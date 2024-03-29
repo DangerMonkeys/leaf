@@ -12,7 +12,7 @@ PIXELS_PER_CHAR = 8
 def make_monochrome(img: NDArray) -> NDArray[bool]:
     if img.dtype == np.uint8 and len(img.shape) == 3:
         # This is a standard 3-byte-per-pixel RGB image
-        return np.dot(img[..., :3], [0.2989, 0.5870, 0.1140]) > 128
+        return np.dot(img[..., :3], [0.2989, 0.5870, 0.1140]) < 128
     else:
         raise NotImplementedError(f"Cannot convert {img.dtype} image with {len(img.shape)} dimensions to monochrome")
 
@@ -23,20 +23,11 @@ def string_of_image(img: NDArray[bool], max_line_length: int) -> list[str]:
     for page in range(math.ceil(img.shape[1] / 8)):
         for col in range(img.shape[0]):
             value = 0
-            for u in range(page * PIXELS_PER_CHAR, (page + 1) * PIXELS_PER_CHAR):
+            for u in range(PIXELS_PER_CHAR):
                 value <<= 1
-                if img[col, u]:
+                if img[col, (page + 1) * PIXELS_PER_CHAR - u - 1]:
                     value += 1
-            c = chr(value)
-            if value < 128 and c.isprintable():
-                if c == "\\":
-                    new_content = "\\\\"
-                elif c == '"':
-                    new_content = '\\"'
-                else:
-                    new_content = c
-            else:
-                new_content = f"\\x{value:02x}"
+            new_content = f"\\x{value:02x}"
             if len(line) + len(new_content) > max_line_length:
                 lines.append(line)
                 line = new_content
@@ -66,7 +57,7 @@ def main():
     lines = string_of_image(monochrome, args.characters_per_line)
     for i, line in enumerate(lines):
         if i == 0:
-            prefix = 'string s = "'
+            prefix = 'String s = "'
         else:
             prefix = '"'
         if i == len(lines) - 1:
