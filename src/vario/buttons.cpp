@@ -10,6 +10,7 @@
 #include "buttons.h"
 #include "power.h"
 #include "display.h"
+#include "pages.h"
 #include "speaker.h"
 #include "settings.h"
 #include "page_menu_units.h"
@@ -49,7 +50,8 @@ void buttons_update(void) {
   uint8_t which_button = buttons_check();
 //  uint8_t button_state = buttons_get_state();  //TODO: delete this line probably
   if (display_getPage() == page_menu_units) {
-    page_menu_units_doButton(which_button, buttons_get_state(), buttons_get_hold_count());
+    bool draw_now = units_page.button_event(which_button, buttons_get_state(), buttons_get_hold_count());
+    if (draw_now) display_update();
   } else if (display_getPage() == page_charging) {
     switch (which_button) {
       case CENTER:

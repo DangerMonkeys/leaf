@@ -5,25 +5,15 @@
 #include "fonts.h"
 #include "settings.h"
 
-char label_back[] = "Back";
-char label_alt[] = "Alt:";
-char label_climb[] = "Climb:";
-char label_speed[] = "Speed:";
-char label_dist[] = "Dist:";
-char label_heading[] = "Head:";
-char label_temp[] = "Temp:";
-char label_hours[] = "Time:";
-
-
 char * labels[] = {
-  label_back,
-  label_alt,
-  label_climb,
-  label_speed,
-  label_dist,
-  label_heading,
-  label_temp,
-  label_hours
+  "Back",
+  "Alt:",
+  "Climb:",
+  "Speed:",
+  "Dist:",
+  "Head:",
+  "Temp:",
+  "Time:"
 };
 
 enum units_menu_items { 
@@ -42,7 +32,7 @@ int8_t cursor_position = 0;   // 0 means nothing selected
 uint8_t cursor_max = 7;       // the number of items (0-based) in the enum list above
 
 
-void display_page_menu_units() {
+void UnitsMenuPage::draw() {
   u8g2.firstPage();
   do { 
     // Title(s) 
@@ -148,7 +138,7 @@ void setting_change(int8_t dir) {
   }
 }
 
-void page_menu_units_doButton(uint8_t button, uint8_t state, uint8_t count) {    
+bool UnitsMenuPage::button_event(uint8_t button, uint8_t state, uint8_t count) {    
   switch (button) {
     case UP:
       if (state == RELEASED) cursor_prev();
@@ -166,7 +156,7 @@ void page_menu_units_doButton(uint8_t button, uint8_t state, uint8_t count) {
       if (state == RELEASED) setting_change(0);
       break;    
   }    
-  display_update();   //update display after button push so that the UI reflects any changes immediately
+  return true;   //update display after button push so that the UI reflects any changes immediately
 }
 
 

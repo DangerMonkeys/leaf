@@ -9,7 +9,7 @@
 #include "display.h"
 #include "display_tests.h"
 #include "fonts.h"
-#include "page_menu_units.h"
+#include "pages.h"
 
 #include "Leaf_SPI.h"
 #include "gps.h"
@@ -111,7 +111,7 @@ void display_update() {
       display_page_charging();
       break;
     case page_menu_units:
-      display_page_menu_units();
+      units_page.draw();
       break;
   }  
 }
