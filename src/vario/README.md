@@ -5,11 +5,27 @@
 * SparkFun 9DoF IMU Breakout - ICM 20948 - Arduino Library: 1.2.12
 
 ## ESP32 configuration
- ESP Board Manager Package 3.0.2
+
+ESP Board Manager Package 3.0.2
+
 * USB CDC On Boot -> "Enabled"
 * Flash Size -> 8MB
 * Partition Scheme -> 8M with spiffs (3MB APP/1.5MB SPIFFS)
 
+Arduino board: ESP32S3 Dev Module
+
+## Programming
+
+To program the current hardware:
+
+* Install Arduino IDE and [ESP Board Manager Package](#esp32-configuration)
+* Install [required libraries](#required-libraries)
+* Plug board into USB
+* Connect ground ("GD" through-hole) and "3V3" to 3.3V from an external power supply
+* Select the [appropriate board](#esp32-configuration) and port in the Arduino IDE
+* Configure the [appropriate board settings](#esp32-configuration)
+
+## Notes
 
 tried but not going to use:
 * NeoGPS: 4.2.9

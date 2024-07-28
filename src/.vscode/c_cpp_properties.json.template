@@ -1,0 +1,37 @@
+{
+    "configurations": [
+        {
+            "name": "Arduino",
+            "includePath": [
+                "This is a template.  It must be rendered by configure_vscode.py"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE",
+                "ARDUINO=10607",
+                "F_CPU=240000000L",
+                "__XTENSA__",
+                "ARDUINO_ESP32S3_DEV",
+                "ARDUINO_ARCH_ESP32",
+                "ARDUINO_BOARD=\"ESP32S3_DEV\"",
+                "ARDUINO_VARIANT=\"esp32s3\"",
+                "ARDUINO_PARTITION_default_8MB",
+                "ARDUINO_HOST_OS=\"windows\"",
+                "ARDUINO_FQBN=\"esp32:esp32:esp32s3:UploadSpeed=921600,USBMode=hwcdc,CDCOnBoot=cdc,MSCOnBoot=default,DFUOnBoot=default,UploadMode=default,CPUFreq=240,FlashMode=qio,FlashSize=8M,PartitionScheme=default_8MB,DebugLevel=none,PSRAM=disabled,LoopCore=1,EventsCore=1,EraseFlash=none,JTAGAdapter=default,ZigbeeMode=default\"",
+                "ESP32",
+                "CORE_DEBUG_LEVEL=0",
+                "ARDUINO_RUNNING_CORE=1",
+                "ARDUINO_EVENT_RUNNING_CORE=1",
+                "ARDUINO_USB_MODE=1",
+                "ARDUINO_USB_CDC_ON_BOOT=1",
+                "ARDUINO_USB_MSC_ON_BOOT=0",
+                "ARDUINO_USB_DFU_ON_BOOT=0"
+            ],
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "${default}"
+        }
+    ],
+    "version": 4
+}
