@@ -172,7 +172,7 @@ void thermalSimplePage_draw() {
   
 }
 
-void thermalSimple_page_cursor_move(uint8_t button) {
+void thermalSimple_page_cursor_move(buttons button) {
 	if (button == UP) {
 		thermalSimple_page_cursor_position--;
 		if (thermalSimple_page_cursor_position < 0) thermalSimple_page_cursor_position = thermalSimple_page_cursor_max;
@@ -184,7 +184,7 @@ void thermalSimple_page_cursor_move(uint8_t button) {
 }
 
 
-void thermalSimplePage_button(uint8_t button, uint8_t state, uint8_t count) {
+void thermalSimplePage_button(buttons button, button_states state, uint8_t count) {
 
 	// reset cursor time out count if a button is pushed
 	thermalSimple_page_cursor_timeCount = 0;

@@ -78,21 +78,21 @@ void AltimeterMenuPage::draw() {
 }
 
 
-void AltimeterMenuPage::setting_change(int8_t dir, uint8_t state, uint8_t count) {  
+void AltimeterMenuPage::setting_change(buttons button, button_states state, uint8_t count) {  
   switch (cursor_position) {
 		case cursor_altimeter_trackGPSAlt:
       if (state == RELEASED) settings_toggleBoolNeutral(&ALT_SYNC_GPS);
       break;
     case cursor_altimeter_adjust:
-      if (dir == 0 && count == 1 && state == HELD) {  // if center button held for 1 'action time'
+      if (button == NONE && count == 1 && state == HELD) {  // if center button held for 1 'action time'
         if (settings_matchGPSAlt()) { // successful adjustment of altimeter setting to match GPS altitude
           speaker_playSound(fx_enter);  
         } else {                      // unsuccessful 
           speaker_playSound(fx_cancel);
         }
-      } else if (dir != 0) {
+      } else if (button != NONE) {
         if (state == PRESSED || state == HELD || state == HELD_LONG) {
-          baro_adjustAltSetting(dir, count);
+          baro_adjustAltSetting(button, count);
           speaker_playSound(fx_neutral);
         }
       }

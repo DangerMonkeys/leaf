@@ -23,14 +23,14 @@
 
 
 //button debouncing 
-uint8_t button_debounce_last = NONE;
+buttons button_debounce_last = NONE;
 uint32_t button_debounce_time = 5;    // time in ms for stabilized button state before returning the button press
 uint32_t button_time_initial = 0;
 uint32_t button_time_elapsed = 0;
 
 //button actions
-uint8_t button_last = NONE;
-uint8_t button_state = NO_STATE;
+buttons button_last = NONE;
+button_states button_state = NO_STATE;
 bool button_everHeld = false;   // in a single button-push event, track if it was ever held long enough to reach the "HELD" or "HELD_LONG" states (no we know not to also take action when it is released)
 uint16_t button_min_hold_time = 800;  // time in ms to count a button as "held down"
 uint16_t button_max_hold_time = 3500; // time in ms to start further actions on long-holds
@@ -40,7 +40,7 @@ uint16_t button_hold_action_time_elapsed = 0; // counting time between 'action s
 uint16_t button_hold_action_time_limit = 500; // time in ms required between "action steps" while holding the button
 uint16_t button_hold_counter = 0;
 
-uint8_t buttons_init(void) {
+buttons buttons_init(void) {
 
   //configure pins
   pinMode(BUTTON_PIN_UP, INPUT_PULLDOWN);
@@ -49,14 +49,14 @@ uint8_t buttons_init(void) {
   pinMode(BUTTON_PIN_RIGHT, INPUT_PULLDOWN);
   pinMode(BUTTON_PIN_CENTER, INPUT_PULLDOWN);
 
-  uint8_t button = buttons_inspectPins();
+  auto button = buttons_inspectPins();
   return button;
 }
 
-uint8_t buttons_update(void) {
+buttons buttons_update(void) {
 
-  uint8_t which_button = buttons_check();  
-  uint8_t button_state = buttons_get_state();
+  buttons which_button = buttons_check();  
+  button_states button_state = buttons_get_state();
   if(which_button == NONE || button_state == NO_STATE) return which_button;  // don't take any action if no button
   //TODO: not jumping out of this function on NO_STATE was causing speaker issues... investigate!
     
@@ -175,7 +175,7 @@ uint8_t buttons_update(void) {
   return which_button;
 }
 
-uint8_t buttons_get_state(void) {
+button_states buttons_get_state(void) {
   return button_state;
 }
 
@@ -187,9 +187,9 @@ uint16_t buttons_get_hold_count(void) {
 
 
 // the recurring call to see if user is pressing buttons.  Handles debounce and button state changes
-uint8_t buttons_check(void) {
+buttons buttons_check(void) {
   button_state = NO_STATE;            // assume no_state on this pass, we'll update if necessary as we go
-  uint8_t button = buttons_debounce(buttons_inspectPins());  // check if we have a button press in a stable state
+  auto button = buttons_debounce(buttons_inspectPins());  // check if we have a button press in a stable state
 
   // reset and exit if bouncing
   if (button == BOUNCE) {
@@ -296,8 +296,8 @@ Serial.println(button_hold_counter);
 }
 
 // check the state of the button hardware pins (this is pulled out as a separate function so we can use this for a one-time check at startup)
-uint8_t buttons_inspectPins(void) {
-  uint8_t button = NONE;
+buttons buttons_inspectPins(void) {
+  buttons button = NONE;
   if      (digitalRead(BUTTON_PIN_CENTER) == HIGH) button = CENTER;
   else if (digitalRead(BUTTON_PIN_DOWN)   == HIGH) button = DOWN;
   else if (digitalRead(BUTTON_PIN_LEFT)   == HIGH) button = LEFT;
@@ -307,7 +307,7 @@ uint8_t buttons_inspectPins(void) {
 }
 
 // check for a minimal stable time before asserting that a button has been pressed or released
-uint8_t buttons_debounce(uint8_t button) {  
+buttons buttons_debounce(buttons button) {  
   if (button != button_debounce_last) {                   // if this is a new button state
     button_time_initial = millis();                       // capture the initial start time
     button_time_elapsed = 0;                              // and reset the elapsed time

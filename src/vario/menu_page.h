@@ -2,14 +2,15 @@
 #define MENU_PAGE_H
 
 #include <Arduino.h>
+#include "buttons.h"
 
 class MenuPage {
   public:
     // Called whenever a button event occurs
-    //   button: Button to which the event pertains (TODO: change to enum)
-    //   state: New state of button (TODO: change to enum)
+    //   button: Button to which the event pertains
+    //   state: New state of button
     //   count: (TODO: document)
-    virtual bool button_event(uint8_t button, uint8_t state, uint8_t count) = 0;
+    virtual bool button_event(buttons button, button_states state, uint8_t count) = 0;
 
     // Called to draw the menu page.
     // Assumes(?) the screen is already clear.
@@ -26,10 +27,10 @@ class MenuPage {
 
 class SettingsMenuPage : public MenuPage {
   public:
-    bool button_event(uint8_t button, uint8_t state, uint8_t cound);
+    bool button_event(buttons button, button_states state, uint8_t count);
 
   protected:
-    virtual void setting_change(int8_t dir, uint8_t state, uint8_t count) = 0;
+    virtual void setting_change(buttons dir, button_states state, uint8_t count) = 0;
 };
 
 #endif

@@ -88,7 +88,7 @@ void UnitsMenuPage::draw() {
 }
 
 
-void UnitsMenuPage::setting_change(int8_t dir, uint8_t state, uint8_t count) {
+void UnitsMenuPage::setting_change(buttons dir, button_states state, uint8_t count) {
   switch (cursor_position) {
     case cursor_units_alt:
       if (state == RELEASED) settings_toggleBoolNeutral(&UNITS_alt);

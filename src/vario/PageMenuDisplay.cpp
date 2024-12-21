@@ -79,7 +79,7 @@ void DisplayMenuPage::draw() {
   } while ( u8g2.nextPage() ); 
 }
 
-void DisplayMenuPage::setting_change(int8_t dir, uint8_t state, uint8_t count) {
+void DisplayMenuPage::setting_change(buttons dir, button_states state, uint8_t count) {
   switch (cursor_position) {
     case cursor_display_contrast:
       if (state == RELEASED && dir != 0) settings_adjustContrast(dir);
