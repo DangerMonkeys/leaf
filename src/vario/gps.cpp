@@ -5,7 +5,6 @@
  */
 #include <Arduino.h>
 #include <TinyGPSPlus.h>
-#include <String.h>
 
 #include "gps.h"
 #include "gpx.h"
