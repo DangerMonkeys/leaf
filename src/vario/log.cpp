@@ -1,6 +1,5 @@
 
 #include <Arduino.h>
-#include <String>
 
 #include "log.h"
 #include "baro.h"

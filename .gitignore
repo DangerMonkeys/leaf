@@ -36,3 +36,8 @@ desktop.ini
 
 
 *.gdoc
+
+# Auto generated files by PlatformIO
+.vscode/c_cpp_properties.json
+.vscode/launch.json
+.pio

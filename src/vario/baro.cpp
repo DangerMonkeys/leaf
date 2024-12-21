@@ -7,7 +7,7 @@
 #include "LinearRegression.h"
 #include "settings.h"
 #include "Leaf_I2C.h"
-#include "TempRH.h"
+#include "tempRH.h"
 
 #define DEBUG_BARO 0  // flag for printing serial debugging messages
 
