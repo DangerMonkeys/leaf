@@ -11,7 +11,7 @@ void MenuPage::cursor_next() {
   if (cursor_position > cursor_max) cursor_position = 0;
 }
 
-bool SettingsMenuPage::button_event(uint8_t button, uint8_t state, uint8_t count) {      
+bool SettingsMenuPage::button_event(buttons button, button_states state, uint8_t count) {      
   switch (button) {
     case UP:
       if (state == RELEASED) cursor_prev();      
@@ -20,13 +20,13 @@ bool SettingsMenuPage::button_event(uint8_t button, uint8_t state, uint8_t count
       if (state == RELEASED) cursor_next();      
       break;
     case LEFT:
-      setting_change(-1, state, count);
+      setting_change(LEFT, state, count);
       break;
     case RIGHT:
-      setting_change(1, state, count);
+      setting_change(RIGHT, state, count);
       break;
     case CENTER:
-      setting_change(0, state, count);
+      setting_change(CENTER, state, count);
       break;    
   }    
   bool redraw = false;

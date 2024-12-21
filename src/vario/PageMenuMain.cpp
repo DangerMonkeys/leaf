@@ -164,7 +164,7 @@ void MainMenuPage::menu_item_action(int8_t button) {
   }
 }
 
-bool MainMenuPage::mainMenuButtonEvent(uint8_t button, uint8_t state, uint8_t count) {
+bool MainMenuPage::mainMenuButtonEvent(buttons button, button_states state, uint8_t count) {
   bool redraw = false; // only redraw screen if a UI input changes something
   switch (button) {
     case UP:
@@ -192,7 +192,7 @@ bool MainMenuPage::mainMenuButtonEvent(uint8_t button, uint8_t state, uint8_t co
 }
 
 
-bool MainMenuPage::button_event(uint8_t button, uint8_t state, uint8_t count) {    
+bool MainMenuPage::button_event(buttons button, button_states state, uint8_t count) {    
   bool redraw = false; // only redraw screen if a UI input changes something
   switch (menu_page) {
     case page_menu_main:

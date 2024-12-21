@@ -360,7 +360,7 @@ void navigatePage_draw() {
   
 }
 
-void nav_cursor_move(uint8_t button) {
+void nav_cursor_move(buttons button) {
 	if (button == UP) {
 		navigatePage_cursorPosition--;
 		if (navigatePage_cursorPosition < 0) navigatePage_cursorPosition = navigatePage_cursorMax;
@@ -384,7 +384,7 @@ void nav_cursor_move(uint8_t button) {
 }
 
 
-void navigatePage_button(uint8_t button, uint8_t state, uint8_t count) {
+void navigatePage_button(buttons button, button_states state, uint8_t count) {
 
 	// reset cursor time out count if a button is pushed
 	navigatePage_cursorTimeCount = 0;
