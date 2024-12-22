@@ -184,7 +184,7 @@ void thermalSimple_page_cursor_move(Button button) {
 }
 
 
-void thermalSimplePage_button(Button button, button_states state, uint8_t count) {
+void thermalSimplePage_button(Button button, ButtonState state, uint8_t count) {
 
 	// reset cursor time out count if a button is pushed
 	thermalSimple_page_cursor_timeCount = 0;

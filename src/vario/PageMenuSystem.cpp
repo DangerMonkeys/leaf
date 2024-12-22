@@ -123,7 +123,7 @@ void SystemMenuPage::draw() {
 }
 
 
-void SystemMenuPage::setting_change(Button dir, button_states state, uint8_t count) {
+void SystemMenuPage::setting_change(Button dir, ButtonState state, uint8_t count) {
   bool redraw = false;
   switch (cursor_position) {
     case cursor_system_timezone:

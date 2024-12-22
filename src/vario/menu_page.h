@@ -10,7 +10,7 @@ class MenuPage {
     //   button: Button to which the event pertains
     //   state: New state of button
     //   count: (TODO: document)
-    virtual bool button_event(Button button, button_states state, uint8_t count) = 0;
+    virtual bool button_event(Button button, ButtonState state, uint8_t count) = 0;
 
     // Called to draw the menu page.
     // Assumes(?) the screen is already clear.
@@ -27,10 +27,10 @@ class MenuPage {
 
 class SettingsMenuPage : public MenuPage {
   public:
-    bool button_event(Button button, button_states state, uint8_t count);
+    bool button_event(Button button, ButtonState state, uint8_t count);
 
   protected:
-    virtual void setting_change(Button dir, button_states state, uint8_t count) = 0;
+    virtual void setting_change(Button dir, ButtonState state, uint8_t count) = 0;
 };
 
 #endif

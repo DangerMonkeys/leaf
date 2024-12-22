@@ -15,7 +15,7 @@ class GPSMenuPage : public SettingsMenuPage {
     void drawConstellation(uint8_t x, uint8_t y, uint16_t size);
 
   protected:
-    void setting_change(Button dir, button_states state, uint8_t count);
+    void setting_change(Button dir, ButtonState state, uint8_t count);
 
   private:
     static constexpr char * labels[4] = {

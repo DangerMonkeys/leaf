@@ -30,7 +30,7 @@ uint32_t button_time_elapsed = 0;
 
 //button actions
 Button button_last = NONE;
-button_states button_state = NO_STATE;
+ButtonState button_state = NO_STATE;
 bool button_everHeld = false;   // in a single button-push event, track if it was ever held long enough to reach the "HELD" or "HELD_LONG" states (no we know not to also take action when it is released)
 uint16_t button_min_hold_time = 800;  // time in ms to count a button as "held down"
 uint16_t button_max_hold_time = 3500; // time in ms to start further actions on long-holds
@@ -56,7 +56,7 @@ Button buttons_init(void) {
 Button buttons_update(void) {
 
   Button which_button = buttons_check();  
-  button_states button_state = buttons_get_state();
+  ButtonState button_state = buttons_get_state();
   if(which_button == NONE || button_state == NO_STATE) return which_button;  // don't take any action if no button
   //TODO: not jumping out of this function on NO_STATE was causing speaker issues... investigate!
     
@@ -175,7 +175,7 @@ Button buttons_update(void) {
   return which_button;
 }
 
-button_states buttons_get_state(void) {
+ButtonState buttons_get_state(void) {
   return button_state;
 }
 

@@ -30,7 +30,7 @@ enum Button : int8_t
     CENTER = 4,
     BOUNCE = 5
 };
-enum button_states : uint8_t
+enum ButtonState : uint8_t
 {
     NO_STATE,
     PRESSED,
@@ -44,7 +44,7 @@ Button buttons_init(void);
 Button buttons_check(void);
 Button buttons_inspectPins(void);
 Button buttons_debounce(Button button);
-button_states buttons_get_state(void);
+ButtonState buttons_get_state(void);
 uint16_t buttons_get_hold_count(void);
 
 Button buttons_update(void); // the main task of checking and handling button pushes

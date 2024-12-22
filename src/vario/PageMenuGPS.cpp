@@ -73,7 +73,7 @@ void GPSMenuPage::draw() {
 }
 
 
-void GPSMenuPage::setting_change(Button dir, button_states state, uint8_t count) {
+void GPSMenuPage::setting_change(Button dir, ButtonState state, uint8_t count) {
   switch (cursor_position) {
     case cursor_gps_update:
 

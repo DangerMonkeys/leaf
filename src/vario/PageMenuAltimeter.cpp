@@ -78,7 +78,7 @@ void AltimeterMenuPage::draw() {
 }
 
 
-void AltimeterMenuPage::setting_change(Button button, button_states state, uint8_t count) {  
+void AltimeterMenuPage::setting_change(Button button, ButtonState state, uint8_t count) {  
   switch (cursor_position) {
 		case cursor_altimeter_trackGPSAlt:
       if (state == RELEASED) settings_toggleBoolNeutral(&ALT_SYNC_GPS);

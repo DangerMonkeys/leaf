@@ -384,7 +384,7 @@ void nav_cursor_move(Button button) {
 }
 
 
-void navigatePage_button(Button button, button_states state, uint8_t count) {
+void navigatePage_button(Button button, ButtonState state, uint8_t count) {
 
 	// reset cursor time out count if a button is pushed
 	navigatePage_cursorTimeCount = 0;

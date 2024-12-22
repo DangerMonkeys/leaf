@@ -94,7 +94,7 @@ void LogMenuPage::draw() {
 }
 
 
-void LogMenuPage::setting_change(Button dir, button_states state, uint8_t count) {
+void LogMenuPage::setting_change(Button dir, ButtonState state, uint8_t count) {
   switch (cursor_position) {
     case cursor_log_format:
 

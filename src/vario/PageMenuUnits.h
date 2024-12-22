@@ -13,7 +13,7 @@ class UnitsMenuPage : public SettingsMenuPage {
     void draw();
 
   protected:
-    void setting_change(Button dir, button_states state, uint8_t count);
+    void setting_change(Button dir, ButtonState state, uint8_t count);
 
   private:
     static constexpr char * labels[8] = {
