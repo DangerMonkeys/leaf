@@ -20,17 +20,17 @@
 
 // D pad button states.
 // NOTE:  Left is -1 as to make casting to an int for settings easier
-enum Button : int8_t
+enum Button
 {
-    NONE = 0,
-    LEFT = -1,
-    RIGHT = 1,
-    UP = 2,
-    DOWN = 3,
-    CENTER = 4,
-    BOUNCE = 5
+    NONE,
+    LEFT,
+    RIGHT,
+    UP,
+    DOWN,
+    CENTER,
+    BOUNCE
 };
-enum ButtonState : uint8_t
+enum ButtonState
 {
     NO_STATE,
     PRESSED,
