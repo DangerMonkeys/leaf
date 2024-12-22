@@ -88,7 +88,7 @@ void VarioMenuPage::draw() {
 }
 
 
-void VarioMenuPage::setting_change(buttons dir, button_states state, uint8_t count) {  
+void VarioMenuPage::setting_change(Button dir, button_states state, uint8_t count) {  
   switch (cursor_position) {
     case cursor_vario_volume:
       if (state == RELEASED) settings_adjustVolumeVario(dir);

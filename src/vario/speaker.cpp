@@ -437,7 +437,7 @@ void IRAM_ATTR onSpeakerTimerSample() {
   //spi_checkFlag(2);
   //Serial.print("ENTER ISR: ");
   
-  //prioritize sound effects from UI & buttons etc before we get to vario beeps
+  //prioritize sound effects from UI & Button etc before we get to vario beeps
   if (sound_fx) {					
     speaker_setVolume(VOLUME_SYSTEM);    // play system sound effects at system volume setting
     
@@ -495,7 +495,7 @@ void IRAM_ATTR onSpeakerTimerAdustable() {
   //Serial.print("ENTER ISR: ");
   timerWrite(speaker_timer, 0);  // reset timer as we enter interrupt
 
-  //prioritize sound effects from UI & buttons etc before we get to vario beeps
+  //prioritize sound effects from UI & Button etc before we get to vario beeps
   if (sound_fx) {								
     Serial.print("FX: "); Serial.print(*snd_index); Serial.print(" @ "); Serial.println(millis());	
 		if (*snd_index != NOTE_END) {

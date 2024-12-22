@@ -20,7 +20,7 @@
 
 // D pad button states.
 // NOTE:  Left is -1 as to make casting to an int for settings easier
-enum buttons : int8_t
+enum Button : int8_t
 {
     NONE = 0,
     LEFT = -1,
@@ -39,12 +39,12 @@ enum button_states : uint8_t
     HELD_LONG
 };
 
-buttons buttons_init(void);
+Button buttons_init(void);
 
-buttons buttons_check(void);
-buttons buttons_inspectPins(void);
-buttons buttons_debounce(buttons button);
+Button buttons_check(void);
+Button buttons_inspectPins(void);
+Button buttons_debounce(Button button);
 button_states buttons_get_state(void);
 uint16_t buttons_get_hold_count(void);
 
-buttons buttons_update(void); // the main task of checking and handling button pushes
+Button buttons_update(void); // the main task of checking and handling button pushes

@@ -2,7 +2,7 @@
  * buttons.cpp
  *
  * 5-way joystick switch (UP DOWN LEFT RIGHT CENTER)
- * Buttons are active-high, via resistor dividers fed from "SYSPOWER", which is typically 4.4V (supply from Battery Charger under USB power) or Battery voltage (when no USB power is applied)
+ * Button are active-high, via resistor dividers fed from "SYSPOWER", which is typically 4.4V (supply from Battery Charger under USB power) or Battery voltage (when no USB power is applied)
  * Use internal pull-down resistors on button pins 
  *
  */
@@ -23,13 +23,13 @@
 
 
 //button debouncing 
-buttons button_debounce_last = NONE;
+Button button_debounce_last = NONE;
 uint32_t button_debounce_time = 5;    // time in ms for stabilized button state before returning the button press
 uint32_t button_time_initial = 0;
 uint32_t button_time_elapsed = 0;
 
 //button actions
-buttons button_last = NONE;
+Button button_last = NONE;
 button_states button_state = NO_STATE;
 bool button_everHeld = false;   // in a single button-push event, track if it was ever held long enough to reach the "HELD" or "HELD_LONG" states (no we know not to also take action when it is released)
 uint16_t button_min_hold_time = 800;  // time in ms to count a button as "held down"
@@ -40,7 +40,7 @@ uint16_t button_hold_action_time_elapsed = 0; // counting time between 'action s
 uint16_t button_hold_action_time_limit = 500; // time in ms required between "action steps" while holding the button
 uint16_t button_hold_counter = 0;
 
-buttons buttons_init(void) {
+Button buttons_init(void) {
 
   //configure pins
   pinMode(BUTTON_PIN_UP, INPUT_PULLDOWN);
@@ -53,9 +53,9 @@ buttons buttons_init(void) {
   return button;
 }
 
-buttons buttons_update(void) {
+Button buttons_update(void) {
 
-  buttons which_button = buttons_check();  
+  Button which_button = buttons_check();  
   button_states button_state = buttons_get_state();
   if(which_button == NONE || button_state == NO_STATE) return which_button;  // don't take any action if no button
   //TODO: not jumping out of this function on NO_STATE was causing speaker issues... investigate!
@@ -187,7 +187,7 @@ uint16_t buttons_get_hold_count(void) {
 
 
 // the recurring call to see if user is pressing buttons.  Handles debounce and button state changes
-buttons buttons_check(void) {
+Button buttons_check(void) {
   button_state = NO_STATE;            // assume no_state on this pass, we'll update if necessary as we go
   auto button = buttons_debounce(buttons_inspectPins());  // check if we have a button press in a stable state
 
@@ -296,8 +296,8 @@ Serial.println(button_hold_counter);
 }
 
 // check the state of the button hardware pins (this is pulled out as a separate function so we can use this for a one-time check at startup)
-buttons buttons_inspectPins(void) {
-  buttons button = NONE;
+Button buttons_inspectPins(void) {
+  Button button = NONE;
   if      (digitalRead(BUTTON_PIN_CENTER) == HIGH) button = CENTER;
   else if (digitalRead(BUTTON_PIN_DOWN)   == HIGH) button = DOWN;
   else if (digitalRead(BUTTON_PIN_LEFT)   == HIGH) button = LEFT;
@@ -307,7 +307,7 @@ buttons buttons_inspectPins(void) {
 }
 
 // check for a minimal stable time before asserting that a button has been pressed or released
-buttons buttons_debounce(buttons button) {  
+Button buttons_debounce(Button button) {  
   if (button != button_debounce_last) {                   // if this is a new button state
     button_time_initial = millis();                       // capture the initial start time
     button_time_elapsed = 0;                              // and reset the elapsed time

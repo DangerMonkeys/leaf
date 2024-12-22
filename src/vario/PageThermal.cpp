@@ -137,7 +137,7 @@ void thermalPage_draw() {
   
 }
 
-void cursor_move(buttons button) {
+void cursor_move(Button button) {
 	if (button == UP) {
 		cursor_position--;
 		if (cursor_position < 0) cursor_position = cursor_max;
@@ -149,7 +149,7 @@ void cursor_move(buttons button) {
 }
 
 
-void thermalPage_button(buttons button, button_states state, uint8_t count) {
+void thermalPage_button(Button button, button_states state, uint8_t count) {
 
 	// reset cursor time out count if a button is pushed
 	cursor_timeCount = 0;

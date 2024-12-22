@@ -11,7 +11,7 @@ void MenuPage::cursor_next() {
   if (cursor_position > cursor_max) cursor_position = 0;
 }
 
-bool SettingsMenuPage::button_event(buttons button, button_states state, uint8_t count) {      
+bool SettingsMenuPage::button_event(Button button, button_states state, uint8_t count) {      
   switch (button) {
     case UP:
       if (state == RELEASED) cursor_prev();      

@@ -162,7 +162,7 @@ void main_CHARGE_loop() {
       SDcard_update();
 
     // Check Buttons
-      uint8_t buttonPushed = buttons_update();       // check buttons for any presses (user can turn ON from charging state)
+      uint8_t buttonPushed = buttons_update();       // check Button for any presses (user can turn ON from charging state)
 
     // Prep to end this cycle and sleep
       chargeman_doTasks = 0;  // done with tasks this timer cycle
@@ -195,7 +195,7 @@ void main_CHARGE_loop() {
         delayMicroseconds(sleepMicros);                   // use delay instead of actual sleep to test sleep logic (allows us to serial print during 'fake sleep' and also re-program over USB mid-'fake sleep')
       }
     } else {
-      //if (buttons_update() != NONE) Serial.println("we see a button!");  // TOOD: erase this
+      //if (Button_update() != NONE) Serial.println("we see a button!");  // TOOD: erase this
     }
   }
 }

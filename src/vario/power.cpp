@@ -38,7 +38,7 @@ void power_simple_init(void) {
 void power_bootUp() {
 
   power_init();                                     // configure power supply
-  uint8_t button = buttons_init();                  // initialize buttons and check if holding the center button is what turned us on
+  uint8_t button = buttons_init();                  // initialize Button and check if holding the center button is what turned us on
   if (button == CENTER) powerOnState = POWER_ON;    // if center button, then latch on and start operating!
   else powerOnState = POWER_OFF_USB;                // if not center button, then USB power turned us on, go into charge mode
   settings_init();                                  // grab user settings (or populate defaults if no saved settings)
