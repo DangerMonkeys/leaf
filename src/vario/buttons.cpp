@@ -18,8 +18,7 @@
 #include "PageThermalSimple.h"
 #include "PageNavigate.h"
 #include "baro.h"
-
-
+#include "menu_page.h"
 
 
 //button debouncing 
@@ -53,6 +52,8 @@ Button buttons_init(void) {
   return button;
 }
 
+// If the current page is charging, show that, otherwise direct any input to shown modal pages
+// before falling back to the current page.
 Button buttons_update(void) {
 
   Button which_button = buttons_check();  
@@ -62,24 +63,9 @@ Button buttons_update(void) {
     
   power_resetAutoOffCounter();                // pressing any button should reset the auto-off counter
   uint8_t currentPage = display_getPage();    // actions depend on which page we're on
-  
-  if (currentPage == page_menu) {
-    bool draw_now = mainMenuPage.button_event(which_button, buttons_get_state(), buttons_get_hold_count());
-    if (draw_now) display_update();
 
-  } else if (currentPage == page_thermal) {
-    thermalPage_button(which_button, buttons_get_state(), buttons_get_hold_count());
-    display_update();
 
-  } else if (currentPage == page_thermalSimple) {
-    thermalSimplePage_button(which_button, buttons_get_state(), buttons_get_hold_count());
-    display_update();
-
-  } else if (currentPage == page_nav) {
-    navigatePage_button(which_button, buttons_get_state(), buttons_get_hold_count());
-    display_update();
-
-  } else if (display_getPage() == page_charging) {
+  if(currentPage == page_charging) {
     switch (which_button) {
       case Button::CENTER:
         if (button_state == HELD && button_hold_counter == 1) {          
@@ -111,7 +97,32 @@ Button buttons_update(void) {
         }
         break;
     }
-  } else { // NOT CHARGING PAGE (i.e., our satellites test page)
+  }
+
+  // If there's a modal page currently shown, we should send the button event to that page
+  auto modal_page = mainMenuPage.get_modal_page();
+  if(modal_page != NULL) {
+    bool draw_now = modal_page->button_event(which_button, buttons_get_state(), buttons_get_hold_count());
+    if (draw_now) display_update();
+    return which_button;
+  }
+
+  if (currentPage == page_menu) {
+    bool draw_now = mainMenuPage.button_event(which_button, buttons_get_state(), buttons_get_hold_count());
+    if (draw_now) display_update();
+
+  } else if (currentPage == page_thermal) {
+    thermalPage_button(which_button, buttons_get_state(), buttons_get_hold_count());
+    display_update();
+
+  } else if (currentPage == page_thermalSimple) {
+    thermalSimplePage_button(which_button, buttons_get_state(), buttons_get_hold_count());
+    display_update();
+
+  } else if (currentPage == page_nav) {
+    navigatePage_button(which_button, buttons_get_state(), buttons_get_hold_count());
+    display_update();
+  } else if (currentPage != page_charging) { // NOT CHARGING PAGE (i.e., our satellites test page)
     switch (which_button) {
       case Button::CENTER:
         switch (button_state) {

@@ -8,6 +8,7 @@
 #include "settings.h"
 #include "power.h"
 #include "speaker.h"
+#include "PageMenuSystemWifi.h"
 
 
 enum system_menu_items { 
@@ -143,7 +144,12 @@ void SystemMenuPage::setting_change(Button dir, ButtonState state, uint8_t count
       if (state == RELEASED) settings_toggleBoolOnOff(&ECO_MODE);
       break;
     case cursor_system_wifi:
-      if (state == RELEASED) {}
+      if (state != RELEASED) break;
+
+      // User has selected WiFi, show this page
+      static PageMenuSystemWifi wifiPage;
+      push_page(&wifiPage);
+      redraw = true;
       break;
     case cursor_system_bluetooth:
       if (state == RELEASED) {}

@@ -26,6 +26,7 @@
 #include "speaker.h"
 #include "power.h"
 #include "SDcard.h"
+#include "menu_page.h"
 
 //#define GLCD_RS LCD_RS
 //#define GLCD_RESET LCD_RESET
@@ -117,7 +118,22 @@ uint8_t display_getPage() {
   return display_page;
 }
 
+// Draws the current page
+// Will first display charging screen if charging,
+// Then will display any current modal pages before
+// falling back to the current 
 void display_update() {
+  if (display_page == page_charging) {
+    display_page_charging();
+    return;
+  }
+
+  auto modalPage = mainMenuPage.get_modal_page();
+  if(modalPage != NULL) {
+    modalPage->draw();
+    return;
+  }
+
   switch (display_page) {
     case page_thermalSimple:
       thermalSimplePage_draw();
@@ -133,9 +149,6 @@ void display_update() {
       break;
     case page_menu:
       mainMenuPage.draw();
-      break;
-    case page_charging:
-      display_page_charging();
       break;
   }  
 }
