@@ -1,0 +1,195 @@
+openapi: 3.0.2
+info:
+    title: Leaf logbook
+    version: 1.0.0
+    description: ''
+paths:
+    /logbook:
+        get:
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Logbook'
+            operationId: getLogbook
+components:
+    schemas:
+        Logbook:
+            description: Top-level logbook data structure
+            type: object
+            properties:
+                entries:
+                    description: ''
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Entry'
+        Entry:
+            description: Single logbook entry representing a flight.
+            type: object
+            properties:
+                start:
+                    $ref: '#/components/schemas/EntryEvent'
+                    description: Conditions at the start of this log entry.
+                end:
+                    $ref: '#/components/schemas/EntryEvent'
+                    description: Conditions at the end of this log entry.
+                stats:
+                    $ref: '#/components/schemas/SummaryStats'
+                    description: Summary statistics about this entry.
+        EntryEvent:
+            description: Information about the starting conditions of a logbook entry.
+            type: object
+            properties:
+                location:
+                    $ref: '#/components/schemas/Location'
+                    description: Location at the start of the logbook entry.
+                time:
+                    format: date-time
+                    description: Time at which the logbook entry started.
+                    type: string
+                temperature:
+                    $ref: '#/components/schemas/Temperature'
+                    description: Air temperature at the start of this logbook entry.
+        Distance:
+            description: Height above "mean sea level" of the Earth as approximated by the WGS84 ellipsoid.
+            required:
+                - value
+                - units
+            type: object
+            properties:
+                value:
+                    format: float
+                    description: Number of units above mean sea level.
+                    type: number
+                units:
+                    $ref: '#/components/schemas/DistanceUnit'
+                    description: Units used to measure the altitude.
+        DistanceUnit:
+            description: Unit measuring distance.
+            enum:
+                - m
+                - ft
+                - mi
+                - km
+            type: string
+        Temperature:
+            description: ''
+            required:
+                - value
+                - units
+            type: object
+            properties:
+                value:
+                    format: float
+                    description: Number of degrees.
+                    type: number
+                units:
+                    $ref: '#/components/schemas/TemperatureUnit'
+                    description: ''
+        TemperatureUnit:
+            description: Unit of temperature measurement.
+            enum:
+                - F
+                - C
+            type: string
+        Location:
+            description: 3D location on Earth.
+            type: object
+            properties:
+                alt:
+                    $ref: '#/components/schemas/Altitude'
+                    description: Altitude of the location.
+                lat:
+                    format: double
+                    description: Latitude of location, degrees north of the equator.
+                    type: number
+                lng:
+                    format: double
+                    description: Longitude of location, degrees east of the Prime Meridian.
+                    type: number
+        SummaryStats:
+            description: Extreme values of various statistics.
+            type: object
+            properties:
+                altitude_min:
+                    $ref: '#/components/schemas/Distance'
+                    description: Minimum altitude reached.
+                altitude_max:
+                    $ref: '#/components/schemas/Distance'
+                    description: Maximum altitude reached.
+                climb_rate_max:
+                    $ref: '#/components/schemas/Speed'
+                    description: Maximum climb rate reached.
+                sink_rate_max:
+                    $ref: '#/components/schemas/Speed'
+                    description: Maximum sink rate encountered (positive value is downward movement).
+                total_altitude_gained:
+                    $ref: '#/components/schemas/Distance'
+                    description: Total increase in altitude over all positive climbs (ignoring sink).
+                temperature_min:
+                    $ref: '#/components/schemas/Temperature'
+                    description: Minimum temperature experienced.
+                temperature_max:
+                    $ref: '#/components/schemas/Temperature'
+                    description: Maximum temperature experienced.
+                track_distance:
+                    $ref: '#/components/schemas/Distance'
+                    description: Total length of track (3D).
+                g_load_max:
+                    $ref: '#/components/schemas/Acceleration'
+                    description: Maximum g-load experienced.
+        Speed:
+            description: ''
+            required:
+                - value
+            type: object
+            properties:
+                value:
+                    format: float
+                    description: ''
+                    type: number
+                units:
+                    $ref: '#/components/schemas/SpeedUnit'
+                    description: Units of speed for value.
+        SpeedUnit:
+            description: |-
+                mph: Miles per hour
+                kph: Kilometers per hour
+                fpm: Feet per minute
+                mps: Meters per second
+                kts: Knots
+            enum:
+                - mph
+                - kph
+                - fpm
+                - mps
+                - kts
+            type: string
+        Altitude:
+            anyOf:
+                -
+                    type: object
+                -
+                    $ref: '#/components/schemas/Distance'
+            description: Height above "mean sea level" of the Earth as approximated by the WGS84 ellipsoid.
+            type: object
+        Acceleration:
+            description: ''
+            required:
+                - units
+                - value
+            type: object
+            properties:
+                value:
+                    format: float
+                    description: ''
+                    type: number
+                units:
+                    $ref: '#/components/schemas/AccelerationUnit'
+                    description: ''
+        AccelerationUnit:
+            description: Unit measuring acceleration.
+            enum:
+                - g
+            type: string
