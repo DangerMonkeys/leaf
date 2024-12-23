@@ -23,13 +23,13 @@
 
 
 //button debouncing 
-Button button_debounce_last = NONE;
+Button button_debounce_last = Button::NONE;
 uint32_t button_debounce_time = 5;    // time in ms for stabilized button state before returning the button press
 uint32_t button_time_initial = 0;
 uint32_t button_time_elapsed = 0;
 
 //button actions
-Button button_last = NONE;
+Button button_last = Button::NONE;
 ButtonState button_state = NO_STATE;
 bool button_everHeld = false;   // in a single button-push event, track if it was ever held long enough to reach the "HELD" or "HELD_LONG" states (no we know not to also take action when it is released)
 uint16_t button_min_hold_time = 800;  // time in ms to count a button as "held down"
@@ -57,7 +57,7 @@ Button buttons_update(void) {
 
   Button which_button = buttons_check();  
   ButtonState button_state = buttons_get_state();
-  if(which_button == NONE || button_state == NO_STATE) return which_button;  // don't take any action if no button
+  if(which_button == Button::NONE || button_state == NO_STATE) return which_button;  // don't take any action if no button
   //TODO: not jumping out of this function on NO_STATE was causing speaker issues... investigate!
     
   power_resetAutoOffCounter();                // pressing any button should reset the auto-off counter
@@ -81,7 +81,7 @@ Button buttons_update(void) {
 
   } else if (display_getPage() == page_charging) {
     switch (which_button) {
-      case CENTER:
+      case Button::CENTER:
         if (button_state == HELD && button_hold_counter == 1) {          
           display_clear();          
           display_setPage(page_thermalSimple);
@@ -89,7 +89,7 @@ Button buttons_update(void) {
           power_switchToOnState();
         }
         break;
-      case UP:
+      case Button::UP:
         switch (button_state) {
           case RELEASED:
             break;
@@ -100,7 +100,7 @@ Button buttons_update(void) {
             break;
         }
         break;
-      case DOWN:
+      case Button::DOWN:
         switch (button_state) {
           case RELEASED:            
             break;
@@ -113,7 +113,7 @@ Button buttons_update(void) {
     }
   } else { // NOT CHARGING PAGE (i.e., our satellites test page)
     switch (which_button) {
-      case CENTER:
+      case Button::CENTER:
         switch (button_state) {
           case HELD:
             if (button_hold_counter == 1) {
@@ -121,7 +121,7 @@ Button buttons_update(void) {
               speaker_playSound(fx_exit);
               delay(600);
               power_shutdown();
-              while(buttons_inspectPins() == CENTER) {} // freeze here until user lets go of power button
+              while(buttons_inspectPins() == Button::CENTER) {} // freeze here until user lets go of power button
               display_setPage(page_charging);              
             }
             break;
@@ -130,13 +130,13 @@ Button buttons_update(void) {
             break;
         }      
         break;
-      case RIGHT:
+      case Button::RIGHT:
         if (button_state == RELEASED) {
           display_turnPage(page_next);
           speaker_playSound(fx_increase);
         }
         break;
-      case LEFT:
+      case Button::LEFT:
         /* Don't allow turning page further to the left
         if (button_state == RELEASED) {
           display_turnPage(page_prev);
@@ -144,29 +144,29 @@ Button buttons_update(void) {
         }
         */
         break;
-      case UP:
+      case Button::UP:
         switch (button_state) {
           case RELEASED:
-            baro_adjustAltSetting(1, 0);
+            baro_adjustAltSetting(Button::RIGHT, 0);
             break;
           case HELD:
-            baro_adjustAltSetting(1, 1);
+            baro_adjustAltSetting(Button::RIGHT, 1);
             break;
           case HELD_LONG:
-            baro_adjustAltSetting(1, 10);
+            baro_adjustAltSetting(Button::RIGHT, 10);
             break;
         }
         break;
-      case DOWN:
+      case Button::DOWN:
         switch (button_state) {
           case RELEASED:
-            baro_adjustAltSetting(-1, 0);            
+            baro_adjustAltSetting(Button::LEFT, 0);            
             break;
           case HELD:
-            baro_adjustAltSetting(-1, 1) ;
+            baro_adjustAltSetting(Button::LEFT, 1) ;
             break;
           case HELD_LONG:
-            baro_adjustAltSetting(-1, 10);
+            baro_adjustAltSetting(Button::LEFT, 10);
             break;
         }
         break;
@@ -192,9 +192,9 @@ Button buttons_check(void) {
   auto button = buttons_debounce(buttons_inspectPins());  // check if we have a button press in a stable state
 
   // reset and exit if bouncing
-  if (button == BOUNCE) {
+  if (button == Button::BOUNCE) {
     button_hold_counter = 0;
-    return NONE;
+    return Button::NONE;
   }
 
   // if we have a state change (low to high or high to low)
@@ -202,7 +202,7 @@ Button buttons_check(void) {
 
     button_hold_counter = 0;  // reset hold counter because button changed -- which means it's not being held
 
-    if (button != NONE) {     // if not-none, we have a pressed button!
+    if (button != Button::NONE) {     // if not-none, we have a pressed button!
       button_state = PRESSED;       
     } else {                  // if it IS none, we have a just-released button
       if (!button_everHeld)  { // we only want to report a released button if it wasn't already held before.  This prevents accidental immediate 'release' button actions when you let go of a held button
@@ -212,7 +212,7 @@ Button buttons_check(void) {
       button_everHeld = false;    // we can reset this now
     }
   // otherwise we have a non-state change (button is held)
-  } else if (button != NONE) {
+  } else if (button != Button::NONE) {
     if (button_time_elapsed >= button_max_hold_time) {
       button_state = HELD_LONG;
     } else if (button_time_elapsed >= button_min_hold_time) {
@@ -246,22 +246,22 @@ Serial.println(button_hold_counter);
 
   if(button_state != NO_STATE) {
     switch(button) {
-      case CENTER:
+      case Button::CENTER:
         Serial.print("button: CENTER");
         break;
-      case LEFT:
+      case Button::LEFT:
         Serial.print("button: LEFT  ");
         break;
-      case RIGHT:
+      case Button::RIGHT:
         Serial.print("button: RIGHT ");
         break;
-      case UP:
+      case Button::UP:
         Serial.print("button: UP    ");
         break;
-      case DOWN:
+      case Button::DOWN:
         Serial.print("button: DOWN  ");
         break;
-      case NONE: 
+      case Button::NONE: 
         Serial.print("button: NONE  ");     
         break;
     }
@@ -288,7 +288,7 @@ Serial.println(button_hold_counter);
   //save button to track for next time.
   // ..if state is RELEASED, then button_last should be 'NONE', since we're seeing the falling edge of the previous button press
   if (button_state == RELEASED) {
-    button_last = NONE;
+    button_last = Button::NONE;
   } else {
     button_last = button;
   }
@@ -297,12 +297,12 @@ Serial.println(button_hold_counter);
 
 // check the state of the button hardware pins (this is pulled out as a separate function so we can use this for a one-time check at startup)
 Button buttons_inspectPins(void) {
-  Button button = NONE;
-  if      (digitalRead(BUTTON_PIN_CENTER) == HIGH) button = CENTER;
-  else if (digitalRead(BUTTON_PIN_DOWN)   == HIGH) button = DOWN;
-  else if (digitalRead(BUTTON_PIN_LEFT)   == HIGH) button = LEFT;
-  else if (digitalRead(BUTTON_PIN_RIGHT)  == HIGH) button = RIGHT;
-  else if (digitalRead(BUTTON_PIN_UP)     == HIGH) button = UP;   
+  Button button = Button::NONE;
+  if      (digitalRead(BUTTON_PIN_CENTER) == HIGH) button = Button::CENTER;
+  else if (digitalRead(BUTTON_PIN_DOWN)   == HIGH) button = Button::DOWN;
+  else if (digitalRead(BUTTON_PIN_LEFT)   == HIGH) button = Button::LEFT;
+  else if (digitalRead(BUTTON_PIN_RIGHT)  == HIGH) button = Button::RIGHT;
+  else if (digitalRead(BUTTON_PIN_UP)     == HIGH) button = Button::UP;   
   return button;
 }
 
@@ -318,7 +318,7 @@ Button buttons_debounce(Button button) {
       return button;
     }
   }
-  return BOUNCE;
+  return Button::BOUNCE;
 }
 
 

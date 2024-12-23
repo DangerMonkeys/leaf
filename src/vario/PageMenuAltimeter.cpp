@@ -84,13 +84,13 @@ void AltimeterMenuPage::setting_change(Button button, ButtonState state, uint8_t
       if (state == RELEASED) settings_toggleBoolNeutral(&ALT_SYNC_GPS);
       break;
     case cursor_altimeter_adjust:
-      if (button == NONE && count == 1 && state == HELD) {  // if center button held for 1 'action time'
+      if (button == Button::NONE && count == 1 && state == HELD) {  // if center button held for 1 'action time'
         if (settings_matchGPSAlt()) { // successful adjustment of altimeter setting to match GPS altitude
           speaker_playSound(fx_enter);  
         } else {                      // unsuccessful 
           speaker_playSound(fx_cancel);
         }
-      } else if (button != NONE) {
+      } else if (button != Button::NONE) {
         if (state == PRESSED || state == HELD || state == HELD_LONG) {
           baro_adjustAltSetting(button, count);
           speaker_playSound(fx_neutral);
@@ -115,15 +115,15 @@ void AltimeterMenuPage::setting_change(Button button, ButtonState state, uint8_t
 // helpful switch constructors to copy-paste as needed:
 /*
 switch (button) {
-  case UP:
+  case Button::UP:
     break;
-  case DOWN:
+  case Button::DOWN:
     break;
-  case LEFT:
+  case Button::LEFT:
     break;
-  case RIGHT:
+  case Button::RIGHT:
     break;
-  case CENTER:
+  case Button::CENTER:
     break;
 */
 

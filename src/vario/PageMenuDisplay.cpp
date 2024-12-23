@@ -82,8 +82,8 @@ void DisplayMenuPage::draw() {
 void DisplayMenuPage::setting_change(Button dir, ButtonState state, uint8_t count) {
   switch (cursor_position) {
     case cursor_display_contrast:
-      if (state == RELEASED && dir != 0) settings_adjustContrast(dir);
-      else if (state == HELD && dir == 0) settings_adjustContrast(dir);
+      if (state == RELEASED && dir != Button::NONE) settings_adjustContrast(dir);
+      else if (state == HELD && dir == Button::NONE) settings_adjustContrast(dir);
       break;
     case cursor_display_AA:
 
@@ -121,15 +121,15 @@ void DisplayMenuPage::setting_change(Button dir, ButtonState state, uint8_t coun
 // helpful switch constructors to copy-paste as needed:
 /*
 switch (button) {
-  case UP:
+  case Button::UP:
     break;
-  case DOWN:
+  case Button::DOWN:
     break;
-  case LEFT:
+  case Button::LEFT:
     break;
-  case RIGHT:
+  case Button::RIGHT:
     break;
-  case CENTER:
+  case Button::CENTER:
     break;
 */
 

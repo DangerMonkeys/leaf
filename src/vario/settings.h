@@ -2,6 +2,7 @@
 #define settings_h
 
 #include <Arduino.h>
+#include "buttons.h"
 
 // Setting bounds and definitions
   // Vario 
@@ -125,21 +126,21 @@ void factoryResetVario(void);
 
 
 // adjust-settings functions
-void settings_adjustContrast(int8_t dir);
+void settings_adjustContrast(Button dir);
 void settings_setAltOffset(int32_t value);
-void settings_adjustAltOffset(int8_t dir, uint8_t count);
+void settings_adjustAltOffset(Button dir, uint8_t count);
 bool settings_matchGPSAlt(void);
-void settings_adjustSinkAlarm(int8_t dir);
-void settings_adjustVarioAverage(int8_t dir);
-void settings_adjustClimbAverage(int8_t dir);
-void settings_adjustClimbStart(int8_t dir);
-void settings_adjustLiftyAir(int8_t dir);
-void settings_adjustVolumeVario(int8_t dir);
-void settings_adjustVolumeSystem(int8_t dir);
-void settings_adjustTimeZone(int8_t dir);
+void settings_adjustSinkAlarm(Button dir);
+void settings_adjustVarioAverage(Button dir);
+void settings_adjustClimbAverage(Button dir);
+void settings_adjustClimbStart(Button dir);
+void settings_adjustLiftyAir(Button dir);
+void settings_adjustVolumeVario(Button dir);
+void settings_adjustVolumeSystem(Button dir);
+void settings_adjustTimeZone(Button dir);
 
-void settings_adjustDisplayField_navPage_alt(int8_t dir);
-void settings_adjustDisplayField_thermalPage_alt(int8_t dir);
+void settings_adjustDisplayField_navPage_alt(Button dir);
+void settings_adjustDisplayField_thermalPage_alt(Button dir);
 
 void settings_toggleBoolNeutral(bool * boolSetting);
 void settings_toggleBoolOnOff(bool * switchSetting);

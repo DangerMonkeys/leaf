@@ -3,11 +3,11 @@
 #include <Arduino.h>
 
 // Pinout for Leaf V3.2.0
-#define BUTTON_PIN_CENTER 2 // INPUT
-#define BUTTON_PIN_LEFT 3   // INPUT
-#define BUTTON_PIN_DOWN 4   // INPUT
-#define BUTTON_PIN_UP 5     // INPUT
-#define BUTTON_PIN_RIGHT 6  // INPUT
+#define BUTTON_PIN_CENTER 2  // INPUT
+#define BUTTON_PIN_LEFT 3    // INPUT
+#define BUTTON_PIN_DOWN 4    // INPUT
+#define BUTTON_PIN_UP 5      // INPUT
+#define BUTTON_PIN_RIGHT 6   // INPUT
 
 /*
 //Pinout for Breadboard
@@ -20,24 +20,8 @@
 
 // D pad button states.
 // NOTE:  Left is -1 as to make casting to an int for settings easier
-enum Button
-{
-    NONE,
-    LEFT,
-    RIGHT,
-    UP,
-    DOWN,
-    CENTER,
-    BOUNCE
-};
-enum ButtonState
-{
-    NO_STATE,
-    PRESSED,
-    RELEASED,
-    HELD,
-    HELD_LONG
-};
+enum class Button { NONE, UP, DOWN, LEFT, RIGHT, CENTER, BOUNCE };
+enum ButtonState { NO_STATE, PRESSED, RELEASED, HELD, HELD_LONG };
 
 Button buttons_init(void);
 
@@ -47,4 +31,5 @@ Button buttons_debounce(Button button);
 ButtonState buttons_get_state(void);
 uint16_t buttons_get_hold_count(void);
 
-Button buttons_update(void); // the main task of checking and handling button pushes
+Button buttons_update(
+    void);  // the main task of checking and handling button pushes

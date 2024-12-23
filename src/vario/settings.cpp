@@ -242,18 +242,18 @@ void settings_totallyEraseNVS() {
 // Adjust individual settings
 
 // Contrast Adjustment
-void settings_adjustContrast(int8_t dir) {
+void settings_adjustContrast(Button dir) {
   uint16_t * sound = fx_neutral;
-  if (dir) sound = fx_increase;
-  else if (dir < 0) sound = fx_decrease;
-  else if (dir == 0) {              // reset to default
+  if (dir == Button::RIGHT) sound = fx_increase;
+  else if (dir == Button::LEFT) sound = fx_decrease;
+  else if (dir == Button::CENTER) {              // reset to default
     speaker_playSound(fx_confirm);  
     CONTRAST = DEF_CONTRAST;
     display_setContrast(CONTRAST);
     return;
   }
 
-  CONTRAST += dir;
+  CONTRAST += dir == Button::RIGHT ? 1 : -1;
 
   if (CONTRAST > CONTRAST_MAX) {
     CONTRAST = CONTRAST_MAX;
@@ -281,10 +281,10 @@ void settings_adjustContrast(int8_t dir) {
   }
 
 
-void settings_adjustSinkAlarm(int8_t dir) {
+void settings_adjustSinkAlarm(Button dir) {
 	uint16_t * sound = fx_neutral;
 
-  if (dir > 0) {
+  if (dir == Button::RIGHT) {
     sound = fx_increase;
     if (++SINK_ALARM > 0) {      
       SINK_ALARM = SINK_ALARM_MAX;      // if we were at 0 and now are at positive 1, go back to max sink rate
@@ -305,10 +305,10 @@ void settings_adjustSinkAlarm(int8_t dir) {
 	// TODO: really needed? speaker_updateClimbToneParameters();	// call to adjust sinkRateSpread according to new SINK_ALARM value
 }
 
-void settings_adjustVarioAverage(int8_t dir) {
+void settings_adjustVarioAverage(Button dir) {
 	uint16_t * sound = fx_neutral;
 	
-  if (dir > 0) {
+  if (dir == Button::RIGHT) {
     sound = fx_increase;    
     if (++VARIO_AVERAGE >= VARIO_AVERAGE_MAX) {
       VARIO_AVERAGE = VARIO_AVERAGE_MAX;  
@@ -325,10 +325,10 @@ void settings_adjustVarioAverage(int8_t dir) {
 }
 
 // climb average goes between 0 and CLIMB_AVERAGE_MAX
-void settings_adjustClimbAverage(int8_t dir) {
+void settings_adjustClimbAverage(Button dir) {
 	uint16_t * sound = fx_neutral;
 	
-  if (dir > 0) {
+  if (dir == Button::RIGHT) {
     sound = fx_increase;    
     if (++CLIMB_AVERAGE >= CLIMB_AVERAGE_MAX) {
       CLIMB_AVERAGE = CLIMB_AVERAGE_MAX;  
@@ -344,11 +344,11 @@ void settings_adjustClimbAverage(int8_t dir) {
 	speaker_playSound(sound);
 }
 
-void settings_adjustClimbStart(int8_t dir) {
+void settings_adjustClimbStart(Button dir) {
 	uint16_t * sound = fx_neutral;
 	uint8_t inc_size = 5;
 
-  if (dir > 0) {
+  if (dir == Button::RIGHT) {
     sound = fx_increase;    
     if ( (CLIMB_START += inc_size) >= CLIMB_START_MAX) {
       CLIMB_START = CLIMB_START_MAX;  
@@ -366,11 +366,11 @@ void settings_adjustClimbStart(int8_t dir) {
 
 
 
-void settings_adjustLiftyAir(int8_t dir) {
+void settings_adjustLiftyAir(Button dir) {
 	uint16_t * sound = fx_neutral;
-	LIFTY_AIR += dir;
+	LIFTY_AIR += dir == Button::RIGHT ? 1 : -1;
 
-  if (dir > 0) {
+  if (dir == Button::RIGHT) {
     sound = fx_increase;
     if (LIFTY_AIR > 0) {      
       LIFTY_AIR = LIFTY_AIR_MAX;      // if we were at 0 and now are at positive 1, go back to max sink rate
@@ -388,11 +388,11 @@ void settings_adjustLiftyAir(int8_t dir) {
 }
 
 
-void settings_adjustVolumeVario(int8_t dir) {
+void settings_adjustVolumeVario(Button dir) {
 
   uint16_t * sound = fx_neutral;
   
-  if (dir > 0) {
+  if (dir == Button::RIGHT) {
     sound = fx_increase;
     VOLUME_VARIO++;
     if (VOLUME_VARIO > VOLUME_MAX) {
@@ -411,9 +411,9 @@ void settings_adjustVolumeVario(int8_t dir) {
 }
   
 
-void settings_adjustVolumeSystem(int8_t dir) {
+void settings_adjustVolumeSystem(Button dir) {
   uint16_t * sound = fx_neutral;  
-  if (dir > 0) {
+  if (dir == Button::RIGHT) {
     sound = fx_increase;
     VOLUME_SYSTEM++;
     if (VOLUME_SYSTEM > VOLUME_MAX) {
@@ -432,9 +432,9 @@ void settings_adjustVolumeSystem(int8_t dir) {
 }
 
 uint8_t timeZoneIncrement = 60;   // in minutes.  This allows us to change and adjust by 15 minutes for some regions that have half-hour and quarter-hour time zones.
-void settings_adjustTimeZone(int8_t dir) {
+void settings_adjustTimeZone(Button dir) {
 
-  if (dir == 0) { // switch from half-hour to full-hour increments
+  if (dir == Button::CENTER) { // switch from half-hour to full-hour increments
     if (timeZoneIncrement == 60) {
       timeZoneIncrement = 15;
       speaker_playSound(fx_increase);
@@ -443,7 +443,7 @@ void settings_adjustTimeZone(int8_t dir) {
       speaker_playSound(fx_decrease);
     }
   }
-  if (dir == 1)
+  if (dir == Button::RIGHT)
     if (TIME_ZONE >= TIME_ZONE_MAX) {
       speaker_playSound(fx_double);
       TIME_ZONE = TIME_ZONE_MAX;
@@ -451,7 +451,7 @@ void settings_adjustTimeZone(int8_t dir) {
       TIME_ZONE += timeZoneIncrement;
       speaker_playSound(fx_neutral);
     }    
-  else if (dir == -1) {
+  else if (dir == Button::LEFT) {
     if (TIME_ZONE <= TIME_ZONE_MIN) {
       speaker_playSound(fx_double);
       TIME_ZONE = TIME_ZONE_MIN;
@@ -463,8 +463,8 @@ void settings_adjustTimeZone(int8_t dir) {
 }
 
 // Change which altitude is shown on the Nav page (Baro Alt, GPS Alt, or Above-Waypoint Alt)
-void settings_adjustDisplayField_navPage_alt(int8_t dir) {
-  if (dir >0) {
+void settings_adjustDisplayField_navPage_alt(Button dir) {
+  if (dir == Button::RIGHT) {
     NAVPG_ALT_TYP++;
     if (NAVPG_ALT_TYP >= 3) NAVPG_ALT_TYP = 0;
   } else {
@@ -475,8 +475,8 @@ void settings_adjustDisplayField_navPage_alt(int8_t dir) {
 }
 
 // Change which altitude is shown on the Thermal page (Baro Alt or GPS Alt)
-void settings_adjustDisplayField_thermalPage_alt(int8_t dir) {
-  if (dir >0) {
+void settings_adjustDisplayField_thermalPage_alt(Button dir) {
+  if (dir == Button::RIGHT) {
     THMPG_ALT_TYP++;
     if (THMPG_ALT_TYP >= 2) THMPG_ALT_TYP = 0;
   } else {

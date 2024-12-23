@@ -10,6 +10,7 @@
 
 #include <Arduino.h>
 #include "Leaf_SPI.h"
+#include "buttons.h"
 
 // Sensor I2C address
 #define ADDR_BARO 0x77
@@ -55,7 +56,7 @@ extern BARO baro;
 	void baro_filterPressure(void);
 	void baro_calculateAlt(void);
 	void baro_updateClimb(void);	
-	void baro_adjustAltSetting(int8_t dir, uint8_t count);
+	void baro_adjustAltSetting(Button dir, uint8_t count);
 
 // Converstion functions
 	int32_t baro_altToUnits(int32_t alt_input, bool units_feet);  

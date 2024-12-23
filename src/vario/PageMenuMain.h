@@ -19,7 +19,7 @@ class MainMenuPage : public MenuPage {
   private:
     void draw_main_menu();
     bool mainMenuButtonEvent(Button button, ButtonState state, uint8_t count);
-    void menu_item_action(int8_t dir);
+    void menu_item_action(Button dir);
     static constexpr char * labels[8] = {
       "Back",
       "Altimeter",

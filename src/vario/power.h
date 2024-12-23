@@ -58,7 +58,7 @@ bool power_autoOff();
 void power_resetAutoOffCounter(void);
 
 
-void power_adjustInputCurrent(int8_t dir);
+void power_adjustInputCurrent(int8_t offset);
 void power_set_input_current(uint8_t current);
 uint16_t power_getBattLevel(uint8_t value);
 bool power_getBattCharging(void);
