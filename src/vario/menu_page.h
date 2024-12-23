@@ -80,10 +80,26 @@ class SettingsMenuPage : public MenuPage {
 class SimpleSettingsMenuPage : public SettingsMenuPage {
     public:
         SimpleSettingsMenuPage();
+
+        // Method to draw the page
         void draw() override;
+
+        // Method called to draw any extra elements to the framebuffer
+        virtual void draw_extra() {};
+
+        // Called after a page is drawn for screens to update their local states
+        virtual void loop() {};
+
+        // Called when a page is shown to the user
         void shown() override;
+
+        // Called to draw the icon/input for a menu item (the right hand side)
         virtual void draw_menu_input(int8_t cursor_position);
+
+        // Title of this page
         virtual const char* get_title() const = 0;
+
+        // Array of labels for the menu items
         virtual etl::array_view<const char*> get_labels() const;
     
     protected:

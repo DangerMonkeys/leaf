@@ -102,7 +102,13 @@ void SimpleSettingsMenuPage::draw() {
             y_pos += 15;
         }
 
+        // Draw any extra elements
+        draw_extra();
+
     } while (u8g2.nextPage());
+
+    // Update the pages event loop
+    loop();
 }
 
 // By default, print an enter character

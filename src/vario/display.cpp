@@ -27,6 +27,7 @@
 #include "power.h"
 #include "SDcard.h"
 #include "menu_page.h"
+#include "version.h"
 
 //#define GLCD_RS LCD_RS
 //#define GLCD_RESET LCD_RESET
@@ -235,6 +236,11 @@ void display_page_charging() {
 
     display_batt_charging_fullscreen();
 
+    // Display the current version
+    u8g2.setCursor(0, 16);
+    u8g2.setFont(leaf_5h);
+    u8g2.print("v");
+    u8g2.print(VERSION);
 
     u8g2.setFont(leaf_6x12);
     u8g2.setCursor(34, 14);
