@@ -137,19 +137,19 @@ void thermalPage_draw() {
   
 }
 
-void cursor_move(uint8_t button) {
-	if (button == UP) {
+void cursor_move(Button button) {
+	if (button == Button::UP) {
 		cursor_position--;
 		if (cursor_position < 0) cursor_position = cursor_max;
 	}
-	if (button == DOWN) {
+	if (button == Button::DOWN) {
 		cursor_position++;
   	if (cursor_position > cursor_max) cursor_position = 0;
 	}
 }
 
 
-void thermalPage_button(uint8_t button, uint8_t state, uint8_t count) {
+void thermalPage_button(Button button, ButtonState state, uint8_t count) {
 
 	// reset cursor time out count if a button is pushed
 	cursor_timeCount = 0;
@@ -157,46 +157,46 @@ void thermalPage_button(uint8_t button, uint8_t state, uint8_t count) {
 	switch (cursor_position) {
 		case cursor_thermalPage_none:
 			switch(button) {
-				case UP:
-				case DOWN:
+				case Button::UP:
+				case Button::DOWN:
 					if (state == RELEASED) cursor_move(button);     					
 					break;
-				case RIGHT:
+				case Button::RIGHT:
 					if (state == RELEASED) {
 						display_turnPage(page_next);
 						speaker_playSound(fx_increase);
 					}
 					break;
-				case LEFT:
+				case Button::LEFT:
 					if (state == RELEASED) {
 						display_turnPage(page_prev);
 						speaker_playSound(fx_decrease);
 					}
 					break;
-				case CENTER:
+				case Button::CENTER:
 					break;
 			}
 			break;
 		case cursor_thermalPage_alt1:
 			switch(button) {
-				case UP:
-				case DOWN:
+				case Button::UP:
+				case Button::DOWN:
 					if (state == RELEASED) cursor_move(button);     					
 					break;
-				case LEFT:
+				case Button::LEFT:
 					if (NAVPG_ALT_TYP == altType_MSL && (state == PRESSED || state == HELD || state == HELD_LONG)) {
-          	baro_adjustAltSetting(-1, count);
+          	baro_adjustAltSetting(Button::LEFT, count);
           	speaker_playSound(fx_neutral);
         	}
 					break;
-				case RIGHT:
+				case Button::RIGHT:
 					if (NAVPG_ALT_TYP == altType_MSL && (state == PRESSED || state == HELD || state == HELD_LONG)) {
-          	baro_adjustAltSetting(1, count);
+          	baro_adjustAltSetting(Button::RIGHT, count);
           	speaker_playSound(fx_neutral);
         	}
 					break;
-				case CENTER:
-					if (state == RELEASED) settings_adjustDisplayField_thermalPage_alt(1);
+				case Button::CENTER:
+					if (state == RELEASED) settings_adjustDisplayField_thermalPage_alt(Button::CENTER);
 					else if (state == HELD && count == 1 && THMPG_ALT_TYP == altType_MSL)  {
 						if (settings_matchGPSAlt()) { // successful adjustment of altimeter setting to match GPS altitude
           		speaker_playSound(fx_enter);  
@@ -210,58 +210,58 @@ void thermalPage_button(uint8_t button, uint8_t state, uint8_t count) {
 			break;
 		/* case cursor_thermalPage_alt2:
 			switch(button) {
-				case UP:
+				case Button::UP:
 					break;
-				case DOWN:
+				case Button::DOWN:
 					break;
-				case LEFT:
+				case Button::LEFT:
 					break;
-				case RIGHT:
+				case Button::RIGHT:
 					break;
-				case CENTER:
+				case Button::CENTER:
 					break;
 			}
 			break;
 		case cursor_thermalPage_userField1:
 			switch(button) {
-				case UP:
+				case Button::UP:
 					break;
-				case DOWN:
+				case Button::DOWN:
 					break;
-				case LEFT:
+				case Button::LEFT:
 					break;
-				case RIGHT:
+				case Button::RIGHT:
 					break;
-				case CENTER:
+				case Button::CENTER:
 					break;
 			}
 			break;
 		case cursor_thermalPage_userField2:
 			switch(button) {
-				case UP:
+				case Button::UP:
 					break;
-				case DOWN:
+				case Button::DOWN:
 					break;
-				case LEFT:
+				case Button::LEFT:
 					break;
-				case RIGHT:
+				case Button::RIGHT:
 					break;
-				case CENTER:
+				case Button::CENTER:
 					break;
 			}
 			break;
 			*/
 		case cursor_thermalPage_timer:
 			switch(button) {
-				case UP:
-				case DOWN:
+				case Button::UP:
+				case Button::DOWN:
 					if (state == RELEASED) cursor_move(button);     					
 					break;
-				case LEFT:
+				case Button::LEFT:
 					break;
-				case RIGHT:
+				case Button::RIGHT:
 					break;
-				case CENTER:
+				case Button::CENTER:
 						if (state == RELEASED) {
 							flightTimer_toggle();
 							cursor_position = cursor_thermalPage_none;

@@ -162,11 +162,11 @@ void main_CHARGE_loop() {
       SDcard_update();
 
     // Check Buttons
-      uint8_t buttonPushed = buttons_update();       // check buttons for any presses (user can turn ON from charging state)
+      auto buttonPushed = buttons_update();       // check Button for any presses (user can turn ON from charging state)
 
     // Prep to end this cycle and sleep
       chargeman_doTasks = 0;  // done with tasks this timer cycle
-      if (buttonPushed == NONE) goToSleep = true; // get ready to sleep if no button is being pushed
+      if (buttonPushed == Button::NONE) goToSleep = true; // get ready to sleep if no button is being pushed
   } else {    
     if (goToSleep && ECO_MODE) {  // don't allow sleep if ECO_MODE is off
 
@@ -195,7 +195,7 @@ void main_CHARGE_loop() {
         delayMicroseconds(sleepMicros);                   // use delay instead of actual sleep to test sleep logic (allows us to serial print during 'fake sleep' and also re-program over USB mid-'fake sleep')
       }
     } else {
-      //if (buttons_update() != NONE) Serial.println("we see a button!");  // TOOD: erase this
+      //if (Button_update() != NONE) Serial.println("we see a button!");  // TOOD: erase this
     }
   }
 }
@@ -352,15 +352,15 @@ void taskManager(void) {
 
 void main_loop_test() {
 
-  uint8_t button = buttons_check();
+  auto button = buttons_check();
   uint8_t button_state = buttons_get_state();
 
 
 /*
   if (button_state == PRESSED) {
-    if (button == LEFT || button == UP) {      
+    if (button == LEFT || button == Button::UP) {      
       if (display_page > 0) display_page--;
-    } else if (button == RIGHT || button == CENTER || button == DOWN) {
+    } else if (button == Button::RIGHT || button == Button::DOWN || button == Button::DOWN) {
       display_page++;
       if (display_page > 12) display_page = 12;
     }

@@ -94,7 +94,7 @@ void LogMenuPage::draw() {
 }
 
 
-void LogMenuPage::setting_change(int8_t dir, uint8_t state, uint8_t count) {
+void LogMenuPage::setting_change(Button dir, ButtonState state, uint8_t count) {
   switch (cursor_position) {
     case cursor_log_format:
 
@@ -115,7 +115,7 @@ void LogMenuPage::setting_change(int8_t dir, uint8_t state, uint8_t count) {
 
       break;
     case cursor_log_timer:
-      if (dir == 0) {
+      if (dir == Button::NONE) {
         if (state == RELEASED) flightTimer_toggle();
         else if (state == HELD) flightTimer_reset();
       }
@@ -137,15 +137,15 @@ void LogMenuPage::setting_change(int8_t dir, uint8_t state, uint8_t count) {
 // helpful switch constructors to copy-paste as needed:
 /*
 switch (button) {
-  case UP:
+  case Button::UP:
     break;
-  case DOWN:
+  case Button::DOWN:
     break;
-  case LEFT:
+  case Button::LEFT:
     break;
-  case RIGHT:
+  case Button::RIGHT:
     break;
-  case CENTER:
+  case Button::CENTER:
     break;
 */
 

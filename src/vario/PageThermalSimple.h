@@ -9,7 +9,7 @@
 void thermalSimplePage_draw(void);
 
 // handle button presses relative to what's shown on the display
-void thermalSimplePage_button(uint8_t button, uint8_t state, uint8_t count);
+void thermalSimplePage_button(Button button, ButtonState state, uint8_t count);
 
 
 #endif

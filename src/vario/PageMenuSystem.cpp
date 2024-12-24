@@ -123,15 +123,15 @@ void SystemMenuPage::draw() {
 }
 
 
-void SystemMenuPage::setting_change(int8_t dir, uint8_t state, uint8_t count) {
+void SystemMenuPage::setting_change(Button dir, ButtonState state, uint8_t count) {
   bool redraw = false;
   switch (cursor_position) {
     case cursor_system_timezone:
-      if (state == RELEASED && dir != 0) settings_adjustTimeZone(dir);
-      if (state == HELD && dir == 0) settings_adjustTimeZone(dir);
+      if (state == RELEASED && dir != Button::NONE) settings_adjustTimeZone(dir);
+      if (state == HELD && dir == Button::NONE) settings_adjustTimeZone(dir);
       break;
     case cursor_system_volume:
-      if (state == RELEASED && dir != 0) settings_adjustVolumeSystem(dir);
+      if (state == RELEASED && dir != Button::NONE) settings_adjustVolumeSystem(dir);
       break;
     case cursor_system_poweroff:
       if (state == RELEASED) settings_toggleBoolOnOff(&AUTO_OFF);
@@ -172,15 +172,15 @@ void SystemMenuPage::setting_change(int8_t dir, uint8_t state, uint8_t count) {
 // helpful switch constructors to copy-paste as needed:
 /*
 switch (button) {
-  case UP:
+  case Button::UP:
     break;
-  case DOWN:
+  case Button::DOWN:
     break;
-  case LEFT:
+  case Button::LEFT:
     break;
-  case RIGHT:
+  case Button::RIGHT:
     break;
-  case CENTER:
+  case Button::CENTER:
     break;
 */
 

@@ -116,72 +116,72 @@ void MainMenuPage::draw_main_menu() {
 }
 
 
-void MainMenuPage::menu_item_action(int8_t button) {
+void MainMenuPage::menu_item_action(Button button) {
   switch (cursor_position) {    
     case cursor_back:
-      if (button == LEFT || button == CENTER) {
+      if (button == Button::LEFT || button == Button::CENTER) {
         display_turnPage(page_back);
         speaker_playSound(fx_exit);  
-      } else if (button == RIGHT) {   
+      } else if (button == Button::RIGHT) {   
         //display_turnPage(page_next);  // maybe stop at menu, don't allow scrolling around back to first page
       }
       break;
     case cursor_altimeter:
-      if (button == RIGHT || button == CENTER) {
+      if (button == Button::RIGHT || button == Button::CENTER) {
         menu_page = page_menu_altimeter;
       }      
       break;
     case cursor_vario:
-      if (button == RIGHT || button == CENTER) {
+      if (button == Button::RIGHT || button == Button::CENTER) {
         menu_page = page_menu_vario;
       }      
       break;
     case cursor_display:
-      if (button == RIGHT || button == CENTER) {
+      if (button == Button::RIGHT || button == Button::CENTER) {
         menu_page = page_menu_display;
       }
       break;
     case cursor_units:
-      if (button == RIGHT || button == CENTER) {        
+      if (button == Button::RIGHT || button == Button::CENTER) {        
         menu_page = page_menu_units;
       }
       break;
     case cursor_gps:
-      if (button == RIGHT || button == CENTER) {
+      if (button == Button::RIGHT || button == Button::CENTER) {
         menu_page = page_menu_gps;
       }      
       break;
     case cursor_log:
-      if (button == RIGHT || button == CENTER) {
+      if (button == Button::RIGHT || button == Button::CENTER) {
         menu_page = page_menu_log;
       }      
       break;
     case cursor_system:      
-      if (button == RIGHT || button == CENTER) {
+      if (button == Button::RIGHT || button == Button::CENTER) {
         menu_page = page_menu_system;
       }      
       break;
   }
 }
 
-bool MainMenuPage::mainMenuButtonEvent(uint8_t button, uint8_t state, uint8_t count) {
+bool MainMenuPage::mainMenuButtonEvent(Button button, ButtonState state, uint8_t count) {
   bool redraw = false; // only redraw screen if a UI input changes something
   switch (button) {
-    case UP:
+    case Button::UP:
       if (state == RELEASED) {
         cursor_prev();
         redraw = true;
       }
       break;
-    case DOWN:
+    case Button::DOWN:
       if (state == RELEASED) {
         cursor_next();
         redraw = true;
       }
       break;
-    case LEFT:
-    case RIGHT:
-    case CENTER:
+    case Button::LEFT:
+    case Button::RIGHT:
+    case Button::CENTER:
       if (state == RELEASED) {
         menu_item_action(button);
         redraw = true;
@@ -192,7 +192,7 @@ bool MainMenuPage::mainMenuButtonEvent(uint8_t button, uint8_t state, uint8_t co
 }
 
 
-bool MainMenuPage::button_event(uint8_t button, uint8_t state, uint8_t count) {    
+bool MainMenuPage::button_event(Button button, ButtonState state, uint8_t count) {    
   bool redraw = false; // only redraw screen if a UI input changes something
   switch (menu_page) {
     case page_menu_main:
@@ -226,15 +226,15 @@ bool MainMenuPage::button_event(uint8_t button, uint8_t state, uint8_t count) {
 // helpful switch constructors to copy-paste as needed:
 /*
 switch (button) {
-  case UP:
+  case Button::UP:
     break;
-  case DOWN:
+  case Button::DOWN:
     break;
-  case LEFT:
+  case Button::LEFT:
     break;
-  case RIGHT:
+  case Button::RIGHT:
     break;
-  case CENTER:
+  case Button::CENTER:
     break;
 */
 

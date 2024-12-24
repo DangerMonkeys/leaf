@@ -88,7 +88,7 @@ void UnitsMenuPage::draw() {
 }
 
 
-void UnitsMenuPage::setting_change(int8_t dir, uint8_t state, uint8_t count) {
+void UnitsMenuPage::setting_change(Button dir, ButtonState state, uint8_t count) {
   switch (cursor_position) {
     case cursor_units_alt:
       if (state == RELEASED) settings_toggleBoolNeutral(&UNITS_alt);
@@ -129,15 +129,15 @@ void UnitsMenuPage::setting_change(int8_t dir, uint8_t state, uint8_t count) {
 // helpful switch constructors to copy-paste as needed:
 /*
 switch (button) {
-  case UP:
+  case Button::UP:
     break;
-  case DOWN:
+  case Button::DOWN:
     break;
-  case LEFT:
+  case Button::LEFT:
     break;
-  case RIGHT:
+  case Button::RIGHT:
     break;
-  case CENTER:
+  case Button::CENTER:
     break;
 */
 

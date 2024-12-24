@@ -172,19 +172,19 @@ void thermalSimplePage_draw() {
   
 }
 
-void thermalSimple_page_cursor_move(uint8_t button) {
-	if (button == UP) {
+void thermalSimple_page_cursor_move(Button button) {
+	if (button == Button::UP) {
 		thermalSimple_page_cursor_position--;
 		if (thermalSimple_page_cursor_position < 0) thermalSimple_page_cursor_position = thermalSimple_page_cursor_max;
 	}
-	if (button == DOWN) {
+	if (button == Button::DOWN) {
 		thermalSimple_page_cursor_position++;
   	if (thermalSimple_page_cursor_position > thermalSimple_page_cursor_max) thermalSimple_page_cursor_position = 0;
 	}
 }
 
 
-void thermalSimplePage_button(uint8_t button, uint8_t state, uint8_t count) {
+void thermalSimplePage_button(Button button, ButtonState state, uint8_t count) {
 
 	// reset cursor time out count if a button is pushed
 	thermalSimple_page_cursor_timeCount = 0;
@@ -192,46 +192,46 @@ void thermalSimplePage_button(uint8_t button, uint8_t state, uint8_t count) {
 	switch (thermalSimple_page_cursor_position) {
 		case cursor_thermalSimplePage_none:
 			switch(button) {
-				case UP:
-				case DOWN:
+				case Button::UP:
+				case Button::DOWN:
 					if (state == RELEASED) thermalSimple_page_cursor_move(button);     					
 					break;
-				case RIGHT:
+				case Button::RIGHT:
 					if (state == RELEASED) {
 						display_turnPage(page_next);
 						speaker_playSound(fx_increase);
 					}
 					break;
-				case LEFT:
+				case Button::LEFT:
 					if (state == RELEASED) {
 						display_turnPage(page_prev);
 						speaker_playSound(fx_decrease);
 					}
 					break;
-				case CENTER:
+				case Button::CENTER:
 					break;
 			}
 			break;
 		case cursor_thermalSimplePage_alt1:
 			switch(button) {
-				case UP:
-				case DOWN:
+				case Button::UP:
+				case Button::DOWN:
 					if (state == RELEASED) thermalSimple_page_cursor_move(button);     					
 					break;
-				case LEFT:
+				case Button::LEFT:
 					if (NAVPG_ALT_TYP == altType_MSL && (state == PRESSED || state == HELD || state == HELD_LONG)) {
-          	baro_adjustAltSetting(-1, count);
+          	baro_adjustAltSetting(Button::LEFT, count);
           	speaker_playSound(fx_neutral);
         	}
 					break;
-				case RIGHT:
+				case Button::RIGHT:
 					if (NAVPG_ALT_TYP == altType_MSL && (state == PRESSED || state == HELD || state == HELD_LONG)) {
-          	baro_adjustAltSetting(1, count);
+          	baro_adjustAltSetting(Button::RIGHT, count);
           	speaker_playSound(fx_neutral);
         	}
 					break;
-				case CENTER:
-					if (state == RELEASED) settings_adjustDisplayField_thermalPage_alt(1);
+				case Button::CENTER:
+					if (state == RELEASED) settings_adjustDisplayField_thermalPage_alt(Button::CENTER);
 					else if (state == HELD && count == 1 && THMPG_ALT_TYP == altType_MSL)  {
 						if (settings_matchGPSAlt()) { // successful adjustment of altimeter setting to match GPS altitude
           		speaker_playSound(fx_enter);  
@@ -245,58 +245,58 @@ void thermalSimplePage_button(uint8_t button, uint8_t state, uint8_t count) {
 			break;
 		/* case cursor_thermalSimplePage_alt2:
 			switch(button) {
-				case UP:
+				case Button::UP:
 					break;
-				case DOWN:
+				case Button::DOWN:
 					break;
-				case LEFT:
+				case Button::LEFT:
 					break;
-				case RIGHT:
+				case Button::RIGHT:
 					break;
-				case CENTER:
+				case Button::CENTER:
 					break;
 			}
 			break;
 		case cursor_thermalSimplePage_userField1:
 			switch(button) {
-				case UP:
+				case Button::UP:
 					break;
-				case DOWN:
+				case Button::DOWN:
 					break;
-				case LEFT:
+				case Button::LEFT:
 					break;
-				case RIGHT:
+				case Button::RIGHT:
 					break;
-				case CENTER:
+				case Button::CENTER:
 					break;
 			}
 			break;
 		case cursor_thermalSimplePage_userField2:
 			switch(button) {
-				case UP:
+				case Button::UP:
 					break;
-				case DOWN:
+				case Button::DOWN:
 					break;
-				case LEFT:
+				case Button::LEFT:
 					break;
-				case RIGHT:
+				case Button::RIGHT:
 					break;
-				case CENTER:
+				case Button::CENTER:
 					break;
 			}
 			break;
 			*/
 		case cursor_thermalSimplePage_timer:
 			switch(button) {
-				case UP:
-				case DOWN:
+				case Button::UP:
+				case Button::DOWN:
 					if (state == RELEASED) thermalSimple_page_cursor_move(button);     					
 					break;
-				case LEFT:
+				case Button::LEFT:
 					break;
-				case RIGHT:
+				case Button::RIGHT:
 					break;
-				case CENTER:
+				case Button::CENTER:
 						if (state == RELEASED) {
 							flightTimer_toggle();
 							thermalSimple_page_cursor_position = cursor_thermalSimplePage_none;

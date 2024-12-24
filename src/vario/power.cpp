@@ -38,8 +38,8 @@ void power_simple_init(void) {
 void power_bootUp() {
 
   power_init();                                     // configure power supply
-  uint8_t button = buttons_init();                  // initialize buttons and check if holding the center button is what turned us on
-  if (button == CENTER) powerOnState = POWER_ON;    // if center button, then latch on and start operating!
+  auto button = buttons_init();                  // initialize Button and check if holding the center button is what turned us on
+  if (button == Button::DOWN) powerOnState = POWER_ON;    // if center button, then latch on and start operating!
   else powerOnState = POWER_OFF_USB;                // if not center button, then USB power turned us on, go into charge mode
   settings_init();                                  // grab user settings (or populate defaults if no saved settings)
   power_init_peripherals();                         // init peripherals (even if we're not turning on and just going into charge mode, we still need to initialize devices so we can put some of them back to sleep)
@@ -226,8 +226,8 @@ bool power_getBattCharging() {
 }
 
 
-void power_adjustInputCurrent(int8_t dir) {
-  int8_t newVal = power_getInputCurrent() + dir;
+void power_adjustInputCurrent(int8_t offset) {
+  int8_t newVal = power_getInputCurrent() + offset;
   if (newVal > iMax) newVal = iMax;
   else if (newVal < iStandby) newVal = iStandby;
   power_set_input_current(newVal);

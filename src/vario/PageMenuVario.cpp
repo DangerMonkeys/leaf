@@ -88,10 +88,11 @@ void VarioMenuPage::draw() {
 }
 
 
-void VarioMenuPage::setting_change(int8_t dir, uint8_t state, uint8_t count) {  
+void VarioMenuPage::setting_change(Button dir, ButtonState state, uint8_t count) {  
   switch (cursor_position) {
     case cursor_vario_volume:
-      if (state == RELEASED) settings_adjustVolumeVario(dir);
+      if (state != RELEASED) return; 
+      settings_adjustVolumeVario(dir);
       break;
     case cursor_vario_sensitive:
       if (state == RELEASED) settings_adjustVarioAverage(dir);
@@ -112,13 +113,13 @@ void VarioMenuPage::setting_change(int8_t dir, uint8_t state, uint8_t count) {
       if (state == RELEASED) settings_adjustSinkAlarm(dir);
       break;
     case cursor_vario_altadj:
-      if (dir == 0 && count == 1 && state == HELD) {  // if center button held for 1 'action time'
+      if (dir == Button::NONE && count == 1 && state == HELD) {  // if center button held for 1 'action time'
         if (settings_matchGPSAlt()) { // successful adjustment of altimeter setting to match GPS altitude
           speaker_playSound(fx_enter);  
         } else {                      // unsuccessful 
           speaker_playSound(fx_cancel);
         }
-      } else if (dir != 0) {
+      } else if (dir != Button::NONE) {
         if (state == PRESSED || state == HELD || state == HELD_LONG) {
           baro_adjustAltSetting(dir, count);
           speaker_playSound(fx_neutral);
@@ -143,15 +144,15 @@ void VarioMenuPage::setting_change(int8_t dir, uint8_t state, uint8_t count) {
 // helpful switch constructors to copy-paste as needed:
 /*
 switch (button) {
-  case UP:
+  case Button::UP:
     break;
-  case DOWN:
+  case Button::DOWN:
     break;
-  case LEFT:
+  case Button::LEFT:
     break;
-  case RIGHT:
+  case Button::RIGHT:
     break;
-  case CENTER:
+  case Button::CENTER:
     break;
 */
 

@@ -8,6 +8,7 @@
 #include "settings.h"
 #include "Leaf_I2C.h"
 #include "tempRH.h"
+#include "buttons.h"
 
 #define DEBUG_BARO 0  // flag for printing serial debugging messages
 
@@ -64,13 +65,13 @@
   int64_t SENS2;
 
 
-  void baro_adjustAltSetting(int8_t dir, uint8_t count) {
+  void baro_adjustAltSetting(Button dir, uint8_t count) {
     float increase = .001;              //     
     if (count >= 1) increase *= 5;
     if (count >= 8) increase *= 4;
 
-    if (dir >= 1) baro.altimeterSetting += increase;
-    else if (dir <= -1) baro.altimeterSetting -= increase;	
+    if (dir == Button::RIGHT) baro.altimeterSetting += increase;
+    else if (dir == Button::LEFT) baro.altimeterSetting -= increase;	
     ALT_SETTING = baro.altimeterSetting;
   }
 

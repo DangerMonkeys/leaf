@@ -38,9 +38,9 @@ uint8_t navigatePage_cursorTimeOut = 8;	// after 8 page draws (4 seconds) reset 
 int16_t destination_selection_index = 0; 
 bool destination_selection_routes_vs_waypoints = true; // start showing routes not waypoints
 
-void navigatePage_destinationSelect(int8_t dir) {
+void navigatePage_destinationSelect(Button dir) {
 	switch (dir) {
-		case -1: 
+		case Button::LEFT: 
 			destination_selection_index--;
 			if (destination_selection_index < 0) {											// if we wrap off the left end
 				if (destination_selection_routes_vs_waypoints) {					// ..and we're showing routes
@@ -63,7 +63,7 @@ void navigatePage_destinationSelect(int8_t dir) {
 
 
 
-		case 1:
+		case Button::RIGHT:
 			destination_selection_index++;
 			if (destination_selection_routes_vs_waypoints) {							// if we're currently showing Routes...				
 				if (destination_selection_index > gpxData.totalRoutes) {		// 		if we're passed the number of Routes we have...					
@@ -85,7 +85,7 @@ void navigatePage_destinationSelect(int8_t dir) {
 				}
 			}
 			break;
-		case 0:
+		case Button::CENTER:
 			if (destination_selection_routes_vs_waypoints) gpx_activateRoute(destination_selection_index);
 			else gpx_activatePoint(destination_selection_index);
 			navigatePage_cursorPosition = cursor_navigatePage_none;
@@ -360,12 +360,12 @@ void navigatePage_draw() {
   
 }
 
-void nav_cursor_move(uint8_t button) {
-	if (button == UP) {
+void nav_cursor_move(Button button) {
+	if (button == Button::UP) {
 		navigatePage_cursorPosition--;
 		if (navigatePage_cursorPosition < 0) navigatePage_cursorPosition = navigatePage_cursorMax;
 	}
-	if (button == DOWN) {
+	if (button == Button::DOWN) {
 		navigatePage_cursorPosition++;
   	if (navigatePage_cursorPosition > navigatePage_cursorMax) navigatePage_cursorPosition = 0;
 	}
@@ -384,7 +384,7 @@ void nav_cursor_move(uint8_t button) {
 }
 
 
-void navigatePage_button(uint8_t button, uint8_t state, uint8_t count) {
+void navigatePage_button(Button button, ButtonState state, uint8_t count) {
 
 	// reset cursor time out count if a button is pushed
 	navigatePage_cursorTimeCount = 0;
@@ -392,46 +392,46 @@ void navigatePage_button(uint8_t button, uint8_t state, uint8_t count) {
 	switch (navigatePage_cursorPosition) {
 		case cursor_navigatePage_none:
 			switch(button) {
-				case UP:
-				case DOWN:
+				case Button::UP:
+				case Button::DOWN:
 					if (state == RELEASED) nav_cursor_move(button);     					
 					break;
-				case RIGHT:
+				case Button::RIGHT:
 					if (state == RELEASED) {
 						display_turnPage(page_next);
 						speaker_playSound(fx_increase);
 					}
 					break;
-				case LEFT:
+				case Button::LEFT:
 					if (state == RELEASED) {
 						display_turnPage(page_prev);
 						speaker_playSound(fx_decrease);
 					}
 					break;
-				case CENTER:
+				case Button::CENTER:
 					break;
 			}
 			break;
 		case cursor_navigatePage_alt1:
 			switch(button) {
-				case UP:
-				case DOWN:					
+				case Button::UP:
+				case Button::DOWN:					
 					if (state == RELEASED) nav_cursor_move(button);     					
 					break;
-				case LEFT:
+				case Button::LEFT:
 					if (NAVPG_ALT_TYP == altType_MSL && (state == PRESSED || state == HELD || state == HELD_LONG)) {
-          	baro_adjustAltSetting(-1, count);
+          	baro_adjustAltSetting(Button::LEFT, count);
           	speaker_playSound(fx_neutral);
         	}
 					break;
-				case RIGHT:
+				case Button::RIGHT:
 					if (NAVPG_ALT_TYP == altType_MSL && (state == PRESSED || state == HELD || state == HELD_LONG)) {
-          	baro_adjustAltSetting(1, count);
+          	baro_adjustAltSetting(Button::RIGHT, count);
           	speaker_playSound(fx_neutral);
         	}
 					break;
-				case CENTER:
-					if (state == RELEASED) settings_adjustDisplayField_navPage_alt(1);
+				case Button::CENTER:
+					if (state == RELEASED) settings_adjustDisplayField_navPage_alt(Button::CENTER);
 					else if (state == HELD && count == 1 && NAVPG_ALT_TYP == altType_MSL)  {
 						if (settings_matchGPSAlt()) { // successful adjustment of altimeter setting to match GPS altitude
           		speaker_playSound(fx_enter);  
@@ -445,18 +445,18 @@ void navigatePage_button(uint8_t button, uint8_t state, uint8_t count) {
 			break;
 		case cursor_navigatePage_waypoint:
 			switch(button) {
-				case UP:
-				case DOWN:
+				case Button::UP:
+				case Button::DOWN:
 					if (state == RELEASED) nav_cursor_move(button);     					
 					break;
-				case LEFT:
-					if (state == RELEASED) navigatePage_destinationSelect(-1);
+				case Button::LEFT:
+					if (state == RELEASED) navigatePage_destinationSelect(Button::LEFT);
 					break;
-				case RIGHT:
-				  if (state == RELEASED) navigatePage_destinationSelect(1);
+				case Button::RIGHT:
+				  if (state == RELEASED) navigatePage_destinationSelect(Button::RIGHT);
 					break;
-				case CENTER:
-					if (state == RELEASED) navigatePage_destinationSelect(0);
+				case Button::CENTER:
+					if (state == RELEASED) navigatePage_destinationSelect(Button::CENTER);
 					if (state == HELD) { 
 						gpx_cancelNav();
 						navigatePage_cursorPosition = cursor_navigatePage_none;
@@ -467,44 +467,44 @@ void navigatePage_button(uint8_t button, uint8_t state, uint8_t count) {
 		/*
 		case cursor_navigatePage_userField1:
 			switch(button) {
-				case UP:
+				case Button::UP:
 					break;
-				case DOWN:
+				case Button::DOWN:
 					break;
-				case LEFT:
+				case Button::LEFT:
 					break;
-				case RIGHT:
+				case Button::RIGHT:
 					break;
-				case CENTER:
+				case Button::CENTER:
 					break;
 			}
 			break;
 		case cursor_navigatePage_userField2:
 			switch(button) {
-				case UP:
+				case Button::UP:
 					break;
-				case DOWN:
+				case Button::DOWN:
 					break;
-				case LEFT:
+				case Button::LEFT:
 					break;
-				case RIGHT:
+				case Button::RIGHT:
 					break;
-				case CENTER:
+				case Button::CENTER:
 					break;
 			}
 			break;
 			*/
 		case cursor_navigatePage_timer:
 			switch(button) {
-				case UP:
-				case DOWN:
+				case Button::UP:
+				case Button::DOWN:
 					if (state == RELEASED) nav_cursor_move(button);     					
 					break;
-				case LEFT:
+				case Button::LEFT:
 					break;
-				case RIGHT:
+				case Button::RIGHT:
 					break;
-				case CENTER:
+				case Button::CENTER:
 						if (state == RELEASED) {
 							flightTimer_toggle();
 							navigatePage_cursorPosition = cursor_navigatePage_none;
