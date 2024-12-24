@@ -1,9 +1,6 @@
 ## Required libraries
 
-* TinyGPSPlus-ESP32 0.0.2
-* U8g2 LCD: 2.34.22
-* SparkFun 9DoF IMU Breakout - ICM 20948 - Arduino Library: 1.2.12
-* AHT20: 1.0.1
+See list of required libraries in the `libraries` section of the [Arduino workflow](../../.github/workflows/arduino.yaml).
 
 ## ESP32 configuration
 
@@ -14,6 +11,8 @@ ESP Board Manager Package 3.0.2
 * Partition Scheme -> 8M with spiffs (3MB APP/1.5MB SPIFFS)
 
 Arduino board: ESP32S3 Dev Module
+
+(see [Arduino workflow](../../.github/workflows/arduino.yaml) to confirm specifics)
 
 ## Programming
 

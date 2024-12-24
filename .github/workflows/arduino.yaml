@@ -1,0 +1,35 @@
+name: Arduino
+
+on:
+  pull_request: # All
+  push:
+    branches:
+    - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # For more information: https://github.com/arduino/compile-sketches#readme
+      - name: Compile sketch
+        uses: arduino/compile-sketches@v1
+        with:
+          fqbn: esp32:esp32:esp32s3:CDCOnBoot=cdc,FlashSize=8M,PartitionScheme=default_8MB
+          platforms: |
+            - name: esp32:esp32
+              version: 3.0.2
+          sketch-paths: |
+            - ./src/vario
+          libraries: |
+            - name: "TinyGPSPlus-ESP32"
+              version: 0.0.2
+            - name: U8g2
+              version: 2.34.22
+            - name: "SparkFun 9DoF IMU Breakout - ICM 20948 - Arduino Library"
+              version: 1.2.12
+            - name: AHT20
+              version: 1.0.1
