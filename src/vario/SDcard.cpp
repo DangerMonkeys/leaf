@@ -325,8 +325,41 @@ void SDcard_test(void) {
 }
 
 
+// Create & log flight test data for debugging and tuning
 
-// Creating and saving log files to SDCard
+String dataSaveDir = "/Data/";
+String currentDataFile;
+File dataFile;
+String dataFileName;
+
+bool SDcard_createDataFile(String filename) {  
+  dataFileName = filename;
+  createDir(SD_MMC, dataSaveDir.c_str());
+  currentDataFile = dataSaveDir + filename;
+  
+  String header = "millis,sensor, value (lat), lng, alt m, speed mps, heading deg\n";
+
+  writeFile(SD_MMC, currentDataFile.c_str(), header.c_str());
+  dataFile = SD_MMC.open(currentDataFile.c_str(), FILE_APPEND);
+  
+  // check if file was written properly, and return false if not
+  if (!dataFile) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
+void SDcard_writeData(String data) {
+  String entry = String(millis()) + "," + data + "\n";
+  appendOpenFile(dataFile, entry.c_str());    
+}
+
+void SDcard_closeDataFile() {
+  dataFile.close();
+}
+
+// Creating and saving track log files to SDCard
 
 String saveDir = "/Tracks/";
 String currentTrackFile;

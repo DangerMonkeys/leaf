@@ -41,4 +41,8 @@ void appendOpenFile(File &file, const char * message);
 void SDcard_writeLogHeader(void);
 void SDcard_writeLogFooter(String trackName, String trackDescription);
 
+bool SDcard_createDataFile(String filename);
+void SDcard_writeData(String data);
+void SDcard_closeDataFile(void);
+
 #endif

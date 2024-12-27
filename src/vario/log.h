@@ -38,6 +38,9 @@
   String log_createTrackFileName(void);
   String log_createTrackDescription(void);
 
+// Test data file (all sensor values dumped realtime to csv)
+  String log_createTestDataFileName(void);
+
   void log_captureValues(void);
   void log_checkMinMaxValues(void);
   bool flightTimer_autoStop(void);
@@ -46,6 +49,7 @@
 // baro struct to hold most values 
 	struct LOGBOOK {
     bool flightTrackStarted = false;
+    bool dataFileStarted = false;
 
     int32_t alt = 0;
     int32_t alt_start = 0;

@@ -12,6 +12,7 @@
 #include "settings.h"
 #include "log.h"
 #include "baro.h"
+#include "SDcard.h"
 
 #define DEBUG_GPS 0
 
@@ -222,6 +223,20 @@ void gps_update() {
   updateGPXnav();
   gps_updateSatList();
   gps_calculateGlideRatio();
+
+  if (logbook.dataFileStarted) {
+    String gpsName = "gps,";
+    String gpsEntryString = gpsName + 
+                            String(gps.location.lat(),8) + ',' +
+                            String(gps.location.lng(),8) + ',' +
+                            String(gps.altitude.meters()) + ',' +
+                            String(gps.speed.mps()) + ',' +
+                            String(gps.course.deg());
+
+    SDcard_writeData(gpsEntryString);
+  }
+
+
 
   /*
 

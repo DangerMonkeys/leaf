@@ -10,6 +10,8 @@
 #include "SDcard.h"
 #include "tempRH.h"
 
+bool DATAFILE = true; // set to false to disable data logging to SDcard
+
 // Flight Timer
   uint32_t flightTimerSec = 0;
   bool flightTimerRunning = 0;
@@ -64,6 +66,11 @@ void log_update() {
         if (ALT_SYNC_GPS) settings_matchGPSAlt(); // sync pressure alt to GPS alt when log starts if the auto-sync setting is turned on
         logbook.flightTrackStarted = SDcard_createTrackFile(log_createFileName()); //flag that we've started a log if we actually have successfully started a log file on SDCard.  If this returns false, we can keep trying to save a log file until it's successful.
       }
+    }
+
+    // start the data file logging if needed
+    if (DATAFILE && !logbook.dataFileStarted) {
+      logbook.dataFileStarted = SDcard_createDataFile(log_createTestDataFileName());
     }
 
     uint32_t logSave_time = micros();
@@ -226,6 +233,12 @@ void log_update() {
         Serial.println("closing Log");
         SDcard_writeLogFooter(log_createTrackFileName(), log_createTrackDescription());
         //TODO: other KML file additions; maybe adding description and min/max and other stuff
+      }
+
+      //if a flight data file was started
+      if (logbook.dataFileStarted) {
+        logbook.dataFileStarted = false;
+        SDcard_closeDataFile();
       }
     }
     flightTimerRunning = 0;
@@ -409,6 +422,7 @@ String log_getKMLCoordinates() {
   return logPointStr;
 }
 
+// filename for Flight Track log file (GPS points every second)
 String log_createFileName() {  
   String fileTitle = "FlightTrack";
   String fileDate = String(gps_getLocalDate());
@@ -426,6 +440,21 @@ String log_createFileName() {
   Serial.println(timeMinutes%10);
 
   String fileName = fileTitle + "_" + fileDate + "_" + fileTime + ".kml";
+  Serial.println(fileName);
+
+  return fileName;
+}
+
+// file name for Test Data file (all flight sensor data saved in real time -- for debugging and tuning purposes)
+String log_createTestDataFileName() {
+  String fileTitle = "TestData";
+  String fileDate = String(gps_getLocalDate());
+  int32_t timeInMinutes = (gps.time.hour()*60 + gps.time.minute() + 24*60 + TIME_ZONE) % (24*60);
+  uint8_t timeHours = timeInMinutes/60;
+  uint8_t timeMinutes = timeInMinutes % 60;
+  String fileTime = String(timeHours/10) + String(timeHours % 10) + String(timeMinutes / 10) + String(timeMinutes % 10);
+
+  String fileName = fileTitle + "_" + fileDate + "_" + fileTime + ".csv";
   Serial.println(fileName);
 
   return fileName;

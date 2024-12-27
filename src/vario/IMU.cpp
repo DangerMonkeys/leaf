@@ -8,6 +8,8 @@
 #include <ICM_20948.h>
 #include "IMU.h"
 #include "Leaf_I2C.h"
+#include "log.h"
+#include "SDcard.h"
 
 #define DEBUG_IMU 0
 
@@ -62,6 +64,12 @@ void imu_update() {
     Serial.print(ay);
     Serial.print(" z: ");
     Serial.println(az);
+  }
+
+  if (logbook.dataFileStarted) {
+    String accelName = "accel,";
+    String accelEntry = accelName + String(at);
+    SDcard_writeData(accelEntry);
   }
 }
 

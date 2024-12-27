@@ -9,6 +9,8 @@
 #include "Leaf_I2C.h"
 #include "tempRH.h"
 #include "buttons.h"
+#include "log.h"
+#include "SDcard.h"
 
 #define DEBUG_BARO 0  // flag for printing serial debugging messages
 
@@ -27,12 +29,14 @@
   LinearRegression<PRESSURE_FILTER_VALS_PREF> pressure_lr;
 
   // probably gonna delete these
+  /*
     #define VARIO_SENSITIVITY 3 // not sure what this is yet :)
 
     #define PfilterSize		6			// pressure alt filter values (minimum 1, max 10)
     int32_t varioVals[25];
     int32_t climbVals[31];
     int32_t climbSecVals[9];
+  */
 
 // Baro Values
   BARO baro;  // struct for common baro values we need all over the place
@@ -141,17 +145,7 @@
 // Device Management
 
   //Initialize the baro sensor
-  void baro_init(void)
-  {  
-    // probably don't need these
-          uint8_t i=0;
-        // initialize averaging arrays
-          for (i=0;i<31;i++) {
-            if (i<25) varioVals[i] = 0;
-            if (i<9) climbSecVals[i]=0;    
-            climbVals[i] = 0;
-          }
-
+  void baro_init(void) {  
     // recover saved altimeter setting
       if (ALT_SETTING > 28.0 && ALT_SETTING < 32.0)
         baro.altimeterSetting = ALT_SETTING;
@@ -316,7 +310,6 @@
   }
 // Device Management 
 
-
 // Device reading & data processing  
   void baro_calculatePressure() {
     // calculate temperature (in 100ths of degrees C, from -4000 to 8500)
@@ -350,8 +343,30 @@
 
     // calculate temperature compensated pressure (in 100ths of mbars)
       baro.pressure = ((uint64_t)D1_P * SENS1 / (int64_t)pow(2,21) - OFF1)/pow(2,15);
+
+    // record datapoint on SD card if datalogging is turned on
+      if (logbook.dataFileStarted) {
+        String baroName = "baro mb*100,";
+        String baroEntry = baroName + String(baro.pressure);
+        SDcard_writeData(baroEntry);
+      }
   }
 
+
+  // Filter Pressure Values
+  //
+  // To reduce noise, we perform a moving average of the last N data points.  We create an array of datapoints pressureFilterVals[] with size FILTER_VALS_MAX + 1, 
+  //     saving one spot [0] for an index/bookmark to where the next value should be stored.
+  // The value of the bookmark rises from 1 up to FILTER_VALS_MAX, then wraps around to 1 again, overwriting old data.  
+  // For proper behavior on startup, the each element of the array is loaded with the current (first) pressure reading.
+  //
+  // When filtering the pressure values, the most recent N values are summed up (from the bookmarked spot back to N spots before that), then divided by N to get the average.
+  //  (where N is presently PRESSURE_FILTER_VALS_PREF == FILTER_VALS_MAX)
+  // 
+  // TODO: Eventually we will support the user adjusting the sensitivity by reducing the size of PRESSURE_FILTER_VALS_PREF to average over fewer samples, if higher sensitivity (less noise reduction) is desired.
+  //
+  // NOTE: We have also explored performing a linear regeression on the last N samples to get a more accurate filtered value.  This is still in testing, and not currently being used in the code.
+  //
   void baro_filterPressure(void) {  
     // new way with regression:
       pressure_lr.update((double)millis(), (double)baro.alt);
@@ -410,7 +425,7 @@
       }
       baro.climbRateFiltered /= CLIMB_FILTER_VALS_PREF; // divide to get the filtered climb rate
     
-    // now calculate the longer-running average climb value
+    // now calculate the longer-running average climb value (this is a smoother, slower-changing value for things like glide ratio, etc)
     int32_t total_samples = CLIMB_AVERAGE * FILTER_VALS_MAX;   // CLIMB_AVERAGE seconds * 20 samples per second = total samples to average over
 
                             // current averaege    *   weighted by total samples (minus 1) + one more new sample     / total samples
