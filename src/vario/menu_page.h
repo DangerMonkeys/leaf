@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include "Embedded_Template_Library.h"
 #include <etl/stack.h>
 #include <etl/array_view.h>
 
