@@ -1,7 +1,11 @@
 #pragma once
 
 #include <Arduino.h>
-#include "Embedded_Template_Library.h"
+#if !defined PIO_BUILD_SYSTEM && !defined __INTELLISENSE__
+// ETL Library has a bug which makes this needed when building
+// on Arduino, and only Arduino IDE.
+#include "Embedded_Template_Library.h"  // NOLINT
+#endif
 #include <etl/stack.h>
 #include <etl/array_view.h>
 

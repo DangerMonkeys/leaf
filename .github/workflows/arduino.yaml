@@ -33,3 +33,5 @@ jobs:
               version: 1.2.12
             - name: AHT20
               version: 1.0.1
+            - name: "Embedded Template Library ETL"
+              version: 20.39.4
