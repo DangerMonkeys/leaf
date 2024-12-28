@@ -1,7 +1,7 @@
 #include "PageQR.h"
 
 #include "display.h"
-#include "qrcode.h"
+#include "qrcodex.h"
 
 // level of detail https://github.com/ricmoo/qrcode/
 // If set to 3, will render bigger
