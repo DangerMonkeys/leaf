@@ -5,6 +5,8 @@
 #include "fonts.h"
 #include "etl/array.h"
 
+etl::array<const char*, 0> SimpleSettingsMenuPage::emptyMenu{};
+
 void MenuPage::cursor_prev() {
     cursor_position--;
     if (cursor_position < cursor_min) cursor_position = cursor_max;
@@ -118,7 +120,7 @@ void SimpleSettingsMenuPage::draw_menu_input(int8_t cursor_position) {
 
 // By default, a menu item will have no labels, an empty view
 etl::array_view<const char*> SimpleSettingsMenuPage::get_labels() const {
-  return etl::array_view<const char*>();
+  return etl::array_view<const char*>(emptyMenu);
 }
 
 // Only handle the default back button closing this dialog

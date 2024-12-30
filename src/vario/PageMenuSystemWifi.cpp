@@ -84,6 +84,9 @@ void PageMenuSystemWifiSetup::setting_change(Button dir, ButtonState state,
         case cursor_system_wifi_setup_android:
             push_page(&qr_android);
             break;
+        case cursor_system_wifi_setup_manual:
+            push_page(&manual);
+            break;
     }
 }
 
@@ -95,6 +98,47 @@ void PageMenuSystemWifiSetup::loop() {
         pop_page();
     }
 }
+
+/**************************
+ * PageMenuSystemWifiManualSetup (sub-page)
+ */
+void PageMenuSystemWifiManualSetup::shown() {
+    SimpleSettingsMenuPage::shown();
+    WiFi.mode(WIFI_STA);
+    wm.setConfigPortalBlocking(false);
+    wm.autoConnect("Leaf");
+    wm.setConfigPortalTimeout(60);
+}
+
+void PageMenuSystemWifiManualSetup::loop() {
+    // If we're connected, close the page
+    if (WiFi.status() == WL_CONNECTED) {
+        pop_page();
+        return;
+    }
+    wm.process();
+}
+
+void PageMenuSystemWifiManualSetup::draw_extra() {
+    u8g2.setFont(leaf_6x12);
+    auto y = 40;
+    const auto OFFSET = 14;  // Font is 10px high, allow for margin
+    u8g2.setCursor(2, y);
+
+    // Instruction Page
+    const char* lines[] = {
+        "Join WiFi", 
+        "Network Called",
+        "Leaf"
+    };
+
+    for (auto line : lines) {
+        u8g2.setCursor(2, y);
+        u8g2.print(line);
+        y += OFFSET;
+    }
+}
+
 
 /**************************
  * PageMenuSystemWifiUpdate (sub-page)

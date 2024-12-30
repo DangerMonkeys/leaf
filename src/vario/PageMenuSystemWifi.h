@@ -1,5 +1,7 @@
 #pragma once
 
+#include <WiFiManager.h>  // https://github.com/tzapu/WiFiManager
+
 #include "PageQR.h"
 #include "WiFi.h"
 #include "etl/array.h"
@@ -7,10 +9,12 @@
 #include "etl/vector.h"
 #include "menu_page.h"
 
-// TODO:  Move this to a version file or something
-
 enum system_wifi_items { cursor_system_wifi_setup, cursor_system_wifi_update };
-enum system_wifi_setup_items { cursor_system_wifi_setup_iphone, cursor_system_wifi_setup_android };
+enum system_wifi_setup_items {
+    cursor_system_wifi_setup_iphone,
+    cursor_system_wifi_setup_android,
+    cursor_system_wifi_setup_manual,
+};
 
 enum class WifiState {
     DISCONNECTED,
@@ -23,17 +27,40 @@ enum class WifiState {
     ERROR
 };
 
+/////////////////////////////////////////
+// WiFi Update Update Settings sub-page
+//  Purpose:  Puts the system in Hot-Spot STA mode for
+//            configuring WiFi on the system
+
+class PageMenuSystemWifiManualSetup : public SimpleSettingsMenuPage {
+   public:
+    PageMenuSystemWifiManualSetup() {}
+    const char* get_title() const override { return "Manual Wifi Setup"; }
+
+    void loop() override;
+    void shown() override;
+    void draw_extra() override;
+
+   private:
+    WiFiManager wm;
+};
+
+/////////////////////////////////////////
 // WiFi setup sub-page
 class PageMenuSystemWifiSetup : public SimpleSettingsMenuPage {
    public:
     PageMenuSystemWifiSetup(WifiState* wifi_state)
         : wifi_state(wifi_state),
-          qr_iphone("iPhone", "https://apps.apple.com/us/app/espressif-esptouch/id1071176700"),
-          qr_android("Android", "https://play.google.com/store/apps/details?id=com.fyent.esptouch.android&hl=en_US") {}
+          qr_iphone(
+              "iPhone",
+              "https://apps.apple.com/us/app/espressif-esptouch/id1071176700"),
+          qr_android("Android",
+                     "https://play.google.com/store/apps/"
+                     "details?id=com.fyent.esptouch.android&hl=en_US") {}
     const char* get_title() const override { return "Wifi Setup"; }
     // void draw_extra() override;
     etl::array_view<const char*> get_labels() const override {
-        static etl::array labels{"iPhone", "Android"};
+        static etl::array labels{"iPhone", "Android", "Manual"};
         return etl::array_view<const char*>(labels);
     }
 
@@ -49,9 +76,14 @@ class PageMenuSystemWifiSetup : public SimpleSettingsMenuPage {
     WifiState* wifi_state;
     PageQR qr_iphone;
     PageQR qr_android;
+    PageMenuSystemWifiManualSetup manual;
 };
 
-// WiFi setup sub-page
+/////////////////////////////////////////
+// WiFi Update Settings sub-page
+//  Purpose:  Runs an OTA update, shows the user
+//            a log of the update
+
 class PageMenuSystemWifiUpdate : public SimpleSettingsMenuPage {
    public:
     PageMenuSystemWifiUpdate(WifiState* wifi_state) : wifi_state(wifi_state) {}
@@ -67,7 +99,11 @@ class PageMenuSystemWifiUpdate : public SimpleSettingsMenuPage {
     etl::vector<String, 20> log_lines;  // Log of the update process
 };
 
-// Top level menu for the Wifi system
+/////////////////////////////////////////
+//  Top Level Wifi Menu Page
+//  Purpose:  Shows the user settings for either
+//            Configuring WiFi or running OTA
+
 class PageMenuSystemWifi : public SimpleSettingsMenuPage {
    public:
     PageMenuSystemWifi()

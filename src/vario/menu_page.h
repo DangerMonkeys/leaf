@@ -8,6 +8,7 @@
 #endif
 #include <etl/stack.h>
 #include <etl/array_view.h>
+#include <etl/array.h>
 
 #include "buttons.h"
 
@@ -104,5 +105,6 @@ class SimpleSettingsMenuPage : public SettingsMenuPage {
     
     protected:
       virtual void setting_change(Button dir, ButtonState state, uint8_t count) override;
+      static etl::array<const char*, 0> emptyMenu;
 
 };

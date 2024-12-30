@@ -35,3 +35,5 @@ jobs:
               version: 1.0.1
             - name: "Embedded Template Library ETL"
               version: 20.39.4
+            - name: "WiFiManager"
+              version: 2.0.17
