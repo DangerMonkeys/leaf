@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <U8g2lib.h>
 
+#include "PageThermalSimple.h"
 #include "display.h"
 #include "fonts.h"
 #include "displayFields.h"
@@ -21,11 +22,11 @@ enum thermalSimple_page_items {
   cursor_thermalSimplePage_none,
 	cursor_thermalSimplePage_alt1,
 	//cursor_thermalSimplePage_alt2,
-	//cursor_thermalSimplePage_userField1,
+	cursor_thermalSimplePage_userField1,
 	//cursor_thermalSimplePage_userField2,
 	cursor_thermalSimplePage_timer
 };
-uint8_t thermalSimple_page_cursor_max = 2;
+uint8_t thermalSimple_page_cursor_max = 3;
 
 int8_t thermalSimple_page_cursor_position = cursor_thermalSimplePage_none;
 uint8_t thermalSimple_page_cursor_timeCount = 0;	// count up for every page_draw, and if no button is pressed, then reset cursor to "none" after the timeOut value is reached.
@@ -131,11 +132,52 @@ void thermalSimplePage_draw() {
       }
 			*/
 			
+
+
 		// User Field ****************************************************
-		u8g2.setCursor(varioBarWidth+2, 170);
-		u8g2.setFont(leaf_21h);
-		u8g2.setDrawColor(1);
-		u8g2.print("12,456");
+		uint8_t userfield_y = 171;
+		switch (THMSPG_USR1) {
+			case static_cast<int>(ThermSimpPageUserField1::GLIDE):
+				// Glide Ratio
+				u8g2.setCursor(varioBarWidth+4, userfield_y-14);
+				u8g2.setFont(leaf_5h);
+				u8g2.print("GLIDE");
+				display_glide(varioBarWidth+24, userfield_y, gps_getGlideRatio());
+				break;
+			case static_cast<int>(ThermSimpPageUserField1::TEMP):
+				// Temperature
+				u8g2.setCursor(varioBarWidth+4, userfield_y-14);
+				u8g2.setFont(leaf_5h);
+				u8g2.print("TEMP");
+				display_temp(varioBarWidth+6, userfield_y, (int16_t)tempRH_getTemp());
+				// Humidity
+				u8g2.setCursor(varioBarWidth+36, userfield_y-14);
+				u8g2.setFont(leaf_5h);
+				u8g2.print("HUMID");
+				display_humidity(varioBarWidth+38, userfield_y, (uint8_t)tempRH_getHumidity());
+				
+				break;
+			case static_cast<int>(ThermSimpPageUserField1::ACCEL):
+				// Acceleration
+				u8g2.setCursor(varioBarWidth+4, userfield_y-14);
+				u8g2.setFont(leaf_5h);
+				u8g2.print("ACCEL (G FORCE)");
+				display_accel(varioBarWidth+24, userfield_y, IMU_getAccel());
+				break;
+			case static_cast<int>(ThermSimpPageUserField1::DIST):
+				// Distance
+				u8g2.setCursor(varioBarWidth+4, userfield_y-14);
+				u8g2.setFont(leaf_5h);
+				u8g2.print("DISTANCE FLOWN");
+				u8g2.setFont(leaf_6x12);
+				display_distance(varioBarWidth+24, userfield_y, 0.0);
+				break;
+		}
+		
+			// if selected, draw the box around it
+			if (thermalSimple_page_cursor_position == cursor_thermalSimplePage_userField1) {
+				display_selectionBox(varioBarWidth+1, userfield_y-21, 96-(varioBarWidth+1), 23, 6);
+			}
 
 
     // Footer Info ****************************************************
@@ -244,20 +286,24 @@ void thermalSimplePage_button(Button button, ButtonState state, uint8_t count) {
 					break;
 			}
 			break;
+			*/
 		case cursor_thermalSimplePage_userField1:
 			switch(button) {
 				case Button::UP:
-					break;
 				case Button::DOWN:
+					if (state == RELEASED) thermalSimple_page_cursor_move(button);     					
 					break;
 				case Button::LEFT:
 					break;
 				case Button::RIGHT:
 					break;
 				case Button::CENTER:
+					if (state == RELEASED) THMSPG_USR1++;
+					if (THMSPG_USR1 >= static_cast<int>(ThermSimpPageUserField1::NONE)) THMSPG_USR1 = 0;
 					break;
 			}
 			break;
+			/*
 		case cursor_thermalSimplePage_userField2:
 			switch(button) {
 				case Button::UP:

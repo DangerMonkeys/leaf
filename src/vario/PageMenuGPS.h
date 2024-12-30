@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include "menu_page.h"
+#include "buttons.h"
 
 class GPSMenuPage : public SettingsMenuPage {
   public:

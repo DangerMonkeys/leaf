@@ -61,6 +61,7 @@
     #define DEF_NAVPG_ALT_TYP         0     // Primary Alt field on Nav page (Baro Alt, GPS Alt, Alt above waypoint, etc)
     #define DEF_THMPG_ALT_TYP         0     // Primary Alt field on Thermal page
     #define DEF_THMPG_ALT2_TYP        0     // Secondary Alt field on Thermal page
+    #define DEF_THMSPG_USR1           0     // User field 1 on Thermal simple page
 
 
   // Default Unit Values
@@ -106,6 +107,8 @@
     extern uint8_t NAVPG_ALT_TYP; 
     extern uint8_t THMPG_ALT_TYP;
     extern uint8_t THMPG_ALT2_TYP;
+    extern uint8_t THMSPG_USR1;
+    
 
   // Unit Values
     extern bool UNITS_climb;

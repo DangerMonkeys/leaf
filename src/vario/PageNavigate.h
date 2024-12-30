@@ -2,7 +2,7 @@
 #define PageNavigate_h
 
 #include <Arduino.h>
-
+#include "buttons.h"
 
 
 // draw the pixels to the display

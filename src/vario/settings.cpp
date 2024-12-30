@@ -46,6 +46,7 @@
     uint8_t NAVPG_ALT_TYP;
     uint8_t THMPG_ALT_TYP;
     uint8_t THMPG_ALT2_TYP;
+    uint8_t THMSPG_USR1;
 
   // Unit Values
     bool UNITS_climb;
@@ -116,6 +117,8 @@ void settings_loadDefaults() {
     NAVPG_ALT_TYP = DEF_NAVPG_ALT_TYP;
     THMPG_ALT_TYP = DEF_THMPG_ALT_TYP;
     THMPG_ALT2_TYP = DEF_THMPG_ALT2_TYP;
+    THMSPG_USR1 = DEF_THMSPG_USR1;
+
 
   // Unit Values
     UNITS_climb = DEF_UNITS_climb;
@@ -160,7 +163,9 @@ void settings_retrieve() {
     CONTRAST =        leafPrefs.getUChar("CONTRAST");
     NAVPG_ALT_TYP =   leafPrefs.getUChar("NAVPG_ALT_TYP");
     THMPG_ALT_TYP =   leafPrefs.getUChar("THMPG_ALT_TYP");
-    THMPG_ALT2_TYP =   leafPrefs.getUChar("THMPG_ALT2_TYP");
+    THMPG_ALT2_TYP =  leafPrefs.getUChar("THMPG_ALT2_TYP");
+    THMSPG_USR1 =     leafPrefs.getUChar("THMSPG_USR1");
+
 
   // Unit Values
     UNITS_climb =     leafPrefs.getBool("UNITS_climb");
@@ -211,6 +216,7 @@ void settings_save() {
     leafPrefs.putUChar("NAVPG_ALT_TYP", NAVPG_ALT_TYP);
     leafPrefs.putUChar("THMPG_ALT_TYP", THMPG_ALT_TYP);
     leafPrefs.putUChar("THMPG_ALT2_TYP", THMPG_ALT2_TYP);
+    leafPrefs.putUChar("THMSPG_USR1", THMSPG_USR1);
   // Unit Values
     leafPrefs.putBool("UNITS_climb", UNITS_climb);
     leafPrefs.putBool("UNITS_alt", UNITS_alt);
