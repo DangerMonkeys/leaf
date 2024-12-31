@@ -50,6 +50,14 @@ void PageMenuSystemWifi::draw_menu_input(int8_t cursor_position) {
     u8g2.print(ret);
 }
 
+void PageMenuSystemWifi::closed(bool removed_from_stack) {
+    // Turn off WiFi once the page is closed
+    if(!removed_from_stack)
+        return;
+    WiFi.disconnect();
+    wifi_state = WifiState::DISCONNECTED;
+}
+
 /**************************
  * PageMenuSystemWifiSetup (sub-page)
  */

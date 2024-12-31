@@ -117,6 +117,7 @@ class PageMenuSystemWifi : public SimpleSettingsMenuPage {
         static etl::array labels{"Setup", "Update"};
         return etl::array_view<const char*>(labels);
     }
+    virtual void closed(bool removed_from_stack) override;
 
    protected:
     void setting_change(Button dir, ButtonState state, uint8_t count) override;

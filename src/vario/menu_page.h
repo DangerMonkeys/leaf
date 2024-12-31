@@ -55,6 +55,10 @@ class MenuPage {
     // Called when a modal page is shown
     virtual void shown() {};
 
+    // Called when a modal page is closed, both when a different modal
+    // dialog is shown, and when it is compleatly removed from the stack
+    virtual void closed(bool removed_from_Stack) {}
+
     int8_t cursor_position;  
     int8_t cursor_max;
     int8_t cursor_min = 0;
