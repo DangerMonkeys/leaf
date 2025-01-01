@@ -38,8 +38,10 @@ void PageMenuSystemWifi::draw_menu_input(int8_t cursor_position) {
                     ret += ".";
                 }
             } else if (WiFi.status() == WL_CONNECTED) {
-                ret = "*";  // Connected... Probably need a checkmark or
+                ret = char(125);  // Connected... Probably need a checkmark or
                               // something
+            } else {
+                ret = char(123);  // Not Set Up Yet
             }
             break;
 
@@ -127,13 +129,17 @@ void PageMenuSystemWifiManualSetup::draw_extra() {
 
     // Instruction Page
     const char* lines[] = {
-        "Join WiFi", 
-        "Network Called",
-        "Leaf"
+        "Join Leaf", 
+        "WiFi network",        
+        " ",
+        "Configure WiFi",
+        "SSID & Password",
+        " ",
+        "Then press Save"
     };
 
     for (auto line : lines) {
-        u8g2.setCursor(2, y);
+        u8g2.setCursor(0, y);
         u8g2.print(line);
         y += OFFSET;
     }
@@ -153,9 +159,9 @@ void PageMenuSystemWifiUpdate::shown() {
     *wifi_state = WifiState::CONNECTING;
 
     log_lines.clear();
-    log_lines.push_back("* Currently running: ");
+    log_lines.push_back("*CURRENT VERSION:");
     log_lines.push_back((String) "  " + VERSION);
-    log_lines.push_back("* Connecting to WiFi...");
+    log_lines.push_back("*WIFI CONNECTING...");
 }
 
 void PageMenuSystemWifiUpdate::draw_extra() {
@@ -177,7 +183,7 @@ void PageMenuSystemWifiUpdate::loop() {
     switch (*wifi_state) {
         case WifiState::CONNECTING:
             if (WiFi.status() == WL_CONNECTED) {
-                log_lines.push_back("* Checking for updates...");
+                log_lines.push_back("*CHECKING FOR UPDATES...");
                 *wifi_state = WifiState::OTA_CHECKING_VERSION;
             }
             break;
@@ -186,22 +192,21 @@ void PageMenuSystemWifiUpdate::loop() {
             try {
                 latest_version = getLatestVersion();
             } catch (const std::runtime_error& e) {
-                log_lines.push_back("* Error checking for updates");
-                log_lines.push_back("* ");
+                log_lines.push_back("*ERROR WHILE CHECKING");
+                log_lines.push_back("*");
                 log_lines.push_back(e.what());
                 *wifi_state = WifiState::ERROR;
                 break;
             }
             if (latest_version == VERSION) {
-                log_lines.push_back("* Up to date!");
+                log_lines.push_back("*YOU'RE UP TO DATE!");
                 *wifi_state = WifiState::OTA_UP_TO_DATE;
             } else {
-                log_lines.push_back("* New version available!");
-                log_lines.push_back("* Updating to: ");
+                log_lines.push_back("*NEW VERSION AVAILABLE!");
+                log_lines.push_back("*UPDATING TO:");
                 log_lines.push_back((String) "   " + latest_version);
                 log_lines.push_back("(this will take a while)");
-                log_lines.push_back("* Device will reboot");
-                log_lines.push_back("  when done");
+                log_lines.push_back("*WILL REBOOT WHEN DONE");
                 *wifi_state = WifiState::OTA_UPDATING;
             }
         } break;
@@ -210,8 +215,8 @@ void PageMenuSystemWifiUpdate::loop() {
                 // TODO:  Enable this
                 PerformOTAUpdate();
             } catch (const std::runtime_error& e) {
-                log_lines.push_back("* Error updating firmware");
-                log_lines.push_back("* ");
+                log_lines.push_back("*ERROR UPDATING!");
+                log_lines.push_back("*");
                 log_lines.push_back(e.what());
                 *wifi_state = WifiState::ERROR;
             }

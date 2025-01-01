@@ -55,8 +55,9 @@ void LogMenuPage::draw() {
       else u8g2.setDrawColor(1);
       switch (i) {
         case cursor_log_format:
-          if (UNITS_alt) u8g2.print("ft");
-          else u8g2.print(" m");
+          if (LOG_FORMAT == 0) u8g2.print("KML");
+          else if (LOG_FORMAT == 1) u8g2.print("IGC");
+          else u8g2.print("_?_");
           break;
         case cursor_log_saveLog:
           if (TRACK_SAVE) u8g2.print("ON");
@@ -71,11 +72,11 @@ void LogMenuPage::draw() {
           else u8g2.print("OFF");    
           break;
         case cursor_log_BB:
-          if (1) u8g2.print("BB");
+          if (1) u8g2.print("  ");
           else u8g2.print("OFF");
           break;
         case cursor_log_CC:
-          if (1) u8g2.print("CC");
+          if (1) u8g2.print("  ");
           else u8g2.print("OFF");
           break;
         case cursor_log_timer:

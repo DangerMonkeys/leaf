@@ -46,6 +46,7 @@
     #define DEF_TRACK_SAVE				    1	    // save track log?
     #define DEF_AUTO_START		        0	    // 1 = ENABLE, 0 = DISABLE
     #define DEF_AUTO_STOP		          0	    // 1 = ENABLE, 0 = DISABLE
+    #define DEF_LOG_FORMAT            0     // 0 = KML, 1 = IGC
 
   // Default System Settings
     #define DEF_TIME_ZONE     				0     // mm (in minutes) UTC -8 (PDT) would therefor be -8*60, or 480.  This allows us to cover all time zones, including the :30 minute and :15 minute ones
@@ -92,6 +93,7 @@
     extern bool TRACK_SAVE;
     extern bool AUTO_START;
     extern bool AUTO_STOP;
+    extern uint8_t LOG_FORMAT;
 
   // System Settings
     extern int16_t TIME_ZONE;
@@ -108,7 +110,7 @@
     extern uint8_t THMPG_ALT_TYP;
     extern uint8_t THMPG_ALT2_TYP;
     extern uint8_t THMSPG_USR1;
-    
+
 
   // Unit Values
     extern bool UNITS_climb;

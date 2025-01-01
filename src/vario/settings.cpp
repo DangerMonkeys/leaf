@@ -31,6 +31,7 @@
     bool TRACK_SAVE;
     bool AUTO_START;
     bool AUTO_STOP;
+    uint8_t LOG_FORMAT;
 
   // System Settings
     int16_t TIME_ZONE;
@@ -102,6 +103,7 @@ void settings_loadDefaults() {
     TRACK_SAVE = DEF_TRACK_SAVE;
     AUTO_START = DEF_AUTO_START;
     AUTO_STOP = DEF_AUTO_STOP;
+    LOG_FORMAT = DEF_LOG_FORMAT;
 
   // System Settings
     TIME_ZONE = DEF_TIME_ZONE;
@@ -149,6 +151,7 @@ void settings_retrieve() {
     GPS_SETTING =     leafPrefs.getChar("GPS_SETTING");
     TRACK_SAVE =      leafPrefs.getBool("TRACK_SAVE");
     AUTO_START =      leafPrefs.getBool("AUTO_START");
+    LOG_FORMAT =      leafPrefs.getUChar("LOG_FORMAT");
 
   // System Settings
     TIME_ZONE =       leafPrefs.getShort("TIME_ZONE");
@@ -203,6 +206,7 @@ void settings_save() {
     leafPrefs.putBool("TRACK_SAVE", TRACK_SAVE);
     leafPrefs.putBool("AUTO_START", AUTO_START);
     leafPrefs.putBool("AUTO_STOP", AUTO_STOP);
+    leafPrefs.putUChar("LOG_FORMAT", LOG_FORMAT);
   // System Settings
     leafPrefs.putShort("TIME_ZONE", TIME_ZONE);
     leafPrefs.putChar("VOLUME_SYSTEM", VOLUME_SYSTEM);  

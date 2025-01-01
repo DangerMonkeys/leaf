@@ -88,7 +88,7 @@ void thermalPage_draw() {
 			
 
 
-			display_altAboveLaunch(24, 129, baro.altAboveLaunch);
+			display_altAboveLaunch(24, 132, baro.altAboveLaunch);
 		
 			
 		// User Fields ****************************************************

@@ -23,8 +23,8 @@ class LogMenuPage : public SettingsMenuPage {
       "SaveLog",
       "AutoStart",
       "AutoStop",
-      "BB",
-      "CC",
+      "  ",
+      "  ",
       "Timer"
     };
 };

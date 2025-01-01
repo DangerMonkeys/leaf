@@ -475,11 +475,21 @@ void display_climbRate(uint8_t x, uint8_t y, const uint8_t * font, int16_t displ
 }
 
 void display_altAboveLaunch(uint8_t x, uint8_t y, int32_t aboveLaunchAlt) {
-  u8g2.setCursor(x, y - 14);
+  u8g2.setCursor(x, y - 16);
   u8g2.setFont(leaf_5h);
   u8g2.print("ABOVE LAUNCH");
-  display_alt(x, y, leaf_6x12, aboveLaunchAlt);
+  display_alt(x, y, leaf_8x14, aboveLaunchAlt);
 }
+
+void display_altAboveLaunch(uint8_t x, uint8_t y, int32_t aboveLaunchAlt, const uint8_t * font) {
+  u8g2.setFont(font);
+  uint8_t h = u8g2.getMaxCharHeight();  
+  u8g2.setCursor(x, y - h - 2);
+  u8g2.setFont(leaf_5h);
+  u8g2.print("ABOVE LAUNCH");
+  display_alt(x, y, font, aboveLaunchAlt);
+}
+
 
 void display_accel(uint8_t x, uint8_t y, float accel) {
   u8g2.setCursor(x, y);
