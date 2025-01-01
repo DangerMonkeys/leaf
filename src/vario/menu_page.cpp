@@ -41,11 +41,27 @@ bool SettingsMenuPage::button_event(Button button, ButtonState state, uint8_t co
 }
 
 void MenuPage::push_page(MenuPage* page) {
+  // Push a new page to the stack
+  
+  // let the current page know it has been closed for now
+  if(!get_current_page_stack().empty()) {
+    auto current_page = get_current_page_stack().top();
+    // Let it know it's closed, but, will shown again once things on top of the stack are popped
+    current_page->closed(false);
+  }
+  
+  
+  auto current_page = get_current_page_stack();
     get_current_page_stack().push(page);
     page->shown();
 }
 
-void MenuPage::pop_page() { get_current_page_stack().pop(); }
+void MenuPage::pop_page() { 
+  // Remove the current page from the stack, notifying the page it has been closed  
+  auto current_page = get_current_page_stack().top();
+  get_current_page_stack().pop();
+  current_page->closed(true); 
+}
 
 MenuPage* MenuPage::get_modal_page() {
     if (get_current_page_stack().empty()) return NULL;
