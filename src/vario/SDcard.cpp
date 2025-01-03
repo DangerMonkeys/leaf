@@ -15,7 +15,10 @@
 bool remountSDCard = false; // flag set if the SD_DETECT pin changes state, so we know to attempt a re-mounting if the card is inserted or removed
 bool SDcardIsPresent = false;
 
+#include "USB.h"
+#include "USBMSC.h"
 
+USBMSC MSC;
 
 void listDir(fs::FS &fs, const char * dirname, uint8_t levels) {
     Serial.printf("Listing directory: %s\n", dirname);
@@ -235,6 +238,54 @@ void SDcard_update() {
     SDcard_detectStateLast = SDcard_detectState;
 }
 
+static int32_t onRead(uint32_t lba, uint32_t offset, void *buffer, uint32_t bufsize) {
+    // Check bufSize is a multiple of block size
+    if (bufsize % 512) {
+        return -1;
+    }
+
+    auto bufferOffset = 0;
+    for(int sector = lba; sector < lba + bufsize / 512; sector++) {
+        if (!SD_MMC.readRAW((uint8_t*)buffer + bufferOffset, sector)) {
+            return -1;
+        }
+        bufferOffset += 512;
+    }
+    
+    return bufsize;
+}
+
+static int32_t onWrite(uint32_t lba, uint32_t offset, uint8_t *buffer, uint32_t bufsize) {
+    // Check bufSize is a multiple of block size
+    if (bufsize % 512) {
+        return -1;
+    }
+
+    auto bufferOffset = 0;
+    for(int sector = lba; sector < lba + bufsize / 512; sector++) {
+        if (!SD_MMC.writeRAW(buffer + bufferOffset, sector)) {
+            return -1;
+        }
+        bufferOffset += 512;
+    }
+    
+    return bufsize;
+}
+
+
+void SetupMassStorage() {
+    Serial.setDebugOutput(true);
+    MSC.vendorID("Leaf");
+    MSC.productID("Leaf_Vario");
+    MSC.productRevision("1.0");
+    MSC.onRead(onRead);
+    MSC.onWrite(onWrite);
+    MSC.isWritable(true);
+    MSC.mediaPresent(true);
+    MSC.begin(SD_MMC.numSectors(), 512);
+    USB.begin();
+}
+
 bool SDcard_mount() {
     // we may be re-mounting after changing power states (from ON to CHARGE and back to ON). 
     // If the SD card was removed during that process, we need to force-end the SD_MCC object so we can try to restart it, so we can properly tell if re-mounting fails (otherwise the SD_MCC object would falsely persist)
@@ -246,6 +297,9 @@ bool SDcard_mount() {
     } else {
         if (DEBUG_SDCARD) Serial.println("SDcard Mount Success");  
         SDcardIsPresent = true;
+        #ifdef ENABLE_MASS_STORAGE
+        SetupMassStorage();
+        #endif
     }
 
     return SDcardIsPresent;
