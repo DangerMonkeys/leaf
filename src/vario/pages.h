@@ -1,15 +1,14 @@
 #ifndef PAGES_H
 #define PAGES_H
 
-#include "PageMenuMain.h"
-
 #include "PageMenuAltimeter.h"
-#include "PageMenuVario.h"
 #include "PageMenuDisplay.h"
-#include "PageMenuUnits.h"
 #include "PageMenuGPS.h"
 #include "PageMenuLog.h"
+#include "PageMenuMain.h"
 #include "PageMenuSystem.h"
+#include "PageMenuUnits.h"
+#include "PageMenuVario.h"
 
 extern MainMenuPage mainMenuPage;
 

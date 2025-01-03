@@ -1,15 +1,13 @@
 #include "pages.h"
 
-#include "PageMenuMain.h"
-
 #include "PageMenuAltimeter.h"
-#include "PageMenuVario.h"
 #include "PageMenuDisplay.h"
-#include "PageMenuUnits.h"
 #include "PageMenuGPS.h"
 #include "PageMenuLog.h"
+#include "PageMenuMain.h"
 #include "PageMenuSystem.h"
-
+#include "PageMenuUnits.h"
+#include "PageMenuVario.h"
 
 MainMenuPage mainMenuPage;
 
@@ -20,6 +18,3 @@ UnitsMenuPage unitsMenuPage;
 GPSMenuPage gpsMenuPage;
 LogMenuPage logMenuPage;
 SystemMenuPage systemMenuPage;
-
-
-

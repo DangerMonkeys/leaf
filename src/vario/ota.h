@@ -1,7 +1,7 @@
 #pragma once
 
-#include <WiFi.h>
 #include <Update.h>
+#include <WiFi.h>
 
 // Gets the latest version from Github's version!
 String getLatestVersion();

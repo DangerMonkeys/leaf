@@ -6,25 +6,21 @@ struct LinearFit {
   double b;
 };
 
-double linear_value(const struct LinearFit* fit, double x)
-{
-    return fit->m * x + fit->b;
-}
+double linear_value(const struct LinearFit* fit, double x) { return fit->m * x + fit->b; }
 
-double linear_derivative(const struct LinearFit* fit, double x) {
-  return fit->m;
-}
+double linear_derivative(const struct LinearFit* fit, double x) { return fit->m; }
 
 template <unsigned int n>
 class LinearRegression {
-public:
-	LinearRegression();
+ public:
+  LinearRegression();
   void reset();
   void update(double x, double y);
   LinearFit fit();
   double max_deviation_y();
   double most_recent_y();
-private:
+
+ private:
   unsigned int _index;
   unsigned int _count;
   double _Xi[n];
@@ -37,7 +33,7 @@ private:
 
 template <unsigned int n>
 void LinearRegression<n>::reset() {
-  for (int i=0; i<n; i++) {
+  for (int i = 0; i < n; i++) {
     _Xi[i] = 0;
     _Yi[i] = 0;
   }
@@ -95,7 +91,7 @@ LinearFit LinearRegression<n>::fit() {
     double sum_xi2 = 0.0;
     double sum_yi = 0.0;
     double sum_xiyi = 0.0;
-    for (uint8_t i=0; i<_count; i++) {
+    for (uint8_t i = 0; i < _count; i++) {
       double dx = _Xi[i] - x0;
       double dy = _Yi[i] - y0;
       sum_xi += dx;
@@ -108,25 +104,30 @@ LinearFit LinearRegression<n>::fit() {
 
     if (denominator == 0) {
       Serial.println("OH NO DENOMINATOR IS 0!!!");
-      Serial.print("_count="); Serial.print(_count);
-      Serial.print(", _sumXi2="); Serial.print(_sumXi2);
-      Serial.print(", _sumXi="); Serial.print(_sumXi);
+      Serial.print("_count=");
+      Serial.print(_count);
+      Serial.print(", _sumXi2=");
+      Serial.print(_sumXi2);
+      Serial.print(", _sumXi=");
+      Serial.print(_sumXi);
       Serial.println();
       Serial.print("_Xi = {");
-      for (uint8_t i=0; i<_count; i++) {
+      for (uint8_t i = 0; i < _count; i++) {
         Serial.print(_Xi[i]);
         Serial.print(", ");
       }
       Serial.println("}");
       Serial.print("_Yi = {");
-      for (uint8_t i=0; i<_count; i++) {
+      for (uint8_t i = 0; i < _count; i++) {
         Serial.print(_Yi[i]);
         Serial.print(", ");
       }
       Serial.println("}");
-      //die();
-      while (true) { delay(1);}
-      //TODO: safer end state here
+      // die();
+      while (true) {
+        delay(1);
+      }
+      // TODO: safer end state here
     }
     result.m = numerator / denominator;
     result.b = (_sumYi - result.m * _sumXi) / _count;
@@ -138,7 +139,7 @@ template <unsigned int n>
 double LinearRegression<n>::max_deviation_y() {
   double y_mean = _sumYi / _count;
   double max_dev = 0;
-  for (uint8_t i=0; i<n; i++) {
+  for (uint8_t i = 0; i < n; i++) {
     double new_dev = abs(_Yi[i] - y_mean);
     if (new_dev > max_dev) max_dev = new_dev;
   }

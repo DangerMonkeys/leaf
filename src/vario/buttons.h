@@ -33,4 +33,5 @@ uint16_t buttons_get_hold_count(void);
 
 Button buttons_update(void);  // the main task of checking and handling button pushes
 
-void buttons_lockDuringPowerOn(void); // lock the buttons during power-on until user next releases the center button
+void buttons_lockDuringPowerOn(
+    void);  // lock the buttons during power-on until user next releases the center button

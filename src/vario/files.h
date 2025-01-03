@@ -6,26 +6,24 @@
 #define FILE_READER_BUFFER_LEN (256)
 
 class FileReader {
-  public:
-    FileReader(fs::FS &fs, String fileName);
+ public:
+  FileReader(fs::FS &fs, String fileName);
 
-	char nextChar();
+  char nextChar();
 
-	bool contentRemaining();
+  bool contentRemaining();
 
-	inline String error() {
-        return _error;
-    }
+  inline String error() { return _error; }
 
-	~FileReader();
+  ~FileReader();
 
-  private:
-	bool _complete;
-	String _error;
-	File _file;
-	char _buffer[FILE_READER_BUFFER_LEN];
-	uint16_t _buffer_count;
-	uint16_t _buffer_index;
+ private:
+  bool _complete;
+  String _error;
+  File _file;
+  char _buffer[FILE_READER_BUFFER_LEN];
+  uint16_t _buffer_count;
+  uint16_t _buffer_index;
 };
 
 #endif

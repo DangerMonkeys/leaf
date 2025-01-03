@@ -3,74 +3,78 @@
 
 #include <Arduino.h>
 
-
 // for fixed sample-length timer (approach #1)
-#define SPEAKER_SAMPLE_LENGTH   40      // ms per sound 'sample' (i.e. like the length of a quarter note) 
-#define FX_NOTE_SAMPLE_COUNT     2      // number of samples to play per FX Note
-
+#define SPEAKER_SAMPLE_LENGTH 40  // ms per sound 'sample' (i.e. like the length of a quarter note)
+#define FX_NOTE_SAMPLE_COUNT 2    // number of samples to play per FX Note
 
 // for time-adjusted timer (approach #2)
-#define FX_NOTE_LENGTH  500
-#define SPEAKER_TIMER_FREQ 1000   // Hz
+#define FX_NOTE_LENGTH 500
+#define SPEAKER_TIMER_FREQ 1000  // Hz
 
-//Pinout for Leaf V3.2.2      // V3.2.0
-#define SPEAKER_PIN       14  // 7
-#define SPEAKER_VOLA      15  // 8
-#define SPEAKER_VOLB      16  // 9
+// Pinout for Leaf V3.2.2      // V3.2.0
+#define SPEAKER_PIN 14   // 7
+#define SPEAKER_VOLA 15  // 8
+#define SPEAKER_VOLB 16  // 9
 
 /*
 // Pinout for Breakboard
 #define SPEAKER_PIN		5   // output pin to play sound signal
 #define SPEAKER_VOLA  4   // enable A pin for voltage amplification (loud)
-#define SPEAKER_VOLB	6   // enable B pin for voltage amplification (louder) (enable both A & B for loudest)
-#define PWM_CHANNEL   0   // ESP32 has many channels; we'll use the first
+#define SPEAKER_VOLB	6   // enable B pin for voltage amplification (louder) (enable both A & B
+for loudest) #define PWM_CHANNEL   0   // ESP32 has many channels; we'll use the first
 */
 
-//each "beep beep" cycle is a "measure", made up of play-length followed by rest-length, then repeat
+// each "beep beep" cycle is a "measure", made up of play-length followed by rest-length, then
+// repeat
 
 // FOR APPROACH #2 (time-adjusted speaker timer)
-  // CLIMB TONE DEFINITIONS
-  //#define CLIMB_AUDIO_THRESHOLD  10 	// don't play unless climb rate is over this value (cm/s)
-  #define CLIMB_MAX		          800		// above this cm/s climb rate, note doesn't get higher
-  #define CLIMB_NOTE_MIN		    523		// min tone pitch in Hz for >0 climb
-  #define CLIMB_NOTE_MAX 		   1568	  // max tone pitch in Hz for CLIMB_MAX (when vario peaks and starts holding a solid tone)
-  #define CLIMB_NOTE_MAXMAX    2093	  // max tone pitch in Hz when vario is truly pegged, even in solid-tone mode
-  #define CLIMB_PLAY_MAX		   60//1200 	// ms play per measure (at min climb)
-  #define CLIMB_PLAY_MIN		    2//200   // ms play per measure (at max climb)
-  #define CLIMB_REST_MAX       100//1000		// ms silence per measure (at min climb)
-  #define CLIMB_REST_MIN	      2 //100		// ms silence per measure (at max climb)
+// CLIMB TONE DEFINITIONS
+// #define CLIMB_AUDIO_THRESHOLD  10 	// don't play unless climb rate is over this value (cm/s)
+#define CLIMB_MAX 800       // above this cm/s climb rate, note doesn't get higher
+#define CLIMB_NOTE_MIN 523  // min tone pitch in Hz for >0 climb
+#define CLIMB_NOTE_MAX \
+  1568  // max tone pitch in Hz for CLIMB_MAX (when vario peaks and starts holding a solid tone)
+#define CLIMB_NOTE_MAXMAX \
+  2093  // max tone pitch in Hz when vario is truly pegged, even in solid-tone mode
+#define CLIMB_PLAY_MAX 60   // 1200 	// ms play per measure (at min climb)
+#define CLIMB_PLAY_MIN 2    // 200   // ms play per measure (at max climb)
+#define CLIMB_REST_MAX 100  // 1000		// ms silence per measure (at min climb)
+#define CLIMB_REST_MIN 2    // 100		// ms silence per measure (at max climb)
 
-  // SINK TONE DEFINITIONS
-  //#define SINK_ALARM           -200   // cm/s sink rate that triggers sink alarm audio
-  #define SINK_MAX		         -800		// at this sink rate, tone doesn't get lower
-  #define SINK_NOTE_MIN		      392   // highest tone pitch for sink > SINK_ALARM
-  #define SINK_NOTE_MAX		      196   // lowest tone pitch for sink @ SINK_MAX (when vario bottoms out and starts holding a solid tone)
-  #define SINK_NOTE_MAXMAX      131   // bottom tone pitch for sink (when vario is truly pegged, even in solid tone mode)
+// SINK TONE DEFINITIONS
+// #define SINK_ALARM           -200   // cm/s sink rate that triggers sink alarm audio
+#define SINK_MAX -800      // at this sink rate, tone doesn't get lower
+#define SINK_NOTE_MIN 392  // highest tone pitch for sink > SINK_ALARM
+#define SINK_NOTE_MAX \
+  196  // lowest tone pitch for sink @ SINK_MAX (when vario bottoms out and starts holding a solid
+       // tone)
+#define SINK_NOTE_MAXMAX \
+  131  // bottom tone pitch for sink (when vario is truly pegged, even in solid tone mode)
 
-  #define SINK_PLAY_MIN		     100//1200   // ms play per measure (at min sink)
-  #define SINK_PLAY_MAX		     2//2000 	// ms play per measure (at max sink)
-  #define SINK_REST_MIN	       100//1000		// silence samples (at min sink)
-  #define SINK_REST_MAX	       2//1000		// silence samples (at max sink)
+#define SINK_PLAY_MIN 100  // 1200   // ms play per measure (at min sink)
+#define SINK_PLAY_MAX 2    // 2000 	// ms play per measure (at max sink)
+#define SINK_REST_MIN 100  // 1000		// silence samples (at min sink)
+#define SINK_REST_MAX 2    // 1000		// silence samples (at max sink)
 
 // FOR APPROACH #1 (fixed sample-size length speaker timer)
-  #define CLIMB_PLAY_SAMPLES_MAX    10
-  #define CLIMB_PLAY_SAMPLES_MIN		 1
-  #define CLIMB_REST_SAMPLES_MAX     6
-  #define CLIMB_REST_SAMPLES_MIN	   1
+#define CLIMB_PLAY_SAMPLES_MAX 10
+#define CLIMB_PLAY_SAMPLES_MIN 1
+#define CLIMB_REST_SAMPLES_MAX 6
+#define CLIMB_REST_SAMPLES_MIN 1
 
-  #define SINK_PLAY_SAMPLES_MIN  8       // play 8, rest 20, flytec 4030
-  #define SINK_PLAY_SAMPLES_MAX  8
-  #define SINK_REST_SAMPLES_MIN	 20
-  #define SINK_REST_SAMPLES_MAX	 20
+#define SINK_PLAY_SAMPLES_MIN 8  // play 8, rest 20, flytec 4030
+#define SINK_PLAY_SAMPLES_MAX 8
+#define SINK_REST_SAMPLES_MIN 20
+#define SINK_REST_SAMPLES_MAX 20
 
-// LiftyAir DEFINITIONS    (for air rising slower than your sinkrate, so net climbrate is negative, but not as bad as it would be in still air)
-#define LIFTYAIR_TONE_MIN	    180		// min pitch tone for lift air @ -(setting)m/s
-#define LIFTYAIR_TONE_MAX	    150		// max pitch tone for lifty air @ .1m/s climb
-#define LIFTYAIR_PLAY	  	      1		//
-#define LIFTYAIR_GAP		        1
-#define LIFTYAIR_REST_MAX      20
-#define LIFTYAIR_REST_MIN      10
-
+// LiftyAir DEFINITIONS    (for air rising slower than your sinkrate, so net climbrate is negative,
+// but not as bad as it would be in still air)
+#define LIFTYAIR_TONE_MIN 180  // min pitch tone for lift air @ -(setting)m/s
+#define LIFTYAIR_TONE_MAX 150  // max pitch tone for lifty air @ .1m/s climb
+#define LIFTYAIR_PLAY 1        //
+#define LIFTYAIR_GAP 1
+#define LIFTYAIR_REST_MAX 20
+#define LIFTYAIR_REST_MIN 10
 
 void speaker_init(void);
 void speaker_sleep(void);
@@ -81,37 +85,35 @@ void speaker_setVolume(unsigned char volume);
 void speaker_incVolume(void);
 void speaker_decVolume(void);
 
-void speaker_updateVarioNote(int32_t verticalRate); // the root one
+void speaker_updateVarioNote(int32_t verticalRate);  // the root one
 
-void onSpeakerTimerSample(void);        // method 1 -- fixed sample length
+void onSpeakerTimerSample(void);  // method 1 -- fixed sample length
 void speaker_updateVarioNoteSample(int32_t verticalRate);
 
-void onSpeakerTimerAdjustable(void);    // method 2 -- adjustable timer length
+void onSpeakerTimerAdjustable(void);  // method 2 -- adjustable timer length
 void speaker_updateVarioNoteAdjustable(int32_t verticalRate);
 
 void speaker_enableTimer(void);
 void speaker_disableTimer(void);
 
-
 void speaker_updateClimbToneParameters(void);
 
-void speaker_playSound(uint16_t * sound);
-
+void speaker_playSound(uint16_t* sound);
 
 // testing
-//void speaker_playsound_up(void);
-//void speaker_playsound_down(void);
+// void speaker_playsound_up(void);
+// void speaker_playsound_down(void);
 
 void speaker_TEST(void);
 void speaker_playPiano(void);
 void speaker_debugPrint(void);
 
-#define NOTE_B0 31      // 
-#define NOTE_C1 33      // 
-#define NOTE_CS1 35     //    maybe retest these with the higher resolution pwm timer
-#define NOTE_D1 37      // 
-#define NOTE_DS1 39     // 
-#define NOTE_E1 41      // Lowest note we can play without crashing due to clock divider limits
+#define NOTE_B0 31   //
+#define NOTE_C1 33   //
+#define NOTE_CS1 35  //    maybe retest these with the higher resolution pwm timer
+#define NOTE_D1 37   //
+#define NOTE_DS1 39  //
+#define NOTE_E1 41   // Lowest note we can play without crashing due to clock divider limits
 #define NOTE_F1 44
 #define NOTE_FS1 46
 #define NOTE_G1 49
@@ -196,7 +198,7 @@ void speaker_debugPrint(void);
 #define NOTE_D8 4699
 #define NOTE_DS8 4978
 
-//Tone definitions
+// Tone definitions
 #define NOTE_END 1
 #define NOTE_NONE 0
 
@@ -223,7 +225,6 @@ extern uint16_t fx_octavesup[];
 extern uint16_t fx_octavesdown[];
 
 extern uint16_t single_note[];
-
 
 /*
 uint16_t * fx_silence;

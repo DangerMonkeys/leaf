@@ -5,27 +5,27 @@
  * 6 DOF Gyro+Accel plus 3-axis mag
  *
  */
-#include <ICM_20948.h>
 #include "IMU.h"
+
+#include <ICM_20948.h>
+
 #include "Leaf_I2C.h"
-#include "log.h"
 #include "SDcard.h"
+#include "log.h"
 
 #define DEBUG_IMU 0
 
 #define SERIAL_PORT Serial
 #define WIRE_PORT Wire
-#define AD0_VAL 0     // I2C address bit
+#define AD0_VAL 0  // I2C address bit
 
 ICM_20948_I2C IMU;
-
-
 
 void imu_init() {
   WIRE_PORT.begin();
   WIRE_PORT.setClock(400000);
 
-  if(DEBUG_IMU) IMU.enableDebugging(); // enable helpful debug messages on Serial
+  if (DEBUG_IMU) IMU.enableDebugging();  // enable helpful debug messages on Serial
 
   bool initialized = false;
   while (!initialized) {
@@ -44,7 +44,7 @@ void imu_init() {
 float ax, ay, az, at;
 
 void imu_update() {
-  //TODO: fill this in with everything
+  // TODO: fill this in with everything
 
   if (IMU.dataReady()) {
     IMU.getAGMT();
@@ -52,9 +52,9 @@ void imu_update() {
     ay = IMU.accY();
     az = IMU.accZ();
 
-    at = sqrt(ax*ax + ay*ay+az*az)/1000;
+    at = sqrt(ax * ax + ay * ay + az * az) / 1000;
   }
-  
+
   if (DEBUG_IMU) {
     Serial.print("tot: ");
     Serial.print(at);
@@ -73,11 +73,7 @@ void imu_update() {
   }
 }
 
-float IMU_getAccel() {
-  return at;
-}
-
-
+float IMU_getAccel() { return at; }
 
 /*
 
@@ -104,7 +100,5 @@ float IMU_getAccel() {
 
   Serial.print("Power Management 2: ");
   Serial.println(spi_readIMUByte(address_PWR_MGMT_2));
-    
+
 */
-
-

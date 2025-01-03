@@ -12,18 +12,17 @@
 #define Y_OFFSET 40
 
 void PageQR::draw_extra() {
-    auto qr_version = 7;
+  auto qr_version = 7;
 
-    QRCode qrcode;
-    uint8_t qrcodeData[qrcode_getBufferSize(qr_version)];
+  QRCode qrcode;
+  uint8_t qrcodeData[qrcode_getBufferSize(qr_version)];
 
-    qrcode_initText(&qrcode, qrcodeData, qr_version, QR_ECC, url.c_str());
-    for (uint8_t x = 0; x < qrcode.size; x++) {
-        for (uint8_t y = 0; y < qrcode.size; y++) {
-            if (qrcode_getModule(&qrcode, x, y)) {
-                u8g2.drawBox(X_OFFSET + x * QR_SIZE, Y_OFFSET + y * QR_SIZE,
-                             QR_SIZE, QR_SIZE);
-            }
-        }
+  qrcode_initText(&qrcode, qrcodeData, qr_version, QR_ECC, url.c_str());
+  for (uint8_t x = 0; x < qrcode.size; x++) {
+    for (uint8_t y = 0; y < qrcode.size; y++) {
+      if (qrcode_getModule(&qrcode, x, y)) {
+        u8g2.drawBox(X_OFFSET + x * QR_SIZE, Y_OFFSET + y * QR_SIZE, QR_SIZE, QR_SIZE);
+      }
     }
+  }
 }

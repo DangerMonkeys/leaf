@@ -1,12 +1,12 @@
 /*
  * gps.h
- * 
+ *
  */
 
 /* Notes
  PQTMPVT - quectel proprietary sentence with most(all?) of the fields we need
- or we need GGA (status, time, lat/lon, alt, sats, HDOP) and RMC (status, date, time, lat/lon, speed, heading)
-  and GSV for sat info when searching
+ or we need GGA (status, time, lat/lon, alt, sats, HDOP) and RMC (status, date, time, lat/lon,
+ speed, heading) and GSV for sat info when searching
 
   to look into:
   RLM messages? RTCM?
@@ -19,22 +19,29 @@
 
 #include <TinyGPSPlus.h>
 
-//Pinout for Leaf V3.2.0
-#define GPS_BACKUP_EN     40 // 42 on V3.2.0  // Enable GPS backup power.  Generally always-on, except able to be turned off for a full GPS reset if needed
+// Pinout for Leaf V3.2.0
+#define GPS_BACKUP_EN \
+  40  // 42 on V3.2.0  // Enable GPS backup power.  Generally always-on, except able to be turned
+      // off for a full GPS reset if needed
 // pins 43-44 are GPS UART, already enabled by default as "Serial0"
-#define GPS_RESET         45
-#define GPS_1PPS          46  // INPUT
+#define GPS_RESET 45
+#define GPS_1PPS 46  // INPUT
 
-//gps object for fix data 
-extern TinyGPSPlus gps;    
+// gps object for fix data
+extern TinyGPSPlus gps;
 
 // GPS Satellites
 #define MAX_SATELLITES 80
-struct gps_sat_info{bool active; int elevation; int azimuth; int snr;};
+struct gps_sat_info {
+  bool active;
+  int elevation;
+  int azimuth;
+  int snr;
+};
 extern struct gps_sat_info sats[MAX_SATELLITES];
 extern struct gps_sat_info satsDisplay[MAX_SATELLITES];
 
-//enum time_formats {hhmmss, }
+// enum time_formats {hhmmss, }
 
 void gps_init(void);
 char gps_read_buffer(void);
@@ -66,7 +73,5 @@ float gps_getCourseDeg(void);
 const char *gps_getCourseCardinal(void);
 float gps_getRelativeBearing(void);
 float gps_getGlideRatio(void);
-
-
 
 #endif

@@ -1,12 +1,13 @@
-#include <Arduino.h>
 #include "PageMenuDisplay.h"
-#include "pages.h"
+
+#include <Arduino.h>
+
 #include "buttons.h"
 #include "display.h"
 #include "fonts.h"
+#include "pages.h"
 #include "settings.h"
 #include "speaker.h"
-
 
 enum display_menu_items {
   cursor_display_back,
@@ -17,51 +18,60 @@ enum display_menu_items {
   cursor_display_contrast,
 };
 
-
 void DisplayMenuPage::draw() {
   u8g2.firstPage();
-  do { 
-    // Title(s) 
+  do {
+    // Title(s)
     u8g2.setFont(leaf_6x12);
     u8g2.setCursor(2, 12);
     u8g2.setDrawColor(1);
     u8g2.print("DISPLAY");
     u8g2.drawHLine(0, 15, 64);
-    u8g2.setCursor(0,45);
+    u8g2.setCursor(0, 45);
     u8g2.print("Show Pages:");
 
-  // Menu Items
+    // Menu Items
     uint8_t y_spacing = 16;
     uint8_t setting_name_x = 3;
-    uint8_t setting_choice_x = 78;    
+    uint8_t setting_choice_x = 78;
     uint8_t menu_items_y[] = {190, 60, 75, 90, 105, 135};
 
-    //first draw cursor selection box
-    u8g2.drawRBox(setting_choice_x-2, menu_items_y[cursor_position]-14, 22, 16, 2);
-    
+    // first draw cursor selection box
+    u8g2.drawRBox(setting_choice_x - 2, menu_items_y[cursor_position] - 14, 22, 16, 2);
+
     // then draw all the menu items
-    for (int i = 0; i <= cursor_max; i++) {      
+    for (int i = 0; i <= cursor_max; i++) {
       u8g2.setCursor(setting_name_x, menu_items_y[i]);
       u8g2.print(labels[i]);
       u8g2.setCursor(setting_choice_x, menu_items_y[i]);
-      if (i == cursor_position) u8g2.setDrawColor(0);
-      else u8g2.setDrawColor(1);
+      if (i == cursor_position)
+        u8g2.setDrawColor(0);
+      else
+        u8g2.setDrawColor(1);
       switch (i) {
         case cursor_display_show_debug:
-          if (SHOW_DEBUG) u8g2.print(char(125));
-          else u8g2.print(char(123));          
+          if (SHOW_DEBUG)
+            u8g2.print(char(125));
+          else
+            u8g2.print(char(123));
           break;
         case cursor_display_show_thrm_sim:
-          if (SHOW_THRM_SIMP) u8g2.print(char(125));
-          else u8g2.print(char(123));
+          if (SHOW_THRM_SIMP)
+            u8g2.print(char(125));
+          else
+            u8g2.print(char(123));
           break;
         case cursor_display_show_thrm_adv:
-          if (SHOW_THRM_ADV) u8g2.print(char(125));
-          else u8g2.print(char(123));
+          if (SHOW_THRM_ADV)
+            u8g2.print(char(125));
+          else
+            u8g2.print(char(123));
           break;
         case cursor_display_show_nav:
-          if (SHOW_NAV) u8g2.print(char(125));
-          else u8g2.print(char(123));
+          if (SHOW_NAV)
+            u8g2.print(char(125));
+          else
+            u8g2.print(char(123));
           break;
         case cursor_display_contrast:
           if (CONTRAST < 10) u8g2.print(" ");
@@ -69,46 +79,45 @@ void DisplayMenuPage::draw() {
           break;
         case cursor_display_back:
           u8g2.print((char)124);
-          break;        
+          break;
       }
-    u8g2.setDrawColor(1);
+      u8g2.setDrawColor(1);
     }
-  } while ( u8g2.nextPage() ); 
+  } while (u8g2.nextPage());
 }
 
 void DisplayMenuPage::setting_change(Button dir, ButtonState state, uint8_t count) {
   switch (cursor_position) {
-
     case cursor_display_show_debug:
-        if (state == RELEASED && dir == Button::CENTER) settings_toggleBoolOnOff(&SHOW_DEBUG);
+      if (state == RELEASED && dir == Button::CENTER) settings_toggleBoolOnOff(&SHOW_DEBUG);
       break;
     case cursor_display_show_thrm_sim:
-        if (state == RELEASED && dir == Button::CENTER) settings_toggleBoolOnOff(&SHOW_THRM_SIMP);
+      if (state == RELEASED && dir == Button::CENTER) settings_toggleBoolOnOff(&SHOW_THRM_SIMP);
       break;
     case cursor_display_show_thrm_adv:
-        if (state == RELEASED && dir == Button::CENTER) settings_toggleBoolOnOff(&SHOW_THRM_ADV);
+      if (state == RELEASED && dir == Button::CENTER) settings_toggleBoolOnOff(&SHOW_THRM_ADV);
       break;
     case cursor_display_show_nav:
-        if (state == RELEASED && dir == Button::CENTER) settings_toggleBoolOnOff(&SHOW_NAV);
+      if (state == RELEASED && dir == Button::CENTER) settings_toggleBoolOnOff(&SHOW_NAV);
       break;
     case cursor_display_contrast:
-      if (state == RELEASED && dir != Button::NONE) settings_adjustContrast(dir);
-      else if (state == HELD && dir == Button::NONE) settings_adjustContrast(dir);
+      if (state == RELEASED && dir != Button::NONE)
+        settings_adjustContrast(dir);
+      else if (state == HELD && dir == Button::NONE)
+        settings_adjustContrast(dir);
       break;
     case cursor_display_back:
       if (state == RELEASED) {
         speaker_playSound(fx_cancel);
-        settings_save(); 
+        settings_save();
         mainMenuPage.backToMainMenu();
       } else if (state == HELD) {
         speaker_playSound(fx_exit);
-        settings_save(); 
-        mainMenuPage.quitMenu();        
-      }      
+        settings_save();
+        mainMenuPage.quitMenu();
+      }
   }
 }
-
-
 
 // helpful switch constructors to copy-paste as needed:
 /*
