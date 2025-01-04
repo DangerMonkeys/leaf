@@ -15,6 +15,13 @@
   #include "log.h"
   #include "settings.h"
 
+  #ifdef WIFI_ON_BOOT
+    #include <WiFi.h>
+  #endif
+  #ifdef DEBUG_WEBSERVER
+    #include "DebugWebserver.h"
+  #endif
+
 #define DEBUG_MAIN_LOOP false
 
 // Pinout for ESP32 Leaf V2
@@ -81,6 +88,18 @@ void setup() {
     delay(200);
     Serial.println("Starting Setup");
 
+    #ifdef WIFI_ON_BOOT
+      // Start WiFi
+      WiFi.begin();
+      WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
+        Serial.println("WiFi Event " + WiFi.localIP().toString() + ": " + event);
+      });
+    #endif
+    #ifdef DEBUG_WEBSERVER
+      // Start WebServer
+      webserver_setup();
+    #endif
+
   // turn on and handle all device initialization
     power_bootUp(); 
 
@@ -137,6 +156,10 @@ TODO: In addition to the timer-driven interrupt, we may consider also setting wa
 // when re-entering POWER_ON state, be sure to start from tasks #1, so baro ADC can be re-prepped before reading
 
 void loop() {
+  #ifdef DEBUG_WEBSERVER
+    webserver_loop();
+  #endif
+
   if (TESTING_LOOP) main_loop_test();
   else if (powerOnState == POWER_ON) main_ON_loop();
   else if (powerOnState == POWER_OFF_USB) main_CHARGE_loop();
