@@ -19,7 +19,14 @@ class VarioMenuPage : public SettingsMenuPage {
 
  private:
   static constexpr char* labels[8] = {
-      "Back", "BeepVolume", "Sens", "Tones", "LiftyAir", "ClimbAvg", "ClimbStart", "SinkAlarm",
+      "Back",
+      "BeepVolume",
+      "Sens",
+      "Tones",
+      "LiftyAir",
+      "ClimbAvg",
+      "ClimbStart",
+      "SinkAlarm",
   };
 };
 

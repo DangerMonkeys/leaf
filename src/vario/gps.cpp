@@ -43,11 +43,14 @@ struct gps_sat_info satsDisplay[MAX_SATELLITES];  // Cached version of the sat i
                                                   // display (this will be re-written each time a
                                                   // total set of new sat info is available)
 TinyGPSCustom totalGPGSVMessages(
-    gps, "GPGSV",
+    gps,
+    "GPGSV",
     1);  // $GPGSV sentence, the first element is how many GSV messages (N) total will be sent
-TinyGPSCustom messageNumber(gps, "GPGSV",
+TinyGPSCustom messageNumber(gps,
+                            "GPGSV",
                             2);  // $GPGSV sentence, second element is the message number (x of N)
-TinyGPSCustom satsInView(gps, "GPGSV",
+TinyGPSCustom satsInView(gps,
+                         "GPGSV",
                          3);  // $GPGSV sentence, third element is how many satellites in view
 // Fields for capturing the information from GSV strings (each GSV sentence will have info for at
 // most 4 satellites)

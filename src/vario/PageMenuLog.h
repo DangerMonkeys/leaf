@@ -18,8 +18,8 @@ class LogMenuPage : public SettingsMenuPage {
   void setting_change(Button dir, ButtonState state, uint8_t count);
 
  private:
-  static constexpr char* labels[8] = {"Back",      "Format",   "SaveLog",
-                                      "AutoStart", "AutoStop", "Timer"};
+  static constexpr char* labels[8] =
+      {"Back", "Format", "SaveLog", "AutoStart", "AutoStop", "Timer"};
 };
 
 #endif

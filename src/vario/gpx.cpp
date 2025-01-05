@@ -54,8 +54,8 @@ void updateGPXnav() {
     }
 
     // get degress to active point
-    gpxNav.courseToActive = gps.courseTo(gps.location.lat(), gps.location.lng(),
-                                         gpxNav.activePoint.lat, gpxNav.activePoint.lon);
+    gpxNav.courseToActive = gps.courseTo(
+        gps.location.lat(), gps.location.lng(), gpxNav.activePoint.lat, gpxNav.activePoint.lon);
     gpxNav.turnToActive = gpxNav.courseToActive - gps.course.deg();
     if (gpxNav.turnToActive > 180)
       gpxNav.turnToActive -= 360;
@@ -64,8 +64,8 @@ void updateGPXnav() {
 
     // if there's a next point, get course to that as well
     if (gpxNav.nextPointIndex) {
-      gpxNav.courseToNext = gps.courseTo(gps.location.lat(), gps.location.lng(),
-                                         gpxNav.nextPoint.lat, gpxNav.nextPoint.lon);
+      gpxNav.courseToNext = gps.courseTo(
+          gps.location.lat(), gps.location.lng(), gpxNav.nextPoint.lat, gpxNav.nextPoint.lon);
       gpxNav.turnToNext = gpxNav.courseToNext - gps.course.deg();
       if (gpxNav.turnToNext > 180)
         gpxNav.turnToNext -= 360;
@@ -111,8 +111,8 @@ bool gpx_activatePoint(int16_t pointIndex) {
 
   speaker_playSound(fx_enter);
 
-  double newDistance = gps.distanceBetween(gps.location.lat(), gps.location.lng(),
-                                           gpxNav.activePoint.lat, gpxNav.activePoint.lon);
+  double newDistance = gps.distanceBetween(
+      gps.location.lat(), gps.location.lng(), gpxNav.activePoint.lat, gpxNav.activePoint.lon);
 
   gpxNav.segmentDistance = newDistance;
   gpxNav.totalDistanceRemaining = newDistance;
@@ -154,7 +154,8 @@ bool gpx_activateRoute(uint16_t routeIndex) {
       // that one point
     } else if (gpxData.routes[gpxNav.activeRouteIndex].totalPoints == 1) {
       gpxNav.totalDistanceRemaining =
-          gps.distanceBetween(gps.location.lat(), gps.location.lng(),
+          gps.distanceBetween(gps.location.lat(),
+                              gps.location.lng(),
                               gpxData.routes[gpxNav.activeRouteIndex].routepoints[1].lat,
                               gpxData.routes[gpxNav.activeRouteIndex].routepoints[1].lon);
     }
@@ -203,7 +204,8 @@ bool gpx_sequenceWaypoint() {
     // use our current location instead
     if (gpxNav.activePointIndex == 1) {
       gpxNav.segmentDistance = gps.distanceBetween(
-          gps.location.lat(), gps.location.lng(),
+          gps.location.lat(),
+          gps.location.lng(),
           gpxData.routes[gpxNav.activeRouteIndex].routepoints[gpxNav.activePointIndex].lat,
           gpxData.routes[gpxNav.activeRouteIndex].routepoints[gpxNav.activePointIndex].lon);
     } else {

@@ -36,7 +36,9 @@ uint16_t heading = 0;
 char string_heading[] = " WNW ";
 
 // Leaf Hardware V3.2.2+
-U8G2_ST75256_JLX19296_F_4W_HW_SPI u8g2(U8G2_R1, /* cs=*/SPI_SS_LCD, /* dc=*/LCD_RS,
+U8G2_ST75256_JLX19296_F_4W_HW_SPI u8g2(U8G2_R1,
+                                       /* cs=*/SPI_SS_LCD,
+                                       /* dc=*/LCD_RS,
                                        /* reset=*/LCD_RESET);
 
 int8_t display_page = page_thermalSimple;

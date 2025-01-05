@@ -33,8 +33,10 @@ enum altTypes {
   altType_AGL
 };
 
-void display_varioBar(uint8_t varioBarFrame_top, uint8_t varioBarFrame_length,
-                      uint8_t varioBarFrame_width, int32_t displayBarClimbRate);
+void display_varioBar(uint8_t varioBarFrame_top,
+                      uint8_t varioBarFrame_length,
+                      uint8_t varioBarFrame_width,
+                      int32_t displayBarClimbRate);
 void display_climbRatePointerBox(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t triSize);
 void display_climbRate(uint8_t x, uint8_t y, const uint8_t *font, int16_t displayClimbRate);
 

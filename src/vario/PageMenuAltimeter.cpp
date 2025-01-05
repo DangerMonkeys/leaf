@@ -33,9 +33,9 @@ void AltimeterMenuPage::draw() {
     uint8_t label_indent = 2;
     uint8_t value_indent = 8;
 
-    uint8_t menu_items_y[] = {190, 80, 115,
-                              150};  // these are for selectable fields only (doesn't apply to
-                                     // standard altimeter value shown, which is not selectable)
+    uint8_t menu_items_y[] = {
+        190, 80, 115, 150};  // these are for selectable fields only (doesn't apply to
+                             // standard altimeter value shown, which is not selectable)
 
     // Standard Altitude Value
     u8g2.setCursor(label_indent, 45);

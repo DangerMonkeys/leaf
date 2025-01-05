@@ -16,15 +16,24 @@ uint16_t fx_silence[] = {NOTE_END};
 uint16_t fx_increase[] = {NOTE_C4, NOTE_G4, NOTE_END};
 uint16_t fx_decrease[] = {NOTE_C4, NOTE_F3, NOTE_END};  // 110 140, END_OF_TONE};
 uint16_t fx_neutral[] = {NOTE_C4, NOTE_C4, NOTE_END};   // 110, 110, END_OF_TONE};
-uint16_t fx_neutralLong[] = {
-    NOTE_C4, NOTE_C4, NOTE_C4, NOTE_C4, NOTE_C4,
-    NOTE_C4, NOTE_C4, NOTE_C4, NOTE_END};  //  {110, 110, 110, 110, 110, 110, 110, 110,10, 110,
-                                           //  1110, 110, 110, 110, 110, 110, 110, 110, 110, 110,
-                                           //  END_OF_TONE};
+uint16_t fx_neutralLong[] = {NOTE_C4,
+                             NOTE_C4,
+                             NOTE_C4,
+                             NOTE_C4,
+                             NOTE_C4,
+                             NOTE_C4,
+                             NOTE_C4,
+                             NOTE_C4,
+                             NOTE_END};  //  {110, 110, 110, 110, 110, 110, 110, 110,10, 110,
+                                         //  1110, 110, 110, 110, 110, 110, 110, 110, 110, 110,
+                                         //  END_OF_TONE};
 uint16_t fx_double[] = {NOTE_C4, NOTE_NONE, NOTE_C4, NOTE_END};  // 110, 0, 110, END_OF_TONE};
 
 uint16_t fx_enter[] = {NOTE_A4, NOTE_C4, NOTE_E4, NOTE_END};  // 150, 120, 90, END_OF_TONE};
-uint16_t fx_exit[] = {NOTE_C5, NOTE_A5, NOTE_F4, NOTE_C4,
+uint16_t fx_exit[] = {NOTE_C5,
+                      NOTE_A5,
+                      NOTE_F4,
+                      NOTE_C4,
                       NOTE_END};  // 65, 90, 120, 150, END_OF_TONE};
 uint16_t fx_confirm[] = {NOTE_C3, NOTE_G3, NOTE_B3, NOTE_C4, NOTE_END};
 uint16_t fx_cancel[] = {NOTE_C4, NOTE_G4, NOTE_C3, NOTE_END};
@@ -39,8 +48,9 @@ uint16_t fx_octavesup[] = {45, 44, 43, 42, 41, 40, 39, 38, 37, 36, 35, 34, 33, 3
 uint16_t fx_octavesdown[] = {31, 31, 40, 40, 45, 45, 65, 65, 90, 90, NOTE_END};
 
 uint16_t single_note[] = {
-    0, NOTE_END};  // this is to allow playing single notes by changing random_note[0], while still
-                   // having a NOTE_END terminator following.
+    0,
+    NOTE_END};  // this is to allow playing single notes by changing random_note[0], while still
+                // having a NOTE_END terminator following.
 
 hw_timer_t* speaker_timer = NULL;
 
@@ -96,7 +106,9 @@ void speaker_init(void) {
     timerAttachInterrupt(speaker_timer,
                          &onSpeakerTimerSample);  // timer, ISR call          NOTE:
                                                   // timerDetachInterrupt() does the opposite
-    timerAlarm(speaker_timer, SPEAKER_SAMPLE_LENGTH, true,
+    timerAlarm(speaker_timer,
+               SPEAKER_SAMPLE_LENGTH,
+               true,
                0);  // auto reload timer ever time we've counted a sample length
 
   } else {
@@ -558,7 +570,9 @@ void IRAM_ATTR onSpeakerTimerAdustable() {
       sound_fxNoteLast = *snd_index;
       snd_index++;
       timerWrite(speaker_timer, 0);  // start at 0
-      timerAlarm(speaker_timer, FX_NOTE_LENGTH, false,
+      timerAlarm(speaker_timer,
+                 FX_NOTE_LENGTH,
+                 false,
                  0);  // set timer for play period (don't reload; we'll trigger back into this ISR
                       // when time is up)
 
@@ -586,7 +600,9 @@ void IRAM_ATTR onSpeakerTimerAdustable() {
       sound_varioResting = false;  // next time through we want to play sound
 
       timerWrite(speaker_timer, 0);  // start at 0
-      timerAlarm(speaker_timer, sound_varioRestLength, false,
+      timerAlarm(speaker_timer,
+                 sound_varioRestLength,
+                 false,
                  0);  // set timer for play period (don't reload; we'll trigger back into this ISR
                       // when time is up)
     } else {
@@ -602,7 +618,9 @@ void IRAM_ATTR onSpeakerTimerAdustable() {
         sound_varioResting = true;   // next time through we want to rest (play silence), unless
                                      // climb is maxed out (ie, rest length == 0)
       timerWrite(speaker_timer, 0);  // start at 0
-      timerAlarm(speaker_timer, sound_varioPlayLength, false,
+      timerAlarm(speaker_timer,
+                 sound_varioPlayLength,
+                 false,
                  0);  // set timer for play period (don't reload; we'll trigger back into this ISR
                       // when time is up)
     }

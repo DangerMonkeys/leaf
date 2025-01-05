@@ -149,14 +149,22 @@ void navigatePage_draw() {
     u8g2.drawLine(pointer_x - pointer_w - 1, pointer_y + pointer_h, pointer_x - 1, pointer_y);
     u8g2.drawLine(pointer_x + pointer_w + 1, pointer_y + pointer_h, pointer_x + 1, pointer_y);
     // arrow flats
-    u8g2.drawLine(pointer_x - pointer_w, pointer_y + pointer_h, pointer_x - pointer_w / 2,
+    u8g2.drawLine(pointer_x - pointer_w,
+                  pointer_y + pointer_h,
+                  pointer_x - pointer_w / 2,
                   pointer_y + pointer_h);
-    u8g2.drawLine(pointer_x + pointer_w, pointer_y + pointer_h, pointer_x + pointer_w / 2,
+    u8g2.drawLine(pointer_x + pointer_w,
+                  pointer_y + pointer_h,
+                  pointer_x + pointer_w / 2,
                   pointer_y + pointer_h);
     // arrow shaft
-    u8g2.drawLine(pointer_x - pointer_w / 2, pointer_y + pointer_h, pointer_x - pointer_w / 2,
+    u8g2.drawLine(pointer_x - pointer_w / 2,
+                  pointer_y + pointer_h,
+                  pointer_x - pointer_w / 2,
                   pointer_y + pointer_h * 2);
-    u8g2.drawLine(pointer_x + pointer_w / 2, pointer_y + pointer_h, pointer_x + pointer_w / 2,
+    u8g2.drawLine(pointer_x + pointer_w / 2,
+                  pointer_y + pointer_h,
+                  pointer_x + pointer_w / 2,
                   pointer_y + pointer_h * 2);
 
     // Waypoint Pointer
@@ -175,7 +183,9 @@ void navigatePage_draw() {
 
       u8g2.drawLine(nav_x + 1, nav_y, waypoint_shaft_x + 1, waypoint_shaft_y);
       u8g2.drawLine(nav_x, nav_y + 1, waypoint_shaft_x, waypoint_shaft_y + 1);
-      u8g2.drawLine(nav_x, nav_y, waypoint_shaft_x,
+      u8g2.drawLine(nav_x,
+                    nav_y,
+                    waypoint_shaft_x,
                     waypoint_shaft_y);  // the real center line; others are just to fatten it up
       u8g2.drawLine(nav_x - 1, nav_y, waypoint_shaft_x - 1, waypoint_shaft_y);
       u8g2.drawLine(nav_x, nav_y - 1, waypoint_shaft_x, waypoint_shaft_y - 1);
@@ -192,8 +202,8 @@ void navigatePage_draw() {
       u8g2.drawLine(tail_left_x, tail_left_y, waypoint_tip_x, waypoint_tip_y);
       u8g2.drawLine(tail_right_x, tail_right_y, waypoint_tip_x, waypoint_tip_y);
       u8g2.drawLine(tail_right_x, tail_right_y, tail_left_x, tail_left_y);
-      u8g2.drawTriangle(tail_left_x, tail_left_y, waypoint_tip_x, waypoint_tip_y, tail_right_x,
-                        tail_right_y);
+      u8g2.drawTriangle(
+          tail_left_x, tail_left_y, waypoint_tip_x, waypoint_tip_y, tail_right_x, tail_right_y);
     }
 
     // Wind sock
@@ -223,11 +233,15 @@ void navigatePage_draw() {
     display_varioBar(topOfFrame, varioBarHeight, varioBarWidth, baro.climbRateFiltered);
 
     // climb
-    display_climbRatePointerBox(varioBarWidth, topOfFrame + varioBarHeight / 2 - varioBoxHeight / 2,
-                                96 - varioBarWidth, varioBoxHeight,
+    display_climbRatePointerBox(varioBarWidth,
+                                topOfFrame + varioBarHeight / 2 - varioBoxHeight / 2,
+                                96 - varioBarWidth,
+                                varioBoxHeight,
                                 6);  // x, y, w, h, triangle size
-    display_climbRate(varioBarWidth, topOfFrame + varioBarHeight / 2 - varioBoxHeight / 2 + 16,
-                      leaf_8x14, baro.climbRateFiltered);
+    display_climbRate(varioBarWidth,
+                      topOfFrame + varioBarHeight / 2 - varioBoxHeight / 2 + 16,
+                      leaf_8x14,
+                      baro.climbRateFiltered);
 
     // alt
     display_alt_type(22, 104, leaf_8x14, NAVPG_ALT_TYP);
@@ -286,8 +300,8 @@ void navigatePage_draw() {
 
     // selection box
     if (navigatePage_cursorPosition == cursor_navigatePage_waypoint) {
-      display_selectionBox(varioBarWidth + 1, topOfFrame + varioBarHeight - 21,
-                           96 - varioBarWidth - 1, 19, 5);
+      display_selectionBox(
+          varioBarWidth + 1, topOfFrame + varioBarHeight - 21, 96 - varioBarWidth - 1, 19, 5);
     }
 
     // Progress Bar

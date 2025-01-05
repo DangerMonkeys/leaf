@@ -372,8 +372,10 @@ void print_alt_label(uint8_t altType) {
   }
 }
 
-void display_varioBar(uint8_t varioBarFrame_top, uint8_t varioBarFrame_length,
-                      uint8_t varioBarFrame_width, int32_t displayBarClimbRate) {
+void display_varioBar(uint8_t varioBarFrame_top,
+                      uint8_t varioBarFrame_length,
+                      uint8_t varioBarFrame_width,
+                      int32_t displayBarClimbRate) {
   int16_t varioBar_climbRateMax = 500;   // this is the bar height, but because we can fill then
                                          // empty the bar, we can show twice this climb value
   int16_t varioBar_climbRateMin = -500;  // again, bar height, so we can show twice this sink value
@@ -427,8 +429,8 @@ void display_varioBar(uint8_t varioBarFrame_top, uint8_t varioBarFrame_length,
     varioBarFill_end = varioBarFrame_mid;
   }
 
-  u8g2.drawBox(1, varioBarFill_start, varioBarFrame_width - 2,
-               varioBarFill_end - varioBarFill_start + 1);
+  u8g2.drawBox(
+      1, varioBarFill_start, varioBarFrame_width - 2, varioBarFill_end - varioBarFill_start + 1);
 
   // Tick marks on varioBar
   uint8_t tickSpacing = varioBarFill_top_length / 5;  // start with top half tick spacing
@@ -455,8 +457,8 @@ void display_varioBar(uint8_t varioBarFrame_top, uint8_t varioBarFrame_length,
 void display_climbRatePointerBox(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t triSize) {
   u8g2.setDrawColor(1);
   u8g2.drawBox(x, y, w, h);
-  u8g2.drawTriangle(x - triSize, y + (h) / 2, x - 1, y + (h) / 2 - triSize, x - 1,
-                    y + (h) / 2 + triSize);
+  u8g2.drawTriangle(
+      x - triSize, y + (h) / 2, x - 1, y + (h) / 2 - triSize, x - 1, y + (h) / 2 + triSize);
   u8g2.setDrawColor(0);
   u8g2.drawLine(x - triSize - 1, y + (h) / 2, x - 2, y + (h) / 2 - triSize + 1);
   u8g2.drawLine(x - triSize - 1, y + (h) / 2, x - 2, y + (h) / 2 + triSize - 1);
@@ -641,7 +643,10 @@ void display_batt_charging_fullscreen(uint8_t x, uint8_t y) {
   u8g2.drawRBox(x - w / 5, y - 1, w / 5 * 2, w / 3, w / 22);  // battery tip nub
   u8g2.drawRBox(x - (w / 2), y + w / 20, w, h, w / 15);       // main rectangle outline
   u8g2.setDrawColor(0);
-  u8g2.drawRBox(x - (w / 2) + t, y + w / 20 + t, w - 2 * t, h - 2 * t,
+  u8g2.drawRBox(x - (w / 2) + t,
+                y + w / 20 + t,
+                w - 2 * t,
+                h - 2 * t,
                 w / 15 - t);  // empty internal volume
 
   // Battery Capacity Fill
@@ -676,9 +681,17 @@ void display_batt_charging_fullscreen(uint8_t x, uint8_t y) {
     uint8_t bolt_y = y + h / 2;      // center of bolt in y direction
 
     u8g2.setDrawColor(0);
-    u8g2.drawTriangle(x + bolt_x1, bolt_y + bolt_y1, x + bolt_x2, bolt_y - bolt_y2, x - bolt_x3,
+    u8g2.drawTriangle(x + bolt_x1,
+                      bolt_y + bolt_y1,
+                      x + bolt_x2,
+                      bolt_y - bolt_y2,
+                      x - bolt_x3,
                       bolt_y + bolt_y1);
-    u8g2.drawTriangle(x - bolt_x1, bolt_y - bolt_y1, x - bolt_x2, bolt_y + bolt_y2, x + bolt_x3,
+    u8g2.drawTriangle(x - bolt_x1,
+                      bolt_y - bolt_y1,
+                      x - bolt_x2,
+                      bolt_y + bolt_y2,
+                      x + bolt_x3,
                       bolt_y - bolt_y1);
 
     for (int i = 0; i < 4; i++) {
@@ -731,10 +744,10 @@ void display_windSock(int16_t x, int16_t y, int16_t radius, float wind_angle) {
   uint16_t tail_mid_xprime = x + sin(wind_angle) * wind_triangle_tail_len / 2;
   uint16_t tail_mid_yprime = y - cos(wind_angle) * wind_triangle_tail_len / 2;
 
-  u8g2.drawTriangle(tip_xprime, tip_yprime, tail_1_xprime, tail_1_yprime, tail_mid_xprime,
-                    tail_mid_yprime);
-  u8g2.drawTriangle(tip_xprime, tip_yprime, tail_2_xprime, tail_2_yprime, tail_mid_xprime,
-                    tail_mid_yprime);
+  u8g2.drawTriangle(
+      tip_xprime, tip_yprime, tail_1_xprime, tail_1_yprime, tail_mid_xprime, tail_mid_yprime);
+  u8g2.drawTriangle(
+      tip_xprime, tip_yprime, tail_2_xprime, tail_2_yprime, tail_mid_xprime, tail_mid_yprime);
   u8g2.drawLine(tip_xprime, tip_yprime, tail_1_xprime, tail_1_yprime);
   u8g2.drawLine(tail_mid_xprime, tail_mid_yprime, tail_2_xprime, tail_2_yprime);
   u8g2.drawLine(tip_xprime, tip_yprime, tail_2_xprime, tail_2_yprime);
