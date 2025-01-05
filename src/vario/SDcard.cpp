@@ -17,7 +17,9 @@ bool SDcardIsPresent = false;
 
 #include "USB.h"
 #include "USBMSC.h"
+#include "FirmwareMSC.h"
 
+FirmwareMSC MSC_Update;
 USBMSC MSC;
 
 void listDir(fs::FS &fs, const char * dirname, uint8_t levels) {
@@ -282,6 +284,7 @@ void SDCard_SetupMassStorage() {
     MSC.isWritable(true);
     MSC.mediaPresent(true);
     MSC.begin(SD_MMC.numSectors(), 512);
+    MSC_Update.begin();
     USB.begin();
 }
 
