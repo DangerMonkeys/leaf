@@ -72,6 +72,10 @@
 /////////////////////////////////////////////////
 void setup() {
 
+  #ifdef ENABLE_MASS_STORAGE
+  SDCard_SetupMassStorage();
+  #endif
+
   // Start USB Serial Debugging Port
     Serial.begin(115200);
     delay(200);

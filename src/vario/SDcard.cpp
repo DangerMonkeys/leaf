@@ -272,8 +272,7 @@ static int32_t onWrite(uint32_t lba, uint32_t offset, uint8_t *buffer, uint32_t 
     return bufsize;
 }
 
-
-void SetupMassStorage() {
+void SDCard_SetupMassStorage() {
     Serial.setDebugOutput(true);
     MSC.vendorID("Leaf");
     MSC.productID("Leaf_Vario");
@@ -298,7 +297,7 @@ bool SDcard_mount() {
         if (DEBUG_SDCARD) Serial.println("SDcard Mount Success");  
         SDcardIsPresent = true;
         #ifdef ENABLE_MASS_STORAGE
-        SetupMassStorage();
+        SDCard_SetupMassStorage();
         #endif
     }
 

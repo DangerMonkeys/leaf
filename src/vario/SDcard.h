@@ -45,4 +45,6 @@ bool SDcard_createDataFile(String filename);
 void SDcard_writeData(String data);
 void SDcard_closeDataFile(void);
 
+void SDCard_SetupMassStorage(void);
+
 #endif
