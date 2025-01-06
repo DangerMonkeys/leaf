@@ -289,9 +289,7 @@ bool SDcard_mount() {
   } else {
     if (DEBUG_SDCARD) Serial.println("SDcard Mount Success");
     SDcardIsPresent = true;
-    #ifdef ENABLE_MASS_STORAGE
     SDCard_SetupMassStorage();
-    #endif
   }
   
   return SDcardIsPresent;
