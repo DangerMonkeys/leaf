@@ -44,6 +44,8 @@ struct gps_accuracy {
   float latError;
   float lonError;
   float error;
+  uint8_t numberOfSats;
+  uint8_t fixType;
 };
 extern gps_accuracy gpsAccuracy;
 

@@ -201,7 +201,7 @@ void gps_init(void) {
   */
 }  // gps_init
 
-void gps_test(void) {
+void gps_test(void) {  
   // Rebroadcast GPS serial data to debugger port
   while (gpsPort.available() > 0) {
     Serial.print(char(gpsPort.read()));

@@ -47,6 +47,7 @@ void display_humidity(uint8_t x, uint8_t y, uint8_t temperature);
 
 void display_battIcon(uint8_t x, uint8_t y, bool vertical);
 void display_batt_charging_fullscreen(uint8_t x, uint8_t y);
+void display_GPS_icon(uint8_t x, uint8_t y);
 
 void display_windSock(int16_t x, int16_t y, int16_t radius, float wind_angle);
 
