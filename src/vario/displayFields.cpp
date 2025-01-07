@@ -744,10 +744,14 @@ void display_GPS_icon(uint8_t x, uint8_t y) {
         blink = 1;
       }      
       u8g2.setFont(leaf_5h);
-      u8g2.setCursor(x + 3, y-3);
-      uint8_t numberOfSatellites = gps.satellites.value();
-      if (numberOfSatellites > 9, numberOfSatellites = 9);
-      u8g2.print(gps.satellites.value());
+      u8g2.setCursor(x + 4, y-4);
+      
+      if (gpsAccuracy.numberOfSats > 9) {
+        u8g2.print("9");
+      } else {
+        if (gpsAccuracy.numberOfSats == 1) u8g2.setCursor(x+5, y-4);
+        u8g2.print(gpsAccuracy.numberOfSats);
+      }
     }
   }
 }

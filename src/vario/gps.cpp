@@ -358,6 +358,8 @@ void gps_updateSatList() {
     int totalMessages = atoi(totalGPGSVMessages.value());
     int currentMessage = atoi(messageNumber.value());
     if (totalMessages == currentMessage) {
+      uint8_t satelliteCount = 0;
+
       for (int i = 0; i < MAX_SATELLITES; ++i) {
         // copy data
         satsDisplay[i].elevation = sats[i].elevation;
@@ -365,10 +367,24 @@ void gps_updateSatList() {
         satsDisplay[i].snr = sats[i].snr;
         satsDisplay[i].active = sats[i].active;
 
+        if (satsDisplay[i].active) satelliteCount++;
+
+        Serial.print("sat: ");
+        Serial.print(i);
+        Serial.print(" active: ");
+        Serial.print(satsDisplay[i].active);
+        Serial.print(" count: ");
+        Serial.print(satelliteCount);
+        Serial.print(" GPScount: ");
+        Serial.println(gpsAccuracy.numberOfSats);
+
         // then negate the source, so it will only be used if it's truly updated again (i.e.,
         // received again in an NMEA sat message)
         sats[i].active = false;
       }
+      gpsAccuracy.numberOfSats = satelliteCount;
+      Serial.println(gpsAccuracy.numberOfSats);
+      Serial.println("NEXT");
     }
   }
 }
