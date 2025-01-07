@@ -47,10 +47,16 @@ class WindSolve:
     wy: float
 
 
+MIN_AIRSPEED = 5
+MAX_AIRSPEED = 25
 def err_total(vi: List[Velocity], s: WindSolve) -> float:
     err = 0
     for v in vi:
         err += pow(s.airspeed - sqrt(pow(v.dy - s.wy, 2) + pow(v.dx - s.wx, 2)), 2)
+    if s.airspeed < MIN_AIRSPEED:
+        err *= (MIN_AIRSPEED - s.airspeed + 1)
+    if s.airspeed > MAX_AIRSPEED:
+        err *= (s.airspeed - MAX_AIRSPEED + 1)
     return err
 
 
@@ -58,10 +64,17 @@ def err_f(vi: List[Velocity]) -> Callable[[float], float]:
     return lambda x: err_total(vi, WindSolve(airspeed=x[0], wx=x[1], wy=x[2]))
 
 
+# Number of trailing samples to use to compute wind speed and direction
 N_WINDOW = 60
-N_STEP = 1
-N_STEPS = 5 * 60
-START_AT = 5 * 60
+
+# How many samples to move forward each animation frame / visualization time step
+N_STEP = 5
+
+# Number of animation frames / visualization time steps to compute and show
+N_STEPS = int(15 * 60 / N_STEP)
+
+# Tim
+START_AT = 30 * 60
 
 
 @dataclass
@@ -72,90 +85,108 @@ class Frame:
     lat: float
     lng: float
     alt: float
+    wind_speed: float
+    wind_direction: float
     ground_speed: float
+    track: float
 
 
 print("Solving for wind...")
 t0 = datetime.now()
 frames: List[Frame] = []
 prev_x = np.array([10, 0, 0])
-for i0 in range(START_AT, START_AT + N_STEPS * N_STEP, N_STEP):
-    i1 = i0 + N_WINDOW
-    result = minimize(err_f(vi[i0:i1]), prev_x, method='Nelder-Mead')
+for i1 in range(START_AT + 1, START_AT + N_STEPS * N_STEP + 2, N_STEP):
+    i0 = i1 - N_WINDOW + 1
+    result = minimize(err_f(vi[i0:i1]), np.array([10, 0, 0]), method='Nelder-Mead')
     prev_x = result.x
-    p = points[i1 - 1]
+    p = points[i1]
+    s = WindSolve(airspeed=result.x[0], wx=result.x[1], wy=result.x[2])
     frames.append(Frame(
-        t=timedelta(seconds=i0 + N_WINDOW),
-        vi=vi[i0:i0+N_WINDOW],
-        s=WindSolve(airspeed=result.x[0], wx=result.x[1], wy=result.x[2]),
+        t=timedelta(seconds=i1),
+        vi=vi[i0:i1],
+        s=s,
         lat=p.lat,
         lng=p.lng,
         alt=p.alt,
+        wind_speed=sqrt(pow(s.wx, 2) + pow(s.wy, 2)),
+        wind_direction=degrees(atan2(s.wx, s.wy)),
         ground_speed=p.speed,
+        track=p.heading,
     ))
 print(f"Solved {len(frames)} wind points in {(datetime.now() - t0).total_seconds():.1f}s")
 
+# Set up the figure and axis
+fig, axs = plt.subplots(2, 1)
+
 t = [frame.t.total_seconds() for frame in frames]
-ws = [sqrt(pow(frame.s.wx, 2) + pow(frame.s.wy, 2)) for frame in frames]
-wd = [degrees(atan2(frame.s.wx, frame.s.wy)) for frame in frames]
+ws = [frame.wind_speed for frame in frames]
+wd = [frame.wind_direction for frame in frames]
 alt = [frame.alt for frame in frames]
 gs = [frame.ground_speed for frame in frames]
+t_track = t
+track = [frame.track for frame in frames]
 
-# Create a figure and axis
-fig, ax1 = plt.subplots(figsize=(10, 6))
+i = 1
+while i < len(track):
+    if (track[i - 1] > 330 and track[i] < 30) or (track[i - 1] < 30 and track[i] > 330):
+        track = track[0:i] + [float('nan')] + track[i:]
+        t_track = t_track[0:i] + [0.5 * (t_track[i - 1] + t_track[i])] + t_track[i:]
+    i += 1
 
 # Scatter plot: Wind speed vs time, colored by wind direction
-scatter_ws = ax1.scatter(t, ws, c=wd, cmap='hsv', s=50)
-ax1.set_xlabel('Time (t)')
-ax1.set_ylabel('Wind Speed (ws)', color='blue')
-ax1.tick_params(axis='y', labelcolor='blue')
-ax1.set_title('Wind Speed and Altitude vs Time')
+scatter_ws = axs[1].scatter(t, ws, c=wd, cmap='hsv', s=50, vmin=-180, vmax=180)
+axs[1].set_xlabel('Time (t)')
+axs[1].set_ylabel('Wind Speed (ws)', color='blue')
+axs[1].tick_params(axis='y', labelcolor='blue')
+ws_now, = axs[1].plot([], [], color='k', linewidth=2)
+ws_earlier, = axs[1].plot([], [], color='gray', linewidth=1)
 
 # Add a colorbar for wind direction
-cbar_ws = fig.colorbar(scatter_ws, ax=ax1, orientation='vertical', label='Wind Direction (wd) [°]')
+cbar_ws = fig.colorbar(scatter_ws, ax=axs[1], orientation='vertical', label='Wind Direction (wd) [°]')
 
 # Create a second y-axis for altitude
-ax2 = ax1.twinx()
+ax2 = axs[1].twinx()
 ax2.plot(t, alt, color='green', linewidth=2, label='Altitude')
 ax2.set_ylabel('Altitude (alt)', color='green')
 ax2.tick_params(axis='y', labelcolor='green')
 
 # Create a third y-axis for ground speed
-ax3 = ax1.twinx()
+ax3 = axs[1].twinx()
 ax3.plot(t, gs, color='red', linewidth=2, label='Ground speed')
 ax3.set_ylabel('Ground speed', color='red')
 ax3.tick_params(axis='y', labelcolor='red')
 
+# Create a fourth y-axis for track
+ax4 = axs[1].twinx()
+ax4.plot(t_track, track, color='orange', linewidth=2, label='Track')
+ax4.set_ylabel('Track', color='orange')
+ax4.tick_params(axis='y', labelcolor='orange')
+ax4.set_ylim(0, 360)
 
 # Add a legend for the altitude line
 ax2.legend(loc='upper right')
 
-# Adjust layout and show the plot
-plt.tight_layout()
-plt.show()
-
-# =============== Animation ===================
-
-# Set up the figure and axis
-fig, ax = plt.subplots()
-ax.set_xlim(-15, 15)
-ax.set_ylim(-15, 15)
-ax.set_aspect('equal')
+axs[0].set_xlim(-15, 15)
+axs[0].set_ylim(-15, 15)
+axs[0].set_aspect('equal')
+axs[0].set_title('Velocity')
 
 # Initialize scatter plot and circle
-scatter = ax.scatter([], [], color='blue', label='Data points')
+scatter = axs[0].scatter([], [], color='blue', label='Data points')
 circle = plt.Circle((0, 0), 0.5, color='red', fill=False, label='Circle')
-center = ax.scatter([], [], color='red', label='Wind')
-center_ref = ax.scatter([0], [0], color='black')
-ax.add_artist(circle)
+center = axs[0].scatter([], [], color='red', label='Wind')
+center_ref = axs[0].scatter([0], [0], color='black')
+axs[0].add_artist(circle)
 
 # Initialization function
 def init():
     scatter.set_offsets(np.empty((0, 2)))  # Clear scatter points
     circle.set_center((0, 0))  # Reset circle position
     center.set_offsets(np.empty((0, 2)))
-    ax.set_title("Time: ")
-    return scatter, circle, center, ax
+    axs[1].set_title("Time: ")
+    ws_now.set_data([], [])
+    ws_earlier.set_data([], [])
+    return scatter, circle, center, axs[1], ws_now, ws_earlier
 
 # Animation function
 def update(f):
@@ -171,18 +202,19 @@ def update(f):
     circle.set_center((frame.s.wx, frame.s.wy))
     circle.set_radius(frame.s.airspeed)
 
-    ax.set_title(f"Time: {frame.t}")
+    ws_now.set_data([frame.t.total_seconds()] * 2, [min(ws), max(ws)])
+    ws_earlier.set_data([frame.t.total_seconds() - N_WINDOW] * 2, [min(ws), max(ws)])
 
-    return scatter, circle, center, ax
+    axs[1].set_title(f"Time: {frame.t}")
+
+    return scatter, circle, center, axs[1], ws_now, ws_earlier
 
 # Create the animation
 ani = FuncAnimation(fig, update, frames=len(frames), init_func=init, blit=False, interval=50)
 
 # Add labels, title, and legend
-plt.xlabel('East')
-plt.ylabel('North')
-plt.title('Velocity')
 plt.legend()
 
 # Display the animation
+plt.tight_layout()
 plt.show()
