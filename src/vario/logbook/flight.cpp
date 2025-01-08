@@ -8,13 +8,12 @@
 void Flight::startFlight() {
   File trackLogsDir = SD_MMC.open(this->desiredFilePath());
 
-  auto filePrefix = this->desiredFileName();
+  auto filePrefix = this->desiredFilePath() + "/" + this->desiredFileName();
   auto suffix = this->fileNameSuffix();
   // Perform a directory listing of all the file in the tracks directory
   auto nextFile = trackLogsDir.getNextFileName();
   auto desiredFlightNum = 1;
   while (!nextFile.isEmpty()) {
-    Serial.println("Doing dir listing");
     if (!nextFile.endsWith(suffix) || !nextFile.startsWith(filePrefix)) {
       nextFile = trackLogsDir.getNextFileName();
       continue;
@@ -25,18 +24,16 @@ void Flight::startFlight() {
     auto flightNumStr =
         nextFile.substring(filePrefix.length() + 1, nextFile.length() - suffix.length());
     auto flightNum = flightNumStr.toInt();
-    if (flightNum > desiredFlightNum) {
+    if (flightNum >= desiredFlightNum) {
       desiredFlightNum = flightNum + 1;
     }
 
     nextFile = trackLogsDir.getNextFileName();
   }
 
-  String fileName = this->desiredFilePath() + "/" + filePrefix + "-" +
+  String fileName = filePrefix + "-" +
                     (desiredFlightNum < 10 ? String(0) + desiredFlightNum : desiredFlightNum) +
                     "." + suffix;
-
-  Serial.println((String) "Recording flight: " + fileName);
 
   // Create the file for writing
   file = SD_MMC.open(fileName, "w", true);
@@ -47,6 +44,4 @@ void Flight::end(const FlightStats stats) {
   Telemetry.end();  // End and flush telemetry
 }
 
-bool Flight::started() {
-  return (boolean)file;
-}
+bool Flight::started() { return (boolean)file; }
