@@ -310,8 +310,8 @@ void display_page_debug() {
     uint8_t battPercent = power_getBattLevel(0);
     uint16_t battMV = power_getBattLevel(1);
     uint16_t battADC = power_getBattLevel(2);
-    uint8_t x = 64;
-    uint8_t y = 25;
+    uint8_t x = 56;
+    uint8_t y = 12;
     u8g2.setFont(leaf_6x12);
     u8g2.setCursor(x, y);
     u8g2.print(battPercent);
@@ -319,8 +319,72 @@ void display_page_debug() {
 
     u8g2.setCursor(x, y += 15);
     u8g2.print(battMV);
-    u8g2.setCursor(x, y += 15);
-    u8g2.print(battADC);
+    //u8g2.setCursor(x, y += 15);
+    //u8g2.print(battADC);
+
+    // Altimeter Setting
+    u8g2.setCursor(65, 32);
+    u8g2.setFont(leaf_5h);
+    u8g2.print("AltSet:");
+    u8g2.setCursor(65, 45);
+    u8g2.setFont(leaf_6x12);
+    u8g2.print(baro.altimeterSetting);
+
+
+    // fix quality debugging
+    x=0;
+    y=76;
+    u8g2.setCursor(x,y);
+    u8g2.print("FixTyp: ");
+    u8g2.print(gpsFixInfo.fix);
+    u8g2.setCursor(x,y+=13);
+    u8g2.print("SatsFix: ");
+    u8g2.print(gps.satellites.value());
+    u8g2.setCursor(x, y+=13);
+    u8g2.print("SatsView:");
+    u8g2.print(gpsFixInfo.numberOfSats);
+
+
+    x=65;
+    y=56;
+    u8g2.setCursor(x,y);
+    u8g2.setFont(leaf_5h);    
+    u8g2.print("LatErr:");
+    u8g2.setCursor(x,y+=13);
+    u8g2.setFont(leaf_6x12);    
+    //u8g2.print(gpsFixInfo.latError);
+    
+    u8g2.setCursor(x,y+=6);
+    u8g2.setFont(leaf_5h);    
+    u8g2.print("LngErr:");
+    u8g2.setCursor(x,y+=13);
+    u8g2.setFont(leaf_6x12);    
+    //u8g2.print(gpsFixInfo.lonError);
+    
+    u8g2.setCursor(x,y+=6);
+    u8g2.setFont(leaf_5h);    
+    u8g2.print("TotErr:");
+    u8g2.setCursor(x,y+=13);
+    u8g2.setFont(leaf_6x12);    
+    u8g2.print(gpsFixInfo.error);
+  
+    u8g2.setCursor(x,y+=6);
+    u8g2.setFont(leaf_5h);    
+    u8g2.print("HDOP:");
+    u8g2.setCursor(x,y+=13);
+    u8g2.setFont(leaf_6x12);    
+    u8g2.print(gps.hdop.value());
+    
+    u8g2.setCursor(x,y+=6);
+    u8g2.setFont(leaf_5h);    
+    u8g2.print("PosErr:");
+    u8g2.setCursor(x,y+=13);
+    u8g2.setFont(leaf_6x12);    
+    u8g2.print(gpsFixInfo.error);
+
+
+
+    /*
 
     // glide ratio debugging
     u8g2.setCursor(0, 73);
@@ -333,7 +397,6 @@ void display_page_debug() {
     u8g2.print("GR:");
     u8g2.print(gps_getGlideRatio());
 
-    /*
     // time remaining calcs testing
     u8g2.setCursor(0,73);
     u8g2.print("m/s:");
@@ -346,12 +409,9 @@ void display_page_debug() {
     u8g2.print(gpxNav.pointDistanceRemaining / gps.speed.mps());
     */
 
-    u8g2.setCursor(65, 110);
-    u8g2.print(baro.altimeterSetting);
-    u8g2.setCursor(65, 140);
-    u8g2.print(gpsAccuracy.error);
 
-    gpsMenuPage.drawConstellation(0, 100, 63);
+
+    gpsMenuPage.drawConstellation(0, 106, 63);
 
     
 

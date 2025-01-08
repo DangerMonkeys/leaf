@@ -732,7 +732,7 @@ void display_GPS_icon(uint8_t x, uint8_t y) {
   if (GPS_SETTING == 0) {   // GPS Off
     u8g2.print((char)44);   // GPS icon with X through it
   } else if (GPS_SETTING) { // GPS not-off
-    if (gps.location.isValid()) {
+    if (gpsFixInfo.fix) {
       u8g2.print((char)43); // GPS icon with fix
     } else {
       //blink the icon to convey "searching"
@@ -746,11 +746,11 @@ void display_GPS_icon(uint8_t x, uint8_t y) {
       u8g2.setFont(leaf_5h);
       u8g2.setCursor(x + 4, y-4);
       
-      if (gpsAccuracy.numberOfSats > 9) {
+      if (gpsFixInfo.numberOfSats > 9) {
         u8g2.print("9");
       } else {
-        if (gpsAccuracy.numberOfSats == 1) u8g2.setCursor(x+5, y-4);
-        u8g2.print(gpsAccuracy.numberOfSats);
+        if (gpsFixInfo.numberOfSats == 1) u8g2.setCursor(x+5, y-4);
+        u8g2.print(gpsFixInfo.numberOfSats);
       }
     }
   }

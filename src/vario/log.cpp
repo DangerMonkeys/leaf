@@ -63,7 +63,7 @@ void log_update() {
     // start the Track if needed (we check every update, in case we didn't have a GPS fix.  This way
     // we can start track log writing as soon as we DO get a fix)
     if (!logbook.flightTrackStarted) {
-      if (gps.location.isValid()) {
+      if (gpsFixInfo.fix) {
         if (ALT_SYNC_GPS)
           settings_matchGPSAlt();  // sync pressure alt to GPS alt when log starts if the auto-sync
                                    // setting is turned on
