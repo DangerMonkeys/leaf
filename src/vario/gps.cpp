@@ -295,7 +295,7 @@ float gps_getAltMeters() { return fakeGPSAlt; }  // gps.altitude.meters(); }
 float gps_getSpeed_kph() { return fakeSpeed; }   // gps.speed.kmph(); }
 float gps_getSpeed_mph() { return fakeSpeed; }   // gps.speed.mph(); }
 float gps_getCourseDeg() { return fakeCourse; }  // gps.course.deg(); }
-const char *gps_getCourseCardinal() { return gps.cardinal(gps_getCourseDeg()); }
+const char* gps_getCourseCardinal() { return gps.cardinal(gps_getCourseDeg()); }
 
 float gps_getWaypointBearing() { return fakeWaypointBearing; }
 
@@ -447,49 +447,30 @@ void gps_test_sats() {
   }
 }
 
-// Functions to get local date & time with TIME_ZONE applied
-
-int16_t timeInMinutes = 0;  // used to check if time zone will change the date
-
-uint16_t gps_getLocalTimeHHMM() {
-  int16_t LocalTimeHHMM = -1;  // use -1 as an error flag
-  if (gps.time.isValid()) {
-    // Serial.println("GPS TIME");
-    // Serial.print(gps.time.hour()); Serial.print(":"); Serial.println(gps.time.minute());
-    // Serial.println(" ");
-    timeInMinutes = gps.time.hour() * 60 + gps.time.minute() + TIME_ZONE;
-    if (timeInMinutes < 0)
-      timeInMinutes +=
-          (24 * 60);  // if time zone moved us into negative time, scoot forward 24 hours.
-    else if (timeInMinutes >= (24 * 60))
-      timeInMinutes -=
-          (24 * 60);  // if time zone moved us past one full day, scoot backward 24 hours.
-    LocalTimeHHMM = (timeInMinutes / 60) * 100 + (timeInMinutes % 60);
+bool gps_getUtcDateTime(tm& cal) {
+  if (!gps.time.isValid()) {
+    return false;
   }
-  return LocalTimeHHMM;
+  cal = tm{
+      .tm_sec = gps.time.second(),
+      .tm_min = gps.time.minute(),
+      .tm_hour = gps.time.hour(),
+      .tm_mday = gps.date.day(),
+      .tm_mon = gps.date.month() - 1,    // tm_mon is 0-based, so subtract 1
+      .tm_year = gps.date.year() - 1900  // tm_year is years since 1900
+  };
+  return true;
 }
 
-// Not a proper Iso8601 date, as we strip out the timezone.
-String gps_getIso8601Date() {
-  // Get the raw date from GPS
-  int day = gps.date.day();
-  int month = gps.date.month();
-  int year = gps.date.year();
+// like gps_getUtcDateTime, but has the timezone offset applied.
+bool gps_getLocalDateTime(tm& cal) {
+  if(!gps_getUtcDateTime(cal)) {
+    return false;
+  }
 
-  // Calculate timezone offset hours and minutes
-  int tzHours = TIME_ZONE / 60;
-  int tzMinutes = abs(TIME_ZONE % 60);
+  time_t rawTime = mktime(&cal);
+  rawTime += TIME_ZONE * 60;  // Apply the timezone offset in seconds
+  cal = *localtime(&rawTime);
 
-  // Format the date in ISO 8601 "pretty" format
-  char buffer[11];
-  snprintf(buffer, sizeof(buffer), "%04d-%02d-%02d", year, month, day);
-
-  // Consider a method to return a non-truncated version like this in the future
-  // Format the date in ISO 8601 "pretty" format
-  // char buffer[32];
-  // snprintf(buffer, sizeof(buffer), "%04d-%02d-%02dT00:00:00%+03d:%02d",
-  //  year, month, day, tzHours, tzMinutes);
-
-  return String(buffer);
+  return true;
 }
-//

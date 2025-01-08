@@ -8,21 +8,16 @@
 #include "log.h"
 
 bool Telemetry_t::begin() {
-  auto date = gps_getIso8601Date();
-  if (date.isEmpty()) return false;
-  String fileName = "/Data/TestData_";
-  fileName += date;
-  fileName += "_";
+  // Get the local time
+  tm cal;
+  if(!gps_getLocalDateTime(cal)) {
+    return false;
+  }
 
-  // Add minues and seconds to the filename
-  int32_t timeInMinutes =
-      (gps.time.hour() * 60 + gps.time.minute() + 24 * 60 + TIME_ZONE) % (24 * 60);
-  uint8_t timeHours = timeInMinutes / 60;
-  uint8_t timeMinutes = timeInMinutes % 60;
-  fileName += String(timeHours / 10) + String(timeHours % 10) + String(timeMinutes / 10) +
-              String(timeMinutes % 10);
-
-  fileName += ".csv";
+  // format with strftime format.  Eg FlightTrack_2025-01-08_2301
+  char fileName[60];
+  String formatString = "/Data/TestData_%F_%H%M%S.csv";
+  strftime(fileName, sizeof(fileName), formatString.c_str(), &cal);
 
   // Open the file to write the telemetry
   file = SD_MMC.open(fileName, "w", true);

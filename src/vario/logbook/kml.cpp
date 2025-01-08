@@ -3,28 +3,19 @@
 #include "gps.h"
 #include "settings.h"
 #include "string_utils.h"
+#include "time.h"
 
 const String Kml::desiredFileName() const {
-  String fileTitle = "FlightTrack";
-  String fileDate = gps_getIso8601Date();
-  int32_t timeInMinutes =
-      (gps.time.hour() * 60 + gps.time.minute() + 24 * 60 + TIME_ZONE) % (24 * 60);
-  uint8_t timeHours = timeInMinutes / 60;
-  uint8_t timeMinutes = timeInMinutes % 60;
-  String fileTime = String(timeHours / 10) + String(timeHours % 10) + String(timeMinutes / 10) +
-                    String(timeMinutes % 10);
-  // TODO: add seconds in case two files are started within a minute
+  // Get the local time
+  tm cal;
+  gps_getLocalDateTime(cal);
 
-  Serial.println(timeInMinutes);
-  Serial.println(timeHours);
-  Serial.println(timeMinutes);
-  Serial.println(timeMinutes / 10);
-  Serial.println(timeMinutes % 10);
+  // format with strftime format.  Eg FlightTrack_2025-01-08_2301
+  char fileString[60];
+  String formatString = "FlightTrack_%F_%H%M";
+  strftime(fileString, sizeof(fileString), formatString.c_str(), &cal);
 
-  String fileName = fileTitle + "_" + fileDate + "_" + fileTime;
-  Serial.println(fileName);
-
-  return fileName;
+  return fileString;
 }
 
 void Kml::startFlight() {
