@@ -4,6 +4,7 @@
 
 #include "FS.h"
 #include "telemetry.h"
+#include "page_flight_summary.h"
 
 void Flight::startFlight() {
   File trackLogsDir = SD_MMC.open(this->desiredFilePath());
@@ -45,6 +46,10 @@ void Flight::startFlight() {
 void Flight::end(const FlightStats stats) {
   file.close();
   Telemetry.end();  // End and flush telemetry
+
+  // Finally, show the flight summary page
+  static PageFlightSummary dialog;
+  dialog.show(stats);
 }
 
 bool Flight::started() {
