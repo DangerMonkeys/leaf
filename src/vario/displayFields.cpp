@@ -13,6 +13,7 @@
 #include "power.h"
 #include "settings.h"
 #include "version.h"
+#include "time.h"
 
 /********************************************************************************************/
 // Display Components
@@ -32,59 +33,25 @@ void display_selectionBox(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t tr
 }
 
 void display_clockTime(uint8_t x, uint8_t y, bool show_ampm) {
-  int16_t localTimeHHMM = gps_getLocalTimeHHMM();
-
   u8g2.setCursor(x, y);
   u8g2.setDrawColor(1);
 
-  if (localTimeHHMM <= -1) {  // will be -1 if GPS time is not current/valid
+  // Get the local date, print NOGPS on error
+  tm cal;
+  if(!gps_getLocalDateTime(cal)) {
     u8g2.print((char)137);
     u8g2.print("NOGPS");
-  } else {  // valid time
-    uint8_t hours = localTimeHHMM / 100;
-    uint8_t minutes = localTimeHHMM % 100;
-
-    // Serial.print("hours: ");
-    // Serial.println(hours);
-
-    bool pm = false;
-    if (UNITS_hours) {
-      if (hours >= 12) {
-        pm = true;
-        if (hours > 12) hours -= 12;
-      } else if (hours == 0) {
-        hours = 12;
-      }
-    }
-
-    // hours
-    if (hours < 10) {
-      if (UNITS_hours)
-        u8g2.print(' ');  // blank character for 12 hour time
-      else
-        u8g2.print('0');  // leading 0 for 24-hour time
-    } else {
-      u8g2.print(hours / 10);
-    }
-    u8g2.print(hours % 10);
-
-    u8g2.print(':');
-
-    // minutes
-    if (minutes < 10) {
-      u8g2.print('0');
-    } else {
-      u8g2.print(minutes / 10);
-    }
-    u8g2.print(minutes % 10);
-
-    if (UNITS_hours && show_ampm) {
-      if (pm)
-        u8g2.print("pm");
-      else
-        u8g2.print("am");
-    }
   }
+  // Crafts a 24 or 12 hour time to show depending on prefs
+  char buf[10];
+  if(UNITS_hours) {
+    // This is a 12 hour time and needs to print eg " 9:45am"
+    strftime(buf, 10, "%I:%M%p", &cal);
+  } else {
+    // 24 hour.  Print in the format of "09:45"
+    strftime(buf, 10, "%R", &cal);
+  }
+  u8g2.print(buf);
 }
 
 void display_waypointTimeRemaining(uint8_t x, uint8_t y, const uint8_t *font) {
@@ -134,7 +101,7 @@ void display_flightTimer(uint8_t x, uint8_t y, bool shortstring, bool selected) 
 
   u8g2.setFont(leaf_6x12);
   u8g2.setCursor(x + 2, y - 2);
-  u8g2.print(flightTimer_getString(shortstring));
+  u8g2.print(flightTimer_getString());
   u8g2.setDrawColor(1);
 
   if (selected) {

@@ -14,6 +14,7 @@
 #include "gpx.h"
 #include "log.h"
 #include "settings.h"
+#include "telemetry.h"
 
 #define DEBUG_GPS 0
 
@@ -239,8 +240,8 @@ void gps_calculateGlideRatio() {
 }
 
 void gps_updateAccuracy() {
-  gpsAccuracy.latError = 2.5; //atof(latAccuracy.value());
-  gpsAccuracy.lonError = 1.5; //atof(lonAccuracy.value());
+  gpsAccuracy.latError = 2.5;  // atof(latAccuracy.value());
+  gpsAccuracy.lonError = 1.5;  // atof(lonAccuracy.value());
   gpsAccuracy.error = sqrt(gpsAccuracy.latError * gpsAccuracy.latError +
                            gpsAccuracy.lonError * gpsAccuracy.lonError);
 }
@@ -252,14 +253,12 @@ void gps_update() {
   gps_updateAccuracy();
   gps_calculateGlideRatio();
 
-  if (logbook.dataFileStarted) {
-    String gpsName = "gps,";
-    String gpsEntryString = gpsName + String(gps.location.lat(), 8) + ',' +
-                            String(gps.location.lng(), 8) + ',' + String(gps.altitude.meters()) +
-                            ',' + String(gps.speed.mps()) + ',' + String(gps.course.deg());
+  String gpsName = "gps,";
+  String gpsEntryString = gpsName + String(gps.location.lat(), 8) + ',' +
+                          String(gps.location.lng(), 8) + ',' + String(gps.altitude.meters()) +
+                          ',' + String(gps.speed.mps()) + ',' + String(gps.course.deg());
 
-    SDcard_writeData(gpsEntryString);
-  }
+  Telemetry.writeText(gpsEntryString);
 
   /*
 
@@ -296,7 +295,7 @@ float gps_getAltMeters() { return fakeGPSAlt; }  // gps.altitude.meters(); }
 float gps_getSpeed_kph() { return fakeSpeed; }   // gps.speed.kmph(); }
 float gps_getSpeed_mph() { return fakeSpeed; }   // gps.speed.mph(); }
 float gps_getCourseDeg() { return fakeCourse; }  // gps.course.deg(); }
-const char *gps_getCourseCardinal() { return gps.cardinal(gps_getCourseDeg()); }
+const char* gps_getCourseCardinal() { return gps.cardinal(gps_getCourseDeg()); }
 
 float gps_getWaypointBearing() { return fakeWaypointBearing; }
 
@@ -340,7 +339,7 @@ char gps_read_buffer() {
 // copy data from each satellite message into the sats[] array.  Then, if we reach the complete set
 // of sentences, copy the fresh sat data into the satDisplay[] array for showing on LCD screen when
 // needed.
-void gps_updateSatList() {  
+void gps_updateSatList() {
   // copy data if we have a complete single sentence
   if (totalGPGSVMessages.isUpdated()) {
     for (int i = 0; i < 4; ++i) {
@@ -448,86 +447,30 @@ void gps_test_sats() {
   }
 }
 
-// Functions to get local date & time with TIME_ZONE applied
-
-int16_t timeInMinutes = 0;  // used to check if time zone will change the date
-
-uint16_t gps_getLocalTimeHHMM() {
-  int16_t LocalTimeHHMM = -1;  // use -1 as an error flag
-  if (gps.time.isValid()) {
-    // Serial.println("GPS TIME");
-    // Serial.print(gps.time.hour()); Serial.print(":"); Serial.println(gps.time.minute());
-    // Serial.println(" ");
-    timeInMinutes = gps.time.hour() * 60 + gps.time.minute() + TIME_ZONE;
-    if (timeInMinutes < 0)
-      timeInMinutes +=
-          (24 * 60);  // if time zone moved us into negative time, scoot forward 24 hours.
-    else if (timeInMinutes >= (24 * 60))
-      timeInMinutes -=
-          (24 * 60);  // if time zone moved us past one full day, scoot backward 24 hours.
-    LocalTimeHHMM = (timeInMinutes / 60) * 100 + (timeInMinutes % 60);
+bool gps_getUtcDateTime(tm& cal) {
+  if (!gps.time.isValid()) {
+    return false;
   }
-  return LocalTimeHHMM;
+  cal = tm{
+      .tm_sec = gps.time.second(),
+      .tm_min = gps.time.minute(),
+      .tm_hour = gps.time.hour(),
+      .tm_mday = gps.date.day(),
+      .tm_mon = gps.date.month() - 1,    // tm_mon is 0-based, so subtract 1
+      .tm_year = gps.date.year() - 1900  // tm_year is years since 1900
+  };
+  return true;
 }
 
-uint32_t gps_getLocalDate() {
-  uint32_t returnDate = 0;  // return 0 if failure
-  int8_t timeZoneDay = 0;   // to track if we need to adjust a day
-  uint8_t adjustedDay = 0;
-  uint8_t adjustedMonth = 0;
-  uint8_t adjustedYear = 0;
-
-  if (gps.date.isValid() && gps.time.isValid()) {
-    uint8_t adjustedDay = gps.date.day();
-    uint8_t adjustedMonth = gps.date.month();
-    uint16_t adjustedYear = gps.date.year();
-
-    // check if time zone changes the date
-    timeInMinutes =
-        gps.time.hour() * 60 + gps.time.minute() + TIME_ZONE;  // correct for local time zone
-    if (timeInMinutes < 0)
-      timeZoneDay = -1;
-    else if (timeInMinutes >= 24 * 60)
-      timeZoneDay = 1;
-    adjustedDay = gps.date.day() + timeZoneDay;
-
-    // handle rolling back a day
-    if (adjustedDay == 0) {
-      adjustedMonth -= 1;
-      if (adjustedMonth == 0) {
-        adjustedMonth = 12;
-        adjustedYear -= 1;
-      }
-      if (adjustedMonth == 4 || adjustedMonth == 6 || adjustedMonth == 9 || adjustedMonth == 11)
-        adjustedDay = 30;
-      else if (adjustedMonth == 2) {
-        if (adjustedYear % 4 == 0)
-          adjustedDay = 29;
-        else
-          adjustedDay = 28;
-      } else {
-        adjustedDay = 31;
-      }
-      // handle rolling forward a day
-    } else if (adjustedDay == 31 && (adjustedMonth == 4 || adjustedMonth == 6 ||
-                                     adjustedMonth == 9 || adjustedMonth == 11)) {
-      adjustedDay = 1;
-      adjustedMonth++;
-    } else if ((adjustedDay == 29 && adjustedMonth == 2 && (adjustedYear % 4) != 0) ||
-               (adjustedDay == 30 && adjustedMonth == 2 && (adjustedYear % 4) == 0)) {
-      adjustedDay = 1;
-      adjustedMonth++;
-    } else if (adjustedDay == 32) {
-      adjustedDay = 1;
-      adjustedMonth++;
-      if (adjustedMonth == 13) {
-        adjustedMonth = 1;
-        adjustedYear++;
-      }
-    }
-
-    returnDate = adjustedYear * 10000 + adjustedMonth * 100 + adjustedDay;
+// like gps_getUtcDateTime, but has the timezone offset applied.
+bool gps_getLocalDateTime(tm& cal) {
+  if(!gps_getUtcDateTime(cal)) {
+    return false;
   }
-  return returnDate;
+
+  time_t rawTime = mktime(&cal);
+  rawTime += TIME_ZONE * 60;  // Apply the timezone offset in seconds
+  cal = *localtime(&rawTime);
+
+  return true;
 }
-//

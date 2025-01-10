@@ -1,5 +1,17 @@
-#ifndef kml_h
-#define kml_h
+#pragma once
+#include "flight.h"
+
+class Kml : public Flight {
+ public:
+  void startFlight() override;
+  void end(const FlightStats stats) override;
+
+  const String fileNameSuffix() const override {
+    return "kml";
+  }
+  const String desiredFileName() const override;
+  void log(unsigned long durationSec) override;
+};
 
 const char KMLtrackHeader[] = R"--8<--8<--(<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2">
@@ -54,5 +66,3 @@ const char KMLtrackFooterD[] = R"--8<--8<--(</name>
 const char KMLtrackFooterE[] = R"--8<--8<--(</description>
   </Document>
 </kml>)--8<--8<--";
-
-#endif

@@ -294,11 +294,11 @@ case cursor_thermalSimplePage_userField2:
         case Button::RIGHT:
           break;
         case Button::CENTER:
-          if (state == RELEASED) {
-            flightTimer_toggle();
+          if (state == RELEASED && !flightTimer_isRunning()) {
+            flightTimer_start();
             thermalSimple_page_cursor_position = cursor_thermalSimplePage_none;
-          } else if (state == HELD) {
-            flightTimer_reset();
+          } else if (state == HELD && flightTimer_isRunning()) {
+            flightTimer_stop();
             thermalSimple_page_cursor_position = cursor_thermalSimplePage_none;
 						buttons_lockAfterHold();	// lock buttons so we don't turn off if user keeps holding button
           }

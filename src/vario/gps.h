@@ -18,6 +18,7 @@
 #define gps_h
 
 #include <TinyGPSPlus.h>
+#include "time.h"
 
 // Pinout for Leaf V3.2.0
 #define GPS_BACKUP_EN \
@@ -54,8 +55,15 @@ char gps_read_buffer(void);
 bool gps_read_buffer_once(void);
 void gps_update(void);
 
-uint32_t gps_getLocalDate(void);
-uint16_t gps_getLocalTimeHHMM(void);
+// Gets a calendar time from GPS in UTC time.
+// See references such as https://en.cppreference.com/w/c/chrono/strftime
+// for how to use and format this time
+// Returns success
+bool gps_getUtcDateTime(tm& cal);
+
+// like gps_getUtcDateTime, but has the timezone offset applied.
+bool gps_getLocalDateTime(tm& cal);
+
 
 void gps_updateSatList(void);
 

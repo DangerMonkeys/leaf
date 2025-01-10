@@ -1,7 +1,9 @@
-#ifndef log_h
-#define log_h
+#pragma once
+
+// Module is responsible for logging a flight
 
 #include <Arduino.h>
+#include "logbook/flight.h"
 
 // Auto Start/Stop Timer Thresholds
 #define AUTO_START_MIN_SPEED 5  // mph minimum before timer will auto-start
@@ -14,7 +16,6 @@
 #define AUTO_STOP_MIN_SEC 10    // seconds of low speed / low accel for timer to auto-stop
 
 // Main Log functions
-void log_init(void);    // set up log at vario start
 void log_update(void);  // Update function to run every second
 
 // Flight Timer Auto Start/Stop check functions
@@ -25,51 +26,26 @@ bool flightTimer_autoStop(void);
 void flightTimer_start(void);
 void flightTimer_stop(void);
 void flightTimer_toggle(void);
-void flightTimer_reset(void);
-bool flightTimer_isRunning(void);
+bool flightTimer_isRunning(void);  // If the timer is running
+bool flightTimer_isLogging(void);  // If the flight recorder log is logging
 void flightTimer_updateStrings(void);
-char* flightTimer_getString(bool shortString);
-uint32_t flightTimer_getTime(void);
+
+// Returns a short human readable string to represent the flight time.  This is either
+// M:SS, or HH:MM depending on how long the flight has been.
+// If we've started, but am not yet logging, we'll flash this
+String flightTimer_getString();
 
 // Log Files
-String log_createFileName(void);
 String log_getKMLCoordinates(void);
 String log_createTrackFileName(void);
-String log_createTrackDescription(void);
-
-// Test data file (all sensor values dumped realtime to csv)
-String log_createTestDataFileName(void);
 
 void log_captureValues(void);
 void log_checkMinMaxValues(void);
+
+// Returns if we should start recording a flight based on movemnt
 bool flightTimer_autoStop(void);
+
+// Returns if we should stop recording a flight based on idle-ness
 bool flightTimer_autoStart(void);
 
-// baro struct to hold most values
-struct LOGBOOK {
-  bool flightTrackStarted = false;
-  bool dataFileStarted = false;
-
-  int32_t alt = 0;
-  int32_t alt_start = 0;
-  int32_t alt_end = 0;
-  int32_t alt_max = 0;
-  int32_t alt_min = 0;
-  int32_t alt_above_launch = 0;
-  int32_t alt_above_launch_max = 0;
-
-  int32_t climb = 0;
-  int32_t climb_max = 0;
-  int32_t climb_min = 0;
-
-  float temperature = 0;
-  float temperature_max = 0;
-  float temperature_min = 0;
-
-  int32_t speed = 0;
-  int32_t speed_max = 0;
-  int32_t speed_min = 0;
-};
-extern LOGBOOK logbook;
-
-#endif
+extern FlightStats logbook;

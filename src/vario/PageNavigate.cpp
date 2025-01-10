@@ -517,11 +517,11 @@ void navigatePage_button(Button button, ButtonState state, uint8_t count) {
         case Button::RIGHT:
           break;
         case Button::CENTER:
-          if (state == RELEASED) {
-            flightTimer_toggle();
+          if (state == RELEASED && !flightTimer_isRunning()) {
+            flightTimer_start();
             navigatePage_cursorPosition = cursor_navigatePage_none;
-          } else if (state == HELD) {
-            flightTimer_reset();
+          } else if (state == HELD && flightTimer_isRunning()) {
+            flightTimer_stop();
             navigatePage_cursorPosition = cursor_navigatePage_none;
           }
 

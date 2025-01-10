@@ -57,9 +57,9 @@ void LogMenuPage::draw() {
         u8g2.setDrawColor(1);
       switch (i) {
         case cursor_log_format:
-          if (LOG_FORMAT == 0)
+          if (LOG_FORMAT == LOG_FORMAT_KML)
             u8g2.print("KML");
-          else if (LOG_FORMAT == 1)
+          else if (LOG_FORMAT == LOG_FORMAT_IGC)
             u8g2.print("IGC");
           else
             u8g2.print("_?_");
@@ -101,27 +101,50 @@ void LogMenuPage::draw() {
 
 void LogMenuPage::setting_change(Button dir, ButtonState state, uint8_t count) {
   switch (cursor_position) {
-    case cursor_log_format:
+    case cursor_log_format: {
+      if(state != PRESSED) {
+        return;
+      }
+      auto new_val = (int8_t)LOG_FORMAT;
+      if (dir == Button::RIGHT) {
+        new_val++;
+      } else if (dir == Button::LEFT) {
+        new_val--;
+      }
+      if (new_val > SETTING_LOG_FORMAT_ENTRIES - 1) {
+        new_val = 0;
+      }
+      if (new_val < 0) {
+        new_val = SETTING_LOG_FORMAT_ENTRIES - 1;
+      }
 
+      // TODO:  Enable more log formats
+      LOG_FORMAT = LOG_FORMAT_KML;
+      // LOG_FORMAT = (SettingLogFormat)new_val;
       break;
-    case cursor_log_saveLog:
+    }
+    case cursor_log_saveLog: {
       if (state == RELEASED) settings_toggleBoolOnOff(&TRACK_SAVE);
       break;
-    case cursor_log_autoStart:
+    }
+    case cursor_log_autoStart: {
       if (state == RELEASED) settings_toggleBoolOnOff(&AUTO_START);
       break;
-    case cursor_log_autoStop:
+    }
+    case cursor_log_autoStop: {
       if (state == RELEASED) settings_toggleBoolOnOff(&AUTO_STOP);
       break;
-    case cursor_log_timer:
+    }
+    case cursor_log_timer: {
       if (dir == Button::CENTER) {
-        if (state == RELEASED)
-          flightTimer_toggle();
-        else if (state == HELD)
-          flightTimer_reset();
+        if (state == RELEASED && !flightTimer_isRunning())
+          flightTimer_start();
+        else if (state == HELD && flightTimer_isRunning())
+          flightTimer_stop();
       }
       break;
-    case cursor_log_back:
+    }
+    case cursor_log_back: {
       if (state == RELEASED) {
         speaker_playSound(fx_cancel);
         settings_save();
@@ -131,6 +154,10 @@ void LogMenuPage::setting_change(Button dir, ButtonState state, uint8_t count) {
         settings_save();
         mainMenuPage.quitMenu();
       }
+      break;
+    }
+    default:
+      break;
   }
 }
 

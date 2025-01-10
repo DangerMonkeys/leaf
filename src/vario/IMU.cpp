@@ -12,6 +12,7 @@
 #include "Leaf_I2C.h"
 #include "SDcard.h"
 #include "log.h"
+#include "telemetry.h"
 
 #define DEBUG_IMU 0
 
@@ -66,11 +67,10 @@ void imu_update() {
     Serial.println(az);
   }
 
-  if (logbook.dataFileStarted) {
     String accelName = "accel,";
     String accelEntry = accelName + String(at);
-    SDcard_writeData(accelEntry);
-  }
+    Telemetry.writeText(accelEntry);
+  
 }
 
 float IMU_getAccel() { return at; }
