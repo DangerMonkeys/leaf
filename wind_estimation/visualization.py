@@ -11,7 +11,7 @@ def visualize(frames: List[Observation], window_duration_s: Optional[float] = No
     fig, axs = plt.subplots(2, 1)
 
     # Extract data by field for convenience
-    t = [frame.t.total_seconds() for frame in frames]
+    t = [frame.t.total_seconds() / 60 for frame in frames]
     ws = [frame.solve.wind.speed for frame in frames]
     wd = [frame.solve.wind.direction for frame in frames]
     alt = [frame.alt for frame in frames]
@@ -28,33 +28,32 @@ def visualize(frames: List[Observation], window_duration_s: Optional[float] = No
         i += 1
 
     # Scatter plot: Wind speed vs time, colored by wind direction
-    scatter_ws = axs[1].scatter(t, ws, c=wd, cmap='hsv', s=50, vmin=-180, vmax=180)
-    axs[1].set_xlabel('Time (t)')
-    axs[1].set_ylabel('Wind Speed (ws)', color='blue')
+    scatter_ws = axs[1].scatter(t, ws, c=wd, cmap='hsv', s=50, vmin=0, vmax=360)
+    axs[1].set_xlabel('Time (minutes)')
+    axs[1].set_ylabel('Wind Speed (m/s)', color='blue')
     axs[1].tick_params(axis='y', labelcolor='blue')
     ws_now, = axs[1].plot([], [], color='k', linewidth=2)
     ws_earlier, = axs[1].plot([], [], color='gray', linewidth=1)
 
     # Add a colorbar for wind direction
-    cbar_ws = fig.colorbar(scatter_ws, ax=axs[1], orientation='vertical', label='Wind Direction (wd) [°]')
+    cbar_ws = fig.colorbar(scatter_ws, ax=axs[1], orientation='horizontal', label='Wind Direction (°)')
 
     # Create a second y-axis for altitude
     ax2 = axs[1].twinx()
-    ax2.plot(t, alt, color='green', linewidth=2, label='Altitude')
-    ax2.set_ylabel('Altitude (alt)', color='green')
+    ax2.plot(t, alt, color='green', linewidth=2)
+    ax2.set_ylabel('Altitude (m)', color='green')
     ax2.tick_params(axis='y', labelcolor='green')
-    ax2.legend(loc='upper right')
 
     # Create a third y-axis for ground speed
     ax3 = axs[1].twinx()
-    ax3.plot(t, gs, color='red', linewidth=2, label='Ground speed')
-    ax3.set_ylabel('Ground speed', color='red')
+    ax3.plot(t, gs, color='red', linewidth=2)
+    ax3.set_ylabel('\nGround speed (m/s)', color='red')
     ax3.tick_params(axis='y', labelcolor='red')
 
     # Create a fourth y-axis for track
     ax4 = axs[1].twinx()
-    ax4.plot(t_track, track_angle, color='orange', linewidth=2, label='Track')
-    ax4.set_ylabel('Track', color='orange')
+    ax4.plot(t_track, track_angle, color='orange', linewidth=2)
+    ax4.set_ylabel('\n\nTrack (°)', color='orange')
     ax4.tick_params(axis='y', labelcolor='orange')
     ax4.set_ylim(0, 360)
 
@@ -94,11 +93,11 @@ def visualize(frames: List[Observation], window_duration_s: Optional[float] = No
         circle.set_radius(frame.solve.airspeed)
 
         # Update "now" indicator
-        ws_now.set_data([frame.t.total_seconds()] * 2, [min(ws), max(ws)])
+        ws_now.set_data([frame.t.total_seconds() / 60] * 2, [min(ws), max(ws)])
 
         # Update "beginning of window" indicator
         if window_duration_s is not None:
-            ws_earlier.set_data([frame.t.total_seconds() - window_duration_s] * 2, [min(ws), max(ws)])
+            ws_earlier.set_data([(frame.t.total_seconds() - window_duration_s) / 60] * 2, [min(ws), max(ws)])
 
         axs[1].set_title(f"Time: {frame.t}")
 

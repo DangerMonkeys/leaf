@@ -8,7 +8,7 @@ from wind_estimation.visualization import visualize
 
 
 SENSOR_DATA_FILENAME = "example1.csv"
-ESTIMATION_START_TIME = timedelta(minutes=30)
+ESTIMATION_START_TIME = timedelta(minutes=20)
 ESTIMATION_PERIOD = timedelta(seconds=1)
 ESTIMATION_DURATION = timedelta(minutes=15)
 WINDOW_DURATION = timedelta(seconds=60)

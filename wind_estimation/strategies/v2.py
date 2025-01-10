@@ -48,22 +48,33 @@ def collect_points(bins: List[Bin]) -> List[DataPoint]:
 
 
 P_BINS = 6
-M_PER_BIN = 8
+"""Number of pie slices for direction-based bins"""
+
+M_PER_BIN = 6
+"""Number of most recent points to keep per direction-based bin"""
+
+BINNED_LAYERS = 2
+"""Number of offset layers of direction-based bins"""
+
 N_RECENT = 30
+"""Number of most recent points to keep, regardless of direction"""
 
 
 def make_bins() -> List[Bin]:
-    return [
-        Bin(
-            lo=p * 360 / P_BINS,
-            hi=(p + 1) * 360 / P_BINS,
-            m_points=M_PER_BIN,
-            points=[],
-        )
-        for p in range(P_BINS)
-    ] + [
-        Bin(lo=0, hi=360, m_points=N_RECENT, points=[])
-    ]
+    bins = []
+    for layer in range(BINNED_LAYERS):
+        theta0 = (360 / P_BINS) * (layer / BINNED_LAYERS)
+        bins += [
+            Bin(
+                lo=theta0 + p * 360 / P_BINS,
+                hi=theta0 + (p + 1) * 360 / P_BINS,
+                m_points=M_PER_BIN,
+                points=[],
+            )
+            for p in range(P_BINS)
+        ]
+    bins.append(Bin(lo=0, hi=360, m_points=N_RECENT, points=[]))
+    return bins
 
 
 def err_total(vi: List[Velocity], s: WindSolve) -> float:
