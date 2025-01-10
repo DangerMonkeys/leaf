@@ -1,12 +1,15 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from math import pow, sqrt
 from typing import List, Callable
 
 import numpy as np
 from scipy.optimize import minimize
 
-from .estimation import Observation, WindSolve
-from .sensor_data import DataPoint, Velocity, compute_velocities
+from wind_estimation.estimation import Observation, WindSolve
+from wind_estimation.sensor_data import DataPoint, Velocity, compute_velocities
+
+# Samples to use to compute wind speed and direction
+T_WINDOW = timedelta(seconds=60)
 
 MIN_AIRSPEED = 5
 MAX_AIRSPEED = 25
@@ -25,13 +28,7 @@ def err_f(vi: List[Velocity]) -> Callable[[float], float]:
     return lambda x: err_total(vi, WindSolve(airspeed=x[0], wx=x[1], wy=x[2]))
 
 
-# Samples to use to compute wind speed and direction
-T_WINDOW = timedelta(seconds=60)
-
-
 def solve_wind(points: List[DataPoint], frame_times: List[timedelta]) -> List[Observation]:
-    print("Solving for wind...")
-    t0 = datetime.now()
     vi: List[Velocity] = compute_velocities(points)
     frames: List[Observation] = []
     for t in frame_times:
@@ -45,5 +42,4 @@ def solve_wind(points: List[DataPoint], frame_times: List[timedelta]) -> List[Ob
             s=s,
             recent_data_point=points[sample_indices[-1]],
         ))
-    print(f"Solved {len(frames)} wind points in {(datetime.now() - t0).total_seconds():.1f}s")
     return frames
