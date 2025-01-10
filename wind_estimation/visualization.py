@@ -12,8 +12,8 @@ def visualize(frames: List[Observation], window_duration_s: Optional[float] = No
 
     # Extract data by field for convenience
     t = [frame.t.total_seconds() for frame in frames]
-    ws = [frame.wind_speed for frame in frames]
-    wd = [frame.wind_direction for frame in frames]
+    ws = [frame.solve.wind.speed for frame in frames]
+    wd = [frame.solve.wind.direction for frame in frames]
     alt = [frame.alt for frame in frames]
     gs = [frame.ground_speed for frame in frames]
     track_angle = [frame.track_angle for frame in frames]
@@ -84,14 +84,14 @@ def visualize(frames: List[Observation], window_duration_s: Optional[float] = No
         frame: Observation = frames[f]
 
         # Update velocity samples scatter data
-        x_data = [v.dx for v in frame.vi]
-        y_data = [v.dy for v in frame.vi]
+        x_data = [p.ground_track.dx for p in frame.points]
+        y_data = [p.ground_track.dy for p in frame.points]
         scatter.set_offsets(np.c_[x_data, y_data])
 
         # Update wind speed estimate circle position and radius
-        circle_center.set_offsets(np.c_[[frame.s.wx], [frame.s.wy]])
-        circle.set_center((frame.s.wx, frame.s.wy))
-        circle.set_radius(frame.s.airspeed)
+        circle_center.set_offsets(np.c_[[frame.solve.wind.dx], [frame.solve.wind.dy]])
+        circle.set_center((frame.solve.wind.dx, frame.solve.wind.dy))
+        circle.set_radius(frame.solve.airspeed)
 
         # Update "now" indicator
         ws_now.set_data([frame.t.total_seconds()] * 2, [min(ws), max(ws)])
