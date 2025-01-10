@@ -3,13 +3,13 @@ from typing import List
 
 from wind_estimation.sampling import compute_times
 from wind_estimation.sensor_data import DataPoint, load_sensor_data
-from wind_estimation.strategies.absolute_fit import solve_wind
+from wind_estimation.strategies.v2 import solve_wind
 from wind_estimation.visualization import visualize
 
 
 SENSOR_DATA_FILENAME = "example1.csv"
 ESTIMATION_START_TIME = timedelta(minutes=30)
-ESTIMATION_PERIOD = timedelta(seconds=5)
+ESTIMATION_PERIOD = timedelta(seconds=1)
 ESTIMATION_DURATION = timedelta(minutes=15)
 WINDOW_DURATION = timedelta(seconds=60)
 

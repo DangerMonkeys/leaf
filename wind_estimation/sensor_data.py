@@ -6,7 +6,7 @@ from typing import List
 from wind_estimation.vectors import Velocity
 
 
-@dataclass
+@dataclass(frozen=True)
 class DataPoint:
     time: timedelta
     """Time past start of sampling that this data point was sampled."""

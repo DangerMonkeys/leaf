@@ -37,9 +37,11 @@ def solve_wind(points: List[DataPoint], frame_times: List[timedelta]) -> List[Ob
 
         result = minimize(err_f, np.array([10, 0, 0]), method='Nelder-Mead')
         solve = WindSolve(airspeed=result.x[0], wind=Velocity(dx=result.x[1], dy=result.x[2]))
+
         frames.append(Observation(
             t=t,
             points=[points[i] for i in sample_indices],
+            most_recent=points[sample_indices[-1]],
             solve=solve,
         ))
     return frames

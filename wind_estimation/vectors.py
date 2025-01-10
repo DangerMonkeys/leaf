@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from math import atan2, cos, degrees, radians, sin, sqrt
 
 
-@dataclass
+@dataclass(frozen=True)
 class Velocity:
     dx: float
     """Eastward speed, meters per second"""
@@ -17,7 +17,7 @@ class Velocity:
 
     @property
     def direction(self) -> float:
-        return degrees(atan2(self.dx, self.dy))
+        return degrees(atan2(self.dx, self.dy)) % 360
 
     def __add__(self, other):
         if isinstance(other, Velocity):

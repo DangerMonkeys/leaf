@@ -15,24 +15,25 @@ class WindSolve:
 class Observation:
     t: timedelta
     points: List[DataPoint]
+    most_recent: DataPoint
     solve: WindSolve
 
     @property
     def lat(self) -> float:
-        return self.points[-1].lat
+        return self.most_recent.lat
 
     @property
     def lng(self) -> float:
-        return self.points[-1].lng
+        return self.most_recent.lng
 
     @property
     def alt(self) -> float:
-        return self.points[-1].alt
+        return self.most_recent.alt
 
     @property
     def ground_speed(self) -> float:
-        return self.points[-1].ground_track.speed
+        return self.most_recent.ground_track.speed
 
     @property
     def track_angle(self) -> float:
-        return self.points[-1].ground_track.direction
+        return self.most_recent.ground_track.direction
