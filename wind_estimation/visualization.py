@@ -3,10 +3,10 @@ import numpy as np
 from matplotlib.animation import FuncAnimation
 from typing import List, Optional
 
-from .estimation import Frame
+from .estimation import Observation
 
 
-def visualize(frames: List[Frame], window_duration_s: Optional[float] = None) -> None:
+def visualize(frames: List[Observation], window_duration_s: Optional[float] = None) -> None:
     # Set up the figure and axis
     fig, axs = plt.subplots(2, 1)
 
@@ -16,14 +16,14 @@ def visualize(frames: List[Frame], window_duration_s: Optional[float] = None) ->
     wd = [frame.wind_direction for frame in frames]
     alt = [frame.alt for frame in frames]
     gs = [frame.ground_speed for frame in frames]
-    track = [frame.track for frame in frames]
+    track_angle = [frame.track_angle for frame in frames]
 
     # Separate track wrap-arounds with nan so they don't plot across the graph
     t_track = t
     i = 1
-    while i < len(track):
-        if (track[i - 1] > 330 and track[i] < 30) or (track[i - 1] < 30 and track[i] > 330):
-            track = track[0:i] + [float('nan')] + track[i:]
+    while i < len(track_angle):
+        if (track_angle[i - 1] > 330 and track_angle[i] < 30) or (track_angle[i - 1] < 30 and track_angle[i] > 330):
+            track_angle = track_angle[0:i] + [float('nan')] + track_angle[i:]
             t_track = t_track[0:i] + [0.5 * (t_track[i - 1] + t_track[i])] + t_track[i:]
         i += 1
 
@@ -53,7 +53,7 @@ def visualize(frames: List[Frame], window_duration_s: Optional[float] = None) ->
 
     # Create a fourth y-axis for track
     ax4 = axs[1].twinx()
-    ax4.plot(t_track, track, color='orange', linewidth=2, label='Track')
+    ax4.plot(t_track, track_angle, color='orange', linewidth=2, label='Track')
     ax4.set_ylabel('Track', color='orange')
     ax4.tick_params(axis='y', labelcolor='orange')
     ax4.set_ylim(0, 360)
@@ -81,7 +81,7 @@ def visualize(frames: List[Frame], window_duration_s: Optional[float] = None) ->
 
     # Animation function
     def update(f):
-        frame: Frame = frames[f]
+        frame: Observation = frames[f]
 
         # Update velocity samples scatter data
         x_data = [v.dx for v in frame.vi]

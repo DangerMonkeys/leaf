@@ -1,11 +1,11 @@
 from datetime import datetime, timedelta
-from math import atan2,degrees, sqrt
+from math import pow, sqrt
 from typing import List, Callable
 
 import numpy as np
 from scipy.optimize import minimize
 
-from .estimation import Frame, WindSolve
+from .estimation import Observation, WindSolve
 from .sensor_data import DataPoint, Velocity, compute_velocities
 
 MIN_AIRSPEED = 5
@@ -25,42 +25,25 @@ def err_f(vi: List[Velocity]) -> Callable[[float], float]:
     return lambda x: err_total(vi, WindSolve(airspeed=x[0], wx=x[1], wy=x[2]))
 
 
-# Number of trailing samples to use to compute wind speed and direction
-N_WINDOW = 60
-
-# How many samples to move forward each animation frame / visualization time step
-N_STEP = 5
-
-# Number of animation frames / visualization time steps to compute and show
-N_STEPS = int(15 * 60 / N_STEP)
-
-# Tim
-START_AT = 30 * 60
+# Samples to use to compute wind speed and direction
+T_WINDOW = timedelta(seconds=60)
 
 
-def solve_wind(points: List[DataPoint]) -> List[Frame]:
+def solve_wind(points: List[DataPoint], frame_times: List[timedelta]) -> List[Observation]:
     print("Solving for wind...")
     t0 = datetime.now()
     vi: List[Velocity] = compute_velocities(points)
-    frames: List[Frame] = []
-    prev_x = np.array([10, 0, 0])
-    for i1 in range(START_AT + 1, START_AT + N_STEPS * N_STEP + 2, N_STEP):
-        i0 = i1 - N_WINDOW + 1
-        result = minimize(err_f(vi[i0:i1]), np.array([10, 0, 0]), method='Nelder-Mead')
-        prev_x = result.x
-        p = points[i1]
+    frames: List[Observation] = []
+    for t in frame_times:
+        sample_indices = [i for i in range(len(points)) if t - T_WINDOW <= points[i].time <= t]
+        frame_vi = [vi[i] for i in sample_indices]
+        result = minimize(err_f(frame_vi), np.array([10, 0, 0]), method='Nelder-Mead')
         s = WindSolve(airspeed=result.x[0], wx=result.x[1], wy=result.x[2])
-        frames.append(Frame(
-            t=timedelta(seconds=i1),
-            vi=vi[i0:i1],
+        frames.append(Observation(
+            t=t,
+            vi=frame_vi,
             s=s,
-            lat=p.lat,
-            lng=p.lng,
-            alt=p.alt,
-            wind_speed=sqrt(pow(s.wx, 2) + pow(s.wy, 2)),
-            wind_direction=degrees(atan2(s.wx, s.wy)),
-            ground_speed=p.speed,
-            track=p.heading,
+            recent_data_point=points[sample_indices[-1]],
         ))
     print(f"Solved {len(frames)} wind points in {(datetime.now() - t0).total_seconds():.1f}s")
     return frames
