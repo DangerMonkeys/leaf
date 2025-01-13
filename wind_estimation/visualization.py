@@ -34,6 +34,7 @@ def visualize(frames: List[Observation], window_duration_s: Optional[float] = No
     axs[1].tick_params(axis='y', labelcolor='blue')
     ws_now, = axs[1].plot([], [], color='k', linewidth=2)
     ws_earlier, = axs[1].plot([], [], color='gray', linewidth=1)
+    axs[1].set_ylim(0, 5)
 
     # Add a colorbar for wind direction
     cbar_ws = fig.colorbar(scatter_ws, ax=axs[1], orientation='horizontal', label='Wind Direction (°)')
@@ -46,15 +47,15 @@ def visualize(frames: List[Observation], window_duration_s: Optional[float] = No
 
     # Create a third y-axis for ground speed
     ax3 = axs[1].twinx()
-    ax3.plot(t, gs, color='red', linewidth=2)
-    ax3.set_ylabel('\nGround speed (m/s)', color='red')
-    ax3.tick_params(axis='y', labelcolor='red')
+    ax3.plot(t, gs, color='blue', linewidth=1)
+    ax3.set_ylabel('\nGround speed (m/s)', color='blue')
+    ax3.tick_params(axis='y', labelcolor='blue')
 
     # Create a fourth y-axis for track
     ax4 = axs[1].twinx()
-    ax4.plot(t_track, track_angle, color='orange', linewidth=2)
-    ax4.set_ylabel('\n\nTrack (°)', color='orange')
-    ax4.tick_params(axis='y', labelcolor='orange')
+    ax4.plot(t_track, track_angle, color='purple', linewidth=1)
+    ax4.set_ylabel('\n\nTrack (°)', color='purple')
+    ax4.tick_params(axis='y', labelcolor='purple')
     ax4.set_ylim(0, 360)
 
     # Set up sampling and wind estimate figure
