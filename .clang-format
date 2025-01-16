@@ -1,0 +1,49 @@
+# Reference: https://releases.llvm.org/19.1.0/tools/clang/docs/ClangFormatStyleOptions.html
+
+BasedOnStyle: Google               # Comparison: https://github.com/motine/cppstylelineup
+
+# === Indentation ===
+IndentWidth: 2                     # Use 2 spaces for indentation
+TabWidth: 2                        # Tab width is also 2 spaces
+UseTab: Never                      # Always use spaces, never tabs
+
+# === Formatting ===
+ColumnLimit: 100                   # Limit line length to 100 characters
+BreakBeforeBraces: Attach          # Place opening braces on same line
+AllowShortIfStatementsOnASingleLine: true
+IndentCaseLabels: true             # Indent case labels in switch statements
+
+# === Namespace Formatting ===
+NamespaceIndentation: All          # Indent everything inside namespaces
+IndentWrappedFunctionNames: false  # Don't indent wrapped function names
+
+# === Pointer and Reference Alignment ===
+DerivePointerAlignment: false         # Use explicitly set PointerAlignment
+PointerAlignment: Left                # Place '*' or '&' next to the data type
+SpaceBeforeParens: ControlStatements  # Add space before parentheses in control statements
+
+# === Include Formatting ===
+SortIncludes: true                 # Automatically sort `#include` statements
+IncludeBlocks: Preserve            # Keep blank lines between include groups
+
+# === Function and Constructor Formatting ===
+AllowShortFunctionsOnASingleLine: InlineOnly  # Only inline trivial functions
+ConstructorInitializerIndentWidth: 4          # Align initializer lists with indentation
+BreakTemplateDeclarations: Yes                # Break all template declarations
+
+# === Comments ===
+CommentPragmas: '^\\s*TODO|FIXME'  # Recognize TODO and FIXME as special comments
+SpaceBeforeCpp11BracedList: false  # No space before C++11 braced lists
+
+# === Function Argument Splitting ===
+# If false, a function declaration’s or function definition’s parameters will either all be on the
+# same line or will have one line each.
+BinPackParameters: false
+
+# If the function declaration doesn’t fit on a line, allow putting all parameters of a function
+# declaration onto the next line even if BinPackParameters is false.
+AllowAllParametersOfDeclarationOnNextLine: false
+
+# If false, a function call’s arguments will either be all on the same line or will have one line
+# each.
+BinPackArguments: false
