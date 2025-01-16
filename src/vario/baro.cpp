@@ -11,6 +11,7 @@
 #include "log.h"
 #include "settings.h"
 #include "speaker.h"
+#include "telemetry.h"
 #include "tempRH.h"
 
 #define DEBUG_BARO 0  // flag for printing serial debugging messages
@@ -404,11 +405,10 @@ void baro_calculatePressure() {
   baro.pressure = ((uint64_t)D1_P * SENS1 / (int64_t)pow(2, 21) - OFF1) / pow(2, 15);
 
   // record datapoint on SD card if datalogging is turned on
-  if (logbook.dataFileStarted) {
-    String baroName = "baro mb*100,";
-    String baroEntry = baroName + String(baro.pressure);
-    SDcard_writeData(baroEntry);
-  }
+
+  String baroName = "baro mb*100,";
+  String baroEntry = baroName + String(baro.pressure);
+  Telemetry.writeText(baroEntry);
 }
 
 // Filter Pressure Values

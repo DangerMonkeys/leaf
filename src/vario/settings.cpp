@@ -31,7 +31,7 @@ int8_t GPS_SETTING;
 bool TRACK_SAVE;
 bool AUTO_START;
 bool AUTO_STOP;
-uint8_t LOG_FORMAT;
+SettingLogFormat LOG_FORMAT;
 
 // System Settings
 int16_t TIME_ZONE;

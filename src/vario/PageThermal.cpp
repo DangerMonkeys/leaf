@@ -221,11 +221,11 @@ void thermalPage_button(Button button, ButtonState state, uint8_t count) {
         case Button::RIGHT:
           break;
         case Button::CENTER:
-          if (state == RELEASED) {
-            flightTimer_toggle();
+          if (state == RELEASED && !flightTimer_isRunning()) {
+            flightTimer_start();
             cursor_position = cursor_thermalPage_none;
-          } else if (state == HELD) {
-            flightTimer_reset();
+          } else if (state == HELD && flightTimer_isRunning()) {
+            flightTimer_stop();
             cursor_position = cursor_thermalPage_none;
 						buttons_lockAfterHold();	// lock buttons so we don't turn off if user keeps holding button
           }

@@ -5,6 +5,12 @@
 
 #include "buttons.h"
 
+// Types for selections
+#define SETTING_LOG_FORMAT_ENTRIES 2  // How many log format entries there are
+typedef uint8_t SettingLogFormat;
+#define LOG_FORMAT_IGC 0
+#define LOG_FORMAT_KML 1
+
 // Setting bounds and definitions
 // Vario
 // Sink Alarm
@@ -49,12 +55,12 @@
 #define DEF_ALT_SYNC_GPS 0     // lock altimeter to GPS alt (to avoid local pressure setting issues)
 
 // Default GPS & Track Log Settings
-#define DEF_DISTANCE_FLOWN 0  // 0 = xc distance, 1 = path distance
-#define DEF_GPS_SETTING 1     // 0 = GPS off, 1 = GPS on, 2 = power save every N sec, etc
-#define DEF_TRACK_SAVE 1      // save track log?
-#define DEF_AUTO_START 0      // 1 = ENABLE, 0 = DISABLE
-#define DEF_AUTO_STOP 0       // 1 = ENABLE, 0 = DISABLE
-#define DEF_LOG_FORMAT 0      // 0 = KML, 1 = IGC
+#define DEF_DISTANCE_FLOWN 0           // 0 = xc distance, 1 = path distance
+#define DEF_GPS_SETTING 1              // 0 = GPS off, 1 = GPS on, 2 = power save every N sec, etc
+#define DEF_TRACK_SAVE 1               // save track log?
+#define DEF_AUTO_START 0               // 1 = ENABLE, 0 = DISABLE
+#define DEF_AUTO_STOP 0                // 1 = ENABLE, 0 = DISABLE
+#define DEF_LOG_FORMAT LOG_FORMAT_IGC  // 0 = KML, 1 = IGC
 
 // Default System Settings
 #define DEF_TIME_ZONE \
@@ -107,7 +113,7 @@ extern int8_t GPS_SETTING;
 extern bool TRACK_SAVE;
 extern bool AUTO_START;
 extern bool AUTO_STOP;
-extern uint8_t LOG_FORMAT;
+extern SettingLogFormat LOG_FORMAT;
 
 // System Settings
 extern int16_t TIME_ZONE;

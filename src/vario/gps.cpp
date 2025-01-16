@@ -14,6 +14,7 @@
 #include "gpx.h"
 #include "log.h"
 #include "settings.h"
+#include "telemetry.h"
 
 #define DEBUG_GPS 1
 
@@ -241,14 +242,12 @@ void gps_update() {
   gps_updateFixInfo();
   gps_calculateGlideRatio();
 
-  if (logbook.dataFileStarted) {
-    String gpsName = "gps,";
-    String gpsEntryString = gpsName + String(gps.location.lat(), 8) + ',' +
-                            String(gps.location.lng(), 8) + ',' + String(gps.altitude.meters()) +
-                            ',' + String(gps.speed.mps()) + ',' + String(gps.course.deg());
+  String gpsName = "gps,";
+  String gpsEntryString = gpsName + String(gps.location.lat(), 8) + ',' +
+                          String(gps.location.lng(), 8) + ',' + String(gps.altitude.meters()) +
+                          ',' + String(gps.speed.mps()) + ',' + String(gps.course.deg());
 
-    SDcard_writeData(gpsEntryString);
-  }
+  Telemetry.writeText(gpsEntryString);
 
   /*
 
@@ -283,7 +282,7 @@ bool gps_read_buffer_once() {
 // copy data from each satellite message into the sats[] array.  Then, if we reach the complete set
 // of sentences, copy the fresh sat data into the satDisplay[] array for showing on LCD screen when
 // needed.
-void gps_updateSatList() {  
+void gps_updateSatList() {
   // copy data if we have a complete single sentence
   if (totalGPGSVMessages.isUpdated()) {
     for (int i = 0; i < 4; ++i) {
@@ -322,86 +321,105 @@ void gps_updateSatList() {
   }
 }
 
-// Functions to get local date & time with TIME_ZONE applied
-
-int16_t timeInMinutes = 0;  // used to check if time zone will change the date
-
-uint16_t gps_getLocalTimeHHMM() {
-  int16_t LocalTimeHHMM = -1;  // use -1 as an error flag
-  if (gps.time.isValid()) {
-    // Serial.println("GPS TIME");
-    // Serial.print(gps.time.hour()); Serial.print(":"); Serial.println(gps.time.minute());
-    // Serial.println(" ");
-    timeInMinutes = gps.time.hour() * 60 + gps.time.minute() + TIME_ZONE;
-    if (timeInMinutes < 0)
-      timeInMinutes +=
-          (24 * 60);  // if time zone moved us into negative time, scoot forward 24 hours.
-    else if (timeInMinutes >= (24 * 60))
-      timeInMinutes -=
-          (24 * 60);  // if time zone moved us past one full day, scoot backward 24 hours.
-    LocalTimeHHMM = (timeInMinutes / 60) * 100 + (timeInMinutes % 60);
-  }
-  return LocalTimeHHMM;
-}
-
-uint32_t gps_getLocalDate() {
-  uint32_t returnDate = 0;  // return 0 if failure
-  int8_t timeZoneDay = 0;   // to track if we need to adjust a day
-  uint8_t adjustedDay = 0;
-  uint8_t adjustedMonth = 0;
-  uint8_t adjustedYear = 0;
-
-  if (gps.date.isValid() && gps.time.isValid()) {
-    uint8_t adjustedDay = gps.date.day();
-    uint8_t adjustedMonth = gps.date.month();
-    uint16_t adjustedYear = gps.date.year();
-
-    // check if time zone changes the date
-    timeInMinutes =
-        gps.time.hour() * 60 + gps.time.minute() + TIME_ZONE;  // correct for local time zone
-    if (timeInMinutes < 0)
-      timeZoneDay = -1;
-    else if (timeInMinutes >= 24 * 60)
-      timeZoneDay = 1;
-    adjustedDay = gps.date.day() + timeZoneDay;
-
-    // handle rolling back a day
-    if (adjustedDay == 0) {
-      adjustedMonth -= 1;
-      if (adjustedMonth == 0) {
-        adjustedMonth = 12;
-        adjustedYear -= 1;
-      }
-      if (adjustedMonth == 4 || adjustedMonth == 6 || adjustedMonth == 9 || adjustedMonth == 11)
-        adjustedDay = 30;
-      else if (adjustedMonth == 2) {
-        if (adjustedYear % 4 == 0)
-          adjustedDay = 29;
-        else
-          adjustedDay = 28;
-      } else {
-        adjustedDay = 31;
-      }
-      // handle rolling forward a day
-    } else if (adjustedDay == 31 && (adjustedMonth == 4 || adjustedMonth == 6 ||
-                                     adjustedMonth == 9 || adjustedMonth == 11)) {
-      adjustedDay = 1;
-      adjustedMonth++;
-    } else if ((adjustedDay == 29 && adjustedMonth == 2 && (adjustedYear % 4) != 0) ||
-               (adjustedDay == 30 && adjustedMonth == 2 && (adjustedYear % 4) == 0)) {
-      adjustedDay = 1;
-      adjustedMonth++;
-    } else if (adjustedDay == 32) {
-      adjustedDay = 1;
-      adjustedMonth++;
-      if (adjustedMonth == 13) {
-        adjustedMonth = 1;
-        adjustedYear++;
+void gps_test_sats() {
+  if (totalGPGSVMessages.isUpdated()) {
+    for (int i = 0; i < 4; ++i) {
+      int no = atoi(satNumber[i].value());
+      // Serial.print(F("SatNumber is ")); Serial.println(no);
+      if (no >= 1 && no <= MAX_SATELLITES) {
+        sats[no - 1].elevation = atoi(elevation[i].value());
+        sats[no - 1].azimuth = atoi(azimuth[i].value());
+        sats[no - 1].snr = atoi(snr[i].value());
+        sats[no - 1].active = true;
       }
     }
 
-    returnDate = adjustedYear * 10000 + adjustedMonth * 100 + adjustedDay;
+    int totalMessages = atoi(totalGPGSVMessages.value());
+    int currentMessage = atoi(messageNumber.value());
+    if (totalMessages == currentMessage) {
+      /*
+      // Print Sat Info
+      Serial.print(F("Sats=")); Serial.print(gps.satellites.value());
+      Serial.print(F(" Nums="));
+      for (int i=0; i<MAX_SATELLITES; ++i)
+        if (sats[i].active)
+        {
+          Serial.print(i+1);
+          Serial.print(F(" "));
+        }
+      Serial.print(F(" Elevation="));
+      for (int i=0; i<MAX_SATELLITES; ++i)
+        if (sats[i].active)
+        {
+          Serial.print(sats[i].elevation);
+          Serial.print(F(" "));
+        }
+      Serial.print(F(" Azimuth="));
+      for (int i=0; i<MAX_SATELLITES; ++i)
+        if (sats[i].active)
+        {
+          Serial.print(sats[i].azimuth);
+          Serial.print(F(" "));
+        }
+
+      Serial.print(F(" SNR="));
+      for (int i=0; i<MAX_SATELLITES; ++i)
+        if (sats[i].active)
+        {
+          Serial.print(sats[i].snr);
+          Serial.print(F(" "));
+        }
+      Serial.println();
+
+      Serial.print("|TIME| isValid: "); Serial.print(gps.time.isValid());
+      Serial.print(", isUpdated:"); Serial.print(gps.time.isUpdated());
+      Serial.print(", hour: "); Serial.print(gps.time.hour());
+      Serial.print(", minute: "); Serial.print(gps.time.minute());
+      Serial.print(", second: "); Serial.print(gps.time.second());
+      Serial.print(", age: "); Serial.print(gps.time.age());
+      Serial.print(", value: "); Serial.print(gps.time.value());
+
+      Serial.print("  |DATE| isValid: "); Serial.print(gps.date.isValid());
+      Serial.print(" isUpdated: "); Serial.print(gps.date.isUpdated());
+      Serial.print(" year: "); Serial.print(gps.date.year());
+      Serial.print(" month: "); Serial.print(gps.date.month());
+      Serial.print(" day: "); Serial.print(gps.date.day());
+      Serial.print(" age: "); Serial.print(gps.date.age());
+      Serial.print(" value: "); Serial.println(gps.date.value());
+      */
+
+      // Reset Active
+      for (int i = 0; i < MAX_SATELLITES; ++i) {
+        sats[i].active = false;
+      }
+    }
   }
-  return returnDate;
 }
-//
+
+bool gps_getUtcDateTime(tm& cal) {
+  if (!gps.time.isValid()) {
+    return false;
+  }
+  cal = tm{
+      .tm_sec = gps.time.second(),
+      .tm_min = gps.time.minute(),
+      .tm_hour = gps.time.hour(),
+      .tm_mday = gps.date.day(),
+      .tm_mon = gps.date.month() - 1,    // tm_mon is 0-based, so subtract 1
+      .tm_year = gps.date.year() - 1900  // tm_year is years since 1900
+  };
+  return true;
+}
+
+// like gps_getUtcDateTime, but has the timezone offset applied.
+bool gps_getLocalDateTime(tm& cal) {
+  if(!gps_getUtcDateTime(cal)) {
+    return false;
+  }
+
+  time_t rawTime = mktime(&cal);
+  rawTime += TIME_ZONE * 60;  // Apply the timezone offset in seconds
+  cal = *localtime(&rawTime);
+
+  return true;
+}
