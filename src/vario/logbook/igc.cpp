@@ -66,7 +66,7 @@ void Igc::log(unsigned long durationSec) {
                       true,
                       baro.alt / 100,  // cm to meters
                       gps.altitude.meters(),
-                      toDigits((int)gpsAccuracy.error, 3));
+                      toDigits((int)gpsFixInfo.error, 3));
 }
 
 void Igc::startFlight() {

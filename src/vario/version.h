@@ -1,7 +1,7 @@
 #pragma once
 
 // This build/release version
-#define VERSION "0.0.3"
+#define VERSION "0.0.4"
 
 // Where to check for the latest version
 #define OTA_HOST "github.com"
