@@ -27,3 +27,9 @@ String formatSeconds(unsigned long seconds,
 
   return String(buffer);
 }
+
+String toDigits(const int src, const int numDigits) {
+  char buffer[10];
+  sprintf(buffer, ((String)"%0" + numDigits + "d").c_str(), src);
+  return buffer;
+}

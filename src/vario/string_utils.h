@@ -8,3 +8,5 @@
 String formatSeconds(unsigned long seconds,
                      const bool minified = false,
                      const int rightAlignTo = 0);
+
+String toDigits(const int src, const int numDigits);

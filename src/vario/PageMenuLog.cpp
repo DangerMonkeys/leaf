@@ -118,9 +118,7 @@ void LogMenuPage::setting_change(Button dir, ButtonState state, uint8_t count) {
         new_val = SETTING_LOG_FORMAT_ENTRIES - 1;
       }
 
-      // TODO:  Enable more log formats
-      LOG_FORMAT = LOG_FORMAT_KML;
-      // LOG_FORMAT = (SettingLogFormat)new_val;
+      LOG_FORMAT = (SettingLogFormat)new_val;
       break;
     }
     case cursor_log_saveLog: {

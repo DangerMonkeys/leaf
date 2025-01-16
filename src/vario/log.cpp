@@ -9,6 +9,7 @@
 #include "gps.h"
 #include "logbook/flight.h"
 #include "logbook/kml.h"
+#include "logbook/igc.h"
 #include "settings.h"
 #include "speaker.h"
 #include "string_utils.h"
@@ -25,6 +26,8 @@ bool DATAFILE = true;  // set to false to disable data logging to SDcard
 Flight* flight =
     NULL;  // Pointer to the current flight record (null if we're not deisred to be logging)
 Kml kmlFlight;
+Igc igcFlight;
+
 
 // TODO:  Delete ME
 
@@ -192,7 +195,8 @@ void flightTimer_start() {
       flight = &kmlFlight;
       break;
     case LOG_FORMAT_IGC:
-      // TODO:  Change the flight to IGC
+      flight = &igcFlight;
+      break;
     default:
       return;  // DO not start the flight if it's an unknown format
   }
