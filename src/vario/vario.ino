@@ -15,6 +15,7 @@
 #include "settings.h"
 #include "speaker.h"
 #include "tempRH.h"
+#include "wind_estimate/wind_estimate.h"
 
   #ifdef WIFI_ON_BOOT
     #include <WiFi.h>
@@ -316,6 +317,7 @@ void setTasks(void) {
       break;
     case 1:
       // taskman_baro = 2;
+      estimateWind();
       break;
     case 2:
       // taskman_baro = 3;

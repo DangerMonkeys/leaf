@@ -15,6 +15,7 @@
 #include "log.h"
 #include "settings.h"
 #include "telemetry.h"
+#include "wind_estimate/wind_estimate.h"
 
 #define DEBUG_GPS 1
 
@@ -264,19 +265,36 @@ void gps_update() {
   */
 }
 
-
 float gps_getGlideRatio() { return glideRatio; }
+
+
+
+
+// this is called whenever a new valid NMEA sentence contains a valid speed (TODO: check if true for every sentence or just every fix)
+void onNewSentence(NMEASentenceContents contents) {
+  windEstimate_onNewSentence(contents);
+
+}
 
 bool gps_read_buffer_once() {
   if (gpsPort.available()) {
     char a = gpsPort.read();
-    gps.encode(a);
+    bool newSentence = gps.encode(a);
+    if (newSentence) {
+      NMEASentenceContents contents = {
+        .speed = gps.speed.isUpdated(),
+        .course = gps.course.deg()
+        };
+      onNewSentence(contents);
+    }
+
     if (DEBUG_GPS) Serial.print(a);
     return true;
   } else {
     return false;
-  }
+  }  
 }
+
 
 
 // copy data from each satellite message into the sats[] array.  Then, if we reach the complete set

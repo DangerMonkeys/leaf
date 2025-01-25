@@ -16,6 +16,7 @@
 #include "settings.h"
 #include "speaker.h"
 #include "tempRH.h"
+#include "wind_estimate/wind_estimate.h"
 
 enum thermalSimple_page_items {
   cursor_thermalSimplePage_none,
@@ -34,7 +35,6 @@ uint8_t thermalSimple_page_cursor_timeCount =
 uint8_t thermalSimple_page_cursor_timeOut =
     8;  // after 8 page draws (4 seconds) reset the cursor if a button hasn't been pushed.
 
-float test_wind_angle = 0;
 
 void thermalSimplePage_draw() {
   // if cursor is selecting something, count toward the timeOut value before we reset cursor
@@ -51,10 +51,19 @@ void thermalSimplePage_draw() {
                             (thermalSimple_page_cursor_position == cursor_thermalSimplePage_timer));
 
     // wind
-    u8g2.drawDisc(49, 25, 12);
+
+    WindEstimate windEstimate = getWindEstimate();
+
+    uint8_t wind_x = 55;
+    uint8_t wind_y = 31;
+    u8g2.drawDisc(wind_x, wind_y, 12);
     u8g2.setDrawColor(0);
-    display_windSock(49, 25, 10, test_wind_angle);  // 0.78);
+    display_windSock(wind_x, wind_y, 10, windEstimate.windDirectionTrue);  // 0.78);
     u8g2.setDrawColor(1);
+
+    display_windSockRing(wind_x, wind_y, 13, 7, test_wind_angle);
+
+
 
     test_wind_angle += .1;
     if (test_wind_angle > 2 * PI) test_wind_angle -= (2 * PI);

@@ -51,6 +51,13 @@ struct GPSFixInfo {
 };
 extern GPSFixInfo gpsFixInfo;
 
+
+struct NMEASentenceContents {
+  bool speed;
+  bool course;
+};
+
+
 // enum time_formats {hhmmss, }
 
 void gps_init(void);

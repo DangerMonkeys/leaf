@@ -15,6 +15,7 @@
 #include "settings.h"
 #include "speaker.h"
 #include "tempRH.h"
+#include "wind_estimate/wind_estimate.h"
 
 enum navigate_page_items {
   cursor_navigatePage_none,
@@ -106,8 +107,6 @@ void navigatePage_destinationSelect(Button dir) {
       break;
   }
 }
-
-float test_wind_angle_nav = 0;
 
 void navigatePage_draw() {
   // if cursor is selecting something, count toward the timeOut value before we reset cursor
@@ -207,13 +206,12 @@ void navigatePage_draw() {
     }
 
     // Wind sock
+    WindEstimate windEstimate = getWindEstimate();
     u8g2.drawDisc(nav_x, nav_y, wind_r + 2);
     u8g2.setDrawColor(0);
-    display_windSock(nav_x, nav_y, wind_r, test_wind_angle_nav);  // 0.78);
+    display_windSock(nav_x, nav_y, wind_r, windEstimate.windDirectionTrue);  // 0.78);
     u8g2.setDrawColor(1);
 
-    test_wind_angle_nav += .1;
-    if (test_wind_angle_nav > 2 * PI) test_wind_angle_nav -= (2 * PI);
 
     ///////////////////////////////////////////////////
     // Vario Info *************************************
