@@ -283,7 +283,7 @@ bool gps_read_buffer_once() {
     if (newSentence) {
       NMEASentenceContents contents = {
         .speed = gps.speed.isUpdated(),
-        .course = gps.course.deg()
+        .course = gps.course.isUpdated()
         };
       onNewSentence(contents);
     }
