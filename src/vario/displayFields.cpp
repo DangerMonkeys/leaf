@@ -724,7 +724,7 @@ void display_GPS_icon(uint8_t x, uint8_t y) {
 }
 
 
-// Wind Sock Triangle
+// Wind Sock Center Pointer
 void display_windSock(int16_t x, int16_t y, int16_t radius, float wind_angle) {
   // int16_t wind_triangle_radius = 10;
   // if (wind_angle > 2 * PI) wind_angle = 0;
@@ -756,6 +756,27 @@ void display_windSock(int16_t x, int16_t y, int16_t radius, float wind_angle) {
   u8g2.drawLine(tail_mid_xprime, tail_mid_yprime, tail_2_xprime, tail_2_yprime);
   u8g2.drawLine(tip_xprime, tip_yprime, tail_2_xprime, tail_2_yprime);
   u8g2.drawLine(tail_mid_xprime, tail_mid_yprime, tail_1_xprime, tail_1_yprime);
+}
+
+
+// Wind Sock Ring Triangle
+void display_windSockRing(int16_t x, int16_t y, int16_t radius, int16_t size, float wind_angle) {
+  float point_angle = 0.65; // half angle of the point, starting with 0.79 rad (45 deg)
+
+  uint16_t tip_x = x + sin(wind_angle) * radius;
+  uint16_t tip_y = y - cos(wind_angle) * radius;
+
+  uint16_t tail_1_x = tip_x + sin(wind_angle + point_angle) * size;
+  uint16_t tail_1_y = tip_y - cos(wind_angle + point_angle) * size;
+  uint16_t tail_2_x = tip_x + sin(wind_angle - point_angle) * size;
+  uint16_t tail_2_y = tip_y - cos(wind_angle - point_angle) * size;
+
+  u8g2.drawTriangle(tip_x, tip_y, tail_1_x, tail_1_y, tail_2_x, tail_2_y);
+
+  u8g2.drawLine(tip_x, tip_y, tail_1_x, tail_1_y);
+  u8g2.drawLine(tip_x, tip_y, tail_2_x, tail_2_y);
+  u8g2.drawLine(tail_1_x, tail_1_y, tail_2_x, tail_2_y);
+
 }
 
 // END OF COMPONENT DISPLAY FUNCTIONS //

@@ -61,7 +61,7 @@ void thermalSimplePage_draw() {
     display_windSock(wind_x, wind_y, 10, windEstimate.windDirectionTrue);  // 0.78);
     u8g2.setDrawColor(1);
 
-    
+    display_windSockRing(wind_x, wind_y, 13, 7, test_wind_angle);
     // Main Info ****************************************************
     uint8_t topOfFrame = 22;
     uint8_t varioBarWidth = 25;
@@ -71,7 +71,7 @@ void thermalSimplePage_draw() {
     display_varioBar(topOfFrame, varioBarHeight, varioBarWidth, baro.climbRateFiltered);
 
     // Altitude
-    uint8_t alt_y = 50;
+    uint8_t alt_y = 58;
     // Altitude header labels
     u8g2.setFont(leaf_labels);
     u8g2.setCursor(varioBarWidth + 52, alt_y);

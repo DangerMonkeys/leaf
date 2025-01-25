@@ -50,6 +50,7 @@ void display_batt_charging_fullscreen(uint8_t x, uint8_t y);
 void display_GPS_icon(uint8_t x, uint8_t y);
 
 void display_windSock(int16_t x, int16_t y, int16_t radius, float wind_angle);
+void display_windSockRing(int16_t x, int16_t y, int16_t radius, int16_t size, float wind_angle);
 
 void display_headerAndFooter(bool headingShowTurn, bool timerSelected);
 
