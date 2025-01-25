@@ -98,20 +98,28 @@ bool checkIfEnoughPoints() {
 
 bool findEstimate() {
 	// do circle fitting
-	// return true if finished
-	return true;
+
+	// Ben's magic goes here
+
+
+	// if finished, populate the estimate and return true	
+	if (1) {
+		// set proper values from the estimate
+		windEstimate.windDirectionTrue = 1.2;
+		windEstimate.windSpeed = 8.2;
+		windEstimate.validEstimate = true;
+
+		return true;
+
+	// otherwise return false and this function will be called again so we can continue calculating
+	} else {	
+		return false;
+	}
 }
 
 
 uint8_t windEstimateStep = 0;
 void estimateWind() {
-
-	// set proper values from the estimate
-	windEstimate.windDirectionTrue = 1.2;
-	windEstimate.windSpeed = 8.2;
-	windEstimate.validEstimate = true;
-
-	return;
 
 	switch (windEstimateStep) {
 		case 0:
