@@ -104,10 +104,7 @@ bool findEstimate() {
 
 	// if finished, populate the estimate and return true	
 	if (1) {
-		// set proper values from the estimate
-		windEstimate.windDirectionTrue = 1.2;
-		windEstimate.windSpeed = 8.2;
-		windEstimate.validEstimate = true;
+
 
 		return true;
 
@@ -118,8 +115,28 @@ bool findEstimate() {
 }
 
 
+// temp testing values
+float tempWindDir = 0;
+float tempWindSpeed = 0;
+int8_t dir = 1;
+
+
 uint8_t windEstimateStep = 0;
 void estimateWind() {
+
+	// Temporary Values for Testing			
+		windEstimate.windDirectionTrue = tempWindDir;
+		windEstimate.windSpeed = tempWindSpeed;
+		windEstimate.validEstimate = true;
+
+		tempWindDir += 0.02;
+		if (tempWindDir > 2 * PI) tempWindDir = 0;
+		tempWindSpeed += (dir * 0.2);
+		if (tempWindSpeed > 25) dir = -1;
+		if (tempWindSpeed < 0) dir = 1;
+
+		return;
+
 
 	switch (windEstimateStep) {
 		case 0:

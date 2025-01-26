@@ -14,6 +14,7 @@
 #include "settings.h"
 #include "version.h"
 #include "time.h"
+#include "wind_estimate/wind_estimate.h"
 
 /********************************************************************************************/
 // Display Components
@@ -725,7 +726,9 @@ void display_GPS_icon(uint8_t x, uint8_t y) {
 
 
 // Wind Sock Center Pointer
-void display_windSock(int16_t x, int16_t y, int16_t radius, float wind_angle) {
+void display_windSockArrow(int16_t x, int16_t y, int16_t radius) {
+  WindEstimate windEstimate = getWindEstimate();
+  float wind_angle = windEstimate.windDirectionTrue;
   // int16_t wind_triangle_radius = 10;
   // if (wind_angle > 2 * PI) wind_angle = 0;
 
@@ -760,8 +763,11 @@ void display_windSock(int16_t x, int16_t y, int16_t radius, float wind_angle) {
 
 
 // Wind Sock Ring Triangle
-void display_windSockRing(int16_t x, int16_t y, int16_t radius, int16_t size, float wind_angle) {
+void display_windSockRing(int16_t x, int16_t y, int16_t radius, int16_t size) {
   float point_angle = 0.65; // half angle of the point, starting with 0.79 rad (45 deg)
+
+  WindEstimate windEstimate = getWindEstimate();
+  float wind_angle = windEstimate.windDirectionTrue;
 
   uint16_t tip_x = x + sin(wind_angle) * radius;
   uint16_t tip_y = y - cos(wind_angle) * radius;
@@ -778,6 +784,36 @@ void display_windSockRing(int16_t x, int16_t y, int16_t radius, int16_t size, fl
   u8g2.drawLine(tail_1_x, tail_1_y, tail_2_x, tail_2_y);
 
 }
+
+void display_windSpeedCentered(uint8_t x, uint8_t y, const uint8_t *font) {
+  const float MPS2MPH = 2.23694f;
+  const float MPS2KPH = 3.6f;
+
+  u8g2.setFont(font);
+
+  WindEstimate windEstimate = getWindEstimate();
+  if (windEstimate.validEstimate) {
+    float windSpeed = windEstimate.windSpeed;
+
+    if (UNITS_speed) {
+      windSpeed *= MPS2MPH;
+    } else {
+      windSpeed *= MPS2KPH;
+    }
+
+    uint8_t displayWindSpeed = (uint8_t)(windSpeed + 0.5);  // round to nearest whole number
+    if (displayWindSpeed > 99) displayWindSpeed = 99;        // cap at 99
+
+    if (displayWindSpeed < 10) x += 4;  // center if single digit
+    u8g2.setCursor(x, y);
+    u8g2.print(displayWindSpeed);
+
+  } else {
+    u8g2.setCursor(x, y);
+    u8g2.print("--");    
+  }
+}
+
 
 // END OF COMPONENT DISPLAY FUNCTIONS //
 /********************************************************************************************/

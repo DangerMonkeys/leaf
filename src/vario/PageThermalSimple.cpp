@@ -51,17 +51,24 @@ void thermalSimplePage_draw() {
                             (thermalSimple_page_cursor_position == cursor_thermalSimplePage_timer));
 
     // wind
-
-    WindEstimate windEstimate = getWindEstimate();
-
     uint8_t wind_x = 55;
-    uint8_t wind_y = 31;
-    u8g2.drawDisc(wind_x, wind_y, 12);
-    u8g2.setDrawColor(0);
-    display_windSock(wind_x, wind_y, 10, windEstimate.windDirectionTrue);  // 0.78);
-    u8g2.setDrawColor(1);
+    uint8_t wind_y = 32;
+    //u8g2.drawDisc(wind_x, wind_y, 12);
+    // u8g2.setDrawColor(0);
+    // display_windSockArrow(wind_x, wind_y, 10);
+    // u8g2.setDrawColor(1);
 
-    display_windSockRing(wind_x, wind_y, 13, 7, test_wind_angle);
+    u8g2.drawDisc(wind_x, wind_y, 13);    
+    u8g2.setDrawColor(0);
+    u8g2.drawDisc(wind_x, wind_y, 11);    
+    u8g2.setDrawColor(1);
+    display_windSockRing(wind_x, wind_y, 14, 7);
+    display_windSpeedCentered(wind_x-8, wind_y+7, leaf_8x14);
+    
+
+
+
+
     // Main Info ****************************************************
     uint8_t topOfFrame = 22;
     uint8_t varioBarWidth = 25;

@@ -209,7 +209,7 @@ void navigatePage_draw() {
     WindEstimate windEstimate = getWindEstimate();
     u8g2.drawDisc(nav_x, nav_y, wind_r + 2);
     u8g2.setDrawColor(0);
-    display_windSock(nav_x, nav_y, wind_r, windEstimate.windDirectionTrue);  // 0.78);
+    display_windSockArrow(nav_x, nav_y, wind_r);  // 0.78);
     u8g2.setDrawColor(1);
 
 
