@@ -105,7 +105,7 @@ void display_flightTimer(uint8_t x, uint8_t y, bool shortstring, bool selected) 
   u8g2.setDrawColor(1);
 
   if (selected) {
-    display_selectionBox(x - 1, y - h - 1, w + 2, h + 2, 6);
+    display_selectionBox(x , y - h, w, h, 6);
   }
 }
 
@@ -805,7 +805,7 @@ void display_headerAndFooter(bool headingShowTurn, bool timerSelected) {
     display_GPS_icon(23, 192);
 
     // Vario Beep Volume icon
-    u8g2.setCursor(37, 192);
+    u8g2.setCursor(37, 191);
     u8g2.setFont(leaf_icons);
     if (QUIET_MODE && !flightTimer_isRunning()) {      
       u8g2.print((char)('I' + 4));
@@ -814,8 +814,8 @@ void display_headerAndFooter(bool headingShowTurn, bool timerSelected) {
     }
 
     // Timer in lower right corner
-    display_flightTimer(51, 191, 0, timerSelected);
-  }
+    display_flightTimer(52, 192, 0, timerSelected);
+}
 
 void display_splashLogo() { u8g2.drawXBM(0, 20, 96, 123, splash_logo_bmp); }
 
