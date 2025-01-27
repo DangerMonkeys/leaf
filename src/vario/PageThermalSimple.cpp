@@ -58,13 +58,23 @@ void thermalSimplePage_draw() {
     // display_windSockArrow(wind_x, wind_y, 10);
     // u8g2.setDrawColor(1);
 
-    u8g2.drawDisc(wind_x, wind_y, 13);    
+    // outer ring option
+    /*
+    u8g2.drawDisc(wind_x, wind_y, 15);    
     u8g2.setDrawColor(0);
-    u8g2.drawDisc(wind_x, wind_y, 11);    
+    u8g2.drawDisc(wind_x, wind_y, 13);    
     u8g2.setDrawColor(1);
-    display_windSockRing(wind_x, wind_y, 14, 7);
-    display_windSpeedCentered(wind_x-8, wind_y+7, leaf_8x14);
-    
+    display_windSockRing(wind_x+1, wind_y+1, 9, 6);
+    display_windSpeedCentered(wind_x-6, wind_y+7, leaf_6x12);
+    */
+
+    // inner ring option
+    u8g2.drawCircle(wind_x, wind_y, 10);    
+    //u8g2.setDrawColor(0);
+    //u8g2.drawDisc(wind_x, wind_y, 9);    
+    //u8g2.setDrawColor(1);
+    display_windSockRing(wind_x+1, wind_y+1, 12, 6);
+    display_windSpeedCentered(wind_x-6, wind_y+7, leaf_6x12);
 
 
 
