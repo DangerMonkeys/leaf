@@ -52,11 +52,13 @@ setting | samples | time avg
 #define DEF_CLIMB_AVERAGE 1  // in units of 5-seconds.  (def = 1 = 5sec)
 #define DEF_CLIMB_START 5    // cm/s when climb note begins
 #define DEF_VOLUME_VARIO 1   // 0=off, 1=low, 2=med, 3=high
-#define DEF_VARIO_TONES \
-  0  // 0 == linear pitch interpolation; 1 == major C-scale for climb, minor scale for descent
-#define DEF_LIFTY_AIR \
-  -40  // In units of cm/s (a sink rate of 30cm/s means the air itself is going up).  '0' is off.
-       // (lift air will apply from the lifty_air setting up to the climb_start value)
+#define DEF_QUIET_MODE 0     // 0 = off, 1 = on (ON means no beeping until flight recording)
+// 0 == linear pitch interpolation; 1 == major C-scale for climb, minor scale for descent
+#define DEF_VARIO_TONES 0  
+// In units of cm/s (a sink rate of 30cm/s means the air itself is going up).  '0' is off.
+// (lift air will apply from the lifty_air setting up to the climb_start value)
+#define DEF_LIFTY_AIR -40
+
 #define DEF_ALT_SETTING 29.921  // altimeter setting
 #define DEF_ALT_SYNC_GPS 0     // lock altimeter to GPS alt (to avoid local pressure setting issues)
 
@@ -66,11 +68,11 @@ setting | samples | time avg
 #define DEF_TRACK_SAVE 1               // save track log?
 #define DEF_AUTO_START 0               // 1 = ENABLE, 0 = DISABLE
 #define DEF_AUTO_STOP 0                // 1 = ENABLE, 0 = DISABLE
-#define DEF_LOG_FORMAT LOG_FORMAT_IGC  // 0 = KML, 1 = IGC
+#define DEF_LOG_FORMAT LOG_FORMAT_IGC  // IGC or KML
 
 // Default System Settings
 #define DEF_TIME_ZONE \
-  0  // mm (in minutes) UTC -8 (PDT) would therefor be -8*60, or 480.  This allows us to cover all
+  0  // mm (in minutes) UTC -8 (PST) would therefor be -8*60, or 480.  This allows us to cover all
      // time zones, including the :30 minute and :15 minute ones
 #define DEF_VOLUME_SYSTEM 1   // 0=off, 1=low, 2=med, 3=high
 #define DEF_ENTER_BOOTLOAD 0  // by default, don't enter bootloader on reset
@@ -108,6 +110,7 @@ extern int8_t VARIO_SENSE;
 extern int8_t CLIMB_AVERAGE;
 extern int8_t CLIMB_START;
 extern int8_t VOLUME_VARIO;
+extern bool QUIET_MODE;
 extern bool VARIO_TONES;
 extern int8_t LIFTY_AIR;
 extern float ALT_SETTING;

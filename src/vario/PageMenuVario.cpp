@@ -14,6 +14,7 @@
 enum vario_menu_items {
   cursor_vario_back,
   cursor_vario_volume,
+  cursor_vario_quietmode,
   cursor_vario_sensitive,
   cursor_vario_tones,
   cursor_vario_liftyair,
@@ -37,7 +38,7 @@ void VarioMenuPage::draw() {
     uint8_t y_spacing = 16;
     uint8_t setting_name_x = 2;
     uint8_t setting_choice_x = 74;
-    uint8_t menu_items_y[] = {190, 45, 60, 75, 90, 105, 120, 135};
+    uint8_t menu_items_y[] = {190, 45, 60, 75, 90, 105, 120, 135, 150};
 
     // first draw cursor selection box
     u8g2.drawRBox(setting_choice_x - 2, menu_items_y[cursor_position] - 14, 24, 16, 2);
@@ -56,6 +57,12 @@ void VarioMenuPage::draw() {
           u8g2.setFont(leaf_icons);
           u8g2.print(char('I' + VOLUME_VARIO));
           u8g2.setFont(leaf_6x12);
+          break;
+        case cursor_vario_quietmode:
+          if (QUIET_MODE)
+            u8g2.print(char(125));
+          else
+            u8g2.print(char(123));
           break;
         case cursor_vario_sensitive:
           u8g2.print(VARIO_SENSE);
@@ -90,6 +97,9 @@ void VarioMenuPage::setting_change(Button dir, ButtonState state, uint8_t count)
       if (state != RELEASED) return;
       settings_adjustVolumeVario(dir);
       break;
+    case cursor_vario_quietmode:
+      if (state == RELEASED) settings_toggleBoolOnOff (&QUIET_MODE);
+      break;
     case cursor_vario_sensitive:
       if (state == RELEASED) settings_adjustVarioAverage(dir);
       break;
@@ -121,31 +131,3 @@ void VarioMenuPage::setting_change(Button dir, ButtonState state, uint8_t count)
       break;
   }
 }
-
-// helpful switch constructors to copy-paste as needed:
-/*
-switch (button) {
-  case Button::UP:
-    break;
-  case Button::DOWN:
-    break;
-  case Button::LEFT:
-    break;
-  case Button::RIGHT:
-    break;
-  case Button::CENTER:
-    break;
-*/
-
-/*
-switch (state) {
-  case RELEASED:
-    break;
-  case PRESSED:
-    break;
-  case HELD:
-    break;
-  case HELD_LONG:
-    break;
-}
-*/

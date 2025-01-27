@@ -766,46 +766,56 @@ void display_windSock(int16_t x, int16_t y, int16_t radius, float wind_angle) {
 
 // Header and Footer Items to show on ALL pages
 void display_headerAndFooter(bool headingShowTurn, bool timerSelected) {
-  // Status Icons and Info ****************************************************
-  // clock time
-  u8g2.setFont(leaf_6x10);
-  display_clockTime(0, 10, false);
+  // Header--------------------------------
+    // clock time
+    u8g2.setFont(leaf_6x10);
+    display_clockTime(0, 10, false);
 
-  // battery
-  display_battIcon(0, 192, true);
+    // Heading in top center
+    uint8_t heading_x = 38;
+    uint8_t heading_y = 10;
+    u8g2.setFont(leaf_7x10);
+    if (headingShowTurn)
+      display_headingTurn(heading_x, heading_y);
+    else
+      display_heading(heading_x + 8, heading_y, true);
 
-  // SD Card Present
-  char SDicon = 60;
-  if (!SDcard_present()) SDicon = 61;
-  u8g2.setCursor(10, 192);
-  u8g2.setFont(leaf_icons);
-  u8g2.print((char)SDicon);
+    // Speed in upper right corner
+    u8g2.setFont(leaf_8x14);
+    display_speed(70, 14);
+    u8g2.setFont(leaf_5h);
+    u8g2.setCursor(82, 21);
+    if (UNITS_speed)
+      u8g2.print("MPH");
+    else
+      u8g2.print("KPH");
 
-  // GPS status icon
-  display_GPS_icon(23, 192);
+  // FOOTER_________________________
+    // battery
+    display_battIcon(0, 192, true);
 
-  // Heading in top center
-  uint8_t heading_x = 38;
-  uint8_t heading_y = 10;
-  u8g2.setFont(leaf_7x10);
-  if (headingShowTurn)
-    display_headingTurn(heading_x, heading_y);
-  else
-    display_heading(heading_x + 8, heading_y, true);
+    // SD Card Present
+    char SDicon = 60;
+    if (!SDcard_present()) SDicon = 61;
+    u8g2.setCursor(10, 192);
+    u8g2.setFont(leaf_icons);
+    u8g2.print((char)SDicon);
 
-  // Speed in upper right corner
-  u8g2.setFont(leaf_8x14);
-  display_speed(70, 14);
-  u8g2.setFont(leaf_5h);
-  u8g2.setCursor(82, 21);
-  if (UNITS_speed)
-    u8g2.print("MPH");
-  else
-    u8g2.print("KPH");
+    // GPS status icon
+    display_GPS_icon(23, 192);
 
-  // Timer in lower right corner
-  display_flightTimer(51, 191, 0, timerSelected);
-}
+    // Vario Beep Volume icon
+    u8g2.setCursor(37, 192);
+    u8g2.setFont(leaf_icons);
+    if (QUIET_MODE && !flightTimer_isRunning()) {      
+      u8g2.print((char)('I' + 4));
+    } else {
+      u8g2.print((char)('I' + VOLUME_VARIO));
+    }
+
+    // Timer in lower right corner
+    display_flightTimer(51, 191, 0, timerSelected);
+  }
 
 void display_splashLogo() { u8g2.drawXBM(0, 20, 96, 123, splash_logo_bmp); }
 

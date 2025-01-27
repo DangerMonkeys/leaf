@@ -29,7 +29,8 @@
         "sstream": "cpp",
         "streambuf": "cpp",
         "regex": "cpp",
-        "utility": "cpp"
+        "utility": "cpp",
+        "mutex": "cpp"
     },
     "editor.formatOnSave": true,
     "[cpp]": {

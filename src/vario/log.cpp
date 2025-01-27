@@ -15,7 +15,10 @@
 #include "string_utils.h"
 #include "tempRH.h"
 
-bool DATAFILE = true;  // set to false to disable data logging to SDcard
+
+// track if we're "flying" separate from if we're recording a log.  This allows us to enable
+// certain in-flight features (like vario quiet_mode) without having to be recording a log.
+bool weAreFlying = false; 
 
 // Local variables
 
@@ -37,54 +40,54 @@ FlightStats logbook;
 //////////////////////////////////////////////////////////////////////////////////////////
 // UPDATE - Main function to run every second
 void log_update() {
-  // If logging is disabled globally
-  if (!DATAFILE) return;
 
-  // We've not requested to start logging yet
-  if (!flight) {
+  // Check auto-start criteria if we haven't begun a flight yet
+  if (!flight && !weAreFlying) {
     // If auto start is configured, and we match the criteria, start the flight
-    if (AUTO_START && flightTimer_autoStart()) {
-      flightTimer_start();
+    if (flightTimer_autoStart()) {
+      weAreFlying = true; // if we meet the flying conditions, we're flying!
+      if (AUTO_START) flightTimer_start(); // start a log if auto-start is on
     } else {
       // Otherwise, there's nothing to do here.
       return;
     }
+  // Check auto-stop criteria if we ARE flying
+  } else if (weAreFlying) {
+    if (flightTimer_autoStop()) {
+      weAreFlying = false; // stop flying so we can stop the vario beeps (if quiet-mode is on)
+      if (AUTO_STOP) flightTimer_stop();  // stop the log if auto-stop is on
+    }
   }
 
-  // Current second of the flight
-  auto currentSecondSinceBoot = millis() / 1000;
+  // Now do all the regular log stuff if we have an active log
+  if (flight) {
+    // Current second of the flight
+    auto currentSecondSinceBoot = millis() / 1000;
 
-  // Current second of the flight
-  logbook.duration = currentSecondSinceBoot - logbook.logStartedAt;
+    // Current second of the flight
+    logbook.duration = currentSecondSinceBoot - logbook.logStartedAt;
 
-  // We wish to log a flight, but the log has not yet started
-  if (!flight->started()) {
-    if (!gps.location.isValid())
-      // We don't have a valid GPS location yet, try again later
-      return;
+    // We wish to log a flight, but the log has not yet started
+    if (!flight->started()) {
+      if (!gps.location.isValid())
+        // We don't have a valid GPS location yet, try again later
+        return;
 
-    if (ALT_SYNC_GPS)
-      settings_matchGPSAlt();  // sync pressure alt to GPS alt when log starts if the auto-sync
-                               // setting is turned on
+      if (ALT_SYNC_GPS)
+        settings_matchGPSAlt();  // sync pressure alt to GPS alt when log starts if the auto-sync
+                                // setting is turned on
 
-    // We have a GPS fix, we're able to start recording of the flight.
-    // TODO:  A second sound effect to show that recording has now started??
-    flight->startFlight();
-    // TODO:  Make this sound much cooler
-    speaker_playSound(fx_buttonhold);
-  }
+      // We have a GPS fix, we're able to start recording of the flight.
+      // TODO:  A second sound effect to show that recording has now started??
+      flight->startFlight();
+      // TODO:  Make this sound much cooler
+      speaker_playSound(fx_buttonhold);
+    }
 
-  // Generate a record to log
-  flight->log(logbook.duration);
-  log_captureValues();      // TODO:  Update this to an "Update Flight Stats" or something
-  log_checkMinMaxValues();  // TODO:  Probably rename this to be "bound Flight Stats"
-
-  // -----------------------------------
-
-  // finally, check if we should auto-stop the timer because we've been sitting idle for long
-  // enough
-  if (AUTO_STOP && flightTimer_autoStop()) {
-    flightTimer_stop();
+    // Generate a record to log
+    flight->log(logbook.duration);
+    log_captureValues();      // TODO:  Update this to an "Update Flight Stats" or something
+    log_checkMinMaxValues();  // TODO:  Probably rename this to be "bound Flight Stats"
   }
 }
 
@@ -183,6 +186,7 @@ bool flightTimer_isLogging() { return flightTimer_isRunning() && (bool)flight->s
 
 // start timer
 void flightTimer_start() {
+  weAreFlying = true;  // we're "flying" when we start a log
   // Short-circuit if a flight is already started
   if (flight != NULL) {
     return;
@@ -224,6 +228,7 @@ void flightTimer_start() {
 
 // stop timer
 void flightTimer_stop() {
+  weAreFlying = false;  // we're not "flying" when we stop a log
   // Short Circuit, no need to do anything if there's no flight recording.
   if (flight == NULL) {
     return;
@@ -237,6 +242,7 @@ void flightTimer_stop() {
   flight = NULL;
   logbook = FlightStats();  // Reset the flight stats
   // TODO:  Pop open a "flight complete" dialog
+  
 }
 
 void flightTimer_toggle() {

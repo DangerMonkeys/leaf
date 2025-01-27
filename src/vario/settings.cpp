@@ -16,6 +16,7 @@
 // Global Variables for Current Settings
 // Vario Settings
 int8_t VOLUME_VARIO;
+bool QUIET_MODE;
 bool VARIO_TONES;
 int8_t VARIO_SENSE;
 int8_t CLIMB_AVERAGE;
@@ -97,6 +98,7 @@ void settings_loadDefaults() {
   CLIMB_AVERAGE = DEF_CLIMB_AVERAGE;
   CLIMB_START = DEF_CLIMB_START;
   VOLUME_VARIO = DEF_VOLUME_VARIO;
+  QUIET_MODE = DEF_QUIET_MODE;
   VARIO_TONES = DEF_VARIO_TONES;
   LIFTY_AIR = DEF_LIFTY_AIR;
   ALT_SETTING = DEF_ALT_SETTING;
@@ -149,6 +151,7 @@ void settings_retrieve() {
   CLIMB_AVERAGE = leafPrefs.getChar("CLIMB_AVERAGE");
   CLIMB_START = leafPrefs.getChar("CLIMB_START");
   VOLUME_VARIO = leafPrefs.getChar("VOLUME_VARIO");
+  QUIET_MODE = leafPrefs.getBool("QUIET_MODE");
   VARIO_TONES = leafPrefs.getBool("VARIO_TONES");
   LIFTY_AIR = leafPrefs.getChar("LIFTY_AIR");
   ALT_SETTING = leafPrefs.getFloat("ALT_SETTING");
@@ -209,6 +212,7 @@ void settings_save() {
   leafPrefs.putChar("CLIMB_AVERAGE", CLIMB_AVERAGE);
   leafPrefs.putChar("CLIMB_START", CLIMB_START);
   leafPrefs.putChar("VOLUME_VARIO", VOLUME_VARIO);
+  leafPrefs.putBool("QUIET_MODE", QUIET_MODE);
   leafPrefs.putBool("VARIO_TONES", VARIO_TONES);
   leafPrefs.putChar("LIFTY_AIR", LIFTY_AIR);
   leafPrefs.putFloat("ALT_SETTING", ALT_SETTING);
