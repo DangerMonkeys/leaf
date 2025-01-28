@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 
+#include "PageMenuAbout.h"
 #include "PageMenuSystemWifi.h"
 #include "buttons.h"
 #include "display.h"
@@ -20,8 +21,11 @@ enum system_menu_items {
   cursor_system_ecomode,
   cursor_system_wifi,
   cursor_system_bluetooth,
-  cursor_system_reset
+  cursor_system_reset,
+  cursor_system_about,
 };
+
+PageMenuAbout about_page;
 
 // used for counting how long the user has held the button down to reset the settings
 uint8_t reset_settings_timer = 0;
@@ -43,7 +47,7 @@ void SystemMenuPage::draw() {
     uint8_t y_spacing = 16;
     uint8_t setting_name_x = 2;
     uint8_t setting_choice_x = 64;
-    uint8_t menu_items_y[] = {190, 45, 60, 75, 90, 105, 120, 135, 150};
+    uint8_t menu_items_y[] = {190, 45, 60, 75, 90, 105, 120, 135, 150, 165};
     char twoZeros[] = "00";
 
     // first draw cursor selection box
@@ -77,7 +81,7 @@ void SystemMenuPage::draw() {
           break;
 
         case cursor_system_volume:
-          u8g2.setCursor(setting_choice_x + 12, menu_items_y[i]);          
+          u8g2.setCursor(setting_choice_x + 12, menu_items_y[i]);
           u8g2.setFont(leaf_icons);
           u8g2.print(char('I' + VOLUME_SYSTEM));
           u8g2.setFont(leaf_6x12);
@@ -111,11 +115,6 @@ void SystemMenuPage::draw() {
             u8g2.print((char)123);
           break;
 
-        case cursor_system_wifi:
-          u8g2.setCursor(setting_choice_x + 8, menu_items_y[i]);
-          u8g2.print((char)126);
-          break;
-
         case cursor_system_bluetooth:
           u8g2.setCursor(setting_choice_x + 4, menu_items_y[i]);
           if (BLUETOOTH_ON)
@@ -136,6 +135,11 @@ void SystemMenuPage::draw() {
         case cursor_system_back:
           u8g2.setCursor(setting_choice_x + 8, menu_items_y[i]);
           u8g2.print((char)124);
+          break;
+
+        default:
+          u8g2.setCursor(setting_choice_x + 8, menu_items_y[i]);
+          u8g2.print((char)126);
           break;
       }
       u8g2.setDrawColor(1);
@@ -204,6 +208,12 @@ void SystemMenuPage::setting_change(Button dir, ButtonState state, uint8_t count
         speaker_playSound(fx_exit);
         settings_save();
         mainMenuPage.quitMenu();
+      }
+      break;
+    case cursor_system_about:
+      if (state == RELEASED) {
+        speaker_playSound(fx_confirm);
+        about_page.show();
       }
       break;
   }
