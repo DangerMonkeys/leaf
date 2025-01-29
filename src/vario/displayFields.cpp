@@ -47,6 +47,9 @@ void display_clockTime(uint8_t x, uint8_t y, bool show_ampm) {
   if (UNITS_hours) {
     // This is a 12 hour time and needs to print eg " 9:45am"
     strftime(buf, 10, "%I:%M%p", &cal);
+    if (buf[0] == '0') {
+      buf[0] = ' ';
+    }
   } else {
     // 24 hour.  Print in the format of "09:45"
     strftime(buf, 10, "%R", &cal);
