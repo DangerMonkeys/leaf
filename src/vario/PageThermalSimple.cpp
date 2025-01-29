@@ -50,37 +50,16 @@ void thermalSimplePage_draw() {
     display_headerAndFooter(false,
                             (thermalSimple_page_cursor_position == cursor_thermalSimplePage_timer));
 
-    // wind
-    uint8_t wind_x = 55;
-    uint8_t wind_y = 32;
-    //u8g2.drawDisc(wind_x, wind_y, 12);
-    // u8g2.setDrawColor(0);
-    // display_windSockArrow(wind_x, wind_y, 10);
-    // u8g2.setDrawColor(1);
-
-    // outer ring option
-    /*
-    u8g2.drawDisc(wind_x, wind_y, 15);    
-    u8g2.setDrawColor(0);
-    u8g2.drawDisc(wind_x, wind_y, 13);    
-    u8g2.setDrawColor(1);
-    display_windSockRing(wind_x+1, wind_y+1, 9, 6);
-    display_windSpeedCentered(wind_x-6, wind_y+7, leaf_6x12);
-    */
-
-    // inner ring option
-    u8g2.drawCircle(wind_x, wind_y, 10);    
-    //u8g2.setDrawColor(0);
-    //u8g2.drawDisc(wind_x, wind_y, 9);    
-    //u8g2.setDrawColor(1);
-    display_windSockRing(wind_x+1, wind_y+1, 12, 6);
-    display_windSpeedCentered(wind_x-6, wind_y+7, leaf_6x12);
-
-
-
+    // wind & compass
+    uint8_t wind_x = 57;
+    uint8_t wind_y = 31;
+    uint8_t wind_radius = 12;
+    uint8_t pointer_size = 7;
+    display_windSockRing(wind_x, wind_y, wind_radius, pointer_size);
+    
 
     // Main Info ****************************************************
-    uint8_t topOfFrame = 22;
+    uint8_t topOfFrame = 26; //22
     uint8_t varioBarWidth = 25;
     uint8_t varioBarHeight = 151;
 
@@ -88,7 +67,7 @@ void thermalSimplePage_draw() {
     display_varioBar(topOfFrame, varioBarHeight, varioBarWidth, baro.climbRateFiltered);
 
     // Altitude
-    uint8_t alt_y = 58;
+    uint8_t alt_y = 62; //58
     // Altitude header labels
     u8g2.setFont(leaf_labels);
     u8g2.setCursor(varioBarWidth + 52, alt_y);
@@ -108,8 +87,10 @@ void thermalSimplePage_draw() {
     }
 
     // Climb
-    display_climbRatePointerBox(varioBarWidth, 84, 76, 27, 13);  // x, y, w, h, triangle size
-    display_climbRate(20, 108, leaf_21h, baro.climbRateFiltered);
+    uint8_t climbBoxHeight = 27;
+    uint8_t climbBoxY = topOfFrame + varioBarHeight/2 - climbBoxHeight/2;
+    display_climbRatePointerBox(varioBarWidth, climbBoxY, 76, climbBoxHeight, 13);  // x, y, w, h, triangle size
+    display_climbRate(20, climbBoxY + 24, leaf_21h, baro.climbRateFiltered);
     u8g2.setDrawColor(0);
     u8g2.setFont(leaf_5h);
     u8g2.print(" ");  // put a space, but using a small font so the space isn't too wide
@@ -121,7 +102,8 @@ void thermalSimplePage_draw() {
     u8g2.setDrawColor(1);
 
     // Alt 2 (user alt field; above launch, etc)
-    display_altAboveLaunch(varioBarWidth + 4, 136, baro.altAboveLaunch);
+    uint8_t alt2y = climbBoxY + 53;
+    display_altAboveLaunch(varioBarWidth + 4, alt2y, baro.altAboveLaunch);
 
     /* if (selected) {
 u8g2.drawRFrame(cursor_x, cursor_y-16, 96-cursor_x, 18, 3);
@@ -129,7 +111,7 @@ u8g2.drawRFrame(cursor_x, cursor_y-16, 96-cursor_x, 18, 3);
     */
 
     // User Field ****************************************************
-    uint8_t userfield_y = 171;
+    uint8_t userfield_y = alt2y + 24;
     switch (THMSPG_USR1) {
       case static_cast<int>(ThermSimpPageUserField1::GLIDE):
         // Glide Ratio

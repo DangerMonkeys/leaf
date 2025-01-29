@@ -690,7 +690,7 @@ void display_batt_charging_fullscreen(uint8_t x, uint8_t y) {
 
 
 // GPS Status Icon
-uint8_t blink = 0;
+uint8_t blinkGPS = 0;
 
 void display_GPS_icon(uint8_t x, uint8_t y) {
   u8g2.setDrawColor(1);
@@ -704,12 +704,12 @@ void display_GPS_icon(uint8_t x, uint8_t y) {
       u8g2.print((char)43); // GPS icon with fix
     } else {
       //blink the icon to convey "searching"
-      if (blink) {
+      if (blinkGPS) {
         u8g2.print((char)42); // GPS icon without fix        
-        blink = 0;
+        blinkGPS = 0;
       } else {
         u8g2.print((char)41); // GPS icon with fix
-        blink = 1;
+        blinkGPS = 1;
       }      
       u8g2.setFont(leaf_5h);
       u8g2.setCursor(x + 4, y-4);
@@ -761,28 +761,106 @@ void display_windSockArrow(int16_t x, int16_t y, int16_t radius) {
   u8g2.drawLine(tail_mid_xprime, tail_mid_yprime, tail_1_xprime, tail_1_yprime);
 }
 
-
 // Wind Sock Ring Triangle
+uint8_t blinkCount = 0;
+bool blink = true;
 void display_windSockRing(int16_t x, int16_t y, int16_t radius, int16_t size) {
-  float point_angle = 0.65; // half angle of the point, starting with 0.79 rad (45 deg)
-
+  float point_angle = 0.65; // half angle of the arrow pointer
+  
   WindEstimate windEstimate = getWindEstimate();
-  float wind_angle = windEstimate.windDirectionTrue;
 
-  uint16_t tip_x = x + sin(wind_angle) * radius;
-  uint16_t tip_y = y - cos(wind_angle) * radius;
+  // main circle
+  u8g2.setDrawColor(1);
+  u8g2.drawDisc(x, y, radius);    
 
-  uint16_t tail_1_x = tip_x + sin(wind_angle + point_angle) * size;
-  uint16_t tail_1_y = tip_y - cos(wind_angle + point_angle) * size;
-  uint16_t tail_2_x = tip_x + sin(wind_angle - point_angle) * size;
-  uint16_t tail_2_y = tip_y - cos(wind_angle - point_angle) * size;
+  u8g2.setDrawColor(0);
 
-  u8g2.drawTriangle(tip_x, tip_y, tail_1_x, tail_1_y, tail_2_x, tail_2_y);
+    blinkCount++;
+    if (blinkCount >= 10) {
+      if (blink) blink = false;
+      else blink = true;
+      blinkCount = 0;
+    }
 
-  u8g2.drawLine(tip_x, tip_y, tail_1_x, tail_1_y);
-  u8g2.drawLine(tip_x, tip_y, tail_2_x, tail_2_y);
-  u8g2.drawLine(tail_1_x, tail_1_y, tail_2_x, tail_2_y);
 
+  if (blink) { //!windEstimate.validEstimate) {
+    // just show generic wind icon if no wind estimate
+    u8g2.setFont(wind_logo);
+    u8g2.setFontMode(1);    
+    u8g2.setCursor(x-10, y+11);
+    u8g2.print('(');
+    u8g2.setFontMode(0);
+  } else {
+    // wind pointer inside
+    float wind_angle = windEstimate.windDirectionTrue;
+
+    uint16_t tip_x = + sin(wind_angle) * (radius - size + 2) + 1 + x;
+    uint16_t tip_y = - cos(wind_angle) * (radius - size + 2) + 1 + y;
+
+    uint16_t tail_1_x = tip_x + sin(wind_angle + point_angle) * size;
+    uint16_t tail_1_y = tip_y - cos(wind_angle + point_angle) * size;
+    uint16_t tail_2_x = tip_x + sin(wind_angle - point_angle) * size;
+    uint16_t tail_2_y = tip_y - cos(wind_angle - point_angle) * size;
+
+    u8g2.drawTriangle(tip_x, tip_y, tail_1_x, tail_1_y, tail_2_x, tail_2_y);
+    u8g2.drawLine(tip_x, tip_y, tail_1_x, tail_1_y);
+    u8g2.drawLine(tip_x, tip_y, tail_2_x, tail_2_y);
+    u8g2.drawLine(tail_1_x, tail_1_y, tail_2_x, tail_2_y);
+
+    // now print wind speed, but offset from pointer
+    uint8_t speed_radius = size / 2;
+    uint8_t speed_x = x - sin(wind_angle) * speed_radius;
+    uint8_t speed_y = y + cos(wind_angle) * speed_radius;
+    display_windSpeedCentered(speed_x-6, speed_y+7, leaf_6x12);
+    u8g2.setDrawColor(1);
+
+    u8g2.drawCircle(x, y, radius);
+  }
+  
+  // Heading pointer
+    u8g2.setDrawColor(1);
+    u8g2.drawTriangle(x, y - radius - size, x + size - 2, y - radius - 1, x - size + 2, y - radius - 1);
+  
+  // compass major directions
+    uint8_t compassRadius = radius + 6;
+    float displayCourse = -1 * gps.course.deg() * DEG_TO_RAD;
+    uint8_t compassN_x = x + sin(displayCourse) * compassRadius;
+    uint8_t compassN_y = y - cos(displayCourse) * compassRadius;
+    uint8_t compassE_x = x + sin(displayCourse + PI / 2) * compassRadius;
+    uint8_t compassE_y = y - cos(displayCourse + PI / 2) * compassRadius;
+    uint8_t compassS_x = x + sin(displayCourse + PI) * compassRadius;
+    uint8_t compassS_y = y - cos(displayCourse + PI) * compassRadius;
+    uint8_t compassW_x = x + sin(displayCourse + 3 * PI / 2) * compassRadius;
+    uint8_t compassW_y = y - cos(displayCourse + 3 * PI / 2) * compassRadius;
+
+    uint8_t fontOffsetH = 2;
+    uint8_t fontOffsetV = 4;
+
+    //cutoff top most value if near the pointer arrow
+    uint8_t cutoff_y = y - compassRadius + 1;
+
+    u8g2.setFont(leaf_compass);
+    u8g2.setDrawColor(2);
+    u8g2.setFontMode(1);
+    if (compassN_y > cutoff_y) {
+      u8g2.setCursor(compassN_x - fontOffsetH, compassN_y + fontOffsetV);
+      u8g2.print("N");
+    }
+    if (compassE_y > cutoff_y) {
+    u8g2.setCursor(compassE_x - fontOffsetH, compassE_y + fontOffsetV);
+    u8g2.print("E");
+    }
+    if (compassS_y > cutoff_y) {
+      u8g2.setCursor(compassS_x - fontOffsetH, compassS_y + fontOffsetV);
+      u8g2.print("S");
+    }
+    if (compassW_y > cutoff_y) {
+      u8g2.setCursor(compassW_x - fontOffsetH, compassW_y + fontOffsetV);
+      u8g2.print("W");
+    }
+    u8g2.setFontMode(0);
+    u8g2.setDrawColor(1);
+  
 }
 
 void display_windSpeedCentered(uint8_t x, uint8_t y, const uint8_t *font) {
