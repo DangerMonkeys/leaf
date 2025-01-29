@@ -231,8 +231,10 @@ void display_page_charging() {
     uint16_t battPercent = power_getBattLevel(0);
 
     // Battery Percent
+    uint8_t fontOffset = 3;
+    if (battPercent == 100) fontOffset = 0;
     u8g2.setFont(leaf_6x12);
-    u8g2.setCursor(34, 12);
+    u8g2.setCursor(36 + fontOffset, 12);
     u8g2.print(battPercent);
     u8g2.print('%');
 
