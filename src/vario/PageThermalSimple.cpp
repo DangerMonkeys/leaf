@@ -47,15 +47,21 @@ void thermalSimplePage_draw() {
   u8g2.firstPage();
   do {
     // draw all status icons, clock, timer, etc (and pass along if timer is selected)
-    display_headerAndFooter(false,
-                            (thermalSimple_page_cursor_position == cursor_thermalSimplePage_timer));
+    display_headerAndFooter(thermalSimple_page_cursor_position == cursor_thermalSimplePage_timer);
+
+    
+    // Track/Heading/Wind in top center
+    uint8_t center_x = 53;
+
+    uint8_t heading_y = 10;
+    u8g2.setFont(leaf_7x10);
+    display_heading(center_x - 11, heading_y, true);
 
     // wind & compass
-    uint8_t wind_x = 57;
     uint8_t wind_y = 31;
     uint8_t wind_radius = 12;
     uint8_t pointer_size = 7;
-    display_windSockRing(wind_x, wind_y, wind_radius, pointer_size);
+    display_windSockRing(center_x, wind_y, wind_radius, pointer_size);
     
 
     // Main Info ****************************************************

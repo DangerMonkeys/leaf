@@ -902,20 +902,11 @@ void display_windSpeedCentered(uint8_t x, uint8_t y, const uint8_t *font) {
 // Full Screen Display Functions
 
 // Header and Footer Items to show on ALL pages
-void display_headerAndFooter(bool headingShowTurn, bool timerSelected) {
+void display_headerAndFooter(bool timerSelected) {
   // Header--------------------------------
     // clock time
     u8g2.setFont(leaf_6x10);
     display_clockTime(0, 10, false);
-
-    // Heading in top center
-    uint8_t heading_x = 38;
-    uint8_t heading_y = 10;
-    u8g2.setFont(leaf_7x10);
-    if (headingShowTurn)
-      display_headingTurn(heading_x, heading_y);
-    else
-      display_heading(heading_x + 8, heading_y, true);
 
     // Speed in upper right corner
     u8g2.setFont(leaf_8x14);
@@ -978,8 +969,9 @@ void display_on_splash() {
     u8g2.setCursor(28, 170);
     u8g2.print("HELLO");
 
-    u8g2.setCursor(17, 192);
-    u8g2.print("VER: ");
+    u8g2.setFont(leaf_5x8);
+    u8g2.setCursor(35, 192);
+    u8g2.print("v");
     u8g2.print(VERSION);
   } while (u8g2.nextPage());
 }

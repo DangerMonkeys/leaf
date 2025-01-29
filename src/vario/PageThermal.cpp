@@ -41,7 +41,13 @@ void thermalPage_draw() {
   u8g2.firstPage();
   do {
     // draw all status icons, clock, timer, etc (and pass along if timer is selected)
-    display_headerAndFooter(false, (cursor_position == cursor_thermalPage_timer));
+    display_headerAndFooter(cursor_position == cursor_thermalPage_timer);
+
+    // heading/track top center
+    uint8_t heading_x = 46;
+    uint8_t heading_y = 10;
+    u8g2.setFont(leaf_7x10);
+    display_heading(heading_x, heading_y, true);
 
     // Main Info ****************************************************
     uint8_t topOfFrame = 30;

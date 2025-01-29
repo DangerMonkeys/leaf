@@ -119,7 +119,15 @@ void navigatePage_draw() {
   u8g2.firstPage();
   do {
     // draw all status icons, clock, timer, etc (and pass along if timer is selected)
-    display_headerAndFooter(true, (navigatePage_cursorPosition == cursor_navigatePage_timer));
+    display_headerAndFooter(navigatePage_cursorPosition == cursor_navigatePage_timer);
+
+    // Track/Heading Top Center
+    uint8_t heading_x = 38;
+    uint8_t heading_y = 10;
+    u8g2.setFont(leaf_7x10);
+    display_headingTurn(heading_x, heading_y);
+
+
 
     ///////////////////////////////////////////////////
     // Nav Circle
