@@ -12,8 +12,8 @@
 #include "log.h"
 #include "power.h"
 #include "settings.h"
-#include "version.h"
 #include "time.h"
+#include "version.h"
 
 /********************************************************************************************/
 // Display Components
@@ -38,13 +38,13 @@ void display_clockTime(uint8_t x, uint8_t y, bool show_ampm) {
 
   // Get the local date, print NOGPS on error
   tm cal;
-  if(!gps_getLocalDateTime(cal)) {
+  if (!gps_getLocalDateTime(cal)) {
     u8g2.print((char)137);
     u8g2.print("NOGPS");
   }
   // Crafts a 24 or 12 hour time to show depending on prefs
   char buf[10];
-  if(UNITS_hours) {
+  if (UNITS_hours) {
     // This is a 12 hour time and needs to print eg " 9:45am"
     strftime(buf, 10, "%I:%M%p", &cal);
   } else {
@@ -54,7 +54,7 @@ void display_clockTime(uint8_t x, uint8_t y, bool show_ampm) {
   u8g2.print(buf);
 }
 
-void display_waypointTimeRemaining(uint8_t x, uint8_t y, const uint8_t *font) {
+void display_waypointTimeRemaining(uint8_t x, uint8_t y, const uint8_t* font) {
   u8g2.setDrawColor(1);
   u8g2.setCursor(x, y);
   u8g2.setFont(font);
@@ -126,11 +126,11 @@ void display_speed(uint8_t cursor_x, uint8_t cursor_y) {
   if (displaySpeed < 100) u8g2.print(" ");  // leave a space if needed
   u8g2.print(displaySpeed, 1);
 }
-void display_speed(uint8_t x, uint8_t y, const uint8_t *font) {
+void display_speed(uint8_t x, uint8_t y, const uint8_t* font) {
   u8g2.setFont(font);
   display_speed(x, y);
 }
-void display_speed(uint8_t x, uint8_t y, const uint8_t *font, bool units) {
+void display_speed(uint8_t x, uint8_t y, const uint8_t* font, bool units) {
   display_speed(x, y, font);
   // kpm or mph
   if (1)
@@ -177,7 +177,7 @@ void display_heading(uint8_t cursor_x, uint8_t cursor_y, bool degSymbol) {
   u8g2.setCursor(cursor_x, cursor_y);
 
   if (UNITS_heading) {  // Cardinal heading direction
-    const char *displayHeadingCardinal =
+    const char* displayHeadingCardinal =
         gps.cardinal(gps.course.deg());  // gps_getCourseCardinal();
     if (strlen(displayHeadingCardinal) == 1)
       u8g2.setCursor(cursor_x + 8, cursor_y);
@@ -237,7 +237,7 @@ void display_headingTurn(uint8_t cursor_x, uint8_t cursor_y) {
   if (displayTurn > '=') u8g2.print(displayTurn);
 }
 
-void display_alt_type(uint8_t cursor_x, uint8_t cursor_y, const uint8_t *font, uint8_t altType) {
+void display_alt_type(uint8_t cursor_x, uint8_t cursor_y, const uint8_t* font, uint8_t altType) {
   int32_t displayAlt = 0;
 
   switch (altType) {
@@ -263,7 +263,7 @@ void display_alt_type(uint8_t cursor_x, uint8_t cursor_y, const uint8_t *font, u
   display_alt(cursor_x, cursor_y, font, displayAlt);
 }
 
-void display_alt(uint8_t cursor_x, uint8_t cursor_y, const uint8_t *font, int32_t displayAlt) {
+void display_alt(uint8_t cursor_x, uint8_t cursor_y, const uint8_t* font, int32_t displayAlt) {
   if (UNITS_alt)
     displayAlt = displayAlt * 100 / 3048;  // convert cm to ft
   else
@@ -356,48 +356,48 @@ void display_varioBar(uint8_t varioBarFrame_top,
   // needed if varioBar overlaps something else u8g2.setDrawColor(1);
 
   // Fill varioBar
-    uint8_t varioBarFill_top = varioBarFrame_top + 1;
-    uint8_t varioBarFill_bot = varioBarFrame_top + varioBarFrame_length - 2;
-    uint8_t varioBarFill_top_length = varioBarFrame_mid - varioBarFill_top + 1;
-    uint8_t varioBarFill_bot_length = varioBarFill_bot - varioBarFrame_mid + 1;
+  uint8_t varioBarFill_top = varioBarFrame_top + 1;
+  uint8_t varioBarFill_bot = varioBarFrame_top + varioBarFrame_length - 2;
+  uint8_t varioBarFill_top_length = varioBarFrame_mid - varioBarFill_top + 1;
+  uint8_t varioBarFill_bot_length = varioBarFill_bot - varioBarFrame_mid + 1;
 
-    int16_t varioBarFill_pixels = 0;
-    uint8_t varioBarFill_start = 1;
-    uint8_t varioBarFill_end = 1;
+  int16_t varioBarFill_pixels = 0;
+  uint8_t varioBarFill_start = 1;
+  uint8_t varioBarFill_end = 1;
 
-    if (displayBarClimbRate > 2 * varioBar_climbRateMax ||
-        displayBarClimbRate < 2 * varioBar_climbRateMin) {
-      // do nothing, the bar is maxxed out which looks empty
+  if (displayBarClimbRate > 2 * varioBar_climbRateMax ||
+      displayBarClimbRate < 2 * varioBar_climbRateMin) {
+    // do nothing, the bar is maxxed out which looks empty
 
-    } else if (displayBarClimbRate > varioBar_climbRateMax) {
-      // fill top half inverted
-      varioBarFill_pixels = varioBarFill_top_length * (displayBarClimbRate - varioBar_climbRateMax) /
-                            varioBar_climbRateMax;
-      varioBarFill_start = varioBarFill_top;
-      varioBarFill_end = varioBarFrame_mid - varioBarFill_pixels;
+  } else if (displayBarClimbRate > varioBar_climbRateMax) {
+    // fill top half inverted
+    varioBarFill_pixels = varioBarFill_top_length * (displayBarClimbRate - varioBar_climbRateMax) /
+                          varioBar_climbRateMax;
+    varioBarFill_start = varioBarFill_top;
+    varioBarFill_end = varioBarFrame_mid - varioBarFill_pixels;
 
-    } else if (displayBarClimbRate < varioBar_climbRateMin) {
-      // fill bottom half inverted
-      varioBarFill_pixels = varioBarFill_bot_length * (displayBarClimbRate - varioBar_climbRateMin) /
-                            varioBar_climbRateMin;
-      varioBarFill_start = varioBarFrame_mid + varioBarFill_pixels;
-      varioBarFill_end = varioBarFill_bot;
+  } else if (displayBarClimbRate < varioBar_climbRateMin) {
+    // fill bottom half inverted
+    varioBarFill_pixels = varioBarFill_bot_length * (displayBarClimbRate - varioBar_climbRateMin) /
+                          varioBar_climbRateMin;
+    varioBarFill_start = varioBarFrame_mid + varioBarFill_pixels;
+    varioBarFill_end = varioBarFill_bot;
 
-    } else if (displayBarClimbRate < 0) {
-      // fill bottom half positive
-      varioBarFill_pixels = varioBarFill_bot_length * (displayBarClimbRate) / varioBar_climbRateMin;
-      varioBarFill_start = varioBarFrame_mid;
-      varioBarFill_end = varioBarFrame_mid + varioBarFill_pixels;
+  } else if (displayBarClimbRate < 0) {
+    // fill bottom half positive
+    varioBarFill_pixels = varioBarFill_bot_length * (displayBarClimbRate) / varioBar_climbRateMin;
+    varioBarFill_start = varioBarFrame_mid;
+    varioBarFill_end = varioBarFrame_mid + varioBarFill_pixels;
 
-    } else {
-      // fill top half positive
-      varioBarFill_pixels = varioBarFill_top_length * (displayBarClimbRate) / varioBar_climbRateMax;
-      varioBarFill_start = varioBarFrame_mid - varioBarFill_pixels;
-      varioBarFill_end = varioBarFrame_mid;
-    }
+  } else {
+    // fill top half positive
+    varioBarFill_pixels = varioBarFill_top_length * (displayBarClimbRate) / varioBar_climbRateMax;
+    varioBarFill_start = varioBarFrame_mid - varioBarFill_pixels;
+    varioBarFill_end = varioBarFrame_mid;
+  }
 
-    u8g2.drawBox(
-        1, varioBarFill_start, varioBarFrame_width - 2, varioBarFill_end - varioBarFill_start + 1);
+  u8g2.drawBox(
+      1, varioBarFill_start, varioBarFrame_width - 2, varioBarFill_end - varioBarFill_start + 1);
 
   // Tick marks on varioBar
   uint8_t tickSpacing = varioBarFill_top_length / 5;  // start with top half tick spacing
@@ -421,7 +421,6 @@ void display_varioBar(uint8_t varioBarFrame_top,
   }
 }
 
-
 void display_climbRatePointerBox(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t triSize) {
   u8g2.setDrawColor(1);
   u8g2.drawBox(x, y, w, h);
@@ -432,7 +431,7 @@ void display_climbRatePointerBox(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uin
   u8g2.drawLine(x - triSize - 1, y + (h) / 2, x - 2, y + (h) / 2 + triSize - 1);
 }
 
-void display_climbRate(uint8_t x, uint8_t y, const uint8_t *font, int16_t displayClimbRate) {
+void display_climbRate(uint8_t x, uint8_t y, const uint8_t* font, int16_t displayClimbRate) {
   u8g2.setCursor(x, y);
   u8g2.setFont(font);
   u8g2.setDrawColor(0);
@@ -488,7 +487,7 @@ void display_altAboveLaunch(uint8_t x, uint8_t y, int32_t aboveLaunchAlt) {
   display_alt(x, y, leaf_8x14, aboveLaunchAlt);
 }
 
-void display_altAboveLaunch(uint8_t x, uint8_t y, int32_t aboveLaunchAlt, const uint8_t *font) {
+void display_altAboveLaunch(uint8_t x, uint8_t y, int32_t aboveLaunchAlt, const uint8_t* font) {
   u8g2.setFont(font);
   uint8_t h = u8g2.getMaxCharHeight();
   u8g2.setCursor(x, y - h - 2);
@@ -688,7 +687,6 @@ void display_batt_charging_fullscreen(uint8_t x, uint8_t y) {
   }
 }
 
-
 // GPS Status Icon
 uint8_t blink = 0;
 
@@ -697,33 +695,32 @@ void display_GPS_icon(uint8_t x, uint8_t y) {
   u8g2.setFont(leaf_icons);
   u8g2.setCursor(x, y);
 
-  if (GPS_SETTING == 0) {   // GPS Off
-    u8g2.print((char)44);   // GPS icon with X through it
-  } else if (GPS_SETTING) { // GPS not-off
+  if (GPS_SETTING == 0) {    // GPS Off
+    u8g2.print((char)44);    // GPS icon with X through it
+  } else if (GPS_SETTING) {  // GPS not-off
     if (gpsFixInfo.fix) {
-      u8g2.print((char)43); // GPS icon with fix
+      u8g2.print((char)43);  // GPS icon with fix
     } else {
-      //blink the icon to convey "searching"
+      // blink the icon to convey "searching"
       if (blink) {
-        u8g2.print((char)42); // GPS icon without fix        
+        u8g2.print((char)42);  // GPS icon without fix
         blink = 0;
       } else {
-        u8g2.print((char)41); // GPS icon with fix
+        u8g2.print((char)41);  // GPS icon with fix
         blink = 1;
-      }      
+      }
       u8g2.setFont(leaf_5h);
-      u8g2.setCursor(x + 4, y-4);
-      
+      u8g2.setCursor(x + 4, y - 4);
+
       if (gpsFixInfo.numberOfSats > 9) {
         u8g2.print("9");
       } else {
-        if (gpsFixInfo.numberOfSats == 1) u8g2.setCursor(x+5, y-4);
+        if (gpsFixInfo.numberOfSats == 1) u8g2.setCursor(x + 5, y - 4);
         u8g2.print(gpsFixInfo.numberOfSats);
       }
     }
   }
 }
-
 
 // Wind Sock Triangle
 void display_windSock(int16_t x, int16_t y, int16_t radius, float wind_angle) {
@@ -807,7 +804,9 @@ void display_headerAndFooter(bool headingShowTurn, bool timerSelected) {
   display_flightTimer(51, 191, 0, timerSelected);
 }
 
-void display_splashLogo() { u8g2.drawXBM(0, 20, 96, 123, splash_logo_bmp); }
+void display_splashLogo() {
+  u8g2.drawXBM(0, 20, 96, 123, splash_logo_bmp);
+}
 
 void display_off_splash() {
   u8g2.firstPage();
