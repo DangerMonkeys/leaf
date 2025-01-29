@@ -79,13 +79,16 @@ bool firstClimbInitialization = true;
 
 void baro_adjustAltSetting(int8_t dir, uint8_t count) {
   float increase = .001;  //
-  if (count >= 1) increase *= 5;
-  if (count >= 8) increase *= 4;
+  if (count >= 1) increase *= 10;
+  if (count >= 8) increase *= 5;
 
-  if (dir >= 1)
+  if (dir >= 1) {
     baro.altimeterSetting += increase;
-  else if (dir <= -1)
+    if (baro.altimeterSetting > 32.0) baro.altimeterSetting = 32.0;
+  } else if (dir <= -1) {
     baro.altimeterSetting -= increase;
+    if (baro.altimeterSetting < 28.0) baro.altimeterSetting = 28.0;    
+  }
   ALT_SETTING = baro.altimeterSetting;
 }
 

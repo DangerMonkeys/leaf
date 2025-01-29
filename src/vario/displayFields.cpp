@@ -12,6 +12,7 @@
 #include "log.h"
 #include "power.h"
 #include "settings.h"
+#include "time.h"
 #include "version.h"
 #include "time.h"
 #include "wind_estimate/wind_estimate.h"
@@ -39,15 +40,18 @@ void display_clockTime(uint8_t x, uint8_t y, bool show_ampm) {
 
   // Get the local date, print NOGPS on error
   tm cal;
-  if(!gps_getLocalDateTime(cal)) {
+  if (!gps_getLocalDateTime(cal)) {
     u8g2.print((char)137);
     u8g2.print("NOGPS");
   }
   // Crafts a 24 or 12 hour time to show depending on prefs
   char buf[10];
-  if(UNITS_hours) {
+  if (UNITS_hours) {
     // This is a 12 hour time and needs to print eg " 9:45am"
     strftime(buf, 10, "%I:%M%p", &cal);
+    if (buf[0] == '0') {
+      buf[0] = ' ';
+    }
   } else {
     // 24 hour.  Print in the format of "09:45"
     strftime(buf, 10, "%R", &cal);
@@ -55,7 +59,7 @@ void display_clockTime(uint8_t x, uint8_t y, bool show_ampm) {
   u8g2.print(buf);
 }
 
-void display_waypointTimeRemaining(uint8_t x, uint8_t y, const uint8_t *font) {
+void display_waypointTimeRemaining(uint8_t x, uint8_t y, const uint8_t* font) {
   u8g2.setDrawColor(1);
   u8g2.setCursor(x, y);
   u8g2.setFont(font);
@@ -106,7 +110,7 @@ void display_flightTimer(uint8_t x, uint8_t y, bool shortstring, bool selected) 
   u8g2.setDrawColor(1);
 
   if (selected) {
-    display_selectionBox(x - 1, y - h - 1, w + 2, h + 2, 6);
+    display_selectionBox(x , y - h, w, h, 6);
   }
 }
 
@@ -127,11 +131,11 @@ void display_speed(uint8_t cursor_x, uint8_t cursor_y) {
   if (displaySpeed < 100) u8g2.print(" ");  // leave a space if needed
   u8g2.print(displaySpeed, 1);
 }
-void display_speed(uint8_t x, uint8_t y, const uint8_t *font) {
+void display_speed(uint8_t x, uint8_t y, const uint8_t* font) {
   u8g2.setFont(font);
   display_speed(x, y);
 }
-void display_speed(uint8_t x, uint8_t y, const uint8_t *font, bool units) {
+void display_speed(uint8_t x, uint8_t y, const uint8_t* font, bool units) {
   display_speed(x, y, font);
   // kpm or mph
   if (1)
@@ -178,7 +182,7 @@ void display_heading(uint8_t cursor_x, uint8_t cursor_y, bool degSymbol) {
   u8g2.setCursor(cursor_x, cursor_y);
 
   if (UNITS_heading) {  // Cardinal heading direction
-    const char *displayHeadingCardinal =
+    const char* displayHeadingCardinal =
         gps.cardinal(gps.course.deg());  // gps_getCourseCardinal();
     if (strlen(displayHeadingCardinal) == 1)
       u8g2.setCursor(cursor_x + 8, cursor_y);
@@ -238,7 +242,7 @@ void display_headingTurn(uint8_t cursor_x, uint8_t cursor_y) {
   if (displayTurn > '=') u8g2.print(displayTurn);
 }
 
-void display_alt_type(uint8_t cursor_x, uint8_t cursor_y, const uint8_t *font, uint8_t altType) {
+void display_alt_type(uint8_t cursor_x, uint8_t cursor_y, const uint8_t* font, uint8_t altType) {
   int32_t displayAlt = 0;
 
   switch (altType) {
@@ -264,7 +268,7 @@ void display_alt_type(uint8_t cursor_x, uint8_t cursor_y, const uint8_t *font, u
   display_alt(cursor_x, cursor_y, font, displayAlt);
 }
 
-void display_alt(uint8_t cursor_x, uint8_t cursor_y, const uint8_t *font, int32_t displayAlt) {
+void display_alt(uint8_t cursor_x, uint8_t cursor_y, const uint8_t* font, int32_t displayAlt) {
   if (UNITS_alt)
     displayAlt = displayAlt * 100 / 3048;  // convert cm to ft
   else
@@ -432,7 +436,7 @@ void display_climbRatePointerBox(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uin
   u8g2.drawLine(x - triSize - 1, y + (h) / 2, x - 2, y + (h) / 2 + triSize - 1);
 }
 
-void display_climbRate(uint8_t x, uint8_t y, const uint8_t *font, int16_t displayClimbRate) {
+void display_climbRate(uint8_t x, uint8_t y, const uint8_t* font, int16_t displayClimbRate) {
   u8g2.setCursor(x, y);
   u8g2.setFont(font);
   u8g2.setDrawColor(0);
@@ -488,7 +492,7 @@ void display_altAboveLaunch(uint8_t x, uint8_t y, int32_t aboveLaunchAlt) {
   display_alt(x, y, leaf_8x14, aboveLaunchAlt);
 }
 
-void display_altAboveLaunch(uint8_t x, uint8_t y, int32_t aboveLaunchAlt, const uint8_t *font) {
+void display_altAboveLaunch(uint8_t x, uint8_t y, int32_t aboveLaunchAlt, const uint8_t* font) {
   u8g2.setFont(font);
   uint8_t h = u8g2.getMaxCharHeight();
   u8g2.setCursor(x, y - h - 2);
@@ -688,7 +692,6 @@ void display_batt_charging_fullscreen(uint8_t x, uint8_t y) {
   }
 }
 
-
 // GPS Status Icon
 uint8_t blinkGPS = 0;
 
@@ -697,11 +700,11 @@ void display_GPS_icon(uint8_t x, uint8_t y) {
   u8g2.setFont(leaf_icons);
   u8g2.setCursor(x, y);
 
-  if (GPS_SETTING == 0) {   // GPS Off
-    u8g2.print((char)44);   // GPS icon with X through it
-  } else if (GPS_SETTING) { // GPS not-off
+  if (GPS_SETTING == 0) {    // GPS Off
+    u8g2.print((char)44);    // GPS icon with X through it
+  } else if (GPS_SETTING) {  // GPS not-off
     if (gpsFixInfo.fix) {
-      u8g2.print((char)43); // GPS icon with fix
+      u8g2.print((char)43);  // GPS icon with fix
     } else {
       //blink the icon to convey "searching"
       if (blinkGPS) {
@@ -712,12 +715,12 @@ void display_GPS_icon(uint8_t x, uint8_t y) {
         blinkGPS = 1;
       }      
       u8g2.setFont(leaf_5h);
-      u8g2.setCursor(x + 4, y-4);
-      
+      u8g2.setCursor(x + 4, y - 4);
+
       if (gpsFixInfo.numberOfSats > 9) {
         u8g2.print("9");
       } else {
-        if (gpsFixInfo.numberOfSats == 1) u8g2.setCursor(x+5, y-4);
+        if (gpsFixInfo.numberOfSats == 1) u8g2.setCursor(x + 5, y - 4);
         u8g2.print(gpsFixInfo.numberOfSats);
       }
     }
@@ -900,48 +903,60 @@ void display_windSpeedCentered(uint8_t x, uint8_t y, const uint8_t *font) {
 
 // Header and Footer Items to show on ALL pages
 void display_headerAndFooter(bool headingShowTurn, bool timerSelected) {
-  // Status Icons and Info ****************************************************
-  // clock time
-  u8g2.setFont(leaf_6x10);
-  display_clockTime(0, 10, false);
+  // Header--------------------------------
+    // clock time
+    u8g2.setFont(leaf_6x10);
+    display_clockTime(0, 10, false);
 
-  // battery
-  display_battIcon(0, 192, true);
+    // Heading in top center
+    uint8_t heading_x = 38;
+    uint8_t heading_y = 10;
+    u8g2.setFont(leaf_7x10);
+    if (headingShowTurn)
+      display_headingTurn(heading_x, heading_y);
+    else
+      display_heading(heading_x + 8, heading_y, true);
 
-  // SD Card Present
-  char SDicon = 60;
-  if (!SDcard_present()) SDicon = 61;
-  u8g2.setCursor(10, 192);
-  u8g2.setFont(leaf_icons);
-  u8g2.print((char)SDicon);
+    // Speed in upper right corner
+    u8g2.setFont(leaf_8x14);
+    display_speed(70, 14);
+    u8g2.setFont(leaf_5h);
+    u8g2.setCursor(82, 21);
+    if (UNITS_speed)
+      u8g2.print("MPH");
+    else
+      u8g2.print("KPH");
 
-  // GPS status icon
-  display_GPS_icon(23, 192);
+  // FOOTER_________________________
+    // battery
+    display_battIcon(0, 192, true);
 
-  // Heading in top center
-  uint8_t heading_x = 38;
-  uint8_t heading_y = 10;
-  u8g2.setFont(leaf_7x10);
-  if (headingShowTurn)
-    display_headingTurn(heading_x, heading_y);
-  else
-    display_heading(heading_x + 8, heading_y, true);
+    // SD Card Present
+    char SDicon = 60;
+    if (!SDcard_present()) SDicon = 61;
+    u8g2.setCursor(10, 192);
+    u8g2.setFont(leaf_icons);
+    u8g2.print((char)SDicon);
 
-  // Speed in upper right corner
-  u8g2.setFont(leaf_8x14);
-  display_speed(70, 14);
-  u8g2.setFont(leaf_5h);
-  u8g2.setCursor(82, 21);
-  if (UNITS_speed)
-    u8g2.print("MPH");
-  else
-    u8g2.print("KPH");
+    // GPS status icon
+    display_GPS_icon(23, 192);
 
-  // Timer in lower right corner
-  display_flightTimer(51, 191, 0, timerSelected);
+    // Vario Beep Volume icon
+    u8g2.setCursor(37, 191);
+    u8g2.setFont(leaf_icons);
+    if (QUIET_MODE && !flightTimer_isRunning()) {      
+      u8g2.print((char)('I' + 4));
+    } else {
+      u8g2.print((char)('I' + VOLUME_VARIO));
+    }
+
+    // Timer in lower right corner
+    display_flightTimer(52, 192, 0, timerSelected);
 }
 
-void display_splashLogo() { u8g2.drawXBM(0, 20, 96, 123, splash_logo_bmp); }
+void display_splashLogo() {
+  u8g2.drawXBM(0, 20, 96, 123, splash_logo_bmp);
+}
 
 void display_off_splash() {
   u8g2.firstPage();

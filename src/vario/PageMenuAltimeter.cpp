@@ -106,16 +106,11 @@ void AltimeterMenuPage::draw() {
 }
 
 void AltimeterMenuPage::setting_change(Button button, ButtonState state, uint8_t count) {
-  int8_t invert = 1;  // flip direction of button actions depending if we're adjusting altimeter
-                      // (height, + means go up in altitude) or altimeter setting (inHg, + means go
-                      // up in pressure, which is DOWN in altitude)
-
   switch (cursor_position) {
     case cursor_altimeter_syncToGPS:
       if (state == RELEASED) settings_toggleBoolNeutral(&ALT_SYNC_GPS);
       break;
     case cursor_altimeter_adjustAlt:
-      invert = -1;  // flip action of the buttons for changing altimeter
     case cursor_altimeter_adjustSetting:
       if (button == Button::CENTER && count == 1 &&
           state == HELD) {             // if center button held for 1 'action time'
@@ -128,9 +123,9 @@ void AltimeterMenuPage::setting_change(Button button, ButtonState state, uint8_t
       } else if (button == Button::LEFT || button == Button::RIGHT) {
         if (state == PRESSED || state == HELD || state == HELD_LONG) {
           if (button == Button::LEFT)
-            baro_adjustAltSetting(-1 * invert, count);
+            baro_adjustAltSetting(-1, count);
           else if (button == Button::RIGHT)
-            baro_adjustAltSetting(1 * invert, count);
+            baro_adjustAltSetting(1, count);
           speaker_playSound(fx_neutral);
         }
       }

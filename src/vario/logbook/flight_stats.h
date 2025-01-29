@@ -26,6 +26,8 @@ class FlightStats {
   int32_t speed_max = 0;
   int32_t speed_min = 0;
 
+  float g_force_max = 0;
+
   // Flight duration, in seconds
   unsigned long duration = 0;
   unsigned long logStartedAt = 0;  // Time flight started (seconds started since boot)

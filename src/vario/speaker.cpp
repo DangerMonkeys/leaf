@@ -4,8 +4,10 @@
 
 #include "Leaf_SPI.h"
 #include "settings.h"
-// use this to switch between method 1 (fixed sample length approach) and method 2 (adjustable timer
-// length)
+#include "log.h"
+
+// use this to switch between method 1 (fixed sample length approach) 
+// and method 2 (adjustable timer length)
 #define FIXED_SAMPLE_APPROACH true
 
 uint8_t speakerVolume = 1;
@@ -239,6 +241,13 @@ void speaker_updateVarioNote(int32_t verticalRate) {
 }
 
 void speaker_updateVarioNoteSample(int32_t verticalRate) {
+
+  // don't play any beeps if Quiet Mode is turned on, and we haven't started a flight
+  if (QUIET_MODE && !flightTimer_isRunning()) {
+    sound_varioNote = 0;
+    return;
+  }
+
   sound_varioNoteLastUpdate = sound_varioNote;
 
   uint16_t sound_varioNoteTEMP;
@@ -265,9 +274,7 @@ void speaker_updateVarioNoteSample(int32_t verticalRate) {
     }
 
     // if we trigger sink threshold
-  } else if (verticalRate <
-             (SINK_ALARM *
-              100)) {  // sink alarm is in meters, so *100 to get cm to compare to verticalRate
+  } else if (verticalRate < (SINK_ALARM * 100)) {  // convert sink alarm 'm/s' setting to cm/s 
     // first clamp to thresholds if sinkRate is over the max
     if (verticalRate <= SINK_MAX) {
       sound_varioNoteTEMP =
