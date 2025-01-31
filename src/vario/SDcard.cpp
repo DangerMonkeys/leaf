@@ -13,14 +13,14 @@ bool remountSDCard = false;  // flag set if the SD_DETECT pin changes state, so 
                              // re-mounting if the card is inserted or removed
 bool SDcardIsPresent = false;
 
+#include "FirmwareMSC.h"
 #include "USB.h"
 #include "USBMSC.h"
-#include "FirmwareMSC.h"
 
 FirmwareMSC MSC_FirmwareUpdate;
 USBMSC MSC;
 
-void listDir(fs::FS &fs, const char *dirname, uint8_t levels) {
+void listDir(fs::FS& fs, const char* dirname, uint8_t levels) {
   Serial.printf("Listing directory: %s\n", dirname);
 
   File root = fs.open(dirname);
@@ -51,7 +51,7 @@ void listDir(fs::FS &fs, const char *dirname, uint8_t levels) {
   }
 }
 
-void createDir(fs::FS &fs, const char *path) {
+void createDir(fs::FS& fs, const char* path) {
   Serial.printf("Creating Dir: %s\n", path);
   if (fs.mkdir(path)) {
     Serial.println("Dir created");
@@ -60,7 +60,7 @@ void createDir(fs::FS &fs, const char *path) {
   }
 }
 
-void removeDir(fs::FS &fs, const char *path) {
+void removeDir(fs::FS& fs, const char* path) {
   Serial.printf("Removing Dir: %s\n", path);
   if (fs.rmdir(path)) {
     Serial.println("Dir removed");
@@ -69,7 +69,7 @@ void removeDir(fs::FS &fs, const char *path) {
   }
 }
 
-void readFile(fs::FS &fs, const char *path) {
+void readFile(fs::FS& fs, const char* path) {
   Serial.printf("Reading file: %s\n", path);
 
   File file = fs.open(path);
@@ -84,7 +84,7 @@ void readFile(fs::FS &fs, const char *path) {
   }
 }
 
-void writeFile(fs::FS &fs, const char *path, const char *message) {
+void writeFile(fs::FS& fs, const char* path, const char* message) {
   Serial.printf("Writing file: %s\n", path);
 
   File file = fs.open(path, FILE_WRITE);
@@ -99,7 +99,7 @@ void writeFile(fs::FS &fs, const char *path, const char *message) {
   }
 }
 
-void appendFile(fs::FS &fs, const char *path, const char *message) {
+void appendFile(fs::FS& fs, const char* path, const char* message) {
   uint32_t append_time = micros();
 
   // Serial.print("startAppend:   ");
@@ -122,7 +122,7 @@ void appendFile(fs::FS &fs, const char *path, const char *message) {
   }
 }
 
-void appendOpenFile(File &file, const char *message) {
+void appendOpenFile(File& file, const char* message) {
   if (file.print(message)) {
     // Serial.println("Message appended");
   } else {
@@ -130,7 +130,7 @@ void appendOpenFile(File &file, const char *message) {
   }
 }
 
-void renameFile(fs::FS &fs, const char *path1, const char *path2) {
+void renameFile(fs::FS& fs, const char* path1, const char* path2) {
   Serial.printf("Renaming file %s to %s\n", path1, path2);
   if (fs.rename(path1, path2)) {
     Serial.println("File renamed");
@@ -139,7 +139,7 @@ void renameFile(fs::FS &fs, const char *path1, const char *path2) {
   }
 }
 
-void deleteFile(fs::FS &fs, const char *path) {
+void deleteFile(fs::FS& fs, const char* path) {
   Serial.printf("Deleting file: %s\n", path);
   if (fs.remove(path)) {
     Serial.println("File deleted");
@@ -148,7 +148,7 @@ void deleteFile(fs::FS &fs, const char *path) {
   }
 }
 
-void testFileIO(fs::FS &fs, const char *path) {
+void testFileIO(fs::FS& fs, const char* path) {
   File file = fs.open(path);
   static uint8_t buf[512];
   size_t len = 0;
@@ -227,52 +227,52 @@ void SDcard_update() {
   SDcard_detectStateLast = SDcard_detectState;
 }
 
-static int32_t onRead(uint32_t lba, uint32_t offset, void *buffer, uint32_t bufsize) {
-    // Check bufSize is a multiple of block size
-    if (bufsize % 512) {
-        return -1;
-    }
+static int32_t onRead(uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize) {
+  // Check bufSize is a multiple of block size
+  if (bufsize % 512) {
+    return -1;
+  }
 
-    auto bufferOffset = 0;
-    for(int sector = lba; sector < lba + bufsize / 512; sector++) {
-        if (!SD_MMC.readRAW((uint8_t*)buffer + bufferOffset, sector)) {
-            return -1;
-        }
-        bufferOffset += 512;
+  auto bufferOffset = 0;
+  for (int sector = lba; sector < lba + bufsize / 512; sector++) {
+    if (!SD_MMC.readRAW((uint8_t*)buffer + bufferOffset, sector)) {
+      return -1;
     }
-    
-    return bufsize;
+    bufferOffset += 512;
+  }
+
+  return bufsize;
 }
 
-static int32_t onWrite(uint32_t lba, uint32_t offset, uint8_t *buffer, uint32_t bufsize) {
-    // Check bufSize is a multiple of block size
-    if (bufsize % 512) {
-        return -1;
-    }
+static int32_t onWrite(uint32_t lba, uint32_t offset, uint8_t* buffer, uint32_t bufsize) {
+  // Check bufSize is a multiple of block size
+  if (bufsize % 512) {
+    return -1;
+  }
 
-    auto bufferOffset = 0;
-    for(int sector = lba; sector < lba + bufsize / 512; sector++) {
-        if (!SD_MMC.writeRAW(buffer + bufferOffset, sector)) {
-            return -1;
-        }
-        bufferOffset += 512;
+  auto bufferOffset = 0;
+  for (int sector = lba; sector < lba + bufsize / 512; sector++) {
+    if (!SD_MMC.writeRAW(buffer + bufferOffset, sector)) {
+      return -1;
     }
-    
-    return bufsize;
+    bufferOffset += 512;
+  }
+
+  return bufsize;
 }
 
 void SDCard_SetupMassStorage() {
-    Serial.setDebugOutput(true);
-    MSC.vendorID("Leaf");
-    MSC.productID("Leaf_Vario");
-    MSC.productRevision("1.0");
-    MSC.onRead(onRead);
-    MSC.onWrite(onWrite);
-    MSC.isWritable(true);
-    MSC.mediaPresent(true);
-    MSC.begin(SD_MMC.numSectors(), 512);
-    MSC_FirmwareUpdate.begin();
-    USB.begin();
+  // Serial.setDebugOutput(true);
+  MSC.vendorID("Leaf");
+  MSC.productID("Leaf_Vario");
+  MSC.productRevision("1.0");
+  MSC.onRead(onRead);
+  MSC.onWrite(onWrite);
+  MSC.isWritable(true);
+  MSC.mediaPresent(true);
+  MSC.begin(SD_MMC.numSectors(), 512);
+  MSC_FirmwareUpdate.begin();
+  USB.begin();
 }
 
 bool SDcard_mount() {
@@ -288,13 +288,17 @@ bool SDcard_mount() {
   } else {
     if (DEBUG_SDCARD) Serial.println("SDcard Mount Success");
     SDcardIsPresent = true;
+#ifndef DISABLE_MASS_STORAGE
     SDCard_SetupMassStorage();
+#endif
   }
-  
+
   return SDcardIsPresent;
 }
 
-bool SDcard_present() { return SDcardIsPresent; }
+bool SDcard_present() {
+  return SDcardIsPresent;
+}
 
 void SDcard_test(void) {
   Serial.println("SD test stuff");

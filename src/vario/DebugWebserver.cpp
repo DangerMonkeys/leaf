@@ -1,6 +1,7 @@
 #include "DebugWebserver.h"
-#include "WebServer.h"
 #include <WiFi.h>
+#include "SDcard.h"
+#include "WebServer.h"
 #include "display.h"
 
 WebServer server;
@@ -26,6 +27,7 @@ void webserver_setup() {
           <h1>ESP32 Vario Debug Webserver</h1>
           <ul>
             <li><a href="/screenshot" target="_blank">Download Screenshot</a></li>
+            <li><a href="/mass_storage" target="_blank">Start Mass Storage</a></li>
           </ul>
         </body>
       </html>
@@ -36,6 +38,12 @@ void webserver_setup() {
     send_buffer = "";
     u8g2_WriteBufferXBM(u8g2.getU8g2(), writeScreenshotBuffer);
     server.send(200, "image/x-xbitmap", send_buffer);
+  });
+
+  server.on("/mass_storage", HTTP_GET, []() {
+    // Serial.end();
+    SDCard_SetupMassStorage();
+    server.send(200, "text/html", "OK!");
   });
 
   // Give it a chance to connect so this debug message means something
