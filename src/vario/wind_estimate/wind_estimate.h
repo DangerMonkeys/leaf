@@ -10,8 +10,8 @@ const uint8_t samplesPerBin = 6;
 
 // the "pie slice" bucket for storing samples
 struct Bin {
-	float angle[samplesPerBin];
-	float speed[samplesPerBin];
+	float angle[samplesPerBin];	// radians East of North (track angle over the ground)
+	float speed[samplesPerBin]; // m/s ground speed
 	float averageAngle;
 	float averageSpeed;
 	float dx[samplesPerBin];
@@ -28,10 +28,13 @@ struct TotalSamples {
 };
 
 struct WindEstimate {
-	// m/s speed estimate
+	// m/s windspeed estimate
 	float windSpeed;	
 	// Radians East of North (0 is True North)
 	float windDirectionTrue;
+	// m/s airspeed estimate (airspeed value pops out of the circle fitting algorithm)
+	float airspeed;
+	// flag if the estimate is valid or not (to be used in UI display functions, etc)
 	bool validEstimate = false;
 };
 
@@ -41,8 +44,8 @@ struct GroundVelocity{
 };
 
 void windEstimate_onNewSentence(NMEASentenceContents contents);
-
 void submitVelocityForWindEstimate(GroundVelocity groundVelocity);
+float calculateErrorOfEstimate(WindEstimate candidateEstimate);
 
 WindEstimate getWindEstimate(void);
 

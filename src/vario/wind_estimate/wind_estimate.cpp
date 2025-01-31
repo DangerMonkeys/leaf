@@ -12,9 +12,8 @@ WindEstimate getWindEstimate(void) {
 void windEstimate_onNewSentence(NMEASentenceContents contents) {
 
 	if (contents.course || contents.speed) {
-		const float DEG2RAD = 0.01745329251f;
 		GroundVelocity v = {
-			.trackAngle = DEG2RAD * gps.course.deg(), 
+			.trackAngle = DEG_TO_RAD * gps.course.deg(), 
 			.speed = gps.speed.mps()
 			};
 		
@@ -23,15 +22,15 @@ void windEstimate_onNewSentence(NMEASentenceContents contents) {
 }
 
 void averageSamplePoints() {
-	for (int i = 0; i < binCount; i++) {
+	for (int b = 0; b < binCount; b++) {
 		float sumAngle = 0;
 		float sumSpeed = 0;
-		for (int j = 0; j < totalSamples.bin[i].sampleCount; j++) {
-			sumAngle += totalSamples.bin[i].angle[j];
-			sumSpeed += totalSamples.bin[i].speed[j];
+		for (int s = 0; s < totalSamples.bin[b].sampleCount; s++) {
+			sumAngle += totalSamples.bin[b].angle[s];
+			sumSpeed += totalSamples.bin[b].speed[s];
 		}
-		totalSamples.bin[i].averageAngle = sumAngle / totalSamples.bin[i].sampleCount;
-		totalSamples.bin[i].averageSpeed = sumSpeed / totalSamples.bin[i].sampleCount;
+		totalSamples.bin[b].averageAngle = sumAngle / totalSamples.bin[b].sampleCount;
+		totalSamples.bin[b].averageSpeed = sumSpeed / totalSamples.bin[b].sampleCount;
 	}
 }
 
@@ -39,15 +38,15 @@ void averageSamplePoints() {
 bool justConvertAverage = true;
 void convertToDxDy() {
 	if (justConvertAverage) {
-		for (int i = 0; i < binCount; i++) {
-			totalSamples.bin[i].averageDx = cos(totalSamples.bin[i].averageAngle) * totalSamples.bin[i].averageSpeed;
-			totalSamples.bin[i].averageDy = sin(totalSamples.bin[i].averageAngle) * totalSamples.bin[i].averageSpeed;
+		for (int b = 0; b < binCount; b++) {
+			totalSamples.bin[b].averageDx = cos(totalSamples.bin[b].averageAngle) * totalSamples.bin[b].averageSpeed;
+			totalSamples.bin[b].averageDy = sin(totalSamples.bin[b].averageAngle) * totalSamples.bin[b].averageSpeed;
 		}
 	} else {
-		for (int i = 0; i < binCount; i++) {
-			for (int j = 0; j < totalSamples.bin[i].sampleCount; j++) {
-				totalSamples.bin[i].dx[j] = cos(totalSamples.bin[i].angle[j]) * totalSamples.bin[i].speed[j];
-				totalSamples.bin[i].dy[j] = sin(totalSamples.bin[i].angle[j]) * totalSamples.bin[i].speed[j];
+		for (int b = 0; b < binCount; b++) {
+			for (int s = 0; s < totalSamples.bin[b].sampleCount; s++) {
+				totalSamples.bin[b].dx[s] = cos(totalSamples.bin[b].angle[s]) * totalSamples.bin[b].speed[s];
+				totalSamples.bin[b].dy[s] = sin(totalSamples.bin[b].angle[s]) * totalSamples.bin[b].speed[s];
 			}
 		}
 	}
@@ -67,15 +66,15 @@ bool checkIfEnoughPoints() {
 	bool haveAStartingBin = false;
 	uint8_t populatedSpan = 0;
 
-	for (int i = 0; i < binCount; i++) {
-		if (totalSamples.bin[i].sampleCount > 0) {
+	for (int b = 0; b < binCount; b++) {
+		if (totalSamples.bin[b].sampleCount > 0) {
 			populatedBinCount++;
 			continuousEmptyBinCount = 0;
 			if (!haveAStartingBin) {
-				firstBinToHavePoints = i;
+				firstBinToHavePoints = b;
 				haveAStartingBin = true;
 			} else {
-				populatedSpan = i - firstBinToHavePoints;				
+				populatedSpan = b - firstBinToHavePoints;				
 			}
 		} else {
 			continuousEmptyBinCount++;
@@ -140,15 +139,15 @@ void estimateWind() {
 
 	switch (windEstimateStep) {
 		case 0:
+			if (checkIfEnoughPoints()) windEstimateStep++;			
+			break;
+		case 1:
 			averageSamplePoints();			
 			windEstimateStep++;
 			break;
-		case 1:
+		case 2:
 			convertToDxDy();
 			windEstimateStep++;
-			break;
-		case 2:
-			if (checkIfEnoughPoints()) windEstimateStep++;
 			break;
 		case 3:
 			if (findEstimate()) windEstimateStep = 0;
@@ -156,6 +155,19 @@ void estimateWind() {
 	}	
 }
 
+
+float calculateErrorOfEstimate(WindEstimate candidateEstimate) {
+	// calculate the error of the estimate
+	float error = 0;
+	for (int b = 0; b < binCount; b++) {
+		for (int s = 0; s < totalSamples.bin[b].sampleCount; s++) {
+			float dx = cos(totalSamples.bin[b].angle[s]) * totalSamples.bin[b].speed[s] - candidateEstimate.windSpeed * cos(candidateEstimate.windDirectionTrue);
+			float dy = sin(totalSamples.bin[b].angle[s]) * totalSamples.bin[b].speed[s] - candidateEstimate.windSpeed * sin(candidateEstimate.windDirectionTrue);
+			error += sqrt(dx*dx + dy*dy);
+		}
+	}
+	return error;
+}
 
 // ingest a sample groundVelocity and store it in the appropriate bin
 void submitVelocityForWindEstimate(GroundVelocity groundVelocity) {
