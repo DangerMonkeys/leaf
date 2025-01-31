@@ -117,7 +117,7 @@ u8g2.drawRFrame(cursor_x, cursor_y-16, 96-cursor_x, 18, 3);
     */
 
     // User Field ****************************************************
-    uint8_t userfield_y = alt2y + 24;
+    uint8_t userfield_y = alt2y + 27;
     switch (THMSPG_USR1) {
       case static_cast<int>(ThermSimpPageUserField1::GLIDE):
         // Glide Ratio
