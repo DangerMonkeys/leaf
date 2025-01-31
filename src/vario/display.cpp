@@ -400,11 +400,15 @@ void display_page_debug() {
       u8g2.setFontMode(0);
 
     WindEstimate displayEstimate = getWindEstimate();
-    
+
     uint8_t estX = pieX + (cos(displayEstimate.windDirectionTrue) * displayEstimate.windSpeed * scaleFactor);
     uint8_t estY = pieY + (sin(displayEstimate.windDirectionTrue) * displayEstimate.windSpeed * scaleFactor);
+    uint8_t estR = displayEstimate.airspeed * scaleFactor;
+
     u8g2.setCursor(estX-2, estY+2);
     u8g2.print("&");
+
+    u8g2.drawCircle(estX, estY, estR);
 
 
       // update cycles      

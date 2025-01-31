@@ -1,7 +1,7 @@
 
 #include "wind_estimate.h"
-#include "log.h"
 #include <limits>
+#include "log.h"
 
 WindEstimate windEstimate;
 
@@ -33,7 +33,7 @@ WindEstimate getWindEstimate(void) {
 }
 
 void windEstimate_onNewSentence(NMEASentenceContents contents) {
-  if (contents.course || contents.speed) {    
+  if (contents.course || contents.speed) {
     GroundVelocity v = {.trackAngle = DEG_TO_RAD * gps.course.deg(), .speed = gps.speed.mps()};
 
     if (getAreWeFlying()) submitVelocityForWindEstimate(v);
@@ -64,24 +64,23 @@ inline float dyOf(float angle, float speed) {
 // convert angle and speed into Dx Dy points for circle-fitting
 bool onlyConvertAverage = false;
 void convertToDxDy() {
-  
-	for (int b = 0; b < binCount; b++) {
-		// convert average angle/speed into average dx/dy
-		totalSamples.bin[b].averageDx =
-				dxOf(totalSamples.bin[b].averageAngle, totalSamples.bin[b].averageSpeed);
-		totalSamples.bin[b].averageDy =
-				dyOf(totalSamples.bin[b].averageAngle, totalSamples.bin[b].averageSpeed);
+  for (int b = 0; b < binCount; b++) {
+    // convert average angle/speed into average dx/dy
+    totalSamples.bin[b].averageDx =
+        dxOf(totalSamples.bin[b].averageAngle, totalSamples.bin[b].averageSpeed);
+    totalSamples.bin[b].averageDy =
+        dyOf(totalSamples.bin[b].averageAngle, totalSamples.bin[b].averageSpeed);
 
-		// convert all angle/speed into all dx/dy
-		if (!onlyConvertAverage) {
-			for (int s = 0; s < totalSamples.bin[b].sampleCount; s++) {
-				totalSamples.bin[b].dx[s] =
-						dxOf(totalSamples.bin[b].angle[s], totalSamples.bin[b].speed[s]);
-				totalSamples.bin[b].dy[s] =
-						dyOf(totalSamples.bin[b].angle[s], totalSamples.bin[b].speed[s]);
-			}
-		}
-  }  
+    // convert all angle/speed into all dx/dy
+    if (!onlyConvertAverage) {
+      for (int s = 0; s < totalSamples.bin[b].sampleCount; s++) {
+        totalSamples.bin[b].dx[s] =
+            dxOf(totalSamples.bin[b].angle[s], totalSamples.bin[b].speed[s]);
+        totalSamples.bin[b].dy[s] =
+            dyOf(totalSamples.bin[b].angle[s], totalSamples.bin[b].speed[s]);
+      }
+    }
+  }
 }
 
 // check if we have at least 3 bins with points, and
@@ -158,12 +157,11 @@ inline float directionOf(float wx, float wy) {
 int updateCount = 0;
 int betterCount = 0;
 bool updateEstimate() {
-	updateCount++;
+  updateCount++;
   float wx = dxOf(windEstimate.windDirectionTrue, windEstimate.windSpeed);
   float wy = dyOf(windEstimate.windDirectionTrue, windEstimate.windSpeed);
   float bestError = errorOf(wx, wy, windEstimate.airspeed);
 
-	Serial.print("bestError: "); Serial.println(bestError);
   int bestAdjustment = -1;
 
   // TODO: split each adjustment into a separate invocation of updateEstimate if needed for
@@ -172,24 +170,37 @@ bool updateEstimate() {
     float newError = errorOf(wx + adjustments[a].dwx,
                              wy + adjustments[a].dwy,
                              windEstimate.airspeed + adjustments[a].dairspeed);
-		
-		Serial.print("newError: "); Serial.println(newError);
+
+      Serial.print("bestError: ");
+      Serial.print(bestError, 4);
+      Serial.print(" newError: ");
+      Serial.println(newError, 4);
 
     if (newError < bestError) {
+
       bestError = newError;
       bestAdjustment = a;
     }
   }
 
   if (bestAdjustment >= 0) {
-		betterCount++;
+    betterCount++;    
     // New estimate is available
     windEstimate.airspeed += adjustments[bestAdjustment].dairspeed;
     wx += adjustments[bestAdjustment].dwx;
     wy += adjustments[bestAdjustment].dwy;
     windEstimate.windSpeed = speedOf(wx, wy);
     windEstimate.windDirectionTrue = directionOf(wx, wy);
-		windEstimate.error = bestError;
+    windEstimate.error = bestError;
+		Serial.print("UPDATE ESTIMATE! Dir: ");
+		Serial.print(windEstimate.windDirectionTrue);
+		Serial.print(" Spd: ");
+		Serial.print(windEstimate.windSpeed);
+		Serial.print(" Airspd: ");
+		Serial.print(windEstimate.airspeed);
+		Serial.print(" Err: ");
+		Serial.println(windEstimate.error);
+		return true;
   } else {
     // Current estimate cannot be improved upon
   }
@@ -205,43 +216,39 @@ int8_t dir = 1;
 bool enoughPoints = false;
 
 bool haveEnoughPoints() {
-	return enoughPoints;
+  return enoughPoints;
 }
 
 int getUpdateCount() {
-	return updateCount;
+  return updateCount;
 }
 int getBetterCount() {
-	return betterCount;
+  return betterCount;
 }
 
 uint8_t windEstimateStep = 0;
 void estimateWind() {
   switch (windEstimateStep) {
     case 0:
-			enoughPoints = checkIfEnoughPoints();
-      if (enoughPoints) {			
-				averageSamplePoints();
-				windEstimateStep++;
-			}
+      convertToDxDy();
+      enoughPoints = checkIfEnoughPoints();
+      if (enoughPoints) {
+        averageSamplePoints();
+        windEstimateStep++;
+      }
       break;
     case 1:
-      convertToDxDy();
-      windEstimateStep++;
-      break;
-    case 2:
       if (updateEstimate()) windEstimateStep = 0;
       break;
   }
 }
 
-
 void clearWindEstimate(void) {
-	windEstimate.validEstimate = false;
-	windEstimate.windSpeed = 0;
-	windEstimate.windDirectionTrue = 0;
-	windEstimate.airspeed = STANDARD_AIRSPEED;
-	windEstimate.error = std::numeric_limits<float>::max();
+  windEstimate.validEstimate = false;
+  windEstimate.windSpeed = 0;
+  windEstimate.windDirectionTrue = 0;
+  windEstimate.airspeed = STANDARD_AIRSPEED;
+  windEstimate.error = std::numeric_limits<float>::max();
 }
 
 // ingest a sample groundVelocity and store it in the appropriate bin
