@@ -1,5 +1,6 @@
 
 #include "wind_estimate.h"
+#include "log.h"
 #include <limits>
 
 WindEstimate windEstimate;
@@ -32,11 +33,10 @@ WindEstimate getWindEstimate(void) {
 }
 
 void windEstimate_onNewSentence(NMEASentenceContents contents) {
-  if (contents.course || contents.speed) {
-    const float DEG2RAD = 0.01745329251f;
-    GroundVelocity v = {.trackAngle = DEG2RAD * gps.course.deg(), .speed = gps.speed.mps()};
+  if (contents.course || contents.speed) {    
+    GroundVelocity v = {.trackAngle = DEG_TO_RAD * gps.course.deg(), .speed = gps.speed.mps()};
 
-    submitVelocityForWindEstimate(v);
+    if (getAreWeFlying()) submitVelocityForWindEstimate(v);
   }
 }
 
@@ -62,25 +62,26 @@ inline float dyOf(float angle, float speed) {
 }
 
 // convert angle and speed into Dx Dy points for circle-fitting
-bool justConvertAverage = true;
+bool onlyConvertAverage = false;
 void convertToDxDy() {
-  if (justConvertAverage) {
-    for (int i = 0; i < binCount; i++) {
-      totalSamples.bin[i].averageDx =
-          dxOf(totalSamples.bin[i].averageAngle, totalSamples.bin[i].averageSpeed);
-      totalSamples.bin[i].averageDy =
-          dyOf(totalSamples.bin[i].averageAngle, totalSamples.bin[i].averageSpeed);
-    }
-  } else {
-    for (int i = 0; i < binCount; i++) {
-      for (int j = 0; j < totalSamples.bin[i].sampleCount; j++) {
-        totalSamples.bin[i].dx[j] =
-            dxOf(totalSamples.bin[i].angle[j], totalSamples.bin[i].speed[j]);
-        totalSamples.bin[i].dy[j] =
-            dyOf(totalSamples.bin[i].angle[j], totalSamples.bin[i].speed[j]);
-      }
-    }
-  }
+  
+	for (int b = 0; b < binCount; b++) {
+		// convert average angle/speed into average dx/dy
+		totalSamples.bin[b].averageDx =
+				dxOf(totalSamples.bin[b].averageAngle, totalSamples.bin[b].averageSpeed);
+		totalSamples.bin[b].averageDy =
+				dyOf(totalSamples.bin[b].averageAngle, totalSamples.bin[b].averageSpeed);
+
+		// convert all angle/speed into all dx/dy
+		if (!onlyConvertAverage) {
+			for (int s = 0; s < totalSamples.bin[b].sampleCount; s++) {
+				totalSamples.bin[b].dx[s] =
+						dxOf(totalSamples.bin[b].angle[s], totalSamples.bin[b].speed[s]);
+				totalSamples.bin[b].dy[s] =
+						dyOf(totalSamples.bin[b].angle[s], totalSamples.bin[b].speed[s]);
+			}
+		}
+  }  
 }
 
 // check if we have at least 3 bins with points, and
@@ -154,10 +155,15 @@ inline float directionOf(float wx, float wy) {
 
 // Perform work toward updating the wind estimate.
 // Returns: true if estimate update is complete, false if still in progress.
+int updateCount = 0;
+int betterCount = 0;
 bool updateEstimate() {
-  float wx = dxOf(windEstimate.windDirectionTrue, windEstimate.windDirectionTrue);
-  float wy = dyOf(windEstimate.windDirectionTrue, windEstimate.windDirectionTrue);
+	updateCount++;
+  float wx = dxOf(windEstimate.windDirectionTrue, windEstimate.windSpeed);
+  float wy = dyOf(windEstimate.windDirectionTrue, windEstimate.windSpeed);
   float bestError = errorOf(wx, wy, windEstimate.airspeed);
+
+	Serial.print("bestError: "); Serial.println(bestError);
   int bestAdjustment = -1;
 
   // TODO: split each adjustment into a separate invocation of updateEstimate if needed for
@@ -166,6 +172,9 @@ bool updateEstimate() {
     float newError = errorOf(wx + adjustments[a].dwx,
                              wy + adjustments[a].dwy,
                              windEstimate.airspeed + adjustments[a].dairspeed);
+		
+		Serial.print("newError: "); Serial.println(newError);
+
     if (newError < bestError) {
       bestError = newError;
       bestAdjustment = a;
@@ -173,12 +182,14 @@ bool updateEstimate() {
   }
 
   if (bestAdjustment >= 0) {
+		betterCount++;
     // New estimate is available
     windEstimate.airspeed += adjustments[bestAdjustment].dairspeed;
     wx += adjustments[bestAdjustment].dwx;
     wy += adjustments[bestAdjustment].dwy;
     windEstimate.windSpeed = speedOf(wx, wy);
     windEstimate.windDirectionTrue = directionOf(wx, wy);
+		windEstimate.error = bestError;
   } else {
     // Current estimate cannot be improved upon
   }
@@ -191,12 +202,28 @@ bool updateEstimate() {
 float tempWindDir = 0;
 float tempWindSpeed = 0;
 int8_t dir = 1;
+bool enoughPoints = false;
+
+bool haveEnoughPoints() {
+	return enoughPoints;
+}
+
+int getUpdateCount() {
+	return updateCount;
+}
+int getBetterCount() {
+	return betterCount;
+}
 
 uint8_t windEstimateStep = 0;
 void estimateWind() {
   switch (windEstimateStep) {
     case 0:
-      if (checkIfEnoughPoints()) windEstimateStep++;
+			enoughPoints = checkIfEnoughPoints();
+      if (enoughPoints) {			
+				averageSamplePoints();
+				windEstimateStep++;
+			}
       break;
     case 1:
       convertToDxDy();
@@ -208,21 +235,30 @@ void estimateWind() {
   }
 }
 
+
+void clearWindEstimate(void) {
+	windEstimate.validEstimate = false;
+	windEstimate.windSpeed = 0;
+	windEstimate.windDirectionTrue = 0;
+	windEstimate.airspeed = STANDARD_AIRSPEED;
+	windEstimate.error = std::numeric_limits<float>::max();
+}
+
 // ingest a sample groundVelocity and store it in the appropriate bin
 void submitVelocityForWindEstimate(GroundVelocity groundVelocity) {
   // sort into appropriate bin
   float binAngleSpan = 2 * PI / binCount;
-  for (int i = 0; i < binCount; i++) {
-    if (groundVelocity.trackAngle < i * binAngleSpan) {
-      totalSamples.bin[i].angle[totalSamples.bin[i].index] = groundVelocity.trackAngle;
-      totalSamples.bin[i].speed[totalSamples.bin[i].index] = groundVelocity.speed;
-      totalSamples.bin[i].index++;
-      totalSamples.bin[i].sampleCount++;
-      if (totalSamples.bin[i].sampleCount > samplesPerBin) {
-        totalSamples.bin[i].sampleCount = samplesPerBin;
+  for (int b = 0; b < binCount; b++) {
+    if (groundVelocity.trackAngle < (b + 1) * binAngleSpan) {
+      totalSamples.bin[b].angle[totalSamples.bin[b].index] = groundVelocity.trackAngle;
+      totalSamples.bin[b].speed[totalSamples.bin[b].index] = groundVelocity.speed;
+      totalSamples.bin[b].index++;
+      totalSamples.bin[b].sampleCount++;
+      if (totalSamples.bin[b].sampleCount > samplesPerBin) {
+        totalSamples.bin[b].sampleCount = samplesPerBin;
       }
-      if (totalSamples.bin[i].index >= samplesPerBin) {
-        totalSamples.bin[i].index = 0;
+      if (totalSamples.bin[b].index >= samplesPerBin) {
+        totalSamples.bin[b].index = 0;
       }
       break;
     }

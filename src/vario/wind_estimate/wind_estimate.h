@@ -4,12 +4,14 @@
 
 // bin definitions for storing sample points
 const uint8_t binCount = 12;
-const uint8_t samplesPerBin = 6;
+const uint8_t samplesPerBin = 2;
+
+const float STANDARD_AIRSPEED = 10;  // 10 m/s typical airspeed used as a starting point for wind estimate
 
 // the "pie slice" bucket for storing samples
 struct Bin {
-  float angle[samplesPerBin];
-  float speed[samplesPerBin];
+	float angle[samplesPerBin];	// radians East of North (track angle over the ground)
+	float speed[samplesPerBin]; // m/s ground speed
   float averageAngle;
   float averageSpeed;
   float dx[samplesPerBin];
@@ -23,7 +25,7 @@ struct Bin {
 // the "full pie" of all samples to use for	wind estimation
 struct TotalSamples {
   Bin bin[binCount];
-};
+}; extern struct TotalSamples totalSamples;
 
 struct WindEstimate {
   // m/s estimate of wind speed
@@ -35,11 +37,14 @@ struct WindEstimate {
   // m/s estimate of aircraft speed
   float airspeed;
 
+	// error of estimate
+	float error;
+
   bool validEstimate = false;
 };
 
 struct GroundVelocity {
-  float trackAngle;
+  float trackAngle;	// radians east from North.  Must be positive.
   float speed;
 };
 
@@ -48,6 +53,11 @@ void windEstimate_onNewSentence(NMEASentenceContents contents);
 void submitVelocityForWindEstimate(GroundVelocity groundVelocity);
 
 WindEstimate getWindEstimate(void);
+bool haveEnoughPoints(void);
+int getUpdateCount();
+int getBetterCount();
+
+void clearWindEstimate(void);
 
 // call frequently, each invocation should take no longer than 10ms
 // each invocation will advance the wind estimation process

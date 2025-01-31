@@ -26,6 +26,7 @@
 #include "settings.h"
 #include "speaker.h"
 #include "version.h"
+#include "wind_estimate/wind_estimate.h"
 
 // Display Testing Temp Vars
 float wind_angle = 1.57;
@@ -318,77 +319,136 @@ void display_page_debug() {
     u8g2.setCursor(x, y);
     u8g2.print(battPercent);
     u8g2.print('%');
-
-    u8g2.setCursor(x, y += 15);
-    u8g2.print(battMV);
-    //u8g2.setCursor(x, y += 15);
-    //u8g2.print(battADC);
-
+    u8g2.setCursor(x, y += 6);
+    u8g2.setFont(leaf_5h);
+    u8g2.print((float)battMV/1000, 2);
+    u8g2.print("v");
+    
     // Altimeter Setting
-    u8g2.setCursor(65, 32);
+    u8g2.setCursor(65, 26);
     u8g2.setFont(leaf_5h);
     u8g2.print("AltSet:");
-    u8g2.setCursor(65, 45);
+    u8g2.setCursor(65, 39);
     u8g2.setFont(leaf_6x12);
     u8g2.print(baro.altimeterSetting);
 
-
+    /*
     // fix quality debugging
     x=0;
     y=76;
     u8g2.setCursor(x,y);
-    u8g2.print("FixTyp: ");
+    u8g2.print("FixTyp:");
     u8g2.print(gpsFixInfo.fix);
     u8g2.setCursor(x,y+=13);
-    u8g2.print("SatsFix: ");
+    u8g2.print("SatsFix:");
     u8g2.print(gps.satellites.value());
     u8g2.setCursor(x, y+=13);
     u8g2.print("SatsView:");
     u8g2.print(gpsFixInfo.numberOfSats);
+    */
 
 
-    x=65;
-    y=56;
+    //////////////////////////////////
+    // Wind Estimate Debugging
+
+
+      // Display Sample Counts
+      uint8_t pieX = 48;
+      uint8_t pieY = 136;
+      uint8_t pieR = 44;
+      float angle = 2 * PI / 12;
+
+      for (int bin = 0; bin < 12; bin++) {
+        float a = angle * bin;
+        int x0 = pieX + cos(a) * pieR;
+        int y0 = pieY + sin(a) * pieR;
+
+        u8g2.setCursor(x0-3, y0+4);
+        u8g2.setFont(leaf_5x8);
+        u8g2.print(totalSamples.bin[bin].sampleCount);
+      }
+
+      // coordinates
+      u8g2.drawHLine(pieX-pieR/2, pieY, pieR);
+      u8g2.drawVLine(pieX, pieY - pieR/2, pieR);
+
+      // enough points
+      if (getAreWeFlying()) {
+        u8g2.drawCircle(pieX, pieY, 5);
+        u8g2.setCursor(pieX-3, pieY+4);
+        u8g2.print(haveEnoughPoints());
+      } else {
+        u8g2.drawDisc(pieX, pieY, 5);
+        u8g2.setDrawColor(0);
+        u8g2.setCursor(pieX-3, pieY+4);
+        u8g2.print(haveEnoughPoints());
+        u8g2.setDrawColor(1);
+      }
+
+      // draw sample points
+      float scaleFactor = 16;
+      u8g2.setFont(leaf_5h);
+      u8g2.setFontMode(1);
+      for (int bin = 0; bin < 12; bin++) {
+        for (int s = 0; s < totalSamples.bin[bin].sampleCount; s++) {
+          int x0 = pieX + totalSamples.bin[bin].dx[s] * scaleFactor;          
+          int y0 = pieY + totalSamples.bin[bin].dy[s] * scaleFactor;
+          u8g2.setCursor(x0-2, y0+2);          
+          u8g2.print("+");          
+        }
+      }
+      u8g2.setFontMode(0);
+
+    WindEstimate displayEstimate = getWindEstimate();
+    
+    uint8_t estX = pieX + (cos(displayEstimate.windDirectionTrue) * displayEstimate.windSpeed * scaleFactor);
+    uint8_t estY = pieY + (sin(displayEstimate.windDirectionTrue) * displayEstimate.windSpeed * scaleFactor);
+    u8g2.setCursor(estX-2, estY+2);
+    u8g2.print("&");
+
+
+      // update cycles      
+      pieX = 5;
+      pieY = pieY - pieR-14;
+      u8g2.setCursor(pieX, pieY);
+      u8g2.print("upd: ");
+      u8g2.setCursor(pieX, pieY+=6);
+      u8g2.print(getUpdateCount());
+      u8g2.setCursor(pieX, pieY+=6);
+      u8g2.print("bet: ");
+      u8g2.setCursor(pieX, pieY+=6);
+      u8g2.print(getBetterCount());
+
+
+
+
+    x=48;
+    y=64;
     u8g2.setCursor(x,y);
     u8g2.setFont(leaf_5h);    
-    u8g2.print("LatErr:");
-    u8g2.setCursor(x,y+=13);
-    u8g2.setFont(leaf_6x12);    
-    //u8g2.print(gpsFixInfo.latError);
+    u8g2.print("WindEst:");
+    u8g2.setCursor(x,y+=9);
+    u8g2.setFont(leaf_5x8);      
+    int16_t windDeg =  ((int)(RAD_TO_DEG * displayEstimate.windDirectionTrue + 360))%360;
+    u8g2.print(windDeg);
+    u8g2.print("@");
+    u8g2.print(displayEstimate.windSpeed);
     
-    u8g2.setCursor(x,y+=6);
+    u8g2.setCursor(x=65,y+=6);
     u8g2.setFont(leaf_5h);    
-    u8g2.print("LngErr:");
-    u8g2.setCursor(x,y+=13);
-    u8g2.setFont(leaf_6x12);    
-    //u8g2.print(gpsFixInfo.lonError);
+    u8g2.print("EstErr:");
+    u8g2.setFont(leaf_5x8);      
+    u8g2.setCursor(x,y+=9); 
+    u8g2.print(displayEstimate.error);
     
-    u8g2.setCursor(x,y+=6);
-    u8g2.setFont(leaf_5h);    
-    u8g2.print("TotErr:");
-    u8g2.setCursor(x,y+=13);
-    u8g2.setFont(leaf_6x12);    
-    u8g2.print(gpsFixInfo.error);
-  
-    u8g2.setCursor(x,y+=6);
-    u8g2.setFont(leaf_5h);    
-    u8g2.print("HDOP:");
-    u8g2.setCursor(x,y+=13);
-    u8g2.setFont(leaf_6x12);    
-    u8g2.print(gps.hdop.value());
+
+
+
+
     
-    u8g2.setCursor(x,y+=6);
-    u8g2.setFont(leaf_5h);    
-    u8g2.print("PosErr:");
-    u8g2.setCursor(x,y+=13);
-    u8g2.setFont(leaf_6x12);    
-    u8g2.print(gpsFixInfo.error);
-
-
-
-    /*
-
+    ////////////////////////
     // glide ratio debugging
+    /*
     u8g2.setCursor(0, 73);
     u8g2.print("AvCl");
     u8g2.print(baro.climbRateAverage);
@@ -412,9 +472,32 @@ void display_page_debug() {
     */
 
 
+    //////////////////////////
+    // GPS FIX and SATELLITES DEBUGGING
+    /*
+    u8g2.setCursor(x=52,y=104);
+    u8g2.setFont(leaf_5h);    
+    u8g2.print("TotErr:");
+    u8g2.setCursor(x,y+=13);
+    u8g2.setFont(leaf_6x12);    
+    u8g2.print(gpsFixInfo.error);
+  
+    u8g2.setCursor(x,y+=6);
+    u8g2.setFont(leaf_5h);    
+    u8g2.print("HDOP:");
+    u8g2.setCursor(x,y+=13);
+    u8g2.setFont(leaf_6x12);    
+    u8g2.print(gps.hdop.value());
+    
+    u8g2.setCursor(x,y+=6);
+    u8g2.setFont(leaf_5h);    
+    u8g2.print("PosErr:");
+    u8g2.setCursor(x,y+=13);
+    u8g2.setFont(leaf_6x12);    
+    u8g2.print(gpsFixInfo.error);
 
     gpsMenuPage.drawConstellation(0, 106, 63);
-
+    */
     
 
   } while (u8g2.nextPage());

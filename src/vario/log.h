@@ -48,4 +48,7 @@ bool flightTimer_autoStop(void);
 // Returns if we should stop recording a flight based on idle-ness
 bool flightTimer_autoStart(void);
 
+// check if we're flying (used for functions that should only work in-flight, like wind estimates)
+bool getAreWeFlying(void);
+
 extern FlightStats logbook;

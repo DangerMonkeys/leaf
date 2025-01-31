@@ -17,7 +17,7 @@
 #include "telemetry.h"
 #include "wind_estimate/wind_estimate.h"
 
-#define DEBUG_GPS 1
+#define DEBUG_GPS 0
 
 // Setup GPS
 #define gpsPort \
