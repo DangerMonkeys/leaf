@@ -14,6 +14,7 @@
 #include "speaker.h"
 #include "string_utils.h"
 #include "tempRH.h"
+#include "wind_estimate/wind_estimate.h"
 
 
 // track if we're "flying" separate from if we're recording a log.  This allows us to enable
@@ -231,6 +232,7 @@ void flightTimer_start() {
 // stop timer
 void flightTimer_stop() {
   weAreFlying = false;  // we're not "flying" when we stop a log
+  clearWindEstimate();  // clear the wind estimate when we stop a flight
   // Short Circuit, no need to do anything if there's no flight recording.
   if (flight == NULL) {
     return;

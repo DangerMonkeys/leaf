@@ -3,6 +3,8 @@
 #include <limits>
 #include "log.h"
 
+bool DEBUG_WIND_ESTIMATE = false;	// enable for verbose serial printing
+
 WindEstimate windEstimate;
 
 TotalSamples totalSamples;
@@ -162,7 +164,8 @@ bool updateEstimate() {
   float wy = dyOf(windEstimate.windDirectionTrue, windEstimate.windSpeed);
   float bestError = errorOf(wx, wy, windEstimate.airspeed);
 
-	Serial.print("Begin Estimate!  Wx: ");
+	if (DEBUG_WIND_ESTIMATE) {
+		Serial.print("Begin Estimate!  Wx: ");
 		Serial.print(wx);
 		Serial.print(" wy: ");
 		Serial.print(wy);		
@@ -174,6 +177,7 @@ bool updateEstimate() {
 		Serial.print(windEstimate.airspeed);
 		Serial.print(" Err: ");
 		Serial.println(bestError);
+	}
 
   int bestAdjustment = -1;
 
@@ -184,10 +188,12 @@ bool updateEstimate() {
                              wy + adjustments[a].dwy,
                              windEstimate.airspeed + adjustments[a].dairspeed);
 
+		if (DEBUG_WIND_ESTIMATE) {
       Serial.print("bestError: ");
       Serial.print(bestError, 4);
       Serial.print(" newError: ");
       Serial.println(newError, 4);
+		}
 
     if (newError < bestError) {
 
@@ -204,19 +210,24 @@ bool updateEstimate() {
     wy += adjustments[bestAdjustment].dwy;
     windEstimate.windSpeed = speedOf(wx, wy);
     windEstimate.windDirectionTrue = directionOf(wx, wy);
+		windEstimate.windDirectionFrom = windEstimate.windDirectionTrue + PI;	// add 180 degrees
     windEstimate.error = bestError;
-		Serial.print("UPDATE ESTIMATE! Wx: ");
-		Serial.print(wx);
-		Serial.print(" wy: ");
-		Serial.print(wy);		
-		Serial.print(" Dir: ");
-		Serial.print(windEstimate.windDirectionTrue);
-		Serial.print(" Spd: ");
-		Serial.print(windEstimate.windSpeed);
-		Serial.print(" Airspd: ");
-		Serial.print(windEstimate.airspeed);
-		Serial.print(" Err: ");
-		Serial.println(windEstimate.error);
+
+		if (DEBUG_WIND_ESTIMATE) {
+			Serial.print("UPDATE ESTIMATE! Wx: ");
+			Serial.print(wx);
+			Serial.print(" wy: ");
+			Serial.print(wy);		
+			Serial.print(" Dir: ");
+			Serial.print(windEstimate.windDirectionTrue);
+			Serial.print(" Spd: ");
+			Serial.print(windEstimate.windSpeed);
+			Serial.print(" Airspd: ");
+			Serial.print(windEstimate.airspeed);
+			Serial.print(" Err: ");
+			Serial.println(windEstimate.error);
+		}
+
 		return true;
   } else {
     // Current estimate cannot be improved upon
@@ -245,17 +256,31 @@ int getBetterCount() {
 
 uint8_t windEstimateStep = 0;
 void estimateWind() {
+	int estimateTimeStamp = micros();
   switch (windEstimateStep) {
     case 0:
-      convertToDxDy();
+      convertToDxDy();			
+			if (DEBUG_WIND_ESTIMATE) {
+				Serial.print("**TIME** convert to Dx Dy: ");
+				Serial.println(micros() - estimateTimeStamp);
+				estimateTimeStamp = micros();
+			}
       enoughPoints = checkIfEnoughPoints();
       if (enoughPoints) {
         averageSamplePoints();
+				if (DEBUG_WIND_ESTIMATE) {
+					Serial.print("**TIME** enough and average points: ");
+					Serial.println(micros() - estimateTimeStamp);
+				}
         windEstimateStep++;
       }
       break;
     case 1:
       if (updateEstimate()) windEstimateStep = 0;
+			if (DEBUG_WIND_ESTIMATE) {
+				Serial.print("**TIME** update estimate: ");
+				Serial.println(micros() - estimateTimeStamp);
+			}
       break;
   }
 }
@@ -270,11 +295,30 @@ void clearWindEstimate(void) {
 
 // ingest a sample groundVelocity and store it in the appropriate bin
 void submitVelocityForWindEstimate(GroundVelocity groundVelocity) {
-  // sort into appropriate bin
+  
+	// get GroundVelocity track relative to current wind estimate (if Valid)
+	// (the center of the pie moves with the wind, and we want 
+	// bins relative to the center of the pie)
+	float relativeAngle = groundVelocity.trackAngle; // start with existing track angle
+
+	if (windEstimate.validEstimate) {									// adjust for wind if estimate is valid
+		float dx = cos(groundVelocity.trackAngle);
+		float dy = sin(groundVelocity.trackAngle);
+		float wx = dxOf(windEstimate.windDirectionTrue, windEstimate.windSpeed);
+		float wy = dyOf(windEstimate.windDirectionTrue, windEstimate.windSpeed);
+		relativeAngle = directionOf(dx - wx, dy - wy);
+	}
+		
+	// stay positive, since we'll search bins from 0 to 2*PI
+	if (relativeAngle < 0) {
+		relativeAngle += 2 * PI;
+	}
+		
+	// now sort into appropriate bin
   float binAngleSpan = 2 * PI / binCount;
   for (int b = 0; b < binCount; b++) {
-    if (groundVelocity.trackAngle < (b + 1) * binAngleSpan) {
-      totalSamples.bin[b].angle[totalSamples.bin[b].index] = groundVelocity.trackAngle;
+    if (relativeAngle < (b + 1) * binAngleSpan) {
+      totalSamples.bin[b].angle[totalSamples.bin[b].index] = relativeAngle;
       totalSamples.bin[b].speed[totalSamples.bin[b].index] = groundVelocity.speed;
       totalSamples.bin[b].index++;
       totalSamples.bin[b].sampleCount++;

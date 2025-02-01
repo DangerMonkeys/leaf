@@ -360,15 +360,15 @@ void display_page_debug() {
 
       for (int bin = 0; bin < 12; bin++) {
         float a = angle * bin;
-        int x0 = pieX + cos(a) * pieR;
-        int y0 = pieY + sin(a) * pieR;
+        int x0 = pieX + sin(a) * pieR;
+        int y0 = pieY - cos(a) * pieR;
 
         u8g2.setCursor(x0-3, y0+4);
         u8g2.setFont(leaf_5x8);
         u8g2.print(totalSamples.bin[bin].sampleCount);
       }
 
-      // coordinates
+      // coordinate system center
       u8g2.drawHLine(pieX-pieR/2, pieY, pieR);
       u8g2.drawVLine(pieX, pieY - pieR/2, pieR);
 
@@ -391,8 +391,8 @@ void display_page_debug() {
       u8g2.setFontMode(1);
       for (int bin = 0; bin < 12; bin++) {
         for (int s = 0; s < totalSamples.bin[bin].sampleCount; s++) {
-          int x0 = pieX + totalSamples.bin[bin].dx[s] * scaleFactor;          
-          int y0 = pieY + totalSamples.bin[bin].dy[s] * scaleFactor;
+          int x0 = pieX + totalSamples.bin[bin].dy[s] * scaleFactor;          
+          int y0 = pieY - totalSamples.bin[bin].dx[s] * scaleFactor;
           u8g2.setCursor(x0-2, y0+2);          
           u8g2.print("+");          
         }
@@ -401,8 +401,8 @@ void display_page_debug() {
 
     WindEstimate displayEstimate = getWindEstimate();
 
-    uint8_t estX = pieX + (cos(displayEstimate.windDirectionTrue) * displayEstimate.windSpeed * scaleFactor);
-    uint8_t estY = pieY + (sin(displayEstimate.windDirectionTrue) * displayEstimate.windSpeed * scaleFactor);
+    uint8_t estX = pieX + (sin(displayEstimate.windDirectionTrue) * displayEstimate.windSpeed * scaleFactor);
+    uint8_t estY = pieY - (cos(displayEstimate.windDirectionTrue) * displayEstimate.windSpeed * scaleFactor);
     uint8_t estR = displayEstimate.airspeed * scaleFactor;
 
     u8g2.setCursor(estX-2, estY+2);

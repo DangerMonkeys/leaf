@@ -281,9 +281,11 @@ char baro_update(bool startNewCycle, bool doTemp) {  // (we don't need to update
   if (microsNow - baroADCStartTime > 9000) {
     baroADCBusy = false;
   } else {
-    Serial.print("BARO BUSY!  ");
-    Serial.print(microsNow - baroADCStartTime);
-    Serial.println(" micros since last reading");
+    Serial.print("BARO BUSY!  Executing Process Step # ");
+    Serial.print(process_step);
+    Serial.print("  Micros since last: ");
+    Serial.println(microsNow - baroADCStartTime);
+    
   }
 
   if (startNewCycle) process_step = 0;
@@ -363,7 +365,7 @@ char baro_update(bool startNewCycle, bool doTemp) {  // (we don't need to update
       break;
   }
   process_step++;
-  // if(++process_step > 4) process_step = 0;  // prep for the next step in the process (if we just
+  // if(++process_step >= 4) process_step = 0;  // prep for the next step in the process (if we just
   // did step 4, we're done so set to 0.  Elsewhere, Interrupt timer will set to 1 again eventually)
   return (process_step - 1);  // return what step was just completed
 }

@@ -765,8 +765,6 @@ void display_windSockArrow(int16_t x, int16_t y, int16_t radius) {
 }
 
 // Wind Sock Ring Triangle
-uint8_t blinkCount = 0;
-bool blink = true;
 void display_windSockRing(int16_t x, int16_t y, int16_t radius, int16_t size) {
   float point_angle = 0.65; // half angle of the arrow pointer
   
@@ -778,15 +776,7 @@ void display_windSockRing(int16_t x, int16_t y, int16_t radius, int16_t size) {
 
   u8g2.setDrawColor(0);
 
-    blinkCount++;
-    if (blinkCount >= 10) {
-      if (blink) blink = false;
-      else blink = true;
-      blinkCount = 0;
-    }
-
-
-  if (blink) { //!windEstimate.validEstimate) {
+  if (!windEstimate.validEstimate) {
     // just show generic wind icon if no wind estimate
     u8g2.setFont(wind_logo);
     u8g2.setFontMode(1);    
@@ -795,15 +785,15 @@ void display_windSockRing(int16_t x, int16_t y, int16_t radius, int16_t size) {
     u8g2.setFontMode(0);
   } else {
     // wind pointer inside
-    float wind_angle = windEstimate.windDirectionTrue;
+    float windDisplayAngle = windEstimate.windDirectionFrom - gps.course.deg() * DEG_TO_RAD;
 
-    uint16_t tip_x = + sin(wind_angle) * (radius - size + 2) + 1 + x;
-    uint16_t tip_y = - cos(wind_angle) * (radius - size + 2) + 1 + y;
+    uint16_t tip_x = + sin(windDisplayAngle) * (radius - size + 2) + 1 + x;
+    uint16_t tip_y = - cos(windDisplayAngle) * (radius - size + 2) + 1 + y;
 
-    uint16_t tail_1_x = tip_x + sin(wind_angle + point_angle) * size;
-    uint16_t tail_1_y = tip_y - cos(wind_angle + point_angle) * size;
-    uint16_t tail_2_x = tip_x + sin(wind_angle - point_angle) * size;
-    uint16_t tail_2_y = tip_y - cos(wind_angle - point_angle) * size;
+    uint16_t tail_1_x = tip_x + sin(windDisplayAngle + point_angle) * size;
+    uint16_t tail_1_y = tip_y - cos(windDisplayAngle + point_angle) * size;
+    uint16_t tail_2_x = tip_x + sin(windDisplayAngle - point_angle) * size;
+    uint16_t tail_2_y = tip_y - cos(windDisplayAngle - point_angle) * size;
 
     u8g2.drawTriangle(tip_x, tip_y, tail_1_x, tail_1_y, tail_2_x, tail_2_y);
     u8g2.drawLine(tip_x, tip_y, tail_1_x, tail_1_y);
@@ -812,8 +802,8 @@ void display_windSockRing(int16_t x, int16_t y, int16_t radius, int16_t size) {
 
     // now print wind speed, but offset from pointer
     uint8_t speed_radius = size / 2;
-    uint8_t speed_x = x - sin(wind_angle) * speed_radius;
-    uint8_t speed_y = y + cos(wind_angle) * speed_radius;
+    uint8_t speed_x = x - sin(windDisplayAngle) * speed_radius;
+    uint8_t speed_y = y + cos(windDisplayAngle) * speed_radius;
     display_windSpeedCentered(speed_x-6, speed_y+7, leaf_6x12);
     u8g2.setDrawColor(1);
 

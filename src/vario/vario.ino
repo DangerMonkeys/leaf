@@ -69,6 +69,7 @@ char taskman_power = 1;    // check battery, check auto-turn-off, etc
 char taskman_log = 1;      // check auto-start, increment timers, update log file, etc
 char taskman_tempRH = 1;   // (1) trigger temp & humidity measurements, (2) process values and save
 char taskman_SDCard = 1;   // check if SD card state has changed and attempt remount if needed
+char taskman_estimateWind = 1;  // estimate wind speed and direction
 
 // track current power on state to detect changes (if user turns device on or off while USB is
 // plugged in, device can still run even when "off")
@@ -312,34 +313,34 @@ void setTasks(void) {
   // statements allow for tasks every second, spaced out on different 100ms blocks)
   switch (counter_10ms_block) {
     case 0:
-      // taskman_baro = 1;  // begin updating baro every 50ms on the 0th and 5th blocks
       baro_startNewCycle = true;  // begin updating baro every 50ms on the 0th and 5th blocks
+      // taskman_baro = 0;  // begin updating baro every 50ms on the 0th and 5th blocks
       break;
     case 1:
-      // taskman_baro = 2;
-      estimateWind();
+      // taskman_baro = 1;        
       break;
     case 2:
-      // taskman_baro = 3;
+      // taskman_baro = 2;
+      taskman_estimateWind = 1;  // estimate wind speed and direction
       break;
     case 3:
-      // taskman_baro = 4;
+      // taskman_baro = 3;
       break;
     case 4:
       taskman_imu = 1;  // update accel every 100ms during the 4th block
       break;
     case 5:
       baro_startNewCycle = true;  // begin updating baro every 50ms on the 0th and 5th blocks
-      // taskman_baro = 1;  // begin updating baro every 50ms on the 0th and 5th blocks
+      // taskman_baro = 0;  // begin updating baro every 50ms on the 0th and 5th blocks
       break;
     case 6:
-      // taskman_baro = 2;
+      // taskman_baro = 1;
       break;
     case 7:
-      // taskman_baro = 3;
+      // taskman_baro = 2;
       break;
     case 8:
-      // taskman_baro = 4;
+      // taskman_baro = 3
       break;
     case 9:
 
@@ -388,6 +389,10 @@ void taskManager(void) {
   if (taskman_buttons) {
     buttons_update();
     taskman_buttons = 0;
+  }
+  if (taskman_estimateWind) {
+    estimateWind();
+    taskman_estimateWind = 0;
   }
   if (taskman_imu) {
     imu_update();

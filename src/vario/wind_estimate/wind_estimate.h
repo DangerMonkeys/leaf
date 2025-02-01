@@ -4,7 +4,7 @@
 
 // bin definitions for storing sample points
 const uint8_t binCount = 12;
-const uint8_t samplesPerBin = 2;
+const uint8_t samplesPerBin = 3;
 
 const float STANDARD_AIRSPEED = 10;  // 10 m/s typical airspeed used as a starting point for wind estimate
 
@@ -32,7 +32,8 @@ struct WindEstimate {
   float windSpeed;
 
   // Radians East of North (0 is True North)
-  float windDirectionTrue;
+  float windDirectionTrue;	// direction wind is blowing toward (used for center of circle-fit)
+	float windDirectionFrom;	// direction wind is blowing FROM (180 deg offset from previous var)
 
   // m/s estimate of aircraft speed
   float airspeed;
