@@ -66,11 +66,6 @@ void imu_update() {
     Serial.print(" z: ");
     Serial.println(az);
   }
-
-    String accelName = "accel,";
-    String accelEntry = accelName + String(at);
-    Telemetry.writeText(accelEntry);
-  
 }
 
 float IMU_getAccel() { return at; }

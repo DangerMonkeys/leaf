@@ -19,7 +19,8 @@
 // Filter values to average/smooth out the baro sensor
 
 // User Settings for Vario
-uint8_t filterValsPref = 20; // default samples to average (will be adjusted by VARIO_SENSE user setting)
+uint8_t filterValsPref =
+    20;  // default samples to average (will be adjusted by VARIO_SENSE user setting)
 #define FILTER_VALS_MAX 30  // total array size max; for both altitude and climb
 int32_t pressureFilterVals[FILTER_VALS_MAX + 1];  // use [0] as the index / bookmark
 int32_t climbFilterVals[FILTER_VALS_MAX + 1];     // use [0] as the index / bookmark
@@ -87,7 +88,7 @@ void baro_adjustAltSetting(int8_t dir, uint8_t count) {
     if (baro.altimeterSetting > 32.0) baro.altimeterSetting = 32.0;
   } else if (dir <= -1) {
     baro.altimeterSetting -= increase;
-    if (baro.altimeterSetting < 28.0) baro.altimeterSetting = 28.0;    
+    if (baro.altimeterSetting < 28.0) baro.altimeterSetting = 28.0;
   }
   ALT_SETTING = baro.altimeterSetting;
 }
@@ -180,6 +181,9 @@ void baro_init(void) {
   C_TREF = baro_readCalibration(5);
   C_TEMPSENS = baro_readCalibration(6);
 
+  // Log the calibration values to telemetry
+  Telemetry.setBaroSensorCalibrations(C_SENS, C_OFF, C_TCS, C_TCO, C_TREF, C_TEMPSENS);
+
   // after initialization, get first baro sensor reading to populate values
   delay(10);             // wait for baro sensor to be ready
   baro_update(1, true);  // send convert-pressure command
@@ -257,7 +261,9 @@ void baro_reset(void) {
 }
 
 // Reset launcAlt to current Alt (when starting a new log file, for example)
-void baro_resetLaunchAlt() { baro.altAtLaunch = baro.altAdjusted; }
+void baro_resetLaunchAlt() {
+  baro.altAtLaunch = baro.altAdjusted;
+}
 
 uint32_t baroTimeStampPressure = 0;
 uint32_t baroTimeStampTemp = 0;
@@ -319,8 +325,13 @@ char baro_update(bool startNewCycle, bool doTemp) {  // (we don't need to update
         // prep and read
         if (D1_P == 0)
           D1_P = D1_Plast;  // use the last value if we get an invalid read
-        else
+        else {
+          // Valid D1 reading
           D1_Plast = D1_P;  // otherwise save this value for next time if needed
+
+          // Write to telemetry
+          Telemetry.setBaroPressure(D1_P);
+        }
         // baroTimeStampTemp = micros();
 
         if (doTemp) {
@@ -345,8 +356,13 @@ char baro_update(bool startNewCycle, bool doTemp) {  // (we don't need to update
           // read
           if (D2_T == 0)
             D2_T = D2_Tlast;  // use the last value if we get a misread
-          else
+          else {
+            // Valid temp reading
             D2_Tlast = D2_T;  // otherwise save this value for next time if needed
+
+            // Write to telemetry
+            Telemetry.setBaroTemp(D2_T);
+          }
         }
       }
       // (even if we skipped some steps above because of mis-reads or mis-timing, we can still
@@ -404,10 +420,6 @@ void baro_calculatePressure() {
   baro.pressure = ((uint64_t)D1_P * SENS1 / (int64_t)pow(2, 21) - OFF1) / pow(2, 15);
 
   // record datapoint on SD card if datalogging is turned on
-
-  String baroName = "baro mb*100,";
-  String baroEntry = baroName + String(baro.pressure);
-  Telemetry.writeText(baroEntry);
 }
 
 // Filter Pressure Values
@@ -429,39 +441,51 @@ void baro_calculatePressure() {
 void baro_filterPressure(void) {
   // first calculate filter size based on user preference
   switch (VARIO_SENSE) {
-    case 1: filterValsPref = 30; break;
-    case 2: filterValsPref = 25; break;
-    case 3: filterValsPref = 20; break;
-    case 4: filterValsPref = 15; break;
-    case 5: filterValsPref = 10; break;
-    default: filterValsPref = 20; break;
+    case 1:
+      filterValsPref = 30;
+      break;
+    case 2:
+      filterValsPref = 25;
+      break;
+    case 3:
+      filterValsPref = 20;
+      break;
+    case 4:
+      filterValsPref = 15;
+      break;
+    case 5:
+      filterValsPref = 10;
+      break;
+    default:
+      filterValsPref = 20;
+      break;
   }
 
   // new way with regression:
-    pressure_lr.update((double)millis(), (double)baro.alt);
-    LinearFit fit = pressure_lr.fit();
-    baro.pressureRegression = linear_value(&fit, (double)millis());
+  pressure_lr.update((double)millis(), (double)baro.alt);
+  LinearFit fit = pressure_lr.fit();
+  baro.pressureRegression = linear_value(&fit, (double)millis());
 
   // old way with averaging last N values equally:
-    baro.pressureFiltered = 0;
-    int8_t filterBookmark = pressureFilterVals[0];  // start at the saved spot in the filter array
-    int8_t filterIndex =
-        filterBookmark;  // and create an index to track all the values we need for averaging
+  baro.pressureFiltered = 0;
+  int8_t filterBookmark = pressureFilterVals[0];  // start at the saved spot in the filter array
+  int8_t filterIndex =
+      filterBookmark;  // and create an index to track all the values we need for averaging
 
-    pressureFilterVals[filterBookmark] =
-        baro.pressure;                       // load in the new value at the bookmarked spot
-    if (++filterBookmark > FILTER_VALS_MAX)  // increment bookmark for next time
-      filterBookmark = 1;                    // wrap around the array for next time if needed
-    pressureFilterVals[0] = filterBookmark;  // and save the bookmark for next time
+  pressureFilterVals[filterBookmark] =
+      baro.pressure;                       // load in the new value at the bookmarked spot
+  if (++filterBookmark > FILTER_VALS_MAX)  // increment bookmark for next time
+    filterBookmark = 1;                    // wrap around the array for next time if needed
+  pressureFilterVals[0] = filterBookmark;  // and save the bookmark for next time
 
-    // sum up all the values from this spot and previous, for the correct number of samples (user
-    // pref)
-    for (int i = 0; i < filterValsPref; i++) {
-      baro.pressureFiltered += pressureFilterVals[filterIndex];
-      filterIndex--;
-      if (filterIndex <= 0) filterIndex = FILTER_VALS_MAX;  // wrap around the array
-    }
-    baro.pressureFiltered /= filterValsPref;  // divide to get the average
+  // sum up all the values from this spot and previous, for the correct number of samples (user
+  // pref)
+  for (int i = 0; i < filterValsPref; i++) {
+    baro.pressureFiltered += pressureFilterVals[filterIndex];
+    filterIndex--;
+    if (filterIndex <= 0) filterIndex = FILTER_VALS_MAX;  // wrap around the array
+  }
+  baro.pressureFiltered /= filterValsPref;  // divide to get the average
 }
 
 void baro_calculateAlt() {
@@ -512,8 +536,13 @@ void baro_updateClimb() {
     filterIndex--;
     if (filterIndex <= 0) filterIndex = FILTER_VALS_MAX;  // wrap around the array
   }
+  auto prevClimbRateFiltered = baro.climbRateFiltered;
   baro.climbRateFiltered =
       climbRateFilterSummation / filterValsPref;  // divide to get the filtered climb rate
+
+  // Write the filtered climb rate to telemetry
+  if (prevClimbRateFiltered != baro.climbRateFiltered)
+    Telemetry.setClimbRate(baro.climbRateFiltered);
 
   // now calculate the longer-running average climb value (this is a smoother, slower-changing value
   // for things like glide ratio, etc)

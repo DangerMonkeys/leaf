@@ -14,6 +14,7 @@
 #include "power.h"
 #include "settings.h"
 #include "speaker.h"
+#include "telemetry.h"
 #include "tempRH.h"
 #include "wind_estimate/wind_estimate.h"
 
@@ -417,6 +418,8 @@ void taskManager(void) {
     SDcard_update();
     taskman_SDCard = 0;
   }
+  // Log telemetry (no-op is no changes)
+  Telemetry.writeTelemetryRecord(micros());
 
   if (taskman_didSomeTasks && DEBUG_MAIN_LOOP) {
     taskman_didSomeTasks = 0;

@@ -17,7 +17,7 @@
 #include "telemetry.h"
 #include "wind_estimate/wind_estimate.h"
 
-#define DEBUG_GPS 1
+#define DEBUG_GPS 0
 
 // Setup GPS
 #define gpsPort \
@@ -41,16 +41,16 @@ uint32_t gpsBootReady = 0;
 // Satellite tracking
 
 // GPS satellite info for storing values straight from the GPS
-struct gps_sat_info sats[MAX_SATELLITES];  
+struct gps_sat_info sats[MAX_SATELLITES];
 
 // Cached version of the sat info for showing on display (this will be re-written each time a
 // total set of new sat info is available)
-struct gps_sat_info satsDisplay[MAX_SATELLITES];  
+struct gps_sat_info satsDisplay[MAX_SATELLITES];
 
 // $GPGSV sentence parsing
-TinyGPSCustom totalGPGSVMessages(gps, "GPGSV", 1); // first element is # messages (N) total 
-TinyGPSCustom messageNumber(gps, "GPGSV", 2);  // second element is message number (x of N)
-TinyGPSCustom satsInView(gps, "GPGSV", 3);  // third element is # satellites in view
+TinyGPSCustom totalGPGSVMessages(gps, "GPGSV", 1);  // first element is # messages (N) total
+TinyGPSCustom messageNumber(gps, "GPGSV", 2);       // second element is message number (x of N)
+TinyGPSCustom satsInView(gps, "GPGSV", 3);          // third element is # satellites in view
 
 // Fields for capturing the information from GSV strings
 // (each GSV sentence will have info for at most 4 satellites)
@@ -63,8 +63,8 @@ TinyGPSCustom snr[4];        // to be initialized later
 // Need to read from the GST sentence which TinyGPS doesn't do by default
 TinyGPSCustom latAccuracy(gps, "GPGST", 6);  // Latitude error - standard deviation
 TinyGPSCustom lonAccuracy(gps, "GPGST", 7);  // Longitude error - standard deviation
-TinyGPSCustom fix(gps, "GNGGA", 6);          // Fix (0=none, 1=GPS, 2=DGPS, 3=Valid PPS)  
-TinyGPSCustom fixMode(gps, "GNGSA", 2);      // Fix mode (1=No fix, 2=2D fix, 3=3D fix) 
+TinyGPSCustom fix(gps, "GNGGA", 6);          // Fix (0=none, 1=GPS, 2=DGPS, 3=Valid PPS)
+TinyGPSCustom fixMode(gps, "GNGSA", 2);      // Fix mode (1=No fix, 2=2D fix, 3=3D fix)
 GPSFixInfo gpsFixInfo;
 
 // Enable GPS Backup Power (to save satellite data and allow faster start-ups)
@@ -203,8 +203,6 @@ void gps_init(void) {
   */
 }  // gps_init
 
-
-
 float glideRatio;
 
 void gps_calculateGlideRatio() {
@@ -227,11 +225,10 @@ void gps_updateFixInfo() {
   gpsFixInfo.fix = atoi(fix.value());
   gpsFixInfo.fixMode = atoi(fixMode.value());
 
-
   // solution accuracy
-  //gpsFixInfo.latError = 2.5; //atof(latAccuracy.value());
-  //gpsFixInfo.lonError = 1.5; //atof(lonAccuracy.value());
-  //gpsFixInfo.error = sqrt(gpsFixInfo.latError * gpsFixInfo.latError +
+  // gpsFixInfo.latError = 2.5; //atof(latAccuracy.value());
+  // gpsFixInfo.lonError = 1.5; //atof(lonAccuracy.value());
+  // gpsFixInfo.error = sqrt(gpsFixInfo.latError * gpsFixInfo.latError +
   //                         gpsFixInfo.lonError * gpsFixInfo.lonError);
   gpsFixInfo.error = (float)gps.hdop.value() * 5 / 100;
 }
@@ -248,7 +245,8 @@ void gps_update() {
                           String(gps.location.lng(), 8) + ',' + String(gps.altitude.meters()) +
                           ',' + String(gps.speed.mps()) + ',' + String(gps.course.deg());
 
-  Telemetry.writeText(gpsEntryString);
+  // Write GPS data to telemetry
+  Telemetry.setGPSPosition(gps.altitude.value(), gps.location.lat(), gps.location.lng());
 
   /*
 
@@ -327,7 +325,8 @@ void gps_updateSatList() {
         satsDisplay[i].snr = sats[i].snr;
         satsDisplay[i].active = sats[i].active;
 
-        // keep track of how many satellites we can see while we're scanning through all the ID's (i)
+        // keep track of how many satellites we can see while we're scanning through all the ID's
+        // (i)
         if (satsDisplay[i].active) satelliteCount++;
 
         // then negate the source, so it will only be used if it's truly updated again (i.e.,
@@ -431,7 +430,7 @@ bool gps_getUtcDateTime(tm& cal) {
 
 // like gps_getUtcDateTime, but has the timezone offset applied.
 bool gps_getLocalDateTime(tm& cal) {
-  if(!gps_getUtcDateTime(cal)) {
+  if (!gps_getUtcDateTime(cal)) {
     return false;
   }
 

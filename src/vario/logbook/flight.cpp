@@ -3,8 +3,8 @@
 #include <SD_MMC.h>
 
 #include "FS.h"
-#include "telemetry.h"
 #include "page_flight_summary.h"
+#include "telemetry.h"
 
 void Flight::startFlight() {
   File trackLogsDir = SD_MMC.open(this->desiredFilePath());
@@ -38,6 +38,9 @@ void Flight::startFlight() {
 
   // Create the file for writing
   file = SD_MMC.open(fileName, "w", true);
+
+  // Start logging telemetry
+  Telemetry.begin();
 }
 
 void Flight::end(const FlightStats stats) {
@@ -49,4 +52,6 @@ void Flight::end(const FlightStats stats) {
   dialog.show(stats);
 }
 
-bool Flight::started() { return (boolean)file; }
+bool Flight::started() {
+  return (boolean)file;
+}

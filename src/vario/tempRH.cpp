@@ -1,6 +1,7 @@
 #include "tempRH.h"
 
 #include "Leaf_I2C.h"
+#include "telemetry.h"
 
 #define DEBUG_TEMPRH 0  // flag for outputting debugf messages on UBS serial port
 
@@ -9,9 +10,13 @@ bool measurementStarted = false;
 float ambientTemp = 0;      // calculated deg C
 float ambientHumidity = 0;  // calculated % relative humidity
 
-float tempRH_getTemp() { return ambientTemp; }
+float tempRH_getTemp() {
+  return ambientTemp;
+}
 
-float tempRH_getHumidity() { return ambientHumidity; }
+float tempRH_getHumidity() {
+  return ambientHumidity;
+}
 
 bool tempRH_init() {
   bool success = true;
@@ -88,6 +93,10 @@ void tempRH_update(uint8_t process_step) {
       ambientTemp += TEMP_OFFSET;
       ambientHumidity = ((float)sensorData.humidity / 1048576) * 100;
       currently_processing = false;
+
+      // Write to telemetry
+      Telemetry.setTemperatureHumidity(ambientTemp, ambientHumidity);
+
       if (DEBUG_TEMPRH) {
         Serial.print("Temp_RH - Temp: ");
         Serial.print(ambientTemp);
@@ -170,9 +179,13 @@ bool tempRH_initialize() {
   return false;
 }
 
-bool tempRH_isBusy() { return (tempRH_getStatus() & (1 << 7)); }
+bool tempRH_isBusy() {
+  return (tempRH_getStatus() & (1 << 7));
+}
 
-bool tempRH_isCalibrated() { return (tempRH_getStatus() & (1 << 3)); }
+bool tempRH_isCalibrated() {
+  return (tempRH_getStatus() & (1 << 3));
+}
 
 uint8_t tempRH_getStatus() {
   Wire.requestFrom(ADDR_AHT20, (uint8_t)1);
