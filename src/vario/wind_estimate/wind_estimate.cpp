@@ -149,7 +149,7 @@ inline float speedOf(float wx, float wy) {
 }
 
 inline float directionOf(float wx, float wy) {
-  return atan2(wx, wy);
+  return atan2(wy, wx);	// atan2 takes y, x in cpp/arduino, unlike other languages and tools which take x, y
 }
 
 // Perform work toward updating the wind estimate.
@@ -161,6 +161,19 @@ bool updateEstimate() {
   float wx = dxOf(windEstimate.windDirectionTrue, windEstimate.windSpeed);
   float wy = dyOf(windEstimate.windDirectionTrue, windEstimate.windSpeed);
   float bestError = errorOf(wx, wy, windEstimate.airspeed);
+
+	Serial.print("Begin Estimate!  Wx: ");
+		Serial.print(wx);
+		Serial.print(" wy: ");
+		Serial.print(wy);		
+		Serial.print(" Dir: ");
+		Serial.print(windEstimate.windDirectionTrue);
+		Serial.print(" Spd: ");
+		Serial.print(windEstimate.windSpeed);
+		Serial.print(" Airspd: ");
+		Serial.print(windEstimate.airspeed);
+		Serial.print(" Err: ");
+		Serial.println(bestError);
 
   int bestAdjustment = -1;
 
@@ -192,7 +205,11 @@ bool updateEstimate() {
     windEstimate.windSpeed = speedOf(wx, wy);
     windEstimate.windDirectionTrue = directionOf(wx, wy);
     windEstimate.error = bestError;
-		Serial.print("UPDATE ESTIMATE! Dir: ");
+		Serial.print("UPDATE ESTIMATE! Wx: ");
+		Serial.print(wx);
+		Serial.print(" wy: ");
+		Serial.print(wy);		
+		Serial.print(" Dir: ");
 		Serial.print(windEstimate.windDirectionTrue);
 		Serial.print(" Spd: ");
 		Serial.print(windEstimate.windSpeed);
