@@ -353,43 +353,52 @@ void display_page_debug() {
 
 
       // Display Sample Counts
+      int numOfBins = getBinCount();
       uint8_t pieX = 48;
       uint8_t pieY = 136;
-      uint8_t pieR = 44;
-      float angle = 2 * PI / 12;
+      uint8_t pieR = 41;      
+      float binAngle = 2 * PI / numOfBins;
 
-      for (int bin = 0; bin < 12; bin++) {
-        float a = angle * bin;
-        int x0 = pieX + sin(a) * pieR;
-        int y0 = pieY - cos(a) * pieR;
+      for (int bin = 0; bin < numOfBins; bin++) {
+        float a = binAngle * bin + binAngle / 2;
+        int x0 = pieX + sin(a) * (pieR + 5);
+        int y0 = pieY - cos(a) * (pieR + 5);
 
         u8g2.setCursor(x0-3, y0+4);
         u8g2.setFont(leaf_5x8);
         u8g2.print(totalSamples.bin[bin].sampleCount);
       }
 
-      // coordinate system center
-      u8g2.drawHLine(pieX-pieR/2, pieY, pieR);
-      u8g2.drawVLine(pieX, pieY - pieR/2, pieR);
+      // coordinate system center lines and axes
+      u8g2.drawHLine(pieX-pieR, pieY, pieR*2);
+      u8g2.drawVLine(pieX, pieY - pieR, pieR*2);
+      u8g2.setFont(leaf_5h);
+      u8g2.setCursor(pieX - 1, pieY - pieR);      
+      u8g2.print("N");
+      u8g2.setCursor(pieX - 1, pieY + pieR + 6);      
+      u8g2.print("S"); 
+      u8g2.setCursor(pieX - pieR - 6, pieY + 3);      
+      u8g2.print("W");
+      u8g2.setCursor(pieX + pieR + 1, pieY + 3);      
+      u8g2.print("E");
+      u8g2.setFont(leaf_5x8);
 
-      // enough points
-      if (getAreWeFlying()) {
-        u8g2.drawCircle(pieX, pieY, 5);
-        u8g2.setCursor(pieX-3, pieY+4);
-        u8g2.print(haveEnoughPoints());
-      } else {
-        u8g2.drawDisc(pieX, pieY, 5);
-        u8g2.setDrawColor(0);
-        u8g2.setCursor(pieX-3, pieY+4);
-        u8g2.print(haveEnoughPoints());
-        u8g2.setDrawColor(1);
-      }
 
       // draw sample points
-      float scaleFactor = 16;
+
+      // find scale factor to fit the wind estimate on-screen
+        float maxGroundSpeed = 1;
+        for (int bin = 0; bin < numOfBins; bin++) {
+          for (int s = 0; s < totalSamples.bin[bin].sampleCount; s++) {
+            if (totalSamples.bin[bin].speed[s] > maxGroundSpeed) maxGroundSpeed = totalSamples.bin[bin].speed[s];
+          }
+        }
+        float scaleFactor = pieR / maxGroundSpeed;
+
+
       u8g2.setFont(leaf_5h);
       u8g2.setFontMode(1);
-      for (int bin = 0; bin < 12; bin++) {
+      for (int bin = 0; bin < numOfBins; bin++) {
         for (int s = 0; s < totalSamples.bin[bin].sampleCount; s++) {
           int x0 = pieX + totalSamples.bin[bin].dy[s] * scaleFactor;          
           int y0 = pieY - totalSamples.bin[bin].dx[s] * scaleFactor;
@@ -399,51 +408,54 @@ void display_page_debug() {
       }
       u8g2.setFontMode(0);
 
-    WindEstimate displayEstimate = getWindEstimate();
+      // draw the wind estimate
+        WindEstimate displayEstimate = getWindEstimate();
 
-    uint8_t estX = pieX + (sin(displayEstimate.windDirectionTrue) * displayEstimate.windSpeed * scaleFactor);
-    uint8_t estY = pieY - (cos(displayEstimate.windDirectionTrue) * displayEstimate.windSpeed * scaleFactor);
-    uint8_t estR = displayEstimate.airspeed * scaleFactor;
+        uint8_t estX = pieX + (sin(displayEstimate.windDirectionTrue) * displayEstimate.windSpeed * scaleFactor);
+        uint8_t estY = pieY - (cos(displayEstimate.windDirectionTrue) * displayEstimate.windSpeed * scaleFactor);
+        uint8_t estR = displayEstimate.airspeed * scaleFactor;
 
-    u8g2.setCursor(estX-2, estY+2);
-    u8g2.print("&");
+        // circle center point (the wind estimate)
+        u8g2.setCursor(estX-2, estY+3);
+        u8g2.print("&");
 
-    u8g2.drawCircle(estX, estY, estR);
+        // airspeed circle (the circle fit)
+        u8g2.drawCircle(estX, estY, estR);
 
 
       // update cycles      
-      pieX = 5;
-      pieY = pieY - pieR-14;
-      u8g2.setCursor(pieX, pieY);
-      u8g2.print("upd: ");
-      u8g2.setCursor(pieX, pieY+=6);
-      u8g2.print(getUpdateCount());
-      u8g2.setCursor(pieX, pieY+=6);
-      u8g2.print("bet: ");
-      u8g2.setCursor(pieX, pieY+=6);
-      u8g2.print(getBetterCount());
+        pieX = 5;
+        pieY = pieY - pieR-20;
+        u8g2.setCursor(pieX, pieY);
+        u8g2.print("upd: ");
+        u8g2.setCursor(pieX, pieY+=6);
+        u8g2.print(getUpdateCount());
+        u8g2.setCursor(pieX, pieY+=8);
+        u8g2.print("bet: ");
+        u8g2.setCursor(pieX, pieY+=6);
+        u8g2.print(getBetterCount());
 
 
 
 
-    x=48;
-    y=64;
-    u8g2.setCursor(x,y);
-    u8g2.setFont(leaf_5h);    
-    u8g2.print("WindEst:");
-    u8g2.setCursor(x,y+=9);
-    u8g2.setFont(leaf_5x8);      
-    int16_t windDeg =  ((int)(RAD_TO_DEG * displayEstimate.windDirectionTrue + 360))%360;
-    u8g2.print(windDeg);
-    u8g2.print("@");
-    u8g2.print(displayEstimate.windSpeed);
-    
-    u8g2.setCursor(x=65,y+=6);
-    u8g2.setFont(leaf_5h);    
-    u8g2.print("EstErr:");
-    u8g2.setFont(leaf_5x8);      
-    u8g2.setCursor(x,y+=9); 
-    u8g2.print(displayEstimate.error);
+      x=48;
+      y=64;
+      u8g2.setCursor(x,y);
+      u8g2.setFont(leaf_5h);    
+      u8g2.print("WindEst:");
+      u8g2.setCursor(x,y+=9);
+      u8g2.setFont(leaf_5x8);      
+      int16_t windDeg =  ((int)(RAD_TO_DEG * displayEstimate.windDirectionTrue + 360))%360;
+      u8g2.print(windDeg);
+      u8g2.print("@");
+      u8g2.print(displayEstimate.windSpeed);
+      
+      u8g2.setCursor(x=65,y+=6);
+      u8g2.setFont(leaf_5h);    
+      u8g2.print("EstErr:");
+      u8g2.setFont(leaf_5x8);      
+      u8g2.setCursor(x,y+=9); 
+      u8g2.print(displayEstimate.error);
     
 
 

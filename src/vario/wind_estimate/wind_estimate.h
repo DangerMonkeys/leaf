@@ -54,9 +54,11 @@ void windEstimate_onNewSentence(NMEASentenceContents contents);
 void submitVelocityForWindEstimate(GroundVelocity groundVelocity);
 
 WindEstimate getWindEstimate(void);
-bool haveEnoughPoints(void);
-int getUpdateCount();
-int getBetterCount();
+int getBinCount(void);
+
+// for testing and debugging
+	int getUpdateCount(void);	// increment each time a wind estimate update completes
+	int getBetterCount(void); // increment each time a wind estimate update yields a better solution
 
 void clearWindEstimate(void);
 

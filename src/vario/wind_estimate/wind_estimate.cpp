@@ -243,15 +243,14 @@ float tempWindSpeed = 0;
 int8_t dir = 1;
 bool enoughPoints = false;
 
-bool haveEnoughPoints() {
-  return enoughPoints;
-}
-
 int getUpdateCount() {
   return updateCount;
 }
 int getBetterCount() {
   return betterCount;
+}
+int getBinCount() {
+	return binCount;
 }
 
 uint8_t windEstimateStep = 0;
