@@ -46,19 +46,64 @@ def collect_points(bins: List[Bin]) -> List[DataPoint]:
             points.add(point)
     return list(points)
 
+def average_points(bins: List[Bin]) -> List[DataPoint]:
+    avg_points = set()
+    for bin in bins:
+        total_speed_rms = 0
+        total_speed = 0
+        total_angle = 0
+        num_points = 0
+
+        for point in bin.points:
+            total_speed_rms += point.ground_track.speed * point.ground_track.speed
+            total_speed += point.ground_track.speed
+            total_angle += point.ground_track.direction
+            num_points += 1
+
+            if num_points == N_AVERAGE:
+                if DO_RMS:
+                    avg_velocity = Velocity.from_speed_and_direction(sqrt(total_speed_rms / num_points), total_angle / num_points)
+                else:
+                    avg_velocity = Velocity.from_speed_and_direction(total_speed / num_points, total_angle / num_points)
+                avg_point = DataPoint(bin.points[num_points - 1].time, ground_track=avg_velocity, lng=0, lat=0, alt=0)
+                avg_points.add(avg_point)
+
+                total_speed_rms = 0
+                total_speed = 0
+                total_angle = 0
+                num_points = 0
+
+        if num_points != 0:
+            if DO_RMS:
+                avg_velocity = Velocity.from_speed_and_direction(sqrt(total_speed_rms / num_points), total_angle / num_points)
+            else:
+                avg_velocity = Velocity.from_speed_and_direction(total_speed / num_points, total_angle / num_points)
+            avg_point = DataPoint(bin.points[num_points - 1].time, ground_track=avg_velocity, lng=0, lat=0, alt=0)
+            avg_points.add(avg_point)
+
+    return list(avg_points)
+
 
 P_BINS = 6
 """Number of pie slices for direction-based bins"""
 
-M_PER_BIN = 6
+M_PER_BIN = 18
 """Number of most recent points to keep per direction-based bin"""
 
-BINNED_LAYERS = 2
+BINNED_LAYERS = 1
 """Number of offset layers of direction-based bins"""
 
-N_RECENT = 30
+N_RECENT = 1
 """Number of most recent points to keep, regardless of direction"""
 
+DO_AVERAGE = True
+"""Combine points within a bin into an average 'super point'"""
+
+DO_RMS = False
+"""Use an RMS average when combining speed magnitudes"""
+
+N_AVERAGE = 3
+"""Number of points to combine into an average point (within a single bin).  To average all points, set to M_PER_BIN"""
 
 def make_bins() -> List[Bin]:
     bins = []
@@ -102,7 +147,11 @@ def solve_wind(points: List[DataPoint], frame_times: List[timedelta]) -> List[Ob
 
         # Perform new solve to fulfill this observation
         solve_points = collect_points(bins)
-        frame_vi = [fp.ground_track for fp in solve_points]
+        solve_avg_points = average_points(bins)
+        if DO_AVERAGE:
+            frame_vi = [fp.ground_track for fp in solve_avg_points]
+        else:
+            frame_vi = [fp.ground_track for fp in solve_points]
 
         def err_f(x: List[float]) -> float:
             return err_total(frame_vi, WindSolve(airspeed=x[0], wind=Velocity(dx=x[1], dy=x[2])))
