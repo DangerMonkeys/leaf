@@ -52,10 +52,12 @@ void PageMenuSystemWifi::draw_menu_input(int8_t cursor_position) {
 }
 
 void PageMenuSystemWifi::closed(bool removed_from_stack) {
-  // Turn off WiFi once the page is closed
+#ifndef DEBUG_WIFI
   if (!removed_from_stack) return;
   WiFi.disconnect();
   wifi_state = WifiState::DISCONNECTED;
+  Serial.println("WiFi disconnected");
+#endif
 }
 
 /**************************

@@ -17,10 +17,8 @@
 #include "tempRH.h"
 #include "wind_estimate/wind_estimate.h"
 
-  #ifdef WIFI_ON_BOOT
+  #ifdef DEBUG_WIFI
     #include <WiFi.h>
-  #endif
-  #ifdef DEBUG_WEBSERVER
     #include "DebugWebserver.h"
   #endif
 
@@ -90,14 +88,14 @@ void setup() {
   delay(200);
   Serial.println("Starting Setup");
 
-    #ifdef WIFI_ON_BOOT
+    #ifdef DEBUG_WIFI
       // Start WiFi
       WiFi.begin();
       WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
         Serial.println("WiFi Event " + WiFi.localIP().toString() + ": " + event);
       });
     #endif
-    #ifdef DEBUG_WEBSERVER
+    #ifdef DEBUG_WIFI
       // Start WebServer
       webserver_setup();
     #endif
@@ -173,7 +171,7 @@ the pushbuttons, the GPS 1PPS signal, and perhaps others.
 
 void loop() {
 
-  #ifdef DEBUG_WEBSERVER
+  #ifdef DEBUG_WIFI
     webserver_loop();
   #endif
   
