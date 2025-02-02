@@ -50,8 +50,10 @@ void display_batt_charging_fullscreen(uint8_t x, uint8_t y);
 void display_GPS_icon(uint8_t x, uint8_t y);
 
 void display_windSockArrow(int16_t x, int16_t y, int16_t radius);
-void display_windSockRing(int16_t x, int16_t y, int16_t radius, int16_t size);
+void display_windSockRing(int16_t x, int16_t y, int16_t radius, int16_t size, bool showPointer);
 void display_windSpeedCentered(uint8_t x, uint8_t y, const uint8_t *font);
+void displayWaypointDropletPointer(uint8_t centerX, uint8_t centerY, uint8_t pointRadius, float direction);
+
 
 void display_headerAndFooter(bool timerSelected);
 

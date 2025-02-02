@@ -61,7 +61,8 @@ void thermalSimplePage_draw() {
     uint8_t wind_y = 31;
     uint8_t wind_radius = 12;
     uint8_t pointer_size = 7;
-    display_windSockRing(center_x, wind_y, wind_radius, pointer_size);
+    bool showPointer = true;
+    display_windSockRing(center_x, wind_y, wind_radius, pointer_size, showPointer);
     
 
     // Main Info ****************************************************
