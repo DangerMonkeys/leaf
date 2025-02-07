@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+@font-face {
+    font-family: leaf;
+    src: url('/font.ttf');
+}
+
+h2 {
+    text-align: center;
+    padding-top: 48px;
+    font-weight: 600;
+    font-size: 32px;
+    font-family: "Roboto Condensed";
+}
+
+.headline-4, .headline-5 {
+    color: #272727;
+    letter-spacing: 0;
+    line-height: 1;
+    margin-bottom: 10px;
+}
+
+.headline-5 {
+    font-weight: 600;
+    font-size: 24px;
+    font-family: "Roboto Condensed", sans-serif;
+    transform: scaleY(0.75);
+}
+
+.headline-4 {
+    font-weight: 600;
+    font-size: 32px;
+    font-family: "Roboto Condensed", sans-serif;
+}
+
+main {
+    font-family: "Roboto", sans-serif;
+    font-size: 20px;
+    line-height: 1.2;
+    color: #0009
+}
+
+main ul {
+    display: block;
+    list-style-type: disc;
+    margin-block-start: 1em;
+    margin-block-end: 1em;
+    
+    li {
+        margin-bottom: 16px;
+    }
+}

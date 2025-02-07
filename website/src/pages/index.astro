@@ -1,0 +1,54 @@
+---
+import "../styles/global.css";
+
+import "@fontsource/roboto";
+import "@fontsource/roboto-condensed";
+
+import Navbar from "../components/navbar/navbar";
+import Gallery from "../components/gallery";
+import Description from "../components/description.astro";
+import Specs from "../components/specs.astro";
+import More from "../components/more.astro";
+
+const base = import.meta.env.BASE_URL;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="description" content="Leaf Opensource Vario" />
+		<meta name="viewport" content="width=device-width" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="generator" content={Astro.generator} />
+		<title>Leaf</title>
+	</head>
+	<body>
+		<Navbar client:only="react" />
+		<div id="gallery">
+			<Gallery client:only="react" base={base} />
+		</div>
+		<div id="description">
+			<Description />
+		</div>
+		<div id="specs">
+			<Specs />
+		</div>
+		<div id="more">
+			<More />
+		</div>
+
+		<!-- Footer -->
+		<section>
+			<main class="text-gray-400 m-auto flex p-8 italic">
+				<ul class="text-xs list-none! m-auto flex">
+					<li>
+						Book icon by <a href="http://lorcblog.blogspot.com"
+							>Lorc</a
+						> from game-icons
+					</li>
+				</ul>
+			</main>
+		</section>
+	</body>
+</html>

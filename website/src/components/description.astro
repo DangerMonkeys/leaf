@@ -1,0 +1,58 @@
+---
+import { Icon } from "astro-icon/components";
+
+const highlightIcons = {
+    "Open Source Hardware": "simple-icons:opensourcehardware",
+    "Bluetooth": "simple-icons:bluetooth",
+    "WiFi": "material-symbols:wifi-rounded",
+    "GPS Logging": "material-symbols:satellite-alt",
+};
+---
+
+<main class="max-w-5xl m-auto pt-16 pb-16 overflow-clip">
+    <div class="sm:flex sm:flex-wrap">
+        <div class="sm:basis-[50%] p-8">
+            <div class="headline-4">Open source vario.</div>
+            <p>
+                Experience the freedom of flight with a mighty small but capable
+                flight computer. The leaf will mount on a flight deck, riser,
+                wrist, or leg. The built in GPS, SD card reader, and display will
+                ensure you're always getting the most important information
+                about your flight, and your track is recorded for later viewing.
+            </p>
+        </div>
+        <div class="sm:basis-[50%] sm:border-l border-l-gray-300 p-8">
+            <div class="headline-5">Product Details</div>
+            <ul class="pl-8">
+                <li>Speaker for responsive audible feedback when in climbs</li>
+                <li>Monochrome display easily viewable in sunlight</li>
+                <li>30 hour battery life</li>
+                <li>Bluetooth to connect to phone and supported accessories</li>
+                <li>Multiple mounting options with optional caddy</li>
+                <li>
+                    GPS with microSD card to record your flights in IGC and KML
+                    file formats
+                </li>
+                <li>Self-updating over WiFi</li>
+                <li>D-Pad to operate with gloves</li>
+                <li>I2C header and all I/O pins exposed and broken out. Designed with Hardware Hackers in mind!</li>
+                <li>100% Open Source hardware and software</li>
+            </ul>
+        </div>
+    </div>
+    <div>
+        <div class="headline-5 text-center pt-8 pb-2">Highlights:</div>
+        <div class="flex space-x-4 md:space-x-16 items-center justify-center">
+            {
+                Object.entries(highlightIcons).map(([desc, icon]) => (
+                    <div class="text-center text-sm text-gray-500 max-w-24">
+                        <div class="flex justify-center">
+                            <Icon name={icon} size={56} />
+                        </div>
+                        <div class="pt-2">{desc}</div>
+                    </div>
+                ))
+            }
+        </div>
+    </div>
+</main>

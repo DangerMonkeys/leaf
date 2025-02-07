@@ -1,0 +1,41 @@
+---
+import { Icon } from "astro-icon/components";
+const base = import.meta.env.BASE_URL;
+
+const links = [
+    {
+        href: "https://github.com/DangerMonkeys/leaf",
+        title: "Github",
+        icon: "simple-icons:github",
+    },
+    {
+        href: base + "/guides/getting-started",
+        title: "Documents",
+        icon: "game-icons:bookmarklet",
+    },
+];
+---
+
+<main>
+    <div class="pb-16">
+        <div class="max-w-5xl m-auto">
+            <h2>More Information</h2>
+            <div class="flex justify-center pt-4">
+                {
+                    links.map((l) => (
+                        <a href={l.href}>
+                            <div class="m-8 text-center">
+                                <div class="flex justify-center">
+                                    <Icon name={l.icon} size={120} />
+                                </div>
+                                <h3 class="text-2lg font-semibold text-green-900/80 underline pt-4">
+                                    {l.title}
+                                </h3>
+                            </div>
+                        </a>
+                    ))
+                }
+            </div>
+        </div>
+    </div>
+</main>
