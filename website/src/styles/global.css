@@ -13,7 +13,8 @@ h2 {
     font-family: "Roboto Condensed";
 }
 
-.headline-4, .headline-5 {
+.headline-4,
+.headline-5 {
     color: #272727;
     letter-spacing: 0;
     line-height: 1;
@@ -45,8 +46,18 @@ main ul {
     list-style-type: disc;
     margin-block-start: 1em;
     margin-block-end: 1em;
-    
+
     li {
         margin-bottom: 16px;
     }
+}
+
+.highlighted::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    background-color: #ffb459;
+    height: 3px;
+    width: 100%;
 }
