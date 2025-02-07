@@ -18,16 +18,16 @@ export default defineConfig({
         },
         sidebar: [
             {
-                label: 'Guides',
-                autogenerate: { directory: 'guides' },
+                label: 'User Guides',
+                autogenerate: { directory: 'user-guides' },
                 // items: [
                 //     // Each item here is one entry in the navigation menu.
                 //     { label: 'Example Guide', slug: 'guides/example' },
                 // ],
             },
             {
-                label: 'Reference',
-                autogenerate: { directory: 'reference' },
+                label: 'Developer Reference',
+                autogenerate: { directory: 'dev-reference' },
             },
         ],
     }), react(), icon({
