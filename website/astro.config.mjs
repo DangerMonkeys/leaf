@@ -8,6 +8,58 @@ import react from '@astrojs/react';
 
 import icon from 'astro-icon';
 
+import fs from "fs";
+import path from "path";
+
+// @ts-ignore
+function getMarkdownItems(dir) {
+    let results = [];
+    let dirMap = {};
+
+    // @ts-ignore
+    function readDir(currentDir) {
+        const files = fs.readdirSync(currentDir);
+        let hasIndex = false;
+        let items = [];
+
+        for (const file of files) {
+            const fullPath = path.join(currentDir, file);
+            const stat = fs.statSync(fullPath);
+
+            if (stat.isDirectory()) {
+                readDir(fullPath);
+            } else if (file.endsWith(".md")) {
+                let relativePath = fullPath.replace("../docs/", "").replace(".md", "");
+                if (file === "index.md") {
+                    hasIndex = true;
+                    relativePath = relativePath.replace(/\/index$/, "");
+                }
+                items.push(relativePath);
+            }
+        }
+
+        if (items.length > 0) {
+            if (hasIndex && items.length > 1) {
+                // @ts-ignore
+                dirMap[currentDir] = items;
+            } else {
+                results.push(...items);
+            }
+        }
+    }
+
+    readDir(dir);
+
+    for (const [key, value] of Object.entries(dirMap)) {
+        results.push({
+            label: key.split("/").at(-1),
+            items: value,
+        });
+    }
+
+    return results;
+}
+
 // https://astro.build/config
 export default defineConfig({
     base: 'leaf',
@@ -27,7 +79,10 @@ export default defineConfig({
             },
             {
                 label: 'Developer Reference',
-                autogenerate: { directory: 'dev-reference' },
+                // Use a custom ordering function to allow index files to be in their own directory                
+                // @ts-ignore
+                items: getMarkdownItems("../docs/dev-references"),
+                // autogenerate: { directory: 'dev-references' },
             },
         ],
     }), react(), icon({
