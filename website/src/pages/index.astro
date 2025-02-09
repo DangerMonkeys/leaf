@@ -10,7 +10,11 @@ import Description from "../components/description.astro";
 import Specs from "../components/specs.astro";
 import More from "../components/more.astro";
 
-const base = import.meta.env.BASE_URL;
+let base = import.meta.env.BASE_URL;
+// Hyperlinks should not start with a slash if there's no subdomain.
+if(base == "/") {
+	base = "";
+}
 ---
 
 <!doctype html>
