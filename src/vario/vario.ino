@@ -16,6 +16,7 @@
 #include "speaker.h"
 #include "tempRH.h"
 #include "wind_estimate/wind_estimate.h"
+#include "ble.h"
 
   #ifdef DEBUG_WIFI
     #include <WiFi.h>
@@ -68,6 +69,7 @@ char taskman_log = 1;      // check auto-start, increment timers, update log fil
 char taskman_tempRH = 1;   // (1) trigger temp & humidity measurements, (2) process values and save
 char taskman_SDCard = 1;   // check if SD card state has changed and attempt remount if needed
 char taskman_estimateWind = 1;  // estimate wind speed and direction
+char taskman_ble = 1;  // post BLE notification
 
 // temp testing stuff
 // uint8_t display_page = 0;
@@ -120,6 +122,8 @@ void setup() {
              CHARGE_TIMER_LENGTH,
              true,
              0);  // auto reload timer ever time we've counted a sample length
+
+  BLE::get().setup();
 
   // All done!
   Serial.println("Finished Setup");
@@ -332,6 +336,7 @@ void setTasks(void) {
       // taskman_baro = 1;
       break;
     case 7:
+      taskman_ble = 1;
       // taskman_baro = 2;
       break;
     case 8:
@@ -416,6 +421,10 @@ void taskManager(void) {
   if (taskman_SDCard) {
     SDcard_update();
     taskman_SDCard = 0;
+  }
+  if (taskman_ble) {
+    BLE::get().loop();
+    taskman_ble = 0;
   }
 
   if (taskman_didSomeTasks && DEBUG_MAIN_LOOP) {
