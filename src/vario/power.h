@@ -19,8 +19,8 @@
 // Battery Threshold values
 #define BATT_FULL_MV 4080   // mV full battery on which to base % full (100%)
 #define BATT_EMPTY_MV 3250  // mV empty battery on which to base % full (0%)
-#define BATT_SHUTDOWN_MV \
-  3200  // mV at which to shutdown the system to prevent battery over-discharge
+#define BATT_SHUTDOWN_MV 3200  
+// mV at which to shutdown the system to prevent battery over-discharge
 // Note: the battery apparently also has over discharge protection, but we don't fully trust it,
 // plus we want to shutdown while we have power to save logs etc
 
@@ -42,13 +42,20 @@ enum power_on_states {
     //   power (no power button detected during boot) or from POWER_ON with USB plugged in, and user
     //   turning off power via pushbutton.
 
-enum power_input_levels { iStandby, i100mA, i500mA, iMax };
 
 // iMax set by ILIM pin resistor on battery charger chip. Results in 1.348Amps max input (for
 // battery charging AND system load) Note: with this higher input limit, the battery charging will
 // then be limited by the ISET pin resistor value, to approximately 810mA charging current)
+enum power_input_levels { iStandby, i100mA, i500mA, iMax };
 
-extern uint8_t powerOnState;
+struct POWER {
+  int8_t batteryPercent;    // battery percentage remaining from 0-100%
+  uint16_t batteryMV;       // milivolts battery voltage (typically between 3200 and 4200)
+  uint16_t batteryADC;      // ADC raw output from ESP32 input pin
+  bool charging = false;    // if system is being charged or not
+  power_on_states onState = POWER_OFF;
+  power_input_levels inputCurrent = i500mA;
+}; extern POWER power;
 
 void power_bootUp(void);
 void power_init(void);
@@ -66,12 +73,9 @@ bool power_autoOff();
 void power_resetAutoOffCounter(void);
 
 void power_adjustInputCurrent(int8_t offset);
-void power_set_input_current(uint8_t current);
-uint16_t power_getBattLevel(uint8_t value);
-bool power_getBattCharging(void);
-uint8_t power_getInputCurrent(void);
+void power_setInputCurrent(power_input_levels current);
+void power_readBatteryState(void);
 
-// testing
-void power_test(void);
-void power_simple_init(void);
+
+
 #endif

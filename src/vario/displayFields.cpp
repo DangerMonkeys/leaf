@@ -619,14 +619,10 @@ void display_battIcon(uint8_t x, uint8_t y, bool vertical) {
       ; batt charging (full)
   */
 
-  uint8_t battPercent = power_getBattLevel(0);
-  // uint16_t battMV = power_getBattLevel(1);
-  // uint16_t battADC = power_getBattLevel(2);
+  char battIcon = '0' + (power.batteryPercent + 5) / 10;
 
-  char battIcon = '0' + (battPercent + 5) / 10;
-
-  if (power_getBattCharging()) {
-    if (battPercent >= 100)
+  if (power.charging) {
+    if (power.batteryPercent >= 100)
       battIcon = ';';
     else
       battIcon = '/';
@@ -658,9 +654,6 @@ void display_battIcon(uint8_t x, uint8_t y, bool vertical) {
   */
 }
 
-uint8_t batt_percent_testing = 0;
-uint8_t batt_charging_testing = 1;
-int8_t batt_testing_direction = 1;
 
 void display_batt_charging_fullscreen(uint8_t x, uint8_t y) {
   // size of battery
@@ -680,21 +673,7 @@ void display_batt_charging_fullscreen(uint8_t x, uint8_t y) {
                 w / 15 - t);  // empty internal volume
 
   // Battery Capacity Fill
-  uint8_t battPercent = power_getBattLevel(0);
-
-  /*
-  battPercent = batt_percent_testing;
-  batt_percent_testing += batt_testing_direction;
-  if (batt_percent_testing >= 100) {
-    batt_testing_direction = -1;
-    batt_charging_testing = 0;
-  } else if (batt_percent_testing == 0) {
-    batt_testing_direction = 1;
-    batt_charging_testing = 1;
-  }
-  */
-
-  uint8_t fill_h = (h - 4 * t) * battPercent / 100;
+  uint8_t fill_h = (h - 4 * t) * power.batteryPercent / 100;
   uint8_t fill_y = (y + w / 20 + 2 * t) +
                    ((h - 4 * t) - fill_h);  // (starting position to allow for line thickness etc) +
                                             // ( (100% height) - (actual height) )
@@ -702,7 +681,7 @@ void display_batt_charging_fullscreen(uint8_t x, uint8_t y) {
   u8g2.drawBox(x - (w / 2) + 2 * t, fill_y, w - 4 * t, fill_h);  //, w/8-t/2);
 
   // Charging bolt
-  if (power_getBattCharging()) {     // batt_charging_testing) {
+  if (power.charging) {
     uint8_t bolt_x1 = w * 6 / 100;   //  4
     uint8_t bolt_x2 = w * 7 / 100;   //  6
     uint8_t bolt_x3 = w * 21 / 100;  // 17

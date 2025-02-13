@@ -156,7 +156,7 @@ Button buttons_update(void) {
     navigatePage_button(which_button, buttons_get_state(), buttons_get_hold_count());
     display_update();
 
-  } else if (currentPage != page_charging) {  // NOT CHARGING PAGE (i.e., our satellites test page)
+  } else if (currentPage != page_charging) {  // NOT CHARGING PAGE (i.e., our debug test page)
     switch (which_button) {
       case Button::CENTER:
         switch (button_state) {

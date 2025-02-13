@@ -247,32 +247,29 @@ void display_update_temp_vars() {
 void display_page_charging() {
   u8g2.firstPage();
   do {
-    uint16_t battMV = power_getBattLevel(1);
-    uint16_t battPercent = power_getBattLevel(0);
-
     // Battery Percent
     uint8_t fontOffset = 3;
-    if (battPercent == 100) fontOffset = 0;
+    if (power.batteryPercent == 100) fontOffset = 0;
     u8g2.setFont(leaf_6x12);
     u8g2.setCursor(36 + fontOffset, 12);
-    u8g2.print(battPercent);
+    u8g2.print(power.batteryPercent);
     u8g2.print('%');
 
     display_batt_charging_fullscreen(48, 17);
 
     u8g2.setFont(leaf_6x12);
     u8g2.setCursor(5, 157);
-    if (power_getInputCurrent() == i100mA)
+    if (power.inputCurrent == i100mA)
       u8g2.print("100mA");
-    else if (power_getInputCurrent() == i500mA)
+    else if (power.inputCurrent == i500mA)
       u8g2.print("500mA");
-    else if (power_getInputCurrent() == iMax)
+    else if (power.inputCurrent == iMax)
       u8g2.print("810mA");
-    else if (power_getInputCurrent() == iStandby)
+    else if (power.inputCurrent == iStandby)
       u8g2.print(" OFF");
 
     u8g2.print(" ");
-    u8g2.print(battMV);
+    u8g2.print(power.batteryMV);
     u8g2.print("mV");
 
     // Display the current version
@@ -329,18 +326,15 @@ void display_page_debug() {
     // Batt Levels
     display_battIcon(89, 13, true);
 
-    uint8_t battPercent = power_getBattLevel(0);
-    uint16_t battMV = power_getBattLevel(1);
-    uint16_t battADC = power_getBattLevel(2);
     uint8_t x = 56;
     uint8_t y = 12;
     u8g2.setFont(leaf_6x12);
     u8g2.setCursor(x, y);
-    u8g2.print(battPercent);
+    u8g2.print(power.batteryPercent);
     u8g2.print('%');
     u8g2.setCursor(x, y += 6);
     u8g2.setFont(leaf_5h);
-    u8g2.print((float)battMV / 1000, 2);
+    u8g2.print((float)power.batteryMV / 1000, 3);
     u8g2.print("v");
 
     // Altimeter Setting

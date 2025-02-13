@@ -16,39 +16,19 @@
 #include "speaker.h"
 #include "tempRH.h"
 
-uint8_t current_setting;           // keep track of which input current setting we're using
-uint8_t powerOnState = POWER_OFF;  // keep track of which power state we're in (ON & Runnning; or
-                                   // (soft)OFF and charging via USB, or dead OFF)
-
-/* was here for testing, can delete
-void power_simple_init(void) {
-
-  #define POWER_CHARGE_I1   41  //  39 Old version 3.2.0
-  #define POWER_CHARGE_I2   42  //  40
-  #define POWER_LATCH       48
-
-  // enable 3.3V regulator
-  pinMode(POWER_LATCH, OUTPUT);
-  digitalWrite(POWER_LATCH, HIGH);
-
-  // set power supply to 500mA mode
-  pinMode(POWER_CHARGE_I1, OUTPUT);
-  pinMode(POWER_CHARGE_I2, OUTPUT);
-  digitalWrite(POWER_CHARGE_I1, HIGH);
-  digitalWrite(POWER_CHARGE_I2, LOW);
-}*/
+POWER power;  // struct for battery-state and on-state variables
 
 void power_bootUp() {
   power_init();                  // configure power supply
   auto button = buttons_init();  // initialize Button and check if holding the center button is what
                                  // turned us on
   if (button == Button::CENTER) {
-    powerOnState =
+    power.onState =
         POWER_ON;  // if center button turned us on, set state to ON (as opposed to charging state,
                    // which can turn us on if plugged into USB but not by the center button)
     display_showOnSplash();  // show the splash screen if user turned us on
   } else
-    powerOnState =
+    power.onState =
         POWER_OFF_USB;  // if not center button, then USB power turned us on, go into charge mode
   settings_init();      // grab user settings (or populate defaults if no saved settings)
   power_init_peripherals();  // init peripherals (even if we're not turning on and just going into
@@ -59,23 +39,24 @@ void power_bootUp() {
 // Initialize the power system itself (battery charger and 3.3V regulator etc)
 void power_init() {
   Serial.print("power_init: ");
-  Serial.println(powerOnState);
+  Serial.println(power.onState);
   // Set output / input pins to control battery charge and power supply
   pinMode(POWER_LATCH, OUTPUT);
   pinMode(POWER_CHARGE_I1, OUTPUT);
   pinMode(POWER_CHARGE_I2, OUTPUT);
   pinMode(POWER_CHARGE_GOOD, INPUT_PULLUP);
   pinMode(BATT_SENSE, INPUT);
-  power_set_input_current(i500mA);  // set default current
+  power_setInputCurrent(i500mA);  // set default current
+  power_readBatteryState();
 }
 
 void power_init_peripherals() {
   Serial.print("init_peripherals: ");
-  Serial.println(powerOnState);
+  Serial.println(power.onState);
   // initialize speaker to play sound (so user knows they can let go of the power button)
   speaker_init();
   Serial.println("Finished Speaker");
-  if (powerOnState == POWER_ON) {
+  if (power.onState == POWER_ON) {
     power_latch_on();
     speaker_playSound(fx_enter);
   }
@@ -104,7 +85,7 @@ void power_init_peripherals() {
 
   // then put devices to sleep as needed if we're in POWER_OFF_USB state (plugged into USB but vario
   // not actively turned on)
-  if (powerOnState == POWER_OFF_USB) {
+  if (power.onState == POWER_OFF_USB) {
     // delay(35);
     power_sleep_peripherals();
   }
@@ -112,11 +93,11 @@ void power_init_peripherals() {
 
 void power_sleep_peripherals() {
   Serial.print("sleep_peripherals: ");
-  Serial.println(powerOnState);
+  Serial.println(power.onState);
   // TODO: all the rest of the peripherals not needed while charging
   gps_sleep();
   Serial.println("Sleeping GPS");
-  // speaker_sleep();    Serial.println("Shut down speaker");
+  speaker_sleep();    Serial.println("Shut down speaker");
 }
 
 void power_wake_peripherals() {
@@ -130,7 +111,7 @@ void power_wake_peripherals() {
 void power_switchToOnState() {
   power_latch_on();
   Serial.println("switch_to_on_state");
-  powerOnState = POWER_ON;
+  power.onState = POWER_ON;
   power_wake_peripherals();
 }
 
@@ -152,37 +133,45 @@ void power_shutdown() {
   settings_save();
   power_sleep_peripherals();
 
-  while (millis() - shutdownTimeStamp < 3000) {  // wait 3 seconds before shutting down to give user
-                                                 // a chance to see the shutdown screen
+  // wait 3 seconds before shutting down to give user
+  // a chance to see the shutdown screen
+  while (millis() - shutdownTimeStamp < 3000) {                                                   
     delay(100);
   }
   power_latch_off();  // turn off 3.3V regulator (if we're plugged into USB, we'll stay on)
-  display_clear();
-  powerOnState =
-      POWER_OFF_USB;  // go to POWER_OFF_USB state, in case device was shut down while plugged into
-                      // USB, then we can show necessary charging updates etc
+  delay(100);  
+
+  // go to POWER_OFF_USB state, in case device was shut down while 
+  // plugged into USB, then we can show necessary charging updates etc
+  power.onState = POWER_OFF_USB;                        
 }
 
 // latch or unlatch 3.3V regulator.
-// 3.3V regulator may be 'on' due to USB power or user holding power switch down.  But if Vario is
-// in "ON" state, we need to latch so user can let go of power button and/or unplug USB and have it
-// stay on
-void power_latch_on() { digitalWrite(POWER_LATCH, HIGH); }  // latch 3.3V regulator
-void power_latch_off() {
-  digitalWrite(POWER_LATCH, LOW);
-}  // unlatch 3.3V regulator.  If no USB, systems will immediately lose power and shut down
-   // processor (after user lets go of center button)
+  // 3.3V regulator may be 'on' due to USB power or user holding power switch down.  But if Vario is
+  // in "ON" state, we need to latch so user can let go of power button and/or unplug USB and have it
+  // stay on
+  void power_latch_on() { digitalWrite(POWER_LATCH, HIGH); }  
+
+  // If no USB power is available, systems will immediately lose
+  // power and shut down (after user lets go of center button)
+  void power_latch_off() { digitalWrite(POWER_LATCH, LOW);}  
+
 
 void power_update() {
-  // TODO: fill this in
-  //  stuff like checking batt state, checking auto-off, etc
+  // update battery state
+  power_readBatteryState();
 
-  // check if we should auto turn off
-  if (AUTO_OFF && !flightTimer_isRunning()) {  // only check if the AUTO_OFF user-setting is ON
-                                               // *AND* the flight timer is NOT running (don't turn
-                                               // off in the middle of a log recording)
+  // check if we should shut down due to low battery..
+  if (power.batteryMV <= BATT_SHUTDOWN_MV) {
+    power_shutdown();
+
+  // ..or if we should shutdown due to inactivity 
+  // (only check if user setting is on and flight timer is stopped)
+  } else  if (AUTO_OFF && !flightTimer_isRunning()) {  
+    
+    // check if inactivity conditions are met
     if (power_autoOff()) {
-      power_shutdown();
+      power_shutdown();   // shutdown!
     }
   }
 }
@@ -232,57 +221,69 @@ bool power_autoOff() {
   return autoShutOff;
 }
 
-uint32_t ADC_value;
-uint16_t power_getBattLevel(uint8_t value) {
-  uint16_t adc_level = analogRead(BATT_SENSE);
-  // uint16_t batt_level_mv = adc_level * 5554 / 4095;  //    (3300mV ADC range / .5942 V_divider) =
-  // 5554.  Then divide by 4095 steps of resolution
-  uint16_t batt_level_mv =
-      adc_level * 5300 / 4095 +
-      260;  // adjusted formula to account for ESP32 ADC non-linearity; based on calibration
-            // measurements.  This is most accurate between 2.4V and 4.7V
-  uint16_t batt_level_pct;
-  if (batt_level_mv < BATT_EMPTY_MV) {
-    batt_level_pct = 0;
-  } else if (batt_level_mv > BATT_FULL_MV) {
-    batt_level_pct = 100;
-  } else {
-    batt_level_pct = 100 * (batt_level_mv - BATT_EMPTY_MV) / (BATT_FULL_MV - BATT_EMPTY_MV);
-  }
-  if (value == 1)
-    return batt_level_mv;
-  else if (value == 2)
-    return adc_level;
-  else
-    return batt_level_pct;
+// Read battery voltage
+uint16_t batteryPercentLast;
+void power_readBatteryState() {
+
+  // Update Charge State
+    power.charging = !digitalRead(POWER_CHARGE_GOOD);
+    // logic low is charging, logic high is not
+
+  // Battery Voltage Level & Percent Remaining
+    power.batteryADC = analogRead(BATT_SENSE);
+    // uint16_t batt_level_mv = adc_level * 5554 / 4095;  //    (3300mV ADC range / .5942 V_divider) =
+    // 5554.  Then divide by 4095 steps of resolution
+
+    // adjusted formula to account for ESP32 ADC non-linearity; based on calibration
+    // measurements.  This is most accurate between 2.4V and 4.7V
+    power.batteryMV = power.batteryADC * 5300 / 4095 + 260;
+
+    if (power.batteryMV < BATT_EMPTY_MV) {
+      power.batteryPercent = 0;
+    } else if (power.batteryMV > BATT_FULL_MV) {
+      power.batteryPercent = 100;
+    } else {
+      power.batteryPercent = 100 * (power.batteryMV - BATT_EMPTY_MV) / 
+                                  (BATT_FULL_MV - BATT_EMPTY_MV);
+    }
+
+    // use a 2% histeresis on battery% to avoid rapid fluctuations as ADC values change    
+    if (power.charging) {  // don't let % go down (within 2%) when charging
+      if (power.batteryPercent < batteryPercentLast && 
+        power.batteryPercent >= batteryPercentLast - 2) {
+          power.batteryPercent = batteryPercentLast;
+      }
+    } else {              // don't let % go up (within 2%) when discharging
+      if (power.batteryPercent > batteryPercentLast && 
+        power.batteryPercent <= batteryPercentLast + 2) {
+          power.batteryPercent = batteryPercentLast;
+      }      
+    }  
+    batteryPercentLast = power.batteryPercent;
 }
 
-bool power_getBattCharging() {
-  return (!digitalRead(POWER_CHARGE_GOOD));  // logic low is charging, logic high is not
-}
 
 void power_adjustInputCurrent(int8_t offset) {
-  int8_t newVal = power_getInputCurrent() + offset;
+  int8_t newVal = power.inputCurrent + offset;  
   if (newVal > iMax)
     newVal = iMax;
   else if (newVal < iStandby)
     newVal = iStandby;
-  power_set_input_current(newVal);
+  power_setInputCurrent((power_input_levels)newVal);
 }
 
-uint8_t power_getInputCurrent() { return current_setting; }
 
 // Note: the Battery Charger Chip has controllable input current (which is then used for both batt
 // charging AND system load).  The battery will be charged with whatever current is remaining after
 // system load.
-void power_set_input_current(uint8_t current) {
-  current_setting = current;
-  switch (current) {
-    default:
+void power_setInputCurrent(power_input_levels current) {
+  power.inputCurrent = current;
+  switch (current) {    
     case i100mA:
       digitalWrite(POWER_CHARGE_I1, LOW);
       digitalWrite(POWER_CHARGE_I2, LOW);
-      break;
+      break;    
+    default:
     case i500mA:
       digitalWrite(POWER_CHARGE_I1, HIGH);
       digitalWrite(POWER_CHARGE_I2, LOW);
@@ -299,47 +300,4 @@ void power_set_input_current(uint8_t current) {
       digitalWrite(POWER_CHARGE_I2, HIGH);
       break;
   }
-}
-
-// Testing STuff
-// ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void power_test(void) {
-  Serial.print("Batt Voltage: ");
-  Serial.print(power_getBattLevel(0));
-  Serial.print(", Batt Percent: ");
-  Serial.print(power_getBattLevel(1));
-  Serial.print("%, Charge_Good: ");
-  if (!digitalRead(POWER_CHARGE_GOOD))
-    Serial.println("Charging!");
-  else
-    Serial.println("Not Charging!");
-
-  if (Serial.available() > 0) {
-    char letter = char(Serial.read());
-    while (Serial.available() > 0) {
-      Serial.read();  // empty buffer
-    }
-
-    int fx = 0;
-    switch (letter) {
-      case '1':
-        power_set_input_current(i100mA);
-        Serial.println("Input Current to 100mA");
-        break;
-      case '2':
-        power_set_input_current(i500mA);
-        Serial.println("Input Current to 500mA");
-        break;
-      case '3':
-        power_set_input_current(iMax);
-        Serial.println("Input Current to Max (1348mA input; ~810mA charger)");
-        break;
-      case '0':
-        power_set_input_current(iStandby);
-        Serial.println("Input Current to Standby");
-        break;
-    }
-  }
-  delay(500);
 }

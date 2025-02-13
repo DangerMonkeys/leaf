@@ -97,13 +97,13 @@ void SystemMenuPage::draw() {
 
         case cursor_system_charge:
           u8g2.setCursor(setting_choice_x + 5, menu_items_y[i]);
-          if (power_getInputCurrent() == i100mA)
+          if (power.inputCurrent == i100mA)
             u8g2.print("100");
-          else if (power_getInputCurrent() == i500mA)
+          else if (power.inputCurrent == i500mA)
             u8g2.print("500");
-          else if (power_getInputCurrent() == iMax)
+          else if (power.inputCurrent == iMax)
             u8g2.print("MAX");
-          else if (power_getInputCurrent() == iStandby)
+          else if (power.inputCurrent == iStandby)
             u8g2.print("OFF");
           break;
 
