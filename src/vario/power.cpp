@@ -105,8 +105,8 @@ void power_sleep_peripherals() {
   gps_sleep();
   Serial.println(" - Sleeping baro");
   baro_sleep();
-  //Serial.println(" - Sleeping speaker");
-  //speaker_sleep();    Serial.println("Shut down speaker");
+  Serial.println(" - Sleeping speaker");
+  speaker_sleep();    Serial.println("Shut down speaker");
   Serial.println(" - DONE");
 }
 
@@ -118,8 +118,8 @@ void power_wake_peripherals() {
   gps_wake();
   Serial.println(" - waking baro");
   baro_wake();
-  //Serial.println(" - waking speaker");
-  //speaker_wake();
+  Serial.println(" - waking speaker");
+  speaker_wake();
   Serial.println(" - DONE");
 }
 
@@ -265,7 +265,7 @@ void power_readBatteryState() {
                                   (BATT_FULL_MV - BATT_EMPTY_MV);
     }
 
-    // use a 2% histeresis on battery% to avoid rapid fluctuations as ADC values change    
+    // use a 2% hysteresis on battery% to avoid rapid fluctuations as ADC values change    
     if (power.charging) {  // don't let % go down (within 2%) when charging
       if (power.batteryPercent < batteryPercentLast && 
         power.batteryPercent >= batteryPercentLast - 2) {
