@@ -41,14 +41,17 @@ hw_timer_t *charge_timer = NULL;
 #define CHARGE_TIMER_FREQ 1000   // run at 1000Hz
 #define CHARGE_TIMER_LENGTH 500  // trigger the ISR every 500ms
 void onChargeTimer(void);
-char chargeman_doTasks =
-    0;  // let the ISR timer set this to 1 so we're on proper timing cycle each time
-uint64_t sleepTimeStamp =
-    0;  // track micros() for how long we should sleep in charge mode between actions.
+
+// let the ISR timer set this to 1 so we're on proper timing cycle each time
+char chargeman_doTasks = 0;  
+// track micros() for how long we should sleep in charge mode between actions
+uint64_t sleepChargeTimeStamp =0;
 
 // Counters for system task timer
 char counter_10ms_block = 0;
 char counter_100ms_block = 0;
+// track micros() for how long we should sleep in between task frames
+uint64_t sleepTasksTimeStamp =0;
 
 // flag if the GPS serial port is done sending data for awhile
 bool gps_is_quiet = 0;
@@ -68,6 +71,7 @@ char taskman_log = 1;      // check auto-start, increment timers, update log fil
 char taskman_tempRH = 1;   // (1) trigger temp & humidity measurements, (2) process values and save
 char taskman_SDCard = 1;   // check if SD card state has changed and attempt remount if needed
 char taskman_estimateWind = 1;  // estimate wind speed and direction
+char taskman_speakerSample = 1;
 
 // temp testing stuff
 // uint8_t display_page = 0;
@@ -130,6 +134,7 @@ void setup() {
 
 // Main Timer Interrupt
 void IRAM_ATTR onTaskTimer() {
+  sleepTasksTimeStamp = micros();
   // do stuff every alarm cycle (default 10ms)
   taskman_setTasks = 1;  // next time through main loop, set tasks to do!
   // wakeup();  // go back to main loop and keep processing stuff that needs doing!
@@ -137,7 +142,7 @@ void IRAM_ATTR onTaskTimer() {
 
 // Charge Timer Interrupt
 void IRAM_ATTR onChargeTimer() {
-  sleepTimeStamp = micros();
+  sleepChargeTimeStamp = micros();
   // do stuff every alarm cycle (default 10ms)
   chargeman_doTasks = 1;  // next time through main loop, set tasks to do!
   // wakeup();  // go back to main loop and keep processing stuff that needs doing!
@@ -179,21 +184,12 @@ void loop() {
     Serial.print("FAILED MAIN LOOP HANDLER");
 }
 
-bool goToSleep = false;
-uint64_t taskTimeLast = 0;
-uint64_t taskTimeNow = 0;
-uint32_t taskDuration = 0;
+bool allowSleepThisCycle = false;
 
 void main_CHARGE_loop() {
   if (chargeman_doTasks) {
-    /* //debug print for checking timing
-      taskTimeNow = micros();
-      taskDuration = taskTimeNow - taskTimeLast;
-      taskTimeLast = taskTimeNow;
-      //Serial.println(" ");
-      //Serial.print("taskDuration: "); Serial.println(taskDuration);
-    */
-
+    allowSleepThisCycle = true;
+    
     // Display Charging Page
     display_setPage(page_charging);
     display_update();  // update display based on battery charge state etc
@@ -204,57 +200,20 @@ void main_CHARGE_loop() {
     // update battery level and charge state 
     power_readBatteryState();
 
-    // Check Buttons
-    auto buttonPushed =
-        buttons_update();  // check Button for any presses (user can turn ON from charging state)
+    // Check Buttons (user can turn ON from charging state)
+    auto buttonPushed = buttons_update(); 
  
     // Prep to end this cycle and sleep
     chargeman_doTasks = 0;  // done with tasks this timer cycle
-    if (buttonPushed == Button::NONE)
-      goToSleep = true;  // get ready to sleep if no button is being pushed
-  } else {
-    if (goToSleep && ECO_MODE) {  // don't allow sleep if ECO_MODE is off
 
-      goToSleep = false;  // we don't want to sleep again as soon as we wake up; we want to wait
-                          // until we've done 'doTasks' before sleeping again
+    if (buttonPushed == Button::NONE) {
 
-      // Wake up if button pushes
-      esp_sleep_enable_ext0_wakeup((gpio_num_t)BUTTON_PIN_CENTER, HIGH);
-      esp_sleep_enable_ext0_wakeup(
-          (gpio_num_t)BUTTON_PIN_LEFT,
-          HIGH);  // TODO: we probably only need to wake up with center button
-      esp_sleep_enable_ext0_wakeup((gpio_num_t)BUTTON_PIN_RIGHT, HIGH);
-      esp_sleep_enable_ext0_wakeup((gpio_num_t)BUTTON_PIN_UP, HIGH);
-      esp_sleep_enable_ext0_wakeup((gpio_num_t)BUTTON_PIN_DOWN, HIGH);
+      // don't go right back to sleep when waking, 
+      // wait for new charge timer int cycle
+      allowSleepThisCycle = false; 
 
-      // or wake up with timer
-      uint64_t microsNow = micros();
-      uint64_t sleepMicros =
-          sleepTimeStamp + (1000 * (CHARGE_TIMER_LENGTH - 1)) -
-          microsNow;  // sleep until just 1ms before the expected next cycle of CHARGE_TIMER
-      if (sleepMicros > 496 * 1000)
-        sleepMicros = 496 * 1000;  // ensure we don't go to sleep for too long if there's some math
-                                   // issue (or micros rollover, etc).
-      esp_sleep_enable_timer_wakeup(sleepMicros);  // set timer to wake up
-
-      // sleep for real if ECO_MODE is set, otherwise 'fake sleep' using delay
-      if (ECO_MODE) {  // TODO: this is doubling the condition since we already check ECO_MODE in
-                       // the parent if() statement
-        esp_light_sleep_start();
-      } else {
-        Serial.print("microsNow:    ");
-        Serial.println(microsNow);
-        Serial.print("sleepMicros:  ");
-        Serial.println(sleepMicros);
-        Serial.print("wakeMicros:   ");
-        Serial.println(microsNow + sleepMicros);
-        delayMicroseconds(sleepMicros);  // use delay instead of actual sleep to test sleep logic
-                                         // (allows us to serial print during 'fake sleep' and also
-                                         // re-program over USB mid-'fake sleep')
-      }
-    } else {
-      // if (Button_update() != NONE) Serial.println("we see a button!");  // TOOD: erase this
-    }
+      goToSleep();
+    }  
   }
 }
 
@@ -265,6 +224,8 @@ void main_ON_loop() {
     // to be done within 10ms! Serial.println(millisBegin);
     setTasks();            // set necessary tasks for this 10ms block
     taskman_setTasks = 0;  // we don't need to do this again until the next 10ms timer interrupt
+
+    allowSleepThisCycle = true;
   }
 
   // do necessary tasks
@@ -278,13 +239,101 @@ void main_ON_loop() {
     gps_buffer_full = gps_read_buffer_once();
   }
 
-  // if (gps_is_quiet) goToSleep();
+  // Go to sleep until next 10ms timer block
+  // IF no more GPS characters, ECO_MODE is on, and we 
+  //   didn't overrun our time block and setTasks has been called again
+  if (!gps_buffer_full
+      // && ECO_MODE 
+      && !taskman_setTasks
+      && allowSleepThisCycle) {
+
+    // don't go right back to sleep when waking, 
+    // wait for new task timer int cycle
+    allowSleepThisCycle = false; 
+      
+    goToSleep();
+  } 
   // else, run this loop again and keep processing the serial buffer until we're done with all the
   // NMEA sentences this cycle
 
   // TODO: if gps serial buffer can fill while processor is sleeping, then we don't need to wait for
   // serial port to be quiet
 }
+
+void goToSleep() {
+  // don't sleep if speaker playing
+  if (speaker_currentlyPlaying()) return;
+
+  // Set Wake-up if button pushes, especially while in charge mode    
+    // TODO: we probably only need to wake up with center button
+    esp_sleep_enable_ext0_wakeup((gpio_num_t)BUTTON_PIN_CENTER, HIGH);
+    esp_sleep_enable_ext0_wakeup((gpio_num_t)BUTTON_PIN_LEFT, HIGH);
+    esp_sleep_enable_ext0_wakeup((gpio_num_t)BUTTON_PIN_RIGHT, HIGH);
+    esp_sleep_enable_ext0_wakeup((gpio_num_t)BUTTON_PIN_UP, HIGH);
+    esp_sleep_enable_ext0_wakeup((gpio_num_t)BUTTON_PIN_DOWN, HIGH);
+
+  // Set wake up with timer
+    uint64_t sleepTimeStamp;
+    // get frame length depending on which state we're in
+      uint32_t frameLength;
+      if (power.onState == POWER_ON) {
+        frameLength = TASK_TIMER_LENGTH * 1000; // uS frame length power on state
+        sleepTimeStamp = sleepTasksTimeStamp;
+      } else if (power.onState == POWER_OFF_USB) {
+        frameLength = CHARGE_TIMER_LENGTH * 1000; // uS frame length charge state
+        sleepTimeStamp = sleepChargeTimeStamp;
+      }
+
+    // calculate how long should we sleep for
+      uint64_t microsNow = micros();
+      //sleep until just 250uS before the next frame will start 
+        //TODO: maybe shrink this with testing
+      int64_t sleepMicros = sleepTimeStamp + frameLength - microsNow - 250;
+
+      // cap sleep length to avoid sleeping too long 
+      // in case of any math errors or micros() rollover etc
+        if (sleepMicros <= 0) {
+          Serial.println("** NEGATIVE SLEEP **");
+          sleepMicros = frameLength - 500;
+          //return;
+        } else if (sleepMicros > frameLength) {
+          Serial.println("** OVERRUN SLEEP **");
+          sleepMicros = frameLength - 500;
+        }
+
+      // finally, set timer duration
+        esp_sleep_enable_timer_wakeup(sleepMicros);  // set timer to wake up
+
+  // sleep for real if ECO_MODE is set, otherwise 'fake sleep' using delay
+  if (ECO_MODE) {
+    esp_light_sleep_start();
+  } else {
+    Serial.print("10ms #: ");
+    Serial.print((uint8_t)counter_10ms_block);
+    Serial.print("  100ms #: ");
+    Serial.print((uint8_t)counter_100ms_block);
+    Serial.print(" tasks uS: ");
+    Serial.print(microsNow - sleepTimeStamp);
+    Serial.print(" sleep uS: ");
+    Serial.println(sleepMicros);
+
+    Serial.print("timeStamp:    ");
+    Serial.println(sleepTimeStamp);
+    Serial.print("microsNow:    ");
+    Serial.println(microsNow);
+    Serial.print("sleepMicros:  ");
+    Serial.println(sleepMicros);
+
+    // use delay instead of actual sleep to test sleep logic
+    // (allows us to serial print during 'fake sleep' and also
+    // re-program over USB mid-'fake sleep')
+    delayMicroseconds(sleepMicros);  
+  }
+} 
+
+
+
+
 
 bool doBaroTemp = true;  // flag to track when to update temp reading from Baro Sensor (we can do
                          // temp every ~1 sec, even though we're doing pressure every 50ms)
@@ -303,6 +352,7 @@ void setTasks(void) {
   // tasks to complete every 10ms
   taskman_buttons = 1;
   taskman_baro = 1;
+  taskman_speakerSample = 1;
 
   // set additional tasks to complete, broken down into 10ms block cycles.  (embedded if()
   // statements allow for tasks every second, spaced out on different 100ms blocks)
@@ -364,6 +414,16 @@ void setTasks(void) {
 
 uint32_t taskman_timeStamp = 0;
 uint8_t taskman_didSomeTasks = 0;
+uint8_t speakerCounter = 0;
+
+void handleSpeaker() {
+  speakerCounter++;
+  if (speakerCounter >= 4) {
+    speakerCounter = 0;
+    onSpeakerTimerSample();
+  }
+}
+
 
 // execute necessary tasks while we're awake and have things to do
 void taskManager(void) {
@@ -371,6 +431,12 @@ void taskManager(void) {
   if (taskman_buttons && DEBUG_MAIN_LOOP) {
     taskman_timeStamp = micros();
     taskman_didSomeTasks = 1;
+  }
+  // Trying a version where we update speaker note using main task timer, 
+  // rather than a separate speaker timer
+  if (taskman_speakerSample) {
+    handleSpeaker();
+    taskman_speakerSample = 0;
   }
 
   // Do Baro first, because the ADC prep & read cycle is time dependent (must have >9ms between prep

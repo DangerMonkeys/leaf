@@ -79,6 +79,7 @@ for loudest) #define PWM_CHANNEL   0   // ESP32 has many channels; we'll use the
 void speaker_init(void);
 void speaker_sleep(void);
 void speaker_wake(void);
+bool speaker_currentlyPlaying(void);
 
 void speaker_setDefaultVolume(void);
 void speaker_setVolume(unsigned char volume);
