@@ -96,8 +96,6 @@ void speaker_updateVarioNoteAdjustable(int32_t verticalRate);
 void speaker_enableTimer(void);
 void speaker_disableTimer(void);
 
-void speaker_updateClimbToneParameters(void);
-
 void speaker_playSound(uint16_t* sound);
 
 // testing

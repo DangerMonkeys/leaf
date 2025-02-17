@@ -201,10 +201,13 @@ void main_CHARGE_loop() {
     // Check SD Card State and remount if card was inserted
     SDcard_update();
 
+    // update battery level and charge state 
+    power_readBatteryState();
+
     // Check Buttons
     auto buttonPushed =
         buttons_update();  // check Button for any presses (user can turn ON from charging state)
-
+ 
     // Prep to end this cycle and sleep
     chargeman_doTasks = 0;  // done with tasks this timer cycle
     if (buttonPushed == Button::NONE)

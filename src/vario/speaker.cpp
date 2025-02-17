@@ -127,8 +127,8 @@ void speaker_init(void) {
 }
 
 void speaker_sleep() {
-  speaker_setVolume(0);
-  timerStop(speaker_timer);
+  speaker_updateVarioNote(0);
+  //timerStop(speaker_timer);
 }
 
 void speaker_wake() {
@@ -214,23 +214,6 @@ unsigned char liftyAirGap =
     1;  // track if we're playing the gap between double-beeps or the longer silence
 unsigned char liftyAirNow = 0;  // track if we're playing lifty air tone
 
-void speaker_updateClimbToneParameters(void) {
-  /*
-        climbToneSpread = CLIMB_TONE_MIN - CLIMB_TONE_MAX;
-        climbRateSpread = CLIMB_MAX - CLIMB_START;
-        climbPlaySpread = CLIMB_PLAY_MAX - CLIMB_PLAY_MIN;
-        climbSilenceSpread = CLIMB_SILENCE_MAX - CLIMB_SILENCE_MIN;
-
-        sinkToneSpread = SINK_TONE_MIN - SINK_TONE_MAX;
-        sinkRateSpread = SINK_MAX - ((unsigned int)SINK_ALARM * 100);
-        sinkPlaySpread = SINK_PLAY_MAX - SINK_PLAY_MIN;
-        sinkSilenceSpread = SINK_SILENCE_MAX - SINK_SILENCE_MIN;
-
-        liftyToneSpread = LIFTYAIR_TONE_MIN - LIFTYAIR_TONE_MAX;
-        liftyRateSpread = CLIMB_START + LIFTY_AIR;
-        liftySilenceSpread = LIFTYAIR_SILENCE_MAX - LIFTYAIR_SILENCE_MIN;
-  */
-}
 
 // entry point to direct the approach
 void speaker_updateVarioNote(int32_t verticalRate) {

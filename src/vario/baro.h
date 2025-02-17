@@ -51,7 +51,9 @@ uint32_t baro_readADC(void);
 void baro_init(void);
 void baro_reset(void);
 void baro_resetLaunchAlt(void);
-char baro_update(bool startNewCycle, bool doTemp);
+void baro_update(bool startNewCycle, bool doTemp);
+void baro_sleep(void);
+void baro_wake(void);
 
 // Device reading & data processing
 void baro_calculatePressure(void);

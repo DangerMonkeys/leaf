@@ -259,6 +259,16 @@ void baro_reset(void) {
 // Reset launcAlt to current Alt (when starting a new log file, for example)
 void baro_resetLaunchAlt() { baro.altAtLaunch = baro.altAdjusted; }
 
+// Track if we've put baro to sleep (in power off usb state)
+bool baroSleeping = false;
+void baro_wake() {
+  baroSleeping = false;
+}
+void baro_sleep() {
+  baroSleeping = true;
+}
+
+
 uint32_t baroTimeStampPressure = 0;
 uint32_t baroTimeStampTemp = 0;
 uint32_t baroADCStartTime = 0;
@@ -267,16 +277,26 @@ bool baroADCBusy = false;
 bool baroADCPressure = false;
 bool baroADCTemp = false;
 
-char baro_update(bool startNewCycle, bool doTemp) {  // (we don't need to update temp as frequently,
-                                                     // so we can skip it most of the time)
+void baro_update(bool startNewCycle, bool doTemp) {  
+  // (we don't need to update temp as frequently so we choose to skip it if desired)
   // the baro senor requires ~9ms between the command to prep the ADC and actually reading the
   // value. Since this delay is required between both pressure and temp values, we break the sensor
   // processing up into several steps, to allow other code to process while we're waiting for the
   // ADC to become ready.
 
+  // only do baro updates if we're not "sleeping" (i.e. in PowerOff state)
+  if (baroSleeping) {
+    // set climb to 0 so we don't have any vario beeps etc 
+    baro.climbRate = 0;
+    baro.climbRateAverage = 0;
+    baro.climbRateFiltered = 0;
+    return;
+  }
+
+
+
   // First check if ADC is not busy (i.e., it's been at least 9ms since we sent a "convert ADC"
   // command)
-
   unsigned long microsNow = micros();
   if (microsNow - baroADCStartTime > 9000) {
     baroADCBusy = false;
@@ -365,10 +385,9 @@ char baro_update(bool startNewCycle, bool doTemp) {  // (we don't need to update
       break;
   }
   process_step++;
-  // if(++process_step >= 4) process_step = 0;  // prep for the next step in the process (if we just
-  // did step 4, we're done so set to 0.  Elsewhere, Interrupt timer will set to 1 again eventually)
-  return (process_step - 1);  // return what step was just completed
 }
+
+
 // Device Management
 
 // Device reading & data processing

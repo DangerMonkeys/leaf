@@ -20,20 +20,31 @@ POWER power;  // struct for battery-state and on-state variables
 
 void power_bootUp() {
   power_init();                  // configure power supply
-  auto button = buttons_init();  // initialize Button and check if holding the center button is what
-                                 // turned us on
+
+  // initialize Buttons and check if holding the center button is what turned us on
+  auto button = buttons_init();  
+                                 
   if (button == Button::CENTER) {
-    power.onState =
-        POWER_ON;  // if center button turned us on, set state to ON (as opposed to charging state,
-                   // which can turn us on if plugged into USB but not by the center button)
+    // if center button turned us on, set state to ON (as opposed to charging state,
+    // which can turn us on if plugged into USB but not by the center button)
+    power.onState = POWER_ON;
+    
     display_showOnSplash();  // show the splash screen if user turned us on
-  } else
-    power.onState =
-        POWER_OFF_USB;  // if not center button, then USB power turned us on, go into charge mode
-  settings_init();      // grab user settings (or populate defaults if no saved settings)
-  power_init_peripherals();  // init peripherals (even if we're not turning on and just going into
-                             // charge mode, we still need to initialize devices so we can put some
-                             // of them back to sleep)
+
+  } else {
+
+    // if not center button, then USB power turned us on, go into charge mode
+    power.onState = POWER_OFF_USB;  
+
+  }
+
+  // grab user settings (or populate defaults if no saved settings)
+  settings_init();     
+
+  // init peripherals (even if we're not turning on and just going into
+  // charge mode, we still need to initialize devices so we can put some
+  // of them back to sleep)
+  power_init_peripherals();  
 }
 
 // Initialize the power system itself (battery charger and 3.3V regulator etc)
@@ -55,57 +66,61 @@ void power_init_peripherals() {
   Serial.println(power.onState);
   // initialize speaker to play sound (so user knows they can let go of the power button)
   speaker_init();
-  Serial.println("Finished Speaker");
+  Serial.println(" - Finished Speaker");
   if (power.onState == POWER_ON) {
     power_latch_on();
     speaker_playSound(fx_enter);
   }
   // then initialize the rest of the devices
   SDcard_init();
-  Serial.println("Finished SDcard");
+  Serial.println(" - Finished SDcard");
   gps_init();
-  Serial.println("Finished GPS");
+  Serial.println(" - Finished GPS");
   wire_init();
-  Serial.println("Finished I2C Wire");
+  Serial.println(" - Finished I2C Wire");
   spi_init();
-  Serial.println("Finished SPI");
+  Serial.println(" - Finished SPI");
   display_init();
-  Serial.println("Finished display");  // u8g2 library initializes SPI bus for itself, so this can
-                                       // come before spi_init()
-  // TODO: show loading / splash Screen?
-
-  // GLCD_init();            Serial.println("Finished GLCD");    // test SPI object to write
-  // directly to LCD (instead of using u8g2 library -- note it IS possible to have both enabled at
-  // once)
+  Serial.println(" - Finished display");  
   baro_init();
-  Serial.println("Finished Baro");
+  Serial.println(" - Finished Baro");
   imu_init();
-  Serial.println("Finished IMU");
+  Serial.println(" - Finished IMU");
   tempRH_init();
+  Serial.println(" - Finished Temp Humid");
 
-  // then put devices to sleep as needed if we're in POWER_OFF_USB state (plugged into USB but vario
-  // not actively turned on)
+  // then put devices to sleep if we're in POWER_OFF_USB state
+  // (plugged into USB but vario not actively turned on)
   if (power.onState == POWER_OFF_USB) {
-    // delay(35);
     power_sleep_peripherals();
   }
+  Serial.println(" - DONE");
 }
 
 void power_sleep_peripherals() {
   Serial.print("sleep_peripherals: ");
   Serial.println(power.onState);
   // TODO: all the rest of the peripherals not needed while charging
+  Serial.println(" - Sleeping GPS");
   gps_sleep();
-  Serial.println("Sleeping GPS");
-  speaker_sleep();    Serial.println("Shut down speaker");
+  Serial.println(" - Sleeping baro");
+  baro_sleep();
+  //Serial.println(" - Sleeping speaker");
+  //speaker_sleep();    Serial.println("Shut down speaker");
+  Serial.println(" - DONE");
 }
 
 void power_wake_peripherals() {
   Serial.println("wake_peripherals: ");
   SDcard_mount();  // re-initialize SD card in case card state was changed while in charging/USB
                    // mode
+  Serial.println(" - waking GPS");
   gps_wake();
-  speaker_wake();
+  Serial.println(" - waking baro");
+  baro_wake();
+  //Serial.println(" - waking speaker");
+  //speaker_wake();
+  Serial.println(" - DONE");
 }
 
 void power_switchToOnState() {
@@ -138,6 +153,8 @@ void power_shutdown() {
   while (millis() - shutdownTimeStamp < 3000) {                                                   
     delay(100);
   }
+  display_clear();
+  delay(100);  
   power_latch_off();  // turn off 3.3V regulator (if we're plugged into USB, we'll stay on)
   delay(100);  
 
@@ -162,6 +179,7 @@ void power_update() {
   power_readBatteryState();
 
   // check if we should shut down due to low battery..
+  // TODO: should we only do this if we're NOT charging?
   if (power.batteryMV <= BATT_SHUTDOWN_MV) {
     power_shutdown();
 
