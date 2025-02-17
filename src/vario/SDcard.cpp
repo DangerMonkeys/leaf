@@ -9,9 +9,9 @@
 
 #define DEBUG_SDCARD true
 
-bool remountSDCard = false;  // flag set if the SD_DETECT pin changes state, so we know to attempt a
-                             // re-mounting if the card is inserted or removed
-bool SDcardIsPresent = false;
+// save state of SD card present (used to compare against the SD_DETECT
+// pin so we can tell if a card has been inserted or removed)
+bool SDcardPresentSavedState = false; 
 
 #include "FirmwareMSC.h"
 #include "USB.h"
@@ -189,14 +189,21 @@ void testFileIO(fs::FS& fs, const char* path) {
   file.close();
 }
 
+/*  Currently removing the SD_DETECT ISR, since we're just polling 
+    the pin every second with SDcard_update()
 void IRAM_ATTR SDIO_DETECT_ISR() {
   remountSDCard = true;
   Serial.println("SD_DETECT");
 }
+  */
+
+bool SDcard_checkIfPresent() {
+  return !digitalRead(SDIO_DETECT);
+}
 
 void SDcard_init(void) {
-  // Shouldn't need to call set pins since we're using the default pins TODO: try removing this
-  // setPins call
+  // Shouldn't need to call set pins since we're using the default pins
+  // TODO: try removing this setPins call
   if (!SD_MMC.setPins(SDIO_CLK, SDIO_CMD, SDIO_D0, SDIO_D1, SDIO_D2, SDIO_D3)) {
     Serial.println("Pin change failed!");
     return;
@@ -205,26 +212,29 @@ void SDcard_init(void) {
   // attempt to remount the card if the SDIO_DETECT pin changes  (i.e. card state is changed by
   // inserting or removing)
   pinMode(SDIO_DETECT, INPUT_PULLUP);
-  attachInterrupt(SDIO_DETECT, SDIO_DETECT_ISR, CHANGE);
+  // attachInterrupt(SDIO_DETECT, SDIO_DETECT_ISR, CHANGE);
 
-  SDcard_mount();
+  // If SDcard present, mount and save state so we can track changes
+  if(SDcard_checkIfPresent()) {
+    SDcardPresentSavedState = true;
+    SDcard_mount();
+  } 
 }
 
-// TODO: we probably don't need ISR anymore to manage SD card since we're just checking the state
-// change each second
-uint8_t SDcard_detectState = 1;  // flag for SD card insertion state (assume SD card is inserted)
-uint8_t SDcard_detectStateLast = 1;  // flag so we can see if there was a state change (and remount
-                                     // card if inserted while in charging state)
-// called every second in case the SD card state has changed and we need to try remounting
+
 void SDcard_update() {
-  SDcard_detectState = !digitalRead(SDIO_DETECT);
+  // if we have a card when we didn't before...
+  if (SDcard_checkIfPresent() && !SDcardPresentSavedState) {
+    // then mount it!
+    if (SDcard_mount()) {
+      SDcardPresentSavedState = true; // save that we have a successfully mounted card
+    }
 
-  if (remountSDCard || (SDcard_detectState && !SDcard_detectStateLast)) {
-    SDcard_mount();
-    remountSDCard = false;
+  // or if we don't have a card when we DID before, "unmount"
+  } else if (!SDcard_checkIfPresent() && SDcardPresentSavedState) {
+    SD_MMC.end();
+    SDcardPresentSavedState = false; // save that we have a successfully unmounted card
   }
-
-  SDcard_detectStateLast = SDcard_detectState;
 }
 
 static int32_t onRead(uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize) {
@@ -261,7 +271,7 @@ static int32_t onWrite(uint32_t lba, uint32_t offset, uint8_t* buffer, uint32_t 
   return bufsize;
 }
 
-void SDCard_SetupMassStorage() {
+bool SDCard_SetupMassStorage() {
   // Serial.setDebugOutput(true);
   MSC.vendorID("Leaf");
   MSC.productID("Leaf_Vario");
@@ -272,92 +282,31 @@ void SDCard_SetupMassStorage() {
   MSC.mediaPresent(true);
   MSC.begin(SD_MMC.numSectors(), 512);
   MSC_FirmwareUpdate.begin();
-  USB.begin();
+  return USB.begin();
 }
 
 bool SDcard_mount() {
-  // we may be re-mounting after changing power states (from ON to CHARGE and back to ON).
-  // If the SD card was removed during that process, we need to force-end the SD_MCC object so we
-  // can try to restart it, so we can properly tell if re-mounting fails (otherwise the SD_MCC
-  // object would falsely persist)
-  SD_MMC.end();
+  bool success = false;
 
   if (!SD_MMC.begin()) {
     if (DEBUG_SDCARD) Serial.println("SDcard Mount Failed");
-    SDcardIsPresent = false;
+    success = false;
   } else {
     if (DEBUG_SDCARD) Serial.println("SDcard Mount Success");
-    SDcardIsPresent = true;
-#ifndef DISABLE_MASS_STORAGE
-    SDCard_SetupMassStorage();
-#endif
+    success = true;
+
+    #ifndef DISABLE_MASS_STORAGE
+      if(SDCard_SetupMassStorage()) {
+        if (DEBUG_SDCARD) Serial.println("Mass Storage Success");
+      } else {
+        if (DEBUG_SDCARD) Serial.println("Mass Storage Failed");
+      }
+    #endif
   }
 
-  return SDcardIsPresent;
+  return success;
 }
 
 bool SDcard_present() {
-  return SDcardIsPresent;
-}
-
-void SDcard_test(void) {
-  Serial.println("SD test stuff");
-  SDcard_testStuff();
-
-  uint8_t cardType = SD_MMC.cardType();
-
-  if (cardType == CARD_NONE) {
-    Serial.println("No SD_MMC card attached");
-    return;
-  }
-
-  Serial.print("SD_MMC Card Type: ");
-  if (cardType == CARD_MMC) {
-    Serial.println("MMC");
-  } else if (cardType == CARD_SD) {
-    Serial.println("SDSC");
-  } else if (cardType == CARD_SDHC) {
-    Serial.println("SDHC");
-  } else {
-    Serial.println("UNKNOWN");
-  }
-
-  uint64_t cardSize = SD_MMC.cardSize() / (1024 * 1024);
-  Serial.printf("SD_MMC Card Size: %lluMB\n", cardSize);
-
-  // listDir(SD_MMC, "/", 2);
-  createDir(SD_MMC, "/mydir");
-  listDir(SD_MMC, "/", 2);
-  // removeDir(SD_MMC, "/mydir");
-  listDir(SD_MMC, "/", 2);
-  writeFile(SD_MMC, "/mydir/hello.txt", "Hello ");
-  listDir(SD_MMC, "/", 2);
-  createDir(SD_MMC, "/mydir");
-  listDir(SD_MMC, "/", 2);
-
-  // appendFile(SD_MMC, "/hello.txt", "World!\n");
-  // readFile(SD_MMC, "/hello.txt");
-  // deleteFile(SD_MMC, "/foo.txt");
-  // renameFile(SD_MMC, "/hello.txt", "/foo.txt");
-  // readFile(SD_MMC, "/foo.txt");
-  testFileIO(SD_MMC, "/test.txt");
-  Serial.printf("Total space: %lluMB\n", SD_MMC.totalBytes() / (1024 * 1024));
-  Serial.printf("Used space: %lluMB\n", SD_MMC.usedBytes() / (1024 * 1024));
-}
-
-void SDcard_testStuff() {
-  Serial.print("isValid: ");
-  Serial.print(gps.time.isValid());
-  Serial.print(", isUpdated:");
-  Serial.print(gps.time.isUpdated());
-  Serial.print(", hour: ");
-  Serial.print(gps.time.hour());
-  Serial.print(", minute: ");
-  Serial.print(gps.time.minute());
-  Serial.print(", second: ");
-  Serial.print(gps.time.second());
-  Serial.print(", age: ");
-  Serial.print(gps.time.age());
-  Serial.print(", value: ");
-  Serial.println(gps.time.value());
+  return SDcardPresentSavedState;
 }

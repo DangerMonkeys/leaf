@@ -32,9 +32,6 @@ void SDcard_update(void);
 bool SDcard_mount(void);
 bool SDcard_present(void);
 
-void SDcard_test(void);
-void SDcard_testStuff(void);
-
 bool SDcard_createTrackFile(String filename);
 void SDcard_writeLogData(String coordinates);
 void appendOpenFile(File &file, const char *message);
@@ -45,6 +42,6 @@ bool SDcard_createDataFile(String filename);
 void SDcard_writeData(String data);
 void SDcard_closeDataFile(void);
 
-void SDCard_SetupMassStorage(void);
+bool SDCard_SetupMassStorage(void);
 
 #endif

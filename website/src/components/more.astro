@@ -2,58 +2,58 @@
 import { Icon } from "astro-icon/components";
 let base = import.meta.env.BASE_URL;
 if (base == "/") {
-    base = "";
+  base = "";
 }
 
 const links = [
-    {
-        href: "https://github.com/DangerMonkeys/leaf",
-        title: "Github",
-        icon: "simple-icons:github",
-    },
-    {
-        href: base + "/user-guides/getting-started",
-        title: "Documents",
-        icon: "game-icons:bookmarklet",
-    },
-    {
-        href: "mailto:leafvario@gmail.com",
-        title: "Email Us",
-        icon: "simple-icons:gmail",
-    },
-    {
-        href: "https://www.instagram.com/leafvario",
-        title: "Instagram",
-        icon: "simple-icons:instagram",
-    },
-    {
-        href: "https://www.youtube.com/channel/UCbwWXjxFitbefeKqzAKa94Q",
-        title: "YouTube",
-        icon: "simple-icons:youtube",
-    },
+  {
+    href: "https://github.com/DangerMonkeys/leaf",
+    title: "Github",
+    icon: "simple-icons:github",
+  },
+  {
+    href: base + "/user-guides/getting-started",
+    title: "Documents",
+    icon: "game-icons:bookmarklet",
+  },
+  {
+    href: "mailto:leafvario@gmail.com",
+    title: "Email Us",
+    icon: "simple-icons:gmail",
+  },
+  {
+    href: "https://www.instagram.com/leafvario",
+    title: "Instagram",
+    icon: "simple-icons:instagram",
+  },
+  {
+    href: "https://www.youtube.com/channel/UCbwWXjxFitbefeKqzAKa94Q",
+    title: "YouTube",
+    icon: "simple-icons:youtube",
+  },
 ];
 ---
 
 <main>
-    <div class="pb-16">
-        <div class="max-w-5xl m-auto">
-            <h2>More Information</h2>
-            <div class="flex justify-center pt-4">
-                {
-                    links.map((l) => (
-                        <a href={l.href}>
-                            <div class="m-8 text-center">
-                                <div class="flex justify-center">
-                                    <Icon name={l.icon} size={120} />
-                                </div>
-                                <h3 class="text-2lg font-semibold text-green-900/80 underline pt-4">
-                                    {l.title}
-                                </h3>
-                            </div>
-                        </a>
-                    ))
-                }
-            </div>
-        </div>
+  <div class="pb-16">
+    <div class="max-w-5xl m-auto">
+      <h2>More Information</h2>
+      <div class="flex flex-wrap max-w-full justify-center pt-4">
+        {
+          links.map((l) => (
+            <a href={l.href}>
+              <div class="m-8 text-center">
+                <div class="flex justify-center">
+                  <Icon name={l.icon} size={64} />
+                </div>
+                <h3 class="text-lg font-semibold text-green-900/80 underline pt-4">
+                  {l.title}
+                </h3>
+              </div>
+            </a>
+          ))
+        }
+      </div>
     </div>
+  </div>
 </main>
