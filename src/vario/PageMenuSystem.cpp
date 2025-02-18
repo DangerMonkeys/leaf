@@ -17,12 +17,12 @@ enum system_menu_items {
   cursor_system_timezone,
   cursor_system_volume,
   cursor_system_poweroff,
-  cursor_system_charge,
+  cursor_system_showWarning,
   cursor_system_ecomode,
   cursor_system_wifi,
   cursor_system_bluetooth,
-  cursor_system_reset,
   cursor_system_about,
+  cursor_system_reset,
 };
 
 PageMenuAbout about_page;
@@ -95,17 +95,13 @@ void SystemMenuPage::draw() {
             u8g2.print((char)123);
           break;
 
-        case cursor_system_charge:
-          u8g2.setCursor(setting_choice_x + 5, menu_items_y[i]);
-          if (power.inputCurrent == i100mA)
-            u8g2.print("100");
-          else if (power.inputCurrent == i500mA)
-            u8g2.print("500");
-          else if (power.inputCurrent == iMax)
-            u8g2.print("MAX");
-          else if (power.inputCurrent == iStandby)
-            u8g2.print("OFF");
-          break;
+        case cursor_system_showWarning:
+        u8g2.setCursor(setting_choice_x + 8, menu_items_y[i]);
+        if (SHOW_WARNING)
+          u8g2.print((char)125);
+        else
+          u8g2.print((char)123);
+        break;
 
         case cursor_system_ecomode:
           u8g2.setCursor(setting_choice_x + 8, menu_items_y[i]);
@@ -146,7 +142,7 @@ void SystemMenuPage::draw() {
     }
 
     if (reset_settings_timer && buttons_get_hold_count()) {
-      u8g2.drawBox(0, 156, reset_settings_timer, 4);
+      u8g2.drawBox(0, 170, reset_settings_timer, 4);
     } else {
       reset_settings_timer = 0;
     }
@@ -167,9 +163,8 @@ void SystemMenuPage::setting_change(Button dir, ButtonState state, uint8_t count
     case cursor_system_poweroff:
       if (state == RELEASED) settings_toggleBoolOnOff(&AUTO_OFF);
       break;
-    case cursor_system_charge:
-      if (state == RELEASED) {
-      }
+    case cursor_system_showWarning:
+    if (state == RELEASED) settings_toggleBoolOnOff(&SHOW_WARNING);
       break;
     case cursor_system_ecomode:
       if (state == RELEASED) settings_toggleBoolOnOff(&ECO_MODE);

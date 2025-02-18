@@ -132,6 +132,8 @@ Button buttons_update(void) {
   }
   if (displayingWarning()) {
     warningPage_button(which_button, buttons_get_state(), buttons_get_hold_count());
+    display_update();
+    return which_button;
   }
 
   // If there's a modal page currently shown, we should send the button event to that page

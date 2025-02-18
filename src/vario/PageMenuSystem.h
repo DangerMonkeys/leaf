@@ -23,12 +23,12 @@ class SystemMenuPage : public SettingsMenuPage {
                                        "TimeZone",
                                        "Volume",
                                        "Auto-Off",
-                                       "Charge",
+                                       "ShowWarning",
                                        "EcoMode",
                                        "Wifi",
                                        "BT",
-                                       "Reset",
-                                       "About"};
+                                       "About",
+                                       "Reset"};
 };
 
 #endif
