@@ -12,6 +12,7 @@
 #include "PageNavigate.h"
 #include "PageThermal.h"
 #include "PageThermalSimple.h"
+#include "PageWarning.h"
 #include "SDcard.h"
 #include "baro.h"
 #include "displayFields.h"
@@ -140,6 +141,15 @@ void display_showOnSplash() {
   showSplashScreenFrames = 3;
 }
 
+bool showWarning = true;
+
+bool displayingWarning() {
+  return showWarning;
+}
+void displayDismissWarning() {
+  showWarning = false;
+}
+
 //*********************************************************************
 // MAIN DISPLAY UPDATE FUNCTION
 //*********************************************************************
@@ -154,6 +164,13 @@ void display_update() {
     display_on_splash();
     showSplashScreenFrames--;
     return;
+  }
+  // If user setting to SHOW_WARNING and also we need to showWarning, then display it
+  if (SHOW_WARNING && showWarning) {
+    warningPage_draw();
+    return;
+  } else {
+    displayDismissWarning();
   }
 
   auto modalPage = mainMenuPage.get_modal_page();

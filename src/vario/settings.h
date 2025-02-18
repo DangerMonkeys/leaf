@@ -81,6 +81,7 @@ setting | samples | time avg
 #define DEF_AUTO_OFF 0      // 1 = ENABLE, 0 = DISABLE
 #define DEF_WIFI_ON 0       // default wifi off
 #define DEF_BLUETOOTH_ON 0  // default bluetooth off
+#define DEF_SHOW_WARNING 1      // default show warning on startup
 
 // Display Settings
 #define DEF_CONTRAST 7  // default contrast setting
@@ -132,6 +133,7 @@ extern bool ECO_MODE;
 extern bool AUTO_OFF;
 extern bool WIFI_ON;
 extern bool BLUETOOTH_ON;
+extern bool SHOW_WARNING;
 
 // Display Settings
 extern uint8_t CONTRAST;

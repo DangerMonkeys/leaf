@@ -14,6 +14,7 @@
 #include "PageNavigate.h"
 #include "PageThermal.h"
 #include "PageThermalSimple.h"
+#include "PageWarning.h"
 #include "baro.h"
 #include "display.h"
 #include "menu_page.h"
@@ -128,6 +129,9 @@ Button buttons_update(void) {
         break;
     }
     return which_button;
+  }
+  if (displayingWarning()) {
+    warningPage_button(which_button, buttons_get_state(), buttons_get_hold_count());
   }
 
   // If there's a modal page currently shown, we should send the button event to that page

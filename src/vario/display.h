@@ -53,5 +53,7 @@ void display_page_debug(void);
 void display_page_charging(void);
 
 void display_showOnSplash(void);
+bool displayingWarning(void);
+void displayDismissWarning(void);
 
 #endif

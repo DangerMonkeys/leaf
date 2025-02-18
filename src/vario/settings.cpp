@@ -42,6 +42,7 @@ bool ECO_MODE;
 bool AUTO_OFF;
 bool WIFI_ON;
 bool BLUETOOTH_ON;
+bool SHOW_WARNING;
 
 // Display Settings
 uint8_t CONTRAST;
@@ -120,6 +121,7 @@ void settings_loadDefaults() {
   AUTO_OFF = DEF_AUTO_OFF;
   WIFI_ON = DEF_WIFI_ON;
   BLUETOOTH_ON = DEF_BLUETOOTH_ON;
+  SHOW_WARNING = DEF_SHOW_WARNING;
 
   // Display Settings
   CONTRAST = DEF_CONTRAST;
@@ -172,6 +174,7 @@ void settings_retrieve() {
   AUTO_OFF = leafPrefs.getBool("AUTO_OFF");
   WIFI_ON = leafPrefs.getBool("WIFI_ON");
   BLUETOOTH_ON = leafPrefs.getBool("BLUETOOTH_ON");
+  SHOW_WARNING = leafPrefs.getBool("SHOW_WARNING");
 
   // Display Settings
   CONTRAST = leafPrefs.getUChar("CONTRAST");
@@ -232,6 +235,7 @@ void settings_save() {
   leafPrefs.putBool("AUTO_OFF", AUTO_OFF);
   leafPrefs.putBool("WIFI_ON", WIFI_ON);
   leafPrefs.putBool("BLUETOOTH_ON", BLUETOOTH_ON);
+  leafPrefs.putBool("SHOW_WARNING", SHOW_WARNING);
   // Display Settings
   leafPrefs.putUChar("CONTRAST", CONTRAST);
   leafPrefs.putUChar("NAVPG_ALT_TYP", NAVPG_ALT_TYP);
