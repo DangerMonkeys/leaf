@@ -14,7 +14,7 @@ typedef uint8_t SettingLogFormat;
 // Setting bounds and definitions
 // Vario
 // Sink Alarm
-#define SINK_ALARM_MAX -6  // m/s sink
+#define SINK_ALARM_MAX -6     // m/s sink
 #define SINK_ALARM_MIN -2
 
 /* Vario Sensitivity
@@ -28,10 +28,10 @@ setting | samples | time avg
 #define VARIO_SENSE_MAX 5  // units of 1/4 seconds
 #define VARIO_SENSE_MIN 1
 // Lifty Air Thermal Sniffer
-#define LIFTY_AIR_MAX -80  // cm/s - sinking less than this will trigger
+#define LIFTY_AIR_MAX -8   // 0.1 m/s - sinking less than this will trigger
 // Climb settings
 #define CLIMB_AVERAGE_MAX 3  // units of 10 seconds, so max 30 sec averaging
-#define CLIMB_START_MAX 50   // cm/s when climb note begins
+#define CLIMB_START_MAX 20   // cm/s when climb note begins
 
 // System
 // Display Contrast
@@ -55,9 +55,9 @@ setting | samples | time avg
 #define DEF_QUIET_MODE 0     // 0 = off, 1 = on (ON means no beeping until flight recording)
 // 0 == linear pitch interpolation; 1 == major C-scale for climb, minor scale for descent
 #define DEF_VARIO_TONES 0  
-// In units of cm/s (a sink rate of 30cm/s means the air itself is going up).  '0' is off.
+// In units of 10 cm/s (a sink rate of only 30cm/s means the air itself is going up).  '0' is off.
 // (lift air will apply from the lifty_air setting up to the climb_start value)
-#define DEF_LIFTY_AIR -40
+#define DEF_LIFTY_AIR -4    // default -0.4m/s sink will trigger lifty air
 
 #define DEF_ALT_SETTING 29.921  // altimeter setting
 #define DEF_ALT_SYNC_GPS 0     // lock altimeter to GPS alt (to avoid local pressure setting issues)

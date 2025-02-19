@@ -403,23 +403,27 @@ void settings_adjustClimbStart(Button dir) {
 
 void settings_adjustLiftyAir(Button dir) {
   uint16_t* sound = fx_neutral;
-  LIFTY_AIR += dir == Button::RIGHT ? 1 : -1;
 
+  // adjust the setting based on button direction
   if (dir == Button::RIGHT) {
+    LIFTY_AIR += 1;
     sound = fx_increase;
-    if (LIFTY_AIR > 0) {
-      LIFTY_AIR =
-          LIFTY_AIR_MAX;  // if we were at 0 and now are at positive 1, go back to max sink rate
-    } else if (LIFTY_AIR == 0) {
-      sound = fx_cancel;
-    }
   } else {
+    LIFTY_AIR += -1;
     sound = fx_decrease;
-    if (LIFTY_AIR < LIFTY_AIR_MAX) {
+  }
+
+  // now scrub the result to ensure we're within bounds
+    // if we were at 0 and now are at positive 1, go back to max sink setting
+    if (LIFTY_AIR > 0) {
+      LIFTY_AIR = LIFTY_AIR_MAX;  
+      sound = fx_increase;
+    } else if (LIFTY_AIR == 0) {    // setting to 0 turns the feature off
+      sound = fx_cancel;
+    } else if (LIFTY_AIR < LIFTY_AIR_MAX) { // wrap from max back to 0
       sound = fx_cancel;
       LIFTY_AIR = 0;
     }
-  }
   speaker_playSound(sound);
 }
 

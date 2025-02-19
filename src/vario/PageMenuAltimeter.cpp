@@ -25,15 +25,7 @@ void AltimeterMenuPage::draw() {
   u8g2.firstPage();
   do {
     // Title(s)
-    u8g2.setFont(leaf_6x12);
-    u8g2.setFontMode(0);
-    u8g2.setCursor(9, 14);
-    u8g2.setDrawColor(1);
-    u8g2.print("ALTIMETER");
-    u8g2.drawHLine(0, 15, 96);
-    u8g2.drawLine(2,15,5,0);
-    u8g2.drawHLine(5,0,75);
-    u8g2.drawLine(80,0,83,15);
+      display_menuTitle("ALTIMETER");
 
     // First draw all the text for the labels and setting descriptions
     uint8_t label_indent = 3;

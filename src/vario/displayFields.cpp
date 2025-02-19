@@ -954,6 +954,20 @@ void displayWaypointDropletPointer(uint8_t centerX, uint8_t centerY, uint8_t poi
 }
 
 
+// Menu Title Bar
+void display_menuTitle(String title) {
+  u8g2.setFont(leaf_6x12);
+  u8g2.setCursor(9, 14);
+  u8g2.setDrawColor(1);
+  u8g2.print(title);
+  uint8_t xPos = u8g2.getCursorX();
+
+  u8g2.drawHLine(0, 15, 96);
+  u8g2.drawLine(2,15,5,0);
+  u8g2.drawHLine(5,0,xPos - 2);
+  u8g2.drawLine(xPos + 3, 0, xPos+6, 15);
+}
+
 // END OF COMPONENT DISPLAY FUNCTIONS //
 /********************************************************************************************/
 
