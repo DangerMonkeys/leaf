@@ -352,4 +352,14 @@ void submitVelocityForWindEstimate(GroundVelocity groundVelocity) {
       break;
     }
   }
+
+  // use this latest GPS velocity to calculate approximate realtime airspeed
+  // ...if we have a valid wind estimate
+  if (windEstimate.validEstimate) {
+    windEstimate.airspeedLive = speedOf(
+      dxOf(groundVelocity.trackAngle, groundVelocity.speed) +
+      dxOf(windEstimate.windDirectionFrom, windEstimate.windSpeed),   
+      dyOf(groundVelocity.trackAngle, groundVelocity.speed) +
+      dyOf(windEstimate.windDirectionFrom, windEstimate.windSpeed));
+  }
 }

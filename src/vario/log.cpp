@@ -303,6 +303,9 @@ void log_checkMinMaxValues() {
     logbook.temperature_min = logbook.temperature;
   }
 
+  // accumulate distance flown
+  logbook.distanceFlown += gps.speed.mps();
+
   time = micros() - time;
   Serial.print("checkMinMax: ");
   Serial.println(time);

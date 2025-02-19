@@ -405,7 +405,9 @@ void navigatePage_draw() {
       u8g2.setFont(leaf_6x12);
 
       // User Field 2  -- Dist to waypoint
-      display_distance(userFieldsCol2X + 5, userFieldsRow1Y + 20, gpxNav.pointDistanceRemaining);
+      double displayDistance = 0;
+      if (gpxNav.navigating) displayDistance = gpxNav.pointDistanceRemaining;
+      display_distance(userFieldsCol2X + 5, userFieldsRow1Y + 20, displayDistance);
       u8g2.setFont(leaf_5h);
       u8g2.setCursor(userFieldsCol2X, userFieldsRow1Y + 7);
       u8g2.print("DIST>&");

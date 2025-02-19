@@ -26,6 +26,8 @@ class FlightStats {
   int32_t speed_max = 0;
   int32_t speed_min = 0;
 
+  float distanceFlown = 0;  // accumulated distance of actual flight path
+
   float g_force_max = 0;
 
   // Flight duration, in seconds

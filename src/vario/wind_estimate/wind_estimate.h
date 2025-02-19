@@ -34,9 +34,13 @@ struct WindEstimate {
   // Radians East of North (0 is True North)
   float windDirectionTrue;	// direction wind is blowing toward (used for center of circle-fit)
 	float windDirectionFrom;	// direction wind is blowing FROM (180 deg offset from previous var)
+  // "from" is the typical/standard way of reporting wind direction, but "to" is helpful for calculations
 
-  // m/s estimate of aircraft speed
+  // m/s estimate of average airspeed used in circle-fit
   float airspeed;
+
+  // m/s estimate of current aircraft airspeed, using latest GPS speed and wind estimate
+  float airspeedLive;
 
 	// error of estimate
 	float error;

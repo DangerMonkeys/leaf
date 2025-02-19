@@ -138,10 +138,10 @@ void display_speed(uint8_t x, uint8_t y, const uint8_t* font) {
 void display_speed(uint8_t x, uint8_t y, const uint8_t* font, bool units) {
   display_speed(x, y, font);
   // kpm or mph
-  if (1)
-    u8g2.print((char)135);  // unit character
+  if (UNITS_speed)
+    u8g2.print((char)135);  // mph unit character
   else
-    u8g2.print((char)136);  // unit character
+    u8g2.print((char)136);  // kph unit character
 }
 
 // Display distance
@@ -150,27 +150,28 @@ void display_distance(uint8_t cursor_x, uint8_t cursor_y, double distance) {
   uint8_t decimalPlaces = 0;
   uint8_t unitsSmall = true;  // assume m or ft, switch to km or mi if needed
 
-  if (UNITS_distance) {
-    distance *= 3.28084;  // convert to feet
-    if (distance > 1000) {
-      distance /= 5280;  // convert to miles if >1000
-      unitsSmall = false;
-      if (distance < 1000) decimalPlaces = 1;  // show x.1 decimal places if under 1000 miles
-      if (distance > 9999) distance = 9999;    // cap max distance
-    }
-  } else {
-    if (distance >= 1000) {
-      distance /= 1000;  // switch to km
-      unitsSmall = false;
-      if (distance > 9999) distance = 9999;
-      if (distance < 1000) decimalPlaces = 1;
-    }
-  }
-
-  if (gpxNav.navigating)
-    u8g2.print(distance, decimalPlaces);
-  else
+  if (distance == 0) {
     u8g2.print("----");
+  } else {
+    if (UNITS_distance) {
+      distance *= 3.28084;  // convert to feet
+      if (distance > 1000) {
+        distance /= 5280;  // convert to miles if >1000
+        unitsSmall = false;
+        if (distance < 1000) decimalPlaces = 1;  // show x.1 decimal places if under 1000 miles
+        if (distance > 9999) distance = 9999;    // cap max distance
+      }
+    } else {
+      if (distance >= 1000) {
+        distance /= 1000;  // switch to km
+        unitsSmall = false;
+        if (distance > 9999) distance = 9999;
+        if (distance < 1000) decimalPlaces = 1;
+      }
+    }
+
+    u8g2.print(distance, decimalPlaces);
+  }
 
   if (unitsSmall && UNITS_distance) u8g2.print((char)128);
   if (!unitsSmall && UNITS_distance) u8g2.print((char)130);
@@ -300,10 +301,17 @@ void display_alt(uint8_t cursor_x, uint8_t cursor_y, const uint8_t* font, int32_
         u8g2.print('-');  // negative sign for negative values (negative values are capped at 9999
                           // so 'digits < 10' will always be true)
       else
-        u8g2.print(" ");  // otherwise leading space as needed for positive values
+        u8g2.print(' ');  // otherwise leading space as needed for positive values
     }
     u8g2.print(digits);
     u8g2.print(',');
+  } else {
+    u8g2.print(' '); // ten-thousands place
+    if (negativeVal) {
+      u8g2.print('-');
+    } else {
+      u8g2.print(' '); // thousands place
+    }
   }
   // rest of the number
   if (keepZeros) {
@@ -313,9 +321,8 @@ void display_alt(uint8_t cursor_x, uint8_t cursor_y, const uint8_t* font, int32_
       u8g2.print(digits);
     }
   } else {             // don't show leading zeros for altitudes less than 1000
-    u8g2.print("  ");  // print two spaces for the thousands places
-    if (displayAlt < 100) u8g2.print(" ");
-    if (displayAlt < 10) u8g2.print(" ");
+    if (displayAlt < 100) u8g2.print(' ');
+    if (displayAlt < 10) u8g2.print(' ');
     u8g2.print(displayAlt);
   }
 }
