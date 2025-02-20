@@ -19,6 +19,10 @@ const images = [
     thumbnail: "/photos/mounting-options.png",
   },
   {
+    original: "/photos/LeafDisplayScreens.png",
+    thumbnail: "/photos/LeafDisplayScreens.png",
+  },
+  {
     original: "/photos/riser.png",
     thumbnail: "/photos/riser.png",
   },
