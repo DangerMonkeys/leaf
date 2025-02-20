@@ -133,9 +133,10 @@ void power_switchToOnState() {
 void power_shutdown() {
   Serial.println("power_shutdown");
 
-  // TODO: maybe show shutting down screen?
+
   display_clear();
   speaker_playSound(fx_exit);
+  baro_sleep();   // stop getting climbrate updates so we don't hear vario beeps while shutting down
   display_off_splash();
   auto shutdownTimeStamp = millis();
 
@@ -146,21 +147,23 @@ void power_shutdown() {
 
   // save any changed settings this session
   settings_save();
-  power_sleep_peripherals();
 
   // wait 3 seconds before shutting down to give user
   // a chance to see the shutdown screen
   while (millis() - shutdownTimeStamp < 3000) {                                                   
     delay(100);
   }
-  display_clear();
-  delay(100);  
-  power_latch_off();  // turn off 3.3V regulator (if we're plugged into USB, we'll stay on)
-  delay(100);  
 
-  // go to POWER_OFF_USB state, in case device was shut down while 
-  // plugged into USB, then we can show necessary charging updates etc
-  power.onState = POWER_OFF_USB;                        
+  // finally, turn off devices
+    power_sleep_peripherals();
+    display_clear();
+    delay(100);  
+    power_latch_off();  // turn off 3.3V regulator (if we're plugged into USB, we'll stay on)
+    delay(100);  
+
+    // go to POWER_OFF_USB state, in case device was shut down while 
+    // plugged into USB, then we can show necessary charging updates etc
+    power.onState = POWER_OFF_USB;                        
 }
 
 // latch or unlatch 3.3V regulator.

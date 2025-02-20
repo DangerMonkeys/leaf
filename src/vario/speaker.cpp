@@ -127,9 +127,9 @@ void speaker_init(void) {
 }
 
 void speaker_sleep() {
-  timerStop(speaker_timer);       // stop updating notes to play
   speaker_updateVarioNote(0);     // ensure we clear vario note
-  ledcWriteTone(SPEAKER_PIN, 0);  // mute speaker pin 
+  ledcWriteTone(SPEAKER_PIN, 0);  // mute speaker pin
+  timerStop(speaker_timer);       // stop updating notes to play 
 }
 
 void speaker_wake() {
