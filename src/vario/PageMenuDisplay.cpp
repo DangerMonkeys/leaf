@@ -4,6 +4,7 @@
 
 #include "buttons.h"
 #include "display.h"
+#include "displayFields.h"
 #include "fonts.h"
 #include "pages.h"
 #include "settings.h"
@@ -21,16 +22,13 @@ enum display_menu_items {
 void DisplayMenuPage::draw() {
   u8g2.firstPage();
   do {
-    // Title(s)
-    u8g2.setFont(leaf_6x12);
-    u8g2.setCursor(2, 12);
-    u8g2.setDrawColor(1);
-    u8g2.print("DISPLAY");
-    u8g2.drawHLine(0, 15, 64);
+    // Title
+    display_menuTitle("DISPLAY");
+
+    // Menu Items
     u8g2.setCursor(0, 45);
     u8g2.print("Show Pages:");
 
-    // Menu Items
     uint8_t y_spacing = 16;
     uint8_t setting_name_x = 3;
     uint8_t setting_choice_x = 78;

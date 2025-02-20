@@ -4,6 +4,7 @@
 
 #include "buttons.h"
 #include "display.h"
+#include "displayFields.h"
 #include "fonts.h"
 #include "pages.h"
 #include "settings.h"
@@ -24,12 +25,8 @@ enum units_menu_items {
 void UnitsMenuPage::draw() {
   u8g2.firstPage();
   do {
-    // Title(s)
-    u8g2.setFont(leaf_6x12);
-    u8g2.setCursor(2, 12);
-    u8g2.setDrawColor(1);
-    u8g2.print("UNITS");
-    u8g2.drawHLine(0, 15, 64);
+    // Title
+    display_menuTitle("UNITS");
 
     // Menu Items
     uint8_t start_y = 29;

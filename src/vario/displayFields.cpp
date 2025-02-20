@@ -14,7 +14,6 @@
 #include "settings.h"
 #include "time.h"
 #include "version.h"
-#include "time.h"
 #include "wind_estimate/wind_estimate.h"
 
 /********************************************************************************************/
@@ -110,7 +109,7 @@ void display_flightTimer(uint8_t x, uint8_t y, bool shortstring, bool selected) 
   u8g2.setDrawColor(1);
 
   if (selected) {
-    display_selectionBox(x , y - h, w, h, 6);
+    display_selectionBox(x, y - h, w, h, 6);
   }
 }
 
@@ -120,14 +119,14 @@ void display_speed(uint8_t cursor_x, uint8_t cursor_y) {
   uint16_t displaySpeed;
   if (UNITS_speed)
     // add half so we effectively round when truncating from float to int.
-    displaySpeed = gps.speed.mph() + 0.5f;  
+    displaySpeed = gps.speed.mph() + 0.5f;
   else
     displaySpeed = gps.speed.kmph() + 0.5f;
 
   if (displaySpeed >= 100) displaySpeed = 99;  // cap display value at 3 digits
 
   u8g2.setCursor(cursor_x, cursor_y);
-  if (displaySpeed < 10) u8g2.print(" ");   // leave a space if needed  
+  if (displaySpeed < 10) u8g2.print(" ");  // leave a space if needed
   u8g2.print(displaySpeed);
 }
 
@@ -306,11 +305,11 @@ void display_alt(uint8_t cursor_x, uint8_t cursor_y, const uint8_t* font, int32_
     u8g2.print(digits);
     u8g2.print(',');
   } else {
-    u8g2.print(' '); // ten-thousands place
+    u8g2.print(' ');  // ten-thousands place
     if (negativeVal) {
       u8g2.print('-');
     } else {
-      u8g2.print(' '); // thousands place
+      u8g2.print(' ');  // thousands place
     }
   }
   // rest of the number
@@ -320,7 +319,7 @@ void display_alt(uint8_t cursor_x, uint8_t cursor_y, const uint8_t* font, int32_
       displayAlt -= (digits * i);
       u8g2.print(digits);
     }
-  } else {             // don't show leading zeros for altitudes less than 1000
+  } else {  // don't show leading zeros for altitudes less than 1000
     if (displayAlt < 100) u8g2.print(' ');
     if (displayAlt < 10) u8g2.print(' ');
     u8g2.print(displayAlt);
@@ -356,12 +355,11 @@ void display_varioBar(uint8_t barTop,
                       uint8_t barSinkHeight,
                       uint8_t barWidth,
                       int32_t displayClimbRate) {
-
-  // climb rate (+climb) that will max-fill the bar upwards (note: because we can then start 
+  // climb rate (+climb) that will max-fill the bar upwards (note: because we can then start
   // un-filling) the bar from the middle, we'll be able to graphically display 2x this value
-  int16_t varioBarClimbRateMax = 500;   
+  int16_t varioBarClimbRateMax = 500;
 
-  // sink rate (-climb) that will max-fill the bar downwards (note: because we can then start 
+  // sink rate (-climb) that will max-fill the bar downwards (note: because we can then start
   // un-filling) the bar from the middle, we'll be able to graphically display 2x this value
   int16_t varioBarSinkRateMax = -500;
 
@@ -373,72 +371,69 @@ void display_varioBar(uint8_t barTop,
   // needed if varioBar overlaps something else u8g2.setDrawColor(1);
 
   // Fill varioBar
-    uint8_t barMid = barTop + barClimbHeight;
-    uint8_t barFillTop = barTop + 1;
-    uint8_t barFillBot = barTop + barClimbHeight + barSinkHeight - 1;
-    uint8_t fillTopLength = barMid - barFillTop + 1;
-    uint8_t fillBotLength = barFillBot - barMid + 1;
+  uint8_t barMid = barTop + barClimbHeight;
+  uint8_t barFillTop = barTop + 1;
+  uint8_t barFillBot = barTop + barClimbHeight + barSinkHeight - 1;
+  uint8_t fillTopLength = barMid - barFillTop + 1;
+  uint8_t fillBotLength = barFillBot - barMid + 1;
 
-    int16_t barFillPixels = 0; // height of pixels of bar's filled section
-    uint8_t barFillStart = 1;  // y-coordinate of start of fill
-    uint8_t barFillEnd = 1;    // y-coordinate of end of fill
+  int16_t barFillPixels = 0;  // height of pixels of bar's filled section
+  uint8_t barFillStart = 1;   // y-coordinate of start of fill
+  uint8_t barFillEnd = 1;     // y-coordinate of end of fill
 
-    // calculate start and end levels for filling in the Vario Bar
-      if (displayClimbRate > 2 * varioBarClimbRateMax ||
-          displayClimbRate < 2 * varioBarSinkRateMax) {
-        // do nothing, the bar is maxxed out which looks empty
+  // calculate start and end levels for filling in the Vario Bar
+  if (displayClimbRate > 2 * varioBarClimbRateMax || displayClimbRate < 2 * varioBarSinkRateMax) {
+    // do nothing, the bar is maxxed out which looks empty
 
-      } else if (displayClimbRate > varioBarClimbRateMax) {
-        // fill top half inverted (from climb value up to top of bar)
-        barFillPixels = fillTopLength * (displayClimbRate - varioBarClimbRateMax) /
-                              varioBarClimbRateMax;
-        barFillStart = barFillTop;
-        barFillEnd = barMid - barFillPixels;
+  } else if (displayClimbRate > varioBarClimbRateMax) {
+    // fill top half inverted (from climb value up to top of bar)
+    barFillPixels =
+        fillTopLength * (displayClimbRate - varioBarClimbRateMax) / varioBarClimbRateMax;
+    barFillStart = barFillTop;
+    barFillEnd = barMid - barFillPixels;
 
-      } else if (displayClimbRate < varioBarSinkRateMax) {
-        // fill bottom half inverted (from sink value down to bottom of bar)
-        barFillPixels = fillBotLength * (displayClimbRate - varioBarSinkRateMax) /
-                              varioBarSinkRateMax;
-        barFillStart = barMid + barFillPixels;
-        barFillEnd = barFillBot;
+  } else if (displayClimbRate < varioBarSinkRateMax) {
+    // fill bottom half inverted (from sink value down to bottom of bar)
+    barFillPixels = fillBotLength * (displayClimbRate - varioBarSinkRateMax) / varioBarSinkRateMax;
+    barFillStart = barMid + barFillPixels;
+    barFillEnd = barFillBot;
 
-      } else if (displayClimbRate < 0) {
-        // fill bottom half positive (from mid point down to sink value)
-        barFillPixels = fillBotLength * (displayClimbRate) / varioBarSinkRateMax;
-        barFillStart = barMid;
-        barFillEnd = barMid + barFillPixels;
+  } else if (displayClimbRate < 0) {
+    // fill bottom half positive (from mid point down to sink value)
+    barFillPixels = fillBotLength * (displayClimbRate) / varioBarSinkRateMax;
+    barFillStart = barMid;
+    barFillEnd = barMid + barFillPixels;
 
-      } else {
-        // fill top half positive (from mid pointup to climb value)
-        barFillPixels = fillTopLength * (displayClimbRate) / varioBarClimbRateMax;
-        barFillStart = barMid - barFillPixels;
-        barFillEnd = barMid;
-      }
+  } else {
+    // fill top half positive (from mid pointup to climb value)
+    barFillPixels = fillTopLength * (displayClimbRate) / varioBarClimbRateMax;
+    barFillStart = barMid - barFillPixels;
+    barFillEnd = barMid;
+  }
 
-    // Now actually draw the fill box  (x, y, width, height)
-      u8g2.drawBox(1, barFillStart, 
-                   barWidth - 2, barFillEnd - barFillStart + 1);
+  // Now actually draw the fill box  (x, y, width, height)
+  u8g2.drawBox(1, barFillStart, barWidth - 2, barFillEnd - barFillStart + 1);
 
   // Tick marks on varioBar
-    uint8_t tickSpacing = fillTopLength / 5;  // start with top half tick spacing
-    uint8_t line_y = barTop;
+  uint8_t tickSpacing = fillTopLength / 5;  // start with top half tick spacing
+  uint8_t line_y = barTop;
 
-    for (int i = 1; i <= 9; i++) {
-      if (i == 5) {
-        // at midpoint, switch to bottom half
-        line_y = barMid;
-        tickSpacing = fillBotLength / 5;
+  for (int i = 1; i <= 9; i++) {
+    if (i == 5) {
+      // at midpoint, switch to bottom half
+      line_y = barMid;
+      tickSpacing = fillBotLength / 5;
+    } else {
+      // draw a tick-mark line
+      line_y += tickSpacing;
+      if (line_y >= barFillStart && line_y <= barFillEnd) {
+        u8g2.setDrawColor(0);
       } else {
-        // draw a tick-mark line
-        line_y += tickSpacing;
-        if (line_y >= barFillStart && line_y <= barFillEnd) {
-          u8g2.setDrawColor(0);
-        } else {
-          u8g2.setDrawColor(1);
-        }
-        u8g2.drawLine(1, line_y, barWidth / 2 - 1, line_y);
+        u8g2.setDrawColor(1);
       }
+      u8g2.drawLine(1, line_y, barWidth / 2 - 1, line_y);
     }
+  }
 }
 
 void display_climbRatePointerBox(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t triSize) {
@@ -497,12 +492,11 @@ void display_climbRate(uint8_t x, uint8_t y, const uint8_t* font, int16_t displa
     */
   }
   // always set back to 1 if we've been using 0, just in case
-  u8g2.setDrawColor(1);  
-                         
+  u8g2.setDrawColor(1);
 }
 
 void display_unsignedClimbRate_short(uint8_t x, uint8_t y, int16_t displayClimbRate) {
-  u8g2.setCursor(x, y);  
+  u8g2.setCursor(x, y);
   u8g2.setDrawColor(0);
 
   float climbInMS = 0;
@@ -517,37 +511,36 @@ void display_unsignedClimbRate_short(uint8_t x, uint8_t y, int16_t displayClimbR
     displayClimbRate = displayClimbRate * 197 / 1000 * 10;
     if (displayClimbRate >= 1000) {  // print 4 digits, 2 large 2 small
       u8g2.setFont(leaf_8x14);
-      u8g2.print(displayClimbRate / 100);      
+      u8g2.print(displayClimbRate / 100);
       u8g2.setCursor(u8g2.getCursorX(), u8g2.getCursorY() - 2);
       u8g2.setFont(leaf_6x12);
       u8g2.print(displayClimbRate % 100);
     } else {  // print 3, 2, or 1 large digit(s)
       u8g2.setFont(leaf_8x14);
-      u8g2.setCursor(u8g2.getCursorX()+1, u8g2.getCursorY());
+      u8g2.setCursor(u8g2.getCursorX() + 1, u8g2.getCursorY());
       if (displayClimbRate < 100) u8g2.print(" ");
       if (displayClimbRate < 10) u8g2.print(" ");
       u8g2.print(displayClimbRate);
     }
-  // if in mps units
+    // if in mps units
   } else {
     // lose one decimal place and round off in the process
     displayClimbRate = (displayClimbRate + 5) / 10;
     // convert to float for ease of printing with the decimal in place
-    climbInMS = (float)displayClimbRate / 10;  
-    
+    climbInMS = (float)displayClimbRate / 10;
+
     u8g2.setFont(leaf_8x14);
-    if (climbInMS >= 10) { // print three large digits XX.X
+    if (climbInMS >= 10) {  // print three large digits XX.X
       u8g2.setFont(leaf_8x14);
-      u8g2.print(climbInMS, 1);  
-    } else { // print two giant digits X.X
+      u8g2.print(climbInMS, 1);
+    } else {  // print two giant digits X.X
       u8g2.setFont(leaf_10x17);
-      u8g2.setCursor(u8g2.getCursorX()+1, u8g2.getCursorY());
-      u8g2.print(climbInMS, 1);      
-    }    
+      u8g2.setCursor(u8g2.getCursorX() + 1, u8g2.getCursorY());
+      u8g2.print(climbInMS, 1);
+    }
   }
   // always set back to 1 if we've been using 0, just in case
-  u8g2.setDrawColor(1);  
-                         
+  u8g2.setDrawColor(1);
 }
 
 void display_altAboveLaunch(uint8_t x, uint8_t y, int32_t aboveLaunchAlt) {
@@ -661,7 +654,6 @@ void display_battIcon(uint8_t x, uint8_t y, bool vertical) {
   */
 }
 
-
 void display_batt_charging_fullscreen(uint8_t x, uint8_t y) {
   // size of battery
   uint8_t w = 60;   // 60;
@@ -750,14 +742,14 @@ void display_GPS_icon(uint8_t x, uint8_t y) {
     if (gpsFixInfo.fix) {
       u8g2.print((char)43);  // GPS icon with fix
     } else {
-      //blink the icon to convey "searching"
+      // blink the icon to convey "searching"
       if (blinkGPS) {
-        u8g2.print((char)42); // GPS icon without fix        
+        u8g2.print((char)42);  // GPS icon without fix
         blinkGPS = 0;
       } else {
-        u8g2.print((char)41); // GPS icon with fix
+        u8g2.print((char)41);  // GPS icon with fix
         blinkGPS = 1;
-      }      
+      }
       u8g2.setFont(leaf_5h);
       u8g2.setCursor(x + 4, y - 4);
 
@@ -770,7 +762,6 @@ void display_GPS_icon(uint8_t x, uint8_t y) {
     }
   }
 }
-
 
 // Wind Sock Center Pointer
 void display_windSockArrow(int16_t x, int16_t y, int16_t radius) {
@@ -810,29 +801,29 @@ void display_windSockArrow(int16_t x, int16_t y, int16_t radius) {
 
 // Wind Sock Ring Triangle
 void display_windSockRing(int16_t x, int16_t y, int16_t radius, int16_t size, bool showPointer) {
-  float point_angle = 0.65; // half angle of the arrow pointer
-  
+  float point_angle = 0.65;  // half angle of the arrow pointer
+
   WindEstimate windEstimate = getWindEstimate();
 
   // main circle
   u8g2.setDrawColor(1);
-  u8g2.drawDisc(x, y, radius);    
+  u8g2.drawDisc(x, y, radius);
 
   u8g2.setDrawColor(0);
 
   if (!windEstimate.validEstimate) {
     // just show generic wind icon if no wind estimate
     u8g2.setFont(wind_logo);
-    u8g2.setFontMode(1);    
-    u8g2.setCursor(x-10, y+11);
+    u8g2.setFontMode(1);
+    u8g2.setCursor(x - 10, y + 11);
     u8g2.print('(');
     u8g2.setFontMode(0);
   } else {
     // wind pointer inside
     float windDisplayAngle = windEstimate.windDirectionFrom - gps.course.deg() * DEG_TO_RAD;
 
-    uint16_t tip_x = + sin(windDisplayAngle) * (radius - size + 2) + 1 + x;
-    uint16_t tip_y = - cos(windDisplayAngle) * (radius - size + 2) + 1 + y;
+    uint16_t tip_x = +sin(windDisplayAngle) * (radius - size + 2) + 1 + x;
+    uint16_t tip_y = -cos(windDisplayAngle) * (radius - size + 2) + 1 + y;
 
     uint16_t tail_1_x = tip_x + sin(windDisplayAngle + point_angle) * size;
     uint16_t tail_1_y = tip_y - cos(windDisplayAngle + point_angle) * size;
@@ -848,61 +839,61 @@ void display_windSockRing(int16_t x, int16_t y, int16_t radius, int16_t size, bo
     uint8_t speed_radius = size / 2;
     uint8_t speed_x = x - sin(windDisplayAngle) * speed_radius;
     uint8_t speed_y = y + cos(windDisplayAngle) * speed_radius;
-    display_windSpeedCentered(speed_x-6, speed_y+7, leaf_6x12);
+    display_windSpeedCentered(speed_x - 6, speed_y + 7, leaf_6x12);
     u8g2.setDrawColor(1);
 
     u8g2.drawCircle(x, y, radius);
   }
-  
+
   // Heading pointer
-    if (showPointer) {
-      u8g2.setDrawColor(1);
-      u8g2.drawTriangle(x, y - radius - size, x + size - 2, y - radius - 1, x - size + 2, y - radius - 1);
-    }
-  
-  // compass major directions
-    uint8_t compassRadius = radius + 6;
-    float displayCourse = -1 * gps.course.deg() * DEG_TO_RAD;
-    uint8_t compassN_x = x + 0.5f + sin(displayCourse) * compassRadius;
-    uint8_t compassN_y = y + 0.5f - cos(displayCourse) * compassRadius;
-    uint8_t compassE_x = x + 0.5f + sin(displayCourse + PI / 2) * compassRadius;
-    uint8_t compassE_y = y + 0.5f - cos(displayCourse + PI / 2) * compassRadius;
-    uint8_t compassS_x = x + 0.5f + sin(displayCourse + PI) * compassRadius;
-    uint8_t compassS_y = y + 0.5f - cos(displayCourse + PI) * compassRadius;
-    uint8_t compassW_x = x + 0.5f + sin(displayCourse + 3 * PI / 2) * compassRadius;
-    uint8_t compassW_y = y + 0.5f - cos(displayCourse + 3 * PI / 2) * compassRadius;
-
-    uint8_t fontOffsetH = 2;
-    uint8_t fontOffsetV = 4;
-
-    //cutoff top most value if near the pointer arrow (if there is a pointer arrow)
-      uint8_t cutoff_y = y - compassRadius + 1;
-
-      u8g2.setFont(leaf_compass);
-      u8g2.setDrawColor(2);
-      u8g2.setFontMode(1);
-      if (!showPointer || compassN_y > cutoff_y) {
-        u8g2.setCursor(compassN_x - fontOffsetH, compassN_y + fontOffsetV);
-        u8g2.print("N");
-      }
-      if (!showPointer || compassE_y > cutoff_y) {
-      u8g2.setCursor(compassE_x - fontOffsetH, compassE_y + fontOffsetV);
-      u8g2.print("E");
-      }
-      if (!showPointer || compassS_y > cutoff_y) {
-        u8g2.setCursor(compassS_x - fontOffsetH, compassS_y + fontOffsetV);
-        u8g2.print("S");
-      }
-      if (!showPointer || compassW_y > cutoff_y) {
-        u8g2.setCursor(compassW_x - fontOffsetH, compassW_y + fontOffsetV);
-        u8g2.print("W");
-      }
-    u8g2.setFontMode(0);
+  if (showPointer) {
     u8g2.setDrawColor(1);
-  
+    u8g2.drawTriangle(
+        x, y - radius - size, x + size - 2, y - radius - 1, x - size + 2, y - radius - 1);
+  }
+
+  // compass major directions
+  uint8_t compassRadius = radius + 6;
+  float displayCourse = -1 * gps.course.deg() * DEG_TO_RAD;
+  uint8_t compassN_x = x + 0.5f + sin(displayCourse) * compassRadius;
+  uint8_t compassN_y = y + 0.5f - cos(displayCourse) * compassRadius;
+  uint8_t compassE_x = x + 0.5f + sin(displayCourse + PI / 2) * compassRadius;
+  uint8_t compassE_y = y + 0.5f - cos(displayCourse + PI / 2) * compassRadius;
+  uint8_t compassS_x = x + 0.5f + sin(displayCourse + PI) * compassRadius;
+  uint8_t compassS_y = y + 0.5f - cos(displayCourse + PI) * compassRadius;
+  uint8_t compassW_x = x + 0.5f + sin(displayCourse + 3 * PI / 2) * compassRadius;
+  uint8_t compassW_y = y + 0.5f - cos(displayCourse + 3 * PI / 2) * compassRadius;
+
+  uint8_t fontOffsetH = 2;
+  uint8_t fontOffsetV = 4;
+
+  // cutoff top most value if near the pointer arrow (if there is a pointer arrow)
+  uint8_t cutoff_y = y - compassRadius + 1;
+
+  u8g2.setFont(leaf_compass);
+  u8g2.setDrawColor(2);
+  u8g2.setFontMode(1);
+  if (!showPointer || compassN_y > cutoff_y) {
+    u8g2.setCursor(compassN_x - fontOffsetH, compassN_y + fontOffsetV);
+    u8g2.print("N");
+  }
+  if (!showPointer || compassE_y > cutoff_y) {
+    u8g2.setCursor(compassE_x - fontOffsetH, compassE_y + fontOffsetV);
+    u8g2.print("E");
+  }
+  if (!showPointer || compassS_y > cutoff_y) {
+    u8g2.setCursor(compassS_x - fontOffsetH, compassS_y + fontOffsetV);
+    u8g2.print("S");
+  }
+  if (!showPointer || compassW_y > cutoff_y) {
+    u8g2.setCursor(compassW_x - fontOffsetH, compassW_y + fontOffsetV);
+    u8g2.print("W");
+  }
+  u8g2.setFontMode(0);
+  u8g2.setDrawColor(1);
 }
 
-void display_windSpeedCentered(uint8_t x, uint8_t y, const uint8_t *font) {
+void display_windSpeedCentered(uint8_t x, uint8_t y, const uint8_t* font) {
   const float MPS2MPH = 2.23694f;
   const float MPS2KPH = 3.6f;
 
@@ -919,7 +910,7 @@ void display_windSpeedCentered(uint8_t x, uint8_t y, const uint8_t *font) {
     }
 
     uint8_t displayWindSpeed = (uint8_t)(windSpeed + 0.5);  // round to nearest whole number
-    if (displayWindSpeed > 99) displayWindSpeed = 99;        // cap at 99
+    if (displayWindSpeed > 99) displayWindSpeed = 99;       // cap at 99
 
     if (displayWindSpeed < 10) x += 4;  // center if single digit
     u8g2.setCursor(x, y);
@@ -927,39 +918,42 @@ void display_windSpeedCentered(uint8_t x, uint8_t y, const uint8_t *font) {
 
   } else {
     u8g2.setCursor(x, y);
-    u8g2.print("--");    
+    u8g2.print("--");
   }
 }
 
-void displayWaypointDropletPointer(uint8_t centerX, uint8_t centerY, uint8_t pointRadius, float direction) {
+void displayWaypointDropletPointer(uint8_t centerX,
+                                   uint8_t centerY,
+                                   uint8_t pointRadius,
+                                   float direction) {
   uint8_t dropRadius = 6;
   uint8_t dropLength = 9;
 
   float dropCenterX = centerX + sin(direction) * (pointRadius - dropLength);
-  float dropCenterY = centerY - cos(direction) * ( pointRadius - dropLength);
+  float dropCenterY = centerY - cos(direction) * (pointRadius - dropLength);
   uint8_t dropTipX = centerX + sin(direction) * pointRadius;
   uint8_t dropTipY = centerY - cos(direction) * pointRadius;
 
-  float dropShoulderAngle = acos((float)dropRadius/dropLength);
+  float dropShoulderAngle = acos((float)dropRadius / dropLength);
   uint8_t dropShoulder1X = dropCenterX + sin(direction - dropShoulderAngle) * dropRadius;
   uint8_t dropShoulder1Y = dropCenterY - cos(direction - dropShoulderAngle) * dropRadius;
   uint8_t dropShoulder2X = dropCenterX + sin(direction + dropShoulderAngle) * dropRadius;
   uint8_t dropShoulder2Y = dropCenterY - cos(direction + dropShoulderAngle) * dropRadius;
 
   u8g2.drawDisc((uint8_t)dropCenterX, (uint8_t)dropCenterY, dropRadius);
-  u8g2.drawTriangle(dropTipX, dropTipY, dropShoulder1X, dropShoulder1Y, dropShoulder2X, dropShoulder2Y);
+  u8g2.drawTriangle(
+      dropTipX, dropTipY, dropShoulder1X, dropShoulder1Y, dropShoulder2X, dropShoulder2Y);
   u8g2.drawLine(dropShoulder1X, dropShoulder1Y, dropTipX, dropTipY);
   u8g2.drawLine(dropShoulder2X, dropShoulder2Y, dropTipX, dropTipY);
 
   // marker icon
   u8g2.setDrawColor(0);
-  u8g2.drawDisc((uint8_t)dropCenterX, (uint8_t)dropCenterY, dropRadius-2);
+  u8g2.drawDisc((uint8_t)dropCenterX, (uint8_t)dropCenterY, dropRadius - 2);
   u8g2.setDrawColor(1);
   u8g2.setFont(leaf_5h);
-  u8g2.setCursor((uint8_t)dropCenterX-2, (uint8_t)dropCenterY+3);
-  //u8g2.print("&");
+  u8g2.setCursor((uint8_t)dropCenterX - 2, (uint8_t)dropCenterY + 3);
+  // u8g2.print("&");
 }
-
 
 // Menu Title Bar
 void display_menuTitle(String title) {
@@ -969,10 +963,14 @@ void display_menuTitle(String title) {
   u8g2.print(title);
   uint8_t xPos = u8g2.getCursorX();
 
+  // top "folder tab" outline
   u8g2.drawHLine(0, 15, 96);
-  u8g2.drawLine(2,15,5,0);
-  u8g2.drawHLine(5,0,xPos - 2);
-  u8g2.drawLine(xPos + 3, 0, xPos+6, 15);
+  u8g2.drawLine(2, 15, 5, 0);
+  u8g2.drawHLine(5, 0, xPos - 2);
+  u8g2.drawLine(xPos + 3, 0, xPos + 6, 15);
+
+  // bottom footer outline
+  u8g2.drawHLine(0, 174, 96);
 }
 
 // END OF COMPONENT DISPLAY FUNCTIONS //
@@ -983,60 +981,60 @@ void display_menuTitle(String title) {
 // Header and Footer Items to show on ALL pages
 void display_headerAndFooter(bool timerSelected, bool showTurnArrows) {
   // Header--------------------------------
-    // clock time
-      u8g2.setFont(leaf_6x10);
-      display_clockTime(0, 10, false);
+  // clock time
+  u8g2.setFont(leaf_6x10);
+  display_clockTime(0, 10, false);
 
-    // Track/Heading top center    
-      uint8_t heading_y = 10;
-      uint8_t heading_x = 37;
-      u8g2.setFont(leaf_7x10);
-      if (showTurnArrows) {        
-        display_headingTurn(heading_x, heading_y);
-      } else {
-        display_heading(heading_x + 8, heading_y, true);
-      }
+  // Track/Heading top center
+  uint8_t heading_y = 10;
+  uint8_t heading_x = 37;
+  u8g2.setFont(leaf_7x10);
+  if (showTurnArrows) {
+    display_headingTurn(heading_x, heading_y);
+  } else {
+    display_heading(heading_x + 8, heading_y, true);
+  }
 
-    // Speed in upper right corner
-      u8g2.setFont(leaf_8x14);
-      display_speed(78, 14);
-      u8g2.setFont(leaf_5h);
-      u8g2.setCursor(82, 21);
-      if (display_getPage() == page_nav) {
-        u8g2.setDrawColor(0); // draw white on black for nav page
-      }
-      if (UNITS_speed)
-        u8g2.print("MPH");
-      else
-        u8g2.print("KPH");
+  // Speed in upper right corner
+  u8g2.setFont(leaf_8x14);
+  display_speed(78, 14);
+  u8g2.setFont(leaf_5h);
+  u8g2.setCursor(82, 21);
+  if (display_getPage() == page_nav) {
+    u8g2.setDrawColor(0);  // draw white on black for nav page
+  }
+  if (UNITS_speed)
+    u8g2.print("MPH");
+  else
+    u8g2.print("KPH");
 
-      u8g2.setDrawColor(1);
+  u8g2.setDrawColor(1);
 
   // FOOTER_________________________
-    // battery
-    display_battIcon(0, 192, true);
+  // battery
+  display_battIcon(0, 192, true);
 
-    // SD Card Present
-    char SDicon = 60;
-    if (!SDcard_present()) SDicon = 61;
-    u8g2.setCursor(10, 192);
-    u8g2.setFont(leaf_icons);
-    u8g2.print((char)SDicon);
+  // SD Card Present
+  char SDicon = 60;
+  if (!SDcard_present()) SDicon = 61;
+  u8g2.setCursor(10, 192);
+  u8g2.setFont(leaf_icons);
+  u8g2.print((char)SDicon);
 
-    // GPS status icon
-    display_GPS_icon(23, 192);
+  // GPS status icon
+  display_GPS_icon(23, 192);
 
-    // Vario Beep Volume icon
-    u8g2.setCursor(37, 191);
-    u8g2.setFont(leaf_icons);
-    if (QUIET_MODE && !flightTimer_isRunning() && VOLUME_VARIO != 0) {      
-      u8g2.print((char)('I' + 4));
-    } else {
-      u8g2.print((char)('I' + VOLUME_VARIO));
-    }
+  // Vario Beep Volume icon
+  u8g2.setCursor(37, 191);
+  u8g2.setFont(leaf_icons);
+  if (QUIET_MODE && !flightTimer_isRunning() && VOLUME_VARIO != 0) {
+    u8g2.print((char)('I' + 4));
+  } else {
+    u8g2.print((char)('I' + VOLUME_VARIO));
+  }
 
-    // Timer in lower right corner
-    display_flightTimer(52, 192, 0, timerSelected);
+  // Timer in lower right corner
+  display_flightTimer(52, 192, 0, timerSelected);
 }
 
 void display_splashLogo() {

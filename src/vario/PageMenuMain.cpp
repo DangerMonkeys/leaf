@@ -4,6 +4,7 @@
 
 #include "buttons.h"
 #include "display.h"
+#include "displayFields.h"
 #include "fonts.h"
 #include "pages.h"
 #include "settings.h"
@@ -80,12 +81,8 @@ void MainMenuPage::draw() {
 void MainMenuPage::draw_main_menu() {
   u8g2.firstPage();
   do {
-    // Title(s)
-    u8g2.setFont(leaf_6x12);
-    u8g2.setCursor(2, 12);
-    u8g2.setDrawColor(1);
-    u8g2.print("MAIN MENU");
-    u8g2.drawHLine(0, 15, 64);
+    // Title
+    display_menuTitle("MAIN MENU");
 
     // Menu Items
     uint8_t start_y = 29;

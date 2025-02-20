@@ -6,6 +6,7 @@
 #include "PageMenuSystemWifi.h"
 #include "buttons.h"
 #include "display.h"
+#include "displayFields.h"
 #include "fonts.h"
 #include "pages.h"
 #include "power.h"
@@ -35,12 +36,8 @@ void SystemMenuPage::draw() {
 
   u8g2.firstPage();
   do {
-    // Title(s)
-    u8g2.setFont(leaf_6x12);
-    u8g2.setCursor(2, 12);
-    u8g2.setDrawColor(1);
-    u8g2.print("SYSTEM");
-    u8g2.drawHLine(0, 15, 95);
+    // Title
+    display_menuTitle("SYSTEM");
 
     // Menu Items
     uint8_t start_y = 29;

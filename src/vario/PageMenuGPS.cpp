@@ -4,6 +4,7 @@
 
 #include "buttons.h"
 #include "display.h"
+#include "displayFields.h"
 #include "fonts.h"
 #include "gps.h"
 #include "pages.h"
@@ -17,12 +18,8 @@ enum gps_menu_items { cursor_gps_back, cursor_gps_update };
 void GPSMenuPage::draw() {
   u8g2.firstPage();
   do {
-    // Title(s)
-    u8g2.setFont(leaf_6x12);
-    u8g2.setCursor(2, 12);
-    u8g2.setDrawColor(1);
-    u8g2.print("GPS");
-    u8g2.drawHLine(0, 15, 64);
+    // Title
+    display_menuTitle("GPS");
 
     // GPS constellation and lat/long
     drawConstellation(3, 22, 75);

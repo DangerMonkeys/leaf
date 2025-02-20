@@ -10,7 +10,7 @@ class LogMenuPage : public SettingsMenuPage {
  public:
   LogMenuPage() {
     cursor_position = 0;
-    cursor_max = 5;
+    cursor_max = 4;
   }
   void draw();
 
@@ -19,7 +19,7 @@ class LogMenuPage : public SettingsMenuPage {
 
  private:
   static constexpr char* labels[8] =
-      {"Back", "Format", "SaveLog", "AutoStart", "AutoStop", "Timer"};
+      {"Back", "Format", "SaveLog", "AutoStart", "AutoStop"};
 };
 
 #endif
