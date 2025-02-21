@@ -71,6 +71,7 @@ def visualize(ti: NDArray[np.float32], yi: NDArray[np.float32], fit_times: NDArr
     # Calculate fit and extrapolation for every time point
     rawfit_t = ti[2:]
     rawfit_y = np.zeros(rawfit_t.shape, dtype=float)
+    rawfit_v = np.zeros(rawfit_t.shape, dtype=float)
     for i in range(ti.size - 2):
         rawfit_ti = ti[0:i+3]
         rawfit_yi = yi[0:i+3]
@@ -79,7 +80,12 @@ def visualize(ti: NDArray[np.float32], yi: NDArray[np.float32], fit_times: NDArr
         rawfit_yi = rawfit_yi[mask]
         a, b, c = quadratic_regression(rawfit_ti, rawfit_yi)
         rawfit_y[i] = a * rawfit_t[i] * rawfit_t[i] + b * rawfit_t[i] + c
+        rawfit_v[i] = 2 * a * rawfit_t[i] + b
     scatter_rawfit = axs.plot(rawfit_t, rawfit_y, color='blue')
+    ax2 = axs.twinx()
+    ax2.plot(rawfit_t, rawfit_v, color='green', linewidth=1)
+    ax2.set_ylabel('Vertical speed (mBar/s)', color='green')
+    ax2.tick_params(axis='y', labelcolor='green')
 
     # Sliding fit visualizations
     scatter_fit = axs.scatter(ti, yi, s=4, color='r')
