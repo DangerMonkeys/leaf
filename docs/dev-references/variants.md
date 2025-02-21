@@ -18,3 +18,7 @@ build_flags =
     -Isrc/variants/leaf_3_2_2
     -D VARIANT
 ```
+
+## Configuration Flags Available:
+
+Please see (https://github.com/DangerMonkeys/leaf/blob/main/src/vario/configuration.h)[src/vario/configuration.h"] for all available configurations.

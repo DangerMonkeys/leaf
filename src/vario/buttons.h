@@ -1,22 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
-
-// Pinout for Leaf V3.2.0
-#define BUTTON_PIN_CENTER 2  // INPUT
-#define BUTTON_PIN_LEFT 3    // INPUT
-#define BUTTON_PIN_DOWN 4    // INPUT
-#define BUTTON_PIN_UP 5      // INPUT
-#define BUTTON_PIN_RIGHT 6   // INPUT
-
-/*
-//Pinout for Breadboard
-#define BUTTON_PIN_UP     40
-#define BUTTON_PIN_DOWN   38
-#define BUTTON_PIN_LEFT   39
-#define BUTTON_PIN_RIGHT  42
-#define BUTTON_PIN_CENTER 41
-*/
+#include "configuration.h"
 
 // D pad button states.
 // NOTE:  Left is -1 as to make casting to an int for settings easier
@@ -34,4 +19,4 @@ uint16_t buttons_get_hold_count(void);
 Button buttons_update(void);  // the main task of checking and handling button pushes
 
 // lock the buttons after a center-hold event until user next releases the center button
-void buttons_lockAfterHold(void);  
+void buttons_lockAfterHold(void);

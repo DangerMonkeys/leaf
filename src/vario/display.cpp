@@ -43,7 +43,7 @@ U8G2_ST75256_JLX19296_F_4W_HW_SPI u8g2(U8G2_R1,
                                        /* dc=*/LCD_RS,
                                        /* reset=*/LCD_RESET);
 #else  // otherwise use the old hardware settings from v3.2.2:
-U8G2_ST75256_WO256X128_F_4W_HW_SPI u8g2(U8G2_R1,
+U8G2_ST75256_WO256X128_F_4W_HW_SPI u8g2(U8G2_R3,
                                         /* cs=*/SPI_SS_LCD,
                                         /* dc=*/LCD_RS,
                                         /* reset=*/LCD_RESET);
