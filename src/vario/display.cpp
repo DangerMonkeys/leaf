@@ -37,18 +37,16 @@ char hours = 0;
 uint16_t heading = 0;
 char string_heading[] = " WNW ";
 
-
-
-#ifndef V322  // if not old hardare, use the latest:
-  U8G2_ST75256_JLX19296_F_4W_HW_SPI u8g2(U8G2_R1,
+#ifndef WO256X128  // if not old hardare, use the latest:
+U8G2_ST75256_JLX19296_F_4W_HW_SPI u8g2(U8G2_R1,
                                        /* cs=*/SPI_SS_LCD,
                                        /* dc=*/LCD_RS,
                                        /* reset=*/LCD_RESET);
-#else // otherwise use the old hardware settings from v3.2.2:
-  U8G2_ST75256_WO256X128_F_4W_HW_SPI u8g2(U8G2_R3,
-                                       /* cs=*/SPI_SS_LCD,
-                                       /* dc=*/LCD_RS,
-                                       /* reset=*/LCD_RESET);
+#else  // otherwise use the old hardware settings from v3.2.2:
+U8G2_ST75256_WO256X128_F_4W_HW_SPI u8g2(U8G2_R1,
+                                        /* cs=*/SPI_SS_LCD,
+                                        /* dc=*/LCD_RS,
+                                        /* reset=*/LCD_RESET);
 #endif
 
 int8_t display_page = page_thermalSimple;
@@ -71,14 +69,13 @@ void display_init(void) {
 }
 
 void display_setContrast(uint8_t contrast) {
-  
-  #ifndef V322  // if not using older hardware, use the latest hardware contrast setting:    
-    // user can select levels of contrast from 0-20; but display needs values of 115-135.
-    u8g2.setContrast(contrast + 115);  
-  #else
-    // user can select levels of contrast from 0-20; but display needs values of 182-220.
-    u8g2.setContrast(180 + 2*contrast);
-  #endif
+#ifndef WO256X128  // if not using older hardware, use the latest hardware contrast setting:
+  // user can select levels of contrast from 0-20; but display needs values of 115-135.
+  u8g2.setContrast(contrast + 115);
+#else
+  // user can select levels of contrast from 0-20; but display needs values of 182-220.
+  u8g2.setContrast(180 + 2 * contrast);
+#endif
 }
 
 void display_turnPage(uint8_t action) {
