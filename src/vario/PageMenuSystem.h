@@ -24,7 +24,7 @@ class SystemMenuPage : public SettingsMenuPage {
                                        "Volume",
                                        "Auto-Off",
                                        "ShowWarning",
-                                       "EcoMode",
+                                       "Fanet",
                                        "Wifi",
                                        "BT",
                                        "About",

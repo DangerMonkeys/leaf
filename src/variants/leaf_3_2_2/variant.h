@@ -16,3 +16,6 @@
 #define BUTTON_PIN_RIGHT 3
 #define BUTTON_PIN_UP 4
 #define BUTTON_PIN_DOWN 5
+
+// This breadboard variant is intended to be used with a LoRa radio
+#define FANET

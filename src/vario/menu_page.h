@@ -47,10 +47,10 @@ class MenuPage {
   void cursor_next();
 
   // Pushes a new modal page onto the stack to receive draw events
-  void push_page(MenuPage* page);
+  static void push_page(MenuPage* page);
 
   // Pops the current modal page off the stack
-  void pop_page();
+  static void pop_page();
 
   // Called when a modal page is shown
   virtual void shown() {};

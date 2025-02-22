@@ -40,5 +40,8 @@
         "editor.defaultFormatter": "ms-vscode.cpptools"
     },
     "C_Cpp.clang_format_style": "file",
-    "C_Cpp.clang_format_fallbackStyle": "none"
+    "C_Cpp.clang_format_fallbackStyle": "none",
+    "cSpell.words": [
+        "Fanet"
+    ]
 }
