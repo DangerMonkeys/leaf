@@ -29,7 +29,7 @@ void PageListSelect::setting_change(Button dir, ButtonState state, uint8_t count
 
   // Handle the selected item
   // Perform the callback
-  callback(selected);
+  callback(cursor_position);
 
   // Close the selection page
   pop_page();

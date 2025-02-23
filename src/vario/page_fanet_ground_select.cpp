@@ -8,6 +8,7 @@ void PageFanetGroundSelect::show() {
 void PageFanetGroundSelect::setting_change(Button dir, ButtonState state, uint8_t count) {
   // Call the parent method
   SimpleSettingsMenuPage::setting_change(dir, state, count);
+  if (cursor_position == CURSOR_BACK) return;
 
   if (state != ButtonState::RELEASED) {
     return;

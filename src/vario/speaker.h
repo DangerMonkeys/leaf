@@ -2,6 +2,7 @@
 #define speaker_h
 
 #include <Arduino.h>
+#include "configuration.h"
 
 // for fixed sample-length timer (approach #1)
 #define SPEAKER_SAMPLE_LENGTH 40  // ms per sound 'sample' (i.e. like the length of a quarter note)
@@ -10,11 +11,6 @@
 // for time-adjusted timer (approach #2)
 #define FX_NOTE_LENGTH 500
 #define SPEAKER_TIMER_FREQ 1000  // Hz
-
-// Pinout for Leaf V3.2.2      // V3.2.0
-#define SPEAKER_PIN 14   // 7
-#define SPEAKER_VOLA 15  // 8
-#define SPEAKER_VOLB 16  // 9
 
 /*
 // Pinout for Breakboard

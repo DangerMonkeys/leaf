@@ -9,7 +9,7 @@ class PageFanet : public SimpleSettingsMenuPage {
   const char* get_title() const override { return "Fanet"; }
   static void show() { push_page(&getInstance()); }
   etl::array_view<const char*> get_labels() const override {
-    static etl::array labels{"Ground", "Region"};
+    static etl::array labels{"Ground", "Region", "Stats", "Neighbors"};
     return etl::array_view<const char*>(labels);
   }
 

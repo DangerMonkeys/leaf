@@ -19,3 +19,8 @@
 
 // This breadboard variant is intended to be used with a LoRa radio
 #define FANET
+#define LORA_SX1262
+#define SX1262_NSS 0     // SPI Chip Select Pin
+#define SX1262_DIO1 46   // DIO1 pin
+#define SX1262_RESET 39  // Busy pin
+#define SX1262_BUSY 7    // Busy pin

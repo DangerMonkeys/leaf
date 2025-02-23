@@ -6,6 +6,7 @@
 #include "SDcard.h"
 #include "baro.h"
 #include "display.h"
+#include "fanet_radio.h"
 #include "fonts.h"
 #include "gps.h"
 #include "gpx.h"
@@ -765,6 +766,30 @@ void display_GPS_icon(uint8_t x, uint8_t y) {
   }
 }
 
+void display_fanet_icon(const uint8_t& x, const uint8_t& y) {
+#ifndef FANET
+  return;
+#endif
+
+  u8g2.setDrawColor(1);
+  u8g2.setFont(leaf_icons);
+  u8g2.setCursor(x, y);
+
+  switch (FanetRadio::getState()) {
+    case FanetRadioState::UNINITIALIZED:
+      u8g2.print(char(0x55));  // Bar icon
+      break;
+    case FanetRadioState::RUNNING: {
+      auto offset = (millis() / 500) % 4;  // Broadcast animation
+      u8g2.print(char(0x56 + offset));
+      break;
+    }
+    default:
+      u8g2.print(char(0x60));  // Radio error icon
+      break;
+  }
+}
+
 // Wind Sock Center Pointer
 void display_windSockArrow(int16_t x, int16_t y, int16_t radius) {
   WindEstimate windEstimate = getWindEstimate();
@@ -984,25 +1009,24 @@ void display_menuTitle(String title) {
 void display_headerAndFooter(bool timerSelected, bool showTurnArrows) {
   // Header--------------------------------
   // clock time
-    u8g2.setFont(leaf_6x10);
-    display_clockTime(0, 10, false);
-
+  u8g2.setFont(leaf_6x10);
+  display_clockTime(0, 10, false);
 
   // Track/Heading top center
-    uint8_t heading_y = 10;
-    uint8_t heading_x = 37;
-    u8g2.setFont(leaf_7x10);
-    if (showTurnArrows) {
-      display_headingTurn(heading_x, heading_y);
-    } else {
-      display_heading(heading_x + 8, heading_y, true);
-    }
+  uint8_t heading_y = 10;
+  uint8_t heading_x = 37;
+  u8g2.setFont(leaf_7x10);
+  if (showTurnArrows) {
+    display_headingTurn(heading_x, heading_y);
+  } else {
+    display_heading(heading_x + 8, heading_y, true);
+  }
 
   // If don't have a fix, show GPS searching icon; otherwise show speed
   if (!gpsFixInfo.fix) {
     display_GPS_icon(84, 12);
   } else {
-  // Speed in upper right corner
+    // Speed in upper right corner
     u8g2.setFont(leaf_8x14);
     display_speed(78, 14);
     u8g2.setFont(leaf_5h);
@@ -1028,6 +1052,9 @@ void display_headerAndFooter(bool timerSelected, bool showTurnArrows) {
   u8g2.setCursor(10, 192);
   u8g2.setFont(leaf_icons);
   u8g2.print((char)SDicon);
+
+  // Show LORA Icon
+  display_fanet_icon(23, 192);
 
   // Vario Beep Volume icon
   u8g2.setCursor(37, 191);

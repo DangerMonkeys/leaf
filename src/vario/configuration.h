@@ -1,5 +1,8 @@
 #pragma once
 
+// Pins that are not connected
+#define NC -1
+
 // First try to load up any config from variants
 #ifdef VARIANT
 #include "variant.h"
@@ -36,4 +39,36 @@
 
 #ifndef BUTTON_PIN_RIGHT
 #define BUTTON_PIN_RIGHT 6  // INPUT
+#endif
+
+// ***** LoRa Configuration *****
+// To flag support for FANET / LoRa.
+// #define FANET
+
+// If a SX1262 Radio is installed.
+// #define LORA_SX1262
+
+// For chip select pin
+// #define SX1262_NSS
+
+// For DIO1 pin (used to trigger interrupt on RX)
+// #define SX1262_DIO1
+
+// IO pin for resetting the module
+// #define SX1262_RESET
+
+// IO Pin if we're busy.
+// #define SX1262_BUSY
+
+// **** Speaker *****
+#ifndef SPEAKER_PIN
+#define SPEAKER_PIN 14  // 7
+#endif
+
+#ifndef SPEAKER_VOLA
+#define SPEAKER_VOLA 15  // 8
+#endif
+
+#ifndef SPEAKER_VOLB
+#define SPEAKER_VOLB 16  // 9
 #endif

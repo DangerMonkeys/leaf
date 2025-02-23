@@ -17,10 +17,14 @@
 #include "tempRH.h"
 #include "wind_estimate/wind_estimate.h"
 
-  #ifdef DEBUG_WIFI
-    #include <WiFi.h>
-    #include "DebugWebserver.h"
-  #endif
+#ifdef DEBUG_WIFI
+#include <WiFi.h>
+#include "DebugWebserver.h"
+#endif
+
+// Bit of a hack for now as we don't have a good way to pass big chunks
+// of data around, so, we do it on the stack.  Default is 8KB
+SET_LOOP_TASK_STACK_SIZE(16 * 1024);  // 16KB
 
 #define DEBUG_MAIN_LOOP false
 
@@ -30,14 +34,14 @@
 #define AVAIL_GPIO_39 39  // unused, broken out to header
 
 // Main system event/task timer
-hw_timer_t *task_timer = NULL;
+hw_timer_t* task_timer = NULL;
 #define TASK_TIMER_FREQ 1000  // run at 1000Hz
 #define TASK_TIMER_LENGTH 10  // trigger the ISR every 10ms
 void onTaskTimer(void);
 
 // Standby system timer (when on USB power and charging battery, but otherwise "off" (i.e., soft
 // off))
-hw_timer_t *charge_timer = NULL;
+hw_timer_t* charge_timer = NULL;
 #define CHARGE_TIMER_FREQ 1000   // run at 1000Hz
 #define CHARGE_TIMER_LENGTH 500  // trigger the ISR every 500ms
 void onChargeTimer(void);
@@ -78,23 +82,25 @@ uint8_t display_do_tracker = 1;
 //             SETUP              ///////////////
 /////////////////////////////////////////////////
 void setup() {
-
   // Start USB Serial Debugging Port
   Serial.begin(115200);
   delay(200);
   Serial.println("Starting Setup");
 
-    #ifdef DEBUG_WIFI
-      // Start WiFi
-      WiFi.begin();
-      WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
-        Serial.println("WiFi Event " + WiFi.localIP().toString() + ": " + event);
-      });
-    #endif
-    #ifdef DEBUG_WIFI
-      // Start WebServer
-      webserver_setup();
-    #endif
+#ifdef DEBUG_WIFI
+  // Start WiFi
+  WiFi.begin();
+  WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
+    Serial.println("WiFi Event " + WiFi.localIP().toString() + ": " + event);
+  });
+#endif
+#ifdef DEBUG_WIFI
+  // Start WebServer
+  webserver_setup();
+#endif
+
+  // Adjust the priority of this (the loop event)'s FreeRTOS priority
+  vTaskPrioritySet(NULL, 10);
 
   // turn on and handle all device initialization
   power_bootUp();
@@ -166,11 +172,10 @@ the pushbuttons, the GPS 1PPS signal, and perhaps others.
 // before reading
 
 void loop() {
+#ifdef DEBUG_WIFI
+  webserver_loop();
+#endif
 
-  #ifdef DEBUG_WIFI
-    webserver_loop();
-  #endif
-  
   if (power.onState == POWER_ON)
     main_ON_loop();
   else if (power.onState == POWER_OFF_USB)
@@ -201,13 +206,13 @@ void main_CHARGE_loop() {
     // Check SD Card State and remount if card was inserted
     SDcard_update();
 
-    // update battery level and charge state 
+    // update battery level and charge state
     power_readBatteryState();
 
     // Check Buttons
     auto buttonPushed =
         buttons_update();  // check Button for any presses (user can turn ON from charging state)
- 
+
     // Prep to end this cycle and sleep
     chargeman_doTasks = 0;  // done with tasks this timer cycle
     if (buttonPushed == Button::NONE)
@@ -312,7 +317,7 @@ void setTasks(void) {
       // taskman_baro = 0;  // begin updating baro every 50ms on the 0th and 5th blocks
       break;
     case 1:
-      // taskman_baro = 1;        
+      // taskman_baro = 1;
       break;
     case 2:
       // taskman_baro = 2;

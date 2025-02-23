@@ -3,10 +3,10 @@
 #include <Arduino.h>
 
 #include "Leaf_SPI.h"
-#include "settings.h"
 #include "log.h"
+#include "settings.h"
 
-// use this to switch between method 1 (fixed sample length approach) 
+// use this to switch between method 1 (fixed sample length approach)
 // and method 2 (adjustable timer length)
 #define FIXED_SAMPLE_APPROACH true
 
@@ -94,8 +94,8 @@ void speaker_init(void) {
   ledcAttach(SPEAKER_PIN, 1000, 10);
 
   // set Volume to proper default setting
-  pinMode(SPEAKER_VOLA, OUTPUT);
-  pinMode(SPEAKER_VOLB, OUTPUT);
+  if (SPEAKER_VOLA != NC) pinMode(SPEAKER_VOLA, OUTPUT);
+  if (SPEAKER_VOLB != NC) pinMode(SPEAKER_VOLB, OUTPUT);
   // speaker_setVolume(VOLUME);      // use saved user prefs
 
   speaker_setDefaultVolume();
@@ -129,7 +129,7 @@ void speaker_init(void) {
 void speaker_sleep() {
   speaker_updateVarioNote(0);     // ensure we clear vario note
   ledcWriteTone(SPEAKER_PIN, 0);  // mute speaker pin
-  timerStop(speaker_timer);       // stop updating notes to play 
+  timerStop(speaker_timer);       // stop updating notes to play
 }
 
 void speaker_wake() {
@@ -137,7 +137,9 @@ void speaker_wake() {
   timerStart(speaker_timer);
 }
 
-void speaker_setDefaultVolume() { speaker_setVolume(1); }
+void speaker_setDefaultVolume() {
+  speaker_setVolume(1);
+}
 
 void speaker_incVolume() {
   if (++speakerVolume > 3) speakerVolume = 3;
@@ -153,6 +155,7 @@ void speaker_decVolume() {
 }
 
 void speaker_setVolume(unsigned char volume) {
+  if (SPEAKER_VOLA == NC || SPEAKER_VOLB == NC) return;
   speakerVolume = volume;
   switch (volume) {
     case 0:  // No Volume -- disable piezo speaker driver
@@ -215,7 +218,6 @@ unsigned char liftyAirGap =
     1;  // track if we're playing the gap between double-beeps or the longer silence
 unsigned char liftyAirNow = 0;  // track if we're playing lifty air tone
 
-
 // entry point to direct the approach
 void speaker_updateVarioNote(int32_t verticalRate) {
   if (FIXED_SAMPLE_APPROACH)
@@ -225,7 +227,6 @@ void speaker_updateVarioNote(int32_t verticalRate) {
 }
 
 void speaker_updateVarioNoteSample(int32_t verticalRate) {
-
   // don't play any beeps if Quiet Mode is turned on, and we haven't started a flight
   if (QUIET_MODE && !flightTimer_isRunning()) {
     sound_varioNote = 0;
@@ -258,7 +259,7 @@ void speaker_updateVarioNoteSample(int32_t verticalRate) {
     }
 
     // if we trigger sink threshold
-  } else if (verticalRate < (SINK_ALARM * 100)) {  // convert sink alarm 'm/s' setting to cm/s 
+  } else if (verticalRate < (SINK_ALARM * 100)) {  // convert sink alarm 'm/s' setting to cm/s
     // first clamp to thresholds if sinkRate is over the max
     if (verticalRate <= SINK_MAX) {
       sound_varioNoteTEMP =

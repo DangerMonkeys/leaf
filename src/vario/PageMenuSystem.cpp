@@ -104,17 +104,14 @@ void SystemMenuPage::draw() {
 
         case cursor_system_fanet:
           u8g2.setCursor(setting_choice_x + 8, menu_items_y[i]);
-          u8g2.setFont(leaf_icons);
 #ifndef FANET
           // If Fanet is not supported, we should show a warning
+          u8g2.setFont(leaf_icons);
           u8g2.print((char)0x22);
           u8g2.setFont(leaf_6x12);
           break;
 #endif
-          // Shows Not Running icon.  Should show more based on the state machine
-          // TODO:  Change this to be the Fanet icons once they are updated
-          u8g2.print((char)0x43);
-          u8g2.setFont(leaf_6x12);
+          u8g2.print(FANET_region == FanetRadioRegion::OFF ? (String) "OFF" : (String)((char)126));
           break;
 
         case cursor_system_bluetooth:

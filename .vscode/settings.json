@@ -30,7 +30,8 @@
         "streambuf": "cpp",
         "regex": "cpp",
         "utility": "cpp",
-        "mutex": "cpp"
+        "mutex": "cpp",
+        "optional": "cpp"
     },
     "editor.formatOnSave": true,
     "[cpp]": {
@@ -42,6 +43,15 @@
     "C_Cpp.clang_format_style": "file",
     "C_Cpp.clang_format_fallbackStyle": "none",
     "cSpell.words": [
-        "Fanet"
+        "baro",
+        "efuse",
+        "Fanet",
+        "kmph",
+        "landedok",
+        "needride",
+        "RADIOLIB",
+        "RSSI",
+        "RXMIT",
+        "xorshift"
     ]
 }

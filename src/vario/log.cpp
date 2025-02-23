@@ -6,20 +6,21 @@
 #include "IMU.h"
 #include "SDcard.h"
 #include "baro.h"
+#include "fanet_radio.h"
 #include "gps.h"
 #include "logbook/flight.h"
-#include "logbook/kml.h"
 #include "logbook/igc.h"
+#include "logbook/kml.h"
+#include "page_fanet_stats.h"
 #include "settings.h"
 #include "speaker.h"
 #include "string_utils.h"
 #include "tempRH.h"
 #include "wind_estimate/wind_estimate.h"
 
-
 // track if we're "flying" separate from if we're recording a log.  This allows us to enable
 // certain in-flight features (like vario quiet_mode) without having to be recording a log.
-bool weAreFlying = false; 
+bool weAreFlying = false;
 bool getAreWeFlying() {
   return weAreFlying;
 }
@@ -35,7 +36,6 @@ Flight* flight =
 Kml kmlFlight;
 Igc igcFlight;
 
-
 // TODO:  Delete ME
 
 // used to keep track of current flight statistics
@@ -44,26 +44,36 @@ FlightStats logbook;
 //////////////////////////////////////////////////////////////////////////////////////////
 // UPDATE - Main function to run every second
 void log_update() {
-
   // Check auto-start criteria if we haven't begun a flight yet
   if (!flight && !weAreFlying) {
     // If auto start is configured, and we match the criteria, start the flight
     if (flightTimer_autoStart()) {
-      weAreFlying = true; // if we meet the flying conditions, we're flying!
-      if (AUTO_START) flightTimer_start(); // start a log if auto-start is on
+      weAreFlying = true;                   // if we meet the flying conditions, we're flying!
+      if (AUTO_START) flightTimer_start();  // start a log if auto-start is on
     } else {
       // Otherwise, there's nothing to do here.
       return;
     }
-  // Check auto-stop criteria if we ARE flying
+    // Check auto-stop criteria if we ARE flying
   } else if (weAreFlying) {
-    if (flightTimer_autoStop()) {      
+    if (flightTimer_autoStop()) {
       if (AUTO_STOP) flightTimer_stop();  // stop the log if auto-stop is on
     }
   }
 
   // Now do all the regular log stuff if we have an active log
   if (flight) {
+    // We're currently logging a flight (we're flying)
+    if (gps.location.isValid()) {
+      // Update the FANet radio module of our current location
+      FanetRadio::setCurrentLocation(gps.location.lat(),
+                                     gps.location.lng(),
+                                     gps.altitude.meters(),
+                                     gps.course.deg(),
+                                     baro.climbRate / 100.0f,
+                                     gps.speed.kmph());
+    }
+
     // Current second of the flight
     auto currentSecondSinceBoot = millis() / 1000;
 
@@ -78,7 +88,7 @@ void log_update() {
 
       if (ALT_SYNC_GPS)
         settings_matchGPSAlt();  // sync pressure alt to GPS alt when log starts if the auto-sync
-                                // setting is turned on
+                                 // setting is turned on
 
       // We have a GPS fix, we're able to start recording of the flight.
       // TODO:  A second sound effect to show that recording has now started??
@@ -160,17 +170,17 @@ bool flightTimer_autoStop() {
       autoStopCounter = 0;
     }
 
-  // reset the comparison altitude to present altitude, since it's still changing
+    // reset the comparison altitude to present altitude, since it's still changing
   } else {
-    autoStopAltitude = baro.alt;  
+    autoStopAltitude = baro.alt;
   }
 
-  Serial.print(" ** STOP ** Counter: ");
-  Serial.print(autoStopCounter);
-  Serial.print("   Alt Diff: ");
-  Serial.print(altDifference);
-  Serial.print("  stopTheTimer? : ");
-  Serial.println(stopTheTimer);
+  // Serial.print(" ** STOP ** Counter: ");
+  // Serial.print(autoStopCounter);
+  // Serial.print("   Alt Diff: ");
+  // Serial.print(altDifference);
+  // Serial.print("  stopTheTimer? : ");
+  // Serial.println(stopTheTimer);
 
   if (stopTheTimer) {
     baro.altInitial = baro.alt;  // reset initial alt (to enable properly checking again for
@@ -184,8 +194,12 @@ bool flightTimer_autoStop() {
 // FLight Timer Management Functions
 
 // check if running
-bool flightTimer_isRunning() { return flight != NULL; }
-bool flightTimer_isLogging() { return flightTimer_isRunning() && (bool)flight->started(); }
+bool flightTimer_isRunning() {
+  return flight != NULL;
+}
+bool flightTimer_isLogging() {
+  return flightTimer_isRunning() && (bool)flight->started();
+}
 
 // start timer
 void flightTimer_start() {
@@ -227,6 +241,10 @@ void flightTimer_start() {
 
   // Finally, save current new altitude as auto-stop altitude
   autoStopAltitude = baro.alt;
+
+  // Start the Fanet radio
+  // TODO:  Fanet packets to Bluetooth updates
+  FanetRadio::begin(FANET_region);
 }
 
 // stop timer
@@ -245,8 +263,9 @@ void flightTimer_stop() {
   speaker_playSound(fx_confirm);
   flight = NULL;
   logbook = FlightStats();  // Reset the flight stats
-  // TODO:  Pop open a "flight complete" dialog
-  
+
+  // Stop the Fanet radio
+  FanetRadio::end();
 }
 
 void flightTimer_toggle() {

@@ -4,6 +4,7 @@
 #include <Arduino.h>
 
 #include "buttons.h"
+#include "fanet_radio_types.h"
 
 // Types for selections
 #define SETTING_LOG_FORMAT_ENTRIES 2  // How many log format entries there are
@@ -14,7 +15,7 @@ typedef uint8_t SettingLogFormat;
 // Setting bounds and definitions
 // Vario
 // Sink Alarm
-#define SINK_ALARM_MAX -6     // m/s sink
+#define SINK_ALARM_MAX -6  // m/s sink
 #define SINK_ALARM_MIN -2
 
 /* Vario Sensitivity
@@ -28,7 +29,7 @@ setting | samples | time avg
 #define VARIO_SENSE_MAX 5  // units of 1/4 seconds
 #define VARIO_SENSE_MIN 1
 // Lifty Air Thermal Sniffer
-#define LIFTY_AIR_MAX -8   // 0.1 m/s - sinking less than this will trigger
+#define LIFTY_AIR_MAX -8  // 0.1 m/s - sinking less than this will trigger
 // Climb settings
 #define CLIMB_AVERAGE_MAX 3  // units of 10 seconds, so max 30 sec averaging
 #define CLIMB_START_MAX 20   // cm/s when climb note begins
@@ -48,19 +49,19 @@ setting | samples | time avg
 // Default Settings
 // Default Vario Settings
 #define DEF_SINK_ALARM -2    // m/s sink
-#define DEF_VARIO_SENSE  3   // 3 = 1 second avg (up and down 1/4 sec from there)
+#define DEF_VARIO_SENSE 3    // 3 = 1 second avg (up and down 1/4 sec from there)
 #define DEF_CLIMB_AVERAGE 1  // in units of 5-seconds.  (def = 1 = 5sec)
 #define DEF_CLIMB_START 5    // cm/s when climb note begins
 #define DEF_VOLUME_VARIO 1   // 0=off, 1=low, 2=med, 3=high
 #define DEF_QUIET_MODE 0     // 0 = off, 1 = on (ON means no beeping until flight recording)
 // 0 == linear pitch interpolation; 1 == major C-scale for climb, minor scale for descent
-#define DEF_VARIO_TONES 0  
+#define DEF_VARIO_TONES 0
 // In units of 10 cm/s (a sink rate of only 30cm/s means the air itself is going up).  '0' is off.
 // (lift air will apply from the lifty_air setting up to the climb_start value)
-#define DEF_LIFTY_AIR -4    // default -0.4m/s sink will trigger lifty air
+#define DEF_LIFTY_AIR -4  // default -0.4m/s sink will trigger lifty air
 
 #define DEF_ALT_SETTING 29.921  // altimeter setting
-#define DEF_ALT_SYNC_GPS 0     // lock altimeter to GPS alt (to avoid local pressure setting issues)
+#define DEF_ALT_SYNC_GPS 0  // lock altimeter to GPS alt (to avoid local pressure setting issues)
 
 // Default GPS & Track Log Settings
 #define DEF_DISTANCE_FLOWN 0           // 0 = xc distance, 1 = path distance
@@ -81,7 +82,7 @@ setting | samples | time avg
 #define DEF_AUTO_OFF 0      // 1 = ENABLE, 0 = DISABLE
 #define DEF_WIFI_ON 0       // default wifi off
 #define DEF_BLUETOOTH_ON 0  // default bluetooth off
-#define DEF_SHOW_WARNING 1      // default show warning on startup
+#define DEF_SHOW_WARNING 1  // default show warning on startup
 
 // Display Settings
 #define DEF_CONTRAST 7  // default contrast setting
@@ -147,6 +148,10 @@ extern bool SHOW_DEBUG;
 extern bool SHOW_THRM_SIMP;
 extern bool SHOW_THRM_ADV;
 extern bool SHOW_NAV;
+
+// Fanet settings
+extern FanetRadioRegion FANET_region;
+extern String FANET_address;
 
 // Unit Values
 extern bool UNITS_climb;

@@ -56,6 +56,10 @@ bool SHOW_THRM_SIMP;
 bool SHOW_THRM_ADV;
 bool SHOW_NAV;
 
+// Fanet settings
+FanetRadioRegion FANET_region;
+String FANET_address;
+
 // Unit Values
 bool UNITS_climb;
 bool UNITS_alt;
@@ -191,6 +195,10 @@ void settings_retrieve() {
   SHOW_THRM_ADV = leafPrefs.getBool("SHOW_THRM_ADV");
   SHOW_NAV = leafPrefs.getBool("SHOW_NAV");
 
+  // Fanet settings
+  FANET_region = (FanetRadioRegion)leafPrefs.getUInt("FANET_REGION");
+  FANET_address = leafPrefs.getString("FANET_ADDRESS");
+
   // Unit Values
   UNITS_climb = leafPrefs.getBool("UNITS_climb");
   UNITS_alt = leafPrefs.getBool("UNITS_alt");
@@ -250,6 +258,9 @@ void settings_save() {
   leafPrefs.putBool("SHOW_THRM_SIMP", SHOW_THRM_SIMP);
   leafPrefs.putBool("SHOW_THRM_ADV", SHOW_THRM_ADV);
   leafPrefs.putBool("SHOW_NAV", SHOW_NAV);
+  // Fanet Settings
+  leafPrefs.putUInt("FANET_REGION", (uint32_t)FANET_region);
+  leafPrefs.putString("FANET_ADDRESS", FANET_address);
   // Unit Values
   leafPrefs.putBool("UNITS_climb", UNITS_climb);
   leafPrefs.putBool("UNITS_alt", UNITS_alt);
@@ -418,16 +429,16 @@ void settings_adjustLiftyAir(Button dir) {
   }
 
   // now scrub the result to ensure we're within bounds
-    // if we were at 0 and now are at positive 1, go back to max sink setting
-    if (LIFTY_AIR > 0) {
-      LIFTY_AIR = LIFTY_AIR_MAX;  
-      sound = fx_increase;
-    } else if (LIFTY_AIR == 0) {    // setting to 0 turns the feature off
-      sound = fx_cancel;
-    } else if (LIFTY_AIR < LIFTY_AIR_MAX) { // wrap from max back to 0
-      sound = fx_cancel;
-      LIFTY_AIR = 0;
-    }
+  // if we were at 0 and now are at positive 1, go back to max sink setting
+  if (LIFTY_AIR > 0) {
+    LIFTY_AIR = LIFTY_AIR_MAX;
+    sound = fx_increase;
+  } else if (LIFTY_AIR == 0) {  // setting to 0 turns the feature off
+    sound = fx_cancel;
+  } else if (LIFTY_AIR < LIFTY_AIR_MAX) {  // wrap from max back to 0
+    sound = fx_cancel;
+    LIFTY_AIR = 0;
+  }
   speaker_playSound(sound);
 }
 
