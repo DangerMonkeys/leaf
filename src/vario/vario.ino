@@ -294,11 +294,12 @@ void goToSleep() {
       // in case of any math errors or micros() rollover etc
         if (sleepMicros <= 0) {
           Serial.println("** NEGATIVE SLEEP **");
-          sleepMicros = frameLength - 500;
-          //return;
+          //sleepMicros = frameLength - 500;
+          return;
         } else if (sleepMicros > frameLength) {
           Serial.println("** OVERRUN SLEEP **");
-          sleepMicros = frameLength - 500;
+          //sleepMicros = frameLength - 500;
+          return;
         }
 
       // finally, set timer duration

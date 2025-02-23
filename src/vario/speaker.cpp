@@ -555,6 +555,7 @@ void onSpeakerTimerSample() {
     ledcWriteTone(SPEAKER_PIN, 0);  // play silence (if timer is configured for auto-reload, we have
                                     // to do this here because sound_varioNote might have been set
                                     // to 0 while we were beeping, and then we'll keep beeping)
+    speakerCurrentNote = 0;
   }
 }
 
