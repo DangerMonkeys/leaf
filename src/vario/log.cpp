@@ -160,9 +160,9 @@ bool flightTimer_autoStop() {
       autoStopCounter = 0;
     }
 
+  // reset the comparison altitude to present altitude, since it's still changing
   } else {
-    autoStopAltitude =
-        baro.alt;  // reset the comparison altitude to present altitude, since it's still changing
+    autoStopAltitude = baro.alt;  
   }
 
   Serial.print(" ** STOP ** Counter: ");
@@ -220,8 +220,8 @@ void flightTimer_start() {
 
   // initial min/max values
   logbook.alt_max = logbook.alt_min = logbook.alt_start;
-  logbook.climb_max = logbook.climb_min = logbook.climb;
-  logbook.speed_max = logbook.speed_min = logbook.speed;
+  logbook.climb_max = logbook.climb_min = 0;
+  logbook.speed_max = logbook.speed;
   logbook.temperature_max = logbook.temperature_min = logbook.temperature;
   logbook.logStartedAt = millis() / 1000;
 
@@ -269,8 +269,9 @@ void log_captureValues() {
   logbook.alt = baro.alt;
   logbook.alt_above_launch = baro.altAboveLaunch;
   logbook.climb = baro.climbRateFiltered;
-  logbook.speed = gps.speed.kmph();
+  logbook.speed = gps.speed.mps();
   logbook.temperature = tempRH_getTemp();
+  logbook.accel = IMU_getAccel();
 }
 
 void log_checkMinMaxValues() {
@@ -301,6 +302,18 @@ void log_checkMinMaxValues() {
     logbook.temperature_max = logbook.temperature;
   } else if (logbook.temperature < logbook.temperature_min) {
     logbook.temperature_min = logbook.temperature;
+  }
+
+  // check accel / g-force for log records
+  if (logbook.accel > logbook.accel_max) {
+    logbook.accel_max = logbook.accel;
+  } else if (logbook.accel < logbook.accel_min) {
+    logbook.accel_min = logbook.accel;
+  }
+
+  // Check speed value for log records
+  if (logbook.speed > logbook.speed_max) {
+    logbook.speed_max = logbook.speed;
   }
 
   // accumulate distance flown

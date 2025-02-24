@@ -4,53 +4,38 @@
 #include "display.h"
 #include "fonts.h"
 #include "displayFields.h"
+#include "string_utils.h"
+#include "settings.h"
 
 void PageFlightSummary::draw_extra() {
   u8g2.setFont(leaf_6x12);
-  auto y = 40;
-  const auto OFFSET = 14;  // Font is 10px high, allow for margin
-  u8g2.setCursor(2, y);
 
-  // Instruction Page
-  const String lines[] = {
-      (String) "Duration: " + stats.duration,
-      (String) "Max Alt:" + stats.alt_max,
-      (String) "AbvLaunch: " + stats.alt_above_launch_max,
-      (String) "MaxClimb: " + stats.climb_max,
-      (String) "MaxSink: " + stats.climb_min,
-      
-  };
+  // Flight Time
+    u8g2.setCursor(0, 37);  
+    u8g2.print("Timer: " + formatSeconds(stats.duration, false, 0));
 
-  for (auto line : lines) {
-    u8g2.setCursor(0, y);
-    u8g2.print(line);
-    y += OFFSET;
-  }
-/*
-  const auto start_y = 30;
 
-  // time flight started (or ended?)
-  u8g2.setFont(leaf_6x10);
-  display_clockTime(0, start_y, false);
+  // Maximuim Values
+    uint8_t y = 50;
+    uint8_t lineSpacing = 14;
+    uint8_t indent = 6;
+    u8g2.drawRFrame(2, y+2, 92, 92, 7);
+    u8g2.setDrawColor(0);
+    u8g2.drawBox(0, y, 53, 7);
+    u8g2.setDrawColor(1);
+    u8g2.setCursor(0, y += 5);
+    u8g2.print("Maximums");
 
-  // Heading in top center
-  uint8_t heading_x = 38;
-  uint8_t heading_y = start_y;
-  u8g2.setFont(leaf_7x10);
-  display_heading(heading_x + 8, heading_y, true);
-
-  // Speed in upper right corner
-  u8g2.setFont(leaf_8x14);
-  display_speed(70, start_y + 4);
-  u8g2.setFont(leaf_5h);
-  u8g2.setCursor(82, start_y + 11);
-  if (UNITS_speed)
-    u8g2.print("MPH");
-  else
-    u8g2.print("KPH");
-
-  // Timer in lower right corner
-  display_flightTimer(51, 175, 0, false);
-*/
-
+    u8g2.setCursor(indent, y += lineSpacing);
+    u8g2.print("Alt:   " + formatAlt(stats.alt_max, UNITS_alt, true));
+    u8g2.setCursor(indent, y += lineSpacing);
+    u8g2.print("AbvTO: " + formatAlt(stats.alt_above_launch_max, UNITS_alt, true));
+    u8g2.setCursor(indent, y += lineSpacing);
+    u8g2.print("Climb: " + formatClimbRate(stats.climb_max, UNITS_climb, true));
+    u8g2.setCursor(indent, y += lineSpacing);
+    u8g2.print("Sink:  " + formatClimbRate(stats.climb_min, UNITS_climb, true));
+    u8g2.setCursor(indent, y += lineSpacing);
+    u8g2.print("Speed:   " + formatSpeed(stats.speed_max, UNITS_speed, true));
+    u8g2.setCursor(indent, y += lineSpacing);
+    u8g2.print("Accel: " + formatAccel(stats.accel_min, false) + '/' + formatAccel(stats.accel_max, true));     
 }

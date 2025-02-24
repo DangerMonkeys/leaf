@@ -6,7 +6,7 @@
 
 class FlightStats {
  public:
-  int32_t alt = 0;
+  int32_t alt = 0;        // alt in cm
   int32_t alt_start = 0;
   int32_t alt_end = 0;
   int32_t alt_max = 0;
@@ -14,7 +14,7 @@ class FlightStats {
   int32_t alt_above_launch = 0;
   int32_t alt_above_launch_max = 0;
 
-  int32_t climb = 0;
+  int32_t climb = 0;      // climb in cm/s
   int32_t climb_max = 0;
   int32_t climb_min = 0;
 
@@ -22,13 +22,14 @@ class FlightStats {
   float temperature_max = 0;
   float temperature_min = 0;
 
-  int32_t speed = 0;
-  int32_t speed_max = 0;
-  int32_t speed_min = 0;
+  float speed = 0;      // speed in mps
+  float speed_max = 0;  // max speed logged in mps
 
-  float distanceFlown = 0;  // accumulated distance of actual flight path
+  float distanceFlown = 0;  // accumulated distance (m) of actual flight path
 
-  float g_force_max = 0;
+  float accel = 1;
+  float accel_max = 1;
+  float accel_min = 1;
 
   // Flight duration, in seconds
   unsigned long duration = 0;
