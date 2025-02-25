@@ -19,10 +19,54 @@ void GPSMenuPage::draw() {
   u8g2.firstPage();
   do {
     // Title
-    display_menuTitle("GPS");
+      display_menuTitle("GPS");
+
+      uint8_t linespacing = 10; // for 5x8 font values like lat/lon/hdop
 
     // GPS constellation and lat/long
-    drawConstellation(3, 22, 75);
+      uint8_t size = 75;
+      uint8_t x = 8;
+      uint8_t y = 22;
+
+      drawConstellation(x, y, size);
+
+    // GPS icon
+      display_GPS_icon(82, 14);
+  
+    u8g2.setFont(leaf_5x8);
+
+    // Num of Sats (Upper left Corner)
+      u8g2.setCursor(0, y + 4);
+      u8g2.print("Sats:");
+      u8g2.setCursor(2, u8g2.getCursorY() + linespacing);
+      u8g2.print(gps.satellites.value());
+
+    // HDOP / accuracy (upper right corner)
+      u8g2.setCursor(70, y + 4);
+      u8g2.print("HDOP:");
+      u8g2.setCursor(76, u8g2.getCursorY() + linespacing);
+      u8g2.print(float(gps.hdop.value()) / 100, 2);
+
+    // draw lat long
+      u8g2.setCursor(0, size + y + linespacing + 2);
+      u8g2.print("Lat:");
+      u8g2.setCursor(25, u8g2.getCursorY());
+      u8g2.print(" ");
+      if (gps.location.lat() >= 0)
+        u8g2.print(" ");
+      u8g2.print(gps.location.lat(), 7);
+
+      u8g2.setCursor(0, u8g2.getCursorY() + linespacing);
+      u8g2.print("Lon:");
+      u8g2.setCursor(25, u8g2.getCursorY());
+      if (gps.location.lng() >= 0)
+        u8g2.print(" ");
+      u8g2.print(gps.location.lng(), 7);
+
+
+      
+
+
 
     // Menu Items
     u8g2.setFont(leaf_6x12);
@@ -76,6 +120,7 @@ void GPSMenuPage::setting_change(Button dir, ButtonState state, uint8_t count) {
   }
 }
 
+
 void GPSMenuPage::drawConstellation(uint8_t x, uint8_t y, uint16_t size) {
   // Draw the satellite background
   // u8g2.setDrawColor(0);
@@ -123,16 +168,6 @@ void GPSMenuPage::drawConstellation(uint8_t x, uint8_t y, uint16_t size) {
       u8g2.setDrawColor(1);
     }
   }
-
-  // draw lat long
-  u8g2.setFont(leaf_5x8);
-  u8g2.setCursor(0, size + y + 12);
-  u8g2.print("Lat:");
-  u8g2.print(gps.location.lat(), 7);
-
-  u8g2.setCursor(0, size + y + 22);
-  u8g2.print("Lon:");
-  u8g2.print(gps.location.lng(), 7);
 }
 
 // helpful switch constructors to copy-paste as needed:

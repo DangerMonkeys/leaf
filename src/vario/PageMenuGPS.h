@@ -14,6 +14,7 @@ class GPSMenuPage : public SettingsMenuPage {
   }
   void draw();
 
+  // draw satellite constellation with latitude and longitude left-justified
   void drawConstellation(uint8_t x, uint8_t y, uint16_t size);
 
  protected:
