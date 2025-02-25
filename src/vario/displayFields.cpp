@@ -181,7 +181,9 @@ void display_distance(uint8_t cursor_x, uint8_t cursor_y, double distance) {
 void display_heading(uint8_t cursor_x, uint8_t cursor_y, bool degSymbol) {
   u8g2.setCursor(cursor_x, cursor_y);
 
-  if (UNITS_heading) {  // Cardinal heading direction
+  if (!gpsFixInfo.fix) {  // blank out heading if no gps fix
+    u8g2.print("---");
+  } else if (UNITS_heading) {  // Cardinal heading direction
     const char* displayHeadingCardinal =
         gps.cardinal(gps.course.deg());  // gps_getCourseCardinal();
     if (strlen(displayHeadingCardinal) == 1)
@@ -982,33 +984,39 @@ void display_menuTitle(String title) {
 void display_headerAndFooter(bool timerSelected, bool showTurnArrows) {
   // Header--------------------------------
   // clock time
-  u8g2.setFont(leaf_6x10);
-  display_clockTime(0, 10, false);
+    u8g2.setFont(leaf_6x10);
+    display_clockTime(0, 10, false);
+
 
   // Track/Heading top center
-  uint8_t heading_y = 10;
-  uint8_t heading_x = 37;
-  u8g2.setFont(leaf_7x10);
-  if (showTurnArrows) {
-    display_headingTurn(heading_x, heading_y);
+    uint8_t heading_y = 10;
+    uint8_t heading_x = 37;
+    u8g2.setFont(leaf_7x10);
+    if (showTurnArrows) {
+      display_headingTurn(heading_x, heading_y);
+    } else {
+      display_heading(heading_x + 8, heading_y, true);
+    }
+
+  // If don't have a fix, show GPS searching icon; otherwise show speed
+  if (!gpsFixInfo.fix) {
+    display_GPS_icon(84, 12);
   } else {
-    display_heading(heading_x + 8, heading_y, true);
-  }
-
   // Speed in upper right corner
-  u8g2.setFont(leaf_8x14);
-  display_speed(78, 14);
-  u8g2.setFont(leaf_5h);
-  u8g2.setCursor(82, 21);
-  if (display_getPage() == page_nav) {
-    u8g2.setDrawColor(0);  // draw white on black for nav page
-  }
-  if (UNITS_speed)
-    u8g2.print("MPH");
-  else
-    u8g2.print("KPH");
+    u8g2.setFont(leaf_8x14);
+    display_speed(78, 14);
+    u8g2.setFont(leaf_5h);
+    u8g2.setCursor(82, 21);
+    if (display_getPage() == page_nav) {
+      u8g2.setDrawColor(0);  // draw white on black for nav page
+    }
+    if (UNITS_speed)
+      u8g2.print("MPH");
+    else
+      u8g2.print("KPH");
 
-  u8g2.setDrawColor(1);
+    u8g2.setDrawColor(1);
+  }
 
   // FOOTER_________________________
   // battery
@@ -1020,9 +1028,6 @@ void display_headerAndFooter(bool timerSelected, bool showTurnArrows) {
   u8g2.setCursor(10, 192);
   u8g2.setFont(leaf_icons);
   u8g2.print((char)SDicon);
-
-  // GPS status icon
-  display_GPS_icon(23, 192);
 
   // Vario Beep Volume icon
   u8g2.setCursor(37, 191);
