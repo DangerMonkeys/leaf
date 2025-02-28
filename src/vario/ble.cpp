@@ -1,52 +1,71 @@
-#include <BLEDescriptor.h>
-#include <BLEDevice.h>
-#include <BLEServer.h>
-#include <BLEUtils.h>
-
-#include <string_view>
-
-#include "baro.h"
 #include "ble.h"
+#include <Arduino.h>
 
-// It is mandatory to use these Nordic UART Service UUIDs
-#define SERVICE_UUID "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
-#define CHARACTERISTIC_VARIO_UUID_RX "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
-#define CHARACTERISTIC_VARIO_UUID "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
+#include <NimBLEDevice.h>
+#include "baro.h"
+#include "etl/string.h"
+#include "fanet_radio.h"
 
-BLE &BLE::get() {
+// These new unique UUIDs came from
+// https://www.uuidgenerator.net/
+
+#define LEAF_SERVICE_UUID "92b38cf3-4bd0-428c-aca4-ae6c3a586835"
+// LK8EX1 Telemetry notification
+#define LEAF_LK8EX1_UUID "583918da-fb9b-4645-bbaf-2db3b1a9c1b3"
+
+class ServerCallbacks : public NimBLEServerCallbacks {
+  // Not sure we need this.  Taken from the demo
+  void onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) override {
+    /**
+     *  We can use the connection handle here to ask for different connection parameters.
+     *  Args: connection handle, min connection interval, max connection interval
+     *  latency, supervision timeout.
+     *  Units; Min/Max Intervals: 1.25 millisecond increments.
+     *  Latency: number of intervals allowed to skip.
+     *  Timeout: 10 millisecond increments.
+     */
+    pServer->updateConnParams(connInfo.getConnHandle(), 24, 48, 0, 180);
+  }
+
+  // This one seems import to re-advertise
+  void onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reason) override {
+    // Re-advertise after a disconnect
+    NimBLEDevice::startAdvertising();
+  }
+
+} serverCallbacks;
+
+BLE& BLE::get() {
   static BLE instance;
   return instance;
 }
 
 void BLE::setup() {
-  BLEDevice::init("MyVario");
+  // Initialize the BLE with the unique device name
+  etl::string<13> name = "Leaf: ";
+  name += FanetRadio::getAddress().c_str();
+  NimBLEDevice::init(name.c_str());
 
-  uint8_t temp_val = 0;
+  // Create a server using the callback class to re-advertise on a disconnect
+  pServer = NimBLEDevice::createServer();
+  pServer->setCallbacks(&serverCallbacks);
 
-  advertising.reset(BLEDevice::getAdvertising());
-  server.reset(BLEDevice::createServer());
-  vario_service.reset(server->createService(SERVICE_UUID));
+  // Create the characteristic and start advertising climb rate information
+  NimBLEService* pService = pServer->createService(LEAF_SERVICE_UUID);
+  pCharacteristic = pService->createCharacteristic(LEAF_LK8EX1_UUID,
+                                                   NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
+  pService->start();
 
-  vario_characteristic.reset(vario_service->createCharacteristic(
-      CHARACTERISTIC_VARIO_UUID,
-      BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY));
-  vario_characteristic->addDescriptor(
-      new BLEDescriptor(BLEUUID((uint16_t)0x2902)));
-  vario_characteristic->setValue(&temp_val, sizeof(temp_val));
-
-  vario_characteristic_rx.reset(vario_service->createCharacteristic(
-      CHARACTERISTIC_VARIO_UUID_RX,
-      BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE));
-  vario_characteristic_rx->addDescriptor(
-      new BLEDescriptor(BLEUUID((uint16_t)0x2902)));
-  vario_characteristic_rx->setValue(&temp_val, sizeof(temp_val));
-
-  vario_service->start();
-
-  advertising->addServiceUUID(SERVICE_UUID);
-  advertising->start();
-
-  Serial.println("BLE Vario Initialized");
+  /** Create an advertising instance and add the services to the advertised data */
+  pAdvertising = NimBLEDevice::getAdvertising();
+  pAdvertising->setName(name.c_str());
+  pAdvertising->addServiceUUID(pService->getUUID());
+  /**
+   *  If your device is battery powered you may consider setting scan response
+   *  to false as it will extend battery life at the expense of less data sent.
+   */
+  pAdvertising->enableScanResponse(true);
+  pAdvertising->start();
 }
 
 uint8_t checksum(std::string_view string) {
@@ -58,12 +77,39 @@ uint8_t checksum(std::string_view string) {
 }
 
 void BLE::loop() {
-  char stringified[50];
-  snprintf(stringified, sizeof(stringified), "$LK8EX1,%u,99999,%d,99,999,*",
-           baro.pressureFiltered, baro.climbRateFiltered);
-  snprintf(stringified + strlen(stringified), sizeof(stringified), "%02X",
-           checksum(stringified));
+  // Short circuit if not running or no connected clients
+  if (!pServer || !pServer->getConnectedCount()) return;
 
-  vario_characteristic->setValue((uint8_t *)stringified, strlen(stringified));
-  vario_characteristic->notify();
+  char stringified[50];
+  snprintf(stringified,
+           sizeof(stringified),
+           // See https://raw.githubusercontent.com/LK8000/LK8000/master/Docs/LK8EX1.txt
+           ("$LK8EX1,"  // Type of update
+            "%u,"       // raw pressure in hPascal
+            "99999,"  // altitude in meters, relative to QNH 1013.25. 99999 if not available/needed
+            "%d,"     // Climb rate in cm/s.  Can be 99999 if not available
+            "99,"     // Temperature in C.  If not available, send 99
+            "999,"  // Battery voltage OR percentage.  If percentage, add 1000 (if 1014 is 14%). 999
+                    // if unavailable
+            "*"     // Checksum to follow
+            ),
+           baro.pressureFiltered,
+           baro.climbRateFiltered);
+  // Add checksum and delimeter with newline
+  snprintf(stringified + strlen(stringified), sizeof(stringified), "%02X\n", checksum(stringified));
+  pCharacteristic->setValue((const uint8_t*)stringified, sizeof(stringified));
+  pCharacteristic->notify();
+
+  // TODO:  Need lines for GPS and Fanet updates
+}
+
+void BLE::end() {
+  // Delete any objects created and deinit manually.. Seems to crash setting this to true
+  NimBLEDevice::deinit(false);
+
+  // Reset null pointers.
+  pServer = nullptr;
+  pService = nullptr;
+  pCharacteristic = nullptr;
+  pAdvertising = nullptr;
 }

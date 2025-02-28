@@ -4,6 +4,7 @@
 
 #include "PageMenuAbout.h"
 #include "PageMenuSystemWifi.h"
+#include "ble.h"
 #include "buttons.h"
 #include "display.h"
 #include "displayFields.h"
@@ -196,8 +197,14 @@ void SystemMenuPage::setting_change(Button dir, ButtonState state, uint8_t count
       redraw = true;
       break;
     case cursor_system_bluetooth:
-      if (state == RELEASED) {
+      if (state != RELEASED) break;
+      BLUETOOTH_ON = !BLUETOOTH_ON;
+      if (BLUETOOTH_ON) {
+        BLE::get().setup();
+      } else {
+        BLE::get().end();
       }
+      settings_save();
       break;
     case cursor_system_reset:
       if (state == RELEASED || state == NO_STATE) {

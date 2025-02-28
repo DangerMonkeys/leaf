@@ -1,23 +1,21 @@
 #pragma once
 
-#include <BLEDevice.h>
-#include <BLEServer.h>
-#include <memory>
+#include <NimBLEDevice.h>
 
 class BLE {
-  public:
-    static BLE& get();
+ public:
+  static BLE& get();
 
-    void setup();
-    void loop();
+  void setup();
+  void loop();
+  void end();
 
-  private:
-    BLE() = default;
+ private:
+  BLE() : pServer(nullptr), pService(nullptr), pCharacteristic(nullptr), pAdvertising(nullptr) {}
 
-    std::unique_ptr<BLEAdvertising> advertising = nullptr;
-
-    std::unique_ptr<BLEServer> server = nullptr;
-    std::unique_ptr<BLEService> vario_service = nullptr;
-    std::unique_ptr<BLECharacteristic> vario_characteristic = nullptr;
-    std::unique_ptr<BLECharacteristic> vario_characteristic_rx = nullptr;
+  NimBLEServer* pServer;
+  NimBLEService* pService;
+  NimBLECharacteristic* pCharacteristic;
+  NimBLEAdvertising* pAdvertising;
 };
+;

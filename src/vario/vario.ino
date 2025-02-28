@@ -7,6 +7,7 @@
 #include "Leaf_SPI.h"
 #include "SDcard.h"
 #include "baro.h"
+#include "ble.h"
 #include "buttons.h"
 #include "display.h"
 #include "gps.h"
@@ -16,7 +17,6 @@
 #include "speaker.h"
 #include "tempRH.h"
 #include "wind_estimate/wind_estimate.h"
-#include "ble.h"
 
 #ifdef MEMORY_PROFILING
 #include "memory_report.h"
@@ -78,7 +78,7 @@ char taskman_tempRH = 1;   // (1) trigger temp & humidity measurements, (2) proc
 char taskman_SDCard = 1;   // check if SD card state has changed and attempt remount if needed
 char taskman_memory_stats = 1;  // Prints memory usage reports
 char taskman_estimateWind = 1;  // estimate wind speed and direction
-char taskman_ble = 1;  // post BLE notification
+char taskman_ble = 1;           // post BLE notification
 
 // temp testing stuff
 // uint8_t display_page = 0;
@@ -134,7 +134,10 @@ void setup() {
              true,
              0);  // auto reload timer ever time we've counted a sample length
 
-  BLE::get().setup();
+  // Start bluetooth on startup if setting enabled
+  if (BLUETOOTH_ON) {
+    BLE::get().setup();
+  }
 
   // All done!
   Serial.println("Finished Setup");
