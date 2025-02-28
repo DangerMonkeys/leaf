@@ -17,6 +17,10 @@
 #include "tempRH.h"
 #include "wind_estimate/wind_estimate.h"
 
+#ifdef MEMORY_PROFILING
+#include "memory_report.h"
+#endif
+
 #ifdef DEBUG_WIFI
 #include <WiFi.h>
 #include "DebugWebserver.h"
@@ -71,6 +75,7 @@ char taskman_power = 1;    // check battery, check auto-turn-off, etc
 char taskman_log = 1;      // check auto-start, increment timers, update log file, etc
 char taskman_tempRH = 1;   // (1) trigger temp & humidity measurements, (2) process values and save
 char taskman_SDCard = 1;   // check if SD card state has changed and attempt remount if needed
+char taskman_memory_stats = 1;  // Prints memory usage reports
 char taskman_estimateWind = 1;  // estimate wind speed and direction
 
 // temp testing stuff
@@ -359,8 +364,13 @@ void setTasks(void) {
       // 5 - gps
       if (counter_100ms_block == 6)
         taskman_SDCard = 1;  // check if SD card state has changed and remount if needed
-      // 7 - available
-      // 8 - LCD
+// 7 - available
+// 8 - LCD
+#ifdef MEMORY_PROFILING
+      if (counter_100ms_block == 7) {
+        taskman_memory_stats = 1;
+      }
+#endif
       if (counter_100ms_block == 9)
         taskman_tempRH = 2;  // read and process temp & humidity measurement
       break;
@@ -422,6 +432,12 @@ void taskManager(void) {
     SDcard_update();
     taskman_SDCard = 0;
   }
+#ifdef MEMORY_PROFILING
+  if (taskman_memory_stats) {
+    printMemoryUsage();
+    taskman_memory_stats = 0;
+  }
+#endif
 
   if (taskman_didSomeTasks && DEBUG_MAIN_LOOP) {
     taskman_didSomeTasks = 0;
