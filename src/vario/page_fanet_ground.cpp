@@ -61,19 +61,19 @@ void PageFanetGround::closed(bool removed_from_Stack) {
 }
 
 void PageFanetGround::draw_extra() {
-  unsigned char* graphic = nullptr;
+  uint8_t* graphic = nullptr;
   switch (mode) {
     case FanetGroundTrackingMode::WALKING:
-      graphic = fanet_walking_bmp;
+      graphic = (uint8_t*)fanet_walking_bmp;
       break;
     case FanetGroundTrackingMode::LANDED_OK:
-      graphic = fanet_landedok_bmp;
+      graphic = (uint8_t*)fanet_landedok_bmp;
       break;
     case FanetGroundTrackingMode::VEHICLE:
-      graphic = fanet_vehicle_bmp;
+      graphic = (uint8_t*)fanet_vehicle_bmp;
       break;
     case FanetGroundTrackingMode::NEED_RIDE:
-      graphic = fanet_needride_bmp;
+      graphic = (uint8_t*)fanet_needride_bmp;
       break;
   }
 

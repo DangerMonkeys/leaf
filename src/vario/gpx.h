@@ -8,8 +8,8 @@
 
 // Waypoint definition and memory allocation
 #define waypointRadius 150  // meters radius to count as "reaching/crossing" a waypoint
-#define maxWaypoints 255
-#define maxRoutes 20
+#define maxWaypoints 15
+#define maxRoutes 5
 #define maxRoutePoints 12
 
 struct Waypoint {
@@ -86,7 +86,7 @@ bool gpx_activateRoute(uint16_t routeIndex);
 bool gpx_sequenceWaypoint(void);
 void gpx_cancelNav(void);
 
-bool gpx_readFile(fs::FS &fs, String fileName);
+bool gpx_readFile(fs::FS& fs, String fileName);
 
 void gpx_loadRoutes(void);
 void gpx_loadWaypoints(void);
