@@ -64,15 +64,6 @@ void log_update() {
   // Now do all the regular log stuff if we have an active log
   if (flight) {
     // We're currently logging a flight (we're flying)
-    if (gps.location.isValid()) {
-      // Update the FANet radio module of our current location
-      FanetRadio::setCurrentLocation(gps.location.lat(),
-                                     gps.location.lng(),
-                                     gps.altitude.meters(),
-                                     gps.course.deg(),
-                                     baro.climbRate / 100.0f,
-                                     gps.speed.kmph());
-    }
 
     // Current second of the flight
     auto currentSecondSinceBoot = millis() / 1000;
@@ -243,8 +234,7 @@ void flightTimer_start() {
   autoStopAltitude = baro.alt;
 
   // Start the Fanet radio
-  // TODO:  Fanet packets to Bluetooth updates
-  FanetRadio::begin(FANET_region);
+  FanetRadio::getInstance().begin(FANET_region);
 }
 
 // stop timer
@@ -265,7 +255,7 @@ void flightTimer_stop() {
   logbook = FlightStats();  // Reset the flight stats
 
   // Stop the Fanet radio
-  FanetRadio::end();
+  FanetRadio::getInstance().end();
 }
 
 void flightTimer_toggle() {

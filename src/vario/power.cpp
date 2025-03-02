@@ -91,7 +91,8 @@ void power_init_peripherals() {
   Serial.println(" - Finished SDcard");
   gps_init();
   Serial.println(" - Finished GPS");
-  
+  wire_init();
+  Serial.println(" - Finished I2C Wire");
   display_init();
   Serial.println(" - Finished display");
   baro_init();

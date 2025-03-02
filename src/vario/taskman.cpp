@@ -1,7 +1,7 @@
-
 // includes
 #include <Arduino.h>
 #include <HardwareSerial.h>
+#include "task.h"
 
 #include "IMU.h"
 #include "Leaf_SPI.h"
@@ -26,6 +26,13 @@
 #include <WiFi.h>
 #include "DebugWebserver.h"
 #endif
+
+//*** Task Manager
+// This module is where the bulk of the task management work
+// happens.  We are slowly moving away from this into a
+// FreeRTOS task based scheduler, so, we expect this file to
+// shrink over time
+// ******
 
 // Bit of a hack for now as we don't have a good way to pass big chunks
 // of data around, so, we do it on the stack.  Default is 8KB
@@ -79,22 +86,23 @@ char taskman_tempRH = 1;   // (1) trigger temp & humidity measurements, (2) proc
 char taskman_SDCard = 1;   // check if SD card state has changed and attempt remount if needed
 char taskman_memory_stats = 1;  // Prints memory usage reports
 char taskman_estimateWind = 1;  // estimate wind speed and direction
-char taskman_ble = 1;           // post BLE notification
 
 // temp testing stuff
 // uint8_t display_page = 0;
 uint8_t display_do_tracker = 1;
 #define TESTING_LOOP false
 
+// Function Prototypes
+void taskManager(void);
+void main_ON_loop();
+void main_CHARGE_loop();
+void setTasks();
+void taskManager();
+
 /////////////////////////////////////////////////
 //             SETUP              ///////////////
 /////////////////////////////////////////////////
-void setup() {
-  // Start USB Serial Debugging Port
-  Serial.begin(115200);
-  delay(200);
-  Serial.println("Starting Setup");
-
+void taskmanSetup() {
 #ifdef DEBUG_WIFI
   // Start WiFi
   WiFi.begin();
@@ -134,11 +142,6 @@ void setup() {
              CHARGE_TIMER_LENGTH,
              true,
              0);  // auto reload timer ever time we've counted a sample length
-
-  // Start bluetooth on startup if setting enabled
-  if (BLUETOOTH_ON) {
-    BLE::get().setup();
-  }
 
   // All done!
   Serial.println("Finished Setup");
@@ -453,10 +456,6 @@ void taskManager(void) {
     taskman_memory_stats = 0;
   }
 #endif
-  if (taskman_ble) {
-    BLE::get().loop();
-    taskman_ble = 0;
-  }
 
   if (taskman_didSomeTasks && DEBUG_MAIN_LOOP) {
     taskman_didSomeTasks = 0;

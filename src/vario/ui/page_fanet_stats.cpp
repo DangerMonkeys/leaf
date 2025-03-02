@@ -9,11 +9,11 @@ void PageFanetStats::show() {
 }
 
 void PageFanetStats::draw_extra() {
-  auto radioStats = FanetRadio::getStats();
+  auto radioStats = FanetRadio::getInstance().getStats();
 
   constexpr int yOffset = 35;
   etl::array<etl::pair<String, String>, 13> stats{
-      etl::pair{(String) "State", FanetRadio::getState().c_str()},
+      etl::pair{(String) "State", FanetRadio::getInstance().getState().c_str()},
       etl::pair{(String) "rx", String(radioStats.rx)},
       etl::pair{(String) "txSuccess", String(radioStats.txSuccess)},
       etl::pair{(String) "txFailed", String(radioStats.txFailed)},

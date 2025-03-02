@@ -775,7 +775,7 @@ void display_fanet_icon(const uint8_t& x, const uint8_t& y) {
   u8g2.setFont(leaf_icons);
   u8g2.setCursor(x, y);
 
-  switch (FanetRadio::getState()) {
+  switch (FanetRadio::getInstance().getState()) {
     case FanetRadioState::UNINITIALIZED:
       u8g2.print(char(0x55));  // Bar icon
       break;

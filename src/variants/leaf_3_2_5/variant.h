@@ -10,6 +10,7 @@
 #define SX1262_DIO1 15  // DIO1 pin
 #define SX1262_RESET 0  // Busy pin
 #define SX1262_BUSY 16  // Busy pin
+#define SX1262_RF_SW 7  // RF Switch pin
 
 
 #define HAS_IO_EXPANDER 1 // this variant has an IO expander

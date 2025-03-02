@@ -200,9 +200,9 @@ void SystemMenuPage::setting_change(Button dir, ButtonState state, uint8_t count
       if (state != RELEASED) break;
       BLUETOOTH_ON = !BLUETOOTH_ON;
       if (BLUETOOTH_ON) {
-        BLE::get().setup();
+        BLE::get().start();
       } else {
-        BLE::get().end();
+        BLE::get().stop();
       }
       settings_save();
       break;
