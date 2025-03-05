@@ -16,6 +16,7 @@
 #include "tempRH.h"
 #include "ui/display.h"
 #include "ui/displayFields.h"
+#include "io_pins.h"
 
 POWER power;  // struct for battery-state and on-state variables
 
@@ -63,22 +64,31 @@ void power_init() {
 void power_init_peripherals() {
   Serial.print("init_peripherals: ");
   Serial.println(power.onState);
+  
+  // Init Peripheral Busses
+  wire_init();
+  Serial.println(" - Finished I2C Wire");
+  spi_init();
+  Serial.println(" - Finished SPI");
+
+  // initialize IO expander (needed for speaker in v3.2.5)
+  ioexInit();  // initialize IO Expander
+  
   // initialize speaker to play sound (so user knows they can let go of the power button)
   speaker_init();
   Serial.println(" - Finished Speaker");
+
   if (power.onState == POWER_ON) {
     power_latch_on();
     speaker_playSound(fx_enter);
   }
+
   // then initialize the rest of the devices
   SDcard_init();
   Serial.println(" - Finished SDcard");
   gps_init();
   Serial.println(" - Finished GPS");
-  wire_init();
-  Serial.println(" - Finished I2C Wire");
-  spi_init();
-  Serial.println(" - Finished SPI");
+  
   display_init();
   Serial.println(" - Finished display");
   baro_init();

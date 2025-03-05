@@ -5,6 +5,8 @@
 #include "Leaf_SPI.h"
 #include "log.h"
 #include "settings.h"
+#include "io_pins.h"
+#include "configuration.h"
 
 // use this to switch between method 1 (fixed sample length approach)
 // and method 2 (adjustable timer length)
@@ -93,9 +95,9 @@ void speaker_init(void) {
   pinMode(SPEAKER_PIN, OUTPUT);
   ledcAttach(SPEAKER_PIN, 1000, 10);
 
-  // set Volume to proper default setting
-  if (SPEAKER_VOLA != NC) pinMode(SPEAKER_VOLA, OUTPUT);
-  if (SPEAKER_VOLB != NC) pinMode(SPEAKER_VOLB, OUTPUT);
+  // set speaker volume pins as outputs IF NOT ON the IO Expander
+  if (!SPEAKER_VOLA_IOEX) pinMode(SPEAKER_VOLA, OUTPUT);
+  if (!SPEAKER_VOLB_IOEX) pinMode(SPEAKER_VOLB, OUTPUT);
   // speaker_setVolume(VOLUME);      // use saved user prefs
 
   speaker_setDefaultVolume();
@@ -159,20 +161,20 @@ void speaker_setVolume(unsigned char volume) {
   speakerVolume = volume;
   switch (volume) {
     case 0:  // No Volume -- disable piezo speaker driver
-      digitalWrite(SPEAKER_VOLA, 0);
-      digitalWrite(SPEAKER_VOLB, 0);
+      ioexDigitalWrite(SPEAKER_VOLA_IOEX, SPEAKER_VOLA, 0);
+      ioexDigitalWrite(SPEAKER_VOLB_IOEX, SPEAKER_VOLB, 0);
       break;
     case 1:  // Low Volume -- enable piezo speaker driver 1x (3.3V)
-      digitalWrite(SPEAKER_VOLA, 1);
-      digitalWrite(SPEAKER_VOLB, 0);
+      ioexDigitalWrite(SPEAKER_VOLA_IOEX, SPEAKER_VOLA, 1);
+      ioexDigitalWrite(SPEAKER_VOLB_IOEX, SPEAKER_VOLB, 0);
       break;
     case 2:  // Med Volume -- enable piezo speaker driver 2x (6.6V)
-      digitalWrite(SPEAKER_VOLA, 0);
-      digitalWrite(SPEAKER_VOLB, 1);
+      ioexDigitalWrite(SPEAKER_VOLA_IOEX, SPEAKER_VOLA, 0);
+      ioexDigitalWrite(SPEAKER_VOLB_IOEX, SPEAKER_VOLB, 1);
       break;
     case 3:  // High Volume -- enable piezo spaker driver 3x (9.9V)
-      digitalWrite(SPEAKER_VOLA, 1);
-      digitalWrite(SPEAKER_VOLB, 1);
+      ioexDigitalWrite(SPEAKER_VOLA_IOEX, SPEAKER_VOLA, 1);
+      ioexDigitalWrite(SPEAKER_VOLB_IOEX, SPEAKER_VOLB, 1);
       break;
   }
 }
