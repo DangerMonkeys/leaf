@@ -66,6 +66,7 @@ bool gps_is_quiet = 0;
 char taskman_setTasks = 1;  // the task of setting tasks -- usually set by timer-driven interrupt
 
 char taskman_buttons = 1;  // poll & process buttons
+char taskman_speakerTimer = 1; // adjust speaker notes
 char taskman_baro = 1;     // (1) preprocess on-chip ADC pressure, (2) read pressure and preprocess
                         // on-chip ADC temperature, (3) read temp and calulate true Alt, (4) filter
                         // Alt, update climb, and store values etc
@@ -320,6 +321,7 @@ void setTasks(void) {
   // tasks to complete every 10ms
   taskman_buttons = 1;
   taskman_baro = 1;
+  taskman_speakerTimer = 1;
 
   // set additional tasks to complete, broken down into 10ms block cycles.  (embedded if()
   // statements allow for tasks every second, spaced out on different 100ms blocks)
@@ -407,6 +409,10 @@ void taskManager(void) {
   if (taskman_buttons) {
     buttons_update();
     taskman_buttons = 0;
+  }
+  if (taskman_speakerTimer) {
+    onSpeakerTimer();
+    taskman_speakerTimer = 0;
   }
   if (taskman_estimateWind) {
     estimateWind();

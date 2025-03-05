@@ -290,6 +290,7 @@ void baro_update(bool startNewCycle, bool doTemp) {
     baro.climbRate = 0;
     baro.climbRateAverage = 0;
     baro.climbRateFiltered = 0;
+    speaker_updateVarioNote(baro.climbRateFiltered);
     return;
   }
 
@@ -548,7 +549,7 @@ void baro_updateClimb() {
       (baro.climbRateAverage * (total_samples - 1) + baro.climbRateFiltered) / total_samples;
 
   // finally, update the speaker sound based on the new climbrate
-  speaker_updateVarioNoteSample(baro.climbRateFiltered);
+  speaker_updateVarioNote(baro.climbRateFiltered);
 }
 
 // Device reading & data processing

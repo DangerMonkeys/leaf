@@ -115,7 +115,7 @@ void power_sleep_peripherals() {
   Serial.println(" - Sleeping baro");
   baro_sleep();
   Serial.println(" - Sleeping speaker");
-  speaker_sleep();
+  speaker_mute();
   Serial.println("Shut down speaker");
   Serial.println(" - DONE");
 }
@@ -129,7 +129,7 @@ void power_wake_peripherals() {
   Serial.println(" - waking baro");
   baro_wake();
   Serial.println(" - waking speaker");
-  speaker_wake();
+  speaker_unMute();
   Serial.println(" - DONE");
 }
 
@@ -142,12 +142,18 @@ void power_switchToOnState() {
 
 void power_shutdown() {
   Serial.println("power_shutdown");
-
+  
   display_clear();
-  speaker_playSound(fx_exit);
-  baro_sleep();  // stop getting climbrate updates so we don't hear vario beeps while shutting down
   display_off_splash();
-  auto shutdownTimeStamp = millis();
+  baro_sleep();  // stop getting climbrate updates so we don't hear vario beeps while shutting down
+
+  // play shutdown sound
+  speaker_playSound(fx_exit);
+
+  //loop until sound is done playing
+  while(onSpeakerTimer()) {
+    delay(10);
+  }  
 
   // saving logs and system data
   if (flightTimer_isRunning()) {
@@ -157,11 +163,10 @@ void power_shutdown() {
   // save any changed settings this session
   settings_save();
 
-  // wait 3 seconds before shutting down to give user
+  // wait another 2.5 seconds before shutting down to give user
   // a chance to see the shutdown screen
-  while (millis() - shutdownTimeStamp < 3000) {
-    delay(100);
-  }
+  delay(2500);
+  
 
   // finally, turn off devices
   power_sleep_peripherals();
