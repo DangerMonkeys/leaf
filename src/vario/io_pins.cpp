@@ -39,12 +39,6 @@ void ioexDigitalWrite(bool onIOEX, uint8_t pin, uint8_t value) {
 	// if we're writing a pin on the IO Expander
 	if (onIOEX) {
 		bool result = IOEX.write1(pin, value);
-		Serial.print("IOEX.pinWrite: ");
-		Serial.print(pin);
-		Serial.print(" val: ");
-		Serial.print(value);
-		Serial.print(" result: ");
-		Serial.println(result);
 	} else {
 		digitalWrite(pin, value);
 	}

@@ -11,6 +11,9 @@
 #define SX1262_RESET 0  // Busy pin
 #define SX1262_BUSY 16  // Busy pin
 
+
+#define HAS_IO_EXPANDER 1 // this variant has an IO expander
+
 #define SPEAKER_VOLA_IOEX 1 // this pin is on the IO Expander
 #define SPEAKER_VOLA 2  // Pin 2 on the IO Expander
 

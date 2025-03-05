@@ -72,7 +72,10 @@ void power_init_peripherals() {
   Serial.println(" - Finished SPI");
 
   // initialize IO expander (needed for speaker in v3.2.5)
-  ioexInit();  // initialize IO Expander
+  #ifdef HAS_IO_EXPANDER
+    ioexInit();  // initialize IO Expander
+    Serial.println(" - Finished IO Expander");
+  #endif
   
   // initialize speaker to play sound (so user knows they can let go of the power button)
   speaker_init();
