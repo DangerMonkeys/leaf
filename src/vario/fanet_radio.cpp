@@ -36,6 +36,21 @@ ICACHE_RAM_ATTR void FanetRadio::onRxIsr() {
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
+void FanetRadio::taskRadioNameTx(void* pvParameters) {
+  auto& fanet = FanetRadio::getInstance();
+  Fanet::Name namePayload;
+  namePayload.name = "Leaf";
+
+  while (true) {
+    if (fanet.state == FanetRadioState::RUNNING) {
+      auto guard = LockGuard(fanet.x_fanet_manager_mutex);
+      fanet.manager->sendPacket(namePayload, millis());
+      xTaskNotify(fanet.x_fanet_tx_task, 0, eNoAction);
+    }
+    delay(1000);
+  }
+}
+
 /// @brief Responsible for reading packets from Radio and processing them in the manager
 /// @param pvParameters
 void FanetRadio::taskRadioRx(void* pvParameters) {
@@ -99,7 +114,9 @@ void FanetRadio::taskRadioTx(void* pvParameters) {
   auto& radio = *fanetRadio.radio;
 
   while (true) {
-    auto sleepTill = portMAX_DELAY;
+    // Default to 2 seconds of sleep to check the send queue
+    // and perform neighbor flushing events.
+    auto sleepTill = pdMS_TO_TICKS(2000);
     // Take the radio & SPI mutex
     if (fanetRadio.state == FanetRadioState::RUNNING) {
       // Very important to take the spiLock before the radio lock here!
@@ -144,7 +161,7 @@ void FanetRadio::taskRadioTx(void* pvParameters) {
     // Release the mutex and go back to sleep, waiting for our next time to
     // check for queued packets.  Run this every 2 seconds as a sanity
     // check
-    ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(2000));
+    ulTaskNotifyTake(pdTRUE, sleepTill);
   }
 }
 
@@ -186,10 +203,6 @@ void FanetRadio::setup(etl::imessage_bus* bus) {
 #ifdef LORA_SX1262
   radio = new SX1262(&radioModule);
 
-  // Don't select this chip by default
-  // pinMode(SX1262_NSS, OUTPUT);
-  // digitalWrite(SX1262_NSS, HIGH);
-
 #endif
 
   // Set the radio callback ISR
@@ -224,6 +237,12 @@ void FanetRadio::setup(etl::imessage_bus* bus) {
     state = FanetRadioState::FAILED_OTHER;
     return;
   }
+
+  // TODO:  Add a setting for sending out periodic Fanet names
+  // Create the name TX task
+  // Just disable this for now until we support names :)
+  // taskCreateCode =
+  //     xTaskCreate(taskRadioNameTx, "FanetNameTx", 4096, nullptr, 1, &x_fanet_tx_name_task);
 
   // Put the radio to sleep once it has been initialized.
   radio->sleep();

@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <RadioLib.h>
+#include "DebugWebserver.h"
 #include "FreeRTOS.h"
 #include "etl/delegate.h"
 #include "etl/message_bus.h"
@@ -23,6 +24,9 @@ String MacToString(Fanet::Mac address);
 // periodic transmission of the aircraft's position based on how noisy the
 // airwaves are and how many neighbors are around.
 class FanetRadio : public etl::message_router<FanetRadio, GpsReading> {
+  // Allow the debug webserver to access all of our private parts
+  friend void webserver_setup();
+
  public:
   /// @brief Allocates any dynamic memory required for module.
   void setup(etl::imessage_bus* bus);
@@ -101,6 +105,10 @@ class FanetRadio : public etl::message_router<FanetRadio, GpsReading> {
   TaskHandle_t x_fanet_tx_task = nullptr;
   static void taskRadioTx(void* pvParameters);
   static volatile bool last_was_tx;
+
+  // Periodic name sending
+  TaskHandle_t x_fanet_tx_name_task = nullptr;
+  static void taskRadioNameTx(void* pvParameters);
 
   /// @brief Setup of the Fanet Packet Handler
   void setupFanetHandler();

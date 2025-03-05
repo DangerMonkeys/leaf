@@ -72,13 +72,13 @@ bool gps_is_quiet = 0;
 // Trackers for Task Manager Queue.  Default to tasks being needed, so they execute upon startup
 char taskman_setTasks = 1;  // the task of setting tasks -- usually set by timer-driven interrupt
 
-char taskman_buttons = 1;  // poll & process buttons
-char taskman_speakerTimer = 1; // adjust speaker notes
-char taskman_baro = 1;     // (1) preprocess on-chip ADC pressure, (2) read pressure and preprocess
+char taskman_buttons = 1;       // poll & process buttons
+char taskman_speakerTimer = 1;  // adjust speaker notes
+char taskman_baro = 1;  // (1) preprocess on-chip ADC pressure, (2) read pressure and preprocess
                         // on-chip ADC temperature, (3) read temp and calulate true Alt, (4) filter
                         // Alt, update climb, and store values etc
-char taskman_imu = 1;      // read sensors and update values
-char taskman_gps = 1;      // process any NMEA strings and update values
+char taskman_imu = 1;   // read sensors and update values
+char taskman_gps = 1;   // process any NMEA strings and update values
 char taskman_display = 1;  // update display
 char taskman_power = 1;    // check battery, check auto-turn-off, etc
 char taskman_log = 1;      // check auto-start, increment timers, update log file, etc
@@ -338,13 +338,13 @@ void setTasks(void) {
       break;
     case 2:
       // taskman_baro = 2;
-      taskman_imu = 1;  // update accel every 50ms during the 2nd & 7th blocks
+      taskman_imu = 1;           // update accel every 50ms during the 2nd & 7th blocks
       taskman_estimateWind = 1;  // estimate wind speed and direction
       break;
     case 3:
       // taskman_baro = 3;
       break;
-    case 4:      
+    case 4:
       break;
     case 5:
       baro_startNewCycle = true;  // begin updating baro every 50ms on the 0th and 5th blocks
@@ -355,7 +355,6 @@ void setTasks(void) {
       break;
     case 7:
       taskman_imu = 1;  // update accel every 50ms during the 2nd & 7th blocks
-      taskman_ble = 1;
       // taskman_baro = 2;
       break;
     case 8:

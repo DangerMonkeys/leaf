@@ -24,3 +24,4 @@
 #define SX1262_DIO1 46   // DIO1 pin
 #define SX1262_RESET 39  // Busy pin
 #define SX1262_BUSY 7    // Busy pin
+#define SX1262_RF_SW 21  // RX Control
