@@ -489,6 +489,8 @@ void baro_calculateAlt() {
   // calculate altitude in cm
   baro.alt = 4433100.0 * (1.0 - pow((float)baro.pressureFiltered / 101325.0,
                                     (.190264)));  // standard altimeter setting
+  baro.altF = (float)baro.alt / 100.0f;
+  
   baro.altAdjusted =
       4433100.0 * (1.0 - pow((float)baro.pressureFiltered / (baro.altimeterSetting * 3386.389),
                              (.190264)));  // adjustable altimeter setting

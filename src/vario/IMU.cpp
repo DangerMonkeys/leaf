@@ -13,6 +13,13 @@
 #include "SDcard.h"
 #include "log.h"
 #include "telemetry.h"
+#include "kalmanvert/kalmanvert.h"
+
+// Kalman filter object for vertical climb rate and position
+Kalmanvert kalmanvert;
+
+#define POSITION_MEASURE_STANDARD_DEVIATION 0.1f
+#define ACCELERATION_MEASURE_STANDARD_DEVIATION 0.3f
 
 #define DEBUG_IMU 0
 
@@ -40,6 +47,13 @@ void imu_init() {
       initialized = true;
     }
   }
+
+  //setup kalman filter
+  kalmanvert.init(baro.altF,
+    0.0,
+    POSITION_MEASURE_STANDARD_DEVIATION,
+    ACCELERATION_MEASURE_STANDARD_DEVIATION,
+    millis());
 }
 
 float ax, ay, az, at;
@@ -70,7 +84,16 @@ void imu_update() {
     String accelName = "accel,";
     String accelEntry = accelName + String(at);
     Telemetry.writeText(accelEntry);
-  
+
+  // update kalman filter
+  kalmanvert.update(baro.altF, at, millis());
+
+  String kalmanName = "kalman,";
+  String kalmanEntryString = kalmanName + String(kalmanvert.getPosition(), 8) + ',' +
+                          String(kalmanvert.getVelocity(), 8) + ',' + String(kalmanvert.getAcceleration(), 8);
+
+  Telemetry.writeText(kalmanEntryString);
+
 }
 
 float IMU_getAccel() { return at; }

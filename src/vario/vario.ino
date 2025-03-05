@@ -320,6 +320,7 @@ void setTasks(void) {
   // tasks to complete every 10ms
   taskman_buttons = 1;
   taskman_baro = 1;
+  
 
   // set additional tasks to complete, broken down into 10ms block cycles.  (embedded if()
   // statements allow for tasks every second, spaced out on different 100ms blocks)
@@ -337,9 +338,9 @@ void setTasks(void) {
       break;
     case 3:
       // taskman_baro = 3;
+      taskman_imu = 1;  // update accel every 50ms during the 3rd & 8th blocks
       break;
-    case 4:
-      taskman_imu = 1;  // update accel every 100ms during the 4th block
+    case 4:      
       break;
     case 5:
       baro_startNewCycle = true;  // begin updating baro every 50ms on the 0th and 5th blocks
@@ -354,6 +355,7 @@ void setTasks(void) {
       break;
     case 8:
       // taskman_baro = 3
+      taskman_imu = 1;  // update accel every 50ms during the 3rd & 8th blocks
       break;
     case 9:
 
