@@ -5,12 +5,11 @@
 #include "Leaf_SPI.h"
 #include "log.h"
 #include "settings.h"
-
-// use this to switch between method 1 (fixed sample length approach)
-// and method 2 (adjustable timer length)
-#define FIXED_SAMPLE_APPROACH true
+#include "io_pins.h"
+#include "configuration.h"
 
 uint8_t speakerVolume = 1;
+bool speakerMute = false; // use to mute sound for varius charging & sleep states
 
 // Sound Effects
 uint16_t fx_silence[] = {NOTE_END};
@@ -93,48 +92,21 @@ void speaker_init(void) {
   pinMode(SPEAKER_PIN, OUTPUT);
   ledcAttach(SPEAKER_PIN, 1000, 10);
 
-  // set Volume to proper default setting
-  if (SPEAKER_VOLA != NC) pinMode(SPEAKER_VOLA, OUTPUT);
-  if (SPEAKER_VOLB != NC) pinMode(SPEAKER_VOLB, OUTPUT);
-  // speaker_setVolume(VOLUME);      // use saved user prefs
-
-  speaker_setDefaultVolume();
-
-  if (FIXED_SAMPLE_APPROACH) {
-    // METHOD 1 (fixed sample length speaker timer)
-
-    // setup speaker timer interrupt to track each "beat" of sound
-    speaker_timer = timerBegin(SPEAKER_TIMER_FREQ);
-    timerAttachInterrupt(speaker_timer,
-                         &onSpeakerTimerSample);  // timer, ISR call          NOTE:
-                                                  // timerDetachInterrupt() does the opposite
-    timerAlarm(speaker_timer,
-               SPEAKER_SAMPLE_LENGTH,
-               true,
-               0);  // auto reload timer ever time we've counted a sample length
-
-  } else {
-    // METHOD 2 (time-adjusted speaker timer)
-
-    // setup speaker timer interrupt to track each "beat" of sound
-    speaker_timer = timerBegin(SPEAKER_TIMER_FREQ);
-    timerAttachInterrupt(speaker_timer,
-                         &onSpeakerTimerAdjustable);  // timer, ISR call          NOTE:
-                                                      // timerDetachInterrupt() does the opposite
-  }
+  // set speaker volume pins as outputs IF NOT ON the IO Expander
+  if (!SPEAKER_VOLA_IOEX) pinMode(SPEAKER_VOLA, OUTPUT);
+  if (!SPEAKER_VOLB_IOEX) pinMode(SPEAKER_VOLB, OUTPUT);
 
   snd_index = fx_silence;
 }
 
-void speaker_sleep() {
+void speaker_mute() {
   speaker_updateVarioNote(0);     // ensure we clear vario note
   ledcWriteTone(SPEAKER_PIN, 0);  // mute speaker pin
-  timerStop(speaker_timer);       // stop updating notes to play
+  speakerMute = true;
 }
 
-void speaker_wake() {
-  speaker_setDefaultVolume();
-  timerStart(speaker_timer);
+void speaker_unMute() {
+  speakerMute = false;
 }
 
 void speaker_setDefaultVolume() {
@@ -159,46 +131,38 @@ void speaker_setVolume(unsigned char volume) {
   speakerVolume = volume;
   switch (volume) {
     case 0:  // No Volume -- disable piezo speaker driver
-      digitalWrite(SPEAKER_VOLA, 0);
-      digitalWrite(SPEAKER_VOLB, 0);
+      ioexDigitalWrite(SPEAKER_VOLA_IOEX, SPEAKER_VOLA, 0);
+      ioexDigitalWrite(SPEAKER_VOLB_IOEX, SPEAKER_VOLB, 0);
       break;
     case 1:  // Low Volume -- enable piezo speaker driver 1x (3.3V)
-      digitalWrite(SPEAKER_VOLA, 1);
-      digitalWrite(SPEAKER_VOLB, 0);
+      ioexDigitalWrite(SPEAKER_VOLA_IOEX, SPEAKER_VOLA, 1);
+      ioexDigitalWrite(SPEAKER_VOLB_IOEX, SPEAKER_VOLB, 0);
       break;
     case 2:  // Med Volume -- enable piezo speaker driver 2x (6.6V)
-      digitalWrite(SPEAKER_VOLA, 0);
-      digitalWrite(SPEAKER_VOLB, 1);
+      ioexDigitalWrite(SPEAKER_VOLA_IOEX, SPEAKER_VOLA, 0);
+      ioexDigitalWrite(SPEAKER_VOLB_IOEX, SPEAKER_VOLB, 1);
       break;
     case 3:  // High Volume -- enable piezo spaker driver 3x (9.9V)
-      digitalWrite(SPEAKER_VOLA, 1);
-      digitalWrite(SPEAKER_VOLB, 1);
+      ioexDigitalWrite(SPEAKER_VOLA_IOEX, SPEAKER_VOLA, 1);
+      ioexDigitalWrite(SPEAKER_VOLB_IOEX, SPEAKER_VOLB, 1);
       break;
   }
 }
 
 void speaker_playSound(uint16_t* sound) {
-  if (VOLUME_SYSTEM != 0) {  // only play sound if the volume is non-zero
 
-    // Dont' need this anymore since volume is set inside ISR as needed
-    // speaker_setVolume(VOLUME_SYSTEM);   // set volume to system level for playing system sounds.
-    // (ISR will set speaker volume back to VOLUME_VARIO when the sound finishes);
-
-    snd_index = sound;
-    Serial.print("setting snd_index to: ");
-    Serial.print(*snd_index);
-    Serial.print(" @ ");
-    Serial.println(millis());
-    sound_fx = 1;
-    if (!FIXED_SAMPLE_APPROACH) onSpeakerTimerAdjustable();
-  }
+  snd_index = sound;
+  Serial.print("setting snd_index to: ");
+  Serial.print(*snd_index);
+  Serial.print(" @ ");
+  Serial.println(millis());
+  sound_fx = 1;
 }
 
 void speaker_playNote(uint16_t note) {
   single_note[0] = note;
   snd_index = single_note;
   sound_fx = 1;
-  if (!FIXED_SAMPLE_APPROACH) onSpeakerTimerAdjustable();
 }
 
 unsigned char climbToneSpread;
@@ -218,15 +182,7 @@ unsigned char liftyAirGap =
     1;  // track if we're playing the gap between double-beeps or the longer silence
 unsigned char liftyAirNow = 0;  // track if we're playing lifty air tone
 
-// entry point to direct the approach
 void speaker_updateVarioNote(int32_t verticalRate) {
-  if (FIXED_SAMPLE_APPROACH)
-    speaker_updateVarioNoteSample(verticalRate);
-  else
-    speaker_updateVarioNoteAdjustable(verticalRate);
-}
-
-void speaker_updateVarioNoteSample(int32_t verticalRate) {
   // don't play any beeps if Quiet Mode is turned on, and we haven't started a flight
   if (QUIET_MODE && !flightTimer_isRunning()) {
     sound_varioNote = 0;
@@ -314,170 +270,46 @@ void speaker_debugPrint() {
   Serial.print(sound_varioNote);
   Serial.print(" Play: ");
 
-  if (FIXED_SAMPLE_APPROACH)
-    Serial.print(sound_vario_play_samples);
-  else
-    Serial.print(sound_varioPlayLength);
+  Serial.print(sound_vario_play_samples);
 
   Serial.print(" Rest: ");
-
-  if (FIXED_SAMPLE_APPROACH)
-    Serial.print(sound_vario_rest_samples);
-  else
-    Serial.print(sound_varioRestLength);
-
+  Serial.print(sound_vario_rest_samples);
   Serial.println(" !");
-  // Serial.println("END OF UPDATE VARIO NOTE --> this is a whole bunch of text to see if additional
-  // serial printing is causing the interrupt routine to fail on the watchdog timer.  woop woop woop
-  // woop woop woop woop woop woop woop woop woop woop woop woop woop woop woop woop woop woop woop
-  // woop woop woop woop woop woop woop woop woop woop woop woop woop woop woop woop woop woop woop
-  // woop woop woop woop woop woop woop woop woop ");
 }
 
-void speaker_updateVarioNoteAdjustable(int32_t verticalRate) {
-  sound_varioNoteLastUpdate = sound_varioNote;
 
-  if (verticalRate > CLIMB_START) {
-    // first clamp to thresholds if climbRate is over the max
-    if (verticalRate >= CLIMB_MAX) {
-      sound_varioNote =
-          verticalRate * (CLIMB_NOTE_MAX - CLIMB_NOTE_MIN) / CLIMB_MAX + CLIMB_NOTE_MIN;
-      if (sound_varioNote > CLIMB_NOTE_MAXMAX) sound_varioNote = CLIMB_NOTE_MAXMAX;
-      sound_varioPlayLength = CLIMB_PLAY_MIN;
-      sound_varioRestLength = 0;  // just hold a continuous tone, no pulses
-    } else {
-      sound_varioNote =
-          verticalRate * (CLIMB_NOTE_MAX - CLIMB_NOTE_MIN) / CLIMB_MAX + CLIMB_NOTE_MIN;
-      sound_varioPlayLength =
-          CLIMB_PLAY_MAX - (verticalRate * (CLIMB_PLAY_MAX - CLIMB_PLAY_MIN) / CLIMB_MAX);
-      sound_varioRestLength =
-          CLIMB_REST_MAX - (verticalRate * (CLIMB_REST_MAX - CLIMB_REST_MIN) / CLIMB_MAX);
-    }
-  } else if (verticalRate < SINK_ALARM) {
-    // first clamp to thresholds if sinkRate is over the max
-    if (verticalRate <= SINK_MAX) {
-      sound_varioNote = SINK_NOTE_MIN - verticalRate * (SINK_NOTE_MIN - SINK_NOTE_MAX) / SINK_MAX;
-      if (sound_varioNote < SINK_NOTE_MAXMAX || sound_varioNote > SINK_NOTE_MAX)
-        sound_varioNote = SINK_NOTE_MAXMAX;  // the second condition (|| > SINK_NOTE_MAX) is to
-                                             // prevent uint16 wrap-around to a much higher number
-      sound_varioPlayLength = SINK_PLAY_MAX;
-      sound_varioRestLength = 0;  // just hold a continuous tone, no pulses
-    } else {
-      sound_varioNote = SINK_NOTE_MIN - verticalRate * (SINK_NOTE_MIN - SINK_NOTE_MAX) / SINK_MAX;
-      sound_varioPlayLength =
-          SINK_PLAY_MIN + (verticalRate * (SINK_PLAY_MAX - SINK_PLAY_MIN) / SINK_MAX);
-      sound_varioRestLength =
-          SINK_REST_MIN + (verticalRate * (SINK_REST_MAX - SINK_REST_MIN) / SINK_MAX);
-    }
+
+// count timer cycles so we only update note every 4th time
+uint8_t speakerTimerCount = 0; 
+
+// Run every 10ms from main loop to adjust tone if needed
+bool onSpeakerTimer() {
+
+  // return true if there are notes left to play
+  bool notesLeftToPlay = false;
+
+  // our 'samples' (note length) are 40ms, so only do this every 4th time
+  if (++speakerTimerCount >= 4) {
+    speakerTimerCount = 0;
+    // proceed with adjusting the tone
   } else {
-    sound_varioNote = 0;
-  }
-
-  // speaker_debugPrint();
-
-  // start the vario beeps if there's something to play, and we haven't been playing, and there are
-  // no FX playing
-  if (sound_varioNote) {
-    if (sound_varioNoteLastUpdate == 0) {
-      if (!sound_fx) onSpeakerTimerAdjustable();  // if there's somethign to play
+    // don't do anything this time, but return true if sound_fx is still playing
+    if (sound_fx) {
+      notesLeftToPlay = true;
     }
+    return notesLeftToPlay;
   }
 
-  /*
-        unsigned char percentToMax = 0;
-
-        sndCLIMB_tone = 0;	// assume no sound to play
-        liftyAirNow = 0;	// assume no lifty air
-
-        if (VOLUME != 0) {
-                // if climbing
-                if (VARIO_RATEfiltered >= CLIMB_START) {
-                        // calculate % between CLIMB_THRESHOLD (min climb) and CLIMB_MAX
-                        percentToMax = (VARIO_RATEfiltered - CLIMB_START)*100 / climbRateSpread;
-     //TODO: probably take out subtraction of the threshold, it's only 10cm if (percentToMax > 100)
-     percentToMax = 100;
-
-                        // calculate sndCLIMB_tone, sndCLIMB_playCountMax, and
-     sndCLIMB_silenceCountMax sndCLIMB_tone = CLIMB_TONE_MIN - (percentToMax * climbToneSpread /
-     100); sndCLIMB_playCountMax = CLIMB_PLAY_MAX - (percentToMax * climbPlaySpread / 100);
-                        sndCLIMB_silenceCountMax = CLIMB_SILENCE_MAX - (percentToMax *
-     climbSilenceSpread / 100);
-
-                // if Sink Alarm is ON and sinking > ALARM
-                } else if (SINK_ALARM != 0 && VARIO_RATEfiltered <= -100*((long)SINK_ALARM)) {
-                        // calculate % between SINK_ALARM and SINK_MAX
-                        percentToMax = (-VARIO_RATEfiltered - ((unsigned int)SINK_ALARM*100)) * 100
-     / sinkRateSpread; if (percentToMax > 100) percentToMax = 100;
-
-                        // calculate sndCLIMB_tone, sndCLIMB_playCountMax, and
-     sndCLIMB_silenceCountMax sndCLIMB_tone = SINK_TONE_MAX + (percentToMax * sinkToneSpread / 100);
-                        sndCLIMB_playCountMax = SINK_PLAY_MIN + (percentToMax * sinkPlaySpread /
-     100); sndCLIMB_silenceCountMax = SINK_SILENCE_MAX - (percentToMax * sinkSilenceSpread / 100);
-
-                // if LiftyAir is ON and we're in that sink/climb range
-                } else if (LIFTY_AIR != 0 && VARIO_RATEfiltered >= -LIFTY_AIR) {
-                        percentToMax = (-VARIO_RATEfiltered + CLIMB_START)*100  / liftyRateSpread;
-                        if (percentToMax > 100) percentToMax = 100;
-
-                        sndCLIMB_tone = LIFTYAIR_TONE_MAX + (percentToMax * liftyToneSpread / 100);
-                        sndCLIMB_playCountMax = LIFTYAIR_PLAY;
-                        sndCLIMB_silenceCountMax = LIFTYAIR_SILENCE_MIN + (percentToMax *
-     liftySilenceSpread / 100); liftyAirNow = 1;
-                }
-        }
-  */
-}
-
-// timerWrite(timer, 0)
-
-/*
-
-//run once when booting up:
-timerSetup() {
-  ..attach timer to interrupt (do_this_when_time_expires);
-  ..set timer to auto-renew itself when it expires
-  ..set timer time to default 1 second.
-}
-
-//run every ~500ms to adjust values based on pressure sensor output
-// note: all three of these variables are declared volatile (not even sure if that's needed since
-they are only ever set here; but the interrupt could be reading them while this function is changing
-them) void updateNote() {
-  ..do calculations on climbRate to set the following:
-  noteToPlay = stuff;
-  noise_time = stuff;
-  silence_time = stuff;
-}
-
-ISR: do_this_when_time_expires() {
-  if (noteToPlay > 0)
-      if (beeping) {
-      ..set timer to appropriate length of rest (silence_time);
-      ..set pwm_speakerOutput(0);
-      beeping = false;
-      } else {
-      ..set timer to appropriate length of beep (noise_time);
-      ..set pwm_speakerOutput(noteToPlay);
-      beeping = true;
-      }
-  else {
-    ..set pwm_speakerOutput(0);
-    // timer will keep cycling at whatever the last set time-period was
+  // only play sound if speaker is not muted
+  if (speakerMute) {
+    ledcWriteTone(SPEAKER_PIN, 0);
+    return notesLeftToPlay;
   }
-}
-
-
-
-
-*/
-
-// Speaker Driver for method 1 (fixed sample length)
-void IRAM_ATTR onSpeakerTimerSample() {
-  // spi_checkFlag(2);
-  // Serial.print("ENTER ISR: ");
-
+  
   // prioritize sound effects from UI & Button etc before we get to vario beeps
-  if (sound_fx) {
+  // but only play soundFX if system volume is on
+  if (sound_fx && VOLUME_SYSTEM) {
+    notesLeftToPlay = true;
     speaker_setVolume(VOLUME_SYSTEM);  // play system sound effects at system volume setting
 
     // Serial.print("FX: "); Serial.print(*snd_index); Serial.print(" @ ");
@@ -499,17 +331,17 @@ void IRAM_ATTR onSpeakerTimerSample() {
       ledcWriteTone(SPEAKER_PIN, 0);
       sound_fx = 0;
       sound_fxNoteLast = 0;
+      notesLeftToPlay = false;
+      speaker_setVolume(VOLUME_VARIO); // return to vario volume in prep for beeps
     }
 
-  } else if (sound_varioNote > 0 &&
-             VOLUME_VARIO) {          // if there's a note to play, and the vario volume isn't zero
-    speaker_setVolume(VOLUME_VARIO);  // play vario sounds at vario volume setting
+  // if there's a vario note to play, and the vario volume isn't zero
+  } else if (sound_varioNote > 0 && VOLUME_VARIO) {          
+    //commenting this line out; instead let's return to vario volume at the end of SoundFX
+    //speaker_setVolume(VOLUME_VARIO);  // play vario sounds at vario volume setting
 
-    // Serial.print("Vario: "); Serial.print(sound_varioNote); Serial.print(" @ ");
-    // Serial.print(millis());
     //  Handle the beeps and rests of a vario sound "measure"
     if (sound_varioResting) {
-      // Serial.println("  VAR_REST");
       ledcWriteTone(SPEAKER_PIN, 0);  // "play" silence since we're resting between beeps
 
       // stop playing rest if we've done it long enough
@@ -541,136 +373,8 @@ void IRAM_ATTR onSpeakerTimerSample() {
                                     // to do this here because sound_varioNote might have been set
                                     // to 0 while we were beeping, and then we'll keep beeping)
   }
-}
 
-// Speaker Driver for method 2 (adjustable length)
-void IRAM_ATTR onSpeakerTimerAdustable() {
-  // Serial.print("ENTER ISR: ");
-  timerWrite(speaker_timer, 0);  // reset timer as we enter interrupt
-
-  // prioritize sound effects from UI & Button etc before we get to vario beeps
-  if (sound_fx) {
-    Serial.print("FX: ");
-    Serial.print(*snd_index);
-    Serial.print(" @ ");
-    Serial.println(millis());
-    if (*snd_index != NOTE_END) {
-      if (*snd_index != sound_fxNoteLast)
-        ledcWriteTone(SPEAKER_PIN,
-                      *snd_index);  // only change pwm if it's a different note, otherwise we get a
-                                    // little audio blip between the same notes
-      sound_fxNoteLast = *snd_index;
-      snd_index++;
-      timerWrite(speaker_timer, 0);  // start at 0
-      timerAlarm(speaker_timer,
-                 FX_NOTE_LENGTH,
-                 false,
-                 0);  // set timer for play period (don't reload; we'll trigger back into this ISR
-                      // when time is up)
-
-    } else {  // Else, we're at END_OF_TONE
-      Serial.println("FX NOTE END");
-      ledcWriteTone(SPEAKER_PIN, 0);
-      sound_fx = 0;
-      sound_fxNoteLast = 0;
-
-      // next, play vario sounds if any
-      if (sound_varioNote > 0) {
-        timerWrite(speaker_timer, 0);              // start at 0
-        timerAlarm(speaker_timer, 500, false, 0);  // set timer for play period (don't reload; we'll
-                                                   // trigger back into this ISR when time is up)
-      }
-    }
-  } else if (sound_varioNote > 0) {
-    // Serial.print("Vario: "); Serial.print(sound_varioNote); Serial.print(" @ ");
-    // Serial.print(millis());
-    //  Handle the beeps and rests of a vario sound "measure"
-    if (sound_varioResting) {
-      // Serial.println("  VAR_REST");
-      ledcWriteTone(SPEAKER_PIN, 0);  // "play" silence since we're resting between beeps
-      sound_varioNoteLast = 0;
-      sound_varioResting = false;  // next time through we want to play sound
-
-      timerWrite(speaker_timer, 0);  // start at 0
-      timerAlarm(speaker_timer,
-                 sound_varioRestLength,
-                 false,
-                 0);  // set timer for play period (don't reload; we'll trigger back into this ISR
-                      // when time is up)
-    } else {
-      // Serial.println("  VAR_BEEP");
-      if (sound_varioNote != sound_varioNoteLast)
-        ledcWriteTone(
-            SPEAKER_PIN,
-            sound_varioNote);  // play the note, but only if different, otherwise we get a little
-                               // audio blip between the same successive notes (happens when vario
-                               // is pegged and there's no rest period between)
-      sound_varioNoteLast = sound_varioNote;
-      if (sound_varioRestLength)
-        sound_varioResting = true;   // next time through we want to rest (play silence), unless
-                                     // climb is maxed out (ie, rest length == 0)
-      timerWrite(speaker_timer, 0);  // start at 0
-      timerAlarm(speaker_timer,
-                 sound_varioPlayLength,
-                 false,
-                 0);  // set timer for play period (don't reload; we'll trigger back into this ISR
-                      // when time is up)
-    }
-  } else {
-    // Serial.println("ISR NO SOUND");
-    ledcWriteTone(SPEAKER_PIN, 0);  // play silence (if timer is configured for auto-reload, we have
-                                    // to do this here because sound_varioNote might have been set
-                                    // to 0 while we were beeping, and then we'll keep beeping)
-  }
-  /*
-
-
-
-
-
-
-
-          } else if (sound_climbNote > 0) {					// Play climb sound
-     if desired, if there were no FX to play if (!sndCLIMB_silence) {
-     // 	if not playing silence..
-
-        timerAlarmWrite(speaker_timer, 1000, true);
-
-                          if (!sndCurrentlyPlaying) {				// if we're not
-     playing a beep currently, then go ahead and allow a frequency/pitch change
-                                  ledcWriteTone(PWM_CHANNEL, sound_climbNote);
-     //  this is the note we play sndCurrentlyPlaying = 1;			//	and note
-     that we're playing something
-                          }
-
-                          sndCLIMB_playCount++;					//	  log this
-     play of the note
-
-                          if (sndCLIMB_playCount >= sndCLIMB_playCountMax) {	// if we've played
-     the note enough times sndCLIMB_playCount = 0;
-     //   reset play count sndCurrentlyPlaying = 0; if (sndCLIMB_silenceCountMax >= 1)
-     //   and if we need silence sndCLIMB_silence = 1;						//
-     get ready to play silence
-                          }
-
-                  } else {
-                          speaker_disableTimer();					// play
-     silence sndCLIMB_silenceCount++;				// log this play of silence if
-     (sndCLIMB_silenceCount >= sndCLIMB_silenceCountMax) { 	// if we've played silence long
-     enough sndCLIMB_silence = 0;
-     //  time for noise sndCLIMB_silenceCount = 0;
-     //  reset silence count if (liftyAirNow) liftyAirGap = 1; } else if (liftyAirNow && liftyAirGap
-     && sndCLIMB_silenceCount >= LIFTYAIR_GAP) { sndCLIMB_silence = 0;
-     //  time for noise sndCLIMB_silenceCount = 0;
-     //  reset silence count liftyAirGap = 0;
-                          }
-                  }
-
-          } else {										//
-     No sound to play speaker_disableTimer();						//   turn
-     off sound
-          }
-    */
+  return notesLeftToPlay;
 }
 
 void speaker_TEST(void) {

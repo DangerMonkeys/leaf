@@ -4,21 +4,8 @@
 #include <Arduino.h>
 #include "configuration.h"
 
-// for fixed sample-length timer (approach #1)
 #define SPEAKER_SAMPLE_LENGTH 40  // ms per sound 'sample' (i.e. like the length of a quarter note)
 #define FX_NOTE_SAMPLE_COUNT 2    // number of samples to play per FX Note
-
-// for time-adjusted timer (approach #2)
-#define FX_NOTE_LENGTH 500
-#define SPEAKER_TIMER_FREQ 1000  // Hz
-
-/*
-// Pinout for Breakboard
-#define SPEAKER_PIN		5   // output pin to play sound signal
-#define SPEAKER_VOLA  4   // enable A pin for voltage amplification (loud)
-#define SPEAKER_VOLB	6   // enable B pin for voltage amplification (louder) (enable both A & B
-for loudest) #define PWM_CHANNEL   0   // ESP32 has many channels; we'll use the first
-*/
 
 // each "beep beep" cycle is a "measure", made up of play-length followed by rest-length, then
 // repeat
@@ -73,8 +60,8 @@ for loudest) #define PWM_CHANNEL   0   // ESP32 has many channels; we'll use the
 #define LIFTYAIR_REST_MIN 10
 
 void speaker_init(void);
-void speaker_sleep(void);
-void speaker_wake(void);
+void speaker_mute(void);
+void speaker_unMute(void);
 
 void speaker_setDefaultVolume(void);
 void speaker_setVolume(unsigned char volume);
@@ -83,14 +70,8 @@ void speaker_decVolume(void);
 
 void speaker_updateVarioNote(int32_t verticalRate);  // the root one
 
-void onSpeakerTimerSample(void);  // method 1 -- fixed sample length
-void speaker_updateVarioNoteSample(int32_t verticalRate);
-
-void onSpeakerTimerAdjustable(void);  // method 2 -- adjustable timer length
-void speaker_updateVarioNoteAdjustable(int32_t verticalRate);
-
-void speaker_enableTimer(void);
-void speaker_disableTimer(void);
+bool onSpeakerTimer(void);  // call every 10ms from main loop
+void speaker_updateVarioNote(int32_t verticalRate);
 
 void speaker_playSound(uint16_t* sound);
 

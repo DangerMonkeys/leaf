@@ -16,6 +16,7 @@
 #include "tempRH.h"
 #include "ui/display.h"
 #include "ui/displayFields.h"
+#include "io_pins.h"
 
 POWER power;  // struct for battery-state and on-state variables
 
@@ -63,22 +64,34 @@ void power_init() {
 void power_init_peripherals() {
   Serial.print("init_peripherals: ");
   Serial.println(power.onState);
+  
+  // Init Peripheral Busses
+  wire_init();
+  Serial.println(" - Finished I2C Wire");
+  spi_init();
+  Serial.println(" - Finished SPI");
+
+  // initialize IO expander (needed for speaker in v3.2.5)
+  #ifdef HAS_IO_EXPANDER
+    ioexInit();  // initialize IO Expander
+    Serial.println(" - Finished IO Expander");
+  #endif
+  
   // initialize speaker to play sound (so user knows they can let go of the power button)
   speaker_init();
   Serial.println(" - Finished Speaker");
+
   if (power.onState == POWER_ON) {
     power_latch_on();
     speaker_playSound(fx_enter);
   }
+
   // then initialize the rest of the devices
   SDcard_init();
   Serial.println(" - Finished SDcard");
   gps_init();
   Serial.println(" - Finished GPS");
-  wire_init();
-  Serial.println(" - Finished I2C Wire");
-  spi_init();
-  Serial.println(" - Finished SPI");
+  
   display_init();
   Serial.println(" - Finished display");
   baro_init();
@@ -105,7 +118,7 @@ void power_sleep_peripherals() {
   Serial.println(" - Sleeping baro");
   baro_sleep();
   Serial.println(" - Sleeping speaker");
-  speaker_sleep();
+  speaker_mute();
   Serial.println("Shut down speaker");
   Serial.println(" - DONE");
 }
@@ -119,7 +132,7 @@ void power_wake_peripherals() {
   Serial.println(" - waking baro");
   baro_wake();
   Serial.println(" - waking speaker");
-  speaker_wake();
+  speaker_unMute();
   Serial.println(" - DONE");
 }
 
@@ -132,12 +145,18 @@ void power_switchToOnState() {
 
 void power_shutdown() {
   Serial.println("power_shutdown");
-
+  
   display_clear();
-  speaker_playSound(fx_exit);
-  baro_sleep();  // stop getting climbrate updates so we don't hear vario beeps while shutting down
   display_off_splash();
-  auto shutdownTimeStamp = millis();
+  baro_sleep();  // stop getting climbrate updates so we don't hear vario beeps while shutting down
+
+  // play shutdown sound
+  speaker_playSound(fx_exit);
+
+  //loop until sound is done playing
+  while(onSpeakerTimer()) {
+    delay(10);
+  }  
 
   // saving logs and system data
   if (flightTimer_isRunning()) {
@@ -147,11 +166,10 @@ void power_shutdown() {
   // save any changed settings this session
   settings_save();
 
-  // wait 3 seconds before shutting down to give user
+  // wait another 2.5 seconds before shutting down to give user
   // a chance to see the shutdown screen
-  while (millis() - shutdownTimeStamp < 3000) {
-    delay(100);
-  }
+  delay(2500);
+  
 
   // finally, turn off devices
   power_sleep_peripherals();
