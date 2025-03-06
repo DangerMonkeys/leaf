@@ -77,8 +77,6 @@ void power_init_peripherals() {
   Serial.println(" - Finished GPS");
   wire_init();
   Serial.println(" - Finished I2C Wire");
-  spi_init();
-  Serial.println(" - Finished SPI");
   display_init();
   Serial.println(" - Finished display");
   baro_init();

@@ -12,6 +12,7 @@
 #include "baro.h"
 #include "gpx.h"
 #include "log.h"
+#include "message_types.h"
 #include "settings.h"
 #include "telemetry.h"
 #include "ui/display.h"
@@ -66,6 +67,13 @@ TinyGPSCustom lonAccuracy(gps, "GPGST", 7);  // Longitude error - standard devia
 TinyGPSCustom fix(gps, "GNGGA", 6);          // Fix (0=none, 1=GPS, 2=DGPS, 3=Valid PPS)
 TinyGPSCustom fixMode(gps, "GNGSA", 2);      // Fix mode (1=No fix, 2=2D fix, 3=3D fix)
 GPSFixInfo gpsFixInfo;
+
+// Message bus to let the rest of the application know when new GPS updates are
+// available
+etl::imessage_bus* gps_bus = nullptr;
+
+// Lock for GPS
+SemaphoreHandle_t GpsLockGuard::mutex = NULL;
 
 // Enable GPS Backup Power (to save satellite data and allow faster start-ups)
 // This consumes a minor amount of current from the battery
@@ -133,6 +141,9 @@ void gps_shutdown() {
 }
 
 void gps_init(void) {
+  // Create the GPS Mutex for multi-threaded locking
+  GpsLockGuard::mutex = xSemaphoreCreateMutex();
+
   // init nav struct (TODO: may not need this here, just for testing at startup for ease)
   gpx_initNav();
 
@@ -266,6 +277,10 @@ float gps_getGlideRatio() {
   return glideRatio;
 }
 
+void gps_setBus(etl::imessage_bus* bus) {
+  gps_bus = bus;
+}
+
 // this is called whenever a new valid NMEA sentence contains a valid speed (TODO: check if true for
 // every sentence or just every fix)
 void onNewSentence(NMEASentenceContents contents) {
@@ -273,12 +288,17 @@ void onNewSentence(NMEASentenceContents contents) {
 }
 
 bool gps_read_buffer_once() {
+  GpsLockGuard mutex;  // Ensure we have a lock on write
   if (gpsPort.available()) {
     char a = gpsPort.read();
     bool newSentence = gps.encode(a);
     if (newSentence) {
       NMEASentenceContents contents = {.speed = gps.speed.isUpdated(),
                                        .course = gps.course.isUpdated()};
+      // Push the update onto the bus!
+      if (gps_bus && gps.location.isUpdated()) {
+        gps_bus->receive(GpsReading(gps));
+      }
       onNewSentence(contents);
     }
 

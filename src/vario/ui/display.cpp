@@ -55,20 +55,26 @@ uint8_t display_page_prior =
                          // cancelling out of a menu heirarchy)
 
 void display_init(void) {
-  pinMode(SPI_SS_LCD, OUTPUT);
-  digitalWrite(SPI_SS_LCD, HIGH);
-  u8g2.setBusClock(20000000);
-  Serial.print("u8g2 set clock. ");
-  u8g2.begin();
-  Serial.print("u8g2 began. ");
+  {
+    // Scope lock as setting a contrast will take its own lock
+    SpiLockGuard spiLock;  // Lock the SPI bus before working with it
+    pinMode(SPI_SS_LCD, OUTPUT);
+    digitalWrite(SPI_SS_LCD, HIGH);
+    u8g2.setBusClock(20000000);
+    Serial.print("u8g2 set clock. ");
+    u8g2.begin();
+    Serial.print("u8g2 began. ");
+
+    pinMode(LCD_BACKLIGHT, OUTPUT);
+    Serial.println("u8g2 done. ");
+  }
+
   display_setContrast(CONTRAST);
   Serial.print("u8g2 set contrast. ");
-
-  pinMode(LCD_BACKLIGHT, OUTPUT);
-  Serial.println("u8g2 done. ");
 }
 
 void display_setContrast(uint8_t contrast) {
+  SpiLockGuard spiLock;
 #ifndef WO256X128  // if not using older hardware, use the latest hardware contrast setting:
   // user can select levels of contrast from 0-20; but display needs values of 115-135.
   u8g2.setContrast(contrast + 115);
@@ -153,6 +159,8 @@ void displayDismissWarning() {
 // Will first display charging screen if charging, or splash screen if in the process of turning on
 // / waking up Then will display any current modal pages before falling back to the current page
 void display_update() {
+  SpiLockGuard spiLock;  // Take out an SPI lock for the rending of the page
+
   if (display_page == page_charging) {
     display_page_charging();
     return;
@@ -196,6 +204,7 @@ void display_update() {
 }
 
 void display_clear() {
+  SpiLockGuard spiLock;
   u8g2.clear();
 }
 

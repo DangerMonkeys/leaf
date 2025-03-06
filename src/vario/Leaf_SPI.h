@@ -1,7 +1,8 @@
 #ifndef Leaf_SPI_h
-#define Lead_SPI_h
+#define Leaf_SPI_h
 
 #include <Arduino.h>
+#include "lock_guard.h"
 
 // Note, ESP32 has four SPI busses.
 // SPI0 and SPI1 -> Used for internal flash
@@ -22,5 +23,16 @@ void spi_writeGLCD(byte data);
 
 void spi_writeIMUByte(byte address, byte data);
 uint8_t spi_readIMUByte(byte address);
+
+/// @brief Class to take out a SPI Mutex Lock
+class SpiLockGuard : public LockGuard {
+  friend void spi_init();
+
+ public:
+  SpiLockGuard() : LockGuard(spiMutex) {}
+
+ private:
+  static SemaphoreHandle_t spiMutex;
+};
 
 #endif

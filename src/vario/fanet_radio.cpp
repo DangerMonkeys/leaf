@@ -1,34 +1,27 @@
 #include "fanet_radio.h"
-#include <RadioLib.h>
 #include "FreeRTOS.h"
+#include "Leaf_SPI.h"
+#include "baro.h"
 #include "configuration.h"
 #include "esp_mac.h"
 #include "etl/array.h"
 #include "fanetGroundTracking.h"
 #include "fanetManager.h"
 #include "lock_guard.h"
-#include "settings.h"
+#include "log.h"
+#include "message_types.h"
 
-// Declare static variables
-FanetRadioState FanetRadio::state = FanetRadioState::UNINITIALIZED;
-SemaphoreHandle_t FanetRadio::x_fanet_manager_mutex = nullptr;
-Fanet::FanetManager* FanetRadio::manager = nullptr;
-SX1262* FanetRadio::radio = nullptr;
-etl::array<uint8_t, 256> FanetRadio::buffer = {};
-TaskHandle_t FanetRadio::x_fanet_rx_task = nullptr;
-TaskHandle_t FanetRadio::x_fanet_tx_task = nullptr;
-etl::optional<etl::delegate<void(Fanet::Packet&)>> FanetRadio::rx_callback = etl::nullopt;
+// Static initializers
 volatile bool FanetRadio::last_was_tx = false;
 
-#ifdef LORA_SX1262
-auto radioModule = Module((uint32_t)SX1262_NSS, SX1262_DIO1, SX1262_RESET, SX1262_BUSY);
-#endif
-
 ICACHE_RAM_ATTR void FanetRadio::onRxIsr() {
+  auto& fanet = FanetRadio::getInstance();
   // If this interrupt was called just to say a transmission has been completed,
+
   // there's no need to wake anyone up to process is
-  if (last_was_tx) {
-    last_was_tx = false;
+  // Try and clear the receive?
+  if (FanetRadio::last_was_tx) {
+    FanetRadio::last_was_tx = false;
     return;
   }
 
@@ -37,20 +30,39 @@ ICACHE_RAM_ATTR void FanetRadio::onRxIsr() {
 
   // Interrupt that a packet has been received.  Notify the RadioRx task
   // that we have packet(s) to handle.
-  xTaskNotifyFromISR(x_fanet_rx_task, 0, eNoAction, &xHigherPriorityTaskWoken);
+  xTaskNotifyFromISR(fanet.x_fanet_rx_task, 0, eNoAction, &xHigherPriorityTaskWoken);
 
   // Optionally, perform a context switch if a higher-priority task was woken
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
+void FanetRadio::taskRadioNameTx(void* pvParameters) {
+  auto& fanet = FanetRadio::getInstance();
+  Fanet::Name namePayload;
+  namePayload.name = "Leaf";
+
+  while (true) {
+    if (fanet.state == FanetRadioState::RUNNING) {
+      auto guard = LockGuard(fanet.x_fanet_manager_mutex);
+      fanet.manager->sendPacket(namePayload, millis());
+      xTaskNotify(fanet.x_fanet_tx_task, 0, eNoAction);
+    }
+    delay(1000);
+  }
+}
+
 /// @brief Responsible for reading packets from Radio and processing them in the manager
 /// @param pvParameters
 void FanetRadio::taskRadioRx(void* pvParameters) {
-  while (true) {
-    processRxPacket();
+  auto& fanet = FanetRadio::getInstance();
 
-    // Notify the Tx task that there *may* be packets to process from the manager
-    xTaskNotify(x_fanet_tx_task, 0, eNoAction);
+  while (true) {
+    if (fanet.state == FanetRadioState::RUNNING) {
+      fanet.processRxPacket();
+
+      // Notify the Tx task that there *may* be packets to process from the manager
+      xTaskNotify(fanet.x_fanet_tx_task, 0, eNoAction);
+    }
 
     // Release the lock & Wait for the next notification of there being a packet
     // to process
@@ -61,48 +73,64 @@ void FanetRadio::taskRadioRx(void* pvParameters) {
 void FanetRadio::processRxPacket() {
   auto& radio = *FanetRadio::radio;
 
-  // Take the radio mutex
-  LockGuard lock(x_fanet_manager_mutex);
+  int16_t rxState;
+  size_t length;
+  if (SpiLockGuard()) {
+    length = radio.getPacketLength();
 
-  auto length = radio.getPacketLength();
+    // If a 0 length packet is here, I'm guessing the "done" DIO pin was fired
+    // without there being any data to process.  Just clear this and continue on
+    // our way for the next notification.
+    if (length == 0) {
+      return;
+    }
 
-  // If a 0 length packet is here, I'm guessing the "done" DIO pin was fired
-  // without there being any data to process.  Just clear this and continue on
-  // our way for the next notification.
-  if (length == 0) {
-    return;
+    // A packet is able to be read
+    rxState = radio.readData(buffer.data(), length);
   }
 
-  // A packet is able to be read
-  auto rxState = radio.readData(buffer.data(), length);
   if (rxState == RADIOLIB_ERR_NONE) {
+    auto rssi = radio.getRSSI();
+    auto snr = radio.getSNR();
+
     // A packet was received successfully.  Process it in our Fanet manager
-    auto optPacket = manager->handleRx(buffer, length, millis(), radio.getRSSI(), radio.getSNR());
+    etl::optional<Fanet::Packet> optPacket;
+    if (LockGuard(x_fanet_manager_mutex))
+      optPacket = manager->handleRx(buffer, length, millis(), rssi, snr);
 
     if (optPacket.has_value()) {
       // If this packet is intended for our application, produce the callback
       auto& packet = optPacket.value();
-      if (rx_callback.has_value()) {
-        rx_callback.value()(packet);
-      }
+
+      // Put the packet on the bus
+      bus->receive(FanetPacket(packet, rssi, snr));
     }
   }
 }
 
 void FanetRadio::taskRadioTx(void* pvParameters) {
-  auto& manager = *FanetRadio::manager;
-  auto& radio = *FanetRadio::radio;
+  auto& fanetRadio = FanetRadio::getInstance();
+  auto& manager = *fanetRadio.manager;
+  auto& radio = *fanetRadio.radio;
 
   while (true) {
-    auto sleepTill = portMAX_DELAY;
-    // Take the radio mutex
-    {
-      LockGuard lock(x_fanet_manager_mutex);
+    // Default to 2 seconds of sleep to check the send queue
+    // and perform neighbor flushing events.
+    auto sleepTill = pdMS_TO_TICKS(2000);
+    // Take the radio & SPI mutex
+    if (fanetRadio.state == FanetRadioState::RUNNING) {
+      // Very important to take the spiLock before the radio lock here!
+      // The draw methods may take out a lock on the SPI bus while they're
+      // requesting information from our Fanet Manager
+      SpiLockGuard spiLock;
+      LockGuard lock(fanetRadio.x_fanet_manager_mutex);
 
       // Loop through all of the packets waiting in the tx queue
       // to be send out at the current time
       auto currentTime = millis();
-      auto nextTxTime = manager.nextTxTime(currentTime);
+      etl::optional<unsigned long> nextTxTime = etl::nullopt;
+      nextTxTime = manager.nextTxTime(currentTime);
+
       while (nextTxTime.has_value() && nextTxTime.value() <= currentTime) {
         manager.doTx(currentTime,
                      [&](const etl::array<uint8_t, 256>* bytes, const size_t& size) -> bool {
@@ -118,6 +146,12 @@ void FanetRadio::taskRadioTx(void* pvParameters) {
       };
       radio.startReceive();
 
+      // Flush out the neighbor table every ~30 seconds
+      if (currentTime - fanetRadio.neighbor_table_flushed > 30000) {
+        manager.flushOldNeighborEntries(currentTime);
+        fanetRadio.neighbor_table_flushed = currentTime;
+      }
+
       // Figure out how long it is we need to sleep until
       if (nextTxTime.has_value()) {
         sleepTill = pdMS_TO_TICKS(nextTxTime.value() - currentTime);
@@ -125,62 +159,13 @@ void FanetRadio::taskRadioTx(void* pvParameters) {
     }
 
     // Release the mutex and go back to sleep, waiting for our next time to
-    // check for queued packets
-    // ulTaskNotifyTake(pdTRUE, sleepTill); // TODO:  This
-    ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(2000));
+    // check for queued packets.  Run this every 2 seconds as a sanity
+    // check
+    ulTaskNotifyTake(pdTRUE, sleepTill);
   }
 }
 
-void FanetRadio::begin(const FanetRadioRegion& region) {
-#ifndef FANET
-  return;  // Model does not support Fanet
-#endif
-
-  // End the radio module if it's already running
-  end();
-
-  // If the region is set not to broadcast, turn off.
-  if (region == FanetRadioRegion::OFF) {
-    return;
-  }
-
-  state = FanetRadioState::INITIALIZING;
-
-  // Create the mutex, lock it.
-  x_fanet_manager_mutex = xSemaphoreCreateMutex();
-  if (x_fanet_manager_mutex == NULL) {
-    state = FanetRadioState::FAILED_OTHER;
-    return;
-  }
-
-  LockGuard lock(x_fanet_manager_mutex);
-
-#ifdef LORA_SX1262
-  radio = new SX1262(&radioModule);
-#endif
-
-  // Set the radio callback ISR
-  radio->setPacketReceivedAction(onRxIsr);
-
-  int16_t radioInitState = RADIOLIB_ERR_UNKNOWN;
-
-  // Initialize the radio for the settings of the given region
-  switch (region) {
-    case FanetRadioRegion::US:
-      radioInitState = radio->begin(920.800f, 500.0f, 7U, 5U, 0xF1, 10U, 8U, 1.6f, false);
-      break;
-  }
-
-  if (radioInitState != RADIOLIB_ERR_NONE) {
-    state = FanetRadioState::FAILED_RADIO_INIT;
-    return;
-  }
-
-  if (radio->setDio2AsRfSwitch() != RADIOLIB_ERR_NONE) {
-    state = FanetRadioState::FAILED_RADIO_INIT;
-    return;
-  }
-
+void FanetRadio::setupFanetHandler() {
   // Figure out what SRC address to use.
   auto addressString = getAddress();
   Fanet::Mac srcAddress;
@@ -198,6 +183,34 @@ void FanetRadio::begin(const FanetRadioRegion& region) {
 
   // TODO:  Probably move this into a configurable setting
   manager->aircraftType = Fanet::AircraftType::Paraglider;
+}
+
+void FanetRadio::setup(etl::imessage_bus* bus) {
+  // Sets up the radio module.  Leaves it in an uninitialized state, but
+  // creates any dynamic memory required.
+  this->bus = bus;
+
+  // Take out a lock on the SPI bus.
+  SpiLockGuard spiLock;
+
+  // Create the mutex, lock it.
+  x_fanet_manager_mutex = xSemaphoreCreateMutex();
+  if (x_fanet_manager_mutex == NULL) {
+    state = FanetRadioState::FAILED_OTHER;
+    return;
+  }
+
+#ifdef LORA_SX1262
+  radio = new SX1262(&radioModule);
+
+#endif
+
+  // Set the radio callback ISR
+  radio->setPacketReceivedAction(onRxIsr);
+
+  // Sets up the FanetHandler, reserving memory if we were to
+  // enable it.
+  setupFanetHandler();
 
   // Create the TX Task
   auto taskCreateCode = xTaskCreate(taskRadioTx,
@@ -214,7 +227,7 @@ void FanetRadio::begin(const FanetRadioRegion& region) {
 
   // Create the RX Task
   taskCreateCode = xTaskCreate(taskRadioRx,
-                               "FanetXx",
+                               "FanetRx",
                                4096,
                                nullptr,
                                1,  // Typical lower priority task
@@ -225,6 +238,52 @@ void FanetRadio::begin(const FanetRadioRegion& region) {
     return;
   }
 
+  // TODO:  Add a setting for sending out periodic Fanet names
+  // Create the name TX task
+  // Just disable this for now until we support names :)
+  // taskCreateCode =
+  //     xTaskCreate(taskRadioNameTx, "FanetNameTx", 4096, nullptr, 1, &x_fanet_tx_name_task);
+
+  // Put the radio to sleep once it has been initialized.
+  radio->sleep();
+}
+
+void FanetRadio::begin(const FanetRadioRegion& region) {
+#ifndef FANET
+  return;  // Model does not support Fanet
+#endif
+
+  // Short circuit above taking any locks out (avoid deadlocks)
+  if (region == FanetRadioRegion::OFF) {
+    end();
+    return;
+  }
+
+  state = FanetRadioState::INITIALIZING;
+  int16_t radioInitState = RADIOLIB_ERR_UNKNOWN;
+  // Always take the SPI lock out before the Fanet Manager lock
+  // to avoid deadlocks with janky display modules locking the SPI
+  // bus and making Fanet state changes or requests after.
+  SpiLockGuard spiLock;
+  LockGuard lock(x_fanet_manager_mutex);
+
+  Serial.println("[FanetRadio] Initializing");
+  // Initialize the radio for the settings of the given region
+
+  switch (region) {
+    case FanetRadioRegion::US:
+      radioInitState = radio->begin(920.800f, 500.0f, 7U, 5U, 0xF1, 22U, 8U, 1.8f, false);
+      break;
+  }
+
+  if (radioInitState != RADIOLIB_ERR_NONE) {
+    Serial.printf("[FanetRadio] Module initialization failed: %d\n", radioInitState);
+    state = FanetRadioState::FAILED_RADIO_INIT;
+    return;
+  }
+
+  Serial.println("[FanetRadio] Initialized");
+
   auto rxState = radio->startReceive();
   if (rxState != RADIOLIB_ERR_NONE) {
     Serial.println("[FanetRadio] Radio->startReceive failed");
@@ -232,41 +291,23 @@ void FanetRadio::begin(const FanetRadioRegion& region) {
     return;
   }
 
+#ifdef LORA_SX1262
+  radio->setRfSwitchPins(SX1262_RF_SW, RADIOLIB_NC);
+  if (radio->setDio2AsRfSwitch() != RADIOLIB_ERR_NONE) {
+    state = FanetRadioState::FAILED_RADIO_INIT;
+    return;
+  }
+  // Try to get a few extra db
+  radio->setRxBoostedGainMode(true, true);
+#endif
+
   // We're finished, release the locks.
   state = FanetRadioState::RUNNING;
 }
 
 void FanetRadio::end() {
-  // Destroy any running tasks
-  if (x_fanet_rx_task != nullptr) {
-    vTaskDelete(x_fanet_rx_task);
-    x_fanet_rx_task = nullptr;
-  }
-  if (x_fanet_tx_task != nullptr) {
-    vTaskDelete(x_fanet_tx_task);
-    x_fanet_tx_task = nullptr;
-  }
-
-  // Destroy any mutex that was created
-  if (x_fanet_manager_mutex != nullptr) {
-    vSemaphoreDelete(x_fanet_manager_mutex);
-    x_fanet_manager_mutex = nullptr;
-  }
-
-  // Destroy the manager
-  if (manager != nullptr) {
-    delete manager;
-    manager = nullptr;
-  }
-
-  // Destroy the radio
-  if (radio != nullptr) {
-    // Not sure the deconstructor will explicitly sleep the radio.
-    radio->sleep(false);
-    delete radio;
-    radio = nullptr;
-  }
-
+  SpiLockGuard spiLock;
+  radio->sleep(false);
   state = FanetRadioState::UNINITIALIZED;
 }
 
@@ -286,10 +327,9 @@ void FanetRadio::setCurrentLocation(const float& lat,
   // Acquire the manager lock, notify the manager
   LockGuard lock(x_fanet_manager_mutex);
   manager->setPos(lat, lon, alt, millis(), heading, climbRate, speedKmh);
-}
 
-void FanetRadio::setRxCallback(etl::delegate<void(Fanet::Packet&)> val) {
-  rx_callback = val;
+  // Notify the Tx task that there *may* be packets to process from the manager
+  xTaskNotify(x_fanet_tx_task, 0, eNoAction);
 }
 
 Fanet::Stats FanetRadio::getStats() {
@@ -305,6 +345,26 @@ etl::unordered_map<uint32_t, Fanet::Neighbor, FANET_MAX_NEIGHBORS> FanetRadio::g
 
   LockGuard lock(x_fanet_manager_mutex);
   return manager->getNeighborTable();
+}
+
+void FanetRadio::on_receive(const GpsReading& msg) {
+  // Not a valid GPS location.  Bail out
+  if (!msg.gps.location.isValid()) return;
+
+  if (!manager->getGroundType().has_value() && !getAreWeFlying()) {
+    // We're not performing ground tracking, and we're not currently flying.
+    // Bail out.
+    return;
+  }
+
+  // Update the FANet radio module of our current location
+  TinyGPSPlus gps = msg.gps;  // Needed as lat() calls are not const :'(
+  setCurrentLocation(gps.location.lat(),
+                     gps.location.lng(),
+                     gps.altitude.meters(),
+                     gps.course.deg(),
+                     baro.climbRate / 100.0f,
+                     gps.speed.kmph());
 }
 
 String FanetRadio::getAddress() {

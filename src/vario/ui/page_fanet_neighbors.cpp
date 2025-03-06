@@ -9,7 +9,7 @@ void PageFanetNeighbors::show() {
 }
 
 void PageFanetNeighbors::draw_extra() {
-  auto neighbors = FanetRadio::getNeighborTable();
+  auto neighbors = FanetRadio::getInstance().getNeighborTable();
 
   constexpr auto x = 3;
   constexpr auto yOffset = 10;

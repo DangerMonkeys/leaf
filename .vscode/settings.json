@@ -31,7 +31,9 @@
         "regex": "cpp",
         "utility": "cpp",
         "mutex": "cpp",
-        "optional": "cpp"
+        "optional": "cpp",
+        "memory_resource": "cpp",
+        "stop_token": "cpp"
     },
     "editor.formatOnSave": true,
     "[cpp]": {
@@ -44,14 +46,17 @@
     "C_Cpp.clang_format_fallbackStyle": "none",
     "cSpell.words": [
         "baro",
+        "centisecond",
         "efuse",
         "Fanet",
         "kmph",
         "landedok",
         "needride",
+        "PFLAA",
         "RADIOLIB",
         "RSSI",
         "RXMIT",
         "xorshift"
-    ]
+    ],
+    "idf.pythonInstallPath": "/usr/bin/python"
 }

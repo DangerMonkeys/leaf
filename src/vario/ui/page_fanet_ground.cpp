@@ -31,22 +31,23 @@ void PageFanetGround::show(FanetGroundTrackingMode mode) {
   push_page(&getInstance());
 
   // Set our tracking mode to ground tracking.
-  FanetRadio::begin(FANET_region);
+  auto& radio = FanetRadio::getInstance();
+  radio.begin(FANET_region);
   switch (mode) {
     case FanetGroundTrackingMode::WALKING:
-      FanetRadio::setTrackingMode(Fanet::GroundTrackingType::Walking);
+      radio.setTrackingMode(Fanet::GroundTrackingType::Walking);
       break;
     case FanetGroundTrackingMode::VEHICLE:
-      FanetRadio::setTrackingMode(Fanet::GroundTrackingType::Vehicle);
+      radio.setTrackingMode(Fanet::GroundTrackingType::Vehicle);
       break;
     case FanetGroundTrackingMode::NEED_RIDE:
-      FanetRadio::setTrackingMode(Fanet::GroundTrackingType::Vehicle);
+      radio.setTrackingMode(Fanet::GroundTrackingType::Vehicle);
       break;
     case FanetGroundTrackingMode::LANDED_OK:
-      FanetRadio::setTrackingMode(Fanet::GroundTrackingType::LandedWell);
+      radio.setTrackingMode(Fanet::GroundTrackingType::LandedWell);
       break;
     case FanetGroundTrackingMode::TECH_SUP:
-      FanetRadio::setTrackingMode(Fanet::GroundTrackingType::NeedTechnicalSupport);
+      radio.setTrackingMode(Fanet::GroundTrackingType::NeedTechnicalSupport);
       break;
   };
 }
@@ -57,7 +58,7 @@ const char* PageFanetGround::get_title() const {
 
 void PageFanetGround::closed(bool removed_from_Stack) {
   // Ground tracking should only occur while we're showing this page.
-  if (removed_from_Stack) FanetRadio::end();
+  if (removed_from_Stack) FanetRadio::getInstance().end();
 }
 
 void PageFanetGround::draw_extra() {
@@ -99,12 +100,13 @@ void PageFanetGround::draw_extra() {
     // Update the FANet radio module of our current location...
     // This really, really shouldn't be done in a Display object
     // but whatever, we'll refactor later.
-    FanetRadio::setCurrentLocation(gps.location.lat(),
-                                   gps.location.lng(),
-                                   gps.altitude.meters(),
-                                   gps.course.deg(),
-                                   baro.climbRate / 100.0f,
-                                   gps.speed.kmph());
+    // TODO:  Delete me
+    FanetRadio::getInstance().setCurrentLocation(gps.location.lat(),
+                                                 gps.location.lng(),
+                                                 gps.altitude.meters(),
+                                                 gps.course.deg(),
+                                                 baro.climbRate / 100.0f,
+                                                 gps.speed.kmph());
   }
 }
 

@@ -18,6 +18,8 @@
 #define gps_h
 
 #include <TinyGPSPlus.h>
+#include "etl/message_bus.h"
+#include "lock_guard.h"
 #include "time.h"
 
 // Pinout for Leaf V3.2.0
@@ -42,8 +44,8 @@ struct gps_sat_info {
 extern struct gps_sat_info sats[MAX_SATELLITES];
 extern struct gps_sat_info satsDisplay[MAX_SATELLITES];
 struct GPSFixInfo {
-  //float latError;
-  //float lonError;
+  // float latError;
+  // float lonError;
   float error;
   uint8_t numberOfSats;
   uint8_t fix;
@@ -51,12 +53,10 @@ struct GPSFixInfo {
 };
 extern GPSFixInfo gpsFixInfo;
 
-
 struct NMEASentenceContents {
   bool speed;
   bool course;
 };
-
 
 // enum time_formats {hhmmss, }
 
@@ -73,7 +73,6 @@ bool gps_getUtcDateTime(tm& cal);
 // like gps_getUtcDateTime, but has the timezone offset applied.
 bool gps_getLocalDateTime(tm& cal);
 
-
 void gps_updateSatList(void);
 
 void gps_setBackupPower(bool backup_power_on);
@@ -85,5 +84,21 @@ void gps_wake(void);
 void gps_sleep(void);
 
 float gps_getGlideRatio(void);
+
+// GPS local message bus
+// This module should really be moved over to a class
+extern etl::imessage_bus* gps_bus;
+void gps_setBus(etl::imessage_bus* bus);
+
+/// @brief Class to take out a SPI Mutex Lock
+class GpsLockGuard : public LockGuard {
+  friend void gps_init();
+
+ public:
+  GpsLockGuard() : LockGuard(mutex) {}
+
+ private:
+  static SemaphoreHandle_t mutex;
+};
 
 #endif
