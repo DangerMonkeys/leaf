@@ -1,15 +1,14 @@
-name: PlatformIO
+name: CI
 
 on:
-  pull_request: # All
+  pull_request:
   push:
     branches:
-    - main
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -24,10 +23,17 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio
 
       - name: Build PlatformIO Project
         run: pio run
+
+      - name: Upload firmware artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware
+          path: |
+            .pio/build/*/firmware.bin  # Ensure this path matches your environment output

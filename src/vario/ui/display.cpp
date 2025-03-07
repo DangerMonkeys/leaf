@@ -290,7 +290,7 @@ void display_page_charging() {
     u8g2.setCursor(35, 172);
     u8g2.setFont(leaf_5x8);
     u8g2.print("v");
-    u8g2.print(VERSION);
+    u8g2.print(LEAF_VERSION);
 
     // SD Card Present
     u8g2.setCursor(12, 191);

@@ -1,0 +1,58 @@
+name: Perform a Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Enter the tag name for the release"
+        required: true
+        default: "0.0.0" # Optional default
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio/.cache
+          key: ${{ runner.os }}-pio
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install PlatformIO Core
+        run: pip install --upgrade platformio
+
+      - name: Build PlatformIO Project with version tag (again)
+        env:
+          PLATFORMIO_BUILD_FLAGS: '-DLEAF_VERSION=\"${{ github.event.inputs.tag_name }}\"' # Set the leaf version
+        run: |
+          # Rebuild the firmware with the version tag
+          pio run
+      - name: Rename firmware files
+        run: |
+          for dir in .pio/build/*/; do
+              old_name="$dir/firmware.bin"
+              new_name="$dir/fw-$(basename "$dir" | sed 's/_prod//').bin"
+              mv "$old_name" "$new_name"
+          done
+      - name: Create version file
+        run: echo "${{ github.event.inputs.tag_name }}" > .pio/build/leaf.version
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            .pio/build/*/fw-*.bin
+            .pio/build/leaf.version
+          tag_name: ${{ github.event.inputs.tag_name }} # Use the provided tag name
+          draft: true
+          prerelease: false
