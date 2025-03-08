@@ -2,6 +2,9 @@
 #define IMU_h
 
 #include <Arduino.h>
+#include "kalmanvert/kalmanvert.h"
+
+extern Kalmanvert kalmanvert;
 
 #define IMU_INTERRUPT 7  // 14 on V3.2.0  // INPUT
 

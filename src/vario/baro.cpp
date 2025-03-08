@@ -13,6 +13,7 @@
 #include "speaker.h"
 #include "telemetry.h"
 #include "tempRH.h"
+#include "IMU.h"
 
 #define DEBUG_BARO 0  // flag for printing serial debugging messages
 
@@ -378,10 +379,23 @@ void baro_update(bool startNewCycle, bool doTemp) {
       break;
 
     case 3:  // Filter Pressure and calculate Final Altitude Values
-      baro_filterPressure();
-      baro_calculateAlt();  // filter pressure alt value
-      baro_updateClimb();   // update and filter climb rate
-      if (DEBUG_BARO) baro_debugPrint();
+      //baro_filterPressure();
+      //baro_calculateAlt();  // filter pressure alt value
+      //baro_updateClimb();   // update and filter climb rate
+      //if (DEBUG_BARO) baro_debugPrint();
+
+      baro.climbRateFiltered = int32_t(kalmanvert.getVelocity()*100);
+      baro.alt = int32_t(kalmanvert.getPosition()*100);
+
+      int32_t total_samples = CLIMB_AVERAGE * FILTER_VALS_MAX;
+
+      baro.climbRateAverage = (baro.climbRateAverage * (total_samples - 1) + baro.climbRateFiltered) / total_samples;
+
+      // finally, update the speaker sound based on the new climbrate
+      speaker_updateVarioNoteSample(baro.climbRateFiltered);
+
+      Serial.println("**BR** climbRate Filtered: " + String(baro.climbRateFiltered));
+
       break;
   }
   process_step++;
@@ -429,6 +443,9 @@ void baro_calculatePressure() {
   String baroName = "baro mb*100,";
   String baroEntry = baroName + String(baro.pressure);
   Telemetry.writeText(baroEntry);
+
+  // calculate instant altitude (for kalman filter)
+  baro.altF = 44331.0 * (1.0 - pow((float)baro.pressure / 101325.0, (.190264)));
 }
 
 // Filter Pressure Values
@@ -489,7 +506,6 @@ void baro_calculateAlt() {
   // calculate altitude in cm
   baro.alt = 4433100.0 * (1.0 - pow((float)baro.pressureFiltered / 101325.0,
                                     (.190264)));  // standard altimeter setting
-  baro.altF = (float)baro.alt / 100.0f;
   
   baro.altAdjusted =
       4433100.0 * (1.0 - pow((float)baro.pressureFiltered / (baro.altimeterSetting * 3386.389),
