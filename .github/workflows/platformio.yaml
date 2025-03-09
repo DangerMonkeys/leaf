@@ -45,9 +45,9 @@ jobs:
         run: pio run --environment ${{ matrix.hardware-variant }}_${{ matrix.behavior-variant }}
 
       - name: Upload firmware artifacts
-        if: ${{ matrix.behavior-variant }} == "release"
+        if: ${{ matrix.behavior-variant == 'release' }}
         uses: actions/upload-artifact@v4
         with:
           name: firmware-${{ matrix.hardware-variant }}
           path: |
-            .pio/build/${{ matrix.hardware-variant }}/firmware.bin
+            .pio/build/${{ matrix.hardware-variant }}_${{ matrix.behavior-variant }}/firmware*.bin
