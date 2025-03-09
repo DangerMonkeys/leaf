@@ -9,7 +9,15 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        pio-env:
+          - leaf_3_2_2_dev
+          - leaf_3_2_3_dev
+          - leaf_3_2_3_release
+          - leaf_3_2_5_dev
+          - leaf_3_2_5_release
+    name: Build ${{ matrix.pio-env }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -30,4 +38,11 @@ jobs:
         run: pip install --upgrade platformio
 
       - name: Build PlatformIO Project
-        run: pio run
+        run: pio run --environment ${{ matrix.pio-env }}
+
+      - name: Upload firmware artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware
+          path: |
+            .pio/build/*/firmware.bin
