@@ -1,10 +1,12 @@
-name: PlatformIO
+name: Build
 
 on:
   pull_request: # All
   push:
     branches:
     - main
+  release:
+    types: [created]  # Runs when a new release is created in the GitHub UI
 
 jobs:
   build:
@@ -21,7 +23,7 @@ jobs:
         exclude:
           - hardware-variant: leaf_3_2_2
             behavior-variant: release
-    name: Build ${{ matrix.hardware-variant }} ${{ matrix.behavior-variant }}
+    name: ${{ matrix.hardware-variant }} ${{ matrix.behavior-variant }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

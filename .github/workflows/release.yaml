@@ -1,0 +1,31 @@
+name: Release
+
+on:
+  workflow_run:
+    workflows: ["PlatformIO"]
+    types:
+      - completed
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    if: >
+      github.event.workflow_run.event == 'release' && 
+      github.event.workflow_run.conclusion == 'success'
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create tag version file
+        run: echo "${GITHUB_REF#refs/tags/v}" > artifacts/leaf.version
+
+      - name: List downloaded files (debugging)
+        run: ls -R artifacts
+
+      - name: Upload Firmware to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.workflow_run.head_branch }}
+          files: artifacts/**/*
