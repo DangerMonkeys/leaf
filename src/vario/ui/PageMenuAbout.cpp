@@ -15,7 +15,7 @@ void PageMenuAbout::draw_extra() {
   u8g2.print("Ver: ");
   u8g2.setCursor(5, y += offset);
   u8g2.setFont(leaf_5x8);
-  u8g2.print(VERSION);
+  u8g2.print(FIRMWARE_VERSION);
   y += offset;
 
   u8g2.setFont(leaf_6x12);

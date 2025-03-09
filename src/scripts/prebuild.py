@@ -8,13 +8,10 @@ Variables that must be defined in the environment: (Note that custom variable na
     custom_hardware_version
         Semantic version of hardware; e.g., 3.2.2
 
-Information about the variant is expected to be located in
-    src/variants/{custom_hardware_type}_{underscored custom_hardware_version}
-{underscored custom_hardware_version} is {custom_hardware_version} with periods replaced with underscores.
+See ../variants/README.md for expectations regarding hardware variants.
 """
 
 def generate_build_flags(env):
-    print("debug_pre:generate_build_flags")
     hw_type = env.GetProjectOption("custom_hardware_type")
     hw_version = env.GetProjectOption("custom_hardware_version")
 

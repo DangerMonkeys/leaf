@@ -42,12 +42,12 @@ jobs:
         run: pip install --upgrade platformio
 
       - name: Build PlatformIO Project
-        run: pio run --environment ${{ matrix.pio-env }}_${{ matrix.behavior-variant }}
+        run: pio run --environment ${{ matrix.hardware-variant }}_${{ matrix.behavior-variant }}
 
       - name: Upload firmware artifacts
         if: ${{ matrix.behavior-variant }} == "release"
         uses: actions/upload-artifact@v4
         with:
-          name: firmware
+          name: firmware-${{ matrix.hardware-variant }}
           path: |
             .pio/build/${{ matrix.hardware-variant }}/firmware.bin
