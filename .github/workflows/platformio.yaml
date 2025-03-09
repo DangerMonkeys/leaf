@@ -11,13 +11,17 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        pio-env:
-          - leaf_3_2_2_dev
-          - leaf_3_2_3_dev
-          - leaf_3_2_3_release
-          - leaf_3_2_5_dev
-          - leaf_3_2_5_release
-    name: Build ${{ matrix.pio-env }}
+        hardware-variant:
+          - leaf_3_2_2
+          - leaf_3_2_3
+          - leaf_3_2_5
+        behavior-variant:
+          - dev
+          - release
+        exclude:
+          - hardware-variant: leaf_3_2_2
+            behavior-variant: release
+    name: Build ${{ matrix.hardware-variant }} ${{ matrix.behavior-variant }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -38,11 +42,12 @@ jobs:
         run: pip install --upgrade platformio
 
       - name: Build PlatformIO Project
-        run: pio run --environment ${{ matrix.pio-env }}
+        run: pio run --environment ${{ matrix.pio-env }}_${{ matrix.behavior-variant }}
 
       - name: Upload firmware artifacts
+        if: ${{ matrix.behavior-variant }} == "release"
         uses: actions/upload-artifact@v4
         with:
           name: firmware
           path: |
-            .pio/build/*/firmware.bin
+            .pio/build/${{ matrix.hardware-variant }}/firmware.bin
