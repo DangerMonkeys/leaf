@@ -1094,7 +1094,7 @@ void display_on_splash() {
     u8g2.print("HELLO");
 
     u8g2.setFont(leaf_5x8);
-    u8g2.setCursor(35, 192);
+    u8g2.setCursor(0, 192);
     u8g2.print("v");
     u8g2.print(FIRMWARE_VERSION);
   } while (u8g2.nextPage());

@@ -24,27 +24,41 @@ def get_git_info() -> dict:
     return info
 
 
-def get_versions() -> tuple[str, str]:
+def get_versions(env) -> tuple[str, str]:
   git_info = get_git_info()
   if "-" in git_info["git_tag"]:
     parts = git_info["git_tag"].split("-")
-    fw_version = parts[0] + "-" + git_info["commit_hash"][0:4]
+    tag_version = parts[0][1:]
+    prerelease = git_info["commit_hash"][0:4]
     if parts[-1] == "dirty":
-      fw_version + "_dirty"
+      prerelease += "d"
   else:
-    fw_version = git_info["git_tag"]
+    tag_version = git_info["git_tag"][1:]
+    prerelease = None
+
+  behavior_variant = env["PIOENV"].split("_")[-1]
+  if behavior_variant != "release":
+    prerelease = (prerelease + "." + behavior_variant) if prerelease else behavior_variant
 
   hw_version = env.GetProjectOption("custom_hardware_version")
+  build_metadata = "h" + hw_version
 
-  firmware_version = fw_version[1:] + "+h" + hw_version
-  tag_version = fw_version[1:].split("-")[0]
-  return firmware_version, tag_version
+  firmware_version = tag_version
+  if prerelease:
+    firmware_version += "-" + prerelease
+  if build_metadata:
+    firmware_version += "+" + build_metadata
+
+  hardware_variant = "_".join(env["PIOENV"].split("_")[0:-1])
+
+  return firmware_version, tag_version, hardware_variant
 
 
-def update_build_flags(env, firmware_version, tag_version) -> None:
+def update_build_flags(env, firmware_version, tag_version, hardware_variant) -> None:
     defines = [
-        ["FIRMWARE_VERSION", f'"\\"{firmware_version}\\""'],
-        ["TAG_VERSION", f'"\\"{tag_version}\\""'],
+        ["FIRMWARE_VERSION", f'\\"{firmware_version}\\"'],
+        ["TAG_VERSION", f'\\"{tag_version}\\"'],
+        ["HARDWARE_VARIANT", f'\\"{hardware_variant}\\"'],
     ]
 
     print("Adding defines:", defines)
@@ -59,6 +73,6 @@ def make_leaf_version(env, tag_version) -> None:
 
 
 Import("env")
-firmware_version, tag_version = get_versions()
-update_build_flags(env, firmware_version, tag_version)
+firmware_version, tag_version, hardware_variant = get_versions(env)
+update_build_flags(env, firmware_version, tag_version, hardware_variant)
 make_leaf_version(env, tag_version)

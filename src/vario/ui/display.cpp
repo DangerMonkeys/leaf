@@ -287,7 +287,7 @@ void display_page_charging() {
     u8g2.print("mV");
 
     // Display the current version
-    u8g2.setCursor(35, 172);
+    u8g2.setCursor(0, 172);
     u8g2.setFont(leaf_5x8);
     u8g2.print("v");
     u8g2.print(FIRMWARE_VERSION);
