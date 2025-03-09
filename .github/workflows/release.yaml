@@ -2,9 +2,9 @@ name: Release
 
 on:
   workflow_run:
-    workflows: ["PlatformIO"]
+    workflows: ["Build"]
     types:
-      - completed
+      - completed  # Runs after the build workflow completes (everything needs to be built before we can update the release)
 
 jobs:
   release:
