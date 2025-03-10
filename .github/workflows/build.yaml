@@ -27,6 +27,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-tags: true  # Ensures tags are available
+          fetch-depth: 0    # Ensures full history is fetched
 
       - uses: actions/cache@v4
         with:
@@ -53,3 +56,19 @@ jobs:
           name: firmware-${{ matrix.hardware-variant }}
           path: |
             .pio/build/${{ matrix.hardware-variant }}_${{ matrix.behavior-variant }}/firmware*.bin
+
+      - name: Upload latest_firmware.json artifact
+        if: matrix.behavior-variant == 'release' && matrix.hardware-variant == 'leaf_3_2_5'  # Arbitrary single job from the matrix (any job will work)
+        uses: actions/upload-artifact@v4
+        with:
+          name: latest_versions.json
+          path: |
+            .pio/build/${{ matrix.hardware-variant }}_${{ matrix.behavior-variant }}/latest_versions.json
+
+      - name: Upload leaf.version artifact
+        if: matrix.behavior-variant == 'release' && matrix.hardware-variant == 'leaf_3_2_5'  # Arbitrary single job from the matrix (any job will work)
+        uses: actions/upload-artifact@v4
+        with:
+          name: leaf.version
+          path: |
+            .pio/build/${{ matrix.hardware-variant }}_${{ matrix.behavior-variant }}/leaf.version

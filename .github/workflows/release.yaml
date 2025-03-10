@@ -50,13 +50,10 @@ jobs:
             exit 1
           fi
 
-      - name: Create tag version file
-        run: echo "${GITHUB_REF#refs/tags/v}" > artifacts/leaf.version
-
       - name: List downloaded files (debugging)
         run: ls -R artifacts
 
-      - name: Upload Firmware to GitHub Release
+      - name: Upload artifacts to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.workflow_run.head_branch }}
