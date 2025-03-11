@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import subprocess
 
 
@@ -37,7 +38,7 @@ def get_versions(env) -> tuple[str, str, str]:
   """
 
   git_info = get_git_info()
-  print("git_info: " + json.dumps(git_info, indent=2))
+  print("[versioning.py] git_info: " + json.dumps(git_info, indent=2))
   if "-" in git_info["git_tag"]:
     parts = git_info["git_tag"].split("-")
     tag_version = parts[0][1:]
@@ -48,11 +49,12 @@ def get_versions(env) -> tuple[str, str, str]:
     tag_version = git_info["git_tag"][1:]
     prerelease = None
 
-  behavior_variant = env["PIOENV"].split("_")[-1]
+  env_name = env["PIOENV"]
+  behavior_variant = env_name.split("_")[-1]
   if behavior_variant != "release":
     prerelease = (prerelease + "." + behavior_variant) if prerelease else behavior_variant
 
-  hw_version = env.GetProjectOption("custom_hardware_version")
+  hw_version = ".".join(env_name.split("_")[-4:-1])
   build_metadata = "h" + hw_version
 
   firmware_version = tag_version
@@ -66,16 +68,38 @@ def get_versions(env) -> tuple[str, str, str]:
   return firmware_version, tag_version, hardware_variant
 
 
-def update_build_flags(env, firmware_version, tag_version, hardware_variant) -> None:
-    defines = [
-        ["FIRMWARE_VERSION", f'\\"{firmware_version}\\"'],
-        ["TAG_VERSION", f'\\"{tag_version}\\"'],
-        ["HARDWARE_VARIANT", f'\\"{hardware_variant}\\"'],
-    ]
+def update_version_header(env, firmware_version, tag_version, hardware_variant) -> None:
+    values = {
+        "FIRMWARE_VERSION": firmware_version,
+        "TAG_VERSION": tag_version,
+        "HARDWARE_VARIANT": hardware_variant,
+    }
 
-    print("Adding defines:", defines)
-
-    env.Append(CPPDEFINES=defines)
+    version_h_path = os.path.join(env["PROJECT_DIR"], "src", "vario", "version.h")
+    with open(version_h_path, "r") as f:
+        lines = f.readlines()
+    
+    missing = set(values.keys())
+    updated = set()
+    pattern = re.compile(r"^#define ([A-Z_0-9]+) ")
+    for i, line in enumerate(lines):
+        m = pattern.match(line)
+        if m and m.group(1) in missing:
+            constant = m.group(1)
+            missing.remove(constant)
+            correct_line = f"#define {constant} \"{values[constant]}\"\n"
+            if line != correct_line:
+                lines[i] = correct_line
+                updated.add(constant)
+    
+    if missing:
+        raise ValueError("version.h does not have a line #defining " + ", ".join(missing))
+    if updated:
+        with open(version_h_path, "w") as f:
+            f.writelines(lines)
+        print(f"[versioning.py] The constant{'s' if len(updated) > 1 else ''} of {', '.join(updated)} {'were' if len(updated) > 1 else 'was'} updated in version.h")
+    else:
+        print(f"[versioning.py] The constants {', '.join(values)} are up to date in version.h")
 
 
 def make_version_files(env, tag_version) -> None:
@@ -116,5 +140,5 @@ def make_version_files(env, tag_version) -> None:
 
 Import("env")
 firmware_version, tag_version, hardware_variant = get_versions(env)
-update_build_flags(env, firmware_version, tag_version, hardware_variant)
+update_version_header(env, firmware_version, tag_version, hardware_variant)
 make_version_files(env, tag_version)

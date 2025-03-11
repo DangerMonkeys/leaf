@@ -55,7 +55,7 @@ jobs:
         with:
           name: firmware-${{ matrix.hardware-variant }}
           path: |
-            .pio/build/${{ matrix.hardware-variant }}_${{ matrix.behavior-variant }}/firmware*.bin
+            .pio/build/${{ matrix.hardware-variant }}_${{ matrix.behavior-variant }}/firmware-*.bin
 
       - name: Upload latest_firmware.json artifact
         if: matrix.behavior-variant == 'release' && matrix.hardware-variant == 'leaf_3_2_5'  # Arbitrary single job from the matrix (any job will work)

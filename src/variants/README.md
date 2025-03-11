@@ -4,13 +4,13 @@ Leaf supports building nominally the same firmware for different hardware varian
 
 ## Creating a new variant
 
-To create a new hardware variant, first identify the hardware type (usually "leaf") and hardware version (e.g., 3.2.5).  The name for this hardware variant should be: `{hardware type}_{underscored hardware version}` where `{underscored hardware version}` is the hardware version with periods replaced with underscores.  Create a folder with this name within this folder.  Add this variant name to the list of variants in [build.yaml](../../.github/workflows/build.yaml).  Change [platformio.ini](../../platformio.ini) to point `default_envs` at the appropriate environment (see below).
+To create a new hardware variant, first identify the [hardware type](../README.md#hardware-type) (usually "leaf") and [hardware version](../README.md#hardware-version) (e.g., 3.2.5).  The name for this hardware variant must be: `{hardware type}_{underscored hardware version}` where `{underscored hardware version}` is the hardware version with periods replaced with underscores.  Create a folder with this name within this folder.  Add this variant name to the list of variants in [build.yaml](../../.github/workflows/build.yaml).  Change [platformio.ini](../../platformio.ini) to point `default_envs` at the appropriate environment (see below).
 
 In the new folder, add:
 
 ### platformio.ini
 
-This partial platformio.ini should define `[env:{hardware variant}_dev]` and `[env:{hardware variant}_release]` which should extend `env:_dev`and `env:_release` respectively.  In each of these environments, the variables in the documentation in src/scripts/prebuild.py must be defined (`custom_hardware_type` and `custom_hardware_version`).
+This partial platformio.ini should define `[env:{hardware variant}_dev]` and `[env:{hardware variant}_release]` which should extend `env:_dev`and `env:_release` respectively.  In each of these environments, `build_flags` must extend the build flags of the base environment to add `-Isrc/variants/{hardware variant}`.
 
 ### variant.h
 
