@@ -1,5 +1,6 @@
 #include "ota.h"
 
+#include <ArduinoJson.h>
 #include <HTTPClient.h>
 
 #include <stdexcept>
@@ -8,7 +9,7 @@
 
 String getLatestVersion() {
   HTTPClient http;
-  String url = "https://" + String(OTA_HOST) + OTA_VERSION_FILENAME;
+  String url = "https://" + String(OTA_HOST) + OTA_VERSIONS_FILENAME;
   http.begin(url);
   http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
   int httpCode = http.GET();
@@ -17,8 +18,10 @@ String getLatestVersion() {
   }
 
   String payload = http.getString();
-  payload.trim();
-  return payload;
+  JsonDocument doc;
+  deserializeJson(doc, payload);
+
+  return doc["latest_tag_versions"][HARDWARE_VARIANT];
 }
 
 /*

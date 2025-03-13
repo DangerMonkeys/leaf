@@ -3,10 +3,9 @@
 // Pins that are not connected
 #define NC -1
 
-// First try to load up any config from variants
-#ifdef VARIANT
+// Variant information is defined in src/variants/{variant name}
+// See documentation for src/scripts/prebuild.py for more information
 #include "variant.h"
-#endif
 
 // Configuration options are below.
 
@@ -21,25 +20,25 @@
 // #define DISABLE_BATTERY_SHUTDOWN
 
 // **** D-Pad 5-button default configuration (for 3.2.3)
-#ifndef BUTTON_PIN_CENTER
-#define BUTTON_PIN_CENTER 2  // INPUT
-#endif
+	#ifndef BUTTON_PIN_CENTER
+	#define BUTTON_PIN_CENTER 2  // INPUT
+	#endif
 
-#ifndef BUTTON_PIN_LEFT
-#define BUTTON_PIN_LEFT 3  // INPUT
-#endif
+	#ifndef BUTTON_PIN_LEFT
+	#define BUTTON_PIN_LEFT 3  // INPUT
+	#endif
 
-#ifndef BUTTON_PIN_DOWN
-#define BUTTON_PIN_DOWN 4  // INPUT
-#endif
+	#ifndef BUTTON_PIN_DOWN
+	#define BUTTON_PIN_DOWN 4  // INPUT
+	#endif
 
-#ifndef BUTTON_PIN_UP
-#define BUTTON_PIN_UP 5  // INPUT
-#endif
+	#ifndef BUTTON_PIN_UP
+	#define BUTTON_PIN_UP 5  // INPUT
+	#endif
 
-#ifndef BUTTON_PIN_RIGHT
-#define BUTTON_PIN_RIGHT 6  // INPUT
-#endif
+	#ifndef BUTTON_PIN_RIGHT
+	#define BUTTON_PIN_RIGHT 6  // INPUT
+	#endif
 
 // ***** LoRa Configuration *****
 // To flag support for FANET / LoRa.
@@ -61,14 +60,22 @@
 // #define SX1262_BUSY
 
 // **** Speaker *****
-#ifndef SPEAKER_PIN
-#define SPEAKER_PIN 14  // 7
-#endif
+	#ifndef SPEAKER_PIN
+	#define SPEAKER_PIN 14  // 7
+	#endif
 
-#ifndef SPEAKER_VOLA
-#define SPEAKER_VOLA 15  // 8
-#endif
+	#ifndef SPEAKER_VOLA
+	#define SPEAKER_VOLA 15  // 8
+	#endif
 
-#ifndef SPEAKER_VOLB
-#define SPEAKER_VOLB 16  // 9
-#endif
+	#ifndef SPEAKER_VOLB
+	#define SPEAKER_VOLB 16  // 9
+	#endif
+
+	#ifndef SPEAKER_VOLA_IOEX
+	#define SPEAKER_VOLA_IOEX 0 // default not on IO expander
+	#endif
+
+	#ifndef SPEAKER_VOLB_IOEX
+	#define SPEAKER_VOLB_IOEX 0 // default not on IO expander
+	#endif

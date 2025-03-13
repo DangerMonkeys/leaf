@@ -1,0 +1,129 @@
+name: Build
+
+on:
+  pull_request: # All
+  push:
+    branches:
+    - main
+  release:
+    types: [created]  # Runs when a new release is created in the GitHub UI
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        hardware-variant:
+          - leaf_3_2_2
+          - leaf_3_2_3
+          - leaf_3_2_5
+        behavior-variant:
+          - dev
+          - release
+        exclude:
+          - hardware-variant: leaf_3_2_2
+            behavior-variant: release
+    name: ${{ matrix.hardware-variant }} ${{ matrix.behavior-variant }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-tags: true  # Ensures tags are available
+          fetch-depth: 0    # Ensures full history is fetched
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio/.cache
+          key: ${{ runner.os }}-pio
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install PlatformIO Core
+        run: pip install --upgrade platformio
+
+      - name: Build PlatformIO Project
+        run: pio run --environment ${{ matrix.hardware-variant }}_${{ matrix.behavior-variant }}
+
+      - name: Upload firmware artifacts
+        if: matrix.behavior-variant == 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ matrix.hardware-variant }}
+          path: |
+            .pio/build/${{ matrix.hardware-variant }}_${{ matrix.behavior-variant }}/firmware-*.bin
+
+      - name: Upload latest_firmware.json artifact
+        if: matrix.behavior-variant == 'release' && matrix.hardware-variant == 'leaf_3_2_5'  # Arbitrary single job from the matrix (any job will work)
+        uses: actions/upload-artifact@v4
+        with:
+          name: versions
+          path: |
+            .pio/build/${{ matrix.hardware-variant }}_${{ matrix.behavior-variant }}/latest_versions.json
+            .pio/build/${{ matrix.hardware-variant }}_${{ matrix.behavior-variant }}/leaf.version
+
+  update_release:
+    name: Update release with build artifacts
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'release' && github.event.action == 'created'
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: List downloaded files (debugging)
+        run: ls -R artifacts
+
+      - name: Flatten artifacts directory
+        run: |
+          shopt -s globstar
+          mkdir -p artifacts
+          find artifacts/* -type f -exec mv {} artifacts/ \;
+          find artifacts/* -type d -empty -delete
+
+      - name: List artifacts files (debugging)
+        run: ls -R artifacts
+
+      - name: Copy newest hardware firmware to firmware.bin
+        # Backwards compatibility: Release 0.0.9 and earlier expect a file named "firmware.bin"
+        run: |
+          highest_version="0.0.0"
+          highest_file=""
+
+          # Iterate over firmware files
+          for file in artifacts/firmware-leaf_*.bin; do
+            # Extract XX, YY, and ZZ using regex
+            if [[ $file =~ firmware-leaf_([0-9]+)_([0-9]+)_([0-9]+)\.bin ]]; then
+              xx=${BASH_REMATCH[1]}
+              yy=${BASH_REMATCH[2]}
+              zz=${BASH_REMATCH[3]}
+              version="$xx.$yy.$zz"
+
+              # Compare versions
+              if [[ $(printf '%s\n' "$highest_version" "$version" | sort -V | tail -n1) == "$version" ]]; then
+                highest_version="$version"
+                highest_file="$file"
+              fi
+            fi
+          done
+
+          # Copy the highest version firmware to artifacts/firmware.bin
+          if [[ -n "$highest_file" ]]; then
+            cp "$highest_file" artifacts/firmware.bin
+            echo "Selected firmware: $highest_file (version $highest_version)"
+          else
+            echo "No firmware files found!" >&2
+            exit 1
+          fi
+
+      - name: Upload artifacts to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.workflow_run.head_branch }}
+          files: artifacts/**/*
