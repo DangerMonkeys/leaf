@@ -3,9 +3,10 @@
 // Pins that are not connected
 #define NC -1
 
-// Variant information is defined in src/variants/{variant name}
-// See documentation for src/scripts/prebuild.py for more information
+// First try to load up any config from variants
+#ifdef VARIANT
 #include "variant.h"
+#endif
 
 // Configuration options are below.
 

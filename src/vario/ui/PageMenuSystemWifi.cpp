@@ -164,7 +164,7 @@ void PageMenuSystemWifiUpdate::shown() {
 
   log_lines.clear();
   log_lines.push_back("*CURRENT VERSION:");
-  log_lines.push_back((String) "  " + FIRMWARE_VERSION);
+  log_lines.push_back((String) "  " + VERSION);
   log_lines.push_back("*CONNECTING TO WIFI...");
 }
 
@@ -202,7 +202,7 @@ void PageMenuSystemWifiUpdate::loop() {
         *wifi_state = WifiState::ERROR;
         break;
       }
-      if (latest_version == TAG_VERSION) {
+      if (latest_version == VERSION) {
         log_lines.push_back("*YOU'RE UP TO DATE!");
         *wifi_state = WifiState::OTA_UP_TO_DATE;
       } else {

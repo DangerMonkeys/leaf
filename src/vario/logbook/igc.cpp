@@ -9,8 +9,8 @@
 #include "gps.h"
 #include "settings.h"
 #include "string_utils.h"
-#include "time.h"
 #include "version.h"
+#include "time.h"
 
 String latDegreeToStr(double degree) {
   char output[9];  // 8 bytes + null terminator
@@ -60,7 +60,7 @@ void Igc::log(unsigned long durationSec) {
   gps_getUtcDateTime(cal);
   strftime(buf, sizeof(buf), "%H%M%S", &cal);
 
-  logger.writeBRecord(buf,  // Time in HHMMSS
+  logger.writeBRecord(buf, // Time in HHMMSS
                       latDegreeToStr(gps.location.lat()),
                       lngDegreeToStr(gps.location.lng()),
                       true,
@@ -85,9 +85,9 @@ void Igc::startFlight() {
   // Overwrite from file if set in the Pilot descriptor
   setPilotFromFile();
 
-  logger.firmware_version = FIRMWARE_VERSION;
+  logger.firmware_version = VERSION;
   logger.hardware_version = "Leaf1";
-  logger.logger_type = (String) "Leaf1," + FIRMWARE_VERSION;
+  logger.logger_type = (String) "Leaf1," + VERSION;
   logger.gps_type = "GNSS LC86G";
   logger.pressure_type = "MS5611";
   logger.time_zone = (String)(TIME_ZONE / 60);
