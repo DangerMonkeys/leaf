@@ -104,7 +104,10 @@ void Igc::startFlight() {
 }
 
 void Igc::end(const FlightStats stats) {
-  logger.writeGRecord();
+  // If we've not started a flight yet, don't write to disk.
+  if (started()) {
+    logger.writeGRecord();
+  }
   Flight::end(stats);
 }
 
