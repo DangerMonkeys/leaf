@@ -18,9 +18,10 @@ const String Kml::desiredFileName() const {
   return fileString;
 }
 
-void Kml::startFlight() {
-  Flight::startFlight();
+bool Kml::startFlight() {
+  if (!Flight::startFlight()) return false;
   file.println(KMLtrackHeader);
+  return true;
 }
 
 void Kml::log(unsigned long durationSec) {

@@ -7,7 +7,7 @@
 
 class Igc : public Flight {
  public:
-  void startFlight() override;
+  bool startFlight() override;
   void end(const FlightStats stats) override;
 
   const String fileNameSuffix() const override { return "igc"; }

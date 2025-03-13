@@ -92,9 +92,9 @@ void log_update() {
 
       // We have a GPS fix, we're able to start recording of the flight.
       // TODO:  A second sound effect to show that recording has now started??
-      flight->startFlight();
-      // TODO:  Make this sound much cooler
-      speaker_playSound(fx_buttonhold);
+      if (flight->startFlight())
+        // TODO:  Make this sound much cooler
+        speaker_playSound(fx_buttonhold);
     }
 
     // Generate a record to log

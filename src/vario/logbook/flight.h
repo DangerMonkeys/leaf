@@ -6,8 +6,9 @@
 
 class Flight {
  public:
-  // We wish to start recording a flight
-  virtual void startFlight();
+  // We wish to start recording a flight.
+  // Returns:  Flight log created successfully
+  virtual bool startFlight();
   virtual void end(const FlightStats stats);
 
   // Logs a datapoint

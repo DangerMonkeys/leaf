@@ -54,6 +54,9 @@ const String Igc::desiredFileName() const {
 }
 
 void Igc::log(unsigned long durationSec) {
+  // Short-circuit if we've not yet started a flight
+  if (!started()) return;
+
   // Generate the time in HHMMSS
   char buf[8];
   tm cal;
@@ -69,8 +72,9 @@ void Igc::log(unsigned long durationSec) {
                       toDigits((int)gpsFixInfo.error, 3));
 }
 
-void Igc::startFlight() {
-  Flight::startFlight();
+bool Igc::startFlight() {
+  auto success = Flight::startFlight();
+  if (!success) return false;
 
   logger.setOutput(file);
 
@@ -101,6 +105,8 @@ void Igc::startFlight() {
   // Log the I record (saying we're going to log the, now manditory, FXA record)
   const IRecordExtension extensions[] = {IRecordExtension(3, "FXA")};
   logger.writeIRecord(sizeof(extensions) / sizeof(extensions[0]), extensions);
+
+  return true;
 }
 
 void Igc::end(const FlightStats stats) {

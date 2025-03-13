@@ -3,12 +3,10 @@
 
 class Kml : public Flight {
  public:
-  void startFlight() override;
+  bool startFlight() override;
   void end(const FlightStats stats) override;
 
-  const String fileNameSuffix() const override {
-    return "kml";
-  }
+  const String fileNameSuffix() const override { return "kml"; }
   const String desiredFileName() const override;
   void log(unsigned long durationSec) override;
 };

@@ -3,10 +3,14 @@
 #include <SD_MMC.h>
 
 #include "FS.h"
+#include "SDcard.h"
 #include "telemetry.h"
 #include "ui/page_flight_summary.h"
 
-void Flight::startFlight() {
+bool Flight::startFlight() {
+  // Short circuit if the card is not mounted or reading properly
+  if (!SDcard_present()) return false;
+  Serial.printf("Sectors: %d\n", SD_MMC.numSectors());
   File trackLogsDir = SD_MMC.open(this->desiredFilePath());
 
   auto filePrefix = this->desiredFilePath() + "/" + this->desiredFileName();
@@ -38,6 +42,8 @@ void Flight::startFlight() {
 
   // Create the file for writing
   file = SD_MMC.open(fileName, "w", true);
+
+  return true;
 }
 
 void Flight::end(const FlightStats stats) {
