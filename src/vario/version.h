@@ -12,7 +12,13 @@
 // ---------------------------------------------------------------
 
 // Where to check for the latest version
-#define OTA_HOST "github.com"
-#define OTA_BIN_FILENAME \
-  "/DangerMonkeys/leaf/releases/latest/download/firmware-" HARDWARE_VARIANT ".bin"
-#define OTA_VERSIONS_FILENAME "/DangerMonkeys/leaf/releases/latest/download/latest_versions.json"
+#define OTA_ORG "DangerMonkeys"
+
+#define OTA_BIN_PATH OTA_ORG "/leaf/releases/download/v%s/firmware-" HARDWARE_VARIANT ".bin"
+#define OTA_BIN_URL "https://github.com/" OTA_BIN_PATH
+
+#define OTA_VERSIONS_PATH OTA_ORG "/leaf/releases/latest/download/latest_versions.json"
+#define OTA_VERSIONS_URL "https://github.com/" OTA_VERSIONS_PATH
+
+// If true, always perform OTA update regardless of whether already on latest version
+#define OTA_ALWAYS_UPDATE false

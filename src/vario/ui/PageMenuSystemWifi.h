@@ -96,6 +96,7 @@ class PageMenuSystemWifiUpdate : public SimpleSettingsMenuPage {
  private:
   WifiState* wifi_state;
   etl::vector<String, 20> log_lines;  // Log of the update process
+  String latest_version_;
 };
 
 /////////////////////////////////////////

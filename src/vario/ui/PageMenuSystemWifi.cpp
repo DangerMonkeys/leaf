@@ -187,9 +187,8 @@ void PageMenuSystemWifiUpdate::loop() {
       }
       break;
     case WifiState::OTA_CHECKING_VERSION: {
-      String latest_version;
       try {
-        latest_version = getLatestVersion();
+        latest_version_ = getLatestTagVersion();
       } catch (const std::runtime_error& e) {
         log_lines.push_back("*ERROR WHILE CHECKING");
         log_lines.push_back("*");
@@ -197,13 +196,13 @@ void PageMenuSystemWifiUpdate::loop() {
         *wifi_state = WifiState::ERROR;
         break;
       }
-      if (latest_version == TAG_VERSION) {
+      if (latest_version_ == TAG_VERSION && !OTA_ALWAYS_UPDATE) {
         log_lines.push_back("*YOU'RE UP TO DATE!");
         *wifi_state = WifiState::OTA_UP_TO_DATE;
       } else {
         log_lines.push_back("*NEW VERSION AVAILABLE!");
         log_lines.push_back("*UPDATING TO:");
-        log_lines.push_back((String) "   " + latest_version);
+        log_lines.push_back((String) "   " + latest_version_ + " for " + HARDWARE_VARIANT);
         log_lines.push_back("(this will take a while)");
         log_lines.push_back("*WILL REBOOT WHEN DONE");
         *wifi_state = WifiState::OTA_UPDATING;
@@ -211,8 +210,7 @@ void PageMenuSystemWifiUpdate::loop() {
     } break;
     case WifiState::OTA_UPDATING:
       try {
-        // TODO:  Enable this
-        PerformOTAUpdate();
+        PerformOTAUpdate(latest_version_.c_str());
       } catch (const std::runtime_error& e) {
         log_lines.push_back("*ERROR UPDATING!");
         log_lines.push_back("*");

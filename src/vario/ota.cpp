@@ -7,21 +7,24 @@
 
 #include "version.h"
 
-String getLatestVersion() {
+String getLatestTagVersion() {
+  Serial.print("[OTA] Getting latest tag version from ");
+  Serial.println(OTA_VERSIONS_URL);
   HTTPClient http;
-  String url = "https://" + String(OTA_HOST) + OTA_VERSIONS_FILENAME;
-  http.begin(url);
+  http.begin(OTA_VERSIONS_URL);
   http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
   int httpCode = http.GET();
   if (httpCode != HTTP_CODE_OK) {
-    throw std::runtime_error(((String) "HTTP GET failed with code " + httpCode).c_str());
+    throw std::runtime_error(((String) "HTTP GET failed " + httpCode).c_str());
   }
 
   String payload = http.getString();
   JsonDocument doc;
   deserializeJson(doc, payload);
 
-  return doc["latest_tag_versions"][HARDWARE_VARIANT];
+  String tagVersion = doc["latest_tag_versions"][HARDWARE_VARIANT];
+  Serial.printf("[OTA] Latest tag version for %s is %s\n", HARDWARE_VARIANT, tagVersion);
+  return tagVersion;
 }
 
 /*
@@ -30,34 +33,36 @@ String getLatestVersion() {
    TODO:  Have this return a data type with meaningul information
    about the result
 */
-void PerformOTAUpdate() {
+void PerformOTAUpdate(const char* tag) {
+  char url[120];
+  snprintf(url, sizeof(url), OTA_BIN_URL, tag);
+  Serial.print("[OTA] Starting OTA from ");
+  Serial.println(url);
   HTTPClient http;
-
-  http.begin(String("https://") + OTA_HOST + OTA_BIN_FILENAME);
+  http.begin(url);
   http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
-  Serial.println("Starting OTA over HTTPS");
   auto httpCode = http.GET();
   if (httpCode != HTTP_CODE_OK) {
-    throw std::runtime_error(((String) "HTTP GET failed with code " + httpCode).c_str());
+    throw std::runtime_error(((String) "HTTP GET failed " + httpCode).c_str());
   }
 
   auto binarySize = http.getSize();
-  Serial.print("Remote binary size: ");
+  Serial.print("[OTA] Remote binary size: ");
   Serial.println(binarySize);
 
   auto payloadPtr = http.getStreamPtr();
   Update.begin(binarySize);
   if (Update.writeStream(*payloadPtr) != binarySize) {
-    throw std::runtime_error("Error writing binary to flash");
+    throw std::runtime_error("Err writing bin->flash");
   }
 
-  Serial.println("OTA done!");
+  Serial.println("[OTA] Done!");
 
   if (Update.end()) {
-    Serial.println("Update successfully completed. Rebooting.");
+    Serial.println("[OTA] Update successfully completed. Rebooting.");
     ESP.restart();
   } else {
-    throw std::runtime_error("Error finishing firmware update");
+    throw std::runtime_error("Err finishing update");
   }
 
   delay(1000);

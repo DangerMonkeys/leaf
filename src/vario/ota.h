@@ -3,8 +3,8 @@
 #include <Update.h>
 #include <WiFi.h>
 
-// Gets the latest version from Github's version!
-String getLatestVersion();
+// Gets the latest tag version for this hardware variant from latest release on Github
+String getLatestTagVersion();
 
 // Performs an over the air update
-void PerformOTAUpdate();
+void PerformOTAUpdate(const char* tag);
