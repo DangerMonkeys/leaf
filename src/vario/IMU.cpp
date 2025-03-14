@@ -117,6 +117,7 @@ bool processQuaternion() {
       double qw = sqrt(1.0 - magnitude);
 
       bool needComma = false;
+      bool needNewline = false;
 #ifdef SHOW_QUATERNION
       Serial.print(F("Qw:"));
       printFloat(qw);
@@ -127,6 +128,7 @@ bool processQuaternion() {
       Serial.print(F(",Qz:"));
       printFloat(qz);
       needComma = true;
+      needNewline = true;
 #endif
 
       double ax = ((double)data.Raw_Accel.Data.X) / 8192.0;
@@ -146,6 +148,7 @@ bool processQuaternion() {
       Serial.print(F(",Az:"));
       printFloat(az);
       needComma = true;
+      needNewline = true;
 #endif
 
       double awx, awy, awz;
@@ -164,6 +167,7 @@ bool processQuaternion() {
       Serial.print(",Wz:");
       printFloat(awz);
       needComma = true;
+      needNewline = true;
 #endif
 
 #ifdef SHOW_VERTICAL_ACCEL
@@ -173,6 +177,7 @@ bool processQuaternion() {
       Serial.print("dAz:");
       printFloat(accelVert);
       needComma = true;
+      needNewline = true;
 #endif
 
 #ifdef SHOW_FIXED_BOUNDS
@@ -183,11 +188,14 @@ bool processQuaternion() {
       printFloat(SHOW_FIXED_BOUNDS);
       Serial.print(",max:");
       printFloat(-SHOW_FIXED_BOUNDS);
+      needNewline = true;
 #endif
 
       zAvg = zAvg * f + awz * (1 - f);
 
-      Serial.println();
+      if (needNewline) {
+        Serial.println();
+      }
 
       success = true;
     }

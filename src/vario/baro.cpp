@@ -395,7 +395,8 @@ void baro_update(bool startNewCycle, bool doTemp) {
       // finally, update the speaker sound based on the new climbrate
       speaker_updateVarioNote(baro.climbRateFiltered);
 
-      Serial.println("**BR** climbRate Filtered: " + String(baro.climbRateFiltered));
+      // if (DEBUG_BARO) { Serial.println("**BR** climbRate Filtered: " +
+      // String(baro.climbRateFiltered)); }
 
       break;
   }
