@@ -4,7 +4,7 @@
 // at build time via src/scripts/versioning.py:
 // ---------------------------------------------------------------
 // Full semantic version (e.g., "0.9.0-9bbad.dev+h2.3.5")
-#define FIRMWARE_VERSION "0.0.9-628d+h3.2.5"
+#define FIRMWARE_VERSION "0.0.9-50e.dev+h3.2.5"
 // Latest tag version (e.g., "0.9.0")
 #define TAG_VERSION "0.0.9"
 // Hardware variant name (e.g., "leaf_3_2_5")
