@@ -4,6 +4,7 @@
  */
 #include "baro.h"
 
+#include "IMU.h"
 #include "Leaf_I2C.h"
 #include "LinearRegression.h"
 #include "SDcard.h"
@@ -13,14 +14,14 @@
 #include "speaker.h"
 #include "telemetry.h"
 #include "tempRH.h"
-#include "IMU.h"
 
 #define DEBUG_BARO 0  // flag for printing serial debugging messages
 
 // Filter values to average/smooth out the baro sensor
 
 // User Settings for Vario
-uint8_t filterValsPref = 20; // default samples to average (will be adjusted by VARIO_SENSE user setting)
+uint8_t filterValsPref =
+    20;  // default samples to average (will be adjusted by VARIO_SENSE user setting)
 #define FILTER_VALS_MAX 30  // total array size max; for both altitude and climb
 int32_t pressureFilterVals[FILTER_VALS_MAX + 1];  // use [0] as the index / bookmark
 int32_t climbFilterVals[FILTER_VALS_MAX + 1];     // use [0] as the index / bookmark
@@ -88,7 +89,7 @@ void baro_adjustAltSetting(int8_t dir, uint8_t count) {
     if (baro.altimeterSetting > 32.0) baro.altimeterSetting = 32.0;
   } else if (dir <= -1) {
     baro.altimeterSetting -= increase;
-    if (baro.altimeterSetting < 28.0) baro.altimeterSetting = 28.0;    
+    if (baro.altimeterSetting < 28.0) baro.altimeterSetting = 28.0;
   }
   ALT_SETTING = baro.altimeterSetting;
 }
@@ -258,7 +259,9 @@ void baro_reset(void) {
 }
 
 // Reset launcAlt to current Alt (when starting a new log file, for example)
-void baro_resetLaunchAlt() { baro.altAtLaunch = baro.altAdjusted; }
+void baro_resetLaunchAlt() {
+  baro.altAtLaunch = baro.altAdjusted;
+}
 
 // Track if we've put baro to sleep (in power off usb state)
 bool baroSleeping = false;
@@ -269,7 +272,6 @@ void baro_sleep() {
   baroSleeping = true;
 }
 
-
 uint32_t baroTimeStampPressure = 0;
 uint32_t baroTimeStampTemp = 0;
 uint32_t baroADCStartTime = 0;
@@ -278,7 +280,7 @@ bool baroADCBusy = false;
 bool baroADCPressure = false;
 bool baroADCTemp = false;
 
-void baro_update(bool startNewCycle, bool doTemp) {  
+void baro_update(bool startNewCycle, bool doTemp) {
   // (we don't need to update temp as frequently so we choose to skip it if desired)
   // the baro senor requires ~9ms between the command to prep the ADC and actually reading the
   // value. Since this delay is required between both pressure and temp values, we break the sensor
@@ -287,15 +289,13 @@ void baro_update(bool startNewCycle, bool doTemp) {
 
   // only do baro updates if we're not "sleeping" (i.e. in PowerOff state)
   if (baroSleeping) {
-    // set climb to 0 so we don't have any vario beeps etc 
+    // set climb to 0 so we don't have any vario beeps etc
     baro.climbRate = 0;
     baro.climbRateAverage = 0;
     baro.climbRateFiltered = 0;
     speaker_updateVarioNote(baro.climbRateFiltered);
     return;
   }
-
-
 
   // First check if ADC is not busy (i.e., it's been at least 9ms since we sent a "convert ADC"
   // command)
@@ -307,7 +307,6 @@ void baro_update(bool startNewCycle, bool doTemp) {
     Serial.print(process_step);
     Serial.print("  Micros since last: ");
     Serial.println(microsNow - baroADCStartTime);
-    
   }
 
   if (startNewCycle) process_step = 0;
@@ -380,17 +379,18 @@ void baro_update(bool startNewCycle, bool doTemp) {
       break;
 
     case 3:  // Filter Pressure and calculate Final Altitude Values
-      //baro_filterPressure();
-      //baro_calculateAlt();  // filter pressure alt value
-      //baro_updateClimb();   // update and filter climb rate
-      //if (DEBUG_BARO) baro_debugPrint();
+      // baro_filterPressure();
+      // baro_calculateAlt();  // filter pressure alt value
+      // baro_updateClimb();   // update and filter climb rate
+      // if (DEBUG_BARO) baro_debugPrint();
 
-      baro.climbRateFiltered = int32_t(kalmanvert.getVelocity()*100);
-      baro.alt = int32_t(kalmanvert.getPosition()*100);
+      baro.climbRateFiltered = int32_t(kalmanvert.getVelocity() * 100);
+      baro.alt = int32_t(kalmanvert.getPosition() * 100);
 
       int32_t total_samples = CLIMB_AVERAGE * FILTER_VALS_MAX;
 
-      baro.climbRateAverage = (baro.climbRateAverage * (total_samples - 1) + baro.climbRateFiltered) / total_samples;
+      baro.climbRateAverage =
+          (baro.climbRateAverage * (total_samples - 1) + baro.climbRateFiltered) / total_samples;
 
       // finally, update the speaker sound based on the new climbrate
       speaker_updateVarioNote(baro.climbRateFiltered);
@@ -401,7 +401,6 @@ void baro_update(bool startNewCycle, bool doTemp) {
   }
   process_step++;
 }
-
 
 // Device Management
 
@@ -468,46 +467,58 @@ void baro_calculatePressure() {
 void baro_filterPressure(void) {
   // first calculate filter size based on user preference
   switch (VARIO_SENSE) {
-    case 1: filterValsPref = 30; break;
-    case 2: filterValsPref = 25; break;
-    case 3: filterValsPref = 20; break;
-    case 4: filterValsPref = 15; break;
-    case 5: filterValsPref = 10; break;
-    default: filterValsPref = 20; break;
+    case 1:
+      filterValsPref = 30;
+      break;
+    case 2:
+      filterValsPref = 25;
+      break;
+    case 3:
+      filterValsPref = 20;
+      break;
+    case 4:
+      filterValsPref = 15;
+      break;
+    case 5:
+      filterValsPref = 10;
+      break;
+    default:
+      filterValsPref = 20;
+      break;
   }
 
   // new way with regression:
-    pressure_lr.update((double)millis(), (double)baro.alt);
-    LinearFit fit = pressure_lr.fit();
-    baro.pressureRegression = linear_value(&fit, (double)millis());
+  pressure_lr.update((double)millis(), (double)baro.alt);
+  LinearFit fit = pressure_lr.fit();
+  baro.pressureRegression = linear_value(&fit, (double)millis());
 
   // old way with averaging last N values equally:
-    baro.pressureFiltered = 0;
-    int8_t filterBookmark = pressureFilterVals[0];  // start at the saved spot in the filter array
-    int8_t filterIndex =
-        filterBookmark;  // and create an index to track all the values we need for averaging
+  baro.pressureFiltered = 0;
+  int8_t filterBookmark = pressureFilterVals[0];  // start at the saved spot in the filter array
+  int8_t filterIndex =
+      filterBookmark;  // and create an index to track all the values we need for averaging
 
-    pressureFilterVals[filterBookmark] =
-        baro.pressure;                       // load in the new value at the bookmarked spot
-    if (++filterBookmark > FILTER_VALS_MAX)  // increment bookmark for next time
-      filterBookmark = 1;                    // wrap around the array for next time if needed
-    pressureFilterVals[0] = filterBookmark;  // and save the bookmark for next time
+  pressureFilterVals[filterBookmark] =
+      baro.pressure;                       // load in the new value at the bookmarked spot
+  if (++filterBookmark > FILTER_VALS_MAX)  // increment bookmark for next time
+    filterBookmark = 1;                    // wrap around the array for next time if needed
+  pressureFilterVals[0] = filterBookmark;  // and save the bookmark for next time
 
-    // sum up all the values from this spot and previous, for the correct number of samples (user
-    // pref)
-    for (int i = 0; i < filterValsPref; i++) {
-      baro.pressureFiltered += pressureFilterVals[filterIndex];
-      filterIndex--;
-      if (filterIndex <= 0) filterIndex = FILTER_VALS_MAX;  // wrap around the array
-    }
-    baro.pressureFiltered /= filterValsPref;  // divide to get the average
+  // sum up all the values from this spot and previous, for the correct number of samples (user
+  // pref)
+  for (int i = 0; i < filterValsPref; i++) {
+    baro.pressureFiltered += pressureFilterVals[filterIndex];
+    filterIndex--;
+    if (filterIndex <= 0) filterIndex = FILTER_VALS_MAX;  // wrap around the array
+  }
+  baro.pressureFiltered /= filterValsPref;  // divide to get the average
 }
 
 void baro_calculateAlt() {
   // calculate altitude in cm
   baro.alt = 4433100.0 * (1.0 - pow((float)baro.pressureFiltered / 101325.0,
                                     (.190264)));  // standard altimeter setting
-  
+
   baro.altAdjusted =
       4433100.0 * (1.0 - pow((float)baro.pressureFiltered / (baro.altimeterSetting * 3386.389),
                              (.190264)));  // adjustable altimeter setting
