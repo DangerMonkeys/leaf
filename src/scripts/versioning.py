@@ -145,22 +145,26 @@ def update_version_header(env, firmware_version, tag_version, hardware_variant) 
     # Back up current version.h content
     original_version_h_path = os.path.join(vario_path, "version.h.original")
     shutil.copy2(version_h_path, original_version_h_path)
+    print("[versioning.py] version.h backed up to version.h.original")
 
     # Define action to restore version.h to its original state when needed
     restored = False
     def restore_version_h():
         nonlocal restored
         if not restored:
-            print("[versioning.py] Restoring version.h to its original content")
-            shutil.copy2(original_version_h_path, version_h_path)
-            os.remove(original_version_h_path)
+            if os.path.exists(original_version_h_path):
+                print("[versioning.py] Restoring version.h to its original content")
+                shutil.copy2(original_version_h_path, version_h_path)
+                os.remove(original_version_h_path)
 
-            if timestamp:
-                # Restore version.h's last-modified timestamp
-                print(f"[versioning.py] Setting date modified to {datetime.fromtimestamp(timestamp)}")
-                current_time = time.time()
-                os.utime(version_h_path, (current_time, timestamp))
-            restored = True
+                if timestamp:
+                    # Restore version.h's last-modified timestamp
+                    print(f"[versioning.py] Setting date modified to {datetime.fromtimestamp(timestamp)}")
+                    current_time = time.time()
+                    os.utime(version_h_path, (current_time, timestamp))
+                restored = True
+            else:
+                print("[versioning.py] Could not restore version.h to its original content because version.h.original was missing")
         else:
             print("[versioning.py] Already restored version.h to its original content")
 

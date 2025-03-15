@@ -37,7 +37,8 @@ WindEstimate getWindEstimate(void) { return windEstimate; }
 
 void windEstimate_onNewSentence(NMEASentenceContents contents) {
   if (contents.course || contents.speed) {
-    GroundVelocity v = {.trackAngle = DEG_TO_RAD * gps.course.deg(), .speed = gps.speed.mps()};
+    GroundVelocity v = {.trackAngle = (float)(DEG_TO_RAD * gps.course.deg()),
+                        .speed = (float)gps.speed.mps()};
 
     if (getAreWeFlying()) submitVelocityForWindEstimate(v);
   }

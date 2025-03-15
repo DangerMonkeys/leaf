@@ -7,11 +7,11 @@
 
 // Pin configuration for the IO Expander (0=output 1=input)
 #ifndef IOEX_REG_CONFIG_PORT0
-#define IOEX_REG_CONFIG_PORT0 B11111111  // default all inputs
+#define IOEX_REG_CONFIG_PORT0 0b11111111  // default all inputs
 #endif
 
 #ifndef IOEX_REG_CONFIG_PORT1
-#define IOEX_REG_CONFIG_PORT1 B11111111  // default all inputs
+#define IOEX_REG_CONFIG_PORT1 0b11111111  // default all inputs
 #endif
 
 // Create IO Expander
