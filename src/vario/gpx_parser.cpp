@@ -367,7 +367,7 @@ bool GPXParser::readFullTagName(char* key) {
 }
 
 bool GPXParser::readRoute(Route* route) {
-  route->totalPoints = 0;
+  route->routepoints.clear();
 
   char key[MAX_VALUE_LENGTH + 1];
   char value[MAX_VALUE_LENGTH + 1];
@@ -399,19 +399,12 @@ bool GPXParser::readRoute(Route* route) {
       break;
     } else if (equalsIgnoreCase(key, "rtept")) {
       // This is an opening route point tag
-      if (route->totalPoints >= maxRoutePoints) {
-        _error = "maximum number of route points exceeded";
-        return false;
-      }
       Waypoint waypoint;
       if (!readWaypoint(&waypoint, "rtept")) {
         _error = " while reading rtept";
         return false;
       }
-      route->routepoints[route->totalPoints + 1] =
-          waypoint;  // TODO: changed to add +1 to index, now routepoints start at 1, not 0.  Change
-                     // back if desired later
-      route->totalPoints++;
+      route->routepoints.push_back(waypoint);
     } else if (equalsIgnoreCase(key, "name")) {
       // This is an opening name tag
       if (!readLiteral(value)) {
