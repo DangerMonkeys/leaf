@@ -207,14 +207,6 @@ void Barometer::resetLaunchAlt() { altAtLaunch = altAdjusted; }
 void Barometer::wake() { sleeping_ = false; }
 void Barometer::sleep() { sleeping_ = true; }
 
-uint32_t baroTimeStampPressure = 0;
-uint32_t baroTimeStampTemp = 0;
-uint32_t baroADCStartTime = 0;
-uint8_t process_step = 0;
-bool baroADCBusy = false;
-bool baroADCPressure = false;
-bool baroADCTemp = false;
-
 void Barometer::update(bool startNewCycle, bool doTemp) {
   // (we don't need to update temp as frequently so we choose to skip it if desired)
   // the baro senor requires ~9ms between the command to prep the ADC and actually reading the
@@ -235,44 +227,44 @@ void Barometer::update(bool startNewCycle, bool doTemp) {
   // First check if ADC is not busy (i.e., it's been at least 9ms since we sent a "convert ADC"
   // command)
   unsigned long microsNow = micros();
-  if (microsNow - baroADCStartTime > 9000) {
-    baroADCBusy = false;
+  if (microsNow - baroADCStartTime_ > 9000) {
+    baroADCBusy_ = false;
   } else {
     Serial.print("BARO BUSY!  Executing Process Step # ");
-    Serial.print(process_step);
+    Serial.print(processStep_);
     Serial.print("  Micros since last: ");
-    Serial.println(microsNow - baroADCStartTime);
+    Serial.println(microsNow - baroADCStartTime_);
   }
 
-  if (startNewCycle) process_step = 0;
+  if (startNewCycle) processStep_ = 0;
 
   if (DEBUG_BARO) {
     Serial.print("baro step: ");
-    Serial.print(process_step);
+    Serial.print(processStep_);
     Serial.print(" NewCycle? ");
     Serial.print(startNewCycle);
     Serial.print(" time: ");
     Serial.println(micros());
   }
 
-  switch (process_step) {
+  switch (processStep_) {
     case 0:  // SEND CONVERT PRESSURE COMMAND
-      if (!baroADCBusy) {
-        baroADCStartTime = micros();
+      if (!baroADCBusy_) {
+        baroADCStartTime_ = micros();
         baro_sendCommand(CMD_CONVERT_PRESSURE);  // Prep baro sensor ADC to read raw pressure value
                                                  // (then come back for step 2 in ~10ms)
-        baroADCBusy = true;      // ADC will be busy now since we sent a conversion command
-        baroADCPressure = true;  // We will have a Pressure value in the ADC when ready
-        baroADCTemp =
+        baroADCBusy_ = true;      // ADC will be busy now since we sent a conversion command
+        baroADCPressure_ = true;  // We will have a Pressure value in the ADC when ready
+        baroADCTemp_ =
             false;  // We won't have a Temp value (even if the ADC was holding an unread Temperature
                     // value, we're clearning that out since we sent a Pressure command)
       }
       break;
 
     case 1:  // READ PRESSURE THEN SEND CONVERT TEMP COMMAND
-      if (!baroADCBusy && baroADCPressure) {
+      if (!baroADCBusy_ && baroADCPressure_) {
         D1_P_ = baro_readADC();  // Read raw pressure value
-        baroADCPressure = false;
+        baroADCPressure_ = false;
         // baroTimeStampPressure = micros() - baroTimeStampPressure; // capture duration between
         // prep and read
         if (D1_P_ == 0)
@@ -282,23 +274,23 @@ void Barometer::update(bool startNewCycle, bool doTemp) {
         // baroTimeStampTemp = micros();
 
         if (doTemp) {
-          baroADCStartTime = micros();
+          baroADCStartTime_ = micros();
           baro_sendCommand(CMD_CONVERT_TEMP);  // Prep baro sensor ADC to read raw temperature value
                                                // (then come back for step 3 in ~10ms)
-          baroADCBusy = true;
-          baroADCTemp = true;       // We will have a Temperature value in the ADC when ready
-          baroADCPressure = false;  // We won't have a Pressure value (even if the ADC was holding
-                                    // an unread Pressure value, we're clearning that out since we
-                                    // sent a Temperature command)
+          baroADCBusy_ = true;
+          baroADCTemp_ = true;       // We will have a Temperature value in the ADC when ready
+          baroADCPressure_ = false;  // We won't have a Pressure value (even if the ADC was holding
+                                     // an unread Pressure value, we're clearning that out since we
+                                     // sent a Temperature command)
         }
       }
       break;
 
     case 2:  // READ TEMP THEN CALCULATE ALTITUDE
       if (doTemp) {
-        if (!baroADCBusy && baroADCTemp) {
+        if (!baroADCBusy_ && baroADCTemp_) {
           D2_T_ = baro_readADC();  // read digital temp data
-          baroADCTemp = false;
+          baroADCTemp_ = false;
           // baroTimeStampTemp = micros() - baroTimeStampTemp; // capture duration between prep and
           // read
           if (D2_T_ == 0)
@@ -334,7 +326,7 @@ void Barometer::update(bool startNewCycle, bool doTemp) {
 
       break;
   }
-  process_step++;
+  processStep_++;
 }
 
 // ^^^ Device Management ^^^

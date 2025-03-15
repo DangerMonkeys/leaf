@@ -88,6 +88,12 @@ class Barometer {
   // Track if we've put baro to sleep (in power off usb state)
   bool sleeping_ = false;
 
+  uint32_t baroADCStartTime_ = 0;
+  uint8_t processStep_ = 0;
+  bool baroADCBusy_ = false;
+  bool baroADCPressure_ = false;
+  bool baroADCTemp_ = false;
+
   // == Device reading & data processing ==
   void calculatePressure(void);
   void filterPressure(void);  // TODO: Use or remove (currently unused)
