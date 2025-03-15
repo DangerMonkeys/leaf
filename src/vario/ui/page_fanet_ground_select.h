@@ -12,11 +12,7 @@ class PageFanetGroundSelect : SimpleSettingsMenuPage {
 
   etl::array_view<const char*> get_labels() const override {
     static etl::array labels{
-        "Walking",
-        "Vehicle",
-        "Need Ride",
-        "Landed OK",
-        "Tech Sup",
+        "Walking", "Vehicle", "Need Ride", "Landed OK", "Tech Sup",
     };
     return etl::array_view<const char*>(labels);
   }

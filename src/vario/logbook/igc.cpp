@@ -64,12 +64,9 @@ void Igc::log(unsigned long durationSec) {
   strftime(buf, sizeof(buf), "%H%M%S", &cal);
 
   logger.writeBRecord(buf,  // Time in HHMMSS
-                      latDegreeToStr(gps.location.lat()),
-                      lngDegreeToStr(gps.location.lng()),
-                      true,
+                      latDegreeToStr(gps.location.lat()), lngDegreeToStr(gps.location.lng()), true,
                       baro.alt / 100,  // cm to meters
-                      gps.altitude.meters(),
-                      toDigits((int)gpsFixInfo.error, 3));
+                      gps.altitude.meters(), toDigits((int)gpsFixInfo.error, 3));
 }
 
 bool Igc::startFlight() {

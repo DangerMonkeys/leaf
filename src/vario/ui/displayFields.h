@@ -35,11 +35,8 @@ enum altTypes {
 
 // The vertical bar graph of climb/sink rate.
 // Different Climb & Sink heights allow the bar to be asymmetric
-void display_varioBar(uint8_t varioBarTop,
-                      uint8_t varioBarClimbHeight,
-                      uint8_t varioBarSinkHeight,
-                      uint8_t varioBarWidth,
-                      int32_t displayClimbRate);
+void display_varioBar(uint8_t varioBarTop, uint8_t varioBarClimbHeight, uint8_t varioBarSinkHeight,
+                      uint8_t varioBarWidth, int32_t displayClimbRate);
 
 // black box with left-facing arrow pointing at vario bar
 void display_climbRatePointerBox(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t triSize);
@@ -62,9 +59,7 @@ void display_fanet_icon(const uint8_t& x, const uint8_t& y);
 void display_windSockArrow(int16_t x, int16_t y, int16_t radius);
 void display_windSockRing(int16_t x, int16_t y, int16_t radius, int16_t size, bool showPointer);
 void display_windSpeedCentered(uint8_t x, uint8_t y, const uint8_t* font);
-void displayWaypointDropletPointer(uint8_t centerX,
-                                   uint8_t centerY,
-                                   uint8_t pointRadius,
+void displayWaypointDropletPointer(uint8_t centerX, uint8_t centerY, uint8_t pointRadius,
                                    float direction);
 
 void display_menuTitle(String title);

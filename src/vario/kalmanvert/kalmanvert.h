@@ -1,7 +1,7 @@
 /* kalmanvert -- Compute vertical acceleration with Kalman filter
  *
  * Copyright 2016-2019 Baptiste PELLEGRIN
- * 
+ *
  * This file is part of GNUVario.
  *
  * GNUVario is free software: you can redistribute it and/or modify
@@ -29,7 +29,6 @@
 /*********************************************************/
 
 class Kalmanvert {
-
  public:
   /**********************************************************/
   /*           init with your first measured values         */
@@ -54,7 +53,7 @@ class Kalmanvert {
  private:
   /* position variance, acceleration variance */
   double varp, vara;
-  
+
   /* position, velocity, acceleration, timestamp */
   double p, v, a;
   unsigned long t;
@@ -64,7 +63,6 @@ class Kalmanvert {
 
   /* covariance matrix */
   double p11, p21, p12, p22;
-  
 };
 
 #endif

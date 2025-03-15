@@ -4,9 +4,7 @@
 #include "fanet_radio.h"
 #include "fonts.h"
 
-void PageFanetStats::show() {
-  push_page(&getInstance());
-}
+void PageFanetStats::show() { push_page(&getInstance()); }
 
 void PageFanetStats::draw_extra() {
   auto radioStats = FanetRadio::getInstance().getStats();

@@ -30,10 +30,8 @@ void PageFanet::setting_change(Button dir, ButtonState state, uint8_t count) {
       };
 
       // Bring up a dialogue for the user to change the region
-      PageListSelect::show("Region",
-                           etl::array_view<const char*>(FanetRadioRegion::strings),
-                           (int)FANET_region,
-                           regionChanged);
+      PageListSelect::show("Region", etl::array_view<const char*>(FanetRadioRegion::strings),
+                           (int)FANET_region, regionChanged);
     } break;
     case 2:
       // User selected statistics

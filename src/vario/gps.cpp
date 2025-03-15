@@ -273,19 +273,13 @@ void gps_update() {
   */
 }
 
-float gps_getGlideRatio() {
-  return glideRatio;
-}
+float gps_getGlideRatio() { return glideRatio; }
 
-void gps_setBus(etl::imessage_bus* bus) {
-  gps_bus = bus;
-}
+void gps_setBus(etl::imessage_bus* bus) { gps_bus = bus; }
 
 // this is called whenever a new valid NMEA sentence contains a valid speed (TODO: check if true for
 // every sentence or just every fix)
-void onNewSentence(NMEASentenceContents contents) {
-  windEstimate_onNewSentence(contents);
-}
+void onNewSentence(NMEASentenceContents contents) { windEstimate_onNewSentence(contents); }
 
 bool gps_read_buffer_once() {
   GpsLockGuard mutex;  // Ensure we have a lock on write

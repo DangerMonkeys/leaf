@@ -2,7 +2,7 @@
 
 #include <FS.h>
 
-FileReader::FileReader(fs::FS &fs, String fileName) {
+FileReader::FileReader(fs::FS& fs, String fileName) {
   // open file from SD card
   _file = fs.open(fileName, FILE_READ);
   if (!_file) {
@@ -16,7 +16,7 @@ FileReader::FileReader(fs::FS &fs, String fileName) {
 char FileReader::nextChar() {
   if (_buffer_index >= _buffer_count) {
     // We need to read another block from the file
-    _buffer_count = _file.read((uint8_t *)_buffer, FILE_READER_BUFFER_LEN);
+    _buffer_count = _file.read((uint8_t*)_buffer, FILE_READER_BUFFER_LEN);
     _buffer_index = 0;
   }
   if (_buffer_count == 0) {

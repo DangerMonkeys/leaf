@@ -59,6 +59,4 @@ void PageMenuAbout::draw_extra() {
   y += offset;
 }
 
-void PageMenuAbout::show() {
-  push_page(this);
-}
+void PageMenuAbout::show() { push_page(this); }

@@ -1,9 +1,7 @@
 #include "page_fanet_ground_select.h"
 #include "page_fanet_ground.h"
 
-void PageFanetGroundSelect::show() {
-  push_page(&getInstance());
-}
+void PageFanetGroundSelect::show() { push_page(&getInstance()); }
 
 void PageFanetGroundSelect::setting_change(Button dir, ButtonState state, uint8_t count) {
   // Call the parent method

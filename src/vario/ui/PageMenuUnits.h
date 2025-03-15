@@ -18,8 +18,8 @@ class UnitsMenuPage : public SettingsMenuPage {
   void setting_change(Button dir, ButtonState state, uint8_t count);
 
  private:
-  static constexpr char* labels[8] =
-      {"Back", "Altitude", "ClimbRate", "Speed", "Distance", "Heading", "Temp", "Time"};
+  static constexpr char* labels[8] = {"Back",     "Altitude", "ClimbRate", "Speed",
+                                      "Distance", "Heading",  "Temp",      "Time"};
 };
 
 #endif

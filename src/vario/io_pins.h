@@ -1,7 +1,7 @@
 #pragma once
 #include <Arduino.h>
 
-/* IO Expander 
+/* IO Expander
 [datasheet](https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2304251416_XINLUDA-XL9535QF24_C5444301.pdf)
 
 Chip is configured with I2C address: 0x20

@@ -173,6 +173,4 @@ void webserver_setup() {
   Serial.println("Webserver started: http://" + WiFi.localIP().toString());
 }
 
-void webserver_loop() {
-  server.handleClient();
-}
+void webserver_loop() { server.handleClient(); }

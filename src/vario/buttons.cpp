@@ -225,13 +225,9 @@ Button buttons_update(void) {
   return which_button;
 }
 
-ButtonState buttons_get_state(void) {
-  return button_state;
-}
+ButtonState buttons_get_state(void) { return button_state; }
 
-uint16_t buttons_get_hold_count(void) {
-  return button_hold_counter;
-}
+uint16_t buttons_get_hold_count(void) { return button_hold_counter; }
 
 // the recurring call to see if user is pressing buttons.  Handles debounce and button state changes
 Button buttons_check(void) {

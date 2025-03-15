@@ -134,24 +134,16 @@ void display_setPage(uint8_t targetPage) {
   if (display_page != tempPage) display_page_prior = tempPage;
 }
 
-uint8_t display_getPage() {
-  return display_page;
-}
+uint8_t display_getPage() { return display_page; }
 
 uint8_t showSplashScreenFrames = 0;
 
-void display_showOnSplash() {
-  showSplashScreenFrames = 3;
-}
+void display_showOnSplash() { showSplashScreenFrames = 3; }
 
 bool showWarning = true;
 
-bool displayingWarning() {
-  return showWarning;
-}
-void displayDismissWarning() {
-  showWarning = false;
-}
+bool displayingWarning() { return showWarning; }
+void displayDismissWarning() { showWarning = false; }
 
 //*********************************************************************
 // MAIN DISPLAY UPDATE FUNCTION

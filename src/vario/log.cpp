@@ -21,9 +21,7 @@
 // track if we're "flying" separate from if we're recording a log.  This allows us to enable
 // certain in-flight features (like vario quiet_mode) without having to be recording a log.
 bool weAreFlying = false;
-bool getAreWeFlying() {
-  return weAreFlying;
-}
+bool getAreWeFlying() { return weAreFlying; }
 
 // Local variables
 
@@ -185,12 +183,8 @@ bool flightTimer_autoStop() {
 // FLight Timer Management Functions
 
 // check if running
-bool flightTimer_isRunning() {
-  return flight != NULL;
-}
-bool flightTimer_isLogging() {
-  return flightTimer_isRunning() && (bool)flight->started();
-}
+bool flightTimer_isRunning() { return flight != NULL; }
+bool flightTimer_isLogging() { return flightTimer_isRunning() && (bool)flight->started(); }
 
 // start timer
 void flightTimer_start() {

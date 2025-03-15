@@ -127,9 +127,7 @@ void taskmanSetup() {
   timerAttachInterrupt(
       task_timer,
       &onTaskTimer);  // timer, ISR call          NOTE: timerDetachInterrupt() does the opposite
-  timerAlarm(task_timer,
-             TASK_TIMER_LENGTH,
-             true,
+  timerAlarm(task_timer, TASK_TIMER_LENGTH, true,
              0);  // auto reload timer ever time we've counted a sample length
 
   // Start Charge System Timer for Interrupt Events (this will tell Main Loop to do tasks every
@@ -138,9 +136,7 @@ void taskmanSetup() {
   timerAttachInterrupt(
       charge_timer,
       &onChargeTimer);  // timer, ISR call          NOTE: timerDetachInterrupt() does the opposite
-  timerAlarm(charge_timer,
-             CHARGE_TIMER_LENGTH,
-             true,
+  timerAlarm(charge_timer, CHARGE_TIMER_LENGTH, true,
              0);  // auto reload timer ever time we've counted a sample length
 
   // All done!

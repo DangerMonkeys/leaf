@@ -55,6 +55,4 @@ void Flight::end(const FlightStats stats) {
   dialog.show(stats);
 }
 
-bool Flight::started() {
-  return (boolean)file;
-}
+bool Flight::started() { return (boolean)file; }

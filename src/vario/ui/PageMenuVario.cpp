@@ -103,22 +103,22 @@ void VarioMenuPage::draw() {
           if (SINK_ALARM == 0) {
             u8g2.print("OFF");
           } else {
-
-
             // now print the value
             if (UNITS_climb) {
               // handle the extra digit required if we hit -1000fpm or more
               if (SINK_ALARM <= -5) {
-                u8g2.setCursor(u8g2.getCursorX() - 7, u8g2.getCursorY()); // scootch over to make room 
+                u8g2.setCursor(u8g2.getCursorX() - 7,
+                               u8g2.getCursorY());  // scootch over to make room
 
                 // and draw a bigger selection box to fit this one if cursor is here
                 if (cursor_position == cursor_vario_sinkalarm) {
                   u8g2.setDrawColor(1);
-                  u8g2.drawRBox(setting_choice_x - 10, menu_items_y[cursor_position] - 14, 38, 16, 2);
+                  u8g2.drawRBox(setting_choice_x - 10, menu_items_y[cursor_position] - 14, 38, 16,
+                                2);
                   u8g2.setDrawColor(0);
-                }                
+                }
               }
-              
+
               // now print the value as usual
               u8g2.print(SINK_ALARM * 200);  // m/s->fpm
             } else {

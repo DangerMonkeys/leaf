@@ -28,8 +28,8 @@ struct BARO {
   int32_t pressureFiltered;
   int32_t pressureRegression;
   float altimeterSetting = 29.920;
-  int32_t alt;          // cm raw pressure altitude calculated off standard altimeter setting (29.92)
-  float altF;           // m raw pressure altitude (float)
+  int32_t alt;  // cm raw pressure altitude calculated off standard altimeter setting (29.92)
+  float altF;   // m raw pressure altitude (float)
   int32_t altAdjusted;  // the resulting altitude after being corrected by the altimeter setting
   int32_t altAtLaunch;
   int32_t altAboveLaunch;

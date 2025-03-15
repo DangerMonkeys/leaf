@@ -44,49 +44,50 @@ void thermalPage_draw() {
     display_headerAndFooter(cursor_position == cursor_thermalPage_timer, false);
 
     // Main Info ****************************************************
-      // Vario Bar
-        uint8_t topOfFrame = 30;
-        uint8_t varioBarWidth = 20;
-        uint8_t varioBarClimbHeight = 70;
-        uint8_t varioBarSinkHeight = varioBarClimbHeight;
-            
-        display_varioBar(topOfFrame, varioBarClimbHeight, varioBarSinkHeight, varioBarWidth, baro.climbRateFiltered);
+    // Vario Bar
+    uint8_t topOfFrame = 30;
+    uint8_t varioBarWidth = 20;
+    uint8_t varioBarClimbHeight = 70;
+    uint8_t varioBarSinkHeight = varioBarClimbHeight;
 
-      // Graph Box
-        uint8_t graphBoxHeight = 40;
-        u8g2.drawFrame(varioBarWidth - 1, topOfFrame, 96 - varioBarWidth + 1, graphBoxHeight);
+    display_varioBar(topOfFrame, varioBarClimbHeight, varioBarSinkHeight, varioBarWidth,
+                     baro.climbRateFiltered);
 
-      // alt
-        display_alt_type(22, 89, leaf_8x14, THMPG_ALT_TYP);
+    // Graph Box
+    uint8_t graphBoxHeight = 40;
+    u8g2.drawFrame(varioBarWidth - 1, topOfFrame, 96 - varioBarWidth + 1, graphBoxHeight);
 
-      // altselection box
-        if (cursor_position == cursor_thermalPage_alt1) {
-          display_selectionBox(21, 73, 96 - 21, 18, 6);
-        }
+    // alt
+    display_alt_type(22, 89, leaf_8x14, THMPG_ALT_TYP);
 
-      // climb rate
-        display_climbRatePointerBox(20, 92, 76, 17, 6);  // x, y, w, h, triangle size
-        display_climbRate(20, 108, leaf_8x14, baro.climbRateFiltered);
+    // altselection box
+    if (cursor_position == cursor_thermalPage_alt1) {
+      display_selectionBox(21, 73, 96 - 21, 18, 6);
+    }
 
-      // altitude above launch
-        display_altAboveLaunch(24, 132, baro.altAboveLaunch);
+    // climb rate
+    display_climbRatePointerBox(20, 92, 76, 17, 6);  // x, y, w, h, triangle size
+    display_climbRate(20, 108, leaf_8x14, baro.climbRateFiltered);
+
+    // altitude above launch
+    display_altAboveLaunch(24, 132, baro.altAboveLaunch);
 
     // User Fields ****************************************************
-      uint8_t userFieldsTop = 136;
-      uint8_t userFieldsHeight = 17;
-      uint8_t userFieldsMid = userFieldsTop + userFieldsHeight;
-      uint8_t userFieldsBottom = userFieldsMid + userFieldsHeight;
-      uint8_t userSecondColumn = varioBarWidth / 2 + 48;
+    uint8_t userFieldsTop = 136;
+    uint8_t userFieldsHeight = 17;
+    uint8_t userFieldsMid = userFieldsTop + userFieldsHeight;
+    uint8_t userFieldsBottom = userFieldsMid + userFieldsHeight;
+    uint8_t userSecondColumn = varioBarWidth / 2 + 48;
 
-      u8g2.drawHLine(varioBarWidth - 1, userFieldsTop, 96 - varioBarWidth + 1);
-      u8g2.drawHLine(varioBarWidth - 1, userFieldsMid, 96 - varioBarWidth + 1);
-      u8g2.drawHLine(varioBarWidth - 1, userFieldsBottom, 96 - varioBarWidth + 1);
-      u8g2.drawVLine(userSecondColumn, userFieldsTop, userFieldsHeight * 2);
+    u8g2.drawHLine(varioBarWidth - 1, userFieldsTop, 96 - varioBarWidth + 1);
+    u8g2.drawHLine(varioBarWidth - 1, userFieldsMid, 96 - varioBarWidth + 1);
+    u8g2.drawHLine(varioBarWidth - 1, userFieldsBottom, 96 - varioBarWidth + 1);
+    u8g2.drawVLine(userSecondColumn, userFieldsTop, userFieldsHeight * 2);
 
-      display_temp(varioBarWidth + 5, userFieldsMid - 1, (int16_t)tempRH_getTemp());
-      display_humidity(userSecondColumn + 3, userFieldsMid - 1, (uint8_t)tempRH_getHumidity());
-      display_accel(varioBarWidth + 5, userFieldsBottom - 1, IMU_getAccel());
-      display_glide(userSecondColumn + 3, userFieldsBottom - 1, gps_getGlideRatio());
+    display_temp(varioBarWidth + 5, userFieldsMid - 1, (int16_t)tempRH_getTemp());
+    display_humidity(userSecondColumn + 3, userFieldsMid - 1, (uint8_t)tempRH_getHumidity());
+    display_accel(varioBarWidth + 5, userFieldsBottom - 1, IMU_getAccel());
+    display_glide(userSecondColumn + 3, userFieldsBottom - 1, gps_getGlideRatio());
 
     // Footer Info ****************************************************
 
@@ -229,7 +230,8 @@ void thermalPage_button(Button button, ButtonState state, uint8_t count) {
           } else if (state == HELD && flightTimer_isRunning()) {
             flightTimer_stop();
             cursor_position = cursor_thermalPage_none;
-						buttons_lockAfterHold();	// lock buttons so we don't turn off if user keeps holding button
+            buttons_lockAfterHold();  // lock buttons so we don't turn off if user keeps holding
+                                      // button
           }
 
           break;

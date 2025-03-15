@@ -7,7 +7,7 @@
 
 class FileReader {
  public:
-  FileReader(fs::FS &fs, String fileName);
+  FileReader(fs::FS& fs, String fileName);
 
   char nextChar();
 

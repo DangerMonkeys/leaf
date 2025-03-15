@@ -52,9 +52,7 @@ void PageFanetGround::show(FanetGroundTrackingMode mode) {
   };
 }
 
-const char* PageFanetGround::get_title() const {
-  return "Ground Tracking";
-}
+const char* PageFanetGround::get_title() const { return "Ground Tracking"; }
 
 void PageFanetGround::closed(bool removed_from_Stack) {
   // Ground tracking should only occur while we're showing this page.
@@ -101,12 +99,9 @@ void PageFanetGround::draw_extra() {
     // This really, really shouldn't be done in a Display object
     // but whatever, we'll refactor later.
     // TODO:  Delete me
-    FanetRadio::getInstance().setCurrentLocation(gps.location.lat(),
-                                                 gps.location.lng(),
-                                                 gps.altitude.meters(),
-                                                 gps.course.deg(),
-                                                 baro.climbRate / 100.0f,
-                                                 gps.speed.kmph());
+    FanetRadio::getInstance().setCurrentLocation(gps.location.lat(), gps.location.lng(),
+                                                 gps.altitude.meters(), gps.course.deg(),
+                                                 baro.climbRate / 100.0f, gps.speed.kmph());
   }
 }
 

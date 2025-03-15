@@ -33,7 +33,7 @@ void LogMenuPage::draw() {
     uint8_t menu_items_y[] = {190, 45, 60, 75, 90, /*105, 120,*/ 135};
 
     // first draw cursor selection box
-      u8g2.drawRBox(setting_choice_x - 4, menu_items_y[cursor_position] - 14, 30, 16, 2);
+    u8g2.drawRBox(setting_choice_x - 4, menu_items_y[cursor_position] - 14, 30, 16, 2);
 
     // then draw all the menu items
     for (int i = 0; i <= cursor_max; i++) {
@@ -83,7 +83,7 @@ void LogMenuPage::draw() {
 void LogMenuPage::setting_change(Button dir, ButtonState state, uint8_t count) {
   switch (cursor_position) {
     case cursor_log_format: {
-      if(state != PRESSED) {
+      if (state != PRESSED) {
         return;
       }
       auto new_val = (int8_t)LOG_FORMAT;

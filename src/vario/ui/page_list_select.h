@@ -14,10 +14,8 @@ class PageListSelect : public SimpleSettingsMenuPage {
   /// @param entries List of entries to show
   /// @param selected Index of selected entry
   /// @param callback Callback with function to selected entry
-  static void show(const char* title,
-                   const etl::array_view<const char*> entries,
-                   const int& selected,
-                   void (*callback)(int));
+  static void show(const char* title, const etl::array_view<const char*> entries,
+                   const int& selected, void (*callback)(int));
 
   const char* get_title() const override { return title; }
   etl::array_view<const char*> get_labels() const override { return entries; }

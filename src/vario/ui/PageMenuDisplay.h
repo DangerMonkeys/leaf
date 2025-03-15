@@ -18,8 +18,8 @@ class DisplayMenuPage : public SettingsMenuPage {
   void setting_change(Button dir, ButtonState state, uint8_t count);
 
  private:
-  static constexpr char *labels[6] =
-      {"Back", "Debug", "Thermal Lite", "Thermal ADV", "Navigate", "Contrast"};
+  static constexpr char* labels[6] = {"Back",        "Debug",    "Thermal Lite",
+                                      "Thermal ADV", "Navigate", "Contrast"};
 };
 
 #endif

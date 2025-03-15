@@ -11,7 +11,7 @@
 
 // save state of SD card present (used to compare against the SD_DETECT
 // pin so we can tell if a card has been inserted or removed)
-bool SDcardPresentSavedState = false; 
+bool SDcardPresentSavedState = false;
 
 #include "FirmwareMSC.h"
 #include "USB.h"
@@ -189,7 +189,7 @@ void testFileIO(fs::FS& fs, const char* path) {
   file.close();
 }
 
-/*  Currently removing the SD_DETECT ISR, since we're just polling 
+/*  Currently removing the SD_DETECT ISR, since we're just polling
     the pin every second with SDcard_update()
 void IRAM_ATTR SDIO_DETECT_ISR() {
   remountSDCard = true;
@@ -197,9 +197,7 @@ void IRAM_ATTR SDIO_DETECT_ISR() {
 }
   */
 
-bool SDcard_checkIfPresent() {
-  return !digitalRead(SDIO_DETECT);
-}
+bool SDcard_checkIfPresent() { return !digitalRead(SDIO_DETECT); }
 
 void SDcard_init(void) {
   // Shouldn't need to call set pins since we're using the default pins
@@ -215,25 +213,24 @@ void SDcard_init(void) {
   // attachInterrupt(SDIO_DETECT, SDIO_DETECT_ISR, CHANGE);
 
   // If SDcard present, mount and save state so we can track changes
-  if(SDcard_checkIfPresent()) {
+  if (SDcard_checkIfPresent()) {
     SDcardPresentSavedState = true;
     SDcard_mount();
-  } 
+  }
 }
-
 
 void SDcard_update() {
   // if we have a card when we didn't before...
   if (SDcard_checkIfPresent() && !SDcardPresentSavedState) {
     // then mount it!
     if (SDcard_mount()) {
-      SDcardPresentSavedState = true; // save that we have a successfully mounted card
+      SDcardPresentSavedState = true;  // save that we have a successfully mounted card
     }
 
-  // or if we don't have a card when we DID before, "unmount"
+    // or if we don't have a card when we DID before, "unmount"
   } else if (!SDcard_checkIfPresent() && SDcardPresentSavedState) {
     SD_MMC.end();
-    SDcardPresentSavedState = false; // save that we have a successfully unmounted card
+    SDcardPresentSavedState = false;  // save that we have a successfully unmounted card
   }
 }
 
@@ -295,18 +292,16 @@ bool SDcard_mount() {
     if (DEBUG_SDCARD) Serial.println("SDcard Mount Success");
     success = true;
 
-    #ifndef DISABLE_MASS_STORAGE
-      if(SDCard_SetupMassStorage()) {
-        if (DEBUG_SDCARD) Serial.println("Mass Storage Success");
-      } else {
-        if (DEBUG_SDCARD) Serial.println("Mass Storage Failed");
-      }
-    #endif
+#ifndef DISABLE_MASS_STORAGE
+    if (SDCard_SetupMassStorage()) {
+      if (DEBUG_SDCARD) Serial.println("Mass Storage Success");
+    } else {
+      if (DEBUG_SDCARD) Serial.println("Mass Storage Failed");
+    }
+#endif
   }
 
   return success;
 }
 
-bool SDcard_present() {
-  return SDcardPresentSavedState;
-}
+bool SDcard_present() { return SDcardPresentSavedState; }

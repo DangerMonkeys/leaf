@@ -177,8 +177,7 @@ void BLE::timerCallback(TimerHandle_t timer) {
 
 void BLE::sendVarioUpdate() {
   char stringified[100];
-  snprintf(stringified,
-           sizeof(stringified),
+  snprintf(stringified, sizeof(stringified),
            // See https://raw.githubusercontent.com/LK8000/LK8000/master/Docs/LK8EX1.txt
            ("$LK8EX1,"  // Type of update
             "%u,"       // raw pressure in hPascal
@@ -189,8 +188,7 @@ void BLE::sendVarioUpdate() {
                     // if unavailable
             "*"     // Checksum to follow
             ),
-           baro.pressureFiltered,
-           baro.climbRateFiltered);
+           baro.pressureFiltered, baro.climbRateFiltered);
   // Add checksum and delimeter with newline
   snprintf(stringified + strlen(stringified), sizeof(stringified), "%02X\n", checksum(stringified));
   pCharacteristic->setValue((const uint8_t*)stringified, sizeof(stringified));
@@ -228,24 +226,15 @@ void BLE::sendGpsUpdate(TinyGPSPlus& gps) {
   // $GPRMC,161229.487,A,3723.2475,N,12158.3416,W,0.13,309.62,120598, ,*10
   char stringified[100];
 
-  snprintf(stringified,
-           sizeof(stringified),
-           "$GPRMC,%02d%02d%02d.%03d,A,%s,%s,%.2f,%.2f,%02d%02d%02d,,*",
-           gps.time.hour(),
-           gps.time.minute(),
-           gps.time.second(),
+  snprintf(stringified, sizeof(stringified),
+           "$GPRMC,%02d%02d%02d.%03d,A,%s,%s,%.2f,%.2f,%02d%02d%02d,,*", gps.time.hour(),
+           gps.time.minute(), gps.time.second(),
            gps.time.centisecond() / 10,  // Adjust if needed
-           formatLatitude(gps.location.lat()),
-           formatLongitude(gps.location.lng()),
-           gps.speed.knots(),
-           gps.course.deg(),
-           gps.date.day(),
-           gps.date.month(),
+           formatLatitude(gps.location.lat()), formatLongitude(gps.location.lng()),
+           gps.speed.knots(), gps.course.deg(), gps.date.day(), gps.date.month(),
            gps.date.year() % 100);
 
-  snprintf(stringified + strlen(stringified),
-           sizeof(stringified) - strlen(stringified),
-           "%02X\n",
+  snprintf(stringified + strlen(stringified), sizeof(stringified) - strlen(stringified), "%02X\n",
            checksum(stringified));
   Serial.println(stringified);
   pCharacteristic->setValue((const uint8_t*)stringified, strlen(stringified));
@@ -310,8 +299,7 @@ void BLE::sendFanetUpdate(FanetPacket& msg) {
     gpsAltitude = gps.altitude.meters();
   }
 
-  snprintf(stringified,
-           sizeof(stringified),
+  snprintf(stringified, sizeof(stringified),
            ("$PFLAA,"
             "0,"       // 0 means no alarm, informational
             "%d,"      // TODO:  Relative north in meters from current location
@@ -328,16 +316,9 @@ void BLE::sendFanetUpdate(FanetPacket& msg) {
             "0,"       // source is FLARM
             "%.2f*\n"  // RSSI
             ),
-           (int)northOffset,
-           (int)eastOffset,
-           payload.altitude - (int)gpsAltitude,
-           MacToString(packet.header.srcMac),
-           payload.heading,
-           payload.speed / 3.6,
-           payload.climbRate,
-           aircraftType,
-           payload.onlineTracking ? 0 : 1,
-           msg.rssi);
+           (int)northOffset, (int)eastOffset, payload.altitude - (int)gpsAltitude,
+           MacToString(packet.header.srcMac), payload.heading, payload.speed / 3.6,
+           payload.climbRate, aircraftType, payload.onlineTracking ? 0 : 1, msg.rssi);
 
   Serial.println(stringified);
   pCharacteristic->setValue((const uint8_t*)stringified, strlen(stringified));

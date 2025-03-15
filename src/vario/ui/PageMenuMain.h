@@ -21,8 +21,8 @@ class MainMenuPage : public MenuPage {
   void draw_main_menu();
   bool mainMenuButtonEvent(Button button, ButtonState state, uint8_t count);
   void menu_item_action(Button dir);
-  static constexpr char* labels[8] =
-      {"Back", "Altimeter", "Vario", "Display", "Units", "GPS", "Log/Timer", "System"};
+  static constexpr char* labels[8] = {"Back",  "Altimeter", "Vario",     "Display",
+                                      "Units", "GPS",       "Log/Timer", "System"};
 };
 
 #endif

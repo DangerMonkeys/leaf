@@ -46,12 +46,8 @@ class FanetRadio : public etl::message_router<FanetRadio, GpsReading> {
   void setTrackingMode(const etl::optional<Fanet::GroundTrackingType::enum_type>& mode);
 
   /// @brief Gets the current location
-  void setCurrentLocation(const float& lat,
-                          const float& lon,
-                          const uint32_t& alt,
-                          const int& heading,
-                          const float& climbRate,
-                          const float& speedKmh);
+  void setCurrentLocation(const float& lat, const float& lon, const uint32_t& alt,
+                          const int& heading, const float& climbRate, const float& speedKmh);
 
   Fanet::Stats getStats();
 

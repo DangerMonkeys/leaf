@@ -19,16 +19,8 @@ class SystemMenuPage : public SettingsMenuPage {
   void setting_change(Button dir, ButtonState state, uint8_t count);
 
  private:
-  static constexpr char* labels[10] = {"Back",
-                                       "TimeZone",
-                                       "Volume",
-                                       "Auto-Off",
-                                       "ShowWarning",
-                                       "Fanet",
-                                       "Wifi",
-                                       "BT",
-                                       "About",
-                                       "Reset"};
+  static constexpr char* labels[10] = {"Back",  "TimeZone", "Volume", "Auto-Off", "ShowWarning",
+                                       "Fanet", "Wifi",     "BT",     "About",    "Reset"};
 };
 
 #endif

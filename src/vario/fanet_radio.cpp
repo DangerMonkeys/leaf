@@ -213,10 +213,7 @@ void FanetRadio::setup(etl::imessage_bus* bus) {
   setupFanetHandler();
 
   // Create the TX Task
-  auto taskCreateCode = xTaskCreate(taskRadioTx,
-                                    "FanetTx",
-                                    4096,
-                                    nullptr,
+  auto taskCreateCode = xTaskCreate(taskRadioTx, "FanetTx", 4096, nullptr,
                                     1,  // Typical lower priority task
                                     &x_fanet_tx_task);
   if (taskCreateCode != pdPASS) {
@@ -226,10 +223,7 @@ void FanetRadio::setup(etl::imessage_bus* bus) {
   }
 
   // Create the RX Task
-  taskCreateCode = xTaskCreate(taskRadioRx,
-                               "FanetRx",
-                               4096,
-                               nullptr,
+  taskCreateCode = xTaskCreate(taskRadioRx, "FanetRx", 4096, nullptr,
                                1,  // Typical lower priority task
                                &x_fanet_rx_task);
   if (taskCreateCode != pdPASS) {
@@ -311,15 +305,10 @@ void FanetRadio::end() {
   state = FanetRadioState::UNINITIALIZED;
 }
 
-FanetRadioState FanetRadio::getState() {
-  return state;
-}
+FanetRadioState FanetRadio::getState() { return state; }
 
-void FanetRadio::setCurrentLocation(const float& lat,
-                                    const float& lon,
-                                    const uint32_t& alt,
-                                    const int& heading,
-                                    const float& climbRate,
+void FanetRadio::setCurrentLocation(const float& lat, const float& lon, const uint32_t& alt,
+                                    const int& heading, const float& climbRate,
                                     const float& speedKmh) {
   if (state != FanetRadioState::RUNNING) {
     return;
@@ -359,12 +348,8 @@ void FanetRadio::on_receive(const GpsReading& msg) {
 
   // Update the FANet radio module of our current location
   TinyGPSPlus gps = msg.gps;  // Needed as lat() calls are not const :'(
-  setCurrentLocation(gps.location.lat(),
-                     gps.location.lng(),
-                     gps.altitude.meters(),
-                     gps.course.deg(),
-                     baro.climbRate / 100.0f,
-                     gps.speed.kmph());
+  setCurrentLocation(gps.location.lat(), gps.location.lng(), gps.altitude.meters(),
+                     gps.course.deg(), baro.climbRate / 100.0f, gps.speed.kmph());
 }
 
 String FanetRadio::getAddress() {
@@ -396,11 +381,7 @@ void FanetRadio::setTrackingMode(const etl::optional<Fanet::GroundTrackingType::
 
 String MacToString(Fanet::Mac address) {
   char buffer[7];
-  snprintf(buffer,
-           sizeof(buffer),
-           "%02X%02X%02X",
-           address.manufacturer,
-           address.device << 8,
+  snprintf(buffer, sizeof(buffer), "%02X%02X%02X", address.manufacturer, address.device << 8,
            address.device | 0xFF);
   buffer[6] = '\0';
   auto ret = String(buffer);

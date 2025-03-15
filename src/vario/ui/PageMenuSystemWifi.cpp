@@ -135,13 +135,8 @@ void PageMenuSystemWifiManualSetup::draw_extra() {
   u8g2.setCursor(2, y);
 
   // Instruction Page
-  const char* lines[] = {"Join Leaf",
-                         "WiFi network",
-                         " ",
-                         "Configure WiFi",
-                         "SSID & Password",
-                         " ",
-                         "Then press Save"};
+  const char* lines[] = {"Join Leaf", "WiFi network",   " ", "Configure WiFi", "SSID & Password",
+                         " ",         "Then press Save"};
 
   for (auto line : lines) {
     u8g2.setCursor(0, y);

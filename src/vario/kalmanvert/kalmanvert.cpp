@@ -1,7 +1,7 @@
 /* kalmanvert -- Compute vertical acceleration with Kalman filter
  *
  * Copyright 2016-2019 Baptiste PELLEGRIN
- * 
+ *
  * This file is part of GNUVario.
  *
  * GNUVario is free software: you can redistribute it and/or modify
@@ -22,15 +22,15 @@
 
 #include <Arduino.h>
 
-void Kalmanvert::init(double startp, double starta, double sigmap, double sigmaa, unsigned long timestamp) {
-
+void Kalmanvert::init(double startp, double starta, double sigmap, double sigmaa,
+                      unsigned long timestamp) {
   /* init base values */
   p = startp;
   v = 0;
   a = starta;
   t = timestamp;
   calibrationDrift = 0.0;
-    
+
   /* init variance */
   varp = sigmap * sigmap;
   vara = sigmaa * sigmaa;
@@ -43,12 +43,11 @@ void Kalmanvert::init(double startp, double starta, double sigmap, double sigmaa
 }
 
 void Kalmanvert::update(double mp, double ma, unsigned long timestamp) {
-
   /**************/
   /* delta time */
   /**************/
   unsigned long deltaTime = timestamp - t;
-  double dt = ((double)deltaTime)/1000.0;
+  double dt = ((double)deltaTime) / 1000.0;
   t = timestamp;
 
   /**************/
@@ -56,22 +55,22 @@ void Kalmanvert::update(double mp, double ma, unsigned long timestamp) {
   /**************/
 
   /* values */
-  a = ma;  // we use the last acceleration value for prediction 
-  double dtPower = dt * dt; //dt^2
-  p += dt*v + dtPower*a/2;
-  v += dt*a;
-  //a = ma; // uncomment to use the previous acceleration value 
+  a = ma;                    // we use the last acceleration value for prediction
+  double dtPower = dt * dt;  // dt^2
+  p += dt * v + dtPower * a / 2;
+  v += dt * a;
+  // a = ma; // uncomment to use the previous acceleration value
 
   /* covariance */
   double inc;
-  
+
   dtPower *= dt;  // now dt^3
-  inc = dt*p22+dtPower*vara/2;
-  dtPower *= dt; // now dt^4
-  p11 += dt*(p12 + p21 + inc) - (dtPower*vara/4);
+  inc = dt * p22 + dtPower * vara / 2;
+  dtPower *= dt;  // now dt^4
+  p11 += dt * (p12 + p21 + inc) - (dtPower * vara / 4);
   p21 += inc;
   p12 += inc;
-  p22 += dt*dt*vara;
+  p22 += dt * dt * vara;
 
   /********************/
   /* gaussian product */
@@ -81,8 +80,8 @@ void Kalmanvert::update(double mp, double ma, unsigned long timestamp) {
   double s, k11, k12, y;
 
   s = p11 + varp;
-  k11 = p11/s;
-  k12 = p12/s;
+  k11 = p11 / s;
+  k12 = p12 / s;
   y = mp - p;
 
   /* update */
@@ -92,35 +91,16 @@ void Kalmanvert::update(double mp, double ma, unsigned long timestamp) {
   p12 -= k12 * p11;
   p21 -= k11 * p21;
   p11 -= k11 * p11;
- 
 }
 
-double Kalmanvert::getPosition() {
+double Kalmanvert::getPosition() { return p; }
 
-  return p;
-}
+double Kalmanvert::getCalibratedPosition() { return (p + calibrationDrift); }
 
-double Kalmanvert::getCalibratedPosition() {
+double Kalmanvert::getVelocity() { return v; }
 
-  return (p + calibrationDrift);
-}
+double Kalmanvert::getAcceleration() { return a; }
 
-double Kalmanvert::getVelocity() {
+unsigned long Kalmanvert::getTimestamp() { return t; }
 
-  return v;
-}
-
-double Kalmanvert::getAcceleration() {
-
-  return a;
-}
-
-unsigned long Kalmanvert::getTimestamp() {
-
-  return t;
-}
-
-void Kalmanvert::calibratePosition(double newPosition) {
-
-  calibrationDrift = newPosition - p;
-}
+void Kalmanvert::calibratePosition(double newPosition) { calibrationDrift = newPosition - p; }

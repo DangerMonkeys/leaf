@@ -1,10 +1,8 @@
 #include "page_list_select.h"
 #include "display.h"
 
-void PageListSelect::show(const char* title,
-                          const etl::array_view<const char*> entries,
-                          const int& selected,
-                          void (*callback)(int)) {
+void PageListSelect::show(const char* title, const etl::array_view<const char*> entries,
+                          const int& selected, void (*callback)(int)) {
   PageListSelect& instance = getInstance();
   instance.title = title;
   instance.entries = entries;

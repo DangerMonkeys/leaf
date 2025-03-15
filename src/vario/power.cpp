@@ -9,6 +9,7 @@
 #include "buttons.h"
 #include "configuration.h"
 #include "gps.h"
+#include "io_pins.h"
 #include "log.h"
 #include "power.h"
 #include "settings.h"
@@ -16,7 +17,6 @@
 #include "tempRH.h"
 #include "ui/display.h"
 #include "ui/displayFields.h"
-#include "io_pins.h"
 
 POWER power;  // struct for battery-state and on-state variables
 
@@ -64,19 +64,19 @@ void power_init() {
 void power_init_peripherals() {
   Serial.print("init_peripherals: ");
   Serial.println(power.onState);
-  
+
   // Init Peripheral Busses
   wire_init();
   Serial.println(" - Finished I2C Wire");
   spi_init();
   Serial.println(" - Finished SPI");
 
-  // initialize IO expander (needed for speaker in v3.2.5)
-  #ifdef HAS_IO_EXPANDER
-    ioexInit();  // initialize IO Expander
-    Serial.println(" - Finished IO Expander");
-  #endif
-  
+// initialize IO expander (needed for speaker in v3.2.5)
+#ifdef HAS_IO_EXPANDER
+  ioexInit();  // initialize IO Expander
+  Serial.println(" - Finished IO Expander");
+#endif
+
   // initialize speaker to play sound (so user knows they can let go of the power button)
   speaker_init();
   Serial.println(" - Finished Speaker");
@@ -146,7 +146,7 @@ void power_switchToOnState() {
 
 void power_shutdown() {
   Serial.println("power_shutdown");
-  
+
   display_clear();
   display_off_splash();
   baro_sleep();  // stop getting climbrate updates so we don't hear vario beeps while shutting down
@@ -154,10 +154,10 @@ void power_shutdown() {
   // play shutdown sound
   speaker_playSound(fx_exit);
 
-  //loop until sound is done playing
-  while(onSpeakerTimer()) {
+  // loop until sound is done playing
+  while (onSpeakerTimer()) {
     delay(10);
-  }  
+  }
 
   // saving logs and system data
   if (flightTimer_isRunning()) {
@@ -170,7 +170,6 @@ void power_shutdown() {
   // wait another 2.5 seconds before shutting down to give user
   // a chance to see the shutdown screen
   delay(2500);
-  
 
   // finally, turn off devices
   power_sleep_peripherals();
@@ -188,15 +187,11 @@ void power_shutdown() {
 // 3.3V regulator may be 'on' due to USB power or user holding power switch down.  But if Vario is
 // in "ON" state, we need to latch so user can let go of power button and/or unplug USB and have it
 // stay on
-void power_latch_on() {
-  digitalWrite(POWER_LATCH, HIGH);
-}
+void power_latch_on() { digitalWrite(POWER_LATCH, HIGH); }
 
 // If no USB power is available, systems will immediately lose
 // power and shut down (after user lets go of center button)
-void power_latch_off() {
-  digitalWrite(POWER_LATCH, LOW);
-}
+void power_latch_off() { digitalWrite(POWER_LATCH, LOW); }
 
 void power_update() {
   // update battery state
@@ -223,9 +218,7 @@ void power_update() {
 uint8_t autoOffCounter = 0;
 int32_t autoOffAltitude = 0;
 
-void power_resetAutoOffCounter() {
-  autoOffCounter = 0;
-}
+void power_resetAutoOffCounter() { autoOffCounter = 0; }
 
 bool power_autoOff() {
   bool autoShutOff = false;  // start with assuming we're not going to turn off

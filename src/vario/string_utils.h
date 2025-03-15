@@ -5,8 +5,7 @@
 
 // Formats seconds into HH:MM:SS (or HH:MM if short)
 // If rightAlignTo is set, we'll pad this many characters
-String formatSeconds(unsigned long seconds,
-                     const bool minified = false,
+String formatSeconds(unsigned long seconds, const bool minified = false,
                      const int rightAlignTo = 0);
 
 String toDigits(const int src, const int numDigits);
@@ -15,11 +14,11 @@ String toDigits(const int src, const int numDigits);
 // either +9999fpm or +99.9m/s
 String formatClimbRate(int32_t climbRate, bool units, bool showUnits);
 
-// Format Altitude (cm) into proper units with comma.  
+// Format Altitude (cm) into proper units with comma.
 // Max digits are either 99,9999 if positive or -9,999 if negative.
 String formatAlt(int32_t altInCM, bool units, bool showUnits);
 
-// Format Speed into proper units  
+// Format Speed into proper units
 // Max digits 999
 String formatSpeed(float speed, bool units, bool showUnits);
 

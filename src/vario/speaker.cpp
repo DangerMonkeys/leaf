@@ -3,13 +3,13 @@
 #include <Arduino.h>
 
 #include "Leaf_SPI.h"
+#include "configuration.h"
+#include "io_pins.h"
 #include "log.h"
 #include "settings.h"
-#include "io_pins.h"
-#include "configuration.h"
 
 uint8_t speakerVolume = 1;
-bool speakerMute = false; // use to mute sound for varius charging & sleep states
+bool speakerMute = false;  // use to mute sound for varius charging & sleep states
 
 // Sound Effects
 uint16_t fx_silence[] = {NOTE_END};
@@ -17,24 +17,15 @@ uint16_t fx_silence[] = {NOTE_END};
 uint16_t fx_increase[] = {NOTE_C4, NOTE_G4, NOTE_END};
 uint16_t fx_decrease[] = {NOTE_C4, NOTE_F3, NOTE_END};  // 110 140, END_OF_TONE};
 uint16_t fx_neutral[] = {NOTE_C4, NOTE_C4, NOTE_END};   // 110, 110, END_OF_TONE};
-uint16_t fx_neutralLong[] = {NOTE_C4,
-                             NOTE_C4,
-                             NOTE_C4,
-                             NOTE_C4,
-                             NOTE_C4,
-                             NOTE_C4,
-                             NOTE_C4,
-                             NOTE_C4,
-                             NOTE_END};  //  {110, 110, 110, 110, 110, 110, 110, 110,10, 110,
-                                         //  1110, 110, 110, 110, 110, 110, 110, 110, 110, 110,
-                                         //  END_OF_TONE};
+uint16_t fx_neutralLong[] = {
+    NOTE_C4, NOTE_C4, NOTE_C4, NOTE_C4, NOTE_C4,
+    NOTE_C4, NOTE_C4, NOTE_C4, NOTE_END};  //  {110, 110, 110, 110, 110, 110, 110, 110,10, 110,
+                                           //  1110, 110, 110, 110, 110, 110, 110, 110, 110, 110,
+                                           //  END_OF_TONE};
 uint16_t fx_double[] = {NOTE_C4, NOTE_NONE, NOTE_C4, NOTE_END};  // 110, 0, 110, END_OF_TONE};
 
 uint16_t fx_enter[] = {NOTE_A4, NOTE_C4, NOTE_E4, NOTE_END};  // 150, 120, 90, END_OF_TONE};
-uint16_t fx_exit[] = {NOTE_C5,
-                      NOTE_A5,
-                      NOTE_F4,
-                      NOTE_C4,
+uint16_t fx_exit[] = {NOTE_C5, NOTE_A5, NOTE_F4, NOTE_C4,
                       NOTE_END};  // 65, 90, 120, 150, END_OF_TONE};
 uint16_t fx_confirm[] = {NOTE_C3, NOTE_G3, NOTE_B3, NOTE_C4, NOTE_END};
 uint16_t fx_cancel[] = {NOTE_C4, NOTE_G4, NOTE_C3, NOTE_END};
@@ -49,9 +40,8 @@ uint16_t fx_octavesup[] = {45, 44, 43, 42, 41, 40, 39, 38, 37, 36, 35, 34, 33, 3
 uint16_t fx_octavesdown[] = {31, 31, 40, 40, 45, 45, 65, 65, 90, 90, NOTE_END};
 
 uint16_t single_note[] = {
-    0,
-    NOTE_END};  // this is to allow playing single notes by changing random_note[0], while still
-                // having a NOTE_END terminator following.
+    0, NOTE_END};  // this is to allow playing single notes by changing random_note[0], while still
+                   // having a NOTE_END terminator following.
 
 // volatile pointer to the sound sample to play
 volatile uint16_t* snd_index;
@@ -103,13 +93,9 @@ void speaker_mute() {
   speakerMute = true;
 }
 
-void speaker_unMute() {
-  speakerMute = false;
-}
+void speaker_unMute() { speakerMute = false; }
 
-void speaker_setDefaultVolume() {
-  speaker_setVolume(1);
-}
+void speaker_setDefaultVolume() { speaker_setVolume(1); }
 
 void speaker_incVolume() {
   if (++speakerVolume > 3) speakerVolume = 3;
@@ -148,7 +134,6 @@ void speaker_setVolume(unsigned char volume) {
 }
 
 void speaker_playSound(uint16_t* sound) {
-
   snd_index = sound;
   Serial.print("setting snd_index to: ");
   Serial.print(*snd_index);
@@ -268,14 +253,11 @@ void speaker_debugPrint() {
   Serial.println(" !");
 }
 
-
-
 // count timer cycles so we only update note every 4th time
-uint8_t speakerTimerCount = 0; 
+uint8_t speakerTimerCount = 0;
 
 // Run every 10ms from main loop to adjust tone if needed
 bool onSpeakerTimer() {
-
   // return true if there are notes left to play
   bool notesLeftToPlay = false;
 
@@ -296,7 +278,7 @@ bool onSpeakerTimer() {
     ledcWriteTone(SPEAKER_PIN, 0);
     return notesLeftToPlay;
   }
-  
+
   // prioritize sound effects from UI & Button etc before we get to vario beeps
   // but only play soundFX if system volume is on
   if (sound_fx && VOLUME_SYSTEM) {
@@ -323,13 +305,13 @@ bool onSpeakerTimer() {
       sound_fx = 0;
       sound_fxNoteLast = 0;
       notesLeftToPlay = false;
-      speaker_setVolume(VOLUME_VARIO); // return to vario volume in prep for beeps
+      speaker_setVolume(VOLUME_VARIO);  // return to vario volume in prep for beeps
     }
 
-  // if there's a vario note to play, and the vario volume isn't zero
-  } else if (sound_varioNote > 0 && VOLUME_VARIO) {          
-    //commenting this line out; instead let's return to vario volume at the end of SoundFX
-    //speaker_setVolume(VOLUME_VARIO);  // play vario sounds at vario volume setting
+    // if there's a vario note to play, and the vario volume isn't zero
+  } else if (sound_varioNote > 0 && VOLUME_VARIO) {
+    // commenting this line out; instead let's return to vario volume at the end of SoundFX
+    // speaker_setVolume(VOLUME_VARIO);  // play vario sounds at vario volume setting
 
     //  Handle the beeps and rests of a vario sound "measure"
     if (sound_varioResting) {

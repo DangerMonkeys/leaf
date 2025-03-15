@@ -6,7 +6,7 @@
 
 class FlightStats {
  public:
-  int32_t alt = 0;        // alt in cm
+  int32_t alt = 0;  // alt in cm
   int32_t alt_start = 0;
   int32_t alt_end = 0;
   int32_t alt_max = 0;
@@ -14,7 +14,7 @@ class FlightStats {
   int32_t alt_above_launch = 0;
   int32_t alt_above_launch_max = 0;
 
-  int32_t climb = 0;      // climb in cm/s
+  int32_t climb = 0;  // climb in cm/s
   int32_t climb_max = 0;
   int32_t climb_min = 0;
 

@@ -4,13 +4,13 @@
 
 #include "Arduino.h"
 #include "gps.h"
-#include "settings.h"
 #include "log.h"
+#include "settings.h"
 
 bool Telemetry_t::begin() {
   // Get the local time
   tm cal;
-  if(!gps_getLocalDateTime(cal)) {
+  if (!gps_getLocalDateTime(cal)) {
     return false;
   }
 
@@ -34,9 +34,8 @@ void Telemetry_t::end() { file.close(); }
 
 void Telemetry_t::writeText(const String text) {
   // Only write telemetry if a flight has started
-  if(!flightTimer_isRunning())
-    return;
-  
+  if (!flightTimer_isRunning()) return;
+
   // Try to start the telemetry file if not started
   if (!file) {
     begin();
