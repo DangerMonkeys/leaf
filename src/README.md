@@ -13,9 +13,9 @@ To use [PlatformIO](https://platformio.org/) to develop this project:
 
 ### Development
 
-* Open the [root repository folder](..) (File -> Open Folder...
+* Open the [root repository folder](..) (File -> Open Folder...)
 * Change build environment as desired
-    * Click second-from-right icon in PlatformIO toolbar (small bar at bottom of IDE) and select "release" or "dev" environment
+    * Click second-from-right icon in PlatformIO toolbar (small bar at bottom of IDE) and select "release" or "dev" environment appropriate to your hardware (e.g., "leaf_3_2_5_dev")
 * Build and upload firmware
     * If needed (if upload fails and/or if running a release version with mass storage enabled), put in bootloader mode:
         * Unplug device (leaf)
@@ -25,6 +25,14 @@ To use [PlatformIO](https://platformio.org/) to develop this project:
             * Alternately, press and release reset button (largest speaker hole)
         * Release boot button
     * Click the small rightward arrow in the PlatformIO toolbar to build and upload firmware
+
+#### Formatting
+
+To auto-format all Leaf C++ files:
+
+* Open command palette (ctrl-shift-p or View -> Command Palette...)
+* Select "Tasks: Run Task" (start typing "run task" to find that option)
+* Select "Format Leaf C++ Files"
 
 ### Versioning
 

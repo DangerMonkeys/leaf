@@ -27,9 +27,9 @@ SortIncludes: true                 # Automatically sort `#include` statements
 IncludeBlocks: Preserve            # Keep blank lines between include groups
 
 # === Function and Constructor Formatting ===
-AllowShortFunctionsOnASingleLine: InlineOnly  # Only inline trivial functions
-ConstructorInitializerIndentWidth: 4          # Align initializer lists with indentation
-BreakTemplateDeclarations: Yes                # Break all template declarations
+AllowShortFunctionsOnASingleLine: All  # Allow short functions on a single line
+ConstructorInitializerIndentWidth: 4   # Align initializer lists with indentation
+BreakTemplateDeclarations: Yes         # Break all template declarations
 
 # === Comments ===
 CommentPragmas: '^\\s*TODO|FIXME'  # Recognize TODO and FIXME as special comments
@@ -38,12 +38,12 @@ SpaceBeforeCpp11BracedList: false  # No space before C++11 braced lists
 # === Function Argument Splitting ===
 # If false, a function declaration’s or function definition’s parameters will either all be on the
 # same line or will have one line each.
-BinPackParameters: false
+BinPackParameters: true
 
 # If the function declaration doesn’t fit on a line, allow putting all parameters of a function
 # declaration onto the next line even if BinPackParameters is false.
-AllowAllParametersOfDeclarationOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: true
 
 # If false, a function call’s arguments will either be all on the same line or will have one line
 # each.
-BinPackArguments: false
+BinPackArguments: true

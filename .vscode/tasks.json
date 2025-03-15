@@ -1,0 +1,29 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Format Leaf C++ files",
+      "type": "shell",
+      "windows": {
+        "command": "Get-ChildItem -Path src/vario, src/variants -Recurse -Include *.cpp, *.h | ForEach-Object { clang-format -i $_.FullName }",
+        "options": {
+          "shell": {
+            "executable": "powershell.exe"
+          }
+        }
+      },
+      "osx": {
+        "command": "find src/vario src/variants -type f \\( -name \"*.cpp\" -o -name \"*.h\" \\) -exec clang-format -i {} +"
+      },
+      "linux": {
+        "command": "find src/vario src/variants -type f \\( -name \"*.cpp\" -o -name \"*.h\" \\) -exec clang-format -i {} +"
+      },
+      "problemMatcher": [],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    }
+  ]
+}
