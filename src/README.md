@@ -8,8 +8,12 @@ To use [PlatformIO](https://platformio.org/) to develop this project:
 
 ### Setup
 
-* Download [Visual Studio Code](https://code.visualstudio.com/)
-* In the Extensions tab, search for PlatformIO and install the extension (make sure to restart VS Code when requested)
+1. Download [Visual Studio Code](https://code.visualstudio.com/)
+2. In the Extensions tab, search for PlatformIO and install the extension (make sure to restart VS Code when requested)
+3. Make sure that formatting will be applied on save:
+    1. Open preferences with File -> Preferences -> Settings
+    2. Type in "files: auto save" to the search box to find "Files: Auto Save"
+    3. Ensure this setting is **not** afterDelay (all other settings are ok)
 
 ### Development
 
