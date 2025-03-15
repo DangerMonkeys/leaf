@@ -95,7 +95,7 @@ void power_init_peripherals() {
   Serial.println(" - Finished I2C Wire");
   display_init();
   Serial.println(" - Finished display");
-  baro_init();
+  baro.init();
   Serial.println(" - Finished Baro");
   imu_init();
   Serial.println(" - Finished IMU");
@@ -117,7 +117,7 @@ void power_sleep_peripherals() {
   Serial.println(" - Sleeping GPS");
   gps_sleep();
   Serial.println(" - Sleeping baro");
-  baro_sleep();
+  baro.sleep();
   Serial.println(" - Sleeping speaker");
   speaker_mute();
   Serial.println("Shut down speaker");
@@ -131,7 +131,7 @@ void power_wake_peripherals() {
   Serial.println(" - waking GPS");
   gps_wake();
   Serial.println(" - waking baro");
-  baro_wake();
+  baro.wake();
   Serial.println(" - waking speaker");
   speaker_unMute();
   Serial.println(" - DONE");
@@ -149,7 +149,7 @@ void power_shutdown() {
 
   display_clear();
   display_off_splash();
-  baro_sleep();  // stop getting climbrate updates so we don't hear vario beeps while shutting down
+  baro.sleep();  // stop getting climbrate updates so we don't hear vario beeps while shutting down
 
   // play shutdown sound
   speaker_playSound(fx_exit);

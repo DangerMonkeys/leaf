@@ -197,26 +197,26 @@ Button buttons_update(void) {
       case Button::UP:
         switch (button_state) {
           case RELEASED:
-            baro_adjustAltSetting(1, 0);
+            baro.adjustAltSetting(1, 0);
             break;
           case HELD:
-            baro_adjustAltSetting(1, 1);
+            baro.adjustAltSetting(1, 1);
             break;
           case HELD_LONG:
-            baro_adjustAltSetting(1, 10);
+            baro.adjustAltSetting(1, 10);
             break;
         }
         break;
       case Button::DOWN:
         switch (button_state) {
           case RELEASED:
-            baro_adjustAltSetting(-1, 0);
+            baro.adjustAltSetting(-1, 0);
             break;
           case HELD:
-            baro_adjustAltSetting(-1, 1);
+            baro.adjustAltSetting(-1, 1);
             break;
           case HELD_LONG:
-            baro_adjustAltSetting(-1, 10);
+            baro.adjustAltSetting(-1, 10);
             break;
         }
         break;

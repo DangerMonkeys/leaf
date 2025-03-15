@@ -401,7 +401,7 @@ void taskManager(void) {
   // & read).  If other tasks delay the start of the baro prep step by >1ms, then next cycle when we
   // read ADC, the Baro won't be ready.
   if (taskman_baro) {
-    baro_update(baro_startNewCycle, doBaroTemp);
+    baro.update(baro_startNewCycle, doBaroTemp);
     taskman_baro = 0;
     baro_startNewCycle = false;
   }

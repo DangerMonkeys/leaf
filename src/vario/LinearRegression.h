@@ -1,14 +1,16 @@
-#ifndef LinearRegression_h
-#define LinearRegression_h
+#pragma once
+
+#include <Arduino.h>
+#include <stdint.h>
+
+double linear_value(const struct LinearFit* fit, double x);
+double linear_derivative(const struct LinearFit* fit, double x);
+
 struct LinearFit {
   double x0;
   double m;
   double b;
 };
-
-double linear_value(const struct LinearFit* fit, double x) { return fit->m * x + fit->b; }
-
-double linear_derivative(const struct LinearFit* fit, double x) { return fit->m; }
 
 template <unsigned int n>
 class LinearRegression {
@@ -155,4 +157,3 @@ double LinearRegression<n>::most_recent_y() {
   }
   return _Yi[i];
 }
-#endif

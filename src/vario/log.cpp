@@ -211,7 +211,7 @@ void flightTimer_start() {
   if (ALT_SYNC_GPS) settings_matchGPSAlt();
 
   // starting values
-  baro_resetLaunchAlt();
+  baro.resetLaunchAlt();
   logbook.alt_start = baro.altAtLaunch;
 
   // get first set of log values

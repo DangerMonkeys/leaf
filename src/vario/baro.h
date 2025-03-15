@@ -5,12 +5,12 @@
  * SPI max 20MHz
  */
 
-#ifndef baro_h
-#define baro_h
+#pragma once
 
 #include <Arduino.h>
 
 #include "Leaf_SPI.h"
+#include "LinearRegression.h"
 #include "buttons.h"
 
 // Sensor I2C address
@@ -20,54 +20,116 @@
 #define CMD_CONVERT_PRESSURE 0b01001000
 #define CMD_CONVERT_TEMP 0b01011000
 
-// baro struct to hold most values
-struct BARO {
-  int32_t temp;  // temperature of air in the baro sensor (not to be confused with temperature
-                 // reading from the temp+humidity sensor)
-  int32_t pressure;
+#define FILTER_VALS_MAX 30  // total array size max; for both altitude and climb
+
+class Barometer {
+ public:
   int32_t pressureFiltered;
-  int32_t pressureRegression;
   float altimeterSetting = 29.920;
-  int32_t alt;  // cm raw pressure altitude calculated off standard altimeter setting (29.92)
-  float altF;   // m raw pressure altitude (float)
-  int32_t altAdjusted;  // the resulting altitude after being corrected by the altimeter setting
+  // cm raw pressure altitude calculated off standard altimeter setting (29.92)
+  int32_t alt;
+  // m raw pressure altitude (float)
+  float altF;
+  // the resulting altitude after being corrected by the altimeter setting
+  int32_t altAdjusted;
   int32_t altAtLaunch;
   int32_t altAboveLaunch;
   int32_t altInitial;
-  int32_t climbRate;  // instantaneous climbrate calculated with every pressure altitude measurement
-  int32_t climbRateFiltered;  // filtered climb value to reduce noise
-  float climbRateAverage;     // long-term (several seconds) averaged climb rate for smoothing out
-                              // glide ratio and other calculations
-  int32_t varioBar;  // TODO: not yet used, but we may have a differently-averaged/filtered value
-                     // for the grpahical vario bar vs the text output for climbrate
+  // instantaneous climbrate calculated with every pressure altitude measurement
+  int32_t climbRate;
+  // filtered climb value to reduce noise
+  int32_t climbRateFiltered;
+  // long-term (several seconds) averaged climb rate for smoothing out glide ratio and other
+  // calculations
+  float climbRateAverage;
+  // TODO: not yet used, but we may have a differently-averaged/filtered value for the grpahical
+  // vario bar vs the text output for climbrate
+  int32_t varioBar;
+
+  // == Device Management ==
+  void init(void);
+  void reset(void);
+
+  // Reset launcAlt to current Alt (when starting a new log file, for example)
+  void resetLaunchAlt(void);
+
+  void update(bool startNewCycle, bool doTemp);
+
+  void sleep(void);
+  void wake(void);
+
+  // == Device reading & data processing ==
+  void adjustAltSetting(int8_t dir, uint8_t count);
+
+  // == Test Functions ==
+  void debugPrint(void);
+
+ private:
+  // temperature of air in the baro sensor (not to be confused with temperature reading from the
+  // temp+humidity sensor)
+  int32_t temp;
+  int32_t pressure;
+  int32_t pressureRegression;
+
+  // LinearRegression to average out noisy sensor readings
+  LinearRegression<20> pressure_lr;
+
+  // == User Settings for Vario ==
+
+  // default samples to average (will be adjusted by VARIO_SENSE user setting)
+  uint8_t filterValsPref = 20;
+
+  int32_t pressureFilterVals[FILTER_VALS_MAX + 1];  // use [0] as the index / bookmark
+  int32_t climbFilterVals[FILTER_VALS_MAX + 1];     // use [0] as the index / bookmark
+
+  // == Device Management ==
+
+  // Track if we've put baro to sleep (in power off usb state)
+  bool sleeping_ = false;
+
+  // == Device reading & data processing ==
+  void calculatePressure(void);
+  void filterPressure(void);  // TODO: Use or remove (currently unused)
+  void calculateAlt(void);    // TODO: Use or remove (currently unused)
+  void updateClimb(void);     // TODO: Use or remove (currently unused)
+
+  // ======
+  // Sensor Calibration Values (stored in chip PROM; must be read at startup before performing baro
+  // calculations)
+  uint16_t C_SENS;
+  uint16_t C_OFF;
+  uint16_t C_TCS;
+  uint16_t C_TCO;
+  uint16_t C_TREF;
+  uint16_t C_TEMPSENS;
+
+  // Digital read-out values
+  uint32_t D1_P;             //  digital pressure value (D1 in datasheet)
+  uint32_t D1_Plast = 1000;  //  save previous value to use if we ever get a mis-read from the baro
+                             //  sensor (initialize with a non zero starter value)
+  uint32_t D2_T;             //  digital temp value (D2 in datasheet)
+  uint32_t D2_Tlast = 1000;  //  save previous value to use if we ever get a mis-read from the baro
+                             //  sensor (initialize with a non zero starter value)
+  int32_t lastAlt = 0;
+
+  // Temperature Calculations
+  int32_t dT;
+
+  // Compensation Values
+  int64_t OFF1;   // Offset at actual temperature
+  int64_t SENS1;  // Sensitivity at actual temperature
+
+  // Extra compensation values for lower temperature ranges
+  int32_t TEMP2;
+  int64_t OFF2;
+  int64_t SENS2;
+
+  // flag to set first climb rate sample to 0 (this allows us to wait for a second baro altitude
+  // sample to calculate any altitude change)
+  bool firstClimbInitialization = true;
 };
-extern BARO baro;
+extern Barometer baro;
 
-// I2C Communication Functions
-uint8_t baro_sendCommand(uint8_t command);
-uint16_t baro_readCalibration(uint8_t PROMaddress);
-uint32_t baro_readADC(void);
-
-// Device Management
-void baro_init(void);
-void baro_reset(void);
-void baro_resetLaunchAlt(void);
-void baro_update(bool startNewCycle, bool doTemp);
-void baro_sleep(void);
-void baro_wake(void);
-
-// Device reading & data processing
-void baro_calculatePressure(void);
-void baro_filterPressure(void);
-void baro_calculateAlt(void);
-void baro_updateClimb(void);
-void baro_adjustAltSetting(int8_t dir, uint8_t count);
-
-// Converstion functions
+// Conversion functions
 int32_t baro_altToUnits(int32_t alt_input, bool units_feet);
 float baro_climbToUnits(int32_t climbrate, bool units_fpm);
-
-// Test Functions
-void baro_debugPrint(void);
-
-#endif

@@ -167,9 +167,9 @@ void AltimeterMenuPage::setting_change(Button button, ButtonState state, uint8_t
       } else if (button == Button::LEFT || button == Button::RIGHT) {
         if (state == PRESSED || state == HELD || state == HELD_LONG) {
           if (button == Button::LEFT)
-            baro_adjustAltSetting(-1, count);
+            baro.adjustAltSetting(-1, count);
           else if (button == Button::RIGHT)
-            baro_adjustAltSetting(1, count);
+            baro.adjustAltSetting(1, count);
           speaker_playSound(fx_neutral);
         }
       }
