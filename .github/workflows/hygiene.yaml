@@ -1,0 +1,50 @@
+name: Hygiene
+
+on:
+  pull_request: # All
+  push:
+    branches:
+    - main
+
+jobs:
+  format-check:
+    name: Leaf C++ Formatting
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache clang-format
+        id: cache-clang-format
+        uses: actions/cache@v4
+        with:
+          path: ~/clang-format-install
+          key: clang-format-19-ubuntu-latest
+
+      - name: Install clang-format 19+ (if not cached)
+        if: steps.cache-clang-format.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget lsb-release
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 19
+          sudo apt-get install -y clang-format-19
+          mkdir -p ~/clang-format-install
+          ln -s /usr/bin/clang-format-19 ~/clang-format-install/clang-format
+
+      - name: Add clang-format to PATH
+        run: echo "$HOME/clang-format-install" >> $GITHUB_PATH
+
+      - name: Verify clang-format version
+        run: clang-format --version
+
+      - name: Check C++ Formatting
+        run: |
+          if find src/vario src/variants -type f \( -name "*.cpp" -o -name "*.h" \) -exec clang-format --dry-run --Werror {} +; then
+            echo "All files are properly formatted."
+          else
+            echo "Some files need formatting. Run 'Format Leaf C++ Files' task to fix them (see src/README.md#formatting)"
+            exit 1
+          fi
