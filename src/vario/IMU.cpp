@@ -45,16 +45,34 @@ const double NEW_MEASUREMENT_WEIGHT = 0.9;  // Weight given to new measurements.
 const double AFTER_SECONDS = 5.0;           // ...after this number of seconds
 const double K_UPDATE = log(1 - NEW_MEASUREMENT_WEIGHT) / AFTER_SECONDS;
 
-void quaternionMult(double qw, double qx, double qy, double qz, double rw, double rx, double ry,
-                    double rz, double* pw, double* px, double* py, double* pz) {
+void quaternionMult(double qw,
+                    double qx,
+                    double qy,
+                    double qz,
+                    double rw,
+                    double rx,
+                    double ry,
+                    double rz,
+                    double* pw,
+                    double* px,
+                    double* py,
+                    double* pz) {
   *pw = rw * qw - rx * qx - ry * qy - rz * qz;
   *px = rw * qx + rx * qw - ry * qz + rz * qy;
   *py = rw * qy + rx * qz + ry * qw - rz * qx;
   *pz = rw * qz - rx * qy + ry * qx + rz * qw;
 }
 
-void rotateByQuaternion(double px, double py, double pz, double qw, double qx, double qy, double qz,
-                        double* p1x, double* p1y, double* p1z) {
+void rotateByQuaternion(double px,
+                        double py,
+                        double pz,
+                        double qw,
+                        double qx,
+                        double qy,
+                        double qz,
+                        double* p1x,
+                        double* p1y,
+                        double* p1z) {
   double qrw, qrx, qry, qrz, qcw;
   quaternionMult(qw, qx, qy, qz, 0, px, py, pz, &qrw, &qrx, &qry, &qrz);
   quaternionMult(qrw, qrx, qry, qrz, qw, -qx, -qy, -qz, &qcw, p1x, p1y, p1z);
@@ -99,6 +117,8 @@ bool processQuaternion() {
       double qw = sqrt(1.0 - magnitude);
 
       bool needComma = false;
+      bool needNewline = false;
+      
 #ifdef SHOW_QUATERNION
       Serial.print(F("Qw:"));
       printFloat(qw);
@@ -109,6 +129,8 @@ bool processQuaternion() {
       Serial.print(F(",Qz:"));
       printFloat(qz);
       needComma = true;
+      needNewline = true;
+
 #endif
 
       double ax = ((double)data.Raw_Accel.Data.X) / 8192.0;
@@ -128,6 +150,7 @@ bool processQuaternion() {
       Serial.print(F(",Az:"));
       printFloat(az);
       needComma = true;
+      needNewline = true;
 #endif
 
       double awx, awy, awz;
@@ -146,6 +169,7 @@ bool processQuaternion() {
       Serial.print(",Wz:");
       printFloat(awz);
       needComma = true;
+      needNewline = true;
 #endif
 
 #ifdef SHOW_VERTICAL_ACCEL
@@ -155,6 +179,7 @@ bool processQuaternion() {
       Serial.print("dAz:");
       printFloat(accelVert);
       needComma = true;
+      needNewline = true;
 #endif
 
 #ifdef SHOW_FIXED_BOUNDS
@@ -165,11 +190,14 @@ bool processQuaternion() {
       printFloat(SHOW_FIXED_BOUNDS);
       Serial.print(",max:");
       printFloat(-SHOW_FIXED_BOUNDS);
+      needNewline = true;
 #endif
 
       zAvg = zAvg * f + awz * (1 - f);
 
-      Serial.println();
+      if (needNewline) {
+        Serial.println();
+      }
 
       success = true;
     }
@@ -233,8 +261,11 @@ void imu_init() {
   }
 
   // setup kalman filter
-  kalmanvert.init(baro.altF, 0.0, POSITION_MEASURE_STANDARD_DEVIATION,
-                  ACCELERATION_MEASURE_STANDARD_DEVIATION, millis());
+  kalmanvert.init(baro.altF,
+                  0.0,
+                  POSITION_MEASURE_STANDARD_DEVIATION,
+                  ACCELERATION_MEASURE_STANDARD_DEVIATION,
+                  millis());
 
   tPrev = millis();
 }
@@ -259,4 +290,6 @@ void imu_update() {
   }
 }
 
-float IMU_getAccel() { return accelTot; }
+float IMU_getAccel() {
+  return accelTot;
+}

@@ -259,12 +259,18 @@ void baro_reset(void) {
 }
 
 // Reset launcAlt to current Alt (when starting a new log file, for example)
-void baro_resetLaunchAlt() { baro.altAtLaunch = baro.altAdjusted; }
+void baro_resetLaunchAlt() {
+  baro.altAtLaunch = baro.altAdjusted;
+}
 
 // Track if we've put baro to sleep (in power off usb state)
 bool baroSleeping = false;
-void baro_wake() { baroSleeping = false; }
-void baro_sleep() { baroSleeping = true; }
+void baro_wake() {
+  baroSleeping = false;
+}
+void baro_sleep() {
+  baroSleeping = true;
+}
 
 uint32_t baroTimeStampPressure = 0;
 uint32_t baroTimeStampTemp = 0;
@@ -389,7 +395,8 @@ void baro_update(bool startNewCycle, bool doTemp) {
       // finally, update the speaker sound based on the new climbrate
       speaker_updateVarioNote(baro.climbRateFiltered);
 
-      Serial.println("**BR** climbRate Filtered: " + String(baro.climbRateFiltered));
+      // if (DEBUG_BARO) { Serial.println("**BR** climbRate Filtered: " +
+      // String(baro.climbRateFiltered)); }
 
       break;
   }
