@@ -47,6 +47,7 @@ class Barometer {
   int32_t varioBar;
 
   // == Device Management ==
+  // Initialize the baro sensor
   void init(void);
   void reset(void);
 
@@ -67,20 +68,20 @@ class Barometer {
  private:
   // temperature of air in the baro sensor (not to be confused with temperature reading from the
   // temp+humidity sensor)
-  int32_t temp;
-  int32_t pressure;
-  int32_t pressureRegression;
+  int32_t temp_;
+  int32_t pressure_;
+  int32_t pressureRegression_;
 
   // LinearRegression to average out noisy sensor readings
-  LinearRegression<20> pressure_lr;
+  LinearRegression<20> pressureLR_;
 
   // == User Settings for Vario ==
 
   // default samples to average (will be adjusted by VARIO_SENSE user setting)
-  uint8_t filterValsPref = 20;
+  uint8_t filterValsPref_ = 20;
 
-  int32_t pressureFilterVals[FILTER_VALS_MAX + 1];  // use [0] as the index / bookmark
-  int32_t climbFilterVals[FILTER_VALS_MAX + 1];     // use [0] as the index / bookmark
+  int32_t pressureFilterVals_[FILTER_VALS_MAX + 1];  // use [0] as the index / bookmark
+  int32_t climbFilterVals_[FILTER_VALS_MAX + 1];     // use [0] as the index / bookmark
 
   // == Device Management ==
 
@@ -96,37 +97,37 @@ class Barometer {
   // ======
   // Sensor Calibration Values (stored in chip PROM; must be read at startup before performing baro
   // calculations)
-  uint16_t C_SENS;
-  uint16_t C_OFF;
-  uint16_t C_TCS;
-  uint16_t C_TCO;
-  uint16_t C_TREF;
-  uint16_t C_TEMPSENS;
+  uint16_t C_SENS_;
+  uint16_t C_OFF_;
+  uint16_t C_TCS_;
+  uint16_t C_TCO_;
+  uint16_t C_TREF_;
+  uint16_t C_TEMPSENS_;
 
   // Digital read-out values
-  uint32_t D1_P;             //  digital pressure value (D1 in datasheet)
-  uint32_t D1_Plast = 1000;  //  save previous value to use if we ever get a mis-read from the baro
-                             //  sensor (initialize with a non zero starter value)
-  uint32_t D2_T;             //  digital temp value (D2 in datasheet)
-  uint32_t D2_Tlast = 1000;  //  save previous value to use if we ever get a mis-read from the baro
-                             //  sensor (initialize with a non zero starter value)
-  int32_t lastAlt = 0;
+  uint32_t D1_P_;             //  digital pressure value (D1 in datasheet)
+  uint32_t D1_Plast_ = 1000;  //  save previous value to use if we ever get a mis-read from the baro
+                              //  sensor (initialize with a non zero starter value)
+  uint32_t D2_T_;             //  digital temp value (D2 in datasheet)
+  uint32_t D2_Tlast_ = 1000;  //  save previous value to use if we ever get a mis-read from the baro
+                              //  sensor (initialize with a non zero starter value)
+  int32_t lastAlt_ = 0;
 
   // Temperature Calculations
-  int32_t dT;
+  int32_t dT_;
 
   // Compensation Values
-  int64_t OFF1;   // Offset at actual temperature
-  int64_t SENS1;  // Sensitivity at actual temperature
+  int64_t OFF1_;   // Offset at actual temperature
+  int64_t SENS1_;  // Sensitivity at actual temperature
 
   // Extra compensation values for lower temperature ranges
-  int32_t TEMP2;
-  int64_t OFF2;
-  int64_t SENS2;
+  int32_t TEMP2_;
+  int64_t OFF2_;
+  int64_t SENS2_;
 
   // flag to set first climb rate sample to 0 (this allows us to wait for a second baro altitude
   // sample to calculate any altitude change)
-  bool firstClimbInitialization = true;
+  bool firstClimbInitialization_ = true;
 };
 extern Barometer baro;
 

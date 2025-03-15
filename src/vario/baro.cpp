@@ -65,7 +65,7 @@ float baro_climbToUnits(int32_t climbrate, bool units_fpm) {
   return climbrate_converted;
 }
 
-// I2C Communication Functions
+// vvv I2C Communication Functions vvv
 
 uint8_t baro_sendCommand(uint8_t command) {
   Wire.beginTransmission(ADDR_BARO);
@@ -103,11 +103,10 @@ uint32_t baro_readADC() {
 
   return value;
 }
-// I2C Communication Functions
+// ^^^ I2C Communication Functions ^^^
 
-// Device Management
+// vvv Device Management vvv
 
-// Initialize the baro sensor
 void Barometer::init(void) {
   // recover saved altimeter setting
   if (ALT_SETTING > 28.0 && ALT_SETTING < 32.0)
@@ -120,12 +119,12 @@ void Barometer::init(void) {
   delay(2);
 
   // read calibration values
-  C_SENS = baro_readCalibration(1);
-  C_OFF = baro_readCalibration(2);
-  C_TCS = baro_readCalibration(3);
-  C_TCO = baro_readCalibration(4);
-  C_TREF = baro_readCalibration(5);
-  C_TEMPSENS = baro_readCalibration(6);
+  C_SENS_ = baro_readCalibration(1);
+  C_OFF_ = baro_readCalibration(2);
+  C_TCS_ = baro_readCalibration(3);
+  C_TCO_ = baro_readCalibration(4);
+  C_TREF_ = baro_readCalibration(5);
+  C_TEMPSENS_ = baro_readCalibration(6);
 
   // after initialization, get first baro sensor reading to populate values
   delay(10);        // wait for baro sensor to be ready
@@ -138,16 +137,16 @@ void Barometer::init(void) {
 
   // load the filters with our current start-up pressure (and climb is assumed to be 0)
   for (int i = 1; i <= FILTER_VALS_MAX; i++) {
-    pressureFilterVals[i] = pressure;
-    climbFilterVals[i] = 0;
+    pressureFilterVals_[i] = pressure_;
+    climbFilterVals_[i] = 0;
   }
   // and set bookmark index to 1
-  pressureFilterVals[0] = 1;
-  climbFilterVals[0] = 1;
+  pressureFilterVals_[0] = 1;
+  climbFilterVals_[0] = 1;
 
   // and save starting filtered output to current pressure
-  pressureFiltered = pressure;
-  pressureRegression = pressure;
+  pressureFiltered = pressure_;
+  pressureRegression_ = pressure_;
 
   // and start off the linear regression version
   // pressure_lr.update((double)millis(), (double)pressure);
@@ -155,7 +154,7 @@ void Barometer::init(void) {
   update(0, true);  // calculate altitudes
 
   // initialize all the other alt variables with current altitude to start
-  lastAlt = alt;     // used to calculate the alt change for climb rate.  Assume we're stationary
+  lastAlt_ = alt;    // used to calculate the alt change for climb rate.  Assume we're stationary
                      // to start (previous Alt = Current ALt, so climb rate is zero).  Note: Climb
                      // rate uses the un-adjusted (standard) altitude
   altInitial = alt;  // also save first value to use as starting point (we assume the
@@ -166,29 +165,29 @@ void Barometer::init(void) {
   if (DEBUG_BARO) {
     Serial.println("Baro initialization values:");
     Serial.print("  C_SENS:");
-    Serial.println(C_SENS);
+    Serial.println(C_SENS_);
     Serial.print("  C_OFF:");
-    Serial.println(C_OFF);
+    Serial.println(C_OFF_);
     Serial.print("  C_TCS:");
-    Serial.println(C_TCS);
+    Serial.println(C_TCS_);
     Serial.print("  C_TCO:");
-    Serial.println(C_TCO);
+    Serial.println(C_TCO_);
     Serial.print("  C_TREF:");
-    Serial.println(C_TREF);
+    Serial.println(C_TREF_);
     Serial.print("  C_TEMPSENS:");
-    Serial.println(C_TEMPSENS);
+    Serial.println(C_TEMPSENS_);
     Serial.print("  D1:");
-    Serial.println(D1_P);
+    Serial.println(D1_P_);
     Serial.print("  D2:");
-    Serial.println(D2_T);
+    Serial.println(D2_T_);
     Serial.print("  dT:");
-    Serial.println(dT);
+    Serial.println(dT_);
     Serial.print("  TEMP:");
-    Serial.println(temp);
+    Serial.println(temp_);
     Serial.print("  OFF1:");
-    Serial.println(OFF1);
+    Serial.println(OFF1_);
     Serial.print("  SENS1:");
-    Serial.println(SENS1);
+    Serial.println(SENS1_);
     Serial.print("  P_ALT:");
     Serial.println(alt);
 
@@ -272,14 +271,14 @@ void Barometer::update(bool startNewCycle, bool doTemp) {
 
     case 1:  // READ PRESSURE THEN SEND CONVERT TEMP COMMAND
       if (!baroADCBusy && baroADCPressure) {
-        D1_P = baro_readADC();  // Read raw pressure value
+        D1_P_ = baro_readADC();  // Read raw pressure value
         baroADCPressure = false;
         // baroTimeStampPressure = micros() - baroTimeStampPressure; // capture duration between
         // prep and read
-        if (D1_P == 0)
-          D1_P = D1_Plast;  // use the last value if we get an invalid read
+        if (D1_P_ == 0)
+          D1_P_ = D1_Plast_;  // use the last value if we get an invalid read
         else
-          D1_Plast = D1_P;  // otherwise save this value for next time if needed
+          D1_Plast_ = D1_P_;  // otherwise save this value for next time if needed
         // baroTimeStampTemp = micros();
 
         if (doTemp) {
@@ -298,14 +297,14 @@ void Barometer::update(bool startNewCycle, bool doTemp) {
     case 2:  // READ TEMP THEN CALCULATE ALTITUDE
       if (doTemp) {
         if (!baroADCBusy && baroADCTemp) {
-          D2_T = baro_readADC();  // read digital temp data
+          D2_T_ = baro_readADC();  // read digital temp data
           baroADCTemp = false;
           // baroTimeStampTemp = micros() - baroTimeStampTemp; // capture duration between prep and
           // read
-          if (D2_T == 0)
-            D2_T = D2_Tlast;  // use the last value if we get a misread
+          if (D2_T_ == 0)
+            D2_T_ = D2_Tlast_;  // use the last value if we get a misread
           else
-            D2_Tlast = D2_T;  // otherwise save this value for next time if needed
+            D2_Tlast_ = D2_T_;  // otherwise save this value for next time if needed
         }
       }
       // (even if we skipped some steps above because of mis-reads or mis-timing, we can still
@@ -338,50 +337,51 @@ void Barometer::update(bool startNewCycle, bool doTemp) {
   process_step++;
 }
 
-// Device Management
+// ^^^ Device Management ^^^
 
-// Device reading & data processing
+// vvv Device reading & data processing vvv
+
 void Barometer::calculatePressure() {
   // calculate temperature (in 100ths of degrees C, from -4000 to 8500)
-  dT = D2_T - ((int32_t)C_TREF) * 256;
-  int32_t TEMP = 2000 + (((int64_t)dT) * ((int64_t)C_TEMPSENS)) / pow(2, 23);
+  dT_ = D2_T_ - ((int32_t)C_TREF_) * 256;
+  int32_t TEMP = 2000 + (((int64_t)dT_) * ((int64_t)C_TEMPSENS_)) / pow(2, 23);
 
   // calculate sensor offsets to use in pressure & altitude calcs
-  OFF1 = (int64_t)C_OFF * pow(2, 16) + (((int64_t)C_TCO) * dT) / pow(2, 7);
-  SENS1 = (int64_t)C_SENS * pow(2, 15) + ((int64_t)C_TCS * dT) / pow(2, 8);
+  OFF1_ = (int64_t)C_OFF_ * pow(2, 16) + (((int64_t)C_TCO_) * dT_) / pow(2, 7);
+  SENS1_ = (int64_t)C_SENS_ * pow(2, 15) + ((int64_t)C_TCS_ * dT_) / pow(2, 8);
 
   // low temperature compensation adjustments
-  TEMP2 = 0;
-  OFF2 = 0;
-  SENS2 = 0;
+  TEMP2_ = 0;
+  OFF2_ = 0;
+  SENS2_ = 0;
   if (TEMP < 2000) {
-    TEMP2 = pow((int64_t)dT, 2) / pow(2, 31);
-    OFF2 = 5 * pow((TEMP - 2000), 2) / 2;
-    SENS2 = 5 * pow((TEMP - 2000), 2) / 4;
+    TEMP2_ = pow((int64_t)dT_, 2) / pow(2, 31);
+    OFF2_ = 5 * pow((TEMP - 2000), 2) / 2;
+    SENS2_ = 5 * pow((TEMP - 2000), 2) / 4;
   }
   // very low temperature compensation adjustments
   if (TEMP < -1500) {
-    OFF2 = OFF2 + 7 * pow((TEMP + 1500), 2);
-    SENS2 = SENS2 + 11 * pow((TEMP + 1500), 2) / 2;
+    OFF2_ = OFF2_ + 7 * pow((TEMP + 1500), 2);
+    SENS2_ = SENS2_ + 11 * pow((TEMP + 1500), 2) / 2;
   }
-  TEMP = TEMP - TEMP2;
-  OFF1 = OFF1 - OFF2;
-  SENS1 = SENS1 - SENS2;
+  TEMP = TEMP - TEMP2_;
+  OFF1_ = OFF1_ - OFF2_;
+  SENS1_ = SENS1_ - SENS2_;
 
   // Filter Temp if necessary due to noise in values
-  temp = TEMP;  // TODO: actually filter if needed
+  temp_ = TEMP;  // TODO: actually filter if needed
 
   // calculate temperature compensated pressure (in 100ths of mbars)
-  pressure = ((uint64_t)D1_P * SENS1 / (int64_t)pow(2, 21) - OFF1) / pow(2, 15);
+  pressure_ = ((uint64_t)D1_P_ * SENS1_ / (int64_t)pow(2, 21) - OFF1_) / pow(2, 15);
 
   // record datapoint on SD card if datalogging is turned on
 
   String baroName = "baro mb*100,";
-  String baroEntry = baroName + String(pressure);
+  String baroEntry = baroName + String(pressure_);
   Telemetry.writeText(baroEntry);
 
   // calculate instant altitude (for kalman filter)
-  altF = 44331.0 * (1.0 - pow((float)pressure / 101325.0, (.190264)));
+  altF = 44331.0 * (1.0 - pow((float)pressure_ / 101325.0, (.190264)));
 }
 
 // Filter Pressure Values
@@ -404,49 +404,49 @@ void Barometer::filterPressure(void) {
   // first calculate filter size based on user preference
   switch (VARIO_SENSE) {
     case 1:
-      filterValsPref = 30;
+      filterValsPref_ = 30;
       break;
     case 2:
-      filterValsPref = 25;
+      filterValsPref_ = 25;
       break;
     case 3:
-      filterValsPref = 20;
+      filterValsPref_ = 20;
       break;
     case 4:
-      filterValsPref = 15;
+      filterValsPref_ = 15;
       break;
     case 5:
-      filterValsPref = 10;
+      filterValsPref_ = 10;
       break;
     default:
-      filterValsPref = 20;
+      filterValsPref_ = 20;
       break;
   }
 
   // new way with regression:
-  pressure_lr.update((double)millis(), (double)alt);
-  LinearFit fit = pressure_lr.fit();
-  pressureRegression = linear_value(&fit, (double)millis());
+  pressureLR_.update((double)millis(), (double)alt);
+  LinearFit fit = pressureLR_.fit();
+  pressureRegression_ = linear_value(&fit, (double)millis());
 
   // old way with averaging last N values equally:
   pressureFiltered = 0;
-  int8_t filterBookmark = pressureFilterVals[0];  // start at the saved spot in the filter array
+  int8_t filterBookmark = pressureFilterVals_[0];  // start at the saved spot in the filter array
   int8_t filterIndex =
       filterBookmark;  // and create an index to track all the values we need for averaging
 
-  pressureFilterVals[filterBookmark] = pressure;  // load in the new value at the bookmarked spot
-  if (++filterBookmark > FILTER_VALS_MAX)         // increment bookmark for next time
-    filterBookmark = 1;                           // wrap around the array for next time if needed
-  pressureFilterVals[0] = filterBookmark;         // and save the bookmark for next time
+  pressureFilterVals_[filterBookmark] = pressure_;  // load in the new value at the bookmarked spot
+  if (++filterBookmark > FILTER_VALS_MAX)           // increment bookmark for next time
+    filterBookmark = 1;                             // wrap around the array for next time if needed
+  pressureFilterVals_[0] = filterBookmark;          // and save the bookmark for next time
 
   // sum up all the values from this spot and previous, for the correct number of samples (user
   // pref)
-  for (int i = 0; i < filterValsPref; i++) {
-    pressureFiltered += pressureFilterVals[filterIndex];
+  for (int i = 0; i < filterValsPref_; i++) {
+    pressureFiltered += pressureFilterVals_[filterIndex];
     filterIndex--;
     if (filterIndex <= 0) filterIndex = FILTER_VALS_MAX;  // wrap around the array
   }
-  pressureFiltered /= filterValsPref;  // divide to get the average
+  pressureFiltered /= filterValsPref_;  // divide to get the average
 }
 
 void Barometer::calculateAlt() {
@@ -462,11 +462,11 @@ void Barometer::calculateAlt() {
 // Update Climb
 void Barometer::updateClimb() {
   // lastAlt isn't set yet on boot-up, so just assume a zero climb rate for the first sample.
-  if (firstClimbInitialization) {
+  if (firstClimbInitialization_) {
     climbRate = 0;
     climbRateFiltered = 0;
     climbRateAverage = 0;
-    firstClimbInitialization = false;
+    firstClimbInitialization_ = false;
     return;
   }
 
@@ -475,30 +475,30 @@ void Barometer::updateClimb() {
   // calculate climb rate based on standard altimeter setting (this way climb doesn't artificially
   // change if the setting is adjusted)
   climbRate =
-      (alt - lastAlt) *
-      20;         // climb is updated every 1/20 second, so climb rate is cm change per 1/20sec * 20
-  lastAlt = alt;  // store last alt value for next time
+      (alt - lastAlt_) *
+      20;  // climb is updated every 1/20 second, so climb rate is cm change per 1/20sec * 20
+  lastAlt_ = alt;  // store last alt value for next time
 
   // filter climb rate
   int32_t climbRateFilterSummation = 0;
-  int8_t filterBookmark = climbFilterVals[0];  // start at the saved spot in the filter array
+  int8_t filterBookmark = climbFilterVals_[0];  // start at the saved spot in the filter array
   int8_t filterIndex =
       filterBookmark;  // and create an index to track all the values we need for averaging
 
-  climbFilterVals[filterBookmark] = climbRate;  // load in the new value at the bookmarked spot
-  if (++filterBookmark > FILTER_VALS_MAX)       // increment bookmark for next time
-    filterBookmark = 1;                         // wrap around the array for next time if needed
-  climbFilterVals[0] = filterBookmark;          // and save the bookmark for next time
+  climbFilterVals_[filterBookmark] = climbRate;  // load in the new value at the bookmarked spot
+  if (++filterBookmark > FILTER_VALS_MAX)        // increment bookmark for next time
+    filterBookmark = 1;                          // wrap around the array for next time if needed
+  climbFilterVals_[0] = filterBookmark;          // and save the bookmark for next time
 
   // sum up all the values from this spot and previous, for the correct number of samples (user
   // pref)
-  for (int i = 0; i < filterValsPref; i++) {
-    climbRateFilterSummation += climbFilterVals[filterIndex];
+  for (int i = 0; i < filterValsPref_; i++) {
+    climbRateFilterSummation += climbFilterVals_[filterIndex];
     filterIndex--;
     if (filterIndex <= 0) filterIndex = FILTER_VALS_MAX;  // wrap around the array
   }
   climbRateFiltered =
-      climbRateFilterSummation / filterValsPref;  // divide to get the filtered climb rate
+      climbRateFilterSummation / filterValsPref_;  // divide to get the filtered climb rate
 
   // now calculate the longer-running average climb value (this is a smoother, slower-changing value
   // for things like glide ratio, etc)
@@ -514,25 +514,25 @@ void Barometer::updateClimb() {
   speaker_updateVarioNote(climbRateFiltered);
 }
 
-// Device reading & data processing
+// ^^^ Device reading & data processing ^^^
 
 // Test Functions
 
 void Barometer::debugPrint() {
   Serial.print("D1_P:");
-  Serial.print(D1_P);
+  Serial.print(D1_P_);
   Serial.print(", D2_T:");
-  Serial.print(D2_T);  // has been zero, perhaps because GPS serial buffer processing delayed the
-                       // ADC prep for reading this from baro chip
+  Serial.print(D2_T_);  // has been zero, perhaps because GPS serial buffer processing delayed the
+                        // ADC prep for reading this from baro chip
 
   Serial.print(", Press:");
-  Serial.print(pressure);
+  Serial.print(pressure_);
   Serial.print(", PressFiltered:");
   Serial.print(pressureFiltered);
   Serial.print(", PressRegression:");
-  Serial.print(pressureRegression);
+  Serial.print(pressureRegression_);
   Serial.print(", LastAlt:");
-  Serial.print(lastAlt);
+  Serial.print(lastAlt_);
   Serial.print(", ALT:");
   Serial.print(alt);
   Serial.print(", AltAdjusted:");
