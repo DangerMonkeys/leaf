@@ -37,12 +37,15 @@ SettingLogFormat LOG_FORMAT;
 // System Settings
 int16_t TIME_ZONE;
 int8_t VOLUME_SYSTEM;
-bool ENTER_BOOTLOAD;
 bool ECO_MODE;
 bool AUTO_OFF;
 bool WIFI_ON;
 bool BLUETOOTH_ON;
 bool SHOW_WARNING;
+
+// Boot Flags
+bool ENTER_BOOTLOAD;
+bool BOOT_TO_ON;
 
 // Display Settings
 uint8_t CONTRAST;
@@ -121,12 +124,15 @@ void settings_loadDefaults() {
   // System Settings
   TIME_ZONE = DEF_TIME_ZONE;
   VOLUME_SYSTEM = DEF_VOLUME_SYSTEM;
-  ENTER_BOOTLOAD = DEF_ENTER_BOOTLOAD;
   ECO_MODE = DEF_ECO_MODE;
   AUTO_OFF = DEF_AUTO_OFF;
   WIFI_ON = DEF_WIFI_ON;
   BLUETOOTH_ON = DEF_BLUETOOTH_ON;
   SHOW_WARNING = DEF_SHOW_WARNING;
+
+  // Boot Flags
+  ENTER_BOOTLOAD = DEF_ENTER_BOOTLOAD;
+  BOOT_TO_ON = DEF_BOOT_TO_ON;
 
   // Display Settings
   CONTRAST = DEF_CONTRAST;
@@ -175,12 +181,15 @@ void settings_retrieve() {
   // System Settings
   TIME_ZONE = leafPrefs.getShort("TIME_ZONE");
   VOLUME_SYSTEM = leafPrefs.getChar("VOLUME_SYSTEM");
-  ENTER_BOOTLOAD = leafPrefs.getBool("ENTER_BOOTLOAD");
   ECO_MODE = leafPrefs.getBool("ECO_MODE");
   AUTO_OFF = leafPrefs.getBool("AUTO_OFF");
   WIFI_ON = leafPrefs.getBool("WIFI_ON");
   BLUETOOTH_ON = leafPrefs.getBool("BLUETOOTH_ON");
   SHOW_WARNING = leafPrefs.getBool("SHOW_WARNING");
+
+  // Boot Flags
+  ENTER_BOOTLOAD = leafPrefs.getBool("ENTER_BOOTLOAD");
+  BOOT_TO_ON = leafPrefs.getBool("BOOT_TO_ON");
 
   // Display Settings
   CONTRAST = leafPrefs.getUChar("CONTRAST");
@@ -241,12 +250,14 @@ void settings_save() {
   // System Settings
   leafPrefs.putShort("TIME_ZONE", TIME_ZONE);
   leafPrefs.putChar("VOLUME_SYSTEM", VOLUME_SYSTEM);
-  leafPrefs.putBool("ENTER_BOOTLOAD", ENTER_BOOTLOAD);
   leafPrefs.putBool("ECO_MODE", ECO_MODE);
   leafPrefs.putBool("AUTO_OFF", AUTO_OFF);
   leafPrefs.putBool("WIFI_ON", WIFI_ON);
   leafPrefs.putBool("BLUETOOTH_ON", BLUETOOTH_ON);
   leafPrefs.putBool("SHOW_WARNING", SHOW_WARNING);
+  // Boot Flags
+  leafPrefs.putBool("ENTER_BOOTLOAD", ENTER_BOOTLOAD);
+  leafPrefs.putBool("BOOT_TO_ON", BOOT_TO_ON);
   // Display Settings
   leafPrefs.putUChar("CONTRAST", CONTRAST);
   leafPrefs.putUChar("NAVPG_ALT_TYP", NAVPG_ALT_TYP);

@@ -5,6 +5,7 @@
 
 #include <stdexcept>
 
+#include "settings.h"
 #include "version.h"
 
 String getLatestVersion() {
@@ -55,6 +56,8 @@ void PerformOTAUpdate() {
 
   if (Update.end()) {
     Serial.println("Update successfully completed. Rebooting.");
+    BOOT_TO_ON = true;  // restart into 'on' state on reboot
+    settings_save();
     ESP.restart();
   } else {
     throw std::runtime_error("Error finishing firmware update");
