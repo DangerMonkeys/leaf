@@ -41,7 +41,7 @@ void GPXnav::update() {
     // update distance remaining, then sequence to next point if distance is small enough
     pointDistanceRemaining = gps.distanceBetween(gps.location.lat(), gps.location.lng(),
                                                  activePoint.lat, activePoint.lon);
-    if (pointDistanceRemaining < waypointRadius && !reachedGoal)
+    if (pointDistanceRemaining < waypointRadius && !reachedGoal_)
       sequenceWaypoint();  //  (this will also update distance to the new point)
 
     // update time remaining
@@ -52,29 +52,29 @@ void GPXnav::update() {
     }
 
     // get degress to active point
-    courseToActive =
+    courseToActive_ =
         gps.courseTo(gps.location.lat(), gps.location.lng(), activePoint.lat, activePoint.lon);
-    turnToActive = courseToActive - gps.course.deg();
+    turnToActive = courseToActive_ - gps.course.deg();
     if (turnToActive > 180)
       turnToActive -= 360;
     else if (turnToActive < -180)
       turnToActive += 360;
 
     // if there's a next point, get course to that as well
-    if (nextPointIndex) {
-      courseToNext =
-          gps.courseTo(gps.location.lat(), gps.location.lng(), nextPoint.lat, nextPoint.lon);
-      turnToNext = courseToNext - gps.course.deg();
-      if (turnToNext > 180)
-        turnToNext -= 360;
-      else if (turnToNext < -180)
-        turnToNext += 360;
+    if (nextPointIndex_) {
+      courseToNext_ =
+          gps.courseTo(gps.location.lat(), gps.location.lng(), nextPoint_.lat, nextPoint_.lon);
+      turnToNext_ = courseToNext_ - gps.course.deg();
+      if (turnToNext_ > 180)
+        turnToNext_ -= 360;
+      else if (turnToNext_ < -180)
+        turnToNext_ += 360;
     }
 
     // get glide to active (and goal point, if we're on a route)
     glideToActive = pointDistanceRemaining / (gps.altitude.meters() - activePoint.ele);
     if (activeRouteIndex)
-      glideToGoal = totalDistanceRemaining / (gps.altitude.meters() - goalPoint.ele);
+      glideToGoal_ = totalDistanceRemaining_ / (gps.altitude.meters() - goalPoint_.ele);
 
     // update relative altimeters (in cm)
     // alt above active point
@@ -83,9 +83,9 @@ void GPXnav::update() {
     // alt above goal (if we're on a route and have a goal; otherwise, set relative goal alt to same
     // as next point)
     if (activeRouteIndex)
-      altAboveGoal = 100 * (gps.altitude.meters() - goalPoint.ele);
+      altAboveGoal_ = 100 * (gps.altitude.meters() - goalPoint_.ele);
     else
-      altAboveGoal = altAboveWaypoint;
+      altAboveGoal_ = altAboveWaypoint;
   }
 
   // update additional values that are required regardless of if we're navigating to a point
@@ -98,7 +98,7 @@ void GPXnav::update() {
 
 bool GPXnav::activatePoint(int16_t pointIndex) {
   navigating = true;
-  reachedGoal = false;
+  reachedGoal_ = false;
 
   activeRouteIndex =
       0;  // Point navigation is exclusive from Route navigation, so cancel any Route navigation
@@ -111,7 +111,7 @@ bool GPXnav::activatePoint(int16_t pointIndex) {
       gps.distanceBetween(gps.location.lat(), gps.location.lng(), activePoint.lat, activePoint.lon);
 
   segmentDistance = newDistance;
-  totalDistanceRemaining = newDistance;
+  totalDistanceRemaining_ = newDistance;
   pointDistanceRemaining = newDistance;
 
   return navigating;
@@ -124,7 +124,7 @@ bool GPXnav::activateRoute(uint16_t routeIndex) {
     navigating = false;
   } else {
     navigating = true;
-    reachedGoal = false;
+    reachedGoal_ = false;
     activeRouteIndex = routeIndex;
 
     Serial.print("*** NEW ROUTE: ");
@@ -136,11 +136,11 @@ bool GPXnav::activateRoute(uint16_t routeIndex) {
     sequenceWaypoint();
 
     // calculate TOTAL Route distance
-    totalDistanceRemaining = 0;
+    totalDistanceRemaining_ = 0;
     // if we have at least 2 points:
     if (routes[activeRouteIndex].totalPoints >= 2) {
       for (int i = 1; i < routes[activeRouteIndex].totalPoints; i++) {
-        totalDistanceRemaining +=
+        totalDistanceRemaining_ +=
             gps.distanceBetween(routes[activeRouteIndex].routepoints[i].lat,
                                 routes[activeRouteIndex].routepoints[i].lon,
                                 routes[activeRouteIndex].routepoints[i + 1].lat,
@@ -149,9 +149,9 @@ bool GPXnav::activateRoute(uint16_t routeIndex) {
       // otherwise our Route only has 1 point, so the Route distance is from where we are now to
       // that one point
     } else if (routes[activeRouteIndex].totalPoints == 1) {
-      totalDistanceRemaining = gps.distanceBetween(gps.location.lat(), gps.location.lng(),
-                                                   routes[activeRouteIndex].routepoints[1].lat,
-                                                   routes[activeRouteIndex].routepoints[1].lon);
+      totalDistanceRemaining_ = gps.distanceBetween(gps.location.lat(), gps.location.lng(),
+                                                    routes[activeRouteIndex].routepoints[1].lat,
+                                                    routes[activeRouteIndex].routepoints[1].lon);
     }
   }
   return navigating;
@@ -184,11 +184,11 @@ bool GPXnav::sequenceWaypoint() {
     if (activePointIndex + 1 <
         routes[activeRouteIndex]
             .totalPoints) {  // if there's also a next point in the list, capture that
-      nextPointIndex = activePointIndex + 1;
-      nextPoint = routes[activeRouteIndex].routepoints[nextPointIndex];
+      nextPointIndex_ = activePointIndex + 1;
+      nextPoint_ = routes[activeRouteIndex].routepoints[nextPointIndex_];
     } else {  // otherwise signify no next point, so we don't show display functions related to next
               // point
-      nextPointIndex = -1;
+      nextPointIndex_ = -1;
     }
 
     // get distance between present (prev) point and new activePoint (used for distance progress
@@ -209,7 +209,7 @@ bool GPXnav::sequenceWaypoint() {
 
   } else {  // otherwise, we made it to our destination!
     // TODO: celebrate!  (play reaching goal sound, or whatever)
-    reachedGoal = true;
+    reachedGoal_ = true;
     speaker_playSound(fx_confirm);
   }
   Serial.print(" succes is: ");
@@ -222,10 +222,10 @@ void GPXnav::cancelNav() {
   pointTimeRemaining = 0;
   activeRouteIndex = 0;
   activePointIndex = 0;
-  reachedGoal = false;
+  reachedGoal_ = false;
   navigating = false;
   turnToActive = 0;
-  turnToNext = 0;
+  turnToNext_ = 0;
   speaker_playSound(fx_cancel);
 }
 

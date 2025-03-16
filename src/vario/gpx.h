@@ -1,5 +1,4 @@
-#ifndef gpx_h
-#define gpx_h
+#pragma once
 
 #include <Arduino.h>
 #include <FS.h>
@@ -76,41 +75,39 @@ class GPXnav {
   void loadWaypoints(void);
 
   // next waypoint in the current route
-  Waypoint nextPoint;
+  Waypoint nextPoint_;
   // final waypoint in the current route
-  Waypoint goalPoint;
+  Waypoint goalPoint_;
 
   // the next waypoint (can prepare you which direction you'll need to turn next as you
   // approach the currently active waypoint).  We create this as a separate variable
   // (instead of just adding 1 to the acive index) because sometimes there IS NO next point
   // (i.e., you're on the last point) and we want to know this.
-  int16_t nextPointIndex = 0;
+  int16_t nextPointIndex_ = 0;
 
   // (gps measured) Altitude in cm above goal waypoint
-  int32_t altAboveGoal = 0;
+  int32_t altAboveGoal_ = 0;
 
   // glide ratio from current position to final (goal) waypoint, ALONG the
   // route //TODO: should this be along route or straight to?
-  float glideToGoal = 0;
+  float glideToGoal_ = 0;
 
   // distance remaining to last waypoint
-  double totalDistanceRemaining;
+  double totalDistanceRemaining_;
 
   // heading degrees from current location to active waypoint
-  double courseToActive;
+  double courseToActive_;
 
   // heading degrees from current location to next waypoint (the one after active)
-  double courseToNext;
+  double courseToNext_;
 
   // change-in-current-heading to point toward next point
-  double turnToNext;
+  double turnToNext_;
 
   // when finished with the Route, we might want to stay in a "finished"
   // state instead of cancelling navigation altogether
-  bool reachedGoal = false;
+  bool reachedGoal_ = false;
 };
 extern GPXnav gpxNav;
 
 bool gpx_readFile(fs::FS& fs, String fileName);
-
-#endif
