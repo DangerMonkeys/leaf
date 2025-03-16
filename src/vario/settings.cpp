@@ -333,8 +333,7 @@ bool settings_matchGPSAlt() {
   bool success = false;
   if (gps.altitude.isValid()) {
     baro.altimeterSetting =
-        baro.pressureFiltered /
-        (3386.389 * pow(1 - gps.altitude.meters() * 100 / 4433100.0, 1 / 0.190264));
+        baro.pressure / (3386.389 * pow(1 - gps.altitude.meters() * 100 / 4433100.0, 1 / 0.190264));
     ALT_SETTING = baro.altimeterSetting;
     success = true;
   }

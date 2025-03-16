@@ -484,14 +484,14 @@ void navigatePage_button(Button button, ButtonState state, uint8_t count) {
         case Button::LEFT:
           if (NAVPG_ALT_TYP == altType_MSL &&
               (state == PRESSED || state == HELD || state == HELD_LONG)) {
-            baro.adjustAltSetting(1, count);
+            baro.adjustAltSetting(-1, count);
             speaker_playSound(fx_neutral);
           }
           break;
         case Button::RIGHT:
           if (NAVPG_ALT_TYP == altType_MSL &&
               (state == PRESSED || state == HELD || state == HELD_LONG)) {
-            baro.adjustAltSetting(-1, count);
+            baro.adjustAltSetting(1, count);
             speaker_playSound(fx_neutral);
           }
           break;
@@ -580,6 +580,8 @@ void navigatePage_button(Button button, ButtonState state, uint8_t count) {
           } else if (state == HELD && flightTimer_isRunning()) {
             flightTimer_stop();
             navigatePage_cursorPosition = cursor_navigatePage_none;
+            buttons_lockAfterHold();  // lock buttons so we don't turn off if user keeps holding
+                                      // button
           }
 
           break;

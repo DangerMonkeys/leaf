@@ -33,17 +33,18 @@ uint32_t button_time_elapsed = 0;
 // button actions
 Button button_last = Button::NONE;
 ButtonState button_state = NO_STATE;
-bool button_everHeld =
-    false;  // in a single button-push event, track if it was ever held long enough to reach the
-            // "HELD" or "HELD_LONG" states (no we know not to also take action when it is released)
+
+// in a single button-push event, track if it was ever held long enough to reach the
+// "HELD" or "HELD_LONG" states (so we know not to also take action when it is released)
+bool button_everHeld = false;
 uint16_t button_min_hold_time = 800;   // time in ms to count a button as "held down"
 uint16_t button_max_hold_time = 3500;  // time in ms to start further actions on long-holds
 
 uint16_t button_hold_action_time_initial = 0;
-uint16_t button_hold_action_time_elapsed =
-    0;  // counting time between 'action steps' while holding the button
-uint16_t button_hold_action_time_limit =
-    500;  // time in ms required between "action steps" while holding the button
+// counting time between 'action steps' while holding the button
+uint16_t button_hold_action_time_elapsed = 0;
+// time in ms required between "action steps" while holding the button
+uint16_t button_hold_action_time_limit = 500;
 uint16_t button_hold_counter = 0;
 
 Button buttons_init(void) {
@@ -80,6 +81,7 @@ Button buttons_update(void) {
   // executed center-hold event.  This prevents multiple sequential actions being executed if user
   // keeps holding the center button (i.e., resetting timer, then turning off)
   if (centerHoldLockButtons && which_button == Button::CENTER) {
+    button_state = NO_STATE;
     return which_button;  // return early without executing further tasks
   } else {
     centerHoldLockButtons = false;  // user let go of center button, so we can reset the lock.
