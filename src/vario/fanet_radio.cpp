@@ -306,6 +306,10 @@ void FanetRadio::begin(const FanetRadioRegion& region) {
 }
 
 void FanetRadio::end() {
+#ifndef FANET
+  return;  // Model does not support Fanet
+#endif
+
   SpiLockGuard spiLock;
   radio->sleep(false);
   state = FanetRadioState::UNINITIALIZED;
