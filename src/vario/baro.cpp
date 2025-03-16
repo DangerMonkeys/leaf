@@ -8,7 +8,9 @@
 #include "Leaf_I2C.h"
 #include "SDcard.h"
 #include "buttons.h"
+#include "flags_enum.h"
 #include "log.h"
+#include "ms5611.h"
 #include "settings.h"
 #include "speaker.h"
 #include "telemetry.h"
@@ -21,8 +23,10 @@
 // average)
 #define CLIMB_AVERAGE 4
 
+// Singleton sensor to use in barometer
+MS5611 sensor;
 // Singleton barometer instance for device
-Barometer baro;
+Barometer baro(&sensor);
 
 void Barometer::adjustAltSetting(int8_t dir, uint8_t count) {
   float increase = .001;  //
@@ -65,46 +69,6 @@ float baro_climbToUnits(int32_t climbrate, bool units_fpm) {
   return climbrate_converted;
 }
 
-// vvv I2C Communication Functions vvv
-
-uint8_t baro_sendCommand(uint8_t command) {
-  Wire.beginTransmission(ADDR_BARO);
-  Wire.write(command);
-  uint8_t result = Wire.endTransmission();
-  // if (DEBUG_BARO) { Serial.print("Baro Send Command Result: "); Serial.println(result); }
-  return result;
-}
-
-uint16_t baro_readCalibration(uint8_t PROMaddress) {
-  uint16_t value = 0;  // This will be the final 16-bit output from the ADC
-  uint8_t command =
-      0b10100000;  // The command to read from the specified address is 1 0 1 0 ad2 ad1 ad0 0
-  command += (PROMaddress << 1);  // Add PROM address bits to the command byte
-
-  baro_sendCommand(command);
-  Wire.requestFrom(ADDR_BARO, 2);
-  value += (Wire.read() << 8);
-  value += (Wire.read());
-
-  return value;
-}
-
-uint32_t baro_readADC() {
-  uint32_t value = 0;  // This will be the final 24-bit output from the ADC
-  // if (DEBUG_BARO) { Serial.println("Baro sending Read ADC command"); }
-  baro_sendCommand(0b00000000);
-  Wire.requestFrom(ADDR_BARO, 3);
-  value += (Wire.read() << 16);
-  // if (DEBUG_BARO) { Serial.print("Baro ADC Value 16: "); Serial.println(value); }
-  value += (Wire.read() << 8);
-  // if (DEBUG_BARO) { Serial.print("Baro ADC Value 8: "); Serial.println(value); }
-  value += (Wire.read());
-  // if (DEBUG_BARO) { Serial.print("Baro ADC Value 0: "); Serial.println(value); }
-
-  return value;
-}
-// ^^^ I2C Communication Functions ^^^
-
 // vvv Device Management vvv
 
 void Barometer::init(void) {
@@ -114,26 +78,16 @@ void Barometer::init(void) {
   else
     altimeterSetting = 29.92;
 
-  // reset baro sensor for initialization
-  reset();
-  delay(2);
-
-  // read calibration values
-  C_SENS_ = baro_readCalibration(1);
-  C_OFF_ = baro_readCalibration(2);
-  C_TCS_ = baro_readCalibration(3);
-  C_TCO_ = baro_readCalibration(4);
-  C_TREF_ = baro_readCalibration(5);
-  C_TEMPSENS_ = baro_readCalibration(6);
+  pressureSource_->init();
 
   // after initialization, get first baro sensor reading to populate values
-  delay(10);        // wait for baro sensor to be ready
-  update(1, true);  // send convert-pressure command
-  delay(10);        // wait for baro sensor to process
-  update(0, true);  // read pressure, send convert-temp command
-  delay(10);        // wait for baro sensor to process
-  update(0, true);  // read temp, and calculate adjusted pressure
-  delay(10);
+  pressureSource_->startMeasurement();
+  PressureUpdateResult result = pressureSource_->update();
+  while (!FLAG_SET(result, PressureUpdateResult::PressureReady)) {
+    delay(10);
+    result = pressureSource_->update();
+  }
+  pressure_ = pressureSource_->getPressure();
 
   // load the filters with our current start-up pressure (and climb is assumed to be 0)
   for (int i = 1; i <= FILTER_VALS_MAX; i++) {
@@ -149,57 +103,25 @@ void Barometer::init(void) {
   pressureRegression_ = pressure_;
 
   // and start off the linear regression version
-  // pressure_lr.update((double)millis(), (double)pressure);
+  // pressure_lr.update((double)millis(), (double)pressure_);
 
-  update(0, true);  // calculate altitudes
+  calculatePressureAlt();  // calculate altitudes
 
   // initialize all the other alt variables with current altitude to start
-  lastAlt_ = alt;    // used to calculate the alt change for climb rate.  Assume we're stationary
-                     // to start (previous Alt = Current ALt, so climb rate is zero).  Note: Climb
-                     // rate uses the un-adjusted (standard) altitude
-  altInitial = alt;  // also save first value to use as starting point (we assume the
-                     // saved altimeter setting is correct for now, so use adjusted)
-  altAtLaunch = altAdjusted;  // save the starting value as launch altitude (Launch will
-                              // be updated when timer starts)
 
-  if (DEBUG_BARO) {
-    Serial.println("Baro initialization values:");
-    Serial.print("  C_SENS:");
-    Serial.println(C_SENS_);
-    Serial.print("  C_OFF:");
-    Serial.println(C_OFF_);
-    Serial.print("  C_TCS:");
-    Serial.println(C_TCS_);
-    Serial.print("  C_TCO:");
-    Serial.println(C_TCO_);
-    Serial.print("  C_TREF:");
-    Serial.println(C_TREF_);
-    Serial.print("  C_TEMPSENS:");
-    Serial.println(C_TEMPSENS_);
-    Serial.print("  D1:");
-    Serial.println(D1_P_);
-    Serial.print("  D2:");
-    Serial.println(D2_T_);
-    Serial.print("  dT:");
-    Serial.println(dT_);
-    Serial.print("  TEMP:");
-    Serial.println(temp_);
-    Serial.print("  OFF1:");
-    Serial.println(OFF1_);
-    Serial.print("  SENS1:");
-    Serial.println(SENS1_);
-    Serial.print("  P_ALT:");
-    Serial.println(alt);
+  // used to calculate the alt change for climb rate.  Assume we're stationary
+  // to start (previous Alt = Current ALt, so climb rate is zero).  Note: Climb
+  // rate uses the un-adjusted (standard) altitude
+  lastAlt_ = alt;
+  // also save first value to use as starting point (we assume the
+  // saved altimeter setting is correct for now, so use adjusted)
+  altInitial = alt;
+  // save the starting value as launch altitude (Launch will
+  // be updated when timer starts)
+  altAtLaunch = altAdjusted;
 
-    Serial.println(" ");
-  }
-}
-
-void Barometer::reset(void) {
-  unsigned char command = 0b00011110;  // This is the command to reset, and for the sensor to copy
-                                       // calibration data into the register as needed
-  baro_sendCommand(command);
-  delay(3);  // delay time required before sensor is ready
+  pressureSource_->startMeasurement();
+  task_ = BarometerTask::Measure;
 }
 
 void Barometer::resetLaunchAlt() { altAtLaunch = altAdjusted; }
@@ -207,7 +129,9 @@ void Barometer::resetLaunchAlt() { altAtLaunch = altAdjusted; }
 void Barometer::wake() { sleeping_ = false; }
 void Barometer::sleep() { sleeping_ = true; }
 
-void Barometer::update(bool startNewCycle, bool doTemp) {
+void Barometer::startMeasurement() { pressureSource_->startMeasurement(); }
+
+void Barometer::update() {
   // (we don't need to update temp as frequently so we choose to skip it if desired)
   // the baro senor requires ~9ms between the command to prep the ADC and actually reading the
   // value. Since this delay is required between both pressure and temp values, we break the sensor
@@ -225,106 +149,51 @@ void Barometer::update(bool startNewCycle, bool doTemp) {
     return;
   }
 
-  // First check if ADC is not busy (i.e., it's been at least 9ms since we sent a "convert ADC"
-  // command)
-  unsigned long microsNow = micros();
-  if (microsNow - baroADCStartTime_ > 9000) {
-    baroADCBusy_ = false;
-  } else {
-    Serial.print("BARO BUSY!  Executing Process Step # ");
-    Serial.print(processStep_);
-    Serial.print("  Micros since last: ");
-    Serial.println(microsNow - baroADCStartTime_);
-  }
-
-  if (startNewCycle) processStep_ = 0;
-
   if (DEBUG_BARO) {
-    Serial.print("baro step: ");
-    Serial.print(processStep_);
-    Serial.print(" NewCycle? ");
-    Serial.print(startNewCycle);
+    Serial.print("baro task: ");
+    Serial.print((int)task_);
     Serial.print(" time: ");
     Serial.println(micros());
   }
 
-  switch (processStep_) {
-    case 0:  // SEND CONVERT PRESSURE COMMAND
-      if (!baroADCBusy_) {
-        baroADCStartTime_ = micros();
-        baro_sendCommand(CMD_CONVERT_PRESSURE);  // Prep baro sensor ADC to read raw pressure value
-                                                 // (then come back for step 2 in ~10ms)
-        baroADCBusy_ = true;      // ADC will be busy now since we sent a conversion command
-        baroADCPressure_ = true;  // We will have a Pressure value in the ADC when ready
-        baroADCTemp_ =
-            false;  // We won't have a Temp value (even if the ADC was holding an unread Temperature
-                    // value, we're clearning that out since we sent a Pressure command)
-      }
-      break;
+  if (task_ == BarometerTask::None) {
+    // Do nothing
+  } else if (task_ == BarometerTask::Measure) {
+    PressureUpdateResult sensorResult = pressureSource_->update();
 
-    case 1:  // READ PRESSURE THEN SEND CONVERT TEMP COMMAND
-      if (!baroADCBusy_ && baroADCPressure_) {
-        D1_P_ = baro_readADC();  // Read raw pressure value
-        baroADCPressure_ = false;
-        // baroTimeStampPressure = micros() - baroTimeStampPressure; // capture duration between
-        // prep and read
-        if (D1_P_ == 0)
-          D1_P_ = D1_Plast_;  // use the last value if we get an invalid read
-        else
-          D1_Plast_ = D1_P_;  // otherwise save this value for next time if needed
-        // baroTimeStampTemp = micros();
+    if (FLAG_SET(sensorResult, PressureUpdateResult::PressureReady)) {
+      pressure_ = pressureSource_->getPressure();
 
-        if (doTemp) {
-          baroADCStartTime_ = micros();
-          baro_sendCommand(CMD_CONVERT_TEMP);  // Prep baro sensor ADC to read raw temperature value
-                                               // (then come back for step 3 in ~10ms)
-          baroADCBusy_ = true;
-          baroADCTemp_ = true;       // We will have a Temperature value in the ADC when ready
-          baroADCPressure_ = false;  // We won't have a Pressure value (even if the ADC was holding
-                                     // an unread Pressure value, we're clearning that out since we
-                                     // sent a Temperature command)
-        }
-      }
-      break;
-
-    case 2:  // READ TEMP THEN CALCULATE ALTITUDE
-      if (doTemp) {
-        if (!baroADCBusy_ && baroADCTemp_) {
-          D2_T_ = baro_readADC();  // read digital temp data
-          baroADCTemp_ = false;
-          // baroTimeStampTemp = micros() - baroTimeStampTemp; // capture duration between prep and
-          // read
-          if (D2_T_ == 0)
-            D2_T_ = D2_Tlast_;  // use the last value if we get a misread
-          else
-            D2_Tlast_ = D2_T_;  // otherwise save this value for next time if needed
-        }
-      }
       // (even if we skipped some steps above because of mis-reads or mis-timing, we can still
       // calculate a "new" corrected pressure value based on the old ADC values.  It will be a
       // repeat value, but it keeps the filter buffer moving on time)
       calculatePressureAlt();  // calculate Pressure Altitude adjusted for temperature
-      break;
+      task_ = BarometerTask::FilterAltitude;
+    }
+  } else if (task_ == BarometerTask::FilterAltitude) {
+    // Filter Pressure and calculate Final Altitude Values
+    // Note, IMU will have taken an accel reading and updated the Kalman
+    // Filter after Baro_step_2 but before Baro_step_3
 
-    case 3:  // Filter Pressure and calculate Final Altitude Values
-      // Note, IMU will have taken an accel reading and updated the Kalman
-      // Filter after Baro_step_2 but before Baro_step_3
+    // get instant climb rate and altitude
+    climbRate = (float)kalmanvert.getVelocity();    // in m/s
+    alt = int32_t(kalmanvert.getPosition() * 100);  // in cm above sea level
 
-      // get instant climb rate and altitude
-      climbRate = (float)kalmanvert.getVelocity();    // in m/s
-      alt = int32_t(kalmanvert.getPosition() * 100);  // in cm above sea level
+    // filter ClimbRate
+    filterClimb();
 
-      // filter ClimbRate
-      filterClimb();
+    // finally, update the speaker sound based on the new climbrate
+    speaker_updateVarioNote(climbRateFiltered);
 
-      // finally, update the speaker sound based on the new climbrate
-      speaker_updateVarioNote(climbRateFiltered);
+    if (DEBUG_BARO) Serial.println("**BR** climbRate Filtered: " + String(climbRateFiltered));
 
-      if (DEBUG_BARO) Serial.println("**BR** climbRate Filtered: " + String(climbRateFiltered));
-
-      break;
+    pressureSource_->startMeasurement();
+    task_ = BarometerTask::Measure;
+  } else {
+    // TODO: Write generic fatal error handler that prints error message to screen before stopping
+    Serial.printf("Fatal error: Barometer was conducting unknown task %d\n", (int)task_);
+    while (true);
   }
-  processStep_++;
 }
 
 // ^^^ Device Management ^^^
@@ -332,38 +201,6 @@ void Barometer::update(bool startNewCycle, bool doTemp) {
 // vvv Device reading & data processing vvv
 
 void Barometer::calculatePressureAlt() {
-  // calculate temperature (in 100ths of degrees C, from -4000 to 8500)
-  dT_ = D2_T_ - ((int32_t)C_TREF_) * 256;
-  int32_t TEMP = 2000 + (((int64_t)dT_) * ((int64_t)C_TEMPSENS_)) / pow(2, 23);
-
-  // calculate sensor offsets to use in pressure & altitude calcs
-  OFF1_ = (int64_t)C_OFF_ * pow(2, 16) + (((int64_t)C_TCO_) * dT_) / pow(2, 7);
-  SENS1_ = (int64_t)C_SENS_ * pow(2, 15) + ((int64_t)C_TCS_ * dT_) / pow(2, 8);
-
-  // low temperature compensation adjustments
-  TEMP2_ = 0;
-  OFF2_ = 0;
-  SENS2_ = 0;
-  if (TEMP < 2000) {
-    TEMP2_ = pow((int64_t)dT_, 2) / pow(2, 31);
-    OFF2_ = 5 * pow((TEMP - 2000), 2) / 2;
-    SENS2_ = 5 * pow((TEMP - 2000), 2) / 4;
-  }
-  // very low temperature compensation adjustments
-  if (TEMP < -1500) {
-    OFF2_ = OFF2_ + 7 * pow((TEMP + 1500), 2);
-    SENS2_ = SENS2_ + 11 * pow((TEMP + 1500), 2) / 2;
-  }
-  TEMP = TEMP - TEMP2_;
-  OFF1_ = OFF1_ - OFF2_;
-  SENS1_ = SENS1_ - SENS2_;
-
-  // Filter Temp if necessary due to noise in values
-  temp_ = TEMP;  // TODO: actually filter if needed
-
-  // calculate temperature compensated pressure (in 100ths of mbars)
-  pressure_ = ((uint64_t)D1_P_ * SENS1_ / (int64_t)pow(2, 21) - OFF1_) / pow(2, 15);
-
   // record datapoint on SD card if datalogging is turned on
 
   String baroName = "baro mb*100,";
@@ -515,13 +352,7 @@ void Barometer::filterClimb() {
 // Test Functions
 
 void Barometer::debugPrint() {
-  Serial.print("D1_P:");
-  Serial.print(D1_P_);
-  Serial.print(", D2_T:");
-  Serial.print(D2_T_);  // has been zero, perhaps because GPS serial buffer processing delayed the
-                        // ADC prep for reading this from baro chip
-
-  Serial.print(", Press:");
+  Serial.print("Press:");
   Serial.print(pressure_);
   Serial.print(", PressFiltered:");
   Serial.print(pressureFiltered);

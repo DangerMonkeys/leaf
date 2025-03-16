@@ -303,11 +303,6 @@ void main_ON_loop() {
   // serial port to be quiet
 }
 
-bool doBaroTemp = true;  // flag to track when to update temp reading from Baro Sensor (we can do
-                         // temp every ~1 sec, even though we're doing pressure every 50ms)
-bool baro_startNewCycle =
-    false;  // flag to track when Baro should start over processing a new pressure measurement
-
 void setTasks(void) {
   // increment time counters
   if (++counter_10ms_block >= 10) {
@@ -326,7 +321,7 @@ void setTasks(void) {
   // statements allow for tasks every second, spaced out on different 100ms blocks)
   switch (counter_10ms_block) {
     case 0:
-      baro_startNewCycle = true;  // begin updating baro every 50ms on the 0th and 5th blocks
+      baro.startMeasurement();  // begin updating baro every 50ms on the 0th and 5th blocks
       // taskman_baro = 0;  // begin updating baro every 50ms on the 0th and 5th blocks
       break;
     case 1:
@@ -343,7 +338,7 @@ void setTasks(void) {
     case 4:
       break;
     case 5:
-      baro_startNewCycle = true;  // begin updating baro every 50ms on the 0th and 5th blocks
+      baro.startMeasurement();  // begin updating baro every 50ms on the 0th and 5th blocks
       // taskman_baro = 0;  // begin updating baro every 50ms on the 0th and 5th blocks
       break;
     case 6:
@@ -401,9 +396,8 @@ void taskManager(void) {
   // & read).  If other tasks delay the start of the baro prep step by >1ms, then next cycle when we
   // read ADC, the Baro won't be ready.
   if (taskman_baro) {
-    baro.update(baro_startNewCycle, doBaroTemp);
+    baro.update();
     taskman_baro = 0;
-    baro_startNewCycle = false;
   }
   if (taskman_buttons) {
     buttons_update();
