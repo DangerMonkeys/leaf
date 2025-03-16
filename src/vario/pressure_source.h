@@ -11,8 +11,17 @@ DEFINE_FLAGS_ENUM(PressureUpdateResult, uint8_t){
 
 class IPressureSource {
  public:
+  // Initialize the pressure source.  Before this method is called, none of the other
+  // methods are expected to behave correctly.  After this method completes, all of
+  // the other methods are expected to behave correctly.
   virtual void init() = 0;
+
+  // Call this method as frequently as desired to perform pressure acquisition tasks.
+  // The return result indicates when new pressure information has been acquired.
   virtual PressureUpdateResult update() = 0;
+
+  // Inform the pressure source that new pressure information is desired.  After
+  // calling this method, call `update` until the pressure information is obtained.
   virtual void startMeasurement() = 0;
 
   // setting to control when to update temp reading from sensor (we can do
