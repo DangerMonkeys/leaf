@@ -42,33 +42,21 @@ class GPXnav {
   uint8_t totalRoutes = 0;
 
   Waypoint activePoint;  // waypoint currently navigating to
-  Waypoint nextPoint;    // next waypoint in the current route
-  Waypoint goalPoint;    // final waypoint in the current route
 
   // waypoint currently navigating to (index value for element inside of waypoints[], or
   // inside of route.routepoints[], if on an active route)
   int16_t activePointIndex = 0;
-  // the next waypoint (can prepare you which direction you'll need to turn next as you
-  // approach the currently active waypoint).  We create this as a separate variable
-  // (instead of just adding 1 to the acive index) because sometimes there IS NO next point
-  // (i.e., you're on the last point) and we want to know this.
-  int16_t nextPointIndex = 0;
   // route currently navigating along (index value for route inside of routes[])
   int16_t activeRouteIndex = 0;
 
   // (gps measured) Altitude in cm above current waypoint
   int32_t altAboveWaypoint = 0;
-  // (gps measured) Altitude in cm above goal waypoint
-  int32_t altAboveGoal = 0;
 
   // keep a running average speed, to smooth out glide ratio and time-remaning calculations.
   float averageSpeed = 0;
 
   // glide ratio from current position to active waypoint
   float glideToActive = 0;
-  // glide ratio from current position to final (goal) waypoint, ALONG the
-  // route //TODO: should this be along route or straight to?
-  float glideToGoal = 0;
 
   // distance between adjacent waypoints
   double segmentDistance;
@@ -76,29 +64,50 @@ class GPXnav {
   double pointDistanceRemaining;
   // time (seconds) remaning to next waypoint
   uint32_t pointTimeRemaining;
-  // distance remaining to last waypoint
-  double totalDistanceRemaining;
-  // time (seconds) remaning to final waypoint
-  uint32_t totalTimeRemaining;
-  // heading degrees from current location to active waypoint
-  double courseToActive;
-  // heading degrees from current location to next waypoint (the one after active)
-  double courseToNext;
   // change-in-current-heading to point toward active point
   double turnToActive;
-  // change-in-current-heading to point toward next point
-  double turnToNext;
 
   // are we currently navigating to any destination
   bool navigating = false;
-  // when finished with the Route, we might want to stay in a "finished"
-  // state instead of cancelling navigation altogether
-  bool reachedGoal = false;
 
  private:
   bool sequenceWaypoint(void);
   void loadRoutes(void);
   void loadWaypoints(void);
+
+  // next waypoint in the current route
+  Waypoint nextPoint;
+  // final waypoint in the current route
+  Waypoint goalPoint;
+
+  // the next waypoint (can prepare you which direction you'll need to turn next as you
+  // approach the currently active waypoint).  We create this as a separate variable
+  // (instead of just adding 1 to the acive index) because sometimes there IS NO next point
+  // (i.e., you're on the last point) and we want to know this.
+  int16_t nextPointIndex = 0;
+
+  // (gps measured) Altitude in cm above goal waypoint
+  int32_t altAboveGoal = 0;
+
+  // glide ratio from current position to final (goal) waypoint, ALONG the
+  // route //TODO: should this be along route or straight to?
+  float glideToGoal = 0;
+
+  // distance remaining to last waypoint
+  double totalDistanceRemaining;
+
+  // heading degrees from current location to active waypoint
+  double courseToActive;
+
+  // heading degrees from current location to next waypoint (the one after active)
+  double courseToNext;
+
+  // change-in-current-heading to point toward next point
+  double turnToNext;
+
+  // when finished with the Route, we might want to stay in a "finished"
+  // state instead of cancelling navigation altogether
+  bool reachedGoal = false;
 };
 extern GPXnav gpxNav;
 
