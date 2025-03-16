@@ -33,10 +33,12 @@ struct GPXdata {
   Route routes[maxRoutes];
   uint8_t totalRoutes = 0;
 };
-extern GPXdata gpxData;
 
-// GPXnav object for storing current nav info (used largely for display purposes)
-struct GPXnav {
+// GPXnav class for managing nav info (used largely for display purposes)
+class GPXnav {
+ public:
+  GPXdata gpxData;
+
   Waypoint activePoint;  // waypoint currently navigating to
   Waypoint nextPoint;    // next waypoint in the current route
   Waypoint goalPoint;    // final waypoint in the current route

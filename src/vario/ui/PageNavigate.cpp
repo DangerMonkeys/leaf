@@ -43,29 +43,30 @@ void navigatePage_destinationSelect(Button dir) {
       destination_selection_index--;
       if (destination_selection_index < 0) {                    // if we wrap off the left end
         if (destination_selection_routes_vs_waypoints) {        // ..and we're showing routes
-          if (gpxData.totalWaypoints >= 1) {                    // ..then if we have waypoints
+          if (gpxNav.gpxData.totalWaypoints >= 1) {             // ..then if we have waypoints
             destination_selection_routes_vs_waypoints = false;  // ..then switch to waypoints
             destination_selection_index =
-                gpxData.totalWaypoints;  // ..and set index to the last waypoint (i.e., we're
-                                         // scrolling backwards/leftward)
+                gpxNav.gpxData.totalWaypoints;  // ..and set index to the last waypoint (i.e., we're
+                                                // scrolling backwards/leftward)
           } else {
             destination_selection_index =
-                gpxData.totalRoutes;  // otherwise stay on Routes and show the last route (i.e.,
-                                      // wrap around list of routes).  This may just be wrapping
-                                      // from 0 back around to 0 if we have no Routes, too.
+                gpxNav.gpxData
+                    .totalRoutes;  // otherwise stay on Routes and show the last route (i.e.,
+                                   // wrap around list of routes).  This may just be wrapping
+                                   // from 0 back around to 0 if we have no Routes, too.
           }
         } else {  // Or if we're showing Waypoints and wrap off the left end
-          if (gpxData.totalRoutes >= 1) {                      // ..then if we have routes
+          if (gpxNav.gpxData.totalRoutes >= 1) {               // ..then if we have routes
             destination_selection_routes_vs_waypoints = true;  // ..then switch to routes
             destination_selection_index =
-                gpxData.totalRoutes;  // ..and set index to the last route (i.e., we're scrolling
-                                      // backwards/leftward)
+                gpxNav.gpxData.totalRoutes;  // ..and set index to the last route (i.e., we're
+                                             // scrolling backwards/leftward)
           } else {
             destination_selection_index =
-                gpxData.totalWaypoints;  // otherwise stay on waypoints and show the last waypoint
-                                         // (i.e., wrap around list of waypoints).  This may just be
-                                         // wrapping from 0 back around to 0 if we have no
-                                         // waypoints, too.
+                gpxNav.gpxData.totalWaypoints;  // otherwise stay on waypoints and show the last
+                                                // waypoint (i.e., wrap around list of waypoints).
+                                                // This may just be wrapping from 0 back around to 0
+                                                // if we have no waypoints, too.
           }
         }
       }
@@ -75,9 +76,9 @@ void navigatePage_destinationSelect(Button dir) {
       destination_selection_index++;
       if (destination_selection_routes_vs_waypoints) {  // if we're currently showing Routes...
         if (destination_selection_index >
-            gpxData.totalRoutes) {            // 		if we're passed the number of Routes we have...
-          if (gpxData.totalWaypoints >= 1) {  // 		...and we have waypoints to switch
-                                              // to...
+            gpxNav.gpxData.totalRoutes) {  // 		if we're passed the number of Routes we have...
+          if (gpxNav.gpxData.totalWaypoints >= 1) {  // 		...and we have waypoints to switch
+                                                     // to...
             destination_selection_routes_vs_waypoints = false;  //		...switch to waypoints..
             destination_selection_index = 1;                    //		...and show the first one
           } else {                                              // otherwise loop back to index 0
@@ -86,8 +87,8 @@ void navigatePage_destinationSelect(Button dir) {
         }
       } else {  // otherise if we're showing waypoints...
         if (destination_selection_index >
-            gpxData.totalWaypoints) {      //...and we're passed the number of waypoints we have
-          if (gpxData.totalRoutes >= 1) {  // 		...and we have routes to switch to...
+            gpxNav.gpxData.totalWaypoints) {  //...and we're passed the number of waypoints we have
+          if (gpxNav.gpxData.totalRoutes >= 1) {  // 		...and we have routes to switch to...
             destination_selection_routes_vs_waypoints = true;  //		...switch to routes...
             destination_selection_index = 1;                   //		...and show the first one
           } else {                                             // otherwise loop back to index 0
@@ -326,7 +327,7 @@ void navigatePage_draw() {
     u8g2.setFont(u8g2_font_12x6LED_tf);
 
     String defaultWaypointString = "<Select Dest>";
-    if (gpxData.totalRoutes <= 0 && gpxData.totalWaypoints <= 0) {
+    if (gpxNav.gpxData.totalRoutes <= 0 && gpxNav.gpxData.totalWaypoints <= 0) {
       defaultWaypointString = "No Waypoints!";
     }
 
@@ -343,9 +344,9 @@ void navigatePage_draw() {
           u8g2.setFont(leaf_icons);
           u8g2.print('R');
           u8g2.setFont(u8g2_font_12x6LED_tf);
-          u8g2.print(gpxData.routes[destination_selection_index].name);
+          u8g2.print(gpxNav.gpxData.routes[destination_selection_index].name);
         } else {
-          u8g2.print(gpxData.waypoints[destination_selection_index].name);
+          u8g2.print(gpxNav.gpxData.waypoints[destination_selection_index].name);
         }
       }
     } else {
