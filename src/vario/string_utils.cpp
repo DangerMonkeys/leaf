@@ -38,7 +38,7 @@ String formatClimbRate(int32_t climbRate, bool units, bool showUnits) {
   char unitSymbol = (char)(131 + units);  // add one =132 if fpm
   float climbInMS = 0;
 
-  if (climbRate > 0)
+  if (climbRate >= 0)
     sign = '+';
   else {
     sign = '-';

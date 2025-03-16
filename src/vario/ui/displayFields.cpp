@@ -434,7 +434,7 @@ void display_varioBar(uint8_t barTop, uint8_t barClimbHeight, uint8_t barSinkHei
       u8g2.drawLine(1, line_y, barWidth / 2 - 1, line_y);
     }
   }
-  u8g2.setDrawColor(1); // return to default color
+  u8g2.setDrawColor(1);  // return to default color
 }
 
 void display_climbRatePointerBox(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t triSize) {
@@ -462,8 +462,8 @@ void display_climbRate(uint8_t x, uint8_t y, const uint8_t* font, int16_t displa
   }
 
   if (UNITS_climb) {
-    displayClimbRate = displayClimbRate * 197 / 1000 *
-                       10;  // convert from cm/s to fpm (lose one significant digit)
+    // convert from cm/s to fpm (lose one significant digit)
+    displayClimbRate = displayClimbRate * 197 / 1000 * 10;
     if (displayClimbRate < 1000) u8g2.print(" ");
     if (displayClimbRate < 100) u8g2.print(" ");
     if (displayClimbRate < 10) u8g2.print(" ");
@@ -477,10 +477,10 @@ void display_climbRate(uint8_t x, uint8_t y, const uint8_t* font, int16_t displa
     }
     */
   } else {
-    displayClimbRate =
-        (displayClimbRate + 5) / 10;  // lose one decimal place and round off in the process
-    climbInMS = (float)displayClimbRate /
-                10;  // convert to float for ease of printing with the decimal in place
+    // lose one decimal place and round off in the process
+    displayClimbRate = (displayClimbRate + 5) / 10;
+    // convert to float for ease of printing with the decimal in place
+    climbInMS = (float)displayClimbRate / 10;
     if (climbInMS < 10) u8g2.print(" ");
     u8g2.print(climbInMS, 1);
     /*
