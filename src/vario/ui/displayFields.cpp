@@ -64,11 +64,11 @@ void display_waypointTimeRemaining(uint8_t x, uint8_t y, const uint8_t* font) {
   u8g2.setCursor(x, y);
   u8g2.setFont(font);
 
-  if (gpxNav.pointTimeRemaining == 0) {
+  if (navigator.pointTimeRemaining == 0) {
     u8g2.print("--:--");
   } else {
-    uint8_t sec = gpxNav.pointTimeRemaining % 60;
-    uint32_t min = gpxNav.pointTimeRemaining / 60;
+    uint8_t sec = navigator.pointTimeRemaining % 60;
+    uint32_t min = navigator.pointTimeRemaining / 60;
     uint8_t hrs = min / 60;
     min = min % 60;  // get rid of any minutes over 60 now that we have the hours
 
@@ -214,7 +214,7 @@ void display_headingTurn(uint8_t cursor_x, uint8_t cursor_y) {
   u8g2.setCursor(cursor_x, cursor_y);
   u8g2.setFont(leaf_7x10);
 
-  double offCourse = gpxNav.turnToActive;
+  double offCourse = navigator.turnToActive;
   int8_t turn = 0;
 
   if (offCourse > turnThreshold1) {
@@ -261,7 +261,7 @@ void display_alt_type(uint8_t cursor_x, uint8_t cursor_y, const uint8_t* font, u
       displayAlt = baro.altAboveLaunch;
       break;
     case altType_aboveWaypoint:
-      displayAlt = gpxNav.altAboveWaypoint;
+      displayAlt = navigator.altAboveWaypoint;
       break;
     case altType_aboveGoal:
       break;

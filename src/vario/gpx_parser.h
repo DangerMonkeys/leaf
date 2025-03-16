@@ -24,7 +24,7 @@ class GPXParser {
     _error = "";
   }
 
-  bool parse(GPXnav* result);
+  bool parse(Navigator* result);
 
   inline String error() { return _error; }
 

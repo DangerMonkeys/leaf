@@ -25,8 +25,8 @@ struct Route {
   Waypoint routepoints[maxRoutePoints];
 };
 
-// GPXnav class for managing nav info (used largely for display purposes)
-class GPXnav {
+// Navigator class for managing nav info (used largely for display purposes)
+class Navigator {
  public:
   void init(void);
   void update(void);
@@ -40,7 +40,8 @@ class GPXnav {
   Route routes[maxRoutes];
   uint8_t totalRoutes = 0;
 
-  Waypoint activePoint;  // waypoint currently navigating to
+  // waypoint currently navigating to
+  Waypoint activePoint;
 
   // waypoint currently navigating to (index value for element inside of waypoints[], or
   // inside of route.routepoints[], if on an active route)
@@ -108,6 +109,6 @@ class GPXnav {
   // state instead of cancelling navigation altogether
   bool reachedGoal_ = false;
 };
-extern GPXnav gpxNav;
+extern Navigator navigator;
 
 bool gpx_readFile(fs::FS& fs, String fileName);

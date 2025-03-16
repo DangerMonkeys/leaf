@@ -18,10 +18,10 @@
 
 Waypoint waypoints[maxWaypoints];
 Route routes[maxRoutes];
-GPXnav gpxNav;
+Navigator navigator;
 
 // TODO: at least here for testing so we can be navigating right from boot up
-void GPXnav::init() {
+void Navigator::init() {
   Serial.println("Loading GPX file...");
   delay(100);
   bool result = gpx_readFile(SD_MMC, "/waypoints.gpx");
@@ -35,7 +35,7 @@ void GPXnav::init() {
 }
 
 // update nav data every second
-void GPXnav::update() {
+void Navigator::update() {
   // only update nav info if we're tracking to an active point
   if (activePointIndex) {
     // update distance remaining, then sequence to next point if distance is small enough
@@ -96,7 +96,7 @@ void GPXnav::update() {
 
 // Start, Sequence, and End Navigation Functions
 
-bool GPXnav::activatePoint(int16_t pointIndex) {
+bool Navigator::activatePoint(int16_t pointIndex) {
   navigating = true;
   reachedGoal_ = false;
 
@@ -117,7 +117,7 @@ bool GPXnav::activatePoint(int16_t pointIndex) {
   return navigating;
 }
 
-bool GPXnav::activateRoute(uint16_t routeIndex) {
+bool Navigator::activateRoute(uint16_t routeIndex) {
   // first check if any valid points
   uint8_t validPoints = routes[routeIndex].totalPoints;
   if (!validPoints) {
@@ -157,7 +157,7 @@ bool GPXnav::activateRoute(uint16_t routeIndex) {
   return navigating;
 }
 
-bool GPXnav::sequenceWaypoint() {
+bool Navigator::sequenceWaypoint() {
   Serial.print("entering sequence..");
 
   bool successfulSequence = false;
@@ -217,7 +217,7 @@ bool GPXnav::sequenceWaypoint() {
   return successfulSequence;
 }
 
-void GPXnav::cancelNav() {
+void Navigator::cancelNav() {
   pointDistanceRemaining = 0;
   pointTimeRemaining = 0;
   activeRouteIndex = 0;
@@ -229,7 +229,7 @@ void GPXnav::cancelNav() {
   speaker_playSound(fx_cancel);
 }
 
-GPXnav parse_result;
+Navigator parse_result;
 
 bool gpx_readFile(fs::FS& fs, String fileName) {
   FileReader file_reader(fs, fileName);
@@ -277,7 +277,7 @@ bool gpx_readFile(fs::FS& fs, String fileName) {
         Serial.println("m");
       }
     }
-    gpxNav = parse_result;
+    navigator = parse_result;
     return true;
   } else {
     // TODO: Display error to user (create appropriate method in GPXParser looking at _error, _line,
@@ -292,7 +292,7 @@ bool gpx_readFile(fs::FS& fs, String fileName) {
   }
 }
 
-void GPXnav::loadRoutes() {
+void Navigator::loadRoutes() {
   routes[1].name = "R: TheCircuit";
   routes[1].totalPoints = 5;
   routes[1].routepoints[1] = waypoints[1];
@@ -325,7 +325,7 @@ void GPXnav::loadRoutes() {
   totalRoutes = 4;
 }
 
-void GPXnav::loadWaypoints() {
+void Navigator::loadWaypoints() {
   waypoints[0].lat = 0;
   waypoints[0].lon = 0;
   waypoints[0].ele = 0;

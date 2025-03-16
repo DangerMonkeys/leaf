@@ -35,7 +35,7 @@ bool equalsIgnoreCase(char* value, const char* constant) {
   return true;
 }
 
-bool GPXParser::parse(GPXnav* result) {
+bool GPXParser::parse(Navigator* result) {
   result->totalRoutes = 0;
   result->totalWaypoints = 0;
 

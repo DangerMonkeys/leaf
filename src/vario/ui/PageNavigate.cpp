@@ -43,29 +43,29 @@ void navigatePage_destinationSelect(Button dir) {
       destination_selection_index--;
       if (destination_selection_index < 0) {                    // if we wrap off the left end
         if (destination_selection_routes_vs_waypoints) {        // ..and we're showing routes
-          if (gpxNav.totalWaypoints >= 1) {                     // ..then if we have waypoints
+          if (navigator.totalWaypoints >= 1) {                  // ..then if we have waypoints
             destination_selection_routes_vs_waypoints = false;  // ..then switch to waypoints
             destination_selection_index =
-                gpxNav.totalWaypoints;  // ..and set index to the last waypoint (i.e., we're
+                navigator.totalWaypoints;  // ..and set index to the last waypoint (i.e., we're
+                                           // scrolling backwards/leftward)
+          } else {
+            destination_selection_index =
+                navigator.totalRoutes;  // otherwise stay on Routes and show the last route (i.e.,
+                                        // wrap around list of routes).  This may just be wrapping
+                                        // from 0 back around to 0 if we have no Routes, too.
+          }
+        } else {  // Or if we're showing Waypoints and wrap off the left end
+          if (navigator.totalRoutes >= 1) {                    // ..then if we have routes
+            destination_selection_routes_vs_waypoints = true;  // ..then switch to routes
+            destination_selection_index =
+                navigator.totalRoutes;  // ..and set index to the last route (i.e., we're
                                         // scrolling backwards/leftward)
           } else {
             destination_selection_index =
-                gpxNav.totalRoutes;  // otherwise stay on Routes and show the last route (i.e.,
-                                     // wrap around list of routes).  This may just be wrapping
-                                     // from 0 back around to 0 if we have no Routes, too.
-          }
-        } else {                          // Or if we're showing Waypoints and wrap off the left end
-          if (gpxNav.totalRoutes >= 1) {  // ..then if we have routes
-            destination_selection_routes_vs_waypoints = true;  // ..then switch to routes
-            destination_selection_index =
-                gpxNav.totalRoutes;  // ..and set index to the last route (i.e., we're
-                                     // scrolling backwards/leftward)
-          } else {
-            destination_selection_index =
-                gpxNav.totalWaypoints;  // otherwise stay on waypoints and show the last
-                                        // waypoint (i.e., wrap around list of waypoints).
-                                        // This may just be wrapping from 0 back around to 0
-                                        // if we have no waypoints, too.
+                navigator.totalWaypoints;  // otherwise stay on waypoints and show the last
+                                           // waypoint (i.e., wrap around list of waypoints).
+                                           // This may just be wrapping from 0 back around to 0
+                                           // if we have no waypoints, too.
           }
         }
       }
@@ -75,9 +75,9 @@ void navigatePage_destinationSelect(Button dir) {
       destination_selection_index++;
       if (destination_selection_routes_vs_waypoints) {  // if we're currently showing Routes...
         if (destination_selection_index >
-            gpxNav.totalRoutes) {            // 		if we're passed the number of Routes we have...
-          if (gpxNav.totalWaypoints >= 1) {  // 		...and we have waypoints to switch
-                                             // to...
+            navigator.totalRoutes) {            // 		if we're passed the number of Routes we have...
+          if (navigator.totalWaypoints >= 1) {  // 		...and we have waypoints to switch
+                                                // to...
             destination_selection_routes_vs_waypoints = false;  //		...switch to waypoints..
             destination_selection_index = 1;                    //		...and show the first one
           } else {                                              // otherwise loop back to index 0
@@ -86,8 +86,8 @@ void navigatePage_destinationSelect(Button dir) {
         }
       } else {  // otherise if we're showing waypoints...
         if (destination_selection_index >
-            gpxNav.totalWaypoints) {      //...and we're passed the number of waypoints we have
-          if (gpxNav.totalRoutes >= 1) {  // 		...and we have routes to switch to...
+            navigator.totalWaypoints) {      //...and we're passed the number of waypoints we have
+          if (navigator.totalRoutes >= 1) {  // 		...and we have routes to switch to...
             destination_selection_routes_vs_waypoints = true;  //		...switch to routes...
             destination_selection_index = 1;                   //		...and show the first one
           } else {                                             // otherwise loop back to index 0
@@ -98,9 +98,9 @@ void navigatePage_destinationSelect(Button dir) {
       break;
     case Button::CENTER:
       if (destination_selection_routes_vs_waypoints)
-        gpxNav.activateRoute(destination_selection_index);
+        navigator.activateRoute(destination_selection_index);
       else
-        gpxNav.activatePoint(destination_selection_index);
+        navigator.activatePoint(destination_selection_index);
       navigatePage_cursorPosition = cursor_navigatePage_none;
       break;
   }
@@ -185,14 +185,14 @@ void navigatePage_draw() {
     // 2);
 
     // Waypoint Pointer
-    if (gpxNav.navigating) {
+    if (navigator.navigating) {
       uint8_t waypoint_tip_r = nav_r - 1;
       uint8_t waypoint_shaft_r = waypoint_tip_r - 3;
       uint8_t waypoint_shaft_length = 9;
       uint8_t waypoint_tail_r = waypoint_tip_r - 5;
       float waypoint_arrow_angle = 0.15;  // 0.205;
 
-      float directionToWaypoint = gpxNav.turnToActive * DEG_TO_RAD;
+      float directionToWaypoint = navigator.turnToActive * DEG_TO_RAD;
 
       int8_t waypoint_tip_x = nav_x + sin(directionToWaypoint) * waypoint_tip_r;
       int8_t waypoint_tip_y = nav_y - cos(directionToWaypoint) * waypoint_tip_r;
@@ -326,7 +326,7 @@ void navigatePage_draw() {
     u8g2.setFont(u8g2_font_12x6LED_tf);
 
     String defaultWaypointString = "<Select Dest>";
-    if (gpxNav.totalRoutes <= 0 && gpxNav.totalWaypoints <= 0) {
+    if (navigator.totalRoutes <= 0 && navigator.totalWaypoints <= 0) {
       defaultWaypointString = "No Waypoints!";
     }
 
@@ -343,14 +343,14 @@ void navigatePage_draw() {
           u8g2.setFont(leaf_icons);
           u8g2.print('R');
           u8g2.setFont(u8g2_font_12x6LED_tf);
-          u8g2.print(gpxNav.routes[destination_selection_index].name);
+          u8g2.print(navigator.routes[destination_selection_index].name);
         } else {
-          u8g2.print(gpxNav.waypoints[destination_selection_index].name);
+          u8g2.print(navigator.waypoints[destination_selection_index].name);
         }
       }
     } else {
-      if (gpxNav.navigating)
-        u8g2.print(gpxNav.activePoint.name.c_str());
+      if (navigator.navigating)
+        u8g2.print(navigator.activePoint.name.c_str());
       else
         u8g2.print(defaultWaypointString);
       u8g2.setFont(leaf_6x12);
@@ -365,8 +365,8 @@ void navigatePage_draw() {
 
     // Progress Bar
     float percent_progress;
-    if (gpxNav.navigating) {
-      percent_progress = 1 - gpxNav.pointDistanceRemaining / gpxNav.segmentDistance;
+    if (navigator.navigating) {
+      percent_progress = 1 - navigator.pointDistanceRemaining / navigator.segmentDistance;
       if (percent_progress < 0) percent_progress = 0;
     } else {
       percent_progress = 0;
@@ -396,7 +396,7 @@ void navigatePage_draw() {
 
     // User Field 2  -- Dist to waypoint
     double displayDistance = 0;
-    if (gpxNav.navigating) displayDistance = gpxNav.pointDistanceRemaining;
+    if (navigator.navigating) displayDistance = navigator.pointDistanceRemaining;
     display_distance(userFieldsCol2X + 5, userFieldsRow1Y + 20, displayDistance);
     u8g2.setFont(leaf_5h);
     u8g2.setCursor(userFieldsCol2X, userFieldsRow1Y + 7);
@@ -411,7 +411,7 @@ void navigatePage_draw() {
     u8g2.setFont(leaf_6x12);
 
     // User Field 4	-- Glide Ratio to Waypoint
-    display_glide(userFieldsCol2X + 5, userFieldsRow2Y + 20, gpxNav.glideToActive);
+    display_glide(userFieldsCol2X + 5, userFieldsRow2Y + 20, navigator.glideToActive);
     u8g2.setFont(leaf_5h);
     u8g2.setCursor(userFieldsCol2X, userFieldsRow2Y + 7);
     u8g2.print("`>&");
@@ -433,12 +433,12 @@ void nav_cursor_move(Button button) {
   }
 
   if (navigatePage_cursorPosition == cursor_navigatePage_waypoint) {
-    if (gpxNav.navigating) {
-      if (gpxNav.activeRouteIndex) {
-        destination_selection_index = gpxNav.activeRouteIndex;
+    if (navigator.navigating) {
+      if (navigator.activeRouteIndex) {
+        destination_selection_index = navigator.activeRouteIndex;
         destination_selection_routes_vs_waypoints = true;
-      } else if (gpxNav.activePointIndex) {
-        destination_selection_index = gpxNav.activePointIndex;
+      } else if (navigator.activePointIndex) {
+        destination_selection_index = navigator.activePointIndex;
         destination_selection_routes_vs_waypoints = false;
       }
     }
@@ -525,7 +525,7 @@ void navigatePage_button(Button button, ButtonState state, uint8_t count) {
         case Button::CENTER:
           if (state == RELEASED) navigatePage_destinationSelect(Button::CENTER);
           if (state == HELD) {
-            gpxNav.cancelNav();
+            navigator.cancelNav();
             navigatePage_cursorPosition = cursor_navigatePage_none;
             buttons_lockAfterHold();  // lock buttons so we don't turn off if user keeps holding
                                       // button
