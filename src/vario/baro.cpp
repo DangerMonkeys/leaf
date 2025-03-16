@@ -112,7 +112,7 @@ void Barometer::init(void) {
   if (ALT_SETTING > 28.0 && ALT_SETTING < 32.0)
     altimeterSetting = ALT_SETTING;
   else
-    altimeterSetting = 29.92;
+    altimeterSetting = 29.921;
 
   // reset baro sensor for initialization
   reset();
@@ -132,9 +132,10 @@ void Barometer::init(void) {
   delay(10);        // wait for baro sensor to process
   update(0, true);  // read pressure, send convert-temp command
   delay(10);        // wait for baro sensor to process
-  update(0, true);  // read temp, and calculate adjusted pressure
-  delay(10);
+  update(0, true);  // read temp, and calculate adjusted pressure and altitudes
 
+  /* TODO: remove pressure filter; we'll rely on Kalman filter for smoothing */
+  /*
   // load the filters with our current start-up pressure (and climb is assumed to be 0)
   for (int i = 1; i <= FILTER_VALS_MAX; i++) {
     pressureFilterVals_[i] = pressure_;
@@ -151,7 +152,7 @@ void Barometer::init(void) {
   // and start off the linear regression version
   // pressure_lr.update((double)millis(), (double)pressure);
 
-  update(0, true);  // calculate altitudes
+*/
 
   // initialize all the other alt variables with current altitude to start
   lastAlt_ = alt;    // used to calculate the alt change for climb rate.  Assume we're stationary
@@ -310,9 +311,11 @@ void Barometer::update(bool startNewCycle, bool doTemp) {
       // Note, IMU will have taken an accel reading and updated the Kalman
       // Filter after Baro_step_2 but before Baro_step_3
 
-      // get instant climb rate and altitude
-      climbRate = (float)kalmanvert.getVelocity();    // in m/s
-      alt = int32_t(kalmanvert.getPosition() * 100);  // in cm above sea level
+      // get instant climb rate
+      climbRate = (float)kalmanvert.getVelocity();  // in m/s
+
+      // TODO: get altitude from Kalman Filter when Baro/IMU/'vario' are restructured
+      // alt = int32_t(kalmanvert.getPosition() * 100);  // in cm above sea level
 
       // filter ClimbRate
       filterClimb();
@@ -362,16 +365,16 @@ void Barometer::calculatePressureAlt() {
   temp_ = TEMP;  // TODO: actually filter if needed
 
   // calculate temperature compensated pressure (in 100ths of mbars)
-  pressure_ = ((uint64_t)D1_P_ * SENS1_ / (int64_t)pow(2, 21) - OFF1_) / pow(2, 15);
+  pressure = ((uint64_t)D1_P_ * SENS1_ / (int64_t)pow(2, 21) - OFF1_) / pow(2, 15);
 
   // record datapoint on SD card if datalogging is turned on
 
   String baroName = "baro mb*100,";
-  String baroEntry = baroName + String(pressure_);
+  String baroEntry = baroName + String(pressure);
   Telemetry.writeText(baroEntry);
 
-  // calculate instant altitude (for kalman filter)
-  altF = 44331.0 * (1.0 - pow((float)pressure_ / 101325.0, (.190264)));
+  // calculate all altitudes (standard, adjusted, and above launch)
+  calculateAlts();
 }
 
 // Filter Pressure Values
@@ -424,10 +427,10 @@ void Barometer::filterPressure(void) {
   int8_t filterIndex =
       filterBookmark;  // and create an index to track all the values we need for averaging
 
-  pressureFilterVals_[filterBookmark] = pressure_;  // load in the new value at the bookmarked spot
-  if (++filterBookmark > FILTER_VALS_MAX)           // increment bookmark for next time
-    filterBookmark = 1;                             // wrap around the array for next time if needed
-  pressureFilterVals_[0] = filterBookmark;          // and save the bookmark for next time
+  pressureFilterVals_[filterBookmark] = pressure;  // load in the new value at the bookmarked spot
+  if (++filterBookmark > FILTER_VALS_MAX)          // increment bookmark for next time
+    filterBookmark = 1;                            // wrap around the array for next time if needed
+  pressureFilterVals_[0] = filterBookmark;         // and save the bookmark for next time
 
   // sum up all the values from this spot and previous, for the correct number of samples (user
   // pref)
@@ -439,13 +442,15 @@ void Barometer::filterPressure(void) {
   pressureFiltered /= filterValsPref_;  // divide to get the average
 }
 
-void Barometer::calculateAlt() {
-  // calculate altitude in cm
-  alt = 4433100.0 * (1.0 - pow((float)pressureFiltered / 101325.0,
-                               (.190264)));  // standard altimeter setting
+void Barometer::calculateAlts() {
+  // float altitude in meters with standard altimeter setting
+  altF = 44331.0 * (1.0 - pow((float)pressure / 101325.0, (.190264)));
 
-  altAdjusted = 4433100.0 * (1.0 - pow((float)pressureFiltered / (altimeterSetting * 3386.389),
-                                       (.190264)));  // adjustable altimeter setting
+  // int altitude in cm with standard altimeter setting
+  alt = int32_t(altF * 100);
+
+  // int altitude in cm with adjusted altimeter setting
+  altAdjusted = 4433100.0 * (1.0 - pow((float)pressure / (altimeterSetting * 3386.389), (.190264)));
   altAboveLaunch = altAdjusted - altAtLaunch;
 }
 
@@ -522,7 +527,7 @@ void Barometer::debugPrint() {
                         // ADC prep for reading this from baro chip
 
   Serial.print(", Press:");
-  Serial.print(pressure_);
+  Serial.print(pressure);
   Serial.print(", PressFiltered:");
   Serial.print(pressureFiltered);
   Serial.print(", PressRegression:");

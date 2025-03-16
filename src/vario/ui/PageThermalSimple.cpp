@@ -248,14 +248,14 @@ void thermalSimplePage_button(Button button, ButtonState state, uint8_t count) {
         case Button::LEFT:
           if (NAVPG_ALT_TYP == altType_MSL &&
               (state == PRESSED || state == HELD || state == HELD_LONG)) {
-            baro.adjustAltSetting(1, count);
+            baro.adjustAltSetting(-1, count);
             speaker_playSound(fx_neutral);
           }
           break;
         case Button::RIGHT:
           if (NAVPG_ALT_TYP == altType_MSL &&
               (state == PRESSED || state == HELD || state == HELD_LONG)) {
-            baro.adjustAltSetting(-1, count);
+            baro.adjustAltSetting(1, count);
             speaker_playSound(fx_neutral);
           }
           break;

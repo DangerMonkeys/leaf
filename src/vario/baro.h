@@ -24,13 +24,14 @@
 
 class Barometer {
  public:
+  int32_t pressure;
   int32_t pressureFiltered;
   float altimeterSetting = 29.921;
   // cm raw pressure altitude calculated off standard altimeter setting (29.92)
   int32_t alt;
   // m raw pressure altitude (float)
   float altF;
-  // the resulting altitude after being corrected by the altimeter setting
+  // cm pressure altitude corrected by the altimeter setting (int)
   int32_t altAdjusted;
   int32_t altAtLaunch;
   int32_t altAboveLaunch;
@@ -69,7 +70,6 @@ class Barometer {
   // temperature of air in the baro sensor (not to be confused with temperature reading from the
   // temp+humidity sensor)
   int32_t temp_;
-  int32_t pressure_;
   int32_t pressureRegression_;
 
   // LinearRegression to average out noisy sensor readings
@@ -97,8 +97,8 @@ class Barometer {
   // == Device reading & data processing ==
   void calculatePressureAlt(void);
   void filterClimb(void);
+  void calculateAlts(void);
   void filterPressure(void);  // TODO: Use or remove (currently unused)
-  void calculateAlt(void);    // TODO: Use or remove (currently unused)
 
   // ======
   // Sensor Calibration Values (stored in chip PROM; must be read at startup before performing baro
