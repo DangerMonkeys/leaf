@@ -38,41 +38,55 @@ class GPXnav {
   Waypoint nextPoint;    // next waypoint in the current route
   Waypoint goalPoint;    // final waypoint in the current route
 
-  int16_t activePointIndex =
-      0;  // waypoint currently navigating to (index value for element inside of waypoints[], or
-          // inside of route.routepoints[], if on an active route)
-  int16_t nextPointIndex =
-      0;  // the next waypoint (can prepare you which direction you'll need to turn next as you
-          // approach the currently active waypoint).  We create this as a separate variable
-          // (instead of just adding 1 to the acive index) because sometimes there IS NO next point
-          // (i.e., you're on the last point) and we want to know this.
-  int16_t activeRouteIndex =
-      0;  // route currently navigating along (index value for route inside of routes[])
+  // waypoint currently navigating to (index value for element inside of waypoints[], or
+  // inside of route.routepoints[], if on an active route)
+  int16_t activePointIndex = 0;
+  // the next waypoint (can prepare you which direction you'll need to turn next as you
+  // approach the currently active waypoint).  We create this as a separate variable
+  // (instead of just adding 1 to the acive index) because sometimes there IS NO next point
+  // (i.e., you're on the last point) and we want to know this.
+  int16_t nextPointIndex = 0;
+  // route currently navigating along (index value for route inside of routes[])
+  int16_t activeRouteIndex = 0;
 
-  int32_t altAboveWaypoint = 0;  // (gps measured) Altitude in cm above current waypoint
-  int32_t altAboveGoal = 0;      // (gps measured) Altitude in cm above goal waypoint
+  // (gps measured) Altitude in cm above current waypoint
+  int32_t altAboveWaypoint = 0;
+  // (gps measured) Altitude in cm above goal waypoint
+  int32_t altAboveGoal = 0;
 
-  float averageSpeed =
-      0;  // keep a running average speed, to smooth out glide ratio and time-remaning calculations.
+  // keep a running average speed, to smooth out glide ratio and time-remaning calculations.
+  float averageSpeed = 0;
 
-  float glideToActive = 0;  // glide ratio from current position to active waypoint
-  float glideToGoal = 0;    // glide ratio from current position to final (goal) waypoint, ALONG the
-                            // route //TODO: should this be along route or straight to?
+  // glide ratio from current position to active waypoint
+  float glideToActive = 0;
+  // glide ratio from current position to final (goal) waypoint, ALONG the
+  // route //TODO: should this be along route or straight to?
+  float glideToGoal = 0;
 
-  double segmentDistance;         // distance between adjacent waypoints
-  double pointDistanceRemaining;  // distance remaining to next waypoint
-  uint32_t pointTimeRemaining;    // time (seconds) remaning to next waypoint
-  double totalDistanceRemaining;  // distance remaining to last waypoint
-  uint32_t totalTimeRemaining;    // time (seconds) remaning to final waypoint
-  double courseToActive;          // heading degrees from current location to active waypoint
-  double courseToNext;  // heading degrees from current location to next waypoint (the one after
-                        // active)
-  double turnToActive;  // change-in-current-heading to point toward active point
-  double turnToNext;    // change-in-current-heading to point toward next point
+  // distance between adjacent waypoints
+  double segmentDistance;
+  // distance remaining to next waypoint
+  double pointDistanceRemaining;
+  // time (seconds) remaning to next waypoint
+  uint32_t pointTimeRemaining;
+  // distance remaining to last waypoint
+  double totalDistanceRemaining;
+  // time (seconds) remaning to final waypoint
+  uint32_t totalTimeRemaining;
+  // heading degrees from current location to active waypoint
+  double courseToActive;
+  // heading degrees from current location to next waypoint (the one after active)
+  double courseToNext;
+  // change-in-current-heading to point toward active point
+  double turnToActive;
+  // change-in-current-heading to point toward next point
+  double turnToNext;
 
-  bool navigating = false;   // are we currently navigating to any destination
-  bool reachedGoal = false;  // when finished with the Route, we might want to stay in a "finished"
-                             // state instead of cancelling navigation altogether
+  // are we currently navigating to any destination
+  bool navigating = false;
+  // when finished with the Route, we might want to stay in a "finished"
+  // state instead of cancelling navigation altogether
+  bool reachedGoal = false;
 };
 extern GPXnav gpxNav;
 
