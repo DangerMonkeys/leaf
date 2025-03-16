@@ -29,6 +29,13 @@ struct Route {
 // GPXnav class for managing nav info (used largely for display purposes)
 class GPXnav {
  public:
+  void init(void);
+  void update(void);
+
+  bool activatePoint(int16_t pointIndex);
+  bool activateRoute(uint16_t routeIndex);
+  void cancelNav(void);
+
   Waypoint waypoints[maxWaypoints];
   uint8_t totalWaypoints = 0;
   Route routes[maxRoutes];
@@ -87,19 +94,14 @@ class GPXnav {
   // when finished with the Route, we might want to stay in a "finished"
   // state instead of cancelling navigation altogether
   bool reachedGoal = false;
+
+ private:
+  bool sequenceWaypoint(void);
+  void loadRoutes(void);
+  void loadWaypoints(void);
 };
 extern GPXnav gpxNav;
 
-void gpx_initNav(void);
-void updateGPXnav(void);
-bool gpx_activatePoint(int16_t pointIndex);
-bool gpx_activateRoute(uint16_t routeIndex);
-bool gpx_sequenceWaypoint(void);
-void gpx_cancelNav(void);
-
 bool gpx_readFile(fs::FS& fs, String fileName);
-
-void gpx_loadRoutes(void);
-void gpx_loadWaypoints(void);
 
 #endif

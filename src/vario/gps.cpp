@@ -144,8 +144,8 @@ void gps_init(void) {
   // Create the GPS Mutex for multi-threaded locking
   GpsLockGuard::mutex = xSemaphoreCreateMutex();
 
-  // init nav struct (TODO: may not need this here, just for testing at startup for ease)
-  gpx_initNav();
+  // init nav class (TODO: may not need this here, just for testing at startup for ease)
+  gpxNav.init();
 
   // Set pins
   Serial.print("GPS set pins... ");
@@ -246,7 +246,7 @@ void gps_updateFixInfo() {
 
 void gps_update() {
   // update sats if we're tracking sat NMEA sentences
-  updateGPXnav();
+  gpxNav.update();
   gps_updateSatList();
   gps_updateFixInfo();
   gps_calculateGlideRatio();

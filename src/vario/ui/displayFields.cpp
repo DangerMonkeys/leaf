@@ -434,7 +434,7 @@ void display_varioBar(uint8_t barTop, uint8_t barClimbHeight, uint8_t barSinkHei
       u8g2.drawLine(1, line_y, barWidth / 2 - 1, line_y);
     }
   }
-  u8g2.setDrawColor(1); // return to default color
+  u8g2.setDrawColor(1);  // return to default color
 }
 
 void display_climbRatePointerBox(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t triSize) {

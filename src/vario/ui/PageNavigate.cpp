@@ -98,9 +98,9 @@ void navigatePage_destinationSelect(Button dir) {
       break;
     case Button::CENTER:
       if (destination_selection_routes_vs_waypoints)
-        gpx_activateRoute(destination_selection_index);
+        gpxNav.activateRoute(destination_selection_index);
       else
-        gpx_activatePoint(destination_selection_index);
+        gpxNav.activatePoint(destination_selection_index);
       navigatePage_cursorPosition = cursor_navigatePage_none;
       break;
   }
@@ -525,7 +525,7 @@ void navigatePage_button(Button button, ButtonState state, uint8_t count) {
         case Button::CENTER:
           if (state == RELEASED) navigatePage_destinationSelect(Button::CENTER);
           if (state == HELD) {
-            gpx_cancelNav();
+            gpxNav.cancelNav();
             navigatePage_cursorPosition = cursor_navigatePage_none;
             buttons_lockAfterHold();  // lock buttons so we don't turn off if user keeps holding
                                       // button
