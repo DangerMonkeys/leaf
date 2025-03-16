@@ -51,13 +51,19 @@ void power_bootUp() {
 void power_init() {
   Serial.print("power_init: ");
   Serial.println(power.onState);
-  // Set output / input pins to control battery charge and power supply
+
+  // configure power-latch pin for main power regulator
   pinMode(POWER_LATCH, OUTPUT);
+  digitalWrite(POWER_LATCH, LOW);  // start with power OFF (to handle reboots etc)
+
+  // Set output / input pins to control battery charge and power supply
   pinMode(POWER_CHARGE_I1, OUTPUT);
   pinMode(POWER_CHARGE_I2, OUTPUT);
   pinMode(POWER_CHARGE_GOOD, INPUT_PULLUP);
   pinMode(BATT_SENSE, INPUT);
   power_setInputCurrent(i500mA);  // set default current
+
+  // populate battery % and charging state
   power_readBatteryState();
 }
 
