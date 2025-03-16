@@ -26,18 +26,13 @@ struct Route {
   Waypoint routepoints[maxRoutePoints];
 };
 
-// GPXdata object for storing available waypoints and routes
-struct GPXdata {
+// GPXnav class for managing nav info (used largely for display purposes)
+class GPXnav {
+ public:
   Waypoint waypoints[maxWaypoints];
   uint8_t totalWaypoints = 0;
   Route routes[maxRoutes];
   uint8_t totalRoutes = 0;
-};
-
-// GPXnav class for managing nav info (used largely for display purposes)
-class GPXnav {
- public:
-  GPXdata gpxData;
 
   Waypoint activePoint;  // waypoint currently navigating to
   Waypoint nextPoint;    // next waypoint in the current route

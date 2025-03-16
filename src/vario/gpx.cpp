@@ -106,7 +106,7 @@ bool gpx_activatePoint(int16_t pointIndex) {
   gpxNav.activeRouteIndex =
       0;  // Point navigation is exclusive from Route navigation, so cancel any Route navigation
   gpxNav.activePointIndex = pointIndex;
-  gpxNav.activePoint = gpxNav.gpxData.waypoints[gpxNav.activePointIndex];
+  gpxNav.activePoint = gpxNav.waypoints[gpxNav.activePointIndex];
 
   speaker_playSound(fx_enter);
 
@@ -122,7 +122,7 @@ bool gpx_activatePoint(int16_t pointIndex) {
 
 bool gpx_activateRoute(uint16_t routeIndex) {
   // first check if any valid points
-  uint8_t validPoints = gpxNav.gpxData.routes[routeIndex].totalPoints;
+  uint8_t validPoints = gpxNav.routes[routeIndex].totalPoints;
   if (!validPoints) {
     gpxNav.navigating = false;
   } else {
@@ -131,7 +131,7 @@ bool gpx_activateRoute(uint16_t routeIndex) {
     gpxNav.activeRouteIndex = routeIndex;
 
     Serial.print("*** NEW ROUTE: ");
-    Serial.println(gpxNav.gpxData.routes[gpxNav.activeRouteIndex].name);
+    Serial.println(gpxNav.routes[gpxNav.activeRouteIndex].name);
 
     // set activePointIndex to 0, then call sequenceWaypoint() to increment and populate new
     // activePoint, and nextPoint, if any
@@ -141,21 +141,21 @@ bool gpx_activateRoute(uint16_t routeIndex) {
     // calculate TOTAL Route distance
     gpxNav.totalDistanceRemaining = 0;
     // if we have at least 2 points:
-    if (gpxNav.gpxData.routes[gpxNav.activeRouteIndex].totalPoints >= 2) {
+    if (gpxNav.routes[gpxNav.activeRouteIndex].totalPoints >= 2) {
       for (int i = 1; i < routes[gpxNav.activeRouteIndex].totalPoints; i++) {
-        gpxNav.totalDistanceRemaining += gps.distanceBetween(
-            gpxNav.gpxData.routes[gpxNav.activeRouteIndex].routepoints[i].lat,
-            gpxNav.gpxData.routes[gpxNav.activeRouteIndex].routepoints[i].lon,
-            gpxNav.gpxData.routes[gpxNav.activeRouteIndex].routepoints[i + 1].lat,
-            gpxNav.gpxData.routes[gpxNav.activeRouteIndex].routepoints[i + 1].lon);
+        gpxNav.totalDistanceRemaining +=
+            gps.distanceBetween(gpxNav.routes[gpxNav.activeRouteIndex].routepoints[i].lat,
+                                gpxNav.routes[gpxNav.activeRouteIndex].routepoints[i].lon,
+                                gpxNav.routes[gpxNav.activeRouteIndex].routepoints[i + 1].lat,
+                                gpxNav.routes[gpxNav.activeRouteIndex].routepoints[i + 1].lon);
       }
       // otherwise our Route only has 1 point, so the Route distance is from where we are now to
       // that one point
-    } else if (gpxNav.gpxData.routes[gpxNav.activeRouteIndex].totalPoints == 1) {
+    } else if (gpxNav.routes[gpxNav.activeRouteIndex].totalPoints == 1) {
       gpxNav.totalDistanceRemaining =
           gps.distanceBetween(gps.location.lat(), gps.location.lng(),
-                              gpxNav.gpxData.routes[gpxNav.activeRouteIndex].routepoints[1].lat,
-                              gpxNav.gpxData.routes[gpxNav.activeRouteIndex].routepoints[1].lon);
+                              gpxNav.routes[gpxNav.activeRouteIndex].routepoints[1].lat,
+                              gpxNav.routes[gpxNav.activeRouteIndex].routepoints[1].lon);
     }
   }
   return gpxNav.navigating;
@@ -168,7 +168,7 @@ bool gpx_sequenceWaypoint() {
 
   // sequence to next point if we're on a route && there's another point in the Route
   if (gpxNav.activeRouteIndex &&
-      gpxNav.activePointIndex < gpxNav.gpxData.routes[gpxNav.activeRouteIndex].totalPoints) {
+      gpxNav.activePointIndex < gpxNav.routes[gpxNav.activeRouteIndex].totalPoints) {
     successfulSequence = true;
 
     // TODO: play going to next point sound, or whatever
@@ -180,7 +180,7 @@ bool gpx_sequenceWaypoint() {
     Serial.print(" route index:");
     Serial.print(gpxNav.activeRouteIndex);
     gpxNav.activePoint =
-        gpxNav.gpxData.routes[gpxNav.activeRouteIndex].routepoints[gpxNav.activePointIndex];
+        gpxNav.routes[gpxNav.activeRouteIndex].routepoints[gpxNav.activePointIndex];
 
     Serial.print(" new point:");
     Serial.print(gpxNav.activePoint.name);
@@ -188,11 +188,10 @@ bool gpx_sequenceWaypoint() {
     Serial.print(gpxNav.activePoint.lat);
 
     if (gpxNav.activePointIndex + 1 <
-        gpxNav.gpxData.routes[gpxNav.activeRouteIndex]
+        gpxNav.routes[gpxNav.activeRouteIndex]
             .totalPoints) {  // if there's also a next point in the list, capture that
       gpxNav.nextPointIndex = gpxNav.activePointIndex + 1;
-      gpxNav.nextPoint =
-          gpxNav.gpxData.routes[gpxNav.activeRouteIndex].routepoints[gpxNav.nextPointIndex];
+      gpxNav.nextPoint = gpxNav.routes[gpxNav.activeRouteIndex].routepoints[gpxNav.nextPointIndex];
     } else {  // otherwise signify no next point, so we don't show display functions related to next
               // point
       gpxNav.nextPointIndex = -1;
@@ -204,18 +203,14 @@ bool gpx_sequenceWaypoint() {
     if (gpxNav.activePointIndex == 1) {
       gpxNav.segmentDistance = gps.distanceBetween(
           gps.location.lat(), gps.location.lng(),
-          gpxNav.gpxData.routes[gpxNav.activeRouteIndex].routepoints[gpxNav.activePointIndex].lat,
-          gpxNav.gpxData.routes[gpxNav.activeRouteIndex].routepoints[gpxNav.activePointIndex].lon);
+          gpxNav.routes[gpxNav.activeRouteIndex].routepoints[gpxNav.activePointIndex].lat,
+          gpxNav.routes[gpxNav.activeRouteIndex].routepoints[gpxNav.activePointIndex].lon);
     } else {
       gpxNav.segmentDistance = gps.distanceBetween(
-          gpxNav.gpxData.routes[gpxNav.activeRouteIndex]
-              .routepoints[gpxNav.activePointIndex - 1]
-              .lat,
-          gpxNav.gpxData.routes[gpxNav.activeRouteIndex]
-              .routepoints[gpxNav.activePointIndex - 1]
-              .lon,
-          gpxNav.gpxData.routes[gpxNav.activeRouteIndex].routepoints[gpxNav.activePointIndex].lat,
-          gpxNav.gpxData.routes[gpxNav.activeRouteIndex].routepoints[gpxNav.activePointIndex].lon);
+          gpxNav.routes[gpxNav.activeRouteIndex].routepoints[gpxNav.activePointIndex - 1].lat,
+          gpxNav.routes[gpxNav.activeRouteIndex].routepoints[gpxNav.activePointIndex - 1].lon,
+          gpxNav.routes[gpxNav.activeRouteIndex].routepoints[gpxNav.activePointIndex].lat,
+          gpxNav.routes[gpxNav.activeRouteIndex].routepoints[gpxNav.activePointIndex].lon);
     }
 
   } else {  // otherwise, we made it to our destination!
@@ -240,7 +235,7 @@ void gpx_cancelNav() {
   speaker_playSound(fx_cancel);
 }
 
-GPXdata parse_result;
+GPXnav parse_result;
 
 bool gpx_readFile(fs::FS& fs, String fileName) {
   FileReader file_reader(fs, fileName);
@@ -288,7 +283,7 @@ bool gpx_readFile(fs::FS& fs, String fileName) {
         Serial.println("m");
       }
     }
-    gpxNav.gpxData = parse_result;
+    gpxNav = parse_result;
     return true;
   } else {
     // TODO: Display error to user (create appropriate method in GPXParser looking at _error, _line,
@@ -304,83 +299,83 @@ bool gpx_readFile(fs::FS& fs, String fileName) {
 }
 
 void gpx_loadRoutes() {
-  gpxNav.gpxData.routes[1].name = "R: TheCircuit";
-  gpxNav.gpxData.routes[1].totalPoints = 5;
-  gpxNav.gpxData.routes[1].routepoints[1] = gpxNav.gpxData.waypoints[1];
-  gpxNav.gpxData.routes[1].routepoints[2] = gpxNav.gpxData.waypoints[7];
-  gpxNav.gpxData.routes[1].routepoints[3] = gpxNav.gpxData.waypoints[8];
-  gpxNav.gpxData.routes[1].routepoints[4] = gpxNav.gpxData.waypoints[1];
-  gpxNav.gpxData.routes[1].routepoints[5] = gpxNav.gpxData.waypoints[2];
+  gpxNav.routes[1].name = "R: TheCircuit";
+  gpxNav.routes[1].totalPoints = 5;
+  gpxNav.routes[1].routepoints[1] = gpxNav.waypoints[1];
+  gpxNav.routes[1].routepoints[2] = gpxNav.waypoints[7];
+  gpxNav.routes[1].routepoints[3] = gpxNav.waypoints[8];
+  gpxNav.routes[1].routepoints[4] = gpxNav.waypoints[1];
+  gpxNav.routes[1].routepoints[5] = gpxNav.waypoints[2];
 
-  gpxNav.gpxData.routes[2].name = "R: Scenic";
-  gpxNav.gpxData.routes[2].totalPoints = 5;
-  gpxNav.gpxData.routes[2].routepoints[1] = gpxNav.gpxData.waypoints[1];
-  gpxNav.gpxData.routes[2].routepoints[2] = gpxNav.gpxData.waypoints[3];
-  gpxNav.gpxData.routes[2].routepoints[3] = gpxNav.gpxData.waypoints[4];
-  gpxNav.gpxData.routes[2].routepoints[4] = gpxNav.gpxData.waypoints[5];
-  gpxNav.gpxData.routes[2].routepoints[5] = gpxNav.gpxData.waypoints[2];
+  gpxNav.routes[2].name = "R: Scenic";
+  gpxNav.routes[2].totalPoints = 5;
+  gpxNav.routes[2].routepoints[1] = gpxNav.waypoints[1];
+  gpxNav.routes[2].routepoints[2] = gpxNav.waypoints[3];
+  gpxNav.routes[2].routepoints[3] = gpxNav.waypoints[4];
+  gpxNav.routes[2].routepoints[4] = gpxNav.waypoints[5];
+  gpxNav.routes[2].routepoints[5] = gpxNav.waypoints[2];
 
-  gpxNav.gpxData.routes[3].name = "R: Downhill";
-  gpxNav.gpxData.routes[3].totalPoints = 4;
-  gpxNav.gpxData.routes[3].routepoints[1] = gpxNav.gpxData.waypoints[1];
-  gpxNav.gpxData.routes[3].routepoints[2] = gpxNav.gpxData.waypoints[5];
-  gpxNav.gpxData.routes[3].routepoints[3] = gpxNav.gpxData.waypoints[2];
+  gpxNav.routes[3].name = "R: Downhill";
+  gpxNav.routes[3].totalPoints = 4;
+  gpxNav.routes[3].routepoints[1] = gpxNav.waypoints[1];
+  gpxNav.routes[3].routepoints[2] = gpxNav.waypoints[5];
+  gpxNav.routes[3].routepoints[3] = gpxNav.waypoints[2];
 
-  gpxNav.gpxData.routes[4].name = "R: MiniTri";
-  gpxNav.gpxData.routes[4].totalPoints = 4;
-  gpxNav.gpxData.routes[4].routepoints[1] = gpxNav.gpxData.waypoints[1];
-  gpxNav.gpxData.routes[4].routepoints[2] = gpxNav.gpxData.waypoints[4];
-  gpxNav.gpxData.routes[4].routepoints[3] = gpxNav.gpxData.waypoints[5];
-  gpxNav.gpxData.routes[4].routepoints[4] = gpxNav.gpxData.waypoints[1];
+  gpxNav.routes[4].name = "R: MiniTri";
+  gpxNav.routes[4].totalPoints = 4;
+  gpxNav.routes[4].routepoints[1] = gpxNav.waypoints[1];
+  gpxNav.routes[4].routepoints[2] = gpxNav.waypoints[4];
+  gpxNav.routes[4].routepoints[3] = gpxNav.waypoints[5];
+  gpxNav.routes[4].routepoints[4] = gpxNav.waypoints[1];
 
-  gpxNav.gpxData.totalRoutes = 4;
+  gpxNav.totalRoutes = 4;
 }
 
 void gpx_loadWaypoints() {
-  gpxNav.gpxData.waypoints[0].lat = 0;
-  gpxNav.gpxData.waypoints[0].lon = 0;
-  gpxNav.gpxData.waypoints[0].ele = 0;
-  gpxNav.gpxData.waypoints[0].name = "EMPTY_POINT";
+  gpxNav.waypoints[0].lat = 0;
+  gpxNav.waypoints[0].lon = 0;
+  gpxNav.waypoints[0].ele = 0;
+  gpxNav.waypoints[0].name = "EMPTY_POINT";
 
-  gpxNav.gpxData.waypoints[1].lat = 34.21016;
-  gpxNav.gpxData.waypoints[1].lon = -117.30274;
-  gpxNav.gpxData.waypoints[1].ele = 1223;
-  gpxNav.gpxData.waypoints[1].name = "Marshall";
+  gpxNav.waypoints[1].lat = 34.21016;
+  gpxNav.waypoints[1].lon = -117.30274;
+  gpxNav.waypoints[1].ele = 1223;
+  gpxNav.waypoints[1].name = "Marshall";
 
-  gpxNav.gpxData.waypoints[2].lat = 34.19318;
-  gpxNav.gpxData.waypoints[2].lon = -117.32334;
-  gpxNav.gpxData.waypoints[2].ele = 521;
-  gpxNav.gpxData.waypoints[2].name = "Marshall_LZ";
+  gpxNav.waypoints[2].lat = 34.19318;
+  gpxNav.waypoints[2].lon = -117.32334;
+  gpxNav.waypoints[2].ele = 521;
+  gpxNav.waypoints[2].name = "Marshall_LZ";
 
-  gpxNav.gpxData.waypoints[3].lat = 34.21065;
-  gpxNav.gpxData.waypoints[3].lon = -117.31298;
-  gpxNav.gpxData.waypoints[3].ele = 1169;
-  gpxNav.gpxData.waypoints[3].name = "Cloud";
+  gpxNav.waypoints[3].lat = 34.21065;
+  gpxNav.waypoints[3].lon = -117.31298;
+  gpxNav.waypoints[3].ele = 1169;
+  gpxNav.waypoints[3].name = "Cloud";
 
-  gpxNav.gpxData.waypoints[4].lat = 34.20958;
-  gpxNav.gpxData.waypoints[4].lon = -117.31982;
-  gpxNav.gpxData.waypoints[4].ele = 1033;
-  gpxNav.gpxData.waypoints[4].name = "Regionals";
+  gpxNav.waypoints[4].lat = 34.20958;
+  gpxNav.waypoints[4].lon = -117.31982;
+  gpxNav.waypoints[4].ele = 1033;
+  gpxNav.waypoints[4].name = "Regionals";
 
-  gpxNav.gpxData.waypoints[5].lat = 34.19991;
-  gpxNav.gpxData.waypoints[5].lon = -117.31688;
-  gpxNav.gpxData.waypoints[5].ele = 767;
-  gpxNav.gpxData.waypoints[5].name = "750";
+  gpxNav.waypoints[5].lat = 34.19991;
+  gpxNav.waypoints[5].lon = -117.31688;
+  gpxNav.waypoints[5].ele = 767;
+  gpxNav.waypoints[5].name = "750";
 
-  gpxNav.gpxData.waypoints[6].lat = 34.23604;
-  gpxNav.gpxData.waypoints[6].lon = -117.31321;
-  gpxNav.gpxData.waypoints[6].ele = 1611;
-  gpxNav.gpxData.waypoints[6].name = "Crestline";
+  gpxNav.waypoints[6].lat = 34.23604;
+  gpxNav.waypoints[6].lon = -117.31321;
+  gpxNav.waypoints[6].ele = 1611;
+  gpxNav.waypoints[6].name = "Crestline";
 
-  gpxNav.gpxData.waypoints[7].lat = 34.23531;
-  gpxNav.gpxData.waypoints[7].lon = -117.32608;
-  gpxNav.gpxData.waypoints[7].ele = 1572;
-  gpxNav.gpxData.waypoints[7].name = "Billboard";
+  gpxNav.waypoints[7].lat = 34.23531;
+  gpxNav.waypoints[7].lon = -117.32608;
+  gpxNav.waypoints[7].ele = 1572;
+  gpxNav.waypoints[7].name = "Billboard";
 
-  gpxNav.gpxData.waypoints[8].lat = 34.23762;
-  gpxNav.gpxData.waypoints[8].lon = -117.35115;
-  gpxNav.gpxData.waypoints[8].ele = 1553;
-  gpxNav.gpxData.waypoints[8].name = "Pine_Mt";
+  gpxNav.waypoints[8].lat = 34.23762;
+  gpxNav.waypoints[8].lon = -117.35115;
+  gpxNav.waypoints[8].ele = 1553;
+  gpxNav.waypoints[8].name = "Pine_Mt";
 
-  gpxNav.gpxData.totalWaypoints = 8;
+  gpxNav.totalWaypoints = 8;
 }
