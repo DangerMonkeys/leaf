@@ -29,7 +29,7 @@ Kalmanvert kalmanvert;
 
 #define POSITION_MEASURE_STANDARD_DEVIATION 0.1f
 #define ACCELERATION_MEASURE_STANDARD_DEVIATION 0.3f
-#define IMU_STARTUP_CYCLES 50  // #samples to bypass at startup while accel calibrates
+#define IMU_STARTUP_CYCLES 80  // #samples to bypass at startup while accel calibrates
 
 #define DEBUG_IMU 0
 

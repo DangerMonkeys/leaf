@@ -580,6 +580,8 @@ void navigatePage_button(Button button, ButtonState state, uint8_t count) {
           } else if (state == HELD && flightTimer_isRunning()) {
             flightTimer_stop();
             navigatePage_cursorPosition = cursor_navigatePage_none;
+            buttons_lockAfterHold();  // lock buttons so we don't turn off if user keeps holding
+                                      // button
           }
 
           break;
