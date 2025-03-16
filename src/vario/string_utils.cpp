@@ -38,9 +38,9 @@ String formatClimbRate(int32_t climbRate, bool units, bool showUnits) {
   char unitSymbol = (char)(131 + units);  // add one =132 if fpm
   float climbInMS = 0;
 
-  if (climbRate >= 0)
+  if (climbRate > 0)
     sign = '+';
-  else {
+  else if (climbRate < 0) {
     sign = '-';
     climbRate *= -1;  // keep positive part
   }
@@ -54,7 +54,7 @@ String formatClimbRate(int32_t climbRate, bool units, bool showUnits) {
     climbRate = (climbRate + 5) / 10;
     // convert to float for ease of printing with the decimal in place
     climbInMS = (float)climbRate / 10;
-    snprintf(buffer, sizeof(buffer), "%2.1f", climbRate);
+    snprintf(buffer, sizeof(buffer), "%2.1f", climbInMS);
   }
 
   String result = String(sign) + String(buffer);

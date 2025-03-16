@@ -320,7 +320,7 @@ void Barometer::update(bool startNewCycle, bool doTemp) {
       // finally, update the speaker sound based on the new climbrate
       speaker_updateVarioNote(climbRateFiltered);
 
-      Serial.println("**BR** climbRate Filtered: " + String(climbRateFiltered));
+      if (DEBUG_BARO) Serial.println("**BR** climbRate Filtered: " + String(climbRateFiltered));
 
       break;
   }
