@@ -16,10 +16,10 @@
 
 #define DEBUG_BARO 0  // flag for printing serial debugging messages
 
-#define CLIMB_AVERAGE \
-  4  // number of seconds for average climb rate (this is used for smoother data in places like
-     // glide ratio, where rapidly fluctuating glide numbers aren't as useful as a several-second
-     // average)
+// number of seconds for average climb rate (this is used for smoother data in places like
+// glide ratio, where rapidly fluctuating glide numbers aren't as useful as a several-second
+// average)
+#define CLIMB_AVERAGE 4
 
 // Singleton barometer instance for device
 Barometer baro;
@@ -221,6 +221,7 @@ void Barometer::update(bool startNewCycle, bool doTemp) {
     climbRateAverage = 0;
     climbRateFiltered = 0;
     speaker_updateVarioNote(climbRateFiltered);
+    firstClimbInitialization_ = true;  //  reset so we don't get false climb on wake-up
     return;
   }
 
@@ -302,22 +303,19 @@ void Barometer::update(bool startNewCycle, bool doTemp) {
       // (even if we skipped some steps above because of mis-reads or mis-timing, we can still
       // calculate a "new" corrected pressure value based on the old ADC values.  It will be a
       // repeat value, but it keeps the filter buffer moving on time)
-      calculatePressure();  // calculate Pressure adjusted for temperature
+      calculatePressureAlt();  // calculate Pressure Altitude adjusted for temperature
       break;
 
     case 3:  // Filter Pressure and calculate Final Altitude Values
-      // filterPressure();
-      // calculateAlt();  // filter pressure alt value
-      // updateClimb();   // update and filter climb rate
-      // if (DEBUG_BARO) debugPrint();
+      // Note, IMU will have taken an accel reading and updated the Kalman
+      // Filter after Baro_step_2 but before Baro_step_3
 
-      climbRateFiltered = int32_t(kalmanvert.getVelocity() * 100);
-      alt = int32_t(kalmanvert.getPosition() * 100);
+      // get instant climb rate and altitude
+      climbRate = (float)kalmanvert.getVelocity();    // in m/s
+      alt = int32_t(kalmanvert.getPosition() * 100);  // in cm above sea level
 
-      int32_t total_samples = CLIMB_AVERAGE * FILTER_VALS_MAX;
-
-      climbRateAverage =
-          (climbRateAverage * (total_samples - 1) + climbRateFiltered) / total_samples;
+      // filter ClimbRate
+      filterClimb();
 
       // finally, update the speaker sound based on the new climbrate
       speaker_updateVarioNote(climbRateFiltered);
@@ -333,7 +331,7 @@ void Barometer::update(bool startNewCycle, bool doTemp) {
 
 // vvv Device reading & data processing vvv
 
-void Barometer::calculatePressure() {
+void Barometer::calculatePressureAlt() {
   // calculate temperature (in 100ths of degrees C, from -4000 to 8500)
   dT_ = D2_T_ - ((int32_t)C_TREF_) * 256;
   int32_t TEMP = 2000 + (((int64_t)dT_) * ((int64_t)C_TEMPSENS_)) / pow(2, 23);
@@ -396,22 +394,22 @@ void Barometer::filterPressure(void) {
   // first calculate filter size based on user preference
   switch (VARIO_SENSE) {
     case 1:
-      filterValsPref_ = 30;
+      filterValsPref_ = 20;
       break;
     case 2:
-      filterValsPref_ = 25;
+      filterValsPref_ = 12;
       break;
     case 3:
-      filterValsPref_ = 20;
+      filterValsPref_ = 6;
       break;
     case 4:
-      filterValsPref_ = 15;
+      filterValsPref_ = 3;
       break;
     case 5:
-      filterValsPref_ = 10;
+      filterValsPref_ = 1;
       break;
     default:
-      filterValsPref_ = 20;
+      filterValsPref_ = 3;
       break;
   }
 
@@ -451,8 +449,8 @@ void Barometer::calculateAlt() {
   altAboveLaunch = altAdjusted - altAtLaunch;
 }
 
-// Update Climb
-void Barometer::updateClimb() {
+// Filter ClimbRate
+void Barometer::filterClimb() {
   // lastAlt isn't set yet on boot-up, so just assume a zero climb rate for the first sample.
   if (firstClimbInitialization_) {
     climbRate = 0;
@@ -462,48 +460,54 @@ void Barometer::updateClimb() {
     return;
   }
 
-  // TODO: incorporate ACCEL for added precision/accuracy
-
-  // calculate climb rate based on standard altimeter setting (this way climb doesn't artificially
-  // change if the setting is adjusted)
-  climbRate =
-      (alt - lastAlt_) *
-      20;  // climb is updated every 1/20 second, so climb rate is cm change per 1/20sec * 20
-  lastAlt_ = alt;  // store last alt value for next time
+  // first calculate filter size based on user preference
+  switch (VARIO_SENSE) {
+    case 1:
+      filterValsPref_ = 20;
+      break;
+    case 2:
+      filterValsPref_ = 12;
+      break;
+    case 3:
+      filterValsPref_ = 6;
+      break;
+    case 4:
+      filterValsPref_ = 3;
+      break;
+    case 5:
+      filterValsPref_ = 1;
+      break;
+    default:
+      filterValsPref_ = 3;
+      break;
+  }
 
   // filter climb rate
-  int32_t climbRateFilterSummation = 0;
+  float climbRateFilterSummation = 0;
   int8_t filterBookmark = climbFilterVals_[0];  // start at the saved spot in the filter array
-  int8_t filterIndex =
-      filterBookmark;  // and create an index to track all the values we need for averaging
+  int8_t filterIndex = filterBookmark;          // create index to track all the values
 
   climbFilterVals_[filterBookmark] = climbRate;  // load in the new value at the bookmarked spot
   if (++filterBookmark > FILTER_VALS_MAX)        // increment bookmark for next time
     filterBookmark = 1;                          // wrap around the array for next time if needed
   climbFilterVals_[0] = filterBookmark;          // and save the bookmark for next time
 
-  // sum up all the values from this spot and previous, for the correct number of samples (user
-  // pref)
+  // sum up all the values from this spot and previous, for user-pref number of samples
   for (int i = 0; i < filterValsPref_; i++) {
     climbRateFilterSummation += climbFilterVals_[filterIndex];
     filterIndex--;
     if (filterIndex <= 0) filterIndex = FILTER_VALS_MAX;  // wrap around the array
   }
-  climbRateFiltered =
-      climbRateFilterSummation / filterValsPref_;  // divide to get the filtered climb rate
 
-  // now calculate the longer-running average climb value (this is a smoother, slower-changing value
-  // for things like glide ratio, etc)
-  int32_t total_samples =
-      CLIMB_AVERAGE * FILTER_VALS_MAX;  // CLIMB_AVERAGE seconds * 20 samples per second = total
-                                        // samples to average over
+  // divide to get the average climb rate (and convert m/s -> cm/s)
+  climbRateFiltered = (int32_t)(climbRateFilterSummation * 100 / filterValsPref_);
 
-  // current averaege    *   weighted by total samples (minus 1) + one more new sample     / total
-  // samples
+  // now calculate the longer-running average climb value
+  // (this is a smoother, slower-changing value for things like glide ratio, etc)
+  int32_t total_samples = CLIMB_AVERAGE * 20;  // CLIMB_AVERAGE seconds * 20 samples/sec
+
+  // use new value in the long-running average
   climbRateAverage = (climbRateAverage * (total_samples - 1) + climbRateFiltered) / total_samples;
-
-  // finally, update the speaker sound based on the new climbrate
-  speaker_updateVarioNote(climbRateFiltered);
 }
 
 // ^^^ Device reading & data processing ^^^

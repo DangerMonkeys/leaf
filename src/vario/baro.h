@@ -20,12 +20,12 @@
 #define CMD_CONVERT_PRESSURE 0b01001000
 #define CMD_CONVERT_TEMP 0b01011000
 
-#define FILTER_VALS_MAX 30  // total array size max; for both altitude and climb
+#define FILTER_VALS_MAX 20  // total array size max;
 
 class Barometer {
  public:
   int32_t pressureFiltered;
-  float altimeterSetting = 29.920;
+  float altimeterSetting = 29.921;
   // cm raw pressure altitude calculated off standard altimeter setting (29.92)
   int32_t alt;
   // m raw pressure altitude (float)
@@ -36,7 +36,7 @@ class Barometer {
   int32_t altAboveLaunch;
   int32_t altInitial;
   // instantaneous climbrate calculated with every pressure altitude measurement
-  int32_t climbRate;
+  float climbRate;
   // filtered climb value to reduce noise
   int32_t climbRateFiltered;
   // long-term (several seconds) averaged climb rate for smoothing out glide ratio and other
@@ -78,10 +78,10 @@ class Barometer {
   // == User Settings for Vario ==
 
   // default samples to average (will be adjusted by VARIO_SENSE user setting)
-  uint8_t filterValsPref_ = 20;
+  uint8_t filterValsPref_ = 3;
 
   int32_t pressureFilterVals_[FILTER_VALS_MAX + 1];  // use [0] as the index / bookmark
-  int32_t climbFilterVals_[FILTER_VALS_MAX + 1];     // use [0] as the index / bookmark
+  float climbFilterVals_[FILTER_VALS_MAX + 1];       // use [0] as the index / bookmark
 
   // == Device Management ==
 
@@ -95,10 +95,10 @@ class Barometer {
   bool baroADCTemp_ = false;
 
   // == Device reading & data processing ==
-  void calculatePressure(void);
+  void calculatePressureAlt(void);
+  void filterClimb(void);
   void filterPressure(void);  // TODO: Use or remove (currently unused)
   void calculateAlt(void);    // TODO: Use or remove (currently unused)
-  void updateClimb(void);     // TODO: Use or remove (currently unused)
 
   // ======
   // Sensor Calibration Values (stored in chip PROM; must be read at startup before performing baro
