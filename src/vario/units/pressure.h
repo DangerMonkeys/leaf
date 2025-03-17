@@ -50,6 +50,8 @@ struct Pressure {
   /// @return
   double millibars() const { return static_cast<double>(raw_value) / 100.0; }
 
+  static Pressure fromMillibars(float mBar) { return Pressure((int32_t)(mBar * 100)); }
+
   /// @brief pA
   /// @return
   double pascals() const { return millibars() * 100.0; }
