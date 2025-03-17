@@ -29,6 +29,7 @@ Kalmanvert kalmanvert;
 
 #define POSITION_MEASURE_STANDARD_DEVIATION 0.1f
 #define ACCELERATION_MEASURE_STANDARD_DEVIATION 0.3f
+#define IMU_STARTUP_CYCLES 80  // #samples to bypass at startup while accel calibrates
 
 #define DEBUG_IMU 0
 
@@ -249,6 +250,8 @@ void imu_init() {
   tPrev = millis();
 }
 
+uint8_t startupCycleCount = IMU_STARTUP_CYCLES;
+
 void imu_update() {
   /*
   String accelName = "accel,";
@@ -257,6 +260,14 @@ void imu_update() {
   */
 
   if (processQuaternion()) {
+    // if we're starting up, block accel values until it's stable
+    if (startupCycleCount > 0) {
+      startupCycleCount--;
+      // submit accel = 0 to kalman filter and return
+      kalmanvert.update(baro.altF, 0.0f, millis());
+      return;
+    }
+
     // update kalman filter
     kalmanvert.update(baro.altF, accelVert * 9.80665f, millis());
 

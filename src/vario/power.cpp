@@ -23,12 +23,17 @@ POWER power;  // struct for battery-state and on-state variables
 void power_bootUp() {
   power_init();  // configure power supply
 
+  // grab user settings (or populate defaults if no saved settings)
+  settings_init();
+
   // initialize Buttons and check if holding the center button is what turned us on
   auto button = buttons_init();
 
-  if (button == Button::CENTER) {
-    // if center button turned us on, set state to ON (as opposed to charging state,
-    // which can turn us on if plugged into USB but not by the center button)
+  // go to "ON" state if button (user input) or BOOT_TO_ON flag from firmware update
+  if (button == Button::CENTER || BOOT_TO_ON) {
+    BOOT_TO_ON = false;
+    settings_save();
+
     power.onState = POWER_ON;
 
     display_showOnSplash();  // show the splash screen if user turned us on
@@ -37,9 +42,6 @@ void power_bootUp() {
     // if not center button, then USB power turned us on, go into charge mode
     power.onState = POWER_OFF_USB;
   }
-
-  // grab user settings (or populate defaults if no saved settings)
-  settings_init();
 
   // init peripherals (even if we're not turning on and just going into
   // charge mode, we still need to initialize devices so we can put some
@@ -51,6 +53,7 @@ void power_bootUp() {
 void power_init() {
   Serial.print("power_init: ");
   Serial.println(power.onState);
+
   // Set output / input pins to control battery charge and power supply
   pinMode(POWER_LATCH, OUTPUT);
   pinMode(POWER_CHARGE_I1, OUTPUT);
@@ -58,6 +61,8 @@ void power_init() {
   pinMode(POWER_CHARGE_GOOD, INPUT_PULLUP);
   pinMode(BATT_SENSE, INPUT);
   power_setInputCurrent(i500mA);  // set default current
+
+  // populate battery % and charging state
   power_readBatteryState();
 }
 
@@ -84,6 +89,8 @@ void power_init_peripherals() {
   if (power.onState == POWER_ON) {
     power_latch_on();
     speaker_playSound(fx_enter);
+  } else {
+    power_latch_off();  // turn off 3.3V regulator (if we're plugged into USB, we'll stay on)
   }
 
   // then initialize the rest of the devices

@@ -167,10 +167,12 @@ void webserver_setup() {
     server.send(200, "text/html", "OK!");
   });
 
-  // Give it a chance to connect so this debug message means something
-  delay(1000);
-  server.begin();
-  Serial.println("Webserver started: http://" + WiFi.localIP().toString());
+  // Give it a chance to connect so this debug message means something.
+  delay(250);
+  // The captive portal belongs on port 80 for setting up WiFi.  Keep the debug
+  // webserver on port 81.
+  server.begin(81);
+  Serial.printf("Webserver started: http://%s:81/\n", WiFi.localIP().toString());
 }
 
 void webserver_loop() { server.handleClient(); }

@@ -5,6 +5,7 @@
 
 #include <stdexcept>
 
+#include "settings.h"
 #include "version.h"
 
 String getLatestTagVersion() {
@@ -60,6 +61,8 @@ void PerformOTAUpdate(const char* tag) {
 
   if (Update.end()) {
     Serial.println("[OTA] Update successfully completed. Rebooting.");
+    BOOT_TO_ON = true;  // restart into 'on' state on reboot
+    settings_save();
     ESP.restart();
   } else {
     throw std::runtime_error("Err finishing update");

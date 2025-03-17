@@ -20,13 +20,13 @@ typedef uint8_t SettingLogFormat;
 
 /* Vario Sensitivity
 setting | samples | time avg
-    1   |   30    | 1.5  second
-    2   |   25    | 1.25 second
-    3   |   20    | 1    second
-    4   |   15    | 0.75 second
-    5   |   10    | 0.5  second
+    1   |   20    | 20/20 second (1 second moving average)
+    2   |   12    | 12/20 second
+    3   |   6     |  6/20 second
+    4   |   3     |  3/20 second
+    5   |   1     |  1/20 second (single sample -- instant)
 */
-#define VARIO_SENSE_MAX 5  // units of 1/4 seconds
+#define VARIO_SENSE_MAX 5
 #define VARIO_SENSE_MIN 1
 // Lifty Air Thermal Sniffer
 #define LIFTY_AIR_MAX -8  // 0.1 m/s - sinking less than this will trigger
@@ -36,9 +36,7 @@ setting | samples | time avg
 
 // System
 // Display Contrast
-#define CONTRAST_MAX \
-  20  // 20 steps of contrast user selectable (corresponds to actual values sent to dislpay of
-      // 115-135)
+#define CONTRAST_MAX 20
 #define CONTRAST_MIN 1
 // Volume (max for both vario and system volume settings)
 #define VOLUME_MAX 3
@@ -72,17 +70,22 @@ setting | samples | time avg
 #define DEF_LOG_FORMAT LOG_FORMAT_IGC  // IGC or KML
 
 // Default System Settings
-#define DEF_TIME_ZONE \
-  0  // mm (in minutes) UTC -8 (PST) would therefor be -8*60, or 480.  This allows us to cover all
-     // time zones, including the :30 minute and :15 minute ones
-#define DEF_VOLUME_SYSTEM 1   // 0=off, 1=low, 2=med, 3=high
-#define DEF_ENTER_BOOTLOAD 0  // by default, don't enter bootloader on reset
-#define DEF_ECO_MODE \
-  0  // default off to allow reprogramming easier.  TODO: switch to 'on' for production release
-#define DEF_AUTO_OFF 0      // 1 = ENABLE, 0 = DISABLE
-#define DEF_WIFI_ON 0       // default wifi off
-#define DEF_BLUETOOTH_ON 0  // default bluetooth off
-#define DEF_SHOW_WARNING 1  // default show warning on startup
+
+// Time Zone offset in minutes. UTC -8 (PST) would therefore be -8*60, or 480
+// This allows us to cover all time zones, including the :30 minute and :15 minute ones
+#define DEF_TIME_ZONE 0
+#define DEF_VOLUME_SYSTEM 1  // 0=off, 1=low, 2=med, 3=high
+#define DEF_ECO_MODE 0       // default off to allow reprogramming easier
+#define DEF_AUTO_OFF 0       // 1 = ENABLE, 0 = DISABLE
+#define DEF_WIFI_ON 0        // default wifi off
+#define DEF_BLUETOOTH_ON 0   // default bluetooth off
+#define DEF_SHOW_WARNING 1   // default show warning on startup
+
+// Boot Flags
+// Boot-to-ON Flag (when resetting from system updates,
+// reboot to "ON" even if not holding power button)
+#define DEF_BOOT_TO_ON false;
+#define DEF_ENTER_BOOTLOAD false;
 
 // Display Settings
 #define DEF_CONTRAST 7  // default contrast setting
@@ -130,12 +133,15 @@ extern SettingLogFormat LOG_FORMAT;
 // System Settings
 extern int16_t TIME_ZONE;
 extern int8_t VOLUME_SYSTEM;
-extern bool ENTER_BOOTLOAD;
 extern bool ECO_MODE;
 extern bool AUTO_OFF;
 extern bool WIFI_ON;
 extern bool BLUETOOTH_ON;
 extern bool SHOW_WARNING;
+
+// Boot Flags
+extern bool ENTER_BOOTLOAD;
+extern bool BOOT_TO_ON;
 
 // Display Settings
 extern uint8_t CONTRAST;
