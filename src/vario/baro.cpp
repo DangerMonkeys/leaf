@@ -81,6 +81,13 @@ void Barometer::init(void) {
   pressureSource_->init();
 
   // after initialization, get first baro sensor reading to populate values
+  getFirstReading();
+
+  pressureSource_->startMeasurement();
+  task_ = BarometerTask::Measure;
+}
+
+void Barometer::getFirstReading(void) {
   pressureSource_->startMeasurement();
   PressureUpdateResult result = pressureSource_->update();
   while (!FLAG_SET(result, PressureUpdateResult::PressureReady)) {
@@ -122,15 +129,15 @@ void Barometer::init(void) {
   // save the starting value as launch altitude (Launch will
   // be updated when timer starts)
   altAtLaunch = altAdjusted;
-
-  pressureSource_->startMeasurement();
-  task_ = BarometerTask::Measure;
 }
 
 void Barometer::resetLaunchAlt() { altAtLaunch = altAdjusted; }
 
-void Barometer::wake() { sleeping_ = false; }
 void Barometer::sleep() { sleeping_ = true; }
+void Barometer::wake() {
+  sleeping_ = false;
+  getFirstReading();  // after waking, get first baro sensor reading to populate values
+}
 
 void Barometer::startMeasurement() { pressureSource_->startMeasurement(); }
 

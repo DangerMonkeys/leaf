@@ -24,6 +24,7 @@ extern Kalmanvert kalmanvert;
 #define select_bank_3 0b00110000       // bank 3
 
 void imu_init(void);
+void imu_wake(void);
 void imu_update(void);
 
 float IMU_getAccel(void);

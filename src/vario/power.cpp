@@ -137,8 +137,9 @@ void power_wake_peripherals() {
                    // mode
   Serial.println(" - waking GPS");
   gps_wake();
-  Serial.println(" - waking baro");
+  Serial.println(" - waking baro and IMU");
   baro.wake();
+  imu_wake();
   Serial.println(" - waking speaker");
   speaker_unMute();
   Serial.println(" - DONE");

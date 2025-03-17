@@ -30,6 +30,7 @@ Kalmanvert kalmanvert;
 #define POSITION_MEASURE_STANDARD_DEVIATION 0.1f
 #define ACCELERATION_MEASURE_STANDARD_DEVIATION 0.3f
 #define IMU_STARTUP_CYCLES 80  // #samples to bypass at startup while accel calibrates
+uint8_t startupCycleCount;
 
 #define DEBUG_IMU 0
 
@@ -192,6 +193,8 @@ bool processQuaternion() {
  * Initialize IMU, Quaternions, and Kalman Filter *
  *************************************************/
 void imu_init() {
+  startupCycleCount = IMU_STARTUP_CYCLES;
+
   WIRE_PORT.begin();
   WIRE_PORT.setClock(400000);
 
@@ -250,8 +253,6 @@ void imu_init() {
   tPrev = millis();
 }
 
-uint8_t startupCycleCount = IMU_STARTUP_CYCLES;
-
 void imu_update() {
   /*
   String accelName = "accel,";
@@ -279,5 +280,7 @@ void imu_update() {
     Telemetry.writeText(kalmanEntryString);
   }
 }
+
+void imu_wake() { startupCycleCount = IMU_STARTUP_CYCLES; }
 
 float IMU_getAccel() { return accelTot; }

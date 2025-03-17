@@ -53,6 +53,7 @@ class Barometer {
   // == Device Management ==
   // Initialize the baro
   void init(void);
+  void getFirstReading(void);
 
   // Reset launcAlt to current Alt (when starting a new log file, for example)
   void resetLaunchAlt(void);
