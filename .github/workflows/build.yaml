@@ -90,37 +90,9 @@ jobs:
       - name: List artifacts files (debugging)
         run: ls -R artifacts
 
-      - name: Copy newest hardware firmware to firmware.bin
+      - name: Copy appropriate hardware firmware to firmware.bin
         # Backwards compatibility: Release 0.0.9 and earlier expect a file named "firmware.bin"
-        run: |
-          highest_version="0.0.0"
-          highest_file=""
-
-          # Iterate over firmware files
-          for file in artifacts/firmware-leaf_*.bin; do
-            # Extract XX, YY, and ZZ using regex
-            if [[ $file =~ firmware-leaf_([0-9]+)_([0-9]+)_([0-9]+)\.bin ]]; then
-              xx=${BASH_REMATCH[1]}
-              yy=${BASH_REMATCH[2]}
-              zz=${BASH_REMATCH[3]}
-              version="$xx.$yy.$zz"
-
-              # Compare versions
-              if [[ $(printf '%s\n' "$highest_version" "$version" | sort -V | tail -n1) == "$version" ]]; then
-                highest_version="$version"
-                highest_file="$file"
-              fi
-            fi
-          done
-
-          # Copy the highest version firmware to artifacts/firmware.bin
-          if [[ -n "$highest_file" ]]; then
-            cp "$highest_file" artifacts/firmware.bin
-            echo "Selected firmware: $highest_file (version $highest_version)"
-          else
-            echo "No firmware files found!" >&2
-            exit 1
-          fi
+        run: cp artifacts/firmware-leaf_3_2_3.bin artifacts/firmware.bin
 
       - name: Upload artifacts to GitHub Release
         uses: softprops/action-gh-release@v2

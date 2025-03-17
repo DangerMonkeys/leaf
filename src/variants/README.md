@@ -4,17 +4,18 @@ Leaf supports building nominally the same firmware for different hardware varian
 
 ## Creating a new variant
 
-To create a new hardware variant, first identify the [hardware type](../README.md#hardware-type) (usually "leaf") and [hardware version](../README.md#hardware-version) (e.g., 3.2.5).  The name for this hardware variant must be: `{hardware type}_{underscored hardware version}` where `{underscored hardware version}` is the hardware version with periods replaced with underscores.  Create a folder with this name within this folder.  Add this variant name to the list of variants in [build.yaml](../../.github/workflows/build.yaml).  Change [platformio.ini](../../platformio.ini) to point `default_envs` at the appropriate environment (see below).
+To create a new hardware variant:
 
-In the new folder, add:
-
-### platformio.ini
-
-This partial platformio.ini should define `[env:{hardware variant}_dev]` and `[env:{hardware variant}_release]` which should extend `env:_dev`and `env:_release` respectively.  In each of these environments, `build_flags` must extend the build flags of the base environment to add `-Isrc/variants/{hardware variant}`.
-
-### variant.h
-
-This file must exist, and should define any differences inherent to this hardware variant.
+1. Identify the [hardware type](../README.md#hardware-type) (usually "leaf") and [hardware version](../README.md#hardware-version) (e.g., 3.2.5)
+2. Create the name for this hardware variant as: `{hardware type}_{underscored hardware version}` where `{underscored hardware version}` is the hardware version with periods replaced with underscores.
+3. Create a folder with the hardware variant's name within this (`variants`) folder.  In the new folder, add:
+    1. **platformio.ini**
+        1. This partial platformio.ini should define `[env:{hardware variant}_dev]` and `[env:{hardware variant}_release]` which should extend `env:_dev`and `env:_release` respectively.
+        2. In each of these environments, `build_flags` must extend the build flags of the base environment to add `-Isrc/variants/{hardware variant}`.
+    2. **variant.h**: This file must exist, and should define any differences inherent to this hardware variant.
+4. Add this variant name to the list of variants in [build.yaml](../../.github/workflows/build.yaml).
+5. If applicable, change the "Copy appropriate hardware firmware to firmware.bin" step in [build.yaml](../../.github/workflows/build.yaml) to use the new hardware variant as the backwards-compatible firmware.bin.
+6. If applicable, change [the main platformio.ini](../../platformio.ini) to point `default_envs` at the appropriate environment (see 3.1 above).
 
 ## Retiring a variant
 
