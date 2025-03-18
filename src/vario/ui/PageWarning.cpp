@@ -55,7 +55,7 @@ void warningPage_draw() {
     u8g2.setCursor(0, line_y += (line_spacing + 5));
     u8g2.print(" www.leafvario.com/");
     u8g2.setCursor(0, line_y += line_spacing);
-    u8g2.print(" legal/disclaimer.pdf");
+    u8g2.print(" legal/disclaimer/");
 
     // Accept Decline Options
     u8g2.setFont(leaf_6x12);
