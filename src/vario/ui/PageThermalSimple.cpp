@@ -288,7 +288,7 @@ void thermalSimplePage_button(Button button, ButtonState state, uint8_t count) {
         case Button::CENTER:
           if (state == RELEASED) leafSettings.disp_thmPageUser1++;
           if (leafSettings.disp_thmPageUser1 >= static_cast<int>(ThermSimpPageUserFields::NONE))
-            THMSPG_USR1 = 0;
+            leafSettings.disp_thmPageUser1 = 0;
           break;
       }
       break;
@@ -305,7 +305,7 @@ void thermalSimplePage_button(Button button, ButtonState state, uint8_t count) {
         case Button::CENTER:
           if (state == RELEASED) leafSettings.disp_thmPageUser2++;
           if (leafSettings.disp_thmPageUser2 >= static_cast<int>(ThermSimpPageUserFields::NONE))
-            THMSPG_USR2 = 0;
+            leafSettings.disp_thmPageUser2 = 0;
           break;
       }
       break;
