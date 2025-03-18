@@ -19,7 +19,7 @@ void PageFanetGround::show(FanetGroundTrackingMode mode) {
     return;
   }
 
-  if (FANET_region == FanetRadioRegion::OFF) {
+  if (settings.fanet_region == FanetRadioRegion::OFF) {
     PageMessage::show("ERROR",
                       "Fanet Region\n"
                       "Not Set\n");
@@ -32,7 +32,7 @@ void PageFanetGround::show(FanetGroundTrackingMode mode) {
 
   // Set our tracking mode to ground tracking.
   auto& radio = FanetRadio::getInstance();
-  radio.begin(FANET_region);
+  radio.begin(settings.fanet_region);
   switch (mode) {
     case FanetGroundTrackingMode::WALKING:
       radio.setTrackingMode(Fanet::GroundTrackingType::Walking);

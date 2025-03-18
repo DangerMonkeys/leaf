@@ -91,7 +91,7 @@ bool Igc::startFlight() {
   logger.logger_type = (String) "Leaf1," + FIRMWARE_VERSION;
   logger.gps_type = "GNSS LC86G";
   logger.pressure_type = "MS5611";
-  logger.time_zone = (String)(TIME_ZONE / 60);
+  logger.time_zone = (String)(settings.system_timeZone / 60);
 
   tm cal;
   gps_getUtcDateTime(cal);

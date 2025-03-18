@@ -46,8 +46,8 @@ void log_update() {
   if (!flight && !weAreFlying) {
     // If auto start is configured, and we match the criteria, start the flight
     if (flightTimer_autoStart()) {
-      weAreFlying = true;                   // if we meet the flying conditions, we're flying!
-      if (AUTO_START) flightTimer_start();  // start a log if auto-start is on
+      weAreFlying = true;  // if we meet the flying conditions, we're flying!
+      if (settings.log_autoStart) flightTimer_start();  // start a log if auto-start is on
     } else {
       // Otherwise, there's nothing to do here.
       return;
@@ -55,7 +55,7 @@ void log_update() {
     // Check auto-stop criteria if we ARE flying
   } else if (weAreFlying) {
     if (flightTimer_autoStop()) {
-      if (AUTO_STOP) flightTimer_stop();  // stop the log if auto-stop is on
+      if (settings.log_autoStop) flightTimer_stop();  // stop the log if auto-stop is on
     }
   }
 
@@ -75,9 +75,9 @@ void log_update() {
         // We don't have a valid GPS location yet, try again later
         return;
 
-      if (ALT_SYNC_GPS)
-        settings_matchGPSAlt();  // sync pressure alt to GPS alt when log starts if the auto-sync
-                                 // setting is turned on
+      if (settings.vario_altSyncToGPS)
+        baro.syncToGPSAlt();  // sync pressure alt to GPS alt when log starts if the auto-sync
+                              // setting is turned on
 
       // We have a GPS fix, we're able to start recording of the flight.
       // TODO:  A second sound effect to show that recording has now started??
@@ -196,7 +196,7 @@ void flightTimer_start() {
 
   // start timer
   speaker_playSound(fx_enter);
-  switch (LOG_FORMAT) {
+  switch (settings.log_format) {
     case LOG_FORMAT_KML:
       flight = &kmlFlight;
       break;
@@ -208,7 +208,7 @@ void flightTimer_start() {
   }
 
   // if Altimeter GPS-SYNC is on, reset altimeter setting so baro matches GPS when log is started
-  if (ALT_SYNC_GPS) settings_matchGPSAlt();
+  if (settings.vario_altSyncToGPS) baro.syncToGPSAlt();
 
   // starting values
   baro.resetLaunchAlt();
@@ -228,7 +228,7 @@ void flightTimer_start() {
   autoStopAltitude = baro.alt;
 
   // Start the Fanet radio
-  FanetRadio::getInstance().begin(FANET_region);
+  FanetRadio::getInstance().begin(settings.fanet_region);
 }
 
 // stop timer

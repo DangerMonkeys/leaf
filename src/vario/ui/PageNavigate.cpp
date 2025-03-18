@@ -265,7 +265,7 @@ void navigatePage_draw() {
     u8g2.setFont(leaf_labels);
     u8g2.setDrawColor(0);
     u8g2.setFontMode(1);
-    if (UNITS_climb) {  // FPM units
+    if (settings.units_climb) {  // FPM units
       u8g2.setCursor(varioBarWidth, varioBarMidpoint - 5);
       u8g2.print('f');
       u8g2.setCursor(u8g2.getCursorX() - 1, u8g2.getCursorY() + 3);
@@ -300,13 +300,13 @@ void navigatePage_draw() {
                                     baro.climbRateFiltered);
 
     // alt
-    display_alt_type(49, 109, leaf_8x14, NAVPG_ALT_TYP);
+    display_alt_type(49, 109, leaf_8x14, settings.disp_navPageAltType);
     // alt label
     u8g2.setDrawColor(0);
     u8g2.setCursor(78, topOfFrame + 2 * nav_r + 5);
-    print_alt_label(NAVPG_ALT_TYP);
+    print_alt_label(settings.disp_navPageAltType);
     u8g2.setCursor(86, topOfFrame + 2 * nav_r - 3);
-    if (UNITS_alt)
+    if (settings.units_alt)
       u8g2.print("ft");
     else
       u8g2.print("m");
@@ -482,14 +482,14 @@ void navigatePage_button(Button button, ButtonState state, uint8_t count) {
           if (state == RELEASED) nav_cursor_move(button);
           break;
         case Button::LEFT:
-          if (NAVPG_ALT_TYP == altType_MSL &&
+          if (settings.disp_navPageAltType == altType_MSL &&
               (state == PRESSED || state == HELD || state == HELD_LONG)) {
             baro.adjustAltSetting(-1, count);
             speaker_playSound(fx_neutral);
           }
           break;
         case Button::RIGHT:
-          if (NAVPG_ALT_TYP == altType_MSL &&
+          if (settings.disp_navPageAltType == altType_MSL &&
               (state == PRESSED || state == HELD || state == HELD_LONG)) {
             baro.adjustAltSetting(1, count);
             speaker_playSound(fx_neutral);
@@ -497,10 +497,10 @@ void navigatePage_button(Button button, ButtonState state, uint8_t count) {
           break;
         case Button::CENTER:
           if (state == RELEASED)
-            settings_adjustDisplayField_navPage_alt(Button::CENTER);
-          else if (state == HELD && count == 1 && NAVPG_ALT_TYP == altType_MSL) {
-            if (settings_matchGPSAlt()) {  // successful adjustment of altimeter setting to match
-                                           // GPS altitude
+            settings.adjustDisplayField_navPage_alt(Button::CENTER);
+          else if (state == HELD && count == 1 && settings.disp_navPageAltType == altType_MSL) {
+            if (baro.syncToGPSAlt()) {  // successful adjustment of altimeter setting to match
+                                        // GPS altitude
               speaker_playSound(fx_enter);
               navigatePage_cursorPosition = cursor_navigatePage_none;
             } else {  // unsuccessful

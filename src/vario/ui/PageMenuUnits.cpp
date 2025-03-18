@@ -49,43 +49,43 @@ void UnitsMenuPage::draw() {
         u8g2.setDrawColor(1);
       switch (i) {
         case cursor_units_alt:
-          if (UNITS_alt)
+          if (settings.units_alt)
             u8g2.print("ft");
           else
             u8g2.print(" m");
           break;
         case cursor_units_climb:
-          if (UNITS_climb)
+          if (settings.units_climb)
             u8g2.print("fpm");
           else
             u8g2.print("m/s");
           break;
         case cursor_units_speed:
-          if (UNITS_speed)
+          if (settings.units_speed)
             u8g2.print("mph");
           else
             u8g2.print("kph");
           break;
         case cursor_units_distance:
-          if (UNITS_distance)
+          if (settings.units_distance)
             u8g2.print("mi");
           else
             u8g2.print("km");
           break;
         case cursor_units_heading:
-          if (UNITS_heading)
+          if (settings.units_heading)
             u8g2.print("NNW");
           else
             u8g2.print("deg");
           break;
         case cursor_units_temp:
-          if (UNITS_temp)
+          if (settings.units_temp)
             u8g2.print("F");
           else
             u8g2.print("C");
           break;
         case cursor_units_hours:
-          if (UNITS_hours)
+          if (settings.units_hours)
             u8g2.print("12h");
           else
             u8g2.print("24h");
@@ -102,34 +102,34 @@ void UnitsMenuPage::draw() {
 void UnitsMenuPage::setting_change(Button dir, ButtonState state, uint8_t count) {
   switch (cursor_position) {
     case cursor_units_alt:
-      if (state == RELEASED) settings_toggleBoolNeutral(&UNITS_alt);
+      if (state == RELEASED) settings.toggleBoolNeutral(&settings.units_alt);
       break;
     case cursor_units_climb:
-      if (state == RELEASED) settings_toggleBoolNeutral(&UNITS_climb);
+      if (state == RELEASED) settings.toggleBoolNeutral(&settings.units_climb);
       break;
     case cursor_units_speed:
-      if (state == RELEASED) settings_toggleBoolNeutral(&UNITS_speed);
+      if (state == RELEASED) settings.toggleBoolNeutral(&settings.units_speed);
       break;
     case cursor_units_distance:
-      if (state == RELEASED) settings_toggleBoolNeutral(&UNITS_distance);
+      if (state == RELEASED) settings.toggleBoolNeutral(&settings.units_distance);
       break;
     case cursor_units_heading:
-      if (state == RELEASED) settings_toggleBoolNeutral(&UNITS_heading);
+      if (state == RELEASED) settings.toggleBoolNeutral(&settings.units_heading);
       break;
     case cursor_units_temp:
-      if (state == RELEASED) settings_toggleBoolNeutral(&UNITS_temp);
+      if (state == RELEASED) settings.toggleBoolNeutral(&settings.units_temp);
       break;
     case cursor_units_hours:
-      if (state == RELEASED) settings_toggleBoolNeutral(&UNITS_hours);
+      if (state == RELEASED) settings.toggleBoolNeutral(&settings.units_hours);
       break;
     case cursor_units_back:
       if (state == RELEASED) {
         speaker_playSound(fx_cancel);
-        settings_save();
+        settings.save();
         mainMenuPage.backToMainMenu();
       } else if (state == HELD) {
         speaker_playSound(fx_exit);
-        settings_save();
+        settings.save();
         mainMenuPage.quitMenu();
       }
       break;

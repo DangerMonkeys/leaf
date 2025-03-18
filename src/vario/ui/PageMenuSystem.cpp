@@ -35,7 +35,7 @@ PageMenuAbout about_page;
 uint8_t reset_settings_timer = 0;
 
 void SystemMenuPage::draw() {
-  int16_t displayTimeZone = TIME_ZONE;
+  int16_t displayTimeZone = settings.system_timeZone;
 
   u8g2.firstPage();
   do {
@@ -83,13 +83,13 @@ void SystemMenuPage::draw() {
         case cursor_system_volume:
           u8g2.setCursor(setting_choice_x + 12, menu_items_y[i]);
           u8g2.setFont(leaf_icons);
-          u8g2.print(char('I' + VOLUME_SYSTEM));
+          u8g2.print(char('I' + settings.system_volume));
           u8g2.setFont(leaf_6x12);
           break;
 
         case cursor_system_poweroff:
           u8g2.setCursor(setting_choice_x + 8, menu_items_y[i]);
-          if (AUTO_OFF)
+          if (settings.system_autoOff)
             u8g2.print((char)125);
           else
             u8g2.print((char)123);
@@ -97,7 +97,7 @@ void SystemMenuPage::draw() {
 
         case cursor_system_showWarning:
           u8g2.setCursor(setting_choice_x + 8, menu_items_y[i]);
-          if (SHOW_WARNING)
+          if (settings.system_showWarning)
             u8g2.print((char)125);
           else
             u8g2.print((char)123);
@@ -112,12 +112,13 @@ void SystemMenuPage::draw() {
           u8g2.setFont(leaf_6x12);
           break;
 #endif
-          u8g2.print(FANET_region == FanetRadioRegion::OFF ? (String) "OFF" : (String)((char)126));
+          u8g2.print(settings.fanet_region == FanetRadioRegion::OFF ? (String) "OFF"
+                                                                    : (String)((char)126));
           break;
 
         case cursor_system_bluetooth:
           u8g2.setCursor(setting_choice_x + 4, menu_items_y[i]);
-          if (BLUETOOTH_ON)
+          if (settings.system_bluetoothOn)
             u8g2.print("ON");
           else
             u8g2.print("OFF");
@@ -158,17 +159,17 @@ void SystemMenuPage::setting_change(Button dir, ButtonState state, uint8_t count
   bool redraw = false;
   switch (cursor_position) {
     case cursor_system_timezone:
-      if (state == RELEASED && dir != Button::NONE) settings_adjustTimeZone(dir);
-      if (state == HELD && dir == Button::NONE) settings_adjustTimeZone(dir);
+      if (state == RELEASED && dir != Button::NONE) settings.adjustTimeZone(dir);
+      if (state == HELD && dir == Button::NONE) settings.adjustTimeZone(dir);
       break;
     case cursor_system_volume:
-      if (state == RELEASED && dir != Button::NONE) settings_adjustVolumeSystem(dir);
+      if (state == RELEASED && dir != Button::NONE) settings.adjustVolumeSystem(dir);
       break;
     case cursor_system_poweroff:
-      if (state == RELEASED) settings_toggleBoolOnOff(&AUTO_OFF);
+      if (state == RELEASED) settings.toggleBoolOnOff(&settings.system_autoOff);
       break;
     case cursor_system_showWarning:
-      if (state == RELEASED) settings_toggleBoolOnOff(&SHOW_WARNING);
+      if (state == RELEASED) settings.toggleBoolOnOff(&settings.system_showWarning);
       break;
     case cursor_system_fanet:
       if (state != RELEASED) break;
@@ -198,13 +199,13 @@ void SystemMenuPage::setting_change(Button dir, ButtonState state, uint8_t count
       break;
     case cursor_system_bluetooth:
       if (state != RELEASED) break;
-      BLUETOOTH_ON = !BLUETOOTH_ON;
-      if (BLUETOOTH_ON) {
+      settings.system_bluetoothOn = !settings.system_bluetoothOn;
+      if (settings.system_bluetoothOn) {
         BLE::get().start();
       } else {
         BLE::get().stop();
       }
-      settings_save();
+      settings.save();
       break;
     case cursor_system_reset:
       if (state == RELEASED || state == NO_STATE) {
@@ -213,7 +214,7 @@ void SystemMenuPage::setting_change(Button dir, ButtonState state, uint8_t count
       if ((state == HELD || state == HELD_LONG) && count <= 12) {
         reset_settings_timer = count * 8;
         if (count == 12) {
-          settings_reset();
+          settings.reset();
           speaker_playSound(fx_confirm);
           reset_settings_timer = 0;
         }
@@ -222,11 +223,11 @@ void SystemMenuPage::setting_change(Button dir, ButtonState state, uint8_t count
     case cursor_system_back:
       if (state == RELEASED) {
         speaker_playSound(fx_cancel);
-        settings_save();
+        settings.save();
         mainMenuPage.backToMainMenu();
       } else if (state == HELD) {
         speaker_playSound(fx_exit);
-        settings_save();
+        settings.save();
         mainMenuPage.quitMenu();
       }
       break;

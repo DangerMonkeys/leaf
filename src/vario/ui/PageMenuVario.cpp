@@ -55,19 +55,19 @@ void VarioMenuPage::draw() {
         case cursor_vario_volume:
           u8g2.print(' ');
           u8g2.setFont(leaf_icons);
-          u8g2.print(char('I' + VOLUME_VARIO));
+          u8g2.print(char('I' + settings.vario_volume));
           u8g2.setFont(leaf_6x12);
           break;
         case cursor_vario_tones:
           u8g2.print(' ');
-          if (VARIO_TONES)
+          if (settings.vario_tones)
             u8g2.print(char(138));
           else
             u8g2.print(char(139));
           break;
         case cursor_vario_quietmode:
           u8g2.print(' ');
-          if (QUIET_MODE)
+          if (settings.vario_quietMode)
             u8g2.print(char(125));
           else
             u8g2.print(char(123));
@@ -75,38 +75,38 @@ void VarioMenuPage::draw() {
 
         case cursor_vario_sensitive:
           u8g2.print(' ');
-          u8g2.print(VARIO_SENSE);
+          u8g2.print(settings.vario_sensitivity);
           break;
         case cursor_vario_climbavg:
           u8g2.print(' ');
-          u8g2.print(CLIMB_AVERAGE);
+          u8g2.print(settings.vario_climbAvg);
           break;
 
         case cursor_vario_climbstart:
-          if (UNITS_climb) {
+          if (settings.units_climb) {
             u8g2.print(' ');
-            u8g2.print(CLIMB_START * 2);  // cm/s->fpm
+            u8g2.print(settings.vario_climbStart * 2);  // cm/s->fpm
           } else {
-            u8g2.print(float(CLIMB_START) / 100, 2);  // cm/s->m/s
+            u8g2.print(float(settings.vario_climbStart) / 100, 2);  // cm/s->m/s
           }
           break;
         case cursor_vario_liftyair:
-          if (LIFTY_AIR == 0) {
+          if (settings.vario_liftyAir == 0) {
             u8g2.print("OFF");
-          } else if (UNITS_climb) {
-            u8g2.print(LIFTY_AIR * 20);  // 10cm/s->fpm
+          } else if (settings.units_climb) {
+            u8g2.print(settings.vario_liftyAir * 20);  // 10cm/s->fpm
           } else {
-            u8g2.print(float(LIFTY_AIR) / 10, 1);  // 10cm/s->m/s
+            u8g2.print(float(settings.vario_liftyAir) / 10, 1);  // 10cm/s->m/s
           }
           break;
         case cursor_vario_sinkalarm:
-          if (SINK_ALARM == 0) {
+          if (settings.vario_sinkAlarm == 0) {
             u8g2.print("OFF");
           } else {
             // now print the value
-            if (UNITS_climb) {
+            if (settings.units_climb) {
               // handle the extra digit required if we hit -1000fpm or more
-              if (SINK_ALARM <= -5) {
+              if (settings.vario_sinkAlarm <= -5) {
                 u8g2.setCursor(u8g2.getCursorX() - 7,
                                u8g2.getCursorY());  // scootch over to make room
 
@@ -120,9 +120,9 @@ void VarioMenuPage::draw() {
               }
 
               // now print the value as usual
-              u8g2.print(SINK_ALARM * 200);  // m/s->fpm
+              u8g2.print(settings.vario_sinkAlarm * 200);  // m/s->fpm
             } else {
-              u8g2.print(float(SINK_ALARM), 1);  // m/s->m/s
+              u8g2.print(float(settings.vario_sinkAlarm), 1);  // m/s->m/s
             }
           }
           break;
@@ -140,37 +140,37 @@ void VarioMenuPage::setting_change(Button dir, ButtonState state, uint8_t count)
   switch (cursor_position) {
     case cursor_vario_volume:
       if (state != RELEASED) return;
-      settings_adjustVolumeVario(dir);
+      settings.adjustVolumeVario(dir);
       break;
     case cursor_vario_quietmode:
-      if (state == RELEASED) settings_toggleBoolOnOff(&QUIET_MODE);
+      if (state == RELEASED) settings.toggleBoolOnOff(&settings.vario_quietMode);
       break;
     case cursor_vario_sensitive:
-      if (state == RELEASED) settings_adjustVarioAverage(dir);
+      if (state == RELEASED) settings.adjustVarioAverage(dir);
       break;
     case cursor_vario_tones:
-      if (state == RELEASED) settings_toggleBoolNeutral(&VARIO_TONES);
+      if (state == RELEASED) settings.toggleBoolNeutral(&settings.vario_tones);
       break;
     case cursor_vario_liftyair:
-      if (state == RELEASED) settings_adjustLiftyAir(dir);
+      if (state == RELEASED) settings.adjustLiftyAir(dir);
       break;
     case cursor_vario_climbavg:
-      if (state == RELEASED) settings_adjustClimbAverage(dir);
+      if (state == RELEASED) settings.adjustClimbAverage(dir);
       break;
     case cursor_vario_climbstart:
-      if (state == RELEASED) settings_adjustClimbStart(dir);
+      if (state == RELEASED) settings.adjustClimbStart(dir);
       break;
     case cursor_vario_sinkalarm:
-      if (state == RELEASED) settings_adjustSinkAlarm(dir);
+      if (state == RELEASED) settings.adjustSinkAlarm(dir);
       break;
     case cursor_vario_back:
       if (state == RELEASED) {
         speaker_playSound(fx_cancel);
-        settings_save();
+        settings.save();
         mainMenuPage.backToMainMenu();
       } else if (state == HELD) {
         speaker_playSound(fx_exit);
-        settings_save();
+        settings.save();
         mainMenuPage.quitMenu();
       }
       break;

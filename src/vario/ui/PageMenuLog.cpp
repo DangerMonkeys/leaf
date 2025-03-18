@@ -46,27 +46,27 @@ void LogMenuPage::draw() {
         u8g2.setDrawColor(1);
       switch (i) {
         case cursor_log_format:
-          if (LOG_FORMAT == LOG_FORMAT_KML)
+          if (settings.log_format == LOG_FORMAT_KML)
             u8g2.print("KML");
-          else if (LOG_FORMAT == LOG_FORMAT_IGC)
+          else if (settings.log_format == LOG_FORMAT_IGC)
             u8g2.print("IGC");
           else
             u8g2.print("_?_");
           break;
         case cursor_log_saveLog:
-          if (TRACK_SAVE)
+          if (settings.log_saveTrack)
             u8g2.print(char(125));
           else
             u8g2.print(char(123));
           break;
         case cursor_log_autoStart:
-          if (AUTO_START)
+          if (settings.log_autoStart)
             u8g2.print(char(125));
           else
             u8g2.print(char(123));
           break;
         case cursor_log_autoStop:
-          if (AUTO_STOP)
+          if (settings.log_autoStop)
             u8g2.print(char(125));
           else
             u8g2.print(char(123));
@@ -86,7 +86,7 @@ void LogMenuPage::setting_change(Button dir, ButtonState state, uint8_t count) {
       if (state != PRESSED) {
         return;
       }
-      auto new_val = (int8_t)LOG_FORMAT;
+      auto new_val = (int8_t)settings.log_format;
       if (dir == Button::RIGHT) {
         new_val++;
       } else if (dir == Button::LEFT) {
@@ -99,29 +99,29 @@ void LogMenuPage::setting_change(Button dir, ButtonState state, uint8_t count) {
         new_val = SETTING_LOG_FORMAT_ENTRIES - 1;
       }
 
-      LOG_FORMAT = (SettingLogFormat)new_val;
+      settings.log_format = (SettingLogFormat)new_val;
       break;
     }
     case cursor_log_saveLog: {
-      if (state == RELEASED) settings_toggleBoolOnOff(&TRACK_SAVE);
+      if (state == RELEASED) settings.toggleBoolOnOff(&settings.log_saveTrack);
       break;
     }
     case cursor_log_autoStart: {
-      if (state == RELEASED) settings_toggleBoolOnOff(&AUTO_START);
+      if (state == RELEASED) settings.toggleBoolOnOff(&settings.log_autoStart);
       break;
     }
     case cursor_log_autoStop: {
-      if (state == RELEASED) settings_toggleBoolOnOff(&AUTO_STOP);
+      if (state == RELEASED) settings.toggleBoolOnOff(&settings.log_autoStop);
       break;
     }
     case cursor_log_back: {
       if (state == RELEASED) {
         speaker_playSound(fx_cancel);
-        settings_save();
+        settings.save();
         mainMenuPage.backToMainMenu();
       } else if (state == HELD) {
         speaker_playSound(fx_exit);
-        settings_save();
+        settings.save();
         mainMenuPage.quitMenu();
       }
       break;

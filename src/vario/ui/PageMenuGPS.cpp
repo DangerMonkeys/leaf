@@ -84,7 +84,7 @@ void GPSMenuPage::draw() {
       switch (i) {
         case cursor_gps_update:
           u8g2.setCursor(setting_choice_x + 4, menu_items_y[i]);
-          u8g2.print(GPS_SETTING);
+          u8g2.print(settings.gpsMode);
           break;
         case cursor_gps_back:
           u8g2.print((char)124);
@@ -103,11 +103,11 @@ void GPSMenuPage::setting_change(Button dir, ButtonState state, uint8_t count) {
     case cursor_gps_back:
       if (state == RELEASED) {
         speaker_playSound(fx_cancel);
-        settings_save();
+        settings.save();
         mainMenuPage.backToMainMenu();
       } else if (state == HELD) {
         speaker_playSound(fx_exit);
-        settings_save();
+        settings.save();
         mainMenuPage.quitMenu();
       }
   }

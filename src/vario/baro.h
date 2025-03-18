@@ -67,6 +67,8 @@ class Barometer {
 
   // == Device reading & data processing ==
   void adjustAltSetting(int8_t dir, uint8_t count);
+  // solve for the altimeter setting required to make corrected-pressure-altitude match gps-altitude
+  bool syncToGPSAlt(void);
 
   // == Test Functions ==
   void debugPrint(void);
@@ -81,7 +83,7 @@ class Barometer {
 
   // == User Settings for Vario ==
 
-  // default samples to average (will be adjusted by VARIO_SENSE user setting)
+  // default samples to average (will be adjusted by vario_sensitivity user setting)
   uint8_t filterValsPref_ = 3;
 
   int32_t pressureFilterVals_[FILTER_VALS_MAX + 1];  // use [0] as the index / bookmark

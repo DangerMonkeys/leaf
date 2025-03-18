@@ -230,7 +230,7 @@ void main_CHARGE_loop() {
     if (buttonPushed == Button::NONE)
       goToSleep = true;  // get ready to sleep if no button is being pushed
   } else {
-    if (goToSleep && ECO_MODE) {  // don't allow sleep if ECO_MODE is off
+    if (goToSleep && settings.system_ecoMode) {  // don't allow sleep if ECO_MODE is off
 
       goToSleep = false;  // we don't want to sleep again as soon as we wake up; we want to wait
                           // until we've done 'doTasks' before sleeping again
@@ -255,8 +255,9 @@ void main_CHARGE_loop() {
       esp_sleep_enable_timer_wakeup(sleepMicros);  // set timer to wake up
 
       // sleep for real if ECO_MODE is set, otherwise 'fake sleep' using delay
-      if (ECO_MODE) {  // TODO: this is doubling the condition since we already check ECO_MODE in
-                       // the parent if() statement
+      if (settings.system_ecoMode) {  // TODO: this is doubling the condition since we already check
+                                      // ECO_MODE in
+                                      // the parent if() statement
         esp_light_sleep_start();
       } else {
         Serial.print("microsNow:    ");

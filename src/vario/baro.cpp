@@ -9,6 +9,7 @@
 #include "SDcard.h"
 #include "buttons.h"
 #include "flags_enum.h"
+#include "gps.h"
 #include "log.h"
 #include "ms5611.h"
 #include "settings.h"
@@ -40,7 +41,19 @@ void Barometer::adjustAltSetting(int8_t dir, uint8_t count) {
     altimeterSetting -= increase;
     if (altimeterSetting < 28.0) altimeterSetting = 28.0;
   }
-  ALT_SETTING = altimeterSetting;
+  settings.vario_altSetting = altimeterSetting;
+}
+
+// solve for the altimeter setting required to make corrected-pressure-altitude match gps-altitude
+bool Barometer::syncToGPSAlt() {
+  bool success = false;
+  if (gps.altitude.isValid()) {
+    baro.altimeterSetting =
+        baro.pressure / (3386.389 * pow(1 - gps.altitude.meters() * 100 / 4433100.0, 1 / 0.190264));
+    settings.vario_altSetting = baro.altimeterSetting;
+    success = true;
+  }
+  return success;
 }
 
 // Conversion functions to change units
@@ -73,8 +86,8 @@ float baro_climbToUnits(int32_t climbrate, bool units_fpm) {
 
 void Barometer::init(void) {
   // recover saved altimeter setting
-  if (ALT_SETTING > 28.0 && ALT_SETTING < 32.0)
-    altimeterSetting = ALT_SETTING;
+  if (settings.vario_altSetting > 28.0 && settings.vario_altSetting < 32.0)
+    altimeterSetting = settings.vario_altSetting;
   else
     altimeterSetting = 29.921;
 
@@ -234,14 +247,14 @@ void Barometer::calculatePressureAlt() {
 //
 // When filtering the pressure values, the most recent N values are summed up (from the bookmarked
 // spot back to N spots before that), then divided by N to get the average.
-//  (where N is calculated based on sensitivity user preference VARIO_SENSE)
+//  (where N is calculated based on sensitivity user preference vario_sensitivity)
 //
 // NOTE: We have also explored performing a linear regeression on the last N samples to get a more
 // accurate filtered value.  This is still in testing, and not currently being used.
 //
 void Barometer::filterPressure(void) {
   // first calculate filter size based on user preference
-  switch (VARIO_SENSE) {
+  switch (settings.vario_sensitivity) {
     case 1:
       filterValsPref_ = 20;
       break;
@@ -312,7 +325,7 @@ void Barometer::filterClimb() {
   }
 
   // first calculate filter size based on user preference
-  switch (VARIO_SENSE) {
+  switch (settings.vario_sensitivity) {
     case 1:
       filterValsPref_ = 20;
       break;

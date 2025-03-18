@@ -21,17 +21,17 @@ void PageFanet::setting_change(Button dir, ButtonState state, uint8_t count) {
 
       // Callback for when the region is changed
       auto regionChanged = [](int selected) {
-        FANET_region = (FanetRadioRegion)selected;
+        settings.fanet_region = (FanetRadioRegion)selected;
         Serial.print("Updating Fanet region to ");
-        Serial.print(FANET_region);
+        Serial.print(settings.fanet_region);
         Serial.print(" ");
-        Serial.println(FANET_region.c_str());
-        settings_save();
+        Serial.println(settings.fanet_region.c_str());
+        settings.save();
       };
 
       // Bring up a dialogue for the user to change the region
       PageListSelect::show("Region", etl::array_view<const char*>(FanetRadioRegion::strings),
-                           (int)FANET_region, regionChanged);
+                           (int)settings.fanet_region, regionChanged);
     } break;
     case 2:
       // User selected statistics
@@ -53,7 +53,7 @@ void PageFanet::draw_menu_input(int8_t cursor_position) {
   switch (cursor_position) {
     case 1:
       // Region
-      ret = FANET_region.c_str();
+      ret = settings.fanet_region.c_str();
       break;
   }
 

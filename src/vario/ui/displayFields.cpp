@@ -46,7 +46,7 @@ void display_clockTime(uint8_t x, uint8_t y, bool show_ampm) {
   }
   // Crafts a 24 or 12 hour time to show depending on prefs
   char buf[10];
-  if (UNITS_hours) {
+  if (settings.units_hours) {
     // This is a 12 hour time and needs to print eg " 9:45am"
     strftime(buf, 10, "%I:%M%p", &cal);
     if (buf[0] == '0') {
@@ -118,7 +118,7 @@ void display_flightTimer(uint8_t x, uint8_t y, bool shortstring, bool selected) 
 void display_speed(uint8_t cursor_x, uint8_t cursor_y) {
   // Get speed in proper units and put into int for display purposes
   uint16_t displaySpeed;
-  if (UNITS_speed)
+  if (settings.units_speed)
     // add half so we effectively round when truncating from float to int.
     displaySpeed = gps.speed.mph() + 0.5f;
   else
@@ -138,7 +138,7 @@ void display_speed(uint8_t x, uint8_t y, const uint8_t* font) {
 void display_speed(uint8_t x, uint8_t y, const uint8_t* font, bool units) {
   display_speed(x, y, font);
   // kpm or mph
-  if (UNITS_speed)
+  if (settings.units_speed)
     u8g2.print((char)135);  // mph unit character
   else
     u8g2.print((char)136);  // kph unit character
@@ -153,7 +153,7 @@ void display_distance(uint8_t cursor_x, uint8_t cursor_y, double distance) {
   if (distance == 0) {
     u8g2.print("----");
   } else {
-    if (UNITS_distance) {
+    if (settings.units_distance) {
       distance *= 3.28084;  // convert to feet
       if (distance > 1000) {
         distance /= 5280;  // convert to miles if >1000
@@ -173,10 +173,10 @@ void display_distance(uint8_t cursor_x, uint8_t cursor_y, double distance) {
     u8g2.print(distance, decimalPlaces);
   }
 
-  if (unitsSmall && UNITS_distance) u8g2.print((char)128);
-  if (!unitsSmall && UNITS_distance) u8g2.print((char)130);
-  if (unitsSmall && !UNITS_distance) u8g2.print((char)127);
-  if (!unitsSmall && !UNITS_distance) u8g2.print((char)129);
+  if (unitsSmall && settings.units_distance) u8g2.print((char)128);
+  if (!unitsSmall && settings.units_distance) u8g2.print((char)130);
+  if (unitsSmall && !settings.units_distance) u8g2.print((char)127);
+  if (!unitsSmall && !settings.units_distance) u8g2.print((char)129);
 }
 
 void display_heading(uint8_t cursor_x, uint8_t cursor_y, bool degSymbol) {
@@ -184,7 +184,7 @@ void display_heading(uint8_t cursor_x, uint8_t cursor_y, bool degSymbol) {
 
   if (!gpsFixInfo.fix) {  // blank out heading if no gps fix
     u8g2.print("---");
-  } else if (UNITS_heading) {  // Cardinal heading direction
+  } else if (settings.units_heading) {  // Cardinal heading direction
     const char* displayHeadingCardinal =
         gps.cardinal(gps.course.deg());  // gps_getCourseCardinal();
     if (strlen(displayHeadingCardinal) == 1)
@@ -272,7 +272,7 @@ void display_alt_type(uint8_t cursor_x, uint8_t cursor_y, const uint8_t* font, u
 }
 
 void display_alt(uint8_t cursor_x, uint8_t cursor_y, const uint8_t* font, int32_t displayAlt) {
-  if (UNITS_alt)
+  if (settings.units_alt)
     displayAlt = displayAlt * 100 / 3048;  // convert cm to ft
   else
     displayAlt /= 100;  // convert from cm to m
@@ -461,7 +461,7 @@ void display_climbRate(uint8_t x, uint8_t y, const uint8_t* font, int16_t displa
     displayClimbRate *= -1;  // keep positive part
   }
 
-  if (UNITS_climb) {
+  if (settings.units_climb) {
     // convert from cm/s to fpm (lose one significant digit)
     displayClimbRate = displayClimbRate * 197 / 1000 * 10;
     if (displayClimbRate < 1000) u8g2.print(" ");
@@ -507,7 +507,7 @@ void display_unsignedClimbRate_short(uint8_t x, uint8_t y, int16_t displayClimbR
   }
 
   // if in fpm units
-  if (UNITS_climb) {
+  if (settings.units_climb) {
     // convert from cm/s to fpm (lose one significant digit)
     displayClimbRate = displayClimbRate * 197 / 1000 * 10;
     if (displayClimbRate >= 1000) {  // print 4 digits, 2 large 2 small
@@ -590,7 +590,7 @@ void display_temp(uint8_t x, uint8_t y, int16_t temperature) {
   u8g2.setDrawColor(1);
   u8g2.setFont(leaf_6x12);
 
-  if (UNITS_temp) {
+  if (settings.units_temp) {
     temperature = temperature * 9 / 5 + 32;
     u8g2.print(temperature);
     u8g2.print((char)134);
@@ -726,9 +726,9 @@ void display_GPS_icon(uint8_t x, uint8_t y) {
   u8g2.setFont(leaf_icons);
   u8g2.setCursor(x, y);
 
-  if (GPS_SETTING == 0) {    // GPS Off
-    u8g2.print((char)44);    // GPS icon with X through it
-  } else if (GPS_SETTING) {  // GPS not-off
+  if (settings.gpsMode == 0) {    // GPS Off
+    u8g2.print((char)44);         // GPS icon with X through it
+  } else if (settings.gpsMode) {  // GPS not-off
     if (gpsFixInfo.fix) {
       u8g2.print((char)43);  // GPS icon with fix
     } else {
@@ -917,7 +917,7 @@ void display_windSpeedCentered(uint8_t x, uint8_t y, const uint8_t* font) {
   if (windEstimate.validEstimate) {
     float windSpeed = windEstimate.windSpeed;
 
-    if (UNITS_speed) {
+    if (settings.units_speed) {
       windSpeed *= MPS2MPH;
     } else {
       windSpeed *= MPS2KPH;
@@ -1019,7 +1019,7 @@ void display_headerAndFooter(bool timerSelected, bool showTurnArrows) {
     if (display_getPage() == page_nav) {
       u8g2.setDrawColor(0);  // draw white on black for nav page
     }
-    if (UNITS_speed)
+    if (settings.units_speed)
       u8g2.print("MPH");
     else
       u8g2.print("KPH");
@@ -1044,10 +1044,10 @@ void display_headerAndFooter(bool timerSelected, bool showTurnArrows) {
   // Vario Beep Volume icon
   u8g2.setCursor(37, 191);
   u8g2.setFont(leaf_icons);
-  if (QUIET_MODE && !flightTimer_isRunning() && VOLUME_VARIO != 0) {
+  if (settings.vario_quietMode && !flightTimer_isRunning() && settings.vario_volume != 0) {
     u8g2.print((char)('I' + 4));
   } else {
-    u8g2.print((char)('I' + VOLUME_VARIO));
+    u8g2.print((char)('I' + settings.vario_volume));
   }
 
   // Timer in lower right corner

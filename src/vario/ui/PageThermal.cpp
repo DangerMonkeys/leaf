@@ -58,7 +58,7 @@ void thermalPage_draw() {
     u8g2.drawFrame(varioBarWidth - 1, topOfFrame, 96 - varioBarWidth + 1, graphBoxHeight);
 
     // alt
-    display_alt_type(22, 89, leaf_8x14, THMPG_ALT_TYP);
+    display_alt_type(22, 89, leaf_8x14, settings.disp_thmPageAltType);
 
     // altselection box
     if (cursor_position == cursor_thermalPage_alt1) {
@@ -142,14 +142,14 @@ void thermalPage_button(Button button, ButtonState state, uint8_t count) {
           if (state == RELEASED) cursor_move(button);
           break;
         case Button::LEFT:
-          if (NAVPG_ALT_TYP == altType_MSL &&
+          if (settings.disp_navPageAltType == altType_MSL &&
               (state == PRESSED || state == HELD || state == HELD_LONG)) {
             baro.adjustAltSetting(1, count);
             speaker_playSound(fx_neutral);
           }
           break;
         case Button::RIGHT:
-          if (NAVPG_ALT_TYP == altType_MSL &&
+          if (settings.disp_navPageAltType == altType_MSL &&
               (state == PRESSED || state == HELD || state == HELD_LONG)) {
             baro.adjustAltSetting(-1, count);
             speaker_playSound(fx_neutral);
@@ -157,10 +157,10 @@ void thermalPage_button(Button button, ButtonState state, uint8_t count) {
           break;
         case Button::CENTER:
           if (state == RELEASED)
-            settings_adjustDisplayField_thermalPage_alt(Button::CENTER);
-          else if (state == HELD && count == 1 && THMPG_ALT_TYP == altType_MSL) {
-            if (settings_matchGPSAlt()) {  // successful adjustment of altimeter setting to match
-                                           // GPS altitude
+            settings.adjustDisplayField_thermalPage_alt(Button::CENTER);
+          else if (state == HELD && count == 1 && settings.disp_thmPageAltType == altType_MSL) {
+            if (baro.syncToGPSAlt()) {  // successful adjustment of altimeter setting to match
+                                        // GPS altitude
               speaker_playSound(fx_enter);
               cursor_position = cursor_thermalPage_none;
             } else {  // unsuccessful

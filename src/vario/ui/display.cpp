@@ -69,7 +69,7 @@ void display_init(void) {
     Serial.println("u8g2 done. ");
   }
 
-  display_setContrast(CONTRAST);
+  display_setContrast(settings.disp_contrast);
   Serial.print("u8g2 set contrast. ");
 }
 
@@ -96,9 +96,9 @@ void display_turnPage(uint8_t action) {
       display_page++;
 
       // skip past any pages not enabled for display
-      if (display_page == page_thermalSimple && !SHOW_THRM_SIMP) display_page++;
-      if (display_page == page_thermal && !SHOW_THRM_ADV) display_page++;
-      if (display_page == page_nav && !SHOW_NAV) display_page++;
+      if (display_page == page_thermalSimple && !settings.disp_showThmPage) display_page++;
+      if (display_page == page_thermal && !settings.disp_showThmAdvPage) display_page++;
+      if (display_page == page_nav && !settings.disp_showNavPage) display_page++;
 
       if (display_page == page_last)
         display_page =
@@ -109,10 +109,10 @@ void display_turnPage(uint8_t action) {
       display_page--;
 
       // skip past any pages not enabled for display
-      if (display_page == page_nav && !SHOW_NAV) display_page--;
-      if (display_page == page_thermal && !SHOW_THRM_ADV) display_page--;
-      if (display_page == page_thermalSimple && !SHOW_THRM_SIMP) display_page--;
-      if (display_page == page_debug && !SHOW_DEBUG)
+      if (display_page == page_nav && !settings.disp_showNavPage) display_page--;
+      if (display_page == page_thermal && !settings.disp_showThmAdvPage) display_page--;
+      if (display_page == page_thermalSimple && !settings.disp_showThmPage) display_page--;
+      if (display_page == page_debug && !settings.disp_showDebugPage)
         display_page = tempPage;  // go back to the page we were on if we can't go further left
 
       if (display_page < 0)
@@ -163,7 +163,7 @@ void display_update() {
     return;
   }
   // If user setting to SHOW_WARNING and also we need to showWarning, then display it
-  if (SHOW_WARNING && showWarning) {
+  if (settings.system_showWarning && showWarning) {
     warningPage_draw();
     return;
   } else {

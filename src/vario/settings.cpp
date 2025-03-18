@@ -13,70 +13,13 @@
 #define RW_MODE false
 #define RO_MODE true
 
-// Global Variables for Current Settings
-// Vario Settings
-int8_t VOLUME_VARIO;
-bool QUIET_MODE;
-bool VARIO_TONES;
-int8_t VARIO_SENSE;
-int8_t CLIMB_AVERAGE;
-int8_t CLIMB_START;
-int8_t LIFTY_AIR;
-int8_t SINK_ALARM;
-float ALT_SETTING;
-bool ALT_SYNC_GPS;
-
-// GPS & Track Log Settings
-bool DISTANCE_FLOWN;
-int8_t GPS_SETTING;
-bool TRACK_SAVE;
-bool AUTO_START;
-bool AUTO_STOP;
-SettingLogFormat LOG_FORMAT;
-
-// System Settings
-int16_t TIME_ZONE;
-int8_t VOLUME_SYSTEM;
-bool ECO_MODE;
-bool AUTO_OFF;
-bool WIFI_ON;
-bool BLUETOOTH_ON;
-bool SHOW_WARNING;
-
-// Boot Flags
-bool ENTER_BOOTLOAD;
-bool BOOT_TO_ON;
-
-// Display Settings
-uint8_t CONTRAST;
-uint8_t NAVPG_ALT_TYP;
-uint8_t THMPG_ALT_TYP;
-uint8_t THMPG_ALT2_TYP;
-uint8_t THMSPG_USR1;
-uint8_t THMSPG_USR2;
-bool SHOW_DEBUG;
-bool SHOW_THRM_SIMP;
-bool SHOW_THRM_ADV;
-bool SHOW_NAV;
-
-// Fanet settings
-FanetRadioRegion FANET_region;
-String FANET_address;
-
-// Unit Values
-bool UNITS_climb;
-bool UNITS_alt;
-bool UNITS_temp;
-bool UNITS_speed;
-bool UNITS_heading;
-bool UNITS_distance;
-bool UNITS_hours;
+Settings settings;
 
 Preferences leafPrefs;
 
-void settings_init() {
-  settings_loadDefaults();  // load defaults regardless, but we'll overwrite these with saved user
-                            // settings (if available)
+void Settings::init() {
+  loadDefaults();  // load defaults regardless, but we'll overwrite these with saved user
+                   // settings (if available)
 
   // Check if settings have been saved before (or not), then save defaults (or grab saved settings)
   leafPrefs.begin("varioPrefs", RO_MODE);  // open (or create if needed) the varioPrefs namespace
@@ -88,139 +31,140 @@ void settings_init() {
   if (newBootupVario) {
     leafPrefs.end();
     leafPrefs.begin("varioPrefs", RW_MODE);
-    settings_save();  // save defaults to NVS0
+    save();  // save defaults to NVS0
     leafPrefs.end();
   } else {
-    settings_retrieve();
+    retrieve();
   }
 }
 
-void factoryResetVario() {
+void Settings::factoryResetVario() {
   leafPrefs.remove(
       "nvsInitVario");  // remove this key so that we force a factory settings reload on next reboot
 }
 
-void settings_loadDefaults() {
+void Settings::loadDefaults() {
   // Vario Settings
-  SINK_ALARM = DEF_SINK_ALARM;
-  VARIO_SENSE = DEF_VARIO_SENSE;
-  CLIMB_AVERAGE = DEF_CLIMB_AVERAGE;
-  CLIMB_START = DEF_CLIMB_START;
-  VOLUME_VARIO = DEF_VOLUME_VARIO;
-  QUIET_MODE = DEF_QUIET_MODE;
-  VARIO_TONES = DEF_VARIO_TONES;
-  LIFTY_AIR = DEF_LIFTY_AIR;
-  ALT_SETTING = DEF_ALT_SETTING;
-  ALT_SYNC_GPS = DEF_ALT_SYNC_GPS;
+  vario_sinkAlarm = DEF_SINK_ALARM;
+  vario_sensitivity = DEF_VARIO_SENSE;
+  vario_climbAvg = DEF_CLIMB_AVERAGE;
+  vario_climbStart = DEF_CLIMB_START;
+  vario_volume = DEF_VOLUME_VARIO;
+  vario_quietMode = DEF_QUIET_MODE;
+   vario_tones = DEF_VARIO_TONES;
+  vario_liftyAir = DEF_LIFTY_AIR;
+  vario_altSetting = DEF_ALT_SETTING;
+  vario_altSyncToGPS = DEF_ALT_SYNC_GPS;
 
   // GPS & Track Log Settings
-  DISTANCE_FLOWN = DEF_DISTANCE_FLOWN;
-  GPS_SETTING = DEF_GPS_SETTING;
-  TRACK_SAVE = DEF_TRACK_SAVE;
-  AUTO_START = DEF_AUTO_START;
-  AUTO_STOP = DEF_AUTO_STOP;
-  LOG_FORMAT = DEF_LOG_FORMAT;
+   distanceFlownType = DEF_DISTANCE_FLOWN;
+   gpsMode = DEF_GPS_SETTING;
+   log_saveTrack = DEF_TRACK_SAVE;
+   log_autoStart = DEF_AUTO_START;
+   log_autoStop = DEF_AUTO_STOP;
+   log_format = DEF_LOG_FORMAT;
 
   // System Settings
-  TIME_ZONE = DEF_TIME_ZONE;
-  VOLUME_SYSTEM = DEF_VOLUME_SYSTEM;
-  ECO_MODE = DEF_ECO_MODE;
-  AUTO_OFF = DEF_AUTO_OFF;
-  WIFI_ON = DEF_WIFI_ON;
-  BLUETOOTH_ON = DEF_BLUETOOTH_ON;
-  SHOW_WARNING = DEF_SHOW_WARNING;
+   system_timeZone = DEF_TIME_ZONE;
+   system_volume = DEF_VOLUME_SYSTEM;
+   system_ecoMode = DEF_ECO_MODE;
+   system_autoOff = DEF_AUTO_OFF;
+   system_wifiOn = DEF_WIFI_ON;
+   system_bluetoothOn = DEF_BLUETOOTH_ON;
+   system_showWarning = DEF_SHOW_WARNING;
 
   // Boot Flags
-  ENTER_BOOTLOAD = DEF_ENTER_BOOTLOAD;
-  BOOT_TO_ON = DEF_BOOT_TO_ON;
+   boot_enterBootloader = DEF_ENTER_BOOTLOAD;
+   boot_toOnState = DEF_BOOT_TO_ON;
 
   // Display Settings
-  CONTRAST = DEF_CONTRAST;
-  NAVPG_ALT_TYP = DEF_NAVPG_ALT_TYP;
-  THMPG_ALT_TYP = DEF_THMPG_ALT_TYP;
-  THMPG_ALT2_TYP = DEF_THMPG_ALT2_TYP;
-  THMSPG_USR1 = DEF_THMSPG_USR1;
-  THMSPG_USR2 = DEF_THMSPG_USR2;
-  SHOW_DEBUG = DEF_SHOW_DEBUG;
-  SHOW_THRM_SIMP = DEF_SHOW_THRM_SIMP;
-  SHOW_THRM_ADV = DEF_SHOW_THRM_ADV;
-  SHOW_NAV = DEF_SHOW_NAV;
+   disp_contrast = DEF_CONTRAST;
+   disp_navPageAltType = DEF_NAVPG_ALT_TYP;
+   disp_thmPageAltType = DEF_THMPG_ALT_TYP;
+   disp_thmPageAlt2Type = DEF_THMPG_ALT2_TYP;
+   disp_thmPageUser1 = DEF_THMSPG_USR1;
+   disp_thmPageUser2 = DEF_THMSPG_USR2;
+   disp_showDebugPage = DEF_SHOW_DEBUG;
+   disp_showThmPage = DEF_SHOW_THRM_SIMP;
+   disp_showThmAdvPage = DEF_SHOW_THRM_ADV;
+   disp_showNavPage = DEF_SHOW_NAV;
 
   // Unit Values
-  UNITS_climb = DEF_UNITS_climb;
-  UNITS_alt = DEF_UNITS_alt;
-  UNITS_temp = DEF_UNITS_temp;
-  UNITS_speed = DEF_UNITS_speed;
-  UNITS_heading = DEF_UNITS_heading;
-  UNITS_distance = DEF_UNITS_distance;
-  UNITS_hours = DEF_UNITS_hours;
+   units_climb = DEF_UNITS_climb;
+   units_alt = DEF_UNITS_alt;
+   units_temp = DEF_UNITS_temp;
+   units_speed = DEF_UNITS_speed;
+   units_heading = DEF_UNITS_heading;
+   units_distance = DEF_UNITS_distance;
+   units_hours = DEF_UNITS_hours;
 }
 
-void settings_retrieve() {
+void Settings::retrieve() {
   leafPrefs.begin("varioPrefs", RO_MODE);
 
   // Vario Settings
-  SINK_ALARM = leafPrefs.getChar("SINK_ALARM");
-  VARIO_SENSE = leafPrefs.getChar("VARIO_SENSE");
-  CLIMB_AVERAGE = leafPrefs.getChar("CLIMB_AVERAGE");
-  CLIMB_START = leafPrefs.getChar("CLIMB_START");
-  VOLUME_VARIO = leafPrefs.getChar("VOLUME_VARIO");
-  QUIET_MODE = leafPrefs.getBool("QUIET_MODE");
-  VARIO_TONES = leafPrefs.getBool("VARIO_TONES");
-  LIFTY_AIR = leafPrefs.getChar("LIFTY_AIR");
-  ALT_SETTING = leafPrefs.getFloat("ALT_SETTING");
-  ALT_SYNC_GPS = leafPrefs.getBool("ALT_SYNC_GPS");
+  vario_sinkAlarm = leafPrefs.getChar("SINK_ALARM");
+  vario_sensitivity = leafPrefs.getChar("vario_sensitivity");
+   vario_climbAvg = leafPrefs.getChar("CLIMB_AVERAGE");
+   vario_climbStart = leafPrefs.getChar("CLIMB_START");
+   vario_volume = leafPrefs.getChar("VOLUME_VARIO");
+   vario_quietMode = leafPrefs.getBool("QUIET_MODE");
+   vario_tones = leafPrefs.getBool("VARIO_TONES");
+   vario_liftyAir = leafPrefs.getChar("LIFTY_AIR");
+   vario_altSetting = leafPrefs.getFloat("ALT_SETTING");
+   vario_altSyncToGPS = leafPrefs.getBool("ALT_SYNC_GPS");
 
   // GPS & Track Log Settings
-  DISTANCE_FLOWN = leafPrefs.getBool("DISTANCE_FLOWN");
-  GPS_SETTING = leafPrefs.getChar("GPS_SETTING");
-  TRACK_SAVE = leafPrefs.getBool("TRACK_SAVE");
-  AUTO_START = leafPrefs.getBool("AUTO_START");
-  LOG_FORMAT = leafPrefs.getUChar("LOG_FORMAT");
+   distanceFlownType = leafPrefs.getBool("DISTANCE_FLOWN");
+   gpsMode = leafPrefs.getChar("GPS_SETTING");
+   log_saveTrack = leafPrefs.getBool("TRACK_SAVE");
+   log_autoStart = leafPrefs.getBool("AUTO_START");
+   log_format = leafPrefs.getUChar("LOG_FORMAT");
 
   // System Settings
-  TIME_ZONE = leafPrefs.getShort("TIME_ZONE");
-  VOLUME_SYSTEM = leafPrefs.getChar("VOLUME_SYSTEM");
-  ECO_MODE = leafPrefs.getBool("ECO_MODE");
-  AUTO_OFF = leafPrefs.getBool("AUTO_OFF");
-  WIFI_ON = leafPrefs.getBool("WIFI_ON");
-  BLUETOOTH_ON = leafPrefs.getBool("BLUETOOTH_ON");
-  SHOW_WARNING = leafPrefs.getBool("SHOW_WARNING");
+   system_timeZone = leafPrefs.getShort("TIME_ZONE");
+   system_volume = leafPrefs.getChar("VOLUME_SYSTEM");
+   system_ecoMode = leafPrefs.getBool("ECO_MODE");
+   system_autoOff = leafPrefs.getBool("AUTO_OFF");
+   system_wifiOn = leafPrefs.getBool("WIFI_ON");
+   system_bluetoothOn = leafPrefs.getBool("BLUETOOTH_ON");
+   system_showWarning = leafPrefs.getBool("SHOW_WARNING");
 
   // Boot Flags
-  ENTER_BOOTLOAD = leafPrefs.getBool("ENTER_BOOTLOAD");
-  BOOT_TO_ON = leafPrefs.getBool("BOOT_TO_ON");
+   boot_enterBootloader = leafPrefs.getBool("ENTER_BOOTLOAD");
+   boot_toOnState = leafPrefs.getBool("BOOT_TO_ON");
 
   // Display Settings
-  CONTRAST = leafPrefs.getUChar("CONTRAST");
-  if (CONTRAST < CONTRAST_MIN || CONTRAST > CONTRAST_MAX) CONTRAST = DEF_CONTRAST;
-  NAVPG_ALT_TYP = leafPrefs.getUChar("NAVPG_ALT_TYP");
-  THMPG_ALT_TYP = leafPrefs.getUChar("THMPG_ALT_TYP");
-  THMPG_ALT2_TYP = leafPrefs.getUChar("THMPG_ALT2_TYP");
-  THMSPG_USR1 = leafPrefs.getUChar("THMSPG_USR1");
-  THMSPG_USR2 = leafPrefs.getUChar("THMSPG_USR2");
-  SHOW_DEBUG = leafPrefs.getBool("SHOW_DEBUG");
-  SHOW_THRM_SIMP = leafPrefs.getBool("SHOW_THRM_SIMP");
-  SHOW_THRM_ADV = leafPrefs.getBool("SHOW_THRM_ADV");
-  SHOW_NAV = leafPrefs.getBool("SHOW_NAV");
+   disp_contrast = leafPrefs.getUChar("CONTRAST");
+  if ( disp_contrast < CONTRAST_MIN ||  disp_contrast > CONTRAST_MAX)
+     disp_contrast = DEF_CONTRAST;
+   disp_navPageAltType = leafPrefs.getUChar("NAVPG_ALT_TYP");
+   disp_thmPageAltType = leafPrefs.getUChar("THMPG_ALT_TYP");
+   disp_thmPageAlt2Type = leafPrefs.getUChar("THMPG_ALT2_TYP");
+   disp_thmPageUser1 = leafPrefs.getUChar("THMSPG_USR1");
+   disp_thmPageUser2 = leafPrefs.getUChar("THMSPG_USR2");
+   disp_showDebugPage = leafPrefs.getBool("SHOW_DEBUG");
+   disp_showThmPage = leafPrefs.getBool("SHOW_THRM_SIMP");
+   disp_showThmAdvPage = leafPrefs.getBool("SHOW_THRM_ADV");
+   disp_showNavPage = leafPrefs.getBool("SHOW_NAV");
 
   // Fanet settings
-  FANET_region = (FanetRadioRegion)leafPrefs.getUInt("FANET_REGION");
-  FANET_address = leafPrefs.getString("FANET_ADDRESS");
+   fanet_region = (FanetRadioRegion)leafPrefs.getUInt("FANET_REGION");
+   fanet_address = leafPrefs.getString("FANET_ADDRESS");
 
   // Unit Values
-  UNITS_climb = leafPrefs.getBool("UNITS_climb");
-  UNITS_alt = leafPrefs.getBool("UNITS_alt");
-  UNITS_temp = leafPrefs.getBool("UNITS_temp");
-  UNITS_speed = leafPrefs.getBool("UNITS_speed");
-  UNITS_heading = leafPrefs.getBool("UNITS_heading");
-  UNITS_distance = leafPrefs.getBool("UNITS_distance");
-  UNITS_hours = leafPrefs.getBool("UNITS_hours");
+   units_climb = leafPrefs.getBool("UNITS_climb");
+   units_alt = leafPrefs.getBool("UNITS_alt");
+   units_temp = leafPrefs.getBool("UNITS_temp");
+   units_speed = leafPrefs.getBool("UNITS_speed");
+   units_heading = leafPrefs.getBool("UNITS_heading");
+   units_distance = leafPrefs.getBool("UNITS_distance");
+   units_hours = leafPrefs.getBool("UNITS_hours");
 
   leafPrefs.end();
 }
 
-void settings_save() {
+void Settings::save() {
   // Save settings before shutdown (or other times as needed)
 
   leafPrefs.begin("varioPrefs", RW_MODE);
@@ -230,67 +174,67 @@ void settings_save() {
   leafPrefs.putBool("nvsInitVario", true);
 
   // Vario Settings
-  leafPrefs.putChar("SINK_ALARM", SINK_ALARM);
-  leafPrefs.putChar("VARIO_SENSE", VARIO_SENSE);
-  leafPrefs.putChar("CLIMB_AVERAGE", CLIMB_AVERAGE);
-  leafPrefs.putChar("CLIMB_START", CLIMB_START);
-  leafPrefs.putChar("VOLUME_VARIO", VOLUME_VARIO);
-  leafPrefs.putBool("QUIET_MODE", QUIET_MODE);
-  leafPrefs.putBool("VARIO_TONES", VARIO_TONES);
-  leafPrefs.putChar("LIFTY_AIR", LIFTY_AIR);
-  leafPrefs.putFloat("ALT_SETTING", ALT_SETTING);
-  leafPrefs.putBool("ALT_SYNC_GPS", ALT_SYNC_GPS);
+  leafPrefs.putChar("SINK_ALARM", vario_sinkAlarm);
+  leafPrefs.putChar("vario_sensitivity", vario_sensitivity);
+  leafPrefs.putChar("CLIMB_AVERAGE",  vario_climbAvg);
+  leafPrefs.putChar("CLIMB_START",  vario_climbStart);
+  leafPrefs.putChar("VOLUME_VARIO",  vario_volume);
+  leafPrefs.putBool("QUIET_MODE",  vario_quietMode);
+  leafPrefs.putBool("VARIO_TONES",  vario_tones);
+  leafPrefs.putChar("LIFTY_AIR",  vario_liftyAir);
+  leafPrefs.putFloat("ALT_SETTING",  vario_altSetting);
+  leafPrefs.putBool("ALT_SYNC_GPS",  vario_altSyncToGPS);
   // GPS & Track Log Settings
-  leafPrefs.putBool("DISTANCE_FLOWN", DISTANCE_FLOWN);
-  leafPrefs.putChar("GPS_SETTING", GPS_SETTING);
-  leafPrefs.putBool("TRACK_SAVE", TRACK_SAVE);
-  leafPrefs.putBool("AUTO_START", AUTO_START);
-  leafPrefs.putBool("AUTO_STOP", AUTO_STOP);
-  leafPrefs.putUChar("LOG_FORMAT", LOG_FORMAT);
+  leafPrefs.putBool("DISTANCE_FLOWN",  distanceFlownType);
+  leafPrefs.putChar("GPS_SETTING",  gpsMode);
+  leafPrefs.putBool("TRACK_SAVE",  log_saveTrack);
+  leafPrefs.putBool("AUTO_START",  log_autoStart);
+  leafPrefs.putBool("AUTO_STOP",  log_autoStop);
+  leafPrefs.putUChar("LOG_FORMAT",  log_format);
   // System Settings
-  leafPrefs.putShort("TIME_ZONE", TIME_ZONE);
-  leafPrefs.putChar("VOLUME_SYSTEM", VOLUME_SYSTEM);
-  leafPrefs.putBool("ECO_MODE", ECO_MODE);
-  leafPrefs.putBool("AUTO_OFF", AUTO_OFF);
-  leafPrefs.putBool("WIFI_ON", WIFI_ON);
-  leafPrefs.putBool("BLUETOOTH_ON", BLUETOOTH_ON);
-  leafPrefs.putBool("SHOW_WARNING", SHOW_WARNING);
+  leafPrefs.putShort("TIME_ZONE",  system_timeZone);
+  leafPrefs.putChar("VOLUME_SYSTEM",  system_volume);
+  leafPrefs.putBool("ECO_MODE",  system_ecoMode);
+  leafPrefs.putBool("AUTO_OFF",  system_autoOff);
+  leafPrefs.putBool("WIFI_ON",  system_wifiOn);
+  leafPrefs.putBool("BLUETOOTH_ON",  system_bluetoothOn);
+  leafPrefs.putBool("SHOW_WARNING",  system_showWarning);
   // Boot Flags
-  leafPrefs.putBool("ENTER_BOOTLOAD", ENTER_BOOTLOAD);
-  leafPrefs.putBool("BOOT_TO_ON", BOOT_TO_ON);
+  leafPrefs.putBool("ENTER_BOOTLOAD",  boot_enterBootloader);
+  leafPrefs.putBool("BOOT_TO_ON",  boot_toOnState);
   // Display Settings
-  leafPrefs.putUChar("CONTRAST", CONTRAST);
-  leafPrefs.putUChar("NAVPG_ALT_TYP", NAVPG_ALT_TYP);
-  leafPrefs.putUChar("THMPG_ALT_TYP", THMPG_ALT_TYP);
-  leafPrefs.putUChar("THMPG_ALT2_TYP", THMPG_ALT2_TYP);
-  leafPrefs.putUChar("THMSPG_USR1", THMSPG_USR1);
-  leafPrefs.putUChar("THMSPG_USR2", THMSPG_USR2);
-  leafPrefs.putBool("SHOW_DEBUG", SHOW_DEBUG);
-  leafPrefs.putBool("SHOW_THRM_SIMP", SHOW_THRM_SIMP);
-  leafPrefs.putBool("SHOW_THRM_ADV", SHOW_THRM_ADV);
-  leafPrefs.putBool("SHOW_NAV", SHOW_NAV);
+  leafPrefs.putUChar("CONTRAST",  disp_contrast);
+  leafPrefs.putUChar("NAVPG_ALT_TYP",  disp_navPageAltType);
+  leafPrefs.putUChar("THMPG_ALT_TYP",  disp_thmPageAltType);
+  leafPrefs.putUChar("THMPG_ALT2_TYP",  disp_thmPageAlt2Type);
+  leafPrefs.putUChar("THMSPG_USR1",  disp_thmPageUser1);
+  leafPrefs.putUChar("THMSPG_USR2",  disp_thmPageUser2);
+  leafPrefs.putBool("SHOW_DEBUG",  disp_showDebugPage);
+  leafPrefs.putBool("SHOW_THRM_SIMP",  disp_showThmPage);
+  leafPrefs.putBool("SHOW_THRM_ADV",  disp_showThmAdvPage);
+  leafPrefs.putBool("SHOW_NAV",  disp_showNavPage);
   // Fanet Settings
-  leafPrefs.putUInt("FANET_REGION", (uint32_t)FANET_region);
-  leafPrefs.putString("FANET_ADDRESS", FANET_address);
+  leafPrefs.putUInt("FANET_REGION", (uint32_t) fanet_region);
+  leafPrefs.putString("FANET_ADDRESS",  fanet_address);
   // Unit Values
-  leafPrefs.putBool("UNITS_climb", UNITS_climb);
-  leafPrefs.putBool("UNITS_alt", UNITS_alt);
-  leafPrefs.putBool("UNITS_temp", UNITS_temp);
-  leafPrefs.putBool("UNITS_speed", UNITS_speed);
-  leafPrefs.putBool("UNITS_heading", UNITS_heading);
-  leafPrefs.putBool("UNITS_distance", UNITS_distance);
-  leafPrefs.putBool("UNITS_hours", UNITS_hours);
+  leafPrefs.putBool("UNITS_climb",  units_climb);
+  leafPrefs.putBool("UNITS_alt",  units_alt);
+  leafPrefs.putBool("UNITS_temp",  units_temp);
+  leafPrefs.putBool("UNITS_speed",  units_speed);
+  leafPrefs.putBool("UNITS_heading",  units_heading);
+  leafPrefs.putBool("UNITS_distance",  units_distance);
+  leafPrefs.putBool("UNITS_hours",  units_hours);
 
   leafPrefs.end();
 }
 
-void settings_reset() {
-  settings_loadDefaults();
-  settings_save();
+void Settings::reset() {
+  loadDefaults();
+  save();
 }
 
 // we probably should never have to call this
-void settings_totallyEraseNVS() {
+void totallyEraseNVS() {
   nvs_flash_erase();  // erase the NVS partition and...
   nvs_flash_init();   // initialize the NVS partition.
 }
@@ -300,7 +244,7 @@ void settings_totallyEraseNVS() {
 // Adjust individual settings
 
 // Contrast Adjustment
-void settings_adjustContrast(Button dir) {
+void Settings::adjustContrast(Button dir) {
   uint16_t* sound = fx_neutral;
   if (dir == Button::RIGHT)
     sound = fx_increase;
@@ -308,78 +252,64 @@ void settings_adjustContrast(Button dir) {
     sound = fx_decrease;
   else if (dir == Button::CENTER) {  // reset to default
     speaker_playSound(fx_confirm);
-    CONTRAST = DEF_CONTRAST;
-    display_setContrast(CONTRAST);
+     disp_contrast = DEF_CONTRAST;
+    display_setContrast( disp_contrast);
     return;
   }
 
-  CONTRAST += dir == Button::RIGHT ? 1 : -1;
+   disp_contrast += dir == Button::RIGHT ? 1 : -1;
 
-  if (CONTRAST > CONTRAST_MAX) {
-    CONTRAST = CONTRAST_MAX;
+  if ( disp_contrast > CONTRAST_MAX) {
+     disp_contrast = CONTRAST_MAX;
     sound = fx_double;
-  } else if (CONTRAST < CONTRAST_MIN) {
-    CONTRAST = CONTRAST_MIN;
+  } else if ( disp_contrast < CONTRAST_MIN) {
+     disp_contrast = CONTRAST_MIN;
     sound = fx_double;
   }
-  display_setContrast(CONTRAST);
+  display_setContrast( disp_contrast);
   speaker_playSound(sound);
 }
 
-// Alt Offsets
-
-// solve for the altimeter setting required to make corrected-pressure-altitude match gps-altitude
-bool settings_matchGPSAlt() {
-  bool success = false;
-  if (gps.altitude.isValid()) {
-    baro.altimeterSetting =
-        baro.pressure / (3386.389 * pow(1 - gps.altitude.meters() * 100 / 4433100.0, 1 / 0.190264));
-    ALT_SETTING = baro.altimeterSetting;
-    success = true;
-  }
-  return success;
-}
-
-void settings_adjustSinkAlarm(Button dir) {
+void Settings::adjustSinkAlarm(Button dir) {
   uint16_t* sound = fx_neutral;
 
   if (dir == Button::RIGHT) {
     sound = fx_increase;
-    if (++SINK_ALARM > 0) {
-      SINK_ALARM =
+    if (++vario_sinkAlarm > 0) {
+      vario_sinkAlarm =
           SINK_ALARM_MAX;  // if we were at 0 and now are at positive 1, go back to max sink rate
-    } else if (SINK_ALARM > SINK_ALARM_MIN) {
+    } else if (vario_sinkAlarm > SINK_ALARM_MIN) {
       sound = fx_cancel;
-      SINK_ALARM = 0;  // if we were at MIN (say, -2), jump to 0 (off)
+       vario_sinkAlarm = 0;  // if we were at MIN (say, -2), jump to 0 (off)
     }
   } else {
     sound = fx_decrease;
-    if (--SINK_ALARM < SINK_ALARM_MAX) {
+    if (--vario_sinkAlarm < SINK_ALARM_MAX) {
       sound = fx_cancel;
-      SINK_ALARM = 0;  // if we were at max, wrap back to 0
-    } else if (SINK_ALARM > SINK_ALARM_MIN) {
-      SINK_ALARM = SINK_ALARM_MIN;  // if we were at 0, and dropped to -1, but still greater than
-                                    // the min (-2), jump to -2
+      vario_sinkAlarm = 0;  // if we were at max, wrap back to 0
+    } else if (vario_sinkAlarm > SINK_ALARM_MIN) {
+      vario_sinkAlarm = SINK_ALARM_MIN;  // if we were at 0, and dropped to -1, but still greater
+                                         // than the min (-2), jump to -2
     }
   }
   speaker_playSound(sound);
   // TODO: really needed? speaker_updateClimbToneParameters();	// call to adjust sinkRateSpread
-  // according to new SINK_ALARM value
+  // according to new  vario_sinkAlarm value
 }
 
-void settings_adjustVarioAverage(Button dir) {
+void Settings::adjustVarioAverage(Button dir) {
   uint16_t* sound = fx_neutral;
 
   if (dir == Button::RIGHT) {
     sound = fx_increase;
-    if (++VARIO_SENSE >= VARIO_SENSE_MAX) {
-      VARIO_SENSE = VARIO_SENSE_MAX;
+    if (++vario_sensitivity >= VARIO_SENSE_MAX) {
+      vario_sensitivity = VARIO_SENSE_MAX;
       sound = fx_double;
     }
   } else {
     sound = fx_decrease;
-    if (--VARIO_SENSE <= VARIO_SENSE_MIN) {
-      VARIO_SENSE = VARIO_SENSE_MIN;
+    if (--vario_sensitivity <= VARIO_SENSE_MIN) {
+      vario_sensitivity = VARIO_SENSE_MIN;
       sound = fx_double;
     }
   }
@@ -387,86 +317,86 @@ void settings_adjustVarioAverage(Button dir) {
 }
 
 // climb average goes between 0 and CLIMB_AVERAGE_MAX
-void settings_adjustClimbAverage(Button dir) {
+void Settings::adjustClimbAverage(Button dir) {
   uint16_t* sound = fx_neutral;
 
   if (dir == Button::RIGHT) {
     sound = fx_increase;
-    if (++CLIMB_AVERAGE >= CLIMB_AVERAGE_MAX) {
-      CLIMB_AVERAGE = CLIMB_AVERAGE_MAX;
+    if (++ vario_climbAvg >= CLIMB_AVERAGE_MAX) {
+       vario_climbAvg = CLIMB_AVERAGE_MAX;
       sound = fx_double;
     }
   } else {
     sound = fx_decrease;
-    if (--CLIMB_AVERAGE <= 0) {
-      CLIMB_AVERAGE = 0;
+    if (-- vario_climbAvg <= 0) {
+       vario_climbAvg = 0;
       sound = fx_double;
     }
   }
   speaker_playSound(sound);
 }
 
-void settings_adjustClimbStart(Button dir) {
+void Settings::adjustClimbStart(Button dir) {
   uint16_t* sound = fx_neutral;
   uint8_t inc_size = 5;
 
   if (dir == Button::RIGHT) {
     sound = fx_increase;
-    if ((CLIMB_START += inc_size) >= CLIMB_START_MAX) {
-      CLIMB_START = CLIMB_START_MAX;
+    if (( vario_climbStart += inc_size) >= CLIMB_START_MAX) {
+       vario_climbStart = CLIMB_START_MAX;
       sound = fx_double;
     }
   } else {
     sound = fx_decrease;
-    if ((CLIMB_START -= inc_size) <= 0) {
-      CLIMB_START = 0;
+    if (( vario_climbStart -= inc_size) <= 0) {
+       vario_climbStart = 0;
       sound = fx_double;
     }
   }
   speaker_playSound(sound);
 }
 
-void settings_adjustLiftyAir(Button dir) {
+void Settings::adjustLiftyAir(Button dir) {
   uint16_t* sound = fx_neutral;
 
   // adjust the setting based on button direction
   if (dir == Button::RIGHT) {
-    LIFTY_AIR += 1;
+     vario_liftyAir += 1;
     sound = fx_increase;
   } else {
-    LIFTY_AIR += -1;
+     vario_liftyAir += -1;
     sound = fx_decrease;
   }
 
   // now scrub the result to ensure we're within bounds
   // if we were at 0 and now are at positive 1, go back to max sink setting
-  if (LIFTY_AIR > 0) {
-    LIFTY_AIR = LIFTY_AIR_MAX;
+  if ( vario_liftyAir > 0) {
+     vario_liftyAir = LIFTY_AIR_MAX;
     sound = fx_increase;
-  } else if (LIFTY_AIR == 0) {  // setting to 0 turns the feature off
+  } else if ( vario_liftyAir == 0) {  // setting to 0 turns the feature off
     sound = fx_cancel;
-  } else if (LIFTY_AIR < LIFTY_AIR_MAX) {  // wrap from max back to 0
+  } else if ( vario_liftyAir < LIFTY_AIR_MAX) {  // wrap from max back to 0
     sound = fx_cancel;
-    LIFTY_AIR = 0;
+     vario_liftyAir = 0;
   }
   speaker_playSound(sound);
 }
 
-void settings_adjustVolumeVario(Button dir) {
+void Settings::adjustVolumeVario(Button dir) {
   uint16_t* sound = fx_neutral;
 
   if (dir == Button::RIGHT) {
     sound = fx_increase;
-    VOLUME_VARIO++;
-    if (VOLUME_VARIO > VOLUME_MAX) {
-      VOLUME_VARIO = VOLUME_MAX;
+     vario_volume++;
+    if ( vario_volume > VOLUME_MAX) {
+       vario_volume = VOLUME_MAX;
       sound = fx_double;
     }
   } else {
     sound = fx_decrease;
-    VOLUME_VARIO--;
-    if (VOLUME_VARIO <= 0) {
-      VOLUME_VARIO = 0;
+     vario_volume--;
+    if ( vario_volume <= 0) {
+       vario_volume = 0;
       sound = fx_cancel;  // even if vario volume is set to 0, the system volume may still be turned
                           // on, so we have a sound for turning vario off
     }
@@ -474,20 +404,20 @@ void settings_adjustVolumeVario(Button dir) {
   speaker_playSound(sound);
 }
 
-void settings_adjustVolumeSystem(Button dir) {
+void Settings::adjustVolumeSystem(Button dir) {
   uint16_t* sound = fx_neutral;
   if (dir == Button::RIGHT) {
     sound = fx_increase;
-    VOLUME_SYSTEM++;
-    if (VOLUME_SYSTEM > VOLUME_MAX) {
-      VOLUME_SYSTEM = VOLUME_MAX;
+     system_volume++;
+    if ( system_volume > VOLUME_MAX) {
+       system_volume = VOLUME_MAX;
       sound = fx_double;
     }
   } else {
     sound = fx_decrease;
-    VOLUME_SYSTEM--;
-    if (VOLUME_SYSTEM <= 0) {
-      VOLUME_SYSTEM = 0;
+     system_volume--;
+    if ( system_volume <= 0) {
+       system_volume = 0;
       sound = fx_cancel;  // we have this line of code for completeness, but the speaker will be
                           // turned off for system sounds so you won't hear it
     }
@@ -498,7 +428,7 @@ void settings_adjustVolumeSystem(Button dir) {
 uint8_t timeZoneIncrement =
     60;  // in minutes.  This allows us to change and adjust by 15 minutes for some regions that
          // have half-hour and quarter-hour time zones.
-void settings_adjustTimeZone(Button dir) {
+void Settings::adjustTimeZone(Button dir) {
   if (dir == Button::CENTER) {  // switch from half-hour to full-hour increments
     if (timeZoneIncrement == 60) {
       timeZoneIncrement = 15;
@@ -509,60 +439,60 @@ void settings_adjustTimeZone(Button dir) {
     }
   }
   if (dir == Button::RIGHT)
-    if (TIME_ZONE >= TIME_ZONE_MAX) {
+    if ( system_timeZone >= TIME_ZONE_MAX) {
       speaker_playSound(fx_double);
-      TIME_ZONE = TIME_ZONE_MAX;
+       system_timeZone = TIME_ZONE_MAX;
     } else {
-      TIME_ZONE += timeZoneIncrement;
+       system_timeZone += timeZoneIncrement;
       speaker_playSound(fx_neutral);
     }
   else if (dir == Button::LEFT) {
-    if (TIME_ZONE <= TIME_ZONE_MIN) {
+    if ( system_timeZone <= TIME_ZONE_MIN) {
       speaker_playSound(fx_double);
-      TIME_ZONE = TIME_ZONE_MIN;
+       system_timeZone = TIME_ZONE_MIN;
     } else {
-      TIME_ZONE -= timeZoneIncrement;
+       system_timeZone -= timeZoneIncrement;
       speaker_playSound(fx_neutral);
     }
   }
 }
 
 // Change which altitude is shown on the Nav page (Baro Alt, GPS Alt, or Above-Waypoint Alt)
-void settings_adjustDisplayField_navPage_alt(Button dir) {
+void Settings::adjustDisplayField_navPage_alt(Button dir) {
   if (dir == Button::RIGHT) {
-    NAVPG_ALT_TYP++;
-    if (NAVPG_ALT_TYP >= 3) NAVPG_ALT_TYP = 0;
+     disp_navPageAltType++;
+    if ( disp_navPageAltType >= 3)  disp_navPageAltType = 0;
   } else {
-    if (NAVPG_ALT_TYP == 0)
-      NAVPG_ALT_TYP = 1;
+    if ( disp_navPageAltType == 0)
+       disp_navPageAltType = 1;
     else
-      NAVPG_ALT_TYP--;
+       disp_navPageAltType--;
   }
   speaker_playSound(fx_neutral);
 }
 
 // Change which altitude is shown on the Thermal page (Baro Alt or GPS Alt)
-void settings_adjustDisplayField_thermalPage_alt(Button dir) {
+void Settings::adjustDisplayField_thermalPage_alt(Button dir) {
   if (dir == Button::RIGHT) {
-    THMPG_ALT_TYP++;
-    if (THMPG_ALT_TYP >= 2) THMPG_ALT_TYP = 0;
+     disp_thmPageAltType++;
+    if ( disp_thmPageAltType >= 2)  disp_thmPageAltType = 0;
   } else {
-    if (THMPG_ALT_TYP == 0)
-      THMPG_ALT_TYP = 1;
+    if ( disp_thmPageAltType == 0)
+       disp_thmPageAltType = 1;
     else
-      THMPG_ALT_TYP--;
+       disp_thmPageAltType--;
   }
   speaker_playSound(fx_neutral);
 }
 
 // swap unit settings and play a neutral sound
-void settings_toggleBoolNeutral(bool* unitSetting) {
+void Settings::toggleBoolNeutral(bool* unitSetting) {
   *unitSetting = !*unitSetting;
   speaker_playSound(fx_neutral);
 }
 
 // flip on/off certain settings and play on/off sounds
-void settings_toggleBoolOnOff(bool* switchSetting) {
+void Settings::toggleBoolOnOff(bool* switchSetting) {
   *switchSetting = !*switchSetting;
   if (*switchSetting)
     speaker_playSound(fx_enter);  // if we turned it on

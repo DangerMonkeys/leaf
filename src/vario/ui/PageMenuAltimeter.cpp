@@ -39,7 +39,7 @@ void AltimeterMenuPage::draw() {
     u8g2.setCursor(0, 35);
     u8g2.print("GPS");
     display_alt(40, 41, leaf_6x12, gps.altitude.meters() * 100);
-    if (UNITS_alt)
+    if (settings.units_alt)
       u8g2.print("ft");
     else
       u8g2.print("m");
@@ -66,7 +66,7 @@ void AltimeterMenuPage::draw() {
     u8g2.setCursor(label_indent, start_y += 15);
     u8g2.print("Std:");
     display_alt(40, start_y, leaf_6x12, baro.alt);
-    if (UNITS_alt)
+    if (settings.units_alt)
       u8g2.print("ft");
     else
       u8g2.print("m");
@@ -75,7 +75,7 @@ void AltimeterMenuPage::draw() {
     u8g2.setCursor(label_indent, start_y += 15);
     u8g2.print("Adj:");
     display_alt(40, start_y, leaf_6x12, baro.altAdjusted);
-    if (UNITS_alt)
+    if (settings.units_alt)
       u8g2.print("ft");
     else
       u8g2.print("m");
@@ -123,7 +123,7 @@ void AltimeterMenuPage::draw() {
           u8g2.print((char)126);
           break;
         case cursor_altimeter_syncGPSLogStart:
-          if (ALT_SYNC_GPS)
+          if (settings.vario_altSyncToGPS)
             u8g2.print(char(125));
           else
             u8g2.print(char(123));
@@ -144,11 +144,11 @@ void AltimeterMenuPage::setting_change(Button button, ButtonState state, uint8_t
   switch (cursor_position) {
     case cursor_altimeter_syncGPSLogStart:
       if ((button == Button::CENTER || button == Button::RIGHT) && state == RELEASED)
-        settings_toggleBoolNeutral(&ALT_SYNC_GPS);
+        settings.toggleBoolNeutral(&settings.vario_altSyncToGPS);
       break;
     case cursor_altimeter_syncGPSNow:
       if (state == RELEASED) {
-        if (settings_matchGPSAlt()) {  // successful adjustment of altimeter setting to match GPS
+        if (baro.syncToGPSAlt()) {  // successful adjustment of altimeter setting to match GPS
           speaker_playSound(fx_enter);
         } else {  // unsuccessful
           speaker_playSound(fx_cancel);
@@ -157,9 +157,9 @@ void AltimeterMenuPage::setting_change(Button button, ButtonState state, uint8_t
       break;
     case cursor_altimeter_adjustSetting:
       if (button == Button::CENTER && count == 1 &&
-          state == HELD) {             // if center button held for 1 'action time'
-        if (settings_matchGPSAlt()) {  // successful adjustment of altimeter setting to match GPS
-                                       // altitude
+          state == HELD) {          // if center button held for 1 'action time'
+        if (baro.syncToGPSAlt()) {  // successful adjustment of altimeter setting to match GPS
+                                    // altitude
           speaker_playSound(fx_enter);
         } else {  // unsuccessful
           speaker_playSound(fx_cancel);
@@ -177,11 +177,11 @@ void AltimeterMenuPage::setting_change(Button button, ButtonState state, uint8_t
     case cursor_altimeter_back:
       if (state == RELEASED) {
         speaker_playSound(fx_cancel);
-        settings_save();
+        settings.save();
         mainMenuPage.backToMainMenu();
       } else if (state == HELD) {
         speaker_playSound(fx_exit);
-        settings_save();
+        settings.save();
         mainMenuPage.quitMenu();
       }
       break;

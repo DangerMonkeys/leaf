@@ -235,7 +235,7 @@ void PageMenuSystemWifiUpdate::closed(bool removed_from_Stack) {
   // that are loaded on startup like BLE.  Poor mans re-init
   // approach
   Serial.println("Rebooting the device");
-  BOOT_TO_ON = true;  // restart into 'on' state on reboot
-  settings_save();
+  settings.boot_toOnState = true;  // restart into 'on' state on reboot
+  settings.save();
   ESP.restart();
 }

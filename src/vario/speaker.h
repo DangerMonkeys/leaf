@@ -27,7 +27,7 @@
 // SINK TONE DEFINITIONS
 // #define SINK_ALARM           -200   // cm/s sink rate that triggers sink alarm audio
 #define SINK_MAX -800      // at this sink rate, tone doesn't get lower
-#define SINK_NOTE_MIN 392  // highest tone pitch for sink > SINK_ALARM
+#define SINK_NOTE_MIN 392  // highest tone pitch for sink >  settings.vario_sinkAlarm
 #define SINK_NOTE_MAX \
   196  // lowest tone pitch for sink @ SINK_MAX (when vario bottoms out and starts holding a solid
        // tone)

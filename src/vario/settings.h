@@ -1,5 +1,5 @@
-#ifndef settings_h
-#define settings_h
+#ifndef h
+#define h
 
 #include <Arduino.h>
 
@@ -89,14 +89,14 @@ setting | samples | time avg
 
 // Display Settings
 #define DEF_CONTRAST 7  // default contrast setting
-#define DEF_NAVPG_ALT_TYP \
-  0  // Primary Alt field on Nav page (Baro Alt, GPS Alt, Alt above waypoint, etc)
+// Primary Alt field on Nav page (Baro Alt, GPS Alt, Alt above waypoint, etc)
+#define DEF_NAVPG_ALT_TYP 0
 #define DEF_THMPG_ALT_TYP 0   // Primary Alt field on Thermal page
 #define DEF_THMPG_ALT2_TYP 0  // Secondary Alt field on Thermal page
-#define DEF_THMSPG_USR1 0     // User field 1 on Thermal simple page
-#define DEF_THMSPG_USR2 1     // User field 2 on Thermal simple page
+#define DEF_THMPG_USR1 0      // User field 1 on Thermal page
+#define DEF_THMPG_USR2 1      // User field 2 on Thermal page
 #define DEF_SHOW_DEBUG 0      // Enable debug page
-#define DEF_SHOW_THRM_SIMP 1  // Enable thermal simple page
+#define DEF_SHOW_THRM 1       // Enable thermal page
 #define DEF_SHOW_THRM_ADV 0   // Enable thermal adv page
 #define DEF_SHOW_NAV 1        // Enable nav page
 
@@ -109,190 +109,92 @@ setting | samples | time avg
 #define DEF_UNITS_distance 0  // 0 (km, or m for <1km),	1 (miles, or ft for < 1000 feet)
 #define DEF_UNITS_hours 1     // 0 (24-hour time),  1 (12 hour time),
 
-// Global Variables for Current Settings
-// Vario Settings
-extern int8_t SINK_ALARM;
-extern int8_t VARIO_SENSE;
-extern int8_t CLIMB_AVERAGE;
-extern int8_t CLIMB_START;
-extern int8_t VOLUME_VARIO;
-extern bool QUIET_MODE;
-extern bool VARIO_TONES;
-extern int8_t LIFTY_AIR;
-extern float ALT_SETTING;
-extern bool ALT_SYNC_GPS;
+class Settings {
+ public:
+  // Global Variables for Current Settings
+  // Vario Settings
+  int8_t vario_sinkAlarm;
+  int8_t vario_sensitivity;
+  int8_t vario_climbAvg;
+  int8_t vario_climbStart;
+  int8_t vario_volume;
+  bool vario_quietMode;
+  bool vario_tones;
+  int8_t vario_liftyAir;
+  float vario_altSetting;
+  bool vario_altSyncToGPS;
 
-// GPS & Track Log Settings
-extern bool DISTANCE_FLOWN;
-extern int8_t GPS_SETTING;
-extern bool TRACK_SAVE;
-extern bool AUTO_START;
-extern bool AUTO_STOP;
-extern SettingLogFormat LOG_FORMAT;
+  // GPS & Track Log Settings
+  bool distanceFlownType;
+  int8_t gpsMode;
+  bool log_saveTrack;
+  bool log_autoStart;
+  bool log_autoStop;
+  SettingLogFormat log_format;
 
-// System Settings
-extern int16_t TIME_ZONE;
-extern int8_t VOLUME_SYSTEM;
-extern bool ECO_MODE;
-extern bool AUTO_OFF;
-extern bool WIFI_ON;
-extern bool BLUETOOTH_ON;
-extern bool SHOW_WARNING;
+  // System Settings
+  int16_t system_timeZone;
+  int8_t system_volume;
+  bool system_ecoMode;
+  bool system_autoOff;
+  bool system_wifiOn;
+  bool system_bluetoothOn;
+  bool system_showWarning;
 
-// Boot Flags
-extern bool ENTER_BOOTLOAD;
-extern bool BOOT_TO_ON;
+  // Boot Flags
+  bool boot_enterBootloader;
+  bool boot_toOnState;
 
-// Display Settings
-extern uint8_t CONTRAST;
-extern uint8_t NAVPG_ALT_TYP;
-extern uint8_t THMPG_ALT_TYP;
-extern uint8_t THMPG_ALT2_TYP;
-extern uint8_t THMSPG_USR1;
-extern uint8_t THMSPG_USR2;
-extern bool SHOW_DEBUG;
-extern bool SHOW_THRM_SIMP;
-extern bool SHOW_THRM_ADV;
-extern bool SHOW_NAV;
+  // Display Settings
+  uint8_t disp_contrast;
+  uint8_t disp_navPageAltType;
+  uint8_t disp_thmPageAltType;
+  uint8_t disp_thmPageAlt2Type;
+  uint8_t disp_thmPageUser1;
+  uint8_t disp_thmPageUser2;
+  bool disp_showDebugPage;
+  bool disp_showThmPage;
+  bool disp_showThmAdvPage;
+  bool disp_showNavPage;
 
-// Fanet settings
-extern FanetRadioRegion FANET_region;
-extern String FANET_address;
+  // Fanet settings
+  FanetRadioRegion fanet_region;
+  String fanet_address;
 
-// Unit Values
-extern bool UNITS_climb;
-extern bool UNITS_alt;
-extern bool UNITS_temp;
-extern bool UNITS_speed;
-extern bool UNITS_heading;
-extern bool UNITS_distance;
-extern bool UNITS_hours;
+  // Unit Values
+  bool units_climb;
+  bool units_alt;
+  bool units_temp;
+  bool units_speed;
+  bool units_heading;
+  bool units_distance;
+  bool units_hours;
 
-// manage-settings functions
-void settings_init(void);
-void settings_loadDefaults(void);
-void settings_reset(void);
-void settings_save(void);
-void settings_retrieve(void);
-void factoryResetVario(void);
+  // manage-settings functions
+  void init(void);
+  void loadDefaults(void);
+  void reset(void);
+  void save(void);
+  void retrieve(void);
+  void factoryResetVario(void);
 
-// adjust-settings functions
-void settings_adjustContrast(Button dir);
-void settings_setAltOffset(int32_t value);
-void settings_adjustAltOffset(Button dir, uint8_t count);
-bool settings_matchGPSAlt(void);
-void settings_adjustSinkAlarm(Button dir);
-void settings_adjustVarioAverage(Button dir);
-void settings_adjustClimbAverage(Button dir);
-void settings_adjustClimbStart(Button dir);
-void settings_adjustLiftyAir(Button dir);
-void settings_adjustVolumeVario(Button dir);
-void settings_adjustVolumeSystem(Button dir);
-void settings_adjustTimeZone(Button dir);
+  // adjust-settings functions
+  void adjustContrast(Button dir);
+  void adjustSinkAlarm(Button dir);
+  void adjustVarioAverage(Button dir);
+  void adjustClimbAverage(Button dir);
+  void adjustClimbStart(Button dir);
+  void adjustLiftyAir(Button dir);
+  void adjustVolumeVario(Button dir);
+  void adjustVolumeSystem(Button dir);
+  void adjustTimeZone(Button dir);
 
-void settings_adjustDisplayField_navPage_alt(Button dir);
-void settings_adjustDisplayField_thermalPage_alt(Button dir);
+  void adjustDisplayField_navPage_alt(Button dir);
+  void adjustDisplayField_thermalPage_alt(Button dir);
 
-void settings_toggleBoolNeutral(bool* boolSetting);
-void settings_toggleBoolOnOff(bool* switchSetting);
-
-/*
-// Timer/Stopwatch Variable
-extern unsigned long TIMER;				// GLOBAL
-extern unsigned char TIMER_RUNNING;		// GLOBAL
-
-
-// Waypoint Input and Edit Variables
-extern char WYPT_tempName[];			// 8 char string name plus end character
-extern signed char WYPT_tempAltSign;
-extern unsigned long WYPT_tempAlt;
-extern unsigned char WYPT_tempAltUnits;
-extern signed char WYPT_tempLatSign;
-extern unsigned long WYPT_tempLatDeg;
-extern unsigned long WYPT_tempLatFrac;
-extern signed char WYPT_tempLongSign;
-extern unsigned long WYPT_tempLongDeg;
-extern unsigned long WYPT_tempLongFrac;
-extern unsigned char WYPT_editCursor;
-
-enum settings_units {units_alt, units_climb, units_speed, units_distance, units_heading, units_temp,
-units_hours};
-
-// Alt offset
-
-
-
-
-void settings_init(void);
-void settings_adjustContrast(signed char dir);
-
-void settings_resetToDefaults(void);
-void settings_readSettings(void);
-void settings_saveSettings(void);
-
-void settings_gps_cycle(void);
-
-void settings_altOffset(signed char dir, unsigned int count, signed long value);
-
-void settings_sinkAlarm_cycle(void);
-void settings_varioAverage_cycle(void);
-void settings_climbAverage_cycle(void);
-void settings_volume_cycle(void);
-void settings_liftyAir_cycle(void);
-void settings_track_cycle(void);
-
-
-void settings_units_cycle(unsigned char whichUnits);
-void settings_timeOffset(signed char dir, unsigned int count);
-void settings_timerAutoStart_cycle(void);
-void settings_powerAutoOff_cycle(void);
-
-unsigned char settings_cycle_1and0(unsigned char input);
-
-//waypoint menu/subpages
-void settings_waypointEnter(signed char enteredFrom);		// get into the waypoint sub-screens
-void settings_waypointExit(void);							// leave
-waypoint sub-screens void settings_waypointSelect(void);
-// handle a selected waypoint void settings_waypointListScroll(signed char dir);
-// scroll the waypoint list
-
-// editing waypoints
-void settings_waypointEdit_shift(void);
-void settings_waypointEdit_inc(signed char dir);
-signed long settings_cycleDigit(signed long val, char place, signed char dir);
-
-
-
-
-
-// Default Settings on First Boot Up
-
-  // Pargliding Vario
-
-
-
-
-  // Off Roading
-    uint8_t rollover_max_fore
-    uint8_t rollover_max_rear
-    uint8_t rollover_max_left
-    uint8_t rollover_max_right
-    uint8_t rollover_warning        // degrees before max to receive warnings
-
-
-
-  // Aircraft
-    //
-
-
-  // Data Logger
-    //
-
-
-
-    //
-
-
-*/
+  void toggleBoolNeutral(bool* boolSetting);
+  void toggleBoolOnOff(bool* switchSetting);
+};
+extern Settings settings;
 
 #endif
