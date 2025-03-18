@@ -11,6 +11,7 @@
 #include "gps.h"
 #include "gpx.h"
 #include "log.h"
+#include "navigation/nav_ids.h"
 #include "power.h"
 #include "settings.h"
 #include "speaker.h"
@@ -98,9 +99,9 @@ void navigatePage_destinationSelect(Button dir) {
       break;
     case Button::CENTER:
       if (destination_selection_routes_vs_waypoints)
-        navigator.activateRoute(destination_selection_index);
+        navigator.activateRoute(RouteID(destination_selection_index));
       else
-        navigator.activatePoint(destination_selection_index);
+        navigator.activatePoint(WaypointID(destination_selection_index));
       navigatePage_cursorPosition = cursor_navigatePage_none;
       break;
   }
@@ -437,8 +438,8 @@ void nav_cursor_move(Button button) {
       if (navigator.activeRouteIndex) {
         destination_selection_index = navigator.activeRouteIndex;
         destination_selection_routes_vs_waypoints = true;
-      } else if (navigator.activePointIndex) {
-        destination_selection_index = navigator.activePointIndex;
+      } else if (navigator.activeWaypointIndex) {
+        destination_selection_index = navigator.activeWaypointIndex;
         destination_selection_routes_vs_waypoints = false;
       }
     }

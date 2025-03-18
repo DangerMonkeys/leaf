@@ -3,13 +3,14 @@
 #include <Arduino.h>
 #include <FS.h>
 
+#include "navigation/nav_ids.h"
+
 #define AVERAGE_SPEED_SAMPLES 5
 
 // Waypoint definition and memory allocation
 #define waypointRadius 150  // meters radius to count as "reaching/crossing" a waypoint
 #define maxWaypoints 15
 #define maxRoutes 5
-#define maxRoutePoints 12
 
 struct Waypoint {
   String name;
@@ -22,7 +23,7 @@ struct Waypoint {
 struct Route {
   String name;
   uint8_t totalPoints = 0;
-  Waypoint routepoints[maxRoutePoints];
+  Waypoint routepoints[RouteIndex::Max + 1];
 };
 
 // Navigator class for managing nav info (used largely for display purposes)
@@ -31,9 +32,12 @@ class Navigator {
   void init(void);
   void update(void);
 
-  bool activatePoint(int16_t pointIndex);
-  bool activateRoute(uint16_t routeIndex);
+  bool activatePoint(WaypointID pointIndex);
+  bool activateRoute(RouteID routeIndex);
   void cancelNav(void);
+
+  // True if a specific waypoint is active, or if a route is active with a next route point.
+  bool hasActivePoint();
 
   Waypoint waypoints[maxWaypoints];
   uint8_t totalWaypoints = 0;
@@ -43,11 +47,12 @@ class Navigator {
   // waypoint currently navigating to
   Waypoint activePoint;
 
-  // waypoint currently navigating to (index value for element inside of waypoints[], or
-  // inside of route.routepoints[], if on an active route)
-  int16_t activePointIndex = 0;
+  // waypoint currently navigating to (index value for element inside of waypoints[])
+  WaypointID activeWaypointIndex;
+  // route point currently navigating to (inside of route.routepoints[], if on an active route)
+  RouteIndex activeRoutePointIndex;
   // route currently navigating along (index value for route inside of routes[])
-  int16_t activeRouteIndex = 0;
+  RouteID activeRouteIndex;
 
   // (gps measured) Altitude in cm above current waypoint
   int32_t altAboveWaypoint = 0;
@@ -84,7 +89,7 @@ class Navigator {
   // approach the currently active waypoint).  We create this as a separate variable
   // (instead of just adding 1 to the acive index) because sometimes there IS NO next point
   // (i.e., you're on the last point) and we want to know this.
-  int16_t nextPointIndex_ = 0;
+  RouteIndex nextPointIndex_;
 
   // (gps measured) Altitude in cm above goal waypoint
   int32_t altAboveGoal_ = 0;
