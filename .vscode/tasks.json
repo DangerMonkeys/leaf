@@ -5,7 +5,13 @@
       "label": "Format Leaf C++ files",
       "type": "shell",
       "windows": {
-        "command": "Get-ChildItem -Path src/vario, src/variants -Recurse -Include *.cpp, *.h | ForEach-Object { clang-format -i $_.FullName }",
+        "command": "powershell.exe",
+        "args": [
+          "-ExecutionPolicy",
+          "Bypass",
+          "-File",
+          "${workspaceFolder}/src/scripts/format_all_files.ps1"
+        ],
         "options": {
           "shell": {
             "executable": "powershell.exe"
@@ -13,10 +19,10 @@
         }
       },
       "osx": {
-        "command": "find src/vario src/variants -type f \\( -name \"*.cpp\" -o -name \"*.h\" \\) -exec clang-format -i {} +"
+        "command": "${workspaceFolder}/src/scripts/format_all_files.sh"
       },
       "linux": {
-        "command": "find src/vario src/variants -type f \\( -name \"*.cpp\" -o -name \"*.h\" \\) -exec clang-format -i {} +"
+        "command": "${workspaceFolder}/src/scripts/format_all_files.sh"
       },
       "problemMatcher": [],
       "group": "build",
