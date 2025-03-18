@@ -11,7 +11,7 @@
 #include "Leaf_SPI.h"
 #include "PageNavigate.h"
 #include "PageThermal.h"
-#include "PageThermalSimple.h"
+#include "PageThermalAdv.h"
 #include "PageWarning.h"
 #include "SDcard.h"
 #include "baro.h"
@@ -49,9 +49,9 @@ U8G2_ST75256_WO256X128_F_4W_HW_SPI u8g2(U8G2_R3,
                                         /* reset=*/LCD_RESET);
 #endif
 
-int8_t display_page = page_thermalSimple;
+int8_t display_page = page_thermal;
 uint8_t display_page_prior =
-    page_thermalSimple;  // track the page we used to be on, so we can "go back" if needed (like
+    page_thermal;  // track the page we used to be on, so we can "go back" if needed (like
                          // cancelling out of a menu heirarchy)
 
 void display_init(void) {
@@ -89,15 +89,15 @@ void display_turnPage(uint8_t action) {
 
   switch (action) {
     case page_home:
-      display_page = page_thermalSimple;
+      display_page = page_thermal;
       break;
 
     case page_next:
       display_page++;
 
       // skip past any pages not enabled for display
-      if (display_page == page_thermalSimple && !settings.disp_showThmPage) display_page++;
-      if (display_page == page_thermal && !settings.disp_showThmAdvPage) display_page++;
+      if (display_page == page_thermal && !settings.disp_showThmPage) display_page++;
+      if (display_page == page_thermalAdv && !settings.disp_showThmAdvPage) display_page++;
       if (display_page == page_nav && !settings.disp_showNavPage) display_page++;
 
       if (display_page == page_last)
@@ -110,8 +110,8 @@ void display_turnPage(uint8_t action) {
 
       // skip past any pages not enabled for display
       if (display_page == page_nav && !settings.disp_showNavPage) display_page--;
-      if (display_page == page_thermal && !settings.disp_showThmAdvPage) display_page--;
-      if (display_page == page_thermalSimple && !settings.disp_showThmPage) display_page--;
+      if (display_page == page_thermalAdv && !settings.disp_showThmAdvPage) display_page--;
+      if (display_page == page_thermal && !settings.disp_showThmPage) display_page--;
       if (display_page == page_debug && !settings.disp_showDebugPage)
         display_page = tempPage;  // go back to the page we were on if we can't go further left
 
@@ -177,11 +177,11 @@ void display_update() {
   }
 
   switch (display_page) {
-    case page_thermalSimple:
-      thermalSimplePage_draw();
-      break;
     case page_thermal:
       thermalPage_draw();
+      break;
+    case page_thermalAdv:
+      thermalPageAdv_draw();
       break;
     case page_debug:
       display_page_debug();

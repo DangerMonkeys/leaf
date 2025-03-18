@@ -1,3 +1,8 @@
+---
+title: Firmware Test Procedure
+description: How to test functionality before submitting a PR or Release
+---
+
 # Firmware Test Procedure
 Follow these steps to test new firmware before submitting PR or building a release
 

@@ -140,10 +140,10 @@ void Settings::retrieve() {
   disp_navPageAltType = leafPrefs.getUChar("NAVPG_ALT_TYP");
   disp_thmPageAltType = leafPrefs.getUChar("THMPG_ALT_TYP");
   disp_thmPageAlt2Type = leafPrefs.getUChar("THMPG_ALT2_TYP");
-  disp_thmPageUser1 = leafPrefs.getUChar("THMSPG_USR1");
-  disp_thmPageUser2 = leafPrefs.getUChar("THMSPG_USR2");
+  disp_thmPageUser1 = leafPrefs.getUChar("THMPG_USR1");
+  disp_thmPageUser2 = leafPrefs.getUChar("THMPG_USR2");
   disp_showDebugPage = leafPrefs.getBool("SHOW_DEBUG");
-  disp_showThmPage = leafPrefs.getBool("SHOW_THRM_SIMP");
+  disp_showThmPage = leafPrefs.getBool("SHOW_THRM");
   disp_showThmAdvPage = leafPrefs.getBool("SHOW_THRM_ADV");
   disp_showNavPage = leafPrefs.getBool("SHOW_NAV");
 
@@ -206,10 +206,10 @@ void Settings::save() {
   leafPrefs.putUChar("NAVPG_ALT_TYP", disp_navPageAltType);
   leafPrefs.putUChar("THMPG_ALT_TYP", disp_thmPageAltType);
   leafPrefs.putUChar("THMPG_ALT2_TYP", disp_thmPageAlt2Type);
-  leafPrefs.putUChar("THMSPG_USR1", disp_thmPageUser1);
-  leafPrefs.putUChar("THMSPG_USR2", disp_thmPageUser2);
+  leafPrefs.putUChar("THMPG_USR1", disp_thmPageUser1);
+  leafPrefs.putUChar("THMPG_USR2", disp_thmPageUser2);
   leafPrefs.putBool("SHOW_DEBUG", disp_showDebugPage);
-  leafPrefs.putBool("SHOW_THRM_SIMP", disp_showThmPage);
+  leafPrefs.putBool("SHOW_THRM", disp_showThmPage);
   leafPrefs.putBool("SHOW_THRM_ADV", disp_showThmAdvPage);
   leafPrefs.putBool("SHOW_NAV", disp_showNavPage);
   // Fanet Settings

@@ -30,8 +30,8 @@ enum display_page_actions {
 
 enum display_main_pages {
   page_debug,
-  page_thermalSimple,
   page_thermal,
+  page_thermalAdv,
   page_nav,
   page_menu,
   page_last,
