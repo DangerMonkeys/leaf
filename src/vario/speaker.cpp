@@ -167,7 +167,7 @@ unsigned char liftyAirNow = 0;  // track if we're playing lifty air tone
 
 void speaker_updateVarioNote(int32_t verticalRate) {
   // don't play any beeps if Quiet Mode is turned on, and we haven't started a flight
-  if (settings.vario_quietMode && !flightTimer_isRunning()) {
+  if (leafSettings.vario_quietMode && !flightTimer_isRunning()) {
     sound_varioNote = 0;
     return;
   }
@@ -178,7 +178,7 @@ void speaker_updateVarioNote(int32_t verticalRate) {
   uint16_t sound_vario_play_samplesTEMP;
   uint16_t sound_vario_rest_samplesTEMP;
 
-  if (verticalRate > settings.vario_climbStart) {
+  if (verticalRate > leafSettings.vario_climbStart) {
     // first clamp to thresholds if climbRate is over the max
     if (verticalRate >= CLIMB_MAX) {
       sound_varioNoteTEMP =
@@ -199,7 +199,7 @@ void speaker_updateVarioNote(int32_t verticalRate) {
 
     // if we trigger sink threshold
   } else if (verticalRate <
-             (settings.vario_sinkAlarm * 100)) {  // convert sink alarm 'm/s' setting to cm/s
+             (leafSettings.vario_sinkAlarm * 100)) {  // convert sink alarm 'm/s' setting to cm/s
     // first clamp to thresholds if sinkRate is over the max
     if (verticalRate <= SINK_MAX) {
       sound_varioNoteTEMP =
@@ -282,10 +282,10 @@ bool onSpeakerTimer() {
 
   // prioritize sound effects from UI & Button etc before we get to vario beeps
   // but only play soundFX if system volume is on
-  if (sound_fx && settings.system_volume) {
+  if (sound_fx && leafSettings.system_volume) {
     notesLeftToPlay = true;
     speaker_setVolume(
-        settings.system_volume);  // play system sound effects at system volume setting
+        leafSettings.system_volume);  // play system sound effects at system volume setting
 
     // Serial.print("FX: "); Serial.print(*snd_index); Serial.print(" @ ");
     // Serial.println(millis());
@@ -307,11 +307,11 @@ bool onSpeakerTimer() {
       sound_fx = 0;
       sound_fxNoteLast = 0;
       notesLeftToPlay = false;
-      speaker_setVolume(settings.vario_volume);  // return to vario volume in prep for beeps
+      speaker_setVolume(leafSettings.vario_volume);  // return to vario volume in prep for beeps
     }
 
     // if there's a vario note to play, and the vario volume isn't zero
-  } else if (sound_varioNote > 0 && settings.vario_volume) {
+  } else if (sound_varioNote > 0 && leafSettings.vario_volume) {
     // commenting this line out; instead let's return to vario volume at the end of SoundFX
     // speaker_setVolume( settings.vario_volume);  // play vario sounds at vario volume setting
 

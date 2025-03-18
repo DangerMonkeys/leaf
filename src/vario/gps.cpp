@@ -443,7 +443,7 @@ bool gps_getLocalDateTime(tm& cal) {
   }
 
   time_t rawTime = mktime(&cal);
-  rawTime += settings.system_timeZone * 60;  // Apply the timezone offset in seconds
+  rawTime += leafSettings.system_timeZone * 60;  // Apply the timezone offset in seconds
   cal = *localtime(&rawTime);
 
   return true;

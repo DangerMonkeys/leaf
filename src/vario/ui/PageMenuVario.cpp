@@ -55,19 +55,19 @@ void VarioMenuPage::draw() {
         case cursor_vario_volume:
           u8g2.print(' ');
           u8g2.setFont(leaf_icons);
-          u8g2.print(char('I' + settings.vario_volume));
+          u8g2.print(char('I' + leafSettings.vario_volume));
           u8g2.setFont(leaf_6x12);
           break;
         case cursor_vario_tones:
           u8g2.print(' ');
-          if (settings.vario_tones)
+          if (leafSettings.vario_tones)
             u8g2.print(char(138));
           else
             u8g2.print(char(139));
           break;
         case cursor_vario_quietmode:
           u8g2.print(' ');
-          if (settings.vario_quietMode)
+          if (leafSettings.vario_quietMode)
             u8g2.print(char(125));
           else
             u8g2.print(char(123));
@@ -75,38 +75,38 @@ void VarioMenuPage::draw() {
 
         case cursor_vario_sensitive:
           u8g2.print(' ');
-          u8g2.print(settings.vario_sensitivity);
+          u8g2.print(leafSettings.vario_sensitivity);
           break;
         case cursor_vario_climbavg:
           u8g2.print(' ');
-          u8g2.print(settings.vario_climbAvg);
+          u8g2.print(leafSettings.vario_climbAvg);
           break;
 
         case cursor_vario_climbstart:
-          if (settings.units_climb) {
+          if (leafSettings.units_climb) {
             u8g2.print(' ');
-            u8g2.print(settings.vario_climbStart * 2);  // cm/s->fpm
+            u8g2.print(leafSettings.vario_climbStart * 2);  // cm/s->fpm
           } else {
-            u8g2.print(float(settings.vario_climbStart) / 100, 2);  // cm/s->m/s
+            u8g2.print(float(leafSettings.vario_climbStart) / 100, 2);  // cm/s->m/s
           }
           break;
         case cursor_vario_liftyair:
-          if (settings.vario_liftyAir == 0) {
+          if (leafSettings.vario_liftyAir == 0) {
             u8g2.print("OFF");
-          } else if (settings.units_climb) {
-            u8g2.print(settings.vario_liftyAir * 20);  // 10cm/s->fpm
+          } else if (leafSettings.units_climb) {
+            u8g2.print(leafSettings.vario_liftyAir * 20);  // 10cm/s->fpm
           } else {
-            u8g2.print(float(settings.vario_liftyAir) / 10, 1);  // 10cm/s->m/s
+            u8g2.print(float(leafSettings.vario_liftyAir) / 10, 1);  // 10cm/s->m/s
           }
           break;
         case cursor_vario_sinkalarm:
-          if (settings.vario_sinkAlarm == 0) {
+          if (leafSettings.vario_sinkAlarm == 0) {
             u8g2.print("OFF");
           } else {
             // now print the value
-            if (settings.units_climb) {
+            if (leafSettings.units_climb) {
               // handle the extra digit required if we hit -1000fpm or more
-              if (settings.vario_sinkAlarm <= -5) {
+              if (leafSettings.vario_sinkAlarm <= -5) {
                 u8g2.setCursor(u8g2.getCursorX() - 7,
                                u8g2.getCursorY());  // scootch over to make room
 
@@ -120,9 +120,9 @@ void VarioMenuPage::draw() {
               }
 
               // now print the value as usual
-              u8g2.print(settings.vario_sinkAlarm * 200);  // m/s->fpm
+              u8g2.print(leafSettings.vario_sinkAlarm * 200);  // m/s->fpm
             } else {
-              u8g2.print(float(settings.vario_sinkAlarm), 1);  // m/s->m/s
+              u8g2.print(float(leafSettings.vario_sinkAlarm), 1);  // m/s->m/s
             }
           }
           break;
@@ -140,37 +140,37 @@ void VarioMenuPage::setting_change(Button dir, ButtonState state, uint8_t count)
   switch (cursor_position) {
     case cursor_vario_volume:
       if (state != RELEASED) return;
-      settings.adjustVolumeVario(dir);
+      leafSettings.adjustVolumeVario(dir);
       break;
     case cursor_vario_quietmode:
-      if (state == RELEASED) settings.toggleBoolOnOff(&settings.vario_quietMode);
+      if (state == RELEASED) leafSettings.toggleBoolOnOff(&leafSettings.vario_quietMode);
       break;
     case cursor_vario_sensitive:
-      if (state == RELEASED) settings.adjustVarioAverage(dir);
+      if (state == RELEASED) leafSettings.adjustVarioAverage(dir);
       break;
     case cursor_vario_tones:
-      if (state == RELEASED) settings.toggleBoolNeutral(&settings.vario_tones);
+      if (state == RELEASED) leafSettings.toggleBoolNeutral(&leafSettings.vario_tones);
       break;
     case cursor_vario_liftyair:
-      if (state == RELEASED) settings.adjustLiftyAir(dir);
+      if (state == RELEASED) leafSettings.adjustLiftyAir(dir);
       break;
     case cursor_vario_climbavg:
-      if (state == RELEASED) settings.adjustClimbAverage(dir);
+      if (state == RELEASED) leafSettings.adjustClimbAverage(dir);
       break;
     case cursor_vario_climbstart:
-      if (state == RELEASED) settings.adjustClimbStart(dir);
+      if (state == RELEASED) leafSettings.adjustClimbStart(dir);
       break;
     case cursor_vario_sinkalarm:
-      if (state == RELEASED) settings.adjustSinkAlarm(dir);
+      if (state == RELEASED) leafSettings.adjustSinkAlarm(dir);
       break;
     case cursor_vario_back:
       if (state == RELEASED) {
         speaker_playSound(fx_cancel);
-        settings.save();
+        leafSettings.save();
         mainMenuPage.backToMainMenu();
       } else if (state == HELD) {
         speaker_playSound(fx_exit);
-        settings.save();
+        leafSettings.save();
         mainMenuPage.quitMenu();
       }
       break;

@@ -39,38 +39,39 @@ class FlightStats {
     Serial.print("creating track description...");
 
     String alt_units;
-    if (settings.units_alt)
+    if (leafSettings.units_alt)
       alt_units = "(ft)";
     else
       alt_units = "(m)";
 
     String climb_units;
-    if (settings.units_climb)
+    if (leafSettings.units_climb)
       climb_units = "(fpm)";
     else
       climb_units = "(m/s)";
 
     String temp_units;
-    if (settings.units_temp)
+    if (leafSettings.units_temp)
       temp_units = "(F)";
     else
       temp_units = "(C)";
 
     // convert values to proper units before printing/saving
-    auto alt_start_formatted = baro_altToUnits(alt_start, settings.units_alt);
-    auto alt_max_formatted = baro_altToUnits(alt_max, settings.units_alt);
-    auto alt_min_formatted = baro_altToUnits(alt_min, settings.units_alt);
-    auto alt_end_formatted = baro_altToUnits(alt_end, settings.units_alt);
-    auto alt_above_launch_max_formatted = baro_altToUnits(alt_above_launch_max, settings.units_alt);
+    auto alt_start_formatted = baro_altToUnits(alt_start, leafSettings.units_alt);
+    auto alt_max_formatted = baro_altToUnits(alt_max, leafSettings.units_alt);
+    auto alt_min_formatted = baro_altToUnits(alt_min, leafSettings.units_alt);
+    auto alt_end_formatted = baro_altToUnits(alt_end, leafSettings.units_alt);
+    auto alt_above_launch_max_formatted =
+        baro_altToUnits(alt_above_launch_max, leafSettings.units_alt);
 
     String stringClimbMax;
     String stringClimbMin;
-    if (settings.units_climb) {
-      stringClimbMax = String(baro_climbToUnits(climb_max, settings.units_climb), 0);
-      stringClimbMin = String(baro_climbToUnits(climb_min, settings.units_climb), 0);
+    if (leafSettings.units_climb) {
+      stringClimbMax = String(baro_climbToUnits(climb_max, leafSettings.units_climb), 0);
+      stringClimbMin = String(baro_climbToUnits(climb_min, leafSettings.units_climb), 0);
     } else {
-      stringClimbMax = String(baro_climbToUnits(climb_max, settings.units_climb), 1);
-      stringClimbMin = String(baro_climbToUnits(climb_min, settings.units_climb), 1);
+      stringClimbMax = String(baro_climbToUnits(climb_max, leafSettings.units_climb), 1);
+      stringClimbMin = String(baro_climbToUnits(climb_min, leafSettings.units_climb), 1);
     }
 
     String trackdescription =

@@ -109,7 +109,7 @@ setting | samples | time avg
 #define DEF_UNITS_distance 0  // 0 (km, or m for <1km),	1 (miles, or ft for < 1000 feet)
 #define DEF_UNITS_hours 1     // 0 (24-hour time),  1 (12 hour time),
 
-class Settings {
+class LeafSettings {
  public:
   // Global Variables for Current Settings
   // Vario Settings
@@ -173,10 +173,11 @@ class Settings {
   // manage-settings functions
   void init(void);
   void loadDefaults(void);
-  void reset(void);
   void save(void);
   void retrieve(void);
+  void reset(void);
   void factoryResetVario(void);
+  void totallyEraseNVS(void);
 
   // adjust-settings functions
   void adjustContrast(Button dir);
@@ -195,6 +196,6 @@ class Settings {
   void toggleBoolNeutral(bool* boolSetting);
   void toggleBoolOnOff(bool* switchSetting);
 };
-extern Settings settings;
+extern LeafSettings leafSettings;
 
 #endif

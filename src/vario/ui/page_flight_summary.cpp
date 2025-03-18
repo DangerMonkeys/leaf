@@ -26,15 +26,15 @@ void PageFlightSummary::draw_extra() {
   u8g2.print("Maximums");
 
   u8g2.setCursor(indent, y += lineSpacing);
-  u8g2.print("Alt:   " + formatAlt(stats.alt_max, settings.units_alt, true));
+  u8g2.print("Alt:   " + formatAlt(stats.alt_max, leafSettings.units_alt, true));
   u8g2.setCursor(indent, y += lineSpacing);
-  u8g2.print("AbvTO: " + formatAlt(stats.alt_above_launch_max, settings.units_alt, true));
+  u8g2.print("AbvTO: " + formatAlt(stats.alt_above_launch_max, leafSettings.units_alt, true));
   u8g2.setCursor(indent, y += lineSpacing);
-  u8g2.print("Climb: " + formatClimbRate(stats.climb_max, settings.units_climb, true));
+  u8g2.print("Climb: " + formatClimbRate(stats.climb_max, leafSettings.units_climb, true));
   u8g2.setCursor(indent, y += lineSpacing);
-  u8g2.print("Sink:  " + formatClimbRate(stats.climb_min, settings.units_climb, true));
+  u8g2.print("Sink:  " + formatClimbRate(stats.climb_min, leafSettings.units_climb, true));
   u8g2.setCursor(indent, y += lineSpacing);
-  u8g2.print("Speed:   " + formatSpeed(stats.speed_max, settings.units_speed, true));
+  u8g2.print("Speed:   " + formatSpeed(stats.speed_max, leafSettings.units_speed, true));
   u8g2.setCursor(indent, y += lineSpacing);
   u8g2.print("Accel: " + formatAccel(stats.accel_min, false) + '/' +
              formatAccel(stats.accel_max, true));

@@ -49,43 +49,43 @@ void UnitsMenuPage::draw() {
         u8g2.setDrawColor(1);
       switch (i) {
         case cursor_units_alt:
-          if (settings.units_alt)
+          if (leafSettings.units_alt)
             u8g2.print("ft");
           else
             u8g2.print(" m");
           break;
         case cursor_units_climb:
-          if (settings.units_climb)
+          if (leafSettings.units_climb)
             u8g2.print("fpm");
           else
             u8g2.print("m/s");
           break;
         case cursor_units_speed:
-          if (settings.units_speed)
+          if (leafSettings.units_speed)
             u8g2.print("mph");
           else
             u8g2.print("kph");
           break;
         case cursor_units_distance:
-          if (settings.units_distance)
+          if (leafSettings.units_distance)
             u8g2.print("mi");
           else
             u8g2.print("km");
           break;
         case cursor_units_heading:
-          if (settings.units_heading)
+          if (leafSettings.units_heading)
             u8g2.print("NNW");
           else
             u8g2.print("deg");
           break;
         case cursor_units_temp:
-          if (settings.units_temp)
+          if (leafSettings.units_temp)
             u8g2.print("F");
           else
             u8g2.print("C");
           break;
         case cursor_units_hours:
-          if (settings.units_hours)
+          if (leafSettings.units_hours)
             u8g2.print("12h");
           else
             u8g2.print("24h");
@@ -102,34 +102,34 @@ void UnitsMenuPage::draw() {
 void UnitsMenuPage::setting_change(Button dir, ButtonState state, uint8_t count) {
   switch (cursor_position) {
     case cursor_units_alt:
-      if (state == RELEASED) settings.toggleBoolNeutral(&settings.units_alt);
+      if (state == RELEASED) leafSettings.toggleBoolNeutral(&leafSettings.units_alt);
       break;
     case cursor_units_climb:
-      if (state == RELEASED) settings.toggleBoolNeutral(&settings.units_climb);
+      if (state == RELEASED) leafSettings.toggleBoolNeutral(&leafSettings.units_climb);
       break;
     case cursor_units_speed:
-      if (state == RELEASED) settings.toggleBoolNeutral(&settings.units_speed);
+      if (state == RELEASED) leafSettings.toggleBoolNeutral(&leafSettings.units_speed);
       break;
     case cursor_units_distance:
-      if (state == RELEASED) settings.toggleBoolNeutral(&settings.units_distance);
+      if (state == RELEASED) leafSettings.toggleBoolNeutral(&leafSettings.units_distance);
       break;
     case cursor_units_heading:
-      if (state == RELEASED) settings.toggleBoolNeutral(&settings.units_heading);
+      if (state == RELEASED) leafSettings.toggleBoolNeutral(&leafSettings.units_heading);
       break;
     case cursor_units_temp:
-      if (state == RELEASED) settings.toggleBoolNeutral(&settings.units_temp);
+      if (state == RELEASED) leafSettings.toggleBoolNeutral(&leafSettings.units_temp);
       break;
     case cursor_units_hours:
-      if (state == RELEASED) settings.toggleBoolNeutral(&settings.units_hours);
+      if (state == RELEASED) leafSettings.toggleBoolNeutral(&leafSettings.units_hours);
       break;
     case cursor_units_back:
       if (state == RELEASED) {
         speaker_playSound(fx_cancel);
-        settings.save();
+        leafSettings.save();
         mainMenuPage.backToMainMenu();
       } else if (state == HELD) {
         speaker_playSound(fx_exit);
-        settings.save();
+        leafSettings.save();
         mainMenuPage.quitMenu();
       }
       break;

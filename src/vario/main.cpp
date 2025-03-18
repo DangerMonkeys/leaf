@@ -41,7 +41,7 @@ void setup() {
   // from the message bus.
   Serial.println("Initializing Bluetooth Module");
   BLE::get().setup();
-  if (settings.system_bluetoothOn) {
+  if (leafSettings.system_bluetoothOn) {
     BLE::get().start();
   }
 

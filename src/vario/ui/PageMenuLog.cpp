@@ -46,27 +46,27 @@ void LogMenuPage::draw() {
         u8g2.setDrawColor(1);
       switch (i) {
         case cursor_log_format:
-          if (settings.log_format == LOG_FORMAT_KML)
+          if (leafSettings.log_format == LOG_FORMAT_KML)
             u8g2.print("KML");
-          else if (settings.log_format == LOG_FORMAT_IGC)
+          else if (leafSettings.log_format == LOG_FORMAT_IGC)
             u8g2.print("IGC");
           else
             u8g2.print("_?_");
           break;
         case cursor_log_saveLog:
-          if (settings.log_saveTrack)
+          if (leafSettings.log_saveTrack)
             u8g2.print(char(125));
           else
             u8g2.print(char(123));
           break;
         case cursor_log_autoStart:
-          if (settings.log_autoStart)
+          if (leafSettings.log_autoStart)
             u8g2.print(char(125));
           else
             u8g2.print(char(123));
           break;
         case cursor_log_autoStop:
-          if (settings.log_autoStop)
+          if (leafSettings.log_autoStop)
             u8g2.print(char(125));
           else
             u8g2.print(char(123));
@@ -86,7 +86,7 @@ void LogMenuPage::setting_change(Button dir, ButtonState state, uint8_t count) {
       if (state != PRESSED) {
         return;
       }
-      auto new_val = (int8_t)settings.log_format;
+      auto new_val = (int8_t)leafSettings.log_format;
       if (dir == Button::RIGHT) {
         new_val++;
       } else if (dir == Button::LEFT) {
@@ -99,29 +99,29 @@ void LogMenuPage::setting_change(Button dir, ButtonState state, uint8_t count) {
         new_val = SETTING_LOG_FORMAT_ENTRIES - 1;
       }
 
-      settings.log_format = (SettingLogFormat)new_val;
+      leafSettings.log_format = (SettingLogFormat)new_val;
       break;
     }
     case cursor_log_saveLog: {
-      if (state == RELEASED) settings.toggleBoolOnOff(&settings.log_saveTrack);
+      if (state == RELEASED) leafSettings.toggleBoolOnOff(&leafSettings.log_saveTrack);
       break;
     }
     case cursor_log_autoStart: {
-      if (state == RELEASED) settings.toggleBoolOnOff(&settings.log_autoStart);
+      if (state == RELEASED) leafSettings.toggleBoolOnOff(&leafSettings.log_autoStart);
       break;
     }
     case cursor_log_autoStop: {
-      if (state == RELEASED) settings.toggleBoolOnOff(&settings.log_autoStop);
+      if (state == RELEASED) leafSettings.toggleBoolOnOff(&leafSettings.log_autoStop);
       break;
     }
     case cursor_log_back: {
       if (state == RELEASED) {
         speaker_playSound(fx_cancel);
-        settings.save();
+        leafSettings.save();
         mainMenuPage.backToMainMenu();
       } else if (state == HELD) {
         speaker_playSound(fx_exit);
-        settings.save();
+        leafSettings.save();
         mainMenuPage.quitMenu();
       }
       break;

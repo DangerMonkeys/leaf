@@ -61,8 +61,8 @@ void PerformOTAUpdate(const char* tag) {
 
   if (Update.end()) {
     Serial.println("[OTA] Update successfully completed. Rebooting.");
-    settings.boot_toOnState = true;  // restart into 'on' state on reboot
-    settings.save();
+    leafSettings.boot_toOnState = true;  // restart into 'on' state on reboot
+    leafSettings.save();
     ESP.restart();
   } else {
     throw std::runtime_error("Err finishing update");
