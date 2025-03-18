@@ -358,7 +358,7 @@ void FanetRadio::on_receive(const GpsReading& msg) {
 
 String FanetRadio::getAddress() {
   // Checks if we have a preference for Fanet IDs
-  if (leafSettings.fanet_address.isEmpty()) {
+  if (settings.fanet_address.isEmpty()) {
     // Find the mac address for our ESP32.  The spec mentions using 0xFB for
     // generic ESP32 devices, so, we'll use this for anything without a Leaf
     // ID allocated and use the last 2 bytes of the Mac address.
@@ -371,7 +371,7 @@ String FanetRadio::getAddress() {
     ret.toUpperCase();
     return ret;
   }
-  return leafSettings.fanet_address;
+  return settings.fanet_address;
 }
 
 void FanetRadio::setTrackingMode(const etl::optional<Fanet::GroundTrackingType::enum_type>& mode) {

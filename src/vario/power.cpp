@@ -24,15 +24,15 @@ void power_bootUp() {
   power_init();  // configure power supply
 
   // grab user settings (or populate defaults if no saved settings)
-  leafSettings.init();
+  settings.init();
 
   // initialize Buttons and check if holding the center button is what turned us on
   auto button = buttons_init();
 
   // go to "ON" state if button (user input) or BOOT_TO_ON flag from firmware update
-  if (button == Button::CENTER || leafSettings.boot_toOnState) {
-    leafSettings.boot_toOnState = false;
-    leafSettings.save();
+  if (button == Button::CENTER || settings.boot_toOnState) {
+    settings.boot_toOnState = false;
+    settings.save();
 
     power.onState = POWER_ON;
 
@@ -173,7 +173,7 @@ void power_shutdown() {
   }
 
   // save any changed settings this session
-  leafSettings.save();
+  settings.save();
 
   // wait another 2.5 seconds before shutting down to give user
   // a chance to see the shutdown screen
@@ -214,7 +214,7 @@ void power_update() {
 
     // ..or if we should shutdown due to inactivity
     // (only check if user setting is on and flight timer is stopped)
-  } else if (leafSettings.system_autoOff && !flightTimer_isRunning()) {
+  } else if (settings.system_autoOff && !flightTimer_isRunning()) {
     // check if inactivity conditions are met
     if (power_autoOff()) {
       power_shutdown();  // shutdown!

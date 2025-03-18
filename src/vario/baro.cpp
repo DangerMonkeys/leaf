@@ -41,7 +41,7 @@ void Barometer::adjustAltSetting(int8_t dir, uint8_t count) {
     altimeterSetting -= increase;
     if (altimeterSetting < 28.0) altimeterSetting = 28.0;
   }
-  leafSettings.vario_altSetting = altimeterSetting;
+  settings.vario_altSetting = altimeterSetting;
 }
 
 // solve for the altimeter setting required to make corrected-pressure-altitude match gps-altitude
@@ -50,7 +50,7 @@ bool Barometer::syncToGPSAlt() {
   if (gps.altitude.isValid()) {
     baro.altimeterSetting =
         baro.pressure / (3386.389 * pow(1 - gps.altitude.meters() * 100 / 4433100.0, 1 / 0.190264));
-    leafSettings.vario_altSetting = baro.altimeterSetting;
+    settings.vario_altSetting = baro.altimeterSetting;
     success = true;
   }
   return success;
@@ -86,8 +86,8 @@ float baro_climbToUnits(int32_t climbrate, bool units_fpm) {
 
 void Barometer::init(void) {
   // recover saved altimeter setting
-  if (leafSettings.vario_altSetting > 28.0 && leafSettings.vario_altSetting < 32.0)
-    altimeterSetting = leafSettings.vario_altSetting;
+  if (settings.vario_altSetting > 28.0 && settings.vario_altSetting < 32.0)
+    altimeterSetting = settings.vario_altSetting;
   else
     altimeterSetting = 29.921;
 
@@ -254,7 +254,7 @@ void Barometer::calculatePressureAlt() {
 //
 void Barometer::filterPressure(void) {
   // first calculate filter size based on user preference
-  switch (leafSettings.vario_sensitivity) {
+  switch (settings.vario_sensitivity) {
     case 1:
       filterValsPref_ = 20;
       break;
@@ -325,7 +325,7 @@ void Barometer::filterClimb() {
   }
 
   // first calculate filter size based on user preference
-  switch (leafSettings.vario_sensitivity) {
+  switch (settings.vario_sensitivity) {
     case 1:
       filterValsPref_ = 20;
       break;

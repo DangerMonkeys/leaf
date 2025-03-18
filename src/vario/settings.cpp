@@ -13,11 +13,11 @@
 #define RW_MODE false
 #define RO_MODE true
 
-LeafSettings leafSettings;
+Settings settings;
 
 Preferences leafPrefs;
 
-void LeafSettings::init() {
+void Settings::init() {
   loadDefaults();  // load defaults regardless, but we'll overwrite these with saved user
                    // settings (if available)
 
@@ -38,12 +38,12 @@ void LeafSettings::init() {
   }
 }
 
-void LeafSettings::factoryResetVario() {
+void Settings::factoryResetVario() {
   leafPrefs.remove(
       "nvsInitVario");  // remove this key so that we force a factory settings reload on next reboot
 }
 
-void LeafSettings::loadDefaults() {
+void Settings::loadDefaults() {
   // Vario Settings
   vario_sinkAlarm = DEF_SINK_ALARM;
   vario_sensitivity = DEF_VARIO_SENSE;
@@ -99,7 +99,7 @@ void LeafSettings::loadDefaults() {
   units_hours = DEF_UNITS_hours;
 }
 
-void LeafSettings::retrieve() {
+void Settings::retrieve() {
   leafPrefs.begin("varioPrefs", RO_MODE);
 
   // Vario Settings
@@ -163,7 +163,7 @@ void LeafSettings::retrieve() {
   leafPrefs.end();
 }
 
-void LeafSettings::save() {
+void Settings::save() {
   // Save settings before shutdown (or other times as needed)
 
   leafPrefs.begin("varioPrefs", RW_MODE);
@@ -227,13 +227,13 @@ void LeafSettings::save() {
   leafPrefs.end();
 }
 
-void LeafSettings::reset() {
+void Settings::reset() {
   loadDefaults();
   save();
 }
 
 // we probably should never have to call this
-void LeafSettings::totallyEraseNVS() {
+void Settings::totallyEraseNVS() {
   nvs_flash_erase();  // erase the NVS partition and...
   nvs_flash_init();   // initialize the NVS partition.
 }
@@ -243,7 +243,7 @@ void LeafSettings::totallyEraseNVS() {
 // Adjust individual settings
 
 // Contrast Adjustment
-void LeafSettings::adjustContrast(Button dir) {
+void Settings::adjustContrast(Button dir) {
   uint16_t* sound = fx_neutral;
   if (dir == Button::RIGHT)
     sound = fx_increase;
@@ -269,7 +269,7 @@ void LeafSettings::adjustContrast(Button dir) {
   speaker_playSound(sound);
 }
 
-void LeafSettings::adjustSinkAlarm(Button dir) {
+void Settings::adjustSinkAlarm(Button dir) {
   uint16_t* sound = fx_neutral;
 
   if (dir == Button::RIGHT) {
@@ -296,7 +296,7 @@ void LeafSettings::adjustSinkAlarm(Button dir) {
   // according to new  vario_sinkAlarm value
 }
 
-void LeafSettings::adjustVarioAverage(Button dir) {
+void Settings::adjustVarioAverage(Button dir) {
   uint16_t* sound = fx_neutral;
 
   if (dir == Button::RIGHT) {
@@ -316,7 +316,7 @@ void LeafSettings::adjustVarioAverage(Button dir) {
 }
 
 // climb average goes between 0 and CLIMB_AVERAGE_MAX
-void LeafSettings::adjustClimbAverage(Button dir) {
+void Settings::adjustClimbAverage(Button dir) {
   uint16_t* sound = fx_neutral;
 
   if (dir == Button::RIGHT) {
@@ -335,7 +335,7 @@ void LeafSettings::adjustClimbAverage(Button dir) {
   speaker_playSound(sound);
 }
 
-void LeafSettings::adjustClimbStart(Button dir) {
+void Settings::adjustClimbStart(Button dir) {
   uint16_t* sound = fx_neutral;
   uint8_t inc_size = 5;
 
@@ -355,7 +355,7 @@ void LeafSettings::adjustClimbStart(Button dir) {
   speaker_playSound(sound);
 }
 
-void LeafSettings::adjustLiftyAir(Button dir) {
+void Settings::adjustLiftyAir(Button dir) {
   uint16_t* sound = fx_neutral;
 
   // adjust the setting based on button direction
@@ -381,7 +381,7 @@ void LeafSettings::adjustLiftyAir(Button dir) {
   speaker_playSound(sound);
 }
 
-void LeafSettings::adjustVolumeVario(Button dir) {
+void Settings::adjustVolumeVario(Button dir) {
   uint16_t* sound = fx_neutral;
 
   if (dir == Button::RIGHT) {
@@ -403,7 +403,7 @@ void LeafSettings::adjustVolumeVario(Button dir) {
   speaker_playSound(sound);
 }
 
-void LeafSettings::adjustVolumeSystem(Button dir) {
+void Settings::adjustVolumeSystem(Button dir) {
   uint16_t* sound = fx_neutral;
   if (dir == Button::RIGHT) {
     sound = fx_increase;
@@ -427,7 +427,7 @@ void LeafSettings::adjustVolumeSystem(Button dir) {
 uint8_t timeZoneIncrement =
     60;  // in minutes.  This allows us to change and adjust by 15 minutes for some regions that
          // have half-hour and quarter-hour time zones.
-void LeafSettings::adjustTimeZone(Button dir) {
+void Settings::adjustTimeZone(Button dir) {
   if (dir == Button::CENTER) {  // switch from half-hour to full-hour increments
     if (timeZoneIncrement == 60) {
       timeZoneIncrement = 15;
@@ -457,7 +457,7 @@ void LeafSettings::adjustTimeZone(Button dir) {
 }
 
 // Change which altitude is shown on the Nav page (Baro Alt, GPS Alt, or Above-Waypoint Alt)
-void LeafSettings::adjustDisplayField_navPage_alt(Button dir) {
+void Settings::adjustDisplayField_navPage_alt(Button dir) {
   if (dir == Button::RIGHT) {
     disp_navPageAltType++;
     if (disp_navPageAltType >= 3) disp_navPageAltType = 0;
@@ -471,7 +471,7 @@ void LeafSettings::adjustDisplayField_navPage_alt(Button dir) {
 }
 
 // Change which altitude is shown on the Thermal page (Baro Alt or GPS Alt)
-void LeafSettings::adjustDisplayField_thermalPage_alt(Button dir) {
+void Settings::adjustDisplayField_thermalPage_alt(Button dir) {
   if (dir == Button::RIGHT) {
     disp_thmPageAltType++;
     if (disp_thmPageAltType >= 2) disp_thmPageAltType = 0;
@@ -485,13 +485,13 @@ void LeafSettings::adjustDisplayField_thermalPage_alt(Button dir) {
 }
 
 // swap unit settings and play a neutral sound
-void LeafSettings::toggleBoolNeutral(bool* unitSetting) {
+void Settings::toggleBoolNeutral(bool* unitSetting) {
   *unitSetting = !*unitSetting;
   speaker_playSound(fx_neutral);
 }
 
 // flip on/off certain settings and play on/off sounds
-void LeafSettings::toggleBoolOnOff(bool* switchSetting) {
+void Settings::toggleBoolOnOff(bool* switchSetting) {
   *switchSetting = !*switchSetting;
   if (*switchSetting)
     speaker_playSound(fx_enter);  // if we turned it on

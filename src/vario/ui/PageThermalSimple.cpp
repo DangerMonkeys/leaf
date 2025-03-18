@@ -73,15 +73,15 @@ void thermalSimplePage_draw() {
     // Altitude header labels
     u8g2.setFont(leaf_labels);
     u8g2.setCursor(varioBarWidth + 52, alt_y - 1);
-    print_alt_label(leafSettings.disp_thmPageAltType);
+    print_alt_label(settings.disp_thmPageAltType);
     u8g2.setCursor(varioBarWidth + 60, alt_y - 9);
-    if (leafSettings.units_alt)
+    if (settings.units_alt)
       u8g2.print("ft");
     else
       u8g2.print("m");
 
     // Alt value
-    display_alt_type(varioBarWidth + 2, alt_y + 21, leaf_21h, leafSettings.disp_thmPageAltType);
+    display_alt_type(varioBarWidth + 2, alt_y + 21, leaf_21h, settings.disp_thmPageAltType);
 
     // if selected, draw the box around it
     if (thermalSimple_page_cursor_position == cursor_thermalSimplePage_alt1) {
@@ -98,7 +98,7 @@ void thermalSimplePage_draw() {
     u8g2.setFont(leaf_5h);
     u8g2.print(" ");  // put a space, but using a small font so the space isn't too wide
     u8g2.setFont(leaf_21h);
-    if (leafSettings.units_climb)
+    if (settings.units_climb)
       u8g2.print('f');
     else
       u8g2.print('m');
@@ -110,12 +110,12 @@ void thermalSimplePage_draw() {
 
     // User Field 1 ****************************************************
     bool isSelected = (thermalSimple_page_cursor_position == cursor_thermalSimplePage_userField1);
-    drawUserField(userfield_x, userfield_y, leafSettings.disp_thmPageUser1, isSelected);
+    drawUserField(userfield_x, userfield_y, settings.disp_thmPageUser1, isSelected);
 
     // User Field 2 ****************************************************
     userfield_y += 27;
     isSelected = (thermalSimple_page_cursor_position == cursor_thermalSimplePage_userField2);
-    drawUserField(userfield_x, userfield_y, leafSettings.disp_thmPageUser2, isSelected);
+    drawUserField(userfield_x, userfield_y, settings.disp_thmPageUser2, isSelected);
 
     // Footer Info ****************************************************
 
@@ -172,13 +172,13 @@ void drawUserField(uint8_t x, uint8_t y, uint8_t field, bool selected) {
       // only show airspeed if wind estimate is valid
       if (windEstForAirspeed.validEstimate) {
         float displayAirspeed = windEstForAirspeed.airspeedLive;  // m/s current approx airspeed
-        if (leafSettings.units_speed)
+        if (settings.units_speed)
           displayAirspeed *= 2.23694f;
         else
           displayAirspeed *= 3.6f;
         if (displayAirspeed < 10) u8g2.print(' ');
         u8g2.print((int)displayAirspeed);
-        if (leafSettings.units_speed)
+        if (settings.units_speed)
           u8g2.print("mph");
         else
           u8g2.print("kph");
@@ -246,14 +246,14 @@ void thermalSimplePage_button(Button button, ButtonState state, uint8_t count) {
           if (state == RELEASED) thermalSimple_page_cursor_move(button);
           break;
         case Button::LEFT:
-          if (leafSettings.disp_navPageAltType == altType_MSL &&
+          if (settings.disp_navPageAltType == altType_MSL &&
               (state == PRESSED || state == HELD || state == HELD_LONG)) {
             baro.adjustAltSetting(-1, count);
             speaker_playSound(fx_neutral);
           }
           break;
         case Button::RIGHT:
-          if (leafSettings.disp_navPageAltType == altType_MSL &&
+          if (settings.disp_navPageAltType == altType_MSL &&
               (state == PRESSED || state == HELD || state == HELD_LONG)) {
             baro.adjustAltSetting(1, count);
             speaker_playSound(fx_neutral);
@@ -261,9 +261,8 @@ void thermalSimplePage_button(Button button, ButtonState state, uint8_t count) {
           break;
         case Button::CENTER:
           if (state == RELEASED) {
-            leafSettings.adjustDisplayField_thermalPage_alt(Button::CENTER);
-          } else if (state == HELD && count == 1 &&
-                     leafSettings.disp_thmPageAltType == altType_MSL) {
+            settings.adjustDisplayField_thermalPage_alt(Button::CENTER);
+          } else if (state == HELD && count == 1 && settings.disp_thmPageAltType == altType_MSL) {
             if (baro.syncToGPSAlt()) {  // successful adjustment of altimeter setting to match
                                         // GPS altitude
               speaker_playSound(fx_enter);
@@ -286,9 +285,9 @@ void thermalSimplePage_button(Button button, ButtonState state, uint8_t count) {
         case Button::RIGHT:
           break;
         case Button::CENTER:
-          if (state == RELEASED) leafSettings.disp_thmPageUser1++;
-          if (leafSettings.disp_thmPageUser1 >= static_cast<int>(ThermSimpPageUserFields::NONE))
-            leafSettings.disp_thmPageUser1 = 0;
+          if (state == RELEASED) settings.disp_thmPageUser1++;
+          if (settings.disp_thmPageUser1 >= static_cast<int>(ThermSimpPageUserFields::NONE))
+            settings.disp_thmPageUser1 = 0;
           break;
       }
       break;
@@ -303,9 +302,9 @@ void thermalSimplePage_button(Button button, ButtonState state, uint8_t count) {
         case Button::RIGHT:
           break;
         case Button::CENTER:
-          if (state == RELEASED) leafSettings.disp_thmPageUser2++;
-          if (leafSettings.disp_thmPageUser2 >= static_cast<int>(ThermSimpPageUserFields::NONE))
-            leafSettings.disp_thmPageUser2 = 0;
+          if (state == RELEASED) settings.disp_thmPageUser2++;
+          if (settings.disp_thmPageUser2 >= static_cast<int>(ThermSimpPageUserFields::NONE))
+            settings.disp_thmPageUser2 = 0;
           break;
       }
       break;

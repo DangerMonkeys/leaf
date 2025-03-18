@@ -109,7 +109,7 @@ setting | samples | time avg
 #define DEF_UNITS_distance 0  // 0 (km, or m for <1km),	1 (miles, or ft for < 1000 feet)
 #define DEF_UNITS_hours 1     // 0 (24-hour time),  1 (12 hour time),
 
-class LeafSettings {
+class Settings {
  public:
   // Global Variables for Current Settings
   // Vario Settings
@@ -196,6 +196,6 @@ class LeafSettings {
   void toggleBoolNeutral(bool* boolSetting);
   void toggleBoolOnOff(bool* switchSetting);
 };
-extern LeafSettings leafSettings;
+extern Settings settings;
 
 #endif

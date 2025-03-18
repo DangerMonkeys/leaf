@@ -48,32 +48,32 @@ void DisplayMenuPage::draw() {
         u8g2.setDrawColor(1);
       switch (i) {
         case cursor_display_show_debug:
-          if (leafSettings.disp_showDebugPage)
+          if (settings.disp_showDebugPage)
             u8g2.print(char(125));
           else
             u8g2.print(char(123));
           break;
         case cursor_display_show_thrm_sim:
-          if (leafSettings.disp_showThmPage)
+          if (settings.disp_showThmPage)
             u8g2.print(char(125));
           else
             u8g2.print(char(123));
           break;
         case cursor_display_show_thrm_adv:
-          if (leafSettings.disp_showThmAdvPage)
+          if (settings.disp_showThmAdvPage)
             u8g2.print(char(125));
           else
             u8g2.print(char(123));
           break;
         case cursor_display_show_nav:
-          if (leafSettings.disp_showNavPage)
+          if (settings.disp_showNavPage)
             u8g2.print(char(125));
           else
             u8g2.print(char(123));
           break;
         case cursor_display_contrast:
-          if (leafSettings.disp_contrast < 10) u8g2.print(" ");
-          u8g2.print(leafSettings.disp_contrast);
+          if (settings.disp_contrast < 10) u8g2.print(" ");
+          u8g2.print(settings.disp_contrast);
           break;
         case cursor_display_back:
           u8g2.print((char)124);
@@ -88,34 +88,34 @@ void DisplayMenuPage::setting_change(Button dir, ButtonState state, uint8_t coun
   switch (cursor_position) {
     case cursor_display_show_debug:
       if (state == RELEASED && dir == Button::CENTER)
-        leafSettings.toggleBoolOnOff(&leafSettings.disp_showDebugPage);
+        settings.toggleBoolOnOff(&settings.disp_showDebugPage);
       break;
     case cursor_display_show_thrm_sim:
       if (state == RELEASED && dir == Button::CENTER)
-        leafSettings.toggleBoolOnOff(&leafSettings.disp_showThmPage);
+        settings.toggleBoolOnOff(&settings.disp_showThmPage);
       break;
     case cursor_display_show_thrm_adv:
       if (state == RELEASED && dir == Button::CENTER)
-        leafSettings.toggleBoolOnOff(&leafSettings.disp_showThmAdvPage);
+        settings.toggleBoolOnOff(&settings.disp_showThmAdvPage);
       break;
     case cursor_display_show_nav:
       if (state == RELEASED && dir == Button::CENTER)
-        leafSettings.toggleBoolOnOff(&leafSettings.disp_showNavPage);
+        settings.toggleBoolOnOff(&settings.disp_showNavPage);
       break;
     case cursor_display_contrast:
       if (state == RELEASED && dir != Button::NONE)
-        leafSettings.adjustContrast(dir);
+        settings.adjustContrast(dir);
       else if (state == HELD && dir == Button::NONE)
-        leafSettings.adjustContrast(dir);
+        settings.adjustContrast(dir);
       break;
     case cursor_display_back:
       if (state == RELEASED) {
         speaker_playSound(fx_cancel);
-        leafSettings.save();
+        settings.save();
         mainMenuPage.backToMainMenu();
       } else if (state == HELD) {
         speaker_playSound(fx_exit);
-        leafSettings.save();
+        settings.save();
         mainMenuPage.quitMenu();
       }
   }
