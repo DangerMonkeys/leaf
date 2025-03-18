@@ -17,7 +17,7 @@
 #include "speaker.h"
 #include "ui/PageNavigate.h"
 #include "ui/PageThermal.h"
-#include "ui/PageThermalSimple.h"
+#include "ui/PageThermalAdv.h"
 #include "ui/PageWarning.h"
 #include "ui/display.h"
 #include "ui/menu_page.h"
@@ -102,8 +102,7 @@ Button buttons_update(void) {
         if (button_state == HELD && button_hold_counter == 1) {
           display_clear();
           display_showOnSplash();
-          display_setPage(
-              page_thermalSimple);  // TODO: set initial page to the user's last used page
+          display_setPage(page_thermal);  // TODO: set initial page to the user's last used page
           speaker_playSound(fx_enter);
           buttons_lockAfterHold();  // lock buttons until user lets go of power button
           power_switchToOnState();
@@ -157,8 +156,8 @@ Button buttons_update(void) {
     thermalPage_button(which_button, buttons_get_state(), buttons_get_hold_count());
     display_update();
 
-  } else if (currentPage == page_thermalSimple) {
-    thermalSimplePage_button(which_button, buttons_get_state(), buttons_get_hold_count());
+  } else if (currentPage == page_thermalAdv) {
+    thermalPageAdv_button(which_button, buttons_get_state(), buttons_get_hold_count());
     display_update();
 
   } else if (currentPage == page_nav) {

@@ -13,7 +13,7 @@
 enum display_menu_items {
   cursor_display_back,
   cursor_display_show_debug,
-  cursor_display_show_thrm_sim,
+  cursor_display_show_thrm,
   cursor_display_show_thrm_adv,
   cursor_display_show_nav,
   cursor_display_contrast,
@@ -53,7 +53,7 @@ void DisplayMenuPage::draw() {
           else
             u8g2.print(char(123));
           break;
-        case cursor_display_show_thrm_sim:
+        case cursor_display_show_thrm:
           if (settings.disp_showThmPage)
             u8g2.print(char(125));
           else
@@ -90,7 +90,7 @@ void DisplayMenuPage::setting_change(Button dir, ButtonState state, uint8_t coun
       if (state == RELEASED && dir == Button::CENTER)
         settings.toggleBoolOnOff(&settings.disp_showDebugPage);
       break;
-    case cursor_display_show_thrm_sim:
+    case cursor_display_show_thrm:
       if (state == RELEASED && dir == Button::CENTER)
         settings.toggleBoolOnOff(&settings.disp_showThmPage);
       break;

@@ -86,6 +86,13 @@ export default defineConfig({
                 items: getMarkdownItems("../docs/dev-references"),
                 // autogenerate: { directory: 'dev-references' },
             },
+            {
+                label: 'Legal',
+                // Use a custom ordering function to allow index files to be in their own directory                
+                // @ts-ignore
+                items: getMarkdownItems("../docs/legal"),
+                // autogenerate: { directory: 'legal' },
+            },
         ],
     }), react(), icon({
         include: {

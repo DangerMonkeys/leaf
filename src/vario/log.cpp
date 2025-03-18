@@ -154,6 +154,7 @@ bool flightTimer_autoStop() {
       autoStopCounter++;
       if (autoStopCounter >= AUTO_STOP_MIN_SEC) {
         stopTheTimer = true;
+        autoStopCounter = 0;  // reset counter for next time
       }
     } else {
       autoStopCounter = 0;
