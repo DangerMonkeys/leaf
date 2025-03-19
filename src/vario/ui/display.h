@@ -2,7 +2,7 @@
 #define display_h
 
 #include <U8g2lib.h>
-#include "configuration.h"
+#include "hardware/configuration.h"
 
 // Display settings loaded from configuration / variants
 #ifndef WO256X128                               // if not old hardare, use the latest:

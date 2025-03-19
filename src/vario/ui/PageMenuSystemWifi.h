@@ -4,11 +4,11 @@
 
 #include "PageQR.h"
 #include "WiFi.h"
-#include "buttons.h"
 #include "etl/array.h"
 #include "etl/array_view.h"
 #include "etl/vector.h"
 #include "menu_page.h"
+#include "ui/input/buttons.h"
 
 enum system_wifi_items { cursor_system_wifi_setup, cursor_system_wifi_update };
 enum system_wifi_setup_items {

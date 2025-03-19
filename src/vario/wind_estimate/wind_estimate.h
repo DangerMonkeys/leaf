@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gps.h"
+#include "instruments/gps.h"
 
 // bin definitions for storing sample points
 const uint8_t binCount = 8;

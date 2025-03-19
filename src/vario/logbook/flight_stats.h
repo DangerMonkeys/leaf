@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Arduino.h"
-#include "baro.h"
-#include "settings.h"
+#include "instruments/baro.h"
+#include "ui/settings/settings.h"
 
 class FlightStats {
  public:

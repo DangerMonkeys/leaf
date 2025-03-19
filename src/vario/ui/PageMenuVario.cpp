@@ -2,15 +2,15 @@
 
 #include <Arduino.h>
 
-#include "baro.h"
-#include "buttons.h"
 #include "display.h"
 #include "displayFields.h"
 #include "fonts.h"
-#include "gps.h"
+#include "instruments/baro.h"
+#include "instruments/gps.h"
 #include "pages.h"
-#include "settings.h"
-#include "speaker.h"
+#include "ui/audio/speaker.h"
+#include "ui/input/buttons.h"
+#include "ui/settings/settings.h"
 
 enum vario_menu_items {
   cursor_vario_back,

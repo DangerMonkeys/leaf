@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-#include "ids.h"
+#include "utils/ids.h"
 
 class WaypointID : public GenericID<WaypointID, uint8_t> {
  public:

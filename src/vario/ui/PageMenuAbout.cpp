@@ -1,8 +1,8 @@
 #include "PageMenuAbout.h"
 #include "WiFi.h"
+#include "comms/fanet_radio.h"
 #include "display.h"
 #include "esp_mac.h"
-#include "fanet_radio.h"
 #include "fonts.h"
 #include "version.h"
 

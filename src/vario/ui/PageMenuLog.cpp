@@ -2,14 +2,14 @@
 
 #include <Arduino.h>
 
-#include "buttons.h"
 #include "display.h"
 #include "displayFields.h"
 #include "fonts.h"
-#include "log.h"
+#include "logging/log.h"
 #include "pages.h"
-#include "settings.h"
-#include "speaker.h"
+#include "ui/audio/speaker.h"
+#include "ui/input/buttons.h"
+#include "ui/settings/settings.h"
 
 enum log_menu_items {
   cursor_log_back,

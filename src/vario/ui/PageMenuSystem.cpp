@@ -4,8 +4,7 @@
 
 #include "PageMenuAbout.h"
 #include "PageMenuSystemWifi.h"
-#include "ble.h"
-#include "buttons.h"
+#include "comms/ble.h"
 #include "display.h"
 #include "displayFields.h"
 #include "fonts.h"
@@ -13,8 +12,9 @@
 #include "page_message.h"
 #include "pages.h"
 #include "power.h"
-#include "settings.h"
-#include "speaker.h"
+#include "ui/audio/speaker.h"
+#include "ui/input/buttons.h"
+#include "ui/settings/settings.h"
 
 enum system_menu_items {
   cursor_system_back,

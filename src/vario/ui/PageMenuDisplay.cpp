@@ -2,13 +2,13 @@
 
 #include <Arduino.h>
 
-#include "buttons.h"
 #include "display.h"
 #include "displayFields.h"
 #include "fonts.h"
 #include "pages.h"
-#include "settings.h"
-#include "speaker.h"
+#include "ui/audio/speaker.h"
+#include "ui/input/buttons.h"
+#include "ui/settings/settings.h"
 
 enum display_menu_items {
   cursor_display_back,

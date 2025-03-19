@@ -10,7 +10,7 @@
 #include <etl/array_view.h>
 #include <etl/stack.h>
 
-#include "buttons.h"
+#include "ui/input/buttons.h"
 
 #define MENU_PAGE_STACK_SIZE 10
 #define CURSOR_BACK -1  // cursor position for default back button

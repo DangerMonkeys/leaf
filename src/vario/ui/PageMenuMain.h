@@ -3,8 +3,8 @@
 
 #include <Arduino.h>
 
-#include "buttons.h"
 #include "menu_page.h"
+#include "ui/input/buttons.h"
 
 class MainMenuPage : public MenuPage {
  public:

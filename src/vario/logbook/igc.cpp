@@ -5,11 +5,11 @@
 #include "Arduino.h"
 #include "ArduinoJson.h"
 #include "FS.h"
-#include "baro.h"
-#include "gps.h"
-#include "settings.h"
-#include "string_utils.h"
+#include "instruments/baro.h"
+#include "instruments/gps.h"
 #include "time.h"
+#include "ui/settings/settings.h"
+#include "utils/string_utils.h"
 #include "version.h"
 
 String latDegreeToStr(double degree) {

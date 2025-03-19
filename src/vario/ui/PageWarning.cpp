@@ -3,8 +3,8 @@
 #include "display.h"
 #include "fonts.h"
 #include "power.h"
-#include "settings.h"
-#include "speaker.h"
+#include "ui/audio/speaker.h"
+#include "ui/settings/settings.h"
 
 enum warning_page_items {
   cursor_warningPage_none,

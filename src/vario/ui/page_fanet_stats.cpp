@@ -1,7 +1,7 @@
 #include "page_fanet_stats.h"
 #include <Arduino.h>
+#include "comms/fanet_radio.h"
 #include "display.h"
-#include "fanet_radio.h"
 #include "fonts.h"
 
 void PageFanetStats::show() { push_page(&getInstance()); }

@@ -3,20 +3,20 @@
 #include <Arduino.h>
 #include <U8g2lib.h>
 
-#include "IMU.h"
 #include "PageThermal.h"
-#include "SDcard.h"
-#include "baro.h"
-#include "buttons.h"
 #include "display.h"
 #include "displayFields.h"
 #include "fonts.h"
-#include "gps.h"
-#include "log.h"
+#include "instruments/baro.h"
+#include "instruments/gps.h"
+#include "instruments/imu.h"
+#include "instruments/temp_rh.h"
+#include "logging/log.h"
 #include "power.h"
-#include "settings.h"
-#include "speaker.h"
-#include "tempRH.h"
+#include "storage/sd_card.h"
+#include "ui/audio/speaker.h"
+#include "ui/input/buttons.h"
+#include "ui/settings/settings.h"
 #include "wind_estimate/wind_estimate.h"
 
 enum thermal_page_items {

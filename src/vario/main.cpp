@@ -1,12 +1,12 @@
 #include "Arduino.h"
-#include "Leaf_SPI.h"
-#include "ble.h"
-#include "configuration.h"
-#include "fanet_radio.h"
-#include "gps.h"
+#include "comms/ble.h"
+#include "comms/fanet_radio.h"
+#include "hardware/Leaf_SPI.h"
+#include "hardware/configuration.h"
+#include "instruments/gps.h"
 #include "message_bus.h"
-#include "settings.h"
 #include "taskman.h"
+#include "ui/settings/settings.h"
 
 // MAIN Module
 // initializes the system.  Responsible for setting up resources with

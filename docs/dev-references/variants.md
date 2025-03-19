@@ -7,7 +7,7 @@ As the Leaf development continues, we have a bunch of different hardware revisio
 IO pins change, even hardware is added. We also have the desire to have our software be ported to other
 hardware platforms. We do this by virtue of "Variants", as modelled from Meshtastic.
 
-To create a "variant", add one like the following. The "configuration.h" will attempt to load up this
+To create a "variant", add one like the following. The "hardware/configuration.h" will attempt to load up this
 variant.h in the variant directory if the variant flag is set, and we can put variant specific defines here.
 
 ```

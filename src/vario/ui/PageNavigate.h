@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 
-#include "buttons.h"
+#include "ui/input/buttons.h"
 
 // draw the pixels to the display
 void navigatePage_draw(void);

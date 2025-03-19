@@ -1,12 +1,12 @@
 #include "PageMenuSystemWifi.h"
 
 #include "WiFi.h"
-#include "ble.h"
+#include "comms/ble.h"
+#include "comms/ota.h"
 #include "display.h"
 #include "fonts.h"
-#include "ota.h"
 #include "power.h"
-#include "settings.h"
+#include "ui/settings/settings.h"
 #include "version.h"
 
 /**************************

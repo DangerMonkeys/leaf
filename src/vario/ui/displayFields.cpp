@@ -3,17 +3,17 @@
 #include <Arduino.h>
 #include <U8g2lib.h>
 
-#include "SDcard.h"
-#include "baro.h"
+#include "comms/fanet_radio.h"
 #include "display.h"
-#include "fanet_radio.h"
 #include "fonts.h"
-#include "gps.h"
-#include "gpx.h"
-#include "log.h"
+#include "instruments/baro.h"
+#include "instruments/gps.h"
+#include "logging/log.h"
+#include "navigation/gpx.h"
 #include "power.h"
-#include "settings.h"
+#include "storage/sd_card.h"
 #include "time.h"
+#include "ui/settings/settings.h"
 #include "version.h"
 #include "wind_estimate/wind_estimate.h"
 

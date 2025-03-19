@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include <limits>
 
-#include "log.h"
+#include "logging/log.h"
 #include "wind_estimate.h"
 
 bool DEBUG_WIND_ESTIMATE = false;  // enable for verbose serial printing

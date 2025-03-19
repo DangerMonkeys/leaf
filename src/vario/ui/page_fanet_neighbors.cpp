@@ -1,6 +1,7 @@
 #include "page_fanet_neighbors.h"
+
+#include "comms/fanet_radio.h"
 #include "display.h"
-#include "fanet_radio.h"
 #include "fonts.h"
 
 void PageFanetNeighbors::show() {

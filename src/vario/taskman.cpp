@@ -3,28 +3,28 @@
 #include <HardwareSerial.h>
 #include "task.h"
 
-#include "IMU.h"
-#include "Leaf_SPI.h"
-#include "SDcard.h"
-#include "baro.h"
-#include "ble.h"
-#include "buttons.h"
-#include "gps.h"
-#include "log.h"
+#include "comms/ble.h"
+#include "hardware/Leaf_SPI.h"
+#include "instruments/baro.h"
+#include "instruments/gps.h"
+#include "instruments/imu.h"
+#include "instruments/temp_rh.h"
+#include "logging/log.h"
 #include "power.h"
-#include "settings.h"
-#include "speaker.h"
-#include "tempRH.h"
+#include "storage/sd_card.h"
+#include "ui/audio/speaker.h"
 #include "ui/display.h"
+#include "ui/input/buttons.h"
+#include "ui/settings/settings.h"
 #include "wind_estimate/wind_estimate.h"
 
 #ifdef MEMORY_PROFILING
-#include "memory_report.h"
+#include "diagnostics/memory_report.h"
 #endif
 
 #ifdef DEBUG_WIFI
 #include <WiFi.h>
-#include "DebugWebserver.h"
+#include "comms/debug_webserver.h"
 #endif
 
 //*** Task Manager

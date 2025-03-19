@@ -1,9 +1,9 @@
 #include "menu_page.h"
 
-#include "buttons.h"
 #include "display.h"
 #include "etl/array.h"
 #include "fonts.h"
+#include "ui/input/buttons.h"
 
 etl::array<const char*, 0> SimpleSettingsMenuPage::emptyMenu{};
 

@@ -1,9 +1,9 @@
 #include "kml.h"
 
-#include "gps.h"
-#include "settings.h"
-#include "string_utils.h"
+#include "instruments/gps.h"
 #include "time.h"
+#include "ui/settings/settings.h"
+#include "utils/string_utils.h"
 
 const String Kml::desiredFileName() const {
   // Get the local time

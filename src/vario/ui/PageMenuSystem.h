@@ -4,8 +4,8 @@
 #include <Arduino.h>
 
 #include "PageMenuSystemWifi.h"
-#include "buttons.h"
 #include "menu_page.h"
+#include "ui/input/buttons.h"
 
 class SystemMenuPage : public SettingsMenuPage {
  public:

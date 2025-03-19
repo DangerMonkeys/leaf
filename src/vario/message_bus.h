@@ -1,7 +1,7 @@
 #pragma once
 
 #include "etl/message_bus.h"
-#include "lock_guard.h"
+#include "utils/lock_guard.h"
 
 /// @brief Thread safe MessageBus
 /// @tparam MAX_ROUTERS_

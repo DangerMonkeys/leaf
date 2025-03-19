@@ -3,8 +3,8 @@
 #include <SD_MMC.h>
 
 #include "FS.h"
-#include "SDcard.h"
-#include "telemetry.h"
+#include "logging/telemetry.h"
+#include "storage/sd_card.h"
 #include "ui/page_flight_summary.h"
 
 bool Flight::startFlight() {

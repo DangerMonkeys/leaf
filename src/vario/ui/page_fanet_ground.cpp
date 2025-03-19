@@ -1,12 +1,12 @@
 #include "page_fanet_ground.h"
 #include "Preferences.h"
-#include "baro.h"
+#include "comms/fanet_radio.h"
 #include "display.h"
 #include "displayFields.h"
-#include "fanet_radio.h"
 #include "fonts.h"
-#include "gps.h"
-#include "log.h"
+#include "instruments/baro.h"
+#include "instruments/gps.h"
+#include "logging/log.h"
 #include "page_message.h"
 
 void PageFanetGround::show(FanetGroundTrackingMode mode) {

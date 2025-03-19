@@ -3,7 +3,7 @@
 #include "page_fanet_neighbors.h"
 #include "page_fanet_stats.h"
 #include "page_list_select.h"
-#include "settings.h"
+#include "ui/settings/settings.h"
 
 // Singleton instance
 

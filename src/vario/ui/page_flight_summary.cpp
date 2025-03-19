@@ -4,8 +4,8 @@
 #include "display.h"
 #include "displayFields.h"
 #include "fonts.h"
-#include "settings.h"
-#include "string_utils.h"
+#include "ui/settings/settings.h"
+#include "utils/string_utils.h"
 
 void PageFlightSummary::draw_extra() {
   u8g2.setFont(leaf_6x12);
