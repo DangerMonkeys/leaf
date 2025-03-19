@@ -48,7 +48,7 @@ void setup() {
   // GPS Bus Interaction.
   // Still needs to be moved away from taskman, but we can
   // hook it into the message bus.
-  gps_setBus(&bus);
+  gps.setBus(&bus);
 
   // Subscribe modules that need bus updates.
   // This should not exceed the bus router limit.

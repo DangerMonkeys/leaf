@@ -18,6 +18,16 @@
 #include "ui/display.h"
 #include "wind_estimate/wind_estimate.h"
 
+LeafGPS gps;
+
+// Pinout for Leaf V3.2.0
+#define GPS_BACKUP_EN \
+  40  // 42 on V3.2.0  // Enable GPS backup power.  Generally always-on, except able to be turned
+      // off for a full GPS reset if needed
+// pins 43-44 are GPS UART, already enabled by default as "Serial0"
+#define GPS_RESET 45
+#define GPS_1PPS 46  // INPUT
+
 #define DEBUG_GPS 0
 
 // Setup GPS
@@ -26,8 +36,6 @@
            // default ESP32S3 pins so no need to set them specifically
 #define GPSBaud 115200
 // #define GPSSerialBufferSize 2048
-TinyGPSPlus gps;  // The TinyGPSPlus object (this is the software class that stores all the GPS info
-                  // and functions)
 
 const char enableGGA[] PROGMEM = "$PAIR062,0,1";  // enable GGA message every 1 second
 const char enableGSV[] PROGMEM = "PAIR062,3,4";   // enable GSV message every 1 second
@@ -37,41 +45,6 @@ const char disableGLL[] PROGMEM = "$PAIR062,1,0";  // disable message
 const char disableGSA[] PROGMEM = "$PAIR062,2,0";  // disable message
 const char disableVTG[] PROGMEM = "$PAIR062,5,0";  // disable message
 
-uint32_t gpsBootReady = 0;
-
-// Satellite tracking
-
-// GPS satellite info for storing values straight from the GPS
-struct gps_sat_info sats[MAX_SATELLITES];
-
-// Cached version of the sat info for showing on display (this will be re-written each time a
-// total set of new sat info is available)
-struct gps_sat_info satsDisplay[MAX_SATELLITES];
-
-// $GPGSV sentence parsing
-TinyGPSCustom totalGPGSVMessages(gps, "GPGSV", 1);  // first element is # messages (N) total
-TinyGPSCustom messageNumber(gps, "GPGSV", 2);       // second element is message number (x of N)
-TinyGPSCustom satsInView(gps, "GPGSV", 3);          // third element is # satellites in view
-
-// Fields for capturing the information from GSV strings
-// (each GSV sentence will have info for at most 4 satellites)
-TinyGPSCustom satNumber[4];  // to be initialized later
-TinyGPSCustom elevation[4];  // to be initialized later
-TinyGPSCustom azimuth[4];    // to be initialized later
-TinyGPSCustom snr[4];        // to be initialized later
-
-// Custom objects for position/fix accuracy.
-// Need to read from the GST sentence which TinyGPS doesn't do by default
-TinyGPSCustom latAccuracy(gps, "GPGST", 6);  // Latitude error - standard deviation
-TinyGPSCustom lonAccuracy(gps, "GPGST", 7);  // Longitude error - standard deviation
-TinyGPSCustom fix(gps, "GNGGA", 6);          // Fix (0=none, 1=GPS, 2=DGPS, 3=Valid PPS)
-TinyGPSCustom fixMode(gps, "GNGSA", 2);      // Fix mode (1=No fix, 2=2D fix, 3=3D fix)
-GPSFixInfo gpsFixInfo;
-
-// Message bus to let the rest of the application know when new GPS updates are
-// available
-etl::imessage_bus* gps_bus = nullptr;
-
 // Lock for GPS
 SemaphoreHandle_t GpsLockGuard::mutex = NULL;
 
@@ -80,45 +53,45 @@ SemaphoreHandle_t GpsLockGuard::mutex = NULL;
 // There is a loop-back pullup resistor from the backup power output to its own ENABLE line, so once
 // backup is turned on, it will stay on even if the main processor is shut down. Typically, the
 // backup power is only turned off to enable a full cold reboot/reset of the GPS module.
-void gps_setBackupPower(bool backup_power_on) {
-  if (backup_power_on)
+void LeafGPS::setBackupPower(bool backupPowerOn) {
+  if (backupPowerOn)
     digitalWrite(GPS_BACKUP_EN, HIGH);
   else
     digitalWrite(GPS_BACKUP_EN, LOW);
 }
 
 // Fully reset GPS using hardware signals, including powering off backup_power to erase everything
-void gps_hardReset(void) {
-  gps_setBackupPower(false);
-  gps_softReset();
-  gps_setBackupPower(true);
+void LeafGPS::hardReset(void) {
+  setBackupPower(false);
+  softReset();
+  setBackupPower(true);
 }
 
 // A soft reset, keeping backup_power enabled so as not to lose saved satellite data
-void gps_softReset(void) {
+void LeafGPS::softReset(void) {
   digitalWrite(GPS_RESET, LOW);
   delay(100);
   digitalWrite(GPS_RESET, HIGH);
 }
 
-void gps_enterBackupMode(void) {
-  gps_setBackupPower(true);  // ensure backup power enabled (should already be on)
+void LeafGPS::enterBackupMode(void) {
+  setBackupPower(true);  // ensure backup power enabled (should already be on)
   // TODO: send $PAIR650,0*25 command to shutdown
   // GPS should now draw ~35uA
   // cut main VCC power to further reduce power consumption to ~13uA (i.e., when whole system is
   // shut down)
 }
 
-void gps_sleep() {
+void LeafGPS::sleep() {
   uint32_t millisNow = millis();
   uint32_t delayTime = 0;
-  if (millisNow < gpsBootReady) delayTime = gpsBootReady - millisNow;
+  if (millisNow < bootReady) delayTime = bootReady - millisNow;
   if (delayTime > 300) delayTime = 300;
 
   Serial.print("now: ");
   Serial.println(millisNow);
   Serial.print("ready: ");
-  Serial.println(gpsBootReady);
+  Serial.println(bootReady);
   Serial.print("delay: ");
   Serial.println(delayTime);
 
@@ -129,18 +102,29 @@ void gps_sleep() {
   Serial.println("************ !!!!!!!!!!! GPS SLEEPING COMMAND SENT !!!!!!!!!!! ************");
 }
 
-void gps_wake() {
-  gps_setBackupPower(1);  // enable backup power if not already
-  gps_softReset();
+void LeafGPS::wake() {
+  setBackupPower(1);  // enable backup power if not already
+  softReset();
 }
 
-void gps_shutdown() {
-  gps_sleep();
-  gps_setBackupPower(
+void LeafGPS::shutdown() {
+  sleep();
+  setBackupPower(
       0);  // disable GPS backup supply, so when main system shuts down, gps is totally off
 }
 
-void gps_init(void) {
+LeafGPS::LeafGPS() {
+  totalGPGSVMessages.begin(gps, "GPGSV", 1);
+  messageNumber.begin(gps, "GPGSV", 2);
+  satsInView.begin(gps, "GPGSV", 3);
+
+  latAccuracy.begin(gps, "GPGST", 6);
+  lonAccuracy.begin(gps, "GPGST", 7);
+  fix.begin(gps, "GNGGA", 6);
+  fixMode.begin(gps, "GNGSA", 2);
+}
+
+void LeafGPS::init(void) {
   // Create the GPS Mutex for multi-threaded locking
   GpsLockGuard::mutex = xSemaphoreCreateMutex();
 
@@ -150,13 +134,14 @@ void gps_init(void) {
   // Set pins
   Serial.print("GPS set pins... ");
   pinMode(GPS_BACKUP_EN, OUTPUT);
-  gps_setBackupPower(true);  // by default, enable backup power
+  setBackupPower(true);  // by default, enable backup power
   pinMode(GPS_RESET, OUTPUT);
-  digitalWrite(GPS_RESET, LOW);  //
+  digitalWrite(GPS_RESET, LOW);
   delay(100);
-  digitalWrite(GPS_RESET, HIGH);  //
-  gpsBootReady = millis() + 300;  // track when GPS was activated; we can't send any commands sooner
-                                  // than ~285ms (we'll use 300ms)
+  digitalWrite(GPS_RESET, HIGH);
+  // track when GPS was activated; we can't send any commands sooner
+  // than ~285ms (we'll use 300ms)
+  bootReady = millis() + 300;
 
   Serial.print("GPS being serial port... ");
   gpsPort.begin(GPSBaud);
@@ -214,9 +199,7 @@ void gps_init(void) {
   */
 }  // gps_init
 
-float glideRatio;
-
-void gps_calculateGlideRatio() {
+void LeafGPS::calculateGlideRatio() {
   float climb = baro.climbRateAverage;
   float speed = gps.speed.kmph();
 
@@ -231,25 +214,25 @@ void gps_calculateGlideRatio() {
   }
 }
 
-void gps_updateFixInfo() {
+void LeafGPS::updateFixInfo() {
   // fix status and mode
-  gpsFixInfo.fix = atoi(fix.value());
-  gpsFixInfo.fixMode = atoi(fixMode.value());
+  fixInfo.fix = atoi(fix.value());
+  fixInfo.fixMode = atoi(fixMode.value());
 
   // solution accuracy
   // gpsFixInfo.latError = 2.5; //atof(latAccuracy.value());
   // gpsFixInfo.lonError = 1.5; //atof(lonAccuracy.value());
   // gpsFixInfo.error = sqrt(gpsFixInfo.latError * gpsFixInfo.latError +
   //                         gpsFixInfo.lonError * gpsFixInfo.lonError);
-  gpsFixInfo.error = (float)gps.hdop.value() * 5 / 100;
+  fixInfo.error = (float)hdop.value() * 5 / 100;
 }
 
-void gps_update() {
+void LeafGPS::update() {
   // update sats if we're tracking sat NMEA sentences
   navigator.update();
-  gps_updateSatList();
-  gps_updateFixInfo();
-  gps_calculateGlideRatio();
+  updateSatList();
+  updateFixInfo();
+  calculateGlideRatio();
 
   String gpsName = "gps,";
   String gpsEntryString = gpsName + String(gps.location.lat(), 8) + ',' +
@@ -273,15 +256,11 @@ void gps_update() {
   */
 }
 
-float gps_getGlideRatio() { return glideRatio; }
-
-void gps_setBus(etl::imessage_bus* bus) { gps_bus = bus; }
-
 // this is called whenever a new valid NMEA sentence contains a valid speed (TODO: check if true for
 // every sentence or just every fix)
 void onNewSentence(NMEASentenceContents contents) { windEstimate_onNewSentence(contents); }
 
-bool gps_read_buffer_once() {
+bool LeafGPS::readBufferOnce() {
   GpsLockGuard mutex;  // Ensure we have a lock on write
   if (gpsPort.available()) {
     char a = gpsPort.read();
@@ -290,8 +269,8 @@ bool gps_read_buffer_once() {
       NMEASentenceContents contents = {.speed = gps.speed.isUpdated(),
                                        .course = gps.course.isUpdated()};
       // Push the update onto the bus!
-      if (gps_bus && gps.location.isUpdated()) {
-        gps_bus->receive(GpsReading(gps));
+      if (bus_ && gps.location.isUpdated()) {
+        bus_->receive(GpsReading(gps));
       }
       onNewSentence(contents);
     }
@@ -306,7 +285,7 @@ bool gps_read_buffer_once() {
 // copy data from each satellite message into the sats[] array.  Then, if we reach the complete set
 // of sentences, copy the fresh sat data into the satDisplay[] array for showing on LCD screen when
 // needed.
-void gps_updateSatList() {
+void LeafGPS::updateSatList() {
   // copy data if we have a complete single sentence
   if (totalGPGSVMessages.isUpdated()) {
     for (int i = 0; i < 4; ++i) {
@@ -341,12 +320,12 @@ void gps_updateSatList() {
         // received again in an NMEA sat message)
         sats[i].active = false;
       }
-      gpsFixInfo.numberOfSats = satelliteCount;  // save counted satellites
+      fixInfo.numberOfSats = satelliteCount;  // save counted satellites
     }
   }
 }
 
-void gps_test_sats() {
+void LeafGPS::testSats() {
   if (totalGPGSVMessages.isUpdated()) {
     for (int i = 0; i < 4; ++i) {
       int no = atoi(satNumber[i].value());
@@ -421,7 +400,7 @@ void gps_test_sats() {
   }
 }
 
-bool gps_getUtcDateTime(tm& cal) {
+bool LeafGPS::getUtcDateTime(tm& cal) {
   if (!gps.time.isValid()) {
     return false;
   }
@@ -437,8 +416,8 @@ bool gps_getUtcDateTime(tm& cal) {
 }
 
 // like gps_getUtcDateTime, but has the timezone offset applied.
-bool gps_getLocalDateTime(tm& cal) {
-  if (!gps_getUtcDateTime(cal)) {
+bool LeafGPS::getLocalDateTime(tm& cal) {
+  if (!getUtcDateTime(cal)) {
     return false;
   }
 

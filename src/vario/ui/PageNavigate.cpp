@@ -404,7 +404,7 @@ void navigatePage_draw() {
     u8g2.setFont(leaf_6x12);
 
     // User Field 3 -- Glide Ratio
-    display_glide(userFieldsCol1X + 5, userFieldsRow2Y + 20, gps_getGlideRatio());
+    display_glide(userFieldsCol1X + 5, userFieldsRow2Y + 20, gps.getGlideRatio());
     u8g2.setFont(leaf_5h);
     u8g2.setCursor(userFieldsCol1X, userFieldsRow2Y + 7);
     u8g2.print("`GLIDE");

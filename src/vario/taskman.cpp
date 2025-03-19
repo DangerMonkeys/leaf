@@ -293,7 +293,7 @@ void main_ON_loop() {
   // interrupt fired and set setTasks to true)
   bool gps_buffer_full = true;
   while (gps_buffer_full && !taskman_setTasks) {
-    gps_buffer_full = gps_read_buffer_once();
+    gps_buffer_full = gps.readBufferOnce();
   }
 
   // if (gps_is_quiet) goToSleep();
@@ -417,7 +417,7 @@ void taskManager(void) {
     taskman_imu = 0;
   }
   if (taskman_gps) {
-    gps_update();
+    gps.update();
     taskman_gps = 0;
   }
   if (taskman_power) {

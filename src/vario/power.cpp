@@ -96,7 +96,7 @@ void power_init_peripherals() {
   // then initialize the rest of the devices
   SDcard_init();
   Serial.println(" - Finished SDcard");
-  gps_init();
+  gps.init();
   Serial.println(" - Finished GPS");
   wire_init();
   Serial.println(" - Finished I2C Wire");
@@ -122,7 +122,7 @@ void power_sleep_peripherals() {
   Serial.println(power.onState);
   // TODO: all the rest of the peripherals not needed while charging
   Serial.println(" - Sleeping GPS");
-  gps_sleep();
+  gps.sleep();
   Serial.println(" - Sleeping baro");
   baro.sleep();
   Serial.println(" - Sleeping speaker");
@@ -136,7 +136,7 @@ void power_wake_peripherals() {
   SDcard_mount();  // re-initialize SD card in case card state was changed while in charging/USB
                    // mode
   Serial.println(" - waking GPS");
-  gps_wake();
+  gps.wake();
   Serial.println(" - waking baro and IMU");
   baro.wake();
   imu_wake();

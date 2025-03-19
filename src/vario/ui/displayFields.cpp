@@ -40,7 +40,7 @@ void display_clockTime(uint8_t x, uint8_t y, bool show_ampm) {
 
   // Get the local date, print NOGPS on error
   tm cal;
-  if (!gps_getLocalDateTime(cal)) {
+  if (!gps.getLocalDateTime(cal)) {
     u8g2.print((char)137);
     u8g2.print("NOGPS");
   }

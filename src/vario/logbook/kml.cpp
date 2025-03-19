@@ -8,7 +8,7 @@
 const String Kml::desiredFileName() const {
   // Get the local time
   tm cal;
-  gps_getLocalDateTime(cal);
+  gps.getLocalDateTime(cal);
 
   // format with strftime format.  Eg FlightTrack_2025-01-08_2301
   char fileString[60];

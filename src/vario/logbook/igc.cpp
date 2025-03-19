@@ -45,7 +45,7 @@ const String Igc::desiredFileName() const {
   // as per the IGC spec.
   char buf[11];
   tm cal;
-  gps_getLocalDateTime(cal);
+  gps.getLocalDateTime(cal);
   strftime(buf, 11, "%F", &cal);
 
   String ret = buf;
@@ -60,7 +60,7 @@ void Igc::log(unsigned long durationSec) {
   // Generate the time in HHMMSS
   char buf[8];
   tm cal;
-  gps_getUtcDateTime(cal);
+  gps.getUtcDateTime(cal);
   strftime(buf, sizeof(buf), "%H%M%S", &cal);
 
   logger.writeBRecord(buf,  // Time in HHMMSS
@@ -94,7 +94,7 @@ bool Igc::startFlight() {
   logger.time_zone = (String)(settings.system_timeZone / 60);
 
   tm cal;
-  gps_getUtcDateTime(cal);
+  gps.getUtcDateTime(cal);
   strftime(logger.date, sizeof(logger.date), "%d%m%y", &cal);
 
   logger.writeHeader();

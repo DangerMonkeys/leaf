@@ -10,7 +10,7 @@
 bool Telemetry_t::begin() {
   // Get the local time
   tm cal;
-  if (!gps_getLocalDateTime(cal)) {
+  if (!gps.getLocalDateTime(cal)) {
     return false;
   }
 
