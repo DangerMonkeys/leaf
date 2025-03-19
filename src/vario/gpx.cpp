@@ -37,7 +37,7 @@ void Navigator::init() {
 // update nav data every second
 void Navigator::update() {
   // only update nav info if we're tracking to an active point
-  if (activePointIndex) {
+  if (hasActivePoint()) {
     // update distance remaining, then sequence to next point if distance is small enough
     pointDistanceRemaining = gps.distanceBetween(gps.location.lat(), gps.location.lng(),
                                                  activePoint.lat, activePoint.lon);
@@ -96,14 +96,16 @@ void Navigator::update() {
 
 // Start, Sequence, and End Navigation Functions
 
-bool Navigator::activatePoint(int16_t pointIndex) {
+bool Navigator::activatePoint(WaypointID pointIndex) {
   navigating = true;
   reachedGoal_ = false;
 
-  activeRouteIndex =
-      0;  // Point navigation is exclusive from Route navigation, so cancel any Route navigation
-  activePointIndex = pointIndex;
-  activePoint = waypoints[activePointIndex];
+  // Point navigation is exclusive from Route navigation, so cancel any Route navigation
+  activeRouteIndex = RouteID::None;
+  activeRoutePointIndex = RouteIndex::None;
+
+  activeWaypointIndex = pointIndex;
+  activePoint = waypoints[activeWaypointIndex];
 
   speaker_playSound(fx_enter);
 
@@ -117,7 +119,7 @@ bool Navigator::activatePoint(int16_t pointIndex) {
   return navigating;
 }
 
-bool Navigator::activateRoute(uint16_t routeIndex) {
+bool Navigator::activateRoute(RouteID routeIndex) {
   // first check if any valid points
   uint8_t validPoints = routes[routeIndex].totalPoints;
   if (!validPoints) {
@@ -132,7 +134,7 @@ bool Navigator::activateRoute(uint16_t routeIndex) {
 
     // set activePointIndex to 0, then call sequenceWaypoint() to increment and populate new
     // activePoint, and nextPoint, if any
-    activePointIndex = 0;
+    activeRoutePointIndex = RouteIndex::None;
     sequenceWaypoint();
 
     // calculate TOTAL Route distance
@@ -163,48 +165,48 @@ bool Navigator::sequenceWaypoint() {
   bool successfulSequence = false;
 
   // sequence to next point if we're on a route && there's another point in the Route
-  if (activeRouteIndex && activePointIndex < routes[activeRouteIndex].totalPoints) {
+  if (activeRouteIndex && activeRoutePointIndex < routes[activeRouteIndex].totalPoints) {
     successfulSequence = true;
 
     // TODO: play going to next point sound, or whatever
     speaker_playSound(fx_enter);
 
-    activePointIndex++;
+    activeRoutePointIndex++;
     Serial.print(" new active index:");
-    Serial.print(activePointIndex);
+    Serial.print(activeRoutePointIndex);
     Serial.print(" route index:");
     Serial.print(activeRouteIndex);
-    activePoint = routes[activeRouteIndex].routepoints[activePointIndex];
+    activePoint = routes[activeRouteIndex].routepoints[activeRoutePointIndex];
 
     Serial.print(" new point:");
     Serial.print(activePoint.name);
     Serial.print(" new lat: ");
     Serial.print(activePoint.lat);
 
-    if (activePointIndex + 1 <
+    if (activeRoutePointIndex + 1 <
         routes[activeRouteIndex]
             .totalPoints) {  // if there's also a next point in the list, capture that
-      nextPointIndex_ = activePointIndex + 1;
+      nextPointIndex_ = activeRoutePointIndex + 1;
       nextPoint_ = routes[activeRouteIndex].routepoints[nextPointIndex_];
     } else {  // otherwise signify no next point, so we don't show display functions related to next
               // point
-      nextPointIndex_ = -1;
+      nextPointIndex_ = RouteIndex::NoNextPoint;
     }
 
     // get distance between present (prev) point and new activePoint (used for distance progress
     // bar) if we're sequencing to the very first point, then there's no previous point to use, so
     // use our current location instead
-    if (activePointIndex == 1) {
+    if (activeRoutePointIndex == 1) {
       segmentDistance =
           gps.distanceBetween(gps.location.lat(), gps.location.lng(),
-                              routes[activeRouteIndex].routepoints[activePointIndex].lat,
-                              routes[activeRouteIndex].routepoints[activePointIndex].lon);
+                              routes[activeRouteIndex].routepoints[activeRoutePointIndex].lat,
+                              routes[activeRouteIndex].routepoints[activeRoutePointIndex].lon);
     } else {
       segmentDistance =
-          gps.distanceBetween(routes[activeRouteIndex].routepoints[activePointIndex - 1].lat,
-                              routes[activeRouteIndex].routepoints[activePointIndex - 1].lon,
-                              routes[activeRouteIndex].routepoints[activePointIndex].lat,
-                              routes[activeRouteIndex].routepoints[activePointIndex].lon);
+          gps.distanceBetween(routes[activeRouteIndex].routepoints[activeRoutePointIndex - 1].lat,
+                              routes[activeRouteIndex].routepoints[activeRoutePointIndex - 1].lon,
+                              routes[activeRouteIndex].routepoints[activeRoutePointIndex].lat,
+                              routes[activeRouteIndex].routepoints[activeRoutePointIndex].lon);
     }
 
   } else {  // otherwise, we made it to our destination!
@@ -220,14 +222,17 @@ bool Navigator::sequenceWaypoint() {
 void Navigator::cancelNav() {
   pointDistanceRemaining = 0;
   pointTimeRemaining = 0;
-  activeRouteIndex = 0;
-  activePointIndex = 0;
+  activeRouteIndex = RouteID::None;
+  activeWaypointIndex = WaypointID::None;
+  activeRoutePointIndex = RouteIndex::None;
   reachedGoal_ = false;
   navigating = false;
   turnToActive = 0;
   turnToNext_ = 0;
   speaker_playSound(fx_cancel);
 }
+
+bool Navigator::hasActivePoint() { return activeWaypointIndex || activeRoutePointIndex; }
 
 Navigator parse_result;
 

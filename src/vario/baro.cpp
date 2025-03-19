@@ -146,6 +146,11 @@ void Barometer::getFirstReading(void) {
 
 void Barometer::resetLaunchAlt() { altAtLaunch = altAdjusted; }
 
+void Barometer::setFilterSamples(size_t nSamples) {
+  pressureFilter.setSampleCount(nSamples);
+  climbFilter.setSampleCount(nSamples);
+}
+
 void Barometer::sleep() { sleeping_ = true; }
 void Barometer::wake() {
   sleeping_ = false;
@@ -253,52 +258,14 @@ void Barometer::calculatePressureAlt() {
 // accurate filtered value.  This is still in testing, and not currently being used.
 //
 void Barometer::filterPressure(void) {
-  // first calculate filter size based on user preference
-  switch (settings.vario_sensitivity) {
-    case 1:
-      filterValsPref_ = 20;
-      break;
-    case 2:
-      filterValsPref_ = 12;
-      break;
-    case 3:
-      filterValsPref_ = 6;
-      break;
-    case 4:
-      filterValsPref_ = 3;
-      break;
-    case 5:
-      filterValsPref_ = 1;
-      break;
-    default:
-      filterValsPref_ = 3;
-      break;
-  }
-
   // new way with regression:
   pressureLR_.update((double)millis(), (double)alt);
   LinearFit fit = pressureLR_.fit();
   pressureRegression_ = linear_value(&fit, (double)millis());
 
   // old way with averaging last N values equally:
-  pressureFiltered = 0;
-  int8_t filterBookmark = pressureFilterVals_[0];  // start at the saved spot in the filter array
-  int8_t filterIndex =
-      filterBookmark;  // and create an index to track all the values we need for averaging
-
-  pressureFilterVals_[filterBookmark] = pressure;  // load in the new value at the bookmarked spot
-  if (++filterBookmark > FILTER_VALS_MAX)          // increment bookmark for next time
-    filterBookmark = 1;                            // wrap around the array for next time if needed
-  pressureFilterVals_[0] = filterBookmark;         // and save the bookmark for next time
-
-  // sum up all the values from this spot and previous, for the correct number of samples (user
-  // pref)
-  for (int i = 0; i < filterValsPref_; i++) {
-    pressureFiltered += pressureFilterVals_[filterIndex];
-    filterIndex--;
-    if (filterIndex <= 0) filterIndex = FILTER_VALS_MAX;  // wrap around the array
-  }
-  pressureFiltered /= filterValsPref_;  // divide to get the average
+  pressureFilter.update(pressure);
+  pressureFiltered = Pressure::fromMillibars(pressureFilter.getAverage());
 }
 
 void Barometer::calculateAlts() {
@@ -324,47 +291,11 @@ void Barometer::filterClimb() {
     return;
   }
 
-  // first calculate filter size based on user preference
-  switch (settings.vario_sensitivity) {
-    case 1:
-      filterValsPref_ = 20;
-      break;
-    case 2:
-      filterValsPref_ = 12;
-      break;
-    case 3:
-      filterValsPref_ = 6;
-      break;
-    case 4:
-      filterValsPref_ = 3;
-      break;
-    case 5:
-      filterValsPref_ = 1;
-      break;
-    default:
-      filterValsPref_ = 3;
-      break;
-  }
-
   // filter climb rate
-  float climbRateFilterSummation = 0;
-  int8_t filterBookmark = climbFilterVals_[0];  // start at the saved spot in the filter array
-  int8_t filterIndex = filterBookmark;          // create index to track all the values
+  climbFilter.update(climbRate);
 
-  climbFilterVals_[filterBookmark] = climbRate;  // load in the new value at the bookmarked spot
-  if (++filterBookmark > FILTER_VALS_MAX)        // increment bookmark for next time
-    filterBookmark = 1;                          // wrap around the array for next time if needed
-  climbFilterVals_[0] = filterBookmark;          // and save the bookmark for next time
-
-  // sum up all the values from this spot and previous, for user-pref number of samples
-  for (int i = 0; i < filterValsPref_; i++) {
-    climbRateFilterSummation += climbFilterVals_[filterIndex];
-    filterIndex--;
-    if (filterIndex <= 0) filterIndex = FILTER_VALS_MAX;  // wrap around the array
-  }
-
-  // divide to get the average climb rate (and convert m/s -> cm/s)
-  climbRateFiltered = (int32_t)(climbRateFilterSummation * 100 / filterValsPref_);
+  // convert m/s -> cm/s to get the average climb rate
+  climbRateFiltered = (int32_t)(climbFilter.getAverage() * 100);
 
   // now calculate the longer-running average climb value
   // (this is a smoother, slower-changing value for things like glide ratio, etc)
@@ -375,26 +306,3 @@ void Barometer::filterClimb() {
 }
 
 // ^^^ Device reading & data processing ^^^
-
-// Test Functions
-
-void Barometer::debugPrint() {
-  Serial.print("Press:");
-  Serial.print(pressure);
-  Serial.print(", PressFiltered:");
-  Serial.print(pressureFiltered);
-  Serial.print(", PressRegression:");
-  Serial.print(pressureRegression_);
-  Serial.print(", LastAlt:");
-  Serial.print(lastAlt_);
-  Serial.print(", ALT:");
-  Serial.print(alt);
-  Serial.print(", AltAdjusted:");
-  Serial.print(altAdjusted);
-  Serial.print(", AltSetting:");
-  Serial.print(altimeterSetting);
-  Serial.print(", CLIMB:");
-  Serial.print(climbRate);
-  Serial.print(", CLIMB_FILTERED:");
-  Serial.println(climbRateFiltered);
-}

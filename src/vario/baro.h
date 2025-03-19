@@ -8,13 +8,15 @@
 #include <Arduino.h>
 
 #include "Leaf_SPI.h"
-#include "LinearRegression.h"
 #include "buttons.h"
 #include "flags_enum.h"
+#include "math/linear_regression.h"
+#include "math/running_average.h"
 #include "pressure_source.h"
 #include "units/pressure.h"
 
 #define FILTER_VALS_MAX 20  // total array size max;
+#define DEFAULT_SAMPLES_TO_AVERAGE 3
 
 enum class BarometerTask : uint8_t {
   None,
@@ -58,6 +60,8 @@ class Barometer {
 
   // Reset launcAlt to current Alt (when starting a new log file, for example)
   void resetLaunchAlt(void);
+  // Change the number of samples over which pressure and climb rate are averaged
+  void setFilterSamples(size_t nSamples);
 
   void startMeasurement();
   void update();
@@ -70,9 +74,6 @@ class Barometer {
   // solve for the altimeter setting required to make corrected-pressure-altitude match gps-altitude
   bool syncToGPSAlt(void);
 
-  // == Test Functions ==
-  void debugPrint(void);
-
  private:
   IPressureSource* pressureSource_;
 
@@ -83,11 +84,8 @@ class Barometer {
 
   // == User Settings for Vario ==
 
-  // default samples to average (will be adjusted by vario_sensitivity user setting)
-  uint8_t filterValsPref_ = 3;
-
-  int32_t pressureFilterVals_[FILTER_VALS_MAX + 1];  // use [0] as the index / bookmark
-  float climbFilterVals_[FILTER_VALS_MAX + 1];       // use [0] as the index / bookmark
+  RunningAverage<float, FILTER_VALS_MAX> pressureFilter{DEFAULT_SAMPLES_TO_AVERAGE};
+  RunningAverage<float, FILTER_VALS_MAX> climbFilter{DEFAULT_SAMPLES_TO_AVERAGE};
 
   // == Device Management ==
 

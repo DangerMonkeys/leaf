@@ -2,6 +2,7 @@
 #define settings_h
 
 #include <Arduino.h>
+#include <functional>
 
 #include "buttons.h"
 #include "fanet_radio_types.h"
@@ -18,16 +19,6 @@ typedef uint8_t SettingLogFormat;
 #define SINK_ALARM_MAX -6  // m/s sink
 #define SINK_ALARM_MIN -2
 
-/* Vario Sensitivity
-setting | samples | time avg
-    1   |   20    | 20/20 second (1 second moving average)
-    2   |   12    | 12/20 second
-    3   |   6     |  6/20 second
-    4   |   3     |  3/20 second
-    5   |   1     |  1/20 second (single sample -- instant)
-*/
-#define VARIO_SENSE_MAX 5
-#define VARIO_SENSE_MIN 1
 // Lifty Air Thermal Sniffer
 #define LIFTY_AIR_MAX -8  // 0.1 m/s - sinking less than this will trigger
 // Climb settings
@@ -109,12 +100,92 @@ setting | samples | time avg
 #define DEF_UNITS_distance 0  // 0 (km, or m for <1km),	1 (miles, or ft for < 1000 feet)
 #define DEF_UNITS_hours 1     // 0 (24-hour time),  1 (12 hour time),
 
+/// @brief Individual setting.
+/// @tparam T Underlying data type of setting.
+/// @tparam MinValue Minimum value setting may take on.
+/// @tparam MaxValue Maximum value setting may take on.
+/// @tparam DefaultValue Default value of setting.
+template <typename T, T MinValue, T MaxValue, T DefaultValue>
+class Setting {
+ public:
+  using ChangeHandler = std::function<void(const T&)>;
+
+  Setting() : value_(DefaultValue) {}
+
+  T min() { return MinValue; }
+  T max() { return MaxValue; }
+  T defaultValue() { return DefaultValue; }
+
+  // Assignment operator to set the value and trigger the callback
+  Setting& operator=(const T& newValue) {
+    if (value_ != newValue && newValue >= MinValue && newValue <= MaxValue) {
+      value_ = newValue;
+      if (onChangeHandler_) {
+        onChangeHandler_(value_);
+      }
+    }
+    return *this;
+  }
+
+  // Implicit conversion to the underlying type
+  operator T() const { return value_; }
+
+  // Attach a handler for value changes
+  void onChange(ChangeHandler handler) { onChangeHandler_ = handler; }
+
+  // Increment operator (prefix)
+  Setting& operator++() {
+    if (value_ + 1 <= MaxValue) {
+      *this = value_ + 1;
+    }
+    return *this;
+  }
+
+  // Increment operator (postfix)
+  Setting operator++(int) {
+    Setting temp = *this;
+    if (value_ + 1 <= MaxValue) {
+      *this = value_ + 1;
+    }
+    return temp;
+  }
+
+  // Decrement operator (prefix)
+  Setting& operator--() {
+    if (value_ - 1 >= MinValue) {
+      *this = value_ - 1;
+    }
+    return *this;
+  }
+
+  // Decrement operator (postfix)
+  Setting operator--(int) {
+    Setting temp = *this;
+    if (value_ - 1 >= MinValue) {
+      *this = value_ - 1;
+    }
+    return temp;
+  }
+
+ private:
+  T value_;
+  ChangeHandler onChangeHandler_ = nullptr;
+};
+
 class Settings {
  public:
   // Global Variables for Current Settings
   // Vario Settings
   int8_t vario_sinkAlarm;
-  int8_t vario_sensitivity;
+  /* Vario Sensitivity
+  setting | samples | time avg
+      1   |   20    | 20/20 second (1 second moving average)
+      2   |   12    | 12/20 second
+      3   |   6     |  6/20 second
+      4   |   3     |  3/20 second
+      5   |   1     |  1/20 second (single sample -- instant)
+  */
+  Setting<int8_t, 1, 5, 3> vario_sensitivity;
   int8_t vario_climbAvg;
   int8_t vario_climbStart;
   int8_t vario_volume;

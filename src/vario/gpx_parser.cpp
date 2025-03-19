@@ -399,7 +399,7 @@ bool GPXParser::readRoute(Route* route) {
       break;
     } else if (equalsIgnoreCase(key, "rtept")) {
       // This is an opening route point tag
-      if (route->totalPoints >= maxRoutePoints) {
+      if (route->totalPoints >= RouteIndex::Max) {
         _error = "maximum number of route points exceeded";
         return false;
       }

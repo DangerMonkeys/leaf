@@ -17,7 +17,12 @@ Follow these steps to test new firmware before submitting PR or building a relea
 |Plug in USB|Charging screen visible|
 
 ## Vario Functions
-(Ensure vario volume is unmuted and quiet mode is off / unchecked)
+Precondition: Ensure vario volume is unmuted and quiet mode is off / unchecked
+
+    * In main menu (far right screen), go to Vario page
+        * "Beep Vol" -> not X
+        * "QuietMode" -> unchecked
+
 | Action | Intended Result |
 |------|-------|
 |Raise unit| climb beeps and positive climb rate|

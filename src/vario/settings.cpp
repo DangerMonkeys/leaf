@@ -18,8 +18,24 @@ Settings settings;
 Preferences leafPrefs;
 
 void Settings::init() {
-  loadDefaults();  // load defaults regardless, but we'll overwrite these with saved user
-                   // settings (if available)
+  vario_sensitivity.onChange([](const int8_t& newValue) {
+    size_t nSamples = 3;
+    if (newValue == 1) {
+      nSamples = 20;
+    } else if (newValue == 2) {
+      nSamples = 12;
+    } else if (newValue == 3) {
+      nSamples = 6;
+    } else if (newValue == 4) {
+      nSamples = 3;
+    } else if (newValue == 5) {
+      nSamples = 1;
+    }
+    baro.setFilterSamples(nSamples);
+  });
+
+  loadDefaults();  // load defaults regardless, but we'll overwrite
+                   // these with saved user settings (if available)
 
   // Check if settings have been saved before (or not), then save defaults (or grab saved settings)
   leafPrefs.begin("varioPrefs", RO_MODE);  // open (or create if needed) the varioPrefs namespace
@@ -46,7 +62,7 @@ void Settings::factoryResetVario() {
 void Settings::loadDefaults() {
   // Vario Settings
   vario_sinkAlarm = DEF_SINK_ALARM;
-  vario_sensitivity = DEF_VARIO_SENSE;
+  vario_sensitivity = vario_sensitivity.defaultValue();
   vario_climbAvg = DEF_CLIMB_AVERAGE;
   vario_climbStart = DEF_CLIMB_START;
   vario_volume = DEF_VOLUME_VARIO;
@@ -302,14 +318,12 @@ void Settings::adjustVarioAverage(Button dir) {
 
   if (dir == Button::RIGHT) {
     sound = fx_increase;
-    if (++vario_sensitivity >= VARIO_SENSE_MAX) {
-      vario_sensitivity = VARIO_SENSE_MAX;
+    if (vario_sensitivity == ++vario_sensitivity) {
       sound = fx_double;
     }
   } else {
     sound = fx_decrease;
-    if (--vario_sensitivity <= VARIO_SENSE_MIN) {
-      vario_sensitivity = VARIO_SENSE_MIN;
+    if (vario_sensitivity == --vario_sensitivity) {
       sound = fx_double;
     }
   }
