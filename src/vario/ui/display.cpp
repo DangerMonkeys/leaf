@@ -50,9 +50,8 @@ U8G2_ST75256_WO256X128_F_4W_HW_SPI u8g2(U8G2_R3,
 #endif
 
 int8_t display_page = page_thermal;
-uint8_t display_page_prior =
-    page_thermal;  // track the page we used to be on, so we can "go back" if needed (like
-                         // cancelling out of a menu heirarchy)
+uint8_t display_page_prior = page_thermal;  // track the page we used to be on, so we can "go back"
+                                            // if needed (like cancelling out of a menu heirarchy)
 
 void display_init(void) {
   {
