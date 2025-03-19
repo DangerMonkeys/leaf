@@ -123,11 +123,11 @@ void GPSMenuPage::drawConstellation(uint8_t x, uint8_t y, uint16_t size) {
 
   // Draw the satellites
   for (int i = MAX_SATELLITES - 1; i >= 0; i--) {
-    if (satsDisplay[i].active) {
+    if (gps.satsDisplay[i].active) {
       // Sat location (on circle display)
-      uint16_t radius = (90 - satsDisplay[i].elevation) * size / 2 / 90;
-      int16_t sat_x = sin(satsDisplay[i].azimuth * PI / 180) * radius;
-      int16_t sat_y = -cos(satsDisplay[i].azimuth * PI / 180) * radius;
+      uint16_t radius = (90 - gps.satsDisplay[i].elevation) * size / 2 / 90;
+      int16_t sat_x = sin(gps.satsDisplay[i].azimuth * PI / 180) * radius;
+      int16_t sat_y = -cos(gps.satsDisplay[i].azimuth * PI / 180) * radius;
 
       // Draw disc
       /*
@@ -142,7 +142,7 @@ void GPSMenuPage::drawConstellation(uint8_t x, uint8_t y, uint16_t size) {
       uint16_t y_pos = y + size / 2 + sat_y;
 
       u8g2.setFont(u8g2_font_micro_tr);  // Font for satellite numbers
-      if (satsDisplay[i].snr < 20) {
+      if (gps.satsDisplay[i].snr < 20) {
         u8g2.drawFrame(x_pos - 5, y_pos - 4, 11, 9);  // white box with black border if SNR is low
         u8g2.setDrawColor(0);
         u8g2.drawBox(x_pos - 4, y_pos - 3, 9, 7);  // erase the gap between frame and text

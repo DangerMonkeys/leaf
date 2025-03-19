@@ -182,7 +182,7 @@ void display_distance(uint8_t cursor_x, uint8_t cursor_y, double distance) {
 void display_heading(uint8_t cursor_x, uint8_t cursor_y, bool degSymbol) {
   u8g2.setCursor(cursor_x, cursor_y);
 
-  if (!gpsFixInfo.fix) {  // blank out heading if no gps fix
+  if (!gps.fixInfo.fix) {  // blank out heading if no gps fix
     u8g2.print("---");
   } else if (settings.units_heading) {  // Cardinal heading direction
     const char* displayHeadingCardinal =
@@ -729,7 +729,7 @@ void display_GPS_icon(uint8_t x, uint8_t y) {
   if (settings.gpsMode == 0) {    // GPS Off
     u8g2.print((char)44);         // GPS icon with X through it
   } else if (settings.gpsMode) {  // GPS not-off
-    if (gpsFixInfo.fix) {
+    if (gps.fixInfo.fix) {
       u8g2.print((char)43);  // GPS icon with fix
     } else {
       // blink the icon to convey "searching"
@@ -743,11 +743,11 @@ void display_GPS_icon(uint8_t x, uint8_t y) {
       u8g2.setFont(leaf_5h);
       u8g2.setCursor(x + 4, y - 4);
 
-      if (gpsFixInfo.numberOfSats > 9) {
+      if (gps.fixInfo.numberOfSats > 9) {
         u8g2.print("9");
       } else {
-        if (gpsFixInfo.numberOfSats == 1) u8g2.setCursor(x + 5, y - 4);
-        u8g2.print(gpsFixInfo.numberOfSats);
+        if (gps.fixInfo.numberOfSats == 1) u8g2.setCursor(x + 5, y - 4);
+        u8g2.print(gps.fixInfo.numberOfSats);
       }
     }
   }
@@ -1008,7 +1008,7 @@ void display_headerAndFooter(bool timerSelected, bool showTurnArrows) {
   }
 
   // If don't have a fix, show GPS searching icon; otherwise show speed
-  if (!gpsFixInfo.fix) {
+  if (!gps.fixInfo.fix) {
     display_GPS_icon(84, 12);
   } else {
     // Speed in upper right corner

@@ -69,13 +69,16 @@ class LeafGPS : public TinyGPSPlus {
 
   float getGlideRatio(void) { return glideRatio; }
 
-  void updateFixInfo();
+  void setBus(etl::imessage_bus* bus) { bus_ = bus; }
+
+  // Cached version of the sat info for showing on display (this will be re-written each time a
+  // total set of new sat info is available)
+  struct GPSSatInfo satsDisplay[MAX_SATELLITES];
 
   GPSFixInfo fixInfo;
 
-  void setBus(etl::imessage_bus* bus) { bus_ = bus; }
-
  private:
+  void updateFixInfo();
   void updateSatList(void);
   void setBackupPower(bool backupPowerOn);
   void enterBackupMode(void);
@@ -92,10 +95,6 @@ class LeafGPS : public TinyGPSPlus {
 
   // GPS satellite info for storing values straight from the GPS
   struct GPSSatInfo sats[MAX_SATELLITES];
-
-  // Cached version of the sat info for showing on display (this will be re-written each time a
-  // total set of new sat info is available)
-  struct GPSSatInfo satsDisplay[MAX_SATELLITES];
 
   uint32_t bootReady = 0;
 
