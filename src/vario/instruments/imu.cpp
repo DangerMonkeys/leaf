@@ -5,7 +5,7 @@
  * 6 DOF Gyro+Accel plus 3-axis mag
  *
  */
-#include "IMU.h"
+#include "instruments/imu.h"
 
 #include <ICM_20948.h>
 
