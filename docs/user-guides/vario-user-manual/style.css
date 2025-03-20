@@ -1,0 +1,15 @@
+.button-table th:first-child,
+.button-table td:first-child {
+    max-width: 150px;
+    max-height: 100px;
+    margin: auto;
+}
+
+.button-table td:last-child {
+    text-align: left;
+    vertical-align: middle;
+}
+
+.button-table thead {
+    display: none;
+}

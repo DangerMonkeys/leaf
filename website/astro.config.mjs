@@ -28,9 +28,9 @@ function getMarkdownItems(dir) {
 
             if (stat.isDirectory()) {
                 readDir(fullPath);
-            } else if (file.endsWith(".md")) {
-                let relativePath = fullPath.replace("../docs/", "").replace(".md", "");
-                if (file === "index.md") {
+            } else if (file.endsWith(".md") || file.endsWith(".mdx")) {
+                let relativePath = fullPath.replace("../docs/", "").replace(/\.(md|mdx)$/, "");
+                if (file === "index.md" || file === "index.mdx") {
                     hasIndex = true;
                     relativePath = relativePath.replace(/\/index$/, "");
                 }
