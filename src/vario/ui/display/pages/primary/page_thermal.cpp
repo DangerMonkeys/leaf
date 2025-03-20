@@ -3,10 +3,10 @@
 #include <Arduino.h>
 #include <U8g2lib.h>
 
+#include "hardware/temp_rh.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "instruments/imu.h"
-#include "instruments/temp_rh.h"
 #include "logging/log.h"
 #include "power.h"
 #include "storage/sd_card.h"

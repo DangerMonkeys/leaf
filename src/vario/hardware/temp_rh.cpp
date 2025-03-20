@@ -1,4 +1,4 @@
-#include "instruments/temp_rh.h"
+#include "hardware/temp_rh.h"
 
 #include "hardware/Leaf_I2C.h"
 

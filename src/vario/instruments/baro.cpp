@@ -6,9 +6,9 @@
 
 #include "hardware/Leaf_I2C.h"
 #include "hardware/ms5611.h"
+#include "hardware/temp_rh.h"
 #include "instruments/gps.h"
 #include "instruments/imu.h"
-#include "instruments/temp_rh.h"
 #include "logging/log.h"
 #include "logging/telemetry.h"
 #include "storage/sd_card.h"

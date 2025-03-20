@@ -4,10 +4,10 @@
 #include <Arduino.h>
 
 #include "comms/fanet_radio.h"
+#include "hardware/temp_rh.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "instruments/imu.h"
-#include "instruments/temp_rh.h"
 #include "logbook/flight.h"
 #include "logbook/igc.h"
 #include "logbook/kml.h"
