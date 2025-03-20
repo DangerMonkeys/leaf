@@ -48,9 +48,10 @@ void Barometer::adjustAltSetting(int8_t dir, uint8_t count) {
 bool Barometer::syncToGPSAlt() {
   bool success = false;
   if (gps.altitude.isValid()) {
-    baro.altimeterSetting =
-        baro.pressure / (3386.389 * pow(1 - gps.altitude.meters() * 100 / 4433100.0, 1 / 0.190264));
-    settings.vario_altSetting = baro.altimeterSetting;
+    altimeterSetting =
+        pressure / (3386.389 * pow(1 - gps.altitude.meters() * 100 / 4433100.0, 1 / 0.190264));
+    settings.vario_altSetting = altimeterSetting;
+    calculateAlts();  // recalculate altitudes with new adjusted pressure setting
     success = true;
   }
   return success;

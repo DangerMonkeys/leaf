@@ -1,6 +1,6 @@
 .button-table th:first-child,
 .button-table td:first-child {
-    max-width: 150px;
+    max-width: 125px;
     max-height: 100px;
     margin: auto;
 }

@@ -80,7 +80,7 @@ String formatAlt(int32_t alt, bool units, bool showUnits) {
   int8_t thousands = 0;
   if (alt >= 1000) {
     thousands = alt / 1000;  // capture thousands
-    alt -= thousands;        // save the hundreds
+    alt = alt % 1000;        // save just the hundreds
   }
 
   if (thousands != 0) {
