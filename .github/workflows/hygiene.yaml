@@ -15,30 +15,36 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Cache clang-format
-        id: cache-clang-format
-        uses: actions/cache@v4
-        with:
-          path: ~/clang-format-install
-          key: clang-format-19-ubuntu-latest
+      # To anyone who would add an actions/cache here for clang-format-19, beware that it appears
+      # to be extremely difficult.  The clang-format-19 binary prepared to be cached below in
+      # ~/clang-format-install is not sufficient because the shared libraries aren't installed.
+      # clang-format/LLVM also doesn't provide docker images; it is as if LLVM wants their servers
+      # to be hit everytime someone wants to check anything in an automated fashion.
 
-      - name: Install clang-format 19+ (if not cached)
-        if: steps.cache-clang-format.outputs.cache-hit != 'true'
+      - name: Install clang-format-19
         run: |
+          set -o xtrace
           sudo apt-get update
           sudo apt-get install -y wget lsb-release
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
           sudo ./llvm.sh 19
           sudo apt-get install -y clang-format-19
+          # The command clang-format-19 is now available as a command
+          which clang-format-19
+          clang-format-19 --version
           mkdir -p ~/clang-format-install
-          ln -s /usr/bin/clang-format-19 ~/clang-format-install/clang-format
+          cp $(which clang-format-19) ~/clang-format-install/clang-format-19
+          ls ~/clang-format-install
 
-      - name: Add clang-format to PATH
-        run: echo "$HOME/clang-format-install" >> $GITHUB_PATH
-
-      - name: Verify clang-format version
-        run: clang-format --version
+      - name: Copy installed v19 clang-format to location on PATH
+        run: |
+          set -o xtrace
+          which clang-format
+          clang-format --version
+          ls ~/clang-format-install
+          sudo cp ~/clang-format-install/clang-format-19 $(which clang-format)
+          clang-format --version
 
       - name: Check C++ Formatting
         run: |
