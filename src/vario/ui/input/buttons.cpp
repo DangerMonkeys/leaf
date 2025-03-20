@@ -13,14 +13,14 @@
 
 #include "instruments/baro.h"
 #include "power.h"
-#include "ui/PageNavigate.h"
-#include "ui/PageThermal.h"
-#include "ui/PageThermalAdv.h"
-#include "ui/PageWarning.h"
 #include "ui/audio/speaker.h"
-#include "ui/display.h"
-#include "ui/menu_page.h"
-#include "ui/pages.h"
+#include "ui/display/display.h"
+#include "ui/display/menu_page.h"
+#include "ui/display/pages.h"
+#include "ui/display/pages/dialogs/page_warning.h"
+#include "ui/display/pages/primary/page_navigate.h"
+#include "ui/display/pages/primary/page_thermal.h"
+#include "ui/display/pages/primary/page_thermal_adv.h"
 #include "ui/settings/settings.h"
 
 // button debouncing

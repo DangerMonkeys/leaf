@@ -13,7 +13,7 @@
 #include "logbook/kml.h"
 #include "storage/sd_card.h"
 #include "ui/audio/speaker.h"
-#include "ui/page_fanet_stats.h"
+#include "ui/display/pages/fanet/page_fanet_stats.h"
 #include "ui/settings/settings.h"
 #include "utils/string_utils.h"
 #include "wind_estimate/wind_estimate.h"

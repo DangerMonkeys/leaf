@@ -5,7 +5,7 @@
 #include "FS.h"
 #include "logging/telemetry.h"
 #include "storage/sd_card.h"
-#include "ui/page_flight_summary.h"
+#include "ui/display/pages/dialogs/page_flight_summary.h"
 
 bool Flight::startFlight() {
   // Short circuit if the card is not mounted or reading properly

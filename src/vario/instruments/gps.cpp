@@ -14,7 +14,7 @@
 #include "logging/telemetry.h"
 #include "navigation/gpx.h"
 #include "storage/sd_card.h"
-#include "ui/display.h"
+#include "ui/display/display.h"
 #include "ui/settings/settings.h"
 #include "wind_estimate/wind_estimate.h"
 

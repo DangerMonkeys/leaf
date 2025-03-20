@@ -13,7 +13,7 @@
 #include "power.h"
 #include "storage/sd_card.h"
 #include "ui/audio/speaker.h"
-#include "ui/display.h"
+#include "ui/display/display.h"
 #include "ui/input/buttons.h"
 #include "ui/settings/settings.h"
 #include "wind_estimate/wind_estimate.h"

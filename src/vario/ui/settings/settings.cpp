@@ -8,7 +8,7 @@
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "ui/audio/speaker.h"
-#include "ui/display.h"
+#include "ui/display/display.h"
 
 #define RW_MODE false
 #define RO_MODE true

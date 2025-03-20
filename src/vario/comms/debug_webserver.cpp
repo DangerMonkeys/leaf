@@ -4,7 +4,7 @@
 #include "comms/fanet_radio.h"
 #include "etl/string_stream.h"
 #include "storage/sd_card.h"
-#include "ui/display.h"
+#include "ui/display/display.h"
 #include "utils/lock_guard.h"
 
 WebServer server;
