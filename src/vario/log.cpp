@@ -55,6 +55,7 @@ void log_update() {
     // Check auto-stop criteria if we ARE flying
   } else if (weAreFlying) {
     if (flightTimer_autoStop()) {
+      weAreFlying = false;  // we're not flying if we meet auto-stop conditions
       if (settings.log_autoStop) flightTimer_stop();  // stop the log if auto-stop is on
     }
   }
@@ -75,15 +76,32 @@ void log_update() {
         // We don't have a valid GPS location yet, try again later
         return;
 
-      if (settings.vario_altSyncToGPS)
-        baro.syncToGPSAlt();  // sync pressure alt to GPS alt when log starts if the auto-sync
-                              // setting is turned on
-
       // We have a GPS fix, we're able to start recording of the flight.
+      // Do all the necessary starting actions as we start the recording.
       // TODO:  A second sound effect to show that recording has now started??
-      if (flight->startFlight())
+      if (flight->startFlight()) {
         // TODO:  Make this sound much cooler
         speaker_playSound(fx_buttonhold);
+
+        // if Altimeter GPS-SYNC is on, reset altimeter setting
+        // so baro matches GPS when log is started
+        if (settings.vario_altSyncToGPS) baro.syncToGPSAlt();
+
+        // starting values
+        baro.resetLaunchAlt();
+        logbook.alt_start = baro.altAtLaunch;
+
+        // get first set of log values
+        log_captureValues();
+
+        // initial min/max values
+        logbook.alt_max = logbook.alt_start;
+        logbook.alt_min = logbook.alt_start;
+        logbook.alt_above_launch_max = 0;
+        logbook.climb_max = logbook.climb_min = 0;
+        logbook.speed_max = 0;
+        logbook.temperature_max = logbook.temperature_min = logbook.temperature;
+      }
     }
 
     // Generate a record to log
@@ -208,25 +226,7 @@ void flightTimer_start() {
       return;  // DO not start the flight if it's an unknown format
   }
 
-  // if Altimeter GPS-SYNC is on, reset altimeter setting so baro matches GPS when log is started
-  if (settings.vario_altSyncToGPS) baro.syncToGPSAlt();
-
-  // starting values
-  baro.resetLaunchAlt();
-  logbook.alt_start = baro.altAtLaunch;
-
-  // get first set of log values
-  log_captureValues();
-
-  // initial min/max values
-  logbook.alt_max = logbook.alt_min = logbook.alt_start;
-  logbook.climb_max = logbook.climb_min = 0;
-  logbook.speed_max = logbook.speed;
-  logbook.temperature_max = logbook.temperature_min = logbook.temperature;
   logbook.logStartedAt = millis() / 1000;
-
-  // Finally, save current new altitude as auto-stop altitude
-  autoStopAltitude = baro.alt;
 
   // Start the Fanet radio
   FanetRadio::getInstance().begin(settings.fanet_region);
@@ -270,7 +270,7 @@ String flightTimer_getString() {
 }
 
 void log_captureValues() {
-  logbook.alt = baro.alt;
+  logbook.alt = baro.altAdjusted;
   logbook.alt_above_launch = baro.altAboveLaunch;
   logbook.climb = baro.climbRateFiltered;
   logbook.speed = gps.speed.mps();
