@@ -433,7 +433,7 @@ void taskManager(void) {
     taskman_display = 0;
   }
   if (taskman_tempRH) {
-    tempRH_update(taskman_tempRH);
+    tempRH.update(taskman_tempRH);
     taskman_tempRH = 0;
   }
   if (taskman_SDCard) {
