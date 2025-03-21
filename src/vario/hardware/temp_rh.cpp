@@ -2,21 +2,24 @@
 
 #include "hardware/Leaf_I2C.h"
 
+AHT20 tempRH;
+
 #define DEBUG_TEMPRH 0  // flag for outputting debugf messages on UBS serial port
 
-bool measurementStarted = false;
+#define ADDR_AHT20 0x38
+// used for subtracting out any self-heating errors in the temp/humidity sensor
+#define TEMP_OFFSET -3
 
-float ambientTemp = 0;      // calculated deg C
-float ambientHumidity = 0;  // calculated % relative humidity
+enum registers {
+  sfe_aht20_reg_reset = 0xBA,
+  sfe_aht20_reg_initialize = 0xBE,
+  sfe_aht20_reg_measure = 0xAC,
+};
 
-float tempRH_getTemp() { return ambientTemp; }
-
-float tempRH_getHumidity() { return ambientHumidity; }
-
-bool tempRH_init() {
+bool AHT20::init() {
   bool success = true;
 
-  if (!tempRH_isConnected()) {
+  if (!isConnected()) {
     success = false;
 
     if (DEBUG_TEMPRH) Serial.println("Temp_RH - AHT20 Temp Humidity sensor NOT FOUND!");
@@ -28,37 +31,37 @@ bool tempRH_init() {
     delay(40);
 
     // Check if the calibrated bit is set. If not, init the sensor.
-    if (!tempRH_isCalibrated()) {
+    if (!isCalibrated()) {
       // Send 0xBE0800
-      tempRH_initialize();
+      initialize();
 
       // Immediately trigger a measurement. Send 0xAC3300
-      tempRH_triggerMeasurement();
+      triggerMeasurement();
 
       delay(75);  // Wait for measurement to complete
 
       uint8_t counter = 0;
-      while (tempRH_isBusy()) {
+      while (isBusy()) {
         delay(1);
         if (counter++ > 100) success = false;  // Give up after 100ms
       }
 
       // This calibration sequence is not completely proven. It's not clear how and when the cal bit
       // clears This seems to work but it's not easily testable
-      if (!tempRH_isCalibrated()) success = false;
+      if (!isCalibrated()) success = false;
     }
 
     // Check that the cal bit has been set
-    if (!tempRH_isCalibrated()) success = false;
+    if (!isCalibrated()) success = false;
 
     // Mark all datums as fresh (not read before)
-    sensorQueried.temperature = true;
-    sensorQueried.humidity = true;
+    sensorQueried_.temperature = true;
+    sensorQueried_.humidity = true;
 
     // Get a fresh initial measurement
-    tempRH_update(1);
+    update(1);
     delay(100);
-    tempRH_update(2);
+    update(2);
   }
 
   if (DEBUG_TEMPRH) {
@@ -71,28 +74,26 @@ bool tempRH_init() {
   return success;
 }
 
-uint8_t currently_processing = false;
-
 // don't call more often than every 1-2 seconds, or sensor will heat up slightly above ambient
-void tempRH_update(uint8_t process_step) {
+void AHT20::update(uint8_t process_step) {
   // measurements must first be triggered, then >75ms later can be read
   if (process_step == 1) {
-    if (!currently_processing)
-      tempRH_triggerMeasurement();  // if we haven't yet processed a prior measurement, don't
-                                    // trigger a new one
-    currently_processing = true;
+    if (!currentlyProcessing_)
+      triggerMeasurement();  // if we haven't yet processed a prior measurement, don't
+                             // trigger a new one
+    currentlyProcessing_ = true;
   } else if (process_step == 2) {
-    if (!tempRH_isBusy()) {  // if busy, skip this and we'll try again next time
-      tempRH_readData();
-      ambientTemp = ((float)sensorData.temperature / 1048576) * 200 - 50;
-      ambientTemp += TEMP_OFFSET;
-      ambientHumidity = ((float)sensorData.humidity / 1048576) * 100;
-      currently_processing = false;
+    if (!isBusy()) {  // if busy, skip this and we'll try again next time
+      readData();
+      ambientTemp_ = ((float)sensorData_.temperature / 1048576) * 200 - 50;
+      ambientTemp_ += TEMP_OFFSET;
+      ambientHumidity_ = ((float)sensorData_.humidity / 1048576) * 100;
+      currentlyProcessing_ = false;
       if (DEBUG_TEMPRH) {
         Serial.print("Temp_RH - Temp: ");
-        Serial.print(ambientTemp);
+        Serial.print(ambientTemp_);
         Serial.print("  Humidity: ");
-        Serial.println(ambientHumidity);
+        Serial.println(ambientHumidity_);
       }
     } else {
       if (DEBUG_TEMPRH) Serial.println("Temp_RH - missed values due to sensor busy");
@@ -100,33 +101,33 @@ void tempRH_update(uint8_t process_step) {
   }
 }
 
-bool tempRH_softReset() {
+bool AHT20::softReset() {
   Wire.beginTransmission(ADDR_AHT20);
   Wire.write(sfe_aht20_reg_reset);
   if (Wire.endTransmission() == 0) return true;
   return false;
 }
 
-bool tempRH_available() {
-  if (!measurementStarted) {
-    tempRH_triggerMeasurement();
-    measurementStarted = true;
+bool AHT20::available() {
+  if (!measurementStarted_) {
+    triggerMeasurement();
+    measurementStarted_ = true;
     return (false);
   }
 
-  if (tempRH_isBusy()) {
+  if (isBusy()) {
     return (false);
   }
 
-  tempRH_readData();
-  measurementStarted = false;
+  readData();
+  measurementStarted_ = false;
   return (true);
 }
 
-void tempRH_readData() {
+void AHT20::readData() {
   // Clear previous data
-  sensorData.temperature = 0;
-  sensorData.humidity = 0;
+  sensorData_.temperature = 0;
+  sensorData_.humidity = 0;
 
   if (Wire.requestFrom(ADDR_AHT20, (uint8_t)6) > 0) {
     Wire.read();  // Read and discard state
@@ -137,22 +138,22 @@ void tempRH_readData() {
     uint8_t midByte = Wire.read();
 
     incoming |= midByte;
-    sensorData.humidity = incoming >> 4;
+    sensorData_.humidity = incoming >> 4;
 
-    sensorData.temperature = (uint32_t)midByte << (8 * 2);
-    sensorData.temperature |= (uint32_t)Wire.read() << (8 * 1);
-    sensorData.temperature |= (uint32_t)Wire.read() << (8 * 0);
+    sensorData_.temperature = (uint32_t)midByte << (8 * 2);
+    sensorData_.temperature |= (uint32_t)Wire.read() << (8 * 1);
+    sensorData_.temperature |= (uint32_t)Wire.read() << (8 * 0);
 
     // Need to get rid of data in bits > 20
-    sensorData.temperature = sensorData.temperature & ~(0xFFF00000);
+    sensorData_.temperature = sensorData_.temperature & ~(0xFFF00000);
 
     // Mark data as fresh
-    sensorQueried.temperature = false;
-    sensorQueried.humidity = false;
+    sensorQueried_.temperature = false;
+    sensorQueried_.humidity = false;
   }
 }
 
-bool tempRH_triggerMeasurement() {
+bool AHT20::triggerMeasurement() {
   Wire.beginTransmission(ADDR_AHT20);
   Wire.write(sfe_aht20_reg_measure);
   Wire.write((uint8_t)0x33);
@@ -161,7 +162,7 @@ bool tempRH_triggerMeasurement() {
   return false;
 }
 
-bool tempRH_initialize() {
+bool AHT20::initialize() {
   Wire.beginTransmission(ADDR_AHT20);
   Wire.write(sfe_aht20_reg_initialize);
   Wire.write((uint8_t)0x08);
@@ -170,17 +171,17 @@ bool tempRH_initialize() {
   return false;
 }
 
-bool tempRH_isBusy() { return (tempRH_getStatus() & (1 << 7)); }
+bool AHT20::isBusy() { return (getStatus() & (1 << 7)); }
 
-bool tempRH_isCalibrated() { return (tempRH_getStatus() & (1 << 3)); }
+bool AHT20::isCalibrated() { return (getStatus() & (1 << 3)); }
 
-uint8_t tempRH_getStatus() {
+uint8_t AHT20::getStatus() {
   Wire.requestFrom(ADDR_AHT20, (uint8_t)1);
   if (Wire.available()) return (Wire.read());
   return (0);
 }
 
-bool tempRH_isConnected() {
+bool AHT20::isConnected() {
   Wire.beginTransmission(ADDR_AHT20);
   if (Wire.endTransmission() == 0) return true;
 
