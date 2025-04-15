@@ -10,9 +10,9 @@
 #include <ICM_20948.h>
 
 #include "hardware/Leaf_I2C.h"
-#include "kalmanvert/kalmanvert.h"
 #include "logging/log.h"
 #include "logging/telemetry.h"
+#include "math/kalman.h"
 #include "storage/sd_card.h"
 
 // === What to display on the serial port
@@ -24,11 +24,13 @@
 // #define SHOW_FIXED_BOUNDS 0.2  // When set, print fixed values to keep the Arduino serial plot in
 // a consistent range
 
-// Kalman filter object for vertical climb rate and position
-Kalmanvert kalmanvert;
-
 #define POSITION_MEASURE_STANDARD_DEVIATION 0.1f
 #define ACCELERATION_MEASURE_STANDARD_DEVIATION 0.3f
+
+// Kalman filter object for vertical climb rate and position
+KalmanFilterPA kalmanvert(pow(POSITION_MEASURE_STANDARD_DEVIATION, 2),
+                          pow(ACCELERATION_MEASURE_STANDARD_DEVIATION, 2));
+
 #define IMU_STARTUP_CYCLES 80  // #samples to bypass at startup while accel calibrates
 uint8_t startupCycleCount;
 
@@ -247,8 +249,7 @@ void imu_init() {
   }
 
   // setup kalman filter
-  kalmanvert.init(baro.altF, 0.0, POSITION_MEASURE_STANDARD_DEVIATION,
-                  ACCELERATION_MEASURE_STANDARD_DEVIATION, millis());
+  kalmanvert.init(millis() / 1000.0, baro.altF, 0.0);
 
   tPrev = millis();
 }
@@ -265,12 +266,12 @@ void imu_update() {
     if (startupCycleCount > 0) {
       startupCycleCount--;
       // submit accel = 0 to kalman filter and return
-      kalmanvert.update(baro.altF, 0.0f, millis());
+      kalmanvert.update(millis() / 1000.0, baro.altF, 0.0f);
       return;
     }
 
     // update kalman filter
-    kalmanvert.update(baro.altF, accelVert * 9.80665f, millis());
+    kalmanvert.update(millis() / 1000.0, baro.altF, accelVert * 9.80665f);
 
     String kalmanName = "kalman,";
     String kalmanEntryString = kalmanName + String(kalmanvert.getPosition(), 8) + ',' +
