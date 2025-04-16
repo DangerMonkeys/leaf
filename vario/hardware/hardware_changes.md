@@ -38,6 +38,7 @@ Brief summary of hardware changes
 |GPIO 41 |EYESPI_BUSY| PWR_CHG_i1 |   <- same        |
 |GPIO 42 |EYESPI_INT | PWR_CHG_i2 |   <- same        |
 |GPIO 45 |EYESPI_SDCS| GPS_RESET  |   <- same        |
+|GPIO 47 | LED       | CHG_GOOD   |   <- same        |
 
 |  IOEX  |    3.2.6   | Prev 3.2.5  |
 |--------|------------|-------------|

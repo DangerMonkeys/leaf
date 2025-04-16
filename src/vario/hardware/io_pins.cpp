@@ -1,6 +1,28 @@
 #include "hardware/io_pins.h"
-#include <TCA9555.h>
+
 #include <Wire.h>
+
+// define our own pin names for IOExpander
+#define TCA9555_PIN_NAMES
+
+#define TCA_P00 0
+#define TCA_P01 1
+#define TCA_P02 2
+#define TCA_P03 3
+#define TCA_P04 4
+#define TCA_P05 5
+#define TCA_P06 6
+#define TCA_P07 7
+#define TCA_P10 10
+#define TCA_P11 11
+#define TCA_P12 12
+#define TCA_P13 13
+#define TCA_P14 14
+#define TCA_P15 15
+#define TCA_P16 16
+#define TCA_P17 17
+
+#include <TCA9555.h>
 
 // First try to load up any config from variants
 #include "variant.h"
@@ -38,5 +60,13 @@ void ioexDigitalWrite(bool onIOEX, uint8_t pin, uint8_t value) {
     bool result = IOEX.write1(pin, value);
   } else {
     digitalWrite(pin, value);
+  }
+}
+
+uint8_t ioexDigitalRead(bool onIOEX, uint8_t pin) {
+  if (onIOEX) {
+    return IOEX.read1(pin);
+  } else {
+    return digitalRead(pin);
   }
 }
