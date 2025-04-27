@@ -49,7 +49,7 @@ void ioexInit() {
   result = IOEX.pinMode8(0, IOEX_REG_CONFIG_PORT0);
   Serial.print("IOEX.pinModeP0 succes: ");
   Serial.println(result);
-  IOEX.pinMode8(1, IOEX_REG_CONFIG_PORT1);
+  result = IOEX.pinMode8(1, IOEX_REG_CONFIG_PORT1);
   Serial.print("IOEX.pinModeP1 succes: ");
   Serial.println(result);
 }

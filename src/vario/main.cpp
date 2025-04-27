@@ -5,6 +5,7 @@
 #include "hardware/configuration.h"
 #include "instruments/gps.h"
 #include "message_bus.h"
+#include "power.h"
 #include "taskman.h"
 #include "ui/settings/settings.h"
 
@@ -19,9 +20,9 @@ MessageBus<10> bus;
 void setup() {
   // Start USB Serial Debugging Port
   Serial.begin(115200);
-  delay(200);
+  delay(2000);
   Serial.println("Starting Setup");
-  delay(200);
+  delay(2000);
 
   // Initialize the shared bus
   spi_init();

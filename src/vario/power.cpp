@@ -20,6 +20,16 @@
 
 POWER power;  // struct for battery-state and on-state variables
 
+void blinkLED(uint8_t count) {
+  pinMode(LED_PIN, OUTPUT);  // LED power status indicator
+  for (int i = 0; i < count; i++) {
+    delay(500);
+    digitalWrite(LED_PIN, LOW);  // turn off LED
+    delay(500);
+    digitalWrite(LED_PIN, HIGH);  // turn on LED
+  }
+}
+
 void power_bootUp() {
   power_init();  // configure power supply
 
@@ -54,12 +64,24 @@ void power_init() {
   Serial.print("power_init: ");
   Serial.println(power.onState);
 
+// initialize IO expander (needed for speaker in v3.2.5)
+#ifdef HAS_IO_EXPANDER
+  ioexInit();  // initialize IO Expander
+  Serial.println(" - Finished IO Expander");
+#endif
+
   // Set output / input pins to control battery charge and power supply
-  pinMode(POWER_LATCH, OUTPUT);
-  pinMode(POWER_CHARGE_I1, OUTPUT);
-  pinMode(POWER_CHARGE_I2, OUTPUT);
-  pinMode(POWER_CHARGE_GOOD, INPUT_PULLUP);
   pinMode(BATT_SENSE, INPUT);
+  pinMode(POWER_LATCH, OUTPUT);
+  if (!POWER_CHARGE_I1_IOEX) pinMode(POWER_CHARGE_I1, OUTPUT);
+  if (!POWER_CHARGE_I2_IOEX) pinMode(POWER_CHARGE_I2, OUTPUT);
+  if (!POWER_CHARGE_GOOD_IOEX) pinMode(POWER_CHARGE_GOOD, INPUT_PULLUP);
+  // POWER_GOOD is only available on v3.2.6+ on IOexpander, so not set here
+
+#ifdef LED_PIN
+  pinMode(LED_PIN, OUTPUT);  // LED power status indicator
+#endif
+
   power_setInputCurrent(i500mA);  // set default current
 
   // populate battery % and charging state
@@ -75,12 +97,6 @@ void power_init_peripherals() {
   Serial.println(" - Finished I2C Wire");
   spi_init();
   Serial.println(" - Finished SPI");
-
-// initialize IO expander (needed for speaker in v3.2.5)
-#ifdef HAS_IO_EXPANDER
-  ioexInit();  // initialize IO Expander
-  Serial.println(" - Finished IO Expander");
-#endif
 
   // initialize speaker to play sound (so user knows they can let go of the power button)
   speaker_init();
@@ -271,8 +287,14 @@ bool power_autoOff() {
 uint16_t batteryPercentLast;
 void power_readBatteryState() {
   // Update Charge State
-  power.charging = !digitalRead(POWER_CHARGE_GOOD);
+  power.charging = !ioexDigitalRead(POWER_CHARGE_GOOD_IOEX, POWER_CHARGE_GOOD);
   // logic low is charging, logic high is not
+
+  if (power.charging) {
+    digitalWrite(LED_PIN, LOW);  // turn on LED if charging
+  } else {
+    digitalWrite(LED_PIN, HIGH);  // turn off LED if not charging
+  }
 
   // Battery Voltage Level & Percent Remaining
   power.batteryADC = analogRead(BATT_SENSE);
@@ -322,24 +344,24 @@ void power_setInputCurrent(power_input_levels current) {
   power.inputCurrent = current;
   switch (current) {
     case i100mA:
-      digitalWrite(POWER_CHARGE_I1, LOW);
-      digitalWrite(POWER_CHARGE_I2, LOW);
+      ioexDigitalWrite(POWER_CHARGE_I1_IOEX, POWER_CHARGE_I1, LOW);
+      ioexDigitalWrite(POWER_CHARGE_I2_IOEX, POWER_CHARGE_I2, LOW);
       break;
     default:
     case i500mA:
-      digitalWrite(POWER_CHARGE_I1, HIGH);
-      digitalWrite(POWER_CHARGE_I2, LOW);
+      ioexDigitalWrite(POWER_CHARGE_I1_IOEX, POWER_CHARGE_I1, HIGH);
+      ioexDigitalWrite(POWER_CHARGE_I2_IOEX, POWER_CHARGE_I2, LOW);
       break;
     case iMax:  // Approx 1.348A max input current (set by ILIM pin resistor value).
                 // In this case, battery charging will then be limited by the max fast-charge limit
                 // set by the ISET pin resistor value (approximately 810mA to the battery).
-      digitalWrite(POWER_CHARGE_I1, LOW);
-      digitalWrite(POWER_CHARGE_I2, HIGH);
+      ioexDigitalWrite(POWER_CHARGE_I1_IOEX, POWER_CHARGE_I1, LOW);
+      ioexDigitalWrite(POWER_CHARGE_I2_IOEX, POWER_CHARGE_I2, HIGH);
       break;
     case iStandby:  // USB Suspend mode - turns off USB input power (no charging or supplemental
                     // power, but battery can still power the system)
-      digitalWrite(POWER_CHARGE_I1, HIGH);
-      digitalWrite(POWER_CHARGE_I2, HIGH);
+      ioexDigitalWrite(POWER_CHARGE_I1_IOEX, POWER_CHARGE_I1, HIGH);
+      ioexDigitalWrite(POWER_CHARGE_I2_IOEX, POWER_CHARGE_I2, HIGH);
       break;
   }
 }

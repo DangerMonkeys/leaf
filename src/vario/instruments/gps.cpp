@@ -9,6 +9,8 @@
 #include <TinyGPSPlus.h>
 
 #include "comms/message_types.h"
+#include "hardware/configuration.h"
+#include "hardware/io_pins.h"
 #include "instruments/baro.h"
 #include "logging/log.h"
 #include "logging/telemetry.h"
@@ -20,13 +22,9 @@
 
 LeafGPS gps;
 
-// Pinout for Leaf V3.2.0
-#define GPS_BACKUP_EN \
-  40  // 42 on V3.2.0  // Enable GPS backup power.  Generally always-on, except able to be turned
-      // off for a full GPS reset if needed
-// pins 43-44 are GPS UART, already enabled by default as "Serial0"
-#define GPS_RESET 45
+// Pinout for Leaf V3.2.0+
 #define GPS_1PPS 46  // INPUT
+// pins 43-44 are GPS UART, already enabled by default as "Serial0"
 
 #define DEBUG_GPS 0
 
@@ -55,9 +53,9 @@ SemaphoreHandle_t GpsLockGuard::mutex = NULL;
 // backup power is only turned off to enable a full cold reboot/reset of the GPS module.
 void LeafGPS::setBackupPower(bool backupPowerOn) {
   if (backupPowerOn)
-    digitalWrite(GPS_BACKUP_EN, HIGH);
+    ioexDigitalWrite(GPS_BACKUP_EN_IOEX, GPS_BACKUP_EN, HIGH);
   else
-    digitalWrite(GPS_BACKUP_EN, LOW);
+    ioexDigitalWrite(GPS_BACKUP_EN_IOEX, GPS_BACKUP_EN, LOW);
 }
 
 // Fully reset GPS using hardware signals, including powering off backup_power to erase everything
@@ -69,9 +67,9 @@ void LeafGPS::hardReset(void) {
 
 // A soft reset, keeping backup_power enabled so as not to lose saved satellite data
 void LeafGPS::softReset(void) {
-  digitalWrite(GPS_RESET, LOW);
+  ioexDigitalWrite(GPS_RESET_IOEX, GPS_RESET, LOW);
   delay(100);
-  digitalWrite(GPS_RESET, HIGH);
+  ioexDigitalWrite(GPS_RESET_IOEX, GPS_RESET, HIGH);
 }
 
 void LeafGPS::enterBackupMode(void) {
@@ -133,12 +131,12 @@ void LeafGPS::init(void) {
 
   // Set pins
   Serial.print("GPS set pins... ");
-  pinMode(GPS_BACKUP_EN, OUTPUT);
+  if (!GPS_BACKUP_EN_IOEX) pinMode(GPS_BACKUP_EN, OUTPUT);
   setBackupPower(true);  // by default, enable backup power
-  pinMode(GPS_RESET, OUTPUT);
-  digitalWrite(GPS_RESET, LOW);
+  if (!GPS_RESET_IOEX) pinMode(GPS_RESET, OUTPUT);
+  ioexDigitalWrite(GPS_RESET_IOEX, GPS_RESET, LOW);
   delay(100);
-  digitalWrite(GPS_RESET, HIGH);
+  ioexDigitalWrite(GPS_RESET_IOEX, GPS_RESET, HIGH);
   // track when GPS was activated; we can't send any commands sooner
   // than ~285ms (we'll use 300ms)
   bootReady = millis() + 300;
