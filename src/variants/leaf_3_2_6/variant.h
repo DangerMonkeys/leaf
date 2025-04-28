@@ -1,5 +1,7 @@
 #pragma once
 
+#include <TCA9555.h>
+
 // For OTA updates
 #define LEAF_FIRMWARE_NAME "leaf_3_2_6"
 
@@ -21,33 +23,42 @@
 #define HAS_IO_EXPANDER 1  // this variant has an IO expander
 #define IOEX_ADDR 0x26     // I2C address of the IO Expander (was 0x20 on v3.2.5)
 
-#define SPEAKER_VOLA_IOEX 1  // this pin is on the IO Expander
-#define SPEAKER_VOLA 5       // Pin 5 on the IO Expander
+#define SPEAKER_VOLA TCA_P05  // Pin 5 on the IO Expander
+#define SPEAKER_VOLA_IOEX 1   // this pin is on the IO Expander
 
-#define SPEAKER_VOLB_IOEX 1  // this pin is on the IO Expander
-#define SPEAKER_VOLB 4       // Pin 4 on the IO Expander
+#define SPEAKER_VOLB TCA_P04  // Pin 4 on the IO Expander
+#define SPEAKER_VOLB_IOEX 1   // this pin is on the IO Expander
 
-#define POWER_CHARGE_GOOD 10
+#define POWER_CHARGE_GOOD TCA_P10
 #define POWER_CHARGE_GOOD_IOEX 1
-#define POWER_GOOD 11
+
+#define POWER_GOOD TCA_P11
 #define POWER_GOOD_IOEX 1
-#define POWER_CHARGE_I1 12
+
+#define POWER_CHARGE_I1 TCA_P12
 #define POWER_CHARGE_I1_IOEX 1
-#define POWER_CHARGE_I2 13
+
+#define POWER_CHARGE_I2 TCA_P13
 #define POWER_CHARGE_I2_IOEX 1
-#define IMU_INT 14
+
+#define IMU_INT TCA_P14
 #define IMU_INT_IOEX 1
-#define SD_DETECT 15
+
+#define SD_DETECT TCA_P15
 #define SD_DETECT_IOEX 1
-#define GPS_RESET 16
+
+#define GPS_RESET TCA_P16
 #define GPS_RESET_IOEX 1
-#define GPS_BACKUP_EN 17
+
+#define GPS_BACKUP_EN TCA_P17
 #define GPS_BACKUP_EN_IOEX 1
 
 //                         pins 7......0
 #define IOEX_REG_CONFIG_PORT0 0b00000000  // All outputs on the first port of the IOEX
+#define IOEX_REG_OUTPUT_PORT0 0b11011111  // default output values for port 0
 //                         pins 17....10
 #define IOEX_REG_CONFIG_PORT1 0b00110011  // P10, 11, 14, 15 are inputs on the second port
+#define IOEX_REG_OUTPUT_PORT1 0b11000100  // default output values for port 0
 
 /*
 |  IOEX  |    3.2.6    | INPUT |

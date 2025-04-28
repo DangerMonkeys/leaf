@@ -200,9 +200,8 @@ void SDcard_init(void) {
     return;
   }
 
-  // attempt to remount the card if the SD_DETECT pin changes  (i.e. card state is changed by
-  // inserting or removing)
-  if (!SD_DETECT_IOEX) (SD_DETECT, INPUT_PULLUP);
+  // configure SD detect pin
+  if (!SD_DETECT_IOEX) pinMode(SD_DETECT, INPUT_PULLUP);
 
   // If SDcard present, mount and save state so we can track changes
   if (SDcard_checkIfPresent()) {

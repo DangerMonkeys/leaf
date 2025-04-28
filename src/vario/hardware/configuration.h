@@ -95,10 +95,6 @@
 #define POWER_CHARGE_GOOD_IOEX 0
 #endif
 
-#ifndef LED_PIN
-#define LED_PIN NC  // feature not available on default 3.2.3 config
-#endif
-
 // **** SD Card ****
 #ifndef SD_DETECT
 #define SD_DETECT 26  // input detect pin on default 3.2.3 config

@@ -49,6 +49,7 @@ struct POWER {
   uint16_t batteryMV;     // milivolts battery voltage (typically between 3200 and 4200)
   uint16_t batteryADC;    // ADC raw output from ESP32 input pin
   bool charging = false;  // if system is being charged or not
+  bool USBinput = false;  // if system is plugged into USB power or not
   power_on_states onState = POWER_OFF;
   power_input_levels inputCurrent = i500mA;
 };

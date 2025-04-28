@@ -31,6 +31,18 @@ void blinkLED(uint8_t count) {
 }
 
 void power_bootUp() {
+  // Init Peripheral Busses
+  wire_init();
+  Serial.println(" - Finished I2C Wire");
+  spi_init();
+  Serial.println(" - Finished SPI");
+
+  // initialize IO expander (needed for speaker in v3.2.5+ and power supply in v3.2.6+)
+#ifdef HAS_IO_EXPANDER
+  ioexInit();  // initialize IO Expander
+  Serial.println(" - Finished IO Expander");
+#endif
+
   power_init();  // configure power supply
 
   // grab user settings (or populate defaults if no saved settings)
@@ -64,12 +76,6 @@ void power_init() {
   Serial.print("power_init: ");
   Serial.println(power.onState);
 
-// initialize IO expander (needed for speaker in v3.2.5)
-#ifdef HAS_IO_EXPANDER
-  ioexInit();  // initialize IO Expander
-  Serial.println(" - Finished IO Expander");
-#endif
-
   // Set output / input pins to control battery charge and power supply
   pinMode(BATT_SENSE, INPUT);
   pinMode(POWER_LATCH, OUTPUT);
@@ -77,26 +83,23 @@ void power_init() {
   if (!POWER_CHARGE_I2_IOEX) pinMode(POWER_CHARGE_I2, OUTPUT);
   if (!POWER_CHARGE_GOOD_IOEX) pinMode(POWER_CHARGE_GOOD, INPUT_PULLUP);
   // POWER_GOOD is only available on v3.2.6+ on IOexpander, so not set here
+  Serial.println("set Charge i pins");
 
 #ifdef LED_PIN
   pinMode(LED_PIN, OUTPUT);  // LED power status indicator
+  Serial.println("set LED pin");
 #endif
 
-  power_setInputCurrent(i500mA);  // set default current
+  // power_setInputCurrent(i500mA);  // set default current
 
   // populate battery % and charging state
-  power_readBatteryState();
+  // power_readBatteryState();
+  Serial.println("read battery state");
 }
 
 void power_init_peripherals() {
   Serial.print("init_peripherals: ");
   Serial.println(power.onState);
-
-  // Init Peripheral Busses
-  wire_init();
-  Serial.println(" - Finished I2C Wire");
-  spi_init();
-  Serial.println(" - Finished SPI");
 
   // initialize speaker to play sound (so user knows they can let go of the power button)
   speaker_init();
@@ -105,6 +108,10 @@ void power_init_peripherals() {
   if (power.onState == POWER_ON) {
     power_latch_on();
     speaker_playSound(fx_enter);
+    // loop until sound is done playing
+    while (onSpeakerTimer()) {
+      delay(10);
+    }
   } else {
     power_latch_off();  // turn off 3.3V regulator (if we're plugged into USB, we'll stay on)
   }
@@ -218,11 +225,23 @@ void power_latch_on() { digitalWrite(POWER_LATCH, HIGH); }
 void power_latch_off() { digitalWrite(POWER_LATCH, LOW); }
 
 void power_update() {
+  // first check for USB power and turn on LED if so
+  // (only for v3.2.6+ with controllable LED and PowerGood input)
+#ifdef LED_PIN
+  power.USBinput = !ioexDigitalRead(POWER_GOOD_IOEX, POWER_GOOD);
+  if (power.USBinput) {
+    digitalWrite(LED_PIN, LOW);  // turn on LED if charging
+  } else {
+    digitalWrite(LED_PIN, HIGH);  // turn off LED if not charging
+  }
+#endif
+
   // update battery state
   power_readBatteryState();
 
   // check if we should shut down due to low battery..
   // TODO: should we only do this if we're NOT charging?
+  //       Probably not, since shutting down allows more current for charging
   if (power.batteryMV <= BATT_SHUTDOWN_MV) {
 #ifndef DISABLE_BATTERY_SHUTDOWN
     power_shutdown();
@@ -290,12 +309,6 @@ void power_readBatteryState() {
   power.charging = !ioexDigitalRead(POWER_CHARGE_GOOD_IOEX, POWER_CHARGE_GOOD);
   // logic low is charging, logic high is not
 
-  if (power.charging) {
-    digitalWrite(LED_PIN, LOW);  // turn on LED if charging
-  } else {
-    digitalWrite(LED_PIN, HIGH);  // turn off LED if not charging
-  }
-
   // Battery Voltage Level & Percent Remaining
   power.batteryADC = analogRead(BATT_SENSE);
   // uint16_t batt_level_mv = adc_level * 5554 / 4095;  //    (3300mV ADC range / .5942 V_divider) =
@@ -349,8 +362,9 @@ void power_setInputCurrent(power_input_levels current) {
       break;
     default:
     case i500mA:
-      ioexDigitalWrite(POWER_CHARGE_I1_IOEX, POWER_CHARGE_I1, HIGH);
+      // set I2 to low first, so we don't accidentally have both set to High (if coming from iMax)
       ioexDigitalWrite(POWER_CHARGE_I2_IOEX, POWER_CHARGE_I2, LOW);
+      ioexDigitalWrite(POWER_CHARGE_I1_IOEX, POWER_CHARGE_I1, HIGH);
       break;
     case iMax:  // Approx 1.348A max input current (set by ILIM pin resistor value).
                 // In this case, battery charging will then be limited by the max fast-charge limit
@@ -364,4 +378,6 @@ void power_setInputCurrent(power_input_levels current) {
       ioexDigitalWrite(POWER_CHARGE_I2_IOEX, POWER_CHARGE_I2, HIGH);
       break;
   }
+  Serial.print("set input current: ");
+  Serial.println(current);
 }
