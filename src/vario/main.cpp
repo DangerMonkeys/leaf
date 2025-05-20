@@ -27,7 +27,7 @@ void setup() {
   spi_init();
   Serial.println(" - Finished SPI");
 
-#ifdef FANET
+#ifdef HAS_FANET
   // Initialize the Fanet Radio module.  Subscribe them for bus
   // updates
   FanetRadio::getInstance().setup(&bus);
@@ -53,9 +53,6 @@ void setup() {
   // Subscribe modules that need bus updates.
   // This should not exceed the bus router limit.
   bus.subscribe(BLE::get());
-#ifdef FANET
-  bus.subscribe(FanetRadio::getInstance());
-#endif
 
   Serial.println("Leaf Initialized");
 }

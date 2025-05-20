@@ -249,27 +249,28 @@ void BLE::sendFanetUpdate(FanetPacket& msg) {
   // We only want to send BLE updates if it's a Tracking update
 
   auto& packet = msg.packet;
-  if (packet.header.type != Fanet::PacketType::Tracking) {
+  if (packet.header().type() != FANET::Header::MessageType::TRACKING) {
     return;
   }
-  auto& payload = etl::get<Fanet::Tracking>(packet.payload);
+
+  auto& payload = etl::get<FANET::TrackingPayload>(packet.payload().value());
 
   // PFLAA lines to notify where the traffic is
   // PFLAA,<AlarmLevel>,<RelativeNorth>,<RelativeEast>,
   // <RelativeVertical>,<IDType>,<ID>,<Track>,<TurnRate>,<GroundSpeed>,
   // <ClimbRate>,<AcftType>[,<NoTrack>[,<Source>,<RSSI>]]
-  // See
-  // https://www.flarm.com/wp-content/uploads/2024/04/FTD-012-Data-Port-Interface-Control-Document-ICD-7.19.pdf
+  // See https://
+  // www.flarm.com/wp-content/uploads/2024/04/FTD-012-Data-Port-Interface-Control-Document-ICD-7.19.pdf
 
   char stringified[100];
 
   // Aircraft type does not marry up between PFLAA and Fanet types
   char aircraftType;
-  switch (payload.aircraftType) {
-    case Fanet::AircraftType::Glider:
+  switch (payload.aircraftType()) {
+    case FANET::TrackingPayload::AircraftType::GLIDER:
       aircraftType = '6';  //  hang glider (hard)
       break;
-    case Fanet::AircraftType::Paraglider:
+    case FANET::TrackingPayload::AircraftType::PARAGLIDER:
       aircraftType = '7';  // paraglider (soft)
       break;
     default:
@@ -290,11 +291,11 @@ void BLE::sendFanetUpdate(FanetPacket& msg) {
     }
     constexpr auto EarthRadius = 6378137;
 
-    double dLat = (payload.location.latitude - gps.location.lat()) * PI / 180.0;
-    double dLon = (payload.location.longitude - gps.location.lng()) * PI / 180.0;
+    double dLat = (payload.latitude() - gps.location.lat()) * PI / 180.0;
+    double dLon = (payload.longitude() - gps.location.lng()) * PI / 180.0;
 
     // Convert latitude to radians for scaling factor
-    double latAvg = (payload.location.latitude + gps.location.lat()) * 0.5 * PI / 180.0;
+    double latAvg = (payload.latitude() + gps.location.lat()) * 0.5 * PI / 180.0;
 
     northOffset = dLat * EarthRadius;
     eastOffset = dLon * EarthRadius * cos(latAvg);
@@ -319,9 +320,9 @@ void BLE::sendFanetUpdate(FanetPacket& msg) {
             "0,"       // source is FLARM
             "%.2f*\n"  // RSSI
             ),
-           (int)northOffset, (int)eastOffset, payload.altitude - (int)gpsAltitude,
-           MacToString(packet.header.srcMac), payload.heading, payload.speed / 3.6,
-           payload.climbRate, aircraftType, payload.onlineTracking ? 0 : 1, msg.rssi);
+           (int)northOffset, (int)eastOffset, payload.altitude() - (int)gpsAltitude,
+           FanetAddressToString(packet.source()), payload.groundTrack(), payload.speed() / 3.6,
+           payload.climbRate(), aircraftType, payload.tracking() ? 0 : 1, msg.rssi);
 
   Serial.println(stringified);
   pCharacteristic->setValue((const uint8_t*)stringified, strlen(stringified));

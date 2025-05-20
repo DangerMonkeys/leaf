@@ -52,7 +52,7 @@ void PageMenuAbout::draw_extra() {
   u8g2.print("Fanet Address: ");
   u8g2.setCursor(5, y += offset);
   u8g2.setFont(leaf_5x8);
-#ifndef FANET
+#ifndef HAS_FANET
   u8g2.print("N/A");
 #else
   u8g2.print(FanetRadio::getAddress());
