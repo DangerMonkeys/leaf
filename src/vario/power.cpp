@@ -106,7 +106,7 @@ void power_init_peripherals() {
   Serial.println(" - Finished Baro");
   imu_init();
   Serial.println(" - Finished IMU");
-  tempRH_init();
+  tempRH.init();
   Serial.println(" - Finished Temp Humid");
 
   // then put devices to sleep if we're in POWER_OFF_USB state
