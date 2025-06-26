@@ -18,6 +18,7 @@ class RunningAverage {
   }
 
   void update(TValue value) {
+    // Note: average will become NaN if value is NaN
     if (count < sampleCount) {
       sum += value;
       samples[count++] = value;
@@ -45,11 +46,15 @@ class RunningAverage {
  private:
   void recomputeSum() {
     sum = 0;
-    count = (count > sampleCount) ? sampleCount : count;
+    if (count > sampleCount) {
+      count = sampleCount;
+      index = 0;
+    } else {
+      index = count;
+    }
     for (size_t i = 0; i < count; ++i) {
       sum += samples[i];
     }
-    index = count % sampleCount;
   }
 
   std::array<TValue, MaxSamples> samples;

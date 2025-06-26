@@ -4,6 +4,7 @@
  */
 #include "instruments/baro.h"
 
+#include "diagnostics/fatal_error.h"
 #include "hardware/Leaf_I2C.h"
 #include "hardware/ms5611.h"
 #include "hardware/temp_rh.h"
@@ -110,25 +111,6 @@ void Barometer::getFirstReading(void) {
   }
   pressure = pressureSource_->getPressure();
 
-  /* TODO: remove pressure filter; we'll rely on Kalman filter for smoothing */
-  /*
-  // load the filters with our current start-up pressure (and climb is assumed to be 0)
-  for (int i = 1; i <= FILTER_VALS_MAX; i++) {
-    pressureFilterVals_[i] = pressure_;
-    climbFilterVals_[i] = 0;
-  }
-  // and set bookmark index to 1
-  pressureFilterVals_[0] = 1;
-  climbFilterVals_[0] = 1;
-
-  // and save starting filtered output to current pressure
-  pressureFiltered = pressure_;
-  pressureRegression_ = pressure_;
-
-  // and start off the linear regression version
-  // pressure_lr.update((double)millis(), (double)pressure_);
-  */
-
   calculatePressureAlt();  // calculate altitudes
 
   // initialize all the other alt variables with current altitude to start
@@ -204,6 +186,9 @@ void Barometer::update() {
 
     // get instant climb rate
     climbRate = (float)kalmanvert.getVelocity();  // in m/s
+    if (isnan(climbRate) || isinf(climbRate)) {
+      fatalError("climbRate in Barometer::update was %g after kalmanvert.getVelocity()", climbRate);
+    }
 
     // TODO: get altitude from Kalman Filter when Baro/IMU/'vario' are restructured
     // alt = int32_t(kalmanvert.getPosition() * 100);  // in cm above sea level
@@ -219,9 +204,7 @@ void Barometer::update() {
     pressureSource_->startMeasurement();
     task_ = BarometerTask::Measure;
   } else {
-    // TODO: Write generic fatal error handler that prints error message to screen before stopping
-    Serial.printf("Fatal error: Barometer was conducting unknown task %d\n", (int)task_);
-    while (true);
+    fatalError("Barometer was conducting unknown task %d", (int)task_);
   }
 }
 
@@ -262,16 +245,28 @@ void Barometer::filterPressure(void) {
   // new way with regression:
   pressureLR_.update((double)millis(), (double)alt);
   LinearFit fit = pressureLR_.fit();
-  pressureRegression_ = linear_value(&fit, (double)millis());
+  double dblPressure = linear_value(&fit, (double)millis());
+  if (isnan(dblPressure) || isinf(dblPressure)) {
+    fatalErrorInfo("fit.m=%g, fit.b=%g, fit.x0=", fit.m, fit.b, fit.x0);
+    fatalError("linearly-interpolated pressure in Barometer::filterPressure was %g", dblPressure);
+  }
+  pressureRegression_ = dblPressure;
 
   // old way with averaging last N values equally:
   pressureFilter.update(pressure);
-  pressureFiltered = Pressure::fromMillibars(pressureFilter.getAverage());
+  float fPressure = pressureFilter.getAverage();
+  if (isnan(fPressure) || isinf(fPressure)) {
+    fatalError("trailing average pressure in Barometer::filterPressure was %g", fPressure);
+  }
+  pressureFiltered = Pressure::fromMillibars(fPressure);
 }
 
 void Barometer::calculateAlts() {
   // float altitude in meters with standard altimeter setting
   altF = 44331.0 * (1.0 - pow((float)pressure / 101325.0, (.190264)));
+  if (isnan(altF) || isinf(altF)) {
+    fatalError("altF in Barometer::calculateAlts was %g after calculating from pressure", altF);
+  }
 
   // int altitude in cm with standard altimeter setting
   alt = int32_t(altF * 100);
@@ -293,10 +288,18 @@ void Barometer::filterClimb() {
   }
 
   // filter climb rate
+  if (isnan(climbRate) || isinf(climbRate)) {
+    fatalError("climbRate in Barometer::filterClimb was %g before climbFilter.update", climbRate);
+  }
   climbFilter.update(climbRate);
 
   // convert m/s -> cm/s to get the average climb rate
-  climbRateFiltered = (int32_t)(climbFilter.getAverage() * 100);
+  float climbFilterAvg = climbFilter.getAverage();
+  if (isnan(climbFilterAvg) || isinf(climbFilterAvg)) {
+    fatalError("climbRateAvg in Barometer::filterClimb was %g after climbFilter.getAverage()",
+               climbFilterAvg);
+  }
+  climbRateFiltered = (int32_t)(climbFilterAvg * 100);
 
   // now calculate the longer-running average climb value
   // (this is a smoother, slower-changing value for things like glide ratio, etc)
@@ -304,6 +307,11 @@ void Barometer::filterClimb() {
 
   // use new value in the long-running average
   climbRateAverage = (climbRateAverage * (total_samples - 1) + climbRateFiltered) / total_samples;
+  if (isnan(climbRateAverage) || isinf(climbRateAverage)) {
+    fatalError(
+        "climbRateAverage in Barometer::filterClimb was %g after incorporating climbRateFiltered",
+        climbRateAverage);
+  }
 }
 
 // ^^^ Device reading & data processing ^^^

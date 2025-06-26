@@ -1,5 +1,9 @@
 #include "math/kalman.h"
 
+#include <Arduino.h>
+
+#include "diagnostics/fatal_error.h"
+
 void KalmanFilterPA::init(double initialTime, double initialPosition, double initialAcceleration) {
   t_ = initialTime;
   p_ = initialPosition;
@@ -14,6 +18,12 @@ void KalmanFilterPA::init(double initialTime, double initialPosition, double ini
 
 void KalmanFilterPA::update(double measuredTime, double measuredPosition,
                             double measuredAcceleration) {
+  if (isnan(measuredTime) || isinf(measuredTime) || isnan(measuredPosition) ||
+      isinf(measuredPosition) || isnan(measuredAcceleration) || isinf(measuredAcceleration)) {
+    fatalErrorInfo("measuredTime=%g, measuredPosition=%g, measuredAcceleration=%g", measuredTime,
+                   measuredPosition, measuredAcceleration);
+    fatalError("input value to KalmanFilterPA::update was invalid");
+  }
   double dt = measuredTime - t_;
   double dt2 = dt * dt;
   double dt3 = dt2 * dt;
@@ -37,6 +47,14 @@ void KalmanFilterPA::update(double measuredTime, double measuredPosition,
   double k11 = p11_ / s;
   double k12 = p12_ / s;
   double dp = measuredPosition - p_;
+  if (k11 == NAN || k12 == NAN) {
+    fatalErrorInfo("measuredTime=%g, measuredPosition=%g, measuredAcceleration=%g", measuredTime,
+                   measuredPosition, measuredAcceleration);
+    fatalErrorInfo("p11_=%g, p21_=%g, p12_=%g, p22_=%g", p11_, p21_, p12_, p22_);
+    fatalErrorInfo("s=%g, pVar_=%g, aVar_=", s, pVar_, aVar_);
+    fatalErrorInfo("k11=%g, k12=%g", k11, k12);
+    fatalError("Kalman variable was invalid in KalmanFilterPA::update");
+  }
 
   // Update
   p_ += k11 * dp;
