@@ -188,12 +188,11 @@ void BLE::timerCallback(TimerHandle_t timer) {
 void BLE::sendVarioUpdate() {
   NMEAString nmea;
   etl::string_stream stream(nmea);
-  stream << "$LK8EX1,"
-    << baro.pressure << ","
-    << static_cast<uint>(baro.altF) << ","
-    << baro.climbRateFiltered << ","
-    << "99,999,*";  // Temperature in C.  If not available, send 99
-                    // Battery voltage OR percentage.  If percentage, add 1000 (if 1014 is 14%). 999
+  stream << "$LK8EX1," << baro.pressure << "," << static_cast<uint>(baro.altF) << ","
+         << baro.climbRateFiltered << ","
+         << "99,999,*";  // Temperature in C.  If not available, send 99
+                         // Battery voltage OR percentage.  If percentage, add 1000 (if 1014 is
+                         // 14%). 999
   addChecksumToNMEA(nmea);
   pCharacteristic->setValue((const uint8_t*)nmea.c_str(), nmea.size());
   pCharacteristic->notify();
@@ -329,28 +328,21 @@ void BLE::sendFanetUpdate(FanetPacket& msg) {
   pCharacteristic->notify();
 }
 
-void BLE::addChecksumToNMEA(etl::istring &nmea)
-{
+void BLE::addChecksumToNMEA(etl::istring& nmea) {
   const char hexChars[] = "0123456789ABCDEF";
   uint16_t chk = 0, i = 1;
-  while (nmea[i] && nmea[i] != '*')
-  {
-      chk ^= nmea[i];
-      i++;
+  while (nmea[i] && nmea[i] != '*') {
+    chk ^= nmea[i];
+    i++;
   }
 
-  if (i > (nmea.capacity() - 5))
-  {
-      return;
+  if (i > (nmea.capacity() - 5)) {
+    return;
   }
   nmea.resize(i);
 
   char checksumSuffix[] = {
-      '*',
-      hexChars[(chk >> 4) & 0x0F],
-      hexChars[chk & 0x0F],
-      '\r',
-      '\n',
+      '*', hexChars[(chk >> 4) & 0x0F], hexChars[chk & 0x0F], '\r', '\n',
   };
 
   nmea.append(checksumSuffix, 5);

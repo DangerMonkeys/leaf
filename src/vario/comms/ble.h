@@ -59,14 +59,14 @@ class BLE : public etl::message_router<BLE, GpsReading, FanetPacket> {
   void sendGpsUpdate(TinyGPSPlus& gps);
   void sendFanetUpdate(FanetPacket& packetMsg);
 
-    /**
-  * Add's the checksum and postfix characters to a NMEA string. It may contain an existing checksum that will be overwritten
-  * When the capacity is not enough, the result is undefined
-  * Note: Must start with the prefix character $ (for performance reasons)
-  * @param nmea example '$PFEC,GPint,RMC05'
-  * @return             '$PFEC,GPint,RMC05*2D\r\n'
-  */
-  void addChecksumToNMEA(etl::istring &nmea);
+  /**
+   * Add's the checksum and postfix characters to a NMEA string. It may contain an existing checksum
+   * that will be overwritten When the capacity is not enough, the result is undefined Note: Must
+   * start with the prefix character $ (for performance reasons)
+   * @param nmea example '$PFEC,GPint,RMC05'
+   * @return             '$PFEC,GPint,RMC05*2D\r\n'
+   */
+  void addChecksumToNMEA(etl::istring& nmea);
 
   long lastGpsMs = 0;
 };
