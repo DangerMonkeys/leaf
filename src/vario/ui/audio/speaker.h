@@ -199,6 +199,8 @@ extern uint16_t fx_goingdown[];
 extern uint16_t fx_octavesup[];
 extern uint16_t fx_octavesdown[];
 
+extern uint16_t fx_fatalerror[];
+
 extern uint16_t single_note[];
 
 /*

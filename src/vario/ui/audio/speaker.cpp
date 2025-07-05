@@ -39,6 +39,8 @@ uint16_t fx_goingdown[] = {31, 31, 32, 33, 34, 35, 36, 38, 41, 46, NOTE_END};
 uint16_t fx_octavesup[] = {45, 44, 43, 42, 41, 40, 39, 38, 37, 36, 35, 34, 33, 32, 31, NOTE_END};
 uint16_t fx_octavesdown[] = {31, 31, 40, 40, 45, 45, 65, 65, 90, 90, NOTE_END};
 
+uint16_t fx_fatalerror[] = {50, 250, 50, 250, 50, 250, 50, 250, 50, 250, NOTE_END};
+
 uint16_t single_note[] = {
     0, NOTE_END};  // this is to allow playing single notes by changing random_note[0], while still
                    // having a NOTE_END terminator following.
