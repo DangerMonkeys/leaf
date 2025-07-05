@@ -46,15 +46,11 @@ class RunningAverage {
  private:
   void recomputeSum() {
     sum = 0;
-    if (count > sampleCount) {
-      count = sampleCount;
-      index = 0;
-    } else {
-      index = count;
-    }
+    count = (count > sampleCount) ? sampleCount : count;
     for (size_t i = 0; i < count; ++i) {
       sum += samples[i];
     }
+    index = count % sampleCount;
   }
 
   std::array<TValue, MaxSamples> samples;
