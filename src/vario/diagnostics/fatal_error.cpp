@@ -141,5 +141,9 @@ void fatalError(const char* msg, ...) {
     delay(10);
   }
 
+#ifdef DEBUG_FATALERROR_COREDUMP
+  assert(0);  // Force core dump
+#else
   rebootOnKeyPress();
+#endif
 }
