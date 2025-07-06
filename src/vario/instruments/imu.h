@@ -1,32 +1,40 @@
-#ifndef IMU_h
-#define IMU_h
+#pragma once
 
 #include <Arduino.h>
+#include "hardware/motion_source.h"
 #include "math/kalman.h"
 
-extern KalmanFilterPA kalmanvert;
+#define POSITION_MEASURE_STANDARD_DEVIATION 0.1f
+#define ACCELERATION_MEASURE_STANDARD_DEVIATION 0.3f
 
-#define IMU_INTERRUPT 7  // 14 on V3.2.0  // INPUT
+class IMU {
+ public:
+  IMU(IMotionSource* motionSource)
+      : motionSource_(motionSource),
+        kalmanvert_(pow(POSITION_MEASURE_STANDARD_DEVIATION, 2),
+                    pow(ACCELERATION_MEASURE_STANDARD_DEVIATION, 2)) {}
 
-#define address_WHO_AM_I 0
-#define address_USER_CTRL 3
-#define address_PWR_MGMT_1 6
-#define address_PWR_MGMT_2 7
-#define address_REG_BANK_SEL 127
+  void init();
+  void wake();
+  void update();
 
-#define default_USER_CTRL 0b01010000  // reset I2C and put into SPI mode
-#define default_PWR_MGMT_1 \
-  0b00000100  // reset, wake up, low power off, temp on, clock '4' (auto select best source)
-#define default_PWR_MGMT_2 0b00000000  // accel on, gyro on
-#define select_bank_0 0b00000000       // bank 0
-#define select_bank_1 0b00010000       // bank 1
-#define select_bank_2 0b00100000       // bank 2
-#define select_bank_3 0b00110000       // bank 3
+  float getAccel();
+  float getVelocity();
 
-void imu_init(void);
-void imu_wake(void);
-void imu_update(void);
+ private:
+  bool processQuaternion();
 
-float IMU_getAccel(void);
+  IMotionSource* motionSource_;
 
-#endif
+  // Kalman filter object for vertical climb rate and position
+  KalmanFilterPA kalmanvert_;
+
+  uint8_t startupCycleCount_;
+
+  double accelVert_;
+  double accelTot_;
+
+  double zAvg_ = 1.0;  // Best guess for strength of gravity
+  uint32_t tPrev_;     // Last time gravity guess was updated
+};
+extern IMU imu;

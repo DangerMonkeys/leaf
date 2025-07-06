@@ -275,7 +275,7 @@ void log_captureValues() {
   logbook.climb = baro.climbRateFiltered;
   logbook.speed = gps.speed.mps();
   logbook.temperature = tempRH.getTemp();
-  logbook.accel = IMU_getAccel();
+  logbook.accel = imu.getAccel();
 }
 
 void log_checkMinMaxValues() {

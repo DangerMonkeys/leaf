@@ -104,7 +104,7 @@ void power_init_peripherals() {
   Serial.println(" - Finished display");
   baro.init();
   Serial.println(" - Finished Baro");
-  imu_init();
+  imu.init();
   Serial.println(" - Finished IMU");
   tempRH.init();
   Serial.println(" - Finished Temp Humid");
@@ -139,7 +139,7 @@ void power_wake_peripherals() {
   gps.wake();
   Serial.println(" - waking baro and IMU");
   baro.wake();
-  imu_wake();
+  imu.wake();
   Serial.println(" - waking speaker");
   speaker_unMute();
   Serial.println(" - DONE");

@@ -413,7 +413,7 @@ void taskManager(void) {
     taskman_estimateWind = 0;
   }
   if (taskman_imu) {
-    imu_update();
+    imu.update();
     taskman_imu = 0;
   }
   if (taskman_gps) {

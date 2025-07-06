@@ -26,9 +26,9 @@
 #define CLIMB_AVERAGE 4
 
 // Singleton sensor to use in barometer
-MS5611 sensor;
+MS5611 pressureSensor;
 // Singleton barometer instance for device
-Barometer baro(&sensor);
+Barometer baro(&pressureSensor);
 
 void Barometer::adjustAltSetting(int8_t dir, uint8_t count) {
   float increase = .001;  //
@@ -185,7 +185,7 @@ void Barometer::update() {
     // Filter after Baro_step_2 but before Baro_step_3
 
     // get instant climb rate
-    climbRate = (float)kalmanvert.getVelocity();  // in m/s
+    climbRate = imu.getVelocity();  // in m/s
     if (isnan(climbRate) || isinf(climbRate)) {
       fatalError("climbRate in Barometer::update was %g after kalmanvert.getVelocity()", climbRate);
     }

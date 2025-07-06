@@ -90,7 +90,7 @@ void thermalPageAdv_draw() {
 
     display_temp(varioBarWidth + 5, userFieldsMid - 1, (int16_t)tempRH.getTemp());
     display_humidity(userSecondColumn + 3, userFieldsMid - 1, (uint8_t)tempRH.getHumidity());
-    display_accel(varioBarWidth + 5, userFieldsBottom - 1, IMU_getAccel());
+    display_accel(varioBarWidth + 5, userFieldsBottom - 1, imu.getAccel());
     display_glide(userSecondColumn + 3, userFieldsBottom - 1, gps.getGlideRatio());
 
     // Footer Info ****************************************************
