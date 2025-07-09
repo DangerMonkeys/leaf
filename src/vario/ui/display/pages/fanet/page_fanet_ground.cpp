@@ -36,19 +36,20 @@ void PageFanetGround::show(FanetGroundTrackingMode mode) {
   radio.begin(settings.fanet_region);
   switch (mode) {
     case FanetGroundTrackingMode::WALKING:
-      radio.setTrackingMode(Fanet::GroundTrackingType::Walking);
+      radio.setGroundTrackingMode(FANET::GroundTrackingPayload::TrackingType::WALKING);
       break;
     case FanetGroundTrackingMode::VEHICLE:
-      radio.setTrackingMode(Fanet::GroundTrackingType::Vehicle);
+      radio.setGroundTrackingMode(FANET::GroundTrackingPayload::TrackingType::VEHICLE);
       break;
     case FanetGroundTrackingMode::NEED_RIDE:
-      radio.setTrackingMode(Fanet::GroundTrackingType::Vehicle);
+      radio.setGroundTrackingMode(FANET::GroundTrackingPayload::TrackingType::NEED_A_RIDE);
       break;
     case FanetGroundTrackingMode::LANDED_OK:
-      radio.setTrackingMode(Fanet::GroundTrackingType::LandedWell);
+      radio.setGroundTrackingMode(FANET::GroundTrackingPayload::TrackingType::LANDED_WELL);
       break;
     case FanetGroundTrackingMode::TECH_SUP:
-      radio.setTrackingMode(Fanet::GroundTrackingType::NeedTechnicalSupport);
+      radio.setGroundTrackingMode(
+          FANET::GroundTrackingPayload::TrackingType::NEED_TECHNICAL_SUPPORT);
       break;
   };
 }

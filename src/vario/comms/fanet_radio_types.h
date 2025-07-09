@@ -5,17 +5,18 @@
 #include "etl/enum_type.h"
 
 struct FanetRadioRegion {
-  enum enum_type { OFF = 0, US };
-  static constexpr size_t size = 2;
+  enum enum_type { OFF = 0, US, EUROPE };
+  static constexpr size_t size = 3;
 
   ETL_DECLARE_ENUM_TYPE(FanetRadioRegion, uint8_t)
   ETL_ENUM_TYPE(OFF, "OFF")
   ETL_ENUM_TYPE(US, "US")
+  ETL_ENUM_TYPE(EUROPE, "EUROPE")
   ETL_END_ENUM_TYPE
 
  public:
-  static constexpr etl::array<const char*, size> strings{"OFF", "US"};
-  static constexpr etl::array<uint8_t, size> values{0, 1};
+  static constexpr etl::array<const char*, size> strings{"OFF", "US", "EUROPE"};
+  static constexpr etl::array<uint8_t, size> values{0, 2};
 };
 
 struct FanetRadioState {

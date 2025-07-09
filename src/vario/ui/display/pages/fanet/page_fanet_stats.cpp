@@ -20,7 +20,7 @@ void PageFanetStats::draw_extra() {
       etl::pair{(String) "forwarded", String(radioStats.forwarded)},
       etl::pair{(String) "fwdMinRssiDrp", String(radioStats.fwdMinRssiDrp)},
       etl::pair{(String) "fwdNeighborDrp", String(radioStats.fwdNeighborDrp)},
-      etl::pair{(String) "fwdEnqueuedDrp", String(radioStats.fwdEnqueuedDrop)},
+      etl::pair{(String) "fwdDbBoostWeak", String(radioStats.fwdDbBoostWeak)},
       etl::pair{(String) "fwdDbBoostDrop", String(radioStats.fwdDbBoostDrop)},
       etl::pair{(String) "rxFromUsDrp", String(radioStats.rxFromUsDrp)},
       etl::pair{(String) "txAck", String(radioStats.txAck)},

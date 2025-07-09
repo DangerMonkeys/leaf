@@ -105,7 +105,7 @@ void SystemMenuPage::draw() {
 
         case cursor_system_fanet:
           u8g2.setCursor(setting_choice_x + 8, menu_items_y[i]);
-#ifndef FANET
+#ifndef HAS_FANET
           // If Fanet is not supported, we should show a warning
           u8g2.setFont(leaf_icons);
           u8g2.print((char)0x22);
@@ -173,7 +173,7 @@ void SystemMenuPage::setting_change(Button dir, ButtonState state, uint8_t count
       break;
     case cursor_system_fanet:
       if (state != RELEASED) break;
-#ifndef FANET
+#ifndef HAS_FANET
       PageMessage::show("Fanet",
                         "UNSUPPORTED\n"
                         "\n"

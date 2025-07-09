@@ -142,6 +142,8 @@ PressureUpdateResult MS5611::update() {
 void MS5611::startMeasurement() { startMeasurement_ = true; }
 
 int32_t MS5611::getPressure() {
+  // TODO: replace division by powers of 2 with >> and multiplication by powers of 2 with <<
+
   // calculate temperature (in 100ths of degrees C, from -4000 to 8500)
   dT_ = D2_T_ - ((int32_t)C_TREF_) * 256;
   int32_t TEMP = 2000 + (((int64_t)dT_) * ((int64_t)C_TEMPSENS_)) / pow(2, 23);

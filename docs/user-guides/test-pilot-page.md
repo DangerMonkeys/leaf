@@ -2,7 +2,8 @@
 title: Test Pilot Page
 description: Helpful links and resources for test pilots
 ---
-<center><img src="https://lh7-rt.googleusercontent.com/docsz/AD_4nXd2at1zGy3sIPvAjRdnwRZpBra2GjCS-wrUKtC3gwOG9wqKzVzXiRPpymI6OMFTHvL_hMfNCpxzzVv5E3BEKwe36G60muIhS47LBsJKpRAw-yXNcw_AKH06aZNTpzkekzuKcg6C" alt="logo" width="200" /> </center>
+
+![logo](vario-user-manual/leaf-logotype.png)
 
 Thanks for being a test pilot!  Here are some helpful links:
 

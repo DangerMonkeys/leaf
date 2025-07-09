@@ -140,19 +140,19 @@ void drawUserField(uint8_t x, uint8_t y, uint8_t field, bool selected) {
       u8g2.setCursor(x, y - 14);
       u8g2.setFont(leaf_5h);
       u8g2.print("TEMP");
-      display_temp(x + 2, y, (int16_t)tempRH_getTemp());
+      display_temp(x + 2, y, (int16_t)tempRH.getTemp());
       // Humidity
       u8g2.setCursor(x + 32, y - 14);
       u8g2.setFont(leaf_5h);
       u8g2.print("HUMID");
-      display_humidity(x + 34, y, (uint8_t)tempRH_getHumidity());
+      display_humidity(x + 34, y, (uint8_t)tempRH.getHumidity());
       break;
     case static_cast<int>(ThermalPageUserFields::ACCEL):
       // Acceleration
       u8g2.setCursor(x, y - 14);
       u8g2.setFont(leaf_5h);
       u8g2.print("ACCEL (G FORCE)");
-      display_accel(x + 20, y, IMU_getAccel());
+      display_accel(x + 20, y, imu.getAccel());
       break;
     case static_cast<int>(ThermalPageUserFields::DIST):
       // Distance

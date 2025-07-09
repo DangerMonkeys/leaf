@@ -3,6 +3,8 @@
 #include <Arduino.h>
 #include <stdint.h>
 
+#include "diagnostics/fatal_error.h"
+
 double linear_value(const struct LinearFit* fit, double x);
 double linear_derivative(const struct LinearFit* fit, double x);
 
@@ -105,31 +107,15 @@ LinearFit LinearRegression<n>::fit() {
     double numerator = _count * sum_xiyi - sum_xi * sum_yi;
 
     if (denominator == 0) {
-      Serial.println("OH NO DENOMINATOR IS 0!!!");
-      Serial.print("_count=");
-      Serial.print(_count);
-      Serial.print(", _sumXi2=");
-      Serial.print(_sumXi2);
-      Serial.print(", _sumXi=");
-      Serial.print(_sumXi);
-      Serial.println();
-      Serial.print("_Xi = {");
+      fatalErrorInfo("_count=%d, _sumXi2=%g, _sumXi=%g, _Xi:", _count, _sumXi2, _sumXi);
       for (uint8_t i = 0; i < _count; i++) {
-        Serial.print(_Xi[i]);
-        Serial.print(", ");
+        fatalErrorInfo("%g", _Xi[i]);
       }
-      Serial.println("}");
-      Serial.print("_Yi = {");
+      fatalErrorInfo("_Yi:");
       for (uint8_t i = 0; i < _count; i++) {
-        Serial.print(_Yi[i]);
-        Serial.print(", ");
+        fatalErrorInfo("%g", _Yi[i]);
       }
-      Serial.println("}");
-      // die();
-      while (true) {
-        delay(1);
-      }
-      // TODO: safer end state here
+      fatalError("denominator was 0 in linear_regression");
     }
     result.m = numerator / denominator;
     result.b = (_sumYi - result.m * _sumXi) / _count;

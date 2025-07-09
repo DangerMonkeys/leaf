@@ -262,6 +262,34 @@ bool LeafGPS::readBufferOnce() {
   GpsLockGuard mutex;  // Ensure we have a lock on write
   if (gpsPort.available()) {
     char a = gpsPort.read();
+
+    // Construct the NMEA sentence in the buffer if this is a NMEA string
+    if (nmeaBuffer[0] == '\0' && a == '$') {
+      // Serial.println("Starting new NMEA sentence");
+      nmeaBufferIndex = 1;
+      nmeaBuffer[0] = '$';  // start a new NMEA sentence
+    } else if (nmeaBuffer[0] == '$') {
+      // We're currently building a NMEA sentence, so add the character to the buffer
+      nmeaBuffer[nmeaBufferIndex++] = a;
+      if (a == '\r') {
+        // If we reach the end of a sentence, null-terminate it
+        nmeaBuffer[nmeaBufferIndex++] = '\n';
+        nmeaBuffer[nmeaBufferIndex] = '\0';
+
+        bus_->receive(GpsMessage(nmeaBuffer));  // Send the complete NMEA sentence to the bus
+        nmeaBufferIndex = 0;                    // reset the index for next sentence
+        nmeaBuffer[0] = '\0';                   // null-terminate the string
+      }
+      if (nmeaBufferIndex >= sizeof(nmeaBuffer) - 1) {
+        // Buffer overflow, reset the buffer
+        nmeaBufferIndex = 0;
+        nmeaBuffer[0] = '\0';  // reset the buffer
+        if (DEBUG_GPS) Serial.println("NMEA buffer overflow, resetting.");
+      }
+    }
+
+    // Serial.print(a);
+    // nmeaBuffer[nmeaBufferIndex++] = a;
     bool newSentence = gps.encode(a);
     if (newSentence) {
       NMEASentenceContents contents = {.speed = gps.speed.isUpdated(),
@@ -270,6 +298,10 @@ bool LeafGPS::readBufferOnce() {
       if (bus_ && gps.location.isUpdated()) {
         bus_->receive(GpsReading(gps));
       }
+
+      nmeaBufferIndex = 0;                 // reset the index for next sentence
+      nmeaBuffer[nmeaBufferIndex] = '\0';  // null-terminate the string
+
       onNewSentence(contents);
     }
 

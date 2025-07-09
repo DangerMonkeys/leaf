@@ -18,6 +18,7 @@ class RunningAverage {
   }
 
   void update(TValue value) {
+    // Note: average will become NaN if value is NaN
     if (count < sampleCount) {
       sum += value;
       samples[count++] = value;

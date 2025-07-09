@@ -26,9 +26,12 @@ void PageListSelect::setting_change(Button dir, ButtonState state, uint8_t count
 
   if (state != RELEASED) return;
 
-  // Handle the selected item
-  // Perform the callback
-  callback(cursor_position);
+  // If 255, it's the back button
+  if (cursor_position != -1) {
+    // Handle the selected item
+    // Perform the callback
+    callback(cursor_position);
+  }
 
   // Close the selection page
   pop_page();

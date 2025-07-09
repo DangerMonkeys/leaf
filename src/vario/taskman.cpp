@@ -413,7 +413,7 @@ void taskManager(void) {
     taskman_estimateWind = 0;
   }
   if (taskman_imu) {
-    imu_update();
+    imu.update();
     taskman_imu = 0;
   }
   if (taskman_gps) {
@@ -433,7 +433,7 @@ void taskManager(void) {
     taskman_display = 0;
   }
   if (taskman_tempRH) {
-    tempRH_update(taskman_tempRH);
+    tempRH.update(taskman_tempRH);
     taskman_tempRH = 0;
   }
   if (taskman_SDCard) {

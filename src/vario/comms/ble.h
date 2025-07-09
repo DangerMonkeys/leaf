@@ -6,7 +6,7 @@
 #include "etl/message_router.h"
 
 // FreeRTOS Task for handling Bluetooth Operations
-class BLE : public etl::message_router<BLE, GpsReading, FanetPacket> {
+class BLE : public etl::message_router<BLE, GpsMessage, FanetPacket> {
  public:
   static BLE& get();
 
@@ -23,7 +23,7 @@ class BLE : public etl::message_router<BLE, GpsReading, FanetPacket> {
   void end();
 
   // On Receive handlers for the message router.
-  void on_receive(const GpsReading& msg);
+  void on_receive(const GpsMessage& msg);
   void on_receive(const FanetPacket& msg);
 
   void on_receive_unknown(const etl::imessage& msg) {}
@@ -59,6 +59,15 @@ class BLE : public etl::message_router<BLE, GpsReading, FanetPacket> {
   void sendGpsUpdate(TinyGPSPlus& gps);
   void sendFanetUpdate(FanetPacket& packetMsg);
 
-  long lastGpsMs = 0;
+  /**
+   * Add's the checksum and postfix characters to a NMEA string. It may contain an existing checksum
+   * that will be overwritten When the capacity is not enough, the result is undefined Note: Must
+   * start with the prefix character $ (for performance reasons)
+   * @param nmea example '$PFEC,GPint,RMC05'
+   * @return             '$PFEC,GPint,RMC05*2D\r\n'
+   */
+  void addChecksumToNMEA(etl::istring& nmea);
+
+  unsigned long lastGpsGgaMs = 0;
+  unsigned long lastGpsGprmcMs = 0;
 };
-;

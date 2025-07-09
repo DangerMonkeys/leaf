@@ -17,10 +17,6 @@ void writeScreenshotBuffer(const char* buffer) {
   send_buffer += buffer;
 }
 
-class UnsafeManager : public Fanet::FanetManager {
-  friend void webserver_setup();
-};
-
 void webserver_setup() {
   server.on("/", HTTP_GET, []() {
     server.send(200, "text/html", R"(
@@ -54,11 +50,12 @@ void webserver_setup() {
     etl::string<1024> str;
     etl::string_stream ss(str);
     auto& radio = FanetRadio::getInstance();
-    auto radioStats = radio.getStats();
+    auto protocol = radio.protocol;
 
     // Lock the radio while we poke around their private parts
     LockGuard lock(radio.x_fanet_manager_mutex);
-    UnsafeManager* manager = (UnsafeManager*)radio.manager;
+    auto& radioStats = protocol->stats();
+    // UnsafeManager* manager = (UnsafeManager*)radio.manager;
     auto ms = millis();
 
     ss << "<!DOCTYPE html>\n"
@@ -79,17 +76,19 @@ void webserver_setup() {
        << "forwarded: " << radioStats.forwarded << "\n"
        << "fwdMinRssiDrp: " << radioStats.fwdMinRssiDrp << "\n"
        << "fwdNeighborDrp: " << radioStats.fwdNeighborDrp << "\n"
-       << "fwdEnqueuedDrp: " << radioStats.fwdEnqueuedDrop << "\n"
+       << "fwdDbBoostWeak: " << radioStats.fwdDbBoostWeak << "\n"
        << "fwdDbBoostDrop: " << radioStats.fwdDbBoostDrop << "\n"
        << "rxFromUsDrp: " << radioStats.rxFromUsDrp << "\n"
        << "txAck: " << radioStats.txAck << "\n"
        << "neighbors: " << radioStats.neighborTableSize << "\n"
        << "-- Manager --" << endl
-       << "Manager Queue Length: " << manager->txQueue.size() << endl
-       << "Next TX Time: "
-       << (manager->txQueue.size() ? (manager->nextTxTime(ms).value() - ms) / 1000.0 : 0) << endl
-       << "Next allowed tracking time: " << (manager->nextAllowedTrackingTime - ms) / 1000.0 << endl
-       << "Last Location Sent Ago: " << (ms - manager->lastLocationSentMs) / 1000.0 << endl
+       << "Manager Queue Length: " << protocol->txPoolSize() << endl
+       << "Next allowed tracking time: "
+       << (radio.m_nextAllowedTrackingTimeMs ? (long long)radio.m_nextAllowedTrackingTimeMs - ms
+                                             : 0) /
+              1000.0f
+       << "s" << endl
+       << endl
 
        << "</pre></body>\n"
        << "</html>\n";

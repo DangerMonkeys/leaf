@@ -3,8 +3,8 @@
 // For OTA updates
 #define LEAF_FIRMWARE_NAME "leaf_3_2_5"
 
-// This variant is intended to be used with a LoRa radio
-#define FANET
+// This breadboard variant is intended to be used with a LoRa radio
+#define HAS_FANET
 #define LORA_SX1262
 #define SX1262_NSS 46   // SPI Chip Select Pin
 #define SX1262_DIO1 15  // DIO1 pin

@@ -6,21 +6,22 @@
 #include "TinyGPSPlus.h"
 #include "comms/fanet_radio.h"
 #include "etl/string.h"
+#include "etl/string_stream.h"
 #include "etl/variant.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
+#include "utils/lock_guard.h"
 
-// These new unique UUIDs came from
-// https://www.uuidgenerator.net/
-
-#define LEAF_SERVICE_UUID "92b38cf3-4bd0-428c-aca4-ae6c3a586835"
-// LK8EX1 Telemetry notification
-#define LEAF_LK8EX1_UUID "583918da-fb9b-4645-bbaf-2db3b1a9c1b3"
+// These UUIDs are for BLE UART services and characteristics.
+// This is required to be UART due to a requirement for
+// compatibility with SeeYou Navigator.
+#define LEAF_SERVICE_UUID "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"  // SPP service
+#define LEAF_LK8EX1_UUID "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"   // SPP characteristic (TX/RX)
 
 /// @brief Internal struct to be passed in the message queues to wakup the BLE task
 struct WakeupMessage {
-  enum Reason { PERIODIC, GPS_RX, FANET_RX } reason;
-  using MessageVariant = etl::variant<TinyGPSPlus, FanetPacket>;
+  enum Reason { PERIODIC, FANET_RX, GPS_GPGGA, GPS_GPRMC } reason;
+  using MessageVariant = etl::variant<NMEAString, FanetPacket>;
   MessageVariant message;
 
   WakeupMessage(Reason reason, MessageVariant message) : reason(reason), message(message) {}
@@ -83,10 +84,10 @@ void BLE::setup() {
   pAdvertising->start();
 
   // Setup the FreeRTOS Tasks and Timers associated with this module
-  // Create a queue the size of two WakeupMessage length.
+  // Create a queue the size of a couple of WakeupMessage length.
   // If say a GPS and periodic send request comes in too close together
   // one of them may be dropped for this cycle.
-  xQueue = xQueueCreate(2, sizeof(WakeupMessage));
+  xQueue = xQueueCreate(4, sizeof(WakeupMessage));
 
   // Create the freeRTOS Task for handling Bluetooth low energy IO
   xTaskCreate(BLE::bleTask, "BLE", 10000, this, 9, &xTask);
@@ -130,18 +131,19 @@ void BLE::end() {
   pAdvertising = nullptr;
 }
 
-void BLE::on_receive(const GpsReading& msg) {
+void BLE::on_receive(const GpsMessage& msg) {
   // Short circuit if not initialized
   if (pServer == nullptr) return;
 
-  // Only process GPS updates twice a second at most.
-  if (millis() - lastGpsMs < 500) {
-    return;
+  // If the GPS message is a GPGGA or GPRMC, we store it in the buffers
+  // for the next periodic send.
+  if (msg.nmea.substr(0, 6) == "$GPGGA" || msg.nmea.substr(0, 6) == "$GNGGA") {
+    WakeupMessage message(WakeupMessage::Reason::GPS_GPGGA, msg.nmea);
+    xQueueSend(BLE::get().xQueue, &message, 0);
+  } else if (msg.nmea.substr(0, 6) == "$GPRMC" || msg.nmea.substr(0, 6) == "$GNRMC") {
+    WakeupMessage message(WakeupMessage::Reason::GPS_GPRMC, msg.nmea);
+    xQueueSend(BLE::get().xQueue, &message, 0);
   }
-  lastGpsMs = millis();
-
-  WakeupMessage message(WakeupMessage::Reason::GPS_RX, msg.gps);
-  xQueueSend(BLE::get().xQueue, &message, 0);
 }
 
 void BLE::on_receive(const FanetPacket& msg) {
@@ -164,13 +166,33 @@ void BLE::bleTask(void* args) {
         // Periodic wakeup to send out the last known Vario & Baro data.
         ble->sendVarioUpdate();
         break;
-      case WakeupMessage::Reason::GPS_RX:
-        // A GPS Position update to go out.
-        ble->sendGpsUpdate(etl::get<TinyGPSPlus>(message.message));
-        break;
       case WakeupMessage::Reason::FANET_RX:
         ble->sendFanetUpdate(etl::get<FanetPacket>(message.message));
         break;
+      case WakeupMessage::Reason::GPS_GPGGA: {
+        if (millis() - ble->lastGpsGgaMs < 500) {
+          // If we received a GPGGA too soon, skip it
+          return;
+        }
+        auto& gpsGpggaBuffer = etl::get<NMEAString>(message.message);
+        ble->pCharacteristic->setValue((const uint8_t*)gpsGpggaBuffer.c_str(),
+                                       gpsGpggaBuffer.size());
+        ble->pCharacteristic->notify();
+        ble->lastGpsGgaMs = millis();
+      } break;
+      case WakeupMessage::Reason::GPS_GPRMC: {
+        if (millis() - ble->lastGpsGprmcMs < 500) {
+          // If we received a GPRMC too soon, skip it
+          return;
+        }
+        auto& gpsGprmcBuffer = etl::get<NMEAString>(message.message);
+        ble->pCharacteristic->setValue((const uint8_t*)gpsGprmcBuffer.c_str(),
+                                       gpsGprmcBuffer.size());
+        ble->pCharacteristic->notify();
+
+        ble->lastGpsGprmcMs = millis();
+        break;
+      }
     }
   }
 }
@@ -183,68 +205,16 @@ void BLE::timerCallback(TimerHandle_t timer) {
 }
 
 void BLE::sendVarioUpdate() {
-  char stringified[100];
-  snprintf(stringified, sizeof(stringified),
-           // See https://raw.githubusercontent.com/LK8000/LK8000/master/Docs/LK8EX1.txt
-           ("$LK8EX1,"  // Type of update
-            "%u,"       // raw pressure in hPascal
-            "%u,"   // altitude in meters, relative to QNH 1013.25. 99999 if not available/needed
-            "%d,"   // Climb rate in cm/s.  Can be 99999 if not available
-            "99,"   // Temperature in C.  If not available, send 99
-            "999,"  // Battery voltage OR percentage.  If percentage, add 1000 (if 1014 is 14%). 999
-                    // if unavailable
-            "*"     // Checksum to follow
-            ),
-           baro.pressure, static_cast<uint>(baro.altF), baro.climbRateFiltered);
-  // Add checksum and delimeter with newline
-  snprintf(stringified + strlen(stringified), sizeof(stringified), "%02X\n", checksum(stringified));
-  pCharacteristic->setValue((const uint8_t*)stringified, sizeof(stringified));
-  pCharacteristic->notify();
-}
+  NMEAString nmea;
+  etl::string_stream stream(nmea);
+  stream << "$LK8EX1," << static_cast<int32_t>(baro.pressure) << "," << static_cast<uint>(baro.altF)
+         << "," << baro.climbRateFiltered << ","
+         << "99,999,";  // Temperature in C.  If not available, send 99
+                        // Battery voltage OR percentage.  If percentage, add 1000 (if 1014 is
+                        // 14%). 999
 
-String formatLatitude(double latitude) {
-  char buffer[10];
-  char latDir = (latitude >= 0) ? 'N' : 'S';
-  latitude = abs(latitude);
-
-  int degrees = (int)latitude;
-  double minutes = (latitude - degrees) * 60;
-
-  snprintf(buffer, sizeof(buffer), "%02d%05.2f", degrees, minutes);
-
-  return String(buffer) + "," + latDir;
-}
-
-String formatLongitude(double longitude) {
-  char buffer[11];
-  char lonDir = (longitude >= 0) ? 'E' : 'W';
-  longitude = abs(longitude);
-
-  int degrees = (int)longitude;
-  double minutes = (longitude - degrees) * 60;
-
-  snprintf(buffer, sizeof(buffer), "%03d%05.2f", degrees, minutes);
-
-  return String(buffer) + "," + lonDir;
-}
-
-void BLE::sendGpsUpdate(TinyGPSPlus& gps) {
-  // Sends out a GPS update string.  The example is:
-  // $GPRMC,161229.487,A,3723.2475,N,12158.3416,W,0.13,309.62,120598, ,*10
-  char stringified[100];
-
-  snprintf(stringified, sizeof(stringified),
-           "$GPRMC,%02d%02d%02d.%03d,A,%s,%s,%.2f,%.2f,%02d%02d%02d,,*", gps.time.hour(),
-           gps.time.minute(), gps.time.second(),
-           gps.time.centisecond() / 10,  // Adjust if needed
-           formatLatitude(gps.location.lat()), formatLongitude(gps.location.lng()),
-           gps.speed.knots(), gps.course.deg(), gps.date.day(), gps.date.month(),
-           gps.date.year() % 100);
-
-  snprintf(stringified + strlen(stringified), sizeof(stringified) - strlen(stringified), "%02X\n",
-           checksum(stringified));
-  Serial.println(stringified);
-  pCharacteristic->setValue((const uint8_t*)stringified, strlen(stringified));
+  addChecksumToNMEA(nmea);
+  pCharacteristic->setValue((const uint8_t*)nmea.c_str(), nmea.size());
   pCharacteristic->notify();
 }
 
@@ -253,27 +223,28 @@ void BLE::sendFanetUpdate(FanetPacket& msg) {
   // We only want to send BLE updates if it's a Tracking update
 
   auto& packet = msg.packet;
-  if (packet.header.type != Fanet::PacketType::Tracking) {
+  if (packet.header().type() != FANET::Header::MessageType::TRACKING) {
     return;
   }
-  auto& payload = etl::get<Fanet::Tracking>(packet.payload);
+
+  auto& payload = etl::get<FANET::TrackingPayload>(packet.payload().value());
 
   // PFLAA lines to notify where the traffic is
   // PFLAA,<AlarmLevel>,<RelativeNorth>,<RelativeEast>,
   // <RelativeVertical>,<IDType>,<ID>,<Track>,<TurnRate>,<GroundSpeed>,
   // <ClimbRate>,<AcftType>[,<NoTrack>[,<Source>,<RSSI>]]
-  // See
-  // https://www.flarm.com/wp-content/uploads/2024/04/FTD-012-Data-Port-Interface-Control-Document-ICD-7.19.pdf
+  // See https://
+  // www.flarm.com/wp-content/uploads/2024/04/FTD-012-Data-Port-Interface-Control-Document-ICD-7.19.pdf
 
   char stringified[100];
 
   // Aircraft type does not marry up between PFLAA and Fanet types
   char aircraftType;
-  switch (payload.aircraftType) {
-    case Fanet::AircraftType::Glider:
+  switch (payload.aircraftType()) {
+    case FANET::TrackingPayload::AircraftType::GLIDER:
       aircraftType = '6';  //  hang glider (hard)
       break;
-    case Fanet::AircraftType::Paraglider:
+    case FANET::TrackingPayload::AircraftType::PARAGLIDER:
       aircraftType = '7';  // paraglider (soft)
       break;
     default:
@@ -294,11 +265,11 @@ void BLE::sendFanetUpdate(FanetPacket& msg) {
     }
     constexpr auto EarthRadius = 6378137;
 
-    double dLat = (payload.location.latitude - gps.location.lat()) * PI / 180.0;
-    double dLon = (payload.location.longitude - gps.location.lng()) * PI / 180.0;
+    double dLat = (payload.latitude() - gps.location.lat()) * PI / 180.0;
+    double dLon = (payload.longitude() - gps.location.lng()) * PI / 180.0;
 
     // Convert latitude to radians for scaling factor
-    double latAvg = (payload.location.latitude + gps.location.lat()) * 0.5 * PI / 180.0;
+    double latAvg = (payload.latitude() + gps.location.lat()) * 0.5 * PI / 180.0;
 
     northOffset = dLat * EarthRadius;
     eastOffset = dLon * EarthRadius * cos(latAvg);
@@ -323,11 +294,32 @@ void BLE::sendFanetUpdate(FanetPacket& msg) {
             "0,"       // source is FLARM
             "%.2f*\n"  // RSSI
             ),
-           (int)northOffset, (int)eastOffset, payload.altitude - (int)gpsAltitude,
-           MacToString(packet.header.srcMac), payload.heading, payload.speed / 3.6,
-           payload.climbRate, aircraftType, payload.onlineTracking ? 0 : 1, msg.rssi);
+           (int)northOffset, (int)eastOffset, payload.altitude() - (int)gpsAltitude,
+           FanetAddressToString(packet.source()), static_cast<int>(payload.groundTrack()),
+           payload.speed() / 3.6, payload.climbRate(), aircraftType, payload.tracking() ? 0 : 1,
+           msg.rssi);
 
   Serial.println(stringified);
   pCharacteristic->setValue((const uint8_t*)stringified, strlen(stringified));
   pCharacteristic->notify();
+}
+
+void BLE::addChecksumToNMEA(etl::istring& nmea) {
+  const char hexChars[] = "0123456789ABCDEF";
+  uint16_t chk = 0, i = 1;
+  while (nmea[i] && nmea[i] != '*') {
+    chk ^= nmea[i];
+    i++;
+  }
+
+  if (i > (nmea.capacity() - 5)) {
+    return;
+  }
+  nmea.resize(i);
+
+  char checksumSuffix[] = {
+      '*', hexChars[(chk >> 4) & 0x0F], hexChars[chk & 0x0F], '\r', '\n',
+  };
+
+  nmea.append(checksumSuffix, 5);
 }

@@ -143,12 +143,12 @@ bool flightTimer_autoStart() {
     Serial.println("****************************** autoStart TRUE via alt");
   }
 
-  Serial.print("S T A R T   Counter: ");
-  Serial.print(autoStartCounter);
-  Serial.print("   Alt Diff: ");
-  Serial.print(altDifference);
-  Serial.print("  StartTheTimer? : ");
-  Serial.println(startTheTimer);
+  // Serial.print("S T A R T   Counter: ");
+  // Serial.print(autoStartCounter);
+  // Serial.print("   Alt Diff: ");
+  // Serial.print(altDifference);
+  // Serial.print("  StartTheTimer? : ");
+  // Serial.println(startTheTimer);
 
   if (startTheTimer) {
     autoStartCounter = 0;
@@ -274,8 +274,8 @@ void log_captureValues() {
   logbook.alt_above_launch = baro.altAboveLaunch;
   logbook.climb = baro.climbRateFiltered;
   logbook.speed = gps.speed.mps();
-  logbook.temperature = tempRH_getTemp();
-  logbook.accel = IMU_getAccel();
+  logbook.temperature = tempRH.getTemp();
+  logbook.accel = imu.getAccel();
 }
 
 void log_checkMinMaxValues() {
@@ -301,7 +301,7 @@ void log_checkMinMaxValues() {
   }
 
   // check temperature values for log records
-  logbook.temperature = tempRH_getTemp();
+  logbook.temperature = tempRH.getTemp();
   if (logbook.temperature > logbook.temperature_max) {
     logbook.temperature_max = logbook.temperature;
   } else if (logbook.temperature < logbook.temperature_min) {
@@ -323,7 +323,7 @@ void log_checkMinMaxValues() {
   // accumulate distance flown
   logbook.distanceFlown += gps.speed.mps();
 
-  time = micros() - time;
-  Serial.print("checkMinMax: ");
-  Serial.println(time);
+  // time = micros() - time;
+  // Serial.print("checkMinMax: ");
+  // Serial.println(time);
 }

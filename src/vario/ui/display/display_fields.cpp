@@ -754,7 +754,7 @@ void display_GPS_icon(uint8_t x, uint8_t y) {
 }
 
 void display_fanet_icon(const uint8_t& x, const uint8_t& y) {
-#ifndef FANET
+#ifndef HAS_FANET
   return;
 #endif
 

@@ -127,9 +127,9 @@ void power_init_peripherals() {
   Serial.println(" - Finished display");
   baro.init();
   Serial.println(" - Finished Baro");
-  imu_init();
+  imu.init();
   Serial.println(" - Finished IMU");
-  tempRH_init();
+  tempRH.init();
   Serial.println(" - Finished Temp Humid");
 
   // then put devices to sleep if we're in POWER_OFF_USB state
@@ -162,7 +162,7 @@ void power_wake_peripherals() {
   gps.wake();
   Serial.println(" - waking baro and IMU");
   baro.wake();
-  imu_wake();
+  imu.wake();
   Serial.println(" - waking speaker");
   speaker_unMute();
   Serial.println(" - DONE");
