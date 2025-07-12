@@ -23,14 +23,6 @@
 LC86G lc86g(&Serial0);
 LeafGPS gps(&lc86g);
 
-// Pinout for Leaf V3.2.0
-#define GPS_BACKUP_EN \
-  40  // 42 on V3.2.0  // Enable GPS backup power.  Generally always-on, except able to be turned
-      // off for a full GPS reset if needed
-// pins 43-44 are GPS UART, already enabled by default as "Serial0"
-#define GPS_RESET 45
-#define GPS_1PPS 46  // INPUT
-
 #define DEBUG_GPS 0
 
 // Setup GPS
@@ -51,70 +43,9 @@ const char disableVTG[] PROGMEM = "$PAIR062,5,0";  // disable message
 // Lock for GPS
 SemaphoreHandle_t GpsLockGuard::mutex = NULL;
 
-// Enable GPS Backup Power (to save satellite data and allow faster start-ups)
-// This consumes a minor amount of current from the battery
-// There is a loop-back pullup resistor from the backup power output to its own ENABLE line, so once
-// backup is turned on, it will stay on even if the main processor is shut down. Typically, the
-// backup power is only turned off to enable a full cold reboot/reset of the GPS module.
-void LeafGPS::setBackupPower(bool backupPowerOn) {
-  if (backupPowerOn)
-    digitalWrite(GPS_BACKUP_EN, HIGH);
-  else
-    digitalWrite(GPS_BACKUP_EN, LOW);
-}
+void LeafGPS::sleep() { gpsDevice_->sleep(); }
 
-// Fully reset GPS using hardware signals, including powering off backup_power to erase everything
-void LeafGPS::hardReset(void) {
-  setBackupPower(false);
-  softReset();
-  setBackupPower(true);
-}
-
-// A soft reset, keeping backup_power enabled so as not to lose saved satellite data
-void LeafGPS::softReset(void) {
-  digitalWrite(GPS_RESET, LOW);
-  delay(100);
-  digitalWrite(GPS_RESET, HIGH);
-}
-
-void LeafGPS::enterBackupMode(void) {
-  setBackupPower(true);  // ensure backup power enabled (should already be on)
-  // TODO: send $PAIR650,0*25 command to shutdown
-  // GPS should now draw ~35uA
-  // cut main VCC power to further reduce power consumption to ~13uA (i.e., when whole system is
-  // shut down)
-}
-
-void LeafGPS::sleep() {
-  uint32_t millisNow = millis();
-  uint32_t delayTime = 0;
-  if (millisNow < bootReady) delayTime = bootReady - millisNow;
-  if (delayTime > 300) delayTime = 300;
-
-  Serial.print("now: ");
-  Serial.println(millisNow);
-  Serial.print("ready: ");
-  Serial.println(bootReady);
-  Serial.print("delay: ");
-  Serial.println(delayTime);
-
-  delay(delayTime);  // don't send a command until the GPS is booted up and ready
-
-  gpsPort.write("$PAIR650,0*25\r\n");  // shutdown command
-  // delay(100);
-  Serial.println("************ !!!!!!!!!!! GPS SLEEPING COMMAND SENT !!!!!!!!!!! ************");
-}
-
-void LeafGPS::wake() {
-  setBackupPower(1);  // enable backup power if not already
-  softReset();
-}
-
-void LeafGPS::shutdown() {
-  sleep();
-  setBackupPower(
-      0);  // disable GPS backup supply, so when main system shuts down, gps is totally off
-}
+void LeafGPS::wake() { gpsDevice_->wake(); }
 
 LeafGPS::LeafGPS(IGPS* gpsDevice) {
   gpsDevice_ = gpsDevice;
@@ -137,7 +68,6 @@ void LeafGPS::init(void) {
   navigator.init();
 
   gpsDevice_->init();
-  bootReady = millis() + 300;  // TODO: remove
 
   // Initialize all the uninitialized TinyGPSCustom objects
   Serial.print("GPS initialize sat messages... ");

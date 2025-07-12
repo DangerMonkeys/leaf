@@ -47,14 +47,31 @@ const char* LC86G::getTextLine() { return currentLine_; }
 // once backup is turned on, it will stay on even if the main processor is shut down. Typically,
 // the backup power is only turned off to enable a full cold reboot/reset of the GPS module.
 void LC86G::setBackupPower(bool backupPowerOn) {
-  // if (backupPowerOn)
-  //   digitalWrite(GPS_BACKUP_EN, HIGH);
-  // else
-  //   digitalWrite(GPS_BACKUP_EN, LOW);
+  if (backupPowerOn)
+    digitalWrite(GPS_BACKUP_EN, HIGH);
+  else
+    digitalWrite(GPS_BACKUP_EN, LOW);
 }
 
 void LC86G::sleep() {
-  // TODO: populate
+  uint32_t millisNow = millis();
+  uint32_t delayTime = 0;
+  if (millisNow < bootReady_) delayTime = bootReady_ - millisNow;
+  if (delayTime > 300) delayTime = 300;
+
+  Serial.print("LC86G::sleep ");
+  Serial.print("now: ");
+  Serial.println(millisNow);
+  Serial.print("ready: ");
+  Serial.println(bootReady_);
+  Serial.print("delay: ");
+  Serial.println(delayTime);
+
+  delay(delayTime);  // don't send a command until the GPS is booted up and ready
+
+  gpsPort.write("$PAIR650,0*25\r\n");  // shutdown command
+  // delay(100);
+  Serial.println("************ !!!!!!!!!!! GPS SLEEPING COMMAND SENT !!!!!!!!!!! ************");
 }
 
 void LC86G::wake() {
@@ -69,9 +86,9 @@ void LC86G::hardReset(void) {
 }
 
 void LC86G::softReset(void) {
-  // digitalWrite(GPS_RESET, LOW);
-  // delay(100);
-  // digitalWrite(GPS_RESET, HIGH);
+  digitalWrite(GPS_RESET, LOW);
+  delay(100);
+  digitalWrite(GPS_RESET, HIGH);
 }
 
 void LC86G::enterBackupMode(void) {
