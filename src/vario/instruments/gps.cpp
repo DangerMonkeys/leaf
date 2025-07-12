@@ -9,6 +9,7 @@
 #include <TinyGPSPlus.h>
 
 #include "comms/message_types.h"
+#include "hardware/lc86g.h"
 #include "instruments/baro.h"
 #include "logging/log.h"
 #include "logging/telemetry.h"
@@ -18,6 +19,7 @@
 #include "ui/settings/settings.h"
 #include "wind_estimate/wind_estimate.h"
 
+LC86G lc86g(&Serial0);
 LeafGPS gps;
 
 // Pinout for Leaf V3.2.0
