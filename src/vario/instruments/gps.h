@@ -20,6 +20,7 @@
 #include <TinyGPSPlus.h>
 #include "comms/message_types.h"
 #include "etl/message_bus.h"
+#include "hardware/gps.h"
 #include "time.h"
 #include "utils/lock_guard.h"
 
@@ -49,7 +50,7 @@ struct NMEASentenceContents {
 
 class LeafGPS : public TinyGPSPlus {
  public:
-  LeafGPS();
+  LeafGPS(IGPS* gpsDevice);
 
   void init(void);
 
@@ -79,6 +80,8 @@ class LeafGPS : public TinyGPSPlus {
   GPSFixInfo fixInfo;
 
  private:
+  IGPS* gpsDevice_;
+
   void updateFixInfo();
   void updateSatList(void);
   void setBackupPower(bool backupPowerOn);

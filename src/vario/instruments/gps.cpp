@@ -9,6 +9,7 @@
 #include <TinyGPSPlus.h>
 
 #include "comms/message_types.h"
+#include "hardware/gps.h"
 #include "hardware/lc86g.h"
 #include "instruments/baro.h"
 #include "logging/log.h"
@@ -20,7 +21,7 @@
 #include "wind_estimate/wind_estimate.h"
 
 LC86G lc86g(&Serial0);
-LeafGPS gps;
+LeafGPS gps(&lc86g);
 
 // Pinout for Leaf V3.2.0
 #define GPS_BACKUP_EN \
@@ -115,7 +116,9 @@ void LeafGPS::shutdown() {
       0);  // disable GPS backup supply, so when main system shuts down, gps is totally off
 }
 
-LeafGPS::LeafGPS() {
+LeafGPS::LeafGPS(IGPS* gpsDevice) {
+  gpsDevice_ = gpsDevice;
+
   totalGPGSVMessages.begin(gps, "GPGSV", 1);
   messageNumber.begin(gps, "GPGSV", 2);
   satsInView.begin(gps, "GPGSV", 3);
