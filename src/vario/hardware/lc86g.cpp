@@ -1,7 +1,38 @@
 #include "hardware/lc86g.h"
 
+// Pinout for Leaf V3.2.0
+#define GPS_BACKUP_EN \
+  40  // 42 on V3.2.0  // Enable GPS backup power.  Generally always-on, except able to be turned
+      // off for a full GPS reset if needed
+// pins 43-44 are GPS UART, already enabled by default as "Serial0"
+#define GPS_RESET 45
+#define GPS_1PPS 46  // INPUT
+
+#define DEBUG_GPS 0
+
+// Setup GPS
+#define gpsPort \
+  Serial0  // This is the hardware communication port (UART0) for GPS Rx and Tx lines.  We use the
+           // default ESP32S3 pins so no need to set them specifically
+#define GPSBaud 115200
+// #define GPSSerialBufferSize 2048
+
 void LC86G::init() {
-  // TODO: populate
+  // Set pins
+  Serial.print("GPS set pins... ");
+  pinMode(GPS_BACKUP_EN, OUTPUT);
+  setBackupPower(true);  // by default, enable backup power
+  pinMode(GPS_RESET, OUTPUT);
+  digitalWrite(GPS_RESET, LOW);
+  delay(100);
+  digitalWrite(GPS_RESET, HIGH);
+  // track when GPS was activated; we can't send any commands sooner
+  // than ~285ms (we'll use 300ms)
+  bootReady_ = millis() + 300;
+
+  Serial.print("GPS being serial port... ");
+  gpsPort.begin(GPSBaud);
+  // gpsPort.setRxBufferSize(GPSSerialBufferSize);
 }
 
 bool LC86G::update() {

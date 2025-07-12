@@ -136,21 +136,8 @@ void LeafGPS::init(void) {
   // init nav class (TODO: may not need this here, just for testing at startup for ease)
   navigator.init();
 
-  // Set pins
-  Serial.print("GPS set pins... ");
-  pinMode(GPS_BACKUP_EN, OUTPUT);
-  setBackupPower(true);  // by default, enable backup power
-  pinMode(GPS_RESET, OUTPUT);
-  digitalWrite(GPS_RESET, LOW);
-  delay(100);
-  digitalWrite(GPS_RESET, HIGH);
-  // track when GPS was activated; we can't send any commands sooner
-  // than ~285ms (we'll use 300ms)
-  bootReady = millis() + 300;
-
-  Serial.print("GPS being serial port... ");
-  gpsPort.begin(GPSBaud);
-  // gpsPort.setRxBufferSize(GPSSerialBufferSize);
+  gpsDevice_->init();
+  bootReady = millis() + 300;  // TODO: remove
 
   // Initialize all the uninitialized TinyGPSCustom objects
   Serial.print("GPS initialize sat messages... ");
