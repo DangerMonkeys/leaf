@@ -36,7 +36,34 @@ void LC86G::init() {
 }
 
 bool LC86G::update() {
-  return false;  // TODO: populate
+  while (gpsPort.available()) {
+    char c = gpsPort.read();
+    if (c == '\n' || c == '\r') {
+      // End of line
+      newLine_[newLineIndex_] = '\0';
+      if (newLineIndex_ > 0) {  // Ignore blank lines and second character in CR+LF
+        for (size_t i = 0; i <= newLineIndex_; i++) {
+          currentLine_[i] = newLine_[i];
+        }
+        newLineIndex_ = 0;
+        return true;  // Return immediately to process the new result even though there may still be
+                      // data available from gpsPort
+      }
+    } else {
+      // New character for line
+      newLine_[newLineIndex_] = c;
+      newLineIndex_++;
+      if (newLineIndex_ >= MAX_NMEA_SENTENCE_LENGTH) {
+        // This could reasonably happen if there were electrical noise on the serial line
+        // and we can recover by simply continuing to wait for a newline after clearing
+        // out the current sentence.
+        newLine_[MAX_NMEA_SENTENCE_LENGTH] = 0;
+        Serial.printf("WARNING: LC86G sentence length exceeded with sentence: '%s'\n", newLine_);
+        newLineIndex_ = 0;
+      }
+    }
+  }
+  return false;
 }
 
 const char* LC86G::getTextLine() { return currentLine_; }
