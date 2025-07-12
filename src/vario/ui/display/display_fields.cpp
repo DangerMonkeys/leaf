@@ -41,22 +41,22 @@ void display_clockTime(uint8_t x, uint8_t y, bool show_ampm) {
   // Get the local date, print NOGPS on error
   tm cal;
   if (!gps.getLocalDateTime(cal)) {
-    u8g2.print((char)137);
-    u8g2.print("NOGPS");
-  }
-  // Crafts a 24 or 12 hour time to show depending on prefs
-  char buf[10];
-  if (settings.units_hours) {
-    // This is a 12 hour time and needs to print eg " 9:45am"
-    strftime(buf, 10, "%I:%M%p", &cal);
-    if (buf[0] == '0') {
-      buf[0] = ' ';
-    }
+    u8g2.print("NO GPS");
   } else {
-    // 24 hour.  Print in the format of "09:45"
-    strftime(buf, 10, "%R", &cal);
+    // Crafts a 24 or 12 hour time to show depending on prefs
+    char buf[10];
+    if (settings.units_hours) {
+      // This is a 12 hour time and needs to print eg " 9:45am"
+      strftime(buf, 10, "%I:%M%p", &cal);
+      if (buf[0] == '0') {
+        buf[0] = ' ';
+      }
+    } else {
+      // 24 hour.  Print in the format of "09:45"
+      strftime(buf, 10, "%R", &cal);
+    }
+    u8g2.print(buf);
   }
-  u8g2.print(buf);
 }
 
 void display_waypointTimeRemaining(uint8_t x, uint8_t y, const uint8_t* font) {
