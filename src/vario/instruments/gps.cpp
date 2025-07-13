@@ -36,10 +36,6 @@ const char disableVTG[] PROGMEM = "$PAIR062,5,0";  // disable message
 // Lock for GPS
 SemaphoreHandle_t GpsLockGuard::mutex = NULL;
 
-void LeafGPS::sleep() { gpsDevice_->sleep(); }
-
-void LeafGPS::wake() { gpsDevice_->wake(); }
-
 LeafGPS::LeafGPS(IGPS* gpsDevice) {
   gpsDevice_ = gpsDevice;
 
@@ -135,7 +131,7 @@ void LeafGPS::update() {
 // every sentence or just every fix)
 void onNewSentence(NMEASentenceContents contents) { windEstimate_onNewSentence(contents); }
 
-bool LeafGPS::readBufferOnce() {
+bool LeafGPS::readData() {
   GpsLockGuard mutex;  // Ensure we have a lock on write
   bool result = false;
   while (gpsDevice_->update()) {

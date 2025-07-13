@@ -21,7 +21,7 @@
 #include "comms/message_types.h"
 #include "etl/message_bus.h"
 #include "hardware/gps.h"
-#include "hardware/sleepable.h"
+#include "hardware/power_control.h"
 #include "time.h"
 #include "utils/lock_guard.h"
 
@@ -49,17 +49,17 @@ struct NMEASentenceContents {
 
 // enum time_formats {hhmmss, }
 
-class LeafGPS : public TinyGPSPlus, ISleepable {
+class LeafGPS : public TinyGPSPlus, IPowerControl {
  public:
   LeafGPS(IGPS* gpsDevice);
 
-  // ISleepable
-  void wake();
-  void sleep();
+  // IPowerControl passes through to gpsDevice_'s implementation
+  void sleep() { gpsDevice_->sleep(); }
+  void wake() { gpsDevice_->wake(); }
 
   void init(void);
 
-  bool readBufferOnce(void);
+  bool readData(void);
   void update(void);
 
   // Gets a calendar time from GPS in UTC time.

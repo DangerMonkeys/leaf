@@ -2,6 +2,7 @@
 
 #include <cstddef>
 
+// Interface producing lines of text when polled via `update`.
 class ITextLineSource {
  public:
   // Initialize the text line source.  Before this method is called, none of the other
