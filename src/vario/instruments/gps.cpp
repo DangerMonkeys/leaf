@@ -79,46 +79,6 @@ void LeafGPS::init(void) {
   }
 
   Serial.print("GPS initialize done... ");
-
-  // Serial.println("Setting GPS messages");
-
-  /*
-    gps.send_P( &gpsPort, (const __FlashStringHelper *) enableGGA );
-    delay(50);
-    gps.send_P( &gpsPort, (const __FlashStringHelper *) enableGSV );
-    delay(50);
-    gps.send_P( &gpsPort, (const __FlashStringHelper *) enableRMC );
-    delay(50);
-    gps.send_P( &gpsPort, (const __FlashStringHelper *) disableGLL );
-    delay(50);
-    gps.send_P( &gpsPort, (const __FlashStringHelper *) disableGSA );
-    delay(50);
-    gps.send_P( &gpsPort, (const __FlashStringHelper *) disableVTG );
-    delay(50);
-  */
-
-  /*
-    gpsPort.println("$PAIR062,0,1*3F");	//turn on GGA at 1 sec
-    gpsPort.println("$PAIR062,1,0*3F");	//turn off GLL
-    gpsPort.println("$PAIR062,2,0*3C");	//turn off GSA
-    gpsPort.println("$PAIR062,3,4*39");	//turn on GSV at 4 sec (up to 3 sentences)  //was 00,01*23"
-    gpsPort.println("$PAIR062,4,1*3B");	//turn on RMC at 1 sec
-    gpsPort.println("$PAIR062,5,0*3B");	//turn off VTG
-  */
-
-  /*
-  0 = NMEA_SEN_GGA    $PAIR062,0,0*3E   $PAIR062,0,1*3F
-  1 = NMEA_SEN_GLL    $PAIR062,1,0*3F   $PAIR062,1,1*3E
-  2 = NMEA_SEN_GSA    $PAIR062,2,0*3C   $PAIR062,2,1*3D
-  3 = NMEA_SEN_GSV    $PAIR062,3,0*3D   $PAIR062,3,1*3C   $PAIR062,3,4*39
-  4 = NMEA_SEN_RMC    $PAIR062,4,0*3A   $PAIR062,4,1*3B
-  5 = NMEA_SEN_VTG    $PAIR062,5,0*3B   $PAIR062,5,1*3A
-  6 = NMEA_SEN_ZDA    $PAIR062,6,0*38   $PAIR062,6,1*39
-  7 = NMEA_SEN_GRS    $PAIR062,7,0*39   $PAIR062,7,1*38
-  8 = NMEA_SEN_GST    $PAIR062,8,0*36   $PAIR062,8,1*37
-  9 = NMEA_SEN_GNS    $PAIR062,9,0*37   $PAIR062,9,1*36
-
-  */
 }  // gps_init
 
 void LeafGPS::calculateGlideRatio() {
