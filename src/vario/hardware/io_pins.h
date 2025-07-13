@@ -7,9 +7,9 @@
 Chip is configured with I2C address: 0x20
 */
 
-#include "variant.h" // first try to load ioex addr from variant.h
+#include "variant.h"  // first try to load ioex addr from variant.h
 #ifndef IOEX_ADDR
-	#define IOEX_ADDR 0x20
+#define IOEX_ADDR 0x20
 #endif
 
 void ioexInit();
