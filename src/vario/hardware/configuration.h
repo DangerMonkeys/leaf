@@ -61,21 +61,54 @@
 
 // **** Speaker *****
 #ifndef SPEAKER_PIN
-#define SPEAKER_PIN 14  // 7
+#define SPEAKER_PIN 14  // default for 3.2.3
 #endif
 
 #ifndef SPEAKER_VOLA
-#define SPEAKER_VOLA 15  // 8
+#define SPEAKER_VOLA 15      // default for 3.2.3
+#define SPEAKER_VOLA_IOEX 0  // default 3.2.3 not on IO expander
 #endif
 
 #ifndef SPEAKER_VOLB
-#define SPEAKER_VOLB 16  // 9
+#define SPEAKER_VOLB 16      // default for 3.2.3
+#define SPEAKER_VOLB_IOEX 0  // default 3.2.3 not on IO expander
 #endif
 
-#ifndef SPEAKER_VOLA_IOEX
-#define SPEAKER_VOLA_IOEX 0  // default not on IO expander
+// **** Power Configuration and Management ****
+#ifndef POWER_GOOD
+#define POWER_GOOD NC  // feature not available on default 3.2.3 config
+#define POWER_GOOD_IOEX 0
 #endif
 
-#ifndef SPEAKER_VOLB_IOEX
-#define SPEAKER_VOLB_IOEX 0  // default not on IO expander
+#ifndef POWER_CHARGE_I1
+#define POWER_CHARGE_I1 41  // default 3.2.3
+#define POWER_CHARGE_I1_IOEX 0
+#endif
+
+#ifndef POWER_CHARGE_I2
+#define POWER_CHARGE_I2 42  // default 3.2.3
+#define POWER_CHARGE_I2_IOEX 0
+#endif
+
+#ifndef POWER_CHARGE_GOOD
+#define POWER_CHARGE_GOOD 47  // default 3.2.3
+#define POWER_CHARGE_GOOD_IOEX 0
+#endif
+
+// **** SD Card ****
+#ifndef SD_DETECT
+#define SD_DETECT 26  // input detect pin on default 3.2.3 config
+#define SD_DETECT_IOEX 0
+#endif
+
+// **** GPS ****
+#ifndef GPS_BACKUP_EN
+#define GPS_BACKUP_EN 40  // Enable GPS backup power.
+// Generally always-on, except able to be turned off for a full GPS reset if needed
+#define GPS_BACKUP_EN_IOEX 0
+#endif
+
+#ifndef GPS_RESET
+#define GPS_RESET 45
+#define GPS_RESET_IOEX 0
 #endif

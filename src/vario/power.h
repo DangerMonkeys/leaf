@@ -9,12 +9,9 @@
 
 #include <Arduino.h>
 
-// Pinout for Leaf V3.2.0
-#define POWER_CHARGE_I1 41  // 39 on old V3.2.0
-#define POWER_CHARGE_I2 42  // 40 on old V3.2.0
+// Pinout for Leaf V3.2.0+
 #define POWER_LATCH 48
-#define POWER_CHARGE_GOOD 47  // INPUT
-#define BATT_SENSE 1          // INPUT ADC
+#define BATT_SENSE 1  // INPUT ADC
 
 // Battery Threshold values
 #define BATT_FULL_MV 4080   // mV full battery on which to base % full (100%)
@@ -52,11 +49,13 @@ struct POWER {
   uint16_t batteryMV;     // milivolts battery voltage (typically between 3200 and 4200)
   uint16_t batteryADC;    // ADC raw output from ESP32 input pin
   bool charging = false;  // if system is being charged or not
+  bool USBinput = false;  // if system is plugged into USB power or not
   power_on_states onState = POWER_OFF;
   power_input_levels inputCurrent = i500mA;
 };
 extern POWER power;
 
+void blinkLED(uint8_t count);
 void power_bootUp(void);
 void power_init(void);
 void power_latch_on(void);

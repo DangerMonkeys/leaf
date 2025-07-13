@@ -59,5 +59,6 @@
         "RXMIT",
         "xorshift"
     ],
-    "idf.pythonInstallPath": "/usr/bin/python"
+    "idf.pythonInstallPath": "/usr/bin/python",
+    "cmake.sourceDirectory": "C:/Users/oxoth/projects/leaf/src/libraries/Adafruit_BusIO"
 }

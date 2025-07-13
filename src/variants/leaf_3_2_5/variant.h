@@ -3,7 +3,7 @@
 // For OTA updates
 #define LEAF_FIRMWARE_NAME "leaf_3_2_5"
 
-// This breadboard variant is intended to be used with a LoRa radio
+// This variant is intended to be used with a LoRa radio
 #define HAS_FANET
 #define LORA_SX1262
 #define SX1262_NSS 46   // SPI Chip Select Pin
@@ -21,7 +21,7 @@
 #define SPEAKER_VOLB 1       // Pin 1 on the IO Expander
 
 #define IOEX_REG_CONFIG_PORT0 0b10000001  // P00 and P07 are inputs; others outputs
-#define IOEX_REG_CONFIG_PORT1 0b10010000  // P10 and P13 are inputs; others outputs
+#define IOEX_REG_CONFIG_PORT1 0b00001001  // P10 and P13 are inputs; others outputs
 
 /*
 |IOEX Pin# |Function

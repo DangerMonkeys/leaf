@@ -2,7 +2,8 @@
 #include <FS.h>
 #include <SD_MMC.h>
 // #include <PinChangeInterrupt.h>
-
+#include "hardware/configuration.h"
+#include "hardware/io_pins.h"
 #include "instruments/gps.h"
 #include "logging/log.h"
 #include "storage/sd_card.h"
@@ -189,15 +190,7 @@ void testFileIO(fs::FS& fs, const char* path) {
   file.close();
 }
 
-/*  Currently removing the SD_DETECT ISR, since we're just polling
-    the pin every second with SDcard_update()
-void IRAM_ATTR SDIO_DETECT_ISR() {
-  remountSDCard = true;
-  Serial.println("SD_DETECT");
-}
-  */
-
-bool SDcard_checkIfPresent() { return !digitalRead(SDIO_DETECT); }
+bool SDcard_checkIfPresent() { return !ioexDigitalRead(SD_DETECT_IOEX, SD_DETECT); }
 
 void SDcard_init(void) {
   // Shouldn't need to call set pins since we're using the default pins
@@ -207,10 +200,8 @@ void SDcard_init(void) {
     return;
   }
 
-  // attempt to remount the card if the SDIO_DETECT pin changes  (i.e. card state is changed by
-  // inserting or removing)
-  pinMode(SDIO_DETECT, INPUT_PULLUP);
-  // attachInterrupt(SDIO_DETECT, SDIO_DETECT_ISR, CHANGE);
+  // configure SD detect pin
+  if (!SD_DETECT_IOEX) pinMode(SD_DETECT, INPUT_PULLUP);
 
   // If SDcard present, mount and save state so we can track changes
   if (SDcard_checkIfPresent()) {

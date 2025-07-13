@@ -1,12 +1,11 @@
 #include "hardware/lc86g.h"
 
-// Pinout for Leaf V3.2.0
-#define GPS_BACKUP_EN \
-  40  // 42 on V3.2.0  // Enable GPS backup power.  Generally always-on, except able to be turned
-      // off for a full GPS reset if needed
-// pins 43-44 are GPS UART, already enabled by default as "Serial0"
-#define GPS_RESET 45
+#include "hardware/configuration.h"
+#include "hardware/io_pins.h"
+
+// Pinout for Leaf V3.2.0+
 #define GPS_1PPS 46  // INPUT
+// pins 43-44 are GPS UART, already enabled by default as "Serial0"
 
 #define DEBUG_GPS 0
 
@@ -20,12 +19,12 @@
 void LC86G::init() {
   // Set pins
   Serial.print("GPS set pins... ");
-  pinMode(GPS_BACKUP_EN, OUTPUT);
+  if (!GPS_BACKUP_EN_IOEX) pinMode(GPS_BACKUP_EN, OUTPUT);
   setBackupPower(true);  // by default, enable backup power
-  pinMode(GPS_RESET, OUTPUT);
-  digitalWrite(GPS_RESET, LOW);
+  if (!GPS_RESET_IOEX) pinMode(GPS_RESET, OUTPUT);
+  ioexDigitalWrite(GPS_RESET_IOEX, GPS_RESET, LOW);
   delay(100);
-  digitalWrite(GPS_RESET, HIGH);
+  ioexDigitalWrite(GPS_RESET_IOEX, GPS_RESET, HIGH);
   // track when GPS was activated; we can't send any commands sooner
   // than ~285ms (we'll use 300ms)
   bootReady_ = millis() + 300;
@@ -70,14 +69,14 @@ const char* LC86G::getTextLine() { return currentLine_; }
 
 // Enable GPS Backup Power (to save satellite data and allow faster start-ups)
 // This consumes a minor amount of current from the battery
-// There is a loop-back pullup resistor from the backup power output to its own ENABLE line, so
-// once backup is turned on, it will stay on even if the main processor is shut down. Typically,
-// the backup power is only turned off to enable a full cold reboot/reset of the GPS module.
+// There is a loop-back pullup resistor from the backup power output to its own ENABLE line, so once
+// backup is turned on, it will stay on even if the main processor is shut down. Typically, the
+// backup power is only turned off to enable a full cold reboot/reset of the GPS module.
 void LC86G::setBackupPower(bool backupPowerOn) {
   if (backupPowerOn)
-    digitalWrite(GPS_BACKUP_EN, HIGH);
+    ioexDigitalWrite(GPS_BACKUP_EN_IOEX, GPS_BACKUP_EN, HIGH);
   else
-    digitalWrite(GPS_BACKUP_EN, LOW);
+    ioexDigitalWrite(GPS_BACKUP_EN_IOEX, GPS_BACKUP_EN, LOW);
 }
 
 void LC86G::sleep() {
@@ -112,10 +111,11 @@ void LC86G::hardReset(void) {
   setBackupPower(true);
 }
 
+// A soft reset, keeping backup_power enabled so as not to lose saved satellite data
 void LC86G::softReset(void) {
-  digitalWrite(GPS_RESET, LOW);
+  ioexDigitalWrite(GPS_RESET_IOEX, GPS_RESET, LOW);
   delay(100);
-  digitalWrite(GPS_RESET, HIGH);
+  ioexDigitalWrite(GPS_RESET_IOEX, GPS_RESET, HIGH);
 }
 
 void LC86G::enterBackupMode(void) {
