@@ -21,6 +21,7 @@
 POWER power;  // struct for battery-state and on-state variables
 
 void blinkLED(uint8_t count) {
+#ifdef LED_PIN
   pinMode(LED_PIN, OUTPUT);  // LED power status indicator
   for (int i = 0; i < count; i++) {
     delay(500);
@@ -28,6 +29,7 @@ void blinkLED(uint8_t count) {
     delay(500);
     digitalWrite(LED_PIN, HIGH);  // turn on LED
   }
+#endif
 }
 
 void power_bootUp() {
