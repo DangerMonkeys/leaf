@@ -58,12 +58,13 @@ flowchart LR
         subgraph ICM20948
             ICM_20948_I2C
         end
+        LC86G
     end
 
     subgraph Instruments
+        AHT20["AHT20<br>(<code>tempRH</code> singleton)"]
         Barometer["Barometer<br>(<code>barometer</code> singleton)"]
         IMU["IMU<br>(<code>imu</code> singleton)"]
-        AHT20["AHT20<br>(<code>tempRH</code> singleton)"]
         subgraph LeafGPS["LeafGPS (<code>gps</code> singleton)"]
             TinyGPSPlus
         end
@@ -74,7 +75,8 @@ flowchart LR
 
     MS5611dev <-->|Wire| MS5611 -->|IPressureSource| Barometer
     AHT20dev <-->|Wire| AHT20
-    GPSdev -->|Serial0| LeafGPS
+    GPSdev <-->|Serial0| LC86G -->|ITextLineSource| LeafGPS
+    LC86G ---|IPowerControl| LeafGPS
 
     ICM20948dev <-->|TwoWire| ICM_20948_I2C["ICM_20948_I2C<br>(Sparkfun lib)"]
     ICM20948 -->|IMotionSource| IMU
@@ -82,5 +84,5 @@ flowchart LR
     Barometer --> VarioLogic
     IMU --> VarioLogic
     AHT20 --> VarioLogic
-    LeafGPS --> VarioLogic
+    LeafGPS <--> VarioLogic
 ```

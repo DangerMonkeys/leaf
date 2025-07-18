@@ -20,6 +20,8 @@
 #include <TinyGPSPlus.h>
 #include "comms/message_types.h"
 #include "etl/message_bus.h"
+#include "hardware/gps.h"
+#include "hardware/power_control.h"
 #include "time.h"
 #include "utils/lock_guard.h"
 
@@ -47,13 +49,17 @@ struct NMEASentenceContents {
 
 // enum time_formats {hhmmss, }
 
-class LeafGPS : public TinyGPSPlus {
+class LeafGPS : public TinyGPSPlus, IPowerControl {
  public:
-  LeafGPS();
+  LeafGPS(IGPS* gpsDevice);
+
+  // IPowerControl passes through to gpsDevice_'s implementation
+  void sleep() { gpsDevice_->sleep(); }
+  void wake() { gpsDevice_->wake(); }
 
   void init(void);
 
-  bool readBufferOnce(void);
+  bool readData(void);
   void update(void);
 
   // Gets a calendar time from GPS in UTC time.
@@ -64,9 +70,6 @@ class LeafGPS : public TinyGPSPlus {
 
   // like getUtcDateTime, but has the timezone offset applied.
   bool getLocalDateTime(tm& cal);
-
-  void wake(void);
-  void sleep(void);
 
   float getGlideRatio(void) { return glideRatio; }
 
@@ -79,14 +82,10 @@ class LeafGPS : public TinyGPSPlus {
   GPSFixInfo fixInfo;
 
  private:
+  IGPS* gpsDevice_;
+
   void updateFixInfo();
   void updateSatList(void);
-  void setBackupPower(bool backupPowerOn);
-  void enterBackupMode(void);
-  void softReset(void);
-  void hardReset(void);
-
-  void shutdown(void);
 
   void calculateGlideRatio();
 
@@ -96,8 +95,6 @@ class LeafGPS : public TinyGPSPlus {
 
   // GPS satellite info for storing values straight from the GPS
   struct GPSSatInfo sats[MAX_SATELLITES];
-
-  uint32_t bootReady = 0;
 
   // $GPGSV sentence parsing
   TinyGPSCustom totalGPGSVMessages;  // first element is # messages (N) total
