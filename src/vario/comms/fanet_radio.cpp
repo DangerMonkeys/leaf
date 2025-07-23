@@ -17,9 +17,17 @@
 bool detectFanet() {
   // Auto-Detect FANET LoRa module
   pinMode(SX1262_BUSY, INPUT_PULLUP);  // chip select for the FANET module (SX1262_NSS pin)
-  delay(100);                          // wait for module to boot/initialize
-  bool modulePresent = !digitalRead(SX1262_BUSY);  // if low, chip is present
-  return modulePresent;
+  pinMode(LED_PIN, OUTPUT);
+  uint32_t counter = 0;
+  bool fanetReady = false;
+  while (counter < 5000) {
+    counter += 100;
+    delay(100);
+    fanetReady = !digitalRead(SX1262_BUSY);  // if busy is low, we're ready
+    digitalWrite(LED_PIN, fanetReady);       // turn on LED if busy is high
+    if (fanetReady) break;                   // if we're ready, break out of the loop
+  }
+  return fanetReady;
 }
 
 // Static initializers

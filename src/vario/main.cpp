@@ -31,8 +31,11 @@ void setup() {
 #ifdef HAS_FANET
   // first, auto-detect the Fanet/LoRa module, and only initialize if present
   if (detectFanet()) {
+    blinkLED(5);
     // Initialize the Fanet Radio module.  Subscribe them for bus updates
     FanetRadio::getInstance().setup(&bus);
+  } else {
+    blinkLED(2);
   }
 #endif
 
