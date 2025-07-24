@@ -17,9 +17,6 @@
 #include "fanet/protocol.hpp"
 #include "ui/settings/settings.h"
 
-// detect phyiscal presence of the FANET (LoRa SX1262) module
-bool detectFanet(void);
-
 // Helper function to convert an Address to a string
 String FanetAddressToString(FANET::Address address);
 
@@ -82,6 +79,9 @@ class FanetRadio : public etl::message_router<FanetRadio, GpsReading>, public FA
   FanetRadio() : message_router(0) {}
 
   FANET::Protocol* protocol = nullptr;  // Pointer to the Fanet manager
+
+  // detect phyiscal presence of the FANET (LoRa SX1262) module
+  bool detectFanet(void);
 
   FanetRadioState state = FanetRadioState::UNINITIALIZED;  // The current state of the radio module
 

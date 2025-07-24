@@ -754,9 +754,14 @@ void display_GPS_icon(uint8_t x, uint8_t y) {
 }
 
 void display_fanet_icon(const uint8_t& x, const uint8_t& y) {
-#ifndef HAS_FANET
+#ifndef FANET_CAPABLE
   return;
 #endif
+
+  // If the radio is missing, don't bother rendering it at all
+  if (FanetRadio::getInstance().getState() == FanetRadioState::UNINSTALLED) {
+    return;
+  }
 
   u8g2.setDrawColor(1);
   u8g2.setFont(leaf_icons);

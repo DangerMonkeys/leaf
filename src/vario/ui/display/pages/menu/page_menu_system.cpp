@@ -3,6 +3,7 @@
 #include <Arduino.h>
 
 #include "comms/ble.h"
+#include "comms/fanet_radio.h"
 #include "power.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
@@ -105,8 +106,8 @@ void SystemMenuPage::draw() {
 
         case cursor_system_fanet:
           u8g2.setCursor(setting_choice_x + 8, menu_items_y[i]);
-#ifndef HAS_FANET
-          // If Fanet is not supported, we should show a warning
+#ifndef FANET_CAPABLE
+          // If Fanet is not supported, we should show a warning icon
           u8g2.setFont(leaf_icons);
           u8g2.print((char)0x22);
           u8g2.setFont(leaf_6x12);
@@ -173,7 +174,7 @@ void SystemMenuPage::setting_change(Button dir, ButtonState state, uint8_t count
       break;
     case cursor_system_fanet:
       if (state != RELEASED) break;
-#ifndef HAS_FANET
+#ifndef FANET_CAPABLE
       PageMessage::show("Fanet",
                         "UNSUPPORTED\n"
                         "\n"
@@ -186,8 +187,18 @@ void SystemMenuPage::setting_change(Button dir, ButtonState state, uint8_t count
                         "    :(\n");
       break;
 #endif
-      // Show the Fanet setting page
-      PageFanet::show();
+      if (FanetRadio::getInstance().getState() == FanetRadioState::UNINITIALIZED) {
+        // If the FANET radio is uninstalled, show a warning message
+        PageMessage::show("Fanet",
+                          "Fanet radio\n"
+                          "not installed.\n\n"
+                          "Install radio\n"
+                          "or contact\n"
+                          "support\n");
+      } else {
+        // Show the Fanet setting page
+        PageFanet::show();
+      }
       break;
     case cursor_system_wifi:
       if (state != RELEASED) break;

@@ -21,6 +21,11 @@ struct FanetRadioRegion {
 
 struct FanetRadioState {
   enum enum_type {
+    // A radio initialization has failed to detect the presence of
+    // the FANET radio.  Presumably, the device is missing, or
+    // failed.
+    UNINSTALLED,
+
     // Radio is sitting idle, no initialization attempt
     UNINITIALIZED,
 
