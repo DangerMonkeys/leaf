@@ -17,14 +17,12 @@
 bool FanetRadio::detectFanet() {
   // Auto-Detect FANET LoRa module
   pinMode(SX1262_BUSY, INPUT_PULLUP);  // chip select for the FANET module (SX1262_NSS pin)
-  pinMode(LED_PIN, OUTPUT);
   uint32_t counter = 0;
   bool fanetReady = false;
   while (counter < 5000) {
     counter += 100;
     delay(100);
     fanetReady = !digitalRead(SX1262_BUSY);  // if busy is low, we're ready
-    digitalWrite(LED_PIN, fanetReady);       // turn on LED if busy is high
     if (fanetReady) break;                   // if we're ready, break out of the loop
   }
   return fanetReady;
@@ -298,11 +296,8 @@ void FanetRadio::begin(const FanetRadioRegion& region) {
   return;  // Model does not support Fanet
 #endif
 
-  // Detect if FANET is installed on this device.  If not found,
-  // short circuit and place into an unsupported state
-  if (!detectFanet()) {
-    state = FanetRadioState::UNINSTALLED;
-    return;
+  if (state == FanetRadioState::UNINSTALLED) {
+    return;  // Short circuit if the radio module is not installed
   }
 
   // Short circuit above taking any locks out (avoid deadlocks)

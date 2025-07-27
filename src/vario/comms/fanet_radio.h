@@ -76,7 +76,15 @@ class FanetRadio : public etl::message_router<FanetRadio, GpsReading>, public FA
 
  private:
   // Singleton class
-  FanetRadio() : message_router(0) {}
+  FanetRadio() : message_router(0) {
+    // Detect if FANET is installed on this device.  If not found,
+    // short circuit and place into an unsupported state
+    if (!detectFanet()) {
+      state = FanetRadioState::UNINSTALLED;
+      return;
+    }
+    state = FanetRadioState::UNINITIALIZED;
+  }
 
   FANET::Protocol* protocol = nullptr;  // Pointer to the Fanet manager
 

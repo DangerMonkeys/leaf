@@ -187,7 +187,7 @@ void SystemMenuPage::setting_change(Button dir, ButtonState state, uint8_t count
                         "    :(\n");
       break;
 #endif
-      if (FanetRadio::getInstance().getState() == FanetRadioState::UNINITIALIZED) {
+      if (FanetRadio::getInstance().getState() == FanetRadioState::UNINSTALLED) {
         // If the FANET radio is uninstalled, show a warning message
         PageMessage::show("Fanet",
                           "Fanet radio\n"
