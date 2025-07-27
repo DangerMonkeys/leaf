@@ -15,6 +15,7 @@
 
 // Initial detection of Fanet module (hw3.2.6+)
 bool FanetRadio::detectFanet() {
+#ifdef FANET_CAPABLE
   // Auto-Detect FANET LoRa module
   pinMode(SX1262_BUSY, INPUT_PULLUP);  // chip select for the FANET module (SX1262_NSS pin)
   uint32_t counter = 0;
@@ -26,6 +27,9 @@ bool FanetRadio::detectFanet() {
     if (fanetReady) break;                   // if we're ready, break out of the loop
   }
   return fanetReady;
+#endif
+  // If the module is not present, return false
+  return false;  // Module does not support Fanet
 }
 
 // Static initializers

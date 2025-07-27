@@ -107,12 +107,18 @@ void SystemMenuPage::draw() {
         case cursor_system_fanet:
           u8g2.setCursor(setting_choice_x + 8, menu_items_y[i]);
 #ifndef FANET_CAPABLE
-          // If Fanet is not supported, we should show a warning icon
-          u8g2.setFont(leaf_icons);
-          u8g2.print((char)0x22);
-          u8g2.setFont(leaf_6x12);
-          break;
+          {
+#else
+          if (FanetRadio::getInstance().getState() == FanetRadioState::UNINSTALLED) {
 #endif
+
+            // If Fanet is not installed or supported, we should show a warning icon
+            u8g2.setFont(leaf_icons);
+            u8g2.print((char)0x22);
+            u8g2.setFont(leaf_6x12);
+            break;
+          }
+
           u8g2.print(settings.fanet_region == FanetRadioRegion::OFF ? (String) "OFF"
                                                                     : (String)((char)126));
           break;
