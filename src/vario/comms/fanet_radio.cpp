@@ -18,13 +18,17 @@ bool FanetRadio::detectFanet() {
 #ifdef FANET_CAPABLE
   // Auto-Detect FANET LoRa module
   pinMode(SX1262_BUSY, INPUT_PULLUP);  // chip select for the FANET module (SX1262_NSS pin)
-  uint32_t counter = 0;
   bool fanetReady = false;
-  while (counter < 5000) {
-    counter += 100;
-    delay(100);
+  int count = 0;
+  while (count < 25) {
+    count++;
     fanetReady = !digitalRead(SX1262_BUSY);  // if busy is low, we're ready
-    if (fanetReady) break;                   // if we're ready, break out of the loop
+    if (fanetReady) {
+      Serial.print("Fanet check cycles: ");
+      Serial.println(count);
+      break;  // if we're ready, break out of the loop
+    }
+    delay(10);
   }
   return fanetReady;
 #endif
