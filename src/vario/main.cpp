@@ -28,9 +28,7 @@ void setup() {
   spi_init();
   Serial.println(" - Finished SPI");
 
-#ifdef HAS_FANET
-  // Initialize the Fanet Radio module.  Subscribe them for bus
-  // updates
+#ifdef FANET_CAPABLE
   FanetRadio::getInstance().setup(&bus);
 #endif
 

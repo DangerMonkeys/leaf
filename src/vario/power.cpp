@@ -25,9 +25,9 @@ void blinkLED(uint8_t count) {
   pinMode(LED_PIN, OUTPUT);  // LED power status indicator
   for (int i = 0; i < count; i++) {
     delay(500);
-    digitalWrite(LED_PIN, LOW);  // turn off LED
+    digitalWrite(LED_PIN, LOW);  // turn on LED
     delay(500);
-    digitalWrite(LED_PIN, HIGH);  // turn on LED
+    digitalWrite(LED_PIN, HIGH);  // turn off LED
   }
 #endif
 }

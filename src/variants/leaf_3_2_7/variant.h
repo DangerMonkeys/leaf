@@ -7,8 +7,8 @@
 
 // This variant allows for optional use of a LoRa radio module (needs to be soft-enabled by user in
 // menu confirguration)
-// #define FANET
-// #define LORA_SX1262
+#define FANET_CAPABLE
+#define LORA_SX1262
 
 // ESP32 IO configuration changes for this variant
 #define SX1262_NSS 46    // SPI Chip Select Pin
