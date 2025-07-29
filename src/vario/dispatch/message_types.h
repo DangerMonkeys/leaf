@@ -10,15 +10,18 @@
 #include "etl/message.h"
 #include "etl/string.h"
 #include "fanet/packet.hpp"
+#include "hardware/ambient_source.h"
 
 #define FANET_MAX_FRAME_SIZE 244  // Maximum size of a FANET frame
 // NMEAString is 82 characters per standard + 2 for \r\n + 1 for null terminator
 using NMEAString = etl::string<85>;
 
-enum MessageType {
-  GPS_UPDATE,
-  GPS_MESSAGE,
-  FANET_PACKET,
+enum MessageType : etl::message_id_t {
+  GPS_UPDATE = 1,
+  GPS_MESSAGE = 2,
+  FANET_PACKET = 3,
+  AMBIENT_UPDATE = 4,
+  MESSAGE_LOGGING_BEGIN = 254,
 };
 
 /// @brief A GPS update received
@@ -44,4 +47,18 @@ struct FanetPacket : public etl::message<FANET_PACKET> {
 
   FanetPacket(FANET::Packet<FANET_MAX_FRAME_SIZE> packet, float rssi, float snr)
       : packet(packet), rssi(rssi), snr(snr) {}
+};
+
+/// @brief Update regarding ambient environment
+struct AmbientUpdate : public etl::message<AMBIENT_UPDATE> {
+  AmbientUpdateResult updates;
+
+  // Temperature in degrees C
+  float temperature;
+
+  // Relative humidity in percent
+  float relativeHumidity;
+
+  AmbientUpdate(float temp, float relRH, AmbientUpdateResult updates)
+      : temperature(temp), relativeHumidity(relRH), updates(updates) {}
 };

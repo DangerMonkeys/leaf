@@ -14,11 +14,6 @@ DEFINE_FLAGS_ENUM(AmbientUpdateResult, uint8_t){
 
 class IAmbientSource {
  public:
-  // Initialize the ambient source.  Before this method is called, none of the other
-  // methods are expected to behave correctly.  After this method completes, all of
-  // the other methods are expected to behave correctly.
-  virtual void init() = 0;
-
   // Call this method as frequently as desired to perform ambient environmental acquisition tasks.
   // The return result indicates when new environmental information has been acquired.
   virtual AmbientUpdateResult update() = 0;

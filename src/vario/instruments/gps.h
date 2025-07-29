@@ -18,7 +18,7 @@
 #define gps_h
 
 #include <TinyGPSPlus.h>
-#include "comms/message_types.h"
+#include "dispatch/message_types.h"
 #include "etl/message_bus.h"
 #include "hardware/gps.h"
 #include "hardware/power_control.h"

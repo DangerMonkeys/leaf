@@ -3,6 +3,8 @@
 #include "diagnostics/fatal_error.h"
 #include "hardware/Leaf_I2C.h"
 
+AHT20 aht20;
+
 #define DEBUG_TEMPRH 0  // flag for outputting debugf messages on UBS serial port
 
 #define ADDR_AHT20 0x38

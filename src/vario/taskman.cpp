@@ -4,8 +4,8 @@
 #include "task.h"
 
 #include "comms/ble.h"
+#include "dispatch/data_source_manager.h"
 #include "hardware/Leaf_SPI.h"
-#include "instruments/ambient.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "instruments/imu.h"
@@ -433,7 +433,7 @@ void taskManager(void) {
     taskman_display = 0;
   }
   if (taskman_tempRH) {
-    ambient->update();
+    dataSourceManager.pollAmbient();
     taskman_tempRH = 0;
   }
   if (taskman_SDCard) {

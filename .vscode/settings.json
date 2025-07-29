@@ -33,7 +33,9 @@
         "mutex": "cpp",
         "optional": "cpp",
         "memory_resource": "cpp",
-        "stop_token": "cpp"
+        "stop_token": "cpp",
+        "atomic": "cpp",
+        "cstdint": "cpp"
     },
     "editor.formatOnSave": true,
     "[cpp]": {

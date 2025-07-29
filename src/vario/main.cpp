@@ -1,9 +1,12 @@
 #include "Arduino.h"
 #include "comms/ble.h"
 #include "comms/fanet_radio.h"
+#include "dispatch/data_source_manager.h"
 #include "dispatch/message_bus.h"
 #include "hardware/Leaf_SPI.h"
+#include "hardware/aht20.h"
 #include "hardware/configuration.h"
+#include "instruments/ambient.h"
 #include "instruments/gps.h"
 #include "power.h"
 #include "taskman.h"
@@ -32,6 +35,9 @@ void setup() {
   FanetRadio::getInstance().setup(&bus);
 #endif
 
+  dataSourceManager.attach(&bus);
+  dataSourceManager.attach(&aht20);
+
   // Initialize anything left over on the Task Manager System
   Serial.println("Initializing Taskman Service");
   taskmanSetup();
@@ -48,6 +54,9 @@ void setup() {
   // Still needs to be moved away from taskman, but we can
   // hook it into the message bus.
   gps.setBus(&bus);
+
+  // Connect ambient environment instrument to message bus sourcing ambient environment updates
+  ambient.subscribe(&bus);
 
   // Subscribe modules that need bus updates.
   // This should not exceed the bus router limit.

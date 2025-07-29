@@ -16,8 +16,9 @@ struct SensorStatus {
 
 class AHT20 : public IAmbientSource {
  public:
-  // IAmbientSource
   void init();
+
+  // IAmbientSource
   AmbientUpdateResult update();
   float getTemp() { return ambientTemp_; }
   float getHumidity() { return ambientHumidity_; }
@@ -66,3 +67,6 @@ class AHT20 : public IAmbientSource {
 
   unsigned long measurementInitiated_;
 };
+
+// Singleton AHT20 device
+extern AHT20 aht20;

@@ -1,7 +1,7 @@
 #include "comms/fanet_radio.h"
 
 #include "FreeRTOS.h"
-#include "comms/message_types.h"
+#include "dispatch/message_types.h"
 #include "esp_mac.h"
 #include "etl/array.h"
 #include "fanet/name.hpp"
