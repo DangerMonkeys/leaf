@@ -46,8 +46,13 @@ void display_clockTime(uint8_t x, uint8_t y, bool show_ampm) {
     // Crafts a 24 or 12 hour time to show depending on prefs
     char buf[10];
     if (settings.units_hours) {
-      // This is a 12 hour time and needs to print eg " 9:45am"
-      strftime(buf, 10, "%I:%M%p", &cal);
+      if (show_ampm) {
+        // This is a 12 hour time and needs to print eg " 9:45am"
+        strftime(buf, 10, "%I:%M%p", &cal);
+      } else {
+        // This is a 12 hour time and needs to print eg " 9:45"
+        strftime(buf, 10, "%I:%M", &cal);
+      }
       if (buf[0] == '0') {
         buf[0] = ' ';
       }
