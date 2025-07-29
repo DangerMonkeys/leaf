@@ -1,7 +1,8 @@
-#ifndef tempRH_h
-#define tempRH_h
+#pragma once
 
 #include <Arduino.h>
+
+#include "hardware/ambient_source.h"
 
 struct SensorData {
   uint32_t humidity;
@@ -13,17 +14,12 @@ struct SensorStatus {
   bool humidity = true;
 };
 
-class AHT20 {
+class AHT20 : public IAmbientSource {
  public:
-  // Initialize the AHT20 device
-  bool init(void);
-
-  // Repeating function called every ~second to trigger
-  // and calculate measurements
-  void update(uint8_t process_step);
-
+  // IAmbientSource
+  void init();
+  AmbientUpdateResult update();
   float getTemp() { return ambientTemp_; }
-
   float getHumidity() { return ambientHumidity_; }
 
  private:
@@ -62,12 +58,11 @@ class AHT20 {
   // calculated % relative humidity
   float ambientHumidity_ = 0;
 
-  uint8_t currentlyProcessing_ = false;
+  uint8_t currentlyMeasuring_ = false;
 
   SensorData sensorData_;
 
   SensorStatus sensorQueried_;
-};
-extern AHT20 tempRH;
 
-#endif
+  unsigned long measurementInitiated_;
+};

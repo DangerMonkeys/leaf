@@ -5,7 +5,7 @@
 #include "hardware/Leaf_SPI.h"
 #include "hardware/configuration.h"
 #include "hardware/io_pins.h"
-#include "hardware/temp_rh.h"
+#include "instruments/ambient.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "instruments/imu.h"
@@ -131,7 +131,7 @@ void power_init_peripherals() {
   Serial.println(" - Finished Baro");
   imu.init();
   Serial.println(" - Finished IMU");
-  tempRH.init();
+  ambient->init();
   Serial.println(" - Finished Temp Humid");
 
   // then put devices to sleep if we're in POWER_OFF_USB state

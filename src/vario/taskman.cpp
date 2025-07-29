@@ -5,7 +5,7 @@
 
 #include "comms/ble.h"
 #include "hardware/Leaf_SPI.h"
-#include "hardware/temp_rh.h"
+#include "instruments/ambient.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "instruments/imu.h"
@@ -433,7 +433,7 @@ void taskManager(void) {
     taskman_display = 0;
   }
   if (taskman_tempRH) {
-    tempRH.update(taskman_tempRH);
+    ambient->update();
     taskman_tempRH = 0;
   }
   if (taskman_SDCard) {

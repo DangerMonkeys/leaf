@@ -4,7 +4,7 @@
 #include <Arduino.h>
 
 #include "comms/fanet_radio.h"
-#include "hardware/temp_rh.h"
+#include "instruments/ambient.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "instruments/imu.h"
@@ -274,7 +274,7 @@ void log_captureValues() {
   logbook.alt_above_launch = baro.altAboveLaunch;
   logbook.climb = baro.climbRateFiltered;
   logbook.speed = gps.speed.mps();
-  logbook.temperature = tempRH.getTemp();
+  logbook.temperature = ambient->getTemp();
   logbook.accel = imu.getAccel();
 }
 
@@ -301,7 +301,7 @@ void log_checkMinMaxValues() {
   }
 
   // check temperature values for log records
-  logbook.temperature = tempRH.getTemp();
+  logbook.temperature = ambient->getTemp();
   if (logbook.temperature > logbook.temperature_max) {
     logbook.temperature_max = logbook.temperature;
   } else if (logbook.temperature < logbook.temperature_min) {

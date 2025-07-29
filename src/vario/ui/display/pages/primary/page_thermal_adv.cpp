@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include <U8g2lib.h>
 
-#include "hardware/temp_rh.h"
+#include "instruments/ambient.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "instruments/imu.h"
@@ -88,8 +88,8 @@ void thermalPageAdv_draw() {
     u8g2.drawHLine(varioBarWidth - 1, userFieldsBottom, 96 - varioBarWidth + 1);
     u8g2.drawVLine(userSecondColumn, userFieldsTop, userFieldsHeight * 2);
 
-    display_temp(varioBarWidth + 5, userFieldsMid - 1, (int16_t)tempRH.getTemp());
-    display_humidity(userSecondColumn + 3, userFieldsMid - 1, (uint8_t)tempRH.getHumidity());
+    display_temp(varioBarWidth + 5, userFieldsMid - 1, (int16_t)ambient->getTemp());
+    display_humidity(userSecondColumn + 3, userFieldsMid - 1, (uint8_t)ambient->getHumidity());
     display_accel(varioBarWidth + 5, userFieldsBottom - 1, imu.getAccel());
     display_glide(userSecondColumn + 3, userFieldsBottom - 1, gps.getGlideRatio());
 

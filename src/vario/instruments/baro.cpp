@@ -7,7 +7,6 @@
 #include "diagnostics/fatal_error.h"
 #include "hardware/Leaf_I2C.h"
 #include "hardware/ms5611.h"
-#include "hardware/temp_rh.h"
 #include "instruments/gps.h"
 #include "instruments/imu.h"
 #include "logging/log.h"
