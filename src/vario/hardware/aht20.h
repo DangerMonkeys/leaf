@@ -58,7 +58,7 @@ class AHT20 : public IAmbientSource {
   // calculated % relative humidity
   float ambientHumidity_ = 0;
 
-  uint8_t currentlyMeasuring = false;
+  uint8_t currentlyMeasuring_ = false;
 
   SensorData sensorData_;
 

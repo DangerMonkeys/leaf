@@ -75,18 +75,18 @@ const unsigned long MEASUREMENT_PERIOD_MS = 75;
 // don't call more often than every 1-2 seconds, or sensor will heat up slightly above
 // ambient
 AmbientUpdateResult AHT20::update() {
-  if (!currentlyMeasuring) {
+  if (!currentlyMeasuring_) {
     // measurements must first be triggered, then >75ms later can be read
     triggerMeasurement();  // if we haven't yet processed a prior measurement, don't
                            // trigger a new one
     measurementInitiated_ = millis();
-    currentlyMeasuring = true;
+    currentlyMeasuring_ = true;
   } else if (millis() - measurementInitiated_ > MEASUREMENT_PERIOD_MS && !isBusy()) {
     readData();
     ambientTemp_ = ((float)sensorData_.temperature / 1048576) * 200 - 50;
     ambientTemp_ += TEMP_OFFSET;
     ambientHumidity_ = ((float)sensorData_.humidity / 1048576) * 100;
-    currentlyMeasuring = false;
+    currentlyMeasuring_ = false;
     if (DEBUG_TEMPRH) {
       Serial.print("Temp_RH - Temp: ");
       Serial.print(ambientTemp_);
