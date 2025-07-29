@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include <U8g2lib.h>
 
-#include "hardware/temp_rh.h"
+#include "instruments/ambient.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "instruments/imu.h"
@@ -140,12 +140,12 @@ void drawUserField(uint8_t x, uint8_t y, uint8_t field, bool selected) {
       u8g2.setCursor(x, y - 14);
       u8g2.setFont(leaf_5h);
       u8g2.print("TEMP");
-      display_temp(x + 2, y, (int16_t)tempRH.getTemp());
+      display_temp(x + 2, y, (int16_t)ambient->getTemp());
       // Humidity
       u8g2.setCursor(x + 32, y - 14);
       u8g2.setFont(leaf_5h);
       u8g2.print("HUMID");
-      display_humidity(x + 34, y, (uint8_t)tempRH.getHumidity());
+      display_humidity(x + 34, y, (uint8_t)ambient->getHumidity());
       break;
     case static_cast<int>(ThermalPageUserFields::ACCEL):
       // Acceleration

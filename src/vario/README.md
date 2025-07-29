@@ -54,6 +54,7 @@ flowchart LR
     end
 
     subgraph Hardware abstraction
+        AHT20hw["AHT20"]
         MS5611["MS5611"]
         subgraph ICM20948
             ICM_20948_I2C
@@ -62,7 +63,7 @@ flowchart LR
     end
 
     subgraph Instruments
-        AHT20["AHT20<br>(<code>tempRH</code> singleton)"]
+        Ambient["<code>ambient</code> singleton"]
         Barometer["Barometer<br>(<code>barometer</code> singleton)"]
         IMU["IMU<br>(<code>imu</code> singleton)"]
         subgraph LeafGPS["LeafGPS (<code>gps</code> singleton)"]
@@ -74,15 +75,15 @@ flowchart LR
     end
 
     MS5611dev <-->|Wire| MS5611 -->|IPressureSource| Barometer
-    AHT20dev <-->|Wire| AHT20
+    AHT20dev <-->|Wire| AHT20hw -->|IAmbientSource| Ambient
     GPSdev <-->|Serial0| LC86G -->|ITextLineSource| LeafGPS
-    LC86G ---|IPowerControl| LeafGPS
+    LC86G ---|ISleepable| LeafGPS
 
     ICM20948dev <-->|TwoWire| ICM_20948_I2C["ICM_20948_I2C<br>(Sparkfun lib)"]
     ICM20948 -->|IMotionSource| IMU
 
     Barometer --> VarioLogic
     IMU --> VarioLogic
-    AHT20 --> VarioLogic
+    Ambient -->|IAmbientSource| VarioLogic
     LeafGPS <--> VarioLogic
 ```

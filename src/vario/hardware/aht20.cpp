@@ -1,8 +1,7 @@
-#include "hardware/temp_rh.h"
+#include "hardware/aht20.h"
 
+#include "diagnostics/fatal_error.h"
 #include "hardware/Leaf_I2C.h"
-
-AHT20 tempRH;
 
 #define DEBUG_TEMPRH 0  // flag for outputting debugf messages on UBS serial port
 
@@ -16,14 +15,11 @@ enum registers {
   sfe_aht20_reg_measure = 0xAC,
 };
 
-bool AHT20::init() {
+void AHT20::init() {
   bool success = true;
 
   if (!isConnected()) {
-    success = false;
-
-    if (DEBUG_TEMPRH) Serial.println("Temp_RH - AHT20 Temp Humidity sensor NOT FOUND!");
-
+    fatalError("AHT20 temp humidity sensor not found (isConnected is false)");
   } else {
     if (DEBUG_TEMPRH) Serial.println("Temp_RH - AHT20 Temp Humidity sensor FOUND!");
 
@@ -43,62 +39,66 @@ bool AHT20::init() {
       uint8_t counter = 0;
       while (isBusy()) {
         delay(1);
-        if (counter++ > 100) success = false;  // Give up after 100ms
+        if (counter++ > 100) {
+          // Give up after 100ms
+          fatalError(
+              "AHT20 initialization failure: initial measurement did not complete after 175ms");
+        }
       }
 
       // This calibration sequence is not completely proven. It's not clear how and when the cal bit
       // clears This seems to work but it's not easily testable
-      if (!isCalibrated()) success = false;
+      if (!isCalibrated()) {
+        fatalError(
+            "AHT20 initialization failure: device indicates not calibrated after calibration and "
+            "initial measurement");
+      }
     }
-
-    // Check that the cal bit has been set
-    if (!isCalibrated()) success = false;
 
     // Mark all datums as fresh (not read before)
     sensorQueried_.temperature = true;
     sensorQueried_.humidity = true;
 
     // Get a fresh initial measurement
-    update(1);
+    update();
     delay(100);
-    update(2);
+    update();
   }
 
   if (DEBUG_TEMPRH) {
-    if (success)
-      Serial.println("Temp_RH - SUCCESS: AHT20 Temp Humidity sensor calibrated!");
-    else
-      Serial.println("Temp_RH - FAIL: AHT20 Temp Humidity sensor not initialized/calibrated");
+    Serial.println("Temp_RH - SUCCESS: AHT20 Temp Humidity sensor calibrated!");
   }
-
-  return success;
 }
 
-// don't call more often than every 1-2 seconds, or sensor will heat up slightly above ambient
-void AHT20::update(uint8_t process_step) {
-  // measurements must first be triggered, then >75ms later can be read
-  if (process_step == 1) {
-    if (!currentlyProcessing_)
-      triggerMeasurement();  // if we haven't yet processed a prior measurement, don't
-                             // trigger a new one
-    currentlyProcessing_ = true;
-  } else if (process_step == 2) {
-    if (!isBusy()) {  // if busy, skip this and we'll try again next time
-      readData();
-      ambientTemp_ = ((float)sensorData_.temperature / 1048576) * 200 - 50;
-      ambientTemp_ += TEMP_OFFSET;
-      ambientHumidity_ = ((float)sensorData_.humidity / 1048576) * 100;
-      currentlyProcessing_ = false;
-      if (DEBUG_TEMPRH) {
-        Serial.print("Temp_RH - Temp: ");
-        Serial.print(ambientTemp_);
-        Serial.print("  Humidity: ");
-        Serial.println(ambientHumidity_);
-      }
-    } else {
-      if (DEBUG_TEMPRH) Serial.println("Temp_RH - missed values due to sensor busy");
+const unsigned long MEASUREMENT_PERIOD_MS = 75;
+
+// don't call more often than every 1-2 seconds, or sensor will heat up slightly above
+// ambient
+AmbientUpdateResult AHT20::update() {
+  if (!currentlyMeasuring) {
+    // measurements must first be triggered, then >75ms later can be read
+    triggerMeasurement();  // if we haven't yet processed a prior measurement, don't
+                           // trigger a new one
+    measurementInitiated_ = millis();
+    currentlyMeasuring = true;
+  } else if (millis() - measurementInitiated_ > MEASUREMENT_PERIOD_MS && !isBusy()) {
+    readData();
+    ambientTemp_ = ((float)sensorData_.temperature / 1048576) * 200 - 50;
+    ambientTemp_ += TEMP_OFFSET;
+    ambientHumidity_ = ((float)sensorData_.humidity / 1048576) * 100;
+    currentlyMeasuring = false;
+    if (DEBUG_TEMPRH) {
+      Serial.print("Temp_RH - Temp: ");
+      Serial.print(ambientTemp_);
+      Serial.print("  Humidity: ");
+      Serial.println(ambientHumidity_);
     }
+    return AmbientUpdateResult::TemperatureReady | AmbientUpdateResult::RelativeHumidityReady;
+  } else {
+    if (DEBUG_TEMPRH) Serial.println("Temp_RH - missed values due to sensor busy");
   }
+
+  return AmbientUpdateResult::NoChange;
 }
 
 bool AHT20::softReset() {
