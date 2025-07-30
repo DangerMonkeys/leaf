@@ -1,7 +1,6 @@
 #include "Arduino.h"
 #include "comms/ble.h"
 #include "comms/fanet_radio.h"
-#include "dispatch/data_source_manager.h"
 #include "dispatch/message_bus.h"
 #include "hardware/Leaf_SPI.h"
 #include "hardware/aht20.h"
@@ -35,8 +34,7 @@ void setup() {
   FanetRadio::getInstance().setup(&bus);
 #endif
 
-  dataSourceManager.attach(&bus);
-  dataSourceManager.attach(&aht20);
+  AHT20::getInstance().attach(&bus);
 
   // Initialize anything left over on the Task Manager System
   Serial.println("Initializing Taskman Service");

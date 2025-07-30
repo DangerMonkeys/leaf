@@ -131,7 +131,7 @@ void power_init_peripherals() {
   Serial.println(" - Finished Baro");
   imu.init();
   Serial.println(" - Finished IMU");
-  aht20.init();
+  AHT20::getInstance().init();
   Serial.println(" - Finished Temp Humid");
 
   // then put devices to sleep if we're in POWER_OFF_USB state

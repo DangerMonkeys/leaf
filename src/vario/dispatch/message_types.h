@@ -10,7 +10,6 @@
 #include "etl/message.h"
 #include "etl/string.h"
 #include "fanet/packet.hpp"
-#include "hardware/ambient_source.h"
 
 #define FANET_MAX_FRAME_SIZE 244  // Maximum size of a FANET frame
 // NMEAString is 82 characters per standard + 2 for \r\n + 1 for null terminator
@@ -50,14 +49,11 @@ struct FanetPacket : public etl::message<FANET_PACKET> {
 
 /// @brief Update regarding ambient environment
 struct AmbientUpdate : public etl::message<AMBIENT_UPDATE> {
-  AmbientUpdateResult updates;
-
   // Temperature in degrees C
   float temperature;
 
   // Relative humidity in percent
   float relativeHumidity;
 
-  AmbientUpdate(float temp, float relRH, AmbientUpdateResult updates)
-      : temperature(temp), relativeHumidity(relRH), updates(updates) {}
+  AmbientUpdate(float temp, float relRH) : temperature(temp), relativeHumidity(relRH) {}
 };

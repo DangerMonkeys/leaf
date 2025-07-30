@@ -1,9 +1,8 @@
 #include "hardware/aht20.h"
 
 #include "diagnostics/fatal_error.h"
+#include "dispatch/message_types.h"
 #include "hardware/Leaf_I2C.h"
-
-AHT20 aht20;
 
 #define DEBUG_TEMPRH 0  // flag for outputting debugf messages on UBS serial port
 
@@ -76,7 +75,7 @@ const unsigned long MEASUREMENT_PERIOD_MS = 75;
 
 // don't call more often than every 1-2 seconds, or sensor will heat up slightly above
 // ambient
-AmbientUpdateResult AHT20::update() {
+void AHT20::update() {
   if (!currentlyMeasuring_) {
     // measurements must first be triggered, then >75ms later can be read
     triggerMeasurement();  // if we haven't yet processed a prior measurement, don't
@@ -85,22 +84,22 @@ AmbientUpdateResult AHT20::update() {
     currentlyMeasuring_ = true;
   } else if (millis() - measurementInitiated_ > MEASUREMENT_PERIOD_MS && !isBusy()) {
     readData();
-    ambientTemp_ = ((float)sensorData_.temperature / 1048576) * 200 - 50;
-    ambientTemp_ += TEMP_OFFSET;
-    ambientHumidity_ = ((float)sensorData_.humidity / 1048576) * 100;
+    float temperature = ((float)sensorData_.temperature / 1048576) * 200 - 50;
+    temperature += TEMP_OFFSET;
+    float rh = ((float)sensorData_.humidity / 1048576) * 100;
     currentlyMeasuring_ = false;
     if (DEBUG_TEMPRH) {
       Serial.print("Temp_RH - Temp: ");
-      Serial.print(ambientTemp_);
+      Serial.print(temperature);
       Serial.print("  Humidity: ");
-      Serial.println(ambientHumidity_);
+      Serial.println(rh);
     }
-    return AmbientUpdateResult::TemperatureReady | AmbientUpdateResult::RelativeHumidityReady;
+    if (bus_) {
+      bus_->receive(AmbientUpdate(temperature, rh));
+    }
   } else {
     if (DEBUG_TEMPRH) Serial.println("Temp_RH - missed values due to sensor busy");
   }
-
-  return AmbientUpdateResult::NoChange;
 }
 
 bool AHT20::softReset() {

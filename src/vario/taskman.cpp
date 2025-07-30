@@ -4,8 +4,8 @@
 #include "task.h"
 
 #include "comms/ble.h"
-#include "dispatch/data_source_manager.h"
 #include "hardware/Leaf_SPI.h"
+#include "hardware/aht20.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "instruments/imu.h"
@@ -433,7 +433,7 @@ void taskManager(void) {
     taskman_display = 0;
   }
   if (taskman_tempRH) {
-    dataSourceManager.pollAmbient();
+    AHT20::getInstance().update();
     taskman_tempRH = 0;
   }
   if (taskman_SDCard) {
