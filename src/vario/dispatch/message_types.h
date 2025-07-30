@@ -17,11 +17,10 @@
 using NMEAString = etl::string<85>;
 
 enum MessageType : etl::message_id_t {
-  GPS_UPDATE = 1,
-  GPS_MESSAGE = 2,
-  FANET_PACKET = 3,
-  AMBIENT_UPDATE = 4,
-  MESSAGE_LOGGING_BEGIN = 254,
+  GPS_UPDATE,
+  GPS_MESSAGE,
+  FANET_PACKET,
+  AMBIENT_UPDATE,
 };
 
 /// @brief A GPS update received
