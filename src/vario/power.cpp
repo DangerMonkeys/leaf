@@ -5,6 +5,7 @@
 #include "hardware/Leaf_SPI.h"
 #include "hardware/aht20.h"
 #include "hardware/configuration.h"
+#include "hardware/icm_20948.h"
 #include "hardware/io_pins.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
@@ -124,6 +125,7 @@ void power_init_peripherals() {
   Serial.println(" - Finished display");
   baro.init();
   Serial.println(" - Finished Baro");
+  ICM20948::getInstance().init();
   imu.init();
   Serial.println(" - Finished IMU");
   AHT20::getInstance().init();

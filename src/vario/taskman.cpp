@@ -6,6 +6,7 @@
 #include "comms/ble.h"
 #include "hardware/Leaf_SPI.h"
 #include "hardware/aht20.h"
+#include "hardware/icm_20948.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "instruments/imu.h"
@@ -413,7 +414,7 @@ void taskManager(void) {
     taskman_estimateWind = 0;
   }
   if (taskman_imu) {
-    imu.update();
+    ICM20948::getInstance().update();
     taskman_imu = 0;
   }
   if (taskman_gps) {

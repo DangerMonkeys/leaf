@@ -1,30 +1,34 @@
 #pragma once
 
 #include <Arduino.h>
-#include "hardware/motion_source.h"
+#include "etl/message_bus.h"
 #include "math/kalman.h"
+
+#include "dispatch/message_types.h"
 
 #define POSITION_MEASURE_STANDARD_DEVIATION 0.1f
 #define ACCELERATION_MEASURE_STANDARD_DEVIATION 0.3f
 
-class IMU {
+class IMU : public etl::message_router<IMU, MotionUpdate> {
  public:
-  IMU(IMotionSource* motionSource)
-      : motionSource_(motionSource),
-        kalmanvert_(pow(POSITION_MEASURE_STANDARD_DEVIATION, 2),
+  IMU()
+      : kalmanvert_(pow(POSITION_MEASURE_STANDARD_DEVIATION, 2),
                     pow(ACCELERATION_MEASURE_STANDARD_DEVIATION, 2)) {}
 
   void init();
   void wake();
-  void update();
+
+  void subscribe(etl::imessage_bus* bus) { bus->subscribe(*this); }
+
+  // etl::message_router<IMU, MotionUpdate>
+  void on_receive(const MotionUpdate& msg);
+  void on_receive_unknown(const etl::imessage& msg) {}
 
   float getAccel();
   float getVelocity();
 
  private:
-  bool processQuaternion();
-
-  IMotionSource* motionSource_;
+  void processQuaternion(const MotionUpdate& m);
 
   // Kalman filter object for vertical climb rate and position
   KalmanFilterPA kalmanvert_;

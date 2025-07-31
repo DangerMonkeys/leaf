@@ -5,8 +5,10 @@
 #include "hardware/Leaf_SPI.h"
 #include "hardware/aht20.h"
 #include "hardware/configuration.h"
+#include "hardware/icm_20948.h"
 #include "instruments/ambient.h"
 #include "instruments/gps.h"
+#include "instruments/imu.h"
 #include "power.h"
 #include "taskman.h"
 #include "ui/settings/settings.h"
@@ -33,6 +35,7 @@ void setup() {
 #endif
 
   AHT20::getInstance().attach(&bus);
+  ICM20948::getInstance().attach(&bus);
 
   // Initialize anything left over on the Task Manager System
   Serial.println("Initializing Taskman Service");
@@ -53,6 +56,9 @@ void setup() {
 
   // Connect ambient environment instrument to message bus sourcing ambient environment updates
   ambient.subscribe(&bus);
+
+  // Connect IMU instrument to message bus sourcing motion updates
+  imu.subscribe(&bus);
 
   // Subscribe modules that need bus updates.
   // This should not exceed the bus router limit.
