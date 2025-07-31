@@ -292,10 +292,10 @@ void display_page_charging() {
     u8g2.print("v");
     u8g2.print(FIRMWARE_VERSION);
 
-    // SD Card Present
+    // SD Card Mounted
     u8g2.setCursor(12, 191);
     u8g2.setFont(leaf_icons);
-    if (!SDcard_present()) {
+    if (!sdcard.isMounted()) {
       u8g2.print((char)61);
       u8g2.setFont(leaf_6x12);
       u8g2.print(" NO SD!");

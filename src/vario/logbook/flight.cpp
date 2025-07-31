@@ -9,7 +9,7 @@
 
 bool Flight::startFlight() {
   // Short circuit if the card is not mounted or reading properly
-  if (!SDcard_present()) return false;
+  if (!sdcard.isMounted()) return false;
   Serial.printf("Sectors: %d\n", SD_MMC.numSectors());
   File trackLogsDir = SD_MMC.open(this->desiredFilePath());
 

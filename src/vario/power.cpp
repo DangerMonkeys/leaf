@@ -115,7 +115,7 @@ void power_init_peripherals() {
   }
 
   // then initialize the rest of the devices
-  SDcard_init();
+  sdcard.init();
   Serial.println(" - Finished SDcard");
   gps.init();
   Serial.println(" - Finished GPS");
@@ -155,7 +155,7 @@ void power_sleep_peripherals() {
 
 void power_wake_peripherals() {
   Serial.println("wake_peripherals: ");
-  SDcard_mount();  // re-initialize SD card in case card state was changed while in charging/USB
+  sdcard.mount();  // re-initialize SD card in case card state was changed while in charging/USB
                    // mode
   Serial.println(" - waking GPS");
   gps.wake();
