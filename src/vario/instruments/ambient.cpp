@@ -1,7 +1,12 @@
 #include "instruments/ambient.h"
 
-#include "hardware/aht20.h"
-#include "hardware/ambient_source.h"
+#include "etl/message_bus.h"
 
-AHT20 aht20;
-IAmbientSource* ambient = &aht20;
+#include "dispatch/message_types.h"
+
+void Ambient::on_receive(const AmbientUpdate& msg) {
+  temperature_ = msg.temperature;
+  relativeHumidity_ = msg.relativeHumidity;
+}
+
+Ambient ambient;

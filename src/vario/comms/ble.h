@@ -2,7 +2,7 @@
 
 #include <NimBLEDevice.h>
 #include "TinyGPSPlus.h"
-#include "comms/message_types.h"
+#include "dispatch/message_types.h"
 #include "etl/message_router.h"
 
 // FreeRTOS Task for handling Bluetooth Operations

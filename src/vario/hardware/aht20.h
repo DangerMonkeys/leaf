@@ -2,7 +2,8 @@
 
 #include <Arduino.h>
 
-#include "hardware/ambient_source.h"
+#include "dispatch/message_source.h"
+#include "dispatch/pollable.h"
 
 struct SensorData {
   uint32_t humidity;
@@ -14,13 +15,21 @@ struct SensorStatus {
   bool humidity = true;
 };
 
-class AHT20 : public IAmbientSource {
+class AHT20 : public IPollable, IMessageSource {
  public:
-  // IAmbientSource
   void init();
-  AmbientUpdateResult update();
-  float getTemp() { return ambientTemp_; }
-  float getHumidity() { return ambientHumidity_; }
+
+  // IPollable
+  void update();
+
+  // IMessageSource
+  void attach(etl::imessage_bus* bus) { bus_ = bus; }
+
+  /// @brief Get the singleton AHT20 instance
+  static AHT20& getInstance() {
+    static AHT20 instance;
+    return instance;
+  }
 
  private:
   // Checks if the AHT20 is connected to the I2C bus
@@ -52,12 +61,6 @@ class AHT20 : public IAmbientSource {
 
   bool measurementStarted_ = false;
 
-  // calculated deg C
-  float ambientTemp_ = 0;
-
-  // calculated % relative humidity
-  float ambientHumidity_ = 0;
-
   uint8_t currentlyMeasuring_ = false;
 
   SensorData sensorData_;
@@ -65,4 +68,6 @@ class AHT20 : public IAmbientSource {
   SensorStatus sensorQueried_;
 
   unsigned long measurementInitiated_;
+
+  etl::imessage_bus* bus_ = nullptr;
 };

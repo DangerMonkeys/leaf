@@ -5,7 +5,7 @@
 
 #include "comms/ble.h"
 #include "hardware/Leaf_SPI.h"
-#include "instruments/ambient.h"
+#include "hardware/aht20.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "instruments/imu.h"
@@ -433,7 +433,7 @@ void taskManager(void) {
     taskman_display = 0;
   }
   if (taskman_tempRH) {
-    ambient->update();
+    AHT20::getInstance().update();
     taskman_tempRH = 0;
   }
   if (taskman_SDCard) {

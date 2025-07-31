@@ -6,7 +6,7 @@
 #include "comms/debug_webserver.h"
 #include "comms/fanet_neighbors.h"
 #include "comms/fanet_radio_types.h"
-#include "comms/message_types.h"
+#include "dispatch/message_types.h"
 #include "etl/delegate.h"
 #include "etl/message_bus.h"
 #include "etl/message_router.h"

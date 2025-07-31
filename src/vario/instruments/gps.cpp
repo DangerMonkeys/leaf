@@ -8,7 +8,7 @@
 #include <Arduino.h>
 #include <TinyGPSPlus.h>
 
-#include "comms/message_types.h"
+#include "dispatch/message_types.h"
 #include "hardware/gps.h"
 #include "hardware/lc86g.h"
 #include "instruments/baro.h"

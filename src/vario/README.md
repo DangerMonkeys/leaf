@@ -62,8 +62,12 @@ flowchart LR
         LC86G
     end
 
+    subgraph Mocks
+        MessagePlayback["Message log<br>playback"]
+    end
+
     subgraph Instruments
-        Ambient["<code>ambient</code> singleton"]
+        Ambient["Ambient<br>(<code>ambient</code> singleton)"]
         Barometer["Barometer<br>(<code>barometer</code> singleton)"]
         IMU["IMU<br>(<code>imu</code> singleton)"]
         subgraph LeafGPS["LeafGPS (<code>gps</code> singleton)"]
@@ -71,19 +75,37 @@ flowchart LR
         end
     end
 
+    subgraph Loggers
+        MessageLogger["Message logger"]
+    end
+
+    subgraph Message bus
+        AmbientUpdateMessage["<code>AmbientUpdate</code><br>message"]
+    end
+
+    subgraph UpdateLogic
+    end
+
     subgraph VarioLogic
     end
 
+    UpdateLogic -.->|IPollable| MessagePlayback
+    UpdateLogic -->|IPollable| AHT20hw
+
     MS5611dev <-->|Wire| MS5611 -->|IPressureSource| Barometer
-    AHT20dev <-->|Wire| AHT20hw -->|IAmbientSource| Ambient
+    AHT20dev <-->|Wire| AHT20hw --> AmbientUpdateMessage --> Ambient
     GPSdev <-->|Serial0| LC86G -->|ITextLineSource| LeafGPS
     LC86G ---|ISleepable| LeafGPS
+
+    MessagePlayback -.-> AmbientUpdateMessage
 
     ICM20948dev <-->|TwoWire| ICM_20948_I2C["ICM_20948_I2C<br>(Sparkfun lib)"]
     ICM20948 -->|IMotionSource| IMU
 
+    AmbientUpdateMessage -.-> MessageLogger
+
     Barometer --> VarioLogic
     IMU --> VarioLogic
-    Ambient -->|IAmbientSource| VarioLogic
+    Ambient --> VarioLogic
     LeafGPS <--> VarioLogic
 ```

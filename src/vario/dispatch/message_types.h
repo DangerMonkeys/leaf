@@ -15,10 +15,11 @@
 // NMEAString is 82 characters per standard + 2 for \r\n + 1 for null terminator
 using NMEAString = etl::string<85>;
 
-enum MessageType {
+enum MessageType : etl::message_id_t {
   GPS_UPDATE,
   GPS_MESSAGE,
   FANET_PACKET,
+  AMBIENT_UPDATE,
 };
 
 /// @brief A GPS update received
@@ -44,4 +45,15 @@ struct FanetPacket : public etl::message<FANET_PACKET> {
 
   FanetPacket(FANET::Packet<FANET_MAX_FRAME_SIZE> packet, float rssi, float snr)
       : packet(packet), rssi(rssi), snr(snr) {}
+};
+
+/// @brief Update regarding ambient environment
+struct AmbientUpdate : public etl::message<AMBIENT_UPDATE> {
+  // Temperature in degrees C
+  float temperature;
+
+  // Relative humidity in percent
+  float relativeHumidity;
+
+  AmbientUpdate(float temp, float relRH) : temperature(temp), relativeHumidity(relRH) {}
 };

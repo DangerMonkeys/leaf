@@ -4,7 +4,7 @@
 #include <etl/message_router.h>
 #include <etl/optional.h>
 #include <etl/set.h>
-#include "comms/message_types.h"
+#include "dispatch/message_types.h"
 #include "fanet/groundTracking.hpp"
 #include "fanet/neighbourTable.hpp"
 #include "fanet/protocol.hpp"
