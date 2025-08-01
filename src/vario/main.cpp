@@ -22,10 +22,6 @@ MessageBus<10> bus;
 void setup() {
   // Start USB Serial Debugging Port
   Serial.begin(115200);
-  uint8_t counter = 0;
-  while (!Serial && counter < 10) {
-    delay(5 * counter++);
-  }
   Serial.println("Starting Setup");
 
   // Initialize the shared bus
