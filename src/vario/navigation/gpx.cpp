@@ -14,6 +14,7 @@
 #include "instruments/gps.h"
 #include "navigation/gpx_parser.h"
 #include "storage/files.h"
+#include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 
 Waypoint waypoints[maxWaypoints];
@@ -107,7 +108,7 @@ bool Navigator::activatePoint(WaypointID pointIndex) {
   activeWaypointIndex = pointIndex;
   activePoint = waypoints[activeWaypointIndex];
 
-  speaker_playSound(fx_enter);
+  speaker.playSound(fx::enter);
 
   double newDistance =
       gps.distanceBetween(gps.location.lat(), gps.location.lng(), activePoint.lat, activePoint.lon);
@@ -169,7 +170,7 @@ bool Navigator::sequenceWaypoint() {
     successfulSequence = true;
 
     // TODO: play going to next point sound, or whatever
-    speaker_playSound(fx_enter);
+    speaker.playSound(fx::enter);
 
     activeRoutePointIndex++;
     Serial.print(" new active index:");
@@ -212,7 +213,7 @@ bool Navigator::sequenceWaypoint() {
   } else {  // otherwise, we made it to our destination!
     // TODO: celebrate!  (play reaching goal sound, or whatever)
     reachedGoal_ = true;
-    speaker_playSound(fx_confirm);
+    speaker.playSound(fx::confirm);
   }
   Serial.print(" succes is: ");
   Serial.println(successfulSequence);
@@ -229,7 +230,7 @@ void Navigator::cancelNav() {
   navigating = false;
   turnToActive = 0;
   turnToNext_ = 0;
-  speaker_playSound(fx_cancel);
+  speaker.playSound(fx::cancel);
 }
 
 bool Navigator::hasActivePoint() { return activeWaypointIndex || activeRoutePointIndex; }

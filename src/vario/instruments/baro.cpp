@@ -154,7 +154,7 @@ void Barometer::update() {
     climbRate = 0;
     climbRateAverage = 0;
     climbRateFiltered = 0;
-    speaker_updateVarioNote(climbRateFiltered);
+    speaker.updateVarioNote(climbRateFiltered);
     firstClimbInitialization_ = true;  //  reset so we don't get false climb on wake-up
     return;
   }
@@ -196,7 +196,7 @@ void Barometer::update() {
     filterClimb();
 
     // finally, update the speaker sound based on the new climbrate
-    speaker_updateVarioNote(climbRateFiltered);
+    speaker.updateVarioNote(climbRateFiltered);
 
     if (DEBUG_BARO) Serial.println("**BR** climbRate Filtered: " + String(climbRateFiltered));
 

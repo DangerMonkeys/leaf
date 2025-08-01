@@ -1,6 +1,7 @@
 #include "ui/display/pages/dialogs/page_warning.h"
 
 #include "power.h"
+#include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
 #include "ui/display/fonts.h"
@@ -101,13 +102,13 @@ void warningPage_button(Button button, ButtonState state, uint8_t count) {
         case Button::UP:
           if (state == RELEASED) {
             warningPage_cursorPosition = cursor_warningPage_decline;
-            speaker_playSound(fx_decrease);
+            speaker.playSound(fx::decrease);
           }
           break;
         case Button::DOWN:
           if (state == RELEASED) {
             warningPage_cursorPosition = cursor_warningPage_accept;
-            speaker_playSound(fx_increase);
+            speaker.playSound(fx::increase);
           }
           break;
       }
@@ -116,7 +117,7 @@ void warningPage_button(Button button, ButtonState state, uint8_t count) {
       if (state == RELEASED) {
         if (button == Button::UP || button == Button::DOWN) {
           warningPage_cursorPosition = cursor_warningPage_accept;
-          speaker_playSound(fx_increase);
+          speaker.playSound(fx::increase);
         } else if (button == Button::CENTER) {
           power_shutdown();
         }
@@ -126,10 +127,10 @@ void warningPage_button(Button button, ButtonState state, uint8_t count) {
       if (state == RELEASED) {
         if (button == Button::UP || button == Button::DOWN) {
           warningPage_cursorPosition = cursor_warningPage_decline;
-          speaker_playSound(fx_decrease);
+          speaker.playSound(fx::decrease);
         } else if (button == Button::CENTER) {
           displayDismissWarning();
-          speaker_playSound(fx_enter);
+          speaker.playSound(fx::enter);
         }
       }
       break;

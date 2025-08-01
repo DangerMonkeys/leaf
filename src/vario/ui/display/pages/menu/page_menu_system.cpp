@@ -5,6 +5,7 @@
 #include "comms/ble.h"
 #include "comms/fanet_radio.h"
 #include "power.h"
+#include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
 #include "ui/display/display_fields.h"
@@ -232,25 +233,25 @@ void SystemMenuPage::setting_change(Button dir, ButtonState state, uint8_t count
         reset_settings_timer = count * 8;
         if (count == 12) {
           settings.reset();
-          speaker_playSound(fx_confirm);
+          speaker.playSound(fx::confirm);
           reset_settings_timer = 0;
         }
       }
       break;
     case cursor_system_back:
       if (state == RELEASED) {
-        speaker_playSound(fx_cancel);
+        speaker.playSound(fx::cancel);
         settings.save();
         mainMenuPage.backToMainMenu();
       } else if (state == HELD) {
-        speaker_playSound(fx_exit);
+        speaker.playSound(fx::exit);
         settings.save();
         mainMenuPage.quitMenu();
       }
       break;
     case cursor_system_about:
       if (state == RELEASED) {
-        speaker_playSound(fx_confirm);
+        speaker.playSound(fx::confirm);
         about_page.show();
       }
       break;
