@@ -6,7 +6,7 @@
 
 #include "hardware/icm_20948.h"
 
-#include "hardware/motion_source.h"
+#include "dispatch/message_types.h"
 
 #define DEBUG_IMU 0
 
@@ -69,56 +69,30 @@ void ICM20948::init() {
   }
 }
 
-MotionUpdateResult ICM20948::update() {
+void ICM20948::update() {
   icm_20948_DMP_data_t data;
   IMU_.readDMPdataFromFIFO(&data);  // TODO: consider rate-limiting this operation
-
-  bool hasQuat = false;
-  bool hasAccel = false;
 
   if ((IMU_.status == ICM_20948_Stat_Ok) ||
       (IMU_.status == ICM_20948_Stat_FIFOMoreDataAvail))  // Was valid data available?
   {
+    MotionUpdate update(millis());
     if ((data.header & DMP_header_bitmap_Quat9) > 0) {
-      tQuaternion_ = millis();
-
       // Scale to +/- 1
-      qx_ = ((double)data.Quat9.Data.Q1) / 1073741824.0;  // Convert to double. Divide by 2^30
-      qy_ = ((double)data.Quat9.Data.Q2) / 1073741824.0;  // Convert to double. Divide by 2^30
-      qz_ = ((double)data.Quat9.Data.Q3) / 1073741824.0;  // Convert to double. Divide by 2^30
-      hasQuat = true;
+      update.qx = ((double)data.Quat9.Data.Q1) / 1073741824.0;  // Convert to double. Divide by 2^30
+      update.qy = ((double)data.Quat9.Data.Q2) / 1073741824.0;  // Convert to double. Divide by 2^30
+      update.qz = ((double)data.Quat9.Data.Q3) / 1073741824.0;  // Convert to double. Divide by 2^30
+      update.hasOrientation = true;
     }
     if ((data.header & DMP_header_bitmap_Accel) > 0) {
-      tAcceleration_ = millis();
-
       // Scale to Gs
-      ax_ = ((double)data.Raw_Accel.Data.X) / 8192.0;
-      ay_ = ((double)data.Raw_Accel.Data.Y) / 8192.0;
-      az_ = ((double)data.Raw_Accel.Data.Z) / 8192.0;
-      hasAccel = true;
+      update.ax = ((double)data.Raw_Accel.Data.X) / 8192.0;
+      update.ay = ((double)data.Raw_Accel.Data.Y) / 8192.0;
+      update.az = ((double)data.Raw_Accel.Data.Z) / 8192.0;
+      update.hasAcceleration = true;
+    }
+    if (update.hasOrientation || update.hasAcceleration && bus_) {
+      bus_->receive(update);
     }
   }
-  if (hasQuat && hasAccel) {
-    return MotionUpdateResult::AccelerationReady | MotionUpdateResult::QuaternionReady;
-  } else if (hasQuat) {
-    return MotionUpdateResult::QuaternionReady;
-  } else if (hasAccel) {
-    return MotionUpdateResult::AccelerationReady;
-  } else {
-    return MotionUpdateResult::NoChange;
-  }
-}
-
-void ICM20948::getOrientation(unsigned long* t, double* qx, double* qy, double* qz) {
-  *t = tQuaternion_;
-  *qx = qx_;
-  *qy = qy_;
-  *qz = qz_;
-}
-
-void ICM20948::getAcceleration(unsigned long* t, double* ax, double* ay, double* az) {
-  *t = tAcceleration_;
-  *ax = ax_;
-  *ay = ay_;
-  *az = az_;
 }

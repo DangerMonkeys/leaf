@@ -20,6 +20,7 @@ enum MessageType : etl::message_id_t {
   GPS_MESSAGE,
   FANET_PACKET,
   AMBIENT_UPDATE,
+  MOTION_UPDATE
 };
 
 /// @brief A GPS update received
@@ -56,4 +57,24 @@ struct AmbientUpdate : public etl::message<AMBIENT_UPDATE> {
   float relativeHumidity;
 
   AmbientUpdate(float temp, float relRH) : temperature(temp), relativeHumidity(relRH) {}
+};
+
+/// @brief Update regarding motion
+struct MotionUpdate : public etl::message<MOTION_UPDATE> {
+  // millis() at which this update was received
+  unsigned long t;
+
+  // Whether this update includes orientation information
+  bool hasOrientation = false;
+
+  // Orientation quaternion, containing orientation information if hasOrientation is true
+  double qx, qy, qz;
+
+  // Whether this update includes acceleration information
+  bool hasAcceleration = false;
+
+  // Acceleration vector, containing acceleration information if hasAcceleration is true
+  double ax, ay, az;
+
+  MotionUpdate(unsigned long t) : t(t) {};
 };

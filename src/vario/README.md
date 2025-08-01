@@ -54,16 +54,16 @@ flowchart LR
     end
 
     subgraph Hardware abstraction
-        AHT20hw["AHT20"]
+        AHT20hw["AHT20 (<code>IPollable</code>)"]
         MS5611["MS5611"]
-        subgraph ICM20948
+        subgraph ICM20948["ICM20948 (<code>IPollable</code>)"]
             ICM_20948_I2C
         end
         LC86G
     end
 
     subgraph Mocks
-        MessagePlayback["Message log<br>playback"]
+        MessagePlayback["Message log playback<br>(<code>IPollable</code>)"]
     end
 
     subgraph Instruments
@@ -79,30 +79,23 @@ flowchart LR
         MessageLogger["Message logger"]
     end
 
-    subgraph Message bus
+    subgraph MessageBus["Message bus"]
         AmbientUpdateMessage["<code>AmbientUpdate</code><br>message"]
-    end
-
-    subgraph UpdateLogic
+        MotionUpdateMessage["<code>MotionUpdate</code><br>message"]
     end
 
     subgraph VarioLogic
     end
-
-    UpdateLogic -.->|IPollable| MessagePlayback
-    UpdateLogic -->|IPollable| AHT20hw
 
     MS5611dev <-->|Wire| MS5611 -->|IPressureSource| Barometer
     AHT20dev <-->|Wire| AHT20hw --> AmbientUpdateMessage --> Ambient
     GPSdev <-->|Serial0| LC86G -->|ITextLineSource| LeafGPS
     LC86G ---|ISleepable| LeafGPS
 
-    MessagePlayback -.-> AmbientUpdateMessage
+    MessagePlayback -.-> MessageBus -.-> MessageLogger
 
     ICM20948dev <-->|TwoWire| ICM_20948_I2C["ICM_20948_I2C<br>(Sparkfun lib)"]
-    ICM20948 -->|IMotionSource| IMU
-
-    AmbientUpdateMessage -.-> MessageLogger
+    ICM20948 --> MotionUpdateMessage --> IMU
 
     Barometer --> VarioLogic
     IMU --> VarioLogic

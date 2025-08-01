@@ -1,16 +1,14 @@
 #include "instruments/imu.h"
 
+#include "dispatch/message_types.h"
 #include "hardware/Leaf_I2C.h"
-#include "hardware/icm_20948.h"
 #include "logging/log.h"
 #include "logging/telemetry.h"
 #include "math/kalman.h"
 #include "storage/sd_card.h"
 
-// Singleton sensor to use in IMU
-ICM20948 motionSensor;
 // Singleton IMU instance for device
-IMU imu(&motionSensor);
+IMU imu;
 
 // === What to display on the serial port
 // #define ALIGN_TEXT 3  // When set, puts values in equal-width columns with this many digits
@@ -55,19 +53,9 @@ inline void printFloat(double v) {
   Serial.print(v, digits);
 }
 
-bool IMU::processQuaternion() {
-  MotionUpdateResult result = motionSource_->update();
-  if (result == MotionUpdateResult::NoChange) {
-    return false;
-  }
-
-  unsigned long t;
-  double qx, qy, qz, ax, ay, az;
-
-  motionSource_->getOrientation(&t, &qx, &qy, &qz);
-
+void IMU::processQuaternion(const MotionUpdate& m) {
   // Scale to +/- 1
-  double magnitude = ((qx * qx) + (qy * qy) + (qz * qz));
+  double magnitude = ((m.qx * m.qx) + (m.qy * m.qy) + (m.qz * m.qz));
   if (magnitude >= 1.0) magnitude = 1.0;
   double qw = sqrt(1.0 - magnitude);
 
@@ -78,34 +66,33 @@ bool IMU::processQuaternion() {
   Serial.print(F("Qw:"));
   printFloat(qw);
   Serial.print(F(",Qx:"));
-  printFloat(qx);
+  printFloat(m.qx);
   Serial.print(F(",Qy:"));
-  printFloat(qy);
+  printFloat(m.qy);
   Serial.print(F(",Qz:"));
-  printFloat(qz);
+  printFloat(m.qz);
   needComma = true;
   needNewline = true;
 #endif
 
-  motionSource_->getAcceleration(&t, &ax, &ay, &az);
-  accelTot_ = sqrt(ax * ax + ay * ay + az * az);
+  accelTot_ = sqrt(m.ax * m.ax + m.ay * m.ay + m.az * m.az);
 
 #ifdef SHOW_DEVICE_ACCEL
   if (needComma) {
     Serial.print(',');
   }
   Serial.print(F("Ax:"));
-  printFloat(ax);
+  printFloat(m.ax);
   Serial.print(F(",Ay:"));
-  printFloat(ay);
+  printFloat(m.ay);
   Serial.print(F(",Az:"));
-  printFloat(az);
+  printFloat(m.az);
   needComma = true;
   needNewline = true;
 #endif
 
   double awx, awy, awz;
-  rotateByQuaternion(ax, ay, az, qw, qx, qy, qz, &awx, &awy, &awz);
+  rotateByQuaternion(m.ax, m.ay, m.az, qw, m.qx, m.qy, m.qz, &awx, &awy, &awz);
 
   accelVert_ = awz - zAvg_;
 
@@ -144,26 +131,22 @@ bool IMU::processQuaternion() {
   needNewline = true;
 #endif
 
-  double dt = ((double)t - tPrev_) * 0.001;
+  double dt = ((double)m.t - tPrev_) * 0.001;
   double f = exp(K_UPDATE * dt);
-  tPrev_ = t;
+  tPrev_ = m.t;
 
   zAvg_ = zAvg_ * f + awz * (1 - f);
 
   if (needNewline) {
     Serial.println();
   }
-
-  return true;
 }
 
 /*************************************************
- * Initialize motion source and Kalman Filter *
+ * Initialize motion processing with Kalman Filter *
  *************************************************/
 void IMU::init() {
   startupCycleCount_ = IMU_STARTUP_CYCLES;
-
-  motionSource_->init();
 
   // setup kalman filter
   kalmanvert_.init(millis() / 1000.0, baro.altF, 0.0);
@@ -171,32 +154,26 @@ void IMU::init() {
   tPrev_ = millis();
 }
 
-void IMU::update() {
-  /*
-  String accelName = "accel,";
-  String accelEntry = accelName + String(at);
-  Telemetry.writeText(accelEntry);
-  */
+void IMU::on_receive(const MotionUpdate& msg) {
+  processQuaternion(msg);
 
-  if (processQuaternion()) {
-    // if we're starting up, block accel values until it's stable
-    if (startupCycleCount_ > 0) {
-      startupCycleCount_--;
-      // submit accel = 0 to kalman filter and return
-      kalmanvert_.update(millis() / 1000.0, baro.altF, 0.0f);
-      return;
-    }
-
-    // update kalman filter
-    kalmanvert_.update(millis() / 1000.0, baro.altF, accelVert_ * 9.80665f);
-
-    String kalmanName = "kalman,";
-    String kalmanEntryString = kalmanName + String(kalmanvert_.getPosition(), 8) + ',' +
-                               String(kalmanvert_.getVelocity(), 8) + ',' +
-                               String(kalmanvert_.getAcceleration(), 8);
-
-    Telemetry.writeText(kalmanEntryString);
+  // if we're starting up, block accel values until it's stable
+  if (startupCycleCount_ > 0) {
+    startupCycleCount_--;
+    // submit accel = 0 to kalman filter and return
+    kalmanvert_.update(millis() / 1000.0, baro.altF, 0.0f);
+    return;
   }
+
+  // update kalman filter
+  kalmanvert_.update(millis() / 1000.0, baro.altF, accelVert_ * 9.80665f);
+
+  String kalmanName = "kalman,";
+  String kalmanEntryString = kalmanName + String(kalmanvert_.getPosition(), 8) + ',' +
+                             String(kalmanvert_.getVelocity(), 8) + ',' +
+                             String(kalmanvert_.getAcceleration(), 8);
+
+  Telemetry.writeText(kalmanEntryString);
 }
 
 void IMU::wake() { startupCycleCount_ = IMU_STARTUP_CYCLES; }
