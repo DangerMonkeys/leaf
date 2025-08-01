@@ -85,18 +85,13 @@ void power_init() {
   if (!POWER_CHARGE_I2_IOEX) pinMode(POWER_CHARGE_I2, OUTPUT);
   if (!POWER_CHARGE_GOOD_IOEX) pinMode(POWER_CHARGE_GOOD, INPUT_PULLUP);
   // POWER_GOOD is only available on v3.2.6+ on IOexpander, so not set here
-  Serial.println("set Charge i pins");
+
+  // set default current limit for charger input
+  power_setInputCurrent(i500mA);
 
 #ifdef LED_PIN
   pinMode(LED_PIN, OUTPUT);  // LED power status indicator
-  Serial.println("set LED pin");
 #endif
-
-  // power_setInputCurrent(i500mA);  // set default current
-
-  // populate battery % and charging state
-  // power_readBatteryState();
-  Serial.println("read battery state");
 }
 
 void power_init_peripherals() {
