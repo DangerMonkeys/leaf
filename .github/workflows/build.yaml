@@ -17,6 +17,8 @@ jobs:
           - leaf_3_2_2
           - leaf_3_2_3
           - leaf_3_2_5
+          - leaf_3_2_6
+          - leaf_3_2_7
         behavior-variant:
           - dev
           - release
