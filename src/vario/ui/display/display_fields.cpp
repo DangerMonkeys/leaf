@@ -1041,9 +1041,9 @@ void display_headerAndFooter(bool timerSelected, bool showTurnArrows) {
   // battery
   display_battIcon(0, 192, true);
 
-  // SD Card Present
+  // SD Card Mounted
   char SDicon = 60;
-  if (!SDcard_present()) SDicon = 61;
+  if (!sdcard.isMounted()) SDicon = 61;
   u8g2.setCursor(10, 192);
   u8g2.setFont(leaf_icons);
   u8g2.print((char)SDicon);

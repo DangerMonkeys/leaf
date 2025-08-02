@@ -162,7 +162,7 @@ void webserver_setup() {
 
   server.on("/mass_storage", HTTP_GET, []() {
     // Serial.end();
-    SDCard_SetupMassStorage();
+    sdcard.setupMassStorage();
     server.send(200, "text/html", "OK!");
   });
 

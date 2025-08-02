@@ -217,7 +217,7 @@ void main_CHARGE_loop() {
     display_update();  // update display based on battery charge state etc
 
     // Check SD Card State and remount if card was inserted
-    SDcard_update();
+    sdcard.update();
 
     // update battery level and charge state
     power_readBatteryState();
@@ -438,7 +438,7 @@ void taskManager(void) {
     taskman_tempRH = 0;
   }
   if (taskman_SDCard) {
-    SDcard_update();
+    sdcard.update();
     taskman_SDCard = 0;
   }
 #ifdef MEMORY_PROFILING
