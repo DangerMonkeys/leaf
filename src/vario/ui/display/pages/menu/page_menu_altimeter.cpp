@@ -4,6 +4,7 @@
 
 #include "instruments/baro.h"
 #include "instruments/gps.h"
+#include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
 #include "ui/display/display_fields.h"
@@ -149,9 +150,9 @@ void AltimeterMenuPage::setting_change(Button button, ButtonState state, uint8_t
     case cursor_altimeter_syncGPSNow:
       if (state == RELEASED) {
         if (baro.syncToGPSAlt()) {  // successful adjustment of altimeter setting to match GPS
-          speaker_playSound(fx_enter);
+          speaker.playSound(fx::enter);
         } else {  // unsuccessful
-          speaker_playSound(fx_cancel);
+          speaker.playSound(fx::cancel);
         }
       }
       break;
@@ -160,9 +161,9 @@ void AltimeterMenuPage::setting_change(Button button, ButtonState state, uint8_t
           state == HELD) {          // if center button held for 1 'action time'
         if (baro.syncToGPSAlt()) {  // successful adjustment of altimeter setting to match GPS
                                     // altitude
-          speaker_playSound(fx_enter);
+          speaker.playSound(fx::enter);
         } else {  // unsuccessful
-          speaker_playSound(fx_cancel);
+          speaker.playSound(fx::cancel);
         }
       } else if (button == Button::LEFT || button == Button::RIGHT) {
         if (state == PRESSED || state == HELD || state == HELD_LONG) {
@@ -170,17 +171,17 @@ void AltimeterMenuPage::setting_change(Button button, ButtonState state, uint8_t
             baro.adjustAltSetting(-1, count);
           else if (button == Button::RIGHT)
             baro.adjustAltSetting(1, count);
-          speaker_playSound(fx_neutral);
+          speaker.playSound(fx::neutral);
         }
       }
       break;
     case cursor_altimeter_back:
       if (state == RELEASED) {
-        speaker_playSound(fx_cancel);
+        speaker.playSound(fx::cancel);
         settings.save();
         mainMenuPage.backToMainMenu();
       } else if (state == HELD) {
-        speaker_playSound(fx_exit);
+        speaker.playSound(fx::exit);
         settings.save();
         mainMenuPage.quitMenu();
       }

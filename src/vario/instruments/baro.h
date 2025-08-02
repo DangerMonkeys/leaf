@@ -42,12 +42,12 @@ class Barometer {
   int32_t altAtLaunch;
   int32_t altAboveLaunch;
   int32_t altInitial;
-  // instantaneous climbrate calculated with every pressure altitude measurement
+  // instantaneous climbrate calculated with every pressure altitude measurement (m/s)
   float climbRate;
-  // filtered climb value to reduce noise
+  // filtered climb value to reduce noise (cm/s)
   int32_t climbRateFiltered;
   // long-term (several seconds) averaged climb rate for smoothing out glide ratio and other
-  // calculations
+  // calculations (cm/s)
   float climbRateAverage;
   // TODO: not yet used, but we may have a differently-averaged/filtered value for the grpahical
   // vario bar vs the text output for climbrate

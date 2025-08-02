@@ -7,6 +7,7 @@
 
 #include "instruments/baro.h"
 #include "instruments/gps.h"
+#include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
 
@@ -261,13 +262,13 @@ void Settings::totallyEraseNVS() {
 
 // Contrast Adjustment
 void Settings::adjustContrast(Button dir) {
-  uint16_t* sound = fx_neutral;
+  sound_t sound = fx::neutral;
   if (dir == Button::RIGHT)
-    sound = fx_increase;
+    sound = fx::increase;
   else if (dir == Button::LEFT)
-    sound = fx_decrease;
+    sound = fx::decrease;
   else if (dir == Button::CENTER) {  // reset to default
-    speaker_playSound(fx_confirm);
+    speaker.playSound(fx::confirm);
     disp_contrast = DEF_CONTRAST;
     display_setContrast(disp_contrast);
     return;
@@ -277,166 +278,166 @@ void Settings::adjustContrast(Button dir) {
 
   if (disp_contrast > CONTRAST_MAX) {
     disp_contrast = CONTRAST_MAX;
-    sound = fx_double;
+    sound = fx::doubleClick;
   } else if (disp_contrast < CONTRAST_MIN) {
     disp_contrast = CONTRAST_MIN;
-    sound = fx_double;
+    sound = fx::doubleClick;
   }
   display_setContrast(disp_contrast);
-  speaker_playSound(sound);
+  speaker.playSound(sound);
 }
 
 void Settings::adjustSinkAlarm(Button dir) {
-  uint16_t* sound = fx_neutral;
+  sound_t sound = fx::neutral;
 
   if (dir == Button::RIGHT) {
-    sound = fx_increase;
+    sound = fx::increase;
     if (++vario_sinkAlarm > 0) {
       vario_sinkAlarm =
           SINK_ALARM_MAX;  // if we were at 0 and now are at positive 1, go back to max sink rate
     } else if (vario_sinkAlarm > SINK_ALARM_MIN) {
-      sound = fx_cancel;
+      sound = fx::cancel;
       vario_sinkAlarm = 0;  // if we were at MIN (say, -2), jump to 0 (off)
     }
   } else {
-    sound = fx_decrease;
+    sound = fx::decrease;
     if (--vario_sinkAlarm < SINK_ALARM_MAX) {
-      sound = fx_cancel;
+      sound = fx::cancel;
       vario_sinkAlarm = 0;  // if we were at max, wrap back to 0
     } else if (vario_sinkAlarm > SINK_ALARM_MIN) {
       vario_sinkAlarm = SINK_ALARM_MIN;  // if we were at 0, and dropped to -1, but still greater
                                          // than the min (-2), jump to -2
     }
   }
-  speaker_playSound(sound);
+  speaker.playSound(sound);
   // TODO: really needed? speaker_updateClimbToneParameters();	// call to adjust sinkRateSpread
   // according to new  vario_sinkAlarm value
 }
 
 void Settings::adjustVarioAverage(Button dir) {
-  uint16_t* sound = fx_neutral;
+  sound_t sound = fx::neutral;
 
   if (dir == Button::RIGHT) {
-    sound = fx_increase;
+    sound = fx::increase;
     if (vario_sensitivity == ++vario_sensitivity) {
-      sound = fx_double;
+      sound = fx::doubleClick;
     }
   } else {
-    sound = fx_decrease;
+    sound = fx::decrease;
     if (vario_sensitivity == --vario_sensitivity) {
-      sound = fx_double;
+      sound = fx::doubleClick;
     }
   }
-  speaker_playSound(sound);
+  speaker.playSound(sound);
 }
 
 // climb average goes between 0 and CLIMB_AVERAGE_MAX
 void Settings::adjustClimbAverage(Button dir) {
-  uint16_t* sound = fx_neutral;
+  sound_t sound = fx::neutral;
 
   if (dir == Button::RIGHT) {
-    sound = fx_increase;
+    sound = fx::increase;
     if (++vario_climbAvg >= CLIMB_AVERAGE_MAX) {
       vario_climbAvg = CLIMB_AVERAGE_MAX;
-      sound = fx_double;
+      sound = fx::doubleClick;
     }
   } else {
-    sound = fx_decrease;
+    sound = fx::decrease;
     if (--vario_climbAvg <= 0) {
       vario_climbAvg = 0;
-      sound = fx_double;
+      sound = fx::doubleClick;
     }
   }
-  speaker_playSound(sound);
+  speaker.playSound(sound);
 }
 
 void Settings::adjustClimbStart(Button dir) {
-  uint16_t* sound = fx_neutral;
+  sound_t sound = fx::neutral;
   uint8_t inc_size = 5;
 
   if (dir == Button::RIGHT) {
-    sound = fx_increase;
+    sound = fx::increase;
     if ((vario_climbStart += inc_size) >= CLIMB_START_MAX) {
       vario_climbStart = CLIMB_START_MAX;
-      sound = fx_double;
+      sound = fx::doubleClick;
     }
   } else {
-    sound = fx_decrease;
+    sound = fx::decrease;
     if ((vario_climbStart -= inc_size) <= 0) {
       vario_climbStart = 0;
-      sound = fx_double;
+      sound = fx::doubleClick;
     }
   }
-  speaker_playSound(sound);
+  speaker.playSound(sound);
 }
 
 void Settings::adjustLiftyAir(Button dir) {
-  uint16_t* sound = fx_neutral;
+  sound_t sound = fx::neutral;
 
   // adjust the setting based on button direction
   if (dir == Button::RIGHT) {
     vario_liftyAir += 1;
-    sound = fx_increase;
+    sound = fx::increase;
   } else {
     vario_liftyAir += -1;
-    sound = fx_decrease;
+    sound = fx::decrease;
   }
 
   // now scrub the result to ensure we're within bounds
   // if we were at 0 and now are at positive 1, go back to max sink setting
   if (vario_liftyAir > 0) {
     vario_liftyAir = LIFTY_AIR_MAX;
-    sound = fx_increase;
+    sound = fx::increase;
   } else if (vario_liftyAir == 0) {  // setting to 0 turns the feature off
-    sound = fx_cancel;
+    sound = fx::cancel;
   } else if (vario_liftyAir < LIFTY_AIR_MAX) {  // wrap from max back to 0
-    sound = fx_cancel;
+    sound = fx::cancel;
     vario_liftyAir = 0;
   }
-  speaker_playSound(sound);
+  speaker.playSound(sound);
 }
 
 void Settings::adjustVolumeVario(Button dir) {
-  uint16_t* sound = fx_neutral;
+  sound_t sound = fx::neutral;
 
   if (dir == Button::RIGHT) {
-    sound = fx_increase;
+    sound = fx::increase;
     vario_volume++;
     if (vario_volume > VOLUME_MAX) {
       vario_volume = VOLUME_MAX;
-      sound = fx_double;
+      sound = fx::doubleClick;
     }
   } else {
-    sound = fx_decrease;
+    sound = fx::decrease;
     vario_volume--;
     if (vario_volume <= 0) {
       vario_volume = 0;
-      sound = fx_cancel;  // even if vario volume is set to 0, the system volume may still be turned
-                          // on, so we have a sound for turning vario off
+      sound = fx::cancel;  // even if vario volume is set to 0, the system volume may still be
+                           // turned on, so we have a sound for turning vario off
     }
   }
-  speaker_playSound(sound);
+  speaker.playSound(sound);
 }
 
 void Settings::adjustVolumeSystem(Button dir) {
-  uint16_t* sound = fx_neutral;
+  sound_t sound = fx::neutral;
   if (dir == Button::RIGHT) {
-    sound = fx_increase;
+    sound = fx::increase;
     system_volume++;
     if (system_volume > VOLUME_MAX) {
       system_volume = VOLUME_MAX;
-      sound = fx_double;
+      sound = fx::doubleClick;
     }
   } else {
-    sound = fx_decrease;
+    sound = fx::decrease;
     system_volume--;
     if (system_volume <= 0) {
       system_volume = 0;
-      sound = fx_cancel;  // we have this line of code for completeness, but the speaker will be
-                          // turned off for system sounds so you won't hear it
+      sound = fx::cancel;  // we have this line of code for completeness, but the speaker will be
+                           // turned off for system sounds so you won't hear it
     }
   }
-  speaker_playSound(sound);
+  speaker.playSound(sound);
 }
 
 uint8_t timeZoneIncrement =
@@ -446,27 +447,27 @@ void Settings::adjustTimeZone(Button dir) {
   if (dir == Button::CENTER) {  // switch from half-hour to full-hour increments
     if (timeZoneIncrement == 60) {
       timeZoneIncrement = 15;
-      speaker_playSound(fx_increase);
+      speaker.playSound(fx::increase);
     } else if (timeZoneIncrement == 15) {
       timeZoneIncrement = 60;
-      speaker_playSound(fx_decrease);
+      speaker.playSound(fx::decrease);
     }
   }
   if (dir == Button::RIGHT)
     if (system_timeZone >= TIME_ZONE_MAX) {
-      speaker_playSound(fx_double);
+      speaker.playSound(fx::doubleClick);
       system_timeZone = TIME_ZONE_MAX;
     } else {
       system_timeZone += timeZoneIncrement;
-      speaker_playSound(fx_neutral);
+      speaker.playSound(fx::neutral);
     }
   else if (dir == Button::LEFT) {
     if (system_timeZone <= TIME_ZONE_MIN) {
-      speaker_playSound(fx_double);
+      speaker.playSound(fx::doubleClick);
       system_timeZone = TIME_ZONE_MIN;
     } else {
       system_timeZone -= timeZoneIncrement;
-      speaker_playSound(fx_neutral);
+      speaker.playSound(fx::neutral);
     }
   }
 }
@@ -482,7 +483,7 @@ void Settings::adjustDisplayField_navPage_alt(Button dir) {
     else
       disp_navPageAltType--;
   }
-  speaker_playSound(fx_neutral);
+  speaker.playSound(fx::neutral);
 }
 
 // Change which altitude is shown on the Thermal page (Baro Alt or GPS Alt)
@@ -496,20 +497,20 @@ void Settings::adjustDisplayField_thermalPage_alt(Button dir) {
     else
       disp_thmPageAltType--;
   }
-  speaker_playSound(fx_neutral);
+  speaker.playSound(fx::neutral);
 }
 
 // swap unit settings and play a neutral sound
 void Settings::toggleBoolNeutral(bool* unitSetting) {
   *unitSetting = !*unitSetting;
-  speaker_playSound(fx_neutral);
+  speaker.playSound(fx::neutral);
 }
 
 // flip on/off certain settings and play on/off sounds
 void Settings::toggleBoolOnOff(bool* switchSetting) {
   *switchSetting = !*switchSetting;
   if (*switchSetting)
-    speaker_playSound(fx_enter);  // if we turned it on
+    speaker.playSound(fx::enter);  // if we turned it on
   else
-    speaker_playSound(fx_cancel);  // if we turned it off
+    speaker.playSound(fx::cancel);  // if we turned it off
 }

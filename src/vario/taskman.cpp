@@ -406,7 +406,7 @@ void taskManager(void) {
     taskman_buttons = 0;
   }
   if (taskman_speakerTimer) {
-    onSpeakerTimer();
+    speaker.update();
     taskman_speakerTimer = 0;
   }
   if (taskman_estimateWind) {

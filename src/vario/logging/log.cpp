@@ -12,6 +12,7 @@
 #include "logbook/igc.h"
 #include "logbook/kml.h"
 #include "storage/sd_card.h"
+#include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/pages/fanet/page_fanet_stats.h"
 #include "ui/settings/settings.h"
@@ -81,7 +82,7 @@ void log_update() {
       // TODO:  A second sound effect to show that recording has now started??
       if (flight->startFlight()) {
         // TODO:  Make this sound much cooler
-        speaker_playSound(fx_buttonhold);
+        speaker.playSound(fx::buttonhold);
 
         // if Altimeter GPS-SYNC is on, reset altimeter setting
         // so baro matches GPS when log is started
@@ -214,7 +215,7 @@ void flightTimer_start() {
   }
 
   // start timer
-  speaker_playSound(fx_enter);
+  speaker.playSound(fx::enter);
   switch (settings.log_format) {
     case LOG_FORMAT_KML:
       flight = &kmlFlight;
@@ -245,7 +246,7 @@ void flightTimer_stop() {
   logbook.alt_end = baro.alt;
   flight->end(logbook);
   // TODO:  A much cooler end flight sound.  Perhaps even an easter egg?
-  speaker_playSound(fx_confirm);
+  speaker.playSound(fx::confirm);
   flight = NULL;
   logbook = FlightStats();  // Reset the flight stats
 

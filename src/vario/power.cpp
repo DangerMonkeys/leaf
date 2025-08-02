@@ -13,6 +13,7 @@
 #include "logging/log.h"
 #include "power.h"
 #include "storage/sd_card.h"
+#include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
 #include "ui/display/display_fields.h"
@@ -100,14 +101,14 @@ void power_init_peripherals() {
   Serial.println(power.onState);
 
   // initialize speaker to play sound (so user knows they can let go of the power button)
-  speaker_init();
+  speaker.init();
   Serial.println(" - Finished Speaker");
 
   if (power.onState == POWER_ON) {
     power_latch_on();
-    speaker_playSound(fx_enter);
+    speaker.playSound(fx::enter);
     // loop until sound is done playing
-    while (onSpeakerTimer()) {
+    while (speaker.update()) {
       delay(10);
     }
   } else {
@@ -148,7 +149,7 @@ void power_sleep_peripherals() {
   Serial.println(" - Sleeping baro");
   baro.sleep();
   Serial.println(" - Sleeping speaker");
-  speaker_mute();
+  speaker.mute();
   Serial.println("Shut down speaker");
   Serial.println(" - DONE");
 }
@@ -163,7 +164,7 @@ void power_wake_peripherals() {
   baro.wake();
   imu.wake();
   Serial.println(" - waking speaker");
-  speaker_unMute();
+  speaker.unMute();
   Serial.println(" - DONE");
 }
 
@@ -182,10 +183,10 @@ void power_shutdown() {
   baro.sleep();  // stop getting climbrate updates so we don't hear vario beeps while shutting down
 
   // play shutdown sound
-  speaker_playSound(fx_exit);
+  speaker.playSound(fx::exit);
 
   // loop until sound is done playing
-  while (onSpeakerTimer()) {
+  while (speaker.update()) {
     delay(10);
   }
 
@@ -278,8 +279,8 @@ bool power_autoOff() {
       if (autoOffCounter >= AUTO_OFF_MIN_SEC) {
         autoShutOff = true;
       } else if (autoOffCounter >= AUTO_OFF_MIN_SEC - 5) {
-        speaker_playSound(
-            fx_decrease);  // start playing warning sounds 5 seconds before it auto-turns off
+        speaker.playSound(
+            fx::decrease);  // start playing warning sounds 5 seconds before it auto-turns off
       }
     } else {
       autoOffCounter = 0;

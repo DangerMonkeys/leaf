@@ -13,6 +13,7 @@
 
 #include "instruments/baro.h"
 #include "power.h"
+#include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
 #include "ui/display/menu_page.h"
@@ -103,7 +104,7 @@ Button buttons_update(void) {
           display_clear();
           display_showOnSplash();
           display_setPage(page_thermal);  // TODO: set initial page to the user's last used page
-          speaker_playSound(fx_enter);
+          speaker.playSound(fx::enter);
           buttons_lockAfterHold();  // lock buttons until user lets go of power button
           power_switchToOnState();
         }
@@ -115,7 +116,7 @@ Button buttons_update(void) {
           case HELD:
             power_adjustInputCurrent(1);
 
-            speaker_playSound(fx_enter);
+            speaker.playSound(fx::enter);
             break;
         }
         break;
@@ -125,7 +126,7 @@ Button buttons_update(void) {
             break;
           case HELD:
             power_adjustInputCurrent(-1);
-            speaker_playSound(fx_exit);
+            speaker.playSound(fx::exit);
             break;
         }
         break;
@@ -184,14 +185,14 @@ Button buttons_update(void) {
       case Button::RIGHT:
         if (button_state == RELEASED) {
           display_turnPage(page_next);
-          speaker_playSound(fx_increase);
+          speaker.playSound(fx::increase);
         }
         break;
       case Button::LEFT:
         /* Don't allow turning page further to the left
         if (button_state == RELEASED) {
           display_turnPage(page_prev);
-          speaker_playSound(fx_decrease);
+          speaker_playSound(fx::decrease);
         }
         */
         break;

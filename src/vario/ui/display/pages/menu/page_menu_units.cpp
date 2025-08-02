@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 
+#include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
 #include "ui/display/display_fields.h"
@@ -124,11 +125,11 @@ void UnitsMenuPage::setting_change(Button dir, ButtonState state, uint8_t count)
       break;
     case cursor_units_back:
       if (state == RELEASED) {
-        speaker_playSound(fx_cancel);
+        speaker.playSound(fx::cancel);
         settings.save();
         mainMenuPage.backToMainMenu();
       } else if (state == HELD) {
-        speaker_playSound(fx_exit);
+        speaker.playSound(fx::exit);
         settings.save();
         mainMenuPage.quitMenu();
       }

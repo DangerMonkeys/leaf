@@ -6,6 +6,7 @@
 
 #include "FS.h"
 
+#include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
 #include "ui/display/fonts.h"
@@ -99,8 +100,8 @@ void rebootOnKeyPress() {
     button_state = buttons_get_state();
   } while (button_state != ButtonState::HELD);
 
-  speaker_playSound(fx_off);
-  while (onSpeakerTimer()) {
+  speaker.playSound(fx::off);
+  while (speaker.update()) {
     delay(10);
   }
 
@@ -134,10 +135,10 @@ void fatalError(const char* msg, ...) {
   displayFatalError(buffer);
 
   // Play fatal error sound
-  speaker_unMute();
+  speaker.unMute();
   settings.system_volume = 3;
-  speaker_playSound(fx_fatalerror);
-  while (onSpeakerTimer()) {
+  speaker.playSound(fx::fatalerror);
+  while (speaker.update()) {
     delay(10);
   }
 
