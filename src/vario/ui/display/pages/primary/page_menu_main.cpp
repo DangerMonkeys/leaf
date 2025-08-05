@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 
+#include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
 #include "ui/display/display_fields.h"
@@ -116,7 +117,7 @@ void MainMenuPage::menu_item_action(Button button) {
     case cursor_back:
       if (button == Button::LEFT || button == Button::CENTER) {
         display_turnPage(page_back);
-        speaker_playSound(fx_exit);
+        speaker.playSound(fx::exit);
       } else if (button == Button::RIGHT) {
         // display_turnPage(page_next);  // maybe stop at menu, don't allow scrolling around back to
         // first page

@@ -9,6 +9,7 @@
 #include "navigation/nav_ids.h"
 #include "power.h"
 #include "storage/sd_card.h"
+#include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
 #include "ui/display/display_fields.h"
@@ -459,13 +460,13 @@ void navigatePage_button(Button button, ButtonState state, uint8_t count) {
         case Button::RIGHT:
           if (state == RELEASED) {
             display_turnPage(page_next);
-            speaker_playSound(fx_increase);
+            speaker.playSound(fx::increase);
           }
           break;
         case Button::LEFT:
           if (state == RELEASED) {
             display_turnPage(page_prev);
-            speaker_playSound(fx_decrease);
+            speaker.playSound(fx::decrease);
           }
           break;
         case Button::CENTER:
@@ -485,14 +486,14 @@ void navigatePage_button(Button button, ButtonState state, uint8_t count) {
           if (settings.disp_navPageAltType == altType_MSL &&
               (state == PRESSED || state == HELD || state == HELD_LONG)) {
             baro.adjustAltSetting(-1, count);
-            speaker_playSound(fx_neutral);
+            speaker.playSound(fx::neutral);
           }
           break;
         case Button::RIGHT:
           if (settings.disp_navPageAltType == altType_MSL &&
               (state == PRESSED || state == HELD || state == HELD_LONG)) {
             baro.adjustAltSetting(1, count);
-            speaker_playSound(fx_neutral);
+            speaker.playSound(fx::neutral);
           }
           break;
         case Button::CENTER:
@@ -501,10 +502,10 @@ void navigatePage_button(Button button, ButtonState state, uint8_t count) {
           else if (state == HELD && count == 1 && settings.disp_navPageAltType == altType_MSL) {
             if (baro.syncToGPSAlt()) {  // successful adjustment of altimeter setting to match
                                         // GPS altitude
-              speaker_playSound(fx_enter);
+              speaker.playSound(fx::enter);
               navigatePage_cursorPosition = cursor_navigatePage_none;
             } else {  // unsuccessful
-              speaker_playSound(fx_cancel);
+              speaker.playSound(fx::cancel);
             }
           }
           break;
