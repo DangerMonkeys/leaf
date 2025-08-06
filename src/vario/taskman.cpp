@@ -7,6 +7,7 @@
 #include "hardware/Leaf_SPI.h"
 #include "hardware/aht20.h"
 #include "hardware/icm_20948.h"
+#include "hardware/lc86g.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "instruments/imu.h"
@@ -294,7 +295,7 @@ void main_ON_loop() {
   // interrupt fired and set setTasks to true)
   bool gpsHasData = true;
   while (gpsHasData && !taskman_setTasks) {
-    gpsHasData = gps.readData();
+    gpsHasData = lc86g.readLine();
   }
 
   // if (gps_is_quiet) goToSleep();

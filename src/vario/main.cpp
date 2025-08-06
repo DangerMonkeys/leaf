@@ -6,6 +6,7 @@
 #include "hardware/aht20.h"
 #include "hardware/configuration.h"
 #include "hardware/icm_20948.h"
+#include "hardware/lc86g.h"
 #include "instruments/ambient.h"
 #include "instruments/gps.h"
 #include "instruments/imu.h"
@@ -36,6 +37,7 @@ void setup() {
 
   AHT20::getInstance().attach(&bus);
   ICM20948::getInstance().attach(&bus);
+  lc86g.attach(&bus);
 
   // Initialize anything left over on the Task Manager System
   Serial.println("Initializing Taskman Service");
@@ -49,10 +51,10 @@ void setup() {
     BLE::get().start();
   }
 
-  // GPS Bus Interaction.
-  // Still needs to be moved away from taskman, but we can
-  // hook it into the message bus.
-  gps.setBus(&bus);
+  // Connect GPS instrument to message bus sourcing lines of text that should be NMEA sentences
+  gps.subscribe(&bus);
+  // Publish parsed GPS messages to message bus
+  gps.attach(&bus);
 
   // Connect ambient environment instrument to message bus sourcing ambient environment updates
   ambient.subscribe(&bus);

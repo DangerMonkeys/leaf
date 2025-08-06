@@ -7,6 +7,7 @@
 #include "hardware/configuration.h"
 #include "hardware/icm_20948.h"
 #include "hardware/io_pins.h"
+#include "hardware/lc86g.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "instruments/imu.h"
@@ -118,6 +119,7 @@ void power_init_peripherals() {
   // then initialize the rest of the devices
   sdcard.init();
   Serial.println(" - Finished SDcard");
+  lc86g.init();
   gps.init();
   Serial.println(" - Finished GPS");
   wire_init();
@@ -145,7 +147,7 @@ void power_sleep_peripherals() {
   Serial.println(power.onState);
   // TODO: all the rest of the peripherals not needed while charging
   Serial.println(" - Sleeping GPS");
-  gps.sleep();
+  lc86g.sleep();
   Serial.println(" - Sleeping baro");
   baro.sleep();
   Serial.println(" - Sleeping speaker");
@@ -159,7 +161,7 @@ void power_wake_peripherals() {
   sdcard.mount();  // re-initialize SD card in case card state was changed while in charging/USB
                    // mode
   Serial.println(" - waking GPS");
-  gps.wake();
+  lc86g.wake();
   Serial.println(" - waking baro and IMU");
   baro.wake();
   imu.wake();
