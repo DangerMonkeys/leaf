@@ -172,7 +172,7 @@ void BLE::bleTask(void* args) {
       case WakeupMessage::Reason::GPS_GPGGA: {
         if (millis() - ble->lastGpsGgaMs < 500) {
           // If we received a GPGGA too soon, skip it
-          return;
+          continue;
         }
         auto& gpsGpggaBuffer = etl::get<NMEAString>(message.message);
         ble->pCharacteristic->setValue((const uint8_t*)gpsGpggaBuffer.c_str(),
@@ -183,7 +183,7 @@ void BLE::bleTask(void* args) {
       case WakeupMessage::Reason::GPS_GPRMC: {
         if (millis() - ble->lastGpsGprmcMs < 500) {
           // If we received a GPRMC too soon, skip it
-          return;
+          continue;
         }
         auto& gpsGprmcBuffer = etl::get<NMEAString>(message.message);
         ble->pCharacteristic->setValue((const uint8_t*)gpsGprmcBuffer.c_str(),
