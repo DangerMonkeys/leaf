@@ -1,7 +1,14 @@
 #include "hardware/lc86g.h"
 
+#include "etl/message_bus.h"
+
+#include "dispatch/message_types.h"
 #include "hardware/configuration.h"
 #include "hardware/io_pins.h"
+
+// Serial0 is the hardware communication port (UART0) for GPS Rx and Tx lines.  We use the
+// default ESP32S3 pins so no need to set them specifically
+LC86G lc86g(Serial0);
 
 // Pinout for Leaf V3.2.0+
 #define GPS_1PPS 46  // INPUT
@@ -10,13 +17,13 @@
 #define DEBUG_GPS 0
 
 // Setup GPS
-#define gpsPort \
-  Serial0  // This is the hardware communication port (UART0) for GPS Rx and Tx lines.  We use the
-           // default ESP32S3 pins so no need to set them specifically
 #define GPSBaud 115200
 // #define GPSSerialBufferSize 2048
 
 void LC86G::init() {
+  // Ensure we can write individual characters to the full capacity of newLine_
+  newLine_.resize(newLine_.capacity());
+
   // Set pins
   Serial.print("GPS set pins... ");
   if (!GPS_BACKUP_EN_IOEX) pinMode(GPS_BACKUP_EN, OUTPUT);
@@ -30,7 +37,7 @@ void LC86G::init() {
   bootReady_ = millis() + 300;
 
   Serial.print("GPS being serial port... ");
-  gpsPort.begin(GPSBaud);
+  gpsPort_.begin(GPSBaud);
   // gpsPort.setRxBufferSize(GPSSerialBufferSize);
 
   // Serial.println("Setting GPS messages");
@@ -74,38 +81,40 @@ void LC86G::init() {
   */
 }
 
-bool LC86G::update() {
-  while (gpsPort.available()) {
-    char c = gpsPort.read();
+bool LC86G::readLine() {
+  while (gpsPort_.available()) {
+    char c = gpsPort_.read();
     if (c == '\n' || c == '\r') {
       // End of line
       newLine_[newLineIndex_] = '\0';
       if (newLineIndex_ > 0) {  // Ignore blank lines and second character in CR+LF
-        for (size_t i = 0; i <= newLineIndex_; i++) {
-          currentLine_[i] = newLine_[i];
+        newLine_.resize(newLineIndex_);
+        if (bus_) {
+          bus_->receive(GpsMessage(newLine_));  // Send the complete NMEA sentence to the bus
         }
+        newLine_.resize(newLine_.capacity());
         newLineIndex_ = 0;
-        return true;  // Return immediately to process the new result even though there may still be
+        return true;  // Return immediately after the line even though there may still be
                       // data available from gpsPort
       }
     } else {
       // New character for line
       newLine_[newLineIndex_] = c;
       newLineIndex_++;
-      if (newLineIndex_ >= MAX_NMEA_SENTENCE_LENGTH) {
+      if (newLineIndex_ >= newLine_.capacity()) {
         // This could reasonably happen if there were electrical noise on the serial line
         // and we can recover by simply continuing to wait for a newline after clearing
         // out the current sentence.
-        newLine_[MAX_NMEA_SENTENCE_LENGTH] = 0;
-        Serial.printf("WARNING: LC86G sentence length exceeded with sentence: '%s'\n", newLine_);
+        Serial.printf(
+            "WARNING: LC86G sentence length %d was exceeded with sentence (index %d length %d): "
+            "'%s'\n",
+            newLine_.capacity(), newLineIndex_, newLine_.length(), newLine_.c_str());
         newLineIndex_ = 0;
       }
     }
   }
   return false;
 }
-
-const char* LC86G::getTextLine() { return currentLine_; }
 
 // Enable GPS Backup Power (to save satellite data and allow faster start-ups)
 // This consumes a minor amount of current from the battery
@@ -135,7 +144,7 @@ void LC86G::sleep() {
 
   delay(delayTime);  // don't send a command until the GPS is booted up and ready
 
-  gpsPort.write("$PAIR650,0*25\r\n");  // shutdown command
+  gpsPort_.write("$PAIR650,0*25\r\n");  // shutdown command
   // delay(100);
   Serial.println("************ !!!!!!!!!!! GPS SLEEPING COMMAND SENT !!!!!!!!!!! ************");
 }

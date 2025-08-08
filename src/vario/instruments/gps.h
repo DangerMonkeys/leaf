@@ -18,9 +18,9 @@
 #define gps_h
 
 #include <TinyGPSPlus.h>
+#include "dispatch/message_source.h"
 #include "dispatch/message_types.h"
 #include "etl/message_bus.h"
-#include "hardware/gps.h"
 #include "hardware/power_control.h"
 #include "time.h"
 #include "utils/lock_guard.h"
@@ -49,18 +49,24 @@ struct NMEASentenceContents {
 
 // enum time_formats {hhmmss, }
 
-class LeafGPS : public TinyGPSPlus, IPowerControl {
+class LeafGPS : public TinyGPSPlus,
+                IMessageSource,
+                public etl::message_router<LeafGPS, GpsMessage> {
  public:
-  LeafGPS(IGPS* gpsDevice);
+  LeafGPS();
 
-  // IPowerControl passes through to gpsDevice_'s implementation
-  void sleep() { gpsDevice_->sleep(); }
-  void wake() { gpsDevice_->wake(); }
+  void init();
 
-  void init(void);
+  void update();
 
-  bool readData(void);
-  void update(void);
+  // IMessageSource
+  void attach(etl::imessage_bus* bus) { bus_ = bus; }
+
+  // etl::message_router<LeafGPS, GpsMessage>
+  void on_receive(const GpsMessage& msg);
+  void on_receive_unknown(const etl::imessage& msg) {}
+
+  void subscribe(etl::imessage_bus* bus) { bus->subscribe(*this); }
 
   // Gets a calendar time from GPS in UTC time.
   // See references such as https://en.cppreference.com/w/c/chrono/strftime
@@ -73,8 +79,6 @@ class LeafGPS : public TinyGPSPlus, IPowerControl {
 
   float getGlideRatio(void) { return glideRatio; }
 
-  void setBus(etl::imessage_bus* bus) { bus_ = bus; }
-
   // Cached version of the sat info for showing on display (this will be re-written each time a
   // total set of new sat info is available)
   struct GPSSatInfo satsDisplay[MAX_SATELLITES];
@@ -82,8 +86,6 @@ class LeafGPS : public TinyGPSPlus, IPowerControl {
   GPSFixInfo fixInfo;
 
  private:
-  IGPS* gpsDevice_;
-
   void updateFixInfo();
   void updateSatList(void);
 

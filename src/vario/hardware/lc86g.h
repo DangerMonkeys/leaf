@@ -1,36 +1,36 @@
 #pragma once
 
-#include "hardware/gps.h"
-
 #include <Arduino.h>
+#include "etl/message_bus.h"
 
-// Maximum length of an NMEA sentence that can be read by this class
-const size_t MAX_NMEA_SENTENCE_LENGTH = 82 + 2;
+#include "dispatch/message_source.h"
+#include "dispatch/message_types.h"
+#include "hardware/power_control.h"
 
 // The LC86G class interacts with an LC86G GPS module to present the abstract IGPS hardware
 // abstraction interface.
-class LC86G : public IGPS {
+class LC86G : IPowerControl, IMessageSource {
  public:
   // serial: Serial interface via which the LC86G module is controlled and read.
-  LC86G(HardwareSerial* serial) : serial_(serial) { currentLine_[0] = 0; }
+  LC86G(HardwareSerial& serial) : gpsPort_(serial) {}
 
-  // IGPS:ITextLineSource
   void init();
-  bool update();
-  const char* getTextLine();
+  bool readLine();
 
-  // IGPS:IPowerControl
+  // IPowerControl
   void sleep();
   void wake();
 
+  // IMessageSource
+  void attach(etl::imessage_bus* bus) { bus_ = bus; }
+
  private:
-  HardwareSerial* serial_;
+  HardwareSerial& gpsPort_;
 
   uint32_t bootReady_ = 0;
 
   size_t newLineIndex_ = 0;
-  char newLine_[MAX_NMEA_SENTENCE_LENGTH + 1];
-  char currentLine_[MAX_NMEA_SENTENCE_LENGTH + 1];
+  NMEAString newLine_;
 
   void setBackupPower(bool backupPowerOn);
 
@@ -43,4 +43,8 @@ class LC86G : public IGPS {
   void enterBackupMode();
 
   void shutdown();
+
+  etl::imessage_bus* bus_ = nullptr;
 };
+
+extern LC86G lc86g;

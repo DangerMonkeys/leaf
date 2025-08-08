@@ -9,7 +9,6 @@
 #include <TinyGPSPlus.h>
 
 #include "dispatch/message_types.h"
-#include "hardware/gps.h"
 #include "hardware/lc86g.h"
 #include "instruments/baro.h"
 #include "logging/log.h"
@@ -20,8 +19,7 @@
 #include "ui/settings/settings.h"
 #include "wind_estimate/wind_estimate.h"
 
-LC86G lc86g(&Serial0);
-LeafGPS gps(&lc86g);
+LeafGPS gps;
 
 #define DEBUG_GPS 0
 
@@ -36,9 +34,7 @@ const char disableVTG[] PROGMEM = "$PAIR062,5,0";  // disable message
 // Lock for GPS
 SemaphoreHandle_t GpsLockGuard::mutex = NULL;
 
-LeafGPS::LeafGPS(IGPS* gpsDevice) {
-  gpsDevice_ = gpsDevice;
-
+LeafGPS::LeafGPS() {
   totalGPGSVMessages.begin(gps, "GPGSV", 1);
   messageNumber.begin(gps, "GPGSV", 2);
   satsInView.begin(gps, "GPGSV", 3);
@@ -55,8 +51,6 @@ void LeafGPS::init(void) {
 
   // init nav class (TODO: may not need this here, just for testing at startup for ease)
   navigator.init();
-
-  gpsDevice_->init();
 
   // Initialize all the uninitialized TinyGPSCustom objects
   Serial.print("GPS initialize sat messages... ");
@@ -131,46 +125,34 @@ void LeafGPS::update() {
 // every sentence or just every fix)
 void onNewSentence(NMEASentenceContents contents) { windEstimate_onNewSentence(contents); }
 
-bool LeafGPS::readData() {
-  GpsLockGuard mutex;  // Ensure we have a lock on write
-  bool result = false;
-  while (gpsDevice_->update()) {
-    result = true;
-    const char* textLine = gpsDevice_->getTextLine();
-    size_t i = 0;
-    while (textLine[i] != '\0') {
-      nmeaBuffer[i] = textLine[i];
-      char a = textLine[i];
-      i++;
-
-      // Serial.print(a);
+void LeafGPS::on_receive(const GpsMessage& msg) {
+  if (DEBUG_GPS) {
+    Serial.printf("LeafGPS::on_receive %d %s\n", msg.nmea.length(), msg.nmea.c_str());
+  }
+  bool newSentence;
+  {
+    GpsLockGuard mutex;  // Ensure we have a lock on write
+    for (size_t i = 0; i < msg.nmea.length(); i++) {
+      char a = msg.nmea[i];
       bool newSentence = gps.encode(a);
       if (newSentence) {
-        fatalError("newSentence encountered in the middle of the line of text '%s'", textLine);
+        fatalError("newSentence encountered in the middle of the line of text '%s'",
+                   msg.nmea.c_str());
       }
-
-      if (DEBUG_GPS) Serial.print(a);
     }
-
-    // Null-terminate NMEA buffer
-    nmeaBuffer[i++] = '\n';
-    nmeaBuffer[i] = '\0';
-
-    bus_->receive(GpsMessage(nmeaBuffer));  // Send the complete NMEA sentence to the bus
-
-    bool newSentence = gps.encode('\r');
-    if (newSentence) {
-      NMEASentenceContents contents = {.speed = gps.speed.isUpdated(),
-                                       .course = gps.course.isUpdated()};
-      // Push the update onto the bus!
-      if (bus_ && gps.location.isUpdated()) {
-        bus_->receive(GpsReading(gps));
-      }
-
-      onNewSentence(contents);
-    }
+    newSentence = gps.encode('\r');
   }
-  return result;
+  if (newSentence) {
+    NMEASentenceContents contents = {.speed = gps.speed.isUpdated(),
+                                     .course = gps.course.isUpdated()};
+    // Push the parsed reading onto the bus!
+    if (bus_ && gps.location.isUpdated()) {
+      bus_->receive(GpsReading(gps));
+    }
+    onNewSentence(contents);  // TODO: switch wind estimate to subscribe to bus instead
+  } else {
+    Serial.printf("NMEA sentence was not valid: %s\n", msg.nmea.c_str());
+  }
 }
 
 // copy data from each satellite message into the sats[] array.  Then, if we reach the complete set
