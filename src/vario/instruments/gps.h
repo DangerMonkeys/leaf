@@ -57,7 +57,6 @@ class LeafGPS : public TinyGPSPlus,
 
   void init();
 
-  bool readData();
   void update();
 
   // IMessageSource
