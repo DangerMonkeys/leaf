@@ -31,6 +31,13 @@
 
 Display display;
 
+#define LCD_BACKLIGHT 21  // can be used for backlight if desired (also broken out to header)
+#define LCD_RS 17         // 16 on old V3.2.0
+#define LCD_RESET 18      // 17 on old V3.2.0
+
+void GLCD_inst(byte data);
+void GLCD_data(byte data);
+
 #ifndef WO256X128  // if not old hardare, use the latest:
 U8G2_ST75256_JLX19296_F_4W_HW_SPI u8g2(U8G2_R1,
                                        /* cs=*/SPI_SS_LCD,
@@ -123,12 +130,7 @@ void Display::setPage(uint8_t targetPage) {
   if (displayPage_ != tempPage) displayPagePrior_ = tempPage;
 }
 
-uint8_t Display::getPage() { return displayPage_; }
-
 void Display::showOnSplash() { showSplashScreenFrames_ = 3; }
-
-bool Display::displayingWarning() { return showWarning_; }
-void Display::dismissWarning() { showWarning_ = false; }
 
 //*********************************************************************
 // MAIN DISPLAY UPDATE FUNCTION

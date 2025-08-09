@@ -10,14 +10,6 @@ extern U8G2_ST75256_JLX19296_F_4W_HW_SPI u8g2;  // Leaf 3.2.3+  Alice Green HW
 extern U8G2_ST75256_WO256X128_F_4W_HW_SPI u8g2;  // Leaf 3.2.2 June Hung
 #endif
 
-#define LCD_BACKLIGHT 21  // can be used for backlight if desired (also broken out to header)
-#define LCD_RS 17         // 16 on old V3.2.0
-#define LCD_RESET 18      // 17 on old V3.2.0
-
-void GLCD_inst(byte data);
-void GLCD_data(byte data);
-// void GLCD_init(void);
-
 // keep track of pages
 enum display_page_actions {
   page_home,  // go to home screen (probably thermal page)
@@ -46,14 +38,14 @@ class Display {
 
   void turnPage(uint8_t action);
   void setPage(uint8_t targetPage);
-  uint8_t getPage();
+  uint8_t getPage() { return displayPage_; }
 
   void showPageDebug();
   void showPageCharging();
   void showOnSplash();
 
-  bool displayingWarning();
-  void dismissWarning();
+  bool displayingWarning() { return showWarning_; }
+  void dismissWarning() { showWarning_ = false; }
 
  private:
   int8_t displayPage_ = page_thermal;
