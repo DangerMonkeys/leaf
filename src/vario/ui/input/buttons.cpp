@@ -179,13 +179,13 @@ Button buttons_update(void) {
             }
             break;
           case RELEASED:
-            display.turnPage(page_home);
+            display.turnPage(PageAction::Home);
             break;
         }
         break;
       case Button::RIGHT:
         if (button_state == RELEASED) {
-          display.turnPage(page_next);
+          display.turnPage(PageAction::Next);
           speaker.playSound(fx::increase);
         }
         break;

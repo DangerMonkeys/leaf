@@ -12,13 +12,12 @@ extern U8G2_ST75256_JLX19296_F_4W_HW_SPI u8g2;  // Leaf 3.2.3+  Alice Green HW
 extern U8G2_ST75256_WO256X128_F_4W_HW_SPI u8g2;  // Leaf 3.2.2 June Hung
 #endif
 
-// keep track of pages
-enum display_page_actions {
-  page_home,  // go to home screen (probably thermal page)
-  page_prev,  // go to page -1
-  page_next,  // go to page +1
-  page_back  // go to page we were just on before (i.e. step back in a menu tree, or cancel a dialog
-             // page back to previous page)
+enum class PageAction : uint8_t {
+  Home,  // go to home screen (probably thermal page)
+  Prev,  // go to page -1
+  Next,  // go to page +1
+  Back   // go to page we were just on before (i.e. step back in a menu tree, or cancel a dialog
+         // page back to previous page)
 };
 
 enum class MainPage : uint8_t {
@@ -38,7 +37,7 @@ class Display {
   void clear();
   void setContrast(uint8_t contrast);
 
-  void turnPage(uint8_t action);
+  void turnPage(PageAction action);
   void setPage(MainPage targetPage);
   MainPage getPage() { return displayPage_; }
 

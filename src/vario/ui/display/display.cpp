@@ -80,15 +80,15 @@ void Display::setContrast(uint8_t contrast) {
 #endif
 }
 
-void Display::turnPage(uint8_t action) {
+void Display::turnPage(PageAction action) {
   MainPage tempPage = displayPage_;
 
   switch (action) {
-    case page_home:
+    case PageAction::Home:
       displayPage_ = MainPage::Thermal;
       break;
 
-    case page_next:
+    case PageAction::Next:
       displayPage_++;
 
       // skip past any pages not enabled for display
@@ -98,7 +98,7 @@ void Display::turnPage(uint8_t action) {
 
       break;
 
-    case page_prev:
+    case PageAction::Prev:
       displayPage_--;
 
       // skip past any pages not enabled for display
@@ -110,7 +110,7 @@ void Display::turnPage(uint8_t action) {
 
       break;
 
-    case page_back:
+    case PageAction::Back:
       displayPage_ = displayPagePrior_;
   }
 
