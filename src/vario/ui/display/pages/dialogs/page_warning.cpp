@@ -129,7 +129,7 @@ void warningPage_button(Button button, ButtonState state, uint8_t count) {
           warningPage_cursorPosition = cursor_warningPage_decline;
           speaker.playSound(fx::decrease);
         } else if (button == Button::CENTER) {
-          displayDismissWarning();
+          display.dismissWarning();
           speaker.playSound(fx::enter);
         }
       }

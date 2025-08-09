@@ -270,7 +270,7 @@ void Settings::adjustContrast(Button dir) {
   else if (dir == Button::CENTER) {  // reset to default
     speaker.playSound(fx::confirm);
     disp_contrast = DEF_CONTRAST;
-    display_setContrast(disp_contrast);
+    display.setContrast(disp_contrast);
     return;
   }
 
@@ -283,7 +283,7 @@ void Settings::adjustContrast(Button dir) {
     disp_contrast = CONTRAST_MIN;
     sound = fx::doubleClick;
   }
-  display_setContrast(disp_contrast);
+  display.setContrast(disp_contrast);
   speaker.playSound(sound);
 }
 
