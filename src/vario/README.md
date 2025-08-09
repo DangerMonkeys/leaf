@@ -80,6 +80,7 @@ flowchart LR
     end
 
     subgraph MessageBus["Message bus"]
+        PressureUpdateMessage["<code>PressureUpdate</code><br>message"]
         AmbientUpdateMessage["<code>AmbientUpdate</code><br>message"]
         MotionUpdateMessage["<code>MotionUpdate</code><br>message"]
     end
@@ -87,7 +88,7 @@ flowchart LR
     subgraph VarioLogic
     end
 
-    MS5611dev <-->|Wire| MS5611 -->|IPressureSource| Barometer
+    MS5611dev <-->|Wire| MS5611 --> PressureUpdateMessage --> Barometer
     AHT20dev <-->|Wire| AHT20hw --> AmbientUpdateMessage --> Ambient
     GPSdev <-->|Serial0| LC86G -->|ITextLineSource| LeafGPS
     LC86G ---|ISleepable| LeafGPS

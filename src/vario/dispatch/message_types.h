@@ -20,7 +20,8 @@ enum MessageType : etl::message_id_t {
   GPS_MESSAGE,
   FANET_PACKET,
   AMBIENT_UPDATE,
-  MOTION_UPDATE
+  MOTION_UPDATE,
+  PRESSURE_UPDATE,
 };
 
 /// @brief A GPS update received
@@ -77,4 +78,15 @@ struct MotionUpdate : public etl::message<MOTION_UPDATE> {
   double ax, ay, az;
 
   MotionUpdate(unsigned long t) : t(t) {};
+};
+
+/// @brief Update regarding pressure
+struct PressureUpdate : public etl::message<PRESSURE_UPDATE> {
+  // millis() at which this update was received
+  unsigned long t;
+
+  // Pressure in 100ths of mBar
+  int32_t pressure;
+
+  PressureUpdate(unsigned long t, int32_t pressure) : t(t), pressure(pressure) {};
 };

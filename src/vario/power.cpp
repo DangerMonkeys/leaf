@@ -7,6 +7,7 @@
 #include "hardware/configuration.h"
 #include "hardware/icm_20948.h"
 #include "hardware/io_pins.h"
+#include "hardware/ms5611.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "instruments/imu.h"
@@ -124,7 +125,14 @@ void power_init_peripherals() {
   Serial.println(" - Finished I2C Wire");
   display_init();
   Serial.println(" - Finished display");
+  ms5611.init();
   baro.init();
+  Serial.println("     Waiting for first pressure reading...");
+  // TODO: don't block here; instead, have clients recognize and handle a not-fully-initialized baro
+  // appropriately
+  while (!baro.hasFirstReading()) {
+    ms5611.update();
+  }
   Serial.println(" - Finished Baro");
   ICM20948::getInstance().init();
   imu.init();
@@ -162,6 +170,12 @@ void power_wake_peripherals() {
   gps.wake();
   Serial.println(" - waking baro and IMU");
   baro.wake();
+  Serial.println("     waiting for first pressure reading...");
+  // TODO: don't block here; instead, have clients recognize and handle a not-fully-initialized baro
+  // appropriately
+  while (!baro.hasFirstReading()) {
+    ms5611.update();
+  }
   imu.wake();
   Serial.println(" - waking speaker");
   speaker.unMute();

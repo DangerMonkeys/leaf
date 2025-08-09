@@ -4,12 +4,20 @@
 #include <Wire.h>
 #include <stdint.h>
 
+#include "diagnostics/fatal_error.h"
+#include "dispatch/message_types.h"
+
+MS5611 ms5611;
+
 // Sensor I2C address
 #define ADDR_BARO 0x77
 
 // Sensor commands
 #define CMD_CONVERT_PRESSURE 0b01001000
 #define CMD_CONVERT_TEMP 0b01011000
+
+// Minimum time between starting consecutive measurements
+const unsigned long MEASUREMENT_PERIOD_MICROS = 9000;
 
 // vvv I2C Communication Functions vvv
 
@@ -74,37 +82,32 @@ void MS5611::init() {
   C_TEMPSENS_ = ms5611_readCalibration(6);
 
   state_ = MS5611State::Idle;
+
+  // Start first measurement
+  update();
 }
 
 void MS5611::enableTemp(bool enable) { tempEnabled_ = enable; }
 
-PressureUpdateResult MS5611::update() {
-  // First check if ADC is not busy (i.e., it's been at least 9ms since we sent a "convert ADC"
-  // command)
-  unsigned long microsNow = micros();
-  if (microsNow - baroADCStartTime_ <= 9000) {
-    // Sensor is busy
-    Serial.print("BARO BUSY!  State ");
-    Serial.print((int)state_);
-    Serial.print("  Micros since last: ");
-    Serial.println(microsNow - baroADCStartTime_);
-    return PressureUpdateResult::NoChange;
-  }
+void MS5611::update() {
+  unsigned long microsNow;
 
   switch (state_) {
     case MS5611State::Idle:  // SEND CONVERT PRESSURE COMMAND
-      if (startMeasurement_) {
-        // Prep baro sensor ADC to read raw pressure value
-        // (then come back for step 2 in ~10ms)
-        ms5611_sendCommand(CMD_CONVERT_PRESSURE);
-        baroADCStartTime_ = micros();
-        state_ = MS5611State::MeasuringPressure;
-        startMeasurement_ = false;
-      }
-      return PressureUpdateResult::NoChange;
+      // Prep baro sensor ADC to read raw pressure value
+      // (then come back for step 2 later)
+      ms5611_sendCommand(CMD_CONVERT_PRESSURE);
+      baroADCStartTime_ = micros();
+      state_ = MS5611State::MeasuringPressure;
+      return;
 
     case MS5611State::MeasuringPressure:  // READ PRESSURE THEN MAYBE SEND CONVERT TEMP COMMAND
-      D1_P_ = ms5611_readADC();           // Read raw pressure value
+      microsNow = micros();
+      if (microsNow - baroADCStartTime_ <= MEASUREMENT_PERIOD_MICROS) {
+        return;  // Sensor is busy measuring pressure
+      }
+
+      D1_P_ = ms5611_readADC();  // Read raw pressure value
       // prep and read
       if (D1_P_ == 0)
         D1_P_ = D1_Plast_;  // use the last value if we get an invalid read
@@ -113,35 +116,44 @@ PressureUpdateResult MS5611::update() {
       // baroTimeStampTemp = micros();
 
       if (tempEnabled_) {
-        baroADCStartTime_ = micros();
         ms5611_sendCommand(CMD_CONVERT_TEMP);  // Prep baro sensor ADC to read raw temperature value
                                                // (then come back for step 3 in ~10ms)
+        baroADCStartTime_ = micros();
         state_ = MS5611State::MeasuringTemperature;
-        return PressureUpdateResult::NoChange;
+        return;
       } else {
+        if (bus_) {
+          bus_->receive(getUpdate());
+        }
         state_ = MS5611State::Idle;
-        return PressureUpdateResult::PressureReady;
+        return;
       }
 
     case MS5611State::MeasuringTemperature:  // READ TEMP
-      D2_T_ = ms5611_readADC();              // read digital temp data
+      microsNow = micros();
+      if (microsNow - baroADCStartTime_ <= MEASUREMENT_PERIOD_MICROS) {
+        return;  // Sensor is busy measuring temperature
+      }
+
+      D2_T_ = ms5611_readADC();  // read digital temp data
       // read
       if (D2_T_ == 0)
         D2_T_ = D2_Tlast_;  // use the last value if we get a misread
       else
         D2_Tlast_ = D2_T_;  // otherwise save this value for next time if needed
+      if (bus_) {
+        bus_->receive(getUpdate());
+      }
       state_ = MS5611State::Idle;
-      return PressureUpdateResult::PressureReady;
+      return;
   }
 
-  // TODO: Write generic fatal error handler that prints error message to screen before stopping
-  Serial.printf("Fatal error: MS5611 was in unknown state %d\n", (int)state_);
-  while (true);
+  fatalError("MS5611 was in unknown/unhandled state %d\n", (int)state_);
 }
 
-void MS5611::startMeasurement() { startMeasurement_ = true; }
+PressureUpdate MS5611::getUpdate() {
+  unsigned long t = millis();
 
-int32_t MS5611::getPressure() {
   // TODO: replace division by powers of 2 with >> and multiplication by powers of 2 with <<
 
   // calculate temperature (in 100ths of degrees C, from -4000 to 8500)
@@ -177,7 +189,7 @@ int32_t MS5611::getPressure() {
   // calculate temperature compensated pressure (in 100ths of mbars)
   int32_t pressure = ((uint64_t)D1_P_ * SENS1_ / (int64_t)pow(2, 21) - OFF1_) / pow(2, 15);
 
-  return pressure;
+  return PressureUpdate(t, pressure);
 }
 
 void MS5611::printCoeffs() {

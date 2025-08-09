@@ -6,7 +6,9 @@
 #include "hardware/aht20.h"
 #include "hardware/configuration.h"
 #include "hardware/icm_20948.h"
+#include "hardware/ms5611.h"
 #include "instruments/ambient.h"
+#include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "instruments/imu.h"
 #include "power.h"
@@ -36,6 +38,9 @@ void setup() {
 
   AHT20::getInstance().attach(&bus);
   ICM20948::getInstance().attach(&bus);
+  ms5611.attach(&bus);
+
+  baro.subscribe(&bus);
 
   // Initialize anything left over on the Task Manager System
   Serial.println("Initializing Taskman Service");
