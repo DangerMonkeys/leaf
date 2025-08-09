@@ -4,8 +4,7 @@
  * Battery Charging Chip BQ24073
  *
  */
-#ifndef power_h
-#define power_h
+#pragma once
 
 #include <Arduino.h>
 
@@ -44,7 +43,6 @@ const char* nameOf(PowerState state) {
 // battery charging AND system load) Note: with this higher input limit, the battery charging will
 // then be limited by the ISET pin resistor value, to approximately 810mA charging current)
 enum class PowerInputLevel : uint8_t { Standby = 0, i100mA = 1, i500mA = 2, Max = 3 };
-
 DEFINE_MINMAX_BOUNDS(PowerInputLevel, PowerInputLevel::Standby, PowerInputLevel::Max);
 
 const char* nameOf(PowerInputLevel level) {
@@ -76,6 +74,7 @@ class Power {
   void increaseInputCurrent();
   void decreaseInputCurrent();
 
+  // Read battery voltage
   void readBatteryState();
 
   int8_t batteryPercent;  // battery percentage remaining from 0-100%
@@ -107,7 +106,11 @@ class Power {
   bool autoOff();
 
   void setInputCurrent(PowerInputLevel current);
+
+  // check if we should turn off from  inactivity
+  uint8_t autoOffCounter_ = 0;
+  int32_t autoOffAltitude_ = 0;
+
+  uint16_t batteryPercentLast_;
 };
 extern Power power;
-
-#endif
