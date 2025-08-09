@@ -8,7 +8,7 @@
 
 #include <Arduino.h>
 
-#include "utils/bounded_enum.h"
+#include "utils/clamped_enum.h"
 
 /// @details ... note: we enter PowerState::OffUSB either from Off and then plugging in to USB power
 /// (no power button detected during boot) or from On with USB plugged in, and user turning off
@@ -43,7 +43,7 @@ const char* nameOf(PowerState state) {
 // battery charging AND system load) Note: with this higher input limit, the battery charging will
 // then be limited by the ISET pin resistor value, to approximately 810mA charging current)
 enum class PowerInputLevel : uint8_t { Standby = 0, i100mA = 1, i500mA = 2, Max = 3 };
-DEFINE_MINMAX_BOUNDS(PowerInputLevel, PowerInputLevel::Standby, PowerInputLevel::Max);
+DEFINE_CLAMPED_BOUNDS(PowerInputLevel, PowerInputLevel::Standby, PowerInputLevel::Max);
 
 const char* nameOf(PowerInputLevel level) {
   switch (level) {
