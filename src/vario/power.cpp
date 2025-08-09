@@ -66,13 +66,13 @@ void Power::bootUp() {
     settings.boot_toOnState = false;
     settings.save();
 
-    onState = PowerState::On;
+    info_.onState = PowerState::On;
 
     display_showOnSplash();  // show the splash screen if user turned us on
 
   } else {
     // if not center button, then USB power turned us on, go into charge mode
-    onState = PowerState::OffUSB;
+    info_.onState = PowerState::OffUSB;
   }
 
   // init peripherals (even if we're not turning on and just going into
@@ -83,7 +83,7 @@ void Power::bootUp() {
 
 void Power::initPowerSystem() {
   Serial.print("power_init: ");
-  Serial.println(nameOf(onState));
+  Serial.println(nameOf(info_.onState));
 
   // Set output / input pins to control battery charge and power supply
   pinMode(BATT_SENSE, INPUT);
@@ -103,13 +103,13 @@ void Power::initPowerSystem() {
 
 void Power::initPeripherals() {
   Serial.print("init_peripherals: ");
-  Serial.println(nameOf(onState));
+  Serial.println(nameOf(info_.onState));
 
   // initialize speaker to play sound (so user knows they can let go of the power button)
   speaker.init();
   Serial.println(" - Finished Speaker");
 
-  if (onState == PowerState::On) {
+  if (info_.onState == PowerState::On) {
     latchOn();
     speaker.playSound(fx::enter);
     // loop until sound is done playing
@@ -139,7 +139,7 @@ void Power::initPeripherals() {
 
   // then put devices to sleep if we're in PowerState::OffUSB
   // (plugged into USB but vario not actively turned on)
-  if (onState == PowerState::OffUSB) {
+  if (info_.onState == PowerState::OffUSB) {
     sleepPeripherals();
   }
   Serial.println(" - DONE");
@@ -147,7 +147,7 @@ void Power::initPeripherals() {
 
 void Power::sleepPeripherals() {
   Serial.print("sleep_peripherals: ");
-  Serial.println(nameOf(onState));
+  Serial.println(nameOf(info_.onState));
   // TODO: all the rest of the peripherals not needed while charging
   Serial.println(" - Sleeping GPS");
   gps.sleep();
@@ -176,7 +176,7 @@ void Power::wakePeripherals() {
 void Power::switchToOnState() {
   latchOn();
   Serial.println("switch_to_on_state");
-  onState = PowerState::On;
+  info_.onState = PowerState::On;
   wakePeripherals();
 }
 
@@ -216,7 +216,7 @@ void Power::shutdown() {
 
   // go to PowerState::OffUSB, in case device was shut down while
   // plugged into USB, then we can show necessary charging updates etc
-  onState = PowerState::OffUSB;
+  info_.onState = PowerState::OffUSB;
 }
 
 void Power::latchOn() { digitalWrite(POWER_LATCH, HIGH); }
@@ -227,8 +227,8 @@ void Power::update() {
   // first check for USB power and turn on LED if so
   // (only for v3.2.6+ with controllable LED and PowerGood input)
 #ifdef LED_PIN
-  USBinput = !ioexDigitalRead(POWER_GOOD_IOEX, POWER_GOOD);
-  if (USBinput) {
+  info_.USBinput = !ioexDigitalRead(POWER_GOOD_IOEX, POWER_GOOD);
+  if (info_.USBinput) {
     digitalWrite(LED_PIN, LOW);  // turn on LED if charging
   } else {
     digitalWrite(LED_PIN, HIGH);  // turn off LED if not charging
@@ -241,7 +241,7 @@ void Power::update() {
   // check if we should shut down due to low battery..
   // TODO: should we only do this if we're NOT charging?
   //       Probably not, since shutting down allows more current for charging
-  if (batteryMV <= BATT_SHUTDOWN_MV) {
+  if (info_.batteryMV <= BATT_SHUTDOWN_MV) {
 #ifndef DISABLE_BATTERY_SHUTDOWN
     shutdown();
 #endif
@@ -299,48 +299,50 @@ bool Power::autoOff() {
 
 void Power::readBatteryState() {
   // Update Charge State
-  charging = !ioexDigitalRead(POWER_CHARGE_GOOD_IOEX, POWER_CHARGE_GOOD);
+  info_.charging = !ioexDigitalRead(POWER_CHARGE_GOOD_IOEX, POWER_CHARGE_GOOD);
   // logic low is charging, logic high is not
 
   // Battery Voltage Level & Percent Remaining
-  batteryADC = analogRead(BATT_SENSE);
+  info_.batteryADC = analogRead(BATT_SENSE);
   // uint16_t batt_level_mv = adc_level * 5554 / 4095;  //    (3300mV ADC range / .5942 V_divider) =
   // 5554.  Then divide by 4095 steps of resolution
 
   // adjusted formula to account for ESP32 ADC non-linearity; based on calibration
   // measurements.  This is most accurate between 2.4V and 4.7V
-  batteryMV = batteryADC * 5300 / 4095 + 260;
+  info_.batteryMV = info_.batteryADC * 5300 / 4095 + 260;
 
-  if (batteryMV < BATT_EMPTY_MV) {
-    batteryPercent = 0;
-  } else if (batteryMV > BATT_FULL_MV) {
-    batteryPercent = 100;
+  if (info_.batteryMV < BATT_EMPTY_MV) {
+    info_.batteryPercent = 0;
+  } else if (info_.batteryMV > BATT_FULL_MV) {
+    info_.batteryPercent = 100;
   } else {
-    batteryPercent = 100 * (batteryMV - BATT_EMPTY_MV) / (BATT_FULL_MV - BATT_EMPTY_MV);
+    info_.batteryPercent = 100 * (info_.batteryMV - BATT_EMPTY_MV) / (BATT_FULL_MV - BATT_EMPTY_MV);
   }
 
   // use a 2% hysteresis on battery% to avoid rapid fluctuations as ADC values change
-  if (charging) {  // don't let % go down (within 2%) when charging
-    if (batteryPercent < batteryPercentLast_ && batteryPercent >= batteryPercentLast_ - 2) {
-      batteryPercent = batteryPercentLast_;
+  if (info_.charging) {  // don't let % go down (within 2%) when charging
+    if (info_.batteryPercent < batteryPercentLast_ &&
+        info_.batteryPercent >= batteryPercentLast_ - 2) {
+      info_.batteryPercent = batteryPercentLast_;
     }
   } else {  // don't let % go up (within 2%) when discharging
-    if (batteryPercent > batteryPercentLast_ && batteryPercent <= batteryPercentLast_ + 2) {
-      batteryPercent = batteryPercentLast_;
+    if (info_.batteryPercent > batteryPercentLast_ &&
+        info_.batteryPercent <= batteryPercentLast_ + 2) {
+      info_.batteryPercent = batteryPercentLast_;
     }
   }
-  batteryPercentLast_ = batteryPercent;
+  batteryPercentLast_ = info_.batteryPercent;
 }
 
-void Power::increaseInputCurrent() { setInputCurrent(++inputCurrent); }
+void Power::increaseInputCurrent() { setInputCurrent(++info_.inputCurrent); }
 
-void Power::decreaseInputCurrent() { setInputCurrent(--inputCurrent); }
+void Power::decreaseInputCurrent() { setInputCurrent(--info_.inputCurrent); }
 
 // Note: the Battery Charger Chip has controllable input current (which is then used for both batt
 // charging AND system load).  The battery will be charged with whatever current is remaining after
 // system load.
 void Power::setInputCurrent(PowerInputLevel current) {
-  inputCurrent = current;
+  info_.inputCurrent = current;
   switch (current) {
     case PowerInputLevel::i100mA:
       ioexDigitalWrite(POWER_CHARGE_I1_IOEX, POWER_CHARGE_I1, LOW);

@@ -259,31 +259,32 @@ void display_update_temp_vars() {
 **   CHARGING PAGE    ************************************************************
 *********************************************************************************/
 void display_page_charging() {
+  const auto& info = power.info();
   u8g2.firstPage();
   do {
     // Battery Percent
     uint8_t fontOffset = 3;
-    if (power.batteryPercent == 100) fontOffset = 0;
+    if (info.batteryPercent == 100) fontOffset = 0;
     u8g2.setFont(leaf_6x12);
     u8g2.setCursor(36 + fontOffset, 12);
-    u8g2.print(power.batteryPercent);
+    u8g2.print(info.batteryPercent);
     u8g2.print('%');
 
     display_batt_charging_fullscreen(48, 17);
 
     u8g2.setFont(leaf_6x12);
     u8g2.setCursor(5, 157);
-    if (power.inputCurrent == PowerInputLevel::i100mA)
+    if (info.inputCurrent == PowerInputLevel::i100mA)
       u8g2.print("100mA");
-    else if (power.inputCurrent == PowerInputLevel::i500mA)
+    else if (info.inputCurrent == PowerInputLevel::i500mA)
       u8g2.print("500mA");
-    else if (power.inputCurrent == PowerInputLevel::Max)
+    else if (info.inputCurrent == PowerInputLevel::Max)
       u8g2.print("810mA");
-    else if (power.inputCurrent == PowerInputLevel::Standby)
+    else if (info.inputCurrent == PowerInputLevel::Standby)
       u8g2.print(" OFF");
 
     u8g2.print(" ");
-    u8g2.print(power.batteryMV);
+    u8g2.print(info.batteryMV);
     u8g2.print("mV");
 
     // Display the current version
@@ -342,13 +343,14 @@ void display_page_debug() {
 
     uint8_t x = 56;
     uint8_t y = 12;
+    const auto& info = power.info();
     u8g2.setFont(leaf_6x12);
     u8g2.setCursor(x, y);
-    u8g2.print(power.batteryPercent);
+    u8g2.print(info.batteryPercent);
     u8g2.print('%');
     u8g2.setCursor(x, y += 6);
     u8g2.setFont(leaf_5h);
-    u8g2.print((float)power.batteryMV / 1000, 3);
+    u8g2.print((float)info.batteryMV / 1000, 3);
     u8g2.print("v");
 
     // Altimeter Setting

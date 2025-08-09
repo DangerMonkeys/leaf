@@ -61,6 +61,18 @@ const char* nameOf(PowerInputLevel level) {
 
 class Power {
  public:
+  struct Info {
+    int8_t batteryPercent;  // battery percentage remaining from 0-100%
+    uint16_t batteryMV;     // milivolts battery voltage (typically between 3200 and 4200)
+    uint16_t batteryADC;    // ADC raw output from ESP32 input pin
+    bool charging = false;  // if system is being charged or not
+    bool USBinput = false;  // if system is plugged into USB power or not
+    PowerState onState = PowerState::Off;
+    PowerInputLevel inputCurrent = PowerInputLevel::i500mA;
+  };
+
+  const Info& info() { return info_; }
+
   void bootUp();
 
   void shutdown();
@@ -76,14 +88,6 @@ class Power {
 
   // Read battery voltage
   void readBatteryState();
-
-  int8_t batteryPercent;  // battery percentage remaining from 0-100%
-  uint16_t batteryMV;     // milivolts battery voltage (typically between 3200 and 4200)
-  uint16_t batteryADC;    // ADC raw output from ESP32 input pin
-  bool charging = false;  // if system is being charged or not
-  bool USBinput = false;  // if system is plugged into USB power or not
-  PowerState onState = PowerState::Off;
-  PowerInputLevel inputCurrent = PowerInputLevel::i500mA;
 
  private:
   // Initialize the power system itself (battery charger and 3.3V regulator etc)
@@ -106,6 +110,8 @@ class Power {
   bool autoOff();
 
   void setInputCurrent(PowerInputLevel current);
+
+  Info info_;
 
   // check if we should turn off from  inactivity
   uint8_t autoOffCounter_ = 0;

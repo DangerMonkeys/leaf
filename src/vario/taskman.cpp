@@ -189,9 +189,10 @@ void loop() {
   webserver_loop();
 #endif
 
-  if (power.onState == PowerState::On)
+  const auto& info = power.info();
+  if (info.onState == PowerState::On)
     main_ON_loop();
-  else if (power.onState == PowerState::OffUSB)
+  else if (info.onState == PowerState::OffUSB)
     main_CHARGE_loop();
   else
     Serial.print("FAILED MAIN LOOP HANDLER");
