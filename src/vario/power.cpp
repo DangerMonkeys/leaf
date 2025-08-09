@@ -20,21 +20,9 @@
 #include "ui/input/buttons.h"
 #include "ui/settings/settings.h"
 
-POWER power;  // struct for battery-state and on-state variables
+Power power;  // struct for battery-state and on-state variables
 
-void blinkLED(uint8_t count) {
-#ifdef LED_PIN
-  pinMode(LED_PIN, OUTPUT);  // LED power status indicator
-  for (int i = 0; i < count; i++) {
-    delay(500);
-    digitalWrite(LED_PIN, LOW);  // turn on LED
-    delay(500);
-    digitalWrite(LED_PIN, HIGH);  // turn off LED
-  }
-#endif
-}
-
-void power_bootUp() {
+void Power::bootUp() {
   // Init Peripheral Busses
   wire_init();
   Serial.println(" - Finished I2C Wire");
@@ -47,7 +35,7 @@ void power_bootUp() {
   Serial.println(" - Finished IO Expander");
 #endif
 
-  power_init();  // configure power supply
+  initPowerSystem();  // configure power supply
 
   // grab user settings (or populate defaults if no saved settings)
   settings.init();
@@ -72,11 +60,10 @@ void power_bootUp() {
   // init peripherals (even if we're not turning on and just going into
   // charge mode, we still need to initialize devices so we can put some
   // of them back to sleep)
-  power_init_peripherals();
+  initPeripherals();
 }
 
-// Initialize the power system itself (battery charger and 3.3V regulator etc)
-void power_init() {
+void Power::initPowerSystem() {
   Serial.print("power_init: ");
   Serial.println(power.onState);
 
@@ -89,14 +76,14 @@ void power_init() {
   // POWER_GOOD is only available on v3.2.6+ on IOexpander, so not set here
 
   // set default current limit for charger input
-  power_setInputCurrent(i500mA);
+  power.setInputCurrent(i500mA);
 
 #ifdef LED_PIN
   pinMode(LED_PIN, OUTPUT);  // LED power status indicator
 #endif
 }
 
-void power_init_peripherals() {
+void Power::initPeripherals() {
   Serial.print("init_peripherals: ");
   Serial.println(power.onState);
 
@@ -105,14 +92,14 @@ void power_init_peripherals() {
   Serial.println(" - Finished Speaker");
 
   if (power.onState == POWER_ON) {
-    power_latch_on();
+    latchOn();
     speaker.playSound(fx::enter);
     // loop until sound is done playing
     while (speaker.update()) {
       delay(10);
     }
   } else {
-    power_latch_off();  // turn off 3.3V regulator (if we're plugged into USB, we'll stay on)
+    latchOff();  // turn off 3.3V regulator (if we're plugged into USB, we'll stay on)
   }
 
   // then initialize the rest of the devices
@@ -135,12 +122,12 @@ void power_init_peripherals() {
   // then put devices to sleep if we're in POWER_OFF_USB state
   // (plugged into USB but vario not actively turned on)
   if (power.onState == POWER_OFF_USB) {
-    power_sleep_peripherals();
+    sleepPeripherals();
   }
   Serial.println(" - DONE");
 }
 
-void power_sleep_peripherals() {
+void Power::sleepPeripherals() {
   Serial.print("sleep_peripherals: ");
   Serial.println(power.onState);
   // TODO: all the rest of the peripherals not needed while charging
@@ -154,7 +141,7 @@ void power_sleep_peripherals() {
   Serial.println(" - DONE");
 }
 
-void power_wake_peripherals() {
+void Power::wakePeripherals() {
   Serial.println("wake_peripherals: ");
   sdcard.mount();  // re-initialize SD card in case card state was changed while in charging/USB
                    // mode
@@ -168,14 +155,14 @@ void power_wake_peripherals() {
   Serial.println(" - DONE");
 }
 
-void power_switchToOnState() {
-  power_latch_on();
+void Power::switchToOnState() {
+  latchOn();
   Serial.println("switch_to_on_state");
   power.onState = POWER_ON;
-  power_wake_peripherals();
+  wakePeripherals();
 }
 
-void power_shutdown() {
+void Power::shutdown() {
   Serial.println("power_shutdown");
 
   display_clear();
@@ -203,10 +190,10 @@ void power_shutdown() {
   delay(2500);
 
   // finally, turn off devices
-  power_sleep_peripherals();
+  sleepPeripherals();
   display_clear();
   delay(100);
-  power_latch_off();  // turn off 3.3V regulator (if we're plugged into USB, we'll stay on)
+  latchOff();  // turn off 3.3V regulator (if we're plugged into USB, we'll stay on)
   delay(100);
 
   // go to POWER_OFF_USB state, in case device was shut down while
@@ -214,17 +201,11 @@ void power_shutdown() {
   power.onState = POWER_OFF_USB;
 }
 
-// latch or unlatch 3.3V regulator.
-// 3.3V regulator may be 'on' due to USB power or user holding power switch down.  But if Vario is
-// in "ON" state, we need to latch so user can let go of power button and/or unplug USB and have it
-// stay on
-void power_latch_on() { digitalWrite(POWER_LATCH, HIGH); }
+void Power::latchOn() { digitalWrite(POWER_LATCH, HIGH); }
 
-// If no USB power is available, systems will immediately lose
-// power and shut down (after user lets go of center button)
-void power_latch_off() { digitalWrite(POWER_LATCH, LOW); }
+void Power::latchOff() { digitalWrite(POWER_LATCH, LOW); }
 
-void power_update() {
+void Power::update() {
   // first check for USB power and turn on LED if so
   // (only for v3.2.6+ with controllable LED and PowerGood input)
 #ifdef LED_PIN
@@ -237,22 +218,22 @@ void power_update() {
 #endif
 
   // update battery state
-  power_readBatteryState();
+  readBatteryState();
 
   // check if we should shut down due to low battery..
   // TODO: should we only do this if we're NOT charging?
   //       Probably not, since shutting down allows more current for charging
   if (power.batteryMV <= BATT_SHUTDOWN_MV) {
 #ifndef DISABLE_BATTERY_SHUTDOWN
-    power_shutdown();
+    shutdown();
 #endif
 
     // ..or if we should shutdown due to inactivity
     // (only check if user setting is on and flight timer is stopped)
   } else if (settings.system_autoOff && !flightTimer_isRunning()) {
     // check if inactivity conditions are met
-    if (power_autoOff()) {
-      power_shutdown();  // shutdown!
+    if (autoOff()) {
+      shutdown();  // shutdown!
     }
   }
 }
@@ -261,9 +242,9 @@ void power_update() {
 uint8_t autoOffCounter = 0;
 int32_t autoOffAltitude = 0;
 
-void power_resetAutoOffCounter() { autoOffCounter = 0; }
+void Power::resetAutoOffCounter() { autoOffCounter = 0; }
 
-bool power_autoOff() {
+bool Power::autoOff() {
   bool autoShutOff = false;  // start with assuming we're not going to turn off
 
   // we will auto-stop only if BOTH the GPS speed AND the Altitude change trigger the stopping
@@ -304,7 +285,7 @@ bool power_autoOff() {
 
 // Read battery voltage
 uint16_t batteryPercentLast;
-void power_readBatteryState() {
+void Power::readBatteryState() {
   // Update Charge State
   power.charging = !ioexDigitalRead(POWER_CHARGE_GOOD_IOEX, POWER_CHARGE_GOOD);
   // logic low is charging, logic high is not
@@ -341,19 +322,19 @@ void power_readBatteryState() {
   batteryPercentLast = power.batteryPercent;
 }
 
-void power_adjustInputCurrent(int8_t offset) {
+void Power::adjustInputCurrent(int8_t offset) {
   int8_t newVal = power.inputCurrent + offset;
   if (newVal > iMax)
     newVal = iMax;
   else if (newVal < iStandby)
     newVal = iStandby;
-  power_setInputCurrent((power_input_levels)newVal);
+  power.setInputCurrent((power_input_levels)newVal);
 }
 
 // Note: the Battery Charger Chip has controllable input current (which is then used for both batt
 // charging AND system load).  The battery will be charged with whatever current is remaining after
 // system load.
-void power_setInputCurrent(power_input_levels current) {
+void Power::setInputCurrent(power_input_levels current) {
   power.inputCurrent = current;
   switch (current) {
     case i100mA:

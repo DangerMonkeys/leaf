@@ -120,7 +120,7 @@ void taskmanSetup() {
   vTaskPrioritySet(NULL, 10);
 
   // turn on and handle all device initialization
-  power_bootUp();
+  power.bootUp();
 
   // Start Main System Timer for Interrupt Events (this will tell Main Loop to set tasks every
   // interrupt cycle)
@@ -220,7 +220,7 @@ void main_CHARGE_loop() {
     sdcard.update();
 
     // update battery level and charge state
-    power_readBatteryState();
+    power.readBatteryState();
 
     // Check Buttons
     auto buttonPushed =
@@ -422,7 +422,7 @@ void taskManager(void) {
     taskman_gps = 0;
   }
   if (taskman_power) {
-    power_update();
+    power.update();
     taskman_power = 0;
   }
   if (taskman_log) {

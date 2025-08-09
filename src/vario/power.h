@@ -44,7 +44,22 @@ enum power_on_states {
 // then be limited by the ISET pin resistor value, to approximately 810mA charging current)
 enum power_input_levels { iStandby, i100mA, i500mA, iMax };
 
-struct POWER {
+class Power {
+ public:
+  void bootUp();
+
+  void shutdown();
+
+  void switchToOnState();
+
+  void update();
+
+  void resetAutoOffCounter();
+
+  void adjustInputCurrent(int8_t offset);
+
+  void readBatteryState();
+
   int8_t batteryPercent;  // battery percentage remaining from 0-100%
   uint16_t batteryMV;     // milivolts battery voltage (typically between 3200 and 4200)
   uint16_t batteryADC;    // ADC raw output from ESP32 input pin
@@ -52,27 +67,29 @@ struct POWER {
   bool USBinput = false;  // if system is plugged into USB power or not
   power_on_states onState = POWER_OFF;
   power_input_levels inputCurrent = i500mA;
+
+ private:
+  // Initialize the power system itself (battery charger and 3.3V regulator etc)
+  void initPowerSystem();
+
+  /// @brief latch or unlatch 3.3V regulator.
+  /// @details 3.3V regulator may be 'on' due to USB power or user holding power switch down.  But
+  /// if Vario is in "ON" state, we need to latch so user can let go of power button and/or unplug
+  /// USB and have it stay on
+  void latchOn();
+
+  // If no USB power is available, systems will immediately lose power and shut down (after user
+  // lets go of center button)
+  void latchOff();
+
+  void initPeripherals();
+  void sleepPeripherals();
+  void wakePeripherals();
+
+  bool autoOff();
+
+  void setInputCurrent(power_input_levels current);
 };
-extern POWER power;
-
-void blinkLED(uint8_t count);
-void power_bootUp(void);
-void power_init(void);
-void power_latch_on(void);
-void power_latch_off(void);
-void power_shutdown(void);
-
-void power_init_peripherals(void);
-void power_sleep_peripherals(void);
-void power_wake_peripherals(void);
-void power_switchToOnState(void);
-
-void power_update(void);
-bool power_autoOff();
-void power_resetAutoOffCounter(void);
-
-void power_adjustInputCurrent(int8_t offset);
-void power_setInputCurrent(power_input_levels current);
-void power_readBatteryState(void);
+extern Power power;
 
 #endif
