@@ -54,6 +54,17 @@ class Display {
 
   bool displayingWarning();
   void dismissWarning();
+
+ private:
+  int8_t displayPage_ = page_thermal;
+
+  // track the page we used to be on, so we can "go back" if needed (like cancelling out of a menu
+  // heirarchy)
+  uint8_t displayPagePrior_ = page_thermal;
+
+  uint8_t showSplashScreenFrames_ = 0;
+
+  bool showWarning_ = true;
 };
 
 extern Display display;

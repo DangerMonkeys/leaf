@@ -31,14 +31,6 @@
 
 Display display;
 
-// Display Testing Temp Vars
-float wind_angle = 1.57;
-char seconds = 0;
-char minutes = 0;
-char hours = 0;
-uint16_t heading = 0;
-char string_heading[] = " WNW ";
-
 #ifndef WO256X128  // if not old hardare, use the latest:
 U8G2_ST75256_JLX19296_F_4W_HW_SPI u8g2(U8G2_R1,
                                        /* cs=*/SPI_SS_LCD,
@@ -50,10 +42,6 @@ U8G2_ST75256_WO256X128_F_4W_HW_SPI u8g2(U8G2_R3,
                                         /* dc=*/LCD_RS,
                                         /* reset=*/LCD_RESET);
 #endif
-
-int8_t display_page = page_thermal;
-uint8_t display_page_prior = page_thermal;  // track the page we used to be on, so we can "go back"
-                                            // if needed (like cancelling out of a menu heirarchy)
 
 void Display::init(void) {
   {
@@ -86,65 +74,61 @@ void Display::setContrast(uint8_t contrast) {
 }
 
 void Display::turnPage(uint8_t action) {
-  uint8_t tempPage = display_page;
+  uint8_t tempPage = displayPage_;
 
   switch (action) {
     case page_home:
-      display_page = page_thermal;
+      displayPage_ = page_thermal;
       break;
 
     case page_next:
-      display_page++;
+      displayPage_++;
 
       // skip past any pages not enabled for display
-      if (display_page == page_thermal && !settings.disp_showThmPage) display_page++;
-      if (display_page == page_thermalAdv && !settings.disp_showThmAdvPage) display_page++;
-      if (display_page == page_nav && !settings.disp_showNavPage) display_page++;
+      if (displayPage_ == page_thermal && !settings.disp_showThmPage) displayPage_++;
+      if (displayPage_ == page_thermalAdv && !settings.disp_showThmAdvPage) displayPage_++;
+      if (displayPage_ == page_nav && !settings.disp_showNavPage) displayPage_++;
 
-      if (display_page == page_last)
-        display_page =
+      if (displayPage_ == page_last)
+        displayPage_ =
             0;  // bound check if we fall off the right side, wrap around to the right side
       break;
 
     case page_prev:
-      display_page--;
+      displayPage_--;
 
       // skip past any pages not enabled for display
-      if (display_page == page_nav && !settings.disp_showNavPage) display_page--;
-      if (display_page == page_thermalAdv && !settings.disp_showThmAdvPage) display_page--;
-      if (display_page == page_thermal && !settings.disp_showThmPage) display_page--;
-      if (display_page == page_debug && !settings.disp_showDebugPage)
-        display_page = tempPage;  // go back to the page we were on if we can't go further left
+      if (displayPage_ == page_nav && !settings.disp_showNavPage) displayPage_--;
+      if (displayPage_ == page_thermalAdv && !settings.disp_showThmAdvPage) displayPage_--;
+      if (displayPage_ == page_thermal && !settings.disp_showThmPage) displayPage_--;
+      if (displayPage_ == page_debug && !settings.disp_showDebugPage)
+        displayPage_ = tempPage;  // go back to the page we were on if we can't go further left
 
-      if (display_page < 0)
-        display_page = page_last - 1;  // bound check if we fall off the left side -- wrap around to
+      if (displayPage_ < 0)
+        displayPage_ = page_last - 1;  // bound check if we fall off the left side -- wrap around to
                                        // the last page (usually the menu page)
       break;
 
     case page_back:
-      display_page = display_page_prior;
+      displayPage_ = displayPagePrior_;
   }
 
-  if (display_page != tempPage) display_page_prior = tempPage;
+  if (displayPage_ != tempPage) displayPagePrior_ = tempPage;
 }
 
 void Display::setPage(uint8_t targetPage) {
-  uint8_t tempPage = display_page;
-  display_page = targetPage;
+  uint8_t tempPage = displayPage_;
+  displayPage_ = targetPage;
 
-  if (display_page != tempPage) display_page_prior = tempPage;
+  if (displayPage_ != tempPage) displayPagePrior_ = tempPage;
 }
 
-uint8_t Display::getPage() { return display_page; }
+uint8_t Display::getPage() { return displayPage_; }
 
-uint8_t showSplashScreenFrames = 0;
+void Display::showOnSplash() { showSplashScreenFrames_ = 3; }
 
-void Display::showOnSplash() { showSplashScreenFrames = 3; }
-
-bool showWarning = true;
-
-bool Display::displayingWarning() { return showWarning; }
-void Display::dismissWarning() { showWarning = false; }
+bool Display::displayingWarning() { return showWarning_; }
+void Display::dismissWarning() { showWarning_ = false; }
 
 //*********************************************************************
 // MAIN DISPLAY UPDATE FUNCTION
@@ -154,17 +138,17 @@ void Display::dismissWarning() { showWarning = false; }
 void Display::update() {
   SpiLockGuard spiLock;  // Take out an SPI lock for the rending of the page
 
-  if (display_page == page_charging) {
+  if (displayPage_ == page_charging) {
     display.showPageCharging();
     return;
   }
-  if (showSplashScreenFrames) {
+  if (showSplashScreenFrames_) {
     display_on_splash();
-    showSplashScreenFrames--;
+    showSplashScreenFrames_--;
     return;
   }
   // If user setting to SHOW_WARNING and also we need to showWarning, then display it
-  if (settings.system_showWarning && showWarning) {
+  if (settings.system_showWarning && showWarning_) {
     warningPage_draw();
     return;
   } else {
@@ -177,7 +161,7 @@ void Display::update() {
     return;
   }
 
-  switch (display_page) {
+  switch (displayPage_) {
     case page_thermal:
       thermalPage_draw();
       break;
@@ -209,52 +193,6 @@ void GLCD_inst(byte data) {
 void GLCD_data(byte data) {
   digitalWrite(LCD_RS, HIGH);
   spi_writeGLCD(data);
-}
-
-char speed[] = "132";
-char windSpeed[] = "28";
-char turn = 1;
-uint16_t windDir = 235;
-int32_t varioBar_climbRate = -100;  // cm/s  (i.e. m/s * 100)
-int8_t climbChange = 10;
-
-char altitude[] = "23,857\"";
-char altAbvLaunch[] = "4,169";
-char glide[] = "10.4";
-char distFlown[] = "34.5";
-char glideToWypt[] = " 6.5";
-char timeToWypt[] = "12:34";
-char distToWypt[] = "42.7";
-char waypoint[] = "Marshall-LZ";
-char temp[] = "102";
-char accel[] = "2.1g";
-char altAbvLZ[] = "1,987";
-char climbRate[] = "+1385";
-char clockTime[] = "12:57pm";
-char timer[] = "1:23:45";
-float dirToWypt = -.25;
-
-/*
-
-float gps_getSpeed_kph() { return gps.speed.kmph(); }
-float gps_getSpeed_mph() { return gps.speed.mph(); }
-float gps_getCourseDeg() { return gps.course.deg(); }
-float gps_getAltMeters() { return gps.altitude.meters(); }
-
-*/
-
-void display_update_temp_vars() {
-  dirToWypt += .005;
-  wind_angle -= .0075;
-
-  varioBar_climbRate += climbChange;
-  if (varioBar_climbRate > 1100) {
-    climbChange *= -1;
-    varioBar_climbRate = 1090;
-  } else if (varioBar_climbRate < -1100) {
-    climbChange *= -1;
-    varioBar_climbRate = -1090;
-  }
 }
 
 /*********************************************************************************
