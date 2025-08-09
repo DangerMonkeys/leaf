@@ -341,7 +341,7 @@ case cursor_thermalPage_userField2:
           } else if (state == HELD && flightTimer_isRunning()) {
             flightTimer_stop();
             thermal_page_cursor_position = cursor_thermalPage_none;
-            buttons_lockAfterHold();  // lock buttons so we don't turn off if user keeps holding
+            buttons.lockAfterHold();  // lock buttons so we don't turn off if user keeps holding
                                       // button
           }
 

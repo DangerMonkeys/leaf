@@ -237,7 +237,7 @@ void thermalPageAdv_button(Button button, ButtonState state, uint8_t count) {
           } else if (state == HELD && flightTimer_isRunning()) {
             flightTimer_stop();
             thermalAdvPage_cursor_position = cursor_thermalAdvPage_none;
-            buttons_lockAfterHold();  // lock buttons so we don't turn off if user keeps holding
+            buttons.lockAfterHold();  // lock buttons so we don't turn off if user keeps holding
                                       // button
           }
 

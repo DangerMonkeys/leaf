@@ -154,7 +154,7 @@ void SystemMenuPage::draw() {
       u8g2.setDrawColor(1);
     }
 
-    if (reset_settings_timer && buttons_get_hold_count()) {
+    if (reset_settings_timer && buttons.getHoldCount()) {
       u8g2.drawBox(0, 170, reset_settings_timer, 4);
     } else {
       reset_settings_timer = 0;
