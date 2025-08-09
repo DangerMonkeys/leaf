@@ -6,9 +6,10 @@
 #pragma once
 
 #include <Arduino.h>
+#include "etl/message_bus.h"
 
+#include "dispatch/message_types.h"
 #include "hardware/Leaf_SPI.h"
-#include "hardware/pressure_source.h"
 #include "math/linear_regression.h"
 #include "math/running_average.h"
 #include "ui/input/buttons.h"
@@ -26,9 +27,13 @@ enum class BarometerTask : uint8_t {
 
 // Barometer reporting altitude, adjusted altitude, climb rate, and other information.
 // Requires a pressure source.
-class Barometer {
+class Barometer : public etl::message_router<Barometer, PressureUpdate> {
  public:
-  Barometer(IPressureSource* pressureSource) : pressureSource_(pressureSource) {}
+  void subscribe(etl::imessage_bus* bus) { bus->subscribe(*this); }
+
+  // etl::message_router<Barometer, PressureUpdate>
+  void on_receive(const PressureUpdate& msg);
+  void on_receive_unknown(const etl::imessage& msg) {}
 
   Pressure pressure;
   Pressure pressureFiltered;
@@ -56,7 +61,6 @@ class Barometer {
   // == Device Management ==
   // Initialize the baro
   void init(void);
-  void getFirstReading(void);
 
   // Reset launcAlt to current Alt (when starting a new log file, for example)
   void resetLaunchAlt(void);
@@ -74,9 +78,9 @@ class Barometer {
   // solve for the altimeter setting required to make corrected-pressure-altitude match gps-altitude
   bool syncToGPSAlt(void);
 
- private:
-  IPressureSource* pressureSource_;
+  bool hasFirstReading() { return hasFirstReading_; }
 
+ private:
   int32_t pressureRegression_;
 
   // LinearRegression to average out noisy sensor readings
@@ -94,8 +98,10 @@ class Barometer {
 
   BarometerTask task_ = BarometerTask::None;
 
+  void firstReading(const PressureUpdate& msg);
+
   // == Device reading & data processing ==
-  void calculatePressureAlt(void);
+  void calculatePressureAlt(int32_t newPressure);
   void filterClimb(void);
   void calculateAlts(void);
   void filterPressure(void);  // TODO: Use or remove (currently unused)
@@ -107,6 +113,9 @@ class Barometer {
   // flag to set first climb rate sample to 0 (this allows us to wait for a second baro altitude
   // sample to calculate any altitude change)
   bool firstClimbInitialization_ = true;
+
+  // Whether the first reading has been obtained, and therefore whether initialization is complete
+  bool hasFirstReading_ = false;
 };
 extern Barometer baro;
 
