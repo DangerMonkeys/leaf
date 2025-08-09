@@ -65,7 +65,7 @@ void Display::init(void) {
     Serial.println("u8g2 done. ");
   }
 
-  display.setContrast(settings.disp_contrast);
+  setContrast(settings.disp_contrast);
   Serial.print("u8g2 set contrast. ");
 }
 
@@ -135,7 +135,7 @@ void Display::update() {
   SpiLockGuard spiLock;  // Take out an SPI lock for the rending of the page
 
   if (displayPage_ == MainPage::Charging) {
-    display.showPageCharging();
+    showPageCharging();
     return;
   }
   if (showSplashScreenFrames_) {
@@ -148,7 +148,7 @@ void Display::update() {
     warningPage_draw();
     return;
   } else {
-    display.dismissWarning();
+    dismissWarning();
   }
 
   auto modalPage = mainMenuPage.get_modal_page();
