@@ -114,7 +114,7 @@ Button buttons_update(void) {
           case RELEASED:
             break;
           case HELD:
-            power.adjustInputCurrent(1);
+            power.increaseInputCurrent();
 
             speaker.playSound(fx::enter);
             break;
@@ -125,7 +125,7 @@ Button buttons_update(void) {
           case RELEASED:
             break;
           case HELD:
-            power.adjustInputCurrent(-1);
+            power.decreaseInputCurrent();
             speaker.playSound(fx::exit);
             break;
         }

@@ -273,13 +273,13 @@ void display_page_charging() {
 
     u8g2.setFont(leaf_6x12);
     u8g2.setCursor(5, 157);
-    if (power.inputCurrent == i100mA)
+    if (power.inputCurrent == PowerInputLevel::i100mA)
       u8g2.print("100mA");
-    else if (power.inputCurrent == i500mA)
+    else if (power.inputCurrent == PowerInputLevel::i500mA)
       u8g2.print("500mA");
-    else if (power.inputCurrent == iMax)
+    else if (power.inputCurrent == PowerInputLevel::Max)
       u8g2.print("810mA");
-    else if (power.inputCurrent == iStandby)
+    else if (power.inputCurrent == PowerInputLevel::Standby)
       u8g2.print(" OFF");
 
     u8g2.print(" ");

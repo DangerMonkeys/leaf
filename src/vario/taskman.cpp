@@ -181,7 +181,7 @@ the pushbuttons, the GPS 1PPS signal, and perhaps others.
 */
 
 // LOOP NOTES:
-// when re-entering POWER_ON state, be sure to start from tasks #1, so baro ADC can be re-prepped
+// when re-entering PowerState::On, be sure to start from tasks #1, so baro ADC can be re-prepped
 // before reading
 
 void loop() {
@@ -189,9 +189,9 @@ void loop() {
   webserver_loop();
 #endif
 
-  if (power.onState == POWER_ON)
+  if (power.onState == PowerState::On)
     main_ON_loop();
-  else if (power.onState == POWER_OFF_USB)
+  else if (power.onState == PowerState::OffUSB)
     main_CHARGE_loop();
   else
     Serial.print("FAILED MAIN LOOP HANDLER");
