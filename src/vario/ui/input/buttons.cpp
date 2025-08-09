@@ -26,29 +26,11 @@
 
 Buttons buttons;
 
-// button debouncing
-Button button_debounce_last = Button::NONE;
-uint32_t button_debounce_time =
-    5;  // time in ms for stabilized button state before returning the button press
-uint32_t button_time_initial = 0;
-uint32_t button_time_elapsed = 0;
+const uint16_t MIN_HOLD_TIME_MS = 800;   // time in ms to count a button as "held down"
+const uint16_t MAX_HOLD_TIME_MS = 3500;  // time in ms to start further actions on long-holds
 
-// button actions
-Button button_last = Button::NONE;
-ButtonState button_state = NO_STATE;
-
-// in a single button-push event, track if it was ever held long enough to reach the
-// "HELD" or "HELD_LONG" states (so we know not to also take action when it is released)
-bool button_everHeld = false;
-uint16_t button_min_hold_time = 800;   // time in ms to count a button as "held down"
-uint16_t button_max_hold_time = 3500;  // time in ms to start further actions on long-holds
-
-uint16_t button_hold_action_time_initial = 0;
-// counting time between 'action steps' while holding the button
-uint16_t button_hold_action_time_elapsed = 0;
 // time in ms required between "action steps" while holding the button
-uint16_t button_hold_action_time_limit = 500;
-uint16_t button_hold_counter = 0;
+const uint16_t HOLD_ACTION_TIME_LIMIT_MS = 500;
 
 Button Buttons::init() {
   // configure pins
@@ -61,17 +43,10 @@ Button Buttons::init() {
   return inspectPins();
 }
 
-// when holding the center button to turn on, we need to "lock" the buttons until the user releases
-// the center button. Otherwise, we'll turn on, and immediately turn back off again due to the
-// persistent button press.
-bool centerHoldLockButtons = true;  // default to true, for the first turn on event
-
 void Buttons::lockAfterHold() {
-  centerHoldLockButtons = true;  // lock from further actions until user lets go of center button
+  centerHoldLockButtons_ = true;  // lock from further actions until user lets go of center button
 }
 
-// If the current page is charging, handle that, otherwise direct any input to shown modal pages
-// before falling back to the current page.
 Button Buttons::update() {
   Button which_button = check();
   ButtonState button_state = getState();
@@ -79,11 +54,11 @@ Button Buttons::update() {
   // check if we should avoid executing further actions if buttons are 'locked' due to an already
   // executed center-hold event.  This prevents multiple sequential actions being executed if user
   // keeps holding the center button (i.e., resetting timer, then turning off)
-  if (centerHoldLockButtons && which_button == Button::CENTER) {
+  if (centerHoldLockButtons_ && which_button == Button::CENTER) {
     button_state = NO_STATE;
     return which_button;  // return early without executing further tasks
   } else {
-    centerHoldLockButtons = false;  // user let go of center button, so we can reset the lock.
+    centerHoldLockButtons_ = false;  // user let go of center button, so we can reset the lock.
   }
 
   if (which_button == Button::NONE || button_state == NO_STATE)
@@ -98,7 +73,7 @@ Button Buttons::update() {
   if (currentPage == page_charging) {
     switch (which_button) {
       case Button::CENTER:
-        if (button_state == HELD && button_hold_counter == 1) {
+        if (button_state == HELD && holdCounter_ == 1) {
           display_clear();
           display_showOnSplash();
           display_setPage(page_thermal);  // TODO: set initial page to the user's last used page
@@ -166,7 +141,7 @@ Button Buttons::update() {
       case Button::CENTER:
         switch (button_state) {
           case HELD:
-            if (button_hold_counter == 2) {
+            if (holdCounter_ == 2) {
               power_shutdown();
               while (inspectPins() == Button::CENTER) {
               }  // freeze here until user lets go of power button
@@ -223,72 +198,58 @@ Button Buttons::update() {
   return which_button;
 }
 
-ButtonState Buttons::getState() { return button_state; }
-
-uint16_t Buttons::getHoldCount() { return button_hold_counter; }
-
 Button Buttons::check() {
-  button_state = NO_STATE;  // assume no_state on this pass, we'll update if necessary as we go
+  buttonState_ = NO_STATE;  // assume no_state on this pass, we'll update if necessary as we go
   auto button = debounce(inspectPins());  // check if we have a button press in a stable state
 
   // reset and exit if bouncing
   if (button == Button::BOUNCE) {
-    button_hold_counter = 0;
+    holdCounter_ = 0;
     return Button::NONE;
   }
 
   // if we have a state change (low to high or high to low)
-  if (button != button_last) {
-    button_hold_counter =
+  if (button != buttonLast_) {
+    holdCounter_ =
         0;  // reset hold counter because button changed -- which means it's not being held
 
     if (button != Button::NONE) {  // if not-none, we have a pressed button!
-      button_state = PRESSED;
-    } else {                   // if it IS none, we have a just-released button
-      if (!button_everHeld) {  // we only want to report a released button if it wasn't already held
-                               // before.  This prevents accidental immediate 'release' button
-                               // actions when you let go of a held button
-        button_state = RELEASED;  // just-released
-        button = button_last;     // we are presently seeing "NONE", which is the release of the
+      buttonState_ = PRESSED;
+    } else {             // if it IS none, we have a just-released button
+      if (!everHeld_) {  // we only want to report a released button if it wasn't already held
+                         // before.  This prevents accidental immediate 'release' button
+                         // actions when you let go of a held button
+        buttonState_ = RELEASED;  // just-released
+        button = buttonLast_;     // we are presently seeing "NONE", which is the release of the
                                   // previously pressed/held button, so grab that previous button to
                                   // associate with the released state
       }
-      button_everHeld = false;  // we can reset this now
+      everHeld_ = false;  // we can reset this now
     }
     // otherwise we have a non-state change (button is held)
   } else if (button != Button::NONE) {
-    if (button_time_elapsed >= button_max_hold_time) {
-      button_state = HELD_LONG;
-    } else if (button_time_elapsed >= button_min_hold_time) {
-      button_state = HELD;
-      button_everHeld = true;  // track that we reached the "HELD" state, so we know not to take
-                               // action also when it's released
+    if (timeElapsed_ >= MAX_HOLD_TIME_MS) {
+      buttonState_ = HELD_LONG;
+    } else if (timeElapsed_ >= MIN_HOLD_TIME_MS) {
+      buttonState_ = HELD;
+      everHeld_ = true;  // track that we reached the "HELD" state, so we know not to take
+                         // action also when it's released
     }
   }
 
-  // only "act" on a held button every ~500ms (button_hold_action_time_limit).  So we'll report
+  // only "act" on a held button every ~500ms (HOLD_ACTION_TIME_LIMIT_MS).  So we'll report
   // NO_STATE in between 'actions' on a held button.
-  if (button_state == HELD || button_state == HELD_LONG) {
-    button_hold_action_time_elapsed = millis() - button_hold_action_time_initial;
-    if (button_hold_action_time_elapsed < button_hold_action_time_limit) {
-      button_state = NO_STATE;
+  if (buttonState_ == HELD || buttonState_ == HELD_LONG) {
+    unsigned long button_hold_action_time_elapsed = millis() - holdActionTimeInitial_;
+    if (button_hold_action_time_elapsed < HOLD_ACTION_TIME_LIMIT_MS) {
+      buttonState_ = NO_STATE;
     } else {
-      button_hold_counter++;
-      button_hold_action_time_elapsed = 0;
-      button_hold_action_time_initial = millis();
+      holdCounter_++;
+      holdActionTimeInitial_ = millis();
     }
   }
 
-  /*
-  Serial.print("button: ");
-  Serial.print(button);
-  Serial.print(" state: ");
-  Serial.print(button_state);
-  Serial.print(" count: ");
-  Serial.println(button_hold_counter);
-  */
-
-  if (button_state != NO_STATE) {
+  if (buttonState_ != NO_STATE) {
     switch (button) {
       case Button::CENTER:
         Serial.print("button: CENTER");
@@ -310,7 +271,7 @@ Button Buttons::check() {
         break;
     }
 
-    switch (button_state) {
+    switch (buttonState_) {
       case PRESSED:
         Serial.print(" state: PRESSED  ");
         break;
@@ -325,16 +286,16 @@ Button Buttons::check() {
     }
 
     Serial.print(" hold count: ");
-    Serial.println(button_hold_counter);
+    Serial.println(holdCounter_);
   }
 
   // save button to track for next time.
-  //  ..if state is RELEASED, then button_last should be 'NONE', since we're seeing the falling edge
+  //  ..if state is RELEASED, then buttonLast_ should be 'NONE', since we're seeing the falling edge
   //  of the previous button press
-  if (button_state == RELEASED) {
-    button_last = Button::NONE;
+  if (buttonState_ == RELEASED) {
+    buttonLast_ = Button::NONE;
   } else {
-    button_last = button;
+    buttonLast_ = button;
   }
   return button;
 }
@@ -355,14 +316,13 @@ Button Buttons::inspectPins() {
 }
 
 Button Buttons::debounce(Button button) {
-  if (button != button_debounce_last) {  // if this is a new button state
-    button_time_initial = millis();      // capture the initial start time
-    button_time_elapsed = 0;             // and reset the elapsed time
-    button_debounce_last = button;
+  if (button != debounceLast_) {  // if this is a new button state
+    timeInitial_ = millis();      // capture the initial start time
+    timeElapsed_ = 0;             // and reset the elapsed time
+    debounceLast_ = button;
   } else {  // this is the same button as last time, so calculate the duration of the press
-    button_time_elapsed =
-        millis() - button_time_initial;  // (the roll-over modulus math works on this)
-    if (button_time_elapsed >= button_debounce_time) {
+    timeElapsed_ = millis() - timeInitial_;  // (the roll-over modulus math works on this)
+    if (timeElapsed_ >= debounceTime_) {
       return button;
     }
   }
