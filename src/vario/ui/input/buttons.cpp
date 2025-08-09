@@ -92,7 +92,7 @@ Button buttons_update(void) {
     return which_button;  // don't take any action if no button
   // TODO: not jumping out of this function on NO_STATE was causing speaker issues... investigate!
 
-  power_resetAutoOffCounter();  // pressing any button should reset the auto-off counter
+  power.resetAutoOffCounter();  // pressing any button should reset the auto-off counter
                                 // TODO: we should probably have a counter for Auto-Timer-Off as
                                 // well, and button presses should reset that.
   uint8_t currentPage = display_getPage();  // actions depend on which page we're on
@@ -106,7 +106,7 @@ Button buttons_update(void) {
           display_setPage(page_thermal);  // TODO: set initial page to the user's last used page
           speaker.playSound(fx::enter);
           buttons_lockAfterHold();  // lock buttons until user lets go of power button
-          power_switchToOnState();
+          power.switchToOnState();
         }
         break;
       case Button::UP:
@@ -114,7 +114,7 @@ Button buttons_update(void) {
           case RELEASED:
             break;
           case HELD:
-            power_adjustInputCurrent(1);
+            power.increaseInputCurrent();
 
             speaker.playSound(fx::enter);
             break;
@@ -125,7 +125,7 @@ Button buttons_update(void) {
           case RELEASED:
             break;
           case HELD:
-            power_adjustInputCurrent(-1);
+            power.decreaseInputCurrent();
             speaker.playSound(fx::exit);
             break;
         }
@@ -171,7 +171,7 @@ Button buttons_update(void) {
         switch (button_state) {
           case HELD:
             if (button_hold_counter == 2) {
-              power_shutdown();
+              power.shutdown();
               while (buttons_inspectPins() == Button::CENTER) {
               }  // freeze here until user lets go of power button
               display_setPage(page_charging);
