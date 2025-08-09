@@ -1026,7 +1026,7 @@ void display_headerAndFooter(bool timerSelected, bool showTurnArrows) {
     display_speed(78, 14);
     u8g2.setFont(leaf_5h);
     u8g2.setCursor(82, 21);
-    if (display_getPage() == page_nav) {
+    if (display.getPage() == page_nav) {
       u8g2.setDrawColor(0);  // draw white on black for nav page
     }
     if (settings.units_speed)

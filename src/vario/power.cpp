@@ -62,7 +62,7 @@ void power_bootUp() {
 
     power.onState = POWER_ON;
 
-    display_showOnSplash();  // show the splash screen if user turned us on
+    display.showOnSplash();  // show the splash screen if user turned us on
 
   } else {
     // if not center button, then USB power turned us on, go into charge mode
@@ -122,7 +122,7 @@ void power_init_peripherals() {
   Serial.println(" - Finished GPS");
   wire_init();
   Serial.println(" - Finished I2C Wire");
-  display_init();
+  display.init();
   Serial.println(" - Finished display");
   baro.init();
   Serial.println(" - Finished Baro");
@@ -178,7 +178,7 @@ void power_switchToOnState() {
 void power_shutdown() {
   Serial.println("power_shutdown");
 
-  display_clear();
+  display.clear();
   display_off_splash();
   baro.sleep();  // stop getting climbrate updates so we don't hear vario beeps while shutting down
 
@@ -204,7 +204,7 @@ void power_shutdown() {
 
   // finally, turn off devices
   power_sleep_peripherals();
-  display_clear();
+  display.clear();
   delay(100);
   power_latch_off();  // turn off 3.3V regulator (if we're plugged into USB, we'll stay on)
   delay(100);

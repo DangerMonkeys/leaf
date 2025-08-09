@@ -125,13 +125,13 @@ void thermalPageAdv_button(Button button, ButtonState state, uint8_t count) {
           break;
         case Button::RIGHT:
           if (state == RELEASED) {
-            display_turnPage(page_next);
+            display.turnPage(page_next);
             speaker.playSound(fx::increase);
           }
           break;
         case Button::LEFT:
           if (state == RELEASED) {
-            display_turnPage(page_prev);
+            display.turnPage(page_prev);
             speaker.playSound(fx::decrease);
           }
           break;

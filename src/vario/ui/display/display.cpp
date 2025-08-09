@@ -29,6 +29,8 @@
 #include "version.h"
 #include "wind_estimate/wind_estimate.h"
 
+Display display;
+
 // Display Testing Temp Vars
 float wind_angle = 1.57;
 char seconds = 0;
@@ -53,7 +55,7 @@ int8_t display_page = page_thermal;
 uint8_t display_page_prior = page_thermal;  // track the page we used to be on, so we can "go back"
                                             // if needed (like cancelling out of a menu heirarchy)
 
-void display_init(void) {
+void Display::init(void) {
   {
     // Scope lock as setting a contrast will take its own lock
     SpiLockGuard spiLock;  // Lock the SPI bus before working with it
@@ -68,11 +70,11 @@ void display_init(void) {
     Serial.println("u8g2 done. ");
   }
 
-  display_setContrast(settings.disp_contrast);
+  display.setContrast(settings.disp_contrast);
   Serial.print("u8g2 set contrast. ");
 }
 
-void display_setContrast(uint8_t contrast) {
+void Display::setContrast(uint8_t contrast) {
   SpiLockGuard spiLock;
 #ifndef WO256X128  // if not using older hardware, use the latest hardware contrast setting:
   // user can select levels of contrast from 0-20; but display needs values of 115-135.
@@ -83,7 +85,7 @@ void display_setContrast(uint8_t contrast) {
 #endif
 }
 
-void display_turnPage(uint8_t action) {
+void Display::turnPage(uint8_t action) {
   uint8_t tempPage = display_page;
 
   switch (action) {
@@ -126,34 +128,34 @@ void display_turnPage(uint8_t action) {
   if (display_page != tempPage) display_page_prior = tempPage;
 }
 
-void display_setPage(uint8_t targetPage) {
+void Display::setPage(uint8_t targetPage) {
   uint8_t tempPage = display_page;
   display_page = targetPage;
 
   if (display_page != tempPage) display_page_prior = tempPage;
 }
 
-uint8_t display_getPage() { return display_page; }
+uint8_t Display::getPage() { return display_page; }
 
 uint8_t showSplashScreenFrames = 0;
 
-void display_showOnSplash() { showSplashScreenFrames = 3; }
+void Display::showOnSplash() { showSplashScreenFrames = 3; }
 
 bool showWarning = true;
 
-bool displayingWarning() { return showWarning; }
-void displayDismissWarning() { showWarning = false; }
+bool Display::displayingWarning() { return showWarning; }
+void Display::dismissWarning() { showWarning = false; }
 
 //*********************************************************************
 // MAIN DISPLAY UPDATE FUNCTION
 //*********************************************************************
 // Will first display charging screen if charging, or splash screen if in the process of turning on
 // / waking up Then will display any current modal pages before falling back to the current page
-void display_update() {
+void Display::update() {
   SpiLockGuard spiLock;  // Take out an SPI lock for the rending of the page
 
   if (display_page == page_charging) {
-    display_page_charging();
+    display.showPageCharging();
     return;
   }
   if (showSplashScreenFrames) {
@@ -166,7 +168,7 @@ void display_update() {
     warningPage_draw();
     return;
   } else {
-    displayDismissWarning();
+    display.dismissWarning();
   }
 
   auto modalPage = mainMenuPage.get_modal_page();
@@ -183,7 +185,7 @@ void display_update() {
       thermalPageAdv_draw();
       break;
     case page_debug:
-      display_page_debug();
+      showPageDebug();
       break;
     case page_nav:
       navigatePage_draw();
@@ -194,7 +196,7 @@ void display_update() {
   }
 }
 
-void display_clear() {
+void Display::clear() {
   SpiLockGuard spiLock;
   u8g2.clear();
 }
@@ -258,7 +260,7 @@ void display_update_temp_vars() {
 /*********************************************************************************
 **   CHARGING PAGE    ************************************************************
 *********************************************************************************/
-void display_page_charging() {
+void Display::showPageCharging() {
   u8g2.firstPage();
   do {
     // Battery Percent
@@ -310,7 +312,7 @@ void display_page_charging() {
 **    DEBUG TEST PAGE     ***************************************************
 *********************************************************************************/
 
-void display_page_debug() {
+void Display::showPageDebug() {
   u8g2.firstPage();
   do {
     // temp display of speed and heading and all that.

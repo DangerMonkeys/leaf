@@ -1,5 +1,4 @@
-#ifndef display_h
-#define display_h
+#pragma once
 
 #include <U8g2lib.h>
 #include "hardware/configuration.h"
@@ -38,20 +37,23 @@ enum display_main_pages {
   page_charging
 };
 
-void display_turnPage(uint8_t action);
-void display_setPage(uint8_t targetPage);
-uint8_t display_getPage(void);
+class Display {
+ public:
+  void init();
+  void update();
+  void clear();
+  void setContrast(uint8_t contrast);
 
-void display_init(void);
-void display_update(void);
-void display_clear(void);
-void display_setContrast(uint8_t contrast);
+  void turnPage(uint8_t action);
+  void setPage(uint8_t targetPage);
+  uint8_t getPage();
 
-void display_page_debug(void);
-void display_page_charging(void);
+  void showPageDebug();
+  void showPageCharging();
+  void showOnSplash();
 
-void display_showOnSplash(void);
-bool displayingWarning(void);
-void displayDismissWarning(void);
+  bool displayingWarning();
+  void dismissWarning();
+};
 
-#endif
+extern Display display;
