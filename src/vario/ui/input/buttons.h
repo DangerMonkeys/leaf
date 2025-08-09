@@ -4,19 +4,36 @@
 #include "hardware/configuration.h"
 
 // D pad button states.
-// NOTE:  Left is -1 as to make casting to an int for settings easier
 enum class Button { NONE, UP, DOWN, LEFT, RIGHT, CENTER, BOUNCE };
 enum ButtonState { NO_STATE, PRESSED, RELEASED, HELD, HELD_LONG };
 
-Button buttons_init(void);
+class Buttons {
+ public:
+  Button init();
 
-Button buttons_check(void);
-Button buttons_inspectPins(void);
-Button buttons_debounce(Button button);
-ButtonState buttons_get_state(void);
-uint16_t buttons_get_hold_count(void);
+  // the recurring call to see if user is pressing buttons.  Handles debounce and button state
+  // changes
+  Button check();
 
-Button buttons_update(void);  // the main task of checking and handling button pushes
+  ButtonState getState();
 
-// lock the buttons after a center-hold event until user next releases the center button
-void buttons_lockAfterHold(void);
+  uint16_t getHoldCount();
+
+  Button update();  // the main task of checking and handling button pushes
+
+  /// @brief lock the buttons after a center-hold event until user next releases the center button
+  /// @details call this function after performing a center-hold button action if no additional
+  /// center-hold actions should be taken until user lets go of the center button (example:
+  /// resetting timer, then turning off)
+  void lockAfterHold();
+
+ private:
+  // check the state of the button hardware pins (this is pulled out as a separate function so we
+  // can use this for a one-time check at startup)
+  Button inspectPins();
+
+  // check for a minimal stable time before asserting that a button has been pressed or released
+  Button debounce(Button button);
+};
+
+extern Buttons buttons;

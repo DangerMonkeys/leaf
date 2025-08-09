@@ -53,7 +53,7 @@ void power_bootUp() {
   settings.init();
 
   // initialize Buttons and check if holding the center button is what turned us on
-  auto button = buttons_init();
+  Button button = buttons.init();
 
   // go to "ON" state if button (user input) or BOOT_TO_ON flag from firmware update
   if (button == Button::CENTER || settings.boot_toOnState) {

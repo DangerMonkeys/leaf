@@ -24,6 +24,8 @@
 #include "ui/display/pages/primary/page_thermal_adv.h"
 #include "ui/settings/settings.h"
 
+Buttons buttons;
+
 // button debouncing
 Button button_debounce_last = Button::NONE;
 uint32_t button_debounce_time =
@@ -48,7 +50,7 @@ uint16_t button_hold_action_time_elapsed = 0;
 uint16_t button_hold_action_time_limit = 500;
 uint16_t button_hold_counter = 0;
 
-Button buttons_init(void) {
+Button Buttons::init() {
   // configure pins
   pinMode(BUTTON_PIN_UP, INPUT_PULLDOWN);
   pinMode(BUTTON_PIN_DOWN, INPUT_PULLDOWN);
@@ -56,8 +58,7 @@ Button buttons_init(void) {
   pinMode(BUTTON_PIN_RIGHT, INPUT_PULLDOWN);
   pinMode(BUTTON_PIN_CENTER, INPUT_PULLDOWN);
 
-  auto button = buttons_inspectPins();
-  return button;
+  return inspectPins();
 }
 
 // when holding the center button to turn on, we need to "lock" the buttons until the user releases
@@ -65,18 +66,15 @@ Button buttons_init(void) {
 // persistent button press.
 bool centerHoldLockButtons = true;  // default to true, for the first turn on event
 
-// call this function after performing a center-hold button action if no additional center-hold
-// actions should be taken until user lets go of the center button (example: resetting timer, then
-// turning off)
-void buttons_lockAfterHold() {
+void Buttons::lockAfterHold() {
   centerHoldLockButtons = true;  // lock from further actions until user lets go of center button
 }
 
 // If the current page is charging, handle that, otherwise direct any input to shown modal pages
 // before falling back to the current page.
-Button buttons_update(void) {
-  Button which_button = buttons_check();
-  ButtonState button_state = buttons_get_state();
+Button Buttons::update() {
+  Button which_button = check();
+  ButtonState button_state = getState();
 
   // check if we should avoid executing further actions if buttons are 'locked' due to an already
   // executed center-hold event.  This prevents multiple sequential actions being executed if user
@@ -105,7 +103,7 @@ Button buttons_update(void) {
           display_showOnSplash();
           display_setPage(page_thermal);  // TODO: set initial page to the user's last used page
           speaker.playSound(fx::enter);
-          buttons_lockAfterHold();  // lock buttons until user lets go of power button
+          lockAfterHold();  // lock buttons until user lets go of power button
           power_switchToOnState();
         }
         break;
@@ -134,7 +132,7 @@ Button buttons_update(void) {
     return which_button;
   }
   if (displayingWarning()) {
-    warningPage_button(which_button, buttons_get_state(), buttons_get_hold_count());
+    warningPage_button(which_button, getState(), getHoldCount());
     display_update();
     return which_button;
   }
@@ -142,27 +140,25 @@ Button buttons_update(void) {
   // If there's a modal page currently shown, we should send the button event to that page
   auto modal_page = mainMenuPage.get_modal_page();
   if (modal_page != NULL) {
-    bool draw_now =
-        modal_page->button_event(which_button, buttons_get_state(), buttons_get_hold_count());
+    bool draw_now = modal_page->button_event(which_button, getState(), getHoldCount());
     if (draw_now) display_update();
     return which_button;
   }
 
   if (currentPage == page_menu) {
-    bool draw_now =
-        mainMenuPage.button_event(which_button, buttons_get_state(), buttons_get_hold_count());
+    bool draw_now = mainMenuPage.button_event(which_button, getState(), getHoldCount());
     if (draw_now) display_update();
 
   } else if (currentPage == page_thermal) {
-    thermalPage_button(which_button, buttons_get_state(), buttons_get_hold_count());
+    thermalPage_button(which_button, getState(), getHoldCount());
     display_update();
 
   } else if (currentPage == page_thermalAdv) {
-    thermalPageAdv_button(which_button, buttons_get_state(), buttons_get_hold_count());
+    thermalPageAdv_button(which_button, getState(), getHoldCount());
     display_update();
 
   } else if (currentPage == page_nav) {
-    navigatePage_button(which_button, buttons_get_state(), buttons_get_hold_count());
+    navigatePage_button(which_button, getState(), getHoldCount());
     display_update();
 
   } else if (currentPage != page_charging) {  // NOT CHARGING PAGE (i.e., our debug test page)
@@ -172,7 +168,7 @@ Button buttons_update(void) {
           case HELD:
             if (button_hold_counter == 2) {
               power_shutdown();
-              while (buttons_inspectPins() == Button::CENTER) {
+              while (inspectPins() == Button::CENTER) {
               }  // freeze here until user lets go of power button
               display_setPage(page_charging);
             }
@@ -227,15 +223,13 @@ Button buttons_update(void) {
   return which_button;
 }
 
-ButtonState buttons_get_state(void) { return button_state; }
+ButtonState Buttons::getState() { return button_state; }
 
-uint16_t buttons_get_hold_count(void) { return button_hold_counter; }
+uint16_t Buttons::getHoldCount() { return button_hold_counter; }
 
-// the recurring call to see if user is pressing buttons.  Handles debounce and button state changes
-Button buttons_check(void) {
+Button Buttons::check() {
   button_state = NO_STATE;  // assume no_state on this pass, we'll update if necessary as we go
-  auto button =
-      buttons_debounce(buttons_inspectPins());  // check if we have a button press in a stable state
+  auto button = debounce(inspectPins());  // check if we have a button press in a stable state
 
   // reset and exit if bouncing
   if (button == Button::BOUNCE) {
@@ -345,9 +339,7 @@ Button buttons_check(void) {
   return button;
 }
 
-// check the state of the button hardware pins (this is pulled out as a separate function so we can
-// use this for a one-time check at startup)
-Button buttons_inspectPins(void) {
+Button Buttons::inspectPins() {
   Button button = Button::NONE;
   if (digitalRead(BUTTON_PIN_CENTER) == HIGH)
     button = Button::CENTER;
@@ -362,8 +354,7 @@ Button buttons_inspectPins(void) {
   return button;
 }
 
-// check for a minimal stable time before asserting that a button has been pressed or released
-Button buttons_debounce(Button button) {
+Button Buttons::debounce(Button button) {
   if (button != button_debounce_last) {  // if this is a new button state
     button_time_initial = millis();      // capture the initial start time
     button_time_elapsed = 0;             // and reset the elapsed time
