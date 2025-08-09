@@ -40,6 +40,32 @@ Power power;  // struct for battery-state and on-state variables
 #define AUTO_OFF_MAX_ALT 400   // cm altitude change for timer auto-stop
 #define AUTO_OFF_MIN_SEC 20    // seconds of low speed / low accel for timer to auto-stop
 
+const char* nameOf(PowerState state) {
+  switch (state) {
+    case PowerState::Off:
+      return "Off";
+    case PowerState::On:
+      return "On";
+    case PowerState::OffUSB:
+      return "OffUSB";
+  }
+  return "Unknown";
+}
+
+const char* nameOf(PowerInputLevel level) {
+  switch (level) {
+    case PowerInputLevel::Standby:
+      return "Standby";
+    case PowerInputLevel::i100mA:
+      return "100mA";
+    case PowerInputLevel::i500mA:
+      return "500mA";
+    case PowerInputLevel::Max:
+      return "Max";
+  }
+  return "Unknown";
+}
+
 void Power::bootUp() {
   // Init Peripheral Busses
   wire_init();

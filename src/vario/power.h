@@ -27,17 +27,7 @@ enum class PowerState : uint8_t {
   OffUSB
 };
 
-const char* nameOf(PowerState state) {
-  switch (state) {
-    case PowerState::Off:
-      return "Off";
-    case PowerState::On:
-      return "On";
-    case PowerState::OffUSB:
-      return "OffUSB";
-  }
-  return "Unknown";
-}
+const char* nameOf(PowerState state);
 
 // iMax set by ILIM pin resistor on battery charger chip. Results in 1.348Amps max input (for
 // battery charging AND system load) Note: with this higher input limit, the battery charging will
@@ -45,19 +35,7 @@ const char* nameOf(PowerState state) {
 enum class PowerInputLevel : uint8_t { Standby = 0, i100mA = 1, i500mA = 2, Max = 3 };
 DEFINE_CLAMPED_BOUNDS(PowerInputLevel, PowerInputLevel::Standby, PowerInputLevel::Max);
 
-const char* nameOf(PowerInputLevel level) {
-  switch (level) {
-    case PowerInputLevel::Standby:
-      return "Standby";
-    case PowerInputLevel::i100mA:
-      return "100mA";
-    case PowerInputLevel::i500mA:
-      return "500mA";
-    case PowerInputLevel::Max:
-      return "Max";
-  }
-  return "Unknown";
-}
+const char* nameOf(PowerInputLevel level);
 
 class Power {
  public:
