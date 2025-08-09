@@ -95,15 +95,16 @@ Button buttons_update(void) {
   power_resetAutoOffCounter();  // pressing any button should reset the auto-off counter
                                 // TODO: we should probably have a counter for Auto-Timer-Off as
                                 // well, and button presses should reset that.
-  uint8_t currentPage = display.getPage();  // actions depend on which page we're on
+  MainPage currentPage = display.getPage();  // actions depend on which page we're on
 
-  if (currentPage == page_charging) {
+  if (currentPage == MainPage::Charging) {
     switch (which_button) {
       case Button::CENTER:
         if (button_state == HELD && button_hold_counter == 1) {
           display.clear();
           display.showOnSplash();
-          display.setPage(page_thermal);  // TODO: set initial page to the user's last used page
+          display.setPage(
+              MainPage::Thermal);  // TODO: set initial page to the user's last used page
           speaker.playSound(fx::enter);
           buttons_lockAfterHold();  // lock buttons until user lets go of power button
           power_switchToOnState();
@@ -148,24 +149,24 @@ Button buttons_update(void) {
     return which_button;
   }
 
-  if (currentPage == page_menu) {
+  if (currentPage == MainPage::Menu) {
     bool draw_now =
         mainMenuPage.button_event(which_button, buttons_get_state(), buttons_get_hold_count());
     if (draw_now) display.update();
 
-  } else if (currentPage == page_thermal) {
+  } else if (currentPage == MainPage::Thermal) {
     thermalPage_button(which_button, buttons_get_state(), buttons_get_hold_count());
     display.update();
 
-  } else if (currentPage == page_thermalAdv) {
+  } else if (currentPage == MainPage::ThermalAdv) {
     thermalPageAdv_button(which_button, buttons_get_state(), buttons_get_hold_count());
     display.update();
 
-  } else if (currentPage == page_nav) {
+  } else if (currentPage == MainPage::Nav) {
     navigatePage_button(which_button, buttons_get_state(), buttons_get_hold_count());
     display.update();
 
-  } else if (currentPage != page_charging) {  // NOT CHARGING PAGE (i.e., our debug test page)
+  } else if (currentPage != MainPage::Charging) {  // NOT CHARGING PAGE (i.e., our debug test page)
     switch (which_button) {
       case Button::CENTER:
         switch (button_state) {
@@ -174,7 +175,7 @@ Button buttons_update(void) {
               power_shutdown();
               while (buttons_inspectPins() == Button::CENTER) {
               }  // freeze here until user lets go of power button
-              display.setPage(page_charging);
+              display.setPage(MainPage::Charging);
             }
             break;
           case RELEASED:

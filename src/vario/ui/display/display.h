@@ -1,7 +1,9 @@
 #pragma once
 
 #include <U8g2lib.h>
+
 #include "hardware/configuration.h"
+#include "utils/wrapping_enum.h"
 
 // Display settings loaded from configuration / variants
 #ifndef WO256X128                               // if not old hardare, use the latest:
@@ -19,15 +21,15 @@ enum display_page_actions {
              // page back to previous page)
 };
 
-enum display_main_pages {
-  page_debug,
-  page_thermal,
-  page_thermalAdv,
-  page_nav,
-  page_menu,
-  page_last,
-  page_charging
+enum class MainPage : uint8_t {
+  Debug = 0,
+  Thermal = 1,
+  ThermalAdv = 2,
+  Nav = 3,
+  Menu = 4,
+  Charging = 5
 };
+DEFINE_WRAPPING_BOUNDS(MainPage, MainPage::Debug, MainPage::Menu);
 
 class Display {
  public:
@@ -37,8 +39,8 @@ class Display {
   void setContrast(uint8_t contrast);
 
   void turnPage(uint8_t action);
-  void setPage(uint8_t targetPage);
-  uint8_t getPage() { return displayPage_; }
+  void setPage(MainPage targetPage);
+  MainPage getPage() { return displayPage_; }
 
   void showPageDebug();
   void showPageCharging();
@@ -48,11 +50,11 @@ class Display {
   void dismissWarning() { showWarning_ = false; }
 
  private:
-  int8_t displayPage_ = page_thermal;
+  MainPage displayPage_ = MainPage::Thermal;
 
   // track the page we used to be on, so we can "go back" if needed (like cancelling out of a menu
   // heirarchy)
-  uint8_t displayPagePrior_ = page_thermal;
+  MainPage displayPagePrior_ = MainPage::Thermal;
 
   uint8_t showSplashScreenFrames_ = 0;
 

@@ -81,39 +81,33 @@ void Display::setContrast(uint8_t contrast) {
 }
 
 void Display::turnPage(uint8_t action) {
-  uint8_t tempPage = displayPage_;
+  MainPage tempPage = displayPage_;
 
   switch (action) {
     case page_home:
-      displayPage_ = page_thermal;
+      displayPage_ = MainPage::Thermal;
       break;
 
     case page_next:
       displayPage_++;
 
       // skip past any pages not enabled for display
-      if (displayPage_ == page_thermal && !settings.disp_showThmPage) displayPage_++;
-      if (displayPage_ == page_thermalAdv && !settings.disp_showThmAdvPage) displayPage_++;
-      if (displayPage_ == page_nav && !settings.disp_showNavPage) displayPage_++;
+      if (displayPage_ == MainPage::Thermal && !settings.disp_showThmPage) displayPage_++;
+      if (displayPage_ == MainPage::ThermalAdv && !settings.disp_showThmAdvPage) displayPage_++;
+      if (displayPage_ == MainPage::Nav && !settings.disp_showNavPage) displayPage_++;
 
-      if (displayPage_ == page_last)
-        displayPage_ =
-            0;  // bound check if we fall off the right side, wrap around to the right side
       break;
 
     case page_prev:
       displayPage_--;
 
       // skip past any pages not enabled for display
-      if (displayPage_ == page_nav && !settings.disp_showNavPage) displayPage_--;
-      if (displayPage_ == page_thermalAdv && !settings.disp_showThmAdvPage) displayPage_--;
-      if (displayPage_ == page_thermal && !settings.disp_showThmPage) displayPage_--;
-      if (displayPage_ == page_debug && !settings.disp_showDebugPage)
+      if (displayPage_ == MainPage::Nav && !settings.disp_showNavPage) displayPage_--;
+      if (displayPage_ == MainPage::ThermalAdv && !settings.disp_showThmAdvPage) displayPage_--;
+      if (displayPage_ == MainPage::Thermal && !settings.disp_showThmPage) displayPage_--;
+      if (displayPage_ == MainPage::Debug && !settings.disp_showDebugPage)
         displayPage_ = tempPage;  // go back to the page we were on if we can't go further left
 
-      if (displayPage_ < 0)
-        displayPage_ = page_last - 1;  // bound check if we fall off the left side -- wrap around to
-                                       // the last page (usually the menu page)
       break;
 
     case page_back:
@@ -123,8 +117,8 @@ void Display::turnPage(uint8_t action) {
   if (displayPage_ != tempPage) displayPagePrior_ = tempPage;
 }
 
-void Display::setPage(uint8_t targetPage) {
-  uint8_t tempPage = displayPage_;
+void Display::setPage(MainPage targetPage) {
+  MainPage tempPage = displayPage_;
   displayPage_ = targetPage;
 
   if (displayPage_ != tempPage) displayPagePrior_ = tempPage;
@@ -140,7 +134,7 @@ void Display::showOnSplash() { showSplashScreenFrames_ = 3; }
 void Display::update() {
   SpiLockGuard spiLock;  // Take out an SPI lock for the rending of the page
 
-  if (displayPage_ == page_charging) {
+  if (displayPage_ == MainPage::Charging) {
     display.showPageCharging();
     return;
   }
@@ -164,19 +158,19 @@ void Display::update() {
   }
 
   switch (displayPage_) {
-    case page_thermal:
+    case MainPage::Thermal:
       thermalPage_draw();
       break;
-    case page_thermalAdv:
+    case MainPage::ThermalAdv:
       thermalPageAdv_draw();
       break;
-    case page_debug:
+    case MainPage::Debug:
       showPageDebug();
       break;
-    case page_nav:
+    case MainPage::Nav:
       navigatePage_draw();
       break;
-    case page_menu:
+    case MainPage::Menu:
       mainMenuPage.draw();
       break;
   }

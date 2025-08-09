@@ -213,7 +213,7 @@ void main_CHARGE_loop() {
     */
 
     // Display Charging Page
-    display.setPage(page_charging);
+    display.setPage(MainPage::Charging);
     display.update();  // update display based on battery charge state etc
 
     // Check SD Card State and remount if card was inserted
