@@ -47,7 +47,7 @@ void MainMenuPage::backToMainMenu() {
 void MainMenuPage::quitMenu() {
   cursor_position = cursor_back;
   menu_page = page_menu_main;
-  display_turnPage(page_back);
+  display.turnPage(PageAction::Back);
 }
 
 void MainMenuPage::draw() {
@@ -116,7 +116,7 @@ void MainMenuPage::menu_item_action(Button button) {
   switch (cursor_position) {
     case cursor_back:
       if (button == Button::LEFT || button == Button::CENTER) {
-        display_turnPage(page_back);
+        display.turnPage(PageAction::Back);
         speaker.playSound(fx::exit);
       } else if (button == Button::RIGHT) {
         // display_turnPage(page_next);  // maybe stop at menu, don't allow scrolling around back to

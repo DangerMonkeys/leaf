@@ -29,13 +29,14 @@
 #include "version.h"
 #include "wind_estimate/wind_estimate.h"
 
-// Display Testing Temp Vars
-float wind_angle = 1.57;
-char seconds = 0;
-char minutes = 0;
-char hours = 0;
-uint16_t heading = 0;
-char string_heading[] = " WNW ";
+Display display;
+
+#define LCD_BACKLIGHT 21  // can be used for backlight if desired (also broken out to header)
+#define LCD_RS 17         // 16 on old V3.2.0
+#define LCD_RESET 18      // 17 on old V3.2.0
+
+void GLCD_inst(byte data);
+void GLCD_data(byte data);
 
 #ifndef WO256X128  // if not old hardare, use the latest:
 U8G2_ST75256_JLX19296_F_4W_HW_SPI u8g2(U8G2_R1,
@@ -49,11 +50,7 @@ U8G2_ST75256_WO256X128_F_4W_HW_SPI u8g2(U8G2_R3,
                                         /* reset=*/LCD_RESET);
 #endif
 
-int8_t display_page = page_thermal;
-uint8_t display_page_prior = page_thermal;  // track the page we used to be on, so we can "go back"
-                                            // if needed (like cancelling out of a menu heirarchy)
-
-void display_init(void) {
+void Display::init(void) {
   {
     // Scope lock as setting a contrast will take its own lock
     SpiLockGuard spiLock;  // Lock the SPI bus before working with it
@@ -68,11 +65,11 @@ void display_init(void) {
     Serial.println("u8g2 done. ");
   }
 
-  display_setContrast(settings.disp_contrast);
+  setContrast(settings.disp_contrast);
   Serial.print("u8g2 set contrast. ");
 }
 
-void display_setContrast(uint8_t contrast) {
+void Display::setContrast(uint8_t contrast) {
   SpiLockGuard spiLock;
 #ifndef WO256X128  // if not using older hardware, use the latest hardware contrast setting:
   // user can select levels of contrast from 0-20; but display needs values of 115-135.
@@ -83,90 +80,75 @@ void display_setContrast(uint8_t contrast) {
 #endif
 }
 
-void display_turnPage(uint8_t action) {
-  uint8_t tempPage = display_page;
+void Display::turnPage(PageAction action) {
+  MainPage tempPage = displayPage_;
 
   switch (action) {
-    case page_home:
-      display_page = page_thermal;
+    case PageAction::Home:
+      displayPage_ = MainPage::Thermal;
       break;
 
-    case page_next:
-      display_page++;
+    case PageAction::Next:
+      displayPage_++;
 
       // skip past any pages not enabled for display
-      if (display_page == page_thermal && !settings.disp_showThmPage) display_page++;
-      if (display_page == page_thermalAdv && !settings.disp_showThmAdvPage) display_page++;
-      if (display_page == page_nav && !settings.disp_showNavPage) display_page++;
+      if (displayPage_ == MainPage::Thermal && !settings.disp_showThmPage) displayPage_++;
+      if (displayPage_ == MainPage::ThermalAdv && !settings.disp_showThmAdvPage) displayPage_++;
+      if (displayPage_ == MainPage::Nav && !settings.disp_showNavPage) displayPage_++;
 
-      if (display_page == page_last)
-        display_page =
-            0;  // bound check if we fall off the right side, wrap around to the right side
       break;
 
-    case page_prev:
-      display_page--;
+    case PageAction::Prev:
+      displayPage_--;
 
       // skip past any pages not enabled for display
-      if (display_page == page_nav && !settings.disp_showNavPage) display_page--;
-      if (display_page == page_thermalAdv && !settings.disp_showThmAdvPage) display_page--;
-      if (display_page == page_thermal && !settings.disp_showThmPage) display_page--;
-      if (display_page == page_debug && !settings.disp_showDebugPage)
-        display_page = tempPage;  // go back to the page we were on if we can't go further left
+      if (displayPage_ == MainPage::Nav && !settings.disp_showNavPage) displayPage_--;
+      if (displayPage_ == MainPage::ThermalAdv && !settings.disp_showThmAdvPage) displayPage_--;
+      if (displayPage_ == MainPage::Thermal && !settings.disp_showThmPage) displayPage_--;
+      if (displayPage_ == MainPage::Debug && !settings.disp_showDebugPage)
+        displayPage_ = tempPage;  // go back to the page we were on if we can't go further left
 
-      if (display_page < 0)
-        display_page = page_last - 1;  // bound check if we fall off the left side -- wrap around to
-                                       // the last page (usually the menu page)
       break;
 
-    case page_back:
-      display_page = display_page_prior;
+    case PageAction::Back:
+      displayPage_ = displayPagePrior_;
   }
 
-  if (display_page != tempPage) display_page_prior = tempPage;
+  if (displayPage_ != tempPage) displayPagePrior_ = tempPage;
 }
 
-void display_setPage(uint8_t targetPage) {
-  uint8_t tempPage = display_page;
-  display_page = targetPage;
+void Display::setPage(MainPage targetPage) {
+  MainPage tempPage = displayPage_;
+  displayPage_ = targetPage;
 
-  if (display_page != tempPage) display_page_prior = tempPage;
+  if (displayPage_ != tempPage) displayPagePrior_ = tempPage;
 }
 
-uint8_t display_getPage() { return display_page; }
-
-uint8_t showSplashScreenFrames = 0;
-
-void display_showOnSplash() { showSplashScreenFrames = 3; }
-
-bool showWarning = true;
-
-bool displayingWarning() { return showWarning; }
-void displayDismissWarning() { showWarning = false; }
+void Display::showOnSplash() { showSplashScreenFrames_ = 3; }
 
 //*********************************************************************
 // MAIN DISPLAY UPDATE FUNCTION
 //*********************************************************************
 // Will first display charging screen if charging, or splash screen if in the process of turning on
 // / waking up Then will display any current modal pages before falling back to the current page
-void display_update() {
+void Display::update() {
   SpiLockGuard spiLock;  // Take out an SPI lock for the rending of the page
 
-  if (display_page == page_charging) {
-    display_page_charging();
+  if (displayPage_ == MainPage::Charging) {
+    showPageCharging();
     return;
   }
-  if (showSplashScreenFrames) {
+  if (showSplashScreenFrames_) {
     display_on_splash();
-    showSplashScreenFrames--;
+    showSplashScreenFrames_--;
     return;
   }
   // If user setting to SHOW_WARNING and also we need to showWarning, then display it
-  if (settings.system_showWarning && showWarning) {
+  if (settings.system_showWarning && showWarning_) {
     warningPage_draw();
     return;
   } else {
-    displayDismissWarning();
+    dismissWarning();
   }
 
   auto modalPage = mainMenuPage.get_modal_page();
@@ -175,26 +157,26 @@ void display_update() {
     return;
   }
 
-  switch (display_page) {
-    case page_thermal:
+  switch (displayPage_) {
+    case MainPage::Thermal:
       thermalPage_draw();
       break;
-    case page_thermalAdv:
+    case MainPage::ThermalAdv:
       thermalPageAdv_draw();
       break;
-    case page_debug:
-      display_page_debug();
+    case MainPage::Debug:
+      showPageDebug();
       break;
-    case page_nav:
+    case MainPage::Nav:
       navigatePage_draw();
       break;
-    case page_menu:
+    case MainPage::Menu:
       mainMenuPage.draw();
       break;
   }
 }
 
-void display_clear() {
+void Display::clear() {
   SpiLockGuard spiLock;
   u8g2.clear();
 }
@@ -209,81 +191,36 @@ void GLCD_data(byte data) {
   spi_writeGLCD(data);
 }
 
-char speed[] = "132";
-char windSpeed[] = "28";
-char turn = 1;
-uint16_t windDir = 235;
-int32_t varioBar_climbRate = -100;  // cm/s  (i.e. m/s * 100)
-int8_t climbChange = 10;
-
-char altitude[] = "23,857\"";
-char altAbvLaunch[] = "4,169";
-char glide[] = "10.4";
-char distFlown[] = "34.5";
-char glideToWypt[] = " 6.5";
-char timeToWypt[] = "12:34";
-char distToWypt[] = "42.7";
-char waypoint[] = "Marshall-LZ";
-char temp[] = "102";
-char accel[] = "2.1g";
-char altAbvLZ[] = "1,987";
-char climbRate[] = "+1385";
-char clockTime[] = "12:57pm";
-char timer[] = "1:23:45";
-float dirToWypt = -.25;
-
-/*
-
-float gps_getSpeed_kph() { return gps.speed.kmph(); }
-float gps_getSpeed_mph() { return gps.speed.mph(); }
-float gps_getCourseDeg() { return gps.course.deg(); }
-float gps_getAltMeters() { return gps.altitude.meters(); }
-
-*/
-
-void display_update_temp_vars() {
-  dirToWypt += .005;
-  wind_angle -= .0075;
-
-  varioBar_climbRate += climbChange;
-  if (varioBar_climbRate > 1100) {
-    climbChange *= -1;
-    varioBar_climbRate = 1090;
-  } else if (varioBar_climbRate < -1100) {
-    climbChange *= -1;
-    varioBar_climbRate = -1090;
-  }
-}
-
 /*********************************************************************************
 **   CHARGING PAGE    ************************************************************
 *********************************************************************************/
-void display_page_charging() {
+void Display::showPageCharging() {
+  const auto& info = power.info();
   u8g2.firstPage();
   do {
     // Battery Percent
     uint8_t fontOffset = 3;
-    if (power.batteryPercent == 100) fontOffset = 0;
+    if (info.batteryPercent == 100) fontOffset = 0;
     u8g2.setFont(leaf_6x12);
     u8g2.setCursor(36 + fontOffset, 12);
-    u8g2.print(power.batteryPercent);
+    u8g2.print(info.batteryPercent);
     u8g2.print('%');
 
     display_batt_charging_fullscreen(48, 17);
 
     u8g2.setFont(leaf_6x12);
     u8g2.setCursor(5, 157);
-    if (power.inputCurrent == i100mA)
+    if (info.inputCurrent == PowerInputLevel::i100mA)
       u8g2.print("100mA");
-    else if (power.inputCurrent == i500mA)
+    else if (info.inputCurrent == PowerInputLevel::i500mA)
       u8g2.print("500mA");
-    else if (power.inputCurrent == iMax)
+    else if (info.inputCurrent == PowerInputLevel::Max)
       u8g2.print("810mA");
-    else if (power.inputCurrent == iStandby)
+    else if (info.inputCurrent == PowerInputLevel::Standby)
       u8g2.print(" OFF");
 
     u8g2.print(" ");
-    u8g2.print(power.batteryMV);
+    u8g2.print(info.batteryMV);
     u8g2.print("mV");
 
     // Display the current version
@@ -310,7 +247,7 @@ void display_page_charging() {
 **    DEBUG TEST PAGE     ***************************************************
 *********************************************************************************/
 
-void display_page_debug() {
+void Display::showPageDebug() {
   u8g2.firstPage();
   do {
     // temp display of speed and heading and all that.
@@ -342,13 +279,14 @@ void display_page_debug() {
 
     uint8_t x = 56;
     uint8_t y = 12;
+    const auto& info = power.info();
     u8g2.setFont(leaf_6x12);
     u8g2.setCursor(x, y);
-    u8g2.print(power.batteryPercent);
+    u8g2.print(info.batteryPercent);
     u8g2.print('%');
     u8g2.setCursor(x, y += 6);
     u8g2.setFont(leaf_5h);
-    u8g2.print((float)power.batteryMV / 1000, 3);
+    u8g2.print((float)info.batteryMV / 1000, 3);
     u8g2.print("v");
 
     // Altimeter Setting

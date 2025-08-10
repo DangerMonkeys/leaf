@@ -624,11 +624,11 @@ void display_battIcon(uint8_t x, uint8_t y, bool vertical) {
       : batt at 100%
       ; batt charging (full)
   */
+  const auto& info = power.info();
+  char battIcon = '0' + (info.batteryPercent + 5) / 10;
 
-  char battIcon = '0' + (power.batteryPercent + 5) / 10;
-
-  if (power.charging) {
-    if (power.batteryPercent >= 100)
+  if (info.charging) {
+    if (info.batteryPercent >= 100)
       battIcon = ';';
     else
       battIcon = '/';
@@ -661,6 +661,8 @@ void display_battIcon(uint8_t x, uint8_t y, bool vertical) {
 }
 
 void display_batt_charging_fullscreen(uint8_t x, uint8_t y) {
+  const auto& info = power.info();
+
   // size of battery
   uint8_t w = 60;   // 60;
   uint8_t h = 120;  // 140;
@@ -675,7 +677,7 @@ void display_batt_charging_fullscreen(uint8_t x, uint8_t y) {
                 w / 15 - t);  // empty internal volume
 
   // Battery Capacity Fill
-  uint8_t fill_h = (h - 4 * t) * power.batteryPercent / 100;
+  uint8_t fill_h = (h - 4 * t) * info.batteryPercent / 100;
   uint8_t fill_y = (y + w / 20 + 2 * t) +
                    ((h - 4 * t) - fill_h);  // (starting position to allow for line thickness etc) +
                                             // ( (100% height) - (actual height) )
@@ -683,7 +685,7 @@ void display_batt_charging_fullscreen(uint8_t x, uint8_t y) {
   u8g2.drawBox(x - (w / 2) + 2 * t, fill_y, w - 4 * t, fill_h);  //, w/8-t/2);
 
   // Charging bolt
-  if (power.charging) {
+  if (info.charging) {
     uint8_t bolt_x1 = w * 6 / 100;   //  4
     uint8_t bolt_x2 = w * 7 / 100;   //  6
     uint8_t bolt_x3 = w * 21 / 100;  // 17
@@ -1026,7 +1028,7 @@ void display_headerAndFooter(bool timerSelected, bool showTurnArrows) {
     display_speed(78, 14);
     u8g2.setFont(leaf_5h);
     u8g2.setCursor(82, 21);
-    if (display_getPage() == page_nav) {
+    if (display.getPage() == MainPage::Nav) {
       u8g2.setDrawColor(0);  // draw white on black for nav page
     }
     if (settings.units_speed)

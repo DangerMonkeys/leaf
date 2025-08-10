@@ -459,19 +459,19 @@ void navigatePage_button(Button button, ButtonState state, uint8_t count) {
           break;
         case Button::RIGHT:
           if (state == RELEASED) {
-            display_turnPage(page_next);
+            display.turnPage(PageAction::Next);
             speaker.playSound(fx::increase);
           }
           break;
         case Button::LEFT:
           if (state == RELEASED) {
-            display_turnPage(page_prev);
+            display.turnPage(PageAction::Prev);
             speaker.playSound(fx::decrease);
           }
           break;
         case Button::CENTER:
           if (state == HELD && count == 2) {
-            power_shutdown();
+            power.shutdown();
           }
           break;
       }
@@ -528,7 +528,7 @@ void navigatePage_button(Button button, ButtonState state, uint8_t count) {
           if (state == HELD) {
             navigator.cancelNav();
             navigatePage_cursorPosition = cursor_navigatePage_none;
-            buttons_lockAfterHold();  // lock buttons so we don't turn off if user keeps holding
+            buttons.lockAfterHold();  // lock buttons so we don't turn off if user keeps holding
                                       // button
           }
           break;
@@ -581,7 +581,7 @@ void navigatePage_button(Button button, ButtonState state, uint8_t count) {
           } else if (state == HELD && flightTimer_isRunning()) {
             flightTimer_stop();
             navigatePage_cursorPosition = cursor_navigatePage_none;
-            buttons_lockAfterHold();  // lock buttons so we don't turn off if user keeps holding
+            buttons.lockAfterHold();  // lock buttons so we don't turn off if user keeps holding
                                       // button
           }
 

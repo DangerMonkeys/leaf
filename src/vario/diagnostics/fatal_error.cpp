@@ -91,13 +91,13 @@ void rebootOnKeyPress() {
 
   // Wait until no buttons are pressed
   do {
-    which_button = buttons_check();
+    which_button = buttons.check();
   } while (which_button == Button::NONE);
 
   // Wait until a button is held
   do {
-    which_button = buttons_check();
-    button_state = buttons_get_state();
+    which_button = buttons.check();
+    button_state = buttons.getState();
   } while (button_state != ButtonState::HELD);
 
   speaker.playSound(fx::off);
