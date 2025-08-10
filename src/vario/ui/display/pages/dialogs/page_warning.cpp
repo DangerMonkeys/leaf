@@ -92,7 +92,7 @@ void warningPage_draw() {
 void warningPage_button(Button button, ButtonState state, uint8_t count) {
   // allow turning off in all states
   if (state == HELD && button == Button::CENTER) {
-    power_shutdown();
+    power.shutdown();
     return;
   }
 
@@ -119,7 +119,7 @@ void warningPage_button(Button button, ButtonState state, uint8_t count) {
           warningPage_cursorPosition = cursor_warningPage_accept;
           speaker.playSound(fx::increase);
         } else if (button == Button::CENTER) {
-          power_shutdown();
+          power.shutdown();
         }
       }
       break;
