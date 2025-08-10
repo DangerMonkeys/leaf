@@ -3,7 +3,7 @@
 #include <U8g2lib.h>
 
 #include "hardware/configuration.h"
-#include "utils/wrapping_enum.h"
+#include "utils/constrained_enum.h"
 
 // Display settings loaded from configuration / variants
 #ifndef WO256X128                               // if not old hardare, use the latest:
