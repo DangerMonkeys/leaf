@@ -7,6 +7,7 @@
 #include "hardware/Leaf_SPI.h"
 #include "hardware/aht20.h"
 #include "hardware/icm_20948.h"
+#include "hardware/ms5611.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "instruments/imu.h"
@@ -323,7 +324,7 @@ void setTasks(void) {
   // statements allow for tasks every second, spaced out on different 100ms blocks)
   switch (counter_10ms_block) {
     case 0:
-      baro.startMeasurement();  // begin updating baro every 50ms on the 0th and 5th blocks
+      ms5611.update();  // begin updating MS5611 every 50ms on the 0th and 5th blocks
       // taskman_baro = 0;  // begin updating baro every 50ms on the 0th and 5th blocks
       break;
     case 1:
@@ -340,7 +341,7 @@ void setTasks(void) {
     case 4:
       break;
     case 5:
-      baro.startMeasurement();  // begin updating baro every 50ms on the 0th and 5th blocks
+      ms5611.update();  // begin updating MS5611 every 50ms on the 0th and 5th blocks
       // taskman_baro = 0;  // begin updating baro every 50ms on the 0th and 5th blocks
       break;
     case 6:
@@ -394,10 +395,11 @@ void taskManager(void) {
     taskman_didSomeTasks = 1;
   }
 
-  // Do Baro first, because the ADC prep & read cycle is time dependent (must have >9ms between prep
-  // & read).  If other tasks delay the start of the baro prep step by >1ms, then next cycle when we
-  // read ADC, the Baro won't be ready.
+  // Do MS5611 first, because the ADC prep & read cycle is time dependent (must have >9ms between
+  // prep & read).  If other tasks delay the start of the MS5611 prep step by >1ms, then next cycle
+  // when we read ADC, the MS5611 won't be ready.
   if (taskman_baro) {
+    ms5611.update();
     baro.update();
     taskman_baro = 0;
   }
