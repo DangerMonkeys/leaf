@@ -226,7 +226,7 @@ void main_CHARGE_loop() {
 
     // Check Buttons
     auto buttonPushed =
-        buttons_update();  // check Button for any presses (user can turn ON from charging state)
+        buttons.update();  // check Button for any presses (user can turn ON from charging state)
 
     // Prep to end this cycle and sleep
     chargeman_doTasks = 0;  // done with tasks this timer cycle
@@ -405,7 +405,7 @@ void taskManager(void) {
     taskman_baro = 0;
   }
   if (taskman_buttons) {
-    buttons_update();
+    buttons.update();
     taskman_buttons = 0;
   }
   if (taskman_speakerTimer) {
