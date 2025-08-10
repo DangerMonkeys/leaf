@@ -107,7 +107,7 @@ Button Buttons::update() {
     }
     return which_button;
   }
-  if (displayingWarning()) {
+  if (display.displayingWarning()) {
     warningPage_button(which_button, getState(), getHoldCount());
     display.update();
     return which_button;
@@ -121,19 +121,19 @@ Button Buttons::update() {
     return which_button;
   }
 
-  if (currentPage == page_menu) {
+  if (currentPage == MainPage::Menu) {
     bool draw_now = mainMenuPage.button_event(which_button, getState(), getHoldCount());
     if (draw_now) display.update();
 
-  } else if (currentPage == page_thermal) {
+  } else if (currentPage == MainPage::Thermal) {
     thermalPage_button(which_button, getState(), getHoldCount());
     display.update();
 
-  } else if (currentPage == page_thermalAdv) {
+  } else if (currentPage == MainPage::ThermalAdv) {
     thermalPageAdv_button(which_button, getState(), getHoldCount());
     display.update();
 
-  } else if (currentPage == page_nav) {
+  } else if (currentPage == MainPage::Nav) {
     navigatePage_button(which_button, getState(), getHoldCount());
     display.update();
 
