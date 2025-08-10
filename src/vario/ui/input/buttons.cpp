@@ -68,15 +68,16 @@ Button Buttons::update() {
   power.resetAutoOffCounter();  // pressing any button should reset the auto-off counter
                                 // TODO: we should probably have a counter for Auto-Timer-Off as
                                 // well, and button presses should reset that.
-  uint8_t currentPage = display_getPage();  // actions depend on which page we're on
+  MainPage currentPage = display.getPage();  // actions depend on which page we're on
 
-  if (currentPage == page_charging) {
+  if (currentPage == MainPage::Charging) {
     switch (which_button) {
       case Button::CENTER:
         if (button_state == HELD && holdCounter_ == 1) {
-          display_clear();
-          display_showOnSplash();
-          display_setPage(page_thermal);  // TODO: set initial page to the user's last used page
+          display.clear();
+          display.showOnSplash();
+          display.setPage(
+              MainPage::Thermal);  // TODO: set initial page to the user's last used page
           speaker.playSound(fx::enter);
           lockAfterHold();  // lock buttons until user lets go of power button
           power.switchToOnState();
@@ -106,9 +107,9 @@ Button Buttons::update() {
     }
     return which_button;
   }
-  if (displayingWarning()) {
+  if (display.displayingWarning()) {
     warningPage_button(which_button, getState(), getHoldCount());
-    display_update();
+    display.update();
     return which_button;
   }
 
@@ -116,27 +117,27 @@ Button Buttons::update() {
   auto modal_page = mainMenuPage.get_modal_page();
   if (modal_page != NULL) {
     bool draw_now = modal_page->button_event(which_button, getState(), getHoldCount());
-    if (draw_now) display_update();
+    if (draw_now) display.update();
     return which_button;
   }
 
-  if (currentPage == page_menu) {
+  if (currentPage == MainPage::Menu) {
     bool draw_now = mainMenuPage.button_event(which_button, getState(), getHoldCount());
-    if (draw_now) display_update();
+    if (draw_now) display.update();
 
-  } else if (currentPage == page_thermal) {
+  } else if (currentPage == MainPage::Thermal) {
     thermalPage_button(which_button, getState(), getHoldCount());
-    display_update();
+    display.update();
 
-  } else if (currentPage == page_thermalAdv) {
+  } else if (currentPage == MainPage::ThermalAdv) {
     thermalPageAdv_button(which_button, getState(), getHoldCount());
-    display_update();
+    display.update();
 
-  } else if (currentPage == page_nav) {
+  } else if (currentPage == MainPage::Nav) {
     navigatePage_button(which_button, getState(), getHoldCount());
-    display_update();
+    display.update();
 
-  } else if (currentPage != page_charging) {  // NOT CHARGING PAGE (i.e., our debug test page)
+  } else if (currentPage != MainPage::Charging) {  // NOT CHARGING PAGE (i.e., our debug test page)
     switch (which_button) {
       case Button::CENTER:
         switch (button_state) {
@@ -145,17 +146,17 @@ Button Buttons::update() {
               power.shutdown();
               while (inspectPins() == Button::CENTER) {
               }  // freeze here until user lets go of power button
-              display_setPage(page_charging);
+              display.setPage(MainPage::Charging);
             }
             break;
           case RELEASED:
-            display_turnPage(page_home);
+            display.turnPage(PageAction::Home);
             break;
         }
         break;
       case Button::RIGHT:
         if (button_state == RELEASED) {
-          display_turnPage(page_next);
+          display.turnPage(PageAction::Next);
           speaker.playSound(fx::increase);
         }
         break;

@@ -95,7 +95,7 @@ void Power::bootUp() {
 
     info_.onState = PowerState::On;
 
-    display_showOnSplash();  // show the splash screen if user turned us on
+    display.showOnSplash();  // show the splash screen if user turned us on
 
   } else {
     // if not center button, then USB power turned us on, go into charge mode
@@ -154,7 +154,7 @@ void Power::initPeripherals() {
   Serial.println(" - Finished GPS");
   wire_init();
   Serial.println(" - Finished I2C Wire");
-  display_init();
+  display.init();
   Serial.println(" - Finished display");
   ms5611.init();
   baro.init();
@@ -223,7 +223,7 @@ void Power::switchToOnState() {
 void Power::shutdown() {
   Serial.println("power_shutdown");
 
-  display_clear();
+  display.clear();
   display_off_splash();
   baro.sleep();  // stop getting climbrate updates so we don't hear vario beeps while shutting down
 
@@ -249,7 +249,7 @@ void Power::shutdown() {
 
   // finally, turn off devices
   sleepPeripherals();
-  display_clear();
+  display.clear();
   delay(100);
   latchOff();  // turn off 3.3V regulator (if we're plugged into USB, we'll stay on)
   delay(100);

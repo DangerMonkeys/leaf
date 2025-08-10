@@ -215,8 +215,8 @@ void main_CHARGE_loop() {
     */
 
     // Display Charging Page
-    display_setPage(page_charging);
-    display_update();  // update display based on battery charge state etc
+    display.setPage(MainPage::Charging);
+    display.update();  // update display based on battery charge state etc
 
     // Check SD Card State and remount if card was inserted
     sdcard.update();
@@ -433,7 +433,7 @@ void taskManager(void) {
     taskman_log = 0;
   }
   if (taskman_display) {
-    display_update();
+    display.update();
     taskman_display = 0;
   }
   if (taskman_tempRH) {
