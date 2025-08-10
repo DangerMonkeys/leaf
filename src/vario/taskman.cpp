@@ -7,6 +7,7 @@
 #include "hardware/Leaf_SPI.h"
 #include "hardware/aht20.h"
 #include "hardware/icm_20948.h"
+#include "hardware/ms5611.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "instruments/imu.h"
@@ -120,7 +121,7 @@ void taskmanSetup() {
   vTaskPrioritySet(NULL, 10);
 
   // turn on and handle all device initialization
-  power_bootUp();
+  power.bootUp();
 
   // Start Main System Timer for Interrupt Events (this will tell Main Loop to set tasks every
   // interrupt cycle)
@@ -181,7 +182,7 @@ the pushbuttons, the GPS 1PPS signal, and perhaps others.
 */
 
 // LOOP NOTES:
-// when re-entering POWER_ON state, be sure to start from tasks #1, so baro ADC can be re-prepped
+// when re-entering PowerState::On, be sure to start from tasks #1, so baro ADC can be re-prepped
 // before reading
 
 void loop() {
@@ -189,9 +190,10 @@ void loop() {
   webserver_loop();
 #endif
 
-  if (power.onState == POWER_ON)
+  const auto& info = power.info();
+  if (info.onState == PowerState::On)
     main_ON_loop();
-  else if (power.onState == POWER_OFF_USB)
+  else if (info.onState == PowerState::OffUSB)
     main_CHARGE_loop();
   else
     Serial.print("FAILED MAIN LOOP HANDLER");
@@ -220,7 +222,7 @@ void main_CHARGE_loop() {
     sdcard.update();
 
     // update battery level and charge state
-    power_readBatteryState();
+    power.readBatteryState();
 
     // Check Buttons
     auto buttonPushed =
@@ -323,7 +325,7 @@ void setTasks(void) {
   // statements allow for tasks every second, spaced out on different 100ms blocks)
   switch (counter_10ms_block) {
     case 0:
-      baro.startMeasurement();  // begin updating baro every 50ms on the 0th and 5th blocks
+      ms5611.update();  // begin updating MS5611 every 50ms on the 0th and 5th blocks
       // taskman_baro = 0;  // begin updating baro every 50ms on the 0th and 5th blocks
       break;
     case 1:
@@ -340,7 +342,7 @@ void setTasks(void) {
     case 4:
       break;
     case 5:
-      baro.startMeasurement();  // begin updating baro every 50ms on the 0th and 5th blocks
+      ms5611.update();  // begin updating MS5611 every 50ms on the 0th and 5th blocks
       // taskman_baro = 0;  // begin updating baro every 50ms on the 0th and 5th blocks
       break;
     case 6:
@@ -394,10 +396,11 @@ void taskManager(void) {
     taskman_didSomeTasks = 1;
   }
 
-  // Do Baro first, because the ADC prep & read cycle is time dependent (must have >9ms between prep
-  // & read).  If other tasks delay the start of the baro prep step by >1ms, then next cycle when we
-  // read ADC, the Baro won't be ready.
+  // Do MS5611 first, because the ADC prep & read cycle is time dependent (must have >9ms between
+  // prep & read).  If other tasks delay the start of the MS5611 prep step by >1ms, then next cycle
+  // when we read ADC, the MS5611 won't be ready.
   if (taskman_baro) {
+    ms5611.update();
     baro.update();
     taskman_baro = 0;
   }
@@ -422,7 +425,7 @@ void taskManager(void) {
     taskman_gps = 0;
   }
   if (taskman_power) {
-    power_update();
+    power.update();
     taskman_power = 0;
   }
   if (taskman_log) {

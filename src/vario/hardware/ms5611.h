@@ -7,7 +7,9 @@
 
 #include <stdint.h>
 
-#include "hardware/pressure_source.h"
+#include "dispatch/message_source.h"
+#include "dispatch/message_types.h"
+#include "dispatch/pollable.h"
 
 enum class MS5611State : uint8_t {
   None,
@@ -16,18 +18,27 @@ enum class MS5611State : uint8_t {
   MeasuringTemperature,
 };
 
-class MS5611 : public IPressureSource {
+class MS5611 : public IMessageSource, IPollable {
  public:
   void init();
-  PressureUpdateResult update();
-  void startMeasurement();
+
+  // IMessageSource
+  void attach(etl::imessage_bus* bus) { bus_ = bus; }
+
+  // IPollable
+  void update();
+
+  // setting to control when to update temp reading from sensor (we can do
+  // temp every ~1 sec, even though we're doing pressure every 50ms)
+  // TODO: specify temp measurement every X often instead
   void enableTemp(bool enable);
-  int32_t getPressure();
 
   void printCoeffs();
   void debugPrint();
 
  private:
+  etl::imessage_bus* bus_ = nullptr;
+
   // Sensor Calibration Values (stored in chip PROM; must be read at startup before performing baro
   // calculations)
   uint16_t C_SENS_;
@@ -62,8 +73,12 @@ class MS5611 : public IPressureSource {
   int64_t OFF2_;
   int64_t SENS2_;
 
-  bool startMeasurement_ = false;
   MS5611State state_ = MS5611State::None;
   bool tempEnabled_ = true;
   uint32_t baroADCStartTime_ = 0;
+
+  PressureUpdate getUpdate();
 };
+
+// Singleton sensor instance
+extern MS5611 ms5611;

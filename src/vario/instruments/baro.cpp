@@ -24,10 +24,8 @@
 // average)
 #define CLIMB_AVERAGE 4
 
-// Singleton sensor to use in barometer
-MS5611 pressureSensor;
 // Singleton barometer instance for device
-Barometer baro(&pressureSensor);
+Barometer baro;
 
 void Barometer::adjustAltSetting(int8_t dir, uint8_t count) {
   float increase = .001;  //
@@ -91,26 +89,22 @@ void Barometer::init(void) {
     altimeterSetting = settings.vario_altSetting;
   else
     altimeterSetting = 29.921;
-
-  pressureSource_->init();
-
-  // after initialization, get first baro sensor reading to populate values
-  getFirstReading();
-
-  pressureSource_->startMeasurement();
-  task_ = BarometerTask::Measure;
 }
 
-void Barometer::getFirstReading(void) {
-  pressureSource_->startMeasurement();
-  PressureUpdateResult result = pressureSource_->update();
-  while (!FLAG_SET(result, PressureUpdateResult::PressureReady)) {
-    delay(10);
-    result = pressureSource_->update();
+void Barometer::on_receive(const PressureUpdate& msg) {
+  if (!hasFirstReading_) {
+    firstReading(msg);
+    return;
   }
-  pressure = pressureSource_->getPressure();
 
-  calculatePressureAlt();  // calculate altitudes
+  calculatePressureAlt(msg.pressure);  // calculate Pressure Altitude adjusted for temperature
+  task_ = BarometerTask::FilterAltitude;
+}
+
+void Barometer::firstReading(const PressureUpdate& msg) {
+  pressure = msg.pressure;
+
+  calculatePressureAlt(msg.pressure);  // calculate altitudes
 
   // initialize all the other alt variables with current altitude to start
 
@@ -124,6 +118,9 @@ void Barometer::getFirstReading(void) {
   // save the starting value as launch altitude (Launch will
   // be updated when timer starts)
   altAtLaunch = altAdjusted;
+
+  task_ = BarometerTask::Measure;
+  hasFirstReading_ = true;
 }
 
 void Barometer::resetLaunchAlt() { altAtLaunch = altAdjusted; }
@@ -136,12 +133,14 @@ void Barometer::setFilterSamples(size_t nSamples) {
 void Barometer::sleep() { sleeping_ = true; }
 void Barometer::wake() {
   sleeping_ = false;
-  getFirstReading();  // after waking, get first baro sensor reading to populate values
+  hasFirstReading_ = false;
 }
 
-void Barometer::startMeasurement() { pressureSource_->startMeasurement(); }
-
 void Barometer::update() {
+  if (!hasFirstReading_) {
+    return;
+  }
+
   // (we don't need to update temp as frequently so we choose to skip it if desired)
   // the baro senor requires ~9ms between the command to prep the ADC and actually reading the
   // value. Since this delay is required between both pressure and temp values, we break the sensor
@@ -169,15 +168,7 @@ void Barometer::update() {
   if (task_ == BarometerTask::None) {
     // Do nothing
   } else if (task_ == BarometerTask::Measure) {
-    PressureUpdateResult sensorResult = pressureSource_->update();
-
-    if (FLAG_SET(sensorResult, PressureUpdateResult::PressureReady)) {
-      // (even if we skipped some steps above because of mis-reads or mis-timing, we can still
-      // calculate a "new" corrected pressure value based on the old ADC values.  It will be a
-      // repeat value, but it keeps the filter buffer moving on time)
-      calculatePressureAlt();  // calculate Pressure Altitude adjusted for temperature
-      task_ = BarometerTask::FilterAltitude;
-    }
+    // Do nothing (task manager polls the pressure source)
   } else if (task_ == BarometerTask::FilterAltitude) {
     // Filter Pressure and calculate Final Altitude Values
     // Note, IMU will have taken an accel reading and updated the Kalman
@@ -200,7 +191,6 @@ void Barometer::update() {
 
     if (DEBUG_BARO) Serial.println("**BR** climbRate Filtered: " + String(climbRateFiltered));
 
-    pressureSource_->startMeasurement();
     task_ = BarometerTask::Measure;
   } else {
     fatalError("Barometer was conducting unknown task %d", (int)task_);
@@ -211,8 +201,8 @@ void Barometer::update() {
 
 // vvv Device reading & data processing vvv
 
-void Barometer::calculatePressureAlt() {
-  pressure = pressureSource_->getPressure();
+void Barometer::calculatePressureAlt(int32_t newPressure) {
+  pressure = newPressure;
 
   // record datapoint on SD card if datalogging is turned on
 
