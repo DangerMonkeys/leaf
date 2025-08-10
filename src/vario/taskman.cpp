@@ -121,7 +121,7 @@ void taskmanSetup() {
   vTaskPrioritySet(NULL, 10);
 
   // turn on and handle all device initialization
-  power_bootUp();
+  power.bootUp();
 
   // Start Main System Timer for Interrupt Events (this will tell Main Loop to set tasks every
   // interrupt cycle)
@@ -182,7 +182,7 @@ the pushbuttons, the GPS 1PPS signal, and perhaps others.
 */
 
 // LOOP NOTES:
-// when re-entering POWER_ON state, be sure to start from tasks #1, so baro ADC can be re-prepped
+// when re-entering PowerState::On, be sure to start from tasks #1, so baro ADC can be re-prepped
 // before reading
 
 void loop() {
@@ -190,9 +190,10 @@ void loop() {
   webserver_loop();
 #endif
 
-  if (power.onState == POWER_ON)
+  const auto& info = power.info();
+  if (info.onState == PowerState::On)
     main_ON_loop();
-  else if (power.onState == POWER_OFF_USB)
+  else if (info.onState == PowerState::OffUSB)
     main_CHARGE_loop();
   else
     Serial.print("FAILED MAIN LOOP HANDLER");
@@ -221,7 +222,7 @@ void main_CHARGE_loop() {
     sdcard.update();
 
     // update battery level and charge state
-    power_readBatteryState();
+    power.readBatteryState();
 
     // Check Buttons
     auto buttonPushed =
@@ -424,7 +425,7 @@ void taskManager(void) {
     taskman_gps = 0;
   }
   if (taskman_power) {
-    power_update();
+    power.update();
     taskman_power = 0;
   }
   if (taskman_log) {
