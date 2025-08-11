@@ -11,6 +11,7 @@
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "instruments/imu.h"
+#include "logging/log.h"
 #include "power.h"
 #include "taskman.h"
 #include "ui/settings/settings.h"
@@ -68,6 +69,9 @@ void setup() {
   // Subscribe modules that need bus updates.
   // This should not exceed the bus router limit.
   bus.subscribe(BLE::get());
+
+  // Provide logger access to the bus
+  log_setBus(&bus);
 
   Serial.println("Leaf Initialized");
 }

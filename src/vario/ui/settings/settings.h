@@ -8,10 +8,11 @@
 #include "ui/input/buttons.h"
 
 // Types for selections
-#define SETTING_LOG_FORMAT_ENTRIES 2  // How many log format entries there are
+#define SETTING_LOG_FORMAT_ENTRIES 3  // How many log format entries there are
 typedef uint8_t SettingLogFormat;
 #define LOG_FORMAT_IGC 0
 #define LOG_FORMAT_KML 1
+#define LOG_FORMAT_BUS 2
 
 // Setting bounds and definitions
 // Vario
