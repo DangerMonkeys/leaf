@@ -3,11 +3,11 @@
 #include "WiFi.h"
 #include "comms/ble.h"
 #include "comms/ota.h"
+#include "leaf_version.h"
 #include "power.h"
 #include "ui/display/display.h"
 #include "ui/display/fonts.h"
 #include "ui/settings/settings.h"
-#include "version.h"
 
 /**************************
  * PageMenuSystemWifi (Top Level)

@@ -5,8 +5,8 @@
 
 #include <stdexcept>
 
+#include "leaf_version.h"
 #include "ui/settings/settings.h"
-#include "version.h"
 
 String getLatestTagVersion() {
   Serial.print("[OTA] Getting latest tag version from ");

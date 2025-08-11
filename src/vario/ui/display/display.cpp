@@ -11,6 +11,7 @@
 #include "hardware/Leaf_SPI.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
+#include "leaf_version.h"
 #include "logging/log.h"
 #include "navigation/gpx.h"
 #include "power.h"
@@ -26,7 +27,6 @@
 #include "ui/display/pages/primary/page_thermal.h"
 #include "ui/display/pages/primary/page_thermal_adv.h"
 #include "ui/settings/settings.h"
-#include "version.h"
 #include "wind_estimate/wind_estimate.h"
 
 Display display;

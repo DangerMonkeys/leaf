@@ -6,6 +6,7 @@
 #include "comms/fanet_radio.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
+#include "leaf_version.h"
 #include "logging/log.h"
 #include "navigation/gpx.h"
 #include "power.h"
@@ -14,7 +15,6 @@
 #include "ui/display/display.h"
 #include "ui/display/fonts.h"
 #include "ui/settings/settings.h"
-#include "version.h"
 #include "wind_estimate/wind_estimate.h"
 
 /********************************************************************************************/

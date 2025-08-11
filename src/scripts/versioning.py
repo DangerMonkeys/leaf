@@ -95,38 +95,38 @@ def set_defines(lines, values) -> tuple[set, set]:
 
 
 def update_version_header(env, firmware_version, tag_version, hardware_variant) -> None:
-    """Temporarily modify version.h to hold constants that apply to this build.
+    """Temporarily modify leaf_version.h to hold constants that apply to this build.
     
-    version.h's last-modified date is manipulated so PlatformIO will rebuild appropriately when
-    the content in version.h and the constants have changed or not changed since last build.
+    leaf_version.h's last-modified date is manipulated so PlatformIO will rebuild appropriately when
+    the content in leaf_version.h and the constants have changed or not changed since last build.
 
-    After the build is complete, the content of version.h as built is stored in version.h.lastbuild
-    for inspection and for checking whether artifacts depending on version.h should be rebuilt next
+    After the build is complete, the content of leaf_version.h as built is stored in leaf_version.h.lastbuild
+    for inspection and for checking whether artifacts depending on leaf_version.h should be rebuilt next
     time.
 
-    The original content of version.h is backed up in version.h.original, and should be restored at
+    The original content of leaf_version.h is backed up in leaf_version.h.original, and should be restored at
     the end of the build.
     """
 
-    # These are the #defines in version.h that should be set per build
+    # These are the #defines in leaf_version.h that should be set per build
     values = {
         "FIRMWARE_VERSION": firmware_version,
         "TAG_VERSION": tag_version,
         "HARDWARE_VARIANT": hardware_variant,
     }
 
-    # Construct what version.h should be for this build
+    # Construct what leaf_version.h should be for this build
     vario_path = os.path.join(env["PROJECT_DIR"], "src", "vario")
-    version_h_path = os.path.join(vario_path, "version.h")
+    version_h_path = os.path.join(vario_path, "leaf_version.h")
     with open(version_h_path, "r") as f:
         version_lines = f.readlines()
     missing, _ = set_defines(version_lines, values)
     if missing:
-        raise ValueError("version.h does not have a line #defining " + ", ".join(missing))
+        raise ValueError("leaf_version.h does not have a line #defining " + ", ".join(missing))
     
-    # Check if there are changes to what version.h should be for this build as compared to what it
+    # Check if there are changes to what leaf_version.h should be for this build as compared to what it
     # was last build
-    last_version_h_path = os.path.join(vario_path, "version.h.lastbuild")
+    last_version_h_path = os.path.join(vario_path, "leaf_version.h.lastbuild")
     if os.path.exists(last_version_h_path):
         with open(last_version_h_path, "r") as f:
             last_version_lines = f.readlines()
@@ -134,41 +134,41 @@ def update_version_header(env, firmware_version, tag_version, hardware_variant) 
     else:
         current = False
     
-    # Determine whether to mark version.h as unchanged for the build
+    # Determine whether to mark leaf_version.h as unchanged for the build
     if current:
         timestamp = os.path.getmtime(version_h_path)
-        print(f"[versioning.py] The constants {', '.join(values)} have not changed since last build; version.h's modified time will be set to {datetime.fromtimestamp(timestamp)} for the build")
+        print(f"[versioning.py] The constants {', '.join(values)} have not changed since last build; leaf_version.h's modified time will be set to {datetime.fromtimestamp(timestamp)} for the build")
     else:
         timestamp = None
-        print(f"[versioning.py] version.h or the constants {', '.join(values)} have changed since last build")
+        print(f"[versioning.py] leaf_version.h or the constants {', '.join(values)} have changed since last build")
 
-    # Back up current version.h content
-    original_version_h_path = os.path.join(vario_path, "version.h.original")
+    # Back up current leaf_version.h content
+    original_version_h_path = os.path.join(vario_path, "leaf_version.h.original")
     shutil.copy2(version_h_path, original_version_h_path)
-    print("[versioning.py] version.h backed up to version.h.original")
+    print("[versioning.py] leaf_version.h backed up to leaf_version.h.original")
 
-    # Define action to restore version.h to its original state when needed
+    # Define action to restore leaf_version.h to its original state when needed
     restored = False
     def restore_version_h():
         nonlocal restored
         if not restored:
             if os.path.exists(original_version_h_path):
-                print("[versioning.py] Restoring version.h to its original content")
+                print("[versioning.py] Restoring leaf_version.h to its original content")
                 shutil.copy2(original_version_h_path, version_h_path)
                 os.remove(original_version_h_path)
 
                 if timestamp:
-                    # Restore version.h's last-modified timestamp
+                    # Restore leaf_version.h's last-modified timestamp
                     print(f"[versioning.py] Setting date modified to {datetime.fromtimestamp(timestamp)}")
                     current_time = time.time()
                     os.utime(version_h_path, (current_time, timestamp))
                 restored = True
             else:
-                print("[versioning.py] Could not restore version.h to its original content because version.h.original was missing")
+                print("[versioning.py] Could not restore leaf_version.h to its original content because leaf_version.h.original was missing")
         else:
-            print("[versioning.py] Already restored version.h to its original content")
+            print("[versioning.py] Already restored leaf_version.h to its original content")
 
-    # Update version.h for this build
+    # Update leaf_version.h for this build
     with open(version_h_path, "w") as f:
         f.writelines(version_lines)
     if timestamp:
@@ -178,7 +178,7 @@ def update_version_header(env, firmware_version, tag_version, hardware_variant) 
     # Queue tasks for build completion
     restored = False
     def after_build(*args, **kwargs):
-        # Record version.h content used for this build
+        # Record leaf_version.h content used for this build
         shutil.move(version_h_path, last_version_h_path)
         current_time = time.time()
         os.utime(last_version_h_path, (current_time, current_time))
@@ -186,7 +186,7 @@ def update_version_header(env, firmware_version, tag_version, hardware_variant) 
         restore_version_h()
     env.AddPostAction("$BUILD_DIR/${PROGNAME}.bin", after_build)
 
-    # Make sure to restore version.h to its original content even if there was a build error
+    # Make sure to restore leaf_version.h to its original content even if there was a build error
     global exit_events
     exit_events.append(lambda success: restore_version_h())
 
