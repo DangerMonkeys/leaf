@@ -7,10 +7,10 @@
 #include "FS.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
+#include "leaf_version.h"
 #include "time.h"
 #include "ui/settings/settings.h"
 #include "utils/string_utils.h"
-#include "version.h"
 
 String latDegreeToStr(double degree) {
   char output[9];  // 8 bytes + null terminator
