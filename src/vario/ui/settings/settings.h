@@ -6,6 +6,7 @@
 
 #include "comms/fanet_radio_types.h"
 #include "ui/input/buttons.h"
+#include "ui/settings/setting.h"
 
 // Types for selections
 #define SETTING_LOG_FORMAT_ENTRIES 2  // How many log format entries there are
@@ -100,78 +101,6 @@ typedef uint8_t SettingLogFormat;
 #define DEF_UNITS_distance 0  // 0 (km, or m for <1km),	1 (miles, or ft for < 1000 feet)
 #define DEF_UNITS_hours 1     // 0 (24-hour time),  1 (12 hour time),
 
-/// @brief Individual setting.
-/// @tparam T Underlying data type of setting.
-/// @tparam MinValue Minimum value setting may take on.
-/// @tparam MaxValue Maximum value setting may take on.
-/// @tparam DefaultValue Default value of setting.
-template <typename T, T MinValue, T MaxValue, T DefaultValue>
-class Setting {
- public:
-  using ChangeHandler = std::function<void(const T&)>;
-
-  Setting() : value_(DefaultValue) {}
-
-  T min() { return MinValue; }
-  T max() { return MaxValue; }
-  T defaultValue() { return DefaultValue; }
-
-  // Assignment operator to set the value and trigger the callback
-  Setting& operator=(const T& newValue) {
-    if (value_ != newValue && newValue >= MinValue && newValue <= MaxValue) {
-      value_ = newValue;
-      if (onChangeHandler_) {
-        onChangeHandler_(value_);
-      }
-    }
-    return *this;
-  }
-
-  // Implicit conversion to the underlying type
-  operator T() const { return value_; }
-
-  // Attach a handler for value changes
-  void onChange(ChangeHandler handler) { onChangeHandler_ = handler; }
-
-  // Increment operator (prefix)
-  Setting& operator++() {
-    if (value_ + 1 <= MaxValue) {
-      *this = value_ + 1;
-    }
-    return *this;
-  }
-
-  // Increment operator (postfix)
-  Setting operator++(int) {
-    Setting temp = *this;
-    if (value_ + 1 <= MaxValue) {
-      *this = value_ + 1;
-    }
-    return temp;
-  }
-
-  // Decrement operator (prefix)
-  Setting& operator--() {
-    if (value_ - 1 >= MinValue) {
-      *this = value_ - 1;
-    }
-    return *this;
-  }
-
-  // Decrement operator (postfix)
-  Setting operator--(int) {
-    Setting temp = *this;
-    if (value_ - 1 >= MinValue) {
-      *this = value_ - 1;
-    }
-    return temp;
-  }
-
- private:
-  T value_;
-  ChangeHandler onChangeHandler_ = nullptr;
-};
-
 class Settings {
  public:
   // Global Variables for Current Settings
@@ -185,7 +114,7 @@ class Settings {
       4   |   3     |  3/20 second
       5   |   1     |  1/20 second (single sample -- instant)
   */
-  Setting<int8_t, 1, 5, 3> vario_sensitivity;
+  CharSetting<1, 3, 5> vario_sensitivity{"vSensitivity"};
   int8_t vario_climbAvg;
   int8_t vario_climbStart;
   int8_t vario_volume;
