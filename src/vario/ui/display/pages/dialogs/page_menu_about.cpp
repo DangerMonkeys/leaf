@@ -3,9 +3,9 @@
 #include "WiFi.h"
 #include "comms/fanet_radio.h"
 #include "esp_mac.h"
+#include "leaf_version.h"
 #include "ui/display/display.h"
 #include "ui/display/fonts.h"
-#include "version.h"
 
 void PageMenuAbout::draw_extra() {
   auto y = 40;
