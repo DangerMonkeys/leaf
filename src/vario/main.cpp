@@ -29,6 +29,8 @@
 // Main message bus
 MessageBus<10> bus;
 
+TaskManager taskman;
+
 void setup() {
   // Start USB Serial Debugging Port
   Serial.begin(115200);
@@ -55,7 +57,7 @@ void setup() {
 
   // Initialize anything left over on the Task Manager System
   Serial.println("Initializing Taskman Service");
-  taskmanSetup();
+  taskman.init();
 
   // Initialize the BLE Stack, subscribe it to events
   // from the message bus.
@@ -85,3 +87,5 @@ void setup() {
 
   Serial.println("Leaf Initialized");
 }
+
+void loop() { taskman.update(); }
