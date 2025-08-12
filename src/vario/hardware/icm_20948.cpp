@@ -91,8 +91,9 @@ void ICM20948::update() {
       update.az = ((double)data.Raw_Accel.Data.Z) / 8192.0;
       update.hasAcceleration = true;
     }
-    if (update.hasOrientation || update.hasAcceleration && bus_) {
-      bus_->receive(update);
+    etl::imessage_bus* bus = bus_;
+    if ((update.hasOrientation || update.hasAcceleration) && bus) {
+      bus->receive(update);
     }
   }
 }

@@ -4,9 +4,11 @@
 
 class IMessageSource {
  public:
-  // Attach this object to the specified message bus and this object will provide messages to the
-  // specified message bus.
-  virtual void attach(etl::imessage_bus* bus) = 0;
+  // Publish messages to the specified message bus.
+  virtual void publishTo(etl::imessage_bus* bus) = 0;
+
+  // Do not publish messages to message bus any more.
+  virtual void stopPublishing() = 0;
 
   virtual ~IMessageSource() = default;  // Always provide a virtual destructor
 };

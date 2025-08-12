@@ -99,6 +99,7 @@ def main() -> int:
 
     try:
         send_packet(f"#Starting playback of {args.logfile}")
+        send_packet("!Disconnect sensors")
         send_packet("!Reset reference time")
         with open(args.logfile, "r", encoding=args.encoding, errors="replace") as f:
             for raw_line in f:
@@ -132,6 +133,11 @@ def main() -> int:
         if args.verbose:
             print("\nInterrupted. Exiting.")
     finally:
+        try:
+            send_packet("!Reconnect sensors")
+        except Exception as e:
+            print(f"Error reconnecting sensors: {e}")
+            pass
         try:
             sock.close()
         except Exception as e:

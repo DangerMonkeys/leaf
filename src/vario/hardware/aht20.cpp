@@ -94,8 +94,9 @@ void AHT20::update() {
       Serial.print("  Humidity: ");
       Serial.println(rh);
     }
-    if (bus_) {
-      bus_->receive(AmbientUpdate(temperature, rh));
+    etl::imessage_bus* bus = bus_;
+    if (bus) {
+      bus->receive(AmbientUpdate(temperature, rh));
     }
   } else {
     if (DEBUG_TEMPRH) Serial.println("Temp_RH - missed values due to sensor busy");

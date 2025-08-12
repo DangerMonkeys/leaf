@@ -10,10 +10,13 @@ class UDPMessageServer : public IMessageSource {
   void init();
 
   // IMessageSource
-  void attach(etl::imessage_bus* bus) { bus_ = bus; }
+  void publishTo(etl::imessage_bus* bus) { bus_ = bus; }
+  void stopPublishing() { bus_ = nullptr; }
 
  private:
   void onPacket(AsyncUDPPacket& packet);
+
+  unsigned long getAdjustedTime(unsigned long dt);
 
   void onComment(const char* line, size_t len);
   void onCommand(const char* line, size_t len);

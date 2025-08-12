@@ -44,13 +44,13 @@ void setup() {
   FanetRadio::getInstance().setup(&bus);
 #endif
 
-  AHT20::getInstance().attach(&bus);
-  ICM20948::getInstance().attach(&bus);
-  lc86g.attach(&bus);
-  ms5611.attach(&bus);
+  AHT20::getInstance().publishTo(&bus);
+  ICM20948::getInstance().publishTo(&bus);
+  lc86g.publishTo(&bus);
+  ms5611.publishTo(&bus);
 
 #ifdef DEBUG_WIFI
-  udpMessageServer.attach(&bus);
+  udpMessageServer.publishTo(&bus);
 #endif
 
   baro.subscribe(&bus);
@@ -70,7 +70,7 @@ void setup() {
   // Connect GPS instrument to message bus sourcing lines of text that should be NMEA sentences
   gps.subscribe(&bus);
   // Publish parsed GPS messages to message bus
-  gps.attach(&bus);
+  gps.publishTo(&bus);
 
   // Connect ambient environment instrument to message bus sourcing ambient environment updates
   ambient.subscribe(&bus);

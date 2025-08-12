@@ -89,8 +89,9 @@ bool LC86G::readLine() {
       newLine_[newLineIndex_] = '\0';
       if (newLineIndex_ > 0) {  // Ignore blank lines and second character in CR+LF
         newLine_.resize(newLineIndex_);
-        if (bus_) {
-          bus_->receive(GpsMessage(newLine_));  // Send the complete NMEA sentence to the bus
+        etl::imessage_bus* bus = bus_;
+        if (bus) {
+          bus->receive(GpsMessage(newLine_));  // Send the complete NMEA sentence to the bus
         }
         newLine_.resize(newLine_.capacity());
         newLineIndex_ = 0;

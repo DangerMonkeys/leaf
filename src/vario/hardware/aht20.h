@@ -23,7 +23,8 @@ class AHT20 : public IPollable, IMessageSource {
   void update();
 
   // IMessageSource
-  void attach(etl::imessage_bus* bus) { bus_ = bus; }
+  void publishTo(etl::imessage_bus* bus) { bus_ = bus; }
+  void stopPublishing() { bus_ = nullptr; }
 
   /// @brief Get the singleton AHT20 instance
   static AHT20& getInstance() {
