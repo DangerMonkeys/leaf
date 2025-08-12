@@ -8,6 +8,7 @@
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "instruments/imu.h"
+#include "logbook/bus.h"
 #include "logbook/flight.h"
 #include "logbook/igc.h"
 #include "logbook/kml.h"
@@ -34,11 +35,14 @@ Flight* flight =
     NULL;  // Pointer to the current flight record (null if we're not deisred to be logging)
 Kml kmlFlight;
 Igc igcFlight;
+Bus busFlight;
 
 // TODO:  Delete ME
 
 // used to keep track of current flight statistics
 FlightStats logbook;
+
+void log_setBus(etl::imessage_bus* bus) { busFlight.setBus(bus); }
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // UPDATE - Main function to run every second
@@ -222,6 +226,9 @@ void flightTimer_start() {
       break;
     case LOG_FORMAT_IGC:
       flight = &igcFlight;
+      break;
+    case LOG_FORMAT_BUS:
+      flight = &busFlight;
       break;
     default:
       return;  // DO not start the flight if it's an unknown format
