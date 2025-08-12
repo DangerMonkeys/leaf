@@ -225,7 +225,7 @@ void TaskManager::updateWhileOn() {
   // interrupt fired and set setTasks to true)
   bool gpsHasData = true;
   while (gpsHasData && !nextTaskTimerBlock.load(std::memory_order_acquire)) {
-    gpsHasData = lc86g.readData();
+    gpsHasData = lc86g.readLine();
   }
 }
 
