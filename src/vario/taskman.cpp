@@ -9,6 +9,7 @@
 #include "hardware/Leaf_SPI.h"
 #include "hardware/aht20.h"
 #include "hardware/icm_20948.h"
+#include "hardware/lc86g.h"
 #include "hardware/ms5611.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
@@ -224,7 +225,7 @@ void TaskManager::updateWhileOn() {
   // interrupt fired and set setTasks to true)
   bool gpsHasData = true;
   while (gpsHasData && !nextTaskTimerBlock.load(std::memory_order_acquire)) {
-    gpsHasData = gps.readData();
+    gpsHasData = lc86g.readData();
   }
 }
 
