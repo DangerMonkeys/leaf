@@ -15,6 +15,10 @@
 #include "taskman.h"
 #include "ui/settings/settings.h"
 
+#ifdef DEBUG_WIFI
+#include "comms/udp_message_server.h"
+#endif
+
 // MAIN Module
 // initializes the system.  Responsible for setting up resources with
 // as much dynamic memory as possible at the system bootup.  Sets up
@@ -39,6 +43,10 @@ void setup() {
   AHT20::getInstance().attach(&bus);
   ICM20948::getInstance().attach(&bus);
   ms5611.attach(&bus);
+
+#ifdef DEBUG_WIFI
+  udpMessageServer.attach(&bus);
+#endif
 
   baro.subscribe(&bus);
 

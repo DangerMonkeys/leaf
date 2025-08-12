@@ -27,6 +27,7 @@
 #ifdef DEBUG_WIFI
 #include <WiFi.h>
 #include "comms/debug_webserver.h"
+#include "comms/udp_message_server.h"
 #endif
 
 //*** Task Manager
@@ -111,10 +112,12 @@ void taskmanSetup() {
   WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
     Serial.println("WiFi Event " + WiFi.localIP().toString() + ": " + event);
   });
-#endif
-#ifdef DEBUG_WIFI
+
   // Start WebServer
   webserver_setup();
+
+  // Start UDP message server
+  udpMessageServer.init();
 #endif
 
   // Adjust the priority of this (the loop event)'s FreeRTOS priority
