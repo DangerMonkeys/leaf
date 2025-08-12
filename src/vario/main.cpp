@@ -12,9 +12,14 @@
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "instruments/imu.h"
+#include "logging/log.h"
 #include "power.h"
 #include "taskman.h"
 #include "ui/settings/settings.h"
+
+#ifdef DEBUG_WIFI
+#include "comms/udp_message_server.h"
+#endif
 
 // MAIN Module
 // initializes the system.  Responsible for setting up resources with
@@ -41,6 +46,10 @@ void setup() {
   ICM20948::getInstance().attach(&bus);
   lc86g.attach(&bus);
   ms5611.attach(&bus);
+
+#ifdef DEBUG_WIFI
+  udpMessageServer.attach(&bus);
+#endif
 
   baro.subscribe(&bus);
 
@@ -70,6 +79,9 @@ void setup() {
   // Subscribe modules that need bus updates.
   // This should not exceed the bus router limit.
   bus.subscribe(BLE::get());
+
+  // Provide logger access to the bus
+  log_setBus(&bus);
 
   Serial.println("Leaf Initialized");
 }

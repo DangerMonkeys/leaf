@@ -3,6 +3,8 @@
 // Module is responsible for logging a flight
 
 #include <Arduino.h>
+#include "etl/message_bus.h"
+
 #include "logbook/flight.h"
 
 // Auto Start/Stop Timer Thresholds
@@ -14,6 +16,8 @@
 #define AUTO_STOP_MAX_ACCEL 10  // Max accelerometer signal
 #define AUTO_STOP_MAX_ALT 200   // cm altitude change for timer auto-stop
 #define AUTO_STOP_MIN_SEC 10    // seconds of low speed / low accel for timer to auto-stop
+
+void log_setBus(etl::imessage_bus* bus);
 
 // Main Log functions
 void log_update(void);  // Update function to run every second
