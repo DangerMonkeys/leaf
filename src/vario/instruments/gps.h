@@ -60,7 +60,8 @@ class LeafGPS : public TinyGPSPlus,
   void update();
 
   // IMessageSource
-  void attach(etl::imessage_bus* bus) { bus_ = bus; }
+  void publishTo(etl::imessage_bus* bus) { bus_ = bus; }
+  void stopPublishing() { bus_ = nullptr; }
 
   // etl::message_router<LeafGPS, GpsMessage>
   void on_receive(const GpsMessage& msg);

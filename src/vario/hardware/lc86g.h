@@ -22,7 +22,8 @@ class LC86G : IPowerControl, IMessageSource {
   void wake();
 
   // IMessageSource
-  void attach(etl::imessage_bus* bus) { bus_ = bus; }
+  void publishTo(etl::imessage_bus* bus) { bus_ = bus; }
+  void stopPublishing() { bus_ = nullptr; }
 
  private:
   HardwareSerial& gpsPort_;

@@ -122,8 +122,9 @@ void MS5611::update() {
         state_ = MS5611State::MeasuringTemperature;
         return;
       } else {
-        if (bus_) {
-          bus_->receive(getUpdate());
+        etl::imessage_bus* bus = bus_;
+        if (bus) {
+          bus->receive(getUpdate());
         }
         state_ = MS5611State::Idle;
         return;
@@ -141,8 +142,9 @@ void MS5611::update() {
         D2_T_ = D2_Tlast_;  // use the last value if we get a misread
       else
         D2_Tlast_ = D2_T_;  // otherwise save this value for next time if needed
-      if (bus_) {
-        bus_->receive(getUpdate());
+      etl::imessage_bus* bus = bus_;
+      if (bus) {
+        bus->receive(getUpdate());
       }
       state_ = MS5611State::Idle;
       return;

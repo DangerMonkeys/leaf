@@ -13,7 +13,8 @@ class ICM20948 : public IPollable, IMessageSource {
   void update();
 
   // IMessageSource
-  void attach(etl::imessage_bus* bus) { bus_ = bus; }
+  void publishTo(etl::imessage_bus* bus) { bus_ = bus; }
+  void stopPublishing() { bus_ = nullptr; }
 
   /// @brief Get the singleton ICM 20948 instance
   static ICM20948& getInstance() {

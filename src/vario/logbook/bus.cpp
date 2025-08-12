@@ -37,7 +37,7 @@ void Bus::on_receive(const AmbientUpdate& msg) {
 
 void Bus::on_receive(const GpsMessage& msg) {
   if (!file) return;
-  file.printf("G%d,%d,%s\n", millis() - tStart_, msg.nmea.length(), msg.nmea.c_str());
+  file.printf("G%d,%s\n", millis() - tStart_, msg.nmea.c_str());
 }
 
 void Bus::on_receive(const MotionUpdate& msg) {

@@ -23,7 +23,8 @@ class MS5611 : public IMessageSource, IPollable {
   void init();
 
   // IMessageSource
-  void attach(etl::imessage_bus* bus) { bus_ = bus; }
+  void publishTo(etl::imessage_bus* bus) { bus_ = bus; }
+  void stopPublishing() { bus_ = nullptr; }
 
   // IPollable
   void update();
