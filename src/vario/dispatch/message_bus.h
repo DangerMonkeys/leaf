@@ -40,9 +40,11 @@ class MessageBus : public etl::message_bus<MAX_ROUTERS_> {
     inline bool valid() { return valid_; }
 
     void receive(const etl::imessage& message) {
-      if (valid_) {
-        bus_.etl::message_bus<MAX_ROUTERS_>::receive(message);
+      if (!valid_) {
+        fatalError("Attempted to publish on message bus when mutex was not successfully acquired");
+        return;
       }
+      bus_.etl::message_bus<MAX_ROUTERS_>::receive(message);
     }
 
    private:
