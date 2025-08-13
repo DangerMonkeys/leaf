@@ -16,6 +16,7 @@
 #include "power.h"
 #include "taskman.h"
 #include "ui/settings/settings.h"
+#include "wind_estimate/wind_estimate.h"
 
 #ifdef DEBUG_WIFI
 #include "comms/udp_message_server.h"
@@ -77,6 +78,8 @@ void setup() {
 
   // Connect IMU instrument to message bus sourcing motion updates
   imu.subscribe(&bus);
+
+  windEstimator.subscribe(&bus);
 
   // Subscribe modules that need bus updates.
   // This should not exceed the bus router limit.

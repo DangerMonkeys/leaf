@@ -170,7 +170,7 @@ void drawUserField(uint8_t x, uint8_t y, uint8_t field, bool selected) {
       u8g2.setFont(leaf_6x12);
       u8g2.setCursor(x + 20, y);
 
-      WindEstimate windEstForAirspeed = getWindEstimate();
+      const WindEstimate& windEstForAirspeed = windEstimator.getWindEstimate();
       // only show airspeed if wind estimate is valid
       if (windEstForAirspeed.validEstimate) {
         float displayAirspeed = windEstForAirspeed.airspeedLive;  // m/s current approx airspeed
