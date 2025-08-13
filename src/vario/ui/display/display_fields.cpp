@@ -791,7 +791,7 @@ void display_fanet_icon(const uint8_t& x, const uint8_t& y) {
 
 // Wind Sock Center Pointer
 void display_windSockArrow(int16_t x, int16_t y, int16_t radius) {
-  WindEstimate windEstimate = getWindEstimate();
+  const WindEstimate& windEstimate = windEstimator.getWindEstimate();
   float wind_angle = windEstimate.windDirectionTrue;
   // int16_t wind_triangle_radius = 10;
   // if (wind_angle > 2 * PI) wind_angle = 0;
@@ -829,7 +829,7 @@ void display_windSockArrow(int16_t x, int16_t y, int16_t radius) {
 void display_windSockRing(int16_t x, int16_t y, int16_t radius, int16_t size, bool showPointer) {
   float point_angle = 0.65;  // half angle of the arrow pointer
 
-  WindEstimate windEstimate = getWindEstimate();
+  const WindEstimate& windEstimate = windEstimator.getWindEstimate();
 
   // main circle
   u8g2.setDrawColor(1);
@@ -925,7 +925,7 @@ void display_windSpeedCentered(uint8_t x, uint8_t y, const uint8_t* font) {
 
   u8g2.setFont(font);
 
-  WindEstimate windEstimate = getWindEstimate();
+  const WindEstimate& windEstimate = windEstimator.getWindEstimate();
   if (windEstimate.validEstimate) {
     float windSpeed = windEstimate.windSpeed;
 

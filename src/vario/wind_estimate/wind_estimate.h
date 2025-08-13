@@ -3,31 +3,30 @@
 #include "instruments/gps.h"
 
 // bin definitions for storing sample points
-const uint8_t binCount = 8;
-const uint8_t samplesPerBin = 6;
+constexpr uint8_t BIN_COUNT = 8;
+constexpr uint8_t SAMPLES_PER_BIN = 6;
 
-const float STANDARD_AIRSPEED =
-    10;  // 10 m/s typical airspeed used as a starting point for wind estimate
-
-// the "pie slice" bucket for storing samples
-struct Bin {
-  float angle[samplesPerBin];  // radians East of North (track angle over the ground)
-  float speed[samplesPerBin];  // m/s ground speed
-  float averageAngle;
-  float averageSpeed;
-  float dx[samplesPerBin];
-  float dy[samplesPerBin];
-  float averageDx;
-  float averageDy;
-  uint8_t index;        // the wrap-around bookmark for where to add new values
-  uint8_t sampleCount;  // track how many in case the bin isn't full yet
-};
+// 10 m/s typical airspeed used as a starting point for wind estimate
+constexpr float STANDARD_AIRSPEED = 10;
 
 // the "full pie" of all samples to use for	wind estimation
 struct TotalSamples {
-  Bin bin[binCount];
+  // the "pie slice" bucket for storing samples
+  struct Bin {
+    float angle[SAMPLES_PER_BIN];  // radians East of North (track angle over the ground)
+    float speed[SAMPLES_PER_BIN];  // m/s ground speed
+    float averageAngle;
+    float averageSpeed;
+    float dx[SAMPLES_PER_BIN];
+    float dy[SAMPLES_PER_BIN];
+    float averageDx;
+    float averageDy;
+    uint8_t index;        // the wrap-around bookmark for where to add new values
+    uint8_t sampleCount;  // track how many in case the bin isn't full yet
+  };
+
+  Bin bin[BIN_COUNT];
 };
-extern struct TotalSamples totalSamples;
 
 struct WindEstimate {
   // m/s estimate of wind speed
@@ -55,24 +54,67 @@ struct WindEstimate {
   bool validEstimate = false;
 };
 
-struct GroundVelocity {
-  float trackAngle;  // radians east from North.  Must be positive.
-  float speed;
+class WindEstimator : public etl::message_router<WindEstimator, GpsReading> {
+ public:
+  void subscribe(etl::imessage_bus* bus) { bus->subscribe(*this); }
+
+  // etl::message_router<WindEstimator, GpsReading>
+  void on_receive(const GpsReading& msg);
+  void on_receive_unknown(const etl::imessage& msg) {}
+
+  // call frequently, each invocation should take no longer than 10ms
+  // each invocation will advance the wind estimation process
+  void estimateWind();
+
+  const WindEstimate& getWindEstimate() const { return windEstimate_; }
+  int binCount() const { return BIN_COUNT; }
+
+  // == for testing and debugging ==
+
+  // increment each time a wind estimate update completes
+  int updateCount() const { return updateCount_; }
+  // increment each time a wind estimate update yields a better solution
+  int betterCount() const { return betterCount_; }
+  const TotalSamples& totalSamples() const { return totalSamples_; }
+
+  void clearWindEstimate();
+
+ private:
+  struct GroundVelocity {
+    float trackAngle;  // radians east from North.  Must be positive.
+    float speed;
+  };
+
+  // ingest a sample groundVelocity and store it in the appropriate bin
+  void submitVelocityForWindEstimate(GroundVelocity groundVelocity);
+
+  void averageSamplePoints();
+
+  // Perform work toward updating the wind estimate.
+  // Returns: true if estimate update is complete, false if still in progress.
+  bool updateEstimate();
+
+  // convert angle and speed into Dx Dy points for circle-fitting
+  void convertToDxDy();
+
+  // check if we have at least 3 bins with points, and
+  // that the bins span at least a semi circle
+  bool checkIfEnoughPoints();
+
+  // Compute the error of the given wind estimate.
+  //   wx: Windspeed in the easterly direction, m/s
+  //   wy: Windspeed in the northerly direction, m/s
+  //   airspeed: Constant airspeed of aircraft, m/s
+  float errorOf(float wx, float wy, float airspeed) const;
+
+  uint8_t windEstimateStep_ = 0;
+
+  WindEstimate windEstimate_;
+
+  TotalSamples totalSamples_;
+
+  int updateCount_ = 0;
+  int betterCount_ = 0;
 };
 
-void windEstimate_onNewSentence(NMEASentenceContents contents);
-
-void submitVelocityForWindEstimate(GroundVelocity groundVelocity);
-
-WindEstimate getWindEstimate(void);
-int getBinCount(void);
-
-// for testing and debugging
-int getUpdateCount(void);  // increment each time a wind estimate update completes
-int getBetterCount(void);  // increment each time a wind estimate update yields a better solution
-
-void clearWindEstimate(void);
-
-// call frequently, each invocation should take no longer than 10ms
-// each invocation will advance the wind estimation process
-void estimateWind(void);
+extern WindEstimator windEstimator;
