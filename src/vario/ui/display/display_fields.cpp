@@ -4,6 +4,7 @@
 #include <U8g2lib.h>
 
 #include "comms/fanet_radio.h"
+#include "instruments/ambient.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "leaf_version.h"
@@ -590,28 +591,38 @@ void display_glide(uint8_t x, uint8_t y, float glide) {
   }
 }
 
-void display_temp(uint8_t x, uint8_t y, int16_t temperature) {
+void display_temp(uint8_t x, uint8_t y, const Ambient& ambient) {
   u8g2.setCursor(x, y);
   u8g2.setDrawColor(1);
   u8g2.setFont(leaf_6x12);
 
-  if (settings.units_temp) {
-    temperature = temperature * 9 / 5 + 32;
-    u8g2.print(temperature);
-    u8g2.print((char)134);
+  if (ambient.state() == Ambient::State::Ready) {
+    int16_t temperature = ambient.temp();
+    if (settings.units_temp) {
+      temperature = temperature * 9 / 5 + 32;
+      u8g2.print(temperature);
+      u8g2.print((char)134);
+    } else {
+      u8g2.print(temperature);
+      u8g2.print((char)133);
+    }
   } else {
-    u8g2.print(temperature);
-    u8g2.print((char)133);
+    u8g2.print("--");
   }
 }
 
-void display_humidity(uint8_t x, uint8_t y, uint8_t humidity) {
+void display_humidity(uint8_t x, uint8_t y, const Ambient& ambient) {
   u8g2.setCursor(x, y);
   u8g2.setDrawColor(1);
   u8g2.setFont(leaf_6x12);
 
-  u8g2.print(humidity);
-  u8g2.print('%');
+  if (ambient.state() == Ambient::State::Ready) {
+    uint8_t humidity = (uint8_t)ambient.humidity();
+    u8g2.print(humidity);
+    u8g2.print('%');
+  } else {
+    u8g2.print("--%");
+  }
 }
 
 void display_battIcon(uint8_t x, uint8_t y, bool vertical) {
