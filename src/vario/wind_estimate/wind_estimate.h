@@ -9,22 +9,22 @@ constexpr uint8_t SAMPLES_PER_BIN = 6;
 // 10 m/s typical airspeed used as a starting point for wind estimate
 constexpr float STANDARD_AIRSPEED = 10;
 
-// the "pie slice" bucket for storing samples
-struct Bin {
-  float angle[SAMPLES_PER_BIN];  // radians East of North (track angle over the ground)
-  float speed[SAMPLES_PER_BIN];  // m/s ground speed
-  float averageAngle;
-  float averageSpeed;
-  float dx[SAMPLES_PER_BIN];
-  float dy[SAMPLES_PER_BIN];
-  float averageDx;
-  float averageDy;
-  uint8_t index;        // the wrap-around bookmark for where to add new values
-  uint8_t sampleCount;  // track how many in case the bin isn't full yet
-};
-
 // the "full pie" of all samples to use for	wind estimation
 struct TotalSamples {
+  // the "pie slice" bucket for storing samples
+  struct Bin {
+    float angle[SAMPLES_PER_BIN];  // radians East of North (track angle over the ground)
+    float speed[SAMPLES_PER_BIN];  // m/s ground speed
+    float averageAngle;
+    float averageSpeed;
+    float dx[SAMPLES_PER_BIN];
+    float dy[SAMPLES_PER_BIN];
+    float averageDx;
+    float averageDy;
+    uint8_t index;        // the wrap-around bookmark for where to add new values
+    uint8_t sampleCount;  // track how many in case the bin isn't full yet
+  };
+
   Bin bin[BIN_COUNT];
 };
 
@@ -54,11 +54,6 @@ struct WindEstimate {
   bool validEstimate = false;
 };
 
-struct GroundVelocity {
-  float trackAngle;  // radians east from North.  Must be positive.
-  float speed;
-};
-
 class WindEstimator : public etl::message_router<WindEstimator, GpsReading> {
  public:
   void subscribe(etl::imessage_bus* bus) { bus->subscribe(*this); }
@@ -85,6 +80,11 @@ class WindEstimator : public etl::message_router<WindEstimator, GpsReading> {
   void clearWindEstimate();
 
  private:
+  struct GroundVelocity {
+    float trackAngle;  // radians east from North.  Must be positive.
+    float speed;
+  };
+
   // ingest a sample groundVelocity and store it in the appropriate bin
   void submitVelocityForWindEstimate(GroundVelocity groundVelocity);
 

@@ -82,9 +82,9 @@ bool WindEstimator::checkIfEnoughPoints() {
   bool enough = false;  // assume we don't have enough
 
   uint8_t populatedBinCount = 0;
-  const uint8_t populatedBinsRequired = 3;
+  constexpr uint8_t POPULATED_BINS_REQUIRED = 3;
   uint8_t continuousEmptyBinCount = 0;
-  const uint8_t binsRequiredForSemiCircle = BIN_COUNT / 2;
+  constexpr uint8_t BINS_REQUIRED_FOR_SEMI_CIRCLE = BIN_COUNT / 2;
 
   uint8_t firstBinToHavePoints = 0;
   bool haveAStartingBin = false;
@@ -104,14 +104,15 @@ bool WindEstimator::checkIfEnoughPoints() {
       continuousEmptyBinCount++;
       // if we span a half a circle with no points, we can't have
       // more than half a circle with points, so return false now
-      if (continuousEmptyBinCount >= binsRequiredForSemiCircle) {
+      if (continuousEmptyBinCount >= BINS_REQUIRED_FOR_SEMI_CIRCLE) {
         return false;
       }
     }
   }
 
   // if we have enough bins and they span more than a semi circle, we have enough
-  if (populatedBinCount >= populatedBinsRequired && populatedSpan >= binsRequiredForSemiCircle) {
+  if (populatedBinCount >= POPULATED_BINS_REQUIRED &&
+      populatedSpan >= BINS_REQUIRED_FOR_SEMI_CIRCLE) {
     enough = true;
   }
 
@@ -288,9 +289,9 @@ void WindEstimator::submitVelocityForWindEstimate(GroundVelocity groundVelocity)
   }
 
   // now sort into appropriate bin
-  float binAngleSpan = 2 * PI / BIN_COUNT;
+  constexpr float BIN_ANGLE_SPAN = 2 * PI / BIN_COUNT;
   for (int b = 0; b < BIN_COUNT; b++) {
-    if (relativeAngle < (b + 1) * binAngleSpan) {
+    if (relativeAngle < (b + 1) * BIN_ANGLE_SPAN) {
       totalSamples_.bin[b].angle[totalSamples_.bin[b].index] = groundVelocity.trackAngle;
       totalSamples_.bin[b].speed[totalSamples_.bin[b].index] = groundVelocity.speed;
       totalSamples_.bin[b].index++;
