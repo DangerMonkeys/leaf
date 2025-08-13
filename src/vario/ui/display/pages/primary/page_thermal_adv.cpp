@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <U8g2lib.h>
 
+#include "hardware/buttons.h"
 #include "instruments/ambient.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
