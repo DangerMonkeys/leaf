@@ -74,6 +74,11 @@ typedef uint8_t SettingLogFormat;
 #define DEF_BLUETOOTH_ON 0   // default bluetooth off
 #define DEF_SHOW_WARNING 1   // default show warning on startup
 
+// Developer Settings
+#define DEF_DEV_MENU 0                // default hide the dev menu
+#define DEF_DEV_START_LOG_AT_BOOT 0   // default do not start log at boot
+#define DEF_DEV_START_DISCONNECTED 0  // default do not disconnect hardware at boot
+
 // Boot Flags
 // Boot-to-ON Flag (when resetting from system updates,
 // reboot to "ON" even if not holding power button)
@@ -104,7 +109,6 @@ typedef uint8_t SettingLogFormat;
 
 class Settings {
  public:
-  // Global Variables for Current Settings
   // Vario Settings
   int8_t vario_sinkAlarm;
   /* Vario Sensitivity
@@ -141,6 +145,11 @@ class Settings {
   bool system_wifiOn;
   bool system_bluetoothOn;
   bool system_showWarning;
+
+  // developer options
+  bool dev_menu;
+  bool dev_startLogAtBoot;
+  bool dev_startDisconnected;
 
   // Boot Flags
   bool boot_enterBootloader;

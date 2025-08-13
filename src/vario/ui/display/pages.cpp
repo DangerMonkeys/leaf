@@ -1,6 +1,7 @@
 #include "ui/display/pages.h"
 
 #include "ui/display/pages/menu/page_menu_altimeter.h"
+#include "ui/display/pages/menu/page_menu_developer.h"
 #include "ui/display/pages/menu/page_menu_display.h"
 #include "ui/display/pages/menu/page_menu_gps.h"
 #include "ui/display/pages/menu/page_menu_log.h"
@@ -18,3 +19,4 @@ UnitsMenuPage unitsMenuPage;
 GPSMenuPage gpsMenuPage;
 LogMenuPage logMenuPage;
 SystemMenuPage systemMenuPage;
+DeveloperMenuPage developerMenuPage;

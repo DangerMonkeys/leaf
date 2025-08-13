@@ -20,7 +20,8 @@ enum cursor_main_menu {
   cursor_units,
   cursor_gps,
   cursor_log,
-  cursor_system
+  cursor_system,
+  cursor_developer,
 };
 
 // all submenu pages and confirmation dialogs
@@ -33,6 +34,7 @@ enum display_menu_pages {
   page_menu_gps,
   page_menu_log,
   page_menu_system,
+  page_menu_developer,
   page_menu_resetConfirm,
 };
 
@@ -76,6 +78,8 @@ void MainMenuPage::draw() {
     case page_menu_system:
       systemMenuPage.draw();
       break;
+    case page_menu_developer:
+      developerMenuPage.draw();
   }
 }
 
@@ -89,13 +93,18 @@ void MainMenuPage::draw_main_menu() {
     uint8_t start_y = 29;
     uint8_t setting_name_x = 2;
     uint8_t setting_choice_x = 72;
-    uint8_t menu_items_y[] = {190, 45, 60, 75, 90, 105, 120, 135};
+    uint8_t menu_items_y[] = {190, 45, 60, 75, 90, 105, 120, 135, 150};
 
     // first draw cursor selection box
     u8g2.drawRBox(setting_choice_x - 10, menu_items_y[cursor_position] - 14, 34, 16, 2);
 
     // then draw all the menu items
     for (int i = 0; i <= cursor_max; i++) {
+      // hide developer menu if not in dev mode
+      if (i == cursor_developer && !settings.dev_menu) {
+        continue;  // skip drawing this menu item
+      }
+
       u8g2.setCursor(setting_name_x, menu_items_y[i]);
       u8g2.print(labels[i]);
       u8g2.setCursor(setting_choice_x, menu_items_y[i]);
@@ -158,6 +167,11 @@ void MainMenuPage::menu_item_action(Button button) {
         menu_page = page_menu_system;
       }
       break;
+    case cursor_developer:
+      if (button == Button::RIGHT || button == Button::CENTER) {
+        menu_page = page_menu_developer;
+      }
+      break;
   }
 }
 
@@ -167,12 +181,18 @@ bool MainMenuPage::mainMenuButtonEvent(Button button, ButtonState state, uint8_t
     case Button::UP:
       if (state == RELEASED) {
         cursor_prev();
+        if (cursor_position == cursor_developer && !settings.dev_menu) {
+          cursor_prev();  // skip developer menu if not in dev mode
+        }
         redraw = true;
       }
       break;
     case Button::DOWN:
       if (state == RELEASED) {
         cursor_next();
+        if (cursor_position == cursor_developer && !settings.dev_menu) {
+          cursor_next();  // skip developer menu if not in dev mode
+        }
         redraw = true;
       }
       break;
@@ -215,6 +235,9 @@ bool MainMenuPage::button_event(Button button, ButtonState state, uint8_t count)
       break;
     case page_menu_system:
       redraw = systemMenuPage.button_event(button, state, count);
+      break;
+    case page_menu_developer:
+      redraw = developerMenuPage.button_event(button, state, count);
       break;
   }
   return redraw;
