@@ -253,6 +253,16 @@ void SystemMenuPage::setting_change(Button dir, ButtonState state, uint8_t count
       if (state == RELEASED) {
         speaker.playSound(fx::confirm);
         about_page.show();
+      } else if (state == HELD && count == 4) {
+        // toggle developer mode
+        settings.toggleBoolOnOff(&settings.dev_menu);
+
+        // ..and if dev mode is now off, turn off logger settings too
+        if (!settings.dev_menu) {
+          settings.dev_startLogAtBoot = false;
+          settings.dev_startDisconnected = false;
+          // TODO: stop bus log if it's running
+        }
       }
       break;
   }

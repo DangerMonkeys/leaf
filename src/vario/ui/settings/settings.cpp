@@ -90,6 +90,11 @@ void Settings::loadDefaults() {
   system_bluetoothOn = DEF_BLUETOOTH_ON;
   system_showWarning = DEF_SHOW_WARNING;
 
+  // Developer Options
+  dev_menu = DEF_DEV_MENU;
+  dev_startLogAtBoot = DEF_DEV_START_LOG_AT_BOOT;
+  dev_startDisconnected = DEF_DEV_START_DISCONNECTED;
+
   // Boot Flags
   boot_enterBootloader = DEF_ENTER_BOOTLOAD;
   boot_toOnState = DEF_BOOT_TO_ON;
@@ -147,6 +152,9 @@ void Settings::retrieve() {
   system_wifiOn = leafPrefs.getBool("WIFI_ON");
   system_bluetoothOn = leafPrefs.getBool("BLUETOOTH_ON");
   system_showWarning = leafPrefs.getBool("SHOW_WARNING");
+  dev_menu = leafPrefs.getBool("DEVELOPER_MENU");
+  dev_startLogAtBoot = leafPrefs.getBool("DEV_STARTLOG");
+  dev_startDisconnected = leafPrefs.getBool("DEV_STARTDISCON");
 
   // Boot Flags
   boot_enterBootloader = leafPrefs.getBool("ENTER_BOOTLOAD");
@@ -216,6 +224,10 @@ void Settings::save() {
   leafPrefs.putBool("WIFI_ON", system_wifiOn);
   leafPrefs.putBool("BLUETOOTH_ON", system_bluetoothOn);
   leafPrefs.putBool("SHOW_WARNING", system_showWarning);
+  // Developer Options
+  leafPrefs.putBool("DEVELOPER_MENU", dev_menu);
+  leafPrefs.putBool("DEV_STARTLOG", dev_startLogAtBoot);
+  leafPrefs.putBool("DEV_STARTDISCON", dev_startDisconnected);
   // Boot Flags
   leafPrefs.putBool("ENTER_BOOTLOAD", boot_enterBootloader);
   leafPrefs.putBool("BOOT_TO_ON", boot_toOnState);

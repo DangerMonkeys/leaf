@@ -2,6 +2,7 @@
 #define PAGES_H
 
 #include "ui/display/pages/menu/page_menu_altimeter.h"
+#include "ui/display/pages/menu/page_menu_developer.h"
 #include "ui/display/pages/menu/page_menu_display.h"
 #include "ui/display/pages/menu/page_menu_gps.h"
 #include "ui/display/pages/menu/page_menu_log.h"
@@ -19,5 +20,6 @@ extern UnitsMenuPage unitsMenuPage;
 extern GPSMenuPage gpsMenuPage;
 extern LogMenuPage logMenuPage;
 extern SystemMenuPage systemMenuPage;
+extern DeveloperMenuPage developerMenuPage;
 
 #endif
