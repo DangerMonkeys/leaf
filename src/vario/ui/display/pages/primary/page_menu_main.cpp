@@ -102,7 +102,7 @@ void MainMenuPage::draw_main_menu() {
     for (int i = 0; i <= cursor_max; i++) {
       // hide developer menu if not in dev mode
       if (i == cursor_developer && !settings.dev_menu) {
-        break;  // skip drawing this menu item
+        continue;  // skip drawing this menu item
       }
 
       u8g2.setCursor(setting_name_x, menu_items_y[i]);
