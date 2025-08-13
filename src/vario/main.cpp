@@ -1,9 +1,11 @@
 #include "Arduino.h"
 #include "comms/ble.h"
 #include "comms/fanet_radio.h"
+#include "diagnostics/buttons.h"
 #include "dispatch/message_bus.h"
 #include "hardware/Leaf_SPI.h"
 #include "hardware/aht20.h"
+#include "hardware/buttons.h"
 #include "hardware/configuration.h"
 #include "hardware/icm_20948.h"
 #include "hardware/lc86g.h"
@@ -15,6 +17,7 @@
 #include "logging/log.h"
 #include "power.h"
 #include "taskman.h"
+#include "ui/input/button_dispatcher.h"
 #include "ui/settings/settings.h"
 
 #ifdef DEBUG_WIFI
@@ -45,6 +48,7 @@ void setup() {
 #endif
 
   AHT20::getInstance().publishTo(&bus);
+  buttons.publishTo(&bus);
   ICM20948::getInstance().publishTo(&bus);
   lc86g.publishTo(&bus);
   ms5611.publishTo(&bus);
@@ -81,6 +85,9 @@ void setup() {
   // Subscribe modules that need bus updates.
   // This should not exceed the bus router limit.
   bus.subscribe(BLE::get());
+
+  buttonMonitor.subscribe(&bus);
+  buttonDispatcher.subscribe(&bus);
 
   // Provide logger access to the bus
   log_setBus(&bus);

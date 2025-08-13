@@ -42,7 +42,7 @@ tried but not going to use:
 - ICM20948_WE
 - AdaFruit ICM20948 (and associated dependencies)
 
-## System diagram
+## Information flow diagram
 
 ```mermaid
 flowchart LR
@@ -51,19 +51,21 @@ flowchart LR
         AHT20dev>AHT20]
         ICM20948dev>ICM20948]
         GPSdev>GPS]
+        Keypad>Keypad]
     end
 
     subgraph Hardware abstraction
-        AHT20hw["AHT20 (<code>IPollable</code>)"]
+        AHT20hw["AHT20"]
         MS5611["MS5611"]
-        subgraph ICM20948["ICM20948 (<code>IPollable</code>)"]
+        subgraph ICM20948["ICM20948"]
             ICM_20948_I2C
         end
         LC86G
+        Buttons
     end
 
     subgraph Mocks
-        MessagePlayback["Message log playback<br>(<code>IPollable</code>)"]
+        UDPMessageServer["UDP message server"]
     end
 
     subgraph Instruments
@@ -84,6 +86,7 @@ flowchart LR
         AmbientUpdateMessage["<code>AmbientUpdate</code><br>message"]
         MotionUpdateMessage["<code>MotionUpdate</code><br>message"]
         GpsMessage["<code>GpsMessage</code><br>message"]
+        ButtonEvent["<code>ButtonEvent</code><br>message"]
     end
 
     subgraph VarioLogic
@@ -92,8 +95,10 @@ flowchart LR
     MS5611dev <-->|Wire| MS5611 --> PressureUpdateMessage --> Barometer
     AHT20dev <-->|Wire| AHT20hw --> AmbientUpdateMessage --> Ambient
     GPSdev <-->|Serial0| LC86G --> GpsMessage --> LeafGPS
+    Keypad -->|GPIO| Buttons --> ButtonEvent --> ButtonDispatcher
+    ButtonEvent --> ButtonMonitor
 
-    MessagePlayback -.-> MessageBus -.-> MessageLogger
+    UDPMessageServer -.-> MessageBus -.-> MessageLogger
 
     ICM20948dev <-->|TwoWire| ICM_20948_I2C["ICM_20948_I2C<br>(Sparkfun lib)"]
     ICM20948 --> MotionUpdateMessage --> IMU

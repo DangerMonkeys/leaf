@@ -4,6 +4,7 @@
 
 #include "comms/ble.h"
 #include "comms/fanet_radio.h"
+#include "hardware/buttons.h"
 #include "power.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
@@ -15,7 +16,6 @@
 #include "ui/display/pages/dialogs/page_message.h"
 #include "ui/display/pages/fanet/page_fanet.h"
 #include "ui/display/pages/menu/system/page_menu_system_wifi.h"
-#include "ui/input/buttons.h"
 #include "ui/settings/settings.h"
 
 enum system_menu_items {

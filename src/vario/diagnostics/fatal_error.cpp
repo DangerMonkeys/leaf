@@ -6,6 +6,7 @@
 
 #include "FS.h"
 
+#include "hardware/buttons.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
@@ -91,14 +92,19 @@ void rebootOnKeyPress() {
 
   // Wait until no buttons are pressed
   do {
-    which_button = buttons.check();
+    which_button = buttons.inspectPins();
   } while (which_button == Button::NONE);
 
   // Wait until a button is held
+  const unsigned long RESET_HOLD_TIME_MS = 3000;
+  unsigned long t0 = millis();
   do {
-    which_button = buttons.check();
-    button_state = buttons.getState();
-  } while (button_state != ButtonState::HELD);
+    Button new_button = buttons.inspectPins();
+    if (new_button != which_button) {
+      which_button = new_button;
+      t0 = millis();
+    }
+  } while (which_button == Button::NONE || millis() - t0 < RESET_HOLD_TIME_MS);
 
   speaker.playSound(fx::off);
   while (speaker.update()) {
