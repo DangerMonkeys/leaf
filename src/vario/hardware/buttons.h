@@ -48,7 +48,7 @@ class Buttons : IMessageSource {
   // "HELD" or "HELD_LONG" states (so we know not to also take action when it is released)
   bool everHeld_ = false;
 
-  uint16_t holdActionTimeInitial_ = 0;
+  uint32_t holdActionTimeInitial_ = 0;
   uint16_t holdCounter_ = 0;
 
   // when holding the center button to turn on, we need to "lock" the buttons until the user

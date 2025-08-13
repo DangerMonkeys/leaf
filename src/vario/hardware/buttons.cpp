@@ -83,7 +83,6 @@ void Buttons::update() {
     holdCounter_ = 0;
 
     if (button != Button::NONE) {  // if not-none, we have a pressed button!
-      holdActionTimeInitial_ = millis();
       report(button, PRESSED);
     } else {             // if it IS none, we have a just-released button
       if (!everHeld_) {  // we only want to report a released button if it wasn't already held
@@ -109,11 +108,13 @@ void Buttons::update() {
                          // action also when it's released
     }
 
-    // only increment the hold counter on a held button every ~500ms (HOLD_ACTION_TIME_LIMIT_MS).
-    if (millis() - holdActionTimeInitial_ >= HOLD_ACTION_TIME_LIMIT_MS) {
-      holdCounter_++;
-      holdActionTimeInitial_ = millis();
-      report(button, lastEvent_.state);
+    if (lastEvent_.state == HELD || lastEvent_.state == HELD_LONG) {
+      // only increment the hold counter on a held button every ~500ms (HOLD_ACTION_TIME_LIMIT_MS).
+      if (millis() - holdActionTimeInitial_ >= HOLD_ACTION_TIME_LIMIT_MS) {
+        holdCounter_++;
+        holdActionTimeInitial_ = millis();
+        report(button, lastEvent_.state);
+      }
     }
   }
 }
