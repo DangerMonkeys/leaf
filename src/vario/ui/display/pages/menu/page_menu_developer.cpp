@@ -93,7 +93,13 @@ void DeveloperMenuPage::setting_change(Button dir, ButtonState state, uint8_t co
       break;
     }
     case cursor_developer_busLogControl: {
-      if (state == RELEASED) delay(1);
+      if (state == RELEASED) {
+        if (0) {  // if log isn't running
+          // start log
+        } else if (1) {  // if log in running
+          // stop log
+        }
+      }
       break;
     }
     case cursor_developer_back: {
