@@ -228,8 +228,6 @@ void Power::switchToOnState() {
       Serial.println("Failed to start bus log at startup");
       speaker.playSound(fx::bad);
     }
-  } else {
-    Serial.println("Bus log should not begin at startup");
   }
 }
 
