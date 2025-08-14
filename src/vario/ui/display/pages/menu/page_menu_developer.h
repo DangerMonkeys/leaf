@@ -18,7 +18,7 @@ class DeveloperMenuPage : public SettingsMenuPage {
   void setting_change(Button dir, ButtonState state, uint8_t count);
 
  private:
-  static constexpr char* labels[8] = {"Back", "Start Log", "HW-Discon", "Log Now:"};
+  static constexpr char* labels[8] = {"Back", "StartBusLog", "Detach HW", "Log Now:"};
 };
 
 #endif

@@ -12,9 +12,11 @@
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "instruments/imu.h"
-#include "logging/log.h"
+#include "logging/buslog.h"
 #include "power.h"
 #include "taskman.h"
+#include "ui/audio/sound_effects.h"
+#include "ui/audio/speaker.h"
 #include "ui/settings/settings.h"
 
 #ifdef DEBUG_WIFI
@@ -44,10 +46,18 @@ void setup() {
   FanetRadio::getInstance().setup(&bus);
 #endif
 
-  AHT20::getInstance().publishTo(&bus);
-  ICM20948::getInstance().publishTo(&bus);
-  lc86g.publishTo(&bus);
-  ms5611.publishTo(&bus);
+  // grab user settings (or populate defaults if no saved settings)
+  settings.init();
+
+  if (!settings.dev_startDisconnected) {
+    Serial.println("Connecting hardware devices to bus");
+    AHT20::getInstance().publishTo(&bus);
+    ICM20948::getInstance().publishTo(&bus);
+    lc86g.publishTo(&bus);
+    ms5611.publishTo(&bus);
+  } else {
+    Serial.println("Leaving hardware devices unconnected to bus");
+  }
 
 #ifdef DEBUG_WIFI
   udpMessageServer.publishTo(&bus);
@@ -82,8 +92,8 @@ void setup() {
   // This should not exceed the bus router limit.
   bus.subscribe(BLE::get());
 
-  // Provide logger access to the bus
-  log_setBus(&bus);
+  // Provide bus logger access to the bus
+  busLog.setBus(&bus);
 
   Serial.println("Leaf Initialized");
 }

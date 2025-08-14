@@ -38,5 +38,9 @@ namespace fx {
                                   37, 36, 35, 34, 33, 32, 31, note::END};
   constexpr note_t octavesdown[] = {31, 31, 40, 40, 45, 45, 65, 65, 90, 90, note::END};
 
+  constexpr const note_t* started =
+      buttonhold;  // TODO: Make a more distinctive "thing started" sound
+
   constexpr note_t fatalerror[] = {50, 250, 50, 250, 50, 250, 50, 250, 50, 250, note::END};
+  constexpr note_t bad[] = {50, 250, 50, 250, note::END};
 }  // namespace fx
