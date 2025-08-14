@@ -2,7 +2,7 @@
 
 #include <Arduino.h>
 
-#include "logging/log.h"
+#include "logging/buslog.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
@@ -68,10 +68,11 @@ void DeveloperMenuPage::draw() {
           break;
         case cursor_developer_busLogControl:
           u8g2.setCursor(u8g2.getCursorX() - 18, u8g2.getCursorY());
-          if (0)  // if bus logger is running
+          if (busLog.isLogging()) {
             u8g2.print("STOP");
-          else
+          } else {
             u8g2.print("START");
+          }
           break;
         case cursor_developer_back:
           u8g2.print((char)124);
@@ -94,10 +95,14 @@ void DeveloperMenuPage::setting_change(Button dir, ButtonState state, uint8_t co
     }
     case cursor_developer_busLogControl: {
       if (state == RELEASED) {
-        if (0) {  // if log isn't running
-          // start log
-        } else if (1) {  // if log in running
-          // stop log
+        if (!busLog.isLogging()) {
+          if (busLog.startLog()) {
+            speaker.playSound(fx::started);
+          } else {
+            speaker.playSound(fx::bad);
+          }
+        } else {
+          busLog.endLog();
         }
       }
       break;
