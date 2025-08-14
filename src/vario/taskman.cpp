@@ -21,6 +21,7 @@
 #include "ui/display/display.h"
 #include "ui/input/buttons.h"
 #include "ui/settings/settings.h"
+#include "utils/magic_enum.h"
 #include "wind_estimate/wind_estimate.h"
 
 #ifdef MEMORY_PROFILING

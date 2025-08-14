@@ -27,15 +27,11 @@ enum class PowerState : uint8_t {
   OffUSB
 };
 
-const char* nameOf(PowerState state);
-
 // iMax set by ILIM pin resistor on battery charger chip. Results in 1.348Amps max input (for
 // battery charging AND system load) Note: with this higher input limit, the battery charging will
 // then be limited by the ISET pin resistor value, to approximately 810mA charging current)
 enum class PowerInputLevel : uint8_t { Standby = 0, i100mA = 1, i500mA = 2, Max = 3 };
 DEFINE_CLAMPING_BOUNDS(PowerInputLevel, PowerInputLevel::Standby, PowerInputLevel::Max);
-
-const char* nameOf(PowerInputLevel level);
 
 class Power {
  public:
