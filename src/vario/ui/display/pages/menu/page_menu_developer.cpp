@@ -14,6 +14,7 @@
 
 enum developer_menu_items {
   cursor_developer_back,
+  cursor_developer_fanetReTx,
   cursor_developer_startupStart,
   cursor_developer_startupDisconnect,
   cursor_developer_busLogControl
@@ -30,7 +31,7 @@ void DeveloperMenuPage::draw() {
     uint8_t y_spacing = 16;
     uint8_t setting_name_x = 2;
     uint8_t setting_choice_x = 76;
-    uint8_t menu_items_y[] = {190, 60, 75, 135};
+    uint8_t menu_items_y[] = {190, 35, 135, 150, 170};
 
     // first draw cursor selection box
     uint8_t largerChoiceSize = 0;
@@ -40,8 +41,9 @@ void DeveloperMenuPage::draw() {
     u8g2.drawRBox(setting_choice_x - 4 - largerChoiceSize, menu_items_y[cursor_position] - 14,
                   30 + largerChoiceSize, 16, 2);
 
-    // draw On Startup Category
-    u8g2.setCursor(0, 45);
+    // draw Bus Logger Section
+    u8g2.drawHLine(0, 105, 96);
+    u8g2.setCursor(0, 120);
     u8g2.print("On Startup:");
 
     // then draw all the menu items
@@ -54,6 +56,12 @@ void DeveloperMenuPage::draw() {
       else
         u8g2.setDrawColor(1);
       switch (i) {
+        case cursor_developer_fanetReTx:
+          if (settings.dev_fanetReTx)
+            u8g2.print(char(125));
+          else
+            u8g2.print(char(123));
+          break;
         case cursor_developer_startupStart:
           if (settings.dev_startLogAtBoot)
             u8g2.print(char(125));
@@ -85,6 +93,10 @@ void DeveloperMenuPage::draw() {
 
 void DeveloperMenuPage::setting_change(Button dir, ButtonState state, uint8_t count) {
   switch (cursor_position) {
+    case cursor_developer_fanetReTx: {
+      if (state == RELEASED) settings.toggleBoolOnOff(&settings.dev_fanetReTx);
+      break;
+    }
     case cursor_developer_startupStart: {
       if (state == RELEASED) settings.toggleBoolOnOff(&settings.dev_startLogAtBoot);
       break;

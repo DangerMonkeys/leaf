@@ -33,7 +33,7 @@
 // a message bus and hook the module's event routers into the bus
 
 // Main message bus
-MessageBus<10> bus;
+MessageBus<11> bus;
 
 TaskManager taskman;
 
