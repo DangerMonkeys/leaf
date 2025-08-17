@@ -22,6 +22,7 @@
 #include "ui/display/display_fields.h"
 #include "ui/input/buttons.h"
 #include "ui/settings/settings.h"
+#include "utils/magic_enum.h"
 
 Power power;  // struct for battery-state and on-state variables
 
@@ -42,18 +43,6 @@ Power power;  // struct for battery-state and on-state variables
 #define AUTO_OFF_MAX_ACCEL 10  // Max accelerometer signal
 #define AUTO_OFF_MAX_ALT 400   // cm altitude change for timer auto-stop
 #define AUTO_OFF_MIN_SEC 20    // seconds of low speed / low accel for timer to auto-stop
-
-const char* nameOf(PowerState state) {
-  switch (state) {
-    case PowerState::Off:
-      return "Off";
-    case PowerState::On:
-      return "On";
-    case PowerState::OffUSB:
-      return "OffUSB";
-  }
-  return "Unknown";
-}
 
 const char* nameOf(PowerInputLevel level) {
   switch (level) {
