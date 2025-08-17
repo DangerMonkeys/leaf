@@ -282,7 +282,9 @@ void log_captureValues() {
   logbook.alt_above_launch = baro.altAboveLaunch;
   logbook.climb = baro.climbRateFiltered;
   logbook.speed = gps.speed.mps();
-  logbook.temperature = ambient.getTemp();
+  if (ambient.state() == Ambient::State::Ready) {
+    logbook.temperature = ambient.temp();
+  }
   logbook.accel = imu.getAccel();
 }
 
@@ -309,11 +311,13 @@ void log_checkMinMaxValues() {
   }
 
   // check temperature values for log records
-  logbook.temperature = ambient.getTemp();
-  if (logbook.temperature > logbook.temperature_max) {
-    logbook.temperature_max = logbook.temperature;
-  } else if (logbook.temperature < logbook.temperature_min) {
-    logbook.temperature_min = logbook.temperature;
+  if (ambient.state() == Ambient::State::Ready) {
+    logbook.temperature = ambient.temp();
+    if (logbook.temperature > logbook.temperature_max) {
+      logbook.temperature_max = logbook.temperature;
+    } else if (logbook.temperature < logbook.temperature_min) {
+      logbook.temperature_min = logbook.temperature;
+    }
   }
 
   // check accel / g-force for log records

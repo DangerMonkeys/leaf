@@ -3,6 +3,8 @@
 
 #include <Arduino.h>
 
+#include "instruments/ambient.h"
+
 void display_selectionBox(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t tri);
 
 void display_clockTime(uint8_t x, uint8_t y, bool show_ampm);
@@ -48,8 +50,8 @@ void display_unsignedClimbRate_short(uint8_t x, uint8_t y, int16_t displayClimbR
 
 void display_accel(uint8_t x, uint8_t y, float accel);
 void display_glide(uint8_t x, uint8_t y, float glide);
-void display_temp(uint8_t x, uint8_t y, int16_t temperature);
-void display_humidity(uint8_t x, uint8_t y, uint8_t temperature);
+void display_temp(uint8_t x, uint8_t y, const Ambient& ambient);
+void display_humidity(uint8_t x, uint8_t y, const Ambient& ambient);
 
 void display_battIcon(uint8_t x, uint8_t y, bool vertical);
 void display_batt_charging_fullscreen(uint8_t x, uint8_t y);
