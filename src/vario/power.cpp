@@ -13,6 +13,7 @@
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "instruments/imu.h"
+#include "logging/buslog.h"
 #include "logging/log.h"
 #include "power.h"
 #include "storage/sd_card.h"
@@ -72,9 +73,6 @@ void Power::bootUp() {
 #endif
 
   initPowerSystem();  // configure power supply
-
-  // grab user settings (or populate defaults if no saved settings)
-  settings.init();
 
   // initialize Buttons and check if holding the center button is what turned us on
   Button button = buttons.init();
@@ -152,7 +150,7 @@ void Power::initPeripherals() {
   baro.init();
   Serial.println("     Waiting for first pressure reading...");
   // TODO: don't block here; instead, have clients recognize and handle a not-fully-initialized baro
-  // appropriately
+  // appropriately (#192)
   while (!baro.hasFirstReading()) {
     ms5611.update();
   }
@@ -210,6 +208,17 @@ void Power::switchToOnState() {
   Serial.println("switch_to_on_state");
   info_.onState = PowerState::On;
   wakePeripherals();
+
+  if (settings.dev_startLogAtBoot) {
+    Serial.println("Starting bus log at startup");
+    if (busLog.startLog()) {
+      Serial.println("Started bus log at startup");
+      speaker.playSound(fx::started);
+    } else {
+      Serial.println("Failed to start bus log at startup");
+      speaker.playSound(fx::bad);
+    }
+  }
 }
 
 void Power::shutdown() {

@@ -51,8 +51,6 @@ void LogMenuPage::draw() {
             u8g2.print("KML");
           else if (settings.log_format == LOG_FORMAT_IGC)
             u8g2.print("IGC");
-          else if (settings.log_format == LOG_FORMAT_BUS)
-            u8g2.print("BUS");
           else
             u8g2.print("_?_");
           break;
