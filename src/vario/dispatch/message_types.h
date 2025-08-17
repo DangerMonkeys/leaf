@@ -10,6 +10,7 @@
 #include "etl/message.h"
 #include "etl/string.h"
 #include "fanet/packet.hpp"
+#include "ui/input/buttons.h"
 
 #define FANET_MAX_FRAME_SIZE 244  // Maximum size of a FANET frame
 
@@ -25,6 +26,7 @@ enum MessageType : etl::message_id_t {
   AMBIENT_UPDATE,
   MOTION_UPDATE,
   PRESSURE_UPDATE,
+  BUTTON_EVENT,
 };
 
 /// @brief A GPS update received
@@ -92,4 +94,18 @@ struct PressureUpdate : public etl::message<PRESSURE_UPDATE> {
   int32_t pressure;
 
   PressureUpdate(unsigned long t, int32_t pressure) : t(t), pressure(pressure) {};
+};
+
+/// @brief Update regarding button presses
+struct ButtonEvent : public etl::message<BUTTON_EVENT> {
+  // Which button triggered event
+  Button button;
+
+  // Current state of the button
+  ButtonState state;
+
+  uint16_t holdCount;
+
+  ButtonEvent(Button button, ButtonState state, uint16_t holdCount = 0)
+      : button(button), state(state), holdCount(holdCount) {}
 };

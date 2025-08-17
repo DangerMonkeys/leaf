@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <U8g2lib.h>
 
+#include "hardware/buttons.h"
 #include "instruments/ambient.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
@@ -141,12 +142,12 @@ void drawUserField(uint8_t x, uint8_t y, uint8_t field, bool selected) {
       u8g2.setCursor(x, y - 14);
       u8g2.setFont(leaf_5h);
       u8g2.print("TEMP");
-      display_temp(x + 2, y, (int16_t)ambient.getTemp());
+      display_temp(x + 2, y, ambient);
       // Humidity
       u8g2.setCursor(x + 32, y - 14);
       u8g2.setFont(leaf_5h);
       u8g2.print("HUMID");
-      display_humidity(x + 34, y, (uint8_t)ambient.getHumidity());
+      display_humidity(x + 34, y, ambient);
       break;
     case static_cast<int>(ThermalPageUserFields::ACCEL):
       // Acceleration
@@ -170,7 +171,7 @@ void drawUserField(uint8_t x, uint8_t y, uint8_t field, bool selected) {
       u8g2.setFont(leaf_6x12);
       u8g2.setCursor(x + 20, y);
 
-      WindEstimate windEstForAirspeed = getWindEstimate();
+      const WindEstimate& windEstForAirspeed = windEstimator.getWindEstimate();
       // only show airspeed if wind estimate is valid
       if (windEstForAirspeed.validEstimate) {
         float displayAirspeed = windEstForAirspeed.airspeedLive;  // m/s current approx airspeed

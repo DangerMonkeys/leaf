@@ -15,6 +15,7 @@
 #include "fanet/connector.hpp"
 #include "fanet/groundTracking.hpp"
 #include "fanet/protocol.hpp"
+#include "hardware/configuration.h"
 #include "ui/settings/settings.h"
 
 // Helper function to convert an Address to a string

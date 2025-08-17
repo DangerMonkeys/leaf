@@ -8,6 +8,7 @@
 #include "comms/ble.h"
 #include "hardware/Leaf_SPI.h"
 #include "hardware/aht20.h"
+#include "hardware/buttons.h"
 #include "hardware/icm_20948.h"
 #include "hardware/lc86g.h"
 #include "hardware/ms5611.h"
@@ -157,11 +158,10 @@ void TaskManager::updateWhileCharging() {
     power.readBatteryState();
 
     // Check Buttons
-    auto buttonPushed =
-        buttons.update();  // check Button for any presses (user can turn ON from charging state)
+    buttons.update();  // check Button for any presses (user can turn ON from charging state)
 
     // Prep to end this cycle and sleep
-    if (buttonPushed == Button::NONE)
+    if (buttons.inspectPins() == Button::NONE)
       goToSleep = true;  // get ready to sleep if no button is being pushed
   } else {
     if (goToSleep && settings.system_ecoMode) {  // don't allow sleep if ECO_MODE is off
@@ -325,7 +325,7 @@ void TaskManager::doNecessaryTasks(void) {
     performTask.speakerTimer = false;
   }
   if (performTask.estimateWind) {
-    estimateWind();
+    windEstimator.estimateWind();
     performTask.estimateWind = false;
   }
   if (performTask.imu) {

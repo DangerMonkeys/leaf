@@ -1,9 +1,11 @@
 #include "Arduino.h"
 #include "comms/ble.h"
 #include "comms/fanet_radio.h"
+#include "diagnostics/buttons.h"
 #include "dispatch/message_bus.h"
 #include "hardware/Leaf_SPI.h"
 #include "hardware/aht20.h"
+#include "hardware/buttons.h"
 #include "hardware/configuration.h"
 #include "hardware/icm_20948.h"
 #include "hardware/lc86g.h"
@@ -17,7 +19,9 @@
 #include "taskman.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
+#include "ui/input/button_dispatcher.h"
 #include "ui/settings/settings.h"
+#include "wind_estimate/wind_estimate.h"
 
 #ifdef DEBUG_WIFI
 #include "comms/udp_message_server.h"
@@ -48,6 +52,12 @@ void setup() {
 
   // grab user settings (or populate defaults if no saved settings)
   settings.init();
+  
+  AHT20::getInstance().publishTo(&bus);
+  buttons.publishTo(&bus);
+  ICM20948::getInstance().publishTo(&bus);
+  lc86g.publishTo(&bus);
+  ms5611.publishTo(&bus);
 
   if (!settings.dev_startDisconnected) {
     Serial.println("Connecting hardware devices to bus");
@@ -88,9 +98,14 @@ void setup() {
   // Connect IMU instrument to message bus sourcing motion updates
   imu.subscribe(&bus);
 
+  windEstimator.subscribe(&bus);
+
   // Subscribe modules that need bus updates.
   // This should not exceed the bus router limit.
   bus.subscribe(BLE::get());
+
+  buttonMonitor.subscribe(&bus);
+  buttonDispatcher.subscribe(&bus);
 
   // Provide bus logger access to the bus
   busLog.setBus(&bus);

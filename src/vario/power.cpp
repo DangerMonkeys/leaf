@@ -4,6 +4,7 @@
 #include "hardware/Leaf_I2C.h"
 #include "hardware/Leaf_SPI.h"
 #include "hardware/aht20.h"
+#include "hardware/buttons.h"
 #include "hardware/configuration.h"
 #include "hardware/icm_20948.h"
 #include "hardware/io_pins.h"

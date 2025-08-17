@@ -235,8 +235,8 @@ void flightTimer_start() {
 
 // stop timer
 void flightTimer_stop() {
-  weAreFlying = false;  // we're not "flying" when we stop a log
-  clearWindEstimate();  // clear the wind estimate when we stop a flight
+  weAreFlying = false;                // we're not "flying" when we stop a log
+  windEstimator.clearWindEstimate();  // clear the wind estimate when we stop a flight
   // Short Circuit, no need to do anything if there's no flight recording.
   if (flight == NULL) {
     return;
@@ -275,7 +275,9 @@ void log_captureValues() {
   logbook.alt_above_launch = baro.altAboveLaunch;
   logbook.climb = baro.climbRateFiltered;
   logbook.speed = gps.speed.mps();
-  logbook.temperature = ambient.getTemp();
+  if (ambient.state() == Ambient::State::Ready) {
+    logbook.temperature = ambient.temp();
+  }
   logbook.accel = imu.getAccel();
 }
 
@@ -302,11 +304,13 @@ void log_checkMinMaxValues() {
   }
 
   // check temperature values for log records
-  logbook.temperature = ambient.getTemp();
-  if (logbook.temperature > logbook.temperature_max) {
-    logbook.temperature_max = logbook.temperature;
-  } else if (logbook.temperature < logbook.temperature_min) {
-    logbook.temperature_min = logbook.temperature;
+  if (ambient.state() == Ambient::State::Ready) {
+    logbook.temperature = ambient.temp();
+    if (logbook.temperature > logbook.temperature_max) {
+      logbook.temperature_max = logbook.temperature;
+    } else if (logbook.temperature < logbook.temperature_min) {
+      logbook.temperature_min = logbook.temperature;
+    }
   }
 
   // check accel / g-force for log records

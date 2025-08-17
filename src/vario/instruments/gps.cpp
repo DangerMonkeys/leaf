@@ -121,10 +121,6 @@ void LeafGPS::update() {
   */
 }
 
-// this is called whenever a new valid NMEA sentence contains a valid speed (TODO: check if true for
-// every sentence or just every fix)
-void onNewSentence(NMEASentenceContents contents) { windEstimate_onNewSentence(contents); }
-
 void LeafGPS::on_receive(const GpsMessage& msg) {
   if (DEBUG_GPS) {
     Serial.printf("LeafGPS::on_receive %d %s\n", msg.nmea.length(), msg.nmea.c_str());
@@ -149,7 +145,6 @@ void LeafGPS::on_receive(const GpsMessage& msg) {
     if (bus_ && gps.location.isUpdated()) {
       bus_->receive(GpsReading(gps));
     }
-    onNewSentence(contents);  // TODO: switch wind estimate to subscribe to bus instead
   } else {
     Serial.printf("NMEA sentence was not valid: %s\n", msg.nmea.c_str());
   }
