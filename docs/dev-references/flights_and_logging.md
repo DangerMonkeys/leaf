@@ -1,3 +1,8 @@
+---
+title: Flights and Logging
+description: Definitions and intent around flights and logging
+---
+
 # Leaf Logging Functions
 
 <!-- Adopted from https://docs.google.com/document/d/1Rp0IslOAHZlb1cdwXtGMdCtgvGe01PvQ_RnXXEvWxjQ/edit?usp=sharing -->
