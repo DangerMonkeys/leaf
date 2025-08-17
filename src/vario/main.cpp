@@ -52,7 +52,7 @@ void setup() {
 
   // grab user settings (or populate defaults if no saved settings)
   settings.init();
-  
+
   AHT20::getInstance().publishTo(&bus);
   buttons.publishTo(&bus);
   ICM20948::getInstance().publishTo(&bus);
