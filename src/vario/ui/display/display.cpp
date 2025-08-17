@@ -316,10 +316,10 @@ void Display::showPageDebug() {
     // Wind Estimate Debugging
     // get current wind estimate to use in display
 
-    WindEstimate displayEstimate = getWindEstimate();
+    const WindEstimate& displayEstimate = windEstimator.getWindEstimate();
 
     // Display Sample Counts
-    int numOfBins = getBinCount();
+    int numOfBins = windEstimator.binCount();
     uint8_t pieX = 48;
     uint8_t pieY = 136;
     uint8_t pieR = 41;
@@ -337,7 +337,7 @@ void Display::showPageDebug() {
         u8g2.setDrawColor(0);
       }
       u8g2.setFont(leaf_5x8);
-      u8g2.print(totalSamples.bin[bin].sampleCount);
+      u8g2.print(windEstimator.totalSamples().bin[bin].sampleCount);
       u8g2.setDrawColor(1);
     }
 
@@ -360,9 +360,9 @@ void Display::showPageDebug() {
     // find scale factor to fit the wind estimate on-screen
     float maxGroundSpeed = 1;
     for (int bin = 0; bin < numOfBins; bin++) {
-      for (int s = 0; s < totalSamples.bin[bin].sampleCount; s++) {
-        if (totalSamples.bin[bin].speed[s] > maxGroundSpeed)
-          maxGroundSpeed = totalSamples.bin[bin].speed[s];
+      for (int s = 0; s < windEstimator.totalSamples().bin[bin].sampleCount; s++) {
+        if (windEstimator.totalSamples().bin[bin].speed[s] > maxGroundSpeed)
+          maxGroundSpeed = windEstimator.totalSamples().bin[bin].speed[s];
       }
     }
     float scaleFactor = pieR / maxGroundSpeed;
@@ -370,9 +370,9 @@ void Display::showPageDebug() {
     u8g2.setFont(leaf_5h);
     u8g2.setFontMode(1);
     for (int bin = 0; bin < numOfBins; bin++) {
-      for (int s = 0; s < totalSamples.bin[bin].sampleCount; s++) {
-        int x0 = pieX + totalSamples.bin[bin].dy[s] * scaleFactor;
-        int y0 = pieY - totalSamples.bin[bin].dx[s] * scaleFactor;
+      for (int s = 0; s < windEstimator.totalSamples().bin[bin].sampleCount; s++) {
+        int x0 = pieX + windEstimator.totalSamples().bin[bin].dy[s] * scaleFactor;
+        int y0 = pieY - windEstimator.totalSamples().bin[bin].dx[s] * scaleFactor;
         u8g2.setCursor(x0 - 2, y0 + 2);
         u8g2.print("+");
       }
@@ -399,11 +399,11 @@ void Display::showPageDebug() {
     u8g2.setCursor(pieX, pieY);
     u8g2.print("upd: ");
     u8g2.setCursor(pieX, pieY += 6);
-    u8g2.print(getUpdateCount());
+    u8g2.print(windEstimator.updateCount());
     u8g2.setCursor(pieX, pieY += 8);
     u8g2.print("bet: ");
     u8g2.setCursor(pieX, pieY += 6);
-    u8g2.print(getBetterCount());
+    u8g2.print(windEstimator.betterCount());
 
     x = 48;
     y = 64;

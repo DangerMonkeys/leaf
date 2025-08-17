@@ -325,7 +325,7 @@ void TaskManager::doNecessaryTasks(void) {
     performTask.speakerTimer = false;
   }
   if (performTask.estimateWind) {
-    estimateWind();
+    windEstimator.estimateWind();
     performTask.estimateWind = false;
   }
   if (performTask.imu) {
