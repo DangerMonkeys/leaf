@@ -53,11 +53,7 @@ void setup() {
   // grab user settings (or populate defaults if no saved settings)
   settings.init();
 
-  AHT20::getInstance().publishTo(&bus);
   buttons.publishTo(&bus);
-  ICM20948::getInstance().publishTo(&bus);
-  lc86g.publishTo(&bus);
-  ms5611.publishTo(&bus);
 
   if (!settings.dev_startDisconnected) {
     Serial.println("Connecting hardware devices to bus");
