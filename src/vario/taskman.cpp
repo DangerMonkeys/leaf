@@ -314,7 +314,6 @@ void TaskManager::doNecessaryTasks(void) {
   // when we read ADC, the MS5611 won't be ready.
   if (performTask.baro) {
     ms5611.update();
-    baro.update();
     performTask.baro = false;
   }
   if (performTask.buttons) {
