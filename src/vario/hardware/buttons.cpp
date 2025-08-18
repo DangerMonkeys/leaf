@@ -91,6 +91,10 @@ void Buttons::update() {
         // we are presently seeing "NONE", which is the release of the previously pressed/held
         // button, so grab that previous button to associate with the released state
         report(lastEvent_.button, RELEASED);
+      } else {
+        // we aren't reporting a RELEASED event externally, but for the purpose of state management
+        // for the buttons themselves, we should note that the button actually was released here.
+        lastEvent_ = ButtonEvent(lastEvent_.button, RELEASED, holdCounter_);
       }
       everHeld_ = false;  // we can reset this now
     }
