@@ -71,7 +71,7 @@ The table below outlines what actions do/don't happen during each state:
 </table>
 
 
-## Terms and Definitions
+## Logging Terms and Definitions
 
 For each Logging Session (i.e., a Flight), Leaf will save a __LogbookEntry__ inside the __Logbook__.
 
