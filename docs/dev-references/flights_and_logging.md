@@ -202,8 +202,8 @@ The (while-viewing-logbook) Flight Summary Page might look something like this. 
 
 <pre>
 ___/LOGBOOK\______
-Flight: Mo/Dy/Year
-Time:      11:45am
+Flight      X of Y 
+11:45am Mo/Dy/Year
 Duration:  01h:55m
 MaxAlt:     5,590'
 AboveLaunch:1,590'
