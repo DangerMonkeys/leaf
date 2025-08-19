@@ -30,6 +30,31 @@
         "reveal": "always",
         "panel": "new"
       }
+    },
+    {
+      "label": "Decode ESP32 Backtrace",
+      "type": "shell",
+      "windows": {
+        "command": "powershell.exe",
+        "args": [
+          "-ExecutionPolicy",
+          "Bypass",
+          "-File",
+          "${workspaceFolder}/src/scripts/decode_backtrace.ps1"
+        ]
+      },
+      "osx": {
+        "command": "${workspaceFolder}/src/scripts/decode_backtrace.sh"
+      },
+      "linux": {
+        "command": "${workspaceFolder}/src/scripts/decode_backtrace.sh"
+      },
+      "options": {
+        "env": {
+          "PIOENV": "${command:platformio-ide.activeEnvironment}"
+        }
+      },
+      "problemMatcher": []
     }
   ]
 }
