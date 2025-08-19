@@ -161,3 +161,55 @@ The collection of LogbookEntries for flights measured by leaf.
 The sequence of GPS positions of the flight path, usually captured in a single file per Flight (instead of “TrackLog” which confusingly uses ‘log’).
 
 GPSTrack files won’t reside in the Logbook; however, a LogbookEntry may contain a link to the specific GPSTrack file for a particular Flight.
+
+
+
+
+# New Logbook Feature Design Notes
+Presently (8/18/2025) Leaf will only show a brief flight summary after a flight has ended (timer stopped).  Additionally, a GPSTrack file can be saved.  There are no other logbook functions currently supported.  This section is an attempt to sketch out what such additional features could look like.
+
+## UX changes/additions
+
+### Logbook Menu
+The "Log/Timer" Menu should likely be changed to "Logbook" or similar.  This can incorporate both Logbook settings as well as accessing the Logbook of previously-logged flights.
+
+The revised Logbook menu might look like this:
+
+<pre>
+___/LOGBOOK\______
+--Settings--------
+Auto Start    ☐
+Auto Stop     ☐
+Save GPSTrack ☐
+Format     IGC/KML
+------------------
+Previous Flights➡
+Export Logbook  ➡
+------------------
+Back            ⏎
+</pre>
+
+The __Settings__ would work as they do currently.
+
+__"Previous Flights"__ would take you into a minimalistic viewer on the Leaf display, where you would essentially see the "Flight Summary" page of the most recently logged flight (including date, time, etc so you could tell which flight that was).  Scrolling left/right would take you between logged flights.  
+* Possibly, the first thing you see when selecting "previous flights" might be an overall logbook summary, with total flights, total flight time, etc etc. 
+
+__"Export Logbook"__ would take the JSON logbook stored inside Leaf (or more likely on the SD card) and export a CSV file that would be easily human-readable & editable in a spreadsheet application.
+
+### Flight Summary Page
+
+The (while-viewing-logbook) Flight Summary Page might look something like this.  Perhaps there's an "erase flight" option to clean up the logbook (in case you accidentally started the timer and/or saved a really short non-flight flight) 
+
+<pre>
+___/LOGBOOK\______
+Flight: Mo/Dy/Year
+Time:      11:45am
+Duration:  01h:55m
+MaxAlt:     5,590'
+AboveLaunch:1,590'
+MaxClimb: 1,230fpm
+------------------
+Erase Flight    ➡
+------------------
+⇦Prev|Back⏎|Next⇨
+</pre>
