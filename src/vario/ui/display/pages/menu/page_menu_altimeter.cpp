@@ -66,7 +66,7 @@ void AltimeterMenuPage::draw() {
     // Standard Altitude Value
     u8g2.setCursor(label_indent, start_y += 15);
     u8g2.print("Std:");
-    display_alt(40, start_y, leaf_6x12, baro.alt);
+    display_alt(40, start_y, leaf_6x12, baro.alt());
     if (settings.units_alt)
       u8g2.print("ft");
     else
@@ -75,7 +75,7 @@ void AltimeterMenuPage::draw() {
     // Adjusted Altimeter Value
     u8g2.setCursor(label_indent, start_y += 15);
     u8g2.print("Adj:");
-    display_alt(40, start_y, leaf_6x12, baro.altAdjusted);
+    display_alt(40, start_y, leaf_6x12, baro.altAdjusted());
     if (settings.units_alt)
       u8g2.print("ft");
     else

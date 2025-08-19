@@ -293,7 +293,7 @@ bool Power::autoOff() {
   // thresholds.
 
   // First check if altitude is stable
-  int32_t altDifference = baro.alt - autoOffAltitude_;
+  int32_t altDifference = baro.alt() - autoOffAltitude_;
   if (altDifference < 0) altDifference *= -1;
   if (altDifference < AUTO_OFF_MAX_ALT) {
     // then check if GPS speed is slow enough

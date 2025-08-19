@@ -42,16 +42,22 @@ void Barometer::adjustAltSetting(int8_t dir, uint8_t count) {
     if (altimeterSetting < 28.0) altimeterSetting = 28.0;
   }
   settings.vario_altSetting = altimeterSetting;
+
+  // Invalidate adjusted altitudes
+  validAltAdjusted_ = false;
 }
 
 bool Barometer::syncToGPSAlt() {
   if (state_ != State::Ready) return false;
   if (!gps.altitude.isValid()) return false;
   altimeterSetting =
-      pressure / (3386.389 * pow(1 - gps.altitude.meters() * 100 / 4433100.0, 1 / 0.190264));
+      pressure_ / (3386.389 * pow(1 - gps.altitude.meters() * 100 / 4433100.0, 1 / 0.190264));
   // TODO(#192): check whether settings is initialized before reading/using
   settings.vario_altSetting = altimeterSetting;
-  calculateAlts();  // recalculate altitudes with new adjusted pressure setting
+
+  // Invalidate adjusted altitudes
+  validAltAdjusted_ = false;
+
   return true;
 }
 
@@ -104,7 +110,7 @@ void Barometer::on_receive(const PressureUpdate& msg) {
   } else if (state_ == State::Sleeping) {
     // Do nothing
   } else if (state_ == State::Ready) {
-    calculatePressureAlt(msg.pressure);  // calculate Pressure Altitude adjusted for temperature
+    setPressureAlt(msg.pressure);  // calculate Pressure Altitude adjusted for temperature
     filterAltitude();
   } else {
     fatalError("Barometer state %s in on_receive", nameOf(state_));
@@ -112,29 +118,39 @@ void Barometer::on_receive(const PressureUpdate& msg) {
 }
 
 void Barometer::firstReading(const PressureUpdate& msg) {
-  pressure = msg.pressure;
-
-  calculatePressureAlt(msg.pressure);  // calculate altitudes
-
-  // initialize all the other alt variables with current altitude to start
-
-  // used to calculate the alt change for climb rate.  Assume we're stationary
-  // to start (previous Alt = Current ALt, so climb rate is zero).  Note: Climb
-  // rate uses the un-adjusted (standard) altitude
-  lastAlt_ = alt;
-  // also save first value to use as starting point (we assume the
-  // saved altimeter setting is correct for now, so use adjusted)
-  altInitial = alt;
-  // save the starting value as launch altitude (Launch will
-  // be updated when timer starts)
-  altAtLaunch = altAdjusted;
+  setPressureAlt(msg.pressure);
+  setAltInitial();
+  setLaunchAlt();
 
   state_ = State::Ready;
 }
 
-void Barometer::resetLaunchAlt() {
-  assertState("Barometer::resetLaunchAlt", State::Ready);
-  altAtLaunch = altAdjusted;
+void Barometer::setLaunchAlt() {
+  assertState("Barometer::setLaunchAlt", State::Ready);
+  altAtLaunch_ = altAdjusted();
+  validAltAtLaunch_ = true;
+}
+
+int32_t Barometer::altAtLaunch() {
+  if (!validAltAtLaunch_) {
+    fatalError("Barometer::altAtLaunch when launch altitude was not set");
+    return 0;
+  }
+  return altAtLaunch_;
+}
+
+void Barometer::setAltInitial() {
+  assertState("Barometer::setAltInitial", State::Ready);
+  altInitial_ = alt();
+  validAltInitial_ = true;
+}
+
+int32_t Barometer::altAboveInitial() {
+  if (!validAltInitial_) {
+    fatalError("Barometer::altAboveInitial when initial altitude was not set");
+    return 0;
+  }
+  return alt() - altInitial_;
 }
 
 void Barometer::setFilterSamples(size_t nSamples) { climbFilter.setSampleCount(nSamples); }
@@ -193,32 +209,45 @@ void Barometer::onUnexpectedState(const char* action, State actual) const {
 
 // vvv Device reading & data processing vvv
 
-void Barometer::calculatePressureAlt(int32_t newPressure) {
-  pressure = newPressure;
-
-  // record datapoint on SD card if datalogging is turned on
-
-  String baroName = "baro mb*100,";
-  String baroEntry = baroName + String(pressure);
-  Telemetry.writeText(baroEntry);
-
-  // calculate all altitudes (standard, adjusted, and above launch)
-  calculateAlts();
+Pressure Barometer::pressure() const {
+  assertState("Barometer::pressure", State::Ready);
+  return pressure_;
 }
 
-void Barometer::calculateAlts() {
-  // float altitude in meters with standard altimeter setting
-  altF = 44331.0 * (1.0 - pow((float)pressure / 101325.0, (.190264)));
-  if (isnan(altF) || isinf(altF)) {
-    fatalError("altF in Barometer::calculateAlts was %g after calculating from pressure", altF);
+float Barometer::altF() {
+  assertState("Barometer::altF", State::Ready);
+  if (!validAltF_) {
+    // float altitude in meters with standard altimeter setting
+    altF_ = 44331.0 * (1.0 - pow((float)pressure_ / 101325.0, (.190264)));
+    if (isnan(altF_) || isinf(altF_)) {
+      fatalError("altF was %g after calculating from pressure", altF_);
+    }
+    validAltF_ = true;
   }
+  return altF_;
+}
 
-  // int altitude in cm with standard altimeter setting
-  alt = int32_t(altF * 100);
+int32_t Barometer::alt() { return int32_t(altF() * 100); }
 
-  // int altitude in cm with adjusted altimeter setting
-  altAdjusted = 4433100.0 * (1.0 - pow((float)pressure / (altimeterSetting * 3386.389), (.190264)));
-  altAboveLaunch = altAdjusted - altAtLaunch;
+int32_t Barometer::altAdjusted() {
+  assertState("Barometer::altAdjusted", State::Ready);
+  if (!validAltAdjusted_) {
+    validAltAdjusted_ = true;
+    altAdjusted_ =
+        4433100.0 * (1.0 - pow((float)pressure_ / (altimeterSetting * 3386.389), (.190264)));
+  }
+  return altAdjusted_;
+}
+
+void Barometer::setPressureAlt(int32_t newPressure) {
+  pressure_ = newPressure;
+  validAltF_ = false;
+  validAltAdjusted_ = false;
+
+  // record datapoint on SD card if datalogging is turned on
+  String baroName = "baro mb*100,";
+  String baroEntry = baroName + String(pressure_);
+  Telemetry.writeText(baroEntry);
 }
 
 // Filter ClimbRate

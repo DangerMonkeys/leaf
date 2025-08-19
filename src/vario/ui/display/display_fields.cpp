@@ -256,7 +256,7 @@ void display_alt_type(uint8_t cursor_x, uint8_t cursor_y, const uint8_t* font, u
 
   switch (altType) {
     case altType_MSL:
-      displayAlt = baro.altAdjusted;
+      displayAlt = baro.altAdjusted();
       break;
     case altType_AGL:
       break;
@@ -264,7 +264,7 @@ void display_alt_type(uint8_t cursor_x, uint8_t cursor_y, const uint8_t* font, u
       displayAlt = 100 * gps.altitude.meters();  // gps returns float in m, convert to int32_t in cm
       break;
     case altType_aboveLaunch:
-      displayAlt = baro.altAboveLaunch;
+      displayAlt = baro.altAboveLaunch();
       break;
     case altType_aboveWaypoint:
       displayAlt = navigator.altAboveWaypoint;

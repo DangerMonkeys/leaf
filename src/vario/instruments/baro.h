@@ -28,7 +28,7 @@ class Barometer : public etl::message_router<Barometer, PressureUpdate>,
  public:
   enum class State : uint8_t { Uninitialized, WaitingForFirstReading, Ready, Sleeping };
 
-  inline State state() const { return state_; }
+  State state() const { return state_; }
 
   void subscribe(etl::imessage_bus* bus) { bus->subscribe(*this); }
 
@@ -40,18 +40,20 @@ class Barometer : public etl::message_router<Barometer, PressureUpdate>,
   void sleep();
   void wake();
 
-  Pressure pressure;
+  // Most recent instantaneous pressure in 100ths of mbar
+  Pressure pressure() const;
+
   Pressure pressureFiltered;
   float altimeterSetting = 29.921;
-  // cm raw pressure altitude calculated off standard altimeter setting (29.92)
-  int32_t alt;
-  // m raw pressure altitude (float)
-  float altF;
-  // cm pressure altitude corrected by the altimeter setting (int)
-  int32_t altAdjusted;
-  int32_t altAtLaunch;
-  int32_t altAboveLaunch;
-  int32_t altInitial;
+  // raw pressure altitude in meters with standard altimeter setting (29.92)
+  float altF();
+
+  // raw pressure altitude in cm with standard altimeter setting (29.92)
+  int32_t alt();
+
+  // pressure altitude in cm corrected by the altimeter setting
+  int32_t altAdjusted();
+
   // instantaneous climbrate calculated with every pressure altitude measurement (m/s)
   float climbRate;
   // filtered climb value to reduce noise (cm/s)
@@ -65,17 +67,47 @@ class Barometer : public etl::message_router<Barometer, PressureUpdate>,
   // Change the number of samples over which pressure and climb rate are averaged
   void setFilterSamples(size_t nSamples);
 
-  // Reset launcAlt to current Alt (when starting a new log file, for example)
-  void resetLaunchAlt(void);
-
   // Incrementally adjust altitude (generally from user input)
   void adjustAltSetting(int8_t dir, uint8_t count);
 
   // Solve for the altimeter setting required to make corrected-pressure-altitude match gps-altitude
   bool syncToGPSAlt(void);
 
+  // == Tracking of reference altitudes ==
+  // TODO: Do not track these reference altitudes here; instead encapsulate information about what
+  // they're used for in a representation of that thing.  For instance, encapsulate a flight
+  // (including conditions of launch like time, altitude, etc) in a Flight class.
+
+  // Set launch altitude to current altitude (when starting a new log file, for example)
+  void setLaunchAlt();
+
+  // pressure altitude of launch in cm corrected by the altimeter setting
+  int32_t altAtLaunch();
+
+  // pressure altitude above launch in cm corrected by the altimeter setting
+  int32_t altAboveLaunch() { return altAdjusted() - altAtLaunch(); }
+
+  void setAltInitial();
+
+  // pressure altitude above initial in cm corrected by the altimeter setting
+  int32_t altAboveInitial();
+
  private:
   State state_ = State::Uninitialized;
+
+  Pressure pressure_;
+
+  float altF_;
+  bool validAltF_ = false;
+
+  int32_t altAdjusted_;
+  bool validAltAdjusted_ = false;
+
+  int32_t altAtLaunch_;
+  bool validAltAtLaunch_ = false;
+
+  int32_t altInitial_;
+  bool validAltInitial_ = false;
 
   int32_t pressureRegression_;
 
@@ -99,13 +131,11 @@ class Barometer : public etl::message_router<Barometer, PressureUpdate>,
   void firstReading(const PressureUpdate& msg);
 
   // == Device reading & data processing ==
-  void calculatePressureAlt(int32_t newPressure);
+  void setPressureAlt(int32_t newPressure);
   void filterClimb(void);
   void calculateAlts(void);
 
   // ======
-
-  int32_t lastAlt_ = 0;
 
   // flag to set first climb rate sample to 0 (this allows us to wait for a second baro altitude
   // sample to calculate any altitude change)

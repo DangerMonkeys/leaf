@@ -149,7 +149,7 @@ void IMU::init() {
   startupCycleCount_ = IMU_STARTUP_CYCLES;
 
   // setup kalman filter
-  kalmanvert_.init(millis() / 1000.0, baro.altF, 0.0);
+  kalmanvert_.init(millis() / 1000.0, baro.altF(), 0.0);
 
   tPrev_ = millis();
 }
@@ -161,12 +161,12 @@ void IMU::on_receive(const MotionUpdate& msg) {
   if (startupCycleCount_ > 0) {
     startupCycleCount_--;
     // submit accel = 0 to kalman filter and return
-    kalmanvert_.update(millis() / 1000.0, baro.altF, 0.0f);
+    kalmanvert_.update(millis() / 1000.0, baro.altF(), 0.0f);
     return;
   }
 
   // update kalman filter
-  kalmanvert_.update(millis() / 1000.0, baro.altF, accelVert_ * 9.80665f);
+  kalmanvert_.update(millis() / 1000.0, baro.altF(), accelVert_ * 9.80665f);
 
   String kalmanName = "kalman,";
   String kalmanEntryString = kalmanName + String(kalmanvert_.getPosition(), 8) + ',' +
