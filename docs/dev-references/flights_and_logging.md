@@ -86,7 +86,7 @@ A LogbookEntry includes:
 * GPSTrack File Link/Reference (if chosen to save)
   * A link to this separate GPSTrack File will be one of the fields in the LogbookEntry.  The GPSTrack File will be a separate file, in either KML or IGC format (perhaps additional formats supported in the future)
 
-__NOTE ON GPS REQUIREMENT:__ While the GPSTrack file strictly requires a GPS fix, the LogbookEntry itself doesn't not strictly need GPS data.  However, certain GPS information (date, time, launch location, etc) make the LogbookEntry more informative and robust.  While we anticipate usually having a GPS fix when logging, the Logbook (and each Entry) should function to a minimum level without GPS.
+__NOTE ON GPS REQUIREMENT:__ While the GPSTrack file strictly requires a GPS fix, the LogbookEntry itself does not strictly need GPS data.  However, certain GPS information (date, time, launch location, etc) make the LogbookEntry more informative and robust.  While we anticipate usually having a GPS fix when logging, the Logbook (and each Entry) should function to a minimum level without GPS.
 
 ### Logbook
 
@@ -102,7 +102,9 @@ Leaf users will have a few ways of interacting with the logbook
 * Viewing LogbookEntries on the Leaf display (scrolling through each previous flight in [reverse] chronological order)
   * Perhaps the option to delete an entry (typically for when it was made in error; for example accidentally starting the timer)
 
-* Exporting the Logbook into a user-friendly format like CSV for viewing on computer in a spreadsheet, etc.
+* Exporting the Logbook into a user-friendly format like JSON or CSV for viewing on computer in a spreadsheet, etc.
+
+* (perhaps) Web page served by Leaf
 
 * (perhaps) uploading a LogbookEntry over wifi to an online repository (for examples: leonardo or XCcontest)
 
@@ -137,7 +139,7 @@ Back            ⏎
 
 The __Settings__ would work as they do currently.
 
-__"Previous Flights"__ would take you into a minimalistic viewer on the Leaf display, where you would essentially see the "Flight Summary" page of the most recently logged flight (including date, time, etc so you could tell which flight that was).  Scrolling left/right would take you between logged flights.  
+__"Previous Flights"__ (or perhaps "View Logbook") would take you into a minimalistic viewer on the Leaf display, where you would essentially see the "Flight Summary" page of the most recently logged flight (including date, time, etc so you could tell which flight that was).  Scrolling left/right would take you between logged flights.  
 * Possibly, the first thing you see when selecting "previous flights" might be an overall logbook summary, with total flights, total flight time, etc etc. 
 
 __"Export Logbook"__ would take the JSON logbook stored inside Leaf (or more likely on the SD card) and export a CSV file that would be easily human-readable & editable in a spreadsheet application.
