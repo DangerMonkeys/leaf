@@ -1,12 +1,15 @@
-#include "fatal_error.h"
+#include "diagnostics/fatal_error.h"
 
 #include <Arduino.h>
+#include <FS.h>
 #include <SD_MMC.h>
+#include <esp_debug_helpers.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/portmacro.h>
 #include <stdarg.h>
 
-#include "FS.h"
-
 #include "hardware/buttons.h"
+#include "leaf_version.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
@@ -15,6 +18,8 @@
 #include "ui/settings/settings.h"
 
 File fatal_error_file;
+
+portMUX_TYPE btMux = portMUX_INITIALIZER_UNLOCKED;
 
 constexpr size_t BUFFER_SIZE = 512;
 
@@ -44,6 +49,10 @@ bool useFile() {
   }
 
   fatal_error_file = SD_MMC.open(fileName, "w", true);  // open for writing, create if doesn't exist
+
+  // Write the version information to know what generated this fatal error
+  fatal_error_file.println(FIRMWARE_VERSION);
+
   return fatal_error_file;
 }
 
@@ -139,6 +148,11 @@ void fatalError(const char* msg, ...) {
   // Show fatal error info on screen
   u8g2.clear();
   displayFatalError(buffer);
+
+  // Print stack trace to default log output (Serial)
+  portENTER_CRITICAL(&btMux);
+  esp_backtrace_print(16);
+  portEXIT_CRITICAL(&btMux);
 
   // Play fatal error sound
   speaker.unMute();
