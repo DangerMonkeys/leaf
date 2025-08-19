@@ -30,7 +30,7 @@ To program the current hardware:
 
 ## Fatal errors
 
-When something happens that shouldn't ever happen, the function `fatalError` in [diagnostics/fatal_error.h](./diagnostics/fatal_error.h) should be called. When it is called, it will attempt to capture as much information as practical about the failure and both print that information to the screen and Serial log.
+When something happens that shouldn't ever happen, the function `fatalError` in [diagnostics/fatal_error.h](./diagnostics/fatal_error.h) should be called. When it is called, it will attempt to capture as much information as practical about the failure and print that information to the Serial log, SD card, and screen, when possible.
 
 ### Decoding backtraces
 
@@ -42,7 +42,7 @@ Backtrace: 0x420189EF:0x3FCC0770 0x4201904A:0x3FCC0790 0x42016152:0x3FCC07E0 0x4
 
 There are a number of ways to decode this into a human-readable stack trace, but the recommended method is:
 
-- Ensure the current PlatformIO environment and git version exactly match the firmware from which the backtrace was obtained
+- Ensure the current PlatformIO environment, git version, and codebase state exactly match the firmware from which the backtrace was obtained
 - Open command palette (ctrl-shift-P in Windows)
 - Select "Tasks: Run Task" (may have to type some of that in to find the appropriate entry)
 - Select "Decode ESP32 Backtrace" (may have to scroll to find it)
