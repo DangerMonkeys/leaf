@@ -27,7 +27,7 @@ graph TD
     class Idle,Logging State
     
     IdleToLogging["Auto-detect flight start<br>--OR--<br>Manually start timer"]
-    LoggingToIdle["Auto-detect flight start<br>--OR--<br>Manually stop timer"]
+    LoggingToIdle["Auto-detect flight stop<br>--OR--<br>Manually stop timer"]
     class IdleToLogging,LoggingToIdle Transition
 
     Idle --> IdleToLogging --> Logging --> LoggingToIdle --> Idle
