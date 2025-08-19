@@ -23,6 +23,19 @@ portMUX_TYPE btMux = portMUX_INITIALIZER_UNLOCKED;
 
 constexpr size_t BUFFER_SIZE = 512;
 
+namespace putc_interception {
+  // state used by the putc hook
+  static char* putc_buffer = nullptr;
+  static size_t putc_buffer_capacity = 0;
+  static size_t putc_buffer_index = 0;
+
+  extern "C" void IRAM_ATTR putc_intercept(char c) {
+    if (putc_buffer && putc_buffer_index < putc_buffer_capacity) {
+      putc_buffer[putc_buffer_index++] = c;
+    }
+  }
+}  // namespace putc_interception
+
 bool useFile() {
   if (fatal_error_file) {
     return true;
@@ -51,9 +64,34 @@ bool useFile() {
   fatal_error_file = SD_MMC.open(fileName, "w", true);  // open for writing, create if doesn't exist
 
   // Write the version information to know what generated this fatal error
+  fatal_error_file.print("Firmware version: ");
   fatal_error_file.println(FIRMWARE_VERSION);
 
   return fatal_error_file;
+}
+
+static void getBacktrace(char* buffer, size_t n) {
+  portENTER_CRITICAL(&btMux);
+
+  // Redirect ROM printf to our buffer for the duration of the backtrace print
+  putc_interception::putc_buffer = buffer;
+  putc_interception::putc_buffer_capacity = n;
+  putc_interception::putc_buffer_index = 0;
+  esp_rom_install_channel_putc(1, putc_interception::putc_intercept);
+
+  // Trigger backtrace print
+  esp_backtrace_print(16);
+
+  // Restore default UART output for ROM printf
+  esp_rom_install_uart_printf();
+
+  portEXIT_CRITICAL(&btMux);
+
+  // Null-terminate backtrace string in buffer
+  if (putc_interception::putc_buffer_index >= n) {
+    putc_interception::putc_buffer_index = n - 1;
+  }
+  buffer[putc_interception::putc_buffer_index] = 0;
 }
 
 void fatalErrorInfo(const char* msg, ...) {
@@ -66,6 +104,7 @@ void fatalErrorInfo(const char* msg, ...) {
 
   Serial.println(buffer);
   if (useFile()) {
+    fatal_error_file.print("Info: ");
     fatal_error_file.println(buffer);
   }
 }
@@ -134,8 +173,23 @@ void fatalError(const char* msg, ...) {
   va_end(args);
 
   Serial.println(buffer);
+  Serial.flush();
 
   // Try to write final error message to file
+  if (useFile()) {
+    fatal_error_file.print("Error: ");
+    fatal_error_file.println(buffer);
+  }
+
+  // Show fatal error info on screen
+  u8g2.clear();
+  displayFatalError(buffer);
+
+  // Load backtrace into buffer
+  getBacktrace(buffer, BUFFER_SIZE);
+
+  // Report backtrace
+  Serial.println(buffer);
   if (useFile()) {
     fatal_error_file.println(buffer);
   }
@@ -145,15 +199,6 @@ void fatalError(const char* msg, ...) {
     fatal_error_file.close();
   }
 
-  // Show fatal error info on screen
-  u8g2.clear();
-  displayFatalError(buffer);
-
-  // Print stack trace to default log output (Serial)
-  portENTER_CRITICAL(&btMux);
-  esp_backtrace_print(16);
-  portEXIT_CRITICAL(&btMux);
-
   // Play fatal error sound
   speaker.unMute();
   settings.system_volume = 3;
@@ -162,9 +207,5 @@ void fatalError(const char* msg, ...) {
     delay(10);
   }
 
-#ifdef DEBUG_FATALERROR_COREDUMP
-  assert(0);  // Force core dump
-#else
   rebootOnKeyPress();
-#endif
 }
