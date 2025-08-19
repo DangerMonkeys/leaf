@@ -91,22 +91,22 @@ void DeveloperMenuPage::draw() {
   } while (u8g2.nextPage());
 }
 
-void DeveloperMenuPage::setting_change(Button dir, ButtonState state, uint8_t count) {
+void DeveloperMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) {
   switch (cursor_position) {
     case cursor_developer_fanetReTx: {
-      if (state == RELEASED) settings.toggleBoolOnOff(&settings.dev_fanetReTx);
+      if (state == ButtonEvent::CLICKED) settings.toggleBoolOnOff(&settings.dev_fanetReTx);
       break;
     }
     case cursor_developer_startupStart: {
-      if (state == RELEASED) settings.toggleBoolOnOff(&settings.dev_startLogAtBoot);
+      if (state == ButtonEvent::CLICKED) settings.toggleBoolOnOff(&settings.dev_startLogAtBoot);
       break;
     }
     case cursor_developer_startupDisconnect: {
-      if (state == RELEASED) settings.toggleBoolOnOff(&settings.dev_startDisconnected);
+      if (state == ButtonEvent::CLICKED) settings.toggleBoolOnOff(&settings.dev_startDisconnected);
       break;
     }
     case cursor_developer_busLogControl: {
-      if (state == RELEASED) {
+      if (state == ButtonEvent::CLICKED) {
         if (!busLog.isLogging()) {
           if (busLog.startLog()) {
             speaker.playSound(fx::started);
@@ -120,11 +120,11 @@ void DeveloperMenuPage::setting_change(Button dir, ButtonState state, uint8_t co
       break;
     }
     case cursor_developer_back: {
-      if (state == RELEASED) {
+      if (state == ButtonEvent::CLICKED) {
         speaker.playSound(fx::cancel);
         settings.save();
         mainMenuPage.backToMainMenu();
-      } else if (state == HELD) {
+      } else if (state == ButtonEvent::HELD) {
         speaker.playSound(fx::exit);
         settings.save();
         mainMenuPage.quitMenu();

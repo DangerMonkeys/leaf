@@ -15,7 +15,7 @@ class AltimeterMenuPage : public SettingsMenuPage {
   void draw();
 
  protected:
-  void setting_change(Button button, ButtonState state, uint8_t count);
+  void setting_change(Button button, ButtonEvent state, uint8_t count);
 };
 
 #endif

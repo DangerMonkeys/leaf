@@ -85,67 +85,37 @@ void DisplayMenuPage::draw() {
   } while (u8g2.nextPage());
 }
 
-void DisplayMenuPage::setting_change(Button dir, ButtonState state, uint8_t count) {
+void DisplayMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) {
   switch (cursor_position) {
     case cursor_display_show_debug:
-      if (state == RELEASED && dir == Button::CENTER)
+      if (state == ButtonEvent::CLICKED && dir == Button::CENTER)
         settings.toggleBoolOnOff(&settings.disp_showDebugPage);
       break;
     case cursor_display_show_thrm:
-      if (state == RELEASED && dir == Button::CENTER)
+      if (state == ButtonEvent::CLICKED && dir == Button::CENTER)
         settings.toggleBoolOnOff(&settings.disp_showThmPage);
       break;
     case cursor_display_show_thrm_adv:
-      if (state == RELEASED && dir == Button::CENTER)
+      if (state == ButtonEvent::CLICKED && dir == Button::CENTER)
         settings.toggleBoolOnOff(&settings.disp_showThmAdvPage);
       break;
     case cursor_display_show_nav:
-      if (state == RELEASED && dir == Button::CENTER)
+      if (state == ButtonEvent::CLICKED && dir == Button::CENTER)
         settings.toggleBoolOnOff(&settings.disp_showNavPage);
       break;
     case cursor_display_contrast:
-      if (state == RELEASED && dir != Button::NONE)
-        settings.adjustContrast(dir);
-      else if (state == HELD && dir == Button::NONE)
+      if (state == ButtonEvent::CLICKED || state == ButtonEvent::INCREMENTED)
         settings.adjustContrast(dir);
       break;
     case cursor_display_back:
-      if (state == RELEASED) {
+      if (state == ButtonEvent::CLICKED) {
         speaker.playSound(fx::cancel);
         settings.save();
         mainMenuPage.backToMainMenu();
-      } else if (state == HELD) {
+      } else if (state == ButtonEvent::HELD) {
         speaker.playSound(fx::exit);
         settings.save();
         mainMenuPage.quitMenu();
       }
   }
 }
-
-// helpful switch constructors to copy-paste as needed:
-/*
-switch (button) {
-  case Button::UP:
-    break;
-  case Button::DOWN:
-    break;
-  case Button::LEFT:
-    break;
-  case Button::RIGHT:
-    break;
-  case Button::CENTER:
-    break;
-*/
-
-/*
-switch (state) {
-  case RELEASED:
-    break;
-  case PRESSED:
-    break;
-  case HELD:
-    break;
-  case HELD_LONG:
-    break;
-}
-*/

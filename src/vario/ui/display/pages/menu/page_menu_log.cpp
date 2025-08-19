@@ -81,10 +81,10 @@ void LogMenuPage::draw() {
   } while (u8g2.nextPage());
 }
 
-void LogMenuPage::setting_change(Button dir, ButtonState state, uint8_t count) {
+void LogMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) {
   switch (cursor_position) {
     case cursor_log_format: {
-      if (state != PRESSED) {
+      if (state != ButtonEvent::CLICKED) {
         return;
       }
       auto new_val = (int8_t)settings.log_format;
@@ -104,23 +104,23 @@ void LogMenuPage::setting_change(Button dir, ButtonState state, uint8_t count) {
       break;
     }
     case cursor_log_saveLog: {
-      if (state == RELEASED) settings.toggleBoolOnOff(&settings.log_saveTrack);
+      if (state == ButtonEvent::CLICKED) settings.toggleBoolOnOff(&settings.log_saveTrack);
       break;
     }
     case cursor_log_autoStart: {
-      if (state == RELEASED) settings.toggleBoolOnOff(&settings.log_autoStart);
+      if (state == ButtonEvent::CLICKED) settings.toggleBoolOnOff(&settings.log_autoStart);
       break;
     }
     case cursor_log_autoStop: {
-      if (state == RELEASED) settings.toggleBoolOnOff(&settings.log_autoStop);
+      if (state == ButtonEvent::CLICKED) settings.toggleBoolOnOff(&settings.log_autoStop);
       break;
     }
     case cursor_log_back: {
-      if (state == RELEASED) {
+      if (state == ButtonEvent::CLICKED) {
         speaker.playSound(fx::cancel);
         settings.save();
         mainMenuPage.backToMainMenu();
-      } else if (state == HELD) {
+      } else if (state == ButtonEvent::HELD) {
         speaker.playSound(fx::exit);
         settings.save();
         mainMenuPage.quitMenu();

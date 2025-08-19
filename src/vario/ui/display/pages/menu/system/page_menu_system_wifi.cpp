@@ -12,8 +12,8 @@
 /**************************
  * PageMenuSystemWifi (Top Level)
  */
-void PageMenuSystemWifi::setting_change(Button dir, ButtonState state, uint8_t count) {
-  if (state != RELEASED) return;
+void PageMenuSystemWifi::setting_change(Button dir, ButtonEvent state, uint8_t count) {
+  if (state != ButtonEvent::CLICKED) return;
 
   // Handle updating items
   switch (cursor_position) {
@@ -82,11 +82,11 @@ void PageMenuSystemWifiSetup::shown() {
   WiFi.beginSmartConfig();
 }
 
-void PageMenuSystemWifiSetup::setting_change(Button dir, ButtonState state, uint8_t count) {
+void PageMenuSystemWifiSetup::setting_change(Button dir, ButtonEvent state, uint8_t count) {
   // Call the parent class to handle the back button
   SimpleSettingsMenuPage::setting_change(dir, state, count);
 
-  if (state != RELEASED) return;
+  if (state != ButtonEvent::CLICKED) return;
 
   // Handle updating items
   switch (cursor_position) {

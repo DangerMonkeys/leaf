@@ -20,11 +20,11 @@ void PageListSelect::draw_menu_input(int8_t cursor_position) {
   u8g2.print(ret);
 }
 
-void PageListSelect::setting_change(Button dir, ButtonState state, uint8_t count) {
+void PageListSelect::setting_change(Button dir, ButtonEvent state, uint8_t count) {
   // Call the parent class to handle the back button
   SimpleSettingsMenuPage::setting_change(dir, state, count);
 
-  if (state != RELEASED) return;
+  if (state != ButtonEvent::CLICKED) return;
 
   // If 255, it's the back button
   if (cursor_position != -1) {

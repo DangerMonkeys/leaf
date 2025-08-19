@@ -89,9 +89,9 @@ void warningPage_draw() {
   } while (u8g2.nextPage());
 }
 
-void warningPage_button(Button button, ButtonState state, uint8_t count) {
+void warningPage_button(Button button, ButtonEvent state, uint8_t count) {
   // allow turning off in all states
-  if (state == HELD && button == Button::CENTER) {
+  if (state == ButtonEvent::HELD && button == Button::CENTER) {
     power.shutdown();
     return;
   }
@@ -100,13 +100,13 @@ void warningPage_button(Button button, ButtonState state, uint8_t count) {
     case cursor_warningPage_none:
       switch (button) {
         case Button::UP:
-          if (state == RELEASED) {
+          if (state == ButtonEvent::CLICKED) {
             warningPage_cursorPosition = cursor_warningPage_decline;
             speaker.playSound(fx::decrease);
           }
           break;
         case Button::DOWN:
-          if (state == RELEASED) {
+          if (state == ButtonEvent::CLICKED) {
             warningPage_cursorPosition = cursor_warningPage_accept;
             speaker.playSound(fx::increase);
           }
@@ -114,7 +114,7 @@ void warningPage_button(Button button, ButtonState state, uint8_t count) {
       }
       break;
     case cursor_warningPage_decline:
-      if (state == RELEASED) {
+      if (state == ButtonEvent::CLICKED) {
         if (button == Button::UP || button == Button::DOWN) {
           warningPage_cursorPosition = cursor_warningPage_accept;
           speaker.playSound(fx::increase);
@@ -124,7 +124,7 @@ void warningPage_button(Button button, ButtonState state, uint8_t count) {
       }
       break;
     case cursor_warningPage_accept:
-      if (state == RELEASED) {
+      if (state == ButtonEvent::CLICKED) {
         if (button == Button::UP || button == Button::DOWN) {
           warningPage_cursorPosition = cursor_warningPage_decline;
           speaker.playSound(fx::decrease);
