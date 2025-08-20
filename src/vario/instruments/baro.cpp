@@ -164,7 +164,9 @@ void Barometer::sleep() {
   if (state_ == State::Uninitialized) {
     init();
   }
-  climbRate = 0;
+  climbRateRaw_ = 0;
+  validClimbRateRaw_ = false;
+
   climbRateAverage = 0;
   climbRateFiltered = 0;
   speaker.updateVarioNote(0);
@@ -175,29 +177,6 @@ void Barometer::sleep() {
 void Barometer::wake() {
   assertState("Barometer::wake", State::Sleeping);
   state_ = State::WaitingForFirstReading;
-}
-
-void Barometer::filterAltitude() {
-  // Filter Pressure and calculate Final Altitude Values
-  // Note, IMU will have taken an accel reading and updated the Kalman
-  // Filter after Baro_step_2 but before Baro_step_3
-
-  // get instant climb rate
-  climbRate = imu.getVelocity();  // in m/s
-  if (isnan(climbRate) || isinf(climbRate)) {
-    fatalError("climbRate in Barometer::update was %g after kalmanvert.getVelocity()", climbRate);
-  }
-
-  // TODO: get altitude from Kalman Filter when Baro/IMU/'vario' are restructured
-  // alt = int32_t(kalmanvert.getPosition() * 100);  // in cm above sea level
-
-  // filter ClimbRate
-  filterClimb();
-
-  // finally, update the speaker sound based on the new climbrate
-  speaker.updateVarioNote(climbRateFiltered);
-
-  if (DEBUG_BARO) Serial.println("**BR** climbRate Filtered: " + String(climbRateFiltered));
 }
 
 // ^^^ Device Management ^^^
@@ -249,22 +228,48 @@ void Barometer::setPressureAlt(int32_t newPressure) {
   Telemetry.writeText(baroEntry);
 }
 
+float Barometer::climbRate() {
+  if (!validClimbRateRaw_) {
+    fatalError("Barometer::climbRate accessed before valid");
+  }
+  return climbRateRaw_;
+}
+
+void Barometer::filterAltitude() {
+  // Filter Pressure and calculate Final Altitude Values
+  // Note, IMU will have taken an accel reading and updated the Kalman
+  // Filter after Baro_step_2 but before Baro_step_3
+
+  // get instant climb rate
+  climbRateRaw_ = imu.getVelocity();  // in m/s
+  if (isnan(climbRateRaw_) || isinf(climbRateRaw_)) {
+    fatalError("climbRate in Barometer::filterAltitude was %g after imu.getVelocity()",
+               climbRateRaw_);
+  }
+  validClimbRateRaw_ = true;
+
+  // TODO: get altitude from Kalman Filter when Baro/IMU/'vario' are restructured
+  // alt = int32_t(kalmanvert.getPosition() * 100);  // in cm above sea level
+
+  // filter ClimbRate
+  filterClimb();
+
+  // finally, update the speaker sound based on the new climbrate
+  speaker.updateVarioNote(climbRateFiltered);
+
+  if (DEBUG_BARO) Serial.println("**BR** climbRate Filtered: " + String(climbRateFiltered));
+}
+
 // Filter ClimbRate
 void Barometer::filterClimb() {
-  // lastAlt isn't set yet on boot-up, so just assume a zero climb rate for the first sample.
-  if (firstClimbInitialization_) {
-    climbRate = 0;
-    climbRateFiltered = 0;
-    climbRateAverage = 0;
-    firstClimbInitialization_ = false;
-    return;
-  }
+  if (!validClimbRateRaw_) return;
 
   // filter climb rate
-  if (isnan(climbRate) || isinf(climbRate)) {
-    fatalError("climbRate in Barometer::filterClimb was %g before climbFilter.update", climbRate);
+  if (isnan(climbRateRaw_) || isinf(climbRateRaw_)) {
+    fatalError("climbRateRaw_ in Barometer::filterClimb was %g before climbFilter.update",
+               climbRateRaw_);
   }
-  climbFilter.update(climbRate);
+  climbFilter.update(climbRateRaw_);
 
   // convert m/s -> cm/s to get the average climb rate
   float climbFilterAvg = climbFilter.getAverage();

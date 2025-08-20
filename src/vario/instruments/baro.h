@@ -55,7 +55,8 @@ class Barometer : public etl::message_router<Barometer, PressureUpdate>,
   int32_t altAdjusted();
 
   // instantaneous climbrate calculated with every pressure altitude measurement (m/s)
-  float climbRate;
+  float climbRate();
+
   // filtered climb value to reduce noise (cm/s)
   int32_t climbRateFiltered;
   // long-term (several seconds) averaged climb rate for smoothing out glide ratio and other
@@ -99,6 +100,9 @@ class Barometer : public etl::message_router<Barometer, PressureUpdate>,
 
   float altF_;
   bool validAltF_ = false;
+
+  float climbRateRaw_;
+  bool validClimbRateRaw_ = false;
 
   int32_t altAdjusted_;
   bool validAltAdjusted_ = false;
