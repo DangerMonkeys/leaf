@@ -9,6 +9,6 @@
 void navigatePage_draw(void);
 
 // handle button presses relative to what's shown on the display
-void navigatePage_button(Button button, ButtonState state, uint8_t count);
+void navigatePage_button(Button button, ButtonEvent state, uint8_t count);
 
 #endif

@@ -137,39 +137,39 @@ void VarioMenuPage::draw() {
   } while (u8g2.nextPage());
 }
 
-void VarioMenuPage::setting_change(Button dir, ButtonState state, uint8_t count) {
+void VarioMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) {
   switch (cursor_position) {
     case cursor_vario_volume:
-      if (state != RELEASED) return;
+      if (state != ButtonEvent::CLICKED) return;
       settings.adjustVolumeVario(dir);
       break;
     case cursor_vario_quietmode:
-      if (state == RELEASED) settings.toggleBoolOnOff(&settings.vario_quietMode);
+      if (state == ButtonEvent::CLICKED) settings.toggleBoolOnOff(&settings.vario_quietMode);
       break;
     case cursor_vario_sensitive:
-      if (state == RELEASED) settings.adjustVarioAverage(dir);
+      if (state == ButtonEvent::CLICKED) settings.adjustVarioAverage(dir);
       break;
     case cursor_vario_tones:
-      if (state == RELEASED) settings.toggleBoolNeutral(&settings.vario_tones);
+      if (state == ButtonEvent::CLICKED) settings.toggleBoolNeutral(&settings.vario_tones);
       break;
     case cursor_vario_liftyair:
-      if (state == RELEASED) settings.adjustLiftyAir(dir);
+      if (state == ButtonEvent::CLICKED) settings.adjustLiftyAir(dir);
       break;
     case cursor_vario_climbavg:
-      if (state == RELEASED) settings.adjustClimbAverage(dir);
+      if (state == ButtonEvent::CLICKED) settings.adjustClimbAverage(dir);
       break;
     case cursor_vario_climbstart:
-      if (state == RELEASED) settings.adjustClimbStart(dir);
+      if (state == ButtonEvent::CLICKED) settings.adjustClimbStart(dir);
       break;
     case cursor_vario_sinkalarm:
-      if (state == RELEASED) settings.adjustSinkAlarm(dir);
+      if (state == ButtonEvent::CLICKED) settings.adjustSinkAlarm(dir);
       break;
     case cursor_vario_back:
-      if (state == RELEASED) {
+      if (state == ButtonEvent::CLICKED) {
         speaker.playSound(fx::cancel);
         settings.save();
         mainMenuPage.backToMainMenu();
-      } else if (state == HELD) {
+      } else if (state == ButtonEvent::HELD) {
         speaker.playSound(fx::exit);
         settings.save();
         mainMenuPage.quitMenu();

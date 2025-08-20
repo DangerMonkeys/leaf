@@ -113,7 +113,7 @@ void cursor_move(Button button) {
   }
 }
 
-void thermalPageAdv_button(Button button, ButtonState state, uint8_t count) {
+void thermalPageAdv_button(Button button, ButtonEvent state, uint8_t count) {
   // reset cursor time out count if a button is pushed
   thermalAdvPage_cursor_timeCount = 0;
 
@@ -122,22 +122,22 @@ void thermalPageAdv_button(Button button, ButtonState state, uint8_t count) {
       switch (button) {
         case Button::UP:
         case Button::DOWN:
-          if (state == RELEASED) cursor_move(button);
+          if (state == ButtonEvent::CLICKED) cursor_move(button);
           break;
         case Button::RIGHT:
-          if (state == RELEASED) {
+          if (state == ButtonEvent::CLICKED) {
             display.turnPage(PageAction::Next);
             speaker.playSound(fx::increase);
           }
           break;
         case Button::LEFT:
-          if (state == RELEASED) {
+          if (state == ButtonEvent::CLICKED) {
             display.turnPage(PageAction::Prev);
             speaker.playSound(fx::decrease);
           }
           break;
         case Button::CENTER:
-          if (state == HELD && count == 2) {
+          if (state == ButtonEvent::INCREMENTED && count == 2) {
             power.shutdown();
           }
           break;
@@ -147,26 +147,27 @@ void thermalPageAdv_button(Button button, ButtonState state, uint8_t count) {
       switch (button) {
         case Button::UP:
         case Button::DOWN:
-          if (state == RELEASED) cursor_move(button);
+          if (state == ButtonEvent::CLICKED) cursor_move(button);
           break;
         case Button::LEFT:
           if (settings.disp_navPageAltType == altType_MSL &&
-              (state == PRESSED || state == HELD || state == HELD_LONG)) {
+              (state == ButtonEvent::CLICKED || state == ButtonEvent::INCREMENTED)) {
             baro.adjustAltSetting(1, count);
             speaker.playSound(fx::neutral);
           }
           break;
         case Button::RIGHT:
           if (settings.disp_navPageAltType == altType_MSL &&
-              (state == PRESSED || state == HELD || state == HELD_LONG)) {
+              (state == ButtonEvent::CLICKED || state == ButtonEvent::INCREMENTED)) {
             baro.adjustAltSetting(-1, count);
             speaker.playSound(fx::neutral);
           }
           break;
         case Button::CENTER:
-          if (state == RELEASED)
+          if (state == ButtonEvent::CLICKED)
             settings.adjustDisplayField_thermalPage_alt(Button::CENTER);
-          else if (state == HELD && count == 1 && settings.disp_thmPageAltType == altType_MSL) {
+          else if (state == ButtonEvent::INCREMENTED && count == 1 &&
+                   settings.disp_thmPageAltType == altType_MSL) {
             if (baro.syncToGPSAlt()) {  // successful adjustment of altimeter setting to match
                                         // GPS altitude
               speaker.playSound(fx::enter);
@@ -178,68 +179,24 @@ void thermalPageAdv_button(Button button, ButtonState state, uint8_t count) {
           break;
       }
       break;
-    /* case cursor_thermalPage_alt2:
-            switch(button) {
-                    case Button::UP:
-                            break;
-                    case Button::DOWN:
-                            break;
-                    case Button::LEFT:
-                            break;
-                    case Button::RIGHT:
-                            break;
-                    case Button::CENTER:
-                            break;
-            }
-            break;
-    case cursor_thermalPage_userField1:
-            switch(button) {
-                    case Button::UP:
-                            break;
-                    case Button::DOWN:
-                            break;
-                    case Button::LEFT:
-                            break;
-                    case Button::RIGHT:
-                            break;
-                    case Button::CENTER:
-                            break;
-            }
-            break;
-    case cursor_thermalPage_userField2:
-            switch(button) {
-                    case Button::UP:
-                            break;
-                    case Button::DOWN:
-                            break;
-                    case Button::LEFT:
-                            break;
-                    case Button::RIGHT:
-                            break;
-                    case Button::CENTER:
-                            break;
-            }
-            break;
-            */
     case cursor_thermalAdvPage_timer:
       switch (button) {
         case Button::UP:
         case Button::DOWN:
-          if (state == RELEASED) cursor_move(button);
+          if (state == ButtonEvent::CLICKED) cursor_move(button);
           break;
         case Button::LEFT:
           break;
         case Button::RIGHT:
           break;
         case Button::CENTER:
-          if (state == RELEASED && !flightTimer_isRunning()) {
+          if (state == ButtonEvent::CLICKED && !flightTimer_isRunning()) {
             flightTimer_start();
             thermalAdvPage_cursor_position = cursor_thermalAdvPage_none;
-          } else if (state == HELD && flightTimer_isRunning()) {
+          } else if (state == ButtonEvent::HELD && flightTimer_isRunning()) {
+            buttons.consumeButton();
             flightTimer_stop();
             thermalAdvPage_cursor_position = cursor_thermalAdvPage_none;
-            buttons.lockAfterHold();  // lock buttons so we don't turn off if user keeps holding
-                                      // button
           }
 
           break;

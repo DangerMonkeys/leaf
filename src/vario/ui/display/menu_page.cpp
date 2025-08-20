@@ -17,13 +17,13 @@ void MenuPage::cursor_next() {
   if (cursor_position > cursor_max) cursor_position = cursor_min;
 }
 
-bool SettingsMenuPage::button_event(Button button, ButtonState state, uint8_t count) {
+bool SettingsMenuPage::button_event(Button button, ButtonEvent state, uint8_t count) {
   switch (button) {
     case Button::UP:
-      if (state == RELEASED) cursor_prev();
+      if (state == ButtonEvent::CLICKED) cursor_prev();
       break;
     case Button::DOWN:
-      if (state == RELEASED) cursor_next();
+      if (state == ButtonEvent::CLICKED) cursor_next();
       break;
     case Button::LEFT:
       setting_change(Button::LEFT, state, count);
@@ -36,7 +36,7 @@ bool SettingsMenuPage::button_event(Button button, ButtonState state, uint8_t co
       break;
   }
   bool redraw = false;
-  if (button != Button::NONE && state != NO_STATE) redraw = true;
+  if (button != Button::NONE) redraw = true;
   return redraw;  // update display after button push so that the UI reflects any changes
                   // immediately
 }
@@ -138,8 +138,8 @@ etl::array_view<const char*> SimpleSettingsMenuPage::get_labels() const {
 }
 
 // Only handle the default back button closing this dialog
-void SimpleSettingsMenuPage::setting_change(Button dir, ButtonState state, uint8_t count) {
-  if (cursor_position == CURSOR_BACK && state == RELEASED) {
+void SimpleSettingsMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) {
+  if (cursor_position == CURSOR_BACK && state == ButtonEvent::CLICKED) {
     pop_page();
     return;
   }

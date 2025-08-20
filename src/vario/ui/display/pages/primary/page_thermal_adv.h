@@ -9,6 +9,6 @@
 void thermalPageAdv_draw(void);
 
 // handle button presses relative to what's shown on the display
-void thermalPageAdv_button(Button button, ButtonState state, uint8_t count);
+void thermalPageAdv_button(Button button, ButtonEvent state, uint8_t count);
 
 #endif

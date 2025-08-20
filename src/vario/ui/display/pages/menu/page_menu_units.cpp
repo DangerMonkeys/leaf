@@ -100,35 +100,35 @@ void UnitsMenuPage::draw() {
   } while (u8g2.nextPage());
 }
 
-void UnitsMenuPage::setting_change(Button dir, ButtonState state, uint8_t count) {
+void UnitsMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) {
   switch (cursor_position) {
     case cursor_units_alt:
-      if (state == RELEASED) settings.toggleBoolNeutral(&settings.units_alt);
+      if (state == ButtonEvent::CLICKED) settings.toggleBoolNeutral(&settings.units_alt);
       break;
     case cursor_units_climb:
-      if (state == RELEASED) settings.toggleBoolNeutral(&settings.units_climb);
+      if (state == ButtonEvent::CLICKED) settings.toggleBoolNeutral(&settings.units_climb);
       break;
     case cursor_units_speed:
-      if (state == RELEASED) settings.toggleBoolNeutral(&settings.units_speed);
+      if (state == ButtonEvent::CLICKED) settings.toggleBoolNeutral(&settings.units_speed);
       break;
     case cursor_units_distance:
-      if (state == RELEASED) settings.toggleBoolNeutral(&settings.units_distance);
+      if (state == ButtonEvent::CLICKED) settings.toggleBoolNeutral(&settings.units_distance);
       break;
     case cursor_units_heading:
-      if (state == RELEASED) settings.toggleBoolNeutral(&settings.units_heading);
+      if (state == ButtonEvent::CLICKED) settings.toggleBoolNeutral(&settings.units_heading);
       break;
     case cursor_units_temp:
-      if (state == RELEASED) settings.toggleBoolNeutral(&settings.units_temp);
+      if (state == ButtonEvent::CLICKED) settings.toggleBoolNeutral(&settings.units_temp);
       break;
     case cursor_units_hours:
-      if (state == RELEASED) settings.toggleBoolNeutral(&settings.units_hours);
+      if (state == ButtonEvent::CLICKED) settings.toggleBoolNeutral(&settings.units_hours);
       break;
     case cursor_units_back:
-      if (state == RELEASED) {
+      if (state == ButtonEvent::CLICKED) {
         speaker.playSound(fx::cancel);
         settings.save();
         mainMenuPage.backToMainMenu();
-      } else if (state == HELD) {
+      } else if (state == ButtonEvent::HELD) {
         speaker.playSound(fx::exit);
         settings.save();
         mainMenuPage.quitMenu();
@@ -136,31 +136,3 @@ void UnitsMenuPage::setting_change(Button dir, ButtonState state, uint8_t count)
       break;
   }
 }
-
-// helpful switch constructors to copy-paste as needed:
-/*
-switch (button) {
-  case Button::UP:
-    break;
-  case Button::DOWN:
-    break;
-  case Button::LEFT:
-    break;
-  case Button::RIGHT:
-    break;
-  case Button::CENTER:
-    break;
-*/
-
-/*
-switch (state) {
-  case RELEASED:
-    break;
-  case PRESSED:
-    break;
-  case HELD:
-    break;
-  case HELD_LONG:
-    break;
-}
-*/

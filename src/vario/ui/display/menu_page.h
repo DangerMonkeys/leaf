@@ -32,7 +32,7 @@ class MenuPage {
   //   state: New state of button
   //   count: (TODO: document)
   // Returns true if the page should be redrawn after the event.
-  virtual bool button_event(Button button, ButtonState state, uint8_t count) = 0;
+  virtual bool button_event(Button button, ButtonEvent state, uint8_t count) = 0;
 
   // Called to draw the menu page.
   // Assumes(?) the screen is already clear.
@@ -73,10 +73,10 @@ class MenuPage {
 
 class SettingsMenuPage : public MenuPage {
  public:
-  bool button_event(Button button, ButtonState state, uint8_t count);
+  bool button_event(Button button, ButtonEvent state, uint8_t count);
 
  protected:
-  virtual void setting_change(Button dir, ButtonState state, uint8_t count) = 0;
+  virtual void setting_change(Button dir, ButtonEvent state, uint8_t count) = 0;
 };
 
 // A simple helper class to handle simple menu items that draw things like
@@ -107,6 +107,6 @@ class SimpleSettingsMenuPage : public SettingsMenuPage {
   virtual etl::array_view<const char*> get_labels() const;
 
  protected:
-  virtual void setting_change(Button dir, ButtonState state, uint8_t count) override;
+  virtual void setting_change(Button dir, ButtonEvent state, uint8_t count) override;
   static etl::array<const char*, 0> emptyMenu;
 };

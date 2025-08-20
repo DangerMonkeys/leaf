@@ -18,7 +18,7 @@ class PageFanetGroundSelect : SimpleSettingsMenuPage {
   }
 
  protected:
-  void setting_change(Button dir, ButtonState state, uint8_t count) override;
+  void setting_change(Button dir, ButtonEvent state, uint8_t count) override;
 
  private:
   PageFanetGroundSelect() {}

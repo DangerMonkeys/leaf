@@ -141,14 +141,14 @@ void AltimeterMenuPage::draw() {
   } while (u8g2.nextPage());
 }
 
-void AltimeterMenuPage::setting_change(Button button, ButtonState state, uint8_t count) {
+void AltimeterMenuPage::setting_change(Button button, ButtonEvent state, uint8_t count) {
   switch (cursor_position) {
     case cursor_altimeter_syncGPSLogStart:
-      if ((button == Button::CENTER || button == Button::RIGHT) && state == RELEASED)
+      if ((button == Button::CENTER || button == Button::RIGHT) && state == ButtonEvent::CLICKED)
         settings.toggleBoolNeutral(&settings.vario_altSyncToGPS);
       break;
     case cursor_altimeter_syncGPSNow:
-      if (state == RELEASED) {
+      if (state == ButtonEvent::CLICKED) {
         if (baro.syncToGPSAlt()) {  // successful adjustment of altimeter setting to match GPS
           speaker.playSound(fx::enter);
         } else {  // unsuccessful
@@ -158,7 +158,7 @@ void AltimeterMenuPage::setting_change(Button button, ButtonState state, uint8_t
       break;
     case cursor_altimeter_adjustSetting:
       if (button == Button::CENTER && count == 1 &&
-          state == HELD) {          // if center button held for 1 'action time'
+          state == ButtonEvent::INCREMENTED) {  // if center button held for 1 increment
         if (baro.syncToGPSAlt()) {  // successful adjustment of altimeter setting to match GPS
                                     // altitude
           speaker.playSound(fx::enter);
@@ -166,7 +166,7 @@ void AltimeterMenuPage::setting_change(Button button, ButtonState state, uint8_t
           speaker.playSound(fx::cancel);
         }
       } else if (button == Button::LEFT || button == Button::RIGHT) {
-        if (state == PRESSED || state == HELD || state == HELD_LONG) {
+        if (state == ButtonEvent::CLICKED || state == ButtonEvent::INCREMENTED) {
           if (button == Button::LEFT)
             baro.adjustAltSetting(-1, count);
           else if (button == Button::RIGHT)
@@ -176,11 +176,11 @@ void AltimeterMenuPage::setting_change(Button button, ButtonState state, uint8_t
       }
       break;
     case cursor_altimeter_back:
-      if (state == RELEASED) {
+      if (state == ButtonEvent::CLICKED) {
         speaker.playSound(fx::cancel);
         settings.save();
         mainMenuPage.backToMainMenu();
-      } else if (state == HELD) {
+      } else if (state == ButtonEvent::HELD) {
         speaker.playSound(fx::exit);
         settings.save();
         mainMenuPage.quitMenu();

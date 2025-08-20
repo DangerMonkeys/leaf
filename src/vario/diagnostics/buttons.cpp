@@ -6,7 +6,7 @@
 
 ButtonMonitor buttonMonitor;
 
-void ButtonMonitor::on_receive(const ButtonEvent& msg) {
+void ButtonMonitor::on_receive(const ButtonEventMessage& msg) {
   switch (msg.button) {
     case Button::CENTER:
       Serial.print("button: CENTER");
@@ -28,18 +28,24 @@ void ButtonMonitor::on_receive(const ButtonEvent& msg) {
       break;
   }
 
-  switch (msg.state) {
-    case PRESSED:
-      Serial.print(" state: PRESSED  ");
+  switch (msg.event) {
+    case ButtonEvent::PRESSED:
+      Serial.print(" state: PRESSED    ");
       break;
-    case RELEASED:
-      Serial.print(" state: RELEASED ");
+    case ButtonEvent::CLICKED:
+      Serial.print(" state: CLICKED    ");
       break;
-    case HELD:
-      Serial.print(" state: HELD     ");
+    case ButtonEvent::RELEASED:
+      Serial.print(" state: RELEASED   ");
       break;
-    case HELD_LONG:
-      Serial.print(" state: HELD_LONG");
+    case ButtonEvent::HELD:
+      Serial.print(" state: HELD       ");
+      break;
+    case ButtonEvent::HELD_LONG:
+      Serial.print(" state: HELD_LONG  ");
+      break;
+    case ButtonEvent::INCREMENTED:
+      Serial.print(" state: INCREMENTED");
   }
 
   Serial.print(" hold count: ");

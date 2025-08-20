@@ -15,13 +15,9 @@ class Buttons : IMessageSource {
   // state changes
   void update();
 
-  uint16_t getHoldCount() { return holdCounter_; }
-
-  /// @brief lock the buttons after a center-hold event until user next releases the center button
-  /// @details call this function after performing a center-hold button action if no additional
-  /// center-hold actions should be taken until user lets go of the center button (example:
-  /// resetting timer, then turning off)
-  void lockAfterHold();
+  // Call to indicate that the current button has produced its only action, so therefore no more
+  // action events (CLICKED, HELD, HELD_LONG, INCREMENTED) should be emitted.
+  void consumeButton() { consumed_ = true; }
 
   // check the instantaneous state of the button hardware pins
   Button inspectPins();
@@ -31,33 +27,29 @@ class Buttons : IMessageSource {
   void stopPublishing() { bus_ = nullptr; }
 
  private:
-  void report(Button button, ButtonState state);
+  // See buttons.md state transition diagram
+  enum class State : uint8_t { Up, Debouncing, Down, Held, HeldLong };
 
-  // Check for a minimal stable time before asserting that a button has been pressed or released.
-  // Returns true if button is debounced, or false while debouncing.
-  bool debounce(Button& button);
+  void startDebouncing(Button button);
 
-  // button debouncing
-  Button debounceLast_ = Button::NONE;
-  // time in ms for stabilized button state before returning the button press
-  uint32_t debounceTime_ = 5;
+  void report(Button button, ButtonEvent state);
+
+  State state_ = State::Up;
+  Button currentButton_ = Button::NONE;
+
+  // Time when the current state began, when the next state transition may occur after a period of
+  // time.
   uint32_t timeInitial_ = 0;
-  uint32_t timeElapsed_ = 0;
 
-  // in a single button-push event, track if it was ever held long enough to reach the
-  // "HELD" or "HELD_LONG" states (so we know not to also take action when it is released)
-  bool everHeld_ = false;
+  // Time of the last time an INCREMENTED event was emitted.
+  uint32_t timeLastIncrement_ = 0;
 
-  uint32_t holdActionTimeInitial_ = 0;
+  // Number of INCREMENTED events already emitted for the current button.
   uint16_t holdCounter_ = 0;
 
-  // when holding the center button to turn on, we need to "lock" the buttons until the user
-  // releases the center button. Otherwise, we'll turn on, and immediately turn back off again due
-  // to the persistent button press.
-  // default to true, for the first turn on event
-  bool centerHoldLockButtons_ = true;
-
-  ButtonEvent lastEvent_{Button::NONE, NO_STATE, 0};
+  // True when input from the current button has been consumed and so the current button should not
+  // emit any additional action events other than RELEASED.
+  bool consumed_ = false;
 
   etl::imessage_bus* bus_ = nullptr;
 };

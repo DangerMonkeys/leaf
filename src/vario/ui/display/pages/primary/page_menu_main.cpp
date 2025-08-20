@@ -175,11 +175,11 @@ void MainMenuPage::menu_item_action(Button button) {
   }
 }
 
-bool MainMenuPage::mainMenuButtonEvent(Button button, ButtonState state, uint8_t count) {
+bool MainMenuPage::mainMenuButtonEvent(Button button, ButtonEvent state, uint8_t count) {
   bool redraw = false;  // only redraw screen if a UI input changes something
   switch (button) {
     case Button::UP:
-      if (state == RELEASED) {
+      if (state == ButtonEvent::CLICKED) {
         cursor_prev();
         if (cursor_position == cursor_developer && !settings.dev_menu) {
           cursor_prev();  // skip developer menu if not in dev mode
@@ -188,7 +188,7 @@ bool MainMenuPage::mainMenuButtonEvent(Button button, ButtonState state, uint8_t
       }
       break;
     case Button::DOWN:
-      if (state == RELEASED) {
+      if (state == ButtonEvent::CLICKED) {
         cursor_next();
         if (cursor_position == cursor_developer && !settings.dev_menu) {
           cursor_next();  // skip developer menu if not in dev mode
@@ -199,7 +199,7 @@ bool MainMenuPage::mainMenuButtonEvent(Button button, ButtonState state, uint8_t
     case Button::LEFT:
     case Button::RIGHT:
     case Button::CENTER:
-      if (state == RELEASED) {
+      if (state == ButtonEvent::CLICKED) {
         menu_item_action(button);
         redraw = true;
       }
@@ -209,7 +209,7 @@ bool MainMenuPage::mainMenuButtonEvent(Button button, ButtonState state, uint8_t
                   // immediately
 }
 
-bool MainMenuPage::button_event(Button button, ButtonState state, uint8_t count) {
+bool MainMenuPage::button_event(Button button, ButtonEvent state, uint8_t count) {
   bool redraw = false;  // only redraw screen if a UI input changes something
   switch (menu_page) {
     case page_menu_main:
@@ -242,31 +242,3 @@ bool MainMenuPage::button_event(Button button, ButtonState state, uint8_t count)
   }
   return redraw;
 }
-
-// helpful switch constructors to copy-paste as needed:
-/*
-switch (button) {
-  case Button::UP:
-    break;
-  case Button::DOWN:
-    break;
-  case Button::LEFT:
-    break;
-  case Button::RIGHT:
-    break;
-  case Button::CENTER:
-    break;
-*/
-
-/*
-switch (state) {
-  case RELEASED:
-    break;
-  case PRESSED:
-    break;
-  case HELD:
-    break;
-  case HELD_LONG:
-    break;
-}
-*/
