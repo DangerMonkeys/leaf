@@ -318,7 +318,7 @@ void navigatePage_draw() {
     if (navigatePage_cursorPosition == cursor_navigatePage_alt1) {
       display_selectionBox(49, 94, 96 - 49, 17, 5);
     }
-    // display_altAboveLaunch(24, 129, baro.altAboveLaunch);
+    // display_altAboveLaunch(24, 129);
 
     ///////////////////////////////////////////////////
     // Waypoint Info **********************************

@@ -285,6 +285,11 @@ void display_alt(uint8_t cursor_x, uint8_t cursor_y, const uint8_t* font, int32_
 
   u8g2.setCursor(cursor_x, cursor_y);
   u8g2.setFont(font);
+  if (displayAlt < -9999) {
+    // Altitude is unavailable
+    u8g2.print(" ---");
+    return;
+  }
 
   bool negativeVal = false;
 
@@ -550,20 +555,12 @@ void display_unsignedClimbRate_short(uint8_t x, uint8_t y, int16_t displayClimbR
   u8g2.setDrawColor(1);
 }
 
-void display_altAboveLaunch(uint8_t x, uint8_t y, int32_t aboveLaunchAlt) {
+void display_altAboveLaunch(uint8_t x, uint8_t y) {
   u8g2.setCursor(x, y - 16);
   u8g2.setFont(leaf_5h);
   u8g2.print("ABOVE LAUNCH");
+  int32_t aboveLaunchAlt = baro.state() == Barometer::State::Ready ? baro.altAdjusted() : -99999;
   display_alt(x, y, leaf_8x14, aboveLaunchAlt);
-}
-
-void display_altAboveLaunch(uint8_t x, uint8_t y, int32_t aboveLaunchAlt, const uint8_t* font) {
-  u8g2.setFont(font);
-  uint8_t h = u8g2.getMaxCharHeight();
-  u8g2.setCursor(x, y - h - 2);
-  u8g2.setFont(leaf_5h);
-  u8g2.print("ABOVE LAUNCH");
-  display_alt(x, y, font, aboveLaunchAlt);
 }
 
 void display_accel(uint8_t x, uint8_t y, float accel) {

@@ -128,7 +128,7 @@ void thermalPage_draw() {
 void drawUserField(uint8_t x, uint8_t y, uint8_t field, bool selected) {
   switch (field) {
     case static_cast<int>(ThermalPageUserFields::ABOVE_LAUNCH):
-      display_altAboveLaunch(x, y, baro.altAboveLaunch());
+      display_altAboveLaunch(x, y);
       break;
     case static_cast<int>(ThermalPageUserFields::GLIDE):
       // Glide Ratio

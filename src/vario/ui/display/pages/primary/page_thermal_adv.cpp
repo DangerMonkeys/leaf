@@ -76,7 +76,7 @@ void thermalPageAdv_draw() {
     display_climbRate(20, 108, leaf_8x14, baro.climbRateFiltered);
 
     // altitude above launch
-    display_altAboveLaunch(24, 132, baro.altAboveLaunch());
+    display_altAboveLaunch(24, 132);
 
     // User Fields ****************************************************
     uint8_t userFieldsTop = 136;
