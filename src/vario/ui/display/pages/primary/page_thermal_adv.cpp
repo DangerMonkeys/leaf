@@ -76,7 +76,7 @@ void thermalPageAdv_draw() {
     display_climbRate(20, 108, leaf_8x14, baro.climbRateFiltered);
 
     // altitude above launch
-    display_altAboveLaunch(24, 132, baro.altAboveLaunch);
+    display_altAboveLaunch(24, 132);
 
     // User Fields ****************************************************
     uint8_t userFieldsTop = 136;
@@ -139,6 +139,7 @@ void thermalPageAdv_button(Button button, ButtonEvent state, uint8_t count) {
         case Button::CENTER:
           if (state == ButtonEvent::INCREMENTED && count == 2) {
             power.shutdown();
+            return;  // Don't refresh the display; we're shutting down
           }
           break;
       }
@@ -203,4 +204,5 @@ void thermalPageAdv_button(Button button, ButtonEvent state, uint8_t count) {
       }
       break;
   }
+  display.update();
 }

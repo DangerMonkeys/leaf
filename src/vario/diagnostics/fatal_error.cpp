@@ -80,7 +80,7 @@ static void getBacktrace(char* buffer, size_t n) {
   esp_rom_install_channel_putc(1, putc_interception::putc_intercept);
 
   // Trigger backtrace print
-  esp_backtrace_print(16);
+  esp_backtrace_print(20);
 
   // Restore default UART output for ROM printf
   esp_rom_install_uart_printf();

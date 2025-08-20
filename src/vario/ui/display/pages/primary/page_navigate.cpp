@@ -318,7 +318,7 @@ void navigatePage_draw() {
     if (navigatePage_cursorPosition == cursor_navigatePage_alt1) {
       display_selectionBox(49, 94, 96 - 49, 17, 5);
     }
-    // display_altAboveLaunch(24, 129, baro.altAboveLaunch);
+    // display_altAboveLaunch(24, 129);
 
     ///////////////////////////////////////////////////
     // Waypoint Info **********************************
@@ -473,6 +473,7 @@ void navigatePage_button(Button button, ButtonEvent state, uint8_t count) {
         case Button::CENTER:
           if (state == ButtonEvent::INCREMENTED && count == 2) {
             power.shutdown();
+            return;  // Don't refresh the display; we're shutting down
           }
           break;
       }
@@ -559,4 +560,5 @@ void navigatePage_button(Button button, ButtonEvent state, uint8_t count) {
       }
       break;
   }
+  display.update();
 }

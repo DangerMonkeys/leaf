@@ -89,8 +89,8 @@ void log_update() {
         if (settings.vario_altSyncToGPS) baro.syncToGPSAlt();
 
         // starting values
-        baro.resetLaunchAlt();
-        logbook.alt_start = baro.altAtLaunch;
+        baro.setLaunchAlt();
+        logbook.alt_start = baro.altAtLaunch();
 
         // get first set of log values
         log_captureValues();
@@ -137,11 +137,13 @@ bool flightTimer_autoStart() {
   }
 
   // check if current altitude has changed enough from startup to trigger timer start
-  int32_t altDifference = baro.alt - baro.altInitial;
-  if (altDifference < 0) altDifference *= -1;
-  if (altDifference > AUTO_START_MIN_ALT) {
-    startTheTimer = true;
-    Serial.println("****************************** autoStart TRUE via alt");
+  if (baro.state() == Barometer::State::Ready) {
+    int32_t altDifference = baro.altAboveInitial();
+    if (altDifference < 0) altDifference *= -1;
+    if (altDifference > AUTO_START_MIN_ALT) {
+      startTheTimer = true;
+      Serial.println("****************************** autoStart TRUE via alt");
+    }
   }
 
   // Serial.print("S T A R T   Counter: ");
@@ -165,7 +167,7 @@ bool flightTimer_autoStop() {
   // thresholds.
 
   // First check if altitude is stable
-  int32_t altDifference = baro.alt - autoStopAltitude;
+  int32_t altDifference = baro.alt() - autoStopAltitude;
   if (altDifference < 0) altDifference *= -1;
   if (altDifference < AUTO_STOP_MAX_ALT) {
     // then check if GPS speed is slow enough
@@ -181,7 +183,7 @@ bool flightTimer_autoStop() {
 
     // reset the comparison altitude to present altitude, since it's still changing
   } else {
-    autoStopAltitude = baro.alt;
+    autoStopAltitude = baro.alt();
   }
 
   // Serial.print(" ** STOP ** Counter: ");
@@ -192,8 +194,8 @@ bool flightTimer_autoStop() {
   // Serial.println(stopTheTimer);
 
   if (stopTheTimer) {
-    baro.altInitial = baro.alt;  // reset initial alt (to enable properly checking again for
-                                 // auto-start conditions)
+    // reset initial alt (to enable properly checking again for auto-start conditions)
+    baro.setAltInitial();
   }
 
   return stopTheTimer;
@@ -243,7 +245,7 @@ void flightTimer_stop() {
   }
 
   // ending values
-  logbook.alt_end = baro.alt;
+  logbook.alt_end = baro.alt();
   flight->end(logbook);
   // TODO:  A much cooler end flight sound.  Perhaps even an easter egg?
   speaker.playSound(fx::confirm);
@@ -271,8 +273,8 @@ String flightTimer_getString() {
 }
 
 void log_captureValues() {
-  logbook.alt = baro.altAdjusted;
-  logbook.alt_above_launch = baro.altAboveLaunch;
+  logbook.alt = baro.altAdjusted();
+  logbook.alt_above_launch = baro.altAboveLaunch();
   logbook.climb = baro.climbRateFiltered;
   logbook.speed = gps.speed.mps();
   if (ambient.state() == Ambient::State::Ready) {

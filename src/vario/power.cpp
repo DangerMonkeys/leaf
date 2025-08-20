@@ -147,13 +147,6 @@ void Power::initPeripherals() {
   display.init();
   Serial.println(" - Finished display");
   ms5611.init();
-  baro.init();
-  Serial.println("     Waiting for first pressure reading...");
-  // TODO: don't block here; instead, have clients recognize and handle a not-fully-initialized baro
-  // appropriately (#192)
-  while (!baro.hasFirstReading()) {
-    ms5611.update();
-  }
   Serial.println(" - Finished Baro");
   ICM20948::getInstance().init();
   imu.init();
@@ -191,12 +184,6 @@ void Power::wakePeripherals() {
   lc86g.wake();
   Serial.println(" - waking baro and IMU");
   baro.wake();
-  Serial.println("     waiting for first pressure reading...");
-  // TODO: don't block here; instead, have clients recognize and handle a not-fully-initialized baro
-  // appropriately
-  while (!baro.hasFirstReading()) {
-    ms5611.update();
-  }
   imu.wake();
   Serial.println(" - waking speaker");
   speaker.unMute();
@@ -306,7 +293,7 @@ bool Power::autoOff() {
   // thresholds.
 
   // First check if altitude is stable
-  int32_t altDifference = baro.alt - autoOffAltitude_;
+  int32_t altDifference = baro.alt() - autoOffAltitude_;
   if (altDifference < 0) altDifference *= -1;
   if (altDifference < AUTO_OFF_MAX_ALT) {
     // then check if GPS speed is slow enough

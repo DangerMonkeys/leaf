@@ -33,6 +33,8 @@ class IMU : public etl::message_router<IMU, MotionUpdate> {
   // Kalman filter object for vertical climb rate and position
   KalmanFilterPA kalmanvert_;
 
+  bool kalmanInitialized_ = false;
+
   uint8_t startupCycleCount_;
 
   double accelVert_;

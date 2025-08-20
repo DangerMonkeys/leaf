@@ -25,7 +25,7 @@ class Ambient : public etl::message_router<Ambient, AmbientUpdate>,
   void on_receive_unknown(const etl::imessage& msg) {}
 
  private:
-  void onUnexpectedState(const char* c, State s) const;
+  void onUnexpectedState(const char* action, State actual) const;
   friend struct StateAssertMixin<Ambient>;
 
   float temperature_;

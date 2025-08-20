@@ -128,7 +128,7 @@ void thermalPage_draw() {
 void drawUserField(uint8_t x, uint8_t y, uint8_t field, bool selected) {
   switch (field) {
     case static_cast<int>(ThermalPageUserFields::ABOVE_LAUNCH):
-      display_altAboveLaunch(x, y, baro.altAboveLaunch);
+      display_altAboveLaunch(x, y);
       break;
     case static_cast<int>(ThermalPageUserFields::GLIDE):
       // Glide Ratio
@@ -236,6 +236,7 @@ void thermalPage_button(Button button, ButtonEvent state, uint8_t count) {
         case Button::CENTER:
           if (state == ButtonEvent::INCREMENTED && count == 2) {
             power.shutdown();
+            return;  // Don't refresh the display; we're shutting down
           }
           break;
       }
@@ -334,4 +335,5 @@ void thermalPage_button(Button button, ButtonEvent state, uint8_t count) {
       }
       break;
   }
+  display.update();
 }
