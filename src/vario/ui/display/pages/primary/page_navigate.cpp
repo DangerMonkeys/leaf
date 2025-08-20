@@ -473,6 +473,7 @@ void navigatePage_button(Button button, ButtonEvent state, uint8_t count) {
         case Button::CENTER:
           if (state == ButtonEvent::INCREMENTED && count == 2) {
             power.shutdown();
+            return;  // Don't refresh the display; we're shutting down
           }
           break;
       }
@@ -559,4 +560,5 @@ void navigatePage_button(Button button, ButtonEvent state, uint8_t count) {
       }
       break;
   }
+  display.update();
 }

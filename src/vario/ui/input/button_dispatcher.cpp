@@ -81,15 +81,12 @@ void ButtonDispatcher::on_receive(const ButtonEventMessage& msg) {
 
   } else if (currentPage == MainPage::Thermal) {
     thermalPage_button(msg.button, msg.event, msg.holdCount);
-    display.update();
 
   } else if (currentPage == MainPage::ThermalAdv) {
     thermalPageAdv_button(msg.button, msg.event, msg.holdCount);
-    display.update();
 
   } else if (currentPage == MainPage::Nav) {
     navigatePage_button(msg.button, msg.event, msg.holdCount);
-    display.update();
 
   } else if (currentPage != MainPage::Charging) {  // NOT CHARGING PAGE (i.e., our debug test page)
     switch (msg.button) {
