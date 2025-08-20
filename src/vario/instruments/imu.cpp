@@ -148,14 +148,23 @@ void IMU::processQuaternion(const MotionUpdate& m) {
 void IMU::init() {
   startupCycleCount_ = IMU_STARTUP_CYCLES;
 
-  // setup kalman filter
-  kalmanvert_.init(millis() / 1000.0, baro.altF(), 0.0);
-
   tPrev_ = millis();
 }
 
 void IMU::on_receive(const MotionUpdate& msg) {
+  if (baro.state() != Barometer::State::Ready) {
+    // We can't do anything without simultaneous barometer-measured altitude
+    return;
+  }
+
   processQuaternion(msg);
+
+  if (!kalmanInitialized_) {
+    // setup kalman filter
+    kalmanvert_.init(millis() / 1000.0, baro.altF(), 0.0);
+    kalmanInitialized_ = true;
+    return;
+  }
 
   // if we're starting up, block accel values until it's stable
   if (startupCycleCount_ > 0) {
