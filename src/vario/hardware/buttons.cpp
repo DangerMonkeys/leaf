@@ -25,14 +25,21 @@
 #include "ui/display/pages/primary/page_thermal_adv.h"
 #include "ui/input/buttons.h"
 #include "ui/settings/settings.h"
+#include "utils/magic_enum.h"
 
 Buttons buttons;
 
-const uint16_t MIN_HOLD_TIME_MS = 800;   // time in ms to count a button as "held down"
-const uint16_t MAX_HOLD_TIME_MS = 3500;  // time in ms to start further actions on long-holds
+// time in ms for stabilized button state before returning the button press
+const uint32_t DEBOUNCE_TIME_MS = 5;
 
-// time in ms required between "action steps" while holding the button
-const uint16_t HOLD_ACTION_TIME_LIMIT_MS = 500;
+// time in ms to count a button as held down
+const uint16_t HOLD_TIME_MS = 800;
+
+// additional time in ms to start further actions on long-holds
+const uint16_t HOLD_LONG_TIME_MS = 3500 - HOLD_TIME_MS;
+
+// time in ms between increment events while holding the button
+const uint16_t INCREMENT_TIME_MS = 500;
 
 Button Buttons::init() {
   // configure pins
@@ -45,81 +52,95 @@ Button Buttons::init() {
   return inspectPins();
 }
 
-void Buttons::lockAfterHold() {
-  centerHoldLockButtons_ = true;  // lock from further actions until user lets go of center button
-}
-
-void Buttons::report(Button button, ButtonState state) {
-  lastEvent_ = ButtonEvent(button, state, holdCounter_);
+void Buttons::report(Button button, ButtonEvent state) {
   etl::imessage_bus* bus = bus_;
   if (bus) {
-    bus->receive(lastEvent_);
+    bus->receive(ButtonEventMessage(button, state, holdCounter_));
   }
+}
+
+void Buttons::startDebouncing(Button button) {
+  state_ = State::Debouncing;
+  timeInitial_ = millis();
+  currentButton_ = button;
 }
 
 void Buttons::update() {
   Button button = inspectPins();
 
-  // reset and exit if bouncing
-  if (!debounce(button)) {
-    holdCounter_ = 0;
-    return;
-  }
+  if (state_ == State::Up) {
+    if (button != Button::NONE) {
+      startDebouncing(button);
+    }
 
-  // check if we should avoid executing further actions if buttons are 'locked' due to an already
-  // executed center-hold event.  This prevents multiple sequential actions being executed if user
-  // keeps holding the center button (i.e., resetting timer, then turning off)
-  if (centerHoldLockButtons_ && button == Button::CENTER) {
-    return;  // return early without executing further tasks
+  } else if (state_ == State::Debouncing) {
+    if (button == Button::NONE) {
+      state_ = State::Up;
+    } else if (button != currentButton_) {
+      startDebouncing(button);
+    } else if (millis() - timeInitial_ >= DEBOUNCE_TIME_MS) {
+      state_ = State::Down;
+      consumed_ = false;
+      timeInitial_ = millis();
+      report(button, ButtonEvent::PRESSED);
+    }
+
+  } else if (state_ == State::Down) {
+    if (button == Button::NONE) {
+      state_ = State::Up;
+      if (!consumed_) report(currentButton_, ButtonEvent::CLICKED);
+      report(currentButton_, ButtonEvent::RELEASED);
+    } else if (button != currentButton_) {
+      Button released = currentButton_;
+      startDebouncing(button);
+      if (!consumed_) report(released, ButtonEvent::CLICKED);
+      report(released, ButtonEvent::RELEASED);
+    } else if (millis() - timeInitial_ >= HOLD_TIME_MS) {
+      state_ = State::Held;
+      holdCounter_ = 0;
+      timeInitial_ = millis();
+      timeLastIncrement_ = timeInitial_;
+      if (!consumed_) report(button, ButtonEvent::HELD);
+      if (!consumed_) report(button, ButtonEvent::INCREMENTED);
+    }
+
+  } else if (state_ == State::Held) {
+    if (button == Button::NONE) {
+      state_ = State::Up;
+      holdCounter_ = 0;
+      report(currentButton_, ButtonEvent::RELEASED);
+    } else if (button != currentButton_) {
+      Button released = currentButton_;
+      startDebouncing(button);
+      holdCounter_ = 0;
+      report(released, ButtonEvent::RELEASED);
+    } else if (millis() - timeLastIncrement_ >= INCREMENT_TIME_MS) {
+      holdCounter_++;
+      timeLastIncrement_ += INCREMENT_TIME_MS;
+      if (!consumed_) report(button, ButtonEvent::INCREMENTED);
+    } else if (millis() - timeInitial_ >= HOLD_LONG_TIME_MS) {
+      state_ = State::HeldLong;
+      if (!consumed_) report(button, ButtonEvent::HELD_LONG);
+    }
+
+  } else if (state_ == State::HeldLong) {
+    if (button == Button::NONE) {
+      state_ = State::Up;
+      holdCounter_ = 0;
+      report(currentButton_, ButtonEvent::RELEASED);
+    } else if (button != currentButton_) {
+      Button released = currentButton_;
+      startDebouncing(button);
+      holdCounter_ = 0;
+      report(released, ButtonEvent::RELEASED);
+    } else if (millis() - timeLastIncrement_ >= INCREMENT_TIME_MS) {
+      holdCounter_++;
+      timeLastIncrement_ += INCREMENT_TIME_MS;
+      if (!consumed_) report(button, ButtonEvent::INCREMENTED);
+    }
+
   } else {
-    centerHoldLockButtons_ = false;  // user let go of center button, so we can reset the lock.
-  }
-
-  // if we have a state change (low to high or high to low)
-  bool newButtonPressed = lastEvent_.state == RELEASED && button != Button::NONE;
-  bool buttonChanged = lastEvent_.state != RELEASED && button != lastEvent_.button;
-  if (newButtonPressed || buttonChanged) {
-    // reset hold counter because button changed -- which means it's not being held
-    holdCounter_ = 0;
-
-    if (button != Button::NONE) {  // if not-none, we have a pressed button!
-      report(button, PRESSED);
-    } else {             // if it IS none, we have a just-released button
-      if (!everHeld_) {  // we only want to report a released button if it wasn't already held
-                         // before.  This prevents accidental immediate 'release' button
-                         // actions when you let go of a held button
-        // we are presently seeing "NONE", which is the release of the previously pressed/held
-        // button, so grab that previous button to associate with the released state
-        report(lastEvent_.button, RELEASED);
-      } else {
-        // we aren't reporting a RELEASED event externally, but for the purpose of state management
-        // for the buttons themselves, we should note that the button actually was released here.
-        lastEvent_ = ButtonEvent(lastEvent_.button, RELEASED, holdCounter_);
-      }
-      everHeld_ = false;  // we can reset this now
-    }
-    // otherwise we have a non-state change (button is held)
-  } else if (button != Button::NONE) {
-    if (timeElapsed_ >= MAX_HOLD_TIME_MS) {
-      if (lastEvent_.state != HELD_LONG) {
-        report(button, HELD_LONG);
-      }
-    } else if (timeElapsed_ >= MIN_HOLD_TIME_MS) {
-      if (lastEvent_.state != HELD) {
-        report(button, HELD);
-      }
-      everHeld_ = true;  // track that we reached the "HELD" state, so we know not to take
-                         // action also when it's released
-    }
-
-    if (lastEvent_.state == HELD || lastEvent_.state == HELD_LONG) {
-      // only increment the hold counter on a held button every ~500ms (HOLD_ACTION_TIME_LIMIT_MS).
-      if (millis() - holdActionTimeInitial_ >= HOLD_ACTION_TIME_LIMIT_MS) {
-        holdCounter_++;
-        holdActionTimeInitial_ = millis();
-        report(button, lastEvent_.state);
-      }
-    }
+    fatalError("Buttons::update found unsupported state '%s'", nameOf(state_));
   }
 }
 
@@ -136,18 +157,4 @@ Button Buttons::inspectPins() {
   else if (digitalRead(BUTTON_PIN_UP) == HIGH)
     button = Button::UP;
   return button;
-}
-
-bool Buttons::debounce(Button& button) {
-  if (button != debounceLast_) {  // if this is a new button state
-    timeInitial_ = millis();      // capture the initial start time
-    timeElapsed_ = 0;             // and reset the elapsed time
-    debounceLast_ = button;
-  } else {  // this is the same button as last time, so calculate the duration of the press
-    timeElapsed_ = millis() - timeInitial_;  // (the roll-over modulus math works on this)
-    if (timeElapsed_ >= debounceTime_) {
-      return true;
-    }
-  }
-  return false;
 }

@@ -8,8 +8,8 @@
 
 // Singleton instance
 
-void PageFanet::setting_change(Button dir, ButtonState state, uint8_t count) {
-  if (state != RELEASED) return;
+void PageFanet::setting_change(Button dir, ButtonEvent state, uint8_t count) {
+  if (state != ButtonEvent::CLICKED) return;
 
   // Handle menu item selection
   switch (cursor_position) {

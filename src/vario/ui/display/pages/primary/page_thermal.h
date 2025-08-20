@@ -9,7 +9,7 @@
 void thermalPage_draw(void);
 
 // handle button presses relative to what's shown on the display
-void thermalPage_button(Button button, ButtonState state, uint8_t count);
+void thermalPage_button(Button button, ButtonEvent state, uint8_t count);
 
 // draw the selectable user fields
 void drawUserField(uint8_t x, uint8_t y, uint8_t field, bool selected);

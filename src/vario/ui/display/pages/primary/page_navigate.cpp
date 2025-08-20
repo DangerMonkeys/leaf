@@ -447,7 +447,7 @@ void nav_cursor_move(Button button) {
   }
 }
 
-void navigatePage_button(Button button, ButtonState state, uint8_t count) {
+void navigatePage_button(Button button, ButtonEvent state, uint8_t count) {
   // reset cursor time out count if a button is pushed
   navigatePage_cursorTimeCount = 0;
 
@@ -456,22 +456,22 @@ void navigatePage_button(Button button, ButtonState state, uint8_t count) {
       switch (button) {
         case Button::UP:
         case Button::DOWN:
-          if (state == RELEASED) nav_cursor_move(button);
+          if (state == ButtonEvent::CLICKED) nav_cursor_move(button);
           break;
         case Button::RIGHT:
-          if (state == RELEASED) {
+          if (state == ButtonEvent::CLICKED) {
             display.turnPage(PageAction::Next);
             speaker.playSound(fx::increase);
           }
           break;
         case Button::LEFT:
-          if (state == RELEASED) {
+          if (state == ButtonEvent::CLICKED) {
             display.turnPage(PageAction::Prev);
             speaker.playSound(fx::decrease);
           }
           break;
         case Button::CENTER:
-          if (state == HELD && count == 2) {
+          if (state == ButtonEvent::INCREMENTED && count == 2) {
             power.shutdown();
           }
           break;
@@ -481,26 +481,27 @@ void navigatePage_button(Button button, ButtonState state, uint8_t count) {
       switch (button) {
         case Button::UP:
         case Button::DOWN:
-          if (state == RELEASED) nav_cursor_move(button);
+          if (state == ButtonEvent::CLICKED) nav_cursor_move(button);
           break;
         case Button::LEFT:
           if (settings.disp_navPageAltType == altType_MSL &&
-              (state == PRESSED || state == HELD || state == HELD_LONG)) {
+              (state == ButtonEvent::CLICKED || state == ButtonEvent::INCREMENTED)) {
             baro.adjustAltSetting(-1, count);
             speaker.playSound(fx::neutral);
           }
           break;
         case Button::RIGHT:
           if (settings.disp_navPageAltType == altType_MSL &&
-              (state == PRESSED || state == HELD || state == HELD_LONG)) {
+              (state == ButtonEvent::CLICKED || state == ButtonEvent::INCREMENTED)) {
             baro.adjustAltSetting(1, count);
             speaker.playSound(fx::neutral);
           }
           break;
         case Button::CENTER:
-          if (state == RELEASED)
+          if (state == ButtonEvent::CLICKED)
             settings.adjustDisplayField_navPage_alt(Button::CENTER);
-          else if (state == HELD && count == 1 && settings.disp_navPageAltType == altType_MSL) {
+          else if (state == ButtonEvent::INCREMENTED && count == 1 &&
+                   settings.disp_navPageAltType == altType_MSL) {
             if (baro.syncToGPSAlt()) {  // successful adjustment of altimeter setting to match
                                         // GPS altitude
               speaker.playSound(fx::enter);
@@ -516,74 +517,42 @@ void navigatePage_button(Button button, ButtonState state, uint8_t count) {
       switch (button) {
         case Button::UP:
         case Button::DOWN:
-          if (state == RELEASED) nav_cursor_move(button);
+          if (state == ButtonEvent::CLICKED) nav_cursor_move(button);
           break;
         case Button::LEFT:
-          if (state == RELEASED) navigatePage_destinationSelect(Button::LEFT);
+          if (state == ButtonEvent::CLICKED) navigatePage_destinationSelect(Button::LEFT);
           break;
         case Button::RIGHT:
-          if (state == RELEASED) navigatePage_destinationSelect(Button::RIGHT);
+          if (state == ButtonEvent::CLICKED) navigatePage_destinationSelect(Button::RIGHT);
           break;
         case Button::CENTER:
-          if (state == RELEASED) navigatePage_destinationSelect(Button::CENTER);
-          if (state == HELD) {
+          if (state == ButtonEvent::CLICKED) navigatePage_destinationSelect(Button::CENTER);
+          if (state == ButtonEvent::HELD) {
+            buttons.consumeButton();
             navigator.cancelNav();
             navigatePage_cursorPosition = cursor_navigatePage_none;
-            buttons.lockAfterHold();  // lock buttons so we don't turn off if user keeps holding
-                                      // button
           }
           break;
       }
       break;
-    /*
-    case cursor_navigatePage_userField1:
-            switch(button) {
-                    case Button::UP:
-                            break;
-                    case Button::DOWN:
-                            break;
-                    case Button::LEFT:
-                            break;
-                    case Button::RIGHT:
-                            break;
-                    case Button::CENTER:
-                            break;
-            }
-            break;
-    case cursor_navigatePage_userField2:
-            switch(button) {
-                    case Button::UP:
-                            break;
-                    case Button::DOWN:
-                            break;
-                    case Button::LEFT:
-                            break;
-                    case Button::RIGHT:
-                            break;
-                    case Button::CENTER:
-                            break;
-            }
-            break;
-            */
     case cursor_navigatePage_timer:
       switch (button) {
         case Button::UP:
         case Button::DOWN:
-          if (state == RELEASED) nav_cursor_move(button);
+          if (state == ButtonEvent::CLICKED) nav_cursor_move(button);
           break;
         case Button::LEFT:
           break;
         case Button::RIGHT:
           break;
         case Button::CENTER:
-          if (state == RELEASED && !flightTimer_isRunning()) {
+          if (state == ButtonEvent::CLICKED && !flightTimer_isRunning()) {
             flightTimer_start();
             navigatePage_cursorPosition = cursor_navigatePage_none;
-          } else if (state == HELD && flightTimer_isRunning()) {
+          } else if (state == ButtonEvent::HELD && flightTimer_isRunning()) {
+            buttons.consumeButton();
             flightTimer_stop();
             navigatePage_cursorPosition = cursor_navigatePage_none;
-            buttons.lockAfterHold();  // lock buttons so we don't turn off if user keeps holding
-                                      // button
           }
 
           break;

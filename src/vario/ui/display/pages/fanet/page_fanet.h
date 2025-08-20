@@ -17,7 +17,7 @@ class PageFanet : public SimpleSettingsMenuPage {
   virtual void draw_menu_input(int8_t cursor_position) override;
 
  protected:
-  void setting_change(Button dir, ButtonState state, uint8_t count) override;
+  void setting_change(Button dir, ButtonEvent state, uint8_t count) override;
 
  private:
   static PageFanet& getInstance();

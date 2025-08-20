@@ -69,7 +69,7 @@ class PageMenuSystemWifiSetup : public SimpleSettingsMenuPage {
 
  protected:
   // Handle the user clicking on the sub menus
-  void setting_change(Button dir, ButtonState state, uint8_t count) override;
+  void setting_change(Button dir, ButtonEvent state, uint8_t count) override;
 
  private:
   WifiState* wifi_state;
@@ -120,7 +120,7 @@ class PageMenuSystemWifi : public SimpleSettingsMenuPage {
   virtual void closed(bool removed_from_stack) override;
 
  protected:
-  void setting_change(Button dir, ButtonState state, uint8_t count) override;
+  void setting_change(Button dir, ButtonEvent state, uint8_t count) override;
 
  private:
   WifiState wifi_state = WifiState::DISCONNECTED;

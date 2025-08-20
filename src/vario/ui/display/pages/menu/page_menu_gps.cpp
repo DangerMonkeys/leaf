@@ -96,17 +96,17 @@ void GPSMenuPage::draw() {
   } while (u8g2.nextPage());
 }
 
-void GPSMenuPage::setting_change(Button dir, ButtonState state, uint8_t count) {
+void GPSMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) {
   switch (cursor_position) {
     case cursor_gps_update:
 
       break;
     case cursor_gps_back:
-      if (state == RELEASED) {
+      if (state == ButtonEvent::CLICKED) {
         speaker.playSound(fx::cancel);
         settings.save();
         mainMenuPage.backToMainMenu();
-      } else if (state == HELD) {
+      } else if (state == ButtonEvent::HELD) {
         speaker.playSound(fx::exit);
         settings.save();
         mainMenuPage.quitMenu();
@@ -162,31 +162,3 @@ void GPSMenuPage::drawConstellation(uint8_t x, uint8_t y, uint16_t size) {
     }
   }
 }
-
-// helpful switch constructors to copy-paste as needed:
-/*
-switch (button) {
-  case Button::UP:
-    break;
-  case Button::DOWN:
-    break;
-  case Button::LEFT:
-    break;
-  case Button::RIGHT:
-    break;
-  case Button::CENTER:
-    break;
-*/
-
-/*
-switch (state) {
-  case RELEASED:
-    break;
-  case PRESSED:
-    break;
-  case HELD:
-    break;
-  case HELD_LONG:
-    break;
-}
-*/

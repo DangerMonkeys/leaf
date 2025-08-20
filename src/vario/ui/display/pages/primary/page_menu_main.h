@@ -12,14 +12,14 @@ class MainMenuPage : public MenuPage {
     cursor_position = 0;
     cursor_max = 8;
   }
-  bool button_event(Button button, ButtonState state, uint8_t count);
+  bool button_event(Button button, ButtonEvent state, uint8_t count);
   void draw();
   void backToMainMenu();
   void quitMenu();
 
  private:
   void draw_main_menu();
-  bool mainMenuButtonEvent(Button button, ButtonState state, uint8_t count);
+  bool mainMenuButtonEvent(Button button, ButtonEvent state, uint8_t count);
   void menu_item_action(Button dir);
   static constexpr char* labels[9] = {"Back", "Altimeter", "Vario",  "Display",  "Units",
                                       "GPS",  "Log/Timer", "System", "Developer"};

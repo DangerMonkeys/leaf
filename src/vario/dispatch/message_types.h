@@ -97,15 +97,15 @@ struct PressureUpdate : public etl::message<PRESSURE_UPDATE> {
 };
 
 /// @brief Update regarding button presses
-struct ButtonEvent : public etl::message<BUTTON_EVENT> {
+struct ButtonEventMessage : public etl::message<BUTTON_EVENT> {
   // Which button triggered event
   Button button;
 
-  // Current state of the button
-  ButtonState state;
+  // Event that occurred
+  ButtonEvent event;
 
   uint16_t holdCount;
 
-  ButtonEvent(Button button, ButtonState state, uint16_t holdCount = 0)
-      : button(button), state(state), holdCount(holdCount) {}
+  ButtonEventMessage(Button button, ButtonEvent event, uint16_t holdCount = 0)
+      : button(button), event(event), holdCount(holdCount) {}
 };

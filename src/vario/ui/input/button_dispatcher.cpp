@@ -18,7 +18,7 @@
 
 ButtonDispatcher buttonDispatcher;
 
-void ButtonDispatcher::on_receive(const ButtonEvent& msg) {
+void ButtonDispatcher::on_receive(const ButtonEventMessage& msg) {
   power.resetAutoOffCounter();  // pressing any button should reset the auto-off counter
                                 // TODO: we should probably have a counter for Auto-Timer-Off as
                                 // well, and button presses should reset that.
@@ -27,21 +27,21 @@ void ButtonDispatcher::on_receive(const ButtonEvent& msg) {
   if (currentPage == MainPage::Charging) {
     switch (msg.button) {
       case Button::CENTER:
-        if (msg.state == HELD && msg.holdCount == 1) {
+        if (msg.event == ButtonEvent::INCREMENTED && msg.holdCount == 1) {
+          buttons.consumeButton();
           display.clear();
           display.showOnSplash();
           display.setPage(
               MainPage::Thermal);  // TODO: set initial page to the user's last used page
           speaker.playSound(fx::enter);
-          buttons.lockAfterHold();  // lock buttons until user lets go of power button
           power.switchToOnState();
         }
         break;
       case Button::UP:
-        switch (msg.state) {
-          case RELEASED:
+        switch (msg.event) {
+          case ButtonEvent::CLICKED:
             break;
-          case HELD:
+          case ButtonEvent::HELD:
             power.increaseInputCurrent();
 
             speaker.playSound(fx::enter);
@@ -49,10 +49,10 @@ void ButtonDispatcher::on_receive(const ButtonEvent& msg) {
         }
         break;
       case Button::DOWN:
-        switch (msg.state) {
-          case RELEASED:
+        switch (msg.event) {
+          case ButtonEvent::CLICKED:
             break;
-          case HELD:
+          case ButtonEvent::HELD:
             power.decreaseInputCurrent();
             speaker.playSound(fx::exit);
             break;
@@ -62,7 +62,7 @@ void ButtonDispatcher::on_receive(const ButtonEvent& msg) {
     return;
   }
   if (display.displayingWarning()) {
-    warningPage_button(msg.button, msg.state, msg.holdCount);
+    warningPage_button(msg.button, msg.event, msg.holdCount);
     display.update();
     return;
   }
@@ -70,32 +70,32 @@ void ButtonDispatcher::on_receive(const ButtonEvent& msg) {
   // If there's a modal page currently shown, we should send the button event to that page
   auto modal_page = mainMenuPage.get_modal_page();
   if (modal_page != NULL) {
-    bool draw_now = modal_page->button_event(msg.button, msg.state, msg.holdCount);
+    bool draw_now = modal_page->button_event(msg.button, msg.event, msg.holdCount);
     if (draw_now) display.update();
     return;
   }
 
   if (currentPage == MainPage::Menu) {
-    bool draw_now = mainMenuPage.button_event(msg.button, msg.state, msg.holdCount);
+    bool draw_now = mainMenuPage.button_event(msg.button, msg.event, msg.holdCount);
     if (draw_now) display.update();
 
   } else if (currentPage == MainPage::Thermal) {
-    thermalPage_button(msg.button, msg.state, msg.holdCount);
+    thermalPage_button(msg.button, msg.event, msg.holdCount);
     display.update();
 
   } else if (currentPage == MainPage::ThermalAdv) {
-    thermalPageAdv_button(msg.button, msg.state, msg.holdCount);
+    thermalPageAdv_button(msg.button, msg.event, msg.holdCount);
     display.update();
 
   } else if (currentPage == MainPage::Nav) {
-    navigatePage_button(msg.button, msg.state, msg.holdCount);
+    navigatePage_button(msg.button, msg.event, msg.holdCount);
     display.update();
 
   } else if (currentPage != MainPage::Charging) {  // NOT CHARGING PAGE (i.e., our debug test page)
     switch (msg.button) {
       case Button::CENTER:
-        switch (msg.state) {
-          case HELD:
+        switch (msg.event) {
+          case ButtonEvent::INCREMENTED:
             if (msg.holdCount == 2) {
               power.shutdown();
               while (buttons.inspectPins() == Button::CENTER) {
@@ -103,47 +103,47 @@ void ButtonDispatcher::on_receive(const ButtonEvent& msg) {
               display.setPage(MainPage::Charging);
             }
             break;
-          case RELEASED:
+          case ButtonEvent::CLICKED:
             display.turnPage(PageAction::Home);
             break;
         }
         break;
       case Button::RIGHT:
-        if (msg.state == RELEASED) {
+        if (msg.event == ButtonEvent::CLICKED) {
           display.turnPage(PageAction::Next);
           speaker.playSound(fx::increase);
         }
         break;
       case Button::LEFT:
         /* Don't allow turning page further to the left
-        if (msg.state == RELEASED) {
+        if (msg.event == ButtonState::CLICKED) {
           display_turnPage(page_prev);
           speaker_playSound(fx::decrease);
         }
         */
         break;
       case Button::UP:
-        switch (msg.state) {
-          case RELEASED:
+        switch (msg.event) {
+          case ButtonEvent::CLICKED:
             baro.adjustAltSetting(1, 0);
             break;
-          case HELD:
+          case ButtonEvent::HELD:
             baro.adjustAltSetting(1, 1);
             break;
-          case HELD_LONG:
+          case ButtonEvent::HELD_LONG:
             baro.adjustAltSetting(1, 10);
             break;
         }
         break;
       case Button::DOWN:
-        switch (msg.state) {
-          case RELEASED:
+        switch (msg.event) {
+          case ButtonEvent::CLICKED:
             baro.adjustAltSetting(-1, 0);
             break;
-          case HELD:
+          case ButtonEvent::HELD:
             baro.adjustAltSetting(-1, 1);
             break;
-          case HELD_LONG:
+          case ButtonEvent::HELD_LONG:
             baro.adjustAltSetting(-1, 10);
             break;
         }

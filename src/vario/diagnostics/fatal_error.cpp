@@ -136,7 +136,7 @@ void displayFatalError(char* msg) {
 
 void rebootOnKeyPress() {
   Button which_button;
-  ButtonState button_state;
+  ButtonEvent button_state;
 
   // Wait until no buttons are pressed
   do {

@@ -6,4 +6,4 @@
 void warningPage_draw(void);
 
 // handle button presses relative to what's shown on the display
-void warningPage_button(Button button, ButtonState state, uint8_t count);
+void warningPage_button(Button button, ButtonEvent state, uint8_t count);
