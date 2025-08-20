@@ -137,11 +137,13 @@ bool flightTimer_autoStart() {
   }
 
   // check if current altitude has changed enough from startup to trigger timer start
-  int32_t altDifference = baro.altAboveInitial();
-  if (altDifference < 0) altDifference *= -1;
-  if (altDifference > AUTO_START_MIN_ALT) {
-    startTheTimer = true;
-    Serial.println("****************************** autoStart TRUE via alt");
+  if (baro.state() == Barometer::State::Ready) {
+    int32_t altDifference = baro.altAboveInitial();
+    if (altDifference < 0) altDifference *= -1;
+    if (altDifference > AUTO_START_MIN_ALT) {
+      startTheTimer = true;
+      Serial.println("****************************** autoStart TRUE via alt");
+    }
   }
 
   // Serial.print("S T A R T   Counter: ");

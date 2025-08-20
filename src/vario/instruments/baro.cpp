@@ -118,11 +118,10 @@ void Barometer::on_receive(const PressureUpdate& msg) {
 }
 
 void Barometer::firstReading(const PressureUpdate& msg) {
+  state_ = State::Ready;
   setPressureAlt(msg.pressure);
   setAltInitial();
   setLaunchAlt();
-
-  state_ = State::Ready;
 }
 
 void Barometer::setLaunchAlt() {
