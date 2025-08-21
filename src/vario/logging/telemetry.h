@@ -1,22 +1,17 @@
 #pragma once
 
-#include "storage/files.h"
+// Compile-time settings determining which information should be sent to the message bus as comments
+// (which can then be written to the bus log if enabled)
+namespace LOG {
+  // IMU instrument Kalman filter state upon every update
+  // Format: kalman,<position>,<velocity>,<acceleration>
+  constexpr bool KALMAN = true;
 
-/*
- *  This is a VERY basic CSV telemetry module for logging data.
- *  It currently works by writing data into a csv file every second
- *  This WILL be re-factored into a binary file format for very quick logging
- *  at some point
- */
-class Telemetry_t {
- public:
-  Telemetry_t() {}
-  bool begin();
-  void end();
-  void writeText(const String text);
+  // GPS instrument state upon every call to update() (separate from incoming NMEA messages)
+  // Format: gps,<latitude>,<longitude>,<altitude in m>,<speed in m/s>,<course in degrees>
+  constexpr bool GPS = true;
 
- private:
-  File file;
-};
-
-extern Telemetry_t Telemetry;
+  // Barometer instrument instantaneous pressure upon every update (via message from message bus)
+  // Format: baro mb*100,<pressure in 100*millibars>
+  constexpr bool BARO = true;
+}  // namespace LOG

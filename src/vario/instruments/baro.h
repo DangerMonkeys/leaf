@@ -8,13 +8,12 @@
 #include <Arduino.h>
 #include "etl/message_bus.h"
 
+#include "dispatch/message_source.h"
 #include "dispatch/message_types.h"
 #include "hardware/power_control.h"
 #include "math/linear_regression.h"
 #include "math/running_average.h"
-// #include "ui/input/buttons.h"
 #include "units/pressure.h"
-// #include "utils/flags_enum.h"
 #include "utils/state_assert_mixin.h"
 
 #define FILTER_VALS_MAX 20  // total array size max;
@@ -23,6 +22,7 @@
 // Barometer reporting altitude, adjusted altitude, climb rate, and other information.
 // Requires a pressure source.
 class Barometer : public etl::message_router<Barometer, PressureUpdate>,
+                  public IMessageSource,
                   public IPowerControl,
                   private StateAssertMixin<Barometer> {
  public:
@@ -35,6 +35,10 @@ class Barometer : public etl::message_router<Barometer, PressureUpdate>,
   // etl::message_router<Barometer, PressureUpdate>
   void on_receive(const PressureUpdate& msg);
   void on_receive_unknown(const etl::imessage& msg) {}
+
+  // IMessageSource
+  void publishTo(etl::imessage_bus* bus) { bus_ = bus; }
+  void stopPublishing() { bus_ = nullptr; }
 
   // IPowerControl
   void sleep();
@@ -94,6 +98,8 @@ class Barometer : public etl::message_router<Barometer, PressureUpdate>,
 
  private:
   State state_ = State::Uninitialized;
+
+  etl::imessage_bus* bus_ = nullptr;
 
   Pressure pressure_;
 

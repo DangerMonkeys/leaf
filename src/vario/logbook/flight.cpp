@@ -48,7 +48,6 @@ bool Flight::startFlight() {
 
 void Flight::end(const FlightStats stats) {
   file.close();
-  Telemetry.end();  // End and flush telemetry
 
   // Finally, show the flight summary page
   static PageFlightSummary dialog;

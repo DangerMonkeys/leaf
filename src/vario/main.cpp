@@ -70,6 +70,7 @@ void setup() {
 #endif
 
   baro.subscribe(&bus);
+  baro.publishTo(&bus);
 
   // Initialize anything left over on the Task Manager System
   Serial.println("Initializing Taskman Service");
@@ -93,6 +94,7 @@ void setup() {
 
   // Connect IMU instrument to message bus sourcing motion updates
   imu.subscribe(&bus);
+  imu.publishTo(&bus);
 
   windEstimator.subscribe(&bus);
 

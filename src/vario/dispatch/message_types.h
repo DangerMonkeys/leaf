@@ -27,6 +27,7 @@ enum MessageType : etl::message_id_t {
   MOTION_UPDATE,
   PRESSURE_UPDATE,
   BUTTON_EVENT,
+  COMMENT_MESSAGE,
 };
 
 /// @brief A GPS update received
@@ -108,4 +109,12 @@ struct ButtonEventMessage : public etl::message<BUTTON_EVENT> {
 
   ButtonEventMessage(Button button, ButtonEvent event, uint16_t holdCount = 0)
       : button(button), event(event), holdCount(holdCount) {}
+};
+
+/// @brief Message containing a generic textual comment
+struct CommentMessage : public etl::message<COMMENT_MESSAGE> {
+  const char* message;
+
+  CommentMessage(const char* message) : message(message) {}
+  CommentMessage(String message) : message(message.c_str()) {}
 };

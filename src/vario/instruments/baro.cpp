@@ -243,10 +243,11 @@ void Barometer::setPressureAlt(int32_t newPressure) {
   validAltF_ = false;
   validAltAdjusted_ = false;
 
-  // record datapoint on SD card if datalogging is turned on
-  String baroName = "baro mb*100,";
-  String baroEntry = baroName + String(pressure_);
-  Telemetry.writeText(baroEntry);
+  if (LOG::BARO && bus_) {
+    String baroName = "baro mb*100,";
+    String baroEntry = baroName + String(pressure_);
+    bus_->receive(CommentMessage(baroEntry));
+  }
 }
 
 // Filter ClimbRate
