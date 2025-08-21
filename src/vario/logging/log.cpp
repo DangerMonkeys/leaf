@@ -275,7 +275,7 @@ String flightTimer_getString() {
 void log_captureValues() {
   logbook.alt = baro.altAdjusted();
   logbook.alt_above_launch = baro.altAboveLaunch();
-  logbook.climb = baro.climbRateFiltered;
+  logbook.climb = baro.climbRateFiltered();
   logbook.speed = gps.speed.mps();
   if (ambient.state() == Ambient::State::Ready) {
     logbook.temperature = ambient.temp();
@@ -298,7 +298,7 @@ void log_checkMinMaxValues() {
   }
 
   // check climb values for log records
-  logbook.climb = baro.climbRateFiltered;
+  logbook.climb = baro.climbRateFiltered();
   if (logbook.climb > logbook.climb_max) {
     logbook.climb_max = logbook.climb;
   } else if (logbook.climb < logbook.climb_min) {

@@ -209,7 +209,7 @@ void BLE::sendVarioUpdate() {
   NMEAString nmea;
   etl::string_stream stream(nmea);
   stream << "$LK8EX1," << static_cast<int32_t>(baro.pressure()) << ","
-         << static_cast<uint>(baro.altF()) << "," << baro.climbRateFiltered << ","
+         << static_cast<uint>(baro.altF()) << "," << baro.climbRateFiltered() << ","
          << "99,999,";  // Temperature in C.  If not available, send 99
                         // Battery voltage OR percentage.  If percentage, add 1000 (if 1014 is
                         // 14%). 999

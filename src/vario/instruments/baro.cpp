@@ -164,11 +164,12 @@ void Barometer::sleep() {
   if (state_ == State::Uninitialized) {
     init();
   }
-  climbRateRaw_ = 0;
+
   validClimbRateRaw_ = false;
+  validClimbRateFiltered_ = false;
+  climbFilter.setSampleCount(0);
 
   climbRateAverage = 0;
-  climbRateFiltered = 0;
   speaker.updateVarioNote(0);
   firstClimbInitialization_ = true;  //  reset so we don't get false climb on wake-up
   state_ = State::Sleeping;
@@ -235,6 +236,14 @@ float Barometer::climbRate() {
   return climbRateRaw_;
 }
 
+int32_t Barometer::climbRateFiltered() {
+  assertState("Barometer::climbRateFiltered", State::Ready);
+  if (!validClimbRateFiltered_) {
+    fatalError("Barometer::climbRateFiltered accessed before valid");
+  }
+  return climbRateFiltered_;
+}
+
 void Barometer::filterAltitude() {
   // Filter Pressure and calculate Final Altitude Values
   // Note, IMU will have taken an accel reading and updated the Kalman
@@ -255,9 +264,11 @@ void Barometer::filterAltitude() {
   filterClimb();
 
   // finally, update the speaker sound based on the new climbrate
-  speaker.updateVarioNote(climbRateFiltered);
+  if (validClimbRateFiltered_) {
+    speaker.updateVarioNote(climbRateFiltered_);
+  }
 
-  if (DEBUG_BARO) Serial.println("**BR** climbRate Filtered: " + String(climbRateFiltered));
+  if (DEBUG_BARO) Serial.println("**BR** climbRate Filtered: " + String(climbRateFiltered_));
 }
 
 // Filter ClimbRate
@@ -277,14 +288,15 @@ void Barometer::filterClimb() {
     fatalError("climbRateAvg in Barometer::filterClimb was %g after climbFilter.getAverage()",
                climbFilterAvg);
   }
-  climbRateFiltered = (int32_t)(climbFilterAvg * 100);
+  climbRateFiltered_ = (int32_t)(climbFilterAvg * 100);
+  validClimbRateFiltered_ = true;
 
   // now calculate the longer-running average climb value
   // (this is a smoother, slower-changing value for things like glide ratio, etc)
   int32_t total_samples = CLIMB_AVERAGE * 20;  // CLIMB_AVERAGE seconds * 20 samples/sec
 
   // use new value in the long-running average
-  climbRateAverage = (climbRateAverage * (total_samples - 1) + climbRateFiltered) / total_samples;
+  climbRateAverage = (climbRateAverage * (total_samples - 1) + climbRateFiltered_) / total_samples;
   if (isnan(climbRateAverage) || isinf(climbRateAverage)) {
     fatalError(
         "climbRateAverage in Barometer::filterClimb was %g after incorporating climbRateFiltered",
