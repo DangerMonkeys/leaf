@@ -258,7 +258,9 @@ float Barometer::climbRateAverage() {
   return climbRateAverage_;
 }
 
-bool Barometer::climbRateAverageValid() { return nInitSamplesRemaining_ == 0; }
+bool Barometer::climbRateAverageValid() {
+  return state_ == State::Ready && nInitSamplesRemaining_ == 0;
+}
 
 void Barometer::filterAltitude() {
   // Filter Pressure and calculate Final Altitude Values
