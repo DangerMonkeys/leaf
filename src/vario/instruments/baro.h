@@ -126,11 +126,6 @@ class Barometer : public etl::message_router<Barometer, PressureUpdate>,
   int32_t altInitial_;
   bool validAltInitial_ = false;
 
-  int32_t pressureRegression_;
-
-  // LinearRegression to average out noisy sensor readings
-  LinearRegression<20> pressureLR_;
-
   // == User Settings for Vario ==
 
   RunningAverage<float, FILTER_VALS_MAX> climbFilter{DEFAULT_SAMPLES_TO_AVERAGE};
@@ -151,12 +146,6 @@ class Barometer : public etl::message_router<Barometer, PressureUpdate>,
   void setPressureAlt(int32_t newPressure);
   void filterClimb(void);
   void calculateAlts(void);
-
-  // ======
-
-  // flag to set first climb rate sample to 0 (this allows us to wait for a second baro altitude
-  // sample to calculate any altitude change)
-  bool firstClimbInitialization_ = true;
 };
 extern Barometer baro;
 

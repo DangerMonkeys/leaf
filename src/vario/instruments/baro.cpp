@@ -173,14 +173,9 @@ void Barometer::sleep() {
   // state to tell Barometer to go to sleep from
   assertState("Barometer::sleep", State::Uninitialized, State::WaitingForFirstReading, State::Ready,
               State::Sleeping);
-  if (state_ == State::Uninitialized) {
-    init();
-  }
-
   init();
 
   speaker.updateVarioNote(0);
-  firstClimbInitialization_ = true;  //  reset so we don't get false climb on wake-up
   state_ = State::Sleeping;
 }
 
