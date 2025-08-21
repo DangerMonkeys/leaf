@@ -11,6 +11,8 @@
 #include "ui/display/menu_page.h"
 #include "ui/display/pages.h"
 #include "ui/display/pages/dialogs/page_warning.h"
+#include "ui/display/pages/primary/page_charging.h"
+#include "ui/display/pages/primary/page_debug.h"
 #include "ui/display/pages/primary/page_navigate.h"
 #include "ui/display/pages/primary/page_thermal.h"
 #include "ui/display/pages/primary/page_thermal_adv.h"
@@ -25,40 +27,7 @@ void ButtonDispatcher::on_receive(const ButtonEventMessage& msg) {
   MainPage currentPage = display.getPage();  // actions depend on which page we're on
 
   if (currentPage == MainPage::Charging) {
-    switch (msg.button) {
-      case Button::CENTER:
-        if (msg.event == ButtonEvent::INCREMENTED && msg.holdCount == 1) {
-          buttons.consumeButton();
-          display.clear();
-          display.showOnSplash();
-          display.setPage(
-              MainPage::Thermal);  // TODO: set initial page to the user's last used page
-          speaker.playSound(fx::enter);
-          power.switchToOnState();
-        }
-        break;
-      case Button::UP:
-        switch (msg.event) {
-          case ButtonEvent::CLICKED:
-            break;
-          case ButtonEvent::HELD:
-            power.increaseInputCurrent();
-
-            speaker.playSound(fx::enter);
-            break;
-        }
-        break;
-      case Button::DOWN:
-        switch (msg.event) {
-          case ButtonEvent::CLICKED:
-            break;
-          case ButtonEvent::HELD:
-            power.decreaseInputCurrent();
-            speaker.playSound(fx::exit);
-            break;
-        }
-        break;
-    }
+    chargingPage_button(msg.button, msg.event, msg.holdCount);
     return;
   }
   if (display.displayingWarning()) {
@@ -88,63 +57,7 @@ void ButtonDispatcher::on_receive(const ButtonEventMessage& msg) {
   } else if (currentPage == MainPage::Nav) {
     navigatePage_button(msg.button, msg.event, msg.holdCount);
 
-  } else if (currentPage != MainPage::Charging) {  // NOT CHARGING PAGE (i.e., our debug test page)
-    switch (msg.button) {
-      case Button::CENTER:
-        switch (msg.event) {
-          case ButtonEvent::INCREMENTED:
-            if (msg.holdCount == 2) {
-              power.shutdown();
-              while (buttons.inspectPins() == Button::CENTER) {
-              }  // freeze here until user lets go of power button
-              display.setPage(MainPage::Charging);
-            }
-            break;
-          case ButtonEvent::CLICKED:
-            display.turnPage(PageAction::Home);
-            break;
-        }
-        break;
-      case Button::RIGHT:
-        if (msg.event == ButtonEvent::CLICKED) {
-          display.turnPage(PageAction::Next);
-          speaker.playSound(fx::increase);
-        }
-        break;
-      case Button::LEFT:
-        /* Don't allow turning page further to the left
-        if (msg.event == ButtonState::CLICKED) {
-          display_turnPage(page_prev);
-          speaker_playSound(fx::decrease);
-        }
-        */
-        break;
-      case Button::UP:
-        switch (msg.event) {
-          case ButtonEvent::CLICKED:
-            baro.adjustAltSetting(1, 0);
-            break;
-          case ButtonEvent::HELD:
-            baro.adjustAltSetting(1, 1);
-            break;
-          case ButtonEvent::HELD_LONG:
-            baro.adjustAltSetting(1, 10);
-            break;
-        }
-        break;
-      case Button::DOWN:
-        switch (msg.event) {
-          case ButtonEvent::CLICKED:
-            baro.adjustAltSetting(-1, 0);
-            break;
-          case ButtonEvent::HELD:
-            baro.adjustAltSetting(-1, 1);
-            break;
-          case ButtonEvent::HELD_LONG:
-            baro.adjustAltSetting(-1, 10);
-            break;
-        }
-        break;
-    }
+  } else if (currentPage == MainPage::Debug) {  // NOT CHARGING PAGE (i.e., our debug test page)
+    debugPage_button(msg.button, msg.event, msg.holdCount);
   }
 }
