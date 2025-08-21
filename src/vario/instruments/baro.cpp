@@ -18,12 +18,16 @@
 #include "utils/flags_enum.h"
 #include "utils/magic_enum.h"
 
-#define DEBUG_BARO 0  // flag for printing serial debugging messages
-
 // number of seconds for average climb rate (this is used for smoother data in places like
 // glide ratio, where rapidly fluctuating glide numbers aren't as useful as a several-second
 // average)
-#define CLIMB_AVERAGE 4
+constexpr uint32_t CLIMB_AVERAGE_S = 4;
+
+// number of seconds to average the climb rate before declaring that the averaged value is valid
+constexpr uint32_t CLIMB_AVERAGE_INIT_S = 1;
+
+// sample rate of altitudes; used to compute smaple count from duration
+constexpr uint32_t SAMPLES_PER_SECOND = 20;
 
 // Singleton barometer instance for device
 Barometer baro;
@@ -97,6 +101,14 @@ void Barometer::init(void) {
   } else {
     altimeterSetting = 29.921;
   }
+
+  // Clear any state
+  validClimbRateRaw_ = false;
+  validClimbRateFiltered_ = false;
+  climbFilter.reset();
+  climbRateAverage_ = 0;
+  nInitSamplesRemaining_ = CLIMB_AVERAGE_INIT_S * SAMPLES_PER_SECOND;
+
   state_ = State::WaitingForFirstReading;
 }
 
@@ -165,11 +177,8 @@ void Barometer::sleep() {
     init();
   }
 
-  validClimbRateRaw_ = false;
-  validClimbRateFiltered_ = false;
-  climbFilter.setSampleCount(0);
+  init();
 
-  climbRateAverage = 0;
   speaker.updateVarioNote(0);
   firstClimbInitialization_ = true;  //  reset so we don't get false climb on wake-up
   state_ = State::Sleeping;
@@ -244,10 +253,21 @@ int32_t Barometer::climbRateFiltered() {
   return climbRateFiltered_;
 }
 
+float Barometer::climbRateAverage() {
+  assertState("Barometer::climbRateAverage", State::Ready);
+  if (nInitSamplesRemaining_ > 0) {
+    fatalError(
+        "Barometer::climbRateAverage accessed before initialized; waiting for %d samples more",
+        nInitSamplesRemaining_);
+  }
+  return climbRateAverage_;
+}
+
+bool Barometer::climbRateAverageValid() { return nInitSamplesRemaining_ == 0; }
+
 void Barometer::filterAltitude() {
   // Filter Pressure and calculate Final Altitude Values
   // Note, IMU will have taken an accel reading and updated the Kalman
-  // Filter after Baro_step_2 but before Baro_step_3
 
   // get instant climb rate
   climbRateRaw_ = imu.getVelocity();  // in m/s
@@ -267,8 +287,6 @@ void Barometer::filterAltitude() {
   if (validClimbRateFiltered_) {
     speaker.updateVarioNote(climbRateFiltered_);
   }
-
-  if (DEBUG_BARO) Serial.println("**BR** climbRate Filtered: " + String(climbRateFiltered_));
 }
 
 // Filter ClimbRate
@@ -291,16 +309,26 @@ void Barometer::filterClimb() {
   climbRateFiltered_ = (int32_t)(climbFilterAvg * 100);
   validClimbRateFiltered_ = true;
 
-  // now calculate the longer-running average climb value
-  // (this is a smoother, slower-changing value for things like glide ratio, etc)
-  int32_t total_samples = CLIMB_AVERAGE * 20;  // CLIMB_AVERAGE seconds * 20 samples/sec
-
   // use new value in the long-running average
-  climbRateAverage = (climbRateAverage * (total_samples - 1) + climbRateFiltered_) / total_samples;
-  if (isnan(climbRateAverage) || isinf(climbRateAverage)) {
-    fatalError(
-        "climbRateAverage in Barometer::filterClimb was %g after incorporating climbRateFiltered",
-        climbRateAverage);
+  if (nInitSamplesRemaining_ > 1) {
+    climbRateAverage_ += climbRateFiltered_;
+    nInitSamplesRemaining_--;
+  } else if (nInitSamplesRemaining_ == 1) {
+    climbRateAverage_ =
+        (climbRateAverage_ + climbRateFiltered_) / (CLIMB_AVERAGE_INIT_S * SAMPLES_PER_SECOND);
+    nInitSamplesRemaining_ = 0;
+  } else {
+    // now calculate the longer-running average climb value
+    // (this is a smoother, slower-changing value for things like glide ratio, etc)
+    uint32_t total_samples = CLIMB_AVERAGE_S * SAMPLES_PER_SECOND;
+
+    climbRateAverage_ =
+        (climbRateAverage_ * (total_samples - 1) + climbRateFiltered_) / total_samples;
+    if (isnan(climbRateAverage_) || isinf(climbRateAverage_)) {
+      fatalError(
+          "climbRateAverage in Barometer::filterClimb was %g after incorporating climbRateFiltered",
+          climbRateAverage_);
+    }
   }
 }
 
