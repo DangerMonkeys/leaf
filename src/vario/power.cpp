@@ -149,7 +149,6 @@ void Power::initPeripherals() {
   ms5611.init();
   Serial.println(" - Finished Baro");
   ICM20948::getInstance().init();
-  imu.init();
   Serial.println(" - Finished IMU");
   AHT20::getInstance().init();
   Serial.println(" - Finished Temp Humid");

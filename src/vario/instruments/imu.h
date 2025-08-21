@@ -13,7 +13,6 @@ class IMU : public etl::message_router<IMU, MotionUpdate> {
  public:
   IMU();
 
-  void init();
   void wake();
 
   void subscribe(etl::imessage_bus* bus) { bus->subscribe(*this); }

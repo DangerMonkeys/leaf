@@ -167,15 +167,6 @@ void IMU::processQuaternion(const MotionUpdate& m) {
   }
 }
 
-/*************************************************
- * Initialize motion processing with Kalman Filter *
- *************************************************/
-void IMU::init() {
-  gravityInitCount_ = GRAVITY_INIT_SAMPLES;
-
-  tLastGravityUpdate_ = millis();
-}
-
 void IMU::on_receive(const MotionUpdate& msg) {
   if (baro.state() != Barometer::State::Ready) {
     // We can't do anything without simultaneous barometer-measured altitude
