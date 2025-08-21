@@ -65,6 +65,38 @@ tried but not going to use:
 - ICM20948_WE
 - AdaFruit ICM20948 (and associated dependencies)
 
+## System state diagrams
+
+System behavior is governed by the state of the system:
+
+![System state diagram](../../docs/dev-references/assets/system_state_diagram.png)
+
+This is managed by [`Power`](./power.h) in the following way:
+
+```mermaid
+flowchart TD
+  Off["Off<br>(off and unplugged)"]
+  Charging["Charging [OnUSB]<br>(charging screen)"]
+  Operating["Operating [On]"]
+  class Off,Charging,Operating State
+
+  bootUp["<code>bootUp()</code>"]
+  switchToOnState["<code>switchToOnState()</code>"]
+  shutdown["<code>shutdown()</code>"]
+  class bootUp,switchToOnState,shutdown Transition
+
+  Off -->|"Plug in"| bootUp -->|"<i>If plugged</i>"| Charging
+  Off -->|"Hold power button"| bootUp -->|"<i>If unplugged</i>"| switchToOnState
+  Charging -->|"Hold power button"| switchToOnState --> Operating
+  Charging -->|"Unplug or<br>hard reset"| Off
+  Operating -->|"Hold power button"| shutdown -->|"<i>If plugged</i>"| Charging
+  shutdown -->|"<i>If unplugged</i>"| Off
+  Operating -->|"Hard reset"| Off
+
+  classDef State fill:#f7ff00
+  classDef Transition fill:#f0f0f0
+```
+
 ## Information flow diagram
 
 ```mermaid
