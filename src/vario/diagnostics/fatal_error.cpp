@@ -9,7 +9,7 @@
 #include <stdarg.h>
 
 #include "hardware/buttons.h"
-#include "leaf_version.h"
+#include "system/version_info.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
@@ -65,7 +65,7 @@ bool useFile() {
 
   // Write the version information to know what generated this fatal error
   fatal_error_file.print("Firmware version: ");
-  fatal_error_file.println(FIRMWARE_VERSION);
+  fatal_error_file.println(LeafVersionInfo::firmwareVersion());
 
   return fatal_error_file;
 }

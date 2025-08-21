@@ -4,8 +4,8 @@
 #include <time.h>
 
 #include "instruments/gps.h"
-#include "leaf_version.h"
 #include "storage/sd_card.h"
+#include "system/version_info.h"
 #include "ui/settings/settings.h"
 #include "utils/string_utils.h"
 
@@ -62,7 +62,7 @@ bool BusLogger::startLog() {
     return false;
   }
 
-  file_.printf("V%s\n", FIRMWARE_VERSION);
+  file_.printf("V%s\n", LeafVersionInfo::firmwareVersion());
 
   tStart_ = millis();
 

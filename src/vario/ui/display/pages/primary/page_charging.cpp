@@ -2,9 +2,9 @@
 #include <U8g2lib.h>
 
 #include "hardware/buttons.h"
-#include "leaf_version.h"
 #include "power.h"
 #include "storage/sd_card.h"
+#include "system/version_info.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
@@ -49,7 +49,7 @@ void chargingPage_draw() {
     u8g2.setCursor(0, 172);
     u8g2.setFont(leaf_5x8);
     u8g2.print("v");
-    u8g2.print(FIRMWARE_VERSION);
+    u8g2.print(LeafVersionInfo::firmwareVersion());
 
     // SD Card Mounted
     u8g2.setCursor(12, 191);
