@@ -248,6 +248,12 @@ int32_t Barometer::climbRateFiltered() {
   return climbRateFiltered_;
 }
 
+bool Barometer::climbRateFilteredValid() {
+  if (state_ != State::Ready) return false;
+  if (!validClimbRateFiltered_) return false;
+  return true;
+}
+
 float Barometer::climbRateAverage() {
   assertState("Barometer::climbRateAverage", State::Ready);
   if (nInitSamplesRemaining_ > 0) {
