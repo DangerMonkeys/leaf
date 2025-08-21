@@ -239,7 +239,7 @@ void navigatePage_draw() {
 
     // Vario Bar
     display_varioBar(topOfFrame, varioBarTopHeight, varioBarBottomHeight, varioBarWidth,
-                     baro.climbRateFiltered);
+                     baro.climbRateFiltered());
 
     // Climb
     // Climb Triangle
@@ -292,14 +292,14 @@ void navigatePage_draw() {
     u8g2.setCursor(varioBarWidth - 6, varioBarMidpoint + 6);
     u8g2.setFont(leaf_8x14);
     u8g2.setDrawColor(0);
-    if (baro.climbRateFiltered >= 0)
+    if (baro.climbRateFiltered() >= 0)
       u8g2.print("+");
     else
       u8g2.print("-");
 
     // climb value
     display_unsignedClimbRate_short(varioBarWidth + 1, varioBarMidpoint + 20,
-                                    baro.climbRateFiltered);
+                                    baro.climbRateFiltered());
 
     // alt
     display_alt_type(49, 109, leaf_8x14, settings.disp_navPageAltType);

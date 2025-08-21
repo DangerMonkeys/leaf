@@ -65,10 +65,14 @@ void LeafGPS::init(void) {
 }  // gps_init
 
 void LeafGPS::calculateGlideRatio() {
-  float climb = baro.climbRateAverage;
+  if (!baro.climbRateAverageValid()) {
+    glideRatio = 0;
+    return;
+  }
+  float climb = baro.climbRateAverage();
   float speed = gps.speed.kmph();
 
-  if (baro.climbRateAverage == 0 || speed == 0) {
+  if (climb == 0 || speed == 0) {
     glideRatio = 0;
   } else {
     //             km per hour       / cm per sec * sec per hour / cm per km

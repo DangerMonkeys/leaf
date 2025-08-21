@@ -103,7 +103,7 @@ void PageFanetGround::draw_extra() {
     // TODO:  Delete me
     FanetRadio::getInstance().setCurrentLocation(gps.location.lat(), gps.location.lng(),
                                                  gps.altitude.meters(), gps.course.deg(),
-                                                 baro.climbRate / 100.0f, gps.speed.kmph());
+                                                 baro.climbRate() / 100.0f, gps.speed.kmph());
   }
 }
 

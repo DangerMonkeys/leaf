@@ -57,7 +57,7 @@ void thermalPageAdv_draw() {
     uint8_t varioBarSinkHeight = varioBarClimbHeight;
 
     display_varioBar(topOfFrame, varioBarClimbHeight, varioBarSinkHeight, varioBarWidth,
-                     baro.climbRateFiltered);
+                     baro.climbRateFiltered());
 
     // Graph Box
     uint8_t graphBoxHeight = 40;
@@ -73,7 +73,7 @@ void thermalPageAdv_draw() {
 
     // climb rate
     display_climbRatePointerBox(20, 92, 76, 17, 6);  // x, y, w, h, triangle size
-    display_climbRate(20, 108, leaf_8x14, baro.climbRateFiltered);
+    display_climbRate(20, 108, leaf_8x14, baro.climbRateFiltered());
 
     // altitude above launch
     display_altAboveLaunch(24, 132);

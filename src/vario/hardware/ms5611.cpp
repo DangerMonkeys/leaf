@@ -25,7 +25,6 @@ uint8_t ms5611_sendCommand(uint8_t command) {
   Wire.beginTransmission(ADDR_BARO);
   Wire.write(command);
   uint8_t result = Wire.endTransmission();
-  // if (DEBUG_BARO) { Serial.print("Baro Send Command Result: "); Serial.println(result); }
   return result;
 }
 
@@ -45,15 +44,11 @@ uint16_t ms5611_readCalibration(uint8_t PROMaddress) {
 
 uint32_t ms5611_readADC() {
   uint32_t value = 0;  // This will be the final 24-bit output from the ADC
-  // if (DEBUG_BARO) { Serial.println("Baro sending Read ADC command"); }
   ms5611_sendCommand(0b00000000);
   Wire.requestFrom(ADDR_BARO, 3);
   value += (Wire.read() << 16);
-  // if (DEBUG_BARO) { Serial.print("Baro ADC Value 16: "); Serial.println(value); }
   value += (Wire.read() << 8);
-  // if (DEBUG_BARO) { Serial.print("Baro ADC Value 8: "); Serial.println(value); }
   value += (Wire.read());
-  // if (DEBUG_BARO) { Serial.print("Baro ADC Value 0: "); Serial.println(value); }
 
   return value;
 }

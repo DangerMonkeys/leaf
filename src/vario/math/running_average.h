@@ -41,6 +41,13 @@ class RunningAverage {
     recomputeSum();
   }
 
+  void reset() {
+    samples.fill(0);
+    sum = 0;
+    count = 0;
+    index = 0;
+  }
+
   TValue getAverage() const { return count > 0 ? sum / static_cast<TValue>(count) : 0; }
 
  private:
