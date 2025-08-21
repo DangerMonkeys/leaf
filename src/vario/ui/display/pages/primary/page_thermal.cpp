@@ -68,8 +68,9 @@ void thermalPage_draw() {
     uint8_t varioBarClimbHeight = 75;
     uint8_t varioBarSinkHeight = varioBarClimbHeight;
 
-    display_varioBar(topOfFrame, varioBarClimbHeight, varioBarSinkHeight, varioBarWidth,
-                     baro.climbRateFiltered());
+    // TODO: display lack of climb rate differently than 0
+    int32_t climbRate = baro.climbRateFilteredValid() ? baro.climbRateFiltered() : 0;
+    display_varioBar(topOfFrame, varioBarClimbHeight, varioBarSinkHeight, varioBarWidth, climbRate);
 
     // Altitude
     uint8_t alt_y = 58;
@@ -96,7 +97,7 @@ void thermalPage_draw() {
     uint8_t climbBoxY = topOfFrame + varioBarClimbHeight - climbBoxHeight / 2;
     display_climbRatePointerBox(varioBarWidth, climbBoxY, 76, climbBoxHeight,
                                 13);  // x, y, w, h, triangle size
-    display_climbRate(20, climbBoxY + 24, leaf_21h, baro.climbRateFiltered());
+    display_climbRate(20, climbBoxY + 24, leaf_21h, climbRate);
     u8g2.setDrawColor(0);
     u8g2.setFont(leaf_5h);
     u8g2.print(" ");  // put a space, but using a small font so the space isn't too wide
@@ -154,7 +155,8 @@ void drawUserField(uint8_t x, uint8_t y, uint8_t field, bool selected) {
       u8g2.setCursor(x, y - 14);
       u8g2.setFont(leaf_5h);
       u8g2.print("ACCEL (G FORCE)");
-      display_accel(x + 20, y, imu.getAccel());
+      // TODO: show missing accel differently than 0
+      display_accel(x + 20, y, imu.accelValid() ? imu.getAccel() : 0);
       break;
     case static_cast<int>(ThermalPageUserFields::DIST):
       // Distance

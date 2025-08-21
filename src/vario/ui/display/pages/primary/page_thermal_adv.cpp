@@ -56,8 +56,9 @@ void thermalPageAdv_draw() {
     uint8_t varioBarClimbHeight = 70;
     uint8_t varioBarSinkHeight = varioBarClimbHeight;
 
-    display_varioBar(topOfFrame, varioBarClimbHeight, varioBarSinkHeight, varioBarWidth,
-                     baro.climbRateFiltered());
+    // TODO: display lack of climb rate differently than 0
+    int32_t climbRate = baro.climbRateFilteredValid() ? baro.climbRateFiltered() : 0;
+    display_varioBar(topOfFrame, varioBarClimbHeight, varioBarSinkHeight, varioBarWidth, climbRate);
 
     // Graph Box
     uint8_t graphBoxHeight = 40;
@@ -73,7 +74,7 @@ void thermalPageAdv_draw() {
 
     // climb rate
     display_climbRatePointerBox(20, 92, 76, 17, 6);  // x, y, w, h, triangle size
-    display_climbRate(20, 108, leaf_8x14, baro.climbRateFiltered());
+    display_climbRate(20, 108, leaf_8x14, climbRate);
 
     // altitude above launch
     display_altAboveLaunch(24, 132);
@@ -92,7 +93,9 @@ void thermalPageAdv_draw() {
 
     display_temp(varioBarWidth + 5, userFieldsMid - 1, ambient);
     display_humidity(userSecondColumn + 3, userFieldsMid - 1, ambient);
-    display_accel(varioBarWidth + 5, userFieldsBottom - 1, imu.getAccel());
+    // TODO: show missing accel differently than 0
+    float accel = imu.accelValid() ? imu.getAccel() : 0;
+    display_accel(varioBarWidth + 5, userFieldsBottom - 1, accel);
     display_glide(userSecondColumn + 3, userFieldsBottom - 1, gps.getGlideRatio());
 
     // Footer Info ****************************************************
