@@ -267,6 +267,7 @@ void Barometer::filterAltitude() {
   // Note, IMU will have taken an accel reading and updated the Kalman
 
   // get instant climb rate
+  if (!imu.velocityValid()) return;
   climbRateRaw_ = imu.getVelocity();  // in m/s
   if (isnan(climbRateRaw_) || isinf(climbRateRaw_)) {
     fatalError("climbRate in Barometer::filterAltitude was %g after imu.getVelocity()",

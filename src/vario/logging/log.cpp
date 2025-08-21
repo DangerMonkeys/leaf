@@ -280,7 +280,9 @@ void log_captureValues() {
   if (ambient.state() == Ambient::State::Ready) {
     logbook.temperature = ambient.temp();
   }
-  logbook.accel = imu.getAccel();
+  if (imu.accelValid()) {
+    logbook.accel = imu.getAccel();
+  }
 }
 
 void log_checkMinMaxValues() {

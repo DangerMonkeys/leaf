@@ -14,6 +14,8 @@ void KalmanFilterPA::init(double initialTime, double initialPosition, double ini
   p12_ = 0;
   p21_ = 0;
   p22_ = 0;
+
+  initialized_ = true;
 }
 
 void KalmanFilterPA::update(double measuredTime, double measuredPosition,
@@ -24,6 +26,12 @@ void KalmanFilterPA::update(double measuredTime, double measuredPosition,
                    measuredPosition, measuredAcceleration);
     fatalError("input value to KalmanFilterPA::update was invalid");
   }
+
+  if (!initialized_) {
+    init(measuredTime, measuredPosition, measuredAcceleration);
+    return;
+  }
+
   double dt = measuredTime - t_;
   double dt2 = dt * dt;
   double dt3 = dt2 * dt;

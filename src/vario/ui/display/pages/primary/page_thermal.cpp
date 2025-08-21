@@ -154,7 +154,8 @@ void drawUserField(uint8_t x, uint8_t y, uint8_t field, bool selected) {
       u8g2.setCursor(x, y - 14);
       u8g2.setFont(leaf_5h);
       u8g2.print("ACCEL (G FORCE)");
-      display_accel(x + 20, y, imu.getAccel());
+      // TODO: show missing accel differently than 0
+      display_accel(x + 20, y, imu.accelValid() ? imu.getAccel() : 0);
       break;
     case static_cast<int>(ThermalPageUserFields::DIST):
       // Distance

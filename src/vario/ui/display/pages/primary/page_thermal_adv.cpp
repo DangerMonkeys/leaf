@@ -92,7 +92,9 @@ void thermalPageAdv_draw() {
 
     display_temp(varioBarWidth + 5, userFieldsMid - 1, ambient);
     display_humidity(userSecondColumn + 3, userFieldsMid - 1, ambient);
-    display_accel(varioBarWidth + 5, userFieldsBottom - 1, imu.getAccel());
+    // TODO: show missing accel differently than 0
+    float accel = imu.accelValid() ? imu.getAccel() : 0;
+    display_accel(varioBarWidth + 5, userFieldsBottom - 1, accel);
     display_glide(userSecondColumn + 3, userFieldsBottom - 1, gps.getGlideRatio());
 
     // Footer Info ****************************************************

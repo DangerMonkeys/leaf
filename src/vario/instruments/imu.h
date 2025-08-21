@@ -11,9 +11,7 @@
 
 class IMU : public etl::message_router<IMU, MotionUpdate> {
  public:
-  IMU()
-      : kalmanvert_(pow(POSITION_MEASURE_STANDARD_DEVIATION, 2),
-                    pow(ACCELERATION_MEASURE_STANDARD_DEVIATION, 2)) {}
+  IMU();
 
   void init();
   void wake();
@@ -24,7 +22,10 @@ class IMU : public etl::message_router<IMU, MotionUpdate> {
   void on_receive(const MotionUpdate& msg);
   void on_receive_unknown(const etl::imessage& msg) {}
 
+  bool accelValid();
   float getAccel();
+
+  bool velocityValid();
   float getVelocity();
 
  private:
@@ -35,12 +36,19 @@ class IMU : public etl::message_router<IMU, MotionUpdate> {
 
   bool kalmanInitialized_ = false;
 
-  uint8_t startupCycleCount_;
-
   double accelVert_;
-  double accelTot_;
+  bool validAccelVert_ = false;
 
-  double zAvg_ = 1.0;  // Best guess for strength of gravity
-  uint32_t tPrev_;     // Last time gravity guess was updated
+  double accelTot_;
+  bool validAccelTot_ = false;
+
+  // Best estimate for strength of gravity
+  double gravity_ = 1.0;
+
+  // Number of samples remaining to collect to initialize estimate of gravity
+  uint16_t gravityInitCount_;
+
+  // Last time gravity estimate was updated
+  uint32_t tLastGravityUpdate_;
 };
 extern IMU imu;
