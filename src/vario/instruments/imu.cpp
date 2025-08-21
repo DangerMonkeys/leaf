@@ -12,12 +12,12 @@
 IMU imu;
 
 namespace {
-// === What to display on the serial port
-#define ALIGN_TEXT 3  // When set, puts values in equal-width columns with this many digits
-// #define SHOW_QUATERNION  // When set, print the components of the orientation quaternion
-#define SHOW_DEVICE_ACCEL    // When set, print the components of the device-frame acceleration
-#define SHOW_WORLD_ACCEL     // When set, print the components of the world-frame acceleration
-#define SHOW_VERTICAL_ACCEL  // When set, print the vertical acceleration (with gravity
+  // === What to display on the serial port
+  // #define ALIGN_TEXT 3  // When set, puts values in equal-width columns with this many digits
+  // #define SHOW_QUATERNION  // When set, print the components of the orientation quaternion
+  // #define SHOW_DEVICE_ACCEL    // When set, print the components of the device-frame acceleration
+  // #define SHOW_WORLD_ACCEL     // When set, print the components of the world-frame acceleration
+  // #define SHOW_VERTICAL_ACCEL  // When set, print the vertical acceleration (with gravity
   // removed) #define SHOW_FIXED_BOUNDS 0.2  // When set, print fixed values to keep the Arduino
   // serial plot in a consistent range
 
