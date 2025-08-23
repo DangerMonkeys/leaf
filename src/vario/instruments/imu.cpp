@@ -180,12 +180,13 @@ void IMU::on_receive(const MotionUpdate& msg) {
     kalmanvert_.update(millis() / 1000.0, baro.altF(), accelVert_ * 9.80665f);
   }
 
-  String kalmanName = "kalman,";
-  String kalmanEntryString = kalmanName + String(kalmanvert_.getPosition(), 8) + ',' +
-                             String(kalmanvert_.getVelocity(), 8) + ',' +
-                             String(kalmanvert_.getAcceleration(), 8);
-
-  Telemetry.writeText(kalmanEntryString);
+  if (LOG::KALMAN && bus_) {
+    String kalmanName = "kalman,";
+    String kalmanEntryString = kalmanName + String(kalmanvert_.getPosition(), 8) + ',' +
+                               String(kalmanvert_.getVelocity(), 8) + ',' +
+                               String(kalmanvert_.getAcceleration(), 8);
+    bus_->receive(CommentMessage(kalmanEntryString));
+  }
 }
 
 void IMU::wake() { gravityInitCount_ = GRAVITY_INIT_SAMPLES; }
