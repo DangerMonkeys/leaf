@@ -74,6 +74,11 @@ void BusLogger::on_receive(const AmbientUpdate& msg) {
   file_.printf("A%d,%f,%f\n", millis() - tStart_, msg.temperature, msg.relativeHumidity);
 }
 
+void BusLogger::on_receive(const CommentMessage& msg) {
+  if (!file_) return;
+  file_.printf("#%d,%s\n", millis() - tStart_, msg.message);
+}
+
 void BusLogger::on_receive(const GpsMessage& msg) {
   if (!file_) return;
   file_.printf("G%d,%s\n", millis() - tStart_, msg.nmea.c_str());

@@ -103,26 +103,14 @@ void LeafGPS::update() {
   updateFixInfo();
   calculateGlideRatio();
 
-  String gpsName = "gps,";
-  String gpsEntryString = gpsName + String(gps.location.lat(), 8) + ',' +
-                          String(gps.location.lng(), 8) + ',' + String(gps.altitude.meters()) +
-                          ',' + String(gps.speed.mps()) + ',' + String(gps.course.deg());
+  if (LOG::GPS && bus_) {
+    String gpsName = "gps,";
+    String gpsEntryString = gpsName + String(gps.location.lat(), 8) + ',' +
+                            String(gps.location.lng(), 8) + ',' + String(gps.altitude.meters()) +
+                            ',' + String(gps.speed.mps()) + ',' + String(gps.course.deg());
 
-  Telemetry.writeText(gpsEntryString);
-
-  /*
-
-  Serial.print("Valid: ");
-  Serial.print(gps.course.isValid());
-  Serial.print(" Course: ");
-  Serial.print(gps.course.deg());
-  Serial.print(", Speed: ");
-  Serial.print(gps.speed.mph());
-  Serial.print(",    AltValid: ");
-  Serial.print(gps.altitude.isValid());
-  Serial.print(", GPS_alt: ");
-  Serial.println(gps.altitude.meters());
-  */
+    bus_->receive(CommentMessage(gpsEntryString));
+  }
 }
 
 void LeafGPS::on_receive(const GpsMessage& msg) {

@@ -6,8 +6,8 @@
 #include "logbook/flight.h"
 
 // Logger that records messages sent to the message bus
-class BusLogger : public etl::message_router<BusLogger, AmbientUpdate, GpsMessage, MotionUpdate,
-                                             PressureUpdate> {
+class BusLogger : public etl::message_router<BusLogger, AmbientUpdate, CommentMessage, GpsMessage,
+                                             MotionUpdate, PressureUpdate> {
  public:
   void setBus(etl::imessage_bus* bus) { bus_ = bus; }
   bool startLog();
@@ -16,6 +16,7 @@ class BusLogger : public etl::message_router<BusLogger, AmbientUpdate, GpsMessag
 
   // etl::message_router<Bus, ...>
   void on_receive(const AmbientUpdate& msg);
+  void on_receive(const CommentMessage& msg);
   void on_receive(const GpsMessage& msg);
   void on_receive(const MotionUpdate& msg);
   void on_receive(const PressureUpdate& msg);
