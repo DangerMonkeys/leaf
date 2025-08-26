@@ -9,10 +9,10 @@ class Ambient : public etl::message_router<Ambient, AmbientUpdate> {
   void subscribe(etl::imessage_bus* bus) { bus->subscribe(*this); }
 
   // Get the most recent temperature in degrees Celsius
-  float getTemp() { return relativeHumidity_; }
+  float getTemp() { return temperature_; }
 
   // Get the most recent relative humidity in percent
-  float getHumidity() { return temperature_; }
+  float getHumidity() { return relativeHumidity_; }
 
   // etl::message_router<Ambient, AmbientUpdate>
   void on_receive(const AmbientUpdate& msg);
