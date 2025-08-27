@@ -1,5 +1,3 @@
-
-
 #include "ui/settings/settings.h"
 
 #include <Preferences.h>
@@ -12,6 +10,13 @@
 
 #define RW_MODE false
 #define RO_MODE true
+
+namespace {
+  constexpr float SINK_ALARM_OPTIONS[][11] = {
+      {0, -1.2, -1.4, -1.6, -1.8, -2.0, -2.5, -3.0, -4.0, -5.0, -6.0},   // m/s
+      {0, -240, -280, -320, -360, -400, -500, -600, -800, -1000, -1200}  // fpm
+  };
+}
 
 Settings settings;
 
@@ -120,7 +125,7 @@ void Settings::retrieve() {
   leafPrefs.begin("varioPrefs", RO_MODE);
 
   // Vario Settings
-  vario_sinkAlarm = leafPrefs.getFloat("SINK_ALARM");
+  vario_sinkAlarm = leafPrefs.getFloat("SINK_ALARM_VAL");
   vario_sinkAlarm_units = leafPrefs.getBool("SINK_ALARM_UNIT");
   vario_sensitivity = leafPrefs.getChar("vario_sensitivity");
   vario_climbAvg = leafPrefs.getChar("CLIMB_AVERAGE");
@@ -192,7 +197,7 @@ void Settings::save() {
   leafPrefs.putBool("nvsInitVario", true);
 
   // Vario Settings
-  leafPrefs.putFloat("SINK_ALARM", vario_sinkAlarm);
+  leafPrefs.putFloat("SINK_ALARM_VAL", vario_sinkAlarm);
   leafPrefs.putBool("SINK_ALARM_UNIT", vario_sinkAlarm_units);
   leafPrefs.putChar("vario_sensitivity", vario_sensitivity);
   leafPrefs.putChar("CLIMB_AVERAGE", vario_climbAvg);
@@ -291,52 +296,41 @@ void Settings::adjustContrast(Button dir) {
 
 void Settings::adjustSinkAlarm(Button dir) {
   uint16_t* sound = fx_neutral;
+  uint8_t opt = vario_sinkAlarm_units ? 1 : 0;  // determine m/s or fpm options
 
-  // first find index of best-matching setting in the valid options array
+  // get the size of the sinkAlarm options list
+  size_t n = sizeof(SINK_ALARM_OPTIONS[opt]) /
+             sizeof(SINK_ALARM_OPTIONS[opt][0]);  // get size of options list
+
+  // then find index of the best-matching setting in the valid options array
   uint8_t index = 0;
-  for (uint8_t i = 0; i < sizeof(sinkAlarmOptions_[vario_sinkAlarm_units ? 1 : 0]); i++) {
-    if (vario_sinkAlarm >= -0.1f + sinkAlarmOptions_[vario_sinkAlarm_units ? 1 : 0][i]) {
+  float min_err = 1e9f;
+  for (uint8_t i = 0; i < n; i++) {
+    float err = abs(vario_sinkAlarm - SINK_ALARM_OPTIONS[opt][i]);
+    if (err < min_err) {
       index = i;
-      break;
+      min_err = err;
     }
   }
-  Serial.print("first read of index: ");
-  Serial.println(index);
-
-  Serial.print("size of array: ");
-  Serial.println(sizeof(sinkAlarmOptions_[vario_sinkAlarm_units ? 1 : 0]) /
-                 sizeof(sinkAlarmOptions_[vario_sinkAlarm_units ? 1 : 0][0]));
 
   // then increase or decrease index based on button direction
   if (dir == Button::RIGHT) {
     sound = fx_increase;
-    if (++index >= sizeof(sinkAlarmOptions_[vario_sinkAlarm_units ? 1 : 0]) /
-                       sizeof(sinkAlarmOptions_[vario_sinkAlarm_units ? 1 : 0][0])) {
+    if (++index >= n) {
       index = 0;
       sound = fx_cancel;
-
-      Serial.print("index at RIGHT cancel: ");
-      Serial.println(index);
     }
   } else {
     sound = fx_decrease;
     if (index == 0) {
-      index = sizeof(sinkAlarmOptions_[vario_sinkAlarm_units ? 1 : 0]) /
-                  sizeof(sinkAlarmOptions_[vario_sinkAlarm_units ? 1 : 0][0]) -
-              1;
+      index = n - 1;
     } else if (--index == 0) {
       sound = fx_cancel;
-
-      Serial.print("index at LEFT cancel: ");
-      Serial.println(index);
     }
   }
 
   // now set the new sink alarm value
-  vario_sinkAlarm = sinkAlarmOptions_[vario_sinkAlarm_units ? 1 : 0][index];
-
-  Serial.print("index at END: ");
-  Serial.println(index);
+  vario_sinkAlarm = SINK_ALARM_OPTIONS[opt][index];
 
   speaker_playSound(sound);
   // TODO: really needed? speaker_updateClimbToneParameters();	// call to adjust sinkRateSpread
@@ -347,21 +341,28 @@ void Settings::adjustSinkAlarmUnits(bool units) {
   if (units == vario_sinkAlarm_units)
     return;  // no change
   else {
-    // first find index of best-matching setting in the valid options array
+    uint8_t opt = vario_sinkAlarm_units ? 1 : 0;  // determine m/s or fpm options
+
+    // get the size of the sinkAlarm options list
+    size_t n = sizeof(SINK_ALARM_OPTIONS[opt]) /
+               sizeof(SINK_ALARM_OPTIONS[opt][0]);  // get size of options list
+
+    // then find index of the best-matching setting in the valid options array
     uint8_t index = 0;
-    for (uint8_t i = 0; i < sizeof(sinkAlarmOptions_[vario_sinkAlarm_units ? 1 : 0]); i++) {
-      if (vario_sinkAlarm >= -0.1f + sinkAlarmOptions_[vario_sinkAlarm_units ? 1 : 0][i]) {
+    float min_err = 1e9f;
+    for (uint8_t i = 0; i < n; i++) {
+      float err = abs(vario_sinkAlarm - SINK_ALARM_OPTIONS[opt][i]);
+      if (err < min_err) {
         index = i;
-        break;
+        min_err = err;
       }
     }
-
     // then switch units
     if (units) {  // switching to fpm
-      vario_sinkAlarm = sinkAlarmOptions_[1][index];
+      vario_sinkAlarm = SINK_ALARM_OPTIONS[1][index];
       vario_sinkAlarm_units = true;
     } else {  // switching to m/s
-      vario_sinkAlarm = sinkAlarmOptions_[0][index];
+      vario_sinkAlarm = SINK_ALARM_OPTIONS[0][index];
       vario_sinkAlarm_units = false;
     }
   }

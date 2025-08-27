@@ -267,12 +267,6 @@ setting | samples | time avg
 
   void toggleBoolNeutral(bool* boolSetting);
   void toggleBoolOnOff(bool* switchSetting);
-
- private:
-  float sinkAlarmOptions_[2][11] = {
-      {0, -1.2, -1.4, -1.6, -1.8, -2.0, -2.5, -3.0, -4.0, -5.0, -6.0},   // m/s
-      {0, -240, -280, -320, -360, -400, -500, -600, -800, -1000, -1200}  // fpm
-  };
 };
 extern Settings settings;
 
