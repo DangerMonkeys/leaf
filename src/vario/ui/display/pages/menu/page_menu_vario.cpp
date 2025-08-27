@@ -100,13 +100,18 @@ void VarioMenuPage::draw() {
           }
           break;
         case cursor_vario_sinkalarm:
-          if (settings.vario_sinkAlarm == 0) {
+          if (settings.vario_sinkAlarm > -1.0f) {
             u8g2.print("OFF");
           } else {
+            // confirm sink alarm setting is in the same units as climb units setting
+            if (settings.vario_sinkAlarm_units != settings.units_climb) {
+              settings.adjustSinkAlarmUnits(settings.units_climb);
+            }
+
             // now print the value
             if (settings.units_climb) {
               // handle the extra digit required if we hit -1000fpm or more
-              if (settings.vario_sinkAlarm <= -5) {
+              if (settings.vario_sinkAlarm <= -1000.0f) {
                 u8g2.setCursor(u8g2.getCursorX() - 7,
                                u8g2.getCursorY());  // scootch over to make room
 
@@ -120,9 +125,9 @@ void VarioMenuPage::draw() {
               }
 
               // now print the value as usual
-              u8g2.print(settings.vario_sinkAlarm * 200);  // m/s->fpm
+              u8g2.print(float(settings.vario_sinkAlarm), 0);  // fpm
             } else {
-              u8g2.print(float(settings.vario_sinkAlarm), 1);  // m/s->m/s
+              u8g2.print(float(settings.vario_sinkAlarm), 1);  // m/s
             }
           }
           break;

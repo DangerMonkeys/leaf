@@ -180,6 +180,13 @@ void speaker_updateVarioNote(int32_t verticalRate) {
   uint16_t sound_vario_play_samplesTEMP;
   uint16_t sound_vario_rest_samplesTEMP;
 
+  int sinkAlarm_cms;
+  if (settings.vario_sinkAlarm_units) {
+    sinkAlarm_cms = settings.vario_sinkAlarm * 100 / 196.85;  // convert fpm to cm/s
+  } else {
+    sinkAlarm_cms = settings.vario_sinkAlarm * 100;  // convert m/s to cm/s
+  }
+
   if (verticalRate > settings.vario_climbStart) {
     // first clamp to thresholds if climbRate is over the max
     if (verticalRate >= CLIMB_MAX) {
@@ -200,8 +207,7 @@ void speaker_updateVarioNote(int32_t verticalRate) {
     }
 
     // if we trigger sink threshold
-  } else if (verticalRate <
-             (settings.vario_sinkAlarm * 100)) {  // convert sink alarm 'm/s' setting to cm/s
+  } else if (verticalRate < sinkAlarm_cms) {
     // first clamp to thresholds if sinkRate is over the max
     if (verticalRate <= SINK_MAX) {
       sound_varioNoteTEMP =
