@@ -34,7 +34,7 @@ typedef uint8_t SettingLogFormat;
 
 // Default Settings
 // Default Vario Settings
-#define DEF_SINK_ALARM -2       // m/s sink
+#define DEF_SINK_ALARM -1.6f    // m/s sink
 #define DEF_SINK_ALARM_UNITS 0  // 0 = m/s, 1 = fpm
 #define DEF_VARIO_SENSE 3       // 3 = 1 second avg (up and down 1/4 sec from there)
 #define DEF_CLIMB_AVERAGE 1     // in units of 5-seconds.  (def = 1 = 5sec)
