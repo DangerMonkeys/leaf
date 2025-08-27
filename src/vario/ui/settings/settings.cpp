@@ -127,7 +127,7 @@ void Settings::retrieve() {
   // Vario Settings
   vario_sinkAlarm = leafPrefs.getFloat("SINK_ALARM_VAL");
   vario_sinkAlarm_units = leafPrefs.getBool("SINK_ALARM_UNIT");
-  vario_sensitivity = leafPrefs.getChar("vario_sensitivity");
+  vario_sensitivity = leafPrefs.getChar("vSensitivity");
   vario_climbAvg = leafPrefs.getChar("CLIMB_AVERAGE");
   vario_climbStart = leafPrefs.getChar("CLIMB_START");
   vario_volume = leafPrefs.getChar("VOLUME_VARIO");
@@ -199,7 +199,7 @@ void Settings::save() {
   // Vario Settings
   leafPrefs.putFloat("SINK_ALARM_VAL", vario_sinkAlarm);
   leafPrefs.putBool("SINK_ALARM_UNIT", vario_sinkAlarm_units);
-  leafPrefs.putChar("vario_sensitivity", vario_sensitivity);
+  leafPrefs.putChar("vSensitivity", vario_sensitivity);
   leafPrefs.putChar("CLIMB_AVERAGE", vario_climbAvg);
   leafPrefs.putChar("CLIMB_START", vario_climbStart);
   leafPrefs.putChar("VOLUME_VARIO", vario_volume);
