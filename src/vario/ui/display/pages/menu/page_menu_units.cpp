@@ -105,7 +105,11 @@ void UnitsMenuPage::setting_change(Button dir, ButtonState state, uint8_t count)
       if (state == RELEASED) settings.toggleBoolNeutral(&settings.units_alt);
       break;
     case cursor_units_climb:
-      if (state == RELEASED) settings.toggleBoolNeutral(&settings.units_climb);
+      if (state == RELEASED) {
+        settings.toggleBoolNeutral(&settings.units_climb);  // change climb units as user reqested
+        settings.adjustSinkAlarmUnits(
+            settings.units_climb);  // and change sink-alarm units to match
+      }
       break;
     case cursor_units_speed:
       if (state == RELEASED) settings.toggleBoolNeutral(&settings.units_speed);

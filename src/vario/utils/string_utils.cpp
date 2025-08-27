@@ -104,7 +104,7 @@ String formatSpeed(float speed, bool units, bool showUnits) {
   else
     speed *= 3.6f;  // convert to kph
 
-  snprintf(buffer, sizeof(buffer), "%3d", speed);
+  snprintf(buffer, sizeof(buffer), "%.0f", speed);
 
   String result = String(buffer);
   if (showUnits) result += String(unitSymbol);

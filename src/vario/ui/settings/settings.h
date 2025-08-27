@@ -15,9 +15,6 @@ typedef uint8_t SettingLogFormat;
 
 // Setting bounds and definitions
 // Vario
-// Sink Alarm
-#define SINK_ALARM_MAX -6  // m/s sink
-#define SINK_ALARM_MIN -2
 
 // Lifty Air Thermal Sniffer
 #define LIFTY_AIR_MAX -8  // 0.1 m/s - sinking less than this will trigger
@@ -37,12 +34,13 @@ typedef uint8_t SettingLogFormat;
 
 // Default Settings
 // Default Vario Settings
-#define DEF_SINK_ALARM -2    // m/s sink
-#define DEF_VARIO_SENSE 3    // 3 = 1 second avg (up and down 1/4 sec from there)
-#define DEF_CLIMB_AVERAGE 1  // in units of 5-seconds.  (def = 1 = 5sec)
-#define DEF_CLIMB_START 5    // cm/s when climb note begins
-#define DEF_VOLUME_VARIO 1   // 0=off, 1=low, 2=med, 3=high
-#define DEF_QUIET_MODE 0     // 0 = off, 1 = on (ON means no beeping until flight recording)
+#define DEF_SINK_ALARM -1.6f    // m/s sink
+#define DEF_SINK_ALARM_UNITS 0  // 0 = m/s, 1 = fpm
+#define DEF_VARIO_SENSE 3       // 3 = 1 second avg (up and down 1/4 sec from there)
+#define DEF_CLIMB_AVERAGE 1     // in units of 5-seconds.  (def = 1 = 5sec)
+#define DEF_CLIMB_START 5       // cm/s when climb note begins
+#define DEF_VOLUME_VARIO 1      // 0=off, 1=low, 2=med, 3=high
+#define DEF_QUIET_MODE 0        // 0 = off, 1 = on (ON means no beeping until flight recording)
 // 0 == linear pitch interpolation; 1 == major C-scale for climb, minor scale for descent
 #define DEF_VARIO_TONES 0
 // In units of 10 cm/s (a sink rate of only 30cm/s means the air itself is going up).  '0' is off.
@@ -176,16 +174,8 @@ class Settings {
  public:
   // Global Variables for Current Settings
   // Vario Settings
-  int8_t vario_sinkAlarm;
-  /* Vario Sensitivity
-  setting | samples | time avg
-      1   |   20    | 20/20 second (1 second moving average)
-      2   |   12    | 12/20 second
-      3   |   6     |  6/20 second
-      4   |   3     |  3/20 second
-      5   |   1     |  1/20 second (single sample -- instant)
-  */
-  Setting<int8_t, 1, 5, 3> vario_sensitivity;
+  float vario_sinkAlarm;
+  bool vario_sinkAlarm_units;
   int8_t vario_climbAvg;
   int8_t vario_climbStart;
   int8_t vario_volume;
@@ -194,6 +184,16 @@ class Settings {
   int8_t vario_liftyAir;
   float vario_altSetting;
   bool vario_altSyncToGPS;
+
+  /* Vario Sensitivity
+setting | samples | time avg
+    1   |   20    | 20/20 second (1 second moving average)
+    2   |   12    | 12/20 second
+    3   |   6     |  6/20 second
+    4   |   3     |  3/20 second
+    5   |   1     |  1/20 second (single sample -- instant)
+*/
+  Setting<int8_t, 1, 5, 3> vario_sensitivity;
 
   // GPS & Track Log Settings
   bool distanceFlownType;
@@ -253,6 +253,7 @@ class Settings {
   // adjust-settings functions
   void adjustContrast(Button dir);
   void adjustSinkAlarm(Button dir);
+  void adjustSinkAlarmUnits(bool units);
   void adjustVarioAverage(Button dir);
   void adjustClimbAverage(Button dir);
   void adjustClimbStart(Button dir);
