@@ -11,13 +11,10 @@
 #include "instruments/gps.h"
 
 #include "logging/telemetry.h"
-etl::imessage_bus* bus_ = nullptr;
-// IMessageSource
-void publishTo(etl::imessage_bus* bus) { bus_ = bus; }
-void stopPublishing() { bus_ = nullptr; }
 
 /// @brief A class to handle FANET neighbor statistics in addition to base Fanet neighbor table.
-struct FanetNeighbors : public etl::message_router<FanetNeighbors, FanetPacket> {
+struct FanetNeighbors : public etl::message_router<FanetNeighbors, FanetPacket>,
+                        public IMessageSource {
  public:
   struct Neighbor {
     FANET::Address address;  // The address of the neighbor
@@ -31,8 +28,13 @@ struct FanetNeighbors : public etl::message_router<FanetNeighbors, FanetPacket> 
 
   using NeighborMap = etl::map<uint32_t, Neighbor, FANET::Protocol::FANET_MAX_NEIGHBORS>;
 
+  // IMessageSource
+  void publishTo(etl::imessage_bus* bus) { bus_ = bus; }
+  void stopPublishing() { bus_ = nullptr; }
+
  private:
   NeighborMap neighbors_;
+  etl::imessage_bus* bus_ = nullptr;
 
  public:
   const NeighborMap& get() const { return neighbors_; }
@@ -115,10 +117,10 @@ struct FanetNeighbors : public etl::message_router<FanetNeighbors, FanetPacket> 
     // Lon>,<MyLat>,<MyLon>
     if (LOG::FANET_RX && bus_) {
       String fanetRxName = "fanet_rx,";
-      String fanetEntry = fanetRxName + String(neighbor.distanceKm.value()) + "'" +
-                          String(neighbor.rssi) + "," + String(neighbor.snr) + "," + String(lat) +
-                          "," + String(lon) + "," + String(gps.location.lat()) + "," +
-                          String(gps.location.lng());
+      String fanetEntry = fanetRxName + String(neighbor.distanceKm.value()) + "," +
+                          String(neighbor.rssi) + "," + String(neighbor.snr) + "," +
+                          String(lat, 8) + "," + String(lon, 8) + "," +
+                          String(gps.location.lat(), 8) + "," + String(gps.location.lng(), 8);
       bus_->receive(CommentMessage(fanetEntry));
     }
   }

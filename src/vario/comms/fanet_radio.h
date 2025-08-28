@@ -26,7 +26,9 @@ String FanetAddressToString(FANET::Address address);
 // initializing, sending, and receiving messages. It will also handle the
 // periodic transmission of the aircraft's position based on how noisy the
 // airwaves are and how many neighbors are around.
-class FanetRadio : public etl::message_router<FanetRadio, GpsReading>, public FANET::Connector {
+class FanetRadio : public etl::message_router<FanetRadio, GpsReading>,
+                   public FANET::Connector,
+                   public IMessageSource {
   // Allow the debug webserver to access all of our private parts
   friend void webserver_setup();
 
@@ -37,7 +39,10 @@ class FanetRadio : public etl::message_router<FanetRadio, GpsReading>, public FA
   void fanet_ackReceived(uint16_t id) override {}
 
   /// @brief Allocates any dynamic memory required for module.
-  void setup(etl::imessage_bus* bus);
+  void setup();
+
+  /// @brief Subscribes the module to the given message bus
+  void subscribe(etl::imessage_bus* bus);
 
   /// @brief Begins the radio module with the given region, sets up a task to handle incoming
   /// messages
@@ -64,6 +69,16 @@ class FanetRadio : public etl::message_router<FanetRadio, GpsReading>, public FA
 
   /// @brief Gets a copy of the neighbor table
   const FanetNeighbors::NeighborMap& getNeighborTable() const;
+
+  // IMessageSource
+  void publishTo(etl::imessage_bus* bus) {
+    bus_ = bus;
+    neighbors.publishTo(bus_);
+  }
+  void stopPublishing() {
+    bus_ = nullptr;
+    neighbors.stopPublishing();
+  }
 
   /// @brief Gets the instance of the Fanet Radio handler
   static FanetRadio& getInstance() {
@@ -130,7 +145,7 @@ class FanetRadio : public etl::message_router<FanetRadio, GpsReading>, public FA
   void setupFanetHandler();
 
   /// @brief Message bus to write events onto
-  etl::imessage_bus* bus = nullptr;
+  etl::imessage_bus* bus_ = nullptr;
 
   /// @brief Time we last flushed out old expired neighbors
   unsigned long neighbor_table_flushed = 0;
