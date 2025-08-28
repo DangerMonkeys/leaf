@@ -94,7 +94,7 @@ void Settings::loadDefaults() {
   dev_menu = DEF_DEV_MENU;
   dev_startLogAtBoot = DEF_DEV_START_LOG_AT_BOOT;
   dev_startDisconnected = DEF_DEV_START_DISCONNECTED;
-  dev_fanetReTx = DEF_DEV_FANET_RETX;
+  dev_fanetFwd = DEF_DEV_FANET_FWD;
 
   // Boot Flags
   boot_enterBootloader = DEF_ENTER_BOOTLOAD;
@@ -158,7 +158,7 @@ void Settings::retrieve() {
   dev_menu = leafPrefs.getBool("DEVELOPER_MENU");
   dev_startLogAtBoot = leafPrefs.getBool("DEV_STARTLOG");
   dev_startDisconnected = leafPrefs.getBool("DEV_STARTDISCON");
-  dev_fanetReTx = leafPrefs.getBool("DEV_FANET_RETX");
+  dev_fanetFwd = leafPrefs.getBool("DEV_FANET_FWD", DEF_DEV_FANET_FWD);
 
   // Boot Flags
   boot_enterBootloader = leafPrefs.getBool("ENTER_BOOTLOAD");
@@ -232,7 +232,7 @@ void Settings::save() {
   leafPrefs.putBool("DEVELOPER_MENU", dev_menu);
   leafPrefs.putBool("DEV_STARTLOG", dev_startLogAtBoot);
   leafPrefs.putBool("DEV_STARTDISCON", dev_startDisconnected);
-  leafPrefs.putBool("DEV_FANET_RETX", dev_fanetReTx);
+  leafPrefs.putBool("DEV_FANET_FWD", dev_fanetFwd);
   // Boot Flags
   leafPrefs.putBool("ENTER_BOOTLOAD", boot_enterBootloader);
   leafPrefs.putBool("BOOT_TO_ON", boot_toOnState);

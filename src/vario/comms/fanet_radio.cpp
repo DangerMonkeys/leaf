@@ -404,6 +404,7 @@ void FanetRadio::setCurrentLocation(const float& lat, const float& lon, const ui
 
     // TX the packet.
     FANET::Packet<FANET_MAX_FRAME_SIZE> trackingPacket;
+    trackingPacket.forward(settings.dev_fanetFwd);
 
     if (trackingMode.has_value()) {
       // Build a ground tracking packet for ground tracking modes
