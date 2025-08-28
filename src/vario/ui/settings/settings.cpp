@@ -333,24 +333,24 @@ void Settings::adjustSinkAlarm(Button dir) {
 
   // then increase or decrease index based on button direction
   if (dir == Button::RIGHT) {
-    sound = fx_increase;
+    sound = fx::increase;
     if (++index >= n) {
       index = 0;
-      sound = fx_cancel;
+      sound = fx::cancel;
     }
   } else {
-    sound = fx_decrease;
+    sound = fx::decrease;
     if (index == 0) {
       index = n - 1;
     } else if (--index == 0) {
-      sound = fx_cancel;
+      sound = fx::cancel;
     }
   }
 
   // now set the new sink alarm value
   vario_sinkAlarm = SINK_ALARM_OPTIONS[opt][index];
 
-  speaker_playSound(sound);
+  speaker.playSound(sound);
   // TODO: really needed? speaker_updateClimbToneParameters();	// call to adjust sinkRateSpread
   // according to new  vario_sinkAlarm value
 }

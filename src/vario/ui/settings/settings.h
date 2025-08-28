@@ -111,7 +111,6 @@ class Settings {
   // Vario Settings
   float vario_sinkAlarm;
   bool vario_sinkAlarm_units;
-  CharSetting<1, 3, 5> vario_sensitivity{"vSensitivity"};
   int8_t vario_climbAvg;
   int8_t vario_climbStart;
   int8_t vario_volume;
@@ -129,7 +128,7 @@ setting | samples | time avg
     4   |   3     |  3/20 second
     5   |   1     |  1/20 second (single sample -- instant)
 */
-  Setting<int8_t, 1, 5, 3> vario_sensitivity;
+  CharSetting<1, 3, 5> vario_sensitivity{"vSensitivity"};
 
   // GPS & Track Log Settings
   bool distanceFlownType;
