@@ -2,12 +2,15 @@
 
 #include <Arduino.h>
 
+#include "comms/fanet_radio.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
 #include "ui/display/display_fields.h"
 #include "ui/display/fonts.h"
 #include "ui/display/pages.h"
+#include "ui/display/pages/dialogs/page_message.h"
+#include "ui/display/pages/fanet/page_fanet.h"
 #include "ui/input/buttons.h"
 #include "ui/settings/settings.h"
 
@@ -20,6 +23,7 @@ enum cursor_main_menu {
   cursor_units,
   cursor_gps,
   cursor_log,
+  cursor_fanet,
   cursor_system,
   cursor_developer,
 };
@@ -93,7 +97,7 @@ void MainMenuPage::draw_main_menu() {
     uint8_t start_y = 29;
     uint8_t setting_name_x = 2;
     uint8_t setting_choice_x = 72;
-    uint8_t menu_items_y[] = {190, 45, 60, 75, 90, 105, 120, 135, 150};
+    uint8_t menu_items_y[] = {190, 45, 60, 75, 90, 105, 120, 135, 150, 165};
 
     // first draw cursor selection box
     u8g2.drawRBox(setting_choice_x - 10, menu_items_y[cursor_position] - 14, 34, 16, 2);
@@ -103,6 +107,18 @@ void MainMenuPage::draw_main_menu() {
       // hide developer menu if not in dev mode
       if (i == cursor_developer && !settings.dev_menu) {
         continue;  // skip drawing this menu item
+      }
+
+      // show fanet menu if enabled
+
+      if (i == cursor_fanet) {
+#ifndef FANET_CAPABLE
+        continue;  // skip drawing this menu item
+#else
+        if (FanetRadio::getInstance().getState() == FanetRadioState::UNINSTALLED) {
+          continue;
+        }
+#endif
       }
 
       u8g2.setCursor(setting_name_x, menu_items_y[i]);
@@ -128,8 +144,8 @@ void MainMenuPage::menu_item_action(Button button) {
         display.turnPage(PageAction::Back);
         speaker.playSound(fx::exit);
       } else if (button == Button::RIGHT) {
-        // display_turnPage(page_next);  // maybe stop at menu, don't allow scrolling around back to
-        // first page
+        // display_turnPage(page_next);  // maybe stop at menu, don't allow scrolling around back
+        // to first page
       }
       break;
     case cursor_altimeter:
@@ -162,6 +178,35 @@ void MainMenuPage::menu_item_action(Button button) {
         menu_page = page_menu_log;
       }
       break;
+    case cursor_fanet:
+      if (button == Button::RIGHT || button == Button::CENTER) {
+#ifndef FANET_CAPABLE
+        PageMessage::show("Fanet",
+                          "UNSUPPORTED\n"
+                          "\n"
+                          "Fanet is not\n"
+                          "supported on\n"
+                          "this device.\n"
+                          "\n"
+                          "  Sorry!\n"
+                          "\n"
+                          "    :(\n");
+        break;
+#endif
+        if (FanetRadio::getInstance().getState() == FanetRadioState::UNINSTALLED) {
+          // If the FANET radio is uninstalled, show a warning message
+          PageMessage::show("Fanet",
+                            "Fanet radio\n"
+                            "not installed.\n\n"
+                            "Install radio\n"
+                            "or contact\n"
+                            "support\n");
+        } else {
+          // Show the Fanet setting page
+          PageFanet::show();
+        }
+      }
+      break;
     case cursor_system:
       if (button == Button::RIGHT || button == Button::CENTER) {
         menu_page = page_menu_system;
@@ -184,12 +229,33 @@ bool MainMenuPage::mainMenuButtonEvent(Button button, ButtonEvent state, uint8_t
         if (cursor_position == cursor_developer && !settings.dev_menu) {
           cursor_prev();  // skip developer menu if not in dev mode
         }
+        if (cursor_position == cursor_fanet) {
+#ifndef FANET_CAPABLE
+          cursor_prev();  // skip fanet menu if not available
+#else
+          if (FanetRadio::getInstance().getState() == FanetRadioState::UNINSTALLED) {
+            cursor_prev();  // skip fanet menu if not available
+          }
+#endif
+        }
+
         redraw = true;
       }
       break;
     case Button::DOWN:
       if (state == ButtonEvent::CLICKED) {
         cursor_next();
+
+        if (cursor_position == cursor_fanet) {
+#ifndef FANET_CAPABLE
+          cursor_next();  // skip fanet menu if not available
+#else
+          if (FanetRadio::getInstance().getState() == FanetRadioState::UNINSTALLED) {
+            cursor_next();  // skip fanet menu if not available
+          }
+#endif
+        }
+
         if (cursor_position == cursor_developer && !settings.dev_menu) {
           cursor_next();  // skip developer menu if not in dev mode
         }
