@@ -10,6 +10,12 @@
 #include "fanet/protocol.hpp"
 #include "instruments/gps.h"
 
+#include "logging/telemetry.h"
+etl::imessage_bus* bus_ = nullptr;
+// IMessageSource
+void publishTo(etl::imessage_bus* bus) { bus_ = bus; }
+void stopPublishing() { bus_ = nullptr; }
+
 /// @brief A class to handle FANET neighbor statistics in addition to base Fanet neighbor table.
 struct FanetNeighbors : public etl::message_router<FanetNeighbors, FanetPacket> {
  public:
@@ -72,12 +78,18 @@ struct FanetNeighbors : public etl::message_router<FanetNeighbors, FanetPacket> 
     neighbor.rssi = msg.rssi;
     neighbor.snr = msg.snr;
 
+    float lat;
+    float lon;
+
     // Update location for Tracking and GroundTracking modes
     if (msg.packet.header().type() == FANET::Header::MessageType::TRACKING) {
       const auto& trackingPayload = etl::get<FANET::TrackingPayload>(msg.packet.payload().value());
 
       const auto& longitude = trackingPayload.longitude();
       const auto& latitude = trackingPayload.latitude();
+
+      lat = latitude;
+      lon = longitude;
 
       neighbor.distanceKm =
           gps.distanceBetween(gps.location.lat(), gps.location.lng(), latitude, longitude) / 1000;
@@ -90,9 +102,24 @@ struct FanetNeighbors : public etl::message_router<FanetNeighbors, FanetPacket> 
       const auto& longitude = trackingPayload.longitude();
       const auto& latitude = trackingPayload.latitude();
 
+      lat = latitude;
+      lon = longitude;
+
       neighbor.distanceKm =
           gps.distanceBetween(gps.location.lat(), gps.location.lng(), latitude, longitude) / 1000;
       neighbor.groundTrackingMode = trackingPayload.groundType();
+    }
+
+    // Log to message bus
+    // Format: fanet_rx,<FanetID>,<distance in km>,<RSSI>,<SNR>,<Packet Lat>,<Packet
+    // Lon>,<MyLat>,<MyLon>
+    if (LOG::FANET_RX && bus_) {
+      String fanetRxName = "fanet_rx,";
+      String fanetEntry = fanetRxName + String(neighbor.distanceKm.value()) + "'" +
+                          String(neighbor.rssi) + "," + String(neighbor.snr) + "," + String(lat) +
+                          "," + String(lon) + "," + String(gps.location.lat()) + "," +
+                          String(gps.location.lng());
+      bus_->receive(CommentMessage(fanetEntry));
     }
   }
 
