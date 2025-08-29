@@ -105,6 +105,12 @@ void IMU::processQuaternion(const MotionUpdate& m) {
 
   double awx, awy, awz;
   rotateByQuaternion(m.ax, m.ay, m.az, qw, m.qx, m.qy, m.qz, &awx, &awy, &awz);
+  if (isinf(awz) || isnan(awz)) {
+    fatalErrorInfo(
+        "m.ax=%g, m.ay=%g, m.az=%g, qw=%g, m.qx=%g, m.qy=%g, m.qz=%g, awx=%g, awy=%g, awz=%g", m.ax,
+        m.ay, m.az, qw, m.qx, m.qy, m.qz, awx, awy, awz);
+    fatalError("IMU awz was invalid");
+  }
 
 #ifdef SHOW_WORLD_ACCEL
   if (needComma) {

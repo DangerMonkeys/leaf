@@ -77,6 +77,9 @@ class Power {
   // lets go of center button)
   void latchOff();
 
+  // Start bus log on "startup" (which can happen in multiple places) if configured
+  void maybeStartBusLog();
+
   void initPeripherals();
   void sleepPeripherals();
   void wakePeripherals();

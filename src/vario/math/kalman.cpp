@@ -55,7 +55,11 @@ void KalmanFilterPA::update(double measuredTime, double measuredPosition,
   double k11 = p11_ / s;
   double k12 = p12_ / s;
   double dp = measuredPosition - p_;
-  if (k11 == NAN || k12 == NAN) {
+  if (isnan(dp) || isinf(dp)) {
+    fatalErrorInfo("dp=%g, measuredPosition=%g, p_=%g", dp, measuredPosition, p_);
+    fatalError("Kalman dp invalid");
+  }
+  if (isnan(k11) || isinf(k11) || isnan(k12) || isinf(k12)) {
     fatalErrorInfo("measuredTime=%g, measuredPosition=%g, measuredAcceleration=%g", measuredTime,
                    measuredPosition, measuredAcceleration);
     fatalErrorInfo("p11_=%g, p21_=%g, p12_=%g, p22_=%g", p11_, p21_, p12_, p22_);
@@ -66,7 +70,15 @@ void KalmanFilterPA::update(double measuredTime, double measuredPosition,
 
   // Update
   p_ += k11 * dp;
+  if (isnan(p_) || isinf(p_)) {
+    fatalErrorInfo("p_=%g, k11=%g, dp=%g", p_, k11, dp);
+    fatalError("Kalman p_ invalid");
+  }
   v_ += k12 * dp;
+  if (isnan(v_) || isinf(v_)) {
+    fatalErrorInfo("v_=%g, k12=%g, dp=%g", v_, k12, dp);
+    fatalError("Kalman v_ invalid");
+  }
   p22_ -= k12 * p21_;
   p12_ -= k12 * p11_;
   p21_ -= k11 * p21_;
