@@ -10,10 +10,18 @@
 #include "ui/audio/notes.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/settings/settings.h"
+#include "utils/magic_enum.h"
 
 Speaker speaker;
 
+namespace {
+  constexpr unsigned long NOTE_DURATION_MS = 40;
+  constexpr unsigned long TIMING_TOLERANCE_MS = 2;
+}  // namespace
+
 void Speaker::init(void) {
+  assertState("Speaker::init", State::Uninitialized);
+
   // configure speaker pinout and PWM channel
   pinMode(SPEAKER_PIN, OUTPUT);
   ledcAttach(SPEAKER_PIN, 1000, 10);
@@ -22,20 +30,41 @@ void Speaker::init(void) {
   if (!SPEAKER_VOLA_IOEX) pinMode(SPEAKER_VOLA, OUTPUT);
   if (!SPEAKER_VOLB_IOEX) pinMode(SPEAKER_VOLB, OUTPUT);
 
-  soundPlaying_ = fx::silence;
+  tLastUpdate_ = millis();
+  state_ = State::Active;
+  setVolume(varioVolume_);
 }
 
 void Speaker::mute() {
-  updateVarioNote(0);             // ensure we clear vario note
-  ledcWriteTone(SPEAKER_PIN, 0);  // mute speaker pin
+  assertState("Speaker::mute", State::Uninitialized, State::Active);
+  updateVarioNote(0);  // ensure we clear vario note
+  if (state_ != State::Uninitialized) {
+    ledcWriteTone(SPEAKER_PIN, 0);  // mute speaker pin
+  }
   speakerMute_ = true;
 }
 
-void Speaker::unMute() { speakerMute_ = false; }
+void Speaker::unMute() {
+  assertState("Speaker::unMute", State::Uninitialized, State::Active);
+  speakerMute_ = false;
+}
+
+void Speaker::setVolume(SoundChannel channel, SpeakerVolume volume) {
+  if (channel == SoundChannel::FX) {
+    fxVolume_ = volume;
+  } else if (channel == SoundChannel::Vario) {
+    varioVolume_ = volume;
+  } else {
+    fatalError("Channel %s invalid in Speaker::setVolume", nameOf(channel));
+  }
+}
 
 void Speaker::setVolume(SpeakerVolume volume) {
+  assertState("Speaker::setVolume", State::Active);
+
+  // This routine isn't applicable for certain hardware variants
   if (SPEAKER_VOLA == NC || SPEAKER_VOLB == NC) return;
-  speakerVolume_ = volume;
+
   switch (volume) {
     case SpeakerVolume::Off:  // No Volume -- disable piezo speaker driver
       ioexDigitalWrite(SPEAKER_VOLA_IOEX, SPEAKER_VOLA, 0);
@@ -59,17 +88,21 @@ void Speaker::setVolume(SpeakerVolume volume) {
 }
 
 void Speaker::playSound(sound_t sound) {
+  assertState("Speaker::playSound", State::Uninitialized, State::Active);
+  Serial.printf("%d playSound %d\n", millis(), sound);
   soundPlaying_ = sound;
-  Serial.printf("Playing sound with note %d @ %d\n", *soundPlaying_, millis());
   playingSound_ = true;
 }
 
 void Speaker::playNote(uint16_t note) {
+  assertState("Speaker::playNote", State::Uninitialized, State::Active);
   singleNote_[0] = note;
   playSound(singleNote_);
 }
 
 void Speaker::updateVarioNote(int32_t verticalRate) {
+  assertState("Speaker::updateVarioNote", State::Uninitialized, State::Active);
+
   // don't play any beeps if Quiet Mode is turned on, and we haven't started a flight
   if (settings.vario_quietMode && !flightTimer_isRunning()) {
     varioNote_ = note::NONE;
@@ -158,57 +191,54 @@ void Speaker::debugPrint() {
 }
 
 bool Speaker::update() {
-  // return true if there are notes left to play
-  bool notesLeftToPlay = false;
-
-  // our 'samples' (note length) are 40ms, so only do this every 4th time
-  if (++speakerTimerCount_ >= 4) {
-    speakerTimerCount_ = 0;
-    // proceed with adjusting the tone
-  } else {
-    // don't do anything this time, but return true if sound_fx is still playing
-    if (playingSound_) {
-      notesLeftToPlay = true;
-    }
-    return notesLeftToPlay;
+  if (state_ == State::Uninitialized) {
+    init();
+  } else if (state_ != State::Active) {
+    fatalError("Unsupported Speaker::update state %d", nameOf(state_));
   }
+
+  unsigned long tNow = millis();
+  if (tNow - tLastUpdate_ < NOTE_DURATION_MS - TIMING_TOLERANCE_MS) {
+    // Nothing to do yet; we need to wait longer.
+    // ...but return true if a sound is still playing
+    return playingSound_;
+  }
+  tLastUpdate_ += NOTE_DURATION_MS;
 
   // only play sound if speaker is not muted
   if (speakerMute_) {
-    ledcWriteTone(SPEAKER_PIN, 0);
-    return notesLeftToPlay;
+    return false;
   }
 
   // prioritize sound effects from UI & Button etc before we get to vario beeps
   // but only play soundFX if system volume is on
-  if (playingSound_ && settings.system_volume) {
-    notesLeftToPlay = true;
-    setVolume((SpeakerVolume)
-                  settings.system_volume);  // play system sound effects at system volume setting
-
+  if (playingSound_ && fxVolume_ != SpeakerVolume::Off) {
+    setVolume(fxVolume_);
     if (*soundPlaying_ != note::END) {
-      if (*soundPlaying_ != fxNoteLast_)
-        ledcWriteTone(SPEAKER_PIN,
-                      *soundPlaying_);  // only change pwm if it's a different note, otherwise we
-                                        // get a little audio blip between the same notes
-      fxNoteLast_ = *soundPlaying_;     // save last note and move on to next
+      if (*soundPlaying_ != fxNoteLast_) {
+        // only change pwm if it's a different note, otherwise we get a little audio blip between
+        // the same notes
+        ledcWriteTone(SPEAKER_PIN, *soundPlaying_);
+      }
+      fxNoteLast_ = *soundPlaying_;  // save last note
 
       // if we've played this note for enough samples
       if (++fxSampleCount_ >= FX_NOTE_SAMPLE_COUNT) {
         soundPlaying_++;
         fxSampleCount_ = 0;  // and reset sample count
       }
+      return true;
 
     } else {  // Else, we're at END_OF_TONE
       ledcWriteTone(SPEAKER_PIN, 0);
       playingSound_ = false;
       fxNoteLast_ = note::NONE;
-      notesLeftToPlay = false;
-      setVolume((SpeakerVolume)settings.vario_volume);  // return to vario volume in prep for beeps
+      setVolume(varioVolume_);  // return to vario volume in prep for beeps
+      return false;
     }
 
     // if there's a vario note to play, and the vario volume isn't zero
-  } else if (varioNote_ != note::NONE && settings.vario_volume) {
+  } else if (varioNote_ != note::NONE && varioVolume_ != SpeakerVolume::Off) {
     //  Handle the beeps and rests of a vario sound "measure"
     if (betweenVarioBeeps_) {
       ledcWriteTone(SPEAKER_PIN, 0);  // "play" silence since we're resting between beeps
@@ -222,10 +252,9 @@ bool Speaker::update() {
 
     } else {
       if (varioNote_ != varioNoteLast_) {
-        ledcWriteTone(SPEAKER_PIN,
-                      varioNote_);  // play the note, but only if different, otherwise we get a
-                                    // little audio blip between the same successive notes (happens
-                                    // when vario is pegged and there's no rest period between)
+        // play the note, but only if different, otherwise we get a little audio blip between the
+        // same successive notes (happens when vario is pegged and there's no rest period between)
+        ledcWriteTone(SPEAKER_PIN, varioNote_);
       }
       varioNoteLast_ = varioNote_;
 
@@ -236,10 +265,14 @@ bool Speaker::update() {
       }
     }
   } else {
-    ledcWriteTone(SPEAKER_PIN, 0);  // play silence (if timer is configured for auto-reload, we have
-                                    // to do this here because sound_varioNote might have been set
-                                    // to 0 while we were beeping, and then we'll keep beeping)
+    // play silence (if timer is configured for auto-reload, we have to do this here because
+    // sound_varioNote might have been set to 0 while we were beeping, and then we'll keep beeping)
+    ledcWriteTone(SPEAKER_PIN, 0);
   }
 
-  return notesLeftToPlay;
+  return false;
+}
+
+void Speaker::onUnexpectedState(const char* action, State actual) const {
+  fatalError("%s while %s", action, nameOf(actual));
 }

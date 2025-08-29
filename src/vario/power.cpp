@@ -122,10 +122,6 @@ void Power::initPeripherals() {
   Serial.print("init_peripherals: ");
   Serial.println(nameOf(info_.onState));
 
-  // initialize speaker to play sound (so user knows they can let go of the power button)
-  speaker.init();
-  Serial.println(" - Finished Speaker");
-
   if (info_.onState == PowerState::On) {
     latchOn();
     speaker.playSound(fx::enter);

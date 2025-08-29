@@ -136,16 +136,16 @@ void speaker_playPiano(void) {
         n = note::E6;
         break;
       case '0':
-        speaker.setVolume(SpeakerVolume::Off);
+        speaker.setVolume(Speaker::SoundChannel::FX, SpeakerVolume::Off);
         break;
       case '1':
-        speaker.setVolume(SpeakerVolume::Low);
+        speaker.setVolume(Speaker::SoundChannel::FX, SpeakerVolume::Low);
         break;
       case '2':
-        speaker.setVolume(SpeakerVolume::Medium);
+        speaker.setVolume(Speaker::SoundChannel::FX, SpeakerVolume::Medium);
         break;
       case '3':
-        speaker.setVolume(SpeakerVolume::High);
+        speaker.setVolume(Speaker::SoundChannel::FX, SpeakerVolume::High);
         break;
       case '4':
         speaker.playSound(fx::buttonpress);
