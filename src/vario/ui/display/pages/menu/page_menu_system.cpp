@@ -3,7 +3,6 @@
 #include <Arduino.h>
 
 #include "comms/ble.h"
-#include "comms/fanet_radio.h"
 #include "hardware/buttons.h"
 #include "power.h"
 #include "ui/audio/sound_effects.h"
@@ -14,7 +13,7 @@
 #include "ui/display/pages.h"
 #include "ui/display/pages/dialogs/page_menu_about.h"
 #include "ui/display/pages/dialogs/page_message.h"
-#include "ui/display/pages/fanet/page_fanet.h"
+
 #include "ui/display/pages/menu/system/page_menu_system_wifi.h"
 #include "ui/settings/settings.h"
 
@@ -24,7 +23,6 @@ enum system_menu_items {
   cursor_system_volume,
   cursor_system_poweroff,
   cursor_system_showWarning,
-  cursor_system_fanet,
   cursor_system_wifi,
   cursor_system_bluetooth,
   cursor_system_about,
@@ -49,7 +47,7 @@ void SystemMenuPage::draw() {
     uint8_t y_spacing = 16;
     uint8_t setting_name_x = 2;
     uint8_t setting_choice_x = 64;
-    uint8_t menu_items_y[] = {190, 45, 60, 75, 90, 105, 120, 135, 150, 165};
+    uint8_t menu_items_y[] = {190, 45, 60, 75, 90, 105, 120, 150, 165};
     char twoZeros[] = "00";
 
     // first draw cursor selection box
@@ -105,25 +103,6 @@ void SystemMenuPage::draw() {
             u8g2.print((char)123);
           break;
 
-        case cursor_system_fanet:
-          u8g2.setCursor(setting_choice_x + 8, menu_items_y[i]);
-#ifndef FANET_CAPABLE
-          {
-#else
-          if (FanetRadio::getInstance().getState() == FanetRadioState::UNINSTALLED) {
-#endif
-
-            // If Fanet is not installed or supported, we should show a warning icon
-            u8g2.setFont(leaf_icons);
-            u8g2.print((char)0x22);
-            u8g2.setFont(leaf_6x12);
-            break;
-          }
-
-          u8g2.print(settings.fanet_region == FanetRadioRegion::OFF ? (String) "OFF"
-                                                                    : (String)((char)126));
-          break;
-
         case cursor_system_bluetooth:
           u8g2.setCursor(setting_choice_x + 4, menu_items_y[i]);
           if (settings.system_bluetoothOn)
@@ -176,34 +155,6 @@ void SystemMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count
       break;
     case cursor_system_showWarning:
       if (state == ButtonEvent::CLICKED) settings.toggleBoolOnOff(&settings.system_showWarning);
-      break;
-    case cursor_system_fanet:
-      if (state != ButtonEvent::CLICKED) break;
-#ifndef FANET_CAPABLE
-      PageMessage::show("Fanet",
-                        "UNSUPPORTED\n"
-                        "\n"
-                        "Fanet is not\n"
-                        "supported on\n"
-                        "this device.\n"
-                        "\n"
-                        "  Sorry!\n"
-                        "\n"
-                        "    :(\n");
-      break;
-#endif
-      if (FanetRadio::getInstance().getState() == FanetRadioState::UNINSTALLED) {
-        // If the FANET radio is uninstalled, show a warning message
-        PageMessage::show("Fanet",
-                          "Fanet radio\n"
-                          "not installed.\n\n"
-                          "Install radio\n"
-                          "or contact\n"
-                          "support\n");
-      } else {
-        // Show the Fanet setting page
-        PageFanet::show();
-      }
       break;
     case cursor_system_wifi:
       if (state != ButtonEvent::CLICKED) break;

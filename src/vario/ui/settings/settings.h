@@ -75,7 +75,7 @@ typedef uint8_t SettingLogFormat;
 #define DEF_DEV_MENU 0                // default hide the dev menu
 #define DEF_DEV_START_LOG_AT_BOOT 0   // default do not start log at boot
 #define DEF_DEV_START_DISCONNECTED 0  // default do not disconnect hardware at boot
-#define DEF_DEV_FANET_RETX \
+#define DEF_DEV_FANET_FWD \
   1  // default DO rebroadcast Fanet packets (generally only turned off for range testing)
 
 // Boot Flags
@@ -151,7 +151,7 @@ setting | samples | time avg
   bool dev_menu;
   bool dev_startLogAtBoot;
   bool dev_startDisconnected;
-  bool dev_fanetReTx;
+  bool dev_fanetFwd;
 
   // Boot Flags
   bool boot_enterBootloader;

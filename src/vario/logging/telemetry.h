@@ -14,4 +14,9 @@ namespace LOG {
   // Barometer instrument instantaneous pressure upon every update (via message from message bus)
   // Format: baro mb*100,<pressure in 100*millibars>
   constexpr bool BARO = true;
+
+  // FANET packets received
+  // Format: fanet_rx,<FanetID>,<distance in km>,<RSSI>,<SNR>,<Packet Lat>,<Packet
+  // Lon>,<MyLat>,<MyLon>
+  constexpr bool FANET_RX = true;
 }  // namespace LOG

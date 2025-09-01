@@ -156,7 +156,7 @@ void FanetRadio::processRxPacket() {
 
     // This is a broadcast packet, or specifically destined for us.  Send it to
     // the bus for further processing.
-    bus->receive(FanetPacket(packet, rssi, snr));
+    bus_->receive(FanetPacket(packet, rssi, snr));
   }
 }
 
@@ -237,12 +237,14 @@ void FanetRadio::setupFanetHandler() {
   protocol->ownAddress(srcAddress);
 }
 
-void FanetRadio::setup(etl::imessage_bus* bus) {
-  // Sets up the radio module.  Leaves it in an uninitialized state, but
-  // creates any dynamic memory required.
-  this->bus = bus;
+void FanetRadio::subscribe(etl::imessage_bus* bus) {
   bus->subscribe(*this);
   bus->subscribe(neighbors);  // Subscribe the neighbors to any FanetPacket updates
+}
+
+void FanetRadio::setup() {
+  // Sets up the radio module.  Leaves it in an uninitialized state, but
+  // creates any dynamic memory required.
 
   // Create the FANET Protocol
   protocol = new FANET::Protocol(this);
@@ -404,6 +406,7 @@ void FanetRadio::setCurrentLocation(const float& lat, const float& lon, const ui
 
     // TX the packet.
     FANET::Packet<FANET_MAX_FRAME_SIZE> trackingPacket;
+    trackingPacket.forward(settings.dev_fanetFwd);
 
     if (trackingMode.has_value()) {
       // Build a ground tracking packet for ground tracking modes

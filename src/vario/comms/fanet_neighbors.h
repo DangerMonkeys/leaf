@@ -10,8 +10,11 @@
 #include "fanet/protocol.hpp"
 #include "instruments/gps.h"
 
+#include "logging/telemetry.h"
+
 /// @brief A class to handle FANET neighbor statistics in addition to base Fanet neighbor table.
-struct FanetNeighbors : public etl::message_router<FanetNeighbors, FanetPacket> {
+struct FanetNeighbors : public etl::message_router<FanetNeighbors, FanetPacket>,
+                        public IMessageSource {
  public:
   struct Neighbor {
     FANET::Address address;  // The address of the neighbor
@@ -25,8 +28,13 @@ struct FanetNeighbors : public etl::message_router<FanetNeighbors, FanetPacket> 
 
   using NeighborMap = etl::map<uint32_t, Neighbor, FANET::Protocol::FANET_MAX_NEIGHBORS>;
 
+  // IMessageSource
+  void publishTo(etl::imessage_bus* bus) { bus_ = bus; }
+  void stopPublishing() { bus_ = nullptr; }
+
  private:
   NeighborMap neighbors_;
+  etl::imessage_bus* bus_ = nullptr;
 
  public:
   const NeighborMap& get() const { return neighbors_; }
@@ -72,12 +80,18 @@ struct FanetNeighbors : public etl::message_router<FanetNeighbors, FanetPacket> 
     neighbor.rssi = msg.rssi;
     neighbor.snr = msg.snr;
 
+    float lat;
+    float lon;
+
     // Update location for Tracking and GroundTracking modes
     if (msg.packet.header().type() == FANET::Header::MessageType::TRACKING) {
       const auto& trackingPayload = etl::get<FANET::TrackingPayload>(msg.packet.payload().value());
 
       const auto& longitude = trackingPayload.longitude();
       const auto& latitude = trackingPayload.latitude();
+
+      lat = latitude;
+      lon = longitude;
 
       neighbor.distanceKm =
           gps.distanceBetween(gps.location.lat(), gps.location.lng(), latitude, longitude) / 1000;
@@ -90,9 +104,24 @@ struct FanetNeighbors : public etl::message_router<FanetNeighbors, FanetPacket> 
       const auto& longitude = trackingPayload.longitude();
       const auto& latitude = trackingPayload.latitude();
 
+      lat = latitude;
+      lon = longitude;
+
       neighbor.distanceKm =
           gps.distanceBetween(gps.location.lat(), gps.location.lng(), latitude, longitude) / 1000;
       neighbor.groundTrackingMode = trackingPayload.groundType();
+    }
+
+    // Log to message bus
+    // Format: fanet_rx,<FanetID>,<distance in km>,<RSSI>,<SNR>,<Packet Lat>,<Packet
+    // Lon>,<MyLat>,<MyLon>
+    if (LOG::FANET_RX && bus_) {
+      String fanetRxName = "fanet_rx,";
+      String fanetEntry = fanetRxName + String(neighbor.distanceKm.value()) + "," +
+                          String(neighbor.rssi) + "," + String(neighbor.snr) + "," +
+                          String(lat, 8) + "," + String(lon, 8) + "," +
+                          String(gps.location.lat(), 8) + "," + String(gps.location.lng(), 8);
+      bus_->receive(CommentMessage(fanetEntry));
     }
   }
 

@@ -57,7 +57,7 @@ void DeveloperMenuPage::draw() {
         u8g2.setDrawColor(1);
       switch (i) {
         case cursor_developer_fanetReTx:
-          if (settings.dev_fanetReTx)
+          if (settings.dev_fanetFwd)
             u8g2.print(char(125));
           else
             u8g2.print(char(123));
@@ -94,7 +94,7 @@ void DeveloperMenuPage::draw() {
 void DeveloperMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) {
   switch (cursor_position) {
     case cursor_developer_fanetReTx: {
-      if (state == ButtonEvent::CLICKED) settings.toggleBoolOnOff(&settings.dev_fanetReTx);
+      if (state == ButtonEvent::CLICKED) settings.toggleBoolOnOff(&settings.dev_fanetFwd);
       break;
     }
     case cursor_developer_startupStart: {
