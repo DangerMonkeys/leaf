@@ -86,6 +86,7 @@ void Power::bootUp() {
 
     display.showOnSplash();  // show the splash screen if user turned us on
 
+    maybeStartBusLog();
   } else {
     // if not center button, then USB power turned us on, go into charge mode
     info_.onState = PowerState::OffUSB;
@@ -149,7 +150,6 @@ void Power::initPeripherals() {
   ms5611.init();
   Serial.println(" - Finished Baro");
   ICM20948::getInstance().init();
-  imu.init();
   Serial.println(" - Finished IMU");
   AHT20::getInstance().init();
   Serial.println(" - Finished Temp Humid");
@@ -195,12 +195,14 @@ void Power::switchToOnState() {
   Serial.println("switch_to_on_state");
   info_.onState = PowerState::On;
   wakePeripherals();
+  maybeStartBusLog();
+}
 
+void Power::maybeStartBusLog() {
   if (settings.dev_startLogAtBoot) {
     Serial.println("Starting bus log at startup");
     if (busLog.startLog()) {
       Serial.println("Started bus log at startup");
-      speaker.playSound(fx::started);
     } else {
       Serial.println("Failed to start bus log at startup");
       speaker.playSound(fx::bad);

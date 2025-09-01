@@ -249,6 +249,12 @@ int32_t Barometer::climbRateFiltered() {
   return climbRateFiltered_;
 }
 
+bool Barometer::climbRateFilteredValid() {
+  if (state_ != State::Ready) return false;
+  if (!validClimbRateFiltered_) return false;
+  return true;
+}
+
 float Barometer::climbRateAverage() {
   assertState("Barometer::climbRateAverage", State::Ready);
   if (nInitSamplesRemaining_ > 0) {
@@ -268,6 +274,7 @@ void Barometer::filterAltitude() {
   // Note, IMU will have taken an accel reading and updated the Kalman
 
   // get instant climb rate
+  if (!imu.velocityValid()) return;
   climbRateRaw_ = imu.getVelocity();  // in m/s
   if (isnan(climbRateRaw_) || isinf(climbRateRaw_)) {
     fatalError("climbRate in Barometer::filterAltitude was %g after imu.getVelocity()",

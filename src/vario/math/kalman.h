@@ -6,8 +6,6 @@ class KalmanFilterPA {
   KalmanFilterPA(double positionVariance, double accelerationVariance)
       : pVar_(positionVariance), aVar_(accelerationVariance) {}
 
-  void init(double initialTime, double initialPosition, double initialAcceleration);
-
   void update(double measuredTime, double measuredPosition, double measuredAcceleration);
 
   double getPosition() { return p_; }
@@ -15,6 +13,10 @@ class KalmanFilterPA {
   double getAcceleration() { return a_; }
 
  private:
+  void init(double initialTime, double initialPosition, double initialAcceleration);
+
+  bool initialized_ = false;
+
   // Position variance
   const double pVar_;
 

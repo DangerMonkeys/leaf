@@ -208,8 +208,9 @@ void BLE::sendVarioUpdate() {
   if (baro.state() != Barometer::State::Ready) return;
   NMEAString nmea;
   etl::string_stream stream(nmea);
+  int32_t climbRate = baro.climbRateFilteredValid() ? baro.climbRateFiltered() : 0;
   stream << "$LK8EX1," << static_cast<int32_t>(baro.pressure()) << ","
-         << static_cast<uint>(baro.altF()) << "," << baro.climbRateFiltered() << ","
+         << static_cast<uint>(baro.altF()) << "," << climbRate << ","
          << "99,999,";  // Temperature in C.  If not available, send 99
                         // Battery voltage OR percentage.  If percentage, add 1000 (if 1014 is
                         // 14%). 999

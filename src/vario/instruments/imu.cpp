@@ -6,25 +6,31 @@
 #include "logging/telemetry.h"
 #include "math/kalman.h"
 #include "storage/sd_card.h"
+#include "utils/const_math.h"
 
 // Singleton IMU instance for device
 IMU imu;
 
-// === What to display on the serial port
-// #define ALIGN_TEXT 3  // When set, puts values in equal-width columns with this many digits
-// #define SHOW_QUATERNION  // When set, print the components of the orientation quaternion
-// #define SHOW_DEVICE_ACCEL  // When set, print the components of the device-frame acceleration
-// #define SHOW_WORLD_ACCEL  // When set, print the components of the world-frame acceleration
-// #define SHOW_VERTICAL_ACCEL  // When set, print the vertical acceleration (with gravity removed)
-// #define SHOW_FIXED_BOUNDS 0.2  // When set, print fixed values to keep the Arduino serial plot in
-// a consistent range
+namespace {
+  // === What to display on the serial port
+  // #define ALIGN_TEXT 3  // When set, puts values in equal-width columns with this many digits
+  // #define SHOW_QUATERNION  // When set, print the components of the orientation quaternion
+  // #define SHOW_DEVICE_ACCEL    // When set, print the components of the device-frame acceleration
+  // #define SHOW_WORLD_ACCEL     // When set, print the components of the world-frame acceleration
+  // #define SHOW_VERTICAL_ACCEL  // When set, print the vertical acceleration (with gravity
+  // removed) #define SHOW_FIXED_BOUNDS 0.2  // When set, print fixed values to keep the Arduino
+  // serial plot in a consistent range
 
-#define IMU_STARTUP_CYCLES 80  // #samples to bypass at startup while accel calibrates
+  // == Estimation of constant gravity acceleration ==
+  constexpr double NEW_MEASUREMENT_WEIGHT = 0.9;  // Weight given to new measurements...
+  constexpr double AFTER_SECONDS = 5.0;           // ...after this number of seconds
+  constexpr double K_UPDATE = constexpr_log(1 - NEW_MEASUREMENT_WEIGHT) / AFTER_SECONDS;
 
-// == Estimation of constant gravity acceleration ==
-const double NEW_MEASUREMENT_WEIGHT = 0.9;  // Weight given to new measurements...
-const double AFTER_SECONDS = 5.0;           // ...after this number of seconds
-const double K_UPDATE = log(1 - NEW_MEASUREMENT_WEIGHT) / AFTER_SECONDS;
+  constexpr uint8_t IMU_SAMPLE_RATE = 40;  // Hz
+  constexpr double GRAVITY_INIT_S = 3.0;   // Time to take to estimate the initial gravity magnitude
+  // samples to bypass at startup while gravity is estimated
+  constexpr uint32_t GRAVITY_INIT_SAMPLES = IMU_SAMPLE_RATE * GRAVITY_INIT_S;
+}  // namespace
 
 void quaternionMult(double qw, double qx, double qy, double qz, double rw, double rx, double ry,
                     double rz, double* pw, double* px, double* py, double* pz) {
@@ -53,6 +59,11 @@ inline void printFloat(double v) {
   Serial.print(v, digits);
 }
 
+IMU::IMU()
+    : kalmanvert_(pow(POSITION_MEASURE_STANDARD_DEVIATION, 2),
+                  pow(ACCELERATION_MEASURE_STANDARD_DEVIATION, 2)),
+      gravityInitCount_(GRAVITY_INIT_SAMPLES) {}
+
 void IMU::processQuaternion(const MotionUpdate& m) {
   // Scale to +/- 1
   double magnitude = ((m.qx * m.qx) + (m.qy * m.qy) + (m.qz * m.qz));
@@ -76,6 +87,7 @@ void IMU::processQuaternion(const MotionUpdate& m) {
 #endif
 
   accelTot_ = sqrt(m.ax * m.ax + m.ay * m.ay + m.az * m.az);
+  validAccelTot_ = true;
 
 #ifdef SHOW_DEVICE_ACCEL
   if (needComma) {
@@ -93,8 +105,12 @@ void IMU::processQuaternion(const MotionUpdate& m) {
 
   double awx, awy, awz;
   rotateByQuaternion(m.ax, m.ay, m.az, qw, m.qx, m.qy, m.qz, &awx, &awy, &awz);
-
-  accelVert_ = awz - zAvg_;
+  if (isinf(awz) || isnan(awz)) {
+    fatalErrorInfo(
+        "m.ax=%g, m.ay=%g, m.az=%g, qw=%g, m.qx=%g, m.qy=%g, m.qz=%g, awx=%g, awy=%g, awz=%g", m.ax,
+        m.ay, m.az, qw, m.qx, m.qy, m.qz, awx, awy, awz);
+    fatalError("IMU awz was invalid");
+  }
 
 #ifdef SHOW_WORLD_ACCEL
   if (needComma) {
@@ -110,16 +126,6 @@ void IMU::processQuaternion(const MotionUpdate& m) {
   needNewline = true;
 #endif
 
-#ifdef SHOW_VERTICAL_ACCEL
-  if (needComma) {
-    Serial.print(',');
-  }
-  Serial.print("dAz:");
-  printFloat(accelVert);
-  needComma = true;
-  needNewline = true;
-#endif
-
 #ifdef SHOW_FIXED_BOUNDS
   if (needComma) {
     Serial.print(',');
@@ -131,24 +137,40 @@ void IMU::processQuaternion(const MotionUpdate& m) {
   needNewline = true;
 #endif
 
-  double dt = ((double)m.t - tPrev_) * 0.001;
-  double f = exp(K_UPDATE * dt);
-  tPrev_ = m.t;
+  if (gravityInitCount_ == 0) {
+    // In steady-state (normally), actual vertical acceleration is the difference between measured
+    // vertical acceleration and gravity
+    accelVert_ = awz - gravity_;
+    validAccelVert_ = true;
 
-  zAvg_ = zAvg_ * f + awz * (1 - f);
+    // Slowly update estimate of gravity
+    double dt = ((double)m.t - tLastGravityUpdate_) * 0.001;
+    double f = exp(K_UPDATE * dt);
+
+    gravity_ = gravity_ * f + awz * (1 - f);
+  } else {
+    validAccelVert_ = false;
+    gravity_ += awz;
+    if (--gravityInitCount_ == 0) {
+      gravity_ /= GRAVITY_INIT_SAMPLES;
+    }
+  }
+
+#ifdef SHOW_VERTICAL_ACCEL
+  if (needComma) {
+    Serial.print(',');
+  }
+  Serial.print("dAz:");
+  printFloat(accelVert_);
+  needComma = true;
+  needNewline = true;
+#endif
+
+  tLastGravityUpdate_ = m.t;
 
   if (needNewline) {
     Serial.println();
   }
-}
-
-/*************************************************
- * Initialize motion processing with Kalman Filter *
- *************************************************/
-void IMU::init() {
-  startupCycleCount_ = IMU_STARTUP_CYCLES;
-
-  tPrev_ = millis();
 }
 
 void IMU::on_receive(const MotionUpdate& msg) {
@@ -159,23 +181,10 @@ void IMU::on_receive(const MotionUpdate& msg) {
 
   processQuaternion(msg);
 
-  if (!kalmanInitialized_) {
-    // setup kalman filter
-    kalmanvert_.init(millis() / 1000.0, baro.altF(), 0.0);
-    kalmanInitialized_ = true;
-    return;
+  if (validAccelVert_) {
+    // update kalman filter
+    kalmanvert_.update(millis() / 1000.0, baro.altF(), accelVert_ * 9.80665f);
   }
-
-  // if we're starting up, block accel values until it's stable
-  if (startupCycleCount_ > 0) {
-    startupCycleCount_--;
-    // submit accel = 0 to kalman filter and return
-    kalmanvert_.update(millis() / 1000.0, baro.altF(), 0.0f);
-    return;
-  }
-
-  // update kalman filter
-  kalmanvert_.update(millis() / 1000.0, baro.altF(), accelVert_ * 9.80665f);
 
   if (LOG::KALMAN && bus_) {
     String kalmanName = "kalman,";
@@ -186,8 +195,22 @@ void IMU::on_receive(const MotionUpdate& msg) {
   }
 }
 
-void IMU::wake() { startupCycleCount_ = IMU_STARTUP_CYCLES; }
+void IMU::wake() { gravityInitCount_ = GRAVITY_INIT_SAMPLES; }
 
-float IMU::getAccel() { return accelTot_; }
+bool IMU::accelValid() { return validAccelTot_; }
 
-float IMU::getVelocity() { return (float)kalmanvert_.getVelocity(); }
+float IMU::getAccel() {
+  if (!accelValid()) {
+    fatalError("IMU::getAccel when not valid");
+  }
+  return accelTot_;
+}
+
+bool IMU::velocityValid() { return gravityInitCount_ == 0; }
+
+float IMU::getVelocity() {
+  if (!velocityValid()) {
+    fatalError("IMU::getVelocity when not valid");
+  }
+  return (float)kalmanvert_.getVelocity();
+}

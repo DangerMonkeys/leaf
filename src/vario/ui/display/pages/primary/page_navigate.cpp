@@ -238,8 +238,9 @@ void navigatePage_draw() {
     // Vario Info *************************************
 
     // Vario Bar
-    display_varioBar(topOfFrame, varioBarTopHeight, varioBarBottomHeight, varioBarWidth,
-                     baro.climbRateFiltered());
+    // TODO: display lack of climb rate differently than 0
+    int32_t climbRate = baro.climbRateFilteredValid() ? baro.climbRateFiltered() : 0;
+    display_varioBar(topOfFrame, varioBarTopHeight, varioBarBottomHeight, varioBarWidth, climbRate);
 
     // Climb
     // Climb Triangle
@@ -292,14 +293,13 @@ void navigatePage_draw() {
     u8g2.setCursor(varioBarWidth - 6, varioBarMidpoint + 6);
     u8g2.setFont(leaf_8x14);
     u8g2.setDrawColor(0);
-    if (baro.climbRateFiltered() >= 0)
+    if (climbRate >= 0)
       u8g2.print("+");
     else
       u8g2.print("-");
 
     // climb value
-    display_unsignedClimbRate_short(varioBarWidth + 1, varioBarMidpoint + 20,
-                                    baro.climbRateFiltered());
+    display_unsignedClimbRate_short(varioBarWidth + 1, varioBarMidpoint + 20, climbRate);
 
     // alt
     display_alt_type(49, 109, leaf_8x14, settings.disp_navPageAltType);
