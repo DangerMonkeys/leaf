@@ -117,10 +117,7 @@ void MS5611::update() {
         state_ = MS5611State::MeasuringTemperature;
         return;
       } else {
-        etl::imessage_bus* bus = bus_;
-        if (bus) {
-          bus->receive(getUpdate());
-        }
+        sendUpdate(getUpdate());
         state_ = MS5611State::Idle;
         return;
       }
@@ -137,10 +134,7 @@ void MS5611::update() {
         D2_T_ = D2_Tlast_;  // use the last value if we get a misread
       else
         D2_Tlast_ = D2_T_;  // otherwise save this value for next time if needed
-      etl::imessage_bus* bus = bus_;
-      if (bus) {
-        bus->receive(getUpdate());
-      }
+      sendUpdate(getUpdate());
       state_ = MS5611State::Idle;
       return;
   }
@@ -187,6 +181,28 @@ PressureUpdate MS5611::getUpdate() {
   int32_t pressure = ((uint64_t)D1_P_ * SENS1_ / (int64_t)pow(2, 21) - OFF1_) / pow(2, 15);
 
   return PressureUpdate(t, pressure);
+}
+
+void MS5611::sendUpdate(const PressureUpdate& update) {
+  etl::imessage_bus* bus = bus_;
+  if (!bus) return;
+
+  // Sanity check
+  if (update.pressure < 24000 || update.pressure > 202650) {
+    char msg[100];
+    snprintf(msg, sizeof(msg), "MS5611 invalid pressure %d", update.pressure);
+    Serial.println(msg);
+    bus->receive(CommentMessage(msg));
+    return;
+  }
+  if (update.t < -90 || update.t > 180) {
+    char msg[100];
+    snprintf(msg, sizeof(msg), "MS5611 invalid temp %d", update.t);
+    Serial.println(msg);
+    bus->receive(CommentMessage(msg));
+    return;
+  }
+  bus->receive(update);
 }
 
 void MS5611::printCoeffs() {

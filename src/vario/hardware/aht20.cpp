@@ -96,7 +96,24 @@ void AHT20::update() {
     }
     etl::imessage_bus* bus = bus_;
     if (bus) {
-      bus->receive(AmbientUpdate(temperature, rh));
+      bool sane = true;
+      if (isnan(temperature) | isinf(temperature) || temperature < -90 || temperature > 180) {
+        char msg[100];
+        snprintf(msg, sizeof(msg), "AHT20 invalid temp %X", sensorData_.temperature);
+        Serial.println(msg);
+        bus->receive(CommentMessage(msg));
+        sane = false;
+      }
+      if (isnan(rh) || isinf(rh) || rh < 0 || rh > 100) {
+        char msg[100];
+        snprintf(msg, sizeof(msg), "AHT20 invalid RH %X", sensorData_.humidity);
+        Serial.println(msg);
+        bus->receive(CommentMessage(msg));
+        sane = false;
+      }
+      if (sane) {
+        bus->receive(AmbientUpdate(temperature, rh));
+      }
     }
   } else {
     if (DEBUG_TEMPRH) Serial.println("Temp_RH - missed values due to sensor busy");

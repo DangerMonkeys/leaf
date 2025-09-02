@@ -93,7 +93,38 @@ void ICM20948::update() {
     }
     etl::imessage_bus* bus = bus_;
     if ((update.hasOrientation || update.hasAcceleration) && bus) {
-      bus->receive(update);
+      // Invalidate insane orientation data
+      if (update.hasOrientation) {
+        if (isnan(update.qx) || isinf(update.qx) || update.qx < -1.1 || update.qx > 1.1 ||
+            isnan(update.qy) || isinf(update.qy) || update.qy < -1.1 || update.qy > 1.1 ||
+            isnan(update.qz) || isinf(update.qz) || update.qz < -1.1 || update.qz > 1.1) {
+          char msg[100];
+          snprintf(msg, sizeof(msg), "ICM20948 invalid orientation Q1=%X; Q2=%X; Q3=%X",
+                   data.Quat9.Data.Q1, data.Quat9.Data.Q2, data.Quat9.Data.Q3);
+          Serial.println(msg);
+          bus->receive(CommentMessage(msg));
+          update.hasOrientation = false;
+        }
+      }
+
+      // Invalidate insane acceleration data
+      if (update.hasAcceleration) {
+        if (isnan(update.ax) || isinf(update.ax) || update.ax < -1000 || update.ax > 1000 ||
+            isnan(update.ay) || isinf(update.ay) || update.ay < -1000 || update.ay > 1000 ||
+            isnan(update.az) || isinf(update.az) || update.az < -1000 || update.az > 1000) {
+          char msg[100];
+          snprintf(msg, sizeof(msg), "ICM20948 invalid acceleration X=%X; Y=%X; Z=%X",
+                   data.Raw_Accel.Data.X, data.Raw_Accel.Data.Y, data.Raw_Accel.Data.Z);
+          Serial.println(msg);
+          bus->receive(CommentMessage(msg));
+          update.hasAcceleration = false;
+        }
+      }
+
+      // Only dispatch to bus if sanity checks pass
+      if (update.hasOrientation || update.hasAcceleration) {
+        bus->receive(update);
+      }
     }
   }
 }
