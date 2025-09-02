@@ -11,7 +11,6 @@
 #include "hardware/Leaf_SPI.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
-#include "leaf_version.h"
 #include "logging/log.h"
 #include "navigation/gpx.h"
 #include "power.h"

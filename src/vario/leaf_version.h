@@ -1,5 +1,8 @@
 #pragma once
 
+// To optimize iterative build speed, do not include this file directly; instead, use accessor
+// functions in system/version_info.h.
+
 // The values here do not matter; they are set automatically
 // at build time via src/scripts/versioning.py:
 // ---------------------------------------------------------------

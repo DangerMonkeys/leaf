@@ -7,7 +7,7 @@
 #include "FS.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
-#include "leaf_version.h"
+#include "system/version_info.h"
 #include "time.h"
 #include "ui/settings/settings.h"
 #include "utils/string_utils.h"
@@ -86,9 +86,9 @@ bool Igc::startFlight() {
   // Overwrite from file if set in the Pilot descriptor
   setPilotFromFile();
 
-  logger.firmware_version = FIRMWARE_VERSION;
+  logger.firmware_version = LeafVersionInfo::firmwareVersion();
   logger.hardware_version = "Leaf1";
-  logger.logger_type = (String) "Leaf1," + FIRMWARE_VERSION;
+  logger.logger_type = (String) "Leaf1," + LeafVersionInfo::firmwareVersion();
   logger.gps_type = "GNSS LC86G";
   logger.pressure_type = "MS5611";
   logger.time_zone = (String)(settings.system_timeZone / 60);

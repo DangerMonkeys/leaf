@@ -1,9 +1,10 @@
 #include "ui/display/pages/dialogs/page_menu_about.h"
 
 #include "WiFi.h"
-#include "comms/fanet_radio.h"
 #include "esp_mac.h"
-#include "leaf_version.h"
+
+#include "comms/fanet_radio.h"
+#include "system/version_info.h"
 #include "ui/display/display.h"
 #include "ui/display/fonts.h"
 
@@ -16,7 +17,7 @@ void PageMenuAbout::draw_extra() {
   u8g2.print("Ver: ");
   u8g2.setCursor(5, y += offset);
   u8g2.setFont(leaf_5x8);
-  u8g2.print(FIRMWARE_VERSION);
+  u8g2.print(LeafVersionInfo::firmwareVersion());
   y += offset;
 
   u8g2.setFont(leaf_6x12);

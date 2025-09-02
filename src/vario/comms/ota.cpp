@@ -5,14 +5,14 @@
 
 #include <stdexcept>
 
-#include "leaf_version.h"
+#include "system/version_info.h"
 #include "ui/settings/settings.h"
 
 String getLatestTagVersion() {
   Serial.print("[OTA] Getting latest tag version from ");
-  Serial.println(OTA_VERSIONS_URL);
+  Serial.println(LeafVersionInfo::otaVersionsUrl());
   HTTPClient http;
-  http.begin(OTA_VERSIONS_URL);
+  http.begin(LeafVersionInfo::otaVersionsUrl());
   http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
   int httpCode = http.GET();
   if (httpCode != HTTP_CODE_OK) {
@@ -23,8 +23,9 @@ String getLatestTagVersion() {
   JsonDocument doc;
   deserializeJson(doc, payload);
 
-  String tagVersion = doc["latest_tag_versions"][HARDWARE_VARIANT];
-  Serial.printf("[OTA] Latest tag version for %s is %s\n", HARDWARE_VARIANT, tagVersion);
+  String tagVersion = doc["latest_tag_versions"][LeafVersionInfo::hardwareVariant()];
+  Serial.printf("[OTA] Latest tag version for %s is %s\n", LeafVersionInfo::hardwareVariant(),
+                tagVersion);
   return tagVersion;
 }
 
@@ -36,7 +37,7 @@ String getLatestTagVersion() {
 */
 void PerformOTAUpdate(const char* tag) {
   char url[120];
-  snprintf(url, sizeof(url), OTA_BIN_URL, tag);
+  snprintf(url, sizeof(url), LeafVersionInfo::otaBinUrl(), tag);
   Serial.print("[OTA] Starting OTA from ");
   Serial.println(url);
   HTTPClient http;

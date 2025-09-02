@@ -1,10 +1,11 @@
 #include "ui/display/pages/menu/system/page_menu_system_wifi.h"
 
 #include "WiFi.h"
+
 #include "comms/ble.h"
 #include "comms/ota.h"
-#include "leaf_version.h"
 #include "power.h"
+#include "system/version_info.h"
 #include "ui/display/display.h"
 #include "ui/display/fonts.h"
 #include "ui/settings/settings.h"
@@ -166,7 +167,7 @@ void PageMenuSystemWifiUpdate::shown() {
 
   log_lines.clear();
   log_lines.push_back("*CURRENT VERSION:");
-  log_lines.push_back((String) "  " + FIRMWARE_VERSION);
+  log_lines.push_back((String) "  " + LeafVersionInfo::firmwareVersion());
   log_lines.push_back("*CONNECTING TO WIFI...");
 }
 
@@ -203,14 +204,15 @@ void PageMenuSystemWifiUpdate::loop() {
         *wifi_state = WifiState::ERROR;
         break;
       }
-      if (latest_version_ == TAG_VERSION && !OTA_ALWAYS_UPDATE) {
+      if (latest_version_ == LeafVersionInfo::tagVersion() && !LeafVersionInfo::otaAlwaysUpdate()) {
         log_lines.push_back("*YOU'RE UP TO DATE!");
         log_lines.push_back("*REBOOT REQUIRED");
         *wifi_state = WifiState::OTA_UP_TO_DATE;
       } else {
         log_lines.push_back("*NEW VERSION AVAILABLE!");
         log_lines.push_back("*UPDATING TO:");
-        log_lines.push_back((String) "   " + latest_version_ + " for " + HARDWARE_VARIANT);
+        log_lines.push_back((String) "   " + latest_version_ + " for " +
+                            LeafVersionInfo::hardwareVariant());
         log_lines.push_back("(this will take a while)");
         log_lines.push_back("*WILL REBOOT WHEN DONE");
         *wifi_state = WifiState::OTA_UPDATING;

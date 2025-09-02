@@ -7,11 +7,11 @@
 #include "instruments/ambient.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
-#include "leaf_version.h"
 #include "logging/log.h"
 #include "navigation/gpx.h"
 #include "power.h"
 #include "storage/sd_card.h"
+#include "system/version_info.h"
 #include "time.h"
 #include "ui/display/display.h"
 #include "ui/display/fonts.h"
@@ -1099,6 +1099,6 @@ void display_on_splash() {
     u8g2.setFont(leaf_5x8);
     u8g2.setCursor(0, 192);
     u8g2.print("v");
-    u8g2.print(FIRMWARE_VERSION);
+    u8g2.print(LeafVersionInfo::firmwareVersion());
   } while (u8g2.nextPage());
 }
