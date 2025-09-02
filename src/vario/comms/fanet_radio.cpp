@@ -13,6 +13,10 @@
 #include "logging/log.h"
 #include "utils/lock_guard.h"
 
+// Singleton instance declaration.  Needs to be outside of static method
+// for use in an ISR.
+FanetRadio FanetRadio::instance_;
+
 // Initial detection of Fanet module (hw3.2.6+)
 bool FanetRadio::detectFanet() {
 #ifdef FANET_CAPABLE

@@ -81,10 +81,7 @@ class FanetRadio : public etl::message_router<FanetRadio, GpsReading>,
   }
 
   /// @brief Gets the instance of the Fanet Radio handler
-  static FanetRadio& getInstance() {
-    static FanetRadio instance;
-    return instance;
-  }
+  static FanetRadio& getInstance() { return instance_; }
 
   // Handle GPS Packet updates
   void on_receive(const GpsReading& msg);
@@ -163,6 +160,9 @@ class FanetRadio : public etl::message_router<FanetRadio, GpsReading>,
   etl::optional<FANET::GroundTrackingPayload::TrackingType::enum_type> trackingMode = etl::nullopt;
 
   FanetNeighbors neighbors;  // The neighbor table with more info than the protocol class
+
+  // Singleton instance
+  static FanetRadio instance_;
 
 #ifdef LORA_SX1262
   Module radioModule = Module((uint32_t)SX1262_NSS, SX1262_DIO1, SX1262_RESET, SX1262_BUSY);
