@@ -82,7 +82,8 @@ function Find-Addr2line() {
   $candidates = @(
     "toolchain-xtensa-esp32s3\bin\xtensa-esp32s3-elf-addr2line.exe",
     "toolchain-xtensa-esp32\bin\xtensa-esp32-elf-addr2line.exe",
-    "toolchain-riscv32-esp\bin\riscv32-unknown-elf-addr2line.exe"
+    "toolchain-riscv32-esp\bin\riscv32-unknown-elf-addr2line.exe",
+    "toolchain-xtensa-esp-elf\bin\xtensa-esp32s3-elf-addr2line.exe"
   ) | ForEach-Object { Join-Path $pkgs $_ }
 
   foreach ($p in $candidates) {
