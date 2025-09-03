@@ -117,9 +117,9 @@ struct FanetNeighbors : public etl::message_router<FanetNeighbors, FanetPacket>,
     // Lon>,<MyLat>,<MyLon>
     if (LOG::FANET_RX && bus_) {
       String fanetRxName = "fanet_rx,";
-      String fanetEntry = fanetRxName + String(neighbor.distanceKm.value()) + "," +
-                          String(neighbor.rssi) + "," + String(neighbor.snr) + "," +
-                          String(lat, 8) + "," + String(lon, 8) + "," +
+      String fanetEntry = fanetRxName + String(neighbor.address.asUint(), HEX) + "," +
+                          (neighbor.distanceKm.value()) + "," + String(neighbor.rssi) + "," +
+                          String(neighbor.snr) + "," + String(lat, 8) + "," + String(lon, 8) + "," +
                           String(gps.location.lat(), 8) + "," + String(gps.location.lng(), 8);
       bus_->receive(CommentMessage(fanetEntry));
     }
