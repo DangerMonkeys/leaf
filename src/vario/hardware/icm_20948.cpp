@@ -99,8 +99,10 @@ void ICM20948::update() {
             isnan(update.qy) || isinf(update.qy) || update.qy < -1.1 || update.qy > 1.1 ||
             isnan(update.qz) || isinf(update.qz) || update.qz < -1.1 || update.qz > 1.1) {
           char msg[100];
-          snprintf(msg, sizeof(msg), "ICM20948 invalid orientation Q1=%X; Q2=%X; Q3=%X",
-                   data.Quat9.Data.Q1, data.Quat9.Data.Q2, data.Quat9.Data.Q3);
+          snprintf(msg, sizeof(msg),
+                   "ICM20948 invalid orientation Q1=%X; Q2=%X; Q3=%X (%.2f, %.2f, %.2f)",
+                   data.Quat9.Data.Q1, data.Quat9.Data.Q2, data.Quat9.Data.Q3, update.qx, update.qy,
+                   update.qz);
           Serial.println(msg);
           bus->receive(CommentMessage(msg));
           update.hasOrientation = false;
@@ -113,8 +115,10 @@ void ICM20948::update() {
             isnan(update.ay) || isinf(update.ay) || update.ay < -1000 || update.ay > 1000 ||
             isnan(update.az) || isinf(update.az) || update.az < -1000 || update.az > 1000) {
           char msg[100];
-          snprintf(msg, sizeof(msg), "ICM20948 invalid acceleration X=%X; Y=%X; Z=%X",
-                   data.Raw_Accel.Data.X, data.Raw_Accel.Data.Y, data.Raw_Accel.Data.Z);
+          snprintf(msg, sizeof(msg),
+                   "ICM20948 invalid acceleration X=%X; Y=%X; Z=%X (%.2f, %.2f, %.2f)",
+                   data.Raw_Accel.Data.X, data.Raw_Accel.Data.Y, data.Raw_Accel.Data.Z, update.ax,
+                   update.ay, update.az);
           Serial.println(msg);
           bus->receive(CommentMessage(msg));
           update.hasAcceleration = false;

@@ -18,6 +18,19 @@ void KalmanFilterPA::init(double initialTime, double initialPosition, double ini
   initialized_ = true;
 }
 
+double KalmanFilterPA::getPosition() {
+  if (!initialized_) fatalError("KalmanFilter::getPosition before initialized");
+  return p_;
+}
+double KalmanFilterPA::getVelocity() {
+  if (!initialized_) fatalError("KalmanFilter::getVelocity before initialized");
+  return v_;
+}
+double KalmanFilterPA::getAcceleration() {
+  if (!initialized_) fatalError("KalmanFilter::getAcceleration before initialized");
+  return a_;
+}
+
 void KalmanFilterPA::update(double measuredTime, double measuredPosition,
                             double measuredAcceleration) {
   if (isnan(measuredTime) || isinf(measuredTime) || isnan(measuredPosition) ||

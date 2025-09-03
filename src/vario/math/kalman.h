@@ -8,9 +8,10 @@ class KalmanFilterPA {
 
   void update(double measuredTime, double measuredPosition, double measuredAcceleration);
 
-  double getPosition() { return p_; }
-  double getVelocity() { return v_; }
-  double getAcceleration() { return a_; }
+  bool initialized() { return initialized_; }
+  double getPosition();
+  double getVelocity();
+  double getAcceleration();
 
  private:
   void init(double initialTime, double initialPosition, double initialAcceleration);
@@ -27,13 +28,13 @@ class KalmanFilterPA {
   double t_;
 
   // Current position
-  double p_;
+  double p_ = 0;
 
   // Current velocity
-  double v_;
+  double v_ = 0;
 
   // Current acceleration
-  double a_;
+  double a_ = 0;
 
   // Covariance matrix
   double p11_, p21_, p12_, p22_;

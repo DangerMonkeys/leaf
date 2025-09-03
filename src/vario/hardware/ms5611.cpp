@@ -195,13 +195,6 @@ void MS5611::sendUpdate(const PressureUpdate& update) {
     bus->receive(CommentMessage(msg));
     return;
   }
-  if (update.t < -90 || update.t > 180) {
-    char msg[100];
-    snprintf(msg, sizeof(msg), "MS5611 invalid temp %d", update.t);
-    Serial.println(msg);
-    bus->receive(CommentMessage(msg));
-    return;
-  }
   bus->receive(update);
 }
 
