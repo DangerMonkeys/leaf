@@ -64,7 +64,7 @@ IMU::IMU()
                   pow(ACCELERATION_MEASURE_STANDARD_DEVIATION, 2)),
       gravityInitCount_(GRAVITY_INIT_SAMPLES) {}
 
-void IMU::processQuaternion(const MotionUpdate& m) {
+void IMU::processMotion(const MotionUpdate& m) {
   // Scale to +/- 1
   double magnitude = ((m.qx * m.qx) + (m.qy * m.qy) + (m.qz * m.qz));
   if (magnitude >= 1.0) magnitude = 1.0;
@@ -179,8 +179,14 @@ void IMU::on_receive(const MotionUpdate& msg) {
     // We can't do anything without simultaneous barometer-measured altitude
     return;
   }
+  if (!msg.hasAcceleration || !msg.hasOrientation) {
+    // We need to use both acceleration and orientation.
+    // In the future, we could potentially collect them separately, but that seems unnecessary given
+    // that they almost always occur together.
+    return;
+  }
 
-  processQuaternion(msg);
+  processMotion(msg);
 
   if (validAccelVert_) {
     // update kalman filter

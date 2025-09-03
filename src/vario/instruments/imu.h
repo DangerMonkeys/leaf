@@ -33,7 +33,7 @@ class IMU : public etl::message_router<IMU, MotionUpdate>, public IMessageSource
   float getVelocity();
 
  private:
-  void processQuaternion(const MotionUpdate& m);
+  void processMotion(const MotionUpdate& m);
 
   etl::imessage_bus* bus_ = nullptr;
 
