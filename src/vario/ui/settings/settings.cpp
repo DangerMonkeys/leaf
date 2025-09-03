@@ -73,6 +73,7 @@ void Settings::loadDefaults() {
   vario_climbAvg = DEF_CLIMB_AVERAGE;
   vario_climbStart = DEF_CLIMB_START;
   vario_volume = DEF_VOLUME_VARIO;
+  speaker.setVolume(Speaker::SoundChannel::Vario, (SpeakerVolume)vario_volume);
   vario_quietMode = DEF_QUIET_MODE;
   vario_tones = DEF_VARIO_TONES;
   vario_liftyAir = DEF_LIFTY_AIR;
@@ -90,6 +91,7 @@ void Settings::loadDefaults() {
   // System Settings
   system_timeZone = DEF_TIME_ZONE;
   system_volume = DEF_VOLUME_SYSTEM;
+  speaker.setVolume(Speaker::SoundChannel::FX, (SpeakerVolume)system_volume);
   system_ecoMode = DEF_ECO_MODE;
   system_autoOff = DEF_AUTO_OFF;
   system_wifiOn = DEF_WIFI_ON;
@@ -138,6 +140,7 @@ void Settings::retrieve() {
   vario_climbAvg = leafPrefs.getChar("CLIMB_AVERAGE");
   vario_climbStart = leafPrefs.getChar("CLIMB_START");
   vario_volume = leafPrefs.getChar("VOLUME_VARIO");
+  speaker.setVolume(Speaker::SoundChannel::Vario, (SpeakerVolume)vario_volume);
   vario_quietMode = leafPrefs.getBool("QUIET_MODE");
   vario_tones = leafPrefs.getBool("VARIO_TONES");
   vario_liftyAir = leafPrefs.getChar("LIFTY_AIR");
@@ -155,6 +158,7 @@ void Settings::retrieve() {
   // System Settings
   system_timeZone = leafPrefs.getShort("TIME_ZONE");
   system_volume = leafPrefs.getChar("VOLUME_SYSTEM");
+  speaker.setVolume(Speaker::SoundChannel::FX, (SpeakerVolume)system_volume);
   system_ecoMode = leafPrefs.getBool("ECO_MODE");
   system_autoOff = leafPrefs.getBool("AUTO_OFF");
   system_wifiOn = leafPrefs.getBool("WIFI_ON");
@@ -478,6 +482,8 @@ void Settings::adjustVolumeVario(Button dir) {
     if (vario_volume > VOLUME_MAX) {
       vario_volume = VOLUME_MAX;
       sound = fx::doubleClick;
+    } else {
+      speaker.setVolume(Speaker::SoundChannel::Vario, (SpeakerVolume)vario_volume);
     }
   } else {
     sound = fx::decrease;
@@ -486,6 +492,8 @@ void Settings::adjustVolumeVario(Button dir) {
       vario_volume = 0;
       sound = fx::cancel;  // even if vario volume is set to 0, the system volume may still be
                            // turned on, so we have a sound for turning vario off
+    } else {
+      speaker.setVolume(Speaker::SoundChannel::Vario, (SpeakerVolume)vario_volume);
     }
   }
   speaker.playSound(sound);
@@ -499,6 +507,8 @@ void Settings::adjustVolumeSystem(Button dir) {
     if (system_volume > VOLUME_MAX) {
       system_volume = VOLUME_MAX;
       sound = fx::doubleClick;
+    } else {
+      speaker.setVolume(Speaker::SoundChannel::FX, (SpeakerVolume)system_volume);
     }
   } else {
     sound = fx::decrease;
@@ -507,6 +517,8 @@ void Settings::adjustVolumeSystem(Button dir) {
       system_volume = 0;
       sound = fx::cancel;  // we have this line of code for completeness, but the speaker will be
                            // turned off for system sounds so you won't hear it
+    } else {
+      speaker.setVolume(Speaker::SoundChannel::FX, (SpeakerVolume)system_volume);
     }
   }
   speaker.playSound(sound);

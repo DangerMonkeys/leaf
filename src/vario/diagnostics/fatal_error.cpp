@@ -201,7 +201,7 @@ void fatalError(const char* msg, ...) {
 
   // Play fatal error sound
   speaker.unMute();
-  settings.system_volume = 3;
+  speaker.setVolume(Speaker::SoundChannel::FX, SpeakerVolume::High);
   speaker.playSound(fx::fatalerror);
   while (speaker.update()) {
     delay(10);
