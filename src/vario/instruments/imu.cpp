@@ -137,6 +137,13 @@ void IMU::processQuaternion(const MotionUpdate& m) {
   needNewline = true;
 #endif
 
+  if (gravityInitCount_ > 0) {
+    validAccelVert_ = false;
+    gravity_ += awz;
+    if (--gravityInitCount_ == 0) {
+      gravity_ /= GRAVITY_INIT_SAMPLES;
+    }
+  }
   if (gravityInitCount_ == 0) {
     // In steady-state (normally), actual vertical acceleration is the difference between measured
     // vertical acceleration and gravity
@@ -148,12 +155,6 @@ void IMU::processQuaternion(const MotionUpdate& m) {
     double f = exp(K_UPDATE * dt);
 
     gravity_ = gravity_ * f + awz * (1 - f);
-  } else {
-    validAccelVert_ = false;
-    gravity_ += awz;
-    if (--gravityInitCount_ == 0) {
-      gravity_ /= GRAVITY_INIT_SAMPLES;
-    }
   }
 
 #ifdef SHOW_VERTICAL_ACCEL
@@ -184,14 +185,14 @@ void IMU::on_receive(const MotionUpdate& msg) {
   if (validAccelVert_) {
     // update kalman filter
     kalmanvert_.update(millis() / 1000.0, baro.altF(), accelVert_ * 9.80665f);
-  }
 
-  if (LOG::KALMAN && bus_) {
-    String kalmanName = "kalman,";
-    String kalmanEntryString = kalmanName + String(kalmanvert_.getPosition(), 8) + ',' +
-                               String(kalmanvert_.getVelocity(), 8) + ',' +
-                               String(kalmanvert_.getAcceleration(), 8);
-    bus_->receive(CommentMessage(kalmanEntryString));
+    if (LOG::KALMAN && bus_) {
+      String kalmanName = "kalman,";
+      String kalmanEntryString = kalmanName + String(kalmanvert_.getPosition(), 8) + ',' +
+                                 String(kalmanvert_.getVelocity(), 8) + ',' +
+                                 String(kalmanvert_.getAcceleration(), 8);
+      bus_->receive(CommentMessage(kalmanEntryString));
+    }
   }
 }
 

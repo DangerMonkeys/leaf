@@ -79,6 +79,7 @@ class MS5611 : public IMessageSource, IPollable {
   uint32_t baroADCStartTime_ = 0;
 
   PressureUpdate getUpdate();
+  void sendUpdate(const PressureUpdate& update);
 };
 
 // Singleton sensor instance

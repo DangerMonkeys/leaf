@@ -187,7 +187,7 @@ void Barometer::wake() {
 // ^^^ Device Management ^^^
 
 void Barometer::onUnexpectedState(const char* action, State actual) const {
-  fatalError("%s while %s", action, nameOf(actual));
+  fatalError("%s while %s (%u)", action, nameOf(actual).c_str(), static_cast<uint8_t>(actual));
 }
 
 // vvv Device reading & data processing vvv
