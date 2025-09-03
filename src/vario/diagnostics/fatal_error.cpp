@@ -14,6 +14,7 @@
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
 #include "ui/display/fonts.h"
+#include "ui/display/utils.h"
 #include "ui/input/buttons.h"
 #include "ui/settings/settings.h"
 
@@ -119,8 +120,7 @@ void displayFatalError(char* msg) {
     u8g2.print("FATAL ERROR");
 
     u8g2.setFont(leaf_5x8);
-    u8g2.setCursor(0, 36);
-    u8g2.print(msg);  // TODO: wrap words to multiple lines
+    printMultiLine(msg, 0, 20, u8g2.getDisplayWidth(), 162 - 20 - u8g2.getMaxCharHeight());
 
     u8g2.setFont(leaf_5x8);
     u8g2.setCursor(0, 163);

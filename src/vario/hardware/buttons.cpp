@@ -140,7 +140,7 @@ void Buttons::update() {
     }
 
   } else {
-    fatalError("Buttons::update found unsupported state '%s'", nameOf(state_));
+    fatalError("Buttons::update found unsupported state '%s' (%u)", nameOf(state_).c_str(), state_);
   }
 }
 

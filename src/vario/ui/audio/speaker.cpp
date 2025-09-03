@@ -55,7 +55,7 @@ void Speaker::setVolume(SoundChannel channel, SpeakerVolume volume) {
   } else if (channel == SoundChannel::Vario) {
     varioVolume_ = volume;
   } else {
-    fatalError("Channel %s invalid in Speaker::setVolume", nameOf(channel));
+    fatalError("Channel %s (%u) invalid in Speaker::setVolume", nameOf(channel).c_str(), channel);
   }
 }
 
@@ -194,7 +194,7 @@ bool Speaker::update() {
   if (state_ == State::Uninitialized) {
     init();
   } else if (state_ != State::Active) {
-    fatalError("Unsupported Speaker::update state %d", nameOf(state_));
+    fatalError("Unsupported Speaker::update state %d (%u)", nameOf(state_).c_str(), state_);
   }
 
   unsigned long tNow = millis();
