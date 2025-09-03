@@ -134,19 +134,30 @@ void PageMenuSystemWifiManualSetup::loop() {
 
 void PageMenuSystemWifiManualSetup::draw_extra() {
   u8g2.setFont(leaf_6x12);
-  auto y = 40;
+  auto y = 35;
   const auto OFFSET = 14;  // Font is 10px high, allow for margin
   u8g2.setCursor(2, y);
 
   // Instruction Page
-  const char* lines[] = {"Join Leaf", "WiFi network",   " ", "Configure WiFi", "SSID & Password",
-                         " ",         "Then press Save"};
+  const char* lines[] = {">Join Leaf WiFi",    " ", ">Click Sign In",  "  Or Visit:",
+                         "http://192.168.4.1", " ", ">Configure WiFi", "Select your network",
+                         "and enter password", " ", ">Press Save"};
+
+  uint8_t lineNum = 0;
 
   for (auto line : lines) {
     u8g2.setCursor(0, y);
+    if (lineNum == 4 || lineNum == 7 || lineNum == 8) {
+      u8g2.setFont(leaf_5x8);
+      u8g2.setCursor(0, y -= 2);
+    } else
+      u8g2.setFont(leaf_6x12);
+
     u8g2.print(line);
     y += OFFSET;
+    lineNum++;
   }
+  u8g2.drawHLine(0, 174, 96);
 }
 
 /**************************

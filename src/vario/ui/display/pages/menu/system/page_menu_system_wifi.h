@@ -36,7 +36,7 @@ enum class WifiState {
 class PageMenuSystemWifiManualSetup : public SimpleSettingsMenuPage {
  public:
   PageMenuSystemWifiManualSetup() {}
-  const char* get_title() const override { return "Manual Wifi Setup"; }
+  const char* get_title() const override { return "Wifi Setup"; }
 
   void loop() override;
   void shown() override;
