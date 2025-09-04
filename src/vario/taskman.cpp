@@ -142,8 +142,8 @@ void TaskManager::update() {
   else if (info.onState == PowerState::OffUSB)
     updateWhileCharging();
   else
-    fatalError("Unsupported onState '%s' (%d) in TaskManager::update()", nameOf(info.onState),
-               info.onState);
+    fatalError("Unsupported onState '%s' (%u) in TaskManager::update()",
+               nameOf(info.onState).c_str(), info.onState);
 }
 
 void TaskManager::updateWhileCharging() {

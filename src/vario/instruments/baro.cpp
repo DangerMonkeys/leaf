@@ -125,7 +125,7 @@ void Barometer::on_receive(const PressureUpdate& msg) {
     setPressureAlt(msg.pressure);  // calculate Pressure Altitude adjusted for temperature
     filterAltitude();
   } else {
-    fatalError("Barometer state %s in on_receive", nameOf(state_));
+    fatalError("Barometer state %s (%u) in on_receive", nameOf(state_).c_str(), state_);
   }
 }
 
@@ -187,7 +187,7 @@ void Barometer::wake() {
 // ^^^ Device Management ^^^
 
 void Barometer::onUnexpectedState(const char* action, State actual) const {
-  fatalError("%s while %s (%u)", action, nameOf(actual).c_str(), static_cast<uint8_t>(actual));
+  fatalError("%s while %s (%u)", action, nameOf(actual).c_str(), actual);
 }
 
 // vvv Device reading & data processing vvv
