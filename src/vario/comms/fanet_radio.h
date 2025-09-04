@@ -33,6 +33,17 @@ class FanetRadio : public etl::message_router<FanetRadio, GpsReading>,
   friend void webserver_setup();
 
  public:
+  // Singleton class
+  FanetRadio() : message_router(0) {
+    // Detect if FANET is installed on this device.  If not found,
+    // short circuit and place into an unsupported state
+    if (!detectFanet()) {
+      state = FanetRadioState::UNINSTALLED;
+      return;
+    }
+    state = FanetRadioState::UNINITIALIZED;
+  }
+
   // Sets up the FANET Radio connector
   uint32_t fanet_getTick() const override { return millis(); }
   bool fanet_sendFrame(uint8_t codingRate, etl::span<const uint8_t> data);
@@ -80,25 +91,11 @@ class FanetRadio : public etl::message_router<FanetRadio, GpsReading>,
     neighbors.stopPublishing();
   }
 
-  /// @brief Gets the instance of the Fanet Radio handler
-  static FanetRadio& getInstance() { return instance_; }
-
   // Handle GPS Packet updates
   void on_receive(const GpsReading& msg);
   void on_receive_unknown(const etl::imessage& msg) {}
 
  private:
-  // Singleton class
-  FanetRadio() : message_router(0) {
-    // Detect if FANET is installed on this device.  If not found,
-    // short circuit and place into an unsupported state
-    if (!detectFanet()) {
-      state = FanetRadioState::UNINSTALLED;
-      return;
-    }
-    state = FanetRadioState::UNINITIALIZED;
-  }
-
   FANET::Protocol* protocol = nullptr;  // Pointer to the Fanet manager
 
   // detect phyiscal presence of the FANET (LoRa SX1262) module
@@ -161,10 +158,9 @@ class FanetRadio : public etl::message_router<FanetRadio, GpsReading>,
 
   FanetNeighbors neighbors;  // The neighbor table with more info than the protocol class
 
-  // Singleton instance
-  static FanetRadio instance_;
-
 #ifdef LORA_SX1262
   Module radioModule = Module((uint32_t)SX1262_NSS, SX1262_DIO1, SX1262_RESET, SX1262_BUSY);
 #endif
 };
+
+extern FanetRadio fanetRadio;

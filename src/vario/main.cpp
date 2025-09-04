@@ -47,9 +47,9 @@ void setup() {
   Serial.println(" - Finished SPI");
 
 #ifdef FANET_CAPABLE
-  FanetRadio::getInstance().subscribe(&bus);
-  FanetRadio::getInstance().setup();
-  FanetRadio::getInstance().publishTo(&bus);
+  fanetRadio.subscribe(&bus);
+  fanetRadio.setup();
+  fanetRadio.publishTo(&bus);
 #endif
 
   // grab user settings (or populate defaults if no saved settings)

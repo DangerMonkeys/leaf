@@ -232,7 +232,7 @@ void flightTimer_start() {
   logbook.logStartedAt = millis() / 1000;
 
   // Start the Fanet radio
-  FanetRadio::getInstance().begin(settings.fanet_region);
+  fanetRadio.begin(settings.fanet_region);
 }
 
 // stop timer
@@ -253,7 +253,7 @@ void flightTimer_stop() {
   logbook = FlightStats();  // Reset the flight stats
 
   // Stop the Fanet radio
-  FanetRadio::getInstance().end();
+  fanetRadio.end();
 }
 
 void flightTimer_toggle() {

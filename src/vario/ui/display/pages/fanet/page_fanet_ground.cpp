@@ -32,7 +32,7 @@ void PageFanetGround::show(FanetGroundTrackingMode mode) {
   push_page(&getInstance());
 
   // Set our tracking mode to ground tracking.
-  auto& radio = FanetRadio::getInstance();
+  auto& radio = fanetRadio;
   radio.begin(settings.fanet_region);
   switch (mode) {
     case FanetGroundTrackingMode::WALKING:
@@ -58,7 +58,7 @@ const char* PageFanetGround::get_title() const { return "Ground Tracking"; }
 
 void PageFanetGround::closed(bool removed_from_Stack) {
   // Ground tracking should only occur while we're showing this page.
-  if (removed_from_Stack) FanetRadio::getInstance().end();
+  if (removed_from_Stack) fanetRadio.end();
 }
 
 void PageFanetGround::draw_extra() {
@@ -101,9 +101,8 @@ void PageFanetGround::draw_extra() {
     // This really, really shouldn't be done in a Display object
     // but whatever, we'll refactor later.
     // TODO:  Delete me
-    FanetRadio::getInstance().setCurrentLocation(gps.location.lat(), gps.location.lng(),
-                                                 gps.altitude.meters(), gps.course.deg(),
-                                                 baro.climbRate() / 100.0f, gps.speed.kmph());
+    fanetRadio.setCurrentLocation(gps.location.lat(), gps.location.lng(), gps.altitude.meters(),
+                                  gps.course.deg(), baro.climbRate() / 100.0f, gps.speed.kmph());
   }
 }
 

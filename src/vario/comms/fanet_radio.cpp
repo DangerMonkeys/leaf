@@ -13,9 +13,8 @@
 #include "logging/log.h"
 #include "utils/lock_guard.h"
 
-// Singleton instance declaration.  Needs to be outside of static method
-// for use in an ISR.
-FanetRadio FanetRadio::instance_;
+// Singleton instance declaration.
+FanetRadio fanetRadio;
 
 // Initial detection of Fanet module (hw3.2.6+)
 bool FanetRadio::detectFanet() {
@@ -44,7 +43,7 @@ bool FanetRadio::detectFanet() {
 volatile bool FanetRadio::frameSending = false;
 
 ICACHE_RAM_ATTR void FanetRadio::onRxIsr() {
-  auto& fanet = FanetRadio::getInstance();
+  auto& fanet = fanetRadio;
   // If this interrupt was called just to say a transmission has been completed,
 
   // there's no need to wake anyone up to process is
@@ -66,7 +65,7 @@ ICACHE_RAM_ATTR void FanetRadio::onRxIsr() {
 }
 
 void FanetRadio::taskRadioNameTx(void* pvParameters) {
-  auto& fanet = FanetRadio::getInstance();
+  auto& fanet = fanetRadio;
 
   while (true) {
     if (fanet.state == FanetRadioState::RUNNING) {
@@ -91,7 +90,7 @@ void FanetRadio::taskRadioNameTx(void* pvParameters) {
 /// @brief Responsible for reading packets from Radio and processing them in the manager
 /// @param pvParameters
 void FanetRadio::taskRadioRx(void* pvParameters) {
-  auto& fanet = FanetRadio::getInstance();
+  auto& fanet = fanetRadio;
 
   while (true) {
     if (fanet.state == FanetRadioState::RUNNING) {
@@ -165,7 +164,6 @@ void FanetRadio::processRxPacket() {
 }
 
 void FanetRadio::taskRadioTx(void* pvParameters) {
-  auto& fanetRadio = FanetRadio::getInstance();
   // auto& manager = *fanetRadio.manager;
   auto& radio = *fanetRadio.radio;
 
