@@ -349,7 +349,7 @@ void TaskManager::doNecessaryTasks(void) {
     performTask.display = false;
   }
   if (performTask.tempRH) {
-    AHT20::getInstance().update();
+    aht20.update();
     performTask.tempRH = false;
   }
   if (performTask.sdCard) {
