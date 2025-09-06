@@ -4,21 +4,15 @@
 
 #include "dispatch/message_source.h"
 #include "dispatch/pollable.h"
+#include "utils/state_assert_mixin.h"
 
 struct SensorData {
   uint32_t humidity;
   uint32_t temperature;
 };
 
-struct SensorStatus {
-  bool temperature = true;
-  bool humidity = true;
-};
-
-class AHT20 : public IPollable, IMessageSource {
+class AHT20 : public IPollable, IMessageSource, private StateAssertMixin<AHT20> {
  public:
-  void init();
-
   // IPollable
   void update();
 
@@ -26,49 +20,57 @@ class AHT20 : public IPollable, IMessageSource {
   void publishTo(etl::imessage_bus* bus) { bus_ = bus; }
   void stopPublishing() { bus_ = nullptr; }
 
-  /// @brief Get the singleton AHT20 instance
-  static AHT20& getInstance() {
-    static AHT20 instance;
-    return instance;
-  }
-
  private:
-  // Checks if the AHT20 is connected to the I2C bus
-  bool isConnected(void);
+  enum class State : uint8_t {
+    Uninitialized,
+    WaitingForPowerOn,
+    WaitingForCalMeasurement,
+    WaitingForInitialMeasurement,
+    Measuring,
+    Idle,
+  };
 
-  // Returns true if new data is available
-  bool available(void);
+  State state() const { return state_; }
+  void onUnexpectedState(const char* action, State actual) const;
+  friend struct StateAssertMixin<AHT20>;
+
+  void beginInit();
+  void waitForPowerOn();
+  void waitForCalMeasurement();
+  void startFirstMeasurement();
+  void maybeTriggerMeasurement();
+  void completeMeasurement();
+
+  // Checks if the AHT20 is connected to the I2C bus
+  bool isConnected();
 
   // Returns the status byte
-  uint8_t getStatus(void);
+  uint8_t getStatus();
 
   // Returns true if the cal bit is set, false otherwise
-  bool isCalibrated(void);
+  bool isCalibrated();
 
   // Returns true if the busy bit is set, false otherwise
-  bool isBusy(void);
+  bool isBusy();
 
   // Initialize for taking measurement
-  bool initialize(void);
+  bool initialize();
 
   // Trigger the AHT20 to take a measurement
-  bool triggerMeasurement(void);
+  void triggerMeasurement(State onSuccess, State onFailure);
 
   // Read and parse the 6 bytes of data into raw humidity and temp
-  void readData(void);
+  bool readData(SensorData& sensorData);
 
   // Restart the sensor system without turning power off and on
-  bool softReset(void);
+  bool softReset();
 
-  bool measurementStarted_ = false;
+  State state_ = State::Uninitialized;
 
-  uint8_t currentlyMeasuring_ = false;
-
-  SensorData sensorData_;
-
-  SensorStatus sensorQueried_;
-
-  unsigned long measurementInitiated_;
+  unsigned long tLastAction_;
+  unsigned long dtMeasurement_;
 
   etl::imessage_bus* bus_ = nullptr;
 };
+
+extern AHT20 aht20;

@@ -147,8 +147,6 @@ void Power::initPeripherals() {
   Serial.println(" - Finished Baro");
   ICM20948::getInstance().init();
   Serial.println(" - Finished IMU");
-  AHT20::getInstance().init();
-  Serial.println(" - Finished Temp Humid");
 
   // then put devices to sleep if we're in PowerState::OffUSB
   // (plugged into USB but vario not actively turned on)
