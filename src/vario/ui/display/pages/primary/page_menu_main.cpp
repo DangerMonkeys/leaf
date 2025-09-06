@@ -115,7 +115,7 @@ void MainMenuPage::draw_main_menu() {
 #ifndef FANET_CAPABLE
         continue;  // skip drawing this menu item
 #else
-        if (FanetRadio::getInstance().getState() == FanetRadioState::UNINSTALLED) {
+        if (fanetRadio.getState() == FanetRadioState::UNINSTALLED) {
           continue;
         }
 #endif
@@ -193,7 +193,7 @@ void MainMenuPage::menu_item_action(Button button) {
                           "    :(\n");
         break;
 #endif
-        if (FanetRadio::getInstance().getState() == FanetRadioState::UNINSTALLED) {
+        if (fanetRadio.getState() == FanetRadioState::UNINSTALLED) {
           // If the FANET radio is uninstalled, show a warning message
           PageMessage::show("Fanet",
                             "Fanet radio\n"
@@ -233,7 +233,7 @@ bool MainMenuPage::mainMenuButtonEvent(Button button, ButtonEvent state, uint8_t
 #ifndef FANET_CAPABLE
           cursor_prev();  // skip fanet menu if not available
 #else
-          if (FanetRadio::getInstance().getState() == FanetRadioState::UNINSTALLED) {
+          if (fanetRadio.getState() == FanetRadioState::UNINSTALLED) {
             cursor_prev();  // skip fanet menu if not available
           }
 #endif
@@ -250,7 +250,7 @@ bool MainMenuPage::mainMenuButtonEvent(Button button, ButtonEvent state, uint8_t
 #ifndef FANET_CAPABLE
           cursor_next();  // skip fanet menu if not available
 #else
-          if (FanetRadio::getInstance().getState() == FanetRadioState::UNINSTALLED) {
+          if (fanetRadio.getState() == FanetRadioState::UNINSTALLED) {
             cursor_next();  // skip fanet menu if not available
           }
 #endif

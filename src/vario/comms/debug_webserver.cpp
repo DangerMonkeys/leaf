@@ -49,7 +49,7 @@ void webserver_setup() {
   server.on("/fanet", HTTP_GET, []() {
     etl::string<1024> str;
     etl::string_stream ss(str);
-    auto& radio = FanetRadio::getInstance();
+    auto& radio = fanetRadio;
     auto protocol = radio.protocol;
 
     // Lock the radio while we poke around their private parts
@@ -68,7 +68,7 @@ void webserver_setup() {
        << "Current Time: " << ms << endl
        << endl
        << "-- STATS -- " << endl
-       << "State: " << FanetRadio::getInstance().getState().c_str() << "\n"
+       << "State: " << fanetRadio.getState().c_str() << "\n"
        << "rx: " << radioStats.rx << "\n"
        << "txSuccess: " << radioStats.txSuccess << "\n"
        << "txFailed: " << radioStats.txFailed << "\n"

@@ -774,7 +774,7 @@ void display_fanet_icon(const uint8_t& x, const uint8_t& y) {
 #endif
 
   // If the radio is missing, don't bother rendering it at all
-  if (FanetRadio::getInstance().getState() == FanetRadioState::UNINSTALLED) {
+  if (fanetRadio.getState() == FanetRadioState::UNINSTALLED) {
     return;
   }
 
@@ -782,7 +782,7 @@ void display_fanet_icon(const uint8_t& x, const uint8_t& y) {
   u8g2.setFont(leaf_icons);
   u8g2.setCursor(x, y);
 
-  switch (FanetRadio::getInstance().getState()) {
+  switch (fanetRadio.getState()) {
     case FanetRadioState::UNINITIALIZED:
       u8g2.print(char(0x55));  // Bar icon
       break;
