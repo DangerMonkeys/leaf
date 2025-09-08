@@ -166,6 +166,10 @@ bool flightTimer_autoStop() {
   // we will auto-stop only if BOTH the GPS speed AND the Altitude change trigger the stopping
   // thresholds.
 
+  if (baro.state() != Barometer::State::Ready) {
+    return false;
+  }
+
   // First check if altitude is stable
   int32_t altDifference = baro.alt() - autoStopAltitude;
   if (altDifference < 0) altDifference *= -1;
