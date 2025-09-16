@@ -12,6 +12,12 @@ using sound_t = const note::note_t*;
 
 enum class SpeakerVolume : uint8_t { Off = 0, Low = 1, Medium = 2, High = 3 };
 
+// Speaker preferentially plays a single FX sound (note sequence) by moving the sound pointer
+// forward until encountering the end-of-sound sentinel note value.  playSound and playNote both
+// immediately replace this single sound with the specified sound.  When no sound FX is playing,
+// Speaker plays vario notes corresponding to the climb rate provided via updateVarioNote.  The
+// hardware speaker is actuated by calling update at least once per NOTE_DURATION_MS (see
+// implementation).
 class Speaker : private StateAssertMixin<Speaker> {
  public:
   enum class State : uint8_t { Uninitialized, Active };
@@ -20,7 +26,7 @@ class Speaker : private StateAssertMixin<Speaker> {
 
   State state() const { return state_; }
 
-  // Do not play any sounds until unmuted
+  // Cancel any sound playing and do not play any sounds until unmuted
   void mute();
 
   // Resume normal sounds (previous volume levels, etc)
@@ -41,8 +47,6 @@ class Speaker : private StateAssertMixin<Speaker> {
   // Set the specified note to be played once as a sound
   void playNote(note::note_t note);
 
-  void debugPrint();
-
  private:
   State state_;
 
@@ -50,37 +54,40 @@ class Speaker : private StateAssertMixin<Speaker> {
 
   SpeakerVolume fxVolume_ = SpeakerVolume::Low;
   SpeakerVolume varioVolume_ = SpeakerVolume::Low;
+  SpeakerVolume currentVolume_;
   bool speakerMute_ = false;  // use to mute sound for various charging & sleep states
 
-  // volatile pointer to the sound sample to play
-  volatile sound_t soundPlaying_ = fx::silence;
+  // pointer to the sound sample to play (moved to next note in sound as notes are played)
+  sound_t soundPlaying_ = fx::silence;
 
   // notes we should play, and if we're currently playing
-  volatile note::note_t varioNote_ = note::NONE;      // note to play for vario beeps
-  volatile note::note_t varioNoteLast_ = note::NONE;  // last note played for vario beeps
-  volatile note::note_t fxNoteLast_ = note::NONE;     // last note played for sound effects
-  volatile bool betweenVarioBeeps_ = false;           // are we resting (silence) between beeps?
-  volatile bool playingSound_ = false;                // are we playing a sound?
+  note::note_t varioNote_ = note::NONE;      // note to play for vario beeps
+  note::note_t varioNoteLast_ = note::NONE;  // last note played for vario beeps
+  note::note_t fxNoteLast_ = note::NONE;     // last note played for sound effects
+  bool betweenVarioBeeps_ = false;           // are we resting (silence) between beeps?
+  bool playingSound_ = false;                // are we playing a sound?
+
+  uint32_t lastTone_ = 0;
 
   // == trackers for fixed-sample length speaker timer approach #1 ==
 
   // amount of samples we should play for
-  volatile uint16_t varioPlaySamples_ = CLIMB_PLAY_SAMPLES_MAX;
+  uint16_t varioPlaySamples_ = CLIMB_PLAY_SAMPLES_MAX;
 
   // amount of samples we should rest for
-  volatile uint16_t varioRestSamples_ = CLIMB_REST_SAMPLES_MAX;
+  uint16_t varioRestSamples_ = CLIMB_REST_SAMPLES_MAX;
 
   // track how many samples (beats) we've played per note when playing sound effects (using
   // method #1 -- fixed sample length)
-  volatile uint8_t varioPlaySampleCount_ = 0;
+  uint8_t varioPlaySampleCount_ = 0;
 
   // track how many samples (beats) we've played per note when playing sound effects (using
   // method #1 -- fixed sample length)
-  volatile uint8_t varioRestSampleCount_ = 0;
+  uint8_t varioRestSampleCount_ = 0;
 
   // track how many samples (beats) we've played per note when playing sound effects (using
   // method #1 -- fixed sample length)
-  volatile uint8_t fxSampleCount_ = 0;
+  uint8_t fxSampleCount_ = 0;
 
   // this is to allow playing single notes by changing single_note[0], while
   // still having a NOTE_END terminator following.
@@ -88,10 +95,16 @@ class Speaker : private StateAssertMixin<Speaker> {
 
   void init();
 
-  void setVolume(SpeakerVolume volume);
+  void setVolume(SpeakerVolume volume, bool force = false);
 
   void onUnexpectedState(const char* action, State actual) const;
   friend struct StateAssertMixin<Speaker>;
+
+  bool shouldUpdate();
+  bool updateSound();
+  void updateVario();
+
+  void playTone(uint32_t freq);
 };
 
 extern Speaker speaker;
