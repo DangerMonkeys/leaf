@@ -96,11 +96,6 @@ void Speaker::setVolume(SpeakerVolume volume, bool force) {
 
 void Speaker::playSound(sound_t sound) {
   assertState("Speaker::playSound", State::Uninitialized, State::Active);
-  if (speakerMute_) {
-    // Do not actually play sound
-    Serial.printf("%d playSound %d MUTED\n", millis(), sound);
-    return;
-  }
   Serial.printf("%d playSound %d\n", millis(), sound);
   soundPlaying_ = sound;
   playingSound_ = true;

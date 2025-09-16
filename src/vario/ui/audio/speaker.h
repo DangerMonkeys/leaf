@@ -26,7 +26,8 @@ class Speaker : private StateAssertMixin<Speaker> {
 
   State state() const { return state_; }
 
-  // Cancel any sound playing and do not play any sounds until unmuted
+  // Cancel any sound playing and do not play any sounds until unmuted (though do play any sound
+  // "played" while muted as soon as Speaker is unMuted)
   void mute();
 
   // Resume normal sounds (previous volume levels, etc)
