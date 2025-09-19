@@ -65,11 +65,15 @@ void debugPage_draw() {
     u8g2.print((float)info.batteryMV / 1000, 3);
     u8g2.print("v");
 
+    u8g2.setCursor(x, y += 10);
+    u8g2.print(info.chargeCurrentMA);
+    u8g2.print("mA");
+
     // Altimeter Setting
-    u8g2.setCursor(65, 26);
+    u8g2.setCursor(65, 36);
     u8g2.setFont(leaf_5h);
     u8g2.print("AltSet:");
-    u8g2.setCursor(65, 39);
+    u8g2.setCursor(65, 49);
     u8g2.setFont(leaf_6x12);
     u8g2.print(baro.altimeterSetting);
 
