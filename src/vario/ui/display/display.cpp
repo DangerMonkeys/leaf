@@ -125,7 +125,7 @@ void Display::setPage(MainPage targetPage) {
   if (displayPage_ != tempPage) displayPagePrior_ = tempPage;
 }
 
-void Display::showOnSplash() { showSplashScreenFrames_ = 3; }
+void Display::showOnSplash() { showSplashScreenFrames_ = 6; }
 
 //*********************************************************************
 // MAIN DISPLAY UPDATE FUNCTION

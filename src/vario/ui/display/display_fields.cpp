@@ -1074,7 +1074,7 @@ void display_headerAndFooter(bool timerSelected, bool showTurnArrows) {
   display_flightTimer(52, 192, 0, timerSelected);
 }
 
-void display_splashLogo() { u8g2.drawXBM(0, 20, 96, 123, splash_logo_bmp); }
+void display_splashLogo() { u8g2.drawXBM(0, 5, 96, 123, splash_logo_bmp); }
 
 void display_off_splash() {
   u8g2.firstPage();
@@ -1093,12 +1093,17 @@ void display_on_splash() {
     display_splashLogo();
 
     u8g2.setFont(leaf_6x12);
-    u8g2.setCursor(28, 170);
+    u8g2.setCursor(28, 155);
     u8g2.print("HELLO");
 
     u8g2.setFont(leaf_5x8);
-    u8g2.setCursor(0, 192);
+    u8g2.setCursor(0, 172);
     u8g2.print("v");
     u8g2.print(LeafVersionInfo::firmwareVersion());
+    u8g2.setCursor(0, 182);
+    u8g2.print("   Contains FCC ID:");
+    u8g2.setCursor(0, 192);
+    u8g2.print(" 2AC7Z-ESPS3MINI1");  // ESP32-S3-MINI-1 module FCC ID
+
   } while (u8g2.nextPage());
 }
