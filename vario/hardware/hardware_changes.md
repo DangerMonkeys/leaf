@@ -7,6 +7,10 @@ Brief summary of hardware changes
 
 ## PCBA
 
+### v3.2.7
+This version is identical to v3.2.6, except the IO_expander address pins were incorrectly wired in v3.2.6.  This version fixes that.
++ IO Expander Address: IOEX_ADDR = 0x20 (same as v3.2.5)
+
 ### v3.2.6
 + Added 10pin connector for Sharp Memory-in-Pixel display
 + IMU rotated 90deg clockwise (+X is "forward" now)
@@ -59,6 +63,7 @@ Brief summary of hardware changes
 | B6 P16 |GPS_RESET   | N/C         |
 | B7 P17 |GPS_BAK_EN  | N/C         |
 
++ Note: IO Expander Address pins wired incorrectly, so IOEX_ADDR = 0x26 for this version (not 0x20 as in v3.2.5).
 
 ### v3.2.5
 
@@ -129,14 +134,18 @@ Chip is configured with I2C address: 0x20
 + 10-pin 64px wide LCD display
 
 ## Plastic Case
+### v3.2.7
++ Add notch for I2C connector (interferred with battery rib in case v3.2.6)
++ Adjust Caddy-to-Case clearance for non-painted parts, preparing for injection mold
++ Add draft angles on certain faces, preparing for injection mold
++ Adjust rubber switch cap design
+
 ### v3.2.6
-(These are all still TODO items)
 + Shrink Temp/Humidity isolation slot
 + Add button-protecting ribs
 + Solidify decision on PCB thickness and adjust for it
 + Move battery ribs to new PCB_v3.2.6 position
 + Make version for both with and without antenna
-+ Make version for Sharp Memory-in-pixel display
 + Increase caddy snap-angle to nearly 90deg
 + Adjust baseplate caddy for adjusted battery and slot positions
 
