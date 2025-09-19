@@ -52,7 +52,7 @@ void chargingPage_draw() {
     // Show Input Current limit (not actually charge current)
     u8g2.setFont(leaf_6x12);
     u8g2.setCursor(10, 157);
-    u8g2.print("Input: ");
+    u8g2.print("Limit: ");
     if (info.inputCurrent == PowerInputLevel::i100mA)
       u8g2.print("100mA");
     else if (info.inputCurrent == PowerInputLevel::i500mA)
