@@ -30,8 +30,29 @@ void chargingPage_draw() {
 
     display_batt_charging_fullscreen(48, 17);
 
+    // Battery Stats
+    u8g2.setFont(leaf_5x8);
+    uint8_t yPos = 124;
+    if (info.batteryPercent > 22) {
+      u8g2.setDrawColor(0);
+    } else {
+      u8g2.setDrawColor(1);
+      yPos = 35;
+    }
+    u8g2.setCursor(35, yPos);
+#ifdef ISET
+    u8g2.print(info.chargeCurrentMA);
+    u8g2.print("mA ");
+#endif
+    u8g2.setCursor(30, yPos + 10);
+    u8g2.print(info.battMvCal);
+    u8g2.print("mV");
+    u8g2.setDrawColor(1);
+
+    // Show Input Current limit (not actually charge current)
     u8g2.setFont(leaf_6x12);
-    u8g2.setCursor(5, 157);
+    u8g2.setCursor(10, 157);
+    u8g2.print("Input: ");
     if (info.inputCurrent == PowerInputLevel::i100mA)
       u8g2.print("100mA");
     else if (info.inputCurrent == PowerInputLevel::i500mA)
@@ -41,11 +62,7 @@ void chargingPage_draw() {
     else if (info.inputCurrent == PowerInputLevel::Standby)
       u8g2.print(" OFF");
 
-    u8g2.print(" ");
-    u8g2.print(info.batteryMV);
-    u8g2.print("mV");
-
-    // Display the current version
+    // Display the current SW version
     u8g2.setCursor(0, 172);
     u8g2.setFont(leaf_5x8);
     u8g2.print("v");

@@ -116,6 +116,10 @@ void Power::initPowerSystem() {
 #ifdef LED_PIN
   pinMode(LED_PIN, OUTPUT);  // LED power status indicator
 #endif
+
+#ifdef ISET
+  pinMode(ISET, INPUT);  // pin to read actual charge current (if used)
+#endif
 }
 
 void Power::initPeripherals() {
@@ -326,11 +330,19 @@ void Power::readBatteryState() {
   info_.charging = !ioexDigitalRead(POWER_CHARGE_GOOD_IOEX, POWER_CHARGE_GOOD);
   // logic low is charging, logic high is not
 
+  info_.chargeCurrentMA = 0;
+#ifdef ISET
+  // V_ISET = (I_CHARGE / 400) * R_ISET note: R_ISET is 1100 Ohms
+  info_.chargeCurrentMA = analogReadMilliVolts(ISET) * 400 / 1100;
+#endif
+
+  // Test internal calibration of ADC:
+  info_.battMvCal = analogReadMilliVolts(BATT_SENSE) * 69 / 41;
+
   // Battery Voltage Level & Percent Remaining
   info_.batteryADC = analogRead(BATT_SENSE);
   // uint16_t batt_level_mv = adc_level * 5554 / 4095;  //    (3300mV ADC range / .5942 V_divider) =
   // 5554.  Then divide by 4095 steps of resolution
-
   // adjusted formula to account for ESP32 ADC non-linearity; based on calibration
   // measurements.  This is most accurate between 2.4V and 4.7V
   info_.batteryMV = info_.batteryADC * 5300 / 4095 + 260;
