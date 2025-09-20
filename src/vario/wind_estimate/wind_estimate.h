@@ -1,5 +1,6 @@
 #pragma once
 
+#include "dispatch/message_sink.h"
 #include "instruments/gps.h"
 
 // bin definitions for storing sample points
@@ -54,11 +55,9 @@ struct WindEstimate {
   bool validEstimate = false;
 };
 
-class WindEstimator : public etl::message_router<WindEstimator, GpsReading> {
+class WindEstimator : public MessageSink<WindEstimator, GpsReading> {
  public:
-  void subscribe(etl::imessage_bus* bus) { bus->subscribe(*this); }
-
-  // etl::message_router<WindEstimator, GpsReading>
+  // MessageSink<WindEstimator, GpsReading>
   void on_receive(const GpsReading& msg);
   void on_receive_unknown(const etl::imessage& msg) {}
 

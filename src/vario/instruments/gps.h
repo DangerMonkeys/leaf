@@ -18,6 +18,7 @@
 #define gps_h
 
 #include <TinyGPSPlus.h>
+#include "dispatch/message_sink.h"
 #include "dispatch/message_source.h"
 #include "dispatch/message_types.h"
 #include "etl/message_bus.h"
@@ -49,9 +50,7 @@ struct NMEASentenceContents {
 
 // enum time_formats {hhmmss, }
 
-class LeafGPS : public TinyGPSPlus,
-                IMessageSource,
-                public etl::message_router<LeafGPS, GpsMessage> {
+class LeafGPS : public TinyGPSPlus, IMessageSource, public MessageSink<LeafGPS, GpsMessage> {
  public:
   LeafGPS();
 
@@ -63,11 +62,9 @@ class LeafGPS : public TinyGPSPlus,
   void publishTo(etl::imessage_bus* bus) { bus_ = bus; }
   void stopPublishing() { bus_ = nullptr; }
 
-  // etl::message_router<LeafGPS, GpsMessage>
+  // MessageSink<LeafGPS, GpsMessage>
   void on_receive(const GpsMessage& msg);
   void on_receive_unknown(const etl::imessage& msg) {}
-
-  void subscribe(etl::imessage_bus* bus) { bus->subscribe(*this); }
 
   // Gets a calendar time from GPS in UTC time.
   // See references such as https://en.cppreference.com/w/c/chrono/strftime
