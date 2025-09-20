@@ -1,8 +1,8 @@
 #pragma once
 
 #include <Arduino.h>
-#include "etl/message_bus.h"
 
+#include "dispatch/message_sink.h"
 #include "dispatch/message_source.h"
 #include "dispatch/message_types.h"
 #include "math/kalman.h"
@@ -10,15 +10,13 @@
 #define POSITION_MEASURE_STANDARD_DEVIATION 0.1f
 #define ACCELERATION_MEASURE_STANDARD_DEVIATION 0.3f
 
-class IMU : public etl::message_router<IMU, MotionUpdate>, public IMessageSource {
+class IMU : public MessageSink<IMU, MotionUpdate>, public IMessageSource {
  public:
   IMU();
 
   void wake();
 
-  void subscribe(etl::imessage_bus* bus) { bus->subscribe(*this); }
-
-  // etl::message_router<IMU, MotionUpdate>
+  // MessageSink<IMU, MotionUpdate>
   void on_receive(const MotionUpdate& msg);
   void on_receive_unknown(const etl::imessage& msg) {}
 

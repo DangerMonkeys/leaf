@@ -71,7 +71,7 @@ void setup() {
   udpMessageServer.publishTo(&bus);
 #endif
 
-  baro.subscribe(&bus);
+  baro.subscribeTo(&bus);
   baro.publishTo(&bus);
 
   // Initialize anything left over on the Task Manager System
@@ -87,25 +87,23 @@ void setup() {
   }
 
   // Connect GPS instrument to message bus sourcing lines of text that should be NMEA sentences
-  gps.subscribe(&bus);
+  gps.subscribeTo(&bus);
   // Publish parsed GPS messages to message bus
   gps.publishTo(&bus);
 
   // Connect ambient environment instrument to message bus sourcing ambient environment updates
-  ambient.subscribe(&bus);
+  ambient.subscribeTo(&bus);
 
   // Connect IMU instrument to message bus sourcing motion updates
-  imu.subscribe(&bus);
+  imu.subscribeTo(&bus);
   imu.publishTo(&bus);
 
-  windEstimator.subscribe(&bus);
+  windEstimator.subscribeTo(&bus);
 
-  // Subscribe modules that need bus updates.
-  // This should not exceed the bus router limit.
-  bus.subscribe(BLE::get());
+  BLE::get().subscribeTo(&bus);
 
-  buttonMonitor.subscribe(&bus);
-  buttonDispatcher.subscribe(&bus);
+  buttonMonitor.subscribeTo(&bus);
+  buttonDispatcher.subscribeTo(&bus);
 
   // Provide bus logger access to the bus
   busLog.setBus(&bus);

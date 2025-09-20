@@ -240,8 +240,14 @@ void FanetRadio::setupFanetHandler() {
 }
 
 void FanetRadio::subscribe(etl::imessage_bus* bus) {
-  bus->subscribe(*this);
-  bus->subscribe(neighbors);  // Subscribe the neighbors to any FanetPacket updates
+  if (!bus->subscribe(*this)) {
+    fatalError("FanetRadio couldn't subscribe to message bus");
+  };
+
+  // Subscribe the neighbors to any FanetPacket updates
+  if (!bus->subscribe(neighbors)) {
+    fatalError("FanetRadio couldn't subscribe neighbors to message bus");
+  }
 }
 
 void FanetRadio::setup() {

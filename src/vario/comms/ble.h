@@ -2,11 +2,12 @@
 
 #include <NimBLEDevice.h>
 #include "TinyGPSPlus.h"
+
+#include "dispatch/message_sink.h"
 #include "dispatch/message_types.h"
-#include "etl/message_router.h"
 
 // FreeRTOS Task for handling Bluetooth Operations
-class BLE : public etl::message_router<BLE, GpsMessage, FanetPacket> {
+class BLE : public MessageSink<BLE, GpsMessage, FanetPacket> {
  public:
   static BLE& get();
 
@@ -22,10 +23,9 @@ class BLE : public etl::message_router<BLE, GpsMessage, FanetPacket> {
   /// @brief ends the service, tears down bluetooth resources
   void end();
 
-  // On Receive handlers for the message router.
+  // MessageSink<BLE, GpsMessage, FanetPacket>
   void on_receive(const GpsMessage& msg);
   void on_receive(const FanetPacket& msg);
-
   void on_receive_unknown(const etl::imessage& msg) {}
 
  private:
@@ -34,8 +34,7 @@ class BLE : public etl::message_router<BLE, GpsMessage, FanetPacket> {
         pService(nullptr),
         pCharacteristic(nullptr),
         pAdvertising(nullptr),
-        started(false),
-        message_router(0) {}
+        started(false) {}
 
   bool started;  // Bluetooth advertising started
 

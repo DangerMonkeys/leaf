@@ -6,8 +6,8 @@
 #pragma once
 
 #include <Arduino.h>
-#include "etl/message_bus.h"
 
+#include "dispatch/message_sink.h"
 #include "dispatch/message_source.h"
 #include "dispatch/message_types.h"
 #include "hardware/power_control.h"
@@ -21,7 +21,7 @@
 
 // Barometer reporting altitude, adjusted altitude, climb rate, and other information.
 // Requires a pressure source.
-class Barometer : public etl::message_router<Barometer, PressureUpdate>,
+class Barometer : public MessageSink<Barometer, PressureUpdate>,
                   public IMessageSource,
                   public IPowerControl,
                   private StateAssertMixin<Barometer> {
@@ -30,9 +30,7 @@ class Barometer : public etl::message_router<Barometer, PressureUpdate>,
 
   State state() const { return state_; }
 
-  void subscribe(etl::imessage_bus* bus) { bus->subscribe(*this); }
-
-  // etl::message_router<Barometer, PressureUpdate>
+  // MessageSink<Barometer, PressureUpdate>
   void on_receive(const PressureUpdate& msg);
   void on_receive_unknown(const etl::imessage& msg) {}
 
