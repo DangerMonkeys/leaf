@@ -30,16 +30,17 @@ void Speaker::init(void) {
   if (!SPEAKER_VOLA_IOEX) pinMode(SPEAKER_VOLA, OUTPUT);
   if (!SPEAKER_VOLB_IOEX) pinMode(SPEAKER_VOLB, OUTPUT);
 
-  tLastUpdate_ = millis();
+  tLastUpdate_ = NOTE_DURATION_MS * (millis() / NOTE_DURATION_MS);
   state_ = State::Active;
-  setVolume(varioVolume_);
+  setVolume(varioVolume_, true);
 }
 
 void Speaker::mute() {
   assertState("Speaker::mute", State::Uninitialized, State::Active);
-  updateVarioNote(0);  // ensure we clear vario note
+  playingSound_ = false;  // clear FX sound
+  updateVarioNote(0);     // clear vario note
   if (state_ != State::Uninitialized) {
-    ledcWriteTone(SPEAKER_PIN, 0);  // mute speaker pin
+    playTone(0);  // mute speaker pin
   }
   speakerMute_ = true;
 }
@@ -59,8 +60,13 @@ void Speaker::setVolume(SoundChannel channel, SpeakerVolume volume) {
   }
 }
 
-void Speaker::setVolume(SpeakerVolume volume) {
+void Speaker::setVolume(SpeakerVolume volume, bool force) {
   assertState("Speaker::setVolume", State::Active);
+
+  if (currentVolume_ == volume && !force) {
+    // Already at specified volume; no need to change
+    return;
+  }
 
   // This routine isn't applicable for certain hardware variants
   if (SPEAKER_VOLA == NC || SPEAKER_VOLB == NC) return;
@@ -85,6 +91,7 @@ void Speaker::setVolume(SpeakerVolume volume) {
     default:
       fatalError("Speaker set to invalid volume %d", (uint8_t)volume);
   }
+  currentVolume_ = volume;
 }
 
 void Speaker::playSound(sound_t sound) {
@@ -166,111 +173,123 @@ void Speaker::updateVarioNote(int32_t verticalRate) {
   varioRestSamples_ = newVarioRestSamples;
 }
 
-void Speaker::debugPrint() {
-  static int microsLast = 0;
-  static int millisLast = 0;
-
-  int timeNowMillis = millis();
-  int timeNowMicros = micros();
-
-  Serial.print(timeNowMillis);
-  Serial.print(" : ");
-  Serial.print(timeNowMillis - millisLast);
-  microsLast = timeNowMicros;
-  millisLast = timeNowMillis;
-
-  Serial.print("  SPKR UPDT -- Note: ");
-  Serial.print(varioNote_);
-  Serial.print(" Play: ");
-
-  Serial.print(varioPlaySamples_);
-
-  Serial.print(" Rest: ");
-  Serial.print(varioRestSamples_);
-  Serial.println(" !");
-}
-
 bool Speaker::update() {
   if (state_ == State::Uninitialized) {
     init();
-  } else if (state_ != State::Active) {
+  }
+  if (state_ != State::Active) {
     fatalError("Unsupported Speaker::update state %d (%u)", nameOf(state_).c_str(), state_);
   }
 
-  unsigned long tNow = millis();
-  if (tNow - tLastUpdate_ < NOTE_DURATION_MS - TIMING_TOLERANCE_MS) {
-    // Nothing to do yet; we need to wait longer.
-    // ...but return true if a sound is still playing
-    return playingSound_;
-  }
-  tLastUpdate_ += NOTE_DURATION_MS;
-
-  // only play sound if speaker is not muted
+  // If speaker is muted, ensure silence and don't play sound
   if (speakerMute_) {
+    playTone(0);
     return false;
   }
 
-  // prioritize sound effects from UI & Button etc before we get to vario beeps
-  // but only play soundFX if system volume is on
+  if (!shouldUpdate()) {
+    return playingSound_;
+  }
+
   if (playingSound_ && fxVolume_ != SpeakerVolume::Off) {
-    setVolume(fxVolume_);
-    if (*soundPlaying_ != note::END) {
-      if (*soundPlaying_ != fxNoteLast_) {
-        // only change pwm if it's a different note, otherwise we get a little audio blip between
-        // the same notes
-        ledcWriteTone(SPEAKER_PIN, *soundPlaying_);
-      }
-      fxNoteLast_ = *soundPlaying_;  // save last note
+    // prioritize sound effects from UI & Button etc before we get to vario beeps
+    // but only play soundFX if system volume is on
+    return updateSound();
 
-      // if we've played this note for enough samples
-      if (++fxSampleCount_ >= FX_NOTE_SAMPLE_COUNT) {
-        soundPlaying_++;
-        fxSampleCount_ = 0;  // and reset sample count
-      }
-      return true;
-
-    } else {  // Else, we're at END_OF_TONE
-      ledcWriteTone(SPEAKER_PIN, 0);
-      playingSound_ = false;
-      fxNoteLast_ = note::NONE;
-      setVolume(varioVolume_);  // return to vario volume in prep for beeps
-      return false;
-    }
-
-    // if there's a vario note to play, and the vario volume isn't zero
   } else if (varioNote_ != note::NONE && varioVolume_ != SpeakerVolume::Off) {
-    //  Handle the beeps and rests of a vario sound "measure"
-    if (betweenVarioBeeps_) {
-      ledcWriteTone(SPEAKER_PIN, 0);  // "play" silence since we're resting between beeps
+    // if there's a vario note to play, and the vario volume isn't zero
+    updateVario();
+    return false;
 
-      // stop playing rest if we've done it long enough
-      if (++varioRestSampleCount_ >= varioRestSamples_) {
-        varioRestSampleCount_ = 0;
-        varioNoteLast_ = note::NONE;
-        betweenVarioBeeps_ = false;  // next time through we want to play sound
-      }
-
-    } else {
-      if (varioNote_ != varioNoteLast_) {
-        // play the note, but only if different, otherwise we get a little audio blip between the
-        // same successive notes (happens when vario is pegged and there's no rest period between)
-        ledcWriteTone(SPEAKER_PIN, varioNote_);
-      }
-      varioNoteLast_ = varioNote_;
-
-      if (++varioPlaySampleCount_ >= varioPlaySamples_) {
-        varioPlaySampleCount_ = 0;
-        if (varioRestSamples_)
-          betweenVarioBeeps_ = true;  // next time through we want to play sound
-      }
-    }
   } else {
-    // play silence (if timer is configured for auto-reload, we have to do this here because
-    // sound_varioNote might have been set to 0 while we were beeping, and then we'll keep beeping)
-    ledcWriteTone(SPEAKER_PIN, 0);
+    // play silence
+    playTone(0);
   }
 
   return false;
+}
+
+bool Speaker::shouldUpdate() {
+  unsigned long tNow = millis();
+  // Nominally wait NOTE_DURATION_MS intervals between updates, but allow an update to happen up to
+  // TIMING_TOLERANCE_MS before its actual target time.  In diagrams below, NOTE_DURATION_MS
+  // intervals are |, tLastUpdate_ is x, tNow is y, and tLastUpdate_ should be updated to z.
+  // TIMING_TOLERANCE_MS is one character wide.
+  // x-------y-|---------|---------|---------| (no action)
+  // x--------y|---------z---------|---------|
+  // x---------y---------z---------|---------|
+  // x---------|y--------z---------|---------|
+  // x---------|-y-------z---------|---------|
+  // x---------|-------y-z---------|---------|
+  // x---------|--------y|---------z---------|
+  // x---------|---------y---------z---------|
+  // x---------|---------|y--------z---------|
+  // x---------|---------|-y-------z---------|
+
+  // n is the number of NOTE_DURATION_MS intervals that have elapsed, or almost elapsed, since
+  // tLastUpdate_
+  uint32_t n = (tNow + TIMING_TOLERANCE_MS - tLastUpdate_) / NOTE_DURATION_MS;
+  if (n == 0) {
+    // Nothing to do yet; we need to wait longer.
+    return false;
+  }
+  if (n >= 2) {
+    Serial.printf("Speaker::update skipped %d intervals\n", n - 1);
+  }
+  tLastUpdate_ += n * NOTE_DURATION_MS;
+  return true;
+}
+
+bool Speaker::updateSound() {
+  setVolume(fxVolume_);
+  if (*soundPlaying_ != note::END) {
+    playTone(*soundPlaying_);
+    fxNoteLast_ = *soundPlaying_;  // save last note
+
+    // if we've played this note for enough samples
+    if (++fxSampleCount_ >= FX_NOTE_SAMPLE_COUNT) {
+      soundPlaying_++;
+      fxSampleCount_ = 0;  // and reset sample count
+    }
+    return true;
+
+  } else {  // Else, we're at END_OF_TONE
+    playTone(0);
+    playingSound_ = false;
+    fxNoteLast_ = note::NONE;
+    return false;
+  }
+}
+
+void Speaker::updateVario() {
+  setVolume(varioVolume_);
+  //  Handle the beeps and rests of a vario sound "measure"
+  if (betweenVarioBeeps_) {
+    playTone(0);  // "play" silence since we're resting between beeps
+
+    // stop playing rest if we've done it long enough
+    if (++varioRestSampleCount_ >= varioRestSamples_) {
+      varioRestSampleCount_ = 0;
+      varioNoteLast_ = note::NONE;
+      betweenVarioBeeps_ = false;  // next time through we want to play sound
+    }
+
+  } else {
+    playTone(varioNote_);
+    varioNoteLast_ = varioNote_;
+
+    if (++varioPlaySampleCount_ >= varioPlaySamples_) {
+      varioPlaySampleCount_ = 0;
+      if (varioRestSamples_) betweenVarioBeeps_ = true;  // next time through we want to play sound
+    }
+  }
+}
+
+void Speaker::playTone(uint32_t freq) {
+  if (freq != lastTone_) {
+    ledcWriteTone(SPEAKER_PIN, freq);
+    lastTone_ = freq;
+  }
 }
 
 void Speaker::onUnexpectedState(const char* action, State actual) const {
