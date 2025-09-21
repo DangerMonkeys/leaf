@@ -14,6 +14,7 @@
 #include "storage/sd_card.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
+#include "ui/display/pages/dialogs/page_alert_timerAutoStop.h"
 #include "ui/display/pages/fanet/page_fanet_stats.h"
 #include "ui/settings/settings.h"
 #include "utils/string_utils.h"
@@ -32,6 +33,9 @@ Igc igcFlight;
 
 // used to keep track of current flight statistics
 FlightStats logbook;
+
+// Alert page to warn if auto-stop is about to occur
+PageAlertTimerAutoStop pageAlertTimerAutoStop;
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // UPDATE - Main function to run every second
@@ -157,6 +161,10 @@ bool flightTimer_autoStop() {
 
     // if all three conditions are met, increment the counter
     autoStopCounter++;
+    // alert the user if we've been in this state for a little while and are about to stop
+    if (autoStopCounter >= AUTO_STOP_MIN_SEC / 2) {
+      pageAlertTimerAutoStop.show();
+    }
     // and check if we've been in this state long enough to trigger auto-stop
     if (autoStopCounter >= AUTO_STOP_MIN_SEC) {
       autoStopCounter = 0;  // reset counter for next time
@@ -170,6 +178,15 @@ bool flightTimer_autoStop() {
   }
   return false;
 }
+
+uint8_t flightTimer_getAutoStopCountRemaining() {
+  if (autoStopCounter)
+    return AUTO_STOP_MIN_SEC - autoStopCounter;
+  else
+    return 0;
+}
+
+void flightTimer_resetAutoStop() { autoStopCounter = 0; }
 
 //////////////////////////////////////////////////////////////////////////////////
 // FLight Timer Management Functions

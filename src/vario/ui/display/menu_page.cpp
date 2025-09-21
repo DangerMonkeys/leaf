@@ -2,6 +2,7 @@
 
 #include "etl/array.h"
 #include "ui/display/display.h"
+#include "ui/display/display_fields.h"
 #include "ui/display/fonts.h"
 #include "ui/input/buttons.h"
 
@@ -84,11 +85,7 @@ void SimpleSettingsMenuPage::draw() {
   u8g2.firstPage();
   do {
     // Title
-    u8g2.setFont(leaf_6x12);
-    u8g2.setCursor(2, 12);
-    u8g2.setDrawColor(1);
-    u8g2.print(get_title());
-    u8g2.drawHLine(0, 15, 95);
+    display_menuTitle(String(get_title()));
 
     // Draw the cursor selection box
     const auto BOX_X = 74 - 10;
