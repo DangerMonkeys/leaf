@@ -8,4 +8,5 @@ class PageAlertTimerAutoStop : public SimpleSettingsMenuPage {
   void draw_extra() override;
   void show();
   void setting_change(Button dir, ButtonEvent state, uint8_t count) override;
+  void closeAlert() { pop_page(); }
 };

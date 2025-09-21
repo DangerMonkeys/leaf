@@ -49,10 +49,10 @@ void log_update() {
       // Otherwise, there's nothing to do here.
       return;
     }
-    // Check auto-stop criteria if we ARE flying
+    // Check auto-stop criteria if we have started a flight (and AutoStop is ON)
   } else {
-    if (flightTimer_autoStop()) {
-      if (settings.log_autoStop) flightTimer_stop();  // stop the log if auto-stop is on
+    if (settings.log_autoStop) {
+      if (flightTimer_autoStop()) flightTimer_stop();  // stop the log if auto-stop is on
     }
   }
 
@@ -148,6 +148,8 @@ bool flightTimer_autoStart() {
   return startTheTimer;
 }
 
+bool showingAlert_ = false;
+
 bool flightTimer_autoStop() {
   if (baro.state() != Barometer::State::Ready) {
     return false;  // can't autoStop without the Baro
@@ -162,16 +164,20 @@ bool flightTimer_autoStop() {
     // if all three conditions are met, increment the counter
     autoStopCounter++;
     // alert the user if we've been in this state for a little while and are about to stop
-    if (autoStopCounter >= AUTO_STOP_MIN_SEC / 2) {
+    if (autoStopCounter == AUTO_STOP_MIN_SEC / 2) {
       pageAlertTimerAutoStop.show();
+      showingAlert_ = true;
+      speaker.playSound(fx::cancel);
     }
     // and check if we've been in this state long enough to trigger auto-stop
     if (autoStopCounter >= AUTO_STOP_MIN_SEC) {
       autoStopCounter = 0;  // reset counter for next time
+      if (showingAlert_) pageAlertTimerAutoStop.closeAlert();
       return true;
     }
   } else {
     autoStopCounter = 0;
+    if (showingAlert_) pageAlertTimerAutoStop.closeAlert();
 
     // reset the comparison altitude to present altitude, since it's still changing
     autoStopAltitude = baro.alt();
@@ -186,7 +192,10 @@ uint8_t flightTimer_getAutoStopCountRemaining() {
     return 0;
 }
 
-void flightTimer_resetAutoStop() { autoStopCounter = 0; }
+void flightTimer_resetAutoStop() {
+  autoStopCounter = 0;
+  showingAlert_ = false;
+}
 
 //////////////////////////////////////////////////////////////////////////////////
 // FLight Timer Management Functions
