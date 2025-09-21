@@ -46,6 +46,8 @@ void log_checkMinMaxValues(void);
 
 // Returns if we should start recording a flight based on movemnt
 bool flightTimer_autoStop(void);
+uint8_t flightTimer_getAutoStopCountRemaining(void);
+void flightTimer_resetAutoStop(void);
 
 // Returns if we should stop recording a flight based on idle-ness
 bool flightTimer_autoStart(void);
