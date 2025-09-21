@@ -36,7 +36,7 @@ void WindEstimator::on_receive(const GpsReading& msg) {
     GroundVelocity v = {.trackAngle = (float)(DEG_TO_RAD * gps.course.deg()),
                         .speed = (float)gps.speed.mps()};
 
-    if (getAreWeFlying()) submitVelocityForWindEstimate(v);
+    if (flightTimer_isRunning()) submitVelocityForWindEstimate(v);
   }
 }
 
