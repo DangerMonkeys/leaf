@@ -41,7 +41,7 @@ typedef uint8_t SettingLogFormat;
 #define DEF_CLIMB_AVERAGE 1     // in units of 5-seconds.  (def = 1 = 5sec)
 #define DEF_CLIMB_START 5       // cm/s when climb note begins
 #define DEF_VOLUME_VARIO 1      // 0=off, 1=low, 2=med, 3=high
-#define DEF_QUIET_MODE 0        // 0 = off, 1 = on (ON means no beeping until flight recording)
+#define DEF_QUIET_MODE 1        // 0 = off, 1 = on (ON means no beeping until flight recording)
 // 0 == linear pitch interpolation; 1 == major C-scale for climb, minor scale for descent
 #define DEF_VARIO_TONES 0
 // In units of 10 cm/s (a sink rate of only 30cm/s means the air itself is going up).  '0' is off.
@@ -55,17 +55,16 @@ typedef uint8_t SettingLogFormat;
 #define DEF_DISTANCE_FLOWN 0           // 0 = xc distance, 1 = path distance
 #define DEF_GPS_SETTING 1              // 0 = GPS off, 1 = GPS on, 2 = power save every N sec, etc
 #define DEF_TRACK_SAVE 1               // save track log?
-#define DEF_AUTO_START 0               // 1 = ENABLE, 0 = DISABLE
-#define DEF_AUTO_STOP 0                // 1 = ENABLE, 0 = DISABLE
+#define DEF_AUTO_START 1               // 1 = ENABLE, 0 = DISABLE
+#define DEF_AUTO_STOP 1                // 1 = ENABLE, 0 = DISABLE
 #define DEF_LOG_FORMAT LOG_FORMAT_IGC  // IGC or KML
 
 // Default System Settings
 
 // Time Zone offset in minutes. UTC -8 (PST) would therefore be -8*60, or 480
 // This allows us to cover all time zones, including the :30 minute and :15 minute ones
-#define DEF_TIME_ZONE 0
+#define DEF_TIME_ZONE -420   // -420 min = UTC -7 hrs (PDT)
 #define DEF_VOLUME_SYSTEM 1  // 0=off, 1=low, 2=med, 3=high
-#define DEF_ECO_MODE 0       // default off to allow reprogramming easier
 #define DEF_AUTO_OFF 0       // 1 = ENABLE, 0 = DISABLE
 #define DEF_WIFI_ON 0        // default wifi off
 #define DEF_BLUETOOTH_ON 0   // default bluetooth off
@@ -75,8 +74,8 @@ typedef uint8_t SettingLogFormat;
 #define DEF_DEV_MENU 0                // default hide the dev menu
 #define DEF_DEV_START_LOG_AT_BOOT 0   // default do not start log at boot
 #define DEF_DEV_START_DISCONNECTED 0  // default do not disconnect hardware at boot
-#define DEF_DEV_FANET_FWD \
-  1  // default DO rebroadcast Fanet packets (generally only turned off for range testing)
+#define DEF_DEV_FANET_FWD 0           //  DO rebroadcast Fanet packets (turn off for range testing)
+#define DEF_ECO_MODE 0                // default off to allow reprogramming easier
 
 // Boot Flags
 // Boot-to-ON Flag (when resetting from system updates,
@@ -87,23 +86,23 @@ typedef uint8_t SettingLogFormat;
 // Display Settings
 #define DEF_CONTRAST 7  // default contrast setting
 // Primary Alt field on Nav page (Baro Alt, GPS Alt, Alt above waypoint, etc)
-#define DEF_NAVPG_ALT_TYP 0
-#define DEF_THMPG_ALT_TYP 0   // Primary Alt field on Thermal page
-#define DEF_THMPG_ALT2_TYP 0  // Secondary Alt field on Thermal page
+#define DEF_NAVPG_ALT_TYP 1
+#define DEF_THMPG_ALT_TYP 1   // Primary Alt field on Thermal page
+#define DEF_THMPG_ALT2_TYP 1  // Secondary Alt field on Thermal page
 #define DEF_THMPG_USR1 0      // User field 1 on Thermal page
 #define DEF_THMPG_USR2 1      // User field 2 on Thermal page
 #define DEF_SHOW_DEBUG 0      // Enable debug page
 #define DEF_SHOW_THRM 1       // Enable thermal page
 #define DEF_SHOW_THRM_ADV 0   // Enable thermal adv page
-#define DEF_SHOW_NAV 1        // Enable nav page
+#define DEF_SHOW_NAV 0        // Enable nav page
 
 // Default Unit Values
-#define DEF_UNITS_climb 0     // 0 (m per second), 	1 (feet per minute)
-#define DEF_UNITS_alt 0       // 0 (meters), 				1 (feet)
-#define DEF_UNITS_temp 0      // 0 (celcius), 			1 (fahrenheit)
-#define DEF_UNITS_speed 0     // 0 (kph), 				  1 (mph)
-#define DEF_UNITS_heading 0   // 0 (342 deg), 		  1 (NNW)
-#define DEF_UNITS_distance 0  // 0 (km, or m for <1km),	1 (miles, or ft for < 1000 feet)
+#define DEF_UNITS_climb 1     // 0 (m per second), 	1 (feet per minute)
+#define DEF_UNITS_alt 1       // 0 (meters), 				1 (feet)
+#define DEF_UNITS_temp 1      // 0 (celcius), 			1 (fahrenheit)
+#define DEF_UNITS_speed 1     // 0 (kph), 				  1 (mph)
+#define DEF_UNITS_heading 1   // 0 (342 deg), 		  1 (NNW)
+#define DEF_UNITS_distance 1  // 0 (km, or m for <1km),	1 (miles, or ft for < 1000 feet)
 #define DEF_UNITS_hours 1     // 0 (24-hour time),  1 (12 hour time),
 
 class Settings {
