@@ -137,13 +137,6 @@ bool flightTimer_autoStart() {
     }
   }
 
-  // Serial.print("S T A R T   Counter: ");
-  // Serial.print(autoStartCounter);
-  // Serial.print("   Alt Diff: ");
-  // Serial.print(altDifference);
-  // Serial.print("  StartTheTimer? : ");
-  // Serial.println(startTheTimer);
-
   if (startTheTimer) {
     autoStartCounter = 0;
   }
@@ -152,13 +145,8 @@ bool flightTimer_autoStart() {
 }
 
 bool flightTimer_autoStop() {
-  bool stopTheTimer = false;  // default to not auto-stop
-
-  // we will auto-stop only if BOTH the GPS speed AND the Altitude change trigger the stopping
-  // thresholds.
-
   if (baro.state() != Barometer::State::Ready) {
-    return false;
+    return false;  // can't autoStop without the Baro
   }
 
   int32_t altDifference = abs(baro.alt() - autoStopAltitude);
@@ -171,8 +159,8 @@ bool flightTimer_autoStop() {
     autoStopCounter++;
     // and check if we've been in this state long enough to trigger auto-stop
     if (autoStopCounter >= AUTO_STOP_MIN_SEC) {
-      stopTheTimer = true;
       autoStopCounter = 0;  // reset counter for next time
+      return true;
     }
   } else {
     autoStopCounter = 0;
@@ -180,20 +168,7 @@ bool flightTimer_autoStop() {
     // reset the comparison altitude to present altitude, since it's still changing
     autoStopAltitude = baro.alt();
   }
-
-  // Serial.print(" ** STOP ** Counter: ");
-  // Serial.print(autoStopCounter);
-  // Serial.print("   Alt Diff: ");
-  // Serial.print(altDifference);
-  // Serial.print("  stopTheTimer? : ");
-  // Serial.println(stopTheTimer);
-
-  if (stopTheTimer) {
-    // reset initial alt (to enable properly checking again for auto-start conditions)
-    baro.setAltInitial();
-  }
-
-  return stopTheTimer;
+  return false;
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -247,6 +222,10 @@ void flightTimer_stop() {
 
   // Stop the Fanet radio
   fanetRadio.end();
+
+  // reset initial alt
+  // (to enable properly checking again for auto-start conditions now that timer is stopped)
+  baro.setAltInitial();
 }
 
 void flightTimer_toggle() {
