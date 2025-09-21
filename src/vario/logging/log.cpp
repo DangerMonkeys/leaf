@@ -19,13 +19,6 @@
 #include "utils/string_utils.h"
 #include "wind_estimate/wind_estimate.h"
 
-// track if we're "flying" separate from if we're recording a log.  This allows us to enable
-// certain in-flight features (like vario quiet_mode) without having to be recording a log.
-bool weAreFlying = false;
-bool getAreWeFlying() { return weAreFlying; }
-
-// Local variables
-
 // This file keeps track of logging a flight to persistent storage.  As the operator may
 // wish to start their flight and flight log before we have a "fix", know the time or
 // location, we keep track of their intent to log, and start the flight record when we have
@@ -44,19 +37,17 @@ FlightStats logbook;
 // UPDATE - Main function to run every second
 void log_update() {
   // Check auto-start criteria if we haven't begun a flight yet
-  if (!flight && !weAreFlying) {
+  if (!flight) {
     // If auto start is configured, and we match the criteria, start the flight
     if (flightTimer_autoStart()) {
-      weAreFlying = true;  // if we meet the flying conditions, we're flying!
       if (settings.log_autoStart) flightTimer_start();  // start a log if auto-start is on
     } else {
       // Otherwise, there's nothing to do here.
       return;
     }
     // Check auto-stop criteria if we ARE flying
-  } else if (weAreFlying) {
+  } else {
     if (flightTimer_autoStop()) {
-      weAreFlying = false;  // we're not flying if we meet auto-stop conditions
       if (settings.log_autoStop) flightTimer_stop();  // stop the log if auto-stop is on
     }
   }
@@ -170,23 +161,23 @@ bool flightTimer_autoStop() {
     return false;
   }
 
-  // First check if altitude is stable
-  int32_t altDifference = baro.alt() - autoStopAltitude;
-  if (altDifference < 0) altDifference *= -1;
-  if (altDifference < AUTO_STOP_MAX_ALT) {
-    // then check if GPS speed is slow enough
-    if (gps.speed.mph() < AUTO_STOP_MAX_SPEED) {
-      autoStopCounter++;
-      if (autoStopCounter >= AUTO_STOP_MIN_SEC) {
-        stopTheTimer = true;
-        autoStopCounter = 0;  // reset counter for next time
-      }
-    } else {
-      autoStopCounter = 0;
+  int32_t altDifference = abs(baro.alt() - autoStopAltitude);
+
+  if ((altDifference < AUTO_STOP_MAX_ALT) &&      // Check if altitude is stable
+      (gps.speed.mph() < AUTO_STOP_MAX_SPEED) &&  // And GPS speed is slow enough
+      (imu.accelValid() && abs(imu.getAccel() - 1.0f) < AUTO_STOP_MAX_ACCEL)) {  // and IMU is calm
+
+    // if all three conditions are met, increment the counter
+    autoStopCounter++;
+    // and check if we've been in this state long enough to trigger auto-stop
+    if (autoStopCounter >= AUTO_STOP_MIN_SEC) {
+      stopTheTimer = true;
+      autoStopCounter = 0;  // reset counter for next time
     }
+  } else {
+    autoStopCounter = 0;
 
     // reset the comparison altitude to present altitude, since it's still changing
-  } else {
     autoStopAltitude = baro.alt();
   }
 
@@ -214,7 +205,6 @@ bool flightTimer_isLogging() { return flightTimer_isRunning() && (bool)flight->s
 
 // start timer
 void flightTimer_start() {
-  weAreFlying = true;  // we're "flying" when we start a log
   // Short-circuit if a flight is already started
   if (flight != NULL) {
     return;
@@ -241,7 +231,6 @@ void flightTimer_start() {
 
 // stop timer
 void flightTimer_stop() {
-  weAreFlying = false;                // we're not "flying" when we stop a log
   windEstimator.clearWindEstimate();  // clear the wind estimate when we stop a flight
   // Short Circuit, no need to do anything if there's no flight recording.
   if (flight == NULL) {

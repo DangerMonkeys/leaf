@@ -280,7 +280,7 @@ void Speaker::updateVario() {
 
     if (++varioPlaySampleCount_ >= varioPlaySamples_) {
       varioPlaySampleCount_ = 0;
-      if (varioRestSamples_) betweenVarioBeeps_ = true;  // next time through we want to play sound
+      if (varioRestSamples_) betweenVarioBeeps_ = true;  // next time through we want to rest
     }
   }
 }

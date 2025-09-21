@@ -12,10 +12,10 @@
 #define AUTO_START_MIN_SEC 3    // seconds above the min speed to auto-start
 #define AUTO_START_MIN_ALT 500  // cm altitude change for timer auto-start
 
-#define AUTO_STOP_MAX_SPEED 3   // mph max -- must be below this speed for timer to auto-stop
-#define AUTO_STOP_MAX_ACCEL 10  // Max accelerometer signal
-#define AUTO_STOP_MAX_ALT 200   // cm altitude change for timer auto-stop
-#define AUTO_STOP_MIN_SEC 10    // seconds of low speed / low accel for timer to auto-stop
+#define AUTO_STOP_MAX_SPEED 3     // mph max -- must be below this speed for timer to auto-stop
+#define AUTO_STOP_MAX_ACCEL 0.2f  // Max accelerometer signal (m/s^2) to consider "not moving"
+#define AUTO_STOP_MAX_ALT 100     // cm altitude change for timer auto-stop
+#define AUTO_STOP_MIN_SEC 20      // seconds of low speed / low accel for timer to auto-stop
 
 // Main Log functions
 void log_update(void);  // Update function to run every second
@@ -49,8 +49,5 @@ bool flightTimer_autoStop(void);
 
 // Returns if we should stop recording a flight based on idle-ness
 bool flightTimer_autoStart(void);
-
-// check if we're flying (used for functions that should only work in-flight, like wind estimates)
-bool getAreWeFlying(void);
 
 extern FlightStats logbook;
