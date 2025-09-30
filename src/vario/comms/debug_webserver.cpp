@@ -2,6 +2,7 @@
 #include <WiFi.h>
 #include "WebServer.h"
 #include "comms/fanet_radio.h"
+#include "diagnostics/memory_report.h"
 #include "etl/string_stream.h"
 #include "storage/sd_card.h"
 #include "ui/display/display.h"
@@ -34,6 +35,7 @@ void webserver_setup() {
             <li><a href="/screenshot" target="_blank">Download Screenshot</a></li>
             <li><a href="/mass_storage" target="_blank">Start Mass Storage</a></li>
             <li><a href="/fanet" target="_blank">FANet Message Stats</a></li>
+            <li><a href="/memory" target="_blank">Memory Usage Stats</a></li>
           </ul>
         </body>
       </html>
@@ -165,6 +167,8 @@ void webserver_setup() {
     sdcard.setupMassStorage();
     server.send(200, "text/html", "OK!");
   });
+
+  server.on("/memory", HTTP_GET, []() { server.send(200, "text/plain", getMemoryUsage()); });
 
   // Give it a chance to connect so this debug message means something.
   delay(250);
