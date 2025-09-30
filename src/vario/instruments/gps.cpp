@@ -124,8 +124,11 @@ void LeafGPS::on_receive(const GpsMessage& msg) {
       char a = msg.nmea[i];
       bool newSentence = gps.encode(a);
       if (newSentence) {
-        fatalError("newSentence encountered in the middle of the line of text '%s'",
-                   msg.nmea.c_str());
+        // We've seen an instance of crashing due to the GPS Message being corrupt.
+        // For now, just carry on!
+        Serial.printf("newSentence encountered in the middle of the line of text '%s'\n",
+                      msg.nmea.c_str());
+        return;
       }
     }
     newSentence = gps.encode('\r');
