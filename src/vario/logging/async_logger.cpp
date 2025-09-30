@@ -1,10 +1,12 @@
-#include "file_writer.h"
+#include "async_logger.h"
 
 RingbufHandle_t AsyncLogger::rb = nullptr;
 TaskHandle_t AsyncLogger::task = nullptr;
 size_t AsyncLogger::freeLowWaterMark =
     0;  // Size in bytes of available space in the buffer, low watermark
-size_t AsyncLogger::bufferSize = 0;  // Size of the ring buffer
+size_t AsyncLogger::bufferSize = 0;                   // Size of the ring buffer
+uint32_t AsyncLogger::droppedEntries = 0;             // Number of dropped logs
+unsigned long AsyncLogger::writeHighWatermarkUs = 0;  // Write to SD card.
 
 bool AsyncLogger::begin(size_t buffer_size, uint32_t task_stack, UBaseType_t task_prio) {
   if (rb != nullptr) {
@@ -33,7 +35,8 @@ bool AsyncLogger::enqueue(File* file, const char* data, uint16_t len, TickType_t
   size_t total_size = sizeof(LogMsgHeader) + len;
   void* buf = nullptr;
   if (xRingbufferSendAcquire(rb, &buf, total_size, timeout) != pdTRUE || !buf) {
-    return false;  // buffer full or timeout
+    droppedEntries++;  // Increase the dropped messages counter.
+    return false;      // buffer full or timeout
   }
 
   LogMsgHeader* msg = (LogMsgHeader*)buf;
@@ -66,7 +69,7 @@ bool AsyncLogger::enqueuef(File* file, const char* format, ...) {
     len = sizeof(buffer) - 1;
   }
 
-  return enqueue(file, buffer, len, pdMS_TO_TICKS(100));  // or pass timeout differently
+  return enqueue(file, buffer, len);
 }
 
 void AsyncLogger::end() {
@@ -118,7 +121,16 @@ void AsyncLogger::writerTask(void* arg) {
 
       // Write the payload (just after the header) to the SD card.
       if (header->file) {
+        // Write the payload to the file and time how long the call took.
+        auto before = micros();
         header->file->write((uint8_t*)payload, header->len);
+        auto duration = micros() - before;
+
+        // Write a high watermark for how long it took to write this to disk.
+        // On ESP32 this is one word size, so reads/writes are atomic
+        if (duration > writeHighWatermarkUs) {
+          writeHighWatermarkUs = duration;
+        }
       }
 
       // Update the low watermark

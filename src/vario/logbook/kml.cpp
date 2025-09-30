@@ -1,7 +1,7 @@
 #include "kml.h"
 
 #include "instruments/gps.h"
-#include "logging/file_writer.h"
+#include "logging/async_logger.h"
 #include "time.h"
 #include "ui/settings/settings.h"
 #include "utils/string_utils.h"

@@ -3,7 +3,7 @@
 #include <SD_MMC.h>
 #include <time.h>
 
-#include "file_writer.h"
+#include "async_logger.h"
 #include "instruments/gps.h"
 #include "storage/sd_card.h"
 #include "system/version_info.h"
@@ -14,8 +14,9 @@ BusLogger busLog;
 
 void BusLogger::statsCallback(TimerHandle_t x) {
   // Prints stats to the file.
-  busLog.file_.printf("S%d,%d\n", millis() - busLog.tStart_,
-                      AsyncLogger::getFreeSizeLowWatermark());
+  AsyncLogger::enqueuef(&busLog.file_, "S%d,%d,%d,%d\n", millis() - busLog.tStart_,
+                        AsyncLogger::getFreeSizeLowWatermark(), AsyncLogger::getDropped(),
+                        AsyncLogger::getWriteTimeHighWatermarkUs());
 }
 
 namespace {

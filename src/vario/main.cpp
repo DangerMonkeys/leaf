@@ -14,8 +14,8 @@
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "instruments/imu.h"
+#include "logging/async_logger.h"
 #include "logging/buslog.h"
-#include "logging/file_writer.h"
 #include "power.h"
 #include "taskman.h"
 #include "ui/audio/sound_effects.h"
@@ -44,7 +44,8 @@ void setup() {
   Serial.println("Starting Setup");
 
   // Initialize the async file writer
-  AsyncLogger::begin(4096U, 4096, 5);
+  // Can adjust to free up memory as needed
+  AsyncLogger::begin(8000U, 4096, 5);
 
   // Initialize the shared bus
   spi_init();

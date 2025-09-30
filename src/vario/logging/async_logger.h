@@ -34,10 +34,24 @@ class AsyncLogger {
   // Gets and clears the size low watermark.
   static size_t getFreeSizeLowWatermark();
 
+  /// @brief Gets the high watermark of how long it took to write to the SD card.  Clears on read
+  /// @return SD card write duration high watermark in uS.
+  static unsigned long getWriteTimeHighWatermarkUs() {
+    auto ret = writeHighWatermarkUs;
+    writeHighWatermarkUs = 0;
+    return ret;
+  }
+
+  // Returns the number of messages that have been dropped due to the queue being full
+  static uint32_t getDropped() { return droppedEntries; }
+
  private:
   static void writerTask(void* arg);
   static RingbufHandle_t rb;
   static TaskHandle_t task;
   static size_t freeLowWaterMark;  // Size in bytes of available space in the buffer, low watermark
   static size_t bufferSize;        // Size of the ring buffer
+  static uint32_t droppedEntries;  // Number of log messages dropped (buffer was full)
+  static unsigned long
+      writeHighWatermarkUs;  // High watermark of how long it took to write to the SD card.
 };
