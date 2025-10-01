@@ -238,7 +238,8 @@ void BLE::sendFanetUpdate(FanetPacket& msg) {
   // See https://
   // www.flarm.com/wp-content/uploads/2024/04/FTD-012-Data-Port-Interface-Control-Document-ICD-7.19.pdf
 
-  char stringified[100];
+  NMEAString stringified;
+  etl::string_stream stream(stringified);
 
   // Aircraft type does not marry up between PFLAA and Fanet types
   char aircraftType;
@@ -279,31 +280,35 @@ void BLE::sendFanetUpdate(FanetPacket& msg) {
     gpsAltitude = gps.altitude.meters();
   }
 
-  snprintf(stringified, sizeof(stringified),
-           ("$PFLAA,"
-            "0,"       // 0 means no alarm, informational
-            "%d,"      // TODO:  Relative north in meters from current location
-            "%d,"      // Relative east from current location
-            "%d,"      // Relative verticle from current location
-            "2,"       // IDType:  2 for Fixed FLARM Id (we'll re-use for Fanet-Flarm)
-            "%s,"      // ID of aircraft
-            "%d,"      // Track heading?  In degrees
-            ","        // Turn rate (currently blank)
-            "%.2f,"    // Ground speed in meters per second
-            "%.2f,"    // Climb rate (in m/s)
-            "%c,"      // Aircraft type
-            "%d,"      // No track
-            "0,"       // source is FLARM
-            "%.2f*\n"  // RSSI
-            ),
-           (int)northOffset, (int)eastOffset, payload.altitude() - (int)gpsAltitude,
-           FanetAddressToString(packet.source()), static_cast<int>(payload.groundTrack()),
-           payload.speed() / 3.6, payload.climbRate(), aircraftType, payload.tracking() ? 0 : 1,
-           msg.rssi);
+  // Example of one that works: $PFLAA,0,-4,9,-3,2,FB5F20,98,,0,0.0,7,0*0B
+  char speedBuf[16];
+  char climbBuf[16];
 
-  Serial.println(stringified);
-  pCharacteristic->setValue((const uint8_t*)stringified, strlen(stringified));
+  // Format the floats
+  snprintf(speedBuf, sizeof(speedBuf), "%.2f", payload.speed() / 3.6);
+  snprintf(climbBuf, sizeof(climbBuf), "%.2f", payload.climbRate());
+
+  // Now use them in the stream
+  stream << "$PFLAA,"                             // FLARM/FANET Aircraft Update
+         << 0 << ","                              // 0 means no alarm, informational
+         << static_cast<int>(northOffset) << ","  // Relative north in meters
+         << static_cast<int>(eastOffset) << ","   // Relative east
+         << (payload.altitude() - static_cast<int>(gpsAltitude)) << ","  // Relative vertical
+         << 2 << ","                                                     // IDType
+         << FanetAddressToString(packet.source()).c_str() << ","         // ID of aircraft
+         << static_cast<int>(payload.groundTrack()) << ","               // Track heading
+         << ","                                                          // Turn rate
+         << speedBuf << ","                                              // Ground speed
+         << climbBuf << ","                                              // Climb rate
+         << etl::string_view(&aircraftType, 1) << ","                    // Aircraft type
+         << (payload.tracking() ? 0 : 1) << ","                          // No track
+         << 0 << ","                                                     // source is FLARM
+         << msg.rssi;                                                    // RSSI
+
+  addChecksumToNMEA(stringified);
+  pCharacteristic->setValue((const uint8_t*)stringified.c_str(), stringified.size());
   pCharacteristic->notify();
+  Serial.println(stringified.c_str());
 }
 
 void BLE::addChecksumToNMEA(etl::istring& nmea) {

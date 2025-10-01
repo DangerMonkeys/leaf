@@ -336,14 +336,23 @@ void FanetRadio::begin(const FanetRadioRegion& region) {
   LockGuard lock(x_fanet_manager_mutex);
 
   Serial.println("[FanetRadio] Initializing");
+
   // Initialize the radio for the settings of the given region
+  // A note on SYNC-WORD:
+  // The setSyncWord 0xF1, 0x44 ends up doing some bit shifting
+  // https://github.com/lyusupov/SoftRF/blob/00209ce2eb4447ea4404901dc0b9c102f736ca87/software/firmware/source/libraries/RadioLib/src/modules/SX126x/SX126x.cpp#L944C55-L953
+  // and ends up setting 0xF4 0x14 into the registers.
+  // This is the value as specified in the FANET spec for SX1262 chips.
+  // We got these values too from OGN-Tracker
 
   switch (region) {
     case FanetRadioRegion::US:
       radioInitState = radio->begin(920.800f, 500.0f, 7U, 5U, 0xF1, 22U, 8U, 1.8f, false);
+      radio->setSyncWord(0xF1, 0x44);
       break;
     case FanetRadioRegion::EUROPE:
       radioInitState = radio->begin(868.200f, 250.0f, 7U, 5U, 0xF1, 22U, 8U, 1.8f, false);
+      radio->setSyncWord(0xF1, 0x44);
       break;
   }
 
