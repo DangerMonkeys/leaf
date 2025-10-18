@@ -114,7 +114,7 @@ class PageMenuSystemWifi : public SimpleSettingsMenuPage {
 
   const char* get_title() const override { return "Wifi"; }
   etl::array_view<const char*> get_labels() const override {
-    static etl::array labels{"Setup", "Update"};
+    static etl::array labels{"Setup", "Update FW"};
     return etl::array_view<const char*>(labels);
   }
   virtual void closed(bool removed_from_stack) override;
