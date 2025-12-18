@@ -211,8 +211,15 @@ void Power::maybeStartBusLog() {
 void Power::shutdown() {
   Serial.println("power_shutdown");
 
+  // Show user we're shutting down
   display.clear();
   display_off_splash();
+
+  // save logs and system data
+  if (flightTimer_isRunning()) {
+    flightTimer_stop();
+  }
+
   baro.sleep();  // stop getting climbrate updates so we don't hear vario beeps while shutting down
 
   // play shutdown sound
@@ -221,11 +228,6 @@ void Power::shutdown() {
   // loop until sound is done playing
   while (speaker.update()) {
     delay(10);
-  }
-
-  // saving logs and system data
-  if (flightTimer_isRunning()) {
-    flightTimer_stop();
   }
 
   // save any changed settings this session
