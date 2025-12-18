@@ -124,6 +124,10 @@ void LeafGPS::on_receive(const GpsMessage& msg) {
       char a = msg.nmea[i];
       bool newSentence = gps.encode(a);
       if (newSentence) {
+        fatalErrorInfo("sentence length: %d", (int)msg.nmea.length());
+        fatalErrorInfo("sentence: %s", msg.nmea.c_str());
+        fatalErrorInfo("index: %d", (int)i);
+        fatalErrorInfo("char: %d", (int)a);
         fatalError("newSentence encountered in the middle of the line of text '%s'",
                    msg.nmea.c_str());
       }
