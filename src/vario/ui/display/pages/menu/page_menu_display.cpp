@@ -13,7 +13,6 @@
 
 enum display_menu_items {
   cursor_display_back,
-  cursor_display_show_debug,
   cursor_display_show_thrm,
   cursor_display_show_thrm_adv,
   cursor_display_show_nav,
@@ -33,7 +32,7 @@ void DisplayMenuPage::draw() {
     uint8_t y_spacing = 16;
     uint8_t setting_name_x = 3;
     uint8_t setting_choice_x = 78;
-    uint8_t menu_items_y[] = {190, 60, 75, 90, 105, 135};
+    uint8_t menu_items_y[] = {190, 60, 75, 90, 135};
 
     // first draw cursor selection box
     u8g2.drawRBox(setting_choice_x - 2, menu_items_y[cursor_position] - 14, 22, 16, 2);
@@ -48,12 +47,6 @@ void DisplayMenuPage::draw() {
       else
         u8g2.setDrawColor(1);
       switch (i) {
-        case cursor_display_show_debug:
-          if (settings.disp_showDebugPage)
-            u8g2.print(char(125));
-          else
-            u8g2.print(char(123));
-          break;
         case cursor_display_show_thrm:
           if (settings.disp_showThmPage)
             u8g2.print(char(125));
@@ -87,10 +80,6 @@ void DisplayMenuPage::draw() {
 
 void DisplayMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) {
   switch (cursor_position) {
-    case cursor_display_show_debug:
-      if (state == ButtonEvent::CLICKED && dir == Button::CENTER)
-        settings.toggleBoolOnOff(&settings.disp_showDebugPage);
-      break;
     case cursor_display_show_thrm:
       if (state == ButtonEvent::CLICKED && dir == Button::CENTER)
         settings.toggleBoolOnOff(&settings.disp_showThmPage);
