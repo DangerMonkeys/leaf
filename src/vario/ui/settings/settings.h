@@ -92,6 +92,7 @@ typedef uint8_t SettingLogFormat;
 #define DEF_THMPG_USR1 0      // User field 1 on Thermal page
 #define DEF_THMPG_USR2 1      // User field 2 on Thermal page
 #define DEF_SHOW_DEBUG 0      // Enable debug page
+#define DEF_SHOW_SIMPLE 1     // Enable simple page
 #define DEF_SHOW_THRM 1       // Enable thermal page
 #define DEF_SHOW_THRM_ADV 0   // Enable thermal adv page
 #define DEF_SHOW_NAV 0        // Enable nav page
@@ -164,6 +165,7 @@ setting | samples | time avg
   uint8_t disp_thmPageUser1;
   uint8_t disp_thmPageUser2;
   bool disp_showDebugPage;
+  bool disp_showSimplePage;
   bool disp_showThmPage;
   bool disp_showThmAdvPage;
   bool disp_showNavPage;
