@@ -205,10 +205,13 @@ void SystemMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count
         // toggle developer mode
         settings.toggleBoolOnOff(&settings.dev_menu);
 
-        // ..and if dev mode is now off, turn off logger settings too
+        // ..and if dev mode is now off, restore default dev settings
         if (!settings.dev_menu) {
           settings.dev_startLogAtBoot = false;
           settings.dev_startDisconnected = false;
+          settings.disp_showDebugPage = false;
+          settings.dev_fanetFwd = true;
+          settings.save();
           // TODO: stop bus log if it's running
         }
       }
