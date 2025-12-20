@@ -109,7 +109,6 @@ void Display::turnPage(PageAction action) {
       if (displayPage_ == MainPage::ThermalAdv && !settings.disp_showThmAdvPage) displayPage_--;
       if (displayPage_ == MainPage::Thermal && !settings.disp_showThmPage) displayPage_--;
       if (displayPage_ == MainPage::Simple && !settings.disp_showSimplePage) displayPage_--;
-      displayPage_ = MainPage::Thermal;  // go back to thermal page if we can't go further left
       if (displayPage_ == MainPage::Debug && !settings.disp_showDebugPage)
         displayPage_ = tempPage;  // go back to the page we were on if we can't go further left
 

@@ -60,7 +60,7 @@ void simplePage_draw() {
 
     // Vario Bar
     uint8_t topOfFrame = 21;
-    uint8_t varioBarWidth = 25;
+    uint8_t varioBarWidth = 12;
     uint8_t varioBarClimbHeight = 75;
     uint8_t varioBarSinkHeight = varioBarClimbHeight;
 
@@ -68,8 +68,22 @@ void simplePage_draw() {
     int32_t climbRate = baro.climbRateFilteredValid() ? baro.climbRateFiltered() : 0;
     display_varioBar(topOfFrame, varioBarClimbHeight, varioBarSinkHeight, varioBarWidth, climbRate);
 
+    // Climb
+    uint8_t climbBoxHeight = 34;
+    uint8_t climbBoxY = topOfFrame + varioBarClimbHeight - climbBoxHeight / 2;
+    display_climbRatePointerBox(varioBarWidth + 9, climbBoxY, 75, climbBoxHeight,
+                                16);  // x, y, w, h, triangle size
+    display_climbRate(11, climbBoxY + 31, leaf_28h, climbRate);
+    u8g2.setDrawColor(0);
+    u8g2.setFont(leaf_28h);
+    if (settings.units_climb)
+      u8g2.print('f');
+    else
+      u8g2.print('m');
+    u8g2.setDrawColor(1);
+
     // Altitude
-    uint8_t alt_y = 58;
+    uint8_t alt_y = 140;
     // Altitude header labels
     u8g2.setFont(leaf_labels);
     u8g2.setCursor(varioBarWidth + 52, alt_y - 1);
@@ -81,32 +95,12 @@ void simplePage_draw() {
       u8g2.print("m");
 
     // Alt value
-    display_alt_type(varioBarWidth + 2, alt_y + 21, leaf_21h, settings.disp_thmPageAltType);
+    display_alt_type(varioBarWidth + 2, alt_y + 29, leaf_28h, settings.disp_thmPageAltType);
 
     // if selected, draw the box around it
     if (simple_page_cursor_position == cursor_simplePage_alt1) {
       display_selectionBox(varioBarWidth + 1, alt_y - 2, 96 - (varioBarWidth + 1), 25, 7);
     }
-
-    // Climb
-    uint8_t climbBoxHeight = 27;
-    uint8_t climbBoxY = topOfFrame + varioBarClimbHeight - climbBoxHeight / 2;
-    display_climbRatePointerBox(varioBarWidth, climbBoxY, 76, climbBoxHeight,
-                                13);  // x, y, w, h, triangle size
-    display_climbRate(20, climbBoxY + 24, leaf_21h, climbRate);
-    u8g2.setDrawColor(0);
-    u8g2.setFont(leaf_5h);
-    u8g2.print(" ");  // put a space, but using a small font so the space isn't too wide
-    u8g2.setFont(leaf_21h);
-    if (settings.units_climb)
-      u8g2.print('f');
-    else
-      u8g2.print('m');
-    u8g2.setDrawColor(1);
-
-    // User Fields
-    uint8_t userfield_y = climbBoxY + 53;
-    uint8_t userfield_x = varioBarWidth + 4;
 
   } while (u8g2.nextPage());
 }

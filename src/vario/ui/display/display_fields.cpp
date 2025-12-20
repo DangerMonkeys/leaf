@@ -451,9 +451,9 @@ void display_varioBar(uint8_t barTop, uint8_t barClimbHeight, uint8_t barSinkHei
 void display_climbRatePointerBox(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t triSize) {
   u8g2.setDrawColor(1);
   u8g2.drawBox(x, y, w, h);
-  u8g2.drawTriangle(x - triSize, y + (h) / 2, x - 1, y + (h) / 2 - triSize, x - 1,
-                    y + (h) / 2 + triSize);
-  u8g2.setDrawColor(0);
+  u8g2.drawTriangle(x - triSize, y + (h) / 2, x, y + (h) / 2 - triSize - 1, x,
+                    y + (h) / 2 + triSize + 1);
+  u8g2.setDrawColor(0);  // mask out a border between the vario bar and the triangle
   u8g2.drawLine(x - triSize - 1, y + (h) / 2, x - 2, y + (h) / 2 - triSize + 1);
   u8g2.drawLine(x - triSize - 1, y + (h) / 2, x - 2, y + (h) / 2 + triSize - 1);
 }

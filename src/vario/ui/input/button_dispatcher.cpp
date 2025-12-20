@@ -14,6 +14,7 @@
 #include "ui/display/pages/primary/page_charging.h"
 #include "ui/display/pages/primary/page_debug.h"
 #include "ui/display/pages/primary/page_navigate.h"
+#include "ui/display/pages/primary/page_simple.h"
 #include "ui/display/pages/primary/page_thermal.h"
 #include "ui/display/pages/primary/page_thermal_adv.h"
 #include "ui/settings/settings.h"
@@ -47,6 +48,9 @@ void ButtonDispatcher::on_receive(const ButtonEventMessage& msg) {
   if (currentPage == MainPage::Menu) {
     bool draw_now = mainMenuPage.button_event(msg.button, msg.event, msg.holdCount);
     if (draw_now) display.update();
+
+  } else if (currentPage == MainPage::Simple) {
+    simplePage_button(msg.button, msg.event, msg.holdCount);
 
   } else if (currentPage == MainPage::Thermal) {
     thermalPage_button(msg.button, msg.event, msg.holdCount);
