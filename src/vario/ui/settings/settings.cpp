@@ -117,6 +117,7 @@ void Settings::loadDefaults() {
   disp_thmPageUser1 = DEF_THMPG_USR1;
   disp_thmPageUser2 = DEF_THMPG_USR2;
   disp_showDebugPage = DEF_SHOW_DEBUG;
+  disp_showSimplePage = DEF_SHOW_SIMPLE;
   disp_showThmPage = DEF_SHOW_THRM;
   disp_showThmAdvPage = DEF_SHOW_THRM_ADV;
   disp_showNavPage = DEF_SHOW_NAV;
@@ -185,6 +186,7 @@ void Settings::retrieve() {
   disp_thmPageUser1 = leafPrefs.getUChar("THMPG_USR1");
   disp_thmPageUser2 = leafPrefs.getUChar("THMPG_USR2");
   disp_showDebugPage = leafPrefs.getBool("SHOW_DEBUG");
+  disp_showSimplePage = leafPrefs.getBool("SHOW_SIMPLE", DEF_SHOW_SIMPLE);
   disp_showThmPage = leafPrefs.getBool("SHOW_THRM");
   disp_showThmAdvPage = leafPrefs.getBool("SHOW_THRM_ADV");
   disp_showNavPage = leafPrefs.getBool("SHOW_NAV");
@@ -257,6 +259,7 @@ void Settings::save() {
   leafPrefs.putUChar("THMPG_USR1", disp_thmPageUser1);
   leafPrefs.putUChar("THMPG_USR2", disp_thmPageUser2);
   leafPrefs.putBool("SHOW_DEBUG", disp_showDebugPage);
+  leafPrefs.putBool("SHOW_SIMPLE", disp_showSimplePage);
   leafPrefs.putBool("SHOW_THRM", disp_showThmPage);
   leafPrefs.putBool("SHOW_THRM_ADV", disp_showThmAdvPage);
   leafPrefs.putBool("SHOW_NAV", disp_showNavPage);

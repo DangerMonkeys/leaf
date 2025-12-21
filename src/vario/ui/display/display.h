@@ -22,11 +22,12 @@ enum class PageAction : uint8_t {
 
 enum class MainPage : uint8_t {
   Debug = 0,
-  Thermal = 1,
-  ThermalAdv = 2,
-  Nav = 3,
-  Menu = 4,
-  Charging = 5
+  Simple = 1,
+  Thermal = 2,
+  ThermalAdv = 3,
+  Nav = 4,
+  Menu = 5,
+  Charging = 6
 };
 DEFINE_WRAPPING_BOUNDS(MainPage, MainPage::Debug, MainPage::Menu);
 

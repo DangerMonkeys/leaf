@@ -11,6 +11,7 @@ void display_clockTime(uint8_t x, uint8_t y, bool show_ampm);
 void display_flightTimer(uint8_t x, uint8_t y, bool shortstring, bool selected);
 void display_waypointTimeRemaining(uint8_t x, uint8_t y, const uint8_t* font);
 void display_speed(uint8_t cursor_x, uint8_t cursor_y);
+void display_speed_threeDigits(uint8_t cursor_x, uint8_t cursor_y);
 void display_speed(uint8_t x, uint8_t y, const uint8_t* font);
 void display_speed(uint8_t x, uint8_t y, const uint8_t* font, bool units);
 void display_distance(uint8_t cursor_x, uint8_t cursor_y, double distance);
@@ -66,6 +67,8 @@ void displayWaypointDropletPointer(uint8_t centerX, uint8_t centerY, uint8_t poi
 void display_menuTitle(String title);
 
 void display_headerAndFooter(bool timerSelected, bool showTurnArrows);
+void display_header(bool showTurnArrows);
+void display_footer(bool timerSelected);
 
 void display_off_splash(void);
 void display_on_splash(void);
