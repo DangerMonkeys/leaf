@@ -10,7 +10,7 @@ class DisplayMenuPage : public SettingsMenuPage {
  public:
   DisplayMenuPage() {
     cursor_position = 0;
-    cursor_max = 5;
+    cursor_max = 4;
   }
   void draw();
 
@@ -18,8 +18,7 @@ class DisplayMenuPage : public SettingsMenuPage {
   void setting_change(Button dir, ButtonEvent state, uint8_t count);
 
  private:
-  static constexpr char* labels[6] = {"Back",      "Simple",   "Thermal",
-                                      "Therm ADV", "Navigate", "Contrast"};
+  static constexpr char* labels[6] = {"Back", "Basic", "User", "Navigate", "Contrast"};
 };
 
 #endif

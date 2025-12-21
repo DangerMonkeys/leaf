@@ -29,7 +29,7 @@ uint8_t simple_page_cursor_timeCount =
     0;  // count up for every page_draw, and if no button is pressed, then reset cursor to "none"
         // after the timeOut value is reached.
 uint8_t simple_page_cursor_timeOut =
-    8;  // after 8 page draws (4 seconds) reset the cursor if a button hasn't been pushed.
+    10;  // after 8 page draws (4 seconds) reset the cursor if a button hasn't been pushed.
 
 void simplePage_draw() {
   // if cursor is selecting something, count toward the timeOut value before we reset cursor
@@ -117,7 +117,7 @@ void simplePage_draw() {
 
     // if selected, draw the box around it
     if (simple_page_cursor_position == cursor_simplePage_alt1) {
-      display_selectionBox(varioBarWidth + 1, alt_y - 2, 96 - (varioBarWidth + 1), 25, 7);
+      display_selectionBox(varioBarWidth + 1, alt_y - 2, 96 - (varioBarWidth + 1), 32, 7);
     }
 
   } while (u8g2.nextPage());
