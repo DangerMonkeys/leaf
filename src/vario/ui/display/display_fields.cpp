@@ -120,6 +120,24 @@ void display_flightTimer(uint8_t x, uint8_t y, bool shortstring, bool selected) 
   }
 }
 
+// Display speed without cap at three digits
+void display_speed_threeDigits(uint8_t cursor_x, uint8_t cursor_y) {
+  // Get speed in proper units and put into int for display purposes
+  uint16_t displaySpeed;
+  if (settings.units_speed)
+    // add half so we effectively round when truncating from float to int.
+    displaySpeed = gps.speed.mph() + 0.5f;
+  else
+    displaySpeed = gps.speed.kmph() + 0.5f;
+
+  if (displaySpeed >= 1000) displaySpeed = 999;  // cap display value at 3 digits
+
+  u8g2.setCursor(cursor_x, cursor_y);
+  if (displaySpeed < 100) u8g2.print(" ");  // leave a space if needed
+  if (displaySpeed < 10) u8g2.print(" ");   // leave a space if needed
+  u8g2.print(displaySpeed);
+}
+
 // Display speed (overloaded function allows for with or without font setting and unit character)
 void display_speed(uint8_t cursor_x, uint8_t cursor_y) {
   // Get speed in proper units and put into int for display purposes
@@ -1012,7 +1030,11 @@ void display_menuTitle(String title) {
 
 // Header and Footer Items to show on ALL pages
 void display_headerAndFooter(bool timerSelected, bool showTurnArrows) {
-  // Header--------------------------------
+  display_header(showTurnArrows);
+  display_footer(timerSelected);
+}
+
+void display_header(bool showTurnArrows) {
   // clock time
   u8g2.setFont(leaf_6x10);
   display_clockTime(0, 10, false);
@@ -1046,8 +1068,9 @@ void display_headerAndFooter(bool timerSelected, bool showTurnArrows) {
 
     u8g2.setDrawColor(1);
   }
+}
 
-  // FOOTER_________________________
+void display_footer(bool timerSelected) {
   // battery
   display_battIcon(0, 192, true);
 

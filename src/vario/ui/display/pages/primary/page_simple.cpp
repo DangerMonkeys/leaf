@@ -41,28 +41,45 @@ void simplePage_draw() {
 
   u8g2.firstPage();
   do {
-    // draw all status icons, clock, timer, etc (and pass along if timer is selected)
-    bool showHeadingTurnArrows = false;
-    display_headerAndFooter(simple_page_cursor_position == cursor_simplePage_timer,
-                            showHeadingTurnArrows);
+    // Draw clock and full footer, but not the full usual header items of the other pages
+    u8g2.setFont(leaf_6x10);
+    display_clockTime(0, 10, false);
+    display_footer(simple_page_cursor_position == cursor_simplePage_timer);
 
-    /*
+    // Heading
+    u8g2.setFont(leaf_8x14);
+    display_heading(42, 14, true);
+
     // wind & compass
-    uint8_t center_x = 57;
-    uint8_t wind_y = 31;
-    uint8_t wind_radius = 12;
-    uint8_t pointer_size = 7;
+    uint8_t center_x = 54;
+    uint8_t wind_y = 38;
+    uint8_t wind_radius = 16;
+    uint8_t pointer_size = 8;
     bool showPointer = true;
     display_windSockRing(center_x, wind_y, wind_radius, pointer_size, showPointer);
-    */
 
-    // Main Info ****************************************************
+    // Speed
+    // If don't have a fix, show GPS searching icon; otherwise show speed
+    if (!gps.fixInfo.fix) {
+      display_GPS_icon(84, 12);
+    }  // else {
+    {
+      u8g2.setFont(leaf_labels);
+      u8g2.setCursor(25, 94);
+      if (settings.units_speed)
+        u8g2.print("MPH");
+      else
+        u8g2.print("KPH");
+
+      u8g2.setFont(leaf_28h);
+      display_speed_threeDigits(49, 93);
+    }
 
     // Vario Bar
-    uint8_t topOfFrame = 21;
+    uint8_t topOfFrame = 18;
     uint8_t varioBarWidth = 12;
-    uint8_t varioBarClimbHeight = 75;
-    uint8_t varioBarSinkHeight = varioBarClimbHeight;
+    uint8_t varioBarClimbHeight = 95;
+    uint8_t varioBarSinkHeight = 60;
 
     // TODO: display lack of climb rate differently than 0
     int32_t climbRate = baro.climbRateFilteredValid() ? baro.climbRateFiltered() : 0;
@@ -83,19 +100,20 @@ void simplePage_draw() {
     u8g2.setDrawColor(1);
 
     // Altitude
-    uint8_t alt_y = 140;
+    uint8_t alt_y = 143;
     // Altitude header labels
     u8g2.setFont(leaf_labels);
-    u8g2.setCursor(varioBarWidth + 52, alt_y - 1);
+    u8g2.setCursor(varioBarWidth + 3, alt_y - 1);
     print_alt_label(settings.disp_thmPageAltType);
-    u8g2.setCursor(varioBarWidth + 60, alt_y - 9);
+    u8g2.print(" Altitude ");
+    // u8g2.setCursor(varioBarWidth + 50, alt_y - 1);
     if (settings.units_alt)
       u8g2.print("ft");
     else
       u8g2.print("m");
 
     // Alt value
-    display_alt_type(varioBarWidth + 2, alt_y + 29, leaf_28h, settings.disp_thmPageAltType);
+    display_alt_type(varioBarWidth + 1, alt_y + 28, leaf_28h, settings.disp_thmPageAltType);
 
     // if selected, draw the box around it
     if (simple_page_cursor_position == cursor_simplePage_alt1) {
