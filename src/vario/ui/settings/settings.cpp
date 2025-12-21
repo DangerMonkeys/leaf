@@ -501,9 +501,8 @@ void Settings::adjustVolumeVario(Button dir) {
       vario_volume = 0;
       sound = fx::cancel;  // even if vario volume is set to 0, the system volume may still be
                            // turned on, so we have a sound for turning vario off
-    } else {
-      speaker.setVolume(Speaker::SoundChannel::Vario, (SpeakerVolume)vario_volume);
     }
+    speaker.setVolume(Speaker::SoundChannel::Vario, (SpeakerVolume)vario_volume);
   }
   speaker.playSound(sound);
 }
@@ -526,9 +525,8 @@ void Settings::adjustVolumeSystem(Button dir) {
       system_volume = 0;
       sound = fx::cancel;  // we have this line of code for completeness, but the speaker will be
                            // turned off for system sounds so you won't hear it
-    } else {
-      speaker.setVolume(Speaker::SoundChannel::FX, (SpeakerVolume)system_volume);
     }
+    speaker.setVolume(Speaker::SoundChannel::FX, (SpeakerVolume)system_volume);
   }
   speaker.playSound(sound);
 }
