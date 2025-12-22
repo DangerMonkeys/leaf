@@ -10,7 +10,7 @@ class VarioMenuPage : public SettingsMenuPage {
  public:
   VarioMenuPage() {
     cursor_position = 0;
-    cursor_max = 8;
+    cursor_max = 5;
   }
   void draw();
 
@@ -18,9 +18,16 @@ class VarioMenuPage : public SettingsMenuPage {
   void setting_change(Button dir, ButtonEvent state, uint8_t count);
 
  private:
-  static constexpr char* labels[9] = {
-      "Back",     "Beep Vol",   "Tones",    "QuietMode", "Sensitivity",
-      "ClimbAvg", "ClimbStart", "LiftyAir", "SinkAlarm",
+  static constexpr char* labels[6] = {
+      "Back",
+      "Beep Vol",
+      /*"Tones",*/
+      "QuietMode",
+      "Sensitivity",
+      /*"ClimbAvg",*/
+      "ClimbStart",
+      /*"LiftyAir",*/
+      "SinkAlarm",
   };
 };
 
