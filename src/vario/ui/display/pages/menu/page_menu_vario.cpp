@@ -16,14 +16,14 @@
 enum vario_menu_items {
   cursor_vario_back,
   cursor_vario_volume,
-  cursor_vario_tones,
+  // cursor_vario_tones,
   cursor_vario_quietmode,
 
   cursor_vario_sensitive,
-  cursor_vario_climbavg,
+  // cursor_vario_climbavg,
 
   cursor_vario_climbstart,
-  cursor_vario_liftyair,
+  // cursor_vario_liftyair,
   cursor_vario_sinkalarm,
 };
 
@@ -38,7 +38,7 @@ void VarioMenuPage::draw() {
     uint8_t y_spacing = 16;
     uint8_t setting_name_x = 2;
     uint8_t setting_choice_x = 68;
-    uint8_t menu_items_y[] = {190, 40, 55, 70, 95, 110, 135, 150, 165};
+    uint8_t menu_items_y[] = {190, 40, 55, 70, 95, 110 /*, 135, 150, 165*/};
 
     // first draw cursor selection box
     u8g2.drawRBox(setting_choice_x - 2, menu_items_y[cursor_position] - 14, 30, 16, 2);
@@ -59,6 +59,7 @@ void VarioMenuPage::draw() {
           u8g2.print(char('I' + settings.vario_volume));
           u8g2.setFont(leaf_6x12);
           break;
+        /*
         case cursor_vario_tones:
           u8g2.print(' ');
           if (settings.vario_tones)
@@ -66,6 +67,7 @@ void VarioMenuPage::draw() {
           else
             u8g2.print(char(139));
           break;
+          */
         case cursor_vario_quietmode:
           u8g2.print(' ');
           if (settings.vario_quietMode)
@@ -78,11 +80,12 @@ void VarioMenuPage::draw() {
           u8g2.print(' ');
           u8g2.print(settings.vario_sensitivity);
           break;
+        /*
         case cursor_vario_climbavg:
           u8g2.print(' ');
           u8g2.print(settings.vario_climbAvg);
           break;
-
+        */
         case cursor_vario_climbstart:
           if (settings.units_climb) {
             u8g2.print(' ');
@@ -91,6 +94,7 @@ void VarioMenuPage::draw() {
             u8g2.print(float(settings.vario_climbStart) / 100, 2);  // cm/s->m/s
           }
           break;
+        /*
         case cursor_vario_liftyair:
           if (settings.vario_liftyAir == 0) {
             u8g2.print("OFF");
@@ -100,6 +104,7 @@ void VarioMenuPage::draw() {
             u8g2.print(float(settings.vario_liftyAir) / 10, 1);  // 10cm/s->m/s
           }
           break;
+          */
         case cursor_vario_sinkalarm:
           if (settings.vario_sinkAlarm > -1.0f) {
             u8g2.print("OFF");
@@ -131,6 +136,16 @@ void VarioMenuPage::draw() {
               u8g2.print(float(settings.vario_sinkAlarm), 1);  // m/s
             }
           }
+          // Print units for climb/sink thresholds
+          u8g2.setFont(leaf_labels);
+          if (settings.units_climb) {
+            u8g2.setCursor(u8g2.getCursorX() - 20, u8g2.getCursorY() + 10);
+            u8g2.print("fpm");
+          } else {
+            u8g2.setCursor(u8g2.getCursorX() - 18, u8g2.getCursorY() + 11);
+            u8g2.print("m/s");
+          }
+          u8g2.setFont(leaf_6x12);
           break;
 
         case cursor_vario_back:
@@ -154,15 +169,19 @@ void VarioMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count)
     case cursor_vario_sensitive:
       if (state == ButtonEvent::CLICKED) settings.adjustVarioAverage(dir);
       break;
+      /*
     case cursor_vario_tones:
       if (state == ButtonEvent::CLICKED) settings.toggleBoolNeutral(&settings.vario_tones);
       break;
     case cursor_vario_liftyair:
       if (state == ButtonEvent::CLICKED) settings.adjustLiftyAir(dir);
       break;
+      */
+    /*
     case cursor_vario_climbavg:
       if (state == ButtonEvent::CLICKED) settings.adjustClimbAverage(dir);
       break;
+    */
     case cursor_vario_climbstart:
       if (state == ButtonEvent::CLICKED) settings.adjustClimbStart(dir);
       break;
