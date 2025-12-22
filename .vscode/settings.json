@@ -69,7 +69,8 @@
         "stdexcept": "cpp",
         "thread": "cpp",
         "cinttypes": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "*._h_": "cpp"
     },
     "editor.formatOnSave": true,
     "[cpp]": {

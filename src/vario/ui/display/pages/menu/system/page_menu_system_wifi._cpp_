@@ -55,6 +55,30 @@ void PageMenuSystemWifi::draw_menu_input(int8_t cursor_position) {
   u8g2.print(ret);
 }
 
+void PageMenuSystemWifi::draw_extra() {
+  int signalStrength = 0;
+  int wifiIcon = 65;  // the "full signal" icon
+  u8g2.setDrawColor(1);
+  u8g2.setFont(leaf_6x12);
+  u8g2.setCursor(0, 25);
+
+  if (WiFi.status() == WL_CONNECTED) {
+    u8g2.print("Connected To:");
+    u8g2.setCursor(0, 40);
+    u8g2.print(WiFi.SSID());
+    signalStrength = WiFi.RSSI();
+    if (signalStrength < -65) wifiIcon--;  // decrease one bar
+    if (signalStrength < -80) wifiIcon--;  // decrease another bar
+  } else {
+    u8g2.print("Not Connected");
+    wifiIcon++;  // index up to the disconnected icon
+  }
+
+  u8g2.setFont(leaf_icons);
+  u8g2.setCursor(85, 12);
+  u8g2.print((char)wifiIcon);
+}
+
 void PageMenuSystemWifi::closed(bool removed_from_stack) {
 #ifndef DEBUG_WIFI
   if (!removed_from_stack) return;
