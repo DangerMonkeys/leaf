@@ -2,10 +2,9 @@
 #define PageMenuWifi_h
 
 #include <Arduino.h>
-
+#include <WiFi.h>
 #include <WiFiManager.h>  // https://github.com/tzapu/WiFiManager
 
-#include "WiFi.h"
 #include "etl/array.h"
 #include "etl/array_view.h"
 #include "etl/vector.h"
@@ -37,7 +36,9 @@ class PageMenuSystemWifiSetup : public SimpleSettingsMenuPage {
   void draw_extra() override;
 
  private:
+  int wifiIcon = 62;  // the "empty signal" icon
   WiFiManager wm;
+  void beginWifiSetup(void);
 };
 
 /////////////////////////////////////////
@@ -47,7 +48,7 @@ class PageMenuSystemWifiSetup : public SimpleSettingsMenuPage {
 class PageMenuSystemWifiUpdate : public SimpleSettingsMenuPage {
  public:
   PageMenuSystemWifiUpdate(WifiState* wifi_state) : wifi_state(wifi_state) {}
-  const char* get_title() const override { return "Wifi Update"; }
+  const char* get_title() const override { return "FW Update"; }
 
   // On enter/shown, begin the WiFi OTA Update Process
   void shown() override;
@@ -61,7 +62,9 @@ class PageMenuSystemWifiUpdate : public SimpleSettingsMenuPage {
   String latest_version_;
 };
 
+/////////////////////////////////////////
 // Main Parent Wifi Menu Page
+//
 class WifiMenuPage : public SettingsMenuPage {
  public:
   WifiMenuPage() : page_wifi_update(&wifi_state) {
@@ -69,6 +72,7 @@ class WifiMenuPage : public SettingsMenuPage {
     cursor_max = 2;
   }
   void draw();
+  bool firstOpened = true;
 
  protected:
   void setting_change(Button dir, ButtonEvent state, uint8_t count);
@@ -78,6 +82,7 @@ class WifiMenuPage : public SettingsMenuPage {
   WifiState wifi_state = WifiState::DISCONNECTED;
   PageMenuSystemWifiSetup page_wifi_setup;
   PageMenuSystemWifiUpdate page_wifi_update;
+  void attemptWifiConnection(void);
 };
 
 #endif

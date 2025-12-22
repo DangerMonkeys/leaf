@@ -22,6 +22,11 @@ enum wifi_menu_items_connected {
 };
 
 void WifiMenuPage::draw() {
+  if (firstOpened) {
+    firstOpened = false;
+    attemptWifiConnection();
+  }
+
   int signalStrength = 0;
   int wifiIcon = 65;  // the "full signal" icon
 
@@ -39,14 +44,14 @@ void WifiMenuPage::draw() {
       u8g2.setCursor(0, 50);
       u8g2.print(WiFi.SSID());
       signalStrength = WiFi.RSSI();
-      if (signalStrength < -65) wifiIcon--;  // decrease one bar
-      if (signalStrength < -80) wifiIcon--;  // decrease another bar
+      if (signalStrength < -70) wifiIcon--;  // decrease one bar
+      if (signalStrength < -85) wifiIcon--;  // decrease another bar
     } else {
       u8g2.print("Not Connected");
       wifiIcon++;  // index up to the disconnected icon
     }
     u8g2.setFont(leaf_icons);
-    u8g2.setCursor(85, 12);
+    u8g2.setCursor(85, 50);
     u8g2.print((char)wifiIcon);
     u8g2.setFont(leaf_6x12);
 
@@ -99,9 +104,6 @@ void WifiMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) 
         if (WiFi.status() == WL_CONNECTED) {
           push_page(&page_wifi_update);
         } else {
-          wifi_state = WifiState::SMART_CONFIG_WAITING;
-          WiFi.mode(WIFI_AP_STA);
-          WiFi.beginSmartConfig();
           push_page(&page_wifi_setup);
         }
       }
@@ -116,6 +118,7 @@ void WifiMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) 
         speaker.playSound(fx::cancel);
         settings.save();
         systemMenuPage.backToSystemMenu();
+        firstOpened = true;  // reset for the next time user enters wifi menu
         if (state == ButtonEvent::HELD) {
           speaker.playSound(fx::exit);
           mainMenuPage.backToMainMenu();
@@ -128,15 +131,38 @@ void WifiMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) 
   }
 }
 
+void PageMenuSystemWifiSetup::beginWifiSetup() {
+  WiFi.mode(WIFI_AP);
+  WiFi.setSleep(false);
+  delay(100);
+
+  // Fixed channel AP
+  WiFi.softAP("Leaf WiFi", nullptr, 6);
+
+  wm.setConfigPortalTimeout(120);  // 2 minutes
+  wm.setConfigPortalBlocking(false);
+  wm.setAPClientCheck(false);
+  wm.setScanDispPerc(false);
+
+  wm.startConfigPortal("Leaf WiFi");
+}
+
+void WifiMenuPage::attemptWifiConnection() {
+  wifi_state = WifiState::CONNECTING;
+  WiFi.mode(WIFI_STA);
+  WiFi.setSleep(false);
+
+  // This attempts to connect using credentials stored by WiFiManager
+  WiFi.begin();
+}
+
 /**************************
  * PageMenuSystemWifiManualSetup (sub-page)
  */
+
 void PageMenuSystemWifiSetup::shown() {
   SimpleSettingsMenuPage::shown();
-  WiFi.mode(WIFI_STA);
-  wm.setConfigPortalBlocking(false);
-  wm.autoConnect("Leaf");
-  wm.setConfigPortalTimeout(120);
+  beginWifiSetup();
 }
 
 void PageMenuSystemWifiSetup::loop() {
@@ -149,30 +175,45 @@ void PageMenuSystemWifiSetup::loop() {
 }
 
 void PageMenuSystemWifiSetup::draw_extra() {
+  // wifi searching status
+  wifiIcon++;
+  if (wifiIcon > 65) wifiIcon = 62;  // loop back to empty signal icon
+  u8g2.setFont(leaf_icons);
+  u8g2.setCursor(85, 12);
+  u8g2.print((char)wifiIcon);
+
   u8g2.setFont(leaf_6x12);
-  auto y = 35;
-  const auto OFFSET = 14;  // Font is 10px high, allow for margin
-  u8g2.setCursor(2, y);
+  auto y = 20;
+  auto x = 0;
+  const auto OFFSET = 9;  // default new paragraph spacing
+  u8g2.setCursor(0, y);
 
   // Instruction Page
-  const char* lines[] = {">Join Leaf WiFi",    " ", ">Click Sign In",  "  Or Visit:",
-                         "http://192.168.4.1", " ", ">Configure WiFi", "Select your network",
-                         "and enter password", " ", ">Press Save"};
+  const char* lines[] = {">Join Leaf WiFi",     "On Phone or Laptop", " ", ">Click Sign In",
+                         "  Or Visit:",         "http://192.168.4.1", " ", ">Configure WiFi",
+                         "Select your network", "and enter password", " ", ">Press Save"};
 
   uint8_t lineNum = 0;
 
   for (auto line : lines) {
     u8g2.setCursor(0, y);
-    if (lineNum == 4 || lineNum == 7 || lineNum == 8) {
-      u8g2.setFont(leaf_5x8);
-      u8g2.setCursor(0, y -= 2);
-    } else
+    if (lineNum == 0 || lineNum == 3 || lineNum == 7 || lineNum == 11) {
+      y += 14;
+      x = 0;
       u8g2.setFont(leaf_6x12);
-
+    } else if (lineNum == 1 || lineNum == 4 || lineNum == 5 || lineNum == 8 || lineNum == 9) {
+      y += 11;
+      x = 5;
+      u8g2.setFont(leaf_5x8);
+    } else {
+      y += OFFSET;
+      u8g2.setFont(leaf_5x8);
+    }
+    u8g2.setCursor(x, y);
     u8g2.print(line);
-    y += OFFSET;
     lineNum++;
   }
+
   u8g2.drawHLine(0, 174, 96);
 }
 
