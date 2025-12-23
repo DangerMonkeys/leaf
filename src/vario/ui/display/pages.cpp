@@ -8,6 +8,7 @@
 #include "ui/display/pages/menu/page_menu_system.h"
 #include "ui/display/pages/menu/page_menu_units.h"
 #include "ui/display/pages/menu/page_menu_vario.h"
+#include "ui/display/pages/menu/page_menu_wifi.h"
 #include "ui/display/pages/primary/page_menu_main.h"
 
 MainMenuPage mainMenuPage;
@@ -20,3 +21,4 @@ GPSMenuPage gpsMenuPage;
 LogMenuPage logMenuPage;
 SystemMenuPage systemMenuPage;
 DeveloperMenuPage developerMenuPage;
+WifiMenuPage wifiMenuPage;

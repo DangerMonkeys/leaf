@@ -317,8 +317,8 @@ bool Power::autoOff() {
     }
 
   } else {
-    autoOffAltitude_ += altDifference;  // reset the comparison altitude to present altitude, since
-                                        // it's still changing
+    autoOffAltitude_ += altDifference;  // reset the comparison altitude to present altitude,
+                                        // since it's still changing
   }
 
   Serial.print(
@@ -348,10 +348,10 @@ void Power::readBatteryState() {
 
   // Battery Voltage Level & Percent Remaining
   info_.batteryADC = analogRead(BATT_SENSE);
-  // uint16_t batt_level_mv = adc_level * 5554 / 4095;  //    (3300mV ADC range / .5942 V_divider) =
-  // 5554.  Then divide by 4095 steps of resolution
-  // adjusted formula to account for ESP32 ADC non-linearity; based on calibration
-  // measurements.  This is most accurate between 2.4V and 4.7V
+  // uint16_t batt_level_mv = adc_level * 5554 / 4095;  //    (3300mV ADC range / .5942 V_divider)
+  // = 5554.  Then divide by 4095 steps of resolution adjusted formula to account for ESP32 ADC
+  // non-linearity; based on calibration measurements.  This is most accurate between 2.4V
+  // and 4.7V
   info_.batteryMV = info_.batteryADC * 5300 / 4095 + 260;
 
   if (info_.batteryMV < BATT_EMPTY_MV) {
@@ -382,8 +382,8 @@ void Power::increaseInputCurrent() { setInputCurrent(++info_.inputCurrent); }
 void Power::decreaseInputCurrent() { setInputCurrent(--info_.inputCurrent); }
 
 // Note: the Battery Charger Chip has controllable input current (which is then used for both batt
-// charging AND system load).  The battery will be charged with whatever current is remaining after
-// system load.
+// charging AND system load).  The battery will be charged with whatever current is remaining
+// after system load.
 void Power::setInputCurrent(PowerInputLevel current) {
   info_.inputCurrent = current;
   switch (current) {

@@ -13,8 +13,7 @@
 #include "ui/display/pages.h"
 #include "ui/display/pages/dialogs/page_menu_about.h"
 #include "ui/display/pages/dialogs/page_message.h"
-
-#include "ui/display/pages/menu/system/page_menu_system_wifi.h"
+#include "ui/display/pages/menu/page_menu_wifi.h"
 #include "ui/settings/settings.h"
 
 enum system_menu_items {
@@ -34,7 +33,40 @@ PageMenuAbout about_page;
 // As the user holds the center button to reset the device, this grows from 0 to 96
 uint8_t resetPending = 0;
 
+// tracking if we fall deeper into a submenu
+enum system_menu_pages {
+  page_menu_system,  // the root system menu
+  page_menu_wifi,    // the WiFi submenu
+};
+
+// tracking which menu page we're on (we might move from the main menu page into a sub-meny)
+uint8_t system_menu_page = page_menu_system;
+
+bool SystemMenuPage::button_event(Button button, ButtonEvent state, uint8_t count) {
+  if (system_menu_page == page_menu_wifi) {
+    return wifiMenuPage.button_event(button, state, count);
+  } else {
+    return SettingsMenuPage::button_event(button, state, count);
+  }
+}
+
+void SystemMenuPage::backToSystemMenu() {
+  cursor_position = cursor_system_back;
+  system_menu_page = page_menu_system;
+}
+
 void SystemMenuPage::draw() {
+  switch (system_menu_page) {
+    case page_menu_system:
+      drawSystemMenu();
+      break;
+    case page_menu_wifi:
+      wifiMenuPage.draw();
+      break;
+  }
+}
+
+void SystemMenuPage::drawSystemMenu() {
   int16_t displayTimeZone = settings.system_timeZone;
 
   u8g2.firstPage();
@@ -158,11 +190,7 @@ void SystemMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count
       break;
     case cursor_system_wifi:
       if (state != ButtonEvent::CLICKED) break;
-
-      // User has selected WiFi, show this page
-      static PageMenuSystemWifi wifiPage;
-      push_page(&wifiPage);
-      redraw = true;
+      system_menu_page = page_menu_wifi;
       break;
     case cursor_system_bluetooth:
       if (state != ButtonEvent::CLICKED) break;
