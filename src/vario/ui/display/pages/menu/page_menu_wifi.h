@@ -79,7 +79,7 @@ class WifiMenuPage : public SettingsMenuPage {
 
  private:
   static constexpr char* labels[3] = {"Back", "Setup Wifi", "Reset Wifi"};
-  WifiState wifi_state = WifiState::DISCONNECTED;
+  WifiState wifi_state;
   PageMenuSystemWifiSetup page_wifi_setup;
   PageMenuSystemWifiUpdate page_wifi_update;
   void attemptWifiConnection(void);

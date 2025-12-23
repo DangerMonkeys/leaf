@@ -132,22 +132,15 @@ void WifiMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) 
 }
 
 void PageMenuSystemWifiSetup::beginWifiSetup() {
-  WiFi.mode(WIFI_AP);
-  WiFi.setSleep(false);
-  delay(100);
+  // TODO: adding these three lines increased reliability of captive portal.  not sure why
+  WiFi.mode(WIFI_AP_STA);
+  WiFi.beginSmartConfig();
+  delay(500);
 
-  // Fixed channel AP
-  WiFi.softAP("Leaf WiFi", nullptr, 6);
-
-  WiFi.setTxPower(WIFI_POWER_13dBm);
-  // wm.setBreakAfterConfig(true);
-  // wm.setSaveConnect(false);
-  wm.setConfigPortalTimeout(120);  // 2 minutes
+  WiFi.mode(WIFI_STA);
   wm.setConfigPortalBlocking(false);
-  wm.setAPClientCheck(false);
-  wm.setScanDispPerc(false);
-
-  wm.startConfigPortal("Leaf WiFi");
+  wm.autoConnect("Leaf WiFi");
+  wm.setConfigPortalTimeout(60);
 }
 
 void WifiMenuPage::attemptWifiConnection() {
@@ -169,7 +162,7 @@ void PageMenuSystemWifiSetup::shown() {
 }
 
 void PageMenuSystemWifiSetup::loop() {
-  // If we're connected, close the page
+  // If we're connected, or portal times out, close the page
   if (WiFi.status() == WL_CONNECTED || wm.getConfigPortalActive() == false) {
     pop_page();
     return;
