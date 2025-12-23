@@ -139,6 +139,9 @@ void PageMenuSystemWifiSetup::beginWifiSetup() {
   // Fixed channel AP
   WiFi.softAP("Leaf WiFi", nullptr, 6);
 
+  WiFi.setTxPower(WIFI_POWER_13dBm);
+  // wm.setBreakAfterConfig(true);
+  // wm.setSaveConnect(false);
   wm.setConfigPortalTimeout(120);  // 2 minutes
   wm.setConfigPortalBlocking(false);
   wm.setAPClientCheck(false);
