@@ -577,7 +577,7 @@ void display_altAboveLaunch(uint8_t x, uint8_t y) {
   u8g2.setCursor(x, y - 16);
   u8g2.setFont(leaf_5h);
   u8g2.print("ABOVE LAUNCH");
-  int32_t aboveLaunchAlt = baro.state() == Barometer::State::Ready ? baro.altAdjusted() : -99999;
+  int32_t aboveLaunchAlt = baro.state() == Barometer::State::Ready ? baro.altAboveLaunch() : -99999;
   display_alt(x, y, leaf_8x14, aboveLaunchAlt);
 }
 
