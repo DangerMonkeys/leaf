@@ -271,9 +271,11 @@ String flightTimer_getString() {
 }
 
 void log_captureValues() {
-  logbook.alt = baro.altAdjusted();
-  logbook.alt_above_launch = baro.altAboveLaunch();
-  logbook.climb = baro.climbRateFiltered();
+  if (baro.state() == Barometer::State::Ready) {
+    logbook.alt = baro.altAdjusted();
+    logbook.alt_above_launch = baro.altAboveLaunch();
+    logbook.climb = baro.climbRateFiltered();
+  }
   logbook.speed = gps.speed.mps();
   if (ambient.state() == Ambient::State::Ready) {
     logbook.temperature = ambient.temp();
@@ -286,23 +288,25 @@ void log_captureValues() {
 void log_checkMinMaxValues() {
   uint32_t time = micros();
 
-  // check altitude values for log records
-  if (logbook.alt > logbook.alt_max) {
-    logbook.alt_max = logbook.alt;
-    if (logbook.alt_above_launch > logbook.alt_above_launch_max)
-      logbook.alt_above_launch_max =
-          logbook.alt_above_launch;  // we only need to check for max above-launch values if we're
-                                     // also setting a new altitude max.
-  } else if (logbook.alt < logbook.alt_min) {
-    logbook.alt_min = logbook.alt;
-  }
+  if (baro.state() == Barometer::State::Ready) {
+    // check altitude values for log records
+    if (logbook.alt > logbook.alt_max) {
+      logbook.alt_max = logbook.alt;
+      if (logbook.alt_above_launch > logbook.alt_above_launch_max)
+        logbook.alt_above_launch_max =
+            logbook.alt_above_launch;  // we only need to check for max above-launch values if we're
+                                       // also setting a new altitude max.
+    } else if (logbook.alt < logbook.alt_min) {
+      logbook.alt_min = logbook.alt;
+    }
 
-  // check climb values for log records
-  logbook.climb = baro.climbRateFiltered();
-  if (logbook.climb > logbook.climb_max) {
-    logbook.climb_max = logbook.climb;
-  } else if (logbook.climb < logbook.climb_min) {
-    logbook.climb_min = logbook.climb;
+    // check climb values for log records
+    logbook.climb = baro.climbRateFiltered();
+    if (logbook.climb > logbook.climb_max) {
+      logbook.climb_max = logbook.climb;
+    } else if (logbook.climb < logbook.climb_min) {
+      logbook.climb_min = logbook.climb;
+    }
   }
 
   // check temperature values for log records
