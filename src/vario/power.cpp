@@ -294,7 +294,7 @@ bool Power::autoOff() {
   // we will auto-stop only if BOTH the GPS speed AND the Altitude change trigger the stopping
   // thresholds.
 
-  // First check if altitude is available (it's not available immediately after boot-up)
+  // First check if baro is available (it's not available immediately after boot-up)
   if (baro.state() != Barometer::State::Ready) {
     return false;
   }
