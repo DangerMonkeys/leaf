@@ -132,8 +132,6 @@ bool display_speed(uint8_t cursor_x, uint8_t cursor_y) {
   else
     displaySpeed = gps.speed.kmph() + 0.5f;
 
-  displaySpeed = 39;  // TODO for testing only, remove once done
-
   if (displaySpeed >= 1000) displaySpeed = 999;  // cap display value at 3 digits
   if (displaySpeed >= 100) speedIsThreeDigits = true;
 
