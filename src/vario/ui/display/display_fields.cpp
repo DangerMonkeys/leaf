@@ -120,8 +120,10 @@ void display_flightTimer(uint8_t x, uint8_t y, bool shortstring, bool selected) 
   }
 }
 
-// Display speed without cap at three digits
-void display_speed_threeDigits(uint8_t cursor_x, uint8_t cursor_y) {
+// Display speed (overloaded function allows for with or without font setting and unit character)
+bool display_speed(uint8_t cursor_x, uint8_t cursor_y) {
+  bool speedIsThreeDigits = false;  // used to rejustify other fields if needed
+
   // Get speed in proper units and put into int for display purposes
   uint16_t displaySpeed;
   if (settings.units_speed)
@@ -130,29 +132,17 @@ void display_speed_threeDigits(uint8_t cursor_x, uint8_t cursor_y) {
   else
     displaySpeed = gps.speed.kmph() + 0.5f;
 
+  displaySpeed = 39;  // TODO for testing only, remove once done
+
   if (displaySpeed >= 1000) displaySpeed = 999;  // cap display value at 3 digits
+  if (displaySpeed >= 100) speedIsThreeDigits = true;
 
   u8g2.setCursor(cursor_x, cursor_y);
   if (displaySpeed < 100) u8g2.print(" ");  // leave a space if needed
   if (displaySpeed < 10) u8g2.print(" ");   // leave a space if needed
   u8g2.print(displaySpeed);
-}
 
-// Display speed (overloaded function allows for with or without font setting and unit character)
-void display_speed(uint8_t cursor_x, uint8_t cursor_y) {
-  // Get speed in proper units and put into int for display purposes
-  uint16_t displaySpeed;
-  if (settings.units_speed)
-    // add half so we effectively round when truncating from float to int.
-    displaySpeed = gps.speed.mph() + 0.5f;
-  else
-    displaySpeed = gps.speed.kmph() + 0.5f;
-
-  if (displaySpeed >= 100) displaySpeed = 99;  // cap display value at 3 digits
-
-  u8g2.setCursor(cursor_x, cursor_y);
-  if (displaySpeed < 10) u8g2.print(" ");  // leave a space if needed
-  u8g2.print(displaySpeed);
+  return speedIsThreeDigits;
 }
 
 void display_speed(uint8_t x, uint8_t y, const uint8_t* font) {
@@ -220,6 +210,8 @@ void display_heading(uint8_t cursor_x, uint8_t cursor_y, bool degSymbol) {
 
   } else {  // Degrees heading direction
     uint16_t displayHeadingDegrees = gps.course.deg();
+    cursor_x -= 1;  // looks a little better when printing numb
+    u8g2.setCursor(cursor_x, cursor_y);
     if (displayHeadingDegrees < 10)
       u8g2.setCursor(cursor_x + 8, cursor_y);
     else if (displayHeadingDegrees < 100)
@@ -1035,27 +1027,19 @@ void display_headerAndFooter(bool timerSelected, bool showTurnArrows) {
 }
 
 void display_header(bool showTurnArrows) {
-  // clock time
+  // clock time in upper left corner
   u8g2.setFont(leaf_6x10);
   display_clockTime(0, 10, false);
 
-  // Track/Heading top center
-  uint8_t heading_y = 10;
-  uint8_t heading_x = 37;
-  u8g2.setFont(leaf_7x10);
-  if (showTurnArrows) {
-    display_headingTurn(heading_x, heading_y);
-  } else {
-    display_heading(heading_x + 8, heading_y, true);
-  }
-
+  // Speed in upper right corner
+  bool speedIsThreeDigits = false;
   // If don't have a fix, show GPS searching icon; otherwise show speed
   if (!gps.fixInfo.fix) {
     display_GPS_icon(84, 12);
   } else {
     // Speed in upper right corner
     u8g2.setFont(leaf_8x14);
-    display_speed(78, 14);
+    speedIsThreeDigits = display_speed(70, 14);
     u8g2.setFont(leaf_5h);
     u8g2.setCursor(82, 21);
     if (display.getPage() == MainPage::Nav) {
@@ -1067,6 +1051,17 @@ void display_header(bool showTurnArrows) {
       u8g2.print("KPH");
 
     u8g2.setDrawColor(1);
+  }
+
+  // Track/Heading top center
+  uint8_t heading_y = 10;
+  uint8_t heading_x = 37;
+  if (speedIsThreeDigits) heading_x -= 6;
+  u8g2.setFont(leaf_7x10);
+  if (showTurnArrows) {
+    display_headingTurn(heading_x, heading_y);
+  } else {
+    display_heading(heading_x + 8, heading_y, true);
   }
 }
 

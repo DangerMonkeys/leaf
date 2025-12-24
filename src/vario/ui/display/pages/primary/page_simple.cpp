@@ -46,40 +46,50 @@ void simplePage_draw() {
     display_clockTime(0, 10, false);
     display_footer(simple_page_cursor_position == cursor_simplePage_timer);
 
-    // Heading
-    u8g2.setFont(leaf_8x14);
-    display_heading(42, 14, true);
-
-    // wind & compass
-    uint8_t center_x = 54;
-    uint8_t wind_y = 38;
-    uint8_t wind_radius = 16;
-    uint8_t pointer_size = 8;
-    bool showPointer = true;
-    display_windSockRing(center_x, wind_y, wind_radius, pointer_size, showPointer);
-
     // Speed
+    uint8_t speed_x = 59;
+    uint8_t speed_y = 28;
+    bool speedIsThreeDigits = false;
     // If don't have a fix, show GPS searching icon; otherwise show speed
     if (!gps.fixInfo.fix) {
       display_GPS_icon(84, 12);
-    }  // else {
-    {
+    } else {
       u8g2.setFont(leaf_labels);
-      u8g2.setCursor(25, 94);
+      u8g2.setCursor(77, 40);
       if (settings.units_speed)
         u8g2.print("MPH");
       else
         u8g2.print("KPH");
 
-      u8g2.setFont(leaf_28h);
-      display_speed_threeDigits(49, 93);
+      u8g2.setFont(leaf_21h);
+      speedIsThreeDigits = display_speed(speed_x, speed_y);
     }
+
+    // Heading and Wind
+    uint8_t center_x = 48;
+    uint8_t wind_y = 54;
+    uint8_t heading_x = center_x - 12;
+    uint8_t heading_y = speed_y;
+    if (speedIsThreeDigits) {
+      heading_x -= 8;
+      if (!settings.units_heading) heading_x -= 3;
+    }
+
+    // heading
+    u8g2.setFont(leaf_8x14);
+    display_heading(heading_x, heading_y, true);
+
+    // wind & compass
+    uint8_t wind_radius = 17;
+    uint8_t pointer_size = 8;
+    bool showPointer = true;
+    display_windSockRing(center_x, wind_y, wind_radius, pointer_size, showPointer);
 
     // Vario Bar
     uint8_t topOfFrame = 18;
     uint8_t varioBarWidth = 12;
-    uint8_t varioBarClimbHeight = 95;
-    uint8_t varioBarSinkHeight = 60;
+    uint8_t varioBarClimbHeight = 85;
+    uint8_t varioBarSinkHeight = 70;
 
     // TODO: display lack of climb rate differently than 0
     int32_t climbRate = baro.climbRateFilteredValid() ? baro.climbRateFiltered() : 0;
@@ -92,6 +102,9 @@ void simplePage_draw() {
                                 16);  // x, y, w, h, triangle size
     display_climbRate(11, climbBoxY + 31, leaf_28h, climbRate);
     u8g2.setDrawColor(0);
+    u8g2.drawPixel(varioBarWidth + 9,
+                   climbBoxY);  // one pixel corner needs trimmed due to interaction with triangle
+                                // and even-dimension box height
     u8g2.setFont(leaf_28h);
     if (settings.units_climb)
       u8g2.print('f');
@@ -100,7 +113,7 @@ void simplePage_draw() {
     u8g2.setDrawColor(1);
 
     // Altitude
-    uint8_t alt_y = 143;
+    uint8_t alt_y = 139;
     // Altitude header labels
     u8g2.setFont(leaf_labels);
     u8g2.setCursor(varioBarWidth + 3, alt_y - 1);

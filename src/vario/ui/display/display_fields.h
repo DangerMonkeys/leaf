@@ -10,8 +10,7 @@ void display_selectionBox(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t tr
 void display_clockTime(uint8_t x, uint8_t y, bool show_ampm);
 void display_flightTimer(uint8_t x, uint8_t y, bool shortstring, bool selected);
 void display_waypointTimeRemaining(uint8_t x, uint8_t y, const uint8_t* font);
-void display_speed(uint8_t cursor_x, uint8_t cursor_y);
-void display_speed_threeDigits(uint8_t cursor_x, uint8_t cursor_y);
+bool display_speed(uint8_t cursor_x, uint8_t cursor_y);
 void display_speed(uint8_t x, uint8_t y, const uint8_t* font);
 void display_speed(uint8_t x, uint8_t y, const uint8_t* font, bool units);
 void display_distance(uint8_t cursor_x, uint8_t cursor_y, double distance);
