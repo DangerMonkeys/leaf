@@ -53,7 +53,7 @@ void thermalPage_draw() {
                             showHeadingTurnArrows);
 
     // wind & compass
-    uint8_t center_x = 57;
+    uint8_t center_x = 56;
     uint8_t wind_y = 31;
     uint8_t wind_radius = 12;
     uint8_t pointer_size = 7;
