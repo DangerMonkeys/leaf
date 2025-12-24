@@ -1,6 +1,7 @@
 #include "kml.h"
 
 #include "instruments/gps.h"
+#include "logging/async_logger.h"
 #include "time.h"
 #include "ui/settings/settings.h"
 #include "utils/string_utils.h"
@@ -30,10 +31,12 @@ void Kml::log(unsigned long durationSec) {
   String altPoint = String(gps.altitude.meters(), 2);
   String logPointStr = lonPoint + "," + latPoint + "," + altPoint + "\n";
 
-  file.println(logPointStr);
+  AsyncLogger::enqueuef(&file, "%s\n", logPointStr);
 }
 
 void Kml::end(const FlightStats stats) {
+  // Flush the async writes
+  AsyncLogger::flush();
   file.println(KMLtrackFooterA);
   file.println("Flight Time: " + formatSeconds(stats.duration, false, 0));
   file.println(KMLtrackFooterB);

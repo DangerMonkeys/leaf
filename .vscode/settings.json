@@ -85,6 +85,7 @@
         "baro",
         "centisecond",
         "efuse",
+        "enqueuef",
         "Fanet",
         "kmph",
         "landedok",
@@ -92,6 +93,8 @@
         "nmea",
         "PFLAA",
         "RADIOLIB",
+        "RINGBUF",
+        "Ringbuffer",
         "RSSI",
         "RXMIT",
         "xorshift"
