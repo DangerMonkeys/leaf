@@ -1,5 +1,6 @@
 #include "selfTest_displayScreens.h"
 
+#include "diagnostics/self_test/selfTest.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
 #include "ui/display/display_fields.h"
@@ -11,10 +12,12 @@ void SelfTest_PageButtons::show() { push_page(this); }
 
 void SelfTest_PageButtons::draw_extra() {
   uint8_t buttonCluster_x = 48;
-  uint8_t buttonCluster_y = 70;
-  u8g2.setCursor(0, 40);
+  uint8_t buttonCluster_y = 100;
+  u8g2.setCursor(23, 40);
   u8g2.setFont(leaf_6x12);
-  u8g2.print("Press all buttons:");
+  u8g2.print("Press all");
+  u8g2.setCursor(26, 55);
+  u8g2.print("Buttons:");
   // Draw button cluster
   // UP
   u8g2.setCursor(buttonCluster_x, buttonCluster_y - 20);
@@ -46,4 +49,11 @@ void SelfTest_PageButtons::draw_extra() {
     u8g2.print("X");
   else
     u8g2.print("O");
+
+  u8g2.setCursor(36, 160);
+  if (selfTest.results.buttons == SelfTest::Status::Pass) {
+    u8g2.print("PASS");
+  } else if (selfTest.results.buttons == SelfTest::Status::Fail) {
+    u8g2.print("FAIL");
+  }
 }

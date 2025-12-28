@@ -204,6 +204,7 @@ bool ButtonsInteractiveTest::update() {
   // Test fails if timeout before all buttons pushed
   if (buttonsTest.waitForInput-- <= 0) {
     buttonsTest.result = SelfTest::Status::Fail;
+    speaker.playSound(fx::cancel);
     selfTestInfo("* SELF TEST * BUTTONS * FAIL - Timeout waiting for button presses");
     if (!upPressed) {
       Serial.println("* SELF TEST * BUTTONS * FAIL - UP button NOT DETECTED");
@@ -225,16 +226,17 @@ bool ButtonsInteractiveTest::update() {
   // Test passes if all buttons have been pressed
   if (upPressed && downPressed && leftPressed && rightPressed && centerPressed) {
     buttonsTest.result = SelfTest::Status::Pass;
+    speaker.playSound(fx::confirm);
     selfTestInfo("* SELF TEST * BUTTONS * PASS - All buttons detected");
-    display.update();
     // delay(750);  // pause to let user see success on display screen
   }
 
   // handle test results (or continue test)
   if (buttonsTest.result != SelfTest::Status::Unknown) {
     Serial.println("* SELF TEST * BUTTONS * Test complete");
+    selfTest.results.buttons = buttonsTest.result;
     display.update();
-    // delay(750);                    // pause to let user see test results on display screen
+    delay(500);                    // pause to let user see test results on display screen
     selfTest_pageButtons.close();  // close button test display page
     // test complete, reset variables and stop running the test
     upPressed = false;
@@ -340,4 +342,7 @@ void SelfTest::runInteractiveTests(bool closeFileWhenDone) {
   }
 }
 
-void SelfTest::clearResults() { buttonsTest.result = SelfTest::Status::Unknown; }
+void SelfTest::clearResults() {
+  buttonsTest.result = SelfTest::Status::Unknown;
+  selfTest.results.buttons = SelfTest::Status::Unknown;
+}
