@@ -26,7 +26,7 @@ class SelfTest {
   static Status testSDCard();
   static Status testPower();
   static Status testSpeaker();
-  static Status testKalman();
+  static Status testVario();
 
   void selfTest_drawDisplay();  // show progress & results on LCD display
 
@@ -40,7 +40,7 @@ class SelfTest {
     Status buttons = Status::Unknown;
     Status power = Status::Unknown;
     Status speaker = Status::Unknown;
-    Status kalman = Status::Unknown;
+    Status vario = Status::Unknown;
   } results;
 };
 extern SelfTest selfTest;
@@ -70,4 +70,21 @@ class ButtonsInteractiveTest : public InteractiveTest {
 
   SelfTest_PageButtons selfTest_pageButtons{&upPressed, &downPressed, &leftPressed, &rightPressed,
                                             &centerPressed};  //. button test display
+};
+
+class VarioInteractiveTest : public InteractiveTest {
+ public:
+  bool update();
+
+ protected:
+  float initialAltitude = 0.0f;
+  float maxAltitude = 0.0f;
+  float deltaAltitude = 0.0f;
+  float climb = 0.0f;
+  float maxClimb = 0.0f;
+  float maxSink = 0.0f;
+
+  SelfTest_PageVario selfTest_pageVario{
+      &deltaAltitude, &maxAltitude, &climb, &maxClimb, &maxSink,
+  };  //. vario test display
 };

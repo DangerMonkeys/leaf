@@ -18,6 +18,7 @@
 
 SelfTest selfTest;
 ButtonsInteractiveTest buttonsTest;
+VarioInteractiveTest varioTest;
 
 constexpr size_t BUFFER_SIZE = 512;
 File self_test_file;
@@ -173,6 +174,13 @@ SelfTest::Status SelfTest::testDisplay() {
 bool ButtonsInteractiveTest::update() {
   if (!running) {
     running = true;
+    // reset tracking variables
+    upPressed = false;
+    downPressed = false;
+    leftPressed = false;
+    rightPressed = false;
+    centerPressed = false;
+    waitForInput = 800;  // reset timeout (10ms ticks)
     selfTestInfo("* SELF TEST * BUTTONS * Starting button test - please press each button");
     result = SelfTest::Status::Unknown;
     selfTest_pageButtons.show();  // show display page for button test
@@ -238,13 +246,67 @@ bool ButtonsInteractiveTest::update() {
     display.update();
     delay(500);                    // pause to let user see test results on display screen
     selfTest_pageButtons.close();  // close button test display page
-    // test complete, reset variables and stop running the test
-    upPressed = false;
-    downPressed = false;
-    leftPressed = false;
-    rightPressed = false;
-    centerPressed = false;
+    // test complete, stop running the test
+    running = false;
+  }
+
+  return running;
+}
+
+///////////////////////////////////////////////
+// Vario Test
+
+bool VarioInteractiveTest::update() {
+  if (!running) {
+    running = true;
     waitForInput = 800;  // reset timeout (10ms ticks)
+    initialAltitude = baro.altF();
+    maxAltitude = initialAltitude;
+    maxClimb = 0.0f;
+    maxSink = 0.0f;
+    selfTestInfo("* SELF TEST *  VARIO  * Starting vario test - please raise & lower quickly");
+    result = SelfTest::Status::Unknown;
+    selfTest_pageVario.show();  // show display page for vario test
+  }
+
+  // check for sufficient vario values
+  if (baro.altF() > maxAltitude) {
+    maxAltitude = baro.altF();
+    deltaAltitude = maxAltitude - initialAltitude;
+  }
+  climb = baro.climbRate();
+  if (climb > maxClimb) {
+    maxClimb = baro.climbRate();
+  } else if (baro.climbRate() < maxSink) {
+    maxSink = baro.climbRate();
+  }
+
+  // fail test if timeout reached
+  if (varioTest.waitForInput-- <= 0) {
+    varioTest.result = SelfTest::Status::Fail;
+    speaker.playSound(fx::cancel);
+    selfTestInfo("* SELF TEST *  VARIO  * FAIL - Timeout waiting for climb & sink");
+  }
+
+  // if vario values sufficient, pass the test
+  if (deltaAltitude >= 0.5f && maxClimb >= 1.0f && maxSink <= -1.0f) {
+    varioTest.result = SelfTest::Status::Pass;
+    speaker.playSound(fx::confirm);
+    selfTestInfo(
+        "* SELF TEST *  VARIO  * PASS - Detected altitude change of %g m, max climb %g m/s, max "
+        "sink %g m/s",
+        deltaAltitude, maxClimb, maxSink);
+  }
+
+  // handle test results (or continue test)
+  if (varioTest.result != SelfTest::Status::Unknown) {
+    Serial.println("* SELF TEST *  VARIO  * Test complete");
+    selfTest.results.vario = varioTest.result;
+    display.update();
+    delay(500);                  // pause to let user see test results on display screen
+    selfTest_pageVario.close();  // close vario test display page
+    // test complete, reset variables and stop running the test
+
     running = false;
   }
 
@@ -310,6 +372,8 @@ SelfTest::Status SelfTest::testSpeaker() {
 void SelfTest::runAllTests() {
   if (buttonsTest.result == SelfTest::Status::Unknown) {
     buttonsTest.update();
+  } else if (varioTest.result == SelfTest::Status::Unknown) {
+    varioTest.update();
   }
   // else if (other tests go here)
   else {
@@ -336,7 +400,7 @@ void SelfTest::runInteractiveTests(bool closeFileWhenDone) {
   selfTest.results.buttons = testButtons();
   selfTest.results.speaker = testSpeaker();
   selfTest.results.display = testDisplay();
-  selfTest.results.kalman = testKalman();
+  selfTest.results.vario = testVario();
   if (closeFileWhenDone && self_test_file) {
     self_test_file.close();
   }
@@ -345,4 +409,6 @@ void SelfTest::runInteractiveTests(bool closeFileWhenDone) {
 void SelfTest::clearResults() {
   buttonsTest.result = SelfTest::Status::Unknown;
   selfTest.results.buttons = SelfTest::Status::Unknown;
+  varioTest.result = SelfTest::Status::Unknown;
+  selfTest.results.vario = SelfTest::Status::Unknown;
 }

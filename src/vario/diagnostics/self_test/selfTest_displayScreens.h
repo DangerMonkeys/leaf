@@ -24,3 +24,31 @@ class SelfTest_PageButtons : public SimpleSettingsMenuPage {
   bool* right_;
   bool* center_;
 };
+
+// Vario Self-Test Page
+class SelfTest_PageVario : public SimpleSettingsMenuPage {
+ public:
+  SelfTest_PageVario(float* altIncrease, float* altMax, float* climb, float* climbMax,
+                     float* climbMin)
+      : altIncrease_(altIncrease),
+        altMax_(altMax),
+        climb_(climb),
+        climbMax_(climbMax),
+        climbMin_(climbMin) {}
+  const char* get_title() const override { return "Vario Test"; }
+
+  bool button_event(Button button, ButtonEvent state, uint8_t count) override {
+    // Ignore button events on this page
+    return false;
+  }
+  void show();
+  void draw_extra() override;
+  void close() { pop_page(); }
+
+ private:
+  float* altIncrease_;
+  float* altMax_;
+  float* climb_;
+  float* climbMax_;
+  float* climbMin_;
+};

@@ -57,3 +57,26 @@ void SelfTest_PageButtons::draw_extra() {
     u8g2.print("FAIL");
   }
 }
+
+//////////////////////////////////////////////
+// Vario Self-Test Page
+void SelfTest_PageVario::show() { push_page(this); }
+
+void SelfTest_PageVario::draw_extra() {
+  u8g2.setCursor(23, 40);
+  u8g2.setFont(leaf_6x12);
+  u8g2.print("Quickly");
+  u8g2.setCursor(5, 55);
+  u8g2.print("raise Leaf");
+  u8g2.setCursor(12, 70);
+  u8g2.print("above your head");
+  u8g2.setCursor(22, 85);
+  u8g2.print("and back down");
+
+  u8g2.setCursor(36, 160);
+  if (selfTest.results.buttons == SelfTest::Status::Pass) {
+    u8g2.print("PASS");
+  } else if (selfTest.results.buttons == SelfTest::Status::Fail) {
+    u8g2.print("FAIL");
+  }
+}
