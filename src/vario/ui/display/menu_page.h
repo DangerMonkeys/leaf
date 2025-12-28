@@ -73,7 +73,7 @@ class MenuPage {
 
 class SettingsMenuPage : public MenuPage {
  public:
-  bool button_event(Button button, ButtonEvent state, uint8_t count);
+  virtual bool button_event(Button button, ButtonEvent state, uint8_t count);
 
  protected:
   virtual void setting_change(Button dir, ButtonEvent state, uint8_t count) = 0;
