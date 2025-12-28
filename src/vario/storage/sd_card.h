@@ -12,10 +12,9 @@ class SDCard {
   bool isMounted() { return mounted_; }
 
   bool setupMassStorage();
-
- private:
   static bool isCardPresent();
 
+ private:
   // Whether the SD card is currently mounted (used to compare against the SD_DETECT
   // pin so we can tell if a card has been inserted or removed)
   bool mounted_ = false;
