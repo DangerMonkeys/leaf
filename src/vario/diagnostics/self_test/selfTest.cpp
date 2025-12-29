@@ -257,28 +257,47 @@ bool ButtonsInteractiveTest::update() {
 // Vario Test
 
 bool VarioInteractiveTest::update() {
+  // initialize the test
   if (!running) {
     running = true;
-    waitForInput = 800;  // reset timeout (10ms ticks)
+    initializedTest = false;
+    waitForInput = 800;         // reset timeout (10ms ticks)
+    selfTest_pageVario.show();  // show display page for vario test
+    result = SelfTest::Status::Unknown;
+  }
+
+  // delay if baro not ready yet
+  if (baro.state() != Barometer::State::Ready || baro.climbRateFilteredValid() == false) {
+    // If this is our first time delaying, send waiting message
+    if (!delayForCalibration)
+      selfTestInfo("* SELF TEST *  VARIO  * DELAY - Waiting for Baro Calibration");
+    delayForCalibration = true;
+    return running;
+  }
+  if (initializedTest == false) {
+    initializedTest = true;
+    if (delayForCalibration)
+      speaker.playSound(fx::confirm);  // if we delayed, play sound to alert user we're starting now
+    delayForCalibration = false;
     initialAltitude = baro.altF();
     maxAltitude = initialAltitude;
+    deltaAltitude = 0.0f;
     maxClimb = 0.0f;
     maxSink = 0.0f;
     selfTestInfo("* SELF TEST *  VARIO  * Starting vario test - please raise & lower quickly");
-    result = SelfTest::Status::Unknown;
-    selfTest_pageVario.show();  // show display page for vario test
   }
 
   // check for sufficient vario values
-  if (baro.altF() > maxAltitude) {
-    maxAltitude = baro.altF();
+  float alt = baro.altF();
+  if (alt > maxAltitude) {
+    maxAltitude = alt;
     deltaAltitude = maxAltitude - initialAltitude;
   }
   climb = baro.climbRate();
   if (climb > maxClimb) {
-    maxClimb = baro.climbRate();
-  } else if (baro.climbRate() < maxSink) {
-    maxSink = baro.climbRate();
+    maxClimb = climb;
+  } else if (climb < maxSink) {
+    maxSink = climb;
   }
 
   // fail test if timeout reached

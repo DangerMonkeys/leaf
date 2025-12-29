@@ -29,12 +29,13 @@ class SelfTest_PageButtons : public SimpleSettingsMenuPage {
 class SelfTest_PageVario : public SimpleSettingsMenuPage {
  public:
   SelfTest_PageVario(float* altIncrease, float* altMax, float* climb, float* climbMax,
-                     float* climbMin)
+                     float* climbMin, bool* delayForCalib)
       : altIncrease_(altIncrease),
         altMax_(altMax),
         climb_(climb),
         climbMax_(climbMax),
-        climbMin_(climbMin) {}
+        climbMin_(climbMin),
+        delayForCalib_(delayForCalib) {}
   const char* get_title() const override { return "Vario Test"; }
 
   bool button_event(Button button, ButtonEvent state, uint8_t count) override {
@@ -51,4 +52,5 @@ class SelfTest_PageVario : public SimpleSettingsMenuPage {
   float* climb_;
   float* climbMax_;
   float* climbMin_;
+  bool* delayForCalib_;
 };

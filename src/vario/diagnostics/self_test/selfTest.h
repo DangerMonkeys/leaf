@@ -49,7 +49,7 @@ extern SelfTest selfTest;
 // giving instructions
 class InteractiveTest {
  public:
-  virtual bool update();  // returns true if test is complete
+  virtual bool update();  // returns true if update() needs to be called again
   SelfTest::Status result = SelfTest::Status::Unknown;
   bool running = false;
 
@@ -83,8 +83,10 @@ class VarioInteractiveTest : public InteractiveTest {
   float climb = 0.0f;
   float maxClimb = 0.0f;
   float maxSink = 0.0f;
+  bool delayForCalibration = false;
+  bool initializedTest = false;
 
   SelfTest_PageVario selfTest_pageVario{
-      &deltaAltitude, &maxAltitude, &climb, &maxClimb, &maxSink,
-  };  //. vario test display
+      &deltaAltitude, &maxAltitude, &climb,
+      &maxClimb,      &maxSink,     &delayForCalibration};  //. vario test display
 };
