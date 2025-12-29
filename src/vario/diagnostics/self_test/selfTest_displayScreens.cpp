@@ -106,3 +106,25 @@ void SelfTest_PageVario::draw_extra() {
     u8g2.print("FAIL");
   }
 }
+
+//////////////////////////////////////////////
+// Speaker Self-Test Page
+void SelfTest_PageSpeaker::show() { push_page(this); }
+
+void SelfTest_PageSpeaker::draw_extra() {
+  // instructions to user
+  u8g2.setCursor(17, 40);
+  u8g2.setFont(leaf_6x12);
+  u8g2.print("Listen for");
+  u8g2.setCursor(5, 55);
+  u8g2.print("three beeps at");
+  u8g2.setCursor(4, 70);
+  u8g2.print("low med & high");
+  u8g2.setCursor(25, 85);
+  u8g2.print("volume");
+
+  u8g2.setCursor(0, 110);
+  u8g2.print("YES: right / up");
+  u8g2.setCursor(0, 125);
+  u8g2.print("NO: left / down");
+}

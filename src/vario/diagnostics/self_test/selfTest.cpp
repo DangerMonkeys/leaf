@@ -170,6 +170,13 @@ SelfTest::Status SelfTest::testDisplay() {
   return result;
 }
 
+SelfTest::Status SelfTest::testPower() {
+  Status result = Status::Running;
+  // Placeholder implementation
+  result = Status::Pass;
+  return result;
+}
+
 ///////////////////////////////////////////////
 // Button Test
 
@@ -326,36 +333,33 @@ SelfTest::Status VarioInteractiveTest::update() {
 }
 
 ///////////////////////////////////////////////
-// Power Test
+// Speaker Test
 
-SelfTest::Status SelfTest::testPower() {
-  Status result = Status::Running;
-  // Placeholder implementation
-  result = Status::Pass;
-  return result;
-}
+SelfTest_PageSpeaker selfTest_pageSpeaker;
 
 SelfTest::Status SelfTest::testSpeaker() {
   Status result = Status::Running;
+  selfTest_pageSpeaker.show();
+  display.update();
 
   speaker.setVolume(Speaker::SoundChannel::FX, SpeakerVolume::Low);
-  speaker.playSound(fx::doubleRise);
+  speaker.playSound(fx::neutralLong);
   while (speaker.update()) {
     delay(10);  // delay to let sound finish playing
   }
-  delay(500);
+  delay(100);
   speaker.setVolume(Speaker::SoundChannel::FX, SpeakerVolume::Medium);
-  speaker.playSound(fx::doubleRise);
+  speaker.playSound(fx::neutralLong);
   while (speaker.update()) {
     delay(10);  // delay to let sound finish playing
   }
-  delay(500);
+  delay(100);
   speaker.setVolume(Speaker::SoundChannel::FX, SpeakerVolume::High);
-  speaker.playSound(fx::tripleRise);
+  speaker.playSound(fx::neutralLong);
   while (speaker.update()) {
     delay(10);  // delay to let sound finish playing
   }
-  delay(500);
+  delay(100);
   speaker.setVolume(Speaker::SoundChannel::FX, SpeakerVolume::Off);
   speaker.playSound(fx::quadRise);
   while (speaker.update()) {
@@ -366,20 +370,27 @@ SelfTest::Status SelfTest::testSpeaker() {
   int waitForInput = 5000;  // wait up to 5 seconds for user input
   Button button = Button::NONE;
   Serial.println(
-      "* SELF TEST * SPEAKER * Hear 1, 2, and 3 beeps increasingly louder, AND not 4 beeps?");
+      "* SELF TEST * SPEAKER * Hear two-beeps at low, med, high volume AND not 4-beeps?");
   Serial.println("* SELF TEST * SPEAKER * YES = UP or RIGHT button, NO = DOWN or LEFT button");
   while (waitForInput-- > 0) {
     button = buttons.inspectPins();
     if (button == Button::UP || button == Button::RIGHT) {
       result = Status::Pass;
+      selfTestInfo("* SELF TEST * SPEAKER * PASS - via user input");
       break;
     } else if (button == Button::DOWN || button == Button::LEFT) {
       result = Status::Fail;
+      selfTestInfo("* SELF TEST * SPEAKER * FAIL - via user input");
       break;
     }
     delay(1);
   }
-
+  if (waitForInput <= 0) {
+    result = Status::Fail;
+    selfTestInfo("* SELF TEST * SPEAKER * FAIL - Timeout waiting for user input");
+  }
+  selfTest_pageSpeaker.close();
+  display.update();
   return result;
 }
 
@@ -440,8 +451,12 @@ SelfTest::Status SelfTest::runInteractiveTests(bool closeFileWhenDone) {
              varioTest.status == SelfTest::Status::Running) {
     selfTest.results.vario = varioTest.update();
   }
-  // else if (other tests go here)
+  // else if (other tests requiring multiple frames go here)
   else {
+    // any other tests that only require one frame
+    selfTest.results.speaker =
+        testSpeaker();  // (speaker test is blocking and only requires one call)
+
     statusInteractiveTests = Status::Complete;  // interactive tests complete
     if (closeFileWhenDone && self_test_file) {
       self_test_file.close();

@@ -54,3 +54,17 @@ class SelfTest_PageVario : public SimpleSettingsMenuPage {
   float* climbMin_;
   bool* delayForCalib_;
 };
+
+// Speaker Self-Test Page
+class SelfTest_PageSpeaker : public SimpleSettingsMenuPage {
+ public:
+  const char* get_title() const override { return "Speaker Test"; }
+
+  bool button_event(Button button, ButtonEvent state, uint8_t count) override {
+    // Ignore button events on this page
+    return false;
+  }
+  void show();
+  void draw_extra() override;
+  void close() { pop_page(); }
+};
