@@ -80,7 +80,7 @@ void selfTestInfo(const char* msg, ...) {
 
 // Test SD Card first since test results will be logged there
 SelfTest::Status SelfTest::testSDCard() {
-  Status result = Status::Unknown;  // default Unknown
+  Status result = Status::Running;
   if (sdcard.isCardPresent() == false) {
     selfTestInfo("* SELF TEST * SD CARD * WARNING - Physical card detection failed");
   }
@@ -98,7 +98,7 @@ SelfTest::Status SelfTest::testSDCard() {
 }
 
 SelfTest::Status SelfTest::testBaro() {
-  Status result = Status::Unknown;  // default Unknown
+  Status result = Status::Running;
   if (baro.state() != Barometer::State::Ready) {
     selfTestInfo("* SELF TEST *  BARO   * FAIL - Barometer not ready");
     result == Status::Fail;
@@ -115,7 +115,7 @@ SelfTest::Status SelfTest::testBaro() {
 }
 
 SelfTest::Status SelfTest::testIMU() {
-  Status result = Status::Unknown;  // default Unknown
+  Status result = Status::Running;
   if (!imu.accelValid()) {
     selfTestInfo("* SELF TEST *   IMU   * FAIL - IMU not ready");
     result = Status::Fail;
@@ -135,7 +135,7 @@ SelfTest::Status SelfTest::testIMU() {
 }
 
 SelfTest::Status SelfTest::testAmbient() {
-  Status result = Status::Unknown;  // default Unknown
+  Status result = Status::Running;
   if (ambient.state() != Ambient::State::Ready) {
     selfTestInfo("* SELF TEST * AMBIENT * FAIL - Ambient sensor not ready");
     result = Status::Fail;
@@ -152,7 +152,7 @@ SelfTest::Status SelfTest::testAmbient() {
 }
 
 SelfTest::Status SelfTest::testGPS() {
-  Status result = Status::Unknown;  // default Unknown
+  Status result = Status::Running;
   if (!gps.fixInfo.numberOfSats) {
     selfTestInfo("* SELF TEST *   GPS   * FAIL - GPS sees zero satellites");
     result = Status::Fail;
@@ -171,9 +171,9 @@ SelfTest::Status SelfTest::testDisplay() {
 ///////////////////////////////////////////////
 // Button Test
 
-bool ButtonsInteractiveTest::update() {
-  if (!running) {
-    running = true;
+SelfTest::Status ButtonsInteractiveTest::update() {
+  if (status != SelfTest::Status::Running) {
+    status = SelfTest::Status::Running;
     // reset tracking variables
     upPressed = false;
     downPressed = false;
@@ -182,7 +182,6 @@ bool ButtonsInteractiveTest::update() {
     centerPressed = false;
     waitForInput = 800;  // reset timeout (10ms ticks)
     selfTestInfo("* SELF TEST * BUTTONS * Starting button test - please press each button");
-    result = SelfTest::Status::Unknown;
     selfTest_pageButtons.show();  // show display page for button test
   }
 
@@ -211,7 +210,7 @@ bool ButtonsInteractiveTest::update() {
 
   // Test fails if timeout before all buttons pushed
   if (buttonsTest.waitForInput-- <= 0) {
-    buttonsTest.result = SelfTest::Status::Fail;
+    buttonsTest.status = SelfTest::Status::Fail;
     speaker.playSound(fx::cancel);
     selfTestInfo("* SELF TEST * BUTTONS * FAIL - Timeout waiting for button presses");
     if (!upPressed) {
@@ -233,37 +232,33 @@ bool ButtonsInteractiveTest::update() {
 
   // Test passes if all buttons have been pressed
   if (upPressed && downPressed && leftPressed && rightPressed && centerPressed) {
-    buttonsTest.result = SelfTest::Status::Pass;
+    buttonsTest.status = SelfTest::Status::Pass;
     speaker.playSound(fx::confirm);
     selfTestInfo("* SELF TEST * BUTTONS * PASS - All buttons detected");
     // delay(750);  // pause to let user see success on display screen
   }
 
-  // handle test results (or continue test)
-  if (buttonsTest.result != SelfTest::Status::Unknown) {
+  // handle test results if test is complete
+  if (buttonsTest.status != SelfTest::Status::Running) {
     Serial.println("* SELF TEST * BUTTONS * Test complete");
-    selfTest.results.buttons = buttonsTest.result;
     display.update();
     delay(500);                    // pause to let user see test results on display screen
     selfTest_pageButtons.close();  // close button test display page
-    // test complete, stop running the test
-    running = false;
   }
 
-  return running;
+  return status;
 }
 
 ///////////////////////////////////////////////
 // Vario Test
 
-bool VarioInteractiveTest::update() {
+SelfTest::Status VarioInteractiveTest::update() {
   // initialize the test
-  if (!running) {
-    running = true;
+  if (status != SelfTest::Status::Running) {
+    status = SelfTest::Status::Running;
     initializedTest = false;
     waitForInput = 800;         // reset timeout (10ms ticks)
     selfTest_pageVario.show();  // show display page for vario test
-    result = SelfTest::Status::Unknown;
   }
 
   // delay if baro not ready yet
@@ -272,7 +267,7 @@ bool VarioInteractiveTest::update() {
     if (!delayForCalibration)
       selfTestInfo("* SELF TEST *  VARIO  * DELAY - Waiting for Baro Calibration");
     delayForCalibration = true;
-    return running;
+    return status;
   }
   if (initializedTest == false) {
     initializedTest = true;
@@ -301,15 +296,15 @@ bool VarioInteractiveTest::update() {
   }
 
   // fail test if timeout reached
-  if (varioTest.waitForInput-- <= 0) {
-    varioTest.result = SelfTest::Status::Fail;
+  if (waitForInput-- <= 0) {
+    status = SelfTest::Status::Fail;
     speaker.playSound(fx::cancel);
     selfTestInfo("* SELF TEST *  VARIO  * FAIL - Timeout waiting for climb & sink");
   }
 
   // if vario values sufficient, pass the test
   if (deltaAltitude >= 0.5f && maxClimb >= 1.0f && maxSink <= -1.0f) {
-    varioTest.result = SelfTest::Status::Pass;
+    status = SelfTest::Status::Pass;
     speaker.playSound(fx::confirm);
     selfTestInfo(
         "* SELF TEST *  VARIO  * PASS - Detected altitude change of %g m, max climb %g m/s, max "
@@ -318,30 +313,27 @@ bool VarioInteractiveTest::update() {
   }
 
   // handle test results (or continue test)
-  if (varioTest.result != SelfTest::Status::Unknown) {
-    Serial.println("* SELF TEST *  VARIO  * Test complete");
-    selfTest.results.vario = varioTest.result;
+  if (status != SelfTest::Status::Running) {
+    selfTestInfo("* SELF TEST *  VARIO  * Test complete");
     display.update();
     delay(500);                  // pause to let user see test results on display screen
     selfTest_pageVario.close();  // close vario test display page
-    // test complete, reset variables and stop running the test
-
-    running = false;
   }
 
-  return running;
+  return status;
 }
 
 ///////////////////////////////////////////////
 // Power Test
 
 SelfTest::Status SelfTest::testPower() {
+  Status result = Status::Running;
   // Placeholder implementation
   return Status::Pass;
 }
 
 SelfTest::Status SelfTest::testSpeaker() {
-  Status result = Status::Unknown;  // default Unknown
+  Status result = Status::Running;
 
   speaker.setVolume(Speaker::SoundChannel::FX, SpeakerVolume::Low);
   speaker.playSound(fx::doubleRise);
@@ -388,46 +380,67 @@ SelfTest::Status SelfTest::testSpeaker() {
   return result;
 }
 
-void SelfTest::runAllTests() {
-  if (buttonsTest.result == SelfTest::Status::Unknown) {
-    buttonsTest.update();
-  } else if (varioTest.result == SelfTest::Status::Unknown) {
-    varioTest.update();
+////////////////////////////////////////////////
+// SelfTest methods to run tests
+
+SelfTest::Status SelfTest::runAllTests() {
+  status = Status::Running;
+  if (runAutoTests(false) == Status::Running) {  // keep file open
+    // keep going
+  } else if (runInteractiveTests(true) == Status::Running) {  // close file when done
+    // keep going
+  } else {
+    status = Status::Complete;  // we're done
+    Serial.println("* SELF TEST * All tests complete");
+  }
+  return status;
+}
+
+SelfTest::Status SelfTest::runAutoTests(bool closeFileWhenDone) {
+  selfTest.statusAutoTests = Status::Running;
+
+  if ((selfTest.results.baro = testBaro()) == Status::Running) {
+    // keep going
+  } else if ((selfTest.results.imu = testIMU()) == Status::Running) {
+    // keep going
+  } else if ((selfTest.results.gps = testGPS()) == Status::Running) {
+    // keep going
+  } else if ((selfTest.results.ambient = testAmbient()) == Status::Running) {
+    // keep going
+  } else if ((selfTest.results.display = testDisplay()) == Status::Running) {
+    // keep going
+  } else if ((selfTest.results.sdCard = testSDCard()) == Status::Running) {
+    // keep going
+  } else if ((selfTest.results.power = testPower()) == Status::Running) {
+    // keep going
+  } else {
+    statusAutoTests = Status::Complete;  // auto tests complete
+    if (closeFileWhenDone && self_test_file) {
+      self_test_file.close();
+    }
+    Serial.println("* SELF TEST * Auto tests complete");
+  }
+  return statusAutoTests;
+}
+
+SelfTest::Status SelfTest::runInteractiveTests(bool closeFileWhenDone) {
+  statusInteractiveTests = Status::Running;
+
+  if ((selfTest.results.buttons = buttonsTest.update()) == SelfTest::Status::Running) {
+    // keep going
+  } else if ((selfTest.results.vario = varioTest.update()) == SelfTest::Status::Running) {
+    // keep going
   }
   // else if (other tests go here)
   else {
-    selfTest.running = false;
-    Serial.println("* SELF TEST * All tests complete");
+    statusInteractiveTests = Status::Complete;  // interactive tests complete
+    if (closeFileWhenDone && self_test_file) {
+      self_test_file.close();
+    }
+    Serial.println("* SELF TEST * Interactive tests complete");
   }
-  // runAutoTests(false);        // keep file open
-  // runInteractiveTests(true);  // close file when done
+
+  return statusInteractiveTests;
 }
 
-void SelfTest::runAutoTests(bool closeFileWhenDone) {
-  selfTest.results.baro = testBaro();
-  selfTest.results.imu = testIMU();
-  selfTest.results.gps = testGPS();
-  selfTest.results.ambient = testAmbient();
-  selfTest.results.sdCard = testSDCard();
-  selfTest.results.power = testPower();
-  if (closeFileWhenDone && self_test_file) {
-    self_test_file.close();
-  }
-}
-
-void SelfTest::runInteractiveTests(bool closeFileWhenDone) {
-  selfTest.results.buttons = testButtons();
-  selfTest.results.speaker = testSpeaker();
-  selfTest.results.display = testDisplay();
-  selfTest.results.vario = testVario();
-  if (closeFileWhenDone && self_test_file) {
-    self_test_file.close();
-  }
-}
-
-void SelfTest::clearResults() {
-  buttonsTest.result = SelfTest::Status::Unknown;
-  selfTest.results.buttons = SelfTest::Status::Unknown;
-  varioTest.result = SelfTest::Status::Unknown;
-  selfTest.results.vario = SelfTest::Status::Unknown;
-}
+void SelfTest::clearResults() { selfTest.results.reset(); }

@@ -244,7 +244,7 @@ void TaskManager::setNecessaryTasksForBlock() {
   performTask.buttons = true;
   performTask.baro = true;
   performTask.speakerTimer = true;
-  if (selfTest.running)
+  if (selfTest.status == SelfTest::Status::Running)
     performTask.selfTest = true;
   else
     (performTask.selfTest = false);

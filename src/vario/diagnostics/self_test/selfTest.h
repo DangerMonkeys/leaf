@@ -6,30 +6,29 @@
 
 class SelfTest {
  public:
-  enum class Status { Unknown, Fail, Pass };
+  enum class Status { Pass, Fail, Running, Complete, Unknown };
+
+  Status status = Status::Unknown;
+  Status statusAutoTests = Status::Unknown;
+  Status statusInteractiveTests = Status::Unknown;
 
   // Run all self tests
-  static void runAllTests();
-  static void runAutoTests(bool closeFileWhenDone);
-  static void runInteractiveTests(bool closeFileWhenDone);
-  static void clearResults();
+  Status runAllTests();
+  Status runAutoTests(bool closeFileWhenDone);
+  Status runInteractiveTests(bool closeFileWhenDone);
+  void clearResults();
 
-  bool running = false;
-
-  // Individual test functions
+  // Individual automated test functions
   static Status testBaro();
   static Status testIMU();
   static Status testGPS();
   static Status testAmbient();
   static Status testDisplay();
-  static Status testButtons();
   static Status testSDCard();
   static Status testPower();
   static Status testSpeaker();
-  static Status testVario();
 
-  void selfTest_drawDisplay();  // show progress & results on LCD display
-
+  // results for all self tests, including both automated and interactive
   struct Results {
     Status sdCard = Status::Unknown;
     Status baro = Status::Unknown;
@@ -41,6 +40,8 @@ class SelfTest {
     Status power = Status::Unknown;
     Status speaker = Status::Unknown;
     Status vario = Status::Unknown;
+
+    void reset() { *this = Results{}; }  // reset all back to Unknown
   } results;
 };
 extern SelfTest selfTest;
@@ -49,9 +50,8 @@ extern SelfTest selfTest;
 // giving instructions
 class InteractiveTest {
  public:
-  virtual bool update();  // returns true if update() needs to be called again
-  SelfTest::Status result = SelfTest::Status::Unknown;
-  bool running = false;
+  virtual SelfTest::Status update();  // returns true if update() needs to be called again
+  SelfTest::Status status = SelfTest::Status::Unknown;
 
  protected:
   int16_t waitForInput = 800;  // 10ms ticks to wait for user input
@@ -59,9 +59,10 @@ class InteractiveTest {
 
 class ButtonsInteractiveTest : public InteractiveTest {
  public:
-  bool update();
+  SelfTest::Status update();
 
  protected:
+  SelfTest::Status status;
   bool upPressed = false;
   bool downPressed = false;
   bool leftPressed = false;
@@ -74,9 +75,10 @@ class ButtonsInteractiveTest : public InteractiveTest {
 
 class VarioInteractiveTest : public InteractiveTest {
  public:
-  bool update();
+  SelfTest::Status update();
 
  protected:
+  SelfTest::Status status;
   float initialAltitude = 0.0f;
   float maxAltitude = 0.0f;
   float deltaAltitude = 0.0f;

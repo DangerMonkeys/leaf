@@ -242,7 +242,7 @@ void debugPage_button(Button button, ButtonEvent state, uint8_t count) {
     case Button::UP:
       switch (state) {
         case ButtonEvent::CLICKED:
-          selfTest.running = true;
+          selfTest.status = SelfTest::Status::Running;
           // baro.adjustAltSetting(1, 0);
           break;
         case ButtonEvent::HELD:
