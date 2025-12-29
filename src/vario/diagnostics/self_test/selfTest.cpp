@@ -104,7 +104,7 @@ SelfTest::Status SelfTest::testBaro() {
     result == Status::Fail;
   } else {
     if (baro.altF() < 3500 && baro.altF() > -200) {
-      Serial.println("* SELF TEST *  BARO   * PASS");
+      selfTestInfo("* SELF TEST *  BARO   * PASS - Barometer reading: %g", baro.altF());
       result = Status::Pass;
     } else {
       selfTestInfo("* SELF TEST *  BARO   * FAIL - Value out of range: %g", baro.altF());
@@ -124,7 +124,7 @@ SelfTest::Status SelfTest::testIMU() {
     // Check if acceleration values are within a reasonable range
     if (accelTotal < 1.2f && accelTotal > 0.8f) {
       result = Status::Pass;
-      selfTestInfo("* SELF TEST *   IMU   * PASS");
+      selfTestInfo("* SELF TEST *   IMU   * PASS - Total acceleration: %g", accelTotal);
     } else {
       selfTestInfo("* SELF TEST *   IMU   * FAIL - Total acceleration out of range: %g",
                    accelTotal);
@@ -164,7 +164,9 @@ SelfTest::Status SelfTest::testGPS() {
 }
 
 SelfTest::Status SelfTest::testDisplay() {
-  Status result = SelfTest::Status::Unknown;  // Default Unknown
+  Status result = Status::Running;
+  // Placeholder implementation
+  result = Status::Pass;
   return result;
 }
 
@@ -181,7 +183,7 @@ SelfTest::Status ButtonsInteractiveTest::update() {
     rightPressed = false;
     centerPressed = false;
     waitForInput = 800;  // reset timeout (10ms ticks)
-    selfTestInfo("* SELF TEST * BUTTONS * Starting button test - please press each button");
+    Serial.println("* SELF TEST * BUTTONS * Starting button test - please press each button");
     selfTest_pageButtons.show();  // show display page for button test
   }
 
@@ -279,7 +281,7 @@ SelfTest::Status VarioInteractiveTest::update() {
     deltaAltitude = 0.0f;
     maxClimb = 0.0f;
     maxSink = 0.0f;
-    selfTestInfo("* SELF TEST *  VARIO  * Starting vario test - please raise & lower quickly");
+    Serial.println("* SELF TEST *  VARIO  * Starting vario test - please raise & lower quickly");
   }
 
   // check for sufficient vario values
@@ -314,7 +316,7 @@ SelfTest::Status VarioInteractiveTest::update() {
 
   // handle test results (or continue test)
   if (status != SelfTest::Status::Running) {
-    selfTestInfo("* SELF TEST *  VARIO  * Test complete");
+    Serial.println("* SELF TEST *  VARIO  * Test complete");
     display.update();
     delay(500);                  // pause to let user see test results on display screen
     selfTest_pageVario.close();  // close vario test display page
@@ -329,7 +331,8 @@ SelfTest::Status VarioInteractiveTest::update() {
 SelfTest::Status SelfTest::testPower() {
   Status result = Status::Running;
   // Placeholder implementation
-  return Status::Pass;
+  result = Status::Pass;
+  return result;
 }
 
 SelfTest::Status SelfTest::testSpeaker() {
@@ -385,40 +388,44 @@ SelfTest::Status SelfTest::testSpeaker() {
 
 SelfTest::Status SelfTest::runAllTests() {
   status = Status::Running;
-  if (runAutoTests(false) == Status::Running) {  // keep file open
-    // keep going
-  } else if (runInteractiveTests(true) == Status::Running) {  // close file when done
-    // keep going
+  if (statusAutoTests == Status::Running || statusAutoTests == Status::Unknown) {
+    statusAutoTests = runAutoTests(false);  // keep file open
+  } else if (statusInteractiveTests == Status::Running ||
+             statusInteractiveTests == Status::Unknown) {
+    statusInteractiveTests = runInteractiveTests(true);  // close file when done
   } else {
     status = Status::Complete;  // we're done
-    Serial.println("* SELF TEST * All tests complete");
+    selfTestInfo("* SELF TEST * All tests complete");
   }
   return status;
 }
 
 SelfTest::Status SelfTest::runAutoTests(bool closeFileWhenDone) {
-  selfTest.statusAutoTests = Status::Running;
+  statusAutoTests = Status::Running;
 
-  if ((selfTest.results.baro = testBaro()) == Status::Running) {
-    // keep going
-  } else if ((selfTest.results.imu = testIMU()) == Status::Running) {
-    // keep going
-  } else if ((selfTest.results.gps = testGPS()) == Status::Running) {
-    // keep going
-  } else if ((selfTest.results.ambient = testAmbient()) == Status::Running) {
-    // keep going
-  } else if ((selfTest.results.display = testDisplay()) == Status::Running) {
-    // keep going
-  } else if ((selfTest.results.sdCard = testSDCard()) == Status::Running) {
-    // keep going
-  } else if ((selfTest.results.power = testPower()) == Status::Running) {
-    // keep going
+  if (selfTest.results.sdCard == Status::Unknown || selfTest.results.sdCard == Status::Running) {
+    selfTest.results.sdCard = testSDCard();
+  } else if (selfTest.results.baro == Status::Unknown || selfTest.results.baro == Status::Running) {
+    selfTest.results.baro = testBaro();
+  } else if (selfTest.results.imu == Status::Unknown || selfTest.results.imu == Status::Running) {
+    selfTest.results.imu = testIMU();
+  } else if (selfTest.results.gps == Status::Unknown || selfTest.results.gps == Status::Running) {
+    selfTest.results.gps = testGPS();
+  } else if (selfTest.results.ambient == Status::Unknown ||
+             selfTest.results.ambient == Status::Running) {
+    selfTest.results.ambient = testAmbient();
+  } else if (selfTest.results.display == Status::Unknown ||
+             selfTest.results.display == Status::Running) {
+    selfTest.results.display = testDisplay();
+  } else if (selfTest.results.power == Status::Unknown ||
+             selfTest.results.power == Status::Running) {
+    selfTest.results.power = testPower();
   } else {
     statusAutoTests = Status::Complete;  // auto tests complete
     if (closeFileWhenDone && self_test_file) {
       self_test_file.close();
     }
-    Serial.println("* SELF TEST * Auto tests complete");
+    selfTestInfo("* SELF TEST * Auto tests complete");
   }
   return statusAutoTests;
 }
@@ -426,10 +433,12 @@ SelfTest::Status SelfTest::runAutoTests(bool closeFileWhenDone) {
 SelfTest::Status SelfTest::runInteractiveTests(bool closeFileWhenDone) {
   statusInteractiveTests = Status::Running;
 
-  if ((selfTest.results.buttons = buttonsTest.update()) == SelfTest::Status::Running) {
-    // keep going
-  } else if ((selfTest.results.vario = varioTest.update()) == SelfTest::Status::Running) {
-    // keep going
+  if (buttonsTest.status == SelfTest::Status::Unknown ||
+      buttonsTest.status == SelfTest::Status::Running) {
+    selfTest.results.buttons = buttonsTest.update();
+  } else if (varioTest.status == SelfTest::Status::Unknown ||
+             varioTest.status == SelfTest::Status::Running) {
+    selfTest.results.vario = varioTest.update();
   }
   // else if (other tests go here)
   else {
@@ -437,10 +446,17 @@ SelfTest::Status SelfTest::runInteractiveTests(bool closeFileWhenDone) {
     if (closeFileWhenDone && self_test_file) {
       self_test_file.close();
     }
-    Serial.println("* SELF TEST * Interactive tests complete");
+    selfTestInfo("* SELF TEST * Interactive tests complete");
   }
 
   return statusInteractiveTests;
 }
 
-void SelfTest::clearResults() { selfTest.results.reset(); }
+void SelfTest::clearResults() {
+  selfTest.results.reset();
+  selfTest.status = Status::Unknown;
+  selfTest.statusAutoTests = Status::Unknown;
+  selfTest.statusInteractiveTests = Status::Unknown;
+  buttonsTest.status = Status::Unknown;
+  varioTest.status = Status::Unknown;
+}

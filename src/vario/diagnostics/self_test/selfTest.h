@@ -46,8 +46,8 @@ class SelfTest {
 };
 extern SelfTest selfTest;
 
-// Object for Interactive Test that requires user action/input and specific display updates for
-// giving instructions
+// Interactive Test that requires user action/input and specific display updates for giving
+// instructions
 class InteractiveTest {
  public:
   virtual SelfTest::Status update();  // returns true if update() needs to be called again
@@ -62,7 +62,6 @@ class ButtonsInteractiveTest : public InteractiveTest {
   SelfTest::Status update();
 
  protected:
-  SelfTest::Status status;
   bool upPressed = false;
   bool downPressed = false;
   bool leftPressed = false;
@@ -78,7 +77,6 @@ class VarioInteractiveTest : public InteractiveTest {
   SelfTest::Status update();
 
  protected:
-  SelfTest::Status status;
   float initialAltitude = 0.0f;
   float maxAltitude = 0.0f;
   float deltaAltitude = 0.0f;
