@@ -445,7 +445,7 @@ SelfTest::Status SelfTest::runAllTests() {
   } else if (statusInteractiveTests == Status::Running ||
              statusInteractiveTests == Status::Unknown) {
     statusInteractiveTests = runInteractiveTests(false);  // keep file open
-  } else {
+  } else if (status != Status::Complete) {
     status = Status::Complete;  // we're done
     selfTestInfo("* SELF TEST * All tests complete");
     closeTestFile();
