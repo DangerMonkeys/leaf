@@ -15,6 +15,7 @@
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
 #include "ui/input/buttons.h"
+#include "ui/settings/settings.h"
 
 SelfTest selfTest;
 ButtonsInteractiveTest buttonsTest;
@@ -406,7 +407,8 @@ SelfTest::Status SelfTest::testSpeaker() {
   while (speaker.update()) {
     delay(10);  // delay to let sound finish playing
   }
-  delay(500);
+  // return volume to user setting
+  speaker.setVolume(Speaker::SoundChannel::FX, (SpeakerVolume)settings.system_volume);
 
   int waitForInput = 5000;  // wait up to 5 seconds for user input
   Button button = Button::NONE;
