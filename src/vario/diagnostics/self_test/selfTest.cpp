@@ -79,6 +79,9 @@ void selfTestInfo(const char* msg, ...) {
 //
 
 // Test SD Card first since test results will be logged there
+
+/////////////////////////////////////////////
+// SD CARD TEST
 SelfTest::Status SelfTest::testSDCard() {
   Status result = Status::Running;
   if (sdcard.isCardPresent() == false) {
@@ -97,6 +100,8 @@ SelfTest::Status SelfTest::testSDCard() {
   return result;
 }
 
+/////////////////////////////////////////////
+// BARO TEST
 SelfTest::Status SelfTest::testBaro() {
   Status result = Status::Running;
   if (baro.state() != Barometer::State::Ready) {
@@ -113,7 +118,8 @@ SelfTest::Status SelfTest::testBaro() {
   }
   return result;
 }
-
+/////////////////////////////////////////////
+// IMU TEST
 SelfTest::Status SelfTest::testIMU() {
   Status result = Status::Running;
   if (!imu.accelValid()) {
@@ -134,6 +140,8 @@ SelfTest::Status SelfTest::testIMU() {
   return result;
 }
 
+/////////////////////////////////////////////
+// AMBIENT TEST
 SelfTest::Status SelfTest::testAmbient() {
   Status result = Status::Running;
   if (ambient.state() != Ambient::State::Ready) {
@@ -151,6 +159,8 @@ SelfTest::Status SelfTest::testAmbient() {
   return result;
 }
 
+/////////////////////////////////////////////
+// GPS TEST
 SelfTest::Status SelfTest::testGPS() {
   Status result = Status::Running;
   if (!gps.fixInfo.numberOfSats) {
@@ -163,6 +173,8 @@ SelfTest::Status SelfTest::testGPS() {
   return result;
 }
 
+/////////////////////////////////////////////
+// DISPLAY TEST
 SelfTest::Status SelfTest::testDisplay() {
   Status result = Status::Running;
   // Placeholder implementation
@@ -170,16 +182,51 @@ SelfTest::Status SelfTest::testDisplay() {
   return result;
 }
 
+/////////////////////////////////////////////
+// POWER TEST
 SelfTest::Status SelfTest::testPower() {
   Status result = Status::Running;
-  // Placeholder implementation
-  result = Status::Pass;
+
+  power.info().charging ? selfTestInfo("* SELF TEST *  POWER  * Battery charging")
+                        : selfTestInfo("* SELF TEST *  POWER  * Battery NOT charging");
+  selfTestInfo("* SELF TEST *  POWER  * Battery percent: %d%%", power.info().batteryPercent);
+
+#ifdef LED_PIN  // (only for v3.2.6+ with controllable LED and PowerGood input)
+  power.info().USBinput ? selfTestInfo("* SELF TEST *  POWER  * USB Power detected")
+                        : selfTestInfo("* SELF TEST *  POWER  * USB Power NOT detected");
+  // Pass if: [ USB Power AND (charging OR full) ] OR [ NOT USB Power AND NOT charging ]
+  if ((power.info().USBinput && (power.info().batteryPercent >= 100 || power.info().charging)) ||
+      (!power.info().USBinput && !power.info().charging)) {
+    result = Status::Pass;
+  } else {
+    result = Status::Fail;
+  }
+#else  // (for previous versions (<= v3.2.5) without PowerGood input)
+  // Pass if:  [charging] OR [ not-charging AND full ]
+  if (power.info().charging || (!power.info().charging && power.info().batteryPercent >= 100)) {
+    result = Status::Pass;
+  } else {
+    result = Status::Fail;
+  }
+#endif
+
+  if (power.info().batteryMV < 3200 || power.info().batteryMV > 4250) {
+    selfTestInfo("* SELF TEST *  POWER  * FAIL - Battery outside voltage range: %d mV",
+                 power.info().batteryMV);
+    result = Status::Fail;
+  }
+
+  if (result == Status::Pass) {
+    selfTestInfo("* SELF TEST *  POWER  * PASS");
+  } else {
+    selfTestInfo("* SELF TEST *  POWER  * FAIL - Inconsistent power state");
+  }
+
   return result;
 }
 
 ///////////////////////////////////////////////
-// Button Test
-
+// Button Test (Interactive)
 SelfTest::Status ButtonsInteractiveTest::update() {
   if (status != SelfTest::Status::Running) {
     status = SelfTest::Status::Running;
@@ -259,8 +306,7 @@ SelfTest::Status ButtonsInteractiveTest::update() {
 }
 
 ///////////////////////////////////////////////
-// Vario Test
-
+// Vario Test (Interactive)
 SelfTest::Status VarioInteractiveTest::update() {
   // initialize the test
   if (status != SelfTest::Status::Running) {
@@ -333,8 +379,7 @@ SelfTest::Status VarioInteractiveTest::update() {
 }
 
 ///////////////////////////////////////////////
-// Speaker Test
-
+// Speaker Test (Interactive)
 SelfTest_PageSpeaker selfTest_pageSpeaker;
 
 SelfTest::Status SelfTest::testSpeaker() {
@@ -456,12 +501,11 @@ SelfTest::Status SelfTest::runInteractiveTests(bool closeFileWhenDone) {
     // any other tests that only require one frame
     selfTest.results.speaker =
         testSpeaker();  // (speaker test is blocking and only requires one call)
-
+    selfTestInfo("* SELF TEST * Interactive tests complete");
     statusInteractiveTests = Status::Complete;  // interactive tests complete
     if (closeFileWhenDone && self_test_file) {
       self_test_file.close();
     }
-    selfTestInfo("* SELF TEST * Interactive tests complete");
   }
 
   return statusInteractiveTests;
