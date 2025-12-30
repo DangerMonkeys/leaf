@@ -270,19 +270,19 @@ SelfTest::Status ButtonsInteractiveTest::update() {
     speaker.playSound(fx::cancel);
     selfTestInfo("* SELF TEST * BUTTONS * FAIL - Timeout waiting for button presses");
     if (!upPressed) {
-      Serial.println("* SELF TEST * BUTTONS * FAIL - UP button NOT DETECTED");
+      selfTestInfo("* SELF TEST * BUTTONS * FAIL - UP button NOT DETECTED");
     }
     if (!downPressed) {
-      Serial.println("* SELF TEST * BUTTONS * FAIL - DOWN button NOT DETECTED");
+      selfTestInfo("* SELF TEST * BUTTONS * FAIL - DOWN button NOT DETECTED");
     }
     if (!leftPressed) {
-      Serial.println("* SELF TEST * BUTTONS * FAIL - LEFT button NOT DETECTED");
+      selfTestInfo("* SELF TEST * BUTTONS * FAIL - LEFT button NOT DETECTED");
     }
     if (!rightPressed) {
-      Serial.println("* SELF TEST * BUTTONS * FAIL - RIGHT button NOT DETECTED");
+      selfTestInfo("* SELF TEST * BUTTONS * FAIL - RIGHT button NOT DETECTED");
     }
     if (!centerPressed) {
-      Serial.println("* SELF TEST * BUTTONS * FAIL - CENTER button NOT DETECTED");
+      selfTestInfo("* SELF TEST * BUTTONS * FAIL - CENTER button NOT DETECTED");
     }
   }
 
@@ -297,8 +297,6 @@ SelfTest::Status ButtonsInteractiveTest::update() {
   // handle test results if test is complete
   if (buttonsTest.status != SelfTest::Status::Running) {
     Serial.println("* SELF TEST * BUTTONS * Test complete");
-    display.update();
-    delay(500);                    // pause to let user see test results on display screen
     selfTest_pageButtons.close();  // close button test display page
   }
 
@@ -370,8 +368,6 @@ SelfTest::Status VarioInteractiveTest::update() {
   // handle test results (or continue test)
   if (status != SelfTest::Status::Running) {
     Serial.println("* SELF TEST *  VARIO  * Test complete");
-    display.update();
-    delay(500);                  // pause to let user see test results on display screen
     selfTest_pageVario.close();  // close vario test display page
   }
 
@@ -448,12 +444,19 @@ SelfTest::Status SelfTest::runAllTests() {
     statusAutoTests = runAutoTests(false);  // keep file open
   } else if (statusInteractiveTests == Status::Running ||
              statusInteractiveTests == Status::Unknown) {
-    statusInteractiveTests = runInteractiveTests(true);  // close file when done
+    statusInteractiveTests = runInteractiveTests(false);  // keep file open
   } else {
     status = Status::Complete;  // we're done
     selfTestInfo("* SELF TEST * All tests complete");
+    closeTestFile();
   }
   return status;
+}
+
+void SelfTest::closeTestFile() {
+  if (self_test_file) {
+    self_test_file.close();
+  }
 }
 
 SelfTest::Status SelfTest::runAutoTests(bool closeFileWhenDone) {
@@ -478,10 +481,10 @@ SelfTest::Status SelfTest::runAutoTests(bool closeFileWhenDone) {
     selfTest.results.power = testPower();
   } else {
     statusAutoTests = Status::Complete;  // auto tests complete
-    if (closeFileWhenDone && self_test_file) {
-      self_test_file.close();
-    }
     selfTestInfo("* SELF TEST * Auto tests complete");
+    if (closeFileWhenDone && self_test_file) {
+      closeTestFile();
+    }
   }
   return statusAutoTests;
 }
@@ -489,22 +492,22 @@ SelfTest::Status SelfTest::runAutoTests(bool closeFileWhenDone) {
 SelfTest::Status SelfTest::runInteractiveTests(bool closeFileWhenDone) {
   statusInteractiveTests = Status::Running;
 
-  if (buttonsTest.status == SelfTest::Status::Unknown ||
-      buttonsTest.status == SelfTest::Status::Running) {
-    selfTest.results.buttons = buttonsTest.update();
-  } else if (varioTest.status == SelfTest::Status::Unknown ||
-             varioTest.status == SelfTest::Status::Running) {
+  if (varioTest.status == SelfTest::Status::Unknown ||
+      varioTest.status == SelfTest::Status::Running) {
     selfTest.results.vario = varioTest.update();
+  } else if (buttonsTest.status == SelfTest::Status::Unknown ||
+             buttonsTest.status == SelfTest::Status::Running) {
+    selfTest.results.buttons = buttonsTest.update();
   }
   // else if (other tests requiring multiple frames go here)
   else {
-    // any other tests that only require one frame
+    // any other interactive tests that only require one frame
     selfTest.results.speaker =
         testSpeaker();  // (speaker test is blocking and only requires one call)
     selfTestInfo("* SELF TEST * Interactive tests complete");
     statusInteractiveTests = Status::Complete;  // interactive tests complete
     if (closeFileWhenDone && self_test_file) {
-      self_test_file.close();
+      closeTestFile();
     }
   }
 

@@ -49,13 +49,6 @@ void SelfTest_PageButtons::draw_extra() {
     u8g2.print("X");
   else
     u8g2.print("O");
-
-  u8g2.setCursor(36, 160);
-  if (selfTest.results.buttons == SelfTest::Status::Pass) {
-    u8g2.print("PASS");
-  } else if (selfTest.results.buttons == SelfTest::Status::Fail) {
-    u8g2.print("FAIL");
-  }
 }
 
 //////////////////////////////////////////////
@@ -97,14 +90,6 @@ void SelfTest_PageVario::draw_extra() {
   u8g2.setCursor(10, 140);
   u8g2.print("Max Sink:   ");
   u8g2.print(*climbMin_);
-
-  u8g2.setFont(leaf_6x12);
-  u8g2.setCursor(36, 160);
-  if (selfTest.results.vario == SelfTest::Status::Pass) {
-    u8g2.print("PASS");
-  } else if (selfTest.results.vario == SelfTest::Status::Fail) {
-    u8g2.print("FAIL");
-  }
 }
 
 //////////////////////////////////////////////

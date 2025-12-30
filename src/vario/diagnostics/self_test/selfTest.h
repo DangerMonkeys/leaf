@@ -14,8 +14,11 @@ class SelfTest {
 
   // Run all self tests
   Status runAllTests();
-  Status runAutoTests(bool closeFileWhenDone);
-  Status runInteractiveTests(bool closeFileWhenDone);
+  Status runAutoTests(bool closeFileWhenDone);  // allow closing file in this method if you only
+                                                // want to run Auto Tests
+  Status runInteractiveTests(bool closeFileWhenDone);  // allow closing file in this method if you
+                                                       // only want to run Interactive Tests
+  void closeTestFile();
   void clearResults();
 
   // Individual automated test functions
