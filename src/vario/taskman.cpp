@@ -6,6 +6,7 @@
 #include "task.h"
 
 #include "comms/ble.h"
+#include "diagnostics/diagnostic_network/diagnostic_network.h"
 #include "hardware/Leaf_SPI.h"
 #include "hardware/aht20.h"
 #include "hardware/buttons.h"
@@ -362,6 +363,8 @@ void TaskManager::doNecessaryTasks(void) {
     performTask.memoryStats = false;
   }
 #endif
+
+  diagnostic_network.update();
 
   if (performedNecessaryTasks && DEBUG_MAIN_LOOP) {
     performedNecessaryTasks = false;
