@@ -56,6 +56,8 @@ bool useSDFile() {
   self_test_file.println(LeafVersionInfo::hardwareVariant());
   self_test_file.print("Firmware Version: ");
   self_test_file.println(LeafVersionInfo::firmwareVersion());
+  self_test_file.print("MAC Address: ");
+  self_test_file.println(settings.macAddress);
 
   return self_test_file;
 }
