@@ -53,7 +53,9 @@ extern SelfTest selfTest;
 // instructions
 class InteractiveTest {
  public:
-  virtual SelfTest::Status update();  // returns true if update() needs to be called again
+  virtual SelfTest::Status update() = 0;  // returns true if update() needs to be called again
+  virtual ~InteractiveTest() = default;
+
   SelfTest::Status status = SelfTest::Status::Unknown;
 
  protected:
