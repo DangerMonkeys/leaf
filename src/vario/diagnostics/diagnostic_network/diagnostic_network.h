@@ -28,8 +28,8 @@ class DiagnosticNetwork : private StateAssertMixin<DiagnosticNetwork> {
   void onUnexpectedState(const char* action, State actual) const;
   friend struct StateAssertMixin<DiagnosticNetwork>;
 
-  State state_ = State::LookingForNetwork;
-  uint32_t t0_;
+  State state_ = State::Ready;
+  uint32_t t0_ = 0;
   const char* error_msg_ = "No error";
 
   bool printed_end_state_ = false;
