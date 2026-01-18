@@ -4,14 +4,26 @@
 
 #include "diagnostics/fatal_error.h"
 #include "power.h"
+#include "utils/magic_enum.h"
 
 static constexpr const char* DIAGNOSTIC_NETWORK_SSID = "LeafDiagnostics";
 static constexpr const char* DIAGNOSTIC_NETWORK_PASSWORD = "leafdiagnostics";
 
 static constexpr int32_t MIN_RSSI_DBM = -85;  // ignore super-weak signals
 static constexpr uint32_t CONNECT_TIMEOUT_MS = 15000;
+static constexpr uint32_t SCAN_RETRY_DELAY_MS = 2000;
 
 DiagnosticNetwork diagnostic_network;
+
+void DiagnosticNetwork::reset(const char* reason) {
+  Serial.printf("DiagnosticNetwork: reset (%s)\n", reason ? reason : "unknown");
+  printed_end_state_ = false;
+  error_msg_ = "No error";
+  state_ = State::Ready;
+  next_scan_attempt_ms_ = 0;
+  WiFi.scanDelete();
+  WiFi.disconnect(true, true);
+}
 
 void DiagnosticNetwork::update() {
   if (state_ == State::Ready) {
@@ -47,25 +59,38 @@ void DiagnosticNetwork::update() {
 void DiagnosticNetwork::maybeLookForNetwork() {
   const Power::Info& info = power.info();
 
-  // Only look for the network if we're charging
-  if (info.charging) {
-    WiFi.mode(WIFI_STA);
-    WiFi.disconnect(true, true);  // drop old state, clear config
-    delay(100);
+  if (info.onState != PowerState::On && !info.charging) {
+    return;
+  }
 
-    // Clean up any previous scan results
-    WiFi.scanDelete();
+  uint32_t now = millis();
+  if (now < next_scan_attempt_ms_) {
+    return;
+  }
 
-    // Start scanning
-    int16_t result = WiFi.scanNetworks(/*async=*/true, /*show_hidden=*/false);
-    if (result == WIFI_SCAN_RUNNING) {
-      state_ = State::LookingForNetwork;
-      return;
-    } else {
-      error_msg_ = "WiFi.scanNetworks did not indicate WIFI_SCAN_RUNNING";
-      state_ = State::Error;
-      return;
-    }
+  Serial.printf(
+      "DiagnosticNetwork: starting scan (charging=%d onState=%s)\n",
+      info.charging,
+      nameOf(info.onState));
+
+  WiFi.mode(WIFI_STA);
+  WiFi.disconnect(true, true);  // drop old state, clear config
+  delay(100);
+
+  // Clean up any previous scan results
+  WiFi.scanDelete();
+
+  // Start scanning
+  int16_t result = WiFi.scanNetworks(/*async=*/true, /*show_hidden=*/false);
+  if (result == WIFI_SCAN_RUNNING) {
+    state_ = State::LookingForNetwork;
+    return;
+  } else {
+    Serial.printf("DiagnosticNetwork: WiFi.scanNetworks failed (%d)\n", result);
+    error_msg_ = "WiFi.scanNetworks did not indicate WIFI_SCAN_RUNNING";
+    next_scan_attempt_ms_ = millis() + SCAN_RETRY_DELAY_MS;
+    state_ = State::Ready;
+    return;
   }
 }
 
@@ -75,12 +100,15 @@ void DiagnosticNetwork::checkForDiagnosticNetwork() {
     return;
   } else if (result == WIFI_SCAN_FAILED) {
     error_msg_ = "WiFi.scanComplete indicated WIFI_SCAN_FAILED";
-    state_ = State::Error;
     Serial.println("DiagnosticNetwork: WiFi.scanComplete failed");
+    next_scan_attempt_ms_ = millis() + SCAN_RETRY_DELAY_MS;
+    state_ = State::Ready;
     return;
   } else if (result < 0) {
     Serial.printf("DiagnosticNetwork: WiFi.scanComplete unexpected result %d\n", result);
-    state_ = State::Error;
+    error_msg_ = "WiFi.scanComplete returned unexpected negative result";
+    next_scan_attempt_ms_ = millis() + SCAN_RETRY_DELAY_MS;
+    state_ = State::Ready;
     return;
   }
 

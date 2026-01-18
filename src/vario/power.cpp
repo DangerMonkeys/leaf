@@ -11,6 +11,7 @@
 #include "hardware/lc86g.h"
 #include "hardware/ms5611.h"
 #include "instruments/baro.h"
+#include "diagnostics/diagnostic_network/diagnostic_network.h"
 #include "instruments/gps.h"
 #include "instruments/imu.h"
 #include "logging/buslog.h"
@@ -193,6 +194,7 @@ void Power::switchToOnState() {
   Serial.println("switch_to_on_state");
   info_.onState = PowerState::On;
   wakePeripherals();
+  diagnostic_network.reset("switch_to_on_state");
   maybeStartBusLog();
 }
 

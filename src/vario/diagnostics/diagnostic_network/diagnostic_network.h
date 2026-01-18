@@ -21,6 +21,7 @@ class DiagnosticNetwork : private StateAssertMixin<DiagnosticNetwork> {
   State state() const { return state_; }
 
   void update();
+  void reset(const char* reason);
 
   const char* error_msg() const { return error_msg_; }
 
@@ -31,6 +32,7 @@ class DiagnosticNetwork : private StateAssertMixin<DiagnosticNetwork> {
   State state_ = State::Ready;
   uint32_t t0_ = 0;
   const char* error_msg_ = "No error";
+  uint32_t next_scan_attempt_ms_ = 0;
 
   bool printed_end_state_ = false;
 
