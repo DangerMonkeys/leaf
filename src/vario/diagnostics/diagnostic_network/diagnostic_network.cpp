@@ -70,16 +70,23 @@ void DiagnosticNetwork::maybeLookForNetwork() {
 }
 
 void DiagnosticNetwork::checkForDiagnosticNetwork() {
-  uint16_t result = WiFi.scanComplete();
+  int16_t result = WiFi.scanComplete();
   if (result == WIFI_SCAN_RUNNING) {
     return;
   } else if (result == WIFI_SCAN_FAILED) {
     error_msg_ = "WiFi.scanComplete indicated WIFI_SCAN_FAILED";
     state_ = State::Error;
+    Serial.println("DiagnosticNetwork: WiFi.scanComplete failed");
+    return;
+  } else if (result < 0) {
+    Serial.printf("DiagnosticNetwork: WiFi.scanComplete unexpected result %d\n", result);
+    state_ = State::Error;
+    return;
   }
 
   int32_t bestRssi = -127;
   bool found = false;
+  Serial.printf("DiagnosticNetwork: scanComplete found %d networks\n", result);
 
   for (int i = 0; i < result; i++) {
     String s = WiFi.SSID(i);
@@ -99,7 +106,12 @@ void DiagnosticNetwork::checkForDiagnosticNetwork() {
     state_ = State::ConnectingToNetwork;
     return;
   } else {
-    Serial.printf("checkForDiagnosticNetwork -> %d with RSSI %d\n", found, bestRssi);
+    Serial.printf(
+        "checkForDiagnosticNetwork -> %d with RSSI %d (min %d) scan count %d\n",
+        found,
+        bestRssi,
+        MIN_RSSI_DBM,
+        result);
     state_ = State::NoNetworkFound;
     return;
   }
