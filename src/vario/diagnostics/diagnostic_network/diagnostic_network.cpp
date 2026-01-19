@@ -20,7 +20,7 @@ void DiagnosticNetwork::reset(const char* reason) {
   printed_end_state_ = false;
   error_msg_ = "No error";
   state_ = State::Ready;
-  next_scan_attempt_ms_ = 0;
+  next_scan_attempt_ms_ = millis() + SCAN_RETRY_DELAY_MS;
   WiFi.scanDelete();
   WiFi.disconnect(true, true);
 }
@@ -72,6 +72,11 @@ void DiagnosticNetwork::maybeLookForNetwork() {
       "DiagnosticNetwork: starting scan (charging=%d onState=%s)\n",
       info.charging,
       nameOf(info.onState));
+  Serial.printf(
+      "DiagnosticNetwork: pre-scan status=%d mode=%d freeHeap=%u\n",
+      WiFi.status(),
+      WiFi.getMode(),
+      ESP.getFreeHeap());
 
   WiFi.mode(WIFI_STA);
   WiFi.disconnect(true, true);  // drop old state, clear config
