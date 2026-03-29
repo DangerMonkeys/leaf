@@ -34,7 +34,7 @@ void warningPage_draw() {
     u8g2.drawHLine(0, 15, 96);
 
     // Warning Message
-    uint8_t line_y = 35;
+    uint8_t line_y = 28;
     uint8_t line_spacing = 11;
     u8g2.setFont(leaf_5x8);
 
@@ -44,19 +44,23 @@ void warningPage_draw() {
     u8g2.print("   are DANGEROUS!");
 
     u8g2.setCursor(0, line_y += (line_spacing + 5));
-    u8g2.print("You accept all risks");
+    u8g2.print("This device may fail.");
     u8g2.setCursor(0, line_y += line_spacing);
-    u8g2.print("of using this product");
+    u8g2.print("  Do not rely on it");
+    u8g2.setCursor(0, line_y += line_spacing);
+    u8g2.print("     for safety!");
 
     u8g2.setCursor(0, line_y += (line_spacing + 5));
-    u8g2.print("  See full terms of");
+    u8g2.print("  Press ACCEPT to");
     u8g2.setCursor(0, line_y += line_spacing);
-    u8g2.print("        use at:");
+    u8g2.print("assume ALL RISK and");
+    u8g2.setCursor(0, line_y += line_spacing);
+    u8g2.print("agree to the waiver:");
 
     u8g2.setCursor(0, line_y += (line_spacing + 5));
     u8g2.print(" www.leafvario.com/");
     u8g2.setCursor(0, line_y += line_spacing);
-    u8g2.print(" legal/disclaimer/");
+    u8g2.print("  legal/disclaimer/");
 
     // Accept Decline Options
     u8g2.setFont(leaf_6x12);
