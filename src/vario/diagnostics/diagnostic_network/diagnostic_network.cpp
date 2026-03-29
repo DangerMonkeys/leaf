@@ -28,6 +28,19 @@ void DiagnosticNetwork::reset(const char* reason) {
 void DiagnosticNetwork::update() {
   if (state_ == State::Ready) {
     maybeLookForNetwork();
+  } else if (state_ == State::WifiResetting) {
+    if (millis() >= t0_) {
+      WiFi.scanDelete();
+      int16_t result = WiFi.scanNetworks(/*async=*/true, /*show_hidden=*/false);
+      if (result == WIFI_SCAN_RUNNING) {
+        state_ = State::LookingForNetwork;
+      } else {
+        Serial.printf("DiagnosticNetwork: WiFi.scanNetworks failed (%d)\n", result);
+        error_msg_ = "WiFi.scanNetworks did not indicate WIFI_SCAN_RUNNING";
+        next_scan_attempt_ms_ = millis() + SCAN_RETRY_DELAY_MS;
+        state_ = State::Ready;
+      }
+    }
   } else if (state_ == State::LookingForNetwork) {
     checkForDiagnosticNetwork();
   } else if (state_ == State::NoNetworkFound) {
@@ -59,7 +72,8 @@ void DiagnosticNetwork::update() {
 void DiagnosticNetwork::maybeLookForNetwork() {
   const Power::Info& info = power.info();
 
-  if (info.onState != PowerState::On && !info.charging) {
+  // Only look for network if the device is on and USB-powered
+  if (info.onState != PowerState::On || !info.USBinput) {
     return;
   }
 
@@ -68,35 +82,17 @@ void DiagnosticNetwork::maybeLookForNetwork() {
     return;
   }
 
-  Serial.printf(
-      "DiagnosticNetwork: starting scan (charging=%d onState=%s)\n",
-      info.charging,
-      nameOf(info.onState));
-  Serial.printf(
-      "DiagnosticNetwork: pre-scan status=%d mode=%d freeHeap=%u\n",
-      WiFi.status(),
-      WiFi.getMode(),
-      ESP.getFreeHeap());
+  Serial.printf("DiagnosticNetwork: starting scan (USBinput=%d onState=%s)\n", info.USBinput,
+                nameOf(info.onState));
+  Serial.printf("DiagnosticNetwork: pre-scan status=%d mode=%d freeHeap=%u\n", WiFi.status(),
+                WiFi.getMode(), ESP.getFreeHeap());
 
   WiFi.mode(WIFI_STA);
   WiFi.disconnect(true, true);  // drop old state, clear config
-  delay(100);
 
-  // Clean up any previous scan results
-  WiFi.scanDelete();
-
-  // Start scanning
-  int16_t result = WiFi.scanNetworks(/*async=*/true, /*show_hidden=*/false);
-  if (result == WIFI_SCAN_RUNNING) {
-    state_ = State::LookingForNetwork;
-    return;
-  } else {
-    Serial.printf("DiagnosticNetwork: WiFi.scanNetworks failed (%d)\n", result);
-    error_msg_ = "WiFi.scanNetworks did not indicate WIFI_SCAN_RUNNING";
-    next_scan_attempt_ms_ = millis() + SCAN_RETRY_DELAY_MS;
-    state_ = State::Ready;
-    return;
-  }
+  // Use WifiResetting state to let WiFi settle for 100ms without blocking the loop
+  t0_ = millis() + 100;
+  state_ = State::WifiResetting;
 }
 
 void DiagnosticNetwork::checkForDiagnosticNetwork() {
@@ -139,12 +135,8 @@ void DiagnosticNetwork::checkForDiagnosticNetwork() {
     state_ = State::ConnectingToNetwork;
     return;
   } else {
-    Serial.printf(
-        "checkForDiagnosticNetwork -> %d with RSSI %d (min %d) scan count %d\n",
-        found,
-        bestRssi,
-        MIN_RSSI_DBM,
-        result);
+    Serial.printf("checkForDiagnosticNetwork -> %d with RSSI %d (min %d) scan count %d\n", found,
+                  bestRssi, MIN_RSSI_DBM, result);
     state_ = State::NoNetworkFound;
     return;
   }

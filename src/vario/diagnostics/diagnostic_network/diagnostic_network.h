@@ -11,6 +11,7 @@ class DiagnosticNetwork : private StateAssertMixin<DiagnosticNetwork> {
  public:
   enum class State : uint8_t {
     Ready,
+    WifiResetting,  // brief settle period after WiFi.disconnect before scanning
     LookingForNetwork,
     NoNetworkFound,
     ConnectingToNetwork,
