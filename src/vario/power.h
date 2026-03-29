@@ -52,6 +52,7 @@ class Power {
   void bootUp();
 
   void shutdown();
+  void shutdown(bool deadBattery);
 
   void switchToOnState();
 

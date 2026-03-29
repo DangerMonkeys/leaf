@@ -207,13 +207,18 @@ void Power::maybeStartBusLog() {
     }
   }
 }
+void Power::shutdown() { shutdown(false); }
 
-void Power::shutdown() {
+void Power::shutdown(bool deadBattery) {
   Serial.println("power_shutdown");
 
   // Show user we're shutting down
   display.clear();
-  display_off_splash();
+  if (deadBattery) {
+    display_batteryDead_splash();
+  } else {
+    display_off_splash();
+  }
 
   // save logs and system data
   if (flightTimer_isRunning()) {
@@ -273,7 +278,7 @@ void Power::update() {
   //       Probably not, since shutting down allows more current for charging
   if (info_.batteryMV <= BATT_SHUTDOWN_MV) {
 #ifndef DISABLE_BATTERY_SHUTDOWN
-    shutdown();
+    shutdown(true);
 #endif
 
     // ..or if we should shutdown due to inactivity
