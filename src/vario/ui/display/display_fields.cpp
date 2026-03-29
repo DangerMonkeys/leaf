@@ -677,6 +677,10 @@ void display_battIcon(uint8_t x, uint8_t y, bool vertical) {
 }
 
 void display_batt_charging_fullscreen(uint8_t x, uint8_t y) {
+  display_batt_charging_fullscreen(x, y, false);
+}
+
+void display_batt_charging_fullscreen(uint8_t x, uint8_t y, bool warning) {
   const auto& info = power.info();
 
   // size of battery
@@ -691,52 +695,67 @@ void display_batt_charging_fullscreen(uint8_t x, uint8_t y) {
   u8g2.setDrawColor(0);
   u8g2.drawRBox(x - (w / 2) + t, y + w / 20 + t, w - 2 * t, h - 2 * t,
                 w / 15 - t);  // empty internal volume
-
-  // Battery Capacity Fill
-  uint8_t fill_h = (h - 4 * t) * info.batteryPercent / 100;
-  uint8_t fill_y = (y + w / 20 + 2 * t) +
-                   ((h - 4 * t) - fill_h);  // (starting position to allow for line thickness etc) +
-                                            // ( (100% height) - (actual height) )
   u8g2.setDrawColor(1);
-  u8g2.drawBox(x - (w / 2) + 2 * t, fill_y, w - 4 * t, fill_h);  //, w/8-t/2);
 
-  // Charging bolt
-  if (info.charging) {
-    uint8_t bolt_x1 = w * 6 / 100;   //  4
-    uint8_t bolt_x2 = w * 7 / 100;   //  6
-    uint8_t bolt_x3 = w * 21 / 100;  // 17
-    uint8_t bolt_y1 = h * 3 / 100;   //  2
-    uint8_t bolt_y2 = h * 25 / 100;  // 19
-    uint8_t bolt_y = y + h / 2;      // center of bolt in y direction
-
+  if (warning) {  // show an exclaimation mark for warning low battery
+    u8g2.setDrawColor(1);
+    u8g2.drawDisc(x, y + 4 * h / 5, w / 10);  // draw the dot of the exclaimation mark
     u8g2.setDrawColor(0);
-    u8g2.drawTriangle(x + bolt_x1, bolt_y + bolt_y1, x + bolt_x2, bolt_y - bolt_y2, x - bolt_x3,
-                      bolt_y + bolt_y1);
-    u8g2.drawTriangle(x - bolt_x1, bolt_y - bolt_y1, x - bolt_x2, bolt_y + bolt_y2, x + bolt_x3,
-                      bolt_y - bolt_y1);
+    u8g2.drawDisc(x, y + 4 * h / 5,
+                  w / 10 - 2);  // mask out the inside of the dot to make it hollow
+    u8g2.setDrawColor(1);
+    u8g2.drawFrame(x - w / 10, y + h / 5, w / 5 + 1,
+                   h / 2 - 4);  // draw the line of the exclaimation mark
+    u8g2.drawFrame(x - w / 10 + 1, y + h / 5 + 1, w / 5 - 1,
+                   h / 2 - 6);  // draw it twice to make it thicker
 
-    for (int i = 0; i < 4; i++) {
-      if (i == 0) {
-        x--;
-      }  // drag the bolt outline around to make it thicker
-      if (i == 1) {
-        bolt_y++;
-      }  //
-      if (i == 2) {
-        bolt_y--;
-        x++;
-      }  //
-      if (i == 3) {
-        bolt_y++;
-      }  //
+  } else {  // show regular capacity level
+    // Battery Capacity Fill
+    uint8_t fill_h = (h - 4 * t) * info.batteryPercent / 100;
+    uint8_t fill_y = (y + w / 20 + 2 * t) +
+                     ((h - 4 * t) - fill_h);  // (starting position to allow for line thickness etc)
+                                              // + ( (100% height) - (actual height) )
+    u8g2.setDrawColor(1);
+    u8g2.drawBox(x - (w / 2) + 2 * t, fill_y, w - 4 * t, fill_h);  //, w/8-t/2);
 
-      u8g2.setDrawColor(1);
-      u8g2.drawLine(x - bolt_x3, bolt_y + bolt_y1, x + bolt_x2, bolt_y - bolt_y2);
-      u8g2.drawLine(x + bolt_x1, bolt_y - bolt_y1, x + bolt_x2, bolt_y - bolt_y2);
-      u8g2.drawLine(x + bolt_x1, bolt_y - bolt_y1, x + bolt_x3, bolt_y - bolt_y1);
-      u8g2.drawLine(x - bolt_x2, bolt_y + bolt_y2, x + bolt_x3, bolt_y - bolt_y1);
-      u8g2.drawLine(x - bolt_x2, bolt_y + bolt_y2, x - bolt_x1, bolt_y + bolt_y1);
-      u8g2.drawLine(x - bolt_x3, bolt_y + bolt_y1, x - bolt_x1, bolt_y + bolt_y1);
+    // Charging bolt
+    if (info.charging) {
+      uint8_t bolt_x1 = w * 6 / 100;   //  4
+      uint8_t bolt_x2 = w * 7 / 100;   //  6
+      uint8_t bolt_x3 = w * 21 / 100;  // 17
+      uint8_t bolt_y1 = h * 3 / 100;   //  2
+      uint8_t bolt_y2 = h * 25 / 100;  // 19
+      uint8_t bolt_y = y + h / 2;      // center of bolt in y direction
+
+      u8g2.setDrawColor(0);
+      u8g2.drawTriangle(x + bolt_x1, bolt_y + bolt_y1, x + bolt_x2, bolt_y - bolt_y2, x - bolt_x3,
+                        bolt_y + bolt_y1);
+      u8g2.drawTriangle(x - bolt_x1, bolt_y - bolt_y1, x - bolt_x2, bolt_y + bolt_y2, x + bolt_x3,
+                        bolt_y - bolt_y1);
+
+      for (int i = 0; i < 4; i++) {
+        if (i == 0) {
+          x--;
+        }  // drag the bolt outline around to make it thicker
+        if (i == 1) {
+          bolt_y++;
+        }  //
+        if (i == 2) {
+          bolt_y--;
+          x++;
+        }  //
+        if (i == 3) {
+          bolt_y++;
+        }  //
+
+        u8g2.setDrawColor(1);
+        u8g2.drawLine(x - bolt_x3, bolt_y + bolt_y1, x + bolt_x2, bolt_y - bolt_y2);
+        u8g2.drawLine(x + bolt_x1, bolt_y - bolt_y1, x + bolt_x2, bolt_y - bolt_y2);
+        u8g2.drawLine(x + bolt_x1, bolt_y - bolt_y1, x + bolt_x3, bolt_y - bolt_y1);
+        u8g2.drawLine(x - bolt_x2, bolt_y + bolt_y2, x + bolt_x3, bolt_y - bolt_y1);
+        u8g2.drawLine(x - bolt_x2, bolt_y + bolt_y2, x - bolt_x1, bolt_y + bolt_y1);
+        u8g2.drawLine(x - bolt_x3, bolt_y + bolt_y1, x - bolt_x1, bolt_y + bolt_y1);
+      }
     }
   }
 }
@@ -1100,6 +1119,17 @@ void display_off_splash() {
     u8g2.setFont(leaf_6x12);
     u8g2.setCursor(20, 180);
     u8g2.print("GOODBYE");
+  } while (u8g2.nextPage());
+}
+
+void display_batteryDead_splash() {
+  u8g2.firstPage();
+  do {
+    display_batt_charging_fullscreen(48, 17, true);
+
+    u8g2.setFont(leaf_6x12);
+    u8g2.setCursor(5, 180);
+    u8g2.print("LOW BATTERY!");
   } while (u8g2.nextPage());
 }
 
