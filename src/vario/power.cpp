@@ -43,7 +43,7 @@ Power power;  // struct for battery-state and on-state variables
 #define AUTO_OFF_MAX_SPEED 3      // mph max -- must be below this speed for timer to auto-stop
 #define AUTO_OFF_MAX_ACCEL 10     // Max accelerometer signal
 #define AUTO_OFF_MAX_ALT 400      // cm altitude change for timer auto-stop
-#define AUTO_OFF_TIME 120         // seconds of inactivity for timer to auto-stop
+#define AUTO_OFF_TIME 300         // seconds of inactivity for timer to auto-stop
 #define AUTO_OFF_TIME_NO_FIX 600  // if no GPS fix, search longer before shutting down
 uint16_t timeout_limit = AUTO_OFF_TIME_NO_FIX;  // start assuming no fix
 
