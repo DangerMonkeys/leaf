@@ -28,9 +28,20 @@ void Kml::log(unsigned long durationSec) {
   String lonPoint = String(gps.location.lng(), 7);
   String latPoint = String(gps.location.lat(), 7);
   String altPoint = String(gps.altitude.meters(), 2);
-  String logPointStr = lonPoint + "," + latPoint + "," + altPoint + "\n";
+  String logPointStr =
+      "<gx:coord>" + lonPoint + " " + latPoint + " " + altPoint + "</gx:coord>" + "\n";
 
   file.println(logPointStr);
+
+  String timeYear = String(gps.date.year());
+  String timeMonth = String(gps.date.month());
+  String timeDay = String(gps.date.day());
+  String timeHour = String(gps.time.hour());
+  String timeMinute = String(gps.time.minute());
+  String timeSecond = String(gps.time.second());
+  String whenPointStr = "<when>" + timeYear + "-" + timeMonth + "-" + timeDay + "T" + timeHour +
+                        ":" + timeMinute + ":" + timeSecond + "Z</when>" + "\n";
+  file.println(whenPointStr);
 }
 
 void Kml::end(const FlightStats stats) {
