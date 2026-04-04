@@ -94,7 +94,7 @@ class Power {
   Info info_;
 
   // check if we should turn off from  inactivity
-  uint8_t autoOffCounter_ = 0;
+  uint16_t autoOffCounter_ = 0;
   int32_t autoOffAltitude_ = 0;
 
   uint16_t batteryPercentLast_;
