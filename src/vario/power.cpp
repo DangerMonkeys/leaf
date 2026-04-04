@@ -342,14 +342,6 @@ bool Power::autoOff() {
     autoOffCounter_ = 0;
   }
 
-  Serial.print(
-      "                                                   *************AUTO OFF***  Counter: ");
-  Serial.print(autoOffCounter_);
-  Serial.print("   Alt Diff: ");
-  Serial.print(altDifference);
-  Serial.print("  AutoShutOff? : ");
-  Serial.println(autoShutOff);
-
   return autoShutOff;
 }
 
