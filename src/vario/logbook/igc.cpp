@@ -63,6 +63,7 @@ void Igc::log(unsigned long durationSec) {
   gps.getUtcDateTime(cal);
   strftime(buf, sizeof(buf), "%H%M%S", &cal);
 
+  // TODO:  Write this async
   logger.writeBRecord(buf,  // Time in HHMMSS
                       latDegreeToStr(gps.location.lat()), lngDegreeToStr(gps.location.lng()), true,
                       baro.alt() / 100,  // cm to meters

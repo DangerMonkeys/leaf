@@ -15,7 +15,8 @@ FreeRTOS on the ESP32 has a number of tasks already setup. The default loop() fu
 - Low Priority: 5-10
   - House-keeping tasks. Things like flushing SD to disk.
 
-| Priority | Task    | Description                                            |
-| -------- | ------- | ------------------------------------------------------ |
-| 10       | taskman | Legacy monolithic task manager. Things not updated yet |
-| 9        | Ble     | Bluetooth Low Energy send updates                      |
+| Priority | Task       | Description                                            |
+| -------- | ---------- | ------------------------------------------------------ |
+| 10       | taskman    | Legacy monolithic task manager. Things not updated yet |
+| 9        | Ble        | Bluetooth Low Energy send updates                      |
+| 5        | FileWriter | Async SD card writer                                   |

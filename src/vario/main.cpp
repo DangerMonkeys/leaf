@@ -14,6 +14,7 @@
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "instruments/imu.h"
+#include "logging/async_logger.h"
 #include "logging/buslog.h"
 #include "power.h"
 #include "taskman.h"
@@ -41,6 +42,10 @@ void setup() {
   // Start USB Serial Debugging Port
   Serial.begin(115200);
   Serial.println("Starting Setup");
+
+  // Initialize the async file writer
+  // Can adjust to free up memory as needed
+  AsyncLogger::begin(8000U, 4096, 5);
 
   // Initialize the shared bus
   spi_init();

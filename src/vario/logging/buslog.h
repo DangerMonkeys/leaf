@@ -28,6 +28,9 @@ class BusLogger : public etl::message_router<BusLogger, AmbientUpdate, CommentMe
   File file_;
   unsigned long tStart_;
   etl::imessage_bus* bus_ = nullptr;
+  TimerHandle_t statTimer_;  // Timer to write periodic stats to
+  // Callback function for writing periodic stats to the bus log.
+  static void statsCallback(TimerHandle_t x);
 };
 
 extern BusLogger busLog;
