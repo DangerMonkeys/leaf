@@ -1,6 +1,7 @@
 // Includes
 #include "power.h"
 
+#include "diagnostics/diagnostic_network/diagnostic_network.h"
 #include "hardware/Leaf_I2C.h"
 #include "hardware/Leaf_SPI.h"
 #include "hardware/aht20.h"
@@ -195,6 +196,7 @@ void Power::switchToOnState() {
   Serial.println("switch_to_on_state");
   info_.onState = PowerState::On;
   wakePeripherals();
+  diagnostic_network.reset("switch_to_on_state");
   maybeStartBusLog();
 }
 
