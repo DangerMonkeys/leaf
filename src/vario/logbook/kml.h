@@ -38,7 +38,7 @@ const char KMLtrackHeader[] = R"--8<--8<--(<?xml version="1.0" encoding="UTF-8"?
 
 // Footer is broken into several sub-pieces, so you can insert names and descriptions in between.
 
-const char KMLtrackFooterA[] = R"--8<--8<--(        </coordinates>
+const char KMLtrackFooterA[] = R"--8<--8<--(
       </gx:Track>
       <name>)--8<--8<--";
 
