@@ -86,6 +86,7 @@ void log_update() {
         // starting values
         baro.setLaunchAlt();
         logbook.alt_start = baro.altAtLaunch();
+        logbook.gpsalt_start = gps.altitude.meters();
 
         // get first set of log values
         log_captureValues();
@@ -95,8 +96,14 @@ void log_update() {
         logbook.alt_min = logbook.alt_start;
         logbook.alt_above_launch_max = 0;
         logbook.climb_max = logbook.climb_min = 0;
+        logbook.gpsalt_max = logbook.gpsalt_start;
+        logbook.gpsalt_min = logbook.gpsalt_start;
+        logbook.gpsalt_above_launch_max = 0;
         logbook.speed_max = 0;
         logbook.temperature_max = logbook.temperature_min = logbook.temperature;
+
+        logbook.startLocationLat = gps.location.lat();
+        logbook.startLocationLng = gps.location.lng();
       }
     }
 
@@ -239,7 +246,9 @@ void flightTimer_stop() {
   }
 
   // ending values
-  logbook.alt_end = baro.alt();
+  log_captureEndingValues();
+
+  // close the flight
   flight->end(logbook);
   // TODO:  A much cooler end flight sound.  Perhaps even an easter egg?
   speaker.playSound(fx::confirm);
@@ -274,15 +283,44 @@ void log_captureValues() {
   if (baro.state() == Barometer::State::Ready) {
     logbook.alt = baro.altAdjusted();
     logbook.alt_above_launch = baro.altAboveLaunch();
-    logbook.climb = baro.climbRateFiltered();
+
+    if (baro.climbRateFilteredValid()) logbook.climb = baro.climbRateFiltered();
   }
-  logbook.speed = gps.speed.mps();
+
+  if (gps.fixInfo.fix) {
+    logbook.speed = gps.speed.mps();
+
+    logbook.gpsalt = gps.altitude.meters();
+    logbook.gpsalt_above_launch = gps.altitude.meters() - logbook.gpsalt_start;
+
+    // accumulate distance flown
+    logbook.distanceAlongPath += gps.speed.mps();
+  }
+
   if (ambient.state() == Ambient::State::Ready) {
     logbook.temperature = ambient.temp();
   }
+
   if (imu.accelValid()) {
     logbook.accel = imu.getAccel();
   }
+}
+
+void log_captureEndingValues() {
+  if (baro.state() == Barometer::State::Ready) {
+    logbook.alt_end = baro.alt();
+  }
+
+  if (gps.fixInfo.fix) {
+    logbook.gpsalt_end = gps.altitude.meters();
+  }
+
+  logbook.endLocationLat = gps.location.lat();
+  logbook.endLocationLng = gps.location.lng();
+
+  logbook.distanceStraightLine =
+      gps.distanceBetween(logbook.startLocationLat, logbook.startLocationLng,
+                          logbook.endLocationLat, logbook.endLocationLng);
 }
 
 void log_checkMinMaxValues() {
@@ -300,18 +338,30 @@ void log_checkMinMaxValues() {
       logbook.alt_min = logbook.alt;
     }
 
-    // check climb values for log records
-    logbook.climb = baro.climbRateFiltered();
-    if (logbook.climb > logbook.climb_max) {
-      logbook.climb_max = logbook.climb;
-    } else if (logbook.climb < logbook.climb_min) {
-      logbook.climb_min = logbook.climb;
+    if (baro.climbRateFilteredValid()) {
+      // check climb values for log records
+      if (logbook.climb > logbook.climb_max) {
+        logbook.climb_max = logbook.climb;
+      } else if (logbook.climb < logbook.climb_min) {
+        logbook.climb_min = logbook.climb;
+      }
+    }
+  }
+
+  if (gps.fixInfo.fix) {
+    if (logbook.gpsalt > logbook.gpsalt_max) {
+      logbook.gpsalt_max = logbook.gpsalt;
+      if (logbook.gpsalt_above_launch > logbook.gpsalt_above_launch_max)
+        logbook.gpsalt_above_launch_max =
+            logbook.gpsalt_above_launch;  // we only need to check for max above-launch values if
+                                          // we're also setting a new gps altitude max.
+    } else if (logbook.gpsalt < logbook.gpsalt_min) {
+      logbook.gpsalt_min = logbook.gpsalt;
     }
   }
 
   // check temperature values for log records
   if (ambient.state() == Ambient::State::Ready) {
-    logbook.temperature = ambient.temp();
     if (logbook.temperature > logbook.temperature_max) {
       logbook.temperature_max = logbook.temperature;
     } else if (logbook.temperature < logbook.temperature_min) {
@@ -330,9 +380,6 @@ void log_checkMinMaxValues() {
   if (logbook.speed > logbook.speed_max) {
     logbook.speed_max = logbook.speed;
   }
-
-  // accumulate distance flown
-  logbook.distanceFlown += gps.speed.mps();
 
   // time = micros() - time;
   // Serial.print("checkMinMax: ");
