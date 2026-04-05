@@ -65,7 +65,8 @@ typedef uint8_t SettingLogFormat;
 // This allows us to cover all time zones, including the :30 minute and :15 minute ones
 #define DEF_TIME_ZONE -420   // -420 min = UTC -7 hrs (PDT)
 #define DEF_VOLUME_SYSTEM 1  // 0=off, 1=low, 2=med, 3=high
-#define DEF_AUTO_OFF 0       // 1 = ENABLE, 0 = DISABLE
+#define DEF_AUTO_OFF 0       // 0 = DISABLE
+#define AUTO_OFF_MAX 60      // max auto-off time in minutes (1 hour)
 #define DEF_WIFI_ON 0        // default wifi off
 #define DEF_BLUETOOTH_ON 0   // default bluetooth off
 #define DEF_SHOW_WARNING 1   // default show warning on startup
@@ -142,7 +143,7 @@ setting | samples | time avg
   int16_t system_timeZone;
   int8_t system_volume;
   bool system_ecoMode;
-  bool system_autoOff;
+  uint8_t system_autoOff;
   bool system_wifiOn;
   bool system_bluetoothOn;
   bool system_showWarning;
@@ -203,6 +204,7 @@ setting | samples | time avg
   void adjustVolumeVario(Button dir);
   void adjustVolumeSystem(Button dir);
   void adjustTimeZone(Button dir);
+  void adjustAutoOff(Button dir);
 
   void adjustDisplayField_navPage_alt(Button dir);
   void adjustDisplayField_thermalPage_alt(Button dir);

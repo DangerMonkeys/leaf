@@ -120,11 +120,14 @@ void SystemMenuPage::drawSystemMenu() {
           break;
 
         case cursor_system_poweroff:
-          u8g2.setCursor(setting_choice_x + 8, menu_items_y[i]);
-          if (settings.system_autoOff)
-            u8g2.print((char)125);
-          else
-            u8g2.print((char)123);
+          u8g2.setCursor(setting_choice_x + 4, menu_items_y[i]);
+          if (settings.system_autoOff) {
+            if (settings.system_autoOff < 10) u8g2.print(" ");
+            u8g2.print(settings.system_autoOff);
+            u8g2.print("m");
+          } else {
+            u8g2.print("OFF");
+          }
           break;
 
         case cursor_system_showWarning:
@@ -183,7 +186,7 @@ void SystemMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count
       if (state == ButtonEvent::CLICKED) settings.adjustVolumeSystem(dir);
       break;
     case cursor_system_poweroff:
-      if (state == ButtonEvent::CLICKED) settings.toggleBoolOnOff(&settings.system_autoOff);
+      if (state == ButtonEvent::CLICKED) settings.adjustAutoOff(dir);
       break;
     case cursor_system_showWarning:
       if (state == ButtonEvent::CLICKED) settings.toggleBoolOnOff(&settings.system_showWarning);

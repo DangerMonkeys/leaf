@@ -11,6 +11,7 @@
 #include "logbook/flight.h"
 #include "logbook/igc.h"
 #include "logbook/kml.h"
+#include "power.h"
 #include "storage/sd_card.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
@@ -240,6 +241,8 @@ void flightTimer_start() {
 // stop timer
 void flightTimer_stop() {
   windEstimator.clearWindEstimate();  // clear the wind estimate when we stop a flight
+  power.resetAutoOffCounter();  // reset the auto-off counter when we stop a flight (it could have
+                                // counted up to nearly the limit prior to auto-starting a log)
   // Short Circuit, no need to do anything if there's no flight recording.
   if (flight == NULL) {
     return;
