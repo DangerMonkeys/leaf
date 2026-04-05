@@ -138,11 +138,12 @@ void VarioMenuPage::draw() {
           }
           // Print units for climb/sink thresholds
           u8g2.setFont(leaf_labels);
+          u8g2.setDrawColor(1);
           if (settings.units_climb) {
-            u8g2.setCursor(u8g2.getCursorX() - 20, u8g2.getCursorY() + 10);
+            u8g2.setCursor(u8g2.getCursorX() - 20, u8g2.getCursorY() + 12);
             u8g2.print("fpm");
           } else {
-            u8g2.setCursor(u8g2.getCursorX() - 18, u8g2.getCursorY() + 11);
+            u8g2.setCursor(u8g2.getCursorX() - 18, u8g2.getCursorY() + 12);
             u8g2.print("m/s");
           }
           u8g2.setFont(leaf_6x12);

@@ -24,10 +24,10 @@ void warningPage_draw() {
     u8g2.setCursor(2, 12);
     u8g2.print((char)34);
     u8g2.setCursor(84, 12);
-    u8g2.print('"');
+    u8g2.print((char)34);
 
     u8g2.setFont(leaf_6x12);
-    u8g2.setCursor(18, 12);
+    u8g2.setCursor(20, 12);
     u8g2.setDrawColor(1);
     u8g2.print("WARNING");
 
