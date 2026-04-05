@@ -179,25 +179,27 @@ void PageMenuSystemWifiSetup::draw_extra() {
   u8g2.print((char)wifiIcon);
 
   u8g2.setFont(leaf_6x12);
-  auto y = 20;
+  auto y = 15;
   auto x = 0;
-  const auto OFFSET = 9;  // default new paragraph spacing
+  const auto OFFSET = 4;  // default new paragraph spacing
   u8g2.setCursor(0, y);
 
   // Instruction Page
-  const char* lines[] = {">Join Leaf WiFi",     "On Phone or Laptop", " ", ">Click Sign In",
-                         "  Or Visit:",         "http://192.168.4.1", " ", ">Configure WiFi",
-                         "Select your network", "and enter password", " ", ">Press Save"};
+  const char* lines[] = {"Follow these steps", "on Phone or Laptop:",  "1.Join Leaf WiFi",   " ",
+                         "2.Click Sign In",    "  Or Visit:",          "http://192.168.4.1", " ",
+                         "3.Configure WiFi",   "Select your network",  "and enter password", " ",
+                         "4.Press Save",       "This page will close", "when connected..."};
 
   uint8_t lineNum = 0;
 
   for (auto line : lines) {
     u8g2.setCursor(0, y);
-    if (lineNum == 0 || lineNum == 3 || lineNum == 7 || lineNum == 11) {
+    if (lineNum == 2 || lineNum == 4 || lineNum == 8 || lineNum == 12) {
       y += 14;
       x = 0;
       u8g2.setFont(leaf_6x12);
-    } else if (lineNum == 1 || lineNum == 4 || lineNum == 5 || lineNum == 8 || lineNum == 9) {
+    } else if (lineNum == 0 || lineNum == 1 || lineNum == 5 || lineNum == 6 || lineNum == 9 ||
+               lineNum == 10 || lineNum == 13 || lineNum == 14) {
       y += 11;
       x = 5;
       u8g2.setFont(leaf_5x8);
