@@ -59,8 +59,8 @@ void Kml::end(const FlightStats stats) {
   file.println(stats.toString());
   file.println(KMLtrackFooterC);  // close </description> and </placemark> and open document <name>
   file.println(file.name());  // KML file title (in google earth) same as long file name on SDcard
-  file.println(KMLtrackFooterD); // close document </name> and open document <description>
+  file.println(KMLtrackFooterD);  // close document </name> and open document <description>
   // skipping KML file description.  Not needed and clogs up the google earth places list
-  file.println(KMLtrackFooterE); // close document </description> and close document and kml tags
+  file.println(KMLtrackFooterE);  // close document </description> and close document and kml tags
   Flight::end(stats);
 }

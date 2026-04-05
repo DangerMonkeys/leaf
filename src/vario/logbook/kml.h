@@ -16,6 +16,13 @@ const char KMLtrackHeader[] = R"--8<--8<--(<?xml version="1.0" encoding="UTF-8"?
      xmlns:gx="http://www.google.com/kml/ext/2.2">
   <Document>
     <Style id="yellowLineGreenPoly">
+    	<IconStyle>
+			  <scale>1.3</scale>
+			  <Icon>
+				  <href>http://maps.google.com/mapfiles/kml/paddle/grn-stars.png</href>
+			  </Icon>
+			  <hotSpot x="32" y="1" xunits="pixels" yunits="pixels"/>
+		  </IconStyle>
       <LineStyle>
         <color>7f00ff7f</color>
         <width>5</width>

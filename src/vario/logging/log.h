@@ -43,6 +43,7 @@ String log_createTrackFileName(void);
 
 void log_captureValues(void);
 void log_checkMinMaxValues(void);
+void log_captureEndingValues(void);
 
 // Returns if we should start recording a flight based on movemnt
 bool flightTimer_autoStop(void);

@@ -14,8 +14,12 @@ void PageFlightSummary::draw_extra() {
   u8g2.setCursor(0, 37);
   u8g2.print("Timer: " + formatSeconds(stats.duration, false, 0));
 
+  // Distance
+  u8g2.setCursor(0, 52);
+  u8g2.print("Dist:  " + formatDistance(stats.distanceAlongPath, settings.units_distance, true));
+
   // Maximuim Values
-  uint8_t y = 50;
+  uint8_t y = 63;
   uint8_t lineSpacing = 14;
   uint8_t indent = 6;
   u8g2.drawRFrame(2, y + 2, 92, 92, 7);
@@ -26,9 +30,9 @@ void PageFlightSummary::draw_extra() {
   u8g2.print("Maximums");
 
   u8g2.setCursor(indent, y += lineSpacing);
-  u8g2.print("Alt:   " + formatAlt(stats.alt_max, settings.units_alt, true));
+  u8g2.print("Alt:   " + formatAlt(stats.gpsalt_max * 100, settings.units_alt, true));
   u8g2.setCursor(indent, y += lineSpacing);
-  u8g2.print("AbvTO: " + formatAlt(stats.alt_above_launch_max, settings.units_alt, true));
+  u8g2.print("AbvTO: " + formatAlt(stats.gpsalt_above_launch_max * 100, settings.units_alt, true));
   u8g2.setCursor(indent, y += lineSpacing);
   u8g2.print("Climb: " + formatClimbRate(stats.climb_max, settings.units_climb, true));
   u8g2.setCursor(indent, y += lineSpacing);

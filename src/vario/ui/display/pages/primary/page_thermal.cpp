@@ -164,7 +164,7 @@ void drawUserField(uint8_t x, uint8_t y, uint8_t field, bool selected) {
       u8g2.setFont(leaf_5h);
       u8g2.print("DISTANCE FLOWN");
       u8g2.setFont(leaf_6x12);
-      display_distance(x + 20, y, logbook.distanceFlown);
+      display_distance(x + 20, y, logbook.distanceAlongPath);
       break;
     case static_cast<int>(ThermalPageUserFields::AIRSPEED):
       u8g2.setCursor(x, y - 14);
