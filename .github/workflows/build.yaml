@@ -1,12 +1,13 @@
 name: Build
 
 on:
-  pull_request: # All
+  workflow_dispatch:
+  pull_request:
   push:
     branches:
-    - main
+      - main
   release:
-    types: [created]  # Runs when a new release is created in the GitHub UI
+    types: [created]
 
 jobs:
   build:
@@ -46,7 +47,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install PlatformIO Core
-        run: pip install --upgrade platformio
+        run: pip install platformio==6.1.19
 
       - name: Build PlatformIO Project
         run: pio run --environment ${{ matrix.hardware-variant }}_${{ matrix.behavior-variant }}
