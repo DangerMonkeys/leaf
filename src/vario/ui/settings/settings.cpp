@@ -162,7 +162,7 @@ void Settings::retrieve() {
   system_volume = leafPrefs.getChar("VOLUME_SYSTEM");
   speaker.setVolume(Speaker::SoundChannel::FX, (SpeakerVolume)system_volume);
   system_ecoMode = leafPrefs.getBool("ECO_MODE");
-  system_autoOff = leafPrefs.getBool("AUTO_OFF");
+  system_autoOff = leafPrefs.getChar("AUTO_OFF");
   system_wifiOn = leafPrefs.getBool("WIFI_ON");
   system_bluetoothOn = leafPrefs.getBool("BLUETOOTH_ON");
   system_showWarning = leafPrefs.getBool("SHOW_WARNING");
@@ -239,7 +239,7 @@ void Settings::save() {
   leafPrefs.putShort("TIME_ZONE", system_timeZone);
   leafPrefs.putChar("VOLUME_SYSTEM", system_volume);
   leafPrefs.putBool("ECO_MODE", system_ecoMode);
-  leafPrefs.putBool("AUTO_OFF", system_autoOff);
+  leafPrefs.putChar("AUTO_OFF", system_autoOff);
   leafPrefs.putBool("WIFI_ON", system_wifiOn);
   leafPrefs.putBool("BLUETOOTH_ON", system_bluetoothOn);
   leafPrefs.putBool("SHOW_WARNING", system_showWarning);
@@ -607,4 +607,41 @@ void Settings::toggleBoolOnOff(bool* switchSetting) {
     speaker.playSound(fx::enter);  // if we turned it on
   else
     speaker.playSound(fx::cancel);  // if we turned it off
+}
+
+void Settings::adjustAutoOff(Button dir) {
+  uint8_t autoOffOptions[8] = {0, 1, 5, 10, 15, 30, 45, 60};  // in minutes, where 0 = DISABLE
+  for (uint8_t i = 0; i < sizeof(autoOffOptions) / sizeof(autoOffOptions[0]); i++) {
+    if (system_autoOff <= autoOffOptions[i]) {
+      // found the current setting in the options list, now adjust based on button press
+      if (dir == Button::RIGHT || dir == Button::CENTER) {
+        if (i >= sizeof(autoOffOptions) / sizeof(autoOffOptions[0]) - 1) {
+          speaker.playSound(fx::doubleClick);
+          system_autoOff = autoOffOptions[sizeof(autoOffOptions) / sizeof(autoOffOptions[0]) - 1];
+        } else {
+          system_autoOff = autoOffOptions[i + 1];
+          speaker.playSound(fx::neutral);
+        }
+      } else if (dir == Button::LEFT) {
+        if (i > 0) {
+          system_autoOff = autoOffOptions[i - 1];
+          if (system_autoOff != 0) {
+            speaker.playSound(fx::neutral);
+          } else {
+            speaker.playSound(fx::cancel);
+          }
+        } else {
+          speaker.playSound(fx::cancel);
+          system_autoOff = autoOffOptions[0];
+        }
+      }
+      break;
+    }
+    if (i == sizeof(autoOffOptions) / sizeof(autoOffOptions[0]) - 1) {
+      // if we don't find the current setting in the options list, then set it to default
+      system_autoOff = autoOffOptions[0];
+      speaker.playSound(fx::cancel);
+      break;
+    }
+  }
 }

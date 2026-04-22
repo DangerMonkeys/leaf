@@ -40,12 +40,9 @@ Power power;  // struct for battery-state and on-state variables
 // plus we want to shutdown while we have power to save logs etc
 
 // Auto-Power-Off Threshold values
-#define AUTO_OFF_MAX_SPEED 3      // mph max -- must be below this speed for timer to auto-stop
-#define AUTO_OFF_MAX_ACCEL 10     // Max accelerometer signal
-#define AUTO_OFF_MAX_ALT 400      // cm altitude change for timer auto-stop
-#define AUTO_OFF_TIME 300         // seconds of inactivity for timer to auto-stop
-#define AUTO_OFF_TIME_NO_FIX 600  // if no GPS fix, search longer before shutting down
-uint16_t timeout_limit = AUTO_OFF_TIME_NO_FIX;  // start assuming no fix
+#define AUTO_OFF_MAX_SPEED 3   // mph max -- must be below this speed for timer to auto-stop
+#define AUTO_OFF_MAX_ACCEL 10  // Max accelerometer signal
+#define AUTO_OFF_MAX_ALT 400   // cm altitude change for timer auto-stop
 
 const char* nameOf(PowerInputLevel level) {
   switch (level) {
@@ -298,50 +295,13 @@ void Power::resetAutoOffCounter() { autoOffCounter_ = 0; }
 bool Power::autoOff() {
   bool autoShutOff = false;  // start with assuming we're not going to turn off
 
-  // we will auto-stop only if BOTH the GPS speed AND the Altitude change trigger the stopping
-  // thresholds.
-
-  // First check if baro is available (it's not available immediately after boot-up)
-  if (baro.state() != Barometer::State::Ready) {
-    return false;
+  autoOffCounter_++;
+  if (autoOffCounter_ >= settings.system_autoOff * 60) {  // convert minutes to seconds
+    autoShutOff = true;
+  } else if (autoOffCounter_ >= settings.system_autoOff * 60 - 10) {
+    speaker.playSound(
+        fx::decrease);  // start playing warning sounds 5 seconds before it auto-turns off
   }
-
-  // Then determine if we're timing out with or without a GPS fix, since we want a longer timeout
-  // with no fix to allow GPS to search for awhile
-
-  // if we get a fix AND haven't yet updated the timeout...
-  if (gps.fixInfo.fix > 0 && timeout_limit == AUTO_OFF_TIME_NO_FIX) {
-    timeout_limit = AUTO_OFF_TIME;  // ...reduce the timout
-    if (autoOffCounter_ > timeout_limit - 6) {
-      // if we get a fix, but we're already past the warning timout, move us back to the
-      // beginning of the warning, so we still get the full 5 seconds of audible warnings
-      autoOffCounter_ = timeout_limit - 6;
-    }
-  }
-
-  // Then check if altitude is stable
-  int32_t altNow = baro.alt();
-  int32_t altDifference = abs(altNow - autoOffAltitude_);
-  if (altDifference < AUTO_OFF_MAX_ALT) {
-    // then check if GPS speed is slow enough
-    if (gps.speed.mph() < AUTO_OFF_MAX_SPEED) {
-      autoOffCounter_++;
-      if (autoOffCounter_ >= timeout_limit) {
-        autoShutOff = true;
-      } else if (autoOffCounter_ >= timeout_limit - 5) {
-        speaker.playSound(
-            fx::decrease);  // start playing warning sounds 5 seconds before it auto-turns off
-      }
-    } else {
-      autoOffCounter_ = 0;
-    }
-
-  } else {
-    autoOffAltitude_ = altNow;  // reset the comparison altitude to present altitude,
-                                // since it's still changing
-    autoOffCounter_ = 0;
-  }
-
   return autoShutOff;
 }
 

@@ -80,12 +80,16 @@ void SystemMenuPage::drawSystemMenu() {
     uint8_t setting_name_x = 2;
     uint8_t setting_choice_x = 64;
     uint8_t menu_items_y[] = {190, 45, 60, 75, 90, 105, 120, 150, 165};
-    char twoZeros[] = "00";
 
     // first draw cursor selection box
-    u8g2.drawRBox(setting_choice_x - 2, menu_items_y[cursor_position] - 14, 34, 16, 2);
+    if (cursor_position == cursor_system_showWarning) {
+      u8g2.drawRBox(setting_choice_x + 4, menu_items_y[cursor_position] - 14, 34, 16, 2);
+    } else {
+      u8g2.drawRBox(setting_choice_x - 2, menu_items_y[cursor_position] - 14, 34, 16, 2);
+    }
 
     // then draw all the menu items
+    u8g2.setFont(leaf_6x12);
     for (int i = 0; i <= cursor_max; i++) {
       u8g2.setCursor(setting_name_x, menu_items_y[i]);
       u8g2.print(labels[i]);
@@ -107,7 +111,7 @@ void SystemMenuPage::drawSystemMenu() {
           u8g2.print(displayTimeZone / 60);
           u8g2.print(':');
           if (displayTimeZone % 60 == 0)
-            u8g2.print(twoZeros);
+            u8g2.print("00");
           else
             u8g2.print(displayTimeZone % 60);
           break;
@@ -120,15 +124,24 @@ void SystemMenuPage::drawSystemMenu() {
           break;
 
         case cursor_system_poweroff:
-          u8g2.setCursor(setting_choice_x + 8, menu_items_y[i]);
-          if (settings.system_autoOff)
-            u8g2.print((char)125);
-          else
-            u8g2.print((char)123);
+          u8g2.setCursor(setting_choice_x + 4, menu_items_y[i]);
+          if (settings.system_autoOff) {
+            if (settings.system_autoOff < 10) u8g2.print(" ");
+            u8g2.print(settings.system_autoOff);
+            u8g2.print("m");
+          } else {
+            u8g2.print("OFF");
+          }
           break;
 
         case cursor_system_showWarning:
-          u8g2.setCursor(setting_choice_x + 8, menu_items_y[i]);
+          u8g2.setCursor(setting_choice_x + 6, menu_items_y[i]);
+
+          u8g2.setFont(leaf_icons);
+          u8g2.print((char)34);
+          u8g2.setFont(leaf_6x12);
+          u8g2.setCursor(u8g2.getCursorX() + 1, u8g2.getCursorY());
+
           if (settings.system_showWarning)
             u8g2.print((char)125);
           else
@@ -183,7 +196,7 @@ void SystemMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count
       if (state == ButtonEvent::CLICKED) settings.adjustVolumeSystem(dir);
       break;
     case cursor_system_poweroff:
-      if (state == ButtonEvent::CLICKED) settings.toggleBoolOnOff(&settings.system_autoOff);
+      if (state == ButtonEvent::CLICKED) settings.adjustAutoOff(dir);
       break;
     case cursor_system_showWarning:
       if (state == ButtonEvent::CLICKED) settings.toggleBoolOnOff(&settings.system_showWarning);
