@@ -300,7 +300,7 @@ bool Power::autoOff() {
     autoShutOff = true;
   } else if (autoOffCounter_ >= settings.system_autoOff * 60 - 10) {
     speaker.playSound(
-    fx::decrease);  // start playing warning sounds 5 seconds before it auto-turns off
+        fx::decrease);  // start playing warning sounds 5 seconds before it auto-turns off
   }
   return autoShutOff;
 }
