@@ -135,6 +135,10 @@ void Settings::loadDefaults() {
 void Settings::retrieve() {
   leafPrefs.begin("varioPrefs", RO_MODE);
 
+  // Load up the FANET address
+  Preferences fanetPrefs;
+  fanetPrefs.begin("fanet", RO_MODE);
+
   // Vario Settings
   vario_sinkAlarm = leafPrefs.getFloat("SINK_ALARM_VAL", DEF_SINK_ALARM);
   vario_sinkAlarm_units = leafPrefs.getBool("SINK_ALARM_UNIT", DEF_SINK_ALARM_UNITS);
@@ -193,7 +197,7 @@ void Settings::retrieve() {
 
   // Fanet settings
   fanet_region = (FanetRadioRegion)leafPrefs.getUInt("FANET_REGION");
-  fanet_address = leafPrefs.getString("FANET_ADDRESS");
+  fanet_address = fanetPrefs.getString("address");
 
   // Unit Values
   units_climb = leafPrefs.getBool("UNITS_climb");
