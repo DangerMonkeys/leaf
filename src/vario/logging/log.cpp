@@ -180,12 +180,18 @@ bool flightTimer_autoStop() {
     // and check if we've been in this state long enough to trigger auto-stop
     if (autoStopCounter >= AUTO_STOP_MIN_SEC) {
       autoStopCounter = 0;  // reset counter for next time
-      if (showingAlert_) pageAlertTimerAutoStop.closeAlert();
+      if (showingAlert_) {
+        pageAlertTimerAutoStop.closeAlert();
+        showingAlert_ = false;
+      }
       return true;
     }
   } else {
     autoStopCounter = 0;
-    if (showingAlert_) pageAlertTimerAutoStop.closeAlert();
+    if (showingAlert_) {
+      pageAlertTimerAutoStop.closeAlert();
+      showingAlert_ = false;
+    }
 
     // reset the comparison altitude to present altitude, since it's still changing
     autoStopAltitude = baro.alt();
