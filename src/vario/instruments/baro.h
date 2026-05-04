@@ -56,9 +56,6 @@ class Barometer : public MessageSink<Barometer, PressureUpdate>,
   // pressure altitude in cm corrected by the altimeter setting
   int32_t altAdjusted();
 
-  // instantaneous climbrate calculated with every pressure altitude measurement (m/s)
-  float climbRate();
-
   // filtered climb value to reduce noise (cm/s)
   int32_t climbRateFiltered();
 
