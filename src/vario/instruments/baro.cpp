@@ -236,32 +236,15 @@ void Barometer::setPressureAlt(int32_t newPressure) {
 
 float Barometer::climbRate() {
   if (!validClimbRateRaw_) {
-    static bool warned = false;
-    if (!warned) {
-      fatalErrorInfo("Barometer::climbRate accessed before valid");
-      warned = true;
-    }
-    return 0.0f;
+    fatalError("Barometer::climbRate accessed before valid");
   }
   return climbRateRaw_;
 }
 
 int32_t Barometer::climbRateFiltered() {
-  if (state_ != State::Ready) {
-    static bool warnedNotReady = false;
-    if (!warnedNotReady) {
-      fatalErrorInfo("Barometer::climbRateFiltered accessed before ready");
-      warnedNotReady = true;
-    }
-    return 0;
-  }
+  assertState("Barometer::climbRateFiltered", State::Ready);
   if (!validClimbRateFiltered_) {
-    static bool warnedNotValid = false;
-    if (!warnedNotValid) {
-      fatalErrorInfo("Barometer::climbRateFiltered accessed before valid");
-      warnedNotValid = true;
-    }
-    return 0;
+    fatalError("Barometer::climbRateFiltered accessed before valid");
   }
   return climbRateFiltered_;
 }
