@@ -89,6 +89,7 @@ void Power::bootUp() {
   } else {
     // if not center button, then USB power turned us on, go into charge mode
     info_.onState = PowerState::OffUSB;
+    display.setPage(MainPage::Charging);
   }
 
   // init peripherals (even if we're not turning on and just going into
@@ -212,7 +213,7 @@ void Power::shutdown(bool deadBattery) {
   Serial.println("power_shutdown");
 
   // Show user we're shutting down
-  display.clear();
+  display.clearPage();
   if (deadBattery) {
     display_batteryDead_splash();
   } else {
@@ -251,6 +252,7 @@ void Power::shutdown(bool deadBattery) {
   // go to PowerState::OffUSB, in case device was shut down while
   // plugged into USB, then we can show necessary charging updates etc
   info_.onState = PowerState::OffUSB;
+  display.setPage(MainPage::Charging);
 }
 
 void Power::latchOn() { digitalWrite(POWER_LATCH, HIGH); }
@@ -317,15 +319,7 @@ void Power::readBatteryState() {
 #endif
 
   // Test internal calibration of ADC:
-  info_.battMvCal = analogReadMilliVolts(BATT_SENSE) * 69 / 41;
-
-  // Battery Voltage Level & Percent Remaining
-  info_.batteryADC = analogRead(BATT_SENSE);
-  // uint16_t batt_level_mv = adc_level * 5554 / 4095;  //    (3300mV ADC range / .5942 V_divider)
-  // = 5554.  Then divide by 4095 steps of resolution adjusted formula to account for ESP32 ADC
-  // non-linearity; based on calibration measurements.  This is most accurate between 2.4V
-  // and 4.7V
-  info_.batteryMV = info_.batteryADC * 5300 / 4095 + 260;
+  info_.batteryMV = analogReadMilliVolts(BATT_SENSE) * 69 / 41;
 
   if (info_.batteryMV < BATT_EMPTY_MV) {
     info_.batteryPercent = 0;

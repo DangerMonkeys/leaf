@@ -64,6 +64,13 @@ void MenuPage::pop_page() {
   current_page->closed(true);
 }
 
+void MenuPage::pop_all_pages() {
+  // Pop all pages from the stack, notifying each page it has been closed
+  while (!get_current_page_stack().empty()) {
+    pop_page();
+  }
+}
+
 MenuPage* MenuPage::get_modal_page() {
   if (get_current_page_stack().empty()) return NULL;
   return get_current_page_stack().top();

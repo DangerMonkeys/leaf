@@ -38,8 +38,6 @@ class Power {
   struct Info {
     int8_t batteryPercent;  // battery percentage remaining from 0-100%
     uint16_t batteryMV;     // milivolts battery voltage (typically between 3200 and 4200)
-    uint16_t batteryADC;    // ADC raw output from ESP32 input pin
-    uint16_t battMvCal;     // Calibrated battery voltage (milivolts)
     bool charging = false;  // if system is being charged or not
     bool USBinput = false;  // if system is plugged into USB power or not
     PowerState onState = PowerState::Off;
