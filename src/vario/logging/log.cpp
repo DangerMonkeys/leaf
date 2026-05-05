@@ -239,7 +239,7 @@ void flightTimer_start() {
 }
 
 // stop timer
-void flightTimer_stop() {
+void flightTimer_stop(bool showSummary) {
   windEstimator.clearWindEstimate();  // clear the wind estimate when we stop a flight
   power.resetAutoOffCounter();  // reset the auto-off counter when we stop a flight (it could have
                                 // counted up to nearly the limit prior to auto-starting a log)
@@ -252,7 +252,7 @@ void flightTimer_stop() {
   log_captureEndingValues();
 
   // close the flight
-  flight->end(logbook);
+  flight->end(logbook, showSummary);
   // TODO:  A much cooler end flight sound.  Perhaps even an easter egg?
   speaker.playSound(fx::confirm);
   flight = NULL;

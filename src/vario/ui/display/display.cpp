@@ -136,6 +136,11 @@ void Display::showOnSplash() { showSplashScreenFrames_ = 6; }
 // Will first display charging screen if charging, or splash screen if in the process of turning on
 // / waking up Then will display any current modal pages before falling back to the current page
 void Display::update() {
+  if (displayPage_ == MainPage::Blank) {
+    clear();
+    return;
+  }
+
   SpiLockGuard spiLock;  // Take out an SPI lock for the rending of the page
 
   if (displayPage_ == MainPage::Charging) {
@@ -186,6 +191,12 @@ void Display::update() {
 void Display::clear() {
   SpiLockGuard spiLock;
   u8g2.clear();
+}
+
+void Display::clearPage() {
+  clear();
+  mainMenuPage.pop_all_pages();
+  displayPage_ = MainPage::Blank;
 }
 
 void GLCD_inst(byte data) {

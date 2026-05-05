@@ -4,7 +4,7 @@
 class Kml : public Flight {
  public:
   bool startFlight() override;
-  void end(const FlightStats stats) override;
+  void end(const FlightStats stats, bool showSummary = true) override;
 
   const String fileNameSuffix() const override { return "kml"; }
   const String desiredFileName() const override;

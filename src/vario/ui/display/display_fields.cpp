@@ -656,24 +656,6 @@ void display_battIcon(uint8_t x, uint8_t y, bool vertical) {
   else
     u8g2.setFont(leaf_icons);
   u8g2.print(battIcon);
-  /*
-  Serial.print("percent: ");
-  Serial.print(battPercent);
-  Serial.print(" icon: ");
-  Serial.print((char)battIcon);
-  Serial.print(" milivolts: ");
-  Serial.print(battMV);
-  Serial.print(" ADC: ");
-  Serial.println(battADC);
-
-  u8g2.setFont(leaf_6x12);
-  u8g2.setCursor(x, y+=15);
-  u8g2.print(battPercent);
-  u8g2.setCursor(x, y+=15);
-  u8g2.print(battMV);
-  u8g2.setCursor(x, y+=15);
-  u8g2.print(battADC);
-  */
 }
 
 void display_batt_charging_fullscreen(uint8_t x, uint8_t y) {

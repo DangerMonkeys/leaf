@@ -52,7 +52,7 @@ void Kml::log(unsigned long durationSec) {
   file.println(whenPointStr);
 }
 
-void Kml::end(const FlightStats stats) {
+void Kml::end(const FlightStats stats, bool showSummary) {
   file.println(KMLtrackFooterA);  // close </gxtrack> and open track <name>
   file.println("Flight Time: " + formatSeconds(stats.duration, false, 0));
   file.println(KMLtrackFooterB);  // close track </name> and open track <description>
@@ -62,5 +62,5 @@ void Kml::end(const FlightStats stats) {
   file.println(KMLtrackFooterD);  // close document </name> and open document <description>
   // skipping KML file description.  Not needed and clogs up the google earth places list
   file.println(KMLtrackFooterE);  // close document </description> and close document and kml tags
-  Flight::end(stats);
+  Flight::end(stats, showSummary);
 }

@@ -46,12 +46,14 @@ bool Flight::startFlight() {
   return true;
 }
 
-void Flight::end(const FlightStats stats) {
+void Flight::end(const FlightStats stats, bool showSummary) {
   file.close();
 
   // Finally, show the flight summary page
-  static PageFlightSummary dialog;
-  dialog.show(stats);
+  if (showSummary) {
+    static PageFlightSummary dialog;
+    dialog.show(stats);
+  }
 }
 
 bool Flight::started() { return (boolean)file; }

@@ -42,6 +42,10 @@ class MenuPage {
   // If there is no modal page, returns NULL.
   MenuPage* get_modal_page();
 
+  // Pops all modal pages off the stack, returning to a blank slate with no
+  // modal pages
+  void pop_all_pages();
+
  protected:
   void cursor_prev();
   void cursor_next();

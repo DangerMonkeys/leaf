@@ -9,7 +9,7 @@ class Flight {
   // We wish to start recording a flight.
   // Returns:  Flight log created successfully
   virtual bool startFlight();
-  virtual void end(const FlightStats stats);
+  virtual void end(const FlightStats stats, bool showSummary = true);
 
   // Logs a datapoint
   virtual void log(unsigned long durationSec) {}
