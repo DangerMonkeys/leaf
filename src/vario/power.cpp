@@ -212,17 +212,17 @@ void Power::shutdown() { shutdown(false); }
 void Power::shutdown(bool deadBattery) {
   Serial.println("power_shutdown");
 
+  // save logs and system data
+  if (flightTimer_isRunning()) {
+    flightTimer_stop(false);
+  }
+
   // Show user we're shutting down
   display.clearPage();
   if (deadBattery) {
     display_batteryDead_splash();
   } else {
     display_off_splash();
-  }
-
-  // save logs and system data
-  if (flightTimer_isRunning()) {
-    flightTimer_stop();
   }
 
   baro.sleep();  // stop getting climbrate updates so we don't hear vario beeps while shutting down

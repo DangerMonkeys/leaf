@@ -26,7 +26,7 @@ bool flightTimer_autoStop(void);
 
 // Flight Timer functions
 void flightTimer_start(void);
-void flightTimer_stop(void);
+void flightTimer_stop(bool showSummary = true);
 void flightTimer_toggle(void);
 bool flightTimer_isRunning(void);  // If the timer is running
 bool flightTimer_isLogging(void);  // If the flight recorder log is logging
