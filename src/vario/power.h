@@ -57,6 +57,7 @@ class Power {
   void update();
 
   void resetAutoOffCounter();
+  uint16_t getAutoOffSecondsRemaining();
 
   void increaseInputCurrent();
   void decreaseInputCurrent();

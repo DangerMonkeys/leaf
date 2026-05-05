@@ -21,9 +21,13 @@
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
 #include "ui/display/display_fields.h"
+#include "ui/display/pages/dialogs/page_alert_autoOff.h"
 #include "ui/input/buttons.h"
 #include "ui/settings/settings.h"
 #include "utils/magic_enum.h"
+
+// Alert page to warn if auto-off is about to occur
+PageAlertAutoOff pageAlertAutoOff;
 
 Power power;  // struct for battery-state and on-state variables
 
@@ -292,7 +296,20 @@ void Power::update() {
   }
 }
 
-void Power::resetAutoOffCounter() { autoOffCounter_ = 0; }
+bool showingAlertAutoOff = false;
+
+void Power::resetAutoOffCounter() {
+  autoOffCounter_ = 0;
+  if (showingAlertAutoOff) {
+    buttons.consumeButton();
+    pageAlertAutoOff.closeAlert();  // close the alert if it's open, since we're shutting down now
+    showingAlertAutoOff = false;    // reset alert page flag so it can show again after this reset
+  }
+}
+
+uint16_t Power::getAutoOffSecondsRemaining() {
+  return (settings.system_autoOff * 60 - autoOffCounter_);
+}
 
 bool Power::autoOff() {
   bool autoShutOff = false;  // start with assuming we're not going to turn off
@@ -301,8 +318,19 @@ bool Power::autoOff() {
   if (autoOffCounter_ >= settings.system_autoOff * 60) {  // convert minutes to seconds
     autoShutOff = true;
   } else if (autoOffCounter_ >= settings.system_autoOff * 60 - 10) {
-    speaker.playSound(
-        fx::decrease);  // start playing warning sounds 5 seconds before it auto-turns off
+    // start playing warning sounds 10 seconds before it auto-turns off
+    speaker.playSound(fx::decrease);
+
+    // and pop up the alert if we have 10 seconds left
+    if (autoOffCounter_ == settings.system_autoOff * 60 - 10 && !showingAlertAutoOff) {
+      pageAlertAutoOff.show();  // show alert page with countdown until auto-off
+      showingAlertAutoOff = true;
+    }
+  }
+  if (autoShutOff) {
+    pageAlertAutoOff.closeAlert();  // close the alert if it's open, since we're shutting down now
+    showingAlertAutoOff =
+        false;  // reset alert page flag for next time we turn on and start counting
   }
   return autoShutOff;
 }
