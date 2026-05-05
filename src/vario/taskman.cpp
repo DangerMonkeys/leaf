@@ -6,6 +6,7 @@
 #include "task.h"
 
 #include "comms/ble.h"
+#include "diagnostics/self_test/selfTest.h"
 #include "hardware/Leaf_SPI.h"
 #include "hardware/aht20.h"
 #include "hardware/buttons.h"
@@ -243,6 +244,10 @@ void TaskManager::setNecessaryTasksForBlock() {
   performTask.buttons = true;
   performTask.baro = true;
   performTask.speakerTimer = true;
+  if (selfTest.status == SelfTest::Status::Running)
+    performTask.selfTest = true;
+  else
+    (performTask.selfTest = false);
 
   // set additional tasks to complete, broken down into 10ms block cycles.  (embedded if()
   // statements allow for tasks every second, spaced out on different 100ms blocks)
@@ -355,6 +360,10 @@ void TaskManager::doNecessaryTasks(void) {
   if (performTask.sdCard) {
     sdcard.update();
     performTask.sdCard = false;
+  }
+  if (performTask.selfTest) {
+    selfTest.runAllTests();
+    performTask.selfTest = false;
   }
 #ifdef MEMORY_PROFILING
   if (performTask.memoryStats) {
