@@ -101,8 +101,14 @@ void PageFanetGround::draw_extra() {
     // This really, really shouldn't be done in a Display object
     // but whatever, we'll refactor later.
     // TODO:  Delete me
+
+    float climbRate = 0;
+    if (baro.climbRateFilteredValid()) {
+      climbRate = baro.climbRateFiltered() / 100.0f;
+    }
+
     fanetRadio.setCurrentLocation(gps.location.lat(), gps.location.lng(), gps.altitude.meters(),
-                                  gps.course.deg(), baro.climbRate() / 100.0f, gps.speed.kmph());
+                                  gps.course.deg(), climbRate, gps.speed.kmph());
   }
 }
 
