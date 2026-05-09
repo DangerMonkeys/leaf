@@ -24,3 +24,5 @@ String formatSpeed(float speed, bool units, bool showUnits);
 
 // Format accel "1.2g"
 String formatAccel(float accel, bool showUnits);
+
+String formatDistance(float distance, bool units, bool showUnits);

@@ -38,8 +38,6 @@ class Power {
   struct Info {
     int8_t batteryPercent;  // battery percentage remaining from 0-100%
     uint16_t batteryMV;     // milivolts battery voltage (typically between 3200 and 4200)
-    uint16_t batteryADC;    // ADC raw output from ESP32 input pin
-    uint16_t battMvCal;     // Calibrated battery voltage (milivolts)
     bool charging = false;  // if system is being charged or not
     bool USBinput = false;  // if system is plugged into USB power or not
     PowerState onState = PowerState::Off;
@@ -52,12 +50,14 @@ class Power {
   void bootUp();
 
   void shutdown();
+  void shutdown(bool deadBattery);
 
   void switchToOnState();
 
   void update();
 
   void resetAutoOffCounter();
+  uint16_t getAutoOffSecondsRemaining();
 
   void increaseInputCurrent();
   void decreaseInputCurrent();
@@ -93,7 +93,7 @@ class Power {
   Info info_;
 
   // check if we should turn off from  inactivity
-  uint8_t autoOffCounter_ = 0;
+  uint16_t autoOffCounter_ = 0;
   int32_t autoOffAltitude_ = 0;
 
   uint16_t batteryPercentLast_;

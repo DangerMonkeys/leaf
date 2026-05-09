@@ -23,8 +23,8 @@ class SystemMenuPage : public SettingsMenuPage {
 
  private:
   void drawSystemMenu();
-  static constexpr char* labels[9] = {"Back", "TimeZone", "Volume", "Auto-Off", "ShowWarning",
-                                      "Wifi", "BT",       "About",  "Reset"};
+  static constexpr char* labels[9] = {"Back", "TimeZone",  "Volume", "Auto-Off", "ShowSafety",
+                                      "Wifi", "Bluetooth", "About",  "Reset"};
 };
 
 #endif

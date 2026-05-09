@@ -106,12 +106,12 @@ bool Igc::startFlight() {
   return true;
 }
 
-void Igc::end(const FlightStats stats) {
+void Igc::end(const FlightStats stats, bool showSummary) {
   // If we've not started a flight yet, don't write to disk.
   if (started()) {
     logger.writeGRecord();
   }
-  Flight::end(stats);
+  Flight::end(stats, showSummary);
 }
 
 void Igc::setPilotFromFile() {

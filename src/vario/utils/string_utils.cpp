@@ -123,3 +123,34 @@ String formatAccel(float accel, bool showUnits) {
 
   return result;
 }
+
+String formatDistance(float distance, bool units, bool showUnits) {
+  char buffer[10];
+  String unitSymbol;
+
+  if (units) {
+    if (distance > 800) {  // convert to miles if over half a mile
+      unitSymbol = "mi";
+      distance *= 0.000621371f;  // convert m to miles
+      snprintf(buffer, sizeof(buffer), "%6.2f", distance);
+    } else {
+      unitSymbol = "ft";
+      distance *= 3.28084f;  // convert to feet
+      snprintf(buffer, sizeof(buffer), "%5.0f", distance);
+    }
+  } else {
+    if (distance >= 1000) {  // convert to km if over 1000m
+      distance /= 1000;      // convert to km
+      unitSymbol = "km";
+      snprintf(buffer, sizeof(buffer), "%6.2f", distance);
+    } else {
+      unitSymbol = "m";
+      snprintf(buffer, sizeof(buffer), "%5.0f", distance);
+    }
+  }
+
+  String result = String(buffer);
+  if (showUnits) result += unitSymbol;
+
+  return result;
+}

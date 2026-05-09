@@ -8,9 +8,9 @@
 #include "logbook/flight.h"
 
 // Auto Start/Stop Timer Thresholds
-#define AUTO_START_MIN_SPEED 5  // mph minimum before timer will auto-start
-#define AUTO_START_MIN_SEC 3    // seconds above the min speed to auto-start
-#define AUTO_START_MIN_ALT 500  // cm altitude change for timer auto-start
+#define AUTO_START_MIN_SPEED 8  // mph minimum before timer will auto-start
+#define AUTO_START_MIN_SEC 5    // seconds above the min speed to auto-start
+#define AUTO_START_MIN_ALT 700  // cm altitude change for timer auto-start
 
 #define AUTO_STOP_MAX_SPEED 3     // mph max -- must be below this speed for timer to auto-stop
 #define AUTO_STOP_MAX_ACCEL 0.2f  // Max accelerometer signal (m/s^2) to consider "not moving"
@@ -26,7 +26,7 @@ bool flightTimer_autoStop(void);
 
 // Flight Timer functions
 void flightTimer_start(void);
-void flightTimer_stop(void);
+void flightTimer_stop(bool showSummary = true);
 void flightTimer_toggle(void);
 bool flightTimer_isRunning(void);  // If the timer is running
 bool flightTimer_isLogging(void);  // If the flight recorder log is logging
@@ -43,6 +43,7 @@ String log_createTrackFileName(void);
 
 void log_captureValues(void);
 void log_checkMinMaxValues(void);
+void log_captureEndingValues(void);
 
 // Returns if we should start recording a flight based on movemnt
 bool flightTimer_autoStop(void);
