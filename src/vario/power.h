@@ -39,7 +39,7 @@ class Power {
     int8_t batteryPercent;  // battery percentage remaining from 0-100%
     uint16_t batteryMV;     // milivolts battery voltage (typically between 3200 and 4200)
     bool charging = false;  // if system is being charged or not
-    bool USBinput = false;  // if system is plugged into USB power or not
+    bool USBinput = false;  // if system is plugged into USB power or not (ONLY VALID ON 3.2.6+)
     PowerState onState = PowerState::Off;
     PowerInputLevel inputCurrent = PowerInputLevel::i500mA;
     uint16_t chargeCurrentMA;  // measured charge current in mA (if used -- versions 3.2.6+)
