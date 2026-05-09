@@ -344,7 +344,7 @@ SelfTest::Status VarioInteractiveTest::update() {
     maxAltitude = alt;
     deltaAltitude = maxAltitude - initialAltitude;
   }
-  climb = baro.climbRate();
+  climb = baro.climbRateFiltered();
   if (climb > maxClimb) {
     maxClimb = climb;
   } else if (climb < maxSink) {
