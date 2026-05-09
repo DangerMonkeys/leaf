@@ -490,8 +490,12 @@ void FanetRadio::on_receive(const GpsReading& msg) {
 
   // Update the FANet radio module of our current location
   TinyGPSPlus gps = msg.gps;  // Needed as lat() calls are not const :'(
+  float climbRate = 0;
+  if (baro.climbRateFilteredValid()) {
+    climbRate = baro.climbRateFiltered() / 100.0f;
+  }
   setCurrentLocation(gps.location.lat(), gps.location.lng(), gps.altitude.meters(),
-                     gps.course.deg(), baro.climbRate() / 100.0f, gps.speed.kmph());
+                     gps.course.deg(), climbRate, gps.speed.kmph());
 }
 
 String FanetRadio::getAddress() {

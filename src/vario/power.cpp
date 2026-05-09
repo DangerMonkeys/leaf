@@ -21,9 +21,13 @@
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
 #include "ui/display/display_fields.h"
+#include "ui/display/pages/dialogs/page_alert_autoOff.h"
 #include "ui/input/buttons.h"
 #include "ui/settings/settings.h"
 #include "utils/magic_enum.h"
+
+// Alert page to warn if auto-off is about to occur
+PageAlertAutoOff pageAlertAutoOff;
 
 Power power;  // struct for battery-state and on-state variables
 
@@ -43,7 +47,6 @@ Power power;  // struct for battery-state and on-state variables
 #define AUTO_OFF_MAX_SPEED 3   // mph max -- must be below this speed for timer to auto-stop
 #define AUTO_OFF_MAX_ACCEL 10  // Max accelerometer signal
 #define AUTO_OFF_MAX_ALT 400   // cm altitude change for timer auto-stop
-#define AUTO_OFF_MIN_SEC 20    // seconds of low speed / low accel for timer to auto-stop
 
 const char* nameOf(PowerInputLevel level) {
   switch (level) {
@@ -90,6 +93,7 @@ void Power::bootUp() {
   } else {
     // if not center button, then USB power turned us on, go into charge mode
     info_.onState = PowerState::OffUSB;
+    display.setPage(MainPage::Charging);
   }
 
   // init peripherals (even if we're not turning on and just going into
@@ -207,17 +211,22 @@ void Power::maybeStartBusLog() {
     }
   }
 }
+void Power::shutdown() { shutdown(false); }
 
-void Power::shutdown() {
+void Power::shutdown(bool deadBattery) {
   Serial.println("power_shutdown");
-
-  // Show user we're shutting down
-  display.clear();
-  display_off_splash();
 
   // save logs and system data
   if (flightTimer_isRunning()) {
-    flightTimer_stop();
+    flightTimer_stop(false);
+  }
+
+  // Show user we're shutting down
+  display.clearPage();
+  if (deadBattery) {
+    display_batteryDead_splash();
+  } else {
+    display_off_splash();
   }
 
   baro.sleep();  // stop getting climbrate updates so we don't hear vario beeps while shutting down
@@ -247,6 +256,7 @@ void Power::shutdown() {
   // go to PowerState::OffUSB, in case device was shut down while
   // plugged into USB, then we can show necessary charging updates etc
   info_.onState = PowerState::OffUSB;
+  display.setPage(MainPage::Charging);
 }
 
 void Power::latchOn() { digitalWrite(POWER_LATCH, HIGH); }
@@ -273,7 +283,7 @@ void Power::update() {
   //       Probably not, since shutting down allows more current for charging
   if (info_.batteryMV <= BATT_SHUTDOWN_MV) {
 #ifndef DISABLE_BATTERY_SHUTDOWN
-    shutdown();
+    shutdown(true);
 #endif
 
     // ..or if we should shutdown due to inactivity
@@ -286,49 +296,42 @@ void Power::update() {
   }
 }
 
-void Power::resetAutoOffCounter() { autoOffCounter_ = 0; }
+bool showingAlertAutoOff = false;
+
+void Power::resetAutoOffCounter() {
+  autoOffCounter_ = 0;
+  if (showingAlertAutoOff) {
+    buttons.consumeButton();
+    pageAlertAutoOff.closeAlert();  // close the alert if it's open, since we're shutting down now
+    showingAlertAutoOff = false;    // reset alert page flag so it can show again after this reset
+  }
+}
+
+uint16_t Power::getAutoOffSecondsRemaining() {
+  return (settings.system_autoOff * 60 - autoOffCounter_);
+}
 
 bool Power::autoOff() {
   bool autoShutOff = false;  // start with assuming we're not going to turn off
 
-  // we will auto-stop only if BOTH the GPS speed AND the Altitude change trigger the stopping
-  // thresholds.
+  autoOffCounter_++;
+  if (autoOffCounter_ >= settings.system_autoOff * 60) {  // convert minutes to seconds
+    autoShutOff = true;
+  } else if (autoOffCounter_ >= settings.system_autoOff * 60 - 10) {
+    // start playing warning sounds 10 seconds before it auto-turns off
+    speaker.playSound(fx::decrease);
 
-  // First check if baro is available (it's not available immediately after boot-up)
-  if (baro.state() != Barometer::State::Ready) {
-    return false;
-  }
-
-  // Then check if altitude is stable
-  int32_t altDifference = baro.alt() - autoOffAltitude_;
-  if (altDifference < 0) altDifference *= -1;
-  if (altDifference < AUTO_OFF_MAX_ALT) {
-    // then check if GPS speed is slow enough
-    if (gps.speed.mph() < AUTO_OFF_MAX_SPEED) {
-      autoOffCounter_++;
-      if (autoOffCounter_ >= AUTO_OFF_MIN_SEC) {
-        autoShutOff = true;
-      } else if (autoOffCounter_ >= AUTO_OFF_MIN_SEC - 5) {
-        speaker.playSound(
-            fx::decrease);  // start playing warning sounds 5 seconds before it auto-turns off
-      }
-    } else {
-      autoOffCounter_ = 0;
+    // and pop up the alert if we have 10 seconds left
+    if (autoOffCounter_ == settings.system_autoOff * 60 - 10 && !showingAlertAutoOff) {
+      pageAlertAutoOff.show();  // show alert page with countdown until auto-off
+      showingAlertAutoOff = true;
     }
-
-  } else {
-    autoOffAltitude_ += altDifference;  // reset the comparison altitude to present altitude,
-                                        // since it's still changing
   }
-
-  Serial.print(
-      "                                                   *************AUTO OFF***  Counter: ");
-  Serial.print(autoOffCounter_);
-  Serial.print("   Alt Diff: ");
-  Serial.print(altDifference);
-  Serial.print("  AutoShutOff? : ");
-  Serial.println(autoShutOff);
-
+  if (autoShutOff) {
+    pageAlertAutoOff.closeAlert();  // close the alert if it's open, since we're shutting down now
+    showingAlertAutoOff =
+        false;  // reset alert page flag for next time we turn on and start counting
+  }
   return autoShutOff;
 }
 
@@ -344,15 +347,7 @@ void Power::readBatteryState() {
 #endif
 
   // Test internal calibration of ADC:
-  info_.battMvCal = analogReadMilliVolts(BATT_SENSE) * 69 / 41;
-
-  // Battery Voltage Level & Percent Remaining
-  info_.batteryADC = analogRead(BATT_SENSE);
-  // uint16_t batt_level_mv = adc_level * 5554 / 4095;  //    (3300mV ADC range / .5942 V_divider)
-  // = 5554.  Then divide by 4095 steps of resolution adjusted formula to account for ESP32 ADC
-  // non-linearity; based on calibration measurements.  This is most accurate between 2.4V
-  // and 4.7V
-  info_.batteryMV = info_.batteryADC * 5300 / 4095 + 260;
+  info_.batteryMV = analogReadMilliVolts(BATT_SENSE) * 69 / 41;
 
   if (info_.batteryMV < BATT_EMPTY_MV) {
     info_.batteryPercent = 0;

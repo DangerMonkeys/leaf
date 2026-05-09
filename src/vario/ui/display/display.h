@@ -27,7 +27,8 @@ enum class MainPage : uint8_t {
   ThermalAdv = 3,
   Nav = 4,
   Menu = 5,
-  Charging = 6
+  Charging = 6,
+  Blank = 7
 };
 DEFINE_WRAPPING_BOUNDS(MainPage, MainPage::Debug, MainPage::Menu);
 
@@ -35,7 +36,9 @@ class Display {
  public:
   void init();
   void update();
-  void clear();
+  void clear();      // clear all pixels on the display
+  void clearPage();  // reset all display target pages and pop-ups (there will be no target content
+                     // after this call)
   void setContrast(uint8_t contrast);
 
   void turnPage(PageAction action);

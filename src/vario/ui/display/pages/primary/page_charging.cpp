@@ -45,22 +45,24 @@ void chargingPage_draw() {
     u8g2.print("mA ");
 #endif
     u8g2.setCursor(30, yPos + 10);
-    u8g2.print(info.battMvCal);
+    u8g2.print(info.batteryMV);
     u8g2.print("mV");
     u8g2.setDrawColor(1);
 
-    // Show Input Current limit (not actually charge current)
-    u8g2.setFont(leaf_6x12);
-    u8g2.setCursor(10, 157);
-    u8g2.print("Limit: ");
-    if (info.inputCurrent == PowerInputLevel::i100mA)
-      u8g2.print("100mA");
-    else if (info.inputCurrent == PowerInputLevel::i500mA)
-      u8g2.print("500mA");
-    else if (info.inputCurrent == PowerInputLevel::Max)
-      u8g2.print("810mA");
-    else if (info.inputCurrent == PowerInputLevel::Standby)
-      u8g2.print(" OFF");
+    if (settings.dev_menu) {
+      // If Developer Mode enabled, show Input Current max limit
+      u8g2.setFont(leaf_6x12);
+      u8g2.setCursor(10, 157);
+      u8g2.print("Limit: ");
+      if (info.inputCurrent == PowerInputLevel::i100mA)
+        u8g2.print("100mA");
+      else if (info.inputCurrent == PowerInputLevel::i500mA)
+        u8g2.print("500mA");
+      else if (info.inputCurrent == PowerInputLevel::Max)
+        u8g2.print("810mA");
+      else if (info.inputCurrent == PowerInputLevel::Standby)
+        u8g2.print(" OFF");
+    }
 
     // Display the current SW version
     u8g2.setCursor(0, 172);
@@ -99,9 +101,10 @@ void chargingPage_button(Button button, ButtonEvent state, uint8_t count) {
         case ButtonEvent::CLICKED:
           break;
         case ButtonEvent::HELD:
-          power.increaseInputCurrent();
-
-          speaker.playSound(fx::enter);
+          if (settings.dev_menu) {
+            power.increaseInputCurrent();
+            speaker.playSound(fx::enter);
+          }
           break;
       }
       break;
@@ -110,8 +113,10 @@ void chargingPage_button(Button button, ButtonEvent state, uint8_t count) {
         case ButtonEvent::CLICKED:
           break;
         case ButtonEvent::HELD:
-          power.decreaseInputCurrent();
-          speaker.playSound(fx::exit);
+          if (settings.dev_menu) {
+            power.decreaseInputCurrent();
+            speaker.playSound(fx::exit);
+          }
           break;
       }
       break;

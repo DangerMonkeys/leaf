@@ -54,6 +54,7 @@ void display_humidity(uint8_t x, uint8_t y, const Ambient& ambient);
 
 void display_battIcon(uint8_t x, uint8_t y, bool vertical);
 void display_batt_charging_fullscreen(uint8_t x, uint8_t y);
+void display_batt_charging_fullscreen(uint8_t x, uint8_t y, bool warning);
 void display_GPS_icon(uint8_t x, uint8_t y);
 void display_fanet_icon(const uint8_t& x, const uint8_t& y);
 
@@ -72,5 +73,6 @@ void display_footer(bool timerSelected);
 void display_off_splash(void);
 void display_on_splash(void);
 void display_splashLogo(void);
+void display_batteryDead_splash(void);
 
 #endif
