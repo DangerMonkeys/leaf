@@ -147,6 +147,7 @@ setting | samples | time avg
   bool system_wifiOn;
   bool system_bluetoothOn;
   bool system_showWarning;
+  String macAddress;
 
   // developer options
   bool dev_menu;
@@ -157,6 +158,7 @@ setting | samples | time avg
   // Boot Flags
   bool boot_enterBootloader;
   bool boot_toOnState;
+  bool boot_firstTime;  // flag for first-ever boot
 
   // Display Settings
   uint8_t disp_contrast;
@@ -185,13 +187,14 @@ setting | samples | time avg
   bool units_hours;
 
   // manage-settings functions
-  void init(void);
+  bool init(void);  // returns true if first-ever boot
   void loadDefaults(void);
   void save(void);
   void retrieve(void);
   void reset(void);
   void factoryResetVario(void);
   void totallyEraseNVS(void);
+  String getMacAddress(void);
 
   // adjust-settings functions
   void adjustContrast(Button dir);

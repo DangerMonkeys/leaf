@@ -18,8 +18,12 @@ namespace fx {
       note::C4, note::C4, note::C4, note::END};  //  {110, 110, 110, 110, 110, 110, 110, 110,10,
                                                  //  110, 1110, 110, 110, 110, 110, 110, 110, 110,
                                                  //  110, 110, END_OF_TONE};
-  constexpr note_t doubleClick[] = {note::C4, note::NONE, note::C4,
-                                    note::END};  // 110, 0, 110, END_OF_TONE};
+  constexpr note_t doubleClick[] = {note::C4, note::NONE, note::C4, note::END};
+
+  constexpr note_t doubleRise[] = {note::C4, note::NONE, note::G4, note::END};
+  constexpr note_t tripleRise[] = {note::C4, note::NONE, note::G4, note::NONE, note::C5, note::END};
+  constexpr note_t quadRise[] = {note::C4, note::NONE, note::G4, note::NONE,
+                                 note::C5, note::NONE, note::G5, note::END};
 
   constexpr note_t enter[] = {note::A4, note::C4, note::E4,
                               note::END};  // 150, 120, 90, END_OF_TONE};

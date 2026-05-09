@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 
+#include "diagnostics/self_test/selfTest.h"
 #include "logging/buslog.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
@@ -16,6 +17,7 @@ enum developer_menu_items {
   cursor_developer_back,
   cursor_developer_fanetReTx,
   cursor_developer_showDebugPg,
+  cursor_developer_runSelfTest,
   cursor_developer_startupStart,
   cursor_developer_startupDisconnect,
   cursor_developer_busLogControl
@@ -32,7 +34,7 @@ void DeveloperMenuPage::draw() {
     uint8_t y_spacing = 16;
     uint8_t setting_name_x = 2;
     uint8_t setting_choice_x = 76;
-    uint8_t menu_items_y[] = {190, 35, 50, 135, 150, 170};
+    uint8_t menu_items_y[] = {190, 35, 50, 65, 135, 150, 170};
 
     // first draw cursor selection box
     uint8_t largerChoiceSize = 0;
@@ -68,6 +70,9 @@ void DeveloperMenuPage::draw() {
             u8g2.print(char(125));
           else
             u8g2.print(char(123));
+          break;
+        case cursor_developer_runSelfTest:
+          u8g2.print((char)126);
           break;
         case cursor_developer_startupStart:
           if (settings.dev_startLogAtBoot)
@@ -107,6 +112,14 @@ void DeveloperMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t co
     case cursor_developer_showDebugPg: {
       if (state == ButtonEvent::CLICKED && dir == Button::CENTER)
         settings.toggleBoolOnOff(&settings.disp_showDebugPage);
+      break;
+    }
+    case cursor_developer_runSelfTest: {
+      if (state == ButtonEvent::CLICKED) {
+        speaker.playSound(fx::confirm);
+        selfTest.status =
+            SelfTest::Status::Running;  // runs all tests via the main system timer / taskman
+      }
       break;
     }
     case cursor_developer_startupStart: {
