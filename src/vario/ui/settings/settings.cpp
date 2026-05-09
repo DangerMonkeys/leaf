@@ -1,5 +1,7 @@
 #include "ui/settings/settings.h"
 
+#include "esp_mac.h"
+
 #include <Preferences.h>
 #include <esp_wifi.h>
 #include <nvs_flash.h>
@@ -24,7 +26,7 @@ Settings settings;
 
 Preferences leafPrefs;
 
-void Settings::init() {
+bool Settings::init() {
   vario_sensitivity.onChange([](const int8_t& newValue) {
     size_t nSamples = 3;
     if (newValue == 1) {
@@ -54,11 +56,24 @@ void Settings::init() {
   if (newBootupVario) {
     leafPrefs.end();
     leafPrefs.begin("varioPrefs", RW_MODE);
-    save();  // save defaults to NVS0
+    macAddress = getMacAddress();  // capture the device MAC address for use as a unique device ID
+    save();                        // save defaults to NVS0
     leafPrefs.end();
+    boot_firstTime = true;
   } else {
     retrieve();
+    boot_firstTime = false;
   }
+  return boot_firstTime;
+}
+
+String Settings::getMacAddress() {
+  uint8_t mac[6];
+  esp_read_mac(mac, ESP_MAC_WIFI_STA);
+  char macStr[18];
+  snprintf(macStr, sizeof(macStr), "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3],
+           mac[4], mac[5]);
+  return String(macStr);
 }
 
 void Settings::factoryResetVario() {
@@ -166,6 +181,7 @@ void Settings::retrieve() {
   system_wifiOn = leafPrefs.getBool("WIFI_ON");
   system_bluetoothOn = leafPrefs.getBool("BLUETOOTH_ON");
   system_showWarning = leafPrefs.getBool("SHOW_WARNING");
+  macAddress = leafPrefs.getString("MAC_ADDRESS", getMacAddress());
 
   // Developer Options
   dev_menu = leafPrefs.getBool("DEVELOPER_MENU");
@@ -176,6 +192,7 @@ void Settings::retrieve() {
   // Boot Flags
   boot_enterBootloader = leafPrefs.getBool("ENTER_BOOTLOAD");
   boot_toOnState = leafPrefs.getBool("BOOT_TO_ON");
+  boot_firstTime = leafPrefs.getBool("FIRST_BOOT", false);
 
   // Display Settings
   disp_contrast = leafPrefs.getUChar("CONTRAST");
@@ -243,6 +260,7 @@ void Settings::save() {
   leafPrefs.putBool("WIFI_ON", system_wifiOn);
   leafPrefs.putBool("BLUETOOTH_ON", system_bluetoothOn);
   leafPrefs.putBool("SHOW_WARNING", system_showWarning);
+  leafPrefs.putString("MAC_ADDRESS", macAddress);
   // Developer Options
   leafPrefs.putBool("DEVELOPER_MENU", dev_menu);
   leafPrefs.putBool("DEV_STARTLOG", dev_startLogAtBoot);
@@ -251,6 +269,7 @@ void Settings::save() {
   // Boot Flags
   leafPrefs.putBool("ENTER_BOOTLOAD", boot_enterBootloader);
   leafPrefs.putBool("BOOT_TO_ON", boot_toOnState);
+  leafPrefs.putBool("FIRST_BOOT", boot_firstTime);
   // Display Settings
   leafPrefs.putUChar("CONTRAST", disp_contrast);
   leafPrefs.putUChar("NAVPG_ALT_TYP", disp_navPageAltType);
@@ -291,7 +310,7 @@ void Settings::reset() {
   save();
 }
 
-// we probably should never have to call this
+// we probably should never have to call this (TODO: maybe make a developer option?)
 void Settings::totallyEraseNVS() {
   nvs_flash_erase();  // erase the NVS partition and...
   nvs_flash_init();   // initialize the NVS partition.

@@ -30,24 +30,12 @@ void PageMenuAbout::draw_extra() {
   u8g2.print(WiFi.localIP().toString());
   y += offset;
 
-  // MAC Address
-  uint8_t mac[6];
-  esp_efuse_mac_get_default(mac);
-  String macStr = "";
-  for (int i = 0; i < 6; i++) {
-    auto hexChr = String(mac[i], HEX);
-    hexChr.toUpperCase();
-    macStr += String(mac[i] < 16 ? "0" : "") + hexChr;
-    if (i != 5) {
-      macStr += ":";
-    }
-  }
   u8g2.setFont(leaf_6x12);
   u8g2.setCursor(0, y += offset);
   u8g2.print("Mac: ");
   u8g2.setCursor(5, y += offset);
   u8g2.setFont(leaf_5x8);
-  u8g2.print(macStr);
+  u8g2.print(settings.macAddress);
   y += offset;
 
   // FCC ID

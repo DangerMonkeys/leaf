@@ -10,7 +10,7 @@ class DeveloperMenuPage : public SettingsMenuPage {
  public:
   DeveloperMenuPage() {
     cursor_position = 0;
-    cursor_max = 5;
+    cursor_max = 6;
   }
   void draw();
 
@@ -18,7 +18,7 @@ class DeveloperMenuPage : public SettingsMenuPage {
   void setting_change(Button dir, ButtonEvent state, uint8_t count);
 
  private:
-  static constexpr char* labels[8] = {"Back",        "Fanet ReTX", "Debug Page",
+  static constexpr char* labels[8] = {"Back",        "Fanet ReTX", "Debug Page", "Run SelfTest",
                                       "StartBusLog", "Detach HW",  "Log Now:"};
 };
 

@@ -22,6 +22,7 @@ struct ManagedTasks {
   bool sdCard = true;       // check if SD card state has changed and attempt remount if needed
   bool memoryStats = true;  // Prints memory usage reports
   bool estimateWind = true;  // estimate wind speed and direction
+  bool selfTest = true;      // run self test tasks
 };
 
 // This is where the bulk of the task management work happens.  We are slowly moving away from this
