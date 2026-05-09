@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <U8g2lib.h>
 
-#include "diagnostics/self_test/selfTest.h"
 #include "hardware/buttons.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
@@ -242,8 +241,7 @@ void debugPage_button(Button button, ButtonEvent state, uint8_t count) {
     case Button::UP:
       switch (state) {
         case ButtonEvent::CLICKED:
-          selfTest.status = SelfTest::Status::Running;
-          // baro.adjustAltSetting(1, 0);
+          baro.adjustAltSetting(1, 0);
           break;
         case ButtonEvent::HELD:
           baro.adjustAltSetting(1, 1);
@@ -256,9 +254,7 @@ void debugPage_button(Button button, ButtonEvent state, uint8_t count) {
     case Button::DOWN:
       switch (state) {
         case ButtonEvent::CLICKED:
-          selfTest.clearResults();
-          Serial.println("CLEAR SELF TEST RESULTS");
-          // baro.adjustAltSetting(-1, 0);
+          baro.adjustAltSetting(-1, 0);
           break;
         case ButtonEvent::HELD:
           baro.adjustAltSetting(-1, 1);
