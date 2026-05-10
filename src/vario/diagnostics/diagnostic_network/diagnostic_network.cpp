@@ -53,11 +53,12 @@ void DiagnosticNetwork::update() {
   } else if (state_ == State::ConnectingToNetwork) {
     checkForConnection();
   } else if (state_ == State::ConnectedToNetwork) {
-    // Do nothing
     if (!printed_end_state_) {
       Serial.println("DiagnosticNetwork: Connected to network");
       printed_end_state_ = true;
     }
+    // begin self test (mark as official production test)
+    selfTest.begin(true);
   } else if (state_ == State::Error) {
     // Do nothing
     if (!printed_end_state_) {
@@ -155,8 +156,6 @@ void DiagnosticNetwork::checkForConnection() {
   wl_status_t status = WiFi.status();
   if (status == WL_CONNECTED) {
     state_ = State::ConnectedToNetwork;
-    // begin self test (mark as official production test)
-    selfTest.begin(true);
     return;
   } else if (status == WL_CONNECT_FAILED || status == WL_STOPPED) {
     WiFi.disconnect(true, true);
