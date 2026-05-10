@@ -117,8 +117,7 @@ void DeveloperMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t co
     case cursor_developer_runSelfTest: {
       if (state == ButtonEvent::CLICKED) {
         speaker.playSound(fx::confirm);
-        selfTest.status =
-            SelfTest::Status::Running;  // runs all tests via the main system timer / taskman
+        selfTest.begin(false);  // start a self test (not the official production test)
       }
       break;
     }

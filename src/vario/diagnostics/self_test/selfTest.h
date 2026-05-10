@@ -8,12 +8,16 @@ class SelfTest {
  public:
   enum class Status { Pass, Fail, Running, Complete, Unknown };
 
+  bool update();  // returns true if update() needs to be called again (because tests still running)
+  // start tests. true = save that we executed the production test (so we don't run multiple times)
+  void begin(bool markAsProductionChecked = false);
+  bool updateNeeded();  // returns true if update() needs to be called again
+
+ protected:
   Status status = Status::Unknown;
   Status statusAutoTests = Status::Unknown;
   Status statusInteractiveTests = Status::Unknown;
 
-  // Run all self tests
-  Status runAllTests();
   Status runAutoTests(bool closeFileWhenDone);  // allow closing file in this method if you only
                                                 // want to run Auto Tests
   Status runInteractiveTests(bool closeFileWhenDone);  // allow closing file in this method if you

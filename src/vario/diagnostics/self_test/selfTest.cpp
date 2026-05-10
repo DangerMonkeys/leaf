@@ -359,7 +359,7 @@ SelfTest::Status VarioInteractiveTest::update() {
   }
 
   // if vario values sufficient, pass the test
-  if (deltaAltitude >= 0.5f && maxClimb >= 1.0f && maxSink <= -1.0f) {
+  if (deltaAltitude >= 0.4f && maxClimb >= 400.0f && maxSink <= -400.0f) {
     status = SelfTest::Status::Pass;
     speaker.playSound(fx::confirm);
     selfTestInfo(
@@ -415,7 +415,7 @@ SelfTest::Status SelfTest::testSpeaker() {
   int waitForInput = 5000;  // wait up to 5 seconds for user input
   Button button = Button::NONE;
   Serial.println(
-      "* SELF TEST * SPEAKER * Hear two-beeps at low, med, high volume AND not 4-beeps?");
+      "* SELF TEST * SPEAKER * Hear long beeps at low, med, high volume AND not 4-beeps?");
   Serial.println("* SELF TEST * SPEAKER * YES = UP or RIGHT button, NO = DOWN or LEFT button");
   while (waitForInput-- > 0) {
     button = buttons.inspectPins();
@@ -442,20 +442,41 @@ SelfTest::Status SelfTest::testSpeaker() {
 ////////////////////////////////////////////////
 // SelfTest methods to run tests
 
-SelfTest::Status SelfTest::runAllTests() {
-  status = Status::Running;
-  if (statusAutoTests == Status::Running || statusAutoTests == Status::Unknown) {
-    statusAutoTests = runAutoTests(false);  // keep file open
-  } else if (statusInteractiveTests == Status::Running ||
-             statusInteractiveTests == Status::Unknown) {
-    statusInteractiveTests = runInteractiveTests(false);  // keep file open
-  } else if (status != Status::Complete) {
-    status = Status::Complete;  // we're done
-    selfTestInfo("* SELF TEST * All tests complete");
-    closeTestFile();
+void SelfTest::begin(bool markAsProductionChecked) {
+  if (markAsProductionChecked) {
+    if (settings.productionTest) {
+      // do nothing, we've already checked the production test
+      return;
+    } else {
+      settings.productionTest = true;  // mark that we've done the production test
+      settings.save();
+    }
   }
-  return status;
+
+  // set status to running so update() will perform tests
+  selfTest.clearResults();  // clear any previous results
+  selfTest.status = SelfTest::Status::Running;
 }
+
+bool SelfTest::update() {
+  bool updateNeeded = true;  // assume we'll need to call this again
+  if (status == Status::Running) {
+    if (statusAutoTests == Status::Running || statusAutoTests == Status::Unknown) {
+      statusAutoTests = runAutoTests(false);  // keep file open
+    } else if (statusInteractiveTests == Status::Running ||
+               statusInteractiveTests == Status::Unknown) {
+      statusInteractiveTests = runInteractiveTests(false);  // keep file open
+    } else if (status != Status::Complete) {
+      status = Status::Complete;  // we're done
+      updateNeeded = false;       // no need to call update again since we're complete
+      selfTestInfo("* SELF TEST * All tests complete");
+      closeTestFile();
+    }
+  }
+  return updateNeeded;
+}
+
+bool SelfTest::updateNeeded() { return status == Status::Running; }
 
 void SelfTest::closeTestFile() {
   if (self_test_file) {

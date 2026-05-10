@@ -3,6 +3,7 @@
 #include <WiFi.h>
 
 #include "diagnostics/fatal_error.h"
+#include "diagnostics/self_test/selfTest.h"
 #include "power.h"
 #include "utils/magic_enum.h"
 
@@ -154,6 +155,8 @@ void DiagnosticNetwork::checkForConnection() {
   wl_status_t status = WiFi.status();
   if (status == WL_CONNECTED) {
     state_ = State::ConnectedToNetwork;
+    // begin self test (mark as official production test)
+    selfTest.begin(true);
     return;
   } else if (status == WL_CONNECT_FAILED || status == WL_STOPPED) {
     WiFi.disconnect(true, true);
