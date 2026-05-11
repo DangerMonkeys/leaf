@@ -113,3 +113,69 @@ void SelfTest_PageSpeaker::draw_extra() {
   u8g2.setCursor(0, 125);
   u8g2.print("NO: left / down");
 }
+
+//////////////////////////////////////////////
+// Results Self-Test Page
+void SelfTest_PageResults::show() { push_page(this); }
+
+void SelfTest_PageResults::draw_extra() {
+  uint8_t lineSpacing = 14;
+  u8g2.setCursor(0, 30);
+  u8g2.setFont(leaf_6x12);
+  u8g2.print("All Tests: ");
+  if (selfTest.results.allTests == SelfTest::Status::Pass) {
+    u8g2.print("PASS");
+  } else if (selfTest.results.allTests == SelfTest::Status::Fail) {
+    u8g2.print("FAIL");
+  } else {
+    u8g2.print("Unknown");
+  }
+  u8g2.setFont(leaf_5x8);
+
+  SelfTest::Status testResult = SelfTest::Status::Unknown;
+
+  for (int i = 0; i < 10; i++) {
+    u8g2.setCursor(0, u8g2.getCursorY() + lineSpacing);
+
+    if (i == 0) {
+      testResult = selfTest.results.sdCard;
+      u8g2.print("SDCard:");
+    } else if (i == 1) {
+      testResult = selfTest.results.baro;
+      u8g2.print("Baro:");
+    } else if (i == 2) {
+      testResult = selfTest.results.imu;
+      u8g2.print("IMU:");
+    } else if (i == 3) {
+      testResult = selfTest.results.gps;
+      u8g2.print("GPS:");
+    } else if (i == 4) {
+      testResult = selfTest.results.ambient;
+      u8g2.print("Ambient:");
+    } else if (i == 5) {
+      testResult = selfTest.results.display;
+      u8g2.print("Display:");
+    } else if (i == 6) {
+      testResult = selfTest.results.buttons;
+      u8g2.print("Buttons:");
+    } else if (i == 7) {
+      testResult = selfTest.results.power;
+      u8g2.print("Power:");
+    } else if (i == 8) {
+      testResult = selfTest.results.speaker;
+      u8g2.print("Speaker:");
+    } else if (i == 9) {
+      testResult = selfTest.results.vario;
+      u8g2.print("Vario:");
+    }
+
+    u8g2.setCursor(48, u8g2.getCursorY());
+    if (testResult == SelfTest::Status::Pass) {
+      u8g2.print("PASS");
+    } else if (testResult == SelfTest::Status::Fail) {
+      u8g2.print("FAIL");
+    } else {
+      u8g2.print("Unknown");
+    }
+  }
+}

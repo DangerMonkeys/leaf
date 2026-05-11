@@ -300,6 +300,10 @@ SelfTest::Status ButtonsInteractiveTest::update() {
   // handle test results if test is complete
   if (buttonsTest.status != SelfTest::Status::Running) {
     Serial.println("* SELF TEST * BUTTONS * Test complete");
+    // finish playing result sound before closing
+    while (speaker.update()) {
+      delay(10);  // delay to let sound finish playing
+    }
     selfTest_pageButtons.close();  // close button test display page
   }
 
@@ -382,6 +386,9 @@ SelfTest::Status VarioInteractiveTest::update() {
 SelfTest_PageSpeaker selfTest_pageSpeaker;
 
 SelfTest::Status SelfTest::testSpeaker() {
+  // pause briefly to separate previous sounds from the test tones
+  delay(500);
+
   Status result = Status::Running;
   selfTest_pageSpeaker.show();
   display.update();
@@ -409,8 +416,9 @@ SelfTest::Status SelfTest::testSpeaker() {
   while (speaker.update()) {
     delay(10);  // delay to let sound finish playing
   }
-  // return volume to user setting
+  // return volume to user setting and cancel any sounds playing
   speaker.setVolume(Speaker::SoundChannel::FX, (SpeakerVolume)settings.system_volume);
+  speaker.playSound(fx::silence);
 
   int waitForInput = 5000;  // wait up to 5 seconds for user input
   Button button = Button::NONE;
@@ -433,6 +441,11 @@ SelfTest::Status SelfTest::testSpeaker() {
   if (waitForInput <= 0) {
     result = Status::Fail;
     selfTestInfo("* SELF TEST * SPEAKER * FAIL - Timeout waiting for user input");
+  }
+  // wait for button to be released before proceeding (to avoid accidentally triggering other tests
+  // or menu selections upon exit)
+  while (buttons.inspectPins() != Button::NONE) {
+    delay(10);
   }
   selfTest_pageSpeaker.close();
   display.update();
@@ -461,6 +474,20 @@ void SelfTest::begin(bool markAsProductionChecked) {
   }
 }
 
+bool SelfTest::tallyResults() {
+  bool allPass = true;
+  if (results.sdCard != Status::Pass || results.baro != Status::Pass ||
+      results.imu != Status::Pass || results.gps != Status::Pass ||
+      results.ambient != Status::Pass || results.display != Status::Pass ||
+      results.buttons != Status::Pass || results.power != Status::Pass ||
+      results.speaker != Status::Pass || results.vario != Status::Pass) {
+    allPass = false;
+  }
+  return allPass;
+}
+
+SelfTest_PageResults selfTest_pageResults;
+
 bool SelfTest::update() {
   bool updateNeeded = true;  // assume we'll need to call this again
   if (status == Status::Running) {
@@ -473,7 +500,17 @@ bool SelfTest::update() {
       status = Status::Complete;  // we're done
       updateNeeded = false;       // no need to call update again since we're complete
       selfTestInfo("* SELF TEST * All tests complete");
+      selfTest.results.allTests = tallyResults() ? Status::Pass : Status::Fail;
+      if (selfTest.results.allTests == Status::Pass) {
+        selfTestInfo("* SELF TEST * ALL TESTS PASSED");
+        speaker.playSound(fx::confirm);
+      } else {
+        selfTestInfo("* SELF TEST * SOME TESTS FAILED");
+        speaker.playSound(fx::fatalerror);
+      }
       closeTestFile();
+      selfTest_pageResults.show();  // show results page when all tests complete
+      display.update();
     }
   }
   return updateNeeded;
@@ -547,6 +584,9 @@ void SelfTest::clearResults() {
   selfTest.status = Status::Unknown;
   selfTest.statusAutoTests = Status::Unknown;
   selfTest.statusInteractiveTests = Status::Unknown;
+
+  // reset interactive tests
   buttonsTest.status = Status::Unknown;
   varioTest.status = Status::Unknown;
+  // speaker test is called regardless so no need to reset
 }
