@@ -300,6 +300,10 @@ SelfTest::Status ButtonsInteractiveTest::update() {
   // handle test results if test is complete
   if (buttonsTest.status != SelfTest::Status::Running) {
     Serial.println("* SELF TEST * BUTTONS * Test complete");
+    // finish playing result sound before closing
+    while (speaker.update()) {
+      delay(10);  // delay to let sound finish playing
+    }
     selfTest_pageButtons.close();  // close button test display page
   }
 
@@ -359,7 +363,7 @@ SelfTest::Status VarioInteractiveTest::update() {
   }
 
   // if vario values sufficient, pass the test
-  if (deltaAltitude >= 0.5f && maxClimb >= 1.0f && maxSink <= -1.0f) {
+  if (deltaAltitude >= 0.4f && maxClimb >= 150.0f && maxSink <= -150.0f) {
     status = SelfTest::Status::Pass;
     speaker.playSound(fx::confirm);
     selfTestInfo(
@@ -382,6 +386,9 @@ SelfTest::Status VarioInteractiveTest::update() {
 SelfTest_PageSpeaker selfTest_pageSpeaker;
 
 SelfTest::Status SelfTest::testSpeaker() {
+  // pause briefly to separate previous sounds from the test tones
+  delay(500);
+
   Status result = Status::Running;
   selfTest_pageSpeaker.show();
   display.update();
@@ -409,13 +416,14 @@ SelfTest::Status SelfTest::testSpeaker() {
   while (speaker.update()) {
     delay(10);  // delay to let sound finish playing
   }
-  // return volume to user setting
+  // return volume to user setting and cancel any sounds playing
   speaker.setVolume(Speaker::SoundChannel::FX, (SpeakerVolume)settings.system_volume);
+  speaker.playSound(fx::silence);
 
   int waitForInput = 5000;  // wait up to 5 seconds for user input
   Button button = Button::NONE;
   Serial.println(
-      "* SELF TEST * SPEAKER * Hear two-beeps at low, med, high volume AND not 4-beeps?");
+      "* SELF TEST * SPEAKER * Hear long beeps at low, med, high volume AND not 4-beeps?");
   Serial.println("* SELF TEST * SPEAKER * YES = UP or RIGHT button, NO = DOWN or LEFT button");
   while (waitForInput-- > 0) {
     button = buttons.inspectPins();
@@ -434,6 +442,11 @@ SelfTest::Status SelfTest::testSpeaker() {
     result = Status::Fail;
     selfTestInfo("* SELF TEST * SPEAKER * FAIL - Timeout waiting for user input");
   }
+  // wait for button to be released before proceeding (to avoid accidentally triggering other tests
+  // or menu selections upon exit)
+  while (buttons.inspectPins() != Button::NONE) {
+    delay(10);
+  }
   selfTest_pageSpeaker.close();
   display.update();
   return result;
@@ -442,20 +455,68 @@ SelfTest::Status SelfTest::testSpeaker() {
 ////////////////////////////////////////////////
 // SelfTest methods to run tests
 
-SelfTest::Status SelfTest::runAllTests() {
-  status = Status::Running;
-  if (statusAutoTests == Status::Running || statusAutoTests == Status::Unknown) {
-    statusAutoTests = runAutoTests(false);  // keep file open
-  } else if (statusInteractiveTests == Status::Running ||
-             statusInteractiveTests == Status::Unknown) {
-    statusInteractiveTests = runInteractiveTests(false);  // keep file open
-  } else if (status != Status::Complete) {
-    status = Status::Complete;  // we're done
-    selfTestInfo("* SELF TEST * All tests complete");
-    closeTestFile();
+void SelfTest::begin(bool markAsProductionChecked) {
+  if (markAsProductionChecked) {
+    if (settings.productionTest) {
+      // do nothing, we've already checked the production test
+      return;
+    } else {
+      settings.productionTest = true;  // mark that we've done the production test
+      settings.save();
+    }
   }
-  return status;
+
+  if (status != Status::Running) {
+    // set status to running so update() will perform tests
+    selfTest.clearResults();  // clear any previous results
+    speaker.playSound(fx::confirm);
+    selfTest.status = SelfTest::Status::Running;
+  }
 }
+
+bool SelfTest::tallyResults() {
+  bool allPass = true;
+  if (results.sdCard != Status::Pass || results.baro != Status::Pass ||
+      results.imu != Status::Pass || results.gps != Status::Pass ||
+      results.ambient != Status::Pass || results.display != Status::Pass ||
+      results.buttons != Status::Pass || results.power != Status::Pass ||
+      results.speaker != Status::Pass || results.vario != Status::Pass) {
+    allPass = false;
+  }
+  return allPass;
+}
+
+SelfTest_PageResults selfTest_pageResults;
+
+bool SelfTest::update() {
+  bool updateNeeded = true;  // assume we'll need to call this again
+  if (status == Status::Running) {
+    if (statusAutoTests == Status::Running || statusAutoTests == Status::Unknown) {
+      statusAutoTests = runAutoTests(false);  // keep file open
+    } else if (statusInteractiveTests == Status::Running ||
+               statusInteractiveTests == Status::Unknown) {
+      statusInteractiveTests = runInteractiveTests(false);  // keep file open
+    } else if (status != Status::Complete) {
+      status = Status::Complete;  // we're done
+      updateNeeded = false;       // no need to call update again since we're complete
+      selfTestInfo("* SELF TEST * All tests complete");
+      selfTest.results.allTests = tallyResults() ? Status::Pass : Status::Fail;
+      if (selfTest.results.allTests == Status::Pass) {
+        selfTestInfo("* SELF TEST * ALL TESTS PASSED");
+        speaker.playSound(fx::confirm);
+      } else {
+        selfTestInfo("* SELF TEST * SOME TESTS FAILED");
+        speaker.playSound(fx::fatalerror);
+      }
+      closeTestFile();
+      selfTest_pageResults.show();  // show results page when all tests complete
+      display.update();
+    }
+  }
+  return updateNeeded;
+}
+
+bool SelfTest::updateNeeded() { return status == Status::Running; }
 
 void SelfTest::closeTestFile() {
   if (self_test_file) {
@@ -523,6 +584,9 @@ void SelfTest::clearResults() {
   selfTest.status = Status::Unknown;
   selfTest.statusAutoTests = Status::Unknown;
   selfTest.statusInteractiveTests = Status::Unknown;
+
+  // reset interactive tests
   buttonsTest.status = Status::Unknown;
   varioTest.status = Status::Unknown;
+  // speaker test is called regardless so no need to reset
 }

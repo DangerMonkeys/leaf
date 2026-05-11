@@ -68,3 +68,11 @@ class SelfTest_PageSpeaker : public SimpleSettingsMenuPage {
   void draw_extra() override;
   void close() { pop_page(); }
 };
+
+// Results Self-Test Page
+class SelfTest_PageResults : public SimpleSettingsMenuPage {
+ public:
+  const char* get_title() const override { return "Test Results"; }
+  void show();
+  void draw_extra() override;
+};

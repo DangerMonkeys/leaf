@@ -8,28 +8,10 @@ class SelfTest {
  public:
   enum class Status { Pass, Fail, Running, Complete, Unknown };
 
-  Status status = Status::Unknown;
-  Status statusAutoTests = Status::Unknown;
-  Status statusInteractiveTests = Status::Unknown;
-
-  // Run all self tests
-  Status runAllTests();
-  Status runAutoTests(bool closeFileWhenDone);  // allow closing file in this method if you only
-                                                // want to run Auto Tests
-  Status runInteractiveTests(bool closeFileWhenDone);  // allow closing file in this method if you
-                                                       // only want to run Interactive Tests
-  void closeTestFile();
-  void clearResults();
-
-  // Individual automated test functions
-  static Status testBaro();
-  static Status testIMU();
-  static Status testGPS();
-  static Status testAmbient();
-  static Status testDisplay();
-  static Status testSDCard();
-  static Status testPower();
-  static Status testSpeaker();
+  bool update();  // returns true if update() needs to be called again (because tests still running)
+  // start tests. true = save that we executed the production test (so we don't run multiple times)
+  void begin(bool markAsProductionChecked = false);
+  bool updateNeeded();  // returns true if update() needs to be called again
 
   // results for all self tests, including both automated and interactive
   struct Results {
@@ -43,9 +25,33 @@ class SelfTest {
     Status power = Status::Unknown;
     Status speaker = Status::Unknown;
     Status vario = Status::Unknown;
+    Status allTests = Status::Unknown;
 
     void reset() { *this = Results{}; }  // reset all back to Unknown
   } results;
+
+ protected:
+  Status status = Status::Unknown;
+  Status statusAutoTests = Status::Unknown;
+  Status statusInteractiveTests = Status::Unknown;
+
+  Status runAutoTests(bool closeFileWhenDone);  // allow closing file in this method if you only
+                                                // want to run Auto Tests
+  Status runInteractiveTests(bool closeFileWhenDone);  // allow closing file in this method if you
+                                                       // only want to run Interactive Tests
+  void closeTestFile();
+  bool tallyResults();
+  void clearResults();
+
+  // Individual automated test functions
+  static Status testBaro();
+  static Status testIMU();
+  static Status testGPS();
+  static Status testAmbient();
+  static Status testDisplay();
+  static Status testSDCard();
+  static Status testPower();
+  static Status testSpeaker();
 };
 extern SelfTest selfTest;
 

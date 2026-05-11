@@ -63,13 +63,14 @@ typedef uint8_t SettingLogFormat;
 
 // Time Zone offset in minutes. UTC -8 (PST) would therefore be -8*60, or 480
 // This allows us to cover all time zones, including the :30 minute and :15 minute ones
-#define DEF_TIME_ZONE -420   // -420 min = UTC -7 hrs (PDT)
-#define DEF_VOLUME_SYSTEM 1  // 0=off, 1=low, 2=med, 3=high
-#define DEF_AUTO_OFF 0       // 0 = DISABLE
-#define AUTO_OFF_MAX 60      // max auto-off time in minutes (1 hour)
-#define DEF_WIFI_ON 0        // default wifi off
-#define DEF_BLUETOOTH_ON 0   // default bluetooth off
-#define DEF_SHOW_WARNING 1   // default show warning on startup
+#define DEF_TIME_ZONE -420    // -420 min = UTC -7 hrs (PDT)
+#define DEF_VOLUME_SYSTEM 1   // 0=off, 1=low, 2=med, 3=high
+#define DEF_AUTO_OFF 0        // 0 = DISABLE
+#define AUTO_OFF_MAX 60       // max auto-off time in minutes (1 hour)
+#define DEF_WIFI_ON 0         // default wifi off
+#define DEF_BLUETOOTH_ON 0    // default bluetooth off
+#define DEF_SHOW_WARNING 1    // default show warning on startup
+#define DEF_PRODUCTIONTEST 0  // default that we have not yet run the production self test
 
 // Developer Settings
 #define DEF_DEV_MENU 0                // default hide the dev menu
@@ -147,7 +148,10 @@ setting | samples | time avg
   bool system_wifiOn;
   bool system_bluetoothOn;
   bool system_showWarning;
+
+  // Production Info
   String macAddress;
+  bool productionTest;  // flag that we've run the initial selfTest during production assembly
 
   // developer options
   bool dev_menu;

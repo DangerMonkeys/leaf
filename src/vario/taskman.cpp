@@ -245,7 +245,7 @@ void TaskManager::setNecessaryTasksForBlock() {
   performTask.buttons = true;
   performTask.baro = true;
   performTask.speakerTimer = true;
-  if (selfTest.status == SelfTest::Status::Running)
+  if (selfTest.updateNeeded())
     performTask.selfTest = true;
   else
     (performTask.selfTest = false);
@@ -363,7 +363,7 @@ void TaskManager::doNecessaryTasks(void) {
     performTask.sdCard = false;
   }
   if (performTask.selfTest) {
-    selfTest.runAllTests();
+    selfTest.update();
     performTask.selfTest = false;
   }
 #ifdef MEMORY_PROFILING

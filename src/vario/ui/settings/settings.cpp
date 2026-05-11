@@ -114,6 +114,8 @@ void Settings::loadDefaults() {
   system_bluetoothOn = DEF_BLUETOOTH_ON;
   system_showWarning = DEF_SHOW_WARNING;
 
+  productionTest = DEF_PRODUCTIONTEST;
+
   // Developer Options
   dev_menu = DEF_DEV_MENU;
   dev_startLogAtBoot = DEF_DEV_START_LOG_AT_BOOT;
@@ -182,6 +184,7 @@ void Settings::retrieve() {
   system_bluetoothOn = leafPrefs.getBool("BLUETOOTH_ON");
   system_showWarning = leafPrefs.getBool("SHOW_WARNING");
   macAddress = leafPrefs.getString("MAC_ADDRESS", getMacAddress());
+  productionTest = leafPrefs.getBool("PRODUCTION_TEST", DEF_PRODUCTIONTEST);
 
   // Developer Options
   dev_menu = leafPrefs.getBool("DEVELOPER_MENU");
@@ -260,6 +263,7 @@ void Settings::save() {
   leafPrefs.putBool("WIFI_ON", system_wifiOn);
   leafPrefs.putBool("BLUETOOTH_ON", system_bluetoothOn);
   leafPrefs.putBool("SHOW_WARNING", system_showWarning);
+  leafPrefs.putBool("PRODUCTION_TEST", productionTest);
   leafPrefs.putString("MAC_ADDRESS", macAddress);
   // Developer Options
   leafPrefs.putBool("DEVELOPER_MENU", dev_menu);

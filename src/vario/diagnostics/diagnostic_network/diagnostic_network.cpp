@@ -3,6 +3,7 @@
 #include <WiFi.h>
 
 #include "diagnostics/fatal_error.h"
+#include "diagnostics/self_test/selfTest.h"
 #include "power.h"
 #include "utils/magic_enum.h"
 
@@ -52,11 +53,12 @@ void DiagnosticNetwork::update() {
   } else if (state_ == State::ConnectingToNetwork) {
     checkForConnection();
   } else if (state_ == State::ConnectedToNetwork) {
-    // Do nothing
     if (!printed_end_state_) {
       Serial.println("DiagnosticNetwork: Connected to network");
       printed_end_state_ = true;
     }
+    // begin self test (mark as official production test)
+    selfTest.begin(true);
   } else if (state_ == State::Error) {
     // Do nothing
     if (!printed_end_state_) {
