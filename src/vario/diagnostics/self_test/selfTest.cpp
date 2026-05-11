@@ -359,7 +359,7 @@ SelfTest::Status VarioInteractiveTest::update() {
   }
 
   // if vario values sufficient, pass the test
-  if (deltaAltitude >= 0.4f && maxClimb >= 400.0f && maxSink <= -400.0f) {
+  if (deltaAltitude >= 0.4f && maxClimb >= 150.0f && maxSink <= -150.0f) {
     status = SelfTest::Status::Pass;
     speaker.playSound(fx::confirm);
     selfTestInfo(
@@ -453,9 +453,12 @@ void SelfTest::begin(bool markAsProductionChecked) {
     }
   }
 
-  // set status to running so update() will perform tests
-  selfTest.clearResults();  // clear any previous results
-  selfTest.status = SelfTest::Status::Running;
+  if (status != Status::Running) {
+    // set status to running so update() will perform tests
+    selfTest.clearResults();  // clear any previous results
+    speaker.playSound(fx::confirm);
+    selfTest.status = SelfTest::Status::Running;
+  }
 }
 
 bool SelfTest::update() {

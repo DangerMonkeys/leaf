@@ -3,6 +3,7 @@
 #include <Arduino.h>
 
 #include "diagnostics/self_test/selfTest.h"
+#include "hardware/buttons.h"
 #include "logging/buslog.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
@@ -116,7 +117,7 @@ void DeveloperMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t co
     }
     case cursor_developer_runSelfTest: {
       if (state == ButtonEvent::CLICKED) {
-        speaker.playSound(fx::confirm);
+        cursor_position = cursor_developer_back;
         selfTest.begin(false);  // start a self test (not the official production test)
       }
       break;
