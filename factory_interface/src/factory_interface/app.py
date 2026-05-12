@@ -6,7 +6,13 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from factory_interface.settings import FactoryInterfaceSettings, load_settings, save_settings
+from factory_interface.settings import (
+    FactoryInterfaceSettings,
+    find_firmware_paths,
+    is_valid_firmware_path,
+    load_settings,
+    save_settings,
+)
 
 PACKAGE_DIR = Path(__file__).resolve().parent
 
@@ -18,6 +24,24 @@ app.mount(
 )
 
 templates = Jinja2Templates(directory=PACKAGE_DIR / "templates")
+
+
+def settings_template_context(
+    settings: FactoryInterfaceSettings,
+    *,
+    saved: bool,
+) -> dict:
+    firmware_paths = find_firmware_paths()
+    return {
+        "title": "Settings",
+        "settings": settings,
+        "saved": saved,
+        "firmware_options": [
+            {"name": path.name, "path": str(path)}
+            for path in firmware_paths
+        ],
+        "selected_firmware_path": settings.firmware_path or "",
+    }
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -53,7 +77,7 @@ async def settings(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
         request,
         "settings.html",
-        {"title": "Settings", "settings": settings, "saved": False},
+        settings_template_context(settings, saved=False),
     )
 
 
@@ -62,11 +86,19 @@ async def save_settings_page(request: Request) -> HTMLResponse:
     body = (await request.body()).decode()
     form_data = parse_qs(body, keep_blank_values=True)
     esptool_path = form_data.get("esptool_path", [""])[0].strip() or None
-    settings = FactoryInterfaceSettings(esptool_path=esptool_path)
+    firmware_path = form_data.get("firmware_path", [""])[0].strip() or None
+    if not is_valid_firmware_path(firmware_path):
+        firmware_paths = find_firmware_paths()
+        firmware_path = str(firmware_paths[0]) if firmware_paths else None
+
+    settings = FactoryInterfaceSettings(
+        esptool_path=esptool_path,
+        firmware_path=firmware_path,
+    )
     save_settings(settings)
 
     return templates.TemplateResponse(
         request,
         "settings.html",
-        {"title": "Settings", "settings": settings, "saved": True},
+        settings_template_context(settings, saved=True),
     )

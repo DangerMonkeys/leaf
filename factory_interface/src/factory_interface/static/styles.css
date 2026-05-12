@@ -131,7 +131,8 @@ label {
   font-weight: 700;
 }
 
-input {
+input,
+select {
   width: 100%;
   min-height: 48px;
   padding: 10px 12px;
@@ -142,9 +143,19 @@ input {
   font: inherit;
 }
 
-input:focus {
+input:focus,
+select:focus {
   border-color: var(--accent);
   outline: 3px solid rgb(208 139 44 / 35%);
+}
+
+select {
+  cursor: pointer;
+}
+
+select:disabled {
+  color: var(--muted);
+  cursor: not-allowed;
 }
 
 button {
@@ -170,6 +181,13 @@ button:focus-visible {
   margin: 0;
   color: var(--muted);
   font-weight: 700;
+}
+
+.path-display {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 640px) {

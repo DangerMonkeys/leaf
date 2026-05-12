@@ -14,10 +14,35 @@
         autocomplete="off"
       >
     </div>
+    <div class="field-group">
+      <label for="firmware-path">Firmware</label>
+      <select id="firmware-path" name="firmware_path" {% if not firmware_options %}disabled{% endif %}>
+        {% if not firmware_options %}
+        <option value="">No valid firmware builds found</option>
+        {% else %}
+        {% for firmware in firmware_options %}
+        <option value="{{ firmware.path }}" {% if firmware.path == selected_firmware_path %}selected{% endif %}>
+          {{ firmware.name }}
+        </option>
+        {% endfor %}
+        {% endif %}
+      </select>
+      <p class="path-display" id="selected-firmware-path">{{ selected_firmware_path or "No firmware selected" }}</p>
+    </div>
     <button type="submit">Save settings</button>
     {% if saved %}
     <p class="status-message">Settings saved.</p>
     {% endif %}
   </form>
 </section>
+<script>
+  const firmwareSelect = document.querySelector("#firmware-path");
+  const firmwarePath = document.querySelector("#selected-firmware-path");
+
+  if (firmwareSelect && firmwarePath) {
+    firmwareSelect.addEventListener("change", () => {
+      firmwarePath.textContent = firmwareSelect.value || "No firmware selected";
+    });
+  }
+</script>
 {% endblock %}

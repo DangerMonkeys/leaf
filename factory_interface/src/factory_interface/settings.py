@@ -7,10 +7,39 @@ from implicitdict import ImplicitDict
 
 SETTINGS_PATH = Path(__file__).resolve().parent / "settings.json"
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
+REQUIRED_FIRMWARE_FILES = ("bootloader.bin", "partitions.bin", "firmware.bin")
 
 
 class FactoryInterfaceSettings(ImplicitDict):
   esptool_path: str | None = None
+  firmware_path: str | None = None
+
+
+def find_firmware_paths() -> list[Path]:
+  build_root = PROJECT_ROOT / ".pio" / "build"
+  if not build_root.exists():
+    return []
+
+  firmware_paths = []
+  for path in sorted(build_root.iterdir()):
+    if not path.is_dir():
+      continue
+    if all((path / filename).exists() for filename in REQUIRED_FIRMWARE_FILES):
+      firmware_paths.append(path)
+
+  return firmware_paths
+
+
+def is_valid_firmware_path(path: str | None) -> bool:
+  if path is None:
+    return False
+
+  try:
+    selected_path = Path(path).resolve()
+  except OSError:
+    return False
+
+  return any(selected_path == firmware_path.resolve() for firmware_path in find_firmware_paths())
 
 
 def find_esptool_path() -> Path | None:
@@ -59,9 +88,19 @@ def load_settings() -> FactoryInterfaceSettings:
   else:
     settings = FactoryInterfaceSettings()
   
+  settings_changed = False
+
   if settings.esptool_path is None or not Path(settings.esptool_path).exists():
     found_path = find_esptool_path()
     settings.esptool_path = str(found_path) if found_path is not None else None
+    settings_changed = True
+
+  if not is_valid_firmware_path(settings.firmware_path):
+    firmware_paths = find_firmware_paths()
+    settings.firmware_path = str(firmware_paths[0]) if firmware_paths else None
+    settings_changed = True
+
+  if settings_changed:
     save_settings(settings)
 
   return settings
