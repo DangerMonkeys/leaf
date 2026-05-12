@@ -24,39 +24,39 @@ LeafGPS gps;
 #define DEBUG_GPS 0
 
 namespace {
-bool isGsvSentence(const NMEAString& nmea) {
-  return nmea.length() >= 7 && nmea[0] == '$' && nmea[3] == 'G' && nmea[4] == 'S' &&
-         nmea[5] == 'V' && nmea[6] == ',';
-}
-
-bool parseNmeaIntField(const NMEAString& nmea, uint8_t targetField, int& value) {
-  uint8_t field = 0;
-  size_t start = nmea[0] == '$' ? 1 : 0;
-
-  for (size_t i = start; i <= nmea.length(); ++i) {
-    char c = i < nmea.length() ? nmea[i] : '\0';
-    if (c == ',' || c == '*' || c == '\0') {
-      if (field == targetField) {
-        if (i == start) return false;
-
-        int parsed = 0;
-        for (size_t j = start; j < i; ++j) {
-          if (nmea[j] < '0' || nmea[j] > '9') return false;
-          parsed = parsed * 10 + (nmea[j] - '0');
-        }
-
-        value = parsed;
-        return true;
-      }
-
-      ++field;
-      start = i + 1;
-      if (c == '*' || c == '\0') return false;
-    }
+  bool isGsvSentence(const NMEAString& nmea) {
+    return nmea.length() >= 7 && nmea[0] == '$' && nmea[3] == 'G' && nmea[4] == 'S' &&
+           nmea[5] == 'V' && nmea[6] == ',';
   }
 
-  return false;
-}
+  bool parseNmeaIntField(const NMEAString& nmea, uint8_t targetField, int& value) {
+    uint8_t field = 0;
+    size_t start = nmea[0] == '$' ? 1 : 0;
+
+    for (size_t i = start; i <= nmea.length(); ++i) {
+      char c = i < nmea.length() ? nmea[i] : '\0';
+      if (c == ',' || c == '*' || c == '\0') {
+        if (field == targetField) {
+          if (i == start) return false;
+
+          int parsed = 0;
+          for (size_t j = start; j < i; ++j) {
+            if (nmea[j] < '0' || nmea[j] > '9') return false;
+            parsed = parsed * 10 + (nmea[j] - '0');
+          }
+
+          value = parsed;
+          return true;
+        }
+
+        ++field;
+        start = i + 1;
+        if (c == '*' || c == '\0') return false;
+      }
+    }
+
+    return false;
+  }
 }  // namespace
 
 const char enableGGA[] PROGMEM = "$PAIR062,0,1";  // enable GGA message every 1 second
@@ -194,8 +194,7 @@ void LeafGPS::updateSatList(const NMEAString& nmea) {
 
   int totalMessages = 0;
   int currentMessage = 0;
-  if (!parseNmeaIntField(nmea, 1, totalMessages) ||
-      !parseNmeaIntField(nmea, 2, currentMessage)) {
+  if (!parseNmeaIntField(nmea, 1, totalMessages) || !parseNmeaIntField(nmea, 2, currentMessage)) {
     return;
   }
 
