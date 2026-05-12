@@ -44,8 +44,8 @@ void log_update() {
   // Check auto-start criteria if we haven't begun a flight yet
   if (!flight) {
     // If auto start is configured, and we match the criteria, start the flight
-    if (flightTimer_autoStart()) {
-      if (settings.log_autoStart) flightTimer_start();  // start a log if auto-start is on
+    if (settings.log_autoStart) {
+      if (flightTimer_autoStart()) flightTimer_start();  // start a log if auto-start is on
     } else {
       // Otherwise, there's nothing to do here.
       return;
