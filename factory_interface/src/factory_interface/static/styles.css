@@ -1,0 +1,175 @@
+:root {
+  color-scheme: light;
+  font-family: "Segoe UI", Arial, sans-serif;
+  --bg: #f4f7f4;
+  --surface: #ffffff;
+  --ink: #18231f;
+  --muted: #60706a;
+  --line: #d8e1dc;
+  --accent: #176c53;
+  --accent-strong: #10533f;
+  --focus: #d08b2c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: 48px 1fr 48px;
+  align-items: center;
+  height: 56px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--line);
+  background: #ffffff;
+}
+
+.brand {
+  justify-self: center;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.icon-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.icon-link:hover,
+.icon-link:focus-visible {
+  background: #e9f1ed;
+  outline: 2px solid transparent;
+}
+
+.icon-link svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.page {
+  width: min(920px, 100%);
+  margin: 0 auto;
+  padding: 32px 20px;
+}
+
+.panel {
+  display: grid;
+  gap: 24px;
+}
+
+.panel.narrow {
+  max-width: 520px;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2rem, 6vw, 3.25rem);
+  line-height: 1.05;
+}
+
+.task-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.task-card {
+  display: flex;
+  align-items: center;
+  min-height: 140px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 1.35rem;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 1px 2px rgb(24 35 31 / 8%);
+}
+
+.task-card:hover,
+.task-card:focus-visible {
+  border-color: var(--accent);
+  outline: 3px solid rgb(208 139 44 / 35%);
+}
+
+.device-form {
+  display: grid;
+  gap: 14px;
+}
+
+label {
+  font-weight: 700;
+}
+
+input {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1px solid #b9c7c1;
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--ink);
+  font: inherit;
+}
+
+input:focus {
+  border-color: var(--accent);
+  outline: 3px solid rgb(208 139 44 / 35%);
+}
+
+button {
+  justify-self: start;
+  min-height: 48px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #ffffff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button:hover,
+button:focus-visible {
+  background: var(--accent-strong);
+  outline: 3px solid rgb(208 139 44 / 35%);
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 24px 14px;
+  }
+
+  .task-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .task-card {
+    min-height: 112px;
+  }
+}

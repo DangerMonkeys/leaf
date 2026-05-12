@@ -1,0 +1,5 @@
+.venv/
+factory_interface.db
+leaf_devices.db
+__pycache__/
+*.pyc
