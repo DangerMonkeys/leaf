@@ -3,10 +3,22 @@
 {% block content %}
 <section class="panel narrow">
   <h1>Set up new device</h1>
-  <form class="device-form" action="#" method="post">
+  <form class="device-form" id="setup-device-form">
     <label for="serial-number">Serial number</label>
-    <input id="serial-number" name="serial_number" type="text" autocomplete="off" autofocus>
-    <button type="button">Set up device</button>
+    <input id="serial-number" name="serial_number" type="text" autocomplete="off" required autofocus>
+    <button type="submit">Set up device</button>
   </form>
 </section>
+<script>
+  const setupForm = document.querySelector("#setup-device-form");
+  const serialInput = document.querySelector("#serial-number");
+
+  setupForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const serialNumber = serialInput.value.trim();
+    if (serialNumber) {
+      window.location.href = `/setup/${encodeURIComponent(serialNumber)}`;
+    }
+  });
+</script>
 {% endblock %}

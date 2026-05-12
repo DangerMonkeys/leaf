@@ -2,10 +2,11 @@ from pathlib import Path
 from urllib.parse import parse_qs
 
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+from factory_interface.commissioning_tasks import get_flash_task, start_flash_firmware
 from factory_interface.settings import (
     FactoryInterfaceSettings,
     find_firmware_paths,
@@ -60,6 +61,27 @@ async def setup_device(request: Request) -> HTMLResponse:
         "setup_device.html",
         {"title": "Set up new device"},
     )
+
+
+@app.get("/setup/{serial_number}", response_class=HTMLResponse)
+async def setup_device_checklist(request: Request, serial_number: str) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "setup_checklist.html",
+        {"title": f"Set up {serial_number}", "serial_number": serial_number},
+    )
+
+
+@app.post("/api/setup/{serial_number}/flash", response_class=JSONResponse)
+async def start_flash_firmware_task(serial_number: str) -> JSONResponse:
+    task = start_flash_firmware(serial_number)
+    return JSONResponse(task.snapshot())
+
+
+@app.get("/api/setup/{serial_number}/flash", response_class=JSONResponse)
+async def get_flash_firmware_task(serial_number: str) -> JSONResponse:
+    task = get_flash_task(serial_number)
+    return JSONResponse(task.snapshot())
 
 
 @app.get("/rework", response_class=HTMLResponse)
