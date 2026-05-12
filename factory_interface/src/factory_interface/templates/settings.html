@@ -3,5 +3,21 @@
 {% block content %}
 <section class="panel narrow">
   <h1>Settings</h1>
+  <form class="settings-form" action="/settings" method="post">
+    <div class="field-group">
+      <label for="esptool-path">esptool.py path</label>
+      <input
+        id="esptool-path"
+        name="esptool_path"
+        type="text"
+        value="{{ settings.esptool_path or '' }}"
+        autocomplete="off"
+      >
+    </div>
+    <button type="submit">Save settings</button>
+    {% if saved %}
+    <p class="status-message">Settings saved.</p>
+    {% endif %}
+  </form>
 </section>
 {% endblock %}

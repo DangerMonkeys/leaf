@@ -1,9 +1,12 @@
 from pathlib import Path
+from urllib.parse import parse_qs
 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+
+from factory_interface.settings import FactoryInterfaceSettings, load_settings, save_settings
 
 PACKAGE_DIR = Path(__file__).resolve().parent
 
@@ -46,8 +49,24 @@ async def rework_device(request: Request) -> HTMLResponse:
 
 @app.get("/settings", response_class=HTMLResponse)
 async def settings(request: Request) -> HTMLResponse:
+    settings = load_settings()
     return templates.TemplateResponse(
         request,
         "settings.html",
-        {"title": "Settings"},
+        {"title": "Settings", "settings": settings, "saved": False},
+    )
+
+
+@app.post("/settings", response_class=HTMLResponse)
+async def save_settings_page(request: Request) -> HTMLResponse:
+    body = (await request.body()).decode()
+    form_data = parse_qs(body, keep_blank_values=True)
+    esptool_path = form_data.get("esptool_path", [""])[0].strip() or None
+    settings = FactoryInterfaceSettings(esptool_path=esptool_path)
+    save_settings(settings)
+
+    return templates.TemplateResponse(
+        request,
+        "settings.html",
+        {"title": "Settings", "settings": settings, "saved": True},
     )

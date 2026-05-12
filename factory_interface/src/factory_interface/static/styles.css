@@ -116,9 +116,15 @@ h1 {
   outline: 3px solid rgb(208 139 44 / 35%);
 }
 
-.device-form {
+.device-form,
+.settings-form {
   display: grid;
   gap: 14px;
+}
+
+.field-group {
+  display: grid;
+  gap: 8px;
 }
 
 label {
@@ -158,6 +164,12 @@ button:hover,
 button:focus-visible {
   background: var(--accent-strong);
   outline: 3px solid rgb(208 139 44 / 35%);
+}
+
+.status-message {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 700;
 }
 
 @media (max-width: 640px) {
