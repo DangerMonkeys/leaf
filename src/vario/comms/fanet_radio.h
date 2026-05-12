@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include <RadioLib.h>
 #include "FreeRTOS.h"
-#include "comms/debug_webserver.h"
+#include "comms/webserver.h"
 #include "comms/fanet_neighbors.h"
 #include "comms/fanet_radio_types.h"
 #include "dispatch/message_types.h"
@@ -29,7 +29,7 @@ String FanetAddressToString(FANET::Address address);
 class FanetRadio : public etl::message_router<FanetRadio, GpsReading>,
                    public FANET::Connector,
                    public IMessageSource {
-  // Allow the debug webserver to access all of our private parts
+  // Allow the webserver to access all of our private parts
   friend void webserver_setup();
 
  public:
