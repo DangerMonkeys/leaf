@@ -23,6 +23,42 @@ LeafGPS gps;
 
 #define DEBUG_GPS 0
 
+namespace {
+  bool isGsvSentence(const NMEAString& nmea) {
+    return nmea.length() >= 7 && nmea[0] == '$' && nmea[3] == 'G' && nmea[4] == 'S' &&
+           nmea[5] == 'V' && nmea[6] == ',';
+  }
+
+  bool parseNmeaIntField(const NMEAString& nmea, uint8_t targetField, int& value) {
+    uint8_t field = 0;
+    size_t start = nmea[0] == '$' ? 1 : 0;
+
+    for (size_t i = start; i <= nmea.length(); ++i) {
+      char c = i < nmea.length() ? nmea[i] : '\0';
+      if (c == ',' || c == '*' || c == '\0') {
+        if (field == targetField) {
+          if (i == start) return false;
+
+          int parsed = 0;
+          for (size_t j = start; j < i; ++j) {
+            if (nmea[j] < '0' || nmea[j] > '9') return false;
+            parsed = parsed * 10 + (nmea[j] - '0');
+          }
+
+          value = parsed;
+          return true;
+        }
+
+        ++field;
+        start = i + 1;
+        if (c == '*' || c == '\0') return false;
+      }
+    }
+
+    return false;
+  }
+}  // namespace
+
 const char enableGGA[] PROGMEM = "$PAIR062,0,1";  // enable GGA message every 1 second
 const char enableGSV[] PROGMEM = "PAIR062,3,4";   // enable GSV message every 1 second
 const char enableRMC[] PROGMEM = "PAIR062,4,1";   // enable RMC message every 1 second
@@ -99,7 +135,6 @@ void LeafGPS::updateFixInfo() {
 void LeafGPS::update() {
   // update sats if we're tracking sat NMEA sentences
   navigator.update();
-  updateSatList();
   updateFixInfo();
   calculateGlideRatio();
 
@@ -135,6 +170,8 @@ void LeafGPS::on_receive(const GpsMessage& msg) {
     newSentence = gps.encode('\r');
   }
   if (newSentence) {
+    updateSatList(msg.nmea);
+
     NMEASentenceContents contents = {.speed = gps.speed.isUpdated(),
                                      .course = gps.course.isUpdated()};
     // Push the parsed reading onto the bus!
@@ -149,43 +186,59 @@ void LeafGPS::on_receive(const GpsMessage& msg) {
 // copy data from each satellite message into the sats[] array.  Then, if we reach the complete set
 // of sentences, copy the fresh sat data into the satDisplay[] array for showing on LCD screen when
 // needed.
-void LeafGPS::updateSatList() {
-  // copy data if we have a complete single sentence
-  if (totalGPGSVMessages.isUpdated()) {
-    for (int i = 0; i < 4; ++i) {
-      int no = atoi(satNumber[i].value());
-      // Serial.print(F("SatNumber is ")); Serial.println(no);
-      if (no >= 1 && no <= MAX_SATELLITES) {
-        sats[no - 1].elevation = atoi(elevation[i].value());
-        sats[no - 1].azimuth = atoi(azimuth[i].value());
-        sats[no - 1].snr = atoi(snr[i].value());
-        sats[no - 1].active = true;
-      }
+void LeafGPS::updateSatList(const NMEAString& nmea) {
+  if (!isGsvSentence(nmea)) {
+    gsvSentenceGroupActive = false;
+    return;
+  }
+
+  int totalMessages = 0;
+  int currentMessage = 0;
+  if (!parseNmeaIntField(nmea, 1, totalMessages) || !parseNmeaIntField(nmea, 2, currentMessage)) {
+    return;
+  }
+
+  if (currentMessage == 1 && !gsvSentenceGroupActive) {
+    for (int i = 0; i < MAX_SATELLITES; ++i) {
+      sats[i].active = false;
     }
+  }
+  gsvSentenceGroupActive = true;
 
-    // If we're on the final sentence, then copy data into the display array
-    int totalMessages = atoi(totalGPGSVMessages.value());
-    int currentMessage = atoi(messageNumber.value());
-    if (totalMessages == currentMessage) {
-      uint8_t satelliteCount = 0;
+  for (int i = 0; i < 4; ++i) {
+    int no = 0;
+    int elevationValue = 0;
+    int azimuthValue = 0;
+    int snrValue = 0;
+    const uint8_t field = 4 + 4 * i;
 
-      for (int i = 0; i < MAX_SATELLITES; ++i) {
-        // copy data
-        satsDisplay[i].elevation = sats[i].elevation;
-        satsDisplay[i].azimuth = sats[i].azimuth;
-        satsDisplay[i].snr = sats[i].snr;
-        satsDisplay[i].active = sats[i].active;
+    if (parseNmeaIntField(nmea, field, no) && no >= 1 && no <= MAX_SATELLITES &&
+        parseNmeaIntField(nmea, field + 1, elevationValue) &&
+        parseNmeaIntField(nmea, field + 2, azimuthValue)) {
+      parseNmeaIntField(nmea, field + 3, snrValue);
 
-        // keep track of how many satellites we can see while we're scanning through all the ID's
-        // (i)
-        if (satsDisplay[i].active) satelliteCount++;
-
-        // then negate the source, so it will only be used if it's truly updated again (i.e.,
-        // received again in an NMEA sat message)
-        sats[i].active = false;
-      }
-      fixInfo.numberOfSats = satelliteCount;  // save counted satellites
+      sats[no - 1].elevation = elevationValue;
+      sats[no - 1].azimuth = azimuthValue;
+      sats[no - 1].snr = snrValue;
+      sats[no - 1].active = true;
     }
+  }
+
+  // If we're on the final sentence, then copy data into the display array
+  if (totalMessages == currentMessage) {
+    uint8_t satelliteCount = 0;
+
+    for (int i = 0; i < MAX_SATELLITES; ++i) {
+      satsDisplay[i].elevation = sats[i].elevation;
+      satsDisplay[i].azimuth = sats[i].azimuth;
+      satsDisplay[i].snr = sats[i].snr;
+      satsDisplay[i].active = sats[i].active;
+
+      // keep track of how many satellites we can see while we're scanning through all the ID's
+      // (i)
+      if (satsDisplay[i].active) satelliteCount++;
+    }
+    fixInfo.numberOfSats = satelliteCount;  // save counted satellites
   }
 }
 

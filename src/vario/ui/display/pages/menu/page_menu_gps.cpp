@@ -25,9 +25,9 @@ void GPSMenuPage::draw() {
     uint8_t linespacing = 10;  // for 5x8 font values like lat/lon/hdop
 
     // GPS constellation and lat/long
-    uint8_t size = 75;
-    uint8_t x = 8;
-    uint8_t y = 22;
+    uint8_t size = 92;
+    uint8_t x = 2;
+    uint8_t y = 30;
 
     drawConstellation(x, y, size);
 
@@ -37,38 +37,46 @@ void GPSMenuPage::draw() {
     u8g2.setFont(leaf_5x8);
 
     // Num of Sats (Upper left Corner)
-    u8g2.setCursor(0, y + 4);
+    u8g2.setCursor(0, y - 4);
     u8g2.print("Sats:");
     u8g2.setCursor(2, u8g2.getCursorY() + linespacing);
     u8g2.print(gps.satellites.value());
 
     // HDOP / accuracy (upper right corner)
-    u8g2.setCursor(70, y + 4);
+    u8g2.setCursor(70, y - 4);
     u8g2.print("HDOP:");
     u8g2.setCursor(76, u8g2.getCursorY() + linespacing);
     u8g2.print(float(gps.hdop.value()) / 100, 2);
 
     // draw lat long
-    u8g2.setCursor(0, size + y + linespacing + 2);
+    u8g2.setCursor(0, size + y + linespacing + 4);
     u8g2.print("Lat:");
-    u8g2.setCursor(25, u8g2.getCursorY());
-    u8g2.print(" ");
-    if (gps.location.lat() >= 0) u8g2.print(" ");
+    u8g2.setCursor(31, u8g2.getCursorY());
+    if (abs(gps.location.lat()) < 10) {
+      // add extra space for single-digit latitudes to align with longitude
+      u8g2.setCursor(u8g2.getCursorX() + 6, u8g2.getCursorY());
+    }
+    if (gps.location.lat() >= 0) u8g2.print("+");
     u8g2.print(gps.location.lat(), 7);
 
     u8g2.setCursor(0, u8g2.getCursorY() + linespacing);
     u8g2.print("Lon:");
     u8g2.setCursor(25, u8g2.getCursorY());
-    if (gps.location.lng() >= 0) u8g2.print(" ");
+    if (abs(gps.location.lng()) < 10) {
+      // add extra space for leading zeros
+      u8g2.setCursor(u8g2.getCursorX() + 6, u8g2.getCursorY());
+      if (abs(gps.location.lng()) < 10) {
+        u8g2.setCursor(u8g2.getCursorX() + 6, u8g2.getCursorY());
+      }
+    }
+    if (gps.location.lng() >= 0) u8g2.print("+");
     u8g2.print(gps.location.lng(), 7);
 
     // Menu Items
     u8g2.setFont(leaf_6x12);
-    uint8_t start_y = 29;
-    uint8_t y_spacing = 16;
     uint8_t setting_name_x = 3;
     uint8_t setting_choice_x = 74;
-    uint8_t menu_items_y[] = {190, 155};
+    uint8_t menu_items_y[] = {190, 165};
 
     // first draw cursor selection box
     u8g2.drawRBox(setting_choice_x - 2, menu_items_y[cursor_position] - 14, 22, 16, 2);

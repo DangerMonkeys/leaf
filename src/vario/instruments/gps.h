@@ -85,7 +85,7 @@ class LeafGPS : public TinyGPSPlus, IMessageSource, public MessageSink<LeafGPS, 
 
  private:
   void updateFixInfo();
-  void updateSatList(void);
+  void updateSatList(const NMEAString& nmea);
 
   void calculateGlideRatio();
 
@@ -123,6 +123,7 @@ class LeafGPS : public TinyGPSPlus, IMessageSource, public MessageSink<LeafGPS, 
 
   NMEAString nmeaBuffer = {'\0'};  // buffer for reading NMEA sentences
   int nmeaBufferIndex = 0;         // index into the buffer currently writing to
+  bool gsvSentenceGroupActive = false;
 };
 extern LeafGPS gps;
 
