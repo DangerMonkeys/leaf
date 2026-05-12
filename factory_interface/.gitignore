@@ -1,0 +1,6 @@
+.venv/
+leaf_devices.db
+settings.json
+src/factory_interface/settings.json
+__pycache__/
+*.pyc

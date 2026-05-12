@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}">
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="icon-link" href="/" aria-label="Home" title="Home">
+        <svg aria-hidden="true" viewBox="0 0 24 24">
+          <path d="M3 10.5 12 3l9 7.5"></path>
+          <path d="M5 9.5V21h5v-6h4v6h5V9.5"></path>
+        </svg>
+      </a>
+      <div class="brand">Factory Interface</div>
+      <a class="icon-link" href="/settings" aria-label="Settings" title="Settings">
+        <svg aria-hidden="true" viewBox="0 0 24 24">
+          <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z"></path>
+          <path d="m19.4 15 .2 2.2-2.1 1.2-1.8-1.3a7.5 7.5 0 0 1-1.7.7L13.2 20h-2.4l-.8-2.2a7.5 7.5 0 0 1-1.7-.7l-1.8 1.3-2.1-1.2.2-2.2a7.7 7.7 0 0 1-.9-1.5L1.7 12l2-1.5c.2-.5.5-1 .9-1.5l-.2-2.2 2.1-1.2 1.8 1.3c.5-.3 1.1-.5 1.7-.7L10.8 4h2.4l.8 2.2c.6.2 1.2.4 1.7.7l1.8-1.3 2.1 1.2-.2 2.2c.4.5.7 1 .9 1.5l2 1.5-2 1.5c-.2.5-.5 1-.9 1.5Z"></path>
+        </svg>
+      </a>
+    </header>
+    <main class="page">
+      {% block content %}{% endblock %}
+    </main>
+  </body>
+</html>

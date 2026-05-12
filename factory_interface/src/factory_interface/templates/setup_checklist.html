@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="panel narrow setup-panel">
+  <div>
+    <h1>Set up device</h1>
+    <p class="path-display">{{ serial_number }}</p>
+  </div>
+
+  <div class="checklist" data-serial-number="{{ serial_number }}">
+    <div class="checklist-item">
+      <label class="bootloader-check">
+        <input id="bootloader-mode" type="checkbox">
+        <span>Put device in bootloader mode</span>
+      </label>
+    </div>
+
+    <div class="checklist-item">
+      <button
+        class="task-icon task-icon-empty"
+        id="flash-task-icon"
+        type="button"
+        aria-label="Toggle flash firmware console output"
+        disabled
+      ></button>
+      <span>Flash firmware</span>
+    </div>
+
+    <textarea
+      class="console-output"
+      id="flash-console"
+      readonly
+      hidden
+      aria-label="Flash firmware console output"
+    ></textarea>
+  </div>
+</section>
+
+<script>
+  const serialNumber = {{ serial_number | tojson }};
+  const bootloaderCheckbox = document.querySelector("#bootloader-mode");
+  const flashTaskIcon = document.querySelector("#flash-task-icon");
+  const flashConsole = document.querySelector("#flash-console");
+  let pollTimer = null;
+
+  function setFlashIcon(status) {
+    flashTaskIcon.className = "task-icon";
+    flashTaskIcon.disabled = status === "idle";
+
+    if (status === "running") {
+      flashTaskIcon.classList.add("task-icon-running");
+    } else if (status === "success") {
+      flashTaskIcon.classList.add("task-icon-success");
+    } else if (status === "failure") {
+      flashTaskIcon.classList.add("task-icon-failure");
+    } else {
+      flashTaskIcon.classList.add("task-icon-empty");
+    }
+  }
+
+  function applyTaskState(state) {
+    setFlashIcon(state.status);
+    flashConsole.value = state.output || "";
+    flashConsole.scrollTop = flashConsole.scrollHeight;
+
+    if (state.status === "running") {
+      bootloaderCheckbox.checked = true;
+      bootloaderCheckbox.disabled = true;
+      if (!pollTimer) {
+        pollTimer = setInterval(refreshTaskState, 500);
+      }
+    } else if (state.status === "success") {
+      bootloaderCheckbox.checked = true;
+      bootloaderCheckbox.disabled = true;
+      clearInterval(pollTimer);
+      pollTimer = null;
+    } else if (state.status === "failure") {
+      bootloaderCheckbox.checked = false;
+      bootloaderCheckbox.disabled = false;
+      clearInterval(pollTimer);
+      pollTimer = null;
+    } else {
+      bootloaderCheckbox.checked = false;
+      bootloaderCheckbox.disabled = false;
+      clearInterval(pollTimer);
+      pollTimer = null;
+    }
+  }
+
+  async function refreshTaskState() {
+    const response = await fetch(`/api/setup/${encodeURIComponent(serialNumber)}/flash`);
+    applyTaskState(await response.json());
+  }
+
+  async function startFlashTask() {
+    bootloaderCheckbox.checked = true;
+    bootloaderCheckbox.disabled = true;
+    const response = await fetch(`/api/setup/${encodeURIComponent(serialNumber)}/flash`, {
+      method: "POST",
+    });
+    applyTaskState(await response.json());
+  }
+
+  bootloaderCheckbox.addEventListener("change", () => {
+    if (bootloaderCheckbox.checked) {
+      startFlashTask();
+    }
+  });
+
+  flashTaskIcon.addEventListener("click", () => {
+    flashConsole.hidden = !flashConsole.hidden;
+  });
+
+  refreshTaskState();
+</script>
+{% endblock %}
