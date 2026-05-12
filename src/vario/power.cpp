@@ -198,7 +198,9 @@ void Power::switchToOnState() {
   Serial.println("switch_to_on_state");
   info_.onState = PowerState::On;
   wakePeripherals();
-  diagnostic_network.reset("switch_to_on_state");
+  if (diagnostic_network.shouldResetWhenSwitchingOn()) {
+    diagnostic_network.reset("switch_to_on_state");
+  }
   maybeStartBusLog();
 }
 
