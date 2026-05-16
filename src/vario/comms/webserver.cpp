@@ -1,6 +1,6 @@
 #include "comms/webserver.h"
-#include <WiFi.h>
 #include <WebServer.h>
+#include <WiFi.h>
 #include "comms/fanet_radio.h"
 #include "diagnostics/memory_report.h"
 #include "etl/string_stream.h"
@@ -22,11 +22,9 @@ void writeScreenshotBuffer(const char* buffer) {
 }
 
 void webserver_setup() {
-  if (WiFi.status() != WL_CONNECTED)
-    return;
+  if (WiFi.status() != WL_CONNECTED) return;
 
-  if (webserver_started)
-    return;
+  if (webserver_started) return;
 
   server.on("/", HTTP_GET, []() {
     server.send(200, "text/html", R"(
@@ -189,6 +187,5 @@ void webserver_setup() {
 }
 
 void webserver_loop() {
-  if (WiFi.status() == WL_CONNECTED)
-    server.handleClient();
+  if (WiFi.status() == WL_CONNECTED) server.handleClient();
 }

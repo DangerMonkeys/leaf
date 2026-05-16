@@ -3,9 +3,9 @@
 #include <Arduino.h>
 #include <RadioLib.h>
 #include "FreeRTOS.h"
-#include "comms/webserver.h"
 #include "comms/fanet_neighbors.h"
 #include "comms/fanet_radio_types.h"
+#include "comms/webserver.h"
 #include "dispatch/message_types.h"
 #include "etl/delegate.h"
 #include "etl/message_bus.h"
