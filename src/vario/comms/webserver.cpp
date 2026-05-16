@@ -1,6 +1,6 @@
-#include "comms/debug_webserver.h"
+#include "comms/webserver.h"
+#include <WebServer.h>
 #include <WiFi.h>
-#include "WebServer.h"
 #include "comms/fanet_radio.h"
 #include "diagnostics/memory_report.h"
 #include "etl/string_stream.h"
@@ -8,8 +8,11 @@
 #include "ui/display/display.h"
 #include "utils/lock_guard.h"
 
-WebServer server;
-String send_buffer = "";
+namespace {
+  ::WebServer server;
+  String send_buffer = "";
+  bool webserver_started = false;
+}  // namespace
 
 constexpr auto endl = "\n";
 
@@ -19,6 +22,10 @@ void writeScreenshotBuffer(const char* buffer) {
 }
 
 void webserver_setup() {
+  if (WiFi.status() != WL_CONNECTED) return;
+
+  if (webserver_started) return;
+
   server.on("/", HTTP_GET, []() {
     server.send(200, "text/html", R"(
       <!DOCTYPE html>
@@ -30,7 +37,7 @@ void webserver_setup() {
           </style>
         </head>
         <body>
-          <h1>ESP32 Vario Debug Webserver</h1>
+          <h1>ESP32 Vario Webserver</h1>
           <ul>
             <li><a href="/screenshot" target="_blank">Download Screenshot</a></li>
             <li><a href="/mass_storage" target="_blank">Start Mass Storage</a></li>
@@ -170,12 +177,15 @@ void webserver_setup() {
 
   server.on("/memory", HTTP_GET, []() { server.send(200, "text/plain", getMemoryUsage()); });
 
-  // Give it a chance to connect so this debug message means something.
+  // Give it a chance to settle so the startup message has a valid IP address.
   delay(250);
-  // The captive portal belongs on port 80 for setting up WiFi.  Keep the debug
+  // The captive portal belongs on port 80 for setting up WiFi. Keep this
   // webserver on port 81.
   server.begin(81);
+  webserver_started = true;
   Serial.printf("Webserver started: http://%s:81/\n", WiFi.localIP().toString());
 }
 
-void webserver_loop() { server.handleClient(); }
+void webserver_loop() {
+  if (WiFi.status() == WL_CONNECTED) server.handleClient();
+}

@@ -31,9 +31,10 @@
 #include "diagnostics/memory_report.h"
 #endif
 
-#ifdef DEBUG_WIFI
 #include <WiFi.h>
-#include "comms/debug_webserver.h"
+#include "comms/webserver.h"
+
+#ifdef DEBUG_WIFI
 #include "comms/udp_message_server.h"
 #endif
 
@@ -74,9 +75,6 @@ void TaskManager::init() {
   WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
     Serial.println("WiFi Event " + WiFi.localIP().toString() + ": " + event);
   });
-
-  // Start WebServer
-  webserver_setup();
 
   // Start UDP message server
   udpMessageServer.init();
@@ -134,9 +132,10 @@ void TaskManager::update() {
   // when re-entering PowerState::On, be sure to start from tasks #1, so baro ADC can be re-prepped
   // before reading
 
-#ifdef DEBUG_WIFI
-  webserver_loop();
-#endif
+  if (WiFi.status() == WL_CONNECTED) {
+    webserver_setup();
+    webserver_loop();
+  }
 
   const auto& info = power.info();
   if (info.onState == PowerState::On)
