@@ -160,12 +160,19 @@ void TaskManager::updateWhileCharging() {
     // update battery level and charge state
     power.readBatteryState();
 
+    // Try to connect to the diagnostic network once while in charge-only mode. If it connects,
+    // the connection will be preserved when the device switches to the on state.
+    diagnostic_network.update();
+
     // Check Buttons
     buttons.update();  // check Button for any presses (user can turn ON from charging state)
 
     // Prep to end this cycle and sleep
-    if (buttons.inspectPins() == Button::NONE)
+    if (buttons.inspectPins() == Button::NONE && diagnostic_network.canSleepWhileCharging()) {
       goToSleep = true;  // get ready to sleep if no button is being pushed
+    } else {
+      goToSleep = false;
+    }
   } else {
     if (goToSleep && settings.system_ecoMode) {  // don't allow sleep if ECO_MODE is off
 

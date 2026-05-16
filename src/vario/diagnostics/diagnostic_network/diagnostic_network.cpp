@@ -19,12 +19,19 @@ DiagnosticNetwork diagnostic_network;
 void DiagnosticNetwork::reset(const char* reason) {
   Serial.printf("DiagnosticNetwork: reset (%s)\n", reason ? reason : "unknown");
   printed_end_state_ = false;
+  off_usb_scan_attempted_ = false;
   error_msg_ = "No error";
   state_ = State::Ready;
   next_scan_attempt_ms_ = millis() + SCAN_RETRY_DELAY_MS;
   WiFi.scanDelete();
   WiFi.disconnect(true, true);
 }
+
+bool DiagnosticNetwork::shouldResetWhenSwitchingOn() const {
+  return state_ == State::Ready || state_ == State::NoNetworkFound || state_ == State::Error;
+}
+
+bool DiagnosticNetwork::canSleepWhileCharging() const { return shouldResetWhenSwitchingOn(); }
 
 void DiagnosticNetwork::update() {
   if (state_ == State::Ready) {
@@ -74,14 +81,25 @@ void DiagnosticNetwork::update() {
 void DiagnosticNetwork::maybeLookForNetwork() {
   const Power::Info& info = power.info();
 
-  // Only look for network if the device is on and USB-powered
-  if (info.onState != PowerState::On || !info.USBinput) {
+  const bool onAndUsbPowered = info.onState == PowerState::On && info.USBinput;
+  const bool offAndCharging = info.onState == PowerState::OffUSB && info.charging;
+
+  // Look continuously while on and USB-powered, or exactly once when USB wakes the device into
+  // charge-only mode.
+  if (!onAndUsbPowered && !offAndCharging) {
     return;
   }
 
   uint32_t now = millis();
   if (now < next_scan_attempt_ms_) {
     return;
+  }
+
+  if (info.onState == PowerState::OffUSB) {
+    if (off_usb_scan_attempted_) {
+      return;
+    }
+    off_usb_scan_attempted_ = true;
   }
 
   Serial.printf("DiagnosticNetwork: starting scan (USBinput=%d onState=%s)\n", info.USBinput,

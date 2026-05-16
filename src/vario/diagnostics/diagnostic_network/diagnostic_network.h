@@ -23,6 +23,8 @@ class DiagnosticNetwork : private StateAssertMixin<DiagnosticNetwork> {
 
   void update();
   void reset(const char* reason);
+  bool canSleepWhileCharging() const;
+  bool shouldResetWhenSwitchingOn() const;
 
   const char* error_msg() const { return error_msg_; }
 
@@ -36,6 +38,7 @@ class DiagnosticNetwork : private StateAssertMixin<DiagnosticNetwork> {
   uint32_t next_scan_attempt_ms_ = 0;
 
   bool printed_end_state_ = false;
+  bool off_usb_scan_attempted_ = false;
 
   void maybeLookForNetwork();
   void checkForDiagnosticNetwork();
