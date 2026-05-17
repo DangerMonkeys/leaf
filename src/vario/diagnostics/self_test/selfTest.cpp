@@ -22,7 +22,21 @@ ButtonsInteractiveTest buttonsTest;
 VarioInteractiveTest varioTest;
 
 constexpr size_t BUFFER_SIZE = 512;
+constexpr uint32_t GPS_SERIAL_TEST_TIMEOUT_MS = 5000;
+constexpr uint32_t GPS_FIX_TEST_TIMEOUT_MS = 30UL * 60UL * 1000UL;
 File self_test_file;
+
+bool gpsSerialTestInitialized = false;
+uint32_t gpsSerialInitialPassedChecksumCount = 0;
+uint32_t gpsSerialStartMillis = 0;
+
+bool gpsFixTestInitialized = false;
+uint32_t gpsFixInitialSentencesWithFixCount = 0;
+uint32_t gpsFixStartMillis = 0;
+uint32_t gpsFixRemainingSeconds = GPS_FIX_TEST_TIMEOUT_MS / 1000;
+uint32_t gpsFixLastDisplayUpdateMillis = 0;
+bool gpsFixTestCancelled = false;
+SelfTest_PageGPSFix selfTest_pageGPSFix{&gpsFixRemainingSeconds, &gpsFixTestCancelled};
 
 bool useSDFile() {
   if (self_test_file) {
@@ -167,13 +181,89 @@ SelfTest::Status SelfTest::testAmbient() {
 SelfTest::Status SelfTest::testGPS() {
   Status result = Status::Running;
   if (!gps.fixInfo.numberOfSats) {
-    selfTestInfo("* SELF TEST *   GPS   * FAIL - GPS sees zero satellites");
-    result = Status::Fail;
+    result = testGPSserial();
   } else {
     result = Status::Pass;
     selfTestInfo("* SELF TEST *   GPS   * PASS - GPS sees %d satellites", gps.fixInfo.numberOfSats);
   }
   return result;
+}
+
+/////////////////////////////////////////////
+// GPS SERIAL TEST
+SelfTest::Status SelfTest::testGPSserial() {
+  if (!gpsSerialTestInitialized) {
+    gpsSerialTestInitialized = true;
+    gpsSerialInitialPassedChecksumCount = gps.passedChecksum();
+    gpsSerialStartMillis = millis();
+    selfTestInfo(
+        "* SELF TEST * GPS SER * INFO - GPS sees zero satellites; waiting for valid NMEA "
+        "sentence");
+  }
+
+  if (gps.passedChecksum() > gpsSerialInitialPassedChecksumCount) {
+    gpsSerialTestInitialized = false;
+    selfTestInfo("* SELF TEST * GPS SER * PASS - Valid NMEA sentence received");
+    return Status::Pass;
+  }
+
+  if (millis() - gpsSerialStartMillis >= GPS_SERIAL_TEST_TIMEOUT_MS) {
+    gpsSerialTestInitialized = false;
+    selfTestInfo("* SELF TEST * GPS SER * FAIL - No valid NMEA sentence received");
+    return Status::Fail;
+  }
+
+  return Status::Running;
+}
+
+/////////////////////////////////////////////
+// GPS FIX TEST
+SelfTest::Status SelfTest::testGPSfix() {
+  const uint32_t millisNow = millis();
+
+  if (!gpsFixTestInitialized) {
+    gpsFixTestInitialized = true;
+    gpsFixTestCancelled = false;
+    gpsFixInitialSentencesWithFixCount = gps.sentencesWithFix();
+    gpsFixStartMillis = millisNow;
+    gpsFixLastDisplayUpdateMillis = 0;
+    gpsFixRemainingSeconds = GPS_FIX_TEST_TIMEOUT_MS / 1000;
+    selfTestInfo("* SELF TEST * GPS FIX * INFO - Waiting for GPS fix");
+    selfTest_pageGPSFix.show();
+    display.update();
+  }
+
+  if (gpsFixTestCancelled) {
+    gpsFixTestInitialized = false;
+    selfTestInfo("* SELF TEST * GPS FIX * FAIL - Cancelled by user");
+    return Status::Fail;
+  }
+
+  if (gps.sentencesWithFix() > gpsFixInitialSentencesWithFixCount) {
+    gpsFixTestInitialized = false;
+    selfTest_pageGPSFix.close();
+    selfTestInfo("* SELF TEST * GPS FIX * PASS - GPS fix acquired with %d satellites",
+                 gps.fixInfo.numberOfSats);
+    return Status::Pass;
+  }
+
+  const uint32_t elapsedMillis = millisNow - gpsFixStartMillis;
+  if (elapsedMillis >= GPS_FIX_TEST_TIMEOUT_MS) {
+    gpsFixTestInitialized = false;
+    gpsFixRemainingSeconds = 0;
+    display.update();
+    selfTest_pageGPSFix.close();
+    selfTestInfo("* SELF TEST * GPS FIX * FAIL - Timeout waiting for GPS fix");
+    return Status::Fail;
+  }
+
+  gpsFixRemainingSeconds = (GPS_FIX_TEST_TIMEOUT_MS - elapsedMillis + 999) / 1000;
+  if (millisNow - gpsFixLastDisplayUpdateMillis >= 1000) {
+    gpsFixLastDisplayUpdateMillis = millisNow;
+    display.update();
+  }
+
+  return Status::Running;
 }
 
 /////////////////////////////////////////////
@@ -478,9 +568,10 @@ bool SelfTest::tallyResults() {
   bool allPass = true;
   if (results.sdCard != Status::Pass || results.baro != Status::Pass ||
       results.imu != Status::Pass || results.gps != Status::Pass ||
-      results.ambient != Status::Pass || results.display != Status::Pass ||
-      results.buttons != Status::Pass || results.power != Status::Pass ||
-      results.speaker != Status::Pass || results.vario != Status::Pass) {
+      results.gpsFix != Status::Pass || results.ambient != Status::Pass ||
+      results.display != Status::Pass || results.buttons != Status::Pass ||
+      results.power != Status::Pass || results.speaker != Status::Pass ||
+      results.vario != Status::Pass) {
     allPass = false;
   }
   return allPass;
@@ -563,12 +654,16 @@ SelfTest::Status SelfTest::runInteractiveTests(bool closeFileWhenDone) {
   } else if (buttonsTest.status == SelfTest::Status::Unknown ||
              buttonsTest.status == SelfTest::Status::Running) {
     selfTest.results.buttons = buttonsTest.update();
+  } else if (selfTest.results.speaker == SelfTest::Status::Unknown ||
+             selfTest.results.speaker == SelfTest::Status::Running) {
+    selfTest.results.speaker =
+        testSpeaker();  // (speaker test is blocking and only requires one call)
+  } else if (selfTest.results.gpsFix == SelfTest::Status::Unknown ||
+             selfTest.results.gpsFix == SelfTest::Status::Running) {
+    selfTest.results.gpsFix = testGPSfix();
   }
   // else if (other tests requiring multiple frames go here)
   else {
-    // any other interactive tests that only require one frame
-    selfTest.results.speaker =
-        testSpeaker();  // (speaker test is blocking and only requires one call)
     selfTestInfo("* SELF TEST * Interactive tests complete");
     statusInteractiveTests = Status::Complete;  // interactive tests complete
     if (closeFileWhenDone && self_test_file) {
@@ -588,5 +683,8 @@ void SelfTest::clearResults() {
   // reset interactive tests
   buttonsTest.status = Status::Unknown;
   varioTest.status = Status::Unknown;
+  gpsSerialTestInitialized = false;
+  gpsFixTestInitialized = false;
+  gpsFixTestCancelled = false;
   // speaker test is called regardless so no need to reset
 }

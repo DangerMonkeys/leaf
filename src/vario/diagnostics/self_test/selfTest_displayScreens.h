@@ -69,6 +69,25 @@ class SelfTest_PageSpeaker : public SimpleSettingsMenuPage {
   void close() { pop_page(); }
 };
 
+// GPS Fix Self-Test Page
+class SelfTest_PageGPSFix : public SimpleSettingsMenuPage {
+ public:
+  SelfTest_PageGPSFix(uint32_t* remainingSeconds, bool* cancelled)
+      : remainingSeconds_(remainingSeconds), cancelled_(cancelled) {}
+  const char* get_title() const override { return "GPS Fix Test"; }
+
+  void show();
+  void draw_extra() override;
+  void close() { pop_page(); }
+
+ protected:
+  void closed(bool removed_from_Stack) override;
+
+ private:
+  uint32_t* remainingSeconds_;
+  bool* cancelled_;
+};
+
 // Results Self-Test Page
 class SelfTest_PageResults : public SimpleSettingsMenuPage {
  public:
