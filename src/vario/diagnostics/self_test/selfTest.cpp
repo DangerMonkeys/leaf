@@ -568,10 +568,10 @@ bool SelfTest::tallyResults() {
   bool allPass = true;
   if (results.sdCard != Status::Pass || results.baro != Status::Pass ||
       results.imu != Status::Pass || results.gps != Status::Pass ||
-      results.gpsFix != Status::Pass ||
-      results.ambient != Status::Pass || results.display != Status::Pass ||
-      results.buttons != Status::Pass || results.power != Status::Pass ||
-      results.speaker != Status::Pass || results.vario != Status::Pass) {
+      results.gpsFix != Status::Pass || results.ambient != Status::Pass ||
+      results.display != Status::Pass || results.buttons != Status::Pass ||
+      results.power != Status::Pass || results.speaker != Status::Pass ||
+      results.vario != Status::Pass) {
     allPass = false;
   }
   return allPass;
