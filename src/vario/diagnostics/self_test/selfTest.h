@@ -47,6 +47,7 @@ class SelfTest {
   static Status testBaro();
   static Status testIMU();
   static Status testGPS();
+  static Status testGPSserial();
   static Status testAmbient();
   static Status testDisplay();
   static Status testSDCard();

@@ -22,7 +22,12 @@ ButtonsInteractiveTest buttonsTest;
 VarioInteractiveTest varioTest;
 
 constexpr size_t BUFFER_SIZE = 512;
+constexpr uint32_t GPS_SERIAL_TEST_TIMEOUT_MS = 5000;
 File self_test_file;
+
+bool gpsSerialTestInitialized = false;
+uint32_t gpsSerialInitialPassedChecksumCount = 0;
+uint32_t gpsSerialStartMillis = 0;
 
 bool useSDFile() {
   if (self_test_file) {
@@ -167,13 +172,39 @@ SelfTest::Status SelfTest::testAmbient() {
 SelfTest::Status SelfTest::testGPS() {
   Status result = Status::Running;
   if (!gps.fixInfo.numberOfSats) {
-    selfTestInfo("* SELF TEST *   GPS   * FAIL - GPS sees zero satellites");
-    result = Status::Fail;
+    result = testGPSserial();
   } else {
     result = Status::Pass;
     selfTestInfo("* SELF TEST *   GPS   * PASS - GPS sees %d satellites", gps.fixInfo.numberOfSats);
   }
   return result;
+}
+
+/////////////////////////////////////////////
+// GPS SERIAL TEST
+SelfTest::Status SelfTest::testGPSserial() {
+  if (!gpsSerialTestInitialized) {
+    gpsSerialTestInitialized = true;
+    gpsSerialInitialPassedChecksumCount = gps.passedChecksum();
+    gpsSerialStartMillis = millis();
+    selfTestInfo(
+        "* SELF TEST * GPS SER * INFO - GPS sees zero satellites; waiting for valid NMEA "
+        "sentence");
+  }
+
+  if (gps.passedChecksum() > gpsSerialInitialPassedChecksumCount) {
+    gpsSerialTestInitialized = false;
+    selfTestInfo("* SELF TEST * GPS SER * PASS - Valid NMEA sentence received");
+    return Status::Pass;
+  }
+
+  if (millis() - gpsSerialStartMillis >= GPS_SERIAL_TEST_TIMEOUT_MS) {
+    gpsSerialTestInitialized = false;
+    selfTestInfo("* SELF TEST * GPS SER * FAIL - No valid NMEA sentence received");
+    return Status::Fail;
+  }
+
+  return Status::Running;
 }
 
 /////////////////////////////////////////////
@@ -588,5 +619,6 @@ void SelfTest::clearResults() {
   // reset interactive tests
   buttonsTest.status = Status::Unknown;
   varioTest.status = Status::Unknown;
+  gpsSerialTestInitialized = false;
   // speaker test is called regardless so no need to reset
 }
