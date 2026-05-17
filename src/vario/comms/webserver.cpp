@@ -70,8 +70,8 @@ namespace {
     json += selfTestModeName(last_self_test_mode);
     json += "\",\"status\":\"";
     json += interactive_self_test_pending ? "pending"
-                                          : running ? "running"
-                                                    : selfTestStatusName(selfTest.results.allTests);
+            : running                     ? "running"
+                                          : selfTestStatusName(selfTest.results.allTests);
     json += "\",\"results\":{";
     appendSelfTestResult(json, "sd_card", selfTest.results.sdCard);
     appendSelfTestResult(json, "baro", selfTest.results.baro);
@@ -295,9 +295,8 @@ void webserver_setup() {
     server.send(200, "application/json", selfTestSnapshotJson());
   });
 
-  server.on("/self-test", HTTP_GET, []() {
-    server.send(200, "application/json", selfTestSnapshotJson());
-  });
+  server.on("/self-test", HTTP_GET,
+            []() { server.send(200, "application/json", selfTestSnapshotJson()); });
 
   // Give it a chance to settle so the startup message has a valid IP address.
   delay(250);
