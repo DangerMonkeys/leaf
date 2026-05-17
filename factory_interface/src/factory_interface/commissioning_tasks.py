@@ -7,6 +7,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from subprocess import list2cmdline
 
+from factory_interface.network_discovery import (
+    start_find_device,
+    start_preflash_monitor,
+    stop_preflash_monitor,
+)
 from factory_interface.settings import load_settings
 
 
@@ -276,6 +281,7 @@ async def run_flash_firmware(serial_number: str) -> None:
         task.return_code = None
 
         try:
+            start_preflash_monitor(serial_number)
             command, firmware_path = build_flash_firmware_command()
             task.output += f"$ {format_command(command)}\n"
             process = await asyncio.create_subprocess_exec(
@@ -295,12 +301,15 @@ async def run_flash_firmware(serial_number: str) -> None:
             task.return_code = await process.wait()
             if task.return_code == 0:
                 task.status = "success"
+                start_find_device(serial_number)
             else:
                 task.status = "failure"
         except Exception as exc:
             task.output += f"\n{type(exc).__name__}: {exc}\n"
             task.return_code = -1
             task.status = "failure"
+        finally:
+            stop_preflash_monitor(serial_number)
 
 
 def start_flash_firmware(serial_number: str) -> FlashFirmwareTask:

@@ -20,6 +20,7 @@ class DiagnosticNetwork : private StateAssertMixin<DiagnosticNetwork> {
   };
 
   State state() const { return state_; }
+  bool connected() const;
 
   void update();
   void reset(const char* reason);

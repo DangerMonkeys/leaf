@@ -16,6 +16,11 @@ static constexpr uint32_t SCAN_RETRY_DELAY_MS = 2000;
 
 DiagnosticNetwork diagnostic_network;
 
+bool DiagnosticNetwork::connected() const {
+  return state_ == State::ConnectedToNetwork && WiFi.status() == WL_CONNECTED &&
+         WiFi.SSID() == DIAGNOSTIC_NETWORK_SSID;
+}
+
 void DiagnosticNetwork::reset(const char* reason) {
   Serial.printf("DiagnosticNetwork: reset (%s)\n", reason ? reason : "unknown");
   printed_end_state_ = false;

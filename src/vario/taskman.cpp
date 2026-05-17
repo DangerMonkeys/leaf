@@ -6,6 +6,7 @@
 #include "task.h"
 
 #include "comms/ble.h"
+#include "comms/factory_discovery.h"
 #include "diagnostics/diagnostic_network/diagnostic_network.h"
 #include "diagnostics/self_test/selfTest.h"
 #include "hardware/Leaf_SPI.h"
@@ -162,6 +163,7 @@ void TaskManager::updateWhileCharging() {
     // Try to connect to the diagnostic network once while in charge-only mode. If it connects,
     // the connection will be preserved when the device switches to the on state.
     diagnostic_network.update();
+    factoryDiscovery.update();
 
     // Check Buttons
     buttons.update();  // check Button for any presses (user can turn ON from charging state)
@@ -380,6 +382,7 @@ void TaskManager::doNecessaryTasks(void) {
 #endif
 
   diagnostic_network.update();
+  factoryDiscovery.update();
 
   if (performedNecessaryTasks && DEBUG_MAIN_LOOP) {
     performedNecessaryTasks = false;

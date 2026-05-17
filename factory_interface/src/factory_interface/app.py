@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from factory_interface.commissioning_tasks import get_flash_task, start_flash_firmware
+from factory_interface.network_discovery import get_find_device_task, start_find_device
 from factory_interface.settings import (
     FactoryInterfaceSettings,
     find_firmware_paths,
@@ -81,6 +82,18 @@ async def start_flash_firmware_task(serial_number: str) -> JSONResponse:
 @app.get("/api/setup/{serial_number}/flash", response_class=JSONResponse)
 async def get_flash_firmware_task(serial_number: str) -> JSONResponse:
     task = get_flash_task(serial_number)
+    return JSONResponse(task.snapshot())
+
+
+@app.post("/api/setup/{serial_number}/network-discovery", response_class=JSONResponse)
+async def start_network_discovery_task(serial_number: str) -> JSONResponse:
+    task = start_find_device(serial_number)
+    return JSONResponse(task.snapshot())
+
+
+@app.get("/api/setup/{serial_number}/network-discovery", response_class=JSONResponse)
+async def get_network_discovery_task(serial_number: str) -> JSONResponse:
+    task = get_find_device_task(serial_number)
     return JSONResponse(task.snapshot())
 
 
