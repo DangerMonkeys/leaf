@@ -5,6 +5,7 @@
 #include "diagnostics/memory_report.h"
 #include "diagnostics/self_test/selfTest.h"
 #include "etl/string_stream.h"
+#include "power.h"
 #include "storage/sd_card.h"
 #include "ui/display/display.h"
 #include "utils/lock_guard.h"
@@ -16,7 +17,11 @@ namespace {
 
   enum class SelfTestMode { None, Interactive };
 
+  static constexpr uint32_t SELF_TEST_POWER_ON_DELAY_MS = 10000;
+
   SelfTestMode last_self_test_mode = SelfTestMode::None;
+  bool interactive_self_test_pending = false;
+  uint32_t interactive_self_test_start_ms = 0;
 
   const char* selfTestModeName(SelfTestMode mode) {
     switch (mode) {
@@ -58,11 +63,15 @@ namespace {
     const bool running = selfTest.updateNeeded();
     String json = "{";
     json += "\"running\":";
-    json += running ? "true" : "false";
+    json += (running || interactive_self_test_pending) ? "true" : "false";
+    json += ",\"pending\":";
+    json += interactive_self_test_pending ? "true" : "false";
     json += ",\"mode\":\"";
     json += selfTestModeName(last_self_test_mode);
     json += "\",\"status\":\"";
-    json += running ? "running" : selfTestStatusName(selfTest.results.allTests);
+    json += interactive_self_test_pending ? "pending"
+                                          : running ? "running"
+                                                    : selfTestStatusName(selfTest.results.allTests);
     json += "\",\"results\":{";
     appendSelfTestResult(json, "sd_card", selfTest.results.sdCard);
     appendSelfTestResult(json, "baro", selfTest.results.baro);
@@ -77,6 +86,43 @@ namespace {
     appendSelfTestResult(json, "all_tests", selfTest.results.allTests, false);
     json += "}}";
     return json;
+  }
+
+  void beginInteractiveSelfTest() {
+    interactive_self_test_pending = false;
+    last_self_test_mode = SelfTestMode::Interactive;
+    selfTest.begin(false);
+  }
+
+  void requestInteractiveSelfTest() {
+    last_self_test_mode = SelfTestMode::Interactive;
+
+    if (interactive_self_test_pending) return;
+
+    if (power.info().onState == PowerState::OffUSB) {
+      display.clear();
+      display.showOnSplash();
+      display.setPage(MainPage::Thermal);
+      power.switchToOnState();
+      if (selfTest.updateNeeded()) return;
+
+      interactive_self_test_pending = true;
+      interactive_self_test_start_ms = millis();
+      return;
+    }
+
+    if (selfTest.updateNeeded()) return;
+
+    beginInteractiveSelfTest();
+  }
+
+  void updatePendingInteractiveSelfTest() {
+    if (!interactive_self_test_pending) return;
+
+    const uint32_t elapsed_ms = millis() - interactive_self_test_start_ms;
+    if (elapsed_ms >= SELF_TEST_POWER_ON_DELAY_MS) {
+      beginInteractiveSelfTest();
+    }
   }
 }  // namespace
 
@@ -245,8 +291,7 @@ void webserver_setup() {
   server.on("/memory", HTTP_GET, []() { server.send(200, "text/plain", getMemoryUsage()); });
 
   server.on("/self-test/interactive", HTTP_POST, []() {
-    last_self_test_mode = SelfTestMode::Interactive;
-    selfTest.begin(false);
+    requestInteractiveSelfTest();
     server.send(200, "application/json", selfTestSnapshotJson());
   });
 
@@ -264,5 +309,8 @@ void webserver_setup() {
 }
 
 void webserver_loop() {
-  if (WiFi.status() == WL_CONNECTED) server.handleClient();
+  if (WiFi.status() == WL_CONNECTED) {
+    server.handleClient();
+    updatePendingInteractiveSelfTest();
+  }
 }
