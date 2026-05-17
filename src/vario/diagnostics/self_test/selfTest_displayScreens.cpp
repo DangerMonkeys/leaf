@@ -1,10 +1,12 @@
 #include "selfTest_displayScreens.h"
 
 #include "diagnostics/self_test/selfTest.h"
+#include "instruments/gps.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
 #include "ui/display/display_fields.h"
 #include "ui/display/fonts.h"
+#include "ui/display/pages.h"
 
 //////////////////////////////////////////////
 // Button Self-Test Page
@@ -115,11 +117,44 @@ void SelfTest_PageSpeaker::draw_extra() {
 }
 
 //////////////////////////////////////////////
+// GPS Fix Self-Test Page
+void SelfTest_PageGPSFix::show() { push_page(this); }
+
+void SelfTest_PageGPSFix::draw_extra() {
+  const uint32_t remainingSeconds = *remainingSeconds_;
+  const uint16_t remainingMinutes = remainingSeconds / 60;
+  const uint8_t remainingSecondsPart = remainingSeconds % 60;
+
+  u8g2.setFont(leaf_6x12);
+  u8g2.setCursor(11, 31);
+  u8g2.print("Acquiring");
+  u8g2.setCursor(21, 45);
+  u8g2.print("GPS fix");
+
+  u8g2.setFont(leaf_5x8);
+  u8g2.setCursor(0, 61);
+  u8g2.print("Timeout: ");
+  u8g2.print(remainingMinutes);
+  u8g2.print(":");
+  if (remainingSecondsPart < 10) u8g2.print("0");
+  u8g2.print(remainingSecondsPart);
+
+  u8g2.setCursor(0, 73);
+  u8g2.print("Sats:");
+  u8g2.print(gps.fixInfo.numberOfSats);
+  u8g2.setCursor(52, 73);
+  u8g2.print("Fix:");
+  u8g2.print(gps.fixInfo.fix);
+
+  gpsMenuPage.drawConstellation(4, 82, 84);
+}
+
+//////////////////////////////////////////////
 // Results Self-Test Page
 void SelfTest_PageResults::show() { push_page(this); }
 
 void SelfTest_PageResults::draw_extra() {
-  uint8_t lineSpacing = 14;
+  uint8_t lineSpacing = 13;
   u8g2.setCursor(0, 30);
   u8g2.setFont(leaf_6x12);
   u8g2.print("All Tests: ");
@@ -134,7 +169,7 @@ void SelfTest_PageResults::draw_extra() {
 
   SelfTest::Status testResult = SelfTest::Status::Unknown;
 
-  for (int i = 0; i < 10; i++) {
+  for (int i = 0; i < 11; i++) {
     u8g2.setCursor(0, u8g2.getCursorY() + lineSpacing);
 
     if (i == 0) {
@@ -150,21 +185,24 @@ void SelfTest_PageResults::draw_extra() {
       testResult = selfTest.results.gps;
       u8g2.print("GPS:");
     } else if (i == 4) {
+      testResult = selfTest.results.gpsFix;
+      u8g2.print("GPS Fix:");
+    } else if (i == 5) {
       testResult = selfTest.results.ambient;
       u8g2.print("Ambient:");
-    } else if (i == 5) {
+    } else if (i == 6) {
       testResult = selfTest.results.display;
       u8g2.print("Display:");
-    } else if (i == 6) {
+    } else if (i == 7) {
       testResult = selfTest.results.buttons;
       u8g2.print("Buttons:");
-    } else if (i == 7) {
+    } else if (i == 8) {
       testResult = selfTest.results.power;
       u8g2.print("Power:");
-    } else if (i == 8) {
+    } else if (i == 9) {
       testResult = selfTest.results.speaker;
       u8g2.print("Speaker:");
-    } else if (i == 9) {
+    } else if (i == 10) {
       testResult = selfTest.results.vario;
       u8g2.print("Vario:");
     }

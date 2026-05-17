@@ -23,11 +23,19 @@ VarioInteractiveTest varioTest;
 
 constexpr size_t BUFFER_SIZE = 512;
 constexpr uint32_t GPS_SERIAL_TEST_TIMEOUT_MS = 5000;
+constexpr uint32_t GPS_FIX_TEST_TIMEOUT_MS = 30UL * 60UL * 1000UL;
 File self_test_file;
 
 bool gpsSerialTestInitialized = false;
 uint32_t gpsSerialInitialPassedChecksumCount = 0;
 uint32_t gpsSerialStartMillis = 0;
+
+bool gpsFixTestInitialized = false;
+uint32_t gpsFixInitialSentencesWithFixCount = 0;
+uint32_t gpsFixStartMillis = 0;
+uint32_t gpsFixRemainingSeconds = GPS_FIX_TEST_TIMEOUT_MS / 1000;
+uint32_t gpsFixLastDisplayUpdateMillis = 0;
+SelfTest_PageGPSFix selfTest_pageGPSFix{&gpsFixRemainingSeconds};
 
 bool useSDFile() {
   if (self_test_file) {
@@ -202,6 +210,49 @@ SelfTest::Status SelfTest::testGPSserial() {
     gpsSerialTestInitialized = false;
     selfTestInfo("* SELF TEST * GPS SER * FAIL - No valid NMEA sentence received");
     return Status::Fail;
+  }
+
+  return Status::Running;
+}
+
+/////////////////////////////////////////////
+// GPS FIX TEST
+SelfTest::Status SelfTest::testGPSfix() {
+  const uint32_t millisNow = millis();
+
+  if (!gpsFixTestInitialized) {
+    gpsFixTestInitialized = true;
+    gpsFixInitialSentencesWithFixCount = gps.sentencesWithFix();
+    gpsFixStartMillis = millisNow;
+    gpsFixLastDisplayUpdateMillis = 0;
+    gpsFixRemainingSeconds = GPS_FIX_TEST_TIMEOUT_MS / 1000;
+    selfTestInfo("* SELF TEST * GPS FIX * INFO - Waiting for GPS fix");
+    selfTest_pageGPSFix.show();
+    display.update();
+  }
+
+  if (gps.sentencesWithFix() > gpsFixInitialSentencesWithFixCount) {
+    gpsFixTestInitialized = false;
+    selfTest_pageGPSFix.close();
+    selfTestInfo("* SELF TEST * GPS FIX * PASS - GPS fix acquired with %d satellites",
+                 gps.fixInfo.numberOfSats);
+    return Status::Pass;
+  }
+
+  const uint32_t elapsedMillis = millisNow - gpsFixStartMillis;
+  if (elapsedMillis >= GPS_FIX_TEST_TIMEOUT_MS) {
+    gpsFixTestInitialized = false;
+    gpsFixRemainingSeconds = 0;
+    display.update();
+    selfTest_pageGPSFix.close();
+    selfTestInfo("* SELF TEST * GPS FIX * FAIL - Timeout waiting for GPS fix");
+    return Status::Fail;
+  }
+
+  gpsFixRemainingSeconds = (GPS_FIX_TEST_TIMEOUT_MS - elapsedMillis + 999) / 1000;
+  if (millisNow - gpsFixLastDisplayUpdateMillis >= 1000) {
+    gpsFixLastDisplayUpdateMillis = millisNow;
+    display.update();
   }
 
   return Status::Running;
@@ -509,6 +560,7 @@ bool SelfTest::tallyResults() {
   bool allPass = true;
   if (results.sdCard != Status::Pass || results.baro != Status::Pass ||
       results.imu != Status::Pass || results.gps != Status::Pass ||
+      results.gpsFix != Status::Pass ||
       results.ambient != Status::Pass || results.display != Status::Pass ||
       results.buttons != Status::Pass || results.power != Status::Pass ||
       results.speaker != Status::Pass || results.vario != Status::Pass) {
@@ -566,6 +618,9 @@ SelfTest::Status SelfTest::runAutoTests(bool closeFileWhenDone) {
     selfTest.results.imu = testIMU();
   } else if (selfTest.results.gps == Status::Unknown || selfTest.results.gps == Status::Running) {
     selfTest.results.gps = testGPS();
+  } else if (selfTest.results.gpsFix == Status::Unknown ||
+             selfTest.results.gpsFix == Status::Running) {
+    selfTest.results.gpsFix = testGPSfix();
   } else if (selfTest.results.ambient == Status::Unknown ||
              selfTest.results.ambient == Status::Running) {
     selfTest.results.ambient = testAmbient();
@@ -620,5 +675,6 @@ void SelfTest::clearResults() {
   buttonsTest.status = Status::Unknown;
   varioTest.status = Status::Unknown;
   gpsSerialTestInitialized = false;
+  gpsFixTestInitialized = false;
   // speaker test is called regardless so no need to reset
 }

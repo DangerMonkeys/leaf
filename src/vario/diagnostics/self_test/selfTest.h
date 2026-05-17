@@ -19,6 +19,7 @@ class SelfTest {
     Status baro = Status::Unknown;
     Status imu = Status::Unknown;
     Status gps = Status::Unknown;
+    Status gpsFix = Status::Unknown;
     Status ambient = Status::Unknown;
     Status display = Status::Unknown;
     Status buttons = Status::Unknown;
@@ -48,6 +49,7 @@ class SelfTest {
   static Status testIMU();
   static Status testGPS();
   static Status testGPSserial();
+  static Status testGPSfix();
   static Status testAmbient();
   static Status testDisplay();
   static Status testSDCard();
