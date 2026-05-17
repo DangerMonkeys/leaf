@@ -8,6 +8,10 @@ from fastapi.templating import Jinja2Templates
 
 from factory_interface.commissioning_tasks import get_flash_task, start_flash_firmware
 from factory_interface.network_discovery import get_find_device_task, start_find_device
+from factory_interface.self_test_task import (
+    get_self_test_task,
+    start_interactive_self_test,
+)
 from factory_interface.settings import (
     FactoryInterfaceSettings,
     find_firmware_paths,
@@ -94,6 +98,18 @@ async def start_network_discovery_task(serial_number: str) -> JSONResponse:
 @app.get("/api/setup/{serial_number}/network-discovery", response_class=JSONResponse)
 async def get_network_discovery_task(serial_number: str) -> JSONResponse:
     task = get_find_device_task(serial_number)
+    return JSONResponse(task.snapshot())
+
+
+@app.post("/api/setup/{serial_number}/interactive-self-test", response_class=JSONResponse)
+async def start_interactive_self_test_task(serial_number: str) -> JSONResponse:
+    task = start_interactive_self_test(serial_number)
+    return JSONResponse(task.snapshot())
+
+
+@app.get("/api/setup/{serial_number}/interactive-self-test", response_class=JSONResponse)
+async def get_interactive_self_test_task(serial_number: str) -> JSONResponse:
+    task = get_self_test_task(serial_number)
     return JSONResponse(task.snapshot())
 
 
