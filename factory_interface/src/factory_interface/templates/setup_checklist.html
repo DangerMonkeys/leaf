@@ -60,6 +60,18 @@
     <div class="checklist-item checklist-item-with-details">
       <button
         class="task-icon task-icon-empty"
+        id="reconnect-task-icon"
+        type="button"
+        aria-label="Toggle device reconnect details"
+        disabled
+      ></button>
+      <span>Wait for device to reconnect</span>
+      <p class="checklist-details" id="reconnect-details" hidden></p>
+    </div>
+
+    <div class="checklist-item checklist-item-with-details">
+      <button
+        class="task-icon task-icon-empty"
         id="mac-address-task-icon"
         type="button"
         aria-label="Toggle MAC address details"
@@ -91,6 +103,8 @@
   const discoveryDetails = document.querySelector("#discovery-details");
   const resetNonvolatileTaskIcon = document.querySelector("#reset-nonvolatile-task-icon");
   const resetNonvolatileDetails = document.querySelector("#reset-nonvolatile-details");
+  const reconnectTaskIcon = document.querySelector("#reconnect-task-icon");
+  const reconnectDetails = document.querySelector("#reconnect-details");
   const macAddressTaskIcon = document.querySelector("#mac-address-task-icon");
   const macAddressDetails = document.querySelector("#mac-address-details");
   const selfTestTaskIcon = document.querySelector("#self-test-task-icon");
@@ -134,6 +148,10 @@
 
   function setResetNonvolatileIcon(status) {
     setTaskIcon(resetNonvolatileTaskIcon, status);
+  }
+
+  function setReconnectIcon(status) {
+    setTaskIcon(reconnectTaskIcon, status);
   }
 
   function setMacAddressIcon(status) {
@@ -205,27 +223,40 @@
   }
 
   function applyResetNonvolatileTaskState(state) {
-    setResetNonvolatileIcon(state.status);
+    const resetStatus = state.reset_status || state.status;
+    const reconnectStatus = state.reconnect_status || "idle";
+    setResetNonvolatileIcon(resetStatus);
+    setReconnectIcon(reconnectStatus);
 
     if (state.status === "success") {
-      resetNonvolatileDetails.textContent = state.details || "Nonvolatile memory reset.";
+      resetNonvolatileDetails.textContent =
+        state.reset_details || "Nonvolatile memory reset command accepted.";
+      reconnectDetails.textContent = state.reconnect_details || "Device reconnected.";
       clearInterval(resetNonvolatilePollTimer);
       resetNonvolatilePollTimer = null;
       startMacAddressTask();
     } else if (state.status === "running") {
-      resetNonvolatileDetails.textContent = state.details || "Resetting nonvolatile memory...";
-      resetNonvolatileDetails.hidden = false;
+      resetNonvolatileDetails.textContent =
+        state.reset_details || "Resetting nonvolatile memory...";
+      reconnectDetails.textContent = state.reconnect_details || "Waiting for device to reconnect...";
+      resetNonvolatileDetails.hidden = resetStatus === "idle";
+      reconnectDetails.hidden = reconnectStatus === "idle";
       if (!resetNonvolatilePollTimer) {
         resetNonvolatilePollTimer = setInterval(refreshResetNonvolatileTaskState, 1000);
       }
     } else if (state.status === "failure") {
-      resetNonvolatileDetails.textContent = state.details || "Nonvolatile memory reset failed.";
-      resetNonvolatileDetails.hidden = false;
+      resetNonvolatileDetails.textContent =
+        state.reset_details || "Nonvolatile memory reset failed.";
+      reconnectDetails.textContent = state.reconnect_details || "Device did not reconnect.";
+      resetNonvolatileDetails.hidden = resetStatus === "idle";
+      reconnectDetails.hidden = reconnectStatus === "idle";
       clearInterval(resetNonvolatilePollTimer);
       resetNonvolatilePollTimer = null;
     } else {
       resetNonvolatileDetails.textContent = "";
       resetNonvolatileDetails.hidden = true;
+      reconnectDetails.textContent = "";
+      reconnectDetails.hidden = true;
       clearInterval(resetNonvolatilePollTimer);
       resetNonvolatilePollTimer = null;
     }
@@ -388,6 +419,10 @@
 
   resetNonvolatileTaskIcon.addEventListener("click", () => {
     resetNonvolatileDetails.hidden = !resetNonvolatileDetails.hidden;
+  });
+
+  reconnectTaskIcon.addEventListener("click", () => {
+    reconnectDetails.hidden = !reconnectDetails.hidden;
   });
 
   macAddressTaskIcon.addEventListener("click", () => {

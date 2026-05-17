@@ -18,12 +18,20 @@ RESET_RECONNECT_POLL_SECONDS = 1.0
 class ResetNonvolatileMemoryTask:
     status: str = "idle"
     details: str = ""
+    reset_status: str = "idle"
+    reset_details: str = ""
+    reconnect_status: str = "idle"
+    reconnect_details: str = ""
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
     def snapshot(self) -> dict:
         return {
             "status": self.status,
             "details": self.details,
+            "reset_status": self.reset_status,
+            "reset_details": self.reset_details,
+            "reconnect_status": self.reconnect_status,
+            "reconnect_details": self.reconnect_details,
         }
 
 
@@ -37,6 +45,10 @@ def get_reset_nonvolatile_memory_task() -> ResetNonvolatileMemoryTask:
 def reset_reset_nonvolatile_memory_task() -> None:
     reset_nonvolatile_memory_task.status = "idle"
     reset_nonvolatile_memory_task.details = ""
+    reset_nonvolatile_memory_task.reset_status = "idle"
+    reset_nonvolatile_memory_task.reset_details = ""
+    reset_nonvolatile_memory_task.reconnect_status = "idle"
+    reset_nonvolatile_memory_task.reconnect_details = ""
 
 
 def device_base_url() -> tuple[str, str]:
@@ -90,6 +102,10 @@ async def run_reset_nonvolatile_memory() -> None:
     async with task.lock:
         task.status = "running"
         task.details = "Resetting nonvolatile memory..."
+        task.reset_status = "running"
+        task.reset_details = "Resetting nonvolatile memory..."
+        task.reconnect_status = "idle"
+        task.reconnect_details = ""
 
         try:
             base_url, device_id = device_base_url()
@@ -101,15 +117,27 @@ async def run_reset_nonvolatile_memory() -> None:
             if not payload.get("reset_requested", False):
                 raise RuntimeError("Device did not acknowledge the reset request.")
 
+            task.reset_status = "success"
+            task.reset_details = "Nonvolatile memory reset command accepted."
+            task.reconnect_status = "running"
+            task.reconnect_details = "Waiting for device to reconnect..."
             task.details = "Waiting for device to reboot after settings reset..."
             await asyncio.sleep(RESET_REBOOT_GRACE_SECONDS)
             await wait_for_device(base_url, device_id)
 
             task.status = "success"
             task.details = "Nonvolatile memory reset."
+            task.reconnect_status = "success"
+            task.reconnect_details = "Device reconnected."
         except Exception as exc:
             task.status = "failure"
             task.details = f"{type(exc).__name__}: {exc}"
+            if task.reset_status == "running":
+                task.reset_status = "failure"
+                task.reset_details = task.details
+            else:
+                task.reconnect_status = "failure"
+                task.reconnect_details = task.details
 
 
 def start_reset_nonvolatile_memory() -> ResetNonvolatileMemoryTask:
@@ -119,5 +147,9 @@ def start_reset_nonvolatile_memory() -> ResetNonvolatileMemoryTask:
 
     task.status = "running"
     task.details = "Resetting nonvolatile memory..."
+    task.reset_status = "running"
+    task.reset_details = "Resetting nonvolatile memory..."
+    task.reconnect_status = "idle"
+    task.reconnect_details = ""
     asyncio.create_task(run_reset_nonvolatile_memory())
     return task
