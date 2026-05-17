@@ -129,28 +129,31 @@ void SelfTest_PageGPSFix::draw_extra() {
   const uint16_t remainingMinutes = remainingSeconds / 60;
   const uint8_t remainingSecondsPart = remainingSeconds % 60;
 
-  u8g2.setFont(leaf_6x12);
-  u8g2.setCursor(11, 31);
-  u8g2.print("Acquiring");
-  u8g2.setCursor(21, 45);
-  u8g2.print("GPS fix");
+  u8g2.setFont(leaf_5x8);
+  u8g2.setCursor(7, 31);
+  u8g2.print("Place Leaf outside");
+  u8g2.setCursor(10, 41);
+  u8g2.print("with a clear view");
+  u8g2.setCursor(25, 51);
+  u8g2.print("of the sky");
 
   u8g2.setFont(leaf_5x8);
-  u8g2.setCursor(0, 61);
-  u8g2.print("Timeout: ");
+  u8g2.setCursor(0, 67);
+  u8g2.print("Timeout:");
+  u8g2.setCursor(70, 67);
   u8g2.print(remainingMinutes);
   u8g2.print(":");
   if (remainingSecondsPart < 10) u8g2.print("0");
   u8g2.print(remainingSecondsPart);
 
-  u8g2.setCursor(0, 73);
-  u8g2.print("Sats:");
+  u8g2.setCursor(0, 78);
+  u8g2.print("Sats: ");
   u8g2.print(gps.fixInfo.numberOfSats);
-  u8g2.setCursor(52, 73);
-  u8g2.print("Fix:");
+  u8g2.setCursor(70, 78);
+  u8g2.print("Fix: ");
   u8g2.print(gps.fixInfo.fix);
 
-  gpsMenuPage.drawConstellation(4, 82, 84);
+  gpsMenuPage.drawConstellation(5, 84, 84);
 }
 
 //////////////////////////////////////////////
