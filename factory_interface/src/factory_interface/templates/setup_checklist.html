@@ -4,10 +4,9 @@
 <section class="panel narrow setup-panel">
   <div>
     <h1>Set up device</h1>
-    <p class="path-display">{{ serial_number }}</p>
   </div>
 
-  <div class="checklist" data-serial-number="{{ serial_number }}">
+  <div class="checklist">
     <div class="checklist-item">
       <label class="bootloader-check">
         <input id="bootloader-mode" type="checkbox">
@@ -49,6 +48,18 @@
     <div class="checklist-item checklist-item-with-details">
       <button
         class="task-icon task-icon-empty"
+        id="mac-address-task-icon"
+        type="button"
+        aria-label="Toggle MAC address details"
+        disabled
+      ></button>
+      <span>Read MAC address</span>
+      <p class="checklist-details" id="mac-address-details" hidden></p>
+    </div>
+
+    <div class="checklist-item checklist-item-with-details">
+      <button
+        class="task-icon task-icon-empty"
         id="self-test-task-icon"
         type="button"
         aria-label="Toggle interactive test details"
@@ -61,18 +72,21 @@
 </section>
 
 <script>
-  const serialNumber = {{ serial_number | tojson }};
   const bootloaderCheckbox = document.querySelector("#bootloader-mode");
   const flashTaskIcon = document.querySelector("#flash-task-icon");
   const flashConsole = document.querySelector("#flash-console");
   const discoveryTaskIcon = document.querySelector("#discovery-task-icon");
   const discoveryDetails = document.querySelector("#discovery-details");
+  const macAddressTaskIcon = document.querySelector("#mac-address-task-icon");
+  const macAddressDetails = document.querySelector("#mac-address-details");
   const selfTestTaskIcon = document.querySelector("#self-test-task-icon");
   const selfTestDetails = document.querySelector("#self-test-details");
   let flashPollTimer = null;
   let discoveryPollTimer = null;
+  let macAddressPollTimer = null;
   let selfTestPollTimer = null;
   let discoveryStartRequested = false;
+  let macAddressStartRequested = false;
   let selfTestStartRequested = false;
 
   function setTaskIcon(icon, status) {
@@ -100,6 +114,10 @@
 
   function setSelfTestIcon(status) {
     setTaskIcon(selfTestTaskIcon, status);
+  }
+
+  function setMacAddressIcon(status) {
+    setTaskIcon(macAddressTaskIcon, status);
   }
 
   function applyFlashTaskState(state) {
@@ -146,7 +164,7 @@
       discoveryDetails.hidden = false;
       clearInterval(discoveryPollTimer);
       discoveryPollTimer = null;
-      startSelfTestTask();
+      startMacAddressTask();
     } else if (state.status === "running") {
       discoveryDetails.textContent = "Searching for the newly flashed device...";
       discoveryDetails.hidden = false;
@@ -163,6 +181,32 @@
       discoveryDetails.hidden = true;
       clearInterval(discoveryPollTimer);
       discoveryPollTimer = null;
+    }
+  }
+
+  function applyMacAddressTaskState(state) {
+    setMacAddressIcon(state.status);
+
+    if (state.status === "success") {
+      macAddressDetails.textContent = state.details || `MAC address: ${state.mac_address}`;
+      clearInterval(macAddressPollTimer);
+      macAddressPollTimer = null;
+      startSelfTestTask();
+    } else if (state.status === "running") {
+      macAddressDetails.textContent = state.details || "Reading MAC address...";
+      if (!macAddressPollTimer) {
+        macAddressPollTimer = setInterval(refreshMacAddressTaskState, 1000);
+      }
+    } else if (state.status === "failure") {
+      macAddressDetails.textContent = state.details || "MAC address read failed.";
+      macAddressDetails.hidden = false;
+      clearInterval(macAddressPollTimer);
+      macAddressPollTimer = null;
+    } else {
+      macAddressDetails.textContent = "";
+      macAddressDetails.hidden = true;
+      clearInterval(macAddressPollTimer);
+      macAddressPollTimer = null;
     }
   }
 
@@ -192,28 +236,29 @@
   }
 
   async function refreshFlashTaskState() {
-    const response = await fetch(`/api/setup/${encodeURIComponent(serialNumber)}/flash`);
+    const response = await fetch("/api/setup/flash");
     applyFlashTaskState(await response.json());
   }
 
   async function refreshDiscoveryTaskState() {
-    const response = await fetch(
-      `/api/setup/${encodeURIComponent(serialNumber)}/network-discovery`
-    );
+    const response = await fetch("/api/setup/network-discovery");
     applyDiscoveryTaskState(await response.json());
   }
 
+  async function refreshMacAddressTaskState() {
+    const response = await fetch("/api/setup/mac-address");
+    applyMacAddressTaskState(await response.json());
+  }
+
   async function refreshSelfTestTaskState() {
-    const response = await fetch(
-      `/api/setup/${encodeURIComponent(serialNumber)}/interactive-self-test`
-    );
+    const response = await fetch("/api/setup/interactive-self-test");
     applySelfTestTaskState(await response.json());
   }
 
   async function startFlashTask() {
     bootloaderCheckbox.checked = true;
     bootloaderCheckbox.disabled = true;
-    const response = await fetch(`/api/setup/${encodeURIComponent(serialNumber)}/flash`, {
+    const response = await fetch("/api/setup/flash", {
       method: "POST",
     });
     applyFlashTaskState(await response.json());
@@ -222,38 +267,42 @@
   async function startDiscoveryTask() {
     if (discoveryStartRequested) return;
     discoveryStartRequested = true;
-    const currentResponse = await fetch(
-      `/api/setup/${encodeURIComponent(serialNumber)}/network-discovery`
-    );
+    const currentResponse = await fetch("/api/setup/network-discovery");
     const currentState = await currentResponse.json();
     if (currentState.status === "running" || currentState.status === "success") {
       applyDiscoveryTaskState(currentState);
       return;
     }
 
-    const response = await fetch(
-      `/api/setup/${encodeURIComponent(serialNumber)}/network-discovery`,
-      { method: "POST" }
-    );
+    const response = await fetch("/api/setup/network-discovery", { method: "POST" });
     applyDiscoveryTaskState(await response.json());
+  }
+
+  async function startMacAddressTask() {
+    if (macAddressStartRequested) return;
+    macAddressStartRequested = true;
+    const currentResponse = await fetch("/api/setup/mac-address");
+    const currentState = await currentResponse.json();
+    if (currentState.status === "running" || currentState.status === "success") {
+      applyMacAddressTaskState(currentState);
+      return;
+    }
+
+    const response = await fetch("/api/setup/mac-address", { method: "POST" });
+    applyMacAddressTaskState(await response.json());
   }
 
   async function startSelfTestTask() {
     if (selfTestStartRequested) return;
     selfTestStartRequested = true;
-    const currentResponse = await fetch(
-      `/api/setup/${encodeURIComponent(serialNumber)}/interactive-self-test`
-    );
+    const currentResponse = await fetch("/api/setup/interactive-self-test");
     const currentState = await currentResponse.json();
     if (currentState.status === "running" || currentState.status === "success") {
       applySelfTestTaskState(currentState);
       return;
     }
 
-    const response = await fetch(
-      `/api/setup/${encodeURIComponent(serialNumber)}/interactive-self-test`,
-      { method: "POST" }
-    );
+    const response = await fetch("/api/setup/interactive-self-test", { method: "POST" });
     applySelfTestTaskState(await response.json());
   }
 
@@ -271,12 +320,17 @@
     discoveryDetails.hidden = !discoveryDetails.hidden;
   });
 
+  macAddressTaskIcon.addEventListener("click", () => {
+    macAddressDetails.hidden = !macAddressDetails.hidden;
+  });
+
   selfTestTaskIcon.addEventListener("click", () => {
     selfTestDetails.hidden = !selfTestDetails.hidden;
   });
 
   refreshFlashTaskState();
   refreshDiscoveryTaskState();
+  refreshMacAddressTaskState();
   refreshSelfTestTaskState();
 </script>
 {% endblock %}

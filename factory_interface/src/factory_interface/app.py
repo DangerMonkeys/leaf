@@ -6,10 +6,24 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from factory_interface.commissioning_tasks import get_flash_task, start_flash_firmware
-from factory_interface.network_discovery import get_find_device_task, start_find_device
+from factory_interface.commissioning_tasks import (
+    get_flash_task,
+    reset_flash_task,
+    start_flash_firmware,
+)
+from factory_interface.mac_address_task import (
+    get_mac_address_task,
+    reset_mac_address_task,
+    start_read_mac_address,
+)
+from factory_interface.network_discovery import (
+    get_find_device_task,
+    reset_find_device_task,
+    start_find_device,
+)
 from factory_interface.self_test_task import (
     get_self_test_task,
+    reset_self_test_task,
     start_interactive_self_test,
 )
 from factory_interface.settings import (
@@ -30,6 +44,24 @@ app.mount(
 )
 
 templates = Jinja2Templates(directory=PACKAGE_DIR / "templates")
+
+
+def reset_setup_tasks_if_complete() -> None:
+    tasks = [
+        get_flash_task(),
+        get_find_device_task(),
+        get_mac_address_task(),
+        get_self_test_task(),
+    ]
+    if any(task.status == "running" for task in tasks):
+        return
+    if all(task.status == "idle" for task in tasks):
+        return
+
+    reset_flash_task()
+    reset_find_device_task()
+    reset_mac_address_task()
+    reset_self_test_task()
 
 
 def settings_template_context(
@@ -61,55 +93,59 @@ async def home(request: Request) -> HTMLResponse:
 
 @app.get("/setup", response_class=HTMLResponse)
 async def setup_device(request: Request) -> HTMLResponse:
+    reset_setup_tasks_if_complete()
     return templates.TemplateResponse(
         request,
-        "setup_device.html",
+        "setup_checklist.html",
         {"title": "Set up new device"},
     )
 
 
-@app.get("/setup/{serial_number}", response_class=HTMLResponse)
-async def setup_device_checklist(request: Request, serial_number: str) -> HTMLResponse:
-    return templates.TemplateResponse(
-        request,
-        "setup_checklist.html",
-        {"title": f"Set up {serial_number}", "serial_number": serial_number},
-    )
-
-
-@app.post("/api/setup/{serial_number}/flash", response_class=JSONResponse)
-async def start_flash_firmware_task(serial_number: str) -> JSONResponse:
-    task = start_flash_firmware(serial_number)
+@app.post("/api/setup/flash", response_class=JSONResponse)
+async def start_flash_firmware_task() -> JSONResponse:
+    task = start_flash_firmware()
     return JSONResponse(task.snapshot())
 
 
-@app.get("/api/setup/{serial_number}/flash", response_class=JSONResponse)
-async def get_flash_firmware_task(serial_number: str) -> JSONResponse:
-    task = get_flash_task(serial_number)
+@app.get("/api/setup/flash", response_class=JSONResponse)
+async def get_flash_firmware_task() -> JSONResponse:
+    task = get_flash_task()
     return JSONResponse(task.snapshot())
 
 
-@app.post("/api/setup/{serial_number}/network-discovery", response_class=JSONResponse)
-async def start_network_discovery_task(serial_number: str) -> JSONResponse:
-    task = start_find_device(serial_number)
+@app.post("/api/setup/network-discovery", response_class=JSONResponse)
+async def start_network_discovery_task() -> JSONResponse:
+    task = start_find_device()
     return JSONResponse(task.snapshot())
 
 
-@app.get("/api/setup/{serial_number}/network-discovery", response_class=JSONResponse)
-async def get_network_discovery_task(serial_number: str) -> JSONResponse:
-    task = get_find_device_task(serial_number)
+@app.get("/api/setup/network-discovery", response_class=JSONResponse)
+async def get_network_discovery_task() -> JSONResponse:
+    task = get_find_device_task()
     return JSONResponse(task.snapshot())
 
 
-@app.post("/api/setup/{serial_number}/interactive-self-test", response_class=JSONResponse)
-async def start_interactive_self_test_task(serial_number: str) -> JSONResponse:
-    task = start_interactive_self_test(serial_number)
+@app.post("/api/setup/mac-address", response_class=JSONResponse)
+async def start_mac_address_task() -> JSONResponse:
+    task = start_read_mac_address()
     return JSONResponse(task.snapshot())
 
 
-@app.get("/api/setup/{serial_number}/interactive-self-test", response_class=JSONResponse)
-async def get_interactive_self_test_task(serial_number: str) -> JSONResponse:
-    task = get_self_test_task(serial_number)
+@app.get("/api/setup/mac-address", response_class=JSONResponse)
+async def get_mac_address_task_status() -> JSONResponse:
+    task = get_mac_address_task()
+    return JSONResponse(task.snapshot())
+
+
+@app.post("/api/setup/interactive-self-test", response_class=JSONResponse)
+async def start_interactive_self_test_task() -> JSONResponse:
+    task = start_interactive_self_test()
+    return JSONResponse(task.snapshot())
+
+
+@app.get("/api/setup/interactive-self-test", response_class=JSONResponse)
+async def get_interactive_self_test_task() -> JSONResponse:
+    task = get_self_test_task()
     return JSONResponse(task.snapshot())
 
 

@@ -83,12 +83,22 @@ class LeafDiscoveryProtocol(asyncio.DatagramProtocol):
 find_device_tasks: dict[str, FindDeviceTask] = {}
 preflash_devices: dict[str, set[str]] = {}
 preflash_monitor_tasks: dict[str, asyncio.Task] = {}
+SETUP_TASK_KEY = "setup"
 
 
-def get_find_device_task(serial_number: str) -> FindDeviceTask:
-    if serial_number not in find_device_tasks:
-        find_device_tasks[serial_number] = FindDeviceTask()
-    return find_device_tasks[serial_number]
+def get_find_device_task() -> FindDeviceTask:
+    if SETUP_TASK_KEY not in find_device_tasks:
+        find_device_tasks[SETUP_TASK_KEY] = FindDeviceTask()
+    return find_device_tasks[SETUP_TASK_KEY]
+
+
+def reset_find_device_task() -> None:
+    task = get_find_device_task()
+    task.status = "idle"
+    task.device = None
+    task.error = None
+    task.excluded_device_ids = set()
+    preflash_devices.pop(SETUP_TASK_KEY, None)
 
 
 async def probe_once() -> list[LeafDiscoveryResponse]:
@@ -112,39 +122,37 @@ async def probe_once() -> list[LeafDiscoveryResponse]:
         transport.close()
 
 
-async def collect_existing_devices(serial_number: str) -> None:
-    preflash_devices[serial_number] = set()
+async def collect_existing_devices() -> None:
+    preflash_devices[SETUP_TASK_KEY] = set()
 
     while True:
         try:
             for response in await probe_once():
-                preflash_devices[serial_number].add(response.device_id)
+                preflash_devices[SETUP_TASK_KEY].add(response.device_id)
         except OSError:
             pass
         await asyncio.sleep(PROBE_INTERVAL_SECONDS)
 
 
-def start_preflash_monitor(serial_number: str) -> None:
-    stop_preflash_monitor(serial_number)
-    preflash_monitor_tasks[serial_number] = asyncio.create_task(
-        collect_existing_devices(serial_number)
-    )
+def start_preflash_monitor() -> None:
+    stop_preflash_monitor()
+    preflash_monitor_tasks[SETUP_TASK_KEY] = asyncio.create_task(collect_existing_devices())
 
 
-def stop_preflash_monitor(serial_number: str) -> None:
-    task = preflash_monitor_tasks.pop(serial_number, None)
+def stop_preflash_monitor() -> None:
+    task = preflash_monitor_tasks.pop(SETUP_TASK_KEY, None)
     if task is not None:
         task.cancel()
 
 
-async def run_find_device(serial_number: str) -> None:
-    task = get_find_device_task(serial_number)
+async def run_find_device() -> None:
+    task = get_find_device_task()
 
     async with task.lock:
         task.status = "running"
         task.device = None
         task.error = None
-        task.excluded_device_ids = set(preflash_devices.get(serial_number, set()))
+        task.excluded_device_ids = set(preflash_devices.get(SETUP_TASK_KEY, set()))
 
         try:
             while True:
@@ -165,13 +173,13 @@ async def run_find_device(serial_number: str) -> None:
             task.error = f"{type(exc).__name__}: {exc}"
 
 
-def start_find_device(serial_number: str) -> FindDeviceTask:
-    task = get_find_device_task(serial_number)
+def start_find_device() -> FindDeviceTask:
+    task = get_find_device_task()
     if task.status == "running":
         return task
 
     task.status = "running"
     task.device = None
     task.error = None
-    asyncio.create_task(run_find_device(serial_number))
+    asyncio.create_task(run_find_device())
     return task
