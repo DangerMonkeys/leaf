@@ -33,6 +33,18 @@
       hidden
       aria-label="Flash firmware console output"
     ></textarea>
+
+    <div class="checklist-item checklist-item-with-details">
+      <button
+        class="task-icon task-icon-empty"
+        id="discovery-task-icon"
+        type="button"
+        aria-label="Toggle network discovery details"
+        disabled
+      ></button>
+      <span>Find device on network</span>
+      <p class="checklist-details" id="discovery-details" hidden></p>
+    </div>
   </div>
 </section>
 
@@ -41,24 +53,40 @@
   const bootloaderCheckbox = document.querySelector("#bootloader-mode");
   const flashTaskIcon = document.querySelector("#flash-task-icon");
   const flashConsole = document.querySelector("#flash-console");
-  let pollTimer = null;
+  const discoveryTaskIcon = document.querySelector("#discovery-task-icon");
+  const discoveryDetails = document.querySelector("#discovery-details");
+  let flashPollTimer = null;
+  let discoveryPollTimer = null;
+  let discoveryStartRequested = false;
 
-  function setFlashIcon(status) {
-    flashTaskIcon.className = "task-icon";
-    flashTaskIcon.disabled = status === "idle";
+  function setTaskIcon(icon, status) {
+    icon.className = "task-icon";
+    icon.disabled = status === "idle";
 
     if (status === "running") {
-      flashTaskIcon.classList.add("task-icon-running");
+      icon.classList.add("task-icon-running");
     } else if (status === "success") {
-      flashTaskIcon.classList.add("task-icon-success");
+      icon.classList.add("task-icon-success");
     } else if (status === "failure") {
-      flashTaskIcon.classList.add("task-icon-failure");
+      icon.classList.add("task-icon-failure");
     } else {
-      flashTaskIcon.classList.add("task-icon-empty");
+      icon.classList.add("task-icon-empty");
     }
   }
 
-  function applyTaskState(state) {
+  function setFlashIcon(status) {
+    setTaskIcon(flashTaskIcon, status);
+  }
+
+  function setDiscoveryIcon(status) {
+    setTaskIcon(discoveryTaskIcon, status);
+  }
+
+  function applyFlashTaskState(state) {
+    const previousStatus = flashTaskIcon.classList.contains("task-icon-success")
+      ? "success"
+      : null;
+
     setFlashIcon(state.status);
     flashConsole.value = state.output || "";
     flashConsole.scrollTop = flashConsole.scrollHeight;
@@ -66,30 +94,67 @@
     if (state.status === "running") {
       bootloaderCheckbox.checked = true;
       bootloaderCheckbox.disabled = true;
-      if (!pollTimer) {
-        pollTimer = setInterval(refreshTaskState, 500);
+      if (!flashPollTimer) {
+        flashPollTimer = setInterval(refreshFlashTaskState, 500);
       }
     } else if (state.status === "success") {
       bootloaderCheckbox.checked = true;
       bootloaderCheckbox.disabled = true;
-      clearInterval(pollTimer);
-      pollTimer = null;
+      clearInterval(flashPollTimer);
+      flashPollTimer = null;
+      if (previousStatus !== "success") {
+        startDiscoveryTask();
+      }
     } else if (state.status === "failure") {
       bootloaderCheckbox.checked = false;
       bootloaderCheckbox.disabled = false;
-      clearInterval(pollTimer);
-      pollTimer = null;
+      clearInterval(flashPollTimer);
+      flashPollTimer = null;
     } else {
       bootloaderCheckbox.checked = false;
       bootloaderCheckbox.disabled = false;
-      clearInterval(pollTimer);
-      pollTimer = null;
+      clearInterval(flashPollTimer);
+      flashPollTimer = null;
     }
   }
 
-  async function refreshTaskState() {
+  function applyDiscoveryTaskState(state) {
+    setDiscoveryIcon(state.status);
+
+    if (state.status === "success" && state.device) {
+      discoveryDetails.textContent = `IP address: ${state.device.ip_address}:${state.device.port}`;
+      discoveryDetails.hidden = false;
+      clearInterval(discoveryPollTimer);
+      discoveryPollTimer = null;
+    } else if (state.status === "running") {
+      discoveryDetails.textContent = "Searching for the newly flashed device...";
+      discoveryDetails.hidden = false;
+      if (!discoveryPollTimer) {
+        discoveryPollTimer = setInterval(refreshDiscoveryTaskState, 1000);
+      }
+    } else if (state.status === "failure") {
+      discoveryDetails.textContent = state.error || "Network discovery failed.";
+      discoveryDetails.hidden = false;
+      clearInterval(discoveryPollTimer);
+      discoveryPollTimer = null;
+    } else {
+      discoveryDetails.textContent = "";
+      discoveryDetails.hidden = true;
+      clearInterval(discoveryPollTimer);
+      discoveryPollTimer = null;
+    }
+  }
+
+  async function refreshFlashTaskState() {
     const response = await fetch(`/api/setup/${encodeURIComponent(serialNumber)}/flash`);
-    applyTaskState(await response.json());
+    applyFlashTaskState(await response.json());
+  }
+
+  async function refreshDiscoveryTaskState() {
+    const response = await fetch(
+      `/api/setup/${encodeURIComponent(serialNumber)}/network-discovery`
+    );
+    applyDiscoveryTaskState(await response.json());
   }
 
   async function startFlashTask() {
@@ -98,7 +163,26 @@
     const response = await fetch(`/api/setup/${encodeURIComponent(serialNumber)}/flash`, {
       method: "POST",
     });
-    applyTaskState(await response.json());
+    applyFlashTaskState(await response.json());
+  }
+
+  async function startDiscoveryTask() {
+    if (discoveryStartRequested) return;
+    discoveryStartRequested = true;
+    const currentResponse = await fetch(
+      `/api/setup/${encodeURIComponent(serialNumber)}/network-discovery`
+    );
+    const currentState = await currentResponse.json();
+    if (currentState.status === "running" || currentState.status === "success") {
+      applyDiscoveryTaskState(currentState);
+      return;
+    }
+
+    const response = await fetch(
+      `/api/setup/${encodeURIComponent(serialNumber)}/network-discovery`,
+      { method: "POST" }
+    );
+    applyDiscoveryTaskState(await response.json());
   }
 
   bootloaderCheckbox.addEventListener("change", () => {
@@ -111,6 +195,11 @@
     flashConsole.hidden = !flashConsole.hidden;
   });
 
-  refreshTaskState();
+  discoveryTaskIcon.addEventListener("click", () => {
+    discoveryDetails.hidden = !discoveryDetails.hidden;
+  });
+
+  refreshFlashTaskState();
+  refreshDiscoveryTaskState();
 </script>
 {% endblock %}
