@@ -33,7 +33,7 @@ class FlashFirmwareTask:
         }
 
 
-flash_tasks: dict[str, FlashFirmwareTask] = {}
+flash_task = FlashFirmwareTask()
 
 
 class FlashCommandError(RuntimeError):
@@ -131,10 +131,14 @@ def load_platformio_board_manifest(board_name: str) -> dict:
     return {}
 
 
-def get_flash_task(serial_number: str) -> FlashFirmwareTask:
-    if serial_number not in flash_tasks:
-        flash_tasks[serial_number] = FlashFirmwareTask()
-    return flash_tasks[serial_number]
+def get_flash_task() -> FlashFirmwareTask:
+    return flash_task
+
+
+def reset_flash_task() -> None:
+    flash_task.status = "idle"
+    flash_task.output = ""
+    flash_task.return_code = None
 
 
 def format_command(command: list[str]) -> str:
@@ -272,8 +276,8 @@ def build_flash_firmware_command() -> tuple[list[str], Path]:
     return command, firmware_path
 
 
-async def run_flash_firmware(serial_number: str) -> None:
-    task = get_flash_task(serial_number)
+async def run_flash_firmware() -> None:
+    task = get_flash_task()
 
     async with task.lock:
         task.status = "running"
@@ -281,7 +285,7 @@ async def run_flash_firmware(serial_number: str) -> None:
         task.return_code = None
 
         try:
-            start_preflash_monitor(serial_number)
+            start_preflash_monitor()
             command, firmware_path = build_flash_firmware_command()
             task.output += f"$ {format_command(command)}\n"
             process = await asyncio.create_subprocess_exec(
@@ -301,7 +305,7 @@ async def run_flash_firmware(serial_number: str) -> None:
             task.return_code = await process.wait()
             if task.return_code == 0:
                 task.status = "success"
-                start_find_device(serial_number)
+                start_find_device()
             else:
                 task.status = "failure"
         except Exception as exc:
@@ -309,16 +313,16 @@ async def run_flash_firmware(serial_number: str) -> None:
             task.return_code = -1
             task.status = "failure"
         finally:
-            stop_preflash_monitor(serial_number)
+            stop_preflash_monitor()
 
 
-def start_flash_firmware(serial_number: str) -> FlashFirmwareTask:
-    task = get_flash_task(serial_number)
+def start_flash_firmware() -> FlashFirmwareTask:
+    task = get_flash_task()
     if task.status == "running":
         return task
 
     task.status = "running"
     task.output = "Starting flash firmware task...\n"
     task.return_code = None
-    asyncio.create_task(run_flash_firmware(serial_number))
+    asyncio.create_task(run_flash_firmware())
     return task

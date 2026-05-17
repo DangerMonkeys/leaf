@@ -25,17 +25,21 @@ class SelfTestTask:
         }
 
 
-self_test_tasks: dict[str, SelfTestTask] = {}
+self_test_task = SelfTestTask()
 
 
-def get_self_test_task(serial_number: str) -> SelfTestTask:
-    if serial_number not in self_test_tasks:
-        self_test_tasks[serial_number] = SelfTestTask()
-    return self_test_tasks[serial_number]
+def get_self_test_task() -> SelfTestTask:
+    return self_test_task
 
 
-def device_self_test_url(serial_number: str) -> str:
-    discovery_task = get_find_device_task(serial_number)
+def reset_self_test_task() -> None:
+    self_test_task.status = "idle"
+    self_test_task.details = ""
+    self_test_task.result = None
+
+
+def device_self_test_url() -> str:
+    discovery_task = get_find_device_task()
     if discovery_task.status != "success" or discovery_task.device is None:
         raise RuntimeError("Device has not been discovered on the network.")
 
@@ -61,8 +65,8 @@ def status_result(payload: dict) -> str | None:
     return None
 
 
-async def run_interactive_self_test(serial_number: str) -> None:
-    task = get_self_test_task(serial_number)
+async def run_interactive_self_test() -> None:
+    task = get_self_test_task()
 
     async with task.lock:
         task.status = "running"
@@ -70,7 +74,7 @@ async def run_interactive_self_test(serial_number: str) -> None:
         task.result = None
 
         try:
-            base_url = device_self_test_url(serial_number)
+            base_url = device_self_test_url()
             await asyncio.to_thread(fetch_json, f"{base_url}/interactive", method="POST")
 
             while True:
@@ -94,13 +98,13 @@ async def run_interactive_self_test(serial_number: str) -> None:
             task.details = f"{type(exc).__name__}: {exc}"
 
 
-def start_interactive_self_test(serial_number: str) -> SelfTestTask:
-    task = get_self_test_task(serial_number)
+def start_interactive_self_test() -> SelfTestTask:
+    task = get_self_test_task()
     if task.status == "running":
         return task
 
     task.status = "running"
     task.details = "Starting interactive self test..."
     task.result = None
-    asyncio.create_task(run_interactive_self_test(serial_number))
+    asyncio.create_task(run_interactive_self_test())
     return task
