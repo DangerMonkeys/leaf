@@ -45,6 +45,18 @@
       <span>Find device on network</span>
       <p class="checklist-details" id="discovery-details" hidden></p>
     </div>
+
+    <div class="checklist-item checklist-item-with-details">
+      <button
+        class="task-icon task-icon-empty"
+        id="self-test-task-icon"
+        type="button"
+        aria-label="Toggle interactive test details"
+        disabled
+      ></button>
+      <span>Interactive test</span>
+      <pre class="checklist-details checklist-details-pre" id="self-test-details" hidden></pre>
+    </div>
   </div>
 </section>
 
@@ -55,9 +67,13 @@
   const flashConsole = document.querySelector("#flash-console");
   const discoveryTaskIcon = document.querySelector("#discovery-task-icon");
   const discoveryDetails = document.querySelector("#discovery-details");
+  const selfTestTaskIcon = document.querySelector("#self-test-task-icon");
+  const selfTestDetails = document.querySelector("#self-test-details");
   let flashPollTimer = null;
   let discoveryPollTimer = null;
+  let selfTestPollTimer = null;
   let discoveryStartRequested = false;
+  let selfTestStartRequested = false;
 
   function setTaskIcon(icon, status) {
     icon.className = "task-icon";
@@ -80,6 +96,10 @@
 
   function setDiscoveryIcon(status) {
     setTaskIcon(discoveryTaskIcon, status);
+  }
+
+  function setSelfTestIcon(status) {
+    setTaskIcon(selfTestTaskIcon, status);
   }
 
   function applyFlashTaskState(state) {
@@ -126,6 +146,7 @@
       discoveryDetails.hidden = false;
       clearInterval(discoveryPollTimer);
       discoveryPollTimer = null;
+      startSelfTestTask();
     } else if (state.status === "running") {
       discoveryDetails.textContent = "Searching for the newly flashed device...";
       discoveryDetails.hidden = false;
@@ -145,6 +166,31 @@
     }
   }
 
+  function applySelfTestTaskState(state) {
+    setSelfTestIcon(state.status);
+
+    if (state.status === "success") {
+      selfTestDetails.textContent = state.details || "Interactive self test passed.";
+      clearInterval(selfTestPollTimer);
+      selfTestPollTimer = null;
+    } else if (state.status === "running") {
+      selfTestDetails.textContent = state.details || "Interactive self test is running...";
+      if (!selfTestPollTimer) {
+        selfTestPollTimer = setInterval(refreshSelfTestTaskState, 1000);
+      }
+    } else if (state.status === "failure") {
+      selfTestDetails.textContent = state.details || "Interactive self test failed.";
+      selfTestDetails.hidden = false;
+      clearInterval(selfTestPollTimer);
+      selfTestPollTimer = null;
+    } else {
+      selfTestDetails.textContent = "";
+      selfTestDetails.hidden = true;
+      clearInterval(selfTestPollTimer);
+      selfTestPollTimer = null;
+    }
+  }
+
   async function refreshFlashTaskState() {
     const response = await fetch(`/api/setup/${encodeURIComponent(serialNumber)}/flash`);
     applyFlashTaskState(await response.json());
@@ -155,6 +201,13 @@
       `/api/setup/${encodeURIComponent(serialNumber)}/network-discovery`
     );
     applyDiscoveryTaskState(await response.json());
+  }
+
+  async function refreshSelfTestTaskState() {
+    const response = await fetch(
+      `/api/setup/${encodeURIComponent(serialNumber)}/interactive-self-test`
+    );
+    applySelfTestTaskState(await response.json());
   }
 
   async function startFlashTask() {
@@ -185,6 +238,25 @@
     applyDiscoveryTaskState(await response.json());
   }
 
+  async function startSelfTestTask() {
+    if (selfTestStartRequested) return;
+    selfTestStartRequested = true;
+    const currentResponse = await fetch(
+      `/api/setup/${encodeURIComponent(serialNumber)}/interactive-self-test`
+    );
+    const currentState = await currentResponse.json();
+    if (currentState.status === "running" || currentState.status === "success") {
+      applySelfTestTaskState(currentState);
+      return;
+    }
+
+    const response = await fetch(
+      `/api/setup/${encodeURIComponent(serialNumber)}/interactive-self-test`,
+      { method: "POST" }
+    );
+    applySelfTestTaskState(await response.json());
+  }
+
   bootloaderCheckbox.addEventListener("change", () => {
     if (bootloaderCheckbox.checked) {
       startFlashTask();
@@ -199,7 +271,12 @@
     discoveryDetails.hidden = !discoveryDetails.hidden;
   });
 
+  selfTestTaskIcon.addEventListener("click", () => {
+    selfTestDetails.hidden = !selfTestDetails.hidden;
+  });
+
   refreshFlashTaskState();
   refreshDiscoveryTaskState();
+  refreshSelfTestTaskState();
 </script>
 {% endblock %}

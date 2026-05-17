@@ -3,6 +3,7 @@
 #include <WiFi.h>
 #include "comms/fanet_radio.h"
 #include "diagnostics/memory_report.h"
+#include "diagnostics/self_test/selfTest.h"
 #include "etl/string_stream.h"
 #include "storage/sd_card.h"
 #include "ui/display/display.h"
@@ -12,6 +13,71 @@ namespace {
   ::WebServer server;
   String send_buffer = "";
   bool webserver_started = false;
+
+  enum class SelfTestMode { None, Interactive };
+
+  SelfTestMode last_self_test_mode = SelfTestMode::None;
+
+  const char* selfTestModeName(SelfTestMode mode) {
+    switch (mode) {
+      case SelfTestMode::Interactive:
+        return "interactive";
+      case SelfTestMode::None:
+      default:
+        return "none";
+    }
+  }
+
+  const char* selfTestStatusName(SelfTest::Status status) {
+    switch (status) {
+      case SelfTest::Status::Pass:
+        return "pass";
+      case SelfTest::Status::Fail:
+        return "fail";
+      case SelfTest::Status::Running:
+        return "running";
+      case SelfTest::Status::Complete:
+        return "complete";
+      case SelfTest::Status::Unknown:
+      default:
+        return "unknown";
+    }
+  }
+
+  void appendSelfTestResult(String& json, const char* name, SelfTest::Status status,
+                            bool trailingComma = true) {
+    json += "\"";
+    json += name;
+    json += "\":\"";
+    json += selfTestStatusName(status);
+    json += "\"";
+    if (trailingComma) json += ",";
+  }
+
+  String selfTestSnapshotJson() {
+    const bool running = selfTest.updateNeeded();
+    String json = "{";
+    json += "\"running\":";
+    json += running ? "true" : "false";
+    json += ",\"mode\":\"";
+    json += selfTestModeName(last_self_test_mode);
+    json += "\",\"status\":\"";
+    json += running ? "running" : selfTestStatusName(selfTest.results.allTests);
+    json += "\",\"results\":{";
+    appendSelfTestResult(json, "sd_card", selfTest.results.sdCard);
+    appendSelfTestResult(json, "baro", selfTest.results.baro);
+    appendSelfTestResult(json, "imu", selfTest.results.imu);
+    appendSelfTestResult(json, "gps", selfTest.results.gps);
+    appendSelfTestResult(json, "ambient", selfTest.results.ambient);
+    appendSelfTestResult(json, "display", selfTest.results.display);
+    appendSelfTestResult(json, "buttons", selfTest.results.buttons);
+    appendSelfTestResult(json, "power", selfTest.results.power);
+    appendSelfTestResult(json, "speaker", selfTest.results.speaker);
+    appendSelfTestResult(json, "vario", selfTest.results.vario);
+    appendSelfTestResult(json, "all_tests", selfTest.results.allTests, false);
+    json += "}}";
+    return json;
+  }
 }  // namespace
 
 constexpr auto endl = "\n";
@@ -41,6 +107,7 @@ void webserver_setup() {
           <ul>
             <li><a href="/screenshot" target="_blank">Download Screenshot</a></li>
             <li><a href="/mass_storage" target="_blank">Start Mass Storage</a></li>
+            <li><a href="#" onclick="fetch('/self-test/interactive', {method: 'POST'}); return false;">Start Interactive Self Test</a></li>
             <li><a href="/fanet" target="_blank">FANet Message Stats</a></li>
             <li><a href="/memory" target="_blank">Memory Usage Stats</a></li>
           </ul>
@@ -176,6 +243,16 @@ void webserver_setup() {
   });
 
   server.on("/memory", HTTP_GET, []() { server.send(200, "text/plain", getMemoryUsage()); });
+
+  server.on("/self-test/interactive", HTTP_POST, []() {
+    last_self_test_mode = SelfTestMode::Interactive;
+    selfTest.begin(false);
+    server.send(200, "application/json", selfTestSnapshotJson());
+  });
+
+  server.on("/self-test", HTTP_GET, []() {
+    server.send(200, "application/json", selfTestSnapshotJson());
+  });
 
   // Give it a chance to settle so the startup message has a valid IP address.
   delay(250);

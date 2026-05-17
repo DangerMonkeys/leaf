@@ -222,6 +222,11 @@ button:focus-visible {
   overflow-wrap: anywhere;
 }
 
+.checklist-details-pre {
+  white-space: pre-wrap;
+  font-family: Consolas, "Courier New", monospace;
+}
+
 .bootloader-check {
   display: grid;
   grid-column: 1 / -1;
