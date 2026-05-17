@@ -77,8 +77,10 @@ String Settings::getMacAddress() {
 }
 
 void Settings::factoryResetVario() {
+  leafPrefs.begin("varioPrefs", RW_MODE);
   leafPrefs.remove(
       "nvsInitVario");  // remove this key so that we force a factory settings reload on next reboot
+  leafPrefs.end();
 }
 
 void Settings::loadDefaults() {
