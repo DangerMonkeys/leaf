@@ -72,19 +72,20 @@ class SelfTest_PageSpeaker : public SimpleSettingsMenuPage {
 // GPS Fix Self-Test Page
 class SelfTest_PageGPSFix : public SimpleSettingsMenuPage {
  public:
-  SelfTest_PageGPSFix(uint32_t* remainingSeconds) : remainingSeconds_(remainingSeconds) {}
+  SelfTest_PageGPSFix(uint32_t* remainingSeconds, bool* cancelled)
+      : remainingSeconds_(remainingSeconds), cancelled_(cancelled) {}
   const char* get_title() const override { return "GPS Fix Test"; }
 
-  bool button_event(Button button, ButtonEvent state, uint8_t count) override {
-    // Ignore button events on this page
-    return false;
-  }
   void show();
   void draw_extra() override;
   void close() { pop_page(); }
 
+ protected:
+  void closed(bool removed_from_Stack) override;
+
  private:
   uint32_t* remainingSeconds_;
+  bool* cancelled_;
 };
 
 // Results Self-Test Page

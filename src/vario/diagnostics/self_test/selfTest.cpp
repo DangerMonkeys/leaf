@@ -35,7 +35,8 @@ uint32_t gpsFixInitialSentencesWithFixCount = 0;
 uint32_t gpsFixStartMillis = 0;
 uint32_t gpsFixRemainingSeconds = GPS_FIX_TEST_TIMEOUT_MS / 1000;
 uint32_t gpsFixLastDisplayUpdateMillis = 0;
-SelfTest_PageGPSFix selfTest_pageGPSFix{&gpsFixRemainingSeconds};
+bool gpsFixTestCancelled = false;
+SelfTest_PageGPSFix selfTest_pageGPSFix{&gpsFixRemainingSeconds, &gpsFixTestCancelled};
 
 bool useSDFile() {
   if (self_test_file) {
@@ -222,6 +223,7 @@ SelfTest::Status SelfTest::testGPSfix() {
 
   if (!gpsFixTestInitialized) {
     gpsFixTestInitialized = true;
+    gpsFixTestCancelled = false;
     gpsFixInitialSentencesWithFixCount = gps.sentencesWithFix();
     gpsFixStartMillis = millisNow;
     gpsFixLastDisplayUpdateMillis = 0;
@@ -229,6 +231,12 @@ SelfTest::Status SelfTest::testGPSfix() {
     selfTestInfo("* SELF TEST * GPS FIX * INFO - Waiting for GPS fix");
     selfTest_pageGPSFix.show();
     display.update();
+  }
+
+  if (gpsFixTestCancelled) {
+    gpsFixTestInitialized = false;
+    selfTestInfo("* SELF TEST * GPS FIX * FAIL - Cancelled by user");
+    return Status::Fail;
   }
 
   if (gps.sentencesWithFix() > gpsFixInitialSentencesWithFixCount) {
@@ -618,9 +626,6 @@ SelfTest::Status SelfTest::runAutoTests(bool closeFileWhenDone) {
     selfTest.results.imu = testIMU();
   } else if (selfTest.results.gps == Status::Unknown || selfTest.results.gps == Status::Running) {
     selfTest.results.gps = testGPS();
-  } else if (selfTest.results.gpsFix == Status::Unknown ||
-             selfTest.results.gpsFix == Status::Running) {
-    selfTest.results.gpsFix = testGPSfix();
   } else if (selfTest.results.ambient == Status::Unknown ||
              selfTest.results.ambient == Status::Running) {
     selfTest.results.ambient = testAmbient();
@@ -649,12 +654,16 @@ SelfTest::Status SelfTest::runInteractiveTests(bool closeFileWhenDone) {
   } else if (buttonsTest.status == SelfTest::Status::Unknown ||
              buttonsTest.status == SelfTest::Status::Running) {
     selfTest.results.buttons = buttonsTest.update();
+  } else if (selfTest.results.speaker == SelfTest::Status::Unknown ||
+             selfTest.results.speaker == SelfTest::Status::Running) {
+    selfTest.results.speaker =
+        testSpeaker();  // (speaker test is blocking and only requires one call)
+  } else if (selfTest.results.gpsFix == SelfTest::Status::Unknown ||
+             selfTest.results.gpsFix == SelfTest::Status::Running) {
+    selfTest.results.gpsFix = testGPSfix();
   }
   // else if (other tests requiring multiple frames go here)
   else {
-    // any other interactive tests that only require one frame
-    selfTest.results.speaker =
-        testSpeaker();  // (speaker test is blocking and only requires one call)
     selfTestInfo("* SELF TEST * Interactive tests complete");
     statusInteractiveTests = Status::Complete;  // interactive tests complete
     if (closeFileWhenDone && self_test_file) {
@@ -676,5 +685,6 @@ void SelfTest::clearResults() {
   varioTest.status = Status::Unknown;
   gpsSerialTestInitialized = false;
   gpsFixTestInitialized = false;
+  gpsFixTestCancelled = false;
   // speaker test is called regardless so no need to reset
 }

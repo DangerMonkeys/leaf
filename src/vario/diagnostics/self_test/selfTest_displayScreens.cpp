@@ -120,6 +120,10 @@ void SelfTest_PageSpeaker::draw_extra() {
 // GPS Fix Self-Test Page
 void SelfTest_PageGPSFix::show() { push_page(this); }
 
+void SelfTest_PageGPSFix::closed(bool removed_from_Stack) {
+  if (removed_from_Stack) *cancelled_ = true;
+}
+
 void SelfTest_PageGPSFix::draw_extra() {
   const uint32_t remainingSeconds = *remainingSeconds_;
   const uint16_t remainingMinutes = remainingSeconds / 60;
