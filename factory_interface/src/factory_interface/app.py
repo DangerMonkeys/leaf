@@ -21,6 +21,11 @@ from factory_interface.network_discovery import (
     reset_find_device_task,
     start_find_device,
 )
+from factory_interface.nonvolatile_memory_task import (
+    get_reset_nonvolatile_memory_task,
+    reset_reset_nonvolatile_memory_task,
+    start_reset_nonvolatile_memory,
+)
 from factory_interface.self_test_task import (
     get_self_test_task,
     reset_self_test_task,
@@ -50,6 +55,7 @@ def reset_setup_tasks_if_complete() -> None:
     tasks = [
         get_flash_task(),
         get_find_device_task(),
+        get_reset_nonvolatile_memory_task(),
         get_mac_address_task(),
         get_self_test_task(),
     ]
@@ -60,6 +66,7 @@ def reset_setup_tasks_if_complete() -> None:
 
     reset_flash_task()
     reset_find_device_task()
+    reset_reset_nonvolatile_memory_task()
     reset_mac_address_task()
     reset_self_test_task()
 
@@ -122,6 +129,18 @@ async def start_network_discovery_task() -> JSONResponse:
 @app.get("/api/setup/network-discovery", response_class=JSONResponse)
 async def get_network_discovery_task() -> JSONResponse:
     task = get_find_device_task()
+    return JSONResponse(task.snapshot())
+
+
+@app.post("/api/setup/reset-nonvolatile-memory", response_class=JSONResponse)
+async def start_reset_nonvolatile_memory_task() -> JSONResponse:
+    task = start_reset_nonvolatile_memory()
+    return JSONResponse(task.snapshot())
+
+
+@app.get("/api/setup/reset-nonvolatile-memory", response_class=JSONResponse)
+async def get_reset_nonvolatile_memory_task_status() -> JSONResponse:
+    task = get_reset_nonvolatile_memory_task()
     return JSONResponse(task.snapshot())
 
 

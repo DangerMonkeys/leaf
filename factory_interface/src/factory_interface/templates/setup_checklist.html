@@ -48,6 +48,30 @@
     <div class="checklist-item checklist-item-with-details">
       <button
         class="task-icon task-icon-empty"
+        id="reset-nonvolatile-task-icon"
+        type="button"
+        aria-label="Toggle nonvolatile memory reset details"
+        disabled
+      ></button>
+      <span>Reset nonvolatile memory</span>
+      <p class="checklist-details" id="reset-nonvolatile-details" hidden></p>
+    </div>
+
+    <div class="checklist-item checklist-item-with-details">
+      <button
+        class="task-icon task-icon-empty"
+        id="reconnect-task-icon"
+        type="button"
+        aria-label="Toggle device reconnect details"
+        disabled
+      ></button>
+      <span>Wait for device to reconnect</span>
+      <p class="checklist-details" id="reconnect-details" hidden></p>
+    </div>
+
+    <div class="checklist-item checklist-item-with-details">
+      <button
+        class="task-icon task-icon-empty"
         id="mac-address-task-icon"
         type="button"
         aria-label="Toggle MAC address details"
@@ -77,15 +101,21 @@
   const flashConsole = document.querySelector("#flash-console");
   const discoveryTaskIcon = document.querySelector("#discovery-task-icon");
   const discoveryDetails = document.querySelector("#discovery-details");
+  const resetNonvolatileTaskIcon = document.querySelector("#reset-nonvolatile-task-icon");
+  const resetNonvolatileDetails = document.querySelector("#reset-nonvolatile-details");
+  const reconnectTaskIcon = document.querySelector("#reconnect-task-icon");
+  const reconnectDetails = document.querySelector("#reconnect-details");
   const macAddressTaskIcon = document.querySelector("#mac-address-task-icon");
   const macAddressDetails = document.querySelector("#mac-address-details");
   const selfTestTaskIcon = document.querySelector("#self-test-task-icon");
   const selfTestDetails = document.querySelector("#self-test-details");
   let flashPollTimer = null;
   let discoveryPollTimer = null;
+  let resetNonvolatilePollTimer = null;
   let macAddressPollTimer = null;
   let selfTestPollTimer = null;
   let discoveryStartRequested = false;
+  let resetNonvolatileStartRequested = false;
   let macAddressStartRequested = false;
   let selfTestStartRequested = false;
 
@@ -114,6 +144,14 @@
 
   function setSelfTestIcon(status) {
     setTaskIcon(selfTestTaskIcon, status);
+  }
+
+  function setResetNonvolatileIcon(status) {
+    setTaskIcon(resetNonvolatileTaskIcon, status);
+  }
+
+  function setReconnectIcon(status) {
+    setTaskIcon(reconnectTaskIcon, status);
   }
 
   function setMacAddressIcon(status) {
@@ -164,7 +202,7 @@
       discoveryDetails.hidden = false;
       clearInterval(discoveryPollTimer);
       discoveryPollTimer = null;
-      startMacAddressTask();
+      startResetNonvolatileTask();
     } else if (state.status === "running") {
       discoveryDetails.textContent = "Searching for the newly flashed device...";
       discoveryDetails.hidden = false;
@@ -181,6 +219,46 @@
       discoveryDetails.hidden = true;
       clearInterval(discoveryPollTimer);
       discoveryPollTimer = null;
+    }
+  }
+
+  function applyResetNonvolatileTaskState(state) {
+    const resetStatus = state.reset_status || state.status;
+    const reconnectStatus = state.reconnect_status || "idle";
+    setResetNonvolatileIcon(resetStatus);
+    setReconnectIcon(reconnectStatus);
+
+    if (state.status === "success") {
+      resetNonvolatileDetails.textContent =
+        state.reset_details || "Nonvolatile memory reset command accepted.";
+      reconnectDetails.textContent = state.reconnect_details || "Device reconnected.";
+      clearInterval(resetNonvolatilePollTimer);
+      resetNonvolatilePollTimer = null;
+      startMacAddressTask();
+    } else if (state.status === "running") {
+      resetNonvolatileDetails.textContent =
+        state.reset_details || "Resetting nonvolatile memory...";
+      reconnectDetails.textContent = state.reconnect_details || "Waiting for device to reconnect...";
+      resetNonvolatileDetails.hidden = resetStatus === "idle";
+      reconnectDetails.hidden = reconnectStatus === "idle";
+      if (!resetNonvolatilePollTimer) {
+        resetNonvolatilePollTimer = setInterval(refreshResetNonvolatileTaskState, 1000);
+      }
+    } else if (state.status === "failure") {
+      resetNonvolatileDetails.textContent =
+        state.reset_details || "Nonvolatile memory reset failed.";
+      reconnectDetails.textContent = state.reconnect_details || "Device did not reconnect.";
+      resetNonvolatileDetails.hidden = resetStatus === "idle";
+      reconnectDetails.hidden = reconnectStatus === "idle";
+      clearInterval(resetNonvolatilePollTimer);
+      resetNonvolatilePollTimer = null;
+    } else {
+      resetNonvolatileDetails.textContent = "";
+      resetNonvolatileDetails.hidden = true;
+      reconnectDetails.textContent = "";
+      reconnectDetails.hidden = true;
+      clearInterval(resetNonvolatilePollTimer);
+      resetNonvolatilePollTimer = null;
     }
   }
 
@@ -250,6 +328,11 @@
     applyMacAddressTaskState(await response.json());
   }
 
+  async function refreshResetNonvolatileTaskState() {
+    const response = await fetch("/api/setup/reset-nonvolatile-memory");
+    applyResetNonvolatileTaskState(await response.json());
+  }
+
   async function refreshSelfTestTaskState() {
     const response = await fetch("/api/setup/interactive-self-test");
     applySelfTestTaskState(await response.json());
@@ -276,6 +359,20 @@
 
     const response = await fetch("/api/setup/network-discovery", { method: "POST" });
     applyDiscoveryTaskState(await response.json());
+  }
+
+  async function startResetNonvolatileTask() {
+    if (resetNonvolatileStartRequested) return;
+    resetNonvolatileStartRequested = true;
+    const currentResponse = await fetch("/api/setup/reset-nonvolatile-memory");
+    const currentState = await currentResponse.json();
+    if (currentState.status === "running" || currentState.status === "success") {
+      applyResetNonvolatileTaskState(currentState);
+      return;
+    }
+
+    const response = await fetch("/api/setup/reset-nonvolatile-memory", { method: "POST" });
+    applyResetNonvolatileTaskState(await response.json());
   }
 
   async function startMacAddressTask() {
@@ -320,6 +417,14 @@
     discoveryDetails.hidden = !discoveryDetails.hidden;
   });
 
+  resetNonvolatileTaskIcon.addEventListener("click", () => {
+    resetNonvolatileDetails.hidden = !resetNonvolatileDetails.hidden;
+  });
+
+  reconnectTaskIcon.addEventListener("click", () => {
+    reconnectDetails.hidden = !reconnectDetails.hidden;
+  });
+
   macAddressTaskIcon.addEventListener("click", () => {
     macAddressDetails.hidden = !macAddressDetails.hidden;
   });
@@ -330,6 +435,7 @@
 
   refreshFlashTaskState();
   refreshDiscoveryTaskState();
+  refreshResetNonvolatileTaskState();
   refreshMacAddressTaskState();
   refreshSelfTestTaskState();
 </script>
