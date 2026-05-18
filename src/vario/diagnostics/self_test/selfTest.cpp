@@ -20,6 +20,7 @@
 SelfTest selfTest;
 ButtonsInteractiveTest buttonsTest;
 VarioInteractiveTest varioTest;
+SpeakerInteractiveTest speakerTest;
 
 constexpr size_t BUFFER_SIZE = 512;
 constexpr uint32_t GPS_SERIAL_TEST_TIMEOUT_MS = 5000;
@@ -180,8 +181,8 @@ SelfTest::Status SelfTest::testAmbient() {
 // GPS TEST
 SelfTest::Status SelfTest::testGPS() {
   Status result = Status::Running;
-  if (!gps.fixInfo.numberOfSats) {
-    result = testGPSserial();
+  if (!gps.fixInfo.numberOfSats) {  // Pass if we see >0 satellites...
+    result = testGPSserial();  // ...otherwise proceed to check serial communication with module
   } else {
     result = Status::Pass;
     selfTestInfo("* SELF TEST *   GPS   * PASS - GPS sees %d satellites", gps.fixInfo.numberOfSats);
@@ -321,7 +322,7 @@ SelfTest::Status SelfTest::testPower() {
 ///////////////////////////////////////////////
 // Button Test (Interactive)
 SelfTest::Status ButtonsInteractiveTest::update() {
-  if (status != SelfTest::Status::Running) {
+  if (status != SelfTest::Status::Running && !waitingForSpeaker) {
     status = SelfTest::Status::Running;
     // reset tracking variables
     upPressed = false;
@@ -329,10 +330,13 @@ SelfTest::Status ButtonsInteractiveTest::update() {
     leftPressed = false;
     rightPressed = false;
     centerPressed = false;
+    waitingForSpeaker = false;
     waitForInput = 800;  // reset timeout (10ms ticks)
     Serial.println("* SELF TEST * BUTTONS * Starting button test - please press each button");
     selfTest_pageButtons.show();  // show display page for button test
     display.update();
+    // turn off vario volume
+    speaker.setVolume(Speaker::SoundChannel::Vario, (SpeakerVolume)0);
   }
 
   Button button = buttons.inspectPins();
@@ -381,21 +385,22 @@ SelfTest::Status ButtonsInteractiveTest::update() {
   }
 
   // Test passes if all buttons have been pressed
-  if (upPressed && downPressed && leftPressed && rightPressed && centerPressed) {
+  if (upPressed && downPressed && leftPressed && rightPressed && centerPressed &&
+      buttonsTest.status == SelfTest::Status::Running) {
     buttonsTest.status = SelfTest::Status::Pass;
     speaker.playSound(fx::confirm);
     selfTestInfo("* SELF TEST * BUTTONS * PASS - All buttons detected");
-    // delay(750);  // pause to let user see success on display screen
   }
 
-  // handle test results if test is complete
+  // close if test is complete
   if (buttonsTest.status != SelfTest::Status::Running) {
-    Serial.println("* SELF TEST * BUTTONS * Test complete");
-    // finish playing result sound before closing
-    while (speaker.update()) {
-      delay(10);  // delay to let sound finish playing
+    if (speaker.update()) {
+      waitingForSpeaker = true;
+      return SelfTest::Status::Running;  // delay to let sound finish playing
+    } else {
+      waitingForSpeaker = false;
+      selfTest_pageButtons.close();  // close button test display page
     }
-    selfTest_pageButtons.close();  // close button test display page
   }
 
   return status;
@@ -475,73 +480,73 @@ SelfTest::Status VarioInteractiveTest::update() {
 
 ///////////////////////////////////////////////
 // Speaker Test (Interactive)
-SelfTest_PageSpeaker selfTest_pageSpeaker;
-
-SelfTest::Status SelfTest::testSpeaker() {
-  // pause briefly to separate previous sounds from the test tones
-  delay(500);
-
-  Status result = Status::Running;
-  selfTest_pageSpeaker.show();
-  display.update();
-
-  speaker.setVolume(Speaker::SoundChannel::FX, SpeakerVolume::Low);
-  speaker.playSound(fx::neutralLong);
-  while (speaker.update()) {
-    delay(10);  // delay to let sound finish playing
+SelfTest::Status SpeakerInteractiveTest::update() {
+  // initialize the test
+  if (status != SelfTest::Status::Running) {
+    status = SelfTest::Status::Running;
+    speakerTestCounter = 0;
+    selfTest_pageSpeaker.show();  // show display page for speaker test
+    display.update();
+    // turn off vario volume to avoid interference with speaker test tones
+    speaker.setVolume(Speaker::SoundChannel::Vario, (SpeakerVolume)0);
   }
-  delay(100);
-  speaker.setVolume(Speaker::SoundChannel::FX, SpeakerVolume::Medium);
-  speaker.playSound(fx::neutralLong);
-  while (speaker.update()) {
-    delay(10);  // delay to let sound finish playing
-  }
-  delay(100);
-  speaker.setVolume(Speaker::SoundChannel::FX, SpeakerVolume::High);
-  speaker.playSound(fx::neutralLong);
-  while (speaker.update()) {
-    delay(10);  // delay to let sound finish playing
-  }
-  delay(100);
-  speaker.setVolume(Speaker::SoundChannel::FX, SpeakerVolume::Off);
-  speaker.playSound(fx::quadRise);
-  while (speaker.update()) {
-    delay(10);  // delay to let sound finish playing
-  }
-  // return volume to user setting and cancel any sounds playing
-  speaker.setVolume(Speaker::SoundChannel::FX, (SpeakerVolume)settings.system_volume);
-  speaker.playSound(fx::silence);
 
-  int waitForInput = 5000;  // wait up to 5 seconds for user input
-  Button button = Button::NONE;
-  Serial.println(
-      "* SELF TEST * SPEAKER * Hear long beeps at low, med, high volume AND not 4-beeps?");
-  Serial.println("* SELF TEST * SPEAKER * YES = UP or RIGHT button, NO = DOWN or LEFT button");
-  while (waitForInput-- > 0) {
+  speakerTestCounter++;
+
+  // wait ~3 seconds before starting the test to give user time to read instructions
+  if (speakerTestCounter < 300) {
+    return status;
+  }
+
+  // Play Test Sounds for user to confirm volume levels function properly
+  if (speakerTestCounter == 300) {
+    speaker.setVolume(Speaker::SoundChannel::FX, SpeakerVolume::Low);
+    speaker.playSound(fx::neutralLong);
+  } else if (speakerTestCounter == 450) {
+    speaker.setVolume(Speaker::SoundChannel::FX, SpeakerVolume::Medium);
+    speaker.playSound(fx::neutralLong);
+  } else if (speakerTestCounter == 600) {
+    speaker.setVolume(Speaker::SoundChannel::FX, SpeakerVolume::High);
+    speaker.playSound(fx::neutralLong);
+  }
+
+  if (speakerTestCounter == 750) {
+    speaker.setVolume(Speaker::SoundChannel::FX, SpeakerVolume::Off);
+    speaker.playSound(fx::quadRise);
+    Serial.println(
+        "* SELF TEST * SPEAKER * Hear long beeps at low, med, high volume AND NOT 4-beeps?");
+    Serial.println("* SELF TEST * SPEAKER * YES = UP button, NO = DOWN button");
+  }
+
+  if (speakerTestCounter > 750 && status == SelfTest::Status::Running) {
+    // check for user input
+    Button button = Button::NONE;
     button = buttons.inspectPins();
-    if (button == Button::UP || button == Button::RIGHT) {
-      result = Status::Pass;
+    if (button == Button::UP) {
+      status = SelfTest::Status::Pass;
       selfTestInfo("* SELF TEST * SPEAKER * PASS - via user input");
-      break;
-    } else if (button == Button::DOWN || button == Button::LEFT) {
-      result = Status::Fail;
+    } else if (button == Button::DOWN) {
+      status = SelfTest::Status::Fail;
       selfTestInfo("* SELF TEST * SPEAKER * FAIL - via user input");
-      break;
     }
-    delay(1);
   }
-  if (waitForInput <= 0) {
-    result = Status::Fail;
+
+  if (speakerTestCounter >= 750 + 800) {
+    status = SelfTest::Status::Fail;
     selfTestInfo("* SELF TEST * SPEAKER * FAIL - Timeout waiting for user input");
   }
-  // wait for button to be released before proceeding (to avoid accidentally triggering other tests
-  // or menu selections upon exit)
-  while (buttons.inspectPins() != Button::NONE) {
-    delay(10);
+
+  if (status != SelfTest::Status::Running) {
+    Serial.println("* SELF TEST * SPEAKER * Test complete");
+
+    // return volume to user setting and cancel any sounds playing
+    speaker.setVolume(Speaker::SoundChannel::Vario, (SpeakerVolume)settings.vario_volume);
+    speaker.setVolume(Speaker::SoundChannel::FX, (SpeakerVolume)settings.system_volume);
+    speaker.playSound(fx::silence);
+
+    selfTest_pageSpeaker.close();  // close speaker test display page
   }
-  selfTest_pageSpeaker.close();
-  display.update();
-  return result;
+  return status;
 }
 
 ////////////////////////////////////////////////
@@ -654,16 +659,15 @@ SelfTest::Status SelfTest::runAutoTests(bool closeFileWhenDone) {
 SelfTest::Status SelfTest::runInteractiveTests(bool closeFileWhenDone) {
   statusInteractiveTests = Status::Running;
 
-  if (varioTest.status == SelfTest::Status::Unknown ||
-      varioTest.status == SelfTest::Status::Running) {
+  if (selfTest.results.vario == SelfTest::Status::Unknown ||
+      selfTest.results.vario == SelfTest::Status::Running) {
     selfTest.results.vario = varioTest.update();
-  } else if (buttonsTest.status == SelfTest::Status::Unknown ||
-             buttonsTest.status == SelfTest::Status::Running) {
+  } else if (selfTest.results.buttons == SelfTest::Status::Unknown ||
+             selfTest.results.buttons == SelfTest::Status::Running) {
     selfTest.results.buttons = buttonsTest.update();
   } else if (selfTest.results.speaker == SelfTest::Status::Unknown ||
              selfTest.results.speaker == SelfTest::Status::Running) {
-    selfTest.results.speaker =
-        testSpeaker();  // (speaker test is blocking and only requires one call)
+    selfTest.results.speaker = speakerTest.update();
   } else if (selfTest.results.gpsFix == SelfTest::Status::Unknown ||
              selfTest.results.gpsFix == SelfTest::Status::Running) {
     selfTest.results.gpsFix = testGPSfix();
@@ -689,8 +693,8 @@ void SelfTest::clearResults() {
   // reset interactive tests
   buttonsTest.status = Status::Unknown;
   varioTest.status = Status::Unknown;
+  speakerTest.status = Status::Unknown;
   gpsSerialTestInitialized = false;
   gpsFixTestInitialized = false;
   gpsFixTestCancelled = false;
-  // speaker test is called regardless so no need to reset
 }

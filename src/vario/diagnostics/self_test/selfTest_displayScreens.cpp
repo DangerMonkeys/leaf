@@ -111,9 +111,9 @@ void SelfTest_PageSpeaker::draw_extra() {
   u8g2.print("volume");
 
   u8g2.setCursor(0, 110);
-  u8g2.print("YES: right / up");
+  u8g2.print("YES: UP");
   u8g2.setCursor(0, 125);
-  u8g2.print("NO: left / down");
+  u8g2.print("NO: DOWN");
 }
 
 //////////////////////////////////////////////
