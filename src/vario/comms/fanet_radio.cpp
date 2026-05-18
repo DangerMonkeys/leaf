@@ -511,6 +511,7 @@ String FanetRadio::getAddress() {
     ret += String(mac[4] < 16 ? "0" : "") + String(mac[4], HEX);
     ret += String(mac[5] < 16 ? "0" : "") + String(mac[5], HEX);
     ret.toUpperCase();
+    settings.fanet_address = ret;  // save newly captured address
     return ret;
   }
   return settings.fanet_address;

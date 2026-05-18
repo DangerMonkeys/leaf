@@ -9,7 +9,7 @@
 #include "ui/display/fonts.h"
 
 void PageMenuAbout::draw_extra() {
-  auto y = 24;
+  auto y = 22;
   constexpr auto offset = 10;
 
   // Leaf Version
