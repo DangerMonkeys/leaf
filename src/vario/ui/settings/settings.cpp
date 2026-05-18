@@ -52,13 +52,20 @@ bool Settings::init() {
   bool newBootupVario = !leafPrefs.isKey(
       "nvsInitVario");  // check if we've ever initialized the non volatile storage (nvs), or if
                         // this is a new device boot up for the first time
-  // new bootup into Vario
+  leafPrefs.end();
+
   if (newBootupVario) {
-    leafPrefs.end();
-    leafPrefs.begin("varioPrefs", RW_MODE);
+    // handle one-time first boot tasks
     macAddress = getMacAddress();  // capture the device MAC address for use as a unique device ID
-    save();                        // save defaults to NVS0
+    productionTest = DEF_PRODUCTIONTEST;  // flag that the production test has yet been run
+    save();                               // save defaults to NVS0
+
+    // save flag to indicate we have previously initialized NVS storage and have saved
+    // settings available
+    leafPrefs.begin("varioPrefs", RW_MODE);
+    leafPrefs.putBool("nvsInitVario", true);
     leafPrefs.end();
+
     boot_firstTime = true;
   } else {
     retrieve();
@@ -76,9 +83,42 @@ String Settings::getMacAddress() {
   return String(macStr);
 }
 
+// Reset Leaf user settings and info to defaults
+void Settings::reset() {
+  loadDefaults();
+
+  // Clear any other user-supplied information
+  // Clear WiFi credentials
+  wifi_config_t current_conf;
+  esp_wifi_get_config((wifi_interface_t)ESP_IF_WIFI_STA, &current_conf);
+  memset(current_conf.sta.ssid, 0, sizeof(current_conf.sta.ssid));
+  memset(current_conf.sta.password, 0, sizeof(current_conf.sta.password));
+  esp_wifi_set_config((wifi_interface_t)ESP_IF_WIFI_STA, &current_conf);
+
+  save();
+}
+
+// Not currently used; we probably should never have to call this
+void Settings::totallyEraseNVS() {
+  nvs_flash_erase();  // erase the NVS partition and...
+  nvs_flash_init();   // initialize the NVS partition.
+}
+
+// Wipe user settings as well as factory supplied info like Fanet Address and production test flag
 void Settings::factoryResetVario() {
-  leafPrefs.remove(
-      "nvsInitVario");  // remove this key so that we force a factory settings reload on next reboot
+  // reset user settings
+  reset();
+
+  // clear additional settings/flags that aren't user settings
+  productionTest = DEF_PRODUCTIONTEST;  // erase any record of a production test
+  macAddress.clear();                   // clear the MAC address string
+  fanet_address.clear();                // clear the FANET address string
+  save();                               // store these updated values
+
+  // and finally clear the varioPrefs key to ensure Leaf boots as a new device
+  leafPrefs.begin("varioPrefs", RW_MODE);
+  leafPrefs.remove("nvsInitVario");
+  leafPrefs.end();
 }
 
 void Settings::loadDefaults() {
@@ -113,8 +153,6 @@ void Settings::loadDefaults() {
   system_wifiOn = DEF_WIFI_ON;
   system_bluetoothOn = DEF_BLUETOOTH_ON;
   system_showWarning = DEF_SHOW_WARNING;
-
-  productionTest = DEF_PRODUCTIONTEST;
 
   // Developer Options
   dev_menu = DEF_DEV_MENU;
@@ -232,10 +270,6 @@ void Settings::save() {
 
   leafPrefs.begin("varioPrefs", RW_MODE);
 
-  // save flag to indicate we have previously initialized NVS storage and have saved settings
-  // available
-  leafPrefs.putBool("nvsInitVario", true);
-
   // Vario Settings
   leafPrefs.putFloat("SINK_ALARM_VAL", vario_sinkAlarm);
   leafPrefs.putBool("SINK_ALARM_UNIT", vario_sinkAlarm_units);
@@ -299,25 +333,6 @@ void Settings::save() {
   leafPrefs.putBool("UNITS_hours", units_hours);
 
   leafPrefs.end();
-}
-
-void Settings::reset() {
-  // Clear WiFi credentials
-  wifi_config_t current_conf;
-  esp_wifi_get_config((wifi_interface_t)ESP_IF_WIFI_STA, &current_conf);
-  memset(current_conf.sta.ssid, 0, sizeof(current_conf.sta.ssid));
-  memset(current_conf.sta.password, 0, sizeof(current_conf.sta.password));
-  esp_wifi_set_config((wifi_interface_t)ESP_IF_WIFI_STA, &current_conf);
-
-  // Reset default Leaf configs
-  loadDefaults();
-  save();
-}
-
-// we probably should never have to call this (TODO: maybe make a developer option?)
-void Settings::totallyEraseNVS() {
-  nvs_flash_erase();  // erase the NVS partition and...
-  nvs_flash_init();   // initialize the NVS partition.
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

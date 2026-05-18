@@ -99,6 +99,10 @@ typedef uint8_t SettingLogFormat;
 #define DEF_SHOW_THRM_ADV 0   // Enable thermal adv page
 #define DEF_SHOW_NAV 0        // Enable nav page
 
+// Fanet settings
+#define DEF_FANET_REGION 0  // OFF by default
+// default FANET_ADDRESS is just an empty string; that's cleared in Settings.factoryResetVario()
+
 // Default Unit Values
 #define DEF_UNITS_climb 1     // 0 (m per second), 	1 (feet per minute)
 #define DEF_UNITS_alt 1       // 0 (meters), 				1 (feet)
