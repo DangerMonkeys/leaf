@@ -189,11 +189,34 @@ async def home(request: Request) -> HTMLResponse:
 @app.get("/setup", response_class=HTMLResponse)
 async def setup_device(request: Request) -> HTMLResponse:
     reset_setup_tasks_if_complete()
+    settings = load_settings()
     return templates.TemplateResponse(
         request,
         "setup_checklist.html",
-        template_context(request, {"title": "Set up new device"}),
+        template_context(
+            request,
+            {
+                "title": "Set up new device",
+                "setup_notes": settings.setup_notes,
+            },
+        ),
     )
+
+
+@app.post("/api/setup/notes", response_class=JSONResponse)
+async def save_setup_notes(request: Request) -> JSONResponse:
+    payload = await request.json()
+    notes = payload.get("notes", "")
+    if not isinstance(notes, str):
+        return JSONResponse(
+            {"detail": "Notes must be text."},
+            status_code=400,
+        )
+
+    settings = load_settings()
+    settings.setup_notes = notes
+    save_settings(settings)
+    return JSONResponse({"setup_notes": settings.setup_notes})
 
 
 @app.post("/api/setup/flash", response_class=JSONResponse)
@@ -277,6 +300,7 @@ async def settings(request: Request) -> HTMLResponse:
 
 @app.post("/settings", response_class=HTMLResponse)
 async def save_settings_page(request: Request) -> HTMLResponse:
+    settings = load_settings()
     body = (await request.body()).decode()
     form_data = parse_qs(body, keep_blank_values=True)
     esptool_path = form_data.get("esptool_path", [""])[0].strip() or None
@@ -285,10 +309,8 @@ async def save_settings_page(request: Request) -> HTMLResponse:
         firmware_paths = find_firmware_paths()
         firmware_path = str(firmware_paths[0]) if firmware_paths else None
 
-    settings = FactoryInterfaceSettings(
-        esptool_path=esptool_path,
-        firmware_path=firmware_path,
-    )
+    settings.esptool_path = esptool_path
+    settings.firmware_path = firmware_path
     save_settings(settings)
 
     return templates.TemplateResponse(

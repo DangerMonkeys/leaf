@@ -7,9 +7,27 @@
   </div>
 
   <div class="checklist">
+    <div class="setup-notes-field">
+      <label for="setup-notes">Notes</label>
+      <textarea
+        id="setup-notes"
+        name="setup_notes"
+        rows="6"
+        aria-label="Setup notes"
+      ></textarea>
+      <p class="checklist-details setup-notes-error" id="setup-notes-error" hidden></p>
+    </div>
+
     <div class="checklist-item">
       <label class="bootloader-check">
-        <input id="bootloader-mode" type="checkbox">
+        <input id="setup-notes-confirmed" type="checkbox">
+        <span>Check that notes are correct</span>
+      </label>
+    </div>
+
+    <div class="checklist-item">
+      <label class="bootloader-check">
+        <input id="bootloader-mode" type="checkbox" disabled>
         <span>Put device in bootloader mode</span>
       </label>
     </div>
@@ -96,6 +114,9 @@
 </section>
 
 <script>
+  const setupNotes = document.querySelector("#setup-notes");
+  const setupNotesConfirmed = document.querySelector("#setup-notes-confirmed");
+  const setupNotesError = document.querySelector("#setup-notes-error");
   const bootloaderCheckbox = document.querySelector("#bootloader-mode");
   const flashTaskIcon = document.querySelector("#flash-task-icon");
   const flashConsole = document.querySelector("#flash-console");
@@ -118,6 +139,15 @@
   let resetNonvolatileStartRequested = false;
   let macAddressStartRequested = false;
   let selfTestStartRequested = false;
+  setupNotes.value = {{ setup_notes | tojson }};
+
+  function lockSetupNotes() {
+    setupNotes.readOnly = true;
+    setupNotesConfirmed.checked = true;
+    setupNotesConfirmed.disabled = true;
+    bootloaderCheckbox.disabled = false;
+    setupNotesError.hidden = true;
+  }
 
   function setTaskIcon(icon, status) {
     icon.className = "task-icon";
@@ -168,12 +198,14 @@
     flashConsole.scrollTop = flashConsole.scrollHeight;
 
     if (state.status === "running") {
+      lockSetupNotes();
       bootloaderCheckbox.checked = true;
       bootloaderCheckbox.disabled = true;
       if (!flashPollTimer) {
         flashPollTimer = setInterval(refreshFlashTaskState, 500);
       }
     } else if (state.status === "success") {
+      lockSetupNotes();
       bootloaderCheckbox.checked = true;
       bootloaderCheckbox.disabled = true;
       clearInterval(flashPollTimer);
@@ -183,12 +215,12 @@
       }
     } else if (state.status === "failure") {
       bootloaderCheckbox.checked = false;
-      bootloaderCheckbox.disabled = false;
+      bootloaderCheckbox.disabled = !setupNotesConfirmed.checked;
       clearInterval(flashPollTimer);
       flashPollTimer = null;
     } else {
       bootloaderCheckbox.checked = false;
-      bootloaderCheckbox.disabled = false;
+      bootloaderCheckbox.disabled = !setupNotesConfirmed.checked;
       clearInterval(flashPollTimer);
       flashPollTimer = null;
     }
@@ -339,6 +371,7 @@
   }
 
   async function startFlashTask() {
+    if (!setupNotesConfirmed.checked) return;
     bootloaderCheckbox.checked = true;
     bootloaderCheckbox.disabled = true;
     const response = await fetch("/api/setup/flash", {
@@ -402,6 +435,31 @@
     const response = await fetch("/api/setup/interactive-self-test", { method: "POST" });
     applySelfTestTaskState(await response.json());
   }
+
+  setupNotesConfirmed.addEventListener("change", async () => {
+    if (!setupNotesConfirmed.checked) return;
+
+    setupNotesConfirmed.disabled = true;
+    setupNotesError.hidden = true;
+    try {
+      const response = await fetch("/api/setup/notes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ notes: setupNotes.value }),
+      });
+      if (!response.ok) {
+        throw new Error("Setup notes could not be saved.");
+      }
+      lockSetupNotes();
+    } catch (error) {
+      setupNotesConfirmed.disabled = false;
+      setupNotesConfirmed.checked = false;
+      setupNotesError.textContent = error.message || "Setup notes could not be saved.";
+      setupNotesError.hidden = false;
+    }
+  });
 
   bootloaderCheckbox.addEventListener("change", () => {
     if (bootloaderCheckbox.checked) {

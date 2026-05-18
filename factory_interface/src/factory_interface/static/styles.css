@@ -159,7 +159,8 @@ label {
 }
 
 input,
-select {
+select,
+textarea {
   width: 100%;
   min-height: 48px;
   padding: 10px 12px;
@@ -171,7 +172,8 @@ select {
 }
 
 input:focus,
-select:focus {
+select:focus,
+textarea:focus {
   border-color: var(--accent);
   outline: 3px solid rgb(208 139 44 / 35%);
 }
@@ -230,6 +232,29 @@ button:focus-visible {
 .checklist {
   display: grid;
   gap: 12px;
+}
+
+.setup-notes-field {
+  display: grid;
+  gap: 8px;
+}
+
+.setup-notes-field textarea {
+  min-height: 132px;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.setup-notes-field textarea:read-only {
+  background: #eef4f1;
+  color: var(--muted);
+  resize: none;
+}
+
+.setup-notes-error {
+  grid-column: 1;
+  color: #b42318;
+  font-weight: 700;
 }
 
 .checklist-item {

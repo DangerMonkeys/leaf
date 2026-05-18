@@ -13,6 +13,7 @@ REQUIRED_FIRMWARE_FILES = ("bootloader.bin", "partitions.bin", "firmware.bin")
 class FactoryInterfaceSettings(ImplicitDict):
   esptool_path: str | None = None
   firmware_path: str | None = None
+  setup_notes: str = ""
 
 
 def find_firmware_paths() -> list[Path]:
@@ -82,13 +83,23 @@ def find_esptool_path() -> Path | None:
 
 
 def load_settings() -> FactoryInterfaceSettings:
+  settings_data = {}
   if SETTINGS_PATH.exists():
     with open(SETTINGS_PATH, "r") as f:
-      settings = ImplicitDict.parse(json.load(f), FactoryInterfaceSettings)
+      settings_data = json.load(f)
+      settings = ImplicitDict.parse(settings_data, FactoryInterfaceSettings)
   else:
     settings = FactoryInterfaceSettings()
   
   settings_changed = False
+
+  if "setup_notes" not in settings_data:
+    settings.setup_notes = ""
+    settings_changed = True
+
+  if not isinstance(settings.setup_notes, str):
+    settings.setup_notes = ""
+    settings_changed = True
 
   if settings.esptool_path is None or not Path(settings.esptool_path).exists():
     found_path = find_esptool_path()
