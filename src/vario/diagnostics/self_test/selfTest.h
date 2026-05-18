@@ -81,6 +81,7 @@ class ButtonsInteractiveTest : public InteractiveTest {
   bool leftPressed = false;
   bool rightPressed = false;
   bool centerPressed = false;
+  bool waitingForSpeaker = false;
 
   SelfTest_PageButtons selfTest_pageButtons{&upPressed, &downPressed, &leftPressed, &rightPressed,
                                             &centerPressed};  //. button test display
@@ -103,4 +104,13 @@ class VarioInteractiveTest : public InteractiveTest {
   SelfTest_PageVario selfTest_pageVario{
       &deltaAltitude, &maxAltitude, &climb,
       &maxClimb,      &maxSink,     &delayForCalibration};  //. vario test display
+};
+
+class SpeakerInteractiveTest : public InteractiveTest {
+ public:
+  SelfTest::Status update();
+
+ protected:
+  uint16_t speakerTestCounter = 0;
+  SelfTest_PageSpeaker selfTest_pageSpeaker;  //. speaker test display
 };
