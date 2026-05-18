@@ -155,6 +155,7 @@ void webserver_setup() {
             <li><a href="/screenshot" target="_blank">Download Screenshot</a></li>
             <li><a href="/mass_storage" target="_blank">Start Mass Storage</a></li>
             <li><a href="#" onclick="fetch('/self-test/interactive', {method: 'POST'}); return false;">Start Interactive Self Test</a></li>
+            <li><a href="#" onclick="fetch('/settings/factory-reset', {method: 'POST'}); return false;">Factory Reset Settings</a></li>
             <li><a href="/mac-address" target="_blank">MAC Address</a></li>
             <li><a href="/fanet" target="_blank">FANet Message Stats</a></li>
             <li><a href="/memory" target="_blank">Memory Usage Stats</a></li>
@@ -297,6 +298,13 @@ void webserver_setup() {
     json += settings.getMacAddress();
     json += "\"}";
     server.send(200, "application/json", json);
+  });
+
+  server.on("/settings/factory-reset", HTTP_POST, []() {
+    settings.factoryResetVario();
+    server.send(200, "application/json", "{\"reset_requested\":true}");
+    delay(250);
+    ESP.restart();
   });
 
   server.on("/self-test/interactive", HTTP_POST, []() {
