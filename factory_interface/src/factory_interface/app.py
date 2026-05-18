@@ -2,7 +2,7 @@ from pathlib import Path
 from urllib.parse import parse_qs
 
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -50,6 +50,51 @@ app.mount(
 
 templates = Jinja2Templates(directory=PACKAGE_DIR / "templates")
 
+OPERATOR_COOKIE_NAME = "factory_interface_operator_name"
+
+
+def get_operator_name(request: Request) -> str | None:
+    operator_name = request.cookies.get(OPERATOR_COOKIE_NAME, "").strip()
+    return operator_name or None
+
+
+def template_context(request: Request, context: dict | None = None) -> dict:
+    page_context = dict(context or {})
+    page_context["operator_name"] = get_operator_name(request)
+    return page_context
+
+
+def login_template_context(
+    request: Request,
+    *,
+    operator_name: str = "",
+    error: str | None = None,
+) -> dict:
+    return template_context(
+        request,
+        {
+            "title": "Identify operator",
+            "entered_operator_name": operator_name,
+            "error": error,
+        },
+    )
+
+
+@app.middleware("http")
+async def require_operator_name(request: Request, call_next) -> Response:
+    path = request.url.path
+    is_public_path = path == "/login" or path.startswith("/static/")
+    if is_public_path or get_operator_name(request) is not None:
+        return await call_next(request)
+
+    if path.startswith("/api/"):
+        return JSONResponse(
+            {"detail": "Operator name is required."},
+            status_code=401,
+        )
+
+    return RedirectResponse(url="/login", status_code=303)
+
 
 def reset_setup_tasks_if_complete() -> None:
     tasks = [
@@ -72,21 +117,64 @@ def reset_setup_tasks_if_complete() -> None:
 
 
 def settings_template_context(
+    request: Request,
     settings: FactoryInterfaceSettings,
     *,
     saved: bool,
 ) -> dict:
     firmware_paths = find_firmware_paths()
-    return {
-        "title": "Settings",
-        "settings": settings,
-        "saved": saved,
-        "firmware_options": [
-            {"name": path.name, "path": str(path)}
-            for path in firmware_paths
-        ],
-        "selected_firmware_path": settings.firmware_path or "",
-    }
+    return template_context(
+        request,
+        {
+            "title": "Settings",
+            "settings": settings,
+            "saved": saved,
+            "firmware_options": [
+                {"name": path.name, "path": str(path)}
+                for path in firmware_paths
+            ],
+            "selected_firmware_path": settings.firmware_path or "",
+        },
+    )
+
+
+@app.get("/login", response_class=HTMLResponse)
+async def login(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "login.html",
+        login_template_context(
+            request,
+            operator_name=get_operator_name(request) or "",
+        ),
+    )
+
+
+@app.post("/login", response_class=HTMLResponse)
+async def save_login(request: Request) -> Response:
+    body = (await request.body()).decode()
+    form_data = parse_qs(body, keep_blank_values=True)
+    operator_name = form_data.get("operator_name", [""])[0].strip()
+
+    if not operator_name:
+        return templates.TemplateResponse(
+            request,
+            "login.html",
+            login_template_context(
+                request,
+                operator_name=operator_name,
+                error="Enter an operator name.",
+            ),
+        )
+
+    response = RedirectResponse(url="/", status_code=303)
+    response.set_cookie(
+        OPERATOR_COOKIE_NAME,
+        operator_name,
+        httponly=True,
+        samesite="lax",
+    )
+    return response
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -94,7 +182,7 @@ async def home(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
         request,
         "home.html",
-        {"title": "Factory Interface"},
+        template_context(request, {"title": "Factory Interface"}),
     )
 
 
@@ -104,7 +192,7 @@ async def setup_device(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
         request,
         "setup_checklist.html",
-        {"title": "Set up new device"},
+        template_context(request, {"title": "Set up new device"}),
     )
 
 
@@ -173,7 +261,7 @@ async def rework_device(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
         request,
         "rework_device.html",
-        {"title": "Rework device"},
+        template_context(request, {"title": "Rework device"}),
     )
 
 
@@ -183,7 +271,7 @@ async def settings(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
         request,
         "settings.html",
-        settings_template_context(settings, saved=False),
+        settings_template_context(request, settings, saved=False),
     )
 
 
@@ -206,5 +294,5 @@ async def save_settings_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
         request,
         "settings.html",
-        settings_template_context(settings, saved=True),
+        settings_template_context(request, settings, saved=True),
     )

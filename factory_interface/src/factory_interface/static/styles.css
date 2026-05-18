@@ -27,7 +27,7 @@ body {
   top: 0;
   z-index: 10;
   display: grid;
-  grid-template-columns: 48px 1fr 48px;
+  grid-template-columns: 48px 1fr auto;
   align-items: center;
   height: 56px;
   padding: 0 12px;
@@ -39,6 +39,32 @@ body {
   justify-self: center;
   font-size: 1rem;
   font-weight: 700;
+}
+
+.topbar-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-self: end;
+  min-width: 0;
+  gap: 4px;
+}
+
+.operator-link {
+  max-width: min(34vw, 240px);
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.operator-link:hover,
+.operator-link:focus-visible {
+  color: var(--ink);
+  outline: 2px solid transparent;
+  text-decoration: underline;
 }
 
 .icon-link {
@@ -117,6 +143,7 @@ h1 {
 }
 
 .device-form,
+.login-form,
 .settings-form {
   display: grid;
   gap: 14px;
@@ -180,6 +207,12 @@ button:focus-visible {
 .status-message {
   margin: 0;
   color: var(--muted);
+  font-weight: 700;
+}
+
+.error-message {
+  margin: 0;
+  color: #b42318;
   font-weight: 700;
 }
 
