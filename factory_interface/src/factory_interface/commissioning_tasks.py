@@ -12,7 +12,7 @@ from factory_interface.network_discovery import (
     start_preflash_monitor,
     stop_preflash_monitor,
 )
-from factory_interface.settings import load_settings
+from factory_interface.settings import load_settings, resolve_application_firmware_file
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -200,59 +200,67 @@ def build_flash_firmware_command() -> tuple[list[str], Path]:
     settings = load_settings()
     if settings.esptool_path is None:
         raise FlashCommandError("esptool.py path is not configured.")
-    if settings.firmware_path is None:
-        raise FlashCommandError("Firmware path is not configured.")
+    if settings.application_firmware_source is None:
+        raise FlashCommandError("Application firmware is not configured.")
+    if settings.non_application_firmware_path is None:
+        raise FlashCommandError("Non-application binary path is not configured.")
 
     esptool_path = Path(settings.esptool_path)
-    firmware_path = Path(settings.firmware_path)
+    non_application_path = Path(settings.non_application_firmware_path)
 
     if not esptool_path.exists():
         raise FlashCommandError(f"esptool.py does not exist: {esptool_path}")
-    if not firmware_path.exists():
-        raise FlashCommandError(f"Firmware path does not exist: {firmware_path}")
+    if not non_application_path.exists():
+        raise FlashCommandError(
+            f"Non-application binary path does not exist: {non_application_path}"
+        )
 
     required_files = {
-        "bootloader.bin": firmware_path / "bootloader.bin",
-        "partitions.bin": firmware_path / "partitions.bin",
-        "firmware.bin": firmware_path / "firmware.bin",
+        "bootloader.bin": non_application_path / "bootloader.bin",
+        "partitions.bin": non_application_path / "partitions.bin",
     }
     missing_files = [
         filename for filename, path in required_files.items() if not path.exists()
     ]
     if missing_files:
         raise FlashCommandError(
-            "Firmware path is missing required files: " + ", ".join(missing_files)
+            "Non-application binary path is missing required files: "
+            + ", ".join(missing_files)
         )
 
+    firmware_file = resolve_application_firmware_file(settings)
+    if not firmware_file.exists():
+        raise FlashCommandError(f"Application firmware file does not exist: {firmware_file}")
+
     platformio_config = load_platformio_configs()
-    board_name = platformio_env_option(platformio_config, firmware_path.name, "board")
+    board_name = platformio_env_option(platformio_config, non_application_path.name, "board")
     board_manifest = load_platformio_board_manifest(board_name) if board_name else {}
     flash_mode = platformio_env_option(
         platformio_config,
-        firmware_path.name,
+        non_application_path.name,
         "board_build.flash_mode",
     ) or board_manifest.get("build", {}).get("flash_mode")
     upload_speed = platformio_env_option(
         platformio_config,
-        firmware_path.name,
+        non_application_path.name,
         "upload_speed",
     ) or str(board_manifest.get("upload", {}).get("speed", 460800))
     flash_freq = platformio_env_option(
         platformio_config,
-        firmware_path.name,
+        non_application_path.name,
         "board_build.f_image",
     ) or platformio_env_option(
         platformio_config,
-        firmware_path.name,
+        non_application_path.name,
         "board_build.f_flash",
     ) or board_manifest.get("build", {}).get("f_flash")
     if flash_mode is None:
         raise FlashCommandError(
-            f"Could not determine flash mode for PlatformIO env {firmware_path.name}."
+            f"Could not determine flash mode for PlatformIO env {non_application_path.name}."
         )
     if flash_freq is None:
         raise FlashCommandError(
-            f"Could not determine flash frequency for PlatformIO env {firmware_path.name}."
+            f"Could not determine flash frequency for PlatformIO env {non_application_path.name}."
         )
 
     upload_flash_mode = platformio_upload_flash_mode(flash_mode)
@@ -283,16 +291,16 @@ def build_flash_firmware_command() -> tuple[list[str], Path]:
         str(required_files["partitions.bin"]),
     ]
 
-    boot_app0_path = find_boot_app0_path(firmware_path)
+    boot_app0_path = find_boot_app0_path(non_application_path)
     if boot_app0_path is not None:
         command.extend(["0xe000", str(boot_app0_path)])
 
     command.extend([
         "0x10000",
-        str(required_files["firmware.bin"]),
+        str(firmware_file),
     ])
 
-    return command, firmware_path
+    return command, non_application_path
 
 
 async def run_flash_firmware() -> None:

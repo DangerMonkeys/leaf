@@ -10,6 +10,21 @@
   </div>
 
   <div class="checklist">
+    <div class="binary-summary">
+      <h2>Binaries to flash</h2>
+      <ul>
+        <li>Firmware: {{ application_firmware_label }}</li>
+        <li>Non-application binaries: {{ non_application_binaries_label }}</li>
+      </ul>
+    </div>
+
+    <div class="checklist-item">
+      <label class="bootloader-check">
+        <input id="binaries-confirmed" type="checkbox">
+        <span>Confirm binaries to flash</span>
+      </label>
+    </div>
+
     <div class="setup-notes-field">
       <label for="setup-notes">Notes</label>
       <textarea
@@ -130,6 +145,7 @@
 
 <script>
   const setupNotes = document.querySelector("#setup-notes");
+  const binariesConfirmed = document.querySelector("#binaries-confirmed");
   const setupNotesConfirmed = document.querySelector("#setup-notes-confirmed");
   const setupNotesError = document.querySelector("#setup-notes-error");
   const cancelSetupTaskButton = document.querySelector("#cancel-setup-task");
@@ -170,12 +186,26 @@
   let selfTestStartRequested = false;
   setupNotes.value = {{ setup_notes | tojson }};
 
+  function canEnableBootloaderMode() {
+    return binariesConfirmed.checked && setupNotesConfirmed.checked;
+  }
+
+  function updateBootloaderModeAvailability() {
+    bootloaderCheckbox.disabled = !canEnableBootloaderMode();
+  }
+
   function lockSetupNotes() {
     setupNotes.readOnly = true;
     setupNotesConfirmed.checked = true;
     setupNotesConfirmed.disabled = true;
-    bootloaderCheckbox.disabled = false;
+    updateBootloaderModeAvailability();
     setupNotesError.hidden = true;
+  }
+
+  function lockBinariesConfirmation() {
+    binariesConfirmed.checked = true;
+    binariesConfirmed.disabled = true;
+    updateBootloaderModeAvailability();
   }
 
   function setTaskIcon(icon, status) {
@@ -241,6 +271,7 @@
     flashConsole.scrollTop = flashConsole.scrollHeight;
 
     if (state.status === "running") {
+      lockBinariesConfirmation();
       lockSetupNotes();
       bootloaderCheckbox.checked = true;
       bootloaderCheckbox.disabled = true;
@@ -248,6 +279,7 @@
         flashPollTimer = setInterval(refreshFlashTaskState, 500);
       }
     } else if (state.status === "success") {
+      lockBinariesConfirmation();
       lockSetupNotes();
       bootloaderCheckbox.checked = true;
       bootloaderCheckbox.disabled = true;
@@ -258,12 +290,12 @@
       }
     } else if (state.status === "failure") {
       bootloaderCheckbox.checked = false;
-      bootloaderCheckbox.disabled = !setupNotesConfirmed.checked;
+      updateBootloaderModeAvailability();
       clearInterval(flashPollTimer);
       flashPollTimer = null;
     } else {
       bootloaderCheckbox.checked = false;
-      bootloaderCheckbox.disabled = !setupNotesConfirmed.checked;
+      updateBootloaderModeAvailability();
       clearInterval(flashPollTimer);
       flashPollTimer = null;
     }
@@ -464,7 +496,7 @@
   }
 
   async function startFlashTask() {
-    if (!setupNotesConfirmed.checked) return;
+    if (!canEnableBootloaderMode()) return;
     bootloaderCheckbox.checked = true;
     bootloaderCheckbox.disabled = true;
     const response = await fetch("/api/setup/flash", {
@@ -568,9 +600,14 @@
     } catch (error) {
       setupNotesConfirmed.disabled = false;
       setupNotesConfirmed.checked = false;
+      updateBootloaderModeAvailability();
       setupNotesError.textContent = error.message || "Setup notes could not be saved.";
       setupNotesError.hidden = false;
     }
+  });
+
+  binariesConfirmed.addEventListener("change", () => {
+    updateBootloaderModeAvailability();
   });
 
   bootloaderCheckbox.addEventListener("change", () => {

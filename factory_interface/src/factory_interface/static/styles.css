@@ -154,6 +154,13 @@ h1 {
   gap: 8px;
 }
 
+.field-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 label {
   font-weight: 700;
 }
@@ -204,6 +211,32 @@ button:hover,
 button:focus-visible {
   background: var(--accent-strong);
   outline: 3px solid rgb(208 139 44 / 35%);
+}
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0;
+}
+
+.icon-button svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.icon-button:disabled {
+  background: #9aaba3;
+  cursor: wait;
 }
 
 .status-message {
@@ -257,6 +290,25 @@ button:focus-visible {
 .checklist {
   display: grid;
   gap: 12px;
+}
+
+.binary-summary {
+  display: grid;
+  gap: 8px;
+}
+
+.binary-summary h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.binary-summary ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 22px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
 }
 
 .setup-notes-field {

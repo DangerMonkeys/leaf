@@ -44,9 +44,14 @@ from factory_interface.self_test_task import (
 )
 from factory_interface.settings import (
     FactoryInterfaceSettings,
-    find_firmware_paths,
-    is_valid_firmware_path,
+    application_firmware_options,
+    describe_application_firmware_source,
+    describe_non_application_binary_path,
+    is_valid_application_firmware_source,
+    is_valid_non_application_binary_path,
     load_settings,
+    non_application_binary_options,
+    refresh_github_releases,
     save_settings,
 )
 
@@ -135,18 +140,33 @@ def settings_template_context(
     *,
     saved: bool,
 ) -> dict:
-    firmware_paths = find_firmware_paths()
+    firmware_options = application_firmware_options(settings)
+    binary_options = non_application_binary_options()
+    selected_application_firmware_details = next(
+        (
+            option["details"]
+            for option in firmware_options
+            if option["source"] == settings.application_firmware_source
+        ),
+        "",
+    )
     return template_context(
         request,
         {
             "title": "Settings",
             "settings": settings,
             "saved": saved,
-            "firmware_options": [
-                {"name": path.name, "path": str(path)}
-                for path in firmware_paths
-            ],
-            "selected_firmware_path": settings.firmware_path or "",
+            "firmware_options": firmware_options,
+            "binary_options": binary_options,
+            "selected_application_firmware_source": (
+                settings.application_firmware_source or ""
+            ),
+            "selected_application_firmware_details": (
+                selected_application_firmware_details or "No firmware selected"
+            ),
+            "selected_non_application_firmware_path": (
+                settings.non_application_firmware_path or ""
+            ),
         },
     )
 
@@ -211,6 +231,13 @@ async def setup_device(request: Request) -> HTMLResponse:
             {
                 "title": "Set up new device",
                 "setup_notes": settings.setup_notes,
+                "application_firmware_label": describe_application_firmware_source(
+                    settings.application_firmware_source,
+                    settings,
+                ),
+                "non_application_binaries_label": describe_non_application_binary_path(
+                    settings.non_application_firmware_path,
+                ),
             },
         ),
     )
@@ -349,17 +376,45 @@ async def save_settings_page(request: Request) -> HTMLResponse:
     body = (await request.body()).decode()
     form_data = parse_qs(body, keep_blank_values=True)
     esptool_path = form_data.get("esptool_path", [""])[0].strip() or None
-    firmware_path = form_data.get("firmware_path", [""])[0].strip() or None
-    if not is_valid_firmware_path(firmware_path):
-        firmware_paths = find_firmware_paths()
-        firmware_path = str(firmware_paths[0]) if firmware_paths else None
+    application_firmware_source = (
+        form_data.get("application_firmware_source", [""])[0].strip() or None
+    )
+    non_application_firmware_path = (
+        form_data.get("non_application_firmware_path", [""])[0].strip() or None
+    )
+    if not is_valid_application_firmware_source(application_firmware_source, settings):
+        firmware_options = application_firmware_options(settings)
+        application_firmware_source = firmware_options[0]["source"] if firmware_options else None
+    if not is_valid_non_application_binary_path(non_application_firmware_path):
+        binary_options = non_application_binary_options()
+        non_application_firmware_path = binary_options[0]["path"] if binary_options else None
 
     settings.esptool_path = esptool_path
-    settings.firmware_path = firmware_path
+    settings.application_firmware_source = application_firmware_source
+    settings.non_application_firmware_path = non_application_firmware_path
+    settings.firmware_path = non_application_firmware_path
     save_settings(settings)
 
     return templates.TemplateResponse(
         request,
         "settings.html",
         settings_template_context(request, settings, saved=True),
+    )
+
+
+@app.post("/api/settings/github-releases/refresh", response_class=JSONResponse)
+async def refresh_github_release_options() -> JSONResponse:
+    settings = load_settings()
+    try:
+        refresh_github_releases(settings)
+    except RuntimeError as exc:
+        return JSONResponse({"detail": str(exc)}, status_code=502)
+
+    return JSONResponse(
+        {
+            "firmware_options": application_firmware_options(settings),
+            "selected_application_firmware_source": (
+                settings.application_firmware_source or ""
+            ),
+        }
     )

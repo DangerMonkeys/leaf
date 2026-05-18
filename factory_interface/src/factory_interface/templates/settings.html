@@ -15,19 +15,61 @@
       >
     </div>
     <div class="field-group">
-      <label for="firmware-path">Firmware</label>
-      <select id="firmware-path" name="firmware_path" {% if not firmware_options %}disabled{% endif %}>
+      <div class="field-label-row">
+        <label for="application-firmware-source">Application firmware</label>
+        <button
+          id="refresh-github-releases"
+          class="icon-button"
+          type="button"
+          aria-label="Refresh GitHub release firmware options"
+          title="Refresh GitHub release firmware options"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M21 12a9 9 0 0 1-15.4 6.4L3 16"></path>
+            <path d="M3 21v-5h5"></path>
+            <path d="M3 12a9 9 0 0 1 15.4-6.4L21 8"></path>
+            <path d="M21 3v5h-5"></path>
+          </svg>
+        </button>
+      </div>
+      <select id="application-firmware-source" name="application_firmware_source" {% if not firmware_options %}disabled{% endif %}>
         {% if not firmware_options %}
-        <option value="">No valid firmware builds found</option>
+        <option value="">No valid firmware found</option>
         {% else %}
         {% for firmware in firmware_options %}
-        <option value="{{ firmware.path }}" {% if firmware.path == selected_firmware_path %}selected{% endif %}>
-          {{ firmware.name }}
+        <option
+          value="{{ firmware.source }}"
+          data-details="{{ firmware.details }}"
+          {% if firmware.source == selected_application_firmware_source %}selected{% endif %}
+        >
+          {{ firmware.label }}
         </option>
         {% endfor %}
         {% endif %}
       </select>
-      <p class="path-display" id="selected-firmware-path">{{ selected_firmware_path or "No firmware selected" }}</p>
+      <p class="path-display" id="selected-application-firmware-source">
+        {{ selected_application_firmware_details }}
+      </p>
+      <p class="error-message" id="github-refresh-error" hidden></p>
+    </div>
+    <div class="field-group">
+      <label for="non-application-firmware-path">Non-application binaries</label>
+      <select id="non-application-firmware-path" name="non_application_firmware_path" {% if not binary_options %}disabled{% endif %}>
+        {% if not binary_options %}
+        <option value="">No valid local binaries found</option>
+        {% else %}
+        {% for binaries in binary_options %}
+        <option
+          value="{{ binaries.path }}"
+          data-details="{{ binaries.details }}"
+          {% if binaries.path == selected_non_application_firmware_path %}selected{% endif %}
+        >
+          {{ binaries.label }}
+        </option>
+        {% endfor %}
+        {% endif %}
+      </select>
+      <p class="path-display" id="selected-non-application-firmware-path">{{ selected_non_application_firmware_path or "No binaries selected" }}</p>
     </div>
     <button type="submit">Save settings</button>
     {% if saved %}
@@ -36,12 +78,63 @@
   </form>
 </section>
 <script>
-  const firmwareSelect = document.querySelector("#firmware-path");
-  const firmwarePath = document.querySelector("#selected-firmware-path");
+  const firmwareSelect = document.querySelector("#application-firmware-source");
+  const firmwarePath = document.querySelector("#selected-application-firmware-source");
+  const binarySelect = document.querySelector("#non-application-firmware-path");
+  const binaryPath = document.querySelector("#selected-non-application-firmware-path");
+  const refreshGithubReleasesButton = document.querySelector("#refresh-github-releases");
+  const githubRefreshError = document.querySelector("#github-refresh-error");
+
+  function selectedDetails(select) {
+    if (!select || !select.selectedOptions.length) return "";
+    return select.selectedOptions[0].dataset.details || select.value;
+  }
 
   if (firmwareSelect && firmwarePath) {
     firmwareSelect.addEventListener("change", () => {
-      firmwarePath.textContent = firmwareSelect.value || "No firmware selected";
+      firmwarePath.textContent = selectedDetails(firmwareSelect) || "No firmware selected";
+    });
+  }
+
+  if (binarySelect && binaryPath) {
+    binarySelect.addEventListener("change", () => {
+      binaryPath.textContent = selectedDetails(binarySelect) || "No binaries selected";
+    });
+  }
+
+  if (refreshGithubReleasesButton && firmwareSelect) {
+    refreshGithubReleasesButton.addEventListener("click", async () => {
+      refreshGithubReleasesButton.disabled = true;
+      githubRefreshError.hidden = true;
+      try {
+        const response = await fetch("/api/settings/github-releases/refresh", {
+          method: "POST",
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(payload.detail || "GitHub release options could not be refreshed.");
+        }
+
+        const selectedSource = firmwareSelect.value;
+        firmwareSelect.innerHTML = "";
+        payload.firmware_options.forEach((firmware) => {
+          const option = document.createElement("option");
+          option.value = firmware.source;
+          option.textContent = firmware.label;
+          option.dataset.details = firmware.details;
+          if (firmware.source === selectedSource) {
+            option.selected = true;
+          }
+          firmwareSelect.append(option);
+        });
+        firmwareSelect.disabled = payload.firmware_options.length === 0;
+        firmwarePath.textContent = selectedDetails(firmwareSelect) || "No firmware selected";
+      } catch (error) {
+        githubRefreshError.textContent = error.message || "GitHub release options could not be refreshed.";
+        githubRefreshError.hidden = false;
+      } finally {
+        refreshGithubReleasesButton.disabled = false;
+      }
     });
   }
 </script>

@@ -8,6 +8,8 @@
 - Cancellation is implemented by `POST /api/setup/cancel`. The backend cancels any currently running setup task and marks that task/checklist item as `failure`. A cancellation request when nothing is running is intentionally harmless.
 - For cancellable tasks, storing the `asyncio.Task` worker handle matters. Otherwise a background coroutine can later overwrite a cancellation/failure state after racing with completion.
 - Flash cancellation also tracks the subprocess handle so the running `esptool` process can be terminated/killed instead of only cancelling the Python coroutine.
+- Firmware settings are intentionally split: application firmware can be either a local build (`local:<build path>`) or a GitHub release asset (`release:<tag>/firmware-*.bin`), while non-application binaries always come from a local PlatformIO build folder containing `bootloader.bin` and `partitions.bin`.
+- GitHub release metadata is cached in `factory_interface/src/factory_interface/settings.json`; release assets are downloaded lazily during flashing into the gitignored `factory_interface/github_cache/` folder.
 
 ## Local verification
 
