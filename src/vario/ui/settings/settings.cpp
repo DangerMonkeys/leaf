@@ -176,6 +176,7 @@ void Settings::loadDefaults() {
   disp_showThmPage = DEF_SHOW_THRM;
   disp_showThmAdvPage = DEF_SHOW_THRM_ADV;
   disp_showNavPage = DEF_SHOW_NAV;
+  startPage = DEF_STARTPAGE;
 
   // Unit Values
   units_climb = DEF_UNITS_climb;
@@ -248,6 +249,8 @@ void Settings::retrieve() {
   disp_showThmPage = leafPrefs.getBool("SHOW_THRM");
   disp_showThmAdvPage = leafPrefs.getBool("SHOW_THRM_ADV");
   disp_showNavPage = leafPrefs.getBool("SHOW_NAV");
+  startPage = leafPrefs.getUChar("START_PAGE", DEF_STARTPAGE);
+  if (startPage > (uint8_t)MainPage::Nav) startPage = DEF_STARTPAGE;
 
   // Fanet settings
   fanet_region = (FanetRadioRegion)leafPrefs.getUInt("FANET_REGION");
@@ -320,6 +323,7 @@ void Settings::save() {
   leafPrefs.putBool("SHOW_THRM", disp_showThmPage);
   leafPrefs.putBool("SHOW_THRM_ADV", disp_showThmAdvPage);
   leafPrefs.putBool("SHOW_NAV", disp_showNavPage);
+  leafPrefs.putUChar("START_PAGE", startPage);
   // Fanet Settings
   leafPrefs.putUInt("FANET_REGION", (uint32_t)fanet_region);
   leafPrefs.putString("FANET_ADDRESS", fanet_address);

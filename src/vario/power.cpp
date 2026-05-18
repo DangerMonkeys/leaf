@@ -89,6 +89,7 @@ void Power::bootUp() {
     info_.onState = PowerState::On;
 
     display.showOnSplash();  // show the splash screen if user turned us on
+    display.setPage((MainPage)settings.startPage);
 
     maybeStartBusLog();
   } else {
@@ -219,6 +220,18 @@ void Power::shutdown() { shutdown(false); }
 
 void Power::shutdown(bool deadBattery) {
   Serial.println("power_shutdown");
+
+  switch (display.getPage()) {
+    case MainPage::Debug:
+    case MainPage::Simple:
+    case MainPage::Thermal:
+    case MainPage::ThermalAdv:
+    case MainPage::Nav:
+      settings.startPage = (uint8_t)display.getPage();
+      break;
+    default:
+      break;
+  }
 
   // save logs and system data
   if (flightTimer_isRunning()) {
