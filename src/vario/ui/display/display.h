@@ -45,8 +45,6 @@ class Display {
   void setPage(MainPage targetPage);
   MainPage getPage() { return displayPage_; }
 
-  void showPageDebug();
-  void showPageCharging();
   void showOnSplash();
 
   bool displayingWarning() { return showWarning_; }

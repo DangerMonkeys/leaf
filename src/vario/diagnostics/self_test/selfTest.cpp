@@ -332,6 +332,7 @@ SelfTest::Status ButtonsInteractiveTest::update() {
     waitForInput = 800;  // reset timeout (10ms ticks)
     Serial.println("* SELF TEST * BUTTONS * Starting button test - please press each button");
     selfTest_pageButtons.show();  // show display page for button test
+    display.update();
   }
 
   Button button = buttons.inspectPins();
@@ -409,6 +410,7 @@ SelfTest::Status VarioInteractiveTest::update() {
     initializedTest = false;
     waitForInput = 800;         // reset timeout (10ms ticks)
     selfTest_pageVario.show();  // show display page for vario test
+    display.update();
   }
 
   // delay if baro not ready yet
@@ -557,6 +559,8 @@ void SelfTest::begin(bool markAsProductionChecked) {
   }
 
   if (status != Status::Running) {
+    display.dismissWarning();  // dismiss liability warning to not block self test screens
+
     // set status to running so update() will perform tests
     selfTest.clearResults();  // clear any previous results
     speaker.playSound(fx::confirm);
@@ -583,10 +587,12 @@ bool SelfTest::update() {
   bool updateNeeded = true;  // assume we'll need to call this again
   if (status == Status::Running) {
     if (statusAutoTests == Status::Running || statusAutoTests == Status::Unknown) {
-      statusAutoTests = runAutoTests(false);  // keep file open
+      statusAutoTests = runAutoTests(false);  // false = keep file open
     } else if (statusInteractiveTests == Status::Running ||
                statusInteractiveTests == Status::Unknown) {
-      statusInteractiveTests = runInteractiveTests(false);  // keep file open
+      statusInteractiveTests = runInteractiveTests(false);  // false = keep file open
+
+      // all tests complete, tally results
     } else if (status != Status::Complete) {
       status = Status::Complete;  // we're done
       updateNeeded = false;       // no need to call update again since we're complete
