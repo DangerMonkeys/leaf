@@ -132,6 +132,18 @@
     <div class="checklist-item checklist-item-with-details">
       <button
         class="task-icon task-icon-empty"
+        id="fanet-id-task-icon"
+        type="button"
+        aria-label="Toggle FANET ID details"
+        disabled
+      ></button>
+      <span>Assign FANET ID</span>
+      <p class="checklist-details" id="fanet-id-details" hidden></p>
+    </div>
+
+    <div class="checklist-item checklist-item-with-details">
+      <button
+        class="task-icon task-icon-empty"
         id="self-test-task-icon"
         type="button"
         aria-label="Toggle interactive test details"
@@ -162,6 +174,8 @@
   const macAddressDetails = document.querySelector("#mac-address-details");
   const firmwareVersionTaskIcon = document.querySelector("#firmware-version-task-icon");
   const firmwareVersionDetails = document.querySelector("#firmware-version-details");
+  const fanetIdTaskIcon = document.querySelector("#fanet-id-task-icon");
+  const fanetIdDetails = document.querySelector("#fanet-id-details");
   const selfTestTaskIcon = document.querySelector("#self-test-task-icon");
   const selfTestDetails = document.querySelector("#self-test-details");
   let flashPollTimer = null;
@@ -169,6 +183,7 @@
   let resetNonvolatilePollTimer = null;
   let macAddressPollTimer = null;
   let firmwareVersionPollTimer = null;
+  let fanetIdPollTimer = null;
   let selfTestPollTimer = null;
   let setupCancellationRequested = false;
   const taskStatuses = {
@@ -177,12 +192,14 @@
     resetNonvolatile: "idle",
     macAddress: "idle",
     firmwareVersion: "idle",
+    fanetId: "idle",
     selfTest: "idle",
   };
   let discoveryStartRequested = false;
   let resetNonvolatileStartRequested = false;
   let macAddressStartRequested = false;
   let firmwareVersionStartRequested = false;
+  let fanetIdStartRequested = false;
   let selfTestStartRequested = false;
   setupNotes.value = {{ setup_notes | tojson }};
 
@@ -257,6 +274,10 @@
 
   function setFirmwareVersionIcon(status) {
     setTaskIcon(firmwareVersionTaskIcon, status);
+  }
+
+  function setFanetIdIcon(status) {
+    setTaskIcon(fanetIdTaskIcon, status);
   }
 
   function applyFlashTaskState(state) {
@@ -418,7 +439,7 @@
       clearInterval(firmwareVersionPollTimer);
       firmwareVersionPollTimer = null;
       if (!setupCancellationRequested) {
-        startSelfTestTask();
+        startFanetIdTask();
       }
     } else if (state.status === "running") {
       firmwareVersionDetails.textContent = state.details || "Reading firmware version...";
@@ -435,6 +456,37 @@
       firmwareVersionDetails.hidden = true;
       clearInterval(firmwareVersionPollTimer);
       firmwareVersionPollTimer = null;
+    }
+  }
+
+  function applyFanetIdTaskState(state) {
+    taskStatuses.fanetId = state.status;
+    updateCancelSetupTaskButton();
+    setFanetIdIcon(state.status);
+
+    if (state.status === "success") {
+      fanetIdDetails.textContent =
+        state.details || `FANET ID: ${state.fanet_address}`;
+      clearInterval(fanetIdPollTimer);
+      fanetIdPollTimer = null;
+      if (!setupCancellationRequested) {
+        startSelfTestTask();
+      }
+    } else if (state.status === "running") {
+      fanetIdDetails.textContent = state.details || "Assigning FANET ID...";
+      if (!fanetIdPollTimer) {
+        fanetIdPollTimer = setInterval(refreshFanetIdTaskState, 1000);
+      }
+    } else if (state.status === "failure") {
+      fanetIdDetails.textContent = state.details || "FANET ID assignment failed.";
+      fanetIdDetails.hidden = false;
+      clearInterval(fanetIdPollTimer);
+      fanetIdPollTimer = null;
+    } else {
+      fanetIdDetails.textContent = "";
+      fanetIdDetails.hidden = true;
+      clearInterval(fanetIdPollTimer);
+      fanetIdPollTimer = null;
     }
   }
 
@@ -483,6 +535,11 @@
   async function refreshFirmwareVersionTaskState() {
     const response = await fetch("/api/setup/firmware-version");
     applyFirmwareVersionTaskState(await response.json());
+  }
+
+  async function refreshFanetIdTaskState() {
+    const response = await fetch("/api/setup/fanet-id");
+    applyFanetIdTaskState(await response.json());
   }
 
   async function refreshResetNonvolatileTaskState() {
@@ -565,6 +622,21 @@
     applyFirmwareVersionTaskState(await response.json());
   }
 
+  async function startFanetIdTask() {
+    if (setupCancellationRequested) return;
+    if (fanetIdStartRequested) return;
+    fanetIdStartRequested = true;
+    const currentResponse = await fetch("/api/setup/fanet-id");
+    const currentState = await currentResponse.json();
+    if (currentState.status === "running" || currentState.status === "success") {
+      applyFanetIdTaskState(currentState);
+      return;
+    }
+
+    const response = await fetch("/api/setup/fanet-id", { method: "POST" });
+    applyFanetIdTaskState(await response.json());
+  }
+
   async function startSelfTestTask() {
     if (setupCancellationRequested) return;
     if (selfTestStartRequested) return;
@@ -626,6 +698,7 @@
       refreshResetNonvolatileTaskState(),
       refreshMacAddressTaskState(),
       refreshFirmwareVersionTaskState(),
+      refreshFanetIdTaskState(),
       refreshSelfTestTaskState(),
     ]);
   });
@@ -654,6 +727,10 @@
     firmwareVersionDetails.hidden = !firmwareVersionDetails.hidden;
   });
 
+  fanetIdTaskIcon.addEventListener("click", () => {
+    fanetIdDetails.hidden = !fanetIdDetails.hidden;
+  });
+
   selfTestTaskIcon.addEventListener("click", () => {
     selfTestDetails.hidden = !selfTestDetails.hidden;
   });
@@ -663,6 +740,7 @@
   refreshResetNonvolatileTaskState();
   refreshMacAddressTaskState();
   refreshFirmwareVersionTaskState();
+  refreshFanetIdTaskState();
   refreshSelfTestTaskState();
 </script>
 {% endblock %}

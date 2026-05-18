@@ -1,4 +1,5 @@
 #include "comms/webserver.h"
+#include <ctype.h>
 #include <WebServer.h>
 #include <WiFi.h>
 #include "comms/fanet_radio.h"
@@ -125,6 +126,48 @@ namespace {
     if (elapsed_ms >= SELF_TEST_POWER_ON_DELAY_MS) {
       beginInteractiveSelfTest();
     }
+  }
+
+  bool isHexDigit(char c) {
+    return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+  }
+
+  bool isValidFanetAddress(const String& fanet_address) {
+    if (fanet_address.length() != 6) return false;
+
+    for (size_t i = 0; i < fanet_address.length(); i++) {
+      if (!isHexDigit(fanet_address[i])) return false;
+    }
+
+    return true;
+  }
+
+  String extractJsonStringValue(const String& body, const char* key) {
+    String quoted_key = "\"";
+    quoted_key += key;
+    quoted_key += "\"";
+
+    int key_index = body.indexOf(quoted_key);
+    if (key_index < 0) return "";
+
+    int separator_index = body.indexOf(':', key_index + quoted_key.length());
+    if (separator_index < 0) return "";
+
+    int value_start = separator_index + 1;
+    while (value_start < body.length() && isspace(body[value_start])) {
+      value_start++;
+    }
+    if (value_start >= body.length() || body[value_start] != '"') return "";
+
+    int value_end = value_start + 1;
+    while (value_end < body.length()) {
+      if (body[value_end] == '"' && body[value_end - 1] != '\\') {
+        return body.substring(value_start + 1, value_end);
+      }
+      value_end++;
+    }
+
+    return "";
   }
 }  // namespace
 
@@ -314,6 +357,26 @@ void webserver_setup() {
     server.send(200, "application/json", "{\"reset_requested\":true}");
     delay(250);
     ESP.restart();
+  });
+
+  server.on("/settings/fanet-address", HTTP_POST, []() {
+    String fanet_address = extractJsonStringValue(server.arg("plain"), "fanet_address");
+    fanet_address.trim();
+    fanet_address.toUpperCase();
+    if (!isValidFanetAddress(fanet_address)) {
+      server.send(
+          400, "application/json",
+          "{\"detail\":\"fanet_address must be a 6-character hexadecimal string.\"}");
+      return;
+    }
+
+    settings.fanet_address = fanet_address;
+    settings.save();
+
+    String json = "{\"fanet_address\":\"";
+    json += settings.fanet_address;
+    json += "\",\"saved\":true}";
+    server.send(200, "application/json", json);
   });
 
   server.on("/self-test/interactive", HTTP_POST, []() {
