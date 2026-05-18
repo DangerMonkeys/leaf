@@ -2,8 +2,11 @@
 
 {% block content %}
 <section class="panel narrow setup-panel">
-  <div>
+  <div class="setup-header">
     <h1>Set up device</h1>
+    <button id="cancel-setup-task" class="cancel-setup-button" type="button" hidden>
+      Cancel
+    </button>
   </div>
 
   <div class="checklist">
@@ -117,6 +120,7 @@
   const setupNotes = document.querySelector("#setup-notes");
   const setupNotesConfirmed = document.querySelector("#setup-notes-confirmed");
   const setupNotesError = document.querySelector("#setup-notes-error");
+  const cancelSetupTaskButton = document.querySelector("#cancel-setup-task");
   const bootloaderCheckbox = document.querySelector("#bootloader-mode");
   const flashTaskIcon = document.querySelector("#flash-task-icon");
   const flashConsole = document.querySelector("#flash-console");
@@ -135,6 +139,14 @@
   let resetNonvolatilePollTimer = null;
   let macAddressPollTimer = null;
   let selfTestPollTimer = null;
+  let setupCancellationRequested = false;
+  const taskStatuses = {
+    flash: "idle",
+    discovery: "idle",
+    resetNonvolatile: "idle",
+    macAddress: "idle",
+    selfTest: "idle",
+  };
   let discoveryStartRequested = false;
   let resetNonvolatileStartRequested = false;
   let macAddressStartRequested = false;
@@ -164,6 +176,14 @@
     }
   }
 
+  function updateCancelSetupTaskButton() {
+    const hasRunningTask = Object.values(taskStatuses).some((status) => status === "running");
+    cancelSetupTaskButton.hidden = !hasRunningTask;
+    if (!hasRunningTask) {
+      cancelSetupTaskButton.disabled = false;
+    }
+  }
+
   function setFlashIcon(status) {
     setTaskIcon(flashTaskIcon, status);
   }
@@ -189,6 +209,8 @@
   }
 
   function applyFlashTaskState(state) {
+    taskStatuses.flash = state.status;
+    updateCancelSetupTaskButton();
     const previousStatus = flashTaskIcon.classList.contains("task-icon-success")
       ? "success"
       : null;
@@ -210,7 +232,7 @@
       bootloaderCheckbox.disabled = true;
       clearInterval(flashPollTimer);
       flashPollTimer = null;
-      if (previousStatus !== "success") {
+      if (previousStatus !== "success" && !setupCancellationRequested) {
         startDiscoveryTask();
       }
     } else if (state.status === "failure") {
@@ -227,6 +249,8 @@
   }
 
   function applyDiscoveryTaskState(state) {
+    taskStatuses.discovery = state.status;
+    updateCancelSetupTaskButton();
     setDiscoveryIcon(state.status);
 
     if (state.status === "success" && state.device) {
@@ -234,7 +258,9 @@
       discoveryDetails.hidden = false;
       clearInterval(discoveryPollTimer);
       discoveryPollTimer = null;
-      startResetNonvolatileTask();
+      if (!setupCancellationRequested) {
+        startResetNonvolatileTask();
+      }
     } else if (state.status === "running") {
       discoveryDetails.textContent = "Searching for the newly flashed device...";
       discoveryDetails.hidden = false;
@@ -255,6 +281,8 @@
   }
 
   function applyResetNonvolatileTaskState(state) {
+    taskStatuses.resetNonvolatile = state.status;
+    updateCancelSetupTaskButton();
     const resetStatus = state.reset_status || state.status;
     const reconnectStatus = state.reconnect_status || "idle";
     setResetNonvolatileIcon(resetStatus);
@@ -266,7 +294,9 @@
       reconnectDetails.textContent = state.reconnect_details || "Device reconnected.";
       clearInterval(resetNonvolatilePollTimer);
       resetNonvolatilePollTimer = null;
-      startMacAddressTask();
+      if (!setupCancellationRequested) {
+        startMacAddressTask();
+      }
     } else if (state.status === "running") {
       resetNonvolatileDetails.textContent =
         state.reset_details || "Resetting nonvolatile memory...";
@@ -295,13 +325,17 @@
   }
 
   function applyMacAddressTaskState(state) {
+    taskStatuses.macAddress = state.status;
+    updateCancelSetupTaskButton();
     setMacAddressIcon(state.status);
 
     if (state.status === "success") {
       macAddressDetails.textContent = state.details || `MAC address: ${state.mac_address}`;
       clearInterval(macAddressPollTimer);
       macAddressPollTimer = null;
-      startSelfTestTask();
+      if (!setupCancellationRequested) {
+        startSelfTestTask();
+      }
     } else if (state.status === "running") {
       macAddressDetails.textContent = state.details || "Reading MAC address...";
       if (!macAddressPollTimer) {
@@ -321,6 +355,8 @@
   }
 
   function applySelfTestTaskState(state) {
+    taskStatuses.selfTest = state.status;
+    updateCancelSetupTaskButton();
     setSelfTestIcon(state.status);
 
     if (state.status === "success") {
@@ -381,6 +417,7 @@
   }
 
   async function startDiscoveryTask() {
+    if (setupCancellationRequested) return;
     if (discoveryStartRequested) return;
     discoveryStartRequested = true;
     const currentResponse = await fetch("/api/setup/network-discovery");
@@ -395,6 +432,7 @@
   }
 
   async function startResetNonvolatileTask() {
+    if (setupCancellationRequested) return;
     if (resetNonvolatileStartRequested) return;
     resetNonvolatileStartRequested = true;
     const currentResponse = await fetch("/api/setup/reset-nonvolatile-memory");
@@ -409,6 +447,7 @@
   }
 
   async function startMacAddressTask() {
+    if (setupCancellationRequested) return;
     if (macAddressStartRequested) return;
     macAddressStartRequested = true;
     const currentResponse = await fetch("/api/setup/mac-address");
@@ -423,6 +462,7 @@
   }
 
   async function startSelfTestTask() {
+    if (setupCancellationRequested) return;
     if (selfTestStartRequested) return;
     selfTestStartRequested = true;
     const currentResponse = await fetch("/api/setup/interactive-self-test");
@@ -465,6 +505,19 @@
     if (bootloaderCheckbox.checked) {
       startFlashTask();
     }
+  });
+
+  cancelSetupTaskButton.addEventListener("click", async () => {
+    setupCancellationRequested = true;
+    cancelSetupTaskButton.disabled = true;
+    await fetch("/api/setup/cancel", { method: "POST" });
+    await Promise.all([
+      refreshFlashTaskState(),
+      refreshDiscoveryTaskState(),
+      refreshResetNonvolatileTaskState(),
+      refreshMacAddressTaskState(),
+      refreshSelfTestTaskState(),
+    ]);
   });
 
   flashTaskIcon.addEventListener("click", () => {

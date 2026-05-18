@@ -24,6 +24,8 @@ class FlashFirmwareTask:
     output: str = ""
     return_code: int | None = None
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+    worker_task: asyncio.Task | None = None
+    process: asyncio.subprocess.Process | None = None
 
     def snapshot(self) -> dict:
         return {
@@ -139,6 +141,23 @@ def reset_flash_task() -> None:
     flash_task.status = "idle"
     flash_task.output = ""
     flash_task.return_code = None
+    flash_task.worker_task = None
+    flash_task.process = None
+
+
+def cancel_flash_task() -> FlashFirmwareTask:
+    task = get_flash_task()
+    if task.status != "running":
+        return task
+
+    task.status = "failure"
+    task.output += "\nFlash firmware task was cancelled.\n"
+    task.return_code = -1
+    if task.process is not None and task.process.returncode is None:
+        task.process.terminate()
+    if task.worker_task is not None:
+        task.worker_task.cancel()
+    return task
 
 
 def format_command(command: list[str]) -> str:
@@ -294,6 +313,7 @@ async def run_flash_firmware() -> None:
                 stderr=asyncio.subprocess.STDOUT,
                 cwd=firmware_path,
             )
+            task.process = process
 
             if process.stdout is not None:
                 while True:
@@ -308,11 +328,21 @@ async def run_flash_firmware() -> None:
                 start_find_device()
             else:
                 task.status = "failure"
+        except asyncio.CancelledError:
+            if task.process is not None and task.process.returncode is None:
+                task.process.kill()
+                await task.process.wait()
+            if "Flash firmware task was cancelled." not in task.output:
+                task.output += "\nFlash firmware task was cancelled.\n"
+            task.return_code = -1
+            task.status = "failure"
         except Exception as exc:
             task.output += f"\n{type(exc).__name__}: {exc}\n"
             task.return_code = -1
             task.status = "failure"
         finally:
+            task.process = None
+            task.worker_task = None
             stop_preflash_monitor()
 
 
@@ -324,5 +354,5 @@ def start_flash_firmware() -> FlashFirmwareTask:
     task.status = "running"
     task.output = "Starting flash firmware task...\n"
     task.return_code = None
-    asyncio.create_task(run_flash_firmware())
+    task.worker_task = asyncio.create_task(run_flash_firmware())
     return task

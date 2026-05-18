@@ -16,6 +16,7 @@ class SelfTestTask:
     details: str = ""
     result: dict | None = None
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+    worker_task: asyncio.Task | None = None
 
     def snapshot(self) -> dict:
         return {
@@ -36,6 +37,19 @@ def reset_self_test_task() -> None:
     self_test_task.status = "idle"
     self_test_task.details = ""
     self_test_task.result = None
+    self_test_task.worker_task = None
+
+
+def cancel_self_test_task() -> SelfTestTask:
+    task = get_self_test_task()
+    if task.status != "running":
+        return task
+
+    task.status = "failure"
+    task.details = "Interactive self test task was cancelled."
+    if task.worker_task is not None:
+        task.worker_task.cancel()
+    return task
 
 
 def device_self_test_url() -> str:
@@ -93,9 +107,14 @@ async def run_interactive_self_test() -> None:
                     return
 
                 await asyncio.sleep(SELF_TEST_POLL_SECONDS)
+        except asyncio.CancelledError:
+            task.status = "failure"
+            task.details = "Interactive self test task was cancelled."
         except Exception as exc:
             task.status = "failure"
             task.details = f"{type(exc).__name__}: {exc}"
+        finally:
+            task.worker_task = None
 
 
 def start_interactive_self_test() -> SelfTestTask:
@@ -106,5 +125,5 @@ def start_interactive_self_test() -> SelfTestTask:
     task.status = "running"
     task.details = "Starting interactive self test..."
     task.result = None
-    asyncio.create_task(run_interactive_self_test())
+    task.worker_task = asyncio.create_task(run_interactive_self_test())
     return task

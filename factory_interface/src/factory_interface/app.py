@@ -7,26 +7,31 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from factory_interface.commissioning_tasks import (
+    cancel_flash_task,
     get_flash_task,
     reset_flash_task,
     start_flash_firmware,
 )
 from factory_interface.mac_address_task import (
+    cancel_mac_address_task,
     get_mac_address_task,
     reset_mac_address_task,
     start_read_mac_address,
 )
 from factory_interface.network_discovery import (
+    cancel_find_device_task,
     get_find_device_task,
     reset_find_device_task,
     start_find_device,
 )
 from factory_interface.nonvolatile_memory_task import (
+    cancel_reset_nonvolatile_memory,
     get_reset_nonvolatile_memory_task,
     reset_reset_nonvolatile_memory_task,
     start_reset_nonvolatile_memory,
 )
 from factory_interface.self_test_task import (
+    cancel_self_test_task,
     get_self_test_task,
     reset_self_test_task,
     start_interactive_self_test,
@@ -217,6 +222,24 @@ async def save_setup_notes(request: Request) -> JSONResponse:
     settings.setup_notes = notes
     save_settings(settings)
     return JSONResponse({"setup_notes": settings.setup_notes})
+
+
+@app.post("/api/setup/cancel", response_class=JSONResponse)
+async def cancel_setup_task() -> JSONResponse:
+    cancel_flash_task()
+    cancel_find_device_task()
+    cancel_reset_nonvolatile_memory()
+    cancel_mac_address_task()
+    cancel_self_test_task()
+    return JSONResponse(
+        {
+            "flash": get_flash_task().snapshot(),
+            "network_discovery": get_find_device_task().snapshot(),
+            "reset_nonvolatile_memory": get_reset_nonvolatile_memory_task().snapshot(),
+            "mac_address": get_mac_address_task().snapshot(),
+            "interactive_self_test": get_self_test_task().snapshot(),
+        }
+    )
 
 
 @app.post("/api/setup/flash", response_class=JSONResponse)

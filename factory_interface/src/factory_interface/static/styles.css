@@ -225,8 +225,33 @@ button:focus-visible {
   overflow-wrap: anywhere;
 }
 
-.setup-panel h1 {
+.setup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   margin-bottom: 8px;
+}
+
+.setup-header h1 {
+  min-width: 0;
+}
+
+.cancel-setup-button {
+  flex: 0 0 auto;
+  min-height: 40px;
+  padding: 0 14px;
+  background: #b42318;
+}
+
+.cancel-setup-button:hover,
+.cancel-setup-button:focus-visible {
+  background: #8f1c14;
+}
+
+.cancel-setup-button:disabled {
+  background: #9aaba3;
+  cursor: not-allowed;
 }
 
 .checklist {

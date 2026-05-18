@@ -34,6 +34,7 @@ class FindDeviceTask:
     error: str | None = None
     excluded_device_ids: set[str] = field(default_factory=set)
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+    worker_task: asyncio.Task | None = None
 
     def snapshot(self) -> dict:
         return {
@@ -98,7 +99,20 @@ def reset_find_device_task() -> None:
     task.device = None
     task.error = None
     task.excluded_device_ids = set()
+    task.worker_task = None
     preflash_devices.pop(SETUP_TASK_KEY, None)
+
+
+def cancel_find_device_task() -> FindDeviceTask:
+    task = get_find_device_task()
+    if task.status != "running":
+        return task
+
+    task.status = "failure"
+    task.error = "Network discovery task was cancelled."
+    if task.worker_task is not None:
+        task.worker_task.cancel()
+    return task
 
 
 async def probe_once() -> list[LeafDiscoveryResponse]:
@@ -166,11 +180,13 @@ async def run_find_device() -> None:
 
                 await asyncio.sleep(PROBE_INTERVAL_SECONDS)
         except asyncio.CancelledError:
-            task.status = "idle"
-            raise
+            task.status = "failure"
+            task.error = "Network discovery task was cancelled."
         except Exception as exc:
             task.status = "failure"
             task.error = f"{type(exc).__name__}: {exc}"
+        finally:
+            task.worker_task = None
 
 
 def start_find_device() -> FindDeviceTask:
@@ -181,5 +197,5 @@ def start_find_device() -> FindDeviceTask:
     task.status = "running"
     task.device = None
     task.error = None
-    asyncio.create_task(run_find_device())
+    task.worker_task = asyncio.create_task(run_find_device())
     return task

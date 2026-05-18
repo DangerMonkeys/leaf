@@ -15,6 +15,7 @@ class MacAddressTask:
     mac_address: str | None = None
     details: str = ""
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+    worker_task: asyncio.Task | None = None
 
     def snapshot(self) -> dict:
         return {
@@ -35,6 +36,19 @@ def reset_mac_address_task() -> None:
     mac_address_task.status = "idle"
     mac_address_task.mac_address = None
     mac_address_task.details = ""
+    mac_address_task.worker_task = None
+
+
+def cancel_mac_address_task() -> MacAddressTask:
+    task = get_mac_address_task()
+    if task.status != "running":
+        return task
+
+    task.status = "failure"
+    task.details = "MAC address read task was cancelled."
+    if task.worker_task is not None:
+        task.worker_task.cancel()
+    return task
 
 
 def device_mac_address_url() -> str:
@@ -69,9 +83,14 @@ async def run_read_mac_address() -> None:
             task.mac_address = mac_address
             task.details = f"MAC address: {mac_address}"
             task.status = "success"
+        except asyncio.CancelledError:
+            task.status = "failure"
+            task.details = "MAC address read task was cancelled."
         except Exception as exc:
             task.status = "failure"
             task.details = f"{type(exc).__name__}: {exc}"
+        finally:
+            task.worker_task = None
 
 
 def start_read_mac_address() -> MacAddressTask:
@@ -82,5 +101,5 @@ def start_read_mac_address() -> MacAddressTask:
     task.status = "running"
     task.mac_address = None
     task.details = "Reading MAC address..."
-    asyncio.create_task(run_read_mac_address())
+    task.worker_task = asyncio.create_task(run_read_mac_address())
     return task

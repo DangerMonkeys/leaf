@@ -23,6 +23,7 @@ class ResetNonvolatileMemoryTask:
     reconnect_status: str = "idle"
     reconnect_details: str = ""
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+    worker_task: asyncio.Task | None = None
 
     def snapshot(self) -> dict:
         return {
@@ -49,6 +50,25 @@ def reset_reset_nonvolatile_memory_task() -> None:
     reset_nonvolatile_memory_task.reset_details = ""
     reset_nonvolatile_memory_task.reconnect_status = "idle"
     reset_nonvolatile_memory_task.reconnect_details = ""
+    reset_nonvolatile_memory_task.worker_task = None
+
+
+def cancel_reset_nonvolatile_memory() -> ResetNonvolatileMemoryTask:
+    task = get_reset_nonvolatile_memory_task()
+    if task.status != "running":
+        return task
+
+    task.status = "failure"
+    task.details = "Nonvolatile memory reset task was cancelled."
+    if task.reset_status == "running":
+        task.reset_status = "failure"
+        task.reset_details = task.details
+    elif task.reconnect_status == "running":
+        task.reconnect_status = "failure"
+        task.reconnect_details = task.details
+    if task.worker_task is not None:
+        task.worker_task.cancel()
+    return task
 
 
 def device_base_url() -> tuple[str, str]:
@@ -129,6 +149,15 @@ async def run_reset_nonvolatile_memory() -> None:
             task.details = "Nonvolatile memory reset."
             task.reconnect_status = "success"
             task.reconnect_details = "Device reconnected."
+        except asyncio.CancelledError:
+            task.status = "failure"
+            task.details = "Nonvolatile memory reset task was cancelled."
+            if task.reset_status == "running":
+                task.reset_status = "failure"
+                task.reset_details = task.details
+            elif task.reconnect_status == "running":
+                task.reconnect_status = "failure"
+                task.reconnect_details = task.details
         except Exception as exc:
             task.status = "failure"
             task.details = f"{type(exc).__name__}: {exc}"
@@ -138,6 +167,8 @@ async def run_reset_nonvolatile_memory() -> None:
             else:
                 task.reconnect_status = "failure"
                 task.reconnect_details = task.details
+        finally:
+            task.worker_task = None
 
 
 def start_reset_nonvolatile_memory() -> ResetNonvolatileMemoryTask:
@@ -151,5 +182,5 @@ def start_reset_nonvolatile_memory() -> ResetNonvolatileMemoryTask:
     task.reset_details = "Resetting nonvolatile memory..."
     task.reconnect_status = "idle"
     task.reconnect_details = ""
-    asyncio.create_task(run_reset_nonvolatile_memory())
+    task.worker_task = asyncio.create_task(run_reset_nonvolatile_memory())
     return task
