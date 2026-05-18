@@ -105,6 +105,18 @@
     <div class="checklist-item checklist-item-with-details">
       <button
         class="task-icon task-icon-empty"
+        id="firmware-version-task-icon"
+        type="button"
+        aria-label="Toggle firmware version details"
+        disabled
+      ></button>
+      <span>Read firmware version</span>
+      <p class="checklist-details" id="firmware-version-details" hidden></p>
+    </div>
+
+    <div class="checklist-item checklist-item-with-details">
+      <button
+        class="task-icon task-icon-empty"
         id="self-test-task-icon"
         type="button"
         aria-label="Toggle interactive test details"
@@ -132,12 +144,15 @@
   const reconnectDetails = document.querySelector("#reconnect-details");
   const macAddressTaskIcon = document.querySelector("#mac-address-task-icon");
   const macAddressDetails = document.querySelector("#mac-address-details");
+  const firmwareVersionTaskIcon = document.querySelector("#firmware-version-task-icon");
+  const firmwareVersionDetails = document.querySelector("#firmware-version-details");
   const selfTestTaskIcon = document.querySelector("#self-test-task-icon");
   const selfTestDetails = document.querySelector("#self-test-details");
   let flashPollTimer = null;
   let discoveryPollTimer = null;
   let resetNonvolatilePollTimer = null;
   let macAddressPollTimer = null;
+  let firmwareVersionPollTimer = null;
   let selfTestPollTimer = null;
   let setupCancellationRequested = false;
   const taskStatuses = {
@@ -145,11 +160,13 @@
     discovery: "idle",
     resetNonvolatile: "idle",
     macAddress: "idle",
+    firmwareVersion: "idle",
     selfTest: "idle",
   };
   let discoveryStartRequested = false;
   let resetNonvolatileStartRequested = false;
   let macAddressStartRequested = false;
+  let firmwareVersionStartRequested = false;
   let selfTestStartRequested = false;
   setupNotes.value = {{ setup_notes | tojson }};
 
@@ -206,6 +223,10 @@
 
   function setMacAddressIcon(status) {
     setTaskIcon(macAddressTaskIcon, status);
+  }
+
+  function setFirmwareVersionIcon(status) {
+    setTaskIcon(firmwareVersionTaskIcon, status);
   }
 
   function applyFlashTaskState(state) {
@@ -334,7 +355,7 @@
       clearInterval(macAddressPollTimer);
       macAddressPollTimer = null;
       if (!setupCancellationRequested) {
-        startSelfTestTask();
+        startFirmwareVersionTask();
       }
     } else if (state.status === "running") {
       macAddressDetails.textContent = state.details || "Reading MAC address...";
@@ -351,6 +372,37 @@
       macAddressDetails.hidden = true;
       clearInterval(macAddressPollTimer);
       macAddressPollTimer = null;
+    }
+  }
+
+  function applyFirmwareVersionTaskState(state) {
+    taskStatuses.firmwareVersion = state.status;
+    updateCancelSetupTaskButton();
+    setFirmwareVersionIcon(state.status);
+
+    if (state.status === "success") {
+      firmwareVersionDetails.textContent =
+        state.details || `Firmware version: ${state.firmware_version}`;
+      clearInterval(firmwareVersionPollTimer);
+      firmwareVersionPollTimer = null;
+      if (!setupCancellationRequested) {
+        startSelfTestTask();
+      }
+    } else if (state.status === "running") {
+      firmwareVersionDetails.textContent = state.details || "Reading firmware version...";
+      if (!firmwareVersionPollTimer) {
+        firmwareVersionPollTimer = setInterval(refreshFirmwareVersionTaskState, 1000);
+      }
+    } else if (state.status === "failure") {
+      firmwareVersionDetails.textContent = state.details || "Firmware version read failed.";
+      firmwareVersionDetails.hidden = false;
+      clearInterval(firmwareVersionPollTimer);
+      firmwareVersionPollTimer = null;
+    } else {
+      firmwareVersionDetails.textContent = "";
+      firmwareVersionDetails.hidden = true;
+      clearInterval(firmwareVersionPollTimer);
+      firmwareVersionPollTimer = null;
     }
   }
 
@@ -394,6 +446,11 @@
   async function refreshMacAddressTaskState() {
     const response = await fetch("/api/setup/mac-address");
     applyMacAddressTaskState(await response.json());
+  }
+
+  async function refreshFirmwareVersionTaskState() {
+    const response = await fetch("/api/setup/firmware-version");
+    applyFirmwareVersionTaskState(await response.json());
   }
 
   async function refreshResetNonvolatileTaskState() {
@@ -461,6 +518,21 @@
     applyMacAddressTaskState(await response.json());
   }
 
+  async function startFirmwareVersionTask() {
+    if (setupCancellationRequested) return;
+    if (firmwareVersionStartRequested) return;
+    firmwareVersionStartRequested = true;
+    const currentResponse = await fetch("/api/setup/firmware-version");
+    const currentState = await currentResponse.json();
+    if (currentState.status === "running" || currentState.status === "success") {
+      applyFirmwareVersionTaskState(currentState);
+      return;
+    }
+
+    const response = await fetch("/api/setup/firmware-version", { method: "POST" });
+    applyFirmwareVersionTaskState(await response.json());
+  }
+
   async function startSelfTestTask() {
     if (setupCancellationRequested) return;
     if (selfTestStartRequested) return;
@@ -516,6 +588,7 @@
       refreshDiscoveryTaskState(),
       refreshResetNonvolatileTaskState(),
       refreshMacAddressTaskState(),
+      refreshFirmwareVersionTaskState(),
       refreshSelfTestTaskState(),
     ]);
   });
@@ -540,6 +613,10 @@
     macAddressDetails.hidden = !macAddressDetails.hidden;
   });
 
+  firmwareVersionTaskIcon.addEventListener("click", () => {
+    firmwareVersionDetails.hidden = !firmwareVersionDetails.hidden;
+  });
+
   selfTestTaskIcon.addEventListener("click", () => {
     selfTestDetails.hidden = !selfTestDetails.hidden;
   });
@@ -548,6 +625,7 @@
   refreshDiscoveryTaskState();
   refreshResetNonvolatileTaskState();
   refreshMacAddressTaskState();
+  refreshFirmwareVersionTaskState();
   refreshSelfTestTaskState();
 </script>
 {% endblock %}

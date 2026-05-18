@@ -12,6 +12,12 @@ from factory_interface.commissioning_tasks import (
     reset_flash_task,
     start_flash_firmware,
 )
+from factory_interface.firmware_version_task import (
+    cancel_firmware_version_task,
+    get_firmware_version_task,
+    reset_firmware_version_task,
+    start_read_firmware_version,
+)
 from factory_interface.mac_address_task import (
     cancel_mac_address_task,
     get_mac_address_task,
@@ -107,6 +113,7 @@ def reset_setup_tasks_if_complete() -> None:
         get_find_device_task(),
         get_reset_nonvolatile_memory_task(),
         get_mac_address_task(),
+        get_firmware_version_task(),
         get_self_test_task(),
     ]
     if any(task.status == "running" for task in tasks):
@@ -118,6 +125,7 @@ def reset_setup_tasks_if_complete() -> None:
     reset_find_device_task()
     reset_reset_nonvolatile_memory_task()
     reset_mac_address_task()
+    reset_firmware_version_task()
     reset_self_test_task()
 
 
@@ -230,6 +238,7 @@ async def cancel_setup_task() -> JSONResponse:
     cancel_find_device_task()
     cancel_reset_nonvolatile_memory()
     cancel_mac_address_task()
+    cancel_firmware_version_task()
     cancel_self_test_task()
     return JSONResponse(
         {
@@ -237,6 +246,7 @@ async def cancel_setup_task() -> JSONResponse:
             "network_discovery": get_find_device_task().snapshot(),
             "reset_nonvolatile_memory": get_reset_nonvolatile_memory_task().snapshot(),
             "mac_address": get_mac_address_task().snapshot(),
+            "firmware_version": get_firmware_version_task().snapshot(),
             "interactive_self_test": get_self_test_task().snapshot(),
         }
     )
@@ -287,6 +297,18 @@ async def start_mac_address_task() -> JSONResponse:
 @app.get("/api/setup/mac-address", response_class=JSONResponse)
 async def get_mac_address_task_status() -> JSONResponse:
     task = get_mac_address_task()
+    return JSONResponse(task.snapshot())
+
+
+@app.post("/api/setup/firmware-version", response_class=JSONResponse)
+async def start_firmware_version_task() -> JSONResponse:
+    task = start_read_firmware_version()
+    return JSONResponse(task.snapshot())
+
+
+@app.get("/api/setup/firmware-version", response_class=JSONResponse)
+async def get_firmware_version_task_status() -> JSONResponse:
+    task = get_firmware_version_task()
     return JSONResponse(task.snapshot())
 
 

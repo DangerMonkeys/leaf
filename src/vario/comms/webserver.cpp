@@ -7,6 +7,7 @@
 #include "etl/string_stream.h"
 #include "power.h"
 #include "storage/sd_card.h"
+#include "system/version_info.h"
 #include "ui/display/display.h"
 #include "ui/settings/settings.h"
 #include "utils/lock_guard.h"
@@ -157,6 +158,7 @@ void webserver_setup() {
             <li><a href="#" onclick="fetch('/self-test/interactive', {method: 'POST'}); return false;">Start Interactive Self Test</a></li>
             <li><a href="#" onclick="fetch('/settings/factory-reset', {method: 'POST'}); return false;">Factory Reset Settings</a></li>
             <li><a href="/mac-address" target="_blank">MAC Address</a></li>
+            <li><a href="/firmware-version" target="_blank">Firmware Version</a></li>
             <li><a href="/fanet" target="_blank">FANet Message Stats</a></li>
             <li><a href="/memory" target="_blank">Memory Usage Stats</a></li>
           </ul>
@@ -296,6 +298,13 @@ void webserver_setup() {
   server.on("/mac-address", HTTP_GET, []() {
     String json = "{\"mac_address\":\"";
     json += settings.getMacAddress();
+    json += "\"}";
+    server.send(200, "application/json", json);
+  });
+
+  server.on("/firmware-version", HTTP_GET, []() {
+    String json = "{\"firmware_version\":\"";
+    json += LeafVersionInfo::firmwareVersion();
     json += "\"}";
     server.send(200, "application/json", json);
   });
