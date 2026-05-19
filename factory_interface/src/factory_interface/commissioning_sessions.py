@@ -26,7 +26,12 @@ from factory_interface.http_client import (
     urlopen_with_timeout_retries,
 )
 from factory_interface.models import ConfigurationEvent, File
-from factory_interface.network_discovery import LeafDiscoveryResponse, probe_once
+from factory_interface.network_discovery import (
+    LeafDiscoveryResponse,
+    discovery_identifier_values,
+    normalize_discovery_identifier,
+    probe_once,
+)
 from factory_interface.settings import (
     FactoryInterfaceSettings,
     describe_application_firmware_source,
@@ -644,6 +649,39 @@ def list_commissioning_sessions() -> list[CommissioningSession]:
         key=lambda session: session.created_at,
         reverse=True,
     )
+
+
+def active_commissioning_device_identifiers() -> set[str]:
+    identifiers: set[str] = set()
+    for session in commissioning_sessions.values():
+        if session.status != "running":
+            continue
+        for value in (
+            session.mac_address,
+            session.device.device_id,
+            session.device.mac_address or "",
+        ):
+            identifiers.update(normalize_discovery_identifier(value))
+    return identifiers
+
+
+def active_commissioning_session_for_device(
+    device: LeafDiscoveryResponse,
+) -> CommissioningSession | None:
+    device_identifiers = discovery_identifier_values(device)
+    for session in commissioning_sessions.values():
+        if session.status != "running":
+            continue
+        session_identifiers: set[str] = set()
+        for value in (
+            session.mac_address,
+            session.device.device_id,
+            session.device.mac_address or "",
+        ):
+            session_identifiers.update(normalize_discovery_identifier(value))
+        if device_identifiers & session_identifiers:
+            return session
+    return None
 
 
 def cancel_commissioning_session(mac_address: str) -> CommissioningSession | None:

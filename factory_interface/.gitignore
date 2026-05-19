@@ -1,5 +1,6 @@
 .venv/
 leaf_devices.db
+*.db-journal
 settings.json
 src/factory_interface/settings.json
 __pycache__/

@@ -5,6 +5,7 @@
 #include <WiFi.h>
 #include <ctype.h>
 #include "comms/fanet_radio.h"
+#include "comms/factory_discovery.h"
 #include "diagnostics/memory_report.h"
 #include "diagnostics/self_test/selfTest.h"
 #include "etl/string_stream.h"
@@ -389,6 +390,11 @@ void webserver_setup() {
     json += LeafVersionInfo::firmwareVersion();
     json += "\"}";
     server.send(200, "application/json", json);
+  });
+
+  server.on("/discovery", HTTP_GET, []() {
+    factoryDiscovery.update();
+    server.send(200, "application/json", factoryDiscovery.statusJson());
   });
 
   server.on("/settings/factory-reset", HTTP_POST, []() {

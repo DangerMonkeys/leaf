@@ -7,6 +7,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from factory_interface.commissioning_sessions import (
+    active_commissioning_device_identifiers,
+    active_commissioning_session_for_device,
     cancel_commissioning_session,
     create_commissioning_session,
     discard_commissioning_session,
@@ -40,7 +42,10 @@ from factory_interface.mac_address_task import (
 )
 from factory_interface.network_discovery import (
     cancel_find_device_task,
+    discovery_identifier_values,
     get_find_device_task,
+    preflash_discovery_snapshot,
+    probe_once,
     reset_find_device_task,
     start_find_device,
 )
@@ -282,6 +287,64 @@ async def setup_sessions(request: Request) -> HTMLResponse:
     )
 
 
+@app.get("/discovery", response_class=HTMLResponse)
+async def discovery_status(request: Request) -> HTMLResponse:
+    discovery_task = get_find_device_task()
+    active_session_identifiers = active_commissioning_device_identifiers()
+    discovered_devices = []
+
+    try:
+        probe_responses = await probe_once()
+        probe_error = None
+    except OSError as exc:
+        probe_responses = []
+        probe_error = f"{type(exc).__name__}: {exc}"
+
+    current_exclusions = set(discovery_task.excluded_device_ids)
+    for response in probe_responses:
+        identifiers = discovery_identifier_values(response)
+        active_session = active_commissioning_session_for_device(response)
+        reasons = []
+        if identifiers & active_session_identifiers:
+            reasons.append("matches a running commissioning session")
+        if identifiers & current_exclusions:
+            reasons.append("matches the current find-device exclusion set")
+        if active_session is not None:
+            reasons.append(f"running session: {active_session.mac_address}")
+
+        discovered_devices.append(
+            {
+                "ip_address": response.ip_address,
+                "port": response.port,
+                "device_id": response.device_id,
+                "mac_address": response.mac_address,
+                "identifiers": sorted(identifiers),
+                "candidate": not reasons,
+                "reasons": reasons,
+            }
+        )
+
+    return templates.TemplateResponse(
+        request,
+        "discovery.html",
+        template_context(
+            request,
+            {
+                "title": "Discovery status",
+                "probe_error": probe_error,
+                "devices": discovered_devices,
+                "active_session_identifiers": sorted(active_session_identifiers),
+                "find_device_task": discovery_task.snapshot(),
+                "find_device_exclusions": sorted(discovery_task.excluded_device_ids),
+                "preflash": preflash_discovery_snapshot(),
+                "sessions": [
+                    session.snapshot() for session in list_commissioning_sessions()
+                ],
+            },
+        ),
+    )
+
+
 @app.get("/setup/{mac_address}", response_class=HTMLResponse)
 async def setup_session(request: Request, mac_address: str) -> HTMLResponse:
     session = get_commissioning_session(mac_address)
@@ -342,6 +405,28 @@ async def handoff_setup_session(request: Request) -> JSONResponse:
     if not mac_address:
         return JSONResponse(
             {"detail": "Discovery response did not include a MAC address."},
+            status_code=409,
+        )
+    existing_session = get_commissioning_session(mac_address)
+    if existing_session is not None and existing_session.status == "running":
+        return JSONResponse(
+            {
+                "detail": (
+                    "Discovered device already has an active commissioning session: "
+                    f"{existing_session.mac_address}."
+                )
+            },
+            status_code=409,
+        )
+    active_session = active_commissioning_session_for_device(device)
+    if active_session is not None:
+        return JSONResponse(
+            {
+                "detail": (
+                    "Discovered device already has an active commissioning session: "
+                    f"{active_session.mac_address}."
+                )
+            },
             status_code=409,
         )
 
@@ -442,7 +527,9 @@ async def get_flash_firmware_task() -> JSONResponse:
 
 @app.post("/api/setup/network-discovery", response_class=JSONResponse)
 async def start_network_discovery_task() -> JSONResponse:
-    task = start_find_device()
+    task = start_find_device(
+        excluded_device_ids=active_commissioning_device_identifiers()
+    )
     return JSONResponse(task.snapshot())
 
 

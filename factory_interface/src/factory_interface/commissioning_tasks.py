@@ -7,7 +7,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from subprocess import list2cmdline
 
+from factory_interface.commissioning_sessions import active_commissioning_device_identifiers
 from factory_interface.network_discovery import (
+    finish_preflash_monitor,
+    reset_find_device_task,
     start_find_device,
     start_preflash_monitor,
     stop_preflash_monitor,
@@ -312,7 +315,7 @@ async def run_flash_firmware() -> None:
         task.return_code = None
 
         try:
-            start_preflash_monitor()
+            await start_preflash_monitor()
             command, firmware_path = build_flash_firmware_command()
             task.output += f"$ {format_command(command)}\n"
             process = await asyncio.create_subprocess_exec(
@@ -333,7 +336,11 @@ async def run_flash_firmware() -> None:
             task.return_code = await process.wait()
             if task.return_code == 0:
                 task.status = "success"
-                start_find_device()
+                excluded_device_ids = (
+                    finish_preflash_monitor()
+                    | active_commissioning_device_identifiers()
+                )
+                start_find_device(excluded_device_ids=excluded_device_ids)
             else:
                 task.status = "failure"
         except asyncio.CancelledError:
@@ -359,6 +366,7 @@ def start_flash_firmware() -> FlashFirmwareTask:
     if task.status == "running":
         return task
 
+    reset_find_device_task()
     task.status = "running"
     task.output = "Starting flash firmware task...\n"
     task.return_code = None
