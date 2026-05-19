@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="panel">
+  <div class="setup-header">
+    <h1>Commissioning sessions</h1>
+    <a class="button-link" href="/setup">New device</a>
+  </div>
+
+  {% if sessions %}
+  <div class="session-list" aria-label="Commissioning sessions">
+    {% for session in sessions %}
+    <a class="session-row" href="/setup/{{ session.mac_address }}">
+      <span class="session-mac">{{ session.mac_address }}</span>
+      <span class="session-status session-status-{{ session.status }}">{{ session.status }}</span>
+      <span class="session-details">{{ session.details }}</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="status-message">No commissioning sessions are active.</p>
+  {% endif %}
+</section>
+{% endblock %}

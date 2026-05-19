@@ -213,6 +213,26 @@ button:focus-visible {
   outline: 3px solid rgb(208 139 44 / 35%);
 }
 
+.button-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: start;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #ffffff;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.button-link:hover,
+.button-link:focus-visible {
+  background: var(--accent-strong);
+  outline: 3px solid rgb(208 139 44 / 35%);
+}
+
 .icon-button {
   display: inline-flex;
   align-items: center;
@@ -285,6 +305,74 @@ button:focus-visible {
 .cancel-setup-button:disabled {
   background: #9aaba3;
   cursor: not-allowed;
+}
+
+.session-list {
+  display: grid;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.session-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) auto minmax(180px, 1.4fr);
+  align-items: center;
+  gap: 14px;
+  min-height: 58px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.session-row:last-child {
+  border-bottom: 0;
+}
+
+.session-row:hover,
+.session-row:focus-visible {
+  background: #e9f1ed;
+  outline: 3px solid rgb(208 139 44 / 35%);
+  outline-offset: -3px;
+}
+
+.session-mac {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.session-status {
+  min-width: 76px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #e7eeea;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-align: center;
+  text-transform: capitalize;
+}
+
+.session-status-running {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.session-status-success {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.session-status-failure {
+  background: #fee2e2;
+  color: #b42318;
+}
+
+.session-details {
+  color: var(--muted);
+  overflow-wrap: anywhere;
 }
 
 .checklist {
@@ -488,5 +576,14 @@ button:focus-visible {
 
   .task-card {
     min-height: 112px;
+  }
+
+  .session-row {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .session-status {
+    justify-self: start;
   }
 }

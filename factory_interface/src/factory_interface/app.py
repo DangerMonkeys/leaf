@@ -6,6 +6,13 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Resp
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+from factory_interface.commissioning_sessions import (
+    cancel_commissioning_session,
+    create_commissioning_session,
+    discard_commissioning_session,
+    get_commissioning_session,
+    list_commissioning_sessions,
+)
 from factory_interface.commissioning_tasks import (
     cancel_flash_task,
     get_flash_task,
@@ -251,6 +258,53 @@ async def setup_device(request: Request) -> HTMLResponse:
     )
 
 
+@app.get("/setup/sessions", response_class=HTMLResponse)
+async def setup_sessions(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "setup_sessions.html",
+        template_context(
+            request,
+            {
+                "title": "Commissioning sessions",
+                "sessions": [
+                    session.snapshot() for session in list_commissioning_sessions()
+                ],
+            },
+        ),
+    )
+
+
+@app.get("/setup/{mac_address}", response_class=HTMLResponse)
+async def setup_session(request: Request, mac_address: str) -> HTMLResponse:
+    session = get_commissioning_session(mac_address)
+    if session is None:
+        return templates.TemplateResponse(
+            request,
+            "setup_session_missing.html",
+            template_context(
+                request,
+                {
+                    "title": "Commissioning session not found",
+                    "mac_address": mac_address,
+                },
+            ),
+            status_code=404,
+        )
+
+    return templates.TemplateResponse(
+        request,
+        "setup_session.html",
+        template_context(
+            request,
+            {
+                "title": f"Set up {session.mac_address}",
+                "session": session.snapshot(),
+            },
+        ),
+    )
+
+
 @app.post("/api/setup/notes", response_class=JSONResponse)
 async def save_setup_notes(request: Request) -> JSONResponse:
     payload = await request.json()
@@ -265,6 +319,81 @@ async def save_setup_notes(request: Request) -> JSONResponse:
     settings.setup_notes = notes
     save_settings(settings)
     return JSONResponse({"setup_notes": settings.setup_notes})
+
+
+@app.post("/api/setup/handoff", response_class=JSONResponse)
+async def handoff_setup_session(request: Request) -> JSONResponse:
+    discovery_task = get_find_device_task()
+    if discovery_task.status != "success" or discovery_task.device is None:
+        return JSONResponse(
+            {"detail": "Device has not been discovered on the network."},
+            status_code=409,
+        )
+
+    device = discovery_task.device
+    mac_address = device.mac_address or device.device_id
+    if not mac_address:
+        return JSONResponse(
+            {"detail": "Discovery response did not include a MAC address."},
+            status_code=409,
+        )
+
+    operator_name = get_operator_name(request) or "unknown"
+    settings = load_settings()
+    preflight = {
+        "application_firmware_label": describe_application_firmware_source(
+            settings.application_firmware_source,
+            settings,
+        ),
+        "non_application_binaries_label": describe_non_application_binary_path(
+            settings.non_application_firmware_path,
+        ),
+        "notes": settings.setup_notes,
+        "flash": get_flash_task().snapshot(),
+    }
+    session = create_commissioning_session(
+        mac_address=mac_address,
+        operator=operator_name,
+        notes=settings.setup_notes,
+        device=device,
+        preflight=preflight,
+    )
+    return JSONResponse(
+        {
+            "session": session.snapshot(),
+            "url": f"/setup/{session.mac_address}",
+        }
+    )
+
+
+@app.get("/api/setup/sessions", response_class=JSONResponse)
+async def get_setup_sessions() -> JSONResponse:
+    return JSONResponse(
+        {"sessions": [session.snapshot() for session in list_commissioning_sessions()]}
+    )
+
+
+@app.get("/api/setup/sessions/{mac_address}", response_class=JSONResponse)
+async def get_setup_session_status(mac_address: str) -> JSONResponse:
+    session = get_commissioning_session(mac_address)
+    if session is None:
+        return JSONResponse({"detail": "Commissioning session not found."}, status_code=404)
+    return JSONResponse(session.snapshot())
+
+
+@app.post("/api/setup/sessions/{mac_address}/cancel", response_class=JSONResponse)
+async def cancel_setup_session(mac_address: str) -> JSONResponse:
+    session = cancel_commissioning_session(mac_address)
+    if session is None:
+        return JSONResponse({"detail": "Commissioning session not found."}, status_code=404)
+    return JSONResponse(session.snapshot())
+
+
+@app.delete("/api/setup/sessions/{mac_address}", response_class=JSONResponse)
+async def discard_setup_session(mac_address: str) -> JSONResponse:
+    if not discard_commissioning_session(mac_address):
+        return JSONResponse({"detail": "Commissioning session not found."}, status_code=404)
+    return JSONResponse({"discarded": True})
 
 
 @app.post("/api/setup/cancel", response_class=JSONResponse)

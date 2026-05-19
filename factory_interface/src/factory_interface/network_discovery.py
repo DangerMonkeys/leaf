@@ -18,12 +18,14 @@ class LeafDiscoveryResponse:
     port: int
     device_id: str
     nonce: str
+    mac_address: str | None = None
 
     def snapshot(self) -> dict:
         return {
             "ip_address": self.ip_address,
             "port": self.port,
             "device_id": self.device_id,
+            "mac_address": self.mac_address,
         }
 
 
@@ -63,6 +65,7 @@ class LeafDiscoveryProtocol(asyncio.DatagramProtocol):
         device_id = str(payload.get("device_id", "")).strip()
         if not device_id:
             return
+        mac_address = str(payload.get("mac_address", "")).strip() or None
 
         try:
             port = int(payload.get("http_port", 0))
@@ -77,6 +80,7 @@ class LeafDiscoveryProtocol(asyncio.DatagramProtocol):
                 port=port,
                 device_id=device_id,
                 nonce=self.nonce,
+                mac_address=mac_address,
             )
         )
 

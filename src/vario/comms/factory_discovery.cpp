@@ -56,11 +56,11 @@ void FactoryDiscovery::onPacket(AsyncUDPPacket& packet) {
   nonce[nonce_len] = '\0';
 
   String mac = WiFi.macAddress();
-  char response[192];
+  char response[256];
   snprintf(response, sizeof(response),
            "{\"type\":\"leaf_discovery_response\",\"version\":1,"
-           "\"nonce\":\"%s\",\"device_id\":\"%s\",\"http_port\":%u}",
-           nonce, mac.c_str(), HTTP_PORT);
+           "\"nonce\":\"%s\",\"device_id\":\"%s\",\"mac_address\":\"%s\",\"http_port\":%u}",
+           nonce, mac.c_str(), mac.c_str(), HTTP_PORT);
 
   packet.print(response);
   Serial.printf("FactoryDiscovery: responded to %s\n", packet.remoteIP().toString().c_str());
