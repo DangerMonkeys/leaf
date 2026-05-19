@@ -10,6 +10,7 @@ from factory_interface.commissioning_sessions import (
     cancel_commissioning_session,
     create_commissioning_session,
     discard_commissioning_session,
+    firmware_file_sources,
     get_commissioning_session,
     list_commissioning_sessions,
 )
@@ -354,6 +355,7 @@ async def handoff_setup_session(request: Request) -> JSONResponse:
         "non_application_binaries_label": describe_non_application_binary_path(
             settings.non_application_firmware_path,
         ),
+        "firmware_files": firmware_file_sources(settings),
         "notes": settings.setup_notes,
         "flash": get_flash_task().snapshot(),
     }

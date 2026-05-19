@@ -1,9 +1,14 @@
 import asyncio
+import getpass
+import hashlib
 import json
+import platform
 import socket
+import subprocess
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
+from pathlib import Path
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
@@ -17,10 +22,18 @@ from factory_interface.fanet_id_task import (
     most_recent_fanet_id_for_mac_address,
     normalize_mac_address,
 )
-from factory_interface.models import ConfigurationEvent
+from factory_interface.models import ConfigurationEvent, File
 from factory_interface.network_discovery import LeafDiscoveryResponse, probe_once
+from factory_interface.settings import (
+    FactoryInterfaceSettings,
+    describe_application_firmware_source,
+    describe_non_application_binary_path,
+    load_settings,
+    resolve_application_firmware_file,
+)
 
 
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 HTTP_TIMEOUT_SECONDS = 5.0
 RECONNECT_GRACE_SECONDS = 2.0
 RECONNECT_TIMEOUT_SECONDS = 45.0
@@ -258,26 +271,146 @@ def self_test_status(payload: dict) -> str | None:
     return None
 
 
-def persist_configuration_event(session: CommissioningSession) -> int:
-    event = ConfigurationEvent(
-        mac_address=session.mac_address,
-        operator=session.operator,
-        configured_at=datetime.now(),
-        configuration_action="setup",
-        machine=socket.gethostname(),
-        repo_state="not recorded",
-        fanet_id=session.fanet_id,
-        notes=session.notes or None,
-        test_results=json.dumps(
-            {
-                "firmware_version": session.firmware_version,
-                "self_test": session.self_test_result,
-                "self_test_details": session.self_test_details,
-            },
-            indent=2,
-        ),
+def machine_description() -> str:
+    return " ".join(
+        [
+            f"{getpass.getuser()}@{socket.gethostname()}",
+            platform.system(),
+            platform.version(),
+            platform.machine(),
+        ]
     )
+
+
+def run_git_command(args: list[str]) -> str:
+    result = subprocess.run(
+        ["git", "-C", str(PROJECT_ROOT), *args],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip()
+
+
+def repo_state() -> str:
+    commit_hash = run_git_command(["rev-parse", "HEAD"])
+    porcelain_status = run_git_command(["status", "--porcelain"])
+    if not porcelain_status:
+        return commit_hash
+    return commit_hash + "\n" + run_git_command(["status"])
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as file:
+        for chunk in iter(lambda: file.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def file_record(path: Path, source: str) -> File:
+    stat = path.stat()
+    return File(
+        name=path.name,
+        source=source,
+        size=stat.st_size,
+        sha256=sha256_file(path),
+        modified_at=datetime.fromtimestamp(stat.st_mtime),
+    )
+
+
+def firmware_file_sources(
+    settings: FactoryInterfaceSettings | None = None,
+) -> dict[str, dict[str, str]]:
+    settings = settings or load_settings()
+    application_source = describe_application_firmware_source(
+        settings.application_firmware_source,
+        settings,
+    )
+    non_application_source = describe_non_application_binary_path(
+        settings.non_application_firmware_path,
+    )
+    if settings.non_application_firmware_path is None:
+        raise RuntimeError("Non-application binaries are not configured.")
+
+    non_application_path = Path(settings.non_application_firmware_path)
+    return {
+        "firmware": {
+            "path": str(resolve_application_firmware_file(settings)),
+            "source": application_source,
+        },
+        "bootloader": {
+            "path": str(non_application_path / "bootloader.bin"),
+            "source": non_application_source,
+        },
+        "partitions": {
+            "path": str(non_application_path / "partitions.bin"),
+            "source": non_application_source,
+        },
+    }
+
+
+def firmware_file_records(session: CommissioningSession) -> dict[str, File]:
+    sources = session.preflight.get("firmware_files")
+    if not isinstance(sources, dict):
+        sources = firmware_file_sources()
+
+    return {
+        "firmware": file_record(
+            Path(sources["firmware"]["path"]),
+            str(sources["firmware"]["source"]),
+        ),
+        "bootloader": file_record(
+            Path(sources["bootloader"]["path"]),
+            str(sources["bootloader"]["source"]),
+        ),
+        "partitions": file_record(
+            Path(sources["partitions"]["path"]),
+            str(sources["partitions"]["source"]),
+        ),
+    }
+
+
+def get_or_create_file(db_session: Session, file_record: File) -> int:
+    existing_file = db_session.exec(
+        select(File).where(
+            File.name == file_record.name,
+            File.source == file_record.source,
+            File.size == file_record.size,
+            File.sha256 == file_record.sha256,
+            File.modified_at == file_record.modified_at,
+        )
+    ).first()
+    if existing_file is not None and existing_file.id is not None:
+        return existing_file.id
+
+    db_session.add(file_record)
+    db_session.flush()
+    if file_record.id is None:
+        raise RuntimeError(f"File row was not assigned an ID: {file_record.name}")
+    return file_record.id
+
+
+def persist_configuration_event(session: CommissioningSession) -> int:
+    file_records = firmware_file_records(session)
     with Session(engine) as db_session:
+        firmware_id = get_or_create_file(db_session, file_records["firmware"])
+        bootloader_id = get_or_create_file(db_session, file_records["bootloader"])
+        partitions_id = get_or_create_file(db_session, file_records["partitions"])
+        event = ConfigurationEvent(
+            mac_address=session.mac_address,
+            operator=session.operator,
+            configured_at=datetime.now(),
+            configuration_action="SetupNewDevice",
+            machine=machine_description(),
+            repo_state=repo_state(),
+            fanet_id=session.fanet_id,
+            firmware=firmware_id,
+            bootloader=bootloader_id,
+            partitions=partitions_id,
+            notes=session.notes or None,
+            test_results=session.self_test_details,
+        )
         db_session.add(event)
         db_session.commit()
         db_session.refresh(event)
@@ -422,14 +555,19 @@ async def run_commissioning_session(session: CommissioningSession) -> None:
         session.touch()
 
         persist_task = session.tasks["persist_results"]
-        persist_task.update({"status": "running", "details": "Saving commissioning results..."})
+        persist_task.update(
+            {
+                "status": "running",
+                "details": "Writing commissioning log to database...",
+            }
+        )
         session.touch()
         event_id = await asyncio.to_thread(persist_configuration_event, session)
         session.configuration_event_id = event_id
         persist_task.update(
             {
                 "status": "success",
-                "details": f"Commissioning results saved as event {event_id}.",
+                "details": f"Commissioning log written to database as event {event_id}.",
             }
         )
         session.status = "success"
