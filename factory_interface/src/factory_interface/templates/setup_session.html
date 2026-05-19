@@ -260,7 +260,7 @@
   discardButton.addEventListener("click", async () => {
     discardButton.disabled = true;
     await fetch(discardUrl, { method: "DELETE" });
-    window.location.href = "/setup/sessions";
+    window.location.href = "/";
   });
 
   flashTaskIcon.addEventListener("click", () => {

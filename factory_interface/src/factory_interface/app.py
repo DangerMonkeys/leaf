@@ -238,11 +238,19 @@ async def save_login(request: Request) -> Response:
 
 
 @app.get("/", response_class=HTMLResponse)
-async def home(request: Request) -> HTMLResponse:
+async def setup_sessions(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
         request,
-        "home.html",
-        template_context(request, {"title": "Factory Interface"}),
+        "setup_sessions.html",
+        template_context(
+            request,
+            {
+                "title": "Commissioning sessions",
+                "sessions": [
+                    session.snapshot() for session in list_commissioning_sessions()
+                ],
+            },
+        ),
     )
 
 
@@ -265,23 +273,6 @@ async def setup_device(request: Request) -> HTMLResponse:
                 "non_application_binaries_label": describe_non_application_binary_path(
                     settings.non_application_firmware_path,
                 ),
-            },
-        ),
-    )
-
-
-@app.get("/setup/sessions", response_class=HTMLResponse)
-async def setup_sessions(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse(
-        request,
-        "setup_sessions.html",
-        template_context(
-            request,
-            {
-                "title": "Commissioning sessions",
-                "sessions": [
-                    session.snapshot() for session in list_commissioning_sessions()
-                ],
             },
         ),
     )
@@ -609,15 +600,6 @@ async def start_retrieve_self_test_details_task() -> JSONResponse:
 async def get_retrieve_self_test_details_task() -> JSONResponse:
     task = get_self_test_details_task()
     return JSONResponse(task.snapshot())
-
-
-@app.get("/rework", response_class=HTMLResponse)
-async def rework_device(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse(
-        request,
-        "rework_device.html",
-        template_context(request, {"title": "Rework device"}),
-    )
 
 
 @app.get("/settings", response_class=HTMLResponse)
