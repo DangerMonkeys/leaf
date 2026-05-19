@@ -94,6 +94,7 @@ class CommissioningSession:
             "interactive_self_test": idle_task(),
             "retrieve_test_details": idle_task(),
             "persist_results": idle_task(),
+            "clear_self_test_results": idle_task(),
             "notify_commissioning_complete": idle_task(),
         }
 
@@ -297,6 +298,17 @@ async def notify_session_commissioning_complete(session: CommissioningSession) -
     )
     if not payload.get("commissioning_complete", False):
         raise RuntimeError("Device did not acknowledge commissioning completion.")
+    return payload
+
+
+async def clear_session_self_test_results(session: CommissioningSession) -> dict:
+    payload = await asyncio.to_thread(
+        fetch_json,
+        f"{device_base_url(session)}/self-test/results",
+        method="DELETE",
+    )
+    if not payload.get("cleared", False):
+        raise RuntimeError("Device did not clear self test results.")
     return payload
 
 
@@ -618,6 +630,24 @@ async def run_commissioning_session(session: CommissioningSession) -> None:
             {
                 "status": "success",
                 "details": f"Commissioning log written to database as event {event_id}.",
+            }
+        )
+
+        clear_self_test_task = session.tasks["clear_self_test_results"]
+        clear_self_test_task.update(
+            {
+                "status": "running",
+                "details": "Clearing self test results from device SD card...",
+            }
+        )
+        session.touch()
+        clear_payload = await clear_session_self_test_results(session)
+        deleted_count = int(clear_payload.get("deleted_count", 0))
+        clear_self_test_task.update(
+            {
+                "status": "success",
+                "details": f"Cleared {deleted_count} self test result file(s).",
+                "deleted_count": deleted_count,
             }
         )
 

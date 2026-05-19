@@ -156,6 +156,30 @@
     <div class="checklist-item checklist-item-with-details">
       <button
         class="task-icon task-icon-empty"
+        id="persist-task-icon"
+        type="button"
+        aria-label="Toggle write commissioning log details"
+        disabled
+      ></button>
+      <span>Write commissioning log to database</span>
+      <p class="checklist-details" id="persist-details" hidden></p>
+    </div>
+
+    <div class="checklist-item checklist-item-with-details">
+      <button
+        class="task-icon task-icon-empty"
+        id="clear-self-test-results-task-icon"
+        type="button"
+        aria-label="Toggle clear self test results details"
+        disabled
+      ></button>
+      <span>Clear self test results</span>
+      <p class="checklist-details" id="clear-self-test-results-details" hidden></p>
+    </div>
+
+    <div class="checklist-item checklist-item-with-details">
+      <button
+        class="task-icon task-icon-empty"
         id="notify-commissioning-complete-task-icon"
         type="button"
         aria-label="Toggle device commissioning notification details"
@@ -190,6 +214,10 @@
   const selfTestDetails = document.querySelector("#self-test-details");
   const retrieveTestDetailsTaskIcon = document.querySelector("#retrieve-test-details-task-icon");
   const retrieveTestDetails = document.querySelector("#retrieve-test-details");
+  const persistTaskIcon = document.querySelector("#persist-task-icon");
+  const persistDetails = document.querySelector("#persist-details");
+  const clearSelfTestResultsTaskIcon = document.querySelector("#clear-self-test-results-task-icon");
+  const clearSelfTestResultsDetails = document.querySelector("#clear-self-test-results-details");
   const notifyCommissioningCompleteTaskIcon = document.querySelector("#notify-commissioning-complete-task-icon");
   const notifyCommissioningCompleteDetails = document.querySelector("#notify-commissioning-complete-details");
   let flashPollTimer = null;
@@ -276,6 +304,14 @@
 
   function setRetrieveTestDetailsIcon(status) {
     setTaskIcon(retrieveTestDetailsTaskIcon, status);
+  }
+
+  function setPersistIcon(status) {
+    setTaskIcon(persistTaskIcon, status);
+  }
+
+  function setClearSelfTestResultsIcon(status) {
+    setTaskIcon(clearSelfTestResultsTaskIcon, status);
   }
 
   function setNotifyCommissioningCompleteIcon(status) {
@@ -798,6 +834,14 @@
 
   retrieveTestDetailsTaskIcon.addEventListener("click", () => {
     retrieveTestDetails.hidden = !retrieveTestDetails.hidden;
+  });
+
+  persistTaskIcon.addEventListener("click", () => {
+    persistDetails.hidden = !persistDetails.hidden;
+  });
+
+  clearSelfTestResultsTaskIcon.addEventListener("click", () => {
+    clearSelfTestResultsDetails.hidden = !clearSelfTestResultsDetails.hidden;
   });
 
   notifyCommissioningCompleteTaskIcon.addEventListener("click", () => {

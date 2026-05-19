@@ -108,6 +108,12 @@
     </div>
 
     <div class="checklist-item checklist-item-with-details">
+      <button class="task-icon task-icon-empty" id="clear-self-test-results-task-icon" type="button" aria-label="Toggle clear self test results details" disabled></button>
+      <span>Clear self test results</span>
+      <p class="checklist-details" id="clear-self-test-results-details" hidden></p>
+    </div>
+
+    <div class="checklist-item checklist-item-with-details">
       <button class="task-icon task-icon-empty" id="notify-commissioning-complete-task-icon" type="button" aria-label="Toggle device commissioning notification details" disabled></button>
       <span>Notify device of successful commissioning</span>
       <p class="checklist-details" id="notify-commissioning-complete-details" hidden></p>
@@ -155,6 +161,10 @@
     persist_results: {
       icon: document.querySelector("#persist-task-icon"),
       details: document.querySelector("#persist-details"),
+    },
+    clear_self_test_results: {
+      icon: document.querySelector("#clear-self-test-results-task-icon"),
+      details: document.querySelector("#clear-self-test-results-details"),
     },
     notify_commissioning_complete: {
       icon: document.querySelector("#notify-commissioning-complete-task-icon"),
@@ -250,6 +260,7 @@
     applyTaskState("interactive_self_test", session.tasks.interactive_self_test);
     applyTaskState("retrieve_test_details", session.tasks.retrieve_test_details);
     applyTaskState("persist_results", session.tasks.persist_results);
+    applyTaskState("clear_self_test_results", session.tasks.clear_self_test_results);
     applyTaskState("notify_commissioning_complete", session.tasks.notify_commissioning_complete);
 
     if (session.status !== "running" && pollTimer) {

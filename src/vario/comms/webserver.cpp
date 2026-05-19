@@ -137,6 +137,48 @@ namespace {
     file.close();
   }
 
+  void clearSelfTestDetailsFiles() {
+    if (!sdcard.isMounted()) {
+      server.send(404, "application/json", "{\"detail\":\"SD card is not mounted.\"}");
+      return;
+    }
+
+    if (selfTest.updateNeeded()) {
+      server.send(409, "application/json", "{\"detail\":\"Self test is still running.\"}");
+      return;
+    }
+
+    unsigned int deleted_count = 0;
+    unsigned int failed_count = 0;
+    char file_name[32];
+
+    for (unsigned int i = 1; i <= 1000; i++) {
+      snprintf(file_name, sizeof(file_name), "/self_test_%u.txt", i);
+      if (!SD_MMC.exists(file_name)) continue;
+
+      if (SD_MMC.remove(file_name)) {
+        deleted_count++;
+      } else {
+        failed_count++;
+      }
+    }
+
+    if (failed_count > 0) {
+      String json = "{\"cleared\":false,\"deleted_count\":";
+      json += deleted_count;
+      json += ",\"failed_count\":";
+      json += failed_count;
+      json += "}";
+      server.send(500, "application/json", json);
+      return;
+    }
+
+    String json = "{\"cleared\":true,\"deleted_count\":";
+    json += deleted_count;
+    json += "}";
+    server.send(200, "application/json", json);
+  }
+
   void beginInteractiveSelfTest() {
     interactive_self_test_pending = false;
     last_self_test_mode = SelfTestMode::Interactive;
@@ -435,6 +477,8 @@ void webserver_setup() {
   });
 
   server.on("/self-test/details", HTTP_GET, []() { sendLatestSelfTestDetails(); });
+
+  server.on("/self-test/results", HTTP_DELETE, []() { clearSelfTestDetailsFiles(); });
 
   server.on("/self-test", HTTP_GET,
             []() { server.send(200, "application/json", selfTestSnapshotJson()); });
