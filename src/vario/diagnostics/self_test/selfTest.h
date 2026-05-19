@@ -54,7 +54,6 @@ class SelfTest {
   static Status testDisplay();
   static Status testSDCard();
   static Status testPower();
-  static Status testSpeaker();
 };
 extern SelfTest selfTest;
 
