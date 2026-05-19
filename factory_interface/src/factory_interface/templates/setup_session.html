@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="panel narrow setup-panel">
+  <div class="setup-header">
+    <h1>Set up device</h1>
+    <button id="discard-session" class="cancel-setup-button icon-button" type="button" aria-label="Cancel and discard session" title="Cancel and discard session">
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M3 6h18"></path>
+        <path d="M8 6V4h8v2"></path>
+        <path d="M6 6l1 15h10l1-15"></path>
+        <path d="M10 11v6"></path>
+        <path d="M14 11v6"></path>
+      </svg>
+    </button>
+  </div>
+
+  <p class="status-message" id="session-summary">{{ session.mac_address }}</p>
+
+  <div class="checklist">
+    <div class="binary-summary">
+      <h2>Binaries flashed</h2>
+      <ul>
+        <li>Firmware: {{ session.preflight.application_firmware_label }}</li>
+        <li>Non-application binaries: {{ session.preflight.non_application_binaries_label }}</li>
+      </ul>
+    </div>
+
+    <div class="checklist-item">
+      <label class="bootloader-check">
+        <input type="checkbox" checked disabled>
+        <span>Confirm binaries to flash</span>
+      </label>
+    </div>
+
+    <div class="setup-notes-field">
+      <label for="setup-notes">Notes</label>
+      <textarea id="setup-notes" rows="6" aria-label="Setup notes" readonly>{{ session.preflight.notes }}</textarea>
+    </div>
+
+    <div class="checklist-item">
+      <label class="bootloader-check">
+        <input type="checkbox" checked disabled>
+        <span>Check that notes are correct</span>
+      </label>
+    </div>
+
+    <div class="checklist-item">
+      <label class="bootloader-check">
+        <input type="checkbox" checked disabled>
+        <span>Put device in bootloader mode</span>
+      </label>
+    </div>
+
+    <div class="checklist-item">
+      <button class="task-icon task-icon-success" id="flash-task-icon" type="button" aria-label="Toggle flash firmware console output"></button>
+      <span>Flash firmware</span>
+    </div>
+
+    <textarea class="console-output" id="flash-console" readonly hidden aria-label="Flash firmware console output">{{ session.preflight.flash.output }}</textarea>
+
+    <div class="checklist-item checklist-item-with-details">
+      <button class="task-icon task-icon-empty" id="discovery-task-icon" type="button" aria-label="Toggle network discovery details" disabled></button>
+      <span>Find device on network</span>
+      <p class="checklist-details" id="discovery-details" hidden></p>
+    </div>
+
+    <div class="checklist-item checklist-item-with-details">
+      <button class="task-icon task-icon-empty" id="reset-nonvolatile-task-icon" type="button" aria-label="Toggle nonvolatile memory reset details" disabled></button>
+      <span>Reset nonvolatile memory</span>
+      <p class="checklist-details" id="reset-nonvolatile-details" hidden></p>
+    </div>
+
+    <div class="checklist-item checklist-item-with-details">
+      <button class="task-icon task-icon-empty" id="reconnect-task-icon" type="button" aria-label="Toggle device reconnect details" disabled></button>
+      <span>Wait for device to reconnect</span>
+      <p class="checklist-details" id="reconnect-details" hidden></p>
+    </div>
+
+    <div class="checklist-item checklist-item-with-details">
+      <button class="task-icon task-icon-empty" id="firmware-version-task-icon" type="button" aria-label="Toggle firmware version details" disabled></button>
+      <span>Read firmware version</span>
+      <p class="checklist-details" id="firmware-version-details" hidden></p>
+    </div>
+
+    <div class="checklist-item checklist-item-with-details">
+      <button class="task-icon task-icon-empty" id="fanet-id-task-icon" type="button" aria-label="Toggle FANET ID details" disabled></button>
+      <span>Assign FANET ID</span>
+      <p class="checklist-details" id="fanet-id-details" hidden></p>
+    </div>
+
+    <div class="checklist-item checklist-item-with-details">
+      <button class="task-icon task-icon-empty" id="self-test-task-icon" type="button" aria-label="Toggle interactive test details" disabled></button>
+      <span>Interactive test</span>
+      <pre class="checklist-details checklist-details-pre" id="self-test-details" hidden></pre>
+    </div>
+
+    <div class="checklist-item checklist-item-with-details">
+      <button class="task-icon task-icon-empty" id="retrieve-test-details-task-icon" type="button" aria-label="Toggle retrieved test details" disabled></button>
+      <span>Retrieve test details</span>
+      <pre class="checklist-details checklist-details-pre" id="retrieve-test-details" hidden></pre>
+    </div>
+
+    <div class="checklist-item checklist-item-with-details">
+      <button class="task-icon task-icon-empty" id="persist-task-icon" type="button" aria-label="Toggle write commissioning log details" disabled></button>
+      <span>Write commissioning log to database</span>
+      <p class="checklist-details" id="persist-details" hidden></p>
+    </div>
+  </div>
+</section>
+
+<script>
+  const macAddress = {{ session.mac_address | tojson }};
+  const summary = document.querySelector("#session-summary");
+  const discardButton = document.querySelector("#discard-session");
+  const flashTaskIcon = document.querySelector("#flash-task-icon");
+  const flashConsole = document.querySelector("#flash-console");
+  const pollUrl = `/api/setup/sessions/${encodeURIComponent(macAddress)}`;
+  const discardUrl = `/api/setup/sessions/${encodeURIComponent(macAddress)}`;
+  let pollTimer = null;
+
+  const controls = {
+    network_discovery: {
+      icon: document.querySelector("#discovery-task-icon"),
+      details: document.querySelector("#discovery-details"),
+    },
+    reset_nonvolatile_memory: {
+      icon: document.querySelector("#reset-nonvolatile-task-icon"),
+      details: document.querySelector("#reset-nonvolatile-details"),
+      reconnectIcon: document.querySelector("#reconnect-task-icon"),
+      reconnectDetails: document.querySelector("#reconnect-details"),
+    },
+    firmware_version: {
+      icon: document.querySelector("#firmware-version-task-icon"),
+      details: document.querySelector("#firmware-version-details"),
+    },
+    fanet_id: {
+      icon: document.querySelector("#fanet-id-task-icon"),
+      details: document.querySelector("#fanet-id-details"),
+    },
+    interactive_self_test: {
+      icon: document.querySelector("#self-test-task-icon"),
+      details: document.querySelector("#self-test-details"),
+    },
+    retrieve_test_details: {
+      icon: document.querySelector("#retrieve-test-details-task-icon"),
+      details: document.querySelector("#retrieve-test-details"),
+    },
+    persist_results: {
+      icon: document.querySelector("#persist-task-icon"),
+      details: document.querySelector("#persist-details"),
+    },
+  };
+
+  function setTaskIcon(icon, status) {
+    icon.className = "task-icon";
+    icon.disabled = status === "idle";
+    if (status === "running") {
+      icon.classList.add("task-icon-running");
+    } else if (status === "success") {
+      icon.classList.add("task-icon-success");
+    } else if (status === "failure") {
+      icon.classList.add("task-icon-failure");
+    } else {
+      icon.classList.add("task-icon-empty");
+    }
+  }
+
+  function setDetails(element, text, status) {
+    element.textContent = text || "";
+    element.hidden = status === "idle" || !element.textContent;
+  }
+
+  function applyTaskState(name, task) {
+    const control = controls[name];
+    task = task || { status: "idle", details: "" };
+    setTaskIcon(control.icon, task.status);
+    setDetails(control.details, task.details, task.status);
+  }
+
+  function applyResetState(task) {
+    const control = controls.reset_nonvolatile_memory;
+    const resetStatus = task.reset_status || task.status;
+    const reconnectStatus = task.reconnect_status || "idle";
+    setTaskIcon(control.icon, resetStatus);
+    setTaskIcon(control.reconnectIcon, reconnectStatus);
+    setDetails(control.details, task.reset_details || task.details, resetStatus);
+    setDetails(control.reconnectDetails, task.reconnect_details, reconnectStatus);
+  }
+
+  function applySession(session) {
+    summary.textContent = `${session.mac_address} - ${session.details}`;
+    applyTaskState("network_discovery", session.tasks.network_discovery);
+    applyResetState(session.tasks.reset_nonvolatile_memory);
+    applyTaskState("firmware_version", session.tasks.firmware_version);
+    applyTaskState("fanet_id", session.tasks.fanet_id);
+    applyTaskState("interactive_self_test", session.tasks.interactive_self_test);
+    applyTaskState("retrieve_test_details", session.tasks.retrieve_test_details);
+    applyTaskState("persist_results", session.tasks.persist_results);
+
+    if (session.status !== "running" && pollTimer) {
+      clearInterval(pollTimer);
+      pollTimer = null;
+    }
+  }
+
+  async function refreshSession() {
+    const response = await fetch(pollUrl);
+    if (!response.ok) {
+      summary.textContent = "Commissioning session not found.";
+      if (pollTimer) clearInterval(pollTimer);
+      return;
+    }
+    applySession(await response.json());
+  }
+
+  discardButton.addEventListener("click", async () => {
+    discardButton.disabled = true;
+    await fetch(discardUrl, { method: "DELETE" });
+    window.location.href = "/setup/sessions";
+  });
+
+  flashTaskIcon.addEventListener("click", () => {
+    flashConsole.hidden = !flashConsole.hidden;
+  });
+
+  Object.values(controls).forEach((control) => {
+    control.icon.addEventListener("click", () => {
+      control.details.hidden = !control.details.hidden;
+    });
+    if (control.reconnectIcon) {
+      control.reconnectIcon.addEventListener("click", () => {
+        control.reconnectDetails.hidden = !control.reconnectDetails.hidden;
+      });
+    }
+  });
+
+  refreshSession();
+  pollTimer = setInterval(refreshSession, 1000);
+</script>
+{% endblock %}

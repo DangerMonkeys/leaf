@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="panel narrow">
+  <h1>Identify operator</h1>
+  <form class="login-form" action="/login" method="post">
+    <div class="field-group">
+      <label for="operator-name">Operator name</label>
+      <input
+        id="operator-name"
+        name="operator_name"
+        type="text"
+        value="{{ entered_operator_name }}"
+        autocomplete="name"
+        autofocus
+        required
+      >
+    </div>
+    <button type="submit">Continue</button>
+    {% if error %}
+    <p class="error-message">{{ error }}</p>
+    {% endif %}
+  </form>
+</section>
+{% endblock %}

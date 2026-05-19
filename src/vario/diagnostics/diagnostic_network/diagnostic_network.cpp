@@ -87,11 +87,11 @@ void DiagnosticNetwork::maybeLookForNetwork() {
   const Power::Info& info = power.info();
 
   const bool onAndUsbPowered = info.onState == PowerState::On && info.USBinput;
-  const bool offAndCharging = info.onState == PowerState::OffUSB && info.charging;
+  const bool offAndUsbPowered = info.onState == PowerState::OffUSB;
 
   // Look continuously while on and USB-powered, or exactly once when USB wakes the device into
   // charge-only mode.
-  if (!onAndUsbPowered && !offAndCharging) {
+  if (!onAndUsbPowered && !offAndUsbPowered) {
     return;
   }
 
@@ -100,11 +100,11 @@ void DiagnosticNetwork::maybeLookForNetwork() {
     return;
   }
 
-  if (info.onState == PowerState::OffUSB) {
+  const bool offUsbAttempt = info.onState == PowerState::OffUSB;
+  if (offUsbAttempt) {
     if (off_usb_scan_attempted_) {
       return;
     }
-    off_usb_scan_attempted_ = true;
   }
 
   Serial.printf("DiagnosticNetwork: starting scan (USBinput=%d onState=%s)\n", info.USBinput,
@@ -117,6 +117,9 @@ void DiagnosticNetwork::maybeLookForNetwork() {
 
   // Use WifiResetting state to let WiFi settle for 100ms without blocking the loop
   t0_ = millis() + 100;
+  if (offUsbAttempt) {
+    off_usb_scan_attempted_ = true;
+  }
   state_ = State::WifiResetting;
 }
 

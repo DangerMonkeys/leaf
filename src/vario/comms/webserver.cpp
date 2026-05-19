@@ -1,12 +1,16 @@
 #include "comms/webserver.h"
+#include <FS.h>
+#include <SD_MMC.h>
 #include <WebServer.h>
 #include <WiFi.h>
+#include <ctype.h>
 #include "comms/fanet_radio.h"
 #include "diagnostics/memory_report.h"
 #include "diagnostics/self_test/selfTest.h"
 #include "etl/string_stream.h"
 #include "power.h"
 #include "storage/sd_card.h"
+#include "system/version_info.h"
 #include "ui/display/display.h"
 #include "ui/settings/settings.h"
 #include "utils/lock_guard.h"
@@ -89,6 +93,43 @@ namespace {
     return json;
   }
 
+  String latestSelfTestDetailsFileName() {
+    String latest_file_name = "";
+    char file_name[32];
+
+    for (unsigned int i = 1; i <= 1000; i++) {
+      snprintf(file_name, sizeof(file_name), "/self_test_%u.txt", i);
+      if (SD_MMC.exists(file_name)) {
+        latest_file_name = file_name;
+      }
+    }
+
+    return latest_file_name;
+  }
+
+  void sendLatestSelfTestDetails() {
+    if (!sdcard.isMounted()) {
+      server.send(404, "application/json", "{\"detail\":\"SD card is not mounted.\"}");
+      return;
+    }
+
+    String file_name = latestSelfTestDetailsFileName();
+    if (file_name.isEmpty()) {
+      server.send(404, "application/json", "{\"detail\":\"No self test details file found.\"}");
+      return;
+    }
+
+    File file = SD_MMC.open(file_name, "r");
+    if (!file) {
+      server.send(500, "application/json",
+                  "{\"detail\":\"Self test details file could not be opened.\"}");
+      return;
+    }
+
+    server.streamFile(file, "text/plain");
+    file.close();
+  }
+
   void beginInteractiveSelfTest() {
     interactive_self_test_pending = false;
     last_self_test_mode = SelfTestMode::Interactive;
@@ -125,6 +166,48 @@ namespace {
       beginInteractiveSelfTest();
     }
   }
+
+  bool isHexDigit(char c) {
+    return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+  }
+
+  bool isValidFanetAddress(const String& fanet_address) {
+    if (fanet_address.length() != 6) return false;
+
+    for (size_t i = 0; i < fanet_address.length(); i++) {
+      if (!isHexDigit(fanet_address[i])) return false;
+    }
+
+    return true;
+  }
+
+  String extractJsonStringValue(const String& body, const char* key) {
+    String quoted_key = "\"";
+    quoted_key += key;
+    quoted_key += "\"";
+
+    int key_index = body.indexOf(quoted_key);
+    if (key_index < 0) return "";
+
+    int separator_index = body.indexOf(':', key_index + quoted_key.length());
+    if (separator_index < 0) return "";
+
+    int value_start = separator_index + 1;
+    while (value_start < body.length() && isspace(body[value_start])) {
+      value_start++;
+    }
+    if (value_start >= body.length() || body[value_start] != '"') return "";
+
+    int value_end = value_start + 1;
+    while (value_end < body.length()) {
+      if (body[value_end] == '"' && body[value_end - 1] != '\\') {
+        return body.substring(value_start + 1, value_end);
+      }
+      value_end++;
+    }
+
+    return "";
+  }
 }  // namespace
 
 constexpr auto endl = "\n";
@@ -157,6 +240,7 @@ void webserver_setup() {
             <li><a href="#" onclick="fetch('/self-test/interactive', {method: 'POST'}); return false;">Start Interactive Self Test</a></li>
             <li><a href="#" onclick="fetch('/settings/factory-reset', {method: 'POST'}); return false;">Factory Reset Settings</a></li>
             <li><a href="/mac-address" target="_blank">MAC Address</a></li>
+            <li><a href="/firmware-version" target="_blank">Firmware Version</a></li>
             <li><a href="/fanet" target="_blank">FANet Message Stats</a></li>
             <li><a href="/memory" target="_blank">Memory Usage Stats</a></li>
           </ul>
@@ -300,6 +384,13 @@ void webserver_setup() {
     server.send(200, "application/json", json);
   });
 
+  server.on("/firmware-version", HTTP_GET, []() {
+    String json = "{\"firmware_version\":\"";
+    json += LeafVersionInfo::firmwareVersion();
+    json += "\"}";
+    server.send(200, "application/json", json);
+  });
+
   server.on("/settings/factory-reset", HTTP_POST, []() {
     settings.factoryResetVario();
     server.send(200, "application/json", "{\"reset_requested\":true}");
@@ -307,10 +398,31 @@ void webserver_setup() {
     ESP.restart();
   });
 
+  server.on("/settings/fanet-address", HTTP_POST, []() {
+    String fanet_address = extractJsonStringValue(server.arg("plain"), "fanet_address");
+    fanet_address.trim();
+    fanet_address.toUpperCase();
+    if (!isValidFanetAddress(fanet_address)) {
+      server.send(400, "application/json",
+                  "{\"detail\":\"fanet_address must be a 6-character hexadecimal string.\"}");
+      return;
+    }
+
+    settings.fanet_address = fanet_address;
+    settings.save();
+
+    String json = "{\"fanet_address\":\"";
+    json += settings.fanet_address;
+    json += "\",\"saved\":true}";
+    server.send(200, "application/json", json);
+  });
+
   server.on("/self-test/interactive", HTTP_POST, []() {
     requestInteractiveSelfTest();
     server.send(200, "application/json", selfTestSnapshotJson());
   });
+
+  server.on("/self-test/details", HTTP_GET, []() { sendLatestSelfTestDetails(); });
 
   server.on("/self-test", HTTP_GET,
             []() { server.send(200, "application/json", selfTestSnapshotJson()); });

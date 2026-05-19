@@ -2,14 +2,50 @@
 
 {% block content %}
 <section class="panel narrow setup-panel">
-  <div>
+  <div class="setup-header">
     <h1>Set up device</h1>
+    <button id="cancel-setup-task" class="cancel-setup-button" type="button" hidden>
+      Cancel
+    </button>
   </div>
 
   <div class="checklist">
+    <div class="binary-summary">
+      <h2>Binaries to flash</h2>
+      <ul>
+        <li>Firmware: {{ application_firmware_label }}</li>
+        <li>Non-application binaries: {{ non_application_binaries_label }}</li>
+      </ul>
+    </div>
+
     <div class="checklist-item">
       <label class="bootloader-check">
-        <input id="bootloader-mode" type="checkbox">
+        <input id="binaries-confirmed" type="checkbox">
+        <span>Confirm binaries to flash</span>
+      </label>
+    </div>
+
+    <div class="setup-notes-field">
+      <label for="setup-notes">Notes</label>
+      <textarea
+        id="setup-notes"
+        name="setup_notes"
+        rows="6"
+        aria-label="Setup notes"
+      ></textarea>
+      <p class="checklist-details setup-notes-error" id="setup-notes-error" hidden></p>
+    </div>
+
+    <div class="checklist-item">
+      <label class="bootloader-check">
+        <input id="setup-notes-confirmed" type="checkbox">
+        <span>Check that notes are correct</span>
+      </label>
+    </div>
+
+    <div class="checklist-item">
+      <label class="bootloader-check">
+        <input id="bootloader-mode" type="checkbox" disabled>
         <span>Put device in bootloader mode</span>
       </label>
     </div>
@@ -72,13 +108,25 @@
     <div class="checklist-item checklist-item-with-details">
       <button
         class="task-icon task-icon-empty"
-        id="mac-address-task-icon"
+        id="firmware-version-task-icon"
         type="button"
-        aria-label="Toggle MAC address details"
+        aria-label="Toggle firmware version details"
         disabled
       ></button>
-      <span>Read MAC address</span>
-      <p class="checklist-details" id="mac-address-details" hidden></p>
+      <span>Read firmware version</span>
+      <p class="checklist-details" id="firmware-version-details" hidden></p>
+    </div>
+
+    <div class="checklist-item checklist-item-with-details">
+      <button
+        class="task-icon task-icon-empty"
+        id="fanet-id-task-icon"
+        type="button"
+        aria-label="Toggle FANET ID details"
+        disabled
+      ></button>
+      <span>Assign FANET ID</span>
+      <p class="checklist-details" id="fanet-id-details" hidden></p>
     </div>
 
     <div class="checklist-item checklist-item-with-details">
@@ -92,10 +140,27 @@
       <span>Interactive test</span>
       <pre class="checklist-details checklist-details-pre" id="self-test-details" hidden></pre>
     </div>
+
+    <div class="checklist-item checklist-item-with-details">
+      <button
+        class="task-icon task-icon-empty"
+        id="retrieve-test-details-task-icon"
+        type="button"
+        aria-label="Toggle retrieved test details"
+        disabled
+      ></button>
+      <span>Retrieve test details</span>
+      <pre class="checklist-details checklist-details-pre" id="retrieve-test-details" hidden></pre>
+    </div>
   </div>
 </section>
 
 <script>
+  const setupNotes = document.querySelector("#setup-notes");
+  const binariesConfirmed = document.querySelector("#binaries-confirmed");
+  const setupNotesConfirmed = document.querySelector("#setup-notes-confirmed");
+  const setupNotesError = document.querySelector("#setup-notes-error");
+  const cancelSetupTaskButton = document.querySelector("#cancel-setup-task");
   const bootloaderCheckbox = document.querySelector("#bootloader-mode");
   const flashTaskIcon = document.querySelector("#flash-task-icon");
   const flashConsole = document.querySelector("#flash-console");
@@ -105,19 +170,60 @@
   const resetNonvolatileDetails = document.querySelector("#reset-nonvolatile-details");
   const reconnectTaskIcon = document.querySelector("#reconnect-task-icon");
   const reconnectDetails = document.querySelector("#reconnect-details");
-  const macAddressTaskIcon = document.querySelector("#mac-address-task-icon");
-  const macAddressDetails = document.querySelector("#mac-address-details");
+  const firmwareVersionTaskIcon = document.querySelector("#firmware-version-task-icon");
+  const firmwareVersionDetails = document.querySelector("#firmware-version-details");
+  const fanetIdTaskIcon = document.querySelector("#fanet-id-task-icon");
+  const fanetIdDetails = document.querySelector("#fanet-id-details");
   const selfTestTaskIcon = document.querySelector("#self-test-task-icon");
   const selfTestDetails = document.querySelector("#self-test-details");
+  const retrieveTestDetailsTaskIcon = document.querySelector("#retrieve-test-details-task-icon");
+  const retrieveTestDetails = document.querySelector("#retrieve-test-details");
   let flashPollTimer = null;
   let discoveryPollTimer = null;
   let resetNonvolatilePollTimer = null;
-  let macAddressPollTimer = null;
+  let firmwareVersionPollTimer = null;
+  let fanetIdPollTimer = null;
   let selfTestPollTimer = null;
+  let retrieveTestDetailsPollTimer = null;
+  let setupCancellationRequested = false;
+  const taskStatuses = {
+    flash: "idle",
+    discovery: "idle",
+    resetNonvolatile: "idle",
+    firmwareVersion: "idle",
+    fanetId: "idle",
+    selfTest: "idle",
+    retrieveTestDetails: "idle",
+  };
   let discoveryStartRequested = false;
   let resetNonvolatileStartRequested = false;
-  let macAddressStartRequested = false;
+  let firmwareVersionStartRequested = false;
+  let fanetIdStartRequested = false;
   let selfTestStartRequested = false;
+  let retrieveTestDetailsStartRequested = false;
+  setupNotes.value = {{ setup_notes | tojson }};
+
+  function canEnableBootloaderMode() {
+    return binariesConfirmed.checked && setupNotesConfirmed.checked;
+  }
+
+  function updateBootloaderModeAvailability() {
+    bootloaderCheckbox.disabled = !canEnableBootloaderMode();
+  }
+
+  function lockSetupNotes() {
+    setupNotes.readOnly = true;
+    setupNotesConfirmed.checked = true;
+    setupNotesConfirmed.disabled = true;
+    updateBootloaderModeAvailability();
+    setupNotesError.hidden = true;
+  }
+
+  function lockBinariesConfirmation() {
+    binariesConfirmed.checked = true;
+    binariesConfirmed.disabled = true;
+    updateBootloaderModeAvailability();
+  }
 
   function setTaskIcon(icon, status) {
     icon.className = "task-icon";
@@ -134,6 +240,14 @@
     }
   }
 
+  function updateCancelSetupTaskButton() {
+    const hasRunningTask = Object.values(taskStatuses).some((status) => status === "running");
+    cancelSetupTaskButton.hidden = !hasRunningTask;
+    if (!hasRunningTask) {
+      cancelSetupTaskButton.disabled = false;
+    }
+  }
+
   function setFlashIcon(status) {
     setTaskIcon(flashTaskIcon, status);
   }
@@ -146,6 +260,10 @@
     setTaskIcon(selfTestTaskIcon, status);
   }
 
+  function setRetrieveTestDetailsIcon(status) {
+    setTaskIcon(retrieveTestDetailsTaskIcon, status);
+  }
+
   function setResetNonvolatileIcon(status) {
     setTaskIcon(resetNonvolatileTaskIcon, status);
   }
@@ -154,11 +272,17 @@
     setTaskIcon(reconnectTaskIcon, status);
   }
 
-  function setMacAddressIcon(status) {
-    setTaskIcon(macAddressTaskIcon, status);
+  function setFirmwareVersionIcon(status) {
+    setTaskIcon(firmwareVersionTaskIcon, status);
+  }
+
+  function setFanetIdIcon(status) {
+    setTaskIcon(fanetIdTaskIcon, status);
   }
 
   function applyFlashTaskState(state) {
+    taskStatuses.flash = state.status;
+    updateCancelSetupTaskButton();
     const previousStatus = flashTaskIcon.classList.contains("task-icon-success")
       ? "success"
       : null;
@@ -168,33 +292,39 @@
     flashConsole.scrollTop = flashConsole.scrollHeight;
 
     if (state.status === "running") {
+      lockBinariesConfirmation();
+      lockSetupNotes();
       bootloaderCheckbox.checked = true;
       bootloaderCheckbox.disabled = true;
       if (!flashPollTimer) {
         flashPollTimer = setInterval(refreshFlashTaskState, 500);
       }
     } else if (state.status === "success") {
+      lockBinariesConfirmation();
+      lockSetupNotes();
       bootloaderCheckbox.checked = true;
       bootloaderCheckbox.disabled = true;
       clearInterval(flashPollTimer);
       flashPollTimer = null;
-      if (previousStatus !== "success") {
+      if (previousStatus !== "success" && !setupCancellationRequested) {
         startDiscoveryTask();
       }
     } else if (state.status === "failure") {
       bootloaderCheckbox.checked = false;
-      bootloaderCheckbox.disabled = false;
+      updateBootloaderModeAvailability();
       clearInterval(flashPollTimer);
       flashPollTimer = null;
     } else {
       bootloaderCheckbox.checked = false;
-      bootloaderCheckbox.disabled = false;
+      updateBootloaderModeAvailability();
       clearInterval(flashPollTimer);
       flashPollTimer = null;
     }
   }
 
   function applyDiscoveryTaskState(state) {
+    taskStatuses.discovery = state.status;
+    updateCancelSetupTaskButton();
     setDiscoveryIcon(state.status);
 
     if (state.status === "success" && state.device) {
@@ -202,7 +332,9 @@
       discoveryDetails.hidden = false;
       clearInterval(discoveryPollTimer);
       discoveryPollTimer = null;
-      startResetNonvolatileTask();
+      if (!setupCancellationRequested) {
+        handoffSetupSession();
+      }
     } else if (state.status === "running") {
       discoveryDetails.textContent = "Searching for the newly flashed device...";
       discoveryDetails.hidden = false;
@@ -223,6 +355,8 @@
   }
 
   function applyResetNonvolatileTaskState(state) {
+    taskStatuses.resetNonvolatile = state.status;
+    updateCancelSetupTaskButton();
     const resetStatus = state.reset_status || state.status;
     const reconnectStatus = state.reconnect_status || "idle";
     setResetNonvolatileIcon(resetStatus);
@@ -234,7 +368,6 @@
       reconnectDetails.textContent = state.reconnect_details || "Device reconnected.";
       clearInterval(resetNonvolatilePollTimer);
       resetNonvolatilePollTimer = null;
-      startMacAddressTask();
     } else if (state.status === "running") {
       resetNonvolatileDetails.textContent =
         state.reset_details || "Resetting nonvolatile memory...";
@@ -262,39 +395,80 @@
     }
   }
 
-  function applyMacAddressTaskState(state) {
-    setMacAddressIcon(state.status);
+  function applyFirmwareVersionTaskState(state) {
+    taskStatuses.firmwareVersion = state.status;
+    updateCancelSetupTaskButton();
+    setFirmwareVersionIcon(state.status);
 
     if (state.status === "success") {
-      macAddressDetails.textContent = state.details || `MAC address: ${state.mac_address}`;
-      clearInterval(macAddressPollTimer);
-      macAddressPollTimer = null;
-      startSelfTestTask();
+      firmwareVersionDetails.textContent =
+        state.details || `Firmware version: ${state.firmware_version}`;
+      clearInterval(firmwareVersionPollTimer);
+      firmwareVersionPollTimer = null;
+      if (!setupCancellationRequested) {
+        startFanetIdTask();
+      }
     } else if (state.status === "running") {
-      macAddressDetails.textContent = state.details || "Reading MAC address...";
-      if (!macAddressPollTimer) {
-        macAddressPollTimer = setInterval(refreshMacAddressTaskState, 1000);
+      firmwareVersionDetails.textContent = state.details || "Reading firmware version...";
+      if (!firmwareVersionPollTimer) {
+        firmwareVersionPollTimer = setInterval(refreshFirmwareVersionTaskState, 1000);
       }
     } else if (state.status === "failure") {
-      macAddressDetails.textContent = state.details || "MAC address read failed.";
-      macAddressDetails.hidden = false;
-      clearInterval(macAddressPollTimer);
-      macAddressPollTimer = null;
+      firmwareVersionDetails.textContent = state.details || "Firmware version read failed.";
+      firmwareVersionDetails.hidden = false;
+      clearInterval(firmwareVersionPollTimer);
+      firmwareVersionPollTimer = null;
     } else {
-      macAddressDetails.textContent = "";
-      macAddressDetails.hidden = true;
-      clearInterval(macAddressPollTimer);
-      macAddressPollTimer = null;
+      firmwareVersionDetails.textContent = "";
+      firmwareVersionDetails.hidden = true;
+      clearInterval(firmwareVersionPollTimer);
+      firmwareVersionPollTimer = null;
+    }
+  }
+
+  function applyFanetIdTaskState(state) {
+    taskStatuses.fanetId = state.status;
+    updateCancelSetupTaskButton();
+    setFanetIdIcon(state.status);
+
+    if (state.status === "success") {
+      fanetIdDetails.textContent =
+        state.details || `FANET ID: ${state.fanet_address}`;
+      clearInterval(fanetIdPollTimer);
+      fanetIdPollTimer = null;
+      if (!setupCancellationRequested) {
+        startSelfTestTask();
+      }
+    } else if (state.status === "running") {
+      fanetIdDetails.textContent = state.details || "Assigning FANET ID...";
+      if (!fanetIdPollTimer) {
+        fanetIdPollTimer = setInterval(refreshFanetIdTaskState, 1000);
+      }
+    } else if (state.status === "failure") {
+      fanetIdDetails.textContent = state.details || "FANET ID assignment failed.";
+      fanetIdDetails.hidden = false;
+      clearInterval(fanetIdPollTimer);
+      fanetIdPollTimer = null;
+    } else {
+      fanetIdDetails.textContent = "";
+      fanetIdDetails.hidden = true;
+      clearInterval(fanetIdPollTimer);
+      fanetIdPollTimer = null;
     }
   }
 
   function applySelfTestTaskState(state) {
+    taskStatuses.selfTest = state.status;
+    updateCancelSetupTaskButton();
     setSelfTestIcon(state.status);
 
     if (state.status === "success") {
       selfTestDetails.textContent = state.details || "Interactive self test passed.";
       clearInterval(selfTestPollTimer);
       selfTestPollTimer = null;
+      if (!setupCancellationRequested) {
+        startRetrieveTestDetailsTask();
+      }
     } else if (state.status === "running") {
       selfTestDetails.textContent = state.details || "Interactive self test is running...";
       if (!selfTestPollTimer) {
@@ -313,6 +487,33 @@
     }
   }
 
+  function applyRetrieveTestDetailsTaskState(state) {
+    taskStatuses.retrieveTestDetails = state.status;
+    updateCancelSetupTaskButton();
+    setRetrieveTestDetailsIcon(state.status);
+
+    if (state.status === "success") {
+      retrieveTestDetails.textContent = state.details || "Self test details retrieved.";
+      clearInterval(retrieveTestDetailsPollTimer);
+      retrieveTestDetailsPollTimer = null;
+    } else if (state.status === "running") {
+      retrieveTestDetails.textContent = state.details || "Retrieving self test details...";
+      if (!retrieveTestDetailsPollTimer) {
+        retrieveTestDetailsPollTimer = setInterval(refreshRetrieveTestDetailsTaskState, 1000);
+      }
+    } else if (state.status === "failure") {
+      retrieveTestDetails.textContent = state.details || "Self test details retrieval failed.";
+      retrieveTestDetails.hidden = false;
+      clearInterval(retrieveTestDetailsPollTimer);
+      retrieveTestDetailsPollTimer = null;
+    } else {
+      retrieveTestDetails.textContent = "";
+      retrieveTestDetails.hidden = true;
+      clearInterval(retrieveTestDetailsPollTimer);
+      retrieveTestDetailsPollTimer = null;
+    }
+  }
+
   async function refreshFlashTaskState() {
     const response = await fetch("/api/setup/flash");
     applyFlashTaskState(await response.json());
@@ -323,9 +524,14 @@
     applyDiscoveryTaskState(await response.json());
   }
 
-  async function refreshMacAddressTaskState() {
-    const response = await fetch("/api/setup/mac-address");
-    applyMacAddressTaskState(await response.json());
+  async function refreshFirmwareVersionTaskState() {
+    const response = await fetch("/api/setup/firmware-version");
+    applyFirmwareVersionTaskState(await response.json());
+  }
+
+  async function refreshFanetIdTaskState() {
+    const response = await fetch("/api/setup/fanet-id");
+    applyFanetIdTaskState(await response.json());
   }
 
   async function refreshResetNonvolatileTaskState() {
@@ -338,7 +544,13 @@
     applySelfTestTaskState(await response.json());
   }
 
+  async function refreshRetrieveTestDetailsTaskState() {
+    const response = await fetch("/api/setup/test-details");
+    applyRetrieveTestDetailsTaskState(await response.json());
+  }
+
   async function startFlashTask() {
+    if (!canEnableBootloaderMode()) return;
     bootloaderCheckbox.checked = true;
     bootloaderCheckbox.disabled = true;
     const response = await fetch("/api/setup/flash", {
@@ -348,6 +560,7 @@
   }
 
   async function startDiscoveryTask() {
+    if (setupCancellationRequested) return;
     if (discoveryStartRequested) return;
     discoveryStartRequested = true;
     const currentResponse = await fetch("/api/setup/network-discovery");
@@ -362,6 +575,7 @@
   }
 
   async function startResetNonvolatileTask() {
+    if (setupCancellationRequested) return;
     if (resetNonvolatileStartRequested) return;
     resetNonvolatileStartRequested = true;
     const currentResponse = await fetch("/api/setup/reset-nonvolatile-memory");
@@ -375,21 +589,38 @@
     applyResetNonvolatileTaskState(await response.json());
   }
 
-  async function startMacAddressTask() {
-    if (macAddressStartRequested) return;
-    macAddressStartRequested = true;
-    const currentResponse = await fetch("/api/setup/mac-address");
+  async function startFirmwareVersionTask() {
+    if (setupCancellationRequested) return;
+    if (firmwareVersionStartRequested) return;
+    firmwareVersionStartRequested = true;
+    const currentResponse = await fetch("/api/setup/firmware-version");
     const currentState = await currentResponse.json();
     if (currentState.status === "running" || currentState.status === "success") {
-      applyMacAddressTaskState(currentState);
+      applyFirmwareVersionTaskState(currentState);
       return;
     }
 
-    const response = await fetch("/api/setup/mac-address", { method: "POST" });
-    applyMacAddressTaskState(await response.json());
+    const response = await fetch("/api/setup/firmware-version", { method: "POST" });
+    applyFirmwareVersionTaskState(await response.json());
+  }
+
+  async function startFanetIdTask() {
+    if (setupCancellationRequested) return;
+    if (fanetIdStartRequested) return;
+    fanetIdStartRequested = true;
+    const currentResponse = await fetch("/api/setup/fanet-id");
+    const currentState = await currentResponse.json();
+    if (currentState.status === "running" || currentState.status === "success") {
+      applyFanetIdTaskState(currentState);
+      return;
+    }
+
+    const response = await fetch("/api/setup/fanet-id", { method: "POST" });
+    applyFanetIdTaskState(await response.json());
   }
 
   async function startSelfTestTask() {
+    if (setupCancellationRequested) return;
     if (selfTestStartRequested) return;
     selfTestStartRequested = true;
     const currentResponse = await fetch("/api/setup/interactive-self-test");
@@ -403,10 +634,81 @@
     applySelfTestTaskState(await response.json());
   }
 
+  async function startRetrieveTestDetailsTask() {
+    if (setupCancellationRequested) return;
+    if (retrieveTestDetailsStartRequested) return;
+    retrieveTestDetailsStartRequested = true;
+    const currentResponse = await fetch("/api/setup/test-details");
+    const currentState = await currentResponse.json();
+    if (currentState.status === "running" || currentState.status === "success") {
+      applyRetrieveTestDetailsTaskState(currentState);
+      return;
+    }
+
+    const response = await fetch("/api/setup/test-details", { method: "POST" });
+    applyRetrieveTestDetailsTaskState(await response.json());
+  }
+
+  async function handoffSetupSession() {
+    const response = await fetch("/api/setup/handoff", { method: "POST" });
+    const payload = await response.json();
+    if (!response.ok) {
+      discoveryDetails.textContent = payload.detail || "Commissioning session could not be started.";
+      discoveryDetails.hidden = false;
+      return;
+    }
+    window.location.href = payload.url;
+  }
+
+  setupNotesConfirmed.addEventListener("change", async () => {
+    if (!setupNotesConfirmed.checked) return;
+
+    setupNotesConfirmed.disabled = true;
+    setupNotesError.hidden = true;
+    try {
+      const response = await fetch("/api/setup/notes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ notes: setupNotes.value }),
+      });
+      if (!response.ok) {
+        throw new Error("Setup notes could not be saved.");
+      }
+      lockSetupNotes();
+    } catch (error) {
+      setupNotesConfirmed.disabled = false;
+      setupNotesConfirmed.checked = false;
+      updateBootloaderModeAvailability();
+      setupNotesError.textContent = error.message || "Setup notes could not be saved.";
+      setupNotesError.hidden = false;
+    }
+  });
+
+  binariesConfirmed.addEventListener("change", () => {
+    updateBootloaderModeAvailability();
+  });
+
   bootloaderCheckbox.addEventListener("change", () => {
     if (bootloaderCheckbox.checked) {
       startFlashTask();
     }
+  });
+
+  cancelSetupTaskButton.addEventListener("click", async () => {
+    setupCancellationRequested = true;
+    cancelSetupTaskButton.disabled = true;
+    await fetch("/api/setup/cancel", { method: "POST" });
+    await Promise.all([
+      refreshFlashTaskState(),
+      refreshDiscoveryTaskState(),
+      refreshResetNonvolatileTaskState(),
+      refreshFirmwareVersionTaskState(),
+      refreshFanetIdTaskState(),
+      refreshSelfTestTaskState(),
+      refreshRetrieveTestDetailsTaskState(),
+    ]);
   });
 
   flashTaskIcon.addEventListener("click", () => {
@@ -425,18 +727,28 @@
     reconnectDetails.hidden = !reconnectDetails.hidden;
   });
 
-  macAddressTaskIcon.addEventListener("click", () => {
-    macAddressDetails.hidden = !macAddressDetails.hidden;
+  firmwareVersionTaskIcon.addEventListener("click", () => {
+    firmwareVersionDetails.hidden = !firmwareVersionDetails.hidden;
+  });
+
+  fanetIdTaskIcon.addEventListener("click", () => {
+    fanetIdDetails.hidden = !fanetIdDetails.hidden;
   });
 
   selfTestTaskIcon.addEventListener("click", () => {
     selfTestDetails.hidden = !selfTestDetails.hidden;
   });
 
+  retrieveTestDetailsTaskIcon.addEventListener("click", () => {
+    retrieveTestDetails.hidden = !retrieveTestDetails.hidden;
+  });
+
   refreshFlashTaskState();
   refreshDiscoveryTaskState();
   refreshResetNonvolatileTaskState();
-  refreshMacAddressTaskState();
+  refreshFirmwareVersionTaskState();
+  refreshFanetIdTaskState();
   refreshSelfTestTaskState();
+  refreshRetrieveTestDetailsTaskState();
 </script>
 {% endblock %}

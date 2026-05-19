@@ -16,6 +16,7 @@ class SelfTestTask:
     details: str = ""
     result: dict | None = None
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+    worker_task: asyncio.Task | None = None
 
     def snapshot(self) -> dict:
         return {
@@ -25,17 +26,67 @@ class SelfTestTask:
         }
 
 
+@dataclass
+class SelfTestDetailsTask:
+    status: str = "idle"
+    details: str = ""
+    lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+    worker_task: asyncio.Task | None = None
+
+    def snapshot(self) -> dict:
+        return {
+            "status": self.status,
+            "details": self.details,
+        }
+
+
 self_test_task = SelfTestTask()
+self_test_details_task = SelfTestDetailsTask()
 
 
 def get_self_test_task() -> SelfTestTask:
     return self_test_task
 
 
+def get_self_test_details_task() -> SelfTestDetailsTask:
+    return self_test_details_task
+
+
 def reset_self_test_task() -> None:
     self_test_task.status = "idle"
     self_test_task.details = ""
     self_test_task.result = None
+    self_test_task.worker_task = None
+
+
+def reset_self_test_details_task() -> None:
+    self_test_details_task.status = "idle"
+    self_test_details_task.details = ""
+    self_test_details_task.worker_task = None
+
+
+def cancel_self_test_task() -> SelfTestTask:
+    task = get_self_test_task()
+    if task.status != "running":
+        return task
+
+    task.status = "failure"
+    task.details = "Interactive self test task was cancelled."
+    if task.worker_task is not None:
+        task.worker_task.cancel()
+    return task
+
+
+def cancel_self_test_details_task() -> SelfTestDetailsTask:
+    task = get_self_test_details_task()
+    if task.status != "running":
+        return task
+
+    task.status = "failure"
+    task.details = "Self test details retrieval was cancelled."
+    if task.worker_task is not None:
+        task.worker_task.cancel()
+    return task
 
 
 def device_self_test_url() -> str:
@@ -51,6 +102,12 @@ def fetch_json(url: str, *, method: str = "GET") -> dict:
     request = Request(url, method=method)
     with urlopen(request, timeout=HTTP_TIMEOUT_SECONDS) as response:
         return json.loads(response.read().decode("utf-8"))
+
+
+def fetch_text(url: str, *, method: str = "GET") -> str:
+    request = Request(url, method=method)
+    with urlopen(request, timeout=HTTP_TIMEOUT_SECONDS) as response:
+        return response.read().decode("utf-8")
 
 
 def status_result(payload: dict) -> str | None:
@@ -93,9 +150,14 @@ async def run_interactive_self_test() -> None:
                     return
 
                 await asyncio.sleep(SELF_TEST_POLL_SECONDS)
+        except asyncio.CancelledError:
+            task.status = "failure"
+            task.details = "Interactive self test task was cancelled."
         except Exception as exc:
             task.status = "failure"
             task.details = f"{type(exc).__name__}: {exc}"
+        finally:
+            task.worker_task = None
 
 
 def start_interactive_self_test() -> SelfTestTask:
@@ -106,5 +168,39 @@ def start_interactive_self_test() -> SelfTestTask:
     task.status = "running"
     task.details = "Starting interactive self test..."
     task.result = None
-    asyncio.create_task(run_interactive_self_test())
+    task.worker_task = asyncio.create_task(run_interactive_self_test())
+    return task
+
+
+async def run_retrieve_self_test_details() -> None:
+    task = get_self_test_details_task()
+
+    async with task.lock:
+        task.status = "running"
+        task.details = "Retrieving self test details..."
+
+        try:
+            details = await asyncio.to_thread(fetch_text, f"{device_self_test_url()}/details")
+            if not details.strip():
+                raise RuntimeError("Device returned empty self test details.")
+            task.status = "success"
+            task.details = details
+        except asyncio.CancelledError:
+            task.status = "failure"
+            task.details = "Self test details retrieval was cancelled."
+        except Exception as exc:
+            task.status = "failure"
+            task.details = f"{type(exc).__name__}: {exc}"
+        finally:
+            task.worker_task = None
+
+
+def start_retrieve_self_test_details() -> SelfTestDetailsTask:
+    task = get_self_test_details_task()
+    if task.status == "running":
+        return task
+
+    task.status = "running"
+    task.details = "Retrieving self test details..."
+    task.worker_task = asyncio.create_task(run_retrieve_self_test_details())
     return task

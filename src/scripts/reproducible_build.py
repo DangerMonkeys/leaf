@@ -28,7 +28,7 @@ def _path_forms(path: pathlib.Path) -> list[str]:
     # GCC diagnostics and __FILE__ strings on Windows commonly use forward
     # slashes even when Python/SCons starts with backslash paths.
     forms.append(str(resolved).replace("\\", "/"))
-    return sorted(set(forms), key=len, reverse=True)
+    return sorted(set(forms), key=lambda form: (-len(form), form))
 
 
 def _append_prefix_maps(source: pathlib.Path, target: str, flags: list[str]) -> None:

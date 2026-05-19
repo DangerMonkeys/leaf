@@ -41,6 +41,7 @@ desktop.ini
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .pio
+factory_interface/github_cache/
 vario.ino.cpp
 
 # Python

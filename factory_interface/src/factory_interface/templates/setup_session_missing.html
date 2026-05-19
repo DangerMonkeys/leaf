@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="panel narrow">
+  <h1>Session not found</h1>
+  <p class="status-message">
+    No in-memory commissioning session exists for {{ mac_address }}.
+  </p>
+  <a class="button-link" href="/setup/sessions">View sessions</a>
+</section>
+{% endblock %}
