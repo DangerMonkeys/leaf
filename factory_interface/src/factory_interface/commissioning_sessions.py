@@ -5,12 +5,11 @@ import json
 import platform
 import socket
 import subprocess
-import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from urllib.error import URLError
-from urllib.request import Request, urlopen
+from urllib.request import Request
 
 from sqlmodel import Session, select
 
@@ -21,6 +20,10 @@ from factory_interface.fanet_id_task import (
     LEAF_MANUFACTURER_ID,
     most_recent_fanet_id_for_mac_address,
     normalize_mac_address,
+)
+from factory_interface.http_client import (
+    DEFAULT_HTTP_TIMEOUT_SECONDS,
+    urlopen_with_timeout_retries,
 )
 from factory_interface.models import ConfigurationEvent, File
 from factory_interface.network_discovery import LeafDiscoveryResponse, probe_once
@@ -34,9 +37,8 @@ from factory_interface.settings import (
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
-HTTP_TIMEOUT_SECONDS = 5.0
+HTTP_TIMEOUT_SECONDS = DEFAULT_HTTP_TIMEOUT_SECONDS
 RECONNECT_GRACE_SECONDS = 2.0
-RECONNECT_TIMEOUT_SECONDS = 45.0
 RECONNECT_POLL_SECONDS = 1.0
 SELF_TEST_POLL_SECONDS = 1.0
 
@@ -126,13 +128,19 @@ def device_base_url(session: CommissioningSession) -> str:
 
 def fetch_json(url: str, *, method: str = "GET") -> dict:
     request = Request(url, method=method)
-    with urlopen(request, timeout=HTTP_TIMEOUT_SECONDS) as response:
+    with urlopen_with_timeout_retries(
+        request,
+        timeout=HTTP_TIMEOUT_SECONDS,
+    ) as response:
         return json.loads(response.read().decode("utf-8"))
 
 
 def fetch_text(url: str, *, method: str = "GET") -> str:
     request = Request(url, method=method)
-    with urlopen(request, timeout=HTTP_TIMEOUT_SECONDS) as response:
+    with urlopen_with_timeout_retries(
+        request,
+        timeout=HTTP_TIMEOUT_SECONDS,
+    ) as response:
         return response.read().decode("utf-8")
 
 
@@ -144,7 +152,10 @@ def post_json(url: str, payload: dict) -> dict:
         method="POST",
         headers={"Content-Type": "application/json"},
     )
-    with urlopen(request, timeout=HTTP_TIMEOUT_SECONDS) as response:
+    with urlopen_with_timeout_retries(
+        request,
+        timeout=HTTP_TIMEOUT_SECONDS,
+    ) as response:
         return json.loads(response.read().decode("utf-8"))
 
 
@@ -185,28 +196,21 @@ async def read_session_mac_address(session: CommissioningSession) -> str:
 
 
 async def wait_for_session_device(session: CommissioningSession) -> None:
-    deadline = time.monotonic() + RECONNECT_TIMEOUT_SECONDS
-    last_error: Exception | None = None
-
-    while time.monotonic() < deadline:
+    while True:
         try:
             await read_session_mac_address(session)
             return
-        except (OSError, URLError, TimeoutError, RuntimeError) as exc:
-            last_error = exc
+        except (OSError, URLError, TimeoutError, RuntimeError):
+            pass
 
         try:
             await rediscover_session_device(session)
             await read_session_mac_address(session)
             return
-        except (OSError, URLError, TimeoutError, RuntimeError) as exc:
-            last_error = exc
+        except (OSError, URLError, TimeoutError, RuntimeError):
+            pass
 
         await asyncio.sleep(RECONNECT_POLL_SECONDS)
-
-    if last_error is not None:
-        raise RuntimeError(f"Device did not reconnect after reset: {last_error}")
-    raise RuntimeError("Device did not reconnect after reset.")
 
 
 def active_fanet_ids(except_mac_address: str | None = None) -> set[int]:

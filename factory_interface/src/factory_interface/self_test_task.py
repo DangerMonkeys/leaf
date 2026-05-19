@@ -1,13 +1,17 @@
 import asyncio
 import json
 from dataclasses import dataclass, field
-from urllib.request import Request, urlopen
+from urllib.request import Request
 
+from factory_interface.http_client import (
+    DEFAULT_HTTP_TIMEOUT_SECONDS,
+    urlopen_with_timeout_retries,
+)
 from factory_interface.network_discovery import get_find_device_task
 
 
 SELF_TEST_POLL_SECONDS = 1.0
-HTTP_TIMEOUT_SECONDS = 5.0
+HTTP_TIMEOUT_SECONDS = DEFAULT_HTTP_TIMEOUT_SECONDS
 
 
 @dataclass
@@ -100,13 +104,19 @@ def device_self_test_url() -> str:
 
 def fetch_json(url: str, *, method: str = "GET") -> dict:
     request = Request(url, method=method)
-    with urlopen(request, timeout=HTTP_TIMEOUT_SECONDS) as response:
+    with urlopen_with_timeout_retries(
+        request,
+        timeout=HTTP_TIMEOUT_SECONDS,
+    ) as response:
         return json.loads(response.read().decode("utf-8"))
 
 
 def fetch_text(url: str, *, method: str = "GET") -> str:
     request = Request(url, method=method)
-    with urlopen(request, timeout=HTTP_TIMEOUT_SECONDS) as response:
+    with urlopen_with_timeout_retries(
+        request,
+        timeout=HTTP_TIMEOUT_SECONDS,
+    ) as response:
         return response.read().decode("utf-8")
 
 

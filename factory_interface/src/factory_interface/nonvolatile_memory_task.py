@@ -1,16 +1,18 @@
 import asyncio
 import json
-import time
 from dataclasses import dataclass, field
 from urllib.error import URLError
-from urllib.request import Request, urlopen
+from urllib.request import Request
 
+from factory_interface.http_client import (
+    DEFAULT_HTTP_TIMEOUT_SECONDS,
+    urlopen_with_timeout_retries,
+)
 from factory_interface.network_discovery import get_find_device_task, probe_once
 
 
-HTTP_TIMEOUT_SECONDS = 5.0
+HTTP_TIMEOUT_SECONDS = DEFAULT_HTTP_TIMEOUT_SECONDS
 RESET_REBOOT_GRACE_SECONDS = 2.0
-RESET_RECONNECT_TIMEOUT_SECONDS = 45.0
 RESET_RECONNECT_POLL_SECONDS = 1.0
 
 
@@ -82,20 +84,20 @@ def device_base_url() -> tuple[str, str]:
 
 def fetch_json(url: str, *, method: str = "GET") -> dict:
     request = Request(url, method=method)
-    with urlopen(request, timeout=HTTP_TIMEOUT_SECONDS) as response:
+    with urlopen_with_timeout_retries(
+        request,
+        timeout=HTTP_TIMEOUT_SECONDS,
+    ) as response:
         return json.loads(response.read().decode("utf-8"))
 
 
 async def wait_for_device(base_url: str, device_id: str) -> None:
-    deadline = time.monotonic() + RESET_RECONNECT_TIMEOUT_SECONDS
-    last_error: Exception | None = None
-
-    while time.monotonic() < deadline:
+    while True:
         try:
             await asyncio.to_thread(fetch_json, f"{base_url}/mac-address")
             return
-        except (OSError, URLError, TimeoutError) as exc:
-            last_error = exc
+        except (OSError, URLError, TimeoutError):
+            pass
 
         try:
             for response in await probe_once():
@@ -106,14 +108,10 @@ async def wait_for_device(base_url: str, device_id: str) -> None:
                         f"http://{response.ip_address}:{response.port}/mac-address",
                     )
                     return
-        except (OSError, URLError, TimeoutError) as exc:
-            last_error = exc
+        except (OSError, URLError, TimeoutError):
+            pass
 
         await asyncio.sleep(RESET_RECONNECT_POLL_SECONDS)
-
-    if last_error is not None:
-        raise RuntimeError(f"Device did not reconnect after reset: {last_error}")
-    raise RuntimeError("Device did not reconnect after reset.")
 
 
 async def run_reset_nonvolatile_memory() -> None:
