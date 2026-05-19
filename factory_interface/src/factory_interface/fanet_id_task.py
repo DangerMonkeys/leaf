@@ -6,6 +6,7 @@ from urllib.request import Request, urlopen
 from sqlmodel import Session, select
 
 from factory_interface.database import engine
+from factory_interface.mac_address_task import get_mac_address_task
 from factory_interface.models import ConfigurationEvent
 from factory_interface.network_discovery import get_find_device_task
 
@@ -14,6 +15,14 @@ HTTP_TIMEOUT_SECONDS = 5.0
 LEAF_MANUFACTURER_ID = 0x0C
 FANET_ID_MIN = (LEAF_MANUFACTURER_ID << 16) | 0x0001
 FANET_ID_MAX = (LEAF_MANUFACTURER_ID << 16) | 0xFFFF
+
+
+def normalize_mac_address(mac_address: str) -> str:
+    return "".join(
+        character
+        for character in mac_address.upper()
+        if character in "0123456789ABCDEF"
+    )
 
 
 @dataclass
@@ -80,6 +89,37 @@ def next_available_fanet_id() -> int:
     raise RuntimeError("No FANET IDs are available for Leaf manufacturer ID 0x0C.")
 
 
+def most_recent_fanet_id_for_mac_address(mac_address: str) -> int | None:
+    normalized_mac_address = normalize_mac_address(mac_address)
+    if not normalized_mac_address:
+        return None
+
+    with Session(engine) as session:
+        events = session.exec(
+            select(ConfigurationEvent)
+            .where(ConfigurationEvent.fanet_id.is_not(None))
+            .order_by(ConfigurationEvent.configured_at.desc(), ConfigurationEvent.id.desc())
+        ).all()
+
+    for event in events:
+        if normalize_mac_address(event.mac_address) == normalized_mac_address:
+            return event.fanet_id
+
+    return None
+
+
+def fanet_id_to_assign() -> int:
+    mac_address_task = get_mac_address_task()
+    if mac_address_task.status != "success" or mac_address_task.mac_address is None:
+        raise RuntimeError("Device MAC address has not been read.")
+
+    existing_fanet_id = most_recent_fanet_id_for_mac_address(mac_address_task.mac_address)
+    if existing_fanet_id is not None:
+        return existing_fanet_id
+
+    return next_available_fanet_id()
+
+
 def device_fanet_address_url() -> str:
     discovery_task = get_find_device_task()
     if discovery_task.status != "success" or discovery_task.device is None:
@@ -111,7 +151,7 @@ async def run_assign_fanet_id() -> None:
         task.details = "Assigning FANET ID..."
 
         try:
-            fanet_id = await asyncio.to_thread(next_available_fanet_id)
+            fanet_id = await asyncio.to_thread(fanet_id_to_assign)
             fanet_address = f"{fanet_id:06X}"
             payload = await asyncio.to_thread(
                 post_json,
