@@ -75,7 +75,7 @@ def cancel_self_test_task() -> SelfTestTask:
         return task
 
     task.status = "failure"
-    task.details = "Interactive self test task was cancelled."
+    task.details = "Verification tests were cancelled."
     if task.worker_task is not None:
         task.worker_task.cancel()
     return task
@@ -132,12 +132,19 @@ def status_result(payload: dict) -> str | None:
     return None
 
 
+async def retrieve_self_test_details_text(base_url: str) -> str:
+    details = await asyncio.to_thread(fetch_text, f"{base_url}/details")
+    if not details.strip():
+        raise RuntimeError("Device returned empty self test details.")
+    return details
+
+
 async def run_interactive_self_test() -> None:
     task = get_self_test_task()
 
     async with task.lock:
         task.status = "running"
-        task.details = "Starting interactive self test..."
+        task.details = "Starting verification tests..."
         task.result = None
 
         try:
@@ -152,17 +159,33 @@ async def run_interactive_self_test() -> None:
                 result = status_result(payload)
                 if result is not None:
                     task.status = result
+                    if result == "failure":
+                        try:
+                            task.details = await retrieve_self_test_details_text(base_url)
+                        except Exception as details_exc:
+                            task.details = (
+                                "Verification tests failed.\n\n"
+                                f"Test details could not be retrieved: "
+                                f"{type(details_exc).__name__}: {details_exc}"
+                            )
                     return
 
                 if not payload.get("running", False):
                     task.status = "failure"
-                    task.details = "Self test stopped without a pass/fail result.\n\n" + task.details
+                    try:
+                        task.details = await retrieve_self_test_details_text(base_url)
+                    except Exception as details_exc:
+                        task.details = (
+                            "Verification tests stopped without a pass/fail result.\n\n"
+                            f"Test details could not be retrieved: "
+                            f"{type(details_exc).__name__}: {details_exc}"
+                        )
                     return
 
                 await asyncio.sleep(SELF_TEST_POLL_SECONDS)
         except asyncio.CancelledError:
             task.status = "failure"
-            task.details = "Interactive self test task was cancelled."
+            task.details = "Verification tests were cancelled."
         except Exception as exc:
             task.status = "failure"
             task.details = f"{type(exc).__name__}: {exc}"
@@ -176,7 +199,7 @@ def start_interactive_self_test() -> SelfTestTask:
         return task
 
     task.status = "running"
-    task.details = "Starting interactive self test..."
+    task.details = "Starting verification tests..."
     task.result = None
     task.worker_task = asyncio.create_task(run_interactive_self_test())
     return task
@@ -190,9 +213,7 @@ async def run_retrieve_self_test_details() -> None:
         task.details = "Retrieving self test details..."
 
         try:
-            details = await asyncio.to_thread(fetch_text, f"{device_self_test_url()}/details")
-            if not details.strip():
-                raise RuntimeError("Device returned empty self test details.")
+            details = await retrieve_self_test_details_text(device_self_test_url())
             task.status = "success"
             task.details = details
         except asyncio.CancelledError:

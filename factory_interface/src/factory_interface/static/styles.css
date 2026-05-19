@@ -95,7 +95,7 @@ body {
 }
 
 .page {
-  width: min(920px, 100%);
+  width: min(1280px, 100%);
   margin: 0 auto;
   padding: 32px 20px;
 }
@@ -107,6 +107,12 @@ body {
 
 .panel.narrow {
   max-width: 520px;
+}
+
+.setup-panel.panel.narrow {
+  width: min(100%, 1100px);
+  max-width: 80vw;
+  margin: 0 auto;
 }
 
 h1 {
@@ -537,6 +543,64 @@ button:focus-visible {
 .checklist-details-pre {
   white-space: pre-wrap;
   font-family: Consolas, "Courier New", monospace;
+}
+
+.verification-test-details {
+  display: grid;
+  gap: 10px;
+}
+
+.verification-results {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.verification-result {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 9px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #edf3ef;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.verification-result-pass,
+.verification-result-success,
+.verification-result-complete {
+  border-color: #bbf7d0;
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.verification-result-fail,
+.verification-result-failure {
+  border-color: #fecaca;
+  background: #fee2e2;
+  color: #b42318;
+}
+
+.verification-result-running,
+.verification-result-pending {
+  border-color: #bfdbfe;
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.verification-failure-details {
+  margin: 0;
+  color: var(--ink);
+}
+
+@media (max-width: 700px) {
+  .setup-panel.panel.narrow {
+    max-width: 100%;
+  }
 }
 
 .bootloader-check {

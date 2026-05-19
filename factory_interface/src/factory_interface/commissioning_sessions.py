@@ -280,6 +280,14 @@ def self_test_status(payload: dict) -> str | None:
     return None
 
 
+async def retrieve_session_self_test_details(session: CommissioningSession, base_url: str) -> str:
+    self_test_details = await asyncio.to_thread(fetch_text, f"{base_url}/details")
+    if not self_test_details.strip():
+        raise RuntimeError("Device returned empty self test details.")
+    session.self_test_details = self_test_details
+    return self_test_details
+
+
 def machine_description() -> str:
     return " ".join(
         [
@@ -520,7 +528,7 @@ async def run_commissioning_session(session: CommissioningSession) -> None:
 
         self_test_task = session.tasks["interactive_self_test"]
         self_test_task.update(
-            {"status": "running", "details": "Starting interactive self test..."}
+            {"status": "running", "details": "Starting verification tests..."}
         )
         session.touch()
         base_url = f"{device_base_url(session)}/self-test"
@@ -537,12 +545,36 @@ async def run_commissioning_session(session: CommissioningSession) -> None:
             if result is not None:
                 self_test_task["status"] = result
                 if result == "failure":
-                    raise RuntimeError("Interactive self test failed.")
+                    try:
+                        self_test_task["details"] = await retrieve_session_self_test_details(
+                            session, base_url
+                        )
+                    except Exception as details_exc:
+                        self_test_task["details"] = (
+                            "Verification tests failed.\n\n"
+                            f"Test details could not be retrieved: "
+                            f"{type(details_exc).__name__}: {details_exc}"
+                        )
+                    session.status = "failure"
+                    session.details = "Verification tests failed."
+                    return
                 break
 
             if not self_test_payload.get("running", False):
                 self_test_task["status"] = "failure"
-                raise RuntimeError("Self test stopped without a pass/fail result.")
+                try:
+                    self_test_task["details"] = await retrieve_session_self_test_details(
+                        session, base_url
+                    )
+                except Exception as details_exc:
+                    self_test_task["details"] = (
+                        "Verification tests stopped without a pass/fail result.\n\n"
+                        f"Test details could not be retrieved: "
+                        f"{type(details_exc).__name__}: {details_exc}"
+                    )
+                session.status = "failure"
+                session.details = "Verification tests stopped without a pass/fail result."
+                return
 
             await asyncio.sleep(SELF_TEST_POLL_SECONDS)
 
@@ -551,10 +583,7 @@ async def run_commissioning_session(session: CommissioningSession) -> None:
             {"status": "running", "details": "Retrieving self test details..."}
         )
         session.touch()
-        self_test_details = await asyncio.to_thread(fetch_text, f"{base_url}/details")
-        if not self_test_details.strip():
-            raise RuntimeError("Device returned empty self test details.")
-        session.self_test_details = self_test_details
+        self_test_details = await retrieve_session_self_test_details(session, base_url)
         retrieve_test_details_task.update(
             {
                 "status": "success",

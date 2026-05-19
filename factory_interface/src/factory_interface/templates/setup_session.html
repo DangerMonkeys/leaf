@@ -90,9 +90,9 @@
     </div>
 
     <div class="checklist-item checklist-item-with-details">
-      <button class="task-icon task-icon-empty" id="self-test-task-icon" type="button" aria-label="Toggle interactive test details" disabled></button>
-      <span>Interactive test</span>
-      <pre class="checklist-details checklist-details-pre" id="self-test-details" hidden></pre>
+      <button class="task-icon task-icon-empty" id="self-test-task-icon" type="button" aria-label="Toggle verification test details" disabled></button>
+      <span>Verification tests</span>
+      <div class="checklist-details verification-test-details" id="self-test-details" hidden></div>
     </div>
 
     <div class="checklist-item checklist-item-with-details">
@@ -171,10 +171,53 @@
     element.hidden = status === "idle" || !element.textContent;
   }
 
+  function formatTestName(name) {
+    return name
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  }
+
+  function renderVerificationTests(element, task) {
+    element.replaceChildren();
+
+    const result = task.result || {};
+    const results = result.results || {};
+    const entries = Object.entries(results).filter(([name]) => name !== "all_tests");
+    if (entries.length > 0) {
+      const list = document.createElement("div");
+      list.className = "verification-results";
+      entries.forEach(([name, status]) => {
+        const item = document.createElement("span");
+        const normalizedStatus = String(status || "unknown").toLowerCase();
+        item.className = `verification-result verification-result-${normalizedStatus}`;
+        item.textContent = `${formatTestName(name)}: ${normalizedStatus}`;
+        list.appendChild(item);
+      });
+      element.appendChild(list);
+    }
+
+    const details = String(task.details || "");
+    if (details && details !== JSON.stringify(result, null, 2)) {
+      const detailsBlock = document.createElement("pre");
+      detailsBlock.className = "checklist-details-pre verification-failure-details";
+      detailsBlock.textContent = details;
+      element.appendChild(detailsBlock);
+    } else if (entries.length === 0 && details) {
+      element.textContent = details;
+    }
+
+    element.hidden = task.status === "idle" || element.textContent.trim() === "";
+  }
+
   function applyTaskState(name, task) {
     const control = controls[name];
     task = task || { status: "idle", details: "" };
     setTaskIcon(control.icon, task.status);
+    if (name === "interactive_self_test") {
+      renderVerificationTests(control.details, task);
+      return;
+    }
     setDetails(control.details, task.details, task.status);
   }
 

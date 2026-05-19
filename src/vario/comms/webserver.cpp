@@ -83,6 +83,7 @@ namespace {
     appendSelfTestResult(json, "baro", selfTest.results.baro);
     appendSelfTestResult(json, "imu", selfTest.results.imu);
     appendSelfTestResult(json, "gps", selfTest.results.gps);
+    appendSelfTestResult(json, "gps_fix", selfTest.results.gpsFix);
     appendSelfTestResult(json, "ambient", selfTest.results.ambient);
     appendSelfTestResult(json, "display", selfTest.results.display);
     appendSelfTestResult(json, "buttons", selfTest.results.buttons);
