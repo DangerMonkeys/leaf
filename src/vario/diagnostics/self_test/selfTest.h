@@ -12,6 +12,7 @@ class SelfTest {
   // start tests. true = save that we executed the production test (so we don't run multiple times)
   void begin(bool markAsProductionChecked = false);
   bool updateNeeded();  // returns true if update() needs to be called again
+  String resultsFileName() const;
 
   // results for all self tests, including both automated and interactive
   struct Results {

@@ -26,6 +26,7 @@ constexpr size_t BUFFER_SIZE = 512;
 constexpr uint32_t GPS_SERIAL_TEST_TIMEOUT_MS = 5000;
 constexpr uint32_t GPS_FIX_TEST_TIMEOUT_MS = 30UL * 60UL * 1000UL;
 File self_test_file;
+String self_test_file_name = "";
 
 bool gpsSerialTestInitialized = false;
 uint32_t gpsSerialInitialPassedChecksumCount = 0;
@@ -65,6 +66,11 @@ bool useSDFile() {
   }
 
   self_test_file = SD_MMC.open(fileName, "w", true);  // open for writing, create if doesn't exist
+  if (!self_test_file) {
+    self_test_file_name = "";
+    return false;
+  }
+  self_test_file_name = fileName;
 
   // Write the version information to know what generated this fatal error
   self_test_file.print("Hardware Variant: ");
@@ -76,6 +82,8 @@ bool useSDFile() {
 
   return self_test_file;
 }
+
+String SelfTest::resultsFileName() const { return self_test_file_name; }
 
 void selfTestInfo(const char* msg, ...) {
   char buffer[BUFFER_SIZE];
@@ -691,6 +699,10 @@ SelfTest::Status SelfTest::runInteractiveTests(bool closeFileWhenDone) {
 }
 
 void SelfTest::clearResults() {
+  if (self_test_file) {
+    self_test_file.close();
+  }
+  self_test_file_name = "";
   selfTest.results.reset();
   selfTest.status = Status::Unknown;
   selfTest.statusAutoTests = Status::Unknown;

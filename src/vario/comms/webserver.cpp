@@ -96,6 +96,11 @@ namespace {
   }
 
   String latestSelfTestDetailsFileName() {
+    String current_file_name = selfTest.resultsFileName();
+    if (!current_file_name.isEmpty() && SD_MMC.exists(current_file_name)) {
+      return current_file_name;
+    }
+
     String latest_file_name = "";
     char file_name[32];
 
