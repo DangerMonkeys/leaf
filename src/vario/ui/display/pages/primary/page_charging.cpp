@@ -91,7 +91,7 @@ void chargingPage_button(Button button, ButtonEvent state, uint8_t count) {
         buttons.consumeButton();
         display.clear();
         display.showOnSplash();
-        display.setPage(MainPage::Thermal);  // TODO: set initial page to the user's last used page
+        display.setPage((MainPage)settings.startPage);
         speaker.playSound(fx::enter);
         power.switchToOnState();
       }
