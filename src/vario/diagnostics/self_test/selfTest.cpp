@@ -500,7 +500,7 @@ SelfTest::Status SpeakerInteractiveTest::update() {
   speakerTestCounter++;
 
   // wait ~3 seconds before starting the test to give user time to read instructions
-  if (speakerTestCounter < 300) {
+  if (speakerTestCounter < 200) {
     return status;
   }
 
@@ -508,7 +508,7 @@ SelfTest::Status SpeakerInteractiveTest::update() {
   if (speakerTestCounter == 200) {
     speaker.setVolume(Speaker::SoundChannel::FX, SpeakerVolume::Low);
     speaker.playSound(fx::neutralLong);
-  } else if (speakerTestCounter == 30) {
+  } else if (speakerTestCounter == 300) {
     speaker.setVolume(Speaker::SoundChannel::FX, SpeakerVolume::Medium);
     speaker.playSound(fx::neutralLong);
   } else if (speakerTestCounter == 400) {
@@ -524,7 +524,7 @@ SelfTest::Status SpeakerInteractiveTest::update() {
     Serial.println("* SELF TEST * SPEAKER * YES = UP button, NO = DOWN button");
   }
 
-  if (speakerTestCounter > 750 && status == SelfTest::Status::Running) {
+  if (speakerTestCounter > 500 && status == SelfTest::Status::Running) {
     // check for user input
     Button button = Button::NONE;
     button = buttons.inspectPins();
