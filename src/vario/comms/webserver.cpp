@@ -4,8 +4,8 @@
 #include <WebServer.h>
 #include <WiFi.h>
 #include <ctype.h>
-#include "comms/fanet_radio.h"
 #include "comms/factory_discovery.h"
+#include "comms/fanet_radio.h"
 #include "diagnostics/memory_report.h"
 #include "diagnostics/self_test/selfTest.h"
 #include "etl/string_stream.h"
