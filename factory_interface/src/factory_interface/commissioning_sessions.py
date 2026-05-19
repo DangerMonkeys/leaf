@@ -47,6 +47,7 @@ class CommissioningSession:
     fanet_id: int | None = None
     fanet_address: str | None = None
     self_test_result: dict | None = None
+    self_test_details: str | None = None
     configuration_event_id: int | None = None
     tasks: dict[str, dict] = field(default_factory=dict)
     worker_task: asyncio.Task | None = None
@@ -71,6 +72,7 @@ class CommissioningSession:
             "firmware_version": idle_task(),
             "fanet_id": idle_task(),
             "interactive_self_test": idle_task(),
+            "retrieve_test_details": idle_task(),
             "persist_results": idle_task(),
         }
 
@@ -90,6 +92,7 @@ class CommissioningSession:
             "firmware_version": self.firmware_version,
             "fanet_id": self.fanet_id,
             "fanet_address": self.fanet_address,
+            "self_test_details": self.self_test_details,
             "configuration_event_id": self.configuration_event_id,
             "preflight": self.preflight,
             "tasks": self.tasks,
@@ -112,6 +115,12 @@ def fetch_json(url: str, *, method: str = "GET") -> dict:
     request = Request(url, method=method)
     with urlopen(request, timeout=HTTP_TIMEOUT_SECONDS) as response:
         return json.loads(response.read().decode("utf-8"))
+
+
+def fetch_text(url: str, *, method: str = "GET") -> str:
+    request = Request(url, method=method)
+    with urlopen(request, timeout=HTTP_TIMEOUT_SECONDS) as response:
+        return response.read().decode("utf-8")
 
 
 def post_json(url: str, payload: dict) -> dict:
@@ -263,6 +272,7 @@ def persist_configuration_event(session: CommissioningSession) -> int:
             {
                 "firmware_version": session.firmware_version,
                 "self_test": session.self_test_result,
+                "self_test_details": session.self_test_details,
             },
             indent=2,
         ),
@@ -393,6 +403,23 @@ async def run_commissioning_session(session: CommissioningSession) -> None:
                 raise RuntimeError("Self test stopped without a pass/fail result.")
 
             await asyncio.sleep(SELF_TEST_POLL_SECONDS)
+
+        retrieve_test_details_task = session.tasks["retrieve_test_details"]
+        retrieve_test_details_task.update(
+            {"status": "running", "details": "Retrieving self test details..."}
+        )
+        session.touch()
+        self_test_details = await asyncio.to_thread(fetch_text, f"{base_url}/details")
+        if not self_test_details.strip():
+            raise RuntimeError("Device returned empty self test details.")
+        session.self_test_details = self_test_details
+        retrieve_test_details_task.update(
+            {
+                "status": "success",
+                "details": self_test_details,
+            }
+        )
+        session.touch()
 
         persist_task = session.tasks["persist_results"]
         persist_task.update({"status": "running", "details": "Saving commissioning results..."})

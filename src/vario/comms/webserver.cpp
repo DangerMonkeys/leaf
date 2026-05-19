@@ -1,5 +1,7 @@
 #include "comms/webserver.h"
 #include <ctype.h>
+#include <FS.h>
+#include <SD_MMC.h>
 #include <WebServer.h>
 #include <WiFi.h>
 #include "comms/fanet_radio.h"
@@ -89,6 +91,43 @@ namespace {
     appendSelfTestResult(json, "all_tests", selfTest.results.allTests, false);
     json += "}}";
     return json;
+  }
+
+  String latestSelfTestDetailsFileName() {
+    String latest_file_name = "";
+    char file_name[32];
+
+    for (unsigned int i = 1; i <= 1000; i++) {
+      snprintf(file_name, sizeof(file_name), "/self_test_%u.txt", i);
+      if (SD_MMC.exists(file_name)) {
+        latest_file_name = file_name;
+      }
+    }
+
+    return latest_file_name;
+  }
+
+  void sendLatestSelfTestDetails() {
+    if (!sdcard.isMounted()) {
+      server.send(404, "application/json", "{\"detail\":\"SD card is not mounted.\"}");
+      return;
+    }
+
+    String file_name = latestSelfTestDetailsFileName();
+    if (file_name.isEmpty()) {
+      server.send(404, "application/json", "{\"detail\":\"No self test details file found.\"}");
+      return;
+    }
+
+    File file = SD_MMC.open(file_name, "r");
+    if (!file) {
+      server.send(500, "application/json",
+                  "{\"detail\":\"Self test details file could not be opened.\"}");
+      return;
+    }
+
+    server.streamFile(file, "text/plain");
+    file.close();
   }
 
   void beginInteractiveSelfTest() {
@@ -383,6 +422,8 @@ void webserver_setup() {
     requestInteractiveSelfTest();
     server.send(200, "application/json", selfTestSnapshotJson());
   });
+
+  server.on("/self-test/details", HTTP_GET, []() { sendLatestSelfTestDetails(); });
 
   server.on("/self-test", HTTP_GET,
             []() { server.send(200, "application/json", selfTestSnapshotJson()); });

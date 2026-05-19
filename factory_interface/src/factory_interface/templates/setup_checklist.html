@@ -140,6 +140,18 @@
       <span>Interactive test</span>
       <pre class="checklist-details checklist-details-pre" id="self-test-details" hidden></pre>
     </div>
+
+    <div class="checklist-item checklist-item-with-details">
+      <button
+        class="task-icon task-icon-empty"
+        id="retrieve-test-details-task-icon"
+        type="button"
+        aria-label="Toggle retrieved test details"
+        disabled
+      ></button>
+      <span>Retrieve test details</span>
+      <pre class="checklist-details checklist-details-pre" id="retrieve-test-details" hidden></pre>
+    </div>
   </div>
 </section>
 
@@ -164,12 +176,15 @@
   const fanetIdDetails = document.querySelector("#fanet-id-details");
   const selfTestTaskIcon = document.querySelector("#self-test-task-icon");
   const selfTestDetails = document.querySelector("#self-test-details");
+  const retrieveTestDetailsTaskIcon = document.querySelector("#retrieve-test-details-task-icon");
+  const retrieveTestDetails = document.querySelector("#retrieve-test-details");
   let flashPollTimer = null;
   let discoveryPollTimer = null;
   let resetNonvolatilePollTimer = null;
   let firmwareVersionPollTimer = null;
   let fanetIdPollTimer = null;
   let selfTestPollTimer = null;
+  let retrieveTestDetailsPollTimer = null;
   let setupCancellationRequested = false;
   const taskStatuses = {
     flash: "idle",
@@ -178,12 +193,14 @@
     firmwareVersion: "idle",
     fanetId: "idle",
     selfTest: "idle",
+    retrieveTestDetails: "idle",
   };
   let discoveryStartRequested = false;
   let resetNonvolatileStartRequested = false;
   let firmwareVersionStartRequested = false;
   let fanetIdStartRequested = false;
   let selfTestStartRequested = false;
+  let retrieveTestDetailsStartRequested = false;
   setupNotes.value = {{ setup_notes | tojson }};
 
   function canEnableBootloaderMode() {
@@ -241,6 +258,10 @@
 
   function setSelfTestIcon(status) {
     setTaskIcon(selfTestTaskIcon, status);
+  }
+
+  function setRetrieveTestDetailsIcon(status) {
+    setTaskIcon(retrieveTestDetailsTaskIcon, status);
   }
 
   function setResetNonvolatileIcon(status) {
@@ -445,6 +466,9 @@
       selfTestDetails.textContent = state.details || "Interactive self test passed.";
       clearInterval(selfTestPollTimer);
       selfTestPollTimer = null;
+      if (!setupCancellationRequested) {
+        startRetrieveTestDetailsTask();
+      }
     } else if (state.status === "running") {
       selfTestDetails.textContent = state.details || "Interactive self test is running...";
       if (!selfTestPollTimer) {
@@ -460,6 +484,33 @@
       selfTestDetails.hidden = true;
       clearInterval(selfTestPollTimer);
       selfTestPollTimer = null;
+    }
+  }
+
+  function applyRetrieveTestDetailsTaskState(state) {
+    taskStatuses.retrieveTestDetails = state.status;
+    updateCancelSetupTaskButton();
+    setRetrieveTestDetailsIcon(state.status);
+
+    if (state.status === "success") {
+      retrieveTestDetails.textContent = state.details || "Self test details retrieved.";
+      clearInterval(retrieveTestDetailsPollTimer);
+      retrieveTestDetailsPollTimer = null;
+    } else if (state.status === "running") {
+      retrieveTestDetails.textContent = state.details || "Retrieving self test details...";
+      if (!retrieveTestDetailsPollTimer) {
+        retrieveTestDetailsPollTimer = setInterval(refreshRetrieveTestDetailsTaskState, 1000);
+      }
+    } else if (state.status === "failure") {
+      retrieveTestDetails.textContent = state.details || "Self test details retrieval failed.";
+      retrieveTestDetails.hidden = false;
+      clearInterval(retrieveTestDetailsPollTimer);
+      retrieveTestDetailsPollTimer = null;
+    } else {
+      retrieveTestDetails.textContent = "";
+      retrieveTestDetails.hidden = true;
+      clearInterval(retrieveTestDetailsPollTimer);
+      retrieveTestDetailsPollTimer = null;
     }
   }
 
@@ -491,6 +542,11 @@
   async function refreshSelfTestTaskState() {
     const response = await fetch("/api/setup/interactive-self-test");
     applySelfTestTaskState(await response.json());
+  }
+
+  async function refreshRetrieveTestDetailsTaskState() {
+    const response = await fetch("/api/setup/test-details");
+    applyRetrieveTestDetailsTaskState(await response.json());
   }
 
   async function startFlashTask() {
@@ -578,6 +634,21 @@
     applySelfTestTaskState(await response.json());
   }
 
+  async function startRetrieveTestDetailsTask() {
+    if (setupCancellationRequested) return;
+    if (retrieveTestDetailsStartRequested) return;
+    retrieveTestDetailsStartRequested = true;
+    const currentResponse = await fetch("/api/setup/test-details");
+    const currentState = await currentResponse.json();
+    if (currentState.status === "running" || currentState.status === "success") {
+      applyRetrieveTestDetailsTaskState(currentState);
+      return;
+    }
+
+    const response = await fetch("/api/setup/test-details", { method: "POST" });
+    applyRetrieveTestDetailsTaskState(await response.json());
+  }
+
   async function handoffSetupSession() {
     const response = await fetch("/api/setup/handoff", { method: "POST" });
     const payload = await response.json();
@@ -636,6 +707,7 @@
       refreshFirmwareVersionTaskState(),
       refreshFanetIdTaskState(),
       refreshSelfTestTaskState(),
+      refreshRetrieveTestDetailsTaskState(),
     ]);
   });
 
@@ -667,11 +739,16 @@
     selfTestDetails.hidden = !selfTestDetails.hidden;
   });
 
+  retrieveTestDetailsTaskIcon.addEventListener("click", () => {
+    retrieveTestDetails.hidden = !retrieveTestDetails.hidden;
+  });
+
   refreshFlashTaskState();
   refreshDiscoveryTaskState();
   refreshResetNonvolatileTaskState();
   refreshFirmwareVersionTaskState();
   refreshFanetIdTaskState();
   refreshSelfTestTaskState();
+  refreshRetrieveTestDetailsTaskState();
 </script>
 {% endblock %}

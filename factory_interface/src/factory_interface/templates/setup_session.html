@@ -96,6 +96,12 @@
     </div>
 
     <div class="checklist-item checklist-item-with-details">
+      <button class="task-icon task-icon-empty" id="retrieve-test-details-task-icon" type="button" aria-label="Toggle retrieved test details" disabled></button>
+      <span>Retrieve test details</span>
+      <pre class="checklist-details checklist-details-pre" id="retrieve-test-details" hidden></pre>
+    </div>
+
+    <div class="checklist-item checklist-item-with-details">
       <button class="task-icon task-icon-empty" id="persist-task-icon" type="button" aria-label="Toggle save results details" disabled></button>
       <span>Save results</span>
       <p class="checklist-details" id="persist-details" hidden></p>
@@ -136,6 +142,10 @@
       icon: document.querySelector("#self-test-task-icon"),
       details: document.querySelector("#self-test-details"),
     },
+    retrieve_test_details: {
+      icon: document.querySelector("#retrieve-test-details-task-icon"),
+      details: document.querySelector("#retrieve-test-details"),
+    },
     persist_results: {
       icon: document.querySelector("#persist-task-icon"),
       details: document.querySelector("#persist-details"),
@@ -163,6 +173,7 @@
 
   function applyTaskState(name, task) {
     const control = controls[name];
+    task = task || { status: "idle", details: "" };
     setTaskIcon(control.icon, task.status);
     setDetails(control.details, task.details, task.status);
   }
@@ -184,6 +195,7 @@
     applyTaskState("firmware_version", session.tasks.firmware_version);
     applyTaskState("fanet_id", session.tasks.fanet_id);
     applyTaskState("interactive_self_test", session.tasks.interactive_self_test);
+    applyTaskState("retrieve_test_details", session.tasks.retrieve_test_details);
     applyTaskState("persist_results", session.tasks.persist_results);
 
     if (session.status !== "running" && pollTimer) {

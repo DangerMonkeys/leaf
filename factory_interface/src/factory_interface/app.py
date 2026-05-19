@@ -50,10 +50,14 @@ from factory_interface.nonvolatile_memory_task import (
     start_reset_nonvolatile_memory,
 )
 from factory_interface.self_test_task import (
+    cancel_self_test_details_task,
     cancel_self_test_task,
+    get_self_test_details_task,
     get_self_test_task,
+    reset_self_test_details_task,
     reset_self_test_task,
     start_interactive_self_test,
+    start_retrieve_self_test_details,
 )
 from factory_interface.settings import (
     FactoryInterfaceSettings,
@@ -134,6 +138,7 @@ def reset_setup_tasks_if_complete() -> None:
         get_firmware_version_task(),
         get_fanet_id_task(),
         get_self_test_task(),
+        get_self_test_details_task(),
     ]
     if any(task.status == "running" for task in tasks):
         return
@@ -147,6 +152,7 @@ def reset_setup_tasks_if_complete() -> None:
     reset_firmware_version_task()
     reset_fanet_id_task()
     reset_self_test_task()
+    reset_self_test_details_task()
 
 
 def settings_template_context(
@@ -405,6 +411,7 @@ async def cancel_setup_task() -> JSONResponse:
     cancel_firmware_version_task()
     cancel_fanet_id_task()
     cancel_self_test_task()
+    cancel_self_test_details_task()
     return JSONResponse(
         {
             "flash": get_flash_task().snapshot(),
@@ -414,6 +421,7 @@ async def cancel_setup_task() -> JSONResponse:
             "firmware_version": get_firmware_version_task().snapshot(),
             "fanet_id": get_fanet_id_task().snapshot(),
             "interactive_self_test": get_self_test_task().snapshot(),
+            "retrieve_test_details": get_self_test_details_task().snapshot(),
         }
     )
 
@@ -499,6 +507,18 @@ async def start_interactive_self_test_task() -> JSONResponse:
 @app.get("/api/setup/interactive-self-test", response_class=JSONResponse)
 async def get_interactive_self_test_task() -> JSONResponse:
     task = get_self_test_task()
+    return JSONResponse(task.snapshot())
+
+
+@app.post("/api/setup/test-details", response_class=JSONResponse)
+async def start_retrieve_self_test_details_task() -> JSONResponse:
+    task = start_retrieve_self_test_details()
+    return JSONResponse(task.snapshot())
+
+
+@app.get("/api/setup/test-details", response_class=JSONResponse)
+async def get_retrieve_self_test_details_task() -> JSONResponse:
+    task = get_self_test_details_task()
     return JSONResponse(task.snapshot())
 
 
