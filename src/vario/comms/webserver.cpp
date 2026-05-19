@@ -1,9 +1,9 @@
 #include "comms/webserver.h"
-#include <ctype.h>
 #include <FS.h>
 #include <SD_MMC.h>
 #include <WebServer.h>
 #include <WiFi.h>
+#include <ctype.h>
 #include "comms/fanet_radio.h"
 #include "diagnostics/memory_report.h"
 #include "diagnostics/self_test/selfTest.h"
@@ -403,9 +403,8 @@ void webserver_setup() {
     fanet_address.trim();
     fanet_address.toUpperCase();
     if (!isValidFanetAddress(fanet_address)) {
-      server.send(
-          400, "application/json",
-          "{\"detail\":\"fanet_address must be a 6-character hexadecimal string.\"}");
+      server.send(400, "application/json",
+                  "{\"detail\":\"fanet_address must be a 6-character hexadecimal string.\"}");
       return;
     }
 
