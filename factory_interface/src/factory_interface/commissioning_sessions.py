@@ -94,6 +94,7 @@ class CommissioningSession:
             "interactive_self_test": idle_task(),
             "retrieve_test_details": idle_task(),
             "persist_results": idle_task(),
+            "notify_commissioning_complete": idle_task(),
         }
 
     def touch(self) -> None:
@@ -286,6 +287,17 @@ async def retrieve_session_self_test_details(session: CommissioningSession, base
         raise RuntimeError("Device returned empty self test details.")
     session.self_test_details = self_test_details
     return self_test_details
+
+
+async def notify_session_commissioning_complete(session: CommissioningSession) -> dict:
+    payload = await asyncio.to_thread(
+        fetch_json,
+        f"{device_base_url(session)}/commissioning/complete",
+        method="POST",
+    )
+    if not payload.get("commissioning_complete", False):
+        raise RuntimeError("Device did not acknowledge commissioning completion.")
+    return payload
 
 
 def machine_description() -> str:
@@ -606,6 +618,22 @@ async def run_commissioning_session(session: CommissioningSession) -> None:
             {
                 "status": "success",
                 "details": f"Commissioning log written to database as event {event_id}.",
+            }
+        )
+
+        notify_task = session.tasks["notify_commissioning_complete"]
+        notify_task.update(
+            {
+                "status": "running",
+                "details": "Notifying device that commissioning is complete...",
+            }
+        )
+        session.touch()
+        await notify_session_commissioning_complete(session)
+        notify_task.update(
+            {
+                "status": "success",
+                "details": "Device acknowledged successful commissioning.",
             }
         )
         session.status = "success"

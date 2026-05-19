@@ -95,3 +95,11 @@ class SelfTest_PageResults : public SimpleSettingsMenuPage {
   void show();
   void draw_extra() override;
 };
+
+// Commissioning Confirmation Self-Test Page
+class SelfTest_PageCommissioningConfirmation : public SimpleSettingsMenuPage {
+ public:
+  const char* get_title() const override { return "Commissioning"; }
+  void show();
+  void draw_extra() override;
+};

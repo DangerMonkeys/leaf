@@ -13,6 +13,8 @@ class SelfTest {
   void begin(bool markAsProductionChecked = false);
   bool updateNeeded();  // returns true if update() needs to be called again
   String resultsFileName() const;
+  void confirmCommissioningComplete();
+  bool commissioningCompleteConfirmed() const;
 
   // results for all self tests, including both automated and interactive
   struct Results {
@@ -44,6 +46,7 @@ class SelfTest {
   void closeTestFile();
   bool tallyResults();
   void clearResults();
+  bool commissioning_complete_confirmed = false;
 
   // Individual automated test functions
   static Status testBaro();

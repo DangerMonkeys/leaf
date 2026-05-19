@@ -224,3 +224,30 @@ void SelfTest_PageResults::draw_extra() {
     }
   }
 }
+
+//////////////////////////////////////////////
+// Commissioning Confirmation Self-Test Page
+void SelfTest_PageCommissioningConfirmation::show() { push_page(this); }
+
+void SelfTest_PageCommissioningConfirmation::draw_extra() {
+  if (selfTest.commissioningCompleteConfirmed()) {
+    u8g2.drawCircle(48, 94, 31);
+    u8g2.drawCircle(48, 94, 30);
+    u8g2.drawLine(29, 94, 42, 109);
+    u8g2.drawLine(30, 94, 42, 108);
+    u8g2.drawLine(42, 109, 68, 74);
+    u8g2.drawLine(43, 109, 69, 74);
+    u8g2.setFont(leaf_6x12);
+    u8g2.setCursor(22, 148);
+    u8g2.print("COMPLETE");
+    return;
+  }
+
+  u8g2.setFont(leaf_5x8);
+  u8g2.setCursor(6, 32);
+  u8g2.print("Awaiting");
+  u8g2.setCursor(4, 43);
+  u8g2.print("commissioning");
+  u8g2.setCursor(8, 54);
+  u8g2.print("confirmation...");
+}

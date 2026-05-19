@@ -439,6 +439,11 @@ void webserver_setup() {
   server.on("/self-test", HTTP_GET,
             []() { server.send(200, "application/json", selfTestSnapshotJson()); });
 
+  server.on("/commissioning/complete", HTTP_POST, []() {
+    selfTest.confirmCommissioningComplete();
+    server.send(200, "application/json", "{\"commissioning_complete\":true}");
+  });
+
   // Give it a chance to settle so the startup message has a valid IP address.
   delay(250);
   // The captive portal belongs on port 80 for setting up WiFi. Keep this

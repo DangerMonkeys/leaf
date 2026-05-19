@@ -152,6 +152,18 @@
       <span>Retrieve test details</span>
       <pre class="checklist-details checklist-details-pre" id="retrieve-test-details" hidden></pre>
     </div>
+
+    <div class="checklist-item checklist-item-with-details">
+      <button
+        class="task-icon task-icon-empty"
+        id="notify-commissioning-complete-task-icon"
+        type="button"
+        aria-label="Toggle device commissioning notification details"
+        disabled
+      ></button>
+      <span>Notify device of successful commissioning</span>
+      <p class="checklist-details" id="notify-commissioning-complete-details" hidden></p>
+    </div>
   </div>
 </section>
 
@@ -178,6 +190,8 @@
   const selfTestDetails = document.querySelector("#self-test-details");
   const retrieveTestDetailsTaskIcon = document.querySelector("#retrieve-test-details-task-icon");
   const retrieveTestDetails = document.querySelector("#retrieve-test-details");
+  const notifyCommissioningCompleteTaskIcon = document.querySelector("#notify-commissioning-complete-task-icon");
+  const notifyCommissioningCompleteDetails = document.querySelector("#notify-commissioning-complete-details");
   let flashPollTimer = null;
   let discoveryPollTimer = null;
   let resetNonvolatilePollTimer = null;
@@ -262,6 +276,10 @@
 
   function setRetrieveTestDetailsIcon(status) {
     setTaskIcon(retrieveTestDetailsTaskIcon, status);
+  }
+
+  function setNotifyCommissioningCompleteIcon(status) {
+    setTaskIcon(notifyCommissioningCompleteTaskIcon, status);
   }
 
   function setResetNonvolatileIcon(status) {
@@ -780,6 +798,10 @@
 
   retrieveTestDetailsTaskIcon.addEventListener("click", () => {
     retrieveTestDetails.hidden = !retrieveTestDetails.hidden;
+  });
+
+  notifyCommissioningCompleteTaskIcon.addEventListener("click", () => {
+    notifyCommissioningCompleteDetails.hidden = !notifyCommissioningCompleteDetails.hidden;
   });
 
   refreshFlashTaskState();
