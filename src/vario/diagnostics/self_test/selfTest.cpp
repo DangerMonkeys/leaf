@@ -138,11 +138,14 @@ SelfTest::Status SelfTest::testBaro() {
 }
 /////////////////////////////////////////////
 // IMU TEST
+uint16_t imuTestCounter = 0;
 SelfTest::Status SelfTest::testIMU() {
   Status result = Status::Running;
   if (!imu.accelValid()) {
-    selfTestInfo("* SELF TEST *   IMU   * FAIL - IMU not ready");
-    result = Status::Fail;
+    if (imuTestCounter++ >= 400) {
+      selfTestInfo("* SELF TEST *   IMU   * FAIL - IMU acceleration not valid");
+      result = Status::Fail;
+    }
   } else {
     float accelTotal = imu.getAccel();
     // Check if acceleration values are within a reasonable range
@@ -160,14 +163,17 @@ SelfTest::Status SelfTest::testIMU() {
 
 /////////////////////////////////////////////
 // AMBIENT TEST
+uint16_t ambientTestCounter = 0;
 SelfTest::Status SelfTest::testAmbient() {
   Status result = Status::Running;
   if (ambient.state() != Ambient::State::Ready) {
-    selfTestInfo("* SELF TEST * AMBIENT * FAIL - Ambient sensor not ready");
-    result = Status::Fail;
+    if (ambientTestCounter++ >= 400) {
+      selfTestInfo("* SELF TEST * AMBIENT * FAIL - Ambient sensor not ready");
+      result = Status::Fail;
+    }
   } else {
     float temperature = ambient.temp();
-    if (temperature < 60.0f && temperature > -5.0f) {
+    if (temperature < 45.0f && temperature > 0.0f) {
       result = Status::Pass;
       selfTestInfo("* SELF TEST * AMBIENT * PASS");
     } else {
@@ -363,7 +369,7 @@ SelfTest::Status ButtonsInteractiveTest::update() {
   }
 
   // Test fails if timeout before all buttons pushed
-  if (buttonsTest.waitForInput-- <= 0) {
+  if (buttonsTest.waitForInput-- == 0) {
     buttonsTest.status = SelfTest::Status::Fail;
     speaker.playSound(fx::cancel);
     selfTestInfo("* SELF TEST * BUTTONS * FAIL - Timeout waiting for button presses");
@@ -499,18 +505,18 @@ SelfTest::Status SpeakerInteractiveTest::update() {
   }
 
   // Play Test Sounds for user to confirm volume levels function properly
-  if (speakerTestCounter == 300) {
+  if (speakerTestCounter == 200) {
     speaker.setVolume(Speaker::SoundChannel::FX, SpeakerVolume::Low);
     speaker.playSound(fx::neutralLong);
-  } else if (speakerTestCounter == 450) {
+  } else if (speakerTestCounter == 30) {
     speaker.setVolume(Speaker::SoundChannel::FX, SpeakerVolume::Medium);
     speaker.playSound(fx::neutralLong);
-  } else if (speakerTestCounter == 600) {
+  } else if (speakerTestCounter == 400) {
     speaker.setVolume(Speaker::SoundChannel::FX, SpeakerVolume::High);
     speaker.playSound(fx::neutralLong);
   }
 
-  if (speakerTestCounter == 750) {
+  if (speakerTestCounter == 500) {
     speaker.setVolume(Speaker::SoundChannel::FX, SpeakerVolume::Off);
     speaker.playSound(fx::quadRise);
     Serial.println(
@@ -689,6 +695,8 @@ void SelfTest::clearResults() {
   selfTest.status = Status::Unknown;
   selfTest.statusAutoTests = Status::Unknown;
   selfTest.statusInteractiveTests = Status::Unknown;
+  ambientTestCounter = 0;
+  imuTestCounter = 0;
 
   // reset interactive tests
   buttonsTest.status = Status::Unknown;
