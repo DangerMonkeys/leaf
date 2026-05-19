@@ -8,12 +8,20 @@
   </head>
   <body>
     <header class="topbar">
-      <a class="icon-link" href="/" aria-label="Home" title="Home">
-        <svg aria-hidden="true" viewBox="0 0 24 24">
-          <path d="M3 10.5 12 3l9 7.5"></path>
-          <path d="M5 9.5V21h5v-6h4v6h5V9.5"></path>
-        </svg>
-      </a>
+      <div class="topbar-primary-actions">
+        <a class="icon-link" href="/" aria-label="Home" title="Home">
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M3 10.5 12 3l9 7.5"></path>
+            <path d="M5 9.5V21h5v-6h4v6h5V9.5"></path>
+          </svg>
+        </a>
+        <a class="icon-link" href="/setup" aria-label="New device setup" title="New device setup">
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M12 5v14"></path>
+            <path d="M5 12h14"></path>
+          </svg>
+        </a>
+      </div>
       <div class="brand">Factory Interface</div>
       <div class="topbar-actions">
         {% if operator_name %}

@@ -120,18 +120,6 @@
     <div class="checklist-item checklist-item-with-details">
       <button
         class="task-icon task-icon-empty"
-        id="fanet-id-task-icon"
-        type="button"
-        aria-label="Toggle FANET ID details"
-        disabled
-      ></button>
-      <span>Assign FANET ID</span>
-      <p class="checklist-details" id="fanet-id-details" hidden></p>
-    </div>
-
-    <div class="checklist-item checklist-item-with-details">
-      <button
-        class="task-icon task-icon-empty"
         id="self-test-task-icon"
         type="button"
         aria-label="Toggle verification test details"
@@ -151,6 +139,18 @@
       ></button>
       <span>Retrieve test details</span>
       <pre class="checklist-details checklist-details-pre" id="retrieve-test-details" hidden></pre>
+    </div>
+
+    <div class="checklist-item checklist-item-with-details">
+      <button
+        class="task-icon task-icon-empty"
+        id="fanet-id-task-icon"
+        type="button"
+        aria-label="Toggle FANET ID details"
+        disabled
+      ></button>
+      <span>Assign FANET ID</span>
+      <p class="checklist-details" id="fanet-id-details" hidden></p>
     </div>
 
     <div class="checklist-item checklist-item-with-details">
@@ -500,7 +500,7 @@
       clearInterval(firmwareVersionPollTimer);
       firmwareVersionPollTimer = null;
       if (!setupCancellationRequested) {
-        startFanetIdTask();
+        startSelfTestTask();
       }
     } else if (state.status === "running") {
       firmwareVersionDetails.textContent = state.details || "Reading firmware version...";
@@ -530,9 +530,6 @@
         state.details || `FANET ID: ${state.fanet_address}`;
       clearInterval(fanetIdPollTimer);
       fanetIdPollTimer = null;
-      if (!setupCancellationRequested) {
-        startSelfTestTask();
-      }
     } else if (state.status === "running") {
       fanetIdDetails.textContent = state.details || "Assigning FANET ID...";
       if (!fanetIdPollTimer) {
@@ -589,6 +586,9 @@
       retrieveTestDetails.textContent = state.details || "Self test details retrieved.";
       clearInterval(retrieveTestDetailsPollTimer);
       retrieveTestDetailsPollTimer = null;
+      if (!setupCancellationRequested) {
+        startFanetIdTask();
+      }
     } else if (state.status === "running") {
       retrieveTestDetails.textContent = state.details || "Retrieving self test details...";
       if (!retrieveTestDetailsPollTimer) {

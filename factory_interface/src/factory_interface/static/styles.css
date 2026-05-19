@@ -27,12 +27,18 @@ body {
   top: 0;
   z-index: 10;
   display: grid;
-  grid-template-columns: 48px 1fr auto;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   height: 56px;
   padding: 0 12px;
   border-bottom: 1px solid var(--line);
   background: #ffffff;
+}
+
+.topbar-primary-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .brand {

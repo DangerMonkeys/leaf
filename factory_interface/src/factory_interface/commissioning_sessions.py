@@ -527,29 +527,6 @@ async def run_commissioning_session(session: CommissioningSession) -> None:
             }
         )
 
-        fanet_task = session.tasks["fanet_id"]
-        fanet_task.update({"status": "running", "details": "Assigning FANET ID..."})
-        session.touch()
-        fanet_id = await fanet_id_for_session(session)
-        fanet_address = f"{fanet_id:06X}"
-        fanet_payload = await asyncio.to_thread(
-            post_json,
-            f"{device_base_url(session)}/settings/fanet-address",
-            {"fanet_address": fanet_address},
-        )
-        saved_fanet_address = str(fanet_payload.get("fanet_address", "")).strip().upper()
-        if saved_fanet_address != fanet_address:
-            raise RuntimeError("Device did not confirm the requested FANET address.")
-        session.fanet_address = fanet_address
-        fanet_task.update(
-            {
-                "status": "success",
-                "details": f"FANET ID: {fanet_address} ({fanet_id} decimal)",
-                "fanet_id": fanet_id,
-                "fanet_address": fanet_address,
-            }
-        )
-
         self_test_task = session.tasks["interactive_self_test"]
         self_test_task.update(
             {"status": "running", "details": "Starting verification tests..."}
@@ -612,6 +589,30 @@ async def run_commissioning_session(session: CommissioningSession) -> None:
             {
                 "status": "success",
                 "details": self_test_details,
+            }
+        )
+        session.touch()
+
+        fanet_task = session.tasks["fanet_id"]
+        fanet_task.update({"status": "running", "details": "Assigning FANET ID..."})
+        session.touch()
+        fanet_id = await fanet_id_for_session(session)
+        fanet_address = f"{fanet_id:06X}"
+        fanet_payload = await asyncio.to_thread(
+            post_json,
+            f"{device_base_url(session)}/settings/fanet-address",
+            {"fanet_address": fanet_address},
+        )
+        saved_fanet_address = str(fanet_payload.get("fanet_address", "")).strip().upper()
+        if saved_fanet_address != fanet_address:
+            raise RuntimeError("Device did not confirm the requested FANET address.")
+        session.fanet_address = fanet_address
+        fanet_task.update(
+            {
+                "status": "success",
+                "details": f"FANET ID: {fanet_address} ({fanet_id} decimal)",
+                "fanet_id": fanet_id,
+                "fanet_address": fanet_address,
             }
         )
         session.touch()
