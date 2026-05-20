@@ -136,6 +136,7 @@ void TaskManager::update() {
   if (WiFi.status() == WL_CONNECTED) {
     webserver_setup();
     webserver_loop();
+    factoryDiscovery.update();
   }
 
   const auto& info = power.info();
@@ -163,7 +164,6 @@ void TaskManager::updateWhileCharging() {
     // Try to connect to the diagnostic network once while in charge-only mode. If it connects,
     // the connection will be preserved when the device switches to the on state.
     diagnostic_network.update();
-    factoryDiscovery.update();
 
     // Check Buttons
     buttons.update();  // check Button for any presses (user can turn ON from charging state)

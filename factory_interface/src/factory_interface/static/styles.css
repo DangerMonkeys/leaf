@@ -27,12 +27,18 @@ body {
   top: 0;
   z-index: 10;
   display: grid;
-  grid-template-columns: 48px 1fr auto;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   height: 56px;
   padding: 0 12px;
   border-bottom: 1px solid var(--line);
   background: #ffffff;
+}
+
+.topbar-primary-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .brand {
@@ -95,7 +101,7 @@ body {
 }
 
 .page {
-  width: min(920px, 100%);
+  width: min(1280px, 100%);
   margin: 0 auto;
   padding: 32px 20px;
 }
@@ -107,6 +113,12 @@ body {
 
 .panel.narrow {
   max-width: 520px;
+}
+
+.setup-panel.panel.narrow {
+  width: min(100%, 1100px);
+  max-width: 80vw;
+  margin: 0 auto;
 }
 
 h1 {
@@ -375,6 +387,95 @@ button:focus-visible {
   overflow-wrap: anywhere;
 }
 
+.discovery-section {
+  display: grid;
+  gap: 14px;
+}
+
+.discovery-section h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.discovery-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.discovery-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+}
+
+.discovery-table th,
+.discovery-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.discovery-table th {
+  background: #edf3ef;
+  color: var(--muted);
+  font-size: 0.84rem;
+  text-transform: uppercase;
+}
+
+.discovery-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.discovery-table td span,
+.discovery-table td strong {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.discovery-table code,
+.discovery-details-grid code {
+  font-size: 0.88rem;
+  overflow-wrap: anywhere;
+}
+
+.discovery-reasons {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: var(--muted);
+}
+
+.discovery-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--line);
+}
+
+.discovery-details-grid div {
+  min-width: 0;
+  padding: 12px 14px;
+  background: var(--surface);
+}
+
+.discovery-details-grid dt {
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.discovery-details-grid dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
 .checklist {
   display: grid;
   gap: 12px;
@@ -448,6 +549,64 @@ button:focus-visible {
 .checklist-details-pre {
   white-space: pre-wrap;
   font-family: Consolas, "Courier New", monospace;
+}
+
+.verification-test-details {
+  display: grid;
+  gap: 10px;
+}
+
+.verification-results {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.verification-result {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 9px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #edf3ef;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.verification-result-pass,
+.verification-result-success,
+.verification-result-complete {
+  border-color: #bbf7d0;
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.verification-result-fail,
+.verification-result-failure {
+  border-color: #fecaca;
+  background: #fee2e2;
+  color: #b42318;
+}
+
+.verification-result-running,
+.verification-result-pending {
+  border-color: #bfdbfe;
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.verification-failure-details {
+  margin: 0;
+  color: var(--ink);
+}
+
+@media (max-width: 700px) {
+  .setup-panel.panel.narrow {
+    max-width: 100%;
+  }
 }
 
 .bootloader-check {
@@ -585,5 +744,9 @@ button:focus-visible {
 
   .session-status {
     justify-self: start;
+  }
+
+  .discovery-details-grid {
+    grid-template-columns: 1fr;
   }
 }

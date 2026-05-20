@@ -26,6 +26,7 @@ constexpr size_t BUFFER_SIZE = 512;
 constexpr uint32_t GPS_SERIAL_TEST_TIMEOUT_MS = 5000;
 constexpr uint32_t GPS_FIX_TEST_TIMEOUT_MS = 30UL * 60UL * 1000UL;
 File self_test_file;
+String self_test_file_name = "";
 
 bool gpsSerialTestInitialized = false;
 uint32_t gpsSerialInitialPassedChecksumCount = 0;
@@ -65,6 +66,11 @@ bool useSDFile() {
   }
 
   self_test_file = SD_MMC.open(fileName, "w", true);  // open for writing, create if doesn't exist
+  if (!self_test_file) {
+    self_test_file_name = "";
+    return false;
+  }
+  self_test_file_name = fileName;
 
   // Write the version information to know what generated this fatal error
   self_test_file.print("Hardware Variant: ");
@@ -76,6 +82,8 @@ bool useSDFile() {
 
   return self_test_file;
 }
+
+String SelfTest::resultsFileName() const { return self_test_file_name; }
 
 void selfTestInfo(const char* msg, ...) {
   char buffer[BUFFER_SIZE];
@@ -593,6 +601,7 @@ bool SelfTest::tallyResults() {
 }
 
 SelfTest_PageResults selfTest_pageResults;
+SelfTest_PageCommissioningConfirmation selfTest_pageCommissioningConfirmation;
 
 bool SelfTest::update() {
   bool updateNeeded = true;  // assume we'll need to call this again
@@ -617,7 +626,11 @@ bool SelfTest::update() {
         speaker.playSound(fx::fatalerror);
       }
       closeTestFile();
-      selfTest_pageResults.show();  // show results page when all tests complete
+      if (selfTest.results.allTests == Status::Pass) {
+        selfTest_pageCommissioningConfirmation.show();
+      } else {
+        selfTest_pageResults.show();  // show results page when any test fails
+      }
       display.update();
     }
   }
@@ -625,6 +638,13 @@ bool SelfTest::update() {
 }
 
 bool SelfTest::updateNeeded() { return status == Status::Running; }
+
+void SelfTest::confirmCommissioningComplete() {
+  commissioning_complete_confirmed = true;
+  display.update();
+}
+
+bool SelfTest::commissioningCompleteConfirmed() const { return commissioning_complete_confirmed; }
 
 void SelfTest::closeTestFile() {
   if (self_test_file) {
@@ -691,6 +711,11 @@ SelfTest::Status SelfTest::runInteractiveTests(bool closeFileWhenDone) {
 }
 
 void SelfTest::clearResults() {
+  if (self_test_file) {
+    self_test_file.close();
+  }
+  self_test_file_name = "";
+  commissioning_complete_confirmed = false;
   selfTest.results.reset();
   selfTest.status = Status::Unknown;
   selfTest.statusAutoTests = Status::Unknown;

@@ -4,6 +4,7 @@
 #include <WebServer.h>
 #include <WiFi.h>
 #include <ctype.h>
+#include "comms/factory_discovery.h"
 #include "comms/fanet_radio.h"
 #include "diagnostics/memory_report.h"
 #include "diagnostics/self_test/selfTest.h"
@@ -82,6 +83,7 @@ namespace {
     appendSelfTestResult(json, "baro", selfTest.results.baro);
     appendSelfTestResult(json, "imu", selfTest.results.imu);
     appendSelfTestResult(json, "gps", selfTest.results.gps);
+    appendSelfTestResult(json, "gps_fix", selfTest.results.gpsFix);
     appendSelfTestResult(json, "ambient", selfTest.results.ambient);
     appendSelfTestResult(json, "display", selfTest.results.display);
     appendSelfTestResult(json, "buttons", selfTest.results.buttons);
@@ -94,6 +96,11 @@ namespace {
   }
 
   String latestSelfTestDetailsFileName() {
+    String current_file_name = selfTest.resultsFileName();
+    if (!current_file_name.isEmpty() && SD_MMC.exists(current_file_name)) {
+      return current_file_name;
+    }
+
     String latest_file_name = "";
     char file_name[32];
 
@@ -128,6 +135,48 @@ namespace {
 
     server.streamFile(file, "text/plain");
     file.close();
+  }
+
+  void clearSelfTestDetailsFiles() {
+    if (!sdcard.isMounted()) {
+      server.send(404, "application/json", "{\"detail\":\"SD card is not mounted.\"}");
+      return;
+    }
+
+    if (selfTest.updateNeeded()) {
+      server.send(409, "application/json", "{\"detail\":\"Self test is still running.\"}");
+      return;
+    }
+
+    unsigned int deleted_count = 0;
+    unsigned int failed_count = 0;
+    char file_name[32];
+
+    for (unsigned int i = 1; i <= 1000; i++) {
+      snprintf(file_name, sizeof(file_name), "/self_test_%u.txt", i);
+      if (!SD_MMC.exists(file_name)) continue;
+
+      if (SD_MMC.remove(file_name)) {
+        deleted_count++;
+      } else {
+        failed_count++;
+      }
+    }
+
+    if (failed_count > 0) {
+      String json = "{\"cleared\":false,\"deleted_count\":";
+      json += deleted_count;
+      json += ",\"failed_count\":";
+      json += failed_count;
+      json += "}";
+      server.send(500, "application/json", json);
+      return;
+    }
+
+    String json = "{\"cleared\":true,\"deleted_count\":";
+    json += deleted_count;
+    json += "}";
+    server.send(200, "application/json", json);
   }
 
   void beginInteractiveSelfTest() {
@@ -391,6 +440,11 @@ void webserver_setup() {
     server.send(200, "application/json", json);
   });
 
+  server.on("/discovery", HTTP_GET, []() {
+    factoryDiscovery.update();
+    server.send(200, "application/json", factoryDiscovery.statusJson());
+  });
+
   server.on("/settings/factory-reset", HTTP_POST, []() {
     settings.factoryResetVario();
     server.send(200, "application/json", "{\"reset_requested\":true}");
@@ -424,8 +478,15 @@ void webserver_setup() {
 
   server.on("/self-test/details", HTTP_GET, []() { sendLatestSelfTestDetails(); });
 
+  server.on("/self-test/results", HTTP_DELETE, []() { clearSelfTestDetailsFiles(); });
+
   server.on("/self-test", HTTP_GET,
             []() { server.send(200, "application/json", selfTestSnapshotJson()); });
+
+  server.on("/commissioning/complete", HTTP_POST, []() {
+    selfTest.confirmCommissioningComplete();
+    server.send(200, "application/json", "{\"commissioning_complete\":true}");
+  });
 
   // Give it a chance to settle so the startup message has a valid IP address.
   delay(250);

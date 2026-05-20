@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="panel">
+  <div class="setup-header">
+    <h1>Discovery status</h1>
+  </div>
+
+  <section class="discovery-section" aria-labelledby="probe-heading">
+    <h2 id="probe-heading">Probe results</h2>
+    {% if probe_error %}
+    <p class="status-message">Discovery probe failed: {{ probe_error }}</p>
+    {% elif devices %}
+    <div class="discovery-table-wrap">
+      <table class="discovery-table">
+        <thead>
+          <tr>
+            <th scope="col">Device</th>
+            <th scope="col">Network</th>
+            <th scope="col">Identifiers</th>
+            <th scope="col">New device candidate</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for device in devices %}
+          <tr>
+            <td>
+              <strong>{{ device.mac_address or "No MAC in response" }}</strong>
+              <span>{{ device.device_id }}</span>
+            </td>
+            <td>{{ device.ip_address }}:{{ device.port }}</td>
+            <td>
+              {% for identifier in device.identifiers %}
+              <code>{{ identifier }}</code>{% if not loop.last %}<br>{% endif %}
+              {% endfor %}
+            </td>
+            <td>
+              {% if device.candidate %}
+              <span class="session-status session-status-success">yes</span>
+              {% else %}
+              <span class="session-status session-status-failure">no</span>
+              <ul class="discovery-reasons">
+                {% for reason in device.reasons %}
+                <li>{{ reason }}</li>
+                {% endfor %}
+              </ul>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="status-message">No devices responded to a discovery probe.</p>
+    {% endif %}
+  </section>
+
+  <section class="discovery-section" aria-labelledby="task-heading">
+    <h2 id="task-heading">Find-device task</h2>
+    <dl class="discovery-details-grid">
+      <div>
+        <dt>Status</dt>
+        <dd>{{ find_device_task.status }}</dd>
+      </div>
+      <div>
+        <dt>Selected device</dt>
+        <dd>
+          {% if find_device_task.device %}
+          {{ find_device_task.device.ip_address }}:{{ find_device_task.device.port }}
+          <br>{{ find_device_task.device.mac_address or find_device_task.device.device_id }}
+          {% else %}
+          none
+          {% endif %}
+        </dd>
+      </div>
+      <div>
+        <dt>Error</dt>
+        <dd>{{ find_device_task.error or "none" }}</dd>
+      </div>
+      <div>
+        <dt>Current exclusions</dt>
+        <dd>
+          {% if find_device_exclusions %}
+          {% for identifier in find_device_exclusions %}
+          <code>{{ identifier }}</code>{% if not loop.last %}<br>{% endif %}
+          {% endfor %}
+          {% else %}
+          none
+          {% endif %}
+        </dd>
+      </div>
+    </dl>
+  </section>
+
+  <section class="discovery-section" aria-labelledby="preflash-heading">
+    <h2 id="preflash-heading">Preflash monitor</h2>
+    <dl class="discovery-details-grid">
+      <div>
+        <dt>Running</dt>
+        <dd>{{ "yes" if preflash.monitor_running else "no" }}</dd>
+      </div>
+      <div>
+        <dt>Observed identifiers</dt>
+        <dd>
+          {% if preflash.device_identifiers %}
+          {% for identifier in preflash.device_identifiers %}
+          <code>{{ identifier }}</code>{% if not loop.last %}<br>{% endif %}
+          {% endfor %}
+          {% else %}
+          none
+          {% endif %}
+        </dd>
+      </div>
+    </dl>
+  </section>
+
+  <section class="discovery-section" aria-labelledby="sessions-heading">
+    <h2 id="sessions-heading">Commissioning sessions</h2>
+    <dl class="discovery-details-grid">
+      <div>
+        <dt>Running session identifiers</dt>
+        <dd>
+          {% if active_session_identifiers %}
+          {% for identifier in active_session_identifiers %}
+          <code>{{ identifier }}</code>{% if not loop.last %}<br>{% endif %}
+          {% endfor %}
+          {% else %}
+          none
+          {% endif %}
+        </dd>
+      </div>
+    </dl>
+
+    {% if sessions %}
+    <div class="session-list" aria-label="Commissioning sessions">
+      {% for session in sessions %}
+      <div class="session-row">
+        <span class="session-mac">{{ session.mac_address }}</span>
+        <span class="session-status session-status-{{ session.status }}">{{ session.status }}</span>
+        <span class="session-details">{{ session.details }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="status-message">No commissioning sessions exist.</p>
+    {% endif %}
+  </section>
+</section>
+{% endblock %}

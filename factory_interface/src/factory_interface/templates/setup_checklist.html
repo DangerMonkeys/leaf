@@ -120,25 +120,13 @@
     <div class="checklist-item checklist-item-with-details">
       <button
         class="task-icon task-icon-empty"
-        id="fanet-id-task-icon"
-        type="button"
-        aria-label="Toggle FANET ID details"
-        disabled
-      ></button>
-      <span>Assign FANET ID</span>
-      <p class="checklist-details" id="fanet-id-details" hidden></p>
-    </div>
-
-    <div class="checklist-item checklist-item-with-details">
-      <button
-        class="task-icon task-icon-empty"
         id="self-test-task-icon"
         type="button"
-        aria-label="Toggle interactive test details"
+        aria-label="Toggle verification test details"
         disabled
       ></button>
-      <span>Interactive test</span>
-      <pre class="checklist-details checklist-details-pre" id="self-test-details" hidden></pre>
+      <span>Verification tests</span>
+      <div class="checklist-details verification-test-details" id="self-test-details" hidden></div>
     </div>
 
     <div class="checklist-item checklist-item-with-details">
@@ -151,6 +139,54 @@
       ></button>
       <span>Retrieve test details</span>
       <pre class="checklist-details checklist-details-pre" id="retrieve-test-details" hidden></pre>
+    </div>
+
+    <div class="checklist-item checklist-item-with-details">
+      <button
+        class="task-icon task-icon-empty"
+        id="fanet-id-task-icon"
+        type="button"
+        aria-label="Toggle FANET ID details"
+        disabled
+      ></button>
+      <span>Assign FANET ID</span>
+      <p class="checklist-details" id="fanet-id-details" hidden></p>
+    </div>
+
+    <div class="checklist-item checklist-item-with-details">
+      <button
+        class="task-icon task-icon-empty"
+        id="persist-task-icon"
+        type="button"
+        aria-label="Toggle write commissioning log details"
+        disabled
+      ></button>
+      <span>Write commissioning log to database</span>
+      <p class="checklist-details" id="persist-details" hidden></p>
+    </div>
+
+    <div class="checklist-item checklist-item-with-details">
+      <button
+        class="task-icon task-icon-empty"
+        id="clear-self-test-results-task-icon"
+        type="button"
+        aria-label="Toggle clear self test results details"
+        disabled
+      ></button>
+      <span>Clear self test results</span>
+      <p class="checklist-details" id="clear-self-test-results-details" hidden></p>
+    </div>
+
+    <div class="checklist-item checklist-item-with-details">
+      <button
+        class="task-icon task-icon-empty"
+        id="notify-commissioning-complete-task-icon"
+        type="button"
+        aria-label="Toggle device commissioning notification details"
+        disabled
+      ></button>
+      <span>Notify device of successful commissioning</span>
+      <p class="checklist-details" id="notify-commissioning-complete-details" hidden></p>
     </div>
   </div>
 </section>
@@ -178,6 +214,12 @@
   const selfTestDetails = document.querySelector("#self-test-details");
   const retrieveTestDetailsTaskIcon = document.querySelector("#retrieve-test-details-task-icon");
   const retrieveTestDetails = document.querySelector("#retrieve-test-details");
+  const persistTaskIcon = document.querySelector("#persist-task-icon");
+  const persistDetails = document.querySelector("#persist-details");
+  const clearSelfTestResultsTaskIcon = document.querySelector("#clear-self-test-results-task-icon");
+  const clearSelfTestResultsDetails = document.querySelector("#clear-self-test-results-details");
+  const notifyCommissioningCompleteTaskIcon = document.querySelector("#notify-commissioning-complete-task-icon");
+  const notifyCommissioningCompleteDetails = document.querySelector("#notify-commissioning-complete-details");
   let flashPollTimer = null;
   let discoveryPollTimer = null;
   let resetNonvolatilePollTimer = null;
@@ -264,6 +306,18 @@
     setTaskIcon(retrieveTestDetailsTaskIcon, status);
   }
 
+  function setPersistIcon(status) {
+    setTaskIcon(persistTaskIcon, status);
+  }
+
+  function setClearSelfTestResultsIcon(status) {
+    setTaskIcon(clearSelfTestResultsTaskIcon, status);
+  }
+
+  function setNotifyCommissioningCompleteIcon(status) {
+    setTaskIcon(notifyCommissioningCompleteTaskIcon, status);
+  }
+
   function setResetNonvolatileIcon(status) {
     setTaskIcon(resetNonvolatileTaskIcon, status);
   }
@@ -278,6 +332,46 @@
 
   function setFanetIdIcon(status) {
     setTaskIcon(fanetIdTaskIcon, status);
+  }
+
+  function formatTestName(name) {
+    return name
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  }
+
+  function renderVerificationTests(element, state, fallbackText) {
+    element.replaceChildren();
+
+    const result = state.result || {};
+    const results = result.results || {};
+    const entries = Object.entries(results).filter(([name]) => name !== "all_tests");
+    if (entries.length > 0) {
+      const list = document.createElement("div");
+      list.className = "verification-results";
+      entries.forEach(([name, status]) => {
+        const item = document.createElement("span");
+        const normalizedStatus = String(status || "unknown").toLowerCase();
+        item.className = `verification-result verification-result-${normalizedStatus}`;
+        item.textContent = `${formatTestName(name)}: ${normalizedStatus}`;
+        list.appendChild(item);
+      });
+      element.appendChild(list);
+    }
+
+    const details = String(state.details || "");
+    const rawResult = JSON.stringify(result, null, 2);
+    if (details && details !== rawResult) {
+      const detailsBlock = document.createElement("pre");
+      detailsBlock.className = "checklist-details-pre verification-failure-details";
+      detailsBlock.textContent = details;
+      element.appendChild(detailsBlock);
+    } else if (entries.length === 0 && fallbackText) {
+      element.textContent = fallbackText;
+    }
+
+    element.hidden = state.status === "idle" || element.textContent.trim() === "";
   }
 
   function applyFlashTaskState(state) {
@@ -406,7 +500,7 @@
       clearInterval(firmwareVersionPollTimer);
       firmwareVersionPollTimer = null;
       if (!setupCancellationRequested) {
-        startFanetIdTask();
+        startSelfTestTask();
       }
     } else if (state.status === "running") {
       firmwareVersionDetails.textContent = state.details || "Reading firmware version...";
@@ -436,9 +530,6 @@
         state.details || `FANET ID: ${state.fanet_address}`;
       clearInterval(fanetIdPollTimer);
       fanetIdPollTimer = null;
-      if (!setupCancellationRequested) {
-        startSelfTestTask();
-      }
     } else if (state.status === "running") {
       fanetIdDetails.textContent = state.details || "Assigning FANET ID...";
       if (!fanetIdPollTimer) {
@@ -463,25 +554,24 @@
     setSelfTestIcon(state.status);
 
     if (state.status === "success") {
-      selfTestDetails.textContent = state.details || "Interactive self test passed.";
+      renderVerificationTests(selfTestDetails, state, "Verification tests passed.");
       clearInterval(selfTestPollTimer);
       selfTestPollTimer = null;
       if (!setupCancellationRequested) {
         startRetrieveTestDetailsTask();
       }
     } else if (state.status === "running") {
-      selfTestDetails.textContent = state.details || "Interactive self test is running...";
+      renderVerificationTests(selfTestDetails, state, "Verification tests are running...");
       if (!selfTestPollTimer) {
         selfTestPollTimer = setInterval(refreshSelfTestTaskState, 1000);
       }
     } else if (state.status === "failure") {
-      selfTestDetails.textContent = state.details || "Interactive self test failed.";
+      renderVerificationTests(selfTestDetails, state, "Verification tests failed.");
       selfTestDetails.hidden = false;
       clearInterval(selfTestPollTimer);
       selfTestPollTimer = null;
     } else {
-      selfTestDetails.textContent = "";
-      selfTestDetails.hidden = true;
+      renderVerificationTests(selfTestDetails, state, "");
       clearInterval(selfTestPollTimer);
       selfTestPollTimer = null;
     }
@@ -496,6 +586,9 @@
       retrieveTestDetails.textContent = state.details || "Self test details retrieved.";
       clearInterval(retrieveTestDetailsPollTimer);
       retrieveTestDetailsPollTimer = null;
+      if (!setupCancellationRequested) {
+        startFanetIdTask();
+      }
     } else if (state.status === "running") {
       retrieveTestDetails.textContent = state.details || "Retrieving self test details...";
       if (!retrieveTestDetailsPollTimer) {
@@ -741,6 +834,18 @@
 
   retrieveTestDetailsTaskIcon.addEventListener("click", () => {
     retrieveTestDetails.hidden = !retrieveTestDetails.hidden;
+  });
+
+  persistTaskIcon.addEventListener("click", () => {
+    persistDetails.hidden = !persistDetails.hidden;
+  });
+
+  clearSelfTestResultsTaskIcon.addEventListener("click", () => {
+    clearSelfTestResultsDetails.hidden = !clearSelfTestResultsDetails.hidden;
+  });
+
+  notifyCommissioningCompleteTaskIcon.addEventListener("click", () => {
+    notifyCommissioningCompleteDetails.hidden = !notifyCommissioningCompleteDetails.hidden;
   });
 
   refreshFlashTaskState();

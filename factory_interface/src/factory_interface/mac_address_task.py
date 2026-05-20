@@ -1,12 +1,16 @@
 import asyncio
 import json
 from dataclasses import dataclass, field
-from urllib.request import Request, urlopen
+from urllib.request import Request
 
+from factory_interface.http_client import (
+    DEFAULT_HTTP_TIMEOUT_SECONDS,
+    urlopen_with_timeout_retries,
+)
 from factory_interface.network_discovery import get_find_device_task
 
 
-HTTP_TIMEOUT_SECONDS = 5.0
+HTTP_TIMEOUT_SECONDS = DEFAULT_HTTP_TIMEOUT_SECONDS
 
 
 @dataclass
@@ -62,7 +66,10 @@ def device_mac_address_url() -> str:
 
 def fetch_json(url: str) -> dict:
     request = Request(url, method="GET")
-    with urlopen(request, timeout=HTTP_TIMEOUT_SECONDS) as response:
+    with urlopen_with_timeout_retries(
+        request,
+        timeout=HTTP_TIMEOUT_SECONDS,
+    ) as response:
         return json.loads(response.read().decode("utf-8"))
 
 

@@ -5,12 +5,11 @@ import json
 import platform
 import socket
 import subprocess
-import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from urllib.error import URLError
-from urllib.request import Request, urlopen
+from urllib.request import Request
 
 from sqlmodel import Session, select
 
@@ -22,8 +21,17 @@ from factory_interface.fanet_id_task import (
     most_recent_fanet_id_for_mac_address,
     normalize_mac_address,
 )
+from factory_interface.http_client import (
+    DEFAULT_HTTP_TIMEOUT_SECONDS,
+    urlopen_with_timeout_retries,
+)
 from factory_interface.models import ConfigurationEvent, File
-from factory_interface.network_discovery import LeafDiscoveryResponse, probe_once
+from factory_interface.network_discovery import (
+    LeafDiscoveryResponse,
+    discovery_identifier_values,
+    normalize_discovery_identifier,
+    probe_once,
+)
 from factory_interface.settings import (
     FactoryInterfaceSettings,
     describe_application_firmware_source,
@@ -34,9 +42,8 @@ from factory_interface.settings import (
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
-HTTP_TIMEOUT_SECONDS = 5.0
+HTTP_TIMEOUT_SECONDS = DEFAULT_HTTP_TIMEOUT_SECONDS
 RECONNECT_GRACE_SECONDS = 2.0
-RECONNECT_TIMEOUT_SECONDS = 45.0
 RECONNECT_POLL_SECONDS = 1.0
 SELF_TEST_POLL_SECONDS = 1.0
 
@@ -87,6 +94,8 @@ class CommissioningSession:
             "interactive_self_test": idle_task(),
             "retrieve_test_details": idle_task(),
             "persist_results": idle_task(),
+            "clear_self_test_results": idle_task(),
+            "notify_commissioning_complete": idle_task(),
         }
 
     def touch(self) -> None:
@@ -126,13 +135,19 @@ def device_base_url(session: CommissioningSession) -> str:
 
 def fetch_json(url: str, *, method: str = "GET") -> dict:
     request = Request(url, method=method)
-    with urlopen(request, timeout=HTTP_TIMEOUT_SECONDS) as response:
+    with urlopen_with_timeout_retries(
+        request,
+        timeout=HTTP_TIMEOUT_SECONDS,
+    ) as response:
         return json.loads(response.read().decode("utf-8"))
 
 
 def fetch_text(url: str, *, method: str = "GET") -> str:
     request = Request(url, method=method)
-    with urlopen(request, timeout=HTTP_TIMEOUT_SECONDS) as response:
+    with urlopen_with_timeout_retries(
+        request,
+        timeout=HTTP_TIMEOUT_SECONDS,
+    ) as response:
         return response.read().decode("utf-8")
 
 
@@ -144,7 +159,10 @@ def post_json(url: str, payload: dict) -> dict:
         method="POST",
         headers={"Content-Type": "application/json"},
     )
-    with urlopen(request, timeout=HTTP_TIMEOUT_SECONDS) as response:
+    with urlopen_with_timeout_retries(
+        request,
+        timeout=HTTP_TIMEOUT_SECONDS,
+    ) as response:
         return json.loads(response.read().decode("utf-8"))
 
 
@@ -185,28 +203,21 @@ async def read_session_mac_address(session: CommissioningSession) -> str:
 
 
 async def wait_for_session_device(session: CommissioningSession) -> None:
-    deadline = time.monotonic() + RECONNECT_TIMEOUT_SECONDS
-    last_error: Exception | None = None
-
-    while time.monotonic() < deadline:
+    while True:
         try:
             await read_session_mac_address(session)
             return
-        except (OSError, URLError, TimeoutError, RuntimeError) as exc:
-            last_error = exc
+        except (OSError, URLError, TimeoutError, RuntimeError):
+            pass
 
         try:
             await rediscover_session_device(session)
             await read_session_mac_address(session)
             return
-        except (OSError, URLError, TimeoutError, RuntimeError) as exc:
-            last_error = exc
+        except (OSError, URLError, TimeoutError, RuntimeError):
+            pass
 
         await asyncio.sleep(RECONNECT_POLL_SECONDS)
-
-    if last_error is not None:
-        raise RuntimeError(f"Device did not reconnect after reset: {last_error}")
-    raise RuntimeError("Device did not reconnect after reset.")
 
 
 def active_fanet_ids(except_mac_address: str | None = None) -> set[int]:
@@ -269,6 +280,36 @@ def self_test_status(payload: dict) -> str | None:
     if all_tests in {"fail", "failure"} or status in {"fail", "failure"}:
         return "failure"
     return None
+
+
+async def retrieve_session_self_test_details(session: CommissioningSession, base_url: str) -> str:
+    self_test_details = await asyncio.to_thread(fetch_text, f"{base_url}/details")
+    if not self_test_details.strip():
+        raise RuntimeError("Device returned empty self test details.")
+    session.self_test_details = self_test_details
+    return self_test_details
+
+
+async def notify_session_commissioning_complete(session: CommissioningSession) -> dict:
+    payload = await asyncio.to_thread(
+        fetch_json,
+        f"{device_base_url(session)}/commissioning/complete",
+        method="POST",
+    )
+    if not payload.get("commissioning_complete", False):
+        raise RuntimeError("Device did not acknowledge commissioning completion.")
+    return payload
+
+
+async def clear_session_self_test_results(session: CommissioningSession) -> dict:
+    payload = await asyncio.to_thread(
+        fetch_json,
+        f"{device_base_url(session)}/self-test/results",
+        method="DELETE",
+    )
+    if not payload.get("cleared", False):
+        raise RuntimeError("Device did not clear self test results.")
+    return payload
 
 
 def machine_description() -> str:
@@ -486,6 +527,72 @@ async def run_commissioning_session(session: CommissioningSession) -> None:
             }
         )
 
+        self_test_task = session.tasks["interactive_self_test"]
+        self_test_task.update(
+            {"status": "running", "details": "Starting verification tests..."}
+        )
+        session.touch()
+        base_url = f"{device_base_url(session)}/self-test"
+        await asyncio.to_thread(fetch_json, f"{base_url}/interactive", method="POST")
+
+        while True:
+            self_test_payload = await asyncio.to_thread(fetch_json, base_url)
+            session.self_test_result = self_test_payload
+            self_test_task["result"] = self_test_payload
+            self_test_task["details"] = json.dumps(self_test_payload, indent=2)
+            session.touch()
+
+            result = self_test_status(self_test_payload)
+            if result is not None:
+                self_test_task["status"] = result
+                if result == "failure":
+                    try:
+                        self_test_task["details"] = await retrieve_session_self_test_details(
+                            session, base_url
+                        )
+                    except Exception as details_exc:
+                        self_test_task["details"] = (
+                            "Verification tests failed.\n\n"
+                            f"Test details could not be retrieved: "
+                            f"{type(details_exc).__name__}: {details_exc}"
+                        )
+                    session.status = "failure"
+                    session.details = "Verification tests failed."
+                    return
+                break
+
+            if not self_test_payload.get("running", False):
+                self_test_task["status"] = "failure"
+                try:
+                    self_test_task["details"] = await retrieve_session_self_test_details(
+                        session, base_url
+                    )
+                except Exception as details_exc:
+                    self_test_task["details"] = (
+                        "Verification tests stopped without a pass/fail result.\n\n"
+                        f"Test details could not be retrieved: "
+                        f"{type(details_exc).__name__}: {details_exc}"
+                    )
+                session.status = "failure"
+                session.details = "Verification tests stopped without a pass/fail result."
+                return
+
+            await asyncio.sleep(SELF_TEST_POLL_SECONDS)
+
+        retrieve_test_details_task = session.tasks["retrieve_test_details"]
+        retrieve_test_details_task.update(
+            {"status": "running", "details": "Retrieving self test details..."}
+        )
+        session.touch()
+        self_test_details = await retrieve_session_self_test_details(session, base_url)
+        retrieve_test_details_task.update(
+            {
+                "status": "success",
+                "details": self_test_details,
+            }
+        )
+        session.touch()
+
         fanet_task = session.tasks["fanet_id"]
         fanet_task.update({"status": "running", "details": "Assigning FANET ID..."})
         session.touch()
@@ -508,50 +615,6 @@ async def run_commissioning_session(session: CommissioningSession) -> None:
                 "fanet_address": fanet_address,
             }
         )
-
-        self_test_task = session.tasks["interactive_self_test"]
-        self_test_task.update(
-            {"status": "running", "details": "Starting interactive self test..."}
-        )
-        session.touch()
-        base_url = f"{device_base_url(session)}/self-test"
-        await asyncio.to_thread(fetch_json, f"{base_url}/interactive", method="POST")
-
-        while True:
-            self_test_payload = await asyncio.to_thread(fetch_json, base_url)
-            session.self_test_result = self_test_payload
-            self_test_task["result"] = self_test_payload
-            self_test_task["details"] = json.dumps(self_test_payload, indent=2)
-            session.touch()
-
-            result = self_test_status(self_test_payload)
-            if result is not None:
-                self_test_task["status"] = result
-                if result == "failure":
-                    raise RuntimeError("Interactive self test failed.")
-                break
-
-            if not self_test_payload.get("running", False):
-                self_test_task["status"] = "failure"
-                raise RuntimeError("Self test stopped without a pass/fail result.")
-
-            await asyncio.sleep(SELF_TEST_POLL_SECONDS)
-
-        retrieve_test_details_task = session.tasks["retrieve_test_details"]
-        retrieve_test_details_task.update(
-            {"status": "running", "details": "Retrieving self test details..."}
-        )
-        session.touch()
-        self_test_details = await asyncio.to_thread(fetch_text, f"{base_url}/details")
-        if not self_test_details.strip():
-            raise RuntimeError("Device returned empty self test details.")
-        session.self_test_details = self_test_details
-        retrieve_test_details_task.update(
-            {
-                "status": "success",
-                "details": self_test_details,
-            }
-        )
         session.touch()
 
         persist_task = session.tasks["persist_results"]
@@ -568,6 +631,40 @@ async def run_commissioning_session(session: CommissioningSession) -> None:
             {
                 "status": "success",
                 "details": f"Commissioning log written to database as event {event_id}.",
+            }
+        )
+
+        clear_self_test_task = session.tasks["clear_self_test_results"]
+        clear_self_test_task.update(
+            {
+                "status": "running",
+                "details": "Clearing self test results from device SD card...",
+            }
+        )
+        session.touch()
+        clear_payload = await clear_session_self_test_results(session)
+        deleted_count = int(clear_payload.get("deleted_count", 0))
+        clear_self_test_task.update(
+            {
+                "status": "success",
+                "details": f"Cleared {deleted_count} self test result file(s).",
+                "deleted_count": deleted_count,
+            }
+        )
+
+        notify_task = session.tasks["notify_commissioning_complete"]
+        notify_task.update(
+            {
+                "status": "running",
+                "details": "Notifying device that commissioning is complete...",
+            }
+        )
+        session.touch()
+        await notify_session_commissioning_complete(session)
+        notify_task.update(
+            {
+                "status": "success",
+                "details": "Device acknowledged successful commissioning.",
             }
         )
         session.status = "success"
@@ -640,6 +737,39 @@ def list_commissioning_sessions() -> list[CommissioningSession]:
         key=lambda session: session.created_at,
         reverse=True,
     )
+
+
+def active_commissioning_device_identifiers() -> set[str]:
+    identifiers: set[str] = set()
+    for session in commissioning_sessions.values():
+        if session.status != "running":
+            continue
+        for value in (
+            session.mac_address,
+            session.device.device_id,
+            session.device.mac_address or "",
+        ):
+            identifiers.update(normalize_discovery_identifier(value))
+    return identifiers
+
+
+def active_commissioning_session_for_device(
+    device: LeafDiscoveryResponse,
+) -> CommissioningSession | None:
+    device_identifiers = discovery_identifier_values(device)
+    for session in commissioning_sessions.values():
+        if session.status != "running":
+            continue
+        session_identifiers: set[str] = set()
+        for value in (
+            session.mac_address,
+            session.device.device_id,
+            session.device.mac_address or "",
+        ):
+            session_identifiers.update(normalize_discovery_identifier(value))
+        if device_identifiers & session_identifiers:
+            return session
+    return None
 
 
 def cancel_commissioning_session(mac_address: str) -> CommissioningSession | None:

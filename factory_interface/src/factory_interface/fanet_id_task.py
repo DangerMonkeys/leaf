@@ -1,17 +1,21 @@
 import asyncio
 import json
 from dataclasses import dataclass, field
-from urllib.request import Request, urlopen
+from urllib.request import Request
 
 from sqlmodel import Session, select
 
 from factory_interface.database import engine
+from factory_interface.http_client import (
+    DEFAULT_HTTP_TIMEOUT_SECONDS,
+    urlopen_with_timeout_retries,
+)
 from factory_interface.mac_address_task import get_mac_address_task
 from factory_interface.models import ConfigurationEvent
 from factory_interface.network_discovery import get_find_device_task
 
 
-HTTP_TIMEOUT_SECONDS = 5.0
+HTTP_TIMEOUT_SECONDS = DEFAULT_HTTP_TIMEOUT_SECONDS
 LEAF_MANUFACTURER_ID = 0x0C
 FANET_ID_MIN = (LEAF_MANUFACTURER_ID << 16) | 0x0001
 FANET_ID_MAX = (LEAF_MANUFACTURER_ID << 16) | 0xFFFF
@@ -137,7 +141,10 @@ def post_json(url: str, payload: dict) -> dict:
         method="POST",
         headers={"Content-Type": "application/json"},
     )
-    with urlopen(request, timeout=HTTP_TIMEOUT_SECONDS) as response:
+    with urlopen_with_timeout_retries(
+        request,
+        timeout=HTTP_TIMEOUT_SECONDS,
+    ) as response:
         return json.loads(response.read().decode("utf-8"))
 
 
