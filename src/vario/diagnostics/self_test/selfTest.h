@@ -21,7 +21,7 @@ class SelfTest {
     Status sdCard = Status::Unknown;
     Status baro = Status::Unknown;
     Status imu = Status::Unknown;
-    Status gps = Status::Unknown;
+    Status gpsSerial = Status::Unknown;
     Status gpsFix = Status::Unknown;
     Status ambient = Status::Unknown;
     Status display = Status::Unknown;
@@ -51,7 +51,7 @@ class SelfTest {
   // Individual automated test functions
   static Status testBaro();
   static Status testIMU();
-  static Status testGPS();
+  static Status testGPSsats();
   static Status testGPSserial();
   static Status testGPSfix();
   static Status testAmbient();

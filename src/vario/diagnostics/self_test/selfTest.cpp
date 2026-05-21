@@ -73,12 +73,15 @@ bool useSDFile() {
   self_test_file_name = fileName;
 
   // Write the version information to know what generated this fatal error
-  self_test_file.print("Hardware Variant: ");
-  self_test_file.println(LeafVersionInfo::hardwareVariant());
-  self_test_file.print("Firmware Version: ");
-  self_test_file.println(LeafVersionInfo::firmwareVersion());
-  self_test_file.print("MAC Address: ");
-  self_test_file.println(settings.macAddress);
+  self_test_file.print("`hardware_version=");
+  self_test_file.print(LeafVersionInfo::hardwareVariant());
+  self_test_file.println("`");
+  self_test_file.print("`firmware_version=");
+  self_test_file.print(LeafVersionInfo::firmwareVersion());
+  self_test_file.println("`");
+  self_test_file.print("`MACaddress=");
+  self_test_file.print(settings.macAddress);
+  self_test_file.println("`");
 
   return self_test_file;
 }
@@ -95,7 +98,7 @@ void selfTestInfo(const char* msg, ...) {
 
   Serial.println(buffer);
   if (useSDFile()) {
-    self_test_file.print("Info: ");
+    self_test_file.print("* ");
     self_test_file.println(buffer);
   }
 }
@@ -111,16 +114,16 @@ void selfTestInfo(const char* msg, ...) {
 SelfTest::Status SelfTest::testSDCard() {
   Status result = Status::Running;
   if (sdcard.isCardPresent() == false) {
-    selfTestInfo("* SELF TEST * SD CARD * WARNING - Physical card detection failed");
-  }
-  if (!sdcard.isMounted()) {
-    selfTestInfo("* SELF TEST * SD CARD * FAIL - SD Card not mounted");
+    selfTestInfo("`Test=SD_CARD`,    `Result=FAIL`, `Message=Physical card detection failed`");
+    result = Status::Fail;
+  } else if (!sdcard.isMounted()) {
+    selfTestInfo("`Test=SD_CARD`,    `Result=FAIL`, `Message=SD Card not mounted`");
     result = Status::Fail;
   } else if (!useSDFile()) {
-    selfTestInfo("* SELF TEST * SD CARD * WARNING - Cannot save self test results");
+    selfTestInfo("`Test=SD_CARD`,    `Result=FAIL`, `Message=Cannot save self test results`");
     result = Status::Fail;
   } else {
-    selfTestInfo("* SELF TEST * SD CARD * PASS - Saving self test results");
+    selfTestInfo("`Test=SD_CARD`,    `Result=PASS`, `Message=Saving self test results`");
     result = Status::Pass;
   }
   return result;
@@ -131,15 +134,16 @@ SelfTest::Status SelfTest::testSDCard() {
 SelfTest::Status SelfTest::testBaro() {
   Status result = Status::Running;
   if (baro.state() != Barometer::State::Ready) {
-    selfTestInfo("* SELF TEST *  BARO   * FAIL - Barometer not ready");
-    result == Status::Fail;
+    selfTestInfo("`Test=BARO`,       `Result=FAIL`, `Message=Barometer not ready`");
+    result = Status::Fail;
   } else {
-    if (baro.altF() < 3500 && baro.altF() > -200) {
-      selfTestInfo("* SELF TEST *  BARO   * PASS - Barometer reading: %g", baro.altF());
+    if (baro.altF() < 1100 && baro.altF() > -200) {
+      selfTestInfo("`Test=BARO`,       `Result=PASS`, `Alt_m=%g`", baro.altF());
       result = Status::Pass;
     } else {
-      selfTestInfo("* SELF TEST *  BARO   * FAIL - Value out of range: %g", baro.altF());
-      result == Status::Fail;
+      selfTestInfo("`Test=BARO`,       `Result=FAIL`, `Alt_m=%g`, `Message=Value out of range`",
+                   baro.altF());
+      result = Status::Fail;
     }
   }
   return result;
@@ -151,7 +155,7 @@ SelfTest::Status SelfTest::testIMU() {
   Status result = Status::Running;
   if (!imu.accelValid()) {
     if (imuTestCounter++ >= 400) {
-      selfTestInfo("* SELF TEST *   IMU   * FAIL - IMU acceleration not valid");
+      selfTestInfo("`Test=IMU`,        `Result=FAIL`, `Message=IMU timeout`");
       result = Status::Fail;
     }
   } else {
@@ -159,9 +163,9 @@ SelfTest::Status SelfTest::testIMU() {
     // Check if acceleration values are within a reasonable range
     if (accelTotal < 1.2f && accelTotal > 0.8f) {
       result = Status::Pass;
-      selfTestInfo("* SELF TEST *   IMU   * PASS - Total acceleration: %g", accelTotal);
+      selfTestInfo("`Test=IMU`,        `Result=PASS`, `Accel=%g`", accelTotal);
     } else {
-      selfTestInfo("* SELF TEST *   IMU   * FAIL - Total acceleration out of range: %g",
+      selfTestInfo("`Test=IMU`,        `Result=FAIL`, `Accel=%g`, `Message=Out of range`",
                    accelTotal);
       result = Status::Fail;
     }
@@ -176,30 +180,33 @@ SelfTest::Status SelfTest::testAmbient() {
   Status result = Status::Running;
   if (ambient.state() != Ambient::State::Ready) {
     if (ambientTestCounter++ >= 400) {
-      selfTestInfo("* SELF TEST * AMBIENT * FAIL - Ambient sensor not ready");
+      selfTestInfo("`Test=AMBIENT`,    `Result=FAIL`, `Message=Ambient sensor not ready`");
       result = Status::Fail;
     }
   } else {
     float temperature = ambient.temp();
-    if (temperature < 45.0f && temperature > 0.0f) {
+    if (temperature < 45.0f && temperature > 5.0f) {
       result = Status::Pass;
-      selfTestInfo("* SELF TEST * AMBIENT * PASS");
+      selfTestInfo("`Test=AMBIENT`,    `Result=PASS`, `Temp=%g`", temperature);
     } else {
-      selfTestInfo("* SELF TEST * AMBIENT * Ambient temperature out of range: %g", temperature);
+      selfTestInfo("`Test=AMBIENT`,    `Result=FAIL`, `Temp=%g`, `Message=Out of range`",
+                   temperature);
     }
   }
   return result;
 }
 
 /////////////////////////////////////////////
-// GPS TEST
-SelfTest::Status SelfTest::testGPS() {
+// GPS SATELLITE TEST
+SelfTest::Status SelfTest::testGPSsats() {
   Status result = Status::Running;
-  if (!gps.fixInfo.numberOfSats) {  // Pass if we see >0 satellites...
-    result = testGPSserial();  // ...otherwise proceed to check serial communication with module
-  } else {
+  if (gps.fixInfo.numberOfSats) {  // Pass if we see >0 satellites...
     result = Status::Pass;
-    selfTestInfo("* SELF TEST *   GPS   * PASS - GPS sees %d satellites", gps.fixInfo.numberOfSats);
+    selfTestInfo("`Test=GPS_SATS`,   `Result=PASS`, `Sats=%d`", gps.fixInfo.numberOfSats);
+  } else {
+    result = Status::Fail;
+    selfTestInfo("`Test=GPS_SATS`,   `Result=FAIL`, `Sats=%d`, `Message=No satellites detected`",
+                 gps.fixInfo.numberOfSats);
   }
   return result;
 }
@@ -211,20 +218,17 @@ SelfTest::Status SelfTest::testGPSserial() {
     gpsSerialTestInitialized = true;
     gpsSerialInitialPassedChecksumCount = gps.passedChecksum();
     gpsSerialStartMillis = millis();
-    selfTestInfo(
-        "* SELF TEST * GPS SER * INFO - GPS sees zero satellites; waiting for valid NMEA "
-        "sentence");
   }
 
   if (gps.passedChecksum() > gpsSerialInitialPassedChecksumCount) {
     gpsSerialTestInitialized = false;
-    selfTestInfo("* SELF TEST * GPS SER * PASS - Valid NMEA sentence received");
+    selfTestInfo("`Test=GPS_SERIAL`, `Result=PASS`, `Message=Valid NMEA sentence received`");
     return Status::Pass;
   }
 
   if (millis() - gpsSerialStartMillis >= GPS_SERIAL_TEST_TIMEOUT_MS) {
     gpsSerialTestInitialized = false;
-    selfTestInfo("* SELF TEST * GPS SER * FAIL - No valid NMEA sentence received");
+    selfTestInfo("`Test=GPS_SERIAL`, `Result=FAIL`, `Message=No valid NMEA sentence received`");
     return Status::Fail;
   }
 
@@ -243,22 +247,22 @@ SelfTest::Status SelfTest::testGPSfix() {
     gpsFixStartMillis = millisNow;
     gpsFixLastDisplayUpdateMillis = 0;
     gpsFixRemainingSeconds = GPS_FIX_TEST_TIMEOUT_MS / 1000;
-    selfTestInfo("* SELF TEST * GPS FIX * INFO - Waiting for GPS fix");
     selfTest_pageGPSFix.show();
     display.update();
   }
 
   if (gpsFixTestCancelled) {
     gpsFixTestInitialized = false;
-    selfTestInfo("* SELF TEST * GPS FIX * FAIL - Cancelled by user");
+    selfTestInfo("`Test=GPS_FIX`,    `Result=FAIL`, `Message=Cancelled by user`");
     return Status::Fail;
   }
 
   if (gps.sentencesWithFix() > gpsFixInitialSentencesWithFixCount) {
     gpsFixTestInitialized = false;
+    uint32_t timeToFixSeconds = GPS_FIX_TEST_TIMEOUT_MS / 1000 - gpsFixRemainingSeconds;
     selfTest_pageGPSFix.close();
-    selfTestInfo("* SELF TEST * GPS FIX * PASS - GPS fix acquired with %d satellites",
-                 gps.fixInfo.numberOfSats);
+    selfTestInfo("`Test=GPS_FIX`,    `Result=PASS`, `Sec_to_fix=%d`, `Fix_sats=%d`",
+                 timeToFixSeconds, gps.fixInfo.numberOfSats);
     return Status::Pass;
   }
 
@@ -268,7 +272,7 @@ SelfTest::Status SelfTest::testGPSfix() {
     gpsFixRemainingSeconds = 0;
     display.update();
     selfTest_pageGPSFix.close();
-    selfTestInfo("* SELF TEST * GPS FIX * FAIL - Timeout waiting for GPS fix");
+    selfTestInfo("`Test=GPS_FIX`,    `Result=FAIL`, `Message=Timeout waiting for GPS fix`");
     return Status::Fail;
   }
 
@@ -295,40 +299,46 @@ SelfTest::Status SelfTest::testDisplay() {
 SelfTest::Status SelfTest::testPower() {
   Status result = Status::Running;
 
-  power.info().charging ? selfTestInfo("* SELF TEST *  POWER  * Battery charging")
-                        : selfTestInfo("* SELF TEST *  POWER  * Battery NOT charging");
-  selfTestInfo("* SELF TEST *  POWER  * Battery percent: %d%%", power.info().batteryPercent);
+  bool battCharging = power.info().charging;
+  uint8_t battPercent = power.info().batteryPercent;
+  String messageStr = "";      // store additional message details
+  String extra326Params = "";  // extra  power info on hardware v3.2.6+
 
 #ifdef LED_PIN  // (only for v3.2.6+ with controllable LED and PowerGood input)
-  power.info().USBinput ? selfTestInfo("* SELF TEST *  POWER  * USB Power detected")
-                        : selfTestInfo("* SELF TEST *  POWER  * USB Power NOT detected");
+  bool usbInput = power.info().USBinput;
+
   // Pass if: [ USB Power AND (charging OR full) ] OR [ NOT USB Power AND NOT charging ]
-  if ((power.info().USBinput && (power.info().batteryPercent >= 100 || power.info().charging)) ||
-      (!power.info().USBinput && !power.info().charging)) {
+  if ((usbInput && (battPercent >= 100 || battCharging)) || (!usbInput && !battCharging)) {
     result = Status::Pass;
   } else {
     result = Status::Fail;
+    messageStr = "Inconsistent power state";
   }
+  extra326Params = ", `USB_input=" + String(usbInput) + "`";
 #else  // (for previous versions (<= v3.2.5) without PowerGood input)
   // Pass if:  [charging] OR [ not-charging AND full ]
-  if (power.info().charging || (!power.info().charging && power.info().batteryPercent >= 100)) {
+  if (battCharging || (!battCharging && battPercent >= 100)) {
     result = Status::Pass;
   } else {
     result = Status::Fail;
+    messageStr = "Inconsistent power state";
   }
 #endif
 
   if (power.info().batteryMV < 3200 || power.info().batteryMV > 4250) {
-    selfTestInfo("* SELF TEST *  POWER  * FAIL - Battery outside voltage range: %d mV",
-                 power.info().batteryMV);
+    if (result == Status::Fail) {
+      // if we already failed above due to inconsistent state, append to message
+      messageStr += ". ";
+    }
     result = Status::Fail;
+    messageStr += "Battery voltage out of range";
   }
 
-  if (result == Status::Pass) {
-    selfTestInfo("* SELF TEST *  POWER  * PASS");
-  } else {
-    selfTestInfo("* SELF TEST *  POWER  * FAIL - Inconsistent power state");
-  }
+  String messageField = messageStr == "" ? "" : ", `Message=" + messageStr + "`";
+
+  selfTestInfo("`Test=POWER`,      `Result=%s`, `Batt%%=%d%%`, `Batt_mV=%d`, `Batt_charge=%d`%s%s",
+               result == Status::Pass ? "PASS" : "FAIL", battPercent, power.info().batteryMV,
+               battCharging, extra326Params.c_str(), messageField.c_str());
 
   return result;
 }
@@ -380,22 +390,10 @@ SelfTest::Status ButtonsInteractiveTest::update() {
   if (buttonsTest.waitForInput-- == 0) {
     buttonsTest.status = SelfTest::Status::Fail;
     speaker.playSound(fx::cancel);
-    selfTestInfo("* SELF TEST * BUTTONS * FAIL - Timeout waiting for button presses");
-    if (!upPressed) {
-      selfTestInfo("* SELF TEST * BUTTONS * FAIL - UP button NOT DETECTED");
-    }
-    if (!downPressed) {
-      selfTestInfo("* SELF TEST * BUTTONS * FAIL - DOWN button NOT DETECTED");
-    }
-    if (!leftPressed) {
-      selfTestInfo("* SELF TEST * BUTTONS * FAIL - LEFT button NOT DETECTED");
-    }
-    if (!rightPressed) {
-      selfTestInfo("* SELF TEST * BUTTONS * FAIL - RIGHT button NOT DETECTED");
-    }
-    if (!centerPressed) {
-      selfTestInfo("* SELF TEST * BUTTONS * FAIL - CENTER button NOT DETECTED");
-    }
+    selfTestInfo(
+        "`Test=BUTTONS`,    `Result=FAIL`, `Up=%d`, `Down=%d`, `Left=%d`, `Right=%d`, `Center=%d`, "
+        "`Message=Timeout waiting for all button presses`",
+        upPressed, downPressed, leftPressed, rightPressed, centerPressed);
   }
 
   // Test passes if all buttons have been pressed
@@ -403,7 +401,9 @@ SelfTest::Status ButtonsInteractiveTest::update() {
       buttonsTest.status == SelfTest::Status::Running) {
     buttonsTest.status = SelfTest::Status::Pass;
     speaker.playSound(fx::confirm);
-    selfTestInfo("* SELF TEST * BUTTONS * PASS - All buttons detected");
+    selfTestInfo(
+        "`Test=BUTTONS`,    `Result=PASS`, `Up=%d`, `Down=%d`, `Left=%d`, `Right=%d`, `Center=%d`",
+        upPressed, downPressed, leftPressed, rightPressed, centerPressed);
   }
 
   // close if test is complete
@@ -430,13 +430,15 @@ SelfTest::Status VarioInteractiveTest::update() {
     waitForInput = 800;         // reset timeout (10ms ticks)
     selfTest_pageVario.show();  // show display page for vario test
     display.update();
+    // Play sound to get user's attention for vario test instructions
+    speaker.playSound(fx::confirm);
   }
 
   // delay if baro not ready yet
   if (baro.state() != Barometer::State::Ready || baro.climbRateFilteredValid() == false) {
     // If this is our first time delaying, send waiting message
     if (!delayForCalibration)
-      selfTestInfo("* SELF TEST *  VARIO  * DELAY - Waiting for Baro Calibration");
+      Serial.println("* SELF TEST *  VARIO  * DELAY - Waiting for Baro Calibration");
     delayForCalibration = true;
     return status;
   }
@@ -459,7 +461,7 @@ SelfTest::Status VarioInteractiveTest::update() {
     maxAltitude = alt;
     deltaAltitude = maxAltitude - initialAltitude;
   }
-  climb = baro.climbRateFiltered();
+  climb = baro.climbRateFiltered() / 100.0f;  // convert from cm/s to m/s
   if (climb > maxClimb) {
     maxClimb = climb;
   } else if (climb < maxSink) {
@@ -470,16 +472,19 @@ SelfTest::Status VarioInteractiveTest::update() {
   if (waitForInput-- <= 0) {
     status = SelfTest::Status::Fail;
     speaker.playSound(fx::cancel);
-    selfTestInfo("* SELF TEST *  VARIO  * FAIL - Timeout waiting for climb & sink");
+    selfTestInfo(
+        "`Test=VARIO`,      `Result=FAIL`, `DeltaAlt_m=%.2f`, `MaxClimb_ms=%.2f`, "
+        "`MaxSink_ms=%.2f`",
+        deltaAltitude, maxClimb, maxSink);
   }
 
   // if vario values sufficient, pass the test
-  if (deltaAltitude >= 0.4f && maxClimb >= 150.0f && maxSink <= -150.0f) {
+  if (deltaAltitude >= 0.4f && maxClimb >= 1.2f && maxSink <= -1.2f) {
     status = SelfTest::Status::Pass;
     speaker.playSound(fx::confirm);
     selfTestInfo(
-        "* SELF TEST *  VARIO  * PASS - Detected altitude change of %g m, max climb %g m/s, max "
-        "sink %g m/s",
+        "`Test=VARIO`,      `Result=PASS`, `DeltaAlt_m=%.2f`, `MaxClimb_ms=%.2f`, "
+        "`MaxSink_ms=%.2f`",
         deltaAltitude, maxClimb, maxSink);
   }
 
@@ -507,24 +512,24 @@ SelfTest::Status SpeakerInteractiveTest::update() {
 
   speakerTestCounter++;
 
-  // wait ~3 seconds before starting the test to give user time to read instructions
-  if (speakerTestCounter < 200) {
+  // wait ~1.5 seconds before starting the test to give user time to read instructions
+  if (speakerTestCounter < 150) {
     return status;
   }
 
   // Play Test Sounds for user to confirm volume levels function properly
-  if (speakerTestCounter == 200) {
+  if (speakerTestCounter == 150) {
     speaker.setVolume(Speaker::SoundChannel::FX, SpeakerVolume::Low);
     speaker.playSound(fx::neutralLong);
-  } else if (speakerTestCounter == 300) {
+  } else if (speakerTestCounter == 250) {
     speaker.setVolume(Speaker::SoundChannel::FX, SpeakerVolume::Medium);
     speaker.playSound(fx::neutralLong);
-  } else if (speakerTestCounter == 400) {
+  } else if (speakerTestCounter == 350) {
     speaker.setVolume(Speaker::SoundChannel::FX, SpeakerVolume::High);
     speaker.playSound(fx::neutralLong);
   }
 
-  if (speakerTestCounter == 500) {
+  if (speakerTestCounter == 450) {
     speaker.setVolume(Speaker::SoundChannel::FX, SpeakerVolume::Off);
     speaker.playSound(fx::quadRise);
     Serial.println(
@@ -532,22 +537,23 @@ SelfTest::Status SpeakerInteractiveTest::update() {
     Serial.println("* SELF TEST * SPEAKER * YES = UP button, NO = DOWN button");
   }
 
-  if (speakerTestCounter > 500 && status == SelfTest::Status::Running) {
+  if (speakerTestCounter > 450 && status == SelfTest::Status::Running) {
     // check for user input
     Button button = Button::NONE;
     button = buttons.inspectPins();
     if (button == Button::UP) {
       status = SelfTest::Status::Pass;
-      selfTestInfo("* SELF TEST * SPEAKER * PASS - via user input");
+      selfTestInfo("`Test=SPEAKER`,    `Result=PASS`, `Message=PASS - via user input`");
     } else if (button == Button::DOWN) {
       status = SelfTest::Status::Fail;
-      selfTestInfo("* SELF TEST * SPEAKER * FAIL - via user input");
+      selfTestInfo("`Test=SPEAKER`,    `Result=FAIL`, `Message=FAIL - via user input`");
     }
   }
 
-  if (speakerTestCounter >= 750 + 800) {
+  if (speakerTestCounter >= 450 + 800) {
     status = SelfTest::Status::Fail;
-    selfTestInfo("* SELF TEST * SPEAKER * FAIL - Timeout waiting for user input");
+    selfTestInfo(
+        "`Test=SPEAKER`,    `Result=FAIL`, `Message=FAIL - Timeout waiting for user input`");
   }
 
   if (status != SelfTest::Status::Running) {
@@ -590,7 +596,7 @@ void SelfTest::begin(bool markAsProductionChecked) {
 bool SelfTest::tallyResults() {
   bool allPass = true;
   if (results.sdCard != Status::Pass || results.baro != Status::Pass ||
-      results.imu != Status::Pass || results.gps != Status::Pass ||
+      results.imu != Status::Pass || results.gpsSerial != Status::Pass ||
       results.gpsFix != Status::Pass || results.ambient != Status::Pass ||
       results.display != Status::Pass || results.buttons != Status::Pass ||
       results.power != Status::Pass || results.speaker != Status::Pass ||
@@ -616,13 +622,12 @@ bool SelfTest::update() {
     } else if (status != Status::Complete) {
       status = Status::Complete;  // we're done
       updateNeeded = false;       // no need to call update again since we're complete
-      selfTestInfo("* SELF TEST * All tests complete");
       selfTest.results.allTests = tallyResults() ? Status::Pass : Status::Fail;
       if (selfTest.results.allTests == Status::Pass) {
-        selfTestInfo("* SELF TEST * ALL TESTS PASSED");
+        selfTestInfo("`Test=ALL`,        `Result=PASS`, `Message=ALL TESTS PASSED`");
         speaker.playSound(fx::confirm);
       } else {
-        selfTestInfo("* SELF TEST * SOME TESTS FAILED");
+        selfTestInfo("`Test=ALL`,        `Result=FAIL`, `Message=SOME TESTS FAILED`");
         speaker.playSound(fx::fatalerror);
       }
       closeTestFile();
@@ -633,6 +638,8 @@ bool SelfTest::update() {
       }
       display.update();
     }
+  } else {
+    updateNeeded = false;  // not running, no need to call update again
   }
   return updateNeeded;
 }
@@ -661,8 +668,9 @@ SelfTest::Status SelfTest::runAutoTests(bool closeFileWhenDone) {
     selfTest.results.baro = testBaro();
   } else if (selfTest.results.imu == Status::Unknown || selfTest.results.imu == Status::Running) {
     selfTest.results.imu = testIMU();
-  } else if (selfTest.results.gps == Status::Unknown || selfTest.results.gps == Status::Running) {
-    selfTest.results.gps = testGPS();
+  } else if (selfTest.results.gpsSerial == Status::Unknown ||
+             selfTest.results.gpsSerial == Status::Running) {
+    selfTest.results.gpsSerial = testGPSserial();
   } else if (selfTest.results.ambient == Status::Unknown ||
              selfTest.results.ambient == Status::Running) {
     selfTest.results.ambient = testAmbient();
@@ -674,7 +682,6 @@ SelfTest::Status SelfTest::runAutoTests(bool closeFileWhenDone) {
     selfTest.results.power = testPower();
   } else {
     statusAutoTests = Status::Complete;  // auto tests complete
-    selfTestInfo("* SELF TEST * Auto tests complete");
     if (closeFileWhenDone && self_test_file) {
       closeTestFile();
     }
@@ -700,7 +707,6 @@ SelfTest::Status SelfTest::runInteractiveTests(bool closeFileWhenDone) {
   }
   // else if (other tests requiring multiple frames go here)
   else {
-    selfTestInfo("* SELF TEST * Interactive tests complete");
     statusInteractiveTests = Status::Complete;  // interactive tests complete
     if (closeFileWhenDone && self_test_file) {
       closeTestFile();

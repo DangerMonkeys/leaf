@@ -82,14 +82,14 @@ namespace {
     appendSelfTestResult(json, "sd_card", selfTest.results.sdCard);
     appendSelfTestResult(json, "baro", selfTest.results.baro);
     appendSelfTestResult(json, "imu", selfTest.results.imu);
-    appendSelfTestResult(json, "gps", selfTest.results.gps);
-    appendSelfTestResult(json, "gps_fix", selfTest.results.gpsFix);
+    appendSelfTestResult(json, "gps_serial", selfTest.results.gpsSerial);
     appendSelfTestResult(json, "ambient", selfTest.results.ambient);
     appendSelfTestResult(json, "display", selfTest.results.display);
-    appendSelfTestResult(json, "buttons", selfTest.results.buttons);
     appendSelfTestResult(json, "power", selfTest.results.power);
-    appendSelfTestResult(json, "speaker", selfTest.results.speaker);
     appendSelfTestResult(json, "vario", selfTest.results.vario);
+    appendSelfTestResult(json, "buttons", selfTest.results.buttons);
+    appendSelfTestResult(json, "speaker", selfTest.results.speaker);
+    appendSelfTestResult(json, "gps_fix", selfTest.results.gpsFix);
     appendSelfTestResult(json, "all_tests", selfTest.results.allTests, false);
     json += "}}";
     return json;
