@@ -125,9 +125,6 @@ int32_t autoStopAltitude = 0;
 bool flightTimer_autoStart() {
   bool startTheTimer = false;  // default to not auto-start
 
-  // we will auto-start if EITHER the GPS speed or the Altitude change triggers the starting
-  // thresholds.
-
   // keep track of how many times (seconds) we've been continuously over the min speed threshold
   if (gps.speed.mph() > AUTO_START_MIN_SPEED) {
     autoStartCounter++;
@@ -139,6 +136,15 @@ bool flightTimer_autoStart() {
     autoStartCounter = 0;
   }
 
+  /*   Auto Start from altitude change was leading to false-positives.  Further, if auto-start by
+  Altitude is triggered before a GPS fix is obtained, then gps.speed is reported as 0, triggering
+  log auto-stop. Plus, a saved tracklog file is only recorded when we have a fix anyway, so it
+  doesn't make sense to start the log before we have a fix.  So, for now, we'll only auto-start from
+  speed. We can re-evaluate auto-start from altitude change in the future if we want to add it back
+  as an additional criteria for auto-starting (in addition to speed).  The main benefit of
+  auto-starting from altitude (before a fix) is to capture the total flight time for a saved
+  logbook.
+
   // check if current altitude has changed enough from startup to trigger timer start
   if (baro.state() == Barometer::State::Ready) {
     int32_t altDifference = baro.altAboveInitial();
@@ -148,6 +154,7 @@ bool flightTimer_autoStart() {
       Serial.println("****************************** autoStart TRUE via alt");
     }
   }
+  */
 
   if (startTheTimer) {
     autoStartCounter = 0;
