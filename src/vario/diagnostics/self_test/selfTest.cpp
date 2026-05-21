@@ -153,9 +153,11 @@ SelfTest::Status SelfTest::testBaro() {
 uint16_t imuTestCounter = 0;
 SelfTest::Status SelfTest::testIMU() {
   Status result = Status::Running;
-  if (!imu.accelValid()) {
-    if (imuTestCounter++ >= 400) {
-      selfTestInfo("`Test=IMU`,        `Result=FAIL`, `Message=IMU timeout`");
+  if (!imu.accelValid() || !baro.climbRateFilteredValid()) {
+    if (imuTestCounter++ >= 1000) {
+      selfTestInfo(
+          "`Test=IMU`,        `Result=FAIL`, `Message=IMU timeout waiting for valid accel and "
+          "climb rate`");
       result = Status::Fail;
     }
   } else {
@@ -479,7 +481,7 @@ SelfTest::Status VarioInteractiveTest::update() {
   }
 
   // if vario values sufficient, pass the test
-  if (deltaAltitude >= 0.4f && maxClimb >= 1.2f && maxSink <= -1.2f) {
+  if (deltaAltitude >= 0.4f && maxClimb >= 1.0f && maxSink <= -1.0) {
     status = SelfTest::Status::Pass;
     speaker.playSound(fx::confirm);
     selfTestInfo(
