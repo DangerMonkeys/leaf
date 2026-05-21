@@ -27,6 +27,10 @@
 #include "comms/udp_message_server.h"
 #endif
 
+#ifdef RUN_EMBEDDED_TESTS
+#include "tests/tests.h"
+#endif
+
 // MAIN Module
 // initializes the system.  Responsible for setting up resources with
 // as much dynamic memory as possible at the system bootup.  Sets up
@@ -111,4 +115,10 @@ void setup() {
   Serial.println("Leaf Initialized");
 }
 
-void loop() { taskman.update(); }
+void loop() {
+#ifdef RUN_EMBEDDED_TESTS
+  run_tests(&bus);
+#else
+  taskman.update();
+#endif
+}
