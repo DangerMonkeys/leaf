@@ -189,29 +189,29 @@ void SelfTest_PageResults::draw_extra() {
       testResult = selfTest.results.imu;
       u8g2.print("IMU:");
     } else if (i == 3) {
-      testResult = selfTest.results.gps;
-      u8g2.print("GPS:");
+      testResult = selfTest.results.gpsSerial;
+      u8g2.print("GPS Ser:");
     } else if (i == 4) {
-      testResult = selfTest.results.gpsFix;
-      u8g2.print("GPS Fix:");
-    } else if (i == 5) {
       testResult = selfTest.results.ambient;
       u8g2.print("Ambient:");
-    } else if (i == 6) {
+    } else if (i == 5) {
       testResult = selfTest.results.display;
       u8g2.print("Display:");
-    } else if (i == 7) {
-      testResult = selfTest.results.buttons;
-      u8g2.print("Buttons:");
-    } else if (i == 8) {
+    } else if (i == 6) {
       testResult = selfTest.results.power;
       u8g2.print("Power:");
+    } else if (i == 7) {
+      testResult = selfTest.results.vario;
+      u8g2.print("Vario:");
+    } else if (i == 8) {
+      testResult = selfTest.results.buttons;
+      u8g2.print("Buttons:");
     } else if (i == 9) {
       testResult = selfTest.results.speaker;
       u8g2.print("Speaker:");
     } else if (i == 10) {
-      testResult = selfTest.results.vario;
-      u8g2.print("Vario:");
+      testResult = selfTest.results.gpsFix;
+      u8g2.print("GPS Fix:");
     }
 
     u8g2.setCursor(48, u8g2.getCursorY());
