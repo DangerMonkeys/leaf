@@ -157,17 +157,18 @@ void LeafGPS::on_receive(const GpsMessage& msg) {
     GpsLockGuard mutex;  // Ensure we have a lock on write
     for (size_t i = 0; i < msg.nmea.length(); i++) {
       char a = msg.nmea[i];
-      bool newSentence = gps.encode(a);
+      newSentence = gps.encode(a);
       if (newSentence) {
-        fatalErrorInfo("sentence length: %d", (int)msg.nmea.length());
-        fatalErrorInfo("sentence: %s", msg.nmea.c_str());
-        fatalErrorInfo("index: %d", (int)i);
-        fatalErrorInfo("char: %d", (int)a);
-        fatalError("newSentence encountered in the middle of the line of text '%s'",
-                   msg.nmea.c_str());
+        // TinyGPSPlus is more forgiving than the NMEA standard by detecting a new sentence even
+        // when not followed by a new line.  Encountering this block means there is a sentence
+        // available, just not without the required trailing new line.  In this case, we will
+        // discard the rest of the line but keep the sentence found at the beginning of the line.
+        break;
       }
     }
-    newSentence = gps.encode('\r');
+    if (!newSentence) {
+      newSentence = gps.encode('\r');
+    }
   }
   if (newSentence) {
     updateSatList(msg.nmea);
