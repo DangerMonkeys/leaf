@@ -16,6 +16,7 @@
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/pages/dialogs/page_alert_timerAutoStop.h"
+#include "ui/display/pages/dialogs/page_flight_summary.h"
 #include "ui/display/pages/fanet/page_fanet_stats.h"
 #include "ui/settings/settings.h"
 #include "utils/string_utils.h"
@@ -124,6 +125,11 @@ int32_t autoStopAltitude = 0;
 
 bool flightTimer_autoStart() {
   bool startTheTimer = false;  // default to not auto-start
+
+  if (PageFlightSummary::isShowing()) {
+    autoStartCounter = 0;
+    return false;
+  }
 
   // keep track of how many times (seconds) we've been continuously over the min speed threshold
   if (gps.speed.mph() > AUTO_START_MIN_SPEED) {
