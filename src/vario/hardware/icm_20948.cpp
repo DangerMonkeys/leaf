@@ -64,10 +64,8 @@ void ICM20948::init() {
   success &= (IMU_.enableDMPSensor(INV_ICM20948_SENSOR_ACCELEROMETER) == ICM_20948_Stat_Ok);
 
   // Configuring DMP to output data at multiple ODRs.
-  success &= (IMU_.setDMPODRrate(DMP_ODR_Reg_Quat9, DMP_ODR_INTERVAL_20HZ) ==
-              ICM_20948_Stat_Ok);
-  success &= (IMU_.setDMPODRrate(DMP_ODR_Reg_Accel, DMP_ODR_INTERVAL_20HZ) ==
-              ICM_20948_Stat_Ok);
+  success &= (IMU_.setDMPODRrate(DMP_ODR_Reg_Quat9, DMP_ODR_INTERVAL_20HZ) == ICM_20948_Stat_Ok);
+  success &= (IMU_.setDMPODRrate(DMP_ODR_Reg_Accel, DMP_ODR_INTERVAL_20HZ) == ICM_20948_Stat_Ok);
 
   // Enable the FIFO
   success &= (IMU_.enableFIFO() == ICM_20948_Stat_Ok);
@@ -109,8 +107,7 @@ void ICM20948::update() {
       return;
     }
 
-    if ((IMU_.status != ICM_20948_Stat_Ok) &&
-        (IMU_.status != ICM_20948_Stat_FIFOMoreDataAvail)) {
+    if ((IMU_.status != ICM_20948_Stat_Ok) && (IMU_.status != ICM_20948_Stat_FIFOMoreDataAvail)) {
       char msg[100];
       snprintf(msg, sizeof(msg), "ICM20948 DMP FIFO read failed: %s", IMU_.statusString());
       publishComment(bus, msg);
@@ -150,8 +147,7 @@ void ICM20948::update() {
 
       // Invalidate insane acceleration data
       if (update.hasAcceleration) {
-        if (invalid(update.ax, -8, 8) || invalid(update.ay, -8, 8) ||
-            invalid(update.az, -8, 8)) {
+        if (invalid(update.ax, -8, 8) || invalid(update.ay, -8, 8) || invalid(update.az, -8, 8)) {
           char msg[100];
           snprintf(msg, sizeof(msg),
                    "ICM20948 invalid acceleration X=%X; Y=%X; Z=%X (%.2f, %.2f, %.2f)",
