@@ -7,6 +7,8 @@
 #include "ui/settings/settings.h"
 #include "utils/string_utils.h"
 
+bool PageFlightSummary::showing_ = false;
+
 void PageFlightSummary::draw_extra() {
   u8g2.setFont(leaf_6x12);
 
