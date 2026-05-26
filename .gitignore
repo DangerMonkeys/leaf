@@ -46,3 +46,6 @@ vario.ino.cpp
 
 # Python
 *.pyc
+
+# ESP-IDF
+esp-idf/
