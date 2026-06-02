@@ -172,9 +172,9 @@ void SDCard::runFormat() {
   const bool ok = SD_MMC.begin("/sdcard", false, /*format_if_mount_failed=*/true);
   if (ok) {
     mounted_ = true;
-#ifndef DISABLE_MASS_STORAGE
-    setupMassStorage();
-#endif
+    // NOTE: intentionally do NOT call setupMassStorage() here. It re-runs USB.begin(), which is
+    // unsafe to call from this background task and hangs. USB mass storage is not needed during
+    // commissioning; the card just needs to be mounted so the self test can log to it.
     Serial.println("SDcard: format success");
     format_message_.store("SD card formatted successfully.");
     format_state_.store(FormatState::Success);
