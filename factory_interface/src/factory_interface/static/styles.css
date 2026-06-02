@@ -226,10 +226,14 @@ button:focus-visible {
 }
 
 .verification-controls {
-  display: inline-flex;
+  grid-column: 2;
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
-  margin-left: 12px;
-  vertical-align: middle;
+}
+
+.verification-controls:not(:has(.verification-control:not([hidden]))) {
+  display: none;
 }
 
 .verification-control {
