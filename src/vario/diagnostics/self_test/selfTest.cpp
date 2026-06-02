@@ -724,7 +724,7 @@ SelfTest::Status SelfTest::runInteractiveTests(bool closeFileWhenDone) {
   if (!varioStartPromptComplete && pressButtonToContinue()) {
     return statusInteractiveTests;
   } else if (selfTest.results.vario == SelfTest::Status::Unknown ||
-      selfTest.results.vario == SelfTest::Status::Running) {
+             selfTest.results.vario == SelfTest::Status::Running) {
     selfTest.results.vario = varioTest.update();
   } else if (selfTest.results.buttons == SelfTest::Status::Unknown ||
              selfTest.results.buttons == SelfTest::Status::Running) {
