@@ -40,6 +40,10 @@ uint32_t gpsFixLastDisplayUpdateMillis = 0;
 bool gpsFixTestCancelled = false;
 SelfTest_PageGPSFix selfTest_pageGPSFix{&gpsFixRemainingSeconds, &gpsFixTestCancelled};
 
+bool waitForVarioStartButton = false;
+bool varioStartPromptComplete = false;
+SelfTest_PageVarioReady selfTest_pageVarioReady;
+
 bool useSDFile() {
   if (self_test_file) {
     return true;
@@ -84,6 +88,29 @@ bool useSDFile() {
   self_test_file.println("`");
 
   return self_test_file;
+}
+
+bool pressButtonToContinue() {
+  if (!waitForVarioStartButton && !varioStartPromptComplete) {
+    waitForVarioStartButton = true;
+    Serial.println("* SELF TEST *  VARIO  * Waiting for user to start vario test");
+    selfTest_pageVarioReady.show();
+    display.update();
+  }
+
+  if (!waitForVarioStartButton) {
+    return false;
+  }
+
+  if (buttons.inspectPins() != Button::NONE) {
+    waitForVarioStartButton = false;
+    varioStartPromptComplete = true;
+    Serial.println("* SELF TEST *  VARIO  * User confirmed ready for vario test");
+    selfTest_pageVarioReady.close();
+    return false;
+  }
+
+  return true;
 }
 
 String SelfTest::resultsFileName() const { return self_test_file_name; }
@@ -694,7 +721,9 @@ SelfTest::Status SelfTest::runAutoTests(bool closeFileWhenDone) {
 SelfTest::Status SelfTest::runInteractiveTests(bool closeFileWhenDone) {
   statusInteractiveTests = Status::Running;
 
-  if (selfTest.results.vario == SelfTest::Status::Unknown ||
+  if (!varioStartPromptComplete && pressButtonToContinue()) {
+    return statusInteractiveTests;
+  } else if (selfTest.results.vario == SelfTest::Status::Unknown ||
       selfTest.results.vario == SelfTest::Status::Running) {
     selfTest.results.vario = varioTest.update();
   } else if (selfTest.results.buttons == SelfTest::Status::Unknown ||
@@ -738,4 +767,6 @@ void SelfTest::clearResults() {
   gpsSerialTestInitialized = false;
   gpsFixTestInitialized = false;
   gpsFixTestCancelled = false;
+  waitForVarioStartButton = false;
+  varioStartPromptComplete = false;
 }

@@ -95,6 +95,26 @@ void SelfTest_PageVario::draw_extra() {
 }
 
 //////////////////////////////////////////////
+// Vario Ready Prompt Page
+void SelfTest_PageVarioReady::show() { push_page(this); }
+
+void SelfTest_PageVarioReady::draw_extra() {
+  u8g2.setFont(leaf_6x12);
+  u8g2.setCursor(19, 43);
+  u8g2.print("Get ready");
+  u8g2.setCursor(8, 58);
+  u8g2.print("for the vario");
+  u8g2.setCursor(31, 73);
+  u8g2.print("test");
+
+  u8g2.setFont(leaf_5x8);
+  u8g2.setCursor(2, 105);
+  u8g2.print("Press any button");
+  u8g2.setCursor(22, 116);
+  u8g2.print("to continue");
+}
+
+//////////////////////////////////////////////
 // Speaker Self-Test Page
 void SelfTest_PageSpeaker::show() { push_page(this); }
 

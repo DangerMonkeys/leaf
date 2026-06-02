@@ -55,6 +55,20 @@ class SelfTest_PageVario : public SimpleSettingsMenuPage {
   bool* delayForCalib_;
 };
 
+// Vario Ready Prompt Page
+class SelfTest_PageVarioReady : public SimpleSettingsMenuPage {
+ public:
+  const char* get_title() const override { return "Vario Test"; }
+
+  bool button_event(Button button, ButtonEvent state, uint8_t count) override {
+    // Button polling is handled by the self-test runner so this page remains passive.
+    return false;
+  }
+  void show();
+  void draw_extra() override;
+  void close() { pop_page(); }
+};
+
 // Speaker Self-Test Page
 class SelfTest_PageSpeaker : public SimpleSettingsMenuPage {
  public:
