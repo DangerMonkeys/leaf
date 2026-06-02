@@ -20,3 +20,19 @@
   - `uv run python -c "from factory_interface.app import app; print(app.title)"`
 - The app requires the operator cookie for API calls. Browser sessions may already have it, but direct API smoke tests need `factory_interface_operator_name=<name>`.
 - Port `8000` may already be in use locally. Starting uvicorn on another port, such as `8001`, works for smoke testing.
+
+## Core Dump Analysis
+
+For ESP32 core dump retrieval and analysis:
+
+**Reference**: [Leaf Core Dump Guide](https://leafvario.com/dev-references/core-dumps/)
+
+**Firmware location**: `.pio/build/leaf_3_2_6_dev/firmware.elf`
+
+**Device path (macOS)**: `/dev/tty.usbmodem*`
+
+**Quick steps**:
+```bash
+cd esp-idf && . ./export.sh
+espcoredump.py -p /dev/tty.usbmodem* info_corefile .pio/build/leaf_3_2_6_dev/firmware.elf
+```
