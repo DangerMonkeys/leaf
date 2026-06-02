@@ -323,7 +323,12 @@ def machine_description() -> str:
     )
 
 
+_ALLOWED_GIT_SUBCOMMANDS: frozenset[str] = frozenset({"rev-parse", "status"})
+
+
 def run_git_command(args: list[str]) -> str:
+    if not args or args[0] not in _ALLOWED_GIT_SUBCOMMANDS:
+        raise ValueError(f"Git subcommand not allowed: {args[0] if args else '(none)'}")
     result = subprocess.run(
         ["git", "-C", str(PROJECT_ROOT), *args],
         check=True,
