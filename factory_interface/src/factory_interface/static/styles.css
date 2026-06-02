@@ -225,6 +225,35 @@ button:focus-visible {
   outline: 3px solid rgb(208 139 44 / 35%);
 }
 
+.verification-controls {
+  display: inline-flex;
+  gap: 8px;
+  margin-left: 12px;
+  vertical-align: middle;
+}
+
+.verification-control {
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.verification-control[hidden] {
+  display: none;
+}
+
+.verification-control-stop {
+  background: #b42318;
+}
+
+.verification-control-stop:hover,
+.verification-control-stop:focus-visible {
+  background: #912018;
+  outline: 3px solid rgb(180 35 24 / 30%);
+}
+
 .button-link {
   display: inline-flex;
   align-items: center;

@@ -47,6 +47,12 @@ RECONNECT_GRACE_SECONDS = 2.0
 RECONNECT_POLL_SECONDS = 1.0
 SELF_TEST_POLL_SECONDS = 1.0
 
+# Operator verification controls (Start / Stop / Retry).
+VERIFICATION_RUN_COMMAND = "run"
+VERIFICATION_STOP_COMMAND = "stop"
+VERIFICATION_COMMANDS = (VERIFICATION_RUN_COMMAND, VERIFICATION_STOP_COMMAND)
+VERIFICATION_START_PROMPT = 'Press "Start Test" to begin verification.'
+
 
 def idle_task(details: str = "") -> dict:
     return {"status": "idle", "details": details}
@@ -71,6 +77,8 @@ class CommissioningSession:
     configuration_event_id: int | None = None
     tasks: dict[str, dict] = field(default_factory=dict)
     worker_task: asyncio.Task | None = None
+    # Operator verification commands ("run"/"stop"); lazily created on the event loop.
+    verification_queue: asyncio.Queue | None = None
 
     def __post_init__(self) -> None:
         if self.tasks:
@@ -458,6 +466,135 @@ def persist_configuration_event(session: CommissioningSession) -> int:
         return event.id or 0
 
 
+def _verification_queue(session: CommissioningSession) -> asyncio.Queue:
+    if session.verification_queue is None:
+        session.verification_queue = asyncio.Queue()
+    return session.verification_queue
+
+
+def _drain_for_stop(queue: asyncio.Queue) -> bool:
+    """Consume all queued commands, returning True if a stop was requested."""
+    stop_requested = False
+    while True:
+        try:
+            command = queue.get_nowait()
+        except asyncio.QueueEmpty:
+            break
+        if command == VERIFICATION_STOP_COMMAND:
+            stop_requested = True
+    return stop_requested
+
+
+def submit_verification_command(
+    mac_address: str, command: str
+) -> CommissioningSession | None:
+    """Queue an operator verification command for a session.
+
+    Returns the session, or None if no session exists for the MAC address.
+    Raises ValueError for unrecognized commands.
+    """
+    if command not in VERIFICATION_COMMANDS:
+        raise ValueError(f"Unknown verification command: {command}")
+    session = get_commissioning_session(mac_address)
+    if session is None:
+        return None
+    _verification_queue(session).put_nowait(command)
+    return session
+
+
+async def _run_self_test_pass(
+    session: CommissioningSession,
+    base_url: str,
+    queue: asyncio.Queue,
+) -> str:
+    """Run a single verification pass.
+
+    Returns "success", "failure", or "stopped" (operator-requested stop).
+    """
+    self_test_task = session.tasks["interactive_self_test"]
+    self_test_task.update({"status": "running", "details": "Starting verification tests..."})
+    session.details = "Verification tests running..."
+    session.touch()
+    await asyncio.to_thread(fetch_json, f"{base_url}/interactive", method="POST")
+
+    while True:
+        if _drain_for_stop(queue):
+            return "stopped"
+
+        self_test_payload = await asyncio.to_thread(fetch_json, base_url)
+        session.self_test_result = self_test_payload
+        self_test_task["result"] = self_test_payload
+        self_test_task["details"] = json.dumps(self_test_payload, indent=2)
+        session.touch()
+
+        result = self_test_status(self_test_payload)
+        if result == "success":
+            self_test_task["status"] = "success"
+            return "success"
+
+        if result == "failure" or not self_test_payload.get("running", False):
+            self_test_task["status"] = "failure"
+            failure_prefix = (
+                "Verification tests failed."
+                if result == "failure"
+                else "Verification tests stopped without a pass/fail result."
+            )
+            try:
+                self_test_task["details"] = await retrieve_session_self_test_details(
+                    session, base_url
+                )
+            except Exception as details_exc:
+                self_test_task["details"] = (
+                    f"{failure_prefix}\n\n"
+                    f"Test details could not be retrieved: "
+                    f"{type(details_exc).__name__}: {details_exc}"
+                )
+            return "failure"
+
+        await asyncio.sleep(SELF_TEST_POLL_SECONDS)
+
+
+async def run_session_verification(session: CommissioningSession) -> None:
+    """Operator-gated verification step.
+
+    Pauses until the operator presses "Start Test", supports "Stop Test" while a
+    pass is running and "Retry Tests" after a stop/failure, and only returns once
+    verification passes so the rest of the commissioning session can continue.
+    """
+    queue = _verification_queue(session)
+    self_test_task = session.tasks["interactive_self_test"]
+
+    # Discard any commands queued before we reached this step.
+    _drain_for_stop(queue)
+
+    self_test_task.update({"status": "awaiting", "details": VERIFICATION_START_PROMPT})
+    session.details = "Awaiting operator to start verification tests."
+    session.touch()
+
+    while True:
+        command = await queue.get()
+        if command != VERIFICATION_RUN_COMMAND:
+            # A stop while nothing is running is a no-op.
+            continue
+
+        outcome = await _run_self_test_pass(
+            session, f"{device_base_url(session)}/self-test", queue
+        )
+        session.touch()
+
+        if outcome == "success":
+            session.details = "Verification tests passed."
+            return
+        if outcome == "stopped":
+            self_test_task.update(
+                {"status": "awaiting", "details": f"Verification stopped. {VERIFICATION_START_PROMPT}"}
+            )
+            session.details = "Verification stopped by operator."
+        else:  # failure: keep the failure status/details and await a retry or stop.
+            session.details = "Verification tests failed. Retry or discard the session."
+        session.touch()
+
+
 async def run_commissioning_session(session: CommissioningSession) -> None:
     try:
         reset_task = session.tasks["reset_nonvolatile_memory"]
@@ -527,57 +664,8 @@ async def run_commissioning_session(session: CommissioningSession) -> None:
             }
         )
 
-        self_test_task = session.tasks["interactive_self_test"]
-        self_test_task.update(
-            {"status": "running", "details": "Starting verification tests..."}
-        )
-        session.touch()
+        await run_session_verification(session)
         base_url = f"{device_base_url(session)}/self-test"
-        await asyncio.to_thread(fetch_json, f"{base_url}/interactive", method="POST")
-
-        while True:
-            self_test_payload = await asyncio.to_thread(fetch_json, base_url)
-            session.self_test_result = self_test_payload
-            self_test_task["result"] = self_test_payload
-            self_test_task["details"] = json.dumps(self_test_payload, indent=2)
-            session.touch()
-
-            result = self_test_status(self_test_payload)
-            if result is not None:
-                self_test_task["status"] = result
-                if result == "failure":
-                    try:
-                        self_test_task["details"] = await retrieve_session_self_test_details(
-                            session, base_url
-                        )
-                    except Exception as details_exc:
-                        self_test_task["details"] = (
-                            "Verification tests failed.\n\n"
-                            f"Test details could not be retrieved: "
-                            f"{type(details_exc).__name__}: {details_exc}"
-                        )
-                    session.status = "failure"
-                    session.details = "Verification tests failed."
-                    return
-                break
-
-            if not self_test_payload.get("running", False):
-                self_test_task["status"] = "failure"
-                try:
-                    self_test_task["details"] = await retrieve_session_self_test_details(
-                        session, base_url
-                    )
-                except Exception as details_exc:
-                    self_test_task["details"] = (
-                        "Verification tests stopped without a pass/fail result.\n\n"
-                        f"Test details could not be retrieved: "
-                        f"{type(details_exc).__name__}: {details_exc}"
-                    )
-                session.status = "failure"
-                session.details = "Verification tests stopped without a pass/fail result."
-                return
-
-            await asyncio.sleep(SELF_TEST_POLL_SECONDS)
 
         retrieve_test_details_task = session.tasks["retrieve_test_details"]
         retrieve_test_details_task.update(
