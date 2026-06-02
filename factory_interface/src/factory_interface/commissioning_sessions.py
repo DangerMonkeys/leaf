@@ -584,6 +584,9 @@ async def _run_self_test_pass(
 
         if result == "failure" or not self_test_payload.get("running", False):
             self_test_task["status"] = "failure"
+            self_test_task["sd_format_available"] = verification_failed_on_sd_card(
+                self_test_payload
+            )
             failure_prefix = (
                 "Verification tests failed."
                 if result == "failure"
