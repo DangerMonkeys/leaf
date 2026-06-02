@@ -46,6 +46,14 @@ void KalmanFilterPA::update(double measuredTime, double measuredPosition,
   }
 
   double dt = measuredTime - t_;
+  if (dt <= 0.0) {
+    return;
+  }
+  if (dt > 1.0) {
+    init(measuredTime, measuredPosition, measuredAcceleration);
+    return;
+  }
+
   double dt2 = dt * dt;
   double dt3 = dt2 * dt;
   double dt4 = dt3 * dt;

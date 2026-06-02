@@ -26,10 +26,45 @@ namespace {
   constexpr double AFTER_SECONDS = 5.0;           // ...after this number of seconds
   constexpr double K_UPDATE = constexpr_log(1 - NEW_MEASUREMENT_WEIGHT) / AFTER_SECONDS;
 
-  constexpr uint8_t IMU_SAMPLE_RATE = 40;  // Hz
+  constexpr uint8_t IMU_SAMPLE_RATE = 20;  // Hz
   constexpr double GRAVITY_INIT_S = 3.0;   // Time to take to estimate the initial gravity magnitude
   // samples to bypass at startup while gravity is estimated
   constexpr uint32_t GRAVITY_INIT_SAMPLES = IMU_SAMPLE_RATE * GRAVITY_INIT_S;
+
+  constexpr double MIN_GRAVITY_G = 0.5;
+  constexpr double MAX_GRAVITY_G = 1.5;
+  constexpr double GRAVITY_UPDATE_ACCEL_TOLERANCE_G = 0.12;
+  constexpr double GRAVITY_UPDATE_VERTICAL_TOLERANCE_G = 0.25;
+
+  bool normalizeQuaternion(double* qw, double* qx, double* qy, double* qz) {
+    double qVecMagnitude2 = (*qx * *qx) + (*qy * *qy) + (*qz * *qz);
+    if (isnan(qVecMagnitude2) || isinf(qVecMagnitude2) || qVecMagnitude2 > 1.05) {
+      return false;
+    }
+
+    if (qVecMagnitude2 > 1.0) {
+      qVecMagnitude2 = 1.0;
+    }
+
+    *qw = sqrt(1.0 - qVecMagnitude2);
+
+    double qMagnitude = sqrt((*qw * *qw) + (*qx * *qx) + (*qy * *qy) + (*qz * *qz));
+    if (isnan(qMagnitude) || isinf(qMagnitude) || qMagnitude < 0.5) {
+      return false;
+    }
+
+    *qw /= qMagnitude;
+    *qx /= qMagnitude;
+    *qy /= qMagnitude;
+    *qz /= qMagnitude;
+    return true;
+  }
+
+  bool plausibleGravity(double gravity) {
+    double magnitude = fabs(gravity);
+    return !isnan(gravity) && !isinf(gravity) && magnitude >= MIN_GRAVITY_G &&
+           magnitude <= MAX_GRAVITY_G;
+  }
 }  // namespace
 
 void quaternionMult(double qw, double qx, double qy, double qz, double rw, double rx, double ry,
@@ -65,10 +100,14 @@ IMU::IMU()
       gravityInitCount_(GRAVITY_INIT_SAMPLES) {}
 
 void IMU::processMotion(const MotionUpdate& m) {
-  // Scale to +/- 1
-  double magnitude = ((m.qx * m.qx) + (m.qy * m.qy) + (m.qz * m.qz));
-  if (magnitude >= 1.0) magnitude = 1.0;
-  double qw = sqrt(1.0 - magnitude);
+  double qw = 0;
+  double qx = m.qx;
+  double qy = m.qy;
+  double qz = m.qz;
+  if (!normalizeQuaternion(&qw, &qx, &qy, &qz)) {
+    validAccelVert_ = false;
+    return;
+  }
 
   bool needComma = false;
   bool needNewline = false;
@@ -77,11 +116,11 @@ void IMU::processMotion(const MotionUpdate& m) {
   Serial.print(F("Qw:"));
   printFloat(qw);
   Serial.print(F(",Qx:"));
-  printFloat(m.qx);
+  printFloat(qx);
   Serial.print(F(",Qy:"));
-  printFloat(m.qy);
+  printFloat(qy);
   Serial.print(F(",Qz:"));
-  printFloat(m.qz);
+  printFloat(qz);
   needComma = true;
   needNewline = true;
 #endif
@@ -104,11 +143,11 @@ void IMU::processMotion(const MotionUpdate& m) {
 #endif
 
   double awx, awy, awz;
-  rotateByQuaternion(m.ax, m.ay, m.az, qw, m.qx, m.qy, m.qz, &awx, &awy, &awz);
+  rotateByQuaternion(m.ax, m.ay, m.az, qw, qx, qy, qz, &awx, &awy, &awz);
   if (isinf(awz) || isnan(awz)) {
     fatalErrorInfo(
         "m.ax=%g, m.ay=%g, m.az=%g, qw=%g, m.qx=%g, m.qy=%g, m.qz=%g, awx=%g, awy=%g, awz=%g", m.ax,
-        m.ay, m.az, qw, m.qx, m.qy, m.qz, awx, awy, awz);
+        m.ay, m.az, qw, qx, qy, qz, awx, awy, awz);
     fatalError("IMU awz was invalid");
   }
 
@@ -142,6 +181,11 @@ void IMU::processMotion(const MotionUpdate& m) {
     gravity_ += awz;
     if (--gravityInitCount_ == 0) {
       gravity_ /= GRAVITY_INIT_SAMPLES;
+      if (!plausibleGravity(gravity_)) {
+        gravity_ = 0;
+        gravityInitCount_ = GRAVITY_INIT_SAMPLES;
+        validAccelVert_ = false;
+      }
     }
   }
   if (gravityInitCount_ == 0) {
@@ -151,10 +195,18 @@ void IMU::processMotion(const MotionUpdate& m) {
     validAccelVert_ = true;
 
     // Slowly update estimate of gravity
-    double dt = ((double)m.t - tLastGravityUpdate_) * 0.001;
-    double f = exp(K_UPDATE * dt);
-
-    gravity_ = gravity_ * f + awz * (1 - f);
+    double accelMagnitudeDelta = fabs(accelTot_ - fabs(gravity_));
+    if (accelMagnitudeDelta <= GRAVITY_UPDATE_ACCEL_TOLERANCE_G &&
+        fabs(accelVert_) <= GRAVITY_UPDATE_VERTICAL_TOLERANCE_G) {
+      double dt = ((double)m.t - tLastGravityUpdate_) * 0.001;
+      if (dt > 0.0 && dt < 1.0) {
+        double f = exp(K_UPDATE * dt);
+        double nextGravity = gravity_ * f + awz * (1 - f);
+        if (plausibleGravity(nextGravity)) {
+          gravity_ = nextGravity;
+        }
+      }
+    }
   }
 
 #ifdef SHOW_VERTICAL_ACCEL
