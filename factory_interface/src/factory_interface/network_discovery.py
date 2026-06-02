@@ -1,4 +1,5 @@
 import asyncio
+import ipaddress
 import json
 import secrets
 import socket
@@ -10,6 +11,30 @@ DISCOVERY_REQUEST_PREFIX = "LEAF_DISCOVERY_REQUEST/1 "
 DISCOVERY_RESPONSE_TYPE = "leaf_discovery_response"
 PROBE_INTERVAL_SECONDS = 1.0
 PROBE_LISTEN_SECONDS = 0.4
+
+
+def _local_ipv4_addresses() -> set[str]:
+    addresses: set[str] = set()
+    try:
+        addrinfo = socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET)
+    except socket.gaierror:
+        return addresses
+
+    for entry in addrinfo:
+        ip_address = entry[4][0]
+        if ip_address.startswith("127.") or ip_address.startswith("169.254."):
+            continue
+        addresses.add(ip_address)
+    return addresses
+
+
+def discovery_probe_targets() -> list[str]:
+    targets = {"255.255.255.255"}
+    for ip_address in _local_ipv4_addresses():
+        octets = ip_address.split(".")
+        if len(octets) == 4:
+            targets.add(".".join([*octets[:3], "255"]))
+    return sorted(targets)
 
 
 @dataclass(frozen=True)
@@ -144,7 +169,7 @@ def cancel_find_device_task() -> FindDeviceTask:
     return task
 
 
-async def probe_once() -> list[LeafDiscoveryResponse]:
+async def probe_once(targets: list[str] | None = None) -> list[LeafDiscoveryResponse]:
     nonce = secrets.token_hex(8)
     loop = asyncio.get_running_loop()
     protocol = LeafDiscoveryProtocol(nonce)
@@ -158,11 +183,36 @@ async def probe_once() -> list[LeafDiscoveryResponse]:
 
     try:
         request = f"{DISCOVERY_REQUEST_PREFIX}{nonce}".encode("ascii")
-        transport.sendto(request, ("255.255.255.255", DISCOVERY_PORT))
+        for target in targets or discovery_probe_targets():
+            transport.sendto(request, (target, DISCOVERY_PORT))
         await asyncio.sleep(PROBE_LISTEN_SECONDS)
         return protocol.responses
     finally:
         transport.close()
+
+
+async def probe_ip_once(ip_address: str) -> list[LeafDiscoveryResponse]:
+    parsed_ip = ipaddress.ip_address(ip_address.strip())
+    if parsed_ip.version != 4:
+        raise ValueError("Discovery only supports IPv4 device addresses.")
+    return await probe_once([str(parsed_ip)])
+
+
+async def manually_select_discovered_device(ip_address: str) -> LeafDiscoveryResponse:
+    responses = await probe_ip_once(ip_address)
+    if not responses:
+        raise RuntimeError(f"No discovery response received from {ip_address}.")
+
+    response = responses[0]
+    task = get_find_device_task()
+    if task.worker_task is not None:
+        task.worker_task.cancel()
+        task.worker_task = None
+    task.status = "success"
+    task.device = response
+    task.error = None
+    task.excluded_device_ids = set()
+    return response
 
 
 async def collect_existing_devices() -> None:

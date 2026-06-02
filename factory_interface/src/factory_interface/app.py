@@ -15,6 +15,7 @@ from factory_interface.commissioning_sessions import (
     firmware_file_sources,
     get_commissioning_session,
     list_commissioning_sessions,
+    manually_rediscover_session_device,
 )
 from factory_interface.commissioning_tasks import (
     cancel_flash_task,
@@ -43,7 +44,9 @@ from factory_interface.mac_address_task import (
 from factory_interface.network_discovery import (
     cancel_find_device_task,
     discovery_identifier_values,
+    discovery_probe_targets,
     get_find_device_task,
+    manually_select_discovered_device,
     preflash_discovery_snapshot,
     probe_once,
     reset_find_device_task,
@@ -323,6 +326,7 @@ async def discovery_status(request: Request) -> HTMLResponse:
             {
                 "title": "Discovery status",
                 "probe_error": probe_error,
+                "probe_targets": discovery_probe_targets(),
                 "devices": discovered_devices,
                 "active_session_identifiers": sorted(active_session_identifiers),
                 "find_device_task": discovery_task.snapshot(),
@@ -465,6 +469,32 @@ async def get_setup_session_status(mac_address: str) -> JSONResponse:
     return JSONResponse(session.snapshot())
 
 
+@app.post("/api/setup/sessions/{mac_address}/network-discovery/manual", response_class=JSONResponse)
+async def manually_select_session_network_device(
+    mac_address: str,
+    request: Request,
+) -> JSONResponse:
+    session = get_commissioning_session(mac_address)
+    if session is None:
+        return JSONResponse({"detail": "Commissioning session not found."}, status_code=404)
+
+    payload = await request.json()
+    ip_address = str(payload.get("ip_address", "")).strip()
+    if not ip_address:
+        return JSONResponse({"detail": "Device IP address is required."}, status_code=400)
+
+    try:
+        await manually_rediscover_session_device(session, ip_address)
+    except ValueError as exc:
+        return JSONResponse({"detail": str(exc)}, status_code=400)
+    except RuntimeError as exc:
+        return JSONResponse({"detail": str(exc)}, status_code=404)
+    except OSError as exc:
+        return JSONResponse({"detail": f"{type(exc).__name__}: {exc}"}, status_code=502)
+
+    return JSONResponse(session.snapshot())
+
+
 @app.post("/api/setup/sessions/{mac_address}/cancel", response_class=JSONResponse)
 async def cancel_setup_session(mac_address: str) -> JSONResponse:
     session = cancel_commissioning_session(mac_address)
@@ -522,6 +552,32 @@ async def start_network_discovery_task() -> JSONResponse:
         excluded_device_ids=active_commissioning_device_identifiers()
     )
     return JSONResponse(task.snapshot())
+
+
+@app.post("/api/setup/network-discovery/manual", response_class=JSONResponse)
+async def manually_select_network_device(request: Request) -> JSONResponse:
+    payload = await request.json()
+    ip_address = str(payload.get("ip_address", "")).strip()
+    if not ip_address:
+        return JSONResponse({"detail": "Device IP address is required."}, status_code=400)
+
+    try:
+        response = await manually_select_discovered_device(ip_address)
+    except ValueError as exc:
+        return JSONResponse({"detail": str(exc)}, status_code=400)
+    except RuntimeError as exc:
+        return JSONResponse({"detail": str(exc)}, status_code=404)
+    except OSError as exc:
+        return JSONResponse({"detail": f"{type(exc).__name__}: {exc}"}, status_code=502)
+
+    if active_commissioning_session_for_device(response) is not None:
+        reset_find_device_task()
+        return JSONResponse(
+            {"detail": "Discovered device already has an active commissioning session."},
+            status_code=409,
+        )
+
+    return JSONResponse(get_find_device_task().snapshot())
 
 
 @app.get("/api/setup/network-discovery", response_class=JSONResponse)

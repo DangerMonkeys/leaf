@@ -60,6 +60,18 @@
     <h2 id="task-heading">Find-device task</h2>
     <dl class="discovery-details-grid">
       <div>
+        <dt>Probe targets</dt>
+        <dd>
+          {% if probe_targets %}
+          {% for target in probe_targets %}
+          <code>{{ target }}:7432</code>{% if not loop.last %}<br>{% endif %}
+          {% endfor %}
+          {% else %}
+          none
+          {% endif %}
+        </dd>
+      </div>
+      <div>
         <dt>Status</dt>
         <dd>{{ find_device_task.status }}</dd>
       </div>

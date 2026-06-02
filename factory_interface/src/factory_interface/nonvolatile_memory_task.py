@@ -99,6 +99,17 @@ async def wait_for_device(base_url: str, device_id: str) -> None:
         except (OSError, URLError, TimeoutError):
             pass
 
+        selected_device = get_find_device_task().device
+        if selected_device is not None and selected_device.device_id == device_id:
+            try:
+                await asyncio.to_thread(
+                    fetch_json,
+                    f"http://{selected_device.ip_address}:{selected_device.port}/mac-address",
+                )
+                return
+            except (OSError, URLError, TimeoutError):
+                pass
+
         try:
             for response in await probe_once():
                 if response.device_id == device_id:
