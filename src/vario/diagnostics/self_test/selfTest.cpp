@@ -576,6 +576,10 @@ SelfTest::Status SpeakerInteractiveTest::update() {
 
 void SelfTest::begin(bool markAsProductionChecked) {
   if (markAsProductionChecked) {
+    // Authorize SD card reformatting for this session's production test. Set before the
+    // settings.productionTest early-return so re-running a production test on an already-tested
+    // unit still permits formatting. Manual/home self tests use begin(false) and never set this.
+    allow_sd_reformat_ = true;
     if (settings.productionTest) {
       // do nothing, we've already checked the production test
       return;

@@ -496,6 +496,11 @@ async def stop_session_verification(mac_address: str) -> JSONResponse:
     return await _submit_verification_command(mac_address, "stop")
 
 
+@app.post("/api/setup/sessions/{mac_address}/verification/format", response_class=JSONResponse)
+async def format_session_sd_card(mac_address: str) -> JSONResponse:
+    return await _submit_verification_command(mac_address, "format")
+
+
 @app.delete("/api/setup/sessions/{mac_address}", response_class=JSONResponse)
 async def discard_setup_session(mac_address: str) -> JSONResponse:
     if not discard_commissioning_session(mac_address):

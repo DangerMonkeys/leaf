@@ -47,11 +47,31 @@ RECONNECT_GRACE_SECONDS = 2.0
 RECONNECT_POLL_SECONDS = 1.0
 SELF_TEST_POLL_SECONDS = 1.0
 
-# Operator verification controls (Start / Stop / Retry).
+# Operator verification controls (Start / Stop / Retry / Format SD).
 VERIFICATION_RUN_COMMAND = "run"
 VERIFICATION_STOP_COMMAND = "stop"
-VERIFICATION_COMMANDS = (VERIFICATION_RUN_COMMAND, VERIFICATION_STOP_COMMAND)
+VERIFICATION_FORMAT_COMMAND = "format"
+VERIFICATION_COMMANDS = (
+    VERIFICATION_RUN_COMMAND,
+    VERIFICATION_STOP_COMMAND,
+    VERIFICATION_FORMAT_COMMAND,
+)
 VERIFICATION_START_PROMPT = 'Press "Start Test" to begin verification.'
+VERIFICATION_RETRY_PROMPT = 'Press "Retry Tests" to run verification again.'
+
+# How long to wait for an on-device SD card format to complete.
+SD_FORMAT_POLL_SECONDS = 1.5
+SD_FORMAT_TIMEOUT_SECONDS = 120.0
+
+
+def verification_failed_on_sd_card(payload: dict | None) -> bool:
+    """True if the self-test result indicates the SD card test specifically failed."""
+    if not isinstance(payload, dict):
+        return False
+    results = payload.get("results")
+    if not isinstance(results, dict):
+        return False
+    return str(results.get("sd_card", "")).lower() in ("fail", "failure")
 
 
 def idle_task(details: str = "") -> dict:
@@ -554,12 +574,80 @@ async def _run_self_test_pass(
         await asyncio.sleep(SELF_TEST_POLL_SECONDS)
 
 
+async def run_session_sd_format(session: CommissioningSession) -> None:
+    """Trigger an on-device SD card format and poll until it completes.
+
+    Used after the verification SD card test fails. On success, returns the step to the
+    awaiting state so the operator can retry; on failure/timeout, keeps the format offer.
+    """
+    self_test_task = session.tasks["interactive_self_test"]
+    self_test_task.update({"status": "formatting", "details": "Formatting SD card on device..."})
+    self_test_task["sd_format_available"] = False
+    session.details = "Formatting SD card on device..."
+    session.touch()
+
+    base_url = f"{device_base_url(session)}/sd-card/format"
+    try:
+        await asyncio.to_thread(fetch_json, base_url, method="POST")
+    except Exception as exc:
+        self_test_task.update(
+            {
+                "status": "failure",
+                "details": f"Could not start SD card format: {type(exc).__name__}: {exc}",
+            }
+        )
+        self_test_task["sd_format_available"] = True
+        session.details = "SD card format could not be started."
+        session.touch()
+        return
+
+    elapsed = 0.0
+    while elapsed < SD_FORMAT_TIMEOUT_SECONDS:
+        await asyncio.sleep(SD_FORMAT_POLL_SECONDS)
+        elapsed += SD_FORMAT_POLL_SECONDS
+        try:
+            status_payload = await asyncio.to_thread(fetch_json, base_url)
+        except Exception:
+            # Device may be momentarily busy formatting; keep polling.
+            continue
+
+        status = str(status_payload.get("status", "")).lower()
+        detail = str(status_payload.get("detail", "")).strip()
+        if status == "success":
+            self_test_task.update(
+                {"status": "awaiting", "details": f"SD card formatted. {VERIFICATION_RETRY_PROMPT}"}
+            )
+            self_test_task["sd_format_available"] = False
+            session.details = "SD card formatted. Awaiting retry."
+            session.touch()
+            return
+        if status == "failure":
+            self_test_task.update(
+                {"status": "failure", "details": f"SD card format failed. {detail}".strip()}
+            )
+            self_test_task["sd_format_available"] = True
+            session.details = "SD card format failed."
+            session.touch()
+            return
+
+        self_test_task["details"] = f"Formatting SD card on device... ({detail or status})"
+        session.touch()
+
+    self_test_task.update(
+        {"status": "failure", "details": "SD card format timed out."}
+    )
+    self_test_task["sd_format_available"] = True
+    session.details = "SD card format timed out."
+    session.touch()
+
+
 async def run_session_verification(session: CommissioningSession) -> None:
     """Operator-gated verification step.
 
     Pauses until the operator presses "Start Test", supports "Stop Test" while a
-    pass is running and "Retry Tests" after a stop/failure, and only returns once
-    verification passes so the rest of the commissioning session can continue.
+    pass is running, "Retry Tests" after a stop/failure, and "Format SD & Retry" when
+    the SD card test specifically failed. Only returns once verification passes so the
+    rest of the commissioning session can continue.
     """
     queue = _verification_queue(session)
     self_test_task = session.tasks["interactive_self_test"]
@@ -568,11 +656,15 @@ async def run_session_verification(session: CommissioningSession) -> None:
     _drain_for_stop(queue)
 
     self_test_task.update({"status": "awaiting", "details": VERIFICATION_START_PROMPT})
+    self_test_task["sd_format_available"] = False
     session.details = "Awaiting operator to start verification tests."
     session.touch()
 
     while True:
         command = await queue.get()
+        if command == VERIFICATION_FORMAT_COMMAND:
+            await run_session_sd_format(session)
+            continue
         if command != VERIFICATION_RUN_COMMAND:
             # A stop while nothing is running is a no-op.
             continue
@@ -583,14 +675,19 @@ async def run_session_verification(session: CommissioningSession) -> None:
         session.touch()
 
         if outcome == "success":
+            self_test_task["sd_format_available"] = False
             session.details = "Verification tests passed."
             return
         if outcome == "stopped":
             self_test_task.update(
                 {"status": "awaiting", "details": f"Verification stopped. {VERIFICATION_START_PROMPT}"}
             )
+            self_test_task["sd_format_available"] = False
             session.details = "Verification stopped by operator."
-        else:  # failure: keep the failure status/details and await a retry or stop.
+        else:  # failure: keep the failure status/details and await a retry, format, or stop.
+            self_test_task["sd_format_available"] = verification_failed_on_sd_card(
+                session.self_test_result
+            )
             session.details = "Verification tests failed. Retry or discard the session."
         session.touch()
 

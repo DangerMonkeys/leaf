@@ -258,6 +258,16 @@ button:focus-visible {
   outline: 3px solid rgb(180 35 24 / 30%);
 }
 
+.verification-control-format {
+  background: #b54708;
+}
+
+.verification-control-format:hover,
+.verification-control-format:focus-visible {
+  background: #93370d;
+  outline: 3px solid rgb(181 71 8 / 30%);
+}
+
 .button-link {
   display: inline-flex;
   align-items: center;

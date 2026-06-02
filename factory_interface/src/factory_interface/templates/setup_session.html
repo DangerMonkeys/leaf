@@ -90,6 +90,7 @@
         <button class="verification-control verification-control-start" id="verification-start" type="button" hidden>Start Test</button>
         <button class="verification-control verification-control-stop" id="verification-stop" type="button" hidden>Stop Test</button>
         <button class="verification-control verification-control-retry" id="verification-retry" type="button" hidden>Retry Tests</button>
+        <button class="verification-control verification-control-format" id="verification-format" type="button" hidden>Format SD &amp; Retry</button>
       </span>
       <div class="checklist-details verification-test-details" id="self-test-details" hidden></div>
     </div>
@@ -136,6 +137,7 @@
     start: document.querySelector("#verification-start"),
     stop: document.querySelector("#verification-stop"),
     retry: document.querySelector("#verification-retry"),
+    format: document.querySelector("#verification-format"),
   };
   const verificationUrl = (action) =>
     `/api/setup/sessions/${encodeURIComponent(macAddress)}/verification/${action}`;
@@ -187,7 +189,7 @@
   function setTaskIcon(icon, status) {
     icon.className = "task-icon";
     icon.disabled = status === "idle";
-    if (status === "running") {
+    if (status === "running" || status === "formatting") {
       icon.classList.add("task-icon-running");
     } else if (status === "success") {
       icon.classList.add("task-icon-success");
@@ -304,10 +306,14 @@
 
   function updateVerificationControls(task) {
     const status = (task && task.status) || "idle";
+    const sdFormatAvailable = !!(task && task.sd_format_available);
     // Start: paused awaiting operator. Stop: a pass is running. Retry: after a failure.
+    // Format SD & Retry: offered when the SD card test specifically failed. No controls while
+    // an on-device format is in progress ("formatting").
     verificationButtons.start.hidden = status !== "awaiting";
     verificationButtons.stop.hidden = status !== "running";
     verificationButtons.retry.hidden = status !== "failure";
+    verificationButtons.format.hidden = !(status === "failure" && sdFormatAvailable);
   }
 
   async function sendVerificationCommand(action, button) {
@@ -328,6 +334,9 @@
   );
   verificationButtons.retry.addEventListener("click", () =>
     sendVerificationCommand("retry", verificationButtons.retry)
+  );
+  verificationButtons.format.addEventListener("click", () =>
+    sendVerificationCommand("format", verificationButtons.format)
   );
 
   Object.values(controls).forEach((control) => {

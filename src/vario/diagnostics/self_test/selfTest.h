@@ -16,6 +16,11 @@ class SelfTest {
   void confirmCommissioningComplete();
   bool commissioningCompleteConfirmed() const;
 
+  // True when the current self test was started as a production test (begin(true)). Authorizes
+  // the device to reformat the SD card during commissioning so we never wipe an end user's card
+  // when they run a self test themselves. RAM-only and session-sticky (resets on reboot).
+  bool allowReformattingOfSDcard() const { return allow_sd_reformat_; }
+
   // results for all self tests, including both automated and interactive
   struct Results {
     Status sdCard = Status::Unknown;
@@ -47,6 +52,7 @@ class SelfTest {
   bool tallyResults();
   void clearResults();
   bool commissioning_complete_confirmed = false;
+  bool allow_sd_reformat_ = false;
 
   // Individual automated test functions
   static Status testBaro();
