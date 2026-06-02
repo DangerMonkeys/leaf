@@ -78,7 +78,22 @@
         disabled
       ></button>
       <span>Find device on network</span>
-      <p class="checklist-details" id="discovery-details" hidden></p>
+      <div class="checklist-details-group" id="discovery-details-group" hidden>
+        <p class="checklist-details" id="discovery-details"></p>
+        <form class="manual-ip-entry" id="discovery-manual-ip-form" hidden>
+          <label for="discovery-manual-ip">Device IP</label>
+          <div class="manual-ip-controls">
+            <input
+              id="discovery-manual-ip"
+              type="text"
+              inputmode="decimal"
+              autocomplete="off"
+              placeholder="192.168.137.21"
+            >
+            <button type="submit">Use IP</button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <div class="checklist-item checklist-item-with-details">
@@ -102,7 +117,22 @@
         disabled
       ></button>
       <span>Wait for device to reconnect</span>
-      <p class="checklist-details" id="reconnect-details" hidden></p>
+      <div class="checklist-details-group" id="reconnect-details-group" hidden>
+        <p class="checklist-details" id="reconnect-details"></p>
+        <form class="manual-ip-entry" id="reconnect-manual-ip-form" hidden>
+          <label for="reconnect-manual-ip">Device IP</label>
+          <div class="manual-ip-controls">
+            <input
+              id="reconnect-manual-ip"
+              type="text"
+              inputmode="decimal"
+              autocomplete="off"
+              placeholder="192.168.137.21"
+            >
+            <button type="submit">Use IP</button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <div class="checklist-item checklist-item-with-details">
@@ -201,11 +231,17 @@
   const flashTaskIcon = document.querySelector("#flash-task-icon");
   const flashConsole = document.querySelector("#flash-console");
   const discoveryTaskIcon = document.querySelector("#discovery-task-icon");
+  const discoveryDetailsGroup = document.querySelector("#discovery-details-group");
   const discoveryDetails = document.querySelector("#discovery-details");
+  const discoveryManualIpForm = document.querySelector("#discovery-manual-ip-form");
+  const discoveryManualIp = document.querySelector("#discovery-manual-ip");
   const resetNonvolatileTaskIcon = document.querySelector("#reset-nonvolatile-task-icon");
   const resetNonvolatileDetails = document.querySelector("#reset-nonvolatile-details");
   const reconnectTaskIcon = document.querySelector("#reconnect-task-icon");
+  const reconnectDetailsGroup = document.querySelector("#reconnect-details-group");
   const reconnectDetails = document.querySelector("#reconnect-details");
+  const reconnectManualIpForm = document.querySelector("#reconnect-manual-ip-form");
+  const reconnectManualIp = document.querySelector("#reconnect-manual-ip");
   const firmwareVersionTaskIcon = document.querySelector("#firmware-version-task-icon");
   const firmwareVersionDetails = document.querySelector("#firmware-version-details");
   const fanetIdTaskIcon = document.querySelector("#fanet-id-task-icon");
@@ -423,7 +459,7 @@
 
     if (state.status === "success" && state.device) {
       discoveryDetails.textContent = `IP address: ${state.device.ip_address}:${state.device.port}`;
-      discoveryDetails.hidden = false;
+      discoveryDetailsGroup.hidden = false;
       clearInterval(discoveryPollTimer);
       discoveryPollTimer = null;
       if (!setupCancellationRequested) {
@@ -431,18 +467,18 @@
       }
     } else if (state.status === "running") {
       discoveryDetails.textContent = "Searching for the newly flashed device...";
-      discoveryDetails.hidden = false;
+      discoveryDetailsGroup.hidden = false;
       if (!discoveryPollTimer) {
         discoveryPollTimer = setInterval(refreshDiscoveryTaskState, 1000);
       }
     } else if (state.status === "failure") {
       discoveryDetails.textContent = state.error || "Network discovery failed.";
-      discoveryDetails.hidden = false;
+      discoveryDetailsGroup.hidden = false;
       clearInterval(discoveryPollTimer);
       discoveryPollTimer = null;
     } else {
       discoveryDetails.textContent = "";
-      discoveryDetails.hidden = true;
+      discoveryDetailsGroup.hidden = true;
       clearInterval(discoveryPollTimer);
       discoveryPollTimer = null;
     }
@@ -460,6 +496,7 @@
       resetNonvolatileDetails.textContent =
         state.reset_details || "Nonvolatile memory reset command accepted.";
       reconnectDetails.textContent = state.reconnect_details || "Device reconnected.";
+      reconnectDetailsGroup.hidden = false;
       clearInterval(resetNonvolatilePollTimer);
       resetNonvolatilePollTimer = null;
     } else if (state.status === "running") {
@@ -467,7 +504,7 @@
         state.reset_details || "Resetting nonvolatile memory...";
       reconnectDetails.textContent = state.reconnect_details || "Waiting for device to reconnect...";
       resetNonvolatileDetails.hidden = resetStatus === "idle";
-      reconnectDetails.hidden = reconnectStatus === "idle";
+      reconnectDetailsGroup.hidden = reconnectStatus === "idle";
       if (!resetNonvolatilePollTimer) {
         resetNonvolatilePollTimer = setInterval(refreshResetNonvolatileTaskState, 1000);
       }
@@ -476,14 +513,14 @@
         state.reset_details || "Nonvolatile memory reset failed.";
       reconnectDetails.textContent = state.reconnect_details || "Device did not reconnect.";
       resetNonvolatileDetails.hidden = resetStatus === "idle";
-      reconnectDetails.hidden = reconnectStatus === "idle";
+      reconnectDetailsGroup.hidden = reconnectStatus === "idle";
       clearInterval(resetNonvolatilePollTimer);
       resetNonvolatilePollTimer = null;
     } else {
       resetNonvolatileDetails.textContent = "";
       resetNonvolatileDetails.hidden = true;
       reconnectDetails.textContent = "";
-      reconnectDetails.hidden = true;
+      reconnectDetailsGroup.hidden = true;
       clearInterval(resetNonvolatilePollTimer);
       resetNonvolatilePollTimer = null;
     }
@@ -642,6 +679,16 @@
     applyRetrieveTestDetailsTaskState(await response.json());
   }
 
+  async function selectManualNetworkDevice(ipAddress) {
+    return fetch("/api/setup/network-discovery/manual", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ ip_address: ipAddress }),
+    });
+  }
+
   async function startFlashTask() {
     if (!canEnableBootloaderMode()) return;
     bootloaderCheckbox.checked = true;
@@ -747,11 +794,61 @@
     const payload = await response.json();
     if (!response.ok) {
       discoveryDetails.textContent = payload.detail || "Commissioning session could not be started.";
-      discoveryDetails.hidden = false;
+      discoveryDetailsGroup.hidden = false;
       return;
     }
     window.location.href = payload.url;
   }
+
+  discoveryManualIpForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const ipAddress = discoveryManualIp.value.trim();
+    if (!ipAddress) return;
+
+    const submitButton = discoveryManualIpForm.querySelector("button");
+    submitButton.disabled = true;
+    discoveryDetails.textContent = `Checking ${ipAddress}...`;
+    discoveryDetailsGroup.hidden = false;
+    try {
+      const response = await selectManualNetworkDevice(ipAddress);
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.detail || "Manual discovery failed.");
+      }
+      applyDiscoveryTaskState(payload);
+    } catch (error) {
+      discoveryDetails.textContent = error.message || "Manual discovery failed.";
+      discoveryDetailsGroup.hidden = false;
+    } finally {
+      submitButton.disabled = false;
+    }
+  });
+
+  reconnectManualIpForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const ipAddress = reconnectManualIp.value.trim();
+    if (!ipAddress) return;
+
+    const submitButton = reconnectManualIpForm.querySelector("button");
+    submitButton.disabled = true;
+    reconnectDetails.textContent = `Checking ${ipAddress}...`;
+    reconnectDetailsGroup.hidden = false;
+    try {
+      const response = await selectManualNetworkDevice(ipAddress);
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.detail || "Manual reconnect failed.");
+      }
+      reconnectDetails.textContent = `Manual IP accepted: ${payload.device.ip_address}:${payload.device.port}`;
+      reconnectDetailsGroup.hidden = false;
+      await refreshResetNonvolatileTaskState();
+    } catch (error) {
+      reconnectDetails.textContent = error.message || "Manual reconnect failed.";
+      reconnectDetailsGroup.hidden = false;
+    } finally {
+      submitButton.disabled = false;
+    }
+  });
 
   setupNotesConfirmed.addEventListener("change", async () => {
     if (!setupNotesConfirmed.checked) return;
@@ -809,7 +906,8 @@
   });
 
   discoveryTaskIcon.addEventListener("click", () => {
-    discoveryDetails.hidden = !discoveryDetails.hidden;
+    discoveryDetailsGroup.hidden = false;
+    discoveryManualIpForm.hidden = !discoveryManualIpForm.hidden;
   });
 
   resetNonvolatileTaskIcon.addEventListener("click", () => {
@@ -817,7 +915,8 @@
   });
 
   reconnectTaskIcon.addEventListener("click", () => {
-    reconnectDetails.hidden = !reconnectDetails.hidden;
+    reconnectDetailsGroup.hidden = false;
+    reconnectManualIpForm.hidden = !reconnectManualIpForm.hidden;
   });
 
   firmwareVersionTaskIcon.addEventListener("click", () => {
