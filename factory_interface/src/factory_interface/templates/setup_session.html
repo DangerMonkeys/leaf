@@ -62,7 +62,23 @@
     <div class="checklist-item checklist-item-with-details">
       <button class="task-icon task-icon-empty" id="discovery-task-icon" type="button" aria-label="Toggle network discovery details" disabled></button>
       <span>Find device on network</span>
-      <p class="checklist-details" id="discovery-details" hidden></p>
+      <div class="checklist-details-group" id="discovery-details-group" hidden>
+        <p class="checklist-details" id="discovery-details"></p>
+        <form class="manual-ip-entry" id="discovery-manual-ip-form" hidden>
+          <label for="discovery-manual-ip">Device IP</label>
+          <div class="manual-ip-controls">
+            <input
+              id="discovery-manual-ip"
+              type="text"
+              inputmode="decimal"
+              autocomplete="off"
+              placeholder="192.168.137.21"
+              value="{{ session.device.ip_address }}"
+            >
+            <button type="submit">Use IP</button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <div class="checklist-item checklist-item-with-details">
@@ -74,7 +90,23 @@
     <div class="checklist-item checklist-item-with-details">
       <button class="task-icon task-icon-empty" id="reconnect-task-icon" type="button" aria-label="Toggle device reconnect details" disabled></button>
       <span>Wait for device to reconnect</span>
-      <p class="checklist-details" id="reconnect-details" hidden></p>
+      <div class="checklist-details-group" id="reconnect-details-group" hidden>
+        <p class="checklist-details" id="reconnect-details"></p>
+        <form class="manual-ip-entry" id="reconnect-manual-ip-form" hidden>
+          <label for="reconnect-manual-ip">Device IP</label>
+          <div class="manual-ip-controls">
+            <input
+              id="reconnect-manual-ip"
+              type="text"
+              inputmode="decimal"
+              autocomplete="off"
+              placeholder="192.168.137.21"
+              value="{{ session.device.ip_address }}"
+            >
+            <button type="submit">Use IP</button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <div class="checklist-item checklist-item-with-details">
@@ -141,20 +173,30 @@
   };
   const verificationUrl = (action) =>
     `/api/setup/sessions/${encodeURIComponent(macAddress)}/verification/${action}`;
+  const discoveryDetailsGroup = document.querySelector("#discovery-details-group");
+  const discoveryManualIpForm = document.querySelector("#discovery-manual-ip-form");
+  const discoveryManualIp = document.querySelector("#discovery-manual-ip");
+  const reconnectDetailsGroup = document.querySelector("#reconnect-details-group");
+  const reconnectManualIpForm = document.querySelector("#reconnect-manual-ip-form");
+  const reconnectManualIp = document.querySelector("#reconnect-manual-ip");
   const pollUrl = `/api/setup/sessions/${encodeURIComponent(macAddress)}`;
   const discardUrl = `/api/setup/sessions/${encodeURIComponent(macAddress)}`;
+  const manualDiscoveryUrl =
+    `/api/setup/sessions/${encodeURIComponent(macAddress)}/network-discovery/manual`;
   let pollTimer = null;
 
   const controls = {
     network_discovery: {
       icon: document.querySelector("#discovery-task-icon"),
       details: document.querySelector("#discovery-details"),
+      detailsContainer: discoveryDetailsGroup,
     },
     reset_nonvolatile_memory: {
       icon: document.querySelector("#reset-nonvolatile-task-icon"),
       details: document.querySelector("#reset-nonvolatile-details"),
       reconnectIcon: document.querySelector("#reconnect-task-icon"),
       reconnectDetails: document.querySelector("#reconnect-details"),
+      reconnectDetailsContainer: reconnectDetailsGroup,
     },
     firmware_version: {
       icon: document.querySelector("#firmware-version-task-icon"),
@@ -200,9 +242,9 @@
     }
   }
 
-  function setDetails(element, text, status) {
+  function setDetails(element, text, status, container = element) {
     element.textContent = text || "";
-    element.hidden = status === "idle" || !element.textContent;
+    container.hidden = status === "idle" || !element.textContent;
   }
 
   function formatTestName(name) {
@@ -253,7 +295,7 @@
       updateVerificationControls(task);
       return;
     }
-    setDetails(control.details, task.details, task.status);
+    setDetails(control.details, task.details, task.status, control.detailsContainer || control.details);
   }
 
   function applyResetState(task) {
@@ -263,7 +305,12 @@
     setTaskIcon(control.icon, resetStatus);
     setTaskIcon(control.reconnectIcon, reconnectStatus);
     setDetails(control.details, task.reset_details || task.details, resetStatus);
-    setDetails(control.reconnectDetails, task.reconnect_details, reconnectStatus);
+    setDetails(
+      control.reconnectDetails,
+      task.reconnect_details,
+      reconnectStatus,
+      control.reconnectDetailsContainer,
+    );
   }
 
   function applySession(session) {
@@ -294,10 +341,64 @@
     applySession(await response.json());
   }
 
+  async function selectManualSessionDevice(ipAddress) {
+    return fetch(manualDiscoveryUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ ip_address: ipAddress }),
+    });
+  }
+
+  async function submitManualIp(form, input, details, fallbackText) {
+    const ipAddress = input.value.trim();
+    if (!ipAddress) return;
+
+    const submitButton = form.querySelector("button");
+    const detailsContainer = details.closest(".checklist-details-group") || details;
+    submitButton.disabled = true;
+    details.textContent = `Checking ${ipAddress}...`;
+    detailsContainer.hidden = false;
+    try {
+      const response = await selectManualSessionDevice(ipAddress);
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.detail || fallbackText);
+      }
+      applySession(payload);
+    } catch (error) {
+      details.textContent = error.message || fallbackText;
+      detailsContainer.hidden = false;
+    } finally {
+      submitButton.disabled = false;
+    }
+  }
+
   discardButton.addEventListener("click", async () => {
     discardButton.disabled = true;
     await fetch(discardUrl, { method: "DELETE" });
     window.location.href = "/";
+  });
+
+  discoveryManualIpForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await submitManualIp(
+      discoveryManualIpForm,
+      discoveryManualIp,
+      controls.network_discovery.details,
+      "Manual discovery failed.",
+    );
+  });
+
+  reconnectManualIpForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await submitManualIp(
+      reconnectManualIpForm,
+      reconnectManualIp,
+      controls.reset_nonvolatile_memory.reconnectDetails,
+      "Manual reconnect failed.",
+    );
   });
 
   flashTaskIcon.addEventListener("click", () => {
@@ -341,11 +442,26 @@
 
   Object.values(controls).forEach((control) => {
     control.icon.addEventListener("click", () => {
-      control.details.hidden = !control.details.hidden;
+      const detailsContainer = control.detailsContainer || control.details;
+      detailsContainer.hidden = false;
+      if (control.detailsContainer) {
+        const form = control.detailsContainer.querySelector(".manual-ip-entry");
+        form.hidden = !form.hidden;
+      } else {
+        control.details.hidden = !control.details.hidden;
+      }
     });
     if (control.reconnectIcon) {
       control.reconnectIcon.addEventListener("click", () => {
-        control.reconnectDetails.hidden = !control.reconnectDetails.hidden;
+        const reconnectDetailsContainer =
+          control.reconnectDetailsContainer || control.reconnectDetails;
+        reconnectDetailsContainer.hidden = false;
+        if (control.reconnectDetailsContainer) {
+          const form = control.reconnectDetailsContainer.querySelector(".manual-ip-entry");
+          form.hidden = !form.hidden;
+        } else {
+          control.reconnectDetails.hidden = !control.reconnectDetails.hidden;
+        }
       });
     }
   });

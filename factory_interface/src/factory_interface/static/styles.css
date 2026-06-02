@@ -589,6 +589,48 @@ button:focus-visible {
   overflow-wrap: anywhere;
 }
 
+.checklist-details-group {
+  display: grid;
+  grid-column: 2;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+}
+
+.checklist-details-group .checklist-details {
+  grid-column: auto;
+}
+
+.manual-ip-entry {
+  display: grid;
+  gap: 6px;
+  width: min(100%, 520px);
+}
+
+.manual-ip-entry label {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.manual-ip-controls {
+  display: grid;
+  grid-template-columns: minmax(16rem, 1fr) auto;
+  gap: 8px;
+}
+
+.manual-ip-controls input,
+.manual-ip-controls button {
+  min-height: 40px;
+}
+
+.manual-ip-controls input {
+  min-width: 0;
+}
+
+.manual-ip-controls button {
+  white-space: nowrap;
+}
+
 .checklist-details-pre {
   white-space: pre-wrap;
   font-family: Consolas, "Courier New", monospace;
@@ -790,6 +832,10 @@ button:focus-visible {
   }
 
   .discovery-details-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .manual-ip-controls {
     grid-template-columns: 1fr;
   }
 }

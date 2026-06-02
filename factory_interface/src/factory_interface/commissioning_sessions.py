@@ -30,6 +30,7 @@ from factory_interface.network_discovery import (
     LeafDiscoveryResponse,
     discovery_identifier_values,
     normalize_discovery_identifier,
+    probe_ip_once,
     probe_once,
 )
 from factory_interface.settings import (
@@ -216,6 +217,35 @@ async def rediscover_session_device(session: CommissioningSession) -> LeafDiscov
             return response
 
     raise RuntimeError("Device was not found on the network.")
+
+
+async def manually_rediscover_session_device(
+    session: CommissioningSession,
+    ip_address: str,
+) -> LeafDiscoveryResponse:
+    responses = await probe_ip_once(ip_address)
+    if not responses:
+        raise RuntimeError(f"No discovery response received from {ip_address}.")
+
+    response = responses[0]
+    if not response_matches_session(response, session):
+        raise RuntimeError(
+            "Discovery response did not match the commissioning session device."
+        )
+
+    session.device = response
+    session.tasks["network_discovery"] = {
+        "status": "success",
+        "details": f"IP address: {response.ip_address}:{response.port}",
+        "device": response.snapshot(),
+    }
+    reset_task = session.tasks.get("reset_nonvolatile_memory", {})
+    if reset_task.get("reconnect_status") == "running":
+        reset_task["reconnect_details"] = (
+            f"Manual IP accepted: {response.ip_address}:{response.port}"
+        )
+    session.touch()
+    return response
 
 
 async def read_session_mac_address(session: CommissioningSession) -> str:
