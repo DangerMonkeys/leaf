@@ -51,7 +51,7 @@ void UDPMessageServer::onPacket(AsyncUDPPacket& packet) {
     onGPSMessage(line, n);
   } else if (msgType == 'M') {
     onMotionUpdate(line, n);
-  } else if (msgType = 'P') {
+  } else if (msgType == 'P') {
     onPressureUpdate(line, n);
   } else {
     Serial.printf("Unrecognized UDP message type: '%s'\n", msgType);
