@@ -60,9 +60,10 @@ VERIFICATION_COMMANDS = (
 VERIFICATION_START_PROMPT = 'Press "Start Test" to begin verification.'
 VERIFICATION_RETRY_PROMPT = 'Press "Retry Tests" to run verification again.'
 
-# How long to wait for an on-device SD card format to complete.
+# How long to wait for an on-device SD card format to complete. Formatting larger cards over SDIO
+# can take a few minutes, so allow generous headroom before giving up.
 SD_FORMAT_POLL_SECONDS = 1.5
-SD_FORMAT_TIMEOUT_SECONDS = 120.0
+SD_FORMAT_TIMEOUT_SECONDS = 600.0
 
 
 def verification_failed_on_sd_card(payload: dict | None) -> bool:
@@ -663,11 +664,19 @@ async def run_session_sd_format(session: CommissioningSession) -> None:
             session.touch()
             return
 
-        self_test_task["details"] = f"Formatting SD card on device... ({detail or status})"
+        self_test_task["details"] = (
+            f"Formatting SD card on device... ({int(elapsed)}s elapsed)"
+        )
         session.touch()
 
     self_test_task.update(
-        {"status": "failure", "details": "SD card format timed out."}
+        {
+            "status": "failure",
+            "details": (
+                "SD card format did not report completion in time. It may have finished anyway "
+                '— try "Retry Tests", or "Format SD & Retry" again.'
+            ),
+        }
     )
     self_test_task["sd_format_available"] = True
     session.details = "SD card format timed out."
