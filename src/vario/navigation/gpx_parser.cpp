@@ -3,9 +3,15 @@
 #include "storage/files.h"
 
 // The maximum length of a value in a GPX (tag name, latitude, longitude, elevation, etc)
-#define MAX_VALUE_LENGTH (32)
+#define MAX_VALUE_LENGTH (64)
 
 inline bool isWhitespace(char c) { return c == ' ' || c == '\t' || c == '\r' || c == '\n'; }
+
+const char* localTagName(const char* value) {
+  const char* name = value[0] == '/' ? value + 1 : value;
+  const char* colon = strchr(name, ':');
+  return colon ? colon + 1 : name;
+}
 
 bool equalsIgnoreCase(char* value, const char* constant) {
   uint16_t i = 0;
@@ -16,7 +22,7 @@ bool equalsIgnoreCase(char* value, const char* constant) {
     if (value[i] != constant[i]) {
       bool lcase_value = 'a' <= value[i] && value[i] <= 'z';
       bool ucase_value = 'A' <= value[i] && value[i] <= 'Z';
-      bool lcase_const = 'a' <= constant[i] && constant[i] <= 'A';
+      bool lcase_const = 'a' <= constant[i] && constant[i] <= 'z';
       bool ucase_const = 'A' <= constant[i] && constant[i] <= 'Z';
       if (lcase_value && ucase_const) {
         if (value[i] != constant[i] + ('a' - 'A')) {
@@ -35,9 +41,11 @@ bool equalsIgnoreCase(char* value, const char* constant) {
   return true;
 }
 
+bool tagEqualsIgnoreCase(char* value, const char* constant);
+bool closingTagEqualsIgnoreCase(char* value, const char* constant);
+
 bool GPXParser::parse(Navigator* result) {
-  result->totalRoutes = 0;
-  result->totalWaypoints = 0;
+  result->clear();
 
   char value_buffer[MAX_VALUE_LENGTH + 1];
 
@@ -47,38 +55,35 @@ bool GPXParser::parse(Navigator* result) {
       _error += " while parsing GPX";
       return false;
     }
-    if (equalsIgnoreCase(value_buffer, "wpt")) {
+    if (tagEqualsIgnoreCase(value_buffer, "wpt")) {
       if (name_result == ReadTagNameResult::TagClosed) {
         _error = "missing lat and lon attributes for wpt tag";
         return false;
       }
-      if (result->totalWaypoints >= maxWaypoints) {
-        _error = "maximum number of GPX waypoints exceeded";
-        return false;
-      }
       Waypoint waypoint;
       if (readWaypoint(&waypoint, "wpt")) {
-        result->waypoints[result->totalWaypoints + 1] =
-            waypoint;  // TODO: changed to add +1 to index, now waypoints start at 1, not 0.  Change
-                       // back if desired later
-        result->totalWaypoints++;
+        if (!result->addWaypoint(waypoint)) {
+          Serial.println("WARNING: maximum number of GPX points reached; skipping extra wpt");
+          continue;
+        }
       } else {
         _error += " in wpt tag";
         return false;
       }
-    } else if (equalsIgnoreCase(value_buffer, "rte")) {
+    } else if (tagEqualsIgnoreCase(value_buffer, "rte")) {
       if (name_result == ReadTagNameResult::TagOpen) {
-        if (!scrollToTagBoundary('>')) {
+        if (!scrollToTagEnd()) {
           _error = "reached end of file when reading rte tag";
           return false;
         }
       }
-      if (result->totalRoutes >= maxRoutes) {
-        _error = "maximum number of GPX routes exceeded";
-        return false;
-      }
       Route route;
-      if (readRoute(&route)) {
+      bool storeRoute = result->totalRoutes < maxRoutes;
+      if (readRoute(result, &route, storeRoute)) {
+        if (!storeRoute) {
+          Serial.println("WARNING: maximum number of GPX routes reached; skipping extra rte");
+          continue;
+        }
         result->routes[result->totalRoutes + 1] =
             route;  // TODO: changed to add +1 to index, now routes start at 1, not 0.  Change back
                     // if desired later
@@ -98,6 +103,9 @@ char GPXParser::getNextChar() {
     return 0;
   }
   char c = _file_reader->nextChar();
+  if ((++_charsReadSinceYield & 0xFF) == 0) {
+    yield();
+  }
   if (c == '\n') {
     _line++;
     _col = 1;
@@ -120,14 +128,43 @@ bool GPXParser::scrollToTagBoundary(char boundary) {
   return false;
 }
 
+bool tagEqualsIgnoreCase(char* value, const char* constant) {
+  return equalsIgnoreCase(const_cast<char*>(localTagName(value)), constant);
+}
+
+bool closingTagEqualsIgnoreCase(char* value, const char* constant) {
+  return value[0] == '/' && tagEqualsIgnoreCase(value, constant);
+}
+
+bool GPXParser::scrollToTagEnd() {
+  char c;
+  char lastNonWhitespace = 0;
+  do {
+    c = getNextChar();
+    if (c == '>') {
+      _lastTagSelfClosing = lastNonWhitespace == '/';
+      return true;
+    }
+    if (c != 0 && !isWhitespace(c)) {
+      lastNonWhitespace = c;
+    }
+  } while (c != 0);
+  return false;
+}
+
 ReadTagNameResult GPXParser::readTagName(char* value) {
   ReadTagNameResult result;
   char c;
   uint16_t i = 0;
   bool name_started = false;
+  _lastTagSelfClosing = false;
   while (true) {
     c = getNextChar();
     if (c == '>') {
+      if (i > 0 && value[i - 1] == '/') {
+        i--;
+        _lastTagSelfClosing = true;
+      }
       result = ReadTagNameResult::TagClosed;
       break;
     } else if (isWhitespace(c)) {
@@ -164,16 +201,27 @@ char GPXParser::skipWhitespace() {
 bool GPXParser::readWaypoint(Waypoint* waypoint, const char* tag_name) {
   char key[MAX_VALUE_LENGTH + 1];
   char value[MAX_VALUE_LENGTH + 1];
+  waypoint->name = "";
+  waypoint->ele = 0;
 
   // Read attributes of opening tag (until tag is closed)
   bool found_lat = false;
   bool found_lon = false;
+  bool self_closing = false;
   while (true) {
     char c = skipWhitespace();
     if (c == 0) {
       _error = "reached end of file while looking for attributes in waypoint tag";
       return false;
     } else if (c == '>') {
+      break;
+    } else if (c == '/') {
+      c = skipWhitespace();
+      if (c != '>') {
+        _error = "unexpected character after self-closing marker in waypoint tag";
+        return false;
+      }
+      self_closing = true;
       break;
     }
     key[0] = c;
@@ -198,6 +246,9 @@ bool GPXParser::readWaypoint(Waypoint* waypoint, const char* tag_name) {
     _error = "couldn't find lon attribute in waypoint tag";
     return false;
   }
+  if (self_closing) {
+    return true;
+  }
 
   // Look for content or the closing tag
   while (true) {
@@ -207,12 +258,12 @@ bool GPXParser::readWaypoint(Waypoint* waypoint, const char* tag_name) {
       return false;
     }
 
-    if (key[0] == '/' && equalsIgnoreCase(key + 1, tag_name)) {
+    if (closingTagEqualsIgnoreCase(key, tag_name)) {
       // This was the closing tag for the waypoint
       break;
-    } else if (equalsIgnoreCase(key, "ele")) {
+    } else if (tagEqualsIgnoreCase(key, "ele")) {
       // This was an opening elevation tag
-      if (!readLiteral(value)) {
+      if (!readLiteral(value, false)) {
         _error += " while reading ele value in waypoint";
         return false;
       }
@@ -222,18 +273,18 @@ bool GPXParser::readWaypoint(Waypoint* waypoint, const char* tag_name) {
         _error += " while reading name of tag that should be a closing ele tag in waypoint";
         return false;
       } else if (closing_outcome == ReadTagNameResult::TagOpen) {
-        if (!scrollToTagBoundary('>')) {
+        if (!scrollToTagEnd()) {
           _error = "reached end of file while looking for end of tag after ele in waypoint";
           return false;
         }
       }
-      if (!equalsIgnoreCase(key, "/ele")) {
+      if (!closingTagEqualsIgnoreCase(key, "ele")) {
         _error = "tag after ele in waypoint was not a closing ele tag";
         return false;
       }
-    } else if (equalsIgnoreCase(key, "name")) {
+    } else if (tagEqualsIgnoreCase(key, "name")) {
       // This was an opening name tag
-      if (!readLiteral(value)) {
+      if (!readLiteral(value, true)) {
         _error += " while reading value of name tag in waypoint";
         return false;
       }
@@ -243,24 +294,27 @@ bool GPXParser::readWaypoint(Waypoint* waypoint, const char* tag_name) {
         _error += " while reading name of tag that should be a closing name tag in waypoint";
         return false;
       } else if (closing_outcome == ReadTagNameResult::TagOpen) {
-        if (!scrollToTagBoundary('>')) {
+        if (!scrollToTagEnd()) {
           _error = "reached end of file while looking for end of tag after name in waypoint";
           return false;
         }
       }
-      if (!equalsIgnoreCase(key, "/name")) {
+      if (!closingTagEqualsIgnoreCase(key, "name")) {
         _error = "tag after name in waypoint was not a closing name tag";
         return false;
       }
     } else {
       // This was an irrelevant tag; look for its closing tag
+      if (_lastTagSelfClosing) {
+        continue;
+      }
       while (true) {
         if (!readFullTagName(value)) {
           _error +=
               " while reading name of tag that should be a closing irrelevant tag in waypoint";
           return false;
         }
-        if (value[0] == '/' && strncmp(key, value + 1, MAX_VALUE_LENGTH - 1)) {
+        if (value[0] == '/' && strncmp(key, value + 1, MAX_VALUE_LENGTH - 1) == 0) {
           // This was the closing tag for the irrelevant tag within the waypoint; proceed with
           // parsing
           break;
@@ -329,7 +383,7 @@ bool GPXParser::readAttribute(char* key, char* value) {
   }
 }
 
-bool GPXParser::readLiteral(char* value) {
+bool GPXParser::readLiteral(char* value, bool truncate) {
   uint16_t i = 0;
   while (true) {
     char c = getNextChar();
@@ -339,8 +393,9 @@ bool GPXParser::readLiteral(char* value) {
       _error = "reached end of file while reading literal value";
       return false;
     }
-    value[i++] = c;
-    if (i >= MAX_VALUE_LENGTH) {
+    if (i < MAX_VALUE_LENGTH) {
+      value[i++] = c;
+    } else if (!truncate) {
       _error = "literal value was too long";
       return false;
     }
@@ -355,18 +410,19 @@ bool GPXParser::readFullTagName(char* key) {
     return false;
   }
   ReadTagNameResult name_outcome = readTagName(key);
-  if (name_outcome == ReadTagNameResult::TagOpen) {
-    if (!scrollToTagBoundary('>')) {
+  if (name_outcome == ReadTagNameResult::Error) {
+    return false;
+  } else if (name_outcome == ReadTagNameResult::TagOpen) {
+    if (!scrollToTagEnd()) {
       _error = "reached end of file while looking for end of tag";
       return false;
     }
-  } else if (name_outcome == ReadTagNameResult::TagClosed) {
-    return true;
   }
-  return false;
+  return true;
 }
 
-bool GPXParser::readRoute(Route* route) {
+bool GPXParser::readRoute(Navigator* result, Route* route, bool storePoints) {
+  route->firstPointIndex = 0;
   route->totalPoints = 0;
 
   char key[MAX_VALUE_LENGTH + 1];
@@ -388,33 +444,32 @@ bool GPXParser::readRoute(Route* route) {
     }
 
     // For every tag except rtept, scroll to end of tag
-    if (!equalsIgnoreCase(key, "rtept") && name_outcome == ReadTagNameResult::TagOpen &&
-        !scrollToTagBoundary('>')) {
+    if (!tagEqualsIgnoreCase(key, "rtept") && name_outcome == ReadTagNameResult::TagOpen &&
+        !scrollToTagEnd()) {
       _error = "reached end of file while looking for end of tag in route";
       return false;
     }
 
-    if (equalsIgnoreCase(key, "/rte")) {
+    if (closingTagEqualsIgnoreCase(key, "rte")) {
       // This was the closing tag for the route
       break;
-    } else if (equalsIgnoreCase(key, "rtept")) {
+    } else if (tagEqualsIgnoreCase(key, "rtept")) {
       // This is an opening route point tag
-      if (route->totalPoints >= RouteIndex::Max) {
-        _error = "maximum number of route points exceeded";
-        return false;
-      }
       Waypoint waypoint;
       if (!readWaypoint(&waypoint, "rtept")) {
         _error = " while reading rtept";
         return false;
       }
-      route->routepoints[route->totalPoints + 1] =
-          waypoint;  // TODO: changed to add +1 to index, now routepoints start at 1, not 0.  Change
-                     // back if desired later
-      route->totalPoints++;
-    } else if (equalsIgnoreCase(key, "name")) {
+      if (!storePoints) {
+        continue;
+      }
+      if (!result->addRoutePoint(route, waypoint)) {
+        Serial.println("WARNING: maximum number of GPX points reached; skipping extra rtept");
+        continue;
+      }
+    } else if (tagEqualsIgnoreCase(key, "name")) {
       // This is an opening name tag
-      if (!readLiteral(value)) {
+      if (!readLiteral(value, true)) {
         _error += " while reading route name";
         return false;
       }
@@ -424,25 +479,28 @@ bool GPXParser::readRoute(Route* route) {
         _error += " while reading closing name tag in route";
         return false;
       } else if (closing_outcome == ReadTagNameResult::TagOpen) {
-        if (!scrollToTagBoundary('>')) {
+        if (!scrollToTagEnd()) {
           _error =
               "reached end of file while reading name of tag that should be a closing name tag in "
               "route";
           return false;
         }
       }
-      if (!equalsIgnoreCase(key, "/name")) {
+      if (!closingTagEqualsIgnoreCase(key, "name")) {
         _error = "missing closing name tag in route";
         return false;
       }
     } else {
       // This was an irrelevant tag; look for its closing tag
+      if (_lastTagSelfClosing) {
+        continue;
+      }
       while (true) {
         if (!readFullTagName(value)) {
           _error += " while reading the name of a closing tag for an irrelevant tag in a route";
           return false;
         }
-        if (value[0] == '/' && strncmp(key, value + 1, MAX_VALUE_LENGTH - 1)) {
+        if (value[0] == '/' && strncmp(key, value + 1, MAX_VALUE_LENGTH - 1) == 0) {
           // This was the closing tag for the irrelevant tag within the route; proceed with parsing
           break;
         }

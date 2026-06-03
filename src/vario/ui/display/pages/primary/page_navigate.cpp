@@ -42,34 +42,23 @@ bool destination_selection_routes_vs_waypoints = true;  // start showing routes 
 void navigatePage_destinationSelect(Button dir) {
   switch (dir) {
     case Button::LEFT:
-      destination_selection_index--;
-      if (destination_selection_index < 0) {                    // if we wrap off the left end
-        if (destination_selection_routes_vs_waypoints) {        // ..and we're showing routes
-          if (navigator.totalWaypoints >= 1) {                  // ..then if we have waypoints
-            destination_selection_routes_vs_waypoints = false;  // ..then switch to waypoints
-            destination_selection_index =
-                navigator.totalWaypoints;  // ..and set index to the last waypoint (i.e., we're
-                                           // scrolling backwards/leftward)
-          } else {
-            destination_selection_index =
-                navigator.totalRoutes;  // otherwise stay on Routes and show the last route (i.e.,
-                                        // wrap around list of routes).  This may just be wrapping
-                                        // from 0 back around to 0 if we have no Routes, too.
-          }
-        } else {  // Or if we're showing Waypoints and wrap off the left end
-          if (navigator.totalRoutes >= 1) {                    // ..then if we have routes
-            destination_selection_routes_vs_waypoints = true;  // ..then switch to routes
-            destination_selection_index =
-                navigator.totalRoutes;  // ..and set index to the last route (i.e., we're
-                                        // scrolling backwards/leftward)
-          } else {
-            destination_selection_index =
-                navigator.totalWaypoints;  // otherwise stay on waypoints and show the last
-                                           // waypoint (i.e., wrap around list of waypoints).
-                                           // This may just be wrapping from 0 back around to 0
-                                           // if we have no waypoints, too.
-          }
+      if (destination_selection_index == 0) {
+        if (navigator.totalWaypoints >= 1) {
+          destination_selection_routes_vs_waypoints = false;
+          destination_selection_index = navigator.totalWaypoints;
+        } else if (navigator.totalRoutes >= 1) {
+          destination_selection_routes_vs_waypoints = true;
+          destination_selection_index = navigator.totalRoutes;
         }
+      } else if (!destination_selection_routes_vs_waypoints && destination_selection_index == 1) {
+        if (navigator.totalRoutes >= 1) {
+          destination_selection_routes_vs_waypoints = true;
+          destination_selection_index = navigator.totalRoutes;
+        } else {
+          destination_selection_index = 0;
+        }
+      } else {
+        destination_selection_index--;
       }
       break;
 
@@ -89,17 +78,15 @@ void navigatePage_destinationSelect(Button dir) {
       } else {  // otherise if we're showing waypoints...
         if (destination_selection_index >
             navigator.totalWaypoints) {      //...and we're passed the number of waypoints we have
-          if (navigator.totalRoutes >= 1) {  // 		...and we have routes to switch to...
-            destination_selection_routes_vs_waypoints = true;  //		...switch to routes...
-            destination_selection_index = 1;                   //		...and show the first one
-          } else {                                             // otherwise loop back to index 0
-            destination_selection_index = 0;
-          }
+          destination_selection_routes_vs_waypoints = navigator.totalRoutes >= 1;
+          destination_selection_index = 0;
         }
       }
       break;
     case Button::CENTER:
-      if (destination_selection_routes_vs_waypoints)
+      if (destination_selection_index == 0) {
+        break;
+      } else if (destination_selection_routes_vs_waypoints)
         navigator.activateRoute(RouteID(destination_selection_index));
       else
         navigator.activatePoint(WaypointID(destination_selection_index));
@@ -347,7 +334,7 @@ void navigatePage_draw() {
           u8g2.setFont(u8g2_font_12x6LED_tf);
           u8g2.print(navigator.routes[destination_selection_index].name);
         } else {
-          u8g2.print(navigator.waypoints[destination_selection_index].name);
+          u8g2.print(navigator.waypoint(WaypointID(destination_selection_index)).name);
         }
       }
     } else {

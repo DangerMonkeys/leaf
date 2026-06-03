@@ -21,6 +21,8 @@ class GPXParser {
     _file_reader = file_reader;
     _line = 1;
     _col = 1;
+    _charsReadSinceYield = 0;
+    _lastTagSelfClosing = false;
     _error = "";
   }
 
@@ -41,6 +43,9 @@ class GPXParser {
   /// @return True if the specified boundary was found, false if boundary was not found
   bool scrollToTagBoundary(char boundary);
 
+  /// @brief Read through the end of a tag and remember whether it was self-closing
+  bool scrollToTagEnd();
+
   /// @brief Read just the name of a tag into the provided value buffer, ensuring null termination
   ReadTagNameResult readTagName(char* value);
 
@@ -58,7 +63,7 @@ class GPXParser {
 
   /// @brief Read a literal value located between two tags
   /// @details Leaves cursor at first character of next tag (past opening < character)
-  bool readLiteral(char* value);
+  bool readLiteral(char* value, bool truncate);
 
   /// @brief Starting outside a tag, read up to and through an entire tag and set `key` to the name
   /// of the tag
@@ -66,11 +71,13 @@ class GPXParser {
 
   /// @brief Read the data from a rte tag into the provided `route`
   /// @details Must start outside the end of the opening rte tag
-  bool readRoute(Route* route);
+  bool readRoute(Navigator* result, Route* route, bool storePoints);
 
   FileReader* _file_reader;
   uint16_t _line;
   uint16_t _col;
+  uint16_t _charsReadSinceYield;
+  bool _lastTagSelfClosing;
   String _error;
 };
 
