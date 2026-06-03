@@ -185,9 +185,9 @@ bool Navigator::activateRoute(RouteID routeIndex) {
       // otherwise our Route only has 1 point, so the Route distance is from where we are now to
       // that one point
     } else if (routes[activeRouteIndex].totalPoints == 1) {
-      totalDistanceRemaining_ = gps.distanceBetween(gps.location.lat(), gps.location.lng(),
-                                                    routePoint(activeRouteIndex, RouteIndex(1)).lat,
-                                                    routePoint(activeRouteIndex, RouteIndex(1)).lon);
+      totalDistanceRemaining_ = gps.distanceBetween(
+          gps.location.lat(), gps.location.lng(), routePoint(activeRouteIndex, RouteIndex(1)).lat,
+          routePoint(activeRouteIndex, RouteIndex(1)).lon);
     }
   }
   return navigating;

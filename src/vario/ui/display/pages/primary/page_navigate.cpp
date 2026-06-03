@@ -77,7 +77,7 @@ void navigatePage_destinationSelect(Button dir) {
         }
       } else {  // otherise if we're showing waypoints...
         if (destination_selection_index >
-            navigator.totalWaypoints) {      //...and we're passed the number of waypoints we have
+            navigator.totalWaypoints) {  //...and we're passed the number of waypoints we have
           destination_selection_routes_vs_waypoints = navigator.totalRoutes >= 1;
           destination_selection_index = 0;
         }
