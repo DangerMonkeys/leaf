@@ -9,8 +9,8 @@
 
 // Waypoint definition and memory allocation
 #define waypointRadius 150  // meters radius to count as "reaching/crossing" a waypoint
-#define maxWaypoints 15
 #define maxRoutes 5
+#define maxNavPoints 75
 
 struct Waypoint {
   String name;
@@ -22,8 +22,8 @@ struct Waypoint {
 // Route definition and memory allocation
 struct Route {
   String name;
+  uint8_t firstPointIndex = 0;
   uint8_t totalPoints = 0;
-  Waypoint routepoints[RouteIndex::Max + 1];
 };
 
 // Navigator class for managing nav info (used largely for display purposes)
@@ -39,17 +39,25 @@ class Navigator {
   // True if a specific waypoint is active, or if a route is active with a next route point.
   bool hasActivePoint();
 
-  Waypoint waypoints[maxWaypoints];
+  void clear();
+  bool addWaypoint(const Waypoint& waypoint);
+  bool addRoutePoint(Route* route, const Waypoint& waypoint);
+  const Waypoint& waypoint(WaypointID pointIndex) const;
+  const Waypoint& routePoint(RouteID routeIndex, RouteIndex pointIndex) const;
+
+  Waypoint points[maxNavPoints + 1];
+  uint8_t totalPoints = 0;
+  uint8_t waypointPointIndexes[maxNavPoints + 1];
   uint8_t totalWaypoints = 0;
-  Route routes[maxRoutes];
+  Route routes[maxRoutes + 1];
   uint8_t totalRoutes = 0;
 
   // waypoint currently navigating to
   Waypoint activePoint;
 
-  // waypoint currently navigating to (index value for element inside of waypoints[])
+  // waypoint currently navigating to (display index inside the bare waypoint list)
   WaypointID activeWaypointIndex;
-  // route point currently navigating to (inside of route.routepoints[], if on an active route)
+  // route point currently navigating to (one-based index inside the active route)
   RouteIndex activeRoutePointIndex;
   // route currently navigating along (index value for route inside of routes[])
   RouteID activeRouteIndex;

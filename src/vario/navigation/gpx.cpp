@@ -17,8 +17,6 @@
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 
-Waypoint waypoints[maxWaypoints];
-Route routes[maxRoutes];
 Navigator navigator;
 
 // TODO: at least here for testing so we can be navigating right from boot up
@@ -33,6 +31,41 @@ void Navigator::init() {
   // loadRoutes();
   // activatePoint(19);
   // activateRoute(3);
+}
+
+void Navigator::clear() {
+  totalPoints = 0;
+  totalWaypoints = 0;
+  totalRoutes = 0;
+}
+
+bool Navigator::addWaypoint(const Waypoint& waypoint) {
+  if (totalPoints >= maxNavPoints || totalWaypoints >= maxNavPoints) {
+    return false;
+  }
+  points[++totalPoints] = waypoint;
+  waypointPointIndexes[++totalWaypoints] = totalPoints;
+  return true;
+}
+
+bool Navigator::addRoutePoint(Route* route, const Waypoint& waypoint) {
+  if (totalPoints >= maxNavPoints) {
+    return false;
+  }
+  points[++totalPoints] = waypoint;
+  if (route->totalPoints == 0) {
+    route->firstPointIndex = totalPoints;
+  }
+  route->totalPoints++;
+  return true;
+}
+
+const Waypoint& Navigator::waypoint(WaypointID pointIndex) const {
+  return points[waypointPointIndexes[pointIndex]];
+}
+
+const Waypoint& Navigator::routePoint(RouteID routeIndex, RouteIndex pointIndex) const {
+  return points[routes[routeIndex].firstPointIndex + pointIndex - 1];
 }
 
 // update nav data every second
@@ -106,7 +139,7 @@ bool Navigator::activatePoint(WaypointID pointIndex) {
   activeRoutePointIndex = RouteIndex::None;
 
   activeWaypointIndex = pointIndex;
-  activePoint = waypoints[activeWaypointIndex];
+  activePoint = waypoint(activeWaypointIndex);
 
   speaker.playSound(fx::enter);
 
@@ -144,17 +177,17 @@ bool Navigator::activateRoute(RouteID routeIndex) {
     if (routes[activeRouteIndex].totalPoints >= 2) {
       for (int i = 1; i < routes[activeRouteIndex].totalPoints; i++) {
         totalDistanceRemaining_ +=
-            gps.distanceBetween(routes[activeRouteIndex].routepoints[i].lat,
-                                routes[activeRouteIndex].routepoints[i].lon,
-                                routes[activeRouteIndex].routepoints[i + 1].lat,
-                                routes[activeRouteIndex].routepoints[i + 1].lon);
+            gps.distanceBetween(routePoint(activeRouteIndex, RouteIndex(i)).lat,
+                                routePoint(activeRouteIndex, RouteIndex(i)).lon,
+                                routePoint(activeRouteIndex, RouteIndex(i + 1)).lat,
+                                routePoint(activeRouteIndex, RouteIndex(i + 1)).lon);
       }
       // otherwise our Route only has 1 point, so the Route distance is from where we are now to
       // that one point
     } else if (routes[activeRouteIndex].totalPoints == 1) {
-      totalDistanceRemaining_ = gps.distanceBetween(gps.location.lat(), gps.location.lng(),
-                                                    routes[activeRouteIndex].routepoints[1].lat,
-                                                    routes[activeRouteIndex].routepoints[1].lon);
+      totalDistanceRemaining_ = gps.distanceBetween(
+          gps.location.lat(), gps.location.lng(), routePoint(activeRouteIndex, RouteIndex(1)).lat,
+          routePoint(activeRouteIndex, RouteIndex(1)).lon);
     }
   }
   return navigating;
@@ -177,7 +210,7 @@ bool Navigator::sequenceWaypoint() {
     Serial.print(activeRoutePointIndex);
     Serial.print(" route index:");
     Serial.print(activeRouteIndex);
-    activePoint = routes[activeRouteIndex].routepoints[activeRoutePointIndex];
+    activePoint = routePoint(activeRouteIndex, activeRoutePointIndex);
 
     Serial.print(" new point:");
     Serial.print(activePoint.name);
@@ -188,7 +221,7 @@ bool Navigator::sequenceWaypoint() {
         routes[activeRouteIndex]
             .totalPoints) {  // if there's also a next point in the list, capture that
       nextPointIndex_ = activeRoutePointIndex + 1;
-      nextPoint_ = routes[activeRouteIndex].routepoints[nextPointIndex_];
+      nextPoint_ = routePoint(activeRouteIndex, nextPointIndex_);
     } else {  // otherwise signify no next point, so we don't show display functions related to next
               // point
       nextPointIndex_ = RouteIndex::NoNextPoint;
@@ -200,14 +233,14 @@ bool Navigator::sequenceWaypoint() {
     if (activeRoutePointIndex == 1) {
       segmentDistance =
           gps.distanceBetween(gps.location.lat(), gps.location.lng(),
-                              routes[activeRouteIndex].routepoints[activeRoutePointIndex].lat,
-                              routes[activeRouteIndex].routepoints[activeRoutePointIndex].lon);
+                              routePoint(activeRouteIndex, activeRoutePointIndex).lat,
+                              routePoint(activeRouteIndex, activeRoutePointIndex).lon);
     } else {
       segmentDistance =
-          gps.distanceBetween(routes[activeRouteIndex].routepoints[activeRoutePointIndex - 1].lat,
-                              routes[activeRouteIndex].routepoints[activeRoutePointIndex - 1].lon,
-                              routes[activeRouteIndex].routepoints[activeRoutePointIndex].lat,
-                              routes[activeRouteIndex].routepoints[activeRoutePointIndex].lon);
+          gps.distanceBetween(routePoint(activeRouteIndex, activeRoutePointIndex - 1).lat,
+                              routePoint(activeRouteIndex, activeRoutePointIndex - 1).lon,
+                              routePoint(activeRouteIndex, activeRoutePointIndex).lat,
+                              routePoint(activeRouteIndex, activeRoutePointIndex).lon);
     }
 
   } else {  // otherwise, we made it to our destination!
@@ -249,41 +282,51 @@ bool gpx_readFile(fs::FS& fs, String fileName) {
   if (success) {
     Serial.println("gpx_readFile was successful:");
     Serial.print("  ");
+    Serial.print(parse_result.totalPoints);
+    Serial.println(" total points");
+    Serial.print("  ");
     Serial.print(parse_result.totalWaypoints);
     Serial.println(" waypoints");
-    for (uint8_t wp = 0; wp < parse_result.totalWaypoints; wp++) {
+    for (uint8_t wp = 1; wp <= parse_result.totalWaypoints; wp++) {
       Serial.print("    ");
-      Serial.print(parse_result.waypoints[wp].name);
+      Serial.print(parse_result.waypoint(WaypointID(wp)).name);
       Serial.print(" @ ");
-      Serial.print(parse_result.waypoints[wp].lat);
+      Serial.print(parse_result.waypoint(WaypointID(wp)).lat);
       Serial.print(", ");
-      Serial.print(parse_result.waypoints[wp].lon);
+      Serial.print(parse_result.waypoint(WaypointID(wp)).lon);
       Serial.print(", ");
-      Serial.print(parse_result.waypoints[wp].ele);
+      Serial.print(parse_result.waypoint(WaypointID(wp)).ele);
       Serial.println("m");
     }
     Serial.print("  ");
     Serial.print(parse_result.totalRoutes);
     Serial.println(" routes");
-    for (uint8_t r = 0; r < parse_result.totalRoutes; r++) {
+    for (uint8_t r = 1; r <= parse_result.totalRoutes; r++) {
       Serial.print("    ");
       Serial.print(parse_result.routes[r].name);
       Serial.print(" (");
       Serial.print(parse_result.routes[r].totalPoints);
       Serial.println(" points)");
-      for (uint8_t wp = 0; wp < parse_result.routes[r].totalPoints; wp++) {
+      for (uint8_t wp = 1; wp <= parse_result.routes[r].totalPoints; wp++) {
         Serial.print("      ");
-        Serial.print(parse_result.waypoints[wp].name);
+        Serial.print(parse_result.routePoint(RouteID(r), RouteIndex(wp)).name);
         Serial.print(" @ ");
-        Serial.print(parse_result.waypoints[wp].lat);
+        Serial.print(parse_result.routePoint(RouteID(r), RouteIndex(wp)).lat);
         Serial.print(", ");
-        Serial.print(parse_result.waypoints[wp].lon);
+        Serial.print(parse_result.routePoint(RouteID(r), RouteIndex(wp)).lon);
         Serial.print(", ");
-        Serial.print(parse_result.waypoints[wp].ele);
+        Serial.print(parse_result.routePoint(RouteID(r), RouteIndex(wp)).ele);
         Serial.println("m");
       }
     }
     navigator = parse_result;
+    Serial.print("Navigator loaded ");
+    Serial.print(navigator.totalPoints);
+    Serial.print(" total points, ");
+    Serial.print(navigator.totalWaypoints);
+    Serial.print(" waypoints and ");
+    Serial.print(navigator.totalRoutes);
+    Serial.println(" routes");
     return true;
   } else {
     // TODO: Display error to user (create appropriate method in GPXParser looking at _error, _line,
@@ -299,83 +342,43 @@ bool gpx_readFile(fs::FS& fs, String fileName) {
 }
 
 void Navigator::loadRoutes() {
+  totalRoutes = 4;
+
   routes[1].name = "R: TheCircuit";
-  routes[1].totalPoints = 5;
-  routes[1].routepoints[1] = waypoints[1];
-  routes[1].routepoints[2] = waypoints[7];
-  routes[1].routepoints[3] = waypoints[8];
-  routes[1].routepoints[4] = waypoints[1];
-  routes[1].routepoints[5] = waypoints[2];
+  addRoutePoint(&routes[1], waypoint(WaypointID(1)));
+  addRoutePoint(&routes[1], waypoint(WaypointID(7)));
+  addRoutePoint(&routes[1], waypoint(WaypointID(8)));
+  addRoutePoint(&routes[1], waypoint(WaypointID(1)));
+  addRoutePoint(&routes[1], waypoint(WaypointID(2)));
 
   routes[2].name = "R: Scenic";
-  routes[2].totalPoints = 5;
-  routes[2].routepoints[1] = waypoints[1];
-  routes[2].routepoints[2] = waypoints[3];
-  routes[2].routepoints[3] = waypoints[4];
-  routes[2].routepoints[4] = waypoints[5];
-  routes[2].routepoints[5] = waypoints[2];
+  addRoutePoint(&routes[2], waypoint(WaypointID(1)));
+  addRoutePoint(&routes[2], waypoint(WaypointID(3)));
+  addRoutePoint(&routes[2], waypoint(WaypointID(4)));
+  addRoutePoint(&routes[2], waypoint(WaypointID(5)));
+  addRoutePoint(&routes[2], waypoint(WaypointID(2)));
 
   routes[3].name = "R: Downhill";
-  routes[3].totalPoints = 4;
-  routes[3].routepoints[1] = waypoints[1];
-  routes[3].routepoints[2] = waypoints[5];
-  routes[3].routepoints[3] = waypoints[2];
+  addRoutePoint(&routes[3], waypoint(WaypointID(1)));
+  addRoutePoint(&routes[3], waypoint(WaypointID(5)));
+  addRoutePoint(&routes[3], waypoint(WaypointID(2)));
 
   routes[4].name = "R: MiniTri";
-  routes[4].totalPoints = 4;
-  routes[4].routepoints[1] = waypoints[1];
-  routes[4].routepoints[2] = waypoints[4];
-  routes[4].routepoints[3] = waypoints[5];
-  routes[4].routepoints[4] = waypoints[1];
-
-  totalRoutes = 4;
+  addRoutePoint(&routes[4], waypoint(WaypointID(1)));
+  addRoutePoint(&routes[4], waypoint(WaypointID(4)));
+  addRoutePoint(&routes[4], waypoint(WaypointID(5)));
+  addRoutePoint(&routes[4], waypoint(WaypointID(1)));
 }
 
 void Navigator::loadWaypoints() {
-  waypoints[0].lat = 0;
-  waypoints[0].lon = 0;
-  waypoints[0].ele = 0;
-  waypoints[0].name = "EMPTY_POINT";
+  clear();
 
-  waypoints[1].lat = 34.21016;
-  waypoints[1].lon = -117.30274;
-  waypoints[1].ele = 1223;
-  waypoints[1].name = "Marshall";
-
-  waypoints[2].lat = 34.19318;
-  waypoints[2].lon = -117.32334;
-  waypoints[2].ele = 521;
-  waypoints[2].name = "Marshall_LZ";
-
-  waypoints[3].lat = 34.21065;
-  waypoints[3].lon = -117.31298;
-  waypoints[3].ele = 1169;
-  waypoints[3].name = "Cloud";
-
-  waypoints[4].lat = 34.20958;
-  waypoints[4].lon = -117.31982;
-  waypoints[4].ele = 1033;
-  waypoints[4].name = "Regionals";
-
-  waypoints[5].lat = 34.19991;
-  waypoints[5].lon = -117.31688;
-  waypoints[5].ele = 767;
-  waypoints[5].name = "750";
-
-  waypoints[6].lat = 34.23604;
-  waypoints[6].lon = -117.31321;
-  waypoints[6].ele = 1611;
-  waypoints[6].name = "Crestline";
-
-  waypoints[7].lat = 34.23531;
-  waypoints[7].lon = -117.32608;
-  waypoints[7].ele = 1572;
-  waypoints[7].name = "Billboard";
-
-  waypoints[8].lat = 34.23762;
-  waypoints[8].lon = -117.35115;
-  waypoints[8].ele = 1553;
-  waypoints[8].name = "Pine_Mt";
-
-  totalWaypoints = 8;
+  addWaypoint(Waypoint{.name = "Marshall", .lat = 34.21016, .lon = -117.30274, .ele = 1223});
+  addWaypoint(Waypoint{.name = "Marshall_LZ", .lat = 34.19318, .lon = -117.32334, .ele = 521});
+  addWaypoint(Waypoint{.name = "Cloud", .lat = 34.21065, .lon = -117.31298, .ele = 1169});
+  addWaypoint(Waypoint{.name = "Regionals", .lat = 34.20958, .lon = -117.31982, .ele = 1033});
+  addWaypoint(Waypoint{.name = "750", .lat = 34.19991, .lon = -117.31688, .ele = 767});
+  addWaypoint(Waypoint{.name = "Crestline", .lat = 34.23604, .lon = -117.31321, .ele = 1611});
+  addWaypoint(Waypoint{.name = "Billboard", .lat = 34.23531, .lon = -117.32608, .ele = 1572});
+  addWaypoint(Waypoint{.name = "Pine_Mt", .lat = 34.23762, .lon = -117.35115, .ele = 1553});
 }
