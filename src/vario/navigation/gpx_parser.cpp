@@ -62,7 +62,7 @@ bool GPXParser::parse(Navigator* result) {
       }
       Waypoint waypoint;
       if (readWaypoint(&waypoint, "wpt")) {
-        if (!result->addWaypoint(waypoint)) {
+        if (!result->addOrFindWaypoint(waypoint)) {
           Serial.println("WARNING: maximum number of GPX points reached; skipping extra wpt");
           continue;
         }
@@ -422,7 +422,7 @@ bool GPXParser::readFullTagName(char* key) {
 }
 
 bool GPXParser::readRoute(Navigator* result, Route* route, bool storePoints) {
-  route->firstPointIndex = 0;
+  route->firstRoutePointIndex = 0;
   route->totalPoints = 0;
 
   char key[MAX_VALUE_LENGTH + 1];
@@ -463,8 +463,17 @@ bool GPXParser::readRoute(Navigator* result, Route* route, bool storePoints) {
       if (!storePoints) {
         continue;
       }
-      if (!result->addRoutePoint(route, waypoint)) {
-        Serial.println("WARNING: maximum number of GPX points reached; skipping extra rtept");
+      if (result->totalRoutePointRefs >= maxRoutePointRefs) {
+        Serial.println("WARNING: maximum number of GPX route point refs reached; skipping rtept");
+        continue;
+      }
+      WaypointID waypointIndex = result->addOrFindWaypoint(waypoint);
+      if (!waypointIndex) {
+        Serial.println("WARNING: maximum number of GPX waypoints reached; skipping extra rtept");
+        continue;
+      }
+      if (!result->addRoutePoint(route, waypointIndex)) {
+        Serial.println("WARNING: maximum number of GPX route point refs reached; skipping rtept");
         continue;
       }
     } else if (tagEqualsIgnoreCase(key, "name")) {
