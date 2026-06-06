@@ -118,6 +118,12 @@
     <div class="checklist-item checklist-item-with-details">
       <button class="task-icon task-icon-empty" id="self-test-task-icon" type="button" aria-label="Toggle verification test details" disabled></button>
       <span>Verification tests</span>
+      <span class="verification-controls" id="verification-controls">
+        <button class="verification-control verification-control-start" id="verification-start" type="button" hidden>Start Test</button>
+        <button class="verification-control verification-control-stop" id="verification-stop" type="button" hidden>Stop Test</button>
+        <button class="verification-control verification-control-retry" id="verification-retry" type="button" hidden>Retry Tests</button>
+        <button class="verification-control verification-control-format" id="verification-format" type="button" hidden>Format SD &amp; Retry</button>
+      </span>
       <div class="checklist-details verification-test-details" id="self-test-details" hidden></div>
     </div>
 
@@ -159,6 +165,14 @@
   const discardButton = document.querySelector("#discard-session");
   const flashTaskIcon = document.querySelector("#flash-task-icon");
   const flashConsole = document.querySelector("#flash-console");
+  const verificationButtons = {
+    start: document.querySelector("#verification-start"),
+    stop: document.querySelector("#verification-stop"),
+    retry: document.querySelector("#verification-retry"),
+    format: document.querySelector("#verification-format"),
+  };
+  const verificationUrl = (action) =>
+    `/api/setup/sessions/${encodeURIComponent(macAddress)}/verification/${action}`;
   const discoveryDetailsGroup = document.querySelector("#discovery-details-group");
   const discoveryManualIpForm = document.querySelector("#discovery-manual-ip-form");
   const discoveryManualIp = document.querySelector("#discovery-manual-ip");
@@ -217,7 +231,7 @@
   function setTaskIcon(icon, status) {
     icon.className = "task-icon";
     icon.disabled = status === "idle";
-    if (status === "running") {
+    if (status === "running" || status === "formatting") {
       icon.classList.add("task-icon-running");
     } else if (status === "success") {
       icon.classList.add("task-icon-success");
@@ -278,6 +292,7 @@
     setTaskIcon(control.icon, task.status);
     if (name === "interactive_self_test") {
       renderVerificationTests(control.details, task);
+      updateVerificationControls(task);
       return;
     }
     setDetails(control.details, task.details, task.status, control.detailsContainer || control.details);
@@ -389,6 +404,41 @@
   flashTaskIcon.addEventListener("click", () => {
     flashConsole.hidden = !flashConsole.hidden;
   });
+
+  function updateVerificationControls(task) {
+    const status = (task && task.status) || "idle";
+    const sdFormatAvailable = !!(task && task.sd_format_available);
+    // Start: paused awaiting operator. Stop: a pass is running. Retry: after a failure.
+    // Format SD & Retry: offered when the SD card test specifically failed. No controls while
+    // an on-device format is in progress ("formatting").
+    verificationButtons.start.hidden = status !== "awaiting";
+    verificationButtons.stop.hidden = status !== "running";
+    verificationButtons.retry.hidden = status !== "failure";
+    verificationButtons.format.hidden = !(status === "failure" && sdFormatAvailable);
+  }
+
+  async function sendVerificationCommand(action, button) {
+    button.disabled = true;
+    try {
+      await fetch(verificationUrl(action), { method: "POST" });
+      await refreshSession();
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  verificationButtons.start.addEventListener("click", () =>
+    sendVerificationCommand("start", verificationButtons.start)
+  );
+  verificationButtons.stop.addEventListener("click", () =>
+    sendVerificationCommand("stop", verificationButtons.stop)
+  );
+  verificationButtons.retry.addEventListener("click", () =>
+    sendVerificationCommand("retry", verificationButtons.retry)
+  );
+  verificationButtons.format.addEventListener("click", () =>
+    sendVerificationCommand("format", verificationButtons.format)
+  );
 
   Object.values(controls).forEach((control) => {
     control.icon.addEventListener("click", () => {

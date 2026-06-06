@@ -16,6 +16,7 @@ from factory_interface.commissioning_sessions import (
     get_commissioning_session,
     list_commissioning_sessions,
     manually_rediscover_session_device,
+    submit_verification_command,
 )
 from factory_interface.commissioning_tasks import (
     cancel_flash_task,
@@ -501,6 +502,33 @@ async def cancel_setup_session(mac_address: str) -> JSONResponse:
     if session is None:
         return JSONResponse({"detail": "Commissioning session not found."}, status_code=404)
     return JSONResponse(session.snapshot())
+
+
+async def _submit_verification_command(mac_address: str, command: str) -> JSONResponse:
+    session = submit_verification_command(mac_address, command)
+    if session is None:
+        return JSONResponse({"detail": "Commissioning session not found."}, status_code=404)
+    return JSONResponse(session.snapshot())
+
+
+@app.post("/api/setup/sessions/{mac_address}/verification/start", response_class=JSONResponse)
+async def start_session_verification(mac_address: str) -> JSONResponse:
+    return await _submit_verification_command(mac_address, "run")
+
+
+@app.post("/api/setup/sessions/{mac_address}/verification/retry", response_class=JSONResponse)
+async def retry_session_verification(mac_address: str) -> JSONResponse:
+    return await _submit_verification_command(mac_address, "run")
+
+
+@app.post("/api/setup/sessions/{mac_address}/verification/stop", response_class=JSONResponse)
+async def stop_session_verification(mac_address: str) -> JSONResponse:
+    return await _submit_verification_command(mac_address, "stop")
+
+
+@app.post("/api/setup/sessions/{mac_address}/verification/format", response_class=JSONResponse)
+async def format_session_sd_card(mac_address: str) -> JSONResponse:
+    return await _submit_verification_command(mac_address, "format")
 
 
 @app.delete("/api/setup/sessions/{mac_address}", response_class=JSONResponse)

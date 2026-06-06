@@ -603,6 +603,10 @@ SelfTest::Status SpeakerInteractiveTest::update() {
 
 void SelfTest::begin(bool markAsProductionChecked) {
   if (markAsProductionChecked) {
+    // Authorize SD card reformatting for this session's production test. Set before the
+    // settings.productionTest early-return so re-running a production test on an already-tested
+    // unit still permits formatting. Manual/home self tests use begin(false) and never set this.
+    allow_sd_reformat_ = true;
     if (settings.productionTest) {
       // do nothing, we've already checked the production test
       return;
@@ -641,6 +645,18 @@ SelfTest_PageCommissioningConfirmation selfTest_pageCommissioningConfirmation;
 bool SelfTest::update() {
   bool updateNeeded = true;  // assume we'll need to call this again
   if (status == Status::Running) {
+    // During a production test, a failed SD card test stops the remaining tests so the operator
+    // can reformat the card and retry, rather than working through the rest (including the
+    // interactive tests) first. Marking both phases complete lets the normal finalize path below
+    // tally the result as a failure.
+    if (allow_sd_reformat_ && results.sdCard == Status::Fail &&
+        (statusAutoTests != Status::Complete || statusInteractiveTests != Status::Complete)) {
+      selfTestInfo(
+          "`Test=SD_CARD`,    `Result=FAIL`, `Message=Stopping remaining tests for reformat`");
+      statusAutoTests = Status::Complete;
+      statusInteractiveTests = Status::Complete;
+    }
+
     if (statusAutoTests == Status::Running || statusAutoTests == Status::Unknown) {
       statusAutoTests = runAutoTests(false);  // false = keep file open
     } else if (statusInteractiveTests == Status::Running ||

@@ -95,6 +95,30 @@ namespace {
     return json;
   }
 
+  const char* sdCardFormatStateName(SDCard::FormatState state) {
+    switch (state) {
+      case SDCard::FormatState::Running:
+        return "running";
+      case SDCard::FormatState::Success:
+        return "success";
+      case SDCard::FormatState::Failed:
+        return "failure";
+      case SDCard::FormatState::Idle:
+      default:
+        return "idle";
+    }
+  }
+
+  String sdCardFormatStatusJson() {
+    // format messages are fixed literals with no characters needing JSON escaping
+    String json = "{\"status\":\"";
+    json += sdCardFormatStateName(sdcard.formatState());
+    json += "\",\"detail\":\"";
+    json += sdcard.formatMessage();
+    json += "\"}";
+    return json;
+  }
+
   String latestSelfTestDetailsFileName() {
     String current_file_name = selfTest.resultsFileName();
     if (!current_file_name.isEmpty() && SD_MMC.exists(current_file_name)) {
@@ -482,6 +506,24 @@ void webserver_setup() {
 
   server.on("/self-test", HTTP_GET,
             []() { server.send(200, "application/json", selfTestSnapshotJson()); });
+
+  server.on("/sd-card/format", HTTP_POST, []() {
+    // Only allow formatting during a production self test so we never wipe an end user's card.
+    if (!selfTest.allowReformattingOfSDcard()) {
+      server.send(409, "application/json",
+                  "{\"detail\":\"SD format is only allowed during a production self test.\"}");
+      return;
+    }
+    if (!SDCard::isCardPresent()) {
+      server.send(409, "application/json", "{\"detail\":\"No SD card detected.\"}");
+      return;
+    }
+    sdcard.requestFormat();
+    server.send(200, "application/json", sdCardFormatStatusJson());
+  });
+
+  server.on("/sd-card/format", HTTP_GET,
+            []() { server.send(200, "application/json", sdCardFormatStatusJson()); });
 
   server.on("/commissioning/complete", HTTP_POST, []() {
     selfTest.confirmCommissioningComplete();
