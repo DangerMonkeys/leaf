@@ -82,9 +82,7 @@ bool Navigator::addRoutePoint(Route* route, WaypointID waypointIndex) {
   return true;
 }
 
-const Waypoint& Navigator::waypoint(WaypointID pointIndex) const {
-  return waypoints[pointIndex];
-}
+const Waypoint& Navigator::waypoint(WaypointID pointIndex) const { return waypoints[pointIndex]; }
 
 const Waypoint& Navigator::routePoint(RouteID routeIndex, RouteIndex pointIndex) const {
   return waypoint(routeWaypointIndexes[routes[routeIndex].firstRoutePointIndex + pointIndex - 1]);
