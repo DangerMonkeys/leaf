@@ -61,7 +61,13 @@ bool GPXParser::parse(Navigator* result) {
         return false;
       }
       Waypoint waypoint;
-      if (readWaypoint(&waypoint, "wpt")) {
+      bool foundCoordinates = false;
+      if (readWaypoint(&waypoint, "wpt", false, &foundCoordinates)) {
+        if (!foundCoordinates) {
+          Serial.print("WARNING: GPX waypoint missing coordinates; skipping wpt: ");
+          Serial.println(waypoint.name);
+          continue;
+        }
         if (!result->addOrFindWaypoint(waypoint)) {
           Serial.println("WARNING: maximum number of GPX points reached; skipping extra wpt");
           continue;
@@ -198,10 +204,13 @@ char GPXParser::skipWhitespace() {
   return c;
 }
 
-bool GPXParser::readWaypoint(Waypoint* waypoint, const char* tag_name) {
+bool GPXParser::readWaypoint(Waypoint* waypoint, const char* tag_name, bool requireCoordinates,
+                             bool* foundCoordinates) {
   char key[MAX_VALUE_LENGTH + 1];
   char value[MAX_VALUE_LENGTH + 1];
   waypoint->name = "";
+  waypoint->lat = 0;
+  waypoint->lon = 0;
   waypoint->ele = 0;
 
   // Read attributes of opening tag (until tag is closed)
@@ -238,11 +247,14 @@ bool GPXParser::readWaypoint(Waypoint* waypoint, const char* tag_name) {
       found_lon = true;
     }
   }
-  if (!found_lat) {
+  if (foundCoordinates) {
+    *foundCoordinates = found_lat && found_lon;
+  }
+  if (requireCoordinates && !found_lat) {
     _error = "couldn't find lat attribute in waypoint tag";
     return false;
   }
-  if (!found_lon) {
+  if (requireCoordinates && !found_lon) {
     _error = "couldn't find lon attribute in waypoint tag";
     return false;
   }
@@ -456,7 +468,8 @@ bool GPXParser::readRoute(Navigator* result, Route* route, bool storePoints) {
     } else if (tagEqualsIgnoreCase(key, "rtept")) {
       // This is an opening route point tag
       Waypoint waypoint;
-      if (!readWaypoint(&waypoint, "rtept")) {
+      bool foundCoordinates = false;
+      if (!readWaypoint(&waypoint, "rtept", false, &foundCoordinates)) {
         _error = " while reading rtept";
         return false;
       }
@@ -467,7 +480,15 @@ bool GPXParser::readRoute(Navigator* result, Route* route, bool storePoints) {
         Serial.println("WARNING: maximum number of GPX route point refs reached; skipping rtept");
         continue;
       }
-      WaypointID waypointIndex = result->addOrFindWaypoint(waypoint);
+      WaypointID waypointIndex = result->findWaypointByName(waypoint.name);
+      if (!waypointIndex && !foundCoordinates) {
+        Serial.print("WARNING: GPX route point without coordinates did not match waypoint: ");
+        Serial.println(waypoint.name);
+        continue;
+      }
+      if (!waypointIndex) {
+        waypointIndex = result->addOrFindWaypoint(waypoint);
+      }
       if (!waypointIndex) {
         Serial.println("WARNING: maximum number of GPX waypoints reached; skipping extra rtept");
         continue;

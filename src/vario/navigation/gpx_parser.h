@@ -55,7 +55,8 @@ class GPXParser {
 
   /// @brief Read the data from a wpt or rtept tag into the provided waypoint
   /// @details Must start inside the wpt/rtept tag just after the tag name
-  bool readWaypoint(Waypoint* waypoint, const char* tag_name);
+  bool readWaypoint(Waypoint* waypoint, const char* tag_name, bool requireCoordinates,
+                    bool* foundCoordinates = nullptr);
 
   /// @brief  Read the key and value of an attribute
   /// @details Routine may start at whitespace before the attribute
