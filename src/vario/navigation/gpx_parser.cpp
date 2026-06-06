@@ -4,6 +4,9 @@
 
 // The maximum length of a value in a GPX (tag name, latitude, longitude, elevation, etc)
 #define MAX_VALUE_LENGTH (64)
+// Safety fuse: the waypoint/route pools are small, so a GPX this large is almost certainly
+// malformed or far beyond what Leaf can use. Abort instead of delaying boot for a long scan.
+#define MAX_GPX_PARSE_CHARS (262144UL)
 
 inline bool isWhitespace(char c) { return c == ' ' || c == '\t' || c == '\r' || c == '\n'; }
 
@@ -98,14 +101,23 @@ bool GPXParser::parse(Navigator* result) {
     }
   }
 
-  return true;
+  return !_readAborted;
 }
 
 char GPXParser::getNextChar() {
+  if (_readAborted) {
+    return 0;
+  }
+  if (_charsReadTotal >= MAX_GPX_PARSE_CHARS) {
+    _error = "GPX parse limit exceeded";
+    _readAborted = true;
+    return 0;
+  }
   if (!_file_reader->contentRemaining()) {
     return 0;
   }
   char c = _file_reader->nextChar();
+  _charsReadTotal++;
   if ((++_charsReadSinceYield & 0xFF) == 0) {
     yield();
   }

@@ -22,6 +22,8 @@ class GPXParser {
     _line = 1;
     _col = 1;
     _charsReadSinceYield = 0;
+    _charsReadTotal = 0;
+    _readAborted = false;
     _lastTagSelfClosing = false;
     _error = "";
   }
@@ -80,6 +82,8 @@ class GPXParser {
   uint16_t _line;
   uint16_t _col;
   uint16_t _charsReadSinceYield;
+  uint32_t _charsReadTotal;
+  bool _readAborted;
   bool _lastTagSelfClosing;
   String _error;
 };
