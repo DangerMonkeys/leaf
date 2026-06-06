@@ -9,8 +9,9 @@
 
 // Waypoint definition and memory allocation
 #define waypointRadius 150  // meters radius to count as "reaching/crossing" a waypoint
-#define maxRoutes 5
-#define maxNavPoints 75
+#define maxRoutes 10
+#define maxNavPoints 100
+#define maxRoutePointRefs 75
 
 struct Waypoint {
   String name;
@@ -22,7 +23,7 @@ struct Waypoint {
 // Route definition and memory allocation
 struct Route {
   String name;
-  uint8_t firstPointIndex = 0;
+  uint8_t firstRoutePointIndex = 0;
   uint8_t totalPoints = 0;
 };
 
@@ -41,14 +42,16 @@ class Navigator {
 
   void clear();
   bool addWaypoint(const Waypoint& waypoint);
-  bool addRoutePoint(Route* route, const Waypoint& waypoint);
+  WaypointID addOrFindWaypoint(const Waypoint& waypoint);
+  WaypointID findWaypointByName(const String& name) const;
+  bool addRoutePoint(Route* route, WaypointID waypointIndex);
   const Waypoint& waypoint(WaypointID pointIndex) const;
   const Waypoint& routePoint(RouteID routeIndex, RouteIndex pointIndex) const;
 
-  Waypoint points[maxNavPoints + 1];
-  uint8_t totalPoints = 0;
-  uint8_t waypointPointIndexes[maxNavPoints + 1];
+  Waypoint waypoints[maxNavPoints + 1];
   uint8_t totalWaypoints = 0;
+  WaypointID routeWaypointIndexes[maxRoutePointRefs + 1];
+  uint8_t totalRoutePointRefs = 0;
   Route routes[maxRoutes + 1];
   uint8_t totalRoutes = 0;
 
