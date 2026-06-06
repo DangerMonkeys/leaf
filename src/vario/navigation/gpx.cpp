@@ -34,38 +34,58 @@ void Navigator::init() {
 }
 
 void Navigator::clear() {
-  totalPoints = 0;
   totalWaypoints = 0;
+  totalRoutePointRefs = 0;
   totalRoutes = 0;
 }
 
 bool Navigator::addWaypoint(const Waypoint& waypoint) {
-  if (totalPoints >= maxNavPoints || totalWaypoints >= maxNavPoints) {
+  if (totalWaypoints >= maxNavPoints) {
     return false;
   }
-  points[++totalPoints] = waypoint;
-  waypointPointIndexes[++totalWaypoints] = totalPoints;
+  waypoints[++totalWaypoints] = waypoint;
   return true;
 }
 
-bool Navigator::addRoutePoint(Route* route, const Waypoint& waypoint) {
-  if (totalPoints >= maxNavPoints) {
+WaypointID Navigator::findWaypointByName(const String& name) const {
+  if (name == "") {
+    return WaypointID::None;
+  }
+  for (uint8_t i = 1; i <= totalWaypoints; i++) {
+    if (waypoints[i].name == name) {
+      return WaypointID(i);
+    }
+  }
+  return WaypointID::None;
+}
+
+WaypointID Navigator::addOrFindWaypoint(const Waypoint& waypoint) {
+  WaypointID existingIndex = findWaypointByName(waypoint.name);
+  if (existingIndex) {
+    return existingIndex;
+  }
+  if (!addWaypoint(waypoint)) {
+    return WaypointID::None;
+  }
+  return WaypointID(totalWaypoints);
+}
+
+bool Navigator::addRoutePoint(Route* route, WaypointID waypointIndex) {
+  if (!waypointIndex || totalRoutePointRefs >= maxRoutePointRefs) {
     return false;
   }
-  points[++totalPoints] = waypoint;
   if (route->totalPoints == 0) {
-    route->firstPointIndex = totalPoints;
+    route->firstRoutePointIndex = totalRoutePointRefs + 1;
   }
+  routeWaypointIndexes[++totalRoutePointRefs] = waypointIndex;
   route->totalPoints++;
   return true;
 }
 
-const Waypoint& Navigator::waypoint(WaypointID pointIndex) const {
-  return points[waypointPointIndexes[pointIndex]];
-}
+const Waypoint& Navigator::waypoint(WaypointID pointIndex) const { return waypoints[pointIndex]; }
 
 const Waypoint& Navigator::routePoint(RouteID routeIndex, RouteIndex pointIndex) const {
-  return points[routes[routeIndex].firstPointIndex + pointIndex - 1];
+  return waypoint(routeWaypointIndexes[routes[routeIndex].firstRoutePointIndex + pointIndex - 1]);
 }
 
 // update nav data every second
@@ -282,9 +302,6 @@ bool gpx_readFile(fs::FS& fs, String fileName) {
   if (success) {
     Serial.println("gpx_readFile was successful:");
     Serial.print("  ");
-    Serial.print(parse_result.totalPoints);
-    Serial.println(" total points");
-    Serial.print("  ");
     Serial.print(parse_result.totalWaypoints);
     Serial.println(" waypoints");
     for (uint8_t wp = 1; wp <= parse_result.totalWaypoints; wp++) {
@@ -321,8 +338,6 @@ bool gpx_readFile(fs::FS& fs, String fileName) {
     }
     navigator = parse_result;
     Serial.print("Navigator loaded ");
-    Serial.print(navigator.totalPoints);
-    Serial.print(" total points, ");
     Serial.print(navigator.totalWaypoints);
     Serial.print(" waypoints and ");
     Serial.print(navigator.totalRoutes);
@@ -345,29 +360,29 @@ void Navigator::loadRoutes() {
   totalRoutes = 4;
 
   routes[1].name = "R: TheCircuit";
-  addRoutePoint(&routes[1], waypoint(WaypointID(1)));
-  addRoutePoint(&routes[1], waypoint(WaypointID(7)));
-  addRoutePoint(&routes[1], waypoint(WaypointID(8)));
-  addRoutePoint(&routes[1], waypoint(WaypointID(1)));
-  addRoutePoint(&routes[1], waypoint(WaypointID(2)));
+  addRoutePoint(&routes[1], WaypointID(1));
+  addRoutePoint(&routes[1], WaypointID(7));
+  addRoutePoint(&routes[1], WaypointID(8));
+  addRoutePoint(&routes[1], WaypointID(1));
+  addRoutePoint(&routes[1], WaypointID(2));
 
   routes[2].name = "R: Scenic";
-  addRoutePoint(&routes[2], waypoint(WaypointID(1)));
-  addRoutePoint(&routes[2], waypoint(WaypointID(3)));
-  addRoutePoint(&routes[2], waypoint(WaypointID(4)));
-  addRoutePoint(&routes[2], waypoint(WaypointID(5)));
-  addRoutePoint(&routes[2], waypoint(WaypointID(2)));
+  addRoutePoint(&routes[2], WaypointID(1));
+  addRoutePoint(&routes[2], WaypointID(3));
+  addRoutePoint(&routes[2], WaypointID(4));
+  addRoutePoint(&routes[2], WaypointID(5));
+  addRoutePoint(&routes[2], WaypointID(2));
 
   routes[3].name = "R: Downhill";
-  addRoutePoint(&routes[3], waypoint(WaypointID(1)));
-  addRoutePoint(&routes[3], waypoint(WaypointID(5)));
-  addRoutePoint(&routes[3], waypoint(WaypointID(2)));
+  addRoutePoint(&routes[3], WaypointID(1));
+  addRoutePoint(&routes[3], WaypointID(5));
+  addRoutePoint(&routes[3], WaypointID(2));
 
   routes[4].name = "R: MiniTri";
-  addRoutePoint(&routes[4], waypoint(WaypointID(1)));
-  addRoutePoint(&routes[4], waypoint(WaypointID(4)));
-  addRoutePoint(&routes[4], waypoint(WaypointID(5)));
-  addRoutePoint(&routes[4], waypoint(WaypointID(1)));
+  addRoutePoint(&routes[4], WaypointID(1));
+  addRoutePoint(&routes[4], WaypointID(4));
+  addRoutePoint(&routes[4], WaypointID(5));
+  addRoutePoint(&routes[4], WaypointID(1));
 }
 
 void Navigator::loadWaypoints() {

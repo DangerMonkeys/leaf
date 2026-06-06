@@ -22,6 +22,8 @@ class GPXParser {
     _line = 1;
     _col = 1;
     _charsReadSinceYield = 0;
+    _charsReadTotal = 0;
+    _readAborted = false;
     _lastTagSelfClosing = false;
     _error = "";
   }
@@ -54,8 +56,11 @@ class GPXParser {
   char skipWhitespace();
 
   /// @brief Read the data from a wpt or rtept tag into the provided waypoint
-  /// @details Must start inside the wpt/rtept tag just after the tag name
-  bool readWaypoint(Waypoint* waypoint, const char* tag_name);
+  /// @details Usually starts inside the wpt/rtept tag just after the tag name. If the caller
+  /// already consumed the end of the opening tag, set openingTagClosed to true.
+  bool readWaypoint(Waypoint* waypoint, const char* tag_name, bool requireCoordinates,
+                    bool* foundCoordinates = nullptr, bool openingTagClosed = false,
+                    bool openingTagSelfClosing = false);
 
   /// @brief  Read the key and value of an attribute
   /// @details Routine may start at whitespace before the attribute
@@ -77,6 +82,8 @@ class GPXParser {
   uint16_t _line;
   uint16_t _col;
   uint16_t _charsReadSinceYield;
+  uint32_t _charsReadTotal;
+  bool _readAborted;
   bool _lastTagSelfClosing;
   String _error;
 };
