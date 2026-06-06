@@ -56,13 +56,10 @@ bool GPXParser::parse(Navigator* result) {
       return false;
     }
     if (tagEqualsIgnoreCase(value_buffer, "wpt")) {
-      if (name_result == ReadTagNameResult::TagClosed) {
-        _error = "missing lat and lon attributes for wpt tag";
-        return false;
-      }
       Waypoint waypoint;
       bool foundCoordinates = false;
-      if (readWaypoint(&waypoint, "wpt", false, &foundCoordinates)) {
+      if (readWaypoint(&waypoint, "wpt", false, &foundCoordinates,
+                       name_result == ReadTagNameResult::TagClosed, _lastTagSelfClosing)) {
         if (!foundCoordinates) {
           Serial.print("WARNING: GPX waypoint missing coordinates; skipping wpt: ");
           Serial.println(waypoint.name);
@@ -205,7 +202,8 @@ char GPXParser::skipWhitespace() {
 }
 
 bool GPXParser::readWaypoint(Waypoint* waypoint, const char* tag_name, bool requireCoordinates,
-                             bool* foundCoordinates) {
+                             bool* foundCoordinates, bool openingTagClosed,
+                             bool openingTagSelfClosing) {
   char key[MAX_VALUE_LENGTH + 1];
   char value[MAX_VALUE_LENGTH + 1];
   waypoint->name = "";
@@ -216,35 +214,37 @@ bool GPXParser::readWaypoint(Waypoint* waypoint, const char* tag_name, bool requ
   // Read attributes of opening tag (until tag is closed)
   bool found_lat = false;
   bool found_lon = false;
-  bool self_closing = false;
-  while (true) {
-    char c = skipWhitespace();
-    if (c == 0) {
-      _error = "reached end of file while looking for attributes in waypoint tag";
-      return false;
-    } else if (c == '>') {
-      break;
-    } else if (c == '/') {
-      c = skipWhitespace();
-      if (c != '>') {
-        _error = "unexpected character after self-closing marker in waypoint tag";
+  bool self_closing = openingTagSelfClosing;
+  if (!openingTagClosed) {
+    while (true) {
+      char c = skipWhitespace();
+      if (c == 0) {
+        _error = "reached end of file while looking for attributes in waypoint tag";
+        return false;
+      } else if (c == '>') {
+        break;
+      } else if (c == '/') {
+        c = skipWhitespace();
+        if (c != '>') {
+          _error = "unexpected character after self-closing marker in waypoint tag";
+          return false;
+        }
+        self_closing = true;
+        break;
+      }
+      key[0] = c;
+      bool attribute_success = readAttribute(key + 1, value);
+      if (!attribute_success) {
+        _error += " while reading attribute in waypoint tag";
         return false;
       }
-      self_closing = true;
-      break;
-    }
-    key[0] = c;
-    bool attribute_success = readAttribute(key + 1, value);
-    if (!attribute_success) {
-      _error += " while reading attribute in waypoint tag";
-      return false;
-    }
-    if (equalsIgnoreCase(key, "lat")) {
-      waypoint->lat = atof(value);
-      found_lat = true;
-    } else if (equalsIgnoreCase(key, "lon")) {
-      waypoint->lon = atof(value);
-      found_lon = true;
+      if (equalsIgnoreCase(key, "lat")) {
+        waypoint->lat = atof(value);
+        found_lat = true;
+      } else if (equalsIgnoreCase(key, "lon")) {
+        waypoint->lon = atof(value);
+        found_lon = true;
+      }
     }
   }
   if (foundCoordinates) {
@@ -469,7 +469,8 @@ bool GPXParser::readRoute(Navigator* result, Route* route, bool storePoints) {
       // This is an opening route point tag
       Waypoint waypoint;
       bool foundCoordinates = false;
-      if (!readWaypoint(&waypoint, "rtept", false, &foundCoordinates)) {
+      if (!readWaypoint(&waypoint, "rtept", false, &foundCoordinates,
+                        name_outcome == ReadTagNameResult::TagClosed, _lastTagSelfClosing)) {
         _error = " while reading rtept";
         return false;
       }
