@@ -28,6 +28,7 @@ class AHT20 : public IPollable, IMessageSource, private StateAssertMixin<AHT20> 
     WaitingForInitialMeasurement,
     Measuring,
     Idle,
+    Disabled,
   };
 
   State state() const { return state_; }
@@ -40,6 +41,7 @@ class AHT20 : public IPollable, IMessageSource, private StateAssertMixin<AHT20> 
   void startFirstMeasurement();
   void maybeTriggerMeasurement();
   void completeMeasurement();
+  void disable(const char* reason);
 
   // Checks if the AHT20 is connected to the I2C bus
   bool isConnected();

@@ -23,7 +23,8 @@ void AHT20::beginInit() {
   assertState("AHT20::beginInit", State::Uninitialized);
 
   if (!isConnected()) {
-    fatalError("AHT20 temp humidity sensor not found (isConnected is false)");
+    disable("AHT20 temp humidity sensor not found (isConnected is false)");
+    return;
   }
 
   if (DEBUG_TEMPRH) Serial.println("Temp_RH - AHT20 Temp Humidity sensor FOUND!");
@@ -64,9 +65,10 @@ void AHT20::waitForCalMeasurement() {
     // This calibration sequence is not completely proven. It's not clear how and when the cal bit
     // clears This seems to work but it's not easily testable
     if (!isCalibrated()) {
-      fatalError(
+      disable(
           "AHT20 initialization failure: device indicates not calibrated after calibration and "
           "initial measurement");
+      return;
     }
     startFirstMeasurement();
     return;
@@ -74,7 +76,7 @@ void AHT20::waitForCalMeasurement() {
 
   if (millis() - tLastAction_ > 175) {
     // Give up after 100ms
-    fatalError("AHT20 initialization failure: initial measurement did not complete after 175ms");
+    disable("AHT20 initialization failure: initial measurement did not complete after 175ms");
   }
 }
 
@@ -86,7 +88,7 @@ void AHT20::startFirstMeasurement() {
   dtMeasurement_ = 100;  // Wait 100ms for first measurement
   triggerMeasurement(State::WaitingForInitialMeasurement, State::Uninitialized);
   if (state_ == State::Uninitialized) {
-    fatalError("AHT20 first measurement could not be started");
+    disable("AHT20 first measurement could not be started");
   }
 }
 
@@ -105,6 +107,11 @@ void AHT20::update() {
     maybeTriggerMeasurement();
   } else if (state_ == State::Measuring) {
     completeMeasurement();
+  } else if (state_ == State::Disabled) {
+    etl::imessage_bus* bus = bus_;
+    if (bus) {
+      bus->receive(AmbientUpdate(0.0f, 0.0f));
+    }
   } else {
     fatalError("AHT20::update with unsupported state %s (%u)", nameOf(state_).c_str(), state_);
   }
@@ -134,7 +141,7 @@ void AHT20::completeMeasurement() {
 
   SensorData sensorData;
   if (!readData(sensorData)) {
-    Serial.println("Temp_RH did not successfully readData");
+    disable("AHT20 did not successfully readData");
     return;
   }
   float temperature = ((float)sensorData.temperature / 1048576) * 200 - 50;
@@ -175,6 +182,15 @@ bool AHT20::softReset() {
   Wire.write(sfe_aht20_reg_reset);
   if (Wire.endTransmission() == 0) return true;
   return false;
+}
+
+void AHT20::disable(const char* reason) {
+  Serial.println(reason);
+  state_ = State::Disabled;
+  etl::imessage_bus* bus = bus_;
+  if (bus) {
+    bus->receive(AmbientUpdate(0.0f, 0.0f));
+  }
 }
 
 bool AHT20::readData(SensorData& sensorData) {
