@@ -46,9 +46,6 @@ void SDCard::init(void) {
 }
 
 void SDCard::update() {
-  // Don't touch the SD bus from the main loop while a background format is in progress.
-  if (format_state_.load() == FormatState::Running) return;
-
   bool cardPresentNow = isCardPresent();
   // if we have a card when we didn't before...
   if (cardPresentNow && !mounted_) {
@@ -139,27 +136,15 @@ bool SDCard::mount() {
 }
 
 void SDCard::requestFormat() {
-  // Only start a format if one isn't already running. compare_exchange avoids a TOCTOU race where
-  // two near-simultaneous requests both spawn a task and both call SD_MMC.end().
+  // Formatting is a rare factory recovery path. Run it synchronously so the normal SD update and
+  // mass-storage paths do not need special "format in progress" behavior.
   FormatState expected = format_state_.load();
   do {
     if (expected == FormatState::Running) return;  // already formatting
   } while (!format_state_.compare_exchange_weak(expected, FormatState::Running));
 
   format_message_.store("SD card format in progress...");
-
-  if (xTaskCreate(formatTaskEntry, "SDFormat", 8192, this, 1, &format_task_) != pdPASS) {
-    format_task_ = nullptr;
-    format_state_.store(FormatState::Failed);
-    format_message_.store("Could not start the SD card format task.");
-  }
-}
-
-void SDCard::formatTaskEntry(void* arg) {
-  SDCard* self = static_cast<SDCard*>(arg);
-  self->runFormat();
-  self->format_task_ = nullptr;
-  vTaskDelete(nullptr);
+  runFormat();
 }
 
 void SDCard::runFormat() {
