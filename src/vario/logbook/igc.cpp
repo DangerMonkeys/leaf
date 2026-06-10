@@ -97,6 +97,7 @@ bool Igc::startFlight() {
   gps.getUtcDateTime(cal);
   strftime(logger.date, sizeof(logger.date), "%d%m%y", &cal);
 
+  logger.fix_accuracy = 2;  // Quectel LC86G spec: 2.0m CEP horizontal accuracy
   logger.writeHeader();
 
   // Log the I record (saying we're going to log the, now manditory, FXA record)
