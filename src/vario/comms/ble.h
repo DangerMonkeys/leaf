@@ -33,6 +33,9 @@ class BLE : public MessageSink<BLE, GpsMessage, FanetPacket> {
       : pServer(nullptr),
         pService(nullptr),
         pCharacteristic(nullptr),
+        pSettingsService(nullptr),
+        pSettingsCmdChar(nullptr),
+        pSettingsRspChar(nullptr),
         pAdvertising(nullptr),
         started(false) {}
 
@@ -41,6 +44,9 @@ class BLE : public MessageSink<BLE, GpsMessage, FanetPacket> {
   NimBLEServer* pServer;
   NimBLEService* pService;
   NimBLECharacteristic* pCharacteristic;
+  NimBLEService* pSettingsService;
+  NimBLECharacteristic* pSettingsCmdChar;  // WRITE  — client sends commands
+  NimBLECharacteristic* pSettingsRspChar;  // NOTIFY — device sends responses
   NimBLEAdvertising* pAdvertising;
 
   // Queue for handling messages into this task from either buffer or periodic wakeup events.

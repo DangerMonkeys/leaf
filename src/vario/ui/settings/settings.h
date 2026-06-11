@@ -2,6 +2,7 @@
 #define settings_h
 
 #include <Arduino.h>
+#include <ArduinoJson.h>
 #include <functional>
 
 #include "comms/fanet_radio_types.h"
@@ -145,6 +146,13 @@ setting | samples | time avg
   bool log_autoStop;
   SettingLogFormat log_format;
 
+  // IGC Pilot & Glider Info
+  String igc_pilotName;         // HFPLT
+  String igc_gliderType;        // HFGTY
+  String igc_gliderId;          // HFGID (registration / serial)
+  String igc_competitionId;     // HFCID
+  String igc_competitionClass;  // HFCCL
+
   // System Settings
   int16_t system_timeZone;
   int8_t system_volume;
@@ -205,6 +213,10 @@ setting | samples | time avg
   void factoryResetVario(void);
   void totallyEraseNVS(void);
   String getMacAddress(void);
+
+  // BLE / web serialization
+  String toJson() const;
+  bool applyFromJson(const JsonVariantConst& doc);
 
   // adjust-settings functions
   void adjustContrast(Button dir);

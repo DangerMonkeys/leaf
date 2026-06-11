@@ -144,6 +144,13 @@ void Settings::loadDefaults() {
   log_autoStop = DEF_AUTO_STOP;
   log_format = DEF_LOG_FORMAT;
 
+  // IGC Pilot & Glider Info
+  igc_pilotName = "";
+  igc_gliderType = "";
+  igc_gliderId = "";
+  igc_competitionId = "";
+  igc_competitionClass = "";
+
   // System Settings
   system_timeZone = DEF_TIME_ZONE;
   system_volume = DEF_VOLUME_SYSTEM;
@@ -256,6 +263,13 @@ void Settings::retrieve() {
   fanet_region = (FanetRadioRegion)leafPrefs.getUInt("FANET_REGION");
   fanet_address = leafPrefs.getString("FANET_ADDRESS");
 
+  // IGC Pilot & Glider Info
+  igc_pilotName        = leafPrefs.getString("IGC_PILOT", "");
+  igc_gliderType       = leafPrefs.getString("IGC_GLIDER_TYPE", "");
+  igc_gliderId         = leafPrefs.getString("IGC_GLIDER_ID", "");
+  igc_competitionId    = leafPrefs.getString("IGC_COMP_ID", "");
+  igc_competitionClass = leafPrefs.getString("IGC_COMP_CLASS", "");
+
   // Unit Values
   units_climb = leafPrefs.getBool("UNITS_climb");
   units_alt = leafPrefs.getBool("UNITS_alt");
@@ -327,6 +341,12 @@ void Settings::save() {
   // Fanet Settings
   leafPrefs.putUInt("FANET_REGION", (uint32_t)fanet_region);
   leafPrefs.putString("FANET_ADDRESS", fanet_address);
+  // IGC Pilot & Glider Info
+  leafPrefs.putString("IGC_PILOT",       igc_pilotName);
+  leafPrefs.putString("IGC_GLIDER_TYPE", igc_gliderType);
+  leafPrefs.putString("IGC_GLIDER_ID",   igc_gliderId);
+  leafPrefs.putString("IGC_COMP_ID",     igc_competitionId);
+  leafPrefs.putString("IGC_COMP_CLASS",  igc_competitionClass);
   // Unit Values
   leafPrefs.putBool("UNITS_climb", units_climb);
   leafPrefs.putBool("UNITS_alt", units_alt);
@@ -649,6 +669,204 @@ void Settings::toggleBoolOnOff(bool* switchSetting) {
     speaker.playSound(fx::enter);  // if we turned it on
   else
     speaker.playSound(fx::cancel);  // if we turned it off
+}
+
+String Settings::toJson() const {
+  JsonDocument doc;
+
+  // Vario
+  doc["vario_sinkAlarm"]      = vario_sinkAlarm;
+  doc["vario_sinkAlarm_units"]= vario_sinkAlarm_units;
+  doc["vario_sensitivity"]    = (int8_t)vario_sensitivity;
+  doc["vario_climbAvg"]       = vario_climbAvg;
+  doc["vario_climbStart"]     = vario_climbStart;
+  doc["vario_volume"]         = vario_volume;
+  doc["vario_quietMode"]      = vario_quietMode;
+  doc["vario_tones"]          = vario_tones;
+  doc["vario_liftyAir"]       = vario_liftyAir;
+  doc["vario_altSetting"]     = vario_altSetting;
+  doc["vario_altSyncToGPS"]   = vario_altSyncToGPS;
+
+  // GPS & Track Log
+  doc["distanceFlownType"]    = distanceFlownType;
+  doc["gpsMode"]              = gpsMode;
+  doc["log_saveTrack"]        = log_saveTrack;
+  doc["log_autoStart"]        = log_autoStart;
+  doc["log_autoStop"]         = log_autoStop;
+  doc["log_format"]           = log_format;
+
+  // IGC Pilot & Glider Info
+  doc["igc_pilotName"]        = igc_pilotName.c_str();
+  doc["igc_gliderType"]       = igc_gliderType.c_str();
+  doc["igc_gliderId"]         = igc_gliderId.c_str();
+  doc["igc_competitionId"]    = igc_competitionId.c_str();
+  doc["igc_competitionClass"] = igc_competitionClass.c_str();
+
+  // System
+  doc["system_timeZone"]      = system_timeZone;
+  doc["system_volume"]        = system_volume;
+  doc["system_ecoMode"]       = system_ecoMode;
+  doc["system_autoOff"]       = system_autoOff;
+  doc["system_wifiOn"]        = system_wifiOn;
+  doc["system_bluetoothOn"]   = system_bluetoothOn;
+  doc["system_showWarning"]   = system_showWarning;
+
+  // Display
+  doc["disp_contrast"]        = disp_contrast;
+  doc["disp_navPageAltType"]  = disp_navPageAltType;
+  doc["disp_thmPageAltType"]  = disp_thmPageAltType;
+  doc["disp_thmPageAlt2Type"] = disp_thmPageAlt2Type;
+  doc["disp_thmPageUser1"]    = disp_thmPageUser1;
+  doc["disp_thmPageUser2"]    = disp_thmPageUser2;
+  doc["disp_showDebugPage"]   = disp_showDebugPage;
+  doc["disp_showSimplePage"]  = disp_showSimplePage;
+  doc["disp_showThmPage"]     = disp_showThmPage;
+  doc["disp_showThmAdvPage"]  = disp_showThmAdvPage;
+  doc["disp_showNavPage"]     = disp_showNavPage;
+  doc["startPage"]            = startPage;
+
+  // FANET
+  doc["fanet_region"]         = (uint32_t)fanet_region;
+  doc["fanet_address"]        = fanet_address.c_str();
+
+  // Units
+  doc["units_climb"]          = units_climb;
+  doc["units_alt"]            = units_alt;
+  doc["units_temp"]           = units_temp;
+  doc["units_speed"]          = units_speed;
+  doc["units_heading"]        = units_heading;
+  doc["units_distance"]       = units_distance;
+  doc["units_hours"]          = units_hours;
+
+  // Read-only device info
+  doc["macAddress"]           = macAddress.c_str();
+
+  String out;
+  serializeJson(doc, out);
+  return out;
+}
+
+bool Settings::applyFromJson(const JsonVariantConst& v) {
+  // Reject anything that isn't a JSON object
+  if (!v.is<JsonObjectConst>()) return false;
+  JsonObjectConst doc = v.as<JsonObjectConst>();
+
+  // Vario
+  if (doc["vario_sinkAlarm"].is<float>())
+    vario_sinkAlarm = doc["vario_sinkAlarm"].as<float>();
+  if (doc["vario_sinkAlarm_units"].is<bool>())
+    vario_sinkAlarm_units = doc["vario_sinkAlarm_units"].as<bool>();
+  if (doc["vario_sensitivity"].is<int>()) {
+    int8_t v_sens = doc["vario_sensitivity"].as<int8_t>();
+    vario_sensitivity = v_sens;  // CharSetting clamps automatically
+  }
+  if (doc["vario_climbAvg"].is<int>())
+    vario_climbAvg = constrain((int)doc["vario_climbAvg"].as<int>(), 0, CLIMB_AVERAGE_MAX);
+  if (doc["vario_climbStart"].is<int>())
+    vario_climbStart = constrain((int)doc["vario_climbStart"].as<int>(), 0, CLIMB_START_MAX);
+  if (doc["vario_volume"].is<int>()) {
+    vario_volume = constrain((int)doc["vario_volume"].as<int>(), 0, VOLUME_MAX);
+    speaker.setVolume(Speaker::SoundChannel::Vario, (SpeakerVolume)vario_volume);
+  }
+  if (doc["vario_quietMode"].is<bool>())
+    vario_quietMode = doc["vario_quietMode"].as<bool>();
+  if (doc["vario_tones"].is<bool>())
+    vario_tones = doc["vario_tones"].as<bool>();
+  if (doc["vario_liftyAir"].is<int>())
+    vario_liftyAir = constrain((int)doc["vario_liftyAir"].as<int>(), LIFTY_AIR_MAX, 0);
+  if (doc["vario_altSetting"].is<float>())
+    vario_altSetting = doc["vario_altSetting"].as<float>();
+  if (doc["vario_altSyncToGPS"].is<bool>())
+    vario_altSyncToGPS = doc["vario_altSyncToGPS"].as<bool>();
+
+  // GPS & Track Log
+  if (doc["distanceFlownType"].is<bool>())
+    distanceFlownType = doc["distanceFlownType"].as<bool>();
+  if (doc["gpsMode"].is<int>())
+    gpsMode = doc["gpsMode"].as<int8_t>();
+  if (doc["log_saveTrack"].is<bool>())
+    log_saveTrack = doc["log_saveTrack"].as<bool>();
+  if (doc["log_autoStart"].is<bool>())
+    log_autoStart = doc["log_autoStart"].as<bool>();
+  if (doc["log_autoStop"].is<bool>())
+    log_autoStop = doc["log_autoStop"].as<bool>();
+  if (doc["log_format"].is<int>())
+    log_format = constrain((int)doc["log_format"].as<int>(), 0, SETTING_LOG_FORMAT_ENTRIES - 1);
+
+  // IGC Pilot & Glider Info
+  if (doc["igc_pilotName"].is<const char*>())
+    igc_pilotName = doc["igc_pilotName"].as<const char*>();
+  if (doc["igc_gliderType"].is<const char*>())
+    igc_gliderType = doc["igc_gliderType"].as<const char*>();
+  if (doc["igc_gliderId"].is<const char*>())
+    igc_gliderId = doc["igc_gliderId"].as<const char*>();
+  if (doc["igc_competitionId"].is<const char*>())
+    igc_competitionId = doc["igc_competitionId"].as<const char*>();
+  if (doc["igc_competitionClass"].is<const char*>())
+    igc_competitionClass = doc["igc_competitionClass"].as<const char*>();
+
+  // System
+  if (doc["system_timeZone"].is<int>())
+    system_timeZone = constrain((int)doc["system_timeZone"].as<int>(), TIME_ZONE_MIN, TIME_ZONE_MAX);
+  if (doc["system_volume"].is<int>()) {
+    system_volume = constrain((int)doc["system_volume"].as<int>(), 0, VOLUME_MAX);
+    speaker.setVolume(Speaker::SoundChannel::FX, (SpeakerVolume)system_volume);
+  }
+  if (doc["system_ecoMode"].is<bool>())
+    system_ecoMode = doc["system_ecoMode"].as<bool>();
+  if (doc["system_autoOff"].is<int>())
+    system_autoOff = constrain((int)doc["system_autoOff"].as<int>(), 0, AUTO_OFF_MAX);
+  if (doc["system_wifiOn"].is<bool>())
+    system_wifiOn = doc["system_wifiOn"].as<bool>();
+  if (doc["system_bluetoothOn"].is<bool>())
+    system_bluetoothOn = doc["system_bluetoothOn"].as<bool>();
+  if (doc["system_showWarning"].is<bool>())
+    system_showWarning = doc["system_showWarning"].as<bool>();
+
+  // Display
+  if (doc["disp_contrast"].is<int>())
+    disp_contrast = constrain((int)doc["disp_contrast"].as<int>(), CONTRAST_MIN, CONTRAST_MAX);
+  if (doc["disp_navPageAltType"].is<int>())
+    disp_navPageAltType = doc["disp_navPageAltType"].as<uint8_t>();
+  if (doc["disp_thmPageAltType"].is<int>())
+    disp_thmPageAltType = doc["disp_thmPageAltType"].as<uint8_t>();
+  if (doc["disp_thmPageAlt2Type"].is<int>())
+    disp_thmPageAlt2Type = doc["disp_thmPageAlt2Type"].as<uint8_t>();
+  if (doc["disp_thmPageUser1"].is<int>())
+    disp_thmPageUser1 = doc["disp_thmPageUser1"].as<uint8_t>();
+  if (doc["disp_thmPageUser2"].is<int>())
+    disp_thmPageUser2 = doc["disp_thmPageUser2"].as<uint8_t>();
+  if (doc["disp_showDebugPage"].is<bool>())
+    disp_showDebugPage = doc["disp_showDebugPage"].as<bool>();
+  if (doc["disp_showSimplePage"].is<bool>())
+    disp_showSimplePage = doc["disp_showSimplePage"].as<bool>();
+  if (doc["disp_showThmPage"].is<bool>())
+    disp_showThmPage = doc["disp_showThmPage"].as<bool>();
+  if (doc["disp_showThmAdvPage"].is<bool>())
+    disp_showThmAdvPage = doc["disp_showThmAdvPage"].as<bool>();
+  if (doc["disp_showNavPage"].is<bool>())
+    disp_showNavPage = doc["disp_showNavPage"].as<bool>();
+  if (doc["startPage"].is<int>())
+    startPage = doc["startPage"].as<uint8_t>();
+
+  // FANET
+  if (doc["fanet_region"].is<int>())
+    fanet_region = (FanetRadioRegion)doc["fanet_region"].as<uint32_t>();
+  if (doc["fanet_address"].is<const char*>())
+    fanet_address = doc["fanet_address"].as<const char*>();
+
+  // Units
+  if (doc["units_climb"].is<bool>())    units_climb    = doc["units_climb"].as<bool>();
+  if (doc["units_alt"].is<bool>())      units_alt      = doc["units_alt"].as<bool>();
+  if (doc["units_temp"].is<bool>())     units_temp     = doc["units_temp"].as<bool>();
+  if (doc["units_speed"].is<bool>())    units_speed    = doc["units_speed"].as<bool>();
+  if (doc["units_heading"].is<bool>())  units_heading  = doc["units_heading"].as<bool>();
+  if (doc["units_distance"].is<bool>()) units_distance = doc["units_distance"].as<bool>();
+  if (doc["units_hours"].is<bool>())    units_hours    = doc["units_hours"].as<bool>();
+
+  // macAddress is read-only; silently ignore if present in the JSON
+
+  return true;
 }
 
 void Settings::adjustAutoOff(Button dir) {

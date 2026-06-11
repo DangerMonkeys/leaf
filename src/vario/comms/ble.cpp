@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 
+#include <ArduinoJson.h>
 #include <NimBLEDevice.h>
 #include "TinyGPSPlus.h"
 #include "comms/fanet_radio.h"
@@ -10,6 +11,9 @@
 #include "etl/variant.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
+#include "ui/audio/sound_effects.h"
+#include "ui/audio/speaker.h"
+#include "ui/settings/settings.h"
 #include "utils/lock_guard.h"
 
 // These UUIDs are for BLE UART services and characteristics.
@@ -17,6 +21,90 @@
 // compatibility with SeeYou Navigator.
 #define LEAF_SERVICE_UUID "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"  // SPP service
 #define LEAF_LK8EX1_UUID "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"   // SPP characteristic (TX/RX)
+
+// Custom settings service — allows a Web Bluetooth client to read and write all device settings.
+#define LEAF_SETTINGS_SVC_UUID  "0A29AB06-0F01-4B27-AE93-1E86D81B9784"
+#define LEAF_SETTINGS_CMD_UUID  "42433AC8-814C-4E2F-AD52-C8F6CBCC96D7"  // WRITE  client→device
+#define LEAF_SETTINGS_RSP_UUID  "A621D682-D621-43D5-A1BD-4AF1F3F5271F"  // NOTIFY device→client
+
+// Maximum bytes per ATT notification payload (MTU 512 − 3 header bytes − 1 prefix byte).
+static constexpr size_t BLE_CHUNK_PAYLOAD = 508;
+
+// Send a string in ≤BLE_CHUNK_PAYLOAD-byte notifications.
+// Each chunk is prefixed with 0x00 (more data) or 0xFF (final chunk).
+static void sendChunked(NimBLECharacteristic* pChar, const String& data) {
+  const size_t total = data.length();
+  size_t offset = 0;
+  while (offset < total) {
+    size_t len = min(BLE_CHUNK_PAYLOAD, total - offset);
+    bool last = (offset + len >= total);
+
+    uint8_t buf[BLE_CHUNK_PAYLOAD + 1];
+    buf[0] = last ? 0xFF : 0x00;
+    memcpy(buf + 1, data.c_str() + offset, len);
+    pChar->setValue(buf, len + 1);
+    pChar->notify();
+    offset += len;
+  }
+}
+
+// Handles JSON commands written by a Web Bluetooth client to the CMD characteristic.
+class SettingsCallbacks : public NimBLECharacteristicCallbacks {
+  void onWrite(NimBLECharacteristic* pChar, NimBLEConnInfo& connInfo) override {
+    NimBLEAttValue raw = pChar->getValue();
+    if (raw.length() == 0) return;
+
+    JsonDocument doc;
+    DeserializationError err = deserializeJson(doc, raw.data(), raw.length());
+    if (err) {
+      const char* resp = "{\"ok\":false,\"error\":\"invalid json\"}";
+      pChar->setValue((const uint8_t*)resp, strlen(resp));
+      return;
+    }
+
+    const char* op = doc["op"] | "";
+
+    if (strcmp(op, "get") == 0) {
+      NimBLECharacteristic* rsp = NimBLEDevice::getServer()
+                                      ->getServiceByUUID(LEAF_SETTINGS_SVC_UUID)
+                                      ->getCharacteristic(LEAF_SETTINGS_RSP_UUID);
+      sendChunked(rsp, settings.toJson());
+      return;
+    }
+
+    if (strcmp(op, "apply") == 0) {
+      NimBLECharacteristic* rsp = NimBLEDevice::getServer()
+                                      ->getServiceByUUID(LEAF_SETTINGS_SVC_UUID)
+                                      ->getCharacteristic(LEAF_SETTINGS_RSP_UUID);
+
+      if (!settings.applyFromJson(doc["settings"])) {
+        const char* resp = "{\"ok\":false,\"error\":\"invalid settings\"}";
+        rsp->setValue((const uint8_t*)resp, strlen(resp));
+        rsp->notify();
+        return;
+      }
+
+      settings.boot_toOnState = true;
+      settings.save();
+
+      const char* resp = "{\"ok\":true}";
+      rsp->setValue((const uint8_t*)resp, strlen(resp));
+      rsp->notify();
+
+      speaker.playSound(fx::confirm);
+      vTaskDelay(pdMS_TO_TICKS(1000));
+      ESP.restart();
+      return;
+    }
+
+    NimBLECharacteristic* rsp = NimBLEDevice::getServer()
+                                    ->getServiceByUUID(LEAF_SETTINGS_SVC_UUID)
+                                    ->getCharacteristic(LEAF_SETTINGS_RSP_UUID);
+    const char* resp = "{\"ok\":false,\"error\":\"unknown op\"}";
+    rsp->setValue((const uint8_t*)resp, strlen(resp));
+    rsp->notify();
+  }
+} settingsCallbacks;
 
 /// @brief Internal struct to be passed in the message queues to wakup the BLE task
 struct WakeupMessage {
@@ -72,10 +160,22 @@ void BLE::setup() {
                                                    NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
   pService->start();
 
+  // Settings service — Web Bluetooth client reads/writes all device settings
+  NimBLEDevice::setMTU(512);
+  pSettingsService = pServer->createService(LEAF_SETTINGS_SVC_UUID);
+  pSettingsCmdChar = pSettingsService->createCharacteristic(LEAF_SETTINGS_CMD_UUID,
+                                                            NIMBLE_PROPERTY::WRITE);
+  pSettingsRspChar = pSettingsService->createCharacteristic(LEAF_SETTINGS_RSP_UUID,
+                                                            NIMBLE_PROPERTY::READ |
+                                                            NIMBLE_PROPERTY::NOTIFY);
+  pSettingsCmdChar->setCallbacks(&settingsCallbacks);
+  pSettingsService->start();
+
   /** Create an advertising instance and add the services to the advertised data */
   pAdvertising = NimBLEDevice::getAdvertising();
   pAdvertising->setName(name.c_str());
   pAdvertising->addServiceUUID(pService->getUUID());
+  pAdvertising->addServiceUUID(pSettingsService->getUUID());
   /**
    *  If your device is battery powered you may consider setting scan response
    *  to false as it will extend battery life at the expense of less data sent.
@@ -128,6 +228,9 @@ void BLE::end() {
   pServer = nullptr;
   pService = nullptr;
   pCharacteristic = nullptr;
+  pSettingsService = nullptr;
+  pSettingsCmdChar = nullptr;
+  pSettingsRspChar = nullptr;
   pAdvertising = nullptr;
 }
 

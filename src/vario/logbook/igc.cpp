@@ -1,9 +1,6 @@
 #include "igc.h"
 
-#include <SD_MMC.h>
-
 #include "Arduino.h"
-#include "ArduinoJson.h"
 #include "FS.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
@@ -81,10 +78,8 @@ bool Igc::startFlight() {
   logger.setLoggerId("Lea");
   logger.setIdExtension("f1");
 
-  logger.pilot = "Unknown";
-  logger.glider_type = "Unknown";
-  // Overwrite from file if set in the Pilot descriptor
-  setPilotFromFile();
+  logger.pilot       = settings.igc_pilotName.isEmpty()  ? "Unknown" : settings.igc_pilotName;
+  logger.glider_type = settings.igc_gliderType.isEmpty() ? "Unknown" : settings.igc_gliderType;
 
   logger.firmware_version = LeafVersionInfo::firmwareVersion();
   logger.hardware_version = "Leaf1";
@@ -98,6 +93,13 @@ bool Igc::startFlight() {
   strftime(logger.date, sizeof(logger.date), "%d%m%y", &cal);
 
   logger.writeHeader();
+
+  if (!settings.igc_gliderId.isEmpty())
+    file.println("HFGIDGLIDERID:" + settings.igc_gliderId);
+  if (!settings.igc_competitionId.isEmpty())
+    file.println("HFCIDCOMPETITIONID:" + settings.igc_competitionId);
+  if (!settings.igc_competitionClass.isEmpty())
+    file.println("HFCCLCOMPETITIONCLASS:" + settings.igc_competitionClass);
 
   // Log the I record (saying we're going to log the, now manditory, FXA record)
   const IRecordExtension extensions[] = {IRecordExtension(3, "FXA")};
@@ -114,13 +116,3 @@ void Igc::end(const FlightStats stats, bool showSummary) {
   Flight::end(stats, showSummary);
 }
 
-void Igc::setPilotFromFile() {
-  auto pilotFile = SD_MMC.open("/pilot.json", "r");
-  if (!pilotFile) {
-    return;  // No pilot JSON file
-  }
-  JsonDocument doc;
-  deserializeJson(doc, pilotFile);
-  logger.pilot = (String)doc["pilot"];
-  logger.glider_type = (String)doc["glider_type"];
-}
