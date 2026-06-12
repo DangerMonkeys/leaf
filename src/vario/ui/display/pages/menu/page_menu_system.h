@@ -4,7 +4,7 @@
 #include <Arduino.h>
 
 #include "ui/display/menu_page.h"
-// #include "ui/display/pages/menu/system/page_menu_system_wifi.h"
+#include "ui/display/pages/menu/page_menu_ble.h"
 #include "ui/display/pages/menu/page_menu_wifi.h"
 #include "ui/input/buttons.h"
 
@@ -23,8 +23,9 @@ class SystemMenuPage : public SettingsMenuPage {
 
  private:
   void drawSystemMenu();
-  static constexpr char* labels[9] = {"Back", "TimeZone",  "Volume", "Auto-Off", "ShowSafety",
-                                      "Wifi", "Bluetooth", "About",  "Reset"};
+  static constexpr const char* labels[9] = {"Back",      "TimeZone", "Volume",    "Auto-Off",
+                                             "ShowSafety", "Wifi",     "Bluetooth", "About",
+                                             "Reset"};
 };
 
 #endif

@@ -2,6 +2,7 @@
 #define PAGES_H
 
 #include "ui/display/pages/menu/page_menu_altimeter.h"
+#include "ui/display/pages/menu/page_menu_ble.h"
 #include "ui/display/pages/menu/page_menu_developer.h"
 #include "ui/display/pages/menu/page_menu_display.h"
 #include "ui/display/pages/menu/page_menu_gps.h"
@@ -23,5 +24,6 @@ extern LogMenuPage logMenuPage;
 extern SystemMenuPage systemMenuPage;
 extern DeveloperMenuPage developerMenuPage;
 extern WifiMenuPage wifiMenuPage;
+extern BleMenuPage bleMenuPage;
 
 #endif

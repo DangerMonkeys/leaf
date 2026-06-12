@@ -23,6 +23,15 @@ class BLE : public MessageSink<BLE, GpsMessage, FanetPacket> {
   /// @brief ends the service, tears down bluetooth resources
   void end();
 
+  /// @brief Enables the settings GATT service and stores the PIN used to authenticate apply commands
+  void enableSettingsService(uint32_t pin);
+
+  /// @brief Disables the settings GATT service
+  void disableSettingsService();
+
+  bool isSettingsServiceActive() const { return settings_service_active; }
+  uint32_t getSettingsPin() const { return settings_pin; }
+
   // MessageSink<BLE, GpsMessage, FanetPacket>
   void on_receive(const GpsMessage& msg);
   void on_receive(const FanetPacket& msg);
@@ -48,6 +57,9 @@ class BLE : public MessageSink<BLE, GpsMessage, FanetPacket> {
   NimBLECharacteristic* pSettingsCmdChar;  // WRITE  — client sends commands
   NimBLECharacteristic* pSettingsRspChar;  // NOTIFY — device sends responses
   NimBLEAdvertising* pAdvertising;
+
+  bool settings_service_active = false;
+  uint32_t settings_pin = 0;
 
   // Queue for handling messages into this task from either buffer or periodic wakeup events.
   QueueHandle_t xQueue;

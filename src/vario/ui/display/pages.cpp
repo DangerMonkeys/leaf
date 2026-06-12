@@ -1,6 +1,7 @@
 #include "ui/display/pages.h"
 
 #include "ui/display/pages/menu/page_menu_altimeter.h"
+#include "ui/display/pages/menu/page_menu_ble.h"
 #include "ui/display/pages/menu/page_menu_developer.h"
 #include "ui/display/pages/menu/page_menu_display.h"
 #include "ui/display/pages/menu/page_menu_gps.h"
@@ -22,3 +23,4 @@ LogMenuPage logMenuPage;
 SystemMenuPage systemMenuPage;
 DeveloperMenuPage developerMenuPage;
 WifiMenuPage wifiMenuPage;
+BleMenuPage bleMenuPage;

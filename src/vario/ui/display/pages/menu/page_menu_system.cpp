@@ -2,7 +2,6 @@
 
 #include <Arduino.h>
 
-#include "comms/ble.h"
 #include "hardware/buttons.h"
 #include "power.h"
 #include "ui/audio/sound_effects.h"
@@ -37,14 +36,17 @@ uint8_t resetPending = 0;
 enum system_menu_pages {
   page_menu_system,  // the root system menu
   page_menu_wifi,    // the WiFi submenu
+  page_menu_ble,     // the Bluetooth submenu
 };
 
-// tracking which menu page we're on (we might move from the main menu page into a sub-meny)
+// tracking which menu page we're on (we might move from the main menu page into a sub-menu)
 uint8_t system_menu_page = page_menu_system;
 
 bool SystemMenuPage::button_event(Button button, ButtonEvent state, uint8_t count) {
   if (system_menu_page == page_menu_wifi) {
     return wifiMenuPage.button_event(button, state, count);
+  } else if (system_menu_page == page_menu_ble) {
+    return bleMenuPage.button_event(button, state, count);
   } else {
     return SettingsMenuPage::button_event(button, state, count);
   }
@@ -53,6 +55,7 @@ bool SystemMenuPage::button_event(Button button, ButtonEvent state, uint8_t coun
 void SystemMenuPage::backToSystemMenu() {
   cursor_position = cursor_system_back;
   system_menu_page = page_menu_system;
+  bleMenuPage.backToBleMenu();
 }
 
 void SystemMenuPage::draw() {
@@ -62,6 +65,9 @@ void SystemMenuPage::draw() {
       break;
     case page_menu_wifi:
       wifiMenuPage.draw();
+      break;
+    case page_menu_ble:
+      bleMenuPage.draw();
       break;
   }
 }
@@ -148,14 +154,6 @@ void SystemMenuPage::drawSystemMenu() {
             u8g2.print((char)123);
           break;
 
-        case cursor_system_bluetooth:
-          u8g2.setCursor(setting_choice_x + 4, menu_items_y[i]);
-          if (settings.system_bluetoothOn)
-            u8g2.print("ON");
-          else
-            u8g2.print("OFF");
-          break;
-
         case cursor_system_reset:
           u8g2.setCursor(setting_choice_x + 8, menu_items_y[i]);
           if (cursor_position == cursor_system_reset) {
@@ -207,13 +205,7 @@ void SystemMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count
       break;
     case cursor_system_bluetooth:
       if (state != ButtonEvent::CLICKED) break;
-      settings.system_bluetoothOn = !settings.system_bluetoothOn;
-      if (settings.system_bluetoothOn) {
-        BLE::get().start();
-      } else {
-        BLE::get().stop();
-      }
-      settings.save();
+      system_menu_page = page_menu_ble;
       break;
     case cursor_system_reset:
       if (state == ButtonEvent::INCREMENTED) {

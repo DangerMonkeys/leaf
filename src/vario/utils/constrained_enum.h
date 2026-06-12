@@ -14,18 +14,18 @@ struct enum_policy;
 
 // -------------------------
 // Detection: enable operators only if a policy exists
-namespace detail {
+namespace cenum_detail {
   template <typename, typename = void>
   struct has_policy : std::false_type {};
 
   template <typename E>
   struct has_policy<E, std::void_t<decltype(enum_policy<E>::bottom), decltype(enum_policy<E>::top),
                                    typename enum_policy<E>::behavior>> : std::true_type {};
-}  // namespace detail
+}  // namespace cenum_detail
 
 // -------------------------
 // Helpers implementing ++/--
-namespace detail {
+namespace cenum_detail {
 
   template <typename E>
   inline E& inc(E& e, wrap_t) {
@@ -65,18 +65,18 @@ namespace detail {
     return e;
   }
 
-}  // namespace detail
+}  // namespace cenum_detail
 
 // -------------------------
 // Generic operators: enabled only when enum_policy<E> is valid
 template <typename E,
-          typename std::enable_if_t<std::is_enum_v<E> && detail::has_policy<E>::value, int> = 0>
+          typename std::enable_if_t<std::is_enum_v<E> && cenum_detail::has_policy<E>::value, int> = 0>
 inline E& operator++(E& e) {
-  return detail::inc(e, typename enum_policy<E>::behavior{});
+  return cenum_detail::inc(e, typename enum_policy<E>::behavior{});
 }
 
 template <typename E,
-          typename std::enable_if_t<std::is_enum_v<E> && detail::has_policy<E>::value, int> = 0>
+          typename std::enable_if_t<std::is_enum_v<E> && cenum_detail::has_policy<E>::value, int> = 0>
 inline E operator++(E& e, int) {
   E tmp = e;
   ++e;
@@ -84,13 +84,13 @@ inline E operator++(E& e, int) {
 }
 
 template <typename E,
-          typename std::enable_if_t<std::is_enum_v<E> && detail::has_policy<E>::value, int> = 0>
+          typename std::enable_if_t<std::is_enum_v<E> && cenum_detail::has_policy<E>::value, int> = 0>
 inline E& operator--(E& e) {
-  return detail::dec(e, typename enum_policy<E>::behavior{});
+  return cenum_detail::dec(e, typename enum_policy<E>::behavior{});
 }
 
 template <typename E,
-          typename std::enable_if_t<std::is_enum_v<E> && detail::has_policy<E>::value, int> = 0>
+          typename std::enable_if_t<std::is_enum_v<E> && cenum_detail::has_policy<E>::value, int> = 0>
 inline E operator--(E& e, int) {
   E tmp = e;
   --e;

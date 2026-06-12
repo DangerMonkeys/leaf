@@ -51,36 +51,49 @@ static void sendChunked(NimBLECharacteristic* pChar, const String& data) {
 // Handles JSON commands written by a Web Bluetooth client to the CMD characteristic.
 class SettingsCallbacks : public NimBLECharacteristicCallbacks {
   void onWrite(NimBLECharacteristic* pChar, NimBLEConnInfo& connInfo) override {
+    NimBLECharacteristic* rsp = NimBLEDevice::getServer()
+                                    ->getServiceByUUID(LEAF_SETTINGS_SVC_UUID)
+                                    ->getCharacteristic(LEAF_SETTINGS_RSP_UUID);
+
+    auto sendError = [&](const char* msg) {
+      String resp = String("{\"ok\":false,\"error\":\"") + msg + "\"}";
+      rsp->setValue((const uint8_t*)resp.c_str(), resp.length());
+      rsp->notify();
+    };
+
+    // Ignore commands when the settings page is not open
+    if (!BLE::get().isSettingsServiceActive()) {
+      sendError("settings service not active");
+      return;
+    }
+
     NimBLEAttValue raw = pChar->getValue();
     if (raw.length() == 0) return;
 
     JsonDocument doc;
     DeserializationError err = deserializeJson(doc, raw.data(), raw.length());
     if (err) {
-      const char* resp = "{\"ok\":false,\"error\":\"invalid json\"}";
-      pChar->setValue((const uint8_t*)resp, strlen(resp));
+      sendError("invalid json");
       return;
     }
 
     const char* op = doc["op"] | "";
 
     if (strcmp(op, "get") == 0) {
-      NimBLECharacteristic* rsp = NimBLEDevice::getServer()
-                                      ->getServiceByUUID(LEAF_SETTINGS_SVC_UUID)
-                                      ->getCharacteristic(LEAF_SETTINGS_RSP_UUID);
       sendChunked(rsp, settings.toJson());
       return;
     }
 
     if (strcmp(op, "apply") == 0) {
-      NimBLECharacteristic* rsp = NimBLEDevice::getServer()
-                                      ->getServiceByUUID(LEAF_SETTINGS_SVC_UUID)
-                                      ->getCharacteristic(LEAF_SETTINGS_RSP_UUID);
+      // Require PIN for writes
+      uint32_t provided_pin = doc["pin"] | 0;
+      if (provided_pin == 0 || provided_pin != BLE::get().getSettingsPin()) {
+        sendError("invalid pin");
+        return;
+      }
 
       if (!settings.applyFromJson(doc["settings"])) {
-        const char* resp = "{\"ok\":false,\"error\":\"invalid settings\"}";
-        rsp->setValue((const uint8_t*)resp, strlen(resp));
-        rsp->notify();
+        sendError("invalid settings");
         return;
       }
 
@@ -97,12 +110,7 @@ class SettingsCallbacks : public NimBLECharacteristicCallbacks {
       return;
     }
 
-    NimBLECharacteristic* rsp = NimBLEDevice::getServer()
-                                    ->getServiceByUUID(LEAF_SETTINGS_SVC_UUID)
-                                    ->getCharacteristic(LEAF_SETTINGS_RSP_UUID);
-    const char* resp = "{\"ok\":false,\"error\":\"unknown op\"}";
-    rsp->setValue((const uint8_t*)resp, strlen(resp));
-    rsp->notify();
+    sendError("unknown op");
   }
 } settingsCallbacks;
 
@@ -213,6 +221,16 @@ void BLE::start() {
 void BLE::stop() {
   pAdvertising->stop();
   started = false;
+}
+
+void BLE::enableSettingsService(uint32_t pin) {
+  settings_service_active = true;
+  settings_pin = pin;
+}
+
+void BLE::disableSettingsService() {
+  settings_service_active = false;
+  settings_pin = 0;
 }
 
 void BLE::end() {
