@@ -27,24 +27,39 @@
 #define LEAF_SETTINGS_CMD_UUID  "42433AC8-814C-4E2F-AD52-C8F6CBCC96D7"  // WRITE  client→device
 #define LEAF_SETTINGS_RSP_UUID  "A621D682-D621-43D5-A1BD-4AF1F3F5271F"  // NOTIFY device→client
 
-// Maximum bytes per ATT notification payload (MTU 512 − 3 header bytes − 1 prefix byte).
+// ATT indication payload: MTU(512) − 3 header bytes − 1 flag prefix byte.
 static constexpr size_t BLE_CHUNK_PAYLOAD = 508;
 
-// Send a string in ≤BLE_CHUNK_PAYLOAD-byte notifications.
-// Each chunk is prefixed with 0x00 (more data) or 0xFF (final chunk).
-static void sendChunked(NimBLECharacteristic* pChar, const String& data) {
-  const size_t total = data.length();
-  size_t offset = 0;
-  while (offset < total) {
-    size_t len = min(BLE_CHUNK_PAYLOAD, total - offset);
-    bool last = (offset + len >= total);
+void BLE::beginChunkedSend(String data) {
+  Serial.printf("[BLE] beginChunkedSend: %u bytes\n", (unsigned)data.length());
+  pending_data = std::move(data);
+  pending_offset = 0;
+  sendNextChunk();
+}
 
-    uint8_t buf[BLE_CHUNK_PAYLOAD + 1];
-    buf[0] = last ? 0xFF : 0x00;
-    memcpy(buf + 1, data.c_str() + offset, len);
-    pChar->setValue(buf, len + 1);
-    pChar->notify();
-    offset += len;
+void BLE::sendNextChunk() {
+  if (pending_data.isEmpty()) {
+    Serial.println("[BLE] sendNextChunk: no pending transfer");
+    return;
+  }
+  size_t total = pending_data.length();
+  size_t len = min(BLE_CHUNK_PAYLOAD, total - pending_offset);
+  bool last = (pending_offset + len >= total);
+
+  uint8_t buf[BLE_CHUNK_PAYLOAD + 1];
+  buf[0] = last ? 0xFF : 0x00;
+  memcpy(buf + 1, pending_data.c_str() + pending_offset, len);
+
+  Serial.printf("[BLE] sendNextChunk: offset=%u len=%u last=%d\n",
+                (unsigned)pending_offset, (unsigned)len, last ? 1 : 0);
+  pSettingsRspChar->setValue(buf, len + 1);
+  pSettingsRspChar->notify();
+
+  pending_offset += len;
+  if (last) {
+    pending_data = String();
+    pending_offset = 0;
+    Serial.println("[BLE] sendNextChunk: transfer complete");
   }
 }
 
@@ -56,6 +71,7 @@ class SettingsCallbacks : public NimBLECharacteristicCallbacks {
                                     ->getCharacteristic(LEAF_SETTINGS_RSP_UUID);
 
     auto sendError = [&](const char* msg) {
+      Serial.printf("[BLE] settings error: %s\n", msg);
       String resp = String("{\"ok\":false,\"error\":\"") + msg + "\"}";
       rsp->setValue((const uint8_t*)resp.c_str(), resp.length());
       rsp->notify();
@@ -68,19 +84,30 @@ class SettingsCallbacks : public NimBLECharacteristicCallbacks {
     }
 
     NimBLEAttValue raw = pChar->getValue();
+    Serial.printf("[BLE] settings onWrite: %u bytes received\n", (unsigned)raw.length());
     if (raw.length() == 0) return;
 
     JsonDocument doc;
     DeserializationError err = deserializeJson(doc, raw.data(), raw.length());
     if (err) {
+      Serial.printf("[BLE] JSON parse error: %s\n", err.c_str());
       sendError("invalid json");
       return;
     }
 
     const char* op = doc["op"] | "";
+    Serial.printf("[BLE] settings op: %s\n", op);
 
     if (strcmp(op, "get") == 0) {
-      sendChunked(rsp, settings.toJson());
+      String json = settings.toJson();
+      Serial.printf("[BLE] settings get: %u bytes\n", (unsigned)json.length());
+      BLE::get().beginChunkedSend(std::move(json));
+      return;
+    }
+
+    if (strcmp(op, "ack") == 0) {
+      Serial.println("[BLE] settings ack");
+      BLE::get().sendNextChunk();
       return;
     }
 
@@ -99,6 +126,7 @@ class SettingsCallbacks : public NimBLECharacteristicCallbacks {
 
       settings.boot_toOnState = true;
       settings.save();
+      Serial.println("[BLE] settings apply: success, restarting");
 
       const char* resp = "{\"ok\":true}";
       rsp->setValue((const uint8_t*)resp, strlen(resp));
@@ -111,6 +139,20 @@ class SettingsCallbacks : public NimBLECharacteristicCallbacks {
     }
 
     sendError("unknown op");
+  }
+
+  void onRead(NimBLECharacteristic* pChar, NimBLEConnInfo& connInfo) override {
+    Serial.printf("[BLE] CMD read (unexpected)  handle=%d\n", connInfo.getConnHandle());
+  }
+
+  void onStatus(NimBLECharacteristic* pChar, int code) override {
+    Serial.printf("[BLE] CMD status  code=%d\n", code);
+  }
+
+  void onSubscribe(NimBLECharacteristic* pChar, NimBLEConnInfo& connInfo,
+                   uint16_t subValue) override {
+    Serial.printf("[BLE] CMD subscribe (unexpected)  handle=%d subValue=%d\n",
+                  connInfo.getConnHandle(), subValue);
   }
 } settingsCallbacks;
 
@@ -126,26 +168,56 @@ struct WakeupMessage {
 };
 
 class ServerCallbacks : public NimBLEServerCallbacks {
-  // Not sure we need this.  Taken from the demo
   void onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) override {
-    /**
-     *  We can use the connection handle here to ask for different connection parameters.
-     *  Args: connection handle, min connection interval, max connection interval
-     *  latency, supervision timeout.
-     *  Units; Min/Max Intervals: 1.25 millisecond increments.
-     *  Latency: number of intervals allowed to skip.
-     *  Timeout: 10 millisecond increments.
-     */
+    Serial.printf("[BLE] Client connected  handle=%d addr=%s\n",
+                  connInfo.getConnHandle(), connInfo.getAddress().toString().c_str());
     pServer->updateConnParams(connInfo.getConnHandle(), 24, 48, 0, 180);
   }
 
-  // This one seems import to re-advertise
   void onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reason) override {
-    // Re-advertise after a disconnect
+    Serial.printf("[BLE] Client disconnected  handle=%d reason=0x%03X\n",
+                  connInfo.getConnHandle(), reason);
     NimBLEDevice::startAdvertising();
   }
 
+  void onMTUChange(uint16_t MTU, NimBLEConnInfo& connInfo) override {
+    Serial.printf("[BLE] MTU changed  handle=%d mtu=%d\n",
+                  connInfo.getConnHandle(), MTU);
+  }
+
+  void onAuthenticationComplete(NimBLEConnInfo& connInfo) override {
+    Serial.printf("[BLE] Auth complete  handle=%d authenticated=%d bonded=%d\n",
+                  connInfo.getConnHandle(),
+                  connInfo.isAuthenticated(),
+                  connInfo.isBonded());
+  }
+
+  void onConnParamsUpdate(NimBLEConnInfo& connInfo) override {
+    Serial.printf("[BLE] Conn params updated  handle=%d interval=%d latency=%d timeout=%d\n",
+                  connInfo.getConnHandle(),
+                  connInfo.getConnInterval(),
+                  connInfo.getConnLatency(),
+                  connInfo.getConnTimeout());
+  }
+
 } serverCallbacks;
+
+class RspCharCallbacks : public NimBLECharacteristicCallbacks {
+  void onSubscribe(NimBLECharacteristic* pChar, NimBLEConnInfo& connInfo,
+                   uint16_t subValue) override {
+    // subValue: 0=unsubscribe, 1=notify, 2=indicate
+    Serial.printf("[BLE] RSP subscribe  handle=%d subValue=%d\n",
+                  connInfo.getConnHandle(), subValue);
+  }
+
+  void onRead(NimBLECharacteristic* pChar, NimBLEConnInfo& connInfo) override {
+    Serial.printf("[BLE] RSP direct read  handle=%d\n", connInfo.getConnHandle());
+  }
+
+  void onStatus(NimBLECharacteristic* pChar, int code) override {
+    Serial.printf("[BLE] RSP notify status  code=%d\n", code);
+  }
+} rspCharCallbacks;
 
 BLE& BLE::get() {
   static BLE instance;
@@ -177,6 +249,7 @@ void BLE::setup() {
                                                             NIMBLE_PROPERTY::READ |
                                                             NIMBLE_PROPERTY::NOTIFY);
   pSettingsCmdChar->setCallbacks(&settingsCallbacks);
+  pSettingsRspChar->setCallbacks(&rspCharCallbacks);
   pSettingsService->start();
 
   /** Create an advertising instance and add the services to the advertised data */

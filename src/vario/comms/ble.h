@@ -32,6 +32,9 @@ class BLE : public MessageSink<BLE, GpsMessage, FanetPacket> {
   bool isSettingsServiceActive() const { return settings_service_active; }
   uint32_t getSettingsPin() const { return settings_pin; }
 
+  void beginChunkedSend(String data);
+  void sendNextChunk();
+
   // MessageSink<BLE, GpsMessage, FanetPacket>
   void on_receive(const GpsMessage& msg);
   void on_receive(const FanetPacket& msg);
@@ -54,7 +57,7 @@ class BLE : public MessageSink<BLE, GpsMessage, FanetPacket> {
   NimBLEService* pService;
   NimBLECharacteristic* pCharacteristic;
   NimBLEService* pSettingsService;
-  NimBLECharacteristic* pSettingsCmdChar;  // WRITE  — client sends commands
+  NimBLECharacteristic* pSettingsCmdChar;  // WRITE   — client sends commands
   NimBLECharacteristic* pSettingsRspChar;  // NOTIFY — device sends responses
   NimBLEAdvertising* pAdvertising;
 
@@ -75,6 +78,9 @@ class BLE : public MessageSink<BLE, GpsMessage, FanetPacket> {
   void sendVarioUpdate();
   void sendGpsUpdate(TinyGPSPlus& gps);
   void sendFanetUpdate(FanetPacket& packetMsg);
+
+  String pending_data;
+  size_t pending_offset = 0;
 
   /**
    * Add's the checksum and postfix characters to a NMEA string. It may contain an existing checksum
