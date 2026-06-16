@@ -43,6 +43,7 @@ SelfTest_PageGPSFix selfTest_pageGPSFix{&gpsFixRemainingSeconds, &gpsFixTestCanc
 bool waitForVarioStartButton = false;
 bool varioStartPromptComplete = false;
 SelfTest_PageVarioReady selfTest_pageVarioReady;
+SelfTest_PageRunning selfTest_pageRunning;
 
 bool useSDFile() {
   if (self_test_file) {
@@ -180,11 +181,11 @@ SelfTest::Status SelfTest::testBaro() {
 uint16_t imuTestCounter = 0;
 SelfTest::Status SelfTest::testIMU() {
   Status result = Status::Running;
-  if (!imu.accelValid() || !baro.climbRateFilteredValid()) {
+  if (!imu.accelValid() || !imu.velocityValid()) {
     if (imuTestCounter++ >= 1000) {
       selfTestInfo(
           "`Test=IMU`,        `Result=FAIL`, `Message=IMU timeout waiting for valid accel and "
-          "climb rate`");
+          "gravity`");
       result = Status::Fail;
     }
   } else {
@@ -220,6 +221,7 @@ SelfTest::Status SelfTest::testAmbient() {
     } else {
       selfTestInfo("`Test=AMBIENT`,    `Result=FAIL`, `Temp=%g`, `Message=Out of range`",
                    temperature);
+      result = Status::Fail;
     }
   }
   return result;
@@ -619,6 +621,8 @@ void SelfTest::begin(bool markAsProductionChecked) {
     selfTest.clearResults();  // clear any previous results
     speaker.playSound(fx::confirm);
     selfTest.status = SelfTest::Status::Running;
+    selfTest_pageRunning.show();
+    display.update();
   }
 }
 
@@ -660,6 +664,7 @@ bool SelfTest::update() {
         speaker.playSound(fx::fatalerror);
       }
       closeTestFile();
+      selfTest_pageRunning.close();
       if (selfTest.results.allTests == Status::Pass) {
         selfTest_pageCommissioningConfirmation.show();
       } else {
