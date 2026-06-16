@@ -24,6 +24,8 @@
 #define SDIO_D0 37
 #define SDIO_D1 38
 
+constexpr DWORD SD_CARD_FORMAT_ALLOCATION_UNIT_SIZE = 32768;
+
 SDCard sdcard;
 
 bool SDCard::isCardPresent() { return !ioexDigitalRead(SD_DETECT_IOEX, SD_DETECT); }
@@ -158,7 +160,7 @@ bool SDCard::format() {
     return false;
   }
 
-  const MKFS_PARM opt = {(BYTE)FM_ANY, 0, 0, 0, 0};
+  const MKFS_PARM opt = {(BYTE)FM_ANY, 0, 0, 0, SD_CARD_FORMAT_ALLOCATION_UNIT_SIZE};
   FRESULT result = f_mkfs("0:", &opt, work, FF_MAX_SS);
   free(work);
 
