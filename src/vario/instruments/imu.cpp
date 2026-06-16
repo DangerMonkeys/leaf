@@ -150,6 +150,8 @@ void IMU::processMotion(const MotionUpdate& m) {
         m.ay, m.az, qw, qx, qy, qz, awx, awy, awz);
     fatalError("IMU awz was invalid");
   }
+  lastWorldVerticalAccel_ = awz;
+  validLastWorldVerticalAccel_ = true;
 
 #ifdef SHOW_WORLD_ACCEL
   if (needComma) {
@@ -182,9 +184,24 @@ void IMU::processMotion(const MotionUpdate& m) {
     if (--gravityInitCount_ == 0) {
       gravity_ /= GRAVITY_INIT_SAMPLES;
       if (!plausibleGravity(gravity_)) {
+        lastRejectedGravity_ = gravity_;
+        gravityInitResetCount_++;
+        char msg[160];
+        snprintf(msg, sizeof(msg),
+                 "IMU gravity init rejected: gravity=%g, awz=%g, accelTot=%g, resets=%u", gravity_,
+                 awz, accelTot_, static_cast<unsigned>(gravityInitResetCount_));
+        Serial.println(msg);
+        if (bus_) bus_->receive(CommentMessage(msg));
         gravity_ = 0;
         gravityInitCount_ = GRAVITY_INIT_SAMPLES;
         validAccelVert_ = false;
+      } else {
+        char msg[160];
+        snprintf(msg, sizeof(msg),
+                 "IMU gravity init complete: gravity=%g, awz=%g, accelTot=%g, resets=%u", gravity_,
+                 awz, accelTot_, static_cast<unsigned>(gravityInitResetCount_));
+        Serial.println(msg);
+        if (bus_) bus_->receive(CommentMessage(msg));
       }
     }
   }
@@ -273,3 +290,15 @@ float IMU::getVelocity() {
   }
   return (float)kalmanvert_.getVelocity();
 }
+
+uint16_t IMU::gravityInitSamplesRemaining() const { return gravityInitCount_; }
+
+float IMU::gravityEstimate() const { return (float)gravity_; }
+
+float IMU::lastWorldVerticalAccel() const { return (float)lastWorldVerticalAccel_; }
+
+bool IMU::worldVerticalAccelValid() const { return validLastWorldVerticalAccel_; }
+
+uint16_t IMU::gravityInitResetCount() const { return gravityInitResetCount_; }
+
+float IMU::lastRejectedGravityEstimate() const { return (float)lastRejectedGravity_; }

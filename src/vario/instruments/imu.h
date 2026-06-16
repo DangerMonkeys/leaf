@@ -30,6 +30,13 @@ class IMU : public MessageSink<IMU, MotionUpdate>, public IMessageSource {
   bool velocityValid();
   float getVelocity();
 
+  uint16_t gravityInitSamplesRemaining() const;
+  float gravityEstimate() const;
+  float lastWorldVerticalAccel() const;
+  bool worldVerticalAccelValid() const;
+  uint16_t gravityInitResetCount() const;
+  float lastRejectedGravityEstimate() const;
+
  private:
   void processMotion(const MotionUpdate& m);
 
@@ -48,6 +55,11 @@ class IMU : public MessageSink<IMU, MotionUpdate>, public IMessageSource {
 
   // Best estimate for strength of gravity
   double gravity_ = 1.0;
+
+  double lastWorldVerticalAccel_ = 0.0;
+  bool validLastWorldVerticalAccel_ = false;
+  double lastRejectedGravity_ = 0.0;
+  uint16_t gravityInitResetCount_ = 0;
 
   // Number of samples remaining to collect to initialize estimate of gravity
   uint16_t gravityInitCount_;
