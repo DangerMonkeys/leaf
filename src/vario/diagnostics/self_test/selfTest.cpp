@@ -24,6 +24,7 @@ SpeakerInteractiveTest speakerTest;
 
 constexpr size_t BUFFER_SIZE = 512;
 constexpr uint32_t GPS_SERIAL_TEST_TIMEOUT_MS = 5000;
+constexpr uint32_t IMU_TEST_TIMEOUT_MS = 20000;
 constexpr uint32_t GPS_FIX_TEST_TIMEOUT_MS = 30UL * 60UL * 1000UL;
 File self_test_file;
 String self_test_file_name = "";
@@ -178,15 +179,28 @@ SelfTest::Status SelfTest::testBaro() {
 }
 /////////////////////////////////////////////
 // IMU TEST
-uint16_t imuTestCounter = 0;
+bool imuTestInitialized = false;
+uint32_t imuTestStartMillis = 0;
 SelfTest::Status SelfTest::testIMU() {
   Status result = Status::Running;
+  if (!imuTestInitialized) {
+    imuTestInitialized = true;
+    imuTestStartMillis = millis();
+  }
+
   if (!imu.accelValid() || !imu.velocityValid()) {
-    if (imuTestCounter++ >= 1000) {
+    uint32_t elapsedMillis = millis() - imuTestStartMillis;
+    if (elapsedMillis >= IMU_TEST_TIMEOUT_MS) {
       selfTestInfo(
           "`Test=IMU`,        `Result=FAIL`, `Message=IMU timeout waiting for valid accel and "
-          "gravity`");
+          "gravity`, `Elapsed_ms=%u`, `AccelValid=%d`, `GravityReady=%d`, "
+          "`GravityRemaining=%u`, `Gravity=%g`, `AwzValid=%d`, `Awz=%g`, "
+          "`GravityResets=%u`, `LastRejectedGravity=%g`",
+          elapsedMillis, imu.accelValid(), imu.velocityValid(), imu.gravityInitSamplesRemaining(),
+          imu.gravityEstimate(), imu.worldVerticalAccelValid(), imu.lastWorldVerticalAccel(),
+          imu.gravityInitResetCount(), imu.lastRejectedGravityEstimate());
       result = Status::Fail;
+      imuTestInitialized = false;
     }
   } else {
     float accelTotal = imu.getAccel();
@@ -199,6 +213,7 @@ SelfTest::Status SelfTest::testIMU() {
                    accelTotal);
       result = Status::Fail;
     }
+    imuTestInitialized = false;
   }
   return result;
 }
@@ -763,7 +778,7 @@ void SelfTest::clearResults() {
   selfTest.statusAutoTests = Status::Unknown;
   selfTest.statusInteractiveTests = Status::Unknown;
   ambientTestCounter = 0;
-  imuTestCounter = 0;
+  imuTestInitialized = false;
 
   // reset interactive tests
   buttonsTest.status = Status::Unknown;
