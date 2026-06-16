@@ -1,6 +1,8 @@
 import asyncio
 import json
+import time
 from dataclasses import dataclass, field
+from urllib.error import URLError
 from urllib.request import Request
 
 from factory_interface.http_client import (
@@ -12,6 +14,8 @@ from factory_interface.network_discovery import get_find_device_task
 
 SELF_TEST_POLL_SECONDS = 1.0
 HTTP_TIMEOUT_SECONDS = DEFAULT_HTTP_TIMEOUT_SECONDS
+SELF_TEST_HTTP_TIMEOUT_SECONDS = 20.0
+SELF_TEST_COMMUNICATION_GRACE_SECONDS = 180.0
 
 
 @dataclass
@@ -102,20 +106,30 @@ def device_self_test_url() -> str:
     return f"http://{device.ip_address}:{device.port}/self-test"
 
 
-def fetch_json(url: str, *, method: str = "GET") -> dict:
+def fetch_json(
+    url: str,
+    *,
+    method: str = "GET",
+    timeout: float = HTTP_TIMEOUT_SECONDS,
+) -> dict:
     request = Request(url, method=method)
     with urlopen_with_timeout_retries(
         request,
-        timeout=HTTP_TIMEOUT_SECONDS,
+        timeout=timeout,
     ) as response:
         return json.loads(response.read().decode("utf-8"))
 
 
-def fetch_text(url: str, *, method: str = "GET") -> str:
+def fetch_text(
+    url: str,
+    *,
+    method: str = "GET",
+    timeout: float = HTTP_TIMEOUT_SECONDS,
+) -> str:
     request = Request(url, method=method)
     with urlopen_with_timeout_retries(
         request,
-        timeout=HTTP_TIMEOUT_SECONDS,
+        timeout=timeout,
     ) as response:
         return response.read().decode("utf-8")
 
@@ -133,7 +147,11 @@ def status_result(payload: dict) -> str | None:
 
 
 async def retrieve_self_test_details_text(base_url: str) -> str:
-    details = await asyncio.to_thread(fetch_text, f"{base_url}/details")
+    details = await asyncio.to_thread(
+        fetch_text,
+        f"{base_url}/details",
+        timeout=SELF_TEST_HTTP_TIMEOUT_SECONDS,
+    )
     if not details.strip():
         raise RuntimeError("Device returned empty self test details.")
     return details
@@ -149,10 +167,37 @@ async def run_interactive_self_test() -> None:
 
         try:
             base_url = device_self_test_url()
-            await asyncio.to_thread(fetch_json, f"{base_url}/interactive", method="POST")
+            await asyncio.to_thread(
+                fetch_json,
+                f"{base_url}/interactive",
+                method="POST",
+                timeout=SELF_TEST_HTTP_TIMEOUT_SECONDS,
+            )
+            last_device_response_at = time.monotonic()
 
             while True:
-                payload = await asyncio.to_thread(fetch_json, base_url)
+                try:
+                    payload = await asyncio.to_thread(
+                        fetch_json,
+                        base_url,
+                        timeout=SELF_TEST_HTTP_TIMEOUT_SECONDS,
+                    )
+                    last_device_response_at = time.monotonic()
+                except (OSError, URLError, TimeoutError) as poll_exc:
+                    elapsed = time.monotonic() - last_device_response_at
+                    if elapsed >= SELF_TEST_COMMUNICATION_GRACE_SECONDS:
+                        raise
+
+                    remaining = int(SELF_TEST_COMMUNICATION_GRACE_SECONDS - elapsed)
+                    task.details = (
+                        "Waiting for device self-test response. The device may be busy "
+                        "formatting the SD card.\n\n"
+                        f"Last error: {type(poll_exc).__name__}: {poll_exc}\n"
+                        f"Will keep waiting for {remaining} more seconds."
+                    )
+                    await asyncio.sleep(SELF_TEST_POLL_SECONDS)
+                    continue
+
                 task.result = payload
                 task.details = json.dumps(payload, indent=2)
 

@@ -5,6 +5,7 @@ import json
 import platform
 import socket
 import subprocess
+import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -47,6 +48,8 @@ HTTP_TIMEOUT_SECONDS = DEFAULT_HTTP_TIMEOUT_SECONDS
 RECONNECT_GRACE_SECONDS = 2.0
 RECONNECT_POLL_SECONDS = 1.0
 SELF_TEST_POLL_SECONDS = 1.0
+SELF_TEST_HTTP_TIMEOUT_SECONDS = 20.0
+SELF_TEST_COMMUNICATION_GRACE_SECONDS = 180.0
 
 
 def idle_task(details: str = "") -> dict:
@@ -134,20 +137,30 @@ def device_base_url(session: CommissioningSession) -> str:
     return f"http://{session.device.ip_address}:{session.device.port}"
 
 
-def fetch_json(url: str, *, method: str = "GET") -> dict:
+def fetch_json(
+    url: str,
+    *,
+    method: str = "GET",
+    timeout: float = HTTP_TIMEOUT_SECONDS,
+) -> dict:
     request = Request(url, method=method)
     with urlopen_with_timeout_retries(
         request,
-        timeout=HTTP_TIMEOUT_SECONDS,
+        timeout=timeout,
     ) as response:
         return json.loads(response.read().decode("utf-8"))
 
 
-def fetch_text(url: str, *, method: str = "GET") -> str:
+def fetch_text(
+    url: str,
+    *,
+    method: str = "GET",
+    timeout: float = HTTP_TIMEOUT_SECONDS,
+) -> str:
     request = Request(url, method=method)
     with urlopen_with_timeout_retries(
         request,
-        timeout=HTTP_TIMEOUT_SECONDS,
+        timeout=timeout,
     ) as response:
         return response.read().decode("utf-8")
 
@@ -313,7 +326,11 @@ def self_test_status(payload: dict) -> str | None:
 
 
 async def retrieve_session_self_test_details(session: CommissioningSession, base_url: str) -> str:
-    self_test_details = await asyncio.to_thread(fetch_text, f"{base_url}/details")
+    self_test_details = await asyncio.to_thread(
+        fetch_text,
+        f"{base_url}/details",
+        timeout=SELF_TEST_HTTP_TIMEOUT_SECONDS,
+    )
     if not self_test_details.strip():
         raise RuntimeError("Device returned empty self test details.")
     session.self_test_details = self_test_details
@@ -563,10 +580,38 @@ async def run_commissioning_session(session: CommissioningSession) -> None:
         )
         session.touch()
         base_url = f"{device_base_url(session)}/self-test"
-        await asyncio.to_thread(fetch_json, f"{base_url}/interactive", method="POST")
+        await asyncio.to_thread(
+            fetch_json,
+            f"{base_url}/interactive",
+            method="POST",
+            timeout=SELF_TEST_HTTP_TIMEOUT_SECONDS,
+        )
+        last_device_response_at = time.monotonic()
 
         while True:
-            self_test_payload = await asyncio.to_thread(fetch_json, base_url)
+            try:
+                self_test_payload = await asyncio.to_thread(
+                    fetch_json,
+                    base_url,
+                    timeout=SELF_TEST_HTTP_TIMEOUT_SECONDS,
+                )
+                last_device_response_at = time.monotonic()
+            except (OSError, URLError, TimeoutError) as poll_exc:
+                elapsed = time.monotonic() - last_device_response_at
+                if elapsed >= SELF_TEST_COMMUNICATION_GRACE_SECONDS:
+                    raise
+
+                remaining = int(SELF_TEST_COMMUNICATION_GRACE_SECONDS - elapsed)
+                self_test_task["details"] = (
+                    "Waiting for device self-test response. The device may be busy "
+                    "formatting the SD card.\n\n"
+                    f"Last error: {type(poll_exc).__name__}: {poll_exc}\n"
+                    f"Will keep waiting for {remaining} more seconds."
+                )
+                session.touch()
+                await asyncio.sleep(SELF_TEST_POLL_SECONDS)
+                continue
+
             session.self_test_result = self_test_payload
             self_test_task["result"] = self_test_payload
             self_test_task["details"] = json.dumps(self_test_payload, indent=2)
