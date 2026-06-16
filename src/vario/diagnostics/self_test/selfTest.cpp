@@ -43,6 +43,7 @@ SelfTest_PageGPSFix selfTest_pageGPSFix{&gpsFixRemainingSeconds, &gpsFixTestCanc
 bool waitForVarioStartButton = false;
 bool varioStartPromptComplete = false;
 SelfTest_PageVarioReady selfTest_pageVarioReady;
+SelfTest_PageRunning selfTest_pageRunning;
 
 bool useSDFile() {
   if (self_test_file) {
@@ -620,6 +621,8 @@ void SelfTest::begin(bool markAsProductionChecked) {
     selfTest.clearResults();  // clear any previous results
     speaker.playSound(fx::confirm);
     selfTest.status = SelfTest::Status::Running;
+    selfTest_pageRunning.show();
+    display.update();
   }
 }
 
@@ -661,6 +664,7 @@ bool SelfTest::update() {
         speaker.playSound(fx::fatalerror);
       }
       closeTestFile();
+      selfTest_pageRunning.close();
       if (selfTest.results.allTests == Status::Pass) {
         selfTest_pageCommissioningConfirmation.show();
       } else {

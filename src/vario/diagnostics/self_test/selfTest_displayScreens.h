@@ -2,6 +2,20 @@
 
 #include "ui/display/menu_page.h"
 
+// Running Self-Test Page
+class SelfTest_PageRunning : public SimpleSettingsMenuPage {
+ public:
+  const char* get_title() const override { return "Self Test"; }
+
+  bool button_event(Button button, ButtonEvent state, uint8_t count) override {
+    // The self-test runner owns flow control while tests are running.
+    return false;
+  }
+  void show();
+  void draw_extra() override;
+  void close();
+};
+
 // Buttons Self-Test Page
 class SelfTest_PageButtons : public SimpleSettingsMenuPage {
  public:

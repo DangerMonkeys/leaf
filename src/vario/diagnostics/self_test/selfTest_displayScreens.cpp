@@ -9,6 +9,22 @@
 #include "ui/display/pages.h"
 
 //////////////////////////////////////////////
+// Running Self-Test Page
+void SelfTest_PageRunning::show() { push_page(this); }
+
+void SelfTest_PageRunning::draw_extra() {
+  u8g2.setFont(leaf_6x12);
+  u8g2.setCursor(9, 65);
+  u8g2.print("Running Test...");
+}
+
+void SelfTest_PageRunning::close() {
+  if (get_modal_page() == this) {
+    pop_page();
+  }
+}
+
+//////////////////////////////////////////////
 // Button Self-Test Page
 void SelfTest_PageButtons::show() { push_page(this); }
 
