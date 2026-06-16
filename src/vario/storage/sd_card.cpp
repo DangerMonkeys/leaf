@@ -25,6 +25,7 @@
 #define SDIO_D1 38
 
 constexpr DWORD SD_CARD_FORMAT_ALLOCATION_UNIT_SIZE = 32768;
+constexpr auto SD_CARD_VOLUME_LABEL = "LEAF VARIO";
 
 SDCard sdcard;
 
@@ -172,4 +173,20 @@ bool SDCard::format() {
   unmount();
   mounted_ = mount();
   return mounted_;
+}
+
+bool SDCard::setLabel() {
+  if (!mounted_) {
+    if (DEBUG_SDCARD) Serial.println("SDcard Label Failed: card is not mounted");
+    return false;
+  }
+
+  FRESULT result = f_setlabel(SD_CARD_VOLUME_LABEL);
+  if (result != FR_OK) {
+    if (DEBUG_SDCARD) Serial.printf("SDcard Label Failed: f_setlabel returned %d\n", result);
+    return false;
+  }
+
+  if (DEBUG_SDCARD) Serial.println("SDcard Label Success");
+  return true;
 }

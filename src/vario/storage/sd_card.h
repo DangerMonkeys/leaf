@@ -11,6 +11,7 @@ class SDCard {
   bool mount(bool formatIfMountFailed = false);
   void unmount();
   bool format();
+  bool setLabel();
   bool isMounted() { return mounted_; }
 
   bool setupMassStorage();

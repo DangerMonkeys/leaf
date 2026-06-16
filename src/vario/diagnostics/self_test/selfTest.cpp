@@ -168,6 +168,9 @@ SelfTest::Status SelfTest::testSDCard() {
       selfTestInfo("`Test=SD_CARD`,    `Result=FAIL`, `Message=Cannot save self test results%s`",
                    formatAttempted ? " after format attempt" : "");
       result = Status::Fail;
+    } else if (!sdcard.setLabel()) {
+      selfTestInfo("`Test=SD_CARD`,    `Result=FAIL`, `Message=Cannot set SD card label`");
+      result = Status::Fail;
     } else {
       selfTestInfo("`Test=SD_CARD`,    `Result=PASS`, `Message=%sSaving self test results`",
                    formatAttempted ? "Formatted SD card. " : "");
