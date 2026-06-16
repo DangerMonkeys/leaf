@@ -103,6 +103,12 @@ namespace {
 }  // namespace
 
 bool SDCard::setupMassStorage() {
+  const uint64_t sectorCount = SD_MMC.cardSize() / 512;
+  if (sectorCount == 0) {
+    if (DEBUG_SDCARD) Serial.println("Mass Storage Failed: SD card size is unknown");
+    return false;
+  }
+
   msc_.vendorID("Leaf");
   msc_.productID("Leaf_Vario");
   msc_.productRevision("1.0");
@@ -110,7 +116,7 @@ bool SDCard::setupMassStorage() {
   msc_.onWrite(onWrite);
   msc_.isWritable(true);
   msc_.mediaPresent(true);
-  msc_.begin(SD_MMC.numSectors(), 512);
+  msc_.begin(sectorCount, 512);
   firmwareMSC_.begin();
   return USB.begin();
 }
@@ -161,7 +167,7 @@ bool SDCard::format() {
     return false;
   }
 
-  const MKFS_PARM opt = {(BYTE)FM_ANY, 0, 0, 0, SD_CARD_FORMAT_ALLOCATION_UNIT_SIZE};
+  const MKFS_PARM opt = {(BYTE)FM_FAT32, 1, 0, 0, SD_CARD_FORMAT_ALLOCATION_UNIT_SIZE};
   FRESULT result = f_mkfs("0:", &opt, work, FF_MAX_SS);
   free(work);
 
