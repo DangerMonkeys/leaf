@@ -220,6 +220,7 @@ SelfTest::Status SelfTest::testAmbient() {
     } else {
       selfTestInfo("`Test=AMBIENT`,    `Result=FAIL`, `Temp=%g`, `Message=Out of range`",
                    temperature);
+      result = Status::Fail;
     }
   }
   return result;
