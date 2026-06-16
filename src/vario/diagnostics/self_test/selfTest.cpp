@@ -145,15 +145,34 @@ SelfTest::Status SelfTest::testSDCard() {
   if (sdcard.isCardPresent() == false) {
     selfTestInfo("`Test=SD_CARD`,    `Result=FAIL`, `Message=Physical card detection failed`");
     result = Status::Fail;
-  } else if (!sdcard.isMounted()) {
-    selfTestInfo("`Test=SD_CARD`,    `Result=FAIL`, `Message=SD Card not mounted`");
-    result = Status::Fail;
-  } else if (!useSDFile()) {
-    selfTestInfo("`Test=SD_CARD`,    `Result=FAIL`, `Message=Cannot save self test results`");
-    result = Status::Fail;
   } else {
-    selfTestInfo("`Test=SD_CARD`,    `Result=PASS`, `Message=Saving self test results`");
-    result = Status::Pass;
+    bool formatAttempted = false;
+
+    if (!sdcard.isMounted()) {
+      Serial.println("* SELF TEST * SD CARD * Mount failed; attempting SD card format");
+      formatAttempted = true;
+      sdcard.format();
+    }
+
+    if (sdcard.isMounted() && !useSDFile()) {
+      Serial.println("* SELF TEST * SD CARD * Cannot save results; attempting SD card format");
+      formatAttempted = true;
+      sdcard.format();
+    }
+
+    if (!sdcard.isMounted()) {
+      selfTestInfo("`Test=SD_CARD`,    `Result=FAIL`, `Message=SD Card not mounted%s`",
+                   formatAttempted ? " after format attempt" : "");
+      result = Status::Fail;
+    } else if (!useSDFile()) {
+      selfTestInfo("`Test=SD_CARD`,    `Result=FAIL`, `Message=Cannot save self test results%s`",
+                   formatAttempted ? " after format attempt" : "");
+      result = Status::Fail;
+    } else {
+      selfTestInfo("`Test=SD_CARD`,    `Result=PASS`, `Message=%sSaving self test results`",
+                   formatAttempted ? "Formatted SD card. " : "");
+      result = Status::Pass;
+    }
   }
   return result;
 }

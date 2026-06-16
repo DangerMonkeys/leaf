@@ -8,7 +8,9 @@ class SDCard {
   void init();
   void update();
 
-  bool mount();
+  bool mount(bool formatIfMountFailed = false);
+  void unmount();
+  bool format();
   bool isMounted() { return mounted_; }
 
   bool setupMassStorage();

@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <FS.h>
 #include <SD_MMC.h>
+#include <ff.h>
 #include "FirmwareMSC.h"
 #include "USB.h"
 #include "USBMSC.h"
@@ -40,8 +41,7 @@ void SDCard::init(void) {
 
   // If SDcard present, mount and save state so we can track changes
   if (isCardPresent()) {
-    mounted_ = true;
-    sdcard.mount();
+    mounted_ = sdcard.mount();
   }
 }
 
@@ -59,8 +59,7 @@ void SDCard::update() {
 
     // or if we don't have a card when we DID before, "unmount"
   } else if (!cardPresentNow && mounted_) {
-    SD_MMC.end();
-    mounted_ = false;  // save that we have a successfully unmounted card
+    unmount();
   }
 }
 
@@ -113,10 +112,10 @@ bool SDCard::setupMassStorage() {
   return USB.begin();
 }
 
-bool SDCard::mount() {
+bool SDCard::mount(bool formatIfMountFailed) {
   bool success = false;
 
-  if (!SD_MMC.begin()) {
+  if (!SD_MMC.begin("/sdcard", false, formatIfMountFailed)) {
     if (DEBUG_SDCARD) Serial.println("SDcard Mount Failed");
     success = false;
   } else {
@@ -133,4 +132,42 @@ bool SDCard::mount() {
   }
 
   return success;
+}
+
+void SDCard::unmount() {
+  SD_MMC.end();
+  mounted_ = false;
+}
+
+bool SDCard::format() {
+  if (!isCardPresent()) {
+    if (DEBUG_SDCARD) Serial.println("SDcard Format Failed: no card present");
+    return false;
+  }
+
+  if (!mounted_) {
+    mounted_ = mount(true);
+    return mounted_;
+  }
+
+  if (DEBUG_SDCARD) Serial.println("Formatting SDcard");
+
+  BYTE* work = static_cast<BYTE*>(malloc(FF_MAX_SS));
+  if (!work) {
+    if (DEBUG_SDCARD) Serial.println("SDcard Format Failed: cannot allocate work buffer");
+    return false;
+  }
+
+  const MKFS_PARM opt = {(BYTE)FM_ANY, 0, 0, 0, 0};
+  FRESULT result = f_mkfs("0:", &opt, work, FF_MAX_SS);
+  free(work);
+
+  if (result != FR_OK) {
+    if (DEBUG_SDCARD) Serial.printf("SDcard Format Failed: f_mkfs returned %d\n", result);
+    return false;
+  }
+
+  unmount();
+  mounted_ = mount();
+  return mounted_;
 }
