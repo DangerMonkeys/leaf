@@ -181,11 +181,11 @@ SelfTest::Status SelfTest::testBaro() {
 uint16_t imuTestCounter = 0;
 SelfTest::Status SelfTest::testIMU() {
   Status result = Status::Running;
-  if (!imu.accelValid()) {
+  if (!imu.accelValid() || !imu.velocityValid()) {
     if (imuTestCounter++ >= 1000) {
       selfTestInfo(
           "`Test=IMU`,        `Result=FAIL`, `Message=IMU timeout waiting for valid accel and "
-          "climb rate`");
+          "gravity`");
       result = Status::Fail;
     }
   } else {
