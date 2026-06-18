@@ -30,8 +30,7 @@ namespace {
     const int era = (year >= 0 ? year : year - 399) / 400;
     const unsigned yearOfEra = static_cast<unsigned>(year - era * 400);
     const unsigned dayOfYear = (153 * (month + (month > 2 ? -3 : 9)) + 2) / 5 + day - 1;
-    const unsigned dayOfEra =
-        yearOfEra * 365 + yearOfEra / 4 - yearOfEra / 100 + dayOfYear;
+    const unsigned dayOfEra = yearOfEra * 365 + yearOfEra / 4 - yearOfEra / 100 + dayOfYear;
     return era * 146097 + static_cast<int>(dayOfEra) - 719468;
   }
 
@@ -365,15 +364,13 @@ bool LeafGPS::getUtcDateTime(tm& cal) {
   if (!gps.date.isValid() || !gps.time.isValid()) {
     return false;
   }
-  cal = tm{
-      .tm_sec = gps.time.second(),
-      .tm_min = gps.time.minute(),
-      .tm_hour = gps.time.hour(),
-      .tm_mday = gps.date.day(),
-      .tm_mon = gps.date.month() - 1,    // tm_mon is 0-based, so subtract 1
-      .tm_year = gps.date.year() - 1900,  // tm_year is years since 1900
-      .tm_isdst = 0
-  };
+  cal = tm{.tm_sec = gps.time.second(),
+           .tm_min = gps.time.minute(),
+           .tm_hour = gps.time.hour(),
+           .tm_mday = gps.date.day(),
+           .tm_mon = gps.date.month() - 1,     // tm_mon is 0-based, so subtract 1
+           .tm_year = gps.date.year() - 1900,  // tm_year is years since 1900
+           .tm_isdst = 0};
   return true;
 }
 
