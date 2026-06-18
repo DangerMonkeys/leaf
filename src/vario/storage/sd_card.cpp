@@ -27,7 +27,7 @@
 #define SDIO_D0 37
 #define SDIO_D1 38
 
-constexpr DWORD SD_CARD_FORMAT_ALLOCATION_UNIT_SIZE = 32768;
+constexpr DWORD SD_CARD_FORMAT_ALLOCATION_UNIT_SIZE = 16384;
 constexpr auto SD_CARD_VOLUME_LABEL = "LEAF VARIO";
 constexpr auto SD_CARD_MOUNT_POINT = "/sdcard";
 constexpr auto SD_CARD_FORMAT_MOUNT_POINT = "/sdcard_format";
@@ -200,12 +200,14 @@ bool SDCard::formatUnmounted() {
   mountConfig.use_one_fat = false;
 
   sdmmc_card_t* card = nullptr;
-  esp_err_t result = esp_vfs_fat_sdmmc_mount(SD_CARD_FORMAT_MOUNT_POINT, &host, &slotConfig, &mountConfig, &card);
+  esp_err_t result =
+      esp_vfs_fat_sdmmc_mount(SD_CARD_FORMAT_MOUNT_POINT, &host, &slotConfig, &mountConfig, &card);
   if (result != ESP_OK) {
     SD_MMC.end();
     SD_MMC.setPins(SDIO_CLK, SDIO_CMD, SDIO_D0, SDIO_D1, SDIO_D2, SDIO_D3);
     mountConfig.format_if_mount_failed = true;
-    result = esp_vfs_fat_sdmmc_mount(SD_CARD_FORMAT_MOUNT_POINT, &host, &slotConfig, &mountConfig, &card);
+    result = esp_vfs_fat_sdmmc_mount(SD_CARD_FORMAT_MOUNT_POINT, &host, &slotConfig, &mountConfig,
+                                     &card);
     if (result != ESP_OK) {
       if (DEBUG_SDCARD) Serial.printf("SDcard Format Failed: mount/format returned 0x%x\n", result);
       return false;

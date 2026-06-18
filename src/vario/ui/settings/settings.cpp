@@ -29,7 +29,7 @@ Preferences leafPrefs;
 namespace {
   constexpr auto FACTORY_FLAGS_NAMESPACE = "factoryFlags";
   constexpr auto FORCE_FORMAT_SD_CARD_KEY = "FORCE_FMT_SD";
-}
+}  // namespace
 
 bool Settings::init() {
   vario_sensitivity.onChange([](const int8_t& newValue) {
