@@ -3,6 +3,7 @@
 #include <SD_MMC.h>
 
 #include "FS.h"
+#include "instruments/gps.h"
 #include "logging/telemetry.h"
 #include "storage/sd_card.h"
 #include "ui/display/pages/dialogs/page_flight_summary.h"
@@ -10,6 +11,8 @@
 bool Flight::startFlight() {
   // Short circuit if the card is not mounted or reading properly
   if (!sdcard.isMounted()) return false;
+  gps.syncSystemClock();
+
   Serial.printf("Sectors: %d\n", SD_MMC.numSectors());
   File trackLogsDir = SD_MMC.open(this->desiredFilePath());
 

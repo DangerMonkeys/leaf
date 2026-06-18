@@ -7,6 +7,7 @@
 
 #include <Arduino.h>
 #include <TinyGPSPlus.h>
+#include <sys/time.h>
 
 #include "dispatch/message_types.h"
 #include "hardware/lc86g.h"
@@ -24,6 +25,47 @@ LeafGPS gps;
 #define DEBUG_GPS 0
 
 namespace {
+  int64_t daysFromCivil(int year, unsigned month, unsigned day) {
+    year -= month <= 2;
+    const int era = (year >= 0 ? year : year - 399) / 400;
+    const unsigned yearOfEra = static_cast<unsigned>(year - era * 400);
+    const unsigned dayOfYear = (153 * (month + (month > 2 ? -3 : 9)) + 2) / 5 + day - 1;
+    const unsigned dayOfEra = yearOfEra * 365 + yearOfEra / 4 - yearOfEra / 100 + dayOfYear;
+    return era * 146097 + static_cast<int>(dayOfEra) - 719468;
+  }
+
+  bool utcCalendarToEpoch(const tm& cal, time_t& epoch) {
+    const int year = cal.tm_year + 1900;
+    const int month = cal.tm_mon + 1;
+
+    if (year < 1980 || month < 1 || month > 12 || cal.tm_mday < 1 || cal.tm_mday > 31 ||
+        cal.tm_hour < 0 || cal.tm_hour > 23 || cal.tm_min < 0 || cal.tm_min > 59 ||
+        cal.tm_sec < 0 || cal.tm_sec > 60) {
+      return false;
+    }
+
+    const int64_t seconds = daysFromCivil(year, month, cal.tm_mday) * 86400LL +
+                            cal.tm_hour * 3600LL + cal.tm_min * 60LL + cal.tm_sec;
+    if (seconds < 0) {
+      return false;
+    }
+
+    epoch = static_cast<time_t>(seconds);
+    return true;
+  }
+
+  void applySystemTimeZone() {
+    const int offsetMinutes = -settings.system_timeZone;
+    const char sign = offsetMinutes >= 0 ? '+' : '-';
+    const int absOffsetMinutes = abs(offsetMinutes);
+
+    char timezone[16];
+    snprintf(timezone, sizeof(timezone), "UTC%c%d:%02d", sign, absOffsetMinutes / 60,
+             absOffsetMinutes % 60);
+    setenv("TZ", timezone, 1);
+    tzset();
+  }
+
   bool isGsvSentence(const NMEAString& nmea) {
     return nmea.length() >= 7 && nmea[0] == '$' && nmea[3] == 'G' && nmea[4] == 'S' &&
            nmea[5] == 'V' && nmea[6] == ',';
@@ -319,17 +361,16 @@ void LeafGPS::testSats() {
 }
 
 bool LeafGPS::getUtcDateTime(tm& cal) {
-  if (!gps.time.isValid()) {
+  if (!gps.date.isValid() || !gps.time.isValid()) {
     return false;
   }
-  cal = tm{
-      .tm_sec = gps.time.second(),
-      .tm_min = gps.time.minute(),
-      .tm_hour = gps.time.hour(),
-      .tm_mday = gps.date.day(),
-      .tm_mon = gps.date.month() - 1,    // tm_mon is 0-based, so subtract 1
-      .tm_year = gps.date.year() - 1900  // tm_year is years since 1900
-  };
+  cal = tm{.tm_sec = gps.time.second(),
+           .tm_min = gps.time.minute(),
+           .tm_hour = gps.time.hour(),
+           .tm_mday = gps.date.day(),
+           .tm_mon = gps.date.month() - 1,     // tm_mon is 0-based, so subtract 1
+           .tm_year = gps.date.year() - 1900,  // tm_year is years since 1900
+           .tm_isdst = 0};
   return true;
 }
 
@@ -339,9 +380,31 @@ bool LeafGPS::getLocalDateTime(tm& cal) {
     return false;
   }
 
-  time_t rawTime = mktime(&cal);
-  rawTime += settings.system_timeZone * 60;  // Apply the timezone offset in seconds
+  time_t rawTime;
+  if (!utcCalendarToEpoch(cal, rawTime)) {
+    return false;
+  }
+
+  applySystemTimeZone();
   cal = *localtime(&rawTime);
 
   return true;
+}
+
+bool LeafGPS::syncSystemClock() {
+  tm cal;
+  if (!getUtcDateTime(cal)) {
+    return false;
+  }
+
+  time_t rawTime;
+  if (!utcCalendarToEpoch(cal, rawTime)) {
+    return false;
+  }
+
+  applySystemTimeZone();
+  timeval now;
+  now.tv_sec = rawTime;
+  now.tv_usec = 0;
+  return settimeofday(&now, nullptr) == 0;
 }
