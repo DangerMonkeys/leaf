@@ -75,6 +75,10 @@ class LeafGPS : public TinyGPSPlus, IMessageSource, public MessageSink<LeafGPS, 
   // like getUtcDateTime, but has the timezone offset applied.
   bool getLocalDateTime(tm& cal);
 
+  // Sets the ESP32 system clock from the current GPS UTC date/time.
+  // Returns false when GPS date/time is not currently valid.
+  bool syncSystemClock();
+
   float getGlideRatio(void) { return glideRatio; }
 
   // Cached version of the sat info for showing on display (this will be re-written each time a
