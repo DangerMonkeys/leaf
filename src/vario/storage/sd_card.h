@@ -8,7 +8,7 @@ class SDCard {
   void init();
   void update();
 
-  bool mount(bool formatIfMountFailed = false);
+  bool mount();
   void unmount();
   bool format();
   bool setLabel();
@@ -24,6 +24,8 @@ class SDCard {
 
   FirmwareMSC firmwareMSC_;
   USBMSC msc_;
+
+  bool formatUnmounted();
 };
 
 extern SDCard sdcard;
