@@ -3,6 +3,10 @@
 #include <Arduino.h>
 #include <FS.h>
 #include <SD_MMC.h>
+#include <driver/sdmmc_host.h>
+#include <esp_vfs_fat.h>
+#include <ff.h>
+#include <sdmmc_cmd.h>
 #include "FirmwareMSC.h"
 #include "USB.h"
 #include "USBMSC.h"
@@ -23,6 +27,11 @@
 #define SDIO_D0 37
 #define SDIO_D1 38
 
+constexpr DWORD SD_CARD_FORMAT_ALLOCATION_UNIT_SIZE = 16384;
+constexpr auto SD_CARD_VOLUME_LABEL = "LEAF VARIO";
+constexpr auto SD_CARD_MOUNT_POINT = "/sdcard";
+constexpr auto SD_CARD_FORMAT_MOUNT_POINT = "/sdcard_format";
+
 SDCard sdcard;
 
 bool SDCard::isCardPresent() { return !ioexDigitalRead(SD_DETECT_IOEX, SD_DETECT); }
@@ -40,8 +49,7 @@ void SDCard::init(void) {
 
   // If SDcard present, mount and save state so we can track changes
   if (isCardPresent()) {
-    mounted_ = true;
-    sdcard.mount();
+    mounted_ = sdcard.mount();
   }
 }
 
@@ -59,8 +67,7 @@ void SDCard::update() {
 
     // or if we don't have a card when we DID before, "unmount"
   } else if (!cardPresentNow && mounted_) {
-    SD_MMC.end();
-    mounted_ = false;  // save that we have a successfully unmounted card
+    unmount();
   }
 }
 
@@ -101,6 +108,12 @@ namespace {
 }  // namespace
 
 bool SDCard::setupMassStorage() {
+  const uint64_t sectorCount = SD_MMC.cardSize() / 512;
+  if (sectorCount == 0) {
+    if (DEBUG_SDCARD) Serial.println("Mass Storage Failed: SD card size is unknown");
+    return false;
+  }
+
   msc_.vendorID("Leaf");
   msc_.productID("Leaf_Vario");
   msc_.productRevision("1.0");
@@ -108,7 +121,7 @@ bool SDCard::setupMassStorage() {
   msc_.onWrite(onWrite);
   msc_.isWritable(true);
   msc_.mediaPresent(true);
-  msc_.begin(SD_MMC.numSectors(), 512);
+  msc_.begin(sectorCount, 512);
   firmwareMSC_.begin();
   return USB.begin();
 }
@@ -116,7 +129,7 @@ bool SDCard::setupMassStorage() {
 bool SDCard::mount() {
   bool success = false;
 
-  if (!SD_MMC.begin()) {
+  if (!SD_MMC.begin(SD_CARD_MOUNT_POINT, false, false)) {
     if (DEBUG_SDCARD) Serial.println("SDcard Mount Failed");
     success = false;
   } else {
@@ -133,4 +146,108 @@ bool SDCard::mount() {
   }
 
   return success;
+}
+
+void SDCard::unmount() {
+  SD_MMC.end();
+  mounted_ = false;
+}
+
+bool SDCard::format() {
+  if (!isCardPresent()) {
+    if (DEBUG_SDCARD) Serial.println("SDcard Format Failed: no card present");
+    return false;
+  }
+
+  if (mounted_) {
+    unmount();
+  }
+
+  if (DEBUG_SDCARD) Serial.println("Formatting SDcard");
+
+  if (!formatUnmounted()) {
+    return false;
+  }
+
+  mounted_ = mount();
+  return mounted_;
+}
+
+bool SDCard::formatUnmounted() {
+  if (DEBUG_SDCARD) Serial.println("Formatting unmounted SDcard");
+
+  SD_MMC.end();
+  SD_MMC.setPins(SDIO_CLK, SDIO_CMD, SDIO_D0, SDIO_D1, SDIO_D2, SDIO_D3);
+
+  sdmmc_host_t host = SDMMC_HOST_DEFAULT();
+  host.flags = SDMMC_HOST_FLAG_4BIT;
+  host.slot = SDMMC_HOST_SLOT_1;
+
+  sdmmc_slot_config_t slotConfig = SDMMC_SLOT_CONFIG_DEFAULT();
+  slotConfig.clk = static_cast<gpio_num_t>(SDIO_CLK);
+  slotConfig.cmd = static_cast<gpio_num_t>(SDIO_CMD);
+  slotConfig.d0 = static_cast<gpio_num_t>(SDIO_D0);
+  slotConfig.d1 = static_cast<gpio_num_t>(SDIO_D1);
+  slotConfig.d2 = static_cast<gpio_num_t>(SDIO_D2);
+  slotConfig.d3 = static_cast<gpio_num_t>(SDIO_D3);
+  slotConfig.width = 4;
+
+  esp_vfs_fat_sdmmc_mount_config_t mountConfig = {};
+  mountConfig.format_if_mount_failed = false;
+  mountConfig.max_files = 1;
+  mountConfig.allocation_unit_size = SD_CARD_FORMAT_ALLOCATION_UNIT_SIZE;
+  mountConfig.disk_status_check_enable = false;
+  mountConfig.use_one_fat = false;
+
+  sdmmc_card_t* card = nullptr;
+  esp_err_t result =
+      esp_vfs_fat_sdmmc_mount(SD_CARD_FORMAT_MOUNT_POINT, &host, &slotConfig, &mountConfig, &card);
+  if (result != ESP_OK) {
+    SD_MMC.end();
+    SD_MMC.setPins(SDIO_CLK, SDIO_CMD, SDIO_D0, SDIO_D1, SDIO_D2, SDIO_D3);
+    mountConfig.format_if_mount_failed = true;
+    result = esp_vfs_fat_sdmmc_mount(SD_CARD_FORMAT_MOUNT_POINT, &host, &slotConfig, &mountConfig,
+                                     &card);
+    if (result != ESP_OK) {
+      if (DEBUG_SDCARD) Serial.printf("SDcard Format Failed: mount/format returned 0x%x\n", result);
+      return false;
+    }
+  } else {
+    result = esp_vfs_fat_sdcard_format_cfg(SD_CARD_FORMAT_MOUNT_POINT, card, &mountConfig);
+    if (result != ESP_OK) {
+      if (DEBUG_SDCARD) Serial.printf("SDcard Format Failed: format returned 0x%x\n", result);
+      esp_vfs_fat_sdcard_unmount(SD_CARD_FORMAT_MOUNT_POINT, card);
+      return false;
+    }
+  }
+
+  result = esp_vfs_fat_sdcard_unmount(SD_CARD_FORMAT_MOUNT_POINT, card);
+  if (result != ESP_OK) {
+    if (result != ESP_ERR_INVALID_STATE) {
+      if (DEBUG_SDCARD) Serial.printf("SDcard Format Failed: unmount returned 0x%x\n", result);
+      return false;
+    }
+
+    if (DEBUG_SDCARD) Serial.println("SDcard Format Cleanup: temporary mount already released");
+  }
+
+  SD_MMC.end();
+  SD_MMC.setPins(SDIO_CLK, SDIO_CMD, SDIO_D0, SDIO_D1, SDIO_D2, SDIO_D3);
+  return true;
+}
+
+bool SDCard::setLabel() {
+  if (!mounted_) {
+    if (DEBUG_SDCARD) Serial.println("SDcard Label Failed: card is not mounted");
+    return false;
+  }
+
+  FRESULT result = f_setlabel(SD_CARD_VOLUME_LABEL);
+  if (result != FR_OK) {
+    if (DEBUG_SDCARD) Serial.printf("SDcard Label Failed: f_setlabel returned %d\n", result);
+    return false;
+  }
+
+  if (DEBUG_SDCARD) Serial.println("SDcard Label Success");
+  return true;
 }

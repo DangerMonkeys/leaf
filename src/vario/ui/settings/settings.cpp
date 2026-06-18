@@ -26,6 +26,11 @@ Settings settings;
 
 Preferences leafPrefs;
 
+namespace {
+  constexpr auto FACTORY_FLAGS_NAMESPACE = "factoryFlags";
+  constexpr auto FORCE_FORMAT_SD_CARD_KEY = "FORCE_FMT_SD";
+}  // namespace
+
 bool Settings::init() {
   vario_sensitivity.onChange([](const int8_t& newValue) {
     size_t nSamples = 3;
@@ -81,6 +86,20 @@ String Settings::getMacAddress() {
   snprintf(macStr, sizeof(macStr), "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3],
            mac[4], mac[5]);
   return String(macStr);
+}
+
+void Settings::setProductionTestForceFormatSdCard(bool forceFormat) {
+  leafPrefs.begin(FACTORY_FLAGS_NAMESPACE, RW_MODE);
+  leafPrefs.putBool(FORCE_FORMAT_SD_CARD_KEY, forceFormat);
+  leafPrefs.end();
+}
+
+bool Settings::consumeProductionTestForceFormatSdCard() {
+  leafPrefs.begin(FACTORY_FLAGS_NAMESPACE, RW_MODE);
+  bool forceFormat = leafPrefs.getBool(FORCE_FORMAT_SD_CARD_KEY, false);
+  leafPrefs.remove(FORCE_FORMAT_SD_CARD_KEY);
+  leafPrefs.end();
+  return forceFormat;
 }
 
 // Reset Leaf user settings and info to defaults

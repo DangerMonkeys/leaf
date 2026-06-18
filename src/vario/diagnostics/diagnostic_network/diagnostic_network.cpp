@@ -5,6 +5,8 @@
 #include "diagnostics/fatal_error.h"
 #include "diagnostics/self_test/selfTest.h"
 #include "power.h"
+#include "storage/sd_card.h"
+#include "ui/settings/settings.h"
 #include "utils/magic_enum.h"
 
 static constexpr const char* DIAGNOSTIC_NETWORK_SSID = "LeafDiagnostics";
@@ -70,6 +72,12 @@ void DiagnosticNetwork::update() {
       printed_end_state_ = true;
     }
     // begin self test (mark as official production test)
+    if (!settings.productionTest && settings.consumeProductionTestForceFormatSdCard()) {
+      Serial.println("DiagnosticNetwork: force-formatting SD card before production self test");
+      if (sdcard.format()) {
+        sdcard.setLabel();
+      }
+    }
     selfTest.begin(true);
   } else if (state_ == State::Error) {
     // Do nothing

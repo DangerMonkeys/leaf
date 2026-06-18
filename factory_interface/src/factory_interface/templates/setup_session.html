@@ -23,6 +23,7 @@
       <ul>
         <li>Firmware: {{ session.preflight.application_firmware_label }}</li>
         <li>Non-application binaries: {{ session.preflight.non_application_binaries_label }}</li>
+        <li>SD card force-format: {{ "enabled" if session.preflight.force_format_sd_card else "disabled" }}</li>
       </ul>
     </div>
 

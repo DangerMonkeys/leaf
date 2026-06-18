@@ -257,6 +257,27 @@ namespace {
 
     return "";
   }
+
+  bool extractJsonBoolValue(const String& body, const char* key, bool defaultValue = false) {
+    String quoted_key = "\"";
+    quoted_key += key;
+    quoted_key += "\"";
+
+    int key_index = body.indexOf(quoted_key);
+    if (key_index < 0) return defaultValue;
+
+    int separator_index = body.indexOf(':', key_index + quoted_key.length());
+    if (separator_index < 0) return defaultValue;
+
+    int value_start = separator_index + 1;
+    while (value_start < body.length() && isspace(body[value_start])) {
+      value_start++;
+    }
+
+    if (body.substring(value_start, value_start + 4) == "true") return true;
+    if (body.substring(value_start, value_start + 5) == "false") return false;
+    return defaultValue;
+  }
 }  // namespace
 
 constexpr auto endl = "\n";
@@ -446,7 +467,10 @@ void webserver_setup() {
   });
 
   server.on("/settings/factory-reset", HTTP_POST, []() {
+    const bool forceFormatSdCard =
+        extractJsonBoolValue(server.arg("plain"), "force_format_sd_card", false);
     settings.factoryResetVario();
+    settings.setProductionTestForceFormatSdCard(forceFormatSdCard);
     server.send(200, "application/json", "{\"reset_requested\":true}");
     delay(250);
     ESP.restart();
@@ -474,6 +498,30 @@ void webserver_setup() {
   server.on("/self-test/interactive", HTTP_POST, []() {
     requestInteractiveSelfTest();
     server.send(200, "application/json", selfTestSnapshotJson());
+  });
+
+  server.on("/sd-card/format", HTTP_POST, []() {
+    if (selfTest.updateNeeded() || interactive_self_test_pending) {
+      server.send(409, "application/json", "{\"detail\":\"Self test is running or pending.\"}");
+      return;
+    }
+
+    if (!sdcard.isCardPresent()) {
+      server.send(404, "application/json", "{\"detail\":\"SD card is not present.\"}");
+      return;
+    }
+
+    if (!sdcard.format()) {
+      server.send(500, "application/json", "{\"formatted\":false}");
+      return;
+    }
+
+    if (!sdcard.setLabel()) {
+      server.send(500, "application/json", "{\"formatted\":true,\"label_set\":false}");
+      return;
+    }
+
+    server.send(200, "application/json", "{\"formatted\":true,\"label_set\":true}");
   });
 
   server.on("/self-test/details", HTTP_GET, []() { sendLatestSelfTestDetails(); });

@@ -71,6 +71,18 @@
       </select>
       <p class="path-display" id="selected-non-application-firmware-path">{{ selected_non_application_firmware_path or "No binaries selected" }}</p>
     </div>
+    <div class="field-group">
+      <label class="bootloader-check">
+        <input
+          id="force-format-sd-card"
+          name="force_format_sd_card_during_commissioning"
+          type="checkbox"
+          value="true"
+          {% if settings.force_format_sd_card_during_commissioning %}checked{% endif %}
+        >
+        <span>Force-format SD card during commissioning</span>
+      </label>
+    </div>
     <button type="submit">Save settings</button>
     {% if saved %}
     <p class="status-message">Settings saved.</p>

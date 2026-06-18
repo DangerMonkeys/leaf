@@ -15,6 +15,7 @@
       <ul>
         <li>Firmware: {{ application_firmware_label }}</li>
         <li>Non-application binaries: {{ non_application_binaries_label }}</li>
+        <li>SD card force-format: {{ "enabled" if force_format_sd_card_during_commissioning else "disabled" }}</li>
       </ul>
     </div>
 

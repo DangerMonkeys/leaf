@@ -276,6 +276,9 @@ async def setup_device(request: Request) -> HTMLResponse:
                 "non_application_binaries_label": describe_non_application_binary_path(
                     settings.non_application_firmware_path,
                 ),
+                "force_format_sd_card_during_commissioning": (
+                    settings.force_format_sd_card_during_commissioning
+                ),
             },
         ),
     )
@@ -436,6 +439,7 @@ async def handoff_setup_session(request: Request) -> JSONResponse:
             settings.non_application_firmware_path,
         ),
         "firmware_files": firmware_file_sources(settings),
+        "force_format_sd_card": settings.force_format_sd_card_during_commissioning,
         "notes": settings.setup_notes,
         "flash": get_flash_task().snapshot(),
     }
@@ -680,6 +684,9 @@ async def save_settings_page(request: Request) -> HTMLResponse:
     non_application_firmware_path = (
         form_data.get("non_application_firmware_path", [""])[0].strip() or None
     )
+    force_format_sd_card = (
+        form_data.get("force_format_sd_card_during_commissioning", [""])[0] == "true"
+    )
     if not is_valid_application_firmware_source(application_firmware_source, settings):
         firmware_options = application_firmware_options(settings)
         application_firmware_source = firmware_options[0]["source"] if firmware_options else None
@@ -690,6 +697,7 @@ async def save_settings_page(request: Request) -> HTMLResponse:
     settings.esptool_path = esptool_path
     settings.application_firmware_source = application_firmware_source
     settings.non_application_firmware_path = non_application_firmware_path
+    settings.force_format_sd_card_during_commissioning = force_format_sd_card
     settings.firmware_path = non_application_firmware_path
     save_settings(settings)
 
