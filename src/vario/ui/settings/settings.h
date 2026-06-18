@@ -205,6 +205,8 @@ setting | samples | time avg
   void factoryResetVario(void);
   void totallyEraseNVS(void);
   String getMacAddress(void);
+  void setProductionTestForceFormatSdCard(bool forceFormat);
+  bool consumeProductionTestForceFormatSdCard(void);
 
   // adjust-settings functions
   void adjustContrast(Button dir);

@@ -1,7 +1,7 @@
 import asyncio
 import json
 from dataclasses import dataclass, field
-from urllib.error import URLError
+from urllib.error import HTTPError, URLError
 from urllib.request import Request
 
 from factory_interface.http_client import (
@@ -9,6 +9,7 @@ from factory_interface.http_client import (
     urlopen_with_timeout_retries,
 )
 from factory_interface.network_discovery import get_find_device_task, probe_once
+from factory_interface.settings import load_settings
 
 
 HTTP_TIMEOUT_SECONDS = DEFAULT_HTTP_TIMEOUT_SECONDS
@@ -91,6 +92,26 @@ def fetch_json(url: str, *, method: str = "GET") -> dict:
         return json.loads(response.read().decode("utf-8"))
 
 
+def post_json(url: str, payload: dict) -> dict:
+    data = json.dumps(payload).encode("utf-8")
+    request = Request(
+        url,
+        data=data,
+        method="POST",
+        headers={"Content-Type": "application/json"},
+    )
+    try:
+        with urlopen_with_timeout_retries(
+            request,
+            timeout=HTTP_TIMEOUT_SECONDS,
+        ) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace").strip()
+        detail = body or exc.reason
+        raise RuntimeError(f"HTTP {exc.code} from {url}: {detail}") from exc
+
+
 async def wait_for_device(base_url: str, device_id: str) -> None:
     while True:
         try:
@@ -139,9 +160,11 @@ async def run_reset_nonvolatile_memory() -> None:
         try:
             base_url, device_id = device_base_url()
             payload = await asyncio.to_thread(
-                fetch_json,
+                post_json,
                 f"{base_url}/settings/factory-reset",
-                method="POST",
+                {
+                    "force_format_sd_card": load_settings().force_format_sd_card_during_commissioning
+                },
             )
             if not payload.get("reset_requested", False):
                 raise RuntimeError("Device did not acknowledge the reset request.")

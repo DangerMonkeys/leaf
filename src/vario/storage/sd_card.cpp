@@ -159,33 +159,16 @@ bool SDCard::format() {
     return false;
   }
 
-  if (!mounted_) {
-    if (!formatUnmounted()) {
-      return false;
-    }
-
-    mounted_ = mount();
-    return mounted_;
+  if (mounted_) {
+    unmount();
   }
 
   if (DEBUG_SDCARD) Serial.println("Formatting SDcard");
 
-  BYTE* work = static_cast<BYTE*>(malloc(FF_MAX_SS));
-  if (!work) {
-    if (DEBUG_SDCARD) Serial.println("SDcard Format Failed: cannot allocate work buffer");
+  if (!formatUnmounted()) {
     return false;
   }
 
-  const MKFS_PARM opt = {(BYTE)FM_FAT32, 2, 0, 0, SD_CARD_FORMAT_ALLOCATION_UNIT_SIZE};
-  FRESULT result = f_mkfs("0:", &opt, work, FF_MAX_SS);
-  free(work);
-
-  if (result != FR_OK) {
-    if (DEBUG_SDCARD) Serial.printf("SDcard Format Failed: f_mkfs returned %d\n", result);
-    return false;
-  }
-
-  unmount();
   mounted_ = mount();
   return mounted_;
 }
@@ -210,7 +193,7 @@ bool SDCard::formatUnmounted() {
   slotConfig.width = 4;
 
   esp_vfs_fat_sdmmc_mount_config_t mountConfig = {};
-  mountConfig.format_if_mount_failed = true;
+  mountConfig.format_if_mount_failed = false;
   mountConfig.max_files = 1;
   mountConfig.allocation_unit_size = SD_CARD_FORMAT_ALLOCATION_UNIT_SIZE;
   mountConfig.disk_status_check_enable = false;
@@ -219,8 +202,21 @@ bool SDCard::formatUnmounted() {
   sdmmc_card_t* card = nullptr;
   esp_err_t result = esp_vfs_fat_sdmmc_mount(SD_CARD_FORMAT_MOUNT_POINT, &host, &slotConfig, &mountConfig, &card);
   if (result != ESP_OK) {
-    if (DEBUG_SDCARD) Serial.printf("SDcard Format Failed: mount/format returned 0x%x\n", result);
-    return false;
+    SD_MMC.end();
+    SD_MMC.setPins(SDIO_CLK, SDIO_CMD, SDIO_D0, SDIO_D1, SDIO_D2, SDIO_D3);
+    mountConfig.format_if_mount_failed = true;
+    result = esp_vfs_fat_sdmmc_mount(SD_CARD_FORMAT_MOUNT_POINT, &host, &slotConfig, &mountConfig, &card);
+    if (result != ESP_OK) {
+      if (DEBUG_SDCARD) Serial.printf("SDcard Format Failed: mount/format returned 0x%x\n", result);
+      return false;
+    }
+  } else {
+    result = esp_vfs_fat_sdcard_format_cfg(SD_CARD_FORMAT_MOUNT_POINT, card, &mountConfig);
+    if (result != ESP_OK) {
+      if (DEBUG_SDCARD) Serial.printf("SDcard Format Failed: format returned 0x%x\n", result);
+      esp_vfs_fat_sdcard_unmount(SD_CARD_FORMAT_MOUNT_POINT, card);
+      return false;
+    }
   }
 
   result = esp_vfs_fat_sdcard_unmount(SD_CARD_FORMAT_MOUNT_POINT, card);
@@ -230,7 +226,7 @@ bool SDCard::formatUnmounted() {
       return false;
     }
 
-    if (DEBUG_SDCARD) Serial.println("SDcard Format Warning: unmount returned ESP_ERR_INVALID_STATE; continuing");
+    if (DEBUG_SDCARD) Serial.println("SDcard Format Cleanup: temporary mount already released");
   }
 
   SD_MMC.end();

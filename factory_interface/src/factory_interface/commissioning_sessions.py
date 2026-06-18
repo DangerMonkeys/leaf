@@ -9,7 +9,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from urllib.error import URLError
+from urllib.error import HTTPError, URLError
 from urllib.request import Request
 
 from sqlmodel import Session, select
@@ -144,11 +144,16 @@ def fetch_json(
     timeout: float = HTTP_TIMEOUT_SECONDS,
 ) -> dict:
     request = Request(url, method=method)
-    with urlopen_with_timeout_retries(
-        request,
-        timeout=timeout,
-    ) as response:
-        return json.loads(response.read().decode("utf-8"))
+    try:
+        with urlopen_with_timeout_retries(
+            request,
+            timeout=timeout,
+        ) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace").strip()
+        detail = body or exc.reason
+        raise RuntimeError(f"HTTP {exc.code} from {url}: {detail}") from exc
 
 
 def fetch_text(
@@ -158,11 +163,16 @@ def fetch_text(
     timeout: float = HTTP_TIMEOUT_SECONDS,
 ) -> str:
     request = Request(url, method=method)
-    with urlopen_with_timeout_retries(
-        request,
-        timeout=timeout,
-    ) as response:
-        return response.read().decode("utf-8")
+    try:
+        with urlopen_with_timeout_retries(
+            request,
+            timeout=timeout,
+        ) as response:
+            return response.read().decode("utf-8")
+    except HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace").strip()
+        detail = body or exc.reason
+        raise RuntimeError(f"HTTP {exc.code} from {url}: {detail}") from exc
 
 
 def post_json(url: str, payload: dict) -> dict:
@@ -173,11 +183,16 @@ def post_json(url: str, payload: dict) -> dict:
         method="POST",
         headers={"Content-Type": "application/json"},
     )
-    with urlopen_with_timeout_retries(
-        request,
-        timeout=HTTP_TIMEOUT_SECONDS,
-    ) as response:
-        return json.loads(response.read().decode("utf-8"))
+    try:
+        with urlopen_with_timeout_retries(
+            request,
+            timeout=HTTP_TIMEOUT_SECONDS,
+        ) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace").strip()
+        detail = body or exc.reason
+        raise RuntimeError(f"HTTP {exc.code} from {url}: {detail}") from exc
 
 
 def response_matches_session(
@@ -520,9 +535,13 @@ async def run_commissioning_session(session: CommissioningSession) -> None:
         )
         session.touch()
         payload = await asyncio.to_thread(
-            fetch_json,
+            post_json,
             f"{device_base_url(session)}/settings/factory-reset",
-            method="POST",
+            {
+                "force_format_sd_card": session.preflight.get(
+                    "force_format_sd_card", False
+                )
+            },
         )
         if not payload.get("reset_requested", False):
             raise RuntimeError("Device did not acknowledge the reset request.")

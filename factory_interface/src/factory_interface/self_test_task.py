@@ -2,7 +2,7 @@ import asyncio
 import json
 import time
 from dataclasses import dataclass, field
-from urllib.error import URLError
+from urllib.error import HTTPError, URLError
 from urllib.request import Request
 
 from factory_interface.http_client import (
@@ -97,13 +97,17 @@ def cancel_self_test_details_task() -> SelfTestDetailsTask:
     return task
 
 
-def device_self_test_url() -> str:
+def device_base_url() -> str:
     discovery_task = get_find_device_task()
     if discovery_task.status != "success" or discovery_task.device is None:
         raise RuntimeError("Device has not been discovered on the network.")
 
     device = discovery_task.device
-    return f"http://{device.ip_address}:{device.port}/self-test"
+    return f"http://{device.ip_address}:{device.port}"
+
+
+def device_self_test_url() -> str:
+    return f"{device_base_url()}/self-test"
 
 
 def fetch_json(
@@ -113,11 +117,16 @@ def fetch_json(
     timeout: float = HTTP_TIMEOUT_SECONDS,
 ) -> dict:
     request = Request(url, method=method)
-    with urlopen_with_timeout_retries(
-        request,
-        timeout=timeout,
-    ) as response:
-        return json.loads(response.read().decode("utf-8"))
+    try:
+        with urlopen_with_timeout_retries(
+            request,
+            timeout=timeout,
+        ) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace").strip()
+        detail = body or exc.reason
+        raise RuntimeError(f"HTTP {exc.code} from {url}: {detail}") from exc
 
 
 def fetch_text(
@@ -127,11 +136,16 @@ def fetch_text(
     timeout: float = HTTP_TIMEOUT_SECONDS,
 ) -> str:
     request = Request(url, method=method)
-    with urlopen_with_timeout_retries(
-        request,
-        timeout=timeout,
-    ) as response:
-        return response.read().decode("utf-8")
+    try:
+        with urlopen_with_timeout_retries(
+            request,
+            timeout=timeout,
+        ) as response:
+            return response.read().decode("utf-8")
+    except HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace").strip()
+        detail = body or exc.reason
+        raise RuntimeError(f"HTTP {exc.code} from {url}: {detail}") from exc
 
 
 def status_result(payload: dict) -> str | None:

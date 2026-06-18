@@ -27,6 +27,7 @@ class FactoryInterfaceSettings(ImplicitDict):
   non_application_firmware_path: str | None = None
   github_releases: list[dict] = []
   setup_notes: str = ""
+  force_format_sd_card_during_commissioning: bool = True
 
 
 def find_build_paths(required_files: tuple[str, ...]) -> list[Path]:
@@ -381,6 +382,10 @@ def load_settings() -> FactoryInterfaceSettings:
 
   if not isinstance(settings.setup_notes, str):
     settings.setup_notes = ""
+    settings_changed = True
+
+  if not isinstance(settings.force_format_sd_card_during_commissioning, bool):
+    settings.force_format_sd_card_during_commissioning = True
     settings_changed = True
 
   if not isinstance(settings.github_releases, list):
