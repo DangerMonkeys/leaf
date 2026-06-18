@@ -14,6 +14,7 @@
 #include "hardware/io_pins.h"
 #include "instruments/gps.h"
 #include "logging/log.h"
+#include "system/usb_state.h"
 
 #define DEBUG_SDCARD true
 
@@ -48,9 +49,16 @@ void SDCard::init(void) {
   if (!SD_DETECT_IOEX) pinMode(SD_DETECT, INPUT_PULLUP);
 
   // If SDcard present, mount and save state so we can track changes
-  if (isCardPresent()) {
+  const bool cardPresent = isCardPresent();
+  if (cardPresent) {
     mounted_ = sdcard.mount();
   }
+
+#ifndef DISABLE_MASS_STORAGE
+  if (!cardPresent || !mounted_) {
+    leaf_usb::begin();
+  }
+#endif
 }
 
 void SDCard::update() {
@@ -123,7 +131,7 @@ bool SDCard::setupMassStorage() {
   msc_.mediaPresent(true);
   msc_.begin(sectorCount, 512);
   firmwareMSC_.begin();
-  return USB.begin();
+  return leaf_usb::begin();
 }
 
 bool SDCard::mount() {
@@ -141,6 +149,7 @@ bool SDCard::mount() {
       if (DEBUG_SDCARD) Serial.println("Mass Storage Success");
     } else {
       if (DEBUG_SDCARD) Serial.println("Mass Storage Failed");
+      leaf_usb::begin();
     }
 #endif
   }

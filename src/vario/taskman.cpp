@@ -21,6 +21,7 @@
 #include "logging/log.h"
 #include "power.h"
 #include "storage/sd_card.h"
+#include "system/usb_state.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
 #include "ui/input/buttons.h"
@@ -169,7 +170,8 @@ void TaskManager::updateWhileCharging() {
     buttons.update();  // check Button for any presses (user can turn ON from charging state)
 
     // Prep to end this cycle and sleep
-    if (buttons.inspectPins() == Button::NONE && diagnostic_network.canSleepWhileCharging()) {
+    if (buttons.inspectPins() == Button::NONE && diagnostic_network.canSleepWhileCharging() &&
+        !leaf_usb::shouldStayAwakeForHost()) {
       goToSleep = true;  // get ready to sleep if no button is being pushed
     } else {
       goToSleep = false;
