@@ -2,16 +2,36 @@
 title: Vario User Manual
 description: How to set up and use your Leaf Vario
 ---
-import style from "./style.css"
+import "./style.css"
+import leafLogotype from "./leaf-logotype.png"
+import leafGreenBg from "./leaf-green-bg.png"
+import button from "./button.png"
+import buttonCenter from "./button-center.png"
+import buttonLeftRight from "./button-left-right.png"
+import buttonUpDown from "./button-up-down.png"
+import cursorBox from "./cursor-box.png"
+import leafPages from "./leaf-pages.png"
+import navPage from "./nav-page.png"
+import thermalPage from "./thermal-page.png"
+import wifiSetup from "./wifi-setup.png"
+import mainMenu from "./menu_images/MainMenu.png"
+import menuAltimeter from "./menu_images/MenuAltimeter.png"
+import menuVario from "./menu_images/MenuVario.png"
+import menuDisplay from "./menu_images/MenuDisplay.png"
+import menuUnits from "./menu_images/MenuUnits.png"
+import gpsMenu from "./menu_images/GPSmenu.png"
+import menuLogTimer from "./menu_images/MenuLogTimer.png"
+import menuSystem from "./menu_images/MenuSystem.png"
+import menuSystemAbout from "./menu_images/MenuSystemAbout.png"
 
 
 
-<div style="width: 30%; margin: auto">
-    ![Leaf Logotype](leaf-logotype.png)
+<div style={{ width: "30%", margin: "auto" }}>
+  <img src={leafLogotype.src} alt="Leaf Logotype" />
 </div>
 
-<div style="width: 70%; margin: auto">
-    ![Leaf Green BG](leaf-green-bg.png)
+<div style={{ width: "70%", margin: "auto" }}>
+  <img src={leafGreenBg.src} alt="Leaf Green BG" />
 </div>
 
 # Quick Start Guide
@@ -24,49 +44,212 @@ import style from "./style.css"
 
 Meet the Directional Pad:
 
-<div className="button-table">
-|||
-|---|---|
-|![dpad](button.png)| You control the Leaf with this 5-way switch by pressing <br />UP, DOWN, LEFT, RIGHT, and CENTER |
-|![Center Button](button-center.png)| Turn Leaf ON and OFF by holding CENTER|
-|![Left Right](button-left-right.png)| Use LEFT and RIGHT to scroll through the pages|
-</div>
+<table className="button-table">
+  <thead>
+    <tr>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><img src={button.src} alt="dpad" /></td>
+      <td>You control the Leaf with this 5-way switch by pressing <br />UP, DOWN, LEFT, RIGHT, and CENTER</td>
+    </tr>
+    <tr>
+      <td><img src={buttonCenter.src} alt="Center Button" /></td>
+      <td>Turn Leaf ON and OFF by holding CENTER</td>
+    </tr>
+    <tr>
+      <td><img src={buttonLeftRight.src} alt="Left Right" /></td>
+      <td>Use LEFT and RIGHT to scroll through the pages</td>
+    </tr>
+  </tbody>
+</table>
 
 All the way to the right you’ll find the MENU page:
-<div style="width: 100%; margin: auto">
-    ![Leaf Pages](leaf-pages.png)
+<div style={{ width: "100%", margin: "auto" }}>
+  <img src={leafPages.src} alt="Leaf Pages" />
 </div>
 
-<div className="button-table">
-|||
-| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-|![Left and Right](button-up-down.png)    | Within a page, use UP and DOWN to scroll through the options                                                      |
-|![Cursor Box](cursor-box.png)            | A cursor selection box will highlight adjustable fields                                                           |
-|![Center Button](button-center.png)      | When selected, press CENTER to select or adjust that option                                                       |
-| For Example,<br />Press CENTER to:      | * Start the timer (**HOLD** CENTER to stop) <br />* Cylce through display options in the Altitude or User fields |
-</div>
+<table className="button-table">
+  <thead>
+    <tr>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><img src={buttonUpDown.src} alt="Left and Right" /></td>
+      <td>Within a page, use UP and DOWN to scroll through the options</td>
+    </tr>
+    <tr>
+      <td><img src={cursorBox.src} alt="Cursor Box" /></td>
+      <td>A cursor selection box will highlight adjustable fields</td>
+    </tr>
+    <tr>
+      <td><img src={buttonCenter.src} alt="Center Button" /></td>
+      <td>When selected, press CENTER to select or adjust that option</td>
+    </tr>
+    <tr>
+      <td>For Example,<br />Press CENTER to:</td>
+      <td>
+        <ul>
+          <li>Start the timer (<strong>HOLD</strong> CENTER to stop)</li>
+          <li>Cycle through display options in the Altitude or User fields</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
 
 ![User Fields](leaf-user-fields.png)
 
-<div className="button-table">
-|||
-| ------------------------------------ | -------------------------------------------------------------------------------------------- |
-| ![Left Right](button-left-right.png) | In a few cases, you can use LEFT and RIGHT on an option as well                              |
-| For Examples,<br />Press L/R to:     | * Adjust the barometric altimeter<br />* Scroll through waypoints and routes on the NAV page |
-</div>
+<table className="button-table">
+  <thead>
+    <tr>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><img src={buttonLeftRight.src} alt="Left Right" /></td>
+      <td>In a few cases, you can use LEFT and RIGHT on an option as well</td>
+    </tr>
+    <tr>
+      <td>For Examples,<br />Press L/R to:</td>
+      <td>
+        <ul>
+          <li>Adjust the barometric altimeter</li>
+          <li>Scroll through waypoints and routes on the NAV page</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
 
 > **Shortcut:** When MSL Altitude is selected, hold CENTER to sync the baro altitude to the GPS altitude. This is useful if you don’t know the site altitude or current pressure setting.
 
 ### Thermal Page
 The  main operational page for standard vario 
-<div style="width: 80%; margin: auto">
-    ![](thermal-page.png)
+<div style={{ width: "80%", margin: "auto" }}>
+  <img src={thermalPage.src} alt="Thermal Page" />
 </div>
 
 ### Nav Page
-<div style="width: 80%; margin: auto">
-    ![](nav-page.png)
+<div style={{ width: "80%", margin: "auto" }}>
+  <img src={navPage.src} alt="Nav Page" />
 </div>
+
+## Menu Options
+
+### Main Menu
+
+<div style={{ width: "70%", margin: "auto" }}>
+  <img src={mainMenu.src} alt="Main Menu" />
+</div>
+
+Use the main menu to adjust settings for the following submenus:
+
+### Altimeter Menu
+
+<div style={{ width: "70%", margin: "auto" }}>
+  <img src={menuAltimeter.src} alt="Altimeter Menu" />
+</div>
+
+- **GPS Altitude**: Displays current GPS altitude, if a GPS fix is available
+- **Sync Now**: Immediately adjusts the barometric pressure setting to align pressure altitude with GPS altitude
+- **@LogStart**: Automatically performs the above mentioned sync when a flight timer/log is first started
+- **Std Barometric Altitude**: Displays the current altitude based on the standard barometric pressure of 1013.25 hPa (29.921 inHg)
+- **Adj Barometric Altitude**: Displays the adjusted altitude based on the current altimeter setting
+- **Set**: Displays the current altimeter setting in inHg
+- **Adjust Altitude**: highlight and press (or hold) left or right to adjust the altimeter setting and pressure altitude
+
+### Vario Menu
+
+<div style={{ width: "70%", margin: "auto" }}>
+  <img src={menuVario.src} alt="Vario Menu" />
+</div>
+
+- **Beep Vol**: The volume setting for vario climb/sink beeping.  Choose OFF-LOW-MED-HIGH
+- **QuietMode**: Mutes vario beeps until flight log/timer is started
+- **Sensitivity**: How reactive the vario is.  1 (low) is approximately 1 second of averaging, 5 (high) is approximately 0.05 seconds.  3 is default and works well.
+- **ClimbStart**: How many fpm (or m/s) of climb is required to start beeping.  Lower values catch lift early, but may beep more than desired especially when just barely maintaining altitude.
+- **SinkAlarm**: How much sink (fpm or m/s) before the sinkn alarm starts beeping.  Values closer to zero will result in an often-beeping sink alarm.  Typically 400~600 fpm (2~3 m/s) is a good starting point for most pilots.
+
+### Display Menu
+
+<div style={{ width: "70%", margin: "auto" }}>
+  <img src={menuDisplay.src} alt="Display Menu" />
+</div>
+
+- **Show Pages**: turn each page on or off.  If all pages are turned off, the last-used page will still be available.  Note: when exiting the menu, the previous page (shown just before entering the menu) will be shown.  If this page was turned off, just scroll left further to another page, then it will no longer be shown.
+- **Basic**: The basic thermal page with less info and larger fonts
+- **User**: Thermal page with 2 user fields (scroll up on these pages to highlight the fields, then press CENTER to change the information shown)
+- **Navigate**: GPS waypoint following page.  
+- **Contrast**: Adjust contrast between level 1 and 20.  Typically around 7 is a good starting point.
+
+### Units Menu
+
+<div style={{ width: "70%", margin: "auto" }}>
+  <img src={menuUnits.src} alt="Units Menu" />
+</div>
+
+Scroll through each field and set your desired units for the display
+
+- **Altitude**: feet, or meters
+- **ClimbRate**: feet per minute, or meters per second
+- **Speed**: mph, or kph
+- **Distance**: miles, or kilometers (will switch to feet or meters for shorter distances)
+- **Heading**: Degrees (from North)or compass directions (NNW etc)
+- **Temp**: F or C
+- **Time**: 12 hr or 24 hr
+
+### GPS Menu
+
+<div style={{ width: "70%", margin: "auto" }}>
+  <img src={gpsMenu.src} alt="GPS Menu" />
+</div>
+- **Icon in top right**: shows searching for fix (and how many satellites are in view), or a solid dot in the crosshairs when a fix is obtained
+- **Sats**: How many satellites are in the calculated fix solution (will be zero until a fix is obtained)
+- **HDOP**: Horizontal dilution of precision.  Lower values are better, and indicate a more accurate fix.  Typically below 2 is good, below 1 is excellent.
+- **Satellite Sky View**: Shows satellites seen by Leaf.  Outer circle is horizon, center is directly overhead.  North is up.  Dark satellites are higher Signal-to-Noise than Light satellites.
+- **Latitude**: Degrees (decimal) up from the equator (negative is south)
+- **Longitude**: Degrees (decimal) east of the prime meridian (negative is west)
+- **Update Seconds**: How often the GPS is updated (this is not currently changable, but may allow reducing update frequence to save battery in future software updates)
+
+### Log/Timer Menu
+
+<div style={{ width: "70%", margin: "auto" }}>
+  <img src={menuLogTimer.src} alt="Log/Timer Menu" />
+</div>
+
+- **Format**: IGC (for online logs like XContest) or KML (Google Earth)
+- **SaveLog**: Save a log file when timer is running (and GPS has a fix)
+- **AutoStart**: Start a log automatically if moving over 8 mph for several seconds
+- **AutoStop**: Stop a running log if no motion or altitude change is detected for approximately 20 seconds.  An alert will sound 10 seconds before stopping so you can press a button (or just shake Leaf) to keep the log running.
+
+### System Menu
+
+<div style={{ width: "70%", margin: "auto" }}>
+  <img src={menuSystem.src} alt="System Menu" />
+</div>
+
+- **TimeZone**: Set your local timezone with LEFT/RIGHT.  If you press CENTER, you can switch to adjusting by 0:15 minute increments (a few countries don't have even-hour timezones). Press CENTER again to switch back to hour increments.
+- **Volume**: Volume for system-level alerts, button presses, and notifications (not vario beeps).  Choose between OFF, LOW, MEDIUM, HIGH.  Note: the vario beeps volume is set in the Vario Menu.
+- **Auto-Off**: Automatically turn Leaf off if no log is running, and if no button has been pressed for a certain amount of time.  Typically 5 or 10min is a good value to use.
+- **ShowSafety**: Show the safety disclaimer on start up.  If you've accepted this once, you can turn it off here to not see it every time.
+- **Wifi**: Use WiFi for updating firmware (see firmware update section further below)
+- **Bluetooth**: Turn Bluetooth on for sharing Leaf data with certain smartphone apps.  You don't need to do anything on Leaf to pair, just turn it on, then select the Leaf device in the compatible phone app.
+- **About**: See information about your Leaf, including the current firmware version, IP address (if currently connected to WiFi), MAC address, and FCC ID.
+- **Reset**: Hold the center button to reset all Leaf settings.  This will not erase your SD card or logs.
+
+<div style={{ width: "70%", margin: "auto" }}>
+  <img src={menuSystemAbout.src} alt="System About Menu" />
+</div>
+a
 
 ## SD Card
 
@@ -106,8 +289,8 @@ Here’s the process:
 
 4.  Now click “Update FW” on Leaf to automatically check for and download the latest firmware. Leaf will restart when finished checking and/or updating.
 
-<div style="width: 70%; margin: auto">
-    ![Wifi Setup](wifi-setup.png)
+<div style={{ width: "70%", margin: "auto" }}>
+  <img src={wifiSetup.src} alt="Wifi Setup" />
 </div>
 
 ### NOTE: For Updates In-The-Field
@@ -119,4 +302,3 @@ If WiFi is not available and you would like to use your cellular internet connec
 3.  Immediately after clicking “save” in Step #3, again turn on your device’s Hotspot Feature.
 4.  Leaf will try to connect to the Hotspot network. If successful, update Leaf firmware as described in step #4 above.
 5.  Once Leaf has updated and restarted, you can turn off your Hotspot feature.
-
