@@ -11,7 +11,10 @@
 bool Flight::startFlight() {
   // Short circuit if the card is not mounted or reading properly
   if (!sdcard.isMounted()) return false;
-  gps.syncSystemClock();
+  if (!gps.syncSystemClock()) {
+    Serial.println("Flight::startFlight waiting for valid GPS date/time");
+    return false;
+  }
 
   Serial.printf("Sectors: %d\n", SD_MMC.numSectors());
   File trackLogsDir = SD_MMC.open(this->desiredFilePath());
