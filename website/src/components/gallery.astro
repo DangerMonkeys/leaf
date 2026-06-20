@@ -1,0 +1,119 @@
+---
+const { base = "" } = Astro.props;
+
+const images = [
+  {
+    original: "/photos/leaf-with-logo.png",
+    thumbnail: "/photos/leaf-with-logo.png",
+    alt: "Leaf vario with logo",
+  },
+  {
+    original: "/photos/flight-deck-2.png",
+    thumbnail: "/photos/flight-deck-2.png",
+    alt: "Leaf vario on a flight deck",
+  },
+  {
+    original: "/photos/leaf-package.png",
+    thumbnail: "/photos/leaf-package.png",
+    alt: "Leaf vario package",
+  },
+  {
+    original: "/photos/mounting-options.png",
+    thumbnail: "/photos/mounting-options.png",
+    alt: "Leaf mounting options",
+  },
+  {
+    original: "/photos/LeafDisplayScreens.png",
+    thumbnail: "/photos/LeafDisplayScreens.png",
+    alt: "Leaf display screens",
+  },
+  {
+    original: "/photos/riser-2.png",
+    thumbnail: "/photos/riser-2.png",
+    alt: "Leaf riser mount",
+  },
+].map((image) => ({
+  ...image,
+  original: `${base}${image.original}`,
+  thumbnail: `${base}${image.thumbnail}`,
+}));
+---
+
+<section class="bg-white" data-gallery>
+  <div class="relative max-w-5xl m-auto">
+    <img
+      class="w-full max-h-[75vh] object-contain bg-white"
+      src={images[0].original}
+      alt={images[0].alt}
+      data-gallery-main
+    />
+    <button
+      type="button"
+      aria-label="Previous image"
+      class="absolute left-3 top-1/2 -translate-y-1/2 bg-white/80 text-gray-700 text-5xl leading-none px-3 py-2 shadow hover:bg-white"
+      data-gallery-previous
+    >
+      &#8249;
+    </button>
+    <button
+      type="button"
+      aria-label="Next image"
+      class="absolute right-3 top-1/2 -translate-y-1/2 bg-white/80 text-gray-700 text-5xl leading-none px-3 py-2 shadow hover:bg-white"
+      data-gallery-next
+    >
+      &#8250;
+    </button>
+  </div>
+  <div class="max-w-5xl m-auto flex justify-center gap-2 overflow-x-auto bg-white p-2">
+    {
+      images.map((image, index) => (
+        <button
+          type="button"
+          aria-label={`Show image ${index + 1}`}
+          aria-current={index === 0 ? "true" : "false"}
+          class={`shrink-0 border-2 ${index === 0 ? "border-gray-700" : "border-transparent"} opacity-80 hover:opacity-100`}
+          data-gallery-thumbnail
+          data-gallery-index={index}
+        >
+          <img class="h-20 w-28 object-cover" src={image.thumbnail} alt="" />
+        </button>
+      ))
+    }
+  </div>
+</section>
+
+<script define:vars={{ images }}>
+  const gallery = document.querySelector("[data-gallery]");
+
+  if (gallery) {
+    const mainImage = gallery.querySelector("[data-gallery-main]");
+    const previousButton = gallery.querySelector("[data-gallery-previous]");
+    const nextButton = gallery.querySelector("[data-gallery-next]");
+    const thumbnailButtons = Array.from(gallery.querySelectorAll("[data-gallery-thumbnail]"));
+    let selectedIndex = 0;
+
+    const setSelectedImage = (index) => {
+      selectedIndex = (index + images.length) % images.length;
+      const selectedImage = images[selectedIndex];
+
+      mainImage.src = selectedImage.original;
+      mainImage.alt = selectedImage.alt;
+
+      thumbnailButtons.forEach((button, buttonIndex) => {
+        const selected = buttonIndex === selectedIndex;
+        button.setAttribute("aria-current", selected ? "true" : "false");
+        button.classList.toggle("border-gray-700", selected);
+        button.classList.toggle("border-transparent", !selected);
+      });
+    };
+
+    previousButton.addEventListener("click", () => setSelectedImage(selectedIndex - 1));
+    nextButton.addEventListener("click", () => setSelectedImage(selectedIndex + 1));
+
+    thumbnailButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        setSelectedImage(Number(button.dataset.galleryIndex));
+      });
+    });
+  }
+</script>

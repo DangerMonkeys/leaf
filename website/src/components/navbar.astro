@@ -1,0 +1,63 @@
+---
+const sections = [
+  { id: "gallery", name: "Gallery" },
+  { id: "description", name: "Description" },
+  { id: "specs", name: "Specs" },
+  { id: "more", name: "More Info" },
+];
+
+const links = [
+  ...sections.map((section) => ({ ...section, href: `#${section.id}` })),
+  { id: "store", name: "Store", href: "https://store.leafvario.com" },
+];
+---
+
+<div class="z-50 sm:flex fixed w-full text-green-950 bg-white border-b-gray-300 border-b pl-8 hidden" data-navbar>
+  <ul class="flex space-x-16 items-end grow justify-center">
+    {
+      links.map((section) => (
+        <li>
+          <a href={section.href} class="relative" data-navbar-link={section.id}>
+            <div class="pt-2 pb-3 text-gray-600 hover:text-gray-900 font-semibold">
+              {section.name}
+            </div>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</div>
+<div class="h-[70px]"></div>
+
+<script>
+  const sections = ["gallery", "description", "specs", "more"];
+  const links = new Map(
+    sections.map((id) => [id, document.querySelector(`[data-navbar-link="${id}"]`)])
+  );
+
+  const setSelectedSection = (selectedId) => {
+    links.forEach((link, id) => {
+      const selected = id === selectedId;
+      link?.classList.toggle("highlighted", selected);
+      const label = link?.querySelector("div");
+      label?.classList.toggle("text-gray-900", selected);
+      label?.classList.toggle("text-gray-600", !selected);
+    });
+  };
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setSelectedSection(entry.target.id);
+        }
+      });
+    },
+    { threshold: 0.5 }
+  );
+
+  sections.forEach((id) => {
+    const section = document.getElementById(id);
+    if (section) observer.observe(section);
+  });
+</script>

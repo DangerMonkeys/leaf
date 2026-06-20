@@ -4,8 +4,9 @@ import "../styles/global.css";
 import "@fontsource/roboto";
 import "@fontsource/roboto-condensed";
 
-import Navbar from "../components/navbar";
-import Gallery from "../components/gallery";
+import Navbar from "../components/navbar.astro";
+import Gallery from "../components/gallery.astro";
+import StoreBanner from "../components/store-banner.astro";
 import Description from "../components/description.astro";
 import Specs from "../components/specs.astro";
 import More from "../components/more.astro";
@@ -28,10 +29,11 @@ if(base == "/") {
 		<title>Leaf</title>
 	</head>
 	<body>
-		<Navbar client:load />
+		<Navbar />
 		<div id="gallery">
-			<Gallery client:only="react" base={base} />
+			<Gallery base={base} />
 		</div>
+		<StoreBanner />
 		<div id="description">
 			<Description />
 		</div>
