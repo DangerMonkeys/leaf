@@ -3,14 +3,19 @@ dist/
 # generated types
 .astro/
 
+# local Windows docs junction contents
+src/content/docs/**
+
 # dependencies
 node_modules/
+.local-node/
 
 # logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+astro-dev*.log
 
 
 # environment variables

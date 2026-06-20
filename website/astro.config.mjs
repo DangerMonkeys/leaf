@@ -15,6 +15,7 @@ import path from "path";
 function getMarkdownItems(dir) {
     let results = [];
     let dirMap = {};
+    const docsRoot = path.normalize("../docs");
 
     // @ts-ignore
     function readDir(currentDir) {
@@ -29,7 +30,7 @@ function getMarkdownItems(dir) {
             if (stat.isDirectory()) {
                 readDir(fullPath);
             } else if (file.endsWith(".md") || file.endsWith(".mdx")) {
-                let relativePath = fullPath.replace("../docs/", "").replace(/\.(md|mdx)$/, "");
+                let relativePath = path.relative(docsRoot, fullPath).replace(/\\/g, "/").replace(/\.(md|mdx)$/, "");
                 if (file === "index.md" || file === "index.mdx") {
                     hasIndex = true;
                     relativePath = relativePath.replace(/\/index$/, "");
@@ -52,7 +53,7 @@ function getMarkdownItems(dir) {
 
     for (const [key, value] of Object.entries(dirMap)) {
         results.push({
-            label: key.split("/").at(-1),
+            label: path.basename(key),
             items: value,
         });
     }
@@ -62,6 +63,7 @@ function getMarkdownItems(dir) {
 
 // https://astro.build/config
 export default defineConfig({
+    prefetch: false,
     integrations: [starlight({
         title: 'Leaf',
         social: {
