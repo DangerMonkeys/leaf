@@ -24,6 +24,7 @@
 #include "ui/display/pages/dialogs/page_warning.h"
 #include "ui/display/pages/primary/page_charging.h"
 #include "ui/display/pages/primary/page_debug.h"
+#include "ui/display/pages/primary/page_debug2.h"
 #include "ui/display/pages/primary/page_navigate.h"
 #include "ui/display/pages/primary/page_simple.h"
 #include "ui/display/pages/primary/page_thermal.h"
@@ -94,6 +95,7 @@ void Display::turnPage(PageAction action) {
       displayPage_++;
 
       // skip past any pages not enabled for display
+      if (displayPage_ == MainPage::Debug2 && !settings.disp_showDebugPage) displayPage_++;
       if (displayPage_ == MainPage::Simple && !settings.disp_showSimplePage) displayPage_++;
       if (displayPage_ == MainPage::Thermal && !settings.disp_showThmPage) displayPage_++;
       if (displayPage_ == MainPage::ThermalAdv && !settings.disp_showThmAdvPage) displayPage_++;
@@ -109,6 +111,7 @@ void Display::turnPage(PageAction action) {
       if (displayPage_ == MainPage::ThermalAdv && !settings.disp_showThmAdvPage) displayPage_--;
       if (displayPage_ == MainPage::Thermal && !settings.disp_showThmPage) displayPage_--;
       if (displayPage_ == MainPage::Simple && !settings.disp_showSimplePage) displayPage_--;
+      if (displayPage_ == MainPage::Debug2 && !settings.disp_showDebugPage) displayPage_--;
       if (displayPage_ == MainPage::Debug && !settings.disp_showDebugPage)
         displayPage_ = tempPage;  // go back to the page we were on if we can't go further left
 
@@ -178,6 +181,9 @@ void Display::update() {
       break;
     case MainPage::Debug:
       debugPage_draw();
+      break;
+    case MainPage::Debug2:
+      debug2Page_draw();
       break;
     case MainPage::Nav:
       navigatePage_draw();

@@ -15,9 +15,9 @@
 #define AD0_VAL 0  // I2C address bit
 
 namespace {
-  // The DMP runs at 225Hz. The task manager polls the IMU at 20Hz, so keep the FIFO
-  // production rate close to the consumer rate and drain bursts when the main loop is delayed.
-  constexpr int DMP_ODR_INTERVAL_20HZ = 10;  // 225 / (10 + 1) = 20.45Hz
+  // SparkFun's default initializeDMP() configures the DMP around 55Hz. The task manager polls the
+  // IMU at 20Hz, so keep FIFO production close to that and drain bursts when the loop is delayed.
+  constexpr int DMP_ODR_INTERVAL_20HZ = 2;  // 55 / (2 + 1) = 18.3Hz
   constexpr uint8_t MAX_DMP_PACKETS_PER_UPDATE = 8;
 
   bool invalid(double value, double min, double max) {
@@ -88,6 +88,7 @@ void ICM20948::init() {
 }
 
 void ICM20948::update() {
+  imuUpdateCallCount_++;
   etl::imessage_bus* bus = bus_;
   MotionUpdate latest(millis());
   bool moreData = false;
@@ -97,12 +98,14 @@ void ICM20948::update() {
     IMU_.readDMPdataFromFIFO(&data);
 
     if (IMU_.status == ICM_20948_Stat_FIFONoDataAvail) {
+      fifoNoDataCount_++;
       moreData = false;
       break;
     }
 
     if (IMU_.status == ICM_20948_Stat_FIFOIncompleteData) {
       publishComment(bus, "ICM20948 FIFO incomplete packet; resetting FIFO");
+      fifoResetCount_++;
       IMU_.resetFIFO();
       return;
     }
@@ -131,6 +134,8 @@ void ICM20948::update() {
       update.hasAcceleration = true;
     }
     if (update.hasOrientation || update.hasAcceleration) {
+      motionFifoPacketCount_++;
+
       // Invalidate insane orientation data
       if (update.hasOrientation) {
         if (invalid(update.qx, -1.1, 1.1) || invalid(update.qy, -1.1, 1.1) ||
@@ -142,6 +147,7 @@ void ICM20948::update() {
                    update.qz);
           publishComment(bus, msg);
           update.hasOrientation = false;
+          invalidOrientationPacketCount_++;
         }
       }
 
@@ -155,23 +161,18 @@ void ICM20948::update() {
                    update.ay, update.az);
           publishComment(bus, msg);
           update.hasAcceleration = false;
+          invalidAccelerationPacketCount_++;
         }
       }
 
-      // Keep only the newest valid values from the FIFO burst.
-      if (update.hasOrientation) {
-        latest.qx = update.qx;
-        latest.qy = update.qy;
-        latest.qz = update.qz;
-        latest.hasOrientation = true;
-        latest.t = update.t;
-      }
-      if (update.hasAcceleration) {
-        latest.ax = update.ax;
-        latest.ay = update.ay;
-        latest.az = update.az;
-        latest.hasAcceleration = true;
-        latest.t = update.t;
+      // Keep only same-packet accel/orientation pairs. During fast rotation, combining accel from
+      // one FIFO packet with orientation from another can corrupt world-frame vertical
+      // acceleration.
+      if (update.hasOrientation && update.hasAcceleration) {
+        latest = update;
+        motionMatchedPacketCount_++;
+      } else if (update.hasOrientation || update.hasAcceleration) {
+        motionMismatchedPacketCount_++;
       }
     }
 
@@ -182,10 +183,32 @@ void ICM20948::update() {
 
   if (moreData) {
     publishComment(bus, "ICM20948 FIFO backlog exceeded drain limit; resetting FIFO");
+    fifoResetCount_++;
     IMU_.resetFIFO();
   }
 
   if (latest.hasOrientation && latest.hasAcceleration && bus) {
+    motionPublishedSampleCount_++;
     bus->receive(latest);
   }
 }
+
+uint32_t ICM20948::motionFifoPacketCount() const { return motionFifoPacketCount_; }
+
+uint32_t ICM20948::motionMatchedPacketCount() const { return motionMatchedPacketCount_; }
+
+uint32_t ICM20948::motionMismatchedPacketCount() const { return motionMismatchedPacketCount_; }
+
+uint32_t ICM20948::motionPublishedSampleCount() const { return motionPublishedSampleCount_; }
+
+uint32_t ICM20948::imuUpdateCallCount() const { return imuUpdateCallCount_; }
+
+uint32_t ICM20948::fifoNoDataCount() const { return fifoNoDataCount_; }
+
+uint32_t ICM20948::invalidOrientationPacketCount() const { return invalidOrientationPacketCount_; }
+
+uint32_t ICM20948::invalidAccelerationPacketCount() const {
+  return invalidAccelerationPacketCount_;
+}
+
+uint32_t ICM20948::fifoResetCount() const { return fifoResetCount_; }
