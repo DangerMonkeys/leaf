@@ -75,11 +75,8 @@ class IMU : public MessageSink<IMU, MotionUpdate>, public IMessageSource {
   double lastRejectedGravity_ = 0.0;
   uint16_t gravityInitResetCount_ = 0;
 
-  // Number of samples remaining to collect to initialize estimate of gravity
-  uint16_t gravityInitCount_;
-
   // Last time gravity estimate was updated
-  uint32_t tLastGravityUpdate_;
+  uint32_t tLastGravityUpdate_ = 0;
 
   uint32_t motionSampleCount_ = 0;
   uint32_t motionSampleBaroNotReadyCount_ = 0;
