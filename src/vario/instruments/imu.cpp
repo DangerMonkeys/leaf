@@ -31,11 +31,12 @@ namespace {
   // samples to bypass at startup while gravity is estimated
   constexpr uint32_t GRAVITY_INIT_SAMPLES = IMU_SAMPLE_RATE * GRAVITY_INIT_S;
 
-  constexpr double MIN_GRAVITY_G = 0.5;
-  constexpr double MAX_GRAVITY_G = 1.5;
-  constexpr double GRAVITY_UPDATE_ACCEL_TOLERANCE_G = 0.12;
-  constexpr double GRAVITY_UPDATE_VERTICAL_TOLERANCE_G = 0.25;
-  constexpr double GRAVITY_UPDATE_MAX_SLEW_G_PER_S = 0.005;
+  constexpr double MIN_GRAVITY_G = 0.9;
+  constexpr double MAX_GRAVITY_G = 1.1;
+  constexpr double GRAVITY_UPDATE_ACCEL_TOLERANCE_G = 0.05;
+  constexpr double GRAVITY_UPDATE_VERTICAL_TOLERANCE_G = 0.10;
+  constexpr double GRAVITY_UPDATE_MAX_SLEW_G_PER_S = 0.025;
+  constexpr uint16_t GRAVITY_RECOVERY_VERTICAL_REJECT_SAMPLES = IMU_SAMPLE_RATE * 2;
 
   bool normalizeQuaternion(double* qw, double* qx, double* qy, double* qz) {
     double qVecMagnitude2 = (*qx * *qx) + (*qy * *qy) + (*qz * *qz);
@@ -221,9 +222,20 @@ void IMU::processMotion(const MotionUpdate& m) {
     double verticalDelta = fabs(accelVert_);
     if (accelMagnitudeDelta > GRAVITY_UPDATE_ACCEL_TOLERANCE_G) {
       gravityUpdateRejectedAccelCount_++;
+      gravityVerticalRejectCount_ = 0;
     } else if (verticalDelta > GRAVITY_UPDATE_VERTICAL_TOLERANCE_G) {
       gravityUpdateRejectedVerticalCount_++;
+      if (++gravityVerticalRejectCount_ >= GRAVITY_RECOVERY_VERTICAL_REJECT_SAMPLES &&
+          fabs(gravity_ - 1.0) > GRAVITY_UPDATE_VERTICAL_TOLERANCE_G) {
+        lastRejectedGravity_ = gravity_;
+        gravityInitResetCount_++;
+        gravity_ = 0;
+        gravityInitCount_ = GRAVITY_INIT_SAMPLES;
+        gravityVerticalRejectCount_ = 0;
+        validAccelVert_ = false;
+      }
     } else {
+      gravityVerticalRejectCount_ = 0;
       double dt = ((double)m.t - tLastGravityUpdate_) * 0.001;
       if (dt > 0.0 && dt < 1.0) {
         double f = exp(K_UPDATE * dt);
