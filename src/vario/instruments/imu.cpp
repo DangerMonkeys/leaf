@@ -37,7 +37,7 @@ namespace {
   constexpr uint16_t GRAVITY_RECOVERY_VERTICAL_REJECT_SAMPLES = IMU_SAMPLE_RATE * 2;
   constexpr uint16_t KALMAN_STARTUP_REPORT_SAMPLES = IMU_SAMPLE_RATE;
   constexpr uint16_t STARTUP_NON_VERT_SAMPLES = IMU_SAMPLE_RATE;
-  constexpr uint32_t STARTUP_IMU_MAX_READINESS_MS = 5000;
+  constexpr uint32_t STARTUP_IMU_MAX_READINESS_MS = 8000;
 
   bool normalizeQuaternion(double* qw, double* qx, double* qy, double* qz) {
     double qVecMagnitude2 = (*qx * *qx) + (*qy * *qy) + (*qz * *qz);
