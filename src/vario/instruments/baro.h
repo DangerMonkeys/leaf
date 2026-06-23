@@ -67,6 +67,9 @@ class Barometer : public MessageSink<Barometer, PressureUpdate>,
 
   bool climbRateAverageValid();
 
+  uint16_t startupSamplesCompleted() const;
+  uint16_t startupSamplesRequired() const;
+
   // == State adjustments ==
 
   // Change the number of samples over which pressure and climb rate are averaged
@@ -119,6 +122,7 @@ class Barometer : public MessageSink<Barometer, PressureUpdate>,
   // Number of remaining initial samples to be summed into climbRateAverage_ before declaring
   // climbRateAverage available
   size_t nInitSamplesRemaining_;
+  size_t startupDiscardSamplesRemaining_;
 
   int32_t altAdjusted_;
   bool validAltAdjusted_ = false;

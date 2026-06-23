@@ -24,7 +24,7 @@ SpeakerInteractiveTest speakerTest;
 
 constexpr size_t BUFFER_SIZE = 512;
 constexpr uint32_t GPS_SERIAL_TEST_TIMEOUT_MS = 5000;
-constexpr uint32_t IMU_TEST_TIMEOUT_MS = 20000;
+constexpr uint32_t IMU_TEST_TIMEOUT_MS = 30000;
 constexpr uint32_t GPS_FIX_TEST_TIMEOUT_MS = 30UL * 60UL * 1000UL;
 File self_test_file;
 String self_test_file_name = "";

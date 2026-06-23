@@ -26,17 +26,18 @@ namespace {
   constexpr double AFTER_SECONDS = 5.0;           // ...after this number of seconds
   constexpr double K_UPDATE = constexpr_log(1 - NEW_MEASUREMENT_WEIGHT) / AFTER_SECONDS;
 
-  constexpr uint8_t IMU_SAMPLE_RATE = 20;  // Hz
-  constexpr double GRAVITY_INIT_S = 3.0;   // Time to take to estimate the initial gravity magnitude
-  // samples to bypass at startup while gravity is estimated
-  constexpr uint32_t GRAVITY_INIT_SAMPLES = IMU_SAMPLE_RATE * GRAVITY_INIT_S;
-
   constexpr double MIN_GRAVITY_G = 0.9;
   constexpr double MAX_GRAVITY_G = 1.1;
+  constexpr double MIN_GRAVITY_ESTIMATE_G = 0.98;
+  constexpr double MAX_GRAVITY_ESTIMATE_G = 1.02;
   constexpr double GRAVITY_UPDATE_ACCEL_TOLERANCE_G = 0.05;
   constexpr double GRAVITY_UPDATE_VERTICAL_TOLERANCE_G = 0.10;
-  constexpr double GRAVITY_UPDATE_MAX_SLEW_G_PER_S = 0.025;
+  constexpr double GRAVITY_UPDATE_MAX_SLEW_G_PER_S = 0.05;
+  constexpr uint8_t IMU_SAMPLE_RATE = 20;  // Hz
   constexpr uint16_t GRAVITY_RECOVERY_VERTICAL_REJECT_SAMPLES = IMU_SAMPLE_RATE * 2;
+  constexpr uint16_t KALMAN_STARTUP_REPORT_SAMPLES = IMU_SAMPLE_RATE;
+  constexpr uint16_t STARTUP_NON_VERT_SAMPLES = IMU_SAMPLE_RATE;
+  constexpr uint32_t STARTUP_IMU_MAX_READINESS_MS = 8000;
 
   bool normalizeQuaternion(double* qw, double* qx, double* qy, double* qz) {
     double qVecMagnitude2 = (*qx * *qx) + (*qy * *qy) + (*qz * *qz);
@@ -66,6 +67,12 @@ namespace {
     double magnitude = fabs(gravity);
     return !isnan(gravity) && !isinf(gravity) && magnitude >= MIN_GRAVITY_G &&
            magnitude <= MAX_GRAVITY_G;
+  }
+
+  double clampGravityEstimate(double gravity) {
+    if (gravity < MIN_GRAVITY_ESTIMATE_G) return MIN_GRAVITY_ESTIMATE_G;
+    if (gravity > MAX_GRAVITY_ESTIMATE_G) return MAX_GRAVITY_ESTIMATE_G;
+    return gravity;
   }
 }  // namespace
 
@@ -99,7 +106,7 @@ inline void printFloat(double v) {
 IMU::IMU()
     : kalmanvert_(pow(POSITION_MEASURE_STANDARD_DEVIATION, 2),
                   pow(ACCELERATION_MEASURE_STANDARD_DEVIATION, 2)),
-      gravityInitCount_(GRAVITY_INIT_SAMPLES) {}
+      kalmanStartupSamplesRemaining_(KALMAN_STARTUP_REPORT_SAMPLES) {}
 
 void IMU::processMotion(const MotionUpdate& m) {
   double qw = 0;
@@ -182,79 +189,53 @@ void IMU::processMotion(const MotionUpdate& m) {
   needNewline = true;
 #endif
 
-  if (gravityInitCount_ > 0) {
-    validAccelVert_ = false;
-    gravityInitSampleCount_++;
-    gravity_ += awz;
-    if (--gravityInitCount_ == 0) {
-      gravity_ /= GRAVITY_INIT_SAMPLES;
-      if (!plausibleGravity(gravity_)) {
-        lastRejectedGravity_ = gravity_;
-        gravityInitResetCount_++;
-        char msg[160];
-        snprintf(msg, sizeof(msg),
-                 "IMU gravity init rejected: gravity=%g, awz=%g, accelTot=%g, resets=%u", gravity_,
-                 awz, accelTot_, static_cast<unsigned>(gravityInitResetCount_));
-        Serial.println(msg);
-        if (bus_) bus_->receive(CommentMessage(msg));
-        gravity_ = 0;
-        gravityInitCount_ = GRAVITY_INIT_SAMPLES;
-        validAccelVert_ = false;
-      } else {
-        char msg[160];
-        snprintf(msg, sizeof(msg),
-                 "IMU gravity init complete: gravity=%g, awz=%g, accelTot=%g, resets=%u", gravity_,
-                 awz, accelTot_, static_cast<unsigned>(gravityInitResetCount_));
-        Serial.println(msg);
-        if (bus_) bus_->receive(CommentMessage(msg));
-      }
-    }
-  }
-  if (gravityInitCount_ == 0) {
-    // In steady-state (normally), actual vertical acceleration is the difference between measured
-    // vertical acceleration and gravity
-    accelVert_ = awz - gravity_;
-    validAccelVert_ = true;
+  // In steady-state (normally), actual vertical acceleration is the difference between measured
+  // vertical acceleration and gravity
+  accelVert_ = awz - gravity_;
+  kalmanAccelVert_ = accelVert_;
+  validAccelVert_ = true;
 
-    // Slowly update estimate of gravity
-    gravityUpdateCandidateCount_++;
-    double accelMagnitudeDelta = fabs(accelTot_ - 1.0);
-    double verticalDelta = fabs(accelVert_);
-    if (accelMagnitudeDelta > GRAVITY_UPDATE_ACCEL_TOLERANCE_G) {
-      gravityUpdateRejectedAccelCount_++;
+  // Slowly update estimate of gravity
+  gravityUpdateCandidateCount_++;
+  double accelMagnitudeDelta = fabs(accelTot_ - 1.0);
+  double verticalDelta = fabs(accelVert_);
+  if (accelMagnitudeDelta > GRAVITY_UPDATE_ACCEL_TOLERANCE_G) {
+    gravityUpdateRejectedAccelCount_++;
+    gravityVerticalRejectCount_ = 0;
+  } else if (verticalDelta > GRAVITY_UPDATE_VERTICAL_TOLERANCE_G) {
+    gravityUpdateRejectedVerticalCount_++;
+    kalmanAccelVert_ = 0.0;
+    if (++gravityVerticalRejectCount_ >= GRAVITY_RECOVERY_VERTICAL_REJECT_SAMPLES &&
+        fabs(gravity_ - 1.0) > GRAVITY_UPDATE_VERTICAL_TOLERANCE_G) {
+      lastRejectedGravity_ = gravity_;
+      gravityInitResetCount_++;
+      gravity_ = 1.0;
       gravityVerticalRejectCount_ = 0;
-    } else if (verticalDelta > GRAVITY_UPDATE_VERTICAL_TOLERANCE_G) {
-      gravityUpdateRejectedVerticalCount_++;
-      if (++gravityVerticalRejectCount_ >= GRAVITY_RECOVERY_VERTICAL_REJECT_SAMPLES &&
-          fabs(gravity_ - 1.0) > GRAVITY_UPDATE_VERTICAL_TOLERANCE_G) {
-        lastRejectedGravity_ = gravity_;
-        gravityInitResetCount_++;
-        gravity_ = 0;
-        gravityInitCount_ = GRAVITY_INIT_SAMPLES;
-        gravityVerticalRejectCount_ = 0;
-        validAccelVert_ = false;
+      validAccelVert_ = false;
+    }
+  } else {
+    gravityVerticalRejectCount_ = 0;
+    if (startupNonVertSamples_ < STARTUP_NON_VERT_SAMPLES) {
+      startupNonVertSamples_++;
+    }
+    double dt = ((double)m.t - tLastGravityUpdate_) * 0.001;
+    if (dt > 0.0 && dt < 1.0) {
+      double f = exp(K_UPDATE * dt);
+      double nextGravity = gravity_ * f + awz * (1 - f);
+      double maxDelta = GRAVITY_UPDATE_MAX_SLEW_G_PER_S * dt;
+      double gravityDelta = nextGravity - gravity_;
+      if (fabs(gravityDelta) > maxDelta) {
+        nextGravity = gravity_ + (gravityDelta > 0.0 ? maxDelta : -maxDelta);
+        gravityUpdateSlewLimitedCount_++;
+      }
+      if (plausibleGravity(nextGravity)) {
+        gravity_ = clampGravityEstimate(nextGravity);
+        gravityUpdateAcceptedCount_++;
+      } else {
+        gravityUpdateRejectedPlausibilityCount_++;
       }
     } else {
-      gravityVerticalRejectCount_ = 0;
-      double dt = ((double)m.t - tLastGravityUpdate_) * 0.001;
-      if (dt > 0.0 && dt < 1.0) {
-        double f = exp(K_UPDATE * dt);
-        double nextGravity = gravity_ * f + awz * (1 - f);
-        double maxDelta = GRAVITY_UPDATE_MAX_SLEW_G_PER_S * dt;
-        double gravityDelta = nextGravity - gravity_;
-        if (fabs(gravityDelta) > maxDelta) {
-          nextGravity = gravity_ + (gravityDelta > 0.0 ? maxDelta : -maxDelta);
-          gravityUpdateSlewLimitedCount_++;
-        }
-        if (plausibleGravity(nextGravity)) {
-          gravity_ = nextGravity;
-          gravityUpdateAcceptedCount_++;
-        } else {
-          gravityUpdateRejectedPlausibilityCount_++;
-        }
-      } else {
-        gravityUpdateRejectedTimeCount_++;
-      }
+      gravityUpdateRejectedTimeCount_++;
     }
   }
 
@@ -278,7 +259,10 @@ void IMU::processMotion(const MotionUpdate& m) {
 void IMU::on_receive(const MotionUpdate& msg) {
   motionSampleCount_++;
   if (baro.state() != Barometer::State::Ready) {
-    // We can't do anything without simultaneous barometer-measured altitude
+    if (msg.hasAcceleration && msg.hasOrientation) {
+      processMotion(msg);
+    }
+    // Gravity can update without baro, but Kalman needs simultaneous barometer-measured altitude.
     motionSampleBaroNotReadyCount_++;
     return;
   }
@@ -290,12 +274,19 @@ void IMU::on_receive(const MotionUpdate& msg) {
     return;
   }
 
+  if (startupReadinessStartMs_ == 0) {
+    startupReadinessStartMs_ = millis();
+  }
+
   processMotion(msg);
 
   if (validAccelVert_) {
     // update kalman filter
-    kalmanvert_.update(millis() / 1000.0, baro.altF(), accelVert_ * 9.80665f);
+    kalmanvert_.update(millis() / 1000.0, baro.altF(), kalmanAccelVert_ * 9.80665f);
     kalmanUpdateSampleCount_++;
+    if (kalmanStartupSamplesRemaining_ > 0) {
+      kalmanStartupSamplesRemaining_--;
+    }
 
     if (LOG::KALMAN && bus_) {
       String kalmanName = "kalman,";
@@ -307,7 +298,14 @@ void IMU::on_receive(const MotionUpdate& msg) {
   }
 }
 
-void IMU::wake() { gravityInitCount_ = GRAVITY_INIT_SAMPLES; }
+void IMU::wake() {
+  gravity_ = 1.0;
+  gravityVerticalRejectCount_ = 0;
+  startupNonVertSamples_ = 0;
+  startupReadinessStartMs_ = 0;
+  tLastGravityUpdate_ = 0;
+  kalmanStartupSamplesRemaining_ = KALMAN_STARTUP_REPORT_SAMPLES;
+}
 
 bool IMU::accelValid() { return validAccelTot_; }
 
@@ -318,7 +316,10 @@ float IMU::getAccel() {
   return accelTot_;
 }
 
-bool IMU::velocityValid() { return gravityInitCount_ == 0; }
+bool IMU::velocityValid() {
+  return kalmanvert_.initialized() && kalmanStartupSamplesRemaining_ == 0 &&
+         (startupNonVertSamples_ >= STARTUP_NON_VERT_SAMPLES || startupReadinessTimedOut());
+}
 
 float IMU::getVelocity() {
   if (!velocityValid()) {
@@ -327,7 +328,7 @@ float IMU::getVelocity() {
   return (float)kalmanvert_.getVelocity();
 }
 
-uint16_t IMU::gravityInitSamplesRemaining() const { return gravityInitCount_; }
+uint16_t IMU::gravityInitSamplesRemaining() const { return 0; }
 
 float IMU::gravityEstimate() const { return (float)gravity_; }
 
@@ -372,3 +373,21 @@ uint32_t IMU::gravityUpdateRejectedPlausibilityCount() const {
 uint32_t IMU::gravityUpdateSlewLimitedCount() const { return gravityUpdateSlewLimitedCount_; }
 
 uint32_t IMU::kalmanUpdateSampleCount() const { return kalmanUpdateSampleCount_; }
+
+bool IMU::startupReadinessTimedOut() const {
+  return startupReadinessStartMs_ != 0 &&
+         static_cast<uint32_t>(millis() - startupReadinessStartMs_) >= STARTUP_IMU_MAX_READINESS_MS;
+}
+
+uint16_t IMU::startupSamplesCompleted() const {
+  uint16_t kalmanCompleted = KALMAN_STARTUP_REPORT_SAMPLES - kalmanStartupSamplesRemaining_;
+  if (kalmanStartupSamplesRemaining_ == 0 && startupReadinessTimedOut()) {
+    return KALMAN_STARTUP_REPORT_SAMPLES;
+  }
+  uint16_t nonVertCompleted = startupNonVertSamples_ > STARTUP_NON_VERT_SAMPLES
+                                  ? STARTUP_NON_VERT_SAMPLES
+                                  : startupNonVertSamples_;
+  return kalmanCompleted < nonVertCompleted ? kalmanCompleted : nonVertCompleted;
+}
+
+uint16_t IMU::startupSamplesRequired() const { return KALMAN_STARTUP_REPORT_SAMPLES; }

@@ -74,5 +74,8 @@ void display_off_splash(void);
 void display_on_splash(void);
 void display_splashLogo(void);
 void display_batteryDead_splash(void);
+uint16_t display_startupProgressCompleted(void);
+uint16_t display_startupProgressRequired(void);
+bool display_startupProgressComplete(void);
 
 #endif

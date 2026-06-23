@@ -50,18 +50,22 @@ class IMU : public MessageSink<IMU, MotionUpdate>, public IMessageSource {
   uint32_t gravityUpdateRejectedPlausibilityCount() const;
   uint32_t gravityUpdateSlewLimitedCount() const;
   uint32_t kalmanUpdateSampleCount() const;
+  uint16_t startupSamplesCompleted() const;
+  uint16_t startupSamplesRequired() const;
 
  private:
   void processMotion(const MotionUpdate& m);
+  bool startupReadinessTimedOut() const;
 
   etl::imessage_bus* bus_ = nullptr;
 
   // Kalman filter object for vertical climb rate and position
   KalmanFilterPA kalmanvert_;
 
-  bool kalmanInitialized_ = false;
+  uint16_t kalmanStartupSamplesRemaining_;
 
   double accelVert_;
+  double kalmanAccelVert_ = 0.0;
   bool validAccelVert_ = false;
 
   double accelTot_;
@@ -75,11 +79,8 @@ class IMU : public MessageSink<IMU, MotionUpdate>, public IMessageSource {
   double lastRejectedGravity_ = 0.0;
   uint16_t gravityInitResetCount_ = 0;
 
-  // Number of samples remaining to collect to initialize estimate of gravity
-  uint16_t gravityInitCount_;
-
   // Last time gravity estimate was updated
-  uint32_t tLastGravityUpdate_;
+  uint32_t tLastGravityUpdate_ = 0;
 
   uint32_t motionSampleCount_ = 0;
   uint32_t motionSampleBaroNotReadyCount_ = 0;
@@ -96,5 +97,7 @@ class IMU : public MessageSink<IMU, MotionUpdate>, public IMessageSource {
   uint32_t gravityUpdateSlewLimitedCount_ = 0;
   uint32_t kalmanUpdateSampleCount_ = 0;
   uint16_t gravityVerticalRejectCount_ = 0;
+  uint16_t startupNonVertSamples_ = 0;
+  uint32_t startupReadinessStartMs_ = 0;
 };
 extern IMU imu;
