@@ -89,6 +89,7 @@ void debug2Page_draw() {
     y += 8;
     u8g2.setFont(leaf_5x8);
     printCounterLine(x, y, "init", imu.gravityInitSampleCount(), 0, false);
+    printCounterLine(x, y, "reset", imu.gravityInitResetCount(), 0, false);
     printCounterLine(x, y, "cand", gravityCandidates, 0, false);
     printCounterLine(x, y, "use", gravityAccepted, percent(gravityAccepted, gravityCandidates));
     printCounterLine(x, y, "accel!", imu.gravityUpdateRejectedAccelCount(),

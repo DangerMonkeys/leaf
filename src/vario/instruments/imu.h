@@ -95,5 +95,6 @@ class IMU : public MessageSink<IMU, MotionUpdate>, public IMessageSource {
   uint32_t gravityUpdateRejectedPlausibilityCount_ = 0;
   uint32_t gravityUpdateSlewLimitedCount_ = 0;
   uint32_t kalmanUpdateSampleCount_ = 0;
+  uint16_t gravityVerticalRejectCount_ = 0;
 };
 extern IMU imu;
