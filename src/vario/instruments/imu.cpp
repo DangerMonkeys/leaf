@@ -35,6 +35,7 @@ namespace {
   constexpr double MAX_GRAVITY_G = 1.5;
   constexpr double GRAVITY_UPDATE_ACCEL_TOLERANCE_G = 0.12;
   constexpr double GRAVITY_UPDATE_VERTICAL_TOLERANCE_G = 0.25;
+  constexpr double GRAVITY_UPDATE_MAX_SLEW_G_PER_S = 0.005;
 
   bool normalizeQuaternion(double* qw, double* qx, double* qy, double* qz) {
     double qVecMagnitude2 = (*qx * *qx) + (*qy * *qy) + (*qz * *qz);
@@ -105,9 +106,11 @@ void IMU::processMotion(const MotionUpdate& m) {
   double qy = m.qy;
   double qz = m.qz;
   if (!normalizeQuaternion(&qw, &qx, &qy, &qz)) {
+    motionSampleRejectedQuaternionCount_++;
     validAccelVert_ = false;
     return;
   }
+  motionSampleProcessedCount_++;
 
   bool needComma = false;
   bool needNewline = false;
@@ -180,6 +183,7 @@ void IMU::processMotion(const MotionUpdate& m) {
 
   if (gravityInitCount_ > 0) {
     validAccelVert_ = false;
+    gravityInitSampleCount_++;
     gravity_ += awz;
     if (--gravityInitCount_ == 0) {
       gravity_ /= GRAVITY_INIT_SAMPLES;
@@ -212,16 +216,32 @@ void IMU::processMotion(const MotionUpdate& m) {
     validAccelVert_ = true;
 
     // Slowly update estimate of gravity
-    double accelMagnitudeDelta = fabs(accelTot_ - fabs(gravity_));
-    if (accelMagnitudeDelta <= GRAVITY_UPDATE_ACCEL_TOLERANCE_G &&
-        fabs(accelVert_) <= GRAVITY_UPDATE_VERTICAL_TOLERANCE_G) {
+    gravityUpdateCandidateCount_++;
+    double accelMagnitudeDelta = fabs(accelTot_ - 1.0);
+    double verticalDelta = fabs(accelVert_);
+    if (accelMagnitudeDelta > GRAVITY_UPDATE_ACCEL_TOLERANCE_G) {
+      gravityUpdateRejectedAccelCount_++;
+    } else if (verticalDelta > GRAVITY_UPDATE_VERTICAL_TOLERANCE_G) {
+      gravityUpdateRejectedVerticalCount_++;
+    } else {
       double dt = ((double)m.t - tLastGravityUpdate_) * 0.001;
       if (dt > 0.0 && dt < 1.0) {
         double f = exp(K_UPDATE * dt);
         double nextGravity = gravity_ * f + awz * (1 - f);
+        double maxDelta = GRAVITY_UPDATE_MAX_SLEW_G_PER_S * dt;
+        double gravityDelta = nextGravity - gravity_;
+        if (fabs(gravityDelta) > maxDelta) {
+          nextGravity = gravity_ + (gravityDelta > 0.0 ? maxDelta : -maxDelta);
+          gravityUpdateSlewLimitedCount_++;
+        }
         if (plausibleGravity(nextGravity)) {
           gravity_ = nextGravity;
+          gravityUpdateAcceptedCount_++;
+        } else {
+          gravityUpdateRejectedPlausibilityCount_++;
         }
+      } else {
+        gravityUpdateRejectedTimeCount_++;
       }
     }
   }
@@ -244,14 +264,17 @@ void IMU::processMotion(const MotionUpdate& m) {
 }
 
 void IMU::on_receive(const MotionUpdate& msg) {
+  motionSampleCount_++;
   if (baro.state() != Barometer::State::Ready) {
     // We can't do anything without simultaneous barometer-measured altitude
+    motionSampleBaroNotReadyCount_++;
     return;
   }
   if (!msg.hasAcceleration || !msg.hasOrientation) {
     // We need to use both acceleration and orientation.
     // In the future, we could potentially collect them separately, but that seems unnecessary given
     // that they almost always occur together.
+    motionSampleMissingFieldsCount_++;
     return;
   }
 
@@ -260,6 +283,7 @@ void IMU::on_receive(const MotionUpdate& msg) {
   if (validAccelVert_) {
     // update kalman filter
     kalmanvert_.update(millis() / 1000.0, baro.altF(), accelVert_ * 9.80665f);
+    kalmanUpdateSampleCount_++;
 
     if (LOG::KALMAN && bus_) {
       String kalmanName = "kalman,";
@@ -302,3 +326,37 @@ bool IMU::worldVerticalAccelValid() const { return validLastWorldVerticalAccel_;
 uint16_t IMU::gravityInitResetCount() const { return gravityInitResetCount_; }
 
 float IMU::lastRejectedGravityEstimate() const { return (float)lastRejectedGravity_; }
+
+uint32_t IMU::motionSampleCount() const { return motionSampleCount_; }
+
+uint32_t IMU::motionSampleBaroNotReadyCount() const { return motionSampleBaroNotReadyCount_; }
+
+uint32_t IMU::motionSampleMissingFieldsCount() const { return motionSampleMissingFieldsCount_; }
+
+uint32_t IMU::motionSampleProcessedCount() const { return motionSampleProcessedCount_; }
+
+uint32_t IMU::motionSampleRejectedQuaternionCount() const {
+  return motionSampleRejectedQuaternionCount_;
+}
+
+uint32_t IMU::gravityInitSampleCount() const { return gravityInitSampleCount_; }
+
+uint32_t IMU::gravityUpdateCandidateCount() const { return gravityUpdateCandidateCount_; }
+
+uint32_t IMU::gravityUpdateAcceptedCount() const { return gravityUpdateAcceptedCount_; }
+
+uint32_t IMU::gravityUpdateRejectedAccelCount() const { return gravityUpdateRejectedAccelCount_; }
+
+uint32_t IMU::gravityUpdateRejectedVerticalCount() const {
+  return gravityUpdateRejectedVerticalCount_;
+}
+
+uint32_t IMU::gravityUpdateRejectedTimeCount() const { return gravityUpdateRejectedTimeCount_; }
+
+uint32_t IMU::gravityUpdateRejectedPlausibilityCount() const {
+  return gravityUpdateRejectedPlausibilityCount_;
+}
+
+uint32_t IMU::gravityUpdateSlewLimitedCount() const { return gravityUpdateSlewLimitedCount_; }
+
+uint32_t IMU::kalmanUpdateSampleCount() const { return kalmanUpdateSampleCount_; }

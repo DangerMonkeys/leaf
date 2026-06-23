@@ -36,6 +36,20 @@ class IMU : public MessageSink<IMU, MotionUpdate>, public IMessageSource {
   bool worldVerticalAccelValid() const;
   uint16_t gravityInitResetCount() const;
   float lastRejectedGravityEstimate() const;
+  uint32_t motionSampleCount() const;
+  uint32_t motionSampleBaroNotReadyCount() const;
+  uint32_t motionSampleMissingFieldsCount() const;
+  uint32_t motionSampleProcessedCount() const;
+  uint32_t motionSampleRejectedQuaternionCount() const;
+  uint32_t gravityInitSampleCount() const;
+  uint32_t gravityUpdateCandidateCount() const;
+  uint32_t gravityUpdateAcceptedCount() const;
+  uint32_t gravityUpdateRejectedAccelCount() const;
+  uint32_t gravityUpdateRejectedVerticalCount() const;
+  uint32_t gravityUpdateRejectedTimeCount() const;
+  uint32_t gravityUpdateRejectedPlausibilityCount() const;
+  uint32_t gravityUpdateSlewLimitedCount() const;
+  uint32_t kalmanUpdateSampleCount() const;
 
  private:
   void processMotion(const MotionUpdate& m);
@@ -66,5 +80,20 @@ class IMU : public MessageSink<IMU, MotionUpdate>, public IMessageSource {
 
   // Last time gravity estimate was updated
   uint32_t tLastGravityUpdate_;
+
+  uint32_t motionSampleCount_ = 0;
+  uint32_t motionSampleBaroNotReadyCount_ = 0;
+  uint32_t motionSampleMissingFieldsCount_ = 0;
+  uint32_t motionSampleProcessedCount_ = 0;
+  uint32_t motionSampleRejectedQuaternionCount_ = 0;
+  uint32_t gravityInitSampleCount_ = 0;
+  uint32_t gravityUpdateCandidateCount_ = 0;
+  uint32_t gravityUpdateAcceptedCount_ = 0;
+  uint32_t gravityUpdateRejectedAccelCount_ = 0;
+  uint32_t gravityUpdateRejectedVerticalCount_ = 0;
+  uint32_t gravityUpdateRejectedTimeCount_ = 0;
+  uint32_t gravityUpdateRejectedPlausibilityCount_ = 0;
+  uint32_t gravityUpdateSlewLimitedCount_ = 0;
+  uint32_t kalmanUpdateSampleCount_ = 0;
 };
 extern IMU imu;

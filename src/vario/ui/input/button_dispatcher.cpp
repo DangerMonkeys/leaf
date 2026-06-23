@@ -13,6 +13,7 @@
 #include "ui/display/pages/dialogs/page_warning.h"
 #include "ui/display/pages/primary/page_charging.h"
 #include "ui/display/pages/primary/page_debug.h"
+#include "ui/display/pages/primary/page_debug2.h"
 #include "ui/display/pages/primary/page_navigate.h"
 #include "ui/display/pages/primary/page_simple.h"
 #include "ui/display/pages/primary/page_thermal.h"
@@ -63,5 +64,7 @@ void ButtonDispatcher::on_receive(const ButtonEventMessage& msg) {
 
   } else if (currentPage == MainPage::Debug) {  // NOT CHARGING PAGE (i.e., our debug test page)
     debugPage_button(msg.button, msg.event, msg.holdCount);
+  } else if (currentPage == MainPage::Debug2) {
+    debug2Page_button(msg.button, msg.event, msg.holdCount);
   }
 }
