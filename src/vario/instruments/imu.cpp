@@ -384,9 +384,9 @@ uint16_t IMU::startupSamplesCompleted() const {
   if (kalmanStartupSamplesRemaining_ == 0 && startupReadinessTimedOut()) {
     return KALMAN_STARTUP_REPORT_SAMPLES;
   }
-  uint16_t nonVertCompleted =
-      startupNonVertSamples_ > STARTUP_NON_VERT_SAMPLES ? STARTUP_NON_VERT_SAMPLES
-                                                        : startupNonVertSamples_;
+  uint16_t nonVertCompleted = startupNonVertSamples_ > STARTUP_NON_VERT_SAMPLES
+                                  ? STARTUP_NON_VERT_SAMPLES
+                                  : startupNonVertSamples_;
   return kalmanCompleted < nonVertCompleted ? kalmanCompleted : nonVertCompleted;
 }
 
