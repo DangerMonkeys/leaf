@@ -59,6 +59,7 @@ class Display {
   MainPage displayPagePrior_ = MainPage::Thermal;
 
   uint8_t showSplashScreenFrames_ = 0;
+  bool showStartupSplash_ = false;
 
   bool showWarning_ = true;
 };

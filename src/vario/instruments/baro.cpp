@@ -29,6 +29,8 @@ constexpr uint32_t CLIMB_AVERAGE_INIT_S = 1;
 // sample rate of altitudes; used to compute smaple count from duration
 constexpr uint32_t SAMPLES_PER_SECOND = 20;
 
+constexpr size_t BARO_STARTUP_DISCARD_SAMPLES = 20;
+
 // Singleton barometer instance for device
 Barometer baro;
 
@@ -103,11 +105,16 @@ void Barometer::init(void) {
   }
 
   // Clear any state
+  validAltF_ = false;
+  validAltAdjusted_ = false;
+  validAltAtLaunch_ = false;
+  validAltInitial_ = false;
   validClimbRateRaw_ = false;
   validClimbRateFiltered_ = false;
   climbFilter.reset();
   climbRateAverage_ = 0;
   nInitSamplesRemaining_ = CLIMB_AVERAGE_INIT_S * SAMPLES_PER_SECOND;
+  startupDiscardSamplesRemaining_ = BARO_STARTUP_DISCARD_SAMPLES;
 
   state_ = State::WaitingForFirstReading;
 }
@@ -118,7 +125,11 @@ void Barometer::on_receive(const PressureUpdate& msg) {
   }
 
   if (state_ == State::WaitingForFirstReading) {
-    firstReading(msg);
+    if (startupDiscardSamplesRemaining_ > 0) {
+      startupDiscardSamplesRemaining_--;
+    } else {
+      firstReading(msg);
+    }
   } else if (state_ == State::Sleeping) {
     // Do nothing
   } else if (state_ == State::Ready) {
@@ -261,6 +272,14 @@ float Barometer::climbRateAverage() {
 bool Barometer::climbRateAverageValid() {
   return state_ == State::Ready && nInitSamplesRemaining_ == 0;
 }
+
+uint16_t Barometer::startupSamplesCompleted() const {
+  if (state_ == State::Uninitialized || state_ == State::Sleeping) return 0;
+  if (state_ != State::WaitingForFirstReading) return BARO_STARTUP_DISCARD_SAMPLES;
+  return BARO_STARTUP_DISCARD_SAMPLES - startupDiscardSamplesRemaining_;
+}
+
+uint16_t Barometer::startupSamplesRequired() const { return BARO_STARTUP_DISCARD_SAMPLES; }
 
 void Barometer::filterAltitude() {
   // Filter Pressure and calculate Final Altitude Values

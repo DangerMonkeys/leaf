@@ -7,6 +7,7 @@
 #include "instruments/ambient.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
+#include "instruments/imu.h"
 #include "logging/log.h"
 #include "navigation/gpx.h"
 #include "power.h"
@@ -1115,14 +1116,39 @@ void display_batteryDead_splash() {
   } while (u8g2.nextPage());
 }
 
+uint16_t display_startupProgressCompleted() {
+  return baro.startupSamplesCompleted() + imu.startupSamplesCompleted();
+}
+
+uint16_t display_startupProgressRequired() {
+  return baro.startupSamplesRequired() + imu.startupSamplesRequired();
+}
+
+bool display_startupProgressComplete() {
+  return display_startupProgressCompleted() >= display_startupProgressRequired();
+}
+
 void display_on_splash() {
   u8g2.firstPage();
   do {
     display_splashLogo();
 
     u8g2.setFont(leaf_6x12);
-    u8g2.setCursor(28, 155);
+    u8g2.setCursor(28, 149);
     u8g2.print("HELLO");
+
+    uint16_t progressCompleted = display_startupProgressCompleted();
+    uint16_t progressRequired = display_startupProgressRequired();
+    if (progressCompleted > progressRequired) progressCompleted = progressRequired;
+    constexpr uint8_t progressX = 18;
+    constexpr uint8_t progressY = 154;
+    constexpr uint8_t progressW = 60;
+    constexpr uint8_t progressH = 6;
+    uint8_t fillW = (progressW - 2) * progressCompleted / progressRequired;
+    u8g2.drawFrame(progressX, progressY, progressW, progressH);
+    if (fillW > 0) {
+      u8g2.drawBox(progressX + 1, progressY + 1, fillW, progressH - 2);
+    }
 
     u8g2.setFont(leaf_5x8);
     u8g2.setCursor(0, 172);

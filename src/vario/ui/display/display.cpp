@@ -131,7 +131,10 @@ void Display::setPage(MainPage targetPage) {
   if (displayPage_ != tempPage) displayPagePrior_ = tempPage;
 }
 
-void Display::showOnSplash() { showSplashScreenFrames_ = 6; }
+void Display::showOnSplash() {
+  showStartupSplash_ = true;
+  showSplashScreenFrames_ = 6;
+}
 
 //*********************************************************************
 // MAIN DISPLAY UPDATE FUNCTION
@@ -150,9 +153,14 @@ void Display::update() {
     chargingPage_draw();
     return;
   }
-  if (showSplashScreenFrames_) {
+  if (showStartupSplash_) {
     display_on_splash();
-    showSplashScreenFrames_--;
+    if (showSplashScreenFrames_ > 0) {
+      showSplashScreenFrames_--;
+    }
+    if (showSplashScreenFrames_ == 0 && display_startupProgressComplete()) {
+      showStartupSplash_ = false;
+    }
     return;
   }
   // If user setting to SHOW_WARNING and also we need to showWarning, then display it
