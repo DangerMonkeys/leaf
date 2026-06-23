@@ -24,6 +24,7 @@ SpeakerInteractiveTest speakerTest;
 
 constexpr size_t BUFFER_SIZE = 512;
 constexpr uint32_t GPS_SERIAL_TEST_TIMEOUT_MS = 5000;
+constexpr uint32_t BARO_TEST_TIMEOUT_MS = 5000;
 constexpr uint32_t IMU_TEST_TIMEOUT_MS = 30000;
 constexpr uint32_t GPS_FIX_TEST_TIMEOUT_MS = 30UL * 60UL * 1000UL;
 File self_test_file;
@@ -182,11 +183,26 @@ SelfTest::Status SelfTest::testSDCard() {
 
 /////////////////////////////////////////////
 // BARO TEST
+bool baroTestInitialized = false;
+uint32_t baroTestStartMillis = 0;
 SelfTest::Status SelfTest::testBaro() {
   Status result = Status::Running;
+  if (!baroTestInitialized) {
+    baroTestInitialized = true;
+    baroTestStartMillis = millis();
+  }
+
   if (baro.state() != Barometer::State::Ready) {
-    selfTestInfo("`Test=BARO`,       `Result=FAIL`, `Message=Barometer not ready`");
-    result = Status::Fail;
+    uint32_t elapsedMillis = millis() - baroTestStartMillis;
+    if (elapsedMillis >= BARO_TEST_TIMEOUT_MS) {
+      selfTestInfo(
+          "`Test=BARO`,       `Result=FAIL`, `Message=Barometer timeout waiting for ready`, "
+          "`Elapsed_ms=%u`, `State=%u`, `StartupCompleted=%u`, `StartupRequired=%u`",
+          elapsedMillis, static_cast<unsigned>(baro.state()), baro.startupSamplesCompleted(),
+          baro.startupSamplesRequired());
+      result = Status::Fail;
+      baroTestInitialized = false;
+    }
   } else {
     if (baro.altF() < 1100 && baro.altF() > -200) {
       selfTestInfo("`Test=BARO`,       `Result=PASS`, `Alt_m=%g`", baro.altF());
@@ -196,6 +212,7 @@ SelfTest::Status SelfTest::testBaro() {
                    baro.altF());
       result = Status::Fail;
     }
+    baroTestInitialized = false;
   }
   return result;
 }
@@ -800,6 +817,7 @@ void SelfTest::clearResults() {
   selfTest.statusAutoTests = Status::Unknown;
   selfTest.statusInteractiveTests = Status::Unknown;
   ambientTestCounter = 0;
+  baroTestInitialized = false;
   imuTestInitialized = false;
 
   // reset interactive tests
