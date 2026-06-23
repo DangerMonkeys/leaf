@@ -35,13 +35,13 @@ typedef uint8_t SettingLogFormat;
 
 // Default Settings
 // Default Vario Settings
-#define DEF_SINK_ALARM -1.6f    // m/s sink
+#define DEF_SINK_ALARM -2.5f    // m/s sink
 #define DEF_SINK_ALARM_UNITS 0  // 0 = m/s, 1 = fpm
-#define DEF_VARIO_SENSE 3       // 3 = 1 second avg (up and down 1/4 sec from there)
+#define DEF_VARIO_SENSE 3       // 3 = avg of 6 samples (6/20 of a second)
 #define DEF_CLIMB_AVERAGE 1     // in units of 5-seconds.  (def = 1 = 5sec)
 #define DEF_CLIMB_START 5       // cm/s when climb note begins
-#define DEF_VOLUME_VARIO 1      // 0=off, 1=low, 2=med, 3=high
-#define DEF_QUIET_MODE 1        // 0 = off, 1 = on (ON means no beeping until flight recording)
+#define DEF_VOLUME_VARIO 2      // 0=off, 1=low, 2=med, 3=high
+#define DEF_QUIET_MODE 0        // 0 = off, 1 = on (ON means no beeping until flight recording)
 // 0 == linear pitch interpolation; 1 == major C-scale for climb, minor scale for descent
 #define DEF_VARIO_TONES 0
 // In units of 10 cm/s (a sink rate of only 30cm/s means the air itself is going up).  '0' is off.
@@ -64,8 +64,8 @@ typedef uint8_t SettingLogFormat;
 // Time Zone offset in minutes. UTC -8 (PST) would therefore be -8*60, or 480
 // This allows us to cover all time zones, including the :30 minute and :15 minute ones
 #define DEF_TIME_ZONE -420    // -420 min = UTC -7 hrs (PDT)
-#define DEF_VOLUME_SYSTEM 1   // 0=off, 1=low, 2=med, 3=high
-#define DEF_AUTO_OFF 0        // 0 = DISABLE
+#define DEF_VOLUME_SYSTEM 2   // 0=off, 1=low, 2=med, 3=high
+#define DEF_AUTO_OFF 10       // 0 = DISABLE, or 1, 5 10, 15, 30, 45, 60 minutes
 #define AUTO_OFF_MAX 60       // max auto-off time in minutes (1 hour)
 #define DEF_WIFI_ON 0         // default wifi off
 #define DEF_BLUETOOTH_ON 0    // default bluetooth off
