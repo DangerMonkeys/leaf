@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -247,6 +248,10 @@ def refresh_github_releases(settings: FactoryInterfaceSettings) -> None:
         "name": asset_name,
         "browser_download_url": asset.get("browser_download_url", ""),
         "size": asset.get("size"),
+        # GitHub returns "sha256:<hex>" (may be absent on older assets). Stored so a
+        # cached file can be validated and re-downloaded if a release asset with the
+        # same tag/name is later re-uploaded with different contents.
+        "digest": asset.get("digest"),
       })
     if assets:
       cached_releases.append({
@@ -271,6 +276,36 @@ def cached_release_asset_path(tag_name: str, asset_name: str) -> Path:
   return GITHUB_CACHE_PATH / safe_tag_name / safe_asset_name
 
 
+def cached_asset_is_current(cache_path: Path, asset: dict) -> bool:
+  """Whether the on-disk cached file still matches the release asset metadata.
+
+  Release assets can be re-uploaded under the same tag/name with different
+  contents (e.g. a rebuilt firmware). The cache path is keyed only by tag/name,
+  so without this check a stale binary would be served forever. Validate against
+  the GitHub-provided sha256 digest when available, otherwise fall back to the
+  byte size. If no metadata is available to compare, assume current (preserve the
+  prior behavior rather than force needless re-downloads).
+  """
+  if not cache_path.exists():
+    return False
+
+  digest = asset.get("digest")
+  if isinstance(digest, str) and digest.startswith("sha256:"):
+    expected = digest.split(":", 1)[1].strip().lower()
+    if expected:
+      hasher = hashlib.sha256()
+      with open(cache_path, "rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+          hasher.update(chunk)
+      return hasher.hexdigest() == expected
+
+  expected_size = asset.get("size")
+  if isinstance(expected_size, int):
+    return cache_path.stat().st_size == expected_size
+
+  return True
+
+
 def acquire_release_firmware_asset(
   settings: FactoryInterfaceSettings,
   tag_name: str,
@@ -281,7 +316,7 @@ def acquire_release_firmware_asset(
     raise RuntimeError(f"Release firmware is not cached in settings: {tag_name}/{asset_name}")
 
   cache_path = cached_release_asset_path(tag_name, asset_name)
-  if cache_path.exists():
+  if cached_asset_is_current(cache_path, asset):
     return cache_path
 
   download_url = asset.get("browser_download_url")
