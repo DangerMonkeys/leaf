@@ -29,6 +29,13 @@ Preferences leafPrefs;
 namespace {
   constexpr auto FACTORY_FLAGS_NAMESPACE = "factoryFlags";
   constexpr auto FORCE_FORMAT_SD_CARD_KEY = "FORCE_FMT_SD";
+
+  void clearSavedWifiCredentials() {
+    esp_err_t err = esp_wifi_restore();
+    if (err != ESP_OK) {
+      Serial.printf("Failed to erase saved WiFi credentials: %d\n", err);
+    }
+  }
 }  // namespace
 
 bool Settings::init() {
@@ -105,15 +112,7 @@ bool Settings::consumeProductionTestForceFormatSdCard() {
 // Reset Leaf user settings and info to defaults
 void Settings::reset() {
   loadDefaults();
-
-  // Clear any other user-supplied information
-  // Clear WiFi credentials
-  wifi_config_t current_conf;
-  esp_wifi_get_config((wifi_interface_t)ESP_IF_WIFI_STA, &current_conf);
-  memset(current_conf.sta.ssid, 0, sizeof(current_conf.sta.ssid));
-  memset(current_conf.sta.password, 0, sizeof(current_conf.sta.password));
-  esp_wifi_set_config((wifi_interface_t)ESP_IF_WIFI_STA, &current_conf);
-
+  clearSavedWifiCredentials();
   save();
 }
 
