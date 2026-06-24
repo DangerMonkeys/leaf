@@ -18,8 +18,12 @@
 
 namespace {
   ::WebServer server;
+  ::WebServer user_server(80);
   String send_buffer = "";
   bool webserver_started = false;
+  bool user_server_started = false;
+  bool user_app_enabled = false;
+  bool user_app_using_leaf_wifi = false;
 
   enum class SelfTestMode { None, Interactive };
 
@@ -278,6 +282,162 @@ namespace {
     if (body.substring(value_start, value_start + 5) == "false") return false;
     return defaultValue;
   }
+
+  String userAppMode() {
+    if (!user_app_enabled) return "off";
+    if (user_app_using_leaf_wifi) return "leaf_wifi";
+    return "network";
+  }
+
+  String userAppAddress() {
+    if (!user_app_enabled) return "";
+    if (user_app_using_leaf_wifi) return WiFi.softAPIP().toString();
+    return WiFi.localIP().toString();
+  }
+
+  String userAppUrl() {
+    if (!user_app_enabled) return "";
+    String url = "http://";
+    url += userAppAddress();
+    url += "/app";
+    return url;
+  }
+
+  void sendUserAppShell(WebServer& target) {
+    if (!user_app_enabled) {
+      target.send(404, "text/plain", "Leaf Web App is not active.");
+      return;
+    }
+
+    target.send(200, "text/html", R"(
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <title>Leaf Web App</title>
+          <style>
+            :root {
+              color-scheme: light;
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+              line-height: 1.35;
+            }
+            body {
+              margin: 0;
+              background: #f5f7f2;
+              color: #172016;
+            }
+            header {
+              background: #172016;
+              color: white;
+              padding: 20px;
+            }
+            main {
+              max-width: 720px;
+              margin: 0 auto;
+              padding: 20px;
+            }
+            h1 {
+              font-size: 28px;
+              margin: 0;
+            }
+            h2 {
+              font-size: 18px;
+              margin: 0 0 8px;
+            }
+            section {
+              border-bottom: 1px solid #d9dfd3;
+              padding: 18px 0;
+            }
+            .status {
+              display: grid;
+              gap: 6px;
+              font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+              font-size: 14px;
+            }
+            .muted {
+              color: #596256;
+            }
+          </style>
+        </head>
+        <body>
+          <header>
+            <h1>Leaf Web App</h1>
+          </header>
+          <main>
+            <section>
+              <h2>Status</h2>
+              <div class="status" id="status">Loading...</div>
+            </section>
+            <section>
+              <h2>Settings</h2>
+              <p class="muted">Settings tools will be added here.</p>
+            </section>
+            <section>
+              <h2>Flight Logs</h2>
+              <p class="muted">Logbook tools will be added here.</p>
+            </section>
+            <section>
+              <h2>Waypoints & Routes</h2>
+              <p class="muted">Navigation file tools will be added here.</p>
+            </section>
+          </main>
+          <script>
+            async function loadStatus() {
+              const target = document.getElementById('status');
+              try {
+                const response = await fetch('/api/user/status');
+                const status = await response.json();
+                target.innerHTML = [
+                  `mode: ${status.mode}`,
+                  `ssid: ${status.ssid || '(none)'}`,
+                  `ip: ${status.ip_address || '(none)'}`,
+                  `firmware: ${status.firmware_version}`
+                ].join('<br>');
+              } catch (error) {
+                target.textContent = 'Unable to read status.';
+              }
+            }
+            loadStatus();
+          </script>
+        </body>
+      </html>
+    )");
+  }
+
+  void sendUserStatus(WebServer& target) {
+    if (!user_app_enabled) {
+      target.send(404, "application/json", "{\"active\":false}");
+      return;
+    }
+
+    String json = "{\"active\":true,\"mode\":\"";
+    json += userAppMode();
+    json += "\",\"ssid\":\"";
+    json += user_app_using_leaf_wifi ? "Leaf WiFi" : WiFi.SSID();
+    json += "\",\"ip_address\":\"";
+    json += userAppAddress();
+    json += "\",\"url\":\"";
+    json += userAppUrl();
+    json += "\",\"firmware_version\":\"";
+    json += LeafVersionInfo::firmwareVersion();
+    json += "\"}";
+    target.send(200, "application/json", json);
+  }
+
+  void setupUserAppServer() {
+    if (user_server_started) return;
+
+    user_server.on("/", HTTP_GET, []() {
+      user_server.sendHeader("Location", "/app", true);
+      user_server.send(302, "text/plain", "");
+    });
+    user_server.on("/app", HTTP_GET, []() { sendUserAppShell(user_server); });
+    user_server.on("/api/user/status", HTTP_GET, []() { sendUserStatus(user_server); });
+    user_server.begin();
+    user_server_started = true;
+    Serial.printf("Leaf Web App started: %s\n", userAppUrl().c_str());
+  }
 }  // namespace
 
 constexpr auto endl = "\n";
@@ -288,7 +448,7 @@ void writeScreenshotBuffer(const char* buffer) {
 }
 
 void webserver_setup() {
-  if (WiFi.status() != WL_CONNECTED) return;
+  if (WiFi.status() != WL_CONNECTED && !user_app_enabled) return;
 
   if (webserver_started) return;
 
@@ -447,6 +607,14 @@ void webserver_setup() {
 
   server.on("/memory", HTTP_GET, []() { server.send(200, "text/plain", getMemoryUsage()); });
 
+  server.on("/app", HTTP_GET, []() {
+    sendUserAppShell(server);
+  });
+
+  server.on("/api/user/status", HTTP_GET, []() {
+    sendUserStatus(server);
+  });
+
   server.on("/mac-address", HTTP_GET, []() {
     String json = "{\"mac_address\":\"";
     json += settings.getMacAddress();
@@ -546,8 +714,43 @@ void webserver_setup() {
 }
 
 void webserver_loop() {
-  if (WiFi.status() == WL_CONNECTED) {
+  if (WiFi.status() == WL_CONNECTED || user_app_enabled) {
     server.handleClient();
+    if (user_app_enabled) user_server.handleClient();
     updatePendingInteractiveSelfTest();
   }
+}
+
+void webserver_enable_user_app(bool useLeafWifi) {
+  if (useLeafWifi || WiFi.status() != WL_CONNECTED) {
+    WiFi.mode(WIFI_AP);
+    WiFi.setSleep(false);
+    WiFi.softAP("Leaf WiFi");
+    user_app_using_leaf_wifi = true;
+  } else {
+    user_app_using_leaf_wifi = false;
+  }
+
+  user_app_enabled = true;
+  setupUserAppServer();
+  webserver_setup();
+}
+
+void webserver_disable_user_app() {
+  user_app_enabled = false;
+  if (user_server_started) {
+    user_server.stop();
+    user_server_started = false;
+  }
+  if (user_app_using_leaf_wifi) {
+    WiFi.softAPdisconnect(true);
+    WiFi.mode(WIFI_STA);
+  }
+  user_app_using_leaf_wifi = false;
+}
+
+bool webserver_user_app_active() { return user_app_enabled; }
+
+String webserver_user_app_url() {
+  return userAppUrl();
 }

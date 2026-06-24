@@ -4,6 +4,7 @@
 
 #include "comms/ble.h"
 #include "comms/ota.h"
+#include "comms/webserver.h"
 #include "power.h"
 #include "system/version_info.h"
 #include "ui/audio/sound_effects.h"
@@ -14,10 +15,26 @@
 #include "ui/display/pages.h"
 #include "ui/input/buttons.h"
 #include "ui/settings/settings.h"
+#include "utils/qrcodex.h"
+
+namespace {
+  int wifiIconForCurrentConnection() {
+    int wifiIcon = 65;  // the "full signal" icon
+    if (WiFi.status() == WL_CONNECTED) {
+      const int signalStrength = WiFi.RSSI();
+      if (signalStrength < -70) wifiIcon--;  // decrease one bar
+      if (signalStrength < -85) wifiIcon--;  // decrease another bar
+    } else {
+      wifiIcon++;  // disconnected icon
+    }
+    return wifiIcon;
+  }
+}  // namespace
 
 enum wifi_menu_items_connected {
   cursor_wifi_back,
   cursor_wifi_connectORupdateFW,
+  cursor_wifi_webApp,
   cursor_wifi_resetWifiSettings
 };
 
@@ -27,8 +44,7 @@ void WifiMenuPage::draw() {
     attemptWifiConnection();
   }
 
-  int signalStrength = 0;
-  int wifiIcon = 65;  // the "full signal" icon
+  int wifiIcon = wifiIconForCurrentConnection();
 
   u8g2.firstPage();
   do {
@@ -43,12 +59,8 @@ void WifiMenuPage::draw() {
       u8g2.print("Connected To:");
       u8g2.setCursor(0, 50);
       u8g2.print(WiFi.SSID());
-      signalStrength = WiFi.RSSI();
-      if (signalStrength < -70) wifiIcon--;  // decrease one bar
-      if (signalStrength < -85) wifiIcon--;  // decrease another bar
     } else {
       u8g2.print("Not Connected");
-      wifiIcon++;  // index up to the disconnected icon
     }
     u8g2.setFont(leaf_icons);
     u8g2.setCursor(85, 50);
@@ -58,7 +70,7 @@ void WifiMenuPage::draw() {
     // Menu Items
     uint8_t setting_name_x = 2;
     uint8_t setting_choice_x = 70;
-    uint8_t menu_items_y[] = {190, 90, 105};
+    uint8_t menu_items_y[] = {190, 90, 105, 120};
 
     // first draw cursor selection box
     u8g2.drawRBox(setting_choice_x - 4, menu_items_y[cursor_position] - 14, 30, 16, 2);
@@ -97,6 +109,11 @@ void WifiMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) 
         WiFi.disconnect(true, true);  // erase AP
         wifi_state = WifiState::DISCONNECTED;
         Serial.println("WiFi settings reset");
+      }
+      break;
+    case cursor_wifi_webApp:
+      if (state == ButtonEvent::CLICKED) {
+        push_page(&page_wifi_web_app);
       }
       break;
     case cursor_wifi_connectORupdateFW:
@@ -150,6 +167,141 @@ void WifiMenuPage::attemptWifiConnection() {
 
   // This attempts to connect using credentials stored by WiFiManager
   WiFi.begin();
+}
+
+namespace {
+  void drawQrCode(const char* text, uint8_t xOffset, uint8_t yOffset) {
+    static constexpr uint8_t QR_VERSION = 2;
+    static constexpr uint8_t QR_SCALE = 2;
+
+    QRCode qrcode;
+    uint8_t qrcodeData[qrcode_getBufferSize(QR_VERSION)];
+    qrcode_initText(&qrcode, qrcodeData, QR_VERSION, ECC_LOW, text);
+
+    for (uint8_t x = 0; x < qrcode.size; x++) {
+      for (uint8_t y = 0; y < qrcode.size; y++) {
+        if (qrcode_getModule(&qrcode, x, y)) {
+          u8g2.drawBox(xOffset + x * QR_SCALE, yOffset + y * QR_SCALE, QR_SCALE, QR_SCALE);
+        }
+      }
+    }
+  }
+}  // namespace
+
+etl::array<const char*, 1> PageMenuSystemWifiWebApp::network_labels{{"Use LeafWiFi"}};
+
+void PageMenuSystemWifiWebApp::start(bool useLeafWifi) {
+  using_leaf_wifi = useLeafWifi || WiFi.status() != WL_CONNECTED;
+  webserver_enable_user_app(using_leaf_wifi);
+}
+
+void PageMenuSystemWifiWebApp::shown() {
+  start(false);
+  SimpleSettingsMenuPage::shown();
+}
+
+void PageMenuSystemWifiWebApp::closed(bool removed_from_Stack) {
+  if (removed_from_Stack) {
+    webserver_disable_user_app();
+  }
+}
+
+etl::array_view<const char*> PageMenuSystemWifiWebApp::get_labels() const {
+  if (using_leaf_wifi) return etl::array_view<const char*>(emptyMenu);
+  return etl::array_view<const char*>(network_labels);
+}
+
+void PageMenuSystemWifiWebApp::draw() {
+  if (using_leaf_wifi) {
+    SimpleSettingsMenuPage::draw();
+    return;
+  }
+
+  u8g2.firstPage();
+  do {
+    display_menuTitle(String(get_title()));
+
+    const auto BOX_X = 74 - 10;
+    const auto BOX_Y = (cursor_position == CURSOR_BACK ? 190 : 45) - 14;
+    u8g2.drawRBox(BOX_X, BOX_Y, 34, 16, 2);
+
+    u8g2.setFont(leaf_6x12);
+    u8g2.setCursor(2, 190);
+    u8g2.print("Back");
+    u8g2.setCursor(74, 190);
+    u8g2.setDrawColor(cursor_position == CURSOR_BACK ? 0 : 1);
+    u8g2.print((char)124);
+    u8g2.setDrawColor(1);
+
+    u8g2.setFont(leaf_5x8);
+    u8g2.setCursor(2, 45);
+    u8g2.print(network_labels[0]);
+    u8g2.setFont(leaf_6x12);
+    u8g2.setCursor(74, 45);
+    u8g2.setDrawColor(cursor_position == 0 ? 0 : 1);
+    u8g2.print((char)126);
+    u8g2.setDrawColor(1);
+
+    draw_extra();
+  } while (u8g2.nextPage());
+
+  loop();
+}
+
+void PageMenuSystemWifiWebApp::setting_change(Button dir, ButtonEvent state, uint8_t count) {
+  if (cursor_position == CURSOR_BACK && state == ButtonEvent::CLICKED) {
+    pop_page();
+    return;
+  }
+
+  if (state != ButtonEvent::CLICKED) return;
+
+  if (using_leaf_wifi) return;
+
+  if (cursor_position == 0) {
+    start(true);
+    cursor_position = CURSOR_BACK;
+    cursor_max = get_labels().size() - 1;
+  }
+}
+
+void PageMenuSystemWifiWebApp::draw_extra() {
+  u8g2.setFont(leaf_5x8);
+  u8g2.setDrawColor(1);
+
+  if (using_leaf_wifi) {
+    u8g2.setCursor(18, 28);
+    u8g2.print("Join Leaf WiFi");
+    drawQrCode("WIFI:T:nopass;S:Leaf WiFi;;", 23, 34);
+
+    u8g2.setCursor(20, 100);
+    u8g2.print("Open Web App");
+    drawQrCode(webserver_user_app_url().c_str(), 23, 106);
+    return;
+  }
+
+  if (webserver_user_app_active()) {
+    u8g2.setFont(leaf_5x8);
+    u8g2.setCursor(2, 28);
+    u8g2.print("Connected to:");
+    u8g2.setCursor(2, 40);
+    u8g2.print(WiFi.SSID());
+    u8g2.setFont(leaf_icons);
+    u8g2.setCursor(85, 40);
+    u8g2.print((char)wifiIconForCurrentConnection());
+
+    drawQrCode(webserver_user_app_url().c_str(), 23, 58);
+
+    String shortUrl = webserver_user_app_url();
+    shortUrl.replace("http://", "");
+    u8g2.setFont(leaf_5x8);
+    u8g2.setCursor(2, 119);
+    u8g2.print(shortUrl);
+  } else {
+    u8g2.setFont(leaf_5x8);
+    u8g2.setCursor(2, 90);
+    u8g2.print("Web App is off");
+  }
 }
 
 /**************************
