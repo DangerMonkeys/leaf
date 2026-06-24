@@ -1,5 +1,5 @@
 ---
-title: Vario User Manual
+title: Leaf Vario User Manual
 description: How to set up and use your Leaf Vario
 ---
 import "./style.css"
@@ -23,6 +23,7 @@ import gpsMenu from "./menu_images/GPSmenu.png"
 import menuLogTimer from "./menu_images/MenuLogTimer.png"
 import menuSystem from "./menu_images/MenuSystem.png"
 import menuSystemAbout from "./menu_images/MenuSystemAbout.png"
+import ResetButton from "./ResetButton.png"
 
 
 
@@ -34,13 +35,17 @@ import menuSystemAbout from "./menu_images/MenuSystemAbout.png"
   <img src={leafGreenBg.src} alt="Leaf Green BG" />
 </div>
 
+
+
+1. [Quick Start Guide](#quick-start-guide)
+2. [Menu Options](#menu-options)
+3. [SD card, TrackLogs, and Waypoints](#sd-card-tracklogs-and-waypoints)
+4. [Firmware Updates](#wifi-firmware-updates)
+5. [Reset and Troubleshooting](#reset-and-troubleshooting)
+
 # Quick Start Guide
 
-1. [Getting Around](#getting-around)
-2. [SD card](#sd-card)
-3. [Firmware Updates](#wifi-firmware-updates)
-
-## Getting Around
+### Getting Around
 
 Meet the Directional Pad:
 
@@ -132,18 +137,19 @@ All the way to the right you’ll find the MENU page:
 
 > **Shortcut:** When MSL Altitude is selected, hold CENTER to sync the baro altitude to the GPS altitude. This is useful if you don’t know the site altitude or current pressure setting.
 
-### Thermal Page
-The  main operational page for standard vario 
+### User Page
+The  main operational page for standard vario information
 <div style={{ width: "80%", margin: "auto" }}>
   <img src={thermalPage.src} alt="Thermal Page" />
 </div>
-
+*Blue are fields that can be adjusted; Green is fixed information*
 ### Nav Page
+The Nav Page is used when tracking to GPS waypoints or routes
 <div style={{ width: "80%", margin: "auto" }}>
   <img src={navPage.src} alt="Nav Page" />
 </div>
-
-## Menu Options
+*Blue are fields that can be adjusted; Green is fixed information*
+# Menu Options
 
 ### Main Menu
 
@@ -177,7 +183,7 @@ Use the main menu to adjust settings for the following submenus:
 - **QuietMode**: Mutes vario beeps until flight log/timer is started
 - **Sensitivity**: How reactive the vario is.  1 (low) is approximately 1 second of averaging, 5 (high) is approximately 0.05 seconds.  3 is default and works well.
 - **ClimbStart**: How many fpm (or m/s) of climb is required to start beeping.  Lower values catch lift early, but may beep more than desired especially when just barely maintaining altitude.
-- **SinkAlarm**: How much sink (fpm or m/s) before the sinkn alarm starts beeping.  Values closer to zero will result in an often-beeping sink alarm.  Typically 400~600 fpm (2~3 m/s) is a good starting point for most pilots.
+- **SinkAlarm**: The descent rate required before the sink alarm starts beeping.  Values closer to zero will result in an often-beeping sink alarm.  Typically between -400 and -600 fpm (-2 and -3 m/s) is a good starting point for most pilots.
 
 ### Display Menu
 
@@ -242,7 +248,7 @@ Scroll through each field and set your desired units for the display
 - **Auto-Off**: Automatically turn Leaf off if no log is running, and if no button has been pressed for a certain amount of time.  Typically 5 or 10min is a good value to use.
 - **ShowSafety**: Show the safety disclaimer on start up.  If you've accepted this once, you can turn it off here to not see it every time.
 - **Wifi**: Use WiFi for updating firmware (see firmware update section further below)
-- **Bluetooth**: Turn Bluetooth on for sharing Leaf data with certain smartphone apps.  You don't need to do anything on Leaf to pair, just turn it on, then select the Leaf device in the compatible phone app.
+- **Bluetooth**: Turn Bluetooth on for sharing Leaf data with certain smartphone apps.  You don't need to do anything on Leaf to pair, just turn on bluetooth, then select the Leaf device in the compatible phone app.
 - **About**: See information about your Leaf, including the current firmware version, IP address (if currently connected to WiFi), MAC address, and FCC ID.
 
 <div style={{ width: "70%", margin: "auto" }}>
@@ -252,9 +258,14 @@ Scroll through each field and set your desired units for the display
 - **Reset**: Hold the center button to reset all Leaf settings.  This will not erase your SD card or logs.
 
 
-## SD Card
+# SD Card, TrackLogs, and Waypoints
 
 ![SD card](leaf-sd-card.png)
+
+### Accessing the SD card
+
+Leaf functions as a mass-storage device.  Simply plug it in to any computer or smartphone and you should see a "LEAF VARIO" drive appear with the SD card contents.  
+*Note: a second drive may also appear with the firmware files.  This can be ignored as it is only used for the rare occassion when you may wish to manually update the firmware.*
 
 ### Saving Track Logs
 
@@ -264,11 +275,13 @@ Logs can be saved in either KML or IGC format.
 
 ### Loading Waypoints and Routes
 
-Loading Waypoints and Routes: When Leaf is turned on, it will look for a file named “waypoints.gpx” in the root directory of the SD card.
+When Leaf is first turned on, it will look for a file named “waypoints.gpx” in the root directory of the SD card.
 
-Create a file with this name and save it to the SD Card to access your waypoints and routes for navigation.
+Create a file with this name and save it to the SD Card, then restart Leaf (unplug Leaf from your computer first to fully shut down).  Then access your waypoints and routes on the Nav Page by scrolling up to the waypoint item.
 
-## WiFi Firmware Updates
+We expect to be adding additional software features for saving and creating flight routes.  We understand the waypoints.gpx file is a bit primative at this stage.
+
+# WiFi Firmware Updates
 
 Leaf can update to the latest firmware over WiFi. To configure the Leaf WiFi Settings, you’ll need another device (phone or computer).
 
@@ -303,3 +316,29 @@ If WiFi is not available and you would like to use your cellular internet connec
 3.  Immediately after clicking “save” in Step #3, again turn on your device’s Hotspot Feature.
 4.  Leaf will try to connect to the Hotspot network. If successful, update Leaf firmware as described in step #4 above.
 5.  Once Leaf has updated and restarted, you can turn off your Hotspot feature.
+
+# Reset and Troubleshooting
+
+### Restore Factory Defaults
+To return all settings to the factory configuration, go to the System Menu, then scroll down to the Reset option. Hold the center button to reset all Leaf settings. This will not erase your SD card or logs.
+
+### Hard Reset Leaf
+Performing a hard reset is useful if Leaf becomes frozen or unresponsive.  The reset button is hidden behind the speaker grille.  Press a paperclip or pin into the lower-end of the largest speaker slot to hard reset Leaf.  This will force a reboot, but it won't reset your user settings or touch your SD card.  After you reset Leaf, you will need to turn it on again if it wasn't plugged into a USB cable at the time.
+
+<div style={{ width: "70%", margin: "auto" }}>
+  <img src={ResetButton.src} alt="Reset Button" />
+</div>
+
+### Reloading Firmware Manually
+
+**WARNING** *Manually loading firmware is only for advanced users.  For general updates, please use the [WiFi update process](#wifi-update-process) described above.*
+
+**If you are manually loading firmware, you MUST be sure to use the correct firmware version for your specific Leaf hardware version.  For most users, this will be 3.2.7_release.  If you are unsure, please contact us before proceeding.**
+
+There are two methods for manually loading firmware:
+##### Flash firmware via USB drive
+When plugging Leaf into a computer, you will see two removable drives appear.  One is the SD card, labeled "LEAF VARIO", where you'll find tracklogs and store waypoint files.  The other drive is the processor boot partition, which can be used to update firmware.  Simply drag and drop the new firmware file onto this drive.  Leaf will reboot to the new firmware once the file is transferred and loaded.  **DO NOT UNPLUG** Leaf until the process is complete.
+
+##### Flash firmware via USB cable and programming tools
+
+For advanced users who wish to reprogram the firmware manually, the "Boot" button is located behind the smallest speaker hole.  To enter bootloader mode, press and hold this button while plugging in the USB cable, then release the Boot button.  Or, while already plugged into USB, press and hold the "Boot" button then press and release the "Reset" button, then release the "Boot" button.  Once in bootloader mode, the firmware can be uploaded using Arduino, PlatformIO, or Espressif tools.
