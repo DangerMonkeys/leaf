@@ -221,8 +221,9 @@ void PageMenuSystemWifiWebApp::draw() {
   do {
     display_menuTitle(String(get_title()));
 
+    const auto NETWORK_ACTION_Y = 166;
     const auto BOX_X = 74 - 10;
-    const auto BOX_Y = (cursor_position == CURSOR_BACK ? 190 : 45) - 14;
+    const auto BOX_Y = (cursor_position == CURSOR_BACK ? 190 : NETWORK_ACTION_Y) - 14;
     u8g2.drawRBox(BOX_X, BOX_Y, 34, 16, 2);
 
     u8g2.setFont(leaf_6x12);
@@ -234,10 +235,10 @@ void PageMenuSystemWifiWebApp::draw() {
     u8g2.setDrawColor(1);
 
     u8g2.setFont(leaf_5x8);
-    u8g2.setCursor(2, 45);
+    u8g2.setCursor(2, NETWORK_ACTION_Y);
     u8g2.print(network_labels[0]);
     u8g2.setFont(leaf_6x12);
-    u8g2.setCursor(74, 45);
+    u8g2.setCursor(74, NETWORK_ACTION_Y);
     u8g2.setDrawColor(cursor_position == 0 ? 0 : 1);
     u8g2.print((char)126);
     u8g2.setDrawColor(1);
@@ -290,12 +291,15 @@ void PageMenuSystemWifiWebApp::draw_extra() {
     u8g2.setCursor(85, 40);
     u8g2.print((char)wifiIconForCurrentConnection());
 
-    drawQrCode(webserver_user_app_url().c_str(), 23, 58);
+    u8g2.setFont(leaf_5x8);
+    u8g2.setCursor(2, 58);
+    u8g2.print("Open in browser:");
+    drawQrCode(webserver_user_app_url().c_str(), 23, 64);
 
     String shortUrl = webserver_user_app_url();
     shortUrl.replace("http://", "");
     u8g2.setFont(leaf_5x8);
-    u8g2.setCursor(2, 119);
+    u8g2.setCursor(2, 124);
     u8g2.print(shortUrl);
   } else {
     u8g2.setFont(leaf_5x8);
