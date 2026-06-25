@@ -28,10 +28,15 @@ namespace {
   bool user_app_using_leaf_wifi = false;
   bool user_app_provisioning = false;
   bool wifi_setup_scan_started = false;
+  bool wifi_setup_connecting = false;
+  uint32_t wifi_setup_connect_started_ms = 0;
+  String wifi_setup_connect_ssid = "";
+  String wifi_setup_connect_error = "";
 
   enum class SelfTestMode { None, Interactive };
 
   static constexpr uint32_t SELF_TEST_POWER_ON_DELAY_MS = 10000;
+  static constexpr uint32_t WIFI_SETUP_CONNECT_TIMEOUT_MS = 12000;
 
   SelfTestMode last_self_test_mode = SelfTestMode::None;
   bool interactive_self_test_pending = false;
@@ -336,19 +341,52 @@ namespace {
     return url;
   }
 
+  void stopFailedWifiSetupAttempt(const char* error) {
+    wifi_setup_connecting = false;
+    wifi_setup_connect_error = error;
+
+    // A failed WiFi.begin() can leave bad setup credentials saved and the STA
+    // side retrying. Stop that while keeping the Leaf AP available.
+    WiFi.disconnect(false, true);
+    WiFi.mode(WIFI_AP_STA);
+    WiFi.setSleep(false);
+    WiFi.softAP("Leaf WiFi");
+  }
+
   String wifiStatusJson() {
     wl_status_t status = WiFi.status();
+    if (wifi_setup_connecting && status == WL_CONNECTED) {
+      wifi_setup_connecting = false;
+      wifi_setup_connect_error = "";
+    } else if (wifi_setup_connecting && status == WL_CONNECT_FAILED) {
+      stopFailedWifiSetupAttempt("connect_failed");
+      status = WiFi.status();
+    } else if (wifi_setup_connecting && status == WL_NO_SSID_AVAIL) {
+      stopFailedWifiSetupAttempt("network_not_found");
+      status = WiFi.status();
+    } else if (wifi_setup_connecting &&
+               millis() - wifi_setup_connect_started_ms > WIFI_SETUP_CONNECT_TIMEOUT_MS) {
+      stopFailedWifiSetupAttempt("timeout");
+      status = WiFi.status();
+    }
+
     String json = "{\"status\":";
     json += (int)status;
     json += ",\"connected\":";
     json += status == WL_CONNECTED ? "true" : "false";
+    json += ",\"connecting\":";
+    json += wifi_setup_connecting ? "true" : "false";
     json += ",\"ssid\":\"";
     json += jsonEscape(WiFi.SSID());
+    json += "\",\"target_ssid\":\"";
+    json += jsonEscape(wifi_setup_connect_ssid);
     json += "\",\"ip_address\":\"";
     json += status == WL_CONNECTED ? WiFi.localIP().toString() : "";
     json += "\",\"setup_active\":";
     json += user_app_provisioning ? "true" : "false";
-    json += ",\"app_url\":\"";
+    json += ",\"error\":\"";
+    json += jsonEscape(wifi_setup_connect_error);
+    json += "\",\"app_url\":\"";
     json += userAppUrl();
     json += "\"}";
     return json;
@@ -655,7 +693,16 @@ namespace {
                   statusEl.textContent = `Connected to ${data.ssid}. Open ${data.ip_address}:81/app from your browser.`;
                   return;
                 }
-                statusEl.textContent = 'Trying to connect...';
+                if (data.error) {
+                  const messages = {
+                    connect_failed: 'Unable to connect. Check the password and try again.',
+                    network_not_found: 'Network not found. Check the network name and try again.',
+                    timeout: 'Connection timed out. Check the password or move closer to the router.'
+                  };
+                  statusEl.textContent = messages[data.error] || 'Unable to connect. Check the network details and try again.';
+                  return;
+                }
+                statusEl.textContent = data.target_ssid ? `Trying to connect to ${data.target_ssid}...` : 'Trying to connect...';
                 setTimeout(pollConnection, 1500);
               } catch (error) {
                 statusEl.textContent = 'Trying to connect...';
@@ -671,12 +718,16 @@ namespace {
                 return;
               }
               statusEl.textContent = 'Saving credentials...';
-              await fetch('/api/wifi/connect', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ssid, password: passwordInput.value })
-              });
-              pollConnection();
+              try {
+                await fetch('/api/wifi/connect', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ ssid, password: passwordInput.value })
+                });
+                pollConnection();
+              } catch (error) {
+                statusEl.textContent = 'Unable to save network details. Try again.';
+              }
             });
 
             loadNetworks();
@@ -764,6 +815,10 @@ namespace {
     WiFi.setSleep(false);
     WiFi.persistent(true);
     WiFi.begin(ssid.c_str(), password.c_str());
+    wifi_setup_connecting = true;
+    wifi_setup_connect_started_ms = millis();
+    wifi_setup_connect_ssid = ssid;
+    wifi_setup_connect_error = "";
     Serial.printf("Leaf WiFi setup connecting to SSID: %s\n", ssid.c_str());
     target.send(202, "application/json", "{\"ok\":true}");
   }
@@ -1118,6 +1173,9 @@ void webserver_disable_user_app() {
   if (user_app_provisioning) dns_server.stop();
   user_app_provisioning = false;
   wifi_setup_scan_started = false;
+  wifi_setup_connecting = false;
+  wifi_setup_connect_ssid = "";
+  wifi_setup_connect_error = "";
   if (user_server_started) {
     user_server.stop();
     user_server_started = false;
