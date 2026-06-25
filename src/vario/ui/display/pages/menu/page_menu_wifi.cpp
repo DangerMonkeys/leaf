@@ -45,7 +45,9 @@ void WifiMenuPage::draw() {
     attemptWifiConnection();
   }
 
-  const bool wifiConnected = WiFi.status() == WL_CONNECTED;
+  const String connectedSsid = WiFi.SSID();
+  const bool wifiConnected = WiFi.status() == WL_CONNECTED && !connectedSsid.isEmpty();
+  const bool wifiSettling = WiFi.status() == WL_CONNECTED && connectedSsid.isEmpty();
   const bool wifiSearching = !wifiConnected && leaf_wifi::savedNetworkConnectionInProgress();
   int wifiIcon = wifiIconForCurrentConnection();
 
@@ -61,8 +63,8 @@ void WifiMenuPage::draw() {
     if (wifiConnected) {
       u8g2.print("Connected To:");
       u8g2.setCursor(0, 50);
-      u8g2.print(WiFi.SSID());
-    } else if (wifiSearching) {
+      u8g2.print(connectedSsid);
+    } else if (wifiSearching || wifiSettling) {
       u8g2.print("Searching...");
     } else {
       u8g2.print("Not Connected");

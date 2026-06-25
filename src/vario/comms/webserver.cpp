@@ -46,6 +46,16 @@ namespace {
   uint32_t interactive_self_test_start_ms = 0;
 
   uint32_t wifi_setup_cycle = 0;
+  uint32_t wifi_setup_started_ms = 0;
+
+  void logWifiSetupTiming(const char* event) {
+    Serial.printf("Leaf WiFi setup cycle %lu +%lums: %s heap=%u maxAlloc=%u\n",
+                  static_cast<unsigned long>(wifi_setup_cycle),
+                  static_cast<unsigned long>(millis() - wifi_setup_started_ms),
+                  event,
+                  ESP.getFreeHeap(),
+                  ESP.getMaxAllocHeap());
+  }
 
   const char* selfTestModeName(SelfTestMode mode) {
     switch (mode) {
@@ -346,6 +356,11 @@ namespace {
     return url;
   }
 
+  bool stationConnectionReady() {
+    return WiFi.status() == WL_CONNECTED && !WiFi.SSID().isEmpty() &&
+           WiFi.localIP() != IPAddress(0, 0, 0, 0);
+  }
+
   void sendNoStoreHeaders(WebServer& target) {
     target.sendHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
     target.sendHeader("Pragma", "no-cache");
@@ -366,18 +381,22 @@ namespace {
 
   String wifiStatusJson() {
     wl_status_t status = WiFi.status();
-    if (wifi_setup_connecting && status == WL_CONNECTED) {
+    if (wifi_setup_connecting && stationConnectionReady()) {
       wifi_setup_connecting = false;
       wifi_setup_connect_error = "";
-    } else if (wifi_setup_connecting && status == WL_CONNECT_FAILED) {
-      stopFailedWifiSetupAttempt("connect_failed");
-      status = WiFi.status();
-    } else if (wifi_setup_connecting && status == WL_NO_SSID_AVAIL) {
-      stopFailedWifiSetupAttempt("network_not_found");
-      status = WiFi.status();
     } else if (wifi_setup_connecting &&
                millis() - wifi_setup_connect_started_ms > WIFI_SETUP_CONNECT_TIMEOUT_MS) {
-      stopFailedWifiSetupAttempt("timeout");
+      const wl_status_t timed_out_status = WiFi.status();
+      if (timed_out_status == WL_CONNECTED) {
+        wifi_setup_connecting = false;
+        wifi_setup_connect_error = "";
+      } else if (timed_out_status == WL_NO_SSID_AVAIL) {
+        stopFailedWifiSetupAttempt("network_not_found");
+      } else if (timed_out_status == WL_CONNECT_FAILED) {
+        stopFailedWifiSetupAttempt("connect_failed");
+      } else {
+        stopFailedWifiSetupAttempt("timeout");
+      }
       status = WiFi.status();
     }
 
@@ -388,7 +407,7 @@ namespace {
     json += ",\"connecting\":";
     json += wifi_setup_connecting ? "true" : "false";
     json += ",\"ssid\":\"";
-    json += jsonEscape(WiFi.SSID());
+    json += jsonEscape(WiFi.SSID().isEmpty() && status == WL_CONNECTED ? wifi_setup_connect_ssid : WiFi.SSID());
     json += "\",\"target_ssid\":\"";
     json += jsonEscape(wifi_setup_connect_ssid);
     json += "\",\"ip_address\":\"";
@@ -627,8 +646,9 @@ namespace {
       Serial.printf("Leaf WiFi setup scan failed: %d\n", result);
     }
     wifi_setup_networks_json = wifiNetworksJsonFromScan(result);
-    Serial.printf("Leaf WiFi setup cycle %lu: scan=%d cachedJson=%u heap=%u maxAlloc=%u\n",
+    Serial.printf("Leaf WiFi setup cycle %lu +%lums: scan=%d cachedJson=%u heap=%u maxAlloc=%u\n",
                   static_cast<unsigned long>(wifi_setup_cycle),
+                  static_cast<unsigned long>(millis() - wifi_setup_started_ms),
                   result,
                   wifi_setup_networks_json.length(),
                   ESP.getFreeHeap(),
@@ -647,6 +667,7 @@ namespace {
   }
 
   void startWifiNetworkScan() {
+    logWifiSetupTiming("scan-start");
     WiFi.scanDelete();
     wifi_setup_networks_json = "{\"scanning\":true,\"networks\":[]}";
     const int16_t result = WiFi.scanNetworks(/*async=*/true, /*hidden=*/false);
@@ -1025,17 +1046,25 @@ void webserver_enable_user_app(bool useLeafWifi) {
 
 void webserver_enable_wifi_setup() {
   wifi_setup_cycle++;
-  leaf_wifi::prepareForUserWifiSetup();
+  wifi_setup_started_ms = millis();
+  logWifiSetupTiming("start");
+  leaf_wifi::prepareForUserWifiSetupFast();
+  logWifiSetupTiming("after-fast-prepare");
   WiFi.mode(WIFI_AP_STA);
   WiFi.setSleep(false);
   WiFi.softAP("Leaf WiFi");
+  logWifiSetupTiming("after-softAP");
   user_app_enabled = true;
   user_app_using_leaf_wifi = true;
   user_app_provisioning = true;
   setupUserAppServer();
+  logWifiSetupTiming("after-user-server");
   dns_server.start(53, "*", WiFi.softAPIP());
+  logWifiSetupTiming("after-dns");
   webserver_setup();
+  logWifiSetupTiming("after-main-server");
   startWifiNetworkScan();
+  logWifiSetupTiming("after-scan-start");
   Serial.printf("Leaf WiFi setup started: http://%s/app/wifi\n", WiFi.softAPIP().toString().c_str());
 }
 

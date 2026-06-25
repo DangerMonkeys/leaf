@@ -84,6 +84,14 @@ void prepareForUserWifiSetup() {
   resetRadioForSetup(/*eraseCredentials=*/false);
 }
 
+void prepareForUserWifiSetupFast() {
+  disableDiagnostics();
+  clearSavedNetworkAttempt();
+  WiFi.scanDelete();
+  WiFi.mode(WIFI_STA);
+  WiFi.setSleep(false);
+}
+
 void prepareForLeafAccessPoint() {
   disableDiagnostics();
   stopScansAndSta(/*eraseCredentials=*/false);

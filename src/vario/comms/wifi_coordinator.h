@@ -6,6 +6,7 @@ void disableDiagnosticsUntilReboot();
 bool diagnosticsAllowed();
 
 void prepareForUserWifiSetup();
+void prepareForUserWifiSetupFast();
 void prepareForLeafAccessPoint();
 void resetUserWifiSettings();
 void attemptSavedNetworkConnection();
