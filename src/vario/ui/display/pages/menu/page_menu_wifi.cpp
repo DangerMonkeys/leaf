@@ -149,15 +149,7 @@ void WifiMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) 
 }
 
 void PageMenuSystemWifiSetup::beginWifiSetup() {
-  // TODO: adding these three lines increased reliability of captive portal.  not sure why
-  WiFi.mode(WIFI_AP_STA);
-  WiFi.beginSmartConfig();
-  delay(500);
-
-  WiFi.mode(WIFI_STA);
-  wm.setConfigPortalBlocking(false);
-  wm.autoConnect("Leaf WiFi");
-  wm.setConfigPortalTimeout(60);
+  webserver_enable_wifi_setup();
 }
 
 void WifiMenuPage::attemptWifiConnection() {
@@ -317,13 +309,17 @@ void PageMenuSystemWifiSetup::shown() {
   beginWifiSetup();
 }
 
+void PageMenuSystemWifiSetup::closed(bool removed_from_Stack) {
+  if (removed_from_Stack) {
+    webserver_disable_user_app();
+  }
+}
+
 void PageMenuSystemWifiSetup::loop() {
-  // If we're connected, or portal times out, close the page
-  if (WiFi.status() == WL_CONNECTED || wm.getConfigPortalActive() == false) {
+  if (WiFi.status() == WL_CONNECTED) {
     pop_page();
     return;
   }
-  wm.process();
 }
 
 void PageMenuSystemWifiSetup::draw_extra() {
@@ -341,10 +337,11 @@ void PageMenuSystemWifiSetup::draw_extra() {
   u8g2.setCursor(0, y);
 
   // Instruction Page
-  const char* lines[] = {"Follow these steps", "on Phone or Laptop:",  "1.Join Leaf WiFi",   " ",
-                         "2.Click Sign In",    "  Or Visit:",          "http://192.168.4.1", " ",
-                         "3.Configure WiFi",   "Select your network",  "and enter password", " ",
-                         "4.Press Save",       "This page will close", "when connected..."};
+  const char* lines[] = {"Follow these steps", "on Phone or Laptop:", "1.Join Leaf WiFi",   " ",
+                         "2.Click Sign In",   "  Or Visit:",         "192.168.4.1/app/wifi",
+                         " ",                 "3.Enter Network",     "Select your network",
+                         "and enter password", " ",                  "4.Press Save",
+                         "This page will close", "when connected..."};
 
   uint8_t lineNum = 0;
 

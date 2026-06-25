@@ -3,7 +3,6 @@
 
 #include <Arduino.h>
 #include <WiFi.h>
-#include <WiFiManager.h>  // https://github.com/tzapu/WiFiManager
 
 #include "etl/array.h"
 #include "etl/array_view.h"
@@ -34,11 +33,11 @@ class PageMenuSystemWifiSetup : public SimpleSettingsMenuPage {
 
   void loop() override;
   void shown() override;
+  void closed(bool removed_from_Stack) override;
   void draw_extra() override;
 
  private:
   int wifiIcon = 62;  // the "empty signal" icon
-  WiFiManager wm;
   void beginWifiSetup(void);
 };
 
