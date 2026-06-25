@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <WiFi.h>
+#include <esp_wifi.h>
 
 namespace leaf_wifi {
 namespace {
@@ -38,6 +39,12 @@ namespace {
         millis() - saved_network_connect_started_ms > SAVED_NETWORK_CONNECT_DISPLAY_MS) {
       clearSavedNetworkAttempt();
     }
+  }
+
+  bool hasSavedStationConfig() {
+    wifi_config_t config = {};
+    if (esp_wifi_get_config(WIFI_IF_STA, &config) != ESP_OK) return false;
+    return config.sta.ssid[0] != '\0';
   }
 
   void stopScansAndSta(bool eraseCredentials) {
@@ -93,6 +100,10 @@ void attemptSavedNetworkConnection() {
   WiFi.scanDelete();
   WiFi.mode(WIFI_STA);
   WiFi.setSleep(false);
+  if (!hasSavedStationConfig()) {
+    clearSavedNetworkAttempt();
+    return;
+  }
   WiFi.begin();
   saved_network_connecting = true;
   saved_network_connect_started_ms = millis();
