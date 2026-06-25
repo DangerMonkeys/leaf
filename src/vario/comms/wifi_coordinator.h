@@ -10,5 +10,6 @@ void prepareForLeafAccessPoint();
 void resetUserWifiSettings();
 void attemptSavedNetworkConnection();
 void disconnectFromNetwork();
+bool savedNetworkConnectionInProgress();
 
 }  // namespace leaf_wifi

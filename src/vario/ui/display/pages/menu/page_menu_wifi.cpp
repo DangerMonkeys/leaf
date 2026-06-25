@@ -45,6 +45,8 @@ void WifiMenuPage::draw() {
     attemptWifiConnection();
   }
 
+  const bool wifiConnected = WiFi.status() == WL_CONNECTED;
+  const bool wifiSearching = !wifiConnected && leaf_wifi::savedNetworkConnectionInProgress();
   int wifiIcon = wifiIconForCurrentConnection();
 
   u8g2.firstPage();
@@ -56,10 +58,12 @@ void WifiMenuPage::draw() {
     u8g2.setDrawColor(1);
     u8g2.setFont(leaf_6x12);
     u8g2.setCursor(0, 35);
-    if (WiFi.status() == WL_CONNECTED) {
+    if (wifiConnected) {
       u8g2.print("Connected To:");
       u8g2.setCursor(0, 50);
       u8g2.print(WiFi.SSID());
+    } else if (wifiSearching) {
+      u8g2.print("Searching...");
     } else {
       u8g2.print("Not Connected");
     }
@@ -80,7 +84,7 @@ void WifiMenuPage::draw() {
     for (int i = 0; i <= cursor_max; i++) {
       u8g2.setCursor(setting_name_x, menu_items_y[i]);
       if (i == cursor_wifi_connectORupdateFW) {
-        if (WiFi.status() == WL_CONNECTED) {
+        if (wifiConnected) {
           u8g2.print("Update FW");
         } else {
           u8g2.print("Setup Wifi");
