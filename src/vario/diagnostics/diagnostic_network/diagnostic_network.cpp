@@ -2,6 +2,7 @@
 
 #include <WiFi.h>
 
+#include "comms/wifi_coordinator.h"
 #include "diagnostics/fatal_error.h"
 #include "diagnostics/self_test/selfTest.h"
 #include "power.h"
@@ -41,6 +42,15 @@ bool DiagnosticNetwork::shouldResetWhenSwitchingOn() const {
 bool DiagnosticNetwork::canSleepWhileCharging() const { return shouldResetWhenSwitchingOn(); }
 
 void DiagnosticNetwork::update() {
+  if (!leaf_wifi::diagnosticsAllowed()) {
+    if (!printed_end_state_) {
+      Serial.println("DiagnosticNetwork: disabled by user WiFi action");
+      printed_end_state_ = true;
+    }
+    state_ = State::NoNetworkFound;
+    return;
+  }
+
   if (state_ == State::Ready) {
     maybeLookForNetwork();
   } else if (state_ == State::WifiResetting) {

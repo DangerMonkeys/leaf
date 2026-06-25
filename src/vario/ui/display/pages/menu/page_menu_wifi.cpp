@@ -4,6 +4,7 @@
 
 #include "comms/ble.h"
 #include "comms/ota.h"
+#include "comms/wifi_coordinator.h"
 #include "comms/webserver.h"
 #include "power.h"
 #include "system/version_info.h"
@@ -106,9 +107,9 @@ void WifiMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) 
     case cursor_wifi_resetWifiSettings:
       if (state == ButtonEvent::CLICKED) {
         speaker.playSound(fx::confirm);
-        WiFi.disconnect(true, true);  // erase AP
+        webserver_disable_user_app();
+        leaf_wifi::resetUserWifiSettings();
         wifi_state = WifiState::DISCONNECTED;
-        Serial.println("WiFi settings reset");
       }
       break;
     case cursor_wifi_webApp:
@@ -128,7 +129,7 @@ void WifiMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) 
     case cursor_wifi_back: {
       if (state == ButtonEvent::CLICKED || state == ButtonEvent::HELD) {
 #ifndef DEBUG_WIFI
-        WiFi.disconnect();
+        leaf_wifi::disconnectFromNetwork();
         wifi_state = WifiState::DISCONNECTED;
         Serial.println("WiFi disconnected");
 #endif
@@ -154,11 +155,9 @@ void PageMenuSystemWifiSetup::beginWifiSetup() {
 
 void WifiMenuPage::attemptWifiConnection() {
   wifi_state = WifiState::CONNECTING;
-  WiFi.mode(WIFI_STA);
-  WiFi.setSleep(false);
 
-  // This attempts to connect using credentials stored by WiFiManager
-  WiFi.begin();
+  // This attempts to connect using credentials stored by the ESP WiFi stack.
+  leaf_wifi::attemptSavedNetworkConnection();
 }
 
 namespace {

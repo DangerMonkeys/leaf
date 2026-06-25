@@ -7,6 +7,7 @@
 #include <ctype.h>
 #include "comms/factory_discovery.h"
 #include "comms/fanet_radio.h"
+#include "comms/wifi_coordinator.h"
 #include "diagnostics/memory_report.h"
 #include "diagnostics/self_test/selfTest.h"
 #include "etl/string_stream.h"
@@ -24,10 +25,11 @@ namespace {
   String send_buffer = "";
   bool webserver_started = false;
   bool user_server_started = false;
+  bool user_server_routes_configured = false;
   bool user_app_enabled = false;
   bool user_app_using_leaf_wifi = false;
   bool user_app_provisioning = false;
-  bool wifi_setup_scan_started = false;
+  String wifi_setup_networks_json = "{\"scanning\":false,\"networks\":[]}";
   bool wifi_setup_connecting = false;
   uint32_t wifi_setup_connect_started_ms = 0;
   String wifi_setup_connect_ssid = "";
@@ -41,6 +43,8 @@ namespace {
   SelfTestMode last_self_test_mode = SelfTestMode::None;
   bool interactive_self_test_pending = false;
   uint32_t interactive_self_test_start_ms = 0;
+
+  uint32_t wifi_setup_cycle = 0;
 
   const char* selfTestModeName(SelfTestMode mode) {
     switch (mode) {
@@ -341,6 +345,12 @@ namespace {
     return url;
   }
 
+  void sendNoStoreHeaders(WebServer& target) {
+    target.sendHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+    target.sendHeader("Pragma", "no-cache");
+    target.sendHeader("Expires", "0");
+  }
+
   void stopFailedWifiSetupAttempt(const char* error) {
     wifi_setup_connecting = false;
     wifi_setup_connect_error = error;
@@ -393,6 +403,7 @@ namespace {
   }
 
   void sendRedirect(WebServer& target, const char* location) {
+    sendNoStoreHeaders(target);
     target.sendHeader("Location", location, true);
     target.send(302, "text/plain", "");
   }
@@ -540,201 +551,9 @@ namespace {
       return;
     }
 
-    target.send(200, "text/html", R"(
-      <!DOCTYPE html>
-      <html lang="en">
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1">
-          <title>Leaf WiFi Setup</title>
-          <style>
-            :root {
-              color-scheme: light;
-              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-              line-height: 1.35;
-            }
-            body {
-              margin: 0;
-              background: #f5f7f2;
-              color: #172016;
-            }
-            header {
-              background: #172016;
-              color: white;
-              padding: 18px 20px;
-            }
-            main {
-              max-width: 560px;
-              margin: 0 auto;
-              padding: 20px;
-            }
-            h1 {
-              font-size: 24px;
-              margin: 0;
-            }
-            label {
-              display: block;
-              font-size: 14px;
-              font-weight: 650;
-              margin: 14px 0 6px;
-            }
-            input, select, button {
-              box-sizing: border-box;
-              width: 100%;
-              border: 1px solid #bac3b4;
-              border-radius: 6px;
-              font: inherit;
-              padding: 12px;
-            }
-            button {
-              background: #172016;
-              color: white;
-              font-weight: 700;
-              margin-top: 16px;
-            }
-            .status {
-              border-bottom: 1px solid #d9dfd3;
-              color: #596256;
-              font-size: 14px;
-              margin-bottom: 18px;
-              padding-bottom: 16px;
-            }
-            .manual {
-              margin-top: 10px;
-            }
-            .password-row {
-              display: flex;
-              gap: 10px;
-            }
-            .password-row input {
-              flex: 1;
-              min-width: 0;
-            }
-            .show-password {
-              align-items: center;
-              border: 1px solid #bac3b4;
-              border-radius: 6px;
-              display: flex;
-              gap: 6px;
-              padding: 0 10px;
-              white-space: nowrap;
-            }
-            .show-password input {
-              width: auto;
-            }
-          </style>
-        </head>
-        <body>
-          <header>
-            <h1>Leaf WiFi Setup</h1>
-          </header>
-          <main>
-            <div class="status" id="status">Scanning for networks...</div>
-            <form id="wifi-form">
-              <label for="ssid-list">Network</label>
-              <select id="ssid-list">
-                <option value="">Select network...</option>
-              </select>
-              <input class="manual" id="ssid" name="ssid" autocomplete="off" placeholder="Type network name">
-              <label for="password">Password</label>
-              <div class="password-row">
-                <input id="password" name="password" type="password" autocomplete="current-password">
-                <label class="show-password">
-                  <input id="show-password" type="checkbox">
-                  Show
-                </label>
-              </div>
-              <button type="submit">Save and Connect</button>
-            </form>
-          </main>
-          <script>
-            const statusEl = document.getElementById('status');
-            const ssidList = document.getElementById('ssid-list');
-            const ssidInput = document.getElementById('ssid');
-            const passwordInput = document.getElementById('password');
-            const showPasswordInput = document.getElementById('show-password');
-            const form = document.getElementById('wifi-form');
-
-            ssidList.addEventListener('change', () => {
-              if (ssidList.value) ssidInput.value = ssidList.value;
-            });
-
-            showPasswordInput.addEventListener('change', () => {
-              passwordInput.type = showPasswordInput.checked ? 'text' : 'password';
-            });
-
-            async function loadNetworks() {
-              try {
-                const response = await fetch('/api/wifi/networks');
-                const data = await response.json();
-                if (data.scanning) {
-                  statusEl.textContent = 'Scanning for networks...';
-                  setTimeout(loadNetworks, 1500);
-                  return;
-                }
-                ssidList.innerHTML = '<option value="">Select network...</option>';
-                data.networks.forEach((network) => {
-                  const option = document.createElement('option');
-                  option.value = network.ssid;
-                  option.textContent = `${network.ssid} (${network.rssi} dBm)`;
-                  ssidList.appendChild(option);
-                });
-                statusEl.textContent = data.networks.length ? 'Choose a network or type one manually.' : 'No networks found. Type the network name manually.';
-              } catch (error) {
-                statusEl.textContent = 'Unable to read network list. Type the network name manually.';
-              }
-            }
-
-            async function pollConnection() {
-              try {
-                const response = await fetch('/api/wifi/status');
-                const data = await response.json();
-                if (data.connected) {
-                  statusEl.textContent = `Connected to ${data.ssid}. Open ${data.ip_address}:81/app from your browser.`;
-                  return;
-                }
-                if (data.error) {
-                  const messages = {
-                    connect_failed: 'Unable to connect. Check the password and try again.',
-                    network_not_found: 'Network not found. Check the network name and try again.',
-                    timeout: 'Connection timed out. Check the password or move closer to the router.'
-                  };
-                  statusEl.textContent = messages[data.error] || 'Unable to connect. Check the network details and try again.';
-                  return;
-                }
-                statusEl.textContent = data.target_ssid ? `Trying to connect to ${data.target_ssid}...` : 'Trying to connect...';
-                setTimeout(pollConnection, 1500);
-              } catch (error) {
-                statusEl.textContent = 'Trying to connect...';
-                setTimeout(pollConnection, 2000);
-              }
-            }
-
-            form.addEventListener('submit', async (event) => {
-              event.preventDefault();
-              const ssid = ssidInput.value.trim();
-              if (!ssid) {
-                statusEl.textContent = 'Enter a network name.';
-                return;
-              }
-              statusEl.textContent = 'Saving credentials...';
-              try {
-                await fetch('/api/wifi/connect', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ ssid, password: passwordInput.value })
-                });
-                pollConnection();
-              } catch (error) {
-                statusEl.textContent = 'Unable to save network details. Try again.';
-              }
-            });
-
-            loadNetworks();
-          </script>
-        </body>
-      </html>
-    )");
+    sendNoStoreHeaders(target);
+    static constexpr char WIFI_SETUP_PAGE[] = R"leafhtml(<!doctype html><html><head><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=Cache-Control content=no-store><title>Leaf WiFi</title><style>body{margin:0;background:#f5f7f2;color:#172016;font:16px -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif}h1{margin:0;padding:18px 20px;background:#172016;color:white;font-size:24px}main{padding:20px;max-width:560px;margin:auto}label{display:block;font-weight:650;margin:14px 0 6px}input,select,button{box-sizing:border-box;width:100%;font:inherit;padding:12px;border:1px solid #bac3b4;border-radius:6px}button{margin-top:16px;background:#172016;color:white;font-weight:700}.status{border-bottom:1px solid #d9dfd3;color:#596256;padding-bottom:14px}.row{display:flex;gap:10px}.row input{flex:1}.show{display:flex;align-items:center;gap:6px;width:auto;white-space:nowrap}.show input{width:auto}</style><script>async function init(){let s=document.getElementById('s'),l=document.getElementById('l'),n=document.getElementById('n'),p=document.getElementById('p'),w=document.getElementById('w'),f=document.getElementById('f');l.onchange=()=>{if(l.value)n.value=l.value};w.onchange=()=>p.type=w.checked?'text':'password';async function nets(){try{let d=await(await fetch('/api/wifi/networks')).json();l.innerHTML='<option value="">Select network...</option>';d.networks.forEach(x=>{let o=document.createElement('option');o.value=x.ssid;o.textContent=x.ssid+' ('+x.rssi+' dBm)';l.appendChild(o)});s.textContent=d.networks.length?'Choose a network or type one manually.':'No networks found. Type the network name manually.'}catch(e){s.textContent='Unable to read network list. Type the network name manually.'}}async function poll(){try{let d=await(await fetch('/api/wifi/status')).json();if(d.connected){s.textContent='Connected to '+d.ssid+'. Open '+d.ip_address+':81/app';return}if(d.error){s.textContent='Unable to connect. Check password and try again.';return}s.textContent=d.target_ssid?'Trying to connect to '+d.target_ssid+'...':'Trying to connect...';setTimeout(poll,1500)}catch(e){s.textContent='Trying to connect...';setTimeout(poll,2000)}}f.onsubmit=async e=>{e.preventDefault();let ssid=n.value.trim();if(!ssid){s.textContent='Enter a network name.';return}s.textContent='Saving credentials...';try{await fetch('/api/wifi/connect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ssid:ssid,password:p.value})});poll()}catch(x){s.textContent='Unable to save network details. Try again.'}};nets()}</script></head><body onload=init()><h1>Leaf WiFi Setup</h1><main><p class=status id=s>Loading...</p><form id=f><label>Network</label><select id=l><option>Select network...</option></select><input id=n autocomplete=off placeholder="Type network name"><label>Password</label><div class=row><input id=p type=password autocomplete=current-password><label class=show><input id=w type=checkbox>Show</label></div><button>Save and Connect</button></form></main></body></html>)leafhtml";
+    target.send(200, "text/html", WIFI_SETUP_PAGE);
   }
 
   void sendUserStatus(WebServer& target) {
@@ -754,41 +573,42 @@ namespace {
     json += "\",\"firmware_version\":\"";
     json += LeafVersionInfo::firmwareVersion();
     json += "\"}";
+    sendNoStoreHeaders(target);
     target.send(200, "application/json", json);
   }
 
-  void startWifiScan() {
-    WiFi.scanDelete();
-    const int16_t result = WiFi.scanNetworks(/*async=*/true, /*hidden=*/false);
-    if (result != WIFI_SCAN_RUNNING) {
-      Serial.printf("Leaf WiFi setup scan did not start: %d\n", result);
-    } else {
-      wifi_setup_scan_started = true;
-    }
-  }
-
-  void sendWifiNetworks(WebServer& target) {
-    if (!wifi_setup_scan_started) {
-      startWifiScan();
-      target.send(200, "application/json", "{\"scanning\":true,\"networks\":[]}");
-      return;
+  String wifiNetworksJsonFromScan(int16_t scan_result) {
+    if (scan_result < 0) {
+      return "{\"scanning\":false,\"networks\":[]}";
     }
 
-    int16_t scan_result = WiFi.scanComplete();
-    if (scan_result == WIFI_SCAN_RUNNING) {
-      target.send(200, "application/json", "{\"scanning\":true,\"networks\":[]}");
-      return;
-    }
+    static constexpr int16_t MAX_WIFI_SETUP_NETWORKS = 10;
+    int16_t top_indices[MAX_WIFI_SETUP_NETWORKS];
+    int32_t top_rssi[MAX_WIFI_SETUP_NETWORKS];
+    int16_t top_count = 0;
 
-    if (scan_result == WIFI_SCAN_FAILED || scan_result < 0) {
-      startWifiScan();
-      target.send(200, "application/json", "{\"scanning\":true,\"networks\":[]}");
-      return;
+    for (int16_t i = 0; i < scan_result; i++) {
+      const int32_t rssi = WiFi.RSSI(i);
+      int16_t insert_at = top_count;
+      while (insert_at > 0 && rssi > top_rssi[insert_at - 1]) {
+        insert_at--;
+      }
+      if (insert_at >= MAX_WIFI_SETUP_NETWORKS) continue;
+
+      const int16_t limit = top_count < MAX_WIFI_SETUP_NETWORKS ? top_count : MAX_WIFI_SETUP_NETWORKS - 1;
+      for (int16_t j = limit; j > insert_at; j--) {
+        top_indices[j] = top_indices[j - 1];
+        top_rssi[j] = top_rssi[j - 1];
+      }
+      top_indices[insert_at] = i;
+      top_rssi[insert_at] = rssi;
+      if (top_count < MAX_WIFI_SETUP_NETWORKS) top_count++;
     }
 
     String json = "{\"scanning\":false,\"networks\":[";
-    for (int16_t i = 0; i < scan_result; i++) {
-      if (i > 0) json += ",";
+    for (int16_t top_i = 0; top_i < top_count; top_i++) {
+      const int16_t i = top_indices[top_i];
+      if (top_i > 0) json += ",";
       json += "{\"ssid\":\"";
       json += jsonEscape(WiFi.SSID(i));
       json += "\",\"rssi\":";
@@ -798,7 +618,28 @@ namespace {
       json += "}";
     }
     json += "]}";
-    target.send(200, "application/json", json);
+    return json;
+  }
+
+  void buildWifiNetworkCache() {
+    WiFi.scanDelete();
+    const int16_t result = WiFi.scanNetworks(/*async=*/false, /*hidden=*/false);
+    if (result < 0) {
+      Serial.printf("Leaf WiFi setup scan failed: %d\n", result);
+    }
+    wifi_setup_networks_json = wifiNetworksJsonFromScan(result);
+    Serial.printf("Leaf WiFi setup cycle %lu: scan=%d cachedJson=%u heap=%u maxAlloc=%u\n",
+                  static_cast<unsigned long>(wifi_setup_cycle),
+                  result,
+                  wifi_setup_networks_json.length(),
+                  ESP.getFreeHeap(),
+                  ESP.getMaxAllocHeap());
+    WiFi.scanDelete();
+  }
+
+  void sendWifiNetworks(WebServer& target) {
+    sendNoStoreHeaders(target);
+    target.send(200, "application/json", wifi_setup_networks_json);
   }
 
   void connectToWifiFromRequest(WebServer& target) {
@@ -826,27 +667,31 @@ namespace {
   void setupUserAppServer() {
     if (user_server_started) return;
 
-    user_server.on("/", HTTP_GET, []() {
-      sendRedirect(user_server, user_app_provisioning ? "/app/wifi" : "/app");
-    });
-    user_server.on("/app", HTTP_GET, []() { sendUserAppShell(user_server); });
-    user_server.on("/app/wifi", HTTP_GET, []() { sendWifiSetupPage(user_server); });
-    user_server.on("/api/user/status", HTTP_GET, []() { sendUserStatus(user_server); });
-    user_server.on("/api/wifi/status", HTTP_GET, []() { user_server.send(200, "application/json", wifiStatusJson()); });
-    user_server.on("/api/wifi/networks", HTTP_GET, []() { sendWifiNetworks(user_server); });
-    user_server.on("/api/wifi/connect", HTTP_POST, []() { connectToWifiFromRequest(user_server); });
-    user_server.on("/generate_204", HTTP_GET, []() { sendNoCaptivePortalResponse(user_server); });
-    user_server.on("/gen_204", HTTP_GET, []() { sendNoCaptivePortalResponse(user_server); });
-    user_server.on("/hotspot-detect.html", HTTP_GET,
-                   []() { sendNoCaptivePortalResponse(user_server, "Success"); });
-    user_server.on("/library/test/success.html", HTTP_GET,
-                   []() { sendNoCaptivePortalResponse(user_server, "Success"); });
-    user_server.on("/ncsi.txt", HTTP_GET,
-                   []() { sendNoCaptivePortalResponse(user_server, "Microsoft NCSI"); });
-    user_server.onNotFound([]() {
-      if (handleCaptivePortalRequest(user_server)) return;
-      user_server.send(404, "text/plain", "Not found");
-    });
+    if (!user_server_routes_configured) {
+      user_server.on("/", HTTP_GET, []() {
+        sendRedirect(user_server, user_app_provisioning ? "/app/wifi" : "/app");
+      });
+      user_server.on("/app", HTTP_GET, []() { sendUserAppShell(user_server); });
+      user_server.on("/app/wifi", HTTP_GET, []() { sendWifiSetupPage(user_server); });
+      user_server.on("/api/user/status", HTTP_GET, []() { sendUserStatus(user_server); });
+      user_server.on("/api/wifi/status", HTTP_GET, []() { user_server.send(200, "application/json", wifiStatusJson()); });
+      user_server.on("/api/wifi/networks", HTTP_GET, []() { sendWifiNetworks(user_server); });
+      user_server.on("/api/wifi/connect", HTTP_POST, []() { connectToWifiFromRequest(user_server); });
+      user_server.on("/generate_204", HTTP_GET, []() { sendNoCaptivePortalResponse(user_server); });
+      user_server.on("/gen_204", HTTP_GET, []() { sendNoCaptivePortalResponse(user_server); });
+      user_server.on("/hotspot-detect.html", HTTP_GET,
+                     []() { sendNoCaptivePortalResponse(user_server, "Success"); });
+      user_server.on("/library/test/success.html", HTTP_GET,
+                     []() { sendNoCaptivePortalResponse(user_server, "Success"); });
+      user_server.on("/ncsi.txt", HTTP_GET,
+                     []() { sendNoCaptivePortalResponse(user_server, "Microsoft NCSI"); });
+      user_server.onNotFound([]() {
+        if (handleCaptivePortalRequest(user_server)) return;
+        user_server.send(404, "text/plain", "Not found");
+      });
+      user_server_routes_configured = true;
+    }
+
     user_server.begin();
     user_server_started = true;
     Serial.printf("Leaf Web App started: %s\n", userAppUrl().c_str());
@@ -1139,6 +984,7 @@ void webserver_loop() {
 
 void webserver_enable_user_app(bool useLeafWifi) {
   if (useLeafWifi || WiFi.status() != WL_CONNECTED) {
+    leaf_wifi::prepareForLeafAccessPoint();
     WiFi.mode(WIFI_AP);
     WiFi.setSleep(false);
     WiFi.softAP("Leaf WiFi");
@@ -1154,16 +1000,17 @@ void webserver_enable_user_app(bool useLeafWifi) {
 }
 
 void webserver_enable_wifi_setup() {
+  wifi_setup_cycle++;
+  leaf_wifi::prepareForUserWifiSetup();
+  buildWifiNetworkCache();
   WiFi.mode(WIFI_AP_STA);
   WiFi.setSleep(false);
   WiFi.softAP("Leaf WiFi");
   user_app_enabled = true;
   user_app_using_leaf_wifi = true;
   user_app_provisioning = true;
-  wifi_setup_scan_started = false;
   setupUserAppServer();
   dns_server.start(53, "*", WiFi.softAPIP());
-  startWifiScan();
   webserver_setup();
   Serial.printf("Leaf WiFi setup started: http://%s/app/wifi\n", WiFi.softAPIP().toString().c_str());
 }
@@ -1172,7 +1019,7 @@ void webserver_disable_user_app() {
   user_app_enabled = false;
   if (user_app_provisioning) dns_server.stop();
   user_app_provisioning = false;
-  wifi_setup_scan_started = false;
+  wifi_setup_networks_json = "{\"scanning\":false,\"networks\":[]}";
   wifi_setup_connecting = false;
   wifi_setup_connect_ssid = "";
   wifi_setup_connect_error = "";
