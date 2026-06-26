@@ -6,17 +6,17 @@
 #include "logbook/logbook_entry.h"
 
 namespace {
-constexpr const char* LOGBOOK_DIR = "/logbook";
+  constexpr const char* LOGBOOK_DIR = "/logbook";
 
-bool getNextLogbookPath(File& dir, String& path) {
-  while (true) {
-    String next = dir.getNextFileName();
-    if (next.isEmpty()) return false;
+  bool getNextLogbookPath(File& dir, String& path) {
+    while (true) {
+      String next = dir.getNextFileName();
+      if (next.isEmpty()) return false;
 
-    path = LogbookStore::normalizePath(next);
-    if (LogbookStore::isLogbookJsonPath(path)) return true;
+      path = LogbookStore::normalizePath(next);
+      if (LogbookStore::isLogbookJsonPath(path)) return true;
+    }
   }
-}
 }  // namespace
 
 uint16_t LogbookStore::count() {

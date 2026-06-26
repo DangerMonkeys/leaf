@@ -56,9 +56,7 @@ bool Flight::startFlight() {
   return true;
 }
 
-void Flight::end(const FlightStats stats, bool showSummary) {
-  file.close();
-}
+void Flight::end(const FlightStats stats, bool showSummary) { file.close(); }
 
 bool Flight::started() { return (boolean)file; }
 

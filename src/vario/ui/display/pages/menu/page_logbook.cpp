@@ -12,58 +12,65 @@
 #include "utils/string_utils.h"
 
 namespace {
-constexpr uint8_t MENU_INPUT_X = 74;
-constexpr uint8_t MENU_BACK_Y = 190;
-constexpr uint8_t DELETE_HOLD_COUNT = 5;
+  constexpr uint8_t MENU_INPUT_X = 74;
+  constexpr uint8_t MENU_BACK_Y = 190;
+  constexpr uint8_t DELETE_HOLD_COUNT = 5;
 
-String formatLogbookAltitude(float meters) {
-  return formatAlt(static_cast<int32_t>(meters * 100), settings.units_alt, true);
-}
-
-String formatLogbookClimb(float metersPerSecond) {
-  String formatted = formatClimbRate(static_cast<int32_t>(fabsf(metersPerSecond) * 100),
-                                     settings.units_climb, true);
-  if (formatted.length() > 0 && formatted[0] == '+') {
-    formatted.setCharAt(0, ' ');
+  String formatLogbookAltitude(float meters) {
+    return formatAlt(static_cast<int32_t>(meters * 100), settings.units_alt, true);
   }
-  return formatted;
-}
 
-String formatLogbookClimbWithArrow(float metersPerSecond, char arrow) {
-  return formatLogbookClimb(metersPerSecond) + String(arrow);
-}
-
-String formatLogbookClimbRange(const LogbookEntrySummary& summary) {
-  return formatLogbookClimbWithArrow(summary.maxClimbRateMps, (char)141) +
-         formatLogbookClimbWithArrow(summary.maxSinkRateMps, (char)142);
-}
-
-void drawMetricRow(const String& label, const String& value, uint8_t y) {
-  u8g2.setCursor(0, y);
-  u8g2.print(label);
-  u8g2.setCursor(96 - u8g2.getStrWidth(value.c_str()), y);
-  u8g2.print(value);
-}
-
-String formatWindDirection(float directionFromDeg) {
-  int degrees = static_cast<int>(directionFromDeg + 0.5f) % 360;
-  if (settings.units_heading) {
-    return gps.cardinal(degrees);
+  String formatLogbookClimb(float metersPerSecond) {
+    String formatted = formatClimbRate(static_cast<int32_t>(fabsf(metersPerSecond) * 100),
+                                       settings.units_climb, true);
+    if (formatted.length() > 0 && formatted[0] == '+') {
+      formatted.setCharAt(0, ' ');
+    }
+    return formatted;
   }
-  return String(degrees) + "*";
-}
 
-String formatWindSpeed(float speedMps) {
-  float speed = settings.units_speed ? speedMps * 2.23694f : speedMps * 3.6f;
-  if (speed > 99) speed = 99;
-  return String(static_cast<int>(speed + 0.5f)) + (settings.units_speed ? "mph" : "kph");
-}
+  String formatLogbookClimbWithArrow(float metersPerSecond, char arrow) {
+    return formatLogbookClimb(metersPerSecond) + String(arrow);
+  }
 
-String formatMaxWind(const LogbookEntrySummary& summary) {
-  if (!summary.maxWindValid) return "--";
-  return formatWindSpeed(summary.maxWindSpeedMps) + " " +
-         formatWindDirection(summary.maxWindDirectionFromDeg);
-}
+  String formatLogbookClimbRange(const LogbookEntrySummary& summary) {
+    return formatLogbookClimbWithArrow(summary.maxClimbRateMps, (char)141) +
+           formatLogbookClimbWithArrow(summary.maxSinkRateMps, (char)142);
+  }
+
+  void drawMetricRow(const String& label, const String& value, uint8_t y) {
+    u8g2.setCursor(0, y);
+    u8g2.print(label);
+    u8g2.setCursor(96 - u8g2.getStrWidth(value.c_str()), y);
+    u8g2.print(value);
+  }
+
+  void drawMetricRow(char labelGlyph, const String& value, uint8_t y) {
+    u8g2.setCursor(0, y);
+    u8g2.print(labelGlyph);
+    u8g2.setCursor(96 - u8g2.getStrWidth(value.c_str()), y);
+    u8g2.print(value);
+  }
+
+  String formatWindDirection(float directionFromDeg) {
+    int degrees = static_cast<int>(directionFromDeg + 0.5f) % 360;
+    if (settings.units_heading) {
+      return gps.cardinal(degrees);
+    }
+    return String(degrees) + String((char)144);
+  }
+
+  String formatWindSpeed(float speedMps) {
+    float speed = settings.units_speed ? speedMps * 2.23694f : speedMps * 3.6f;
+    if (speed > 99) speed = 99;
+    return String(static_cast<int>(speed + 0.5f)) + (settings.units_speed ? "mph" : "kph");
+  }
+
+  String formatMaxWind(const LogbookEntrySummary& summary) {
+    if (!summary.maxWindValid) return "--";
+    return formatWindSpeed(summary.maxWindSpeedMps) + " " +
+           formatWindDirection(summary.maxWindDirectionFromDeg);
+  }
 }  // namespace
 
 PageLogbook::PageLogbook() {
@@ -178,18 +185,19 @@ void PageLogbook::drawEntry() {
   drawMetricRow("", formatLogbookClimbRange(summary), 91);
   drawMetricRow("MaxSpeed:", formatSpeed(summary.maxGroundSpeedMps, settings.units_speed, true),
                 104);
-  drawMetricRow("Accel:", formatAccel(summary.maxAccelG, true) + '/' +
-                              formatAccel(summary.minAccelG, true),
-                117);
+  drawMetricRow(
+      "Accel:", formatAccel(summary.maxAccelG, true) + '/' + formatAccel(summary.minAccelG, true),
+      117);
   if (summary.maxWindValid) {
-    drawMetricRow("MaxWind:", formatMaxWind(summary), 130);
+    drawMetricRow((char)143, formatMaxWind(summary), 130);
   }
 
   drawDeleteRow(153);
   drawPageRow(168);
 
   if (deletePending) {
-    uint8_t width = deletePending >= DELETE_HOLD_COUNT ? 96 : deletePending * 96 / DELETE_HOLD_COUNT;
+    uint8_t width =
+        deletePending >= DELETE_HOLD_COUNT ? 96 : deletePending * 96 / DELETE_HOLD_COUNT;
     u8g2.drawBox(0, 170, width, 4);
   }
 }

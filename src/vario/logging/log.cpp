@@ -43,19 +43,19 @@ LogbookEntryFile logbookEntry;
 PageAlertTimerAutoStop pageAlertTimerAutoStop;
 
 namespace {
-void captureFirstGpsFixForLogbook() {
-  logbook.gpsalt_start = gps.altitude.meters();
-  logbook.gpsalt = logbook.gpsalt_start;
-  logbook.gpsalt_above_launch = 0;
-  logbook.gpsalt_max = logbook.gpsalt_start;
-  logbook.gpsalt_min = logbook.gpsalt_start;
-  logbook.gpsalt_above_launch_max = 0;
-  logbook.speed = gps.speed.mps();
-  logbook.speed_max = logbook.speed;
-  logbook.startLocationLat = gps.location.lat();
-  logbook.startLocationLng = gps.location.lng();
-  logbookEntry.captureFirstFix(logbook);
-}
+  void captureFirstGpsFixForLogbook() {
+    logbook.gpsalt_start = gps.altitude.meters();
+    logbook.gpsalt = logbook.gpsalt_start;
+    logbook.gpsalt_above_launch = 0;
+    logbook.gpsalt_max = logbook.gpsalt_start;
+    logbook.gpsalt_min = logbook.gpsalt_start;
+    logbook.gpsalt_above_launch_max = 0;
+    logbook.speed = gps.speed.mps();
+    logbook.speed_max = logbook.speed;
+    logbook.startLocationLat = gps.location.lat();
+    logbook.startLocationLng = gps.location.lng();
+    logbookEntry.captureFirstFix(logbook);
+  }
 }  // namespace
 
 //////////////////////////////////////////////////////////////////////////////////////////

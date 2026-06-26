@@ -10,47 +10,47 @@
 #include "ui/settings/settings.h"
 
 namespace {
-constexpr const char* LOGBOOK_DIR = "/logbook";
-constexpr const char* SCHEMA_NAME = "leaf.logbook.flight";
-constexpr const char* SCHEMA_VERSION = "v0.1.0";
+  constexpr const char* LOGBOOK_DIR = "/logbook";
+  constexpr const char* SCHEMA_NAME = "leaf.logbook.flight";
+  constexpr const char* SCHEMA_VERSION = "v0.1.0";
 
-String absolutePath(const String& path) {
-  if (path.isEmpty() || path[0] == '/') return path;
-  return "/" + path;
-}
+  String absolutePath(const String& path) {
+    if (path.isEmpty() || path[0] == '/') return path;
+    return "/" + path;
+  }
 
-void formatUtcTime(char* out, size_t len, time_t epoch) {
-  tm cal;
-  gmtime_r(&epoch, &cal);
-  strftime(out, len, "%FT%TZ", &cal);
-}
+  void formatUtcTime(char* out, size_t len, time_t epoch) {
+    tm cal;
+    gmtime_r(&epoch, &cal);
+    strftime(out, len, "%FT%TZ", &cal);
+  }
 
-void formatLocalTime(char* out, size_t len, time_t epoch) {
-  tm cal;
-  localtime_r(&epoch, &cal);
-  strftime(out, len, "%FT%T", &cal);
-}
+  void formatLocalTime(char* out, size_t len, time_t epoch) {
+    tm cal;
+    localtime_r(&epoch, &cal);
+    strftime(out, len, "%FT%T", &cal);
+  }
 
-void addSystemTime(JsonObject event, bool valid, time_t epoch) {
-  event["time_valid"] = valid;
-  if (!valid) return;
+  void addSystemTime(JsonObject event, bool valid, time_t epoch) {
+    event["time_valid"] = valid;
+    if (!valid) return;
 
-  char utc[24];
-  char local[24];
-  formatUtcTime(utc, sizeof(utc), epoch);
-  formatLocalTime(local, sizeof(local), epoch);
-  event["time_utc"] = utc;
-  event["time_local"] = local;
-}
+    char utc[24];
+    char local[24];
+    formatUtcTime(utc, sizeof(utc), epoch);
+    formatLocalTime(local, sizeof(local), epoch);
+    event["time_utc"] = utc;
+    event["time_local"] = local;
+  }
 
-void addLocation(JsonObject event, float lat, float lon, float altitudeM, bool valid) {
-  if (!valid) return;
+  void addLocation(JsonObject event, float lat, float lon, float altitudeM, bool valid) {
+    if (!valid) return;
 
-  JsonObject location = event["location"].to<JsonObject>();
-  location["lat_deg"] = lat;
-  location["lon_deg"] = lon;
-  location["altitude_m"] = altitudeM;
-}
+    JsonObject location = event["location"].to<JsonObject>();
+    location["lat_deg"] = lat;
+    location["lon_deg"] = lon;
+    location["altitude_m"] = altitudeM;
+  }
 }  // namespace
 
 bool LogbookEntryFile::begin(const FlightStats& stats) {
