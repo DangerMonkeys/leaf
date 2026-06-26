@@ -4,8 +4,8 @@
 
 #include "comms/ble.h"
 #include "comms/ota.h"
-#include "comms/wifi_coordinator.h"
 #include "comms/webserver.h"
+#include "comms/wifi_coordinator.h"
 #include "power.h"
 #include "system/version_info.h"
 #include "ui/audio/sound_effects.h"
@@ -155,9 +155,7 @@ void WifiMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) 
   }
 }
 
-void PageMenuSystemWifiSetup::beginWifiSetup() {
-  webserver_enable_wifi_setup();
-}
+void PageMenuSystemWifiSetup::beginWifiSetup() { webserver_enable_wifi_setup(); }
 
 void WifiMenuPage::attemptWifiConnection() {
   wifi_state = WifiState::CONNECTING;
@@ -360,11 +358,10 @@ void PageMenuSystemWifiSetup::draw_extra() {
   u8g2.setCursor(0, y);
 
   // Instruction Page
-  const char* lines[] = {"Follow these steps", "on Phone or Laptop:", "1.Join Leaf WiFi",   " ",
-                         "2.Click Sign In",   "  Or Visit:",         "192.168.4.1/wifi",
-                         " ",                 "3.Enter Network",     "Select your network",
-                         "and enter password", " ",                  "4.Press Save",
-                         "This page will close", "when connected..."};
+  const char* lines[] = {"Follow these steps", "on Phone or Laptop:",  "1.Join Leaf WiFi",   " ",
+                         "2.Click Sign In",    "  Or Visit:",          "192.168.4.1/wifi",   " ",
+                         "3.Enter Network",    "Select your network",  "and enter password", " ",
+                         "4.Press Save",       "This page will close", "when connected..."};
 
   uint8_t lineNum = 0;
 

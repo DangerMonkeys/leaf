@@ -1,6 +1,6 @@
 #include "comms/webserver.h"
-#include <FS.h>
 #include <DNSServer.h>
+#include <FS.h>
 #include <SD_MMC.h>
 #include <WebServer.h>
 #include <WiFi.h>
@@ -51,10 +51,8 @@ namespace {
   void logWifiSetupTiming(const char* event) {
     Serial.printf("Leaf WiFi setup cycle %lu +%lums: %s heap=%u maxAlloc=%u\n",
                   static_cast<unsigned long>(wifi_setup_cycle),
-                  static_cast<unsigned long>(millis() - wifi_setup_started_ms),
-                  event,
-                  ESP.getFreeHeap(),
-                  ESP.getMaxAllocHeap());
+                  static_cast<unsigned long>(millis() - wifi_setup_started_ms), event,
+                  ESP.getFreeHeap(), ESP.getMaxAllocHeap());
   }
 
   const char* selfTestModeName(SelfTestMode mode) {
@@ -407,7 +405,8 @@ namespace {
     json += ",\"connecting\":";
     json += wifi_setup_connecting ? "true" : "false";
     json += ",\"ssid\":\"";
-    json += jsonEscape(WiFi.SSID().isEmpty() && status == WL_CONNECTED ? wifi_setup_connect_ssid : WiFi.SSID());
+    json += jsonEscape(WiFi.SSID().isEmpty() && status == WL_CONNECTED ? wifi_setup_connect_ssid
+                                                                       : WiFi.SSID());
     json += "\",\"target_ssid\":\"";
     json += jsonEscape(wifi_setup_connect_ssid);
     json += "\",\"ip_address\":\"";
@@ -572,7 +571,8 @@ namespace {
     }
 
     sendNoStoreHeaders(target);
-    static constexpr char WIFI_SETUP_PAGE[] = R"leafhtml(<!doctype html><html><head><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=Cache-Control content=no-store><title>Leaf WiFi</title><style>body{margin:0;background:#f5f7f2;color:#172016;font:16px -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif}h1{margin:0;padding:18px 20px;background:#172016;color:white;font-size:24px}main{padding:20px;max-width:560px;margin:auto}label{display:block;font-weight:650;margin:14px 0 6px}input,select,button{box-sizing:border-box;width:100%;font:inherit;padding:12px;border:1px solid #bac3b4;border-radius:6px}button{margin-top:16px;background:#172016;color:white;font-weight:700}.status{border-bottom:1px solid #d9dfd3;color:#596256;padding-bottom:14px}.row{display:flex;gap:10px}.row input{flex:1}.show{display:flex;align-items:center;gap:6px;width:auto;white-space:nowrap}.show input{width:auto}</style><script>async function init(){let s=document.getElementById('s'),l=document.getElementById('l'),n=document.getElementById('n'),p=document.getElementById('p'),w=document.getElementById('w'),f=document.getElementById('f');l.onchange=()=>{if(l.value)n.value=l.value};w.onchange=()=>p.type=w.checked?'text':'password';async function nets(){try{let d=await(await fetch('/api/wifi/networks')).json();if(d.scanning){s.textContent='Scanning for networks...';setTimeout(nets,1500);return}l.innerHTML='<option value="">Select network...</option>';d.networks.forEach(x=>{let o=document.createElement('option');o.value=x.ssid;o.textContent=x.ssid+' ('+x.rssi+' dBm)';l.appendChild(o)});s.textContent=d.networks.length?'Choose a network or type one manually.':'No networks found. Type the network name manually.'}catch(e){s.textContent='Unable to read network list. Type the network name manually.'}}async function poll(){try{let d=await(await fetch('/api/wifi/status')).json();if(d.connected){s.textContent='Connected to '+d.ssid+'. Open '+d.ip_address+':81/app';return}if(d.error){s.textContent='Unable to connect. Check password and try again.';return}s.textContent=d.target_ssid?'Trying to connect to '+d.target_ssid+'...':'Trying to connect...';setTimeout(poll,1500)}catch(e){s.textContent='Trying to connect...';setTimeout(poll,2000)}}f.onsubmit=async e=>{e.preventDefault();let ssid=n.value.trim();if(!ssid){s.textContent='Enter a network name.';return}s.textContent='Saving credentials...';try{await fetch('/api/wifi/connect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ssid:ssid,password:p.value})});poll()}catch(x){s.textContent='Unable to save network details. Try again.'}};nets()}</script></head><body onload=init()><h1>Leaf WiFi Setup</h1><main><p class=status id=s>Loading...</p><form id=f><label>Network</label><select id=l><option>Select network...</option></select><input id=n autocomplete=off placeholder="Type network name"><label>Password</label><div class=row><input id=p type=password autocomplete=current-password><label class=show><input id=w type=checkbox>Show</label></div><button>Save and Connect</button></form></main></body></html>)leafhtml";
+    static constexpr char WIFI_SETUP_PAGE[] =
+        R"leafhtml(<!doctype html><html><head><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=Cache-Control content=no-store><title>Leaf WiFi</title><style>body{margin:0;background:#f5f7f2;color:#172016;font:16px -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif}h1{margin:0;padding:18px 20px;background:#172016;color:white;font-size:24px}main{padding:20px;max-width:560px;margin:auto}label{display:block;font-weight:650;margin:14px 0 6px}input,select,button{box-sizing:border-box;width:100%;font:inherit;padding:12px;border:1px solid #bac3b4;border-radius:6px}button{margin-top:16px;background:#172016;color:white;font-weight:700}.status{border-bottom:1px solid #d9dfd3;color:#596256;padding-bottom:14px}.row{display:flex;gap:10px}.row input{flex:1}.show{display:flex;align-items:center;gap:6px;width:auto;white-space:nowrap}.show input{width:auto}</style><script>async function init(){let s=document.getElementById('s'),l=document.getElementById('l'),n=document.getElementById('n'),p=document.getElementById('p'),w=document.getElementById('w'),f=document.getElementById('f');l.onchange=()=>{if(l.value)n.value=l.value};w.onchange=()=>p.type=w.checked?'text':'password';async function nets(){try{let d=await(await fetch('/api/wifi/networks')).json();if(d.scanning){s.textContent='Scanning for networks...';setTimeout(nets,1500);return}l.innerHTML='<option value="">Select network...</option>';d.networks.forEach(x=>{let o=document.createElement('option');o.value=x.ssid;o.textContent=x.ssid+' ('+x.rssi+' dBm)';l.appendChild(o)});s.textContent=d.networks.length?'Choose a network or type one manually.':'No networks found. Type the network name manually.'}catch(e){s.textContent='Unable to read network list. Type the network name manually.'}}async function poll(){try{let d=await(await fetch('/api/wifi/status')).json();if(d.connected){s.textContent='Connected to '+d.ssid+'. Open '+d.ip_address+':81/app';return}if(d.error){s.textContent='Unable to connect. Check password and try again.';return}s.textContent=d.target_ssid?'Trying to connect to '+d.target_ssid+'...':'Trying to connect...';setTimeout(poll,1500)}catch(e){s.textContent='Trying to connect...';setTimeout(poll,2000)}}f.onsubmit=async e=>{e.preventDefault();let ssid=n.value.trim();if(!ssid){s.textContent='Enter a network name.';return}s.textContent='Saving credentials...';try{await fetch('/api/wifi/connect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ssid:ssid,password:p.value})});poll()}catch(x){s.textContent='Unable to save network details. Try again.'}};nets()}</script></head><body onload=init()><h1>Leaf WiFi Setup</h1><main><p class=status id=s>Loading...</p><form id=f><label>Network</label><select id=l><option>Select network...</option></select><input id=n autocomplete=off placeholder="Type network name"><label>Password</label><div class=row><input id=p type=password autocomplete=current-password><label class=show><input id=w type=checkbox>Show</label></div><button>Save and Connect</button></form></main></body></html>)leafhtml";
     target.send(200, "text/html", WIFI_SETUP_PAGE);
   }
 
@@ -615,7 +615,8 @@ namespace {
       }
       if (insert_at >= MAX_WIFI_SETUP_NETWORKS) continue;
 
-      const int16_t limit = top_count < MAX_WIFI_SETUP_NETWORKS ? top_count : MAX_WIFI_SETUP_NETWORKS - 1;
+      const int16_t limit =
+          top_count < MAX_WIFI_SETUP_NETWORKS ? top_count : MAX_WIFI_SETUP_NETWORKS - 1;
       for (int16_t j = limit; j > insert_at; j--) {
         top_indices[j] = top_indices[j - 1];
         top_rssi[j] = top_rssi[j - 1];
@@ -648,11 +649,8 @@ namespace {
     wifi_setup_networks_json = wifiNetworksJsonFromScan(result);
     Serial.printf("Leaf WiFi setup cycle %lu +%lums: scan=%d cachedJson=%u heap=%u maxAlloc=%u\n",
                   static_cast<unsigned long>(wifi_setup_cycle),
-                  static_cast<unsigned long>(millis() - wifi_setup_started_ms),
-                  result,
-                  wifi_setup_networks_json.length(),
-                  ESP.getFreeHeap(),
-                  ESP.getMaxAllocHeap());
+                  static_cast<unsigned long>(millis() - wifi_setup_started_ms), result,
+                  wifi_setup_networks_json.length(), ESP.getFreeHeap(), ESP.getMaxAllocHeap());
     WiFi.scanDelete();
   }
 
@@ -712,16 +710,17 @@ namespace {
     if (user_server_started) return;
 
     if (!user_server_routes_configured) {
-      user_server.on("/", HTTP_GET, []() {
-        sendRedirect(user_server, user_app_provisioning ? "/wifi" : "/app");
-      });
+      user_server.on("/", HTTP_GET,
+                     []() { sendRedirect(user_server, user_app_provisioning ? "/wifi" : "/app"); });
       user_server.on("/app", HTTP_GET, []() { sendUserAppShell(user_server); });
       user_server.on("/wifi", HTTP_GET, []() { sendWifiSetupPage(user_server); });
       user_server.on("/app/wifi", HTTP_GET, []() { sendWifiSetupPage(user_server); });
       user_server.on("/api/user/status", HTTP_GET, []() { sendUserStatus(user_server); });
-      user_server.on("/api/wifi/status", HTTP_GET, []() { user_server.send(200, "application/json", wifiStatusJson()); });
+      user_server.on("/api/wifi/status", HTTP_GET,
+                     []() { user_server.send(200, "application/json", wifiStatusJson()); });
       user_server.on("/api/wifi/networks", HTTP_GET, []() { sendWifiNetworks(user_server); });
-      user_server.on("/api/wifi/connect", HTTP_POST, []() { connectToWifiFromRequest(user_server); });
+      user_server.on("/api/wifi/connect", HTTP_POST,
+                     []() { connectToWifiFromRequest(user_server); });
       user_server.on("/generate_204", HTTP_GET, []() { sendNoCaptivePortalResponse(user_server); });
       user_server.on("/gen_204", HTTP_GET, []() { sendNoCaptivePortalResponse(user_server); });
       user_server.on("/hotspot-detect.html", HTTP_GET,
@@ -910,13 +909,9 @@ void webserver_setup() {
 
   server.on("/memory", HTTP_GET, []() { server.send(200, "text/plain", getMemoryUsage()); });
 
-  server.on("/app", HTTP_GET, []() {
-    sendUserAppShell(server);
-  });
+  server.on("/app", HTTP_GET, []() { sendUserAppShell(server); });
 
-  server.on("/api/user/status", HTTP_GET, []() {
-    sendUserStatus(server);
-  });
+  server.on("/api/user/status", HTTP_GET, []() { sendUserStatus(server); });
 
   server.on("/mac-address", HTTP_GET, []() {
     String json = "{\"mac_address\":\"";
@@ -1092,6 +1087,4 @@ void webserver_disable_user_app() {
 
 bool webserver_user_app_active() { return user_app_enabled; }
 
-String webserver_user_app_url() {
-  return userAppUrl();
-}
+String webserver_user_app_url() { return userAppUrl(); }
