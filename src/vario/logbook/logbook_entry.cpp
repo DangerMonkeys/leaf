@@ -6,6 +6,7 @@
 #include <time.h>
 
 #include "instruments/gps.h"
+#include "profiles/profile_store.h"
 #include "system/version_info.h"
 #include "ui/settings/settings.h"
 
@@ -61,6 +62,8 @@ bool LogbookEntryFile::begin(const FlightStats& stats) {
   }
   path_ = pathForStem(startTimeValid_ ? timestampFileStem() : unsyncedFileStem());
   startTemperatureC_ = stats.temperature;
+  ProfileStore::activePilot(pilot_);
+  ProfileStore::activeGlider(glider_);
 
   return true;
 }
@@ -129,6 +132,8 @@ void LogbookEntryFile::reset() {
   firstFixDurationSeconds_ = 0;
   startTemperatureC_ = 0;
   firstFixTemperatureC_ = 0;
+  pilot_ = PilotProfile();
+  glider_ = GliderProfile();
 }
 
 bool LogbookEntryFile::deleteFiles(const String& logbookPath, const String& trackPath) {
@@ -271,11 +276,30 @@ bool LogbookEntryFile::writeJson(const FlightStats& stats, bool finalEntry,
   device["hardware_version"] = LeafVersionInfo::hardwareVariant();
   device["mac_address"] = settings.macAddress;
 
-  doc["pilot"].to<JsonObject>()["name"] = nullptr;
+  JsonObject pilot = doc["pilot"].to<JsonObject>();
+  if (pilot_.valid()) {
+    pilot["id"] = pilot_.id;
+    pilot["name"] = pilot_.name;
+  } else {
+    pilot["id"] = nullptr;
+    pilot["name"] = nullptr;
+  }
+
   JsonObject glider = doc["glider"].to<JsonObject>();
-  glider["brand"] = nullptr;
-  glider["model"] = nullptr;
-  glider["size"] = nullptr;
+  if (glider_.valid()) {
+    glider["id"] = glider_.id;
+    glider["brand"] = glider_.brand.isEmpty() ? nullptr : glider_.brand.c_str();
+    glider["model"] = glider_.model;
+    glider["size"] = glider_.size.isEmpty() ? nullptr : glider_.size.c_str();
+    String displayName = glider_.resolvedDisplayName();
+    glider["display_name"] = displayName.isEmpty() ? nullptr : displayName.c_str();
+  } else {
+    glider["id"] = nullptr;
+    glider["brand"] = nullptr;
+    glider["model"] = nullptr;
+    glider["size"] = nullptr;
+    glider["display_name"] = nullptr;
+  }
   JsonObject site = doc["site"].to<JsonObject>();
   site["launch_name"] = nullptr;
   site["landing_name"] = nullptr;

@@ -275,6 +275,9 @@ components:
       type: object
       additionalProperties: true
       properties:
+        id:
+          type: string
+          nullable: true
         name:
           type: string
           nullable: true
@@ -282,6 +285,9 @@ components:
       type: object
       additionalProperties: true
       properties:
+        id:
+          type: string
+          nullable: true
         brand:
           type: string
           nullable: true
@@ -289,6 +295,9 @@ components:
           type: string
           nullable: true
         size:
+          type: string
+          nullable: true
+        display_name:
           type: string
           nullable: true
     SiteInfo:

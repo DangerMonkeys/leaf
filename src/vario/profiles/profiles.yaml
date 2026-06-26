@@ -1,0 +1,91 @@
+openapi: 3.0.2
+info:
+  title: Leaf profiles
+  version: v0.1.0
+  description: >
+    Canonical schema for pilot and glider profiles stored on the Leaf SD card
+    at /profiles/profiles.json. Flight logbook entries snapshot selected
+    profile fields when a flight starts so historical flights remain stable if
+    profiles are edited later.
+paths:
+  /profiles:
+    get:
+      summary: Read the profiles file.
+      responses:
+        "200":
+          description: Profile settings.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profiles"
+components:
+  schemas:
+    Profiles:
+      type: object
+      additionalProperties: true
+      required:
+        - schema
+        - schema_version
+        - pilots
+        - gliders
+      properties:
+        schema:
+          type: string
+          enum:
+            - leaf.profiles
+        schema_version:
+          type: string
+          example: v0.1.0
+        active_pilot_id:
+          type: string
+          nullable: true
+          description: Pilot used for the next flight. If null and exactly one valid pilot exists, that pilot is treated as active.
+        active_glider_id:
+          type: string
+          nullable: true
+          description: Glider used for the next flight. If null and exactly one valid glider exists, that glider is treated as active.
+        pilots:
+          type: array
+          items:
+            $ref: "#/components/schemas/PilotProfile"
+        gliders:
+          type: array
+          items:
+            $ref: "#/components/schemas/GliderProfile"
+    PilotProfile:
+      type: object
+      additionalProperties: true
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          pattern: "^[0-9a-fA-F]{6,16}$"
+        name:
+          type: string
+          minLength: 1
+    GliderProfile:
+      type: object
+      additionalProperties: true
+      required:
+        - id
+        - model
+      properties:
+        id:
+          type: string
+          pattern: "^[0-9a-fA-F]{6,16}$"
+        brand:
+          type: string
+          nullable: true
+        model:
+          type: string
+          minLength: 1
+          description: Minimum required glider display field.
+        size:
+          type: string
+          nullable: true
+        display_name:
+          type: string
+          nullable: true
+          description: Optional preferred display label. If missing, firmware derives one from brand, model, and size.

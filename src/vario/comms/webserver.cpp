@@ -12,6 +12,7 @@
 #include "diagnostics/self_test/selfTest.h"
 #include "etl/string_stream.h"
 #include "power.h"
+#include "profiles/profile_store.h"
 #include "storage/sd_card.h"
 #include "system/version_info.h"
 #include "ui/display/display.h"
@@ -40,6 +41,9 @@ namespace {
 
   static constexpr uint32_t SELF_TEST_POWER_ON_DELAY_MS = 10000;
   static constexpr uint32_t WIFI_SETUP_CONNECT_TIMEOUT_MS = 12000;
+  static constexpr size_t PROFILE_FILE_MAX_BYTES = 4096;
+  static constexpr const char* PROFILE_TEMP_FILE = "/profiles/profiles.tmp";
+  static constexpr const char* PROFILE_BACKUP_FILE = "/profiles/profiles.bak";
 
   SelfTestMode last_self_test_mode = SelfTestMode::None;
   bool interactive_self_test_pending = false;
@@ -421,6 +425,106 @@ namespace {
     return json;
   }
 
+  const char* emptyProfilesJson() {
+    return "{\"schema\":\"leaf.profiles\",\"schema_version\":\"v0.1.0\","
+           "\"active_pilot_id\":null,\"active_glider_id\":null,\"pilots\":[],\"gliders\":[]}";
+  }
+
+  void sendProfiles(WebServer& target) {
+    if (!user_app_enabled) {
+      target.send(404, "application/json", "{\"detail\":\"Leaf Web App is not active.\"}");
+      return;
+    }
+
+    if (!sdcard.isMounted()) {
+      target.send(404, "application/json", "{\"detail\":\"SD card is not mounted.\"}");
+      return;
+    }
+
+    if (!SD_MMC.exists(ProfileStore::filePath())) {
+      sendNoStoreHeaders(target);
+      target.send(200, "application/json", emptyProfilesJson());
+      return;
+    }
+
+    File file = SD_MMC.open(ProfileStore::filePath(), "r");
+    if (!file) {
+      target.send(500, "application/json",
+                  "{\"detail\":\"Profiles file could not be opened.\"}");
+      return;
+    }
+
+    sendNoStoreHeaders(target);
+    target.streamFile(file, "application/json");
+    file.close();
+  }
+
+  bool profilesRequestLooksValid(const String& body) {
+    if (body.length() == 0 || body.length() > PROFILE_FILE_MAX_BYTES) return false;
+    if (extractJsonStringValue(body, "schema") != "leaf.profiles") return false;
+    if (body.indexOf("\"pilots\"") < 0 || body.indexOf("\"gliders\"") < 0) return false;
+    return true;
+  }
+
+  bool writeProfilesBody(const String& body) {
+    if (!SD_MMC.exists(ProfileStore::directoryPath()) && !SD_MMC.mkdir(ProfileStore::directoryPath())) {
+      return false;
+    }
+
+    if (SD_MMC.exists(PROFILE_TEMP_FILE)) SD_MMC.remove(PROFILE_TEMP_FILE);
+    if (SD_MMC.exists(PROFILE_BACKUP_FILE)) SD_MMC.remove(PROFILE_BACKUP_FILE);
+
+    File file = SD_MMC.open(PROFILE_TEMP_FILE, "w", true);
+    if (!file) return false;
+
+    const size_t written = file.print(body);
+    file.close();
+    if (written != body.length()) {
+      SD_MMC.remove(PROFILE_TEMP_FILE);
+      return false;
+    }
+
+    const bool hadExisting = SD_MMC.exists(ProfileStore::filePath());
+    if (hadExisting && !SD_MMC.rename(ProfileStore::filePath(), PROFILE_BACKUP_FILE)) {
+      SD_MMC.remove(PROFILE_TEMP_FILE);
+      return false;
+    }
+
+    if (!SD_MMC.rename(PROFILE_TEMP_FILE, ProfileStore::filePath())) {
+      if (hadExisting) SD_MMC.rename(PROFILE_BACKUP_FILE, ProfileStore::filePath());
+      SD_MMC.remove(PROFILE_TEMP_FILE);
+      return false;
+    }
+
+    if (hadExisting) SD_MMC.remove(PROFILE_BACKUP_FILE);
+    return true;
+  }
+
+  void saveProfiles(WebServer& target) {
+    if (!user_app_enabled) {
+      target.send(404, "application/json", "{\"detail\":\"Leaf Web App is not active.\"}");
+      return;
+    }
+
+    if (!sdcard.isMounted()) {
+      target.send(404, "application/json", "{\"detail\":\"SD card is not mounted.\"}");
+      return;
+    }
+
+    const String body = target.arg("plain");
+    if (!profilesRequestLooksValid(body)) {
+      target.send(400, "application/json", "{\"detail\":\"Invalid profiles JSON.\"}");
+      return;
+    }
+
+    if (!writeProfilesBody(body)) {
+      target.send(500, "application/json", "{\"saved\":false}");
+      return;
+    }
+
+    target.send(200, "application/json", "{\"saved\":true}");
+  }
+
   void sendRedirect(WebServer& target, const char* location) {
     sendNoStoreHeaders(target);
     target.sendHeader("Location", location, true);
@@ -448,120 +552,56 @@ namespace {
       return;
     }
 
-    target.send(200, "text/html", R"(
-      <!DOCTYPE html>
-      <html lang="en">
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1">
-          <title>Leaf Web App</title>
-          <style>
-            :root {
-              color-scheme: light;
-              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-              line-height: 1.35;
-            }
-            body {
-              margin: 0;
-              background: #f5f7f2;
-              color: #172016;
-            }
-            header {
-              background: #172016;
-              color: white;
-              padding: 20px;
-            }
-            main {
-              max-width: 720px;
-              margin: 0 auto;
-              padding: 20px;
-            }
-            h1 {
-              font-size: 28px;
-              margin: 0;
-            }
-            h2 {
-              font-size: 18px;
-              margin: 0 0 8px;
-            }
-            section {
-              border-bottom: 1px solid #d9dfd3;
-              padding: 18px 0;
-            }
-            label {
-              display: block;
-              font-size: 14px;
-              font-weight: 650;
-              margin: 14px 0 6px;
-            }
-            input, select, button {
-              box-sizing: border-box;
-              width: 100%;
-              border: 1px solid #bac3b4;
-              border-radius: 6px;
-              font: inherit;
-              padding: 12px;
-            }
-            button {
-              background: #172016;
-              color: white;
-              font-weight: 700;
-              margin-top: 16px;
-            }
-            .status {
-              display: grid;
-              gap: 6px;
-              font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
-              font-size: 14px;
-            }
-            .muted {
-              color: #596256;
-            }
-          </style>
-        </head>
-        <body>
-          <header>
-            <h1>Leaf Web App</h1>
-          </header>
-          <main>
-            <section>
-              <h2>Status</h2>
-              <div class="status" id="status">Loading...</div>
-            </section>
-            <section>
-              <h2>Settings</h2>
-              <p class="muted">Settings tools will be added here.</p>
-            </section>
-            <section>
-              <h2>Flight Logs</h2>
-              <p class="muted">Logbook tools will be added here.</p>
-            </section>
-            <section>
-              <h2>Waypoints & Routes</h2>
-              <p class="muted">Navigation file tools will be added here.</p>
-            </section>
-          </main>
-          <script>
-            async function loadStatus() {
-              const target = document.getElementById('status');
-              try {
-                const response = await fetch('/api/user/status');
-                const status = await response.json();
-                target.innerHTML = [
-                  `mode: ${status.mode}`,
-                  `ssid: ${status.ssid || '(none)'}`,
-                  `ip: ${status.ip_address || '(none)'}`,
-                  `firmware: ${status.firmware_version}`
-                ].join('<br>');
-              } catch (error) {
-                target.textContent = 'Unable to read status.';
-              }
-            }
-            loadStatus();
-          </script>
-        </body>
-      </html>
-    )");
+    target.send(200, "text/html", R"leafapp(<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=Cache-Control content=no-store><title>Leaf</title><style>:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#172016;background:#f5f7f2;line-height:1.35}body{margin:0}header{background:#172016;color:white;padding:18px 20px}main{max-width:640px;margin:auto;padding:16px 18px}h1{font-size:24px;margin:0}h2{font-size:18px;margin:0 0 10px}section{border-bottom:1px solid #d9dfd3;padding:18px 0}.grid{display:grid;gap:10px}.row{display:flex;gap:8px}.row>*{flex:1}.row>.small{flex:0 0 94px}label{display:block;font-size:13px;font-weight:650;margin:10px 0 4px}input,select,button{box-sizing:border-box;width:100%;font:inherit;padding:11px;border:1px solid #bac3b4;border-radius:6px;background:white}button{background:#172016;color:white;font-weight:700}.secondary{background:white;color:#172016}.danger{background:#5d1717;color:white}.muted{color:#596256}.status{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:13px;white-space:pre-wrap}.msg{min-height:20px;margin-top:10px}</style></head><body><header><h1>Leaf</h1></header><main><section><h2>Status</h2><div class=status id=status>Loading...</div></section><section><h2>Pilots</h2><label>Active pilot</label><select id=pilotList></select><label>Name</label><input id=pilotName maxlength=48 autocomplete=name><div class=row><button id=pilotSave>Save</button><button class=secondary id=pilotNew>New</button><button class="small danger" id=pilotDelete>Delete</button></div></section><section><h2>Gliders</h2><label>Active glider</label><select id=gliderList></select><div class=row><div><label>Brand</label><input id=gliderBrand maxlength=32></div><div><label>Model</label><input id=gliderModel maxlength=48></div></div><div class=row><div><label>Size</label><input id=gliderSize maxlength=16></div><div><label>Display name</label><input id=gliderDisplay maxlength=64></div></div><div class=row><button id=gliderSave>Save</button><button class=secondary id=gliderNew>New</button><button class="small danger" id=gliderDelete>Delete</button></div><p class="muted msg" id=msg></p></section></main><script>
+let profiles={schema:'leaf.profiles',schema_version:'v0.1.0',active_pilot_id:null,active_glider_id:null,pilots:[],gliders:[]};
+const $=id=>document.getElementById(id);
+function id(){return Math.floor(Math.random()*0xffffffff).toString(16).padStart(8,'0')}
+function clean(v){v=(v||'').trim();return v?v:null}
+function pilotLabel(p){return p.name||'Unnamed pilot'}
+function gliderLabel(g){return g.display_name||[g.brand,g.model,g.size].filter(Boolean).join(' ')||'Unnamed glider'}
+function selectedPilot(){return profiles.pilots.find(p=>p.id==profiles.active_pilot_id)}
+function selectedGlider(){return profiles.gliders.find(g=>g.id==profiles.active_glider_id)}
+function setMsg(t){$('msg').textContent=t||''}
+function render(){
+  let pl=$('pilotList');pl.textContent='';
+  profiles.pilots.forEach(p=>{let o=document.createElement('option');o.value=p.id;o.textContent=pilotLabel(p);pl.appendChild(o)});
+  if(profiles.active_pilot_id)pl.value=profiles.active_pilot_id;
+  let p=selectedPilot();$('pilotName').value=p?p.name||'':'';
+  let gl=$('gliderList');gl.textContent='';
+  profiles.gliders.forEach(g=>{let o=document.createElement('option');o.value=g.id;o.textContent=gliderLabel(g);gl.appendChild(o)});
+  if(profiles.active_glider_id)gl.value=profiles.active_glider_id;
+  let g=selectedGlider();$('gliderBrand').value=g?g.brand||'':'';$('gliderModel').value=g?g.model||'':'';$('gliderSize').value=g?g.size||'':'';$('gliderDisplay').value=g?g.display_name||'':'';
+}
+function normalize(){
+  profiles.schema='leaf.profiles';profiles.schema_version='v0.1.0';
+  profiles.pilots=(profiles.pilots||[]).filter(p=>p&&p.id&&p.name);
+  profiles.gliders=(profiles.gliders||[]).filter(g=>g&&g.id&&g.model);
+  if(!profiles.pilots.find(p=>p.id==profiles.active_pilot_id))profiles.active_pilot_id=profiles.pilots.length==1?profiles.pilots[0].id:null;
+  if(!profiles.gliders.find(g=>g.id==profiles.active_glider_id))profiles.active_glider_id=profiles.gliders.length==1?profiles.gliders[0].id:null;
+}
+async function save(note){
+  normalize();
+  let r=await fetch('/api/profiles',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(profiles)});
+  if(!r.ok)throw new Error();
+  setMsg(note||'Saved.');
+  render();
+}
+async function loadStatus(){
+  try{let s=await(await fetch('/api/user/status')).json();$('status').textContent=`mode: ${s.mode}\nssid: ${s.ssid||'(none)'}\nip: ${s.ip_address||'(none)'}\nfirmware: ${s.firmware_version}`}catch(e){$('status').textContent='Unable to read status.'}
+}
+async function loadProfiles(){
+  try{profiles=await(await fetch('/api/profiles')).json();normalize();render();setMsg('')}catch(e){setMsg('Unable to read profiles.')}
+}
+$('pilotList').onchange=()=>{profiles.active_pilot_id=$('pilotList').value;render();save('Active pilot saved.').catch(()=>setMsg('Unable to save.'))};
+$('gliderList').onchange=()=>{profiles.active_glider_id=$('gliderList').value;render();save('Active glider saved.').catch(()=>setMsg('Unable to save.'))};
+$('pilotNew').onclick=()=>{$('pilotList').value='';profiles.active_pilot_id=null;$('pilotName').value='';$('pilotName').focus();setMsg('Enter pilot name, then Save.')};
+$('gliderNew').onclick=()=>{$('gliderList').value='';profiles.active_glider_id=null;['gliderBrand','gliderModel','gliderSize','gliderDisplay'].forEach(x=>$(x).value='');$('gliderModel').focus();setMsg('Enter glider details, then Save.')};
+$('pilotSave').onclick=()=>{let name=clean($('pilotName').value);if(!name){setMsg('Pilot name is required.');return}let p=selectedPilot();if(!p){p={id:id(),name:''};profiles.pilots.push(p);profiles.active_pilot_id=p.id}p.name=name;save('Pilot saved.').catch(()=>setMsg('Unable to save pilot.'))};
+$('gliderSave').onclick=()=>{let model=clean($('gliderModel').value);if(!model){setMsg('Glider model is required.');return}let g=selectedGlider();if(!g){g={id:id(),model:''};profiles.gliders.push(g);profiles.active_glider_id=g.id}g.brand=clean($('gliderBrand').value);g.model=model;g.size=clean($('gliderSize').value);g.display_name=clean($('gliderDisplay').value);save('Glider saved.').catch(()=>setMsg('Unable to save glider.'))};
+$('pilotDelete').onclick=()=>{let p=selectedPilot();if(!p)return;profiles.pilots=profiles.pilots.filter(x=>x.id!=p.id);profiles.active_pilot_id=null;save('Pilot deleted.').catch(()=>setMsg('Unable to delete pilot.'))};
+$('gliderDelete').onclick=()=>{let g=selectedGlider();if(!g)return;profiles.gliders=profiles.gliders.filter(x=>x.id!=g.id);profiles.active_glider_id=null;save('Glider deleted.').catch(()=>setMsg('Unable to delete glider.'))};
+loadStatus();loadProfiles();
+</script></body></html>)leafapp");
   }
 
   void sendWifiSetupPage(WebServer& target) {
@@ -716,6 +756,8 @@ namespace {
       user_server.on("/wifi", HTTP_GET, []() { sendWifiSetupPage(user_server); });
       user_server.on("/app/wifi", HTTP_GET, []() { sendWifiSetupPage(user_server); });
       user_server.on("/api/user/status", HTTP_GET, []() { sendUserStatus(user_server); });
+      user_server.on("/api/profiles", HTTP_GET, []() { sendProfiles(user_server); });
+      user_server.on("/api/profiles", HTTP_PUT, []() { saveProfiles(user_server); });
       user_server.on("/api/wifi/status", HTTP_GET,
                      []() { user_server.send(200, "application/json", wifiStatusJson()); });
       user_server.on("/api/wifi/networks", HTTP_GET, []() { sendWifiNetworks(user_server); });
@@ -912,6 +954,8 @@ void webserver_setup() {
   server.on("/app", HTTP_GET, []() { sendUserAppShell(server); });
 
   server.on("/api/user/status", HTTP_GET, []() { sendUserStatus(server); });
+  server.on("/api/profiles", HTTP_GET, []() { sendProfiles(server); });
+  server.on("/api/profiles", HTTP_PUT, []() { saveProfiles(server); });
 
   server.on("/mac-address", HTTP_GET, []() {
     String json = "{\"mac_address\":\"";
