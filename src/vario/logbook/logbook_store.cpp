@@ -101,6 +101,33 @@ bool LogbookStore::nextEntryPath(const String& currentPath, String& path) {
   return true;
 }
 
+bool LogbookStore::entryPositionNewestFirst(const String& currentPath, uint16_t& position,
+                                            uint16_t& total) {
+  position = 0;
+  total = 0;
+
+  File dir = SD_MMC.open(LOGBOOK_DIR);
+  if (!dir) return false;
+
+  const String currentKey = sortKeyForPath(currentPath);
+  bool found = false;
+  uint16_t newerEntries = 0;
+  String candidatePath;
+  while (getNextLogbookPath(dir, candidatePath)) {
+    const String candidateKey = sortKeyForPath(candidatePath);
+    total++;
+    if (candidateKey == currentKey) {
+      found = true;
+    } else if (candidateKey > currentKey) {
+      newerEntries++;
+    }
+  }
+
+  if (!found) return false;
+  position = newerEntries + 1;
+  return true;
+}
+
 bool LogbookStore::readSummary(const String& path, LogbookEntrySummary& summary) {
   summary = LogbookEntrySummary();
   const String normalizedPath = normalizePath(path);
@@ -126,6 +153,12 @@ bool LogbookStore::readSummary(const String& path, LogbookEntrySummary& summary)
   JsonObject metrics = doc["metrics"];
   summary.durationSeconds = metrics["duration_seconds"] | 0;
   summary.maxAltitudeM = metrics["max_altitude_m"] | 0.0f;
+  summary.minAltitudeM = metrics["min_altitude_m"] | 0.0f;
+  summary.maxAltitudeAboveLaunchM = metrics["max_altitude_above_launch_m"] | 0.0f;
+  summary.maxClimbRateMps = metrics["max_climb_rate_mps"] | 0.0f;
+  summary.maxSinkRateMps = metrics["max_sink_rate_mps"] | 0.0f;
+  summary.maxGroundSpeedMps = metrics["max_ground_speed_mps"] | 0.0f;
+  summary.pathDistanceM = metrics["path_distance_m"] | 0.0f;
 
   JsonObject track = doc["track"];
   summary.trackSaved = track["saved"] | false;

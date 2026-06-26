@@ -12,6 +12,12 @@ struct LogbookEntrySummary {
   String startTimeLocal;
   uint32_t durationSeconds = 0;
   float maxAltitudeM = 0;
+  float minAltitudeM = 0;
+  float maxAltitudeAboveLaunchM = 0;
+  float maxClimbRateMps = 0;
+  float maxSinkRateMps = 0;
+  float maxGroundSpeedMps = 0;
+  float pathDistanceM = 0;
   bool trackSaved = false;
   String trackPath;
 };
@@ -24,6 +30,8 @@ class LogbookStore {
   static bool newestEntryPath(String& path);
   static bool previousEntryPath(const String& currentPath, String& path);
   static bool nextEntryPath(const String& currentPath, String& path);
+  static bool entryPositionNewestFirst(const String& currentPath, uint16_t& position,
+                                       uint16_t& total);
   static bool readSummary(const String& path, LogbookEntrySummary& summary);
   static bool deleteEntry(const String& path);
   static bool isLogbookJsonPath(const String& path);
