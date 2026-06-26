@@ -12,6 +12,7 @@ class LogbookEntryFile {
   bool finalize(const FlightStats& stats, const String& trackFormat = "",
                 const String& trackPath = "");
   void reset();
+  static bool deleteFiles(const String& logbookPath, const String& trackPath);
 
   bool active() const { return !path_.isEmpty(); }
   const String& flightId() const { return flightId_; }
@@ -24,6 +25,7 @@ class LogbookEntryFile {
   String pathForStem(const String& stem) const;
   bool ensureLogbookDirectory() const;
   time_t startEpochFromStats(const FlightStats& stats) const;
+  void refreshFirstFixTimeIfPossible();
   bool writeJson(const FlightStats& stats, bool finalEntry, const String& trackFormat,
                  const String& trackPath) const;
   bool renameToSyncedTimestampIfNeeded();
@@ -36,6 +38,7 @@ class LogbookEntryFile {
   bool firstFixTimeValid_ = false;
   time_t startEpoch_ = 0;
   time_t firstFixEpoch_ = 0;
+  unsigned long firstFixDurationSeconds_ = 0;
   float startTemperatureC_ = 0;
   float firstFixTemperatureC_ = 0;
 };

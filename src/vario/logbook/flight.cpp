@@ -6,7 +6,6 @@
 #include "instruments/gps.h"
 #include "logging/telemetry.h"
 #include "storage/sd_card.h"
-#include "ui/display/pages/dialogs/page_flight_summary.h"
 
 bool Flight::startFlight() {
   // Short circuit if the card is not mounted or reading properly
@@ -59,12 +58,6 @@ bool Flight::startFlight() {
 
 void Flight::end(const FlightStats stats, bool showSummary) {
   file.close();
-
-  // Finally, show the flight summary page
-  if (showSummary) {
-    static PageFlightSummary dialog;
-    dialog.show(stats);
-  }
 }
 
 bool Flight::started() { return (boolean)file; }

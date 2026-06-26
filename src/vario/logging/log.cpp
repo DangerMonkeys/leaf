@@ -31,6 +31,7 @@ Flight* flight =
     NULL;  // Pointer to the current flight record (null if we're not deisred to be logging)
 Kml kmlFlight;
 Igc igcFlight;
+bool trackLogEnabledForFlight = false;
 
 // TODO:  Delete ME
 
@@ -40,6 +41,22 @@ LogbookEntryFile logbookEntry;
 
 // Alert page to warn if auto-stop is about to occur
 PageAlertTimerAutoStop pageAlertTimerAutoStop;
+
+namespace {
+void captureFirstGpsFixForLogbook() {
+  logbook.gpsalt_start = gps.altitude.meters();
+  logbook.gpsalt = logbook.gpsalt_start;
+  logbook.gpsalt_above_launch = 0;
+  logbook.gpsalt_max = logbook.gpsalt_start;
+  logbook.gpsalt_min = logbook.gpsalt_start;
+  logbook.gpsalt_above_launch_max = 0;
+  logbook.speed = gps.speed.mps();
+  logbook.speed_max = logbook.speed;
+  logbook.startLocationLat = gps.location.lat();
+  logbook.startLocationLng = gps.location.lng();
+  logbookEntry.captureFirstFix(logbook);
+}
+}  // namespace
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // UPDATE - Main function to run every second
@@ -72,8 +89,8 @@ void log_update() {
     logbookEntry.writePlaceholder(logbook);
     logbookEntry.refreshStartTimeFromSyncedClock(logbook);
 
-    // We wish to log a flight, but the log has not yet started
-    if (!flight->started()) {
+    // We wish to save a tracklog, but the tracklog has not yet started.
+    if (trackLogEnabledForFlight && !flight->started()) {
       if (!gps.location.isValid())
         // We don't have a valid GPS location yet, try again later
         return;
@@ -92,7 +109,7 @@ void log_update() {
         // starting values
         baro.setLaunchAlt();
         logbook.alt_start = baro.altAtLaunch();
-        logbook.gpsalt_start = gps.altitude.meters();
+        captureFirstGpsFixForLogbook();
 
         // get first set of log values
         log_captureValues();
@@ -102,20 +119,18 @@ void log_update() {
         logbook.alt_min = logbook.alt_start;
         logbook.alt_above_launch_max = 0;
         logbook.climb_max = logbook.climb_min = 0;
-        logbook.gpsalt_max = logbook.gpsalt_start;
-        logbook.gpsalt_min = logbook.gpsalt_start;
-        logbook.gpsalt_above_launch_max = 0;
         logbook.speed_max = 0;
         logbook.temperature_max = logbook.temperature_min = logbook.temperature;
-
-        logbook.startLocationLat = gps.location.lat();
-        logbook.startLocationLng = gps.location.lng();
-        logbookEntry.captureFirstFix(logbook);
       }
     }
 
-    // Generate a record to log
-    flight->log(logbook.duration);
+    if (!trackLogEnabledForFlight && gps.location.isValid() && logbook.startLocationLat == 0 &&
+        logbook.startLocationLng == 0) {
+      captureFirstGpsFixForLogbook();
+    }
+
+    // Generate a tracklog record.
+    if (trackLogEnabledForFlight) flight->log(logbook.duration);
     log_captureValues();      // TODO:  Update this to an "Update Flight Stats" or something
     log_checkMinMaxValues();  // TODO:  Probably rename this to be "bound Flight Stats"
   }
@@ -234,7 +249,9 @@ void flightTimer_resetAutoStop() {
 
 // check if running
 bool flightTimer_isRunning() { return flight != NULL; }
-bool flightTimer_isLogging() { return flightTimer_isRunning() && (bool)flight->started(); }
+bool flightTimer_isLogging() {
+  return flightTimer_isRunning() && (!trackLogEnabledForFlight || (bool)flight->started());
+}
 
 // start timer
 void flightTimer_start() {
@@ -260,6 +277,7 @@ void flightTimer_start() {
   log_captureValues();
   logbook.temperature_max = logbook.temperature_min = logbook.temperature;
   logbookEntry.begin(logbook);
+  trackLogEnabledForFlight = settings.log_saveTrack;
 
   // Start the Fanet radio
   fanetRadio.begin(settings.fanet_region);
@@ -278,13 +296,22 @@ void flightTimer_stop(bool showSummary) {
   // ending values
   log_captureEndingValues();
 
-  // close the flight
-  flight->end(logbook, showSummary);
-  logbookEntry.finalize(logbook, flight->trackLogFormat(), flight->trackLogPath());
+  const String trackFormat = flight->started() ? flight->trackLogFormat() : "";
+  const String trackPath = flight->started() ? flight->trackLogPath() : "";
+
+  // Close the tracklog before finalizing the logbook reference to it.
+  if (flight->started()) flight->end(logbook, false);
+
+  logbookEntry.finalize(logbook, trackFormat, trackPath);
+  if (showSummary) {
+    static PageFlightSummary dialog;
+    dialog.show(logbook, logbookEntry.path(), trackPath);
+  }
   logbookEntry.reset();
   // TODO:  A much cooler end flight sound.  Perhaps even an easter egg?
   speaker.playSound(fx::confirm);
   flight = NULL;
+  trackLogEnabledForFlight = false;
   logbook = FlightStats();  // Reset the flight stats
 
   // Stop the Fanet radio

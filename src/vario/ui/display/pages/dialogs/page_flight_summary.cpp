@@ -1,6 +1,7 @@
 #include "ui/display/pages/dialogs/page_flight_summary.h"
 
 #include "Arduino.h"
+#include "logbook/logbook_entry.h"
 #include "ui/display/display.h"
 #include "ui/display/display_fields.h"
 #include "ui/display/fonts.h"
@@ -8,20 +9,27 @@
 #include "utils/string_utils.h"
 
 bool PageFlightSummary::showing_ = false;
+etl::array<const char*, 1> PageFlightSummary::labels{"Delete"};
 
 void PageFlightSummary::draw_extra() {
   u8g2.setFont(leaf_6x12);
 
+  if (deleted) {
+    u8g2.setCursor(0, 67);
+    u8g2.print("Log deleted");
+    return;
+  }
+
   // Flight Time
-  u8g2.setCursor(0, 37);
+  u8g2.setCursor(0, 67);
   u8g2.print("Timer: " + formatSeconds(stats.duration, false, 0));
 
   // Distance
-  u8g2.setCursor(0, 52);
+  u8g2.setCursor(0, 82);
   u8g2.print("Dist:  " + formatDistance(stats.distanceAlongPath, settings.units_distance, true));
 
   // Maximuim Values
-  uint8_t y = 63;
+  uint8_t y = 93;
   uint8_t lineSpacing = 14;
   uint8_t indent = 6;
   u8g2.drawRFrame(2, y + 2, 92, 92, 7);
@@ -44,4 +52,12 @@ void PageFlightSummary::draw_extra() {
   u8g2.setCursor(indent, y += lineSpacing);
   u8g2.print("Accel: " + formatAccel(stats.accel_min, false) + '/' +
              formatAccel(stats.accel_max, true));
+}
+
+void PageFlightSummary::setting_change(Button dir, ButtonEvent state, uint8_t count) {
+  SimpleSettingsMenuPage::setting_change(dir, state, count);
+
+  if (cursor_position == 0 && state == ButtonEvent::CLICKED && !deleted) {
+    deleted = LogbookEntryFile::deleteFiles(logbookPath, trackPath);
+  }
 }

@@ -14,6 +14,11 @@ constexpr const char* LOGBOOK_DIR = "/logbook";
 constexpr const char* SCHEMA_NAME = "leaf.logbook.flight";
 constexpr const char* SCHEMA_VERSION = "v0.1.0";
 
+String absolutePath(const String& path) {
+  if (path.isEmpty() || path[0] == '/') return path;
+  return "/" + path;
+}
+
 void formatUtcTime(char* out, size_t len, time_t epoch) {
   tm cal;
   gmtime_r(&epoch, &cal);
@@ -76,6 +81,7 @@ void LogbookEntryFile::captureFirstFix(const FlightStats& stats) {
 
   firstFixCaptured_ = true;
   firstFixTimeValid_ = gps.systemTimeSyncedThisBoot();
+  firstFixDurationSeconds_ = stats.duration;
   if (firstFixTimeValid_) {
     firstFixEpoch_ = startEpochFromStats(stats) + stats.duration;
   }
@@ -88,6 +94,7 @@ bool LogbookEntryFile::refreshStartTimeFromSyncedClock(const FlightStats& stats)
 
   startTimeValid_ = true;
   startEpoch_ = startEpochFromStats(stats);
+  refreshFirstFixTimeIfPossible();
   if (!renameToSyncedTimestampIfNeeded()) return false;
   placeholderWritten_ = writeJson(stats, false, "", "");
   return placeholderWritten_;
@@ -103,6 +110,7 @@ bool LogbookEntryFile::finalize(const FlightStats& stats, const String& trackFor
   if (!startTimeValid_ && gps.systemTimeSyncedThisBoot()) {
     startTimeValid_ = true;
     startEpoch_ = startEpochFromStats(stats);
+    refreshFirstFixTimeIfPossible();
     if (!renameToSyncedTimestampIfNeeded()) return false;
   }
 
@@ -118,8 +126,29 @@ void LogbookEntryFile::reset() {
   firstFixTimeValid_ = false;
   startEpoch_ = 0;
   firstFixEpoch_ = 0;
+  firstFixDurationSeconds_ = 0;
   startTemperatureC_ = 0;
   firstFixTemperatureC_ = 0;
+}
+
+bool LogbookEntryFile::deleteFiles(const String& logbookPath, const String& trackPath) {
+  bool success = true;
+
+  if (!trackPath.isEmpty()) {
+    const String absoluteTrackPath = absolutePath(trackPath);
+    if (SD_MMC.exists(absoluteTrackPath)) {
+      success = SD_MMC.remove(absoluteTrackPath) && success;
+    }
+  }
+
+  if (!logbookPath.isEmpty()) {
+    const String absoluteLogbookPath = absolutePath(logbookPath);
+    if (SD_MMC.exists(absoluteLogbookPath)) {
+      success = SD_MMC.remove(absoluteLogbookPath) && success;
+    }
+  }
+
+  return success;
 }
 
 String LogbookEntryFile::generateFlightId() const {
@@ -163,6 +192,14 @@ time_t LogbookEntryFile::startEpochFromStats(const FlightStats& stats) const {
   const unsigned long elapsedSinceStart =
       nowSinceBoot >= stats.logStartedAt ? nowSinceBoot - stats.logStartedAt : 0;
   return time(nullptr) - elapsedSinceStart;
+}
+
+void LogbookEntryFile::refreshFirstFixTimeIfPossible() {
+  if (!firstFixCaptured_ || firstFixTimeValid_ || !startTimeValid_) return;
+
+  firstFixTimeValid_ = true;
+  firstFixEpoch_ = startEpoch_ + firstFixDurationSeconds_;
+  placeholderWritten_ = false;
 }
 
 bool LogbookEntryFile::writeJson(const FlightStats& stats, bool finalEntry,
