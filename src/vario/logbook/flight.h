@@ -15,6 +15,8 @@ class Flight {
   virtual void log(unsigned long durationSec) {}
 
   bool started();
+  const String trackLogFormat() const { return fileNameSuffix(); }
+  String trackLogPath() const;
 
  protected:
   // eg. igc, kml
@@ -29,4 +31,5 @@ class Flight {
   virtual const String desiredFilePath() const { return "/tracks"; }
 
   File file;
+  String filePath_;
 };

@@ -11,6 +11,7 @@
 #include "logbook/flight.h"
 #include "logbook/igc.h"
 #include "logbook/kml.h"
+#include "logbook/logbook_entry.h"
 #include "power.h"
 #include "storage/sd_card.h"
 #include "ui/audio/sound_effects.h"
@@ -35,6 +36,7 @@ Igc igcFlight;
 
 // used to keep track of current flight statistics
 FlightStats logbook;
+LogbookEntryFile logbookEntry;
 
 // Alert page to warn if auto-stop is about to occur
 PageAlertTimerAutoStop pageAlertTimerAutoStop;
@@ -67,6 +69,7 @@ void log_update() {
 
     // Current second of the flight
     logbook.duration = currentSecondSinceBoot - logbook.logStartedAt;
+    logbookEntry.refreshStartTimeFromSyncedClock(logbook);
 
     // We wish to log a flight, but the log has not yet started
     if (!flight->started()) {
@@ -252,6 +255,9 @@ void flightTimer_start() {
   }
 
   logbook.logStartedAt = millis() / 1000;
+  log_captureValues();
+  logbook.temperature_max = logbook.temperature_min = logbook.temperature;
+  logbookEntry.begin(logbook);
 
   // Start the Fanet radio
   fanetRadio.begin(settings.fanet_region);
@@ -272,6 +278,8 @@ void flightTimer_stop(bool showSummary) {
 
   // close the flight
   flight->end(logbook, showSummary);
+  logbookEntry.finalize(logbook, flight->trackLogFormat(), flight->trackLogPath());
+  logbookEntry.reset();
   // TODO:  A much cooler end flight sound.  Perhaps even an easter egg?
   speaker.playSound(fx::confirm);
   flight = NULL;

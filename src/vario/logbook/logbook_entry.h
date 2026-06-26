@@ -9,6 +9,7 @@ class LogbookEntryFile {
   bool refreshStartTimeFromSyncedClock(const FlightStats& stats);
   bool finalize(const FlightStats& stats, const String& trackFormat = "",
                 const String& trackPath = "");
+  void reset();
 
   bool active() const { return !path_.isEmpty(); }
   const String& flightId() const { return flightId_; }

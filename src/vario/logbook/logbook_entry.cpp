@@ -85,6 +85,13 @@ bool LogbookEntryFile::finalize(const FlightStats& stats, const String& trackFor
   return writeJson(stats, true, trackFormat, trackPath);
 }
 
+void LogbookEntryFile::reset() {
+  flightId_ = "";
+  path_ = "";
+  startTimeValid_ = false;
+  startEpoch_ = 0;
+}
+
 String LogbookEntryFile::generateFlightId() const {
   char id[9];
   snprintf(id, sizeof(id), "%08lx", static_cast<unsigned long>(esp_random()));
@@ -177,8 +184,10 @@ bool LogbookEntryFile::writeJson(const FlightStats& stats, bool finalEntry,
 
   JsonObject track = doc["track"].to<JsonObject>();
   track["saved"] = !trackPath.isEmpty();
-  if (!trackFormat.isEmpty()) track["format"] = trackFormat;
-  if (!trackPath.isEmpty()) track["path"] = trackPath;
+  if (!trackPath.isEmpty()) {
+    if (!trackFormat.isEmpty()) track["format"] = trackFormat;
+    track["path"] = trackPath;
+  }
 
   JsonObject device = doc["device"].to<JsonObject>();
   device["firmware_version"] = LeafVersionInfo::firmwareVersion();

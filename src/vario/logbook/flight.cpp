@@ -48,7 +48,12 @@ bool Flight::startFlight() {
 
   // Create the file for writing
   file = SD_MMC.open(fileName, "w", true);
+  if (!file) {
+    filePath_ = "";
+    return false;
+  }
 
+  filePath_ = fileName;
   return true;
 }
 
@@ -63,3 +68,8 @@ void Flight::end(const FlightStats stats, bool showSummary) {
 }
 
 bool Flight::started() { return (boolean)file; }
+
+String Flight::trackLogPath() const {
+  if (filePath_.isEmpty()) return "";
+  return filePath_[0] == '/' ? filePath_.substring(1) : filePath_;
+}
