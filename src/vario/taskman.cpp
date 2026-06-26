@@ -134,7 +134,7 @@ void TaskManager::update() {
   // when re-entering PowerState::On, be sure to start from tasks #1, so baro ADC can be re-prepped
   // before reading
 
-  if (WiFi.status() == WL_CONNECTED) {
+  if (WiFi.status() == WL_CONNECTED || webserver_user_app_active()) {
     webserver_setup();
     webserver_loop();
     factoryDiscovery.update();

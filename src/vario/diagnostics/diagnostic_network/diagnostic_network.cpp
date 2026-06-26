@@ -2,6 +2,7 @@
 
 #include <WiFi.h>
 
+#include "comms/wifi_coordinator.h"
 #include "diagnostics/fatal_error.h"
 #include "diagnostics/self_test/selfTest.h"
 #include "power.h"
@@ -31,7 +32,7 @@ void DiagnosticNetwork::reset(const char* reason) {
   state_ = State::Ready;
   next_scan_attempt_ms_ = millis() + SCAN_RETRY_DELAY_MS;
   WiFi.scanDelete();
-  WiFi.disconnect(true, true);
+  WiFi.disconnect();
 }
 
 bool DiagnosticNetwork::shouldResetWhenSwitchingOn() const {
@@ -41,6 +42,15 @@ bool DiagnosticNetwork::shouldResetWhenSwitchingOn() const {
 bool DiagnosticNetwork::canSleepWhileCharging() const { return shouldResetWhenSwitchingOn(); }
 
 void DiagnosticNetwork::update() {
+  if (!leaf_wifi::diagnosticsAllowed()) {
+    if (!printed_end_state_) {
+      Serial.println("DiagnosticNetwork: disabled by user WiFi action");
+      printed_end_state_ = true;
+    }
+    state_ = State::NoNetworkFound;
+    return;
+  }
+
   if (state_ == State::Ready) {
     maybeLookForNetwork();
   } else if (state_ == State::WifiResetting) {
@@ -121,7 +131,7 @@ void DiagnosticNetwork::maybeLookForNetwork() {
                 WiFi.getMode(), ESP.getFreeHeap());
 
   WiFi.mode(WIFI_STA);
-  WiFi.disconnect(true, true);  // drop old state, clear config
+  WiFi.disconnect();  // drop the active connection without erasing saved user credentials
 
   // Use WifiResetting state to let WiFi settle for 100ms without blocking the loop
   t0_ = millis() + 100;
@@ -181,7 +191,7 @@ void DiagnosticNetwork::checkForDiagnosticNetwork() {
 void DiagnosticNetwork::checkForConnection() {
   uint32_t now = millis();
   if (now - t0_ > CONNECT_TIMEOUT_MS) {
-    WiFi.disconnect(true, true);
+    WiFi.disconnect();
     error_msg_ = "Timeout attempting to connect to diagnostic network";
     state_ = State::Error;
     return;
@@ -192,7 +202,7 @@ void DiagnosticNetwork::checkForConnection() {
     state_ = State::ConnectedToNetwork;
     return;
   } else if (status == WL_CONNECT_FAILED || status == WL_STOPPED) {
-    WiFi.disconnect(true, true);
+    WiFi.disconnect();
     error_msg_ = "WiFi FAILED or STOPPED while connecting to diagnostic network";
     state_ = State::Error;
   }

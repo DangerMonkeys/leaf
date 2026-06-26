@@ -3,12 +3,12 @@
 
 #include <Arduino.h>
 #include <WiFi.h>
-#include <WiFiManager.h>  // https://github.com/tzapu/WiFiManager
 
 #include "etl/array.h"
 #include "etl/array_view.h"
 #include "etl/vector.h"
 #include "ui/display/menu_page.h"
+#include "ui/display/pages/dialogs/page_qr.h"
 #include "ui/input/buttons.h"
 
 enum class WifiState {
@@ -33,11 +33,13 @@ class PageMenuSystemWifiSetup : public SimpleSettingsMenuPage {
 
   void loop() override;
   void shown() override;
+  void closed(bool removed_from_Stack) override;
   void draw_extra() override;
 
  private:
+  static constexpr uint32_t STARTING_MESSAGE_MS = 8000;
   int wifiIcon = 62;  // the "empty signal" icon
-  WiFiManager wm;
+  uint32_t starting_message_started_ms = 0;
   void beginWifiSetup(void);
 };
 
@@ -63,13 +65,36 @@ class PageMenuSystemWifiUpdate : public SimpleSettingsMenuPage {
 };
 
 /////////////////////////////////////////
+// WiFi Web App sub-page
+//  Purpose: Starts a lightweight Leaf-hosted web app
+class PageMenuSystemWifiWebApp : public SimpleSettingsMenuPage {
+ public:
+  const char* get_title() const override { return "Web App"; }
+
+  void draw() override;
+  void shown() override;
+  void closed(bool removed_from_Stack) override;
+  void draw_extra() override;
+  etl::array_view<const char*> get_labels() const override;
+
+ protected:
+  void setting_change(Button dir, ButtonEvent state, uint8_t count) override;
+
+ private:
+  static etl::array<const char*, 1> network_labels;
+  bool using_leaf_wifi = false;
+  PageQR page_qr;
+  void start(bool useLeafWifi);
+};
+
+/////////////////////////////////////////
 // Main Parent Wifi Menu Page
 //
 class WifiMenuPage : public SettingsMenuPage {
  public:
   WifiMenuPage() : page_wifi_update(&wifi_state) {
     cursor_position = 0;
-    cursor_max = 2;
+    cursor_max = 3;
   }
   void draw();
   bool firstOpened = true;
@@ -78,10 +103,11 @@ class WifiMenuPage : public SettingsMenuPage {
   void setting_change(Button dir, ButtonEvent state, uint8_t count);
 
  private:
-  static constexpr char* labels[3] = {"Back", "Setup Wifi", "Reset Wifi"};
+  static constexpr char* labels[4] = {"Back", "Setup Wifi", "Web App", "Reset Wifi"};
   WifiState wifi_state;
   PageMenuSystemWifiSetup page_wifi_setup;
   PageMenuSystemWifiUpdate page_wifi_update;
+  PageMenuSystemWifiWebApp page_wifi_web_app;
   void attemptWifiConnection(void);
 };
 
