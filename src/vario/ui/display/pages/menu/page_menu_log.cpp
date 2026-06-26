@@ -17,10 +17,41 @@ enum log_menu_items {
   cursor_log_format,
   cursor_log_saveLog,
   cursor_log_autoStart,
-  cursor_log_autoStop
+  cursor_log_autoStop,
+  cursor_log_viewLogbook
 };
 
+enum log_menu_pages {
+  page_menu_log,
+  page_logbook,
+};
+
+uint8_t log_menu_page = page_menu_log;
+
+bool LogMenuPage::button_event(Button button, ButtonEvent state, uint8_t count) {
+  if (log_menu_page == page_logbook) {
+    return pageLogbook.button_event(button, state, count);
+  }
+  return SettingsMenuPage::button_event(button, state, count);
+}
+
+void LogMenuPage::backToLogMenu() {
+  cursor_position = cursor_log_back;
+  log_menu_page = page_menu_log;
+}
+
 void LogMenuPage::draw() {
+  switch (log_menu_page) {
+    case page_menu_log:
+      drawLogMenu();
+      break;
+    case page_logbook:
+      pageLogbook.draw();
+      break;
+  }
+}
+
+void LogMenuPage::drawLogMenu() {
   u8g2.firstPage();
   do {
     // Title
@@ -31,7 +62,7 @@ void LogMenuPage::draw() {
     uint8_t y_spacing = 16;
     uint8_t setting_name_x = 2;
     uint8_t setting_choice_x = 70;
-    uint8_t menu_items_y[] = {190, 45, 60, 75, 90, /*105, 120,*/ 135};
+    uint8_t menu_items_y[] = {190, 45, 60, 75, 90, 120};
 
     // first draw cursor selection box
     u8g2.drawRBox(setting_choice_x - 4, menu_items_y[cursor_position] - 14, 30, 16, 2);
@@ -71,6 +102,9 @@ void LogMenuPage::draw() {
             u8g2.print(char(125));
           else
             u8g2.print(char(123));
+          break;
+        case cursor_log_viewLogbook:
+          u8g2.print((char)126);
           break;
         case cursor_log_back:
           u8g2.print((char)124);
@@ -113,6 +147,14 @@ void LogMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) {
     }
     case cursor_log_autoStop: {
       if (state == ButtonEvent::CLICKED) settings.toggleBoolOnOff(&settings.log_autoStop);
+      break;
+    }
+    case cursor_log_viewLogbook: {
+      if (state == ButtonEvent::CLICKED) {
+        speaker.playSound(fx::confirm);
+        pageLogbook.showNewest();
+        log_menu_page = page_logbook;
+      }
       break;
     }
     case cursor_log_back: {

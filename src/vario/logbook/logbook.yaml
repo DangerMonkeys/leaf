@@ -1,195 +1,314 @@
 openapi: 3.0.2
 info:
-    title: Leaf logbook
-    version: 1.0.0
-    description: ''
+  title: Leaf logbook entry
+  version: v0.1.0
+  description: >
+    Canonical schema for one per-flight JSON logbook entry saved on the Leaf SD
+    card under /logbook. Each file is authoritative for one flight. Aggregate
+    logbook indexes and webserver list responses should be treated as derived
+    views that can be rebuilt by scanning these files.
 paths:
-    /logbook:
-        get:
-            responses:
-                '200':
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/Logbook'
-            operationId: getLogbook
+  /logbook/{filename}:
+    get:
+      summary: Read a single per-flight logbook JSON file.
+      description: >
+        This path models a future webserver representation of one JSON file from
+        the SD card logbook directory. The schema is also the file format.
+      operationId: getLogbookEntry
+      parameters:
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+          example: 2026-06-26_14-32-10_a7f3c2.json
+      responses:
+        "200":
+          description: One logbook entry.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LogbookEntry"
+  /logbook:
+    get:
+      summary: List logbook entries.
+      description: >
+        Optional derived webserver response. Implementations may build this by
+        scanning /logbook/*.json instead of maintaining an authoritative index.
+      operationId: listLogbookEntries
+      responses:
+        "200":
+          description: Derived list of per-flight logbook entries.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LogbookEntryList"
 components:
-    schemas:
-        Logbook:
-            description: Top-level logbook data structure
-            type: object
-            properties:
-                entries:
-                    description: ''
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/Entry'
-        Entry:
-            description: Single logbook entry representing a flight.
-            type: object
-            properties:
-                start:
-                    $ref: '#/components/schemas/EntryEvent'
-                    description: Conditions at the start of this log entry.
-                end:
-                    $ref: '#/components/schemas/EntryEvent'
-                    description: Conditions at the end of this log entry.
-                stats:
-                    $ref: '#/components/schemas/SummaryStats'
-                    description: Summary statistics about this entry.
-        EntryEvent:
-            description: Information about the starting conditions of a logbook entry.
-            type: object
-            properties:
-                location:
-                    $ref: '#/components/schemas/Location'
-                    description: Location at the start of the logbook entry.
-                time:
-                    format: date-time
-                    description: Time at which the logbook entry started.
-                    type: string
-                temperature:
-                    $ref: '#/components/schemas/Temperature'
-                    description: Air temperature at the start of this logbook entry.
-        Distance:
-            description: Height above "mean sea level" of the Earth as approximated by the WGS84 ellipsoid.
-            required:
-                - value
-                - units
-            type: object
-            properties:
-                value:
-                    format: float
-                    description: Number of units above mean sea level.
-                    type: number
-                units:
-                    $ref: '#/components/schemas/DistanceUnit'
-                    description: Units used to measure the altitude.
-        DistanceUnit:
-            description: Unit measuring distance.
-            enum:
-                - m
-                - ft
-                - mi
-                - km
-            type: string
-        Temperature:
-            description: ''
-            required:
-                - value
-                - units
-            type: object
-            properties:
-                value:
-                    format: float
-                    description: Number of degrees.
-                    type: number
-                units:
-                    $ref: '#/components/schemas/TemperatureUnit'
-                    description: ''
-        TemperatureUnit:
-            description: Unit of temperature measurement.
-            enum:
-                - F
-                - C
-            type: string
-        Location:
-            description: 3D location on Earth.
-            type: object
-            properties:
-                alt:
-                    $ref: '#/components/schemas/Altitude'
-                    description: Altitude of the location.
-                lat:
-                    format: double
-                    description: Latitude of location, degrees north of the equator.
-                    type: number
-                lng:
-                    format: double
-                    description: Longitude of location, degrees east of the Prime Meridian.
-                    type: number
-        SummaryStats:
-            description: Extreme values of various statistics.
-            type: object
-            properties:
-                altitude_min:
-                    $ref: '#/components/schemas/Distance'
-                    description: Minimum altitude reached.
-                altitude_max:
-                    $ref: '#/components/schemas/Distance'
-                    description: Maximum altitude reached.
-                climb_rate_max:
-                    $ref: '#/components/schemas/Speed'
-                    description: Maximum climb rate reached.
-                sink_rate_max:
-                    $ref: '#/components/schemas/Speed'
-                    description: Maximum sink rate encountered (positive value is downward movement).
-                total_altitude_gained:
-                    $ref: '#/components/schemas/Distance'
-                    description: Total increase in altitude over all positive climbs (ignoring sink).
-                temperature_min:
-                    $ref: '#/components/schemas/Temperature'
-                    description: Minimum temperature experienced.
-                temperature_max:
-                    $ref: '#/components/schemas/Temperature'
-                    description: Maximum temperature experienced.
-                track_distance:
-                    $ref: '#/components/schemas/Distance'
-                    description: Total length of track (3D).
-                g_load_max:
-                    $ref: '#/components/schemas/Acceleration'
-                    description: Maximum g-load experienced.
-        Speed:
-            description: ''
-            required:
-                - value
-            type: object
-            properties:
-                value:
-                    format: float
-                    description: ''
-                    type: number
-                units:
-                    $ref: '#/components/schemas/SpeedUnit'
-                    description: Units of speed for value.
-        SpeedUnit:
-            description: |-
-                mph: Miles per hour
-                kph: Kilometers per hour
-                fpm: Feet per minute
-                mps: Meters per second
-                kts: Knots
-            enum:
-                - mph
-                - kph
-                - fpm
-                - mps
-                - kts
-            type: string
-        Altitude:
-            anyOf:
-                -
-                    type: object
-                -
-                    $ref: '#/components/schemas/Distance'
-            description: Height above "mean sea level" of the Earth as approximated by the WGS84 ellipsoid.
-            type: object
-        Acceleration:
-            description: ''
-            required:
-                - units
-                - value
-            type: object
-            properties:
-                value:
-                    format: float
-                    description: ''
-                    type: number
-                units:
-                    $ref: '#/components/schemas/AccelerationUnit'
-                    description: ''
-        AccelerationUnit:
-            description: Unit measuring acceleration.
-            enum:
-                - g
+  schemas:
+    LogbookEntryList:
+      type: object
+      additionalProperties: true
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/LogbookEntry"
+    LogbookEntry:
+      description: >
+        Sparse-friendly summary record for one logging session. Older parsers
+        should ignore unknown fields, and writers may leave unavailable values
+        null so placeholder entries can still be saved without GPS or a tracklog.
+      type: object
+      additionalProperties: true
+      required:
+        - schema
+        - schema_version
+        - flight_id
+      properties:
+        schema:
+          type: string
+          enum:
+            - leaf.logbook.flight
+          description: Identifies this JSON document as a Leaf flight logbook entry.
+        schema_version:
+          type: string
+          example: v0.1.0
+          pattern: "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
+          description: Semantic version of this logbook entry schema.
+        flight_id:
+          type: string
+          example: a7f3c2
+          pattern: "^[0-9a-fA-F]{6,16}$"
+          description: Stable random hex identifier for this flight.
+        clock:
+          $ref: "#/components/schemas/ClockInfo"
+        start:
+          $ref: "#/components/schemas/FlightEvent"
+        first_fix:
+          $ref: "#/components/schemas/FlightEvent"
+        end:
+          $ref: "#/components/schemas/FlightEvent"
+        metrics:
+          $ref: "#/components/schemas/FlightMetrics"
+        track:
+          $ref: "#/components/schemas/TrackReference"
+        device:
+          $ref: "#/components/schemas/DeviceInfo"
+        pilot:
+          $ref: "#/components/schemas/PilotInfo"
+        glider:
+          $ref: "#/components/schemas/GliderInfo"
+        site:
+          $ref: "#/components/schemas/SiteInfo"
+        weather:
+          type: object
+          additionalProperties: true
+          description: Reserved for future weather fields.
+        notes:
+          $ref: "#/components/schemas/FlightNotes"
+    ClockInfo:
+      type: object
+      additionalProperties: true
+      properties:
+        system_time_synced_this_boot:
+          type: boolean
+          description: True once this boot session has received valid GPS time and synced system time.
+        time_source:
+          type: string
+          enum:
+            - gps
+            - system
+            - unsynced
+            - manual
+          description: Best known source for timestamps stored in this entry.
+        timezone_offset_minutes:
+          type: integer
+          nullable: true
+          example: -420
+          description: Offset from UTC used for local timestamps, if known.
+    FlightEvent:
+      description: Conditions at a meaningful flight event, such as start or end.
+      type: object
+      additionalProperties: true
+      properties:
+        time_utc:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2026-06-26T21:32:10Z"
+        time_local:
+          type: string
+          nullable: true
+          example: "2026-06-26T14:32:10"
+          description: Local timestamp string using the device timezone setting at the time.
+        time_valid:
+          type: boolean
+          description: False when no valid GPS-backed system time was available for this event.
+        location:
+          $ref: "#/components/schemas/Location3D"
+        temperature_c:
+          type: number
+          format: float
+          nullable: true
+          description: Ambient temperature at this event in degrees Celsius.
+    Location3D:
+      type: object
+      nullable: true
+      additionalProperties: true
+      properties:
+        lat_deg:
+          type: number
+          format: double
+          nullable: true
+          description: Latitude in decimal degrees north of the equator.
+        lon_deg:
+          type: number
+          format: double
+          nullable: true
+          description: Longitude in decimal degrees east of the Prime Meridian.
+        altitude_m:
+          type: number
+          format: float
+          nullable: true
+          description: GPS altitude in meters.
+    FlightMetrics:
+      description: Whole-flight derived metrics stored in metric base units.
+      type: object
+      additionalProperties: true
+      properties:
+        duration_seconds:
+          type: integer
+          nullable: true
+          minimum: 0
+        max_altitude_m:
+          type: number
+          format: float
+          nullable: true
+          description: Maximum GPS altitude in meters.
+        min_altitude_m:
+          type: number
+          format: float
+          nullable: true
+          description: Minimum GPS altitude in meters.
+        max_altitude_above_launch_m:
+          type: number
+          format: float
+          nullable: true
+          description: Maximum GPS altitude above launch altitude in meters.
+        max_climb_rate_mps:
+          type: number
+          format: float
+          nullable: true
+        max_sink_rate_mps:
+          type: number
+          format: float
+          nullable: true
+          description: Most negative climb-rate value in meters per second.
+        max_ground_speed_mps:
+          type: number
+          format: float
+          nullable: true
+        average_ground_speed_mps:
+          type: number
+          format: float
+          nullable: true
+        straight_line_distance_m:
+          type: number
+          format: float
+          nullable: true
+          description: Distance between start and end GPS locations in meters.
+        path_distance_m:
+          type: number
+          format: float
+          nullable: true
+          description: Along-path GPS distance estimate in meters.
+        max_accel_g:
+          type: number
+          format: float
+          nullable: true
+        min_accel_g:
+          type: number
+          format: float
+          nullable: true
+        max_temperature_c:
+          type: number
+          format: float
+          nullable: true
+        min_temperature_c:
+          type: number
+          format: float
+          nullable: true
+    TrackReference:
+      description: Link to the optional second-by-second GPS tracklog for this flight.
+      type: object
+      additionalProperties: true
+      properties:
+        saved:
+          type: boolean
+          description: True when a tracklog file was saved for this flight.
+        format:
+          type: string
+          nullable: true
+          enum:
+            - igc
+            - kml
+            - null
+        path:
+          type: string
+          nullable: true
+          example: tracks/2026-06-26_14-32-10.igc
+          description: SD-card relative path to the associated tracklog.
+    DeviceInfo:
+      type: object
+      additionalProperties: true
+      properties:
+        firmware_version:
+          type: string
+          nullable: true
+        hardware_version:
+          type: string
+          nullable: true
+        mac_address:
+          type: string
+          nullable: true
+    PilotInfo:
+      type: object
+      additionalProperties: true
+      properties:
+        name:
+          type: string
+          nullable: true
+    GliderInfo:
+      type: object
+      additionalProperties: true
+      properties:
+        brand:
+          type: string
+          nullable: true
+        model:
+          type: string
+          nullable: true
+        size:
+          type: string
+          nullable: true
+    SiteInfo:
+      type: object
+      additionalProperties: true
+      properties:
+        launch_name:
+          type: string
+          nullable: true
+        landing_name:
+          type: string
+          nullable: true
+    FlightNotes:
+      type: object
+      additionalProperties: true
+      properties:
+        pilot_notes:
+          type: string
+          nullable: true
+        tags:
+          type: array
+          items:
             type: string

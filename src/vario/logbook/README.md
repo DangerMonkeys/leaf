@@ -1,6 +1,8 @@
 # Leaf logbook
 
-[View the logbook data model with the ReDoc viewer](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/DangerMonkeys/leaf/refs/heads/main/src/vario/logbook/logbook.yaml)
+[View the per-flight logbook entry schema with the ReDoc viewer](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/DangerMonkeys/leaf/refs/heads/main/src/vario/logbook/logbook.yaml)
+
+Each saved flight should have one authoritative JSON file in `/logbook`. Any webserver list or index response should be derived from those files, so the index can be rebuilt if entries are added, edited, or deleted.
 
 ## Bus log format
 

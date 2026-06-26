@@ -6,12 +6,11 @@
 #include "instruments/gps.h"
 #include "logging/telemetry.h"
 #include "storage/sd_card.h"
-#include "ui/display/pages/dialogs/page_flight_summary.h"
 
 bool Flight::startFlight() {
   // Short circuit if the card is not mounted or reading properly
   if (!sdcard.isMounted()) return false;
-  if (!gps.syncSystemClock()) {
+  if (!gps.systemTimeSyncedThisBoot()) {
     Serial.println("Flight::startFlight waiting for valid GPS date/time");
     return false;
   }
@@ -48,18 +47,20 @@ bool Flight::startFlight() {
 
   // Create the file for writing
   file = SD_MMC.open(fileName, "w", true);
+  if (!file) {
+    filePath_ = "";
+    return false;
+  }
 
+  filePath_ = fileName;
   return true;
 }
 
-void Flight::end(const FlightStats stats, bool showSummary) {
-  file.close();
-
-  // Finally, show the flight summary page
-  if (showSummary) {
-    static PageFlightSummary dialog;
-    dialog.show(stats);
-  }
-}
+void Flight::end(const FlightStats stats, bool showSummary) { file.close(); }
 
 bool Flight::started() { return (boolean)file; }
+
+String Flight::trackLogPath() const {
+  if (filePath_.isEmpty()) return "";
+  return filePath_[0] == '/' ? filePath_.substring(1) : filePath_;
+}

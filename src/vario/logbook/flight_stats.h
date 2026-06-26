@@ -37,6 +37,10 @@ class FlightStats {
   float speed = 0;      // speed in mps
   float speed_max = 0;  // max speed logged in mps
 
+  bool windValid = false;
+  float windSpeedMax = 0;               // max valid wind speed logged in mps
+  float windDirectionFromAtMaxDeg = 0;  // direction wind is blowing from, in degrees true
+
   float temperature = 0;
   float temperature_max = 0;
   float temperature_min = 0;

@@ -78,6 +78,9 @@ class LeafGPS : public TinyGPSPlus, IMessageSource, public MessageSink<LeafGPS, 
   // Sets the ESP32 system clock from the current GPS UTC date/time.
   // Returns false when GPS date/time is not currently valid.
   bool syncSystemClock();
+  bool hasValidDateTimeForClockSync() const;
+
+  bool systemTimeSyncedThisBoot() const { return systemTimeSyncedThisBoot_; }
 
   float getGlideRatio(void) { return glideRatio; }
 
@@ -90,6 +93,7 @@ class LeafGPS : public TinyGPSPlus, IMessageSource, public MessageSink<LeafGPS, 
  private:
   void updateFixInfo();
   void updateSatList(const NMEAString& nmea);
+  void syncSystemClockIfNeeded();
 
   void calculateGlideRatio();
 
@@ -128,6 +132,7 @@ class LeafGPS : public TinyGPSPlus, IMessageSource, public MessageSink<LeafGPS, 
   NMEAString nmeaBuffer = {'\0'};  // buffer for reading NMEA sentences
   int nmeaBufferIndex = 0;         // index into the buffer currently writing to
   bool gsvSentenceGroupActive = false;
+  bool systemTimeSyncedThisBoot_ = false;
 };
 extern LeafGPS gps;
 
