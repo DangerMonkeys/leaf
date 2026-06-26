@@ -440,6 +440,14 @@ void log_checkMinMaxValues() {
     logbook.speed_max = logbook.speed;
   }
 
+  const WindEstimate& windEstimate = windEstimator.getWindEstimate();
+  if (windEstimate.validEstimate && windEstimate.windSpeed > logbook.windSpeedMax) {
+    logbook.windValid = true;
+    logbook.windSpeedMax = windEstimate.windSpeed;
+    logbook.windDirectionFromAtMaxDeg =
+        fmodf(windEstimate.windDirectionFrom * RAD_TO_DEG + 360.0f, 360.0f);
+  }
+
   // time = micros() - time;
   // Serial.print("checkMinMax: ");
   // Serial.println(time);

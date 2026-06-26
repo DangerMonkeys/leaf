@@ -17,7 +17,12 @@ struct LogbookEntrySummary {
   float maxClimbRateMps = 0;
   float maxSinkRateMps = 0;
   float maxGroundSpeedMps = 0;
+  bool maxWindValid = false;
+  float maxWindSpeedMps = 0;
+  float maxWindDirectionFromDeg = 0;
   float pathDistanceM = 0;
+  float maxAccelG = 1;
+  float minAccelG = 1;
   bool trackSaved = false;
   String trackPath;
 };

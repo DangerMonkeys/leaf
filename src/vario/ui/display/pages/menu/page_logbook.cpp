@@ -1,6 +1,7 @@
 #include "ui/display/pages/menu/page_logbook.h"
 
 #include "hardware/buttons.h"
+#include "instruments/gps.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
@@ -20,7 +21,48 @@ String formatLogbookAltitude(float meters) {
 }
 
 String formatLogbookClimb(float metersPerSecond) {
-  return formatClimbRate(static_cast<int32_t>(metersPerSecond * 100), settings.units_climb, true);
+  String formatted = formatClimbRate(static_cast<int32_t>(fabsf(metersPerSecond) * 100),
+                                     settings.units_climb, true);
+  if (formatted.length() > 0 && formatted[0] == '+') {
+    formatted.setCharAt(0, ' ');
+  }
+  return formatted;
+}
+
+String formatLogbookClimbWithArrow(float metersPerSecond, char arrow) {
+  return formatLogbookClimb(metersPerSecond) + String(arrow);
+}
+
+String formatLogbookClimbRange(const LogbookEntrySummary& summary) {
+  return formatLogbookClimbWithArrow(summary.maxClimbRateMps, (char)141) +
+         formatLogbookClimbWithArrow(summary.maxSinkRateMps, (char)142);
+}
+
+void drawMetricRow(const String& label, const String& value, uint8_t y) {
+  u8g2.setCursor(0, y);
+  u8g2.print(label);
+  u8g2.setCursor(96 - u8g2.getStrWidth(value.c_str()), y);
+  u8g2.print(value);
+}
+
+String formatWindDirection(float directionFromDeg) {
+  int degrees = static_cast<int>(directionFromDeg + 0.5f) % 360;
+  if (settings.units_heading) {
+    return gps.cardinal(degrees);
+  }
+  return String(degrees) + "*";
+}
+
+String formatWindSpeed(float speedMps) {
+  float speed = settings.units_speed ? speedMps * 2.23694f : speedMps * 3.6f;
+  if (speed > 99) speed = 99;
+  return String(static_cast<int>(speed + 0.5f)) + (settings.units_speed ? "mph" : "kph");
+}
+
+String formatMaxWind(const LogbookEntrySummary& summary) {
+  if (!summary.maxWindValid) return "--";
+  return formatWindSpeed(summary.maxWindSpeedMps) + " " +
+         formatWindDirection(summary.maxWindDirectionFromDeg);
 }
 }  // namespace
 
@@ -104,7 +146,7 @@ void PageLogbook::deleteCurrent() {
 void PageLogbook::draw() {
   u8g2.firstPage();
   do {
-    display_menuTitle("Logbook");
+    display_menuTitle("LOGBOOK");
     if (summary.valid) {
       drawEntry();
     } else {
@@ -121,31 +163,30 @@ void PageLogbook::drawEmpty() {
 }
 
 void PageLogbook::drawEntry() {
-  u8g2.setFont(leaf_6x12);
-
+  u8g2.setFont(leaf_5x8);
   u8g2.setCursor(0, 35);
   u8g2.print(dateString());
-  u8g2.setCursor(56, 35);
-  u8g2.print(timeString());
+  const String time = timeString();
+  u8g2.setCursor(96 - u8g2.getStrWidth(time.c_str()), 35);
+  u8g2.print(time);
 
-  u8g2.setCursor(0, 50);
-  u8g2.print("Timer: " + formatSeconds(summary.durationSeconds, false, 0));
+  u8g2.setFont(leaf_6x12);
+  drawMetricRow("Timer:", formatSeconds(summary.durationSeconds, false, 0), 50);
 
-  u8g2.setCursor(0, 65);
-  u8g2.print("MaxAlt:" + formatLogbookAltitude(summary.maxAltitudeM));
-  u8g2.setCursor(0, 78);
-  u8g2.print("MinAlt:" + formatLogbookAltitude(summary.minAltitudeM));
-  u8g2.setCursor(0, 91);
-  u8g2.print("AbvTO: " + formatLogbookAltitude(summary.maxAltitudeAboveLaunchM));
-  u8g2.setCursor(0, 104);
-  u8g2.print("Climb:" + formatLogbookClimb(summary.maxClimbRateMps));
-  u8g2.setCursor(0, 117);
-  u8g2.print("Sink: " + formatLogbookClimb(summary.maxSinkRateMps));
-  u8g2.setCursor(0, 130);
-  u8g2.print("Speed:  " + formatSpeed(summary.maxGroundSpeedMps, settings.units_speed, true));
+  drawMetricRow("MaxAlt:", formatLogbookAltitude(summary.maxAltitudeM), 65);
+  drawMetricRow("AbvTO:", formatLogbookAltitude(summary.maxAltitudeAboveLaunchM), 78);
+  drawMetricRow("", formatLogbookClimbRange(summary), 91);
+  drawMetricRow("MaxSpeed:", formatSpeed(summary.maxGroundSpeedMps, settings.units_speed, true),
+                104);
+  drawMetricRow("Accel:", formatAccel(summary.maxAccelG, true) + '/' +
+                              formatAccel(summary.minAccelG, true),
+                117);
+  if (summary.maxWindValid) {
+    drawMetricRow("MaxWind:", formatMaxWind(summary), 130);
+  }
 
-  drawDeleteRow(147);
-  drawPageRow(162);
+  drawDeleteRow(153);
+  drawPageRow(168);
 
   if (deletePending) {
     uint8_t width = deletePending >= DELETE_HOLD_COUNT ? 96 : deletePending * 96 / DELETE_HOLD_COUNT;
@@ -169,13 +210,13 @@ void PageLogbook::drawBackRow() {
 
 void PageLogbook::drawDeleteRow(uint8_t y) {
   if (cursor_position == cursor_delete) {
-    u8g2.drawRBox(MENU_INPUT_X - 10, y - 14, 34, 16, 2);
+    u8g2.drawRBox(0, y - 13, 96, 15, 2);
+    u8g2.setDrawColor(0);
   }
 
   u8g2.setCursor(2, y);
   u8g2.print("Delete");
-  u8g2.setCursor(cursor_position == cursor_delete ? MENU_INPUT_X - 10 : MENU_INPUT_X, y);
-  u8g2.setDrawColor(cursor_position == cursor_delete ? 0 : 1);
+  u8g2.setCursor(cursor_position == cursor_delete ? 65 : 80, y);
   if (cursor_position == cursor_delete) {
     u8g2.print("HOLD");
   } else {
@@ -192,7 +233,7 @@ void PageLogbook::drawPageRow(uint8_t y) {
 
   if (position > 1) {
     u8g2.setCursor(2, y);
-    u8g2.print("<-");
+    u8g2.print((char)140);
   }
 
   String pageText = String(position) + "/" + String(total);
@@ -200,8 +241,8 @@ void PageLogbook::drawPageRow(uint8_t y) {
   u8g2.print(pageText);
 
   if (position < total) {
-    u8g2.setCursor(82, y);
-    u8g2.print("->");
+    u8g2.setCursor(80, y);
+    u8g2.print((char)126);
   }
 
   u8g2.setDrawColor(1);
@@ -217,7 +258,15 @@ String PageLogbook::dateString() const {
 
 String PageLogbook::timeString() const {
   if (summary.startTimeValid && summary.startTimeLocal.length() >= 16) {
-    return summary.startTimeLocal.substring(11, 16);
+    int hour = summary.startTimeLocal.substring(11, 13).toInt();
+    const String minute = summary.startTimeLocal.substring(14, 16);
+    if (!settings.units_hours) {
+      return summary.startTimeLocal.substring(11, 16);
+    }
+    const bool pm = hour >= 12;
+    hour %= 12;
+    if (hour == 0) hour = 12;
+    return String(hour) + ":" + minute + (pm ? " PM" : " AM");
   }
   return "Time?";
 }

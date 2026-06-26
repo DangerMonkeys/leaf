@@ -245,6 +245,11 @@ bool LogbookEntryFile::writeJson(const FlightStats& stats, bool finalEntry,
   metrics["max_climb_rate_mps"] = stats.climb_max / 100.0f;
   metrics["max_sink_rate_mps"] = stats.climb_min / 100.0f;
   metrics["max_ground_speed_mps"] = stats.speed_max;
+  if (stats.windValid) {
+    JsonObject maxWind = metrics["max_wind"].to<JsonObject>();
+    maxWind["speed_mps"] = stats.windSpeedMax;
+    maxWind["direction_from_deg"] = stats.windDirectionFromAtMaxDeg;
+  }
   metrics["average_ground_speed_mps"] =
       stats.duration > 0 ? stats.distanceAlongPath / stats.duration : 0;
   metrics["straight_line_distance_m"] = stats.distanceStraightLine;

@@ -158,7 +158,13 @@ bool LogbookStore::readSummary(const String& path, LogbookEntrySummary& summary)
   summary.maxClimbRateMps = metrics["max_climb_rate_mps"] | 0.0f;
   summary.maxSinkRateMps = metrics["max_sink_rate_mps"] | 0.0f;
   summary.maxGroundSpeedMps = metrics["max_ground_speed_mps"] | 0.0f;
+  JsonObject maxWind = metrics["max_wind"];
+  summary.maxWindValid = !maxWind.isNull();
+  summary.maxWindSpeedMps = maxWind["speed_mps"] | 0.0f;
+  summary.maxWindDirectionFromDeg = maxWind["direction_from_deg"] | 0.0f;
   summary.pathDistanceM = metrics["path_distance_m"] | 0.0f;
+  summary.maxAccelG = metrics["max_accel_g"] | 1.0f;
+  summary.minAccelG = metrics["min_accel_g"] | 1.0f;
 
   JsonObject track = doc["track"];
   summary.trackSaved = track["saved"] | false;
