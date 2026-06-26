@@ -430,7 +430,7 @@ namespace {
 
   bool handleCaptivePortalRequest(WebServer& target) {
     if (!user_app_provisioning) return false;
-    sendRedirect(target, "/app/wifi");
+    sendRedirect(target, "/wifi");
     return true;
   }
 
@@ -713,9 +713,10 @@ namespace {
 
     if (!user_server_routes_configured) {
       user_server.on("/", HTTP_GET, []() {
-        sendRedirect(user_server, user_app_provisioning ? "/app/wifi" : "/app");
+        sendRedirect(user_server, user_app_provisioning ? "/wifi" : "/app");
       });
       user_server.on("/app", HTTP_GET, []() { sendUserAppShell(user_server); });
+      user_server.on("/wifi", HTTP_GET, []() { sendWifiSetupPage(user_server); });
       user_server.on("/app/wifi", HTTP_GET, []() { sendWifiSetupPage(user_server); });
       user_server.on("/api/user/status", HTTP_GET, []() { sendUserStatus(user_server); });
       user_server.on("/api/wifi/status", HTTP_GET, []() { user_server.send(200, "application/json", wifiStatusJson()); });
@@ -1065,7 +1066,7 @@ void webserver_enable_wifi_setup() {
   logWifiSetupTiming("after-main-server");
   startWifiNetworkScan();
   logWifiSetupTiming("after-scan-start");
-  Serial.printf("Leaf WiFi setup started: http://%s/app/wifi\n", WiFi.softAPIP().toString().c_str());
+  Serial.printf("Leaf WiFi setup started: http://%s/wifi\n", WiFi.softAPIP().toString().c_str());
 }
 
 void webserver_disable_user_app() {

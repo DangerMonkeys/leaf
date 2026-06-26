@@ -311,6 +311,7 @@ void PageMenuSystemWifiWebApp::draw_extra() {
 
 void PageMenuSystemWifiSetup::shown() {
   SimpleSettingsMenuPage::shown();
+  starting_message_started_ms = millis();
   beginWifiSetup();
 }
 
@@ -335,6 +336,23 @@ void PageMenuSystemWifiSetup::draw_extra() {
   u8g2.setCursor(85, 12);
   u8g2.print((char)wifiIcon);
 
+  if (millis() - starting_message_started_ms < STARTING_MESSAGE_MS) {
+    u8g2.setFont(leaf_6x12);
+    u8g2.setCursor(24, 52);
+    u8g2.print("Starting");
+    u8g2.setCursor(12, 69);
+    u8g2.print("Leaf Wifi...");
+
+    u8g2.setFont(leaf_5x8);
+    u8g2.setCursor(8, 104);
+    u8g2.print("Network may take");
+    u8g2.setCursor(15, 116);
+    u8g2.print("10-20 seconds");
+    u8g2.setCursor(8, 128);
+    u8g2.print("to show on phone");
+    return;
+  }
+
   u8g2.setFont(leaf_6x12);
   auto y = 15;
   auto x = 0;
@@ -343,7 +361,7 @@ void PageMenuSystemWifiSetup::draw_extra() {
 
   // Instruction Page
   const char* lines[] = {"Follow these steps", "on Phone or Laptop:", "1.Join Leaf WiFi",   " ",
-                         "2.Click Sign In",   "  Or Visit:",         "192.168.4.1/app/wifi",
+                         "2.Click Sign In",   "  Or Visit:",         "192.168.4.1/wifi",
                          " ",                 "3.Enter Network",     "Select your network",
                          "and enter password", " ",                  "4.Press Save",
                          "This page will close", "when connected..."};

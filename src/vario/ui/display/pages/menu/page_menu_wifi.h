@@ -37,7 +37,9 @@ class PageMenuSystemWifiSetup : public SimpleSettingsMenuPage {
   void draw_extra() override;
 
  private:
+  static constexpr uint32_t STARTING_MESSAGE_MS = 8000;
   int wifiIcon = 62;  // the "empty signal" icon
+  uint32_t starting_message_started_ms = 0;
   void beginWifiSetup(void);
 };
 
