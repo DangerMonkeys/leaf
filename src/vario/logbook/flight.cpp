@@ -11,7 +11,7 @@
 bool Flight::startFlight() {
   // Short circuit if the card is not mounted or reading properly
   if (!sdcard.isMounted()) return false;
-  if (!gps.syncSystemClock()) {
+  if (!gps.systemTimeSyncedThisBoot()) {
     Serial.println("Flight::startFlight waiting for valid GPS date/time");
     return false;
   }

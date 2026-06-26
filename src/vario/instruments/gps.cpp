@@ -175,6 +175,8 @@ void LeafGPS::updateFixInfo() {
 }
 
 void LeafGPS::update() {
+  syncSystemClockIfNeeded();
+
   // update sats if we're tracking sat NMEA sentences
   navigator.update();
   updateFixInfo();
@@ -214,6 +216,7 @@ void LeafGPS::on_receive(const GpsMessage& msg) {
   }
   if (newSentence) {
     updateSatList(msg.nmea);
+    syncSystemClockIfNeeded();
 
     NMEASentenceContents contents = {.speed = gps.speed.isUpdated(),
                                      .course = gps.course.isUpdated()};
@@ -392,6 +395,10 @@ bool LeafGPS::getLocalDateTime(tm& cal) {
 }
 
 bool LeafGPS::syncSystemClock() {
+  if (!hasValidDateTimeForClockSync()) {
+    return false;
+  }
+
   tm cal;
   if (!getUtcDateTime(cal)) {
     return false;
@@ -406,5 +413,21 @@ bool LeafGPS::syncSystemClock() {
   timeval now;
   now.tv_sec = rawTime;
   now.tv_usec = 0;
-  return settimeofday(&now, nullptr) == 0;
+  const bool synced = settimeofday(&now, nullptr) == 0;
+  if (synced) {
+    systemTimeSyncedThisBoot_ = true;
+  }
+  return synced;
+}
+
+bool LeafGPS::hasValidDateTimeForClockSync() const {
+  constexpr uint32_t MAX_CLOCK_SYNC_AGE_MS = 3000;
+
+  return gps.date.isValid() && gps.time.isValid() && gps.fixInfo.fix &&
+         gps.date.age() <= MAX_CLOCK_SYNC_AGE_MS && gps.time.age() <= MAX_CLOCK_SYNC_AGE_MS;
+}
+
+void LeafGPS::syncSystemClockIfNeeded() {
+  if (systemTimeSyncedThisBoot_) return;
+  syncSystemClock();
 }
