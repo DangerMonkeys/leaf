@@ -84,6 +84,8 @@ components:
           $ref: "#/components/schemas/ClockInfo"
         start:
           $ref: "#/components/schemas/FlightEvent"
+        first_fix:
+          $ref: "#/components/schemas/FlightEvent"
         end:
           $ref: "#/components/schemas/FlightEvent"
         metrics:

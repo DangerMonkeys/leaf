@@ -69,6 +69,7 @@ void log_update() {
 
     // Current second of the flight
     logbook.duration = currentSecondSinceBoot - logbook.logStartedAt;
+    logbookEntry.writePlaceholder(logbook);
     logbookEntry.refreshStartTimeFromSyncedClock(logbook);
 
     // We wish to log a flight, but the log has not yet started
@@ -109,6 +110,7 @@ void log_update() {
 
         logbook.startLocationLat = gps.location.lat();
         logbook.startLocationLng = gps.location.lng();
+        logbookEntry.captureFirstFix(logbook);
       }
     }
 

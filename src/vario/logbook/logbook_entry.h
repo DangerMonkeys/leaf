@@ -6,6 +6,8 @@
 class LogbookEntryFile {
  public:
   bool begin(const FlightStats& stats);
+  bool writePlaceholder(const FlightStats& stats);
+  void captureFirstFix(const FlightStats& stats);
   bool refreshStartTimeFromSyncedClock(const FlightStats& stats);
   bool finalize(const FlightStats& stats, const String& trackFormat = "",
                 const String& trackPath = "");
@@ -29,5 +31,11 @@ class LogbookEntryFile {
   String flightId_;
   String path_;
   bool startTimeValid_ = false;
+  bool placeholderWritten_ = false;
+  bool firstFixCaptured_ = false;
+  bool firstFixTimeValid_ = false;
   time_t startEpoch_ = 0;
+  time_t firstFixEpoch_ = 0;
+  float startTemperatureC_ = 0;
+  float firstFixTemperatureC_ = 0;
 };

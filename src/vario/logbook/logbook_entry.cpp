@@ -49,16 +49,38 @@ void addLocation(JsonObject event, float lat, float lon, float altitudeM, bool v
 }  // namespace
 
 bool LogbookEntryFile::begin(const FlightStats& stats) {
-  if (!ensureLogbookDirectory()) return false;
-
   flightId_ = generateFlightId();
   startTimeValid_ = gps.systemTimeSyncedThisBoot();
   if (startTimeValid_) {
     startEpoch_ = startEpochFromStats(stats);
   }
   path_ = pathForStem(startTimeValid_ ? timestampFileStem() : unsyncedFileStem());
+  startTemperatureC_ = stats.temperature;
 
-  return writeJson(stats, false, "", "");
+  return true;
+}
+
+bool LogbookEntryFile::writePlaceholder(const FlightStats& stats) {
+  if (!active()) {
+    if (!begin(stats)) return false;
+  }
+  if (placeholderWritten_) return true;
+  if (!ensureLogbookDirectory()) return false;
+  placeholderWritten_ = writeJson(stats, false, "", "");
+  return placeholderWritten_;
+}
+
+void LogbookEntryFile::captureFirstFix(const FlightStats& stats) {
+  if (firstFixCaptured_) return;
+  if (stats.startLocationLat == 0 && stats.startLocationLng == 0) return;
+
+  firstFixCaptured_ = true;
+  firstFixTimeValid_ = gps.systemTimeSyncedThisBoot();
+  if (firstFixTimeValid_) {
+    firstFixEpoch_ = startEpochFromStats(stats) + stats.duration;
+  }
+  firstFixTemperatureC_ = stats.temperature;
+  placeholderWritten_ = false;
 }
 
 bool LogbookEntryFile::refreshStartTimeFromSyncedClock(const FlightStats& stats) {
@@ -67,7 +89,8 @@ bool LogbookEntryFile::refreshStartTimeFromSyncedClock(const FlightStats& stats)
   startTimeValid_ = true;
   startEpoch_ = startEpochFromStats(stats);
   if (!renameToSyncedTimestampIfNeeded()) return false;
-  return writeJson(stats, false, "", "");
+  placeholderWritten_ = writeJson(stats, false, "", "");
+  return placeholderWritten_;
 }
 
 bool LogbookEntryFile::finalize(const FlightStats& stats, const String& trackFormat,
@@ -75,6 +98,7 @@ bool LogbookEntryFile::finalize(const FlightStats& stats, const String& trackFor
   if (!active()) {
     if (!begin(stats)) return false;
   }
+  if (!ensureLogbookDirectory()) return false;
 
   if (!startTimeValid_ && gps.systemTimeSyncedThisBoot()) {
     startTimeValid_ = true;
@@ -89,7 +113,13 @@ void LogbookEntryFile::reset() {
   flightId_ = "";
   path_ = "";
   startTimeValid_ = false;
+  placeholderWritten_ = false;
+  firstFixCaptured_ = false;
+  firstFixTimeValid_ = false;
   startEpoch_ = 0;
+  firstFixEpoch_ = 0;
+  startTemperatureC_ = 0;
+  firstFixTemperatureC_ = 0;
 }
 
 String LogbookEntryFile::generateFlightId() const {
@@ -153,9 +183,14 @@ bool LogbookEntryFile::writeJson(const FlightStats& stats, bool finalEntry,
 
   JsonObject start = doc["start"].to<JsonObject>();
   addSystemTime(start, startTimeValid_, startEpoch_);
-  addLocation(start, stats.startLocationLat, stats.startLocationLng, stats.gpsalt_start,
-              stats.startLocationLat != 0 || stats.startLocationLng != 0);
-  start["temperature_c"] = stats.temperature_min;
+  start["temperature_c"] = startTemperatureC_;
+
+  if (firstFixCaptured_) {
+    JsonObject firstFix = doc["first_fix"].to<JsonObject>();
+    addSystemTime(firstFix, firstFixTimeValid_, firstFixEpoch_);
+    addLocation(firstFix, stats.startLocationLat, stats.startLocationLng, stats.gpsalt_start, true);
+    firstFix["temperature_c"] = firstFixTemperatureC_;
+  }
 
   if (finalEntry) {
     JsonObject end = doc["end"].to<JsonObject>();
