@@ -911,6 +911,7 @@ void writeScreenshotBuffer(const char* buffer) {
 }
 
 void webserver_setup() {
+  if (!settings.dev_mode) return;
   if (debug_routes_configured) return;
 
   user_server.on("/app/debug", HTTP_GET, []() {
