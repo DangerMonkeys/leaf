@@ -4,56 +4,56 @@
 #include <SD_MMC.h>
 
 namespace {
-String optionalString(JsonVariantConst value) {
-  if (value.isNull()) return "";
-  return value.as<String>();
-}
-
-String joinGliderName(const String& brand, const String& model, const String& size) {
-  String name;
-  if (!brand.isEmpty()) name += brand;
-  if (!model.isEmpty()) {
-    if (!name.isEmpty()) name += " ";
-    name += model;
+  String optionalString(JsonVariantConst value) {
+    if (value.isNull()) return "";
+    return value.as<String>();
   }
-  if (!size.isEmpty()) {
-    if (!name.isEmpty()) name += " ";
-    name += size;
+
+  String joinGliderName(const String& brand, const String& model, const String& size) {
+    String name;
+    if (!brand.isEmpty()) name += brand;
+    if (!model.isEmpty()) {
+      if (!name.isEmpty()) name += " ";
+      name += model;
+    }
+    if (!size.isEmpty()) {
+      if (!name.isEmpty()) name += " ";
+      name += size;
+    }
+    return name;
   }
-  return name;
-}
 
-PilotProfile pilotFromJson(JsonObjectConst obj) {
-  PilotProfile pilot;
-  pilot.id = optionalString(obj["id"]);
-  pilot.name = optionalString(obj["name"]);
-  return pilot;
-}
-
-GliderProfile gliderFromJson(JsonObjectConst obj) {
-  GliderProfile glider;
-  glider.id = optionalString(obj["id"]);
-  glider.brand = optionalString(obj["brand"]);
-  glider.model = optionalString(obj["model"]);
-  if (glider.model.isEmpty()) {
-    glider.model = optionalString(obj["name"]);
+  PilotProfile pilotFromJson(JsonObjectConst obj) {
+    PilotProfile pilot;
+    pilot.id = optionalString(obj["id"]);
+    pilot.name = optionalString(obj["name"]);
+    return pilot;
   }
-  glider.size = optionalString(obj["size"]);
-  glider.displayName = optionalString(obj["display_name"]);
-  return glider;
-}
 
-bool loadProfiles(JsonDocument& doc) {
-  File file = SD_MMC.open(ProfileStore::filePath(), "r");
-  if (!file) return false;
+  GliderProfile gliderFromJson(JsonObjectConst obj) {
+    GliderProfile glider;
+    glider.id = optionalString(obj["id"]);
+    glider.brand = optionalString(obj["brand"]);
+    glider.model = optionalString(obj["model"]);
+    if (glider.model.isEmpty()) {
+      glider.model = optionalString(obj["name"]);
+    }
+    glider.size = optionalString(obj["size"]);
+    glider.displayName = optionalString(obj["display_name"]);
+    return glider;
+  }
 
-  DeserializationError error = deserializeJson(doc, file);
-  file.close();
-  if (error) return false;
+  bool loadProfiles(JsonDocument& doc) {
+    File file = SD_MMC.open(ProfileStore::filePath(), "r");
+    if (!file) return false;
 
-  const char* schema = doc["schema"] | "";
-  return strcmp(schema, "leaf.profiles") == 0;
-}
+    DeserializationError error = deserializeJson(doc, file);
+    file.close();
+    if (error) return false;
+
+    const char* schema = doc["schema"] | "";
+    return strcmp(schema, "leaf.profiles") == 0;
+  }
 }  // namespace
 
 String GliderProfile::resolvedDisplayName() const {

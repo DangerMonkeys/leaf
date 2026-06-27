@@ -101,17 +101,18 @@ namespace {
     if (!file) return;
 
     if (!existed || file.size() == 0) {
-      file.println("millis,event,enabled,using_leaf_wifi,user_server_started,debug_routes_configured,"
-                   "ap_stations,max_ap_stations,wifi_status,free_heap,max_alloc_heap,loop_count,"
-                   "handle_count,root,app,status,profiles_get,profiles_put,not_found,ap_ip");
+      file.println(
+          "millis,event,enabled,using_leaf_wifi,user_server_started,debug_routes_configured,"
+          "ap_stations,max_ap_stations,wifi_status,free_heap,max_alloc_heap,loop_count,"
+          "handle_count,root,app,status,profiles_get,profiles_put,not_found,ap_ip");
     }
 
     updateUserAppStationPeak();
     const String ap_ip = WiFi.softAPIP().toString();
     file.printf("%lu,%s,%u,%u,%u,%u,%u,%u,%d,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%s\n",
-                static_cast<unsigned long>(millis()), event ? event : "",
-                user_app_enabled ? 1 : 0, user_app_using_leaf_wifi ? 1 : 0,
-                user_server_started ? 1 : 0, debug_routes_configured ? 1 : 0,
+                static_cast<unsigned long>(millis()), event ? event : "", user_app_enabled ? 1 : 0,
+                user_app_using_leaf_wifi ? 1 : 0, user_server_started ? 1 : 0,
+                debug_routes_configured ? 1 : 0,
                 static_cast<unsigned int>(WiFi.softAPgetStationNum()),
                 static_cast<unsigned int>(user_app_max_ap_stations),
                 static_cast<int>(WiFi.status()), static_cast<unsigned long>(ESP.getFreeHeap()),
@@ -614,8 +615,7 @@ namespace {
 
     File file = SD_MMC.open(ProfileStore::filePath(), "r");
     if (!file) {
-      target.send(500, "application/json",
-                  "{\"detail\":\"Profiles file could not be opened.\"}");
+      target.send(500, "application/json", "{\"detail\":\"Profiles file could not be opened.\"}");
       return;
     }
 
@@ -632,7 +632,8 @@ namespace {
   }
 
   bool writeProfilesBody(const String& body) {
-    if (!SD_MMC.exists(ProfileStore::directoryPath()) && !SD_MMC.mkdir(ProfileStore::directoryPath())) {
+    if (!SD_MMC.exists(ProfileStore::directoryPath()) &&
+        !SD_MMC.mkdir(ProfileStore::directoryPath())) {
       return false;
     }
 
@@ -717,7 +718,9 @@ namespace {
       return;
     }
 
-    target.send(200, "text/html", R"leafapp(<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=Cache-Control content=no-store><title>Leaf</title><style>:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#172016;background:#f5f7f2;line-height:1.35}body{margin:0}header{background:#172016;color:white;padding:18px 20px}main{max-width:640px;margin:auto;padding:16px 18px}h1{font-size:24px;margin:0}h2{font-size:18px;margin:0 0 10px}section{border-bottom:1px solid #d9dfd3;padding:18px 0}.grid{display:grid;gap:10px}.row{display:flex;gap:8px}.row>*{flex:1}.row>.small{flex:0 0 94px}label{display:block;font-size:13px;font-weight:650;margin:10px 0 4px}input,select,button{box-sizing:border-box;width:100%;font:inherit;padding:11px;border:1px solid #bac3b4;border-radius:6px;background:white}button{background:#172016;color:white;font-weight:700}.secondary{background:white;color:#172016}.danger{background:#5d1717;color:white}.muted{color:#596256}.status{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:13px;white-space:pre-wrap}.msg{min-height:20px;margin-top:10px}</style></head><body><header><h1>Leaf</h1></header><main><section><h2>Status</h2><div class=status id=status>Loading...</div></section><section><h2>Pilots</h2><label>Active pilot</label><select id=pilotList></select><label>Name</label><input id=pilotName maxlength=48 autocomplete=name><div class=row><button id=pilotSave>Save</button><button class=secondary id=pilotNew>New</button><button class="small danger" id=pilotDelete>Delete</button></div></section><section><h2>Gliders</h2><label>Active glider</label><select id=gliderList></select><div class=row><div><label>Brand</label><input id=gliderBrand maxlength=32></div><div><label>Model</label><input id=gliderModel maxlength=48></div></div><div class=row><div><label>Size</label><input id=gliderSize maxlength=16></div><div><label>Display name</label><input id=gliderDisplay maxlength=64></div></div><div class=row><button id=gliderSave>Save</button><button class=secondary id=gliderNew>New</button><button class="small danger" id=gliderDelete>Delete</button></div><p class="muted msg" id=msg></p></section></main><script>
+    target.send(
+        200, "text/html",
+        R"leafapp(<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=Cache-Control content=no-store><title>Leaf</title><style>:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#172016;background:#f5f7f2;line-height:1.35}body{margin:0}header{background:#172016;color:white;padding:18px 20px}main{max-width:640px;margin:auto;padding:16px 18px}h1{font-size:24px;margin:0}h2{font-size:18px;margin:0 0 10px}section{border-bottom:1px solid #d9dfd3;padding:18px 0}.grid{display:grid;gap:10px}.row{display:flex;gap:8px}.row>*{flex:1}.row>.small{flex:0 0 94px}label{display:block;font-size:13px;font-weight:650;margin:10px 0 4px}input,select,button{box-sizing:border-box;width:100%;font:inherit;padding:11px;border:1px solid #bac3b4;border-radius:6px;background:white}button{background:#172016;color:white;font-weight:700}.secondary{background:white;color:#172016}.danger{background:#5d1717;color:white}.muted{color:#596256}.status{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:13px;white-space:pre-wrap}.msg{min-height:20px;margin-top:10px}</style></head><body><header><h1>Leaf</h1></header><main><section><h2>Status</h2><div class=status id=status>Loading...</div></section><section><h2>Pilots</h2><label>Active pilot</label><select id=pilotList></select><label>Name</label><input id=pilotName maxlength=48 autocomplete=name><div class=row><button id=pilotSave>Save</button><button class=secondary id=pilotNew>New</button><button class="small danger" id=pilotDelete>Delete</button></div></section><section><h2>Gliders</h2><label>Active glider</label><select id=gliderList></select><div class=row><div><label>Brand</label><input id=gliderBrand maxlength=32></div><div><label>Model</label><input id=gliderModel maxlength=48></div></div><div class=row><div><label>Size</label><input id=gliderSize maxlength=16></div><div><label>Display name</label><input id=gliderDisplay maxlength=64></div></div><div class=row><button id=gliderSave>Save</button><button class=secondary id=gliderNew>New</button><button class="small danger" id=gliderDelete>Delete</button></div><p class="muted msg" id=msg></p></section></main><script>
 let profiles={schema:'leaf.profiles',schema_version:'v0.1.0',active_pilot_id:null,active_glider_id:null,pilots:[],gliders:[]};
 const $=id=>document.getElementById(id);
 function id(){return Math.floor(Math.random()*0xffffffff).toString(16).padStart(8,'0')}
@@ -1001,7 +1004,7 @@ void webserver_setup() {
         </body>
       </html>
     )");
-    });
+  });
 
   user_server.on("/api/debug/raw-xbm", HTTP_GET, []() {
     send_buffer = "";
@@ -1015,46 +1018,46 @@ void webserver_setup() {
     auto& radio = fanetRadio;
     auto protocol = radio.protocol;
 
-      // Lock the radio while we poke around their private parts
-      LockGuard lock(radio.x_fanet_manager_mutex);
-      auto& radioStats = protocol->stats();
-      // UnsafeManager* manager = (UnsafeManager*)radio.manager;
-      auto ms = millis();
+    // Lock the radio while we poke around their private parts
+    LockGuard lock(radio.x_fanet_manager_mutex);
+    auto& radioStats = protocol->stats();
+    // UnsafeManager* manager = (UnsafeManager*)radio.manager;
+    auto ms = millis();
 
-      ss << "<!DOCTYPE html>\n"
-         << "<html>\n"
-         << "<script>\n"
-         << "setTimeout(() => location.reload(), 1000);\n"
-         << "</script>\n"
-         << "<body><pre>\n"
+    ss << "<!DOCTYPE html>\n"
+       << "<html>\n"
+       << "<script>\n"
+       << "setTimeout(() => location.reload(), 1000);\n"
+       << "</script>\n"
+       << "<body><pre>\n"
 
-         << "Current Time: " << ms << endl
-         << endl
-         << "-- STATS -- " << endl
-         << "State: " << fanetRadio.getState().c_str() << "\n"
-         << "rx: " << radioStats.rx << "\n"
-         << "txSuccess: " << radioStats.txSuccess << "\n"
-         << "txFailed: " << radioStats.txFailed << "\n"
-         << "processed: " << radioStats.processed << "\n"
-         << "forwarded: " << radioStats.forwarded << "\n"
-         << "fwdMinRssiDrp: " << radioStats.fwdMinRssiDrp << "\n"
-         << "fwdNeighborDrp: " << radioStats.fwdNeighborDrp << "\n"
-         << "fwdDbBoostWeak: " << radioStats.fwdDbBoostWeak << "\n"
-         << "fwdDbBoostDrop: " << radioStats.fwdDbBoostDrop << "\n"
-         << "rxFromUsDrp: " << radioStats.rxFromUsDrp << "\n"
-         << "txAck: " << radioStats.txAck << "\n"
-         << "neighbors: " << radioStats.neighborTableSize << "\n"
-         << "-- Manager --" << endl
-         << "Manager Queue Length: " << protocol->txPoolSize() << endl
-         << "Next allowed tracking time: "
-         << (radio.m_nextAllowedTrackingTimeMs ? (long long)radio.m_nextAllowedTrackingTimeMs - ms
-                                               : 0) /
-                1000.0f
-         << "s" << endl
-         << endl
+       << "Current Time: " << ms << endl
+       << endl
+       << "-- STATS -- " << endl
+       << "State: " << fanetRadio.getState().c_str() << "\n"
+       << "rx: " << radioStats.rx << "\n"
+       << "txSuccess: " << radioStats.txSuccess << "\n"
+       << "txFailed: " << radioStats.txFailed << "\n"
+       << "processed: " << radioStats.processed << "\n"
+       << "forwarded: " << radioStats.forwarded << "\n"
+       << "fwdMinRssiDrp: " << radioStats.fwdMinRssiDrp << "\n"
+       << "fwdNeighborDrp: " << radioStats.fwdNeighborDrp << "\n"
+       << "fwdDbBoostWeak: " << radioStats.fwdDbBoostWeak << "\n"
+       << "fwdDbBoostDrop: " << radioStats.fwdDbBoostDrop << "\n"
+       << "rxFromUsDrp: " << radioStats.rxFromUsDrp << "\n"
+       << "txAck: " << radioStats.txAck << "\n"
+       << "neighbors: " << radioStats.neighborTableSize << "\n"
+       << "-- Manager --" << endl
+       << "Manager Queue Length: " << protocol->txPoolSize() << endl
+       << "Next allowed tracking time: "
+       << (radio.m_nextAllowedTrackingTimeMs ? (long long)radio.m_nextAllowedTrackingTimeMs - ms
+                                             : 0) /
+              1000.0f
+       << "s" << endl
+       << endl
 
-         << "</pre></body>\n"
-         << "</html>\n";
+       << "</pre></body>\n"
+       << "</html>\n";
 
     user_server.send(200, "text/html", str.c_str());
   });
@@ -1121,7 +1124,7 @@ void webserver_setup() {
         </body>
         </html>
     )");
-    });
+  });
 
   user_server.on("/api/debug/mass-storage", HTTP_GET, []() {
     // Serial.end();
@@ -1187,7 +1190,8 @@ void webserver_setup() {
 
   user_server.on("/api/debug/sd-card/format", HTTP_POST, []() {
     if (selfTest.updateNeeded() || interactive_self_test_pending) {
-      user_server.send(409, "application/json", "{\"detail\":\"Self test is running or pending.\"}");
+      user_server.send(409, "application/json",
+                       "{\"detail\":\"Self test is running or pending.\"}");
       return;
     }
 
