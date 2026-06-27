@@ -310,7 +310,7 @@ void PageMenuSystemWifiWebApp::draw_extra() {
     String shortUrl = webserver_user_app_url();
     shortUrl.replace("http://", "");
     u8g2.setFont(leaf_5x8);
-    u8g2.setCursor(2, 124);
+    u8g2.setCursor(2, 134);
     u8g2.print(shortUrl);
   } else {
     u8g2.setFont(leaf_5x8);
