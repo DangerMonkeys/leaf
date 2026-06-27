@@ -49,7 +49,7 @@ void chargingPage_draw() {
     u8g2.print("mV");
     u8g2.setDrawColor(1);
 
-    if (settings.dev_menu) {
+    if (settings.dev_mode) {
       // If Developer Mode enabled, show Input Current max limit
       u8g2.setFont(leaf_6x12);
       u8g2.setCursor(10, 157);
@@ -101,7 +101,7 @@ void chargingPage_button(Button button, ButtonEvent state, uint8_t count) {
         case ButtonEvent::CLICKED:
           break;
         case ButtonEvent::HELD:
-          if (settings.dev_menu) {
+          if (settings.dev_mode) {
             power.increaseInputCurrent();
             speaker.playSound(fx::enter);
           }
@@ -113,7 +113,7 @@ void chargingPage_button(Button button, ButtonEvent state, uint8_t count) {
         case ButtonEvent::CLICKED:
           break;
         case ButtonEvent::HELD:
-          if (settings.dev_menu) {
+          if (settings.dev_mode) {
             power.decreaseInputCurrent();
             speaker.playSound(fx::exit);
           }

@@ -7,6 +7,7 @@
 #include "FS.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
+#include "profiles/profile_store.h"
 #include "system/version_info.h"
 #include "time.h"
 #include "ui/settings/settings.h"
@@ -83,8 +84,7 @@ bool Igc::startFlight() {
 
   logger.pilot = "Unknown";
   logger.glider_type = "Unknown";
-  // Overwrite from file if set in the Pilot descriptor
-  setPilotFromFile();
+  setPilotFromProfiles();
 
   logger.firmware_version = LeafVersionInfo::firmwareVersion();
   logger.hardware_version = "Leaf1";
@@ -115,13 +115,15 @@ void Igc::end(const FlightStats stats, bool showSummary) {
   Flight::end(stats, showSummary);
 }
 
-void Igc::setPilotFromFile() {
-  auto pilotFile = SD_MMC.open("/pilot.json", "r");
-  if (!pilotFile) {
-    return;  // No pilot JSON file
+void Igc::setPilotFromProfiles() {
+  PilotProfile pilot;
+  if (ProfileStore::activePilot(pilot)) {
+    logger.pilot = pilot.name;
   }
-  JsonDocument doc;
-  deserializeJson(doc, pilotFile);
-  logger.pilot = (String)doc["pilot"];
-  logger.glider_type = (String)doc["glider_type"];
+
+  GliderProfile glider;
+  if (ProfileStore::activeGlider(glider)) {
+    const String displayName = glider.resolvedDisplayName();
+    if (!displayName.isEmpty()) logger.glider_type = displayName;
+  }
 }

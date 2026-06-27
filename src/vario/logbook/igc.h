@@ -17,5 +17,5 @@ class Igc : public Flight {
 
  private:
   IgcLogger logger;
-  void setPilotFromFile();
+  void setPilotFromProfiles();
 };

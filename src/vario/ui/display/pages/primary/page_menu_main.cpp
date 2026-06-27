@@ -105,7 +105,7 @@ void MainMenuPage::draw_main_menu() {
     // then draw all the menu items
     for (int i = 0; i <= cursor_max; i++) {
       // hide developer menu if not in dev mode
-      if (i == cursor_developer && !settings.dev_menu) {
+      if (i == cursor_developer && !settings.dev_mode) {
         continue;  // skip drawing this menu item
       }
 
@@ -226,7 +226,7 @@ bool MainMenuPage::mainMenuButtonEvent(Button button, ButtonEvent state, uint8_t
     case Button::UP:
       if (state == ButtonEvent::CLICKED) {
         cursor_prev();
-        if (cursor_position == cursor_developer && !settings.dev_menu) {
+        if (cursor_position == cursor_developer && !settings.dev_mode) {
           cursor_prev();  // skip developer menu if not in dev mode
         }
         if (cursor_position == cursor_fanet) {
@@ -256,7 +256,7 @@ bool MainMenuPage::mainMenuButtonEvent(Button button, ButtonEvent state, uint8_t
 #endif
         }
 
-        if (cursor_position == cursor_developer && !settings.dev_menu) {
+        if (cursor_position == cursor_developer && !settings.dev_mode) {
           cursor_next();  // skip developer menu if not in dev mode
         }
         redraw = true;

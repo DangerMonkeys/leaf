@@ -165,25 +165,33 @@ void WifiMenuPage::attemptWifiConnection() {
 }
 
 namespace {
-  void drawQrCode(const char* text, uint8_t xOffset, uint8_t yOffset) {
-    static constexpr uint8_t QR_VERSION = 2;
-    static constexpr uint8_t QR_SCALE = 2;
+  void drawQrCodeScaled(const char* text, uint8_t xOffset, uint8_t yOffset, uint8_t version,
+                        uint8_t scale) {
+    static constexpr uint8_t QR_MAX_VERSION = 3;
 
     QRCode qrcode;
-    uint8_t qrcodeData[qrcode_getBufferSize(QR_VERSION)];
-    qrcode_initText(&qrcode, qrcodeData, QR_VERSION, ECC_LOW, text);
+    uint8_t qrcodeData[qrcode_getBufferSize(QR_MAX_VERSION)];
+    qrcode_initText(&qrcode, qrcodeData, version, ECC_LOW, text);
 
     for (uint8_t x = 0; x < qrcode.size; x++) {
       for (uint8_t y = 0; y < qrcode.size; y++) {
         if (qrcode_getModule(&qrcode, x, y)) {
-          u8g2.drawBox(xOffset + x * QR_SCALE, yOffset + y * QR_SCALE, QR_SCALE, QR_SCALE);
+          u8g2.drawBox(xOffset + x * scale, yOffset + y * scale, scale, scale);
         }
       }
     }
   }
+
+  void drawQrCode(const char* text, uint8_t xOffset, uint8_t yOffset) {
+    drawQrCodeScaled(text, xOffset, yOffset, 3, 2);
+  }
+
+  void drawSmallQrCode(const char* text, uint8_t xOffset, uint8_t yOffset) {
+    drawQrCodeScaled(text, xOffset, yOffset, 2, 2);
+  }
 }  // namespace
 
-etl::array<const char*, 1> PageMenuSystemWifiWebApp::network_labels{{"Use LeafWiFi"}};
+etl::array<const char*, 1> PageMenuSystemWifiWebApp::network_labels{{"Use Leaf AP"}};
 
 void PageMenuSystemWifiWebApp::start(bool useLeafWifi) {
   using_leaf_wifi = useLeafWifi || WiFi.status() != WL_CONNECTED;
@@ -266,13 +274,21 @@ void PageMenuSystemWifiWebApp::draw_extra() {
   u8g2.setDrawColor(1);
 
   if (using_leaf_wifi) {
-    u8g2.setCursor(18, 28);
-    u8g2.print("Join Leaf WiFi");
-    drawQrCode("WIFI:T:nopass;S:Leaf WiFi;;", 23, 34);
+    u8g2.setCursor(1, 25);
+    u8g2.print("Join Wifi: ");
+    u8g2.print(webserver_leaf_ap_ssid());
+    u8g2.setCursor(1, 35);
+    u8g2.print("Password: ");
+    u8g2.print(webserver_leaf_ap_password());
+    drawQrCode(webserver_leaf_ap_wifi_qr().c_str(), 19, 41);
 
-    u8g2.setCursor(20, 100);
-    u8g2.print("Open Web App");
-    drawQrCode(webserver_user_app_url().c_str(), 23, 106);
+    u8g2.setCursor(17, 106);
+    u8g2.print("Open Web App:");
+    drawSmallQrCode(webserver_user_app_url().c_str(), 23, 112);
+    u8g2.setCursor(8, 171);
+    String shortUrl = webserver_user_app_url();
+    shortUrl.replace("http://", "");
+    u8g2.print(shortUrl);
     return;
   }
 
@@ -294,7 +310,7 @@ void PageMenuSystemWifiWebApp::draw_extra() {
     String shortUrl = webserver_user_app_url();
     shortUrl.replace("http://", "");
     u8g2.setFont(leaf_5x8);
-    u8g2.setCursor(2, 124);
+    u8g2.setCursor(2, 134);
     u8g2.print(shortUrl);
   } else {
     u8g2.setFont(leaf_5x8);
@@ -339,7 +355,7 @@ void PageMenuSystemWifiSetup::draw_extra() {
     u8g2.setCursor(24, 52);
     u8g2.print("Starting");
     u8g2.setCursor(12, 69);
-    u8g2.print("Leaf Wifi...");
+    u8g2.print("Leaf WiFi...");
 
     u8g2.setFont(leaf_5x8);
     u8g2.setCursor(8, 104);
@@ -351,39 +367,39 @@ void PageMenuSystemWifiSetup::draw_extra() {
     return;
   }
 
+  u8g2.setFont(leaf_5x8);
+  u8g2.setCursor(0, 28);
+  u8g2.print("Follow these steps");
+  u8g2.setCursor(0, 39);
+  u8g2.print("on Phone or Laptop:");
+
   u8g2.setFont(leaf_6x12);
-  auto y = 15;
-  auto x = 0;
-  const auto OFFSET = 4;  // default new paragraph spacing
-  u8g2.setCursor(0, y);
+  u8g2.setCursor(0, 58);
+  u8g2.print("1.Join:");
+  u8g2.setFont(leaf_5x8);
+  u8g2.setCursor(5, 70);
+  u8g2.print(webserver_leaf_ap_ssid());
+  u8g2.setCursor(5, 82);
+  u8g2.print("Pass ");
+  u8g2.print(webserver_leaf_ap_password());
 
-  // Instruction Page
-  const char* lines[] = {"Follow these steps", "on Phone or Laptop:",  "1.Join Leaf WiFi",   " ",
-                         "2.Click Sign In",    "  Or Visit:",          "192.168.4.1/wifi",   " ",
-                         "3.Enter Network",    "Select your network",  "and enter password", " ",
-                         "4.Press Save",       "This page will close", "when connected..."};
+  u8g2.setFont(leaf_6x12);
+  u8g2.setCursor(0, 103);
+  u8g2.print("2.Sign In");
+  u8g2.setFont(leaf_5x8);
+  u8g2.setCursor(5, 115);
+  u8g2.print("Or Visit:");
+  u8g2.setCursor(5, 127);
+  u8g2.print("192.168.4.1/wifi");
 
-  uint8_t lineNum = 0;
-
-  for (auto line : lines) {
-    u8g2.setCursor(0, y);
-    if (lineNum == 2 || lineNum == 4 || lineNum == 8 || lineNum == 12) {
-      y += 14;
-      x = 0;
-      u8g2.setFont(leaf_6x12);
-    } else if (lineNum == 0 || lineNum == 1 || lineNum == 5 || lineNum == 6 || lineNum == 9 ||
-               lineNum == 10 || lineNum == 13 || lineNum == 14) {
-      y += 11;
-      x = 5;
-      u8g2.setFont(leaf_5x8);
-    } else {
-      y += OFFSET;
-      u8g2.setFont(leaf_5x8);
-    }
-    u8g2.setCursor(x, y);
-    u8g2.print(line);
-    lineNum++;
-  }
+  u8g2.setFont(leaf_6x12);
+  u8g2.setCursor(0, 148);
+  u8g2.print("3.Enter Network");
+  u8g2.setFont(leaf_5x8);
+  u8g2.setCursor(5, 160);
+  u8g2.print("Select network");
+  u8g2.setCursor(5, 172);
+  u8g2.print("and enter password");
 
   u8g2.drawHLine(0, 174, 96);
 }

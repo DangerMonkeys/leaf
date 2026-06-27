@@ -339,7 +339,7 @@ void navigatePage_draw() {
       }
     } else {
       if (navigator.navigating)
-        u8g2.print(navigator.activePoint.name.c_str());
+        u8g2.print(navigator.activePoint.name);
       else
         u8g2.print(defaultWaypointString);
       u8g2.setFont(leaf_6x12);

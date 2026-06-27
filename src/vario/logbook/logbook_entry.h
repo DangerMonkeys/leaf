@@ -2,6 +2,7 @@
 
 #include "Arduino.h"
 #include "logbook/flight_stats.h"
+#include "profiles/profile_store.h"
 
 class LogbookEntryFile {
  public:
@@ -41,4 +42,6 @@ class LogbookEntryFile {
   unsigned long firstFixDurationSeconds_ = 0;
   float startTemperatureC_ = 0;
   float firstFixTemperatureC_ = 0;
+  PilotProfile pilot_;
+  GliderProfile glider_;
 };

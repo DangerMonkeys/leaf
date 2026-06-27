@@ -218,9 +218,9 @@ bool GPXParser::readWaypoint(Waypoint* waypoint, const char* tag_name, bool requ
                              bool openingTagSelfClosing) {
   char key[MAX_VALUE_LENGTH + 1];
   char value[MAX_VALUE_LENGTH + 1];
-  waypoint->name = "";
-  waypoint->lat = 0;
-  waypoint->lon = 0;
+  waypoint->setName("");
+  waypoint->latE7 = 0;
+  waypoint->lonE7 = 0;
   waypoint->ele = 0;
 
   // Read attributes of opening tag (until tag is closed)
@@ -251,10 +251,10 @@ bool GPXParser::readWaypoint(Waypoint* waypoint, const char* tag_name, bool requ
         return false;
       }
       if (equalsIgnoreCase(key, "lat")) {
-        waypoint->lat = atof(value);
+        waypoint->setLatitude(atof(value));
         found_lat = true;
       } else if (equalsIgnoreCase(key, "lon")) {
-        waypoint->lon = atof(value);
+        waypoint->setLongitude(atof(value));
         found_lon = true;
       }
     }
@@ -312,7 +312,7 @@ bool GPXParser::readWaypoint(Waypoint* waypoint, const char* tag_name, bool requ
         _error += " while reading value of name tag in waypoint";
         return false;
       }
-      waypoint->name = String(value);
+      waypoint->setName(value);
       ReadTagNameResult closing_outcome = readTagName(key);
       if (closing_outcome == ReadTagNameResult::Error) {
         _error += " while reading name of tag that should be a closing name tag in waypoint";
@@ -446,6 +446,7 @@ bool GPXParser::readFullTagName(char* key) {
 }
 
 bool GPXParser::readRoute(Navigator* result, Route* route, bool storePoints) {
+  route->setName("");
   route->firstRoutePointIndex = 0;
   route->totalPoints = 0;
 
@@ -516,7 +517,7 @@ bool GPXParser::readRoute(Navigator* result, Route* route, bool storePoints) {
         _error += " while reading route name";
         return false;
       }
-      route->name = String(value);
+      route->setName(value);
       ReadTagNameResult closing_outcome = readTagName(key);
       if (closing_outcome == ReadTagNameResult::Error) {
         _error += " while reading closing name tag in route";

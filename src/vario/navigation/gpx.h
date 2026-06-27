@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <FS.h>
+#include <string.h>
 
 #include "navigation/nav_ids.h"
 
@@ -12,19 +13,45 @@
 #define maxRoutes 10
 #define maxNavPoints 100
 #define maxRoutePointRefs 75
+#define maxGpxNameLength 24
+
+inline int32_t gpxDegreesToE7(double degrees) {
+  return static_cast<int32_t>(degrees * 10000000.0 + (degrees >= 0 ? 0.5 : -0.5));
+}
+
+inline double gpxE7ToDegrees(int32_t degreesE7) { return degreesE7 / 10000000.0; }
 
 struct Waypoint {
-  String name;
-  double lat;
-  double lon;
-  float ele;
+  char name[maxGpxNameLength + 1] = "";
+  int32_t latE7 = 0;
+  int32_t lonE7 = 0;
+  float ele = 0;
+
+  void setName(const char* value) {
+    strncpy(name, value ? value : "", maxGpxNameLength);
+    name[maxGpxNameLength] = '\0';
+  }
+
+  void setLatitude(double latitude) { latE7 = gpxDegreesToE7(latitude); }
+  void setLongitude(double longitude) { lonE7 = gpxDegreesToE7(longitude); }
+  void setCoordinates(double latitude, double longitude) {
+    setLatitude(latitude);
+    setLongitude(longitude);
+  }
+  double latitude() const { return gpxE7ToDegrees(latE7); }
+  double longitude() const { return gpxE7ToDegrees(lonE7); }
 };
 
 // Route definition and memory allocation
 struct Route {
-  String name;
+  char name[maxGpxNameLength + 1] = "";
   uint8_t firstRoutePointIndex = 0;
   uint8_t totalPoints = 0;
+
+  void setName(const char* value) {
+    strncpy(name, value ? value : "", maxGpxNameLength);
+    name[maxGpxNameLength] = '\0';
+  }
 };
 
 // Navigator class for managing nav info (used largely for display purposes)
@@ -43,7 +70,7 @@ class Navigator {
   void clear();
   bool addWaypoint(const Waypoint& waypoint);
   WaypointID addOrFindWaypoint(const Waypoint& waypoint);
-  WaypointID findWaypointByName(const String& name) const;
+  WaypointID findWaypointByName(const char* name) const;
   bool addRoutePoint(Route* route, WaypointID waypointIndex);
   const Waypoint& waypoint(WaypointID pointIndex) const;
   const Waypoint& routePoint(RouteID routeIndex, RouteIndex pointIndex) const;
