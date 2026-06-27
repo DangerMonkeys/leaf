@@ -56,6 +56,44 @@
     .sync-status{color:#e2e7dc;font-size:12px;font-weight:650;text-align:center}
     .sync-status strong{display:block;color:white;font-size:13px}
     .msg{min-height:20px;margin-top:10px}
+    .log-pager{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:14px}
+    .log-pager button{width:40px;height:34px;padding:4px 8px;font-size:21px;line-height:1}
+    .log-count{min-width:72px;color:white;text-align:center;font-weight:800}
+    .metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+    .metric{background:#4d4d4d;border-radius:7px;padding:8px 10px;color:white}
+    .metric span{display:block;color:#dfe5d9;font-size:12px;font-weight:650;margin-bottom:2px}
+    .metric strong{display:block;font-size:16px}
+    .metric.wide{grid-column:1/-1}
+    .flight-card{color:white}
+    .flight-meta{display:flex;justify-content:space-between;gap:12px;font-weight:800;margin-bottom:10px}
+    .flight-meta span:last-child{text-align:right}
+    .alt-chart{position:relative;height:150px;border-radius:7px;background:#4d4d4d;overflow:hidden;margin:12px 0 16px}
+    .alt-title{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;color:#dfe5d9;font-size:16px;font-weight:800;letter-spacing:.04em}
+    .alt-point{position:absolute;min-width:58px;transform:translate(-50%,-50%);text-align:center}
+    .alt-point strong{display:block;background:var(--leaf);color:#0b0d0b;border-radius:6px;padding:6px 8px;font-size:16px}
+    .alt-point span{display:block;color:white;font-size:11px;font-weight:700;margin-bottom:2px}
+    .flight-detail-grid{display:grid;grid-template-columns:116px 1fr;gap:16px;margin:0 0 16px}
+    .climb-box{display:grid;grid-template-rows:1fr auto 1fr;justify-items:center;min-height:140px;background:#4d4d4d;border-radius:7px;padding:10px 8px;box-sizing:border-box}
+    .climb-box div{display:flex;align-items:center;justify-content:center}
+    .climb-box .mid{color:#dfe5d9;font-weight:800}
+    .climb-value{border-radius:6px;padding:6px 8px;font-weight:800;min-width:72px;text-align:center}
+    .climb-up{align-self:start}
+    .climb-up .climb-value{background:var(--leaf);color:#0b0d0b}
+    .climb-down{align-self:end}
+    .climb-down .climb-value{background:#0b0d0b;color:white}
+    .detail-list{display:grid;gap:7px}
+    .detail-row{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid #777;padding-bottom:5px}
+    .detail-row span{color:#dfe5d9}
+    .detail-row strong{text-align:right}
+    .track-link{color:var(--leaf);font-weight:800;word-break:break-all}
+    .track-block{margin-top:6px}
+    .flight-id{color:#dfe5d9;font-size:12px;text-align:right;margin-top:6px}
+    .delete-log{margin-top:14px;display:flex;justify-content:flex-end}
+    .delete-log button{width:auto;padding:8px 12px;font-size:14px}
+    .delete-confirm{margin-top:14px;background:#4d4d4d;border-radius:7px;padding:10px}
+    .delete-confirm p{margin:0 0 10px;color:white;font-weight:600;text-align:center}
+    .delete-confirm .row{gap:14px}
+    .cancel-delete{background:var(--leaf);border-color:var(--leaf);color:#0b0d0b}
   </style>
 </head>
 <body>
@@ -74,7 +112,7 @@
         </div>
       </section>
       <section>
-        <h2>Logbook Profiles</h2>
+        <h2>Profiles</h2>
         <label>Active pilot</label>
         <select id="activePilotList"></select>
         <label>Active glider</label>
@@ -86,7 +124,13 @@
       </section>
       <section>
         <h2>Logbook</h2>
-        <p class="muted">Flight log tools will go here.</p>
+        <div class="metric-grid" id="logbookOverview">
+          <div class="metric wide"><span>Flights</span><strong>Loading...</strong></div>
+        </div>
+        <div class="actions">
+          <p class="muted msg" id="logbookMsg"></p>
+          <button class="secondary" id="openLogbook">Open Logbook</button>
+        </div>
       </section>
     </div>
     <div id="profilesView" class="view">
@@ -139,6 +183,21 @@
         <p class="muted msg" id="gliderMsg"></p>
       </section>
     </div>
+    <div id="logbookView" class="view">
+      <div class="subbar">
+        <button class="back" id="backLogbookMain" aria-label="Back">&#x276e;</button>
+        <h2>Logbook</h2>
+      </div>
+      <section>
+        <h2>Flight Details</h2>
+        <div class="log-pager">
+          <button class="secondary" id="logPrev" aria-label="Previous flight">&#x276e;</button>
+          <div class="log-count" id="logCount">--/--</div>
+          <button class="secondary" id="logNext" aria-label="Next flight">&#x276f;</button>
+        </div>
+        <div class="log-summary" id="logSummary"></div>
+      </section>
+    </div>
   </main>
 
   <script>
@@ -171,6 +230,17 @@
       ]
     };
 
+    const mockLogs = [
+      {file:'2026-06-26_11-20-11_6a118bb5.json',flight_id:'6a118bb5',start:{time_local:'2026-06-26T11:20:11'},metrics:{duration_seconds:121,max_altitude_m:41.2,min_altitude_m:29.11,max_altitude_above_launch_m:0,max_climb_rate_mps:0.26,max_sink_rate_mps:-0.16,max_ground_speed_mps:0.581322,average_ground_speed_mps:0.089284,path_distance_m:10.80333},track:{saved:true,path:'tracks/2026-06-26-XLF-000-02.igc'}},
+      {file:'2026-06-26_11-38-48_2dd3a567.json',flight_id:'2dd3a567',start:{time_local:'2026-06-26T11:38:48'},metrics:{duration_seconds:80,max_altitude_m:24.22,min_altitude_m:24.22,max_altitude_above_launch_m:0,max_climb_rate_mps:0.09,max_sink_rate_mps:-0.22,max_ground_speed_mps:0.154333,average_ground_speed_mps:0.025856,path_distance_m:1.656511},track:{saved:true,path:'tracks/2026-06-26-XLF-000-03.igc'}},
+      {file:'2026-06-26_11-55-20_7375661d.json',flight_id:'7375661d',start:{time_local:'2026-06-26T11:55:20'},metrics:{duration_seconds:40,max_altitude_m:0,min_altitude_m:0,max_altitude_above_launch_m:0,max_climb_rate_mps:0.11,max_sink_rate_mps:-0.11,max_ground_speed_mps:2.196678,average_ground_speed_mps:0.135299,path_distance_m:5.411955},track:{saved:false,path:null}},
+      {file:'2026-06-26_12-13-02_37243116.json',flight_id:'37243116',start:{time_local:'2026-06-26T12:13:02'},metrics:{duration_seconds:82,max_altitude_m:24.17,min_altitude_m:24.17,max_altitude_above_launch_m:0,max_climb_rate_mps:0.25,max_sink_rate_mps:-0.13,max_ground_speed_mps:0.159478,average_ground_speed_mps:0.006776,path_distance_m:0.5556},track:{saved:false,path:null}},
+      {file:'2026-06-26_13-59-18_b7d7f6e8.json',flight_id:'b7d7f6e8',start:{time_local:'2026-06-26T13:59:18'},metrics:{duration_seconds:165,max_altitude_m:44.35,min_altitude_m:0,max_altitude_above_launch_m:0,max_climb_rate_mps:1.49,max_sink_rate_mps:-0.88,max_ground_speed_mps:1.0649,average_ground_speed_mps:0.111245,path_distance_m:18.35538},track:{saved:false,path:null}},
+      {file:'2026-06-26_14-53-13_68278e6a.json',flight_id:'68278e6a',start:{time_local:'2026-06-26T14:53:13'},metrics:{duration_seconds:10,max_altitude_m:24.81,min_altitude_m:24.29,max_altitude_above_launch_m:0.52,max_climb_rate_mps:1.01,max_sink_rate_mps:-0.65,max_ground_speed_mps:0.6945,average_ground_speed_mps:0.466601,path_distance_m:4.666012},track:{saved:true,path:'tracks/2026-06-26-XLF-000-04.igc'}},
+      {file:'2026-06-26_14-53-49_013725e8.json',flight_id:'013725e8',start:{time_local:'2026-06-26T14:53:49'},metrics:{duration_seconds:6,max_altitude_m:24.29,min_altitude_m:24.29,max_altitude_above_launch_m:0,max_climb_rate_mps:0.68,max_sink_rate_mps:-0.62,max_ground_speed_mps:0.920856,average_ground_speed_mps:0.596756,path_distance_m:3.580533},track:{saved:true,path:'tracks/2026-06-26-XLF-000-05.igc'}},
+      {file:'2026-06-26_14-55-34_31c02d5d.json',flight_id:'31c02d5d',start:{time_local:'2026-06-26T14:55:34'},metrics:{duration_seconds:6,max_altitude_m:24.29,min_altitude_m:24.29,max_altitude_above_launch_m:0,max_climb_rate_mps:0.11,max_sink_rate_mps:-0.17,max_ground_speed_mps:0.010289,average_ground_speed_mps:0,path_distance_m:0},track:{saved:true,path:'tracks/2026-06-26-XLF-000-06.igc'}}
+    ];
+
     function mockProfiles() {
       try {
         return JSON.parse(localStorage.getItem('leaf.mock.profiles')) || defaultProfiles;
@@ -196,6 +266,17 @@
         saveMockProfiles(JSON.parse(options.body));
         return new Response(JSON.stringify({ saved: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
       }
+      if (path === '/api/logbook') {
+        let loaded=[];
+        for (let item of mockLogs) {
+          try {
+            let r=await realFetch('logbook%20json%20files/'+item.file);
+            if(r.ok)loaded.push(await r.json());
+          } catch (e) {}
+        }
+        if(loaded[0]&&loaded[0].metrics){loaded[0].metrics.max_wind_speed_kph=26;loaded[0].metrics.max_wind_direction='SSW'}
+        return new Response(JSON.stringify({ logs: loaded.length?loaded:mockLogs }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
       return realFetch(url, options);
     };
   </script>
@@ -204,6 +285,9 @@
     let profiles={schema:'leaf.profiles',schema_version:'v0.1.0',active_pilot_id:null,active_glider_id:null,pilots:[],gliders:[]};
     let pilotSnapshot={id:null,name:''};
     let gliderSnapshot={id:null,brand:'',model:'',size:'',display_name:''};
+    let logs=[];
+    let logIndex=0;
+    let pendingLogDelete=false;
     const $=id=>document.getElementById(id);
     function id(){return Math.floor(Math.random()*0xffffffff).toString(16).padStart(8,'0')}
     function clean(v){v=(v||'').trim();return v?v:null}
@@ -218,10 +302,98 @@
     function showView(name){
       $('mainView').classList.toggle('active',name=='main');
       $('profilesView').classList.toggle('active',name=='profiles');
+      $('logbookView').classList.toggle('active',name=='logbook');
     }
     function fillProfileSelect(el,items,label){
       el.textContent='';
       items.forEach(x=>{let o=document.createElement('option');o.value=x.id;o.textContent=label(x);el.appendChild(o)});
+    }
+    function fmtDate(v){if(!v)return'--';let d=new Date(v);return isNaN(d)?v:d.toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}
+    function fmtDuration(s){s=Number(s)||0;let m=Math.floor(s/60),r=s%60;return m?`${m}m ${r}s`:`${r}s`}
+    function fmtNum(v,d,u){return Number.isFinite(Number(v))?`${Number(v).toFixed(d)}${u||''}`:'--'}
+    function fmtAlt(v){return fmtNum(v,0,' m')}
+    function metricPair(label,value){return `<div class="detail-row"><span>${label}</span><strong>${value}</strong></div>`}
+    function optionalMetricPair(label,value){return Number.isFinite(Number(value))?metricPair(label,fmtNum(value,1,' km/h')):''}
+    function windText(m){
+      let v=m.max_wind_speed_kph??m.max_wind_kph;
+      if(!Number.isFinite(Number(v))){
+        let mps=m.max_wind_speed_mps??m.max_wind_mps;
+        v=Number.isFinite(Number(mps))?Number(mps)*3.6:NaN;
+      }
+      return Number.isFinite(Number(v))?`${Number(v).toFixed(0)} km/h${m.max_wind_direction?` ${m.max_wind_direction}`:''}`:'';
+    }
+    function altitudePoint(label,value,x,min,max){
+      if(!Number.isFinite(Number(value)))return '';
+      let span=Math.max(1,max-min),top=22+(1-(value-min)/span)*56;
+      return `<div class="alt-point" style="left:${x}%;top:${top}%"><span>${label}</span><strong>${fmtAlt(value)}</strong></div>`;
+    }
+    function metric(label,value,wide){return `<div class="metric${wide?' wide':''}"><span>${label}</span><strong>${value}</strong></div>`}
+    function renderLogbook(){
+      pendingLogDelete=false;
+      renderLogbookOverview();
+      if(!logs.length){$('logCount').textContent='0/0';$('logSummary').innerHTML='<p class="muted">No logs found.</p>';$('logPrev').disabled=true;$('logNext').disabled=true;return}
+      logIndex=Math.max(0,Math.min(logs.length-1,logIndex));
+      let l=logs[logIndex],m=l.metrics||{};
+      $('logCount').textContent=`${logIndex+1}/${logs.length}`;
+      $('logPrev').disabled=logIndex==0;
+      $('logNext').disabled=logIndex==logs.length-1;
+      let startAlt=l.start&&l.start.location?l.start.location.altitude_m:(l.first_fix&&l.first_fix.location?l.first_fix.location.altitude_m:null);
+      let endAlt=l.end&&l.end.location?l.end.location.altitude_m:null;
+      let maxAlt=m.max_altitude_m;
+      let minAlt=Math.min(...[startAlt,endAlt,maxAlt,m.min_altitude_m].filter(x=>Number.isFinite(Number(x))));
+      let chartMax=Math.max(...[startAlt,endAlt,maxAlt].filter(x=>Number.isFinite(Number(x))));
+      let showMax=Number(maxAlt)>Number(startAlt)&&Number(maxAlt)>Number(endAlt);
+      let trackName=l.track&&l.track.path?l.track.path.split('/').pop():'No track file saved';
+      $('logSummary').innerHTML=`<div class="flight-card">
+        <div class="flight-meta"><span>${fmtDate(l.start&&l.start.time_local)}</span><span>${fmtDuration(m.duration_seconds)}</span></div>
+        <div class="alt-chart">
+          <div class="alt-title">Altitude</div>
+          ${altitudePoint('start',startAlt,14,minAlt,chartMax)}
+          ${showMax?altitudePoint('max',maxAlt,50,minAlt,chartMax):''}
+          ${altitudePoint('end',endAlt,86,minAlt,chartMax)}
+        </div>
+        <div class="flight-detail-grid">
+          <div class="climb-box">
+            <div class="climb-up"><span class="climb-value">${fmtNum(m.max_climb_rate_mps,1,' m/s')}</span></div>
+            <div class="mid">Vario</div>
+            <div class="climb-down"><span class="climb-value">${fmtNum(m.max_sink_rate_mps,1,' m/s')}</span></div>
+          </div>
+          <div class="detail-list">
+            ${metricPair('Max Speed',fmtNum((m.max_ground_speed_mps||0)*3.6,1,' km/h'))}
+            ${windText(m)?metricPair('Max Wind',windText(m)):''}
+            ${metricPair('Path Distance',fmtNum(m.path_distance_m,0,' m'))}
+            ${metricPair('Straight Distance',fmtNum(m.straight_line_distance_m,0,' m'))}
+            ${metricPair('G Force',`${fmtNum(m.min_accel_g,2,'g')} / ${fmtNum(m.max_accel_g,2,'g')}`)}
+            ${metricPair('Temp',`${fmtNum(m.min_temperature_c,1,' C')} / ${fmtNum(m.max_temperature_c,1,' C')}`)}
+          </div>
+        </div>
+        <div class="track-block"><span class="status-block-title">Track File</span><span class="track-link">${trackName}</span></div>
+        <div class="flight-id">Flight ID ${l.flight_id||'--'}</div>
+        <div id="deleteArea"><div class="delete-log"><button class="danger" id="deleteLog">Delete Log</button></div></div>
+      </div>`;
+      $('deleteLog').onclick=showDeleteConfirm;
+    }
+    function showDeleteConfirm(){
+      if(!logs.length)return;
+      pendingLogDelete=true;
+      $('deleteArea').innerHTML='<div class="delete-confirm"><p>Are you sure you want to delete this log and track file?</p><div class="row"><button class="danger" id="confirmDeleteLog">Confirm Delete</button><button class="cancel-delete" id="cancelDeleteLog">Cancel</button></div></div>';
+      $('confirmDeleteLog').onclick=deleteCurrentLog;
+      $('cancelDeleteLog').onclick=()=>{pendingLogDelete=false;renderLogbook()};
+    }
+    function deleteCurrentLog(){
+      if(!pendingLogDelete||!logs.length)return;
+      logs.splice(logIndex,1);
+      if(logIndex>=logs.length)logIndex=logs.length-1;
+      renderLogbook();
+    }
+    function renderLogbookOverview(){
+      if(!logs.length){$('logbookOverview').innerHTML=metric('Flights','No logs found.',true);$('openLogbook').disabled=true;return}
+      let last=logs[logs.length-1],m=(last&&last.metrics)||{};
+      $('openLogbook').disabled=false;
+      $('logbookOverview').innerHTML=[
+        metric('Flights',logs.length),
+        metric('Last Flight',fmtDate(last.start&&last.start.time_local))
+      ].join('');
     }
     function pilotEditor(){return {id:profiles.active_pilot_id,name:$('pilotName').value||''}}
     function gliderEditor(){return {id:profiles.active_glider_id,brand:$('gliderBrand').value||'',model:$('gliderModel').value||'',size:$('gliderSize').value||'',display_name:$('gliderDisplay').value||''}}
@@ -284,8 +456,15 @@
     async function loadProfiles(){
       try{profiles=await(await fetch('/api/profiles')).json();normalize();setPilotMsg('');setGliderMsg('');render()}catch(e){setPilotMsg('Unable to read profiles.');setGliderMsg('')}
     }
+    async function loadLogs(){
+      try{let d=await(await fetch('/api/logbook')).json();logs=d.logs||[];renderLogbook()}catch(e){$('logSummary').innerHTML='<p class="muted">Unable to read logs.</p>'}
+    }
     $('editProfiles').onclick=()=>showView('profiles');
     $('backMain').onclick=()=>showView('main');
+    $('openLogbook').onclick=()=>showView('logbook');
+    $('backLogbookMain').onclick=()=>showView('main');
+    $('logPrev').onclick=()=>{logIndex--;renderLogbook()};
+    $('logNext').onclick=()=>{logIndex++;renderLogbook()};
     ['pilotName','gliderBrand','gliderModel','gliderSize','gliderDisplay'].forEach(x=>$(x).oninput=updateEditorButtons);
     $('activePilotList').onchange=()=>{profiles.active_pilot_id=$('activePilotList').value;render();save('Active pilot saved.').then(()=>setMainProfileMsg('Active pilot saved.')).catch(()=>setMainProfileMsg('Unable to save.'))};
     $('activeGliderList').onchange=()=>{profiles.active_glider_id=$('activeGliderList').value;render();save('Active glider saved.').then(()=>setMainProfileMsg('Active glider saved.')).catch(()=>setMainProfileMsg('Unable to save.'))};
@@ -297,7 +476,7 @@
     $('gliderSave').onclick=()=>{let model=clean($('gliderModel').value);if(!model){setGliderMsg('Glider model is required.');return}let g=selectedGlider();if(!g){g={id:id(),model:''};profiles.gliders.push(g);profiles.active_glider_id=g.id}g.brand=clean($('gliderBrand').value);g.model=model;g.size=clean($('gliderSize').value);g.display_name=clean($('gliderDisplay').value);save('Glider profile saved.').then(()=>setGliderMsg('Glider profile saved.')).catch(()=>setGliderMsg('Unable to save glider.'))};
     $('pilotDelete').onclick=()=>{let p=selectedPilot();if(!p)return;profiles.pilots=profiles.pilots.filter(x=>x.id!=p.id);profiles.active_pilot_id=null;save('Pilot profile deleted.').then(()=>setPilotMsg('Pilot profile deleted.')).catch(()=>setPilotMsg('Unable to delete pilot.'))};
     $('gliderDelete').onclick=()=>{let g=selectedGlider();if(!g)return;profiles.gliders=profiles.gliders.filter(x=>x.id!=g.id);profiles.active_glider_id=null;save('Glider profile deleted.').then(()=>setGliderMsg('Glider profile deleted.')).catch(()=>setGliderMsg('Unable to delete glider.'))};
-    loadStatus();loadProfiles();
+    loadStatus();loadProfiles();loadLogs();
   </script>
 </body>
 </html>
