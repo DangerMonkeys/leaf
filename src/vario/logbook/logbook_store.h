@@ -10,6 +10,8 @@ struct LogbookEntrySummary {
   bool startTimeValid = false;
   String startTimeUtc;
   String startTimeLocal;
+  float startAltitudeM = 0;
+  float endAltitudeM = 0;
   uint32_t durationSeconds = 0;
   float maxAltitudeM = 0;
   float minAltitudeM = 0;
@@ -21,8 +23,11 @@ struct LogbookEntrySummary {
   float maxWindSpeedMps = 0;
   float maxWindDirectionFromDeg = 0;
   float pathDistanceM = 0;
+  float straightLineDistanceM = 0;
   float maxAccelG = 1;
   float minAccelG = 1;
+  float maxTemperatureC = 0;
+  float minTemperatureC = 0;
   bool trackSaved = false;
   String trackPath;
 };

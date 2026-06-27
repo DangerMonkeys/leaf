@@ -149,6 +149,12 @@ bool LogbookStore::readSummary(const String& path, LogbookEntrySummary& summary)
   summary.startTimeValid = start["time_valid"] | false;
   summary.startTimeUtc = start["time_utc"] | "";
   summary.startTimeLocal = start["time_local"] | "";
+  JsonObject startLocation = start["location"];
+  summary.startAltitudeM = startLocation["altitude_m"] | 0.0f;
+
+  JsonObject end = doc["end"];
+  JsonObject endLocation = end["location"];
+  summary.endAltitudeM = endLocation["altitude_m"] | 0.0f;
 
   JsonObject metrics = doc["metrics"];
   summary.durationSeconds = metrics["duration_seconds"] | 0;
@@ -163,8 +169,11 @@ bool LogbookStore::readSummary(const String& path, LogbookEntrySummary& summary)
   summary.maxWindSpeedMps = maxWind["speed_mps"] | 0.0f;
   summary.maxWindDirectionFromDeg = maxWind["direction_from_deg"] | 0.0f;
   summary.pathDistanceM = metrics["path_distance_m"] | 0.0f;
+  summary.straightLineDistanceM = metrics["straight_line_distance_m"] | 0.0f;
   summary.maxAccelG = metrics["max_accel_g"] | 1.0f;
   summary.minAccelG = metrics["min_accel_g"] | 1.0f;
+  summary.maxTemperatureC = metrics["max_temperature_c"] | 0.0f;
+  summary.minTemperatureC = metrics["min_temperature_c"] | 0.0f;
 
   JsonObject track = doc["track"];
   summary.trackSaved = track["saved"] | false;
