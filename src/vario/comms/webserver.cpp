@@ -8,6 +8,7 @@
 #include "comms/factory_discovery.h"
 #include "comms/fanet_radio.h"
 #include "comms/wifi_coordinator.h"
+#include "diagnostics/heap_monitor.h"
 #include "diagnostics/memory_report.h"
 #include "diagnostics/self_test/selfTest.h"
 #include "etl/string_stream.h"
@@ -36,6 +37,15 @@ namespace {
   uint32_t wifi_setup_connect_started_ms = 0;
   String wifi_setup_connect_ssid = "";
   String wifi_setup_connect_error = "";
+  uint32_t user_app_loop_count = 0;
+  uint32_t user_app_handle_count = 0;
+  uint32_t user_app_route_root_count = 0;
+  uint32_t user_app_route_app_count = 0;
+  uint32_t user_app_route_status_count = 0;
+  uint32_t user_app_route_profiles_get_count = 0;
+  uint32_t user_app_route_profiles_put_count = 0;
+  uint32_t user_app_route_not_found_count = 0;
+  uint8_t user_app_max_ap_stations = 0;
 
   enum class SelfTestMode { None, Interactive };
 
@@ -44,6 +54,8 @@ namespace {
   static constexpr size_t PROFILE_FILE_MAX_BYTES = 4096;
   static constexpr const char* PROFILE_TEMP_FILE = "/profiles/profiles.tmp";
   static constexpr const char* PROFILE_BACKUP_FILE = "/profiles/profiles.bak";
+  static constexpr const char* DIAGNOSTICS_DIR = "/diagnostics";
+  static constexpr const char* USER_APP_DIAGNOSTICS_FILE = "/diagnostics/webapp_requests.csv";
 
   SelfTestMode last_self_test_mode = SelfTestMode::None;
   bool interactive_self_test_pending = false;
@@ -57,6 +69,57 @@ namespace {
                   static_cast<unsigned long>(wifi_setup_cycle),
                   static_cast<unsigned long>(millis() - wifi_setup_started_ms), event,
                   ESP.getFreeHeap(), ESP.getMaxAllocHeap());
+  }
+
+  void resetUserAppCounters() {
+    user_app_loop_count = 0;
+    user_app_handle_count = 0;
+    user_app_route_root_count = 0;
+    user_app_route_app_count = 0;
+    user_app_route_status_count = 0;
+    user_app_route_profiles_get_count = 0;
+    user_app_route_profiles_put_count = 0;
+    user_app_route_not_found_count = 0;
+    user_app_max_ap_stations = 0;
+  }
+
+  void updateUserAppStationPeak() {
+    const uint8_t station_count = WiFi.softAPgetStationNum();
+    if (station_count > user_app_max_ap_stations) user_app_max_ap_stations = station_count;
+  }
+
+  void dumpUserAppCounters(const char* event) {
+    if (!SD_MMC.exists(DIAGNOSTICS_DIR)) SD_MMC.mkdir(DIAGNOSTICS_DIR);
+
+    const bool existed = SD_MMC.exists(USER_APP_DIAGNOSTICS_FILE);
+    File file = SD_MMC.open(USER_APP_DIAGNOSTICS_FILE, "a", true);
+    if (!file) return;
+
+    if (!existed || file.size() == 0) {
+      file.println("millis,event,enabled,using_leaf_wifi,user_server_started,main_server_started,"
+                   "ap_stations,max_ap_stations,wifi_status,free_heap,max_alloc_heap,loop_count,"
+                   "handle_count,root,app,status,profiles_get,profiles_put,not_found,ap_ip");
+    }
+
+    updateUserAppStationPeak();
+    const String ap_ip = WiFi.softAPIP().toString();
+    file.printf("%lu,%s,%u,%u,%u,%u,%u,%u,%d,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%s\n",
+                static_cast<unsigned long>(millis()), event ? event : "",
+                user_app_enabled ? 1 : 0, user_app_using_leaf_wifi ? 1 : 0,
+                user_server_started ? 1 : 0, webserver_started ? 1 : 0,
+                static_cast<unsigned int>(WiFi.softAPgetStationNum()),
+                static_cast<unsigned int>(user_app_max_ap_stations),
+                static_cast<int>(WiFi.status()), static_cast<unsigned long>(ESP.getFreeHeap()),
+                static_cast<unsigned long>(ESP.getMaxAllocHeap()),
+                static_cast<unsigned long>(user_app_loop_count),
+                static_cast<unsigned long>(user_app_handle_count),
+                static_cast<unsigned long>(user_app_route_root_count),
+                static_cast<unsigned long>(user_app_route_app_count),
+                static_cast<unsigned long>(user_app_route_status_count),
+                static_cast<unsigned long>(user_app_route_profiles_get_count),
+                static_cast<unsigned long>(user_app_route_profiles_put_count),
+                static_cast<unsigned long>(user_app_route_not_found_count), ap_ip.c_str());
+    file.close();
   }
 
   const char* selfTestModeName(SelfTestMode mode) {
@@ -750,14 +813,28 @@ loadStatus();loadProfiles();
     if (user_server_started) return;
 
     if (!user_server_routes_configured) {
-      user_server.on("/", HTTP_GET,
-                     []() { sendRedirect(user_server, user_app_provisioning ? "/wifi" : "/app"); });
-      user_server.on("/app", HTTP_GET, []() { sendUserAppShell(user_server); });
+      user_server.on("/", HTTP_GET, []() {
+        user_app_route_root_count++;
+        sendRedirect(user_server, user_app_provisioning ? "/wifi" : "/app");
+      });
+      user_server.on("/app", HTTP_GET, []() {
+        user_app_route_app_count++;
+        sendUserAppShell(user_server);
+      });
       user_server.on("/wifi", HTTP_GET, []() { sendWifiSetupPage(user_server); });
       user_server.on("/app/wifi", HTTP_GET, []() { sendWifiSetupPage(user_server); });
-      user_server.on("/api/user/status", HTTP_GET, []() { sendUserStatus(user_server); });
-      user_server.on("/api/profiles", HTTP_GET, []() { sendProfiles(user_server); });
-      user_server.on("/api/profiles", HTTP_PUT, []() { saveProfiles(user_server); });
+      user_server.on("/api/user/status", HTTP_GET, []() {
+        user_app_route_status_count++;
+        sendUserStatus(user_server);
+      });
+      user_server.on("/api/profiles", HTTP_GET, []() {
+        user_app_route_profiles_get_count++;
+        sendProfiles(user_server);
+      });
+      user_server.on("/api/profiles", HTTP_PUT, []() {
+        user_app_route_profiles_put_count++;
+        saveProfiles(user_server);
+      });
       user_server.on("/api/wifi/status", HTTP_GET,
                      []() { user_server.send(200, "application/json", wifiStatusJson()); });
       user_server.on("/api/wifi/networks", HTTP_GET, []() { sendWifiNetworks(user_server); });
@@ -772,6 +849,7 @@ loadStatus();loadProfiles();
       user_server.on("/ncsi.txt", HTTP_GET,
                      []() { sendNoCaptivePortalResponse(user_server, "Microsoft NCSI"); });
       user_server.onNotFound([]() {
+        user_app_route_not_found_count++;
         if (handleCaptivePortalRequest(user_server)) return;
         user_server.send(404, "text/plain", "Not found");
       });
@@ -1059,8 +1137,11 @@ void webserver_loop() {
   if (WiFi.status() == WL_CONNECTED || user_app_enabled) {
     server.handleClient();
     if (user_app_enabled) {
+      user_app_loop_count++;
+      updateUserAppStationPeak();
       if (user_app_provisioning) updateWifiNetworkScan();
       if (user_app_provisioning) dns_server.processNextRequest();
+      user_app_handle_count++;
       user_server.handleClient();
     }
     updatePendingInteractiveSelfTest();
@@ -1068,20 +1149,28 @@ void webserver_loop() {
 }
 
 void webserver_enable_user_app(bool useLeafWifi) {
+  heap_monitor::clear();
+  resetUserAppCounters();
+  heap_monitor::record("enable-start");
   if (useLeafWifi || WiFi.status() != WL_CONNECTED) {
     leaf_wifi::prepareForLeafAccessPoint();
+    heap_monitor::record("after-prepare-ap");
     WiFi.mode(WIFI_AP);
     WiFi.setSleep(false);
     WiFi.softAP("Leaf WiFi");
+    heap_monitor::record("after-softap");
     user_app_using_leaf_wifi = true;
   } else {
     user_app_using_leaf_wifi = false;
+    heap_monitor::record("using-sta");
   }
 
   user_app_enabled = true;
   user_app_provisioning = false;
   setupUserAppServer();
+  heap_monitor::record("after-user-server");
   webserver_setup();
+  heap_monitor::record("enabled");
 }
 
 void webserver_enable_wifi_setup() {
@@ -1109,6 +1198,8 @@ void webserver_enable_wifi_setup() {
 }
 
 void webserver_disable_user_app() {
+  heap_monitor::record("disable-start");
+  dumpUserAppCounters("disable-start");
   user_app_enabled = false;
   if (user_app_provisioning) dns_server.stop();
   user_app_provisioning = false;
@@ -1121,12 +1212,17 @@ void webserver_disable_user_app() {
   if (user_server_started) {
     user_server.stop();
     user_server_started = false;
+    heap_monitor::record("after-user-stop");
   }
   if (user_app_using_leaf_wifi) {
     WiFi.softAPdisconnect(true);
     WiFi.mode(WIFI_STA);
+    heap_monitor::record("after-ap-stop");
   }
   user_app_using_leaf_wifi = false;
+  heap_monitor::record("disabled");
+  dumpUserAppCounters("disabled");
+  heap_monitor::dumpToSd();
 }
 
 bool webserver_user_app_active() { return user_app_enabled; }
