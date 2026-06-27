@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Cache-Control" content="no-store">
+  <title>Leaf Mock</title>
+  <style>
+    :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#202423;background:#363636;line-height:1.35;--leaf:#d8ff00;--ink:#202423;--graphite:#565656;--soft:#f6f7f3;--line:#d7dccf;--muted:#626a5d;--danger:#7a1d1d}
+    body{margin:0;background:#363636}
+    header{background:var(--leaf);color:#0b0d0b;padding:12px 20px;text-align:center}
+    main{max-width:640px;margin:auto;padding:18px 18px 24px}
+    h1{font-family:Arial,sans-serif;font-size:38px;font-weight:500;letter-spacing:.12em;line-height:1;margin:0}
+    h2{font-size:18px;margin:-16px -14px 14px;padding:10px 12px;color:#0b0d0b;background:var(--leaf);text-align:center;border-radius:5px 5px 0 0}
+    section{background:var(--graphite);border:0;border-radius:8px;margin:0 0 14px;padding:16px 14px}
+    section:first-child{padding:14px 14px}
+    section:first-child h2{margin:-14px -14px 14px}
+    .status-panel h2{background:var(--graphite);color:white;border-bottom:1px solid #a9a9a9}
+    .view{display:none}
+    .view.active{display:block}
+    .subbar{position:relative;display:flex;align-items:center;justify-content:center;min-height:38px;color:white;margin:0 0 14px}
+    .back{position:absolute;left:0;top:0;width:42px;height:38px;background:white;color:var(--ink);border-color:white;box-shadow:none;padding:5px 8px;font-size:28px;font-weight:900;line-height:.9}
+    .subbar h2{color:white;background:transparent;margin:0;padding:0;font-size:18px;text-align:center;border-radius:0}
+    .grid{display:grid;gap:10px}
+    .row{display:flex;gap:8px}
+    .row>*{flex:1}
+    .row>.small{flex:0 0 94px}
+    .profile-actions{margin-top:12px;gap:14px}
+    .profile-actions button{padding:8px 10px;font-size:14px}
+    .actions{display:flex;align-items:center;gap:10px;margin-top:12px}
+    .actions .msg{flex:1;margin:0}
+    .actions button{flex:0 0 auto;width:auto;padding:8px 12px;font-size:14px}
+    label{display:block;font-size:13px;font-weight:700;margin:10px 0 4px;color:white}
+    input,select,button{box-sizing:border-box;width:100%;font:inherit;padding:11px;border:1px solid #b9c0b2;border-radius:7px;background:white;color:var(--ink)}
+    input:focus,select:focus{outline:2px solid var(--leaf);outline-offset:1px;border-color:#7d8a69}
+    select:disabled{background:#686868;border-color:#686868;color:#8a8a8a;opacity:1}
+    button{background:var(--ink);color:white;font-weight:750;border-color:var(--ink);box-shadow:inset 0 -2px 0 rgba(0,0,0,.22)}
+    button:focus{outline:2px solid var(--leaf);outline-offset:2px}
+    button:disabled{background:#686868;border-color:#686868;color:#8a8a8a;box-shadow:none}
+    .profile-actions button:first-child:not(:disabled){background:var(--leaf);border-color:var(--leaf);color:#0b0d0b;box-shadow:inset 0 -2px 0 rgba(0,0,0,.18)}
+    .secondary{background:white;color:var(--ink);border-color:#89917f;box-shadow:none}
+    .secondary:disabled{background:#686868;border-color:#686868;color:#8a8a8a}
+    .danger{background:var(--danger);border-color:var(--danger);color:white}
+    .danger:disabled{background:#686868;border-color:#686868;color:#8a8a8a}
+    .muted{color:#e2e7dc}
+    .status{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:13px;white-space:pre-wrap;color:white}
+    .status-body{display:grid;grid-template-columns:max-content max-content max-content;align-items:start;justify-content:space-between;column-gap:14px}
+    .status-block{color:white;font-size:13px;font-weight:700}
+    .status-block-title{display:block;color:#e2e7dc;font-size:12px;font-weight:650;margin-bottom:4px}
+    .battery-status{color:white;text-align:right;font-size:13px;font-weight:700}
+    .battery-line{display:flex;align-items:center;justify-content:flex-end;gap:7px;margin-bottom:4px}
+    .battery{position:relative;width:44px;height:20px;border:2px solid white;border-radius:4px;box-sizing:border-box}
+    .battery:after{content:"";position:absolute;right:-6px;top:4px;width:4px;height:8px;background:white;border-radius:0 2px 2px 0}
+    .battery-fill{display:block;height:100%;background:var(--leaf);border-radius:2px}
+    .battery-meta{font-size:12px;font-weight:650;color:#e2e7dc}
+    .sync-status{color:#e2e7dc;font-size:12px;font-weight:650;text-align:center}
+    .sync-status strong{display:block;color:white;font-size:13px}
+    .msg{min-height:20px;margin-top:10px}
+  </style>
+</head>
+<body>
+  <header><h1>Leaf</h1></header>
+  <main>
+    <div id="mainView" class="view active">
+      <section class="status-panel">
+        <h2>Status</h2>
+        <div class="status-body">
+          <div class="status" id="status">Loading...</div>
+          <div class="sync-status"><strong>Log Sync</strong><span id="syncText">--</span></div>
+          <div class="battery-status">
+            <div class="battery-line"><span id="batteryText">--%</span><div class="battery" aria-label="Battery"><span class="battery-fill" id="batteryFill"></span></div></div>
+            <div class="battery-meta" id="batteryCharge">Unknown</div>
+          </div>
+        </div>
+      </section>
+      <section>
+        <h2>Logbook Profiles</h2>
+        <label>Active pilot</label>
+        <select id="activePilotList"></select>
+        <label>Active glider</label>
+        <select id="activeGliderList"></select>
+        <div class="actions">
+          <p class="muted msg" id="mainProfileMsg"></p>
+          <button class="secondary" id="editProfiles">Edit Profiles</button>
+        </div>
+      </section>
+      <section>
+        <h2>Logbook</h2>
+        <p class="muted">Flight log tools will go here.</p>
+      </section>
+    </div>
+    <div id="profilesView" class="view">
+      <div class="subbar">
+        <button class="back" id="backMain" aria-label="Back">&#x276e;</button>
+        <h2>Edit Profiles</h2>
+      </div>
+      <section>
+        <h2>Pilots</h2>
+        <label>Active pilot</label>
+        <select id="pilotList"></select>
+        <label>Name</label>
+        <input id="pilotName" maxlength="48" autocomplete="name">
+        <div class="row profile-actions">
+          <button id="pilotSave" disabled>Save Profile</button>
+          <button class="secondary" id="pilotNew">New</button>
+          <button class="small danger" id="pilotDelete">Delete</button>
+        </div>
+        <p class="muted msg" id="pilotMsg"></p>
+      </section>
+      <section>
+        <h2>Gliders</h2>
+        <label>Active glider</label>
+        <select id="gliderList"></select>
+        <div class="row">
+          <div>
+            <label>Brand</label>
+            <input id="gliderBrand" maxlength="32">
+          </div>
+          <div>
+            <label>Model</label>
+            <input id="gliderModel" maxlength="48">
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Size</label>
+            <input id="gliderSize" maxlength="16">
+          </div>
+          <div>
+            <label>Display name</label>
+            <input id="gliderDisplay" maxlength="64">
+          </div>
+        </div>
+        <div class="row profile-actions">
+          <button id="gliderSave" disabled>Save Profile</button>
+          <button class="secondary" id="gliderNew">New</button>
+          <button class="small danger" id="gliderDelete">Delete</button>
+        </div>
+        <p class="muted msg" id="gliderMsg"></p>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const mockStatus = {
+      active: true,
+      mode: 'network',
+      ssid: 'SkyWagon',
+      ip_address: '10.0.0.20',
+      url: 'http://10.0.0.20:81/app',
+      firmware_version: '0.1.7-webapp-mock',
+      battery_percent: 75,
+      battery_charging: true,
+      log_sync_uploaded: 3,
+      log_sync_total: 7,
+      log_sync_complete: false
+    };
+
+    const defaultProfiles = {
+      schema: 'leaf.profiles',
+      schema_version: 'v0.1.0',
+      active_pilot_id: 'pilot-a',
+      active_glider_id: 'glider-a',
+      pilots: [
+        { id: 'pilot-a', name: 'Alex Morgan' },
+        { id: 'pilot-b', name: 'Taylor Chen' }
+      ],
+      gliders: [
+        { id: 'glider-a', brand: 'Ozone', model: 'Swift 6', size: 'MS', display_name: 'Swift 6 MS' },
+        { id: 'glider-b', brand: 'Advance', model: 'Epsilon DLS', size: '26', display_name: 'Epsilon DLS 26' }
+      ]
+    };
+
+    function mockProfiles() {
+      try {
+        return JSON.parse(localStorage.getItem('leaf.mock.profiles')) || defaultProfiles;
+      } catch (error) {
+        return defaultProfiles;
+      }
+    }
+
+    function saveMockProfiles(data) {
+      localStorage.setItem('leaf.mock.profiles', JSON.stringify(data));
+    }
+
+    const realFetch = window.fetch.bind(window);
+    window.fetch = async function(url, options = {}) {
+      const path = typeof url === 'string' ? url : url.url;
+      if (path === '/api/user/status') {
+        return new Response(JSON.stringify(mockStatus), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      if (path === '/api/profiles' && (!options.method || options.method === 'GET')) {
+        return new Response(JSON.stringify(mockProfiles()), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      if (path === '/api/profiles' && options.method === 'PUT') {
+        saveMockProfiles(JSON.parse(options.body));
+        return new Response(JSON.stringify({ saved: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      return realFetch(url, options);
+    };
+  </script>
+
+  <script>
+    let profiles={schema:'leaf.profiles',schema_version:'v0.1.0',active_pilot_id:null,active_glider_id:null,pilots:[],gliders:[]};
+    let pilotSnapshot={id:null,name:''};
+    let gliderSnapshot={id:null,brand:'',model:'',size:'',display_name:''};
+    const $=id=>document.getElementById(id);
+    function id(){return Math.floor(Math.random()*0xffffffff).toString(16).padStart(8,'0')}
+    function clean(v){v=(v||'').trim();return v?v:null}
+    function pilotLabel(p){return p.name||'Unnamed pilot'}
+    function gliderLabel(g){return g.display_name||[g.brand,g.model,g.size].filter(Boolean).join(' ')||'Unnamed glider'}
+    function selectedPilot(){return profiles.pilots.find(p=>p.id==profiles.active_pilot_id)}
+    function selectedGlider(){return profiles.gliders.find(g=>g.id==profiles.active_glider_id)}
+    function setPilotMsg(t){$('pilotMsg').textContent=t||''}
+    function setGliderMsg(t){$('gliderMsg').textContent=t||''}
+    function setMsg(t){setPilotMsg(t);setGliderMsg('')}
+    function setMainProfileMsg(t){$('mainProfileMsg').textContent=t||''}
+    function showView(name){
+      $('mainView').classList.toggle('active',name=='main');
+      $('profilesView').classList.toggle('active',name=='profiles');
+    }
+    function fillProfileSelect(el,items,label){
+      el.textContent='';
+      items.forEach(x=>{let o=document.createElement('option');o.value=x.id;o.textContent=label(x);el.appendChild(o)});
+    }
+    function pilotEditor(){return {id:profiles.active_pilot_id,name:$('pilotName').value||''}}
+    function gliderEditor(){return {id:profiles.active_glider_id,brand:$('gliderBrand').value||'',model:$('gliderModel').value||'',size:$('gliderSize').value||'',display_name:$('gliderDisplay').value||''}}
+    function same(a,b){return JSON.stringify(a)==JSON.stringify(b)}
+    function setSnapshots(){
+      pilotSnapshot=pilotEditor();
+      gliderSnapshot=gliderEditor();
+      updateEditorButtons();
+    }
+    function updateEditorButtons(){
+      let p=pilotEditor();
+      let g=gliderEditor();
+      $('pilotSave').disabled=!clean(p.name)||same(p,pilotSnapshot);
+      $('pilotDelete').disabled=!selectedPilot();
+      $('pilotNew').disabled=!profiles.pilots.length;
+      $('gliderSave').disabled=!([g.brand,g.model,g.size,g.display_name].some(v=>clean(v)))||same(g,gliderSnapshot);
+      $('gliderDelete').disabled=!selectedGlider();
+      $('gliderNew').disabled=!profiles.gliders.length;
+    }
+    function render(){
+      let pl=$('pilotList');pl.textContent='';
+      fillProfileSelect(pl,profiles.pilots,pilotLabel);
+      pl.disabled=!profiles.pilots.length;
+      if(profiles.active_pilot_id)pl.value=profiles.active_pilot_id;
+      fillProfileSelect($('activePilotList'),profiles.pilots,pilotLabel);
+      $('activePilotList').disabled=!profiles.pilots.length;
+      if(profiles.active_pilot_id)$('activePilotList').value=profiles.active_pilot_id;
+      let p=selectedPilot();$('pilotName').value=p?p.name||'':'';
+      if(!profiles.pilots.length)setPilotMsg('Enter pilot name, then Save Profile.');
+      let gl=$('gliderList');gl.textContent='';
+      fillProfileSelect(gl,profiles.gliders,gliderLabel);
+      gl.disabled=!profiles.gliders.length;
+      if(profiles.active_glider_id)gl.value=profiles.active_glider_id;
+      fillProfileSelect($('activeGliderList'),profiles.gliders,gliderLabel);
+      $('activeGliderList').disabled=!profiles.gliders.length;
+      if(profiles.active_glider_id)$('activeGliderList').value=profiles.active_glider_id;
+      let g=selectedGlider();$('gliderBrand').value=g?g.brand||'':'';
+      $('gliderModel').value=g?g.model||'':'';
+      $('gliderSize').value=g?g.size||'':'';
+      $('gliderDisplay').value=g?g.display_name||'':'';
+      if(!profiles.gliders.length)setGliderMsg('Enter glider details, then Save Profile.');
+      setSnapshots();
+    }
+    function normalize(){
+      profiles.schema='leaf.profiles';profiles.schema_version='v0.1.0';
+      profiles.pilots=(profiles.pilots||[]).filter(p=>p&&p.id&&p.name);
+      profiles.gliders=(profiles.gliders||[]).filter(g=>g&&g.id&&g.model);
+      if(!profiles.pilots.find(p=>p.id==profiles.active_pilot_id))profiles.active_pilot_id=profiles.pilots.length==1?profiles.pilots[0].id:null;
+      if(!profiles.gliders.find(g=>g.id==profiles.active_glider_id))profiles.active_glider_id=profiles.gliders.length==1?profiles.gliders[0].id:null;
+    }
+    async function save(note){
+      normalize();
+      let r=await fetch('/api/profiles',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(profiles)});
+      if(!r.ok)throw new Error();
+      render();
+    }
+    async function loadStatus(){
+      try{let s=await(await fetch('/api/user/status')).json();$('status').textContent=`mode: ${s.mode}\nssid: ${s.ssid||'(none)'}\nip: ${s.ip_address||'(none)'}\nfirmware: ${s.firmware_version}`;let p=Math.max(0,Math.min(100,Number(s.battery_percent)||0));$('batteryFill').style.width=p+'%';$('batteryText').textContent=p+'%';$('batteryCharge').textContent=s.battery_charging?'Charging':'Not charging';$('syncText').textContent=s.log_sync_complete?'Complete':`${s.log_sync_uploaded||0}/${s.log_sync_total||0} uploaded`}catch(e){$('status').textContent='Unable to read status.'}
+    }
+    async function loadProfiles(){
+      try{profiles=await(await fetch('/api/profiles')).json();normalize();setPilotMsg('');setGliderMsg('');render()}catch(e){setPilotMsg('Unable to read profiles.');setGliderMsg('')}
+    }
+    $('editProfiles').onclick=()=>showView('profiles');
+    $('backMain').onclick=()=>showView('main');
+    ['pilotName','gliderBrand','gliderModel','gliderSize','gliderDisplay'].forEach(x=>$(x).oninput=updateEditorButtons);
+    $('activePilotList').onchange=()=>{profiles.active_pilot_id=$('activePilotList').value;render();save('Active pilot saved.').then(()=>setMainProfileMsg('Active pilot saved.')).catch(()=>setMainProfileMsg('Unable to save.'))};
+    $('activeGliderList').onchange=()=>{profiles.active_glider_id=$('activeGliderList').value;render();save('Active glider saved.').then(()=>setMainProfileMsg('Active glider saved.')).catch(()=>setMainProfileMsg('Unable to save.'))};
+    $('pilotList').onchange=()=>{profiles.active_pilot_id=$('pilotList').value;render();save('Active pilot selected.').then(()=>setPilotMsg('Active pilot selected.')).catch(()=>setPilotMsg('Unable to save.'))};
+    $('gliderList').onchange=()=>{profiles.active_glider_id=$('gliderList').value;render();save('Active glider selected.').then(()=>setGliderMsg('Active glider selected.')).catch(()=>setGliderMsg('Unable to save.'))};
+    $('pilotNew').onclick=()=>{$('pilotList').value='';profiles.active_pilot_id=null;$('pilotName').value='';setSnapshots();$('pilotName').focus();setPilotMsg('Enter pilot name, then Save Profile.')};
+    $('gliderNew').onclick=()=>{$('gliderList').value='';profiles.active_glider_id=null;['gliderBrand','gliderModel','gliderSize','gliderDisplay'].forEach(x=>$(x).value='');setSnapshots();$('gliderModel').focus();setGliderMsg('Enter glider details, then Save Profile.')};
+    $('pilotSave').onclick=()=>{let name=clean($('pilotName').value);if(!name){setPilotMsg('Pilot name is required.');return}let p=selectedPilot();if(!p){p={id:id(),name:''};profiles.pilots.push(p);profiles.active_pilot_id=p.id}p.name=name;save('Pilot profile saved.').then(()=>setPilotMsg('Pilot profile saved.')).catch(()=>setPilotMsg('Unable to save pilot.'))};
+    $('gliderSave').onclick=()=>{let model=clean($('gliderModel').value);if(!model){setGliderMsg('Glider model is required.');return}let g=selectedGlider();if(!g){g={id:id(),model:''};profiles.gliders.push(g);profiles.active_glider_id=g.id}g.brand=clean($('gliderBrand').value);g.model=model;g.size=clean($('gliderSize').value);g.display_name=clean($('gliderDisplay').value);save('Glider profile saved.').then(()=>setGliderMsg('Glider profile saved.')).catch(()=>setGliderMsg('Unable to save glider.'))};
+    $('pilotDelete').onclick=()=>{let p=selectedPilot();if(!p)return;profiles.pilots=profiles.pilots.filter(x=>x.id!=p.id);profiles.active_pilot_id=null;save('Pilot profile deleted.').then(()=>setPilotMsg('Pilot profile deleted.')).catch(()=>setPilotMsg('Unable to delete pilot.'))};
+    $('gliderDelete').onclick=()=>{let g=selectedGlider();if(!g)return;profiles.gliders=profiles.gliders.filter(x=>x.id!=g.id);profiles.active_glider_id=null;save('Glider profile deleted.').then(()=>setGliderMsg('Glider profile deleted.')).catch(()=>setGliderMsg('Unable to delete glider.'))};
+    loadStatus();loadProfiles();
+  </script>
+</body>
+</html>

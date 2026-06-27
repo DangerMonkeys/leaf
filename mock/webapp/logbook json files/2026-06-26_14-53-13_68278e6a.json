@@ -1,0 +1,84 @@
+{
+  "schema": "leaf.logbook.flight",
+  "schema_version": "v0.1.0",
+  "flight_id": "68278e6a",
+  "clock": {
+    "system_time_synced_this_boot": true,
+    "time_source": "gps",
+    "timezone_offset_minutes": -420
+  },
+  "start": {
+    "time_valid": true,
+    "time_utc": "2026-06-26T21:53:13Z",
+    "time_local": "2026-06-26T14:53:13",
+    "temperature_c": 25.64895
+  },
+  "first_fix": {
+    "time_valid": true,
+    "time_utc": "2026-06-26T21:53:13Z",
+    "time_local": "2026-06-26T14:53:13",
+    "location": {
+      "lat_deg": 37.37478,
+      "lon_deg": -121.9942,
+      "altitude_m": 24.81
+    },
+    "temperature_c": 25.64895
+  },
+  "end": {
+    "time_valid": true,
+    "time_utc": "2026-06-26T21:53:24Z",
+    "time_local": "2026-06-26T14:53:24",
+    "location": {
+      "lat_deg": 37.37474,
+      "lon_deg": -121.9942,
+      "altitude_m": 24.32
+    },
+    "temperature_c": 25.64494
+  },
+  "metrics": {
+    "duration_seconds": 10,
+    "max_altitude_m": 24.81,
+    "min_altitude_m": 24.32,
+    "max_altitude_above_launch_m": 0,
+    "max_climb_rate_mps": 1.01,
+    "max_sink_rate_mps": -0.65,
+    "max_ground_speed_mps": 0.6945,
+    "average_ground_speed_mps": 0.466601,
+    "straight_line_distance_m": 4.296201,
+    "path_distance_m": 4.666012,
+    "max_accel_g": 1.065156,
+    "min_accel_g": 0.706098,
+    "max_temperature_c": 25.67603,
+    "min_temperature_c": 25.56541
+  },
+  "track": {
+    "saved": true,
+    "format": "igc",
+    "path": "tracks/2026-06-26-XLF-000-04.igc"
+  },
+  "device": {
+    "firmware_version": "0.1.7-978d+h3.2.6",
+    "hardware_version": "leaf_3_2_6",
+    "mac_address": "F0:F5:BD:53:60:04"
+  },
+  "pilot": {
+    "id": "a1b2c3",
+    "name": "Test Pilot"
+  },
+  "glider": {
+    "id": "d4e5f6",
+    "brand": "Ozone",
+    "model": "Swift",
+    "size": "MS",
+    "display_name": "Swift MS"
+  },
+  "site": {
+    "launch_name": null,
+    "landing_name": null
+  },
+  "weather": {},
+  "notes": {
+    "pilot_notes": "",
+    "tags": []
+  }
+}

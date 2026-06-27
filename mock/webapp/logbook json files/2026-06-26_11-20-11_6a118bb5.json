@@ -1,0 +1,75 @@
+{
+  "schema": "leaf.logbook.flight",
+  "schema_version": "v0.1.0",
+  "flight_id": "6a118bb5",
+  "clock": {
+    "system_time_synced_this_boot": true,
+    "time_source": "gps",
+    "timezone_offset_minutes": -420
+  },
+  "start": {
+    "time_valid": true,
+    "time_utc": "2026-06-26T18:20:11Z",
+    "time_local": "2026-06-26T11:20:11",
+    "location": {
+      "lat_deg": 37.37475,
+      "lon_deg": -121.9943,
+      "altitude_m": 41.2
+    },
+    "temperature_c": 24.69051
+  },
+  "end": {
+    "time_valid": true,
+    "time_utc": "2026-06-26T18:22:12Z",
+    "time_local": "2026-06-26T11:22:12",
+    "location": {
+      "lat_deg": 37.37473,
+      "lon_deg": -121.9943,
+      "altitude_m": 30.09
+    },
+    "temperature_c": 25.14255
+  },
+  "metrics": {
+    "duration_seconds": 121,
+    "max_altitude_m": 41.2,
+    "min_altitude_m": 29.11,
+    "max_altitude_above_launch_m": 0,
+    "max_climb_rate_mps": 0.26,
+    "max_sink_rate_mps": -0.16,
+    "max_ground_speed_mps": 0.581322,
+    "average_ground_speed_mps": 0.089284,
+    "straight_line_distance_m": 5.019224,
+    "path_distance_m": 10.80333,
+    "max_accel_g": 1.130168,
+    "min_accel_g": 0.869295,
+    "max_temperature_c": 25.26061,
+    "min_temperature_c": 24.69051
+  },
+  "track": {
+    "saved": true,
+    "format": "igc",
+    "path": "tracks/2026-06-26-XLF-000-02.igc"
+  },
+  "device": {
+    "firmware_version": "0.1.7-b4cd+h3.2.6",
+    "hardware_version": "leaf_3_2_6",
+    "mac_address": "F0:F5:BD:53:60:04"
+  },
+  "pilot": {
+    "name": null
+  },
+  "glider": {
+    "brand": null,
+    "model": null,
+    "size": null
+  },
+  "site": {
+    "launch_name": null,
+    "landing_name": null
+  },
+  "weather": {},
+  "notes": {
+    "pilot_notes": "",
+    "tags": []
+  }
+}
