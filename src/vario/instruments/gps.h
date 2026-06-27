@@ -29,10 +29,10 @@
 // GPS Satellites
 #define MAX_SATELLITES 80
 struct GPSSatInfo {
-  bool active;
-  int elevation;
-  int azimuth;
-  int snr;
+  bool active = false;
+  uint8_t elevation = 0;
+  uint16_t azimuth = 0;
+  uint8_t snr = 0;
 };
 struct GPSFixInfo {
   // float latError;

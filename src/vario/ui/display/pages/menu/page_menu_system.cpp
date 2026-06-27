@@ -244,10 +244,10 @@ void SystemMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count
         about_page.show();
       } else if (state == ButtonEvent::INCREMENTED && count == 4) {
         // toggle developer mode
-        settings.toggleBoolOnOff(&settings.dev_menu);
+        settings.toggleBoolOnOff(&settings.dev_mode);
 
         // ..and if dev mode is now off, restore default dev settings
-        if (!settings.dev_menu) {
+        if (!settings.dev_mode) {
           settings.dev_startLogAtBoot = false;
           settings.dev_startDisconnected = false;
           settings.disp_showDebugPage = false;

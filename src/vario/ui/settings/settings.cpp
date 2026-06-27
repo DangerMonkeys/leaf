@@ -173,7 +173,7 @@ void Settings::loadDefaults() {
   system_showWarning = DEF_SHOW_WARNING;
 
   // Developer Options
-  dev_menu = DEF_DEV_MENU;
+  dev_mode = DEF_DEV_MODE;
   dev_startLogAtBoot = DEF_DEV_START_LOG_AT_BOOT;
   dev_startDisconnected = DEF_DEV_START_DISCONNECTED;
   dev_fanetFwd = DEF_DEV_FANET_FWD;
@@ -244,7 +244,7 @@ void Settings::retrieve() {
   productionTest = leafPrefs.getBool("PRODUCTION_TEST", DEF_PRODUCTIONTEST);
 
   // Developer Options
-  dev_menu = leafPrefs.getBool("DEVELOPER_MENU");
+  dev_mode = leafPrefs.getBool("DEV_MODE", leafPrefs.getBool("DEVELOPER_MENU", DEF_DEV_MODE));
   dev_startLogAtBoot = leafPrefs.getBool("DEV_STARTLOG");
   dev_startDisconnected = leafPrefs.getBool("DEV_STARTDISCON");
   dev_fanetFwd = leafPrefs.getBool("DEV_FANET_FWD", DEF_DEV_FANET_FWD);
@@ -321,7 +321,7 @@ void Settings::save() {
   leafPrefs.putBool("PRODUCTION_TEST", productionTest);
   leafPrefs.putString("MAC_ADDRESS", macAddress);
   // Developer Options
-  leafPrefs.putBool("DEVELOPER_MENU", dev_menu);
+  leafPrefs.putBool("DEV_MODE", dev_mode);
   leafPrefs.putBool("DEV_STARTLOG", dev_startLogAtBoot);
   leafPrefs.putBool("DEV_STARTDISCON", dev_startDisconnected);
   leafPrefs.putBool("DEV_FANET_FWD", dev_fanetFwd);

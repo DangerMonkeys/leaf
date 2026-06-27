@@ -263,9 +263,9 @@ void LeafGPS::updateSatList(const NMEAString& nmea) {
         parseNmeaIntField(nmea, field + 2, azimuthValue)) {
       parseNmeaIntField(nmea, field + 3, snrValue);
 
-      sats[no - 1].elevation = elevationValue;
-      sats[no - 1].azimuth = azimuthValue;
-      sats[no - 1].snr = snrValue;
+      sats[no - 1].elevation = constrain(elevationValue, 0, 90);
+      sats[no - 1].azimuth = constrain(azimuthValue, 0, 359);
+      sats[no - 1].snr = constrain(snrValue, 0, 99);
       sats[no - 1].active = true;
     }
   }
@@ -294,9 +294,9 @@ void LeafGPS::testSats() {
       int no = atoi(satNumber[i].value());
       // Serial.print(F("SatNumber is ")); Serial.println(no);
       if (no >= 1 && no <= MAX_SATELLITES) {
-        sats[no - 1].elevation = atoi(elevation[i].value());
-        sats[no - 1].azimuth = atoi(azimuth[i].value());
-        sats[no - 1].snr = atoi(snr[i].value());
+        sats[no - 1].elevation = constrain(atoi(elevation[i].value()), 0, 90);
+        sats[no - 1].azimuth = constrain(atoi(azimuth[i].value()), 0, 359);
+        sats[no - 1].snr = constrain(atoi(snr[i].value()), 0, 99);
         sats[no - 1].active = true;
       }
     }

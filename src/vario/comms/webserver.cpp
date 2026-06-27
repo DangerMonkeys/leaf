@@ -5,6 +5,7 @@
 #include <WebServer.h>
 #include <WiFi.h>
 #include <ctype.h>
+#include "comms/ble.h"
 #include "comms/factory_discovery.h"
 #include "comms/fanet_radio.h"
 #include "comms/wifi_coordinator.h"
@@ -30,6 +31,10 @@ namespace {
   bool user_app_enabled = false;
   bool user_app_using_leaf_wifi = false;
   bool user_app_provisioning = false;
+  bool user_app_services_paused = false;
+  bool user_app_restart_ble = false;
+  bool user_app_restart_fanet = false;
+  FanetRadioRegion user_app_fanet_region = FanetRadioRegion::OFF;
   String wifi_setup_networks_json = "{\"scanning\":false,\"networks\":[]}";
   bool wifi_setup_scan_running = false;
   bool wifi_setup_connecting = false;
@@ -418,6 +423,42 @@ namespace {
     url += userAppAddress();
     url += "/app";
     return url;
+  }
+
+  void pauseServicesForUserApp() {
+    if (user_app_services_paused) return;
+
+    user_app_restart_ble = settings.system_bluetoothOn;
+    if (user_app_restart_ble) {
+      BLE::get().stop();
+    }
+
+    user_app_restart_fanet = fanetRadio.getState() == FanetRadioState::RUNNING;
+    user_app_fanet_region = settings.fanet_region;
+    if (user_app_restart_fanet) {
+      fanetRadio.end();
+    }
+
+    user_app_services_paused = true;
+  }
+
+  void resumeServicesAfterUserApp() {
+    if (!user_app_services_paused) return;
+
+    if (user_app_restart_fanet && settings.fanet_region != FanetRadioRegion::OFF) {
+      fanetRadio.begin(settings.fanet_region);
+    } else if (user_app_restart_fanet && user_app_fanet_region != FanetRadioRegion::OFF) {
+      fanetRadio.begin(user_app_fanet_region);
+    }
+
+    if (user_app_restart_ble && settings.system_bluetoothOn) {
+      BLE::get().start();
+    }
+
+    user_app_restart_ble = false;
+    user_app_restart_fanet = false;
+    user_app_fanet_region = FanetRadioRegion::OFF;
+    user_app_services_paused = false;
   }
 
   bool stationConnectionReady() {
@@ -897,7 +938,7 @@ void webserver_setup() {
         </body>
       </html>
     )");
-  });
+    });
 
   user_server.on("/api/debug/raw-xbm", HTTP_GET, []() {
     send_buffer = "";
@@ -911,46 +952,46 @@ void webserver_setup() {
     auto& radio = fanetRadio;
     auto protocol = radio.protocol;
 
-    // Lock the radio while we poke around their private parts
-    LockGuard lock(radio.x_fanet_manager_mutex);
-    auto& radioStats = protocol->stats();
-    // UnsafeManager* manager = (UnsafeManager*)radio.manager;
-    auto ms = millis();
+      // Lock the radio while we poke around their private parts
+      LockGuard lock(radio.x_fanet_manager_mutex);
+      auto& radioStats = protocol->stats();
+      // UnsafeManager* manager = (UnsafeManager*)radio.manager;
+      auto ms = millis();
 
-    ss << "<!DOCTYPE html>\n"
-       << "<html>\n"
-       << "<script>\n"
-       << "setTimeout(() => location.reload(), 1000);\n"
-       << "</script>\n"
-       << "<body><pre>\n"
+      ss << "<!DOCTYPE html>\n"
+         << "<html>\n"
+         << "<script>\n"
+         << "setTimeout(() => location.reload(), 1000);\n"
+         << "</script>\n"
+         << "<body><pre>\n"
 
-       << "Current Time: " << ms << endl
-       << endl
-       << "-- STATS -- " << endl
-       << "State: " << fanetRadio.getState().c_str() << "\n"
-       << "rx: " << radioStats.rx << "\n"
-       << "txSuccess: " << radioStats.txSuccess << "\n"
-       << "txFailed: " << radioStats.txFailed << "\n"
-       << "processed: " << radioStats.processed << "\n"
-       << "forwarded: " << radioStats.forwarded << "\n"
-       << "fwdMinRssiDrp: " << radioStats.fwdMinRssiDrp << "\n"
-       << "fwdNeighborDrp: " << radioStats.fwdNeighborDrp << "\n"
-       << "fwdDbBoostWeak: " << radioStats.fwdDbBoostWeak << "\n"
-       << "fwdDbBoostDrop: " << radioStats.fwdDbBoostDrop << "\n"
-       << "rxFromUsDrp: " << radioStats.rxFromUsDrp << "\n"
-       << "txAck: " << radioStats.txAck << "\n"
-       << "neighbors: " << radioStats.neighborTableSize << "\n"
-       << "-- Manager --" << endl
-       << "Manager Queue Length: " << protocol->txPoolSize() << endl
-       << "Next allowed tracking time: "
-       << (radio.m_nextAllowedTrackingTimeMs ? (long long)radio.m_nextAllowedTrackingTimeMs - ms
-                                             : 0) /
-              1000.0f
-       << "s" << endl
-       << endl
+         << "Current Time: " << ms << endl
+         << endl
+         << "-- STATS -- " << endl
+         << "State: " << fanetRadio.getState().c_str() << "\n"
+         << "rx: " << radioStats.rx << "\n"
+         << "txSuccess: " << radioStats.txSuccess << "\n"
+         << "txFailed: " << radioStats.txFailed << "\n"
+         << "processed: " << radioStats.processed << "\n"
+         << "forwarded: " << radioStats.forwarded << "\n"
+         << "fwdMinRssiDrp: " << radioStats.fwdMinRssiDrp << "\n"
+         << "fwdNeighborDrp: " << radioStats.fwdNeighborDrp << "\n"
+         << "fwdDbBoostWeak: " << radioStats.fwdDbBoostWeak << "\n"
+         << "fwdDbBoostDrop: " << radioStats.fwdDbBoostDrop << "\n"
+         << "rxFromUsDrp: " << radioStats.rxFromUsDrp << "\n"
+         << "txAck: " << radioStats.txAck << "\n"
+         << "neighbors: " << radioStats.neighborTableSize << "\n"
+         << "-- Manager --" << endl
+         << "Manager Queue Length: " << protocol->txPoolSize() << endl
+         << "Next allowed tracking time: "
+         << (radio.m_nextAllowedTrackingTimeMs ? (long long)radio.m_nextAllowedTrackingTimeMs - ms
+                                               : 0) /
+                1000.0f
+         << "s" << endl
+         << endl
 
-       << "</pre></body>\n"
-       << "</html>\n";
+         << "</pre></body>\n"
+         << "</html>\n";
 
     user_server.send(200, "text/html", str.c_str());
   });
@@ -1017,7 +1058,7 @@ void webserver_setup() {
         </body>
         </html>
     )");
-  });
+    });
 
   user_server.on("/api/debug/mass-storage", HTTP_GET, []() {
     // Serial.end();
@@ -1137,6 +1178,8 @@ void webserver_loop() {
 }
 
 void webserver_enable_user_app(bool useLeafWifi) {
+  pauseServicesForUserApp();
+
   heap_monitor::clear();
   resetUserAppCounters();
   heap_monitor::record("enable-start");
@@ -1162,6 +1205,8 @@ void webserver_enable_user_app(bool useLeafWifi) {
 }
 
 void webserver_enable_wifi_setup() {
+  pauseServicesForUserApp();
+
   wifi_setup_cycle++;
   wifi_setup_started_ms = millis();
   logWifiSetupTiming("start");
@@ -1211,6 +1256,7 @@ void webserver_disable_user_app() {
   heap_monitor::record("disabled");
   dumpUserAppCounters("disabled");
   heap_monitor::dumpToSd();
+  resumeServicesAfterUserApp();
 }
 
 bool webserver_user_app_active() { return user_app_enabled; }
