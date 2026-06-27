@@ -21,13 +21,12 @@
 #include "utils/lock_guard.h"
 
 namespace {
-  ::WebServer server;
   ::WebServer user_server(80);
   DNSServer dns_server;
   String send_buffer = "";
-  bool webserver_started = false;
   bool user_server_started = false;
   bool user_server_routes_configured = false;
+  bool debug_routes_configured = false;
   bool user_app_enabled = false;
   bool user_app_using_leaf_wifi = false;
   bool user_app_provisioning = false;
@@ -96,7 +95,7 @@ namespace {
     if (!file) return;
 
     if (!existed || file.size() == 0) {
-      file.println("millis,event,enabled,using_leaf_wifi,user_server_started,main_server_started,"
+      file.println("millis,event,enabled,using_leaf_wifi,user_server_started,debug_routes_configured,"
                    "ap_stations,max_ap_stations,wifi_status,free_heap,max_alloc_heap,loop_count,"
                    "handle_count,root,app,status,profiles_get,profiles_put,not_found,ap_ip");
     }
@@ -106,7 +105,7 @@ namespace {
     file.printf("%lu,%s,%u,%u,%u,%u,%u,%u,%d,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%s\n",
                 static_cast<unsigned long>(millis()), event ? event : "",
                 user_app_enabled ? 1 : 0, user_app_using_leaf_wifi ? 1 : 0,
-                user_server_started ? 1 : 0, webserver_started ? 1 : 0,
+                user_server_started ? 1 : 0, debug_routes_configured ? 1 : 0,
                 static_cast<unsigned int>(WiFi.softAPgetStationNum()),
                 static_cast<unsigned int>(user_app_max_ap_stations),
                 static_cast<int>(WiFi.status()), static_cast<unsigned long>(ESP.getFreeHeap()),
@@ -207,37 +206,37 @@ namespace {
     return latest_file_name;
   }
 
-  void sendLatestSelfTestDetails() {
+  void sendLatestSelfTestDetails(WebServer& target) {
     if (!sdcard.isMounted()) {
-      server.send(404, "application/json", "{\"detail\":\"SD card is not mounted.\"}");
+      target.send(404, "application/json", "{\"detail\":\"SD card is not mounted.\"}");
       return;
     }
 
     String file_name = latestSelfTestDetailsFileName();
     if (file_name.isEmpty()) {
-      server.send(404, "application/json", "{\"detail\":\"No self test details file found.\"}");
+      target.send(404, "application/json", "{\"detail\":\"No self test details file found.\"}");
       return;
     }
 
     File file = SD_MMC.open(file_name, "r");
     if (!file) {
-      server.send(500, "application/json",
+      target.send(500, "application/json",
                   "{\"detail\":\"Self test details file could not be opened.\"}");
       return;
     }
 
-    server.streamFile(file, "text/plain");
+    target.streamFile(file, "text/plain");
     file.close();
   }
 
-  void clearSelfTestDetailsFiles() {
+  void clearSelfTestDetailsFiles(WebServer& target) {
     if (!sdcard.isMounted()) {
-      server.send(404, "application/json", "{\"detail\":\"SD card is not mounted.\"}");
+      target.send(404, "application/json", "{\"detail\":\"SD card is not mounted.\"}");
       return;
     }
 
     if (selfTest.updateNeeded()) {
-      server.send(409, "application/json", "{\"detail\":\"Self test is still running.\"}");
+      target.send(409, "application/json", "{\"detail\":\"Self test is still running.\"}");
       return;
     }
 
@@ -262,14 +261,14 @@ namespace {
       json += ",\"failed_count\":";
       json += failed_count;
       json += "}";
-      server.send(500, "application/json", json);
+      target.send(500, "application/json", json);
       return;
     }
 
     String json = "{\"cleared\":true,\"deleted_count\":";
     json += deleted_count;
     json += "}";
-    server.send(200, "application/json", json);
+    target.send(200, "application/json", json);
   }
 
   void beginInteractiveSelfTest() {
@@ -856,6 +855,7 @@ loadStatus();loadProfiles();
       user_server_routes_configured = true;
     }
 
+    webserver_setup();
     user_server.begin();
     user_server_started = true;
     Serial.printf("Leaf Web App started: %s\n", userAppUrl().c_str());
@@ -870,44 +870,42 @@ void writeScreenshotBuffer(const char* buffer) {
 }
 
 void webserver_setup() {
-  if (WiFi.status() != WL_CONNECTED && !user_app_enabled) return;
+  if (debug_routes_configured) return;
 
-  if (webserver_started) return;
-
-  server.on("/", HTTP_GET, []() {
-    server.send(200, "text/html", R"(
+  user_server.on("/app/debug", HTTP_GET, []() {
+    user_server.send(200, "text/html", R"(
       <!DOCTYPE html>
       <html>
         <head>
-          <title>ESP32 Vario</title>
+          <title>Leaf Debug</title>
           <style>
             body { font-family: Arial, sans-serif; margin: 2em auto; max-width: 800px; }
           </style>
         </head>
         <body>
-          <h1>ESP32 Vario Webserver</h1>
+          <h1>Leaf Debug</h1>
           <ul>
-            <li><a href="/screenshot" target="_blank">Download Screenshot</a></li>
-            <li><a href="/mass_storage" target="_blank">Start Mass Storage</a></li>
-            <li><a href="#" onclick="fetch('/self-test/interactive', {method: 'POST'}); return false;">Start Interactive Self Test</a></li>
-            <li><a href="#" onclick="fetch('/settings/factory-reset', {method: 'POST'}); return false;">Factory Reset Settings</a></li>
-            <li><a href="/mac-address" target="_blank">MAC Address</a></li>
-            <li><a href="/firmware-version" target="_blank">Firmware Version</a></li>
-            <li><a href="/fanet" target="_blank">FANet Message Stats</a></li>
-            <li><a href="/memory" target="_blank">Memory Usage Stats</a></li>
+            <li><a href="/app/debug/screenshot" target="_blank">Download Screenshot</a></li>
+            <li><a href="/api/debug/mass-storage" target="_blank">Start Mass Storage</a></li>
+            <li><a href="#" onclick="fetch('/api/debug/self-test/interactive', {method: 'POST'}); return false;">Start Interactive Self Test</a></li>
+            <li><a href="#" onclick="fetch('/api/debug/settings/factory-reset', {method: 'POST'}); return false;">Factory Reset Settings</a></li>
+            <li><a href="/api/debug/mac-address" target="_blank">MAC Address</a></li>
+            <li><a href="/api/debug/firmware-version" target="_blank">Firmware Version</a></li>
+            <li><a href="/app/debug/fanet" target="_blank">FANet Message Stats</a></li>
+            <li><a href="/app/debug/memory" target="_blank">Memory Usage Stats</a></li>
           </ul>
         </body>
       </html>
     )");
   });
 
-  server.on("/raw-xbm", HTTP_GET, []() {
+  user_server.on("/api/debug/raw-xbm", HTTP_GET, []() {
     send_buffer = "";
     u8g2_WriteBufferXBM(u8g2.getU8g2(), writeScreenshotBuffer);
-    server.send(200, "image/x-xbitmap", send_buffer);
+    user_server.send(200, "image/x-xbitmap", send_buffer);
   });
 
-  server.on("/fanet", HTTP_GET, []() {
+  user_server.on("/app/debug/fanet", HTTP_GET, []() {
     etl::string<1024> str;
     etl::string_stream ss(str);
     auto& radio = fanetRadio;
@@ -954,11 +952,11 @@ void webserver_setup() {
        << "</pre></body>\n"
        << "</html>\n";
 
-    server.send(200, "text/html", str.c_str());
+    user_server.send(200, "text/html", str.c_str());
   });
 
-  server.on("/screenshot", HTTP_GET, []() {
-    server.send(200, "text/html", R"(
+  user_server.on("/app/debug/screenshot", HTTP_GET, []() {
+    user_server.send(200, "text/html", R"(
         <!DOCTYPE html>
         <html>
         <head>
@@ -1005,7 +1003,7 @@ void webserver_setup() {
         }
 
 
-        fetch('/raw-xbm')
+        fetch('/api/debug/raw-xbm')
           .then(response => response.text())
           .then(xbmData => {
             drawXBM(xbmData, 'screenshotCanvas');
@@ -1021,56 +1019,51 @@ void webserver_setup() {
     )");
   });
 
-  server.on("/mass_storage", HTTP_GET, []() {
+  user_server.on("/api/debug/mass-storage", HTTP_GET, []() {
     // Serial.end();
     sdcard.setupMassStorage();
-    server.send(200, "text/html", "OK!");
+    user_server.send(200, "text/html", "OK!");
   });
 
-  server.on("/memory", HTTP_GET, []() { server.send(200, "text/plain", getMemoryUsage()); });
+  user_server.on("/app/debug/memory", HTTP_GET,
+                 []() { user_server.send(200, "text/plain", getMemoryUsage()); });
 
-  server.on("/app", HTTP_GET, []() { sendUserAppShell(server); });
-
-  server.on("/api/user/status", HTTP_GET, []() { sendUserStatus(server); });
-  server.on("/api/profiles", HTTP_GET, []() { sendProfiles(server); });
-  server.on("/api/profiles", HTTP_PUT, []() { saveProfiles(server); });
-
-  server.on("/mac-address", HTTP_GET, []() {
+  user_server.on("/api/debug/mac-address", HTTP_GET, []() {
     String json = "{\"mac_address\":\"";
     json += settings.getMacAddress();
     json += "\"}";
-    server.send(200, "application/json", json);
+    user_server.send(200, "application/json", json);
   });
 
-  server.on("/firmware-version", HTTP_GET, []() {
+  user_server.on("/api/debug/firmware-version", HTTP_GET, []() {
     String json = "{\"firmware_version\":\"";
     json += LeafVersionInfo::firmwareVersion();
     json += "\"}";
-    server.send(200, "application/json", json);
+    user_server.send(200, "application/json", json);
   });
 
-  server.on("/discovery", HTTP_GET, []() {
+  user_server.on("/api/debug/discovery", HTTP_GET, []() {
     factoryDiscovery.update();
-    server.send(200, "application/json", factoryDiscovery.statusJson());
+    user_server.send(200, "application/json", factoryDiscovery.statusJson());
   });
 
-  server.on("/settings/factory-reset", HTTP_POST, []() {
+  user_server.on("/api/debug/settings/factory-reset", HTTP_POST, []() {
     const bool forceFormatSdCard =
-        extractJsonBoolValue(server.arg("plain"), "force_format_sd_card", false);
+        extractJsonBoolValue(user_server.arg("plain"), "force_format_sd_card", false);
     settings.factoryResetVario();
     settings.setProductionTestForceFormatSdCard(forceFormatSdCard);
-    server.send(200, "application/json", "{\"reset_requested\":true}");
+    user_server.send(200, "application/json", "{\"reset_requested\":true}");
     delay(250);
     ESP.restart();
   });
 
-  server.on("/settings/fanet-address", HTTP_POST, []() {
-    String fanet_address = extractJsonStringValue(server.arg("plain"), "fanet_address");
+  user_server.on("/api/debug/settings/fanet-address", HTTP_POST, []() {
+    String fanet_address = extractJsonStringValue(user_server.arg("plain"), "fanet_address");
     fanet_address.trim();
     fanet_address.toUpperCase();
     if (!isValidFanetAddress(fanet_address)) {
-      server.send(400, "application/json",
-                  "{\"detail\":\"fanet_address must be a 6-character hexadecimal string.\"}");
+      user_server.send(400, "application/json",
+                       "{\"detail\":\"fanet_address must be a 6-character hexadecimal string.\"}");
       return;
     }
 
@@ -1080,62 +1073,57 @@ void webserver_setup() {
     String json = "{\"fanet_address\":\"";
     json += settings.fanet_address;
     json += "\",\"saved\":true}";
-    server.send(200, "application/json", json);
+    user_server.send(200, "application/json", json);
   });
 
-  server.on("/self-test/interactive", HTTP_POST, []() {
+  user_server.on("/api/debug/self-test/interactive", HTTP_POST, []() {
     requestInteractiveSelfTest();
-    server.send(200, "application/json", selfTestSnapshotJson());
+    user_server.send(200, "application/json", selfTestSnapshotJson());
   });
 
-  server.on("/sd-card/format", HTTP_POST, []() {
+  user_server.on("/api/debug/sd-card/format", HTTP_POST, []() {
     if (selfTest.updateNeeded() || interactive_self_test_pending) {
-      server.send(409, "application/json", "{\"detail\":\"Self test is running or pending.\"}");
+      user_server.send(409, "application/json", "{\"detail\":\"Self test is running or pending.\"}");
       return;
     }
 
     if (!sdcard.isCardPresent()) {
-      server.send(404, "application/json", "{\"detail\":\"SD card is not present.\"}");
+      user_server.send(404, "application/json", "{\"detail\":\"SD card is not present.\"}");
       return;
     }
 
     if (!sdcard.format()) {
-      server.send(500, "application/json", "{\"formatted\":false}");
+      user_server.send(500, "application/json", "{\"formatted\":false}");
       return;
     }
 
     if (!sdcard.setLabel()) {
-      server.send(500, "application/json", "{\"formatted\":true,\"label_set\":false}");
+      user_server.send(500, "application/json", "{\"formatted\":true,\"label_set\":false}");
       return;
     }
 
-    server.send(200, "application/json", "{\"formatted\":true,\"label_set\":true}");
+    user_server.send(200, "application/json", "{\"formatted\":true,\"label_set\":true}");
   });
 
-  server.on("/self-test/details", HTTP_GET, []() { sendLatestSelfTestDetails(); });
+  user_server.on("/api/debug/self-test/details", HTTP_GET,
+                 []() { sendLatestSelfTestDetails(user_server); });
 
-  server.on("/self-test/results", HTTP_DELETE, []() { clearSelfTestDetailsFiles(); });
+  user_server.on("/api/debug/self-test/results", HTTP_DELETE,
+                 []() { clearSelfTestDetailsFiles(user_server); });
 
-  server.on("/self-test", HTTP_GET,
-            []() { server.send(200, "application/json", selfTestSnapshotJson()); });
+  user_server.on("/api/debug/self-test", HTTP_GET,
+                 []() { user_server.send(200, "application/json", selfTestSnapshotJson()); });
 
-  server.on("/commissioning/complete", HTTP_POST, []() {
+  user_server.on("/api/debug/commissioning/complete", HTTP_POST, []() {
     selfTest.confirmCommissioningComplete();
-    server.send(200, "application/json", "{\"commissioning_complete\":true}");
+    user_server.send(200, "application/json", "{\"commissioning_complete\":true}");
   });
 
-  // Give it a chance to settle so the startup message has a valid IP address.
-  delay(250);
-  // The captive portal belongs on port 80 for setting up WiFi. Keep this
-  // webserver on port 81.
-  server.begin(81);
-  webserver_started = true;
-  Serial.printf("Webserver started: http://%s:81/\n", WiFi.localIP().toString());
+  debug_routes_configured = true;
 }
 
 void webserver_loop() {
   if (WiFi.status() == WL_CONNECTED || user_app_enabled) {
-    server.handleClient();
     if (user_app_enabled) {
       user_app_loop_count++;
       updateUserAppStationPeak();
