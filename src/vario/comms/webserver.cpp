@@ -1,4 +1,5 @@
 #include "comms/webserver.h"
+#include <ArduinoJson.h>
 #include <DNSServer.h>
 #include <FS.h>
 #include <SD_MMC.h>
@@ -22,7 +23,6 @@
 #include "ui/display/display.h"
 #include "ui/settings/settings.h"
 #include "utils/lock_guard.h"
-#include <ArduinoJson.h>
 
 namespace {
   ::WebServer user_server(80);
@@ -121,24 +121,23 @@ namespace {
     const String ap_ip = WiFi.softAPIP().toString();
     file.printf(
         "%lu,%s,%u,%u,%u,%u,%u,%u,%d,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%s\n",
-                static_cast<unsigned long>(millis()), event ? event : "", user_app_enabled ? 1 : 0,
-                user_app_using_leaf_wifi ? 1 : 0, user_server_started ? 1 : 0,
-                debug_routes_configured ? 1 : 0,
-                static_cast<unsigned int>(WiFi.softAPgetStationNum()),
-                static_cast<unsigned int>(user_app_max_ap_stations),
-                static_cast<int>(WiFi.status()), static_cast<unsigned long>(ESP.getFreeHeap()),
-                static_cast<unsigned long>(ESP.getMaxAllocHeap()),
-                static_cast<unsigned long>(user_app_loop_count),
-                static_cast<unsigned long>(user_app_handle_count),
-                static_cast<unsigned long>(user_app_route_root_count),
-                static_cast<unsigned long>(user_app_route_app_count),
-                static_cast<unsigned long>(user_app_route_status_count),
-                static_cast<unsigned long>(user_app_route_profiles_get_count),
-                static_cast<unsigned long>(user_app_route_profiles_put_count),
-                static_cast<unsigned long>(user_app_route_logbook_count),
-                static_cast<unsigned long>(user_app_route_logbook_entry_count),
-                static_cast<unsigned long>(user_app_route_logbook_delete_count),
-                static_cast<unsigned long>(user_app_route_not_found_count), ap_ip.c_str());
+        static_cast<unsigned long>(millis()), event ? event : "", user_app_enabled ? 1 : 0,
+        user_app_using_leaf_wifi ? 1 : 0, user_server_started ? 1 : 0,
+        debug_routes_configured ? 1 : 0, static_cast<unsigned int>(WiFi.softAPgetStationNum()),
+        static_cast<unsigned int>(user_app_max_ap_stations), static_cast<int>(WiFi.status()),
+        static_cast<unsigned long>(ESP.getFreeHeap()),
+        static_cast<unsigned long>(ESP.getMaxAllocHeap()),
+        static_cast<unsigned long>(user_app_loop_count),
+        static_cast<unsigned long>(user_app_handle_count),
+        static_cast<unsigned long>(user_app_route_root_count),
+        static_cast<unsigned long>(user_app_route_app_count),
+        static_cast<unsigned long>(user_app_route_status_count),
+        static_cast<unsigned long>(user_app_route_profiles_get_count),
+        static_cast<unsigned long>(user_app_route_profiles_put_count),
+        static_cast<unsigned long>(user_app_route_logbook_count),
+        static_cast<unsigned long>(user_app_route_logbook_entry_count),
+        static_cast<unsigned long>(user_app_route_logbook_delete_count),
+        static_cast<unsigned long>(user_app_route_not_found_count), ap_ip.c_str());
     file.close();
   }
 
@@ -655,7 +654,8 @@ namespace {
     if (pilots.isNull() || gliders.isNull()) return false;
     if (pilots.size() > 12 || gliders.size() > 12) return false;
 
-    String activePilotId = doc["active_pilot_id"].isNull() ? "" : doc["active_pilot_id"].as<String>();
+    String activePilotId =
+        doc["active_pilot_id"].isNull() ? "" : doc["active_pilot_id"].as<String>();
     String activeGliderId =
         doc["active_glider_id"].isNull() ? "" : doc["active_glider_id"].as<String>();
     bool activePilotFound = activePilotId.isEmpty();
@@ -1066,8 +1066,9 @@ loadStatus();loadProfiles();loadLogbook();
 
     if (!LogbookStore::deleteEntry(path)) {
       heap_monitor::record("logbook-delete-fail");
-      target.send(500, "application/json",
-                  "{\"ok\":false,\"error\":\"delete_failed\",\"detail\":\"Log could not be deleted.\"}");
+      target.send(
+          500, "application/json",
+          "{\"ok\":false,\"error\":\"delete_failed\",\"detail\":\"Log could not be deleted.\"}");
       return;
     }
 
