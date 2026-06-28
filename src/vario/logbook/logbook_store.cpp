@@ -144,6 +144,10 @@ bool LogbookStore::readSummary(const String& path, LogbookEntrySummary& summary)
   summary.path = normalizedPath;
   summary.filename = filenameFromPath(normalizedPath);
   summary.flightId = doc["flight_id"] | "";
+  JsonObject pilot = doc["pilot"];
+  summary.pilotName = pilot["name"] | "";
+  JsonObject glider = doc["glider"];
+  summary.gliderDisplayName = glider["display_name"] | "";
 
   JsonObject start = doc["start"];
   summary.startTimeValid = start["time_valid"] | false;
@@ -194,9 +198,11 @@ bool LogbookStore::deleteEntry(const String& path) {
 }
 
 bool LogbookStore::isLogbookJsonPath(const String& path) {
-  if (!path.endsWith(".json")) return false;
-  if (path.endsWith(".tmp")) return false;
-  return filenameFromPath(path).length() > 5;
+  const String normalizedPath = normalizePath(path);
+  if (!normalizedPath.startsWith(String(LOGBOOK_DIR) + "/")) return false;
+  if (!normalizedPath.endsWith(".json")) return false;
+  if (normalizedPath.endsWith(".tmp")) return false;
+  return filenameFromPath(normalizedPath).length() > 5;
 }
 
 String LogbookStore::normalizePath(const String& path) {
