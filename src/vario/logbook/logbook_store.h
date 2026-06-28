@@ -7,6 +7,8 @@ struct LogbookEntrySummary {
   String path;
   String filename;
   String flightId;
+  String pilotName;
+  String gliderDisplayName;
   bool startTimeValid = false;
   String startTimeUtc;
   String startTimeLocal;

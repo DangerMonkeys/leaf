@@ -1,4 +1,5 @@
 #include "comms/webserver.h"
+#include <ArduinoJson.h>
 #include <DNSServer.h>
 #include <FS.h>
 #include <SD_MMC.h>
@@ -53,6 +54,7 @@ namespace {
   uint32_t user_app_route_profiles_put_count = 0;
   uint32_t user_app_route_logbook_count = 0;
   uint32_t user_app_route_logbook_entry_count = 0;
+  uint32_t user_app_route_logbook_delete_count = 0;
   uint32_t user_app_route_not_found_count = 0;
   uint8_t user_app_max_ap_stations = 0;
 
@@ -90,6 +92,7 @@ namespace {
     user_app_route_profiles_put_count = 0;
     user_app_route_logbook_count = 0;
     user_app_route_logbook_entry_count = 0;
+    user_app_route_logbook_delete_count = 0;
     user_app_route_not_found_count = 0;
     user_app_max_ap_stations = 0;
   }
@@ -111,29 +114,30 @@ namespace {
           "millis,event,enabled,using_leaf_wifi,user_server_started,debug_routes_configured,"
           "ap_stations,max_ap_stations,wifi_status,free_heap,max_alloc_heap,loop_count,"
           "handle_count,root,app,status,profiles_get,profiles_put,logbook,logbook_entry,"
-          "not_found,ap_ip");
+          "logbook_delete,not_found,ap_ip");
     }
 
     updateUserAppStationPeak();
     const String ap_ip = WiFi.softAPIP().toString();
-    file.printf("%lu,%s,%u,%u,%u,%u,%u,%u,%d,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%s\n",
-                static_cast<unsigned long>(millis()), event ? event : "", user_app_enabled ? 1 : 0,
-                user_app_using_leaf_wifi ? 1 : 0, user_server_started ? 1 : 0,
-                debug_routes_configured ? 1 : 0,
-                static_cast<unsigned int>(WiFi.softAPgetStationNum()),
-                static_cast<unsigned int>(user_app_max_ap_stations),
-                static_cast<int>(WiFi.status()), static_cast<unsigned long>(ESP.getFreeHeap()),
-                static_cast<unsigned long>(ESP.getMaxAllocHeap()),
-                static_cast<unsigned long>(user_app_loop_count),
-                static_cast<unsigned long>(user_app_handle_count),
-                static_cast<unsigned long>(user_app_route_root_count),
-                static_cast<unsigned long>(user_app_route_app_count),
-                static_cast<unsigned long>(user_app_route_status_count),
-                static_cast<unsigned long>(user_app_route_profiles_get_count),
-                static_cast<unsigned long>(user_app_route_profiles_put_count),
-                static_cast<unsigned long>(user_app_route_logbook_count),
-                static_cast<unsigned long>(user_app_route_logbook_entry_count),
-                static_cast<unsigned long>(user_app_route_not_found_count), ap_ip.c_str());
+    file.printf(
+        "%lu,%s,%u,%u,%u,%u,%u,%u,%d,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%s\n",
+        static_cast<unsigned long>(millis()), event ? event : "", user_app_enabled ? 1 : 0,
+        user_app_using_leaf_wifi ? 1 : 0, user_server_started ? 1 : 0,
+        debug_routes_configured ? 1 : 0, static_cast<unsigned int>(WiFi.softAPgetStationNum()),
+        static_cast<unsigned int>(user_app_max_ap_stations), static_cast<int>(WiFi.status()),
+        static_cast<unsigned long>(ESP.getFreeHeap()),
+        static_cast<unsigned long>(ESP.getMaxAllocHeap()),
+        static_cast<unsigned long>(user_app_loop_count),
+        static_cast<unsigned long>(user_app_handle_count),
+        static_cast<unsigned long>(user_app_route_root_count),
+        static_cast<unsigned long>(user_app_route_app_count),
+        static_cast<unsigned long>(user_app_route_status_count),
+        static_cast<unsigned long>(user_app_route_profiles_get_count),
+        static_cast<unsigned long>(user_app_route_profiles_put_count),
+        static_cast<unsigned long>(user_app_route_logbook_count),
+        static_cast<unsigned long>(user_app_route_logbook_entry_count),
+        static_cast<unsigned long>(user_app_route_logbook_delete_count),
+        static_cast<unsigned long>(user_app_route_not_found_count), ap_ip.c_str());
     file.close();
   }
 
@@ -606,6 +610,7 @@ namespace {
   }
 
   void sendProfiles(WebServer& target) {
+    heap_monitor::record("profiles-get-start");
     if (!user_app_enabled) {
       target.send(404, "application/json", "{\"detail\":\"Leaf Web App is not active.\"}");
       return;
@@ -631,12 +636,57 @@ namespace {
     sendNoStoreHeaders(target);
     target.streamFile(file, "application/json");
     file.close();
+    heap_monitor::record("profiles-get-end");
   }
 
   bool profilesRequestLooksValid(const String& body) {
     if (body.length() == 0 || body.length() > PROFILE_FILE_MAX_BYTES) return false;
-    if (extractJsonStringValue(body, "schema") != "leaf.profiles") return false;
-    if (body.indexOf("\"pilots\"") < 0 || body.indexOf("\"gliders\"") < 0) return false;
+
+    JsonDocument doc;
+    DeserializationError error = deserializeJson(doc, body);
+    if (error) return false;
+
+    const char* schema = doc["schema"] | "";
+    if (strcmp(schema, "leaf.profiles") != 0) return false;
+
+    JsonArray pilots = doc["pilots"].as<JsonArray>();
+    JsonArray gliders = doc["gliders"].as<JsonArray>();
+    if (pilots.isNull() || gliders.isNull()) return false;
+    if (pilots.size() > 12 || gliders.size() > 12) return false;
+
+    String activePilotId =
+        doc["active_pilot_id"].isNull() ? "" : doc["active_pilot_id"].as<String>();
+    String activeGliderId =
+        doc["active_glider_id"].isNull() ? "" : doc["active_glider_id"].as<String>();
+    bool activePilotFound = activePilotId.isEmpty();
+    bool activeGliderFound = activeGliderId.isEmpty();
+
+    for (JsonObject item : pilots) {
+      String id = item["id"] | "";
+      String name = item["name"] | "";
+      id.trim();
+      name.trim();
+      if (id.isEmpty() || id.length() > 20 || name.isEmpty() || name.length() > 48) return false;
+      if (!activePilotId.isEmpty() && id == activePilotId) activePilotFound = true;
+    }
+
+    for (JsonObject item : gliders) {
+      String id = item["id"] | "";
+      String brand = item["brand"] | "";
+      String model = item["model"] | "";
+      String size = item["size"] | "";
+      String displayName = item["display_name"] | "";
+      id.trim();
+      brand.trim();
+      model.trim();
+      size.trim();
+      displayName.trim();
+      if (id.isEmpty() || id.length() > 20 || model.isEmpty() || model.length() > 48) return false;
+      if (brand.length() > 32 || size.length() > 16 || displayName.length() > 64) return false;
+      if (!activeGliderId.isEmpty() && id == activeGliderId) activeGliderFound = true;
+    }
+
+    if (!activePilotFound || !activeGliderFound) return false;
     return true;
   }
 
@@ -676,6 +726,7 @@ namespace {
   }
 
   void saveProfiles(WebServer& target) {
+    heap_monitor::record("profiles-put-start");
     if (!user_app_enabled) {
       target.send(404, "application/json", "{\"detail\":\"Leaf Web App is not active.\"}");
       return;
@@ -688,15 +739,18 @@ namespace {
 
     const String body = target.arg("plain");
     if (!profilesRequestLooksValid(body)) {
+      heap_monitor::record("profiles-put-invalid");
       target.send(400, "application/json", "{\"detail\":\"Invalid profiles JSON.\"}");
       return;
     }
 
     if (!writeProfilesBody(body)) {
+      heap_monitor::record("profiles-put-fail");
       target.send(500, "application/json", "{\"saved\":false}");
       return;
     }
 
+    heap_monitor::record("profiles-put-end");
     target.send(200, "application/json", "{\"saved\":true}");
   }
 
@@ -728,7 +782,7 @@ namespace {
     }
 
     static constexpr char USER_APP_PAGE[] PROGMEM =
-        R"leafapp(<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=Cache-Control content=no-store><title>Leaf</title><style>:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#202423;background:#363636;line-height:1.35;--leaf:#d8ff00;--ink:#202423;--panel:#565656;--sub:#4d4d4d;--danger:#7a1d1d}body{margin:0;background:#363636}header{background:var(--leaf);color:#0b0d0b;padding:12px 20px;text-align:center}main{max-width:640px;margin:auto;padding:18px}h1{font-family:Arial,sans-serif;font-size:38px;font-weight:500;letter-spacing:.12em;line-height:1;margin:0}h2{font-size:18px;margin:-16px -14px 14px;padding:10px 12px;color:#0b0d0b;background:var(--leaf);text-align:center;border-radius:5px 5px 0 0}section{background:var(--panel);border-radius:8px;margin:0 0 14px;padding:16px 14px}.status-panel{padding-top:14px}.status-panel h2{background:var(--panel);color:white;border-bottom:1px solid #a9a9a9;margin:-14px -14px 14px}.view{display:none}.view.active{display:block}.subbar{position:relative;display:flex;align-items:center;justify-content:center;min-height:38px;color:white;margin:0 0 14px}.back{position:absolute;left:0;top:0;width:42px;height:38px;background:white;color:var(--ink);border-color:white;box-shadow:none;padding:5px 8px;font-size:28px;font-weight:900;line-height:.9}.subbar h2{color:white;background:transparent;margin:0;padding:0;font-size:18px}.row{display:flex;gap:8px}.row>*{flex:1}.row>.small{flex:0 0 94px}.actions{display:flex;align-items:center;gap:10px;margin-top:12px}.actions .msg{flex:1;margin:0}.actions button,.profile-actions button{width:auto;padding:8px 10px;font-size:14px}.profile-actions{margin-top:12px;gap:14px}label{display:block;font-size:13px;font-weight:700;margin:10px 0 4px;color:white}input,select,button{box-sizing:border-box;width:100%;font:inherit;padding:11px;border:1px solid #b9c0b2;border-radius:7px;background:white;color:var(--ink)}input:focus,select:focus,button:focus{outline:2px solid var(--leaf);outline-offset:1px}select:disabled,button:disabled,.secondary:disabled,.danger:disabled{background:#686868;border-color:#686868;color:#8a8a8a;opacity:1;box-shadow:none}button{background:var(--ink);color:white;font-weight:750;border-color:var(--ink);box-shadow:inset 0 -2px 0 rgba(0,0,0,.22)}.secondary{background:white;color:var(--ink);border-color:#89917f;box-shadow:none}.danger{background:var(--danger);border-color:var(--danger);color:white}.profile-actions button:first-child:not(:disabled){background:var(--leaf);border-color:var(--leaf);color:#0b0d0b}.muted{color:#e2e7dc}.msg{min-height:20px;margin-top:10px}.status{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:13px;white-space:pre-wrap;color:white;min-width:0}.status-body{display:grid;grid-template-columns:minmax(0,1fr) max-content;align-items:start;justify-content:space-between;column-gap:14px}.status-side{display:grid;gap:8px;justify-items:end}.sync{color:#e2e7dc;font-size:12px;font-weight:650;text-align:right}.sync strong{display:block;color:white;font-size:13px}.battery-status{color:white;text-align:right;font-size:13px;font-weight:700}.battery-line{display:flex;align-items:center;justify-content:flex-end;gap:7px;margin-bottom:4px}.battery{position:relative;width:44px;height:20px;border:2px solid white;border-radius:4px;box-sizing:border-box}.battery:after{content:"";position:absolute;right:-6px;top:4px;width:4px;height:8px;background:white;border-radius:0 2px 2px 0}.battery-fill{display:block;height:100%;background:var(--leaf);border-radius:2px}.battery-meta{font-size:12px;font-weight:650;color:#e2e7dc}.metrics{display:grid;grid-template-columns:1fr 1fr;gap:9px}.metric{background:var(--sub);border-radius:7px;padding:8px 10px;color:white}.metric span{display:block;color:#dfe5d9;font-size:12px;font-weight:650;margin-bottom:2px}.metric strong{display:block;font-size:16px}#logCount{font-size:34px;line-height:1}.pager{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;gap:8px;margin-bottom:12px}.pager button{height:38px;padding:0;background:var(--leaf);border-color:var(--leaf);color:#0b0d0b}.pager button:disabled{background:#686868;border-color:#686868;color:#8a8a8a;box-shadow:none}.page-title{text-align:center;color:white;font-weight:800}.flight-head{display:flex;justify-content:space-between;gap:12px;color:white;margin-bottom:12px}.flight-card{color:white}.alt-box,.vario-box{background:var(--sub);border-radius:7px;padding:12px;margin:12px 0}.alt-box{position:relative;padding-bottom:34px}.alt-title{position:absolute;left:0;right:0;bottom:8px;text-align:center}.alt-title,.vario-title{font-size:18px;font-weight:800}.vario-title{text-align:center}.alt-row{position:relative;height:118px;margin-top:4px}.alt-row .pill{position:absolute;min-width:74px;background:#111;color:white}.alt-row .pill.high{background:var(--leaf);color:#0b0d0b}.pill{background:var(--leaf);color:#0b0d0b;border-radius:6px;padding:5px 8px;font-weight:800;text-align:center}.pill span{display:block;font-size:11px}.detail-grid{display:grid;grid-template-columns:1fr 1.45fr;gap:10px}.vario-box{display:flex;flex-direction:column;justify-content:center;gap:9px}.vario-title{order:2}.vario-values{display:contents}#climbMax{order:1}#sinkMax{order:3}.sink{background:#111;color:white}.mini-metrics{background:var(--sub);border-radius:7px;padding:8px 10px}.mini-row{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid #777;padding:5px 0}.mini-row:last-child{border-bottom:0}.track{overflow-wrap:anywhere;color:#e2e7dc;margin-top:12px;font-size:13px}@media(max-width:520px){.detail-grid{grid-template-columns:1fr 1.45fr}.status-body{grid-template-columns:minmax(0,1fr) max-content}.status-side{justify-items:end}.sync,.battery-status{text-align:right}.battery-line{justify-content:flex-end}}</style></head><body><header><h1>Leaf</h1></header><main><div id=mainView class="view active"><section class=status-panel><h2>Status</h2><div class=status-body><div class=status id=status>Loading...</div><div class=status-side><div class=battery-status id=batteryBox><div class=battery-line><span id=batteryText>--%</span><div class=battery><span class=battery-fill id=batteryFill></span></div></div><div class=battery-meta id=batteryCharge>Unknown</div></div><div class=sync><strong>Log Sync</strong><span id=syncText>--</span></div></div></div></section><section><h2>Profiles</h2><label>Active pilot</label><select id=activePilotList></select><label>Active glider</label><select id=activeGliderList></select><div class=actions><p class="muted msg" id=mainProfileMsg></p><button class=secondary id=editProfiles>Edit Profiles</button></div></section><section><h2>Logbook</h2><div class=metrics><div class=metric><span>Total Flights</span><strong id=logCount>--</strong></div><div class=metric><span>Last Flight</span><strong id=logLatest>Loading...</strong></div></div><div class=actions><p class="muted msg" id=logMsg></p><button class=secondary id=openLogbook disabled>Open Logbook</button></div></section></div><div id=profilesView class=view><div class=subbar><button class=back id=backMain aria-label=Back>&#x276e;</button><h2>Edit Profiles</h2></div><section><h2>Pilots</h2><label>Active pilot</label><select id=pilotList></select><label>Name</label><input id=pilotName maxlength=48 autocomplete=name><div class="row profile-actions"><button id=pilotSave disabled>Save Profile</button><button class=secondary id=pilotNew>New</button><button class="small danger" id=pilotDelete>Delete</button></div><p class="muted msg" id=pilotMsg></p></section><section><h2>Gliders</h2><label>Active glider</label><select id=gliderList></select><div class=row><div><label>Brand</label><input id=gliderBrand maxlength=32></div><div><label>Model</label><input id=gliderModel maxlength=48></div></div><div class=row><div><label>Size</label><input id=gliderSize maxlength=16></div><div><label>Display name</label><input id=gliderDisplay maxlength=64></div></div><div class="row profile-actions"><button id=gliderSave disabled>Save Profile</button><button class=secondary id=gliderNew>New</button><button class="small danger" id=gliderDelete>Delete</button></div><p class="muted msg" id=gliderMsg></p></section></div><div id=logbookView class=view><div class=subbar><button class=back id=backLogMain aria-label=Back>&#x276e;</button><h2>Logbook</h2></div><section class=flight-card><div class=pager><button id=logPrev>&#x276e;</button><div class=page-title id=logPage>--</div><button id=logNext>&#x276f;</button></div><div class=flight-head><div id=flightTime>Loading...</div><div id=flightDuration></div></div><div class=alt-box><div class=alt-title>Altitude</div><div class=alt-row><div class=pill id=altStart><span>Start</span>--</div><div class=pill id=altMax><span>Max</span>--</div><div class=pill id=altEnd><span>End</span>--</div></div></div><div class=detail-grid><div class=vario-box><div class=vario-title>Vario</div><div class=vario-values><div class=pill id=climbMax>--</div><div class="pill sink" id=sinkMax>--</div></div></div><div class=mini-metrics id=flightMetrics></div></div><div class=track id=trackInfo></div><p class="muted msg" id=logDetailMsg></p></section></div></main><script>
+        R"leafapp(<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=Cache-Control content=no-store><title>Leaf</title><style>:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#202423;background:#363636;line-height:1.35;--leaf:#d8ff00;--ink:#202423;--panel:#565656;--sub:#4d4d4d;--danger:#7a1d1d}body{margin:0;background:#363636}header{background:var(--leaf);color:#0b0d0b;padding:12px 20px;text-align:center}main{max-width:640px;margin:auto;padding:18px}h1{font-family:Arial,sans-serif;font-size:38px;font-weight:500;letter-spacing:.12em;line-height:1;margin:0}h2{font-size:18px;margin:-16px -14px 14px;padding:10px 12px;color:#0b0d0b;background:var(--leaf);text-align:center;border-radius:5px 5px 0 0}section{background:var(--panel);border-radius:8px;margin:0 0 14px;padding:16px 14px}.status-panel{padding-top:14px}.status-panel h2{background:var(--panel);color:white;border-bottom:1px solid #a9a9a9;margin:-14px -14px 14px}.view{display:none}.view.active{display:block}.subbar{position:relative;display:flex;align-items:center;justify-content:center;min-height:38px;color:white;margin:0 0 14px}.back{position:absolute;left:0;top:0;width:42px;height:38px;background:white;color:var(--ink);border-color:white;box-shadow:none;padding:5px 8px;font-size:28px;font-weight:900;line-height:.9}.subbar h2{color:white;background:transparent;margin:0;padding:0;font-size:18px}.row{display:flex;gap:8px}.row>*{flex:1}.row>.small{flex:0 0 94px}.actions{display:flex;align-items:center;gap:10px;margin-top:12px}.actions .msg{flex:1;margin:0}.actions button,.profile-actions button{width:auto;padding:8px 10px;font-size:14px}.profile-actions{margin-top:12px;gap:14px}label{display:block;font-size:13px;font-weight:700;margin:10px 0 4px;color:white}input,select,button{box-sizing:border-box;width:100%;font:inherit;padding:11px;border:1px solid #b9c0b2;border-radius:7px;background:white;color:var(--ink)}input:focus,select:focus,button:focus{outline:2px solid var(--leaf);outline-offset:1px}select:disabled,button:disabled,.secondary:disabled,.danger:disabled{background:#686868;border-color:#686868;color:#8a8a8a;opacity:1;box-shadow:none}button{background:var(--ink);color:white;font-weight:750;border-color:var(--ink);box-shadow:inset 0 -2px 0 rgba(0,0,0,.22)}.secondary{background:white;color:var(--ink);border-color:#89917f;box-shadow:none}.danger{background:var(--danger);border-color:var(--danger);color:white}.hero{background:var(--leaf);border-color:var(--leaf);color:#0b0d0b}.profile-actions button:first-child:not(:disabled){background:var(--leaf);border-color:var(--leaf);color:#0b0d0b}.muted{color:#e2e7dc}.msg{min-height:20px;margin-top:10px}.status{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:13px;white-space:pre-wrap;color:white;min-width:0}.status-body{display:grid;grid-template-columns:minmax(0,1fr) max-content;align-items:start;justify-content:space-between;column-gap:14px}.status-side{display:grid;gap:8px;justify-items:end}.sync{color:#e2e7dc;font-size:12px;font-weight:650;text-align:right}.sync strong{display:block;color:white;font-size:13px}.battery-status{color:white;text-align:right;font-size:13px;font-weight:700}.battery-line{display:flex;align-items:center;justify-content:flex-end;gap:7px;margin-bottom:4px}.battery{position:relative;width:44px;height:20px;border:2px solid white;border-radius:4px;box-sizing:border-box}.battery:after{content:"";position:absolute;right:-6px;top:4px;width:4px;height:8px;background:white;border-radius:0 2px 2px 0}.battery-fill{display:block;height:100%;background:var(--leaf);border-radius:2px}.battery-meta{font-size:12px;font-weight:650;color:#e2e7dc}.metrics{display:grid;grid-template-columns:1fr 1fr;gap:9px}.metric{background:var(--sub);border-radius:7px;padding:8px 10px;color:white}.metric span{display:block;color:#dfe5d9;font-size:12px;font-weight:650;margin-bottom:2px}.metric strong{display:block;font-size:16px}#logCount{font-size:34px;line-height:1}.pager{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;gap:8px;margin-bottom:12px}.pager button{height:38px;padding:0;background:var(--leaf);border-color:var(--leaf);color:#0b0d0b}.pager button:disabled{background:#686868;border-color:#686868;color:#8a8a8a;box-shadow:none}.page-title{text-align:center;color:white;font-weight:800}.flight-head{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;color:white;margin-bottom:8px}.flight-head div:nth-child(2){text-align:center}.flight-head div:nth-child(3){text-align:right}.flight-profiles{display:flex;justify-content:space-between;gap:10px;color:var(--leaf);font-weight:800;margin:0 0 10px}.flight-profiles div{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.flight-profiles div:last-child{text-align:right}.flight-card{color:white}.alt-box,.vario-box{background:var(--sub);border-radius:7px;padding:12px;margin:12px 0}.alt-box{position:relative;padding-bottom:34px}.alt-title{position:absolute;left:0;right:0;bottom:8px;text-align:center}.alt-title,.vario-title{font-size:18px;font-weight:800}.vario-title{text-align:center}.alt-row{position:relative;height:118px;margin-top:4px}.alt-row .pill{position:absolute;min-width:74px;background:#111;color:white}.alt-row .pill.high{background:var(--leaf);color:#0b0d0b}.pill{background:var(--leaf);color:#0b0d0b;border-radius:6px;padding:5px 8px;font-weight:800;text-align:center}.pill span{display:block;font-size:11px}.detail-grid{display:grid;grid-template-columns:1fr 1.45fr;gap:10px}.vario-box{display:flex;flex-direction:column;justify-content:center;gap:9px}.vario-title{order:2}.vario-values{display:contents}#climbMax{order:1}#sinkMax{order:3}.sink{background:#111;color:white}.mini-metrics{background:var(--sub);border-radius:7px;padding:8px 10px}.mini-row{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid #777;padding:5px 0}.mini-row:last-child{border-bottom:0}.track{overflow-wrap:anywhere;color:#e2e7dc;margin-top:12px;font-size:13px}.delete-area{margin-top:14px;display:flex;justify-content:flex-end}.delete-area>button{width:auto;padding:8px 10px;font-size:14px}.delete-confirm{display:none;width:100%;text-align:left;background:rgba(0,0,0,.18);border-radius:7px;padding:10px}.delete-confirm button{width:100%;font-size:16px;padding:11px}.delete-warning{font-weight:500;margin:0 0 10px;color:white}@media(max-width:520px){.detail-grid{grid-template-columns:1fr 1.45fr}.status-body{grid-template-columns:minmax(0,1fr) max-content}.status-side{justify-items:end}.sync,.battery-status{text-align:right}.battery-line{justify-content:flex-end}}</style></head><body><header><h1>Leaf</h1></header><main><div id=mainView class="view active"><section class=status-panel><h2>Status</h2><div class=status-body><div class=status id=status>Loading...</div><div class=status-side><div class=battery-status id=batteryBox><div class=battery-line><span id=batteryText>--%</span><div class=battery><span class=battery-fill id=batteryFill></span></div></div><div class=battery-meta id=batteryCharge>Unknown</div></div><div class=sync><strong>Log Sync</strong><span id=syncText>--</span></div></div></div></section><section><h2>Profiles</h2><label>Active pilot</label><select id=activePilotList></select><label>Active glider</label><select id=activeGliderList></select><div class=actions><p class="muted msg" id=mainProfileMsg></p><button class=secondary id=editProfiles>Edit Profiles</button></div></section><section><h2>Logbook</h2><div class=metrics><div class=metric><span>Total Flights</span><strong id=logCount>--</strong></div><div class=metric><span>Last Flight</span><strong id=logLatest>Loading...</strong></div></div><div class=actions><p class="muted msg" id=logMsg></p><button class=secondary id=openLogbook disabled>Open Logbook</button></div></section></div><div id=profilesView class=view><div class=subbar><button class=back id=backMain aria-label=Back>&#x276e;</button><h2>Edit Profiles</h2></div><section><h2>Pilots</h2><label>Active pilot</label><select id=pilotList></select><label>Name</label><input id=pilotName maxlength=48 autocomplete=name><div class="row profile-actions"><button id=pilotSave disabled>Save Profile</button><button class=secondary id=pilotNew>New</button><button class="small danger" id=pilotDelete>Delete</button></div><p class="muted msg" id=pilotMsg></p></section><section><h2>Gliders</h2><label>Active glider</label><select id=gliderList></select><div class=row><div><label>Brand</label><input id=gliderBrand maxlength=32></div><div><label>Model</label><input id=gliderModel maxlength=48></div></div><div class=row><div><label>Size</label><input id=gliderSize maxlength=16></div><div><label>Display name</label><input id=gliderDisplay maxlength=64></div></div><div class="row profile-actions"><button id=gliderSave disabled>Save Profile</button><button class=secondary id=gliderNew>New</button><button class="small danger" id=gliderDelete>Delete</button></div><p class="muted msg" id=gliderMsg></p></section></div><div id=logbookView class=view><div class=subbar><button class=back id=backLogMain aria-label=Back>&#x276e;</button><h2>Logbook</h2></div><section class=flight-card><div class=pager><button id=logPrev>&#x276e;</button><div class=page-title id=logPage>--</div><button id=logNext>&#x276f;</button></div><div class=flight-head><div id=flightDate>Loading...</div><div id=flightTime></div><div id=flightDuration></div></div><div class=flight-profiles><div id=flightPilot></div><div id=flightGlider></div></div><div class=alt-box><div class=alt-title>Altitude</div><div class=alt-row><div class=pill id=altStart><span>Start</span>--</div><div class=pill id=altMax><span>Max</span>--</div><div class=pill id=altEnd><span>End</span>--</div></div></div><div class=detail-grid><div class=vario-box><div class=vario-title>Vario</div><div class=vario-values><div class=pill id=climbMax>--</div><div class="pill sink" id=sinkMax>--</div></div></div><div class=mini-metrics id=flightMetrics></div></div><div class=track id=trackInfo></div><div class=delete-area><button class=danger id=deleteLog>Delete Log</button><div class=delete-confirm id=deleteConfirm><p class=delete-warning>Delete log and track file?</p><div class=row><button class=danger id=confirmDelete>Confirm Delete</button><button class=hero id=cancelDelete>Cancel</button></div></div></div><p class="muted msg" id=logDetailMsg></p></section></div></main><script>
 let profiles={schema:'leaf.profiles',schema_version:'v0.1.0',active_pilot_id:null,active_glider_id:null,pilots:[],gliders:[]},pilotSnap={},gliderSnap={},logState={prev:'',next:'',path:''};
 const $=id=>document.getElementById(id),clean=v=>{v=(v||'').trim();return v?v:null},newId=()=>Math.floor(Math.random()*0xffffffff).toString(16).padStart(8,'0');
 function pilotLabel(p){return p.name||'Unnamed pilot'}function gliderLabel(g){return g.display_name||[g.brand,g.model,g.size].filter(Boolean).join(' ')||'Unnamed glider'}
@@ -742,15 +796,17 @@ function render(){fillSelect($('pilotList'),profiles.pilots,pilotLabel);fillSele
 function normalize(){profiles.schema='leaf.profiles';profiles.schema_version='v0.1.0';profiles.pilots=(profiles.pilots||[]).filter(p=>p&&p.id&&p.name);profiles.gliders=(profiles.gliders||[]).filter(g=>g&&g.id&&g.model);if(!profiles.pilots.find(p=>p.id==profiles.active_pilot_id))profiles.active_pilot_id=profiles.pilots.length==1?profiles.pilots[0].id:null;if(!profiles.gliders.find(g=>g.id==profiles.active_glider_id))profiles.active_glider_id=profiles.gliders.length==1?profiles.gliders[0].id:null}
 async function save(){normalize();let r=await fetch('/api/profiles',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(profiles)});if(!r.ok)throw new Error();render()}
 function versionText(v){let a=(v||'').split('+'),fw=a[0]||'unknown',hw=a[1]||'';if(fw[0]!='v')fw='v'+fw;if(hw){if(hw[0]=='h')hw=hw.slice(1);if(hw[0]!='v')hw='v'+hw}return `firmware: ${fw}`+(hw?`\nhardware: ${hw}`:'')}
-function logDateTime(t,h12){if(!t)return'';let a=t.split('T'),d=a[0]||'',hm=(a[1]||'').slice(0,5),h=Number(hm.slice(0,2)),m=hm.slice(3,5);if(h12&&Number.isFinite(h)){let ap=h>=12?'PM':'AM';h=h%12||12;hm=h+':'+m+'\u00a0'+ap}return d+'  '+hm}
+function logParts(t,h12){if(!t)return{date:'',time:''};let a=t.split('T'),d=a[0]||'',hm=(a[1]||'').slice(0,5),h=Number(hm.slice(0,2)),m=hm.slice(3,5);if(h12&&Number.isFinite(h)){let ap=h>=12?'PM':'AM';h=h%12||12;hm=h+':'+m+'\u00a0'+ap}return{date:d,time:hm}}function logDateTime(t,h12){let p=logParts(t,h12);return p.date?(p.date+'  '+p.time):''}
 function dur(s){s=Number(s)||0;let h=Math.floor(s/3600),m=Math.floor((s%3600)/60);return h?h+'h '+m+'m':m+'m'}
 function good(v){return v!==null&&v!==undefined&&v!==""&&Number.isFinite(Number(v))}function m(v){return good(v)?Math.round(Number(v))+' m':'--'}function ms(v){return good(v)?Number(v).toFixed(1)+' m/s':'--'}function kph(v){return good(v)?(Number(v)*3.6).toFixed(1)+' kph':'--'}function dist(v){if(!good(v))return'--';v=Number(v);return v>=1000?(v/1000).toFixed(2)+' km':Math.round(v)+' m'}
-function renderAlt(e){let s=Number(e.start_altitude_m),x=Number(e.max_altitude_m),n=Number(e.min_altitude_m),end=Number(e.end_altitude_m);let vals=[s,x,end].filter(Number.isFinite);if(!Number.isFinite(n))n=Math.min(...vals,0);let hi=Math.max(...vals,0),lo=Math.min(n,...vals,0),range=Math.max(1,hi-lo),top=v=>Number.isFinite(v)?Math.round((hi-v)/range*72)+4:40;let a=$('altStart'),b=$('altMax'),c=$('altEnd');[a,b,c].forEach(q=>q.classList.remove('high'));a.lastChild.textContent=m(s);b.lastChild.textContent=m(x);c.lastChild.textContent=m(end);a.style.left='0';a.style.top=top(s)+'px';b.style.left='50%';b.style.transform='translateX(-50%)';b.style.top=top(x)+'px';b.style.display=x>Math.max(s,end)?'block':'none';c.style.right='0';c.style.top=top(end)+'px';let high=b.style.display!='none'&&x>=hi?b:(s>=end?a:c);high.classList.add('high')}
+function renderAlt(e){let s=Number(e.start_altitude_m),x=Number(e.max_altitude_m),n=Number(e.min_altitude_m),end=Number(e.end_altitude_m);let vals=[s,x,end].filter(Number.isFinite),a=$('altStart'),b=$('altMax'),c=$('altEnd');[a,b,c].forEach(q=>{q.classList.remove('high');q.style.display='none'});if(!vals.length)return;if(!Number.isFinite(n))n=Math.min(...vals,0);let hi=Math.max(...vals,0),lo=Math.min(n,...vals,0),range=Math.max(1,hi-lo),top=v=>Number.isFinite(v)?Math.round((hi-v)/range*72)+4:40;if(Number.isFinite(s)){a.style.display='block';a.lastChild.textContent=m(s);a.style.left='0';a.style.top=top(s)+'px'}if(Number.isFinite(x)&&x>Math.max(Number.isFinite(s)?s:-1e9,Number.isFinite(end)?end:-1e9)){b.style.display='block';b.lastChild.textContent=m(x);b.style.left='50%';b.style.transform='translateX(-50%)';b.style.top=top(x)+'px'}if(Number.isFinite(end)){c.style.display='block';c.lastChild.textContent=m(end);c.style.right='0';c.style.top=top(end)+'px'}let shown=[a,b,c].filter(q=>q.style.display!='none'),high=shown.reduce((best,q)=>!best||parseInt(q.style.top)<parseInt(best.style.top)?q:best,null);if(high)high.classList.add('high')}
 async function loadStatus(){try{let s=await(await fetch('/api/user/status')).json();$('status').textContent=`mode: ${s.mode}\nssid: ${s.ssid||'(none)'}\nip: ${s.ip_address||'(none)'}\n`+versionText(s.firmware_version);if(Number.isFinite(Number(s.battery_percent))){let p=Math.max(0,Math.min(100,Number(s.battery_percent)));$('batteryFill').style.width=p+'%';$('batteryText').textContent=p+'%';$('batteryCharge').textContent=s.battery_charging?'Charging':'Not charging'}else $('batteryBox').style.display='none';$('syncText').textContent=s.log_sync_complete?'Complete':(s.log_sync_total?`${s.log_sync_uploaded||0}/${s.log_sync_total} uploaded`:'--')}catch(e){$('status').textContent='Unable to read status.'}}
 async function loadLogbook(){try{let d=await(await fetch('/api/logbook')).json();$('logCount').textContent=d.count||0;$('openLogbook').disabled=!d.count;$('logLatest').textContent=d.latest&&d.latest.start_time_local?logDateTime(d.latest.start_time_local,d.time_12h):(d.count?'Unknown':'No flights')}catch(e){$('logLatest').textContent='Unavailable';$('openLogbook').disabled=true}}
-async function loadLogEntry(path){msg('logDetailMsg','Loading...');let url='/api/logbook/entry'+(path?'?path='+encodeURIComponent(path):'');try{let d=await(await fetch(url)).json();if(!d.ok)throw new Error();let e=d.entry;logState={prev:d.previous_path||'',next:d.next_path||'',path:e.path||''};$('logPage').textContent=(d.position||'--')+'/'+(d.total||'--');$('logPrev').disabled=!logState.next;$('logNext').disabled=!logState.prev;$('flightTime').textContent=logDateTime(e.start_time_local,d.time_12h)||'Time unknown';$('flightDuration').textContent='Duration: '+dur(e.duration_seconds);renderAlt(e);$('climbMax').textContent=ms(e.max_climb_rate_mps);$('sinkMax').textContent=ms(e.max_sink_rate_mps);let rows=[['Max Speed',kph(e.max_ground_speed_mps)],['Path Dist',dist(e.path_distance_m)],['Straight Dist',dist(e.straight_line_distance_m)],['Accel',(good(e.min_accel_g)&&good(e.max_accel_g)?Number(e.min_accel_g).toFixed(1)+' / '+Number(e.max_accel_g).toFixed(1)+' G':'--')],['Temp',(good(e.min_temperature_c)&&good(e.max_temperature_c)?Math.round(Number(e.min_temperature_c))+' / '+Math.round(Number(e.max_temperature_c))+' C':'--')]];if(e.max_wind_valid)rows.push(['Wind',kph(e.max_wind_speed_mps)+' '+Math.round(e.max_wind_direction_from_deg)+' deg']);$('flightMetrics').innerHTML=rows.map(r=>`<div class=mini-row><span>${r[0]}</span><strong>${r[1]}</strong></div>`).join('');$('trackInfo').textContent=(e.track_saved?'Track: '+(e.track_path||'saved'):'No track file')+(e.flight_id?' | ID: '+e.flight_id:'');msg('logDetailMsg','')}catch(x){msg('logDetailMsg','Unable to load log.')}}
+function resetDelete(){$('deleteLog').style.display='block';$('deleteConfirm').style.display='none'}
+function clearLogCard(d){logState={prev:d&&d.previous_path||'',next:d&&d.next_path||'',path:d&&d.path||''};$('logPage').textContent=((d&&d.position)||'--')+'/'+((d&&d.total)||'--');$('logPrev').disabled=!logState.next;$('logNext').disabled=!logState.prev;$('flightDate').textContent='Date unknown';$('flightTime').textContent='';$('flightDuration').textContent='Duration: --';$('flightPilot').textContent='';$('flightGlider').textContent='';renderAlt({});$('climbMax').style.display='none';$('sinkMax').style.display='none';$('flightMetrics').innerHTML=['Max Speed','Path Dist','Straight Dist','Accel','Temp'].map(x=>`<div class=mini-row><span>${x}</span><strong>--</strong></div>`).join('');$('trackInfo').textContent=(d&&d.filename?'Bad log: '+d.filename:'Bad log');$('deleteLog').disabled=!logState.path}
+async function loadLogEntry(path){msg('logDetailMsg','Loading...');resetDelete();$('deleteLog').disabled=false;let url='/api/logbook/entry'+(path?'?path='+encodeURIComponent(path):'');try{let r=await fetch(url),d=await r.json().catch(()=>({}));if(!r.ok||!d.ok){clearLogCard(d);throw d}let e=d.entry;logState={prev:d.previous_path||'',next:d.next_path||'',path:e.path||''};$('logPage').textContent=(d.position||'--')+'/'+(d.total||'--');$('logPrev').disabled=!logState.next;$('logNext').disabled=!logState.prev;let lp=logParts(e.start_time_local,d.time_12h);$('flightDate').textContent=lp.date||'Date unknown';$('flightTime').textContent=lp.time||'';$('flightDuration').textContent='Duration: '+dur(e.duration_seconds);$('flightPilot').textContent=e.pilot_name||'';$('flightGlider').textContent=e.glider_display_name||'';renderAlt(e);$('climbMax').style.display=good(e.max_climb_rate_mps)?'block':'none';$('sinkMax').style.display=good(e.max_sink_rate_mps)?'block':'none';$('climbMax').textContent=ms(e.max_climb_rate_mps);$('sinkMax').textContent=ms(e.max_sink_rate_mps);let rows=[['Max Speed',kph(e.max_ground_speed_mps)],['Path Dist',dist(e.path_distance_m)],['Straight Dist',dist(e.straight_line_distance_m)],['Accel',(good(e.min_accel_g)&&good(e.max_accel_g)?Number(e.min_accel_g).toFixed(1)+' / '+Number(e.max_accel_g).toFixed(1)+' G':'--')],['Temp',(good(e.min_temperature_c)&&good(e.max_temperature_c)?Math.round(Number(e.min_temperature_c))+' / '+Math.round(Number(e.max_temperature_c))+' C':'--')]];if(e.max_wind_valid)rows.push(['Wind',kph(e.max_wind_speed_mps)+' '+Math.round(e.max_wind_direction_from_deg)+' deg']);$('flightMetrics').innerHTML=rows.map(r=>`<div class=mini-row><span>${r[0]}</span><strong>${r[1]}</strong></div>`).join('');$('trackInfo').textContent=(e.track_saved?'Track: '+(e.track_path||'saved'):'No track file')+(e.flight_id?' | ID: '+e.flight_id:'');$('deleteLog').disabled=!logState.path;msg('logDetailMsg','')}catch(x){resetDelete();if(!(x&&x.path))$('deleteLog').disabled=true;msg('logDetailMsg',x&&x.detail?x.detail:'Unable to load log.')}}
 async function loadProfiles(){try{profiles=await(await fetch('/api/profiles')).json();normalize();msg('pilotMsg','');msg('gliderMsg','');render()}catch(e){msg('pilotMsg','Unable to read profiles.')}}
-$('editProfiles').onclick=()=>show('profiles');$('backMain').onclick=()=>show('main');$('backLogMain').onclick=()=>show('main');$('openLogbook').onclick=()=>{show('logbook');loadLogEntry('')};$('logPrev').onclick=()=>{if(logState.next)loadLogEntry(logState.next)};$('logNext').onclick=()=>{if(logState.prev)loadLogEntry(logState.prev)};['pilotName','gliderBrand','gliderModel','gliderSize','gliderDisplay'].forEach(x=>$(x).oninput=buttons);
+$('editProfiles').onclick=()=>show('profiles');$('backMain').onclick=()=>show('main');$('backLogMain').onclick=()=>show('main');$('openLogbook').onclick=()=>{show('logbook');loadLogEntry('')};$('logPrev').onclick=()=>{if(logState.next)loadLogEntry(logState.next)};$('logNext').onclick=()=>{if(logState.prev)loadLogEntry(logState.prev)};$('deleteLog').onclick=()=>{if(!logState.path)return;$('deleteLog').style.display='none';$('deleteConfirm').style.display='block';msg('logDetailMsg','')};$('cancelDelete').onclick=resetDelete;$('confirmDelete').onclick=async()=>{if(!logState.path)return;msg('logDetailMsg','Deleting...');try{let r=await fetch('/api/logbook/entry?path='+encodeURIComponent(logState.path),{method:'DELETE'}),d=await r.json().catch(()=>({}));if(!r.ok||!d.ok)throw d;await loadLogbook();if(d.count>0)loadLogEntry(d.next_path||'');else{show('main');msg('logMsg','Log deleted.')}}catch(x){msg('logDetailMsg',x&&x.detail?x.detail:'Unable to delete log.');resetDelete()}};['pilotName','gliderBrand','gliderModel','gliderSize','gliderDisplay'].forEach(x=>$(x).oninput=buttons);
 $('activePilotList').onchange=()=>{profiles.active_pilot_id=$('activePilotList').value;render();save().then(()=>msg('mainProfileMsg','Active pilot saved.')).catch(()=>msg('mainProfileMsg','Unable to save.'))};
 $('activeGliderList').onchange=()=>{profiles.active_glider_id=$('activeGliderList').value;render();save().then(()=>msg('mainProfileMsg','Active glider saved.')).catch(()=>msg('mainProfileMsg','Unable to save.'))};
 $('pilotList').onchange=()=>{profiles.active_pilot_id=$('pilotList').value;render();save().then(()=>msg('pilotMsg','Active pilot selected.')).catch(()=>msg('pilotMsg','Unable to save.'))};
@@ -825,6 +881,10 @@ loadStatus();loadProfiles();loadLogbook();
     json += jsonEscape(summary.filename);
     json += "\",\"flight_id\":\"";
     json += jsonEscape(summary.flightId);
+    json += "\",\"pilot_name\":\"";
+    json += jsonEscape(summary.pilotName);
+    json += "\",\"glider_display_name\":\"";
+    json += jsonEscape(summary.gliderDisplayName);
     json += "\",\"start_time_local\":\"";
     json += jsonEscape(summary.startTimeLocal);
     json += "\",\"duration_seconds\":";
@@ -905,15 +965,53 @@ loadStatus();loadProfiles();loadLogbook();
     String path = target.arg("path");
     if (path.isEmpty() && !LogbookStore::newestEntryPath(path)) {
       heap_monitor::record("logbook-entry-empty");
-      target.send(404, "application/json", "{\"ok\":false,\"error\":\"no_logs\"}");
+      target.send(404, "application/json",
+                  "{\"ok\":false,\"error\":\"no_logs\",\"detail\":\"No logs found.\"}");
       return;
     }
 
     path = LogbookStore::normalizePath(path);
+    if (!LogbookStore::isLogbookJsonPath(path)) {
+      heap_monitor::record("logbook-entry-bad-path");
+      target.send(400, "application/json",
+                  "{\"ok\":false,\"error\":\"bad_path\",\"detail\":\"Invalid log path.\"}");
+      return;
+    }
+    if (!SD_MMC.exists(path)) {
+      heap_monitor::record("logbook-entry-missing");
+      target.send(404, "application/json",
+                  "{\"ok\":false,\"error\":\"missing\",\"detail\":\"Log file was not found.\"}");
+      return;
+    }
+
     LogbookEntrySummary summary;
     if (!LogbookStore::readSummary(path, summary)) {
       heap_monitor::record("logbook-entry-fail");
-      target.send(404, "application/json", "{\"ok\":false,\"error\":\"not_found\"}");
+      uint16_t position = 0;
+      uint16_t total = 0;
+      LogbookStore::entryPositionNewestFirst(path, position, total);
+
+      String previousPath;
+      String nextPath;
+      const bool hasPrevious = LogbookStore::previousEntryPath(path, previousPath);
+      const bool hasNext = LogbookStore::nextEntryPath(path, nextPath);
+
+      String json =
+          "{\"ok\":false,\"error\":\"invalid_json\",\"detail\":\"Log file could not be parsed.\","
+          "\"path\":\"";
+      json += jsonEscape(path);
+      json += "\",\"filename\":\"";
+      json += jsonEscape(LogbookStore::filenameFromPath(path));
+      json += "\",\"position\":";
+      json += position;
+      json += ",\"total\":";
+      json += total;
+      json += ",\"previous_path\":\"";
+      json += hasPrevious ? jsonEscape(previousPath) : "";
+      json += "\",\"next_path\":\"";
+      json += hasNext ? jsonEscape(nextPath) : "";
+      json += "\"}";
+      target.send(422, "application/json", json);
       return;
     }
 
@@ -941,6 +1039,48 @@ loadStatus();loadProfiles();loadLogbook();
     json += "}";
 
     heap_monitor::record("logbook-entry-end");
+    sendNoStoreHeaders(target);
+    target.send(200, "application/json", json);
+  }
+
+  void deleteLogbookEntry(WebServer& target) {
+    if (!user_app_enabled) {
+      target.send(404, "application/json", "{\"ok\":false,\"error\":\"inactive\"}");
+      return;
+    }
+
+    heap_monitor::record("logbook-delete-start");
+    String path = LogbookStore::normalizePath(target.arg("path"));
+    if (!LogbookStore::isLogbookJsonPath(path)) {
+      heap_monitor::record("logbook-delete-bad-path");
+      target.send(400, "application/json",
+                  "{\"ok\":false,\"error\":\"bad_path\",\"detail\":\"Invalid log path.\"}");
+      return;
+    }
+    if (!SD_MMC.exists(path)) {
+      heap_monitor::record("logbook-delete-missing");
+      target.send(404, "application/json",
+                  "{\"ok\":false,\"error\":\"missing\",\"detail\":\"Log file was not found.\"}");
+      return;
+    }
+
+    if (!LogbookStore::deleteEntry(path)) {
+      heap_monitor::record("logbook-delete-fail");
+      target.send(
+          500, "application/json",
+          "{\"ok\":false,\"error\":\"delete_failed\",\"detail\":\"Log could not be deleted.\"}");
+      return;
+    }
+
+    String newestPath;
+    const bool hasNext = LogbookStore::newestEntryPath(newestPath);
+    String json = "{\"ok\":true,\"next_path\":\"";
+    json += hasNext ? jsonEscape(newestPath) : "";
+    json += "\",\"count\":";
+    json += LogbookStore::count();
+    json += "}";
+
+    heap_monitor::record("logbook-delete-end");
     sendNoStoreHeaders(target);
     target.send(200, "application/json", json);
   }
@@ -1088,6 +1228,10 @@ loadStatus();loadProfiles();loadLogbook();
       user_server.on("/api/logbook/entry", HTTP_GET, []() {
         user_app_route_logbook_entry_count++;
         sendLogbookEntry(user_server);
+      });
+      user_server.on("/api/logbook/entry", HTTP_DELETE, []() {
+        user_app_route_logbook_delete_count++;
+        deleteLogbookEntry(user_server);
       });
       user_server.on("/api/wifi/status", HTTP_GET,
                      []() { user_server.send(200, "application/json", wifiStatusJson()); });

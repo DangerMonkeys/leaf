@@ -3,6 +3,7 @@
 #include <ArduinoJson.h>
 #include <SD_MMC.h>
 #include <esp_system.h>
+#include <math.h>
 #include <time.h>
 
 #include "instruments/gps.h"
@@ -44,13 +45,21 @@ namespace {
     event["time_local"] = local;
   }
 
+  void addFloat(JsonObject object, const char* key, float value) {
+    if (isfinite(value)) {
+      object[key] = value;
+    } else {
+      object[key] = nullptr;
+    }
+  }
+
   void addLocation(JsonObject event, float lat, float lon, float altitudeM, bool valid) {
     if (!valid) return;
 
     JsonObject location = event["location"].to<JsonObject>();
-    location["lat_deg"] = lat;
-    location["lon_deg"] = lon;
-    location["altitude_m"] = altitudeM;
+    addFloat(location, "lat_deg", lat);
+    addFloat(location, "lon_deg", lon);
+    addFloat(location, "altitude_m", altitudeM);
   }
 }  // namespace
 
@@ -225,13 +234,13 @@ bool LogbookEntryFile::writeJson(const FlightStats& stats, bool finalEntry,
 
   JsonObject start = doc["start"].to<JsonObject>();
   addSystemTime(start, startTimeValid_, startEpoch_);
-  start["temperature_c"] = startTemperatureC_;
+  addFloat(start, "temperature_c", startTemperatureC_);
 
   if (firstFixCaptured_) {
     JsonObject firstFix = doc["first_fix"].to<JsonObject>();
     addSystemTime(firstFix, firstFixTimeValid_, firstFixEpoch_);
     addLocation(firstFix, stats.startLocationLat, stats.startLocationLng, stats.gpsalt_start, true);
-    firstFix["temperature_c"] = firstFixTemperatureC_;
+    addFloat(firstFix, "temperature_c", firstFixTemperatureC_);
   }
 
   if (finalEntry) {
@@ -239,30 +248,30 @@ bool LogbookEntryFile::writeJson(const FlightStats& stats, bool finalEntry,
     addSystemTime(end, gps.systemTimeSyncedThisBoot(), time(nullptr));
     addLocation(end, stats.endLocationLat, stats.endLocationLng, stats.gpsalt_end,
                 stats.endLocationLat != 0 || stats.endLocationLng != 0);
-    end["temperature_c"] = stats.temperature;
+    addFloat(end, "temperature_c", stats.temperature);
   }
 
   JsonObject metrics = doc["metrics"].to<JsonObject>();
   metrics["duration_seconds"] = stats.duration;
-  metrics["max_altitude_m"] = stats.gpsalt_max;
-  metrics["min_altitude_m"] = stats.gpsalt_min;
-  metrics["max_altitude_above_launch_m"] = stats.gpsalt_above_launch_max;
-  metrics["max_climb_rate_mps"] = stats.climb_max / 100.0f;
-  metrics["max_sink_rate_mps"] = stats.climb_min / 100.0f;
-  metrics["max_ground_speed_mps"] = stats.speed_max;
+  addFloat(metrics, "max_altitude_m", stats.gpsalt_max);
+  addFloat(metrics, "min_altitude_m", stats.gpsalt_min);
+  addFloat(metrics, "max_altitude_above_launch_m", stats.gpsalt_above_launch_max);
+  addFloat(metrics, "max_climb_rate_mps", stats.climb_max / 100.0f);
+  addFloat(metrics, "max_sink_rate_mps", stats.climb_min / 100.0f);
+  addFloat(metrics, "max_ground_speed_mps", stats.speed_max);
   if (stats.windValid) {
     JsonObject maxWind = metrics["max_wind"].to<JsonObject>();
-    maxWind["speed_mps"] = stats.windSpeedMax;
-    maxWind["direction_from_deg"] = stats.windDirectionFromAtMaxDeg;
+    addFloat(maxWind, "speed_mps", stats.windSpeedMax);
+    addFloat(maxWind, "direction_from_deg", stats.windDirectionFromAtMaxDeg);
   }
-  metrics["average_ground_speed_mps"] =
-      stats.duration > 0 ? stats.distanceAlongPath / stats.duration : 0;
-  metrics["straight_line_distance_m"] = stats.distanceStraightLine;
-  metrics["path_distance_m"] = stats.distanceAlongPath;
-  metrics["max_accel_g"] = stats.accel_max;
-  metrics["min_accel_g"] = stats.accel_min;
-  metrics["max_temperature_c"] = stats.temperature_max;
-  metrics["min_temperature_c"] = stats.temperature_min;
+  addFloat(metrics, "average_ground_speed_mps",
+           stats.duration > 0 ? stats.distanceAlongPath / stats.duration : 0);
+  addFloat(metrics, "straight_line_distance_m", stats.distanceStraightLine);
+  addFloat(metrics, "path_distance_m", stats.distanceAlongPath);
+  addFloat(metrics, "max_accel_g", stats.accel_max);
+  addFloat(metrics, "min_accel_g", stats.accel_min);
+  addFloat(metrics, "max_temperature_c", stats.temperature_max);
+  addFloat(metrics, "min_temperature_c", stats.temperature_min);
 
   JsonObject track = doc["track"].to<JsonObject>();
   track["saved"] = !trackPath.isEmpty();
