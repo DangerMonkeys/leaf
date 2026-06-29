@@ -1,76 +1,18 @@
 #include "ui/display/pages/menu/page_logbook.h"
 
 #include "hardware/buttons.h"
-#include "instruments/gps.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
 #include "ui/display/display_fields.h"
 #include "ui/display/fonts.h"
+#include "ui/display/logbook_card.h"
 #include "ui/display/pages.h"
-#include "ui/settings/settings.h"
-#include "utils/string_utils.h"
 
 namespace {
   constexpr uint8_t MENU_INPUT_X = 74;
   constexpr uint8_t MENU_BACK_Y = 190;
   constexpr uint8_t DELETE_HOLD_COUNT = 5;
-
-  String formatLogbookAltitude(float meters) {
-    return formatAlt(static_cast<int32_t>(meters * 100), settings.units_alt, true);
-  }
-
-  String formatLogbookClimb(float metersPerSecond) {
-    String formatted = formatClimbRate(static_cast<int32_t>(fabsf(metersPerSecond) * 100),
-                                       settings.units_climb, true);
-    if (formatted.length() > 0 && formatted[0] == '+') {
-      formatted.setCharAt(0, ' ');
-    }
-    return formatted;
-  }
-
-  String formatLogbookClimbWithArrow(float metersPerSecond, char arrow) {
-    return formatLogbookClimb(metersPerSecond) + String(arrow);
-  }
-
-  String formatLogbookClimbRange(const LogbookEntrySummary& summary) {
-    return formatLogbookClimbWithArrow(summary.maxClimbRateMps, (char)141) +
-           formatLogbookClimbWithArrow(summary.maxSinkRateMps, (char)142);
-  }
-
-  void drawMetricRow(const String& label, const String& value, uint8_t y) {
-    u8g2.setCursor(0, y);
-    u8g2.print(label);
-    u8g2.setCursor(96 - u8g2.getStrWidth(value.c_str()), y);
-    u8g2.print(value);
-  }
-
-  void drawMetricRow(char labelGlyph, const String& value, uint8_t y) {
-    u8g2.setCursor(0, y);
-    u8g2.print(labelGlyph);
-    u8g2.setCursor(96 - u8g2.getStrWidth(value.c_str()), y);
-    u8g2.print(value);
-  }
-
-  String formatWindDirection(float directionFromDeg) {
-    int degrees = static_cast<int>(directionFromDeg + 0.5f) % 360;
-    if (settings.units_heading) {
-      return gps.cardinal(degrees);
-    }
-    return String(degrees) + String((char)144);
-  }
-
-  String formatWindSpeed(float speedMps) {
-    float speed = settings.units_speed ? speedMps * 2.23694f : speedMps * 3.6f;
-    if (speed > 99) speed = 99;
-    return String(static_cast<int>(speed + 0.5f)) + (settings.units_speed ? "mph" : "kph");
-  }
-
-  String formatMaxWind(const LogbookEntrySummary& summary) {
-    if (!summary.maxWindValid) return "--";
-    return formatWindSpeed(summary.maxWindSpeedMps) + " " +
-           formatWindDirection(summary.maxWindDirectionFromDeg);
-  }
 }  // namespace
 
 PageLogbook::PageLogbook() {
@@ -170,35 +112,15 @@ void PageLogbook::drawEmpty() {
 }
 
 void PageLogbook::drawEntry() {
-  u8g2.setFont(leaf_5x8);
-  u8g2.setCursor(0, 35);
-  u8g2.print(dateString());
-  const String time = timeString();
-  u8g2.setCursor(96 - u8g2.getStrWidth(time.c_str()), 35);
-  u8g2.print(time);
+  logbook_card::drawFlightCard(summary);
 
-  u8g2.setFont(leaf_6x12);
-  drawMetricRow("Timer:", formatSeconds(summary.durationSeconds, false, 0), 50);
-
-  drawMetricRow("MaxAlt:", formatLogbookAltitude(summary.maxAltitudeM), 65);
-  drawMetricRow("AbvTO:", formatLogbookAltitude(summary.maxAltitudeAboveLaunchM), 78);
-  drawMetricRow("", formatLogbookClimbRange(summary), 91);
-  drawMetricRow("MaxSpeed:", formatSpeed(summary.maxGroundSpeedMps, settings.units_speed, true),
-                104);
-  drawMetricRow(
-      "Accel:", formatAccel(summary.maxAccelG, true) + '/' + formatAccel(summary.minAccelG, true),
-      117);
-  if (summary.maxWindValid) {
-    drawMetricRow((char)143, formatMaxWind(summary), 130);
-  }
-
-  drawDeleteRow(153);
-  drawPageRow(168);
+  drawDeleteRow(156);
+  drawPageRow(171);
 
   if (deletePending) {
     uint8_t width =
         deletePending >= DELETE_HOLD_COUNT ? 96 : deletePending * 96 / DELETE_HOLD_COUNT;
-    u8g2.drawBox(0, 170, width, 4);
+    u8g2.drawBox(0, 173, width, 4);
   }
 }
 
@@ -254,29 +176,6 @@ void PageLogbook::drawPageRow(uint8_t y) {
   }
 
   u8g2.setDrawColor(1);
-}
-
-String PageLogbook::dateString() const {
-  if (summary.startTimeValid && summary.startTimeLocal.length() >= 10) {
-    return summary.startTimeLocal.substring(5, 7) + "/" + summary.startTimeLocal.substring(8, 10) +
-           "/" + summary.startTimeLocal.substring(2, 4);
-  }
-  return "Date?";
-}
-
-String PageLogbook::timeString() const {
-  if (summary.startTimeValid && summary.startTimeLocal.length() >= 16) {
-    int hour = summary.startTimeLocal.substring(11, 13).toInt();
-    const String minute = summary.startTimeLocal.substring(14, 16);
-    if (!settings.units_hours) {
-      return summary.startTimeLocal.substring(11, 16);
-    }
-    const bool pm = hour >= 12;
-    hour %= 12;
-    if (hour == 0) hour = 12;
-    return String(hour) + ":" + minute + (pm ? " PM" : " AM");
-  }
-  return "Time?";
 }
 
 void PageLogbook::setting_change(Button dir, ButtonEvent state, uint8_t count) {

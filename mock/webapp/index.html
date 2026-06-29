@@ -8,7 +8,7 @@
   <style>
     :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#202423;background:#363636;line-height:1.35;--leaf:#d8ff00;--ink:#202423;--graphite:#565656;--soft:#f6f7f3;--line:#d7dccf;--muted:#626a5d;--danger:#7a1d1d}
     body{margin:0;background:#363636}
-    header{background:var(--leaf);color:#0b0d0b;padding:12px 20px;text-align:center}
+    header{background:var(--leaf);color:#0b0d0b;padding:11px 20px;text-align:center}
     main{max-width:640px;margin:auto;padding:18px 18px 24px}
     h1{font-family:Arial,sans-serif;font-size:38px;font-weight:500;letter-spacing:.12em;line-height:1;margin:0}
     h2{font-size:18px;margin:-16px -14px 14px;padding:10px 12px;color:#0b0d0b;background:var(--leaf);text-align:center;border-radius:5px 5px 0 0}
@@ -18,8 +18,8 @@
     .status-panel h2{background:var(--graphite);color:white;border-bottom:1px solid #a9a9a9}
     .view{display:none}
     .view.active{display:block}
-    .subbar{position:relative;display:flex;align-items:center;justify-content:center;min-height:38px;color:white;margin:0 0 14px}
-    .back{position:absolute;left:0;top:0;width:42px;height:38px;background:white;color:var(--ink);border-color:white;box-shadow:none;padding:5px 8px;font-size:28px;font-weight:900;line-height:.9}
+    .subbar{position:relative;display:flex;align-items:center;justify-content:center;min-height:34px;color:white;margin:0 0 14px}
+    .back{position:absolute;left:0;top:-3px;width:44px;height:40px;background:white;color:var(--ink);border-color:white;box-shadow:none;padding:3px 8px;font-size:32px;font-weight:900;line-height:.85}
     .subbar h2{color:white;background:transparent;margin:0;padding:0;font-size:18px;text-align:center;border-radius:0}
     .grid{display:grid;gap:10px}
     .row{display:flex;gap:8px}
@@ -53,9 +53,9 @@
     .battery:after{content:"";position:absolute;right:-6px;top:4px;width:4px;height:8px;background:white;border-radius:0 2px 2px 0}
     .battery-fill{display:block;height:100%;background:var(--leaf);border-radius:2px}
     .battery-meta{font-size:12px;font-weight:650;color:#e2e7dc}
-    .sync-status{color:#e2e7dc;font-size:12px;font-weight:650;text-align:center}
-    .sync-status strong{display:block;color:white;font-size:13px}
     .msg{min-height:20px;margin-top:10px}
+    #profilesView section{padding-bottom:4px}
+    #profilesView .msg{min-height:0;margin:6px 0 0;line-height:1.2}
     .log-pager{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:14px}
     .log-pager button{width:40px;height:34px;padding:4px 8px;font-size:21px;line-height:1}
     .log-count{min-width:72px;color:white;text-align:center;font-weight:800}
@@ -65,12 +65,16 @@
     .metric strong{display:block;font-size:16px}
     .metric.wide{grid-column:1/-1}
     .flight-card{color:white}
-    .flight-meta{display:flex;justify-content:space-between;gap:12px;font-weight:800;margin-bottom:10px}
-    .flight-meta span:last-child{text-align:right}
-    .alt-chart{position:relative;height:150px;border-radius:7px;background:#4d4d4d;overflow:hidden;margin:12px 0 16px}
+    .flight-meta{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px}
+    .flight-meta div:nth-child(2){text-align:center}
+    .flight-meta div:nth-child(3){text-align:right}
+    .flight-meta span{display:block;color:#dfe5d9;font-size:12px;font-weight:650}
+    .flight-meta strong{display:block;color:white;font-size:14px;font-weight:800;white-space:nowrap}
+    .alt-chart{position:relative;height:130px;border-radius:7px;background:#4d4d4d;overflow:hidden;margin:10px 0 14px}
     .alt-title{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;color:#dfe5d9;font-size:16px;font-weight:800;letter-spacing:.04em}
     .alt-point{position:absolute;min-width:58px;transform:translate(-50%,-50%);text-align:center}
-    .alt-point strong{display:block;background:var(--leaf);color:#0b0d0b;border-radius:6px;padding:6px 8px;font-size:16px}
+    .alt-point strong{display:block;background:#111;color:white;border-radius:6px;padding:6px 8px;font-size:16px}
+    .alt-point.high strong{background:var(--leaf);color:#0b0d0b}
     .alt-point span{display:block;color:white;font-size:11px;font-weight:700;margin-bottom:2px}
     .flight-detail-grid{display:grid;grid-template-columns:116px 1fr;gap:16px;margin:0 0 16px}
     .climb-box{display:grid;grid-template-rows:1fr auto 1fr;justify-items:center;min-height:140px;background:#4d4d4d;border-radius:7px;padding:10px 8px;box-sizing:border-box}
@@ -86,14 +90,16 @@
     .detail-row span{color:#dfe5d9}
     .detail-row strong{text-align:right}
     .track-link{color:var(--leaf);font-weight:800;word-break:break-all}
-    .track-block{margin-top:6px}
-    .flight-id{color:#dfe5d9;font-size:12px;text-align:right;margin-top:6px}
+    .track-block{margin-top:6px;display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+    .flight-id{color:#dfe5d9;font-size:12px;text-align:right;white-space:nowrap}
     .delete-log{margin-top:14px;display:flex;justify-content:flex-end}
     .delete-log button{width:auto;padding:8px 12px;font-size:14px}
-    .delete-confirm{margin-top:14px;background:#4d4d4d;border-radius:7px;padding:10px}
-    .delete-confirm p{margin:0 0 10px;color:white;font-weight:600;text-align:center}
+    .delete-confirm{background:#4d4d4d;border-radius:7px;padding:8px 10px}
+    .delete-confirm p{margin:0 0 8px;color:white;font-weight:600;text-align:center}
     .delete-confirm .row{gap:14px}
     .cancel-delete{background:var(--leaf);border-color:var(--leaf);color:#0b0d0b}
+    #logDetailMsg{min-height:0;margin:6px 0 0}
+    #logDetailMsg:empty{display:none}
   </style>
 </head>
 <body>
@@ -104,7 +110,6 @@
         <h2>Status</h2>
         <div class="status-body">
           <div class="status" id="status">Loading...</div>
-          <div class="sync-status"><strong>Log Sync</strong><span id="syncText">--</span></div>
           <div class="battery-status">
             <div class="battery-line"><span id="batteryText">--%</span><div class="battery" aria-label="Battery"><span class="battery-fill" id="batteryFill"></span></div></div>
             <div class="battery-meta" id="batteryCharge">Unknown</div>
@@ -288,6 +293,7 @@
     let logs=[];
     let logIndex=0;
     let pendingLogDelete=false;
+    let unitPrefs={alt_feet:false,climb_fpm:false,speed_mph:false,distance_miles:false,heading_cardinal:false,temp_f:false,time_12h:true};
     const $=id=>document.getElementById(id);
     function id(){return Math.floor(Math.random()*0xffffffff).toString(16).padStart(8,'0')}
     function clean(v){v=(v||'').trim();return v?v:null}
@@ -308,10 +314,19 @@
       el.textContent='';
       items.forEach(x=>{let o=document.createElement('option');o.value=x.id;o.textContent=label(x);el.appendChild(o)});
     }
-    function fmtDate(v){if(!v)return'--';let d=new Date(v);return isNaN(d)?v:d.toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}
+    function fmtDateParts(v){if(!v)return{day:'--',date:'--',time:'--'};let d=new Date(v);if(isNaN(d))return{day:'--',date:v,time:'--'};return{day:d.toLocaleDateString('en-US',{weekday:'long'}),date:d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}),time:d.toLocaleTimeString([], {hour:unitPrefs.time_12h?'numeric':'2-digit',minute:'2-digit',hour12:unitPrefs.time_12h})}}
+    function fmtDate(v){let p=fmtDateParts(v);return p.date&&p.time?p.date+' '+p.time:'--'}
     function fmtDuration(s){s=Number(s)||0;let m=Math.floor(s/60),r=s%60;return m?`${m}m ${r}s`:`${r}s`}
-    function fmtNum(v,d,u){return Number.isFinite(Number(v))?`${Number(v).toFixed(d)}${u||''}`:'--'}
-    function fmtAlt(v){return fmtNum(v,0,' m')}
+    function good(v){return Number.isFinite(Number(v))}
+    function fmtNum(v,d,u){return good(v)?`${Number(v).toFixed(d)}${u||''}`:'--'}
+    function fmtAlt(v){if(!good(v))return'--';v=Number(v);return unitPrefs.alt_feet?Math.round(v*3.28084)+' ft':Math.round(v)+' m'}
+    function altDisplayValue(v){if(!good(v))return NaN;v=Number(v);return unitPrefs.alt_feet?Math.round(v*3.28084):Math.round(v)}
+    function fmtClimb(v){if(!good(v))return'--';v=Number(v);return unitPrefs.climb_fpm?Math.round(v*196.85)+' fpm':v.toFixed(1)+' m/s'}
+    function fmtSpeed(v){if(!good(v))return'--';v=Number(v);return unitPrefs.speed_mph?(v*2.23694).toFixed(1)+' mph':(v*3.6).toFixed(1)+' kph'}
+    function fmtDist(v){if(!good(v))return'--';v=Number(v);if(unitPrefs.distance_miles)return v>805?(v*0.000621371).toFixed(2)+' mi':Math.round(v*3.28084)+' ft';return v>=1000?(v/1000).toFixed(2)+' km':Math.round(v)+' m'}
+    function fmtTempValue(v){if(!good(v))return'--';v=Number(v);return unitPrefs.temp_f?Math.round(v*9/5+32):Math.round(v)}
+    function fmtTempRange(min,max){return good(min)&&good(max)?`${fmtTempValue(min)}° / ${fmtTempValue(max)}°${unitPrefs.temp_f?'F':'C'}`:'--'}
+    function fmtHeading(v){if(!good(v))return'--';v=(Math.round(Number(v))%360+360)%360;if(!unitPrefs.heading_cardinal)return v+' deg';let a=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];return a[Math.round(v/22.5)%16]}
     function metricPair(label,value){return `<div class="detail-row"><span>${label}</span><strong>${value}</strong></div>`}
     function optionalMetricPair(label,value){return Number.isFinite(Number(value))?metricPair(label,fmtNum(value,1,' km/h')):''}
     function windText(m){
@@ -320,12 +335,12 @@
         let mps=m.max_wind_speed_mps??m.max_wind_mps;
         v=Number.isFinite(Number(mps))?Number(mps)*3.6:NaN;
       }
-      return Number.isFinite(Number(v))?`${Number(v).toFixed(0)} km/h${m.max_wind_direction?` ${m.max_wind_direction}`:''}`:'';
+      return good(v)?`${unitPrefs.speed_mph?Math.round(Number(v)*0.621371)+' mph':Math.round(Number(v))+' kph'} ${m.max_wind_direction||fmtHeading(m.max_wind_direction_from_deg)}`:'';
     }
-    function altitudePoint(label,value,x,min,max){
+    function altitudePoint(label,value,x,min,max,high){
       if(!Number.isFinite(Number(value)))return '';
-      let span=Math.max(1,max-min),top=22+(1-(value-min)/span)*56;
-      return `<div class="alt-point" style="left:${x}%;top:${top}%"><span>${label}</span><strong>${fmtAlt(value)}</strong></div>`;
+      let span=Math.max(1,max-min),top=16+(1-(value-min)/span)*50;
+      return `<div class="alt-point${high?' high':''}" style="left:${x}%;top:${top}%"><span>${label}</span><strong>${fmtAlt(value)}</strong></div>`;
     }
     function metric(label,value,wide){return `<div class="metric${wide?' wide':''}"><span>${label}</span><strong>${value}</strong></div>`}
     function renderLogbook(){
@@ -342,33 +357,35 @@
       let maxAlt=m.max_altitude_m;
       let minAlt=Math.min(...[startAlt,endAlt,maxAlt,m.min_altitude_m].filter(x=>Number.isFinite(Number(x))));
       let chartMax=Math.max(...[startAlt,endAlt,maxAlt].filter(x=>Number.isFinite(Number(x))));
-      let showMax=Number(maxAlt)>Number(startAlt)&&Number(maxAlt)>Number(endAlt);
-      let trackName=l.track&&l.track.path?l.track.path.split('/').pop():'No track file saved';
+      let startValid=Number.isFinite(Number(startAlt));
+      let endValid=Number.isFinite(Number(endAlt));
+      let showMax=Number.isFinite(Number(maxAlt))&&altDisplayValue(maxAlt)>Math.max(startValid?altDisplayValue(startAlt):-1e9,endValid?altDisplayValue(endAlt):-1e9);
+      let trackName=l.track&&l.track.path?l.track.path.split('/').pop():'';
+      let trackHtml=trackName?`<span>Track File: </span><span class="track-link">${trackName}</span>`:'No track file';
       $('logSummary').innerHTML=`<div class="flight-card">
-        <div class="flight-meta"><span>${fmtDate(l.start&&l.start.time_local)}</span><span>${fmtDuration(m.duration_seconds)}</span></div>
+        ${(()=>{let p=fmtDateParts(l.start&&l.start.time_local);return `<div class="flight-meta"><div><span>${p.day}</span><strong>${p.date}</strong></div><div><span>Start:</span><strong>${p.time}</strong></div><div><span>Duration:</span><strong>${fmtDuration(m.duration_seconds)}</strong></div></div>`})()}
         <div class="alt-chart">
           <div class="alt-title">Altitude</div>
-          ${altitudePoint('start',startAlt,14,minAlt,chartMax)}
-          ${showMax?altitudePoint('max',maxAlt,50,minAlt,chartMax):''}
-          ${altitudePoint('end',endAlt,86,minAlt,chartMax)}
+          ${altitudePoint('start',startAlt,14,minAlt,chartMax,!showMax&&startValid&&(!endValid||altDisplayValue(startAlt)>=altDisplayValue(endAlt)))}
+          ${showMax?altitudePoint('max',maxAlt,50,minAlt,chartMax,true):''}
+          ${altitudePoint('end',endAlt,86,minAlt,chartMax,!showMax&&endValid&&(!startValid||altDisplayValue(endAlt)>altDisplayValue(startAlt)))}
         </div>
         <div class="flight-detail-grid">
           <div class="climb-box">
-            <div class="climb-up"><span class="climb-value">${fmtNum(m.max_climb_rate_mps,1,' m/s')}</span></div>
+            <div class="climb-up"><span class="climb-value">${fmtClimb(m.max_climb_rate_mps)}</span></div>
             <div class="mid">Vario</div>
-            <div class="climb-down"><span class="climb-value">${fmtNum(m.max_sink_rate_mps,1,' m/s')}</span></div>
+            <div class="climb-down"><span class="climb-value">${fmtClimb(m.max_sink_rate_mps)}</span></div>
           </div>
           <div class="detail-list">
-            ${metricPair('Max Speed',fmtNum((m.max_ground_speed_mps||0)*3.6,1,' km/h'))}
-            ${windText(m)?metricPair('Max Wind',windText(m)):''}
-            ${metricPair('Path Distance',fmtNum(m.path_distance_m,0,' m'))}
-            ${metricPair('Straight Distance',fmtNum(m.straight_line_distance_m,0,' m'))}
+            ${metricPair('Straight Dist',fmtDist(m.straight_line_distance_m))}
+            ${metricPair('Path Dist',fmtDist(m.path_distance_m))}
+            ${metricPair('Max Speed',fmtSpeed(m.max_ground_speed_mps))}
             ${metricPair('G Force',`${fmtNum(m.min_accel_g,2,'g')} / ${fmtNum(m.max_accel_g,2,'g')}`)}
-            ${metricPair('Temp',`${fmtNum(m.min_temperature_c,1,' C')} / ${fmtNum(m.max_temperature_c,1,' C')}`)}
+            ${metricPair('Temp',fmtTempRange(m.min_temperature_c,m.max_temperature_c))}
+            ${windText(m)?metricPair('Wind',windText(m)):''}
           </div>
         </div>
-        <div class="track-block"><span class="status-block-title">Track File</span><span class="track-link">${trackName}</span></div>
-        <div class="flight-id">Flight ID ${l.flight_id||'--'}</div>
+        <div class="track-block"><span>${trackHtml}</span><span class="flight-id">Flight ID ${l.flight_id||'--'}</span></div>
         <div id="deleteArea"><div class="delete-log"><button class="danger" id="deleteLog">Delete Log</button></div></div>
       </div>`;
       $('deleteLog').onclick=showDeleteConfirm;
@@ -451,7 +468,7 @@
       render();
     }
     async function loadStatus(){
-      try{let s=await(await fetch('/api/user/status')).json();$('status').textContent=`mode: ${s.mode}\nssid: ${s.ssid||'(none)'}\nip: ${s.ip_address||'(none)'}\nfirmware: ${s.firmware_version}`;let p=Math.max(0,Math.min(100,Number(s.battery_percent)||0));$('batteryFill').style.width=p+'%';$('batteryText').textContent=p+'%';$('batteryCharge').textContent=s.battery_charging?'Charging':'Not charging';$('syncText').textContent=s.log_sync_complete?'Complete':`${s.log_sync_uploaded||0}/${s.log_sync_total||0} uploaded`}catch(e){$('status').textContent='Unable to read status.'}
+      try{let s=await(await fetch('/api/user/status')).json();$('status').textContent=`mode: ${s.mode}\nssid: ${s.ssid||'(none)'}\nip: ${s.ip_address||'(none)'}\nfirmware: ${s.firmware_version}`;let p=Math.max(0,Math.min(100,Number(s.battery_percent)||0));$('batteryFill').style.width=p+'%';$('batteryText').textContent=p+'%';$('batteryCharge').textContent=s.battery_charging?'Charging':'Not charging'}catch(e){$('status').textContent='Unable to read status.'}
     }
     async function loadProfiles(){
       try{profiles=await(await fetch('/api/profiles')).json();normalize();setPilotMsg('');setGliderMsg('');render()}catch(e){setPilotMsg('Unable to read profiles.');setGliderMsg('')}

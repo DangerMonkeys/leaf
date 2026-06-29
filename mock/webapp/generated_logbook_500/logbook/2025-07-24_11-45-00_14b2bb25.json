@@ -1,0 +1,91 @@
+{
+    "schema":  "leaf.logbook.flight",
+    "schema_version":  "v0.1.0",
+    "flight_id":  "14b2bb25",
+    "clock":  {
+                  "system_time_synced_this_boot":  true,
+                  "time_source":  "gps",
+                  "timezone_offset_minutes":  -420
+              },
+    "start":  {
+                  "time_utc":  "2025-07-24T18:45:00Z",
+                  "time_local":  "2025-07-24T11:45:00",
+                  "time_valid":  true,
+                  "location":  {
+                                   "lat_deg":  38.1971,
+                                   "lon_deg":  -121.5866,
+                                   "altitude_m":  1389
+                               },
+                  "temperature_c":  20.9
+              },
+    "first_fix":  {
+                      "time_utc":  "2025-07-24T18:45:12Z",
+                      "time_local":  "2025-07-24T11:45:12",
+                      "time_valid":  true,
+                      "location":  {
+                                       "lat_deg":  38.1973,
+                                       "lon_deg":  -121.5868,
+                                       "altitude_m":  1393
+                                   },
+                      "temperature_c":  20.9
+                  },
+    "end":  {
+                "time_utc":  "2025-07-24T21:32:01Z",
+                "time_local":  "2025-07-24T14:32:01",
+                "time_valid":  true,
+                "location":  {
+                                 "lat_deg":  38.1961,
+                                 "lon_deg":  -121.5956,
+                                 "altitude_m":  1278
+                             },
+                "temperature_c":  15.5
+            },
+    "metrics":  {
+                    "duration_seconds":  10021,
+                    "max_altitude_m":  2632,
+                    "min_altitude_m":  1189,
+                    "max_altitude_above_launch_m":  1243,
+                    "max_climb_rate_mps":  2.9,
+                    "max_sink_rate_mps":  -3.4,
+                    "max_ground_speed_mps":  8.1,
+                    "average_ground_speed_mps":  0.77,
+                    "straight_line_distance_m":  3699,
+                    "path_distance_m":  7707,
+                    "max_accel_g":  1.18,
+                    "min_accel_g":  0.77,
+                    "max_temperature_c":  20.7,
+                    "min_temperature_c":  16.9
+                },
+    "track":  {
+                  "saved":  false
+              },
+    "device":  {
+                   "firmware_version":  "0.1.7-test+h3.2.6",
+                   "hardware_version":  "leaf_3_2_6",
+                   "mac_address":  "AA:BB:CC:DD:EE:FF"
+               },
+    "pilot":  {
+                  "id":  "pilot_2",
+                  "name":  "Sam Morgan"
+              },
+    "glider":  {
+                   "id":  "glider_2",
+                   "brand":  "Advance",
+                   "model":  "Omega ULS",
+                   "size":  "23",
+                   "display_name":  "Omega ULS 23"
+               },
+    "site":  {
+                 "launch_name":  "South Bowl",
+                 "landing_name":  "Trailhead LZ"
+             },
+    "weather":  {
+
+                },
+    "notes":  {
+                  "pilot_notes":  "",
+                  "tags":  [
+
+                           ]
+              }
+}

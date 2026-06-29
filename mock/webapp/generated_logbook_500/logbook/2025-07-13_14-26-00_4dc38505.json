@@ -1,0 +1,91 @@
+{
+    "schema":  "leaf.logbook.flight",
+    "schema_version":  "v0.1.0",
+    "flight_id":  "4dc38505",
+    "clock":  {
+                  "system_time_synced_this_boot":  true,
+                  "time_source":  "gps",
+                  "timezone_offset_minutes":  -420
+              },
+    "start":  {
+                  "time_utc":  "2025-07-13T21:26:00Z",
+                  "time_local":  "2025-07-13T14:26:00",
+                  "time_valid":  true,
+                  "location":  {
+                                   "lat_deg":  37.8035,
+                                   "lon_deg":  -121.929,
+                                   "altitude_m":  2105
+                               },
+                  "temperature_c":  24.5
+              },
+    "first_fix":  {
+                      "time_utc":  "2025-07-13T21:26:12Z",
+                      "time_local":  "2025-07-13T14:26:12",
+                      "time_valid":  true,
+                      "location":  {
+                                       "lat_deg":  37.8037,
+                                       "lon_deg":  -121.9292,
+                                       "altitude_m":  2109
+                                   },
+                      "temperature_c":  24.5
+                  },
+    "end":  {
+                "time_utc":  "2025-07-13T22:40:45Z",
+                "time_local":  "2025-07-13T15:40:45",
+                "time_valid":  true,
+                "location":  {
+                                 "lat_deg":  37.8115,
+                                 "lon_deg":  -121.93,
+                                 "altitude_m":  1970
+                             },
+                "temperature_c":  23.5
+            },
+    "metrics":  {
+                    "duration_seconds":  4485,
+                    "max_altitude_m":  2420,
+                    "min_altitude_m":  1925,
+                    "max_altitude_above_launch_m":  315,
+                    "max_climb_rate_mps":  4.5,
+                    "max_sink_rate_mps":  -1.1,
+                    "max_ground_speed_mps":  9.5,
+                    "average_ground_speed_mps":  13.99,
+                    "straight_line_distance_m":  33260,
+                    "path_distance_m":  62755,
+                    "max_accel_g":  1.1,
+                    "min_accel_g":  0.77,
+                    "max_temperature_c":  27.5,
+                    "min_temperature_c":  12.5
+                },
+    "track":  {
+                  "saved":  false
+              },
+    "device":  {
+                   "firmware_version":  "0.1.7-test+h3.2.6",
+                   "hardware_version":  "leaf_3_2_6",
+                   "mac_address":  "AA:BB:CC:DD:EE:FF"
+               },
+    "pilot":  {
+                  "id":  "pilot_5",
+                  "name":  "Jordan Hale"
+              },
+    "glider":  {
+                   "id":  "glider_5",
+                   "brand":  "Nova",
+                   "model":  "Mentor",
+                   "size":  "XS",
+                   "display_name":  "Mentor XS"
+               },
+    "site":  {
+                 "launch_name":  "South Bowl",
+                 "landing_name":  "Main LZ"
+             },
+    "weather":  {
+
+                },
+    "notes":  {
+                  "pilot_notes":  "",
+                  "tags":  [
+
+                           ]
+              }
+}

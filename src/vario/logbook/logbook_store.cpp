@@ -54,77 +54,60 @@ bool LogbookStore::newestEntryPath(String& path) {
 }
 
 bool LogbookStore::previousEntryPath(const String& currentPath, String& path) {
-  File dir = SD_MMC.open(LOGBOOK_DIR);
-  if (!dir) return false;
-
-  const String currentKey = sortKeyForPath(currentPath);
-  bool found = false;
-  String bestPath;
-  String bestKey;
-  String candidatePath;
-  while (getNextLogbookPath(dir, candidatePath)) {
-    String candidateKey = sortKeyForPath(candidatePath);
-    if (candidateKey >= currentKey) continue;
-    if (!found || candidateKey > bestKey) {
-      found = true;
-      bestPath = candidatePath;
-      bestKey = candidateKey;
-    }
-  }
-
-  if (!found) return false;
-  path = bestPath;
+  LogbookNavigation navigation;
+  if (!navigationForPath(currentPath, navigation) || navigation.previousPath.isEmpty())
+    return false;
+  path = navigation.previousPath;
   return true;
 }
 
 bool LogbookStore::nextEntryPath(const String& currentPath, String& path) {
-  File dir = SD_MMC.open(LOGBOOK_DIR);
-  if (!dir) return false;
-
-  const String currentKey = sortKeyForPath(currentPath);
-  bool found = false;
-  String bestPath;
-  String bestKey;
-  String candidatePath;
-  while (getNextLogbookPath(dir, candidatePath)) {
-    String candidateKey = sortKeyForPath(candidatePath);
-    if (candidateKey <= currentKey) continue;
-    if (!found || candidateKey < bestKey) {
-      found = true;
-      bestPath = candidatePath;
-      bestKey = candidateKey;
-    }
-  }
-
-  if (!found) return false;
-  path = bestPath;
+  LogbookNavigation navigation;
+  if (!navigationForPath(currentPath, navigation) || navigation.nextPath.isEmpty()) return false;
+  path = navigation.nextPath;
   return true;
 }
 
 bool LogbookStore::entryPositionNewestFirst(const String& currentPath, uint16_t& position,
                                             uint16_t& total) {
-  position = 0;
-  total = 0;
+  LogbookNavigation navigation;
+  if (!navigationForPath(currentPath, navigation)) return false;
+  position = navigation.position;
+  total = navigation.total;
+  return true;
+}
 
+bool LogbookStore::navigationForPath(const String& currentPath, LogbookNavigation& navigation) {
+  navigation = LogbookNavigation();
   File dir = SD_MMC.open(LOGBOOK_DIR);
   if (!dir) return false;
 
   const String currentKey = sortKeyForPath(currentPath);
-  bool found = false;
   uint16_t newerEntries = 0;
+  String previousKey;
+  String nextKey;
   String candidatePath;
   while (getNextLogbookPath(dir, candidatePath)) {
     const String candidateKey = sortKeyForPath(candidatePath);
-    total++;
+    navigation.total++;
     if (candidateKey == currentKey) {
-      found = true;
+      navigation.found = true;
     } else if (candidateKey > currentKey) {
       newerEntries++;
+      if (nextKey.isEmpty() || candidateKey < nextKey) {
+        nextKey = candidateKey;
+        navigation.nextPath = candidatePath;
+      }
+    } else if (candidateKey < currentKey) {
+      if (previousKey.isEmpty() || candidateKey > previousKey) {
+        previousKey = candidateKey;
+        navigation.previousPath = candidatePath;
+      }
     }
   }
 
-  if (!found) return false;
-  position = newerEntries + 1;
+  if (!navigation.found) return false;
+  navigation.position = newerEntries + 1;
   return true;
 }
 
@@ -154,7 +137,13 @@ bool LogbookStore::readSummary(const String& path, LogbookEntrySummary& summary)
   summary.startTimeUtc = start["time_utc"] | "";
   summary.startTimeLocal = start["time_local"] | "";
   JsonObject startLocation = start["location"];
-  summary.startAltitudeM = startLocation["altitude_m"] | 0.0f;
+  if (!startLocation.isNull()) {
+    summary.startAltitudeM = startLocation["altitude_m"] | 0.0f;
+  } else {
+    JsonObject firstFix = doc["first_fix"];
+    JsonObject firstFixLocation = firstFix["location"];
+    summary.startAltitudeM = firstFixLocation["altitude_m"] | 0.0f;
+  }
 
   JsonObject end = doc["end"];
   JsonObject endLocation = end["location"];

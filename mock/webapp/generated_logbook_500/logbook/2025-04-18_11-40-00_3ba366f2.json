@@ -1,0 +1,91 @@
+{
+    "schema":  "leaf.logbook.flight",
+    "schema_version":  "v0.1.0",
+    "flight_id":  "3ba366f2",
+    "clock":  {
+                  "system_time_synced_this_boot":  true,
+                  "time_source":  "gps",
+                  "timezone_offset_minutes":  -420
+              },
+    "start":  {
+                  "time_utc":  "2025-04-18T18:40:00Z",
+                  "time_local":  "2025-04-18T11:40:00",
+                  "time_valid":  true,
+                  "location":  {
+                                   "lat_deg":  37.9388,
+                                   "lon_deg":  -121.4903,
+                                   "altitude_m":  2022
+                               },
+                  "temperature_c":  25.2
+              },
+    "first_fix":  {
+                      "time_utc":  "2025-04-18T18:40:12Z",
+                      "time_local":  "2025-04-18T11:40:12",
+                      "time_valid":  true,
+                      "location":  {
+                                       "lat_deg":  37.939,
+                                       "lon_deg":  -121.4905,
+                                       "altitude_m":  2026
+                                   },
+                      "temperature_c":  25.2
+                  },
+    "end":  {
+                "time_utc":  "2025-04-18T22:07:58Z",
+                "time_local":  "2025-04-18T15:07:58",
+                "time_valid":  true,
+                "location":  {
+                                 "lat_deg":  37.9468,
+                                 "lon_deg":  -121.4843,
+                                 "altitude_m":  2164
+                             },
+                "temperature_c":  14
+            },
+    "metrics":  {
+                    "duration_seconds":  12478,
+                    "max_altitude_m":  3218,
+                    "min_altitude_m":  1990,
+                    "max_altitude_above_launch_m":  1196,
+                    "max_climb_rate_mps":  3.8,
+                    "max_sink_rate_mps":  -4,
+                    "max_ground_speed_mps":  13.8,
+                    "average_ground_speed_mps":  3.78,
+                    "straight_line_distance_m":  25019,
+                    "path_distance_m":  47206,
+                    "max_accel_g":  1.25,
+                    "min_accel_g":  0.82,
+                    "max_temperature_c":  22.6,
+                    "min_temperature_c":  11.2
+                },
+    "track":  {
+                  "saved":  false
+              },
+    "device":  {
+                   "firmware_version":  "0.1.7-test+h3.2.6",
+                   "hardware_version":  "leaf_3_2_6",
+                   "mac_address":  "AA:BB:CC:DD:EE:FF"
+               },
+    "pilot":  {
+                  "id":  "pilot_1",
+                  "name":  "Alex Rivera"
+              },
+    "glider":  {
+                   "id":  "glider_1",
+                   "brand":  "Ozone",
+                   "model":  "Zeolite",
+                   "size":  "MS",
+                   "display_name":  "Zeolite MS"
+               },
+    "site":  {
+                 "launch_name":  "Eagle Launch",
+                 "landing_name":  "Trailhead LZ"
+             },
+    "weather":  {
+
+                },
+    "notes":  {
+                  "pilot_notes":  "",
+                  "tags":  [
+
+                           ]
+              }
+}
