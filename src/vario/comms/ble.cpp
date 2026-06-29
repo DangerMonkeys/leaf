@@ -5,6 +5,7 @@
 #include <NimBLEDevice.h>
 #include "TinyGPSPlus.h"
 #include "comms/fanet_radio.h"
+#include "comms/webserver.h"
 #include "etl/string.h"
 #include "etl/string_stream.h"
 #include "etl/variant.h"
@@ -45,8 +46,10 @@ class ServerCallbacks : public NimBLEServerCallbacks {
 
   // This one seems import to re-advertise
   void onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reason) override {
-    // Re-advertise after a disconnect
-    NimBLEDevice::startAdvertising();
+    if (BLE::get().isStarted()) {
+      // Re-advertise after a disconnect when BLE is enabled.
+      NimBLEDevice::startAdvertising();
+    }
   }
 
 } serverCallbacks;
@@ -57,9 +60,8 @@ BLE& BLE::get() {
 }
 
 void BLE::setup() {
-  // Initialize the BLE with the unique device name
-  etl::string<13> name = "Leaf: ";
-  name += FanetRadio::getAddress().c_str();
+  // Initialize BLE with the same unique, user-visible name as the Leaf AP.
+  const String name = webserver_leaf_ap_ssid();
   NimBLEDevice::init(name.c_str());
 
   // Create a server using the callback class to re-advertise on a disconnect
@@ -81,7 +83,6 @@ void BLE::setup() {
    *  to false as it will extend battery life at the expense of less data sent.
    */
   pAdvertising->enableScanResponse(true);
-  pAdvertising->start();
 
   // Setup the FreeRTOS Tasks and Timers associated with this module
   // Create a queue the size of a couple of WakeupMessage length.
@@ -106,11 +107,13 @@ uint8_t checksum(std::string_view string) {
 }
 
 void BLE::start() {
+  if (pAdvertising == nullptr) return;
   pAdvertising->start();
   started = true;
 }
 
 void BLE::stop() {
+  if (pAdvertising == nullptr) return;
   pAdvertising->stop();
   started = false;
 }

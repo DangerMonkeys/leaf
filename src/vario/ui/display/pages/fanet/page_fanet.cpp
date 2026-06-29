@@ -48,17 +48,19 @@ void PageFanet::setting_change(Button dir, ButtonEvent state, uint8_t count) {
   SimpleSettingsMenuPage::setting_change(dir, state, count);
 }
 
-void PageFanet::draw_menu_input(int8_t cursor_position) {
-  String ret((char)126);
-
-  switch (cursor_position) {
+void PageFanet::draw_menu_input(int8_t row_position) {
+  switch (row_position) {
     case 1:
       // Region
-      ret = settings.fanet_region.c_str();
+      u8g2.print(settings.fanet_region.c_str());
+      break;
+    default:
+      if (cursor_position == row_position) {
+        u8g2.setCursor(menu_ui::ICON_X, u8g2.getCursorY());
+        menu_ui::printGlyph(menu_ui::ICON_ENTER);
+      }
       break;
   }
-
-  u8g2.print(ret);
 }
 
 PageFanet& PageFanet::getInstance() {

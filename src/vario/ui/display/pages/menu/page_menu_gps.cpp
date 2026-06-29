@@ -20,7 +20,7 @@ void GPSMenuPage::draw() {
   u8g2.firstPage();
   do {
     // Title
-    display_menuTitle("GPS");
+    menu_ui::drawTitle("GPS", menu_ui::GLYPH_GPS);
 
     uint8_t linespacing = 10;  // for 5x8 font values like lat/lon/hdop
 
@@ -78,28 +78,21 @@ void GPSMenuPage::draw() {
     uint8_t setting_choice_x = 74;
     uint8_t menu_items_y[] = {190, 165};
 
-    // first draw cursor selection box
-    u8g2.drawRBox(setting_choice_x - 2, menu_items_y[cursor_position] - 14, 22, 16, 2);
-
-    // then draw all the menu items
     for (int i = 0; i <= cursor_max; i++) {
-      u8g2.setCursor(setting_name_x, menu_items_y[i]);
-      u8g2.print(labels[i]);
+      const bool selected = i == cursor_position;
+      menu_ui::beginRow(menu_items_y[i], selected);
+      menu_ui::drawLabel(setting_name_x, menu_items_y[i], labels[i]);
       u8g2.setCursor(setting_choice_x, menu_items_y[i]);
-      if (i == cursor_position)
-        u8g2.setDrawColor(0);
-      else
-        u8g2.setDrawColor(1);
       switch (i) {
         case cursor_gps_update:
           u8g2.setCursor(setting_choice_x + 4, menu_items_y[i]);
           u8g2.print(settings.gpsMode);
           break;
         case cursor_gps_back:
-          u8g2.print((char)124);
+          menu_ui::drawBackIcon(setting_choice_x, menu_items_y[i]);
           break;
       }
-      u8g2.setDrawColor(1);
+      menu_ui::endRow();
     }
   } while (u8g2.nextPage());
 }

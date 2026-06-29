@@ -64,17 +64,22 @@ namespace {
     return formatAccel(summary.minAccelG, false) + "/" + formatAccel(summary.maxAccelG, true);
   }
 
+  constexpr uint8_t METRIC_LABEL_X = 2;
+  constexpr uint8_t METRIC_VALUE_RIGHT_X = 94;
+  constexpr uint8_t METRIC_FRAME_Y = 35;
+  constexpr uint8_t METRIC_FRAME_H = 106;
+
   void drawMetricRow(const String& label, const String& value, uint8_t y) {
-    u8g2.setCursor(0, y);
+    u8g2.setCursor(METRIC_LABEL_X, y);
     u8g2.print(label);
-    u8g2.setCursor(96 - u8g2.getStrWidth(value.c_str()), y);
+    u8g2.setCursor(METRIC_VALUE_RIGHT_X - u8g2.getStrWidth(value.c_str()), y);
     u8g2.print(value);
   }
 
   void drawMetricRow(char labelGlyph, const String& value, uint8_t y) {
-    u8g2.setCursor(0, y);
+    u8g2.setCursor(METRIC_LABEL_X, y);
     u8g2.print(labelGlyph);
-    u8g2.setCursor(96 - u8g2.getStrWidth(value.c_str()), y);
+    u8g2.setCursor(METRIC_VALUE_RIGHT_X - u8g2.getStrWidth(value.c_str()), y);
     u8g2.print(value);
   }
 }  // namespace
@@ -108,13 +113,15 @@ namespace logbook_card {
     u8g2.setCursor(0, 25);
     u8g2.print(dateString(summary));
     const String time = timeString(summary);
-    u8g2.setCursor(0, 35);
+    u8g2.setCursor(0, 34);
     u8g2.print(time);
 
     u8g2.setFont(leaf_6x12);
     const String duration = formatLogbookDuration(summary.durationSeconds);
     u8g2.setCursor(96 - u8g2.getStrWidth(duration.c_str()), 31);
     u8g2.print(duration);
+
+    u8g2.drawRFrame(0, METRIC_FRAME_Y, 96, METRIC_FRAME_H, 3);
 
     drawMetricRow("MaxAlt:", formatLogbookAltitude(summary.maxAltitudeM), 49);
     drawMetricRow("", formatLogbookClimbRange(summary), 64);

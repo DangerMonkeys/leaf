@@ -24,7 +24,7 @@ void DisplayMenuPage::draw() {
   u8g2.firstPage();
   do {
     // Title
-    display_menuTitle("DISPLAY");
+    menu_ui::drawTitle("Display", menu_ui::GLYPH_DISPLAY);
 
     // Menu Items
     u8g2.setCursor(0, 45);
@@ -35,30 +35,23 @@ void DisplayMenuPage::draw() {
     uint8_t setting_choice_x = 78;
     uint8_t menu_items_y[] = {190, 60, 75, 90, 135};
 
-    // first draw cursor selection box
-    u8g2.drawRBox(setting_choice_x - 2, menu_items_y[cursor_position] - 14, 22, 16, 2);
-
-    // then draw all the menu items
     for (int i = 0; i <= cursor_max; i++) {
-      u8g2.setCursor(setting_name_x, menu_items_y[i]);
-      u8g2.print(labels[i]);
+      const bool selected = i == cursor_position;
+      menu_ui::beginRow(menu_items_y[i], selected);
+      menu_ui::drawLabel(setting_name_x, menu_items_y[i], labels[i]);
       u8g2.setCursor(setting_choice_x, menu_items_y[i]);
-      if (i == cursor_position)
-        u8g2.setDrawColor(0);
-      else
-        u8g2.setDrawColor(1);
       switch (i) {
         case cursor_display_show_simple:
           if (settings.disp_showSimplePage)
-            u8g2.print(char(125));
+            menu_ui::printGlyph(menu_ui::ICON_ON);
           else
-            u8g2.print(char(123));
+            menu_ui::printGlyph(menu_ui::ICON_OFF);
           break;
         case cursor_display_show_thrm:
           if (settings.disp_showThmPage)
-            u8g2.print(char(125));
+            menu_ui::printGlyph(menu_ui::ICON_ON);
           else
-            u8g2.print(char(123));
+            menu_ui::printGlyph(menu_ui::ICON_OFF);
           break;
           /*
           case cursor_display_show_thrm_adv:
@@ -70,19 +63,19 @@ void DisplayMenuPage::draw() {
           */
         case cursor_display_show_nav:
           if (settings.disp_showNavPage)
-            u8g2.print(char(125));
+            menu_ui::printGlyph(menu_ui::ICON_ON);
           else
-            u8g2.print(char(123));
+            menu_ui::printGlyph(menu_ui::ICON_OFF);
           break;
         case cursor_display_contrast:
           if (settings.disp_contrast < 10) u8g2.print(" ");
           u8g2.print(settings.disp_contrast);
           break;
         case cursor_display_back:
-          u8g2.print((char)124);
+          menu_ui::drawBackIcon(setting_choice_x, menu_items_y[i]);
           break;
       }
-      u8g2.setDrawColor(1);
+      menu_ui::endRow();
     }
   } while (u8g2.nextPage());
 }
@@ -115,7 +108,7 @@ void DisplayMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t coun
       if (state == ButtonEvent::CLICKED) {
         speaker.playSound(fx::cancel);
         settings.save();
-        mainMenuPage.backToMainMenu();
+        settingsMenuPage.backToSettingsMenu();
       } else if (state == ButtonEvent::HELD) {
         speaker.playSound(fx::exit);
         settings.save();

@@ -13,7 +13,6 @@
 bool PageFlightSummary::showing_ = false;
 
 namespace {
-  constexpr uint8_t MENU_INPUT_X = 74;
   constexpr uint8_t MENU_BACK_Y = 190;
   constexpr uint8_t DELETE_HOLD_COUNT = 5;
 }  // namespace
@@ -36,19 +35,13 @@ void PageFlightSummary::draw() {
     } else {
       logbook_card::drawFlightCard(summary);
 
+      menu_ui::beginRow(156, cursor_position == 0);
+      menu_ui::drawLabel(2, 156, "Delete");
       if (cursor_position == 0) {
-        u8g2.drawRBox(0, 156 - 13, 96, 15, 2);
-        u8g2.setDrawColor(0);
-      }
-      u8g2.setCursor(2, 156);
-      u8g2.print("Delete");
-      u8g2.setCursor(cursor_position == 0 ? 65 : 80, 156);
-      if (cursor_position == 0) {
+        u8g2.setCursor(65, 156);
         u8g2.print("HOLD");
-      } else {
-        u8g2.print((char)126);
       }
-      u8g2.setDrawColor(1);
+      menu_ui::endRow();
     }
 
     if (deletePending) {
@@ -58,15 +51,10 @@ void PageFlightSummary::draw() {
     }
 
     u8g2.setFont(leaf_6x12);
-    if (cursor_position == CURSOR_BACK) {
-      u8g2.drawRBox(MENU_INPUT_X - 10, MENU_BACK_Y - 14, 34, 16, 2);
-    }
-    u8g2.setCursor(2, MENU_BACK_Y);
-    u8g2.print("Back");
-    u8g2.setCursor(MENU_INPUT_X, MENU_BACK_Y);
-    u8g2.setDrawColor(cursor_position == CURSOR_BACK ? 0 : 1);
-    u8g2.print((char)124);
-    u8g2.setDrawColor(1);
+    menu_ui::beginRow(MENU_BACK_Y, cursor_position == CURSOR_BACK);
+    menu_ui::drawLabel(2, MENU_BACK_Y, "Back");
+    menu_ui::drawBackIcon(74, MENU_BACK_Y);
+    menu_ui::endRow();
   } while (u8g2.nextPage());
 }
 

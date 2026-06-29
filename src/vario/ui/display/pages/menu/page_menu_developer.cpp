@@ -28,7 +28,7 @@ void DeveloperMenuPage::draw() {
   u8g2.firstPage();
   do {
     // Title
-    display_menuTitle("DEVELOPER");
+    menu_ui::drawTitle("Developer", menu_ui::GLYPH_DEVELOPER);
 
     // Menu Items
     uint8_t start_y = 29;
@@ -37,14 +37,6 @@ void DeveloperMenuPage::draw() {
     uint8_t setting_choice_x = 76;
     uint8_t menu_items_y[] = {190, 35, 50, 65, 135, 150, 170};
 
-    // first draw cursor selection box
-    uint8_t largerChoiceSize = 0;
-    if (cursor_position == cursor_developer_busLogControl) {
-      largerChoiceSize = 12;  // make the bus logger control button larger
-    }
-    u8g2.drawRBox(setting_choice_x - 4 - largerChoiceSize, menu_items_y[cursor_position] - 14,
-                  30 + largerChoiceSize, 16, 2);
-
     // draw Bus Logger Section
     u8g2.drawHLine(0, 105, 96);
     u8g2.setCursor(0, 120);
@@ -52,40 +44,37 @@ void DeveloperMenuPage::draw() {
 
     // then draw all the menu items
     for (int i = 0; i <= cursor_max; i++) {
-      u8g2.setCursor(setting_name_x, menu_items_y[i]);
-      u8g2.print(labels[i]);
+      const bool selected = i == cursor_position;
+      menu_ui::beginRow(menu_items_y[i], selected);
+      menu_ui::drawLabel(setting_name_x, menu_items_y[i], labels[i]);
       u8g2.setCursor(setting_choice_x, menu_items_y[i]);
-      if (i == cursor_position)
-        u8g2.setDrawColor(0);
-      else
-        u8g2.setDrawColor(1);
       switch (i) {
         case cursor_developer_fanetReTx:
           if (settings.dev_fanetFwd)
-            u8g2.print(char(125));
+            menu_ui::printGlyph(menu_ui::ICON_ON);
           else
-            u8g2.print(char(123));
+            menu_ui::printGlyph(menu_ui::ICON_OFF);
           break;
         case cursor_developer_showDebugPg:
           if (settings.disp_showDebugPage)
-            u8g2.print(char(125));
+            menu_ui::printGlyph(menu_ui::ICON_ON);
           else
-            u8g2.print(char(123));
+            menu_ui::printGlyph(menu_ui::ICON_OFF);
           break;
         case cursor_developer_runSelfTest:
-          u8g2.print((char)126);
+          menu_ui::drawEnterIcon(setting_choice_x, menu_items_y[i], selected);
           break;
         case cursor_developer_startupStart:
           if (settings.dev_startLogAtBoot)
-            u8g2.print(char(125));
+            menu_ui::printGlyph(menu_ui::ICON_ON);
           else
-            u8g2.print(char(123));
+            menu_ui::printGlyph(menu_ui::ICON_OFF);
           break;
         case cursor_developer_startupDisconnect:
           if (settings.dev_startDisconnected)
-            u8g2.print(char(125));
+            menu_ui::printGlyph(menu_ui::ICON_ON);
           else
-            u8g2.print(char(123));
+            menu_ui::printGlyph(menu_ui::ICON_OFF);
           break;
         case cursor_developer_busLogControl:
           u8g2.setCursor(u8g2.getCursorX() - 18, u8g2.getCursorY());
@@ -96,10 +85,10 @@ void DeveloperMenuPage::draw() {
           }
           break;
         case cursor_developer_back:
-          u8g2.print((char)124);
+          menu_ui::drawBackIcon(setting_choice_x, menu_items_y[i]);
           break;
       }
-      u8g2.setDrawColor(1);
+      menu_ui::endRow();
     }
   } while (u8g2.nextPage());
 }

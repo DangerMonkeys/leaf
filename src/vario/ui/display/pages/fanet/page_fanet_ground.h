@@ -8,6 +8,7 @@ class PageFanetGround : public SimpleSettingsMenuPage {
  public:
   static void show(FanetGroundTrackingMode mode);
   const char* get_title() const override;
+  uint8_t get_title_glyph() const override { return menu_ui::GLYPH_FANET; }
   virtual void closed(bool removed_from_Stack) override;
   void draw_extra() override;
 

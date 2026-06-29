@@ -26,7 +26,7 @@ void AltimeterMenuPage::draw() {
   u8g2.firstPage();
   do {
     // Title(s)
-    display_menuTitle("ALTIMETER");
+    menu_ui::drawTitle("Altimeter", menu_ui::GLYPH_ALTIMETER);
 
     // First draw all the text for the labels and setting descriptions
     uint8_t label_indent = 3;
@@ -90,55 +90,44 @@ void AltimeterMenuPage::draw() {
     u8g2.print(baro.altimeterSetting, 3);
     u8g2.print("inHg");
 
-    // Altimeter User Selectable Options
-
-    // Sync to GPS Now
-    u8g2.setCursor(15, menu_items_y[1]);
-    u8g2.print("Sync Now");
-
-    // Sync every time the log starts
-    u8g2.setCursor(15, menu_items_y[2]);
-    u8g2.print("@LogStart");
-
-    // Adjust Altimeter Setting
-    u8g2.setCursor(label_indent, menu_items_y[3]);
-    u8g2.print("Adjust Alt");
-
-    // Back Menu Option
-    u8g2.setCursor(label_indent, menu_items_y[0]);
-    u8g2.print("Back");
-
-    // Now draw all the cursor selection options
     uint8_t setting_choice_x = 78;
 
-    // first draw cursor selection box
-    u8g2.drawRBox(setting_choice_x - 2, menu_items_y[cursor_position] - 14, 20, 16, 2);
-
-    // then draw all the menu items
     for (int i = 0; i <= cursor_max; i++) {
-      u8g2.setCursor(setting_choice_x, menu_items_y[i]);
-      if (i == cursor_position)
-        u8g2.setDrawColor(0);
-      else
-        u8g2.setDrawColor(1);
+      const bool selected = i == cursor_position;
+      menu_ui::beginRow(menu_items_y[i], selected);
       switch (i) {
         case cursor_altimeter_syncGPSNow:
-          u8g2.print((char)126);
+          menu_ui::drawLabel(15, menu_items_y[i], "Sync Now");
+          break;
+        case cursor_altimeter_syncGPSLogStart:
+          menu_ui::drawLabel(15, menu_items_y[i], "@LogStart");
+          break;
+        case cursor_altimeter_adjustSetting:
+          menu_ui::drawLabel(label_indent, menu_items_y[i], "Adjust Alt");
+          break;
+        case cursor_altimeter_back:
+          menu_ui::drawLabel(label_indent, menu_items_y[i], "Back");
+          break;
+      }
+      u8g2.setCursor(setting_choice_x, menu_items_y[i]);
+      switch (i) {
+        case cursor_altimeter_syncGPSNow:
+          menu_ui::drawEnterIcon(setting_choice_x, menu_items_y[i], selected);
           break;
         case cursor_altimeter_syncGPSLogStart:
           if (settings.vario_altSyncToGPS)
-            u8g2.print(char(125));
+            menu_ui::printGlyph(menu_ui::ICON_ON);
           else
-            u8g2.print(char(123));
+            menu_ui::printGlyph(menu_ui::ICON_OFF);
           break;
         case cursor_altimeter_adjustSetting:
           u8g2.print('`');
           break;
         case cursor_altimeter_back:
-          u8g2.print((char)124);
+          menu_ui::drawBackIcon(setting_choice_x, menu_items_y[i]);
           break;
       }
-      u8g2.setDrawColor(1);
+      menu_ui::endRow();
     }
   } while (u8g2.nextPage());
 }
@@ -181,7 +170,7 @@ void AltimeterMenuPage::setting_change(Button button, ButtonEvent state, uint8_t
       if (state == ButtonEvent::CLICKED) {
         speaker.playSound(fx::cancel);
         settings.save();
-        mainMenuPage.backToMainMenu();
+        settingsMenuPage.backToSettingsMenu();
       } else if (state == ButtonEvent::HELD) {
         speaker.playSound(fx::exit);
         settings.save();

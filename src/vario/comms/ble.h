@@ -20,6 +20,9 @@ class BLE : public MessageSink<BLE, GpsMessage, FanetPacket> {
   /// @brief Stops advertising, does not free up resources
   void stop();
 
+  /// @brief True when BLE advertising should be active
+  bool isStarted() const { return started; }
+
   /// @brief ends the service, tears down bluetooth resources
   void end();
 

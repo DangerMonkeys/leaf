@@ -22,6 +22,14 @@ enum class WifiState {
   ERROR
 };
 
+namespace wifi_menu_ui {
+  int iconForCurrentConnection();
+  bool isConnectedToNamedNetwork();
+  void attemptSavedNetworkConnection();
+  void disconnectFromNetwork();
+  void drawStatusLine(uint8_t y);
+}  // namespace wifi_menu_ui
+
 /////////////////////////////////////////
 // WiFi Connection Setup sub-page
 //  Purpose:  Puts the system in Hot-Spot STA mode for
@@ -30,6 +38,7 @@ class PageMenuSystemWifiSetup : public SimpleSettingsMenuPage {
  public:
   PageMenuSystemWifiSetup() {}
   const char* get_title() const override { return "Wifi Setup"; }
+  uint8_t get_title_glyph() const override { return menu_ui::GLYPH_WIFI; }
 
   void loop() override;
   void shown() override;
@@ -51,6 +60,7 @@ class PageMenuSystemWifiUpdate : public SimpleSettingsMenuPage {
  public:
   PageMenuSystemWifiUpdate(WifiState* wifi_state) : wifi_state(wifi_state) {}
   const char* get_title() const override { return "FW Update"; }
+  uint8_t get_title_glyph() const override { return menu_ui::GLYPH_SETTINGS; }
 
   // On enter/shown, begin the WiFi OTA Update Process
   void shown() override;
@@ -70,6 +80,7 @@ class PageMenuSystemWifiUpdate : public SimpleSettingsMenuPage {
 class PageMenuSystemWifiWebApp : public SimpleSettingsMenuPage {
  public:
   const char* get_title() const override { return "Web App"; }
+  uint8_t get_title_glyph() const override { return menu_ui::GLYPH_WEB_APP; }
 
   void draw() override;
   void shown() override;
@@ -97,13 +108,17 @@ class WifiMenuPage : public SettingsMenuPage {
     cursor_max = 3;
   }
   void draw();
+  void showSetup();
+  void showFirmwareUpdate();
+  void showWebApp();
   bool firstOpened = true;
 
  protected:
   void setting_change(Button dir, ButtonEvent state, uint8_t count);
 
  private:
-  static constexpr char* labels[4] = {"Back", "Setup Wifi", "Web App", "Reset Wifi"};
+  static constexpr char* labels[4] = {"Back", "Setup", "Reset", "BLE"};
+  uint8_t resetPending = 0;
   WifiState wifi_state;
   PageMenuSystemWifiSetup page_wifi_setup;
   PageMenuSystemWifiUpdate page_wifi_update;

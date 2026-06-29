@@ -11,6 +11,7 @@ class PageLogbook : public SettingsMenuPage {
   PageLogbook();
 
   void showNewest();
+  void showModalNewest();
   void draw() override;
 
  protected:
@@ -38,4 +39,5 @@ class PageLogbook : public SettingsMenuPage {
   uint16_t position = 0;
   uint16_t total = 0;
   uint8_t deletePending = 0;
+  bool modal = false;
 };
