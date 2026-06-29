@@ -9,55 +9,55 @@
 etl::array<const char*, 0> SimpleSettingsMenuPage::emptyMenu{};
 
 namespace menu_ui {
-void printGlyph(uint8_t glyph) { u8g2.print((char)glyph); }
+  void printGlyph(uint8_t glyph) { u8g2.print((char)glyph); }
 
-void printGlyphLabel(uint8_t glyph, const char* label) {
-  if (glyph != 0) {
-    printGlyph(glyph);
-    u8g2.print(' ');
-  }
-  u8g2.print(label);
-}
-
-void drawTitle(const char* title, uint8_t glyph) {
-  if (glyph == 0) {
-    display_menuTitle(String(title));
-    return;
+  void printGlyphLabel(uint8_t glyph, const char* label) {
+    if (glyph != 0) {
+      printGlyph(glyph);
+      u8g2.print(' ');
+    }
+    u8g2.print(label);
   }
 
-  String titleText;
-  titleText += (char)glyph;
-  titleText += ' ';
-  titleText += title;
-  display_menuTitle(titleText);
-}
+  void drawTitle(const char* title, uint8_t glyph) {
+    if (glyph == 0) {
+      display_menuTitle(String(title));
+      return;
+    }
 
-void beginRow(uint8_t y, bool selected, uint8_t height) {
-  if (selected) {
-    u8g2.drawRBox(0, y - height + 1, 96, height + 1, 2);
-    u8g2.setDrawColor(0);
-  } else {
-    u8g2.setDrawColor(1);
+    String titleText;
+    titleText += (char)glyph;
+    titleText += ' ';
+    titleText += title;
+    display_menuTitle(titleText);
   }
-}
 
-void endRow() { u8g2.setDrawColor(1); }
+  void beginRow(uint8_t y, bool selected, uint8_t height) {
+    if (selected) {
+      u8g2.drawRBox(0, y - height + 1, 96, height + 1, 2);
+      u8g2.setDrawColor(0);
+    } else {
+      u8g2.setDrawColor(1);
+    }
+  }
 
-void drawLabel(uint8_t x, uint8_t y, const char* label, uint8_t glyph) {
-  u8g2.setCursor(x, y);
-  printGlyphLabel(glyph, label);
-}
+  void endRow() { u8g2.setDrawColor(1); }
 
-void drawEnterIcon(uint8_t x, uint8_t y, bool selected) {
-  if (!selected) return;
-  u8g2.setCursor(ICON_X, y);
-  printGlyph(ICON_ENTER);
-}
+  void drawLabel(uint8_t x, uint8_t y, const char* label, uint8_t glyph) {
+    u8g2.setCursor(x, y);
+    printGlyphLabel(glyph, label);
+  }
 
-void drawBackIcon(uint8_t x, uint8_t y) {
-  u8g2.setCursor(ICON_BACK_X, y);
-  printGlyph(ICON_BACK);
-}
+  void drawEnterIcon(uint8_t x, uint8_t y, bool selected) {
+    if (!selected) return;
+    u8g2.setCursor(ICON_X, y);
+    printGlyph(ICON_ENTER);
+  }
+
+  void drawBackIcon(uint8_t x, uint8_t y) {
+    u8g2.setCursor(ICON_BACK_X, y);
+    printGlyph(ICON_BACK);
+  }
 }  // namespace menu_ui
 
 void MenuPage::cursor_prev() {

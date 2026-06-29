@@ -16,48 +16,48 @@
 #define CURSOR_BACK -1  // cursor position for default back button
 
 namespace menu_ui {
-constexpr uint8_t GLYPH_SETTINGS = 151;
-constexpr uint8_t GLYPH_LOGGING = 152;
-constexpr uint8_t GLYPH_CONNECTIVITY = 153;
-constexpr uint8_t GLYPH_GPS = 154;
-constexpr uint8_t GLYPH_FLIGHT = 155;
-constexpr uint8_t GLYPH_DEVELOPER = 156;
-constexpr uint8_t GLYPH_SETUP = 156;
-constexpr uint8_t GLYPH_WEB_APP = 157;
-constexpr uint8_t GLYPH_UNITS = 158;
-constexpr uint8_t GLYPH_ALTIMETER = 159;
-constexpr uint8_t GLYPH_WIFI = 160;
-constexpr uint8_t GLYPH_BLUETOOTH = 161;
-constexpr uint8_t GLYPH_DISPLAY = 162;
-constexpr uint8_t GLYPH_FANET = 163;
-constexpr uint8_t GLYPH_VARIO = 164;
-constexpr uint8_t GLYPH_NAV_DATA = 165;
-constexpr uint8_t GLYPH_NAV_POINT_SELECT = 166;
-constexpr uint8_t GLYPH_NAV_POINT_SAVE = 167;
-constexpr uint8_t GLYPH_NAV_ROUTE_SELECT = 168;
-constexpr uint8_t GLYPH_NAV_ROUTE_BUILD = 169;
-constexpr uint8_t GLYPH_RESET = 170;
-constexpr uint8_t GLYPH_BLE = 171;
-constexpr uint8_t GLYPH_GPX = 149;
-constexpr uint8_t GLYPH_ROUTE = 150;
+  constexpr uint8_t GLYPH_SETTINGS = 151;
+  constexpr uint8_t GLYPH_LOGGING = 152;
+  constexpr uint8_t GLYPH_CONNECTIVITY = 153;
+  constexpr uint8_t GLYPH_GPS = 154;
+  constexpr uint8_t GLYPH_FLIGHT = 155;
+  constexpr uint8_t GLYPH_DEVELOPER = 156;
+  constexpr uint8_t GLYPH_SETUP = 156;
+  constexpr uint8_t GLYPH_WEB_APP = 157;
+  constexpr uint8_t GLYPH_UNITS = 158;
+  constexpr uint8_t GLYPH_ALTIMETER = 159;
+  constexpr uint8_t GLYPH_WIFI = 160;
+  constexpr uint8_t GLYPH_BLUETOOTH = 161;
+  constexpr uint8_t GLYPH_DISPLAY = 162;
+  constexpr uint8_t GLYPH_FANET = 163;
+  constexpr uint8_t GLYPH_VARIO = 164;
+  constexpr uint8_t GLYPH_NAV_DATA = 165;
+  constexpr uint8_t GLYPH_NAV_POINT_SELECT = 166;
+  constexpr uint8_t GLYPH_NAV_POINT_SAVE = 167;
+  constexpr uint8_t GLYPH_NAV_ROUTE_SELECT = 168;
+  constexpr uint8_t GLYPH_NAV_ROUTE_BUILD = 169;
+  constexpr uint8_t GLYPH_RESET = 170;
+  constexpr uint8_t GLYPH_BLE = 171;
+  constexpr uint8_t GLYPH_GPX = 149;
+  constexpr uint8_t GLYPH_ROUTE = 150;
 
-constexpr uint8_t ICON_OFF = 123;
-constexpr uint8_t ICON_BACK = 124;
-constexpr uint8_t ICON_ON = 125;
-constexpr uint8_t ICON_ENTER = 62;
-constexpr uint8_t ICON_X = 87;
-constexpr uint8_t ICON_BACK_X = 80;
-constexpr uint8_t ICON_CHECKBOX_X = 83;
-constexpr uint8_t HOLD_X = 65;
+  constexpr uint8_t ICON_OFF = 123;
+  constexpr uint8_t ICON_BACK = 124;
+  constexpr uint8_t ICON_ON = 125;
+  constexpr uint8_t ICON_ENTER = 62;
+  constexpr uint8_t ICON_X = 87;
+  constexpr uint8_t ICON_BACK_X = 80;
+  constexpr uint8_t ICON_CHECKBOX_X = 83;
+  constexpr uint8_t HOLD_X = 65;
 
-void printGlyph(uint8_t glyph);
-void printGlyphLabel(uint8_t glyph, const char* label);
-void drawTitle(const char* title, uint8_t glyph = 0);
-void beginRow(uint8_t y, bool selected, uint8_t height = 15);
-void endRow();
-void drawLabel(uint8_t x, uint8_t y, const char* label, uint8_t glyph = 0);
-void drawEnterIcon(uint8_t x, uint8_t y, bool selected);
-void drawBackIcon(uint8_t x, uint8_t y);
+  void printGlyph(uint8_t glyph);
+  void printGlyphLabel(uint8_t glyph, const char* label);
+  void drawTitle(const char* title, uint8_t glyph = 0);
+  void beginRow(uint8_t y, bool selected, uint8_t height = 15);
+  void endRow();
+  void drawLabel(uint8_t x, uint8_t y, const char* label, uint8_t glyph = 0);
+  void drawEnterIcon(uint8_t x, uint8_t y, bool selected);
+  void drawBackIcon(uint8_t x, uint8_t y);
 }  // namespace menu_ui
 
 // Base class for all Pages to be drawn with Menu Items with support for
