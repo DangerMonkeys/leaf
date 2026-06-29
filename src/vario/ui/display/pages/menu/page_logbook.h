@@ -32,8 +32,6 @@ class PageLogbook : public SettingsMenuPage {
   void drawBackRow();
   void drawDeleteRow(uint8_t y);
   void drawPageRow(uint8_t y);
-  String dateString() const;
-  String timeString() const;
 
   String currentPath;
   LogbookEntrySummary summary;

@@ -53,8 +53,6 @@
     .battery:after{content:"";position:absolute;right:-6px;top:4px;width:4px;height:8px;background:white;border-radius:0 2px 2px 0}
     .battery-fill{display:block;height:100%;background:var(--leaf);border-radius:2px}
     .battery-meta{font-size:12px;font-weight:650;color:#e2e7dc}
-    .sync-status{color:#e2e7dc;font-size:12px;font-weight:650;text-align:center}
-    .sync-status strong{display:block;color:white;font-size:13px}
     .msg{min-height:20px;margin-top:10px}
     #profilesView section{padding-bottom:4px}
     #profilesView .msg{min-height:0;margin:6px 0 0;line-height:1.2}
@@ -75,7 +73,8 @@
     .alt-chart{position:relative;height:130px;border-radius:7px;background:#4d4d4d;overflow:hidden;margin:10px 0 14px}
     .alt-title{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;color:#dfe5d9;font-size:16px;font-weight:800;letter-spacing:.04em}
     .alt-point{position:absolute;min-width:58px;transform:translate(-50%,-50%);text-align:center}
-    .alt-point strong{display:block;background:var(--leaf);color:#0b0d0b;border-radius:6px;padding:6px 8px;font-size:16px}
+    .alt-point strong{display:block;background:#111;color:white;border-radius:6px;padding:6px 8px;font-size:16px}
+    .alt-point.high strong{background:var(--leaf);color:#0b0d0b}
     .alt-point span{display:block;color:white;font-size:11px;font-weight:700;margin-bottom:2px}
     .flight-detail-grid{display:grid;grid-template-columns:116px 1fr;gap:16px;margin:0 0 16px}
     .climb-box{display:grid;grid-template-rows:1fr auto 1fr;justify-items:center;min-height:140px;background:#4d4d4d;border-radius:7px;padding:10px 8px;box-sizing:border-box}
@@ -91,8 +90,8 @@
     .detail-row span{color:#dfe5d9}
     .detail-row strong{text-align:right}
     .track-link{color:var(--leaf);font-weight:800;word-break:break-all}
-    .track-block{margin-top:6px}
-    .flight-id{color:#dfe5d9;font-size:12px;text-align:right;margin-top:6px}
+    .track-block{margin-top:6px;display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+    .flight-id{color:#dfe5d9;font-size:12px;text-align:right;white-space:nowrap}
     .delete-log{margin-top:14px;display:flex;justify-content:flex-end}
     .delete-log button{width:auto;padding:8px 12px;font-size:14px}
     .delete-confirm{background:#4d4d4d;border-radius:7px;padding:8px 10px}
@@ -111,7 +110,6 @@
         <h2>Status</h2>
         <div class="status-body">
           <div class="status" id="status">Loading...</div>
-          <div class="sync-status"><strong>Log Sync</strong><span id="syncText">--</span></div>
           <div class="battery-status">
             <div class="battery-line"><span id="batteryText">--%</span><div class="battery" aria-label="Battery"><span class="battery-fill" id="batteryFill"></span></div></div>
             <div class="battery-meta" id="batteryCharge">Unknown</div>
@@ -322,10 +320,12 @@
     function good(v){return Number.isFinite(Number(v))}
     function fmtNum(v,d,u){return good(v)?`${Number(v).toFixed(d)}${u||''}`:'--'}
     function fmtAlt(v){if(!good(v))return'--';v=Number(v);return unitPrefs.alt_feet?Math.round(v*3.28084)+' ft':Math.round(v)+' m'}
+    function altDisplayValue(v){if(!good(v))return NaN;v=Number(v);return unitPrefs.alt_feet?Math.round(v*3.28084):Math.round(v)}
     function fmtClimb(v){if(!good(v))return'--';v=Number(v);return unitPrefs.climb_fpm?Math.round(v*196.85)+' fpm':v.toFixed(1)+' m/s'}
     function fmtSpeed(v){if(!good(v))return'--';v=Number(v);return unitPrefs.speed_mph?(v*2.23694).toFixed(1)+' mph':(v*3.6).toFixed(1)+' kph'}
     function fmtDist(v){if(!good(v))return'--';v=Number(v);if(unitPrefs.distance_miles)return v>805?(v*0.000621371).toFixed(2)+' mi':Math.round(v*3.28084)+' ft';return v>=1000?(v/1000).toFixed(2)+' km':Math.round(v)+' m'}
-    function fmtTemp(v){if(!good(v))return'--';v=Number(v);return unitPrefs.temp_f?Math.round(v*9/5+32)+' F':Math.round(v)+' C'}
+    function fmtTempValue(v){if(!good(v))return'--';v=Number(v);return unitPrefs.temp_f?Math.round(v*9/5+32):Math.round(v)}
+    function fmtTempRange(min,max){return good(min)&&good(max)?`${fmtTempValue(min)}° / ${fmtTempValue(max)}°${unitPrefs.temp_f?'F':'C'}`:'--'}
     function fmtHeading(v){if(!good(v))return'--';v=(Math.round(Number(v))%360+360)%360;if(!unitPrefs.heading_cardinal)return v+' deg';let a=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];return a[Math.round(v/22.5)%16]}
     function metricPair(label,value){return `<div class="detail-row"><span>${label}</span><strong>${value}</strong></div>`}
     function optionalMetricPair(label,value){return Number.isFinite(Number(value))?metricPair(label,fmtNum(value,1,' km/h')):''}
@@ -335,12 +335,12 @@
         let mps=m.max_wind_speed_mps??m.max_wind_mps;
         v=Number.isFinite(Number(mps))?Number(mps)*3.6:NaN;
       }
-      return good(v)?`${unitPrefs.speed_mph?(Number(v)*0.621371).toFixed(0)+' mph':Number(v).toFixed(0)+' kph'} ${m.max_wind_direction||fmtHeading(m.max_wind_direction_from_deg)}`:'';
+      return good(v)?`${unitPrefs.speed_mph?Math.round(Number(v)*0.621371)+' mph':Math.round(Number(v))+' kph'} ${m.max_wind_direction||fmtHeading(m.max_wind_direction_from_deg)}`:'';
     }
-    function altitudePoint(label,value,x,min,max){
+    function altitudePoint(label,value,x,min,max,high){
       if(!Number.isFinite(Number(value)))return '';
       let span=Math.max(1,max-min),top=16+(1-(value-min)/span)*50;
-      return `<div class="alt-point" style="left:${x}%;top:${top}%"><span>${label}</span><strong>${fmtAlt(value)}</strong></div>`;
+      return `<div class="alt-point${high?' high':''}" style="left:${x}%;top:${top}%"><span>${label}</span><strong>${fmtAlt(value)}</strong></div>`;
     }
     function metric(label,value,wide){return `<div class="metric${wide?' wide':''}"><span>${label}</span><strong>${value}</strong></div>`}
     function renderLogbook(){
@@ -357,15 +357,18 @@
       let maxAlt=m.max_altitude_m;
       let minAlt=Math.min(...[startAlt,endAlt,maxAlt,m.min_altitude_m].filter(x=>Number.isFinite(Number(x))));
       let chartMax=Math.max(...[startAlt,endAlt,maxAlt].filter(x=>Number.isFinite(Number(x))));
-      let showMax=Number(maxAlt)>Number(startAlt)&&Number(maxAlt)>Number(endAlt);
-      let trackName=l.track&&l.track.path?l.track.path.split('/').pop():'No track file saved';
+      let startValid=Number.isFinite(Number(startAlt));
+      let endValid=Number.isFinite(Number(endAlt));
+      let showMax=Number.isFinite(Number(maxAlt))&&altDisplayValue(maxAlt)>Math.max(startValid?altDisplayValue(startAlt):-1e9,endValid?altDisplayValue(endAlt):-1e9);
+      let trackName=l.track&&l.track.path?l.track.path.split('/').pop():'';
+      let trackHtml=trackName?`<span>Track File: </span><span class="track-link">${trackName}</span>`:'No track file';
       $('logSummary').innerHTML=`<div class="flight-card">
         ${(()=>{let p=fmtDateParts(l.start&&l.start.time_local);return `<div class="flight-meta"><div><span>${p.day}</span><strong>${p.date}</strong></div><div><span>Start:</span><strong>${p.time}</strong></div><div><span>Duration:</span><strong>${fmtDuration(m.duration_seconds)}</strong></div></div>`})()}
         <div class="alt-chart">
           <div class="alt-title">Altitude</div>
-          ${altitudePoint('start',startAlt,14,minAlt,chartMax)}
-          ${showMax?altitudePoint('max',maxAlt,50,minAlt,chartMax):''}
-          ${altitudePoint('end',endAlt,86,minAlt,chartMax)}
+          ${altitudePoint('start',startAlt,14,minAlt,chartMax,!showMax&&startValid&&(!endValid||altDisplayValue(startAlt)>=altDisplayValue(endAlt)))}
+          ${showMax?altitudePoint('max',maxAlt,50,minAlt,chartMax,true):''}
+          ${altitudePoint('end',endAlt,86,minAlt,chartMax,!showMax&&endValid&&(!startValid||altDisplayValue(endAlt)>altDisplayValue(startAlt)))}
         </div>
         <div class="flight-detail-grid">
           <div class="climb-box">
@@ -374,16 +377,15 @@
             <div class="climb-down"><span class="climb-value">${fmtClimb(m.max_sink_rate_mps)}</span></div>
           </div>
           <div class="detail-list">
+            ${metricPair('Straight Dist',fmtDist(m.straight_line_distance_m))}
+            ${metricPair('Path Dist',fmtDist(m.path_distance_m))}
             ${metricPair('Max Speed',fmtSpeed(m.max_ground_speed_mps))}
-            ${windText(m)?metricPair('Max Wind',windText(m)):''}
-            ${metricPair('Path Distance',fmtDist(m.path_distance_m))}
-            ${metricPair('Straight Distance',fmtDist(m.straight_line_distance_m))}
             ${metricPair('G Force',`${fmtNum(m.min_accel_g,2,'g')} / ${fmtNum(m.max_accel_g,2,'g')}`)}
-            ${metricPair('Temp',`${fmtTemp(m.min_temperature_c)} / ${fmtTemp(m.max_temperature_c)}`)}
+            ${metricPair('Temp',fmtTempRange(m.min_temperature_c,m.max_temperature_c))}
+            ${windText(m)?metricPair('Wind',windText(m)):''}
           </div>
         </div>
-        <div class="track-block"><span class="status-block-title">Track File</span><span class="track-link">${trackName}</span></div>
-        <div class="flight-id">Flight ID ${l.flight_id||'--'}</div>
+        <div class="track-block"><span>${trackHtml}</span><span class="flight-id">Flight ID ${l.flight_id||'--'}</span></div>
         <div id="deleteArea"><div class="delete-log"><button class="danger" id="deleteLog">Delete Log</button></div></div>
       </div>`;
       $('deleteLog').onclick=showDeleteConfirm;
@@ -466,7 +468,7 @@
       render();
     }
     async function loadStatus(){
-      try{let s=await(await fetch('/api/user/status')).json();$('status').textContent=`mode: ${s.mode}\nssid: ${s.ssid||'(none)'}\nip: ${s.ip_address||'(none)'}\nfirmware: ${s.firmware_version}`;let p=Math.max(0,Math.min(100,Number(s.battery_percent)||0));$('batteryFill').style.width=p+'%';$('batteryText').textContent=p+'%';$('batteryCharge').textContent=s.battery_charging?'Charging':'Not charging';$('syncText').textContent=s.log_sync_complete?'Complete':`${s.log_sync_uploaded||0}/${s.log_sync_total||0} uploaded`}catch(e){$('status').textContent='Unable to read status.'}
+      try{let s=await(await fetch('/api/user/status')).json();$('status').textContent=`mode: ${s.mode}\nssid: ${s.ssid||'(none)'}\nip: ${s.ip_address||'(none)'}\nfirmware: ${s.firmware_version}`;let p=Math.max(0,Math.min(100,Number(s.battery_percent)||0));$('batteryFill').style.width=p+'%';$('batteryText').textContent=p+'%';$('batteryCharge').textContent=s.battery_charging?'Charging':'Not charging'}catch(e){$('status').textContent='Unable to read status.'}
     }
     async function loadProfiles(){
       try{profiles=await(await fetch('/api/profiles')).json();normalize();setPilotMsg('');setGliderMsg('');render()}catch(e){setPilotMsg('Unable to read profiles.');setGliderMsg('')}

@@ -136,7 +136,13 @@ bool LogbookStore::readSummary(const String& path, LogbookEntrySummary& summary)
   summary.startTimeUtc = start["time_utc"] | "";
   summary.startTimeLocal = start["time_local"] | "";
   JsonObject startLocation = start["location"];
-  summary.startAltitudeM = startLocation["altitude_m"] | 0.0f;
+  if (!startLocation.isNull()) {
+    summary.startAltitudeM = startLocation["altitude_m"] | 0.0f;
+  } else {
+    JsonObject firstFix = doc["first_fix"];
+    JsonObject firstFixLocation = firstFix["location"];
+    summary.startAltitudeM = firstFixLocation["altitude_m"] | 0.0f;
+  }
 
   JsonObject end = doc["end"];
   JsonObject endLocation = end["location"];
