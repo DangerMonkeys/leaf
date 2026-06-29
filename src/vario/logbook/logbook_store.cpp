@@ -55,7 +55,8 @@ bool LogbookStore::newestEntryPath(String& path) {
 
 bool LogbookStore::previousEntryPath(const String& currentPath, String& path) {
   LogbookNavigation navigation;
-  if (!navigationForPath(currentPath, navigation) || navigation.previousPath.isEmpty()) return false;
+  if (!navigationForPath(currentPath, navigation) || navigation.previousPath.isEmpty())
+    return false;
   path = navigation.previousPath;
   return true;
 }
