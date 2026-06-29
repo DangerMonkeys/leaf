@@ -1,0 +1,95 @@
+{
+    "schema":  "leaf.logbook.flight",
+    "schema_version":  "v0.1.0",
+    "flight_id":  "9876aadf",
+    "clock":  {
+                  "system_time_synced_this_boot":  true,
+                  "time_source":  "gps",
+                  "timezone_offset_minutes":  -420
+              },
+    "start":  {
+                  "time_utc":  "2025-07-11T21:07:00Z",
+                  "time_local":  "2025-07-11T14:07:00",
+                  "time_valid":  true,
+                  "location":  {
+                                   "lat_deg":  37.7297,
+                                   "lon_deg":  -121.9932,
+                                   "altitude_m":  1883
+                               },
+                  "temperature_c":  20.3
+              },
+    "first_fix":  {
+                      "time_utc":  "2025-07-11T21:07:12Z",
+                      "time_local":  "2025-07-11T14:07:12",
+                      "time_valid":  true,
+                      "location":  {
+                                       "lat_deg":  37.7299,
+                                       "lon_deg":  -121.9934,
+                                       "altitude_m":  1887
+                                   },
+                      "temperature_c":  20.3
+                  },
+    "end":  {
+                "time_utc":  "2025-07-11T22:04:27Z",
+                "time_local":  "2025-07-11T15:04:27",
+                "time_valid":  true,
+                "location":  {
+                                 "lat_deg":  37.7197,
+                                 "lon_deg":  -122.0032,
+                                 "altitude_m":  1646
+                             },
+                "temperature_c":  20.5
+            },
+    "metrics":  {
+                    "duration_seconds":  3447,
+                    "max_altitude_m":  2024,
+                    "min_altitude_m":  1643,
+                    "max_altitude_above_launch_m":  141,
+                    "max_climb_rate_mps":  1.5,
+                    "max_sink_rate_mps":  -3.2,
+                    "max_ground_speed_mps":  10.7,
+                    "average_ground_speed_mps":  17.66,
+                    "straight_line_distance_m":  28618,
+                    "path_distance_m":  60889,
+                    "max_accel_g":  1.14,
+                    "min_accel_g":  0.87,
+                    "max_temperature_c":  20.9,
+                    "min_temperature_c":  8.3,
+                    "max_wind":  {
+                                     "speed_mps":  10.8,
+                                     "direction_from_deg":  3
+                                 }
+                },
+    "track":  {
+                  "saved":  false
+              },
+    "device":  {
+                   "firmware_version":  "0.1.7-test+h3.2.6",
+                   "hardware_version":  "leaf_3_2_6",
+                   "mac_address":  "AA:BB:CC:DD:EE:FF"
+               },
+    "pilot":  {
+                  "id":  "pilot_4",
+                  "name":  "Taylor Quinn"
+              },
+    "glider":  {
+                   "id":  "glider_4",
+                   "brand":  "Gin",
+                   "model":  "Bonanza",
+                   "size":  "S",
+                   "display_name":  "Bonanza S"
+               },
+    "site":  {
+                 "launch_name":  "West Spur",
+                 "landing_name":  "Main LZ"
+             },
+    "weather":  {
+
+                },
+    "notes":  {
+                  "pilot_notes":  "",
+                  "tags":  [
+
+                           ]
+              }
+}

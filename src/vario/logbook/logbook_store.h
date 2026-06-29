@@ -34,6 +34,14 @@ struct LogbookEntrySummary {
   String trackPath;
 };
 
+struct LogbookNavigation {
+  bool found = false;
+  uint16_t position = 0;
+  uint16_t total = 0;
+  String previousPath;
+  String nextPath;
+};
+
 class LogbookStore {
  public:
   static constexpr const char* directoryPath() { return "/logbook"; }
@@ -44,6 +52,7 @@ class LogbookStore {
   static bool nextEntryPath(const String& currentPath, String& path);
   static bool entryPositionNewestFirst(const String& currentPath, uint16_t& position,
                                        uint16_t& total);
+  static bool navigationForPath(const String& currentPath, LogbookNavigation& navigation);
   static bool readSummary(const String& path, LogbookEntrySummary& summary);
   static bool deleteEntry(const String& path);
   static bool isLogbookJsonPath(const String& path);
