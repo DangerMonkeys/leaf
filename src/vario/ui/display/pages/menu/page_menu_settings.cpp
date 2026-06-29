@@ -201,7 +201,8 @@ void SettingsRootMenuPage::skip_hidden_backward() {
   while (row_hidden(cursor_position)) cursor_prev();
 }
 
-bool SettingsRootMenuPage::settingsRootButtonEvent(Button button, ButtonEvent state, uint8_t count) {
+bool SettingsRootMenuPage::settingsRootButtonEvent(Button button, ButtonEvent state,
+                                                   uint8_t count) {
   bool redraw = false;
   switch (button) {
     case Button::UP:

@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Leaf Menu Path Graph</title>
+  <style>
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f6f7f4;
+      color: #1d2720;
+    }
+
+    #toolbar {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 10;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid #cbd3c7;
+      border-radius: 6px;
+      box-shadow: 0 8px 28px rgba(29, 39, 32, 0.12);
+    }
+
+    button {
+      border: 1px solid #8da08c;
+      border-radius: 4px;
+      background: #ffffff;
+      color: #1d2720;
+      padding: 6px 10px;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #eef3eb;
+    }
+
+    #hint {
+      padding-left: 4px;
+      font-size: 13px;
+      color: #536156;
+      white-space: nowrap;
+    }
+
+    svg {
+      width: 100vw;
+      height: 100vh;
+      cursor: grab;
+      user-select: none;
+      touch-action: none;
+    }
+
+    svg.dragging {
+      cursor: grabbing;
+    }
+
+    .edge {
+      fill: none;
+      stroke: #8fa092;
+      stroke-width: 1.5;
+    }
+
+    .node rect {
+      fill: #ffffff;
+      stroke: #627763;
+      stroke-width: 1.4;
+      rx: 5;
+    }
+
+    .node text {
+      fill: #162318;
+      font-size: 12px;
+      dominant-baseline: middle;
+      text-anchor: middle;
+      pointer-events: none;
+    }
+
+    .category rect {
+      fill: #e5eee2;
+      stroke: #3f6848;
+      stroke-width: 1.8;
+    }
+
+    .modal rect {
+      fill: #fff6d9;
+      stroke: #9b7931;
+    }
+
+    .gated rect {
+      fill: #eef1f8;
+      stroke: #58698b;
+      stroke-dasharray: 4 3;
+    }
+
+    .action rect {
+      fill: #f9fbf8;
+      stroke: #9aa89c;
+    }
+  </style>
+</head>
+<body>
+  <div id="toolbar">
+    <button id="fit" type="button">Fit</button>
+    <button id="reset" type="button">Reset</button>
+    <button id="zoom-in" type="button">+</button>
+    <button id="zoom-out" type="button">-</button>
+    <span id="hint">Drag to pan. Wheel to zoom.</span>
+  </div>
+
+  <svg id="graph" viewBox="0 0 1900 1250" aria-label="Leaf menu path graph">
+    <defs>
+      <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#8fa092"></path>
+      </marker>
+    </defs>
+    <g id="viewport">
+      <g id="edges" marker-end="url(#arrow)"></g>
+      <g id="nodes"></g>
+    </g>
+  </svg>
+
+  <script>
+    const graph = document.getElementById("graph");
+    const viewport = document.getElementById("viewport");
+    const edgesLayer = document.getElementById("edges");
+    const nodesLayer = document.getElementById("nodes");
+
+    const nodes = [
+      ["carousel", "Primary Page\nCarousel", 70, 560, "category"],
+      ["menu", "Main Menu", 290, 560, "category"],
+
+      ["alt", "Altimeter", 520, 70, "category"],
+      ["alt_sync", "Sync Now", 750, 20, "action"],
+      ["alt_log", "@LogStart", 750, 70, "action"],
+      ["alt_adj", "Adjust Alt", 750, 120, "action"],
+
+      ["vario", "Vario", 520, 230, "category"],
+      ["v_vol", "Beep Vol", 750, 155, "action"],
+      ["v_quiet", "QuietMode", 750, 205, "action"],
+      ["v_sens", "Sensitivity", 750, 255, "action"],
+      ["v_climb", "ClimbStart", 750, 305, "action"],
+      ["v_sink", "SinkAlarm", 750, 355, "action"],
+
+      ["display", "Display", 520, 430, "category"],
+      ["d_basic", "Basic", 750, 405, "action"],
+      ["d_user", "User", 750, 455, "action"],
+      ["d_nav", "Navigate", 750, 505, "action"],
+      ["d_contrast", "Contrast", 750, 555, "action"],
+
+      ["units", "Units", 520, 670, "category"],
+      ["u_alt", "Altitude", 750, 600, "action"],
+      ["u_climb", "ClimbRate", 750, 650, "action"],
+      ["u_speed", "Speed", 750, 700, "action"],
+      ["u_dist", "Distance", 750, 750, "action"],
+      ["u_head", "Heading", 750, 800, "action"],
+      ["u_temp", "Temp", 750, 850, "action"],
+      ["u_time", "Time", 750, 900, "action"],
+
+      ["gps", "GPS", 520, 995, "category"],
+      ["gps_update", "Update(sec)\n(no action)", 750, 995, "action"],
+
+      ["log", "Log/Timer", 990, 120, "category"],
+      ["l_format", "Format", 1220, 20, "action"],
+      ["l_save", "SaveLog", 1220, 70, "action"],
+      ["l_start", "AutoStart", 1220, 120, "action"],
+      ["l_stop", "AutoStop", 1220, 170, "action"],
+      ["logbook", "Logbook", 1220, 240, "category"],
+      ["lb_delete", "Delete", 1450, 190, "action"],
+      ["lb_page", "Page\nolder/newer", 1450, 245, "action"],
+
+      ["fanet", "Fanet\n(gated)", 990, 430, "gated"],
+      ["f_ground", "Ground", 1220, 330, "category"],
+      ["f_region", "Region", 1220, 510, "modal"],
+      ["f_stats", "Stats", 1220, 590, "modal"],
+      ["f_neighbors", "Neighbors", 1220, 650, "modal"],
+      ["f_walk", "Walking", 1450, 285, "action"],
+      ["f_vehicle", "Vehicle", 1450, 335, "action"],
+      ["f_ride", "Need Ride", 1450, 385, "action"],
+      ["f_ok", "Landed OK", 1450, 435, "action"],
+      ["f_tech", "Tech Sup", 1450, 485, "action"],
+      ["f_track", "Ground\nTracking", 1680, 385, "modal"],
+      ["f_off", "OFF", 1450, 535, "action"],
+      ["f_us", "US", 1450, 585, "action"],
+      ["f_eu", "EUROPE", 1450, 635, "action"],
+
+      ["system", "System", 990, 810, "category"],
+      ["s_time", "TimeZone", 1220, 715, "action"],
+      ["s_vol", "Volume", 1220, 765, "action"],
+      ["s_auto", "Auto-Off", 1220, 815, "action"],
+      ["s_safety", "ShowSafety", 1220, 865, "action"],
+      ["wifi", "Wifi", 1220, 935, "category"],
+      ["s_bt", "Bluetooth", 1220, 1035, "action"],
+      ["s_about", "About", 1220, 1085, "modal"],
+      ["s_reset", "Reset\n(hold)", 1220, 1135, "action"],
+      ["w_setup_update", "Setup Wifi /\nUpdate FW", 1450, 845, "category"],
+      ["w_setup", "Wifi Setup\nif disconnected", 1680, 800, "modal"],
+      ["w_update", "FW Update\nif connected", 1680, 890, "modal"],
+      ["w_app", "Web App", 1450, 950, "modal"],
+      ["w_leaf", "Use Leaf AP\noptional", 1680, 960, "action"],
+      ["w_reset", "Reset Wifi", 1450, 1050, "action"],
+
+      ["dev", "Developer\n(gated)", 990, 1120, "gated"],
+      ["dev_retx", "Fanet ReTX", 1220, 1190, "action"],
+      ["dev_debug", "Debug Page", 1220, 1240, "action"],
+      ["dev_self", "Run SelfTest", 1450, 1145, "modal"],
+      ["dev_start", "StartBusLog", 1450, 1195, "action"],
+      ["dev_detach", "Detach HW", 1450, 1245, "action"],
+      ["dev_bus", "Log Now\nSTART/STOP", 1680, 1195, "action"],
+    ];
+
+    const edges = [
+      ["carousel", "menu"],
+      ["menu", "alt"], ["alt", "alt_sync"], ["alt", "alt_log"], ["alt", "alt_adj"],
+      ["menu", "vario"], ["vario", "v_vol"], ["vario", "v_quiet"], ["vario", "v_sens"], ["vario", "v_climb"], ["vario", "v_sink"],
+      ["menu", "display"], ["display", "d_basic"], ["display", "d_user"], ["display", "d_nav"], ["display", "d_contrast"],
+      ["menu", "units"], ["units", "u_alt"], ["units", "u_climb"], ["units", "u_speed"], ["units", "u_dist"], ["units", "u_head"], ["units", "u_temp"], ["units", "u_time"],
+      ["menu", "gps"], ["gps", "gps_update"],
+      ["menu", "log"], ["log", "l_format"], ["log", "l_save"], ["log", "l_start"], ["log", "l_stop"], ["log", "logbook"], ["logbook", "lb_delete"], ["logbook", "lb_page"],
+      ["menu", "fanet"], ["fanet", "f_ground"], ["fanet", "f_region"], ["fanet", "f_stats"], ["fanet", "f_neighbors"],
+      ["f_ground", "f_walk"], ["f_ground", "f_vehicle"], ["f_ground", "f_ride"], ["f_ground", "f_ok"], ["f_ground", "f_tech"],
+      ["f_walk", "f_track"], ["f_vehicle", "f_track"], ["f_ride", "f_track"], ["f_ok", "f_track"], ["f_tech", "f_track"],
+      ["f_region", "f_off"], ["f_region", "f_us"], ["f_region", "f_eu"],
+      ["menu", "system"], ["system", "s_time"], ["system", "s_vol"], ["system", "s_auto"], ["system", "s_safety"], ["system", "wifi"], ["system", "s_bt"], ["system", "s_about"], ["system", "s_reset"],
+      ["wifi", "w_setup_update"], ["w_setup_update", "w_setup"], ["w_setup_update", "w_update"], ["wifi", "w_app"], ["w_app", "w_leaf"], ["wifi", "w_reset"],
+      ["menu", "dev"], ["dev", "dev_retx"], ["dev", "dev_debug"], ["dev", "dev_self"], ["dev", "dev_start"], ["dev", "dev_detach"], ["dev", "dev_bus"],
+    ];
+
+    const nodeById = new Map(nodes.map(([id, label, x, y, kind]) => [id, { id, label, x, y, kind, w: 132, h: label.includes("\n") ? 48 : 34 }]));
+
+    function makeSvg(tag, attrs = {}) {
+      const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+      for (const [key, value] of Object.entries(attrs)) el.setAttribute(key, value);
+      return el;
+    }
+
+    function edgePath(from, to) {
+      const a = nodeById.get(from);
+      const b = nodeById.get(to);
+      const startX = a.x + a.w / 2;
+      const startY = a.y;
+      const endX = b.x - b.w / 2;
+      const endY = b.y;
+      const midX = startX + Math.max(50, (endX - startX) / 2);
+      return `M ${startX} ${startY} C ${midX} ${startY}, ${midX} ${endY}, ${endX} ${endY}`;
+    }
+
+    for (const [from, to] of edges) {
+      edgesLayer.appendChild(makeSvg("path", { class: "edge", d: edgePath(from, to) }));
+    }
+
+    for (const node of nodeById.values()) {
+      const group = makeSvg("g", { class: `node ${node.kind}`, transform: `translate(${node.x - node.w / 2}, ${node.y - node.h / 2})` });
+      group.appendChild(makeSvg("rect", { width: node.w, height: node.h }));
+      const lines = node.label.split("\n");
+      lines.forEach((line, i) => {
+        const text = makeSvg("text", { x: node.w / 2, y: node.h / 2 + (i - (lines.length - 1) / 2) * 15 });
+        text.textContent = line;
+        group.appendChild(text);
+      });
+      nodesLayer.appendChild(group);
+    }
+
+    let state = { x: 0, y: 0, scale: 1 };
+    let dragging = false;
+    let dragStart = null;
+
+    function applyTransform() {
+      viewport.setAttribute("transform", `translate(${state.x} ${state.y}) scale(${state.scale})`);
+    }
+
+    function zoomAt(clientX, clientY, factor) {
+      const point = graph.createSVGPoint();
+      point.x = clientX;
+      point.y = clientY;
+      const svgPoint = point.matrixTransform(graph.getScreenCTM().inverse());
+      state.x = svgPoint.x - (svgPoint.x - state.x) * factor;
+      state.y = svgPoint.y - (svgPoint.y - state.y) * factor;
+      state.scale = Math.max(0.1, Math.min(4, state.scale * factor));
+      applyTransform();
+    }
+
+    function fit() {
+      const margin = 70;
+      const bounds = viewport.getBBox();
+      const widthScale = window.innerWidth / (bounds.width + margin * 2);
+      const heightScale = window.innerHeight / (bounds.height + margin * 2);
+      state.scale = Math.min(widthScale, heightScale);
+      state.x = (window.innerWidth - bounds.width * state.scale) / 2 - bounds.x * state.scale;
+      state.y = (window.innerHeight - bounds.height * state.scale) / 2 - bounds.y * state.scale;
+      applyTransform();
+    }
+
+    graph.addEventListener("pointerdown", (event) => {
+      dragging = true;
+      dragStart = { clientX: event.clientX, clientY: event.clientY, x: state.x, y: state.y };
+      graph.classList.add("dragging");
+      graph.setPointerCapture(event.pointerId);
+    });
+
+    graph.addEventListener("pointermove", (event) => {
+      if (!dragging) return;
+      state.x = dragStart.x + event.clientX - dragStart.clientX;
+      state.y = dragStart.y + event.clientY - dragStart.clientY;
+      applyTransform();
+    });
+
+    graph.addEventListener("pointerup", (event) => {
+      dragging = false;
+      graph.classList.remove("dragging");
+      graph.releasePointerCapture(event.pointerId);
+    });
+
+    graph.addEventListener("wheel", (event) => {
+      event.preventDefault();
+      zoomAt(event.clientX, event.clientY, event.deltaY < 0 ? 1.12 : 0.89);
+    }, { passive: false });
+
+    document.getElementById("fit").addEventListener("click", fit);
+    document.getElementById("reset").addEventListener("click", () => {
+      state = { x: 0, y: 0, scale: 1 };
+      applyTransform();
+    });
+    document.getElementById("zoom-in").addEventListener("click", () => zoomAt(window.innerWidth / 2, window.innerHeight / 2, 1.2));
+    document.getElementById("zoom-out").addEventListener("click", () => zoomAt(window.innerWidth / 2, window.innerHeight / 2, 0.8));
+    window.addEventListener("resize", fit);
+    fit();
+  </script>
+</body>
+</html>

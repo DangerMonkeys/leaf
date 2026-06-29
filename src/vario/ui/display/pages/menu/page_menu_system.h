@@ -24,7 +24,7 @@ class SystemMenuPage : public SettingsMenuPage {
 
  private:
   void drawSystemMenu();
-  static constexpr char* labels[8] = {"Back",      "Time Zone", "Volume",   "Auto-Off",
+  static constexpr char* labels[8] = {"Back",       "Time Zone", "Volume",    "Auto-Off",
                                       "ShowSafety", "About",     "Update FW", "Reset"};
 };
 

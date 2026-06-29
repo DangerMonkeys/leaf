@@ -23,11 +23,11 @@ enum class WifiState {
 };
 
 namespace wifi_menu_ui {
-int iconForCurrentConnection();
-bool isConnectedToNamedNetwork();
-void attemptSavedNetworkConnection();
-void disconnectFromNetwork();
-void drawStatusLine(uint8_t y);
+  int iconForCurrentConnection();
+  bool isConnectedToNamedNetwork();
+  void attemptSavedNetworkConnection();
+  void disconnectFromNetwork();
+  void drawStatusLine(uint8_t y);
 }  // namespace wifi_menu_ui
 
 /////////////////////////////////////////

@@ -35,15 +35,11 @@ bool SystemMenuPage::button_event(Button button, ButtonEvent state, uint8_t coun
   return SettingsMenuPage::button_event(button, state, count);
 }
 
-void SystemMenuPage::backToSystemMenu() {
-  cursor_position = cursor_system_back;
-}
+void SystemMenuPage::backToSystemMenu() { cursor_position = cursor_system_back; }
 
 void SystemMenuPage::focusUpdate() { cursor_position = cursor_system_updateFW; }
 
-void SystemMenuPage::draw() {
-  drawSystemMenu();
-}
+void SystemMenuPage::draw() { drawSystemMenu(); }
 
 void SystemMenuPage::drawSystemMenu() {
   int16_t displayTimeZone = settings.system_timeZone;

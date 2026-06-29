@@ -20,8 +20,8 @@ enum nav_data_menu_items {
 };
 
 namespace {
-  constexpr char* labels[6] = {"Back",       "Load GPX",   "Select Pt.",
-                               "Select Rte", "Build Rte",  "Save Point"};
+  constexpr char* labels[6] = {"Back",       "Load GPX",  "Select Pt.",
+                               "Select Rte", "Build Rte", "Save Point"};
   constexpr uint8_t glyphs[6] = {0,
                                  menu_ui::GLYPH_NAV_DATA,
                                  menu_ui::GLYPH_NAV_POINT_SELECT,
