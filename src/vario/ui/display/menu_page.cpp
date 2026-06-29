@@ -8,6 +8,58 @@
 
 etl::array<const char*, 0> SimpleSettingsMenuPage::emptyMenu{};
 
+namespace menu_ui {
+void printGlyph(uint8_t glyph) { u8g2.print((char)glyph); }
+
+void printGlyphLabel(uint8_t glyph, const char* label) {
+  if (glyph != 0) {
+    printGlyph(glyph);
+    u8g2.print(' ');
+  }
+  u8g2.print(label);
+}
+
+void drawTitle(const char* title, uint8_t glyph) {
+  if (glyph == 0) {
+    display_menuTitle(String(title));
+    return;
+  }
+
+  String titleText;
+  titleText += (char)glyph;
+  titleText += ' ';
+  titleText += title;
+  display_menuTitle(titleText);
+}
+
+void beginRow(uint8_t y, bool selected, uint8_t height) {
+  if (selected) {
+    u8g2.drawRBox(0, y - height + 1, 96, height + 1, 2);
+    u8g2.setDrawColor(0);
+  } else {
+    u8g2.setDrawColor(1);
+  }
+}
+
+void endRow() { u8g2.setDrawColor(1); }
+
+void drawLabel(uint8_t x, uint8_t y, const char* label, uint8_t glyph) {
+  u8g2.setCursor(x, y);
+  printGlyphLabel(glyph, label);
+}
+
+void drawEnterIcon(uint8_t x, uint8_t y, bool selected) {
+  if (!selected) return;
+  u8g2.setCursor(ICON_X, y);
+  printGlyph(ICON_ENTER);
+}
+
+void drawBackIcon(uint8_t x, uint8_t y) {
+  u8g2.setCursor(ICON_BACK_X, y);
+  printGlyph(ICON_BACK);
+}
+}  // namespace menu_ui
+
 void MenuPage::cursor_prev() {
   cursor_position--;
   if (cursor_position < cursor_min) cursor_position = cursor_max;
@@ -93,34 +145,23 @@ void SimpleSettingsMenuPage::draw() {
   u8g2.firstPage();
   do {
     // Title
-    display_menuTitle(String(get_title()));
-
-    // Draw the cursor selection box
-    const auto BOX_X = 74 - 10;
-    const auto BOX_Y = (cursor_position == CURSOR_BACK ? 190 : 45 + (cursor_position * 15)) - 14;
-    u8g2.drawRBox(BOX_X, BOX_Y, 34, 16, 2);
+    menu_ui::drawTitle(get_title(), get_title_glyph());
 
     // Draw the back item
-    u8g2.setCursor(2, 190);
-    u8g2.print("Back");
-    u8g2.setCursor(74, 190);
-    u8g2.setDrawColor(cursor_position == CURSOR_BACK ? 0 : 1);
-    u8g2.print((char)124);  // Print back button
-    u8g2.setDrawColor(1);
+    menu_ui::beginRow(190, cursor_position == CURSOR_BACK);
+    menu_ui::drawLabel(2, 190, "Back");
+    menu_ui::drawBackIcon(74, 190);
+    menu_ui::endRow();
 
     // Draw the menu items starting from the top
     uint8_t y_pos = 45;
     for (int i = 0; i <= cursor_max; i++) {
-      // Print the menu label
-      u8g2.setDrawColor(1);
-      u8g2.setCursor(2, y_pos);
-      u8g2.print(get_labels()[i]);
-
-      // Print the menu input
+      const bool selected = cursor_position == i;
+      menu_ui::beginRow(y_pos, selected);
+      menu_ui::drawLabel(2, y_pos, get_labels()[i]);
       u8g2.setCursor(74, y_pos);
-      u8g2.setDrawColor(cursor_position == i ? 0 : 1);
-      // Call the virtual function to draw the input
       draw_menu_input(i);
+      menu_ui::endRow();
 
       y_pos += 15;
     }
@@ -135,7 +176,12 @@ void SimpleSettingsMenuPage::draw() {
 }
 
 // By default, print an enter character
-void SimpleSettingsMenuPage::draw_menu_input(int8_t cursor_position) { u8g2.print((char)126); }
+void SimpleSettingsMenuPage::draw_menu_input(int8_t row_position) {
+  if (cursor_position == row_position) {
+    u8g2.setCursor(menu_ui::ICON_X, u8g2.getCursorY());
+    menu_ui::printGlyph(menu_ui::ICON_ENTER);
+  }
+}
 
 // By default, a menu item will have no labels, an empty view
 etl::array_view<const char*> SimpleSettingsMenuPage::get_labels() const {

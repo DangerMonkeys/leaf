@@ -22,9 +22,18 @@ PageLogbook::PageLogbook() {
 }
 
 void PageLogbook::showNewest() {
+  modal = false;
   cursor_position = CURSOR_BACK;
   deletePending = 0;
   loadNewest();
+}
+
+void PageLogbook::showModalNewest() {
+  modal = true;
+  cursor_position = CURSOR_BACK;
+  deletePending = 0;
+  loadNewest();
+  push_page(this);
 }
 
 void PageLogbook::loadNewest() {
@@ -95,7 +104,7 @@ void PageLogbook::deleteCurrent() {
 void PageLogbook::draw() {
   u8g2.firstPage();
   do {
-    display_menuTitle("LOGBOOK");
+    menu_ui::drawTitle("Logbook", menu_ui::GLYPH_LOGGING);
     if (summary.valid) {
       drawEntry();
     } else {
@@ -127,38 +136,39 @@ void PageLogbook::drawEntry() {
 void PageLogbook::drawBackRow() {
   u8g2.setFont(leaf_6x12);
   if (cursor_position == CURSOR_BACK) {
-    u8g2.drawRBox(MENU_INPUT_X - 10, MENU_BACK_Y - 14, 34, 16, 2);
+    menu_ui::beginRow(MENU_BACK_Y, true);
+  } else {
+    menu_ui::beginRow(MENU_BACK_Y, false);
   }
 
-  u8g2.setCursor(2, MENU_BACK_Y);
-  u8g2.print("Back");
-  u8g2.setCursor(MENU_INPUT_X, MENU_BACK_Y);
-  u8g2.setDrawColor(cursor_position == CURSOR_BACK ? 0 : 1);
-  u8g2.print((char)124);
-  u8g2.setDrawColor(1);
+  menu_ui::drawLabel(2, MENU_BACK_Y, "Back");
+  menu_ui::drawBackIcon(MENU_INPUT_X, MENU_BACK_Y);
+  menu_ui::endRow();
 }
 
 void PageLogbook::drawDeleteRow(uint8_t y) {
   if (cursor_position == cursor_delete) {
-    u8g2.drawRBox(0, y - 13, 96, 15, 2);
-    u8g2.setDrawColor(0);
+    menu_ui::beginRow(y, true);
+  } else {
+    menu_ui::beginRow(y, false);
   }
 
   u8g2.setCursor(2, y);
   u8g2.print("Delete");
-  u8g2.setCursor(cursor_position == cursor_delete ? 65 : 80, y);
+  u8g2.setCursor(cursor_position == cursor_delete ? menu_ui::HOLD_X : menu_ui::ICON_X, y);
   if (cursor_position == cursor_delete) {
     u8g2.print("HOLD");
   } else {
-    u8g2.print((char)126);
+    menu_ui::printGlyph(menu_ui::ICON_ENTER);
   }
-  u8g2.setDrawColor(1);
+  menu_ui::endRow();
 }
 
 void PageLogbook::drawPageRow(uint8_t y) {
   if (cursor_position == cursor_page) {
-    u8g2.drawRBox(0, y - 13, 96, 15, 2);
-    u8g2.setDrawColor(0);
+    menu_ui::beginRow(y, true);
+  } else {
+    menu_ui::beginRow(y, false);
   }
 
   if (position > 1) {
@@ -175,16 +185,21 @@ void PageLogbook::drawPageRow(uint8_t y) {
     u8g2.print((char)126);
   }
 
-  u8g2.setDrawColor(1);
+  menu_ui::endRow();
 }
 
 void PageLogbook::setting_change(Button dir, ButtonEvent state, uint8_t count) {
   if (cursor_position == cursor_back) {
     if (state == ButtonEvent::CLICKED || state == ButtonEvent::HELD) {
       speaker.playSound(state == ButtonEvent::HELD ? fx::exit : fx::cancel);
-      logMenuPage.backToLogMenu();
+      if (modal) {
+        modal = false;
+        pop_page();
+      } else {
+        logMenuPage.backToLogMenu();
+      }
       if (state == ButtonEvent::HELD) {
-        mainMenuPage.backToMainMenu();
+        mainMenuPage.quitMenu();
       }
     }
     return;

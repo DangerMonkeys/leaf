@@ -12,10 +12,11 @@ class SystemMenuPage : public SettingsMenuPage {
  public:
   SystemMenuPage() {
     cursor_position = 0;
-    cursor_max = 8;
+    cursor_max = 7;
   }
   void draw();
   void backToSystemMenu();
+  void focusUpdate();
   bool button_event(Button button, ButtonEvent state, uint8_t count) override;
 
  protected:
@@ -23,8 +24,8 @@ class SystemMenuPage : public SettingsMenuPage {
 
  private:
   void drawSystemMenu();
-  static constexpr char* labels[9] = {"Back", "TimeZone",  "Volume", "Auto-Off", "ShowSafety",
-                                      "Wifi", "Bluetooth", "About",  "Reset"};
+  static constexpr char* labels[8] = {"Back",      "Time Zone", "Volume",   "Auto-Off",
+                                      "ShowSafety", "About",     "Update FW", "Reset"};
 };
 
 #endif

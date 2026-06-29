@@ -2,42 +2,35 @@
 
 #include <Arduino.h>
 
-#include "comms/fanet_radio.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
 #include "ui/display/display_fields.h"
 #include "ui/display/fonts.h"
 #include "ui/display/pages.h"
-#include "ui/display/pages/dialogs/page_message.h"
-#include "ui/display/pages/fanet/page_fanet.h"
+#include "ui/display/pages/menu/page_menu_wifi.h"
 #include "ui/input/buttons.h"
 #include "ui/settings/settings.h"
 
 // cursor positions on the main menu
 enum cursor_main_menu {
   cursor_back,
-  cursor_altimeter,
-  cursor_vario,
-  cursor_display,
-  cursor_units,
+  cursor_settings,
+  cursor_flightTools,
+  cursor_navData,
   cursor_gps,
-  cursor_log,
-  cursor_fanet,
-  cursor_system,
+  cursor_webApp,
+  cursor_logbook,
   cursor_developer,
 };
 
 // all submenu pages and confirmation dialogs
 enum display_menu_pages {
   page_menu_main,
-  page_menu_altimeter,
-  page_menu_vario,
-  page_menu_display,
-  page_menu_units,
+  page_menu_settings,
+  page_menu_flightTools,
+  page_menu_navData,
   page_menu_gps,
-  page_menu_log,
-  page_menu_system,
   page_menu_developer,
   page_menu_resetConfirm,
 };
@@ -53,6 +46,11 @@ void MainMenuPage::backToMainMenu() {
 void MainMenuPage::quitMenu() {
   cursor_position = cursor_back;
   menu_page = page_menu_main;
+  firstOpened = true;
+#ifndef DEBUG_WIFI
+  wifi_menu_ui::disconnectFromNetwork();
+  Serial.println("WiFi disconnected");
+#endif
   display.turnPage(PageAction::Back);
 }
 
@@ -61,26 +59,17 @@ void MainMenuPage::draw() {
     case page_menu_main:
       draw_main_menu();
       break;
-    case page_menu_altimeter:
-      altimeterMenuPage.draw();
+    case page_menu_settings:
+      settingsMenuPage.draw();
       break;
-    case page_menu_vario:
-      varioMenuPage.draw();
+    case page_menu_flightTools:
+      flightToolsMenuPage.draw();
       break;
-    case page_menu_display:
-      displayMenuPage.draw();
-      break;
-    case page_menu_units:
-      unitsMenuPage.draw();
+    case page_menu_navData:
+      navDataMenuPage.draw();
       break;
     case page_menu_gps:
       gpsMenuPage.draw();
-      break;
-    case page_menu_log:
-      logMenuPage.draw();
-      break;
-    case page_menu_system:
-      systemMenuPage.draw();
       break;
     case page_menu_developer:
       developerMenuPage.draw();
@@ -88,51 +77,35 @@ void MainMenuPage::draw() {
 }
 
 void MainMenuPage::draw_main_menu() {
+  if (firstOpened) {
+    firstOpened = false;
+    wifi_menu_ui::attemptSavedNetworkConnection();
+  }
+
   u8g2.firstPage();
   do {
     // Title
-    display_menuTitle("MAIN MENU");
+    menu_ui::drawTitle("Main Menu");
+    wifi_menu_ui::drawStatusLine(29);
 
     // Menu Items
-    uint8_t start_y = 29;
     uint8_t setting_name_x = 2;
-    uint8_t setting_choice_x = 72;
-    uint8_t menu_items_y[] = {190, 45, 60, 75, 90, 105, 120, 135, 150, 165};
-
-    // first draw cursor selection box
-    u8g2.drawRBox(setting_choice_x - 10, menu_items_y[cursor_position] - 14, 34, 16, 2);
+    uint8_t setting_choice_x = 88;
+    uint8_t menu_items_y[] = {190, 60, 75, 90, 105, 120, 135, 150};
 
     // then draw all the menu items
     for (int i = 0; i <= cursor_max; i++) {
-      // hide developer menu if not in dev mode
-      if (i == cursor_developer && !settings.dev_mode) {
-        continue;  // skip drawing this menu item
+      if (row_hidden(i)) continue;
+
+      const bool selected = i == cursor_position;
+      menu_ui::beginRow(menu_items_y[i], selected);
+      menu_ui::drawLabel(setting_name_x, menu_items_y[i], labels[i], glyphs[i]);
+      if (i == cursor_back) {
+        menu_ui::drawBackIcon(setting_choice_x, menu_items_y[i]);
+      } else {
+        menu_ui::drawEnterIcon(setting_choice_x, menu_items_y[i], selected);
       }
-
-      // show fanet menu if enabled
-
-      if (i == cursor_fanet) {
-#ifndef FANET_CAPABLE
-        continue;  // skip drawing this menu item
-#else
-        if (fanetRadio.getState() == FanetRadioState::UNINSTALLED) {
-          continue;
-        }
-#endif
-      }
-
-      u8g2.setCursor(setting_name_x, menu_items_y[i]);
-      u8g2.print(labels[i]);
-      u8g2.setCursor(setting_choice_x, menu_items_y[i]);
-      if (i == cursor_position)
-        u8g2.setDrawColor(0);
-      else
-        u8g2.setDrawColor(1);
-      if (i == cursor_back)
-        u8g2.print((char)124);
-      else
-        u8g2.print((char)126);
-      u8g2.setDrawColor(1);
+      menu_ui::endRow();
     }
   } while (u8g2.nextPage());
 }
@@ -141,31 +114,27 @@ void MainMenuPage::menu_item_action(Button button) {
   switch (cursor_position) {
     case cursor_back:
       if (button == Button::LEFT || button == Button::CENTER) {
-        display.turnPage(PageAction::Back);
         speaker.playSound(fx::exit);
+        quitMenu();
       } else if (button == Button::RIGHT) {
         // display_turnPage(page_next);  // maybe stop at menu, don't allow scrolling around back
         // to first page
       }
       break;
-    case cursor_altimeter:
+    case cursor_settings:
       if (button == Button::RIGHT || button == Button::CENTER) {
-        menu_page = page_menu_altimeter;
+        settingsMenuPage.backToSettingsMenu();
+        menu_page = page_menu_settings;
       }
       break;
-    case cursor_vario:
+    case cursor_flightTools:
       if (button == Button::RIGHT || button == Button::CENTER) {
-        menu_page = page_menu_vario;
+        menu_page = page_menu_flightTools;
       }
       break;
-    case cursor_display:
+    case cursor_navData:
       if (button == Button::RIGHT || button == Button::CENTER) {
-        menu_page = page_menu_display;
-      }
-      break;
-    case cursor_units:
-      if (button == Button::RIGHT || button == Button::CENTER) {
-        menu_page = page_menu_units;
+        menu_page = page_menu_navData;
       }
       break;
     case cursor_gps:
@@ -173,43 +142,14 @@ void MainMenuPage::menu_item_action(Button button) {
         menu_page = page_menu_gps;
       }
       break;
-    case cursor_log:
+    case cursor_webApp:
       if (button == Button::RIGHT || button == Button::CENTER) {
-        menu_page = page_menu_log;
+        wifiMenuPage.showWebApp();
       }
       break;
-    case cursor_fanet:
+    case cursor_logbook:
       if (button == Button::RIGHT || button == Button::CENTER) {
-#ifndef FANET_CAPABLE
-        PageMessage::show("Fanet",
-                          "UNSUPPORTED\n"
-                          "\n"
-                          "Fanet is not\n"
-                          "supported on\n"
-                          "this device.\n"
-                          "\n"
-                          "  Sorry!\n"
-                          "\n"
-                          "    :(\n");
-        break;
-#endif
-        if (fanetRadio.getState() == FanetRadioState::UNINSTALLED) {
-          // If the FANET radio is uninstalled, show a warning message
-          PageMessage::show("Fanet",
-                            "Fanet radio\n"
-                            "not installed.\n\n"
-                            "Install radio\n"
-                            "or contact\n"
-                            "support\n");
-        } else {
-          // Show the Fanet setting page
-          PageFanet::show();
-        }
-      }
-      break;
-    case cursor_system:
-      if (button == Button::RIGHT || button == Button::CENTER) {
-        menu_page = page_menu_system;
+        logMenuPage.showLogbook();
       }
       break;
     case cursor_developer:
@@ -220,45 +160,34 @@ void MainMenuPage::menu_item_action(Button button) {
   }
 }
 
+bool MainMenuPage::row_hidden(uint8_t row) const {
+  if (row == cursor_developer && !settings.dev_mode) return true;
+
+  return false;
+}
+
+void MainMenuPage::skip_hidden_forward() {
+  while (row_hidden(cursor_position)) cursor_next();
+}
+
+void MainMenuPage::skip_hidden_backward() {
+  while (row_hidden(cursor_position)) cursor_prev();
+}
+
 bool MainMenuPage::mainMenuButtonEvent(Button button, ButtonEvent state, uint8_t count) {
   bool redraw = false;  // only redraw screen if a UI input changes something
   switch (button) {
     case Button::UP:
       if (state == ButtonEvent::CLICKED) {
         cursor_prev();
-        if (cursor_position == cursor_developer && !settings.dev_mode) {
-          cursor_prev();  // skip developer menu if not in dev mode
-        }
-        if (cursor_position == cursor_fanet) {
-#ifndef FANET_CAPABLE
-          cursor_prev();  // skip fanet menu if not available
-#else
-          if (fanetRadio.getState() == FanetRadioState::UNINSTALLED) {
-            cursor_prev();  // skip fanet menu if not available
-          }
-#endif
-        }
-
+        skip_hidden_backward();
         redraw = true;
       }
       break;
     case Button::DOWN:
       if (state == ButtonEvent::CLICKED) {
         cursor_next();
-
-        if (cursor_position == cursor_fanet) {
-#ifndef FANET_CAPABLE
-          cursor_next();  // skip fanet menu if not available
-#else
-          if (fanetRadio.getState() == FanetRadioState::UNINSTALLED) {
-            cursor_next();  // skip fanet menu if not available
-          }
-#endif
-        }
-
-        if (cursor_position == cursor_developer && !settings.dev_mode) {
-          cursor_next();  // skip developer menu if not in dev mode
-        }
+        skip_hidden_forward();
         redraw = true;
       }
       break;
@@ -281,26 +210,17 @@ bool MainMenuPage::button_event(Button button, ButtonEvent state, uint8_t count)
     case page_menu_main:
       redraw = mainMenuButtonEvent(button, state, count);
       break;
-    case page_menu_altimeter:
-      redraw = altimeterMenuPage.button_event(button, state, count);
+    case page_menu_settings:
+      redraw = settingsMenuPage.button_event(button, state, count);
       break;
-    case page_menu_vario:
-      redraw = varioMenuPage.button_event(button, state, count);
+    case page_menu_flightTools:
+      redraw = flightToolsMenuPage.button_event(button, state, count);
       break;
-    case page_menu_display:
-      redraw = displayMenuPage.button_event(button, state, count);
-      break;
-    case page_menu_units:
-      redraw = unitsMenuPage.button_event(button, state, count);
+    case page_menu_navData:
+      redraw = navDataMenuPage.button_event(button, state, count);
       break;
     case page_menu_gps:
       redraw = gpsMenuPage.button_event(button, state, count);
-      break;
-    case page_menu_log:
-      redraw = logMenuPage.button_event(button, state, count);
-      break;
-    case page_menu_system:
-      redraw = systemMenuPage.button_event(button, state, count);
       break;
     case page_menu_developer:
       redraw = developerMenuPage.button_event(button, state, count);

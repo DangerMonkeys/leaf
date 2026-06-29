@@ -9,6 +9,7 @@ class PageFanetGroundSelect : SimpleSettingsMenuPage {
  public:
   static void show();
   const char* get_title() const override { return "Currently..."; }
+  uint8_t get_title_glyph() const override { return menu_ui::GLYPH_FANET; }
 
   etl::array_view<const char*> get_labels() const override {
     static etl::array labels{

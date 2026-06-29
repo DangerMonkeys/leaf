@@ -27,7 +27,7 @@ void UnitsMenuPage::draw() {
   u8g2.firstPage();
   do {
     // Title
-    display_menuTitle("UNITS");
+    menu_ui::drawTitle("Units", menu_ui::GLYPH_UNITS);
 
     // Menu Items
     uint8_t start_y = 29;
@@ -36,18 +36,11 @@ void UnitsMenuPage::draw() {
     uint8_t setting_choice_x = 68;
     uint8_t menu_items_y[] = {190, 45, 60, 75, 90, 105, 120, 135};
 
-    // first draw cursor selection box
-    u8g2.drawRBox(setting_choice_x - 6, menu_items_y[cursor_position] - 14, 34, 16, 2);
-
-    // then draw all the menu items
     for (int i = 0; i <= cursor_max; i++) {
-      u8g2.setCursor(setting_name_x, menu_items_y[i]);
-      u8g2.print(labels[i]);
+      const bool selected = i == cursor_position;
+      menu_ui::beginRow(menu_items_y[i], selected);
+      menu_ui::drawLabel(setting_name_x, menu_items_y[i], labels[i]);
       u8g2.setCursor(setting_choice_x, menu_items_y[i]);
-      if (i == cursor_position)
-        u8g2.setDrawColor(0);
-      else
-        u8g2.setDrawColor(1);
       switch (i) {
         case cursor_units_alt:
           if (settings.units_alt)
@@ -92,10 +85,10 @@ void UnitsMenuPage::draw() {
             u8g2.print("24h");
           break;
         case cursor_units_back:
-          u8g2.print((char)124);
+          menu_ui::drawBackIcon(setting_choice_x, menu_items_y[i]);
           break;
       }
-      u8g2.setDrawColor(1);
+      menu_ui::endRow();
     }
   } while (u8g2.nextPage());
 }
@@ -131,7 +124,7 @@ void UnitsMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count)
       if (state == ButtonEvent::CLICKED) {
         speaker.playSound(fx::cancel);
         settings.save();
-        mainMenuPage.backToMainMenu();
+        settingsMenuPage.backToSettingsMenu();
       } else if (state == ButtonEvent::HELD) {
         speaker.playSound(fx::exit);
         settings.save();

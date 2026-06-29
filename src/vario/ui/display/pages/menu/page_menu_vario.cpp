@@ -31,7 +31,7 @@ void VarioMenuPage::draw() {
   u8g2.firstPage();
   do {
     // Title(s)
-    display_menuTitle("VARIO");
+    menu_ui::drawTitle("Vario", menu_ui::GLYPH_VARIO);
 
     // Menu Items
     uint8_t start_y = 29;
@@ -40,18 +40,11 @@ void VarioMenuPage::draw() {
     uint8_t setting_choice_x = 68;
     uint8_t menu_items_y[] = {190, 40, 55, 70, 95, 110 /*, 135, 150, 165*/};
 
-    // first draw cursor selection box
-    u8g2.drawRBox(setting_choice_x - 2, menu_items_y[cursor_position] - 14, 30, 16, 2);
-
-    // then draw all the menu items
     for (int i = 0; i <= cursor_max; i++) {
-      u8g2.setCursor(setting_name_x, menu_items_y[i]);
-      u8g2.print(labels[i]);
+      const bool selected = i == cursor_position;
+      menu_ui::beginRow(menu_items_y[i], selected);
+      menu_ui::drawLabel(setting_name_x, menu_items_y[i], labels[i]);
       u8g2.setCursor(setting_choice_x, menu_items_y[i]);
-      if (i == cursor_position)
-        u8g2.setDrawColor(0);
-      else
-        u8g2.setDrawColor(1);
       switch (i) {
         case cursor_vario_volume:
           u8g2.print(' ');
@@ -71,9 +64,9 @@ void VarioMenuPage::draw() {
         case cursor_vario_quietmode:
           u8g2.print(' ');
           if (settings.vario_quietMode)
-            u8g2.print(char(125));
+            menu_ui::printGlyph(menu_ui::ICON_ON);
           else
-            u8g2.print(char(123));
+            menu_ui::printGlyph(menu_ui::ICON_OFF);
           break;
 
         case cursor_vario_sensitive:
@@ -123,9 +116,6 @@ void VarioMenuPage::draw() {
 
                 // and draw a bigger selection box to fit this one if cursor is here
                 if (cursor_position == cursor_vario_sinkalarm) {
-                  u8g2.setDrawColor(1);
-                  u8g2.drawRBox(setting_choice_x - 10, menu_items_y[cursor_position] - 14, 38, 16,
-                                2);
                   u8g2.setDrawColor(0);
                 }
               }
@@ -138,7 +128,7 @@ void VarioMenuPage::draw() {
           }
           // Print units for climb/sink thresholds
           u8g2.setFont(leaf_labels);
-          u8g2.setDrawColor(1);
+          u8g2.setDrawColor(selected ? 0 : 1);
           if (settings.units_climb) {
             u8g2.setCursor(u8g2.getCursorX() - 20, u8g2.getCursorY() + 12);
             u8g2.print("fpm");
@@ -150,10 +140,10 @@ void VarioMenuPage::draw() {
           break;
 
         case cursor_vario_back:
-          u8g2.print((char)124);
+          menu_ui::drawBackIcon(setting_choice_x, menu_items_y[i]);
           break;
       }
-      u8g2.setDrawColor(1);
+      menu_ui::endRow();
     }
   } while (u8g2.nextPage());
 }
@@ -193,7 +183,7 @@ void VarioMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count)
       if (state == ButtonEvent::CLICKED) {
         speaker.playSound(fx::cancel);
         settings.save();
-        mainMenuPage.backToMainMenu();
+        settingsMenuPage.backToSettingsMenu();
       } else if (state == ButtonEvent::HELD) {
         speaker.playSound(fx::exit);
         settings.save();

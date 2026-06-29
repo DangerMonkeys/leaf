@@ -11,10 +11,11 @@ class LogMenuPage : public SettingsMenuPage {
  public:
   LogMenuPage() {
     cursor_position = 0;
-    cursor_max = 5;
+    cursor_max = 4;
   }
   void draw();
   void backToLogMenu();
+  void showLogbook();
   bool button_event(Button button, ButtonEvent state, uint8_t count) override;
 
  protected:
@@ -22,8 +23,7 @@ class LogMenuPage : public SettingsMenuPage {
 
  private:
   void drawLogMenu();
-  static constexpr char* labels[6] = {"Back",      "Format",   "SaveLog",
-                                      "AutoStart", "AutoStop", "Logbook"};
+  static constexpr char* labels[5] = {"Back", "Format", "SaveLog", "AutoStart", "AutoStop"};
   PageLogbook pageLogbook;
 };
 
