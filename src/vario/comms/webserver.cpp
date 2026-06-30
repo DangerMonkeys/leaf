@@ -43,6 +43,7 @@ namespace {
   bool wifi_setup_scan_running = false;
   bool wifi_setup_connecting = false;
   uint32_t wifi_setup_connect_started_ms = 0;
+  uint32_t wifi_setup_connected_ms = 0;
   String wifi_setup_connect_ssid = "";
   String wifi_setup_connect_error = "";
   uint32_t user_app_loop_count = 0;
@@ -62,11 +63,13 @@ namespace {
 
   static constexpr uint32_t SELF_TEST_POWER_ON_DELAY_MS = 10000;
   static constexpr uint32_t WIFI_SETUP_CONNECT_TIMEOUT_MS = 12000;
+  static constexpr uint32_t WIFI_SETUP_AP_SUCCESS_GRACE_MS = 5000;
   static constexpr size_t PROFILE_FILE_MAX_BYTES = 4096;
   static constexpr const char* PROFILE_TEMP_FILE = "/profiles/profiles.tmp";
   static constexpr const char* PROFILE_BACKUP_FILE = "/profiles/profiles.bak";
   static constexpr const char* DIAGNOSTICS_DIR = "/diagnostics";
   static constexpr const char* USER_APP_DIAGNOSTICS_FILE = "/diagnostics/webapp_requests.csv";
+  static constexpr const char* WIFI_SETUP_DIAGNOSTICS_FILE = "/diagnostics/wifi_setup.csv";
 
   SelfTestMode last_self_test_mode = SelfTestMode::None;
   bool interactive_self_test_pending = false;
@@ -74,6 +77,7 @@ namespace {
 
   uint32_t wifi_setup_cycle = 0;
   uint32_t wifi_setup_started_ms = 0;
+  uint32_t wifi_setup_last_diag_ms = 0;
 
   void logWifiSetupTiming(const char* event) {
     Serial.printf("Leaf WiFi setup cycle %lu +%lums: %s heap=%u maxAlloc=%u\n",
@@ -100,6 +104,89 @@ namespace {
   void updateUserAppStationPeak() {
     const uint8_t station_count = WiFi.softAPgetStationNum();
     if (station_count > user_app_max_ap_stations) user_app_max_ap_stations = station_count;
+  }
+
+  bool stationConnectionReady() {
+    return WiFi.status() == WL_CONNECTED && WiFi.localIP() != IPAddress(0, 0, 0, 0);
+  }
+
+  uint32_t wifiSetupConnectedElapsedMs() {
+    return wifi_setup_connected_ms == 0 ? 0 : millis() - wifi_setup_connected_ms;
+  }
+
+  bool wifiSetupReadyForTransition() {
+    return user_app_enabled && user_app_provisioning && stationConnectionReady() &&
+           wifi_setup_connected_ms != 0 &&
+           wifiSetupConnectedElapsedMs() >= WIFI_SETUP_AP_SUCCESS_GRACE_MS;
+  }
+
+  void printCsvString(File& file, const String& value) {
+    file.print('"');
+    for (size_t i = 0; i < value.length(); i++) {
+      if (value[i] == '"') file.print('"');
+      file.print(value[i]);
+    }
+    file.print('"');
+  }
+
+  void appendWifiSetupDiagnostics(const char* event, bool force = false) {
+    const uint32_t now = millis();
+    if (!force && now - wifi_setup_last_diag_ms < 1000) return;
+    wifi_setup_last_diag_ms = now;
+
+    const bool ready = wifiSetupReadyForTransition();
+    const int wifi_status = static_cast<int>(WiFi.status());
+    const int wifi_mode = static_cast<int>(WiFi.getMode());
+    const uint8_t ap_stations = WiFi.softAPgetStationNum();
+    const String local_ip = WiFi.localIP().toString();
+    const String ap_ip = WiFi.softAPIP().toString();
+    const String ssid = WiFi.SSID();
+
+    Serial.printf(
+        "Leaf WiFi setup diag: event=%s enabled=%u leaf_ap=%u provisioning=%u connecting=%u "
+        "ready=%u status=%d mode=%d local_ip=%s ap_ip=%s ap_stations=%u ssid=%s target=%s "
+        "connected_elapsed=%lu error=%s\n",
+        event ? event : "", user_app_enabled ? 1 : 0, user_app_using_leaf_wifi ? 1 : 0,
+        user_app_provisioning ? 1 : 0, wifi_setup_connecting ? 1 : 0, ready ? 1 : 0,
+        wifi_status, wifi_mode, local_ip.c_str(), ap_ip.c_str(),
+        static_cast<unsigned int>(ap_stations), ssid.c_str(), wifi_setup_connect_ssid.c_str(),
+        static_cast<unsigned long>(wifiSetupConnectedElapsedMs()), wifi_setup_connect_error.c_str());
+
+    if (!SD_MMC.exists(DIAGNOSTICS_DIR)) SD_MMC.mkdir(DIAGNOSTICS_DIR);
+    const bool existed = SD_MMC.exists(WIFI_SETUP_DIAGNOSTICS_FILE);
+    File file = SD_MMC.open(WIFI_SETUP_DIAGNOSTICS_FILE, "a", true);
+    if (!file) return;
+
+    if (!existed || file.size() == 0) {
+      file.println(
+          "millis,event,cycle,enabled,using_leaf_wifi,provisioning,connecting,ready,wifi_status,"
+          "wifi_mode,ap_stations,local_ip,ap_ip,ssid,target_ssid,connect_error,"
+          "connect_started_ms,connected_ms,connected_elapsed_ms,free_heap,max_alloc_heap");
+    }
+
+    file.printf("%lu,", static_cast<unsigned long>(now));
+    printCsvString(file, event ? String(event) : String(""));
+    file.printf(",%lu,%u,%u,%u,%u,%u,%d,%d,%u,",
+                static_cast<unsigned long>(wifi_setup_cycle), user_app_enabled ? 1 : 0,
+                user_app_using_leaf_wifi ? 1 : 0, user_app_provisioning ? 1 : 0,
+                wifi_setup_connecting ? 1 : 0, ready ? 1 : 0, wifi_status, wifi_mode,
+                static_cast<unsigned int>(ap_stations));
+    printCsvString(file, local_ip);
+    file.print(',');
+    printCsvString(file, ap_ip);
+    file.print(',');
+    printCsvString(file, ssid);
+    file.print(',');
+    printCsvString(file, wifi_setup_connect_ssid);
+    file.print(',');
+    printCsvString(file, wifi_setup_connect_error);
+    file.printf(",%lu,%lu,%lu,%lu,%lu\n",
+                static_cast<unsigned long>(wifi_setup_connect_started_ms),
+                static_cast<unsigned long>(wifi_setup_connected_ms),
+                static_cast<unsigned long>(wifiSetupConnectedElapsedMs()),
+                static_cast<unsigned long>(ESP.getFreeHeap()),
+                static_cast<unsigned long>(ESP.getMaxAllocHeap()));
+    file.close();
   }
 
   void dumpUserAppCounters(const char* event) {
@@ -440,6 +527,13 @@ namespace {
     return url;
   }
 
+  String stationUserAppUrl() {
+    String url = "http://";
+    url += WiFi.localIP().toString();
+    url += "/app";
+    return url;
+  }
+
   String deviceHexDigits() {
     String hex = settings.getMacAddress();
     hex.replace(":", "");
@@ -537,11 +631,6 @@ namespace {
     user_app_services_paused = false;
   }
 
-  bool stationConnectionReady() {
-    return WiFi.status() == WL_CONNECTED && !WiFi.SSID().isEmpty() &&
-           WiFi.localIP() != IPAddress(0, 0, 0, 0);
-  }
-
   void sendNoStoreHeaders(WebServer& target) {
     target.sendHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
     target.sendHeader("Pragma", "no-cache");
@@ -550,6 +639,7 @@ namespace {
 
   void stopFailedWifiSetupAttempt(const char* error) {
     wifi_setup_connecting = false;
+    wifi_setup_connected_ms = 0;
     wifi_setup_connect_error = error;
 
     // A failed WiFi.begin() can leave bad setup credentials saved and the STA
@@ -561,15 +651,19 @@ namespace {
   }
 
   String wifiStatusJson() {
+    appendWifiSetupDiagnostics("status", true);
     wl_status_t status = WiFi.status();
     if (wifi_setup_connecting && stationConnectionReady()) {
       wifi_setup_connecting = false;
+      wifi_setup_connected_ms = millis();
       wifi_setup_connect_error = "";
+      appendWifiSetupDiagnostics("status-connected", true);
     } else if (wifi_setup_connecting &&
                millis() - wifi_setup_connect_started_ms > WIFI_SETUP_CONNECT_TIMEOUT_MS) {
       const wl_status_t timed_out_status = WiFi.status();
       if (timed_out_status == WL_CONNECTED) {
         wifi_setup_connecting = false;
+        wifi_setup_connected_ms = millis();
         wifi_setup_connect_error = "";
       } else if (timed_out_status == WL_NO_SSID_AVAIL) {
         stopFailedWifiSetupAttempt("network_not_found");
@@ -587,6 +681,16 @@ namespace {
     json += status == WL_CONNECTED ? "true" : "false";
     json += ",\"connecting\":";
     json += wifi_setup_connecting ? "true" : "false";
+    json += ",\"transition_ready\":";
+    json += wifiSetupReadyForTransition() ? "true" : "false";
+    json += ",\"using_leaf_wifi\":";
+    json += user_app_using_leaf_wifi ? "true" : "false";
+    json += ",\"wifi_mode\":";
+    json += static_cast<int>(WiFi.getMode());
+    json += ",\"ap_stations\":";
+    json += static_cast<int>(WiFi.softAPgetStationNum());
+    json += ",\"connected_elapsed_ms\":";
+    json += static_cast<unsigned long>(wifiSetupConnectedElapsedMs());
     json += ",\"ssid\":\"";
     json += jsonEscape(WiFi.SSID().isEmpty() && status == WL_CONNECTED ? wifi_setup_connect_ssid
                                                                        : WiFi.SSID());
@@ -599,7 +703,7 @@ namespace {
     json += ",\"error\":\"";
     json += jsonEscape(wifi_setup_connect_error);
     json += "\",\"app_url\":\"";
-    json += userAppUrl();
+    json += status == WL_CONNECTED ? stationUserAppUrl() : userAppUrl();
     json += "\"}";
     return json;
   }
@@ -666,7 +770,13 @@ namespace {
       String name = item["name"] | "";
       id.trim();
       name.trim();
+      String email = item["email"] | "";
+      String leafLogApiKey = item["leaf_log_api_key"] | "";
+      email.trim();
+      leafLogApiKey.trim();
       if (id.isEmpty() || id.length() > 20 || name.isEmpty() || name.length() > 48) return false;
+      if (email.length() > 80) return false;
+      if (leafLogApiKey.length() > 160) return false;
       if (!activePilotId.isEmpty() && id == activePilotId) activePilotFound = true;
     }
 
@@ -782,39 +892,39 @@ namespace {
     }
 
     static constexpr char USER_APP_PAGE[] PROGMEM =
-        R"leafapp(<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=Cache-Control content=no-store><title>Leaf</title><style>:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#202423;background:#363636;line-height:1.35;--leaf:#d8ff00;--ink:#202423;--panel:#565656;--sub:#4d4d4d;--danger:#7a1d1d}body{margin:0;background:#363636}header{background:var(--leaf);color:#0b0d0b;padding:11px 20px;text-align:center}main{max-width:640px;margin:auto;padding:18px}h1{font-family:Arial,sans-serif;font-size:38px;font-weight:500;letter-spacing:.12em;line-height:1;margin:0}h2{font-size:18px;margin:-16px -14px 14px;padding:10px 12px;color:#0b0d0b;background:var(--leaf);text-align:center;border-radius:5px 5px 0 0}section{background:var(--panel);border-radius:8px;margin:0 0 14px;padding:16px 14px}.status-panel{padding-top:14px}.status-panel h2{background:var(--panel);color:white;border-bottom:1px solid #a9a9a9;margin:-14px -14px 14px}.view{display:none}.view.active{display:block}.subbar{position:relative;display:flex;align-items:center;justify-content:center;min-height:34px;color:white;margin:0 0 14px}.back{position:absolute;left:0;top:-3px;width:44px;height:40px;background:white;color:var(--ink);border-color:white;box-shadow:none;padding:3px 8px;font-size:32px;font-weight:900;line-height:.85}.subbar h2{color:white;background:transparent;margin:0;padding:0;font-size:18px}.row{display:flex;gap:8px}.row>*{flex:1}.row>.small{flex:0 0 94px}.actions{display:flex;align-items:center;gap:10px;margin-top:12px}.actions .msg{flex:1;margin:0}.actions button,.profile-actions button{width:auto;padding:8px 10px;font-size:14px}.profile-actions{margin-top:12px;gap:14px}label{display:block;font-size:13px;font-weight:700;margin:10px 0 4px;color:white}input,select,button{box-sizing:border-box;width:100%;font:inherit;padding:11px;border:1px solid #b9c0b2;border-radius:7px;background:white;color:var(--ink)}input:focus,select:focus,button:focus{outline:2px solid var(--leaf);outline-offset:1px}select:disabled,button:disabled,.secondary:disabled,.danger:disabled{background:#686868;border-color:#686868;color:#8a8a8a;opacity:1;box-shadow:none}button{background:var(--ink);color:white;font-weight:750;border-color:var(--ink);box-shadow:inset 0 -2px 0 rgba(0,0,0,.22)}.secondary{background:white;color:var(--ink);border-color:#89917f;box-shadow:none}.danger{background:var(--danger);border-color:var(--danger);color:white}.hero{background:var(--leaf);border-color:var(--leaf);color:#0b0d0b}.profile-actions button:first-child:not(:disabled){background:var(--leaf);border-color:var(--leaf);color:#0b0d0b}.muted{color:#e2e7dc}.msg{min-height:20px;margin-top:10px}#profilesView section{padding-bottom:4px}#profilesView .msg{min-height:0;margin:6px 0 0;line-height:1.2}.status{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:13px;white-space:pre-wrap;color:white;min-width:0}.status-body{display:grid;grid-template-columns:minmax(0,1fr) max-content;align-items:start;justify-content:space-between;column-gap:14px}.status-side{display:grid;gap:8px;justify-items:end}.battery-status{color:white;text-align:right;font-size:13px;font-weight:700}.battery-line{display:flex;align-items:center;justify-content:flex-end;gap:7px;margin-bottom:4px}.battery{position:relative;width:44px;height:20px;border:2px solid white;border-radius:4px;box-sizing:border-box}.battery:after{content:"";position:absolute;right:-6px;top:4px;width:4px;height:8px;background:white;border-radius:0 2px 2px 0}.battery-fill{display:block;height:100%;background:var(--leaf);border-radius:2px}.battery-meta{font-size:12px;font-weight:650;color:#e2e7dc}.metrics{display:grid;grid-template-columns:1fr 1fr;gap:9px}.metric{background:var(--sub);border-radius:7px;padding:8px 10px;color:white}.metric span{display:block;color:#dfe5d9;font-size:12px;font-weight:650;margin-bottom:2px}.metric strong{display:block;font-size:16px}#logCount{font-size:34px;line-height:1}.pager{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;gap:8px;margin-bottom:12px}.pager button{height:38px;padding:0;background:var(--leaf);border-color:var(--leaf);color:#0b0d0b}.pager button:disabled{background:#686868;border-color:#686868;color:#8a8a8a;box-shadow:none}.page-title{text-align:center;color:white;font-weight:800}.flight-head{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;color:white;margin-bottom:8px}.flight-head div:nth-child(2){text-align:center}.flight-head div:nth-child(3){text-align:right}.flight-head span{display:block;color:#dfe5d9;font-size:12px;font-weight:650}.flight-head strong{display:block;color:white;font-size:14px;font-weight:800;white-space:nowrap}.flight-profiles{display:flex;justify-content:space-between;gap:10px;color:var(--leaf);font-weight:800;margin:0 0 10px}.flight-profiles div{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.flight-profiles div:last-child{text-align:right}.flight-card{color:white}.alt-box,.vario-box{background:var(--sub);border-radius:7px;padding:12px;margin:10px 0}.alt-box{position:relative;padding:8px 10px 28px}.alt-title{position:absolute;left:0;right:0;bottom:6px;text-align:center}.alt-title,.vario-title{font-size:18px;font-weight:800}.vario-title{text-align:center}.alt-row{position:relative;height:100px;margin-top:0}.alt-row .pill{position:absolute;min-width:74px;background:#111;color:white}.alt-row .pill.high{background:var(--leaf);color:#0b0d0b}.pill{background:var(--leaf);color:#0b0d0b;border-radius:6px;padding:5px 8px;font-weight:800;text-align:center}.pill span{display:block;font-size:11px}.detail-grid{display:grid;grid-template-columns:1fr 1.45fr;gap:10px}.vario-box{display:flex;flex-direction:column;justify-content:center;gap:9px}.vario-title{order:2}.vario-values{display:contents}#climbMax{order:1}#sinkMax{order:3}.sink{background:#111;color:white}.mini-metrics{background:var(--sub);border-radius:7px;padding:8px 10px}.mini-row{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid #777;padding:5px 0}.mini-row:last-child{border-bottom:0}.track{overflow-wrap:anywhere;color:#e2e7dc;margin-top:12px;font-size:13px;display:flex;justify-content:space-between;gap:12px;align-items:baseline}.track-file-name{color:var(--leaf);font-weight:800}.flight-id{font-size:12px;text-align:right;white-space:nowrap}.delete-area{margin-top:10px;display:flex;justify-content:flex-end}.delete-area>button{width:auto;padding:8px 10px;font-size:14px}.delete-confirm{display:none;width:100%;text-align:left;background:rgba(0,0,0,.18);border-radius:7px;padding:7px 8px}.delete-confirm button{width:100%;font-size:15px;padding:8px 9px}.delete-warning{font-weight:500;margin:0 0 7px;color:white}#logDetailMsg{min-height:0;margin:6px 0 0}#logDetailMsg:empty{display:none}@media(max-width:520px){.detail-grid{grid-template-columns:1fr 1.45fr}.status-body{grid-template-columns:minmax(0,1fr) max-content}.status-side{justify-items:end}.battery-status{text-align:right}.battery-line{justify-content:flex-end}}</style></head><body><header><h1>Leaf</h1></header><main><div id=mainView class="view active"><section class=status-panel><h2>Status</h2><div class=status-body><div class=status id=status>Loading...</div><div class=status-side><div class=battery-status id=batteryBox><div class=battery-line><span id=batteryText>--%</span><div class=battery><span class=battery-fill id=batteryFill></span></div></div><div class=battery-meta id=batteryCharge>Unknown</div></div></div></div></section><section><h2>Profiles</h2><label>Active pilot</label><select id=activePilotList></select><label>Active glider</label><select id=activeGliderList></select><div class=actions><p class="muted msg" id=mainProfileMsg></p><button class=secondary id=editProfiles>Edit Profiles</button></div></section><section><h2>Logbook</h2><div class=metrics><div class=metric><span>Total Flights</span><strong id=logCount>--</strong></div><div class=metric><span>Last Flight</span><strong id=logLatest>Loading...</strong></div></div><div class=actions><p class="muted msg" id=logMsg></p><button class=secondary id=openLogbook disabled>Open Logbook</button></div></section></div><div id=profilesView class=view><div class=subbar><button class=back id=backMain aria-label=Back>&#x276e;</button><h2>Edit Profiles</h2></div><section><h2>Pilots</h2><label>Active pilot</label><select id=pilotList></select><label>Name</label><input id=pilotName maxlength=48 autocomplete=name><div class="row profile-actions"><button id=pilotSave disabled>Save Profile</button><button class=secondary id=pilotNew>New</button><button class="small danger" id=pilotDelete>Delete</button></div><p class="muted msg" id=pilotMsg></p></section><section><h2>Gliders</h2><label>Active glider</label><select id=gliderList></select><div class=row><div><label>Brand</label><input id=gliderBrand maxlength=32></div><div><label>Model</label><input id=gliderModel maxlength=48></div></div><div class=row><div><label>Size</label><input id=gliderSize maxlength=16></div><div><label>Display name</label><input id=gliderDisplay maxlength=64></div></div><div class="row profile-actions"><button id=gliderSave disabled>Save Profile</button><button class=secondary id=gliderNew>New</button><button class="small danger" id=gliderDelete>Delete</button></div><p class="muted msg" id=gliderMsg></p></section></div><div id=logbookView class=view><div class=subbar><button class=back id=backLogMain aria-label=Back>&#x276e;</button><h2>Logbook</h2></div><section class=flight-card><div class=pager><button id=logPrev>&#x276e;</button><div class=page-title id=logPage>--</div><button id=logNext>&#x276f;</button></div><div class=flight-head><div><span id=flightDay>--</span><strong id=flightDate>Loading...</strong></div><div><span>Start:</span><strong id=flightTime>--</strong></div><div><span>Duration:</span><strong id=flightDuration>--</strong></div></div><div class=flight-profiles><div id=flightPilot></div><div id=flightGlider></div></div><div class=alt-box><div class=alt-title>Altitude</div><div class=alt-row><div class=pill id=altStart><span>Start</span>--</div><div class=pill id=altMax><span>Max</span>--</div><div class=pill id=altEnd><span>End</span>--</div></div></div><div class=detail-grid><div class=vario-box><div class=vario-title>Vario</div><div class=vario-values><div class=pill id=climbMax>--</div><div class="pill sink" id=sinkMax>--</div></div></div><div class=mini-metrics id=flightMetrics></div></div><div class=track id=trackInfo></div><div class=delete-area><button class=danger id=deleteLog>Delete Log</button><div class=delete-confirm id=deleteConfirm><p class=delete-warning>Delete log and track file?</p><div class=row><button class=danger id=confirmDelete>Confirm Delete</button><button class=hero id=cancelDelete>Cancel</button></div></div></div><p class="muted msg" id=logDetailMsg></p></section></div></main><script>
-let profiles={schema:'leaf.profiles',schema_version:'v0.1.0',active_pilot_id:null,active_glider_id:null,pilots:[],gliders:[]},pilotSnap={},gliderSnap={},logState={prev:'',next:'',path:''},unitPrefs={alt_feet:false,climb_fpm:false,speed_mph:false,distance_miles:false,heading_cardinal:false,temp_f:false,time_12h:false};
+        R"leafapp(<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=Cache-Control content=no-store><title>Leaf</title><style>:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#202423;background:#363636;line-height:1.35;--leaf:#d8ff00;--ink:#202423;--panel:#565656;--sub:#4d4d4d;--danger:#7a1d1d}body{margin:0;background:#363636}header{background:var(--leaf);color:#0b0d0b;padding:11px 20px;text-align:center}main{max-width:640px;margin:auto;padding:18px}h1{font-family:Arial,sans-serif;font-size:38px;font-weight:500;letter-spacing:.12em;line-height:1;margin:0}h2{font-size:18px;margin:-16px -14px 14px;padding:10px 12px;color:#0b0d0b;background:var(--leaf);text-align:center;border-radius:5px 5px 0 0}section{background:var(--panel);border-radius:8px;margin:0 0 14px;padding:16px 14px}.status-panel{padding-top:14px}.status-panel h2{background:var(--panel);color:white;border-bottom:1px solid #a9a9a9;margin:-14px -14px 14px}.view{display:none}.view.active{display:block}.subbar{position:relative;display:flex;align-items:center;justify-content:center;min-height:34px;color:white;margin:0 0 14px}.back{position:absolute;left:0;top:-3px;width:44px;height:40px;background:white;color:var(--ink);border-color:white;box-shadow:none;padding:3px 8px;font-size:32px;font-weight:900;line-height:.85}.subbar h2{color:white;background:transparent;margin:0;padding:0;font-size:18px}.row{display:flex;gap:8px}.row>*{flex:1}.row>.small{flex:0 0 94px}.actions{display:flex;align-items:center;gap:10px;margin-top:12px}.actions .msg{flex:1;margin:0}.actions button,.profile-actions button{width:auto;padding:8px 10px;font-size:14px}.profile-actions{margin-top:12px;gap:14px}label{display:block;font-size:13px;font-weight:700;margin:10px 0 4px;color:white}input,select,button{box-sizing:border-box;width:100%;font:inherit;padding:11px;border:1px solid #b9c0b2;border-radius:7px;background:white;color:var(--ink)}input:focus,select:focus,button:focus{outline:2px solid var(--leaf);outline-offset:1px}select:disabled,button:disabled,.secondary:disabled,.danger:disabled{background:#686868;border-color:#686868;color:#8a8a8a;opacity:1;box-shadow:none}button{background:var(--ink);color:white;font-weight:750;border-color:var(--ink);box-shadow:inset 0 -2px 0 rgba(0,0,0,.22)}.secondary{background:white;color:var(--ink);border-color:#89917f;box-shadow:none}.danger{background:var(--danger);border-color:var(--danger);color:white}.hero{background:var(--leaf);border-color:var(--leaf);color:#0b0d0b}.profile-actions button:first-child:not(:disabled){background:var(--leaf);border-color:var(--leaf);color:#0b0d0b}.muted{color:#e2e7dc}.msg{min-height:20px;margin-top:10px}#profilesView section{padding-bottom:4px}#profilesView .msg{min-height:0;margin:6px 0 0;line-height:1.2}.leaf-log-panel{display:none;margin-top:10px;background:rgba(0,0,0,.16);border-radius:7px;padding:10px}.leaf-log-panel.active{display:block}.leaf-log-step{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;color:white;font-weight:700}.leaf-log-step button,#leafLogWifi{width:auto}.status{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:13px;white-space:pre-wrap;color:white;min-width:0}.status-body{display:grid;grid-template-columns:minmax(0,1fr) max-content;align-items:start;justify-content:space-between;column-gap:14px}.status-side{display:grid;gap:8px;justify-items:end}.battery-status{color:white;text-align:right;font-size:13px;font-weight:700}.battery-line{display:flex;align-items:center;justify-content:flex-end;gap:7px;margin-bottom:4px}.battery{position:relative;width:44px;height:20px;border:2px solid white;border-radius:4px;box-sizing:border-box}.battery:after{content:"";position:absolute;right:-6px;top:4px;width:4px;height:8px;background:white;border-radius:0 2px 2px 0}.battery-fill{display:block;height:100%;background:var(--leaf);border-radius:2px}.battery-meta{font-size:12px;font-weight:650;color:#e2e7dc}.metrics{display:grid;grid-template-columns:1fr 1fr;gap:9px}.metric{background:var(--sub);border-radius:7px;padding:8px 10px;color:white}.metric span{display:block;color:#dfe5d9;font-size:12px;font-weight:650;margin-bottom:2px}.metric strong{display:block;font-size:16px}#logCount{font-size:34px;line-height:1}.pager{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;gap:8px;margin-bottom:12px}.pager button{height:38px;padding:0;background:var(--leaf);border-color:var(--leaf);color:#0b0d0b}.pager button:disabled{background:#686868;border-color:#686868;color:#8a8a8a;box-shadow:none}.page-title{text-align:center;color:white;font-weight:800}.flight-head{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;color:white;margin-bottom:8px}.flight-head div:nth-child(2){text-align:center}.flight-head div:nth-child(3){text-align:right}.flight-head span{display:block;color:#dfe5d9;font-size:12px;font-weight:650}.flight-head strong{display:block;color:white;font-size:14px;font-weight:800;white-space:nowrap}.flight-profiles{display:flex;justify-content:space-between;gap:10px;color:var(--leaf);font-weight:800;margin:0 0 10px}.flight-profiles div{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.flight-profiles div:last-child{text-align:right}.flight-card{color:white}.alt-box,.vario-box{background:var(--sub);border-radius:7px;padding:12px;margin:10px 0}.alt-box{position:relative;padding:8px 10px 28px}.alt-title{position:absolute;left:0;right:0;bottom:6px;text-align:center}.alt-title,.vario-title{font-size:18px;font-weight:800}.vario-title{text-align:center}.alt-row{position:relative;height:100px;margin-top:0}.alt-row .pill{position:absolute;min-width:74px;background:#111;color:white}.alt-row .pill.high{background:var(--leaf);color:#0b0d0b}.pill{background:var(--leaf);color:#0b0d0b;border-radius:6px;padding:5px 8px;font-weight:800;text-align:center}.pill span{display:block;font-size:11px}.detail-grid{display:grid;grid-template-columns:1fr 1.45fr;gap:10px}.vario-box{display:flex;flex-direction:column;justify-content:center;gap:9px}.vario-title{order:2}.vario-values{display:contents}#climbMax{order:1}#sinkMax{order:3}.sink{background:#111;color:white}.mini-metrics{background:var(--sub);border-radius:7px;padding:8px 10px}.mini-row{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid #777;padding:5px 0}.mini-row:last-child{border-bottom:0}.track{overflow-wrap:anywhere;color:#e2e7dc;margin-top:12px;font-size:13px;display:flex;justify-content:space-between;gap:12px;align-items:baseline}.track-file-name{color:var(--leaf);font-weight:800}.flight-id{font-size:12px;text-align:right;white-space:nowrap}.delete-area{margin-top:10px;display:flex;justify-content:flex-end}.delete-area>button{width:auto;padding:8px 10px;font-size:14px}.delete-confirm{display:none;width:100%;text-align:left;background:rgba(0,0,0,.18);border-radius:7px;padding:7px 8px}.delete-confirm button{width:100%;font-size:15px;padding:8px 9px}.delete-warning{font-weight:500;margin:0 0 7px;color:white}#logDetailMsg{min-height:0;margin:6px 0 0}#logDetailMsg:empty{display:none}@media(max-width:520px){.detail-grid{grid-template-columns:1fr 1.45fr}.status-body{grid-template-columns:minmax(0,1fr) max-content}.status-side{justify-items:end}.battery-status{text-align:right}.battery-line{justify-content:flex-end}}</style></head><body><header><h1>Leaf</h1></header><main><div id=mainView class="view active"><section class=status-panel><h2>Status</h2><div class=status-body><div class=status id=status>Loading...</div><div class=status-side><div class=battery-status id=batteryBox><div class=battery-line><span id=batteryText>--%</span><div class=battery><span class=battery-fill id=batteryFill></span></div></div><div class=battery-meta id=batteryCharge>Unknown</div></div></div></div></section><section><h2>Profiles</h2><label>Active pilot</label><select id=activePilotList></select><label>Active glider</label><select id=activeGliderList></select><div class=actions><p class="muted msg" id=mainProfileMsg></p><button class=secondary id=editProfiles>Edit Profiles</button></div></section><section><h2>Logbook</h2><div class=metrics><div class=metric><span>Total Flights</span><strong id=logCount>--</strong></div><div class=metric><span>Last Flight</span><strong id=logLatest>Loading...</strong></div></div><div class=actions><p class="muted msg" id=logMsg></p><button class=secondary id=openLogbook disabled>Open Logbook</button></div></section></div><div id=profilesView class=view><div class=subbar><button class=back id=backMain aria-label=Back>&#x276e;</button><h2>Edit Profiles</h2></div><section><h2>Pilots</h2><label>Active pilot</label><select id=pilotList></select><label>Name</label><input id=pilotName maxlength=48 autocomplete=name><label>Email</label><input id=pilotEmail maxlength=80 type=email autocomplete=email><div class=actions><button class=secondary id=leafLogLink disabled>Link Leaf Log</button><button class=secondary id=leafLogWifi>WiFi Setup</button><p class="muted msg" id=leafLogStatus></p></div><div class=leaf-log-panel id=leafLogPanel><div class=leaf-log-step><span>Open Leaf Log and sign in to get a Link Code</span><button class=hero id=leafLogOpen>Open Leaf Log</button></div><label>Leaf Log Link Code</label><input id=leafLogCode maxlength=160 autocomplete=off><div class=actions><p class="muted msg" id=leafLogMsg></p><button class=secondary id=leafLogSave>Save Link</button></div></div><div class="row profile-actions"><button id=pilotSave disabled>Save Profile</button><button class=secondary id=pilotNew>New</button><button class="small danger" id=pilotDelete>Delete</button></div><p class="muted msg" id=pilotMsg></p></section><section><h2>Gliders</h2><label>Active glider</label><select id=gliderList></select><div class=row><div><label>Brand</label><input id=gliderBrand maxlength=32></div><div><label>Model</label><input id=gliderModel maxlength=48></div></div><div class=row><div><label>Size</label><input id=gliderSize maxlength=16></div><div><label>Display name</label><input id=gliderDisplay maxlength=64></div></div><div class="row profile-actions"><button id=gliderSave disabled>Save Profile</button><button class=secondary id=gliderNew>New</button><button class="small danger" id=gliderDelete>Delete</button></div><p class="muted msg" id=gliderMsg></p></section></div><div id=logbookView class=view><div class=subbar><button class=back id=backLogMain aria-label=Back>&#x276e;</button><h2>Logbook</h2></div><section class=flight-card><div class=pager><button id=logPrev>&#x276e;</button><div class=page-title id=logPage>--</div><button id=logNext>&#x276f;</button></div><div class=flight-head><div><span id=flightDay>--</span><strong id=flightDate>Loading...</strong></div><div><span>Start:</span><strong id=flightTime>--</strong></div><div><span>Duration:</span><strong id=flightDuration>--</strong></div></div><div class=flight-profiles><div id=flightPilot></div><div id=flightGlider></div></div><div class=alt-box><div class=alt-title>Altitude</div><div class=alt-row><div class=pill id=altStart><span>Start</span>--</div><div class=pill id=altMax><span>Max</span>--</div><div class=pill id=altEnd><span>End</span>--</div></div></div><div class=detail-grid><div class=vario-box><div class=vario-title>Vario</div><div class=vario-values><div class=pill id=climbMax>--</div><div class="pill sink" id=sinkMax>--</div></div></div><div class=mini-metrics id=flightMetrics></div></div><div class=track id=trackInfo></div><div class=delete-area><button class=danger id=deleteLog>Delete Log</button><div class=delete-confirm id=deleteConfirm><p class=delete-warning>Delete log and track file?</p><div class=row><button class=danger id=confirmDelete>Confirm Delete</button><button class=hero id=cancelDelete>Cancel</button></div></div></div><p class="muted msg" id=logDetailMsg></p></section></div></main><script>
+let profiles={schema:'leaf.profiles',schema_version:'v0.1.0',active_pilot_id:null,active_glider_id:null,pilots:[],gliders:[]},pilotSnap={},gliderSnap={},logState={prev:'',next:'',path:''},unitPrefs={alt_feet:false,climb_fpm:false,speed_mph:false,distance_miles:false,heading_cardinal:false,temp_f:false,time_12h:false},userStatus={mode:'',mac_address:''};
 const $=id=>document.getElementById(id),clean=v=>{v=(v||'').trim();return v?v:null},newId=()=>Math.floor(Math.random()*0xffffffff).toString(16).padStart(8,'0');
 function pilotLabel(p){return p.name||'Unnamed pilot'}function gliderLabel(g){return g.display_name||[g.brand,g.model,g.size].filter(Boolean).join(' ')||'Unnamed glider'}
 function selectedPilot(){return profiles.pilots.find(p=>p.id==profiles.active_pilot_id)}function selectedGlider(){return profiles.gliders.find(g=>g.id==profiles.active_glider_id)}
-function msg(id,t){$(id).textContent=t||''}function show(v){$('mainView').classList.toggle('active',v=='main');$('profilesView').classList.toggle('active',v=='profiles');$('logbookView').classList.toggle('active',v=='logbook')}
+function msg(id,t){$(id).textContent=t||''}function validEmail(v){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((v||'').trim())}function show(v){$('mainView').classList.toggle('active',v=='main');$('profilesView').classList.toggle('active',v=='profiles');$('logbookView').classList.toggle('active',v=='logbook')}
 function fillSelect(el,items,label){el.textContent='';items.forEach(x=>{let o=document.createElement('option');o.value=x.id;o.textContent=label(x);el.appendChild(o)});el.disabled=!items.length}
-function pilotEditor(){return {id:profiles.active_pilot_id,name:$('pilotName').value||''}}function gliderEditor(){return {id:profiles.active_glider_id,brand:$('gliderBrand').value||'',model:$('gliderModel').value||'',size:$('gliderSize').value||'',display_name:$('gliderDisplay').value||''}}
+function pilotEditor(){return {id:profiles.active_pilot_id,name:$('pilotName').value||'',email:$('pilotEmail').value||'',leaf_log_api_key:$('leafLogCode').value||''}}function gliderEditor(){return {id:profiles.active_glider_id,brand:$('gliderBrand').value||'',model:$('gliderModel').value||'',size:$('gliderSize').value||'',display_name:$('gliderDisplay').value||''}}
 function same(a,b){return JSON.stringify(a)==JSON.stringify(b)}function setSnaps(){pilotSnap=pilotEditor();gliderSnap=gliderEditor();buttons()}
-function buttons(){let p=pilotEditor(),g=gliderEditor();$('pilotSave').disabled=!clean(p.name)||same(p,pilotSnap);$('pilotDelete').disabled=!selectedPilot();$('pilotNew').disabled=!profiles.pilots.length;$('gliderSave').disabled=!([g.brand,g.model,g.size,g.display_name].some(v=>clean(v)))||same(g,gliderSnap);$('gliderDelete').disabled=!selectedGlider();$('gliderNew').disabled=!profiles.gliders.length}
-function render(){fillSelect($('pilotList'),profiles.pilots,pilotLabel);fillSelect($('activePilotList'),profiles.pilots,pilotLabel);if(profiles.active_pilot_id){$('pilotList').value=profiles.active_pilot_id;$('activePilotList').value=profiles.active_pilot_id}let p=selectedPilot();$('pilotName').value=p?p.name||'':'';if(!profiles.pilots.length)msg('pilotMsg','Enter pilot name, then Save Profile.');fillSelect($('gliderList'),profiles.gliders,gliderLabel);fillSelect($('activeGliderList'),profiles.gliders,gliderLabel);if(profiles.active_glider_id){$('gliderList').value=profiles.active_glider_id;$('activeGliderList').value=profiles.active_glider_id}let g=selectedGlider();$('gliderBrand').value=g?g.brand||'':'';$('gliderModel').value=g?g.model||'':'';$('gliderSize').value=g?g.size||'':'';$('gliderDisplay').value=g?g.display_name||'':'';if(!profiles.gliders.length)msg('gliderMsg','Enter glider details, then Save Profile.');setSnaps()}
+function buttons(){let p=pilotEditor(),g=gliderEditor();$('pilotSave').disabled=!clean(p.name)||same(p,pilotSnap);$('pilotDelete').disabled=!selectedPilot();$('pilotNew').disabled=!profiles.pilots.length;$('gliderSave').disabled=!([g.brand,g.model,g.size,g.display_name].some(v=>clean(v)))||same(g,gliderSnap);$('gliderDelete').disabled=!selectedGlider();$('gliderNew').disabled=!profiles.gliders.length;leafLogButtons()}
+function render(){fillSelect($('pilotList'),profiles.pilots,pilotLabel);fillSelect($('activePilotList'),profiles.pilots,pilotLabel);if(profiles.active_pilot_id){$('pilotList').value=profiles.active_pilot_id;$('activePilotList').value=profiles.active_pilot_id}let p=selectedPilot();$('pilotName').value=p?p.name||'':'';$('pilotEmail').value=p?p.email||'':'';$('leafLogCode').value=p?p.leaf_log_api_key||'':'';$('leafLogPanel').classList.remove('active');msg('leafLogMsg','');if(!profiles.pilots.length)msg('pilotMsg','Enter pilot name, then Save Profile.');fillSelect($('gliderList'),profiles.gliders,gliderLabel);fillSelect($('activeGliderList'),profiles.gliders,gliderLabel);if(profiles.active_glider_id){$('gliderList').value=profiles.active_glider_id;$('activeGliderList').value=profiles.active_glider_id}let g=selectedGlider();$('gliderBrand').value=g?g.brand||'':'';$('gliderModel').value=g?g.model||'':'';$('gliderSize').value=g?g.size||'':'';$('gliderDisplay').value=g?g.display_name||'':'';if(!profiles.gliders.length)msg('gliderMsg','Enter glider details, then Save Profile.');setSnaps()}
 function normalize(){profiles.schema='leaf.profiles';profiles.schema_version='v0.1.0';profiles.pilots=(profiles.pilots||[]).filter(p=>p&&p.id&&p.name);profiles.gliders=(profiles.gliders||[]).filter(g=>g&&g.id&&g.model);if(!profiles.pilots.find(p=>p.id==profiles.active_pilot_id))profiles.active_pilot_id=profiles.pilots.length==1?profiles.pilots[0].id:null;if(!profiles.gliders.find(g=>g.id==profiles.active_glider_id))profiles.active_glider_id=profiles.gliders.length==1?profiles.gliders[0].id:null}
 async function save(){normalize();let r=await fetch('/api/profiles',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(profiles)});if(!r.ok)throw new Error();render()}
-function versionText(v){let a=(v||'').split('+'),fw=a[0]||'unknown',hw=a[1]||'';if(fw[0]!='v')fw='v'+fw;if(hw){if(hw[0]=='h')hw=hw.slice(1);if(hw[0]!='v')hw='v'+hw}return `firmware: ${fw}`+(hw?`\nhardware: ${hw}`:'')}
+function leafLogLinked(){return !!clean($('leafLogCode').value)}function leafLogButtons(){let p=pilotEditor(),saved=!!selectedPilot(),email=validEmail(p.email),network=userStatus.mode=='network',linked=leafLogLinked();$('leafLogWifi').style.display=network?'none':'block';$('leafLogLink').disabled=!saved||!email||!network;if(!saved)msg('leafLogStatus','Save this pilot profile before linking Leaf Log.');else if(!email)msg('leafLogStatus','Add the email you use for Leaf Log.');else if(!network)msg('leafLogStatus','Join a Wifi network to link');else msg('leafLogStatus',linked?'Linked':'Not linked')}function leafLogUrl(){let q=new URLSearchParams({email:clean($('pilotEmail').value)||'',mac:userStatus.mac_address||'',profile:profiles.active_pilot_id||''});return 'https://leaflogonline.com/link?'+q.toString()}function versionText(s){let fw=s.firmware_display_version||'',hw=s.hardware_display_version||'';if(!fw){let a=(s.firmware_version||'').split('+');fw=a[0]||'unknown';hw=a[1]||hw||'';if(fw[0]!='v')fw='v'+fw;if(hw&&hw[0]=='h')hw=hw.slice(1);if(hw&&hw[0]!='v')hw='v'+hw}return `firmware: ${fw}`+(hw?`\nhardware: ${hw}`:'')}
 function useUnits(u){if(u)unitPrefs=u}function logParts(t,h12){if(!t)return{day:'--',date:'--',time:'--'};let a=t.split('T'),d=a[0]||'--',hm=(a[1]||'').slice(0,5)||'--',dt=new Date(t),day=isNaN(dt)?'--':dt.toLocaleDateString('en-US',{weekday:'long'}),date=isNaN(dt)?d:dt.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}),h=Number(hm.slice(0,2)),m=hm.slice(3,5);if(h12&&Number.isFinite(h)){let ap=h>=12?'PM':'AM';h=h%12||12;hm=h+':'+m+'\u00a0'+ap}return{day:day,date:date,time:hm}}function logDateTime(t,h12){let p=logParts(t,h12);return p.date?(p.date+'  '+p.time):''}
 function dur(s){s=Number(s)||0;let h=Math.floor(s/3600),m=Math.floor((s%3600)/60);return h?h+'h '+m+'m':m+'m'}
 function good(v){return v!==null&&v!==undefined&&v!==""&&Number.isFinite(Number(v))}function m(v){if(!good(v))return'--';v=Number(v);return unitPrefs.alt_feet?Math.round(v*3.28084)+' ft':Math.round(v)+' m'}function ms(v){if(!good(v))return'--';v=Number(v);return unitPrefs.climb_fpm?Math.round(v*196.85)+' fpm':v.toFixed(1)+' m/s'}function spd(v){if(!good(v))return'--';v=Number(v);return unitPrefs.speed_mph?(v*2.23694).toFixed(1)+' mph':(v*3.6).toFixed(1)+' kph'}function windSpd(v){if(!good(v))return'--';v=Number(v);return unitPrefs.speed_mph?Math.round(v*2.23694)+' mph':Math.round(v*3.6)+' kph'}function dist(v){if(!good(v))return'--';v=Number(v);if(unitPrefs.distance_miles)return v>805?(v*0.000621371).toFixed(2)+' mi':Math.round(v*3.28084)+' ft';return v>=1000?(v/1000).toFixed(2)+' km':Math.round(v)+' m'}function tempVal(c){if(!good(c))return'--';c=Number(c);return unitPrefs.temp_f?Math.round(c*9/5+32):Math.round(c)}function tempRange(a,b){return good(a)&&good(b)?tempVal(a)+'\u00b0 / '+tempVal(b)+'\u00b0'+(unitPrefs.temp_f?'F':'C'):'--'}function hdg(d){if(!good(d))return'--';d=(Math.round(Number(d))%360+360)%360;if(!unitPrefs.heading_cardinal)return d+' deg';let a=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];return a[Math.round(d/22.5)%16]}function wind(v,d){return windSpd(v)+' '+hdg(d)}
 function altShown(v){if(!good(v))return NaN;v=Number(v);return unitPrefs.alt_feet?Math.round(v*3.28084):Math.round(v)}
 function renderAlt(e){let s=Number(e.start_altitude_m),x=Number(e.max_altitude_m),n=Number(e.min_altitude_m),end=Number(e.end_altitude_m);let vals=[s,x,end].filter(Number.isFinite),a=$('altStart'),b=$('altMax'),c=$('altEnd');[a,b,c].forEach(q=>{q.classList.remove('high');q.style.display='none'});if(!vals.length)return;if(!Number.isFinite(n))n=Math.min(...vals,0);let hi=Math.max(...vals,0),lo=Math.min(n,...vals,0),range=Math.max(1,hi-lo),top=v=>Number.isFinite(v)?Math.round((hi-v)/range*64)+2:32,sv=Number.isFinite(s),ev=Number.isFinite(end),showMax=Number.isFinite(x)&&altShown(x)>Math.max(sv?altShown(s):-1e9,ev?altShown(end):-1e9);if(sv){a.style.display='block';a.lastChild.textContent=m(s);a.style.left='0';a.style.top=top(s)+'px'}if(showMax){b.style.display='block';b.lastChild.textContent=m(x);b.style.left='50%';b.style.transform='translateX(-50%)';b.style.top=top(x)+'px'}if(ev){c.style.display='block';c.lastChild.textContent=m(end);c.style.right='0';c.style.top=top(end)+'px'}if(showMax)b.classList.add('high');else if(sv&&(!ev||altShown(s)>=altShown(end)))a.classList.add('high');else if(ev)c.classList.add('high')}
-async function loadStatus(){try{let s=await(await fetch('/api/user/status')).json();$('status').textContent=`mode: ${s.mode}\nssid: ${s.ssid||'(none)'}\nip: ${s.ip_address||'(none)'}\n`+versionText(s.firmware_version);if(Number.isFinite(Number(s.battery_percent))){let p=Math.max(0,Math.min(100,Number(s.battery_percent)));$('batteryFill').style.width=p+'%';$('batteryText').textContent=p+'%';$('batteryCharge').textContent=s.battery_charging?'Charging':'Not charging'}else $('batteryBox').style.display='none'}catch(e){$('status').textContent='Unable to read status.'}}
+async function loadStatus(){try{let s=await(await fetch('/api/user/status')).json();userStatus=s;$('status').textContent=`mode: ${s.mode}\nssid: ${s.ssid||'(none)'}\nip: ${s.ip_address||'(none)'}\n`+versionText(s);leafLogButtons();if(Number.isFinite(Number(s.battery_percent))){let p=Math.max(0,Math.min(100,Number(s.battery_percent)));$('batteryFill').style.width=p+'%';$('batteryText').textContent=p+'%';$('batteryCharge').textContent=s.battery_charging?'Charging':'Not charging'}else $('batteryBox').style.display='none'}catch(e){$('status').textContent='Unable to read status.'}}
 async function loadLogbook(){try{let d=await(await fetch('/api/logbook')).json();useUnits(d.units);$('logCount').textContent=d.count||0;$('openLogbook').disabled=!d.count;$('logLatest').textContent=d.latest&&d.latest.start_time_local?logDateTime(d.latest.start_time_local,unitPrefs.time_12h):(d.count?'Unknown':'No flights')}catch(e){$('logLatest').textContent='Unavailable';$('openLogbook').disabled=true}}
 function resetDelete(){$('deleteLog').style.display='block';$('deleteConfirm').style.display='none'}
 function clearLogCard(d){logState={prev:d&&d.previous_path||'',next:d&&d.next_path||'',path:d&&d.path||''};$('logPage').textContent=((d&&d.position)||'--')+'/'+((d&&d.total)||'--');$('logPrev').disabled=!logState.next;$('logNext').disabled=!logState.prev;$('flightDay').textContent='--';$('flightDate').textContent='Date unknown';$('flightTime').textContent='--';$('flightDuration').textContent='--';$('flightPilot').textContent='';$('flightGlider').textContent='';renderAlt({});$('climbMax').style.display='none';$('sinkMax').style.display='none';$('flightMetrics').innerHTML=['Straight Dist','Path Dist','Max Speed','Accel','Temp'].map(x=>`<div class=mini-row><span>${x}</span><strong>--</strong></div>`).join('');$('trackInfo').textContent=(d&&d.filename?'Bad log: '+d.filename:'Bad log');$('deleteLog').disabled=!logState.path}
 async function loadLogEntry(path){msg('logDetailMsg','Loading...');resetDelete();$('deleteLog').disabled=false;let url='/api/logbook/entry'+(path?'?path='+encodeURIComponent(path):'');try{let r=await fetch(url),d=await r.json().catch(()=>({}));useUnits(d.units);if(!r.ok||!d.ok){clearLogCard(d);throw d}let e=d.entry;logState={prev:d.previous_path||'',next:d.next_path||'',path:e.path||''};$('logPage').textContent=(d.position||'--')+'/'+(d.total||'--');$('logPrev').disabled=!logState.next;$('logNext').disabled=!logState.prev;let lp=logParts(e.start_time_local,unitPrefs.time_12h);$('flightDay').textContent=lp.day||'--';$('flightDate').textContent=lp.date||'Date unknown';$('flightTime').textContent=lp.time||'--';$('flightDuration').textContent=dur(e.duration_seconds);$('flightPilot').textContent=e.pilot_name||'';$('flightGlider').textContent=e.glider_display_name||'';renderAlt(e);$('climbMax').style.display=good(e.max_climb_rate_mps)?'block':'none';$('sinkMax').style.display=good(e.max_sink_rate_mps)?'block':'none';$('climbMax').textContent=ms(e.max_climb_rate_mps);$('sinkMax').textContent=ms(e.max_sink_rate_mps);let rows=[['Straight Dist',dist(e.straight_line_distance_m)],['Path Dist',dist(e.path_distance_m)],['Max Speed',spd(e.max_ground_speed_mps)],['Accel',(good(e.min_accel_g)&&good(e.max_accel_g)?Number(e.min_accel_g).toFixed(1)+' / '+Number(e.max_accel_g).toFixed(1)+' G':'--')],['Temp',tempRange(e.min_temperature_c,e.max_temperature_c)]];if(e.max_wind_valid)rows.push(['Wind',wind(e.max_wind_speed_mps,e.max_wind_direction_from_deg)]);$('flightMetrics').innerHTML=rows.map(r=>`<div class=mini-row><span>${r[0]}</span><strong>${r[1]}</strong></div>`).join('');let tn=e.track_path?e.track_path.split('/').pop():'';$('trackInfo').innerHTML='<span>'+(e.track_saved?('Track File: <span class=track-file-name>'+tn+'</span>'):'No track file')+'</span><span class=flight-id>Flight ID '+(e.flight_id||'--')+'</span>';$('deleteLog').disabled=!logState.path;msg('logDetailMsg','')}catch(x){resetDelete();if(!(x&&x.path))$('deleteLog').disabled=true;msg('logDetailMsg',x&&x.detail?x.detail:'Unable to load log.')}}
 async function loadProfiles(){try{profiles=await(await fetch('/api/profiles')).json();normalize();msg('pilotMsg','');msg('gliderMsg','');render()}catch(e){msg('pilotMsg','Unable to read profiles.')}}
-$('editProfiles').onclick=()=>show('profiles');$('backMain').onclick=()=>show('main');$('backLogMain').onclick=()=>show('main');$('openLogbook').onclick=()=>{show('logbook');loadLogEntry('')};$('logPrev').onclick=()=>{if(logState.next)loadLogEntry(logState.next)};$('logNext').onclick=()=>{if(logState.prev)loadLogEntry(logState.prev)};$('deleteLog').onclick=()=>{if(!logState.path)return;$('deleteLog').style.display='none';$('deleteConfirm').style.display='block';msg('logDetailMsg','')};$('cancelDelete').onclick=resetDelete;$('confirmDelete').onclick=async()=>{if(!logState.path)return;msg('logDetailMsg','Deleting...');try{let r=await fetch('/api/logbook/entry?path='+encodeURIComponent(logState.path),{method:'DELETE'}),d=await r.json().catch(()=>({}));if(!r.ok||!d.ok)throw d;await loadLogbook();if(d.count>0)loadLogEntry(d.next_path||'');else{show('main');msg('logMsg','Log deleted.')}}catch(x){msg('logDetailMsg',x&&x.detail?x.detail:'Unable to delete log.');resetDelete()}};['pilotName','gliderBrand','gliderModel','gliderSize','gliderDisplay'].forEach(x=>$(x).oninput=buttons);
+$('editProfiles').onclick=()=>show('profiles');$('backMain').onclick=()=>show('main');$('backLogMain').onclick=()=>show('main');$('openLogbook').onclick=()=>{show('logbook');loadLogEntry('')};$('logPrev').onclick=()=>{if(logState.next)loadLogEntry(logState.next)};$('logNext').onclick=()=>{if(logState.prev)loadLogEntry(logState.prev)};$('deleteLog').onclick=()=>{if(!logState.path)return;$('deleteLog').style.display='none';$('deleteConfirm').style.display='block';msg('logDetailMsg','')};$('cancelDelete').onclick=resetDelete;$('confirmDelete').onclick=async()=>{if(!logState.path)return;msg('logDetailMsg','Deleting...');try{let r=await fetch('/api/logbook/entry?path='+encodeURIComponent(logState.path),{method:'DELETE'}),d=await r.json().catch(()=>({}));if(!r.ok||!d.ok)throw d;await loadLogbook();if(d.count>0)loadLogEntry(d.next_path||'');else{show('main');msg('logMsg','Log deleted.')}}catch(x){msg('logDetailMsg',x&&x.detail?x.detail:'Unable to delete log.');resetDelete()}};['pilotName','pilotEmail','leafLogCode','gliderBrand','gliderModel','gliderSize','gliderDisplay'].forEach(x=>$(x).oninput=buttons);$('leafLogLink').onclick=()=>{$('leafLogPanel').classList.add('active');msg('leafLogMsg','')};$('leafLogWifi').onclick=()=>{location.href='/wifi?scan=1&return=app'};$('leafLogOpen').onclick=()=>{window.open(leafLogUrl(),'_blank','noopener')};$('leafLogSave').onclick=()=>{let name=clean($('pilotName').value);if(!name){msg('leafLogMsg','Pilot name is required.');return}let p=selectedPilot();if(!p){msg('leafLogMsg','Save this pilot profile before linking Leaf Log.');return}p.name=name;p.email=clean($('pilotEmail').value);p.leaf_log_api_key=clean($('leafLogCode').value);save().then(()=>{msg('leafLogMsg','Leaf Log link saved.');msg('pilotMsg','Pilot profile saved.')}).catch(()=>msg('leafLogMsg','Unable to save Leaf Log link.'))};
 $('activePilotList').onchange=()=>{profiles.active_pilot_id=$('activePilotList').value;render();save().then(()=>msg('mainProfileMsg','Active pilot saved.')).catch(()=>msg('mainProfileMsg','Unable to save.'))};
 $('activeGliderList').onchange=()=>{profiles.active_glider_id=$('activeGliderList').value;render();save().then(()=>msg('mainProfileMsg','Active glider saved.')).catch(()=>msg('mainProfileMsg','Unable to save.'))};
 $('pilotList').onchange=()=>{profiles.active_pilot_id=$('pilotList').value;render();save().then(()=>msg('pilotMsg','Active pilot selected.')).catch(()=>msg('pilotMsg','Unable to save.'))};
 $('gliderList').onchange=()=>{profiles.active_glider_id=$('gliderList').value;render();save().then(()=>msg('gliderMsg','Active glider selected.')).catch(()=>msg('gliderMsg','Unable to save.'))};
-$('pilotNew').onclick=()=>{profiles.active_pilot_id=null;$('pilotName').value='';setSnaps();$('pilotName').focus();msg('pilotMsg','Enter pilot name, then Save Profile.')};
+$('pilotNew').onclick=()=>{profiles.active_pilot_id=null;$('pilotName').value='';$('pilotEmail').value='';$('leafLogCode').value='';$('leafLogPanel').classList.remove('active');setSnaps();$('pilotName').focus();msg('pilotMsg','Enter pilot name, then Save Profile.')};
 $('gliderNew').onclick=()=>{profiles.active_glider_id=null;['gliderBrand','gliderModel','gliderSize','gliderDisplay'].forEach(x=>$(x).value='');setSnaps();$('gliderModel').focus();msg('gliderMsg','Enter glider details, then Save Profile.')};
-$('pilotSave').onclick=()=>{let name=clean($('pilotName').value);if(!name){msg('pilotMsg','Pilot name is required.');return}let p=selectedPilot();if(!p){p={id:newId(),name:''};profiles.pilots.push(p);profiles.active_pilot_id=p.id}p.name=name;save().then(()=>msg('pilotMsg','Pilot profile saved.')).catch(()=>msg('pilotMsg','Unable to save pilot.'))};
+$('pilotSave').onclick=()=>{let name=clean($('pilotName').value);if(!name){msg('pilotMsg','Pilot name is required.');return}let p=selectedPilot();if(!p){p={id:newId(),name:''};profiles.pilots.push(p);profiles.active_pilot_id=p.id}p.name=name;p.email=clean($('pilotEmail').value);p.leaf_log_api_key=clean($('leafLogCode').value);save().then(()=>msg('pilotMsg','Pilot profile saved.')).catch(()=>msg('pilotMsg','Unable to save pilot.'))};
 $('gliderSave').onclick=()=>{let model=clean($('gliderModel').value);if(!model){msg('gliderMsg','Glider model is required.');return}let g=selectedGlider();if(!g){g={id:newId(),model:''};profiles.gliders.push(g);profiles.active_glider_id=g.id}g.brand=clean($('gliderBrand').value);g.model=model;g.size=clean($('gliderSize').value);g.display_name=clean($('gliderDisplay').value);save().then(()=>msg('gliderMsg','Glider profile saved.')).catch(()=>msg('gliderMsg','Unable to save glider.'))};
 $('pilotDelete').onclick=()=>{let p=selectedPilot();if(!p)return;profiles.pilots=profiles.pilots.filter(x=>x.id!=p.id);profiles.active_pilot_id=null;save().then(()=>msg('pilotMsg','Pilot profile deleted.')).catch(()=>msg('pilotMsg','Unable to delete pilot.'))};
 $('gliderDelete').onclick=()=>{let g=selectedGlider();if(!g)return;profiles.gliders=profiles.gliders.filter(x=>x.id!=g.id);profiles.active_glider_id=null;save().then(()=>msg('gliderMsg','Glider profile deleted.')).catch(()=>msg('gliderMsg','Unable to delete glider.'))};
@@ -833,7 +943,7 @@ loadStatus();loadProfiles();loadLogbook();
 
     sendNoStoreHeaders(target);
     static constexpr char WIFI_SETUP_PAGE[] =
-        R"leafhtml(<!doctype html><html><head><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=Cache-Control content=no-store><title>Leaf WiFi</title><style>body{margin:0;background:#f5f7f2;color:#172016;font:16px -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif}h1{margin:0;padding:18px 20px;background:#172016;color:white;font-size:24px}main{padding:20px;max-width:560px;margin:auto}label{display:block;font-weight:650;margin:14px 0 6px}input,select,button{box-sizing:border-box;width:100%;font:inherit;padding:12px;border:1px solid #bac3b4;border-radius:6px}button{margin-top:16px;background:#172016;color:white;font-weight:700}.status{border-bottom:1px solid #d9dfd3;color:#596256;padding-bottom:14px}.row{display:flex;gap:10px}.row input{flex:1}.show{display:flex;align-items:center;gap:6px;width:auto;white-space:nowrap}.show input{width:auto}</style><script>async function init(){let s=document.getElementById('s'),l=document.getElementById('l'),n=document.getElementById('n'),p=document.getElementById('p'),w=document.getElementById('w'),f=document.getElementById('f');l.onchange=()=>{if(l.value)n.value=l.value};w.onchange=()=>p.type=w.checked?'text':'password';async function nets(){try{let d=await(await fetch('/api/wifi/networks')).json();if(d.scanning){s.textContent='Scanning for networks...';setTimeout(nets,1500);return}l.innerHTML='<option value="">Select network...</option>';d.networks.forEach(x=>{let o=document.createElement('option');o.value=x.ssid;o.textContent=x.ssid+' ('+x.rssi+' dBm)';l.appendChild(o)});s.textContent=d.networks.length?'Choose a network or type one manually.':'No networks found. Type the network name manually.'}catch(e){s.textContent='Unable to read network list. Type the network name manually.'}}async function poll(){try{let d=await(await fetch('/api/wifi/status')).json();if(d.connected){s.textContent='Connected to '+d.ssid+'. Open http://'+d.ip_address+'/app';return}if(d.error){s.textContent='Unable to connect. Check password and try again.';return}s.textContent=d.target_ssid?'Trying to connect to '+d.target_ssid+'...':'Trying to connect...';setTimeout(poll,1500)}catch(e){s.textContent='Trying to connect...';setTimeout(poll,2000)}}f.onsubmit=async e=>{e.preventDefault();let ssid=n.value.trim();if(!ssid){s.textContent='Enter a network name.';return}s.textContent='Saving credentials...';try{await fetch('/api/wifi/connect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ssid:ssid,password:p.value})});poll()}catch(x){s.textContent='Unable to save network details. Try again.'}};nets()}</script></head><body onload=init()><h1>Leaf WiFi Setup</h1><main><p class=status id=s>Loading...</p><form id=f><label>Network</label><select id=l><option>Select network...</option></select><input id=n autocomplete=off placeholder="Type network name"><label>Password</label><div class=row><input id=p type=password autocomplete=current-password><label class=show><input id=w type=checkbox>Show</label></div><button>Save and Connect</button></form></main></body></html>)leafhtml";
+        R"leafhtml(<!doctype html><html><head><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=Cache-Control content=no-store><title>Leaf WiFi</title><style>:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#202423;background:#363636;line-height:1.35;--leaf:#d8ff00;--ink:#202423;--panel:#565656;--sub:#4d4d4d}body{margin:0;background:#363636}header{background:var(--leaf);color:#0b0d0b;padding:11px 20px;text-align:center}main{max-width:640px;margin:auto;padding:18px}h1{font-family:Arial,sans-serif;font-size:38px;font-weight:500;letter-spacing:.12em;line-height:1;margin:0}.subbar{display:flex;align-items:center;justify-content:center;min-height:34px;color:white;margin:0 0 14px}.subbar h2{color:white;background:transparent;margin:0;padding:0;font-size:18px}section{background:var(--panel);border-radius:8px;margin:0 0 14px;padding:16px 14px}label{display:block;font-size:13px;font-weight:700;margin:10px 0 4px;color:white}input,select,button{box-sizing:border-box;width:100%;font:inherit;padding:11px;border:1px solid #b9c0b2;border-radius:7px;background:white;color:var(--ink)}input:focus,select:focus,button:focus{outline:2px solid var(--leaf);outline-offset:1px}button{background:var(--ink);color:white;font-weight:750;border-color:var(--ink);box-shadow:inset 0 -2px 0 rgba(0,0,0,.22)}button:disabled{background:#686868;border-color:#686868;color:#8a8a8a;opacity:1;box-shadow:none}.hero:not(:disabled){background:var(--leaf);border-color:var(--leaf);color:#0b0d0b}.status{min-height:20px;margin:0 0 12px;color:#e2e7dc}.network-row,.row{display:flex;gap:8px}.network-row select,.row input{flex:1}.refresh{flex:0 0 44px;width:44px;height:44px;padding:0;font-size:23px;line-height:1}.show{display:flex;align-items:center;gap:6px;width:auto;white-space:nowrap;color:white;font-weight:700}.show input{width:auto;accent-color:var(--leaf)}#n{margin-top:8px}#save{margin-top:16px}</style><script>async function init(){let s=document.getElementById('s'),l=document.getElementById('l'),n=document.getElementById('n'),p=document.getElementById('p'),w=document.getElementById('w'),f=document.getElementById('f'),r=document.getElementById('r'),save=document.getElementById('save');function chosen(){let o=l.options[l.selectedIndex];return o&&o.value&&o.value==n.value.trim()?o:null}function buttons(){let o=chosen(),need=o&&o.dataset.secure=='1';save.disabled=!n.value.trim()||(need&&!p.value)}l.onchange=()=>{if(l.value)n.value=l.value;buttons()};n.oninput=buttons;p.oninput=buttons;w.onchange=()=>p.type=w.checked?'text':'password';r.onclick=()=>nets(true);let params=new URLSearchParams(location.search),autoScan=params.has('scan'),returnToApp=params.get('return')=='app';async function nets(refresh){try{let d=await(await fetch('/api/wifi/networks'+(refresh?'?refresh=1':''))).json();if(d.scanning){s.textContent='Scanning for networks...';setTimeout(nets,1500);return}l.innerHTML='<option value="">Select network...</option>';d.networks.forEach(x=>{let o=document.createElement('option');o.value=x.ssid;o.dataset.secure=x.secure?'1':'0';o.textContent=x.ssid+' ('+x.rssi+' dBm)';l.appendChild(o)});s.textContent=d.networks.length?'Choose a network or type one manually.':'No networks found. Type the network name manually.';buttons()}catch(e){s.textContent='Unable to read network list. Type the network name manually.';buttons()}}async function poll(){try{let d=await(await fetch('/api/wifi/status')).json();if(d.connected){let appUrl=d.app_url||('http://'+d.ip_address+'/app');s.textContent=returnToApp?('Leaf is now on '+d.ssid+'. Connect to that network and open the Leaf app again using the QR code on the Leaf display.'):('Connected to '+d.ssid+'. Open '+appUrl);return}if(d.error){s.textContent='Unable to connect. Check password and try again.';return}s.textContent=d.target_ssid?'Trying to connect to '+d.target_ssid+'...':'Trying to connect...';setTimeout(poll,1500)}catch(e){s.textContent='Trying to connect...';setTimeout(poll,2000)}}f.onsubmit=async e=>{e.preventDefault();let ssid=n.value.trim();if(save.disabled)return;s.textContent='Saving credentials...';try{await fetch('/api/wifi/connect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ssid:ssid,password:p.value})});save.disabled=true;poll()}catch(x){s.textContent='Unable to save network details. Try again.';buttons()}};buttons();nets(autoScan)}</script></head><body onload=init()><header><h1>Leaf</h1></header><main><div class=subbar><h2>WiFi Setup</h2></div><section><p class=status id=s>Loading...</p><form id=f><label>Network</label><div class=network-row><select id=l><option value="">Select network...</option></select><button type=button id=r class=refresh title=Refresh aria-label=Refresh>&#x21bb;</button></div><input id=n autocomplete=off placeholder="Type network name"><label>Password</label><div class=row><input id=p type=password autocomplete=current-password><label class=show><input id=w type=checkbox>Show</label></div><button id=save class=hero disabled>Save and Connect</button></form></section></main></body></html>)leafhtml";
     target.send(200, "text/html", WIFI_SETUP_PAGE);
   }
 
@@ -853,6 +963,16 @@ loadStatus();loadProfiles();loadLogbook();
     json += userAppUrl();
     json += "\",\"firmware_version\":\"";
     json += LeafVersionInfo::firmwareVersion();
+    char firmwareDisplayVersion[48];
+    char hardwareDisplayVersion[24];
+    LeafVersionInfo::firmwareDisplayVersion(firmwareDisplayVersion, sizeof(firmwareDisplayVersion));
+    LeafVersionInfo::hardwareDisplayVersion(hardwareDisplayVersion, sizeof(hardwareDisplayVersion));
+    json += "\",\"firmware_display_version\":\"";
+    json += jsonEscape(firmwareDisplayVersion);
+    json += "\",\"hardware_display_version\":\"";
+    json += jsonEscape(hardwareDisplayVersion);
+    json += "\",\"mac_address\":\"";
+    json += jsonEscape(settings.macAddress.isEmpty() ? settings.getMacAddress() : settings.macAddress);
     const Power::Info& power_info = power.info();
     json += "\",\"battery_percent\":";
     json += power_info.batteryPercent;
@@ -1183,6 +1303,9 @@ loadStatus();loadProfiles();loadLogbook();
   }
 
   void sendWifiNetworks(WebServer& target) {
+    if (target.hasArg("refresh") && target.arg("refresh") != "0" && !wifi_setup_scan_running) {
+      startWifiNetworkScan();
+    }
     updateWifiNetworkScan();
     sendNoStoreHeaders(target);
     target.send(200, "application/json", wifi_setup_networks_json);
@@ -1202,11 +1325,16 @@ loadStatus();loadProfiles();loadLogbook();
     WiFi.setSleep(false);
     WiFi.persistent(true);
     WiFi.begin(ssid.c_str(), password.c_str());
+    if (user_app_enabled && user_app_using_leaf_wifi) {
+      user_app_provisioning = true;
+    }
     wifi_setup_connecting = true;
     wifi_setup_connect_started_ms = millis();
+    wifi_setup_connected_ms = 0;
     wifi_setup_connect_ssid = ssid;
     wifi_setup_connect_error = "";
     Serial.printf("Leaf WiFi setup connecting to SSID: %s\n", ssid.c_str());
+    appendWifiSetupDiagnostics("connect-request", true);
     target.send(202, "application/json", "{\"ok\":true}");
   }
 
@@ -1548,6 +1676,16 @@ void webserver_loop() {
       if (user_app_dns_started) dns_server.processNextRequest();
       user_app_handle_count++;
       user_server.handleClient();
+      if (user_app_provisioning) appendWifiSetupDiagnostics("loop");
+      if (webserver_wifi_setup_ready_for_network_app()) {
+        appendWifiSetupDiagnostics("transition-start", true);
+        Serial.printf("Leaf WiFi setup connected to %s; switching Web App to network mode\n",
+                      WiFi.SSID().c_str());
+        webserver_disable_user_app();
+        webserver_enable_user_app(false);
+        appendWifiSetupDiagnostics("transition-finished", true);
+        display.update();
+      }
     }
     updatePendingInteractiveSelfTest();
   }
@@ -1579,6 +1717,7 @@ void webserver_enable_user_app(bool useLeafWifi) {
   heap_monitor::record("after-user-server");
   webserver_setup();
   heap_monitor::record("enabled");
+  appendWifiSetupDiagnostics(useLeafWifi ? "enable-user-app-ap" : "enable-user-app-network", true);
 }
 
 void webserver_enable_wifi_setup() {
@@ -1604,10 +1743,12 @@ void webserver_enable_wifi_setup() {
   logWifiSetupTiming("after-main-server");
   startWifiNetworkScan();
   logWifiSetupTiming("after-scan-start");
+  appendWifiSetupDiagnostics("setup-started", true);
   Serial.printf("Leaf WiFi setup started: http://%s/wifi\n", WiFi.softAPIP().toString().c_str());
 }
 
 void webserver_disable_user_app() {
+  appendWifiSetupDiagnostics("disable-start", true);
   heap_monitor::record("disable-start");
   dumpUserAppCounters("disable-start");
   user_app_enabled = false;
@@ -1617,6 +1758,7 @@ void webserver_disable_user_app() {
   wifi_setup_scan_running = false;
   wifi_setup_networks_json = "{\"scanning\":false,\"networks\":[]}";
   wifi_setup_connecting = false;
+  wifi_setup_connected_ms = 0;
   wifi_setup_connect_ssid = "";
   wifi_setup_connect_error = "";
   if (user_server_started) {
@@ -1634,9 +1776,24 @@ void webserver_disable_user_app() {
   dumpUserAppCounters("disabled");
   heap_monitor::dumpToSd();
   resumeServicesAfterUserApp();
+  appendWifiSetupDiagnostics("disable-finished", true);
 }
 
 bool webserver_user_app_active() { return user_app_enabled; }
+
+bool webserver_wifi_setup_ready_for_network_app() {
+  if (!user_app_enabled || !user_app_provisioning) return false;
+  if (!stationConnectionReady()) return false;
+
+  if (wifi_setup_connecting) {
+    wifi_setup_connecting = false;
+    wifi_setup_connect_error = "";
+  }
+  if (wifi_setup_connected_ms == 0) wifi_setup_connected_ms = millis();
+  return millis() - wifi_setup_connected_ms >= WIFI_SETUP_AP_SUCCESS_GRACE_MS;
+}
+
+bool webserver_user_app_using_leaf_wifi() { return user_app_enabled && user_app_using_leaf_wifi; }
 
 String webserver_user_app_url() { return userAppUrl(); }
 

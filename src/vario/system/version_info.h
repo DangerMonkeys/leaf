@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stddef.h>
+
 struct LeafVersionInfo {
   // Primary accessors (no heap)
 
@@ -9,4 +11,7 @@ struct LeafVersionInfo {
   static const char* otaVersionsUrl();
   static const char* otaBinUrl();
   static bool otaAlwaysUpdate();
+
+  static void firmwareDisplayVersion(char* out, size_t len);
+  static void hardwareDisplayVersion(char* out, size_t len);
 };

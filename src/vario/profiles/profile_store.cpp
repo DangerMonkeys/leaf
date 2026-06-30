@@ -27,6 +27,8 @@ namespace {
     PilotProfile pilot;
     pilot.id = optionalString(obj["id"]);
     pilot.name = optionalString(obj["name"]);
+    pilot.email = optionalString(obj["email"]);
+    pilot.leafLogApiKey = optionalString(obj["leaf_log_api_key"]);
     return pilot;
   }
 
@@ -58,6 +60,10 @@ namespace {
 
 String GliderProfile::resolvedDisplayName() const {
   if (!displayName.isEmpty()) return displayName;
+  return profileName();
+}
+
+String GliderProfile::profileName() const {
   return joinGliderName(brand, model, size);
 }
 

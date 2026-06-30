@@ -86,9 +86,15 @@ bool Igc::startFlight() {
   logger.glider_type = "Unknown";
   setPilotFromProfiles();
 
-  logger.firmware_version = LeafVersionInfo::firmwareVersion();
-  logger.hardware_version = "Leaf1";
-  logger.logger_type = (String) "Leaf1," + LeafVersionInfo::firmwareVersion();
+  char firmwareVersion[48];
+  char hardwareVersion[24];
+  LeafVersionInfo::firmwareDisplayVersion(firmwareVersion, sizeof(firmwareVersion));
+  LeafVersionInfo::hardwareDisplayVersion(hardwareVersion, sizeof(hardwareVersion));
+
+  const String macAddress = settings.macAddress.isEmpty() ? settings.getMacAddress() : settings.macAddress;
+  logger.firmware_version = firmwareVersion;
+  logger.hardware_version = hardwareVersion;
+  logger.logger_type = (String) "Leaf:" + macAddress;
   logger.gps_type = "GNSS LC86G";
   logger.pressure_type = "MS5611";
   logger.time_zone = (String)(settings.system_timeZone / 60);
@@ -123,7 +129,7 @@ void Igc::setPilotFromProfiles() {
 
   GliderProfile glider;
   if (ProfileStore::activeGlider(glider)) {
-    const String displayName = glider.resolvedDisplayName();
-    if (!displayName.isEmpty()) logger.glider_type = displayName;
+    const String profileName = glider.profileName();
+    if (!profileName.isEmpty()) logger.glider_type = profileName;
   }
 }
