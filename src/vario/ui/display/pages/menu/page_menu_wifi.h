@@ -83,6 +83,7 @@ class PageMenuSystemWifiWebApp : public SimpleSettingsMenuPage {
   uint8_t get_title_glyph() const override { return menu_ui::GLYPH_WEB_APP; }
 
   void draw() override;
+  void loop() override;
   void shown() override;
   void closed(bool removed_from_Stack) override;
   void draw_extra() override;
@@ -96,6 +97,7 @@ class PageMenuSystemWifiWebApp : public SimpleSettingsMenuPage {
   bool using_leaf_wifi = false;
   PageQR page_qr;
   void start(bool useLeafWifi);
+  void syncWebAppMode();
 };
 
 /////////////////////////////////////////

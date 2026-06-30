@@ -272,6 +272,7 @@ void PageMenuSystemWifiWebApp::shown() {
 
 void PageMenuSystemWifiWebApp::closed(bool removed_from_Stack) {
   if (removed_from_Stack) {
+    syncWebAppMode();
     const bool reconnectToSavedNetwork = using_leaf_wifi;
     webserver_disable_user_app();
     if (reconnectToSavedNetwork) {
@@ -280,12 +281,24 @@ void PageMenuSystemWifiWebApp::closed(bool removed_from_Stack) {
   }
 }
 
+void PageMenuSystemWifiWebApp::loop() {}
+
+void PageMenuSystemWifiWebApp::syncWebAppMode() {
+  const bool serverUsingLeafWifi = webserver_user_app_using_leaf_wifi();
+  if (using_leaf_wifi == serverUsingLeafWifi) return;
+
+  using_leaf_wifi = serverUsingLeafWifi;
+  cursor_position = CURSOR_BACK;
+  cursor_max = using_leaf_wifi ? -1 : network_labels.size() - 1;
+}
+
 etl::array_view<const char*> PageMenuSystemWifiWebApp::get_labels() const {
   if (using_leaf_wifi) return etl::array_view<const char*>(emptyMenu);
   return etl::array_view<const char*>(network_labels);
 }
 
 void PageMenuSystemWifiWebApp::draw() {
+  syncWebAppMode();
   if (using_leaf_wifi) {
     SimpleSettingsMenuPage::draw();
     return;
@@ -318,6 +331,8 @@ void PageMenuSystemWifiWebApp::draw() {
 }
 
 void PageMenuSystemWifiWebApp::setting_change(Button dir, ButtonEvent state, uint8_t count) {
+  syncWebAppMode();
+
   if (cursor_position == CURSOR_BACK && state == ButtonEvent::CLICKED) {
     pop_page();
     return;

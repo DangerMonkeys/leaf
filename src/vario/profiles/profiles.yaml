@@ -65,6 +65,15 @@ components:
         name:
           type: string
           minLength: 1
+        email:
+          type: string
+          nullable: true
+          format: email
+          description: Optional pilot email address.
+        leaf_log_api_key:
+          type: string
+          nullable: true
+          description: Optional Leaf Log Online upload key. The web app labels this as a Leaf Log Link Code.
     GliderProfile:
       type: object
       additionalProperties: true

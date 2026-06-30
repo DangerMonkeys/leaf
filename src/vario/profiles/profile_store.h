@@ -5,6 +5,8 @@
 struct PilotProfile {
   String id;
   String name;
+  String email;
+  String leafLogApiKey;
 
   bool valid() const { return !id.isEmpty() && !name.isEmpty(); }
 };
@@ -17,6 +19,7 @@ struct GliderProfile {
   String displayName;
 
   bool valid() const { return !id.isEmpty() && !model.isEmpty(); }
+  String profileName() const;
   String resolvedDisplayName() const;
 };
 
