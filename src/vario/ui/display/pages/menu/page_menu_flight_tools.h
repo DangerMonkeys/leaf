@@ -10,7 +10,7 @@ class FlightToolsMenuPage : public SettingsMenuPage {
  public:
   FlightToolsMenuPage() {
     cursor_position = 0;
-    cursor_max = 2;
+    cursor_max = 3;
   }
   void draw();
 

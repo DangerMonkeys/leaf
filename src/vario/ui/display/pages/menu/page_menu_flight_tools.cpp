@@ -15,6 +15,7 @@ enum flight_tools_menu_items {
   cursor_flight_tools_back,
   cursor_flight_tools_syncAlt,
   cursor_flight_tools_varioVolume,
+  cursor_flight_tools_savePoint,
 };
 
 void FlightToolsMenuPage::draw() {
@@ -24,7 +25,7 @@ void FlightToolsMenuPage::draw() {
 
     uint8_t setting_name_x = 2;
     uint8_t setting_choice_x = 76;
-    uint8_t menu_items_y[] = {190, 45, 60};
+    uint8_t menu_items_y[] = {190, 45, 60, 75};
 
     for (int i = 0; i <= cursor_max; i++) {
       const bool selected = i == cursor_position;
@@ -49,6 +50,11 @@ void FlightToolsMenuPage::draw() {
           u8g2.print(char('I' + settings.vario_volume));
           u8g2.setFont(leaf_6x12);
           break;
+        case cursor_flight_tools_savePoint:
+          menu_ui::drawLabel(setting_name_x, menu_items_y[i], "Save Point",
+                             menu_ui::GLYPH_NAV_POINT_SAVE);
+          menu_ui::drawEnterIcon(setting_choice_x, menu_items_y[i], selected);
+          break;
       }
       menu_ui::endRow();
     }
@@ -69,6 +75,11 @@ void FlightToolsMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t 
     case cursor_flight_tools_varioVolume:
       if (state == ButtonEvent::CLICKED && (dir == Button::LEFT || dir == Button::RIGHT)) {
         settings.adjustVolumeVario(dir);
+      }
+      break;
+    case cursor_flight_tools_savePoint:
+      if (state == ButtonEvent::CLICKED) {
+        speaker.playSound(fx::cancel);
       }
       break;
     case cursor_flight_tools_back:

@@ -8,7 +8,6 @@
 #include "navigation/gpx.h"
 
 #include <FS.h>
-#include <SD_MMC.h>
 
 #include "instruments/baro.h"
 #include "instruments/gps.h"
@@ -19,13 +18,16 @@
 
 Navigator navigator;
 
-// TODO: at least here for testing so we can be navigating right from boot up
+namespace {
+  String filenameFromPath(const String& path) {
+    const int slash = path.lastIndexOf('/');
+    if (slash < 0) return path;
+    return path.substring(slash + 1);
+  }
+}  // namespace
+
 void Navigator::init() {
-  Serial.println("Loading GPX file...");
-  delay(100);
-  bool result = gpx_readFile(SD_MMC, "/waypoints.gpx");
-  Serial.print("gpx_readFile result: ");
-  Serial.println(result ? "true" : "false");
+  clear();
 
   // loadWaypoints();
   // loadRoutes();
@@ -37,6 +39,30 @@ void Navigator::clear() {
   totalWaypoints = 0;
   totalRoutePointRefs = 0;
   totalRoutes = 0;
+  activePoint = Waypoint();
+  activeWaypointIndex = WaypointID::None;
+  activeRoutePointIndex = RouteIndex::None;
+  activeRouteIndex = RouteID::None;
+  altAboveWaypoint = 0;
+  averageSpeed = 0;
+  glideToActive = 0;
+  segmentDistance = 0;
+  pointDistanceRemaining = 0;
+  pointTimeRemaining = 0;
+  turnToActive = 0;
+  navigating = false;
+  nextPoint_ = Waypoint();
+  goalPoint_ = Waypoint();
+  nextPointIndex_ = RouteIndex::None;
+  altAboveGoal_ = 0;
+  glideToGoal_ = 0;
+  totalDistanceRemaining_ = 0;
+  courseToActive_ = 0;
+  courseToNext_ = 0;
+  turnToNext_ = 0;
+  reachedGoal_ = false;
+  loadedGpxFile_ = false;
+  loadedGpxFilename_[0] = '\0';
 }
 
 bool Navigator::addWaypoint(const Waypoint& waypoint) {
@@ -289,6 +315,13 @@ void Navigator::cancelNav() {
 
 bool Navigator::hasActivePoint() { return activeWaypointIndex || activeRoutePointIndex; }
 
+void Navigator::setLoadedGpxFilename(const String& fileName) {
+  String baseName = filenameFromPath(fileName);
+  baseName.toCharArray(loadedGpxFilename_, sizeof(loadedGpxFilename_));
+  loadedGpxFilename_[maxGpxFileNameLength] = '\0';
+  loadedGpxFile_ = true;
+}
+
 bool gpx_readFile(fs::FS& fs, String fileName) {
   FileReader file_reader(fs, fileName);
   if (file_reader.error() != "") {
@@ -296,6 +329,9 @@ bool gpx_readFile(fs::FS& fs, String fileName) {
     Serial.println(file_reader.error());
     return false;
   }
+
+  navigator.clear();
+
   GPXParser parser(&file_reader);
   bool success = parser.parse(&navigator);
   if (success) {
@@ -340,6 +376,7 @@ bool gpx_readFile(fs::FS& fs, String fileName) {
     Serial.print(" waypoints and ");
     Serial.print(navigator.totalRoutes);
     Serial.println(" routes");
+    navigator.setLoadedGpxFilename(fileName);
     return true;
   } else {
     // TODO: Display error to user (create appropriate method in GPXParser looking at _error, _line,
@@ -350,6 +387,7 @@ bool gpx_readFile(fs::FS& fs, String fileName) {
     Serial.print(parser.col());
     Serial.print(": ");
     Serial.println(parser.error());
+    navigator.clear();
     return false;
   }
 }

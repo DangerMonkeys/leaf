@@ -14,6 +14,7 @@
 #define maxNavPoints 100
 #define maxRoutePointRefs 75
 #define maxGpxNameLength 24
+#define maxGpxFileNameLength 96
 
 inline int32_t gpxDegreesToE7(double degrees) {
   return static_cast<int32_t>(degrees * 10000000.0 + (degrees >= 0 ? 0.5 : -0.5));
@@ -74,6 +75,9 @@ class Navigator {
   bool addRoutePoint(Route* route, WaypointID waypointIndex);
   const Waypoint& waypoint(WaypointID pointIndex) const;
   const Waypoint& routePoint(RouteID routeIndex, RouteIndex pointIndex) const;
+  bool hasLoadedGpxFile() const { return loadedGpxFile_; }
+  const char* loadedGpxFilename() const { return loadedGpxFilename_; }
+  void setLoadedGpxFilename(const String& fileName);
 
   Waypoint waypoints[maxNavPoints + 1];
   uint8_t totalWaypoints = 0;
@@ -151,6 +155,8 @@ class Navigator {
   // when finished with the Route, we might want to stay in a "finished"
   // state instead of cancelling navigation altogether
   bool reachedGoal_ = false;
+  bool loadedGpxFile_ = false;
+  char loadedGpxFilename_[maxGpxFileNameLength + 1] = "";
 };
 extern Navigator navigator;
 
