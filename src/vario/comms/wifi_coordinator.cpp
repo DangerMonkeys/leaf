@@ -313,6 +313,7 @@ namespace leaf_wifi {
 
   void attemptSavedNetworkConnection() {
     disableDiagnostics();
+    clearSavedNetworkAttempt();
     WiFi.scanDelete();
     WiFi.mode(WIFI_STA);
     WiFi.setSleep(false);
