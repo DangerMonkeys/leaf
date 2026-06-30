@@ -63,9 +63,7 @@ String GliderProfile::resolvedDisplayName() const {
   return profileName();
 }
 
-String GliderProfile::profileName() const {
-  return joinGliderName(brand, model, size);
-}
+String GliderProfile::profileName() const { return joinGliderName(brand, model, size); }
 
 bool ProfileStore::activePilot(PilotProfile& pilot) {
   pilot = PilotProfile();

@@ -281,8 +281,7 @@ void PageMenuSystemWifiWebApp::closed(bool removed_from_Stack) {
   }
 }
 
-void PageMenuSystemWifiWebApp::loop() {
-}
+void PageMenuSystemWifiWebApp::loop() {}
 
 void PageMenuSystemWifiWebApp::syncWebAppMode() {
   const bool serverUsingLeafWifi = webserver_user_app_using_leaf_wifi();

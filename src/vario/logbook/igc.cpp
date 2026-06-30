@@ -91,7 +91,8 @@ bool Igc::startFlight() {
   LeafVersionInfo::firmwareDisplayVersion(firmwareVersion, sizeof(firmwareVersion));
   LeafVersionInfo::hardwareDisplayVersion(hardwareVersion, sizeof(hardwareVersion));
 
-  const String macAddress = settings.macAddress.isEmpty() ? settings.getMacAddress() : settings.macAddress;
+  const String macAddress =
+      settings.macAddress.isEmpty() ? settings.getMacAddress() : settings.macAddress;
   logger.firmware_version = firmwareVersion;
   logger.hardware_version = hardwareVersion;
   logger.logger_type = (String) "Leaf:" + macAddress;

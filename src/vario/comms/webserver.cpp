@@ -147,10 +147,11 @@ namespace {
         "ready=%u status=%d mode=%d local_ip=%s ap_ip=%s ap_stations=%u ssid=%s target=%s "
         "connected_elapsed=%lu error=%s\n",
         event ? event : "", user_app_enabled ? 1 : 0, user_app_using_leaf_wifi ? 1 : 0,
-        user_app_provisioning ? 1 : 0, wifi_setup_connecting ? 1 : 0, ready ? 1 : 0,
-        wifi_status, wifi_mode, local_ip.c_str(), ap_ip.c_str(),
-        static_cast<unsigned int>(ap_stations), ssid.c_str(), wifi_setup_connect_ssid.c_str(),
-        static_cast<unsigned long>(wifiSetupConnectedElapsedMs()), wifi_setup_connect_error.c_str());
+        user_app_provisioning ? 1 : 0, wifi_setup_connecting ? 1 : 0, ready ? 1 : 0, wifi_status,
+        wifi_mode, local_ip.c_str(), ap_ip.c_str(), static_cast<unsigned int>(ap_stations),
+        ssid.c_str(), wifi_setup_connect_ssid.c_str(),
+        static_cast<unsigned long>(wifiSetupConnectedElapsedMs()),
+        wifi_setup_connect_error.c_str());
 
     if (!SD_MMC.exists(DIAGNOSTICS_DIR)) SD_MMC.mkdir(DIAGNOSTICS_DIR);
     const bool existed = SD_MMC.exists(WIFI_SETUP_DIAGNOSTICS_FILE);
@@ -166,11 +167,10 @@ namespace {
 
     file.printf("%lu,", static_cast<unsigned long>(now));
     printCsvString(file, event ? String(event) : String(""));
-    file.printf(",%lu,%u,%u,%u,%u,%u,%d,%d,%u,",
-                static_cast<unsigned long>(wifi_setup_cycle), user_app_enabled ? 1 : 0,
-                user_app_using_leaf_wifi ? 1 : 0, user_app_provisioning ? 1 : 0,
-                wifi_setup_connecting ? 1 : 0, ready ? 1 : 0, wifi_status, wifi_mode,
-                static_cast<unsigned int>(ap_stations));
+    file.printf(",%lu,%u,%u,%u,%u,%u,%d,%d,%u,", static_cast<unsigned long>(wifi_setup_cycle),
+                user_app_enabled ? 1 : 0, user_app_using_leaf_wifi ? 1 : 0,
+                user_app_provisioning ? 1 : 0, wifi_setup_connecting ? 1 : 0, ready ? 1 : 0,
+                wifi_status, wifi_mode, static_cast<unsigned int>(ap_stations));
     printCsvString(file, local_ip);
     file.print(',');
     printCsvString(file, ap_ip);
@@ -180,8 +180,7 @@ namespace {
     printCsvString(file, wifi_setup_connect_ssid);
     file.print(',');
     printCsvString(file, wifi_setup_connect_error);
-    file.printf(",%lu,%lu,%lu,%lu,%lu\n",
-                static_cast<unsigned long>(wifi_setup_connect_started_ms),
+    file.printf(",%lu,%lu,%lu,%lu,%lu\n", static_cast<unsigned long>(wifi_setup_connect_started_ms),
                 static_cast<unsigned long>(wifi_setup_connected_ms),
                 static_cast<unsigned long>(wifiSetupConnectedElapsedMs()),
                 static_cast<unsigned long>(ESP.getFreeHeap()),
@@ -972,7 +971,8 @@ loadStatus();loadProfiles();loadLogbook();
     json += "\",\"hardware_display_version\":\"";
     json += jsonEscape(hardwareDisplayVersion);
     json += "\",\"mac_address\":\"";
-    json += jsonEscape(settings.macAddress.isEmpty() ? settings.getMacAddress() : settings.macAddress);
+    json +=
+        jsonEscape(settings.macAddress.isEmpty() ? settings.getMacAddress() : settings.macAddress);
     const Power::Info& power_info = power.info();
     json += "\",\"battery_percent\":";
     json += power_info.batteryPercent;

@@ -55,9 +55,8 @@ bool LeafVersionInfo::otaAlwaysUpdate() { return OTA_ALWAYS_UPDATE; }
 void LeafVersionInfo::firmwareDisplayVersion(char* out, size_t len) {
   const char* combined = firmwareVersion();
   const char* split = strchr(combined, '+');
-  copyVersionSegment(out, len, combined, split ? static_cast<size_t>(split - combined)
-                                               : strlen(combined),
-                     false);
+  copyVersionSegment(out, len, combined,
+                     split ? static_cast<size_t>(split - combined) : strlen(combined), false);
 }
 
 void LeafVersionInfo::hardwareDisplayVersion(char* out, size_t len) {
