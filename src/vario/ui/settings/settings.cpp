@@ -6,6 +6,7 @@
 #include <esp_wifi.h>
 #include <nvs_flash.h>
 
+#include "comms/wifi_coordinator.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "ui/audio/sound_effects.h"
@@ -29,13 +30,6 @@ Preferences leafPrefs;
 namespace {
   constexpr auto FACTORY_FLAGS_NAMESPACE = "factoryFlags";
   constexpr auto FORCE_FORMAT_SD_CARD_KEY = "FORCE_FMT_SD";
-
-  void clearSavedWifiCredentials() {
-    esp_err_t err = esp_wifi_restore();
-    if (err != ESP_OK) {
-      Serial.printf("Failed to erase saved WiFi credentials: %d\n", err);
-    }
-  }
 }  // namespace
 
 bool Settings::init() {
@@ -112,7 +106,7 @@ bool Settings::consumeProductionTestForceFormatSdCard() {
 // Reset Leaf user settings and info to defaults
 void Settings::reset() {
   loadDefaults();
-  clearSavedWifiCredentials();
+  leaf_wifi::clearSavedNetworkCredentials();
   save();
 }
 

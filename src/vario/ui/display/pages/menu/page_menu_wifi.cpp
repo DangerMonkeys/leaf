@@ -44,15 +44,15 @@ void wifi_menu_ui::attemptSavedNetworkConnection() { leaf_wifi::attemptSavedNetw
 void wifi_menu_ui::disconnectFromNetwork() { leaf_wifi::disconnectFromNetwork(); }
 
 void wifi_menu_ui::drawStatusLine(uint8_t y) {
+  const bool savedNetworkAttemptActive = leaf_wifi::savedNetworkConnectionInProgress();
   const String connectedSsid = WiFi.SSID();
   const bool wifiConnected = WiFi.status() == WL_CONNECTED && !connectedSsid.isEmpty();
   const bool wifiSettling = WiFi.status() == WL_CONNECTED && connectedSsid.isEmpty();
-  const bool wifiSearching = !wifiConnected && leaf_wifi::savedNetworkConnectionInProgress();
 
   String statusText;
   if (wifiConnected) {
     statusText = connectedSsid;
-  } else if (wifiSearching || wifiSettling) {
+  } else if (savedNetworkAttemptActive || wifiSettling) {
     statusText = "Searching..";
   } else {
     statusText = "Not Connected";
@@ -416,7 +416,7 @@ void PageMenuSystemWifiSetup::closed(bool removed_from_Stack) {
 }
 
 void PageMenuSystemWifiSetup::loop() {
-  if (WiFi.status() == WL_CONNECTED) {
+  if (WiFi.status() == WL_CONNECTED && !webserver_user_app_using_leaf_wifi()) {
     pop_page();
     return;
   }

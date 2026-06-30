@@ -45,7 +45,9 @@ namespace {
   uint32_t wifi_setup_connect_started_ms = 0;
   uint32_t wifi_setup_connected_ms = 0;
   String wifi_setup_connect_ssid = "";
+  String wifi_setup_connect_password = "";
   String wifi_setup_connect_error = "";
+  bool wifi_setup_connect_saved = false;
   uint32_t user_app_loop_count = 0;
   uint32_t user_app_handle_count = 0;
   uint32_t user_app_route_root_count = 0;
@@ -70,6 +72,7 @@ namespace {
   static constexpr const char* DIAGNOSTICS_DIR = "/diagnostics";
   static constexpr const char* USER_APP_DIAGNOSTICS_FILE = "/diagnostics/webapp_requests.csv";
   static constexpr const char* WIFI_SETUP_DIAGNOSTICS_FILE = "/diagnostics/wifi_setup.csv";
+  static constexpr size_t WIFI_SETUP_NETWORKS_JSON_RESERVE = 896;
 
   SelfTestMode last_self_test_mode = SelfTestMode::None;
   bool interactive_self_test_pending = false;
@@ -186,6 +189,21 @@ namespace {
                 static_cast<unsigned long>(ESP.getFreeHeap()),
                 static_cast<unsigned long>(ESP.getMaxAllocHeap()));
     file.close();
+  }
+
+  void rememberSuccessfulWifiSetupNetwork() {
+    if (wifi_setup_connect_saved || wifi_setup_connect_ssid.isEmpty()) return;
+    leaf_wifi::rememberSuccessfulNetwork(wifi_setup_connect_ssid, wifi_setup_connect_password);
+    wifi_setup_connect_saved = true;
+    wifi_setup_connect_password = "";
+  }
+
+  void markWifiSetupConnected(const char* event) {
+    wifi_setup_connecting = false;
+    if (wifi_setup_connected_ms == 0) wifi_setup_connected_ms = millis();
+    wifi_setup_connect_error = "";
+    rememberSuccessfulWifiSetupNetwork();
+    appendWifiSetupDiagnostics(event, true);
   }
 
   void dumpUserAppCounters(const char* event) {
@@ -636,14 +654,27 @@ namespace {
     target.sendHeader("Expires", "0");
   }
 
+  void setWifiSetupNetworksJson(const char* json) {
+    wifi_setup_networks_json = "";
+    wifi_setup_networks_json.reserve(WIFI_SETUP_NETWORKS_JSON_RESERVE);
+    wifi_setup_networks_json = json;
+  }
+
+  void releaseWifiSetupNetworksJson() {
+    wifi_setup_networks_json = String();
+    wifi_setup_networks_json = "{\"scanning\":false,\"networks\":[]}";
+  }
+
   void stopFailedWifiSetupAttempt(const char* error) {
     wifi_setup_connecting = false;
     wifi_setup_connected_ms = 0;
     wifi_setup_connect_error = error;
+    wifi_setup_connect_password = "";
+    wifi_setup_connect_saved = false;
 
-    // A failed WiFi.begin() can leave bad setup credentials saved and the STA
-    // side retrying. Stop that while keeping the Leaf AP available.
-    WiFi.disconnect(false, true);
+    // Stop the RAM-only setup attempt while keeping the previous saved default
+    // and the Leaf AP available.
+    WiFi.disconnect(false, false);
     WiFi.mode(WIFI_AP_STA);
     WiFi.setSleep(false);
     startLeafAp();
@@ -653,17 +684,12 @@ namespace {
     appendWifiSetupDiagnostics("status", true);
     wl_status_t status = WiFi.status();
     if (wifi_setup_connecting && stationConnectionReady()) {
-      wifi_setup_connecting = false;
-      wifi_setup_connected_ms = millis();
-      wifi_setup_connect_error = "";
-      appendWifiSetupDiagnostics("status-connected", true);
+      markWifiSetupConnected("status-connected");
     } else if (wifi_setup_connecting &&
                millis() - wifi_setup_connect_started_ms > WIFI_SETUP_CONNECT_TIMEOUT_MS) {
       const wl_status_t timed_out_status = WiFi.status();
       if (timed_out_status == WL_CONNECTED) {
-        wifi_setup_connecting = false;
-        wifi_setup_connected_ms = millis();
-        wifi_setup_connect_error = "";
+        markWifiSetupConnected("status-connected-after-timeout");
       } else if (timed_out_status == WL_NO_SSID_AVAIL) {
         stopFailedWifiSetupAttempt("network_not_found");
       } else if (timed_out_status == WL_CONNECT_FAILED) {
@@ -943,7 +969,7 @@ loadStatus();loadProfiles();loadLogbook();
     sendNoStoreHeaders(target);
     static constexpr char WIFI_SETUP_PAGE[] =
         R"leafhtml(<!doctype html><html><head><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=Cache-Control content=no-store><title>Leaf WiFi</title><style>:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#202423;background:#363636;line-height:1.35;--leaf:#d8ff00;--ink:#202423;--panel:#565656;--sub:#4d4d4d}body{margin:0;background:#363636}header{background:var(--leaf);color:#0b0d0b;padding:11px 20px;text-align:center}main{max-width:640px;margin:auto;padding:18px}h1{font-family:Arial,sans-serif;font-size:38px;font-weight:500;letter-spacing:.12em;line-height:1;margin:0}.subbar{display:flex;align-items:center;justify-content:center;min-height:34px;color:white;margin:0 0 14px}.subbar h2{color:white;background:transparent;margin:0;padding:0;font-size:18px}section{background:var(--panel);border-radius:8px;margin:0 0 14px;padding:16px 14px}label{display:block;font-size:13px;font-weight:700;margin:10px 0 4px;color:white}input,select,button{box-sizing:border-box;width:100%;font:inherit;padding:11px;border:1px solid #b9c0b2;border-radius:7px;background:white;color:var(--ink)}input:focus,select:focus,button:focus{outline:2px solid var(--leaf);outline-offset:1px}button{background:var(--ink);color:white;font-weight:750;border-color:var(--ink);box-shadow:inset 0 -2px 0 rgba(0,0,0,.22)}button:disabled{background:#686868;border-color:#686868;color:#8a8a8a;opacity:1;box-shadow:none}.hero:not(:disabled){background:var(--leaf);border-color:var(--leaf);color:#0b0d0b}.status{min-height:20px;margin:0 0 12px;color:#e2e7dc}.network-row,.row{display:flex;gap:8px}.network-row select,.row input{flex:1}.refresh{flex:0 0 44px;width:44px;height:44px;padding:0;font-size:23px;line-height:1}.show{display:flex;align-items:center;gap:6px;width:auto;white-space:nowrap;color:white;font-weight:700}.show input{width:auto;accent-color:var(--leaf)}#n{margin-top:8px}#save{margin-top:16px}</style><script>async function init(){let s=document.getElementById('s'),l=document.getElementById('l'),n=document.getElementById('n'),p=document.getElementById('p'),w=document.getElementById('w'),f=document.getElementById('f'),r=document.getElementById('r'),save=document.getElementById('save');function chosen(){let o=l.options[l.selectedIndex];return o&&o.value&&o.value==n.value.trim()?o:null}function buttons(){let o=chosen(),need=o&&o.dataset.secure=='1';save.disabled=!n.value.trim()||(need&&!p.value)}l.onchange=()=>{if(l.value)n.value=l.value;buttons()};n.oninput=buttons;p.oninput=buttons;w.onchange=()=>p.type=w.checked?'text':'password';r.onclick=()=>nets(true);let params=new URLSearchParams(location.search),autoScan=params.has('scan'),returnToApp=params.get('return')=='app';async function nets(refresh){try{let d=await(await fetch('/api/wifi/networks'+(refresh?'?refresh=1':''))).json();if(d.scanning){s.textContent='Scanning for networks...';setTimeout(nets,1500);return}l.innerHTML='<option value="">Select network...</option>';d.networks.forEach(x=>{let o=document.createElement('option');o.value=x.ssid;o.dataset.secure=x.secure?'1':'0';o.textContent=x.ssid+' ('+x.rssi+' dBm)';l.appendChild(o)});s.textContent=d.networks.length?'Choose a network or type one manually.':'No networks found. Type the network name manually.';buttons()}catch(e){s.textContent='Unable to read network list. Type the network name manually.';buttons()}}async function poll(){try{let d=await(await fetch('/api/wifi/status')).json();if(d.connected){let appUrl=d.app_url||('http://'+d.ip_address+'/app');s.textContent=returnToApp?('Leaf is now on '+d.ssid+'. Connect to that network and open the Leaf app again using the QR code on the Leaf display.'):('Connected to '+d.ssid+'. Open '+appUrl);return}if(d.error){s.textContent='Unable to connect. Check password and try again.';return}s.textContent=d.target_ssid?'Trying to connect to '+d.target_ssid+'...':'Trying to connect...';setTimeout(poll,1500)}catch(e){s.textContent='Trying to connect...';setTimeout(poll,2000)}}f.onsubmit=async e=>{e.preventDefault();let ssid=n.value.trim();if(save.disabled)return;s.textContent='Saving credentials...';try{await fetch('/api/wifi/connect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ssid:ssid,password:p.value})});save.disabled=true;poll()}catch(x){s.textContent='Unable to save network details. Try again.';buttons()}};buttons();nets(autoScan)}</script></head><body onload=init()><header><h1>Leaf</h1></header><main><div class=subbar><h2>WiFi Setup</h2></div><section><p class=status id=s>Loading...</p><form id=f><label>Network</label><div class=network-row><select id=l><option value="">Select network...</option></select><button type=button id=r class=refresh title=Refresh aria-label=Refresh>&#x21bb;</button></div><input id=n autocomplete=off placeholder="Type network name"><label>Password</label><div class=row><input id=p type=password autocomplete=current-password><label class=show><input id=w type=checkbox>Show</label></div><button id=save class=hero disabled>Save and Connect</button></form></section></main></body></html>)leafhtml";
-    target.send(200, "text/html", WIFI_SETUP_PAGE);
+    target.send_P(200, "text/html", WIFI_SETUP_PAGE);
   }
 
   void sendUserStatus(WebServer& target) {
@@ -1250,7 +1276,9 @@ loadStatus();loadProfiles();loadLogbook();
       if (top_count < MAX_WIFI_SETUP_NETWORKS) top_count++;
     }
 
-    String json = "{\"scanning\":false,\"networks\":[";
+    String json;
+    json.reserve(WIFI_SETUP_NETWORKS_JSON_RESERVE);
+    json = "{\"scanning\":false,\"networks\":[";
     for (int16_t top_i = 0; top_i < top_count; top_i++) {
       const int16_t i = top_indices[top_i];
       if (top_i > 0) json += ",";
@@ -1291,7 +1319,7 @@ loadStatus();loadProfiles();loadLogbook();
   void startWifiNetworkScan() {
     logWifiSetupTiming("scan-start");
     WiFi.scanDelete();
-    wifi_setup_networks_json = "{\"scanning\":true,\"networks\":[]}";
+    setWifiSetupNetworksJson("{\"scanning\":true,\"networks\":[]}");
     const int16_t result = WiFi.scanNetworks(/*async=*/true, /*hidden=*/false);
     if (result == WIFI_SCAN_RUNNING) {
       wifi_setup_scan_running = true;
@@ -1321,9 +1349,16 @@ loadStatus();loadProfiles();loadLogbook();
       return;
     }
 
+    if (wifi_setup_scan_running) {
+      WiFi.scanDelete();
+      wifi_setup_scan_running = false;
+      setWifiSetupNetworksJson("{\"scanning\":false,\"networks\":[]}");
+    }
+
     WiFi.mode(WIFI_AP_STA);
     WiFi.setSleep(false);
-    WiFi.persistent(true);
+    WiFi.disconnect(false, false);
+    WiFi.persistent(false);
     WiFi.begin(ssid.c_str(), password.c_str());
     if (user_app_enabled && user_app_using_leaf_wifi) {
       user_app_provisioning = true;
@@ -1332,7 +1367,9 @@ loadStatus();loadProfiles();loadLogbook();
     wifi_setup_connect_started_ms = millis();
     wifi_setup_connected_ms = 0;
     wifi_setup_connect_ssid = ssid;
+    wifi_setup_connect_password = password;
     wifi_setup_connect_error = "";
+    wifi_setup_connect_saved = false;
     Serial.printf("Leaf WiFi setup connecting to SSID: %s\n", ssid.c_str());
     appendWifiSetupDiagnostics("connect-request", true);
     target.send(202, "application/json", "{\"ok\":true}");
@@ -1756,11 +1793,13 @@ void webserver_disable_user_app() {
   user_app_provisioning = false;
   if (wifi_setup_scan_running) WiFi.scanDelete();
   wifi_setup_scan_running = false;
-  wifi_setup_networks_json = "{\"scanning\":false,\"networks\":[]}";
+  releaseWifiSetupNetworksJson();
   wifi_setup_connecting = false;
   wifi_setup_connected_ms = 0;
   wifi_setup_connect_ssid = "";
+  wifi_setup_connect_password = "";
   wifi_setup_connect_error = "";
+  wifi_setup_connect_saved = false;
   if (user_server_started) {
     user_server.stop();
     user_server_started = false;
@@ -1786,10 +1825,9 @@ bool webserver_wifi_setup_ready_for_network_app() {
   if (!stationConnectionReady()) return false;
 
   if (wifi_setup_connecting) {
-    wifi_setup_connecting = false;
-    wifi_setup_connect_error = "";
+    markWifiSetupConnected("transition-connected");
   }
-  if (wifi_setup_connected_ms == 0) wifi_setup_connected_ms = millis();
+  if (wifi_setup_connected_ms == 0) markWifiSetupConnected("transition-ready");
   return millis() - wifi_setup_connected_ms >= WIFI_SETUP_AP_SUCCESS_GRACE_MS;
 }
 
