@@ -45,7 +45,9 @@ namespace {
   uint32_t wifi_setup_connect_started_ms = 0;
   uint32_t wifi_setup_connected_ms = 0;
   String wifi_setup_connect_ssid = "";
+  String wifi_setup_connect_password = "";
   String wifi_setup_connect_error = "";
+  bool wifi_setup_connect_saved = false;
   uint32_t user_app_loop_count = 0;
   uint32_t user_app_handle_count = 0;
   uint32_t user_app_route_root_count = 0;
@@ -186,6 +188,21 @@ namespace {
                 static_cast<unsigned long>(ESP.getFreeHeap()),
                 static_cast<unsigned long>(ESP.getMaxAllocHeap()));
     file.close();
+  }
+
+  void rememberSuccessfulWifiSetupNetwork() {
+    if (wifi_setup_connect_saved || wifi_setup_connect_ssid.isEmpty()) return;
+    leaf_wifi::rememberSuccessfulNetwork(wifi_setup_connect_ssid, wifi_setup_connect_password);
+    wifi_setup_connect_saved = true;
+    wifi_setup_connect_password = "";
+  }
+
+  void markWifiSetupConnected(const char* event) {
+    wifi_setup_connecting = false;
+    if (wifi_setup_connected_ms == 0) wifi_setup_connected_ms = millis();
+    wifi_setup_connect_error = "";
+    rememberSuccessfulWifiSetupNetwork();
+    appendWifiSetupDiagnostics(event, true);
   }
 
   void dumpUserAppCounters(const char* event) {
@@ -640,10 +657,12 @@ namespace {
     wifi_setup_connecting = false;
     wifi_setup_connected_ms = 0;
     wifi_setup_connect_error = error;
+    wifi_setup_connect_password = "";
+    wifi_setup_connect_saved = false;
 
-    // A failed WiFi.begin() can leave bad setup credentials saved and the STA
-    // side retrying. Stop that while keeping the Leaf AP available.
-    WiFi.disconnect(false, true);
+    // Stop the RAM-only setup attempt while keeping the previous saved default
+    // and the Leaf AP available.
+    WiFi.disconnect(false, false);
     WiFi.mode(WIFI_AP_STA);
     WiFi.setSleep(false);
     startLeafAp();
@@ -653,17 +672,12 @@ namespace {
     appendWifiSetupDiagnostics("status", true);
     wl_status_t status = WiFi.status();
     if (wifi_setup_connecting && stationConnectionReady()) {
-      wifi_setup_connecting = false;
-      wifi_setup_connected_ms = millis();
-      wifi_setup_connect_error = "";
-      appendWifiSetupDiagnostics("status-connected", true);
+      markWifiSetupConnected("status-connected");
     } else if (wifi_setup_connecting &&
                millis() - wifi_setup_connect_started_ms > WIFI_SETUP_CONNECT_TIMEOUT_MS) {
       const wl_status_t timed_out_status = WiFi.status();
       if (timed_out_status == WL_CONNECTED) {
-        wifi_setup_connecting = false;
-        wifi_setup_connected_ms = millis();
-        wifi_setup_connect_error = "";
+        markWifiSetupConnected("status-connected-after-timeout");
       } else if (timed_out_status == WL_NO_SSID_AVAIL) {
         stopFailedWifiSetupAttempt("network_not_found");
       } else if (timed_out_status == WL_CONNECT_FAILED) {
@@ -1321,9 +1335,16 @@ loadStatus();loadProfiles();loadLogbook();
       return;
     }
 
+    if (wifi_setup_scan_running) {
+      WiFi.scanDelete();
+      wifi_setup_scan_running = false;
+      wifi_setup_networks_json = "{\"scanning\":false,\"networks\":[]}";
+    }
+
     WiFi.mode(WIFI_AP_STA);
     WiFi.setSleep(false);
-    WiFi.persistent(true);
+    WiFi.disconnect(false, false);
+    WiFi.persistent(false);
     WiFi.begin(ssid.c_str(), password.c_str());
     if (user_app_enabled && user_app_using_leaf_wifi) {
       user_app_provisioning = true;
@@ -1332,7 +1353,9 @@ loadStatus();loadProfiles();loadLogbook();
     wifi_setup_connect_started_ms = millis();
     wifi_setup_connected_ms = 0;
     wifi_setup_connect_ssid = ssid;
+    wifi_setup_connect_password = password;
     wifi_setup_connect_error = "";
+    wifi_setup_connect_saved = false;
     Serial.printf("Leaf WiFi setup connecting to SSID: %s\n", ssid.c_str());
     appendWifiSetupDiagnostics("connect-request", true);
     target.send(202, "application/json", "{\"ok\":true}");
@@ -1760,7 +1783,9 @@ void webserver_disable_user_app() {
   wifi_setup_connecting = false;
   wifi_setup_connected_ms = 0;
   wifi_setup_connect_ssid = "";
+  wifi_setup_connect_password = "";
   wifi_setup_connect_error = "";
+  wifi_setup_connect_saved = false;
   if (user_server_started) {
     user_server.stop();
     user_server_started = false;
@@ -1786,10 +1811,9 @@ bool webserver_wifi_setup_ready_for_network_app() {
   if (!stationConnectionReady()) return false;
 
   if (wifi_setup_connecting) {
-    wifi_setup_connecting = false;
-    wifi_setup_connect_error = "";
+    markWifiSetupConnected("transition-connected");
   }
-  if (wifi_setup_connected_ms == 0) wifi_setup_connected_ms = millis();
+  if (wifi_setup_connected_ms == 0) markWifiSetupConnected("transition-ready");
   return millis() - wifi_setup_connected_ms >= WIFI_SETUP_AP_SUCCESS_GRACE_MS;
 }
 
