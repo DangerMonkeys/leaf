@@ -196,7 +196,6 @@ void SystemMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count
       break;
     case cursor_system_about:
       if (state == ButtonEvent::CLICKED) {
-        speaker.playSound(fx::confirm);
         about_page.show();
       } else if (state == ButtonEvent::INCREMENTED && count == 4) {
         // toggle developer mode

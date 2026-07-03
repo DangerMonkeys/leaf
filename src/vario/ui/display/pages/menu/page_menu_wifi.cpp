@@ -21,6 +21,14 @@
 
 namespace {
   constexpr uint8_t RESET_HOLD_COUNT = 5;
+
+  char searchingWifiIcon() {
+    static int wifiIcon = 62;  // empty signal
+    const char icon = static_cast<char>(wifiIcon);
+    wifiIcon++;
+    if (wifiIcon > 65) wifiIcon = 62;  // loop through full signal
+    return icon;
+  }
 }  // namespace
 
 int wifi_menu_ui::iconForCurrentConnection() {
@@ -68,7 +76,8 @@ void wifi_menu_ui::drawStatusLine(uint8_t y) {
   u8g2.print(statusText);
   u8g2.setFont(leaf_icons);
   u8g2.setCursor(85, y + 2);
-  u8g2.print((char)iconForCurrentConnection());
+  u8g2.print(savedNetworkAttemptActive || wifiSettling ? searchingWifiIcon()
+                                                       : (char)iconForCurrentConnection());
   u8g2.setFont(leaf_6x12);
 }
 
@@ -80,11 +89,6 @@ enum wifi_menu_items_connected {
 };
 
 void WifiMenuPage::draw() {
-  if (firstOpened) {
-    firstOpened = false;
-    attemptWifiConnection();
-  }
-
   u8g2.firstPage();
   do {
     // Title
@@ -203,7 +207,6 @@ void WifiMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) 
         speaker.playSound(fx::cancel);
         settings.save();
         settingsMenuPage.backToSettingsMenu();
-        firstOpened = true;  // reset for the next time user enters wifi menu
         if (state == ButtonEvent::HELD) {
           speaker.playSound(fx::exit);
           mainMenuPage.quitMenu();
@@ -223,13 +226,6 @@ void WifiMenuPage::showFirmwareUpdate() { push_page(&page_wifi_update); }
 void WifiMenuPage::showWebApp() { push_page(&page_wifi_web_app); }
 
 void PageMenuSystemWifiSetup::beginWifiSetup() { webserver_enable_wifi_setup(); }
-
-void WifiMenuPage::attemptWifiConnection() {
-  wifi_state = WifiState::CONNECTING;
-
-  // This attempts to connect using credentials stored by the ESP WiFi stack.
-  wifi_menu_ui::attemptSavedNetworkConnection();
-}
 
 namespace {
   void drawQrCodeScaled(const char* text, uint8_t xOffset, uint8_t yOffset, uint8_t version,
@@ -278,6 +274,7 @@ void PageMenuSystemWifiWebApp::closed(bool removed_from_Stack) {
     if (reconnectToSavedNetwork) {
       wifi_menu_ui::attemptSavedNetworkConnection();
     }
+    mainMenuPage.backToMainMenu();
   }
 }
 
@@ -334,6 +331,7 @@ void PageMenuSystemWifiWebApp::setting_change(Button dir, ButtonEvent state, uin
   syncWebAppMode();
 
   if (cursor_position == CURSOR_BACK && state == ButtonEvent::CLICKED) {
+    speaker.playSound(fx::cancel);
     pop_page();
     return;
   }
@@ -423,13 +421,6 @@ void PageMenuSystemWifiSetup::loop() {
 }
 
 void PageMenuSystemWifiSetup::draw_extra() {
-  // wifi searching status
-  wifiIcon++;
-  if (wifiIcon > 65) wifiIcon = 62;  // loop back to empty signal icon
-  u8g2.setFont(leaf_icons);
-  u8g2.setCursor(85, 12);
-  u8g2.print((char)wifiIcon);
-
   if (millis() - starting_message_started_ms < STARTING_MESSAGE_MS) {
     u8g2.setFont(leaf_6x12);
     u8g2.setCursor(24, 52);

@@ -2,10 +2,19 @@
 
 #include <Arduino.h>
 #include "comms/fanet_radio.h"
+#include "ui/audio/sound_effects.h"
+#include "ui/audio/speaker.h"
 #include "ui/display/display.h"
 #include "ui/display/fonts.h"
 
 void PageFanetStats::show() { push_page(&getInstance()); }
+
+void PageFanetStats::setting_change(Button dir, ButtonEvent state, uint8_t count) {
+  if (cursor_position == CURSOR_BACK && state == ButtonEvent::CLICKED) {
+    speaker.playSound(fx::cancel);
+    pop_page();
+  }
+}
 
 void PageFanetStats::draw_extra() {
   auto radioStats = fanetRadio.getStats();

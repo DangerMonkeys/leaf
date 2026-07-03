@@ -9,6 +9,7 @@
 #include "ui/display/display.h"
 #include "ui/display/display_fields.h"
 #include "ui/display/fonts.h"
+#include "ui/display/pages.h"
 
 namespace {
   constexpr uint8_t ROW_START_Y = 35;
@@ -151,6 +152,7 @@ void PageNavDataSelect::ensureCursorVisible() {
 
 void PageNavDataSelect::close() {
   speaker.playSound(fx::cancel);
+  navDataMenuPage.backToNavDataMenu();
   pop_page();
 }
 
@@ -162,6 +164,7 @@ void PageNavDataSelect::selectCurrent() {
                              ? navigator.activatePoint(WaypointID(cursor_position + 1))
                              : navigator.activateRoute(RouteID(cursor_position + 1));
   if (activated) {
+    navDataMenuPage.backToNavDataMenu();
     pop_page();
   } else {
     speaker.playSound(fx::bad);
