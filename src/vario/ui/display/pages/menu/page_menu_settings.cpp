@@ -10,6 +10,7 @@
 #include "ui/display/fonts.h"
 #include "ui/display/pages.h"
 #include "ui/display/pages/fanet/page_fanet.h"
+#include "ui/display/pages/menu/page_menu_wifi.h"
 #include "ui/input/buttons.h"
 #include "ui/settings/settings.h"
 
@@ -118,10 +119,11 @@ void SettingsRootMenuPage::drawSettingsMenu() {
   u8g2.firstPage();
   do {
     menu_ui::drawTitle("Settings", menu_ui::GLYPH_SETTINGS);
+    wifi_menu_ui::drawStatusLine(30);
 
     uint8_t setting_name_x = 2;
     uint8_t setting_choice_x = 76;
-    uint8_t menu_items_y[] = {190, 45, 60, 75, 90, 105, 120, 135, 150};
+    uint8_t menu_items_y[] = {190, 60, 75, 90, 105, 120, 135, 150, 165};
 
     for (int i = 0; i <= cursor_max; i++) {
       if (row_hidden(i)) continue;

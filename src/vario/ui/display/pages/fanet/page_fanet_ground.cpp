@@ -5,6 +5,8 @@
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "logging/log.h"
+#include "ui/audio/sound_effects.h"
+#include "ui/audio/speaker.h"
 #include "ui/display/display.h"
 #include "ui/display/display_fields.h"
 #include "ui/display/fonts.h"
@@ -55,6 +57,13 @@ void PageFanetGround::show(FanetGroundTrackingMode mode) {
 }
 
 const char* PageFanetGround::get_title() const { return "Ground Tracking"; }
+
+void PageFanetGround::setting_change(Button dir, ButtonEvent state, uint8_t count) {
+  if (cursor_position == CURSOR_BACK && state == ButtonEvent::CLICKED) {
+    speaker.playSound(fx::cancel);
+    pop_page();
+  }
+}
 
 void PageFanetGround::closed(bool removed_from_Stack) {
   // Ground tracking should only occur while we're showing this page.

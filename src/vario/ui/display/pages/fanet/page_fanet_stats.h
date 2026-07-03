@@ -10,6 +10,9 @@ class PageFanetStats : public SimpleSettingsMenuPage {
   uint8_t get_title_glyph() const override { return menu_ui::GLYPH_FANET; }
   void draw_extra() override;
 
+ protected:
+  void setting_change(Button dir, ButtonEvent state, uint8_t count) override;
+
  private:
   static PageFanetStats& getInstance();
 };

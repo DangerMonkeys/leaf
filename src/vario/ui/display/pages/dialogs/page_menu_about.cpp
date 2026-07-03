@@ -5,8 +5,11 @@
 
 #include "comms/fanet_radio.h"
 #include "system/version_info.h"
+#include "ui/audio/sound_effects.h"
+#include "ui/audio/speaker.h"
 #include "ui/display/display.h"
 #include "ui/display/fonts.h"
+#include "ui/display/pages.h"
 
 void PageMenuAbout::draw_extra() {
   auto y = 22;
@@ -63,3 +66,16 @@ void PageMenuAbout::draw_extra() {
 }
 
 void PageMenuAbout::show() { push_page(this); }
+
+void PageMenuAbout::setting_change(Button dir, ButtonEvent state, uint8_t count) {
+  if (cursor_position == CURSOR_BACK && state == ButtonEvent::CLICKED) {
+    speaker.playSound(fx::cancel);
+    pop_page();
+  }
+}
+
+void PageMenuAbout::closed(bool removed_from_Stack) {
+  if (removed_from_Stack) {
+    systemMenuPage.backToSystemMenu();
+  }
+}

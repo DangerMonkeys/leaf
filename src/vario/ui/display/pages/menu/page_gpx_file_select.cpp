@@ -11,6 +11,7 @@
 #include "ui/display/display.h"
 #include "ui/display/display_fields.h"
 #include "ui/display/fonts.h"
+#include "ui/display/pages.h"
 
 namespace {
   constexpr const char* GPX_DIR = "/gpx files";
@@ -267,6 +268,7 @@ void PageGpxFileSelect::ensureCursorVisible() {
 
 void PageGpxFileSelect::close() {
   speaker.playSound(fx::cancel);
+  navDataMenuPage.backToNavDataMenu();
   pop_page();
 }
 
@@ -280,6 +282,7 @@ void PageGpxFileSelect::loadSelectedFile() {
   const bool success = gpx_readFile(SD_MMC, path);
   if (success) {
     speaker.playSound(fx::confirm);
+    navDataMenuPage.backToNavDataMenu();
     pop_page();
   } else {
     speaker.playSound(fx::bad);

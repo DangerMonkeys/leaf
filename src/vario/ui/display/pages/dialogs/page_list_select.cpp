@@ -1,5 +1,7 @@
 #include "ui/display/pages/dialogs/page_list_select.h"
 
+#include "ui/audio/sound_effects.h"
+#include "ui/audio/speaker.h"
 #include "ui/display/display.h"
 
 void PageListSelect::show(const char* title, const etl::array_view<const char*> entries,
@@ -21,19 +23,15 @@ void PageListSelect::draw_menu_input(int8_t cursor_position) {
 }
 
 void PageListSelect::setting_change(Button dir, ButtonEvent state, uint8_t count) {
-  // Call the parent class to handle the back button
-  SimpleSettingsMenuPage::setting_change(dir, state, count);
-
   if (state != ButtonEvent::CLICKED) return;
 
-  // If 255, it's the back button
-  if (cursor_position != -1) {
-    // Handle the selected item
-    // Perform the callback
-    callback(cursor_position);
+  if (cursor_position == CURSOR_BACK) {
+    speaker.playSound(fx::cancel);
+    pop_page();
+    return;
   }
 
-  // Close the selection page
+  callback(cursor_position);
   pop_page();
 }
 

@@ -16,6 +16,7 @@ class PageFanet : public SimpleSettingsMenuPage {
 
   // Menu item button icons will depend on the current setting
   virtual void draw_menu_input(int8_t cursor_position) override;
+  void closed(bool removed_from_Stack) override;
 
  protected:
   void setting_change(Button dir, ButtonEvent state, uint8_t count) override;

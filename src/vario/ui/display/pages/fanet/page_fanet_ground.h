@@ -12,6 +12,9 @@ class PageFanetGround : public SimpleSettingsMenuPage {
   virtual void closed(bool removed_from_Stack) override;
   void draw_extra() override;
 
+ protected:
+  void setting_change(Button dir, ButtonEvent state, uint8_t count) override;
+
  private:
   PageFanetGround() {}
   FanetGroundTrackingMode mode;

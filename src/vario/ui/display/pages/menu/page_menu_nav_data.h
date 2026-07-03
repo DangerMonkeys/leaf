@@ -14,6 +14,7 @@ class NavDataMenuPage : public SettingsMenuPage {
     cursor_position = 0;
     cursor_max = 4;
   }
+  void backToNavDataMenu();
   void draw();
   bool button_event(Button button, ButtonEvent state, uint8_t count) override;
 

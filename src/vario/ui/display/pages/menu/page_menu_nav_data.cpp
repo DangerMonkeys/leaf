@@ -21,12 +21,15 @@ enum nav_data_menu_items {
 };
 
 namespace {
-  constexpr char* labels[5] = {"Back", "Load GPX", "Select Pt.", "Select Rte", "Build Rte"};
+  constexpr char* labels[5] = {"Back", "Load GPX", "Select Pt", "Select Rt", "Build Rt"};
   constexpr uint8_t glyphs[5] = {0, menu_ui::GLYPH_GPX, menu_ui::GLYPH_NAV_POINT_SELECT,
                                  menu_ui::GLYPH_NAV_ROUTE_SELECT, menu_ui::GLYPH_NAV_ROUTE_BUILD};
   constexpr uint8_t MENU_INPUT_X = 76;
   constexpr uint8_t FITTED_TEXT_MAX_WIDTH = 92;
+  constexpr uint8_t STATUS_DIVIDER_Y = 106;
 }  // namespace
+
+void NavDataMenuPage::backToNavDataMenu() { cursor_position = cursor_nav_data_back; }
 
 bool NavDataMenuPage::button_event(Button button, ButtonEvent state, uint8_t count) {
   switch (button) {
@@ -60,7 +63,7 @@ void NavDataMenuPage::draw() {
     menu_ui::drawTitle("Nav Data", menu_ui::GLYPH_NAV_DATA);
 
     uint8_t setting_name_x = 2;
-    uint8_t menu_items_y[] = {190, 35, 135, 150, 165};
+    uint8_t menu_items_y[] = {190, 122, 137, 152, 167};
 
     for (int i = 0; i <= cursor_max; i++) {
       if (row_hidden(i)) continue;
@@ -82,31 +85,33 @@ void NavDataMenuPage::draw() {
       const bool hasActivePoint = !hasActiveRoute && navigator.activeWaypointIndex;
 
       u8g2.setFont(leaf_5x8);
-      u8g2.setCursor(2, 55);
+      u8g2.setCursor(2, 35);
       u8g2.print("Active File:");
 
       u8g2.setFont(leaf_6x12);
-      drawFittedText(2, 68, navigator.loadedGpxFilename(), FITTED_TEXT_MAX_WIDTH);
+      drawFittedText(2, 48, navigator.loadedGpxFilename(), FITTED_TEXT_MAX_WIDTH);
 
       u8g2.setFont(leaf_5x8);
-      u8g2.setCursor(2, 78);
+      u8g2.setCursor(2, 58);
       u8g2.print("Points: ");
       u8g2.print(navigator.totalWaypoints);
-      u8g2.print(" Routes: ");
+
+      u8g2.setCursor(2, 68);
+      u8g2.print("Routes: ");
       u8g2.print(navigator.totalRoutes);
 
       if (hasActiveRoute || hasActivePoint) {
-        u8g2.setCursor(2, 94);
+        u8g2.setCursor(2, 84);
         u8g2.print(hasActiveRoute ? "Active Route:" : "Active Point:");
 
         u8g2.setFont(leaf_6x12);
         const char* activeName = hasActiveRoute ? navigator.routes[navigator.activeRouteIndex].name
                                                 : navigator.activePoint.name;
-        drawFittedText(2, 107, activeName, FITTED_TEXT_MAX_WIDTH);
+        drawFittedText(2, 97, activeName, FITTED_TEXT_MAX_WIDTH);
       }
-
-      u8g2.drawHLine(0, 120, 96);
     }
+
+    u8g2.drawHLine(0, STATUS_DIVIDER_Y, 96);
   } while (u8g2.nextPage());
 }
 

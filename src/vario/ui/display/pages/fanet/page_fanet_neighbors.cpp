@@ -1,12 +1,21 @@
 #include "ui/display/pages/fanet/page_fanet_neighbors.h"
 
 #include "comms/fanet_radio.h"
+#include "ui/audio/sound_effects.h"
+#include "ui/audio/speaker.h"
 #include "ui/display/display.h"
 #include "ui/display/fonts.h"
 
 void PageFanetNeighbors::show() {
   static PageFanetNeighbors instance;
   push_page(&instance);
+}
+
+void PageFanetNeighbors::setting_change(Button dir, ButtonEvent state, uint8_t count) {
+  if (cursor_position == CURSOR_BACK && state == ButtonEvent::CLICKED) {
+    speaker.playSound(fx::cancel);
+    pop_page();
+  }
 }
 
 void PageFanetNeighbors::draw_extra() {

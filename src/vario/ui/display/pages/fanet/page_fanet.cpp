@@ -1,5 +1,8 @@
 #include "ui/display/pages/fanet/page_fanet.h"
 
+#include "ui/audio/sound_effects.h"
+#include "ui/audio/speaker.h"
+#include "ui/display/pages.h"
 #include "ui/display/pages/dialogs/page_list_select.h"
 #include "ui/display/pages/fanet/page_fanet_ground_select.h"
 #include "ui/display/pages/fanet/page_fanet_neighbors.h"
@@ -10,6 +13,12 @@
 
 void PageFanet::setting_change(Button dir, ButtonEvent state, uint8_t count) {
   if (state != ButtonEvent::CLICKED) return;
+
+  if (cursor_position == CURSOR_BACK) {
+    speaker.playSound(fx::cancel);
+    pop_page();
+    return;
+  }
 
   // Handle menu item selection
   switch (cursor_position) {
@@ -43,9 +52,14 @@ void PageFanet::setting_change(Button dir, ButtonEvent state, uint8_t count) {
       PageFanetNeighbors::show();
       break;
   }
+}
 
-  // Call parent class to handle back button
-  SimpleSettingsMenuPage::setting_change(dir, state, count);
+void PageFanet::closed(bool removed_from_Stack) {
+  if (removed_from_Stack) {
+    settingsMenuPage.backToSettingsMenu();
+  } else {
+    cursor_position = CURSOR_BACK;
+  }
 }
 
 void PageFanet::draw_menu_input(int8_t row_position) {

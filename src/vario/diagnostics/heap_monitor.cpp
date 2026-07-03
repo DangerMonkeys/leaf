@@ -7,6 +7,7 @@
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "ui/settings/settings.h"
 
 namespace heap_monitor {
   namespace {
@@ -52,6 +53,7 @@ namespace heap_monitor {
   }  // namespace
 
   void record(const char* event) {
+    if (!settings.dev_mode) return;
     Sample& sample = samples[nextSample];
     sample.millis = millis();
     copyEvent(sample.event, event);
@@ -66,6 +68,7 @@ namespace heap_monitor {
   }
 
   bool dumpToSd(const char* path) {
+    if (!settings.dev_mode) return false;
     if (!path || path[0] == '\0') return false;
     if (!ensureDiagnosticsDirectory()) return false;
 
@@ -90,6 +93,7 @@ namespace heap_monitor {
   }
 
   void clear() {
+    if (!settings.dev_mode) return;
     nextSample = 0;
     sampleTotal = 0;
   }

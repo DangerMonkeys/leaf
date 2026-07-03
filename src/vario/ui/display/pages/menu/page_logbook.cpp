@@ -194,6 +194,7 @@ void PageLogbook::setting_change(Button dir, ButtonEvent state, uint8_t count) {
       speaker.playSound(state == ButtonEvent::HELD ? fx::exit : fx::cancel);
       if (modal) {
         modal = false;
+        mainMenuPage.backToMainMenu();
         pop_page();
       } else {
         logMenuPage.backToLogMenu();

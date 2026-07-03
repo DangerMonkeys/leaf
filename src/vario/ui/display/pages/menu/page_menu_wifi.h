@@ -47,7 +47,6 @@ class PageMenuSystemWifiSetup : public SimpleSettingsMenuPage {
 
  private:
   static constexpr uint32_t STARTING_MESSAGE_MS = 8000;
-  int wifiIcon = 62;  // the "empty signal" icon
   uint32_t starting_message_started_ms = 0;
   void beginWifiSetup(void);
 };
@@ -113,7 +112,6 @@ class WifiMenuPage : public SettingsMenuPage {
   void showSetup();
   void showFirmwareUpdate();
   void showWebApp();
-  bool firstOpened = true;
 
  protected:
   void setting_change(Button dir, ButtonEvent state, uint8_t count);
@@ -125,7 +123,6 @@ class WifiMenuPage : public SettingsMenuPage {
   PageMenuSystemWifiSetup page_wifi_setup;
   PageMenuSystemWifiUpdate page_wifi_update;
   PageMenuSystemWifiWebApp page_wifi_web_app;
-  void attemptWifiConnection(void);
 };
 
 #endif
