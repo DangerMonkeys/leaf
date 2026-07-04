@@ -7,22 +7,420 @@
 
 #include "navigation/gpx.h"
 
+#include <ArduinoJson.h>
 #include <FS.h>
+#include <SD_MMC.h>
+#include <ctype.h>
 
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "navigation/gpx_parser.h"
+#include "navigation/route_store.h"
 #include "storage/files.h"
+#include "storage/sd_card.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 
 Navigator navigator;
 
 namespace {
+  constexpr size_t MAX_NAV_LINE_LENGTH = 256;
+  constexpr size_t MAX_KML_PARSE_CHARS = 262144UL;
+  constexpr const char* NAV_STATE_SCHEMA = "leaf.nav_state";
+  constexpr const char* LEGACY_ACTIVE_ROUTE_SCHEMA = "leaf.active_route";
+
   String filenameFromPath(const String& path) {
     const int slash = path.lastIndexOf('/');
     if (slash < 0) return path;
     return path.substring(slash + 1);
+  }
+
+  String lowerExtension(const String& fileName) {
+    const int dot = fileName.lastIndexOf('.');
+    if (dot < 0) return "";
+    String ext = fileName.substring(dot + 1);
+    ext.toLowerCase();
+    return ext;
+  }
+
+  const char* sourceName(LoadedNavSource source) {
+    switch (source) {
+      case LoadedNavSource::NavFile:
+        return "nav_file";
+      case LoadedNavSource::SavedRoute:
+        return "saved_route";
+      case LoadedNavSource::None:
+      default:
+        return "none";
+    }
+  }
+
+  LoadedNavSource sourceFromName(const char* value) {
+    if (value == nullptr) return LoadedNavSource::None;
+    if (strcmp(value, "nav_file") == 0) return LoadedNavSource::NavFile;
+    if (strcmp(value, "saved_route") == 0) return LoadedNavSource::SavedRoute;
+    return LoadedNavSource::None;
+  }
+
+  bool writeNavState(JsonDocument& doc) {
+    if (!SD_MMC.exists(route_store::directoryPath()) && !SD_MMC.mkdir(route_store::directoryPath()))
+      return false;
+
+    const char* tempPath = "/routes/active.tmp";
+    if (SD_MMC.exists(tempPath)) SD_MMC.remove(tempPath);
+
+    File file = SD_MMC.open(tempPath, "w", true);
+    if (!file) return false;
+
+    const size_t written = serializeJsonPretty(doc, file);
+    file.close();
+    if (written == 0) {
+      SD_MMC.remove(tempPath);
+      return false;
+    }
+
+    SD_MMC.remove(route_store::activeRoutePath());
+    if (!SD_MMC.rename(tempPath, route_store::activeRoutePath())) {
+      SD_MMC.remove(tempPath);
+      return false;
+    }
+    return true;
+  }
+
+  bool readLine(File& file, char* buffer, size_t len) {
+    if (!file || file.available() <= 0 || len == 0) return false;
+
+    size_t index = 0;
+    while (file.available() > 0) {
+      const char c = file.read();
+      if (c == '\r') continue;
+      if (c == '\n') break;
+      if (index + 1 < len) buffer[index++] = c;
+    }
+    buffer[index] = '\0';
+    return true;
+  }
+
+  char* trimInPlace(char* value) {
+    if (value == nullptr) return value;
+    while (*value == ' ' || *value == '\t') value++;
+    char* end = value + strlen(value);
+    while (end > value && (end[-1] == ' ' || end[-1] == '\t')) {
+      *--end = '\0';
+    }
+    return value;
+  }
+
+  bool nextCsvField(const char*& cursor, char* out, size_t outLen) {
+    if (cursor == nullptr || *cursor == '\0' || outLen == 0) return false;
+
+    size_t index = 0;
+    bool quoted = false;
+    if (*cursor == '"') {
+      quoted = true;
+      cursor++;
+    }
+
+    while (*cursor != '\0') {
+      const char c = *cursor++;
+      if (quoted) {
+        if (c == '"') {
+          if (*cursor == '"') {
+            if (index + 1 < outLen) out[index++] = '"';
+            cursor++;
+          } else {
+            quoted = false;
+          }
+        } else if (index + 1 < outLen) {
+          out[index++] = c;
+        }
+      } else if (c == ',') {
+        break;
+      } else if (index + 1 < outLen) {
+        out[index++] = c;
+      }
+    }
+
+    out[index] = '\0';
+    if (*cursor == ',') cursor++;
+    return true;
+  }
+
+  bool csvFieldAt(const char* line, uint8_t target, char* out, size_t outLen) {
+    const char* cursor = line;
+    char field[96];
+    for (uint8_t i = 0; i <= target; i++) {
+      if (!nextCsvField(cursor, field, sizeof(field))) return false;
+    }
+    strncpy(out, trimInPlace(field), outLen);
+    out[outLen - 1] = '\0';
+    return true;
+  }
+
+  bool parseCupCoordinate(const char* text, double& value) {
+    if (text == nullptr) return false;
+    char buffer[32];
+    strncpy(buffer, text, sizeof(buffer));
+    buffer[sizeof(buffer) - 1] = '\0';
+    char* s = trimInPlace(buffer);
+    const size_t len = strlen(s);
+    if (len < 5) return false;
+
+    const char hemi = s[len - 1];
+    if (hemi != 'N' && hemi != 'S' && hemi != 'E' && hemi != 'W' && hemi != 'n' && hemi != 's' &&
+        hemi != 'e' && hemi != 'w') {
+      return false;
+    }
+    s[len - 1] = '\0';
+    char* dot = strchr(s, '.');
+    if (dot == nullptr || dot - s < 2) return false;
+
+    const uint8_t degreeDigits = (dot - s) - 2;
+    if (degreeDigits < 2 || degreeDigits > 3) return false;
+
+    char degreesText[4] = "";
+    strncpy(degreesText, s, degreeDigits);
+    degreesText[degreeDigits] = '\0';
+    const double degrees = atof(degreesText);
+    const double minutes = atof(s + degreeDigits);
+    if (minutes < 0 || minutes >= 60) return false;
+
+    value = degrees + minutes / 60.0;
+    if (hemi == 'S' || hemi == 'W' || hemi == 's' || hemi == 'w') value = -value;
+    return true;
+  }
+
+  float parseElevationMeters(const char* text) {
+    if (text == nullptr) return 0;
+    return atof(text);
+  }
+
+  float parseElevationFeetAsMeters(const char* text) {
+    if (text == nullptr) return 0;
+    return atof(text) * 0.3048f;
+  }
+
+  bool validCoordinate(double lat, double lon) {
+    return lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
+  }
+
+  bool addWaypoint(Navigator* result, const char* name, double lat, double lon, float ele) {
+    if (!validCoordinate(lat, lon)) return false;
+
+    Waypoint waypoint;
+    waypoint.setName(name);
+    waypoint.setCoordinates(lat, lon);
+    waypoint.ele = ele;
+    return result->addWaypoint(waypoint);
+  }
+
+  bool addOrFindRouteWaypoint(Navigator* result, Route* route, const char* name, double lat,
+                              double lon, float ele) {
+    if (!validCoordinate(lat, lon)) return false;
+
+    Waypoint waypoint;
+    waypoint.setName(name);
+    waypoint.setCoordinates(lat, lon);
+    waypoint.ele = ele;
+    const WaypointID waypointIndex = result->addOrFindWaypoint(waypoint);
+    return waypointIndex && result->addRoutePoint(route, waypointIndex);
+  }
+
+  bool parseCupFile(fs::FS& fs, const String& fileName, Navigator* result) {
+    File file = fs.open(fileName, FILE_READ);
+    if (!file) return false;
+
+    char line[MAX_NAV_LINE_LENGTH];
+    bool parsedAny = false;
+    bool inTasks = false;
+
+    while (readLine(file, line, sizeof(line))) {
+      char* trimmed = trimInPlace(line);
+      if (trimmed[0] == '\0') continue;
+      if (strstr(trimmed, "-----Related Tasks-----") != nullptr) {
+        inTasks = true;
+        continue;
+      }
+
+      if (!inTasks) {
+        char name[64];
+        char latText[32];
+        char lonText[32];
+        char eleText[32];
+        if (!csvFieldAt(trimmed, 0, name, sizeof(name)) || strcmp(name, "name") == 0 ||
+            strcmp(name, "Title") == 0 || !csvFieldAt(trimmed, 3, latText, sizeof(latText)) ||
+            !csvFieldAt(trimmed, 4, lonText, sizeof(lonText)) ||
+            !csvFieldAt(trimmed, 5, eleText, sizeof(eleText))) {
+          continue;
+        }
+
+        double lat = 0;
+        double lon = 0;
+        if (parseCupCoordinate(latText, lat) && parseCupCoordinate(lonText, lon) &&
+            addWaypoint(result, name, lat, lon, parseElevationMeters(eleText))) {
+          parsedAny = true;
+        }
+      } else {
+        char field[64];
+        const char* cursor = trimmed;
+        if (!nextCsvField(cursor, field, sizeof(field)) || field[0] == '\0') continue;
+        if (result->totalRoutes >= maxRoutes) continue;
+
+        Route* activeRoute = &result->routes[++result->totalRoutes];
+        activeRoute->setName(field);
+        while (nextCsvField(cursor, field, sizeof(field))) {
+          char* wpName = trimInPlace(field);
+          if (wpName[0] == '\0') continue;
+          const WaypointID waypointIndex = result->findWaypointByName(wpName);
+          if (waypointIndex) result->addRoutePoint(activeRoute, waypointIndex);
+        }
+        if (activeRoute->totalPoints == 0) result->totalRoutes--;
+      }
+    }
+
+    file.close();
+    return parsedAny;
+  }
+
+  bool parseWptFile(fs::FS& fs, const String& fileName, Navigator* result) {
+    File file = fs.open(fileName, FILE_READ);
+    if (!file) return false;
+
+    char line[MAX_NAV_LINE_LENGTH];
+    bool parsedAny = false;
+    while (readLine(file, line, sizeof(line))) {
+      char* trimmed = trimInPlace(line);
+      if (trimmed[0] == '\0' || strstr(trimmed, "OziExplorer") == trimmed) continue;
+
+      char name[64];
+      char latText[32];
+      char lonText[32];
+      char eleText[32] = "0";
+      double lat = 0;
+      double lon = 0;
+      float ele = 0;
+
+      if (csvFieldAt(trimmed, 1, name, sizeof(name)) &&
+          csvFieldAt(trimmed, 2, latText, sizeof(latText)) &&
+          csvFieldAt(trimmed, 3, lonText, sizeof(lonText))) {
+        csvFieldAt(trimmed, 14, eleText, sizeof(eleText));
+        lat = atof(latText);
+        lon = atof(lonText);
+        ele = parseElevationFeetAsMeters(eleText);
+      } else if (csvFieldAt(trimmed, 0, name, sizeof(name)) &&
+                 csvFieldAt(trimmed, 1, latText, sizeof(latText)) &&
+                 csvFieldAt(trimmed, 2, lonText, sizeof(lonText))) {
+        csvFieldAt(trimmed, 3, eleText, sizeof(eleText));
+        lat = atof(latText);
+        lon = atof(lonText);
+        ele = parseElevationMeters(eleText);
+      } else {
+        continue;
+      }
+
+      if (addWaypoint(result, name, lat, lon, ele)) parsedAny = true;
+    }
+
+    file.close();
+    return parsedAny;
+  }
+
+  bool parseKmlCoordinateTuple(const char* tuple, double& lat, double& lon, float& ele) {
+    if (tuple == nullptr) return false;
+    char buffer[96];
+    strncpy(buffer, tuple, sizeof(buffer));
+    buffer[sizeof(buffer) - 1] = '\0';
+    char* lonText = trimInPlace(buffer);
+    char* latText = strchr(lonText, ',');
+    if (latText == nullptr) return false;
+    *latText++ = '\0';
+    char* eleText = strchr(latText, ',');
+    if (eleText != nullptr) *eleText++ = '\0';
+
+    lon = atof(lonText);
+    lat = atof(latText);
+    ele = eleText == nullptr ? 0 : atof(eleText);
+    return validCoordinate(lat, lon);
+  }
+
+  bool parseKmlFile(fs::FS& fs, const String& fileName, Navigator* result) {
+    File file = fs.open(fileName, FILE_READ);
+    if (!file) return false;
+    if (file.size() > MAX_KML_PARSE_CHARS) {
+      file.close();
+      return false;
+    }
+
+    String content;
+    content.reserve(file.size() + 1);
+    while (file.available() > 0) {
+      content += static_cast<char>(file.read());
+    }
+    file.close();
+
+    bool parsedAny = false;
+    int searchFrom = 0;
+    while (true) {
+      const int placemarkStart = content.indexOf("<Placemark", searchFrom);
+      if (placemarkStart < 0) break;
+      const int placemarkEnd = content.indexOf("</Placemark>", placemarkStart);
+      if (placemarkEnd < 0) break;
+
+      const String placemark = content.substring(placemarkStart, placemarkEnd);
+      String name = "KML Point";
+      const int nameStart = placemark.indexOf("<name>");
+      const int nameEnd = nameStart >= 0 ? placemark.indexOf("</name>", nameStart) : -1;
+      if (nameStart >= 0 && nameEnd > nameStart) {
+        name = placemark.substring(nameStart + 6, nameEnd);
+        name.trim();
+      }
+
+      const int coordinatesStart = placemark.indexOf("<coordinates>");
+      const int coordinatesEnd =
+          coordinatesStart >= 0 ? placemark.indexOf("</coordinates>", coordinatesStart) : -1;
+      if (coordinatesStart >= 0 && coordinatesEnd > coordinatesStart) {
+        String coordinates = placemark.substring(coordinatesStart + 13, coordinatesEnd);
+        coordinates.trim();
+        const bool isRoute = placemark.indexOf("<LineString") >= 0;
+
+        if (isRoute && result->totalRoutes < maxRoutes) {
+          Route* route = &result->routes[++result->totalRoutes];
+          route->setName(name.c_str());
+          uint8_t routeIndex = 1;
+          int tupleStart = 0;
+          while (tupleStart < coordinates.length()) {
+            while (tupleStart < coordinates.length() && isspace(coordinates[tupleStart]))
+              tupleStart++;
+            int tupleEnd = tupleStart;
+            while (tupleEnd < coordinates.length() && !isspace(coordinates[tupleEnd])) tupleEnd++;
+            String tuple = coordinates.substring(tupleStart, tupleEnd);
+            double lat = 0;
+            double lon = 0;
+            float ele = 0;
+            char pointName[maxGpxNameLength + 1];
+            snprintf(pointName, sizeof(pointName), "%s %u", name.c_str(), routeIndex++);
+            if (parseKmlCoordinateTuple(tuple.c_str(), lat, lon, ele) &&
+                addOrFindRouteWaypoint(result, route, pointName, lat, lon, ele)) {
+              parsedAny = true;
+            }
+            tupleStart = tupleEnd + 1;
+          }
+          if (route->totalPoints == 0) result->totalRoutes--;
+        } else {
+          double lat = 0;
+          double lon = 0;
+          float ele = 0;
+          if (parseKmlCoordinateTuple(coordinates.c_str(), lat, lon, ele) &&
+              addWaypoint(result, name.c_str(), lat, lon, ele)) {
+            parsedAny = true;
+          }
+        }
+      }
+
+      searchFrom = placemarkEnd + 12;
+    }
+
+    return parsedAny;
   }
 }  // namespace
 
@@ -40,6 +438,7 @@ void Navigator::clear() {
   totalRoutePointRefs = 0;
   totalRoutes = 0;
   activePoint = Waypoint();
+  activeRoutePoint = RoutePoint();
   activeWaypointIndex = WaypointID::None;
   activeRoutePointIndex = RouteIndex::None;
   activeRouteIndex = RouteID::None;
@@ -61,8 +460,9 @@ void Navigator::clear() {
   courseToNext_ = 0;
   turnToNext_ = 0;
   reachedGoal_ = false;
-  loadedGpxFile_ = false;
+  loadedNavSource_ = LoadedNavSource::None;
   loadedGpxFilename_[0] = '\0';
+  loadedNavPath_[0] = '\0';
 }
 
 bool Navigator::addWaypoint(const Waypoint& waypoint) {
@@ -96,14 +496,19 @@ WaypointID Navigator::addOrFindWaypoint(const Waypoint& waypoint) {
   return WaypointID(totalWaypoints);
 }
 
-bool Navigator::addRoutePoint(Route* route, WaypointID waypointIndex) {
+bool Navigator::addRoutePoint(Route* route, WaypointID waypointIndex, uint16_t radiusM,
+                              RoutePointRole role) {
   if (!waypointIndex || totalRoutePointRefs >= maxRoutePointRefs) {
     return false;
   }
   if (route->totalPoints == 0) {
     route->firstRoutePointIndex = totalRoutePointRefs + 1;
   }
-  routeWaypointIndexes[++totalRoutePointRefs] = waypointIndex;
+  RoutePoint routePoint;
+  routePoint.waypointIndex = waypointIndex;
+  routePoint.radiusM = radiusM == 0 ? defaultWaypointRadius : radiusM;
+  routePoint.role = role;
+  routePoints[++totalRoutePointRefs] = routePoint;
   route->totalPoints++;
   return true;
 }
@@ -111,7 +516,11 @@ bool Navigator::addRoutePoint(Route* route, WaypointID waypointIndex) {
 const Waypoint& Navigator::waypoint(WaypointID pointIndex) const { return waypoints[pointIndex]; }
 
 const Waypoint& Navigator::routePoint(RouteID routeIndex, RouteIndex pointIndex) const {
-  return waypoint(routeWaypointIndexes[routes[routeIndex].firstRoutePointIndex + pointIndex - 1]);
+  return waypoint(routePointMeta(routeIndex, pointIndex).waypointIndex);
+}
+
+const RoutePoint& Navigator::routePointMeta(RouteID routeIndex, RouteIndex pointIndex) const {
+  return routePoints[routes[routeIndex].firstRoutePointIndex + pointIndex - 1];
 }
 
 // update nav data every second
@@ -121,14 +530,18 @@ void Navigator::update() {
     // update distance remaining, then sequence to next point if distance is small enough
     pointDistanceRemaining = gps.distanceBetween(gps.location.lat(), gps.location.lng(),
                                                  activePoint.latitude(), activePoint.longitude());
-    if (pointDistanceRemaining < waypointRadius && !reachedGoal_)
+    const uint16_t activeRadius =
+        activeRouteIndex ? activeRoutePoint.radiusM : defaultWaypointRadius;
+    if (pointDistanceRemaining < activeRadius && !reachedGoal_)
       sequenceWaypoint();  //  (this will also update distance to the new point)
 
     // update time remaining
     if (gps.speed.mps() < 0.5) {
       pointTimeRemaining = 0;
     } else {
-      pointTimeRemaining = (pointDistanceRemaining - waypointRadius) / gps.speed.mps();
+      const double distanceToCylinder =
+          pointDistanceRemaining > activeRadius ? pointDistanceRemaining - activeRadius : 0;
+      pointTimeRemaining = distanceToCylinder / gps.speed.mps();
     }
 
     // get degress to active point
@@ -177,6 +590,8 @@ void Navigator::update() {
 // Start, Sequence, and End Navigation Functions
 
 bool Navigator::activatePoint(WaypointID pointIndex) {
+  if (!pointIndex || pointIndex > totalWaypoints) return false;
+
   navigating = true;
   reachedGoal_ = false;
 
@@ -186,6 +601,7 @@ bool Navigator::activatePoint(WaypointID pointIndex) {
 
   activeWaypointIndex = pointIndex;
   activePoint = waypoint(activeWaypointIndex);
+  activeRoutePoint = RoutePoint();
 
   speaker.playSound(fx::enter);
 
@@ -196,25 +612,35 @@ bool Navigator::activatePoint(WaypointID pointIndex) {
   totalDistanceRemaining_ = newDistance;
   pointDistanceRemaining = newDistance;
 
+  savePersistedState();
   return navigating;
 }
 
 bool Navigator::activateRoute(RouteID routeIndex) {
+  return activateRoute(routeIndex, RouteIndex(1));
+}
+
+bool Navigator::activateRoute(RouteID routeIndex, RouteIndex routePointIndex) {
+  if (!routeIndex || routeIndex > totalRoutes) return false;
+
   // first check if any valid points
   uint8_t validPoints = routes[routeIndex].totalPoints;
+  if (routePointIndex < 1 || routePointIndex > validPoints) return false;
   if (!validPoints) {
     navigating = false;
   } else {
     navigating = true;
     reachedGoal_ = false;
     activeRouteIndex = routeIndex;
+    activeWaypointIndex = WaypointID::None;
 
     Serial.print("*** NEW ROUTE: ");
     Serial.println(routes[activeRouteIndex].name);
 
-    // set activePointIndex to 0, then call sequenceWaypoint() to increment and populate new
+    // set activePointIndex to one before the desired point, then call sequenceWaypoint() to
+    // increment and populate new
     // activePoint, and nextPoint, if any
-    activeRoutePointIndex = RouteIndex::None;
+    activeRoutePointIndex = routePointIndex - 1;
     sequenceWaypoint();
 
     // calculate TOTAL Route distance
@@ -237,6 +663,7 @@ bool Navigator::activateRoute(RouteID routeIndex) {
                               routePoint(activeRouteIndex, RouteIndex(1)).longitude());
     }
   }
+  savePersistedState();
   return navigating;
 }
 
@@ -257,7 +684,8 @@ bool Navigator::sequenceWaypoint() {
     Serial.print(activeRoutePointIndex);
     Serial.print(" route index:");
     Serial.print(activeRouteIndex);
-    activePoint = routePoint(activeRouteIndex, activeRoutePointIndex);
+    activeRoutePoint = routePointMeta(activeRouteIndex, activeRoutePointIndex);
+    activePoint = waypoint(activeRoutePoint.waypointIndex);
 
     Serial.print(" new point:");
     Serial.print(activePoint.name);
@@ -295,6 +723,7 @@ bool Navigator::sequenceWaypoint() {
     reachedGoal_ = true;
     speaker.playSound(fx::confirm);
   }
+  if (successfulSequence) savePersistedState();
   Serial.print(" succes is: ");
   Serial.println(successfulSequence);
   return successfulSequence;
@@ -306,10 +735,12 @@ void Navigator::cancelNav() {
   activeRouteIndex = RouteID::None;
   activeWaypointIndex = WaypointID::None;
   activeRoutePointIndex = RouteIndex::None;
+  activeRoutePoint = RoutePoint();
   reachedGoal_ = false;
   navigating = false;
   turnToActive = 0;
   turnToNext_ = 0;
+  savePersistedState();
   speaker.playSound(fx::cancel);
 }
 
@@ -319,7 +750,95 @@ void Navigator::setLoadedGpxFilename(const String& fileName) {
   String baseName = filenameFromPath(fileName);
   baseName.toCharArray(loadedGpxFilename_, sizeof(loadedGpxFilename_));
   loadedGpxFilename_[maxGpxFileNameLength] = '\0';
-  loadedGpxFile_ = true;
+  fileName.toCharArray(loadedNavPath_, sizeof(loadedNavPath_));
+  loadedNavPath_[maxGpxFileNameLength] = '\0';
+  loadedNavSource_ = LoadedNavSource::NavFile;
+}
+
+void Navigator::setLoadedSavedRouteFilename(const String& fileName) {
+  String baseName = filenameFromPath(fileName);
+  baseName.toCharArray(loadedGpxFilename_, sizeof(loadedGpxFilename_));
+  loadedGpxFilename_[maxGpxFileNameLength] = '\0';
+  fileName.toCharArray(loadedNavPath_, sizeof(loadedNavPath_));
+  loadedNavPath_[maxGpxFileNameLength] = '\0';
+  loadedNavSource_ = LoadedNavSource::SavedRoute;
+}
+
+bool Navigator::savePersistedState() {
+  if (!sdcard.isMounted() || loadedNavSource_ == LoadedNavSource::None || loadedNavPath_[0] == '\0')
+    return false;
+
+  JsonDocument doc;
+  doc["schema"] = NAV_STATE_SCHEMA;
+  doc["schema_version"] = "v0.1.0";
+  JsonObject source = doc["source"].to<JsonObject>();
+  source["type"] = sourceName(loadedNavSource_);
+  source["path"] = loadedNavPath_;
+
+  JsonObject active = doc["active"].to<JsonObject>();
+  if (activeRouteIndex) {
+    active["type"] = "route";
+    active["index"] = static_cast<uint8_t>(activeRouteIndex);
+    active["route_point_index"] = static_cast<int16_t>(activeRoutePointIndex);
+    active["route_complete"] = reachedGoal_;
+  } else if (activeWaypointIndex) {
+    active["type"] = "point";
+    active["index"] = static_cast<uint8_t>(activeWaypointIndex);
+  } else {
+    active["type"] = "none";
+    active["index"] = 0;
+  }
+
+  return writeNavState(doc);
+}
+
+bool Navigator::clearPersistedState() {
+  if (!sdcard.isMounted() || !SD_MMC.exists(route_store::activeRoutePath())) return true;
+  return SD_MMC.remove(route_store::activeRoutePath());
+}
+
+bool Navigator::loadPersistedState() {
+  if (!sdcard.isMounted() || !SD_MMC.exists(route_store::activeRoutePath())) return false;
+
+  File file = SD_MMC.open(route_store::activeRoutePath(), "r");
+  if (!file) return false;
+
+  JsonDocument doc;
+  DeserializationError error = deserializeJson(doc, file);
+  file.close();
+  if (error) return false;
+
+  const char* schema = doc["schema"] | "";
+  if (strcmp(schema, LEGACY_ACTIVE_ROUTE_SCHEMA) == 0) {
+    const String path = doc["path"] | "";
+    if (!route_store::loadRouteFile(path, false)) return false;
+    return activateRoute(RouteID(1));
+  }
+  if (strcmp(schema, NAV_STATE_SCHEMA) != 0) return false;
+
+  JsonObjectConst source = doc["source"].as<JsonObjectConst>();
+  const LoadedNavSource sourceType = sourceFromName(source["type"] | "");
+  const String path = source["path"] | "";
+  if (sourceType == LoadedNavSource::None || path.isEmpty()) return false;
+
+  bool loaded = false;
+  if (sourceType == LoadedNavSource::SavedRoute) {
+    loaded = route_store::loadRouteFile(path, false);
+  } else if (sourceType == LoadedNavSource::NavFile) {
+    loaded = nav_readFile(SD_MMC, path);
+  }
+  if (!loaded) return false;
+
+  JsonObjectConst active = doc["active"].as<JsonObjectConst>();
+  const char* activeType = active["type"] | "none";
+  const uint8_t index = active["index"] | 0;
+  const int16_t routePointIndex = active["route_point_index"] | 1;
+  if (strcmp(activeType, "route") == 0)
+    return activateRoute(RouteID(index), RouteIndex(routePointIndex));
+  if (strcmp(activeType, "point") == 0) return activatePoint(WaypointID(index));
+
+  savePersistedState();
+  return true;
 }
 
 bool gpx_readFile(fs::FS& fs, String fileName) {
@@ -377,6 +896,7 @@ bool gpx_readFile(fs::FS& fs, String fileName) {
     Serial.print(navigator.totalRoutes);
     Serial.println(" routes");
     navigator.setLoadedGpxFilename(fileName);
+    navigator.savePersistedState();
     return true;
   } else {
     // TODO: Display error to user (create appropriate method in GPXParser looking at _error, _line,
@@ -390,6 +910,45 @@ bool gpx_readFile(fs::FS& fs, String fileName) {
     navigator.clear();
     return false;
   }
+}
+
+bool nav_readFile(fs::FS& fs, String fileName) {
+  const String ext = lowerExtension(fileName);
+  if (ext == "gpx") {
+    return gpx_readFile(fs, fileName);
+  }
+
+  navigator.clear();
+
+  bool success = false;
+  if (ext == "cup") {
+    success = parseCupFile(fs, fileName, &navigator);
+  } else if (ext == "wpt" || ext == "wyp") {
+    success = parseWptFile(fs, fileName, &navigator);
+  } else if (ext == "kml") {
+    success = parseKmlFile(fs, fileName, &navigator);
+  } else {
+    Serial.print("Unsupported nav file type: ");
+    Serial.println(fileName);
+    return false;
+  }
+
+  if (success) {
+    Serial.print("Navigator loaded ");
+    Serial.print(navigator.totalWaypoints);
+    Serial.print(" waypoints and ");
+    Serial.print(navigator.totalRoutes);
+    Serial.print(" routes from ");
+    Serial.println(fileName);
+    navigator.setLoadedNavFilename(fileName);
+    navigator.savePersistedState();
+    return true;
+  }
+
+  Serial.print("nav_readFile error parsing ");
+  Serial.println(fileName);
+  navigator.clear();
+  return false;
 }
 
 void Navigator::loadRoutes() {

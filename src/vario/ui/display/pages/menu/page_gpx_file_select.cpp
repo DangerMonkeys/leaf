@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "navigation/gpx.h"
+#include "navigation/route_store.h"
 #include "storage/sd_card.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
@@ -14,7 +15,10 @@
 #include "ui/display/pages.h"
 
 namespace {
-  constexpr const char* GPX_DIR = "/gpx files";
+  constexpr const char* WAYPOINTS_DIR = "/waypoints";
+  constexpr const char* ROUTES_DIR = "/routes";
+  constexpr const char* FOLDER_WAYPOINTS = "waypoints/";
+  constexpr const char* FOLDER_ROUTES = "routes/";
   constexpr uint8_t FILE_ROW_START_Y = 35;
   constexpr uint8_t FILE_ROW_SPACING = 15;
   constexpr uint8_t MENU_INPUT_X = 74;
@@ -26,14 +30,27 @@ namespace {
     return c;
   }
 
-  bool endsWithGpx(const char* name) {
+  bool hasExtension(const char* name, const char* expected) {
     if (name == nullptr) return false;
 
-    const size_t len = strlen(name);
-    if (len < 4) return false;
+    const char* dot = strrchr(name, '.');
+    if (dot == nullptr || dot[1] == '\0') return false;
+    dot++;
 
-    return name[len - 4] == '.' && lowerAscii(name[len - 3]) == 'g' &&
-           lowerAscii(name[len - 2]) == 'p' && lowerAscii(name[len - 1]) == 'x';
+    char ext[8] = "";
+    for (uint8_t i = 0; i < sizeof(ext) - 1 && dot[i] != '\0'; i++) {
+      ext[i] = lowerAscii(dot[i]);
+    }
+    return strcmp(ext, expected) == 0;
+  }
+
+  bool isActiveRoutePointer(const char* name) {
+    return name != nullptr && strcmp(name, "active.json") == 0;
+  }
+
+  bool hasSupportedNavExtension(const char* name) {
+    return hasExtension(name, "gpx") || hasExtension(name, "cup") || hasExtension(name, "wpt") ||
+           hasExtension(name, "wyp") || hasExtension(name, "kml");
   }
 
   int compareFileNames(const char* a, const char* b) {
@@ -63,6 +80,7 @@ PageGpxFileSelect::PageGpxFileSelect() {
 }
 
 void PageGpxFileSelect::show() {
+  mode_ = Mode::FolderSelect;
   refreshIndex();
   push_page(this);
 }
@@ -85,6 +103,8 @@ bool PageGpxFileSelect::button_event(Button button, ButtonEvent state, uint8_t c
       case Button::CENTER:
         if (cursorOnBack()) {
           close();
+        } else if (mode_ == Mode::FolderSelect) {
+          openSelectedFolder();
         } else {
           loadSelectedFile();
         }
@@ -100,7 +120,7 @@ bool PageGpxFileSelect::button_event(Button button, ButtonEvent state, uint8_t c
 void PageGpxFileSelect::draw() {
   u8g2.firstPage();
   do {
-    menu_ui::drawTitle("Select File", menu_ui::GLYPH_NAV_DATA);
+    menu_ui::drawTitle("Load File", menu_ui::GLYPH_NAV_FILE);
 
     if (fileCount_ == 0) {
       drawStatus();
@@ -134,14 +154,19 @@ void PageGpxFileSelect::refreshIndex() {
     }
   }
 
-  if (!ensureGpxDirectory()) {
+  if (mode_ == Mode::FolderSelect) {
+    refreshFolders();
+    return;
+  }
+
+  if (!ensureDirectory()) {
     snprintf(status_, sizeof(status_), "Folder error");
     cursor_position = CURSOR_BACK;
     cursor_max = CURSOR_BACK;
     return;
   }
 
-  File dir = SD_MMC.open(GPX_DIR);
+  File dir = SD_MMC.open(directoryPath());
   if (!dir || !dir.isDirectory()) {
     snprintf(status_, sizeof(status_), "Folder error");
     cursor_position = CURSOR_BACK;
@@ -153,7 +178,7 @@ void PageGpxFileSelect::refreshIndex() {
   while (entry) {
     if (!entry.isDirectory()) {
       const String name = fileNameOnly(entry.name());
-      if (endsWithGpx(name.c_str())) {
+      if (supportedFileName(name.c_str())) {
         addFileName(name);
       }
     }
@@ -163,7 +188,8 @@ void PageGpxFileSelect::refreshIndex() {
   dir.close();
 
   if (fileCount_ == 0) {
-    snprintf(status_, sizeof(status_), "No GPX files");
+    snprintf(status_, sizeof(status_),
+             mode_ == Mode::SavedRoutes ? "No saved routes" : "No nav files");
     cursor_position = CURSOR_BACK;
     cursor_max = CURSOR_BACK;
     return;
@@ -177,19 +203,45 @@ void PageGpxFileSelect::refreshIndex() {
   cursor_max = fileCount_ - 1;
 }
 
-bool PageGpxFileSelect::ensureGpxDirectory() {
-  File existing = SD_MMC.open(GPX_DIR);
+void PageGpxFileSelect::refreshFolders() {
+  ensureDirectory();
+  mode_ = Mode::SavedRoutes;
+  ensureDirectory();
+  mode_ = Mode::FolderSelect;
+
+  strncpy(fileNames_[0], FOLDER_WAYPOINTS, sizeof(fileNames_[0]));
+  fileNames_[0][MAX_GPX_FILENAME_LENGTH] = '\0';
+  strncpy(fileNames_[1], FOLDER_ROUTES, sizeof(fileNames_[1]));
+  fileNames_[1][MAX_GPX_FILENAME_LENGTH] = '\0';
+  fileCount_ = 2;
+  cursor_position = 0;
+  cursor_max = fileCount_ - 1;
+}
+
+void PageGpxFileSelect::openSelectedFolder() {
+  if (cursor_position == 0) {
+    mode_ = Mode::NavFiles;
+  } else if (cursor_position == 1) {
+    mode_ = Mode::SavedRoutes;
+  } else {
+    return;
+  }
+  refreshIndex();
+}
+
+bool PageGpxFileSelect::ensureDirectory() {
+  File existing = SD_MMC.open(directoryPath());
   if (existing) {
     const bool isDirectory = existing.isDirectory();
     existing.close();
     return isDirectory;
   }
 
-  if (!SD_MMC.mkdir(GPX_DIR)) {
+  if (!SD_MMC.mkdir(directoryPath())) {
     return false;
   }
 
-  File created = SD_MMC.open(GPX_DIR);
+  File created = SD_MMC.open(directoryPath());
   const bool isDirectory = created && created.isDirectory();
   if (created) created.close();
   return isDirectory;
@@ -202,7 +254,7 @@ void PageGpxFileSelect::addFileName(const String& name) {
   }
 
   if (name.length() > MAX_GPX_FILENAME_LENGTH) {
-    Serial.print("Skipping GPX file with too-long name: ");
+    Serial.print("Skipping file with too-long name: ");
     Serial.println(name);
     return;
   }
@@ -267,19 +319,31 @@ void PageGpxFileSelect::ensureCursorVisible() {
 }
 
 void PageGpxFileSelect::close() {
+  if (mode_ != Mode::FolderSelect) {
+    closeToFolderSelect();
+    return;
+  }
+
   speaker.playSound(fx::cancel);
   navDataMenuPage.backToNavDataMenu();
   pop_page();
 }
 
+void PageGpxFileSelect::closeToFolderSelect() {
+  speaker.playSound(fx::cancel);
+  mode_ = Mode::FolderSelect;
+  refreshIndex();
+}
+
 void PageGpxFileSelect::loadSelectedFile() {
   if (cursorOnBack() || cursor_position < 0 || cursor_position >= fileCount_) return;
 
-  const String path = String(GPX_DIR) + "/" + fileNames_[cursor_position];
-  Serial.print("Loading GPX file: ");
+  const String path = String(directoryPath()) + "/" + fileNames_[cursor_position];
+  Serial.print(mode_ == Mode::SavedRoutes ? "Loading saved route: " : "Loading nav file: ");
   Serial.println(path);
 
-  const bool success = gpx_readFile(SD_MMC, path);
+  const bool success = mode_ == Mode::SavedRoutes ? route_store::loadRouteFile(path, true)
+                                                  : nav_readFile(SD_MMC, path);
   if (success) {
     speaker.playSound(fx::confirm);
     navDataMenuPage.backToNavDataMenu();
@@ -307,7 +371,8 @@ void PageGpxFileSelect::drawBackRow() {
 void PageGpxFileSelect::drawStatus() {
   u8g2.setFont(leaf_6x12);
   u8g2.setCursor(2, 67);
-  u8g2.print(status_[0] == '\0' ? "No GPX files" : status_);
+  u8g2.print(status_[0] == '\0' ? (mode_ == Mode::SavedRoutes ? "No saved routes" : "No nav files")
+                                : status_);
 }
 
 void PageGpxFileSelect::drawFittedText(uint8_t x, uint8_t y, const char* text, uint8_t maxWidth) {
@@ -328,3 +393,12 @@ void PageGpxFileSelect::drawFittedText(uint8_t x, uint8_t y, const char* text, u
 }
 
 bool PageGpxFileSelect::cursorOnBack() const { return cursor_position == CURSOR_BACK; }
+
+const char* PageGpxFileSelect::directoryPath() const {
+  return mode_ == Mode::SavedRoutes ? ROUTES_DIR : WAYPOINTS_DIR;
+}
+
+bool PageGpxFileSelect::supportedFileName(const char* name) const {
+  return mode_ == Mode::SavedRoutes ? hasExtension(name, "json") && !isActiveRoutePointer(name)
+                                    : hasSupportedNavExtension(name);
+}

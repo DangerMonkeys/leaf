@@ -38,7 +38,10 @@ namespace menu_ui {
   constexpr uint8_t GLYPH_NAV_ROUTE_BUILD = 169;
   constexpr uint8_t GLYPH_RESET = 170;
   constexpr uint8_t GLYPH_BLE = 171;
-  constexpr uint8_t GLYPH_GPX = 172;
+  constexpr uint8_t GLYPH_NAV_FILE = 172;
+  constexpr uint8_t GLYPH_RESET_ROUTE = 173;
+  constexpr uint8_t GLYPH_CLEAR_ALL = 174;
+  constexpr uint8_t GLYPH_WAYPOINT = 149;
   constexpr uint8_t GLYPH_ROUTE = 150;
 
   constexpr uint8_t ICON_OFF = 123;

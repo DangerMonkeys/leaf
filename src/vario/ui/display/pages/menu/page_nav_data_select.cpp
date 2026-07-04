@@ -73,8 +73,7 @@ bool PageNavDataSelect::button_event(Button button, ButtonEvent state, uint8_t c
 void PageNavDataSelect::draw() {
   u8g2.firstPage();
   do {
-    menu_ui::drawTitle(mode_ == NavDataSelectMode::Point ? "Select Pt" : "Select Rte",
-                       menu_ui::GLYPH_NAV_DATA);
+    menu_ui::drawTitle("Select Dest", menu_ui::GLYPH_NAV_DATA);
 
     const uint8_t count = itemCount();
     if (count == 0) {
@@ -94,15 +93,18 @@ void PageNavDataSelect::draw() {
 }
 
 uint8_t PageNavDataSelect::itemCount() const {
-  return mode_ == NavDataSelectMode::Point ? navigator.totalWaypoints : navigator.totalRoutes;
+  return navigator.totalRoutes + navigator.totalWaypoints;
 }
 
 const char* PageNavDataSelect::itemName(uint8_t index) const {
-  if (mode_ == NavDataSelectMode::Point) {
-    return navigator.waypoint(WaypointID(index + 1)).name;
+  if (itemIsRoute(index)) {
+    return navigator.routes[index + 1].name;
   }
-  return navigator.routes[index + 1].name;
+  const uint8_t waypointIndex = index - navigator.totalRoutes + 1;
+  return navigator.waypoint(WaypointID(waypointIndex)).name;
 }
+
+bool PageNavDataSelect::itemIsRoute(uint8_t index) const { return index < navigator.totalRoutes; }
 
 void PageNavDataSelect::moveCursorDown() {
   const uint8_t count = itemCount();
@@ -160,9 +162,10 @@ void PageNavDataSelect::selectCurrent() {
   const uint8_t count = itemCount();
   if (cursorOnBack() || cursor_position < 0 || cursor_position >= count) return;
 
-  const bool activated = mode_ == NavDataSelectMode::Point
-                             ? navigator.activatePoint(WaypointID(cursor_position + 1))
-                             : navigator.activateRoute(RouteID(cursor_position + 1));
+  const bool activated =
+      itemIsRoute(cursor_position)
+          ? navigator.activateRoute(RouteID(cursor_position + 1))
+          : navigator.activatePoint(WaypointID(cursor_position - navigator.totalRoutes + 1));
   if (activated) {
     navDataMenuPage.backToNavDataMenu();
     pop_page();
@@ -174,7 +177,9 @@ void PageNavDataSelect::selectCurrent() {
 void PageNavDataSelect::drawItemRow(uint8_t y, uint8_t index) {
   const bool selected = cursor_position == index;
   menu_ui::beginRow(y, selected);
-  drawFittedText(2, y, itemName(index), TEXT_MAX_WIDTH);
+  u8g2.setCursor(2, y);
+  menu_ui::printGlyph(itemIsRoute(index) ? menu_ui::GLYPH_ROUTE : menu_ui::GLYPH_WAYPOINT);
+  drawFittedText(12, y, itemName(index), TEXT_MAX_WIDTH - 10);
   menu_ui::endRow();
 }
 
@@ -188,7 +193,7 @@ void PageNavDataSelect::drawBackRow() {
 void PageNavDataSelect::drawStatus() {
   u8g2.setFont(leaf_6x12);
   u8g2.setCursor(2, 67);
-  u8g2.print(mode_ == NavDataSelectMode::Point ? "No points" : "No routes");
+  u8g2.print("No destinations");
 }
 
 void PageNavDataSelect::drawFittedText(uint8_t x, uint8_t y, const char* text, uint8_t maxWidth) {

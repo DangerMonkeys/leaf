@@ -129,6 +129,9 @@ void LeafGPS::init(void) {
 
   // init nav class (TODO: may not need this here, just for testing at startup for ease)
   navigator.init();
+  if (sdcard.isMounted()) {
+    navigator.loadPersistedState();
+  }
 
   // Initialize all the uninitialized TinyGPSCustom objects
   Serial.print("GPS initialize sat messages... ");

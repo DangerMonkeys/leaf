@@ -9,7 +9,7 @@
 #define AVERAGE_SPEED_SAMPLES 5
 
 // Waypoint definition and memory allocation
-#define waypointRadius 150  // meters radius to count as "reaching/crossing" a waypoint
+#define defaultWaypointRadius 150  // meters radius to count as "reaching/crossing" a waypoint
 #define maxRoutes 10
 #define maxNavPoints 100
 #define maxRoutePointRefs 75
@@ -43,11 +43,59 @@ struct Waypoint {
   double longitude() const { return gpxE7ToDegrees(lonE7); }
 };
 
+enum class RoutePointRole : uint8_t {
+  Normal,
+  Takeoff,
+  StartSpeedSection,
+  EndSpeedSection,
+  EndSpeedSectionGoal,
+  Goal,
+};
+
+enum class RouteTaskType : uint8_t {
+  Route,
+  Classic,
+};
+
+enum class RouteEarthModel : uint8_t {
+  WGS84,
+  FAISphere,
+};
+
+enum class RouteGoalType : uint8_t {
+  Cylinder,
+  Line,
+};
+
+enum class RouteStartType : uint8_t {
+  None,
+  Race,
+  ElapsedTime,
+};
+
+enum class LoadedNavSource : uint8_t {
+  None,
+  NavFile,
+  SavedRoute,
+};
+
+struct RoutePoint {
+  WaypointID waypointIndex = WaypointID::None;
+  uint16_t radiusM = defaultWaypointRadius;
+  RoutePointRole role = RoutePointRole::Normal;
+};
+
 // Route definition and memory allocation
 struct Route {
   char name[maxGpxNameLength + 1] = "";
   uint8_t firstRoutePointIndex = 0;
   uint8_t totalPoints = 0;
+  RouteTaskType taskType = RouteTaskType::Route;
+  RouteEarthModel earthModel = RouteEarthModel::WGS84;
+  RouteGoalType goalType = RouteGoalType::Cylinder;
+  RouteStartType startType = RouteStartType::None;
+  uint16_t goalDeadlineMinutesUtc = 0;
+  bool hasGoalDeadline = false;
 
   void setName(const char* value) {
     strncpy(name, value ? value : "", maxGpxNameLength);
@@ -63,7 +111,11 @@ class Navigator {
 
   bool activatePoint(WaypointID pointIndex);
   bool activateRoute(RouteID routeIndex);
+  bool activateRoute(RouteID routeIndex, RouteIndex routePointIndex);
   void cancelNav(void);
+  bool loadPersistedState();
+  bool savePersistedState();
+  bool clearPersistedState();
 
   // True if a specific waypoint is active, or if a route is active with a next route point.
   bool hasActivePoint();
@@ -72,22 +124,32 @@ class Navigator {
   bool addWaypoint(const Waypoint& waypoint);
   WaypointID addOrFindWaypoint(const Waypoint& waypoint);
   WaypointID findWaypointByName(const char* name) const;
-  bool addRoutePoint(Route* route, WaypointID waypointIndex);
+  bool addRoutePoint(Route* route, WaypointID waypointIndex,
+                     uint16_t radiusM = defaultWaypointRadius,
+                     RoutePointRole role = RoutePointRole::Normal);
   const Waypoint& waypoint(WaypointID pointIndex) const;
   const Waypoint& routePoint(RouteID routeIndex, RouteIndex pointIndex) const;
-  bool hasLoadedGpxFile() const { return loadedGpxFile_; }
+  const RoutePoint& routePointMeta(RouteID routeIndex, RouteIndex pointIndex) const;
+  bool hasLoadedGpxFile() const { return loadedNavSource_ != LoadedNavSource::None; }
+  bool hasLoadedNavFile() const { return loadedNavSource_ == LoadedNavSource::NavFile; }
+  bool hasLoadedSavedRoute() const { return loadedNavSource_ == LoadedNavSource::SavedRoute; }
   const char* loadedGpxFilename() const { return loadedGpxFilename_; }
+  const char* loadedNavFilename() const { return loadedGpxFilename(); }
+  const char* loadedNavPath() const { return loadedNavPath_; }
   void setLoadedGpxFilename(const String& fileName);
+  void setLoadedNavFilename(const String& fileName) { setLoadedGpxFilename(fileName); }
+  void setLoadedSavedRouteFilename(const String& fileName);
 
   Waypoint waypoints[maxNavPoints + 1];
   uint8_t totalWaypoints = 0;
-  WaypointID routeWaypointIndexes[maxRoutePointRefs + 1];
+  RoutePoint routePoints[maxRoutePointRefs + 1];
   uint8_t totalRoutePointRefs = 0;
   Route routes[maxRoutes + 1];
   uint8_t totalRoutes = 0;
 
   // waypoint currently navigating to
   Waypoint activePoint;
+  RoutePoint activeRoutePoint;
 
   // waypoint currently navigating to (display index inside the bare waypoint list)
   WaypointID activeWaypointIndex;
@@ -155,9 +217,11 @@ class Navigator {
   // when finished with the Route, we might want to stay in a "finished"
   // state instead of cancelling navigation altogether
   bool reachedGoal_ = false;
-  bool loadedGpxFile_ = false;
+  LoadedNavSource loadedNavSource_ = LoadedNavSource::None;
   char loadedGpxFilename_[maxGpxFileNameLength + 1] = "";
+  char loadedNavPath_[maxGpxFileNameLength + 1] = "";
 };
 extern Navigator navigator;
 
 bool gpx_readFile(fs::FS& fs, String fileName);
+bool nav_readFile(fs::FS& fs, String fileName);
