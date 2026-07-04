@@ -14,19 +14,21 @@
 
 enum nav_data_menu_items {
   cursor_nav_data_back,
-  cursor_nav_data_loadGpx,
-  cursor_nav_data_selectPoint,
-  cursor_nav_data_selectRoute,
+  cursor_nav_data_selectDest,
   cursor_nav_data_buildRoute,
+  cursor_nav_data_loadFile,
+  cursor_nav_data_clearAll,
 };
 
 namespace {
-  constexpr char* labels[5] = {"Back", "Load GPX", "Select Pt", "Select Rt", "Build Rt"};
-  constexpr uint8_t glyphs[5] = {0, menu_ui::GLYPH_GPX, menu_ui::GLYPH_NAV_POINT_SELECT,
-                                 menu_ui::GLYPH_NAV_ROUTE_SELECT, menu_ui::GLYPH_NAV_ROUTE_BUILD};
+  constexpr char* labels[5] = {"Back", "Select Dest", "Build Rt", "Load File", "Clear All"};
+  constexpr uint8_t glyphs[5] = {0, menu_ui::GLYPH_NAV_POINT_SELECT, menu_ui::GLYPH_NAV_ROUTE_BUILD,
+                                 menu_ui::GLYPH_NAV_FILE, menu_ui::GLYPH_CLEAR_ALL};
   constexpr uint8_t MENU_INPUT_X = 76;
   constexpr uint8_t FITTED_TEXT_MAX_WIDTH = 92;
-  constexpr uint8_t STATUS_DIVIDER_Y = 106;
+  constexpr uint8_t ACTIVE_SECTION_DIVIDER_Y = 45;
+  constexpr uint8_t FILE_SECTION_DIVIDER_Y = 121;
+  constexpr uint8_t OPEN_SECTION_DIVIDER_Y = 174;
 }  // namespace
 
 void NavDataMenuPage::backToNavDataMenu() { cursor_position = cursor_nav_data_back; }
@@ -63,7 +65,7 @@ void NavDataMenuPage::draw() {
     menu_ui::drawTitle("Nav Data", menu_ui::GLYPH_NAV_DATA);
 
     uint8_t setting_name_x = 2;
-    uint8_t menu_items_y[] = {190, 122, 137, 152, 167};
+    uint8_t menu_items_y[] = {190, 94, 109, 149, 164};
 
     for (int i = 0; i <= cursor_max; i++) {
       if (row_hidden(i)) continue;
@@ -80,38 +82,51 @@ void NavDataMenuPage::draw() {
       menu_ui::endRow();
     }
 
-    if (navigator.hasLoadedGpxFile()) {
-      const bool hasActiveRoute = navigator.activeRouteIndex;
-      const bool hasActivePoint = !hasActiveRoute && navigator.activeWaypointIndex;
+    const bool hasActiveRoute = navigator.activeRouteIndex;
+    const bool hasActivePoint = !hasActiveRoute && navigator.activeWaypointIndex;
+    const char* activeName = hasActiveRoute   ? navigator.routes[navigator.activeRouteIndex].name
+                             : hasActivePoint ? navigator.activePoint.name
+                                              : "None";
+    const char* activeLabel = hasActiveRoute   ? "Active Route:"
+                              : hasActivePoint ? "Active Point:"
+                                               : "Active Dest:";
 
-      u8g2.setFont(leaf_5x8);
-      u8g2.setCursor(2, 35);
-      u8g2.print("Active File:");
+    u8g2.setFont(leaf_5x8);
+    u8g2.setCursor(2, 28);
+    u8g2.print(activeLabel);
 
+    u8g2.setFont(leaf_6x12);
+    drawFittedText(2, 41, activeName, FITTED_TEXT_MAX_WIDTH);
+    u8g2.drawHLine(0, ACTIVE_SECTION_DIVIDER_Y, 96);
+
+    u8g2.setFont(leaf_5x8);
+    u8g2.setCursor(2, 56);
+    u8g2.print("Active File:");
+
+    if (navigator.hasLoadedNavFile()) {
       u8g2.setFont(leaf_6x12);
-      drawFittedText(2, 48, navigator.loadedGpxFilename(), FITTED_TEXT_MAX_WIDTH);
+      drawFittedText(2, 69, navigator.loadedNavFilename(), FITTED_TEXT_MAX_WIDTH);
 
       u8g2.setFont(leaf_5x8);
-      u8g2.setCursor(2, 58);
-      u8g2.print("Points: ");
-      u8g2.print(navigator.totalWaypoints);
-
-      u8g2.setCursor(2, 68);
-      u8g2.print("Routes: ");
-      u8g2.print(navigator.totalRoutes);
-
-      if (hasActiveRoute || hasActivePoint) {
-        u8g2.setCursor(2, 84);
-        u8g2.print(hasActiveRoute ? "Active Route:" : "Active Point:");
-
-        u8g2.setFont(leaf_6x12);
-        const char* activeName = hasActiveRoute ? navigator.routes[navigator.activeRouteIndex].name
-                                                : navigator.activePoint.name;
-        drawFittedText(2, 97, activeName, FITTED_TEXT_MAX_WIDTH);
+      u8g2.setCursor(2, 79);
+      if (navigator.totalRoutes == 0) {
+        u8g2.print("Points: ");
+        u8g2.print(navigator.totalWaypoints);
+      } else {
+        u8g2.print("Pts: ");
+        u8g2.print(navigator.totalWaypoints);
+        u8g2.print("  Rtes: ");
+        u8g2.print(navigator.totalRoutes);
       }
+    } else {
+      u8g2.setFont(leaf_6x12);
+      u8g2.setCursor(2, 69);
+      u8g2.print("None");
     }
 
-    u8g2.drawHLine(0, STATUS_DIVIDER_Y, 96);
+    u8g2.drawHLine(0, FILE_SECTION_DIVIDER_Y, 96);
+
+    u8g2.drawHLine(0, OPEN_SECTION_DIVIDER_Y, 96);
   } while (u8g2.nextPage());
 }
 
@@ -130,29 +145,31 @@ void NavDataMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t coun
         mainMenuPage.quitMenu();
       }
       break;
-    case cursor_nav_data_loadGpx:
+    case cursor_nav_data_selectDest:
+      if (state == ButtonEvent::CLICKED && (dir == Button::RIGHT || dir == Button::CENTER)) {
+        navDataSelectPage.show();
+      } else if (state == ButtonEvent::CLICKED) {
+        speaker.playSound(fx::cancel);
+      }
+      break;
+    case cursor_nav_data_buildRoute:
+      if (state == ButtonEvent::CLICKED) {
+        speaker.playSound(fx::cancel);
+      }
+      break;
+    case cursor_nav_data_loadFile:
       if (state == ButtonEvent::CLICKED && (dir == Button::RIGHT || dir == Button::CENTER)) {
         gpxFileSelectPage.show();
       } else if (state == ButtonEvent::CLICKED) {
         speaker.playSound(fx::cancel);
       }
       break;
-    case cursor_nav_data_selectPoint:
+    case cursor_nav_data_clearAll:
       if (state == ButtonEvent::CLICKED && (dir == Button::RIGHT || dir == Button::CENTER)) {
-        navDataSelectPage.show(NavDataSelectMode::Point);
+        navigator.clear();
+        navigator.clearPersistedState();
+        speaker.playSound(fx::confirm);
       } else if (state == ButtonEvent::CLICKED) {
-        speaker.playSound(fx::cancel);
-      }
-      break;
-    case cursor_nav_data_selectRoute:
-      if (state == ButtonEvent::CLICKED && (dir == Button::RIGHT || dir == Button::CENTER)) {
-        navDataSelectPage.show(NavDataSelectMode::Route);
-      } else if (state == ButtonEvent::CLICKED) {
-        speaker.playSound(fx::cancel);
-      }
-      break;
-    default:
-      if (state == ButtonEvent::CLICKED) {
         speaker.playSound(fx::cancel);
       }
       break;
@@ -160,7 +177,14 @@ void NavDataMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t coun
 }
 
 bool NavDataMenuPage::row_hidden(int8_t row) const {
-  return row >= cursor_nav_data_selectPoint && !navigator.hasLoadedGpxFile();
+  if (row == cursor_nav_data_selectDest) {
+    return !navigator.hasLoadedNavFile() ||
+           (navigator.totalWaypoints == 0 && navigator.totalRoutes == 0);
+  }
+  if (row == cursor_nav_data_buildRoute) {
+    return !navigator.hasLoadedNavFile() || navigator.totalWaypoints == 0;
+  }
+  return false;
 }
 
 void NavDataMenuPage::skip_hidden_forward() {

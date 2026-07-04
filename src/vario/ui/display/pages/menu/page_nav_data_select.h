@@ -6,15 +6,14 @@
 #include "ui/input/buttons.h"
 
 enum class NavDataSelectMode : uint8_t {
-  Point,
-  Route,
+  Destination,
 };
 
 class PageNavDataSelect : public MenuPage {
  public:
   PageNavDataSelect();
 
-  void show(NavDataSelectMode mode);
+  void show(NavDataSelectMode mode = NavDataSelectMode::Destination);
   bool button_event(Button button, ButtonEvent state, uint8_t count) override;
   void draw() override;
 
@@ -24,6 +23,7 @@ class PageNavDataSelect : public MenuPage {
 
   uint8_t itemCount() const;
   const char* itemName(uint8_t index) const;
+  bool itemIsRoute(uint8_t index) const;
   void moveCursorDown();
   void moveCursorUp();
   void ensureCursorVisible();
@@ -35,6 +35,6 @@ class PageNavDataSelect : public MenuPage {
   void drawFittedText(uint8_t x, uint8_t y, const char* text, uint8_t maxWidth);
   bool cursorOnBack() const;
 
-  NavDataSelectMode mode_ = NavDataSelectMode::Point;
+  NavDataSelectMode mode_ = NavDataSelectMode::Destination;
   uint8_t firstVisible_ = 0;
 };

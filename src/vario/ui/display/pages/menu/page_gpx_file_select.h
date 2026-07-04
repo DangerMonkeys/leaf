@@ -14,26 +14,38 @@ class PageGpxFileSelect : public MenuPage {
   void draw() override;
 
  private:
+  enum class Mode : uint8_t {
+    FolderSelect,
+    NavFiles,
+    SavedRoutes,
+  };
+
   static constexpr uint8_t MAX_GPX_FILES = 32;
   static constexpr uint8_t MAX_GPX_FILENAME_LENGTH = 96;
   static constexpr uint8_t VISIBLE_FILE_ROWS = 10;
 
   void refreshIndex();
-  bool ensureGpxDirectory();
+  void refreshFolders();
+  void openSelectedFolder();
+  bool ensureDirectory();
   void addFileName(const String& name);
   void moveCursorDown();
   void moveCursorUp();
   void ensureCursorVisible();
   void close();
+  void closeToFolderSelect();
   void loadSelectedFile();
   void drawFileRow(uint8_t y, uint8_t fileIndex);
   void drawBackRow();
   void drawStatus();
   void drawFittedText(uint8_t x, uint8_t y, const char* text, uint8_t maxWidth);
   bool cursorOnBack() const;
+  const char* directoryPath() const;
+  bool supportedFileName(const char* name) const;
 
   char fileNames_[MAX_GPX_FILES][MAX_GPX_FILENAME_LENGTH + 1];
   char status_[32];
+  Mode mode_ = Mode::NavFiles;
   uint8_t fileCount_ = 0;
   uint8_t firstVisible_ = 0;
   bool tooManyFiles_ = false;

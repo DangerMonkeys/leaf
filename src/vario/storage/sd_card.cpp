@@ -80,6 +80,22 @@ void SDCard::update() {
 }
 
 namespace {
+  constexpr const char* STANDARD_DIRECTORIES[] = {"/waypoints", "/routes", "/logbook", "/tracks"};
+
+  bool ensureDirectory(const char* path) {
+    if (SD_MMC.exists(path)) return true;
+    if (SD_MMC.mkdir(path)) return true;
+
+    if (DEBUG_SDCARD) Serial.printf("SDcard Directory Failed: %s\n", path);
+    return false;
+  }
+
+  void ensureStandardDirectories() {
+    for (const char* path : STANDARD_DIRECTORIES) {
+      ensureDirectory(path);
+    }
+  }
+
   int32_t onRead(uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize) {
     // Check bufSize is a multiple of block size
     if (bufsize % 512) {
@@ -143,6 +159,7 @@ bool SDCard::mount() {
   } else {
     if (DEBUG_SDCARD) Serial.println("SDcard Mount Success");
     success = true;
+    ensureStandardDirectories();
 
 #ifndef DISABLE_MASS_STORAGE
     if (sdcard.setupMassStorage()) {
