@@ -16,6 +16,7 @@
 #include "diagnostics/self_test/selfTest.h"
 #include "etl/string_stream.h"
 #include "logbook/logbook_store.h"
+#include "navigation/gpx.h"
 #include "navigation/route_store.h"
 #include "power.h"
 #include "profiles/profile_store.h"
@@ -59,6 +60,7 @@ namespace {
   uint32_t user_app_route_logbook_count = 0;
   uint32_t user_app_route_logbook_entry_count = 0;
   uint32_t user_app_route_logbook_delete_count = 0;
+  uint32_t user_app_route_waypoints_upload_count = 0;
   uint32_t user_app_route_routes_import_count = 0;
   uint32_t user_app_route_not_found_count = 0;
   uint8_t user_app_max_ap_stations = 0;
@@ -70,8 +72,12 @@ namespace {
   static constexpr uint32_t WIFI_SETUP_AP_SUCCESS_GRACE_MS = 5000;
   static constexpr size_t PROFILE_FILE_MAX_BYTES = 4096;
   static constexpr size_t ROUTE_IMPORT_REQUEST_MAX_BYTES = 10000;
+  static constexpr size_t ROUTE_EDITOR_REQUEST_MAX_BYTES = 18000;
+  static constexpr size_t NAV_UPLOAD_MAX_BYTES = 262144UL;
   static constexpr const char* PROFILE_TEMP_FILE = "/profiles/profiles.tmp";
   static constexpr const char* PROFILE_BACKUP_FILE = "/profiles/profiles.bak";
+  static constexpr const char* WAYPOINTS_DIR = "/waypoints";
+  static constexpr const char* NAV_UPLOAD_TEMP_FILE = "/waypoints/upload.tmp";
   static constexpr const char* DIAGNOSTICS_DIR = "/diagnostics";
   static constexpr const char* USER_APP_DIAGNOSTICS_FILE = "/diagnostics/webapp_requests.csv";
   static constexpr const char* WIFI_SETUP_DIAGNOSTICS_FILE = "/diagnostics/wifi_setup.csv";
@@ -84,6 +90,11 @@ namespace {
   uint32_t wifi_setup_cycle = 0;
   uint32_t wifi_setup_started_ms = 0;
   uint32_t wifi_setup_last_diag_ms = 0;
+  File nav_upload_file;
+  String nav_upload_final_path = "";
+  String nav_upload_saved_name = "";
+  String nav_upload_error = "";
+  size_t nav_upload_bytes = 0;
 
   bool diagnosticsEnabled() { return settings.dev_mode; }
 
@@ -107,6 +118,7 @@ namespace {
     user_app_route_logbook_count = 0;
     user_app_route_logbook_entry_count = 0;
     user_app_route_logbook_delete_count = 0;
+    user_app_route_waypoints_upload_count = 0;
     user_app_route_routes_import_count = 0;
     user_app_route_not_found_count = 0;
     user_app_max_ap_stations = 0;
@@ -229,13 +241,14 @@ namespace {
           "millis,event,enabled,using_leaf_wifi,user_server_started,debug_routes_configured,"
           "ap_stations,max_ap_stations,wifi_status,free_heap,max_alloc_heap,loop_count,"
           "handle_count,root,app,status,profiles_get,profiles_put,logbook,logbook_entry,"
-          "logbook_delete,routes_import,not_found,ap_ip");
+          "logbook_delete,waypoints_upload,routes_import,not_found,ap_ip");
     }
 
     updateUserAppStationPeak();
     const String ap_ip = WiFi.softAPIP().toString();
     file.printf(
-        "%lu,%s,%u,%u,%u,%u,%u,%u,%d,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%s\n",
+        "%lu,%s,%u,%u,%u,%u,%u,%u,%d,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%"
+        "s\n",
         static_cast<unsigned long>(millis()), event ? event : "", user_app_enabled ? 1 : 0,
         user_app_using_leaf_wifi ? 1 : 0, user_server_started ? 1 : 0,
         debug_routes_configured ? 1 : 0, static_cast<unsigned int>(WiFi.softAPgetStationNum()),
@@ -252,6 +265,7 @@ namespace {
         static_cast<unsigned long>(user_app_route_logbook_count),
         static_cast<unsigned long>(user_app_route_logbook_entry_count),
         static_cast<unsigned long>(user_app_route_logbook_delete_count),
+        static_cast<unsigned long>(user_app_route_waypoints_upload_count),
         static_cast<unsigned long>(user_app_route_routes_import_count),
         static_cast<unsigned long>(user_app_route_not_found_count), ap_ip.c_str());
     file.close();
@@ -533,6 +547,227 @@ namespace {
       }
     }
     return escaped;
+  }
+
+  String filenameFromUploadPath(String fileName) {
+    fileName.replace('\\', '/');
+    const int slash = fileName.lastIndexOf('/');
+    if (slash >= 0) fileName = fileName.substring(slash + 1);
+    fileName.trim();
+    return fileName;
+  }
+
+  String lowerFileExtension(const String& fileName) {
+    const int dot = fileName.lastIndexOf('.');
+    if (dot < 0 || dot == fileName.length() - 1) return "";
+    String ext = fileName.substring(dot + 1);
+    ext.toLowerCase();
+    return ext;
+  }
+
+  bool supportedNavUploadExtension(const String& ext) {
+    return ext == "gpx" || ext == "cup" || ext == "wpt" || ext == "wyp" || ext == "kml";
+  }
+
+  String sanitizeNavUploadFileName(String fileName) {
+    fileName = filenameFromUploadPath(fileName);
+    const String ext = lowerFileExtension(fileName);
+    if (!supportedNavUploadExtension(ext)) return "";
+
+    const int dot = fileName.lastIndexOf('.');
+    String stem = dot > 0 ? fileName.substring(0, dot) : "waypoints";
+    stem.trim();
+
+    String safeStem;
+    safeStem.reserve(stem.length());
+    for (uint16_t i = 0; i < stem.length(); i++) {
+      const char c = stem[i];
+      if (isalnum(static_cast<unsigned char>(c)) || c == '-' || c == '_') {
+        safeStem += c;
+      } else if (c == ' ' || c == '.') {
+        safeStem += '-';
+      }
+    }
+
+    while (safeStem.startsWith("-")) safeStem.remove(0, 1);
+    while (safeStem.endsWith("-")) safeStem.remove(safeStem.length() - 1);
+    if (safeStem.isEmpty()) safeStem = "waypoints";
+
+    constexpr size_t MAX_UPLOAD_FILENAME_LENGTH = maxGpxFileNameLength - 16;
+    const size_t maxStemLength = MAX_UPLOAD_FILENAME_LENGTH - ext.length() - 1;
+    if (safeStem.length() > maxStemLength) safeStem = safeStem.substring(0, maxStemLength);
+
+    String safeName = safeStem;
+    safeName += ".";
+    safeName += ext;
+    return safeName;
+  }
+
+  String uniqueWaypointUploadPath(const String& safeName) {
+    const int dot = safeName.lastIndexOf('.');
+    if (dot <= 0) return "";
+
+    String stem = safeName.substring(0, dot);
+    const String ext = safeName.substring(dot);
+    String path = String(WAYPOINTS_DIR) + "/" + safeName;
+    if (!SD_MMC.exists(path)) return path;
+
+    for (uint16_t suffix = 2; suffix < 1000; suffix++) {
+      String suffixText = "-";
+      suffixText += suffix;
+      constexpr size_t MAX_UPLOAD_FILENAME_LENGTH = maxGpxFileNameLength - 16;
+      const size_t maxStemLength = MAX_UPLOAD_FILENAME_LENGTH - ext.length() - suffixText.length();
+      String candidateStem = stem;
+      if (candidateStem.length() > maxStemLength) {
+        candidateStem = candidateStem.substring(0, maxStemLength);
+      }
+      path = String(WAYPOINTS_DIR) + "/" + candidateStem + suffixText + ext;
+      if (!SD_MMC.exists(path)) return path;
+    }
+
+    return "";
+  }
+
+  void resetNavUploadState() {
+    if (nav_upload_file) nav_upload_file.close();
+    nav_upload_final_path = "";
+    nav_upload_saved_name = "";
+    nav_upload_error = "";
+    nav_upload_bytes = 0;
+  }
+
+  void failNavUpload(const String& message) {
+    if (!nav_upload_error.isEmpty()) return;
+    nav_upload_error = message;
+    if (nav_upload_file) nav_upload_file.close();
+    if (SD_MMC.exists(NAV_UPLOAD_TEMP_FILE)) SD_MMC.remove(NAV_UPLOAD_TEMP_FILE);
+  }
+
+  void beginNavUpload(const String& uploadFileName) {
+    resetNavUploadState();
+
+    if (!user_app_enabled) {
+      nav_upload_error = "Leaf Web App is not active.";
+      return;
+    }
+
+    if (!sdcard.isMounted()) {
+      nav_upload_error = "SD card is not mounted.";
+      return;
+    }
+
+    if (!SD_MMC.exists(WAYPOINTS_DIR) && !SD_MMC.mkdir(WAYPOINTS_DIR)) {
+      nav_upload_error = "Unable to create waypoints folder.";
+      return;
+    }
+
+    const String safeName = sanitizeNavUploadFileName(uploadFileName);
+    if (safeName.isEmpty()) {
+      nav_upload_error = "Choose a GPX, CUP, WPT, WYP, or KML file.";
+      return;
+    }
+
+    nav_upload_final_path = uniqueWaypointUploadPath(safeName);
+    if (nav_upload_final_path.isEmpty()) {
+      nav_upload_error = "Unable to choose a unique file name.";
+      return;
+    }
+
+    if (SD_MMC.exists(NAV_UPLOAD_TEMP_FILE)) SD_MMC.remove(NAV_UPLOAD_TEMP_FILE);
+    nav_upload_file = SD_MMC.open(NAV_UPLOAD_TEMP_FILE, "w", true);
+    if (!nav_upload_file) {
+      nav_upload_error = "Unable to write waypoint file.";
+      return;
+    }
+  }
+
+  void receiveWaypointUpload(WebServer& target) {
+    HTTPUpload& upload = target.upload();
+    switch (upload.status) {
+      case UPLOAD_FILE_START:
+        heap_monitor::record("waypoint-upload-start");
+        beginNavUpload(upload.filename);
+        break;
+      case UPLOAD_FILE_WRITE:
+        if (!nav_upload_error.isEmpty()) return;
+        nav_upload_bytes += upload.currentSize;
+        if (nav_upload_bytes > NAV_UPLOAD_MAX_BYTES) {
+          failNavUpload("Waypoint file is too large.");
+          return;
+        }
+        if (!nav_upload_file ||
+            nav_upload_file.write(upload.buf, upload.currentSize) != upload.currentSize) {
+          failNavUpload("Unable to write waypoint file.");
+        }
+        break;
+      case UPLOAD_FILE_END:
+        if (!nav_upload_file && nav_upload_error.isEmpty()) {
+          failNavUpload("Waypoint upload did not start.");
+          return;
+        }
+        if (nav_upload_file) nav_upload_file.close();
+        if (!nav_upload_error.isEmpty()) {
+          if (SD_MMC.exists(NAV_UPLOAD_TEMP_FILE)) SD_MMC.remove(NAV_UPLOAD_TEMP_FILE);
+          return;
+        }
+        if (nav_upload_bytes == 0) {
+          failNavUpload("Waypoint file is empty.");
+          return;
+        }
+        if (SD_MMC.exists(nav_upload_final_path) ||
+            !SD_MMC.rename(NAV_UPLOAD_TEMP_FILE, nav_upload_final_path)) {
+          failNavUpload("Unable to save waypoint file.");
+          return;
+        }
+        nav_upload_saved_name = filenameFromUploadPath(nav_upload_final_path);
+        break;
+      case UPLOAD_FILE_ABORTED:
+        failNavUpload("Waypoint upload was cancelled.");
+        break;
+    }
+  }
+
+  void finishWaypointUpload(WebServer& target) {
+    if (!nav_upload_error.isEmpty()) {
+      String json = "{\"saved\":false,\"loaded\":false,\"detail\":\"";
+      json += jsonEscape(nav_upload_error);
+      json += "\"}";
+      resetNavUploadState();
+      heap_monitor::record("waypoint-upload-fail");
+      target.send(400, "application/json", json);
+      return;
+    }
+
+    if (nav_upload_final_path.isEmpty() || nav_upload_saved_name.isEmpty()) {
+      resetNavUploadState();
+      target.send(
+          400, "application/json",
+          "{\"saved\":false,\"loaded\":false,\"detail\":\"No waypoint file was uploaded.\"}");
+      return;
+    }
+
+    const String savedPath = nav_upload_final_path;
+    const String savedName = nav_upload_saved_name;
+    const bool loaded = nav_readFile(SD_MMC, savedPath);
+
+    String json = "{\"saved\":true,\"loaded\":";
+    json += loaded ? "true" : "false";
+    json += ",\"filename\":\"";
+    json += jsonEscape(savedName);
+    json += "\",\"path\":\"";
+    json += jsonEscape(savedPath);
+    json += "\",\"points\":";
+    json += loaded ? navigator.totalWaypoints : 0;
+    json += ",\"routes\":";
+    json += loaded ? navigator.totalRoutes : 0;
+    if (!loaded) {
+      json += ",\"detail\":\"File was saved, but Leaf could not load it.\"";
+    }
+    json += "}";
+
+    resetNavUploadState();
+    heap_monitor::record(loaded ? "waypoint-upload-end" : "waypoint-upload-load-fail");
+    target.send(loaded ? 200 : 422, "application/json", json);
   }
 
   String userAppMode() {
@@ -961,6 +1196,241 @@ namespace {
     target.send(200, "application/json", json);
   }
 
+  void sendNavData(WebServer& target) {
+    heap_monitor::record("nav-data-start");
+    if (!user_app_enabled) {
+      target.send(404, "application/json", "{\"detail\":\"Leaf Web App is not active.\"}");
+      return;
+    }
+
+    String json;
+    json.reserve(256 + static_cast<size_t>(navigator.totalWaypoints) * 96);
+    json = "{\"loaded_file\":\"";
+    json += jsonEscape(navigator.loadedNavFilename());
+    json += "\",\"loaded_path\":\"";
+    json += jsonEscape(navigator.loadedNavPath());
+    json += "\",\"point_count\":";
+    json += navigator.totalWaypoints;
+    json += ",\"route_count\":";
+    json += navigator.totalRoutes;
+    json += ",\"active_type\":\"";
+    if (navigator.activeRouteIndex) {
+      json += "route";
+    } else if (navigator.activeWaypointIndex) {
+      json += "point";
+    }
+    json += "\",\"active_name\":\"";
+    if (navigator.activeRouteIndex && navigator.activeRouteIndex <= navigator.totalRoutes) {
+      json += jsonEscape(navigator.routes[navigator.activeRouteIndex].name);
+    } else if (navigator.activeWaypointIndex) {
+      json += jsonEscape(navigator.activePoint.name);
+    }
+    json += "\",\"points\":[";
+    for (uint8_t i = 1; i <= navigator.totalWaypoints; i++) {
+      const Waypoint& waypoint = navigator.waypoint(WaypointID(i));
+      if (i > 1) json += ",";
+      json += "{\"index\":";
+      json += i;
+      json += ",\"name\":\"";
+      json += jsonEscape(waypoint.name);
+      json += "\",\"lat\":";
+      json += String(waypoint.latitude(), 7);
+      json += ",\"lon\":";
+      json += String(waypoint.longitude(), 7);
+      json += ",\"alt_m\":";
+      json += String(waypoint.ele, 1);
+      json += "}";
+    }
+    json += "]}";
+
+    heap_monitor::record("nav-data-end");
+    target.send(200, "application/json", json);
+  }
+
+  void sendWaypointFileList(WebServer& target) {
+    if (!user_app_enabled) {
+      target.send(404, "application/json", "{\"detail\":\"Leaf Web App is not active.\"}");
+      return;
+    }
+
+    if (!sdcard.isMounted()) {
+      target.send(404, "application/json", "{\"detail\":\"SD card is not mounted.\"}");
+      return;
+    }
+
+    String json = "{\"files\":[";
+    bool first = true;
+    File dir = SD_MMC.open(WAYPOINTS_DIR);
+    if (dir && dir.isDirectory()) {
+      File entry = dir.openNextFile();
+      while (entry) {
+        if (!entry.isDirectory()) {
+          const String name = filenameFromUploadPath(entry.name());
+          if (supportedNavUploadExtension(lowerFileExtension(name))) {
+            if (!first) json += ",";
+            first = false;
+            json += "{\"name\":\"";
+            json += jsonEscape(name);
+            json += "\",\"path\":\"";
+            json += jsonEscape(String(WAYPOINTS_DIR) + "/" + name);
+            json += "\"}";
+          }
+        }
+        entry.close();
+        entry = dir.openNextFile();
+      }
+    }
+    if (dir) dir.close();
+    json += "]}";
+    target.send(200, "application/json", json);
+  }
+
+  void activateWaypointFile(WebServer& target) {
+    if (!user_app_enabled) {
+      target.send(404, "application/json", "{\"detail\":\"Leaf Web App is not active.\"}");
+      return;
+    }
+
+    if (!sdcard.isMounted()) {
+      target.send(404, "application/json", "{\"detail\":\"SD card is not mounted.\"}");
+      return;
+    }
+
+    JsonDocument doc;
+    DeserializationError error = deserializeJson(doc, target.arg("plain"));
+    if (error) {
+      target.send(400, "application/json",
+                  "{\"detail\":\"Waypoint activation request is invalid.\"}");
+      return;
+    }
+
+    const String name = filenameFromUploadPath(doc["name"] | "");
+    if (name.isEmpty() || !supportedNavUploadExtension(lowerFileExtension(name))) {
+      target.send(400, "application/json", "{\"detail\":\"Choose a waypoint file.\"}");
+      return;
+    }
+
+    const String path = String(WAYPOINTS_DIR) + "/" + name;
+    if (!SD_MMC.exists(path)) {
+      target.send(404, "application/json", "{\"detail\":\"Waypoint file was not found.\"}");
+      return;
+    }
+
+    if (!nav_readFile(SD_MMC, path)) {
+      target.send(400, "application/json",
+                  "{\"detail\":\"Leaf could not parse this waypoint file.\"}");
+      return;
+    }
+
+    String json = "{\"loaded\":true,\"filename\":\"";
+    json += jsonEscape(name);
+    json += "\",\"points\":";
+    json += navigator.totalWaypoints;
+    json += ",\"routes\":";
+    json += navigator.totalRoutes;
+    json += "}";
+    target.send(200, "application/json", json);
+  }
+
+  void saveEditedRoute(WebServer& target) {
+    heap_monitor::record("route-save-start");
+    if (!user_app_enabled) {
+      target.send(404, "application/json", "{\"detail\":\"Leaf Web App is not active.\"}");
+      return;
+    }
+
+    if (!sdcard.isMounted()) {
+      target.send(404, "application/json", "{\"detail\":\"SD card is not mounted.\"}");
+      return;
+    }
+
+    const String body = target.arg("plain");
+    if (body.length() == 0 || body.length() > ROUTE_EDITOR_REQUEST_MAX_BYTES) {
+      target.send(400, "application/json", "{\"detail\":\"Route save request is invalid.\"}");
+      return;
+    }
+
+    JsonDocument input;
+    DeserializationError error = deserializeJson(input, body);
+    if (error) {
+      target.send(400, "application/json", "{\"detail\":\"Route save request is not JSON.\"}");
+      return;
+    }
+
+    String name = input["name"] | "";
+    name.trim();
+    const bool activate = input["activate"] | true;
+    JsonArrayConst inputPoints = input["points"].as<JsonArrayConst>();
+    if (name.isEmpty() || inputPoints.isNull() || inputPoints.size() == 0 ||
+        inputPoints.size() > maxRoutePointRefs) {
+      target.send(400, "application/json",
+                  "{\"detail\":\"Route name and at least one waypoint are required.\"}");
+      return;
+    }
+
+    JsonDocument routeDoc;
+    JsonObject route = routeDoc.to<JsonObject>();
+    route["schema"] = "leaf.route";
+    route["schema_version"] = "v0.1.0";
+    route["name"] = name;
+    route["source_format"] = "leaf_web";
+    route["task_type"] = "route";
+    route["earth_model"] = "wgs84";
+    route["goal"]["type"] = "cylinder";
+    route["start"]["type"] = "none";
+    route["start"]["time_gates"].to<JsonArray>();
+
+    JsonArray points = route["points"].to<JsonArray>();
+    uint8_t pointIndex = 0;
+    const uint8_t totalPoints = inputPoints.size();
+    for (JsonObjectConst inputPoint : inputPoints) {
+      pointIndex++;
+      const double lat = inputPoint["lat"] | NAN;
+      const double lon = inputPoint["lon"] | NAN;
+      if (isnan(lat) || isnan(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+        target.send(400, "application/json",
+                    "{\"detail\":\"Route contains an invalid waypoint coordinate.\"}");
+        return;
+      }
+
+      uint16_t radiusM = inputPoint["radius_m"] | defaultWaypointRadius;
+      if (radiusM < 10) radiusM = 10;
+      if (radiusM > 20000) radiusM = 20000;
+
+      JsonObject outPoint = points.add<JsonObject>();
+      outPoint["name"] = inputPoint["name"] | "";
+      outPoint["lat"] = lat;
+      outPoint["lon"] = lon;
+      outPoint["alt_m"] = inputPoint["alt_m"] | 0.0;
+      outPoint["radius_m"] = radiusM;
+      outPoint["role"] = pointIndex == totalPoints ? "goal" : "normal";
+    }
+
+    route_store::ImportResult result;
+    if (!route_store::saveRouteJson(routeDoc, activate, result)) {
+      String json = "{\"saved\":";
+      json += result.path.isEmpty() ? "false" : "true";
+      json += ",\"detail\":\"";
+      json += jsonEscape(result.error);
+      json += "\"}";
+      heap_monitor::record("route-save-fail");
+      target.send(result.path.isEmpty() ? 400 : 500, "application/json", json);
+      return;
+    }
+
+    String json = "{\"saved\":true,\"active\":";
+    json += result.active ? "true" : "false";
+    json += ",\"name\":\"";
+    json += jsonEscape(name);
+    json += "\",\"path\":\"";
+    json += jsonEscape(result.path);
+    json += "\",\"points\":";
+    json += result.points;
+    json += "}";
+    heap_monitor::record("route-save-end");
+    target.send(200, "application/json", json);
+  }
+
   void sendRedirect(WebServer& target, const char* location) {
     sendNoStoreHeaders(target);
     target.sendHeader("Location", location, true);
@@ -989,17 +1459,27 @@ namespace {
     }
 
     static constexpr char USER_APP_PAGE[] PROGMEM =
-        R"leafapp(<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=Cache-Control content=no-store><title>Leaf</title><style>:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#202423;background:#363636;line-height:1.35;--leaf:#d8ff00;--ink:#202423;--panel:#565656;--sub:#4d4d4d;--danger:#7a1d1d}body{margin:0;background:#363636}header{background:var(--leaf);color:#0b0d0b;padding:11px 20px;text-align:center}main{max-width:640px;margin:auto;padding:18px}h1{font-family:Arial,sans-serif;font-size:38px;font-weight:500;letter-spacing:.12em;line-height:1;margin:0}h2{font-size:18px;margin:-16px -14px 14px;padding:10px 12px;color:#0b0d0b;background:var(--leaf);text-align:center;border-radius:5px 5px 0 0}section{background:var(--panel);border-radius:8px;margin:0 0 14px;padding:16px 14px}.status-panel{padding-top:14px}.status-panel h2{background:var(--panel);color:white;border-bottom:1px solid #a9a9a9;margin:-14px -14px 14px}.view{display:none}.view.active{display:block}.subbar{position:relative;display:flex;align-items:center;justify-content:center;min-height:34px;color:white;margin:0 0 14px}.back{position:absolute;left:0;top:-3px;width:44px;height:40px;background:white;color:var(--ink);border-color:white;box-shadow:none;padding:3px 8px;font-size:32px;font-weight:900;line-height:.85}.subbar h2{color:white;background:transparent;margin:0;padding:0;font-size:18px}.row{display:flex;gap:8px}.row>*{flex:1}.row>.small{flex:0 0 94px}.actions{display:flex;align-items:center;gap:10px;margin-top:12px}.actions .msg{flex:1;margin:0}.actions button,.profile-actions button{width:auto;padding:8px 10px;font-size:14px}.profile-actions{margin-top:12px;gap:14px}label{display:block;font-size:13px;font-weight:700;margin:10px 0 4px;color:white}input,select,textarea,button{box-sizing:border-box;width:100%;font:inherit;padding:11px;border:1px solid #b9c0b2;border-radius:7px;background:white;color:var(--ink)}textarea{min-height:112px;resize:vertical}.checkline{display:flex;align-items:center;gap:8px;width:auto;margin:0}.checkline input{width:auto;accent-color:var(--leaf)}.route-actions{align-items:center;justify-content:space-between}.route-actions .checkline{flex:1}.route-actions button{flex:0 0 auto}input:focus,select:focus,textarea:focus,button:focus{outline:2px solid var(--leaf);outline-offset:1px}select:disabled,button:disabled,.secondary:disabled,.danger:disabled{background:#686868;border-color:#686868;color:#8a8a8a;opacity:1;box-shadow:none}button{background:var(--ink);color:white;font-weight:750;border-color:var(--ink);box-shadow:inset 0 -2px 0 rgba(0,0,0,.22)}.secondary{background:white;color:var(--ink);border-color:#89917f;box-shadow:none}.danger{background:var(--danger);border-color:var(--danger);color:white}.hero{background:var(--leaf);border-color:var(--leaf);color:#0b0d0b}.profile-actions button:first-child:not(:disabled){background:var(--leaf);border-color:var(--leaf);color:#0b0d0b}.muted{color:#e2e7dc}.msg{min-height:20px;margin-top:10px}#profilesView section{padding-bottom:4px}#profilesView .msg{min-height:0;margin:6px 0 0;line-height:1.2}.leaf-log-panel{display:none;margin-top:10px;background:rgba(0,0,0,.16);border-radius:7px;padding:10px}.leaf-log-panel.active{display:block}.leaf-log-step{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;color:white;font-weight:700}.leaf-log-step button,#leafLogWifi{width:auto}.status{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:13px;white-space:pre-wrap;color:white;min-width:0}.status-body{display:grid;grid-template-columns:minmax(0,1fr) max-content;align-items:start;justify-content:space-between;column-gap:14px}.status-side{display:grid;gap:8px;justify-items:end}.battery-status{color:white;text-align:right;font-size:13px;font-weight:700}.battery-line{display:flex;align-items:center;justify-content:flex-end;gap:7px;margin-bottom:4px}.battery{position:relative;width:44px;height:20px;border:2px solid white;border-radius:4px;box-sizing:border-box}.battery:after{content:"";position:absolute;right:-6px;top:4px;width:4px;height:8px;background:white;border-radius:0 2px 2px 0}.battery-fill{display:block;height:100%;background:var(--leaf);border-radius:2px}.battery-meta{font-size:12px;font-weight:650;color:#e2e7dc}.metrics{display:grid;grid-template-columns:1fr 1fr;gap:9px}.metric{background:var(--sub);border-radius:7px;padding:8px 10px;color:white}.metric span{display:block;color:#dfe5d9;font-size:12px;font-weight:650;margin-bottom:2px}.metric strong{display:block;font-size:16px}#logCount{font-size:34px;line-height:1}.pager{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;gap:8px;margin-bottom:12px}.pager button{height:38px;padding:0;background:var(--leaf);border-color:var(--leaf);color:#0b0d0b}.pager button:disabled{background:#686868;border-color:#686868;color:#8a8a8a;box-shadow:none}.page-title{text-align:center;color:white;font-weight:800}.flight-head{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;color:white;margin-bottom:8px}.flight-head div:nth-child(2){text-align:center}.flight-head div:nth-child(3){text-align:right}.flight-head span{display:block;color:#dfe5d9;font-size:12px;font-weight:650}.flight-head strong{display:block;color:white;font-size:14px;font-weight:800;white-space:nowrap}.flight-profiles{display:flex;justify-content:space-between;gap:10px;color:var(--leaf);font-weight:800;margin:0 0 10px}.flight-profiles div{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.flight-profiles div:last-child{text-align:right}.flight-card{color:white}.alt-box,.vario-box{background:var(--sub);border-radius:7px;padding:12px;margin:10px 0}.alt-box{position:relative;padding:8px 10px 28px}.alt-title{position:absolute;left:0;right:0;bottom:6px;text-align:center}.alt-title,.vario-title{font-size:18px;font-weight:800}.vario-title{text-align:center}.alt-row{position:relative;height:100px;margin-top:0}.alt-row .pill{position:absolute;min-width:74px;background:#111;color:white}.alt-row .pill.high{background:var(--leaf);color:#0b0d0b}.pill{background:var(--leaf);color:#0b0d0b;border-radius:6px;padding:5px 8px;font-weight:800;text-align:center}.pill span{display:block;font-size:11px}.detail-grid{display:grid;grid-template-columns:1fr 1.45fr;gap:10px}.vario-box{display:flex;flex-direction:column;justify-content:center;gap:9px}.vario-title{order:2}.vario-values{display:contents}#climbMax{order:1}#sinkMax{order:3}.sink{background:#111;color:white}.mini-metrics{background:var(--sub);border-radius:7px;padding:8px 10px}.mini-row{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid #777;padding:5px 0}.mini-row:last-child{border-bottom:0}.track{overflow-wrap:anywhere;color:#e2e7dc;margin-top:12px;font-size:13px;display:flex;justify-content:space-between;gap:12px;align-items:baseline}.track-file-name{color:var(--leaf);font-weight:800}.flight-id{font-size:12px;text-align:right;white-space:nowrap}.delete-area{margin-top:10px;display:flex;justify-content:flex-end}.delete-area>button{width:auto;padding:8px 10px;font-size:14px}.delete-confirm{display:none;width:100%;text-align:left;background:rgba(0,0,0,.18);border-radius:7px;padding:7px 8px}.delete-confirm button{width:100%;font-size:15px;padding:8px 9px}.delete-warning{font-weight:500;margin:0 0 7px;color:white}#logDetailMsg{min-height:0;margin:6px 0 0}#logDetailMsg:empty{display:none}@media(max-width:520px){.detail-grid{grid-template-columns:1fr 1.45fr}.status-body{grid-template-columns:minmax(0,1fr) max-content}.status-side{justify-items:end}.battery-status{text-align:right}.battery-line{justify-content:flex-end}}</style></head><body><header><h1>Leaf</h1></header><main><div id=mainView class="view active"><section class=status-panel><h2>Status</h2><div class=status-body><div class=status id=status>Loading...</div><div class=status-side><div class=battery-status id=batteryBox><div class=battery-line><span id=batteryText>--%</span><div class=battery><span class=battery-fill id=batteryFill></span></div></div><div class=battery-meta id=batteryCharge>Unknown</div></div></div></div></section><section><h2>Profiles</h2><label>Active pilot</label><select id=activePilotList></select><label>Active glider</label><select id=activeGliderList></select><div class=actions><p class="muted msg" id=mainProfileMsg></p><button class=secondary id=editProfiles>Edit Profiles</button></div></section><section><h2>Logbook</h2><div class=metrics><div class=metric><span>Total Flights</span><strong id=logCount>--</strong></div><div class=metric><span>Last Flight</span><strong id=logLatest>Loading...</strong></div></div><div class=actions><p class="muted msg" id=logMsg></p><button class=secondary id=openLogbook disabled>Open Logbook</button></div></section><section><h2>Routes</h2><label>Route name</label><input id=routeName maxlength=48 autocomplete=off><label>Task / Route Data</label><textarea id=routeData placeholder="XCTSK:..."></textarea><div class="actions route-actions"><label class=checkline><input id=routeActivate type=checkbox checked>Set as active route</label><button class=hero id=routeSave disabled>Save to Leaf</button></div><p class="muted msg" id=routeMsg></p></section></div><div id=profilesView class=view><div class=subbar><button class=back id=backMain aria-label=Back>&#x276e;</button><h2>Edit Profiles</h2></div><section><h2>Pilots</h2><label>Active pilot</label><select id=pilotList></select><label>Name</label><input id=pilotName maxlength=48 autocomplete=name><label>Email</label><input id=pilotEmail maxlength=80 type=email autocomplete=email><div class=actions><button class=secondary id=leafLogLink disabled>Link Leaf Log</button><button class=secondary id=leafLogWifi>WiFi Setup</button><p class="muted msg" id=leafLogStatus></p></div><div class=leaf-log-panel id=leafLogPanel><div class=leaf-log-step><span>Open Leaf Log and sign in to get a Link Code</span><button class=hero id=leafLogOpen>Open Leaf Log</button></div><label>Leaf Log Link Code</label><input id=leafLogCode maxlength=160 autocomplete=off><div class=actions><p class="muted msg" id=leafLogMsg></p><button class=secondary id=leafLogSave>Save Link</button></div></div><div class="row profile-actions"><button id=pilotSave disabled>Save Profile</button><button class=secondary id=pilotNew>New</button><button class="small danger" id=pilotDelete>Delete</button></div><p class="muted msg" id=pilotMsg></p></section><section><h2>Gliders</h2><label>Active glider</label><select id=gliderList></select><div class=row><div><label>Brand</label><input id=gliderBrand maxlength=32></div><div><label>Model</label><input id=gliderModel maxlength=48></div></div><div class=row><div><label>Size</label><input id=gliderSize maxlength=16></div><div><label>Display name</label><input id=gliderDisplay maxlength=64></div></div><div class="row profile-actions"><button id=gliderSave disabled>Save Profile</button><button class=secondary id=gliderNew>New</button><button class="small danger" id=gliderDelete>Delete</button></div><p class="muted msg" id=gliderMsg></p></section></div><div id=logbookView class=view><div class=subbar><button class=back id=backLogMain aria-label=Back>&#x276e;</button><h2>Logbook</h2></div><section class=flight-card><div class=pager><button id=logPrev>&#x276e;</button><div class=page-title id=logPage>--</div><button id=logNext>&#x276f;</button></div><div class=flight-head><div><span id=flightDay>--</span><strong id=flightDate>Loading...</strong></div><div><span>Start:</span><strong id=flightTime>--</strong></div><div><span>Duration:</span><strong id=flightDuration>--</strong></div></div><div class=flight-profiles><div id=flightPilot></div><div id=flightGlider></div></div><div class=alt-box><div class=alt-title>Altitude</div><div class=alt-row><div class=pill id=altStart><span>Start</span>--</div><div class=pill id=altMax><span>Max</span>--</div><div class=pill id=altEnd><span>End</span>--</div></div></div><div class=detail-grid><div class=vario-box><div class=vario-title>Vario</div><div class=vario-values><div class=pill id=climbMax>--</div><div class="pill sink" id=sinkMax>--</div></div></div><div class=mini-metrics id=flightMetrics></div></div><div class=track id=trackInfo></div><div class=delete-area><button class=danger id=deleteLog>Delete Log</button><div class=delete-confirm id=deleteConfirm><p class=delete-warning>Delete log and track file?</p><div class=row><button class=danger id=confirmDelete>Confirm Delete</button><button class=hero id=cancelDelete>Cancel</button></div></div></div><p class="muted msg" id=logDetailMsg></p></section></div></main><script>
+        R"leafapp(<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=Cache-Control content=no-store><title>Leaf</title><style>:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#202423;background:#363636;line-height:1.35;--leaf:#d8ff00;--ink:#202423;--panel:#565656;--sub:#4d4d4d;--danger:#7a1d1d}body{margin:0;background:#363636}header{background:var(--leaf);color:#0b0d0b;padding:11px 20px;text-align:center}main{max-width:640px;margin:auto;padding:18px}h1{font-family:Arial,sans-serif;font-size:38px;font-weight:500;letter-spacing:.12em;line-height:1;margin:0}h2{position:relative;font-size:18px;margin:-16px -14px 14px;padding:12px 12px;color:#0b0d0b;background:var(--leaf);text-align:center;border-radius:5px 5px 0 0}section{background:var(--panel);border-radius:8px;margin:0 0 14px;padding:16px 14px}.status-panel{padding-top:14px}.status-panel h2{background:var(--panel);color:white;border-bottom:1px solid #a9a9a9;margin:-14px -14px 14px}.view{display:none}.view.active{display:block}.subbar{position:relative;display:flex;align-items:center;justify-content:center;min-height:34px;color:white;margin:0 0 14px}.back{position:absolute;left:0;top:-3px;width:44px;height:40px;background:white;color:var(--ink);border-color:white;box-shadow:none;padding:3px 8px;font-size:32px;font-weight:900;line-height:.85}.subbar h2{color:white;background:transparent;margin:0;padding:0;font-size:18px}.row{display:flex;gap:8px}.row>*{flex:1}.row>.small{flex:0 0 94px}.actions{display:flex;align-items:center;gap:10px;margin-top:10px}.actions .msg{flex:1;margin:0}.actions button,.profile-actions button{width:auto;padding:8px 10px;font-size:14px}.profile-actions{margin-top:12px;gap:14px}label{display:block;font-size:13px;font-weight:700;margin:10px 0 4px;color:white}input,select,textarea,button{box-sizing:border-box;width:100%;font:inherit;padding:11px;border:1px solid #b9c0b2;border-radius:7px;background:white;color:var(--ink)}textarea{min-height:112px;resize:vertical}.checkline{display:flex;align-items:center;gap:8px;width:auto;margin:0}.checkline input{width:auto;accent-color:var(--leaf)}.route-actions{align-items:center;justify-content:space-between}.route-actions .checkline{flex:1}.route-actions button{flex:0 0 auto}.route-edit-list{margin-top:4px;background:var(--sub);border-radius:7px;padding:8px 10px;min-height:34px}.route-point-row{display:grid;grid-template-columns:minmax(0,1fr) 74px 34px 34px 34px;gap:6px;align-items:center;margin:7px 0}.route-point-name{color:white;font-weight:750;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.route-point-row input{padding:7px}.route-point-row button{width:34px;height:34px;padding:0}.route-add-grid{display:grid;grid-template-columns:minmax(0,1fr) 122px;gap:8px;align-items:end}.route-add-grid label{margin-top:10px}.card-nav{position:absolute;right:8px;top:5px;display:flex;align-items:center;justify-content:center;width:44px;height:38px;padding:0 0 4px;background:white;color:var(--ink);border:1px solid #0b0d0b;box-shadow:none;font-size:34px;line-height:1}.waypoint-status-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:start}.waypoint-status-row button{width:auto;padding:8px 10px;font-size:14px}.file-activate{display:block;margin-top:8px}.nav-tools-blocked{color:white;font-weight:750;margin:8px 0}.nav-summary{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:13px;white-space:pre-wrap;color:white}input:focus,select:focus,textarea:focus,button:focus{outline:2px solid var(--leaf);outline-offset:1px}select:disabled,button:disabled,.secondary:disabled,.danger:disabled{background:#686868;border-color:#686868;color:#8a8a8a;opacity:1;box-shadow:none}button{background:var(--ink);color:white;font-weight:750;border-color:var(--ink);box-shadow:inset 0 -2px 0 rgba(0,0,0,.22)}.secondary{background:white;color:var(--ink);border-color:#89917f;box-shadow:none}.danger{background:var(--danger);border-color:var(--danger);color:white}.hero{background:var(--leaf);border-color:var(--leaf);color:#0b0d0b}.profile-actions button:first-child:not(:disabled){background:var(--leaf);border-color:var(--leaf);color:#0b0d0b}.muted{color:#e2e7dc}.msg{min-height:0;margin:6px 0 0;line-height:1.2}.msg:empty{display:none}#mainView section{padding-bottom:10px}#profilesView section{padding-bottom:4px}#profilesView .msg{min-height:0;margin:6px 0 0;line-height:1.2}.leaf-log-panel{display:none;margin-top:10px;background:rgba(0,0,0,.16);border-radius:7px;padding:10px}.leaf-log-panel.active{display:block}.leaf-log-step{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;color:white;font-weight:700}.leaf-log-step button,#leafLogWifi{width:auto}.status{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:13px;white-space:pre-wrap;color:white;min-width:0}.status-body{display:grid;grid-template-columns:minmax(0,1fr) max-content;align-items:start;justify-content:space-between;column-gap:14px}.status-side{display:grid;gap:8px;justify-items:end}.battery-status{color:white;text-align:right;font-size:13px;font-weight:700}.battery-line{display:flex;align-items:center;justify-content:flex-end;gap:7px;margin-bottom:4px}.battery{position:relative;width:44px;height:20px;border:2px solid white;border-radius:4px;box-sizing:border-box}.battery:after{content:"";position:absolute;right:-6px;top:4px;width:4px;height:8px;background:white;border-radius:0 2px 2px 0}.battery-fill{display:block;height:100%;background:var(--leaf);border-radius:2px}.battery-meta{font-size:12px;font-weight:650;color:#e2e7dc}.metrics{display:grid;grid-template-columns:1fr 1fr;gap:9px}.metric{background:var(--sub);border-radius:7px;padding:8px 10px;color:white}.metric span{display:block;color:#dfe5d9;font-size:12px;font-weight:650;margin-bottom:2px}.metric strong{display:block;font-size:16px}#logCount{font-size:34px;line-height:1}.pager{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;gap:8px;margin-bottom:12px}.pager button{height:38px;padding:0;background:var(--leaf);border-color:var(--leaf);color:#0b0d0b}.pager button:disabled{background:#686868;border-color:#686868;color:#8a8a8a;box-shadow:none}.page-title{text-align:center;color:white;font-weight:800}.flight-head{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;color:white;margin-bottom:8px}.flight-head div:nth-child(2){text-align:center}.flight-head div:nth-child(3){text-align:right}.flight-head span{display:block;color:#dfe5d9;font-size:12px;font-weight:650}.flight-head strong{display:block;color:white;font-size:14px;font-weight:800;white-space:nowrap}.flight-profiles{display:flex;justify-content:space-between;gap:10px;color:var(--leaf);font-weight:800;margin:0 0 10px}.flight-profiles div{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.flight-profiles div:last-child{text-align:right}.flight-card{color:white}.alt-box,.vario-box{background:var(--sub);border-radius:7px;padding:12px;margin:10px 0}.alt-box{position:relative;padding:8px 10px 28px}.alt-title{position:absolute;left:0;right:0;bottom:6px;text-align:center}.alt-title,.vario-title{font-size:18px;font-weight:800}.vario-title{text-align:center}.alt-row{position:relative;height:100px;margin-top:0}.alt-row .pill{position:absolute;min-width:74px;background:#111;color:white}.alt-row .pill.high{background:var(--leaf);color:#0b0d0b}.pill{background:var(--leaf);color:#0b0d0b;border-radius:6px;padding:5px 8px;font-weight:800;text-align:center}.pill span{display:block;font-size:11px}.detail-grid{display:grid;grid-template-columns:1fr 1.45fr;gap:10px}.vario-box{display:flex;flex-direction:column;justify-content:center;gap:9px}.vario-title{order:2}.vario-values{display:contents}#climbMax{order:1}#sinkMax{order:3}.sink{background:#111;color:white}.mini-metrics{background:var(--sub);border-radius:7px;padding:8px 10px}.mini-row{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid #777;padding:5px 0}.mini-row:last-child{border-bottom:0}.track{overflow-wrap:anywhere;color:#e2e7dc;margin-top:12px;font-size:13px;display:flex;justify-content:space-between;gap:12px;align-items:baseline}.track-file-name{color:var(--leaf);font-weight:800}.flight-id{font-size:12px;text-align:right;white-space:nowrap}.delete-area{margin-top:10px;display:flex;justify-content:flex-end}.delete-area>button{width:auto;padding:8px 10px;font-size:14px}.delete-confirm{display:none;width:100%;text-align:left;background:rgba(0,0,0,.18);border-radius:7px;padding:7px 8px}.delete-confirm button{width:100%;font-size:15px;padding:8px 9px}.delete-warning{font-weight:500;margin:0 0 7px;color:white}#logDetailMsg{min-height:0;margin:6px 0 0}#logDetailMsg:empty{display:none}@media(max-width:520px){.detail-grid{grid-template-columns:1fr 1.45fr}.status-body{grid-template-columns:minmax(0,1fr) max-content}.status-side{justify-items:end}.battery-status{text-align:right}.battery-line{justify-content:flex-end}}</style></head><body><header><h1>Leaf</h1></header><main><div id=mainView class="view active"><section class=status-panel><h2>Status</h2><div class=status-body><div class=status id=status>Loading...</div><div class=status-side><div class=battery-status id=batteryBox><div class=battery-line><span id=batteryText>--%</span><div class=battery><span class=battery-fill id=batteryFill></span></div></div><div class=battery-meta id=batteryCharge>Unknown</div></div></div></div></section><section><h2>Profiles<button class=card-nav id=openProfiles aria-label="Edit Profiles">&#x276f;</button></h2><label>Active pilot</label><select id=activePilotList></select><label>Active glider</label><select id=activeGliderList></select><p class="muted msg" id=mainProfileMsg></p></section><section><h2>Logbook<button class=card-nav id=openLogbook aria-label="Open Logbook">&#x276f;</button></h2><div class=metrics><div class=metric><span>Total Flights</span><strong id=logCount>--</strong></div><div class=metric><span>Last Flight</span><strong id=logLatest>Loading...</strong></div></div><p class="muted msg" id=logMsg></p></section><section><h2>Waypoints & Routes<button class=card-nav id=openNavTools aria-label="Open Waypoints and Routes">&#x276f;</button></h2><div class=nav-summary id=navSummary>Loading...</div></section></div><div id=navView class=view><div class=subbar><button class=back id=backNavMain aria-label=Back>&#x276e;</button><h2>Waypoints & Routes</h2></div><section><h2>Waypoints</h2><div class=waypoint-status-row><div class=nav-summary id=waypointSubStatus>Loading...</div><button class=secondary id=waypointLoad>Import New File</button></div><input id=waypointFile type=file accept=".gpx,.cup,.wpt,.wyp,.kml" hidden><div class=file-activate id=waypointActivatePanel><label>Waypoint file</label><select id=waypointFileList></select></div><div class=actions><p class="muted msg" id=waypointMsg></p><button class=hero id=waypointActivate>Activate File</button></div></section><section><h2>Create Route</h2><p class=nav-tools-blocked id=createRouteBlocked>Please activate a waypoints file first.</p><div id=createRouteContent><div class=route-edit-list id=editRouteList></div><div class=route-add-grid><div><label id=routeWaypointLabel>First Waypoint</label><select id=routeWaypointList></select></div><div><label>Turn Radius (m)</label><input id=routeDefaultRadius type=number min=10 max=20000 step=10 value=150></div></div><div class=actions><p class="muted msg" id=routeEditHint></p><button class=secondary id=editRouteAdd disabled>Add Point</button></div><label>Route name</label><input id=editRouteName maxlength=48 autocomplete=off><div class="actions route-actions"><label class=checkline><input id=editRouteActivate type=checkbox checked>Set as active route</label><button class=hero id=editRouteSave disabled>Save Route</button></div><p class="muted msg" id=editRouteMsg></p></div></section><section><h2>Import Route</h2><label>Route name</label><input id=routeName maxlength=48 autocomplete=off><label>Task / Route Data</label><textarea id=routeData placeholder="XCTSK:..."></textarea><div class="actions route-actions"><label class=checkline><input id=routeActivate type=checkbox checked>Set as active route</label><button class=hero id=routeSave disabled>Save to Leaf</button></div><p class="muted msg" id=routeMsg></p></section></div><div id=profilesView class=view><div class=subbar><button class=back id=backMain aria-label=Back>&#x276e;</button><h2>Edit Profiles</h2></div><section><h2>Pilots</h2><label>Active pilot</label><select id=pilotList></select><label>Name</label><input id=pilotName maxlength=48 autocomplete=name><label>Email</label><input id=pilotEmail maxlength=80 type=email autocomplete=email><div class=actions><button class=secondary id=leafLogLink disabled>Link Leaf Log</button><button class=secondary id=leafLogWifi>WiFi Setup</button><p class="muted msg" id=leafLogStatus></p></div><div class=leaf-log-panel id=leafLogPanel><div class=leaf-log-step><span>Open Leaf Log and sign in to get a Link Code</span><button class=hero id=leafLogOpen>Open Leaf Log</button></div><label>Leaf Log Link Code</label><input id=leafLogCode maxlength=160 autocomplete=off><div class=actions><p class="muted msg" id=leafLogMsg></p><button class=secondary id=leafLogSave>Save Link</button></div></div><div class="row profile-actions"><button id=pilotSave disabled>Save Profile</button><button class=secondary id=pilotNew>New</button><button class="small danger" id=pilotDelete>Delete</button></div><p class="muted msg" id=pilotMsg></p></section><section><h2>Gliders</h2><label>Active glider</label><select id=gliderList></select><div class=row><div><label>Brand</label><input id=gliderBrand maxlength=32></div><div><label>Model</label><input id=gliderModel maxlength=48></div></div><div class=row><div><label>Size</label><input id=gliderSize maxlength=16></div><div><label>Display name</label><input id=gliderDisplay maxlength=64></div></div><div class="row profile-actions"><button id=gliderSave disabled>Save Profile</button><button class=secondary id=gliderNew>New</button><button class="small danger" id=gliderDelete>Delete</button></div><p class="muted msg" id=gliderMsg></p></section></div><div id=logbookView class=view><div class=subbar><button class=back id=backLogMain aria-label=Back>&#x276e;</button><h2>Logbook</h2></div><section class=flight-card><div class=pager><button id=logPrev>&#x276e;</button><div class=page-title id=logPage>--</div><button id=logNext>&#x276f;</button></div><div class=flight-head><div><span id=flightDay>--</span><strong id=flightDate>Loading...</strong></div><div><span>Start:</span><strong id=flightTime>--</strong></div><div><span>Duration:</span><strong id=flightDuration>--</strong></div></div><div class=flight-profiles><div id=flightPilot></div><div id=flightGlider></div></div><div class=alt-box><div class=alt-title>Altitude</div><div class=alt-row><div class=pill id=altStart><span>Start</span>--</div><div class=pill id=altMax><span>Max</span>--</div><div class=pill id=altEnd><span>End</span>--</div></div></div><div class=detail-grid><div class=vario-box><div class=vario-title>Vario</div><div class=vario-values><div class=pill id=climbMax>--</div><div class="pill sink" id=sinkMax>--</div></div></div><div class=mini-metrics id=flightMetrics></div></div><div class=track id=trackInfo></div><div class=delete-area><button class=danger id=deleteLog>Delete Log</button><div class=delete-confirm id=deleteConfirm><p class=delete-warning>Delete log and track file?</p><div class=row><button class=danger id=confirmDelete>Confirm Delete</button><button class=hero id=cancelDelete>Cancel</button></div></div></div><p class="muted msg" id=logDetailMsg></p></section></div></main><script>
 const LEAF_LOG_ENABLED=false;
-let profiles={schema:'leaf.profiles',schema_version:'v0.1.0',active_pilot_id:null,active_glider_id:null,pilots:[],gliders:[]},pilotSnap={},gliderSnap={},logState={prev:'',next:'',path:''},unitPrefs={alt_feet:false,climb_fpm:false,speed_mph:false,distance_miles:false,heading_cardinal:false,temp_f:false,time_12h:false},userStatus={mode:'',mac_address:''};
+let profiles={schema:'leaf.profiles',schema_version:'v0.1.0',active_pilot_id:null,active_glider_id:null,pilots:[],gliders:[]},pilotSnap={},gliderSnap={},navPoints=[],editRoute=[],logState={prev:'',next:'',path:''},unitPrefs={alt_feet:false,climb_fpm:false,speed_mph:false,distance_miles:false,heading_cardinal:false,temp_f:false,time_12h:false},userStatus={mode:'',mac_address:''};
 const $=id=>document.getElementById(id),clean=v=>{v=(v||'').trim();return v?v:null},newId=()=>Math.floor(Math.random()*0xffffffff).toString(16).padStart(8,'0');
 function pilotLabel(p){return p.name||'Unnamed pilot'}function gliderLabel(g){return g.display_name||[g.brand,g.model,g.size].filter(Boolean).join(' ')||'Unnamed glider'}
 function selectedPilot(){return profiles.pilots.find(p=>p.id==profiles.active_pilot_id)}function selectedGlider(){return profiles.gliders.find(g=>g.id==profiles.active_glider_id)}
-function msg(id,t){$(id).textContent=t||''}function validEmail(v){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((v||'').trim())}function show(v){$('mainView').classList.toggle('active',v=='main');$('profilesView').classList.toggle('active',v=='profiles');$('logbookView').classList.toggle('active',v=='logbook')}
+function msg(id,t){$(id).textContent=t||''}function validEmail(v){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((v||'').trim())}function show(v){$('mainView').classList.toggle('active',v=='main');$('navView').classList.toggle('active',v=='nav');$('profilesView').classList.toggle('active',v=='profiles');$('logbookView').classList.toggle('active',v=='logbook')}
 function fillSelect(el,items,label){el.textContent='';items.forEach(x=>{let o=document.createElement('option');o.value=x.id;o.textContent=label(x);el.appendChild(o)});el.disabled=!items.length}
 function pilotEditor(){return {id:profiles.active_pilot_id,name:$('pilotName').value||'',email:$('pilotEmail').value||'',leaf_log_api_key:$('leafLogCode').value||''}}function gliderEditor(){return {id:profiles.active_glider_id,brand:$('gliderBrand').value||'',model:$('gliderModel').value||'',size:$('gliderSize').value||'',display_name:$('gliderDisplay').value||''}}
 function same(a,b){return JSON.stringify(a)==JSON.stringify(b)}function setSnaps(){pilotSnap=pilotEditor();gliderSnap=gliderEditor();buttons()}
-function routeButtons(hint=true){let n=clean($('routeName').value),d=clean($('routeData').value);$('routeSave').disabled=!n||!d;if(!hint)return;if(!n&&!d)msg('routeMsg','Enter route name and data, then Save to Leaf.');else if(!n)msg('routeMsg','Enter route name, then Save to Leaf.');else if(!d)msg('routeMsg','Paste route data, then Save to Leaf.');else msg('routeMsg','Ready to save route.')}function buttons(){let p=pilotEditor(),g=gliderEditor();$('pilotSave').disabled=!clean(p.name)||same(p,pilotSnap);$('pilotDelete').disabled=!selectedPilot();$('pilotNew').disabled=!profiles.pilots.length;$('gliderSave').disabled=!([g.brand,g.model,g.size,g.display_name].some(v=>clean(v)))||same(g,gliderSnap);$('gliderDelete').disabled=!selectedGlider();$('gliderNew').disabled=!profiles.gliders.length;leafLogButtons();routeButtons()}
+function esc(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function routeEditButtons(hint=true){let n=clean($('editRouteName').value);$('routeWaypointLabel').textContent=editRoute.length?'Next Waypoint':'First Waypoint';$('editRouteAdd').disabled=!navPoints.length;$('editRouteSave').disabled=!n||!editRoute.length;if(!hint)return;if(!navPoints.length)msg('routeEditHint','Load a waypoint file first.');else msg('routeEditHint','Select a point and add to route.');if(!n&&!editRoute.length)msg('editRouteMsg','Add waypoints and enter route name.');else if(!editRoute.length)msg('editRouteMsg','Add waypoints, then Save Route.');else if(!n)msg('editRouteMsg','Enter route name, then Save Route.');else msg('editRouteMsg','Ready to save route.')}
+function renderWaypointPicker(){let el=$('routeWaypointList');el.textContent='';navPoints.forEach(p=>{let o=document.createElement('option');o.value=p.index;o.textContent=p.name||('Point '+p.index);el.appendChild(o)});el.disabled=!navPoints.length;routeEditButtons()}
+function routePointRow(p,i){return '<div class=route-point-row><div class=route-point-name>'+esc(p.name||('Point '+(i+1)))+'</div><input type=number min=10 max=20000 step=10 value="'+(p.radius_m||150)+'" data-r="'+i+'"><button type=button data-act=up data-i="'+i+'">&uarr;</button><button type=button data-act=down data-i="'+i+'">&darr;</button><button type=button data-act=remove data-i="'+i+'">&times;</button></div>'}
+function renderEditRoute(){$('editRouteList').innerHTML=editRoute.map(routePointRow).join('');routeEditButtons()}
+function navSummaryText(d){let lines=[];lines.push(d.loaded_file||'No waypoint file loaded');lines.push('Points: '+(d.point_count||0)+' Routes: '+(d.route_count||0));if(d.active_name)lines.push('Active '+(d.active_type=='route'?'Route':'Point')+': '+d.active_name);return lines.join('\n')}
+function renderNavStatus(d){$('navSummary').textContent=navSummaryText(d);$('waypointSubStatus').textContent=navSummaryText(d);let ready=!!d.loaded_file&&!!(d.point_count||0);$('createRouteBlocked').style.display=ready?'none':'block';$('createRouteContent').style.display=ready?'block':'none'}
+async function loadNavData(){try{let d=await(await fetch('/api/nav-data')).json();navPoints=d.points||[];renderNavStatus(d);renderWaypointPicker()}catch(e){navPoints=[];renderWaypointPicker();$('navSummary').textContent='Unable to read navigation data.';$('waypointSubStatus').textContent='Unable to read navigation data.';msg('routeEditHint','Unable to read waypoints.')}}
+async function loadWaypointFileList(){msg('waypointMsg','Loading files...');try{let d=await(await fetch('/api/waypoints/files')).json(),files=d.files||[],sel=$('waypointFileList'),current=sel.value;sel.textContent='';files.forEach(f=>{let o=document.createElement('option');o.value=f.name;o.textContent=f.name;sel.appendChild(o)});if(current)sel.value=current;msg('waypointMsg',files.length?'Choose a file, then Activate File.':'No waypoint files found.')}catch(e){msg('waypointMsg','Unable to list waypoint files.')}}async function activateWaypointFile(){let sel=$('waypointFileList');if(!sel.options.length)await loadWaypointFileList();let name=sel.value;if(!name){msg('waypointMsg','Choose a waypoint file.');return}msg('waypointMsg','Activating '+name+'...');try{let r=await fetch('/api/waypoints/activate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name})}),d=await r.json().catch(()=>({}));if(!r.ok||!d.loaded)throw d;msg('waypointMsg','Activated '+(d.filename||name)+'.');loadNavData()}catch(x){msg('waypointMsg',x&&x.detail?x.detail:'Unable to activate file.')}}
+function addSelectedRoutePoint(){let idx=Number($('routeWaypointList').value),p=navPoints.find(x=>Number(x.index)==idx);if(!p)return;let radius=Math.max(10,Math.min(20000,Math.round(Number($('routeDefaultRadius').value)||150)));$('routeDefaultRadius').value=radius;editRoute.push({name:p.name,lat:p.lat,lon:p.lon,alt_m:p.alt_m||0,radius_m:radius});renderEditRoute()}
+async function saveEditedRoute(){let name=clean($('editRouteName').value);if(!name||!editRoute.length){routeEditButtons();return}msg('editRouteMsg','Saving route...');$('editRouteSave').disabled=true;try{let r=await fetch('/api/routes/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,activate:$('editRouteActivate').checked,points:editRoute})}),d=await r.json().catch(()=>({}));if(!r.ok||!d.saved)throw d;msg('editRouteMsg','Saved '+(d.points||0)+' points'+(d.active?' and set active.':'.'))}catch(x){msg('editRouteMsg',x&&x.detail?x.detail:'Unable to save route.')}routeEditButtons(false)}function routeButtons(hint=true){let n=clean($('routeName').value),d=clean($('routeData').value);$('routeSave').disabled=!n||!d;if(!hint)return;if(!n&&!d)msg('routeMsg','Enter route name and data, then Save to Leaf.');else if(!n)msg('routeMsg','Enter route name, then Save to Leaf.');else if(!d)msg('routeMsg','Paste route data, then Save to Leaf.');else msg('routeMsg','Ready to save route.')}async function uploadWaypointFile(file){if(!file)return;msg('waypointMsg','Uploading '+file.name+'...');$('waypointLoad').disabled=true;let form=new FormData();form.append('file',file,file.name);try{let r=await fetch('/api/waypoints/upload',{method:'POST',body:form}),d=await r.json().catch(()=>({}));if(!d.saved)throw d;let counts=(d.points||0)+' pts';if(d.routes)counts+=', '+d.routes+' rtes';if(d.loaded){msg('waypointMsg','Loaded '+(d.filename||file.name)+': '+counts+'.');loadNavData();loadWaypointFileList()}else msg('waypointMsg','Saved '+(d.filename||file.name)+', but Leaf could not load it.')}catch(x){msg('waypointMsg',x&&x.detail?x.detail:'Unable to load file.')} $('waypointLoad').disabled=false}function buttons(){let p=pilotEditor(),g=gliderEditor();$('pilotSave').disabled=!clean(p.name)||same(p,pilotSnap);$('pilotDelete').disabled=!selectedPilot();$('pilotNew').disabled=!profiles.pilots.length;$('gliderSave').disabled=!([g.brand,g.model,g.size,g.display_name].some(v=>clean(v)))||same(g,gliderSnap);$('gliderDelete').disabled=!selectedGlider();$('gliderNew').disabled=!profiles.gliders.length;leafLogButtons();routeButtons()}
 function render(){fillSelect($('pilotList'),profiles.pilots,pilotLabel);fillSelect($('activePilotList'),profiles.pilots,pilotLabel);if(profiles.active_pilot_id){$('pilotList').value=profiles.active_pilot_id;$('activePilotList').value=profiles.active_pilot_id}let p=selectedPilot();$('pilotName').value=p?p.name||'':'';$('pilotEmail').value=p?p.email||'':'';$('leafLogCode').value=p?p.leaf_log_api_key||'':'';$('leafLogPanel').classList.remove('active');msg('leafLogMsg','');if(!profiles.pilots.length)msg('pilotMsg','Enter pilot name, then Save Profile.');fillSelect($('gliderList'),profiles.gliders,gliderLabel);fillSelect($('activeGliderList'),profiles.gliders,gliderLabel);if(profiles.active_glider_id){$('gliderList').value=profiles.active_glider_id;$('activeGliderList').value=profiles.active_glider_id}let g=selectedGlider();$('gliderBrand').value=g?g.brand||'':'';$('gliderModel').value=g?g.model||'':'';$('gliderSize').value=g?g.size||'':'';$('gliderDisplay').value=g?g.display_name||'':'';if(!profiles.gliders.length)msg('gliderMsg','Enter glider details, then Save Profile.');setSnaps()}
 function normalize(){profiles.schema='leaf.profiles';profiles.schema_version='v0.1.0';profiles.pilots=(profiles.pilots||[]).filter(p=>p&&p.id&&p.name);profiles.gliders=(profiles.gliders||[]).filter(g=>g&&g.id&&g.model);if(!profiles.pilots.find(p=>p.id==profiles.active_pilot_id))profiles.active_pilot_id=profiles.pilots.length==1?profiles.pilots[0].id:null;if(!profiles.gliders.find(g=>g.id==profiles.active_glider_id))profiles.active_glider_id=profiles.gliders.length==1?profiles.gliders[0].id:null}
 async function save(){normalize();let r=await fetch('/api/profiles',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(profiles)});if(!r.ok)throw new Error();render()}
@@ -1010,12 +1490,12 @@ function good(v){return v!==null&&v!==undefined&&v!==""&&Number.isFinite(Number(
 function altShown(v){if(!good(v))return NaN;v=Number(v);return unitPrefs.alt_feet?Math.round(v*3.28084):Math.round(v)}
 function renderAlt(e){let s=Number(e.start_altitude_m),x=Number(e.max_altitude_m),n=Number(e.min_altitude_m),end=Number(e.end_altitude_m);let vals=[s,x,end].filter(Number.isFinite),a=$('altStart'),b=$('altMax'),c=$('altEnd');[a,b,c].forEach(q=>{q.classList.remove('high');q.style.display='none'});if(!vals.length)return;if(!Number.isFinite(n))n=Math.min(...vals,0);let hi=Math.max(...vals,0),lo=Math.min(n,...vals,0),range=Math.max(1,hi-lo),top=v=>Number.isFinite(v)?Math.round((hi-v)/range*64)+2:32,sv=Number.isFinite(s),ev=Number.isFinite(end),showMax=Number.isFinite(x)&&altShown(x)>Math.max(sv?altShown(s):-1e9,ev?altShown(end):-1e9);if(sv){a.style.display='block';a.lastChild.textContent=m(s);a.style.left='0';a.style.top=top(s)+'px'}if(showMax){b.style.display='block';b.lastChild.textContent=m(x);b.style.left='50%';b.style.transform='translateX(-50%)';b.style.top=top(x)+'px'}if(ev){c.style.display='block';c.lastChild.textContent=m(end);c.style.right='0';c.style.top=top(end)+'px'}if(showMax)b.classList.add('high');else if(sv&&(!ev||altShown(s)>=altShown(end)))a.classList.add('high');else if(ev)c.classList.add('high')}
 async function loadStatus(){try{let s=await(await fetch('/api/user/status')).json();userStatus=s;$('status').textContent=`mode: ${s.mode}\nssid: ${s.ssid||'(none)'}\nip: ${s.ip_address||'(none)'}\n`+versionText(s);leafLogButtons();if(Number.isFinite(Number(s.battery_percent))){let p=Math.max(0,Math.min(100,Number(s.battery_percent)));$('batteryFill').style.width=p+'%';$('batteryText').textContent=p+'%';$('batteryCharge').textContent=s.battery_charging?'Charging':'Not charging'}else $('batteryBox').style.display='none'}catch(e){$('status').textContent='Unable to read status.'}}
-async function loadLogbook(){try{let d=await(await fetch('/api/logbook')).json();useUnits(d.units);$('logCount').textContent=d.count||0;$('openLogbook').disabled=!d.count;$('logLatest').textContent=d.latest&&d.latest.start_time_local?logDateTime(d.latest.start_time_local,unitPrefs.time_12h):(d.count?'Unknown':'No flights')}catch(e){$('logLatest').textContent='Unavailable';$('openLogbook').disabled=true}}
+async function loadLogbook(){try{let d=await(await fetch('/api/logbook')).json();useUnits(d.units);$('logCount').textContent=d.count||0;$('logLatest').textContent=d.latest&&d.latest.start_time_local?logDateTime(d.latest.start_time_local,unitPrefs.time_12h):(d.count?'Unknown':'No flights')}catch(e){$('logLatest').textContent='Unavailable'}}
 function resetDelete(){$('deleteLog').style.display='block';$('deleteConfirm').style.display='none'}
 function clearLogCard(d){logState={prev:d&&d.previous_path||'',next:d&&d.next_path||'',path:d&&d.path||''};$('logPage').textContent=((d&&d.position)||'--')+'/'+((d&&d.total)||'--');$('logPrev').disabled=!logState.next;$('logNext').disabled=!logState.prev;$('flightDay').textContent='--';$('flightDate').textContent='Date unknown';$('flightTime').textContent='--';$('flightDuration').textContent='--';$('flightPilot').textContent='';$('flightGlider').textContent='';renderAlt({});$('climbMax').style.display='none';$('sinkMax').style.display='none';$('flightMetrics').innerHTML=['Straight Dist','Path Dist','Max Speed','Accel','Temp'].map(x=>`<div class=mini-row><span>${x}</span><strong>--</strong></div>`).join('');$('trackInfo').textContent=(d&&d.filename?'Bad log: '+d.filename:'Bad log');$('deleteLog').disabled=!logState.path}
 async function loadLogEntry(path){msg('logDetailMsg','Loading...');resetDelete();$('deleteLog').disabled=false;let url='/api/logbook/entry'+(path?'?path='+encodeURIComponent(path):'');try{let r=await fetch(url),d=await r.json().catch(()=>({}));useUnits(d.units);if(!r.ok||!d.ok){clearLogCard(d);throw d}let e=d.entry;logState={prev:d.previous_path||'',next:d.next_path||'',path:e.path||''};$('logPage').textContent=(d.position||'--')+'/'+(d.total||'--');$('logPrev').disabled=!logState.next;$('logNext').disabled=!logState.prev;let lp=logParts(e.start_time_local,unitPrefs.time_12h);$('flightDay').textContent=lp.day||'--';$('flightDate').textContent=lp.date||'Date unknown';$('flightTime').textContent=lp.time||'--';$('flightDuration').textContent=dur(e.duration_seconds);$('flightPilot').textContent=e.pilot_name||'';$('flightGlider').textContent=e.glider_display_name||'';renderAlt(e);$('climbMax').style.display=good(e.max_climb_rate_mps)?'block':'none';$('sinkMax').style.display=good(e.max_sink_rate_mps)?'block':'none';$('climbMax').textContent=ms(e.max_climb_rate_mps);$('sinkMax').textContent=ms(e.max_sink_rate_mps);let rows=[['Straight Dist',dist(e.straight_line_distance_m)],['Path Dist',dist(e.path_distance_m)],['Max Speed',spd(e.max_ground_speed_mps)],['Accel',(good(e.min_accel_g)&&good(e.max_accel_g)?Number(e.min_accel_g).toFixed(1)+' / '+Number(e.max_accel_g).toFixed(1)+' G':'--')],['Temp',tempRange(e.min_temperature_c,e.max_temperature_c)]];if(e.max_wind_valid)rows.push(['Wind',wind(e.max_wind_speed_mps,e.max_wind_direction_from_deg)]);$('flightMetrics').innerHTML=rows.map(r=>`<div class=mini-row><span>${r[0]}</span><strong>${r[1]}</strong></div>`).join('');let tn=e.track_path?e.track_path.split('/').pop():'';$('trackInfo').innerHTML='<span>'+(e.track_saved?('Track File: <span class=track-file-name>'+tn+'</span>'):'No track file')+'</span><span class=flight-id>Flight ID '+(e.flight_id||'--')+'</span>';$('deleteLog').disabled=!logState.path;msg('logDetailMsg','')}catch(x){resetDelete();if(!(x&&x.path))$('deleteLog').disabled=true;msg('logDetailMsg',x&&x.detail?x.detail:'Unable to load log.')}}
 async function loadProfiles(){try{profiles=await(await fetch('/api/profiles')).json();normalize();msg('pilotMsg','');msg('gliderMsg','');render()}catch(e){msg('pilotMsg','Unable to read profiles.')}}
-$('editProfiles').onclick=()=>show('profiles');$('backMain').onclick=()=>show('main');$('backLogMain').onclick=()=>show('main');$('openLogbook').onclick=()=>{show('logbook');loadLogEntry('')};$('logPrev').onclick=()=>{if(logState.next)loadLogEntry(logState.next)};$('logNext').onclick=()=>{if(logState.prev)loadLogEntry(logState.prev)};$('deleteLog').onclick=()=>{if(!logState.path)return;$('deleteLog').style.display='none';$('deleteConfirm').style.display='block';msg('logDetailMsg','')};$('cancelDelete').onclick=resetDelete;$('confirmDelete').onclick=async()=>{if(!logState.path)return;msg('logDetailMsg','Deleting...');try{let r=await fetch('/api/logbook/entry?path='+encodeURIComponent(logState.path),{method:'DELETE'}),d=await r.json().catch(()=>({}));if(!r.ok||!d.ok)throw d;await loadLogbook();if(d.count>0)loadLogEntry(d.next_path||'');else{show('main');msg('logMsg','Log deleted.')}}catch(x){msg('logDetailMsg',x&&x.detail?x.detail:'Unable to delete log.');resetDelete()}};['pilotName','pilotEmail','leafLogCode','gliderBrand','gliderModel','gliderSize','gliderDisplay'].forEach(x=>$(x).oninput=buttons);['routeName','routeData'].forEach(x=>$(x).oninput=routeButtons);$('leafLogLink').onclick=()=>{$('leafLogPanel').classList.add('active');msg('leafLogMsg','')};$('leafLogWifi').onclick=()=>{location.href='/wifi?scan=1&return=app'};$('leafLogOpen').onclick=()=>{window.open(leafLogUrl(),'_blank','noopener')};$('leafLogSave').onclick=()=>{let name=clean($('pilotName').value);if(!name){msg('leafLogMsg','Pilot name is required.');return}let p=selectedPilot();if(!p){msg('leafLogMsg','Save this pilot profile before linking Leaf Log.');return}p.name=name;p.email=clean($('pilotEmail').value);p.leaf_log_api_key=clean($('leafLogCode').value);save().then(()=>{msg('leafLogMsg','Leaf Log link saved.');msg('pilotMsg','Pilot profile saved.')}).catch(()=>msg('leafLogMsg','Unable to save Leaf Log link.'))};$('routeSave').onclick=async()=>{let name=clean($('routeName').value),data=clean($('routeData').value);if(!name||!data){routeButtons();return}msg('routeMsg','Saving route...');$('routeSave').disabled=true;try{let r=await fetch('/api/routes/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,data:data,activate:$('routeActivate').checked})}),d=await r.json().catch(()=>({}));if(!r.ok||!d.saved)throw d;msg('routeMsg','Saved '+(d.points||0)+' points'+(d.active?' and set active.':'.'));$('routeData').value=''}catch(x){msg('routeMsg',x&&x.detail?x.detail:'Unable to save route.')}routeButtons(false)};
+$('openProfiles').onclick=()=>show('profiles');$('backMain').onclick=()=>show('main');$('openNavTools').onclick=()=>{show('nav');loadWaypointFileList()};$('backNavMain').onclick=()=>show('main');$('backLogMain').onclick=()=>show('main');$('openLogbook').onclick=()=>{show('logbook');loadLogEntry('')};$('waypointActivate').onclick=activateWaypointFile;$('waypointLoad').onclick=()=>{$('waypointFile').value='';$('waypointFile').click()};$('waypointFile').onchange=()=>uploadWaypointFile($('waypointFile').files[0]);$('editRouteName').oninput=routeEditButtons;$('editRouteAdd').onclick=addSelectedRoutePoint;$('editRouteSave').onclick=saveEditedRoute;$('editRouteList').onclick=e=>{let b=e.target.closest('button');if(!b)return;let i=Number(b.dataset.i),a=b.dataset.act;if(a=='remove')editRoute.splice(i,1);else if(a=='up'&&i>0)[editRoute[i-1],editRoute[i]]=[editRoute[i],editRoute[i-1]];else if(a=='down'&&i<editRoute.length-1)[editRoute[i+1],editRoute[i]]=[editRoute[i],editRoute[i+1]];renderEditRoute()};$('editRouteList').oninput=e=>{if(e.target.dataset.r===undefined)return;let i=Number(e.target.dataset.r),v=Number(e.target.value)||150;editRoute[i].radius_m=Math.max(10,Math.min(20000,Math.round(v)))};$('logPrev').onclick=()=>{if(logState.next)loadLogEntry(logState.next)};$('logNext').onclick=()=>{if(logState.prev)loadLogEntry(logState.prev)};$('deleteLog').onclick=()=>{if(!logState.path)return;$('deleteLog').style.display='none';$('deleteConfirm').style.display='block';msg('logDetailMsg','')};$('cancelDelete').onclick=resetDelete;$('confirmDelete').onclick=async()=>{if(!logState.path)return;msg('logDetailMsg','Deleting...');try{let r=await fetch('/api/logbook/entry?path='+encodeURIComponent(logState.path),{method:'DELETE'}),d=await r.json().catch(()=>({}));if(!r.ok||!d.ok)throw d;await loadLogbook();if(d.count>0)loadLogEntry(d.next_path||'');else{show('main');msg('logMsg','Log deleted.')}}catch(x){msg('logDetailMsg',x&&x.detail?x.detail:'Unable to delete log.');resetDelete()}};['pilotName','pilotEmail','leafLogCode','gliderBrand','gliderModel','gliderSize','gliderDisplay'].forEach(x=>$(x).oninput=buttons);['routeName','routeData'].forEach(x=>$(x).oninput=routeButtons);$('leafLogLink').onclick=()=>{$('leafLogPanel').classList.add('active');msg('leafLogMsg','')};$('leafLogWifi').onclick=()=>{location.href='/wifi?scan=1&return=app'};$('leafLogOpen').onclick=()=>{window.open(leafLogUrl(),'_blank','noopener')};$('leafLogSave').onclick=()=>{let name=clean($('pilotName').value);if(!name){msg('leafLogMsg','Pilot name is required.');return}let p=selectedPilot();if(!p){msg('leafLogMsg','Save this pilot profile before linking Leaf Log.');return}p.name=name;p.email=clean($('pilotEmail').value);p.leaf_log_api_key=clean($('leafLogCode').value);save().then(()=>{msg('leafLogMsg','Leaf Log link saved.');msg('pilotMsg','Pilot profile saved.')}).catch(()=>msg('leafLogMsg','Unable to save Leaf Log link.'))};$('routeSave').onclick=async()=>{let name=clean($('routeName').value),data=clean($('routeData').value);if(!name||!data){routeButtons();return}msg('routeMsg','Saving route...');$('routeSave').disabled=true;try{let r=await fetch('/api/routes/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,data:data,activate:$('routeActivate').checked})}),d=await r.json().catch(()=>({}));if(!r.ok||!d.saved)throw d;msg('routeMsg','Saved '+(d.points||0)+' points'+(d.active?' and set active.':'.'));$('routeData').value=''}catch(x){msg('routeMsg',x&&x.detail?x.detail:'Unable to save route.')}routeButtons(false)};
 $('activePilotList').onchange=()=>{profiles.active_pilot_id=$('activePilotList').value;render();save().then(()=>msg('mainProfileMsg','Active pilot saved.')).catch(()=>msg('mainProfileMsg','Unable to save.'))};
 $('activeGliderList').onchange=()=>{profiles.active_glider_id=$('activeGliderList').value;render();save().then(()=>msg('mainProfileMsg','Active glider saved.')).catch(()=>msg('mainProfileMsg','Unable to save.'))};
 $('pilotList').onchange=()=>{profiles.active_pilot_id=$('pilotList').value;render();save().then(()=>msg('pilotMsg','Active pilot selected.')).catch(()=>msg('pilotMsg','Unable to save.'))};
@@ -1026,7 +1506,7 @@ $('pilotSave').onclick=()=>{let name=clean($('pilotName').value);if(!name){msg('
 $('gliderSave').onclick=()=>{let model=clean($('gliderModel').value);if(!model){msg('gliderMsg','Glider model is required.');return}let g=selectedGlider();if(!g){g={id:newId(),model:''};profiles.gliders.push(g);profiles.active_glider_id=g.id}g.brand=clean($('gliderBrand').value);g.model=model;g.size=clean($('gliderSize').value);g.display_name=clean($('gliderDisplay').value);save().then(()=>msg('gliderMsg','Glider profile saved.')).catch(()=>msg('gliderMsg','Unable to save glider.'))};
 $('pilotDelete').onclick=()=>{let p=selectedPilot();if(!p)return;profiles.pilots=profiles.pilots.filter(x=>x.id!=p.id);profiles.active_pilot_id=null;save().then(()=>msg('pilotMsg','Pilot profile deleted.')).catch(()=>msg('pilotMsg','Unable to delete pilot.'))};
 $('gliderDelete').onclick=()=>{let g=selectedGlider();if(!g)return;profiles.gliders=profiles.gliders.filter(x=>x.id!=g.id);profiles.active_glider_id=null;save().then(()=>msg('gliderMsg','Glider profile deleted.')).catch(()=>msg('gliderMsg','Unable to delete glider.'))};
-leafLogButtons();routeButtons();loadStatus();loadProfiles();loadLogbook();
+leafLogButtons();routeButtons();routeEditButtons();loadStatus();loadProfiles();loadLogbook();loadNavData();
 </script></body></html>)leafapp";
     sendNoStoreHeaders(target);
     target.send_P(200, "text/html", USER_APP_PAGE);
@@ -1478,6 +1958,18 @@ leafLogButtons();routeButtons();loadStatus();loadProfiles();loadLogbook();
         if (diagnosticsEnabled()) user_app_route_routes_import_count++;
         importRoute(user_server);
       });
+      user_server.on("/api/routes/save", HTTP_POST, []() { saveEditedRoute(user_server); });
+      user_server.on("/api/nav-data", HTTP_GET, []() { sendNavData(user_server); });
+      user_server.on("/api/waypoints/files", HTTP_GET, []() { sendWaypointFileList(user_server); });
+      user_server.on("/api/waypoints/activate", HTTP_POST,
+                     []() { activateWaypointFile(user_server); });
+      user_server.on(
+          "/api/waypoints/upload", HTTP_POST,
+          []() {
+            if (diagnosticsEnabled()) user_app_route_waypoints_upload_count++;
+            finishWaypointUpload(user_server);
+          },
+          []() { receiveWaypointUpload(user_server); });
       user_server.on("/api/logbook", HTTP_GET, []() {
         if (diagnosticsEnabled()) user_app_route_logbook_count++;
         heap_monitor::record("logbook-summary");

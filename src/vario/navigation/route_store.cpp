@@ -11,7 +11,7 @@
 namespace route_store {
   namespace {
     constexpr size_t ROUTE_IMPORT_MAX_BYTES = 8192;
-    constexpr size_t ROUTE_FILE_MAX_BYTES = 8192;
+    constexpr size_t ROUTE_FILE_MAX_BYTES = 16384;
     constexpr const char* ROUTE_TEMP_FILE = "/routes/route.tmp";
     constexpr const char* ROUTE_BACKUP_FILE = "/routes/route.bak";
 
@@ -450,6 +450,45 @@ namespace route_store {
 
     result.path = path;
     result.points = routeDoc["points"].as<JsonArray>().size();
+    result.ok = true;
+
+    if (activate) {
+      if (!saveActiveRoutePointer(path) || !loadNormalizedRoute(routeDoc, path, true)) {
+        result.error = routeError("Route was saved but could not be activated.");
+        return false;
+      }
+      result.active = true;
+    }
+
+    return true;
+  }
+
+  bool saveRouteJson(JsonDocument& routeDoc, bool activate, ImportResult& result) {
+    result = ImportResult();
+
+    JsonObject route = routeDoc.as<JsonObject>();
+    route["schema"] = "leaf.route";
+    route["schema_version"] = "v0.1.0";
+
+    String name = route["name"] | "";
+    name.trim();
+    if (name.isEmpty()) name = "Web Route";
+    route["name"] = name;
+
+    JsonArray points = route["points"].as<JsonArray>();
+    if (points.isNull() || points.size() == 0 || points.size() > maxRoutePointRefs) {
+      result.error = routeError("Route has no usable turnpoints.");
+      return false;
+    }
+
+    const String path = safeRouteFileName(name);
+    if (!writeJsonFile(path, routeDoc)) {
+      result.error = routeError("Route file could not be saved.");
+      return false;
+    }
+
+    result.path = path;
+    result.points = points.size();
     result.ok = true;
 
     if (activate) {

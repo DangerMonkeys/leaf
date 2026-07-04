@@ -18,6 +18,7 @@ enum flight_tools_menu_items {
   cursor_flight_tools_varioVolume,
   cursor_flight_tools_savePoint,
   cursor_flight_tools_resetRoute,
+  cursor_flight_tools_cancelNav,
 };
 
 bool FlightToolsMenuPage::button_event(Button button, ButtonEvent state, uint8_t count) {
@@ -53,7 +54,7 @@ void FlightToolsMenuPage::draw() {
 
     uint8_t setting_name_x = 2;
     uint8_t setting_choice_x = 76;
-    uint8_t menu_items_y[] = {190, 45, 60, 75, 90};
+    uint8_t menu_items_y[] = {190, 45, 60, 75, 90, 105};
 
     for (int i = 0; i <= cursor_max; i++) {
       if (row_hidden(i)) continue;
@@ -86,8 +87,13 @@ void FlightToolsMenuPage::draw() {
           menu_ui::drawEnterIcon(setting_choice_x, menu_items_y[i], selected);
           break;
         case cursor_flight_tools_resetRoute:
-          menu_ui::drawLabel(setting_name_x, menu_items_y[i], "Reset Route",
+          menu_ui::drawLabel(setting_name_x, menu_items_y[i], "Reset Rte",
                              menu_ui::GLYPH_RESET_ROUTE);
+          menu_ui::drawEnterIcon(setting_choice_x, menu_items_y[i], selected);
+          break;
+        case cursor_flight_tools_cancelNav:
+          menu_ui::drawLabel(setting_name_x, menu_items_y[i], "Cancel Nav",
+                             menu_ui::GLYPH_CANCEL_NAV);
           menu_ui::drawEnterIcon(setting_choice_x, menu_items_y[i], selected);
           break;
       }
@@ -128,6 +134,11 @@ void FlightToolsMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t 
         }
       }
       break;
+    case cursor_flight_tools_cancelNav:
+      if (state == ButtonEvent::CLICKED) {
+        navigator.cancelNav();
+      }
+      break;
     case cursor_flight_tools_back:
       if (state == ButtonEvent::CLICKED) {
         speaker.playSound(fx::cancel);
@@ -143,7 +154,9 @@ void FlightToolsMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t 
 }
 
 bool FlightToolsMenuPage::row_hidden(int8_t row) const {
-  return row == cursor_flight_tools_resetRoute && !navigator.activeRouteIndex;
+  if (row == cursor_flight_tools_resetRoute) return !navigator.activeRouteIndex;
+  if (row == cursor_flight_tools_cancelNav) return !navigator.hasActivePoint();
+  return false;
 }
 
 void FlightToolsMenuPage::skip_hidden_forward() {

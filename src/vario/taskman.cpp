@@ -19,6 +19,7 @@
 #include "instruments/gps.h"
 #include "instruments/imu.h"
 #include "logging/log.h"
+#include "navigation/gpx.h"
 #include "power.h"
 #include "storage/sd_card.h"
 #include "system/usb_state.h"
@@ -362,6 +363,10 @@ void TaskManager::doNecessaryTasks(void) {
   }
   if (performTask.display) {
     display.update();
+    if (!restoredNavAfterFirstDisplayUpdate_) {
+      restoredNavAfterFirstDisplayUpdate_ = true;
+      if (sdcard.isMounted()) navigator.loadPersistedState();
+    }
     performTask.display = false;
   }
   if (performTask.tempRH) {

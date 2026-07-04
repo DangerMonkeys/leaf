@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <ArduinoJson.h>
 
 namespace route_store {
 
@@ -16,6 +17,7 @@ namespace route_store {
   constexpr const char* activeRoutePath() { return "/routes/active.json"; }
 
   bool importRouteText(const String& name, const String& data, bool activate, ImportResult& result);
+  bool saveRouteJson(JsonDocument& routeDoc, bool activate, ImportResult& result);
   bool loadRouteFile(const String& path, bool activate);
   bool loadActiveRoute();
   bool clearActiveRoute();
