@@ -45,6 +45,7 @@ class TaskManager : IPollable {
 
   uint32_t tNecessaryTasksStart = 0;
   bool performedNecessaryTasks = false;
+  bool restoredNavAfterFirstDisplayUpdate_ = false;
 
   // Opportunities to perform necessary work occur every 10ms with a repeating pattern every 1000ms.
   // Tasks can be targeted to execute at certain combinations of 10ms and 100ms indices within the

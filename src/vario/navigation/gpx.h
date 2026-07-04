@@ -11,7 +11,7 @@
 // Waypoint definition and memory allocation
 #define defaultWaypointRadius 150  // meters radius to count as "reaching/crossing" a waypoint
 #define maxRoutes 10
-#define maxNavPoints 100
+#define maxNavPoints 128
 #define maxRoutePointRefs 75
 #define maxGpxNameLength 24
 #define maxGpxFileNameLength 96
@@ -110,8 +110,11 @@ class Navigator {
   void update(void);
 
   bool activatePoint(WaypointID pointIndex);
+  bool activatePoint(WaypointID pointIndex, bool playSound);
   bool activateRoute(RouteID routeIndex);
+  bool activateRoute(RouteID routeIndex, bool playSound);
   bool activateRoute(RouteID routeIndex, RouteIndex routePointIndex);
+  bool activateRoute(RouteID routeIndex, RouteIndex routePointIndex, bool playSound);
   void cancelNav(void);
   bool loadPersistedState();
   bool savePersistedState();
@@ -180,7 +183,7 @@ class Navigator {
   bool navigating = false;
 
  private:
-  bool sequenceWaypoint(void);
+  bool sequenceWaypoint(bool playSound = true);
   void loadRoutes(void);
   void loadWaypoints(void);
 

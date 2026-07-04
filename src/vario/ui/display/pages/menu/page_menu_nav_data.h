@@ -12,7 +12,7 @@ class NavDataMenuPage : public SettingsMenuPage {
  public:
   NavDataMenuPage() {
     cursor_position = 0;
-    cursor_max = 4;
+    cursor_max = 3;
   }
   void backToNavDataMenu();
   void draw();

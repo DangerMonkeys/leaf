@@ -15,15 +15,14 @@
 enum nav_data_menu_items {
   cursor_nav_data_back,
   cursor_nav_data_selectDest,
-  cursor_nav_data_buildRoute,
   cursor_nav_data_loadFile,
   cursor_nav_data_clearAll,
 };
 
 namespace {
-  constexpr char* labels[5] = {"Back", "Select Dest", "Build Rt", "Load File", "Clear All"};
-  constexpr uint8_t glyphs[5] = {0, menu_ui::GLYPH_NAV_POINT_SELECT, menu_ui::GLYPH_NAV_ROUTE_BUILD,
-                                 menu_ui::GLYPH_NAV_FILE, menu_ui::GLYPH_CLEAR_ALL};
+  constexpr char* labels[4] = {"Back", "Select Dest", "Load File", "Clear All"};
+  constexpr uint8_t glyphs[4] = {0, menu_ui::GLYPH_NAV_POINT_SELECT, menu_ui::GLYPH_NAV_FILE,
+                                 menu_ui::GLYPH_CLEAR_ALL};
   constexpr uint8_t MENU_INPUT_X = 76;
   constexpr uint8_t FITTED_TEXT_MAX_WIDTH = 92;
   constexpr uint8_t ACTIVE_SECTION_DIVIDER_Y = 45;
@@ -65,7 +64,7 @@ void NavDataMenuPage::draw() {
     menu_ui::drawTitle("Nav Data", menu_ui::GLYPH_NAV_DATA);
 
     uint8_t setting_name_x = 2;
-    uint8_t menu_items_y[] = {190, 94, 109, 149, 164};
+    uint8_t menu_items_y[] = {190, 94, 149, 164};
 
     for (int i = 0; i <= cursor_max; i++) {
       if (row_hidden(i)) continue;
@@ -152,11 +151,6 @@ void NavDataMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t coun
         speaker.playSound(fx::cancel);
       }
       break;
-    case cursor_nav_data_buildRoute:
-      if (state == ButtonEvent::CLICKED) {
-        speaker.playSound(fx::cancel);
-      }
-      break;
     case cursor_nav_data_loadFile:
       if (state == ButtonEvent::CLICKED && (dir == Button::RIGHT || dir == Button::CENTER)) {
         gpxFileSelectPage.show();
@@ -180,9 +174,6 @@ bool NavDataMenuPage::row_hidden(int8_t row) const {
   if (row == cursor_nav_data_selectDest) {
     return !navigator.hasLoadedNavFile() ||
            (navigator.totalWaypoints == 0 && navigator.totalRoutes == 0);
-  }
-  if (row == cursor_nav_data_buildRoute) {
-    return !navigator.hasLoadedNavFile() || navigator.totalWaypoints == 0;
   }
   return false;
 }

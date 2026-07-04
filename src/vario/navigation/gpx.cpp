@@ -142,7 +142,6 @@ namespace {
     }
 
     out[index] = '\0';
-    if (*cursor == ',') cursor++;
     return true;
   }
 
@@ -589,7 +588,9 @@ void Navigator::update() {
 
 // Start, Sequence, and End Navigation Functions
 
-bool Navigator::activatePoint(WaypointID pointIndex) {
+bool Navigator::activatePoint(WaypointID pointIndex) { return activatePoint(pointIndex, true); }
+
+bool Navigator::activatePoint(WaypointID pointIndex, bool playSound) {
   if (!pointIndex || pointIndex > totalWaypoints) return false;
 
   navigating = true;
@@ -603,7 +604,7 @@ bool Navigator::activatePoint(WaypointID pointIndex) {
   activePoint = waypoint(activeWaypointIndex);
   activeRoutePoint = RoutePoint();
 
-  speaker.playSound(fx::enter);
+  if (playSound) speaker.playSound(fx::enter);
 
   double newDistance = gps.distanceBetween(gps.location.lat(), gps.location.lng(),
                                            activePoint.latitude(), activePoint.longitude());
@@ -616,11 +617,17 @@ bool Navigator::activatePoint(WaypointID pointIndex) {
   return navigating;
 }
 
-bool Navigator::activateRoute(RouteID routeIndex) {
-  return activateRoute(routeIndex, RouteIndex(1));
+bool Navigator::activateRoute(RouteID routeIndex) { return activateRoute(routeIndex, true); }
+
+bool Navigator::activateRoute(RouteID routeIndex, bool playSound) {
+  return activateRoute(routeIndex, RouteIndex(1), playSound);
 }
 
 bool Navigator::activateRoute(RouteID routeIndex, RouteIndex routePointIndex) {
+  return activateRoute(routeIndex, routePointIndex, true);
+}
+
+bool Navigator::activateRoute(RouteID routeIndex, RouteIndex routePointIndex, bool playSound) {
   if (!routeIndex || routeIndex > totalRoutes) return false;
 
   // first check if any valid points
@@ -641,7 +648,7 @@ bool Navigator::activateRoute(RouteID routeIndex, RouteIndex routePointIndex) {
     // increment and populate new
     // activePoint, and nextPoint, if any
     activeRoutePointIndex = routePointIndex - 1;
-    sequenceWaypoint();
+    sequenceWaypoint(playSound);
 
     // calculate TOTAL Route distance
     totalDistanceRemaining_ = 0;
@@ -667,7 +674,7 @@ bool Navigator::activateRoute(RouteID routeIndex, RouteIndex routePointIndex) {
   return navigating;
 }
 
-bool Navigator::sequenceWaypoint() {
+bool Navigator::sequenceWaypoint(bool playSound) {
   Serial.print("entering sequence..");
 
   bool successfulSequence = false;
@@ -677,7 +684,7 @@ bool Navigator::sequenceWaypoint() {
     successfulSequence = true;
 
     // TODO: play going to next point sound, or whatever
-    speaker.playSound(fx::enter);
+    if (playSound) speaker.playSound(fx::enter);
 
     activeRoutePointIndex++;
     Serial.print(" new active index:");
@@ -721,7 +728,7 @@ bool Navigator::sequenceWaypoint() {
   } else {  // otherwise, we made it to our destination!
     // TODO: celebrate!  (play reaching goal sound, or whatever)
     reachedGoal_ = true;
-    speaker.playSound(fx::confirm);
+    if (playSound) speaker.playSound(fx::confirm);
   }
   if (successfulSequence) savePersistedState();
   Serial.print(" succes is: ");
@@ -812,7 +819,7 @@ bool Navigator::loadPersistedState() {
   if (strcmp(schema, LEGACY_ACTIVE_ROUTE_SCHEMA) == 0) {
     const String path = doc["path"] | "";
     if (!route_store::loadRouteFile(path, false)) return false;
-    return activateRoute(RouteID(1));
+    return activateRoute(RouteID(1), false);
   }
   if (strcmp(schema, NAV_STATE_SCHEMA) != 0) return false;
 
@@ -834,8 +841,8 @@ bool Navigator::loadPersistedState() {
   const uint8_t index = active["index"] | 0;
   const int16_t routePointIndex = active["route_point_index"] | 1;
   if (strcmp(activeType, "route") == 0)
-    return activateRoute(RouteID(index), RouteIndex(routePointIndex));
-  if (strcmp(activeType, "point") == 0) return activatePoint(WaypointID(index));
+    return activateRoute(RouteID(index), RouteIndex(routePointIndex), false);
+  if (strcmp(activeType, "point") == 0) return activatePoint(WaypointID(index), false);
 
   savePersistedState();
   return true;
