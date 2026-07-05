@@ -2,6 +2,7 @@
 
 #include <ArduinoJson.h>
 #include <SD_MMC.h>
+#include <string.h>
 
 namespace {
   String optionalString(JsonVariantConst value) {
@@ -55,6 +56,55 @@ namespace {
 
     const char* schema = doc["schema"] | "";
     return strcmp(schema, "leaf.profiles") == 0;
+  }
+
+  bool profileIdExists(JsonArrayConst profiles, const String& id) {
+    if (id.isEmpty()) return false;
+
+    for (JsonObjectConst item : profiles) {
+      const String candidateId = optionalString(item["id"]);
+      if (candidateId == id) return true;
+    }
+
+    return false;
+  }
+
+  bool ensureProfileDirectory() {
+    File existing = SD_MMC.open(ProfileStore::directoryPath());
+    if (existing) {
+      const bool isDirectory = existing.isDirectory();
+      existing.close();
+      return isDirectory;
+    }
+
+    if (!SD_MMC.mkdir(ProfileStore::directoryPath())) return false;
+
+    File created = SD_MMC.open(ProfileStore::directoryPath());
+    const bool isDirectory = created && created.isDirectory();
+    if (created) created.close();
+    return isDirectory;
+  }
+
+  bool writeProfiles(JsonDocument& doc) {
+    if (!ensureProfileDirectory()) return false;
+
+    File file = SD_MMC.open(ProfileStore::filePath(), "w");
+    if (!file) return false;
+
+    const size_t written = serializeJson(doc, file);
+    file.close();
+    return written > 0;
+  }
+
+  bool selectProfileId(const char* activeKey, const char* arrayKey, const String& id) {
+    JsonDocument doc;
+    if (!loadProfiles(doc)) return false;
+
+    JsonArrayConst profiles = doc[arrayKey].as<JsonArrayConst>();
+    if (profiles.isNull() || !profileIdExists(profiles, id)) return false;
+
+    doc[activeKey] = id;
+    return writeProfiles(doc);
   }
 }  // namespace
 
@@ -129,4 +179,53 @@ bool ProfileStore::activeGlider(GliderProfile& glider) {
   }
 
   return false;
+}
+
+bool ProfileStore::load(PilotProfile* pilots, size_t maxPilots, size_t& pilotCount,
+                        GliderProfile* gliders, size_t maxGliders, size_t& gliderCount,
+                        String& activePilotId, String& activeGliderId) {
+  pilotCount = 0;
+  gliderCount = 0;
+  activePilotId = "";
+  activeGliderId = "";
+
+  JsonDocument doc;
+  if (!loadProfiles(doc)) return false;
+
+  activePilotId = optionalString(doc["active_pilot_id"]);
+  activeGliderId = optionalString(doc["active_glider_id"]);
+
+  JsonArrayConst pilotsJson = doc["pilots"].as<JsonArrayConst>();
+  if (!pilotsJson.isNull()) {
+    for (JsonObjectConst item : pilotsJson) {
+      PilotProfile candidate = pilotFromJson(item);
+      if (!candidate.valid()) continue;
+      if (pilotCount < maxPilots) {
+        pilots[pilotCount] = candidate;
+        pilotCount++;
+      }
+    }
+  }
+
+  JsonArrayConst glidersJson = doc["gliders"].as<JsonArrayConst>();
+  if (!glidersJson.isNull()) {
+    for (JsonObjectConst item : glidersJson) {
+      GliderProfile candidate = gliderFromJson(item);
+      if (!candidate.valid()) continue;
+      if (gliderCount < maxGliders) {
+        gliders[gliderCount] = candidate;
+        gliderCount++;
+      }
+    }
+  }
+
+  return true;
+}
+
+bool ProfileStore::selectPilot(const String& id) {
+  return selectProfileId("active_pilot_id", "pilots", id);
+}
+
+bool ProfileStore::selectGlider(const String& id) {
+  return selectProfileId("active_glider_id", "gliders", id);
 }

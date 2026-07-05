@@ -14,6 +14,7 @@
 
 enum flight_tools_menu_items {
   cursor_flight_tools_back,
+  cursor_flight_tools_profiles,
   cursor_flight_tools_syncAlt,
   cursor_flight_tools_varioVolume,
   cursor_flight_tools_savePoint,
@@ -54,7 +55,7 @@ void FlightToolsMenuPage::draw() {
 
     uint8_t setting_name_x = 2;
     uint8_t setting_choice_x = 76;
-    uint8_t menu_items_y[] = {190, 45, 60, 75, 90, 105};
+    uint8_t menu_items_y[] = {190, 45, 60, 75, 90, 105, 120};
 
     for (int i = 0; i <= cursor_max; i++) {
       if (row_hidden(i)) continue;
@@ -65,6 +66,10 @@ void FlightToolsMenuPage::draw() {
         case cursor_flight_tools_back:
           menu_ui::drawLabel(setting_name_x, menu_items_y[i], "Back");
           menu_ui::drawBackIcon(setting_choice_x, menu_items_y[i]);
+          break;
+        case cursor_flight_tools_profiles:
+          menu_ui::drawLabel(setting_name_x, menu_items_y[i], "Profiles", menu_ui::GLYPH_PROFILE);
+          menu_ui::drawEnterIcon(setting_choice_x, menu_items_y[i], selected);
           break;
         case cursor_flight_tools_syncAlt:
           u8g2.setCursor(setting_name_x, menu_items_y[i]);
@@ -106,6 +111,11 @@ void FlightToolsMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t 
   if (row_hidden(cursor_position)) return;
 
   switch (cursor_position) {
+    case cursor_flight_tools_profiles:
+      if (state == ButtonEvent::CLICKED) {
+        profileSelectPage.show();
+      }
+      break;
     case cursor_flight_tools_syncAlt:
       if (state == ButtonEvent::CLICKED) {
         if (baro.syncToGPSAlt()) {

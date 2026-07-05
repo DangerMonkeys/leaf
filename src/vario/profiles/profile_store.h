@@ -30,4 +30,9 @@ class ProfileStore {
 
   static bool activePilot(PilotProfile& pilot);
   static bool activeGlider(GliderProfile& glider);
+  static bool load(PilotProfile* pilots, size_t maxPilots, size_t& pilotCount,
+                   GliderProfile* gliders, size_t maxGliders, size_t& gliderCount,
+                   String& activePilotId, String& activeGliderId);
+  static bool selectPilot(const String& id);
+  static bool selectGlider(const String& id);
 };
