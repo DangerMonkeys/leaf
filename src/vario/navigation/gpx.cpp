@@ -16,6 +16,7 @@
 #include "instruments/gps.h"
 #include "navigation/gpx_parser.h"
 #include "navigation/route_store.h"
+#include "navigation/user_waypoints.h"
 #include "storage/files.h"
 #include "storage/sd_card.h"
 #include "ui/audio/sound_effects.h"
@@ -49,6 +50,8 @@ namespace {
         return "nav_file";
       case LoadedNavSource::SavedRoute:
         return "saved_route";
+      case LoadedNavSource::UserWaypoints:
+        return "user_waypoints";
       case LoadedNavSource::None:
       default:
         return "none";
@@ -59,6 +62,7 @@ namespace {
     if (value == nullptr) return LoadedNavSource::None;
     if (strcmp(value, "nav_file") == 0) return LoadedNavSource::NavFile;
     if (strcmp(value, "saved_route") == 0) return LoadedNavSource::SavedRoute;
+    if (strcmp(value, "user_waypoints") == 0) return LoadedNavSource::UserWaypoints;
     return LoadedNavSource::None;
   }
 
@@ -232,8 +236,10 @@ namespace {
     char line[MAX_NAV_LINE_LENGTH];
     bool parsedAny = false;
     bool inTasks = false;
+    uint16_t linesRead = 0;
 
     while (readLine(file, line, sizeof(line))) {
+      if ((++linesRead & 0x0F) == 0) yield();
       char* trimmed = trimInPlace(line);
       if (trimmed[0] == '\0') continue;
       if (strstr(trimmed, "-----Related Tasks-----") != nullptr) {
@@ -287,7 +293,9 @@ namespace {
 
     char line[MAX_NAV_LINE_LENGTH];
     bool parsedAny = false;
+    uint16_t linesRead = 0;
     while (readLine(file, line, sizeof(line))) {
+      if ((++linesRead & 0x0F) == 0) yield();
       char* trimmed = trimInPlace(line);
       if (trimmed[0] == '\0' || strstr(trimmed, "OziExplorer") == trimmed) continue;
 
@@ -459,6 +467,7 @@ void Navigator::clear() {
   courseToNext_ = 0;
   turnToNext_ = 0;
   reachedGoal_ = false;
+  loadedFileWaypointCount_ = 0;
   loadedNavSource_ = LoadedNavSource::None;
   loadedGpxFilename_[0] = '\0';
   loadedNavPath_[0] = '\0';
@@ -821,6 +830,7 @@ void Navigator::setLoadedGpxFilename(const String& fileName) {
   loadedGpxFilename_[maxGpxFileNameLength] = '\0';
   fileName.toCharArray(loadedNavPath_, sizeof(loadedNavPath_));
   loadedNavPath_[maxGpxFileNameLength] = '\0';
+  markLoadedFileWaypointCount();
   loadedNavSource_ = LoadedNavSource::NavFile;
 }
 
@@ -830,7 +840,17 @@ void Navigator::setLoadedSavedRouteFilename(const String& fileName) {
   loadedGpxFilename_[maxGpxFileNameLength] = '\0';
   fileName.toCharArray(loadedNavPath_, sizeof(loadedNavPath_));
   loadedNavPath_[maxGpxFileNameLength] = '\0';
+  markLoadedFileWaypointCount();
   loadedNavSource_ = LoadedNavSource::SavedRoute;
+}
+
+void Navigator::setLoadedUserWaypointsFilename(const String& fileName) {
+  strncpy(loadedGpxFilename_, "User Waypoints", sizeof(loadedGpxFilename_));
+  loadedGpxFilename_[maxGpxFileNameLength] = '\0';
+  fileName.toCharArray(loadedNavPath_, sizeof(loadedNavPath_));
+  loadedNavPath_[maxGpxFileNameLength] = '\0';
+  markLoadedFileWaypointCount();
+  loadedNavSource_ = LoadedNavSource::UserWaypoints;
 }
 
 bool Navigator::savePersistedState() {
@@ -909,6 +929,8 @@ bool Navigator::loadPersistedState(bool activate) {
     loaded = route_store::loadRouteFile(path, false);
   } else if (sourceType == LoadedNavSource::NavFile) {
     loaded = nav_readFile(SD_MMC, path);
+  } else if (sourceType == LoadedNavSource::UserWaypoints) {
+    loaded = user_waypoints::loadAsNavigatorSource(false);
   }
   if (!loaded) return false;
 

@@ -179,7 +179,7 @@ void NavDataMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t coun
 
 bool NavDataMenuPage::row_hidden(int8_t row) const {
   if (row == cursor_nav_data_selectDest) {
-    return !navigator.hasLoadedNavFile() ||
+    return !navigator.hasLoadedGpxFile() ||
            (navigator.totalWaypoints == 0 && navigator.totalRoutes == 0);
   }
   return false;

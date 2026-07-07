@@ -77,6 +77,7 @@ enum class LoadedNavSource : uint8_t {
   None,
   NavFile,
   SavedRoute,
+  UserWaypoints,
 };
 
 enum class LastNavType : uint8_t {
@@ -153,12 +154,16 @@ class Navigator {
   bool hasLoadedGpxFile() const { return loadedNavSource_ != LoadedNavSource::None; }
   bool hasLoadedNavFile() const { return loadedNavSource_ == LoadedNavSource::NavFile; }
   bool hasLoadedSavedRoute() const { return loadedNavSource_ == LoadedNavSource::SavedRoute; }
+  bool hasLoadedUserWaypoints() const { return loadedNavSource_ == LoadedNavSource::UserWaypoints; }
+  uint8_t loadedFileWaypointCount() const { return loadedFileWaypointCount_; }
+  void markLoadedFileWaypointCount() { loadedFileWaypointCount_ = totalWaypoints; }
   const char* loadedGpxFilename() const { return loadedGpxFilename_; }
   const char* loadedNavFilename() const { return loadedGpxFilename(); }
   const char* loadedNavPath() const { return loadedNavPath_; }
   void setLoadedGpxFilename(const String& fileName);
   void setLoadedNavFilename(const String& fileName) { setLoadedGpxFilename(fileName); }
   void setLoadedSavedRouteFilename(const String& fileName);
+  void setLoadedUserWaypointsFilename(const String& fileName);
 
   Waypoint waypoints[maxNavPoints + 1];
   uint8_t totalWaypoints = 0;
@@ -239,6 +244,7 @@ class Navigator {
   // when finished with the Route, we might want to stay in a "finished"
   // state instead of cancelling navigation altogether
   bool reachedGoal_ = false;
+  uint8_t loadedFileWaypointCount_ = 0;
   LoadedNavSource loadedNavSource_ = LoadedNavSource::None;
   char loadedGpxFilename_[maxGpxFileNameLength + 1] = "";
   char loadedNavPath_[maxGpxFileNameLength + 1] = "";

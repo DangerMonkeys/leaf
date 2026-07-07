@@ -144,23 +144,29 @@ namespace user_waypoints {
       return true;
     }
 
-    void appendNavigatorWaypoint(JsonObjectConst point) {
-      if (!validPoint(point)) return;
+    Waypoint waypointFromJson(JsonObjectConst point) {
       Waypoint waypoint;
       waypoint.setName(cleanName(point["name"] | "").c_str());
       waypoint.setLatitude(point["lat"] | 0.0);
       waypoint.setLongitude(point["lon"] | 0.0);
       waypoint.ele = point["alt_m"] | 0.0;
+      return waypoint;
+    }
+
+    WaypointID appendNavigatorWaypoint(JsonObjectConst point) {
+      if (!validPoint(point)) return WaypointID::None;
+      Waypoint waypoint = waypointFromJson(point);
 
       for (uint8_t i = 1; i <= navigator.totalWaypoints; i++) {
         if (navigator.waypoints[i].latE7 == waypoint.latE7 &&
             navigator.waypoints[i].lonE7 == waypoint.lonE7) {
           navigator.waypoints[i] = waypoint;
-          return;
+          return WaypointID(i);
         }
       }
 
-      navigator.addWaypoint(waypoint);
+      if (!navigator.addWaypoint(waypoint)) return WaypointID::None;
+      return WaypointID(navigator.totalWaypoints);
     }
   }  // namespace
 
@@ -216,6 +222,41 @@ namespace user_waypoints {
       appendNavigatorWaypoint(point);
     }
     return true;
+  }
+
+  bool hasSavedPoints() {
+    if (!sdcard.isMounted() || !SD_MMC.exists(filePath())) return false;
+    JsonDocument doc;
+    String error;
+    if (!loadDocument(doc, error)) return false;
+    for (JsonObjectConst point : doc["points"].as<JsonArrayConst>()) {
+      if (validPoint(point)) return true;
+    }
+    return false;
+  }
+
+  bool loadAsNavigatorSource(bool persist) {
+    if (!sdcard.isMounted() || !SD_MMC.exists(filePath())) return false;
+    JsonDocument doc;
+    String error;
+    if (!loadDocument(doc, error)) return false;
+
+    navigator.clear();
+    for (JsonObjectConst point : doc["points"].as<JsonArrayConst>()) {
+      if (!validPoint(point)) continue;
+      if (!appendNavigatorWaypoint(point)) {
+        navigator.clear();
+        return false;
+      }
+    }
+
+    if (navigator.totalWaypoints == 0) {
+      navigator.clear();
+      return false;
+    }
+
+    navigator.setLoadedUserWaypointsFilename(filePath());
+    return !persist || navigator.savePersistedState();
   }
 
   bool appendJsonList(String& json, String& error) {
