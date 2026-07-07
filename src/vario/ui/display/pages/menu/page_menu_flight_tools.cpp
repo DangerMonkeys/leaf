@@ -3,6 +3,7 @@
 #include <Arduino.h>
 
 #include "instruments/baro.h"
+#include "logging/log.h"
 #include "navigation/gpx.h"
 #include "navigation/user_waypoints.h"
 #include "ui/audio/sound_effects.h"
@@ -167,6 +168,7 @@ void FlightToolsMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t 
         Waypoint savedWaypoint;
         String error;
         if (user_waypoints::appendCurrentPosition(savedWaypoint, error)) {
+          flightTimer_markSavedPoint(savedWaypoint);
           speaker.playSound(fx::confirm);
         } else {
           Serial.print("Save Point failed: ");

@@ -7,6 +7,8 @@
 
 #include "logbook/flight.h"
 
+struct Waypoint;
+
 // Auto Start/Stop Timer Thresholds
 #define AUTO_START_MIN_SPEED 8  // mph minimum before timer will auto-start
 #define AUTO_START_MIN_SEC 5    // seconds above the min speed to auto-start
@@ -30,6 +32,7 @@ void flightTimer_stop(bool showSummary = true);
 void flightTimer_toggle(void);
 bool flightTimer_isRunning(void);  // If the timer is running
 bool flightTimer_isLogging(void);  // If the flight recorder log is logging
+void flightTimer_markSavedPoint(const Waypoint& waypoint);
 void flightTimer_updateStrings(void);
 
 // Returns a short human readable string to represent the flight time.  This is either

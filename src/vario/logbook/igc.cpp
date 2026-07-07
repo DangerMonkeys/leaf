@@ -7,11 +7,105 @@
 #include "FS.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
+#include "navigation/gpx.h"
 #include "profiles/profile_store.h"
 #include "system/version_info.h"
 #include "time.h"
 #include "ui/settings/settings.h"
 #include "utils/string_utils.h"
+
+namespace {
+  String utcTimeString() {
+    char buf[8];
+    tm cal;
+    gps.getUtcDateTime(cal);
+    strftime(buf, sizeof(buf), "%H%M%S", &cal);
+    return String(buf);
+  }
+
+  String utcDateString() {
+    char buf[8];
+    tm cal;
+    gps.getUtcDateTime(cal);
+    strftime(buf, sizeof(buf), "%d%m%y", &cal);
+    return String(buf);
+  }
+
+  String printableAscii(const String& value, uint8_t maxLength) {
+    String safe;
+    safe.reserve(min((uint16_t)value.length(), (uint16_t)maxLength));
+    for (uint16_t i = 0; i < value.length() && safe.length() < maxLength; i++) {
+      char c = value[i];
+      safe += (c >= 0x20 && c <= 0x7E) ? c : ' ';
+    }
+    safe.trim();
+    return safe;
+  }
+
+  String pointLabel(const Waypoint& waypoint) {
+    return printableAscii(String(waypoint.name), maxGpxNameLength);
+  }
+
+  const char* routeRoleName(RoutePointRole role) {
+    switch (role) {
+      case RoutePointRole::Takeoff:
+        return "TAKEOFF";
+      case RoutePointRole::StartSpeedSection:
+        return "SSS";
+      case RoutePointRole::EndSpeedSection:
+        return "ESS";
+      case RoutePointRole::EndSpeedSectionGoal:
+        return "ESS_GOAL";
+      case RoutePointRole::Goal:
+        return "GOAL";
+      case RoutePointRole::Normal:
+      default:
+        return "TURN";
+    }
+  }
+
+  const char* cPointRoleName(RoutePointRole role, RouteIndex pointIndex, uint8_t totalPoints) {
+    switch (role) {
+      case RoutePointRole::Takeoff:
+        return "TAKEOFF";
+      case RoutePointRole::StartSpeedSection:
+        return "START";
+      case RoutePointRole::EndSpeedSection:
+        return "ESS";
+      case RoutePointRole::EndSpeedSectionGoal:
+      case RoutePointRole::Goal:
+        return "FINISH";
+      case RoutePointRole::Normal:
+      default:
+        if (pointIndex == 1) return "START";
+        if (pointIndex == totalPoints) return "FINISH";
+        return "TURN";
+    }
+  }
+
+  String cPointDescription(const char* role, const Waypoint& waypoint) {
+    String description = String(role) + " " + pointLabel(waypoint);
+    return printableAscii(description, 58);
+  }
+
+  String indexedLabel(uint8_t index, uint8_t total) {
+    char buf[8];
+    snprintf(buf, sizeof(buf), "%02u/%02u", index, total);
+    return String(buf);
+  }
+
+  String taskPointMetadata(uint8_t index, uint8_t total, const RoutePoint& meta,
+                           const Waypoint& waypoint) {
+    String comment = "NAVTP:" + indexedLabel(index, total);
+    comment += " R=";
+    comment += meta.radiusM;
+    comment += " ROLE=";
+    comment += routeRoleName(meta.role);
+    comment += " NAME=";
+    comment += pointLabel(waypoint);
+    return printableAscii(comment, 72);
+  }
+}  // namespace
 
 String latDegreeToStr(double degree) {
   char output[9];  // 8 bytes + null terminator
@@ -58,13 +152,7 @@ void Igc::log(unsigned long durationSec) {
   // Short-circuit if we've not yet started a flight
   if (!started()) return;
 
-  // Generate the time in HHMMSS
-  char buf[8];
-  tm cal;
-  gps.getUtcDateTime(cal);
-  strftime(buf, sizeof(buf), "%H%M%S", &cal);
-
-  logger.writeBRecord(buf,  // Time in HHMMSS
+  logger.writeBRecord(utcTimeString(),  // Time in HHMMSS
                       latDegreeToStr(gps.location.lat()), lngDegreeToStr(gps.location.lng()), true,
                       baro.alt() / 100,  // cm to meters
                       gps.altitude.meters(), toDigits((int)gps.fixInfo.error, 3));
@@ -110,6 +198,7 @@ bool Igc::startFlight() {
   // Log the I record (saying we're going to log the, now manditory, FXA record)
   const IRecordExtension extensions[] = {IRecordExtension(3, "FXA")};
   logger.writeIRecord(sizeof(extensions) / sizeof(extensions[0]), extensions);
+  writeActiveNavigationDeclaration();
 
   return true;
 }
@@ -133,4 +222,51 @@ void Igc::setPilotFromProfiles() {
     const String profileName = glider.profileName();
     if (!profileName.isEmpty()) logger.glider_type = profileName;
   }
+}
+
+void Igc::markSavedPoint(const Waypoint& waypoint) {
+  if (!started()) return;
+  logger.writeERecord(utcTimeString(), "PEV",
+                      printableAscii(String("Save Point ") + waypoint.name, 66));
+}
+
+void Igc::writeActiveNavigationDeclaration() {
+  const RouteID routeIndex = navigator.routeContextIndex();
+  if (routeIndex) {
+    const Route& route = navigator.routes[routeIndex];
+    if (!route.totalPoints) return;
+
+    const uint8_t turnpointCount = route.totalPoints > 2 ? route.totalPoints - 2 : 0;
+    const String routeName = printableAscii(String(route.name), maxGpxNameLength);
+    Serial.print("IGC task declaration route: ");
+    Serial.println(routeName);
+    logger.writeCDeclarationRecord(utcDateString(), utcTimeString(), utcDateString(), "0000",
+                                   turnpointCount,
+                                   printableAscii(String("Leaf Route ") + routeName, 51));
+    logger.writeLRecord(printableAscii(String("NAV:ROUTE NAME=") + routeName, 72));
+
+    for (uint8_t i = 1; i <= route.totalPoints; i++) {
+      const RouteIndex pointIndex(i);
+      const RoutePoint& meta = navigator.routePointMeta(routeIndex, pointIndex);
+      const Waypoint& point = navigator.routePoint(routeIndex, pointIndex);
+      logger.writeCPointRecord(
+          latDegreeToStr(point.latitude()), lngDegreeToStr(point.longitude()),
+          cPointDescription(cPointRoleName(meta.role, pointIndex, route.totalPoints), point));
+      logger.writeLRecord(taskPointMetadata(i, route.totalPoints, meta, point));
+    }
+    return;
+  }
+
+  if (!navigator.activeWaypointIndex) return;
+
+  const Waypoint& point = navigator.activePoint;
+  const String pointName = pointLabel(point);
+  Serial.print("IGC nav declaration point: ");
+  Serial.println(pointName);
+  logger.writeCDeclarationRecord(utcDateString(), utcTimeString(), utcDateString(), "0000", 0,
+                                 printableAscii(String("Leaf Point ") + pointName, 51));
+  logger.writeCPointRecord(latDegreeToStr(point.latitude()), lngDegreeToStr(point.longitude()),
+                           cPointDescription("POINT", point));
+  logger.writeLRecord(
+      printableAscii(String("NAV:POINT R=") + defaultWaypointRadius + " NAME=" + pointName, 72));
 }

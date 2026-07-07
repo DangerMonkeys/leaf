@@ -12,6 +12,7 @@
 #include "logbook/igc.h"
 #include "logbook/kml.h"
 #include "logbook/logbook_entry.h"
+#include "navigation/gpx.h"
 #include "power.h"
 #include "storage/sd_card.h"
 #include "ui/audio/sound_effects.h"
@@ -251,6 +252,11 @@ void flightTimer_resetAutoStop() {
 bool flightTimer_isRunning() { return flight != NULL; }
 bool flightTimer_isLogging() {
   return flightTimer_isRunning() && (!trackLogEnabledForFlight || (bool)flight->started());
+}
+
+void flightTimer_markSavedPoint(const Waypoint& waypoint) {
+  if (flight != &igcFlight || !trackLogEnabledForFlight || !igcFlight.started()) return;
+  igcFlight.markSavedPoint(waypoint);
 }
 
 // start timer

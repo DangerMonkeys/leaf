@@ -273,7 +273,10 @@ void PageGpxFileSelect::addFileName(const String& name) {
   name.toCharArray(candidate, sizeof(candidate));
 
   uint8_t insertAt = fileCount_;
-  while (insertAt > 0 && compareFileNames(candidate, fileNames_[insertAt - 1]) < 0) {
+  const bool pinnedUserWaypoints = isUserWaypointsLabel(candidate);
+  while (insertAt > 0 &&
+         (pinnedUserWaypoints || (!isUserWaypointsLabel(fileNames_[insertAt - 1]) &&
+                                  compareFileNames(candidate, fileNames_[insertAt - 1]) < 0))) {
     strncpy(fileNames_[insertAt], fileNames_[insertAt - 1], sizeof(fileNames_[insertAt]));
     fileNames_[insertAt][MAX_GPX_FILENAME_LENGTH] = '\0';
     --insertAt;
