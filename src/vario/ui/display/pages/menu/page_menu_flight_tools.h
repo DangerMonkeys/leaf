@@ -10,7 +10,7 @@ class FlightToolsMenuPage : public SettingsMenuPage {
  public:
   FlightToolsMenuPage() {
     cursor_position = 0;
-    cursor_max = 6;
+    cursor_max = 11;
   }
   bool button_event(Button button, ButtonEvent state, uint8_t count) override;
   void draw();
@@ -19,7 +19,10 @@ class FlightToolsMenuPage : public SettingsMenuPage {
   void setting_change(Button dir, ButtonEvent state, uint8_t count);
 
  private:
+  bool row_selectable(int8_t row) const;
   bool row_hidden(int8_t row) const;
+  bool nav_section_visible() const;
+  void drawNavStatusLine(uint8_t y) const;
   void skip_hidden_forward();
   void skip_hidden_backward();
 };

@@ -77,6 +77,13 @@ enum class LoadedNavSource : uint8_t {
   None,
   NavFile,
   SavedRoute,
+  UserWaypoints,
+};
+
+enum class LastNavType : uint8_t {
+  None,
+  Route,
+  Point,
 };
 
 struct RoutePoint {
@@ -117,11 +124,22 @@ class Navigator {
   bool activateRoute(RouteID routeIndex, RouteIndex routePointIndex, bool playSound);
   void cancelNav(void);
   bool loadPersistedState();
+  bool loadPersistedState(bool activate);
   bool savePersistedState();
   bool clearPersistedState();
+  bool resumeLastNav();
+  bool restartLastRoute();
 
   // True if a specific waypoint is active, or if a route is active with a next route point.
-  bool hasActivePoint();
+  bool hasActivePoint() const;
+  bool hasNavSolution() const;
+  bool hasLastNav() const { return lastNavType_ != LastNavType::None; }
+  bool lastNavIsRoute() const { return lastNavType_ == LastNavType::Route; }
+  bool lastNavIsPoint() const { return lastNavType_ == LastNavType::Point; }
+  RouteID lastRouteIndex() const { return lastRouteIndex_; }
+  RouteIndex lastRoutePointIndex() const { return lastRoutePointIndex_; }
+  RouteID routeContextIndex() const;
+  const char* lastNavDestinationName() const;
 
   void clear();
   bool addWaypoint(const Waypoint& waypoint);
@@ -136,12 +154,16 @@ class Navigator {
   bool hasLoadedGpxFile() const { return loadedNavSource_ != LoadedNavSource::None; }
   bool hasLoadedNavFile() const { return loadedNavSource_ == LoadedNavSource::NavFile; }
   bool hasLoadedSavedRoute() const { return loadedNavSource_ == LoadedNavSource::SavedRoute; }
+  bool hasLoadedUserWaypoints() const { return loadedNavSource_ == LoadedNavSource::UserWaypoints; }
+  uint8_t loadedFileWaypointCount() const { return loadedFileWaypointCount_; }
+  void markLoadedFileWaypointCount() { loadedFileWaypointCount_ = totalWaypoints; }
   const char* loadedGpxFilename() const { return loadedGpxFilename_; }
   const char* loadedNavFilename() const { return loadedGpxFilename(); }
   const char* loadedNavPath() const { return loadedNavPath_; }
   void setLoadedGpxFilename(const String& fileName);
   void setLoadedNavFilename(const String& fileName) { setLoadedGpxFilename(fileName); }
   void setLoadedSavedRouteFilename(const String& fileName);
+  void setLoadedUserWaypointsFilename(const String& fileName);
 
   Waypoint waypoints[maxNavPoints + 1];
   uint8_t totalWaypoints = 0;
@@ -183,6 +205,8 @@ class Navigator {
   bool navigating = false;
 
  private:
+  bool gpsPositionUsable() const;
+  void clearNavSolution();
   bool sequenceWaypoint(bool playSound = true);
   void loadRoutes(void);
   void loadWaypoints(void);
@@ -220,9 +244,14 @@ class Navigator {
   // when finished with the Route, we might want to stay in a "finished"
   // state instead of cancelling navigation altogether
   bool reachedGoal_ = false;
+  uint8_t loadedFileWaypointCount_ = 0;
   LoadedNavSource loadedNavSource_ = LoadedNavSource::None;
   char loadedGpxFilename_[maxGpxFileNameLength + 1] = "";
   char loadedNavPath_[maxGpxFileNameLength + 1] = "";
+  LastNavType lastNavType_ = LastNavType::None;
+  RouteID lastRouteIndex_ = RouteID::None;
+  RouteIndex lastRoutePointIndex_ = RouteIndex::None;
+  WaypointID lastWaypointIndex_ = WaypointID::None;
 };
 extern Navigator navigator;
 

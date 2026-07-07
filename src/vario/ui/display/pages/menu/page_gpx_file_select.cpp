@@ -6,6 +6,7 @@
 
 #include "navigation/gpx.h"
 #include "navigation/route_store.h"
+#include "navigation/user_waypoints.h"
 #include "storage/sd_card.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
@@ -19,6 +20,7 @@ namespace {
   constexpr const char* ROUTES_DIR = "/routes";
   constexpr const char* FOLDER_WAYPOINTS = "waypoints/";
   constexpr const char* FOLDER_ROUTES = "routes/";
+  constexpr const char* USER_WAYPOINTS_LABEL = "User Waypoints";
   constexpr uint8_t FILE_ROW_START_Y = 35;
   constexpr uint8_t FILE_ROW_SPACING = 15;
   constexpr uint8_t MENU_INPUT_X = 74;
@@ -69,6 +71,10 @@ namespace {
     const int slash = path.lastIndexOf('/');
     if (slash < 0) return path;
     return path.substring(slash + 1);
+  }
+
+  bool isUserWaypointsLabel(const char* name) {
+    return name != nullptr && strcmp(name, USER_WAYPOINTS_LABEL) == 0;
   }
 }  // namespace
 
@@ -174,6 +180,10 @@ void PageGpxFileSelect::refreshIndex() {
     return;
   }
 
+  if (mode_ == Mode::NavFiles && user_waypoints::hasSavedPoints()) {
+    addFileName(USER_WAYPOINTS_LABEL);
+  }
+
   File entry = dir.openNextFile();
   while (entry) {
     if (!entry.isDirectory()) {
@@ -263,7 +273,10 @@ void PageGpxFileSelect::addFileName(const String& name) {
   name.toCharArray(candidate, sizeof(candidate));
 
   uint8_t insertAt = fileCount_;
-  while (insertAt > 0 && compareFileNames(candidate, fileNames_[insertAt - 1]) < 0) {
+  const bool pinnedUserWaypoints = isUserWaypointsLabel(candidate);
+  while (insertAt > 0 &&
+         (pinnedUserWaypoints || (!isUserWaypointsLabel(fileNames_[insertAt - 1]) &&
+                                  compareFileNames(candidate, fileNames_[insertAt - 1]) < 0))) {
     strncpy(fileNames_[insertAt], fileNames_[insertAt - 1], sizeof(fileNames_[insertAt]));
     fileNames_[insertAt][MAX_GPX_FILENAME_LENGTH] = '\0';
     --insertAt;
@@ -337,6 +350,19 @@ void PageGpxFileSelect::closeToFolderSelect() {
 
 void PageGpxFileSelect::loadSelectedFile() {
   if (cursorOnBack() || cursor_position < 0 || cursor_position >= fileCount_) return;
+
+  if (mode_ == Mode::NavFiles && isUserWaypointsLabel(fileNames_[cursor_position])) {
+    Serial.println("Loading user waypoints");
+    if (user_waypoints::loadAsNavigatorSource(true)) {
+      speaker.playSound(fx::confirm);
+      navDataMenuPage.backToNavDataMenu();
+      pop_page();
+    } else {
+      speaker.playSound(fx::bad);
+      snprintf(status_, sizeof(status_), "Load failed");
+    }
+    return;
+  }
 
   const String path = String(directoryPath()) + "/" + fileNames_[cursor_position];
   Serial.print(mode_ == Mode::SavedRoutes ? "Loading saved route: " : "Loading nav file: ");
