@@ -45,6 +45,9 @@ class Display {
   void turnPage(PageAction action);
   void setPage(MainPage targetPage);
   MainPage getPage() { return displayPage_; }
+  bool isMainPageVisible(MainPage targetPage) const;
+  bool hasEnabledPrimaryPage() const;
+  void ensurePrimaryPageEnabled();
 
   void showOnSplash();
 
@@ -52,6 +55,9 @@ class Display {
   void dismissWarning() { showWarning_ = false; }
 
  private:
+  MainPage sanitizedMainPage(MainPage targetPage);
+  MainPage firstVisiblePrimaryPage(MainPage preferredPage) const;
+
   MainPage displayPage_ = MainPage::Thermal;
 
   // track the page we used to be on, so we can "go back" if needed (like cancelling out of a menu

@@ -20,7 +20,28 @@ enum display_menu_items {
   cursor_display_contrast,
 };
 
+namespace {
+  uint8_t enabledPrimaryPageCount() {
+    uint8_t count = 0;
+    if (settings.disp_showSimplePage) count++;
+    if (settings.disp_showThmPage) count++;
+    if (settings.disp_showThmAdvPage) count++;
+    if (settings.disp_showNavPage) count++;
+    return count;
+  }
+
+  void togglePrimaryPageSetting(bool* showPage) {
+    if (*showPage && enabledPrimaryPageCount() <= 1) {
+      speaker.playSound(fx::bad);
+      return;
+    }
+    settings.toggleBoolOnOff(showPage);
+  }
+}  // namespace
+
 void DisplayMenuPage::draw() {
+  display.ensurePrimaryPageEnabled();
+
   u8g2.firstPage();
   do {
     // Title
@@ -84,21 +105,15 @@ void DisplayMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t coun
   switch (cursor_position) {
     case cursor_display_show_simple:
       if (state == ButtonEvent::CLICKED && dir == Button::CENTER)
-        settings.toggleBoolOnOff(&settings.disp_showSimplePage);
+        togglePrimaryPageSetting(&settings.disp_showSimplePage);
       break;
     case cursor_display_show_thrm:
       if (state == ButtonEvent::CLICKED && dir == Button::CENTER)
-        settings.toggleBoolOnOff(&settings.disp_showThmPage);
+        togglePrimaryPageSetting(&settings.disp_showThmPage);
       break;
-      /*
-      case cursor_display_show_thrm_adv:
-        if (state == ButtonEvent::CLICKED && dir == Button::CENTER)
-          settings.toggleBoolOnOff(&settings.disp_showThmAdvPage);
-        break;
-      */
     case cursor_display_show_nav:
       if (state == ButtonEvent::CLICKED && dir == Button::CENTER)
-        settings.toggleBoolOnOff(&settings.disp_showNavPage);
+        togglePrimaryPageSetting(&settings.disp_showNavPage);
       break;
     case cursor_display_contrast:
       if (state == ButtonEvent::CLICKED || state == ButtonEvent::INCREMENTED)
