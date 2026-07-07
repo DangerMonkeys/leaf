@@ -20,6 +20,7 @@
 #include "instruments/imu.h"
 #include "logging/log.h"
 #include "navigation/gpx.h"
+#include "navigation/user_waypoints.h"
 #include "power.h"
 #include "storage/sd_card.h"
 #include "system/usb_state.h"
@@ -365,7 +366,10 @@ void TaskManager::doNecessaryTasks(void) {
     display.update();
     if (!restoredNavAfterFirstDisplayUpdate_) {
       restoredNavAfterFirstDisplayUpdate_ = true;
-      if (sdcard.isMounted()) navigator.loadPersistedState();
+      if (sdcard.isMounted()) {
+        navigator.loadPersistedState(false);
+        user_waypoints::loadIntoNavigator();
+      }
     }
     performTask.display = false;
   }

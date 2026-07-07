@@ -79,6 +79,12 @@ enum class LoadedNavSource : uint8_t {
   SavedRoute,
 };
 
+enum class LastNavType : uint8_t {
+  None,
+  Route,
+  Point,
+};
+
 struct RoutePoint {
   WaypointID waypointIndex = WaypointID::None;
   uint16_t radiusM = defaultWaypointRadius;
@@ -117,11 +123,22 @@ class Navigator {
   bool activateRoute(RouteID routeIndex, RouteIndex routePointIndex, bool playSound);
   void cancelNav(void);
   bool loadPersistedState();
+  bool loadPersistedState(bool activate);
   bool savePersistedState();
   bool clearPersistedState();
+  bool resumeLastNav();
+  bool restartLastRoute();
 
   // True if a specific waypoint is active, or if a route is active with a next route point.
-  bool hasActivePoint();
+  bool hasActivePoint() const;
+  bool hasNavSolution() const;
+  bool hasLastNav() const { return lastNavType_ != LastNavType::None; }
+  bool lastNavIsRoute() const { return lastNavType_ == LastNavType::Route; }
+  bool lastNavIsPoint() const { return lastNavType_ == LastNavType::Point; }
+  RouteID lastRouteIndex() const { return lastRouteIndex_; }
+  RouteIndex lastRoutePointIndex() const { return lastRoutePointIndex_; }
+  RouteID routeContextIndex() const;
+  const char* lastNavDestinationName() const;
 
   void clear();
   bool addWaypoint(const Waypoint& waypoint);
@@ -183,6 +200,8 @@ class Navigator {
   bool navigating = false;
 
  private:
+  bool gpsPositionUsable() const;
+  void clearNavSolution();
   bool sequenceWaypoint(bool playSound = true);
   void loadRoutes(void);
   void loadWaypoints(void);
@@ -223,6 +242,10 @@ class Navigator {
   LoadedNavSource loadedNavSource_ = LoadedNavSource::None;
   char loadedGpxFilename_[maxGpxFileNameLength + 1] = "";
   char loadedNavPath_[maxGpxFileNameLength + 1] = "";
+  LastNavType lastNavType_ = LastNavType::None;
+  RouteID lastRouteIndex_ = RouteID::None;
+  RouteIndex lastRoutePointIndex_ = RouteIndex::None;
+  WaypointID lastWaypointIndex_ = WaypointID::None;
 };
 extern Navigator navigator;
 

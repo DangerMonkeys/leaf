@@ -4,6 +4,7 @@
 
 #include "instruments/baro.h"
 #include "navigation/gpx.h"
+#include "navigation/user_waypoints.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
@@ -18,7 +19,12 @@ enum flight_tools_menu_items {
   cursor_flight_tools_syncAlt,
   cursor_flight_tools_varioVolume,
   cursor_flight_tools_savePoint,
+  cursor_flight_tools_navHeader,
+  cursor_flight_tools_navStatus,
+  cursor_flight_tools_resumeRoute,
+  cursor_flight_tools_resumePoint,
   cursor_flight_tools_resetRoute,
+  cursor_flight_tools_restartRoute,
   cursor_flight_tools_cancelNav,
 };
 
@@ -55,13 +61,15 @@ void FlightToolsMenuPage::draw() {
 
     uint8_t setting_name_x = 2;
     uint8_t setting_choice_x = 76;
-    uint8_t menu_items_y[] = {190, 45, 60, 75, 90, 105, 120};
+    uint8_t menu_items_y[] = {190, 45, 60, 75, 90, 112, 126, 141, 141, 156, 156, 171};
 
     for (int i = 0; i <= cursor_max; i++) {
       if (row_hidden(i)) continue;
 
       const bool selected = i == cursor_position;
-      menu_ui::beginRow(menu_items_y[i], selected);
+      const bool selectable = row_selectable(i);
+      u8g2.setFont(leaf_6x12);
+      if (selectable) menu_ui::beginRow(menu_items_y[i], selected);
       switch (i) {
         case cursor_flight_tools_back:
           menu_ui::drawLabel(setting_name_x, menu_items_y[i], "Back");
@@ -91,8 +99,32 @@ void FlightToolsMenuPage::draw() {
                              menu_ui::GLYPH_NAV_POINT_SAVE);
           menu_ui::drawEnterIcon(setting_choice_x, menu_items_y[i], selected);
           break;
+        case cursor_flight_tools_navHeader:
+          u8g2.setFont(leaf_5x8);
+          u8g2.setCursor(setting_name_x, menu_items_y[i] - 1);
+          u8g2.print("Navigation");
+          u8g2.drawHLine(0, menu_items_y[i], 96);
+          break;
+        case cursor_flight_tools_navStatus:
+          drawNavStatusLine(menu_items_y[i]);
+          break;
+        case cursor_flight_tools_resumeRoute:
+          menu_ui::drawLabel(setting_name_x, menu_items_y[i], "Resume Rte",
+                             menu_ui::GLYPH_NAV_ROUTE_SELECT);
+          menu_ui::drawEnterIcon(setting_choice_x, menu_items_y[i], selected);
+          break;
+        case cursor_flight_tools_resumePoint:
+          menu_ui::drawLabel(setting_name_x, menu_items_y[i], "Resume Pt",
+                             menu_ui::GLYPH_NAV_POINT_SELECT);
+          menu_ui::drawEnterIcon(setting_choice_x, menu_items_y[i], selected);
+          break;
         case cursor_flight_tools_resetRoute:
           menu_ui::drawLabel(setting_name_x, menu_items_y[i], "Reset Rte",
+                             menu_ui::GLYPH_RESET_ROUTE);
+          menu_ui::drawEnterIcon(setting_choice_x, menu_items_y[i], selected);
+          break;
+        case cursor_flight_tools_restartRoute:
+          menu_ui::drawLabel(setting_name_x, menu_items_y[i], "Restart Rte",
                              menu_ui::GLYPH_RESET_ROUTE);
           menu_ui::drawEnterIcon(setting_choice_x, menu_items_y[i], selected);
           break;
@@ -102,13 +134,13 @@ void FlightToolsMenuPage::draw() {
           menu_ui::drawEnterIcon(setting_choice_x, menu_items_y[i], selected);
           break;
       }
-      menu_ui::endRow();
+      if (selectable) menu_ui::endRow();
     }
   } while (u8g2.nextPage());
 }
 
 void FlightToolsMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) {
-  if (row_hidden(cursor_position)) return;
+  if (!row_selectable(cursor_position)) return;
 
   switch (cursor_position) {
     case cursor_flight_tools_profiles:
@@ -132,7 +164,27 @@ void FlightToolsMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t 
       break;
     case cursor_flight_tools_savePoint:
       if (state == ButtonEvent::CLICKED) {
-        speaker.playSound(fx::cancel);
+        Waypoint savedWaypoint;
+        String error;
+        if (user_waypoints::appendCurrentPosition(savedWaypoint, error)) {
+          speaker.playSound(fx::confirm);
+        } else {
+          Serial.print("Save Point failed: ");
+          Serial.println(error);
+          speaker.playSound(fx::bad);
+        }
+        cursor_position = cursor_flight_tools_back;
+      }
+      break;
+    case cursor_flight_tools_resumeRoute:
+    case cursor_flight_tools_resumePoint:
+      if (state == ButtonEvent::CLICKED) {
+        if (navigator.resumeLastNav()) {
+          speaker.playSound(fx::confirm);
+        } else {
+          speaker.playSound(fx::bad);
+        }
+        cursor_position = cursor_flight_tools_back;
       }
       break;
     case cursor_flight_tools_resetRoute:
@@ -142,11 +194,23 @@ void FlightToolsMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t 
         } else {
           speaker.playSound(fx::bad);
         }
+        cursor_position = cursor_flight_tools_back;
+      }
+      break;
+    case cursor_flight_tools_restartRoute:
+      if (state == ButtonEvent::CLICKED) {
+        if (navigator.restartLastRoute()) {
+          speaker.playSound(fx::confirm);
+        } else {
+          speaker.playSound(fx::bad);
+        }
+        cursor_position = cursor_flight_tools_back;
       }
       break;
     case cursor_flight_tools_cancelNav:
       if (state == ButtonEvent::CLICKED) {
         navigator.cancelNav();
+        cursor_position = cursor_flight_tools_back;
       }
       break;
     case cursor_flight_tools_back:
@@ -163,16 +227,54 @@ void FlightToolsMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t 
   }
 }
 
+bool FlightToolsMenuPage::row_selectable(int8_t row) const {
+  return !row_hidden(row) && row != cursor_flight_tools_navHeader &&
+         row != cursor_flight_tools_navStatus;
+}
+
 bool FlightToolsMenuPage::row_hidden(int8_t row) const {
+  if (row == cursor_flight_tools_navHeader || row == cursor_flight_tools_navStatus)
+    return !nav_section_visible();
+  if (row == cursor_flight_tools_resumeRoute)
+    return navigator.hasActivePoint() || !navigator.hasLastNav() || !navigator.lastNavIsRoute();
+  if (row == cursor_flight_tools_resumePoint)
+    return navigator.hasActivePoint() || !navigator.hasLastNav() || !navigator.lastNavIsPoint();
   if (row == cursor_flight_tools_resetRoute) return !navigator.activeRouteIndex;
+  if (row == cursor_flight_tools_restartRoute)
+    return navigator.hasActivePoint() || !navigator.hasLastNav() || !navigator.lastNavIsRoute();
   if (row == cursor_flight_tools_cancelNav) return !navigator.hasActivePoint();
   return false;
 }
 
+bool FlightToolsMenuPage::nav_section_visible() const {
+  return navigator.hasActivePoint() || navigator.hasLastNav();
+}
+
+void FlightToolsMenuPage::drawNavStatusLine(uint8_t y) const {
+  const bool active = navigator.hasActivePoint();
+  const bool route = active ? navigator.activeRouteIndex : navigator.lastNavIsRoute();
+  const char* name = "";
+  if (active) {
+    name = route ? navigator.routes[navigator.activeRouteIndex].name : navigator.activePoint.name;
+  } else {
+    name = navigator.lastNavDestinationName();
+  }
+
+  u8g2.setFont(leaf_5x8);
+  u8g2.setCursor(2, y);
+  u8g2.print(active ? "Active:" : "Last:");
+
+  u8g2.setFont(leaf_6x12);
+  u8g2.print((char)(route ? menu_ui::GLYPH_ROUTE : menu_ui::GLYPH_WAYPOINT));
+
+  u8g2.setFont(u8g2_font_12x6LED_tf);
+  u8g2.print(name);
+}
+
 void FlightToolsMenuPage::skip_hidden_forward() {
-  while (row_hidden(cursor_position)) cursor_next();
+  while (!row_selectable(cursor_position)) cursor_next();
 }
 
 void FlightToolsMenuPage::skip_hidden_backward() {
-  while (row_hidden(cursor_position)) cursor_prev();
+  while (!row_selectable(cursor_position)) cursor_prev();
 }

@@ -36,23 +36,44 @@ uint8_t navigatePage_cursorTimeCount =
 uint8_t navigatePage_cursorTimeOut =
     8;  // after 8 page draws (4 seconds) reset the cursor if a button hasn't been pushed.
 
+enum class DestinationSelectionMode : uint8_t {
+  Routes,
+  Waypoints,
+  ActiveRoutePoints,
+};
+
 int16_t destination_selection_index = 0;
-bool destination_selection_routes_vs_waypoints = true;  // start showing routes not waypoints
+DestinationSelectionMode destination_selection_mode = DestinationSelectionMode::Routes;
+
+bool selectingDestinationRoutes() {
+  return destination_selection_mode == DestinationSelectionMode::Routes;
+}
+
+RouteID routePointSelectionRoute() { return navigator.routeContextIndex(); }
+
+bool selectingActiveRoutePoints() {
+  return destination_selection_mode == DestinationSelectionMode::ActiveRoutePoints &&
+         routePointSelectionRoute();
+}
 
 void navigatePage_destinationSelect(Button dir) {
   switch (dir) {
     case Button::LEFT:
-      if (destination_selection_index == 0) {
+      if (selectingActiveRoutePoints()) {
+        const Route& route = navigator.routes[routePointSelectionRoute()];
+        destination_selection_index =
+            destination_selection_index <= 0 ? route.totalPoints : destination_selection_index - 1;
+      } else if (destination_selection_index == 0) {
         if (navigator.totalWaypoints >= 1) {
-          destination_selection_routes_vs_waypoints = false;
+          destination_selection_mode = DestinationSelectionMode::Waypoints;
           destination_selection_index = navigator.totalWaypoints;
         } else if (navigator.totalRoutes >= 1) {
-          destination_selection_routes_vs_waypoints = true;
+          destination_selection_mode = DestinationSelectionMode::Routes;
           destination_selection_index = navigator.totalRoutes;
         }
-      } else if (!destination_selection_routes_vs_waypoints && destination_selection_index == 1) {
+      } else if (!selectingDestinationRoutes() && destination_selection_index == 1) {
         if (navigator.totalRoutes >= 1) {
-          destination_selection_routes_vs_waypoints = true;
+          destination_selection_mode = DestinationSelectionMode::Routes;
           destination_selection_index = navigator.totalRoutes;
         } else {
           destination_selection_index = 0;
@@ -63,33 +84,47 @@ void navigatePage_destinationSelect(Button dir) {
       break;
 
     case Button::RIGHT:
-      destination_selection_index++;
-      if (destination_selection_routes_vs_waypoints) {  // if we're currently showing Routes...
+      if (selectingActiveRoutePoints()) {
+        const Route& route = navigator.routes[routePointSelectionRoute()];
+        destination_selection_index++;
+        if (destination_selection_index > route.totalPoints) destination_selection_index = 0;
+      } else {
+        destination_selection_index++;
+      }
+      if (selectingDestinationRoutes()) {  // if we're currently showing Routes...
         if (destination_selection_index >
             navigator.totalRoutes) {            // 		if we're passed the number of Routes we have...
           if (navigator.totalWaypoints >= 1) {  // 		...and we have waypoints to switch
                                                 // to...
-            destination_selection_routes_vs_waypoints = false;  //		...switch to waypoints..
-            destination_selection_index = 1;                    //		...and show the first one
-          } else {                                              // otherwise loop back to index 0
+            destination_selection_mode = DestinationSelectionMode::Waypoints;  // switch to wpts
+            destination_selection_index = 1;  // and show the first one
+          } else {                            // otherwise loop back to index 0
             destination_selection_index = 0;
           }
         }
-      } else {  // otherise if we're showing waypoints...
+      } else if (!selectingActiveRoutePoints()) {  // otherise if we're showing waypoints...
         if (destination_selection_index >
             navigator.totalWaypoints) {  //...and we're passed the number of waypoints we have
-          destination_selection_routes_vs_waypoints = navigator.totalRoutes >= 1;
+          destination_selection_mode = navigator.totalRoutes >= 1
+                                           ? DestinationSelectionMode::Routes
+                                           : DestinationSelectionMode::Waypoints;
           destination_selection_index = 0;
         }
       }
       break;
     case Button::CENTER:
-      if (destination_selection_index == 0) {
+      if (selectingActiveRoutePoints()) {
+        navigator.activateRoute(routePointSelectionRoute(),
+                                destination_selection_index <= 0
+                                    ? RouteIndex(1)
+                                    : RouteIndex(destination_selection_index));
+      } else if (destination_selection_index == 0) {
         break;
-      } else if (destination_selection_routes_vs_waypoints)
+      } else if (selectingDestinationRoutes()) {
         navigator.activateRoute(RouteID(destination_selection_index));
-      else
+      } else {
         navigator.activatePoint(WaypointID(destination_selection_index));
+      }
       navigatePage_cursorPosition = cursor_navigatePage_none;
       break;
   }
@@ -137,7 +172,7 @@ void navigatePage_draw() {
 
     ///////////////////
     // Draw Header Info
-    bool showHeadingTurnArrows = true;
+    bool showHeadingTurnArrows = navigator.hasNavSolution();
     display_headerAndFooter(navigatePage_cursorPosition == cursor_navigatePage_timer,
                             showHeadingTurnArrows);
 
@@ -174,7 +209,7 @@ void navigatePage_draw() {
     // 2);
 
     // Waypoint Pointer
-    if (navigator.navigating) {
+    if (navigator.hasNavSolution()) {
       uint8_t waypoint_tip_r = nav_r - 1;
       uint8_t waypoint_shaft_r = waypoint_tip_r - 3;
       uint8_t waypoint_shaft_length = 9;
@@ -325,10 +360,28 @@ void navigatePage_draw() {
       u8g2.setCursor(u8g2.getCursorX() + 6,
                      u8g2.getCursorY());  // Also scoot the string over a few pixels to make room
                                           // for selection box
-      if (destination_selection_index == 0) {
+      if (selectingActiveRoutePoints()) {
+        const RouteID routeIndex = routePointSelectionRoute();
+        const Route& route = navigator.routes[routeIndex];
+        if (destination_selection_index <= 0) {
+          u8g2.setFont(leaf_icons);
+          u8g2.print('R');
+          u8g2.setFont(u8g2_font_12x6LED_tf);
+          u8g2.print(route.name);
+        } else {
+          u8g2.setFont(leaf_5x8);
+          u8g2.print(destination_selection_index);
+          u8g2.print('/');
+          u8g2.print(route.totalPoints);
+          u8g2.print(' ');
+          u8g2.setFont(u8g2_font_12x6LED_tf);
+          u8g2.print(
+              navigator.routePoint(routeIndex, RouteIndex(destination_selection_index)).name);
+        }
+      } else if (destination_selection_index == 0) {
         u8g2.print(defaultWaypointString);
       } else {
-        if (destination_selection_routes_vs_waypoints) {
+        if (selectingDestinationRoutes()) {
           u8g2.setFont(leaf_icons);
           u8g2.print('R');
           u8g2.setFont(u8g2_font_12x6LED_tf);
@@ -354,9 +407,17 @@ void navigatePage_draw() {
 
     // Progress Bar
     float percent_progress;
-    if (navigator.navigating) {
-      percent_progress = 1 - navigator.pointDistanceRemaining / navigator.segmentDistance;
+    if (navigator.hasNavSolution() && navigator.segmentDistance > 0) {
+      const uint16_t activeRadius =
+          navigator.activeRouteIndex ? navigator.activeRoutePoint.radiusM : defaultWaypointRadius;
+      const double distanceToSequence = navigator.pointDistanceRemaining > activeRadius
+                                            ? navigator.pointDistanceRemaining - activeRadius
+                                            : 0;
+      const double segmentToSequence =
+          navigator.segmentDistance > activeRadius ? navigator.segmentDistance - activeRadius : 0;
+      percent_progress = segmentToSequence > 0 ? 1 - distanceToSequence / segmentToSequence : 1;
       if (percent_progress < 0) percent_progress = 0;
+      if (percent_progress > 1) percent_progress = 1;
     } else {
       percent_progress = 0;
     }
@@ -385,7 +446,7 @@ void navigatePage_draw() {
 
     // User Field 2  -- Dist to waypoint
     double displayDistance = 0;
-    if (navigator.navigating) displayDistance = navigator.pointDistanceRemaining;
+    if (navigator.hasNavSolution()) displayDistance = navigator.pointDistanceRemaining;
     display_distance(userFieldsCol2X + 5, userFieldsRow1Y + 20, displayDistance);
     u8g2.setFont(leaf_5h);
     u8g2.setCursor(userFieldsCol2X, userFieldsRow1Y + 7);
@@ -400,7 +461,8 @@ void navigatePage_draw() {
     u8g2.setFont(leaf_6x12);
 
     // User Field 4	-- Glide Ratio to Waypoint
-    display_glide(userFieldsCol2X + 5, userFieldsRow2Y + 20, navigator.glideToActive);
+    display_glide(userFieldsCol2X + 5, userFieldsRow2Y + 20,
+                  navigator.hasNavSolution() ? navigator.glideToActive : 0);
     u8g2.setFont(leaf_5h);
     u8g2.setCursor(userFieldsCol2X, userFieldsRow2Y + 7);
     u8g2.print("`>&");
@@ -424,12 +486,16 @@ void nav_cursor_move(Button button) {
   if (navigatePage_cursorPosition == cursor_navigatePage_waypoint) {
     if (navigator.navigating) {
       if (navigator.activeRouteIndex) {
-        destination_selection_index = navigator.activeRouteIndex;
-        destination_selection_routes_vs_waypoints = true;
+        destination_selection_mode = DestinationSelectionMode::ActiveRoutePoints;
+        destination_selection_index =
+            navigator.activeRoutePointIndex ? navigator.activeRoutePointIndex : RouteIndex(1);
       } else if (navigator.activeWaypointIndex) {
+        destination_selection_mode = DestinationSelectionMode::Waypoints;
         destination_selection_index = navigator.activeWaypointIndex;
-        destination_selection_routes_vs_waypoints = false;
       }
+    } else if (navigator.routeContextIndex()) {
+      destination_selection_mode = DestinationSelectionMode::ActiveRoutePoints;
+      destination_selection_index = 0;
     }
   }
 }

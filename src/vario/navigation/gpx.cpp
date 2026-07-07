@@ -462,6 +462,10 @@ void Navigator::clear() {
   loadedNavSource_ = LoadedNavSource::None;
   loadedGpxFilename_[0] = '\0';
   loadedNavPath_[0] = '\0';
+  lastNavType_ = LastNavType::None;
+  lastRouteIndex_ = RouteID::None;
+  lastRoutePointIndex_ = RouteIndex::None;
+  lastWaypointIndex_ = WaypointID::None;
 }
 
 bool Navigator::addWaypoint(const Waypoint& waypoint) {
@@ -524,11 +528,16 @@ const RoutePoint& Navigator::routePointMeta(RouteID routeIndex, RouteIndex point
 
 // update nav data every second
 void Navigator::update() {
+  if (hasActivePoint() && !gpsPositionUsable()) {
+    clearNavSolution();
+  }
+
   // only update nav info if we're tracking to an active point
-  if (hasActivePoint()) {
+  if (hasNavSolution()) {
     // update distance remaining, then sequence to next point if distance is small enough
     pointDistanceRemaining = gps.distanceBetween(gps.location.lat(), gps.location.lng(),
                                                  activePoint.latitude(), activePoint.longitude());
+    if (segmentDistance <= 0) segmentDistance = pointDistanceRemaining;
     const uint16_t activeRadius =
         activeRouteIndex ? activeRoutePoint.radiusM : defaultWaypointRadius;
     if (pointDistanceRemaining < activeRadius && !reachedGoal_)
@@ -595,6 +604,10 @@ bool Navigator::activatePoint(WaypointID pointIndex, bool playSound) {
 
   navigating = true;
   reachedGoal_ = false;
+  lastNavType_ = LastNavType::Point;
+  lastRouteIndex_ = RouteID::None;
+  lastRoutePointIndex_ = RouteIndex::None;
+  lastWaypointIndex_ = pointIndex;
 
   // Point navigation is exclusive from Route navigation, so cancel any Route navigation
   activeRouteIndex = RouteID::None;
@@ -606,12 +619,18 @@ bool Navigator::activatePoint(WaypointID pointIndex, bool playSound) {
 
   if (playSound) speaker.playSound(fx::enter);
 
-  double newDistance = gps.distanceBetween(gps.location.lat(), gps.location.lng(),
-                                           activePoint.latitude(), activePoint.longitude());
+  if (gpsPositionUsable()) {
+    double newDistance = gps.distanceBetween(gps.location.lat(), gps.location.lng(),
+                                             activePoint.latitude(), activePoint.longitude());
 
-  segmentDistance = newDistance;
-  totalDistanceRemaining_ = newDistance;
-  pointDistanceRemaining = newDistance;
+    segmentDistance = newDistance;
+    totalDistanceRemaining_ = newDistance;
+    pointDistanceRemaining = newDistance;
+  } else {
+    segmentDistance = 0;
+    totalDistanceRemaining_ = 0;
+    clearNavSolution();
+  }
 
   savePersistedState();
   return navigating;
@@ -640,6 +659,10 @@ bool Navigator::activateRoute(RouteID routeIndex, RouteIndex routePointIndex, bo
     reachedGoal_ = false;
     activeRouteIndex = routeIndex;
     activeWaypointIndex = WaypointID::None;
+    lastNavType_ = LastNavType::Route;
+    lastRouteIndex_ = routeIndex;
+    lastRoutePointIndex_ = routePointIndex;
+    lastWaypointIndex_ = WaypointID::None;
 
     Serial.print("*** NEW ROUTE: ");
     Serial.println(routes[activeRouteIndex].name);
@@ -649,6 +672,7 @@ bool Navigator::activateRoute(RouteID routeIndex, RouteIndex routePointIndex, bo
     // activePoint, and nextPoint, if any
     activeRoutePointIndex = routePointIndex - 1;
     sequenceWaypoint(playSound);
+    if (!gpsPositionUsable()) clearNavSolution();
 
     // calculate TOTAL Route distance
     totalDistanceRemaining_ = 0;
@@ -665,9 +689,11 @@ bool Navigator::activateRoute(RouteID routeIndex, RouteIndex routePointIndex, bo
       // that one point
     } else if (routes[activeRouteIndex].totalPoints == 1) {
       totalDistanceRemaining_ =
-          gps.distanceBetween(gps.location.lat(), gps.location.lng(),
-                              routePoint(activeRouteIndex, RouteIndex(1)).latitude(),
-                              routePoint(activeRouteIndex, RouteIndex(1)).longitude());
+          gpsPositionUsable()
+              ? gps.distanceBetween(gps.location.lat(), gps.location.lng(),
+                                    routePoint(activeRouteIndex, RouteIndex(1)).latitude(),
+                                    routePoint(activeRouteIndex, RouteIndex(1)).longitude())
+              : 0;
     }
   }
   savePersistedState();
@@ -687,6 +713,10 @@ bool Navigator::sequenceWaypoint(bool playSound) {
     if (playSound) speaker.playSound(fx::enter);
 
     activeRoutePointIndex++;
+    lastNavType_ = LastNavType::Route;
+    lastRouteIndex_ = activeRouteIndex;
+    lastRoutePointIndex_ = activeRoutePointIndex;
+    lastWaypointIndex_ = WaypointID::None;
     Serial.print(" new active index:");
     Serial.print(activeRoutePointIndex);
     Serial.print(" route index:");
@@ -714,9 +744,11 @@ bool Navigator::sequenceWaypoint(bool playSound) {
     // use our current location instead
     if (activeRoutePointIndex == 1) {
       segmentDistance =
-          gps.distanceBetween(gps.location.lat(), gps.location.lng(),
-                              routePoint(activeRouteIndex, activeRoutePointIndex).latitude(),
-                              routePoint(activeRouteIndex, activeRoutePointIndex).longitude());
+          gpsPositionUsable()
+              ? gps.distanceBetween(gps.location.lat(), gps.location.lng(),
+                                    routePoint(activeRouteIndex, activeRoutePointIndex).latitude(),
+                                    routePoint(activeRouteIndex, activeRoutePointIndex).longitude())
+              : 0;
     } else {
       segmentDistance =
           gps.distanceBetween(routePoint(activeRouteIndex, activeRoutePointIndex - 1).latitude(),
@@ -751,7 +783,37 @@ void Navigator::cancelNav() {
   speaker.playSound(fx::cancel);
 }
 
-bool Navigator::hasActivePoint() { return activeWaypointIndex || activeRoutePointIndex; }
+bool Navigator::hasActivePoint() const { return activeWaypointIndex || activeRoutePointIndex; }
+
+bool Navigator::gpsPositionUsable() const { return gps.fixInfo.fix && gps.location.isValid(); }
+
+bool Navigator::hasNavSolution() const { return hasActivePoint() && gpsPositionUsable(); }
+
+void Navigator::clearNavSolution() {
+  pointDistanceRemaining = 0;
+  pointTimeRemaining = 0;
+  turnToActive = 0;
+  turnToNext_ = 0;
+  glideToActive = 0;
+}
+
+const char* Navigator::lastNavDestinationName() const {
+  if (lastNavType_ == LastNavType::Route && lastRouteIndex_ && lastRouteIndex_ <= totalRoutes)
+    return routes[lastRouteIndex_].name;
+  if (lastNavType_ == LastNavType::Point && lastWaypointIndex_ &&
+      lastWaypointIndex_ <= totalWaypoints)
+    return waypoint(lastWaypointIndex_).name;
+  return "";
+}
+
+RouteID Navigator::routeContextIndex() const {
+  if (activeRouteIndex) return activeRouteIndex;
+  if (hasActivePoint()) return RouteID::None;
+  if (lastNavType_ == LastNavType::Route && lastRouteIndex_ && lastRouteIndex_ <= totalRoutes)
+    return lastRouteIndex_;
+  if (totalRoutes == 1) return RouteID(1);
+  return RouteID::None;
+}
 
 void Navigator::setLoadedGpxFilename(const String& fileName) {
   String baseName = filenameFromPath(fileName);
@@ -791,6 +853,14 @@ bool Navigator::savePersistedState() {
   } else if (activeWaypointIndex) {
     active["type"] = "point";
     active["index"] = static_cast<uint8_t>(activeWaypointIndex);
+  } else if (lastNavType_ == LastNavType::Route) {
+    active["type"] = "route";
+    active["index"] = static_cast<uint8_t>(lastRouteIndex_);
+    active["route_point_index"] = static_cast<int16_t>(lastRoutePointIndex_);
+    active["route_complete"] = reachedGoal_;
+  } else if (lastNavType_ == LastNavType::Point) {
+    active["type"] = "point";
+    active["index"] = static_cast<uint8_t>(lastWaypointIndex_);
   } else {
     active["type"] = "none";
     active["index"] = 0;
@@ -804,7 +874,9 @@ bool Navigator::clearPersistedState() {
   return SD_MMC.remove(route_store::activeRoutePath());
 }
 
-bool Navigator::loadPersistedState() {
+bool Navigator::loadPersistedState() { return loadPersistedState(true); }
+
+bool Navigator::loadPersistedState(bool activate) {
   if (!sdcard.isMounted() || !SD_MMC.exists(route_store::activeRoutePath())) return false;
 
   File file = SD_MMC.open(route_store::activeRoutePath(), "r");
@@ -819,7 +891,11 @@ bool Navigator::loadPersistedState() {
   if (strcmp(schema, LEGACY_ACTIVE_ROUTE_SCHEMA) == 0) {
     const String path = doc["path"] | "";
     if (!route_store::loadRouteFile(path, false)) return false;
-    return activateRoute(RouteID(1), false);
+    lastNavType_ = LastNavType::Route;
+    lastRouteIndex_ = RouteID(1);
+    lastRoutePointIndex_ = RouteIndex(1);
+    lastWaypointIndex_ = WaypointID::None;
+    return activate ? activateRoute(RouteID(1), false) : true;
   }
   if (strcmp(schema, NAV_STATE_SCHEMA) != 0) return false;
 
@@ -840,12 +916,49 @@ bool Navigator::loadPersistedState() {
   const char* activeType = active["type"] | "none";
   const uint8_t index = active["index"] | 0;
   const int16_t routePointIndex = active["route_point_index"] | 1;
-  if (strcmp(activeType, "route") == 0)
-    return activateRoute(RouteID(index), RouteIndex(routePointIndex), false);
-  if (strcmp(activeType, "point") == 0) return activatePoint(WaypointID(index), false);
+  if (strcmp(activeType, "route") == 0) {
+    const RouteID routeIndex(index);
+    const RouteIndex pointIndex(routePointIndex);
+    if (!routeIndex || routeIndex > totalRoutes || pointIndex < 1 ||
+        pointIndex > routes[routeIndex].totalPoints)
+      return false;
+    lastNavType_ = LastNavType::Route;
+    lastRouteIndex_ = routeIndex;
+    lastRoutePointIndex_ = pointIndex;
+    lastWaypointIndex_ = WaypointID::None;
+    return activate ? activateRoute(lastRouteIndex_, lastRoutePointIndex_, false) : true;
+  }
+  if (strcmp(activeType, "point") == 0) {
+    const WaypointID pointIndex(index);
+    if (!pointIndex || pointIndex > totalWaypoints) return false;
+    lastNavType_ = LastNavType::Point;
+    lastRouteIndex_ = RouteID::None;
+    lastRoutePointIndex_ = RouteIndex::None;
+    lastWaypointIndex_ = pointIndex;
+    return activate ? activatePoint(lastWaypointIndex_, false) : true;
+  }
 
+  lastNavType_ = LastNavType::None;
+  lastRouteIndex_ = RouteID::None;
+  lastRoutePointIndex_ = RouteIndex::None;
+  lastWaypointIndex_ = WaypointID::None;
   savePersistedState();
   return true;
+}
+
+bool Navigator::resumeLastNav() {
+  if (!hasLastNav() && !loadPersistedState(false)) return false;
+  if (lastNavType_ == LastNavType::Route)
+    return activateRoute(lastRouteIndex_,
+                         lastRoutePointIndex_ ? lastRoutePointIndex_ : RouteIndex(1));
+  if (lastNavType_ == LastNavType::Point) return activatePoint(lastWaypointIndex_);
+  return false;
+}
+
+bool Navigator::restartLastRoute() {
+  if (!hasLastNav() && !loadPersistedState(false)) return false;
+  if (lastNavType_ != LastNavType::Route) return false;
+  return activateRoute(lastRouteIndex_, RouteIndex(1));
 }
 
 bool gpx_readFile(fs::FS& fs, String fileName) {

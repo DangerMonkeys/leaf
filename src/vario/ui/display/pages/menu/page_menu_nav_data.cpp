@@ -83,11 +83,18 @@ void NavDataMenuPage::draw() {
 
     const bool hasActiveRoute = navigator.activeRouteIndex;
     const bool hasActivePoint = !hasActiveRoute && navigator.activeWaypointIndex;
+    const RouteID routeContext = navigator.routeContextIndex();
+    const bool hasLoadedRoute = !hasActiveRoute && !hasActivePoint && routeContext;
+    const bool hasLastPoint = !hasActiveRoute && !hasActivePoint && navigator.lastNavIsPoint();
     const char* activeName = hasActiveRoute   ? navigator.routes[navigator.activeRouteIndex].name
                              : hasActivePoint ? navigator.activePoint.name
+                             : hasLoadedRoute ? navigator.routes[routeContext].name
+                             : hasLastPoint   ? navigator.lastNavDestinationName()
                                               : "None";
     const char* activeLabel = hasActiveRoute   ? "Active Route:"
                               : hasActivePoint ? "Active Point:"
+                              : hasLoadedRoute ? "Loaded Route:"
+                              : hasLastPoint   ? "Last Point:"
                                                : "Active Dest:";
 
     u8g2.setFont(leaf_5x8);
@@ -102,7 +109,7 @@ void NavDataMenuPage::draw() {
     u8g2.setCursor(2, 56);
     u8g2.print("Active File:");
 
-    if (navigator.hasLoadedNavFile()) {
+    if (navigator.hasLoadedGpxFile()) {
       u8g2.setFont(leaf_6x12);
       drawFittedText(2, 69, navigator.loadedNavFilename(), FITTED_TEXT_MAX_WIDTH);
 
