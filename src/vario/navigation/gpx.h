@@ -11,9 +11,9 @@
 // Waypoint definition and memory allocation
 #define defaultWaypointRadius 150  // meters radius to count as "reaching/crossing" a waypoint
 #define maxRoutes 10
-#define maxNavPoints 128
-#define maxRoutePointRefs 75
-#define maxGpxNameLength 24
+#define maxNavPoints 120
+#define maxRoutePointRefs 40
+#define maxGpxNameLength 18
 #define maxGpxFileNameLength 96
 
 inline int32_t gpxDegreesToE7(double degrees) {
