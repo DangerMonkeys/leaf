@@ -83,8 +83,20 @@ namespace {
     }
   }
 
-  String cPointDescription(const char* role, const Waypoint& waypoint) {
-    String description = String(role) + " " + pointLabel(waypoint);
+  String areaDistanceField(uint16_t radiusM) {
+    char buf[8];
+    snprintf(buf, sizeof(buf), "%07lu", static_cast<unsigned long>(radiusM));
+    return String(buf);
+  }
+
+  String cPointAreaDescription(const char* role, const Waypoint& waypoint, uint16_t radiusM) {
+    const bool isStart = strcmp(role, "START") == 0;
+    String description = isStart ? areaDistanceField(radiusM) : String("0000000");
+    description += isStart ? "9999999" : areaDistanceField(radiusM);
+    description += "000000360000";
+    description += role;
+    description += "AREA ";
+    description += pointLabel(waypoint);
     return printableAscii(description, 58);
   }
 
@@ -104,6 +116,10 @@ namespace {
     comment += " NAME=";
     comment += pointLabel(waypoint);
     return printableAscii(comment, 72);
+  }
+
+  void writeTaskPlaceholders(IgcLogger& logger, bool takeoff) {
+    logger.writeCPointRecord("0000000N", "00000000E", takeoff ? "TAKEOFF" : "LANDING");
   }
 }  // namespace
 
@@ -243,15 +259,24 @@ void Igc::writeActiveNavigationDeclaration() {
     logger.writeCDeclarationRecord(utcDateString(), utcTimeString(), utcDateString(), "0000",
                                    turnpointCount,
                                    printableAscii(String("Leaf Route ") + routeName, 51));
+    writeTaskPlaceholders(logger, true);
+
+    for (uint8_t i = 1; i <= route.totalPoints; i++) {
+      const RouteIndex pointIndex(i);
+      const RoutePoint& meta = navigator.routePointMeta(routeIndex, pointIndex);
+      const Waypoint& point = navigator.routePoint(routeIndex, pointIndex);
+      const char* role = cPointRoleName(meta.role, pointIndex, route.totalPoints);
+      logger.writeCPointRecord(latDegreeToStr(point.latitude()), lngDegreeToStr(point.longitude()),
+                               cPointAreaDescription(role, point, meta.radiusM));
+    }
+
+    writeTaskPlaceholders(logger, false);
     logger.writeLRecord(printableAscii(String("NAV:ROUTE NAME=") + routeName, 72));
 
     for (uint8_t i = 1; i <= route.totalPoints; i++) {
       const RouteIndex pointIndex(i);
       const RoutePoint& meta = navigator.routePointMeta(routeIndex, pointIndex);
       const Waypoint& point = navigator.routePoint(routeIndex, pointIndex);
-      logger.writeCPointRecord(
-          latDegreeToStr(point.latitude()), lngDegreeToStr(point.longitude()),
-          cPointDescription(cPointRoleName(meta.role, pointIndex, route.totalPoints), point));
       logger.writeLRecord(taskPointMetadata(i, route.totalPoints, meta, point));
     }
     return;
@@ -265,8 +290,12 @@ void Igc::writeActiveNavigationDeclaration() {
   Serial.println(pointName);
   logger.writeCDeclarationRecord(utcDateString(), utcTimeString(), utcDateString(), "0000", 0,
                                  printableAscii(String("Leaf Point ") + pointName, 51));
+  writeTaskPlaceholders(logger, true);
   logger.writeCPointRecord(latDegreeToStr(point.latitude()), lngDegreeToStr(point.longitude()),
-                           cPointDescription("POINT", point));
+                           cPointAreaDescription("START", point, defaultWaypointRadius));
+  logger.writeCPointRecord(latDegreeToStr(point.latitude()), lngDegreeToStr(point.longitude()),
+                           cPointAreaDescription("FINISH", point, defaultWaypointRadius));
+  writeTaskPlaceholders(logger, false);
   logger.writeLRecord(
       printableAscii(String("NAV:POINT R=") + defaultWaypointRadius + " NAME=" + pointName, 72));
 }
