@@ -151,6 +151,7 @@ const String Igc::desiredFileName() const {
 void Igc::log(unsigned long durationSec) {
   // Short-circuit if we've not yet started a flight
   if (!started()) return;
+  if (!gps.hasUsableFix()) return;
 
   logger.writeBRecord(utcTimeString(),  // Time in HHMMSS
                       latDegreeToStr(gps.location.lat()), lngDegreeToStr(gps.location.lng()), true,

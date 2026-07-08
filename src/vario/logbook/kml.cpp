@@ -25,6 +25,8 @@ bool Kml::startFlight() {
 }
 
 void Kml::log(unsigned long durationSec) {
+  if (!gps.hasUsableFix()) return;
+
   // First format and print the GPS coordinate
   char lonStr[20];
   char latStr[20];
