@@ -51,7 +51,7 @@ void simplePage_draw() {
     uint8_t speed_y = 28;
     bool speedIsThreeDigits = false;
     // If don't have a fix, show GPS searching icon; otherwise show speed
-    if (!gps.fixInfo.fix) {
+    if (!gps.hasUsableFix()) {
       display_GPS_icon(84, 12);
     } else {
       u8g2.setFont(leaf_labels);

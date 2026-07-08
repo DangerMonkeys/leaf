@@ -105,7 +105,7 @@ void PageFanetGround::draw_extra() {
   u8g2.println((String) "lng: " + gps.location.lng());
 
   // Update the ground station for our position
-  if (gps.location.isValid()) {
+  if (gps.hasUsableFix()) {
     // Update the FANet radio module of our current location...
     // This really, really shouldn't be done in a Display object
     // but whatever, we'll refactor later.

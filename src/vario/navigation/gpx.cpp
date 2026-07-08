@@ -14,6 +14,7 @@
 
 #include "instruments/baro.h"
 #include "instruments/gps.h"
+#include "logging/log.h"
 #include "navigation/gpx_parser.h"
 #include "navigation/route_store.h"
 #include "navigation/user_waypoints.h"
@@ -549,11 +550,11 @@ void Navigator::update() {
     if (segmentDistance <= 0) segmentDistance = pointDistanceRemaining;
     const uint16_t activeRadius =
         activeRouteIndex ? activeRoutePoint.radiusM : defaultWaypointRadius;
-    if (pointDistanceRemaining < activeRadius && !reachedGoal_)
+    if (pointDistanceRemaining < activeRadius && !reachedGoal_ && flightTimer_isLogging())
       sequenceWaypoint();  //  (this will also update distance to the new point)
 
     // update time remaining
-    if (gps.speed.mps() < 0.5) {
+    if (!gps.hasFreshGroundSpeed() || gps.speed.mps() < 0.5) {
       pointTimeRemaining = 0;
     } else {
       const double distanceToCylinder =
@@ -600,8 +601,10 @@ void Navigator::update() {
 
   // update additional values that are required regardless of if we're navigating to a point
   // average speed
-  averageSpeed =
-      (averageSpeed * (AVERAGE_SPEED_SAMPLES - 1) + gps.speed.kmph()) / AVERAGE_SPEED_SAMPLES;
+  if (gps.hasFreshGroundSpeed()) {
+    averageSpeed =
+        (averageSpeed * (AVERAGE_SPEED_SAMPLES - 1) + gps.speed.kmph()) / AVERAGE_SPEED_SAMPLES;
+  }
 }
 
 // Start, Sequence, and End Navigation Functions
@@ -794,7 +797,7 @@ void Navigator::cancelNav() {
 
 bool Navigator::hasActivePoint() const { return activeWaypointIndex || activeRoutePointIndex; }
 
-bool Navigator::gpsPositionUsable() const { return gps.fixInfo.fix && gps.location.isValid(); }
+bool Navigator::gpsPositionUsable() const { return gps.hasUsableFix(); }
 
 bool Navigator::hasNavSolution() const { return hasActivePoint() && gpsPositionUsable(); }
 

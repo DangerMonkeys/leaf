@@ -266,7 +266,7 @@ void BLE::sendFanetUpdate(FanetPacket& msg) {
   {
     // Create a lock, and work out our offsets
     GpsLockGuard gpsMutex;
-    if (!gps.location.isValid()) {
+    if (!gps.hasUsableFix()) {
       return;
     }
     constexpr auto EarthRadius = 6378137;

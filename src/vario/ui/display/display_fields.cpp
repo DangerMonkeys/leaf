@@ -195,7 +195,7 @@ void display_distance(uint8_t cursor_x, uint8_t cursor_y, double distance) {
 void display_heading(uint8_t cursor_x, uint8_t cursor_y, bool degSymbol) {
   u8g2.setCursor(cursor_x, cursor_y);
 
-  if (!gps.fixInfo.fix) {  // blank out heading if no gps fix
+  if (!gps.hasUsableFix()) {  // blank out heading if no gps fix
     u8g2.print("---");
   } else if (settings.units_heading) {  // Cardinal heading direction
     const char* displayHeadingCardinal =
@@ -754,7 +754,7 @@ void display_GPS_icon(uint8_t x, uint8_t y) {
   if (settings.gpsMode == 0) {    // GPS Off
     u8g2.print((char)44);         // GPS icon with X through it
   } else if (settings.gpsMode) {  // GPS not-off
-    if (gps.fixInfo.fix) {
+    if (gps.hasUsableFix()) {
       u8g2.print((char)43);  // GPS icon with fix
     } else {
       // blink the icon to convey "searching"
@@ -1034,7 +1034,7 @@ void display_header(bool showTurnArrows) {
   // Speed in upper right corner
   bool speedIsThreeDigits = false;
   // If don't have a fix, show GPS searching icon; otherwise show speed
-  if (!gps.fixInfo.fix) {
+  if (!gps.hasUsableFix()) {
     display_GPS_icon(84, 12);
   } else {
     // Speed in upper right corner

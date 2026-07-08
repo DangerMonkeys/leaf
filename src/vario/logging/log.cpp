@@ -45,16 +45,19 @@ PageAlertTimerAutoStop pageAlertTimerAutoStop;
 
 namespace {
   void captureFirstGpsFixForLogbook() {
-    logbook.gpsalt_start = gps.altitude.meters();
+    GPSPositionSnapshot fix;
+    if (!gps.lastValidFix(fix)) return;
+
+    logbook.gpsalt_start = fix.altitudeM;
     logbook.gpsalt = logbook.gpsalt_start;
     logbook.gpsalt_above_launch = 0;
     logbook.gpsalt_max = logbook.gpsalt_start;
     logbook.gpsalt_min = logbook.gpsalt_start;
     logbook.gpsalt_above_launch_max = 0;
-    logbook.speed = gps.speed.mps();
+    logbook.speed = fix.speedMps;
     logbook.speed_max = logbook.speed;
-    logbook.startLocationLat = gps.location.lat();
-    logbook.startLocationLng = gps.location.lng();
+    logbook.startLocationLat = fix.latitude;
+    logbook.startLocationLng = fix.longitude;
     logbookEntry.captureFirstFix(logbook);
   }
 }  // namespace
@@ -92,7 +95,7 @@ void log_update() {
 
     // We wish to save a tracklog, but the tracklog has not yet started.
     if (trackLogEnabledForFlight && !flight->started()) {
-      if (!gps.location.isValid())
+      if (!gps.hasUsableFix())
         // We don't have a valid GPS location yet, try again later
         return;
 
@@ -125,13 +128,13 @@ void log_update() {
       }
     }
 
-    if (!trackLogEnabledForFlight && gps.location.isValid() && logbook.startLocationLat == 0 &&
+    if (!trackLogEnabledForFlight && gps.hasUsableFix() && logbook.startLocationLat == 0 &&
         logbook.startLocationLng == 0) {
       captureFirstGpsFixForLogbook();
     }
 
     // Generate a tracklog record.
-    if (trackLogEnabledForFlight) flight->log(logbook.duration);
+    if (trackLogEnabledForFlight && gps.hasUsableFix()) flight->log(logbook.duration);
     log_captureValues();      // TODO:  Update this to an "Update Flight Stats" or something
     log_checkMinMaxValues();  // TODO:  Probably rename this to be "bound Flight Stats"
   }
@@ -148,6 +151,11 @@ bool flightTimer_autoStart() {
   bool startTheTimer = false;  // default to not auto-start
 
   if (PageFlightSummary::isShowing()) {
+    autoStartCounter = 0;
+    return false;
+  }
+
+  if (!gps.hasFreshGroundSpeed()) {
     autoStartCounter = 0;
     return false;
   }
@@ -199,8 +207,12 @@ bool flightTimer_autoStop() {
 
   int32_t altDifference = abs(baro.alt() - autoStopAltitude);
 
-  if ((altDifference < AUTO_STOP_MAX_ALT) &&      // Check if altitude is stable
-      (gps.speed.mph() < AUTO_STOP_MAX_SPEED) &&  // And GPS speed is slow enough
+  const bool gpsSpeedQuiet =
+      gps.hasUsableFix() ? gps.hasFreshGroundSpeed() && gps.speed.mph() < AUTO_STOP_MAX_SPEED
+                         : true;
+
+  if ((altDifference < AUTO_STOP_MAX_ALT) &&  // Check if altitude is stable
+      gpsSpeedQuiet &&                        // And GPS speed is slow enough, if current
       (imu.accelValid() && abs(imu.getAccel() - 1.0f) < AUTO_STOP_MAX_ACCEL)) {  // and IMU is calm
 
     // if all three conditions are met, increment the counter
@@ -352,14 +364,17 @@ void log_captureValues() {
     if (baro.climbRateFilteredValid()) logbook.climb = baro.climbRateFiltered();
   }
 
-  if (gps.fixInfo.fix) {
-    logbook.speed = gps.speed.mps();
+  if (gps.hasUsableFix()) {
+    GPSPositionSnapshot fix;
+    if (gps.lastValidFix(fix)) {
+      logbook.speed = fix.speedMps;
 
-    logbook.gpsalt = gps.altitude.meters();
-    logbook.gpsalt_above_launch = gps.altitude.meters() - logbook.gpsalt_start;
+      logbook.gpsalt = fix.altitudeM;
+      logbook.gpsalt_above_launch = fix.altitudeM - logbook.gpsalt_start;
 
-    // accumulate distance flown
-    logbook.distanceAlongPath += gps.speed.mps();
+      // accumulate distance flown
+      logbook.distanceAlongPath += fix.speedMps;
+    }
   }
 
   if (ambient.state() == Ambient::State::Ready) {
@@ -376,16 +391,18 @@ void log_captureEndingValues() {
     logbook.alt_end = baro.alt();
   }
 
-  if (gps.fixInfo.fix) {
-    logbook.gpsalt_end = gps.altitude.meters();
+  GPSPositionSnapshot fix;
+  if (gps.lastValidFix(fix)) {
+    logbook.gpsalt_end = fix.altitudeM;
+    logbook.endLocationLat = fix.latitude;
+    logbook.endLocationLng = fix.longitude;
+
+    if (logbook.startLocationLat != 0 || logbook.startLocationLng != 0) {
+      logbook.distanceStraightLine =
+          gps.distanceBetween(logbook.startLocationLat, logbook.startLocationLng,
+                              logbook.endLocationLat, logbook.endLocationLng);
+    }
   }
-
-  logbook.endLocationLat = gps.location.lat();
-  logbook.endLocationLng = gps.location.lng();
-
-  logbook.distanceStraightLine =
-      gps.distanceBetween(logbook.startLocationLat, logbook.startLocationLng,
-                          logbook.endLocationLat, logbook.endLocationLng);
 }
 
 void log_checkMinMaxValues() {
@@ -413,7 +430,7 @@ void log_checkMinMaxValues() {
     }
   }
 
-  if (gps.fixInfo.fix) {
+  if (gps.hasUsableFix()) {
     if (logbook.gpsalt > logbook.gpsalt_max) {
       logbook.gpsalt_max = logbook.gpsalt;
       if (logbook.gpsalt_above_launch > logbook.gpsalt_above_launch_max)

@@ -25,6 +25,8 @@ LeafGPS gps;
 #define DEBUG_GPS 0
 
 namespace {
+  constexpr uint32_t MAX_USABLE_GPS_AGE_MS = 3000;
+
   int64_t daysFromCivil(int year, unsigned month, unsigned day) {
     year -= month <= 2;
     const int era = (year >= 0 ? year : year - 399) / 400;
@@ -178,8 +180,9 @@ void LeafGPS::update() {
   syncSystemClockIfNeeded();
 
   // update sats if we're tracking sat NMEA sentences
-  navigator.update();
   updateFixInfo();
+  updateLastValidFix();
+  navigator.update();
   calculateGlideRatio();
 
   if (LOG::GPS && bus_) {
@@ -286,6 +289,34 @@ void LeafGPS::updateSatList(const NMEAString& nmea) {
     }
     fixInfo.numberOfSats = satelliteCount;  // save counted satellites
   }
+}
+
+bool LeafGPS::hasUsableFix() const {
+  return fixInfo.fix && location.isValid() && altitude.isValid() &&
+         location.age() <= MAX_USABLE_GPS_AGE_MS && altitude.age() <= MAX_USABLE_GPS_AGE_MS;
+}
+
+bool LeafGPS::hasFreshGroundSpeed() const {
+  return hasUsableFix() && speed.isValid() && speed.age() <= MAX_USABLE_GPS_AGE_MS;
+}
+
+bool LeafGPS::lastValidFix(GPSPositionSnapshot& snapshot) const {
+  if (!lastValidFix_.valid) return false;
+  snapshot = lastValidFix_;
+  return true;
+}
+
+void LeafGPS::updateLastValidFix() {
+  if (!hasUsableFix()) return;
+
+  lastValidFix_.valid = true;
+  lastValidFix_.latitude = location.lat();
+  lastValidFix_.longitude = location.lng();
+  lastValidFix_.altitudeM = altitude.meters();
+  lastValidFix_.speedMps = speed.mps();
+  lastValidFix_.courseDeg = course.deg();
+  lastValidFix_.fixError = fixInfo.error;
+  lastValidFix_.capturedAtMs = millis();
 }
 
 void LeafGPS::testSats() {

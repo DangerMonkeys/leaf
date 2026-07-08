@@ -48,6 +48,17 @@ struct NMEASentenceContents {
   bool course;
 };
 
+struct GPSPositionSnapshot {
+  bool valid = false;
+  double latitude = 0;
+  double longitude = 0;
+  float altitudeM = 0;
+  float speedMps = 0;
+  float courseDeg = 0;
+  float fixError = 0;
+  uint32_t capturedAtMs = 0;
+};
+
 // enum time_formats {hhmmss, }
 
 class LeafGPS : public TinyGPSPlus, IMessageSource, public MessageSink<LeafGPS, GpsMessage> {
@@ -82,6 +93,10 @@ class LeafGPS : public TinyGPSPlus, IMessageSource, public MessageSink<LeafGPS, 
 
   bool systemTimeSyncedThisBoot() const { return systemTimeSyncedThisBoot_; }
 
+  bool hasUsableFix() const;
+  bool hasFreshGroundSpeed() const;
+  bool lastValidFix(GPSPositionSnapshot& snapshot) const;
+
   float getGlideRatio(void) { return glideRatio; }
 
   // Cached version of the sat info for showing on display (this will be re-written each time a
@@ -93,6 +108,7 @@ class LeafGPS : public TinyGPSPlus, IMessageSource, public MessageSink<LeafGPS, 
  private:
   void updateFixInfo();
   void updateSatList(const NMEAString& nmea);
+  void updateLastValidFix();
   void syncSystemClockIfNeeded();
 
   void calculateGlideRatio();
@@ -133,6 +149,7 @@ class LeafGPS : public TinyGPSPlus, IMessageSource, public MessageSink<LeafGPS, 
   int nmeaBufferIndex = 0;         // index into the buffer currently writing to
   bool gsvSentenceGroupActive = false;
   bool systemTimeSyncedThisBoot_ = false;
+  GPSPositionSnapshot lastValidFix_;
 };
 extern LeafGPS gps;
 

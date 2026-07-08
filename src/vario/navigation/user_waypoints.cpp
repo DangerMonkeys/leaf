@@ -176,7 +176,7 @@ namespace user_waypoints {
       error = "SD card is not mounted.";
       return false;
     }
-    if (!gps.location.isValid() || !gps.fixInfo.fix) {
+    if (!gps.hasUsableFix()) {
       error = "GPS fix is required.";
       return false;
     }
