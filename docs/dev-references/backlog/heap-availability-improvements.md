@@ -5,70 +5,74 @@ description: Ordered backlog for improving Leaf's general heap availability and 
 
 # Heap Availability Improvements Backlog
 
-Recent heap diagnostics showed that Leaf has substantial heap available shortly after SD mount, but much of it is consumed or fragmented before memory-intensive features like WiFi setup, the web app, OTA checks, route editing, and waypoint transfer run. The goal of this backlog is to improve Leaf's general heap headroom, not just fix one acute web-app request.
+Recent heap diagnostics showed that Leaf has substantial heap available shortly after SD mount, but much of it was consumed or fragmented before memory-intensive features like WiFi setup, the web app, OTA checks, route editing, and waypoint transfer ran. Recent memory work has improved the major web-app and lifecycle pressure points enough that this backlog is no longer an urgent failure list. It is now a pickup note for cautious follow-up if real-world diagnostics show more room to squeeze.
 
-Approximate order of attack:
+Completed or mostly completed work:
 
-1. Gate diagnostic WiFi scanning so it does not consume normal runtime heap.
-   - Later lifecycle diagnostics identified the previously unexplained post-setup heap drop: the first `diagnostic_network.update()` call can consume roughly 49 KB by initializing WiFi STA mode and starting an async scan.
-   - Avoid running production/diagnostic-network scanning during ordinary user operation, web-app testing, and memory profiling unless explicitly requested or factory/commissioning conditions are active.
-   - Confirm that when diagnostic scanning is skipped, Leaf reaches the WiFi menu/web-app path with the roughly 49 KB baseline heap restored.
-   - If the scan is still needed in some USB-powered states, ensure it calls `WiFi.scanDelete()` and returns the WiFi stack to a low-memory/off state when no diagnostic network is found.
+1. Diagnostic WiFi scan gating.
+   - `diagnostic_network.update()` previously explained a roughly 49 KB post-setup heap drop by initializing WiFi STA mode and starting an async scan.
+   - Diagnostic network scanning is now limited to commissioning/factory-relevant states through `settings.diagnosticNetworkScanAllowed()`, so fully commissioned units should not pay this cost during normal use or web-app testing.
+   - If this area is revisited, focus on commissioning-pending and first-boot behavior, not normal user runtime.
 
-2. Tighten radio and service lifecycle boundaries.
-   - Make WiFi setup, the user web app, BLE, FANET, OTA checks, and other network-adjacent features more mutually exclusive where possible.
-   - When entering WiFi setup or web-app mode, release unneeded BLE/FANET resources instead of only stopping advertising or pausing activity.
-   - Confirm task handles, queues, protocol objects, and buffers are actually destroyed when a feature is no longer active.
-   - Recent OTA diagnostics showed `BLE::end()` recovered roughly 60 KB, confirming BLE is a major reclaimable subsystem when web/OTA features need headroom.
+2. Radio and service lifecycle boundaries.
+   - User web-app and WiFi setup flows now have clearer lifecycle boundaries and diagnostics around setup portal shutdown, user-app startup, and service resume.
+   - BLE is released for memory-intensive web/OTA paths where appropriate; OTA diagnostics showed `BLE::end()` can recover roughly 60 KB.
+   - The captive-portal-to-network-web-app flow was tightened so setup teardown completes before later user-app activity, without auto-loading the web app after setup.
 
-3. Audit and reduce task stack reservations.
-   - Use heap lifecycle stack high-water logs to size each FreeRTOS task closer to observed use.
+3. Web response streaming and bounded builders.
+   - Large static `/app` and `/wifi` HTML responses use flash-backed send paths instead of heap-backed `String` copies.
+   - Worst nav/web responses were streamed or chunked so waypoint/nav data no longer requires large monolithic JSON strings.
+   - `/api/user-waypoints` and related waypoint responses were optimized to reduce latency and heap churn.
+   - Recurring JSON builders use tighter reserve/lifetime patterns where they were clearly hot.
+
+4. KML removal.
+   - KML track logging has been removed; IGC is now the canonical flight track record for new flights.
+   - KML waypoint loading has been removed because it previously read the whole file into one heap-backed `String` before parsing.
+   - The web app and device file pickers no longer list `.kml` files for waypoint import.
+
+5. Static data and templates.
+   - The main web app and setup HTML are served from flash-backed storage where practical.
+   - This should continue to be checked with release-build `.data`/`.bss` reports, but the largest static web assets have already been addressed.
+
+Remaining possible follow-up items:
+
+1. Audit and reduce task stack reservations.
+   - Use real-world heap lifecycle stack high-water logs to size each FreeRTOS task closer to observed use.
    - Review loop, BLE, FANET TX, FANET RX, web/server-related work, and any other long-lived task stacks.
-   - Keep safety margin, but return oversized stack reservations to general heap.
+   - Keep a conservative safety margin, but return obvious excess stack reservations to general heap.
+   - This is the best next candidate if hours of dev-mode logging show consistently large unused stack margins.
 
-4. Reduce WiFi setup overlap and cleanup latency.
-   - Avoid overlapping AP, DNS, scanning, STA connect, setup web server, and user web app longer than necessary.
-   - Tear down AP/DNS/setup handlers before or immediately after STA connection when the user flow allows it.
-   - Delete WiFi scan results aggressively and verify that scan/connect paths return heap and largest-block headroom.
+2. Selective additional web response streaming.
+   - Prefer `sendContent()`/streaming writers over building full JSON/HTML responses in heap-backed `String` objects when response size grows with SD-card content.
+   - Remaining candidates include profiles, logbook entries/details, route editor data, and OTA/version responses.
+   - Do this selectively based on measured web-app pressure; avoid turning small fixed responses into complex streaming code.
 
-5. Stream or chunk web responses by default.
-   - Prefer `sendContent()`/streaming writers over building full JSON/HTML responses in heap-backed `String` objects.
-   - Apply first to waypoint/nav data, user waypoints, profiles, logbook entries, route editor data, OTA/version responses, and any response that grows with SD-card content.
-   - Preserve clear low-heap responses so the UI can report incomplete data instead of appearing random or truncated.
-
-6. Replace hot-path dynamic `String` usage with fixed buffers or reusable scratch storage.
+3. Replace hot-path dynamic `String` usage with fixed buffers or reusable scratch storage.
    - Audit code that repeatedly appends to `String`, calls `reserve()`, or builds temporary JSON in request handlers and parsers.
    - Use fixed `char[]` buffers, bounded formatting, reusable module buffers, or streaming output where lifetimes are simple.
-   - Prioritize paths visible in diagnostics: profiles, nav data, route save/import, logbook entry, OTA, and WiFi setup.
-   - KML track logging has been removed; IGC is now the canonical flight track record for new flights.
+   - Prioritize paths visible in diagnostics: profiles, route save/import, logbook entry/detail, OTA, and WiFi setup.
 
-7. Audit ArduinoJson document sizing and lifetimes.
+4. Audit ArduinoJson document sizing and lifetimes.
    - Identify large `JsonDocument` allocations in profile, waypoint, route, logbook, web app, and setup paths.
-   - Replace full-document reads with streaming, filtered parsing, or narrower documents where possible.
+   - Replace full-document reads with streaming, filtered parsing, or narrower documents where practical.
    - Ensure documents are scoped tightly so their heap is released before response construction begins.
-   - KML waypoint loading has been removed because it previously read the whole file into one heap-backed `String` before parsing.
 
-8. Move static data and templates out of RAM.
-   - Keep constant web app assets, HTML/CSS/JS fragments, labels, lookup tables, and diagnostic strings in flash/PROGMEM where practical.
-   - Continue using `send_P` or equivalent flash-backed response helpers for large static web content.
-   - Check static RAM reports after each change to confirm `.bss`/`.data` does not grow unexpectedly.
-
-9. Review fixed-size navigation and route storage.
+5. Review fixed-size navigation and route storage.
    - `maxNavPoints`, `maxRoutePointRefs`, and related fixed arrays provide predictable behavior but reserve RAM permanently.
    - Decide whether current capacities are worth their always-on cost, or whether some route/waypoint data can live on SD and be paged or streamed.
    - Keep flight-critical navigation deterministic; avoid heap-heavy dynamic containers in the active flight path.
 
-10. Defer optional features until first use.
+6. Defer optional features until first use.
     - Avoid initializing web app, OTA, route editing, profile editing, or heavy diagnostics until the user enters the relevant mode.
     - Consider lightweight placeholders at boot, with explicit init/deinit around each feature session.
     - Re-test repeated enter/exit cycles to ensure heap returns close to the prior baseline.
 
-11. Keep heap diagnostics as a regression tool while optimizing.
+7. Keep heap diagnostics as a regression tool while optimizing.
     - Preserve lifecycle checkpoints during this work and use `/diagnostics/heap_lifecycle.csv` as the primary before/after evidence.
     - Track free heap, largest free block, minimum free heap, current task, and stack high-water values.
-    - Add targeted checkpoints before removing temporary diagnostics, especially around the currently unattributed baseline drops.
+    - Use extended real-world dev-mode logs before reducing stack reservations or making further lifecycle changes.
 
-12. Consider memory policy and feature gating for low-heap states.
+8. Consider memory policy and feature gating for low-heap states.
     - Define minimum heap and largest-block thresholds for memory-intensive actions.
     - When below threshold, degrade gracefully by skipping optional details, streaming smaller batches, or asking the user to retry after closing a mode.
     - Treat this as a guardrail, not a substitute for reducing baseline memory use.
@@ -82,3 +86,4 @@ Useful evidence from the first heap lifecycle pass:
 - WiFi setup/connect drove the recorded minimum free heap as low as roughly 700 bytes.
 - Some nav/web responses ran with largest free blocks below 4 KB, which is enough to cause fragmentation-sensitive failures; one `nav-data` response took roughly 200 seconds and ended with only about 2.3 KB largest allocatable block.
 - Earlier KML parsing and nav-load experiments helped isolate heap behavior; KML import has since been removed to avoid whole-file heap allocations.
+- After the web/nav streaming, WiFi lifecycle, and KML-removal work, release-build size was roughly 98.8 KB RAM usage and 2.11 MB flash usage. Hardware smoke testing showed the web app responsive again; longer real-world dev-mode logs should guide any further stack or lifecycle tuning.
