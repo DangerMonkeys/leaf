@@ -2,6 +2,7 @@
 #include "power.h"
 
 #include "diagnostics/diagnostic_network/diagnostic_network.h"
+#include "diagnostics/heap_monitor.h"
 #include "hardware/Leaf_I2C.h"
 #include "hardware/Leaf_SPI.h"
 #include "hardware/aht20.h"
@@ -64,22 +65,28 @@ const char* nameOf(PowerInputLevel level) {
 }
 
 void Power::bootUp() {
+  heap_monitor::checkpoint("power-boot-start");
   // Init Peripheral Busses
   wire_init();
+  heap_monitor::checkpoint("power-wire");
   Serial.println(" - Finished I2C Wire");
   spi_init();
+  heap_monitor::checkpoint("power-spi");
   Serial.println(" - Finished SPI");
 
   // initialize IO expander (needed for speaker in v3.2.5+ and power supply in v3.2.6+)
 #ifdef HAS_IO_EXPANDER
   ioexInit();  // initialize IO Expander
+  heap_monitor::checkpoint("power-ioex");
   Serial.println(" - Finished IO Expander");
 #endif
 
   initPowerSystem();  // configure power supply
+  heap_monitor::checkpoint("power-system");
 
   // initialize Buttons and check if holding the center button is what turned us on
   Button button = buttons.init();
+  heap_monitor::checkpoint("power-buttons");
 
   // go to "ON" state if button (user input) or BOOT_TO_ON flag from firmware update
   if (button == Button::CENTER || settings.boot_toOnState) {
@@ -89,7 +96,9 @@ void Power::bootUp() {
     info_.onState = PowerState::On;
 
     display.showOnSplash();  // show the splash screen if user turned us on
+    heap_monitor::checkpoint("power-splash");
     display.setPage((MainPage)settings.startPage);
+    heap_monitor::checkpoint("power-start-page");
 
     maybeStartBusLog();
   } else {
@@ -102,9 +111,11 @@ void Power::bootUp() {
   // charge mode, we still need to initialize devices so we can put some
   // of them back to sleep)
   initPeripherals();
+  heap_monitor::checkpoint("power-boot-end");
 }
 
 void Power::initPowerSystem() {
+  heap_monitor::checkpoint("power-system-start");
   Serial.print("power_init: ");
   Serial.println(nameOf(info_.onState));
 
@@ -118,6 +129,7 @@ void Power::initPowerSystem() {
 
   // set default current limit for charger input
   setInputCurrent(PowerInputLevel::i500mA);
+  heap_monitor::checkpoint("power-system-pins");
 
 #ifdef LED_PIN
   pinMode(LED_PIN, OUTPUT);  // LED power status indicator
@@ -129,6 +141,7 @@ void Power::initPowerSystem() {
 }
 
 void Power::initPeripherals() {
+  heap_monitor::checkpoint("periph-start");
   Serial.print("init_peripherals: ");
   Serial.println(nameOf(info_.onState));
 
@@ -139,23 +152,31 @@ void Power::initPeripherals() {
     while (speaker.update()) {
       delay(10);
     }
+    heap_monitor::checkpoint("periph-enter-sound");
   } else {
     latchOff();  // turn off 3.3V regulator (if we're plugged into USB, we'll stay on)
   }
 
   // then initialize the rest of the devices
   sdcard.init();
+  heap_monitor::checkpoint("periph-sd");
   Serial.println(" - Finished SDcard");
   lc86g.init();
+  heap_monitor::checkpoint("periph-lc86g");
   gps.init();
+  heap_monitor::checkpoint("periph-gps");
   Serial.println(" - Finished GPS");
   wire_init();
+  heap_monitor::checkpoint("periph-wire");
   Serial.println(" - Finished I2C Wire");
   display.init();
+  heap_monitor::checkpoint("periph-display");
   Serial.println(" - Finished display");
   ms5611.init();
+  heap_monitor::checkpoint("periph-baro");
   Serial.println(" - Finished Baro");
   ICM20948::getInstance().init();
+  heap_monitor::checkpoint("periph-imu");
   Serial.println(" - Finished IMU");
 
   // then put devices to sleep if we're in PowerState::OffUSB
@@ -163,6 +184,7 @@ void Power::initPeripherals() {
   if (info_.onState == PowerState::OffUSB) {
     sleepPeripherals();
   }
+  heap_monitor::checkpoint("periph-end");
   Serial.println(" - DONE");
 }
 
@@ -181,16 +203,21 @@ void Power::sleepPeripherals() {
 }
 
 void Power::wakePeripherals() {
+  heap_monitor::checkpoint("wake-periph-start");
   Serial.println("wake_peripherals: ");
   sdcard.mount();  // re-initialize SD card in case card state was changed while in charging/USB
                    // mode
+  heap_monitor::checkpoint("wake-periph-sd");
   Serial.println(" - waking GPS");
   lc86g.wake();
+  heap_monitor::checkpoint("wake-periph-gps");
   Serial.println(" - waking baro and IMU");
   baro.wake();
   imu.wake();
+  heap_monitor::checkpoint("wake-periph-baro-imu");
   Serial.println(" - waking speaker");
   speaker.unMute();
+  heap_monitor::checkpoint("wake-periph-speaker");
   Serial.println(" - DONE");
 }
 

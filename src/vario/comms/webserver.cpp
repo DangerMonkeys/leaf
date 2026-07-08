@@ -690,7 +690,7 @@ namespace {
     HTTPUpload& upload = target.upload();
     switch (upload.status) {
       case UPLOAD_FILE_START:
-        heap_monitor::record("waypoint-upload-start");
+        heap_monitor::checkpoint("waypoint-upload-start");
         beginNavUpload(upload.filename);
         break;
       case UPLOAD_FILE_WRITE:
@@ -738,7 +738,7 @@ namespace {
       json += jsonEscape(nav_upload_error);
       json += "\"}";
       resetNavUploadState();
-      heap_monitor::record("waypoint-upload-fail");
+      heap_monitor::checkpoint("waypoint-upload-fail");
       target.send(400, "application/json", json);
       return;
     }
@@ -772,7 +772,7 @@ namespace {
     json += "}";
 
     resetNavUploadState();
-    heap_monitor::record(loaded ? "waypoint-upload-end" : "waypoint-upload-load-fail");
+    heap_monitor::checkpoint(loaded ? "waypoint-upload-end" : "waypoint-upload-load-fail");
     target.send(loaded ? 200 : 422, "application/json", json);
   }
 
@@ -992,7 +992,7 @@ namespace {
   }
 
   void sendProfiles(WebServer& target) {
-    heap_monitor::record("profiles-get-start");
+    heap_monitor::checkpoint("profiles-get-start");
     if (!user_app_enabled) {
       target.send(404, "application/json", "{\"detail\":\"Leaf Web App is not active.\"}");
       return;
@@ -1018,7 +1018,7 @@ namespace {
     sendNoStoreHeaders(target);
     target.streamFile(file, "application/json");
     file.close();
-    heap_monitor::record("profiles-get-end");
+    heap_monitor::checkpoint("profiles-get-end");
   }
 
   bool profilesRequestLooksValid(const String& body) {
@@ -1114,7 +1114,7 @@ namespace {
   }
 
   void saveProfiles(WebServer& target) {
-    heap_monitor::record("profiles-put-start");
+    heap_monitor::checkpoint("profiles-put-start");
     if (!user_app_enabled) {
       target.send(404, "application/json", "{\"detail\":\"Leaf Web App is not active.\"}");
       return;
@@ -1127,23 +1127,23 @@ namespace {
 
     const String body = target.arg("plain");
     if (!profilesRequestLooksValid(body)) {
-      heap_monitor::record("profiles-put-invalid");
+      heap_monitor::checkpoint("profiles-put-invalid");
       target.send(400, "application/json", "{\"detail\":\"Invalid profiles JSON.\"}");
       return;
     }
 
     if (!writeProfilesBody(body)) {
-      heap_monitor::record("profiles-put-fail");
+      heap_monitor::checkpoint("profiles-put-fail");
       target.send(500, "application/json", "{\"saved\":false}");
       return;
     }
 
-    heap_monitor::record("profiles-put-end");
+    heap_monitor::checkpoint("profiles-put-end");
     target.send(200, "application/json", "{\"saved\":true}");
   }
 
   void importRoute(WebServer& target) {
-    heap_monitor::record("route-import-start");
+    heap_monitor::checkpoint("route-import-start");
     if (!user_app_enabled) {
       target.send(404, "application/json", "{\"detail\":\"Leaf Web App is not active.\"}");
       return;
@@ -1184,7 +1184,7 @@ namespace {
       json += ",\"detail\":\"";
       json += jsonEscape(result.error);
       json += "\"}";
-      heap_monitor::record("route-import-fail");
+      heap_monitor::checkpoint("route-import-fail");
       target.send(result.path.isEmpty() ? 400 : 500, "application/json", json);
       return;
     }
@@ -1198,12 +1198,12 @@ namespace {
     json += "\",\"points\":";
     json += result.points;
     json += "}";
-    heap_monitor::record("route-import-end");
+    heap_monitor::checkpoint("route-import-end");
     target.send(200, "application/json", json);
   }
 
   void sendNavData(WebServer& target) {
-    heap_monitor::record("nav-data-start");
+    heap_monitor::checkpoint("nav-data-start");
     if (!user_app_enabled) {
       target.send(404, "application/json", "{\"detail\":\"Leaf Web App is not active.\"}");
       return;
@@ -1235,7 +1235,7 @@ namespace {
     json += "\"";
     if (!includePoints) {
       json += "}";
-      heap_monitor::record("nav-data-end");
+      heap_monitor::checkpoint("nav-data-end");
       target.send(200, "application/json", json);
       return;
     }
@@ -1243,7 +1243,7 @@ namespace {
     if (ESP.getFreeHeap() < NAV_POINTS_MIN_FREE_HEAP ||
         ESP.getMaxAllocHeap() < NAV_POINTS_MIN_MAX_ALLOC) {
       json += ",\"points_unavailable\":true,\"detail\":\"Unable to refresh waypoint list.\"}";
-      heap_monitor::record("nav-data-low-heap");
+      heap_monitor::checkpoint("nav-data-low-heap");
       target.send(503, "application/json", json);
       return;
     }
@@ -1254,7 +1254,7 @@ namespace {
     target.sendContent(",\"points\":[");
     String pointBuffer;
     if (!pointBuffer.reserve(NAV_POINTS_BUFFER_RESERVE)) {
-      heap_monitor::record("nav-data-reserve-fail");
+      heap_monitor::checkpoint("nav-data-reserve-fail");
       target.sendContent(
           "],\"points_unavailable\":true,\"detail\":\"Unable to refresh waypoint "
           "list.\"}");
@@ -1287,7 +1287,7 @@ namespace {
     }
     target.sendContent("]}");
     target.sendContent("");
-    heap_monitor::record("nav-data-end");
+    heap_monitor::checkpoint("nav-data-end");
   }
 
   void activateNavPoint(WebServer& target) {
@@ -1409,7 +1409,7 @@ namespace {
   }
 
   void saveEditedRoute(WebServer& target) {
-    heap_monitor::record("route-save-start");
+    heap_monitor::checkpoint("route-save-start");
     if (!user_app_enabled) {
       target.send(404, "application/json", "{\"detail\":\"Leaf Web App is not active.\"}");
       return;
@@ -1489,7 +1489,7 @@ namespace {
       json += ",\"detail\":\"";
       json += jsonEscape(result.error);
       json += "\"}";
-      heap_monitor::record("route-save-fail");
+      heap_monitor::checkpoint("route-save-fail");
       target.send(result.path.isEmpty() ? 400 : 500, "application/json", json);
       return;
     }
@@ -1504,7 +1504,7 @@ namespace {
     json += "\",\"points\":";
     json += result.points;
     json += "}";
-    heap_monitor::record("route-save-end");
+    heap_monitor::checkpoint("route-save-end");
     target.send(200, "application/json", json);
   }
 
@@ -1837,10 +1837,10 @@ leafLogButtons();routeButtons();routeEditButtons();loadStatus();loadProfiles();l
       return;
     }
 
-    heap_monitor::record("logbook-entry-start");
+    heap_monitor::checkpoint("logbook-entry-start");
     String path = target.arg("path");
     if (path.isEmpty() && !LogbookStore::newestEntryPath(path)) {
-      heap_monitor::record("logbook-entry-empty");
+      heap_monitor::checkpoint("logbook-entry-empty");
       target.send(404, "application/json",
                   "{\"ok\":false,\"error\":\"no_logs\",\"detail\":\"No logs found.\"}");
       return;
@@ -1848,13 +1848,13 @@ leafLogButtons();routeButtons();routeEditButtons();loadStatus();loadProfiles();l
 
     path = LogbookStore::normalizePath(path);
     if (!LogbookStore::isLogbookJsonPath(path)) {
-      heap_monitor::record("logbook-entry-bad-path");
+      heap_monitor::checkpoint("logbook-entry-bad-path");
       target.send(400, "application/json",
                   "{\"ok\":false,\"error\":\"bad_path\",\"detail\":\"Invalid log path.\"}");
       return;
     }
     if (!SD_MMC.exists(path)) {
-      heap_monitor::record("logbook-entry-missing");
+      heap_monitor::checkpoint("logbook-entry-missing");
       target.send(404, "application/json",
                   "{\"ok\":false,\"error\":\"missing\",\"detail\":\"Log file was not found.\"}");
       return;
@@ -1862,7 +1862,7 @@ leafLogButtons();routeButtons();routeEditButtons();loadStatus();loadProfiles();l
 
     LogbookEntrySummary summary;
     if (!LogbookStore::readSummary(path, summary)) {
-      heap_monitor::record("logbook-entry-fail");
+      heap_monitor::checkpoint("logbook-entry-fail");
       LogbookNavigation navigation;
       LogbookStore::navigationForPath(path, navigation);
 
@@ -1906,7 +1906,7 @@ leafLogButtons();routeButtons();routeEditButtons();loadStatus();loadProfiles();l
     appendLogbookSummaryJson(json, summary);
     json += "}";
 
-    heap_monitor::record("logbook-entry-end");
+    heap_monitor::checkpoint("logbook-entry-end");
     sendNoStoreHeaders(target);
     target.send(200, "application/json", json);
   }
@@ -1917,16 +1917,16 @@ leafLogButtons();routeButtons();routeEditButtons();loadStatus();loadProfiles();l
       return;
     }
 
-    heap_monitor::record("logbook-delete-start");
+    heap_monitor::checkpoint("logbook-delete-start");
     String path = LogbookStore::normalizePath(target.arg("path"));
     if (!LogbookStore::isLogbookJsonPath(path)) {
-      heap_monitor::record("logbook-delete-bad-path");
+      heap_monitor::checkpoint("logbook-delete-bad-path");
       target.send(400, "application/json",
                   "{\"ok\":false,\"error\":\"bad_path\",\"detail\":\"Invalid log path.\"}");
       return;
     }
     if (!SD_MMC.exists(path)) {
-      heap_monitor::record("logbook-delete-missing");
+      heap_monitor::checkpoint("logbook-delete-missing");
       target.send(404, "application/json",
                   "{\"ok\":false,\"error\":\"missing\",\"detail\":\"Log file was not found.\"}");
       return;
@@ -1936,7 +1936,7 @@ leafLogButtons();routeButtons();routeEditButtons();loadStatus();loadProfiles();l
     LogbookStore::navigationForPath(path, navigation);
 
     if (!LogbookStore::deleteEntry(path)) {
-      heap_monitor::record("logbook-delete-fail");
+      heap_monitor::checkpoint("logbook-delete-fail");
       target.send(
           500, "application/json",
           "{\"ok\":false,\"error\":\"delete_failed\",\"detail\":\"Log could not be deleted.\"}");
@@ -1951,7 +1951,7 @@ leafLogButtons();routeButtons();routeEditButtons();loadStatus();loadProfiles();l
     json += navigation.total > 0 ? navigation.total - 1 : 0;
     json += "}";
 
-    heap_monitor::record("logbook-delete-end");
+    heap_monitor::checkpoint("logbook-delete-end");
     sendNoStoreHeaders(target);
     target.send(200, "application/json", json);
   }
@@ -2004,6 +2004,7 @@ leafLogButtons();routeButtons();routeEditButtons();loadStatus();loadProfiles();l
   }
 
   void finishWifiNetworkScan(int16_t result) {
+    heap_monitor::checkpoint("wifi-scan-finish");
     if (result < 0) {
       Serial.printf("Leaf WiFi setup scan failed: %d\n", result);
     }
@@ -2026,12 +2027,14 @@ leafLogButtons();routeButtons();routeEditButtons();loadStatus();loadProfiles();l
   }
 
   void startWifiNetworkScan() {
+    heap_monitor::checkpoint("wifi-scan-start");
     logWifiSetupTiming("scan-start");
     WiFi.scanDelete();
     setWifiSetupNetworksJson("{\"scanning\":true,\"networks\":[]}");
     const int16_t result = WiFi.scanNetworks(/*async=*/true, /*hidden=*/false);
     if (result == WIFI_SCAN_RUNNING) {
       wifi_setup_scan_running = true;
+      heap_monitor::checkpoint("wifi-scan-running");
       return;
     }
 
@@ -2049,6 +2052,7 @@ leafLogButtons();routeButtons();routeEditButtons();loadStatus();loadProfiles();l
   }
 
   void connectToWifiFromRequest(WebServer& target) {
+    heap_monitor::checkpoint("wifi-connect-request");
     const String body = target.arg("plain");
     const String ssid = extractJsonStringValue(body, "ssid");
     const String password = extractJsonStringValue(body, "password");
@@ -2062,6 +2066,7 @@ leafLogButtons();routeButtons();routeEditButtons();loadStatus();loadProfiles();l
       WiFi.scanDelete();
       wifi_setup_scan_running = false;
       setWifiSetupNetworksJson("{\"scanning\":false,\"networks\":[]}");
+      heap_monitor::checkpoint("wifi-scan-cancel");
     }
 
     WiFi.mode(WIFI_AP_STA);
@@ -2069,6 +2074,7 @@ leafLogButtons();routeButtons();routeEditButtons();loadStatus();loadProfiles();l
     WiFi.disconnect(false, false);
     WiFi.persistent(false);
     WiFi.begin(ssid.c_str(), password.c_str());
+    heap_monitor::checkpoint("wifi-connect-begin");
     if (user_app_enabled && user_app_using_leaf_wifi) {
       user_app_provisioning = true;
     }
@@ -2132,7 +2138,7 @@ leafLogButtons();routeButtons();routeEditButtons();loadStatus();loadProfiles();l
           []() { receiveWaypointUpload(user_server); });
       user_server.on("/api/logbook", HTTP_GET, []() {
         if (diagnosticsEnabled()) user_app_route_logbook_count++;
-        heap_monitor::record("logbook-summary");
+        heap_monitor::checkpoint("logbook-summary");
         sendLogbookSummary(user_server);
       });
       user_server.on("/api/logbook/entry", HTTP_GET, []() {
@@ -2462,31 +2468,33 @@ void webserver_enable_user_app(bool useLeafWifi) {
 
   heap_monitor::clear();
   resetUserAppCounters();
-  heap_monitor::record("enable-start");
+  heap_monitor::checkpoint("enable-start");
   if (useLeafWifi || WiFi.status() != WL_CONNECTED) {
     leaf_wifi::prepareForLeafAccessPoint();
-    heap_monitor::record("after-prepare-ap");
+    heap_monitor::checkpoint("after-prepare-ap");
     WiFi.mode(WIFI_AP);
     WiFi.setSleep(false);
     startLeafAp();
     startLeafApDns();
-    heap_monitor::record("after-softap");
+    heap_monitor::checkpoint("after-softap");
     user_app_using_leaf_wifi = true;
   } else {
     user_app_using_leaf_wifi = false;
-    heap_monitor::record("using-sta");
+    heap_monitor::checkpoint("using-sta");
   }
 
   user_app_enabled = true;
   user_app_provisioning = false;
   setupUserAppServer();
-  heap_monitor::record("after-user-server");
+  heap_monitor::checkpoint("after-user-server");
   webserver_setup();
-  heap_monitor::record("enabled");
+  heap_monitor::checkpoint("enabled");
   appendWifiSetupDiagnostics(useLeafWifi ? "enable-user-app-ap" : "enable-user-app-network", true);
 }
 
 void webserver_enable_wifi_setup() {
+  heap_monitor::clear();
+  heap_monitor::checkpoint("wifi-setup-start");
   pauseServicesForUserApp();
 
   if (diagnosticsEnabled()) {
@@ -2495,17 +2503,21 @@ void webserver_enable_wifi_setup() {
   }
   logWifiSetupTiming("start");
   leaf_wifi::prepareForUserWifiSetupFast();
+  heap_monitor::checkpoint("wifi-setup-prepared");
   logWifiSetupTiming("after-fast-prepare");
   WiFi.mode(WIFI_AP_STA);
   WiFi.setSleep(false);
   startLeafAp();
+  heap_monitor::checkpoint("wifi-setup-ap");
   logWifiSetupTiming("after-softAP");
   user_app_enabled = true;
   user_app_using_leaf_wifi = true;
   user_app_provisioning = true;
   setupUserAppServer();
+  heap_monitor::checkpoint("wifi-setup-server");
   logWifiSetupTiming("after-user-server");
   startLeafApDns();
+  heap_monitor::checkpoint("wifi-setup-dns");
   logWifiSetupTiming("after-dns");
   webserver_setup();
   logWifiSetupTiming("after-main-server");
@@ -2517,7 +2529,7 @@ void webserver_enable_wifi_setup() {
 
 void webserver_disable_user_app() {
   appendWifiSetupDiagnostics("disable-start", true);
-  heap_monitor::record("disable-start");
+  heap_monitor::checkpoint("disable-start");
   dumpUserAppCounters("disable-start");
   user_app_enabled = false;
   stopLeafApDns();
@@ -2534,15 +2546,15 @@ void webserver_disable_user_app() {
   if (user_server_started) {
     user_server.stop();
     user_server_started = false;
-    heap_monitor::record("after-user-stop");
+    heap_monitor::checkpoint("after-user-stop");
   }
   if (user_app_using_leaf_wifi) {
     WiFi.softAPdisconnect(true);
     WiFi.mode(WIFI_STA);
-    heap_monitor::record("after-ap-stop");
+    heap_monitor::checkpoint("after-ap-stop");
   }
   user_app_using_leaf_wifi = false;
-  heap_monitor::record("disabled");
+  heap_monitor::checkpoint("disabled");
   dumpUserAppCounters("disabled");
   heap_monitor::dumpToSd();
   resumeServicesAfterUserApp();

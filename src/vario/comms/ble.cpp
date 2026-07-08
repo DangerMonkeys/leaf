@@ -6,6 +6,7 @@
 #include "TinyGPSPlus.h"
 #include "comms/fanet_radio.h"
 #include "comms/webserver.h"
+#include "diagnostics/heap_monitor.h"
 #include "etl/string.h"
 #include "etl/string_stream.h"
 #include "etl/variant.h"
@@ -89,9 +90,12 @@ void BLE::setup() {
   // If say a GPS and periodic send request comes in too close together
   // one of them may be dropped for this cycle.
   xQueue = xQueueCreate(4, sizeof(WakeupMessage));
+  heap_monitor::checkpoint("ble-queue");
 
   // Create the freeRTOS Task for handling Bluetooth low energy IO
   xTaskCreate(BLE::bleTask, "BLE", 10000, this, 9, &xTask);
+  heap_monitor::registerTask("ble", xTask);
+  heap_monitor::checkpoint("ble-task");
 
   // Fire off the timer to periodically request a send
   xTimer = xTimerCreate("BLEPeriodicSend", pdMS_TO_TICKS(100), pdTRUE, NULL, BLE::timerCallback);
@@ -108,21 +112,27 @@ uint8_t checksum(std::string_view string) {
 
 void BLE::start() {
   if (pAdvertising == nullptr) return;
+  heap_monitor::checkpoint("ble-start-before");
   pAdvertising->start();
   started = true;
+  heap_monitor::checkpoint("ble-start-after");
 }
 
 void BLE::stop() {
   if (pAdvertising == nullptr) return;
+  heap_monitor::checkpoint("ble-stop-before");
   pAdvertising->stop();
   started = false;
+  heap_monitor::checkpoint("ble-stop-after");
 }
 
 void BLE::end() {
+  heap_monitor::checkpoint("ble-end-before");
   // Delete FreeRTOS objects
   xTimerDelete(xTimer, 0);
   vTaskDelete(xTask);
   vQueueDelete(xQueue);
+  heap_monitor::registerTask("ble", nullptr);
 
   // Delete any objects created and deinit manually.. Seems to crash setting this to true
   NimBLEDevice::deinit(false);
@@ -132,6 +142,7 @@ void BLE::end() {
   pService = nullptr;
   pCharacteristic = nullptr;
   pAdvertising = nullptr;
+  heap_monitor::checkpoint("ble-end-after");
 }
 
 void BLE::on_receive(const GpsMessage& msg) {

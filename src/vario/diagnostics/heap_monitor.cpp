@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <SD_MMC.h>
+#include <string.h>
 
 #include "esp_heap_caps.h"
 #include "esp_system.h"
@@ -13,7 +14,10 @@ namespace heap_monitor {
   namespace {
     constexpr size_t SAMPLE_COUNT = 32;
     constexpr size_t EVENT_LENGTH = 28;
+    constexpr size_t TASK_NAME_LENGTH = 12;
+    constexpr size_t REGISTERED_TASK_COUNT = 4;
     constexpr const char* DIAGNOSTICS_DIR = "/diagnostics";
+    constexpr const char* LIFECYCLE_PATH = "/diagnostics/heap_lifecycle.csv";
 
     struct Sample {
       uint32_t millis;
@@ -22,12 +26,28 @@ namespace heap_monitor {
       uint32_t minFreeHeap;
       uint32_t largestFreeBlock;
       uint32_t maxAllocHeap;
+      uint32_t internalFree;
+      uint32_t internalLargest;
+      uint32_t psramFree;
+      uint32_t psramLargest;
       uint32_t stackHighWater;
+      uint32_t loopStackHighWater;
+      uint32_t bleStackHighWater;
+      uint32_t fanetTxStackHighWater;
+      uint32_t fanetRxStackHighWater;
+      char currentTask[TASK_NAME_LENGTH];
+    };
+
+    struct RegisteredTask {
+      char name[TASK_NAME_LENGTH];
+      TaskHandle_t handle;
     };
 
     Sample samples[SAMPLE_COUNT];
     size_t nextSample = 0;
     size_t sampleTotal = 0;
+    RegisteredTask registeredTasks[REGISTERED_TASK_COUNT] = {};
+    bool sdLoggingEnabled = false;
 
     void copyEvent(char* dest, const char* event) {
       if (!event) event = "";
@@ -36,6 +56,24 @@ namespace heap_monitor {
         dest[i] = event[i];
       }
       dest[i] = '\0';
+    }
+
+    void copyTaskName(char* dest, const char* name) {
+      if (!name) name = "";
+      size_t i = 0;
+      for (; i + 1 < TASK_NAME_LENGTH && name[i] != '\0'; i++) {
+        dest[i] = name[i];
+      }
+      dest[i] = '\0';
+    }
+
+    uint32_t stackHighWaterFor(const char* name) {
+      for (const RegisteredTask& task : registeredTasks) {
+        if (task.handle && strncmp(task.name, name, TASK_NAME_LENGTH) == 0) {
+          return uxTaskGetStackHighWaterMark(task.handle);
+        }
+      }
+      return 0;
     }
 
     bool ensureDiagnosticsDirectory() {
@@ -47,7 +85,46 @@ namespace heap_monitor {
       if (SD_MMC.exists(path) && file.size() > 0) return;
       file.println(
           "millis,event,free_heap,min_free_heap,largest_free_block,max_alloc_heap,"
-          "stack_high_water");
+          "internal_free,internal_largest,psram_free,psram_largest,current_task,"
+          "stack_high_water,loop_stack_high_water,ble_stack_high_water,"
+          "fanet_tx_stack_high_water,fanet_rx_stack_high_water");
+    }
+
+    void captureSample(Sample& sample, const char* event) {
+      sample.millis = millis();
+      copyEvent(sample.event, event);
+      sample.freeHeap = esp_get_free_heap_size();
+      sample.minFreeHeap = esp_get_minimum_free_heap_size();
+      sample.largestFreeBlock = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
+      sample.maxAllocHeap = ESP.getMaxAllocHeap();
+      sample.internalFree = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
+      sample.internalLargest = heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL);
+      sample.psramFree = heap_caps_get_free_size(MALLOC_CAP_SPIRAM);
+      sample.psramLargest = heap_caps_get_largest_free_block(MALLOC_CAP_SPIRAM);
+      sample.stackHighWater = uxTaskGetStackHighWaterMark(NULL);
+      sample.loopStackHighWater = stackHighWaterFor("loop");
+      sample.bleStackHighWater = stackHighWaterFor("ble");
+      sample.fanetTxStackHighWater = stackHighWaterFor("fanet_tx");
+      sample.fanetRxStackHighWater = stackHighWaterFor("fanet_rx");
+      copyTaskName(sample.currentTask, pcTaskGetName(NULL));
+    }
+
+    void writeSample(File& file, const Sample& sample) {
+      file.printf("%lu,%s,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%s,%lu,%lu,%lu,%lu,%lu\n",
+                  static_cast<unsigned long>(sample.millis), sample.event,
+                  static_cast<unsigned long>(sample.freeHeap),
+                  static_cast<unsigned long>(sample.minFreeHeap),
+                  static_cast<unsigned long>(sample.largestFreeBlock),
+                  static_cast<unsigned long>(sample.maxAllocHeap),
+                  static_cast<unsigned long>(sample.internalFree),
+                  static_cast<unsigned long>(sample.internalLargest),
+                  static_cast<unsigned long>(sample.psramFree),
+                  static_cast<unsigned long>(sample.psramLargest), sample.currentTask,
+                  static_cast<unsigned long>(sample.stackHighWater),
+                  static_cast<unsigned long>(sample.loopStackHighWater),
+                  static_cast<unsigned long>(sample.bleStackHighWater),
+                  static_cast<unsigned long>(sample.fanetTxStackHighWater),
+                  static_cast<unsigned long>(sample.fanetRxStackHighWater));
     }
 
   }  // namespace
@@ -55,21 +132,59 @@ namespace heap_monitor {
   void record(const char* event) {
     if (!settings.dev_mode) return;
     Sample& sample = samples[nextSample];
-    sample.millis = millis();
-    copyEvent(sample.event, event);
-    sample.freeHeap = esp_get_free_heap_size();
-    sample.minFreeHeap = esp_get_minimum_free_heap_size();
-    sample.largestFreeBlock = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
-    sample.maxAllocHeap = ESP.getMaxAllocHeap();
-    sample.stackHighWater = uxTaskGetStackHighWaterMark(NULL);
+    captureSample(sample, event);
 
     nextSample = (nextSample + 1) % SAMPLE_COUNT;
     if (sampleTotal < SAMPLE_COUNT) sampleTotal++;
   }
 
+  void checkpoint(const char* event) {
+    if (!settings.dev_mode) return;
+
+    Sample sample;
+    captureSample(sample, event);
+
+    samples[nextSample] = sample;
+    nextSample = (nextSample + 1) % SAMPLE_COUNT;
+    if (sampleTotal < SAMPLE_COUNT) sampleTotal++;
+
+    if (!sdLoggingEnabled || !ensureDiagnosticsDirectory()) return;
+
+    const bool existed = SD_MMC.exists(LIFECYCLE_PATH);
+    File file = SD_MMC.open(LIFECYCLE_PATH, "a", true);
+    if (!file) return;
+    if (!existed || file.size() == 0) writeHeaderIfNeeded(file, LIFECYCLE_PATH);
+    writeSample(file, sample);
+    file.close();
+  }
+
+  void registerTask(const char* name, TaskHandle_t handle) {
+    if (!name) return;
+
+    for (RegisteredTask& task : registeredTasks) {
+      if (strncmp(task.name, name, TASK_NAME_LENGTH) == 0) {
+        task.handle = handle;
+        return;
+      }
+    }
+
+    if (!handle) return;
+
+    for (RegisteredTask& task : registeredTasks) {
+      if (!task.handle) {
+        copyTaskName(task.name, name);
+        task.handle = handle;
+        return;
+      }
+    }
+  }
+
+  void setSdLoggingEnabled(bool enabled) { sdLoggingEnabled = enabled; }
+
   bool dumpToSd(const char* path) {
     if (!settings.dev_mode) return false;
     if (!path || path[0] == '\0') return false;
+    if (!sdLoggingEnabled) return false;
     if (!ensureDiagnosticsDirectory()) return false;
 
     const bool existed = SD_MMC.exists(path);
@@ -81,12 +196,7 @@ namespace heap_monitor {
     const size_t start = sampleTotal < SAMPLE_COUNT ? 0 : nextSample;
     for (size_t i = 0; i < sampleTotal; i++) {
       const Sample& sample = samples[(start + i) % SAMPLE_COUNT];
-      file.printf("%lu,%s,%lu,%lu,%lu,%lu,%lu\n", static_cast<unsigned long>(sample.millis),
-                  sample.event, static_cast<unsigned long>(sample.freeHeap),
-                  static_cast<unsigned long>(sample.minFreeHeap),
-                  static_cast<unsigned long>(sample.largestFreeBlock),
-                  static_cast<unsigned long>(sample.maxAllocHeap),
-                  static_cast<unsigned long>(sample.stackHighWater));
+      writeSample(file, sample);
     }
     file.close();
     return true;

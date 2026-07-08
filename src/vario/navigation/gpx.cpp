@@ -12,6 +12,7 @@
 #include <SD_MMC.h>
 #include <ctype.h>
 
+#include "diagnostics/heap_monitor.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "logging/log.h"
@@ -987,14 +988,17 @@ bool Navigator::restartLastRoute() {
 }
 
 bool gpx_readFile(fs::FS& fs, String fileName) {
+  heap_monitor::checkpoint("gpx-read-start");
   FileReader file_reader(fs, fileName);
   if (file_reader.error() != "") {
     Serial.print("Found file_reader error: ");
     Serial.println(file_reader.error());
+    heap_monitor::checkpoint("gpx-read-open-fail");
     return false;
   }
 
   navigator.clear();
+  heap_monitor::checkpoint("gpx-parse-start");
 
   GPXParser parser(&file_reader);
   bool success = parser.parse(&navigator);
@@ -1042,6 +1046,7 @@ bool gpx_readFile(fs::FS& fs, String fileName) {
     Serial.println(" routes");
     navigator.setLoadedGpxFilename(fileName);
     navigator.savePersistedState();
+    heap_monitor::checkpoint("gpx-read-end");
     return true;
   } else {
     // TODO: Display error to user (create appropriate method in GPXParser looking at _error, _line,
@@ -1053,11 +1058,13 @@ bool gpx_readFile(fs::FS& fs, String fileName) {
     Serial.print(": ");
     Serial.println(parser.error());
     navigator.clear();
+    heap_monitor::checkpoint("gpx-read-fail");
     return false;
   }
 }
 
 bool nav_readFile(fs::FS& fs, String fileName) {
+  heap_monitor::checkpoint("nav-read-start");
   const String ext = lowerExtension(fileName);
   if (ext == "gpx") {
     return gpx_readFile(fs, fileName);
@@ -1067,14 +1074,18 @@ bool nav_readFile(fs::FS& fs, String fileName) {
 
   bool success = false;
   if (ext == "cup") {
+    heap_monitor::checkpoint("cup-parse-start");
     success = parseCupFile(fs, fileName, &navigator);
   } else if (ext == "wpt" || ext == "wyp") {
+    heap_monitor::checkpoint("wpt-parse-start");
     success = parseWptFile(fs, fileName, &navigator);
   } else if (ext == "kml") {
+    heap_monitor::checkpoint("kml-parse-start");
     success = parseKmlFile(fs, fileName, &navigator);
   } else {
     Serial.print("Unsupported nav file type: ");
     Serial.println(fileName);
+    heap_monitor::checkpoint("nav-read-unsupported");
     return false;
   }
 
@@ -1087,12 +1098,14 @@ bool nav_readFile(fs::FS& fs, String fileName) {
     Serial.println(fileName);
     navigator.setLoadedNavFilename(fileName);
     navigator.savePersistedState();
+    heap_monitor::checkpoint("nav-read-end");
     return true;
   }
 
   Serial.print("nav_readFile error parsing ");
   Serial.println(fileName);
   navigator.clear();
+  heap_monitor::checkpoint("nav-read-fail");
   return false;
 }
 

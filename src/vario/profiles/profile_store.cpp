@@ -4,6 +4,8 @@
 #include <SD_MMC.h>
 #include <string.h>
 
+#include "diagnostics/heap_monitor.h"
+
 namespace {
   String optionalString(JsonVariantConst value) {
     if (value.isNull()) return "";
@@ -47,15 +49,24 @@ namespace {
   }
 
   bool loadProfiles(JsonDocument& doc) {
+    heap_monitor::checkpoint("profiles-load-start");
     File file = SD_MMC.open(ProfileStore::filePath(), "r");
-    if (!file) return false;
+    if (!file) {
+      heap_monitor::checkpoint("profiles-load-open-fail");
+      return false;
+    }
 
     DeserializationError error = deserializeJson(doc, file);
     file.close();
-    if (error) return false;
+    if (error) {
+      heap_monitor::checkpoint("profiles-load-json-fail");
+      return false;
+    }
 
     const char* schema = doc["schema"] | "";
-    return strcmp(schema, "leaf.profiles") == 0;
+    const bool valid = strcmp(schema, "leaf.profiles") == 0;
+    heap_monitor::checkpoint(valid ? "profiles-load-end" : "profiles-load-schema-fail");
+    return valid;
   }
 
   bool profileIdExists(JsonArrayConst profiles, const String& id) {
@@ -86,14 +97,20 @@ namespace {
   }
 
   bool writeProfiles(JsonDocument& doc) {
+    heap_monitor::checkpoint("profiles-write-start");
     if (!ensureProfileDirectory()) return false;
 
     File file = SD_MMC.open(ProfileStore::filePath(), "w");
-    if (!file) return false;
+    if (!file) {
+      heap_monitor::checkpoint("profiles-write-open-fail");
+      return false;
+    }
 
     const size_t written = serializeJson(doc, file);
     file.close();
-    return written > 0;
+    const bool ok = written > 0;
+    heap_monitor::checkpoint(ok ? "profiles-write-end" : "profiles-write-fail");
+    return ok;
   }
 
   bool selectProfileId(const char* activeKey, const char* arrayKey, const String& id) {

@@ -1,6 +1,7 @@
 #include "comms/fanet_radio.h"
 
 #include "FreeRTOS.h"
+#include "diagnostics/heap_monitor.h"
 #include "dispatch/message_types.h"
 #include "esp_mac.h"
 #include "etl/array.h"
@@ -251,11 +252,13 @@ void FanetRadio::subscribe(etl::imessage_bus* bus) {
 }
 
 void FanetRadio::setup() {
+  heap_monitor::checkpoint("fanet-setup-start");
   // Sets up the radio module.  Leaves it in an uninitialized state, but
   // creates any dynamic memory required.
 
   // Create the FANET Protocol
   protocol = new FANET::Protocol(this);
+  heap_monitor::checkpoint("fanet-protocol");
 
   // Take out a lock on the SPI bus.
   SpiLockGuard spiLock;
@@ -269,6 +272,7 @@ void FanetRadio::setup() {
 
 #ifdef LORA_SX1262
   radio = new SX1262(&radioModule);
+  heap_monitor::checkpoint("fanet-radio-alloc");
 
 #endif
 
@@ -288,6 +292,8 @@ void FanetRadio::setup() {
     state = FanetRadioState::FAILED_OTHER;
     return;
   }
+  heap_monitor::registerTask("fanet_tx", x_fanet_tx_task);
+  heap_monitor::checkpoint("fanet-tx-task");
 
   // Create the RX Task
   taskCreateCode = xTaskCreate(taskRadioRx, "FanetRx", 4096, nullptr,
@@ -298,6 +304,8 @@ void FanetRadio::setup() {
     state = FanetRadioState::FAILED_OTHER;
     return;
   }
+  heap_monitor::registerTask("fanet_rx", x_fanet_rx_task);
+  heap_monitor::checkpoint("fanet-rx-task");
 
   // TODO:  Add a setting for sending out periodic Fanet names
   // Create the name TX task
@@ -307,6 +315,7 @@ void FanetRadio::setup() {
 
   // Put the radio to sleep once it has been initialized.
   radio->sleep();
+  heap_monitor::checkpoint("fanet-setup-end");
 }
 
 void FanetRadio::begin(const FanetRadioRegion& region) {
@@ -327,6 +336,7 @@ void FanetRadio::begin(const FanetRadioRegion& region) {
   // Initialize the random number generator
   random.initialise(millis());
 
+  heap_monitor::checkpoint("fanet-begin-start");
   state = FanetRadioState::INITIALIZING;
   int16_t radioInitState = RADIOLIB_ERR_UNKNOWN;
   // Always take the SPI lock out before the Fanet Manager lock
@@ -384,6 +394,7 @@ void FanetRadio::begin(const FanetRadioRegion& region) {
 
   // We're finished, release the locks.
   state = FanetRadioState::RUNNING;
+  heap_monitor::checkpoint("fanet-begin-end");
 }
 
 void FanetRadio::end() {
@@ -397,9 +408,11 @@ void FanetRadio::end() {
   }
 
   SpiLockGuard spiLock;
+  heap_monitor::checkpoint("fanet-end-start");
   radio->sleep(false);
   state = FanetRadioState::UNINITIALIZED;
   trackingMode = etl::nullopt;  // Reset the tracking mode
+  heap_monitor::checkpoint("fanet-end-end");
 }
 
 FanetRadioState FanetRadio::getState() { return state; }

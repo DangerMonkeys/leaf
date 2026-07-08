@@ -2,6 +2,7 @@
 #include "comms/ble.h"
 #include "comms/fanet_radio.h"
 #include "diagnostics/buttons.h"
+#include "diagnostics/heap_monitor.h"
 #include "dispatch/message_bus.h"
 #include "hardware/Leaf_SPI.h"
 #include "hardware/aht20.h"
@@ -58,6 +59,8 @@ void setup() {
 
   // grab user settings (or populate defaults if no saved settings)
   settings.init();
+  heap_monitor::registerTask("loop", xTaskGetCurrentTaskHandle());
+  heap_monitor::record("setup-settings");
 
   buttons.publishTo(&bus);
 
@@ -81,13 +84,16 @@ void setup() {
   // Initialize anything left over on the Task Manager System
   Serial.println("Initializing Taskman Service");
   taskman.init();
+  heap_monitor::checkpoint("setup-taskman");
 
   // Initialize the BLE Stack, subscribe it to events
   // from the message bus.
   Serial.println("Initializing Bluetooth Module");
   BLE::get().setup();
+  heap_monitor::checkpoint("setup-ble");
   if (settings.system_bluetoothOn) {
     BLE::get().start();
+    heap_monitor::checkpoint("setup-ble-start");
   }
 
   // Connect GPS instrument to message bus sourcing lines of text that should be NMEA sentences
@@ -113,6 +119,7 @@ void setup() {
   busLog.setBus(&bus);
 
   Serial.println("Leaf Initialized");
+  heap_monitor::checkpoint("setup-complete");
 }
 
 void loop() {

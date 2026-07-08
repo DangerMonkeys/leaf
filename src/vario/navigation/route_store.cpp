@@ -6,6 +6,7 @@
 #include <math.h>
 #include <string.h>
 
+#include "diagnostics/heap_monitor.h"
 #include "navigation/gpx.h"
 
 namespace route_store {
@@ -437,16 +438,23 @@ namespace route_store {
 
   bool importRouteText(const String& name, const String& data, bool activate,
                        ImportResult& result) {
+    heap_monitor::checkpoint("route-import-text");
     result = ImportResult();
 
     JsonDocument routeDoc;
-    if (!normalizeRoute(name, data, routeDoc, result.error)) return false;
+    if (!normalizeRoute(name, data, routeDoc, result.error)) {
+      heap_monitor::checkpoint("route-import-parse-fail");
+      return false;
+    }
+    heap_monitor::checkpoint("route-import-normalized");
 
     const String path = safeRouteFileName(routeDoc["name"] | "route");
     if (!writeJsonFile(path, routeDoc)) {
       result.error = routeError("Route file could not be saved.");
+      heap_monitor::checkpoint("route-import-write-fail");
       return false;
     }
+    heap_monitor::checkpoint("route-import-written");
 
     result.path = path;
     result.points = routeDoc["points"].as<JsonArray>().size();
@@ -455,15 +463,18 @@ namespace route_store {
     if (activate) {
       if (!saveActiveRoutePointer(path) || !loadNormalizedRoute(routeDoc, path, true)) {
         result.error = routeError("Route was saved but could not be activated.");
+        heap_monitor::checkpoint("route-import-act-fail");
         return false;
       }
       result.active = true;
     }
 
+    heap_monitor::checkpoint("route-import-done");
     return true;
   }
 
   bool saveRouteJson(JsonDocument& routeDoc, bool activate, ImportResult& result) {
+    heap_monitor::checkpoint("route-save-json");
     result = ImportResult();
 
     JsonObject route = routeDoc.as<JsonObject>();
@@ -478,14 +489,17 @@ namespace route_store {
     JsonArray points = route["points"].as<JsonArray>();
     if (points.isNull() || points.size() == 0 || points.size() > maxRoutePointRefs) {
       result.error = routeError("Route has no usable turnpoints.");
+      heap_monitor::checkpoint("route-save-invalid");
       return false;
     }
 
     const String path = safeRouteFileName(name);
     if (!writeJsonFile(path, routeDoc)) {
       result.error = routeError("Route file could not be saved.");
+      heap_monitor::checkpoint("route-save-write-fail");
       return false;
     }
+    heap_monitor::checkpoint("route-save-written");
 
     result.path = path;
     result.points = points.size();
@@ -494,15 +508,18 @@ namespace route_store {
     if (activate) {
       if (!saveActiveRoutePointer(path) || !loadNormalizedRoute(routeDoc, path, true)) {
         result.error = routeError("Route was saved but could not be activated.");
+        heap_monitor::checkpoint("route-save-act-fail");
         return false;
       }
       result.active = true;
     }
 
+    heap_monitor::checkpoint("route-save-done");
     return true;
   }
 
   bool loadRouteFile(const String& path, bool activate) {
+    heap_monitor::checkpoint("route-load-file");
     if (path.isEmpty() || path.length() > 96 || !SD_MMC.exists(path)) return false;
 
     File file = SD_MMC.open(path, "r");
@@ -515,9 +532,14 @@ namespace route_store {
     JsonDocument doc;
     DeserializationError error = deserializeJson(doc, file);
     file.close();
-    if (error) return false;
+    if (error) {
+      heap_monitor::checkpoint("route-load-json-fail");
+      return false;
+    }
 
-    return loadNormalizedRoute(doc, path, activate);
+    const bool loaded = loadNormalizedRoute(doc, path, activate);
+    heap_monitor::checkpoint(loaded ? "route-load-done" : "route-load-fail");
+    return loaded;
   }
 
   bool loadActiveRoute() {
