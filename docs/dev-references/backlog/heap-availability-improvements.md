@@ -40,11 +40,13 @@ Approximate order of attack:
    - Audit code that repeatedly appends to `String`, calls `reserve()`, or builds temporary JSON in request handlers and parsers.
    - Use fixed `char[]` buffers, bounded formatting, reusable module buffers, or streaming output where lifetimes are simple.
    - Prioritize paths visible in diagnostics: profiles, nav data, route save/import, logbook entry, OTA, and WiFi setup.
+   - Consider removing KML track logging now that IGC is the richer canonical flight record and Leaf Log can analyze uploaded IGC files; the direct always-on RAM saving is small, but it simplifies the logging surface and removes end-of-flight KML formatting churn.
 
 7. Audit ArduinoJson document sizing and lifetimes.
    - Identify large `JsonDocument` allocations in profile, waypoint, route, logbook, web app, and setup paths.
    - Replace full-document reads with streaming, filtered parsing, or narrower documents where possible.
    - Ensure documents are scoped tightly so their heap is released before response construction begins.
+   - KML waypoint loading currently reads the whole file into one heap-backed `String` before parsing; either remove KML waypoint import support along with KML logging or rewrite it as a streaming parser before treating KML as safe for low-heap web/app workflows.
 
 8. Move static data and templates out of RAM.
    - Keep constant web app assets, HTML/CSS/JS fragments, labels, lookup tables, and diagnostic strings in flash/PROGMEM where practical.

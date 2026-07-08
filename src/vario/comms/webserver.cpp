@@ -75,11 +75,10 @@ namespace {
   static constexpr size_t PROFILE_FILE_MAX_BYTES = 4096;
   static constexpr size_t ROUTE_IMPORT_REQUEST_MAX_BYTES = 10000;
   static constexpr size_t ROUTE_EDITOR_REQUEST_MAX_BYTES = 18000;
+  static constexpr size_t USER_WAYPOINTS_MAX_BYTES = 24576;
   static constexpr size_t NAV_UPLOAD_MAX_BYTES = 262144UL;
   static constexpr uint32_t NAV_POINTS_MIN_FREE_HEAP = 18000;
   static constexpr uint32_t NAV_POINTS_MIN_MAX_ALLOC = 6000;
-  static constexpr size_t NAV_POINTS_BUFFER_RESERVE = 2048;
-  static constexpr size_t NAV_POINTS_BUFFER_FLUSH = 1800;
   static constexpr const char* PROFILE_TEMP_FILE = "/profiles/profiles.tmp";
   static constexpr const char* PROFILE_BACKUP_FILE = "/profiles/profiles.bak";
   static constexpr const char* WAYPOINTS_DIR = "/waypoints";
@@ -630,6 +629,85 @@ namespace {
     }
     return escaped;
   }
+
+  class JsonStream {
+   public:
+    JsonStream(WebServer& target, char* buffer, size_t bufferSize)
+        : target_(target), buffer_(buffer), bufferSize_(bufferSize) {}
+
+    void write(const char* value) {
+      if (value == nullptr) return;
+      write(value, strlen(value));
+    }
+
+    void write(const char* value, size_t len) {
+      if (value == nullptr || len == 0) return;
+      if (len > bufferSize_) {
+        flush();
+        target_.sendContent(value, len);
+        return;
+      }
+      if (len > bufferSize_ - used_) flush();
+      memcpy(buffer_ + used_, value, len);
+      used_ += len;
+    }
+
+    void writeEscaped(const char* value) {
+      if (value == nullptr) return;
+      const char* chunkStart = value;
+      for (const char* p = value; *p != '\0'; p++) {
+        const char* replacement = nullptr;
+        char escapedChar[3] = {'\\', *p, '\0'};
+        if (*p == '"' || *p == '\\') {
+          replacement = escapedChar;
+        } else if (*p == '\n') {
+          replacement = "\\n";
+        } else if (*p == '\r') {
+          replacement = "\\r";
+        }
+
+        if (replacement != nullptr) {
+          if (p > chunkStart) write(chunkStart, p - chunkStart);
+          write(replacement);
+          chunkStart = p + 1;
+        }
+      }
+      if (*chunkStart != '\0') write(chunkStart, strlen(chunkStart));
+    }
+
+    void writeUInt(unsigned long value) {
+      char buffer[16];
+      snprintf(buffer, sizeof(buffer), "%lu", value);
+      write(buffer);
+    }
+
+    void writeFloat(double value, unsigned int decimals) {
+      char buffer[32];
+      if (isfinite(value)) {
+        snprintf(buffer, sizeof(buffer), "%.*f", decimals, value);
+      } else {
+        snprintf(buffer, sizeof(buffer), "null");
+      }
+      write(buffer);
+    }
+
+    void finish() {
+      flush();
+      target_.sendContent("", 0);
+    }
+
+   private:
+    void flush() {
+      if (used_ == 0) return;
+      target_.sendContent(buffer_, used_);
+      used_ = 0;
+    }
+
+    WebServer& target_;
+    char* buffer_;
+    const size_t bufferSize_;
+    size_t used_ = 0;
+  };
 
   String filenameFromUploadPath(String fileName) {
     fileName.replace('\\', '/');
@@ -1254,6 +1332,7 @@ namespace {
       target.send(400, "application/json", "{\"detail\":\"Route name and data are required.\"}");
       return;
     }
+    doc.clear();
 
     route_store::ImportResult result;
     if (!route_store::importRouteText(name, data, activate, result)) {
@@ -1288,83 +1367,67 @@ namespace {
     }
 
     const bool includePoints = target.hasArg("points") && target.arg("points") == "1";
-    String json;
-    json.reserve(256);
-    json = "{\"loaded_file\":\"";
-    json += jsonEscape(navigator.loadedNavFilename());
-    json += "\",\"loaded_path\":\"";
-    json += jsonEscape(navigator.loadedNavPath());
-    json += "\",\"point_count\":";
-    json += navigator.loadedFileWaypointCount();
-    json += ",\"route_count\":";
-    json += navigator.totalRoutes;
-    json += ",\"active_type\":\"";
-    if (navigator.activeRouteIndex) {
-      json += "route";
-    } else if (navigator.activeWaypointIndex) {
-      json += "point";
-    }
-    json += "\",\"active_name\":\"";
-    if (navigator.activeRouteIndex && navigator.activeRouteIndex <= navigator.totalRoutes) {
-      json += jsonEscape(navigator.routes[navigator.activeRouteIndex].name);
-    } else if (navigator.activeWaypointIndex) {
-      json += jsonEscape(navigator.activePoint.name);
-    }
-    json += "\"";
-    if (!includePoints) {
-      json += "}";
-      heap_monitor::checkpoint("nav-data-end");
-      target.send(200, "application/json", json);
-      return;
-    }
-
-    if (ESP.getFreeHeap() < NAV_POINTS_MIN_FREE_HEAP ||
-        ESP.getMaxAllocHeap() < NAV_POINTS_MIN_MAX_ALLOC) {
-      json += ",\"points_unavailable\":true,\"detail\":\"Unable to refresh waypoint list.\"}";
-      heap_monitor::checkpoint("nav-data-low-heap");
-      target.send(503, "application/json", json);
-      return;
-    }
-
     target.setContentLength(CONTENT_LENGTH_UNKNOWN);
-    target.send(200, "application/json", "");
-    target.sendContent(json);
-    target.sendContent(",\"points\":[");
-    String pointBuffer;
-    if (!pointBuffer.reserve(NAV_POINTS_BUFFER_RESERVE)) {
-      heap_monitor::checkpoint("nav-data-reserve-fail");
-      target.sendContent(
-          "],\"points_unavailable\":true,\"detail\":\"Unable to refresh waypoint "
-          "list.\"}");
-      target.sendContent("");
+    const bool lowHeap = includePoints && (ESP.getFreeHeap() < NAV_POINTS_MIN_FREE_HEAP ||
+                                           ESP.getMaxAllocHeap() < NAV_POINTS_MIN_MAX_ALLOC);
+    target.send(lowHeap ? 503 : 200, "application/json", "");
+    char responseBuffer[1024];
+    JsonStream json(target, responseBuffer, sizeof(responseBuffer));
+    json.write("{\"loaded_file\":\"");
+    json.writeEscaped(navigator.loadedNavFilename());
+    json.write("\",\"loaded_path\":\"");
+    json.writeEscaped(navigator.loadedNavPath());
+    json.write("\",\"point_count\":");
+    json.writeUInt(navigator.loadedFileWaypointCount());
+    json.write(",\"route_count\":");
+    json.writeUInt(navigator.totalRoutes);
+    json.write(",\"active_type\":\"");
+    if (navigator.activeRouteIndex) {
+      json.write("route");
+    } else if (navigator.activeWaypointIndex) {
+      json.write("point");
+    }
+    json.write("\",\"active_name\":\"");
+    if (navigator.activeRouteIndex && navigator.activeRouteIndex <= navigator.totalRoutes) {
+      json.writeEscaped(navigator.routes[navigator.activeRouteIndex].name);
+    } else if (navigator.activeWaypointIndex) {
+      json.writeEscaped(navigator.activePoint.name);
+    }
+    json.write("\"");
+    if (!includePoints) {
+      json.write("}");
+      json.finish();
+      heap_monitor::checkpoint("nav-data-end");
       return;
     }
+
+    if (lowHeap) {
+      json.write(",\"points_unavailable\":true,\"detail\":\"Unable to refresh waypoint list.\"}");
+      json.finish();
+      heap_monitor::checkpoint("nav-data-low-heap");
+      return;
+    }
+
+    json.write(",\"points\":[");
     const uint8_t pointCount = navigator.loadedFileWaypointCount();
     for (uint8_t i = 1; i <= pointCount; i++) {
       const Waypoint& waypoint = navigator.waypoint(WaypointID(i));
-      if (i > 1) pointBuffer += ",";
-      pointBuffer += "{\"index\":";
-      pointBuffer += i;
-      pointBuffer += ",\"name\":\"";
-      pointBuffer += jsonEscape(waypoint.name);
-      pointBuffer += "\",\"lat\":";
-      pointBuffer += String(waypoint.latitude(), 7);
-      pointBuffer += ",\"lon\":";
-      pointBuffer += String(waypoint.longitude(), 7);
-      pointBuffer += ",\"alt_m\":";
-      pointBuffer += String(waypoint.ele, 1);
-      pointBuffer += "}";
-      if (pointBuffer.length() >= NAV_POINTS_BUFFER_FLUSH) {
-        target.sendContent(pointBuffer);
-        pointBuffer = "";
-        yield();
-      }
+      if (i > 1) json.write(",");
+      json.write("{\"index\":");
+      json.writeUInt(i);
+      json.write(",\"name\":\"");
+      json.writeEscaped(waypoint.name);
+      json.write("\",\"lat\":");
+      json.writeFloat(waypoint.latitude(), 7);
+      json.write(",\"lon\":");
+      json.writeFloat(waypoint.longitude(), 7);
+      json.write(",\"alt_m\":");
+      json.writeFloat(waypoint.ele, 1);
+      json.write("}");
+      if ((i & 0x07) == 0) yield();
     }
-    if (pointBuffer.length() > 0) {
-      target.sendContent(pointBuffer);
-    }
-    target.sendContent("]}");
-    target.sendContent("");
+    json.write("]}");
+    json.finish();
     heap_monitor::checkpoint("nav-data-end");
   }
 
@@ -1411,7 +1474,11 @@ namespace {
       return;
     }
 
-    String json = "{\"files\":[";
+    target.setContentLength(CONTENT_LENGTH_UNKNOWN);
+    target.send(200, "application/json", "");
+    char responseBuffer[1024];
+    JsonStream json(target, responseBuffer, sizeof(responseBuffer));
+    json.write("{\"files\":[");
     bool first = true;
     File dir = SD_MMC.open(WAYPOINTS_DIR);
     if (dir && dir.isDirectory()) {
@@ -1420,13 +1487,15 @@ namespace {
         if (!entry.isDirectory()) {
           const String name = filenameFromUploadPath(entry.name());
           if (supportedNavUploadExtension(lowerFileExtension(name))) {
-            if (!first) json += ",";
+            if (!first) json.write(",");
             first = false;
-            json += "{\"name\":\"";
-            json += jsonEscape(name);
-            json += "\",\"path\":\"";
-            json += jsonEscape(String(WAYPOINTS_DIR) + "/" + name);
-            json += "\"}";
+            json.write("{\"name\":\"");
+            json.writeEscaped(name.c_str());
+            json.write("\",\"path\":\"");
+            json.writeEscaped(WAYPOINTS_DIR);
+            json.write("/");
+            json.writeEscaped(name.c_str());
+            json.write("\"}");
           }
         }
         entry.close();
@@ -1434,8 +1503,8 @@ namespace {
       }
     }
     if (dir) dir.close();
-    json += "]}";
-    target.send(200, "application/json", json);
+    json.write("]}");
+    json.finish();
   }
 
   void activateWaypointFile(WebServer& target) {
@@ -1559,6 +1628,7 @@ namespace {
       outPoint["radius_m"] = radiusM;
       outPoint["role"] = pointIndex == totalPoints ? "goal" : "normal";
     }
+    input.clear();
 
     route_store::ImportResult result;
     if (!route_store::saveRouteJson(routeDoc, activate, result)) {
@@ -1592,18 +1662,84 @@ namespace {
       return;
     }
 
-    String json = "{";
-    String error;
     user_waypoints::loadIntoNavigator();
-    if (!user_waypoints::appendJsonList(json, error)) {
-      json += "\"points\":[],\"detail\":\"";
-      json += jsonEscape(error);
-      json += "\"}";
-      target.send(404, "application/json", json);
+
+    if (!sdcard.isMounted()) {
+      target.send(404, "application/json",
+                  "{\"points\":[],\"detail\":\"SD card is not mounted.\"}");
       return;
     }
-    json += "}";
-    target.send(200, "application/json", json);
+
+    JsonDocument doc;
+    if (!SD_MMC.exists(user_waypoints::filePath())) {
+      doc["schema"] = "leaf.user_waypoints";
+      doc["schema_version"] = "v0.1.0";
+      doc["points"].to<JsonArray>();
+    } else {
+      File file = SD_MMC.open(user_waypoints::filePath(), "r");
+      if (!file) {
+        target.send(404, "application/json",
+                    "{\"points\":[],\"detail\":\"Unable to read user waypoints.\"}");
+        return;
+      }
+      if (file.size() > USER_WAYPOINTS_MAX_BYTES) {
+        file.close();
+        target.send(404, "application/json",
+                    "{\"points\":[],\"detail\":\"User waypoint file is too large.\"}");
+        return;
+      }
+      DeserializationError error = deserializeJson(doc, file);
+      file.close();
+      if (error || strcmp(doc["schema"] | "", "leaf.user_waypoints") != 0) {
+        target.send(404, "application/json",
+                    "{\"points\":[],\"detail\":\"User waypoint file is invalid.\"}");
+        return;
+      }
+    }
+
+    target.setContentLength(CONTENT_LENGTH_UNKNOWN);
+    target.send(200, "application/json", "");
+    char responseBuffer[1024];
+    JsonStream json(target, responseBuffer, sizeof(responseBuffer));
+    json.write("{\"points\":[");
+    bool first = true;
+    for (JsonObjectConst point : doc["points"].as<JsonArrayConst>()) {
+      const double lat = point["lat"] | NAN;
+      const double lon = point["lon"] | NAN;
+      if (isnan(lat) || isnan(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) continue;
+
+      Waypoint waypoint;
+      waypoint.setLatitude(lat);
+      waypoint.setLongitude(lon);
+      uint8_t navigatorIndex = 0;
+      for (uint8_t i = 1; i <= navigator.totalWaypoints; i++) {
+        if (navigator.waypoints[i].latE7 == waypoint.latE7 &&
+            navigator.waypoints[i].lonE7 == waypoint.lonE7) {
+          navigatorIndex = i;
+          break;
+        }
+      }
+
+      if (!first) json.write(",");
+      first = false;
+      json.write("{\"id\":\"");
+      json.writeEscaped(point["id"] | "");
+      json.write("\",\"index\":");
+      json.writeUInt(navigatorIndex);
+      json.write(",\"name\":\"");
+      json.writeEscaped(point["name"] | "");
+      json.write("\",\"lat\":");
+      json.writeFloat(lat, 7);
+      json.write(",\"lon\":");
+      json.writeFloat(lon, 7);
+      json.write(",\"alt_m\":");
+      json.writeFloat(point["alt_m"] | 0.0, 1);
+      json.write(",\"created_utc\":\"");
+      json.writeEscaped(point["created_utc"] | "");
+      json.write("\"}");
+    }
+    json.write("]}");
+    json.finish();
   }
 
   void saveUserWaypoints(WebServer& target) {
@@ -1800,86 +1936,78 @@ leafLogButtons();routeButtons();routeEditButtons();loadStatus();loadProfiles();l
     target.send(200, "application/json", json);
   }
 
-  void appendJsonFloat(String& json, float value, unsigned int decimals) {
-    if (isfinite(value)) {
-      json += String(value, decimals);
-    } else {
-      json += "null";
-    }
+  void writeUnitSettingsJson(JsonStream& json) {
+    json.write("\"units\":{\"alt_feet\":");
+    json.write(settings.units_alt ? "true" : "false");
+    json.write(",\"climb_fpm\":");
+    json.write(settings.units_climb ? "true" : "false");
+    json.write(",\"speed_mph\":");
+    json.write(settings.units_speed ? "true" : "false");
+    json.write(",\"distance_miles\":");
+    json.write(settings.units_distance ? "true" : "false");
+    json.write(",\"heading_cardinal\":");
+    json.write(settings.units_heading ? "true" : "false");
+    json.write(",\"temp_f\":");
+    json.write(settings.units_temp ? "true" : "false");
+    json.write(",\"time_12h\":");
+    json.write(settings.units_hours ? "true" : "false");
+    json.write("}");
   }
 
-  void appendUnitSettingsJson(String& json) {
-    json += "\"units\":{\"alt_feet\":";
-    json += settings.units_alt ? "true" : "false";
-    json += ",\"climb_fpm\":";
-    json += settings.units_climb ? "true" : "false";
-    json += ",\"speed_mph\":";
-    json += settings.units_speed ? "true" : "false";
-    json += ",\"distance_miles\":";
-    json += settings.units_distance ? "true" : "false";
-    json += ",\"heading_cardinal\":";
-    json += settings.units_heading ? "true" : "false";
-    json += ",\"temp_f\":";
-    json += settings.units_temp ? "true" : "false";
-    json += ",\"time_12h\":";
-    json += settings.units_hours ? "true" : "false";
-    json += "}";
-  }
-
-  void appendLogbookSummaryJson(String& json, const LogbookEntrySummary& summary) {
-    json += "{\"path\":\"";
-    json += jsonEscape(summary.path);
-    json += "\",\"filename\":\"";
-    json += jsonEscape(summary.filename);
-    json += "\",\"flight_id\":\"";
-    json += jsonEscape(summary.flightId);
-    json += "\",\"pilot_name\":\"";
-    json += jsonEscape(summary.pilotName);
-    json += "\",\"glider_display_name\":\"";
-    json += jsonEscape(summary.gliderDisplayName);
-    json += "\",\"start_time_local\":\"";
-    json += jsonEscape(summary.startTimeLocal);
-    json += "\",\"duration_seconds\":";
-    json += summary.durationSeconds;
-    json += ",\"start_altitude_m\":";
-    appendJsonFloat(json, summary.startAltitudeM, 1);
-    json += ",\"end_altitude_m\":";
-    appendJsonFloat(json, summary.endAltitudeM, 1);
-    json += ",\"max_altitude_m\":";
-    appendJsonFloat(json, summary.maxAltitudeM, 1);
-    json += ",\"min_altitude_m\":";
-    appendJsonFloat(json, summary.minAltitudeM, 1);
-    json += ",\"max_altitude_above_launch_m\":";
-    appendJsonFloat(json, summary.maxAltitudeAboveLaunchM, 1);
-    json += ",\"max_climb_rate_mps\":";
-    appendJsonFloat(json, summary.maxClimbRateMps, 2);
-    json += ",\"max_sink_rate_mps\":";
-    appendJsonFloat(json, summary.maxSinkRateMps, 2);
-    json += ",\"max_ground_speed_mps\":";
-    appendJsonFloat(json, summary.maxGroundSpeedMps, 2);
-    json += ",\"path_distance_m\":";
-    appendJsonFloat(json, summary.pathDistanceM, 1);
-    json += ",\"straight_line_distance_m\":";
-    appendJsonFloat(json, summary.straightLineDistanceM, 1);
-    json += ",\"max_accel_g\":";
-    appendJsonFloat(json, summary.maxAccelG, 2);
-    json += ",\"min_accel_g\":";
-    appendJsonFloat(json, summary.minAccelG, 2);
-    json += ",\"max_temperature_c\":";
-    appendJsonFloat(json, summary.maxTemperatureC, 1);
-    json += ",\"min_temperature_c\":";
-    appendJsonFloat(json, summary.minTemperatureC, 1);
-    json += ",\"max_wind_valid\":";
-    json += summary.maxWindValid ? "true" : "false";
-    json += ",\"max_wind_speed_mps\":";
-    appendJsonFloat(json, summary.maxWindSpeedMps, 2);
-    json += ",\"max_wind_direction_from_deg\":";
-    appendJsonFloat(json, summary.maxWindDirectionFromDeg, 0);
-    json += ",\"track_saved\":";
-    json += summary.trackSaved ? "true" : "false";
-    json += ",\"track_path\":\"";
-    json += jsonEscape(summary.trackPath);
-    json += "\"}";
+  void writeLogbookSummaryJson(JsonStream& json, const LogbookEntrySummary& summary) {
+    json.write("{\"path\":\"");
+    json.writeEscaped(summary.path.c_str());
+    json.write("\",\"filename\":\"");
+    json.writeEscaped(summary.filename.c_str());
+    json.write("\",\"flight_id\":\"");
+    json.writeEscaped(summary.flightId.c_str());
+    json.write("\",\"pilot_name\":\"");
+    json.writeEscaped(summary.pilotName.c_str());
+    json.write("\",\"glider_display_name\":\"");
+    json.writeEscaped(summary.gliderDisplayName.c_str());
+    json.write("\",\"start_time_local\":\"");
+    json.writeEscaped(summary.startTimeLocal.c_str());
+    json.write("\",\"duration_seconds\":");
+    json.writeUInt(summary.durationSeconds);
+    json.write(",\"start_altitude_m\":");
+    json.writeFloat(summary.startAltitudeM, 1);
+    json.write(",\"end_altitude_m\":");
+    json.writeFloat(summary.endAltitudeM, 1);
+    json.write(",\"max_altitude_m\":");
+    json.writeFloat(summary.maxAltitudeM, 1);
+    json.write(",\"min_altitude_m\":");
+    json.writeFloat(summary.minAltitudeM, 1);
+    json.write(",\"max_altitude_above_launch_m\":");
+    json.writeFloat(summary.maxAltitudeAboveLaunchM, 1);
+    json.write(",\"max_climb_rate_mps\":");
+    json.writeFloat(summary.maxClimbRateMps, 2);
+    json.write(",\"max_sink_rate_mps\":");
+    json.writeFloat(summary.maxSinkRateMps, 2);
+    json.write(",\"max_ground_speed_mps\":");
+    json.writeFloat(summary.maxGroundSpeedMps, 2);
+    json.write(",\"path_distance_m\":");
+    json.writeFloat(summary.pathDistanceM, 1);
+    json.write(",\"straight_line_distance_m\":");
+    json.writeFloat(summary.straightLineDistanceM, 1);
+    json.write(",\"max_accel_g\":");
+    json.writeFloat(summary.maxAccelG, 2);
+    json.write(",\"min_accel_g\":");
+    json.writeFloat(summary.minAccelG, 2);
+    json.write(",\"max_temperature_c\":");
+    json.writeFloat(summary.maxTemperatureC, 1);
+    json.write(",\"min_temperature_c\":");
+    json.writeFloat(summary.minTemperatureC, 1);
+    json.write(",\"max_wind_valid\":");
+    json.write(summary.maxWindValid ? "true" : "false");
+    json.write(",\"max_wind_speed_mps\":");
+    json.writeFloat(summary.maxWindSpeedMps, 2);
+    json.write(",\"max_wind_direction_from_deg\":");
+    json.writeFloat(summary.maxWindDirectionFromDeg, 0);
+    json.write(",\"track_saved\":");
+    json.write(summary.trackSaved ? "true" : "false");
+    json.write(",\"track_path\":\"");
+    json.writeEscaped(summary.trackPath.c_str());
+    json.write("\"}");
   }
 
   void sendLogbookSummary(WebServer& target) {
@@ -1889,24 +2017,27 @@ leafLogButtons();routeButtons();routeEditButtons();loadStatus();loadProfiles();l
     }
 
     const uint16_t count = LogbookStore::count();
-    String json = "{\"count\":";
-    json += count;
-    json += ",\"time_12h\":";
-    json += settings.units_hours ? "true" : "false";
-    json += ",";
-    appendUnitSettingsJson(json);
-
+    sendNoStoreHeaders(target);
+    target.setContentLength(CONTENT_LENGTH_UNKNOWN);
+    target.send(200, "application/json", "");
+    char responseBuffer[1024];
+    JsonStream json(target, responseBuffer, sizeof(responseBuffer));
+    json.write("{\"count\":");
+    json.writeUInt(count);
+    json.write(",\"time_12h\":");
+    json.write(settings.units_hours ? "true" : "false");
+    json.write(",");
+    writeUnitSettingsJson(json);
     String latestPath;
     LogbookEntrySummary latest;
     if (count > 0 && LogbookStore::newestEntryPath(latestPath) &&
         LogbookStore::readSummary(latestPath, latest)) {
-      json += ",\"latest\":";
-      appendLogbookSummaryJson(json, latest);
+      json.write(",\"latest\":");
+      writeLogbookSummaryJson(json, latest);
     }
 
-    json += "}";
-    sendNoStoreHeaders(target);
-    target.send(200, "application/json", json);
+    json.write("}");
+    json.finish();
   }
 
   void sendLogbookEntry(WebServer& target) {
@@ -1944,49 +2075,57 @@ leafLogButtons();routeButtons();routeEditButtons();loadStatus();loadProfiles();l
       LogbookNavigation navigation;
       LogbookStore::navigationForPath(path, navigation);
 
-      String json =
-          "{\"ok\":false,\"error\":\"invalid_json\",\"detail\":\"Log file could not be parsed.\","
-          "\"path\":\"";
-      json += jsonEscape(path);
-      json += "\",\"filename\":\"";
-      json += jsonEscape(LogbookStore::filenameFromPath(path));
-      json += "\",\"position\":";
-      json += navigation.position;
-      json += ",\"total\":";
-      json += navigation.total;
-      json += ",\"previous_path\":\"";
-      json += jsonEscape(navigation.previousPath);
-      json += "\",\"next_path\":\"";
-      json += jsonEscape(navigation.nextPath);
-      json += "\",";
-      appendUnitSettingsJson(json);
-      json += "}";
-      target.send(422, "application/json", json);
+      target.setContentLength(CONTENT_LENGTH_UNKNOWN);
+      target.send(422, "application/json", "");
+      char responseBuffer[1024];
+      JsonStream json(target, responseBuffer, sizeof(responseBuffer));
+      json.write(
+          "{\"ok\":false,\"error\":\"invalid_json\",\"detail\":\"Log file could not be "
+          "parsed.\",\"path\":\"");
+      json.writeEscaped(path.c_str());
+      json.write("\",\"filename\":\"");
+      const String filename = LogbookStore::filenameFromPath(path);
+      json.writeEscaped(filename.c_str());
+      json.write("\",\"position\":");
+      json.writeUInt(navigation.position);
+      json.write(",\"total\":");
+      json.writeUInt(navigation.total);
+      json.write(",\"previous_path\":\"");
+      json.writeEscaped(navigation.previousPath.c_str());
+      json.write("\",\"next_path\":\"");
+      json.writeEscaped(navigation.nextPath.c_str());
+      json.write("\",");
+      writeUnitSettingsJson(json);
+      json.write("}");
+      json.finish();
       return;
     }
 
     LogbookNavigation navigation;
     LogbookStore::navigationForPath(summary.path, navigation);
 
-    String json = "{\"ok\":true,\"time_12h\":";
-    json += settings.units_hours ? "true" : "false";
-    json += ",";
-    appendUnitSettingsJson(json);
-    json += ",\"position\":";
-    json += navigation.position;
-    json += ",\"total\":";
-    json += navigation.total;
-    json += ",\"previous_path\":\"";
-    json += jsonEscape(navigation.previousPath);
-    json += "\",\"next_path\":\"";
-    json += jsonEscape(navigation.nextPath);
-    json += "\",\"entry\":";
-    appendLogbookSummaryJson(json, summary);
-    json += "}";
-
     heap_monitor::checkpoint("logbook-entry-end");
     sendNoStoreHeaders(target);
-    target.send(200, "application/json", json);
+    target.setContentLength(CONTENT_LENGTH_UNKNOWN);
+    target.send(200, "application/json", "");
+    char responseBuffer[1024];
+    JsonStream json(target, responseBuffer, sizeof(responseBuffer));
+    json.write("{\"ok\":true,\"time_12h\":");
+    json.write(settings.units_hours ? "true" : "false");
+    json.write(",");
+    writeUnitSettingsJson(json);
+    json.write(",\"position\":");
+    json.writeUInt(navigation.position);
+    json.write(",\"total\":");
+    json.writeUInt(navigation.total);
+    json.write(",\"previous_path\":\"");
+    json.writeEscaped(navigation.previousPath.c_str());
+    json.write("\",\"next_path\":\"");
+    json.writeEscaped(navigation.nextPath.c_str());
+    json.write("\",\"entry\":");
+    writeLogbookSummaryJson(json, summary);
+    json.write("}");
+    json.finish();
   }
 
   void deleteLogbookEntry(WebServer& target) {

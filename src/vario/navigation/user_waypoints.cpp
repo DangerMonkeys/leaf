@@ -16,23 +16,6 @@ namespace user_waypoints {
 
     bool ensureDirectory() { return SD_MMC.exists(WAYPOINTS_DIR) || SD_MMC.mkdir(WAYPOINTS_DIR); }
 
-    String jsonEscape(const String& value) {
-      String escaped;
-      escaped.reserve(value.length() + 4);
-      for (uint16_t i = 0; i < value.length(); i++) {
-        const char c = value[i];
-        if (c == '"' || c == '\\') escaped += '\\';
-        if (c == '\n') {
-          escaped += "\\n";
-        } else if (c == '\r') {
-          escaped += "\\r";
-        } else {
-          escaped += c;
-        }
-      }
-      return escaped;
-    }
-
     String timestampText(const char* format, const String& fallback) {
       tm cal;
       if (!gps.getUtcDateTime(cal)) return fallback;
@@ -267,43 +250,6 @@ namespace user_waypoints {
     const bool saved = !persist || navigator.savePersistedState();
     heap_monitor::checkpoint(saved ? "user-wpt-source-end" : "user-wpt-source-fail");
     return saved;
-  }
-
-  bool appendJsonList(String& json, String& error) {
-    heap_monitor::checkpoint("user-wpt-json-start");
-    if (!sdcard.isMounted()) {
-      error = "SD card is not mounted.";
-      return false;
-    }
-
-    JsonDocument doc;
-    if (!loadDocument(doc, error)) return false;
-
-    json += "\"points\":[";
-    bool first = true;
-    for (JsonObjectConst point : doc["points"].as<JsonArrayConst>()) {
-      if (!validPoint(point)) continue;
-      if (!first) json += ",";
-      first = false;
-      json += "{\"id\":\"";
-      json += jsonEscape(point["id"] | "");
-      json += "\",\"index\":";
-      json += navigatorIndexForPoint(point);
-      json += ",\"name\":\"";
-      json += jsonEscape(point["name"] | "");
-      json += "\",\"lat\":";
-      json += String(point["lat"] | 0.0, 7);
-      json += ",\"lon\":";
-      json += String(point["lon"] | 0.0, 7);
-      json += ",\"alt_m\":";
-      json += String(point["alt_m"] | 0.0, 1);
-      json += ",\"created_utc\":\"";
-      json += jsonEscape(point["created_utc"] | "");
-      json += "\"}";
-    }
-    json += "]";
-    heap_monitor::checkpoint("user-wpt-json-end");
-    return true;
   }
 
   bool renameFromJson(JsonDocument& input, String& error) {
