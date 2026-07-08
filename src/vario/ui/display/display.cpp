@@ -83,42 +83,78 @@ void Display::setContrast(uint8_t contrast) {
 #endif
 }
 
+bool Display::isMainPageVisible(MainPage targetPage) const {
+  switch (targetPage) {
+    case MainPage::Debug:
+    case MainPage::Debug2:
+      return settings.dev_mode && settings.disp_showDebugPage;
+    case MainPage::Simple:
+      return settings.disp_showSimplePage;
+    case MainPage::Thermal:
+      return settings.disp_showThmPage;
+    case MainPage::ThermalAdv:
+      return settings.disp_showThmAdvPage;
+    case MainPage::Nav:
+      return settings.disp_showNavPage;
+    case MainPage::Menu:
+    case MainPage::Charging:
+    case MainPage::Blank:
+      return true;
+  }
+  return false;
+}
+
+bool Display::hasEnabledPrimaryPage() const {
+  return settings.disp_showSimplePage || settings.disp_showThmPage ||
+         settings.disp_showThmAdvPage || settings.disp_showNavPage;
+}
+
+void Display::ensurePrimaryPageEnabled() {
+  if (!hasEnabledPrimaryPage()) settings.disp_showThmPage = true;
+}
+
+MainPage Display::firstVisiblePrimaryPage(MainPage preferredPage) const {
+  if (isMainPageVisible(preferredPage) && preferredPage != MainPage::Menu &&
+      preferredPage != MainPage::Charging && preferredPage != MainPage::Blank) {
+    return preferredPage;
+  }
+
+  if (settings.disp_showThmPage) return MainPage::Thermal;
+  if (settings.disp_showSimplePage) return MainPage::Simple;
+  if (settings.disp_showNavPage) return MainPage::Nav;
+  if (settings.disp_showThmAdvPage) return MainPage::ThermalAdv;
+  if (settings.dev_mode && settings.disp_showDebugPage) return MainPage::Debug;
+  return MainPage::Thermal;
+}
+
+MainPage Display::sanitizedMainPage(MainPage targetPage) {
+  ensurePrimaryPageEnabled();
+  if (isMainPageVisible(targetPage)) return targetPage;
+  return firstVisiblePrimaryPage(targetPage);
+}
+
 void Display::turnPage(PageAction action) {
   MainPage tempPage = displayPage_;
 
   switch (action) {
     case PageAction::Home:
-      displayPage_ = MainPage::Thermal;
+      displayPage_ = sanitizedMainPage(MainPage::Thermal);
       break;
 
     case PageAction::Next:
-      displayPage_++;
-
-      // skip past any pages not enabled for display
-      if (displayPage_ == MainPage::Debug2 && !settings.disp_showDebugPage) displayPage_++;
-      if (displayPage_ == MainPage::Simple && !settings.disp_showSimplePage) displayPage_++;
-      if (displayPage_ == MainPage::Thermal && !settings.disp_showThmPage) displayPage_++;
-      if (displayPage_ == MainPage::ThermalAdv && !settings.disp_showThmAdvPage) displayPage_++;
-      if (displayPage_ == MainPage::Nav && !settings.disp_showNavPage) displayPage_++;
-
+      do {
+        displayPage_++;
+      } while (!isMainPageVisible(displayPage_));
       break;
 
     case PageAction::Prev:
-      displayPage_--;
-
-      // skip past any pages not enabled for display
-      if (displayPage_ == MainPage::Nav && !settings.disp_showNavPage) displayPage_--;
-      if (displayPage_ == MainPage::ThermalAdv && !settings.disp_showThmAdvPage) displayPage_--;
-      if (displayPage_ == MainPage::Thermal && !settings.disp_showThmPage) displayPage_--;
-      if (displayPage_ == MainPage::Simple && !settings.disp_showSimplePage) displayPage_--;
-      if (displayPage_ == MainPage::Debug2 && !settings.disp_showDebugPage) displayPage_--;
-      if (displayPage_ == MainPage::Debug && !settings.disp_showDebugPage)
-        displayPage_ = tempPage;  // go back to the page we were on if we can't go further left
-
+      do {
+        displayPage_--;
+      } while (!isMainPageVisible(displayPage_));
       break;
 
     case PageAction::Back:
-      displayPage_ = displayPagePrior_;
+      displayPage_ = sanitizedMainPage(displayPagePrior_);
   }
 
   if (displayPage_ != tempPage) displayPagePrior_ = tempPage;
@@ -126,7 +162,7 @@ void Display::turnPage(PageAction action) {
 
 void Display::setPage(MainPage targetPage) {
   MainPage tempPage = displayPage_;
-  displayPage_ = targetPage;
+  displayPage_ = sanitizedMainPage(targetPage);
 
   if (displayPage_ != tempPage) displayPagePrior_ = tempPage;
 }
@@ -176,6 +212,8 @@ void Display::update() {
     modalPage->draw();
     return;
   }
+
+  if (!isMainPageVisible(displayPage_)) displayPage_ = sanitizedMainPage(displayPage_);
 
   switch (displayPage_) {
     case MainPage::Simple:
