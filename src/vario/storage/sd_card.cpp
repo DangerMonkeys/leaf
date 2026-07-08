@@ -161,6 +161,8 @@ bool SDCard::mount() {
   } else {
     if (DEBUG_SDCARD) Serial.println("SDcard Mount Success");
     success = true;
+    mounted_ = true;
+    setLabel();
     ensureStandardDirectories();
     heap_monitor::setSdLoggingEnabled(true);
     heap_monitor::checkpoint("sd-mounted");
