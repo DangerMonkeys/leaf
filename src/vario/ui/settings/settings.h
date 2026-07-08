@@ -71,6 +71,8 @@ typedef uint8_t SettingLogFormat;
 #define DEF_BLUETOOTH_ON 0    // default bluetooth off
 #define DEF_SHOW_WARNING 1    // default show warning on startup
 #define DEF_PRODUCTIONTEST 0  // default that we have not yet run the production self test
+#define DEF_COMMISSIONING_PENDING 1
+#define DEF_COMMISSIONING_COMPLETE 0
 
 // Developer Settings
 #define DEF_DEV_MODE 0                // default hide developer-mode features
@@ -157,6 +159,8 @@ setting | samples | time avg
   // Production Info
   String macAddress;
   bool productionTest;  // flag that we've run the initial selfTest during production assembly
+  bool commissioningPending;
+  bool commissioningComplete;
 
   // developer options
   bool dev_mode;
@@ -207,6 +211,9 @@ setting | samples | time avg
   String getMacAddress(void);
   void setProductionTestForceFormatSdCard(bool forceFormat);
   bool consumeProductionTestForceFormatSdCard(void);
+  void beginCommissioning(void);
+  void markCommissioningComplete(void);
+  bool diagnosticNetworkScanAllowed(void) const;
 
   // adjust-settings functions
   void adjustContrast(Button dir);

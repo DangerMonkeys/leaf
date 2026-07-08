@@ -45,7 +45,7 @@
 
 // Bit of a hack for now as we don't have a good way to pass big chunks
 // of data around, so, we do it on the stack.  Default is 8KB
-SET_LOOP_TASK_STACK_SIZE(16 * 1024);  // 16KB
+SET_LOOP_TASK_STACK_SIZE(12 * 1024);  // 12KB
 
 #define DEBUG_MAIN_LOOP false
 

@@ -61,6 +61,10 @@ BLE& BLE::get() {
 }
 
 void BLE::setup() {
+  if (pServer != nullptr) return;
+
+  heap_monitor::checkpoint("ble-setup-before");
+
   // Initialize BLE with the same unique, user-visible name as the Leaf AP.
   const String name = webserver_leaf_ap_ssid();
   NimBLEDevice::init(name.c_str());
@@ -70,7 +74,7 @@ void BLE::setup() {
   pServer->setCallbacks(&serverCallbacks);
 
   // Create the characteristic and start advertising climb rate information
-  NimBLEService* pService = pServer->createService(LEAF_SERVICE_UUID);
+  pService = pServer->createService(LEAF_SERVICE_UUID);
   pCharacteristic = pService->createCharacteristic(LEAF_LK8EX1_UUID,
                                                    NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
   pService->start();
@@ -93,13 +97,14 @@ void BLE::setup() {
   heap_monitor::checkpoint("ble-queue");
 
   // Create the freeRTOS Task for handling Bluetooth low energy IO
-  xTaskCreate(BLE::bleTask, "BLE", 10000, this, 9, &xTask);
+  xTaskCreate(BLE::bleTask, "BLE", 5120, this, 9, &xTask);
   heap_monitor::registerTask("ble", xTask);
   heap_monitor::checkpoint("ble-task");
 
   // Fire off the timer to periodically request a send
   xTimer = xTimerCreate("BLEPeriodicSend", pdMS_TO_TICKS(100), pdTRUE, NULL, BLE::timerCallback);
   xTimerStart(xTimer, 0);
+  heap_monitor::checkpoint("ble-setup-after");
 }
 
 uint8_t checksum(std::string_view string) {
@@ -111,7 +116,8 @@ uint8_t checksum(std::string_view string) {
 }
 
 void BLE::start() {
-  if (pAdvertising == nullptr) return;
+  if (pAdvertising == nullptr) setup();
+  if (pAdvertising == nullptr || started) return;
   heap_monitor::checkpoint("ble-start-before");
   pAdvertising->start();
   started = true;
@@ -119,7 +125,7 @@ void BLE::start() {
 }
 
 void BLE::stop() {
-  if (pAdvertising == nullptr) return;
+  if (pAdvertising == nullptr || !started) return;
   heap_monitor::checkpoint("ble-stop-before");
   pAdvertising->stop();
   started = false;
@@ -127,15 +133,34 @@ void BLE::stop() {
 }
 
 void BLE::end() {
+  if (pServer == nullptr && xTimer == nullptr && xTask == nullptr && xQueue == nullptr) return;
+
   heap_monitor::checkpoint("ble-end-before");
+  if (pAdvertising != nullptr && started) {
+    pAdvertising->stop();
+  }
+  started = false;
+
   // Delete FreeRTOS objects
-  xTimerDelete(xTimer, 0);
-  vTaskDelete(xTask);
-  vQueueDelete(xQueue);
+  if (xTimer != nullptr) {
+    xTimerStop(xTimer, 0);
+    xTimerDelete(xTimer, 0);
+    xTimer = nullptr;
+  }
+  if (xTask != nullptr) {
+    vTaskDelete(xTask);
+    xTask = nullptr;
+  }
+  if (xQueue != nullptr) {
+    vQueueDelete(xQueue);
+    xQueue = nullptr;
+  }
   heap_monitor::registerTask("ble", nullptr);
 
   // Delete any objects created and deinit manually.. Seems to crash setting this to true
-  NimBLEDevice::deinit(false);
+  if (pServer != nullptr) {
+    NimBLEDevice::deinit(false);
+  }
 
   // Reset null pointers.
   pServer = nullptr;
@@ -214,6 +239,7 @@ void BLE::bleTask(void* args) {
 void BLE::timerCallback(TimerHandle_t timer) {
   // Send a message on the queue that it's time to do a periodic task send
   // (wake up the BLE task)
+  if (BLE::get().xQueue == nullptr) return;
   WakeupMessage message(WakeupMessage::Reason::PERIODIC);
   xQueueSend(BLE::get().xQueue, &message, 0);
 }

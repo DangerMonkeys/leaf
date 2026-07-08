@@ -870,7 +870,7 @@ namespace {
 
     user_app_restart_ble = settings.system_bluetoothOn;
     if (user_app_restart_ble) {
-      BLE::get().stop();
+      BLE::get().end();
     }
 
     user_app_restart_fanet = fanetRadio.getState() == FanetRadioState::RUNNING;
@@ -892,6 +892,7 @@ namespace {
     }
 
     if (user_app_restart_ble && settings.system_bluetoothOn) {
+      BLE::get().setup();
       BLE::get().start();
     }
 
@@ -2367,6 +2368,7 @@ void webserver_setup() {
     const bool forceFormatSdCard =
         extractJsonBoolValue(user_server.arg("plain"), "force_format_sd_card", false);
     settings.factoryResetVario();
+    settings.beginCommissioning();
     settings.setProductionTestForceFormatSdCard(forceFormatSdCard);
     user_server.send(200, "application/json", "{\"reset_requested\":true}");
     delay(250);
@@ -2432,8 +2434,10 @@ void webserver_setup() {
                  []() { user_server.send(200, "application/json", selfTestSnapshotJson()); });
 
   user_server.on("/api/debug/commissioning/complete", HTTP_POST, []() {
+    settings.markCommissioningComplete();
     selfTest.confirmCommissioningComplete();
-    user_server.send(200, "application/json", "{\"commissioning_complete\":true}");
+    user_server.send(200, "application/json",
+                     "{\"commissioning_complete\":true,\"commissioning_pending\":false}");
   });
 
   debug_routes_configured = true;
@@ -2464,11 +2468,11 @@ void webserver_loop() {
 }
 
 void webserver_enable_user_app(bool useLeafWifi) {
-  pauseServicesForUserApp();
-
   heap_monitor::clear();
   resetUserAppCounters();
   heap_monitor::checkpoint("enable-start");
+  pauseServicesForUserApp();
+  heap_monitor::checkpoint("after-pause-services");
   if (useLeafWifi || WiFi.status() != WL_CONNECTED) {
     leaf_wifi::prepareForLeafAccessPoint();
     heap_monitor::checkpoint("after-prepare-ap");

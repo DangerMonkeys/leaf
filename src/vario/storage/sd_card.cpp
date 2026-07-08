@@ -10,6 +10,7 @@
 #include "FirmwareMSC.h"
 #include "USB.h"
 #include "USBMSC.h"
+#include "diagnostics/boot_diagnostics.h"
 #include "diagnostics/heap_monitor.h"
 #include "hardware/configuration.h"
 #include "hardware/io_pins.h"
@@ -163,6 +164,7 @@ bool SDCard::mount() {
     ensureStandardDirectories();
     heap_monitor::setSdLoggingEnabled(true);
     heap_monitor::checkpoint("sd-mounted");
+    boot_diagnostics::writeReportsToSd();
 
 #ifndef DISABLE_MASS_STORAGE
     if (sdcard.setupMassStorage()) {

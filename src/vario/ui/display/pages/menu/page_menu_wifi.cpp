@@ -192,10 +192,11 @@ void WifiMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) 
         settings.system_bluetoothOn = !settings.system_bluetoothOn;
         if (settings.system_bluetoothOn) {
           heap_monitor::checkpoint("wifi-menu-ble-start");
+          BLE::get().setup();
           BLE::get().start();
         } else {
-          heap_monitor::checkpoint("wifi-menu-ble-stop");
-          BLE::get().stop();
+          heap_monitor::checkpoint("wifi-menu-ble-end");
+          BLE::get().end();
         }
         heap_monitor::checkpoint("wifi-menu-ble-toggled");
         settings.save();

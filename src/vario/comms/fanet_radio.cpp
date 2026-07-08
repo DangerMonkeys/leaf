@@ -253,6 +253,11 @@ void FanetRadio::subscribe(etl::imessage_bus* bus) {
 
 void FanetRadio::setup() {
   heap_monitor::checkpoint("fanet-setup-start");
+  if (state == FanetRadioState::UNINSTALLED) {
+    heap_monitor::checkpoint("fanet-setup-skipped");
+    return;
+  }
+
   // Sets up the radio module.  Leaves it in an uninitialized state, but
   // creates any dynamic memory required.
 
