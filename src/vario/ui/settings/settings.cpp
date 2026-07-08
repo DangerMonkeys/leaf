@@ -64,7 +64,9 @@ bool Settings::init() {
     // handle one-time first boot tasks
     macAddress = getMacAddress();  // capture the device MAC address for use as a unique device ID
     productionTest = DEF_PRODUCTIONTEST;  // flag that the production test has yet been run
-    save();                               // save defaults to NVS0
+    commissioningPending = DEF_COMMISSIONING_PENDING;
+    commissioningComplete = DEF_COMMISSIONING_COMPLETE;
+    save();  // save defaults to NVS0
 
     // save flag to indicate we have previously initialized NVS storage and have saved
     // settings available
@@ -103,6 +105,23 @@ bool Settings::consumeProductionTestForceFormatSdCard() {
   return forceFormat;
 }
 
+void Settings::beginCommissioning() {
+  commissioningPending = true;
+  commissioningComplete = false;
+  save();
+}
+
+void Settings::markCommissioningComplete() {
+  commissioningPending = false;
+  commissioningComplete = true;
+  save();
+}
+
+bool Settings::diagnosticNetworkScanAllowed() const {
+  if (commissioningComplete) return false;
+  return commissioningPending || !productionTest || boot_firstTime;
+}
+
 // Reset Leaf user settings and info to defaults
 void Settings::reset() {
   loadDefaults();
@@ -123,9 +142,11 @@ void Settings::factoryResetVario() {
 
   // clear additional settings/flags that aren't user settings
   productionTest = DEF_PRODUCTIONTEST;  // erase any record of a production test
-  macAddress.clear();                   // clear the MAC address string
-  fanet_address.clear();                // clear the FANET address string
-  save();                               // store these updated values
+  commissioningPending = true;
+  commissioningComplete = false;
+  macAddress.clear();     // clear the MAC address string
+  fanet_address.clear();  // clear the FANET address string
+  save();                 // store these updated values
 
   // and finally clear the varioPrefs key to ensure Leaf boots as a new device
   leafPrefs.begin("varioPrefs", RW_MODE);
@@ -154,7 +175,6 @@ void Settings::loadDefaults() {
   log_saveTrack = DEF_TRACK_SAVE;
   log_autoStart = DEF_AUTO_START;
   log_autoStop = DEF_AUTO_STOP;
-  log_format = DEF_LOG_FORMAT;
 
   // System Settings
   system_timeZone = DEF_TIME_ZONE;
@@ -165,6 +185,9 @@ void Settings::loadDefaults() {
   system_wifiOn = DEF_WIFI_ON;
   system_bluetoothOn = DEF_BLUETOOTH_ON;
   system_showWarning = DEF_SHOW_WARNING;
+  productionTest = DEF_PRODUCTIONTEST;
+  commissioningPending = DEF_COMMISSIONING_PENDING;
+  commissioningComplete = DEF_COMMISSIONING_COMPLETE;
 
   // Developer Options
   dev_mode = DEF_DEV_MODE;
@@ -223,7 +246,6 @@ void Settings::retrieve() {
   log_saveTrack = leafPrefs.getBool("TRACK_SAVE");
   log_autoStart = leafPrefs.getBool("AUTO_START");
   log_autoStop = leafPrefs.getBool("AUTO_STOP");
-  log_format = leafPrefs.getUChar("LOG_FORMAT");
 
   // System Settings
   system_timeZone = leafPrefs.getShort("TIME_ZONE");
@@ -236,6 +258,9 @@ void Settings::retrieve() {
   system_showWarning = leafPrefs.getBool("SHOW_WARNING");
   macAddress = leafPrefs.getString("MAC_ADDRESS", getMacAddress());
   productionTest = leafPrefs.getBool("PRODUCTION_TEST", DEF_PRODUCTIONTEST);
+  commissioningComplete = leafPrefs.getBool("COMM_COMPLETE", productionTest);
+  commissioningPending =
+      leafPrefs.getBool("COMM_PENDING", !commissioningComplete && !productionTest);
 
   // Developer Options
   dev_mode = leafPrefs.getBool("DEV_MODE", leafPrefs.getBool("DEVELOPER_MENU", DEF_DEV_MODE));
@@ -303,7 +328,6 @@ void Settings::save() {
   leafPrefs.putBool("TRACK_SAVE", log_saveTrack);
   leafPrefs.putBool("AUTO_START", log_autoStart);
   leafPrefs.putBool("AUTO_STOP", log_autoStop);
-  leafPrefs.putUChar("LOG_FORMAT", log_format);
   // System Settings
   leafPrefs.putShort("TIME_ZONE", system_timeZone);
   leafPrefs.putChar("VOLUME_SYSTEM", system_volume);
@@ -313,6 +337,8 @@ void Settings::save() {
   leafPrefs.putBool("BLUETOOTH_ON", system_bluetoothOn);
   leafPrefs.putBool("SHOW_WARNING", system_showWarning);
   leafPrefs.putBool("PRODUCTION_TEST", productionTest);
+  leafPrefs.putBool("COMM_PENDING", commissioningPending);
+  leafPrefs.putBool("COMM_COMPLETE", commissioningComplete);
   leafPrefs.putString("MAC_ADDRESS", macAddress);
   // Developer Options
   leafPrefs.putBool("DEV_MODE", dev_mode);

@@ -7,6 +7,7 @@
 
 #include "diagnostics/diagnostic_network/diagnostic_network.h"
 #include "power.h"
+#include "ui/settings/settings.h"
 
 namespace {
   constexpr uint16_t DISCOVERY_PORT = 7432;
@@ -249,6 +250,14 @@ String FactoryDiscovery::statusJson() const {
   json += diagnostic_network_connected ? "true" : "false";
   json += ",\"error\":";
   appendJsonString(json, diagnostic_network.error_msg());
+  json += ",\"scan_allowed\":";
+  json += settings.diagnosticNetworkScanAllowed() ? "true" : "false";
+  json += ",\"commissioning_pending\":";
+  json += settings.commissioningPending ? "true" : "false";
+  json += ",\"commissioning_complete\":";
+  json += settings.commissioningComplete ? "true" : "false";
+  json += ",\"production_test\":";
+  json += settings.productionTest ? "true" : "false";
   json += "},\"power\":{";
   json += "\"state\":";
   appendJsonString(json, powerStateName(power_info.onState));

@@ -84,7 +84,7 @@ A LogbookEntry includes:
   * Duration
   * Max/min values (alt, climbrate, speed, etc)
 * GPSTrack File Link/Reference (if chosen to save)
-  * A link to this separate GPSTrack File will be one of the fields in the LogbookEntry.  The GPSTrack File will be a separate file, in either KML or IGC format (perhaps additional formats supported in the future)
+  * A link to this separate GPSTrack File will be one of the fields in the LogbookEntry.  The GPSTrack File will be a separate IGC file (perhaps additional formats supported in the future)
 
 __NOTE ON GPS REQUIREMENT:__ While the GPSTrack file strictly requires a GPS fix, the LogbookEntry itself does not strictly need GPS data.  However, certain GPS information (date, time, launch location, etc) make the LogbookEntry more informative and robust.  While we anticipate usually having a GPS fix when logging, the Logbook (and each Entry) should function to a minimum level without GPS.
 
@@ -129,7 +129,7 @@ ___/LOGGING\______
 Auto Start    ☐
 Auto Stop     ☐
 Save GPSTrack ☐
-Format     IGC/KML
+Format     IGC
 ------------------
 Previous Flights➡
 Export Logbook  ➡

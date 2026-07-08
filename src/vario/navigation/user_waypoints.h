@@ -13,7 +13,6 @@ namespace user_waypoints {
   bool hasSavedPoints();
   bool loadIntoNavigator();
   bool loadAsNavigatorSource(bool persist = true);
-  bool appendJsonList(String& json, String& error);
   bool renameFromJson(JsonDocument& input, String& error);
   bool deleteById(const char* id, String& error);
 

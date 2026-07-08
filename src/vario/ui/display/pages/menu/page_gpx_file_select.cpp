@@ -52,7 +52,7 @@ namespace {
 
   bool hasSupportedNavExtension(const char* name) {
     return hasExtension(name, "gpx") || hasExtension(name, "cup") || hasExtension(name, "wpt") ||
-           hasExtension(name, "wyp") || hasExtension(name, "kml");
+           hasExtension(name, "wyp");
   }
 
   int compareFileNames(const char* a, const char* b) {

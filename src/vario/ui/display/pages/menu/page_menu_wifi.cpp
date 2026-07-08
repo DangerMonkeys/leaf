@@ -6,6 +6,7 @@
 #include "comms/ota.h"
 #include "comms/webserver.h"
 #include "comms/wifi_coordinator.h"
+#include "diagnostics/heap_monitor.h"
 #include "hardware/buttons.h"
 #include "power.h"
 #include "system/version_info.h"
@@ -190,15 +191,20 @@ void WifiMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) 
         speaker.playSound(fx::confirm);
         settings.system_bluetoothOn = !settings.system_bluetoothOn;
         if (settings.system_bluetoothOn) {
+          heap_monitor::checkpoint("wifi-menu-ble-start");
+          BLE::get().setup();
           BLE::get().start();
         } else {
-          BLE::get().stop();
+          heap_monitor::checkpoint("wifi-menu-ble-end");
+          BLE::get().end();
         }
+        heap_monitor::checkpoint("wifi-menu-ble-toggled");
         settings.save();
       }
       break;
     case cursor_wifi_setup:
       if (state == ButtonEvent::CLICKED) {
+        heap_monitor::checkpoint("wifi-menu-setup-click");
         showSetup();
       }
       break;
@@ -257,22 +263,29 @@ namespace {
 etl::array<const char*, 1> PageMenuSystemWifiWebApp::network_labels{{"Use Leaf AP"}};
 
 void PageMenuSystemWifiWebApp::start(bool useLeafWifi) {
+  heap_monitor::checkpoint(useLeafWifi ? "webapp-start-ap" : "webapp-start-sta");
   using_leaf_wifi = useLeafWifi || WiFi.status() != WL_CONNECTED;
   webserver_enable_user_app(using_leaf_wifi);
+  heap_monitor::checkpoint(using_leaf_wifi ? "webapp-started-ap" : "webapp-started-sta");
 }
 
 void PageMenuSystemWifiWebApp::shown() {
+  heap_monitor::checkpoint("webapp-page-shown");
   start(false);
   SimpleSettingsMenuPage::shown();
+  heap_monitor::checkpoint("webapp-page-ready");
 }
 
 void PageMenuSystemWifiWebApp::closed(bool removed_from_Stack) {
   if (removed_from_Stack) {
+    heap_monitor::checkpoint("webapp-page-close");
     syncWebAppMode();
     const bool reconnectToSavedNetwork = using_leaf_wifi;
     webserver_disable_user_app();
+    heap_monitor::checkpoint("webapp-page-disabled");
     if (reconnectToSavedNetwork) {
       wifi_menu_ui::attemptSavedNetworkConnection();
+      heap_monitor::checkpoint("webapp-page-reconnect");
     }
     mainMenuPage.backToMainMenu();
   }
@@ -402,19 +415,25 @@ void PageMenuSystemWifiWebApp::draw_extra() {
  */
 
 void PageMenuSystemWifiSetup::shown() {
+  heap_monitor::checkpoint("wifi-setup-page-shown");
   SimpleSettingsMenuPage::shown();
   starting_message_started_ms = millis();
   beginWifiSetup();
+  heap_monitor::checkpoint("wifi-setup-page-ready");
 }
 
 void PageMenuSystemWifiSetup::closed(bool removed_from_Stack) {
   if (removed_from_Stack) {
-    webserver_disable_user_app();
+    heap_monitor::checkpoint("wifi-setup-page-close");
+    if (webserver_wifi_setup_active()) {
+      webserver_disable_user_app();
+      heap_monitor::checkpoint("wifi-setup-page-disabled");
+    }
   }
 }
 
 void PageMenuSystemWifiSetup::loop() {
-  if (WiFi.status() == WL_CONNECTED && !webserver_user_app_using_leaf_wifi()) {
+  if (WiFi.status() == WL_CONNECTED && !webserver_wifi_setup_active()) {
     pop_page();
     return;
   }
@@ -479,22 +498,29 @@ void PageMenuSystemWifiSetup::draw_extra() {
  * PageMenuSystemWifiUpdate (sub-page)
  */
 void PageMenuSystemWifiUpdate::shown() {
+  heap_monitor::checkpoint("wifi-update-page-shown");
   SimpleSettingsMenuPage::shown();
+  heap_monitor::checkpoint("wifi-update-menu-ready");
 
   // Performing an OTA update check is super expensive.
   // Unload BLE to do this check and reboot when done.
+  heap_monitor::checkpoint("wifi-update-ble-end");
   BLE::get().end();
+  heap_monitor::checkpoint("wifi-update-ble-ended");
 
   // Reset the WiFi module into a disconnected
   // TODO:  Only do this if not already connected
+  heap_monitor::checkpoint("wifi-update-wifi-begin");
   WiFi.mode(WIFI_STA);
   WiFi.begin();
+  heap_monitor::checkpoint("wifi-update-wifi-started");
   *wifi_state = WifiState::CONNECTING;
 
   log_lines.clear();
   log_lines.push_back("*CURRENT VERSION:");
   log_lines.push_back((String) "  " + LeafVersionInfo::firmwareVersion());
   log_lines.push_back("*CONNECTING TO WIFI...");
+  heap_monitor::checkpoint("wifi-update-page-ready");
 }
 
 void PageMenuSystemWifiUpdate::draw_extra() {

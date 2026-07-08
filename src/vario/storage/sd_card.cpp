@@ -10,6 +10,8 @@
 #include "FirmwareMSC.h"
 #include "USB.h"
 #include "USBMSC.h"
+#include "diagnostics/boot_diagnostics.h"
+#include "diagnostics/heap_monitor.h"
 #include "hardware/configuration.h"
 #include "hardware/io_pins.h"
 #include "instruments/gps.h"
@@ -160,6 +162,9 @@ bool SDCard::mount() {
     if (DEBUG_SDCARD) Serial.println("SDcard Mount Success");
     success = true;
     ensureStandardDirectories();
+    heap_monitor::setSdLoggingEnabled(true);
+    heap_monitor::checkpoint("sd-mounted");
+    boot_diagnostics::writeReportsToSd();
 
 #ifndef DISABLE_MASS_STORAGE
     if (sdcard.setupMassStorage()) {
@@ -175,6 +180,8 @@ bool SDCard::mount() {
 }
 
 void SDCard::unmount() {
+  heap_monitor::checkpoint("sd-unmount");
+  heap_monitor::setSdLoggingEnabled(false);
   SD_MMC.end();
   mounted_ = false;
 }

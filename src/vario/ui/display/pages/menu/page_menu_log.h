@@ -11,7 +11,7 @@ class LogMenuPage : public SettingsMenuPage {
  public:
   LogMenuPage() {
     cursor_position = 0;
-    cursor_max = 4;
+    cursor_max = 3;
   }
   void draw();
   void backToLogMenu();
@@ -23,7 +23,7 @@ class LogMenuPage : public SettingsMenuPage {
 
  private:
   void drawLogMenu();
-  static constexpr char* labels[5] = {"Back", "Format", "SaveLog", "AutoStart", "AutoStop"};
+  static constexpr char* labels[4] = {"Back", "Save IGC File", "AutoStart", "AutoStop"};
   PageLogbook pageLogbook;
 };
 

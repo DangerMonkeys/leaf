@@ -10,7 +10,6 @@
 #include "instruments/imu.h"
 #include "logbook/flight.h"
 #include "logbook/igc.h"
-#include "logbook/kml.h"
 #include "logbook/logbook_entry.h"
 #include "navigation/gpx.h"
 #include "power.h"
@@ -30,7 +29,6 @@
 // a fix and a date/time record.
 Flight* flight =
     NULL;  // Pointer to the current flight record (null if we're not deisred to be logging)
-Kml kmlFlight;
 Igc igcFlight;
 bool trackLogEnabledForFlight = false;
 
@@ -280,16 +278,7 @@ void flightTimer_start() {
 
   // start timer
   speaker.playSound(fx::enter);
-  switch (settings.log_format) {
-    case LOG_FORMAT_KML:
-      flight = &kmlFlight;
-      break;
-    case LOG_FORMAT_IGC:
-      flight = &igcFlight;
-      break;
-    default:
-      return;  // DO not start the flight if it's an unknown format
-  }
+  flight = &igcFlight;
 
   logbook.logStartedAt = millis() / 1000;
   log_captureValues();

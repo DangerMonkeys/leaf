@@ -23,6 +23,9 @@ class BLE : public MessageSink<BLE, GpsMessage, FanetPacket> {
   /// @brief True when BLE advertising should be active
   bool isStarted() const { return started; }
 
+  /// @brief True when BLE resources are currently allocated
+  bool isSetup() const { return pServer != nullptr; }
+
   /// @brief ends the service, tears down bluetooth resources
   void end();
 
@@ -37,6 +40,9 @@ class BLE : public MessageSink<BLE, GpsMessage, FanetPacket> {
         pService(nullptr),
         pCharacteristic(nullptr),
         pAdvertising(nullptr),
+        xQueue(nullptr),
+        xTimer(nullptr),
+        xTask(nullptr),
         started(false) {}
 
   bool started;  // Bluetooth advertising started

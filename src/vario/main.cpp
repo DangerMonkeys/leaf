@@ -1,7 +1,9 @@
 #include "Arduino.h"
 #include "comms/ble.h"
 #include "comms/fanet_radio.h"
+#include "diagnostics/boot_diagnostics.h"
 #include "diagnostics/buttons.h"
+#include "diagnostics/heap_monitor.h"
 #include "dispatch/message_bus.h"
 #include "hardware/Leaf_SPI.h"
 #include "hardware/aht20.h"
@@ -44,6 +46,7 @@ TaskManager taskman;
 void setup() {
   // Start USB Serial Debugging Port
   Serial.begin(115200);
+  boot_diagnostics::captureResetReason();
   Serial.println("Starting Setup");
 
   // Initialize the shared bus
@@ -58,6 +61,8 @@ void setup() {
 
   // grab user settings (or populate defaults if no saved settings)
   settings.init();
+  heap_monitor::registerTask("loop", xTaskGetCurrentTaskHandle());
+  heap_monitor::record("setup-settings");
 
   buttons.publishTo(&bus);
 
@@ -81,13 +86,18 @@ void setup() {
   // Initialize anything left over on the Task Manager System
   Serial.println("Initializing Taskman Service");
   taskman.init();
+  heap_monitor::checkpoint("setup-taskman");
 
-  // Initialize the BLE Stack, subscribe it to events
-  // from the message bus.
-  Serial.println("Initializing Bluetooth Module");
-  BLE::get().setup();
+  // Initialize the BLE stack only when the saved setting asks for it. BLE still subscribes to the
+  // bus below so it can be enabled later from settings without rebooting.
   if (settings.system_bluetoothOn) {
+    Serial.println("Initializing Bluetooth Module");
+    BLE::get().setup();
+    heap_monitor::checkpoint("setup-ble");
     BLE::get().start();
+    heap_monitor::checkpoint("setup-ble-start");
+  } else {
+    heap_monitor::checkpoint("setup-ble-skipped");
   }
 
   // Connect GPS instrument to message bus sourcing lines of text that should be NMEA sentences
@@ -113,6 +123,7 @@ void setup() {
   busLog.setBus(&bus);
 
   Serial.println("Leaf Initialized");
+  heap_monitor::checkpoint("setup-complete");
 }
 
 void loop() {

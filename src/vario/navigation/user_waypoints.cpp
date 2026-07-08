@@ -4,6 +4,7 @@
 #include <math.h>
 #include <string.h>
 
+#include "diagnostics/heap_monitor.h"
 #include "instruments/gps.h"
 #include "storage/sd_card.h"
 
@@ -14,23 +15,6 @@ namespace user_waypoints {
     constexpr size_t USER_WAYPOINTS_MAX_BYTES = 24576;
 
     bool ensureDirectory() { return SD_MMC.exists(WAYPOINTS_DIR) || SD_MMC.mkdir(WAYPOINTS_DIR); }
-
-    String jsonEscape(const String& value) {
-      String escaped;
-      escaped.reserve(value.length() + 4);
-      for (uint16_t i = 0; i < value.length(); i++) {
-        const char c = value[i];
-        if (c == '"' || c == '\\') escaped += '\\';
-        if (c == '\n') {
-          escaped += "\\n";
-        } else if (c == '\r') {
-          escaped += "\\r";
-        } else {
-          escaped += c;
-        }
-      }
-      return escaped;
-    }
 
     String timestampText(const char* format, const String& fallback) {
       tm cal;
@@ -171,6 +155,7 @@ namespace user_waypoints {
   }  // namespace
 
   bool appendCurrentPosition(Waypoint& savedWaypoint, String& error) {
+    heap_monitor::checkpoint("user-wpt-add-start");
     savedWaypoint = Waypoint();
     if (!sdcard.isMounted()) {
       error = "SD card is not mounted.";
@@ -203,17 +188,22 @@ namespace user_waypoints {
     point["created_utc"] = created;
     point["source"] = "flight_menu";
 
-    if (!writeDocument(doc, error)) return false;
+    if (!writeDocument(doc, error)) {
+      heap_monitor::checkpoint("user-wpt-add-fail");
+      return false;
+    }
 
     savedWaypoint.setName(name.c_str());
     savedWaypoint.setLatitude(gps.location.lat());
     savedWaypoint.setLongitude(gps.location.lng());
     savedWaypoint.ele = gps.altitude.meters();
     navigator.addOrFindWaypoint(savedWaypoint);
+    heap_monitor::checkpoint("user-wpt-add-end");
     return true;
   }
 
   bool loadIntoNavigator() {
+    heap_monitor::checkpoint("user-wpt-load-nav");
     if (!sdcard.isMounted() || !SD_MMC.exists(filePath())) return false;
     JsonDocument doc;
     String error;
@@ -236,6 +226,7 @@ namespace user_waypoints {
   }
 
   bool loadAsNavigatorSource(bool persist) {
+    heap_monitor::checkpoint("user-wpt-source-start");
     if (!sdcard.isMounted() || !SD_MMC.exists(filePath())) return false;
     JsonDocument doc;
     String error;
@@ -256,45 +247,13 @@ namespace user_waypoints {
     }
 
     navigator.setLoadedUserWaypointsFilename(filePath());
-    return !persist || navigator.savePersistedState();
-  }
-
-  bool appendJsonList(String& json, String& error) {
-    if (!sdcard.isMounted()) {
-      error = "SD card is not mounted.";
-      return false;
-    }
-
-    JsonDocument doc;
-    if (!loadDocument(doc, error)) return false;
-
-    json += "\"points\":[";
-    bool first = true;
-    for (JsonObjectConst point : doc["points"].as<JsonArrayConst>()) {
-      if (!validPoint(point)) continue;
-      if (!first) json += ",";
-      first = false;
-      json += "{\"id\":\"";
-      json += jsonEscape(point["id"] | "");
-      json += "\",\"index\":";
-      json += navigatorIndexForPoint(point);
-      json += ",\"name\":\"";
-      json += jsonEscape(point["name"] | "");
-      json += "\",\"lat\":";
-      json += String(point["lat"] | 0.0, 7);
-      json += ",\"lon\":";
-      json += String(point["lon"] | 0.0, 7);
-      json += ",\"alt_m\":";
-      json += String(point["alt_m"] | 0.0, 1);
-      json += ",\"created_utc\":\"";
-      json += jsonEscape(point["created_utc"] | "");
-      json += "\"}";
-    }
-    json += "]";
-    return true;
+    const bool saved = !persist || navigator.savePersistedState();
+    heap_monitor::checkpoint(saved ? "user-wpt-source-end" : "user-wpt-source-fail");
+    return saved;
   }
 
   bool renameFromJson(JsonDocument& input, String& error) {
+    heap_monitor::checkpoint("user-wpt-rename-start");
     if (!sdcard.isMounted()) {
       error = "SD card is not mounted.";
       return false;
@@ -319,10 +278,13 @@ namespace user_waypoints {
       }
     }
 
-    return writeDocument(doc, error);
+    const bool written = writeDocument(doc, error);
+    heap_monitor::checkpoint(written ? "user-wpt-rename-end" : "user-wpt-rename-fail");
+    return written;
   }
 
   bool deleteById(const char* id, String& error) {
+    heap_monitor::checkpoint("user-wpt-delete-start");
     if (!sdcard.isMounted()) {
       error = "SD card is not mounted.";
       return false;
@@ -340,10 +302,13 @@ namespace user_waypoints {
       JsonObject point = points[i].as<JsonObject>();
       if (strcmp(point["id"] | "", id) != 0) continue;
       points.remove(i);
-      return writeDocument(doc, error);
+      const bool written = writeDocument(doc, error);
+      heap_monitor::checkpoint(written ? "user-wpt-delete-end" : "user-wpt-delete-fail");
+      return written;
     }
 
     error = "Saved waypoint was not found.";
+    heap_monitor::checkpoint("user-wpt-delete-miss");
     return false;
   }
 

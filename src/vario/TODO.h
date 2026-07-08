@@ -19,7 +19,7 @@ How many waypoints/routes can we store in NVM?  etc)
 
 
 GPS Logging
-*#5* Additional file formats for logs (gpx, IGC, KML-with-timestamps, etc)
+*#5* Additional file formats for logs (gpx, etc)
 
 UI
 *#9* ->Additional menu screens (choose GPX file to load; list of waypoints and routes; possibly

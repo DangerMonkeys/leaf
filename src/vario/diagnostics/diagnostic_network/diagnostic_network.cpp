@@ -42,6 +42,15 @@ bool DiagnosticNetwork::shouldResetWhenSwitchingOn() const {
 bool DiagnosticNetwork::canSleepWhileCharging() const { return shouldResetWhenSwitchingOn(); }
 
 void DiagnosticNetwork::update() {
+  if (!settings.diagnosticNetworkScanAllowed()) {
+    if (!printed_end_state_) {
+      Serial.println("DiagnosticNetwork: skipped; commissioning is complete");
+      printed_end_state_ = true;
+    }
+    state_ = State::NoNetworkFound;
+    return;
+  }
+
   if (!leaf_wifi::diagnosticsAllowed()) {
     if (!printed_end_state_) {
       Serial.println("DiagnosticNetwork: disabled by user WiFi action");

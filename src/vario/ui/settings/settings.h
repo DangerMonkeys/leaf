@@ -8,12 +8,6 @@
 #include "ui/input/buttons.h"
 #include "ui/settings/setting.h"
 
-// Types for selections
-#define SETTING_LOG_FORMAT_ENTRIES 2  // How many log format entries there are
-typedef uint8_t SettingLogFormat;
-#define LOG_FORMAT_IGC 0
-#define LOG_FORMAT_KML 1
-
 // Setting bounds and definitions
 // Vario
 
@@ -52,12 +46,11 @@ typedef uint8_t SettingLogFormat;
 #define DEF_ALT_SYNC_GPS 0  // lock altimeter to GPS alt (to avoid local pressure setting issues)
 
 // Default GPS & Track Log Settings
-#define DEF_DISTANCE_FLOWN 0           // 0 = xc distance, 1 = path distance
-#define DEF_GPS_SETTING 1              // 0 = GPS off, 1 = GPS on, 2 = power save every N sec, etc
-#define DEF_TRACK_SAVE 1               // save track log?
-#define DEF_AUTO_START 1               // 1 = ENABLE, 0 = DISABLE
-#define DEF_AUTO_STOP 1                // 1 = ENABLE, 0 = DISABLE
-#define DEF_LOG_FORMAT LOG_FORMAT_IGC  // IGC or KML
+#define DEF_DISTANCE_FLOWN 0  // 0 = xc distance, 1 = path distance
+#define DEF_GPS_SETTING 1     // 0 = GPS off, 1 = GPS on, 2 = power save every N sec, etc
+#define DEF_TRACK_SAVE 1      // save track log?
+#define DEF_AUTO_START 1      // 1 = ENABLE, 0 = DISABLE
+#define DEF_AUTO_STOP 1       // 1 = ENABLE, 0 = DISABLE
 
 // Default System Settings
 
@@ -71,6 +64,8 @@ typedef uint8_t SettingLogFormat;
 #define DEF_BLUETOOTH_ON 0    // default bluetooth off
 #define DEF_SHOW_WARNING 1    // default show warning on startup
 #define DEF_PRODUCTIONTEST 0  // default that we have not yet run the production self test
+#define DEF_COMMISSIONING_PENDING 1
+#define DEF_COMMISSIONING_COMPLETE 0
 
 // Developer Settings
 #define DEF_DEV_MODE 0                // default hide developer-mode features
@@ -143,7 +138,6 @@ setting | samples | time avg
   bool log_saveTrack;
   bool log_autoStart;
   bool log_autoStop;
-  SettingLogFormat log_format;
 
   // System Settings
   int16_t system_timeZone;
@@ -157,6 +151,8 @@ setting | samples | time avg
   // Production Info
   String macAddress;
   bool productionTest;  // flag that we've run the initial selfTest during production assembly
+  bool commissioningPending;
+  bool commissioningComplete;
 
   // developer options
   bool dev_mode;
@@ -207,6 +203,9 @@ setting | samples | time avg
   String getMacAddress(void);
   void setProductionTestForceFormatSdCard(bool forceFormat);
   bool consumeProductionTestForceFormatSdCard(void);
+  void beginCommissioning(void);
+  void markCommissioningComplete(void);
+  bool diagnosticNetworkScanAllowed(void) const;
 
   // adjust-settings functions
   void adjustContrast(Button dir);

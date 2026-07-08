@@ -8,6 +8,7 @@
 #include "comms/ble.h"
 #include "comms/factory_discovery.h"
 #include "diagnostics/diagnostic_network/diagnostic_network.h"
+#include "diagnostics/heap_monitor.h"
 #include "diagnostics/self_test/selfTest.h"
 #include "hardware/Leaf_SPI.h"
 #include "hardware/aht20.h"
@@ -44,7 +45,7 @@
 
 // Bit of a hack for now as we don't have a good way to pass big chunks
 // of data around, so, we do it on the stack.  Default is 8KB
-SET_LOOP_TASK_STACK_SIZE(16 * 1024);  // 16KB
+SET_LOOP_TASK_STACK_SIZE(12 * 1024);  // 12KB
 
 #define DEBUG_MAIN_LOOP false
 
@@ -67,6 +68,30 @@ namespace {
     tChargeTimerBlock.store(static_cast<uint32_t>(micros()), std::memory_order_release);
     nextChargeTimerBlock.store(true, std::memory_order_release);
   }
+
+  constexpr uint32_t MEMORY_HEARTBEAT_MS = 5000;
+  uint32_t lastMemoryHeartbeatMs = 0;
+  bool loggedFirstBaroTask = false;
+  bool loggedFirstButtonsTask = false;
+  bool loggedFirstSpeakerTask = false;
+  bool loggedFirstWindTask = false;
+  bool loggedFirstImuTask = false;
+  bool loggedFirstGpsTask = false;
+  bool loggedFirstPowerTask = false;
+  bool loggedFirstLogTask = false;
+  bool loggedFirstDisplayTask = false;
+  bool loggedFirstDisplayAfterTask = false;
+  bool loggedFirstTempRhTask = false;
+  bool loggedFirstSdCardTask = false;
+  bool loggedFirstSelfTestTask = false;
+  bool loggedFirstDiagnosticNetwork = false;
+  bool loggedFirstFactoryDiscovery = false;
+
+  void checkpointOnce(bool& logged, const char* event) {
+    if (logged) return;
+    logged = true;
+    heap_monitor::checkpoint(event);
+  }
 }  // namespace
 
 /////////////////////////////////////////////////
@@ -88,9 +113,12 @@ void TaskManager::init() {
   vTaskPrioritySet(NULL, 10);
 
   // turn on and handle all device initialization
+  heap_monitor::checkpoint("taskman-power-start");
   power.bootUp();
+  heap_monitor::checkpoint("taskman-power-end");
 
   if (!timerISRsSetup.exchange(false, std::memory_order_acq_rel)) {
+    heap_monitor::checkpoint("taskman-timers-start");
     // Start Main System Timer for Interrupt Events (this will tell Main Loop to set tasks every
     // interrupt cycle)
     taskTimer_ = timerBegin(TASK_TIMER_FREQ);
@@ -106,6 +134,7 @@ void TaskManager::init() {
     timerAttachInterrupt(chargeTimer_, &onChargeTimer);
     // auto reload timer ever time we've counted a sample length
     timerAlarm(chargeTimer_, CHARGE_TIMER_PERIOD_MS, true, 0);
+    heap_monitor::checkpoint("taskman-timers-end");
   } else {
     fatalError("Attempted to set up singleton task timers when they were already set up");
   }
@@ -140,6 +169,11 @@ void TaskManager::update() {
     webserver_setup();
     webserver_loop();
     factoryDiscovery.update();
+  }
+
+  if (millis() - lastMemoryHeartbeatMs >= MEMORY_HEARTBEAT_MS) {
+    lastMemoryHeartbeatMs = millis();
+    heap_monitor::checkpoint("main-heartbeat");
   }
 
   const auto& info = power.info();
@@ -332,57 +366,73 @@ void TaskManager::doNecessaryTasks(void) {
   // when we read ADC, the MS5611 won't be ready.
   if (performTask.baro) {
     ms5611.update();
+    checkpointOnce(loggedFirstBaroTask, "task-baro-first");
     performTask.baro = false;
   }
   if (performTask.buttons) {
     buttons.update();
+    checkpointOnce(loggedFirstButtonsTask, "task-buttons-first");
     performTask.buttons = false;
   }
   if (performTask.speakerTimer) {
     speaker.update();
+    checkpointOnce(loggedFirstSpeakerTask, "task-speaker-first");
     performTask.speakerTimer = false;
   }
   if (performTask.estimateWind) {
     windEstimator.estimateWind();
+    checkpointOnce(loggedFirstWindTask, "task-wind-first");
     performTask.estimateWind = false;
   }
   if (performTask.imu) {
     ICM20948::getInstance().update();
+    checkpointOnce(loggedFirstImuTask, "task-imu-first");
     performTask.imu = false;
   }
   if (performTask.gps) {
     gps.update();
+    checkpointOnce(loggedFirstGpsTask, "task-gps-first");
     performTask.gps = false;
   }
   if (performTask.power) {
     power.update();
+    checkpointOnce(loggedFirstPowerTask, "task-power-first");
     performTask.power = false;
   }
   if (performTask.log) {
     log_update();
+    checkpointOnce(loggedFirstLogTask, "task-log-first");
     performTask.log = false;
   }
   if (performTask.display) {
+    checkpointOnce(loggedFirstDisplayTask, "task-display-before");
     display.update();
+    checkpointOnce(loggedFirstDisplayAfterTask, "task-display-after");
     if (!restoredNavAfterFirstDisplayUpdate_) {
       restoredNavAfterFirstDisplayUpdate_ = true;
       if (sdcard.isMounted()) {
+        heap_monitor::checkpoint("task-nav-restore-start");
         navigator.loadPersistedState(false);
+        heap_monitor::checkpoint("task-nav-restore-state");
         user_waypoints::loadIntoNavigator();
+        heap_monitor::checkpoint("task-nav-restore-end");
       }
     }
     performTask.display = false;
   }
   if (performTask.tempRH) {
     aht20.update();
+    checkpointOnce(loggedFirstTempRhTask, "task-temp-rh-first");
     performTask.tempRH = false;
   }
   if (performTask.sdCard) {
     sdcard.update();
+    checkpointOnce(loggedFirstSdCardTask, "task-sdcard-first");
     performTask.sdCard = false;
   }
   if (performTask.selfTest) {
     selfTest.update();
+    checkpointOnce(loggedFirstSelfTestTask, "task-self-test-first");
     performTask.selfTest = false;
   }
 #ifdef MEMORY_PROFILING
@@ -393,7 +443,9 @@ void TaskManager::doNecessaryTasks(void) {
 #endif
 
   diagnostic_network.update();
+  checkpointOnce(loggedFirstDiagnosticNetwork, "task-diag-net-first");
   factoryDiscovery.update();
+  checkpointOnce(loggedFirstFactoryDiscovery, "task-factory-disc-first");
 
   if (performedNecessaryTasks && DEBUG_MAIN_LOOP) {
     performedNecessaryTasks = false;

@@ -14,7 +14,6 @@
 
 enum log_menu_items {
   cursor_log_back,
-  cursor_log_format,
   cursor_log_saveLog,
   cursor_log_autoStart,
   cursor_log_autoStop,
@@ -59,11 +58,9 @@ void LogMenuPage::drawLogMenu() {
     menu_ui::drawTitle("Logging", menu_ui::GLYPH_LOGGING);
 
     // Menu Items
-    uint8_t start_y = 29;
-    uint8_t y_spacing = 16;
     uint8_t setting_name_x = 2;
-    uint8_t setting_choice_x = 70;
-    uint8_t menu_items_y[] = {190, 45, 60, 75, 90};
+    uint8_t setting_choice_x = 82;
+    uint8_t menu_items_y[] = {190, 45, 60, 75};
 
     // then draw all the menu items
     for (int i = 0; i <= cursor_max; i++) {
@@ -72,14 +69,6 @@ void LogMenuPage::drawLogMenu() {
       menu_ui::drawLabel(setting_name_x, menu_items_y[i], labels[i]);
       u8g2.setCursor(setting_choice_x, menu_items_y[i]);
       switch (i) {
-        case cursor_log_format:
-          if (settings.log_format == LOG_FORMAT_KML)
-            u8g2.print("KML");
-          else if (settings.log_format == LOG_FORMAT_IGC)
-            u8g2.print("IGC");
-          else
-            u8g2.print("_?_");
-          break;
         case cursor_log_saveLog:
           if (settings.log_saveTrack)
             menu_ui::printGlyph(menu_ui::ICON_ON);
@@ -109,26 +98,6 @@ void LogMenuPage::drawLogMenu() {
 
 void LogMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) {
   switch (cursor_position) {
-    case cursor_log_format: {
-      if (state != ButtonEvent::CLICKED) {
-        return;
-      }
-      auto new_val = (int8_t)settings.log_format;
-      if (dir == Button::RIGHT) {
-        new_val++;
-      } else if (dir == Button::LEFT) {
-        new_val--;
-      }
-      if (new_val > SETTING_LOG_FORMAT_ENTRIES - 1) {
-        new_val = 0;
-      }
-      if (new_val < 0) {
-        new_val = SETTING_LOG_FORMAT_ENTRIES - 1;
-      }
-
-      settings.log_format = (SettingLogFormat)new_val;
-      break;
-    }
     case cursor_log_saveLog: {
       if (state == ButtonEvent::CLICKED) settings.toggleBoolOnOff(&settings.log_saveTrack);
       break;

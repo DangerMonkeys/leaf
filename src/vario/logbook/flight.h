@@ -19,7 +19,7 @@ class Flight {
   String trackLogPath() const;
 
  protected:
-  // eg. igc, kml
+  // eg. igc
   virtual const String fileNameSuffix() const = 0;
 
   // The desired filename to log.  In the instance of there being two
