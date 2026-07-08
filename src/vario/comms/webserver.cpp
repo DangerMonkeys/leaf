@@ -6,6 +6,7 @@
 #include <WebServer.h>
 #include <WiFi.h>
 #include <ctype.h>
+#include <esp_heap_caps.h>
 #include <math.h>
 #include "comms/ble.h"
 #include "comms/factory_discovery.h"
@@ -85,8 +86,10 @@ namespace {
   static constexpr const char* NAV_UPLOAD_TEMP_FILE = "/waypoints/upload.tmp";
   static constexpr const char* DIAGNOSTICS_DIR = "/diagnostics";
   static constexpr const char* USER_APP_DIAGNOSTICS_FILE = "/diagnostics/webapp_requests.csv";
+  static constexpr const char* WEB_REQUEST_DIAGNOSTICS_FILE = "/diagnostics/web_requests.csv";
   static constexpr const char* WIFI_SETUP_DIAGNOSTICS_FILE = "/diagnostics/wifi_setup.csv";
   static constexpr size_t WIFI_SETUP_NETWORKS_JSON_RESERVE = 896;
+  static constexpr uint32_t WEB_REQUEST_SLOW_MS = 1000;
 
   SelfTestMode last_self_test_mode = SelfTestMode::None;
   bool interactive_self_test_pending = false;
@@ -100,6 +103,7 @@ namespace {
   String nav_upload_saved_name = "";
   String nav_upload_error = "";
   size_t nav_upload_bytes = 0;
+  uint32_t web_request_sequence = 0;
 
   bool diagnosticsEnabled() { return settings.dev_mode; }
 
@@ -156,6 +160,79 @@ namespace {
       file.print(value[i]);
     }
     file.print('"');
+  }
+
+  const char* httpMethodName(HTTPMethod method) {
+    switch (method) {
+      case HTTP_GET:
+        return "GET";
+      case HTTP_POST:
+        return "POST";
+      case HTTP_DELETE:
+        return "DELETE";
+      case HTTP_PUT:
+        return "PUT";
+      case HTTP_PATCH:
+        return "PATCH";
+      case HTTP_OPTIONS:
+        return "OPTIONS";
+      default:
+        return "OTHER";
+    }
+  }
+
+  void appendWebRequestDiagnostics(const char* event, uint32_t sequence, const char* route,
+                                   uint32_t startedMs, uint32_t durationMs) {
+    if (!diagnosticsEnabled()) return;
+    if (!SD_MMC.exists(DIAGNOSTICS_DIR)) SD_MMC.mkdir(DIAGNOSTICS_DIR);
+
+    const bool existed = SD_MMC.exists(WEB_REQUEST_DIAGNOSTICS_FILE);
+    File file = SD_MMC.open(WEB_REQUEST_DIAGNOSTICS_FILE, "a", true);
+    if (!file) return;
+
+    if (!existed || file.size() == 0) {
+      file.println(
+          "millis,event,sequence,route,method,uri,duration_ms,started_ms,free_heap,"
+          "min_free_heap,largest_free_block,max_alloc_heap,wifi_status,wifi_mode,rssi,"
+          "ap_stations,using_leaf_wifi,provisioning,current_task");
+    }
+
+    file.printf("%lu,", static_cast<unsigned long>(millis()));
+    printCsvString(file, event ? String(event) : String(""));
+    file.printf(",%lu,", static_cast<unsigned long>(sequence));
+    printCsvString(file, route ? String(route) : String(""));
+    file.print(',');
+    printCsvString(file, httpMethodName(user_server.method()));
+    file.print(',');
+    printCsvString(file, user_server.uri());
+    file.printf(",%lu,%lu,%lu,%lu,%lu,%lu,%d,%d,%d,%u,%u,%u,",
+                static_cast<unsigned long>(durationMs), static_cast<unsigned long>(startedMs),
+                static_cast<unsigned long>(ESP.getFreeHeap()),
+                static_cast<unsigned long>(esp_get_minimum_free_heap_size()),
+                static_cast<unsigned long>(heap_caps_get_largest_free_block(MALLOC_CAP_8BIT)),
+                static_cast<unsigned long>(ESP.getMaxAllocHeap()), static_cast<int>(WiFi.status()),
+                static_cast<int>(WiFi.getMode()), WiFi.RSSI(),
+                static_cast<unsigned int>(WiFi.softAPgetStationNum()),
+                user_app_using_leaf_wifi ? 1 : 0, user_app_provisioning ? 1 : 0);
+    printCsvString(file, pcTaskGetName(NULL));
+    file.println();
+    file.close();
+  }
+
+  template <typename Handler>
+  void handleUserRequest(const char* route, Handler handler) {
+    if (!diagnosticsEnabled()) {
+      handler();
+      return;
+    }
+
+    const uint32_t sequence = ++web_request_sequence;
+    const uint32_t startedMs = millis();
+    appendWebRequestDiagnostics("start", sequence, route, startedMs, 0);
+    handler();
+    const uint32_t durationMs = millis() - startedMs;
+    appendWebRequestDiagnostics(durationMs >= WEB_REQUEST_SLOW_MS ? "slow" : "end", sequence, route,
+                                startedMs, durationMs);
   }
 
   void appendWifiSetupDiagnostics(const char* event, bool force = false) {
@@ -2096,77 +2173,135 @@ leafLogButtons();routeButtons();routeEditButtons();loadStatus();loadProfiles();l
 
     if (!user_server_routes_configured) {
       user_server.on("/", HTTP_GET, []() {
-        if (diagnosticsEnabled()) user_app_route_root_count++;
-        sendRedirect(user_server, user_app_provisioning ? "/wifi" : "/app");
+        handleUserRequest("GET /", []() {
+          if (diagnosticsEnabled()) user_app_route_root_count++;
+          sendRedirect(user_server, user_app_provisioning ? "/wifi" : "/app");
+        });
       });
       user_server.on("/app", HTTP_GET, []() {
-        if (diagnosticsEnabled()) user_app_route_app_count++;
-        sendUserAppShell(user_server);
+        handleUserRequest("GET /app", []() {
+          if (diagnosticsEnabled()) user_app_route_app_count++;
+          sendUserAppShell(user_server);
+        });
       });
-      user_server.on("/wifi", HTTP_GET, []() { sendWifiSetupPage(user_server); });
-      user_server.on("/app/wifi", HTTP_GET, []() { sendWifiSetupPage(user_server); });
+      user_server.on("/wifi", HTTP_GET, []() {
+        handleUserRequest("GET /wifi", []() { sendWifiSetupPage(user_server); });
+      });
+      user_server.on("/app/wifi", HTTP_GET, []() {
+        handleUserRequest("GET /app/wifi", []() { sendWifiSetupPage(user_server); });
+      });
       user_server.on("/api/user/status", HTTP_GET, []() {
-        if (diagnosticsEnabled()) user_app_route_status_count++;
-        sendUserStatus(user_server);
+        handleUserRequest("GET /api/user/status", []() {
+          if (diagnosticsEnabled()) user_app_route_status_count++;
+          sendUserStatus(user_server);
+        });
       });
       user_server.on("/api/profiles", HTTP_GET, []() {
-        if (diagnosticsEnabled()) user_app_route_profiles_get_count++;
-        sendProfiles(user_server);
+        handleUserRequest("GET /api/profiles", []() {
+          if (diagnosticsEnabled()) user_app_route_profiles_get_count++;
+          sendProfiles(user_server);
+        });
       });
       user_server.on("/api/profiles", HTTP_PUT, []() {
-        if (diagnosticsEnabled()) user_app_route_profiles_put_count++;
-        saveProfiles(user_server);
+        handleUserRequest("PUT /api/profiles", []() {
+          if (diagnosticsEnabled()) user_app_route_profiles_put_count++;
+          saveProfiles(user_server);
+        });
       });
       user_server.on("/api/routes/import", HTTP_POST, []() {
-        if (diagnosticsEnabled()) user_app_route_routes_import_count++;
-        importRoute(user_server);
+        handleUserRequest("POST /api/routes/import", []() {
+          if (diagnosticsEnabled()) user_app_route_routes_import_count++;
+          importRoute(user_server);
+        });
       });
-      user_server.on("/api/routes/save", HTTP_POST, []() { saveEditedRoute(user_server); });
-      user_server.on("/api/nav-data", HTTP_GET, []() { sendNavData(user_server); });
-      user_server.on("/api/nav/activate-point", HTTP_POST, []() { activateNavPoint(user_server); });
-      user_server.on("/api/user-waypoints", HTTP_GET, []() { sendUserWaypoints(user_server); });
-      user_server.on("/api/user-waypoints", HTTP_PUT, []() { saveUserWaypoints(user_server); });
-      user_server.on("/api/user-waypoints", HTTP_DELETE, []() { deleteUserWaypoint(user_server); });
-      user_server.on("/api/waypoints/files", HTTP_GET, []() { sendWaypointFileList(user_server); });
-      user_server.on("/api/waypoints/activate", HTTP_POST,
-                     []() { activateWaypointFile(user_server); });
+      user_server.on("/api/routes/save", HTTP_POST, []() {
+        handleUserRequest("POST /api/routes/save", []() { saveEditedRoute(user_server); });
+      });
+      user_server.on("/api/nav-data", HTTP_GET, []() {
+        handleUserRequest("GET /api/nav-data", []() { sendNavData(user_server); });
+      });
+      user_server.on("/api/nav/activate-point", HTTP_POST, []() {
+        handleUserRequest("POST /api/nav/activate-point", []() { activateNavPoint(user_server); });
+      });
+      user_server.on("/api/user-waypoints", HTTP_GET, []() {
+        handleUserRequest("GET /api/user-waypoints", []() { sendUserWaypoints(user_server); });
+      });
+      user_server.on("/api/user-waypoints", HTTP_PUT, []() {
+        handleUserRequest("PUT /api/user-waypoints", []() { saveUserWaypoints(user_server); });
+      });
+      user_server.on("/api/user-waypoints", HTTP_DELETE, []() {
+        handleUserRequest("DELETE /api/user-waypoints", []() { deleteUserWaypoint(user_server); });
+      });
+      user_server.on("/api/waypoints/files", HTTP_GET, []() {
+        handleUserRequest("GET /api/waypoints/files", []() { sendWaypointFileList(user_server); });
+      });
+      user_server.on("/api/waypoints/activate", HTTP_POST, []() {
+        handleUserRequest("POST /api/waypoints/activate",
+                          []() { activateWaypointFile(user_server); });
+      });
       user_server.on(
           "/api/waypoints/upload", HTTP_POST,
           []() {
-            if (diagnosticsEnabled()) user_app_route_waypoints_upload_count++;
-            finishWaypointUpload(user_server);
+            handleUserRequest("POST /api/waypoints/upload", []() {
+              if (diagnosticsEnabled()) user_app_route_waypoints_upload_count++;
+              finishWaypointUpload(user_server);
+            });
           },
           []() { receiveWaypointUpload(user_server); });
       user_server.on("/api/logbook", HTTP_GET, []() {
-        if (diagnosticsEnabled()) user_app_route_logbook_count++;
-        heap_monitor::checkpoint("logbook-summary");
-        sendLogbookSummary(user_server);
+        handleUserRequest("GET /api/logbook", []() {
+          if (diagnosticsEnabled()) user_app_route_logbook_count++;
+          heap_monitor::checkpoint("logbook-summary");
+          sendLogbookSummary(user_server);
+        });
       });
       user_server.on("/api/logbook/entry", HTTP_GET, []() {
-        if (diagnosticsEnabled()) user_app_route_logbook_entry_count++;
-        sendLogbookEntry(user_server);
+        handleUserRequest("GET /api/logbook/entry", []() {
+          if (diagnosticsEnabled()) user_app_route_logbook_entry_count++;
+          sendLogbookEntry(user_server);
+        });
       });
       user_server.on("/api/logbook/entry", HTTP_DELETE, []() {
-        if (diagnosticsEnabled()) user_app_route_logbook_delete_count++;
-        deleteLogbookEntry(user_server);
+        handleUserRequest("DELETE /api/logbook/entry", []() {
+          if (diagnosticsEnabled()) user_app_route_logbook_delete_count++;
+          deleteLogbookEntry(user_server);
+        });
       });
-      user_server.on("/api/wifi/status", HTTP_GET,
-                     []() { user_server.send(200, "application/json", wifiStatusJson()); });
-      user_server.on("/api/wifi/networks", HTTP_GET, []() { sendWifiNetworks(user_server); });
-      user_server.on("/api/wifi/connect", HTTP_POST,
-                     []() { connectToWifiFromRequest(user_server); });
-      user_server.on("/generate_204", HTTP_GET, []() { sendNoCaptivePortalResponse(user_server); });
-      user_server.on("/gen_204", HTTP_GET, []() { sendNoCaptivePortalResponse(user_server); });
-      user_server.on("/hotspot-detect.html", HTTP_GET,
-                     []() { sendNoCaptivePortalResponse(user_server, "Success"); });
-      user_server.on("/library/test/success.html", HTTP_GET,
-                     []() { sendNoCaptivePortalResponse(user_server, "Success"); });
-      user_server.on("/ncsi.txt", HTTP_GET,
-                     []() { sendNoCaptivePortalResponse(user_server, "Microsoft NCSI"); });
+      user_server.on("/api/wifi/status", HTTP_GET, []() {
+        handleUserRequest("GET /api/wifi/status",
+                          []() { user_server.send(200, "application/json", wifiStatusJson()); });
+      });
+      user_server.on("/api/wifi/networks", HTTP_GET, []() {
+        handleUserRequest("GET /api/wifi/networks", []() { sendWifiNetworks(user_server); });
+      });
+      user_server.on("/api/wifi/connect", HTTP_POST, []() {
+        handleUserRequest("POST /api/wifi/connect",
+                          []() { connectToWifiFromRequest(user_server); });
+      });
+      user_server.on("/generate_204", HTTP_GET, []() {
+        handleUserRequest("GET /generate_204", []() { sendNoCaptivePortalResponse(user_server); });
+      });
+      user_server.on("/gen_204", HTTP_GET, []() {
+        handleUserRequest("GET /gen_204", []() { sendNoCaptivePortalResponse(user_server); });
+      });
+      user_server.on("/hotspot-detect.html", HTTP_GET, []() {
+        handleUserRequest("GET /hotspot-detect.html",
+                          []() { sendNoCaptivePortalResponse(user_server, "Success"); });
+      });
+      user_server.on("/library/test/success.html", HTTP_GET, []() {
+        handleUserRequest("GET /library/test/success.html",
+                          []() { sendNoCaptivePortalResponse(user_server, "Success"); });
+      });
+      user_server.on("/ncsi.txt", HTTP_GET, []() {
+        handleUserRequest("GET /ncsi.txt",
+                          []() { sendNoCaptivePortalResponse(user_server, "Microsoft NCSI"); });
+      });
       user_server.onNotFound([]() {
-        if (diagnosticsEnabled()) user_app_route_not_found_count++;
-        if (handleCaptivePortalRequest(user_server)) return;
-        user_server.send(404, "text/plain", "Not found");
+        handleUserRequest("NOT_FOUND", []() {
+          if (diagnosticsEnabled()) user_app_route_not_found_count++;
+          if (handleCaptivePortalRequest(user_server)) return;
+          user_server.send(404, "text/plain", "Not found");
+        });
       });
       user_server_routes_configured = true;
     }
