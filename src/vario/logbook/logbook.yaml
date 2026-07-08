@@ -253,6 +253,7 @@ components:
             - igc
             - kml
             - null
+          description: New firmware writes IGC tracklogs; older logbook entries may reference legacy KML files.
         path:
           type: string
           nullable: true

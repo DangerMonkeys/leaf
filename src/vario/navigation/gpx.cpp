@@ -10,7 +10,6 @@
 #include <ArduinoJson.h>
 #include <FS.h>
 #include <SD_MMC.h>
-#include <ctype.h>
 
 #include "diagnostics/heap_monitor.h"
 #include "instruments/baro.h"
@@ -28,7 +27,6 @@ Navigator navigator;
 
 namespace {
   constexpr size_t MAX_NAV_LINE_LENGTH = 256;
-  constexpr size_t MAX_KML_PARSE_CHARS = 262144UL;
   constexpr const char* NAV_STATE_SCHEMA = "leaf.nav_state";
   constexpr const char* LEGACY_ACTIVE_ROUTE_SCHEMA = "leaf.active_route";
 
@@ -334,103 +332,6 @@ namespace {
     return parsedAny;
   }
 
-  bool parseKmlCoordinateTuple(const char* tuple, double& lat, double& lon, float& ele) {
-    if (tuple == nullptr) return false;
-    char buffer[96];
-    strncpy(buffer, tuple, sizeof(buffer));
-    buffer[sizeof(buffer) - 1] = '\0';
-    char* lonText = trimInPlace(buffer);
-    char* latText = strchr(lonText, ',');
-    if (latText == nullptr) return false;
-    *latText++ = '\0';
-    char* eleText = strchr(latText, ',');
-    if (eleText != nullptr) *eleText++ = '\0';
-
-    lon = atof(lonText);
-    lat = atof(latText);
-    ele = eleText == nullptr ? 0 : atof(eleText);
-    return validCoordinate(lat, lon);
-  }
-
-  bool parseKmlFile(fs::FS& fs, const String& fileName, Navigator* result) {
-    File file = fs.open(fileName, FILE_READ);
-    if (!file) return false;
-    if (file.size() > MAX_KML_PARSE_CHARS) {
-      file.close();
-      return false;
-    }
-
-    String content;
-    content.reserve(file.size() + 1);
-    while (file.available() > 0) {
-      content += static_cast<char>(file.read());
-    }
-    file.close();
-
-    bool parsedAny = false;
-    int searchFrom = 0;
-    while (true) {
-      const int placemarkStart = content.indexOf("<Placemark", searchFrom);
-      if (placemarkStart < 0) break;
-      const int placemarkEnd = content.indexOf("</Placemark>", placemarkStart);
-      if (placemarkEnd < 0) break;
-
-      const String placemark = content.substring(placemarkStart, placemarkEnd);
-      String name = "KML Point";
-      const int nameStart = placemark.indexOf("<name>");
-      const int nameEnd = nameStart >= 0 ? placemark.indexOf("</name>", nameStart) : -1;
-      if (nameStart >= 0 && nameEnd > nameStart) {
-        name = placemark.substring(nameStart + 6, nameEnd);
-        name.trim();
-      }
-
-      const int coordinatesStart = placemark.indexOf("<coordinates>");
-      const int coordinatesEnd =
-          coordinatesStart >= 0 ? placemark.indexOf("</coordinates>", coordinatesStart) : -1;
-      if (coordinatesStart >= 0 && coordinatesEnd > coordinatesStart) {
-        String coordinates = placemark.substring(coordinatesStart + 13, coordinatesEnd);
-        coordinates.trim();
-        const bool isRoute = placemark.indexOf("<LineString") >= 0;
-
-        if (isRoute && result->totalRoutes < maxRoutes) {
-          Route* route = &result->routes[++result->totalRoutes];
-          route->setName(name.c_str());
-          uint8_t routeIndex = 1;
-          int tupleStart = 0;
-          while (tupleStart < coordinates.length()) {
-            while (tupleStart < coordinates.length() && isspace(coordinates[tupleStart]))
-              tupleStart++;
-            int tupleEnd = tupleStart;
-            while (tupleEnd < coordinates.length() && !isspace(coordinates[tupleEnd])) tupleEnd++;
-            String tuple = coordinates.substring(tupleStart, tupleEnd);
-            double lat = 0;
-            double lon = 0;
-            float ele = 0;
-            char pointName[maxGpxNameLength + 1];
-            snprintf(pointName, sizeof(pointName), "%s %u", name.c_str(), routeIndex++);
-            if (parseKmlCoordinateTuple(tuple.c_str(), lat, lon, ele) &&
-                addOrFindRouteWaypoint(result, route, pointName, lat, lon, ele)) {
-              parsedAny = true;
-            }
-            tupleStart = tupleEnd + 1;
-          }
-          if (route->totalPoints == 0) result->totalRoutes--;
-        } else {
-          double lat = 0;
-          double lon = 0;
-          float ele = 0;
-          if (parseKmlCoordinateTuple(coordinates.c_str(), lat, lon, ele) &&
-              addWaypoint(result, name.c_str(), lat, lon, ele)) {
-            parsedAny = true;
-          }
-        }
-      }
-
-      searchFrom = placemarkEnd + 12;
-    }
-
-    return parsedAny;
-  }
 }  // namespace
 
 void Navigator::init() {
@@ -1079,9 +980,6 @@ bool nav_readFile(fs::FS& fs, String fileName) {
   } else if (ext == "wpt" || ext == "wyp") {
     heap_monitor::checkpoint("wpt-parse-start");
     success = parseWptFile(fs, fileName, &navigator);
-  } else if (ext == "kml") {
-    heap_monitor::checkpoint("kml-parse-start");
-    success = parseKmlFile(fs, fileName, &navigator);
   } else {
     Serial.print("Unsupported nav file type: ");
     Serial.println(fileName);

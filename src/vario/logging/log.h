@@ -40,8 +40,6 @@ void flightTimer_updateStrings(void);
 // If we've started, but am not yet logging, we'll flash this
 String flightTimer_getString();
 
-// Log Files
-String log_getKMLCoordinates(void);
 String log_createTrackFileName(void);
 
 void log_captureValues(void);

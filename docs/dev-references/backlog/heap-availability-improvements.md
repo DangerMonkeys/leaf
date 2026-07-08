@@ -40,13 +40,13 @@ Approximate order of attack:
    - Audit code that repeatedly appends to `String`, calls `reserve()`, or builds temporary JSON in request handlers and parsers.
    - Use fixed `char[]` buffers, bounded formatting, reusable module buffers, or streaming output where lifetimes are simple.
    - Prioritize paths visible in diagnostics: profiles, nav data, route save/import, logbook entry, OTA, and WiFi setup.
-   - Consider removing KML track logging now that IGC is the richer canonical flight record and Leaf Log can analyze uploaded IGC files; the direct always-on RAM saving is small, but it simplifies the logging surface and removes end-of-flight KML formatting churn.
+   - KML track logging has been removed; IGC is now the canonical flight track record for new flights.
 
 7. Audit ArduinoJson document sizing and lifetimes.
    - Identify large `JsonDocument` allocations in profile, waypoint, route, logbook, web app, and setup paths.
    - Replace full-document reads with streaming, filtered parsing, or narrower documents where possible.
    - Ensure documents are scoped tightly so their heap is released before response construction begins.
-   - KML waypoint loading currently reads the whole file into one heap-backed `String` before parsing; either remove KML waypoint import support along with KML logging or rewrite it as a streaming parser before treating KML as safe for low-heap web/app workflows.
+   - KML waypoint loading has been removed because it previously read the whole file into one heap-backed `String` before parsing.
 
 8. Move static data and templates out of RAM.
    - Keep constant web app assets, HTML/CSS/JS fragments, labels, lookup tables, and diagnostic strings in flash/PROGMEM where practical.
@@ -81,4 +81,4 @@ Useful evidence from the first heap lifecycle pass:
 - BLE setup consumed roughly 61 KB total, and `BLE::end()` recovered about 60 KB before OTA checks.
 - WiFi setup/connect drove the recorded minimum free heap as low as roughly 700 bytes.
 - Some nav/web responses ran with largest free blocks below 4 KB, which is enough to cause fragmentation-sensitive failures; one `nav-data` response took roughly 200 seconds and ended with only about 2.3 KB largest allocatable block.
-- After reboot, KML parsing and nav load showed much healthier heap, suggesting lifecycle cleanup and baseline reduction should have broad impact.
+- Earlier KML parsing and nav-load experiments helped isolate heap behavior; KML import has since been removed to avoid whole-file heap allocations.

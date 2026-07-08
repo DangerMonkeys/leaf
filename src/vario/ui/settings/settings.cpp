@@ -175,7 +175,6 @@ void Settings::loadDefaults() {
   log_saveTrack = DEF_TRACK_SAVE;
   log_autoStart = DEF_AUTO_START;
   log_autoStop = DEF_AUTO_STOP;
-  log_format = DEF_LOG_FORMAT;
 
   // System Settings
   system_timeZone = DEF_TIME_ZONE;
@@ -247,7 +246,6 @@ void Settings::retrieve() {
   log_saveTrack = leafPrefs.getBool("TRACK_SAVE");
   log_autoStart = leafPrefs.getBool("AUTO_START");
   log_autoStop = leafPrefs.getBool("AUTO_STOP");
-  log_format = leafPrefs.getUChar("LOG_FORMAT");
 
   // System Settings
   system_timeZone = leafPrefs.getShort("TIME_ZONE");
@@ -330,7 +328,6 @@ void Settings::save() {
   leafPrefs.putBool("TRACK_SAVE", log_saveTrack);
   leafPrefs.putBool("AUTO_START", log_autoStart);
   leafPrefs.putBool("AUTO_STOP", log_autoStop);
-  leafPrefs.putUChar("LOG_FORMAT", log_format);
   // System Settings
   leafPrefs.putShort("TIME_ZONE", system_timeZone);
   leafPrefs.putChar("VOLUME_SYSTEM", system_volume);
