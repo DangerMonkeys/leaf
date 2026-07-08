@@ -1,0 +1,5 @@
+millis,event,cycle,enabled,using_leaf_wifi,provisioning,connecting,ready,wifi_status,wifi_mode,ap_stations,local_ip,ap_ip,ssid,target_ssid,connect_error,connect_started_ms,connected_ms,connected_elapsed_ms,free_heap,max_alloc_heap
+353766,"enable-user-app-network",0,1,0,0,0,0,3,1,0,"10.0.0.211","0.0.0.0","SkyWagon","","",0,0,0,98004,32756
+398380,"disable-start",0,1,0,0,0,0,3,1,0,"10.0.0.211","0.0.0.0","SkyWagon","","",0,0,0,91500,32756
+398452,"portal-disabled",0,0,0,0,0,0,3,1,0,"10.0.0.211","0.0.0.0","SkyWagon","","",0,0,0,91832,32756
+398581,"services-resumed",0,0,0,0,0,0,3,1,0,"10.0.0.211","0.0.0.0","SkyWagon","","",0,0,0,36124,27636

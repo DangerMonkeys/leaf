@@ -1,0 +1,5 @@
+millis,event,cycle,attempt_index,saved_count,elapsed_ms,target_ssid,current_ssid,wifi_status,wifi_mode,rssi,local_ip,diagnostics_allowed,free_heap,max_alloc_heap,current_task
+351947,"attempt-start",1,0,0,0,"","",254,0,0,"0.0.0.0",0,101224,34804,"loopTask"
+351983,"attempt-network",1,0,1,7,"SkyWagon","",6,1,0,"0.0.0.0",0,47236,31732,"loopTask"
+352652,"attempt-connected",1,0,1,676,"SkyWagon","SkyWagon",3,1,-65,"10.0.0.211",0,43516,31732,"loopTask"
+400542,"disconnect",1,0,0,0,"","SkyWagon",3,1,-63,"10.0.0.211",0,36104,27636,"loopTask"

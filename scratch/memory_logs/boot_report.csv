@@ -1,0 +1,12 @@
+millis,section,key,value,detail
+163,reset,reason,1,poweron
+163,nav_size,sizeof_waypoint,32,bytes
+163,nav_size,sizeof_route_point,6,bytes
+166,nav_size,sizeof_route,30,bytes
+166,nav_size,sizeof_navigator,4864,bytes
+166,nav_size,waypoint_capacity,121,entries
+166,nav_size,route_point_capacity,41,entries
+166,nav_size,route_capacity,11,entries
+166,nav_size,waypoints_array_bytes,3872,bytes
+166,nav_size,route_points_array_bytes,246,bytes
+166,nav_size,routes_array_bytes,330,bytes

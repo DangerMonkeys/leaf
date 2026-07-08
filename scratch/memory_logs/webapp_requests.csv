@@ -1,0 +1,3 @@
+millis,event,enabled,using_leaf_wifi,user_server_started,debug_routes_configured,ap_stations,max_ap_stations,wifi_status,free_heap,max_alloc_heap,loop_count,handle_count,root,app,status,profiles_get,profiles_put,logbook,logbook_entry,logbook_delete,waypoints_upload,routes_import,not_found,ap_ip
+398408,disable-start,1,0,1,1,0,0,3,91496,32756,31635,31635,0,1,1,1,0,2,4,1,0,0,0,0.0.0.0
+398447,disabled,0,0,0,1,0,0,3,91828,32756,31635,31635,0,1,1,1,0,2,4,1,0,0,0,0.0.0.0
