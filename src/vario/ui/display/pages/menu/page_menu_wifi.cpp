@@ -425,13 +425,15 @@ void PageMenuSystemWifiSetup::shown() {
 void PageMenuSystemWifiSetup::closed(bool removed_from_Stack) {
   if (removed_from_Stack) {
     heap_monitor::checkpoint("wifi-setup-page-close");
-    webserver_disable_user_app();
-    heap_monitor::checkpoint("wifi-setup-page-disabled");
+    if (webserver_wifi_setup_active()) {
+      webserver_disable_user_app();
+      heap_monitor::checkpoint("wifi-setup-page-disabled");
+    }
   }
 }
 
 void PageMenuSystemWifiSetup::loop() {
-  if (WiFi.status() == WL_CONNECTED && !webserver_user_app_using_leaf_wifi()) {
+  if (WiFi.status() == WL_CONNECTED && !webserver_wifi_setup_active()) {
     pop_page();
     return;
   }

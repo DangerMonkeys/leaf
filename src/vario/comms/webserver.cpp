@@ -788,6 +788,44 @@ namespace {
     return "";
   }
 
+  bool validUserWaypointJson(JsonObjectConst point) {
+    const double lat = point["lat"] | NAN;
+    const double lon = point["lon"] | NAN;
+    return !isnan(lat) && !isnan(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
+  }
+
+  uint8_t mergeUserWaypointIntoNavigator(JsonObjectConst point) {
+    if (!validUserWaypointJson(point)) return 0;
+
+    Waypoint waypoint;
+    const char* sourceName = point["name"] | "";
+    while (*sourceName == ' ' || *sourceName == '\t') sourceName++;
+    char name[maxGpxNameLength + 1];
+    strncpy(name, *sourceName == '\0' ? "Saved Point" : sourceName, maxGpxNameLength);
+    name[maxGpxNameLength] = '\0';
+    char* end = name + strlen(name);
+    while (end > name && (end[-1] == ' ' || end[-1] == '\t')) *--end = '\0';
+    if (name[0] == '\0') {
+      strncpy(name, "Saved Point", maxGpxNameLength);
+      name[maxGpxNameLength] = '\0';
+    }
+    waypoint.setName(name);
+    waypoint.setLatitude(point["lat"] | 0.0);
+    waypoint.setLongitude(point["lon"] | 0.0);
+    waypoint.ele = point["alt_m"] | 0.0;
+
+    for (uint8_t i = 1; i <= navigator.totalWaypoints; i++) {
+      if (navigator.waypoints[i].latE7 == waypoint.latE7 &&
+          navigator.waypoints[i].lonE7 == waypoint.lonE7) {
+        navigator.waypoints[i] = waypoint;
+        return i;
+      }
+    }
+
+    if (!navigator.addWaypoint(waypoint)) return 0;
+    return navigator.totalWaypoints;
+  }
+
   void resetNavUploadState() {
     if (nav_upload_file) nav_upload_file.close();
     nav_upload_final_path = "";
@@ -1662,8 +1700,6 @@ namespace {
       return;
     }
 
-    user_waypoints::loadIntoNavigator();
-
     if (!sdcard.isMounted()) {
       target.send(404, "application/json",
                   "{\"points\":[],\"detail\":\"SD card is not mounted.\"}");
@@ -1706,19 +1742,8 @@ namespace {
     for (JsonObjectConst point : doc["points"].as<JsonArrayConst>()) {
       const double lat = point["lat"] | NAN;
       const double lon = point["lon"] | NAN;
-      if (isnan(lat) || isnan(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) continue;
-
-      Waypoint waypoint;
-      waypoint.setLatitude(lat);
-      waypoint.setLongitude(lon);
-      uint8_t navigatorIndex = 0;
-      for (uint8_t i = 1; i <= navigator.totalWaypoints; i++) {
-        if (navigator.waypoints[i].latE7 == waypoint.latE7 &&
-            navigator.waypoints[i].lonE7 == waypoint.lonE7) {
-          navigatorIndex = i;
-          break;
-        }
-      }
+      if (!validUserWaypointJson(point)) continue;
+      const uint8_t navigatorIndex = mergeUserWaypointIntoNavigator(point);
 
       if (!first) json.write(",");
       first = false;
@@ -1890,7 +1915,7 @@ leafLogButtons();routeButtons();routeEditButtons();loadStatus();loadProfiles();l
     }
 
     sendNoStoreHeaders(target);
-    static constexpr char WIFI_SETUP_PAGE[] =
+    static constexpr char WIFI_SETUP_PAGE[] PROGMEM =
         R"leafhtml(<!doctype html><html><head><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=Cache-Control content=no-store><title>Leaf WiFi</title><style>:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#202423;background:#363636;line-height:1.35;--leaf:#d8ff00;--ink:#202423;--panel:#565656;--sub:#4d4d4d}body{margin:0;background:#363636}header{background:var(--leaf);color:#0b0d0b;padding:11px 20px;text-align:center}main{max-width:640px;margin:auto;padding:18px}h1{font-family:Arial,sans-serif;font-size:38px;font-weight:500;letter-spacing:.12em;line-height:1;margin:0}.subbar{display:flex;align-items:center;justify-content:center;min-height:34px;color:white;margin:0 0 14px}.subbar h2{color:white;background:transparent;margin:0;padding:0;font-size:18px}section{background:var(--panel);border-radius:8px;margin:0 0 14px;padding:16px 14px}label{display:block;font-size:13px;font-weight:700;margin:10px 0 4px;color:white}input,select,button{box-sizing:border-box;width:100%;font:inherit;padding:11px;border:1px solid #b9c0b2;border-radius:7px;background:white;color:var(--ink)}input:focus,select:focus,button:focus{outline:2px solid var(--leaf);outline-offset:1px}button{background:var(--ink);color:white;font-weight:750;border-color:var(--ink);box-shadow:inset 0 -2px 0 rgba(0,0,0,.22)}button:disabled{background:#686868;border-color:#686868;color:#8a8a8a;opacity:1;box-shadow:none}.hero:not(:disabled){background:var(--leaf);border-color:var(--leaf);color:#0b0d0b}.status{min-height:20px;margin:0 0 12px;color:#e2e7dc}.network-row,.row{display:flex;gap:8px}.network-row select,.row input{flex:1}.refresh{flex:0 0 44px;width:44px;height:44px;padding:0;font-size:23px;line-height:1}.show{display:flex;align-items:center;gap:6px;width:auto;white-space:nowrap;color:white;font-weight:700}.show input{width:auto;accent-color:var(--leaf)}#n{margin-top:8px}#save{margin-top:16px}</style><script>async function init(){let s=document.getElementById('s'),l=document.getElementById('l'),n=document.getElementById('n'),p=document.getElementById('p'),w=document.getElementById('w'),f=document.getElementById('f'),r=document.getElementById('r'),save=document.getElementById('save');function chosen(){let o=l.options[l.selectedIndex];return o&&o.value&&o.value==n.value.trim()?o:null}function buttons(){let o=chosen(),need=o&&o.dataset.secure=='1';save.disabled=!n.value.trim()||(need&&!p.value)}l.onchange=()=>{if(l.value)n.value=l.value;buttons()};n.oninput=buttons;p.oninput=buttons;w.onchange=()=>p.type=w.checked?'text':'password';r.onclick=()=>nets(true);let params=new URLSearchParams(location.search),autoScan=params.has('scan'),returnToApp=params.get('return')=='app';async function nets(refresh){try{let d=await(await fetch('/api/wifi/networks'+(refresh?'?refresh=1':''))).json();if(d.scanning){s.textContent='Scanning for networks...';setTimeout(nets,1500);return}l.innerHTML='<option value="">Select network...</option>';d.networks.forEach(x=>{let o=document.createElement('option');o.value=x.ssid;o.dataset.secure=x.secure?'1':'0';o.textContent=x.ssid+' ('+x.rssi+' dBm)';l.appendChild(o)});s.textContent=d.networks.length?'Choose a network or type one manually.':'No networks found. Type the network name manually.';buttons()}catch(e){s.textContent='Unable to read network list. Type the network name manually.';buttons()}}async function poll(){try{let d=await(await fetch('/api/wifi/status')).json();if(d.connected){let appUrl=d.app_url||('http://'+d.ip_address+'/app');s.textContent=returnToApp?('Leaf is now on '+d.ssid+'. Connect to that network and open the Leaf app again using the QR code on the Leaf display.'):('Connected to '+d.ssid+'. Open '+appUrl);return}if(d.error){s.textContent='Unable to connect. Check password and try again.';return}s.textContent=d.target_ssid?'Trying to connect to '+d.target_ssid+'...':'Trying to connect...';setTimeout(poll,1500)}catch(e){s.textContent='Trying to connect...';setTimeout(poll,2000)}}f.onsubmit=async e=>{e.preventDefault();let ssid=n.value.trim();if(save.disabled)return;s.textContent='Saving credentials...';try{await fetch('/api/wifi/connect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ssid:ssid,password:p.value})});save.disabled=true;poll()}catch(x){s.textContent='Unable to save network details. Try again.';buttons()}};buttons();nets(autoScan)}</script></head><body onload=init()><header><h1>Leaf</h1></header><main><div class=subbar><h2>WiFi Setup</h2></div><section><p class=status id=s>Loading...</p><form id=f><label>Network</label><div class=network-row><select id=l><option value="">Select network...</option></select><button type=button id=r class=refresh title=Refresh aria-label=Refresh>&#x21bb;</button></div><input id=n autocomplete=off placeholder="Type network name"><label>Password</label><div class=row><input id=p type=password autocomplete=current-password><label class=show><input id=w type=checkbox>Show</label></div><button id=save class=hero disabled>Save and Connect</button></form></section></main></body></html>)leafhtml";
     target.send_P(200, "text/html", WIFI_SETUP_PAGE);
   }
@@ -2727,12 +2752,11 @@ void webserver_loop() {
       if (diagnosticsEnabled()) user_app_handle_count++;
       user_server.handleClient();
       if (user_app_provisioning) appendWifiSetupDiagnostics("loop");
-      if (webserver_wifi_setup_ready_for_network_app()) {
+      if (webserver_wifi_setup_ready_to_finish()) {
         appendWifiSetupDiagnostics("transition-start", true);
-        Serial.printf("Leaf WiFi setup connected to %s; switching Web App to network mode\n",
+        Serial.printf("Leaf WiFi setup connected to %s; closing setup portal\n",
                       WiFi.SSID().c_str());
         webserver_disable_user_app();
-        webserver_enable_user_app(false);
         appendWifiSetupDiagnostics("transition-finished", true);
         display.update();
       }
@@ -2834,14 +2858,18 @@ void webserver_disable_user_app() {
   user_app_using_leaf_wifi = false;
   heap_monitor::checkpoint("disabled");
   dumpUserAppCounters("disabled");
+  appendWifiSetupDiagnostics("portal-disabled", true);
   heap_monitor::dumpToSd();
   resumeServicesAfterUserApp();
-  appendWifiSetupDiagnostics("disable-finished", true);
+  heap_monitor::checkpoint("after-resume-services");
+  appendWifiSetupDiagnostics("services-resumed", true);
 }
 
 bool webserver_user_app_active() { return user_app_enabled; }
 
-bool webserver_wifi_setup_ready_for_network_app() {
+bool webserver_wifi_setup_active() { return user_app_enabled && user_app_provisioning; }
+
+bool webserver_wifi_setup_ready_to_finish() {
   if (!user_app_enabled || !user_app_provisioning) return false;
   if (!stationConnectionReady()) return false;
 
