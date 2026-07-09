@@ -19,6 +19,9 @@ from factory_interface.settings import load_settings, resolve_application_firmwa
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
+ERASE_NVS_BEFORE_FLASH = True
+NVS_PARTITION_OFFSET = "0x9000"
+NVS_PARTITION_SIZE = "0x5000"
 
 
 @dataclass
@@ -199,7 +202,7 @@ def find_boot_app0_path(firmware_path: Path) -> Path | None:
     return None
 
 
-def build_flash_firmware_command() -> tuple[list[str], Path]:
+def build_flash_firmware_commands() -> tuple[list[list[str]], Path]:
     settings = load_settings()
     if settings.esptool_path is None:
         raise FlashCommandError("esptool.py path is not configured.")
@@ -269,7 +272,23 @@ def build_flash_firmware_command() -> tuple[list[str], Path]:
     upload_flash_mode = platformio_upload_flash_mode(flash_mode)
     upload_flash_freq = normalize_frequency(flash_freq)
 
-    command = [
+    erase_nvs_command = [
+        sys.executable,
+        str(esptool_path),
+        "--chip",
+        "esp32s3",
+        "--baud",
+        str(upload_speed),
+        "--before",
+        "default_reset",
+        "--after",
+        "no_reset",
+        "erase_region",
+        NVS_PARTITION_OFFSET,
+        NVS_PARTITION_SIZE,
+    ]
+
+    write_flash_command = [
         sys.executable,
         str(esptool_path),
         "--chip",
@@ -296,14 +315,38 @@ def build_flash_firmware_command() -> tuple[list[str], Path]:
 
     boot_app0_path = find_boot_app0_path(non_application_path)
     if boot_app0_path is not None:
-        command.extend(["0xe000", str(boot_app0_path)])
+        write_flash_command.extend(["0xe000", str(boot_app0_path)])
 
-    command.extend([
+    write_flash_command.extend([
         "0x10000",
         str(firmware_file),
     ])
 
-    return command, non_application_path
+    commands = [write_flash_command]
+    if ERASE_NVS_BEFORE_FLASH:
+        commands.insert(0, erase_nvs_command)
+
+    return commands, non_application_path
+
+
+async def run_esptool_command(command: list[str], cwd: Path, task: FlashFirmwareTask) -> int:
+    task.output += f"$ {format_command(command)}\n"
+    process = await asyncio.create_subprocess_exec(
+        *command,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.STDOUT,
+        cwd=cwd,
+    )
+    task.process = process
+
+    if process.stdout is not None:
+        while True:
+            chunk = await process.stdout.read(1024)
+            if not chunk:
+                break
+            task.output += chunk.decode(errors="replace")
+
+    return await process.wait()
 
 
 async def run_flash_firmware() -> None:
@@ -316,24 +359,13 @@ async def run_flash_firmware() -> None:
 
         try:
             await start_preflash_monitor()
-            command, firmware_path = build_flash_firmware_command()
-            task.output += f"$ {format_command(command)}\n"
-            process = await asyncio.create_subprocess_exec(
-                *command,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.STDOUT,
-                cwd=firmware_path,
-            )
-            task.process = process
+            commands, firmware_path = build_flash_firmware_commands()
+            task.return_code = 0
+            for command in commands:
+                task.return_code = await run_esptool_command(command, firmware_path, task)
+                if task.return_code != 0:
+                    break
 
-            if process.stdout is not None:
-                while True:
-                    chunk = await process.stdout.read(1024)
-                    if not chunk:
-                        break
-                    task.output += chunk.decode(errors="replace")
-
-            task.return_code = await process.wait()
             if task.return_code == 0:
                 task.status = "success"
                 excluded_device_ids = (

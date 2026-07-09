@@ -83,34 +83,6 @@
     </div>
 
     <div class="checklist-item checklist-item-with-details">
-      <button class="task-icon task-icon-empty" id="reset-nonvolatile-task-icon" type="button" aria-label="Toggle nonvolatile memory reset details" disabled></button>
-      <span>Reset nonvolatile memory</span>
-      <p class="checklist-details" id="reset-nonvolatile-details" hidden></p>
-    </div>
-
-    <div class="checklist-item checklist-item-with-details">
-      <button class="task-icon task-icon-empty" id="reconnect-task-icon" type="button" aria-label="Toggle device reconnect details" disabled></button>
-      <span>Wait for device to reconnect</span>
-      <div class="checklist-details-group" id="reconnect-details-group" hidden>
-        <p class="checklist-details" id="reconnect-details"></p>
-        <form class="manual-ip-entry" id="reconnect-manual-ip-form" hidden>
-          <label for="reconnect-manual-ip">Device IP</label>
-          <div class="manual-ip-controls">
-            <input
-              id="reconnect-manual-ip"
-              type="text"
-              inputmode="decimal"
-              autocomplete="off"
-              placeholder="192.168.137.21"
-              value="{{ session.device.ip_address }}"
-            >
-            <button type="submit">Use IP</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <div class="checklist-item checklist-item-with-details">
       <button class="task-icon task-icon-empty" id="firmware-version-task-icon" type="button" aria-label="Toggle firmware version details" disabled></button>
       <span>Read firmware version</span>
       <p class="checklist-details" id="firmware-version-details" hidden></p>
@@ -163,9 +135,6 @@
   const discoveryDetailsGroup = document.querySelector("#discovery-details-group");
   const discoveryManualIpForm = document.querySelector("#discovery-manual-ip-form");
   const discoveryManualIp = document.querySelector("#discovery-manual-ip");
-  const reconnectDetailsGroup = document.querySelector("#reconnect-details-group");
-  const reconnectManualIpForm = document.querySelector("#reconnect-manual-ip-form");
-  const reconnectManualIp = document.querySelector("#reconnect-manual-ip");
   const pollUrl = `/api/setup/sessions/${encodeURIComponent(macAddress)}`;
   const discardUrl = `/api/setup/sessions/${encodeURIComponent(macAddress)}`;
   const manualDiscoveryUrl =
@@ -177,13 +146,6 @@
       icon: document.querySelector("#discovery-task-icon"),
       details: document.querySelector("#discovery-details"),
       detailsContainer: discoveryDetailsGroup,
-    },
-    reset_nonvolatile_memory: {
-      icon: document.querySelector("#reset-nonvolatile-task-icon"),
-      details: document.querySelector("#reset-nonvolatile-details"),
-      reconnectIcon: document.querySelector("#reconnect-task-icon"),
-      reconnectDetails: document.querySelector("#reconnect-details"),
-      reconnectDetailsContainer: reconnectDetailsGroup,
     },
     firmware_version: {
       icon: document.querySelector("#firmware-version-task-icon"),
@@ -284,25 +246,9 @@
     setDetails(control.details, task.details, task.status, control.detailsContainer || control.details);
   }
 
-  function applyResetState(task) {
-    const control = controls.reset_nonvolatile_memory;
-    const resetStatus = task.reset_status || task.status;
-    const reconnectStatus = task.reconnect_status || "idle";
-    setTaskIcon(control.icon, resetStatus);
-    setTaskIcon(control.reconnectIcon, reconnectStatus);
-    setDetails(control.details, task.reset_details || task.details, resetStatus);
-    setDetails(
-      control.reconnectDetails,
-      task.reconnect_details,
-      reconnectStatus,
-      control.reconnectDetailsContainer,
-    );
-  }
-
   function applySession(session) {
     summary.textContent = `${session.mac_address} - ${session.details}`;
     applyTaskState("network_discovery", session.tasks.network_discovery);
-    applyResetState(session.tasks.reset_nonvolatile_memory);
     applyTaskState("firmware_version", session.tasks.firmware_version);
     applyTaskState("fanet_id", session.tasks.fanet_id);
     applyTaskState("interactive_self_test", session.tasks.interactive_self_test);
@@ -377,16 +323,6 @@
     );
   });
 
-  reconnectManualIpForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    await submitManualIp(
-      reconnectManualIpForm,
-      reconnectManualIp,
-      controls.reset_nonvolatile_memory.reconnectDetails,
-      "Manual reconnect failed.",
-    );
-  });
-
   flashTaskIcon.addEventListener("click", () => {
     flashConsole.hidden = !flashConsole.hidden;
   });
@@ -402,19 +338,6 @@
         control.details.hidden = !control.details.hidden;
       }
     });
-    if (control.reconnectIcon) {
-      control.reconnectIcon.addEventListener("click", () => {
-        const reconnectDetailsContainer =
-          control.reconnectDetailsContainer || control.reconnectDetails;
-        reconnectDetailsContainer.hidden = false;
-        if (control.reconnectDetailsContainer) {
-          const form = control.reconnectDetailsContainer.querySelector(".manual-ip-entry");
-          form.hidden = !form.hidden;
-        } else {
-          control.reconnectDetails.hidden = !control.reconnectDetails.hidden;
-        }
-      });
-    }
   });
 
   refreshSession();

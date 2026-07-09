@@ -32,7 +32,6 @@ from factory_interface.network_discovery import (
     discovery_identifier_values,
     normalize_discovery_identifier,
     probe_ip_once,
-    probe_once,
 )
 from factory_interface.settings import (
     FactoryInterfaceSettings,
@@ -45,8 +44,6 @@ from factory_interface.settings import (
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 HTTP_TIMEOUT_SECONDS = DEFAULT_HTTP_TIMEOUT_SECONDS
-RECONNECT_GRACE_SECONDS = 2.0
-RECONNECT_POLL_SECONDS = 1.0
 SELF_TEST_POLL_SECONDS = 1.0
 SELF_TEST_HTTP_TIMEOUT_SECONDS = 20.0
 SELF_TEST_COMMUNICATION_GRACE_SECONDS = 180.0
@@ -84,14 +81,6 @@ class CommissioningSession:
                 "status": "success",
                 "details": f"IP address: {self.device.ip_address}:{self.device.port}",
                 "device": self.device.snapshot(),
-            },
-            "reset_nonvolatile_memory": {
-                "status": "idle",
-                "details": "",
-                "reset_status": "idle",
-                "reset_details": "",
-                "reconnect_status": "idle",
-                "reconnect_details": "",
             },
             "firmware_version": idle_task(),
             "fanet_id": idle_task(),
@@ -204,21 +193,6 @@ def response_matches_session(
     return any(session_key(candidate or "") == expected for candidate in candidates)
 
 
-async def rediscover_session_device(session: CommissioningSession) -> LeafDiscoveryResponse:
-    for response in await probe_once():
-        if response_matches_session(response, session):
-            session.device = response
-            session.tasks["network_discovery"] = {
-                "status": "success",
-                "details": f"IP address: {response.ip_address}:{response.port}",
-                "device": response.snapshot(),
-            }
-            session.touch()
-            return response
-
-    raise RuntimeError("Device was not found on the network.")
-
-
 async def manually_rediscover_session_device(
     session: CommissioningSession,
     ip_address: str,
@@ -239,11 +213,6 @@ async def manually_rediscover_session_device(
         "details": f"IP address: {response.ip_address}:{response.port}",
         "device": response.snapshot(),
     }
-    reset_task = session.tasks.get("reset_nonvolatile_memory", {})
-    if reset_task.get("reconnect_status") == "running":
-        reset_task["reconnect_details"] = (
-            f"Manual IP accepted: {response.ip_address}:{response.port}"
-        )
     session.touch()
     return response
 
@@ -258,24 +227,6 @@ async def read_session_mac_address(session: CommissioningSession) -> str:
             f"Device MAC address changed from {session.mac_address} to {mac_address}."
         )
     return mac_address
-
-
-async def wait_for_session_device(session: CommissioningSession) -> None:
-    while True:
-        try:
-            await read_session_mac_address(session)
-            return
-        except (OSError, URLError, TimeoutError, RuntimeError):
-            pass
-
-        try:
-            await rediscover_session_device(session)
-            await read_session_mac_address(session)
-            return
-        except (OSError, URLError, TimeoutError, RuntimeError):
-            pass
-
-        await asyncio.sleep(RECONNECT_POLL_SECONDS)
 
 
 def active_fanet_ids(except_mac_address: str | None = None) -> set[int]:
@@ -522,51 +473,6 @@ def persist_configuration_event(session: CommissioningSession) -> int:
 
 async def run_commissioning_session(session: CommissioningSession) -> None:
     try:
-        reset_task = session.tasks["reset_nonvolatile_memory"]
-        reset_task.update(
-            {
-                "status": "running",
-                "details": "Resetting nonvolatile memory...",
-                "reset_status": "running",
-                "reset_details": "Resetting nonvolatile memory...",
-                "reconnect_status": "idle",
-                "reconnect_details": "",
-            }
-        )
-        session.touch()
-        payload = await asyncio.to_thread(
-            post_json,
-            f"{device_base_url(session)}/settings/factory-reset",
-            {
-                "force_format_sd_card": session.preflight.get(
-                    "force_format_sd_card", False
-                )
-            },
-        )
-        if not payload.get("reset_requested", False):
-            raise RuntimeError("Device did not acknowledge the reset request.")
-
-        reset_task.update(
-            {
-                "reset_status": "success",
-                "reset_details": "Nonvolatile memory reset command accepted.",
-                "reconnect_status": "running",
-                "reconnect_details": "Waiting for device to reconnect...",
-                "details": "Waiting for device to reboot after settings reset...",
-            }
-        )
-        session.touch()
-        await asyncio.sleep(RECONNECT_GRACE_SECONDS)
-        await wait_for_session_device(session)
-        reset_task.update(
-            {
-                "status": "success",
-                "details": "Nonvolatile memory reset.",
-                "reconnect_status": "success",
-                "reconnect_details": "Device reconnected.",
-            }
-        )
-
         mac_address = await read_session_mac_address(session)
         session.mac_address = mac_address
         session.tasks["network_discovery"]["details"] = (
@@ -785,9 +691,6 @@ def mark_running_task_failed(session: CommissioningSession, details: str) -> Non
         if task.get("reset_status") == "running":
             task["reset_status"] = "failure"
             task["reset_details"] = details
-        if task.get("reconnect_status") == "running":
-            task["reconnect_status"] = "failure"
-            task["reconnect_details"] = details
         return
 
 

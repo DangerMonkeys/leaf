@@ -11,7 +11,7 @@
 
 namespace {
   constexpr uint16_t DISCOVERY_PORT = 7432;
-  constexpr uint16_t HTTP_PORT = 81;
+  constexpr uint16_t HTTP_PORT = 80;
   constexpr const char* REQUEST_PREFIX = "LEAF_DISCOVERY_REQUEST/1 ";
   constexpr size_t REQUEST_PREFIX_LEN = 25;
   constexpr const char* DIAGNOSTIC_NETWORK_SSID = "LeafDiagnostics";
