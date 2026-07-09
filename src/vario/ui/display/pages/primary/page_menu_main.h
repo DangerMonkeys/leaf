@@ -25,11 +25,11 @@ class MainMenuPage : public MenuPage {
   void skip_hidden_forward();
   void skip_hidden_backward();
   bool firstOpened = true;
-  static constexpr char* labels[8] = {"Back", "Settings", "Flight",  "Nav Data",
-                                      "GPS",  "Web App",  "Logbook", "Developer"};
+  static constexpr char* labels[8] = {"Back", "Flight",  "Settings", "Nav Data",
+                                      "GPS",  "Web App", "Logbook",  "Developer"};
   static constexpr uint8_t glyphs[8] = {0,
-                                        menu_ui::GLYPH_SETTINGS,
                                         menu_ui::GLYPH_FLIGHT,
+                                        menu_ui::GLYPH_SETTINGS,
                                         menu_ui::GLYPH_NAV_DATA,
                                         menu_ui::GLYPH_GPS,
                                         menu_ui::GLYPH_WEB_APP,

@@ -23,7 +23,7 @@ class LogMenuPage : public SettingsMenuPage {
 
  private:
   void drawLogMenu();
-  static constexpr char* labels[4] = {"Back", "Save IGC File", "AutoStart", "AutoStop"};
+  static constexpr char* labels[4] = {"Back", "Save IGC", "AutoStart", "AutoStop"};
   PageLogbook pageLogbook;
 };
 

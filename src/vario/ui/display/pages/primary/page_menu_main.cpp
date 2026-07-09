@@ -15,8 +15,8 @@
 // cursor positions on the main menu
 enum cursor_main_menu {
   cursor_back,
-  cursor_settings,
   cursor_flightTools,
+  cursor_settings,
   cursor_navData,
   cursor_gps,
   cursor_webApp,

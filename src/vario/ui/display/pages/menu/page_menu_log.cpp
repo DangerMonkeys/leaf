@@ -59,7 +59,7 @@ void LogMenuPage::drawLogMenu() {
 
     // Menu Items
     uint8_t setting_name_x = 2;
-    uint8_t setting_choice_x = 82;
+    uint8_t setting_choice_x = 78;
     uint8_t menu_items_y[] = {190, 45, 60, 75};
 
     // then draw all the menu items
