@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 
+#include "comms/webserver.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
@@ -48,8 +49,10 @@ void MainMenuPage::quitMenu() {
   menu_page = page_menu_main;
   firstOpened = true;
 #ifndef DEBUG_WIFI
-  wifi_menu_ui::disconnectFromNetwork();
-  Serial.println("WiFi disconnected");
+  if (!webserver_user_app_always_on()) {
+    wifi_menu_ui::disconnectFromNetwork();
+    Serial.println("WiFi disconnected");
+  }
 #endif
   display.turnPage(PageAction::Back);
 }

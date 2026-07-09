@@ -44,6 +44,8 @@ namespace {
   bool user_app_dns_started = false;
   bool user_app_restart_ble = false;
   bool user_app_restart_fanet = false;
+  bool user_app_always_on = false;
+  bool user_app_keep_bluetooth_disabled = false;
   FanetRadioRegion user_app_fanet_region = FanetRadioRegion::OFF;
   String wifi_setup_networks_json = "{\"scanning\":false,\"networks\":[]}";
   bool wifi_setup_scan_running = false;
@@ -1086,7 +1088,7 @@ namespace {
       fanetRadio.begin(user_app_fanet_region);
     }
 
-    if (user_app_restart_ble && settings.system_bluetoothOn) {
+    if (user_app_restart_ble && settings.system_bluetoothOn && !user_app_keep_bluetooth_disabled) {
       BLE::get().setup();
       BLE::get().start();
     }
@@ -1906,7 +1908,38 @@ $('gliderDelete').onclick=()=>{let g=selectedGlider();if(!g)return;profiles.glid
 leafLogButtons();routeButtons();routeEditButtons();loadStatus();loadProfiles();loadLogbook();loadNavData();loadUserWaypoints();
 </script></body></html>)leafapp";
     sendNoStoreHeaders(target);
-    target.send_P(200, "text/html", USER_APP_PAGE);
+    if (!settings.dev_mode) {
+      target.send_P(200, "text/html", USER_APP_PAGE);
+      return;
+    }
+
+    static constexpr char USER_APP_DEVELOPER_SCRIPT[] PROGMEM =
+        R"leafdev(<script>
+(function(){
+function el(t,a,c){let n=document.createElement(t);if(a)Object.keys(a).forEach(k=>{if(k=="text")n.textContent=a[k];else n.setAttribute(k,a[k])});(c||[]).forEach(x=>n.appendChild(x));return n}
+function row(label,id){let l=el("label",{class:"checkline"}),i=el("input",{id:id,type:"checkbox"}),s=el("span",{text:label});l.appendChild(i);l.appendChild(s);return l}
+function msg(t){let m=document.getElementById("devMsg");if(m)m.textContent=t||""}
+let main=document.getElementById("mainView");if(!main)return;
+let s=el("section",{id:"developerCard"}),h=el("h2",{text:"Developer"}),status=el("div",{class:"status",id:"devStatus",text:"Loading..."}),actions=el("div",{class:"actions"}),msgEl=el("p",{class:"muted msg",id:"devMsg"});
+let shot=el("button",{class:"hero",id:"devScreenshot",text:"Screenshot"}),msc=el("button",{class:"secondary",id:"devMassStorage",text:"Mass Storage"}),mem=el("button",{class:"secondary",id:"devMemory",text:"Memory"}),fan=el("button",{class:"secondary",id:"devFanet",text:"FANET"});
+actions.style.flexWrap="wrap";
+actions.appendChild(shot);actions.appendChild(msc);actions.appendChild(mem);actions.appendChild(fan);
+s.appendChild(h);s.appendChild(status);s.appendChild(row("Keep web app on","devAlwaysOn"));s.appendChild(row("Keep Bluetooth disabled","devKeepBleDisabled"));s.appendChild(actions);s.appendChild(msgEl);main.appendChild(s);
+async function load(){try{let r=await Promise.all([fetch("/api/debug/session"),fetch("/api/user/status")]),d=await r[0].json(),u=await r[1].json();document.getElementById("devAlwaysOn").checked=!!d.always_on;document.getElementById("devKeepBleDisabled").checked=!!d.keep_bluetooth_disabled;status.textContent="web app: "+(d.web_app_active?"active":"off")+"\\nmode: "+(d.using_leaf_wifi?"Leaf AP":"network")+"\\nfirmware: "+(u.firmware_display_version||u.firmware_version||"")+"\\nmac: "+(u.mac_address||"")}catch(e){status.textContent="Developer controls unavailable."}}
+async function save(){msg("Saving...");try{let body={always_on:document.getElementById("devAlwaysOn").checked,keep_bluetooth_disabled:document.getElementById("devKeepBleDisabled").checked};await fetch("/api/debug/session",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});msg("Saved for this session.");load()}catch(e){msg("Unable to save developer settings.")}}
+document.getElementById("devAlwaysOn").onchange=save;document.getElementById("devKeepBleDisabled").onchange=save;
+shot.onclick=()=>window.open("/app/debug/screenshot","_blank","noopener");
+mem.onclick=()=>window.open("/app/debug/memory","_blank","noopener");
+fan.onclick=()=>window.open("/app/debug/fanet","_blank","noopener");
+msc.onclick=async()=>{if(!confirm("Start SD mass storage?"))return;msg("Starting mass storage...");try{await fetch("/api/debug/mass-storage");msg("Mass storage requested.")}catch(e){msg("Unable to start mass storage.")}};
+load();
+})();
+</script>)leafdev";
+    target.setContentLength(CONTENT_LENGTH_UNKNOWN);
+    target.send(200, "text/html", "");
+    target.sendContent_P(USER_APP_PAGE);
+    target.sendContent_P(USER_APP_DEVELOPER_SCRIPT);
+    target.sendContent("");
     return;
   }
 
@@ -1958,9 +1991,33 @@ leafLogButtons();routeButtons();routeEditButtons();loadStatus();loadProfiles();l
     json += power_info.USBinput ? "true" : "false";
     json += ",\"battery_mv\":";
     json += power_info.batteryMV;
+    json += ",\"dev_mode\":";
+    json += settings.dev_mode ? "true" : "false";
     json += "}";
     sendNoStoreHeaders(target);
     target.send(200, "application/json", json);
+  }
+
+  void sendDebugSessionStatus(WebServer& target) {
+    String json = "{\"always_on\":";
+    json += user_app_always_on ? "true" : "false";
+    json += ",\"keep_bluetooth_disabled\":";
+    json += user_app_keep_bluetooth_disabled ? "true" : "false";
+    json += ",\"web_app_active\":";
+    json += user_app_enabled ? "true" : "false";
+    json += ",\"using_leaf_wifi\":";
+    json += user_app_using_leaf_wifi ? "true" : "false";
+    json += "}";
+    sendNoStoreHeaders(target);
+    target.send(200, "application/json", json);
+  }
+
+  void updateDebugSessionStatus(WebServer& target) {
+    const String body = target.arg("plain");
+    user_app_always_on = extractJsonBoolValue(body, "always_on", user_app_always_on);
+    user_app_keep_bluetooth_disabled =
+        extractJsonBoolValue(body, "keep_bluetooth_disabled", user_app_keep_bluetooth_disabled);
+    sendDebugSessionStatus(target);
   }
 
   void sendFirmwareUpdateStatus(WebServer& target) {
@@ -2527,33 +2584,6 @@ void webserver_setup() {
   if (!settings.dev_mode) return;
   if (debug_routes_configured) return;
 
-  user_server.on("/app/debug", HTTP_GET, []() {
-    user_server.send(200, "text/html", R"(
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Leaf Debug</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 2em auto; max-width: 800px; }
-          </style>
-        </head>
-        <body>
-          <h1>Leaf Debug</h1>
-          <ul>
-            <li><a href="/app/debug/screenshot" target="_blank">Download Screenshot</a></li>
-            <li><a href="/api/debug/mass-storage" target="_blank">Start Mass Storage</a></li>
-            <li><a href="#" onclick="fetch('/api/debug/self-test/interactive', {method: 'POST'}); return false;">Start Interactive Self Test</a></li>
-            <li><a href="#" onclick="fetch('/api/debug/settings/factory-reset', {method: 'POST'}); return false;">Factory Reset Settings</a></li>
-            <li><a href="/api/debug/mac-address" target="_blank">MAC Address</a></li>
-            <li><a href="/api/debug/firmware-version" target="_blank">Firmware Version</a></li>
-            <li><a href="/app/debug/fanet" target="_blank">FANet Message Stats</a></li>
-            <li><a href="/app/debug/memory" target="_blank">Memory Usage Stats</a></li>
-          </ul>
-        </body>
-      </html>
-    )");
-  });
-
   user_server.on("/api/debug/raw-xbm", HTTP_GET, []() {
     send_buffer = "";
     u8g2_WriteBufferXBM(u8g2.getU8g2(), writeScreenshotBuffer);
@@ -2619,7 +2649,7 @@ void webserver_setup() {
         </head>
         <body>
 
-        <canvas id="screenshotCanvas" width="200" height="200" style="border:0px solid #000;"></canvas>
+        <canvas id="screenshotCanvas" style="border:0px solid #000; image-rendering: pixelated;"></canvas>
 
         <script>
         function drawXBM(xbmData, canvasId) {
@@ -2631,6 +2661,10 @@ void webserver_setup() {
           const heightMatch = xbmData.match(/height (\d+)/);
           const width = parseInt(widthMatch[1]);
           const height = parseInt(heightMatch[1]);
+          canvas.width = height;
+          canvas.height = width;
+          canvas.style.width = (height * 2) + 'px';
+          canvas.style.height = (width * 2) + 'px';
 
           // Extract bitmap data (assuming hex format)
           const dataMatch = xbmData.match(/bits\[\] = {(.*?)}/s); // Use /s for multiline matching
@@ -2679,6 +2713,10 @@ void webserver_setup() {
     sdcard.setupMassStorage();
     user_server.send(200, "text/html", "OK!");
   });
+
+  user_server.on("/api/debug/session", HTTP_GET, []() { sendDebugSessionStatus(user_server); });
+
+  user_server.on("/api/debug/session", HTTP_POST, []() { updateDebugSessionStatus(user_server); });
 
   user_server.on("/app/debug/memory", HTTP_GET,
                  []() { user_server.send(200, "text/plain", getMemoryUsage()); });
@@ -2905,6 +2943,8 @@ void webserver_disable_user_app() {
 }
 
 bool webserver_user_app_active() { return user_app_enabled; }
+
+bool webserver_user_app_always_on() { return user_app_always_on; }
 
 bool webserver_wifi_setup_active() { return user_app_enabled && user_app_provisioning; }
 
