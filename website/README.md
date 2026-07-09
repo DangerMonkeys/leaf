@@ -1,54 +1,45 @@
-# Starlight Starter Kit: Basics
+# Leaf Website
 
-[![Built with Starlight](https://astro.badg.es/v2/built-with-starlight/tiny.svg)](https://starlight.astro.build)
+Astro/Starlight website for Leaf. The documentation content is shared from the
+repo-level `docs/` folder via `src/content/docs`.
 
-```
-npm create astro@latest -- --template starlight
-```
+## Local Preview
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/withastro/starlight/tree/main/examples/basics)
-[![Open with CodeSandbox](https://assets.codesandbox.io/github/button-edit-lime.svg)](https://codesandbox.io/p/sandbox/github/withastro/starlight/tree/main/examples/basics)
-[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/withastro/starlight&create_from_path=examples/basics)
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fwithastro%2Fstarlight%2Ftree%2Fmain%2Fexamples%2Fbasics&project-name=my-starlight-docs&repository-name=my-starlight-docs)
+From `website/`, run:
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
-
-## 🚀 Project Structure
-
-Inside of your Astro + Starlight project, you'll see the following folders and files:
-
-```
-.
-├── public/
-├── src/
-│   ├── assets/
-│   ├── content/
-│   │   ├── docs/
-│   └── content.config.ts
-├── astro.config.mjs
-├── package.json
-└── tsconfig.json
+```powershell
+.\scripts\start-local-preview.ps1
 ```
 
-Starlight looks for `.md` or `.mdx` files in the `src/content/docs/` directory. Each file is exposed as a route based on its file name.
+The script:
 
-Images can be added to `src/assets/` and embedded in Markdown with a relative link.
+- ensures `src/content/docs` points at the repo-level `docs/` folder
+- uses the bundled local Node runtime under `.local-node/` when present
+- starts Astro on `http://localhost:4321/`
 
-Static assets, like favicons, can be placed in the `public/` directory.
+To preview from another device on the same Wi-Fi, such as a phone:
 
-## 🧞 Commands
+```powershell
+.\scripts\start-local-preview.ps1 -Network
+```
 
-All commands are run from the root of the project, from a terminal:
+Then open the LAN URL printed by the script, for example
+`http://10.0.0.14:4321/`.
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+## Build
 
-## 👀 Want to learn more?
+```powershell
+.\.local-node\node-v24.14.0-win-x64\node.exe .\node_modules\astro\astro.js build
+```
 
-Check out [Starlight’s docs](https://starlight.astro.build/), read [the Astro documentation](https://docs.astro.build), or jump into the [Astro Discord server](https://astro.build/chat).
+Or, if system Node/npm is available:
+
+```powershell
+npm run build
+```
+
+## Notes
+
+On Windows, `src/content/docs` may appear in `git status` after local preview
+setup because the script replaces a checkout placeholder with a local junction
+to `../docs`. Do not stage that local-only change.
