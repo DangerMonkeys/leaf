@@ -11,11 +11,12 @@ h2 {
     font-weight: 600;
     font-size: 32px;
     font-family: "Roboto Condensed";
+    color: #484848;
 }
 
 .headline-4,
 .headline-5 {
-    color: #272727;
+    color: #484848;
     letter-spacing: 0;
     line-height: 1;
     margin-bottom: 10px;
@@ -38,7 +39,7 @@ main {
     font-family: "Roboto", sans-serif;
     font-size: 20px;
     line-height: 1.2;
-    color: #0009
+    color: #484848
 }
 
 main ul {

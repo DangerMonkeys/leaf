@@ -107,11 +107,14 @@ export default defineConfig({
                 "gmail",
                 "youtube",
                 "instagram",
+                "discord",
             ],
             "material-symbols": [
                 "bluetooth",
                 "wifi-rounded",
                 "satellite-alt",
+                "sd-card",
+                "smartphone",
             ]
         },
     })],

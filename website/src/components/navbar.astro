@@ -3,7 +3,6 @@ const sections = [
   { id: "gallery", name: "Gallery" },
   { id: "description", name: "Description" },
   { id: "web-app", name: "Web App" },
-  { id: "specs", name: "Specs" },
   { id: "more", name: "More Info" },
 ];
 
@@ -31,7 +30,7 @@ const links = [
 <div class="h-[70px]"></div>
 
 <script>
-  const sections = ["gallery", "description", "web-app", "specs", "more"];
+  const sections = ["gallery", "description", "web-app", "more"];
   const links = new Map(
     sections.map((id) => [id, document.querySelector(`[data-navbar-link="${id}"]`)])
   );

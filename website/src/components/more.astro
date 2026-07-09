@@ -5,55 +5,90 @@ if (base == "/") {
   base = "";
 }
 
-const links = [
+const infoLinks = [
   {
-    href: "https://github.com/DangerMonkeys/leaf",
-    title: "Github",
-    icon: "simple-icons:github",
-  },
-  {
-    href: base + "/user-guides/vario-user-manual/",
-    title: "Documents",
+    href: "https://leafvario.com/user-guides/vario-user-manual/",
+    description: "Read the Quick Start Guide and full User Manual.",
     icon: "game-icons:bookmarklet",
   },
   {
+    href: "https://www.youtube.com/@LeafVario",
+    description: "Watch helpful how-to videos and demos on YouTube.",
+    icon: "simple-icons:youtube",
+  },
+  {
+    href: "https://github.com/DangerMonkeys/leaf",
+    description: "See the full open source repository on GitHub.",
+    icon: "simple-icons:github",
+  },
+];
+
+const contactLinks = [
+  {
+    href: "https://discord.gg/7Secr9MVF",
+    description: "Chat with us and the Leaf community on Discord.",
+    icon: "simple-icons:discord",
+  },
+  {
     href: "mailto:leafvario@gmail.com",
-    title: "Email Us",
+    description: "Email us with questions or feedback.",
     icon: "simple-icons:gmail",
   },
   {
     href: "https://www.instagram.com/leafvario",
-    title: "Instagram",
+    description: "Follow project updates and flying photos on Instagram.",
     icon: "simple-icons:instagram",
   },
-  {
-    href: "https://www.youtube.com/channel/UCbwWXjxFitbefeKqzAKa94Q",
-    title: "YouTube",
-    icon: "simple-icons:youtube",
-  },
 ];
+
 ---
 
 <main>
-  <div class="pb-16">
-    <div class="max-w-5xl m-auto">
-      <h2>More Information</h2>
-      <div class="flex flex-wrap max-w-full justify-center pt-4">
-        {
-          links.map((l) => (
-            <a href={l.href}>
-              <div class="m-8 text-center">
-                <div class="flex justify-center">
-                  <Icon name={l.icon} size={64} />
-                </div>
-                <h3 class="text-lg font-semibold text-green-900/80 underline pt-4">
-                  {l.title}
-                </h3>
-              </div>
-            </a>
-          ))
-        }
+  <section class="bg-white text-gray-700">
+    <div class="max-w-5xl m-auto px-8 py-14">
+      <div class="grid gap-12 md:grid-cols-2">
+        <section>
+          <h2 class="pt-0 text-left text-[#484848]">More Information</h2>
+          <div class="mt-6 space-y-5">
+            {
+              infoLinks.map((link) => (
+                <a
+                  href={link.href}
+                  class="group flex items-center gap-5 text-gray-600"
+                >
+                  <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-gray-500 transition-colors group-hover:bg-[#d8ff00] group-hover:text-[#484848] group-focus-visible:bg-[#d8ff00] group-focus-visible:text-[#484848]">
+                    <Icon name={link.icon} size={38} />
+                  </span>
+                  <span class="text-base leading-snug underline decoration-gray-300 underline-offset-4 transition-colors group-hover:text-[#484848] group-focus-visible:text-[#484848]">
+                    {link.description}
+                  </span>
+                </a>
+              ))
+            }
+          </div>
+        </section>
+
+        <section>
+          <h2 class="pt-0 text-left text-[#484848]">Stay in Touch</h2>
+          <div class="mt-6 space-y-5">
+          {
+            contactLinks.map((link) => (
+              <a
+                href={link.href}
+                class="group flex items-center gap-5 text-gray-600"
+              >
+                <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-gray-500 transition-colors group-hover:bg-[#d8ff00] group-hover:text-[#484848] group-focus-visible:bg-[#d8ff00] group-focus-visible:text-[#484848]">
+                  <Icon name={link.icon} size={38} />
+                </span>
+                <span class="text-base leading-snug underline decoration-gray-300 underline-offset-4 transition-colors group-hover:text-[#484848] group-focus-visible:text-[#484848]">
+                  {link.description}
+                </span>
+              </a>
+            ))
+          }
+          </div>
+        </section>
       </div>
     </div>
-  </div>
+  </section>
 </main>
