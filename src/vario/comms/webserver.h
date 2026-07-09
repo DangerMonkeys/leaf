@@ -8,6 +8,7 @@ void webserver_enable_user_app(bool useLeafWifi);
 void webserver_enable_wifi_setup();
 void webserver_disable_user_app();
 bool webserver_user_app_active();
+bool webserver_user_app_always_on();
 bool webserver_wifi_setup_active();
 bool webserver_wifi_setup_ready_to_finish();
 bool webserver_user_app_using_leaf_wifi();

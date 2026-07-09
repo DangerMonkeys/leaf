@@ -280,6 +280,11 @@ void PageMenuSystemWifiWebApp::closed(bool removed_from_Stack) {
   if (removed_from_Stack) {
     heap_monitor::checkpoint("webapp-page-close");
     syncWebAppMode();
+    if (webserver_user_app_always_on()) {
+      heap_monitor::checkpoint("webapp-page-always-on");
+      mainMenuPage.backToMainMenu();
+      return;
+    }
     const bool reconnectToSavedNetwork = using_leaf_wifi;
     webserver_disable_user_app();
     heap_monitor::checkpoint("webapp-page-disabled");
