@@ -8,6 +8,7 @@ import Navbar from "../components/navbar.astro";
 import Gallery from "../components/gallery.astro";
 import StoreBanner from "../components/store-banner.astro";
 import Description from "../components/description.astro";
+import WebApp from "../components/web-app.astro";
 import Specs from "../components/specs.astro";
 import More from "../components/more.astro";
 
@@ -36,6 +37,9 @@ if(base == "/") {
 		<StoreBanner />
 		<div id="description">
 			<Description />
+		</div>
+		<div id="web-app">
+			<WebApp base={base} />
 		</div>
 		<div id="specs">
 			<Specs />
