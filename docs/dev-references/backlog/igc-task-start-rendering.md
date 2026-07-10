@@ -1,3 +1,8 @@
+---
+title: IGC Task Start Rendering Follow-up
+description: Future compatibility check for how IGC viewers render the first route waypoint in Leaf task declarations.
+---
+
 # IGC Task Start Rendering Follow-Up
 
 ## Context
