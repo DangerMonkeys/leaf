@@ -1,14 +1,20 @@
 :root {
   color-scheme: light;
-  font-family: "Segoe UI", Arial, sans-serif;
-  --bg: #f4f7f4;
-  --surface: #ffffff;
-  --ink: #18231f;
-  --muted: #60706a;
-  --line: #d8e1dc;
-  --accent: #176c53;
-  --accent-strong: #10533f;
-  --focus: #d08b2c;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  --bg: #363636;
+  --surface: #565656;
+  --surface-subtle: #4d4d4d;
+  --field: #ffffff;
+  --ink: #ffffff;
+  --field-ink: #202423;
+  --muted: #e2e7dc;
+  --line: #707070;
+  --accent: #d8ff00;
+  --accent-strong: #c5e900;
+  --button: #202423;
+  --button-strong: #111513;
+  --focus: #d8ff00;
+  --danger: #7a1d1d;
 }
 
 * {
@@ -32,7 +38,8 @@ body {
   height: 56px;
   padding: 0 12px;
   border-bottom: 1px solid var(--line);
-  background: #ffffff;
+  background: var(--accent);
+  color: #0b0d0b;
 }
 
 .topbar-primary-actions {
@@ -58,7 +65,7 @@ body {
 .operator-link {
   max-width: min(34vw, 240px);
   overflow: hidden;
-  color: var(--muted);
+  color: #202423;
   font-size: 0.92rem;
   font-weight: 700;
   text-decoration: none;
@@ -68,7 +75,7 @@ body {
 
 .operator-link:hover,
 .operator-link:focus-visible {
-  color: var(--ink);
+  color: #0b0d0b;
   outline: 2px solid transparent;
   text-decoration: underline;
 }
@@ -80,13 +87,13 @@ body {
   width: 40px;
   height: 40px;
   border-radius: 6px;
-  color: var(--ink);
+  color: #202423;
   text-decoration: none;
 }
 
 .icon-link:hover,
 .icon-link:focus-visible {
-  background: #e9f1ed;
+  background: rgb(0 0 0 / 12%);
   outline: 2px solid transparent;
 }
 
@@ -109,6 +116,10 @@ body {
 .panel {
   display: grid;
   gap: 24px;
+  padding: 16px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
 }
 
 .panel.narrow {
@@ -140,18 +151,18 @@ h1 {
   padding: 22px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: var(--surface);
+  background: var(--surface-subtle);
   color: var(--ink);
   font-size: 1.35rem;
   font-weight: 700;
   text-decoration: none;
-  box-shadow: 0 1px 2px rgb(24 35 31 / 8%);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 16%);
 }
 
 .task-card:hover,
 .task-card:focus-visible {
   border-color: var(--accent);
-  outline: 3px solid rgb(208 139 44 / 35%);
+  outline: 3px solid rgb(216 255 0 / 35%);
 }
 
 .device-form,
@@ -185,8 +196,8 @@ textarea {
   padding: 10px 12px;
   border: 1px solid #b9c7c1;
   border-radius: 6px;
-  background: #ffffff;
-  color: var(--ink);
+  background: var(--field);
+  color: var(--field-ink);
   font: inherit;
 }
 
@@ -194,7 +205,7 @@ input:focus,
 select:focus,
 textarea:focus {
   border-color: var(--accent);
-  outline: 3px solid rgb(208 139 44 / 35%);
+  outline: 3px solid rgb(216 255 0 / 35%);
 }
 
 select {
@@ -210,10 +221,10 @@ button {
   justify-self: start;
   min-height: 48px;
   padding: 0 18px;
-  border: 0;
+  border: 1px solid var(--accent);
   border-radius: 6px;
   background: var(--accent);
-  color: #ffffff;
+  color: #0b0d0b;
   font: inherit;
   font-weight: 700;
   cursor: pointer;
@@ -222,7 +233,14 @@ button {
 button:hover,
 button:focus-visible {
   background: var(--accent-strong);
-  outline: 3px solid rgb(208 139 44 / 35%);
+  outline: 3px solid rgb(216 255 0 / 35%);
+}
+
+button:disabled {
+  background: #686868;
+  border-color: #686868;
+  color: #8a8a8a;
+  cursor: not-allowed;
 }
 
 .button-link {
@@ -234,7 +252,7 @@ button:focus-visible {
   padding: 0 16px;
   border-radius: 6px;
   background: var(--accent);
-  color: #ffffff;
+  color: #0b0d0b;
   font-weight: 700;
   text-decoration: none;
 }
@@ -242,7 +260,7 @@ button:focus-visible {
 .button-link:hover,
 .button-link:focus-visible {
   background: var(--accent-strong);
-  outline: 3px solid rgb(208 139 44 / 35%);
+  outline: 3px solid rgb(216 255 0 / 35%);
 }
 
 .icon-button {
@@ -267,7 +285,9 @@ button:focus-visible {
 }
 
 .icon-button:disabled {
-  background: #9aaba3;
+  background: #686868;
+  border-color: #686868;
+  color: #8a8a8a;
   cursor: wait;
 }
 
@@ -279,7 +299,7 @@ button:focus-visible {
 
 .error-message {
   margin: 0;
-  color: #b42318;
+  color: #ffb0a8;
   font-weight: 700;
 }
 
@@ -306,16 +326,20 @@ button:focus-visible {
   flex: 0 0 auto;
   min-height: 40px;
   padding: 0 14px;
-  background: #b42318;
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #ffffff;
 }
 
 .cancel-setup-button:hover,
 .cancel-setup-button:focus-visible {
-  background: #8f1c14;
+  background: #5f1515;
 }
 
 .cancel-setup-button:disabled {
-  background: #9aaba3;
+  background: #686868;
+  border-color: #686868;
+  color: #8a8a8a;
   cursor: not-allowed;
 }
 
@@ -323,7 +347,7 @@ button:focus-visible {
   display: grid;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: var(--surface);
+  background: var(--surface-subtle);
   overflow: hidden;
 }
 
@@ -345,8 +369,8 @@ button:focus-visible {
 
 .session-row:hover,
 .session-row:focus-visible {
-  background: #e9f1ed;
-  outline: 3px solid rgb(208 139 44 / 35%);
+  background: var(--surface-subtle);
+  outline: 3px solid rgb(216 255 0 / 35%);
   outline-offset: -3px;
 }
 
@@ -359,7 +383,7 @@ button:focus-visible {
   min-width: 76px;
   padding: 4px 8px;
   border-radius: 999px;
-  background: #e7eeea;
+  background: var(--surface-subtle);
   color: var(--muted);
   font-size: 0.84rem;
   font-weight: 700;
@@ -368,18 +392,18 @@ button:focus-visible {
 }
 
 .session-status-running {
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: #202423;
+  color: var(--accent);
 }
 
 .session-status-success {
-  background: #dcfce7;
-  color: #15803d;
+  background: var(--accent);
+  color: #0b0d0b;
 }
 
 .session-status-failure {
-  background: #fee2e2;
-  color: #b42318;
+  background: var(--danger);
+  color: #ffffff;
 }
 
 .session-details {
@@ -401,7 +425,7 @@ button:focus-visible {
   overflow-x: auto;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: var(--surface);
+  background: var(--surface-subtle);
 }
 
 .discovery-table {
@@ -419,7 +443,7 @@ button:focus-visible {
 }
 
 .discovery-table th {
-  background: #edf3ef;
+  background: var(--surface-subtle);
   color: var(--muted);
   font-size: 0.84rem;
   text-transform: uppercase;
@@ -460,7 +484,7 @@ button:focus-visible {
 .discovery-details-grid div {
   min-width: 0;
   padding: 12px 14px;
-  background: var(--surface);
+  background: var(--surface-subtle);
 }
 
 .discovery-details-grid dt {
@@ -512,14 +536,14 @@ button:focus-visible {
 }
 
 .setup-notes-field textarea:read-only {
-  background: #eef4f1;
+  background: var(--surface-subtle);
   color: var(--muted);
   resize: none;
 }
 
 .setup-notes-error {
   grid-column: 1;
-  color: #b42318;
+  color: #ffb0a8;
   font-weight: 700;
 }
 
@@ -611,7 +635,7 @@ button:focus-visible {
   padding: 4px 9px;
   border: 1px solid var(--line);
   border-radius: 6px;
-  background: #edf3ef;
+  background: var(--surface-subtle);
   color: var(--muted);
   font-size: 0.84rem;
   font-weight: 700;
@@ -621,23 +645,23 @@ button:focus-visible {
 .verification-result-pass,
 .verification-result-success,
 .verification-result-complete {
-  border-color: #bbf7d0;
-  background: #dcfce7;
-  color: #15803d;
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #0b0d0b;
 }
 
 .verification-result-fail,
 .verification-result-failure {
-  border-color: #fecaca;
-  background: #fee2e2;
-  color: #b42318;
+  border-color: var(--danger);
+  background: var(--danger);
+  color: #ffffff;
 }
 
 .verification-result-running,
 .verification-result-pending {
-  border-color: #bfdbfe;
-  background: #dbeafe;
-  color: #1d4ed8;
+  border-color: #202423;
+  background: #202423;
+  color: var(--accent);
 }
 
 .verification-failure-details {
@@ -665,7 +689,7 @@ button:focus-visible {
   min-height: 24px;
   height: 24px;
   margin: 0;
-  accent-color: #15803d;
+  accent-color: var(--accent);
   cursor: pointer;
 }
 
@@ -681,7 +705,7 @@ button:focus-visible {
   height: 24px;
   min-height: 24px;
   padding: 0;
-  border: 2px solid #9aaba3;
+  border: 2px solid #8a8a8a;
   border-radius: 50%;
   background: #ffffff;
   color: #ffffff;
@@ -700,14 +724,14 @@ button:focus-visible {
 }
 
 .task-icon-running {
-  border-color: #2f6f91;
+  border-color: var(--accent);
   border-top-color: transparent;
   animation: spin 0.8s linear infinite;
 }
 
 .task-icon-success {
-  border-color: #15803d;
-  background: #15803d;
+  border-color: var(--accent);
+  background: var(--accent);
 }
 
 .task-icon-success::after {
@@ -716,15 +740,15 @@ button:focus-visible {
   left: 7px;
   width: 6px;
   height: 11px;
-  border: solid #ffffff;
+  border: solid #0b0d0b;
   border-width: 0 2px 2px 0;
   content: "";
   transform: rotate(45deg);
 }
 
 .task-icon-failure {
-  border-color: #b42318;
-  background: #b42318;
+  border-color: var(--danger);
+  background: var(--danger);
 }
 
 .task-icon-failure::before,

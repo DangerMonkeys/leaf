@@ -100,45 +100,6 @@
     <div class="checklist-item checklist-item-with-details">
       <button
         class="task-icon task-icon-empty"
-        id="reset-nonvolatile-task-icon"
-        type="button"
-        aria-label="Toggle nonvolatile memory reset details"
-        disabled
-      ></button>
-      <span>Reset nonvolatile memory</span>
-      <p class="checklist-details" id="reset-nonvolatile-details" hidden></p>
-    </div>
-
-    <div class="checklist-item checklist-item-with-details">
-      <button
-        class="task-icon task-icon-empty"
-        id="reconnect-task-icon"
-        type="button"
-        aria-label="Toggle device reconnect details"
-        disabled
-      ></button>
-      <span>Wait for device to reconnect</span>
-      <div class="checklist-details-group" id="reconnect-details-group" hidden>
-        <p class="checklist-details" id="reconnect-details"></p>
-        <form class="manual-ip-entry" id="reconnect-manual-ip-form" hidden>
-          <label for="reconnect-manual-ip">Device IP</label>
-          <div class="manual-ip-controls">
-            <input
-              id="reconnect-manual-ip"
-              type="text"
-              inputmode="decimal"
-              autocomplete="off"
-              placeholder="192.168.137.21"
-            >
-            <button type="submit">Use IP</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <div class="checklist-item checklist-item-with-details">
-      <button
-        class="task-icon task-icon-empty"
         id="firmware-version-task-icon"
         type="button"
         aria-label="Toggle firmware version details"
@@ -236,13 +197,6 @@
   const discoveryDetails = document.querySelector("#discovery-details");
   const discoveryManualIpForm = document.querySelector("#discovery-manual-ip-form");
   const discoveryManualIp = document.querySelector("#discovery-manual-ip");
-  const resetNonvolatileTaskIcon = document.querySelector("#reset-nonvolatile-task-icon");
-  const resetNonvolatileDetails = document.querySelector("#reset-nonvolatile-details");
-  const reconnectTaskIcon = document.querySelector("#reconnect-task-icon");
-  const reconnectDetailsGroup = document.querySelector("#reconnect-details-group");
-  const reconnectDetails = document.querySelector("#reconnect-details");
-  const reconnectManualIpForm = document.querySelector("#reconnect-manual-ip-form");
-  const reconnectManualIp = document.querySelector("#reconnect-manual-ip");
   const firmwareVersionTaskIcon = document.querySelector("#firmware-version-task-icon");
   const firmwareVersionDetails = document.querySelector("#firmware-version-details");
   const fanetIdTaskIcon = document.querySelector("#fanet-id-task-icon");
@@ -259,7 +213,6 @@
   const notifyCommissioningCompleteDetails = document.querySelector("#notify-commissioning-complete-details");
   let flashPollTimer = null;
   let discoveryPollTimer = null;
-  let resetNonvolatilePollTimer = null;
   let firmwareVersionPollTimer = null;
   let fanetIdPollTimer = null;
   let selfTestPollTimer = null;
@@ -268,14 +221,12 @@
   const taskStatuses = {
     flash: "idle",
     discovery: "idle",
-    resetNonvolatile: "idle",
     firmwareVersion: "idle",
     fanetId: "idle",
     selfTest: "idle",
     retrieveTestDetails: "idle",
   };
   let discoveryStartRequested = false;
-  let resetNonvolatileStartRequested = false;
   let firmwareVersionStartRequested = false;
   let fanetIdStartRequested = false;
   let selfTestStartRequested = false;
@@ -353,14 +304,6 @@
 
   function setNotifyCommissioningCompleteIcon(status) {
     setTaskIcon(notifyCommissioningCompleteTaskIcon, status);
-  }
-
-  function setResetNonvolatileIcon(status) {
-    setTaskIcon(resetNonvolatileTaskIcon, status);
-  }
-
-  function setReconnectIcon(status) {
-    setTaskIcon(reconnectTaskIcon, status);
   }
 
   function setFirmwareVersionIcon(status) {
@@ -482,48 +425,6 @@
       discoveryDetailsGroup.hidden = true;
       clearInterval(discoveryPollTimer);
       discoveryPollTimer = null;
-    }
-  }
-
-  function applyResetNonvolatileTaskState(state) {
-    taskStatuses.resetNonvolatile = state.status;
-    updateCancelSetupTaskButton();
-    const resetStatus = state.reset_status || state.status;
-    const reconnectStatus = state.reconnect_status || "idle";
-    setResetNonvolatileIcon(resetStatus);
-    setReconnectIcon(reconnectStatus);
-
-    if (state.status === "success") {
-      resetNonvolatileDetails.textContent =
-        state.reset_details || "Nonvolatile memory reset command accepted.";
-      reconnectDetails.textContent = state.reconnect_details || "Device reconnected.";
-      reconnectDetailsGroup.hidden = false;
-      clearInterval(resetNonvolatilePollTimer);
-      resetNonvolatilePollTimer = null;
-    } else if (state.status === "running") {
-      resetNonvolatileDetails.textContent =
-        state.reset_details || "Resetting nonvolatile memory...";
-      reconnectDetails.textContent = state.reconnect_details || "Waiting for device to reconnect...";
-      resetNonvolatileDetails.hidden = resetStatus === "idle";
-      reconnectDetailsGroup.hidden = reconnectStatus === "idle";
-      if (!resetNonvolatilePollTimer) {
-        resetNonvolatilePollTimer = setInterval(refreshResetNonvolatileTaskState, 1000);
-      }
-    } else if (state.status === "failure") {
-      resetNonvolatileDetails.textContent =
-        state.reset_details || "Nonvolatile memory reset failed.";
-      reconnectDetails.textContent = state.reconnect_details || "Device did not reconnect.";
-      resetNonvolatileDetails.hidden = resetStatus === "idle";
-      reconnectDetailsGroup.hidden = reconnectStatus === "idle";
-      clearInterval(resetNonvolatilePollTimer);
-      resetNonvolatilePollTimer = null;
-    } else {
-      resetNonvolatileDetails.textContent = "";
-      resetNonvolatileDetails.hidden = true;
-      reconnectDetails.textContent = "";
-      reconnectDetailsGroup.hidden = true;
-      clearInterval(resetNonvolatilePollTimer);
-      resetNonvolatilePollTimer = null;
     }
   }
 
@@ -665,11 +566,6 @@
     applyFanetIdTaskState(await response.json());
   }
 
-  async function refreshResetNonvolatileTaskState() {
-    const response = await fetch("/api/setup/reset-nonvolatile-memory");
-    applyResetNonvolatileTaskState(await response.json());
-  }
-
   async function refreshSelfTestTaskState() {
     const response = await fetch("/api/setup/interactive-self-test");
     applySelfTestTaskState(await response.json());
@@ -713,21 +609,6 @@
 
     const response = await fetch("/api/setup/network-discovery", { method: "POST" });
     applyDiscoveryTaskState(await response.json());
-  }
-
-  async function startResetNonvolatileTask() {
-    if (setupCancellationRequested) return;
-    if (resetNonvolatileStartRequested) return;
-    resetNonvolatileStartRequested = true;
-    const currentResponse = await fetch("/api/setup/reset-nonvolatile-memory");
-    const currentState = await currentResponse.json();
-    if (currentState.status === "running" || currentState.status === "success") {
-      applyResetNonvolatileTaskState(currentState);
-      return;
-    }
-
-    const response = await fetch("/api/setup/reset-nonvolatile-memory", { method: "POST" });
-    applyResetNonvolatileTaskState(await response.json());
   }
 
   async function startFirmwareVersionTask() {
@@ -825,32 +706,6 @@
     }
   });
 
-  reconnectManualIpForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const ipAddress = reconnectManualIp.value.trim();
-    if (!ipAddress) return;
-
-    const submitButton = reconnectManualIpForm.querySelector("button");
-    submitButton.disabled = true;
-    reconnectDetails.textContent = `Checking ${ipAddress}...`;
-    reconnectDetailsGroup.hidden = false;
-    try {
-      const response = await selectManualNetworkDevice(ipAddress);
-      const payload = await response.json();
-      if (!response.ok) {
-        throw new Error(payload.detail || "Manual reconnect failed.");
-      }
-      reconnectDetails.textContent = `Manual IP accepted: ${payload.device.ip_address}:${payload.device.port}`;
-      reconnectDetailsGroup.hidden = false;
-      await refreshResetNonvolatileTaskState();
-    } catch (error) {
-      reconnectDetails.textContent = error.message || "Manual reconnect failed.";
-      reconnectDetailsGroup.hidden = false;
-    } finally {
-      submitButton.disabled = false;
-    }
-  });
-
   setupNotesConfirmed.addEventListener("change", async () => {
     if (!setupNotesConfirmed.checked) return;
 
@@ -894,7 +749,6 @@
     await Promise.all([
       refreshFlashTaskState(),
       refreshDiscoveryTaskState(),
-      refreshResetNonvolatileTaskState(),
       refreshFirmwareVersionTaskState(),
       refreshFanetIdTaskState(),
       refreshSelfTestTaskState(),
@@ -909,15 +763,6 @@
   discoveryTaskIcon.addEventListener("click", () => {
     discoveryDetailsGroup.hidden = false;
     discoveryManualIpForm.hidden = !discoveryManualIpForm.hidden;
-  });
-
-  resetNonvolatileTaskIcon.addEventListener("click", () => {
-    resetNonvolatileDetails.hidden = !resetNonvolatileDetails.hidden;
-  });
-
-  reconnectTaskIcon.addEventListener("click", () => {
-    reconnectDetailsGroup.hidden = false;
-    reconnectManualIpForm.hidden = !reconnectManualIpForm.hidden;
   });
 
   firmwareVersionTaskIcon.addEventListener("click", () => {
@@ -950,7 +795,6 @@
 
   refreshFlashTaskState();
   refreshDiscoveryTaskState();
-  refreshResetNonvolatileTaskState();
   refreshFirmwareVersionTaskState();
   refreshFanetIdTaskState();
   refreshSelfTestTaskState();

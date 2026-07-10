@@ -36,6 +36,7 @@ namespace {
   String send_buffer = "";
   bool user_server_started = false;
   bool user_server_routes_configured = false;
+  bool commissioning_routes_configured = false;
   bool debug_routes_configured = false;
   bool user_app_enabled = false;
   bool user_app_using_leaf_wifi = false;
@@ -109,6 +110,14 @@ namespace {
   uint32_t web_request_sequence = 0;
 
   bool diagnosticsEnabled() { return settings.dev_mode; }
+
+  bool connectedToDiagnosticWifi() {
+    return WiFi.status() == WL_CONNECTED && WiFi.SSID() == "LeafDiagnostics";
+  }
+
+  bool commissioningHttpAllowed() {
+    return connectedToDiagnosticWifi() && !settings.commissioningComplete;
+  }
 
   void logWifiSetupTiming(const char* event) {
     if (!diagnosticsEnabled()) return;
@@ -2020,6 +2029,173 @@ load();
     sendDebugSessionStatus(target);
   }
 
+  bool requireCommissioningHttp(WebServer& target) {
+    if (commissioningHttpAllowed()) return true;
+
+    target.send(403, "application/json",
+                "{\"detail\":\"Commissioning endpoints are only available on the "
+                "LeafDiagnostics network before commissioning is complete.\"}");
+    return false;
+  }
+
+  void sendCommissioningMacAddress(WebServer& target) {
+    if (!requireCommissioningHttp(target)) return;
+
+    String json = "{\"mac_address\":\"";
+    json += settings.getMacAddress();
+    json += "\"}";
+    target.send(200, "application/json", json);
+  }
+
+  void sendCommissioningFirmwareVersion(WebServer& target) {
+    if (!requireCommissioningHttp(target)) return;
+
+    String json = "{\"firmware_version\":\"";
+    json += LeafVersionInfo::firmwareVersion();
+    json += "\"}";
+    target.send(200, "application/json", json);
+  }
+
+  void resetCommissioningSettings(WebServer& target) {
+    if (!requireCommissioningHttp(target)) return;
+
+    const bool forceFormatSdCard =
+        extractJsonBoolValue(target.arg("plain"), "force_format_sd_card", false);
+    target.send(200, "application/json", "{\"reset_requested\":true}");
+    delay(250);
+    settings.factoryResetVario();
+    settings.beginCommissioning();
+    settings.setProductionTestForceFormatSdCard(forceFormatSdCard);
+    delay(50);
+    ESP.restart();
+  }
+
+  void saveCommissioningFanetAddress(WebServer& target) {
+    if (!requireCommissioningHttp(target)) return;
+
+    String fanet_address = extractJsonStringValue(target.arg("plain"), "fanet_address");
+    fanet_address.trim();
+    fanet_address.toUpperCase();
+    if (!isValidFanetAddress(fanet_address)) {
+      target.send(400, "application/json",
+                  "{\"detail\":\"fanet_address must be a 6-character hexadecimal string.\"}");
+      return;
+    }
+
+    settings.fanet_address = fanet_address;
+    settings.save();
+
+    String json = "{\"fanet_address\":\"";
+    json += settings.fanet_address;
+    json += "\",\"saved\":true}";
+    target.send(200, "application/json", json);
+  }
+
+  void startCommissioningSelfTest(WebServer& target) {
+    if (!requireCommissioningHttp(target)) return;
+
+    requestInteractiveSelfTest();
+    target.send(200, "application/json", selfTestSnapshotJson());
+  }
+
+  void sendCommissioningSelfTest(WebServer& target) {
+    if (!requireCommissioningHttp(target)) return;
+
+    target.send(200, "application/json", selfTestSnapshotJson());
+  }
+
+  void sendCommissioningSelfTestDetails(WebServer& target) {
+    if (!requireCommissioningHttp(target)) return;
+
+    sendLatestSelfTestDetails(target);
+  }
+
+  void clearCommissioningSelfTestResults(WebServer& target) {
+    if (!requireCommissioningHttp(target)) return;
+
+    clearSelfTestDetailsFiles(target);
+  }
+
+  void formatCommissioningSdCard(WebServer& target) {
+    if (!requireCommissioningHttp(target)) return;
+
+    if (selfTest.updateNeeded() || interactive_self_test_pending) {
+      target.send(409, "application/json", "{\"detail\":\"Self test is running or pending.\"}");
+      return;
+    }
+
+    if (!sdcard.isCardPresent()) {
+      target.send(404, "application/json", "{\"detail\":\"SD card is not present.\"}");
+      return;
+    }
+
+    if (!sdcard.format()) {
+      target.send(500, "application/json", "{\"formatted\":false}");
+      return;
+    }
+
+    if (!sdcard.setLabel()) {
+      target.send(500, "application/json", "{\"formatted\":true,\"label_set\":false}");
+      return;
+    }
+
+    target.send(200, "application/json", "{\"formatted\":true,\"label_set\":true}");
+  }
+
+  void markCommissioningComplete(WebServer& target) {
+    if (!requireCommissioningHttp(target)) return;
+
+    settings.markCommissioningComplete();
+    selfTest.confirmCommissioningComplete();
+    target.send(200, "application/json",
+                "{\"commissioning_complete\":true,\"commissioning_pending\":false}");
+  }
+
+  void configureCommissioningRoutes() {
+    if (commissioning_routes_configured) return;
+
+    user_server.on("/mac-address", HTTP_GET, []() { sendCommissioningMacAddress(user_server); });
+    user_server.on("/firmware-version", HTTP_GET,
+                   []() { sendCommissioningFirmwareVersion(user_server); });
+    user_server.on("/settings/factory-reset", HTTP_POST,
+                   []() { resetCommissioningSettings(user_server); });
+    user_server.on("/settings/fanet-address", HTTP_POST,
+                   []() { saveCommissioningFanetAddress(user_server); });
+    user_server.on("/self-test/interactive", HTTP_POST,
+                   []() { startCommissioningSelfTest(user_server); });
+    user_server.on("/self-test", HTTP_GET, []() { sendCommissioningSelfTest(user_server); });
+    user_server.on("/self-test/details", HTTP_GET,
+                   []() { sendCommissioningSelfTestDetails(user_server); });
+    user_server.on("/self-test/results", HTTP_DELETE,
+                   []() { clearCommissioningSelfTestResults(user_server); });
+    user_server.on("/sd-card/format", HTTP_POST, []() { formatCommissioningSdCard(user_server); });
+    user_server.on("/commissioning/complete", HTTP_POST,
+                   []() { markCommissioningComplete(user_server); });
+
+    user_server.on("/api/debug/mac-address", HTTP_GET,
+                   []() { sendCommissioningMacAddress(user_server); });
+    user_server.on("/api/debug/firmware-version", HTTP_GET,
+                   []() { sendCommissioningFirmwareVersion(user_server); });
+    user_server.on("/api/debug/settings/factory-reset", HTTP_POST,
+                   []() { resetCommissioningSettings(user_server); });
+    user_server.on("/api/debug/settings/fanet-address", HTTP_POST,
+                   []() { saveCommissioningFanetAddress(user_server); });
+    user_server.on("/api/debug/self-test/interactive", HTTP_POST,
+                   []() { startCommissioningSelfTest(user_server); });
+    user_server.on("/api/debug/sd-card/format", HTTP_POST,
+                   []() { formatCommissioningSdCard(user_server); });
+    user_server.on("/api/debug/self-test/details", HTTP_GET,
+                   []() { sendCommissioningSelfTestDetails(user_server); });
+    user_server.on("/api/debug/self-test/results", HTTP_DELETE,
+                   []() { clearCommissioningSelfTestResults(user_server); });
+    user_server.on("/api/debug/self-test", HTTP_GET,
+                   []() { sendCommissioningSelfTest(user_server); });
+    user_server.on("/api/debug/commissioning/complete", HTTP_POST,
+                   []() { markCommissioningComplete(user_server); });
+
+    commissioning_routes_configured = true;
+  }
+
   void sendFirmwareUpdateStatus(WebServer& target) {
     if (!user_app_enabled) {
       target.send(404, "application/json", "{\"detail\":\"Leaf Web App is not active.\"}");
@@ -2425,7 +2601,7 @@ load();
   }
 
   void setupUserAppServer() {
-    if (user_server_started) return;
+    if (user_server_started && user_server_routes_configured) return;
 
     if (!user_server_routes_configured) {
       user_server.on("/", HTTP_GET, []() {
@@ -2567,8 +2743,10 @@ load();
     }
 
     webserver_setup();
-    user_server.begin();
-    user_server_started = true;
+    if (!user_server_started) {
+      user_server.begin();
+      user_server_started = true;
+    }
     Serial.printf("Leaf Web App started: %s\n", userAppUrl().c_str());
   }
 }  // namespace
@@ -2581,6 +2759,13 @@ void writeScreenshotBuffer(const char* buffer) {
 }
 
 void webserver_setup() {
+  configureCommissioningRoutes();
+  if (!user_server_started && commissioningHttpAllowed()) {
+    user_server.begin();
+    user_server_started = true;
+    Serial.println("Leaf commissioning webserver started");
+  }
+
   if (!settings.dev_mode) return;
   if (debug_routes_configured) return;
 
@@ -2721,99 +2906,9 @@ void webserver_setup() {
   user_server.on("/app/debug/memory", HTTP_GET,
                  []() { user_server.send(200, "text/plain", getMemoryUsage()); });
 
-  user_server.on("/api/debug/mac-address", HTTP_GET, []() {
-    String json = "{\"mac_address\":\"";
-    json += settings.getMacAddress();
-    json += "\"}";
-    user_server.send(200, "application/json", json);
-  });
-
-  user_server.on("/api/debug/firmware-version", HTTP_GET, []() {
-    String json = "{\"firmware_version\":\"";
-    json += LeafVersionInfo::firmwareVersion();
-    json += "\"}";
-    user_server.send(200, "application/json", json);
-  });
-
   user_server.on("/api/debug/discovery", HTTP_GET, []() {
     factoryDiscovery.update();
     user_server.send(200, "application/json", factoryDiscovery.statusJson());
-  });
-
-  user_server.on("/api/debug/settings/factory-reset", HTTP_POST, []() {
-    const bool forceFormatSdCard =
-        extractJsonBoolValue(user_server.arg("plain"), "force_format_sd_card", false);
-    settings.factoryResetVario();
-    settings.beginCommissioning();
-    settings.setProductionTestForceFormatSdCard(forceFormatSdCard);
-    user_server.send(200, "application/json", "{\"reset_requested\":true}");
-    delay(250);
-    ESP.restart();
-  });
-
-  user_server.on("/api/debug/settings/fanet-address", HTTP_POST, []() {
-    String fanet_address = extractJsonStringValue(user_server.arg("plain"), "fanet_address");
-    fanet_address.trim();
-    fanet_address.toUpperCase();
-    if (!isValidFanetAddress(fanet_address)) {
-      user_server.send(400, "application/json",
-                       "{\"detail\":\"fanet_address must be a 6-character hexadecimal string.\"}");
-      return;
-    }
-
-    settings.fanet_address = fanet_address;
-    settings.save();
-
-    String json = "{\"fanet_address\":\"";
-    json += settings.fanet_address;
-    json += "\",\"saved\":true}";
-    user_server.send(200, "application/json", json);
-  });
-
-  user_server.on("/api/debug/self-test/interactive", HTTP_POST, []() {
-    requestInteractiveSelfTest();
-    user_server.send(200, "application/json", selfTestSnapshotJson());
-  });
-
-  user_server.on("/api/debug/sd-card/format", HTTP_POST, []() {
-    if (selfTest.updateNeeded() || interactive_self_test_pending) {
-      user_server.send(409, "application/json",
-                       "{\"detail\":\"Self test is running or pending.\"}");
-      return;
-    }
-
-    if (!sdcard.isCardPresent()) {
-      user_server.send(404, "application/json", "{\"detail\":\"SD card is not present.\"}");
-      return;
-    }
-
-    if (!sdcard.format()) {
-      user_server.send(500, "application/json", "{\"formatted\":false}");
-      return;
-    }
-
-    if (!sdcard.setLabel()) {
-      user_server.send(500, "application/json", "{\"formatted\":true,\"label_set\":false}");
-      return;
-    }
-
-    user_server.send(200, "application/json", "{\"formatted\":true,\"label_set\":true}");
-  });
-
-  user_server.on("/api/debug/self-test/details", HTTP_GET,
-                 []() { sendLatestSelfTestDetails(user_server); });
-
-  user_server.on("/api/debug/self-test/results", HTTP_DELETE,
-                 []() { clearSelfTestDetailsFiles(user_server); });
-
-  user_server.on("/api/debug/self-test", HTTP_GET,
-                 []() { user_server.send(200, "application/json", selfTestSnapshotJson()); });
-
-  user_server.on("/api/debug/commissioning/complete", HTTP_POST, []() {
-    settings.markCommissioningComplete();
-    selfTest.confirmCommissioningComplete();
-    user_server.send(200, "application/json",
-                     "{\"commissioning_complete\":true,\"commissioning_pending\":false}");
   });
 
   debug_routes_configured = true;
@@ -2821,13 +2916,16 @@ void webserver_setup() {
 
 void webserver_loop() {
   if (WiFi.status() == WL_CONNECTED || user_app_enabled) {
+    if (user_server_started) {
+      user_server.handleClient();
+    }
+
     if (user_app_enabled) {
       if (diagnosticsEnabled()) user_app_loop_count++;
       updateUserAppStationPeak();
       if (user_app_provisioning) updateWifiNetworkScan();
       if (user_app_dns_started) dns_server.processNextRequest();
       if (diagnosticsEnabled()) user_app_handle_count++;
-      user_server.handleClient();
       if (user_app_provisioning) appendWifiSetupDiagnostics("loop");
       if (webserver_wifi_setup_ready_to_finish()) {
         appendWifiSetupDiagnostics("transition-start", true);
