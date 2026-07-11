@@ -5,8 +5,6 @@
 struct PilotProfile {
   String id;
   String name;
-  String email;
-  String leafLogApiKey;
 
   bool valid() const { return !id.isEmpty() && !name.isEmpty(); }
 };
