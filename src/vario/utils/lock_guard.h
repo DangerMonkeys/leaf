@@ -5,12 +5,15 @@
 /// @brief Simple FreeRTOS locking guard to lock a mutex in scope
 class LockGuard {
  public:
-  explicit LockGuard(SemaphoreHandle_t mutex);
+  explicit LockGuard(SemaphoreHandle_t mutex, TickType_t timeoutTicks = pdMS_TO_TICKS(10000),
+                     bool fatalOnTimeout = true);
 
-  ~LockGuard() { xSemaphoreGive(mutex_); }
+  ~LockGuard() {
+    if (valid_) xSemaphoreGive(mutex_);
+  }
 
   // Allow this to be used in if statements
-  explicit operator bool() const { return true; }
+  explicit operator bool() const { return valid_; }
 
   // Prevent copying
   LockGuard(const LockGuard&) = delete;
@@ -18,4 +21,5 @@ class LockGuard {
 
  private:
   SemaphoreHandle_t mutex_;
+  bool valid_ = false;
 };

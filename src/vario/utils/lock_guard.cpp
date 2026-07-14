@@ -4,9 +4,13 @@
 
 #include "diagnostics/fatal_error.h"
 
-LockGuard::LockGuard(SemaphoreHandle_t mutex) : mutex_(mutex) {
+LockGuard::LockGuard(SemaphoreHandle_t mutex, TickType_t timeoutTicks, bool fatalOnTimeout)
+    : mutex_(mutex) {
   // Try to take the lock out
-  if (xSemaphoreTake(mutex_, pdMS_TO_TICKS(10000)) == pdTRUE) return;
+  if (mutex_ != NULL && xSemaphoreTake(mutex_, timeoutTicks) == pdTRUE) {
+    valid_ = true;
+    return;
+  }
 
-  fatalError("Lock acquisition failed in LockGuard constructor");
+  if (fatalOnTimeout) fatalError("Lock acquisition failed in LockGuard constructor");
 }

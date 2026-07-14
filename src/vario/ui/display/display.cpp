@@ -73,7 +73,8 @@ void Display::init(void) {
 }
 
 void Display::setContrast(uint8_t contrast) {
-  SpiLockGuard spiLock;
+  SpiLockGuard spiLock(25, false);
+  if (!spiLock) return;
 #ifndef WO256X128  // if not using older hardware, use the latest hardware contrast setting:
   // user can select levels of contrast from 0-20; but display needs values of 115-135.
   u8g2.setContrast(contrast + 115);
@@ -183,7 +184,8 @@ void Display::update() {
     return;
   }
 
-  SpiLockGuard spiLock;  // Take out an SPI lock for the rending of the page
+  SpiLockGuard spiLock(25, false);  // Take out an SPI lock for the rending of the page
+  if (!spiLock) return;
 
   if (displayPage_ == MainPage::Charging) {
     chargingPage_draw();
@@ -241,7 +243,8 @@ void Display::update() {
 }
 
 void Display::clear() {
-  SpiLockGuard spiLock;
+  SpiLockGuard spiLock(25, false);
+  if (!spiLock) return;
   u8g2.clear();
 }
 

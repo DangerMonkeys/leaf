@@ -801,6 +801,11 @@ void display_fanet_icon(const uint8_t& x, const uint8_t& y) {
       u8g2.print(char(0x56 + offset));
       break;
     }
+    case FanetRadioState::FAILED_RADIO_PROBE:
+    case FanetRadioState::FAILED_RADIO_INIT:
+    case FanetRadioState::FAILED_OTHER:
+      u8g2.print(char(96));  // Failed FANET icon
+      break;
     default:
       u8g2.print(char(0x60));  // Radio error icon
       break;

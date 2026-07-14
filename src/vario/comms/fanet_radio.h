@@ -63,6 +63,9 @@ class FanetRadio : public etl::message_router<FanetRadio, GpsReading>,
   // Request to cleanly stop the radio module
   void end();
 
+  // Logs the cached boot-time detection result once system event logging is available.
+  void logDetectionResult();
+
   // Returns the current state of the radio module
   FanetRadioState getState();
 
@@ -100,8 +103,39 @@ class FanetRadio : public etl::message_router<FanetRadio, GpsReading>,
 
   // detect phyiscal presence of the FANET (LoRa SX1262) module
   bool detectFanet(void);
+  bool probeFanetSpi(void);
+  bool waitFanetReady(uint32_t timeoutMs) const;
+  bool radioUnavailable(void) const;
+  bool shouldMarkRadioUnhealthy(int16_t code) const;
+  void markRadioUnhealthy(const char* event, int16_t code);
+  void logProbeResult();
+  void logEvent(const char* event, const String& detail = String(), const char* key = nullptr,
+                int32_t value = 0, bool hasValue = false);
+  void logEventCode(const char* event, const String& detail, const int16_t code);
+  template <typename Fn>
+  int16_t callRadio(const char* event, const String& detail, Fn fn,
+                    bool markUnhealthyOnFailure = true) {
+    const uint32_t startMs = millis();
+    const int16_t result = fn();
+    const uint32_t elapsedMs = millis() - startMs;
+    logEventCode(event, result == RADIOLIB_ERR_NONE ? "ok" : detail, result);
+    const String durationEvent = String(event) + "-ms";
+    logEvent(durationEvent.c_str(), detail, "elapsed", static_cast<int32_t>(elapsedMs), true);
+    if (markUnhealthyOnFailure && shouldMarkRadioUnhealthy(result)) {
+      markRadioUnhealthy(event, result);
+    }
+    return result;
+  }
 
   FanetRadioState state = FanetRadioState::UNINITIALIZED;  // The current state of the radio module
+  bool fanetDetected_ = false;
+  bool detectionResultLogged_ = false;
+  uint8_t detectionCycles_ = 0;
+  bool fanetSpiProbed_ = false;
+  bool fanetSpiProbeOk_ = false;
+  bool probeResultLogged_ = false;
+  uint8_t probeStatus_ = 0;
+  String probeDetail_;
 
   // Delete copy constructor and copy assignment operator
   FanetRadio(const FanetRadio&) = delete;
