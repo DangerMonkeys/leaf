@@ -16,8 +16,7 @@ namespace diagnostic_logs {
   bool enabled(Log log);
   bool ensureDirectory();
   void printCsvString(File& file, const String& value);
-  bool appendSystemEvent(const char* source, const char* event,
-                         const String& detail = String(), const char* key = nullptr,
-                         int32_t value = 0, bool hasValue = false);
+  bool appendSystemEvent(const char* source, const char* event, const String& detail = String(),
+                         const char* key = nullptr, int32_t value = 0, bool hasValue = false);
 
 }  // namespace diagnostic_logs

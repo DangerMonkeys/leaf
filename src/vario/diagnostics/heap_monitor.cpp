@@ -4,11 +4,11 @@
 #include <SD_MMC.h>
 #include <string.h>
 
+#include "diagnostics/diagnostic_logs.h"
 #include "esp_heap_caps.h"
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "diagnostics/diagnostic_logs.h"
 #include "ui/settings/settings.h"
 
 namespace heap_monitor {
@@ -77,7 +77,8 @@ namespace heap_monitor {
     void writeHeaderIfNeeded(File& file, const char* path) {
       if (SD_MMC.exists(path) && file.size() > 0) return;
       file.println(
-          "millis,source,event,detail,key,value,free_heap,min_free_heap,largest_free_block,max_alloc_heap,"
+          "millis,source,event,detail,key,value,free_heap,min_free_heap,largest_free_block,max_"
+          "alloc_heap,"
           "internal_free,internal_largest,psram_free,psram_largest,current_task,"
           "stack_high_water,loop_stack_high_water,ble_stack_high_water,"
           "fanet_tx_stack_high_water,fanet_rx_stack_high_water");
@@ -104,8 +105,7 @@ namespace heap_monitor {
 
     void writeSample(File& file, const char* source, const Sample& sample) {
       file.printf("%lu,%s,%s,,,,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%s,%lu,%lu,%lu,%lu,%lu\n",
-                  static_cast<unsigned long>(sample.millis), source ? source : "heap",
-                  sample.event,
+                  static_cast<unsigned long>(sample.millis), source ? source : "heap", sample.event,
                   static_cast<unsigned long>(sample.freeHeap),
                   static_cast<unsigned long>(sample.minFreeHeap),
                   static_cast<unsigned long>(sample.largestFreeBlock),
@@ -147,7 +147,8 @@ namespace heap_monitor {
     const bool existed = SD_MMC.exists(diagnostic_logs::SYSTEM_EVENTS_PATH);
     File file = SD_MMC.open(diagnostic_logs::SYSTEM_EVENTS_PATH, "a", true);
     if (!file) return;
-    if (!existed || file.size() == 0) writeHeaderIfNeeded(file, diagnostic_logs::SYSTEM_EVENTS_PATH);
+    if (!existed || file.size() == 0)
+      writeHeaderIfNeeded(file, diagnostic_logs::SYSTEM_EVENTS_PATH);
     writeSample(file, "heap", sample);
     file.close();
   }

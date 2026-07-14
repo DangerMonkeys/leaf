@@ -102,8 +102,7 @@ namespace leaf_wifi {
       printCsvString(file, String(""));
       file.printf(",%lu,%lu,,,%u,%lu,%lu,", static_cast<unsigned long>(elapsed),
                   static_cast<unsigned long>(saved_network_connect_started_ms),
-                  diagnosticsAllowed() ? 1 : 0,
-                  static_cast<unsigned long>(ESP.getFreeHeap()),
+                  diagnosticsAllowed() ? 1 : 0, static_cast<unsigned long>(ESP.getFreeHeap()),
                   static_cast<unsigned long>(ESP.getMaxAllocHeap()));
       printCsvString(file, pcTaskGetName(NULL));
       file.println(",,,,,,,,,,,,,");

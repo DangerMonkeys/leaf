@@ -76,7 +76,7 @@
 #define DEF_DIAG_NETWORK_EVENTS 0
 #define DEF_DIAG_WEB_REQUESTS 0
 #define DEF_DIAG_VARIO 0
-#define DEF_ECO_MODE 0                // default off to allow reprogramming easier
+#define DEF_ECO_MODE 0  // default off to allow reprogramming easier
 
 // Boot Flags
 // Boot-to-ON Flag (when resetting from system updates,

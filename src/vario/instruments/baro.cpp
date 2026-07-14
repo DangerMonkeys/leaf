@@ -365,15 +365,15 @@ void Barometer::filterClimb() {
     }
   }
 
-  if (diagnostic_logs::enabled(diagnostic_logs::Log::Vario) &&
-      diagnostic_logs::ensureDirectory()) {
+  if (diagnostic_logs::enabled(diagnostic_logs::Log::Vario) && diagnostic_logs::ensureDirectory()) {
     const bool existed = SD_MMC.exists(diagnostic_logs::VARIO_PATH);
     File file = SD_MMC.open(diagnostic_logs::VARIO_PATH, "a", true);
     if (file) {
       writeVarioHeaderIfNeeded(file, existed);
       file.printf(
           "%lu,%lu,%ld,%.6f,%ld,%.6f,%.6f,%.6f,%.6f,%.8f,%.8f,%.8f,%.6f,%.6f,%.6f,"
-          "%.6f,%.6f,%.6f,%u,%.6f,%.6f,%.6f,%.6f,%ld,%.6f,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu\n",
+          "%.6f,%.6f,%.6f,%u,%.6f,%.6f,%.6f,%.6f,%ld,%.6f,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%"
+          "lu\n",
           static_cast<unsigned long>(millis()), static_cast<unsigned long>(imu.lastMotionTime()),
           static_cast<long>(pressure_), altF(), static_cast<long>(altAdjusted()), imu.getAccel(),
           imu.lastDeviceAccelX(), imu.lastDeviceAccelY(), imu.lastDeviceAccelZ(), imu.lastQuatX(),

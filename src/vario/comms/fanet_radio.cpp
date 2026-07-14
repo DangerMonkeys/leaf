@@ -1,7 +1,7 @@
 #include "comms/fanet_radio.h"
 
-#include "FreeRTOS.h"
 #include <SPI.h>
+#include "FreeRTOS.h"
 #include "diagnostics/diagnostic_logs.h"
 #include "diagnostics/heap_monitor.h"
 #include "dispatch/message_types.h"
@@ -20,41 +20,39 @@
 FanetRadio fanetRadio;
 
 namespace {
-constexpr uint8_t SX1262_CMD_GET_STATUS = 0xC0;
-constexpr uint8_t SX1262_CMD_READ_REGISTER = 0x1D;
-constexpr uint8_t SX1262_CMD_SET_STANDBY = 0x80;
-constexpr uint8_t SX1262_CMD_NOP = 0x00;
-constexpr uint8_t SX1262_STANDBY_RC = 0x00;
-constexpr uint16_t SX1262_REG_VERSION_STRING = 0x0320;
-constexpr uint32_t FANET_SPI_PROBE_BUSY_TIMEOUT_MS = 100;
-constexpr uint32_t FANET_SPI_LOCK_TIMEOUT_MS = 25;
-constexpr uint32_t FANET_RADIO_SPI_CLOCK_HZ = 1000000;
+  constexpr uint8_t SX1262_CMD_GET_STATUS = 0xC0;
+  constexpr uint8_t SX1262_CMD_READ_REGISTER = 0x1D;
+  constexpr uint8_t SX1262_CMD_SET_STANDBY = 0x80;
+  constexpr uint8_t SX1262_CMD_NOP = 0x00;
+  constexpr uint8_t SX1262_STANDBY_RC = 0x00;
+  constexpr uint16_t SX1262_REG_VERSION_STRING = 0x0320;
+  constexpr uint32_t FANET_SPI_PROBE_BUSY_TIMEOUT_MS = 100;
+  constexpr uint32_t FANET_SPI_LOCK_TIMEOUT_MS = 25;
+  constexpr uint32_t FANET_RADIO_SPI_CLOCK_HZ = 1000000;
 
-bool sx1262StatusLooksValid(uint8_t status) {
-  return status != 0x00 && status != 0xFF;
-}
+  bool sx1262StatusLooksValid(uint8_t status) { return status != 0x00 && status != 0xFF; }
 
-bool sx126xVersionLooksValid(const char* version) {
-  return strncmp(version, "SX1261", 6) == 0 || strncmp(version, "SX1262", 6) == 0;
-}
-
-String sx1262VersionPrefixString(const char* version) {
-  String prefix;
-  for (size_t i = 0; i < 6; i++) {
-    const char c = version[i];
-    prefix += isPrintable(c) ? c : '.';
+  bool sx126xVersionLooksValid(const char* version) {
+    return strncmp(version, "SX1261", 6) == 0 || strncmp(version, "SX1262", 6) == 0;
   }
-  return prefix;
-}
 
-String sx1262VersionHexString(const char* version) {
-  char hex[18] = {0};
-  snprintf(hex, sizeof(hex), "%02X%02X%02X%02X%02X%02X",
-           static_cast<uint8_t>(version[0]), static_cast<uint8_t>(version[1]),
-           static_cast<uint8_t>(version[2]), static_cast<uint8_t>(version[3]),
-           static_cast<uint8_t>(version[4]), static_cast<uint8_t>(version[5]));
-  return String(hex);
-}
+  String sx1262VersionPrefixString(const char* version) {
+    String prefix;
+    for (size_t i = 0; i < 6; i++) {
+      const char c = version[i];
+      prefix += isPrintable(c) ? c : '.';
+    }
+    return prefix;
+  }
+
+  String sx1262VersionHexString(const char* version) {
+    char hex[18] = {0};
+    snprintf(hex, sizeof(hex), "%02X%02X%02X%02X%02X%02X", static_cast<uint8_t>(version[0]),
+             static_cast<uint8_t>(version[1]), static_cast<uint8_t>(version[2]),
+             static_cast<uint8_t>(version[3]), static_cast<uint8_t>(version[4]),
+             static_cast<uint8_t>(version[5]));
+    return String(hex);
+  }
 }  // namespace
 
 // Initial detection of Fanet module (hw3.2.6+)
@@ -171,16 +169,14 @@ bool FanetRadio::probeFanetSpi() {
     SPI.endTransaction();
   }
 
-  const uint8_t status =
-      sx1262StatusLooksValid(firstStatus) ? firstStatus : secondStatus;
+  const uint8_t status = sx1262StatusLooksValid(firstStatus) ? firstStatus : secondStatus;
   const String versionPrefix = sx1262VersionPrefixString(version);
   fanetSpiProbed_ = true;
   fanetSpiProbeOk_ = sx126xVersionLooksValid(version);
   probeStatus_ = status;
-  probeDetail_ = fanetSpiProbeOk_
-                     ? String("ok:") + versionPrefix
-                     : String("version:") + versionPrefix + ":hex:" +
-                           sx1262VersionHexString(version);
+  probeDetail_ = fanetSpiProbeOk_ ? String("ok:") + versionPrefix
+                                  : String("version:") + versionPrefix +
+                                        ":hex:" + sx1262VersionHexString(version);
   logEvent("probe-status", sx1262StatusLooksValid(status) ? "ok" : "invalid", "status", status,
            true);
   logEvent("probe-version", fanetSpiProbeOk_ ? String("ok:") + versionPrefix : versionPrefix);
@@ -199,9 +195,8 @@ bool FanetRadio::probeFanetSpi() {
 
 void FanetRadio::logDetectionResult() {
   if (!detectionResultLogged_ &&
-      diagnostic_logs::appendSystemEvent("fanet", "detect",
-                                         fanetDetected_ ? "present" : "missing", "cycles",
-                                         detectionCycles_, true)) {
+      diagnostic_logs::appendSystemEvent("fanet", "detect", fanetDetected_ ? "present" : "missing",
+                                         "cycles", detectionCycles_, true)) {
     detectionResultLogged_ = true;
   }
   logProbeResult();
@@ -210,8 +205,7 @@ void FanetRadio::logDetectionResult() {
 void FanetRadio::logProbeResult() {
   if (probeResultLogged_ || !fanetSpiProbed_) return;
   String detail = probeDetail_.isEmpty() ? (fanetSpiProbeOk_ ? "ok" : "failed") : probeDetail_;
-  if (diagnostic_logs::appendSystemEvent("fanet", "probe", detail, "status",
-                                         probeStatus_, true)) {
+  if (diagnostic_logs::appendSystemEvent("fanet", "probe", detail, "status", probeStatus_, true)) {
     probeResultLogged_ = true;
   }
 }
@@ -228,8 +222,7 @@ void FanetRadio::logEventCode(const char* event, const String& detail, const int
 }
 
 bool FanetRadio::radioUnavailable() const {
-  return state == FanetRadioState::UNINSTALLED ||
-         state == FanetRadioState::FAILED_RADIO_PROBE ||
+  return state == FanetRadioState::UNINSTALLED || state == FanetRadioState::FAILED_RADIO_PROBE ||
          state == FanetRadioState::FAILED_RADIO_INIT || state == FanetRadioState::FAILED_OTHER;
 }
 
@@ -340,9 +333,8 @@ void FanetRadio::processRxPacket() {
     }
 
     // A packet is able to be read
-    rxState = callRadio("rx-read", "readData", [&]() {
-      return radio.readData(buffer.data(), length);
-    });
+    rxState =
+        callRadio("rx-read", "readData", [&]() { return radio.readData(buffer.data(), length); });
   } else {
     logEvent("rx-read", "spi-lock-timeout");
     return;
@@ -454,9 +446,8 @@ bool FanetRadio::fanet_sendFrame(uint8_t codingRate, etl::span<const uint8_t> da
 
   // Send the frame out on the wire.
   logEvent("tx-start", "transmit", "bytes", data.size(), true);
-  auto txResult = callRadio("tx-result", "transmit", [&]() {
-    return radio->transmit(data.data(), data.size());
-  });
+  auto txResult = callRadio("tx-result", "transmit",
+                            [&]() { return radio->transmit(data.data(), data.size()); });
   if (txResult != RADIOLIB_ERR_NONE) {
     Serial.println("[FanetRadio] Failed to transmit");
     return false;
@@ -645,9 +636,8 @@ void FanetRadio::begin(const FanetRadioRegion& region) {
         return radio->begin(920.800f, 500.0f, 7U, 5U, 0xF1, 22U, 8U, 1.8f, false);
       });
       if (radioInitState == RADIOLIB_ERR_NONE) {
-        syncWordState = callRadio("begin-sync-word", "US", [&]() {
-          return radio->setSyncWord(0xF1, 0x44);
-        });
+        syncWordState =
+            callRadio("begin-sync-word", "US", [&]() { return radio->setSyncWord(0xF1, 0x44); });
       }
       break;
     case FanetRadioRegion::EUROPE:
@@ -656,9 +646,8 @@ void FanetRadio::begin(const FanetRadioRegion& region) {
         return radio->begin(868.200f, 250.0f, 7U, 5U, 0xF1, 22U, 8U, 1.8f, false);
       });
       if (radioInitState == RADIOLIB_ERR_NONE) {
-        syncWordState = callRadio("begin-sync-word", "EUROPE", [&]() {
-          return radio->setSyncWord(0xF1, 0x44);
-        });
+        syncWordState = callRadio("begin-sync-word", "EUROPE",
+                                  [&]() { return radio->setSyncWord(0xF1, 0x44); });
       }
       break;
   }
@@ -676,9 +665,8 @@ void FanetRadio::begin(const FanetRadioRegion& region) {
   Serial.println("[FanetRadio] Initialized");
 
   logEvent("begin-start-rx-start", "startReceive");
-  auto rxState = callRadio("begin-start-rx", "startReceive", [&]() {
-    return radio->startReceive();
-  });
+  auto rxState =
+      callRadio("begin-start-rx", "startReceive", [&]() { return radio->startReceive(); });
   if (rxState != RADIOLIB_ERR_NONE) {
     Serial.println("[FanetRadio] Radio->startReceive failed");
     state = FanetRadioState::FAILED_RADIO_INIT;
@@ -689,18 +677,16 @@ void FanetRadio::begin(const FanetRadioRegion& region) {
   // 1262 radio is different from the WaveShare breadboard modules.
   radio->setRfSwitchPins(SX1262_RF_SW, RADIOLIB_NC);
   logEvent("begin-dio2-rf-switch-start", "setDio2AsRfSwitch");
-  auto dio2State = callRadio("begin-dio2-rf-switch", "setDio2AsRfSwitch", [&]() {
-    return radio->setDio2AsRfSwitch();
-  });
+  auto dio2State = callRadio("begin-dio2-rf-switch", "setDio2AsRfSwitch",
+                             [&]() { return radio->setDio2AsRfSwitch(); });
   if (dio2State != RADIOLIB_ERR_NONE) {
     state = FanetRadioState::FAILED_RADIO_INIT;
     return;
   }
   // Try to get a few extra db
   logEvent("begin-rx-boost-start", "setRxBoostedGainMode");
-  auto boostedGainState = callRadio("begin-rx-boost", "setRxBoostedGainMode", [&]() {
-    return radio->setRxBoostedGainMode(true, true);
-  });
+  auto boostedGainState = callRadio("begin-rx-boost", "setRxBoostedGainMode",
+                                    [&]() { return radio->setRxBoostedGainMode(true, true); });
   if (boostedGainState != RADIOLIB_ERR_NONE) {
     state = FanetRadioState::FAILED_RADIO_INIT;
     return;

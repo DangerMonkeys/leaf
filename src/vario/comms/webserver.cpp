@@ -107,7 +107,9 @@ namespace {
   size_t nav_upload_bytes = 0;
   uint32_t web_request_sequence = 0;
 
-  bool diagnosticsEnabled() { return diagnostic_logs::enabled(diagnostic_logs::Log::NetworkEvents); }
+  bool diagnosticsEnabled() {
+    return diagnostic_logs::enabled(diagnostic_logs::Log::NetworkEvents);
+  }
 
   bool webRequestDiagnosticsEnabled() {
     return diagnostic_logs::enabled(diagnostic_logs::Log::WebRequests);
@@ -310,13 +312,13 @@ namespace {
     printCsvString(file, ssid);
     file.print(',');
     printCsvString(file, wifi_setup_connect_error);
-    file.printf(",%lu,%lu,%lu,%d,%u,%lu,%lu,",
-                static_cast<unsigned long>(wifiSetupConnectedElapsedMs()),
-                static_cast<unsigned long>(wifi_setup_connect_started_ms),
-                static_cast<unsigned long>(wifi_setup_connected_ms),
-                static_cast<int>(wifi_setup_last_scan_result), leaf_wifi::diagnosticsAllowed() ? 1 : 0,
-                static_cast<unsigned long>(ESP.getFreeHeap()),
-                static_cast<unsigned long>(ESP.getMaxAllocHeap()));
+    file.printf(
+        ",%lu,%lu,%lu,%d,%u,%lu,%lu,", static_cast<unsigned long>(wifiSetupConnectedElapsedMs()),
+        static_cast<unsigned long>(wifi_setup_connect_started_ms),
+        static_cast<unsigned long>(wifi_setup_connected_ms),
+        static_cast<int>(wifi_setup_last_scan_result), leaf_wifi::diagnosticsAllowed() ? 1 : 0,
+        static_cast<unsigned long>(ESP.getFreeHeap()),
+        static_cast<unsigned long>(ESP.getMaxAllocHeap()));
     printCsvString(file, pcTaskGetName(NULL));
     file.println(",,,,,,,,,,,,,");
     file.close();
@@ -352,10 +354,9 @@ namespace {
     file.printf("%lu,", static_cast<unsigned long>(millis()));
     printCsvString(file, event ? String(event) : String(""));
     file.print(",webapp,,,,");
-    file.printf("%u,%u,%u,,,%d,%d,%d,%u,%u,",
-                user_app_enabled ? 1 : 0, user_app_using_leaf_wifi ? 1 : 0,
-                user_app_provisioning ? 1 : 0, static_cast<int>(WiFi.status()),
-                static_cast<int>(WiFi.getMode()), WiFi.RSSI(),
+    file.printf("%u,%u,%u,,,%d,%d,%d,%u,%u,", user_app_enabled ? 1 : 0,
+                user_app_using_leaf_wifi ? 1 : 0, user_app_provisioning ? 1 : 0,
+                static_cast<int>(WiFi.status()), static_cast<int>(WiFi.getMode()), WiFi.RSSI(),
                 static_cast<unsigned int>(WiFi.softAPgetStationNum()),
                 static_cast<unsigned int>(user_app_max_ap_stations));
     printCsvString(file, WiFi.localIP().toString());
@@ -2052,10 +2053,10 @@ load();
     user_app_always_on = extractJsonBoolValue(body, "always_on", user_app_always_on);
     user_app_keep_bluetooth_disabled =
         extractJsonBoolValue(body, "keep_bluetooth_disabled", user_app_keep_bluetooth_disabled);
-    settings.diag_systemEvents = extractJsonBoolValue(body, "diag_system_events",
-                                                      settings.diag_systemEvents);
-    settings.diag_networkEvents = extractJsonBoolValue(body, "diag_network_events",
-                                                       settings.diag_networkEvents);
+    settings.diag_systemEvents =
+        extractJsonBoolValue(body, "diag_system_events", settings.diag_systemEvents);
+    settings.diag_networkEvents =
+        extractJsonBoolValue(body, "diag_network_events", settings.diag_networkEvents);
     settings.diag_webRequests =
         extractJsonBoolValue(body, "diag_web_requests", settings.diag_webRequests);
     settings.diag_vario = extractJsonBoolValue(body, "diag_vario", settings.diag_vario);
