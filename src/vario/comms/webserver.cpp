@@ -14,6 +14,7 @@
 #include "comms/fanet_radio.h"
 #include "comms/ota.h"
 #include "comms/wifi_coordinator.h"
+#include "diagnostics/diagnostic_logs.h"
 #include "diagnostics/heap_monitor.h"
 #include "diagnostics/memory_report.h"
 #include "diagnostics/self_test/selfTest.h"
@@ -89,10 +90,6 @@ namespace {
   static constexpr const char* PROFILE_BACKUP_FILE = "/profiles/profiles.bak";
   static constexpr const char* WAYPOINTS_DIR = "/waypoints";
   static constexpr const char* NAV_UPLOAD_TEMP_FILE = "/waypoints/upload.tmp";
-  static constexpr const char* DIAGNOSTICS_DIR = "/diagnostics";
-  static constexpr const char* USER_APP_DIAGNOSTICS_FILE = "/diagnostics/webapp_requests.csv";
-  static constexpr const char* WEB_REQUEST_DIAGNOSTICS_FILE = "/diagnostics/web_requests.csv";
-  static constexpr const char* WIFI_SETUP_DIAGNOSTICS_FILE = "/diagnostics/wifi_setup.csv";
   static constexpr size_t WIFI_SETUP_NETWORKS_JSON_RESERVE = 896;
   static constexpr uint32_t WEB_REQUEST_SLOW_MS = 1000;
 
@@ -110,7 +107,13 @@ namespace {
   size_t nav_upload_bytes = 0;
   uint32_t web_request_sequence = 0;
 
-  bool diagnosticsEnabled() { return settings.dev_mode; }
+  bool diagnosticsEnabled() {
+    return diagnostic_logs::enabled(diagnostic_logs::Log::NetworkEvents);
+  }
+
+  bool webRequestDiagnosticsEnabled() {
+    return diagnostic_logs::enabled(diagnostic_logs::Log::WebRequests);
+  }
 
   bool connectedToDiagnosticWifi() {
     return WiFi.status() == WL_CONNECTED && WiFi.SSID() == "LeafDiagnostics";
@@ -175,6 +178,17 @@ namespace {
     file.print('"');
   }
 
+  void writeNetworkEventsHeaderIfNeeded(File& file, bool existed) {
+    if (existed && file.size() > 0) return;
+    file.println(
+        "millis,event,mode,cycle,attempt_index,saved_count,enabled,using_leaf_wifi,provisioning,"
+        "connecting,ready,wifi_status,wifi_mode,rssi,ap_stations,max_ap_stations,local_ip,ap_ip,"
+        "target_ssid,current_ssid,connect_error,elapsed_ms,connect_started_ms,connected_ms,"
+        "last_scan_result,diagnostics_allowed,free_heap,max_alloc_heap,current_task,loop_count,"
+        "handle_count,root,app,status,profiles_get,profiles_put,logbook,logbook_entry,"
+        "logbook_delete,waypoints_upload,routes_import,not_found");
+  }
+
   const char* httpMethodName(HTTPMethod method) {
     switch (method) {
       case HTTP_GET:
@@ -196,11 +210,11 @@ namespace {
 
   void appendWebRequestDiagnostics(const char* event, uint32_t sequence, const char* route,
                                    uint32_t startedMs, uint32_t durationMs) {
-    if (!diagnosticsEnabled()) return;
-    if (!SD_MMC.exists(DIAGNOSTICS_DIR)) SD_MMC.mkdir(DIAGNOSTICS_DIR);
+    if (!webRequestDiagnosticsEnabled()) return;
+    if (!diagnostic_logs::ensureDirectory()) return;
 
-    const bool existed = SD_MMC.exists(WEB_REQUEST_DIAGNOSTICS_FILE);
-    File file = SD_MMC.open(WEB_REQUEST_DIAGNOSTICS_FILE, "a", true);
+    const bool existed = SD_MMC.exists(diagnostic_logs::WEB_REQUESTS_PATH);
+    File file = SD_MMC.open(diagnostic_logs::WEB_REQUESTS_PATH, "a", true);
     if (!file) return;
 
     if (!existed || file.size() == 0) {
@@ -234,7 +248,7 @@ namespace {
 
   template <typename Handler>
   void handleUserRequest(const char* route, Handler handler) {
-    if (!diagnosticsEnabled()) {
+    if (!webRequestDiagnosticsEnabled()) {
       handler();
       return;
     }
@@ -273,41 +287,40 @@ namespace {
         static_cast<unsigned long>(wifiSetupConnectedElapsedMs()),
         wifi_setup_connect_error.c_str());
 
-    if (!SD_MMC.exists(DIAGNOSTICS_DIR)) SD_MMC.mkdir(DIAGNOSTICS_DIR);
-    const bool existed = SD_MMC.exists(WIFI_SETUP_DIAGNOSTICS_FILE);
-    File file = SD_MMC.open(WIFI_SETUP_DIAGNOSTICS_FILE, "a", true);
+    if (!diagnostic_logs::ensureDirectory()) return;
+    const bool existed = SD_MMC.exists(diagnostic_logs::NETWORK_EVENTS_PATH);
+    File file = SD_MMC.open(diagnostic_logs::NETWORK_EVENTS_PATH, "a", true);
     if (!file) return;
 
-    if (!existed || file.size() == 0) {
-      file.println(
-          "millis,event,cycle,enabled,using_leaf_wifi,provisioning,connecting,ready,wifi_status,"
-          "wifi_mode,ap_stations,local_ip,ap_ip,ssid,target_ssid,connect_error,"
-          "connect_started_ms,connected_ms,connected_elapsed_ms,last_scan_result,free_heap,"
-          "max_alloc_heap");
-    }
+    writeNetworkEventsHeaderIfNeeded(file, existed);
 
     file.printf("%lu,", static_cast<unsigned long>(now));
     printCsvString(file, event ? String(event) : String(""));
-    file.printf(",%lu,%u,%u,%u,%u,%u,%d,%d,%u,", static_cast<unsigned long>(wifi_setup_cycle),
-                user_app_enabled ? 1 : 0, user_app_using_leaf_wifi ? 1 : 0,
-                user_app_provisioning ? 1 : 0, wifi_setup_connecting ? 1 : 0, ready ? 1 : 0,
-                wifi_status, wifi_mode, static_cast<unsigned int>(ap_stations));
+    file.print(",wifi_setup");
+    file.printf(",%lu,,,%u,%u,%u,%u,%u,%d,%d,%d,%u,%u,",
+                static_cast<unsigned long>(wifi_setup_cycle), user_app_enabled ? 1 : 0,
+                user_app_using_leaf_wifi ? 1 : 0, user_app_provisioning ? 1 : 0,
+                wifi_setup_connecting ? 1 : 0, ready ? 1 : 0, wifi_status, wifi_mode, WiFi.RSSI(),
+                static_cast<unsigned int>(ap_stations),
+                static_cast<unsigned int>(user_app_max_ap_stations));
     printCsvString(file, local_ip);
     file.print(',');
     printCsvString(file, ap_ip);
     file.print(',');
-    printCsvString(file, ssid);
-    file.print(',');
     printCsvString(file, wifi_setup_connect_ssid);
     file.print(',');
+    printCsvString(file, ssid);
+    file.print(',');
     printCsvString(file, wifi_setup_connect_error);
-    file.printf(",%lu,%lu,%lu,%d,%lu,%lu\n",
-                static_cast<unsigned long>(wifi_setup_connect_started_ms),
-                static_cast<unsigned long>(wifi_setup_connected_ms),
-                static_cast<unsigned long>(wifiSetupConnectedElapsedMs()),
-                static_cast<int>(wifi_setup_last_scan_result),
-                static_cast<unsigned long>(ESP.getFreeHeap()),
-                static_cast<unsigned long>(ESP.getMaxAllocHeap()));
+    file.printf(
+        ",%lu,%lu,%lu,%d,%u,%lu,%lu,", static_cast<unsigned long>(wifiSetupConnectedElapsedMs()),
+        static_cast<unsigned long>(wifi_setup_connect_started_ms),
+        static_cast<unsigned long>(wifi_setup_connected_ms),
+        static_cast<int>(wifi_setup_last_scan_result), leaf_wifi::diagnosticsAllowed() ? 1 : 0,
+        static_cast<unsigned long>(ESP.getFreeHeap()),
+        static_cast<unsigned long>(ESP.getMaxAllocHeap()));
+    printCsvString(file, pcTaskGetName(NULL));
+    file.println(",,,,,,,,,,,,,");
     file.close();
   }
 
@@ -328,44 +341,46 @@ namespace {
 
   void dumpUserAppCounters(const char* event) {
     if (!diagnosticsEnabled()) return;
-    if (!SD_MMC.exists(DIAGNOSTICS_DIR)) SD_MMC.mkdir(DIAGNOSTICS_DIR);
+    if (!diagnostic_logs::ensureDirectory()) return;
 
-    const bool existed = SD_MMC.exists(USER_APP_DIAGNOSTICS_FILE);
-    File file = SD_MMC.open(USER_APP_DIAGNOSTICS_FILE, "a", true);
+    const bool existed = SD_MMC.exists(diagnostic_logs::NETWORK_EVENTS_PATH);
+    File file = SD_MMC.open(diagnostic_logs::NETWORK_EVENTS_PATH, "a", true);
     if (!file) return;
 
-    if (!existed || file.size() == 0) {
-      file.println(
-          "millis,event,enabled,using_leaf_wifi,user_server_started,debug_routes_configured,"
-          "ap_stations,max_ap_stations,wifi_status,free_heap,max_alloc_heap,loop_count,"
-          "handle_count,root,app,status,profiles_get,profiles_put,logbook,logbook_entry,"
-          "logbook_delete,waypoints_upload,routes_import,not_found,ap_ip");
-    }
+    writeNetworkEventsHeaderIfNeeded(file, existed);
 
     updateUserAppStationPeak();
     const String ap_ip = WiFi.softAPIP().toString();
-    file.printf(
-        "%lu,%s,%u,%u,%u,%u,%u,%u,%d,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%"
-        "s\n",
-        static_cast<unsigned long>(millis()), event ? event : "", user_app_enabled ? 1 : 0,
-        user_app_using_leaf_wifi ? 1 : 0, user_server_started ? 1 : 0,
-        debug_routes_configured ? 1 : 0, static_cast<unsigned int>(WiFi.softAPgetStationNum()),
-        static_cast<unsigned int>(user_app_max_ap_stations), static_cast<int>(WiFi.status()),
-        static_cast<unsigned long>(ESP.getFreeHeap()),
-        static_cast<unsigned long>(ESP.getMaxAllocHeap()),
-        static_cast<unsigned long>(user_app_loop_count),
-        static_cast<unsigned long>(user_app_handle_count),
-        static_cast<unsigned long>(user_app_route_root_count),
-        static_cast<unsigned long>(user_app_route_app_count),
-        static_cast<unsigned long>(user_app_route_status_count),
-        static_cast<unsigned long>(user_app_route_profiles_get_count),
-        static_cast<unsigned long>(user_app_route_profiles_put_count),
-        static_cast<unsigned long>(user_app_route_logbook_count),
-        static_cast<unsigned long>(user_app_route_logbook_entry_count),
-        static_cast<unsigned long>(user_app_route_logbook_delete_count),
-        static_cast<unsigned long>(user_app_route_waypoints_upload_count),
-        static_cast<unsigned long>(user_app_route_routes_import_count),
-        static_cast<unsigned long>(user_app_route_not_found_count), ap_ip.c_str());
+    file.printf("%lu,", static_cast<unsigned long>(millis()));
+    printCsvString(file, event ? String(event) : String(""));
+    file.print(",webapp,,,,");
+    file.printf("%u,%u,%u,,,%d,%d,%d,%u,%u,", user_app_enabled ? 1 : 0,
+                user_app_using_leaf_wifi ? 1 : 0, user_app_provisioning ? 1 : 0,
+                static_cast<int>(WiFi.status()), static_cast<int>(WiFi.getMode()), WiFi.RSSI(),
+                static_cast<unsigned int>(WiFi.softAPgetStationNum()),
+                static_cast<unsigned int>(user_app_max_ap_stations));
+    printCsvString(file, WiFi.localIP().toString());
+    file.print(',');
+    printCsvString(file, ap_ip);
+    file.print(",,,,,,,");
+    file.printf("%u,%lu,%lu,", leaf_wifi::diagnosticsAllowed() ? 1 : 0,
+                static_cast<unsigned long>(ESP.getFreeHeap()),
+                static_cast<unsigned long>(ESP.getMaxAllocHeap()));
+    printCsvString(file, pcTaskGetName(NULL));
+    file.printf(",%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu\n",
+                static_cast<unsigned long>(user_app_loop_count),
+                static_cast<unsigned long>(user_app_handle_count),
+                static_cast<unsigned long>(user_app_route_root_count),
+                static_cast<unsigned long>(user_app_route_app_count),
+                static_cast<unsigned long>(user_app_route_status_count),
+                static_cast<unsigned long>(user_app_route_profiles_get_count),
+                static_cast<unsigned long>(user_app_route_profiles_put_count),
+                static_cast<unsigned long>(user_app_route_logbook_count),
+                static_cast<unsigned long>(user_app_route_logbook_entry_count),
+                static_cast<unsigned long>(user_app_route_logbook_delete_count),
+                static_cast<unsigned long>(user_app_route_waypoints_upload_count),
+                static_cast<unsigned long>(user_app_route_routes_import_count),
+                static_cast<unsigned long>(user_app_route_not_found_count));
     file.close();
   }
 
@@ -1937,10 +1952,10 @@ let s=el("section",{id:"developerCard"}),h=el("h2",{text:"Developer"}),status=el
 let shot=el("button",{class:"hero",id:"devScreenshot",text:"Screenshot"}),msc=el("button",{class:"secondary",id:"devMassStorage",text:"Mass Storage"}),mem=el("button",{class:"secondary",id:"devMemory",text:"Memory"}),fan=el("button",{class:"secondary",id:"devFanet",text:"FANET"});
 actions.style.flexWrap="wrap";
 actions.appendChild(shot);actions.appendChild(msc);actions.appendChild(mem);actions.appendChild(fan);
-s.appendChild(h);s.appendChild(status);s.appendChild(row("Keep web app on","devAlwaysOn"));s.appendChild(row("Keep Bluetooth disabled","devKeepBleDisabled"));s.appendChild(actions);s.appendChild(msgEl);main.appendChild(s);
-async function load(){try{let r=await Promise.all([fetch("/api/debug/session"),fetch("/api/user/status")]),d=await r[0].json(),u=await r[1].json();document.getElementById("devAlwaysOn").checked=!!d.always_on;document.getElementById("devKeepBleDisabled").checked=!!d.keep_bluetooth_disabled;status.textContent="web app: "+(d.web_app_active?"active":"off")+"\\nmode: "+(d.using_leaf_wifi?"Leaf AP":"network")+"\\nfirmware: "+(u.firmware_display_version||u.firmware_version||"")+"\\nmac: "+(u.mac_address||"")}catch(e){status.textContent="Developer controls unavailable."}}
-async function save(){msg("Saving...");try{let body={always_on:document.getElementById("devAlwaysOn").checked,keep_bluetooth_disabled:document.getElementById("devKeepBleDisabled").checked};await fetch("/api/debug/session",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});msg("Saved for this session.");load()}catch(e){msg("Unable to save developer settings.")}}
-document.getElementById("devAlwaysOn").onchange=save;document.getElementById("devKeepBleDisabled").onchange=save;
+s.appendChild(h);s.appendChild(status);s.appendChild(row("Keep web app on","devAlwaysOn"));s.appendChild(row("Keep Bluetooth disabled","devKeepBleDisabled"));s.appendChild(row("System events log","devDiagSystem"));s.appendChild(row("Network events log","devDiagNetwork"));s.appendChild(row("Web requests log","devDiagWeb"));s.appendChild(row("Vario log","devDiagVario"));s.appendChild(actions);s.appendChild(msgEl);main.appendChild(s);
+async function load(){try{let r=await Promise.all([fetch("/api/debug/session"),fetch("/api/user/status")]),d=await r[0].json(),u=await r[1].json();document.getElementById("devAlwaysOn").checked=!!d.always_on;document.getElementById("devKeepBleDisabled").checked=!!d.keep_bluetooth_disabled;document.getElementById("devDiagSystem").checked=!!d.diag_system_events;document.getElementById("devDiagNetwork").checked=!!d.diag_network_events;document.getElementById("devDiagWeb").checked=!!d.diag_web_requests;document.getElementById("devDiagVario").checked=!!d.diag_vario;status.textContent="web app: "+(d.web_app_active?"active":"off")+"\\nmode: "+(d.using_leaf_wifi?"Leaf AP":"network")+"\\nfirmware: "+(u.firmware_display_version||u.firmware_version||"")+"\\nmac: "+(u.mac_address||"")}catch(e){status.textContent="Developer controls unavailable."}}
+async function save(){msg("Saving...");try{let body={always_on:document.getElementById("devAlwaysOn").checked,keep_bluetooth_disabled:document.getElementById("devKeepBleDisabled").checked,diag_system_events:document.getElementById("devDiagSystem").checked,diag_network_events:document.getElementById("devDiagNetwork").checked,diag_web_requests:document.getElementById("devDiagWeb").checked,diag_vario:document.getElementById("devDiagVario").checked};await fetch("/api/debug/session",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});msg("Saved.");load()}catch(e){msg("Unable to save developer settings.")}}
+["devAlwaysOn","devKeepBleDisabled","devDiagSystem","devDiagNetwork","devDiagWeb","devDiagVario"].forEach(id=>document.getElementById(id).onchange=save);
 shot.onclick=()=>window.open("/app/debug/screenshot","_blank","noopener");
 mem.onclick=()=>window.open("/app/debug/memory","_blank","noopener");
 fan.onclick=()=>window.open("/app/debug/fanet","_blank","noopener");
@@ -2020,6 +2035,14 @@ load();
     json += user_app_enabled ? "true" : "false";
     json += ",\"using_leaf_wifi\":";
     json += user_app_using_leaf_wifi ? "true" : "false";
+    json += ",\"diag_system_events\":";
+    json += settings.diag_systemEvents ? "true" : "false";
+    json += ",\"diag_network_events\":";
+    json += settings.diag_networkEvents ? "true" : "false";
+    json += ",\"diag_web_requests\":";
+    json += settings.diag_webRequests ? "true" : "false";
+    json += ",\"diag_vario\":";
+    json += settings.diag_vario ? "true" : "false";
     json += "}";
     sendNoStoreHeaders(target);
     target.send(200, "application/json", json);
@@ -2030,6 +2053,14 @@ load();
     user_app_always_on = extractJsonBoolValue(body, "always_on", user_app_always_on);
     user_app_keep_bluetooth_disabled =
         extractJsonBoolValue(body, "keep_bluetooth_disabled", user_app_keep_bluetooth_disabled);
+    settings.diag_systemEvents =
+        extractJsonBoolValue(body, "diag_system_events", settings.diag_systemEvents);
+    settings.diag_networkEvents =
+        extractJsonBoolValue(body, "diag_network_events", settings.diag_networkEvents);
+    settings.diag_webRequests =
+        extractJsonBoolValue(body, "diag_web_requests", settings.diag_webRequests);
+    settings.diag_vario = extractJsonBoolValue(body, "diag_vario", settings.diag_vario);
+    settings.save();
     sendDebugSessionStatus(target);
   }
 

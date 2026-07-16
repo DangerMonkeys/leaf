@@ -1,6 +1,8 @@
 #include "comms/fanet_radio.h"
 
+#include <SPI.h>
 #include "FreeRTOS.h"
+#include "diagnostics/diagnostic_logs.h"
 #include "diagnostics/heap_monitor.h"
 #include "dispatch/message_types.h"
 #include "esp_mac.h"
@@ -16,6 +18,42 @@
 
 // Singleton instance declaration.
 FanetRadio fanetRadio;
+
+namespace {
+  constexpr uint8_t SX1262_CMD_GET_STATUS = 0xC0;
+  constexpr uint8_t SX1262_CMD_READ_REGISTER = 0x1D;
+  constexpr uint8_t SX1262_CMD_SET_STANDBY = 0x80;
+  constexpr uint8_t SX1262_CMD_NOP = 0x00;
+  constexpr uint8_t SX1262_STANDBY_RC = 0x00;
+  constexpr uint16_t SX1262_REG_VERSION_STRING = 0x0320;
+  constexpr uint32_t FANET_SPI_PROBE_BUSY_TIMEOUT_MS = 100;
+  constexpr uint32_t FANET_SPI_LOCK_TIMEOUT_MS = 25;
+  constexpr uint32_t FANET_RADIO_SPI_CLOCK_HZ = 1000000;
+
+  bool sx1262StatusLooksValid(uint8_t status) { return status != 0x00 && status != 0xFF; }
+
+  bool sx126xVersionLooksValid(const char* version) {
+    return strncmp(version, "SX1261", 6) == 0 || strncmp(version, "SX1262", 6) == 0;
+  }
+
+  String sx1262VersionPrefixString(const char* version) {
+    String prefix;
+    for (size_t i = 0; i < 6; i++) {
+      const char c = version[i];
+      prefix += isPrintable(c) ? c : '.';
+    }
+    return prefix;
+  }
+
+  String sx1262VersionHexString(const char* version) {
+    char hex[18] = {0};
+    snprintf(hex, sizeof(hex), "%02X%02X%02X%02X%02X%02X", static_cast<uint8_t>(version[0]),
+             static_cast<uint8_t>(version[1]), static_cast<uint8_t>(version[2]),
+             static_cast<uint8_t>(version[3]), static_cast<uint8_t>(version[4]),
+             static_cast<uint8_t>(version[5]));
+    return String(hex);
+  }
+}  // namespace
 
 // Initial detection of Fanet module (hw3.2.6+)
 bool FanetRadio::detectFanet() {
@@ -34,10 +72,180 @@ bool FanetRadio::detectFanet() {
     }
     delay(10);
   }
+  fanetDetected_ = fanetReady;
+  detectionCycles_ = count;
   return fanetReady;
 #endif
   // If the module is not present, return false
+  fanetDetected_ = false;
+  detectionCycles_ = 0;
   return false;  // Module does not support Fanet
+}
+
+bool FanetRadio::waitFanetReady(uint32_t timeoutMs) const {
+#ifdef FANET_CAPABLE
+  const uint32_t startMs = millis();
+  while (digitalRead(SX1262_BUSY)) {
+    if (millis() - startMs >= timeoutMs) return false;
+    delay(1);
+  }
+  return true;
+#endif
+  return false;
+}
+
+bool FanetRadio::probeFanetSpi() {
+#if defined(FANET_CAPABLE) && defined(LORA_SX1262)
+  logEvent("probe-start", "version-string");
+
+  pinMode(SX1262_NSS, OUTPUT);
+  digitalWrite(SX1262_NSS, HIGH);
+  pinMode(SX1262_BUSY, INPUT_PULLUP);
+  pinMode(SX1262_RESET, OUTPUT);
+  digitalWrite(SX1262_RESET, LOW);
+  delay(1);
+  digitalWrite(SX1262_RESET, HIGH);
+
+  if (!waitFanetReady(FANET_SPI_PROBE_BUSY_TIMEOUT_MS)) {
+    state = FanetRadioState::FAILED_RADIO_PROBE;
+    fanetSpiProbed_ = true;
+    fanetSpiProbeOk_ = false;
+    probeStatus_ = 0;
+    probeDetail_ = "busy-timeout";
+    logEvent("probe", "busy-timeout");
+    logProbeResult();
+    return false;
+  }
+
+  uint8_t firstStatus = 0;
+  uint8_t secondStatus = 0;
+  char version[7] = {0};
+  {
+    SpiLockGuard spiLock(FANET_SPI_LOCK_TIMEOUT_MS, false);
+    if (!spiLock) {
+      state = FanetRadioState::FAILED_RADIO_PROBE;
+      fanetSpiProbed_ = true;
+      fanetSpiProbeOk_ = false;
+      probeStatus_ = 0;
+      probeDetail_ = "spi-lock-timeout";
+      logEvent("probe", "spi-lock-timeout");
+      logProbeResult();
+      return false;
+    }
+
+    SPI.beginTransaction(SPISettings(FANET_RADIO_SPI_CLOCK_HZ, MSBFIRST, SPI_MODE0));
+    digitalWrite(SX1262_NSS, LOW);
+    firstStatus = SPI.transfer(SX1262_CMD_GET_STATUS);
+    secondStatus = SPI.transfer(SX1262_CMD_NOP);
+    digitalWrite(SX1262_NSS, HIGH);
+
+    digitalWrite(SX1262_NSS, LOW);
+    SPI.transfer(SX1262_CMD_SET_STANDBY);
+    SPI.transfer(SX1262_STANDBY_RC);
+    digitalWrite(SX1262_NSS, HIGH);
+    SPI.endTransaction();
+
+    if (!waitFanetReady(FANET_SPI_PROBE_BUSY_TIMEOUT_MS)) {
+      state = FanetRadioState::FAILED_RADIO_PROBE;
+      fanetSpiProbed_ = true;
+      fanetSpiProbeOk_ = false;
+      probeStatus_ = sx1262StatusLooksValid(firstStatus) ? firstStatus : secondStatus;
+      probeDetail_ = "standby-timeout";
+      logEvent("probe", "standby-timeout");
+      logProbeResult();
+      return false;
+    }
+
+    SPI.beginTransaction(SPISettings(FANET_RADIO_SPI_CLOCK_HZ, MSBFIRST, SPI_MODE0));
+    digitalWrite(SX1262_NSS, LOW);
+    SPI.transfer(SX1262_CMD_READ_REGISTER);
+    SPI.transfer(static_cast<uint8_t>((SX1262_REG_VERSION_STRING >> 8) & 0xFF));
+    SPI.transfer(static_cast<uint8_t>(SX1262_REG_VERSION_STRING & 0xFF));
+    SPI.transfer(SX1262_CMD_NOP);  // status/dummy byte before register data
+    for (size_t i = 0; i < 6; i++) {
+      version[i] = static_cast<char>(SPI.transfer(SX1262_CMD_NOP));
+    }
+    digitalWrite(SX1262_NSS, HIGH);
+    SPI.endTransaction();
+  }
+
+  const uint8_t status = sx1262StatusLooksValid(firstStatus) ? firstStatus : secondStatus;
+  const String versionPrefix = sx1262VersionPrefixString(version);
+  fanetSpiProbed_ = true;
+  fanetSpiProbeOk_ = sx126xVersionLooksValid(version);
+  probeStatus_ = status;
+  probeDetail_ = fanetSpiProbeOk_ ? String("ok:") + versionPrefix
+                                  : String("version:") + versionPrefix +
+                                        ":hex:" + sx1262VersionHexString(version);
+  logEvent("probe-status", sx1262StatusLooksValid(status) ? "ok" : "invalid", "status", status,
+           true);
+  logEvent("probe-version", fanetSpiProbeOk_ ? String("ok:") + versionPrefix : versionPrefix);
+  logEvent("probe-version-hex", sx1262VersionHexString(version));
+  logProbeResult();
+
+  if (!fanetSpiProbeOk_) {
+    state = FanetRadioState::FAILED_RADIO_PROBE;
+    return false;
+  }
+
+  return true;
+#endif
+  return false;
+}
+
+void FanetRadio::logDetectionResult() {
+  if (!detectionResultLogged_ &&
+      diagnostic_logs::appendSystemEvent("fanet", "detect", fanetDetected_ ? "present" : "missing",
+                                         "cycles", detectionCycles_, true)) {
+    detectionResultLogged_ = true;
+  }
+  logProbeResult();
+}
+
+void FanetRadio::logProbeResult() {
+  if (probeResultLogged_ || !fanetSpiProbed_) return;
+  String detail = probeDetail_.isEmpty() ? (fanetSpiProbeOk_ ? "ok" : "failed") : probeDetail_;
+  if (diagnostic_logs::appendSystemEvent("fanet", "probe", detail, "status", probeStatus_, true)) {
+    probeResultLogged_ = true;
+  }
+}
+
+void FanetRadio::logEvent(const char* event, const String& detail, const char* key, int32_t value,
+                          bool hasValue) {
+  logDetectionResult();
+  if (state == FanetRadioState::UNINSTALLED) return;
+  diagnostic_logs::appendSystemEvent("fanet", event, detail, key, value, hasValue);
+}
+
+void FanetRadio::logEventCode(const char* event, const String& detail, const int16_t code) {
+  logEvent(event, detail, "code", code, true);
+}
+
+bool FanetRadio::radioUnavailable() const {
+  return state == FanetRadioState::UNINSTALLED || state == FanetRadioState::FAILED_RADIO_PROBE ||
+         state == FanetRadioState::FAILED_RADIO_INIT || state == FanetRadioState::FAILED_OTHER;
+}
+
+bool FanetRadio::shouldMarkRadioUnhealthy(int16_t code) const {
+  switch (code) {
+    case RADIOLIB_ERR_NONE:
+      return false;
+    case RADIOLIB_ERR_CHIP_NOT_FOUND:
+    case RADIOLIB_ERR_SPI_WRITE_FAILED:
+    case RADIOLIB_ERR_WRONG_MODEM:
+    case RADIOLIB_ERR_SPI_CMD_TIMEOUT:
+      return true;
+    default:
+      return false;
+  }
+}
+
+void FanetRadio::markRadioUnhealthy(const char* event, int16_t code) {
+  if (state == FanetRadioState::UNINSTALLED || state == FanetRadioState::FAILED_RADIO_PROBE) {
+    return;
+  }
+  state = FanetRadioState::FAILED_RADIO_INIT;
+  logEvent("radio-unhealthy", event, "code", code, true);
 }
 
 // Static initializers
@@ -108,11 +316,13 @@ void FanetRadio::taskRadioRx(void* pvParameters) {
 }
 
 void FanetRadio::processRxPacket() {
+  if (state != FanetRadioState::RUNNING) return;
+
   auto& radio = *FanetRadio::radio;
 
-  int16_t rxState;
+  int16_t rxState = RADIOLIB_ERR_UNKNOWN;
   size_t length;
-  if (auto lockGuard = SpiLockGuard()) {
+  if (auto lockGuard = SpiLockGuard(FANET_SPI_LOCK_TIMEOUT_MS, false)) {
     length = radio.getPacketLength();
 
     // If a 0 length packet is here, I'm guessing the "done" DIO pin was fired
@@ -123,7 +333,15 @@ void FanetRadio::processRxPacket() {
     }
 
     // A packet is able to be read
-    rxState = radio.readData(buffer.data(), length);
+    rxState =
+        callRadio("rx-read", "readData", [&]() { return radio.readData(buffer.data(), length); });
+  } else {
+    logEvent("rx-read", "spi-lock-timeout");
+    return;
+  }
+
+  if (rxState != RADIOLIB_ERR_NONE) {
+    return;
   }
 
   if (rxState == RADIOLIB_ERR_NONE) {
@@ -181,14 +399,22 @@ void FanetRadio::taskRadioTx(void* pvParameters) {
     // The draw methods may take out a lock on the SPI bus while they're
     // requesting information from our Fanet Manager
     uint32_t sleepMs = 0;
-    if (auto spiLock = SpiLockGuard()) {
+    if (auto spiLock = SpiLockGuard(FANET_SPI_LOCK_TIMEOUT_MS, false)) {
       LockGuard lock(fanetRadio.x_fanet_manager_mutex);
+      if (!lock) {
+        fanetRadio.logEvent("tx-manager-lock", "failed");
+      } else {
+        // Process a TX.
+        // auto currentTime = millis();
+        sleepMs = fanetRadio.protocol->handleTx() - millis();
 
-      // Process a TX.
-      // auto currentTime = millis();
-      sleepMs = fanetRadio.protocol->handleTx() - millis();
-
-      radio.startReceive();  // Put the radio back into a receive state
+        fanetRadio.logEvent("tx-rx-restart-start", "startReceive");
+        fanetRadio.callRadio("tx-rx-restart", "startReceive", [&]() {
+          return radio.startReceive();  // Put the radio back into a receive state
+        });
+      }
+    } else {
+      fanetRadio.logEvent("tx-rx-restart", "spi-lock-timeout");
     }
 
     // Sleep until the next due TX time.
@@ -197,6 +423,10 @@ void FanetRadio::taskRadioTx(void* pvParameters) {
 }
 
 bool FanetRadio::fanet_sendFrame(uint8_t codingRate, etl::span<const uint8_t> data) {
+  if (state != FanetRadioState::RUNNING) {
+    return false;
+  }
+
   // For now, just flag this as a success
   if (frameSending) {
     // If we're already sending a frame, don't send another one
@@ -215,7 +445,9 @@ bool FanetRadio::fanet_sendFrame(uint8_t codingRate, etl::span<const uint8_t> da
   // Not sure why the above is locking up.
 
   // Send the frame out on the wire.
-  auto txResult = radio->transmit(data.data(), data.size());
+  logEvent("tx-start", "transmit", "bytes", data.size(), true);
+  auto txResult = callRadio("tx-result", "transmit",
+                            [&]() { return radio->transmit(data.data(), data.size()); });
   if (txResult != RADIOLIB_ERR_NONE) {
     Serial.println("[FanetRadio] Failed to transmit");
     return false;
@@ -252,9 +484,15 @@ void FanetRadio::subscribe(etl::imessage_bus* bus) {
 }
 
 void FanetRadio::setup() {
+  logDetectionResult();
   heap_monitor::checkpoint("fanet-setup-start");
   if (state == FanetRadioState::UNINSTALLED) {
     heap_monitor::checkpoint("fanet-setup-skipped");
+    return;
+  }
+
+  if (!probeFanetSpi()) {
+    heap_monitor::checkpoint("fanet-setup-probe-failed");
     return;
   }
 
@@ -265,13 +503,11 @@ void FanetRadio::setup() {
   protocol = new FANET::Protocol(this);
   heap_monitor::checkpoint("fanet-protocol");
 
-  // Take out a lock on the SPI bus.
-  SpiLockGuard spiLock;
-
   // Create the mutex, lock it.
   x_fanet_manager_mutex = xSemaphoreCreateMutex();
   if (x_fanet_manager_mutex == NULL) {
     state = FanetRadioState::FAILED_OTHER;
+    logEvent("setup", "mutex-failed");
     return;
   }
 
@@ -295,6 +531,7 @@ void FanetRadio::setup() {
   if (taskCreateCode != pdPASS) {
     Serial.println((String) "Creating Tx task failed: " + taskCreateCode);
     state = FanetRadioState::FAILED_OTHER;
+    logEvent("setup-tx-task", "failed", "code", taskCreateCode, true);
     return;
   }
   heap_monitor::registerTask("fanet_tx", x_fanet_tx_task);
@@ -307,6 +544,7 @@ void FanetRadio::setup() {
   if (taskCreateCode != pdPASS) {
     Serial.print((String) "Creating Rx task failed: " + taskCreateCode);
     state = FanetRadioState::FAILED_OTHER;
+    logEvent("setup-rx-task", "failed", "code", taskCreateCode, true);
     return;
   }
   heap_monitor::registerTask("fanet_rx", x_fanet_rx_task);
@@ -319,7 +557,13 @@ void FanetRadio::setup() {
   //     xTaskCreate(taskRadioNameTx, "FanetNameTx", 4096, nullptr, 1, &x_fanet_tx_name_task);
 
   // Put the radio to sleep once it has been initialized.
-  radio->sleep();
+  logEvent("setup-sleep-start", "sleep");
+  if (auto spiLock = SpiLockGuard(FANET_SPI_LOCK_TIMEOUT_MS, false)) {
+    callRadio("setup-sleep", "sleep", [&]() { return radio->sleep(); });
+  } else {
+    state = FanetRadioState::FAILED_RADIO_INIT;
+    logEvent("setup-sleep", "spi-lock-timeout");
+  }
   heap_monitor::checkpoint("fanet-setup-end");
 }
 
@@ -328,13 +572,26 @@ void FanetRadio::begin(const FanetRadioRegion& region) {
   return;  // Model does not support Fanet
 #endif
 
+  logDetectionResult();
   if (state == FanetRadioState::UNINSTALLED) {
     return;  // Short circuit if the radio module is not installed
   }
 
   // Short circuit above taking any locks out (avoid deadlocks)
   if (region == FanetRadioRegion::OFF) {
+    logEvent("begin", "region-off");
     end();
+    return;
+  }
+
+  if (radioUnavailable()) {
+    logEvent("begin", "radio-unavailable");
+    return;
+  }
+
+  if (radio == nullptr || x_fanet_manager_mutex == nullptr) {
+    state = FanetRadioState::FAILED_OTHER;
+    logEvent("begin", "not-setup");
     return;
   }
 
@@ -342,13 +599,25 @@ void FanetRadio::begin(const FanetRadioRegion& region) {
   random.initialise(millis());
 
   heap_monitor::checkpoint("fanet-begin-start");
+  logEvent("begin-start", region.c_str());
   state = FanetRadioState::INITIALIZING;
   int16_t radioInitState = RADIOLIB_ERR_UNKNOWN;
+  int16_t syncWordState = RADIOLIB_ERR_UNKNOWN;
   // Always take the SPI lock out before the Fanet Manager lock
   // to avoid deadlocks with janky display modules locking the SPI
   // bus and making Fanet state changes or requests after.
-  SpiLockGuard spiLock;
+  SpiLockGuard spiLock(FANET_SPI_LOCK_TIMEOUT_MS, false);
+  if (!spiLock) {
+    state = FanetRadioState::FAILED_RADIO_INIT;
+    logEvent("begin", "spi-lock-timeout");
+    return;
+  }
   LockGuard lock(x_fanet_manager_mutex);
+  if (!lock) {
+    state = FanetRadioState::FAILED_OTHER;
+    logEvent("begin", "manager-lock-timeout");
+    return;
+  }
 
   Serial.println("[FanetRadio] Initializing");
 
@@ -362,12 +631,24 @@ void FanetRadio::begin(const FanetRadioRegion& region) {
 
   switch (region) {
     case FanetRadioRegion::US:
-      radioInitState = radio->begin(920.800f, 500.0f, 7U, 5U, 0xF1, 22U, 8U, 1.8f, false);
-      radio->setSyncWord(0xF1, 0x44);
+      logEvent("begin-radio-start", "US");
+      radioInitState = callRadio("begin-radio", "US", [&]() {
+        return radio->begin(920.800f, 500.0f, 7U, 5U, 0xF1, 22U, 8U, 1.8f, false);
+      });
+      if (radioInitState == RADIOLIB_ERR_NONE) {
+        syncWordState =
+            callRadio("begin-sync-word", "US", [&]() { return radio->setSyncWord(0xF1, 0x44); });
+      }
       break;
     case FanetRadioRegion::EUROPE:
-      radioInitState = radio->begin(868.200f, 250.0f, 7U, 5U, 0xF1, 22U, 8U, 1.8f, false);
-      radio->setSyncWord(0xF1, 0x44);
+      logEvent("begin-radio-start", "EUROPE");
+      radioInitState = callRadio("begin-radio", "EUROPE", [&]() {
+        return radio->begin(868.200f, 250.0f, 7U, 5U, 0xF1, 22U, 8U, 1.8f, false);
+      });
+      if (radioInitState == RADIOLIB_ERR_NONE) {
+        syncWordState = callRadio("begin-sync-word", "EUROPE",
+                                  [&]() { return radio->setSyncWord(0xF1, 0x44); });
+      }
       break;
   }
 
@@ -376,10 +657,16 @@ void FanetRadio::begin(const FanetRadioRegion& region) {
     state = FanetRadioState::FAILED_RADIO_INIT;
     return;
   }
+  if (syncWordState != RADIOLIB_ERR_NONE) {
+    state = FanetRadioState::FAILED_RADIO_INIT;
+    return;
+  }
 
   Serial.println("[FanetRadio] Initialized");
 
-  auto rxState = radio->startReceive();
+  logEvent("begin-start-rx-start", "startReceive");
+  auto rxState =
+      callRadio("begin-start-rx", "startReceive", [&]() { return radio->startReceive(); });
   if (rxState != RADIOLIB_ERR_NONE) {
     Serial.println("[FanetRadio] Radio->startReceive failed");
     state = FanetRadioState::FAILED_RADIO_INIT;
@@ -389,16 +676,26 @@ void FanetRadio::begin(const FanetRadioRegion& region) {
 #ifdef LORA_SX1262
   // 1262 radio is different from the WaveShare breadboard modules.
   radio->setRfSwitchPins(SX1262_RF_SW, RADIOLIB_NC);
-  if (radio->setDio2AsRfSwitch() != RADIOLIB_ERR_NONE) {
+  logEvent("begin-dio2-rf-switch-start", "setDio2AsRfSwitch");
+  auto dio2State = callRadio("begin-dio2-rf-switch", "setDio2AsRfSwitch",
+                             [&]() { return radio->setDio2AsRfSwitch(); });
+  if (dio2State != RADIOLIB_ERR_NONE) {
     state = FanetRadioState::FAILED_RADIO_INIT;
     return;
   }
   // Try to get a few extra db
-  radio->setRxBoostedGainMode(true, true);
+  logEvent("begin-rx-boost-start", "setRxBoostedGainMode");
+  auto boostedGainState = callRadio("begin-rx-boost", "setRxBoostedGainMode",
+                                    [&]() { return radio->setRxBoostedGainMode(true, true); });
+  if (boostedGainState != RADIOLIB_ERR_NONE) {
+    state = FanetRadioState::FAILED_RADIO_INIT;
+    return;
+  }
 #endif
 
   // We're finished, release the locks.
   state = FanetRadioState::RUNNING;
+  logEvent("begin-end", "running");
   heap_monitor::checkpoint("fanet-begin-end");
 }
 
@@ -407,16 +704,26 @@ void FanetRadio::end() {
   return;  // Model does not support Fanet
 #endif
 
+  logDetectionResult();
   // Short circuit unloading if the radio module is missing.
-  if (state == FanetRadioState::UNINSTALLED) {
+  if (state == FanetRadioState::UNINSTALLED || state == FanetRadioState::FAILED_RADIO_PROBE ||
+      state == FanetRadioState::FAILED_RADIO_INIT || state == FanetRadioState::FAILED_OTHER ||
+      radio == nullptr) {
+    logEvent("end", "radio-unavailable");
     return;
   }
 
-  SpiLockGuard spiLock;
+  SpiLockGuard spiLock(FANET_SPI_LOCK_TIMEOUT_MS, false);
+  if (!spiLock) {
+    logEvent("end", "spi-lock-timeout");
+    return;
+  }
   heap_monitor::checkpoint("fanet-end-start");
-  radio->sleep(false);
+  logEvent("end-sleep-start", "sleep");
+  callRadio("end-sleep", "sleep", [&]() { return radio->sleep(false); });
   state = FanetRadioState::UNINITIALIZED;
   trackingMode = etl::nullopt;  // Reset the tracking mode
+  logEvent("end", "uninitialized");
   heap_monitor::checkpoint("fanet-end-end");
 }
 
@@ -486,10 +793,14 @@ const FANET::Protocol::Stats FanetRadio::getStats() const {
   if (state != FanetRadioState::RUNNING) return {};
 
   LockGuard lock(x_fanet_manager_mutex);
+  if (!lock) return {};
   return protocol->stats();
 }
 
 const FanetNeighbors::NeighborMap& FanetRadio::getNeighborTable() const {
+  if (state != FanetRadioState::RUNNING || x_fanet_manager_mutex == nullptr) {
+    return neighbors.get();
+  }
   LockGuard lock(x_fanet_manager_mutex);
   return neighbors.get();
 }

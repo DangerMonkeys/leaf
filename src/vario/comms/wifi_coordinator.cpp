@@ -8,6 +8,7 @@
 #include <esp_wifi.h>
 #include <cstring>
 
+#include "diagnostics/diagnostic_logs.h"
 #include "ui/settings/settings.h"
 
 namespace leaf_wifi {
@@ -40,14 +41,14 @@ namespace leaf_wifi {
     constexpr uint32_t SAVED_NETWORK_CONNECT_MS = 5000;
     constexpr uint8_t SAVED_NETWORK_SCHEMA_VERSION = 1;
     constexpr const char* WIFI_CREDENTIALS_NAMESPACE = "leafWifi";
-    constexpr const char* DIAGNOSTICS_DIR = "/diagnostics";
-    constexpr const char* WIFI_AUTOCONNECT_DIAGNOSTICS_FILE = "/diagnostics/wifi_autoconnect.csv";
 
     void settleWifi() { delay(WIFI_SETTLE_MS); }
 
     void hardSettleWifi() { delay(WIFI_HARD_RESET_SETTLE_MS); }
 
-    bool diagnosticsEnabled() { return settings.dev_mode; }
+    bool diagnosticsEnabled() {
+      return diagnostic_logs::enabled(diagnostic_logs::Log::NetworkEvents);
+    }
 
     void printCsvString(File& file, const String& value) {
       file.print('"');
@@ -61,17 +62,21 @@ namespace leaf_wifi {
     void appendAutoConnectDiagnostics(const char* event, const String& target_ssid = String(),
                                       uint8_t saved_count = saved_network_count) {
       if (!diagnosticsEnabled()) return;
-      if (!SD_MMC.exists(DIAGNOSTICS_DIR)) SD_MMC.mkdir(DIAGNOSTICS_DIR);
+      if (!diagnostic_logs::ensureDirectory()) return;
 
-      const bool existed = SD_MMC.exists(WIFI_AUTOCONNECT_DIAGNOSTICS_FILE);
-      File file = SD_MMC.open(WIFI_AUTOCONNECT_DIAGNOSTICS_FILE, "a", true);
+      const bool existed = SD_MMC.exists(diagnostic_logs::NETWORK_EVENTS_PATH);
+      File file = SD_MMC.open(diagnostic_logs::NETWORK_EVENTS_PATH, "a", true);
       if (!file) return;
 
       if (!existed || file.size() == 0) {
         file.println(
-            "millis,event,cycle,attempt_index,saved_count,elapsed_ms,target_ssid,current_ssid,"
-            "wifi_status,wifi_mode,rssi,local_ip,diagnostics_allowed,free_heap,max_alloc_heap,"
-            "current_task");
+            "millis,event,mode,cycle,attempt_index,saved_count,enabled,using_leaf_wifi,"
+            "provisioning,connecting,ready,wifi_status,wifi_mode,rssi,ap_stations,"
+            "max_ap_stations,local_ip,ap_ip,target_ssid,current_ssid,connect_error,elapsed_ms,"
+            "connect_started_ms,connected_ms,last_scan_result,diagnostics_allowed,free_heap,"
+            "max_alloc_heap,current_task,loop_count,handle_count,root,app,status,profiles_get,"
+            "profiles_put,logbook,logbook_entry,logbook_delete,waypoints_upload,routes_import,"
+            "not_found");
       }
 
       const uint32_t now = millis();
@@ -81,20 +86,26 @@ namespace leaf_wifi {
 
       file.printf("%lu,", static_cast<unsigned long>(now));
       printCsvString(file, event ? String(event) : String(""));
-      file.printf(",%lu,%u,%u,%lu,", static_cast<unsigned long>(saved_network_cycle),
+      file.printf(",wifi_autoconnect,%lu,%u,%u,,,,,,%d,%d,%d,,,",
+                  static_cast<unsigned long>(saved_network_cycle),
                   static_cast<unsigned int>(saved_network_connect_index),
-                  static_cast<unsigned int>(saved_count), static_cast<unsigned long>(elapsed));
+                  static_cast<unsigned int>(saved_count), static_cast<int>(WiFi.status()),
+                  static_cast<int>(WiFi.getMode()), rssi);
+      printCsvString(file, WiFi.localIP().toString());
+      file.print(',');
+      printCsvString(file, String(""));
+      file.print(',');
       printCsvString(file, target_ssid);
       file.print(',');
       printCsvString(file, WiFi.SSID());
-      file.printf(",%d,%d,%d,", static_cast<int>(WiFi.status()), static_cast<int>(WiFi.getMode()),
-                  rssi);
-      printCsvString(file, WiFi.localIP().toString());
-      file.printf(",%u,%lu,%lu,", diagnosticsAllowed() ? 1 : 0,
-                  static_cast<unsigned long>(ESP.getFreeHeap()),
+      file.print(',');
+      printCsvString(file, String(""));
+      file.printf(",%lu,%lu,,,%u,%lu,%lu,", static_cast<unsigned long>(elapsed),
+                  static_cast<unsigned long>(saved_network_connect_started_ms),
+                  diagnosticsAllowed() ? 1 : 0, static_cast<unsigned long>(ESP.getFreeHeap()),
                   static_cast<unsigned long>(ESP.getMaxAllocHeap()));
       printCsvString(file, pcTaskGetName(NULL));
-      file.println();
+      file.println(",,,,,,,,,,,,,");
       file.close();
     }
 

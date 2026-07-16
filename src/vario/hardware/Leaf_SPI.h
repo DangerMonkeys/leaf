@@ -30,6 +30,8 @@ class SpiLockGuard : public LockGuard {
 
  public:
   SpiLockGuard() : LockGuard(spiMutex) {}
+  explicit SpiLockGuard(uint32_t timeoutMs, bool fatalOnTimeout = true)
+      : LockGuard(spiMutex, pdMS_TO_TICKS(timeoutMs), fatalOnTimeout) {}
 
  private:
   static SemaphoreHandle_t spiMutex;

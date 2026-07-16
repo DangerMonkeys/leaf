@@ -8,10 +8,10 @@ class KalmanFilterPA {
 
   void update(double measuredTime, double measuredPosition, double measuredAcceleration);
 
-  bool initialized() { return initialized_; }
-  double getPosition();
-  double getVelocity();
-  double getAcceleration();
+  bool initialized() const { return initialized_; }
+  double getPosition() const;
+  double getVelocity() const;
+  double getAcceleration() const;
 
  private:
   void init(double initialTime, double initialPosition, double initialAcceleration);

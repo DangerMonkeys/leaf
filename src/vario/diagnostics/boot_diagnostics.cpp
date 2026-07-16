@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <SD_MMC.h>
 
+#include "diagnostics/diagnostic_logs.h"
 #include "diagnostics/heap_monitor.h"
 #include "esp_system.h"
 #include "navigation/gpx.h"
@@ -10,9 +11,6 @@
 
 namespace boot_diagnostics {
   namespace {
-    constexpr const char* DIAGNOSTICS_DIR = "/diagnostics";
-    constexpr const char* BOOT_REPORT_PATH = "/diagnostics/boot_report.csv";
-
     esp_reset_reason_t resetReason = ESP_RST_UNKNOWN;
     bool resetReasonCaptured = false;
     bool reportsWritten = false;
@@ -55,20 +53,20 @@ namespace boot_diagnostics {
       }
     }
 
-    bool ensureDiagnosticsDirectory() {
-      if (SD_MMC.exists(DIAGNOSTICS_DIR)) return true;
-      return SD_MMC.mkdir(DIAGNOSTICS_DIR);
-    }
-
     void writeHeaderIfNeeded(File& file, bool existed) {
       if (existed && file.size() > 0) return;
-      file.println("millis,section,key,value,detail");
+      file.println(
+          "millis,source,event,detail,key,value,free_heap,min_free_heap,largest_free_block,"
+          "max_alloc_heap,internal_free,internal_largest,psram_free,psram_largest,current_task,"
+          "stack_high_water,loop_stack_high_water,ble_stack_high_water,"
+          "fanet_tx_stack_high_water,fanet_rx_stack_high_water");
     }
 
     void writeRow(File& file, const char* section, const char* key, size_t value,
                   const char* detail) {
-      file.printf("%lu,%s,%s,%lu,%s\n", static_cast<unsigned long>(millis()), section, key,
-                  static_cast<unsigned long>(value), detail ? detail : "");
+      file.printf("%lu,boot,%s,", static_cast<unsigned long>(millis()), section);
+      diagnostic_logs::printCsvString(file, detail ? String(detail) : String(""));
+      file.printf(",%s,%lu,,,,,,,,,,,,,,\n", key, static_cast<unsigned long>(value));
     }
 
     void writeNavSizeReport(File& file) {
@@ -110,10 +108,12 @@ namespace boot_diagnostics {
   }
 
   void writeReportsToSd() {
-    if (!settings.dev_mode || reportsWritten || !ensureDiagnosticsDirectory()) return;
+    if (!diagnostic_logs::enabled(diagnostic_logs::Log::SystemEvents) || reportsWritten ||
+        !diagnostic_logs::ensureDirectory())
+      return;
 
-    const bool existed = SD_MMC.exists(BOOT_REPORT_PATH);
-    File file = SD_MMC.open(BOOT_REPORT_PATH, "a", true);
+    const bool existed = SD_MMC.exists(diagnostic_logs::SYSTEM_EVENTS_PATH);
+    File file = SD_MMC.open(diagnostic_logs::SYSTEM_EVENTS_PATH, "a", true);
     if (!file) return;
 
     writeHeaderIfNeeded(file, existed);

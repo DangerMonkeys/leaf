@@ -35,18 +35,23 @@ struct FanetRadioState {
     // Radio initialization failed (eg. SPI bus failure)
     FAILED_RADIO_INIT,
 
+    // The BUSY pin indicated a possible module, but a bounded SPI probe failed.
+    FAILED_RADIO_PROBE,
+
     // Failed for another reason (needs Serial debugging?)
     FAILED_OTHER,
 
     // Radio is running and ready to rx/tx messages
     RUNNING,
   };
-  static constexpr size_t size = 5;
+  static constexpr size_t size = 7;
 
   ETL_DECLARE_ENUM_TYPE(FanetRadioState, uint8_t)
+  ETL_ENUM_TYPE(UNINSTALLED, "UNINSTALLED")
   ETL_ENUM_TYPE(UNINITIALIZED, "UNINITIALIZED")
   ETL_ENUM_TYPE(INITIALIZING, "INITIALIZING")
   ETL_ENUM_TYPE(FAILED_RADIO_INIT, "FAILED_RADIO_INIT")
+  ETL_ENUM_TYPE(FAILED_RADIO_PROBE, "FAILED_RADIO_PROBE")
   ETL_ENUM_TYPE(FAILED_OTHER, "FAILED_OTHER")
   ETL_ENUM_TYPE(RUNNING, "RUNNING")
   ETL_END_ENUM_TYPE

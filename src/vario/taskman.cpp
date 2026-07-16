@@ -7,6 +7,7 @@
 
 #include "comms/ble.h"
 #include "comms/factory_discovery.h"
+#include "comms/fanet_radio.h"
 #include "diagnostics/diagnostic_network/diagnostic_network.h"
 #include "diagnostics/heap_monitor.h"
 #include "diagnostics/self_test/selfTest.h"
@@ -115,6 +116,9 @@ void TaskManager::init() {
   // turn on and handle all device initialization
   heap_monitor::checkpoint("taskman-power-start");
   power.bootUp();
+#ifdef FANET_CAPABLE
+  fanetRadio.logDetectionResult();
+#endif
   heap_monitor::checkpoint("taskman-power-end");
 
   if (!timerISRsSetup.exchange(false, std::memory_order_acq_rel)) {

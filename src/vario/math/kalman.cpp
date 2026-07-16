@@ -18,15 +18,15 @@ void KalmanFilterPA::init(double initialTime, double initialPosition, double ini
   initialized_ = true;
 }
 
-double KalmanFilterPA::getPosition() {
+double KalmanFilterPA::getPosition() const {
   if (!initialized_) fatalError("KalmanFilter::getPosition before initialized");
   return p_;
 }
-double KalmanFilterPA::getVelocity() {
+double KalmanFilterPA::getVelocity() const {
   if (!initialized_) fatalError("KalmanFilter::getVelocity before initialized");
   return v_;
 }
-double KalmanFilterPA::getAcceleration() {
+double KalmanFilterPA::getAcceleration() const {
   if (!initialized_) fatalError("KalmanFilter::getAcceleration before initialized");
   return a_;
 }
