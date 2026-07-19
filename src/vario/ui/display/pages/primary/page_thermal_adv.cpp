@@ -114,6 +114,8 @@ void cursor_move(Button button) {
     if (thermalAdvPage_cursor_position > cursor_thermalAdvPage_cursor_max)
       thermalAdvPage_cursor_position = 0;
   }
+  speaker.playSound(thermalAdvPage_cursor_position == cursor_thermalAdvPage_none ? fx::doubleClick
+                                                                                 : fx::click);
 }
 
 void thermalPageAdv_button(Button button, ButtonEvent state, uint8_t count) {

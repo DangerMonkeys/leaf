@@ -16,6 +16,7 @@ class AltimeterMenuPage : public SettingsMenuPage {
 
  protected:
   void setting_change(Button button, ButtonEvent state, uint8_t count);
+  bool cursorUsesLeftButton() const override;
 };
 
 #endif

@@ -172,7 +172,7 @@ void WifiMenuPage::draw() {
 void WifiMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) {
   switch (cursor_position) {
     case cursor_wifi_resetWifiSettings:
-      if (state == ButtonEvent::INCREMENTED) {
+      if (state == ButtonEvent::INCREMENTED && (dir == Button::CENTER || dir == Button::RIGHT)) {
         resetPending = count;
         if (count >= RESET_HOLD_COUNT) {
           buttons.consumeButton();
@@ -187,7 +187,7 @@ void WifiMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) 
       }
       break;
     case cursor_wifi_bluetooth:
-      if (state == ButtonEvent::CLICKED) {
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
         speaker.playSound(fx::confirm);
         settings.system_bluetoothOn = !settings.system_bluetoothOn;
         if (settings.system_bluetoothOn) {
@@ -203,8 +203,9 @@ void WifiMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) 
       }
       break;
     case cursor_wifi_setup:
-      if (state == ButtonEvent::CLICKED) {
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
         heap_monitor::checkpoint("wifi-menu-setup-click");
+        speaker.playSound(fx::increase);
         showSetup();
       }
       break;
@@ -215,7 +216,7 @@ void WifiMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) 
         settingsMenuPage.backToSettingsMenu();
         if (state == ButtonEvent::HELD) {
           speaker.playSound(fx::exit);
-          mainMenuPage.quitMenu();
+          settingsMenuPage.quitMenu();
         }
       }
       break;
@@ -359,6 +360,7 @@ void PageMenuSystemWifiWebApp::setting_change(Button dir, ButtonEvent state, uin
   if (using_leaf_wifi) return;
 
   if (cursor_position == 0) {
+    speaker.playSound(fx::increase);
     start(true);
     cursor_position = CURSOR_BACK;
     cursor_max = get_labels().size() - 1;

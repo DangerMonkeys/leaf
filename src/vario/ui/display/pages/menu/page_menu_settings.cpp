@@ -54,9 +54,21 @@ namespace {
                                  menu_ui::GLYPH_FANET};
 }  // namespace
 
-void SettingsRootMenuPage::backToSettingsMenu() {
+void SettingsRootMenuPage::backToSettingsMenu() { settings_menu_page = page_menu_settings_root; }
+
+void SettingsRootMenuPage::resetCursor() {
   cursor_position = cursor_settings_back;
   settings_menu_page = page_menu_settings_root;
+}
+
+void SettingsRootMenuPage::exitToMainMenu() {
+  resetCursor();
+  mainMenuPage.backToMainMenu();
+}
+
+void SettingsRootMenuPage::quitMenu() {
+  resetCursor();
+  mainMenuPage.quitMenu();
 }
 
 void SettingsRootMenuPage::focusSystemUpdate() {
@@ -149,36 +161,60 @@ void SettingsRootMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t
       if (state == ButtonEvent::CLICKED) {
         speaker.playSound(fx::cancel);
         settings.save();
-        mainMenuPage.backToMainMenu();
+        exitToMainMenu();
       } else if (state == ButtonEvent::HELD) {
         speaker.playSound(fx::exit);
         settings.save();
-        mainMenuPage.quitMenu();
+        quitMenu();
       }
       break;
     case cursor_settings_vario:
-      if (state == ButtonEvent::CLICKED) settings_menu_page = page_menu_settings_vario;
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
+        speaker.playSound(fx::increase);
+        settings_menu_page = page_menu_settings_vario;
+      }
       break;
     case cursor_settings_altimeter:
-      if (state == ButtonEvent::CLICKED) settings_menu_page = page_menu_settings_altimeter;
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
+        speaker.playSound(fx::increase);
+        settings_menu_page = page_menu_settings_altimeter;
+      }
       break;
     case cursor_settings_display:
-      if (state == ButtonEvent::CLICKED) settings_menu_page = page_menu_settings_display;
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
+        speaker.playSound(fx::increase);
+        settings_menu_page = page_menu_settings_display;
+      }
       break;
     case cursor_settings_units:
-      if (state == ButtonEvent::CLICKED) settings_menu_page = page_menu_settings_units;
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
+        speaker.playSound(fx::increase);
+        settings_menu_page = page_menu_settings_units;
+      }
       break;
     case cursor_settings_logging:
-      if (state == ButtonEvent::CLICKED) settings_menu_page = page_menu_settings_logging;
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
+        speaker.playSound(fx::increase);
+        settings_menu_page = page_menu_settings_logging;
+      }
       break;
     case cursor_settings_connect:
-      if (state == ButtonEvent::CLICKED) settings_menu_page = page_menu_settings_connect;
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
+        speaker.playSound(fx::increase);
+        settings_menu_page = page_menu_settings_connect;
+      }
       break;
     case cursor_settings_system:
-      if (state == ButtonEvent::CLICKED) settings_menu_page = page_menu_settings_system;
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
+        speaker.playSound(fx::increase);
+        settings_menu_page = page_menu_settings_system;
+      }
       break;
     case cursor_settings_fanet:
-      if (state == ButtonEvent::CLICKED) PageFanet::show();
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
+        speaker.playSound(fx::increase);
+        PageFanet::show();
+      }
       break;
   }
 }
@@ -211,6 +247,7 @@ bool SettingsRootMenuPage::settingsRootButtonEvent(Button button, ButtonEvent st
       if (state == ButtonEvent::CLICKED) {
         cursor_prev();
         skip_hidden_backward();
+        playCursorMoveSound();
         redraw = true;
       }
       break;
@@ -218,10 +255,19 @@ bool SettingsRootMenuPage::settingsRootButtonEvent(Button button, ButtonEvent st
       if (state == ButtonEvent::CLICKED) {
         cursor_next();
         skip_hidden_forward();
+        playCursorMoveSound();
         redraw = true;
       }
       break;
     case Button::LEFT:
+      if (state == ButtonEvent::CLICKED && cursor_position != cursor_settings_back) {
+        speaker.playSound(fx::cancel);
+        settings.save();
+        exitToMainMenu();
+        redraw = true;
+        break;
+      }
+      [[fallthrough]];
     case Button::RIGHT:
     case Button::CENTER:
       if (state == ButtonEvent::CLICKED || state == ButtonEvent::HELD) {

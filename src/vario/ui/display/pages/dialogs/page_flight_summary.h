@@ -15,7 +15,6 @@ class PageFlightSummary : public SettingsMenuPage {
   void show(const FlightStats, const String& logbookPath, const String& trackPath) {
     this->logbookPath = logbookPath;
     this->trackPath = trackPath;
-    this->deleted = false;
     this->deletePending = 0;
     this->summary = LogbookEntrySummary();
     LogbookStore::readSummary(logbookPath, this->summary);
@@ -29,7 +28,6 @@ class PageFlightSummary : public SettingsMenuPage {
   String logbookPath;
   String trackPath;
   LogbookEntrySummary summary;
-  bool deleted = false;
   uint8_t deletePending = 0;
   static bool showing_;
 };

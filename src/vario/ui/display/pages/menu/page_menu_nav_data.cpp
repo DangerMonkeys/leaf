@@ -38,15 +38,24 @@ bool NavDataMenuPage::button_event(Button button, ButtonEvent state, uint8_t cou
       if (state == ButtonEvent::CLICKED) {
         cursor_prev();
         skip_hidden_backward();
+        playCursorMoveSound();
       }
       break;
     case Button::DOWN:
       if (state == ButtonEvent::CLICKED) {
         cursor_next();
         skip_hidden_forward();
+        playCursorMoveSound();
       }
       break;
     case Button::LEFT:
+      if (state == ButtonEvent::CLICKED && cursor_position != cursor_nav_data_back) {
+        speaker.playSound(fx::cancel);
+        settings.save();
+        mainMenuPage.backToMainMenu();
+        break;
+      }
+      [[fallthrough]];
     case Button::RIGHT:
     case Button::CENTER:
       setting_change(button, state, count);
@@ -153,6 +162,7 @@ void NavDataMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t coun
       break;
     case cursor_nav_data_selectDest:
       if (state == ButtonEvent::CLICKED && (dir == Button::RIGHT || dir == Button::CENTER)) {
+        speaker.playSound(fx::increase);
         navDataSelectPage.show();
       } else if (state == ButtonEvent::CLICKED) {
         speaker.playSound(fx::cancel);
@@ -160,6 +170,7 @@ void NavDataMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t coun
       break;
     case cursor_nav_data_loadFile:
       if (state == ButtonEvent::CLICKED && (dir == Button::RIGHT || dir == Button::CENTER)) {
+        speaker.playSound(fx::increase);
         gpxFileSelectPage.show();
       } else if (state == ButtonEvent::CLICKED) {
         speaker.playSound(fx::cancel);

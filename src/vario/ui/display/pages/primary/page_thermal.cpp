@@ -210,6 +210,8 @@ void thermal_page_cursor_move(Button button) {
     thermal_page_cursor_position++;
     if (thermal_page_cursor_position > thermal_page_cursor_max) thermal_page_cursor_position = 0;
   }
+  speaker.playSound(thermal_page_cursor_position == cursor_thermalPage_none ? fx::doubleClick
+                                                                            : fx::click);
 }
 
 void thermalPage_button(Button button, ButtonEvent state, uint8_t count) {

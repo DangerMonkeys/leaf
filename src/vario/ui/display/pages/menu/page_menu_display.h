@@ -16,6 +16,7 @@ class DisplayMenuPage : public SettingsMenuPage {
 
  protected:
   void setting_change(Button dir, ButtonEvent state, uint8_t count);
+  bool cursorUsesLeftButton() const override;
 
  private:
   static constexpr char* labels[6] = {"Back", "Basic", "User", "Navigate", "Contrast"};

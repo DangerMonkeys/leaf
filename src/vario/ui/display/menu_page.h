@@ -88,6 +88,8 @@ class MenuPage {
   // Assumes(?) the screen is already clear.
   virtual void draw() = 0;
 
+  virtual void resetCursor();
+
   // Returns the current modal page on the stack.
   // If there is no modal page, returns NULL.
   MenuPage* get_modal_page();
@@ -99,6 +101,7 @@ class MenuPage {
  protected:
   void cursor_prev();
   void cursor_next();
+  void playCursorMoveSound() const;
 
   // Pushes a new modal page onto the stack to receive draw events
   static void push_page(MenuPage* page);
@@ -131,6 +134,8 @@ class SettingsMenuPage : public MenuPage {
 
  protected:
   virtual void setting_change(Button dir, ButtonEvent state, uint8_t count) = 0;
+  virtual bool cursorUsesLeftButton() const { return false; }
+  void leftButtonBackShortcut(ButtonEvent state, uint8_t count);
 };
 
 // A simple helper class to handle simple menu items that draw things like
