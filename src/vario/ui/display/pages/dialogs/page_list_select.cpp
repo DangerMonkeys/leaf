@@ -32,6 +32,7 @@ void PageListSelect::setting_change(Button dir, ButtonEvent state, uint8_t count
   }
 
   callback(cursor_position);
+  speaker.playSound(fx::neutral);
   pop_page();
 }
 

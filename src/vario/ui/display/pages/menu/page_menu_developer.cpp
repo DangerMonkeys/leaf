@@ -96,31 +96,34 @@ void DeveloperMenuPage::draw() {
 void DeveloperMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) {
   switch (cursor_position) {
     case cursor_developer_fanetReTx: {
-      if (state == ButtonEvent::CLICKED) settings.toggleBoolOnOff(&settings.dev_fanetFwd);
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT))
+        settings.toggleBoolOnOff(&settings.dev_fanetFwd);
       break;
     }
     case cursor_developer_showDebugPg: {
-      if (state == ButtonEvent::CLICKED && dir == Button::CENTER)
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT))
         settings.toggleBoolOnOff(&settings.disp_showDebugPage);
       break;
     }
     case cursor_developer_runSelfTest: {
-      if (state == ButtonEvent::CLICKED) {
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
         cursor_position = cursor_developer_back;
         selfTest.begin(false);  // start a self test (not the official production test)
       }
       break;
     }
     case cursor_developer_startupStart: {
-      if (state == ButtonEvent::CLICKED) settings.toggleBoolOnOff(&settings.dev_startLogAtBoot);
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT))
+        settings.toggleBoolOnOff(&settings.dev_startLogAtBoot);
       break;
     }
     case cursor_developer_startupDisconnect: {
-      if (state == ButtonEvent::CLICKED) settings.toggleBoolOnOff(&settings.dev_startDisconnected);
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT))
+        settings.toggleBoolOnOff(&settings.dev_startDisconnected);
       break;
     }
     case cursor_developer_busLogControl: {
-      if (state == ButtonEvent::CLICKED) {
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
         if (!busLog.isLogging()) {
           if (busLog.startLog()) {
             speaker.playSound(fx::started);

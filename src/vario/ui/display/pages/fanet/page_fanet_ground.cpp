@@ -15,6 +15,7 @@
 void PageFanetGround::show(FanetGroundTrackingMode mode) {
   // If we're currently in a flight, show an error message
   if (flightTimer_isRunning()) {
+    speaker.playSound(fx::bad);
     PageMessage::show("ERROR",
                       "End flight Before\n"
                       "Tracking Ground\n"
@@ -23,6 +24,7 @@ void PageFanetGround::show(FanetGroundTrackingMode mode) {
   }
 
   if (settings.fanet_region == FanetRadioRegion::OFF) {
+    speaker.playSound(fx::bad);
     PageMessage::show("ERROR",
                       "Fanet Region\n"
                       "Not Set\n");
@@ -31,6 +33,7 @@ void PageFanetGround::show(FanetGroundTrackingMode mode) {
 
   // Show this page
   getInstance().mode = mode;
+  speaker.playSound(fx::increase);
   push_page(&getInstance());
 
   // Set our tracking mode to ground tracking.

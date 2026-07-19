@@ -122,6 +122,7 @@ void PageNavDataSelect::moveCursorDown() {
   }
 
   ensureCursorVisible();
+  playCursorMoveSound();
 }
 
 void PageNavDataSelect::moveCursorUp() {
@@ -140,6 +141,7 @@ void PageNavDataSelect::moveCursorUp() {
   }
 
   ensureCursorVisible();
+  playCursorMoveSound();
 }
 
 void PageNavDataSelect::ensureCursorVisible() {

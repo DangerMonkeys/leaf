@@ -35,15 +35,25 @@ bool FlightToolsMenuPage::button_event(Button button, ButtonEvent state, uint8_t
       if (state == ButtonEvent::CLICKED) {
         cursor_prev();
         skip_hidden_backward();
+        playCursorMoveSound();
       }
       break;
     case Button::DOWN:
       if (state == ButtonEvent::CLICKED) {
         cursor_next();
         skip_hidden_forward();
+        playCursorMoveSound();
       }
       break;
     case Button::LEFT:
+      if (state == ButtonEvent::CLICKED && cursor_position != cursor_flight_tools_back &&
+          cursor_position != cursor_flight_tools_varioVolume) {
+        speaker.playSound(fx::cancel);
+        settings.save();
+        mainMenuPage.backToMainMenu();
+        break;
+      }
+      [[fallthrough]];
     case Button::RIGHT:
     case Button::CENTER:
       setting_change(button, state, count);
@@ -145,12 +155,13 @@ void FlightToolsMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t 
 
   switch (cursor_position) {
     case cursor_flight_tools_profiles:
-      if (state == ButtonEvent::CLICKED) {
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
+        speaker.playSound(fx::increase);
         profileSelectPage.show();
       }
       break;
     case cursor_flight_tools_syncAlt:
-      if (state == ButtonEvent::CLICKED) {
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
         if (baro.syncToGPSAlt()) {
           speaker.playSound(fx::enter);
         } else {
@@ -164,7 +175,7 @@ void FlightToolsMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t 
       }
       break;
     case cursor_flight_tools_savePoint:
-      if (state == ButtonEvent::CLICKED) {
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
         Waypoint savedWaypoint;
         String error;
         if (user_waypoints::appendCurrentPosition(savedWaypoint, error)) {
@@ -180,7 +191,7 @@ void FlightToolsMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t 
       break;
     case cursor_flight_tools_resumeRoute:
     case cursor_flight_tools_resumePoint:
-      if (state == ButtonEvent::CLICKED) {
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
         if (navigator.resumeLastNav()) {
           speaker.playSound(fx::confirm);
         } else {
@@ -190,7 +201,7 @@ void FlightToolsMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t 
       }
       break;
     case cursor_flight_tools_resetRoute:
-      if (state == ButtonEvent::CLICKED) {
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
         if (navigator.activeRouteIndex && navigator.activateRoute(navigator.activeRouteIndex)) {
           speaker.playSound(fx::confirm);
         } else {
@@ -200,7 +211,7 @@ void FlightToolsMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t 
       }
       break;
     case cursor_flight_tools_restartRoute:
-      if (state == ButtonEvent::CLICKED) {
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
         if (navigator.restartLastRoute()) {
           speaker.playSound(fx::confirm);
         } else {
@@ -210,7 +221,7 @@ void FlightToolsMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t 
       }
       break;
     case cursor_flight_tools_cancelNav:
-      if (state == ButtonEvent::CLICKED) {
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
         navigator.cancelNav();
         cursor_position = cursor_flight_tools_back;
       }

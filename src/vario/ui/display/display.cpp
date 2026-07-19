@@ -134,6 +134,11 @@ MainPage Display::sanitizedMainPage(MainPage targetPage) {
   return firstVisiblePrimaryPage(targetPage);
 }
 
+bool Display::isScrollableMainPageVisible(MainPage targetPage) const {
+  return targetPage != MainPage::Menu && targetPage != MainPage::Charging &&
+         targetPage != MainPage::Blank && isMainPageVisible(targetPage);
+}
+
 void Display::turnPage(PageAction action) {
   MainPage tempPage = displayPage_;
 
@@ -142,17 +147,33 @@ void Display::turnPage(PageAction action) {
       displayPage_ = sanitizedMainPage(MainPage::Thermal);
       break;
 
-    case PageAction::Next:
-      do {
-        displayPage_++;
-      } while (!isMainPageVisible(displayPage_));
+    case PageAction::Next: {
+      MainPage nextPage = displayPage_;
+      for (int page = static_cast<int>(displayPage_) + 1; page <= static_cast<int>(MainPage::Menu);
+           page++) {
+        MainPage candidate = static_cast<MainPage>(page);
+        if (candidate == MainPage::Menu || isScrollableMainPageVisible(candidate)) {
+          nextPage = candidate;
+          break;
+        }
+      }
+      displayPage_ = nextPage;
       break;
+    }
 
-    case PageAction::Prev:
-      do {
-        displayPage_--;
-      } while (!isMainPageVisible(displayPage_));
+    case PageAction::Prev: {
+      MainPage nextPage = displayPage_;
+      for (int page = static_cast<int>(displayPage_) - 1; page >= static_cast<int>(MainPage::Debug);
+           page--) {
+        MainPage candidate = static_cast<MainPage>(page);
+        if (isScrollableMainPageVisible(candidate)) {
+          nextPage = candidate;
+          break;
+        }
+      }
+      displayPage_ = nextPage;
       break;
+    }
 
     case PageAction::Back:
       displayPage_ = sanitizedMainPage(displayPagePrior_);
@@ -251,6 +272,19 @@ void Display::clear() {
 void Display::clearPage() {
   clear();
   mainMenuPage.pop_all_pages();
+  mainMenuPage.resetCursor();
+  settingsMenuPage.resetCursor();
+  flightToolsMenuPage.resetCursor();
+  navDataMenuPage.backToNavDataMenu();
+  gpsMenuPage.resetCursor();
+  logMenuPage.backToLogMenu();
+  varioMenuPage.resetCursor();
+  altimeterMenuPage.resetCursor();
+  displayMenuPage.resetCursor();
+  unitsMenuPage.resetCursor();
+  systemMenuPage.backToSystemMenu();
+  developerMenuPage.resetCursor();
+  wifiMenuPage.resetCursor();
   displayPage_ = MainPage::Blank;
 }
 

@@ -12,7 +12,8 @@ namespace fx {
 
   constexpr note_t increase[] = {note::C4, note::G4, note::END};
   constexpr note_t decrease[] = {note::C4, note::F3, note::END};  // 110 140, END_OF_TONE};
-  constexpr note_t neutral[] = {note::C4, note::C4, note::END};   // 110, 110, END_OF_TONE};
+  constexpr note_t click[] = {note::C4, note::END};
+  constexpr note_t neutral[] = {note::C4, note::C4, note::END};  // 110, 110, END_OF_TONE};
   constexpr note_t neutralLong[] = {
       note::C4, note::C4, note::C4, note::C4, note::C4,
       note::C4, note::C4, note::C4, note::END};  //  {110, 110, 110, 110, 110, 110, 110, 110,10,

@@ -99,15 +99,18 @@ void LogMenuPage::drawLogMenu() {
 void LogMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) {
   switch (cursor_position) {
     case cursor_log_saveLog: {
-      if (state == ButtonEvent::CLICKED) settings.toggleBoolOnOff(&settings.log_saveTrack);
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT))
+        settings.toggleBoolOnOff(&settings.log_saveTrack);
       break;
     }
     case cursor_log_autoStart: {
-      if (state == ButtonEvent::CLICKED) settings.toggleBoolOnOff(&settings.log_autoStart);
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT))
+        settings.toggleBoolOnOff(&settings.log_autoStart);
       break;
     }
     case cursor_log_autoStop: {
-      if (state == ButtonEvent::CLICKED) settings.toggleBoolOnOff(&settings.log_autoStop);
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT))
+        settings.toggleBoolOnOff(&settings.log_autoStop);
       break;
     }
     case cursor_log_back: {
@@ -118,7 +121,7 @@ void LogMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) {
       } else if (state == ButtonEvent::HELD) {
         speaker.playSound(fx::exit);
         settings.save();
-        mainMenuPage.quitMenu();
+        settingsMenuPage.quitMenu();
       }
       break;
     }

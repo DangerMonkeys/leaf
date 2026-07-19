@@ -101,6 +101,8 @@ void PageLogbook::deleteCurrent() {
   }
 }
 
+bool PageLogbook::cursorUsesLeftButton() const { return cursor_position == cursor_page; }
+
 void PageLogbook::draw() {
   u8g2.firstPage();
   do {
@@ -218,7 +220,7 @@ void PageLogbook::setting_change(Button dir, ButtonEvent state, uint8_t count) {
   }
 
   if (cursor_position == cursor_delete) {
-    if (state == ButtonEvent::INCREMENTED) {
+    if (state == ButtonEvent::INCREMENTED && (dir == Button::CENTER || dir == Button::RIGHT)) {
       deletePending = count;
       if (count >= DELETE_HOLD_COUNT) {
         deleteCurrent();

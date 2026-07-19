@@ -140,6 +140,7 @@ void PageProfileSelect::moveCursorDown() {
   }
 
   ensureCursorVisible();
+  playCursorMoveSound();
 }
 
 void PageProfileSelect::moveCursorUp() {
@@ -165,6 +166,7 @@ void PageProfileSelect::moveCursorUp() {
   }
 
   ensureCursorVisible();
+  playCursorMoveSound();
 }
 
 void PageProfileSelect::ensureCursorVisible() {

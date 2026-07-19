@@ -39,15 +39,16 @@ enum display_menu_pages {
 // tracking which menu page we're on (we might move from the main menu page into a sub-meny)
 uint8_t menu_page = page_menu_main;
 
-void MainMenuPage::backToMainMenu() {
-  cursor_position = cursor_back;
-  menu_page = page_menu_main;
-}
+void MainMenuPage::backToMainMenu() { menu_page = page_menu_main; }
 
-void MainMenuPage::quitMenu() {
+void MainMenuPage::resetCursor() {
   cursor_position = cursor_back;
   menu_page = page_menu_main;
   firstOpened = true;
+}
+
+void MainMenuPage::quitMenu() {
+  resetCursor();
 #ifndef DEBUG_WIFI
   if (!webserver_user_app_always_on()) {
     wifi_menu_ui::disconnectFromNetwork();
@@ -126,37 +127,44 @@ void MainMenuPage::menu_item_action(Button button) {
       break;
     case cursor_settings:
       if (button == Button::RIGHT || button == Button::CENTER) {
+        speaker.playSound(fx::increase);
         settingsMenuPage.backToSettingsMenu();
         menu_page = page_menu_settings;
       }
       break;
     case cursor_flightTools:
       if (button == Button::RIGHT || button == Button::CENTER) {
+        speaker.playSound(fx::increase);
         menu_page = page_menu_flightTools;
       }
       break;
     case cursor_navData:
       if (button == Button::RIGHT || button == Button::CENTER) {
+        speaker.playSound(fx::increase);
         menu_page = page_menu_navData;
       }
       break;
     case cursor_gps:
       if (button == Button::RIGHT || button == Button::CENTER) {
+        speaker.playSound(fx::increase);
         menu_page = page_menu_gps;
       }
       break;
     case cursor_webApp:
       if (button == Button::RIGHT || button == Button::CENTER) {
+        speaker.playSound(fx::increase);
         wifiMenuPage.showWebApp();
       }
       break;
     case cursor_logbook:
       if (button == Button::RIGHT || button == Button::CENTER) {
+        speaker.playSound(fx::increase);
         logMenuPage.showLogbook();
       }
       break;
     case cursor_developer:
       if (button == Button::RIGHT || button == Button::CENTER) {
+        speaker.playSound(fx::increase);
         menu_page = page_menu_developer;
       }
       break;
@@ -184,6 +192,7 @@ bool MainMenuPage::mainMenuButtonEvent(Button button, ButtonEvent state, uint8_t
       if (state == ButtonEvent::CLICKED) {
         cursor_prev();
         skip_hidden_backward();
+        playCursorMoveSound();
         redraw = true;
       }
       break;
@@ -191,10 +200,17 @@ bool MainMenuPage::mainMenuButtonEvent(Button button, ButtonEvent state, uint8_t
       if (state == ButtonEvent::CLICKED) {
         cursor_next();
         skip_hidden_forward();
+        playCursorMoveSound();
         redraw = true;
       }
       break;
     case Button::LEFT:
+      if (state == ButtonEvent::CLICKED) {
+        speaker.playSound(fx::exit);
+        quitMenu();
+        redraw = true;
+      }
+      break;
     case Button::RIGHT:
     case Button::CENTER:
       if (state == ButtonEvent::CLICKED) {

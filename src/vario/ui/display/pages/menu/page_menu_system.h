@@ -21,6 +21,7 @@ class SystemMenuPage : public SettingsMenuPage {
 
  protected:
   void setting_change(Button dir, ButtonEvent state, uint8_t count);
+  bool cursorUsesLeftButton() const override;
 
  private:
   void drawSystemMenu();

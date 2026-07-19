@@ -187,8 +187,13 @@ void VarioMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count)
       } else if (state == ButtonEvent::HELD) {
         speaker.playSound(fx::exit);
         settings.save();
-        mainMenuPage.quitMenu();
+        settingsMenuPage.quitMenu();
       }
       break;
   }
+}
+
+bool VarioMenuPage::cursorUsesLeftButton() const {
+  return cursor_position == cursor_vario_volume || cursor_position == cursor_vario_sensitive ||
+         cursor_position == cursor_vario_climbstart || cursor_position == cursor_vario_sinkalarm;
 }

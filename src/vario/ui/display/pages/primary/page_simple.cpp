@@ -145,6 +145,8 @@ void simple_page_cursor_move(Button button) {
     simple_page_cursor_position++;
     if (simple_page_cursor_position > simple_page_cursor_max) simple_page_cursor_position = 0;
   }
+  speaker.playSound(simple_page_cursor_position == cursor_simplePage_none ? fx::doubleClick
+                                                                          : fx::click);
 }
 
 void simplePage_button(Button button, ButtonEvent state, uint8_t count) {

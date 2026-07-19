@@ -14,7 +14,10 @@ class SettingsRootMenuPage : public SettingsMenuPage {
   }
   void draw();
   bool button_event(Button button, ButtonEvent state, uint8_t count) override;
+  void resetCursor() override;
   void backToSettingsMenu();
+  void exitToMainMenu();
+  void quitMenu();
   void focusSystemUpdate();
 
  protected:

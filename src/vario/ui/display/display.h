@@ -57,6 +57,7 @@ class Display {
  private:
   MainPage sanitizedMainPage(MainPage targetPage);
   MainPage firstVisiblePrimaryPage(MainPage preferredPage) const;
+  bool isScrollableMainPageVisible(MainPage targetPage) const;
 
   MainPage displayPage_ = MainPage::Thermal;
 

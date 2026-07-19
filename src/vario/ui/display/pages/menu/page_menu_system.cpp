@@ -169,10 +169,11 @@ void SystemMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count
       if (state == ButtonEvent::CLICKED) settings.adjustAutoOff(dir);
       break;
     case cursor_system_showWarning:
-      if (state == ButtonEvent::CLICKED) settings.toggleBoolOnOff(&settings.system_showWarning);
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT))
+        settings.toggleBoolOnOff(&settings.system_showWarning);
       break;
     case cursor_system_reset:
-      if (state == ButtonEvent::INCREMENTED) {
+      if (state == ButtonEvent::INCREMENTED && (dir == Button::CENTER || dir == Button::RIGHT)) {
         resetPending = count * 8;
         if (count == 12) {
           buttons.consumeButton();
@@ -191,13 +192,15 @@ void SystemMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count
       } else if (state == ButtonEvent::HELD) {
         speaker.playSound(fx::exit);
         settings.save();
-        mainMenuPage.quitMenu();
+        settingsMenuPage.quitMenu();
       }
       break;
     case cursor_system_about:
-      if (state == ButtonEvent::CLICKED) {
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
+        speaker.playSound(fx::increase);
         about_page.show();
-      } else if (state == ButtonEvent::INCREMENTED && count == 4) {
+      } else if (state == ButtonEvent::INCREMENTED && count == 4 &&
+                 (dir == Button::CENTER || dir == Button::RIGHT)) {
         // toggle developer mode
         settings.toggleBoolOnOff(&settings.dev_mode);
 
@@ -213,14 +216,21 @@ void SystemMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count
       }
       break;
     case cursor_system_updateFW:
-      if (state == ButtonEvent::CLICKED) {
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
         if (wifi_menu_ui::isConnectedToNamedNetwork()) {
+          speaker.playSound(fx::increase);
           wifiMenuPage.showFirmwareUpdate();
         } else {
           focusUpdate();
+          speaker.playSound(fx::increase);
           wifiMenuPage.showSetup();
         }
       }
       break;
   }
+}
+
+bool SystemMenuPage::cursorUsesLeftButton() const {
+  return cursor_position == cursor_system_timezone || cursor_position == cursor_system_volume ||
+         cursor_position == cursor_system_poweroff;
 }

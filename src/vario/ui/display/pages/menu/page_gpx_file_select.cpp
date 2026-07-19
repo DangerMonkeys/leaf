@@ -236,6 +236,7 @@ void PageGpxFileSelect::openSelectedFolder() {
   } else {
     return;
   }
+  speaker.playSound(fx::increase);
   refreshIndex();
 }
 
@@ -302,6 +303,7 @@ void PageGpxFileSelect::moveCursorDown() {
   }
 
   ensureCursorVisible();
+  playCursorMoveSound();
 }
 
 void PageGpxFileSelect::moveCursorUp() {
@@ -319,6 +321,7 @@ void PageGpxFileSelect::moveCursorUp() {
   }
 
   ensureCursorVisible();
+  playCursorMoveSound();
 }
 
 void PageGpxFileSelect::ensureCursorVisible() {

@@ -104,15 +104,15 @@ void DisplayMenuPage::draw() {
 void DisplayMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) {
   switch (cursor_position) {
     case cursor_display_show_simple:
-      if (state == ButtonEvent::CLICKED && dir == Button::CENTER)
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT))
         togglePrimaryPageSetting(&settings.disp_showSimplePage);
       break;
     case cursor_display_show_thrm:
-      if (state == ButtonEvent::CLICKED && dir == Button::CENTER)
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT))
         togglePrimaryPageSetting(&settings.disp_showThmPage);
       break;
     case cursor_display_show_nav:
-      if (state == ButtonEvent::CLICKED && dir == Button::CENTER)
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT))
         togglePrimaryPageSetting(&settings.disp_showNavPage);
       break;
     case cursor_display_contrast:
@@ -127,7 +127,11 @@ void DisplayMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t coun
       } else if (state == ButtonEvent::HELD) {
         speaker.playSound(fx::exit);
         settings.save();
-        mainMenuPage.quitMenu();
+        settingsMenuPage.quitMenu();
       }
   }
+}
+
+bool DisplayMenuPage::cursorUsesLeftButton() const {
+  return cursor_position == cursor_display_contrast;
 }

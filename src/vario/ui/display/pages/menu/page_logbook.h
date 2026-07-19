@@ -16,6 +16,7 @@ class PageLogbook : public SettingsMenuPage {
 
  protected:
   void setting_change(Button dir, ButtonEvent state, uint8_t count) override;
+  bool cursorUsesLeftButton() const override;
 
  private:
   enum Cursor : int8_t {

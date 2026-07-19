@@ -1,6 +1,8 @@
 #include "ui/display/menu_page.h"
 
 #include "etl/array.h"
+#include "ui/audio/sound_effects.h"
+#include "ui/audio/speaker.h"
 #include "ui/display/display.h"
 #include "ui/display/display_fields.h"
 #include "ui/display/fonts.h"
@@ -70,16 +72,31 @@ void MenuPage::cursor_next() {
   if (cursor_position > cursor_max) cursor_position = cursor_min;
 }
 
+void MenuPage::playCursorMoveSound() const {
+  speaker.playSound(cursor_position == cursor_min ? fx::doubleClick : fx::click);
+}
+
 bool SettingsMenuPage::button_event(Button button, ButtonEvent state, uint8_t count) {
   switch (button) {
     case Button::UP:
-      if (state == ButtonEvent::CLICKED) cursor_prev();
+      if (state == ButtonEvent::CLICKED) {
+        cursor_prev();
+        playCursorMoveSound();
+      }
       break;
     case Button::DOWN:
-      if (state == ButtonEvent::CLICKED) cursor_next();
+      if (state == ButtonEvent::CLICKED) {
+        cursor_next();
+        playCursorMoveSound();
+      }
       break;
     case Button::LEFT:
-      setting_change(Button::LEFT, state, count);
+      if (state == ButtonEvent::CLICKED && cursor_position != CURSOR_BACK &&
+          !cursorUsesLeftButton()) {
+        leftButtonBackShortcut(state, count);
+      } else {
+        setting_change(Button::LEFT, state, count);
+      }
       break;
     case Button::RIGHT:
       setting_change(Button::RIGHT, state, count);
@@ -92,6 +109,13 @@ bool SettingsMenuPage::button_event(Button button, ButtonEvent state, uint8_t co
   if (button != Button::NONE) redraw = true;
   return redraw;  // update display after button push so that the UI reflects any changes
                   // immediately
+}
+
+void MenuPage::resetCursor() { cursor_position = cursor_min; }
+
+void SettingsMenuPage::leftButtonBackShortcut(ButtonEvent state, uint8_t count) {
+  cursor_position = cursor_min;
+  setting_change(Button::LEFT, state, count);
 }
 
 void MenuPage::push_page(MenuPage* page) {

@@ -24,6 +24,7 @@ void PageFanet::setting_change(Button dir, ButtonEvent state, uint8_t count) {
   switch (cursor_position) {
     case 0:
       // Ground Tracking Selection
+      speaker.playSound(fx::increase);
       PageFanetGroundSelect::show();
       break;
     case 1: {
@@ -40,15 +41,18 @@ void PageFanet::setting_change(Button dir, ButtonEvent state, uint8_t count) {
       };
 
       // Bring up a dialogue for the user to change the region
+      speaker.playSound(fx::increase);
       PageListSelect::show("Region", etl::array_view<const char*>(FanetRadioRegion::strings),
                            (int)settings.fanet_region, regionChanged);
     } break;
     case 2:
       // User selected statistics
+      speaker.playSound(fx::increase);
       PageFanetStats::show();
       break;
     case 3:
       // User wants to see neighbors
+      speaker.playSound(fx::increase);
       PageFanetNeighbors::show();
       break;
   }

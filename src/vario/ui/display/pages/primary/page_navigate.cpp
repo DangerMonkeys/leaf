@@ -482,6 +482,8 @@ void nav_cursor_move(Button button) {
     navigatePage_cursorPosition++;
     if (navigatePage_cursorPosition > navigatePage_cursorMax) navigatePage_cursorPosition = 0;
   }
+  speaker.playSound(navigatePage_cursorPosition == cursor_navigatePage_none ? fx::doubleClick
+                                                                            : fx::click);
 
   if (navigatePage_cursorPosition == cursor_navigatePage_waypoint) {
     if (navigator.navigating) {

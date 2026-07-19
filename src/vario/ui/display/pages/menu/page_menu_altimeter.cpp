@@ -174,8 +174,12 @@ void AltimeterMenuPage::setting_change(Button button, ButtonEvent state, uint8_t
       } else if (state == ButtonEvent::HELD) {
         speaker.playSound(fx::exit);
         settings.save();
-        mainMenuPage.quitMenu();
+        settingsMenuPage.quitMenu();
       }
       break;
   }
+}
+
+bool AltimeterMenuPage::cursorUsesLeftButton() const {
+  return cursor_position == cursor_altimeter_adjustSetting;
 }

@@ -29,20 +29,15 @@ void PageFlightSummary::draw() {
     display_menuTitle("SUMMARY");
 
     u8g2.setFont(leaf_6x12);
-    if (deleted) {
-      u8g2.setCursor(0, 67);
-      u8g2.print("Log deleted");
-    } else {
-      logbook_card::drawFlightCard(summary);
+    logbook_card::drawFlightCard(summary);
 
-      menu_ui::beginRow(156, cursor_position == 0);
-      menu_ui::drawLabel(2, 156, "Delete");
-      if (cursor_position == 0) {
-        u8g2.setCursor(65, 156);
-        u8g2.print("HOLD");
-      }
-      menu_ui::endRow();
+    menu_ui::beginRow(156, cursor_position == 0);
+    menu_ui::drawLabel(2, 156, "Delete");
+    if (cursor_position == 0) {
+      u8g2.setCursor(65, 156);
+      u8g2.print("HOLD");
     }
+    menu_ui::endRow();
 
     if (deletePending) {
       uint8_t width =
@@ -67,14 +62,18 @@ void PageFlightSummary::setting_change(Button dir, ButtonEvent state, uint8_t co
     return;
   }
 
-  if (cursor_position == 0 && !deleted) {
-    if (state == ButtonEvent::INCREMENTED) {
+  if (cursor_position == 0) {
+    if (state == ButtonEvent::INCREMENTED && (dir == Button::CENTER || dir == Button::RIGHT)) {
       deletePending = count;
       if (count >= DELETE_HOLD_COUNT) {
         buttons.consumeButton();
-        deleted = LogbookEntryFile::deleteFiles(logbookPath, trackPath);
-        speaker.playSound(deleted ? fx::confirm : fx::bad);
         deletePending = 0;
+        if (LogbookEntryFile::deleteFiles(logbookPath, trackPath)) {
+          speaker.playSound(fx::confirm);
+          pop_page();
+        } else {
+          speaker.playSound(fx::bad);
+        }
       }
     } else if (state == ButtonEvent::RELEASED || state == ButtonEvent::CLICKED) {
       deletePending = 0;

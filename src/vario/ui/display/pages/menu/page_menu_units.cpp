@@ -96,29 +96,35 @@ void UnitsMenuPage::draw() {
 void UnitsMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) {
   switch (cursor_position) {
     case cursor_units_alt:
-      if (state == ButtonEvent::CLICKED) settings.toggleBoolNeutral(&settings.units_alt);
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT))
+        settings.toggleBoolNeutral(&settings.units_alt);
       break;
     case cursor_units_climb:
-      if (state == ButtonEvent::CLICKED) {
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
         settings.toggleBoolNeutral(&settings.units_climb);  // change climb units as user reqested
         settings.adjustSinkAlarmUnits(
             settings.units_climb);  // and change sink-alarm units to match
       }
       break;
     case cursor_units_speed:
-      if (state == ButtonEvent::CLICKED) settings.toggleBoolNeutral(&settings.units_speed);
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT))
+        settings.toggleBoolNeutral(&settings.units_speed);
       break;
     case cursor_units_distance:
-      if (state == ButtonEvent::CLICKED) settings.toggleBoolNeutral(&settings.units_distance);
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT))
+        settings.toggleBoolNeutral(&settings.units_distance);
       break;
     case cursor_units_heading:
-      if (state == ButtonEvent::CLICKED) settings.toggleBoolNeutral(&settings.units_heading);
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT))
+        settings.toggleBoolNeutral(&settings.units_heading);
       break;
     case cursor_units_temp:
-      if (state == ButtonEvent::CLICKED) settings.toggleBoolNeutral(&settings.units_temp);
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT))
+        settings.toggleBoolNeutral(&settings.units_temp);
       break;
     case cursor_units_hours:
-      if (state == ButtonEvent::CLICKED) settings.toggleBoolNeutral(&settings.units_hours);
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT))
+        settings.toggleBoolNeutral(&settings.units_hours);
       break;
     case cursor_units_back:
       if (state == ButtonEvent::CLICKED) {
@@ -128,7 +134,7 @@ void UnitsMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count)
       } else if (state == ButtonEvent::HELD) {
         speaker.playSound(fx::exit);
         settings.save();
-        mainMenuPage.quitMenu();
+        settingsMenuPage.quitMenu();
       }
       break;
   }
