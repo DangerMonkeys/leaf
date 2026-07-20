@@ -7,15 +7,15 @@ from pathlib import Path
 
 
 DEFAULTS = {
-    "window_s": 75,
-    "min_gain_m": 25,
+    "window_s": 30,
+    "min_gain_m": 10,
     "min_turn_deg": 90,
     "min_duration_s": 25,
-    "min_save_gain_m": 35,
+    "min_save_gain_m": 100,
     "merge_radius_m": 300,
-    "bearing_lookback_s": 8,
-    "min_bearing_distance_m": 18,
-    "stale_tolerance_s": 8,
+    "bearing_lookback_s": 5,
+    "min_bearing_distance_m": 10,
+    "stale_tolerance_s": 20,
     "vario_avg_s": 5,
 }
 
@@ -326,6 +326,11 @@ def render_html(payload: dict) -> str:
     }}
     .thermal-card span, .candidate-card span, .merged-card span {{
       color: var(--muted);
+    }}
+    .end-trigger {{
+      text-decoration: underline;
+      text-decoration-thickness: 2px;
+      text-underline-offset: 3px;
     }}
     .thermal-card.is-selected, .candidate-card.is-selected, .merged-card.is-selected {{
       border-width: 3px;
@@ -696,7 +701,7 @@ function detectThermalsThrough(fixes, endIndex) {{
     }}
     if (active.length) {{
       const episodeId = saved.length + failed.length + 1;
-      evaluateEpisode(active, saved, failed, episodeId);
+      evaluateEpisode(active, saved, failed, episodeId, fix);
       active = [];
       lastCandidateT = null;
     }}
@@ -704,12 +709,13 @@ function detectThermalsThrough(fixes, endIndex) {{
   return {{saved, failed}};
 }}
 
-function evaluateEpisode(points, saved, failed, episodeId) {{
+function evaluateEpisode(points, saved, failed, episodeId, closingFix = null) {{
   const duration = points[points.length - 1].t - points[0].t;
   const alts = points.map(p => p.detectorAlt);
   const gain = Math.max(...alts) - Math.min(...alts);
   const turnDeg = episodeTurnDeg(points);
   const center = weightedCenter(points);
+  const spine = buildThermalSpine(points);
   const episode = {{
     id: episodeId,
     x: center.x,
@@ -723,6 +729,9 @@ function evaluateEpisode(points, saved, failed, episodeId) {{
     gain_m: gain,
     avg_climb_mps: gain / Math.max(1, duration),
     turns: turnDeg / 360,
+    spine,
+    ended_by_gain: closingFix ? closingFix.windowGain < params.min_gain_m : false,
+    ended_by_turn: closingFix ? closingFix.windowTurn < params.min_turn_deg : false,
     failed_duration: duration < params.min_duration_s,
     failed_gain: gain < params.min_save_gain_m
   }};
@@ -743,7 +752,10 @@ function evaluateEpisode(points, saved, failed, episodeId) {{
     gain_m: episode.gain_m,
     avg_climb_mps: episode.avg_climb_mps,
     turns: episode.turns,
-    max_climb_mps: Math.max(...points.map(p => p.climb30))
+    max_climb_mps: Math.max(...points.map(p => p.climb30)),
+    spine,
+    ended_by_gain: episode.ended_by_gain,
+    ended_by_turn: episode.ended_by_turn
   }};
   saved.push(next);
   for (const point of points) point.thermal = next.id;
@@ -751,6 +763,111 @@ function evaluateEpisode(points, saved, failed, episodeId) {{
 
 function thermalDistance(a, b) {{
   return Math.hypot(a.x - b.x, a.y - b.y);
+}}
+
+function buildThermalSpine(points, maxNodes = 4) {{
+  if (!points.length) return [];
+  const alts = points.map(p => p.detectorAlt);
+  const minAlt = Math.min(...alts);
+  const maxAlt = Math.max(...alts);
+  const span = Math.max(1, maxAlt - minAlt);
+  const bucketCount = Math.min(maxNodes, Math.max(2, Math.ceil(span / 200) + 1));
+  const buckets = Array.from({{length: bucketCount}}, () => ({{weight: 0, x: 0, y: 0, z: 0}}));
+  for (const point of points) {{
+    const normalized = (point.detectorAlt - minAlt) / span;
+    const index = Math.max(0, Math.min(bucketCount - 1, Math.floor(normalized * bucketCount)));
+    const weight = Math.max(0.2, Math.min(5, point.climb30) + 0.5);
+    const bucket = buckets[index];
+    bucket.weight += weight;
+    bucket.x += point.x * weight;
+    bucket.y += point.y * weight;
+    bucket.z += point.detectorAlt * weight;
+  }}
+  let nodes = buckets
+    .filter(bucket => bucket.weight > 0)
+    .map(bucket => ({{x: bucket.x / bucket.weight, y: bucket.y / bucket.weight, z: bucket.z / bucket.weight}}))
+    .sort((a, b) => a.z - b.z);
+  if (nodes.length === 1 && points.length > 1) {{
+    const ordered = [...points].sort((a, b) => a.detectorAlt - b.detectorAlt);
+    nodes = [itemPosition(ordered[0]), itemPosition(ordered[ordered.length - 1])];
+  }}
+  return nodes.slice(0, maxNodes);
+}}
+
+function interpolateSpine(spine, altitude) {{
+  if (!spine || !spine.length) return null;
+  const nodes = [...spine].sort((a, b) => a.z - b.z);
+  if (nodes.length === 1) return nodes[0];
+  let lower = nodes[0];
+  let upper = nodes[nodes.length - 1];
+  for (let i = 1; i < nodes.length; i += 1) {{
+    if (altitude <= nodes[i].z) {{
+      lower = nodes[i - 1];
+      upper = nodes[i];
+      break;
+    }}
+  }}
+  const dz = upper.z - lower.z;
+  const ratio = Math.max(0, Math.min(1, dz === 0 ? 0 : (altitude - lower.z) / dz));
+  return {{
+    x: lower.x + (upper.x - lower.x) * ratio,
+    y: lower.y + (upper.y - lower.y) * ratio,
+    z: lower.z + (upper.z - lower.z) * ratio
+  }};
+}}
+
+function sourceSpineContribution(source, altitude) {{
+  const spine = source.spine || [];
+  if (!spine.length) return null;
+  const nodes = [...spine].sort((a, b) => a.z - b.z);
+  const minAlt = nodes[0].z;
+  const maxAlt = nodes[nodes.length - 1].z;
+  const edgeAllowanceM = 100;
+  let weight = Math.max(1, source.duration_s || 1);
+  if (altitude < minAlt) {{
+    const delta = minAlt - altitude;
+    if (delta > edgeAllowanceM) return null;
+    weight *= 1 - delta / edgeAllowanceM;
+  }} else if (altitude > maxAlt) {{
+    const delta = altitude - maxAlt;
+    if (delta > edgeAllowanceM) return null;
+    weight *= 1 - delta / edgeAllowanceM;
+  }}
+  const point = interpolateSpine(nodes, altitude);
+  return point && weight > 0 ? {{...point, weight}} : null;
+}}
+
+function mergedSpineAltitudes(sources, maxNodes) {{
+  const altitudes = [...new Set(
+    sources.flatMap(source => (source.spine || []).map(node => Math.round(node.z)))
+  )].sort((a, b) => a - b);
+  if (altitudes.length <= maxNodes) return altitudes;
+  const result = [];
+  for (let i = 0; i < maxNodes; i += 1) {{
+    const index = Math.round(i * (altitudes.length - 1) / (maxNodes - 1));
+    result.push(altitudes[index]);
+  }}
+  return [...new Set(result)].sort((a, b) => a - b);
+}}
+
+function mergedSpineFromSources(sources, maxNodes = 4) {{
+  const nodes = sources.flatMap(source => source.spine || []);
+  if (!nodes.length) return [];
+  const altitudes = mergedSpineAltitudes(sources, Math.min(maxNodes, Math.max(2, nodes.length)));
+  const result = [];
+  for (const altitude of altitudes) {{
+    const samples = sources
+      .map(source => sourceSpineContribution(source, altitude))
+      .filter(Boolean);
+    if (!samples.length) continue;
+    const totalWeight = samples.reduce((sum, sample) => sum + sample.weight, 0);
+    result.push({{
+      x: samples.reduce((sum, sample) => sum + sample.x * sample.weight, 0) / totalWeight,
+      y: samples.reduce((sum, sample) => sum + sample.y * sample.weight, 0) / totalWeight,
+      z: altitude
+    }});
+  }}
+  return result;
 }}
 
 function mergedFromSources(sources) {{
@@ -773,7 +890,8 @@ function mergedFromSources(sources) {{
     gain_m: accruedGain,
     duration_s: activeTime,
     avg_climb_mps: accruedGain / Math.max(1, activeTime),
-    turns
+    turns,
+    spine: mergedSpineFromSources(ordered)
   }};
 }}
 
@@ -995,6 +1113,29 @@ function drawPolyline3d(points, map, color, width, alpha = 1, ground = false) {{
     ctx.lineTo(next.x, next.y);
   }}
   ctx.stroke();
+  ctx.restore();
+}}
+
+function drawSpine3d(spine, map, color, label, radius = 9) {{
+  if (!spine || !spine.length) return;
+  const projected = spine.map(node => project3d(node, map));
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = 3;
+  if (projected.length > 1) {{
+    ctx.beginPath();
+    ctx.moveTo(projected[0].x, projected[0].y);
+    for (const point of projected.slice(1)) ctx.lineTo(point.x, point.y);
+    ctx.stroke();
+  }}
+  for (const point of projected) {{
+    ctx.beginPath();
+    ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
+    ctx.stroke();
+  }}
+  const labelPoint = projected[projected.length - 1];
+  ctx.fillText(label, labelPoint.x + radius + 2, labelPoint.y - radius - 2);
   ctx.restore();
 }}
 
@@ -1238,14 +1379,7 @@ function draw() {{
     ctx.fillRect(point.x - 1, point.y - 1, 2, 2);
   }}
   for (const th of saved) {{
-    const point = project3d(th, map);
-    ctx.strokeStyle = "#ffd166";
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.arc(point.x, point.y, 9, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.fillStyle = "#ffd166";
-    ctx.fillText(`T${{th.id}}`, point.x + 11, point.y - 11);
+    drawSpine3d(th.spine, map, "#ffd166", `T${{th.id}}`);
   }}
   for (const candidate of failed) {{
     const point = project3d(candidate, map);
@@ -1274,12 +1408,7 @@ function draw() {{
       ctx.lineTo(sourcePoint.x, sourcePoint.y);
       ctx.stroke();
     }}
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.arc(point.x, point.y, 13, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.fillStyle = "#9cff57";
-    ctx.fillText(compactMergedLabel(merge), point.x + 15, point.y + 2);
+    drawSpine3d(merge.spine, map, "#9cff57", compactMergedLabel(merge));
   }}
   const fixPoint = project3d(fix, map);
   ctx.fillStyle = "#fff";
@@ -1393,19 +1522,19 @@ function draw() {{
   document.getElementById("thermalList").innerHTML = saved.map(th =>
     `<article class="thermal-card${{selectedClass("thermal", th.id)}}" data-select-kind="thermal" data-select-id="${{th.id}}">` +
       `<strong>T${{th.id}}</strong>` +
-      `<div><span>Gain</span><b>${{th.gain_m.toFixed(0)}} m</b></div>` +
+      `<div><span class="${{th.ended_by_gain ? "end-trigger" : ""}}">Gain</span><b>${{th.gain_m.toFixed(0)}} m</b></div>` +
       `<div><span>Time</span><b>${{fmtDuration(th.duration_s)}}</b></div>` +
       `<div><span>Climb</span><b>+${{th.avg_climb_mps.toFixed(1)}} m/s</b></div>` +
-      `<div><span>Turns</span><b>${{th.turns.toFixed(1)}}</b></div>` +
+      `<div><span class="${{th.ended_by_turn ? "end-trigger" : ""}}">Turns</span><b>${{th.turns.toFixed(1)}}</b></div>` +
     `</article>`
   ).join("");
   document.getElementById("candidateList").innerHTML = failed.map(candidate =>
     `<article class="candidate-card${{selectedClass("candidate", candidate.id)}}" data-select-kind="candidate" data-select-id="${{candidate.id}}">` +
       `<strong>C${{candidate.id}}</strong>` +
-      `<div class="${{candidate.failed_gain ? "fail" : "pass"}}"><span>Save gain</span><b>${{candidate.gain_m.toFixed(0)}} / ${{params.min_save_gain_m}} m</b></div>` +
+      `<div class="${{candidate.failed_gain ? "fail" : "pass"}}"><span class="${{candidate.ended_by_gain ? "end-trigger" : ""}}">Save gain</span><b>${{candidate.gain_m.toFixed(0)}} / ${{params.min_save_gain_m}} m</b></div>` +
       `<div class="${{candidate.failed_duration ? "fail" : "pass"}}"><span>Save duration</span><b>${{fmtDuration(candidate.duration_s)}} / ${{fmtDuration(params.min_duration_s)}}</b></div>` +
       `<div class="pass"><span>Climb</span><b>+${{candidate.avg_climb_mps.toFixed(1)}} m/s</b></div>` +
-      `<div class="pass"><span>Turns</span><b>${{candidate.turns.toFixed(1)}}</b></div>` +
+      `<div class="pass"><span class="${{candidate.ended_by_turn ? "end-trigger" : ""}}">Turns</span><b>${{candidate.turns.toFixed(1)}}</b></div>` +
     `</article>`
   ).join("");
   document.getElementById("mergedList").innerHTML = merged.map(merge =>
