@@ -2,7 +2,6 @@
 
 #include <Arduino.h>
 
-#include "instruments/baro.h"
 #include "logging/log.h"
 #include "navigation/gpx.h"
 #include "navigation/user_waypoints.h"
@@ -17,7 +16,6 @@
 enum flight_tools_menu_items {
   cursor_flight_tools_back,
   cursor_flight_tools_profiles,
-  cursor_flight_tools_syncAlt,
   cursor_flight_tools_varioVolume,
   cursor_flight_tools_savePoint,
   cursor_flight_tools_navHeader,
@@ -72,7 +70,7 @@ void FlightToolsMenuPage::draw() {
 
     uint8_t setting_name_x = 2;
     uint8_t setting_choice_x = 76;
-    uint8_t menu_items_y[] = {190, 45, 60, 75, 90, 112, 126, 141, 141, 156, 156, 171};
+    uint8_t menu_items_y[] = {190, 45, 60, 75, 112, 126, 141, 141, 156, 156, 171};
 
     for (int i = 0; i <= cursor_max; i++) {
       if (row_hidden(i)) continue;
@@ -88,13 +86,6 @@ void FlightToolsMenuPage::draw() {
           break;
         case cursor_flight_tools_profiles:
           menu_ui::drawLabel(setting_name_x, menu_items_y[i], "Profiles", menu_ui::GLYPH_PROFILE);
-          menu_ui::drawEnterIcon(setting_choice_x, menu_items_y[i], selected);
-          break;
-        case cursor_flight_tools_syncAlt:
-          u8g2.setCursor(setting_name_x, menu_items_y[i]);
-          menu_ui::printGlyph(menu_ui::GLYPH_GPS);
-          menu_ui::printGlyph(menu_ui::GLYPH_ALTIMETER);
-          u8g2.print("SyncAlt");
           menu_ui::drawEnterIcon(setting_choice_x, menu_items_y[i], selected);
           break;
         case cursor_flight_tools_varioVolume:
@@ -158,15 +149,6 @@ void FlightToolsMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t 
       if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
         speaker.playSound(fx::increase);
         profileSelectPage.show();
-      }
-      break;
-    case cursor_flight_tools_syncAlt:
-      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
-        if (baro.syncToGPSAlt()) {
-          speaker.playSound(fx::enter);
-        } else {
-          speaker.playSound(fx::cancel);
-        }
       }
       break;
     case cursor_flight_tools_varioVolume:

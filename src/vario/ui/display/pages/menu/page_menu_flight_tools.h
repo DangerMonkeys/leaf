@@ -10,7 +10,7 @@ class FlightToolsMenuPage : public SettingsMenuPage {
  public:
   FlightToolsMenuPage() {
     cursor_position = 0;
-    cursor_max = 11;
+    cursor_max = 10;
   }
   bool button_event(Button button, ButtonEvent state, uint8_t count) override;
   void draw();
