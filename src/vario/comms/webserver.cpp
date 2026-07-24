@@ -1052,7 +1052,7 @@ namespace {
   }
 
   String leafApPassword() {
-    static constexpr const char* words[] = {"sunset", "breeze", "updraft", "skyward"};
+    static constexpr const char* words[] = {"sunset", "thermal", "cloud", "lift", "circle"};
     const String hex = deviceHexDigits();
     const uint8_t a = hexNibble(hex.length() > 1 ? hex[hex.length() - 2] : '2');
     const uint8_t b = hexNibble(hex.length() > 0 ? hex[hex.length() - 1] : '3');
