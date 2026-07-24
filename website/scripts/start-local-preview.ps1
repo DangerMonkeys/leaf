@@ -45,42 +45,6 @@ function Get-NodePath {
     return "node"
 }
 
-if ($Background) {
-    $args = @(
-        "-NoProfile",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-File",
-        $PSCommandPath,
-        "-Port",
-        [string]$Port
-    )
-    if ($Network) {
-        $args += "-Network"
-    }
-    if ($NoForce) {
-        $args += "-NoForce"
-    }
-
-    $process = Start-Process -FilePath "powershell.exe" `
-        -ArgumentList $args `
-        -WorkingDirectory $WebsiteRoot `
-        -RedirectStandardOutput $LogPath `
-        -RedirectStandardError $ErrorLogPath `
-        -WindowStyle Hidden `
-        -PassThru
-
-    Write-Host "Started Leaf website preview in background (PID $($process.Id))."
-    Write-Host "Local:   http://localhost:$Port/"
-    if ($Network) {
-        foreach ($address in Get-NetworkAddresses) {
-            Write-Host "Network: http://$address`:$Port/"
-        }
-    }
-    Write-Host "Logs:    $LogPath"
-    return
-}
-
 Ensure-DocsLink
 
 $node = Get-NodePath
@@ -97,6 +61,26 @@ if ($Network) {
 $astroArgs = @($astro, "dev", "--host", $bindHost, "--port", [string]$Port)
 if (-not $NoForce) {
     $astroArgs += "--force"
+}
+
+if ($Background) {
+    $process = Start-Process -FilePath $node `
+        -ArgumentList $astroArgs `
+        -WorkingDirectory $WebsiteRoot `
+        -RedirectStandardOutput $LogPath `
+        -RedirectStandardError $ErrorLogPath `
+        -WindowStyle Hidden `
+        -PassThru
+
+    Write-Host "Started Leaf website preview in background (PID $($process.Id))."
+    Write-Host "Local:   http://localhost:$Port/"
+    if ($Network) {
+        foreach ($address in Get-NetworkAddresses) {
+            Write-Host "Network: http://$address`:$Port/"
+        }
+    }
+    Write-Host "Logs:    $LogPath"
+    return
 }
 
 Write-Host "Starting Leaf website preview..."
