@@ -1922,7 +1922,7 @@ async function loadStatus(){try{let s=await(await fetch('/api/user/status')).jso
 async function loadLogbook(){try{let d=await(await fetch('/api/logbook')).json();useUnits(d.units);$('logCount').textContent=d.count||0;$('logLatest').textContent=d.latest&&d.latest.start_time_local?logDateTime(d.latest.start_time_local,unitPrefs.time_12h):(d.count?'Unknown':'No flights')}catch(e){$('logLatest').textContent='Unavailable'}}
 function resetDelete(){$('deleteLog').style.display='block';$('deleteConfirm').style.display='none'}
 function clearLogCard(d){logState={prev:d&&d.previous_path||'',next:d&&d.next_path||'',path:d&&d.path||''};$('logPage').textContent=((d&&d.position)||'--')+'/'+((d&&d.total)||'--');$('logPrev').disabled=!logState.next;$('logNext').disabled=!logState.prev;$('flightDay').textContent='--';$('flightDate').textContent='Date unknown';$('flightTime').textContent='--';$('flightDuration').textContent='--';$('flightPilot').textContent='';$('flightGlider').textContent='';renderAlt({});$('climbMax').style.display='none';$('sinkMax').style.display='none';$('flightMetrics').innerHTML=['Straight Dist','Path Dist','Max Speed','Accel','Temp'].map(x=>`<div class=mini-row><span>${x}</span><strong>--</strong></div>`).join('');$('trackInfo').textContent=(d&&d.filename?'Bad log: '+d.filename:'Bad log');$('deleteLog').disabled=!logState.path}
-async function loadLogEntry(path){msg('logDetailMsg','Loading...');resetDelete();$('deleteLog').disabled=false;let url='/api/logbook/entry'+(path?'?path='+encodeURIComponent(path):'');try{let r=await fetch(url),d=await r.json().catch(()=>({}));useUnits(d.units);if(!r.ok||!d.ok){clearLogCard(d);throw d}let e=d.entry;logState={prev:d.previous_path||'',next:d.next_path||'',path:e.path||''};$('logPage').textContent=(d.position||'--')+'/'+(d.total||'--');$('logPrev').disabled=!logState.next;$('logNext').disabled=!logState.prev;let lp=logParts(e.start_time_local,unitPrefs.time_12h);$('flightDay').textContent=lp.day||'--';$('flightDate').textContent=lp.date||'Date unknown';$('flightTime').textContent=lp.time||'--';$('flightDuration').textContent=dur(e.duration_seconds);$('flightPilot').textContent=e.pilot_name||'';$('flightGlider').textContent=e.glider_display_name||'';renderAlt(e);$('climbMax').style.display=good(e.max_climb_rate_mps)?'block':'none';$('sinkMax').style.display=good(e.max_sink_rate_mps)?'block':'none';$('climbMax').textContent=ms(e.max_climb_rate_mps);$('sinkMax').textContent=ms(e.max_sink_rate_mps);let rows=[['Straight Dist',dist(e.straight_line_distance_m)],['Path Dist',dist(e.path_distance_m)],['Max Speed',spd(e.max_ground_speed_mps)],['Accel',(good(e.min_accel_g)&&good(e.max_accel_g)?Number(e.min_accel_g).toFixed(1)+' / '+Number(e.max_accel_g).toFixed(1)+' G':'--')],['Temp',tempRange(e.min_temperature_c,e.max_temperature_c)]];if(e.max_wind_valid)rows.push(['Wind',wind(e.max_wind_speed_mps,e.max_wind_direction_from_deg)]);$('flightMetrics').innerHTML=rows.map(r=>`<div class=mini-row><span>${r[0]}</span><strong>${r[1]}</strong></div>`).join('');let tn=e.track_path?e.track_path.split('/').pop():'';$('trackInfo').innerHTML='<span>'+(e.track_saved?('Track File: <span class=track-file-name>'+tn+'</span>'):'No track file')+'</span><span class=flight-id>Flight ID '+(e.flight_id||'--')+'</span>';$('deleteLog').disabled=!logState.path;msg('logDetailMsg','')}catch(x){resetDelete();if(!(x&&x.path))$('deleteLog').disabled=true;msg('logDetailMsg',x&&x.detail?x.detail:'Unable to load log.')}}
+async function loadLogEntry(path){msg('logDetailMsg','Loading...');resetDelete();$('deleteLog').disabled=false;let url='/api/logbook/entry'+(path?'?path='+encodeURIComponent(path):'');try{let r=await fetch(url),d=await r.json().catch(()=>({}));useUnits(d.units);if(!r.ok||!d.ok){clearLogCard(d);throw d}let e=d.entry;logState={prev:d.previous_path||'',next:d.next_path||'',path:e.path||''};$('logPage').textContent=(d.position||'--')+'/'+(d.total||'--');$('logPrev').disabled=!logState.next;$('logNext').disabled=!logState.prev;let lp=logParts(e.start_time_local,unitPrefs.time_12h);$('flightDay').textContent=lp.day||'--';$('flightDate').textContent=lp.date||'Date unknown';$('flightTime').textContent=lp.time||'--';$('flightDuration').textContent=dur(e.duration_seconds);$('flightPilot').textContent=e.pilot_name||'';$('flightGlider').textContent=e.glider_display_name||'';renderAlt(e);$('climbMax').style.display=good(e.max_climb_rate_mps)?'block':'none';$('sinkMax').style.display=good(e.max_sink_rate_mps)?'block':'none';$('climbMax').textContent=ms(e.max_climb_rate_mps);$('sinkMax').textContent=ms(e.max_sink_rate_mps);let rows=[['Straight Dist',dist(e.straight_line_distance_m)],['Path Dist',dist(e.path_distance_m)],['Max Speed',spd(e.max_ground_speed_mps)],['Accel',(good(e.min_accel_g)&&good(e.max_accel_g)?Number(e.min_accel_g).toFixed(1)+' / '+Number(e.max_accel_g).toFixed(1)+' G':'--')],['Temp',tempRange(e.min_temperature_c,e.max_temperature_c)]];if(e.max_wind_valid)rows.push(['Wind',wind(e.max_wind_speed_mps,e.max_wind_direction_from_deg)]);$('flightMetrics').innerHTML=rows.map(r=>`<div class=mini-row><span>${r[0]}</span><strong>${r[1]}</strong></div>`).join('');let tn=e.track_path?e.track_path.split('/').pop():'',igc=tn.toLowerCase().endsWith('.igc'),track=e.track_saved?(igc?('Track File: <a class=track-file-name href="/api/logbook/track?path='+encodeURIComponent(e.path)+'" download>'+esc(tn)+'</a>'):('Track File: <span class=track-file-name>'+esc(tn)+'</span>')):'No track file';$('trackInfo').innerHTML='<span>'+track+'</span><span class=flight-id>Flight ID '+(e.flight_id||'--')+'</span>';$('deleteLog').disabled=!logState.path;msg('logDetailMsg','')}catch(x){resetDelete();if(!(x&&x.path))$('deleteLog').disabled=true;msg('logDetailMsg',x&&x.detail?x.detail:'Unable to load log.')}}
 async function loadProfiles(){try{profiles=await(await fetch('/api/profiles')).json();normalize();msg('pilotMsg','');msg('gliderMsg','');render()}catch(e){msg('pilotMsg','Unable to read profiles.')}}
 $('firmwareCheck').onclick=checkFirmware;$('openProfiles').onclick=()=>show('profiles');$('backMain').onclick=()=>show('main');$('openNavTools').onclick=async()=>{show('nav');await loadUserWaypoints();await loadNavData(true);await loadWaypointFileList()};$('backNavMain').onclick=()=>show('main');$('backLogMain').onclick=()=>show('main');$('openLogbook').onclick=()=>{show('logbook');loadLogEntry('')};$('waypointActivate').onclick=activateWaypointFile;$('waypointLoad').onclick=()=>{$('waypointFile').value='';$('waypointFile').click()};$('waypointFile').onchange=()=>uploadWaypointFile($('waypointFile').files[0]);$('fileWaypointActivate').onclick=()=>{let p=selectedFilePoint();if(p)activatePointIndex(Number(p.index),'waypointMsg')};$('fileWaypointMap').onclick=()=>{let p=selectedFilePoint();if(p)window.open(mapUrl(p),'_blank','noopener')};$('userWaypointSelect').onchange=e=>{selectedUserWaypointId=e.target.value;renderUserWaypoints()};$('userWaypointName').oninput=userWaypointChanged;$('userWaypointRename').onclick=renameUserWaypoint;$('userWaypointActivate').onclick=()=>{let p=selectedUserWaypoint();if(p)activatePointIndex(Number(p.index),'userWaypointMsg')};$('userWaypointMap').onclick=()=>{let p=selectedUserWaypoint();if(p)window.open(mapUrl(p),'_blank','noopener')};$('userWaypointDelete').onclick=()=>{if(!selectedUserWaypoint())return;$('userWaypointDelete').style.display='none';$('userWaypointDeleteConfirm').style.display='block';msg('userWaypointMsg','')};$('userWaypointCancelDelete').onclick=resetUserWaypointDelete;$('userWaypointConfirmDelete').onclick=deleteUserWaypoint;$('createRouteLoadPoints').onclick=loadRoutePoints;$('editRouteName').oninput=routeEditButtons;$('editRouteAdd').onclick=addSelectedRoutePoint;$('editRouteSave').onclick=saveEditedRoute;$('editRouteList').onclick=e=>{let b=e.target.closest('button');if(!b)return;let i=Number(b.dataset.i),a=b.dataset.act;if(a=='remove')editRoute.splice(i,1);else if(a=='up'&&i>0)[editRoute[i-1],editRoute[i]]=[editRoute[i],editRoute[i-1]];else if(a=='down'&&i<editRoute.length-1)[editRoute[i+1],editRoute[i]]=[editRoute[i],editRoute[i+1]];renderEditRoute()};$('editRouteList').oninput=e=>{if(e.target.dataset.r===undefined)return;let i=Number(e.target.dataset.r),v=Number(e.target.value)||150;editRoute[i].radius_m=Math.max(10,Math.min(20000,Math.round(v)))};$('logPrev').onclick=()=>{if(logState.next)loadLogEntry(logState.next)};$('logNext').onclick=()=>{if(logState.prev)loadLogEntry(logState.prev)};$('deleteLog').onclick=()=>{if(!logState.path)return;$('deleteLog').style.display='none';$('deleteConfirm').style.display='block';msg('logDetailMsg','')};$('cancelDelete').onclick=resetDelete;$('confirmDelete').onclick=async()=>{if(!logState.path)return;msg('logDetailMsg','Deleting...');try{let r=await fetch('/api/logbook/entry?path='+encodeURIComponent(logState.path),{method:'DELETE'}),d=await r.json().catch(()=>({}));if(!r.ok||!d.ok)throw d;await loadLogbook();if(d.count>0)loadLogEntry(d.next_path||'');else{show('main');msg('logMsg','Log deleted.')}}catch(x){msg('logDetailMsg',x&&x.detail?x.detail:'Unable to delete log.');resetDelete()}};['pilotName','pilotEmail','leafLogCode','gliderBrand','gliderModel','gliderSize','gliderDisplay'].forEach(x=>$(x).oninput=buttons);['routeName','routeData'].forEach(x=>$(x).oninput=routeButtons);$('leafLogLink').onclick=()=>{$('leafLogPanel').classList.add('active');msg('leafLogMsg','')};$('leafLogWifi').onclick=()=>{location.href='/wifi?scan=1&return=app'};$('leafLogOpen').onclick=()=>{window.open(leafLogUrl(),'_blank','noopener')};$('leafLogSave').onclick=()=>{let name=clean($('pilotName').value);if(!name){msg('leafLogMsg','Pilot name is required.');return}let p=selectedPilot();if(!p){msg('leafLogMsg','Save this pilot profile before linking Leaf Log.');return}p.name=name;p.email=clean($('pilotEmail').value);p.leaf_log_api_key=clean($('leafLogCode').value);save().then(()=>{msg('leafLogMsg','Leaf Log link saved.');msg('pilotMsg','Pilot profile saved.')}).catch(()=>msg('leafLogMsg','Unable to save Leaf Log link.'))};$('routeSave').onclick=async()=>{let name=clean($('routeName').value),data=clean($('routeData').value);if(!name||!data){routeButtons();return}msg('routeMsg','Saving route...');$('routeSave').disabled=true;try{let r=await fetch('/api/routes/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,data:data,activate:$('routeActivate').checked})}),d=await r.json().catch(()=>({}));if(!r.ok||!d.saved)throw d;msg('routeMsg','Saved '+(d.points||0)+' points'+(d.active?' and set active.':'.'));$('routeData').value=''}catch(x){msg('routeMsg',x&&x.detail?x.detail:'Unable to save route.')}routeButtons(false)};
 $('activePilotList').onchange=()=>{profiles.active_pilot_id=$('activePilotList').value;render();save().then(()=>msg('mainProfileMsg','Active pilot saved.')).catch(()=>msg('mainProfileMsg','Unable to save.'))};
@@ -2503,6 +2503,82 @@ load();
     target.send(200, "application/json", json);
   }
 
+  String normalizeTrackPath(String path) {
+    path.trim();
+    if (path.isEmpty()) return "";
+    if (path[0] == '/') return path;
+    if (path.startsWith("tracks/")) return "/" + path;
+    return "";
+  }
+
+  bool isIgcTrackPath(const String& path) {
+    const String normalizedPath = normalizeTrackPath(path);
+    if (!normalizedPath.startsWith("/tracks/")) return false;
+    if (normalizedPath.indexOf("..") >= 0 || normalizedPath.indexOf('\\') >= 0) return false;
+
+    String lowerPath = normalizedPath;
+    lowerPath.toLowerCase();
+    if (!lowerPath.endsWith(".igc")) return false;
+
+    return LogbookStore::filenameFromPath(normalizedPath).length() > 4;
+  }
+
+  void sendLogbookTrack(WebServer& target) {
+    if (!user_app_enabled) {
+      target.send(404, "application/json", "{\"ok\":false,\"error\":\"inactive\"}");
+      return;
+    }
+
+    heap_monitor::checkpoint("logbook-track-start");
+    const String logbookPath = LogbookStore::normalizePath(target.arg("path"));
+    if (!LogbookStore::isLogbookJsonPath(logbookPath)) {
+      heap_monitor::checkpoint("logbook-track-bad-log-path");
+      target.send(400, "application/json",
+                  "{\"ok\":false,\"error\":\"bad_path\",\"detail\":\"Invalid log path.\"}");
+      return;
+    }
+
+    LogbookEntrySummary summary;
+    if (!SD_MMC.exists(logbookPath) || !LogbookStore::readSummary(logbookPath, summary)) {
+      heap_monitor::checkpoint("logbook-track-missing-log");
+      target.send(404, "application/json",
+                  "{\"ok\":false,\"error\":\"missing\",\"detail\":\"Log file was not found.\"}");
+      return;
+    }
+
+    const String trackPath = normalizeTrackPath(summary.trackPath);
+    if (!summary.trackSaved || !isIgcTrackPath(trackPath)) {
+      heap_monitor::checkpoint("logbook-track-no-igc");
+      target.send(404, "application/json",
+                  "{\"ok\":false,\"error\":\"no_igc\",\"detail\":\"No IGC track file found.\"}");
+      return;
+    }
+    if (!SD_MMC.exists(trackPath)) {
+      heap_monitor::checkpoint("logbook-track-missing-file");
+      target.send(404, "application/json",
+                  "{\"ok\":false,\"error\":\"missing\",\"detail\":\"Track file was not found.\"}");
+      return;
+    }
+
+    File file = SD_MMC.open(trackPath, "r");
+    if (!file) {
+      heap_monitor::checkpoint("logbook-track-open-fail");
+      target.send(500, "application/json",
+                  "{\"ok\":false,\"error\":\"open_failed\",\"detail\":\"Track file could not be "
+                  "opened.\"}");
+      return;
+    }
+
+    String filename = LogbookStore::filenameFromPath(trackPath);
+    filename.replace("\"", "_");
+    filename.replace("\\", "_");
+    target.sendHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
+    sendNoStoreHeaders(target);
+    target.streamFile(file, "application/octet-stream");
+    file.close();
+    heap_monitor::checkpoint("logbook-track-end");
+  }
+
   String wifiNetworksJsonFromScan(int16_t scan_result) {
     if (scan_result < 0) {
       return "{\"scanning\":false,\"networks\":[]}";
@@ -2735,6 +2811,9 @@ load();
           if (diagnosticsEnabled()) user_app_route_logbook_entry_count++;
           sendLogbookEntry(user_server);
         });
+      });
+      user_server.on("/api/logbook/track", HTTP_GET, []() {
+        handleUserRequest("GET /api/logbook/track", []() { sendLogbookTrack(user_server); });
       });
       user_server.on("/api/logbook/entry", HTTP_DELETE, []() {
         handleUserRequest("DELETE /api/logbook/entry", []() {
