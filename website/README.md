@@ -26,6 +26,29 @@ To preview from another device on the same Wi-Fi, such as a phone:
 Then open the LAN URL printed by the script, for example
 `http://10.0.0.14:4321/`.
 
+### Repeatable Task: Start Local Website Server
+
+From the repo root, this is the usual command when editing the website and
+previewing from both the desktop and a phone on the same Wi-Fi:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\website\scripts\start-local-preview.ps1 -Network -Background
+```
+
+Then open:
+
+- desktop: `http://localhost:4321/`
+- phone: the `Network:` URL printed by the script, usually similar to
+  `http://10.0.0.14:4321/`
+
+The server writes logs to:
+
+- `website/astro-dev-preview.log`
+- `website/astro-dev-preview.err.log`
+
+If the page does not load immediately, give Astro a few seconds to finish
+syncing content and then refresh.
+
 ## Build
 
 ```powershell

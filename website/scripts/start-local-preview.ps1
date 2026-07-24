@@ -1,7 +1,8 @@
 param(
     [int]$Port = 4321,
     [switch]$Network,
-    [switch]$NoForce
+    [switch]$NoForce,
+    [switch]$Background
 )
 
 Set-StrictMode -Version Latest
@@ -11,6 +12,14 @@ $WebsiteRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $RepoRoot = (Resolve-Path (Join-Path $WebsiteRoot "..")).Path
 $DocsTarget = (Resolve-Path (Join-Path $RepoRoot "docs")).Path
 $DocsLink = Join-Path $WebsiteRoot "src\content\docs"
+$LogPath = Join-Path $WebsiteRoot "astro-dev-preview.log"
+$ErrorLogPath = Join-Path $WebsiteRoot "astro-dev-preview.err.log"
+
+function Get-NetworkAddresses {
+    Get-NetIPConfiguration |
+        Where-Object { $_.IPv4Address -and $_.NetAdapter.Status -eq "Up" } |
+        ForEach-Object { $_.IPv4Address.IPAddress }
+}
 
 function Ensure-DocsLink {
     if ((Test-Path -LiteralPath $DocsLink -PathType Container)) {
@@ -36,6 +45,42 @@ function Get-NodePath {
     return "node"
 }
 
+if ($Background) {
+    $args = @(
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        $PSCommandPath,
+        "-Port",
+        [string]$Port
+    )
+    if ($Network) {
+        $args += "-Network"
+    }
+    if ($NoForce) {
+        $args += "-NoForce"
+    }
+
+    $process = Start-Process -FilePath "powershell.exe" `
+        -ArgumentList $args `
+        -WorkingDirectory $WebsiteRoot `
+        -RedirectStandardOutput $LogPath `
+        -RedirectStandardError $ErrorLogPath `
+        -WindowStyle Hidden `
+        -PassThru
+
+    Write-Host "Started Leaf website preview in background (PID $($process.Id))."
+    Write-Host "Local:   http://localhost:$Port/"
+    if ($Network) {
+        foreach ($address in Get-NetworkAddresses) {
+            Write-Host "Network: http://$address`:$Port/"
+        }
+    }
+    Write-Host "Logs:    $LogPath"
+    return
+}
+
 Ensure-DocsLink
 
 $node = Get-NodePath
@@ -57,11 +102,7 @@ if (-not $NoForce) {
 Write-Host "Starting Leaf website preview..."
 Write-Host "Local:   http://localhost:$Port/"
 if ($Network) {
-    $addresses = Get-NetIPConfiguration |
-        Where-Object { $_.IPv4Address -and $_.NetAdapter.Status -eq "Up" } |
-        ForEach-Object { $_.IPv4Address.IPAddress }
-
-    foreach ($address in $addresses) {
+    foreach ($address in Get-NetworkAddresses) {
         Write-Host "Network: http://$address`:$Port/"
     }
 }

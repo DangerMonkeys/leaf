@@ -9,13 +9,14 @@ import leafGreenBg from "./leaf-green-bg.png"
 import button from "./button.png"
 import buttonCenter from "./button-center.png"
 import buttonLeftRight from "./button-left-right.png"
+import buttonLeftOnly from "./button-left-only.png"
 import buttonUpDown from "./button-up-down.png"
 import cursorBox from "./cursor-box.png"
 import leafPages from "./leaf-pages.png"
 import navPage from "./nav-page.png"
 import thermalPage from "./thermal-page.png"
 import mainMenu from "./menu_images/MainMenu.png"
-import flightMenu from "./menu_images/Flight.png"
+import flightMenu from "./menu_images/FlightNoSyncAlt.png"
 import settingsMenu from "./menu_images/Settings.png"
 import varioMenu from "./menu_images/Vario.png"
 import altimeterMenu from "./menu_images/Altimeter.png"
@@ -139,10 +140,13 @@ All the way to the right you’ll find the MENU page:
   </tbody>
 </table>
 
-> **Shortcut:** When MSL Altitude is selected, hold CENTER to sync the baro altitude to the GPS altitude. This is useful if you don’t know the site altitude or current pressure setting.
+<div className="manual-shortcut-callout">
+  <img src={buttonCenter.src} alt="Center button shortcut" />
+  <p><strong>Shortcut:</strong> When MSL Altitude is selected, hold <strong>CENTER</strong> to sync the baro altitude to the GPS altitude. This is useful if you don’t know the site altitude or current pressure setting.</p>
+</div>
 
 ## User Page
-The  main operational page for standard vario information
+This is the main operational page for standard vario information
 <div className="manual-page-image">
   <img src={thermalPage.src} alt="Thermal Page" />
 </div>
@@ -175,6 +179,12 @@ The Nav Page is used when tracking to GPS waypoints or routes
 
 # Menu Options
 <p>The Leaf menu is the last main page.  Scroll  <strong>&rarr;</strong> right through the pages to open it.  When you enter the menu, Leaf will try to auto-connect to any known saved WiFi networks.  You will see the connection status at the top.</p>
+
+<div className="manual-shortcut-callout">
+  <img src={buttonLeftOnly.src} alt="Left button shortcut" />
+  <p><strong>Shortcut:</strong> To quickly exit the menu, press <strong>LEFT</strong> on most menu options to go back or exit.</p>
+</div>
+
 ## Main Menu
 
 <div className="manual-menu-card">
@@ -199,7 +209,6 @@ The Nav Page is used when tracking to GPS waypoints or routes
   <div>
     <ul>
       <li><strong>Profiles</strong>: Select the active pilot and glider profiles to save in the logbook.</li>
-      <li><strong>SyncAlt</strong>: Adjust pressure altitude to match GPS altitude.</li>
       <li><strong>VarioVol</strong>: Adjust the volume of the vario beeps.</li>
       <li><strong>Save Point</strong>: Save your current location to user waypoints and, if recording, mark a point of interest in the IGC log file.</li>
     </ul>
@@ -256,9 +265,9 @@ Below is an overview of available Leaf settings. For full descriptions of each o
       <li><strong>Status icon</strong>: Shows GPS search/fix status and satellite count.</li>
       <li><strong>Sats</strong>: Shows how many satellites are used in the current fix.</li>
       <li><strong>HDOP</strong>: Shows fix quality. Lower is better; below 2 is generally good.</li>
-      <li><strong>Sky view</strong>: Shows satellite positions in the sky, with north at the top.</li>
+      <li><strong>Sky view</strong>: Shows satellite positions in the sky, with north at the top. The center of the circle is directly overhead.</li>
       <li><strong>Lat / Lon</strong>: Shows current GPS coordinates.</li>
-      <li><strong>Update(sec)</strong>: Shows how often the GPS position is updated.</li>
+      <li><strong>Update(sec)</strong>: Shows how often the GPS position is updated. This is currently fixed at 1 second. In the future we may allow slower update cycles for battery savings.</li>
     </ul>
   </div>
 </div>
@@ -297,7 +306,7 @@ Below is an overview of available Leaf settings. For full descriptions of each o
     </div>
     <ul>
       <li><strong>Delete</strong>: Erases the log summary as well as any recorded IGC flight track.</li>
-      <li><strong>Pages</strong>: Scroll LEFT and RIGHT through all logbook entries.</li>
+      <li><strong>Page Number / Total</strong>: Scroll LEFT and RIGHT through all logbook entries.</li>
     </ul>
   </div>
 </div>
@@ -428,6 +437,20 @@ Flight logs will save to the SD card. Be sure to turn on the "Save IGC File" set
 
 Track logs are saved in IGC format.
 
+### Files and Folders
+
+Leaf will create folders and files on the SD card as you use different features:
+
+<ul className="manual-folder-list">
+  <li><strong>tracks/</strong> Stores recorded IGC flight track files.</li>
+  <li><strong>logbook/</strong> Stores flight summary files used by the Logbook page and Leaf Web App. These summaries reference the matching track files in <strong>tracks/</strong> when an IGC track was recorded.</li>
+  <li><strong>waypoints/</strong> Stores waypoint files for navigation. You can place <strong>GPX</strong>, <strong>CUP</strong>, <strong>WPT</strong>, and <strong>WYP</strong> files here. Leaf also stores saved user waypoints in <strong>waypoints/user_waypoints.json</strong>.</li>
+  <li><strong>routes/</strong> Stores route files created or imported on Leaf or in the Leaf Web App. Leaf may also use <strong>routes/active.json</strong> to remember the currently active route.</li>
+  <li><strong>profiles/</strong> Stores pilot and glider profile information, such as <strong>profiles/profiles.json</strong>, after profiles are edited in the Web App.</li>
+  <li><strong>diagnostics/</strong> May appear when diagnostic features are enabled or troubleshooting information is saved.</li>
+  <li><strong>buslogs/</strong> May appear when developer logging is enabled.</li>
+</ul>
+
 # Navigation
 
 ### Waypoint and Route Files
@@ -452,9 +475,16 @@ When you select a route from a GPX file, or create or import a route from the Le
 
 ### Quick Access
 
-As a shortcut, you can resume, reset, or cancel navigation from the Flight menu.
-
-On the main Nav Page, you can also scroll up to the destination field, then scroll left and right through available navigation points. This is especially handy when following a route, since you can quickly skip ahead to bypass a point or go back to a previous one.
+<div className="manual-shortcut-group">
+  <div className="manual-shortcut-callout">
+    <img src={flightMenu.src} alt="Flight menu shortcut" />
+    <p><strong>Shortcut:</strong> Open <strong>Main Menu &rarr; Flight</strong> to resume, reset, or cancel navigation without going back through the Nav Data menu.</p>
+  </div>
+  <div className="manual-shortcut-callout manual-shortcut-callout-wide">
+    <img src={navPage.src} alt="Nav Page destination field shortcut" />
+    <p><strong>Shortcut:</strong> On the main Nav Page, scroll up to the destination field, then press <strong>LEFT</strong> or <strong>RIGHT</strong> to move through available navigation points. Press <strong>CENTER</strong> to select one as the new destination. This is especially useful while navigating a route if you want to skip ahead or go back to a previous point.</p>
+  </div>
+</div>
 
 # Connect to WiFi
 
@@ -515,6 +545,10 @@ To connect to your phone's hotspot network for internet access, follow this proc
 4.  Immediately after clicking "Save and Connect", turn your device's hotspot feature back on if needed.
 5.  Leaf will try to connect to the hotspot network and save it for future use.
 6.  To reconnect in the future, simply turn on your hotspot feature before opening the main menu on Leaf. When the main menu page opens, Leaf will automatically try connecting to every saved network, including your hotspot.
+
+<div className="manual-note-callout">
+  <p><strong>iPhone hotspot note:</strong> Connecting Leaf to an iPhone hotspot may require another device, such as a tablet, laptop, or a friend's phone. Turn on your iPhone hotspot, then use the other device to follow the normal Leaf WiFi setup process and select the iPhone hotspot as the network Leaf should join.</p>
+</div>
 
 ### WiFi Troubleshooting
 
