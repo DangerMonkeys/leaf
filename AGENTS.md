@@ -15,6 +15,9 @@
 
 ## Local verification
 
+- For Leaf firmware work, run the formatter before building:
+  `powershell -ExecutionPolicy Bypass -File src\scripts\format_all_files.ps1`
+- Until further notice, build firmware with the `leaf_3_2_6_release` PlatformIO environment.
 - `factory_interface` is a Python/uv project under `factory_interface/`; useful quick checks are:
   - `python -m compileall src\factory_interface`
   - `uv run python -c "from factory_interface.app import app; print(app.title)"`

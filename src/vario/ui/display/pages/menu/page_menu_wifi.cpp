@@ -259,6 +259,13 @@ namespace {
   void drawSmallQrCode(const char* text, uint8_t xOffset, uint8_t yOffset) {
     drawQrCodeScaled(text, xOffset, yOffset, 2, 2);
   }
+
+  void drawCenteredText(uint8_t y, const char* text) {
+    const int16_t width = u8g2.getStrWidth(text);
+    const int16_t x = width < 96 ? (96 - width) / 2 : 0;
+    u8g2.setCursor(x, y);
+    u8g2.print(text);
+  }
 }  // namespace
 
 etl::array<const char*, 1> PageMenuSystemWifiWebApp::network_labels{{"Use Leaf AP"}};
@@ -324,7 +331,7 @@ void PageMenuSystemWifiWebApp::draw() {
   do {
     menu_ui::drawTitle(get_title(), get_title_glyph());
 
-    const auto NETWORK_ACTION_Y = 166;
+    const auto NETWORK_ACTION_Y = 168;
     menu_ui::beginRow(190, cursor_position == CURSOR_BACK);
     menu_ui::drawLabel(2, 190, "Back");
     menu_ui::drawBackIcon(74, 190);
@@ -380,8 +387,7 @@ void PageMenuSystemWifiWebApp::draw_extra() {
     u8g2.print(webserver_leaf_ap_password());
     drawQrCode(webserver_leaf_ap_wifi_qr().c_str(), 19, 41);
 
-    u8g2.setCursor(17, 109);
-    u8g2.print("Open Web App:");
+    drawCenteredText(109, "Then Open Web App:");
     drawSmallQrCode(webserver_user_app_url().c_str(), 23, 112);
     u8g2.setCursor(8, 172);
     String shortUrl = webserver_user_app_url();
@@ -401,15 +407,13 @@ void PageMenuSystemWifiWebApp::draw_extra() {
     u8g2.print((char)wifi_menu_ui::iconForCurrentConnection());
 
     u8g2.setFont(leaf_5x8);
-    u8g2.setCursor(2, 58);
-    u8g2.print("Open in browser:");
-    drawQrCode(webserver_user_app_url().c_str(), 23, 64);
+    drawCenteredText(53, "Open in browser:");
+    drawQrCodeScaled(webserver_user_app_url().c_str(), 4, 55, 3, 3);
 
     String shortUrl = webserver_user_app_url();
     shortUrl.replace("http://", "");
     u8g2.setFont(leaf_5x8);
-    u8g2.setCursor(2, 134);
-    u8g2.print(shortUrl);
+    drawCenteredText(152, shortUrl.c_str());
   } else {
     u8g2.setFont(leaf_5x8);
     u8g2.setCursor(2, 90);
