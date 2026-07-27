@@ -11,7 +11,7 @@ The generator parses IGC `B` records, preserves both GPS and IGC pressure-altitu
 Build the replay from an IGC file:
 
 ```powershell
-& 'C:\Users\oxoth\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' analyses\thermal_detection\build_igc_replay.py 'C:\path\to\flight.igc'
+& 'C:\Users\oxoth\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' 'tools and analysis\thermal_detection\build_igc_replay.py' 'C:\path\to\flight.igc'
 ```
 
 Open `igc_thermal_replay.html` in a browser to review detector state, candidate periods, and saved thermal locations during playback.
