@@ -65,6 +65,17 @@ bool PageNavDataSelect::button_event(Button button, ButtonEvent state, uint8_t c
       default:
         break;
     }
+  } else if (state == ButtonEvent::INCREMENTED) {
+    switch (button) {
+      case Button::UP:
+        pageCursorUp();
+        break;
+      case Button::DOWN:
+        pageCursorDown();
+        break;
+      default:
+        break;
+    }
   }
 
   return true;
@@ -73,7 +84,7 @@ bool PageNavDataSelect::button_event(Button button, ButtonEvent state, uint8_t c
 void PageNavDataSelect::draw() {
   u8g2.firstPage();
   do {
-    menu_ui::drawTitle("Select Dest", menu_ui::GLYPH_NAV_DATA);
+    menu_ui::drawTitle("Navigate\037To", menu_ui::GLYPH_NAV_DATA);
 
     const uint8_t count = itemCount();
     if (count == 0) {
@@ -140,6 +151,33 @@ void PageNavDataSelect::moveCursorUp() {
     --cursor_position;
   }
 
+  ensureCursorVisible();
+  playCursorMoveSound();
+}
+
+void PageNavDataSelect::pageCursorDown() {
+  const uint8_t count = itemCount();
+  if (count == 0 || cursorOnBack()) return;
+
+  const int8_t lastItem = count - 1;
+  const int8_t previous = cursor_position;
+  const int16_t next = cursor_position + VISIBLE_ROWS;
+  cursor_position = next > lastItem ? lastItem : next;
+
+  if (cursor_position == previous) return;
+  ensureCursorVisible();
+  playCursorMoveSound();
+}
+
+void PageNavDataSelect::pageCursorUp() {
+  const uint8_t count = itemCount();
+  if (count == 0 || cursorOnBack()) return;
+
+  const int8_t previous = cursor_position;
+  const int16_t next = cursor_position - VISIBLE_ROWS;
+  cursor_position = next < 0 ? 0 : next;
+
+  if (cursor_position == previous) return;
   ensureCursorVisible();
   playCursorMoveSound();
 }

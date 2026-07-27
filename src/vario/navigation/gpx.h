@@ -13,7 +13,7 @@
 #define maxRoutes 10
 #define maxNavPoints 120
 #define maxRoutePointRefs 40
-#define maxGpxNameLength 18
+#define maxGpxNameLength 15
 #define maxGpxFileNameLength 96
 
 inline int32_t gpxDegreesToE7(double degrees) {

@@ -26,6 +26,8 @@ class PageNavDataSelect : public MenuPage {
   bool itemIsRoute(uint8_t index) const;
   void moveCursorDown();
   void moveCursorUp();
+  void pageCursorDown();
+  void pageCursorUp();
   void ensureCursorVisible();
   void close();
   void selectCurrent();

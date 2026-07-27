@@ -28,7 +28,7 @@ namespace menu_ui {
     }
 
     u8g2.setFont(leaf_6x12);
-    u8g2.setCursor(8, 14);
+    u8g2.setCursor(6, 14);
     u8g2.setDrawColor(1);
     printGlyph(glyph);
     u8g2.setCursor(u8g2.getCursorX() + 3, u8g2.getCursorY());
@@ -36,9 +36,9 @@ namespace menu_ui {
     uint8_t xPos = u8g2.getCursorX();
 
     u8g2.drawHLine(0, 15, 96);
-    u8g2.drawLine(1, 15, 4, 0);
-    u8g2.drawHLine(5, 0, xPos - 2);
-    u8g2.drawLine(xPos + 2, 0, xPos + 5, 15);
+    u8g2.drawLine(0, 15, 3, 0);
+    u8g2.drawHLine(4, 0, xPos - 2);
+    u8g2.drawLine(xPos + 1, 0, xPos + 4, 15);
     u8g2.drawHLine(0, 174, 96);
   }
 

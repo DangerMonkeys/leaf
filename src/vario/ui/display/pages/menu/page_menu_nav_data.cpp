@@ -20,7 +20,7 @@ enum nav_data_menu_items {
 };
 
 namespace {
-  constexpr char* labels[4] = {"Back", "Select Dest", "Load File", "Clear All"};
+  constexpr char* labels[4] = {"Back", "Navigate\037To", "Load File", "Clear All"};
   constexpr uint8_t glyphs[4] = {0, menu_ui::GLYPH_NAV_POINT_SELECT, menu_ui::GLYPH_NAV_FILE,
                                  menu_ui::GLYPH_CLEAR_ALL};
   constexpr uint8_t MENU_INPUT_X = 76;
@@ -104,7 +104,7 @@ void NavDataMenuPage::draw() {
                               : hasActivePoint ? "Active Point:"
                               : hasLoadedRoute ? "Loaded Route:"
                               : hasLastPoint   ? "Last Point:"
-                                               : "Active Dest:";
+                                               : "Active Destination:";
 
     u8g2.setFont(leaf_5x8);
     u8g2.setCursor(2, 28);
