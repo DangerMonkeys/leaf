@@ -236,6 +236,21 @@
       width: auto;
       min-height: 0;
     }
+    #leaf-display-editor .lde-sim-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 6px;
+      align-items: center;
+    }
+    #leaf-display-editor .lde-sim-row input[type="range"] {
+      grid-column: 1 / -1;
+      padding-inline: 0;
+    }
+    #leaf-display-editor .lde-sim-value {
+      color: var(--foreground);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: calc(var(--font-size-base) * .86);
+    }
     @media (max-width: 980px) {
       #leaf-display-editor {
         grid-template-columns: 1fr;
@@ -291,6 +306,64 @@
         </select>
       </div>
       <button type="button" class="btn" id="lde-import-btn">Import</button>
+    </div>
+
+    <div class="lde-section" id="lde-sim-controls">
+      <div class="lde-section-title">Live Values</div>
+      <label class="lde-check-row">
+        <input id="lde-sim-gps-fix" type="checkbox" checked>
+        <span>GPS fix</span>
+      </label>
+      <div class="lde-field">
+        <label for="lde-sim-cursor">Selected field</label>
+        <select id="lde-sim-cursor" class="form-select">
+          <option value="none">None</option>
+          <option value="altitude">Altitude</option>
+          <option value="user1">User field 1</option>
+          <option value="user2">User field 2</option>
+          <option value="timer">Timer</option>
+        </select>
+      </div>
+      <div class="lde-sim-row">
+        <label for="lde-sim-climb">Climb rate</label>
+        <span class="lde-sim-value" id="lde-sim-climb-value"></span>
+        <input id="lde-sim-climb" type="range" min="-1200" max="1200" step="10" value="540">
+      </div>
+      <div class="lde-sim-row">
+        <label for="lde-sim-heading">Heading</label>
+        <span class="lde-sim-value" id="lde-sim-heading-value"></span>
+        <input id="lde-sim-heading" type="range" min="0" max="359" step="1" value="0">
+      </div>
+      <div class="lde-sim-row">
+        <label for="lde-sim-speed">Speed</label>
+        <span class="lde-sim-value" id="lde-sim-speed-value"></span>
+        <input id="lde-sim-speed" type="range" min="0" max="80" step="1" value="24">
+      </div>
+      <div class="lde-sim-row">
+        <label for="lde-sim-altitude">Altitude</label>
+        <span class="lde-sim-value" id="lde-sim-altitude-value"></span>
+        <input id="lde-sim-altitude" type="range" min="-500" max="18000" step="10" value="3250">
+      </div>
+      <div class="lde-sim-row">
+        <label for="lde-sim-above-launch">Above launch</label>
+        <span class="lde-sim-value" id="lde-sim-above-launch-value"></span>
+        <input id="lde-sim-above-launch" type="range" min="-1000" max="5000" step="10" value="820">
+      </div>
+      <div class="lde-sim-row">
+        <label for="lde-sim-glide">Glide</label>
+        <span class="lde-sim-value" id="lde-sim-glide-value"></span>
+        <input id="lde-sim-glide" type="range" min="0" max="30" step="0.1" value="8.4">
+      </div>
+      <div class="lde-sim-row">
+        <label for="lde-sim-battery">Battery</label>
+        <span class="lde-sim-value" id="lde-sim-battery-value"></span>
+        <input id="lde-sim-battery" type="range" min="0" max="100" step="5" value="80">
+      </div>
+      <div class="lde-sim-row">
+        <label for="lde-sim-timer">Timer</label>
+        <span class="lde-sim-value" id="lde-sim-timer-value"></span>
+        <input id="lde-sim-timer" type="range" min="0" max="180" step="1" value="83">
+      </div>
     </div>
   </div>
 
@@ -425,6 +498,7 @@
         ['disc', 'Disc'],
         ['triangle', 'Triangle'],
         ['text', 'Text'],
+        ['varioBar', 'Vario bar'],
         ['bitmap', 'Bitmap']
       ];
       const leafFonts = window.LEAF_U8G2_FONTS || {};
@@ -445,11 +519,85 @@
         drag: null,
         exportMode: 'cpp',
         pngBorder: false,
+        activeTemplate: null,
         nextId: 1
+      };
+      const simInputs = {
+        gpsFix: root.querySelector('#lde-sim-gps-fix'),
+        cursor: root.querySelector('#lde-sim-cursor'),
+        climb: root.querySelector('#lde-sim-climb'),
+        heading: root.querySelector('#lde-sim-heading'),
+        speed: root.querySelector('#lde-sim-speed'),
+        altitude: root.querySelector('#lde-sim-altitude'),
+        aboveLaunch: root.querySelector('#lde-sim-above-launch'),
+        glide: root.querySelector('#lde-sim-glide'),
+        battery: root.querySelector('#lde-sim-battery'),
+        timer: root.querySelector('#lde-sim-timer')
+      };
+      const simValues = {
+        climb: root.querySelector('#lde-sim-climb-value'),
+        heading: root.querySelector('#lde-sim-heading-value'),
+        speed: root.querySelector('#lde-sim-speed-value'),
+        altitude: root.querySelector('#lde-sim-altitude-value'),
+        aboveLaunch: root.querySelector('#lde-sim-above-launch-value'),
+        glide: root.querySelector('#lde-sim-glide-value'),
+        battery: root.querySelector('#lde-sim-battery-value'),
+        timer: root.querySelector('#lde-sim-timer-value')
       };
 
       function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, Number.isFinite(n) ? n : lo)); }
       function round(n) { return Math.round(Number(n) || 0); }
+      function readSimModel() {
+        const timerMinutes = Number(simInputs.timer.value);
+        return {
+          gpsFix: simInputs.gpsFix.checked,
+          cursor: simInputs.cursor.value,
+          climbRate: Number(simInputs.climb.value),
+          heading: Number(simInputs.heading.value),
+          speed: Number(simInputs.speed.value),
+          altitude: Number(simInputs.altitude.value),
+          aboveLaunch: Number(simInputs.aboveLaunch.value),
+          glide: Number(simInputs.glide.value),
+          battery: Number(simInputs.battery.value),
+          timerText: Math.floor(timerMinutes / 60) + ':' + String(timerMinutes % 60).padStart(2, '0')
+        };
+      }
+      function updateSimLabels() {
+        const model = readSimModel();
+        simValues.climb.textContent = `${model.climbRate} ft/min`;
+        simValues.heading.textContent = `${model.heading} deg`;
+        simValues.speed.textContent = `${model.speed} mph`;
+        simValues.altitude.textContent = `${model.altitude} ft`;
+        simValues.aboveLaunch.textContent = `${model.aboveLaunch} ft`;
+        simValues.glide.textContent = model.glide.toFixed(1);
+        simValues.battery.textContent = `${model.battery}%`;
+        simValues.timer.textContent = model.timerText;
+      }
+      function liveClimbText(existingText, climbRate) {
+        const signText = `${climbRate >= 0 ? '+' : ''}${climbRate}`;
+        if (String(existingText || '').includes(' f')) return `${signText} f`;
+        if (String(existingText || '').endsWith('f')) return `${signText}f`;
+        return signText;
+      }
+      function applyLiveValuesToShapes() {
+        const model = readSimModel();
+        const headingText = model.gpsFix ? cardinalFromHeading(model.heading) : '--';
+        state.shapes.forEach(s => {
+          if (s.type !== 'text') return;
+          if (s.name === 'speed') s.text = model.gpsFix ? String(model.speed) : '--';
+          if (s.name === 'heading') s.text = headingText;
+          if (s.name === 'heading turn') s.text = `<${headingText}>`;
+          if (s.name === 'altitude') s.text = String(model.altitude);
+          if (s.name === 'climb rate') s.text = liveClimbText(s.text, model.climbRate);
+          if (s.name === 'climb sign') s.text = model.climbRate >= 0 ? '+' : '-';
+          if (s.name === 'climb value') s.text = String(Math.abs(model.climbRate));
+          if (s.name === 'above launch' || s.name === 'user field 1 value') s.text = String(model.aboveLaunch);
+          if (s.name === 'glide' || s.name === 'user field 2 value') s.text = model.glide.toFixed(1);
+          if (s.name === 'glide waypoint') s.text = (model.glide - 0.5).toFixed(1);
+          if (s.name === 'timer' || s.name === 'time remaining') s.text = model.timerText;
+          if (s.name === 'battery icon') s.text = batteryGlyph(model.battery);
+        });
+      }
       function selected() { return state.shapes.find(s => s.id === state.selectedId) || null; }
       function pxColor(c) {
         if (forceMonoPalette) return c === 0 ? '#ffffff' : '#000000';
@@ -585,6 +733,7 @@
         if (type === 'circle' || type === 'disc') return { ...base, x: midX, y: midY, r: 16 };
         if (type === 'triangle') return { ...base, x1: midX, y1: midY - 18, x2: midX - 16, y2: midY + 12, x3: midX + 16, y3: midY + 12 };
         if (type === 'text') return { ...base, x: 8, y: 24, text: 'ALT 3250', font: 'leaf_8x14' };
+        if (type === 'varioBar') return { ...base, x: 4, y: 22, w: 18, posTick: 14, negTick: 14 };
         if (type === 'bitmap') return { ...base, x: midX - 16, y: midY - 16, w: 32, h: 32, label: 'xbm' };
         const shape = { ...base, x: midX - 24, y: midY - 14, w: 48, h: 28 };
         if (type === 'rbox' || type === 'rframe') shape.r = 3;
@@ -598,6 +747,7 @@
         }
         if (s.type === 'hline') return { x: s.x, y: s.y, w: s.w, h: 1 };
         if (s.type === 'vline') return { x: s.x, y: s.y, w: 1, h: s.h };
+        if (s.type === 'varioBar') return { x: s.x, y: s.y, w: s.w, h: varioBarHeight(s) };
         if (s.type === 'circle' || s.type === 'disc') return { x: s.x - s.r, y: s.y - s.r, w: s.r * 2 + 1, h: s.r * 2 + 1 };
         if (s.type === 'triangle') {
           const xs = [s.x1, s.x2, s.x3], ys = [s.y1, s.y2, s.y3];
@@ -787,6 +937,45 @@
           if (xs.length >= 2) drawLinePixels(Math.ceil(Math.min(...xs)), y, Math.floor(Math.max(...xs)), y, color);
         }
       }
+      function varioBarHeight(s) {
+        return Math.max(3, 5 * Math.max(1, round(s.posTick)) + 5 * Math.max(1, round(s.negTick)) + 1);
+      }
+      function varioZeroY(s) {
+        return round(s.y) + 5 * Math.max(1, round(s.posTick));
+      }
+      function drawVarioBarPixels(s, color) {
+        const x = round(s.x);
+        const y = round(s.y);
+        const w = Math.max(3, round(s.w));
+        const posTick = Math.max(1, round(s.posTick));
+        const negTick = Math.max(1, round(s.negTick));
+        const h = varioBarHeight(s);
+        const zeroY = varioZeroY(s);
+        const innerX = x + 1;
+        const innerW = Math.max(1, w - 2);
+        const tickW = Math.max(1, Math.floor(innerW / 2));
+        const climb = clamp(readSimModel().climbRate, -1000, 1000);
+        let fillStart = zeroY;
+        let fillEnd = zeroY;
+        if (climb >= 0) {
+          const fill = Math.round((climb / 500) * (5 * posTick));
+          fillStart = clamp(zeroY - fill, y + 1, zeroY);
+        } else {
+          const fill = Math.round((-climb / 500) * (5 * negTick));
+          fillEnd = clamp(zeroY + fill, zeroY, y + h - 2);
+        }
+        if (fillEnd >= fillStart) drawRectPixels(innerX, fillStart, innerW, fillEnd - fillStart + 1, color, true);
+        drawRectPixels(x, y, w, h, color, false);
+        for (let i = 1; i <= 5; i++) {
+          const tickY = zeroY - i * posTick;
+          drawLinePixels(innerX, tickY, innerX + tickW - 1, tickY, tickY >= fillStart && tickY <= fillEnd ? 0 : color);
+        }
+        drawLinePixels(innerX, zeroY, innerX + innerW - 1, zeroY, zeroY >= fillStart && zeroY <= fillEnd ? 0 : color);
+        for (let i = 1; i <= 5; i++) {
+          const tickY = zeroY + i * negTick;
+          drawLinePixels(innerX, tickY, innerX + tickW - 1, tickY, tickY >= fillStart && tickY <= fillEnd ? 0 : color);
+        }
+      }
       function drawShape(s) {
         if (!s.visible) return;
         const c = Number(s.color);
@@ -801,6 +990,7 @@
         if (s.type === 'circle') drawCirclePixels(s.x, s.y, s.r, c);
         if (s.type === 'disc') drawDiscPixels(s.x, s.y, s.r, c);
         if (s.type === 'triangle') drawTrianglePixels(s, c);
+        if (s.type === 'varioBar') drawVarioBarPixels(s, c);
         if (s.type === 'bitmap') {
           drawRectPixels(s.x, s.y, s.w, s.h, c, false);
           drawLinePixels(s.x, s.y, s.x + s.w - 1, s.y + s.h - 1, c);
@@ -907,6 +1097,7 @@
         if (s.type === 'line') return ['x1', 'y1', 'x2', 'y2'];
         if (s.type === 'hline') return ['x', 'y', 'w'];
         if (s.type === 'vline') return ['x', 'y', 'h'];
+        if (s.type === 'varioBar') return ['x', 'y', 'w', 'posTick', 'negTick'];
         if (s.type === 'circle' || s.type === 'disc') return ['x', 'y', 'r'];
         if (s.type === 'triangle') return ['x1', 'y1', 'x2', 'y2', 'x3', 'y3'];
         if (s.type === 'rbox' || s.type === 'rframe') return ['x', 'y', 'w', 'h', 'r'];
@@ -938,7 +1129,11 @@
           input.step = '1';
           input.className = 'form-control';
           input.value = s[k] ?? 0;
-          input.addEventListener('input', () => { s[k] = round(input.value); render(); });
+          input.addEventListener('input', () => {
+            s[k] = k === 'posTick' || k === 'negTick' ? Math.max(1, round(input.value)) : round(input.value);
+            if (s.type === 'varioBar' && k === 'w') s.w = Math.max(3, round(s.w));
+            render();
+          });
           wrap.append(label, input);
           propFieldsEl.appendChild(wrap);
         });
@@ -954,6 +1149,15 @@
         const delta = grow ? step : -step;
         if (s.type === 'circle' || s.type === 'disc') {
           s.r = Math.max(1, round((s.r || 1) + delta));
+          return true;
+        }
+        if (s.type === 'varioBar') {
+          if (key === 'ArrowLeft' || key === 'ArrowRight') {
+            s.w = Math.max(3, round((s.w || 3) + delta));
+          } else {
+            s.posTick = Math.max(1, round((s.posTick || 1) + delta));
+            s.negTick = Math.max(1, round((s.negTick || 1) + delta));
+          }
           return true;
         }
         if ((key === 'ArrowLeft' || key === 'ArrowRight') && 'w' in s) {
@@ -1017,14 +1221,22 @@
         if (s.type === 'disc') call = `u8g2.drawDisc(${s.x}, ${s.y}, ${s.r});`;
         if (s.type === 'triangle') call = `u8g2.drawTriangle(${s.x1}, ${s.y1}, ${s.x2}, ${s.y2}, ${s.x3}, ${s.y3});`;
         if (s.type === 'text') call = `u8g2.setFont(${s.font});\nu8g2.drawStr(${s.x}, ${s.y}, "${String(s.text || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"')}");`;
+        if (s.type === 'varioBar') {
+          const h = varioBarHeight(s);
+          const zeroY = varioZeroY(s);
+          const innerW = Math.max(1, round(s.w) - 2);
+          const tickW = Math.max(1, Math.floor(innerW / 2));
+          call = [
+            `drawVarioBarWidget(${s.x}, ${s.y}, ${s.w}, ${h}, ${zeroY}, ${tickW}, climbRate);`,
+            `// Generated widget params: positive tick height ${s.posTick}, negative tick height ${s.negTick}.`
+          ].join('\n');
+        }
         if (s.type === 'bitmap') call = `u8g2.drawXBM(${s.x}, ${s.y}, ${s.w}, ${s.h}, bitmap_name);`;
         return prefix + call + suffix;
       }
       function rasterBits() {
-        const z = state.zoom;
-        const off = document.createElement('canvas');
-        off.width = state.display.w * z; off.height = state.display.h * z;
-        const oldCtx = ctx;
+        const screen = renderedDisplayCanvas();
+        const pixels = screen.getContext('2d').getImageData(0, 0, screen.width, screen.height).data;
         const data = [];
         for (let y = 0; y < state.display.h; y++) {
           for (let bx = 0; bx < Math.ceil(state.display.w / 8); bx++) {
@@ -1032,12 +1244,8 @@
             for (let bit = 0; bit < 8; bit++) {
               const x = bx * 8 + bit;
               if (x >= state.display.w) continue;
-              let on = false;
-              for (const s of state.shapes) {
-                if (!s.visible || s.color === 0) continue;
-                const b = shapeBounds(s);
-                if (x >= b.x && y >= b.y && x < b.x + b.w && y < b.y + b.h) on = true;
-              }
+              const i = (y * state.display.w + x) * 4;
+              const on = pixels[i] + pixels[i + 1] + pixels[i + 2] < 384;
               if (on) byte |= (1 << bit);
             }
             data.push(byte);
@@ -1121,56 +1329,21 @@
       function addLeafText(add, name, x, y, text, font, color = 1) {
         return addLeafShape(add, { type: 'text', name, x, y, text, font, color });
       }
-      function addLeafVarioBar(add, barTop, barClimbHeight, barSinkHeight, barWidth, climbRate) {
-        addLeafShape(add, { type: 'frame', name: 'vario frame', x: 0, y: barTop, w: barWidth, h: barClimbHeight + barSinkHeight + 1 });
-        const climbMax = 500;
-        const sinkMax = -500;
-        const barMid = barTop + barClimbHeight;
-        const barFillTop = barTop + 1;
-        const barFillBot = barTop + barClimbHeight + barSinkHeight - 1;
-        const fillTopLength = barMid - barFillTop + 1;
-        const fillBotLength = barFillBot - barMid + 1;
-        let barFillStart = 1;
-        let barFillEnd = 1;
-        if (climbRate > 2 * climbMax || climbRate < 2 * sinkMax) {
-          barFillStart = 1;
-          barFillEnd = 0;
-        } else if (climbRate > climbMax) {
-          const fill = Math.trunc(fillTopLength * (climbRate - climbMax) / climbMax);
-          barFillStart = barFillTop;
-          barFillEnd = barMid - fill;
-        } else if (climbRate < sinkMax) {
-          const fill = Math.trunc(fillBotLength * (climbRate - sinkMax) / sinkMax);
-          barFillStart = barMid + fill;
-          barFillEnd = barFillBot;
-        } else if (climbRate < 0) {
-          const fill = Math.trunc(fillBotLength * climbRate / sinkMax);
-          barFillStart = barMid;
-          barFillEnd = barMid + fill;
-        } else {
-          const fill = Math.trunc(fillTopLength * climbRate / climbMax);
-          barFillStart = barMid - fill;
-          barFillEnd = barMid;
+      function addLeafVarioBar(add, name, barTop, barClimbHeight, barSinkHeight, barWidth, reuseShapes = new Map()) {
+        const reused = reuseShapes.get(name);
+        if (reused) {
+          addLeafShape(add, { ...reused, id: undefined, preserveScale: true });
+          return;
         }
-        if (barFillEnd >= barFillStart) addLeafShape(add, { type: 'box', name: 'vario fill', x: 1, y: barFillStart, w: barWidth - 2, h: barFillEnd - barFillStart + 1 });
-        let tickSpacing = Math.trunc(fillTopLength / 5);
-        let lineY = barTop;
-        for (let i = 1; i <= 9; i++) {
-          if (i === 5) {
-            lineY = barMid;
-            tickSpacing = Math.trunc(fillBotLength / 5);
-          } else {
-            lineY += tickSpacing;
-            addLeafShape(add, {
-              type: 'hline',
-              name: 'vario tick ' + i,
-              x: 1,
-              y: lineY,
-              w: Math.max(1, Math.trunc(barWidth / 2) - 1),
-              color: lineY >= barFillStart && lineY <= barFillEnd ? 0 : 1
-            });
-          }
-        }
+        addLeafShape(add, {
+          type: 'varioBar',
+          name,
+          x: 0,
+          y: barTop,
+          w: barWidth,
+          posTick: Math.max(1, Math.round(barClimbHeight / 5)),
+          negTick: Math.max(1, Math.round(barSinkHeight / 5))
+        });
       }
       function addLeafClimbPointerBox(add, x, y, w, h, triSize) {
         addLeafShape(add, { type: 'box', name: 'climb box', x, y, w, h });
@@ -1199,23 +1372,57 @@
         addLeafText(add, 'compass S', x - 2, y + compassRadius + 4, 'S', 'leaf_compass', 2);
         addLeafText(add, 'compass W', x - compassRadius - 2, y + 4, 'W', 'leaf_compass', 2);
       }
-      function addLeafHeader(add, navPage = false, showTurnArrows = false) {
-        addLeafText(add, 'clock', 0, 10, '12:34', 'leaf_6x10');
-        addLeafText(add, 'speed', 70, 14, '24', 'leaf_8x14');
-        addLeafText(add, 'speed units', 82, 21, 'MPH', 'leaf_5h', navPage ? 0 : 1);
-        addLeafText(add, showTurnArrows ? 'heading turn' : 'heading', showTurnArrows ? 37 : 45, 10, showTurnArrows ? '<N>' : 'N', 'leaf_7x10');
+      function speedX(speed, baseX = 70) {
+        const len = String(speed).length;
+        return len <= 1 ? baseX + 6 : len >= 3 ? baseX - 6 : baseX;
       }
-      function addLeafFooter(add, timerSelected = false) {
-        addLeafText(add, 'battery icon', 0, 192, '8', 'Leaf_BattIcon_Vertical');
+      function leftPadX(value, baseX, digitCount, step = 4) {
+        return baseX + Math.max(0, digitCount - String(value).length) * step;
+      }
+      function batteryGlyph(percent) {
+        return String(clamp(Math.round(Number(percent) / 12.5), 0, 8));
+      }
+      function addLeafHeader(add, navPage = false, showTurnArrows = false, model = readSimModel()) {
+        const headingText = model.gpsFix ? cardinalFromHeading(model.heading) : '--';
+        addLeafText(add, 'clock', 0, 10, '12:34', 'leaf_6x10');
+        addLeafText(add, 'speed', speedX(model.speed), 14, model.gpsFix ? String(model.speed) : '--', 'leaf_8x14');
+        addLeafText(add, 'speed units', 82, 21, 'MPH', 'leaf_5h', navPage ? 0 : 1);
+        addLeafText(add, showTurnArrows ? 'heading turn' : 'heading', showTurnArrows ? 37 : headingText.length > 1 ? 41 : 45, 10, showTurnArrows ? `<${headingText}>` : headingText, 'leaf_7x10');
+      }
+      function addLeafFooter(add, timerSelected = false, model = readSimModel()) {
+        addLeafText(add, 'battery icon', 0, 192, batteryGlyph(model.battery), 'Leaf_BattIcon_Vertical');
         addLeafText(add, 'sd icon', 10, 192, '<', 'leaf_icons');
         addLeafText(add, 'fanet icon', 23, 192, 'U', 'leaf_icons');
         addLeafText(add, 'volume icon', 37, 191, 'L', 'leaf_icons');
         if (timerSelected) addLeafShape(add, { type: 'rbox', name: 'timer selected fill', x: 50, y: 178, w: 46, h: 16, r: 2 });
-        addLeafText(add, 'timer', 52, 192, '1:23', 'leaf_6x12', timerSelected ? 0 : 1);
+        addLeafText(add, 'timer', 52, 192, model.timerText, 'leaf_6x12', timerSelected ? 0 : 1);
       }
-      function addLeafHeaderFooter(add, timerSelected = false, showTurnArrows = false, navPage = false) {
-        addLeafHeader(add, navPage, showTurnArrows);
-        addLeafFooter(add, timerSelected);
+      function addLeafHeaderFooter(add, timerSelected = false, showTurnArrows = false, navPage = false, model = readSimModel()) {
+        addLeafHeader(add, navPage, showTurnArrows, model);
+        addLeafFooter(add, timerSelected, model);
+      }
+      function cardinalFromHeading(deg) {
+        const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+        return dirs[Math.round((((deg % 360) + 360) % 360) / 45) % 8];
+      }
+      function addThermalTemplate(add, model = readSimModel()) {
+        const climbText = `${model.climbRate >= 0 ? '+' : ''}${model.climbRate} f`;
+        addLeafHeaderFooter(add, model.cursor === 'timer', false, false, model);
+        addLeafWindSockRing(add, 56, 31, 12, 7, model.gpsFix);
+        addLeafVarioBar(add, 'thermal vario bar', 21, 75, 75, 25, model.reuseShapes);
+        if (model.cursor === 'altitude') addLeafShape(add, { type: 'rframe', name: 'altitude selected', x: 25, y: 55, w: 66, h: 29, r: 2 });
+        addLeafText(add, 'alt label', 77, 57, 'MSL', 'leaf_labels');
+        addLeafText(add, 'alt units', 85, 49, 'ft', 'leaf_labels');
+        addLeafText(add, 'altitude', leftPadX(model.altitude, 27, 4), 79, String(model.altitude), 'leaf_21h');
+        const climbBoxY = 21 + 75 - Math.trunc(27 / 2);
+        addLeafClimbPointerBox(add, 25, climbBoxY, 76, 27, 13);
+        addLeafText(add, 'climb rate', climbText.length > 6 ? 16 : 20, climbBoxY + 24, climbText, 'leaf_21h', 0);
+        if (model.cursor === 'user1') addLeafShape(add, { type: 'rframe', name: 'user field 1 selected', x: 27, y: climbBoxY + 30, w: 67, h: 26, r: 2 });
+        addLeafText(add, 'user field 1 label', 29, climbBoxY + 39, 'ABOVE LAUNCH', 'leaf_5h');
+        addLeafText(add, 'user field 1 value', 49 - Math.max(0, String(model.aboveLaunch).length - 3) * 3, climbBoxY + 53, String(model.aboveLaunch), 'leaf_6x12');
+        if (model.cursor === 'user2') addLeafShape(add, { type: 'rframe', name: 'user field 2 selected', x: 27, y: climbBoxY + 57, w: 67, h: 26, r: 2 });
+        addLeafText(add, 'user field 2 label', 29, climbBoxY + 66, '` GLIDE', 'leaf_5h');
+        addLeafText(add, 'user field 2 value', 49, climbBoxY + 80, model.glide.toFixed(1), 'leaf_6x12');
       }
       function importTemplate(name) {
         const W = state.display.w, H = state.display.h;
@@ -1230,45 +1437,47 @@
           if ('r' in out) out.r = Math.max(1, S(out.r, 'x'));
           return out;
         };
-        const add = s => { const out = scaleShape(s); out.id = state.nextId++; out.visible = true; out.color ??= 1; state.shapes.push(out); };
+        const add = s => {
+          const out = s.preserveScale ? { ...s } : scaleShape(s);
+          delete out.preserveScale;
+          out.id = state.nextId++;
+          out.visible = true;
+          out.color ??= 1;
+          state.shapes.push(out);
+        };
+        const reuseShapes = new Map(state.shapes.filter(s => s.type === 'varioBar').map(s => [s.name, JSON.parse(JSON.stringify(s))]));
+        const model = readSimModel();
+        model.reuseShapes = reuseShapes;
+        const climbText = `${model.climbRate >= 0 ? '+' : ''}${model.climbRate}`;
+        const previousSelection = selected();
+        const previousSelectionKey = previousSelection ? `${previousSelection.type}:${previousSelection.name}` : null;
         state.shapes = [];
+        state.activeTemplate = name;
         if (name === 'simple') {
           addLeafText(add, 'clock', 0, 10, '12:34', 'leaf_6x10');
-          addLeafFooter(add, false);
+          addLeafFooter(add, model.cursor === 'timer', model);
           addLeafText(add, 'speed units', 77, 40, 'MPH', 'leaf_labels');
-          addLeafText(add, 'speed', 59, 28, '24', 'leaf_21h');
-          addLeafText(add, 'heading', 36, 28, 'N', 'leaf_8x14');
-          addLeafWindSockRing(add, 48, 54, 17, 8, true);
-          addLeafVarioBar(add, 18, 85, 70, 12, 540);
+          addLeafText(add, 'speed', speedX(model.speed, 59), 28, model.gpsFix ? String(model.speed) : '--', 'leaf_21h');
+          addLeafText(add, 'heading', 36, 28, model.gpsFix ? cardinalFromHeading(model.heading) : '--', 'leaf_8x14');
+          addLeafWindSockRing(add, 48, 54, 17, 8, model.gpsFix);
+          addLeafVarioBar(add, 'simple vario bar', 18, 85, 70, 12, reuseShapes);
           const climbBoxY = 18 + 85 - Math.trunc(34 / 2);
           addLeafClimbPointerBox(add, 21, climbBoxY, 75, 34, 16);
-          addLeafText(add, 'climb rate', 11, climbBoxY + 31, '+540f', 'leaf_28h', 0);
+          addLeafText(add, 'climb rate', climbText.length > 4 ? 5 : 11, climbBoxY + 31, `${climbText}f`, 'leaf_28h', 0);
           addLeafText(add, 'altitude label', 15, 138, 'MSL Altitude ft', 'leaf_labels');
-          addLeafText(add, 'altitude', 13, 167, '3250', 'leaf_28h');
+          addLeafText(add, 'altitude', leftPadX(model.altitude, 13, 4, 6), 167, String(model.altitude), 'leaf_28h');
         }
         if (name === 'thermal' || name === 'thermalAdv') {
           if (name === 'thermal') {
-            addLeafHeaderFooter(add);
-            addLeafWindSockRing(add, 56, 31, 12, 7, true);
-            addLeafVarioBar(add, 21, 75, 75, 25, 540);
-            addLeafText(add, 'alt label', 77, 57, 'MSL', 'leaf_labels');
-            addLeafText(add, 'alt units', 85, 49, 'ft', 'leaf_labels');
-            addLeafText(add, 'altitude', 27, 79, '3250', 'leaf_21h');
-            const climbBoxY = 21 + 75 - Math.trunc(27 / 2);
-            addLeafClimbPointerBox(add, 25, climbBoxY, 76, 27, 13);
-            addLeafText(add, 'climb rate', 20, climbBoxY + 24, '+540 f', 'leaf_21h', 0);
-            addLeafText(add, 'user field 1 label', 29, climbBoxY + 39, 'ABOVE LAUNCH', 'leaf_5h');
-            addLeafText(add, 'user field 1 value', 49, climbBoxY + 53, '820', 'leaf_6x12');
-            addLeafText(add, 'user field 2 label', 29, climbBoxY + 66, '` GLIDE', 'leaf_5h');
-            addLeafText(add, 'user field 2 value', 49, climbBoxY + 80, '8.4', 'leaf_6x12');
+            addThermalTemplate(add, model);
           } else {
-            addLeafHeaderFooter(add);
-            addLeafVarioBar(add, 30, 70, 70, 20, 540);
+            addLeafHeaderFooter(add, model.cursor === 'timer', false, false, model);
+            addLeafVarioBar(add, 'thermal advanced vario bar', 30, 70, 70, 20, reuseShapes);
             add({ type: 'frame', name: 'graph box', x: 19, y: 30, w: 77, h: 40 });
-            addLeafText(add, 'altitude', 22, 89, '3250', 'leaf_8x14');
+            addLeafText(add, 'altitude', leftPadX(model.altitude, 22, 4, 3), 89, String(model.altitude), 'leaf_8x14');
             addLeafClimbPointerBox(add, 20, 92, 76, 17, 6);
-            addLeafText(add, 'climb rate', 20, 108, '+540', 'leaf_8x14', 0);
-            addLeafText(add, 'above launch', 24, 132, '820', 'leaf_6x12');
+            addLeafText(add, 'climb rate', 20, 108, climbText, 'leaf_8x14', 0);
+            addLeafText(add, 'above launch', 24, 132, String(model.aboveLaunch), 'leaf_6x12');
             add({ type: 'hline', name: 'user top', x: 19, y: 136, w: 77 });
             add({ type: 'hline', name: 'user mid', x: 19, y: 153, w: 77 });
             add({ type: 'hline', name: 'user bottom', x: 19, y: 170, w: 77 });
@@ -1276,7 +1485,7 @@
             addLeafText(add, 'temperature', 25, 152, '72F', 'leaf_6x12');
             addLeafText(add, 'humidity', 61, 152, '45%', 'leaf_6x12');
             addLeafText(add, 'accel', 25, 169, '1.0G', 'leaf_6x12');
-            addLeafText(add, 'glide', 61, 169, '8.4', 'leaf_6x12');
+            addLeafText(add, 'glide', 61, 169, model.glide.toFixed(1), 'leaf_6x12');
           }
         }
         if (name === 'navigate') {
@@ -1286,7 +1495,7 @@
           add({ type: 'disc', name: 'nav circle cutout', color: 0, x: navX, y: navY, r: navR });
           add({ type: 'box', name: 'speed notch', color: 0, x: 68, y: top, w: 28, h: 2 });
           add({ type: 'hline', name: 'speed notch lip', color: 0, x: 64, y: top, w: 4 });
-          addLeafHeaderFooter(add, false, true, true);
+          addLeafHeaderFooter(add, model.cursor === 'timer', true, true, model);
           add({ type: 'box', name: 'travel arrow erase', color: 0, x: navX - 2, y: navY - navR - 2, w: 5, h: 4 });
           add({ type: 'line', name: 'travel arrow left', x1: 51, y1: 20, x2: 56, y2: 11 });
           add({ type: 'line', name: 'travel arrow right', x1: 61, y1: 20, x2: 56, y2: 11 });
@@ -1295,29 +1504,29 @@
           add({ type: 'vline', name: 'travel arrow shaft left', x: 54, y: 20, h: 6 });
           add({ type: 'vline', name: 'travel arrow shaft right', x: 58, y: 20, h: 6 });
           addLeafWindSockRing(add, navX, navY, 12, 7, false);
-          addLeafVarioBar(add, top, topH, botH, barW, 540);
+          addLeafVarioBar(add, 'navigate vario bar', top, topH, botH, barW, reuseShapes);
           add({ type: 'triangle', name: 'climb side pointer', x1: 8, y1: 88, x2: 17, y2: 79, x3: 17, y3: 97 });
           add({ type: 'line', name: 'climb side pointer mask upper', color: 0, x1: 7, y1: 88, x2: 16, y2: 80 });
           add({ type: 'line', name: 'climb side pointer mask upper 2', color: 0, x1: 7, y1: 87, x2: 16, y2: 79 });
           add({ type: 'line', name: 'climb side pointer mask lower', color: 0, x1: 7, y1: 88, x2: 16, y2: 96 });
           add({ type: 'line', name: 'climb side pointer mask lower 2', color: 0, x1: 7, y1: 89, x2: 16, y2: 97 });
           add({ type: 'box', name: 'climb background', x: barW, y: top + 2 * navR + 4, w: 30, h: 17 });
-          addLeafText(add, 'climb sign', barW - 6, mid + 6, '+', 'leaf_8x14', 0);
-          addLeafText(add, 'climb value', barW + 1, mid + 20, '540', 'leaf_8x14', 0);
-          addLeafText(add, 'altitude', 49, 109, '3250', 'leaf_8x14', 0);
+          addLeafText(add, 'climb sign', barW - 6, mid + 6, model.climbRate >= 0 ? '+' : '-', 'leaf_8x14', 0);
+          addLeafText(add, 'climb value', barW + 1, mid + 20, String(Math.abs(model.climbRate)), 'leaf_8x14', 0);
+          addLeafText(add, 'altitude', leftPadX(model.altitude, 49, 4, 3), 109, String(model.altitude), 'leaf_8x14', 0);
           addLeafText(add, 'alt label', 78, top + 2 * navR + 5, 'MSL', 'leaf_labels', 0);
           addLeafText(add, 'alt units', 86, top + 2 * navR - 3, 'ft', 'leaf_labels', 0);
           addLeafText(add, 'waypoint', barW + 2, top + barH - 9, '<Select Dest>', 'leaf_6x12');
           add({ type: 'frame', name: 'progress frame', x: barW - 1, y: top + barH - 4, w: 96 - barW + 1, h: 4 });
           add({ type: 'box', name: 'progress fill', x: barW, y: top + barH - 3, w: 31, h: 2 });
           addLeafText(add, 'time label', 3, top + barH + 7, 'TIME>&', 'leaf_5h');
-          addLeafText(add, 'time remaining', 8, top + barH + 20, '1:23', 'leaf_6x12');
+          addLeafText(add, 'time remaining', 8, top + barH + 20, model.timerText, 'leaf_6x12');
           addLeafText(add, 'dist label', 52, top + barH + 7, 'DIST>&', 'leaf_5h');
           addLeafText(add, 'distance', 57, top + barH + 20, '3.2MI', 'leaf_6x12');
           addLeafText(add, 'glide label', 3, top + barH + 27, '`GLIDE', 'leaf_5h');
-          addLeafText(add, 'glide', 8, top + barH + 40, '8.4', 'leaf_6x12');
+          addLeafText(add, 'glide', 8, top + barH + 40, model.glide.toFixed(1), 'leaf_6x12');
           addLeafText(add, 'glide waypoint label', 52, top + barH + 27, '`>&', 'leaf_5h');
-          addLeafText(add, 'glide waypoint', 57, top + barH + 40, '7.9', 'leaf_6x12');
+          addLeafText(add, 'glide waypoint', 57, top + barH + 40, (model.glide - 0.5).toFixed(1), 'leaf_6x12');
         }
         if (name === 'menu') {
           add({ type: 'hline', name: 'menu title bottom', x: 0, y: 15, w: 96 });
@@ -1328,14 +1537,21 @@
         }
         if (name === 'debug') {
           add({ type: 'text', name: 'speed label', x: 0, y: 7, text: 'mph', font: 'leaf_5x8' });
+          add({ type: 'text', name: 'speed', x: 0, y: 17, text: model.gpsFix ? String(model.speed) : '--', font: 'leaf_8x14' });
           add({ type: 'text', name: 'heading label', x: 0, y: 27, text: 'Heading', font: 'leaf_5x8' });
+          add({ type: 'text', name: 'heading', x: 0, y: 37, text: model.gpsFix ? String(model.heading) : '--', font: 'leaf_8x14' });
           add({ type: 'text', name: 'alt label', x: 0, y: 47, text: 'alt', font: 'leaf_5x8' });
+          add({ type: 'text', name: 'altitude', x: 0, y: 60, text: String(model.altitude), font: 'leaf_8x14' });
+          add({ type: 'text', name: 'climb rate', x: 0, y: 75, text: climbText, font: 'leaf_8x14' });
           add({ type: 'disc', name: 'pie center', x: 48, y: 110, r: 28 });
           add({ type: 'hline', name: 'pie hline', x: 20, y: 110, w: 56, color: 0 });
           add({ type: 'vline', name: 'pie vline', x: 48, y: 82, h: 56, color: 0 });
           add({ type: 'circle', name: 'estimate circle', x: 48, y: 110, r: 35 });
         }
-        state.selectedId = state.shapes[0]?.id || null;
+        const restoredSelection = previousSelectionKey
+          ? state.shapes.find(s => `${s.type}:${s.name}` === previousSelectionKey)
+          : null;
+        state.selectedId = restoredSelection?.id || state.shapes[0]?.id || null;
         render();
       }
 
@@ -1348,12 +1564,16 @@
       root.querySelector('#lde-duplicate').addEventListener('click', duplicate);
       root.querySelector('#lde-delete').addEventListener('click', removeSelected);
       root.querySelector('#lde-grid').addEventListener('click', () => { state.showGrid = !state.showGrid; render(); });
-      root.querySelector('#lde-clear').addEventListener('click', () => { state.shapes = []; state.selectedId = null; render(); });
+      root.querySelector('#lde-clear').addEventListener('click', () => { state.shapes = []; state.selectedId = null; state.activeTemplate = null; render(); });
       root.querySelector('#lde-import-btn').addEventListener('click', () => {
         const val = root.querySelector('#lde-import').value;
         if (val) importTemplate(val);
       });
-      profileSelect.addEventListener('change', () => { state.display = { ...profileMap[profileSelect.value] }; render(); });
+      profileSelect.addEventListener('change', () => {
+        state.display = { ...profileMap[profileSelect.value] };
+        if (state.activeTemplate) importTemplate(state.activeTemplate);
+        else render();
+      });
       zoomInput.addEventListener('input', () => { state.zoom = Number(zoomInput.value); zoomValue.textContent = state.zoom + 'x'; render(); });
       root.querySelectorAll('[data-export]').forEach(btn => btn.addEventListener('click', () => {
         state.exportMode = btn.dataset.export;
@@ -1373,6 +1593,18 @@
       pngBorderInput.addEventListener('change', () => {
         state.pngBorder = pngBorderInput.checked;
         renderExport();
+      });
+      Object.values(simInputs).forEach(input => {
+        input.addEventListener('input', () => {
+          updateSimLabels();
+          applyLiveValuesToShapes();
+          render();
+        });
+        input.addEventListener('change', () => {
+          updateSimLabels();
+          applyLiveValuesToShapes();
+          render();
+        });
       });
       canvas.addEventListener('pointerdown', ev => {
         const p = canvasPoint(ev);
@@ -1420,6 +1652,7 @@
       });
 
       renderTools();
+      updateSimLabels();
       importTemplate('simple');
     })();
   </script>

@@ -7,9 +7,73 @@
 
 #include "ui/display/display.h"
 
+namespace {
+  bool evenCircleContainsPixel(int16_t px, int16_t py, int16_t cx2, int16_t cy2, int16_t diameter) {
+    const int32_t dx2 = int32_t(px) * 2 + 1 - cx2;
+    const int32_t dy2 = int32_t(py) * 2 + 1 - cy2;
+    const int32_t r2 = int32_t(diameter) * diameter;
+    return dx2 * dx2 + dy2 * dy2 <= r2;
+  }
+}  // namespace
+
+void drawCircleD(int16_t centerX, int16_t centerY, uint8_t diameter) {
+  if (diameter == 0) return;
+
+  if (diameter & 1) {
+    const uint8_t radius = diameter / 2;
+    u8g2.drawCircle(centerX, centerY, radius);
+    return;
+  }
+
+  const int16_t left = centerX - diameter / 2;
+  const int16_t top = centerY - diameter / 2;
+  const int16_t centerX2 = 2 * centerX;
+  const int16_t centerY2 = 2 * centerY;
+
+  for (int16_t py = top; py < top + diameter; ++py) {
+    for (int16_t px = left; px < left + diameter; ++px) {
+      if (evenCircleContainsPixel(px, py, centerX2, centerY2, diameter) &&
+          (!evenCircleContainsPixel(px - 1, py, centerX2, centerY2, diameter) ||
+           !evenCircleContainsPixel(px + 1, py, centerX2, centerY2, diameter) ||
+           !evenCircleContainsPixel(px, py - 1, centerX2, centerY2, diameter) ||
+           !evenCircleContainsPixel(px, py + 1, centerX2, centerY2, diameter))) {
+        u8g2.drawPixel(px, py);
+      }
+    }
+  }
+}
+
+void drawDiscD(int16_t centerX, int16_t centerY, uint8_t diameter) {
+  if (diameter == 0) return;
+
+  if (diameter & 1) {
+    const uint8_t radius = diameter / 2;
+    u8g2.drawDisc(centerX, centerY, radius);
+    return;
+  }
+
+  const int16_t left = centerX - diameter / 2;
+  const int16_t top = centerY - diameter / 2;
+  const int16_t centerX2 = 2 * centerX;
+  const int16_t centerY2 = 2 * centerY;
+
+  for (int16_t py = top; py < top + diameter; ++py) {
+    int16_t start = left + diameter;
+    int16_t end = left - 1;
+    for (int16_t px = left; px < left + diameter; ++px) {
+      if (evenCircleContainsPixel(px, py, centerX2, centerY2, diameter)) {
+        if (px < start) start = px;
+        end = px;
+      }
+    }
+    if (end >= start) u8g2.drawHLine(start, py, end - start + 1);
+  }
+}
+
 /**
  * Print `str` into a box whose top-left corner is (x,y).
- * - If width==0, lines are only broken on '\n' (no width constraint).
+ * - If width==0, lines are only
+ * broken on '\n' (no width constraint).
  * - If height==0, vertical space is unbounded.
  * - Wrap whole words when they fit; otherwise wrap by the maximum number of characters that fit.
  * - Treat '\n' as a hard line break; ignore '\r'.
