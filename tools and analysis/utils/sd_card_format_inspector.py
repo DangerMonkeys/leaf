@@ -3,7 +3,7 @@ r"""Read-only SD card FAT32 layout inspector for Windows PhysicalDrive devices.
 
 Run PowerShell as Administrator, then:
 
-    python utils\sd_card_format_inspector.py --disk 2
+    python "tools and analysis\utils\sd_card_format_inspector.py" --disk 2
 
 The script does not write to the card. It reads the MBR, chooses the first FAT
 partition by default, decodes the FAT boot sector, and checks FAT32 FSInfo and

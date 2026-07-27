@@ -1,0 +1,1428 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Leaf Display Layout Editor</title>
+</head>
+<body>
+<div id="leaf-display-editor" class="leaf-display-editor">
+  <style>
+    body {
+      margin: 0;
+      padding: 16px;
+      background: #f8fafc;
+      color: #111827;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    #leaf-display-editor {
+      --background: #f8fafc;
+      --foreground: #111827;
+      --card: #ffffff;
+      --card-foreground: #111827;
+      --primary: #2563eb;
+      --primary-foreground: #ffffff;
+      --secondary: #e5e7eb;
+      --secondary-foreground: #111827;
+      --muted: #e5e7eb;
+      --muted-foreground: #4b5563;
+      --border: #cbd5e1;
+      --input: #cbd5e1;
+      --ring: #2563eb;
+      --viz-series-1: #0ea5e9;
+      --font-size-base: 14px;
+      --lde-pixel-on: var(--foreground);
+      --lde-pixel-off: var(--background);
+      --lde-pixel-grid: color-mix(in srgb, var(--border) 54%, transparent);
+      --lde-select: var(--viz-series-1);
+      color: var(--foreground);
+      display: grid;
+      gap: 12px;
+      grid-template-columns: minmax(230px, 270px) minmax(260px, 1fr) minmax(250px, 310px);
+      align-items: start;
+      width: 100%;
+    }
+    #leaf-display-editor * { box-sizing: border-box; }
+    #leaf-display-editor [hidden] { display: none !important; }
+    #leaf-display-editor .btn,
+    #leaf-display-editor input,
+    #leaf-display-editor select,
+    #leaf-display-editor textarea {
+      border: 1px solid var(--input);
+      border-radius: 6px;
+      background: var(--card);
+      color: var(--card-foreground);
+      font: inherit;
+    }
+    #leaf-display-editor .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 32px;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+    #leaf-display-editor .btn:hover {
+      background: var(--secondary);
+      color: var(--secondary-foreground);
+    }
+    #leaf-display-editor .btn[aria-pressed="true"] {
+      background: var(--primary);
+      color: var(--primary-foreground);
+      border-color: var(--primary);
+    }
+    #leaf-display-editor input,
+    #leaf-display-editor select {
+      min-height: 32px;
+      padding: 4px 8px;
+    }
+    #leaf-display-editor textarea {
+      padding: 8px;
+    }
+    #leaf-display-editor .lde-panel {
+      display: grid;
+      gap: 10px;
+      min-width: 0;
+    }
+    #leaf-display-editor .lde-section {
+      display: grid;
+      gap: 8px;
+    }
+    #leaf-display-editor .lde-section-title {
+      font-weight: 500;
+      color: var(--foreground);
+    }
+    #leaf-display-editor .lde-controls {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    #leaf-display-editor .lde-tools {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+    }
+    #leaf-display-editor .lde-tools .btn {
+      justify-content: center;
+      min-width: 0;
+    }
+    #leaf-display-editor .lde-field-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+    #leaf-display-editor .lde-field {
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+    }
+    #leaf-display-editor .lde-field label,
+    #leaf-display-editor .lde-label {
+      color: var(--muted-foreground);
+      font-size: calc(var(--font-size-base) * .86);
+    }
+    #leaf-display-editor input,
+    #leaf-display-editor select,
+    #leaf-display-editor textarea {
+      width: 100%;
+    }
+    #leaf-display-editor textarea {
+      min-height: 170px;
+      resize: vertical;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: calc(var(--font-size-base) * .82);
+    }
+    #leaf-display-editor .lde-stage-wrap {
+      display: grid;
+      gap: 8px;
+      justify-items: center;
+      min-width: 0;
+    }
+    #leaf-display-editor .lde-stage-shell {
+      max-width: 100%;
+      overflow: auto;
+      padding: 8px;
+      border: 1px solid var(--border);
+      background:
+        linear-gradient(45deg, color-mix(in srgb, var(--muted) 42%, transparent) 25%, transparent 25%),
+        linear-gradient(-45deg, color-mix(in srgb, var(--muted) 42%, transparent) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, color-mix(in srgb, var(--muted) 42%, transparent) 75%),
+        linear-gradient(-45deg, transparent 75%, color-mix(in srgb, var(--muted) 42%, transparent) 75%);
+      background-size: 16px 16px;
+      background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+    }
+    #leaf-display-editor canvas {
+      display: block;
+      image-rendering: pixelated;
+      background: var(--lde-pixel-off);
+      border: 1px solid var(--foreground);
+      cursor: crosshair;
+      touch-action: none;
+    }
+    #leaf-display-editor .lde-status {
+      color: var(--muted-foreground);
+      font-size: calc(var(--font-size-base) * .86);
+      text-align: center;
+      min-height: 1.3em;
+    }
+    #leaf-display-editor .lde-layer-list {
+      display: grid;
+      gap: 5px;
+      max-height: 280px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+    #leaf-display-editor .lde-layer {
+      display: grid;
+      grid-template-columns: 26px 1fr auto;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--border);
+      padding: 5px;
+      background: transparent;
+      color: var(--foreground);
+      text-align: left;
+    }
+    #leaf-display-editor .lde-layer[aria-selected="true"] {
+      border-color: var(--primary);
+      background: color-mix(in srgb, var(--primary) 12%, transparent);
+    }
+    #leaf-display-editor .lde-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 22px;
+      padding: 2px 5px;
+      border: 1px solid var(--border);
+      color: var(--muted-foreground);
+      font-size: calc(var(--font-size-base) * .76);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    #leaf-display-editor .lde-layer-name {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    #leaf-display-editor .lde-visibility {
+      width: auto;
+    }
+    #leaf-display-editor .lde-mini {
+      padding-inline: 7px;
+    }
+    #leaf-display-editor .lde-export-tabs {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    #leaf-display-editor .lde-export-tabs .btn[aria-pressed="true"] {
+      background: var(--primary);
+      color: var(--primary-foreground);
+    }
+    #leaf-display-editor .lde-text-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 6px;
+    }
+    #leaf-display-editor .lde-check-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--muted-foreground);
+      font-size: calc(var(--font-size-base) * .86);
+    }
+    #leaf-display-editor .lde-check-row input {
+      width: auto;
+      min-height: 0;
+    }
+    @media (max-width: 980px) {
+      #leaf-display-editor {
+        grid-template-columns: 1fr;
+      }
+      #leaf-display-editor .lde-stage-wrap { order: -1; }
+    }
+    @media (max-width: 420px) {
+      #leaf-display-editor .lde-field-grid,
+      #leaf-display-editor .lde-tools {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+  <div class="lde-panel">
+    <div class="lde-section">
+      <div class="lde-section-title">Display</div>
+      <div class="lde-field">
+        <label for="lde-profile">Profile</label>
+        <select id="lde-profile" class="form-select">
+          <option value="96x192">Current Leaf 96 x 192</option>
+          <option value="122x250">Candidate 122 x 250</option>
+          <option value="168x384">Candidate 168 x 384</option>
+        </select>
+      </div>
+      <div class="lde-field">
+        <label for="lde-zoom">Zoom <span id="lde-zoom-value">4x</span></label>
+        <input id="lde-zoom" class="form-range" type="range" min="1" max="8" value="4">
+      </div>
+      <div class="lde-controls">
+        <button type="button" class="btn" id="lde-grid">Grid</button>
+        <button type="button" class="btn" id="lde-clear">Clear</button>
+      </div>
+    </div>
+
+    <div class="lde-section">
+      <div class="lde-section-title">Add Primitive</div>
+      <div class="lde-tools" id="lde-tools"></div>
+    </div>
+
+    <div class="lde-section">
+      <div class="lde-section-title">Import Main Page</div>
+      <div class="lde-field">
+        <label for="lde-import">Template</label>
+        <select id="lde-import" class="form-select">
+          <option value="">Choose...</option>
+          <option value="simple">Simple</option>
+          <option value="thermal">Thermal</option>
+          <option value="thermalAdv">Thermal advanced</option>
+          <option value="navigate">Navigate</option>
+          <option value="menu">Main menu</option>
+          <option value="debug">Debug</option>
+        </select>
+      </div>
+      <button type="button" class="btn" id="lde-import-btn">Import</button>
+    </div>
+  </div>
+
+  <div class="lde-stage-wrap">
+    <div class="lde-stage-shell">
+      <canvas id="lde-canvas" width="384" height="768" aria-label="Pixel display layout editor"></canvas>
+    </div>
+    <div class="lde-status" id="lde-status"></div>
+  </div>
+
+  <div class="lde-panel">
+    <div class="lde-section">
+      <div class="lde-section-title">Selected Primitive</div>
+      <div id="lde-props-empty" class="text-muted">Click a primitive to edit it. Click empty display space to deselect.</div>
+      <div id="lde-props" class="lde-section" hidden>
+        <div class="lde-field">
+          <label for="lde-name">Name</label>
+          <input id="lde-name" class="form-control" type="text">
+        </div>
+        <div class="lde-field-grid" id="lde-prop-fields"></div>
+        <div class="lde-field-grid">
+          <div class="lde-field">
+            <label for="lde-color">Draw color</label>
+            <select id="lde-color" class="form-select">
+              <option value="1">1 black/set</option>
+              <option value="0">0 white/clear</option>
+              <option value="2">2 xor/invert</option>
+            </select>
+          </div>
+          <div class="lde-field">
+            <label for="lde-font">Font token</label>
+            <select id="lde-font" class="form-select">
+              <option value="leaf_5h">leaf_5h</option>
+              <option value="leaf_5x8">leaf_5x8</option>
+              <option value="leaf_6x10">leaf_6x10</option>
+              <option value="leaf_6x12">leaf_6x12</option>
+              <option value="leaf_7x10">leaf_7x10</option>
+              <option value="leaf_8x14">leaf_8x14</option>
+              <option value="leaf_9x16">leaf_9x16</option>
+              <option value="leaf_10x17">leaf_10x17</option>
+              <option value="leaf_7x13">leaf_7x13</option>
+              <option value="leaf_21h">leaf_21h</option>
+              <option value="leaf_28h">leaf_28h</option>
+              <option value="leaf_labels">leaf_labels</option>
+              <option value="leaf_compass">leaf_compass</option>
+              <option value="leaf_icons">leaf_icons</option>
+              <option value="Leaf_BattIcon_Vertical">Leaf_BattIcon_Vertical</option>
+              <option value="wind_logo">wind_logo</option>
+            </select>
+          </div>
+        </div>
+        <div class="lde-field" id="lde-text-wrap">
+          <label for="lde-text">Text</label>
+          <input id="lde-text" class="form-control" type="text">
+        </div>
+        <div class="lde-controls">
+          <button type="button" class="btn lde-mini" id="lde-backward">Back</button>
+          <button type="button" class="btn lde-mini" id="lde-forward">Forward</button>
+          <button type="button" class="btn lde-mini" id="lde-duplicate">Duplicate</button>
+          <button type="button" class="btn lde-mini" id="lde-delete">Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="lde-section">
+      <div class="lde-section-title">Layers</div>
+      <div id="lde-layers" class="lde-layer-list"></div>
+    </div>
+
+    <div class="lde-section">
+      <div class="lde-section-title">Export</div>
+      <div class="lde-export-tabs">
+        <button type="button" class="btn" data-export="cpp" aria-pressed="true">C++</button>
+        <button type="button" class="btn" data-export="json" aria-pressed="false">JSON</button>
+        <button type="button" class="btn" data-export="xbm" aria-pressed="false">XBM</button>
+        <button type="button" class="btn" data-export="png" aria-pressed="false">PNG</button>
+      </div>
+      <label class="lde-check-row" id="lde-png-border-wrap" hidden>
+        <input id="lde-png-border" type="checkbox">
+        <span>Include border</span>
+      </label>
+      <div class="lde-text-row">
+        <button type="button" class="btn" id="lde-copy">Copy</button>
+        <button type="button" class="btn" id="lde-refresh-export">Refresh</button>
+      </div>
+      <textarea id="lde-export" class="form-control" spellcheck="false"></textarea>
+    </div>
+  </div>
+
+  <script src="leaf-fonts.js?v=2026-07-27-actual-fonts"></script>
+  <script>
+    (() => {
+      const root = document.getElementById('leaf-display-editor');
+      const canvas = root.querySelector('#lde-canvas');
+      const ctx = canvas.getContext('2d');
+      let activeCtx = ctx;
+      let forceMonoPalette = false;
+      const profileSelect = root.querySelector('#lde-profile');
+      const zoomInput = root.querySelector('#lde-zoom');
+      const zoomValue = root.querySelector('#lde-zoom-value');
+      const statusEl = root.querySelector('#lde-status');
+      const toolsEl = root.querySelector('#lde-tools');
+      const layersEl = root.querySelector('#lde-layers');
+      const propsEl = root.querySelector('#lde-props');
+      const propsEmptyEl = root.querySelector('#lde-props-empty');
+      const propFieldsEl = root.querySelector('#lde-prop-fields');
+      const exportEl = root.querySelector('#lde-export');
+      const nameInput = root.querySelector('#lde-name');
+      const colorInput = root.querySelector('#lde-color');
+      const fontInput = root.querySelector('#lde-font');
+      const textInput = root.querySelector('#lde-text');
+      const textWrap = root.querySelector('#lde-text-wrap');
+      const pngBorderInput = root.querySelector('#lde-png-border');
+      const pngBorderWrap = root.querySelector('#lde-png-border-wrap');
+      const copyButton = root.querySelector('#lde-copy');
+
+      const profileMap = {
+        '96x192': { w: 96, h: 192 },
+        '122x250': { w: 122, h: 250 },
+        '168x384': { w: 168, h: 384 }
+      };
+      const toolDefs = [
+        ['pixel', 'Pixel'],
+        ['line', 'Line'],
+        ['hline', 'H line'],
+        ['vline', 'V line'],
+        ['box', 'Box'],
+        ['frame', 'Frame'],
+        ['rbox', 'R box'],
+        ['rframe', 'R frame'],
+        ['circle', 'Circle'],
+        ['disc', 'Disc'],
+        ['triangle', 'Triangle'],
+        ['text', 'Text'],
+        ['bitmap', 'Bitmap']
+      ];
+      const leafFonts = window.LEAF_U8G2_FONTS || {};
+      const fontFallbacks = {
+        leaf_5h: [4, 5], leaf_5x8: [5, 8], leaf_6x10: [6, 10], leaf_6x12: [6, 12],
+        leaf_7x10: [7, 10], leaf_7x13: [7, 13], leaf_8x14: [8, 14], leaf_9x16: [9, 16],
+        leaf_10x17: [10, 17], leaf_21h: [13, 21], leaf_28h: [17, 28],
+        leaf_labels: [6, 8], leaf_compass: [7, 9], leaf_icons: [16, 16],
+        Leaf_BattIcon_Vertical: [10, 18], wind_logo: [20, 20]
+      };
+      const state = {
+        display: { w: 96, h: 192 },
+        zoom: 4,
+        showGrid: true,
+        tool: 'box',
+        shapes: [],
+        selectedId: null,
+        drag: null,
+        exportMode: 'cpp',
+        pngBorder: false,
+        nextId: 1
+      };
+
+      function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, Number.isFinite(n) ? n : lo)); }
+      function round(n) { return Math.round(Number(n) || 0); }
+      function selected() { return state.shapes.find(s => s.id === state.selectedId) || null; }
+      function pxColor(c) {
+        if (forceMonoPalette) return c === 0 ? '#ffffff' : '#000000';
+        if (c === 0) return getComputedStyle(root).getPropertyValue('--lde-pixel-off').trim();
+        if (c === 2) return getComputedStyle(root).getPropertyValue('--lde-pixel-on').trim();
+        return getComputedStyle(root).getPropertyValue('--lde-pixel-on').trim();
+      }
+      function fontWord(bytes, offset) { return (bytes[offset] || 0) | ((bytes[offset + 1] || 0) << 8); }
+      function fontInfo(bytes) {
+        if (!bytes || bytes.length < 23) return null;
+        return {
+          bits0: bytes[2], bits1: bytes[3], bitsWidth: bytes[4], bitsHeight: bytes[5],
+          bitsX: bytes[6], bitsY: bytes[7], bitsDeltaX: bytes[8],
+          maxWidth: bytes[9], maxHeight: bytes[10], xOffset: bytes[11], yOffset: bytes[12],
+          startUpperA: fontWord(bytes, 17), startLowerA: fontWord(bytes, 19)
+        };
+      }
+      function findGlyph(bytes, info, code) {
+        if (!bytes || !info || code > 255) return null;
+        let pos = 23;
+        if (code >= 97) pos += info.startLowerA;
+        else if (code >= 65) pos += info.startUpperA;
+        while (pos + 1 < bytes.length && bytes[pos + 1] !== 0) {
+          if (bytes[pos] === code) return pos + 2;
+          pos += bytes[pos + 1];
+        }
+        return null;
+      }
+      function bitReader(bytes, start) {
+        return {
+          ptr: start,
+          bit: 0,
+          unsigned(cnt) {
+            if (cnt <= 0) return 0;
+            let val = (bytes[this.ptr] || 0) >> this.bit;
+            let bitPos = this.bit + cnt;
+            if (bitPos >= 8) {
+              const shift = 8 - this.bit;
+              this.ptr++;
+              val |= (bytes[this.ptr] || 0) << shift;
+              bitPos -= 8;
+            }
+            this.bit = bitPos;
+            return val & ((1 << cnt) - 1);
+          },
+          signed(cnt) {
+            if (cnt <= 0) return 0;
+            return this.unsigned(cnt) - (1 << (cnt - 1));
+          }
+        };
+      }
+      function decodeGlyph(fontName, code) {
+        const bytes = leafFonts[fontName];
+        const info = fontInfo(bytes);
+        const glyph = findGlyph(bytes, info, code);
+        if (!glyph) return null;
+        const r = bitReader(bytes, glyph);
+        const width = r.unsigned(info.bitsWidth);
+        const height = r.unsigned(info.bitsHeight);
+        const xOffset = r.signed(info.bitsX);
+        const yOffset = r.signed(info.bitsY);
+        const deltaX = r.signed(info.bitsDeltaX);
+        const pixels = [];
+        if (width > 0) {
+          let lx = 0, ly = 0;
+          const pushRun = (len, foreground) => {
+            let cnt = len;
+            for (;;) {
+              const rem = width - lx;
+              const current = Math.min(cnt, rem);
+              if (foreground) {
+                for (let i = 0; i < current; i++) pixels.push([xOffset + lx + i, -(height + yOffset) + ly]);
+              }
+              if (cnt < rem) break;
+              cnt -= rem;
+              lx = 0;
+              ly++;
+            }
+            lx += cnt;
+          };
+          for (;;) {
+            const a = r.unsigned(info.bits0);
+            const b = r.unsigned(info.bits1);
+            do {
+              pushRun(a, false);
+              pushRun(b, true);
+            } while (r.unsigned(1) !== 0);
+            if (ly >= height) break;
+          }
+        }
+        return { width, height, xOffset, yOffset, deltaX, pixels };
+      }
+      function textPixels(shape) {
+        const text = String(shape.text || '');
+        let cursorX = round(shape.x);
+        const baselineY = round(shape.y);
+        const pixels = [];
+        for (const ch of text) {
+          const glyph = decodeGlyph(shape.font || 'leaf_8x14', ch.charCodeAt(0));
+          if (!glyph) {
+            const [cw] = fontFallbacks[shape.font] || fontFallbacks.leaf_8x14;
+            cursorX += cw;
+            continue;
+          }
+          glyph.pixels.forEach(([x, y]) => pixels.push([cursorX + x, baselineY + y]));
+          cursorX += glyph.deltaX;
+        }
+        return pixels;
+      }
+      function measureTextShape(shape) {
+        const pixels = textPixels(shape);
+        if (pixels.length) {
+          const xs = pixels.map(p => p[0]);
+          const ys = pixels.map(p => p[1]);
+          const x = Math.min(...xs), y = Math.min(...ys);
+          return { x, y, w: Math.max(...xs) - x + 1, h: Math.max(...ys) - y + 1 };
+        }
+        const [cw, ch] = fontFallbacks[shape.font] || fontFallbacks.leaf_8x14;
+        return { x: shape.x, y: shape.y - ch, w: Math.max(1, (shape.text || '').length * cw), h: ch };
+      }
+      function drawU8g2Text(shape, color) {
+        textPixels(shape).forEach(([x, y]) => putPixel(x, y, color));
+      }
+      function defaultShape(type) {
+        const id = state.nextId++;
+        const midX = Math.floor(state.display.w / 2);
+        const midY = Math.floor(state.display.h / 2);
+        const base = { id, type, name: type + ' ' + id, color: 1, visible: true };
+        if (type === 'pixel') return { ...base, x: midX, y: midY };
+        if (type === 'line') return { ...base, x1: midX - 12, y1: midY - 8, x2: midX + 12, y2: midY + 8 };
+        if (type === 'hline') return { ...base, x: midX - 20, y: midY, w: 40 };
+        if (type === 'vline') return { ...base, x: midX, y: midY - 20, h: 40 };
+        if (type === 'circle' || type === 'disc') return { ...base, x: midX, y: midY, r: 16 };
+        if (type === 'triangle') return { ...base, x1: midX, y1: midY - 18, x2: midX - 16, y2: midY + 12, x3: midX + 16, y3: midY + 12 };
+        if (type === 'text') return { ...base, x: 8, y: 24, text: 'ALT 3250', font: 'leaf_8x14' };
+        if (type === 'bitmap') return { ...base, x: midX - 16, y: midY - 16, w: 32, h: 32, label: 'xbm' };
+        const shape = { ...base, x: midX - 24, y: midY - 14, w: 48, h: 28 };
+        if (type === 'rbox' || type === 'rframe') shape.r = 3;
+        return shape;
+      }
+      function shapeBounds(s) {
+        if (s.type === 'pixel') return { x: s.x, y: s.y, w: 1, h: 1 };
+        if (s.type === 'line') {
+          const x = Math.min(s.x1, s.x2), y = Math.min(s.y1, s.y2);
+          return { x, y, w: Math.abs(s.x2 - s.x1) + 1, h: Math.abs(s.y2 - s.y1) + 1 };
+        }
+        if (s.type === 'hline') return { x: s.x, y: s.y, w: s.w, h: 1 };
+        if (s.type === 'vline') return { x: s.x, y: s.y, w: 1, h: s.h };
+        if (s.type === 'circle' || s.type === 'disc') return { x: s.x - s.r, y: s.y - s.r, w: s.r * 2 + 1, h: s.r * 2 + 1 };
+        if (s.type === 'triangle') {
+          const xs = [s.x1, s.x2, s.x3], ys = [s.y1, s.y2, s.y3];
+          const x = Math.min(...xs), y = Math.min(...ys);
+          return { x, y, w: Math.max(...xs) - x + 1, h: Math.max(...ys) - y + 1 };
+        }
+        if (s.type === 'text') {
+          return measureTextShape(s);
+        }
+        return { x: s.x, y: s.y, w: s.w || 1, h: s.h || 1 };
+      }
+      function hitTest(p) {
+        for (let i = state.shapes.length - 1; i >= 0; i--) {
+          const s = state.shapes[i];
+          if (!s.visible) continue;
+          const b = shapeBounds(s);
+          if (p.x >= b.x - 3 && p.y >= b.y - 3 && p.x <= b.x + b.w + 2 && p.y <= b.y + b.h + 2) return s;
+        }
+        return null;
+      }
+      function canvasPoint(ev) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+          x: clamp(Math.floor((ev.clientX - rect.left) / state.zoom), 0, state.display.w - 1),
+          y: clamp(Math.floor((ev.clientY - rect.top) / state.zoom), 0, state.display.h - 1)
+        };
+      }
+      function drawLinePixels(x0, y0, x1, y1, color) {
+        x0 = round(x0); y0 = round(y0); x1 = round(x1); y1 = round(y1);
+        let dx = Math.abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
+        let dy = -Math.abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+        let err = dx + dy;
+        while (true) {
+          putPixel(x0, y0, color);
+          if (x0 === x1 && y0 === y1) break;
+          const e2 = 2 * err;
+          if (e2 >= dy) { err += dy; x0 += sx; }
+          if (e2 <= dx) { err += dx; y0 += sy; }
+        }
+      }
+      function putPixel(x, y, color) {
+        if (x < 0 || y < 0 || x >= state.display.w || y >= state.display.h) return;
+        if (color === 2) {
+          const sample = activeCtx.getImageData(x * state.zoom, y * state.zoom, 1, 1).data;
+          const isLight = sample[0] + sample[1] + sample[2] > 384;
+          activeCtx.fillStyle = isLight ? '#000000' : '#ffffff';
+          activeCtx.fillRect(x * state.zoom, y * state.zoom, state.zoom, state.zoom);
+          return;
+        }
+        activeCtx.fillStyle = pxColor(color);
+        activeCtx.fillRect(x * state.zoom, y * state.zoom, state.zoom, state.zoom);
+      }
+      function drawRectPixels(x, y, w, h, color, filled) {
+        x = round(x); y = round(y); w = Math.max(1, round(w)); h = Math.max(1, round(h));
+        if (filled) {
+          if (color === 2) {
+            for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) putPixel(xx, yy, color);
+            return;
+          }
+          activeCtx.fillStyle = pxColor(color);
+          activeCtx.fillRect(x * state.zoom, y * state.zoom, w * state.zoom, h * state.zoom);
+        } else {
+          drawLinePixels(x, y, x + w - 1, y, color);
+          drawLinePixels(x, y + h - 1, x + w - 1, y + h - 1, color);
+          drawLinePixels(x, y, x, y + h - 1, color);
+          drawLinePixels(x + w - 1, y, x + w - 1, y + h - 1, color);
+        }
+      }
+      const CIRCLE_UPPER_RIGHT = 0x01;
+      const CIRCLE_UPPER_LEFT = 0x02;
+      const CIRCLE_LOWER_LEFT = 0x04;
+      const CIRCLE_LOWER_RIGHT = 0x08;
+      const CIRCLE_ALL = CIRCLE_UPPER_RIGHT | CIRCLE_UPPER_LEFT | CIRCLE_LOWER_LEFT | CIRCLE_LOWER_RIGHT;
+
+      function drawRoundRectPixels(x, y, w, h, r, color, filled) {
+        x = round(x); y = round(y); w = Math.max(1, round(w)); h = Math.max(1, round(h)); r = clamp(round(r), 0, Math.floor(Math.min(w, h) / 2));
+        if (r <= 1) return drawRectPixels(x, y, w, h, color, filled);
+        if (filled) {
+          drawRectPixels(x + r, y, w - 2 * r, h, color, true);
+          drawRectPixels(x, y + r, w, h - 2 * r, color, true);
+          drawDiscPixels(x + r, y + r, r, color, CIRCLE_UPPER_LEFT);
+          drawDiscPixels(x + w - r - 1, y + r, r, color, CIRCLE_UPPER_RIGHT);
+          drawDiscPixels(x + r, y + h - r - 1, r, color, CIRCLE_LOWER_LEFT);
+          drawDiscPixels(x + w - r - 1, y + h - r - 1, r, color, CIRCLE_LOWER_RIGHT);
+        } else {
+          drawLinePixels(x + r, y, x + w - r - 1, y, color);
+          drawLinePixels(x + r, y + h - 1, x + w - r - 1, y + h - 1, color);
+          drawLinePixels(x, y + r, x, y + h - r - 1, color);
+          drawLinePixels(x + w - 1, y + r, x + w - 1, y + h - r - 1, color);
+          drawCirclePixels(x + r, y + r, r, color, CIRCLE_UPPER_LEFT);
+          drawCirclePixels(x + w - r - 1, y + r, r, color, CIRCLE_UPPER_RIGHT);
+          drawCirclePixels(x + r, y + h - r - 1, r, color, CIRCLE_LOWER_LEFT);
+          drawCirclePixels(x + w - r - 1, y + h - r - 1, r, color, CIRCLE_LOWER_RIGHT);
+        }
+      }
+      function drawCircleSection(x, y, cx, cy, color, option) {
+        if (option & CIRCLE_UPPER_RIGHT) {
+          putPixel(cx + x, cy - y, color);
+          putPixel(cx + y, cy - x, color);
+        }
+        if (option & CIRCLE_UPPER_LEFT) {
+          putPixel(cx - x, cy - y, color);
+          putPixel(cx - y, cy - x, color);
+        }
+        if (option & CIRCLE_LOWER_RIGHT) {
+          putPixel(cx + x, cy + y, color);
+          putPixel(cx + y, cy + x, color);
+        }
+        if (option & CIRCLE_LOWER_LEFT) {
+          putPixel(cx - x, cy + y, color);
+          putPixel(cx - y, cy + x, color);
+        }
+      }
+      function drawCirclePixels(cx, cy, r, color, option = CIRCLE_ALL) {
+        cx = round(cx); cy = round(cy); r = Math.max(1, round(r));
+        let f = 1 - r;
+        let ddF_x = 1;
+        let ddF_y = -2 * r;
+        let x = 0;
+        let y = r;
+        drawCircleSection(x, y, cx, cy, color, option);
+        while (x < y) {
+          if (f >= 0) {
+            y--;
+            ddF_y += 2;
+            f += ddF_y;
+          }
+          x++;
+          ddF_x += 2;
+          f += ddF_x;
+          drawCircleSection(x, y, cx, cy, color, option);
+        }
+      }
+      function drawVLinePixels(x, y, h, color) {
+        drawLinePixels(x, y, x, y + h - 1, color);
+      }
+      function drawDiscSection(x, y, cx, cy, color, option) {
+        if (option & CIRCLE_UPPER_RIGHT) {
+          drawVLinePixels(cx + x, cy - y, y + 1, color);
+          drawVLinePixels(cx + y, cy - x, x + 1, color);
+        }
+        if (option & CIRCLE_UPPER_LEFT) {
+          drawVLinePixels(cx - x, cy - y, y + 1, color);
+          drawVLinePixels(cx - y, cy - x, x + 1, color);
+        }
+        if (option & CIRCLE_LOWER_RIGHT) {
+          drawVLinePixels(cx + x, cy, y + 1, color);
+          drawVLinePixels(cx + y, cy, x + 1, color);
+        }
+        if (option & CIRCLE_LOWER_LEFT) {
+          drawVLinePixels(cx - x, cy, y + 1, color);
+          drawVLinePixels(cx - y, cy, x + 1, color);
+        }
+      }
+      function drawDiscPixels(cx, cy, r, color, option = CIRCLE_ALL) {
+        cx = round(cx); cy = round(cy); r = Math.max(1, round(r));
+        let f = 1 - r;
+        let ddF_x = 1;
+        let ddF_y = -2 * r;
+        let x = 0;
+        let y = r;
+        drawDiscSection(x, y, cx, cy, color, option);
+        while (x < y) {
+          if (f >= 0) {
+            y--;
+            ddF_y += 2;
+            f += ddF_y;
+          }
+          x++;
+          ddF_x += 2;
+          f += ddF_x;
+          drawDiscSection(x, y, cx, cy, color, option);
+        }
+      }
+      function drawTrianglePixels(s, color) {
+        const pts = [[s.x1, s.y1], [s.x2, s.y2], [s.x3, s.y3]].map(p => [round(p[0]), round(p[1])]);
+        const minY = Math.min(pts[0][1], pts[1][1], pts[2][1]);
+        const maxY = Math.max(pts[0][1], pts[1][1], pts[2][1]);
+        for (let y = minY; y <= maxY; y++) {
+          const xs = [];
+          for (let i = 0; i < 3; i++) {
+            const a = pts[i], b = pts[(i + 1) % 3];
+            if ((a[1] <= y && b[1] > y) || (b[1] <= y && a[1] > y)) {
+              xs.push(a[0] + (y - a[1]) * (b[0] - a[0]) / (b[1] - a[1]));
+            }
+          }
+          if (xs.length >= 2) drawLinePixels(Math.ceil(Math.min(...xs)), y, Math.floor(Math.max(...xs)), y, color);
+        }
+      }
+      function drawShape(s) {
+        if (!s.visible) return;
+        const c = Number(s.color);
+        if (s.type === 'pixel') putPixel(s.x, s.y, c);
+        if (s.type === 'line') drawLinePixels(s.x1, s.y1, s.x2, s.y2, c);
+        if (s.type === 'hline') drawLinePixels(s.x, s.y, s.x + s.w - 1, s.y, c);
+        if (s.type === 'vline') drawLinePixels(s.x, s.y, s.x, s.y + s.h - 1, c);
+        if (s.type === 'box') drawRectPixels(s.x, s.y, s.w, s.h, c, true);
+        if (s.type === 'frame') drawRectPixels(s.x, s.y, s.w, s.h, c, false);
+        if (s.type === 'rbox') drawRoundRectPixels(s.x, s.y, s.w, s.h, s.r, c, true);
+        if (s.type === 'rframe') drawRoundRectPixels(s.x, s.y, s.w, s.h, s.r, c, false);
+        if (s.type === 'circle') drawCirclePixels(s.x, s.y, s.r, c);
+        if (s.type === 'disc') drawDiscPixels(s.x, s.y, s.r, c);
+        if (s.type === 'triangle') drawTrianglePixels(s, c);
+        if (s.type === 'bitmap') {
+          drawRectPixels(s.x, s.y, s.w, s.h, c, false);
+          drawLinePixels(s.x, s.y, s.x + s.w - 1, s.y + s.h - 1, c);
+          drawLinePixels(s.x + s.w - 1, s.y, s.x, s.y + s.h - 1, c);
+        }
+        if (s.type === 'text') {
+          drawU8g2Text(s, c);
+        }
+      }
+      function drawGrid() {
+        if (!state.showGrid || state.zoom < 3) return;
+        activeCtx.strokeStyle = getComputedStyle(root).getPropertyValue('--lde-pixel-grid').trim();
+        activeCtx.lineWidth = 1;
+        activeCtx.beginPath();
+        for (let x = 0; x <= state.display.w; x++) {
+          activeCtx.moveTo(x * state.zoom + .5, 0);
+          activeCtx.lineTo(x * state.zoom + .5, state.display.h * state.zoom);
+        }
+        for (let y = 0; y <= state.display.h; y++) {
+          activeCtx.moveTo(0, y * state.zoom + .5);
+          activeCtx.lineTo(state.display.w * state.zoom, y * state.zoom + .5);
+        }
+        activeCtx.stroke();
+      }
+      function drawSelection() {
+        const s = selected();
+        if (!s) return;
+        const b = shapeBounds(s);
+        activeCtx.save();
+        activeCtx.strokeStyle = getComputedStyle(root).getPropertyValue('--lde-select').trim();
+        activeCtx.lineWidth = 2;
+        activeCtx.setLineDash([5, 3]);
+        activeCtx.strokeRect(b.x * state.zoom - 2, b.y * state.zoom - 2, b.w * state.zoom + 4, b.h * state.zoom + 4);
+        activeCtx.setLineDash([]);
+        activeCtx.fillStyle = activeCtx.strokeStyle;
+        [[b.x,b.y],[b.x+b.w,b.y],[b.x,b.y+b.h],[b.x+b.w,b.y+b.h]].forEach(p => {
+          activeCtx.fillRect(p[0] * state.zoom - 4, p[1] * state.zoom - 4, 8, 8);
+        });
+        activeCtx.restore();
+      }
+      function paintDisplay(includeOverlays = true) {
+        activeCtx.fillStyle = pxColor(0);
+        activeCtx.fillRect(0, 0, state.display.w * state.zoom, state.display.h * state.zoom);
+        state.shapes.forEach(drawShape);
+        if (includeOverlays) {
+          drawGrid();
+          drawSelection();
+        }
+      }
+      function render() {
+        canvas.width = state.display.w * state.zoom;
+        canvas.height = state.display.h * state.zoom;
+        activeCtx = ctx;
+        paintDisplay(true);
+        const s = selected();
+        statusEl.textContent = `${state.display.w} x ${state.display.h} px, ${state.shapes.length} primitives${s ? ', selected ' + s.name : ''}`;
+        renderLayers();
+        renderProps();
+        renderExport();
+      }
+      function addShape(type) {
+        const s = defaultShape(type);
+        state.shapes.push(s);
+        state.selectedId = s.id;
+        render();
+      }
+      function renderTools() {
+        toolsEl.innerHTML = '';
+        toolDefs.forEach(([type, label]) => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'btn';
+          b.textContent = label;
+          b.setAttribute('aria-pressed', state.tool === type ? 'true' : 'false');
+          b.addEventListener('click', () => { state.tool = type; addShape(type); });
+          toolsEl.appendChild(b);
+        });
+      }
+      function renderLayers() {
+        layersEl.innerHTML = '';
+        [...state.shapes].reverse().forEach((s, revIndex) => {
+          const index = state.shapes.length - 1 - revIndex;
+          const row = document.createElement('button');
+          row.type = 'button';
+          row.className = 'lde-layer';
+          row.setAttribute('aria-selected', s.id === state.selectedId ? 'true' : 'false');
+          row.innerHTML = `<span class="lde-chip">${index + 1}</span><span class="lde-layer-name"></span><input class="lde-visibility" type="checkbox" ${s.visible ? 'checked' : ''} aria-label="Visible">`;
+          row.querySelector('.lde-layer-name').textContent = `${s.name} (${s.type})`;
+          row.addEventListener('click', e => {
+            if (e.target.classList.contains('lde-visibility')) return;
+            state.selectedId = s.id;
+            render();
+          });
+          row.querySelector('input').addEventListener('change', e => {
+            s.visible = e.target.checked;
+            render();
+          });
+          layersEl.appendChild(row);
+        });
+      }
+      function propList(s) {
+        if (!s) return [];
+        if (s.type === 'pixel') return ['x', 'y'];
+        if (s.type === 'line') return ['x1', 'y1', 'x2', 'y2'];
+        if (s.type === 'hline') return ['x', 'y', 'w'];
+        if (s.type === 'vline') return ['x', 'y', 'h'];
+        if (s.type === 'circle' || s.type === 'disc') return ['x', 'y', 'r'];
+        if (s.type === 'triangle') return ['x1', 'y1', 'x2', 'y2', 'x3', 'y3'];
+        if (s.type === 'rbox' || s.type === 'rframe') return ['x', 'y', 'w', 'h', 'r'];
+        if (s.type === 'text') return ['x', 'y'];
+        return ['x', 'y', 'w', 'h'];
+      }
+      function renderProps() {
+        const s = selected();
+        propsEl.hidden = !s;
+        propsEmptyEl.hidden = !!s;
+        if (!s) return;
+        nameInput.value = s.name || '';
+        colorInput.value = String(s.color ?? 1);
+        fontInput.value = s.font || 'leaf_8x14';
+        fontInput.disabled = s.type !== 'text';
+        textWrap.hidden = s.type !== 'text';
+        textInput.value = s.text || '';
+        propFieldsEl.innerHTML = '';
+        propList(s).forEach(k => {
+          const wrap = document.createElement('div');
+          wrap.className = 'lde-field';
+          const label = document.createElement('label');
+          const input = document.createElement('input');
+          const id = 'lde-prop-' + k;
+          label.setAttribute('for', id);
+          label.textContent = k;
+          input.id = id;
+          input.type = 'number';
+          input.step = '1';
+          input.className = 'form-control';
+          input.value = s[k] ?? 0;
+          input.addEventListener('input', () => { s[k] = round(input.value); render(); });
+          wrap.append(label, input);
+          propFieldsEl.appendChild(wrap);
+        });
+      }
+      function moveShape(s, dx, dy) {
+        if (!s) return;
+        ['x', 'x1', 'x2', 'x3'].forEach(k => { if (k in s) s[k] = round(s[k] + dx); });
+        ['y', 'y1', 'y2', 'y3'].forEach(k => { if (k in s) s[k] = round(s[k] + dy); });
+      }
+      function resizeShape(s, key, step) {
+        if (!s) return false;
+        const grow = key === 'ArrowRight' || key === 'ArrowDown';
+        const delta = grow ? step : -step;
+        if (s.type === 'circle' || s.type === 'disc') {
+          s.r = Math.max(1, round((s.r || 1) + delta));
+          return true;
+        }
+        if ((key === 'ArrowLeft' || key === 'ArrowRight') && 'w' in s) {
+          s.w = Math.max(1, round((s.w || 1) + delta));
+          if ('r' in s) s.r = clamp(round(s.r || 0), 0, Math.floor(Math.min(s.w || 1, s.h || 1) / 2));
+          return true;
+        }
+        if ((key === 'ArrowUp' || key === 'ArrowDown') && 'h' in s) {
+          s.h = Math.max(1, round((s.h || 1) + delta));
+          if ('r' in s) s.r = clamp(round(s.r || 0), 0, Math.floor(Math.min(s.w || 1, s.h || 1) / 2));
+          return true;
+        }
+        return false;
+      }
+      function updateDrag(p) {
+        if (!state.drag) return;
+        const { shape, start, orig } = state.drag;
+        const dx = p.x - start.x, dy = p.y - start.y;
+        Object.assign(shape, JSON.parse(JSON.stringify(orig)));
+        moveShape(shape, dx, dy);
+        render();
+      }
+      function layer(delta) {
+        const s = selected();
+        if (!s) return;
+        const i = state.shapes.indexOf(s);
+        const ni = clamp(i + delta, 0, state.shapes.length - 1);
+        state.shapes.splice(i, 1);
+        state.shapes.splice(ni, 0, s);
+        render();
+      }
+      function duplicate() {
+        const s = selected();
+        if (!s) return;
+        const copy = JSON.parse(JSON.stringify(s));
+        copy.id = state.nextId++;
+        copy.name = s.name + ' copy';
+        moveShape(copy, 3, 3);
+        state.shapes.push(copy);
+        state.selectedId = copy.id;
+        render();
+      }
+      function removeSelected() {
+        state.shapes = state.shapes.filter(s => s.id !== state.selectedId);
+        state.selectedId = null;
+        render();
+      }
+      function u8g2Call(s) {
+        const prefix = s.color !== 1 ? `u8g2.setDrawColor(${s.color});\n` : '';
+        const suffix = s.color !== 1 ? `\nu8g2.setDrawColor(1);` : '';
+        let call = '';
+        if (s.type === 'pixel') call = `u8g2.drawPixel(${s.x}, ${s.y});`;
+        if (s.type === 'line') call = `u8g2.drawLine(${s.x1}, ${s.y1}, ${s.x2}, ${s.y2});`;
+        if (s.type === 'hline') call = `u8g2.drawHLine(${s.x}, ${s.y}, ${s.w});`;
+        if (s.type === 'vline') call = `u8g2.drawVLine(${s.x}, ${s.y}, ${s.h});`;
+        if (s.type === 'box') call = `u8g2.drawBox(${s.x}, ${s.y}, ${s.w}, ${s.h});`;
+        if (s.type === 'frame') call = `u8g2.drawFrame(${s.x}, ${s.y}, ${s.w}, ${s.h});`;
+        if (s.type === 'rbox') call = `u8g2.drawRBox(${s.x}, ${s.y}, ${s.w}, ${s.h}, ${s.r});`;
+        if (s.type === 'rframe') call = `u8g2.drawRFrame(${s.x}, ${s.y}, ${s.w}, ${s.h}, ${s.r});`;
+        if (s.type === 'circle') call = `u8g2.drawCircle(${s.x}, ${s.y}, ${s.r});`;
+        if (s.type === 'disc') call = `u8g2.drawDisc(${s.x}, ${s.y}, ${s.r});`;
+        if (s.type === 'triangle') call = `u8g2.drawTriangle(${s.x1}, ${s.y1}, ${s.x2}, ${s.y2}, ${s.x3}, ${s.y3});`;
+        if (s.type === 'text') call = `u8g2.setFont(${s.font});\nu8g2.drawStr(${s.x}, ${s.y}, "${String(s.text || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"')}");`;
+        if (s.type === 'bitmap') call = `u8g2.drawXBM(${s.x}, ${s.y}, ${s.w}, ${s.h}, bitmap_name);`;
+        return prefix + call + suffix;
+      }
+      function rasterBits() {
+        const z = state.zoom;
+        const off = document.createElement('canvas');
+        off.width = state.display.w * z; off.height = state.display.h * z;
+        const oldCtx = ctx;
+        const data = [];
+        for (let y = 0; y < state.display.h; y++) {
+          for (let bx = 0; bx < Math.ceil(state.display.w / 8); bx++) {
+            let byte = 0;
+            for (let bit = 0; bit < 8; bit++) {
+              const x = bx * 8 + bit;
+              if (x >= state.display.w) continue;
+              let on = false;
+              for (const s of state.shapes) {
+                if (!s.visible || s.color === 0) continue;
+                const b = shapeBounds(s);
+                if (x >= b.x && y >= b.y && x < b.x + b.w && y < b.y + b.h) on = true;
+              }
+              if (on) byte |= (1 << bit);
+            }
+            data.push(byte);
+          }
+        }
+        return data;
+      }
+      function renderedDisplayCanvas() {
+        const off = document.createElement('canvas');
+        off.width = state.display.w;
+        off.height = state.display.h;
+        const offCtx = off.getContext('2d');
+        const oldCtx = activeCtx;
+        const oldZoom = state.zoom;
+        const oldMono = forceMonoPalette;
+        activeCtx = offCtx;
+        state.zoom = 1;
+        forceMonoPalette = true;
+        paintDisplay(false);
+        activeCtx = oldCtx;
+        state.zoom = oldZoom;
+        forceMonoPalette = oldMono;
+        return off;
+      }
+      function pngExportCanvas() {
+        const screen = renderedDisplayCanvas();
+        if (!state.pngBorder) return screen;
+        const border = Math.max(1, Math.round(state.display.w * 0.05));
+        const out = document.createElement('canvas');
+        out.width = state.display.w + border * 2;
+        out.height = state.display.h + border * 2;
+        const outCtx = out.getContext('2d');
+        outCtx.imageSmoothingEnabled = false;
+        outCtx.fillStyle = '#d1d5db';
+        outCtx.fillRect(0, 0, out.width, out.height);
+        outCtx.drawImage(screen, border, border);
+        return out;
+      }
+      function downloadPng() {
+        const out = pngExportCanvas();
+        const borderName = state.pngBorder ? '-border' : '';
+        const a = document.createElement('a');
+        a.href = out.toDataURL('image/png');
+        a.download = `leaf-display-${state.display.w}x${state.display.h}${borderName}.png`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        statusEl.textContent = `PNG downloaded (${out.width} x ${out.height})`;
+      }
+      function renderExport() {
+        pngBorderWrap.hidden = state.exportMode !== 'png';
+        copyButton.textContent = state.exportMode === 'png' ? 'Download PNG' : 'Copy';
+        pngBorderInput.checked = state.pngBorder;
+        exportEl.disabled = state.exportMode === 'png';
+        if (state.exportMode === 'png') {
+          const border = state.pngBorder ? Math.max(1, Math.round(state.display.w * 0.05)) : 0;
+          const w = state.display.w + border * 2;
+          const h = state.display.h + border * 2;
+          exportEl.value = state.pngBorder
+            ? `PNG export: ${w} x ${h} px with ${border}px light grey border.`
+            : `PNG export: ${w} x ${h} px, exact LCD resolution with no border.`;
+          return;
+        }
+        if (state.exportMode === 'json') {
+          exportEl.value = JSON.stringify({ display: state.display, shapes: state.shapes }, null, 2);
+          return;
+        }
+        if (state.exportMode === 'xbm') {
+          const bytes = rasterBits();
+          const rows = [];
+          for (let i = 0; i < bytes.length; i += 12) rows.push('  ' + bytes.slice(i, i + 12).map(b => '0x' + b.toString(16).padStart(2, '0')).join(', '));
+          exportEl.value = `#define leaf_layout_width ${state.display.w}\n#define leaf_layout_height ${state.display.h}\nstatic const unsigned char leaf_layout_bits[] PROGMEM = {\n${rows.join(',\n')}\n};`;
+          return;
+        }
+        exportEl.value = `// Leaf display layout ${state.display.w} x ${state.display.h}\nvoid draw_exported_layout() {\n${state.shapes.filter(s => s.visible).map(s => '  ' + u8g2Call(s).replace(/\n/g, '\n  ')).join('\n')}\n}`;
+      }
+      function addLeafShape(add, shape) {
+        add(shape);
+        return shape;
+      }
+      function addLeafText(add, name, x, y, text, font, color = 1) {
+        return addLeafShape(add, { type: 'text', name, x, y, text, font, color });
+      }
+      function addLeafVarioBar(add, barTop, barClimbHeight, barSinkHeight, barWidth, climbRate) {
+        addLeafShape(add, { type: 'frame', name: 'vario frame', x: 0, y: barTop, w: barWidth, h: barClimbHeight + barSinkHeight + 1 });
+        const climbMax = 500;
+        const sinkMax = -500;
+        const barMid = barTop + barClimbHeight;
+        const barFillTop = barTop + 1;
+        const barFillBot = barTop + barClimbHeight + barSinkHeight - 1;
+        const fillTopLength = barMid - barFillTop + 1;
+        const fillBotLength = barFillBot - barMid + 1;
+        let barFillStart = 1;
+        let barFillEnd = 1;
+        if (climbRate > 2 * climbMax || climbRate < 2 * sinkMax) {
+          barFillStart = 1;
+          barFillEnd = 0;
+        } else if (climbRate > climbMax) {
+          const fill = Math.trunc(fillTopLength * (climbRate - climbMax) / climbMax);
+          barFillStart = barFillTop;
+          barFillEnd = barMid - fill;
+        } else if (climbRate < sinkMax) {
+          const fill = Math.trunc(fillBotLength * (climbRate - sinkMax) / sinkMax);
+          barFillStart = barMid + fill;
+          barFillEnd = barFillBot;
+        } else if (climbRate < 0) {
+          const fill = Math.trunc(fillBotLength * climbRate / sinkMax);
+          barFillStart = barMid;
+          barFillEnd = barMid + fill;
+        } else {
+          const fill = Math.trunc(fillTopLength * climbRate / climbMax);
+          barFillStart = barMid - fill;
+          barFillEnd = barMid;
+        }
+        if (barFillEnd >= barFillStart) addLeafShape(add, { type: 'box', name: 'vario fill', x: 1, y: barFillStart, w: barWidth - 2, h: barFillEnd - barFillStart + 1 });
+        let tickSpacing = Math.trunc(fillTopLength / 5);
+        let lineY = barTop;
+        for (let i = 1; i <= 9; i++) {
+          if (i === 5) {
+            lineY = barMid;
+            tickSpacing = Math.trunc(fillBotLength / 5);
+          } else {
+            lineY += tickSpacing;
+            addLeafShape(add, {
+              type: 'hline',
+              name: 'vario tick ' + i,
+              x: 1,
+              y: lineY,
+              w: Math.max(1, Math.trunc(barWidth / 2) - 1),
+              color: lineY >= barFillStart && lineY <= barFillEnd ? 0 : 1
+            });
+          }
+        }
+      }
+      function addLeafClimbPointerBox(add, x, y, w, h, triSize) {
+        addLeafShape(add, { type: 'box', name: 'climb box', x, y, w, h });
+        addLeafShape(add, {
+          type: 'triangle',
+          name: 'climb pointer',
+          x1: x - triSize,
+          y1: y + Math.trunc(h / 2),
+          x2: x,
+          y2: y + Math.trunc(h / 2) - triSize - 1,
+          x3: x,
+          y3: y + Math.trunc(h / 2) + triSize + 1
+        });
+        addLeafShape(add, { type: 'line', name: 'climb pointer mask upper', color: 0, x1: x - triSize - 1, y1: y + Math.trunc(h / 2), x2: x - 2, y2: y + Math.trunc(h / 2) - triSize + 1 });
+        addLeafShape(add, { type: 'line', name: 'climb pointer mask lower', color: 0, x1: x - triSize - 1, y1: y + Math.trunc(h / 2), x2: x - 2, y2: y + Math.trunc(h / 2) + triSize - 1 });
+      }
+      function addLeafWindSockRing(add, x, y, radius, size, showPointer) {
+        addLeafShape(add, { type: 'disc', name: 'wind ring fill', x, y, r: radius });
+        addLeafShape(add, { type: 'text', name: 'wind logo', color: 0, x: x - 10, y: y + 11, text: '(', font: 'wind_logo' });
+        if (showPointer) {
+          addLeafShape(add, { type: 'triangle', name: 'heading pointer', x1: x, y1: y - radius - size, x2: x + size - 2, y2: y - radius - 1, x3: x - size + 2, y3: y - radius - 1 });
+        }
+        const compassRadius = radius + 6;
+        addLeafText(add, 'compass N', x - 2, y - compassRadius + 4, 'N', 'leaf_compass', 2);
+        addLeafText(add, 'compass E', x + compassRadius - 2, y + 4, 'E', 'leaf_compass', 2);
+        addLeafText(add, 'compass S', x - 2, y + compassRadius + 4, 'S', 'leaf_compass', 2);
+        addLeafText(add, 'compass W', x - compassRadius - 2, y + 4, 'W', 'leaf_compass', 2);
+      }
+      function addLeafHeader(add, navPage = false, showTurnArrows = false) {
+        addLeafText(add, 'clock', 0, 10, '12:34', 'leaf_6x10');
+        addLeafText(add, 'speed', 70, 14, '24', 'leaf_8x14');
+        addLeafText(add, 'speed units', 82, 21, 'MPH', 'leaf_5h', navPage ? 0 : 1);
+        addLeafText(add, showTurnArrows ? 'heading turn' : 'heading', showTurnArrows ? 37 : 45, 10, showTurnArrows ? '<N>' : 'N', 'leaf_7x10');
+      }
+      function addLeafFooter(add, timerSelected = false) {
+        addLeafText(add, 'battery icon', 0, 192, '8', 'Leaf_BattIcon_Vertical');
+        addLeafText(add, 'sd icon', 10, 192, '<', 'leaf_icons');
+        addLeafText(add, 'fanet icon', 23, 192, 'U', 'leaf_icons');
+        addLeafText(add, 'volume icon', 37, 191, 'L', 'leaf_icons');
+        if (timerSelected) addLeafShape(add, { type: 'rbox', name: 'timer selected fill', x: 50, y: 178, w: 46, h: 16, r: 2 });
+        addLeafText(add, 'timer', 52, 192, '1:23', 'leaf_6x12', timerSelected ? 0 : 1);
+      }
+      function addLeafHeaderFooter(add, timerSelected = false, showTurnArrows = false, navPage = false) {
+        addLeafHeader(add, navPage, showTurnArrows);
+        addLeafFooter(add, timerSelected);
+      }
+      function importTemplate(name) {
+        const W = state.display.w, H = state.display.h;
+        const sx = W / 96, sy = H / 192;
+        const S = (v, axis) => Math.round(v * (axis === 'x' ? sx : sy));
+        const scaleShape = s => {
+          const out = { ...s };
+          ['x', 'x1', 'x2', 'x3'].forEach(k => { if (k in out) out[k] = S(out[k], 'x'); });
+          ['y', 'y1', 'y2', 'y3'].forEach(k => { if (k in out) out[k] = S(out[k], 'y'); });
+          if ('w' in out) out.w = Math.max(1, S(out.w, 'x'));
+          if ('h' in out) out.h = Math.max(1, S(out.h, 'y'));
+          if ('r' in out) out.r = Math.max(1, S(out.r, 'x'));
+          return out;
+        };
+        const add = s => { const out = scaleShape(s); out.id = state.nextId++; out.visible = true; out.color ??= 1; state.shapes.push(out); };
+        state.shapes = [];
+        if (name === 'simple') {
+          addLeafText(add, 'clock', 0, 10, '12:34', 'leaf_6x10');
+          addLeafFooter(add, false);
+          addLeafText(add, 'speed units', 77, 40, 'MPH', 'leaf_labels');
+          addLeafText(add, 'speed', 59, 28, '24', 'leaf_21h');
+          addLeafText(add, 'heading', 36, 28, 'N', 'leaf_8x14');
+          addLeafWindSockRing(add, 48, 54, 17, 8, true);
+          addLeafVarioBar(add, 18, 85, 70, 12, 540);
+          const climbBoxY = 18 + 85 - Math.trunc(34 / 2);
+          addLeafClimbPointerBox(add, 21, climbBoxY, 75, 34, 16);
+          addLeafText(add, 'climb rate', 11, climbBoxY + 31, '+540f', 'leaf_28h', 0);
+          addLeafText(add, 'altitude label', 15, 138, 'MSL Altitude ft', 'leaf_labels');
+          addLeafText(add, 'altitude', 13, 167, '3250', 'leaf_28h');
+        }
+        if (name === 'thermal' || name === 'thermalAdv') {
+          if (name === 'thermal') {
+            addLeafHeaderFooter(add);
+            addLeafWindSockRing(add, 56, 31, 12, 7, true);
+            addLeafVarioBar(add, 21, 75, 75, 25, 540);
+            addLeafText(add, 'alt label', 77, 57, 'MSL', 'leaf_labels');
+            addLeafText(add, 'alt units', 85, 49, 'ft', 'leaf_labels');
+            addLeafText(add, 'altitude', 27, 79, '3250', 'leaf_21h');
+            const climbBoxY = 21 + 75 - Math.trunc(27 / 2);
+            addLeafClimbPointerBox(add, 25, climbBoxY, 76, 27, 13);
+            addLeafText(add, 'climb rate', 20, climbBoxY + 24, '+540 f', 'leaf_21h', 0);
+            addLeafText(add, 'user field 1 label', 29, climbBoxY + 39, 'ABOVE LAUNCH', 'leaf_5h');
+            addLeafText(add, 'user field 1 value', 49, climbBoxY + 53, '820', 'leaf_6x12');
+            addLeafText(add, 'user field 2 label', 29, climbBoxY + 66, '` GLIDE', 'leaf_5h');
+            addLeafText(add, 'user field 2 value', 49, climbBoxY + 80, '8.4', 'leaf_6x12');
+          } else {
+            addLeafHeaderFooter(add);
+            addLeafVarioBar(add, 30, 70, 70, 20, 540);
+            add({ type: 'frame', name: 'graph box', x: 19, y: 30, w: 77, h: 40 });
+            addLeafText(add, 'altitude', 22, 89, '3250', 'leaf_8x14');
+            addLeafClimbPointerBox(add, 20, 92, 76, 17, 6);
+            addLeafText(add, 'climb rate', 20, 108, '+540', 'leaf_8x14', 0);
+            addLeafText(add, 'above launch', 24, 132, '820', 'leaf_6x12');
+            add({ type: 'hline', name: 'user top', x: 19, y: 136, w: 77 });
+            add({ type: 'hline', name: 'user mid', x: 19, y: 153, w: 77 });
+            add({ type: 'hline', name: 'user bottom', x: 19, y: 170, w: 77 });
+            add({ type: 'vline', name: 'user column', x: 58, y: 136, h: 34 });
+            addLeafText(add, 'temperature', 25, 152, '72F', 'leaf_6x12');
+            addLeafText(add, 'humidity', 61, 152, '45%', 'leaf_6x12');
+            addLeafText(add, 'accel', 25, 169, '1.0G', 'leaf_6x12');
+            addLeafText(add, 'glide', 61, 169, '8.4', 'leaf_6x12');
+          }
+        }
+        if (name === 'navigate') {
+          const navX = 56, navY = 52, navR = 38, top = 13, barW = 18, topH = 75, botH = 45;
+          const barH = topH + botH + 1, mid = top + topH;
+          add({ type: 'box', name: 'nav black field', x: barW, y: top, w: 96 - barW, h: navR * 2 + 4 });
+          add({ type: 'disc', name: 'nav circle cutout', color: 0, x: navX, y: navY, r: navR });
+          add({ type: 'box', name: 'speed notch', color: 0, x: 68, y: top, w: 28, h: 2 });
+          add({ type: 'hline', name: 'speed notch lip', color: 0, x: 64, y: top, w: 4 });
+          addLeafHeaderFooter(add, false, true, true);
+          add({ type: 'box', name: 'travel arrow erase', color: 0, x: navX - 2, y: navY - navR - 2, w: 5, h: 4 });
+          add({ type: 'line', name: 'travel arrow left', x1: 51, y1: 20, x2: 56, y2: 11 });
+          add({ type: 'line', name: 'travel arrow right', x1: 61, y1: 20, x2: 56, y2: 11 });
+          add({ type: 'line', name: 'travel arrow left thick', x1: 50, y1: 20, x2: 55, y2: 11 });
+          add({ type: 'line', name: 'travel arrow right thick', x1: 62, y1: 20, x2: 57, y2: 11 });
+          add({ type: 'vline', name: 'travel arrow shaft left', x: 54, y: 20, h: 6 });
+          add({ type: 'vline', name: 'travel arrow shaft right', x: 58, y: 20, h: 6 });
+          addLeafWindSockRing(add, navX, navY, 12, 7, false);
+          addLeafVarioBar(add, top, topH, botH, barW, 540);
+          add({ type: 'triangle', name: 'climb side pointer', x1: 8, y1: 88, x2: 17, y2: 79, x3: 17, y3: 97 });
+          add({ type: 'line', name: 'climb side pointer mask upper', color: 0, x1: 7, y1: 88, x2: 16, y2: 80 });
+          add({ type: 'line', name: 'climb side pointer mask upper 2', color: 0, x1: 7, y1: 87, x2: 16, y2: 79 });
+          add({ type: 'line', name: 'climb side pointer mask lower', color: 0, x1: 7, y1: 88, x2: 16, y2: 96 });
+          add({ type: 'line', name: 'climb side pointer mask lower 2', color: 0, x1: 7, y1: 89, x2: 16, y2: 97 });
+          add({ type: 'box', name: 'climb background', x: barW, y: top + 2 * navR + 4, w: 30, h: 17 });
+          addLeafText(add, 'climb sign', barW - 6, mid + 6, '+', 'leaf_8x14', 0);
+          addLeafText(add, 'climb value', barW + 1, mid + 20, '540', 'leaf_8x14', 0);
+          addLeafText(add, 'altitude', 49, 109, '3250', 'leaf_8x14', 0);
+          addLeafText(add, 'alt label', 78, top + 2 * navR + 5, 'MSL', 'leaf_labels', 0);
+          addLeafText(add, 'alt units', 86, top + 2 * navR - 3, 'ft', 'leaf_labels', 0);
+          addLeafText(add, 'waypoint', barW + 2, top + barH - 9, '<Select Dest>', 'leaf_6x12');
+          add({ type: 'frame', name: 'progress frame', x: barW - 1, y: top + barH - 4, w: 96 - barW + 1, h: 4 });
+          add({ type: 'box', name: 'progress fill', x: barW, y: top + barH - 3, w: 31, h: 2 });
+          addLeafText(add, 'time label', 3, top + barH + 7, 'TIME>&', 'leaf_5h');
+          addLeafText(add, 'time remaining', 8, top + barH + 20, '1:23', 'leaf_6x12');
+          addLeafText(add, 'dist label', 52, top + barH + 7, 'DIST>&', 'leaf_5h');
+          addLeafText(add, 'distance', 57, top + barH + 20, '3.2MI', 'leaf_6x12');
+          addLeafText(add, 'glide label', 3, top + barH + 27, '`GLIDE', 'leaf_5h');
+          addLeafText(add, 'glide', 8, top + barH + 40, '8.4', 'leaf_6x12');
+          addLeafText(add, 'glide waypoint label', 52, top + barH + 27, '`>&', 'leaf_5h');
+          addLeafText(add, 'glide waypoint', 57, top + barH + 40, '7.9', 'leaf_6x12');
+        }
+        if (name === 'menu') {
+          add({ type: 'hline', name: 'menu title bottom', x: 0, y: 15, w: 96 });
+          add({ type: 'text', name: 'title', x: 8, y: 12, text: 'MENU', font: 'leaf_8x14' });
+          ['FLIGHT', 'GPS', 'DISPLAY', 'SYSTEM', 'WIFI'].forEach((t, i) => add({ type: 'text', name: 'menu ' + t, x: 8, y: 38 + i * 25, text: t, font: 'leaf_8x14' }));
+          add({ type: 'rframe', name: 'selection', x: 2, y: 21, w: 92, h: 24, r: 3 });
+          add({ type: 'hline', name: 'footer', x: 0, y: 174, w: 96 });
+        }
+        if (name === 'debug') {
+          add({ type: 'text', name: 'speed label', x: 0, y: 7, text: 'mph', font: 'leaf_5x8' });
+          add({ type: 'text', name: 'heading label', x: 0, y: 27, text: 'Heading', font: 'leaf_5x8' });
+          add({ type: 'text', name: 'alt label', x: 0, y: 47, text: 'alt', font: 'leaf_5x8' });
+          add({ type: 'disc', name: 'pie center', x: 48, y: 110, r: 28 });
+          add({ type: 'hline', name: 'pie hline', x: 20, y: 110, w: 56, color: 0 });
+          add({ type: 'vline', name: 'pie vline', x: 48, y: 82, h: 56, color: 0 });
+          add({ type: 'circle', name: 'estimate circle', x: 48, y: 110, r: 35 });
+        }
+        state.selectedId = state.shapes[0]?.id || null;
+        render();
+      }
+
+      nameInput.addEventListener('input', () => { const s = selected(); if (s) { s.name = nameInput.value; render(); } });
+      colorInput.addEventListener('change', () => { const s = selected(); if (s) { s.color = Number(colorInput.value); render(); } });
+      fontInput.addEventListener('change', () => { const s = selected(); if (s) { s.font = fontInput.value; render(); } });
+      textInput.addEventListener('input', () => { const s = selected(); if (s) { s.text = textInput.value; render(); } });
+      root.querySelector('#lde-backward').addEventListener('click', () => layer(-1));
+      root.querySelector('#lde-forward').addEventListener('click', () => layer(1));
+      root.querySelector('#lde-duplicate').addEventListener('click', duplicate);
+      root.querySelector('#lde-delete').addEventListener('click', removeSelected);
+      root.querySelector('#lde-grid').addEventListener('click', () => { state.showGrid = !state.showGrid; render(); });
+      root.querySelector('#lde-clear').addEventListener('click', () => { state.shapes = []; state.selectedId = null; render(); });
+      root.querySelector('#lde-import-btn').addEventListener('click', () => {
+        const val = root.querySelector('#lde-import').value;
+        if (val) importTemplate(val);
+      });
+      profileSelect.addEventListener('change', () => { state.display = { ...profileMap[profileSelect.value] }; render(); });
+      zoomInput.addEventListener('input', () => { state.zoom = Number(zoomInput.value); zoomValue.textContent = state.zoom + 'x'; render(); });
+      root.querySelectorAll('[data-export]').forEach(btn => btn.addEventListener('click', () => {
+        state.exportMode = btn.dataset.export;
+        root.querySelectorAll('[data-export]').forEach(b => b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'));
+        renderExport();
+      }));
+      root.querySelector('#lde-refresh-export').addEventListener('click', renderExport);
+      root.querySelector('#lde-copy').addEventListener('click', async () => {
+        if (state.exportMode === 'png') {
+          downloadPng();
+          return;
+        }
+        exportEl.select();
+        try { await navigator.clipboard.writeText(exportEl.value); statusEl.textContent = 'Export copied'; }
+        catch { document.execCommand('copy'); statusEl.textContent = 'Export copied'; }
+      });
+      pngBorderInput.addEventListener('change', () => {
+        state.pngBorder = pngBorderInput.checked;
+        renderExport();
+      });
+      canvas.addEventListener('pointerdown', ev => {
+        const p = canvasPoint(ev);
+        const s = hitTest(p);
+        if (s) {
+          state.selectedId = s.id;
+          state.drag = { shape: s, start: p, orig: JSON.parse(JSON.stringify(s)) };
+          canvas.setPointerCapture(ev.pointerId);
+        } else {
+          state.selectedId = null;
+        }
+        render();
+      });
+      canvas.addEventListener('pointermove', ev => {
+        const p = canvasPoint(ev);
+        if (state.drag) updateDrag(p);
+        else statusEl.textContent = `${p.x}, ${p.y}`;
+      });
+      canvas.addEventListener('pointerup', ev => {
+        if (state.drag) {
+          state.drag = null;
+          try { canvas.releasePointerCapture(ev.pointerId); } catch {}
+          render();
+        }
+      });
+      document.addEventListener('keydown', ev => {
+        if (!root.contains(ev.target) && ev.target !== document.body) return;
+        const tag = ev.target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+        const s = selected();
+        if (!s) return;
+        const step = ev.shiftKey ? 10 : 1;
+        if ((ev.ctrlKey || ev.altKey) && ev.key.startsWith('Arrow')) {
+          if (resizeShape(s, ev.key, step)) {
+            ev.preventDefault();
+            render();
+          }
+          return;
+        }
+        if (ev.key === 'ArrowLeft') { moveShape(s, -step, 0); ev.preventDefault(); render(); }
+        if (ev.key === 'ArrowRight') { moveShape(s, step, 0); ev.preventDefault(); render(); }
+        if (ev.key === 'ArrowUp') { moveShape(s, 0, -step); ev.preventDefault(); render(); }
+        if (ev.key === 'ArrowDown') { moveShape(s, 0, step); ev.preventDefault(); render(); }
+        if (ev.key === 'Delete' || ev.key === 'Backspace') { removeSelected(); ev.preventDefault(); }
+      });
+
+      renderTools();
+      importTemplate('simple');
+    })();
+  </script>
+</div>
+</body>
+</html>
