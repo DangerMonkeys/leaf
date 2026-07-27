@@ -4,6 +4,13 @@
 
 #include "leaf_version.h"
 
+extern "C" {
+__attribute__((used)) const char LEAF_FIRMWARE_HARDWARE_MARKER[] =
+    "LEAF_HARDWARE_VARIANT=" HARDWARE_VARIANT;
+__attribute__((used)) const char LEAF_FIRMWARE_VERSION_MARKER[] =
+    "LEAF_FIRMWARE_VERSION=" FIRMWARE_VERSION;
+}
+
 namespace {
   const char* fallbackVersion() { return "unknown"; }
 

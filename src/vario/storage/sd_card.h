@@ -22,8 +22,8 @@ class SDCard {
   // pin so we can tell if a card has been inserted or removed)
   bool mounted_ = false;
 
-  FirmwareMSC firmwareMSC_;
-  USBMSC msc_;
+  FirmwareMSC* firmwareMSC_ = nullptr;
+  USBMSC* msc_ = nullptr;
 
   bool formatUnmounted();
 };

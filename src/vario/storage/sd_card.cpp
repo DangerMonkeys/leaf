@@ -7,9 +7,11 @@
 #include <esp_vfs_fat.h>
 #include <ff.h>
 #include <sdmmc_cmd.h>
+#include <new>
 #include "FirmwareMSC.h"
 #include "USB.h"
 #include "USBMSC.h"
+#include "comms/sd_firmware_update.h"
 #include "diagnostics/boot_diagnostics.h"
 #include "diagnostics/heap_monitor.h"
 #include "hardware/configuration.h"
@@ -17,6 +19,7 @@
 #include "instruments/gps.h"
 #include "logging/log.h"
 #include "system/usb_state.h"
+#include "ui/settings/settings.h"
 
 #define DEBUG_SDCARD true
 
@@ -39,6 +42,10 @@ SDCard sdcard;
 
 bool SDCard::isCardPresent() { return !ioexDigitalRead(SD_DETECT_IOEX, SD_DETECT); }
 
+namespace {
+  bool bootUpdateRequested = false;
+}
+
 void SDCard::init(void) {
   // Shouldn't need to call set pins since we're using the default pins
   // TODO: try removing this setPins call
@@ -53,7 +60,9 @@ void SDCard::init(void) {
   // If SDcard present, mount and save state so we can track changes
   const bool cardPresent = isCardPresent();
   if (cardPresent) {
+    bootUpdateRequested = true;
     mounted_ = sdcard.mount();
+    bootUpdateRequested = false;
   }
 
 #ifndef DISABLE_MASS_STORAGE
@@ -82,7 +91,8 @@ void SDCard::update() {
 }
 
 namespace {
-  constexpr const char* STANDARD_DIRECTORIES[] = {"/waypoints", "/routes", "/logbook", "/tracks"};
+  constexpr const char* STANDARD_DIRECTORIES[] = {"/waypoints", "/routes", "/logbook", "/tracks",
+                                                  "/firmware"};
 
   bool ensureDirectory(const char* path) {
     if (SD_MMC.exists(path)) return true;
@@ -140,15 +150,24 @@ bool SDCard::setupMassStorage() {
     return false;
   }
 
-  msc_.vendorID("Leaf");
-  msc_.productID("Leaf_Vario");
-  msc_.productRevision("1.0");
-  msc_.onRead(onRead);
-  msc_.onWrite(onWrite);
-  msc_.isWritable(true);
-  msc_.mediaPresent(true);
-  msc_.begin(sectorCount, 512);
-  firmwareMSC_.begin();
+  if (!msc_) msc_ = new (std::nothrow) USBMSC();
+  if (!msc_) {
+    if (DEBUG_SDCARD) Serial.println("Mass Storage Failed: could not allocate USB MSC");
+    return false;
+  }
+
+  msc_->vendorID("Leaf");
+  msc_->productID("Leaf_Vario");
+  msc_->productRevision("1.0");
+  msc_->onRead(onRead);
+  msc_->onWrite(onWrite);
+  msc_->isWritable(true);
+  msc_->mediaPresent(true);
+  msc_->begin(sectorCount, 512);
+  if (settings.dev_mode) {
+    if (!firmwareMSC_) firmwareMSC_ = new (std::nothrow) FirmwareMSC();
+    if (firmwareMSC_) firmwareMSC_->begin();
+  }
   return leaf_usb::begin();
 }
 
@@ -167,6 +186,7 @@ bool SDCard::mount() {
     heap_monitor::setSdLoggingEnabled(true);
     heap_monitor::checkpoint("sd-mounted");
     boot_diagnostics::writeReportsToSd();
+    if (bootUpdateRequested) sd_firmware_update::handleBootUpdate();
 
 #ifndef DISABLE_MASS_STORAGE
     if (sdcard.setupMassStorage()) {

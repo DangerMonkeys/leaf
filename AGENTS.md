@@ -15,9 +15,15 @@
 
 ## Local verification
 
-- For Leaf firmware work, run the formatter before building:
-  `powershell -ExecutionPolicy Bypass -File src\scripts\format_all_files.ps1`
-- Until further notice, build firmware with the `leaf_3_2_6_release` PlatformIO environment.
+- For Leaf firmware work, use this verification workflow:
+  1. Run the formatter:
+     `powershell -ExecutionPolicy Bypass -File src\scripts\format_all_files.ps1`
+  2. Build-test firmware with the `leaf_3_2_6_release` PlatformIO environment unless the user specifies a different hardware version/environment:
+     `C:\Users\oxoth\.platformio\penv\Scripts\pio.exe run -e leaf_3_2_6_release`
+  3. Auto-detect the connected ESP32/Leaf COM port instead of hardcoding one. Prefer exactly one port with Espressif VID `303A`, using:
+     `C:\Users\oxoth\.platformio\penv\Scripts\python.exe -m serial.tools.list_ports -v`
+  4. If exactly one likely ESP32/Leaf COM port is connected, attempt to flash the built firmware. It is acceptable for flashing to fail if the device is not connected or not in boot mode; report the esptool result clearly. Flash the app image to both OTA app slots so the currently selected boot partition does not matter. For the default v3.2.6 build, use:
+     `C:\Users\oxoth\.platformio\penv\Scripts\python.exe C:\Users\oxoth\.platformio\packages\tool-esptoolpy\esptool.py --chip esp32s3 --port <AUTO_DETECTED_COM_PORT> --baud 460800 --before default_reset --after hard_reset write_flash -z --flash_mode qio --flash_freq 80m --flash_size detect 0x10000 .pio\build\leaf_3_2_6_release\firmware.bin 0x340000 .pio\build\leaf_3_2_6_release\firmware.bin`
 - `factory_interface` is a Python/uv project under `factory_interface/`; useful quick checks are:
   - `python -m compileall src\factory_interface`
   - `uv run python -c "from factory_interface.app import app; print(app.title)"`
