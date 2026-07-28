@@ -484,12 +484,16 @@ void FanetRadio::subscribe(etl::imessage_bus* bus) {
 }
 
 void FanetRadio::setup() {
-  logDetectionResult();
   heap_monitor::checkpoint("fanet-setup-start");
-  if (state == FanetRadioState::UNINSTALLED) {
+  if (!detectFanet()) {
+    state = FanetRadioState::UNINSTALLED;
+    logDetectionResult();
     heap_monitor::checkpoint("fanet-setup-skipped");
     return;
   }
+
+  state = FanetRadioState::UNINITIALIZED;
+  logDetectionResult();
 
   if (!probeFanetSpi()) {
     heap_monitor::checkpoint("fanet-setup-probe-failed");

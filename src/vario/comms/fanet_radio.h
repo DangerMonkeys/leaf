@@ -33,16 +33,9 @@ class FanetRadio : public etl::message_router<FanetRadio, GpsReading>,
   friend void webserver_setup();
 
  public:
-  // Singleton class
-  FanetRadio() : message_router(0) {
-    // Detect if FANET is installed on this device.  If not found,
-    // short circuit and place into an unsupported state
-    if (!detectFanet()) {
-      state = FanetRadioState::UNINSTALLED;
-      return;
-    }
-    state = FanetRadioState::UNINITIALIZED;
-  }
+  // Keep singleton construction free of hardware access. FANET detection runs from setup(),
+  // after Arduino and the shared SPI bus have been initialized.
+  FanetRadio() : message_router(0) {}
 
   // Sets up the FANET Radio connector
   uint32_t fanet_getTick() const override { return millis(); }
