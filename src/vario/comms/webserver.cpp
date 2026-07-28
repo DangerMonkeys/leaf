@@ -1052,7 +1052,7 @@ namespace {
   }
 
   String leafApPassword() {
-    static constexpr const char* words[] = {"sunset", "thermal", "cloud", "lift", "circle"};
+    static constexpr const char* words[] = {"sunset", "thermal", "clouds", "lifted", "circle"};
     const String hex = deviceHexDigits();
     const uint8_t a = hexNibble(hex.length() > 1 ? hex[hex.length() - 2] : '2');
     const uint8_t b = hexNibble(hex.length() > 0 ? hex[hex.length() - 1] : '3');
@@ -1063,10 +1063,15 @@ namespace {
     return password;
   }
 
-  void startLeafAp() {
+  bool startLeafAp() {
     const String ssid = leafApSsid();
     const String password = leafApPassword();
-    WiFi.softAP(ssid.c_str(), password.c_str());
+    const bool started = WiFi.softAP(ssid.c_str(), password.c_str());
+    if (!started) {
+      Serial.printf("Leaf access point failed to start: ssid=%s password_length=%u\n", ssid.c_str(),
+                    static_cast<unsigned int>(password.length()));
+    }
+    return started;
   }
 
   void startLeafApDns() {
