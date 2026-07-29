@@ -1,0 +1,144 @@
+---
+const { base = "" } = Astro.props;
+
+const previews = [
+  {
+    src: "/photos/web-app/png_screenshots/WebApp_screenshots_1_mainPage.png",
+    alt: "Leaf Web App main page",
+    label: "Main page",
+  },
+  {
+    src: "/photos/web-app/png_screenshots/WebApp_screenshots_2_profiles.png",
+    alt: "Leaf Web App profiles page",
+    label: "Profiles",
+  },
+  {
+    src: "/photos/web-app/png_screenshots/WebApp_screenshots_3_logbook.png",
+    alt: "Leaf Web App logbook flight summary",
+    label: "Logbook",
+  },
+  {
+    src: "/photos/web-app/png_screenshots/WebApp_screenshots_4_waypointsRoutes.png",
+    alt: "Leaf Web App waypoints and routes page",
+    label: "Waypoints and routes",
+  },
+  {
+    src: "/photos/web-app/png_screenshots/WebApp_screenshots_5_createRoute.png",
+    alt: "Leaf Web App create route screen",
+    label: "Route builder",
+  },
+].map((preview) => ({
+  ...preview,
+  src: `${base}${preview.src}`,
+}));
+
+const bullets = [
+  "Review flight logs with track details, altitude, vario, distance, and weather summaries.",
+  "Import waypoint files, activate routes, navigate to saved points, and build new routes.",
+  "Manage pilot and glider profiles without digging through device menus.",
+];
+---
+
+<main class="bg-[#f4f7f4]">
+  <section class="max-w-5xl m-auto px-8 pt-10 pb-16">
+    <div class="web-app-preview-row" aria-label="Leaf Web App screenshot previews">
+      {
+        previews.map((preview, index) => (
+          <figure class="web-app-preview" tabindex="0">
+            <img
+              class="web-app-preview-thumb"
+              src={preview.src}
+              alt={preview.alt}
+              loading="lazy"
+            />
+            <figcaption class="sr-only">{index + 1}. {preview.label}</figcaption>
+            <div class="web-app-preview-popover" aria-hidden="true">
+              <img src={preview.src} alt="" />
+            </div>
+          </figure>
+        ))
+      }
+    </div>
+    <div class="grid gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
+      <div>
+        <div class="headline-4">Leaf Web App.</div>
+        <p>
+          Leaf includes an onboard web app for the bigger, richer tasks that are easier on a phone or laptop screen.
+        </p>
+        
+        <p><br>
+          Simply open a phone or laptop browser while Leaf is in Web App mode.
+        </p>
+      </div>
+      <div>
+        <ul class="pl-8 mt-0">
+          {bullets.map((bullet) => <li>{bullet}</li>)}
+        </ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<style>
+  .web-app-preview-row {
+    align-items: flex-start;
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(0.5rem, 2vw, 0.75rem);
+    justify-content: center;
+    margin-bottom: 2rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .web-app-preview {
+    cursor: zoom-in;
+    margin: 0;
+    outline: none;
+    position: relative;
+  }
+
+  .web-app-preview-thumb {
+    display: block;
+    filter: drop-shadow(0 8px 14px rgb(0 0 0 / 0.18));
+    height: clamp(104px, 16vw, 170px);
+    transition:
+      filter 160ms ease,
+      transform 160ms ease;
+    width: auto;
+  }
+
+  .web-app-preview:hover .web-app-preview-thumb,
+  .web-app-preview:focus-visible .web-app-preview-thumb {
+    filter: drop-shadow(0 10px 18px rgb(0 0 0 / 0.24));
+    transform: translateY(-4px);
+  }
+
+  .web-app-preview:focus-visible .web-app-preview-thumb {
+    outline: 3px solid #ffb459;
+    outline-offset: 4px;
+  }
+
+  .web-app-preview-popover {
+    display: none;
+    inset: 50% auto auto 50%;
+    pointer-events: none;
+    position: fixed;
+    transform: translate(-50%, -50%);
+    z-index: 80;
+  }
+
+  .web-app-preview-popover img {
+    display: block;
+    filter: drop-shadow(0 24px 34px rgb(0 0 0 / 0.42));
+    max-height: min(82vh, 880px);
+    max-width: min(86vw, 520px);
+    width: auto;
+  }
+
+  .web-app-preview:hover .web-app-preview-popover,
+  .web-app-preview:focus .web-app-preview-popover,
+  .web-app-preview:focus-within .web-app-preview-popover {
+    display: block;
+  }
+</style>

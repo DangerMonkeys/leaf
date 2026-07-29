@@ -1,0 +1,47 @@
+---
+import { Icon } from "astro-icon/components";
+
+const highlights = [
+  {
+    label: "Open Source",
+    icon: "simple-icons:opensourcehardware",
+  },
+  {
+    label: "Bluetooth",
+    icon: "simple-icons:bluetooth",
+  },
+  {
+    label: "WiFi",
+    icon: "material-symbols:wifi-rounded",
+  },
+  {
+    label: "GPS",
+    icon: "material-symbols:satellite-alt",
+  },
+  {
+    label: "IGC Logging",
+    icon: "material-symbols:sd-card",
+  },
+  {
+    label: "Web App",
+    icon: "material-symbols:smartphone",
+  },
+];
+---
+
+<section class="bg-white border-b border-gray-200">
+  <main class="max-w-5xl m-auto px-8 py-6">
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-6 items-center justify-items-center">
+      {
+        highlights.map((highlight) => (
+          <div class="text-center text-sm text-gray-500 w-28">
+            <div class="flex justify-center">
+              <Icon name={highlight.icon} size={46} />
+            </div>
+            <div class="pt-2 leading-tight">{highlight.label}</div>
+          </div>
+        ))
+      }
+    </div>
+  </main>
+</section>

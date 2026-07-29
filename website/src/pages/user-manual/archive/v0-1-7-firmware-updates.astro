@@ -1,0 +1,235 @@
+---
+import "../../../styles/global.css";
+import "@fontsource/roboto";
+import "@fontsource/roboto-condensed";
+import wifiSetup from "../../../../../docs/user-guides/vario-user-manual/wifi-setup.png";
+
+let base = import.meta.env.BASE_URL;
+if (base == "/") {
+  base = "";
+}
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content="Legacy Leaf firmware update instructions for firmware v0.1.7 and earlier" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href={`${base}/favicon.svg`} />
+    <title>Legacy Leaf Firmware Update Instructions</title>
+    <style>
+      body {
+        margin: 0;
+        background: #fff;
+        color: #484848;
+        font-family: Roboto, system-ui, sans-serif;
+      }
+
+      .legacy-topbar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.85rem clamp(1rem, 3vw, 2rem);
+        background: rgb(255 255 255 / 95%);
+        border-bottom: 1px solid #e5e5e5;
+        backdrop-filter: blur(10px);
+      }
+
+      .legacy-topbar a {
+        color: #484848;
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      main {
+        width: min(1040px, calc(100% - 2rem));
+        margin: 0 auto;
+        padding: 2rem 0 4rem;
+      }
+
+      h1,
+      h2,
+      h3 {
+        color: #484848;
+        font-family: "Roboto Condensed", Roboto, system-ui, sans-serif;
+        line-height: 1.12;
+      }
+
+      h1 {
+        margin: 0 0 0.45rem;
+        font-size: clamp(2.3rem, 5vw, 4rem);
+        text-align: center;
+      }
+
+      h3 {
+        margin: 2.2rem 0 1rem;
+        font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+      }
+
+      a {
+        color: #484848;
+        font-weight: 700;
+        text-decoration: underline;
+        text-decoration-color: #9bb800;
+        text-decoration-thickness: 2px;
+        text-underline-offset: 3px;
+      }
+
+      .legacy-note {
+        margin: 1.5rem 0 2rem;
+        padding: 1rem 1.1rem;
+        border: 2px solid #d8ff00;
+        border-radius: 8px;
+        background: #fbfbfb;
+        font-size: 1rem;
+        line-height: 1.55;
+      }
+
+      .legacy-note p {
+        margin: 0;
+      }
+
+      .legacy-update-section {
+        color: #1f2933;
+        font-size: clamp(1.15rem, 2.25vw, 1.55rem);
+        line-height: 1.55;
+      }
+
+      .legacy-update-section p {
+        margin: 1.2rem 0;
+      }
+
+      .legacy-update-section ol {
+        list-style-type: decimal;
+        list-style-position: outside;
+        margin: 0.35rem 0 1.75rem;
+        padding-left: 3.5rem;
+      }
+
+      .legacy-update-section li {
+        display: list-item;
+        margin: 1.35rem 0;
+        padding-left: 0.25rem;
+      }
+
+      .legacy-update-section li::marker {
+        color: #1f2933;
+      }
+
+      .legacy-step-line {
+        display: block;
+        margin-top: 1rem;
+      }
+
+      .legacy-step-followup {
+        display: block;
+        margin-top: 1.2rem;
+      }
+
+      .legacy-image {
+        width: 70%;
+        margin: 2.2rem auto 2.8rem;
+      }
+
+      .legacy-image img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+
+      @media (max-width: 720px) {
+        main {
+          width: min(100% - 1.5rem, 1040px);
+        }
+
+        .legacy-update-section {
+          font-size: 1.08rem;
+        }
+
+        .legacy-update-section ol {
+          padding-left: 1.65rem;
+        }
+
+        .legacy-image {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="legacy-topbar">
+      <a href={`${base}/`}>Leaf Vario</a>
+      <a href={`${base}/user-manual/`}>Current User Manual</a>
+    </header>
+
+    <main>
+      <div class="legacy-note">
+        <p>
+          These instructions are preserved for older Leaf units running firmware
+          <strong>v0.1.7 or earlier</strong>. If your Leaf is already running newer firmware,
+          use the <a href={`${base}/user-manual/#firmware-updates`}>current Firmware Updates section</a>.
+        </p>
+      </div>
+
+      <section class="legacy-update-section">
+        <h1>WiFi Firmware Updates</h1>
+
+        <p>
+          Leaf can update to the latest firmware over WiFi. To configure the Leaf WiFi Settings, you'll need
+          another device (phone or computer).
+        </p>
+
+        <p>Here's the process:</p>
+
+        <ol>
+          <li>
+            Enter the Manual WiFi Setup Mode on Leaf:
+            <span class="legacy-step-line">Main Menu&#x27A1;&#xFE0F;System&#x27A1;&#xFE0F;WiFi&#x27A1;&#xFE0F;Setup</span>
+          </li>
+          <li>
+            Switch to your other device, then find and join the "Leaf" WiFi Network. This should bring up a
+            WiFi Manager page. If it doesn't come up automatically, you may first need to click "Sign in to
+            Leaf WiFi" on your device, or visit <a href="http://192.168.4.1">http://192.168.4.1</a>).
+            <span class="legacy-step-line">&#x27A1;&#xFE0F;Click "Configure Wifi"</span>
+          </li>
+          <li>
+            Select your WiFi Network from the list (or type it in), and enter the password. Remember the
+            SSID and password fields are Case Sensitive.
+            <span class="legacy-step-line">&#x27A1;&#xFE0F;Click "Save"</span>
+            <span class="legacy-step-followup">
+              Leaf will then attempt to connect to your WiFi Network. If successful, Leaf will automatically exit
+              the "Setup" page, and show connection status.
+            </span>
+          </li>
+          <li>
+            Now click "Update FW" on Leaf to automatically check for and download the latest firmware.
+            Leaf will restart when finished checking and/or updating.
+          </li>
+        </ol>
+
+        <div class="legacy-image">
+          <img src={wifiSetup.src} alt="Wifi Setup" />
+        </div>
+
+        <h3>NOTE: For Updates In-The-Field</h3>
+
+        <p>
+          If WiFi is not available and you would like to use your cellular internet connection to update Leaf,
+          follow these steps:
+        </p>
+
+        <ol>
+          <li>Turn on and configure your WiFi Hotspot feature on your phone/device. Be sure to remember the SSID Name and Password.</li>
+          <li>Follow steps #1-3 above to connect to the Leaf Network and enter your Hotspot information into the Leaf WiFi Manager. Note that connecting to the Leaf Network on your device will likely automatically turn off your Hotspot feature. This is ok.</li>
+          <li>Immediately after clicking "save" in Step #3, again turn on your device's Hotspot Feature.</li>
+          <li>Leaf will try to connect to the Hotspot network. If successful, update Leaf firmware as described in step #4 above.</li>
+          <li>Once Leaf has updated and restarted, you can turn off your Hotspot feature.</li>
+        </ol>
+      </section>
+    </main>
+  </body>
+</html>

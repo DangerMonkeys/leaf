@@ -1,0 +1,145 @@
+---
+import "../styles/global.css";
+
+import "@fontsource/roboto";
+import "@fontsource/roboto-condensed";
+
+import ManualContent from "../../../docs/user-guides/vario-user-manual/index.mdx";
+
+let base = import.meta.env.BASE_URL;
+if (base == "/") {
+  base = "";
+}
+
+const outline = [
+  {
+    href: "#quick-start-guide",
+    label: "Quick Start Guide",
+    children: [
+      { href: "#getting-around", label: "Getting Around" },
+      { href: "#user-page", label: "User Page" },
+      { href: "#nav-page", label: "Nav Page" },
+      { href: "#before-your-first-flight", label: "First Flight" },
+    ],
+  },
+  {
+    href: "#menu-options",
+    label: "Menu Options",
+    children: [
+      { href: "#main-menu", label: "Main Menu" },
+      { href: "#settings-submenus", label: "Settings Submenus" },
+    ],
+  },
+  {
+    href: "#sd-card--logging",
+    label: "SD Card & Logging",
+  },
+  {
+    href: "#navigation",
+    label: "Navigation",
+  },
+  { href: "#connect-to-wifi", label: "Connect to WiFi" },
+  { href: "#leaf-web-app", label: "Leaf Web App" },
+  { href: "#firmware-updates", label: "Firmware Updates" },
+  { href: "#troubleshooting", label: "Troubleshooting" },
+  { href: "#contact-us", label: "Contact Us" },
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content="Leaf Vario User Manual" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href={`${base}/favicon.svg`} />
+    <meta name="generator" content={Astro.generator} />
+    <title>Leaf Vario User Manual</title>
+  </head>
+  <body class="manual-page bg-white text-[#484848]">
+    <header class="manual-topbar">
+      <a href={`${base}/`} class="manual-brand">Leaf Vario</a>
+      <button class="manual-outline-toggle" type="button" aria-expanded="false" aria-controls="manual-outline-nav">
+        Contents
+      </button>
+      <a href={`${base}/`} class="manual-home-link">Back to Leaf</a>
+    </header>
+
+    <main class="manual-shell">
+      <aside class="manual-outline" aria-label="User manual outline">
+        <div class="manual-outline-header">
+          <p>User Manual</p>
+        </div>
+        <nav id="manual-outline-nav">
+          {
+            outline.map((item) => (
+              <div class="manual-outline-group">
+                <a href={item.href} data-manual-link={item.href}>
+                  {item.label}
+                </a>
+                {item.children && (
+                  <div class="manual-outline-children">
+                    {item.children.map((child) => (
+                      <a href={child.href} data-manual-link={child.href}>
+                        {child.label}
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))
+          }
+        </nav>
+      </aside>
+
+      <article class="manual-content">
+        <ManualContent />
+      </article>
+    </main>
+
+    <script>
+      const links = Array.from(document.querySelectorAll("[data-manual-link]"));
+      const targets = links
+        .map((link) => document.querySelector(link.getAttribute("href")))
+        .filter(Boolean);
+
+      const setActiveLink = (id) => {
+        links.forEach((link) => {
+          link.toggleAttribute("aria-current", link.getAttribute("href") === `#${id}`);
+        });
+      };
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          const visible = entries
+            .filter((entry) => entry.isIntersecting)
+            .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+
+          if (visible[0]?.target?.id) {
+            setActiveLink(visible[0].target.id);
+          }
+        },
+        { rootMargin: "-20% 0px -65% 0px", threshold: 0.01 },
+      );
+
+      targets.forEach((target) => observer.observe(target));
+
+      const outline = document.querySelector(".manual-outline");
+      const outlineToggle = document.querySelector(".manual-outline-toggle");
+      const outlineNav = document.querySelector("#manual-outline-nav");
+
+      outlineToggle?.addEventListener("click", () => {
+        const expanded = outlineToggle.getAttribute("aria-expanded") === "true";
+        outlineToggle.setAttribute("aria-expanded", String(!expanded));
+        outline?.classList.toggle("manual-outline-open", !expanded);
+      });
+
+      outlineNav?.addEventListener("click", (event) => {
+        if (event.target instanceof HTMLAnchorElement) {
+          outlineToggle?.setAttribute("aria-expanded", "false");
+          outline?.classList.remove("manual-outline-open");
+        }
+      });
+    </script>
+  </body>
+</html>

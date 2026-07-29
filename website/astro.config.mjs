@@ -63,6 +63,7 @@ function getMarkdownItems(dir) {
 
 // https://astro.build/config
 export default defineConfig({
+    site: 'https://leafvario.com',
     prefetch: false,
     integrations: [starlight({
         title: 'Leaf',
@@ -107,11 +108,17 @@ export default defineConfig({
                 "gmail",
                 "youtube",
                 "instagram",
+                "discord",
             ],
             "material-symbols": [
                 "bluetooth",
                 "wifi-rounded",
                 "satellite-alt",
+                "sd-card",
+                "smartphone",
+                "home-outline",
+                "menu-book-outline",
+                "rate-review-outline",
             ]
         },
     })],

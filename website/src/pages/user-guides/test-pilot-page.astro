@@ -1,0 +1,150 @@
+---
+import "../../styles/global.css";
+import "@fontsource/roboto";
+import "@fontsource/roboto-condensed";
+import { Icon } from "astro-icon/components";
+import leafLogotype from "../../../../docs/user-guides/vario-user-manual/leaf-logotype.png";
+
+let base = import.meta.env.BASE_URL;
+if (base == "/") {
+  base = "";
+}
+
+const links = [
+  {
+    href: `${base}/user-manual/`,
+    icon: "material-symbols:menu-book-outline",
+    label: "Read the current Leaf User Manual",
+  },
+  {
+    href: "https://docs.google.com/forms/d/e/1FAIpQLScCz3XbxYCgQPGmazFjcjsg6wPizb-6Uk98m3w0qamMUfB78g/viewform?usp=dialog",
+    icon: "material-symbols:rate-review-outline",
+    label: "Share feedback in the test pilot questionnaire",
+  },
+  {
+    href: "mailto:leafvario@gmail.com",
+    icon: "simple-icons:gmail",
+    label: "Email the Leaf team",
+  },
+  {
+    href: "https://discord.gg/7Secr9MVF",
+    icon: "simple-icons:discord",
+    label: "Chat with us on Discord",
+  },
+  {
+    href: `${base}/`,
+    icon: "material-symbols:home-outline",
+    label: "Return to the Leaf Vario website",
+  },
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content="Leaf Vario test pilot resources" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href={`${base}/favicon.svg`} />
+    <title>Leaf Vario Test Pilot Resources</title>
+    <style>
+      body {
+        margin: 0;
+        background: #fff;
+        color: #484848;
+        font-family: Roboto, system-ui, sans-serif;
+      }
+
+      main {
+        width: min(920px, calc(100% - 2rem));
+        margin: 0 auto;
+        padding: clamp(2.25rem, 7vw, 4.5rem) 0 4rem;
+      }
+
+      .logo {
+        display: block;
+        width: min(260px, 65vw);
+        margin: 0 auto 2.5rem;
+      }
+
+      h1,
+      p {
+        text-align: center;
+      }
+
+      h1 {
+        margin: 0;
+        color: #484848;
+        font-family: "Roboto Condensed", Roboto, system-ui, sans-serif;
+        font-size: clamp(2.35rem, 8vw, 5rem);
+        font-weight: 700;
+        line-height: 0.98;
+      }
+
+      p {
+        max-width: 640px;
+        margin: 1.2rem auto 2rem;
+        font-size: clamp(1rem, 2.4vw, 1.2rem);
+        line-height: 1.55;
+      }
+
+      .resource-list {
+        display: grid;
+        gap: 0.85rem;
+        margin: 0 auto;
+        max-width: 720px;
+      }
+
+      .resource-list a {
+        display: grid;
+        grid-template-columns: 54px minmax(0, 1fr);
+        gap: 1rem;
+        align-items: center;
+        padding: 1rem;
+        border: 1px solid #dedede;
+        border-radius: 8px;
+        color: #484848;
+        text-decoration: none;
+        transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
+      }
+
+      .resource-list a:hover,
+      .resource-list a:focus-visible {
+        background: #fbfbfb;
+        border-color: #d8ff00;
+        transform: translateY(-1px);
+      }
+
+      .resource-list span {
+        display: grid;
+        width: 48px;
+        height: 48px;
+        place-items: center;
+        border-radius: 999px;
+        background: #d8ff00;
+        color: #484848;
+      }
+
+      .resource-list strong {
+        font-size: 1.05rem;
+        line-height: 1.3;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img class="logo" src={leafLogotype.src} alt="Leaf Vario" />
+      <h1>Test Pilot Resources</h1>
+      <p>Thanks for flying Leaf and helping us improve it. Here are the current manual, feedback, and contact links for test pilots.</p>
+
+      <div class="resource-list">
+        {links.map((link) => (
+          <a href={link.href}>
+            <span><Icon name={link.icon} size={28} /></span>
+            <strong>{link.label}</strong>
+          </a>
+        ))}
+      </div>
+    </main>
+  </body>
+</html>

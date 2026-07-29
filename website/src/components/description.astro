@@ -1,23 +1,12 @@
----
-import { Icon } from "astro-icon/components";
-
-const highlightIcons = {
-    "Open Source Hardware": "simple-icons:opensourcehardware",
-    "Bluetooth": "simple-icons:bluetooth",
-    "WiFi": "material-symbols:wifi-rounded",
-    "GPS Logging": "material-symbols:satellite-alt",
-};
----
-
-<main class="max-w-5xl m-auto pt-16 pb-16 overflow-clip">
+<main class="max-w-5xl m-auto pt-16 pb-8 overflow-clip">
     <div class="sm:flex sm:flex-wrap">
         <div class="sm:basis-[50%] p-8">
             <div class="headline-4">Open Source Vario.</div>
             <p>
-                Leaf is a powerful flight computer in a tiny package – small enough to strap to a riser, but crammed full of capability.
+                Leaf is a powerful flight computer in a tiny package - small enough to strap to a riser, but crammed full of capability.
             </p>
             <p><br>
-                All valuable flight information is shown on screen, and behind the scenes Leaf will log your data and flight tracks to the SD card in KML and IGC format.
+                All valuable flight information is shown on screen, and behind the scenes Leaf will log your data and flight tracks to the included 8GB SD card in IGC format.
             </p>
             <p><br>
                 While Leaf is a complete flight computer package, you can also pair to other devices with Bluetooth and WiFi to expand even further.
@@ -30,34 +19,18 @@ const highlightIcons = {
             </p>
         </div>
         <div class="sm:basis-[50%] sm:border-l border-l-gray-300 p-8">
-            <div class="headline-5">Product Details</div>
+            <div class="headline-5">Features</div>
             <ul class="pl-8">
-                <li>High sensitivity barometric pressure sensor for precise climb rate and altitude.  Also includes ambient temperature and humidity</li>
-                <li>High contrast LCD display for easy outdoor viewing, even in direct sunlight.  192x96 pixel resolution.  Screen will work even with polarized sunglasses!</li>
-                <li>GPS with WAAS/SBAS and multi-constellation support for precise 3D location around the world</li>
-                <li>Track every movement with the 9-axis IMU (accelerometer, gyro, and compass)</li>
-                <li>SD Card for saving data and logs.  8GB card included!</li>
-                <li>Pair with other devices or your mobile phone via Bluetooth</li>
-                <li>Connect to WiFi networks for easy firmware updates</li>
-                <li>20 hour battery life and powerful 32-bit 240MHz processor</li>
-                <li>Velcro strap, safety lanyard, and snap-in base plate provide plenty of mounting options</li>
-                <li>100% Open Source hardware and software</li>
+                <li>All flight information on a sunlight-readable screen (even with polarized sunglasses) including vario, altitude, GPS track and speed, glide ratio, wind estimates, and more!</li>
+                <li>Instant vario response with combined barometer, accelerometer and gyro sensing</li>
+                <li>Automatic IGC flight logging to the SD card</li>
+                <li>Web App for managing logs, profiles, waypoints, and routes from a phone or laptop</li>
+                <li>Mount on a riser, harness, or flight deck with the included strap, lanyard, or base plate</li>
+                <li>Bluetooth and WiFi for device pairing, web tools, and easy firmware updates</li>
+                <li>20 hour battery life.  USB-C charge port</li>
+                <li>Replaceable screen, battery, and case</li>
+                <li>100% open source hardware and software, improved with community ideas and feedback</li>
             </ul>
-        </div>
-    </div>
-    <div>
-        <div class="headline-5 text-center pt-8 pb-2">Highlights:</div>
-        <div class="flex space-x-4 md:space-x-16 items-center justify-center">
-            {
-                Object.entries(highlightIcons).map(([desc, icon]) => (
-                    <div class="text-center text-sm text-gray-500 max-w-24">
-                        <div class="flex justify-center">
-                            <Icon name={icon} size={56} />
-                        </div>
-                        <div class="pt-2">{desc}</div>
-                    </div>
-                ))
-            }
         </div>
     </div>
 </main>
