@@ -37,7 +37,7 @@ namespace wifi_menu_ui {
 class PageMenuSystemWifiSetup : public SimpleSettingsMenuPage {
  public:
   PageMenuSystemWifiSetup() {}
-  const char* get_title() const override { return "Wifi Setup"; }
+  const char* get_title() const override { return "WiFi Setup"; }
   uint8_t get_title_glyph() const override { return menu_ui::GLYPH_WIFI; }
 
   void loop() override;
