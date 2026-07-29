@@ -23,5 +23,7 @@
 #define OTA_VERSIONS_PATH OTA_ORG "/leaf/releases/latest/download/latest_versions.json"
 #define OTA_VERSIONS_URL "https://github.com/" OTA_VERSIONS_PATH
 
+#define OTA_RELEASES_API_URL "https://api.github.com/repos/" OTA_ORG "/leaf/releases?per_page=1"
+
 // If true, always perform OTA update regardless of whether already on latest version
 #define OTA_ALWAYS_UPDATE false

@@ -2247,8 +2247,7 @@ load();
     heap_monitor::checkpoint("web-fw-check-start");
     try {
       String latestVersion = getLatestTagVersion();
-      const bool updateAvailable =
-          latestVersion != LeafVersionInfo::tagVersion() || LeafVersionInfo::otaAlwaysUpdate();
+      const bool updateAvailable = otaUpdateAvailable(latestVersion);
       heap_monitor::checkpoint(updateAvailable ? "web-fw-check-available" : "web-fw-check-current");
 
       String json = "{\"ok\":true,\"update_available\":";

@@ -567,7 +567,7 @@ void PageMenuSystemWifiUpdate::loop() {
         *wifi_state = WifiState::ERROR;
         break;
       }
-      if (latest_version_ == LeafVersionInfo::tagVersion() && !LeafVersionInfo::otaAlwaysUpdate()) {
+      if (!otaUpdateAvailable(latest_version_)) {
         log_lines.push_back("*YOU'RE UP TO DATE!");
         log_lines.push_back("*REBOOT REQUIRED");
         *wifi_state = WifiState::OTA_UP_TO_DATE;
