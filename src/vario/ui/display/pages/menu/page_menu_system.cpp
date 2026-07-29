@@ -67,7 +67,7 @@ void SystemMenuPage::drawSystemMenu() {
         label = "TimeZone";
       }
       if (i == cursor_system_updateFW && selected && !wifi_menu_ui::isConnectedToNamedNetwork()) {
-        label = "Setup Wifi?";
+        label = "Setup WiFi?";
       }
       menu_ui::drawLabel(setting_name_x, menu_items_y[i], label);
       u8g2.setCursor(setting_choice_x, menu_items_y[i]);

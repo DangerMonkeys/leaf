@@ -106,7 +106,7 @@ void WifiMenuPage::draw() {
     uint8_t menu_items_y[] = {190, 72, 87, 133};
 
     u8g2.setDrawColor(1);
-    menu_ui::drawLabel(setting_name_x, 55, "Wifi:", menu_ui::GLYPH_WIFI);
+    menu_ui::drawLabel(setting_name_x, 55, "WiFi:", menu_ui::GLYPH_WIFI);
     u8g2.drawHLine(2, 57, 92);
     menu_ui::drawLabel(setting_name_x, 115, "Bluetooth:", menu_ui::GLYPH_BLUETOOTH);
     u8g2.drawHLine(2, 117, 92);
@@ -380,7 +380,7 @@ void PageMenuSystemWifiWebApp::draw_extra() {
 
   if (using_leaf_wifi) {
     u8g2.setCursor(1, 27);
-    u8g2.print("Join Wifi: ");
+    u8g2.print("Join WiFi: ");
     u8g2.print(webserver_leaf_ap_ssid());
     u8g2.setCursor(1, 37);
     u8g2.print("Password: ");
@@ -530,7 +530,7 @@ void PageMenuSystemWifiUpdate::shown() {
   log_lines.clear();
   log_lines.push_back("*CURRENT VERSION:");
   log_lines.push_back((String) "  " + LeafVersionInfo::firmwareVersion());
-  log_lines.push_back("*CONNECTING TO WIFI...");
+  log_lines.push_back("*CONNECTING TO WiFi...");
   heap_monitor::checkpoint("wifi-update-page-ready");
 }
 
