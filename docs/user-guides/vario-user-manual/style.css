@@ -122,10 +122,29 @@
 }
 
 .manual-note-callout {
-    margin: 1rem 0 2rem;
-    padding: 0.9rem 1rem;
-    background: #f7f7f7;
-    border-left: 5px solid #d8ff00;
+    position: relative;
+    margin: 2.1rem 0 2rem;
+    padding: 1.15rem 1rem 0.95rem;
+    background: #fbfbfb;
+    border: 2px solid #d8ff00;
+    border-radius: 8px;
+}
+
+.manual-note-callout::before {
+    content: "Note";
+    position: absolute;
+    top: -0.85rem;
+    left: 0.9rem;
+    padding: 0.18rem 0.65rem 0.22rem;
+    background: #d8ff00;
+    border: 2px solid #d8ff00;
+    border-radius: 6px 6px 0 0;
+    color: #484848;
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0;
+    text-transform: uppercase;
 }
 
 .manual-note-callout p {

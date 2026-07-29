@@ -1,0 +1,25 @@
+---
+let base = import.meta.env.BASE_URL;
+if (base == "/") {
+  base = "";
+}
+
+const target = `${base}/user-manual/`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta http-equiv="refresh" content={`0; url=${target}`} />
+    <link rel="canonical" href={target} />
+    <title>Leaf Vario User Manual</title>
+  </head>
+  <body>
+    <p>The Leaf Vario User Manual has moved to <a href={target}>the dedicated manual page</a>.</p>
+    <script is:inline define:vars={{ target }}>
+      window.location.replace(target);
+    </script>
+  </body>
+</html>
