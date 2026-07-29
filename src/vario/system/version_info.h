@@ -9,6 +9,7 @@ struct LeafVersionInfo {
   static const char* hardwareVariant();
   static const char* tagVersion();
   static const char* otaVersionsUrl();
+  static const char* otaReleasesApiUrl();
   static const char* otaBinUrl();
   static bool otaAlwaysUpdate();
 
