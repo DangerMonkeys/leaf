@@ -5,6 +5,8 @@
 
 .button-table th:first-child,
 .button-table td:first-child {
+    width: 125px;
+    min-width: 125px;
     max-width: 125px;
     max-height: 100px;
     margin: auto;
@@ -34,6 +36,16 @@
     vertical-align: middle;
 }
 
+.button-table td:last-child ul {
+    margin: 0.35rem 0 0;
+    padding-left: 1.25rem;
+}
+
+.button-table td:last-child li {
+    margin: 0.1rem 0;
+    line-height: 1.35;
+}
+
 .button-table thead {
     display: none;
 }
@@ -47,14 +59,33 @@
 }
 
 .manual-shortcut-callout {
+    position: relative;
     display: grid;
     grid-template-columns: minmax(72px, 110px) minmax(0, 1fr);
     gap: 1rem;
     align-items: center;
-    margin: 1rem 0 2rem;
-    padding: 0.85rem 1rem;
-    background: #f7f7f7;
-    border-left: 5px solid #d8ff00;
+    margin: 1.65rem 0 2rem;
+    padding: 1.15rem 1rem 0.95rem;
+    background: #fbfbfb;
+    border: 2px solid #d8ff00;
+    border-radius: 8px;
+}
+
+.manual-shortcut-callout::before {
+    content: "Pro Tip";
+    position: absolute;
+    top: -0.85rem;
+    left: 0.9rem;
+    padding: 0.18rem 0.65rem 0.22rem;
+    background: #d8ff00;
+    border: 2px solid #d8ff00;
+    border-radius: 6px 6px 0 0;
+    color: #484848;
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0;
+    text-transform: uppercase;
 }
 
 .manual-shortcut-callout img {
@@ -69,12 +100,12 @@
 
 .manual-shortcut-group {
     display: grid;
-    gap: 0.85rem;
+    gap: 1.25rem;
     margin: 1rem 0 2rem;
 }
 
 .manual-shortcut-group .manual-shortcut-callout {
-    margin: 0;
+    margin: 0.85rem 0 0;
 }
 
 .manual-shortcut-group .manual-shortcut-callout img {
@@ -99,6 +130,64 @@
 
 .manual-note-callout p {
     margin: 0;
+}
+
+.manual-examples {
+    margin: 1rem 0 1.5rem;
+}
+
+.manual-examples h3 {
+    margin-bottom: 0.75rem;
+}
+
+.manual-examples p {
+    margin: 0.85rem 0 0.35rem;
+}
+
+.manual-examples ul {
+    margin-top: 0.25rem;
+}
+
+.manual-first-flight {
+    position: relative;
+    margin: 4rem 0 2.6rem;
+    padding: 2.45rem 1.35rem 1.1rem;
+    background: #fff;
+    border: 2px solid #d8ff00;
+    border-radius: 10px;
+    color: #303030;
+}
+
+.manual-content .manual-first-flight h2 {
+    display: inline-block;
+    position: absolute;
+    top: 0;
+    left: 1rem;
+    margin: 0;
+    padding: 0.35rem 0.85rem 0.42rem;
+    background: #d8ff00;
+    border: 2px solid #d8ff00;
+    border-radius: 8px 8px 0 0;
+    color: #303030;
+    font-size: clamp(1.45rem, 2.8vw, 2rem);
+    line-height: 1.1;
+    transform: translateY(-75%);
+}
+
+.manual-first-flight ul {
+    margin-top: 0;
+}
+
+.manual-first-flight a {
+    color: #303030;
+    font-weight: 700;
+    text-decoration-color: rgb(48 48 48 / 55%);
+}
+
+.manual-first-flight .manual-centered-note {
+    margin: 0.2rem 0;
+    color: #303030;
+    font-weight: 700;
 }
 
 .manual-menu-card img {

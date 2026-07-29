@@ -77,7 +77,7 @@ Meet the Directional Pad:
   </tbody>
 </table>
 
-All the way to the right you’ll find the MENU page:
+All the way to the right you'll find the MENU page:
 <div style={{ width: "100%", margin: "auto" }}>
   <img src={leafPages.src} alt="Leaf Pages" />
 </div>
@@ -96,23 +96,32 @@ All the way to the right you’ll find the MENU page:
     </tr>
     <tr>
       <td><img src={cursorBox.src} alt="Cursor Box" /></td>
-      <td>A cursor selection box will highlight adjustable fields</td>
+      <td>A cursor selection box will highlight adjustable fields. If no button is pushed for about 5 seconds, the cursor will disappear. This prevents accidental adjustments to your Leaf.</td>
     </tr>
     <tr>
       <td><img src={buttonCenter.src} alt="Center Button" /></td>
       <td>When selected, press CENTER to select or adjust that option</td>
     </tr>
-    <tr>
-      <td>For Example,<br />Press CENTER to:</td>
-      <td>
-        <ul>
-          <li>Start the timer (<strong>HOLD</strong> CENTER to stop)</li>
-          <li>Cycle through display options in the Altitude or User fields</li>
-        </ul>
-      </td>
-    </tr>
   </tbody>
 </table>
+
+<div className="manual-examples">
+  <h3>Examples</h3>
+  <p><strong>Manually starting and stopping the flight timer:</strong></p>
+  <ul>
+    <li>Press <strong>UP</strong> to select the timer. Press <strong>CENTER</strong> to start the timer.</li>
+    <li>If the timer is running, press <strong>UP</strong> to select the timer, then hold <strong>CENTER</strong> for a few seconds to stop the timer.</li>
+  </ul>
+  <p><strong>Switching between GPS and Pressure Altitude:</strong></p>
+  <ul>
+    <li>Press <strong>UP</strong> or <strong>DOWN</strong> as needed to select the altitude field. Press <strong>CENTER</strong> to switch between GPS and Pressure Altitude.</li>
+  </ul>
+</div>
+
+<div className="manual-shortcut-callout">
+  <img src={buttonUpDown.src} alt="Up and down shortcut" />
+  <p>The selection cursor wraps around from top to bottom. When nothing is selected on a page or menu, press <strong>DOWN</strong> to reach items near the top faster, or press <strong>UP</strong> to reach items near the bottom faster.</p>
+</div>
 
 ![User Fields](leaf-user-fields.png)
 
@@ -126,14 +135,11 @@ All the way to the right you’ll find the MENU page:
   <tbody>
     <tr>
       <td><img src={buttonLeftRight.src} alt="Left Right" /></td>
-      <td>In a few cases, you can use LEFT and RIGHT on an option as well</td>
-    </tr>
-    <tr>
-      <td>For Examples,<br />Press L/R to:</td>
       <td>
+        In a few cases, you can use <strong>LEFT</strong> and <strong>RIGHT</strong> on an option as well. For example:
         <ul>
-          <li>Adjust the barometric altimeter</li>
-          <li>Scroll through waypoints and routes on the NAV page</li>
+          <li><strong>Altitude Field:</strong> Adjust the barometric altimeter pressure setting</li>
+          <li><strong>Nav Page destination field:</strong> Scroll through waypoints and routes</li>
         </ul>
       </td>
     </tr>
@@ -142,7 +148,7 @@ All the way to the right you’ll find the MENU page:
 
 <div className="manual-shortcut-callout">
   <img src={buttonCenter.src} alt="Center button shortcut" />
-  <p><strong>Shortcut:</strong> When MSL Altitude is selected, hold <strong>CENTER</strong> to sync the baro altitude to the GPS altitude. This is useful if you don’t know the site altitude or current pressure setting.</p>
+  <p><strong>Shortcut:</strong> When MSL Altitude is selected, hold <strong>CENTER</strong> to sync the baro altitude to the GPS altitude. This is useful if you don't know the site altitude or current pressure setting. (Requires a GPS fix.)</p>
 </div>
 
 ## User Page
@@ -158,7 +164,8 @@ The Nav Page is used when tracking to GPS waypoints or routes
 </div>
 *Blue are fields that can be adjusted; Green is fixed information*
 
-## Before Your First Flight
+<section className="manual-first-flight">
+  <h2 id="before-your-first-flight">Before Your First Flight</h2>
 
 - Fully charge Leaf using a USB-C cable.
 - Read the liability waiver included with Leaf. Leaf will ask you to accept it the first time you turn it on. You can disable this reminder later in <strong>Menu &rarr; Settings &rarr; System</strong>.
@@ -176,9 +183,10 @@ The Nav Page is used when tracking to GPS waypoints or routes
 
 <p className="manual-centered-note">Thank you for supporting open-source flight instruments.</p>
 <p className="manual-centered-note">Fly safe and enjoy the adventure!</p>
+</section>
 
 # Menu Options
-<p>The Leaf menu is the last main page.  Scroll  <strong>&rarr;</strong> right through the pages to open it.  When you enter the menu, Leaf will try to auto-connect to any known saved WiFi networks.  You will see the connection status at the top.</p>
+<p>The Leaf menu is the last main page. Scroll <strong>&rarr;</strong> right through the pages to open it. When you enter the menu, Leaf will try to auto-connect to any known saved WiFi networks. You will see the connection status at the top.</p>
 
 <div className="manual-shortcut-callout">
   <img src={buttonLeftOnly.src} alt="Left button shortcut" />
@@ -193,7 +201,7 @@ The Nav Page is used when tracking to GPS waypoints or routes
     <ul>
       <li><strong>WiFi Status</strong>: Leaf will show network name and connection status.</li>
       <li><strong>Flight</strong>: Quick-access settings you may wish to change just before or during a flight.</li>
-      <li><strong>Settings</strong>: Adjust all settings and preferences and enable/disable features</li>
+      <li><strong>Settings</strong>: Adjust settings and preferences, and enable or disable features.</li>
       <li><strong>Nav Data</strong>: Select waypoint and route files for navigation.</li>
       <li><strong>GPS</strong>: View GPS fix quality, satellite positions, and current coordinates.</li>
       <li><strong>Web App</strong>: Open the Leaf Web App on a phone or computer.</li>
@@ -235,7 +243,7 @@ Below is an overview of available Leaf settings. For full descriptions of each o
       <li><strong>Units</strong>: Choose altitude, speed, distance, temperature, and time units.</li>
       <li><strong>Logging</strong>: Configure IGC logging and automatic start/stop behavior.</li>
       <li><strong>Connect</strong>: Configure WiFi and Bluetooth features.</li>
-      <li><strong>System</strong>: Set timezone, volume, auto-off, firmware updates, and reset options.</li>
+      <li><strong>System</strong>: Set time zone, volume, auto-off, firmware updates, and reset options.</li>
     </ul>
   </div>
 </div>
@@ -251,7 +259,7 @@ Below is an overview of available Leaf settings. For full descriptions of each o
       <li><strong>Pts / Rtes</strong>: Shows how many points and routes were found in the loaded file.</li>
       <li><strong>Select Dest</strong>: Opens the list of available destinations.</li>
       <li><strong>Load File</strong>: Loads a waypoint or route file from the SD card.</li>
-      <li><strong>Clear All</strong>: Clears the loaded navigation data.</li>
+      <li><strong>Clear All</strong>: Unloads the current navigation data without deleting files from the SD card.</li>
     </ul>
   </div>
 </div>
@@ -262,7 +270,7 @@ Below is an overview of available Leaf settings. For full descriptions of each o
   <img src={gpsMenu.src} alt="GPS Menu" />
   <div>
     <ul>
-      <li><strong>Status icon</strong>: Shows GPS search/fix status and satellite count.</li>
+      <li><strong>Status icon</strong>: Shows a solid dot when Leaf has a GPS fix. Otherwise, it blinks and shows the current satellite count while searching for a fix.</li>
       <li><strong>Sats</strong>: Shows how many satellites are used in the current fix.</li>
       <li><strong>HDOP</strong>: Shows fix quality. Lower is better; below 2 is generally good.</li>
       <li><strong>Sky view</strong>: Shows satellite positions in the sky, with north at the top. The center of the circle is directly overhead.</li>
@@ -385,7 +393,7 @@ Below is an overview of available Leaf settings. For full descriptions of each o
     <ul>
       <li><strong>Save IGC</strong>: Saves an IGC track file while the flight timer is running and GPS has a fix.</li>
       <li><strong>AutoStart</strong>: Starts logging automatically after Leaf detects launch-like motion and speed for at least 5-8 seconds.</li>
-      <li><strong>AutoStop</strong>: Stops logging automatically after landing-like stillness is detected for at least 20 seconds.</li>
+      <li><strong>AutoStop</strong>: Stops logging automatically after landing-like stillness is detected for at least 20 seconds. An alert will pop up when the log is 10 seconds from stopping, allowing you to push a button or shake Leaf to keep the log running.</li>
     </ul>
   </div>
 </div>
@@ -396,9 +404,9 @@ Below is an overview of available Leaf settings. For full descriptions of each o
   <img src={connectMenu.src} alt="Connect Settings" />
   <div>
     <ul>
-      <li><strong>Wifi Setup</strong>: Creates the Leaf setup network so you can save WiFi credentials.</li>
+      <li><strong>WiFi Setup</strong>: Creates the Leaf setup network so you can save WiFi credentials.</li>
       <li className="manual-subnote">See <a href="#connect-to-wifi">Connect to WiFi</a> for more details.</li>
-      <li><strong>Wifi Reset</strong>: Clears saved WiFi networks.</li>
+      <li><strong>WiFi Reset</strong>: Clears saved WiFi networks.</li>
       <li><strong>BLE</strong>: Enables Bluetooth Low Energy for sharing flight data with compatible apps.</li>
       <li><strong>Name</strong>: Shows the Bluetooth device name advertised by Leaf.</li>
     </ul>
@@ -411,7 +419,7 @@ Below is an overview of available Leaf settings. For full descriptions of each o
   <img src={systemMenu.src} alt="System Settings" />
   <div>
     <ul>
-      <li><strong>Time Zone</strong>: Sets the local timezone used for the display clock and log file create/start/end times. Press CENTER to switch to adjusting the time zone in 15 minute increments. Press CENTER again to switch back to hour increments.</li>
+      <li><strong>Time Zone</strong>: Sets the local time zone used for the display clock and log file create/start/end times. Press CENTER to switch to adjusting the time zone in 15 minute increments. Press CENTER again to switch back to hour increments.</li>
       <li><strong>Volume</strong>: Sets system alert, button, and notification volume.</li>
       <li><strong>Auto-Off</strong>: Turns Leaf off after inactivity when no log is running.</li>
       <li><strong>ShowSafety</strong>: Shows or hides the startup safety disclaimer.</li>
@@ -428,7 +436,7 @@ Below is an overview of available Leaf settings. For full descriptions of each o
 
 ### Accessing the SD card
 
-Leaf functions as a mass-storage device. Simply plug it in to any computer or smartphone and you should see a "LEAF VARIO" drive appear with the SD card contents.  
+Leaf functions as a mass-storage device. Simply plug it in to any computer or smartphone and you should see a "LEAF VARIO" drive appear with the SD card contents.
 *Note: a second drive may also appear with the firmware files. This can be ignored as it is only used for the rare occasion when you may wish to manually update the firmware.*
 
 ### Saving Track Logs
@@ -447,15 +455,15 @@ Leaf will create folders and files on the SD card as you use different features:
   <li><strong>waypoints/</strong> Stores waypoint files for navigation. You can place <strong>GPX</strong>, <strong>CUP</strong>, <strong>WPT</strong>, and <strong>WYP</strong> files here. Leaf also stores saved user waypoints in <strong>waypoints/user_waypoints.json</strong>.</li>
   <li><strong>routes/</strong> Stores route files created or imported on Leaf or in the Leaf Web App. Leaf may also use <strong>routes/active.json</strong> to remember the currently active route.</li>
   <li><strong>profiles/</strong> Stores pilot and glider profile information, such as <strong>profiles/profiles.json</strong>, after profiles are edited in the Web App.</li>
+  <li><strong>firmware/</strong> Stores firmware files and update status messages for <a href="#flash-firmware-via-the-sd-card">manual firmware updates via the SD card</a>.</li>
   <li><strong>diagnostics/</strong> May appear when diagnostic features are enabled or troubleshooting information is saved.</li>
-  <li><strong>buslogs/</strong> May appear when developer logging is enabled.</li>
 </ul>
 
 # Navigation
 
 ### Waypoint and Route Files
 
-Leaf can load waypoint and route files from the SD card. Save navigation files in the <strong>waypoints</strong> folder on the "LEAF VARIO" drive.  Leaf accepts <strong>GPX</strong>, <strong>CUP</strong>, <strong>WPT</strong>, and <strong>WYP</strong> files. GPX files may contain waypoints, routes, or both.
+Leaf can load waypoint and route files from the SD card. Save navigation files in the <strong>waypoints</strong> folder on the "LEAF VARIO" drive. Leaf accepts <strong>GPX</strong>, <strong>CUP</strong>, <strong>WPT</strong>, and <strong>WYP</strong> files. GPX files may contain waypoints, routes, or both.
 
 ### Loading and Activating Files
 
@@ -482,7 +490,7 @@ When you select a route from a GPX file, or create or import a route from the Le
   </div>
   <div className="manual-shortcut-callout manual-shortcut-callout-wide">
     <img src={navPage.src} alt="Nav Page destination field shortcut" />
-    <p><strong>Shortcut:</strong> On the main Nav Page, scroll up to the destination field, then press <strong>LEFT</strong> or <strong>RIGHT</strong> to move through available navigation points. Press <strong>CENTER</strong> to select one as the new destination. This is especially useful while navigating a route if you want to skip ahead or go back to a previous point.</p>
+    <p><strong>Shortcut:</strong> On the Nav Page, scroll up to the destination field, then press <strong>LEFT</strong> or <strong>RIGHT</strong> to move through available navigation points. Press <strong>CENTER</strong> to select one as the new destination. This is especially useful while navigating a route if you want to skip ahead or go back to a previous point.</p>
   </div>
 </div>
 
@@ -496,7 +504,7 @@ Connect Leaf to a local WiFi network for firmware updates, log uploads, and easi
   <img src={wifiSetupLeafScreenshot.src} alt="Leaf WiFi setup instructions" />
   <div>
     <ul>
-      <li>On Leaf, open <strong>Main Menu &rarr; Settings &rarr; Connect &rarr; Wifi Setup</strong>.</li>
+      <li>On Leaf, open <strong>Main Menu &rarr; Settings &rarr; Connect &rarr; WiFi Setup</strong>.</li>
       <li>Leaf will create its own temporary WiFi network named Leaf followed by four characters, similar to Leaf-AB12.</li>
       <li>Leave Leaf on the setup screen while you use a phone, tablet, or computer to finish the setup.</li>
     </ul>
@@ -522,7 +530,7 @@ After a successful connection, Leaf will save that network and try to reconnect 
 
 <br />
 
-When Leaf is connected to a network with internet access, you will be able to check for firmware updates, access the Leaf Web App from any device on that network, and, coming soon, automatically upload your IGC log files to a web-based logbook.
+When Leaf is connected to a network with internet access, you will be able to check for firmware updates, access the Leaf Web App from any device on that network, and support future online logbook upload features.
 
 ### Connecting to a Phone Hotspot
 
@@ -539,15 +547,16 @@ To connect to your phone's hotspot network for internet access, follow this proc
 1.  Turn on and configure the WiFi hotspot feature on your phone/device. Be sure to remember the hotspot network name and password.
 2.  Follow the [Connect to WiFi](#connect-to-wifi) steps to connect to the Leaf network and open the WiFi setup page on your phone/device.
 
-    **Note:** Connecting to the Leaf network on your device may automatically turn off your hotspot feature. If this happens, it is ok.
+    **Note:** Connecting to the Leaf network on your device may automatically turn off your hotspot feature. If this happens, it is okay.
 
 3.  Enter your hotspot network and password information into the WiFi setup page. If your hotspot did turn off, you may have to type the name manually instead of selecting it from the list.
 4.  Immediately after clicking "Save and Connect", turn your device's hotspot feature back on if needed.
 5.  Leaf will try to connect to the hotspot network and save it for future use.
-6.  To reconnect in the future, simply turn on your hotspot feature before opening the main menu on Leaf. When the main menu page opens, Leaf will automatically try connecting to every saved network, including your hotspot.
+6.  To reconnect in the future, simply turn on your hotspot feature before opening the Main Menu on Leaf. When the Main Menu page opens, Leaf will automatically try connecting to every saved network, including your hotspot.
+7.  If you have trouble connecting Leaf to your hotspot, try using an additional device as described in the iPhone note below:
 
 <div className="manual-note-callout">
-  <p><strong>iPhone hotspot note:</strong> Connecting Leaf to an iPhone hotspot may require another device, such as a tablet, laptop, or a friend's phone. Turn on your iPhone hotspot, then use the other device to follow the normal Leaf WiFi setup process and select the iPhone hotspot as the network Leaf should join.</p>
+  <p><strong>iPhone hotspot note:</strong> Connecting Leaf to an iPhone hotspot may require another device, such as a tablet, laptop, or a friend's phone. Turn on your iPhone hotspot and set it aside, then use the other device to follow the <a href="#connect-to-wifi"><strong>Connect to WiFi</strong></a> steps and select the iPhone hotspot as the network Leaf should join.</p>
 </div>
 
 ### WiFi Troubleshooting
@@ -556,11 +565,13 @@ Having issues connecting Leaf to WiFi networks? You can try the following:
 
 - Try the WiFi setup process again, and make sure you are using the correct network name and password.
 - Try rebooting Leaf by turning it off and on again. Leaf needs to be unplugged from a charger during this process for a proper reset.
-- Fully reset WiFi settings by selecting <strong>Settings &rarr; Connect &rarr; Wifi Reset</strong>. Then try connecting again. <strong>Warning:</strong> this will erase all previously saved networks.
+- Fully reset WiFi settings by selecting <strong>Settings &rarr; Connect &rarr; WiFi Reset</strong>. Then try connecting again. <strong>Warning:</strong> this will erase all previously saved networks.
+- If Leaf does not reconnect to a previously used WiFi network, it may just be a temporarily failed connection. Exit and reopen the Main Menu to make Leaf try again.
+- Leaf saves only the latest three WiFi networks, so older networks may need to be added again in WiFi Setup.
 
 # Leaf Web App
 
-The Leaf Web App gives you a larger screen for tasks that are easier on a phone, tablet, or laptop: profiles, flight summaries, saved waypoints, route activation, and route building.  The Web App runs directly on Leaf. For local features like profiles, route editing, and logbook viewing, internet access is not required.
+The Leaf Web App gives you a larger screen for tasks that are easier on a phone, tablet, or laptop: profiles, flight summaries, saved waypoints, route activation, and route building. The Web App runs directly on Leaf. For local features like profiles, route editing, and logbook viewing, internet access is not required.
 
 ### Opening the Web App
 
@@ -653,37 +664,41 @@ To check for updates, open <strong>Main Menu &rarr; Settings &rarr; System &rarr
 
 <br />
 
-If Leaf ever fails to properly check for updates, it is ok to restart Leaf and try checking again.
+If Leaf fails to check for updates, restart Leaf and try again.
 
 <br />
 
 If no WiFi network is available, you can still check for firmware updates using your phone's hotspot and cellular connection. See [Connecting to a Phone Hotspot](#connecting-to-a-phone-hotspot).
 
+### Reloading Firmware Manually
+
+**WARNING** *Manually loading firmware is only for advanced users. For general updates, please use the firmware update process described above.*
+
+**Make sure the firmware file matches your Leaf hardware version. For most users, this will be 3.2.7. Contact us if you are unsure.**
+
+There are two methods for manually loading firmware:
+#### Flash firmware via the SD card
+Plug Leaf into your computer with a USB cable. Leaf will appear as a removable drive showing the SD card contents. Copy the new firmware file into the `firmware/` folder on the SD card, then unplug Leaf from the USB cable and reboot Leaf. During startup, Leaf will detect the firmware file and attempt to upgrade to the new firmware.
+
+After the upgrade attempt, Leaf will create a status message inside the `firmware/` folder so you can confirm whether the update succeeded or failed. When you are finished, it is okay to delete the firmware file and the status message from the SD card.
+
+#### Flash firmware via USB cable and programming tools
+
+For advanced users who wish to reprogram the firmware manually, the "Boot" button is located behind the smallest speaker hole. To enter bootloader mode, turn Leaf off, then press and hold the Boot button while plugging in the USB cable, then release the Boot button. Or, while already plugged into USB, press and hold the "Boot" button then press and release the "Reset" button, then release the "Boot" button. Once in bootloader mode, the firmware can be uploaded using Arduino, PlatformIO, or Espressif tools.
+
 # Troubleshooting
 
+Having WiFi connection issues? See [WiFi Troubleshooting](#wifi-troubleshooting) in the Connect to WiFi section.
+
 ### Restore Factory Defaults
-To return all settings to the factory configuration, go to <strong>Menu &rarr; Settings &rarr; System</strong>, then scroll down to the Reset option. Hold the center button to reset all Leaf settings. This will not erase your SD card or logs.
+To return all settings to the factory configuration, go to <strong>Menu &rarr; Settings &rarr; System</strong>, then scroll down to the Reset option. Hold the center button to reset all Leaf settings. This will reset Leaf settings and saved WiFi networks, but it will not erase your SD card, logs, pilot or glider profiles, or saved waypoints/routes.
 
 ### Hard Reset Leaf
-Performing a hard reset is useful if Leaf becomes frozen or unresponsive.  The reset button is hidden behind the speaker grille.  Press a paperclip or pin into the lower-end of the largest speaker slot to hard reset Leaf.  This will force a reboot, but it won't reset your user settings or touch your SD card.  After you reset Leaf, you will need to turn it on again if it wasn't plugged into a USB cable at the time.
+Performing a hard reset is useful if Leaf becomes frozen or unresponsive. The reset button is hidden behind the speaker grille. Press a paperclip or pin into the lower-end of the largest speaker slot to hard reset Leaf. This will force a reboot, but it won't reset your user settings or touch your SD card. After you reset Leaf, you will need to turn it on again if it wasn't plugged into a USB cable at the time.
 
 <div style={{ width: "70%", margin: "auto" }}>
   <img src={ResetButton.src} alt="Reset Button" />
 </div>
-
-### Reloading Firmware Manually
-
-**WARNING** *Manually loading firmware is only for advanced users. For general updates, please use the [firmware update process](#firmware-updates) described above.*
-
-**If you are manually loading firmware, you MUST be sure to use the correct firmware version for your specific Leaf hardware version.  For most users, this will be 3.2.7_release.  If you are unsure, please contact us before proceeding.**
-
-There are two methods for manually loading firmware:
-#### Flash firmware via USB drive
-When plugging Leaf into a computer, you will see two removable drives appear.  One is the SD card, labeled "LEAF VARIO", where you'll find tracklogs and waypoint files.  The other drive is the processor boot partition, which can be used to update firmware.  Simply drag and drop the new firmware file onto this drive.  Leaf will reboot to the new firmware once the file is transferred and loaded.  **DO NOT UNPLUG** Leaf until the process is complete.
-
-#### Flash firmware via USB cable and programming tools
-
-For advanced users who wish to reprogram the firmware manually, the "Boot" button is located behind the smallest speaker hole.  To enter bootloader mode, turn Leaf off, then press and hold the Boot button while plugging in the USB cable, then release the Boot button.  Or, while already plugged into USB, press and hold the "Boot" button then press and release the "Reset" button, then release the "Boot" button.  Once in bootloader mode, the firmware can be uploaded using Arduino, PlatformIO, or Espressif tools.
 
 # Contact Us
 
