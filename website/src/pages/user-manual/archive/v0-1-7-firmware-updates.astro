@@ -93,6 +93,13 @@ if (base == "/") {
         margin: 0;
       }
 
+      .legacy-frequency-note {
+        margin: 1.25rem 0 2rem;
+        background: #f5fbd5;
+        font-size: 1.1rem;
+        text-align: center;
+      }
+
       .legacy-update-section {
         color: #1f2933;
         font-size: clamp(1.15rem, 2.25vw, 1.55rem);
@@ -177,6 +184,13 @@ if (base == "/") {
 
       <section class="legacy-update-section">
         <h1>WiFi Firmware Updates</h1>
+
+        <div class="legacy-note legacy-frequency-note" role="note">
+          <p>
+            <strong>NOTE:</strong> Leaf requires a <strong>2.4 GHz WiFi network</strong> and is not compatible
+            with 5 GHz-only networks.
+          </p>
+        </div>
 
         <p>
           Leaf can update to the latest firmware over WiFi. To configure the Leaf WiFi Settings, you'll need

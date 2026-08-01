@@ -151,6 +151,18 @@
     margin: 0;
 }
 
+.manual-wifi-frequency-callout {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.manual-wifi-frequency-icon {
+    flex: 0 0 auto;
+    font-size: 2.15rem;
+    line-height: 1;
+}
+
 .manual-examples {
     margin: 1rem 0 1.5rem;
 }
