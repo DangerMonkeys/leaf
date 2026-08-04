@@ -46,6 +46,7 @@ enum class DisplayRenderContext : uint8_t {
   Nav = 13,
   Debug = 14,
   Debug2 = 15,
+  ThermalNav = 16,
   MainMenu = 20,
   ModalMenu = 30,
 };

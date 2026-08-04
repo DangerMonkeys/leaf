@@ -68,19 +68,61 @@ namespace {
     u8g2.print("km");
   }
 
-  void drawQualityMarker(int16_t x, int16_t y, uint8_t quality) {
-    quality = constrain(quality, 1, 5);
-    u8g2.drawCircle(x, y, 4);
-    if (quality >= 2) u8g2.drawCircle(x, y, 3);
-    if (quality >= 3) u8g2.drawCircle(x, y, 2);
-    if (quality >= 4) u8g2.drawDisc(x, y, 2);
-    if (quality >= 5) u8g2.drawDisc(x, y, 4);
+  bool mapContainsPixel(int16_t x, int16_t y) {
+    const int32_t dx2 = int32_t(x) * 2 + 1 - 2 * MAP_CX;
+    const int32_t dy2 = int32_t(y) * 2 + 1 - 2 * MAP_CY;
+    return dx2 * dx2 + dy2 * dy2 <= int32_t(MAP_D_5000M) * MAP_D_5000M;
   }
 
-  void drawOuterEraseRing() {
-    u8g2.setDrawColor(0);
-    drawRingD(MAP_CX, MAP_CY, MAP_D_5000M + 16, 8);
-    u8g2.setDrawColor(1);
+  bool discContainsPixel(int16_t px, int16_t py, int16_t cx, int16_t cy, uint8_t radius) {
+    const int16_t dx = px - cx;
+    const int16_t dy = py - cy;
+    return dx * dx + dy * dy <= radius * radius;
+  }
+
+  void drawClippedPixel(int16_t x, int16_t y) {
+    if (mapContainsPixel(x, y)) u8g2.drawPixel(x, y);
+  }
+
+  void drawClippedDisc(int16_t cx, int16_t cy, uint8_t radius) {
+    for (int16_t y = cy - radius; y <= cy + radius; y++) {
+      int16_t segmentStart = INT16_MIN;
+      for (int16_t x = cx - radius; x <= cx + radius; x++) {
+        const bool draw = discContainsPixel(x, y, cx, cy, radius) && mapContainsPixel(x, y);
+        if (draw && segmentStart == INT16_MIN) {
+          segmentStart = x;
+        } else if (!draw && segmentStart != INT16_MIN) {
+          u8g2.drawHLine(segmentStart, y, x - segmentStart);
+          segmentStart = INT16_MIN;
+        }
+      }
+      if (segmentStart != INT16_MIN)
+        u8g2.drawHLine(segmentStart, y, cx + radius - segmentStart + 1);
+    }
+  }
+
+  void drawClippedCircle(int16_t cx, int16_t cy, uint8_t radius) {
+    for (int16_t y = cy - radius; y <= cy + radius; y++) {
+      for (int16_t x = cx - radius; x <= cx + radius; x++) {
+        if (!discContainsPixel(x, y, cx, cy, radius)) continue;
+        if (discContainsPixel(x - 1, y, cx, cy, radius) &&
+            discContainsPixel(x + 1, y, cx, cy, radius) &&
+            discContainsPixel(x, y - 1, cx, cy, radius) &&
+            discContainsPixel(x, y + 1, cx, cy, radius)) {
+          continue;
+        }
+        drawClippedPixel(x, y);
+      }
+    }
+  }
+
+  void drawQualityMarker(int16_t x, int16_t y, uint8_t quality) {
+    quality = constrain(quality, 1, 5);
+    drawClippedCircle(x, y, 4);
+    if (quality >= 2) drawClippedCircle(x, y, 3);
+    if (quality >= 3) drawClippedCircle(x, y, 2);
+    if (quality >= 4) drawClippedDisc(x, y, 2);
+    if (quality >= 5) drawClippedDisc(x, y, 4);
   }
 
   void drawMapRingsAndLabels() {
@@ -127,7 +169,7 @@ namespace {
     }
     for (uint8_t i = 0; i < count; ++i) {
       if (items[i].valid && items[i].selected) {
-        u8g2.drawCircle(items[i].x, items[i].y, 6);
+        drawClippedCircle(items[i].x, items[i].y, 6);
         break;
       }
     }
@@ -161,7 +203,6 @@ void thermalNavPage_draw() {
     const ThermalDisplayItem* selected = thermalTracker.selectedDisplayItem();
 
     drawThermals();
-    drawOuterEraseRing();
     drawMapRingsAndLabels();
     drawUserTriangle();
     printSelectedClimb(selected);

@@ -264,6 +264,7 @@ void Display::update() {
       thermalPageAdv_draw();
       break;
     case MainPage::ThermalNav:
+      lastRenderContext_ = DisplayRenderContext::ThermalNav;
       thermalNavPage_draw();
       break;
     case MainPage::Debug:
