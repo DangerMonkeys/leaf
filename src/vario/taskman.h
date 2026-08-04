@@ -21,8 +21,9 @@ struct ManagedTasks {
   bool tempRH = true;       // (1) trigger temp & humidity measurements, (2) process values and save
   bool sdCard = true;       // check if SD card state has changed and attempt remount if needed
   bool memoryStats = true;  // Prints memory usage reports
-  bool estimateWind = true;  // estimate wind speed and direction
-  bool selfTest = true;      // run self test tasks
+  bool estimateWind = true;     // estimate wind speed and direction
+  bool selfTest = true;         // run self test tasks
+  bool cpuUtilization = false;  // write CPU utilization diagnostics
 };
 
 // This is where the bulk of the task management work happens.  We are slowly moving away from this

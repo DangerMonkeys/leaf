@@ -76,6 +76,7 @@
 #define DEF_DIAG_NETWORK_EVENTS 0
 #define DEF_DIAG_WEB_REQUESTS 0
 #define DEF_DIAG_VARIO 0
+#define DEF_DIAG_CPU_UTILIZATION 0
 #define DEF_ECO_MODE 0  // default off to allow reprogramming easier
 
 // Boot Flags
@@ -167,6 +168,7 @@ setting | samples | time avg
   bool diag_networkEvents;
   bool diag_webRequests;
   bool diag_vario;
+  bool diag_cpuUtilization;
 
   // Boot Flags
   bool boot_enterBootloader;

@@ -8,6 +8,7 @@
 #include "comms/ble.h"
 #include "comms/factory_discovery.h"
 #include "comms/fanet_radio.h"
+#include "diagnostics/cpu_utilization.h"
 #include "diagnostics/diagnostic_network/diagnostic_network.h"
 #include "diagnostics/heap_monitor.h"
 #include "diagnostics/self_test/selfTest.h"
@@ -265,13 +266,35 @@ void TaskManager::updateWhileCharging() {
 }
 
 void TaskManager::updateWhileOn() {
+  bool startedTaskBlock = false;
+  bool recordCpuUtilization = false;
+  uint32_t taskBlockStartUs = 0;
+  uint8_t taskBlockIndex = 0;
+  uint8_t taskBlockButtonMask = 0;
+  uint8_t taskBlockDisplayContext = 0;
+
   // Check flag set by timer interrupt
   if (nextTaskTimerBlock.exchange(false, std::memory_order_acq_rel)) {
+    startedTaskBlock = true;
+    recordCpuUtilization = cpu_utilization::enabled();
+    taskBlockStartUs = static_cast<uint32_t>(micros());
+    if (recordCpuUtilization) {
+      taskBlockButtonMask = cpu_utilization::buttonPinMask(buttons.inspectPins());
+      display.clearLastRenderContext();
+    }
     // We only do this once every 10ms
     setNecessaryTasksForBlock();
+    taskBlockIndex = current100msBlock * 10 + current10msBlock;
   }
 
   doNecessaryTasks();
+
+  if (startedTaskBlock && recordCpuUtilization) {
+    taskBlockButtonMask |= cpu_utilization::buttonPinMask(buttons.inspectPins());
+    taskBlockDisplayContext = static_cast<uint8_t>(display.lastRenderContext());
+    cpu_utilization::recordBlock(taskBlockIndex, taskBlockStartUs, static_cast<uint32_t>(micros()),
+                                 taskBlockButtonMask, taskBlockDisplayContext);
+  }
 
   // GPS Serial Buffer Read
   // stop reading if no more data is available, OR, if our 10ms time block is up (because main timer
@@ -313,6 +336,7 @@ void TaskManager::setNecessaryTasksForBlock() {
       performTask.estimateWind = true;  // estimate wind speed and direction
       break;
     case 3:
+      if (current100msBlock == 0) performTask.cpuUtilization = true;
       break;
     case 4:
       break;
@@ -433,6 +457,10 @@ void TaskManager::doNecessaryTasks(void) {
     sdcard.update();
     checkpointOnce(loggedFirstSdCardTask, "task-sdcard-first");
     performTask.sdCard = false;
+  }
+  if (performTask.cpuUtilization) {
+    cpu_utilization::writePendingReport();
+    performTask.cpuUtilization = false;
   }
   if (performTask.selfTest) {
     selfTest.update();
