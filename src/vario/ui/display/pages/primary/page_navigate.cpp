@@ -502,6 +502,16 @@ void nav_cursor_move(Button button) {
   }
 }
 
+bool navigatePage_volumeShortcut(Button button, ButtonEvent state) {
+  if (!settings.volumeShortcut || (button != Button::UP && button != Button::DOWN) ||
+      state != ButtonEvent::INCREMENTED) {
+    return false;
+  }
+
+  if (!settings.adjustShortcutVolume(button)) buttons.consumeButton();
+  return true;
+}
+
 void navigatePage_button(Button button, ButtonEvent state, uint8_t count) {
   // reset cursor time out count if a button is pushed
   navigatePage_cursorTimeCount = 0;
@@ -511,7 +521,11 @@ void navigatePage_button(Button button, ButtonEvent state, uint8_t count) {
       switch (button) {
         case Button::UP:
         case Button::DOWN:
-          if (state == ButtonEvent::CLICKED) nav_cursor_move(button);
+          if (navigatePage_volumeShortcut(button, state)) {
+            break;
+          } else if (state == ButtonEvent::CLICKED) {
+            nav_cursor_move(button);
+          }
           break;
         case Button::RIGHT:
           if (state == ButtonEvent::CLICKED) {

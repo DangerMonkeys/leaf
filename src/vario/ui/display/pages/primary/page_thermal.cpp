@@ -214,6 +214,16 @@ void thermal_page_cursor_move(Button button) {
                                                                             : fx::click);
 }
 
+bool thermalPage_volumeShortcut(Button button, ButtonEvent state) {
+  if (!settings.volumeShortcut || (button != Button::UP && button != Button::DOWN) ||
+      state != ButtonEvent::INCREMENTED) {
+    return false;
+  }
+
+  if (!settings.adjustShortcutVolume(button)) buttons.consumeButton();
+  return true;
+}
+
 void thermalPage_button(Button button, ButtonEvent state, uint8_t count) {
   // reset cursor time out count if a button is pushed
   thermal_page_cursor_timeCount = 0;
@@ -223,7 +233,11 @@ void thermalPage_button(Button button, ButtonEvent state, uint8_t count) {
       switch (button) {
         case Button::UP:
         case Button::DOWN:
-          if (state == ButtonEvent::CLICKED) thermal_page_cursor_move(button);
+          if (thermalPage_volumeShortcut(button, state)) {
+            break;
+          } else if (state == ButtonEvent::CLICKED) {
+            thermal_page_cursor_move(button);
+          }
           break;
         case Button::RIGHT:
           if (state == ButtonEvent::CLICKED) {

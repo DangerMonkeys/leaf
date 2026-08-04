@@ -1087,10 +1087,10 @@ void display_footer(bool timerSelected) {
   // Vario Beep Volume icon
   u8g2.setCursor(37, 191);
   u8g2.setFont(leaf_icons);
-  if (settings.vario_quietMode && !flightTimer_isRunning() && settings.vario_volume != 0) {
+  if (settings.vario_quietMode && !flightTimer_isRunning() && settings.shortcutVolumeLevel != 0) {
     u8g2.print((char)('I' + 4));
   } else {
-    u8g2.print((char)('I' + settings.vario_volume));
+    u8g2.print((char)('I' + settings.shortcutVolumeLevel));
   }
 
   // Timer in lower right corner
