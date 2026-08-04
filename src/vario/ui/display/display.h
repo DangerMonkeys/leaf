@@ -26,10 +26,11 @@ enum class MainPage : uint8_t {
   Simple = 2,
   Thermal = 3,
   ThermalAdv = 4,
-  Nav = 5,
-  Menu = 6,
-  Charging = 7,
-  Blank = 8
+  ThermalNav = 5,
+  Nav = 6,
+  Menu = 7,
+  Charging = 8,
+  Blank = 9
 };
 DEFINE_WRAPPING_BOUNDS(MainPage, MainPage::Debug, MainPage::Menu);
 

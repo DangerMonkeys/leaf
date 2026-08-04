@@ -10,7 +10,7 @@ class DisplayMenuPage : public SettingsMenuPage {
  public:
   DisplayMenuPage() {
     cursor_position = 0;
-    cursor_max = 4;
+    cursor_max = 5;
   }
   void draw();
 
@@ -19,7 +19,7 @@ class DisplayMenuPage : public SettingsMenuPage {
   bool cursorUsesLeftButton() const override;
 
  private:
-  static constexpr char* labels[6] = {"Back", "Basic", "User", "Navigate", "Contrast"};
+  static constexpr char* labels[6] = {"Back", "Basic", "User", "Therm Nav", "Wpt Nav", "Contrast"};
 };
 
 #endif

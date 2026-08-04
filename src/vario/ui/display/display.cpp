@@ -29,6 +29,7 @@
 #include "ui/display/pages/primary/page_simple.h"
 #include "ui/display/pages/primary/page_thermal.h"
 #include "ui/display/pages/primary/page_thermal_adv.h"
+#include "ui/display/pages/primary/page_thermal_nav.h"
 #include "ui/settings/settings.h"
 #include "wind_estimate/wind_estimate.h"
 
@@ -95,6 +96,8 @@ bool Display::isMainPageVisible(MainPage targetPage) const {
       return settings.disp_showThmPage;
     case MainPage::ThermalAdv:
       return settings.disp_showThmAdvPage;
+    case MainPage::ThermalNav:
+      return settings.disp_showThermalNavPage;
     case MainPage::Nav:
       return settings.disp_showNavPage;
     case MainPage::Menu:
@@ -107,7 +110,8 @@ bool Display::isMainPageVisible(MainPage targetPage) const {
 
 bool Display::hasEnabledPrimaryPage() const {
   return settings.disp_showSimplePage || settings.disp_showThmPage ||
-         settings.disp_showThmAdvPage || settings.disp_showNavPage;
+         settings.disp_showThmAdvPage || settings.disp_showThermalNavPage ||
+         settings.disp_showNavPage;
 }
 
 void Display::ensurePrimaryPageEnabled() {
@@ -122,6 +126,7 @@ MainPage Display::firstVisiblePrimaryPage(MainPage preferredPage) const {
 
   if (settings.disp_showThmPage) return MainPage::Thermal;
   if (settings.disp_showSimplePage) return MainPage::Simple;
+  if (settings.disp_showThermalNavPage) return MainPage::ThermalNav;
   if (settings.disp_showNavPage) return MainPage::Nav;
   if (settings.disp_showThmAdvPage) return MainPage::ThermalAdv;
   if (settings.dev_mode && settings.disp_showDebugPage) return MainPage::Debug;
@@ -257,6 +262,9 @@ void Display::update() {
     case MainPage::ThermalAdv:
       lastRenderContext_ = DisplayRenderContext::ThermalAdv;
       thermalPageAdv_draw();
+      break;
+    case MainPage::ThermalNav:
+      thermalNavPage_draw();
       break;
     case MainPage::Debug:
       lastRenderContext_ = DisplayRenderContext::Debug;

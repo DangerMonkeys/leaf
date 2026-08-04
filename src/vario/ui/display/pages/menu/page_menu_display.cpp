@@ -16,7 +16,8 @@ enum display_menu_items {
   cursor_display_show_simple,  // basic page
   cursor_display_show_thrm,    // user page
   // cursor_display_show_thrm_adv,  // currently not used and half-developed
-  cursor_display_show_nav,  // navigate page
+  cursor_display_show_thermal_nav,  // thermal nav page
+  cursor_display_show_nav,          // waypoint nav page
   cursor_display_contrast,
 };
 
@@ -26,6 +27,7 @@ namespace {
     if (settings.disp_showSimplePage) count++;
     if (settings.disp_showThmPage) count++;
     if (settings.disp_showThmAdvPage) count++;
+    if (settings.disp_showThermalNavPage) count++;
     if (settings.disp_showNavPage) count++;
     return count;
   }
@@ -54,7 +56,7 @@ void DisplayMenuPage::draw() {
     uint8_t y_spacing = 16;
     uint8_t setting_name_x = 3;
     uint8_t setting_choice_x = 78;
-    uint8_t menu_items_y[] = {190, 60, 75, 90, 135};
+    uint8_t menu_items_y[] = {190, 60, 75, 90, 105, 135};
 
     for (int i = 0; i <= cursor_max; i++) {
       const bool selected = i == cursor_position;
@@ -82,6 +84,12 @@ void DisplayMenuPage::draw() {
               u8g2.print(char(123));
             break;
           */
+        case cursor_display_show_thermal_nav:
+          if (settings.disp_showThermalNavPage)
+            menu_ui::printGlyph(menu_ui::ICON_ON);
+          else
+            menu_ui::printGlyph(menu_ui::ICON_OFF);
+          break;
         case cursor_display_show_nav:
           if (settings.disp_showNavPage)
             menu_ui::printGlyph(menu_ui::ICON_ON);
@@ -114,6 +122,10 @@ void DisplayMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t coun
     case cursor_display_show_nav:
       if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT))
         togglePrimaryPageSetting(&settings.disp_showNavPage);
+      break;
+    case cursor_display_show_thermal_nav:
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT))
+        togglePrimaryPageSetting(&settings.disp_showThermalNavPage);
       break;
     case cursor_display_contrast:
       if (state == ButtonEvent::CLICKED || state == ButtonEvent::INCREMENTED)

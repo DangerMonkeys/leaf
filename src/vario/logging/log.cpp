@@ -12,6 +12,7 @@
 #include "logbook/igc.h"
 #include "logbook/logbook_entry.h"
 #include "navigation/gpx.h"
+#include "navigation/thermal_tracker.h"
 #include "power.h"
 #include "storage/sd_card.h"
 #include "ui/audio/sound_effects.h"
@@ -115,6 +116,7 @@ void log_update() {
 
         // get first set of log values
         log_captureValues();
+        thermalTracker.seedTestThermalsForFlight();
 
         // initial min/max values
         logbook.alt_max = logbook.alt_start;
@@ -279,6 +281,7 @@ void flightTimer_start() {
   // start timer
   speaker.playSound(fx::enter);
   flight = &igcFlight;
+  thermalTracker.reset();
 
   logbook.logStartedAt = millis() / 1000;
   log_captureValues();

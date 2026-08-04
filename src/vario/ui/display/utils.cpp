@@ -70,6 +70,37 @@ void drawDiscD(int16_t centerX, int16_t centerY, uint8_t diameter) {
   }
 }
 
+void drawRingD(int16_t centerX, int16_t centerY, uint8_t outerDiameter, uint8_t thickness) {
+  if (outerDiameter == 0 || thickness == 0) return;
+
+  const int16_t centerX2 = (outerDiameter & 1) ? 2 * centerX + 1 : 2 * centerX;
+  const int16_t centerY2 = (outerDiameter & 1) ? 2 * centerY + 1 : 2 * centerY;
+  const int16_t outerRadius2 = outerDiameter;
+  const int16_t innerRadius2 = max<int16_t>(0, outerRadius2 - 2 * thickness);
+  const int32_t outerRadiusSq = static_cast<int32_t>(outerRadius2) * outerRadius2;
+  const int32_t innerRadiusSq = static_cast<int32_t>(innerRadius2) * innerRadius2;
+  const int16_t left = centerX - outerDiameter / 2;
+  const int16_t top = centerY - outerDiameter / 2;
+  const int16_t extent = outerDiameter;
+
+  for (int16_t py = top; py < top + extent; ++py) {
+    int16_t segmentStart = -1;
+    for (int16_t px = left; px < left + extent; ++px) {
+      const int32_t dx2 = int32_t(px) * 2 + 1 - centerX2;
+      const int32_t dy2 = int32_t(py) * 2 + 1 - centerY2;
+      const int32_t distSq = dx2 * dx2 + dy2 * dy2;
+      const bool inRing = distSq <= outerRadiusSq && distSq >= innerRadiusSq;
+      if (inRing && segmentStart < 0) {
+        segmentStart = px;
+      } else if (!inRing && segmentStart >= 0) {
+        u8g2.drawHLine(segmentStart, py, px - segmentStart);
+        segmentStart = -1;
+      }
+    }
+    if (segmentStart >= 0) u8g2.drawHLine(segmentStart, py, left + extent - segmentStart);
+  }
+}
+
 /**
  * Print `str` into a box whose top-left corner is (x,y).
  * - If width==0, lines are only

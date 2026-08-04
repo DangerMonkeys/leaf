@@ -215,6 +215,7 @@ void Settings::loadDefaults() {
   disp_showSimplePage = DEF_SHOW_SIMPLE;
   disp_showThmPage = DEF_SHOW_THRM;
   disp_showThmAdvPage = DEF_SHOW_THRM_ADV;
+  disp_showThermalNavPage = DEF_SHOW_THERMAL_NAV;
   disp_showNavPage = DEF_SHOW_NAV;
   startPage = DEF_STARTPAGE;
 
@@ -295,6 +296,7 @@ void Settings::retrieve() {
   disp_showSimplePage = leafPrefs.getBool("SHOW_SIMPLE", DEF_SHOW_SIMPLE);
   disp_showThmPage = leafPrefs.getBool("SHOW_THRM");
   disp_showThmAdvPage = leafPrefs.getBool("SHOW_THRM_ADV");
+  disp_showThermalNavPage = leafPrefs.getBool("SHOW_THERM_NAV", DEF_SHOW_THERMAL_NAV);
   disp_showNavPage = leafPrefs.getBool("SHOW_NAV");
   startPage = leafPrefs.getUChar("START_PAGE", DEF_STARTPAGE);
   if (startPage > (uint8_t)MainPage::Nav) startPage = DEF_STARTPAGE;
@@ -375,6 +377,7 @@ void Settings::save() {
   leafPrefs.putBool("SHOW_SIMPLE", disp_showSimplePage);
   leafPrefs.putBool("SHOW_THRM", disp_showThmPage);
   leafPrefs.putBool("SHOW_THRM_ADV", disp_showThmAdvPage);
+  leafPrefs.putBool("SHOW_THERM_NAV", disp_showThermalNavPage);
   leafPrefs.putBool("SHOW_NAV", disp_showNavPage);
   leafPrefs.putUChar("START_PAGE", startPage);
   // Fanet Settings

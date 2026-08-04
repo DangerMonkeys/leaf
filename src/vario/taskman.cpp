@@ -23,6 +23,7 @@
 #include "instruments/imu.h"
 #include "logging/log.h"
 #include "navigation/gpx.h"
+#include "navigation/thermal_tracker.h"
 #include "navigation/user_waypoints.h"
 #include "power.h"
 #include "storage/sd_card.h"
@@ -359,19 +360,25 @@ void TaskManager::setNecessaryTasksForBlock() {
         performTask.gps =
             true;  // gps update every half second (this avoids any aliasing issues if we
                    // keep trying to update GPS in the middle of an NMEA sentence string)
-      if (current100msBlock == 1) performTask.power = true;  // every second: power checks
-      if (current100msBlock == 2) performTask.log = true;    // every second: logging
+      if (current100msBlock == 1) {
+        performTask.thermalDetector = true;    // every second: thermal detector
+        performTask.thermalNavigation = true;  // every half second: thermal nav/display cache
+      }
+      if (current100msBlock == 2) performTask.log = true;  // every second: logging
       if (current100msBlock == 3 || current100msBlock == 8)
         performTask.display = 1;  // Update LCD every half-second on the 3rd and 8th 100ms blocks
       if (current100msBlock == 4)
         performTask.tempRH = true;  // trigger the start of a new temp & humidity measurement
       // 5 - gps
       if (current100msBlock == 6)
-        performTask.sdCard = 1;  // check if SD card state has changed and remount if needed
-// 7 - available
+        performTask.thermalNavigation = true;  // every half second: thermal nav/display cache
+      if (current100msBlock == 7) {
+        performTask.power = true;   // every second: power checks
+        performTask.sdCard = true;  // check if SD card state has changed and remount if needed
+      }
 // 8 - LCD
 #ifdef MEMORY_PROFILING
-      if (current100msBlock == 7) {
+      if (current100msBlock == 9) {
         performTask.memoryStats = 1;
       }
 #endif
@@ -421,6 +428,14 @@ void TaskManager::doNecessaryTasks(void) {
     gps.update();
     checkpointOnce(loggedFirstGpsTask, "task-gps-first");
     performTask.gps = false;
+  }
+  if (performTask.thermalDetector) {
+    thermalTracker.updateDetector();
+    performTask.thermalDetector = false;
+  }
+  if (performTask.thermalNavigation) {
+    thermalTracker.updateNavigation();
+    performTask.thermalNavigation = false;
   }
   if (performTask.power) {
     power.update();

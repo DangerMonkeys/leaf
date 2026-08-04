@@ -18,6 +18,7 @@
 #include "ui/display/pages/primary/page_simple.h"
 #include "ui/display/pages/primary/page_thermal.h"
 #include "ui/display/pages/primary/page_thermal_adv.h"
+#include "ui/display/pages/primary/page_thermal_nav.h"
 #include "ui/settings/settings.h"
 
 ButtonDispatcher buttonDispatcher;
@@ -58,6 +59,9 @@ void ButtonDispatcher::on_receive(const ButtonEventMessage& msg) {
 
   } else if (currentPage == MainPage::ThermalAdv) {
     thermalPageAdv_button(msg.button, msg.event, msg.holdCount);
+
+  } else if (currentPage == MainPage::ThermalNav) {
+    thermalNavPage_button(msg.button, msg.event, msg.holdCount);
 
   } else if (currentPage == MainPage::Nav) {
     navigatePage_button(msg.button, msg.event, msg.holdCount);

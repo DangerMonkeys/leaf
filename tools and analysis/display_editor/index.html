@@ -38,7 +38,11 @@
       color: var(--foreground);
       display: grid;
       gap: 12px;
-      grid-template-columns: minmax(230px, 270px) minmax(260px, 1fr) minmax(250px, 310px);
+      grid-template-columns:
+        minmax(230px, 270px)
+        minmax(260px, 1fr)
+        minmax(220px, 280px)
+        minmax(250px, 310px);
       align-items: start;
       width: 100%;
     }
@@ -173,6 +177,16 @@
       overflow: auto;
       padding-right: 2px;
     }
+    #leaf-display-editor .lde-layer-panel {
+      height: calc(100vh - 32px);
+      grid-template-rows: auto minmax(0, 1fr);
+      position: sticky;
+      top: 16px;
+    }
+    #leaf-display-editor .lde-layer-panel .lde-layer-list {
+      max-height: none;
+      min-height: 0;
+    }
     #leaf-display-editor .lde-layer {
       display: grid;
       grid-template-columns: 26px minmax(0, 1fr) auto auto;
@@ -255,11 +269,32 @@
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       font-size: calc(var(--font-size-base) * .86);
     }
+    @media (max-width: 1260px) {
+      #leaf-display-editor {
+        grid-template-columns: minmax(230px, 270px) minmax(260px, 1fr) minmax(250px, 310px);
+      }
+      #leaf-display-editor .lde-layer-panel {
+        grid-column: 3;
+        height: auto;
+        max-height: calc(100vh - 32px);
+      }
+      #leaf-display-editor .lde-layer-panel .lde-layer-list {
+        max-height: 520px;
+      }
+    }
     @media (max-width: 980px) {
       #leaf-display-editor {
         grid-template-columns: 1fr;
       }
       #leaf-display-editor .lde-stage-wrap { order: -1; }
+      #leaf-display-editor .lde-layer-panel {
+        grid-column: auto;
+        max-height: none;
+        position: static;
+      }
+      #leaf-display-editor .lde-layer-panel .lde-layer-list {
+        max-height: 360px;
+      }
     }
     @media (max-width: 420px) {
       #leaf-display-editor .lde-field-grid,
@@ -378,6 +413,11 @@
     <div class="lde-status" id="lde-status"></div>
   </div>
 
+  <div class="lde-panel lde-layer-panel">
+    <div class="lde-section-title">Layers</div>
+    <div id="lde-layers" class="lde-layer-list"></div>
+  </div>
+
   <div class="lde-panel">
     <div class="lde-section">
       <div class="lde-section-title">Selected Primitive</div>
@@ -430,11 +470,6 @@
           <button type="button" class="btn lde-mini" id="lde-delete">Delete</button>
         </div>
       </div>
-    </div>
-
-    <div class="lde-section">
-      <div class="lde-section-title">Layers</div>
-      <div id="lde-layers" class="lde-layer-list"></div>
     </div>
 
     <div class="lde-section">
