@@ -175,7 +175,7 @@
     }
     #leaf-display-editor .lde-layer {
       display: grid;
-      grid-template-columns: 26px 1fr auto;
+      grid-template-columns: 26px minmax(0, 1fr) auto auto;
       align-items: center;
       gap: 6px;
       border: 1px solid var(--border);
@@ -205,6 +205,10 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+    #leaf-display-editor .lde-layer-actions {
+      display: inline-flex;
+      gap: 3px;
+    }
     #leaf-display-editor .lde-visibility {
       width: auto;
     }
@@ -222,7 +226,7 @@
     }
     #leaf-display-editor .lde-text-row {
       display: grid;
-      grid-template-columns: 1fr auto;
+      grid-template-columns: 1fr auto auto;
       gap: 6px;
     }
     #leaf-display-editor .lde-check-row {
@@ -447,6 +451,7 @@
       </label>
       <div class="lde-text-row">
         <button type="button" class="btn" id="lde-copy">Copy</button>
+        <button type="button" class="btn" id="lde-load-json" hidden>Load JSON</button>
         <button type="button" class="btn" id="lde-refresh-export">Refresh</button>
       </div>
       <textarea id="lde-export" class="form-control" spellcheck="false"></textarea>
@@ -479,6 +484,7 @@
       const pngBorderInput = root.querySelector('#lde-png-border');
       const pngBorderWrap = root.querySelector('#lde-png-border-wrap');
       const copyButton = root.querySelector('#lde-copy');
+      const loadJsonButton = root.querySelector('#lde-load-json');
 
       const profileMap = {
         '96x192': { w: 96, h: 192 },
@@ -490,12 +496,8 @@
         ['line', 'Line'],
         ['hline', 'H line'],
         ['vline', 'V line'],
-        ['box', 'Box'],
-        ['frame', 'Frame'],
-        ['rbox', 'R box'],
-        ['rframe', 'R frame'],
+        ['box', 'Rectangle'],
         ['circle', 'Circle'],
-        ['disc', 'Disc'],
         ['triangle', 'Triangle'],
         ['text', 'Text'],
         ['varioBar', 'Vario bar'],
@@ -605,7 +607,7 @@
         if (c === 2) return getComputedStyle(root).getPropertyValue('--lde-pixel-on').trim();
         return getComputedStyle(root).getPropertyValue('--lde-pixel-on').trim();
       }
-      function fontWord(bytes, offset) { return (bytes[offset] || 0) | ((bytes[offset + 1] || 0) << 8); }
+      function fontWord(bytes, offset) { return ((bytes[offset] || 0) << 8) | (bytes[offset + 1] || 0); }
       function fontInfo(bytes) {
         if (!bytes || bytes.length < 23) return null;
         return {
@@ -690,15 +692,25 @@
         }
         return { width, height, xOffset, yOffset, deltaX, pixels };
       }
+      function decodeGlyphWithFallback(fontName, code) {
+        const primaryFont = fontName || 'leaf_6x12';
+        const primary = decodeGlyph(primaryFont, code);
+        if (primary) return primary;
+        if (primaryFont !== 'leaf_6x12') {
+          const fallback = decodeGlyph('leaf_6x12', code);
+          if (fallback) return fallback;
+        }
+        return null;
+      }
       function textPixels(shape) {
         const text = String(shape.text || '');
         let cursorX = round(shape.x);
         const baselineY = round(shape.y);
         const pixels = [];
         for (const ch of text) {
-          const glyph = decodeGlyph(shape.font || 'leaf_8x14', ch.charCodeAt(0));
+          const glyph = decodeGlyphWithFallback(shape.font || 'leaf_6x12', ch.charCodeAt(0));
           if (!glyph) {
-            const [cw] = fontFallbacks[shape.font] || fontFallbacks.leaf_8x14;
+            const [cw] = fontFallbacks[shape.font] || fontFallbacks.leaf_6x12;
             cursorX += cw;
             continue;
           }
@@ -715,11 +727,41 @@
           const x = Math.min(...xs), y = Math.min(...ys);
           return { x, y, w: Math.max(...xs) - x + 1, h: Math.max(...ys) - y + 1 };
         }
-        const [cw, ch] = fontFallbacks[shape.font] || fontFallbacks.leaf_8x14;
+        const [cw, ch] = fontFallbacks[shape.font] || fontFallbacks.leaf_6x12;
         return { x: shape.x, y: shape.y - ch, w: Math.max(1, (shape.text || '').length * cw), h: ch };
       }
       function drawU8g2Text(shape, color) {
         textPixels(shape).forEach(([x, y]) => putPixel(x, y, color));
+      }
+      function normalizeShape(s) {
+        if (!s) return s;
+        if (s.type === 'disc') {
+          s.type = 'circle';
+          s.fill = true;
+        }
+        if (s.type === 'frame' || s.type === 'rbox' || s.type === 'rframe') {
+          const wasFilled = s.type === 'rbox';
+          const wasRounded = s.type === 'rbox' || s.type === 'rframe';
+          s.type = 'box';
+          s.fill = wasFilled;
+          s.rounded = wasRounded;
+          if (wasRounded) s.r = Math.max(1, round(s.r || 3));
+        }
+        if (s.type === 'box') {
+          s.fill ??= true;
+          s.rounded ??= false;
+          if (s.rounded) s.r = Math.max(1, round(s.r || 3));
+        }
+        if (s.type === 'circle') {
+          s.fill ??= false;
+          s.ring ??= false;
+          if (!('diameter' in s)) s.diameter = Math.max(1, round((s.r || 1) * 2 + 1));
+          delete s.r;
+          s.diameter = Math.max(1, round(s.diameter));
+          s.thickness = clamp(round(s.thickness || 3), 1, Math.ceil(s.diameter / 2));
+          s.even = (s.diameter % 2 === 0);
+        }
+        return s;
       }
       function defaultShape(type) {
         const id = state.nextId++;
@@ -730,16 +772,15 @@
         if (type === 'line') return { ...base, x1: midX - 12, y1: midY - 8, x2: midX + 12, y2: midY + 8 };
         if (type === 'hline') return { ...base, x: midX - 20, y: midY, w: 40 };
         if (type === 'vline') return { ...base, x: midX, y: midY - 20, h: 40 };
-        if (type === 'circle' || type === 'disc') return { ...base, x: midX, y: midY, r: 16 };
+        if (type === 'circle') return { ...base, x: midX, y: midY, diameter: 33, even: false, fill: false, ring: false, thickness: 3 };
         if (type === 'triangle') return { ...base, x1: midX, y1: midY - 18, x2: midX - 16, y2: midY + 12, x3: midX + 16, y3: midY + 12 };
-        if (type === 'text') return { ...base, x: 8, y: 24, text: 'ALT 3250', font: 'leaf_8x14' };
+        if (type === 'text') return { ...base, x: 8, y: 24, text: 'ALT 3250', font: 'leaf_6x12' };
         if (type === 'varioBar') return { ...base, x: 4, y: 22, w: 18, posTick: 14, negTick: 14 };
         if (type === 'bitmap') return { ...base, x: midX - 16, y: midY - 16, w: 32, h: 32, label: 'xbm' };
-        const shape = { ...base, x: midX - 24, y: midY - 14, w: 48, h: 28 };
-        if (type === 'rbox' || type === 'rframe') shape.r = 3;
-        return shape;
+        return { ...base, x: midX - 24, y: midY - 14, w: 48, h: 28, fill: false, rounded: false, r: 3 };
       }
       function shapeBounds(s) {
+        normalizeShape(s);
         if (s.type === 'pixel') return { x: s.x, y: s.y, w: 1, h: 1 };
         if (s.type === 'line') {
           const x = Math.min(s.x1, s.x2), y = Math.min(s.y1, s.y2);
@@ -748,7 +789,12 @@
         if (s.type === 'hline') return { x: s.x, y: s.y, w: s.w, h: 1 };
         if (s.type === 'vline') return { x: s.x, y: s.y, w: 1, h: s.h };
         if (s.type === 'varioBar') return { x: s.x, y: s.y, w: s.w, h: varioBarHeight(s) };
-        if (s.type === 'circle' || s.type === 'disc') return { x: s.x - s.r, y: s.y - s.r, w: s.r * 2 + 1, h: s.r * 2 + 1 };
+        if (s.type === 'circle') {
+          const d = Math.max(1, round(s.diameter || 1));
+          const left = s.even ? round(s.x) - d / 2 : round(s.x) - Math.floor(d / 2);
+          const top = s.even ? round(s.y) - d / 2 : round(s.y) - Math.floor(d / 2);
+          return { x: left, y: top, w: d, h: d };
+        }
         if (s.type === 'triangle') {
           const xs = [s.x1, s.x2, s.x3], ys = [s.y1, s.y2, s.y3];
           const x = Math.min(...xs), y = Math.min(...ys);
@@ -922,6 +968,87 @@
           drawDiscSection(x, y, cx, cy, color, option);
         }
       }
+      function evenCircleContainsPixel(px, py, cx2, cy2, diameter) {
+        const dx2 = px * 2 + 1 - cx2;
+        const dy2 = py * 2 + 1 - cy2;
+        const r2 = diameter * diameter;
+        return dx2 * dx2 + dy2 * dy2 <= r2;
+      }
+      function drawCircleDPixels(cx, cy, diameter, color) {
+        cx = round(cx); cy = round(cy); diameter = Math.max(1, round(diameter));
+        if (diameter % 2 === 1) {
+          drawCirclePixels(cx, cy, Math.floor(diameter / 2), color);
+          return;
+        }
+        const left = cx - diameter / 2;
+        const top = cy - diameter / 2;
+        const cx2 = 2 * cx;
+        const cy2 = 2 * cy;
+        for (let py = top; py < top + diameter; py++) {
+          for (let px = left; px < left + diameter; px++) {
+            if (evenCircleContainsPixel(px, py, cx2, cy2, diameter) &&
+                (!evenCircleContainsPixel(px - 1, py, cx2, cy2, diameter) ||
+                 !evenCircleContainsPixel(px + 1, py, cx2, cy2, diameter) ||
+                 !evenCircleContainsPixel(px, py - 1, cx2, cy2, diameter) ||
+                 !evenCircleContainsPixel(px, py + 1, cx2, cy2, diameter))) {
+              putPixel(px, py, color);
+            }
+          }
+        }
+      }
+      function drawDiscDPixels(cx, cy, diameter, color) {
+        cx = round(cx); cy = round(cy); diameter = Math.max(1, round(diameter));
+        if (diameter % 2 === 1) {
+          drawDiscPixels(cx, cy, Math.floor(diameter / 2), color);
+          return;
+        }
+        const left = cx - diameter / 2;
+        const top = cy - diameter / 2;
+        const cx2 = 2 * cx;
+        const cy2 = 2 * cy;
+        for (let py = top; py < top + diameter; py++) {
+          let start = left + diameter;
+          let end = left - 1;
+          for (let px = left; px < left + diameter; px++) {
+            if (evenCircleContainsPixel(px, py, cx2, cy2, diameter)) {
+              if (px < start) start = px;
+              end = px;
+            }
+          }
+          if (end >= start) drawLinePixels(start, py, end, py, color);
+        }
+      }
+      function ringRuns(cx, cy, outerDiameter, thickness) {
+        cx = round(cx); cy = round(cy);
+        outerDiameter = Math.max(1, round(outerDiameter));
+        thickness = clamp(round(thickness || 1), 1, Math.ceil(outerDiameter / 2));
+        const innerDiameter = Math.max(0, outerDiameter - 2 * thickness);
+        const left = outerDiameter % 2 === 0 ? cx - outerDiameter / 2 : cx - Math.floor(outerDiameter / 2);
+        const top = outerDiameter % 2 === 0 ? cy - outerDiameter / 2 : cy - Math.floor(outerDiameter / 2);
+        const outerCx2 = outerDiameter % 2 === 0 ? 2 * cx : 2 * cx + 1;
+        const outerCy2 = outerDiameter % 2 === 0 ? 2 * cy : 2 * cy + 1;
+        const innerCx2 = innerDiameter % 2 === 0 ? 2 * cx : 2 * cx + 1;
+        const innerCy2 = innerDiameter % 2 === 0 ? 2 * cy : 2 * cy + 1;
+        const runs = [];
+        for (let py = top; py < top + outerDiameter; py++) {
+          let start = null;
+          for (let px = left; px < left + outerDiameter; px++) {
+            const inOuter = evenCircleContainsPixel(px, py, outerCx2, outerCy2, outerDiameter);
+            const inInner = innerDiameter > 0 && evenCircleContainsPixel(px, py, innerCx2, innerCy2, innerDiameter);
+            if (inOuter && !inInner) {
+              if (start === null) start = px;
+            } else if (start !== null) {
+              runs.push([start, py, px - start]);
+              start = null;
+            }
+          }
+          if (start !== null) runs.push([start, py, left + outerDiameter - start]);
+        }
+        return runs;
+      }
+      function drawRingDPixels(cx, cy, outerDiameter, thickness, color) {
+        for (const [x, y, w] of ringRuns(cx, cy, outerDiameter, thickness)) drawLinePixels(x, y, x + w - 1, y, color);
+      }
       function drawTrianglePixels(s, color) {
         const pts = [[s.x1, s.y1], [s.x2, s.y2], [s.x3, s.y3]].map(p => [round(p[0]), round(p[1])]);
         const minY = Math.min(pts[0][1], pts[1][1], pts[2][1]);
@@ -977,18 +1104,20 @@
         }
       }
       function drawShape(s) {
+        normalizeShape(s);
         if (!s.visible) return;
         const c = Number(s.color);
         if (s.type === 'pixel') putPixel(s.x, s.y, c);
         if (s.type === 'line') drawLinePixels(s.x1, s.y1, s.x2, s.y2, c);
         if (s.type === 'hline') drawLinePixels(s.x, s.y, s.x + s.w - 1, s.y, c);
         if (s.type === 'vline') drawLinePixels(s.x, s.y, s.x, s.y + s.h - 1, c);
-        if (s.type === 'box') drawRectPixels(s.x, s.y, s.w, s.h, c, true);
-        if (s.type === 'frame') drawRectPixels(s.x, s.y, s.w, s.h, c, false);
-        if (s.type === 'rbox') drawRoundRectPixels(s.x, s.y, s.w, s.h, s.r, c, true);
-        if (s.type === 'rframe') drawRoundRectPixels(s.x, s.y, s.w, s.h, s.r, c, false);
-        if (s.type === 'circle') drawCirclePixels(s.x, s.y, s.r, c);
-        if (s.type === 'disc') drawDiscPixels(s.x, s.y, s.r, c);
+        if (s.type === 'box' && s.rounded) drawRoundRectPixels(s.x, s.y, s.w, s.h, s.r, c, s.fill);
+        else if (s.type === 'box') drawRectPixels(s.x, s.y, s.w, s.h, c, s.fill);
+        if (s.type === 'circle' && s.ring) {
+          drawRingDPixels(s.x, s.y, s.diameter, s.thickness, c);
+        }
+        else if (s.type === 'circle' && s.fill) drawDiscDPixels(s.x, s.y, s.diameter, c);
+        else if (s.type === 'circle') drawCircleDPixels(s.x, s.y, s.diameter, c);
         if (s.type === 'triangle') drawTrianglePixels(s, c);
         if (s.type === 'varioBar') drawVarioBarPixels(s, c);
         if (s.type === 'bitmap') {
@@ -1072,18 +1201,31 @@
       function renderLayers() {
         layersEl.innerHTML = '';
         [...state.shapes].reverse().forEach((s, revIndex) => {
+          normalizeShape(s);
           const index = state.shapes.length - 1 - revIndex;
-          const row = document.createElement('button');
-          row.type = 'button';
+          const row = document.createElement('div');
           row.className = 'lde-layer';
+          row.tabIndex = 0;
+          row.setAttribute('role', 'button');
           row.setAttribute('aria-selected', s.id === state.selectedId ? 'true' : 'false');
-          row.innerHTML = `<span class="lde-chip">${index + 1}</span><span class="lde-layer-name"></span><input class="lde-visibility" type="checkbox" ${s.visible ? 'checked' : ''} aria-label="Visible">`;
-          row.querySelector('.lde-layer-name').textContent = `${s.name} (${s.type})`;
+          row.innerHTML = `<span class="lde-chip">${index + 1}</span><span class="lde-layer-name"></span><span class="lde-layer-actions"><button type="button" class="btn lde-mini" data-layer-delta="1" ${index === state.shapes.length - 1 ? 'disabled' : ''} aria-label="Move layer up">Up</button><button type="button" class="btn lde-mini" data-layer-delta="-1" ${index === 0 ? 'disabled' : ''} aria-label="Move layer down">Down</button></span><input class="lde-visibility" type="checkbox" ${s.visible ? 'checked' : ''} aria-label="Visible">`;
+          row.querySelector('.lde-layer-name').textContent = `${s.name} (${s.type === 'box' ? 'rectangle' : s.type})`;
           row.addEventListener('click', e => {
-            if (e.target.classList.contains('lde-visibility')) return;
+            if (e.target.closest('button') || e.target.classList.contains('lde-visibility')) return;
             state.selectedId = s.id;
             render();
           });
+          row.addEventListener('keydown', e => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            e.preventDefault();
+            state.selectedId = s.id;
+            render();
+          });
+          row.querySelectorAll('[data-layer-delta]').forEach(btn => btn.addEventListener('click', e => {
+            e.stopPropagation();
+            state.selectedId = s.id;
+            layer(Number(btn.dataset.layerDelta));
+          }));
           row.querySelector('input').addEventListener('change', e => {
             s.visible = e.target.checked;
             render();
@@ -1092,30 +1234,68 @@
         });
       }
       function propList(s) {
+        normalizeShape(s);
         if (!s) return [];
         if (s.type === 'pixel') return ['x', 'y'];
         if (s.type === 'line') return ['x1', 'y1', 'x2', 'y2'];
         if (s.type === 'hline') return ['x', 'y', 'w'];
         if (s.type === 'vline') return ['x', 'y', 'h'];
         if (s.type === 'varioBar') return ['x', 'y', 'w', 'posTick', 'negTick'];
-        if (s.type === 'circle' || s.type === 'disc') return ['x', 'y', 'r'];
+        if (s.type === 'circle') return s.ring ? ['x', 'y', 'diameter', 'thickness'] : ['x', 'y', 'diameter'];
         if (s.type === 'triangle') return ['x1', 'y1', 'x2', 'y2', 'x3', 'y3'];
-        if (s.type === 'rbox' || s.type === 'rframe') return ['x', 'y', 'w', 'h', 'r'];
+        if (s.type === 'box') return s.rounded ? ['x', 'y', 'w', 'h', 'r'] : ['x', 'y', 'w', 'h'];
         if (s.type === 'text') return ['x', 'y'];
         return ['x', 'y', 'w', 'h'];
+      }
+      function boolPropList(s) {
+        normalizeShape(s);
+        if (!s) return [];
+        if (s.type === 'circle') return [
+          ['fill', 'Fill'],
+          ['ring', 'Ring'],
+          ['even', 'Even diameter center']
+        ];
+        if (s.type === 'box') return [
+          ['fill', 'Fill'],
+          ['rounded', 'Rounded corners']
+        ];
+        return [];
       }
       function renderProps() {
         const s = selected();
         propsEl.hidden = !s;
         propsEmptyEl.hidden = !!s;
         if (!s) return;
+        normalizeShape(s);
         nameInput.value = s.name || '';
         colorInput.value = String(s.color ?? 1);
-        fontInput.value = s.font || 'leaf_8x14';
+        fontInput.value = s.font || 'leaf_6x12';
         fontInput.disabled = s.type !== 'text';
         textWrap.hidden = s.type !== 'text';
         textInput.value = s.text || '';
         propFieldsEl.innerHTML = '';
+        boolPropList(s).forEach(([k, labelText]) => {
+          const label = document.createElement('label');
+          label.className = 'lde-check-row';
+          const input = document.createElement('input');
+          input.type = 'checkbox';
+          input.checked = !!s[k];
+          input.addEventListener('change', () => {
+            s[k] = input.checked;
+            if (s.type === 'circle' && k === 'even') {
+              const d = Math.max(1, round(s.diameter || 1));
+              s.diameter = input.checked
+                ? d + (d % 2 === 0 ? 0 : 1)
+                : d + (d % 2 === 1 ? 0 : 1);
+            }
+            if (s.type === 'circle' && k === 'ring' && s.ring) s.fill = false;
+            if (s.type === 'box' && k === 'rounded' && s.rounded) s.r = Math.max(1, round(s.r || 3));
+            render();
+          });
+          label.append(input, document.createElement('span'));
+          label.lastChild.textContent = labelText;
+          propFieldsEl.appendChild(label);
+        });
         propList(s).forEach(k => {
           const wrap = document.createElement('div');
           wrap.className = 'lde-field';
@@ -1130,8 +1310,14 @@
           input.className = 'form-control';
           input.value = s[k] ?? 0;
           input.addEventListener('input', () => {
-            s[k] = k === 'posTick' || k === 'negTick' ? Math.max(1, round(input.value)) : round(input.value);
+            s[k] = k === 'posTick' || k === 'negTick' || k === 'diameter' || k === 'thickness' ? Math.max(1, round(input.value)) : round(input.value);
+            if (s.type === 'circle' && k === 'diameter') {
+              s.even = s.diameter % 2 === 0;
+              s.thickness = clamp(round(s.thickness || 1), 1, Math.ceil(s.diameter / 2));
+            }
+            if (s.type === 'circle' && k === 'thickness') s.thickness = Math.min(s.thickness, Math.ceil(Math.max(1, round(s.diameter || 1)) / 2));
             if (s.type === 'varioBar' && k === 'w') s.w = Math.max(3, round(s.w));
+            if (s.type === 'box' && k === 'r') s.r = clamp(round(s.r || 0), 0, Math.floor(Math.min(s.w || 1, s.h || 1) / 2));
             render();
           });
           wrap.append(label, input);
@@ -1147,8 +1333,10 @@
         if (!s) return false;
         const grow = key === 'ArrowRight' || key === 'ArrowDown';
         const delta = grow ? step : -step;
-        if (s.type === 'circle' || s.type === 'disc') {
-          s.r = Math.max(1, round((s.r || 1) + delta));
+        normalizeShape(s);
+        if (s.type === 'circle') {
+          s.diameter = Math.max(1, round((s.diameter || 1) + delta));
+          s.even = s.diameter % 2 === 0;
           return true;
         }
         if (s.type === 'varioBar') {
@@ -1193,6 +1381,7 @@
         const s = selected();
         if (!s) return;
         const copy = JSON.parse(JSON.stringify(s));
+        normalizeShape(copy);
         copy.id = state.nextId++;
         copy.name = s.name + ' copy';
         moveShape(copy, 3, 3);
@@ -1206,6 +1395,7 @@
         render();
       }
       function u8g2Call(s) {
+        normalizeShape(s);
         const prefix = s.color !== 1 ? `u8g2.setDrawColor(${s.color});\n` : '';
         const suffix = s.color !== 1 ? `\nu8g2.setDrawColor(1);` : '';
         let call = '';
@@ -1213,12 +1403,16 @@
         if (s.type === 'line') call = `u8g2.drawLine(${s.x1}, ${s.y1}, ${s.x2}, ${s.y2});`;
         if (s.type === 'hline') call = `u8g2.drawHLine(${s.x}, ${s.y}, ${s.w});`;
         if (s.type === 'vline') call = `u8g2.drawVLine(${s.x}, ${s.y}, ${s.h});`;
-        if (s.type === 'box') call = `u8g2.drawBox(${s.x}, ${s.y}, ${s.w}, ${s.h});`;
-        if (s.type === 'frame') call = `u8g2.drawFrame(${s.x}, ${s.y}, ${s.w}, ${s.h});`;
-        if (s.type === 'rbox') call = `u8g2.drawRBox(${s.x}, ${s.y}, ${s.w}, ${s.h}, ${s.r});`;
-        if (s.type === 'rframe') call = `u8g2.drawRFrame(${s.x}, ${s.y}, ${s.w}, ${s.h}, ${s.r});`;
-        if (s.type === 'circle') call = `u8g2.drawCircle(${s.x}, ${s.y}, ${s.r});`;
-        if (s.type === 'disc') call = `u8g2.drawDisc(${s.x}, ${s.y}, ${s.r});`;
+        if (s.type === 'box' && s.rounded && s.fill) call = `u8g2.drawRBox(${s.x}, ${s.y}, ${s.w}, ${s.h}, ${s.r});`;
+        else if (s.type === 'box' && s.rounded) call = `u8g2.drawRFrame(${s.x}, ${s.y}, ${s.w}, ${s.h}, ${s.r});`;
+        else if (s.type === 'box' && s.fill) call = `u8g2.drawBox(${s.x}, ${s.y}, ${s.w}, ${s.h});`;
+        else if (s.type === 'box') call = `u8g2.drawFrame(${s.x}, ${s.y}, ${s.w}, ${s.h});`;
+        if (s.type === 'circle' && s.ring) {
+          call = ringRuns(s.x, s.y, s.diameter, s.thickness)
+            .map(([x, y, w]) => `u8g2.drawHLine(${x}, ${y}, ${w});`)
+            .join('\n');
+        }
+        else if (s.type === 'circle') call = `${s.fill ? 'drawDiscD' : 'drawCircleD'}(${s.x}, ${s.y}, ${s.diameter});`;
         if (s.type === 'triangle') call = `u8g2.drawTriangle(${s.x1}, ${s.y1}, ${s.x2}, ${s.y2}, ${s.x3}, ${s.y3});`;
         if (s.type === 'text') call = `u8g2.setFont(${s.font});\nu8g2.drawStr(${s.x}, ${s.y}, "${String(s.text || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"')}");`;
         if (s.type === 'varioBar') {
@@ -1295,9 +1489,52 @@
         a.remove();
         statusEl.textContent = `PNG downloaded (${out.width} x ${out.height})`;
       }
+      function loadLayoutJson() {
+        let data;
+        try {
+          data = JSON.parse(exportEl.value);
+        } catch (err) {
+          statusEl.textContent = `JSON load failed: ${err.message}`;
+          return;
+        }
+        if (!data || !Array.isArray(data.shapes)) {
+          statusEl.textContent = 'JSON load failed: expected an object with a shapes array';
+          return;
+        }
+        const display = data.display || state.display;
+        const w = round(display.w);
+        const h = round(display.h);
+        if (w > 0 && h > 0) {
+          state.display = { w, h };
+          const profileKey = Object.entries(profileMap).find(([, p]) => p.w === w && p.h === h)?.[0];
+          if (profileKey) profileSelect.value = profileKey;
+        }
+        const usedIds = new Set();
+        let maxId = 0;
+        state.shapes = data.shapes.map((shape, i) => {
+          const out = JSON.parse(JSON.stringify(shape || {}));
+          out.type ||= 'box';
+          out.name ||= `${out.type} ${i + 1}`;
+          out.visible = out.visible !== false;
+          out.color ??= 1;
+          normalizeShape(out);
+          let id = Number(out.id);
+          if (!Number.isFinite(id) || id <= 0 || usedIds.has(id)) id = maxId + 1;
+          out.id = id;
+          usedIds.add(id);
+          maxId = Math.max(maxId, id);
+          return out;
+        });
+        state.nextId = maxId + 1;
+        state.selectedId = state.shapes[0]?.id || null;
+        state.activeTemplate = null;
+        render();
+        statusEl.textContent = `Loaded JSON layout with ${state.shapes.length} primitives`;
+      }
       function renderExport() {
         pngBorderWrap.hidden = state.exportMode !== 'png';
         copyButton.textContent = state.exportMode === 'png' ? 'Download PNG' : 'Copy';
+        loadJsonButton.hidden = state.exportMode !== 'json';
         pngBorderInput.checked = state.pngBorder;
         exportEl.disabled = state.exportMode === 'png';
         if (state.exportMode === 'png') {
@@ -1323,8 +1560,9 @@
         exportEl.value = `// Leaf display layout ${state.display.w} x ${state.display.h}\nvoid draw_exported_layout() {\n${state.shapes.filter(s => s.visible).map(s => '  ' + u8g2Call(s).replace(/\n/g, '\n  ')).join('\n')}\n}`;
       }
       function addLeafShape(add, shape) {
-        add(shape);
-        return shape;
+        const normalized = normalizeShape(shape);
+        add(normalized);
+        return normalized;
       }
       function addLeafText(add, name, x, y, text, font, color = 1) {
         return addLeafShape(add, { type: 'text', name, x, y, text, font, color });
@@ -1435,6 +1673,7 @@
           if ('w' in out) out.w = Math.max(1, S(out.w, 'x'));
           if ('h' in out) out.h = Math.max(1, S(out.h, 'y'));
           if ('r' in out) out.r = Math.max(1, S(out.r, 'x'));
+          if ('diameter' in out) out.diameter = Math.max(1, S(out.diameter, 'x'));
           return out;
         };
         const add = s => {
@@ -1443,7 +1682,7 @@
           out.id = state.nextId++;
           out.visible = true;
           out.color ??= 1;
-          state.shapes.push(out);
+          state.shapes.push(normalizeShape(out));
         };
         const reuseShapes = new Map(state.shapes.filter(s => s.type === 'varioBar').map(s => [s.name, JSON.parse(JSON.stringify(s))]));
         const model = readSimModel();
@@ -1581,6 +1820,7 @@
         renderExport();
       }));
       root.querySelector('#lde-refresh-export').addEventListener('click', renderExport);
+      loadJsonButton.addEventListener('click', loadLayoutJson);
       root.querySelector('#lde-copy').addEventListener('click', async () => {
         if (state.exportMode === 'png') {
           downloadPng();
