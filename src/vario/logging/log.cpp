@@ -278,6 +278,7 @@ void flightTimer_start() {
 
   // start timer
   speaker.playSound(fx::enter);
+  settings.resetShortcutVolume();
   flight = &igcFlight;
 
   logbook.logStartedAt = millis() / 1000;
@@ -317,6 +318,7 @@ void flightTimer_stop(bool showSummary) {
   logbookEntry.reset();
   // TODO:  A much cooler end flight sound.  Perhaps even an easter egg?
   speaker.playSound(fx::confirm);
+  settings.resetShortcutVolume();
   flight = NULL;
   trackLogEnabledForFlight = false;
   logbook = FlightStats();  // Reset the flight stats

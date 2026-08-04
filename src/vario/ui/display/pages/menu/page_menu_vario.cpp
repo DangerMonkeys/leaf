@@ -25,6 +25,7 @@ enum vario_menu_items {
   cursor_vario_climbstart,
   // cursor_vario_liftyair,
   cursor_vario_sinkalarm,
+  cursor_vario_volumeShortcut,
 };
 
 void VarioMenuPage::draw() {
@@ -34,11 +35,9 @@ void VarioMenuPage::draw() {
     menu_ui::drawTitle("Vario", menu_ui::GLYPH_VARIO);
 
     // Menu Items
-    uint8_t start_y = 29;
-    uint8_t y_spacing = 16;
     uint8_t setting_name_x = 2;
     uint8_t setting_choice_x = 68;
-    uint8_t menu_items_y[] = {190, 40, 55, 70, 95, 110 /*, 135, 150, 165*/};
+    uint8_t menu_items_y[] = {190, 40, 55, 70, 85, 100, 128 /*, 135, 150, 165*/};
 
     for (int i = 0; i <= cursor_max; i++) {
       const bool selected = i == cursor_position;
@@ -128,7 +127,7 @@ void VarioMenuPage::draw() {
           }
           // Print units for climb/sink thresholds
           u8g2.setFont(leaf_labels);
-          u8g2.setDrawColor(selected ? 0 : 1);
+          u8g2.setDrawColor(1);
           if (settings.units_climb) {
             u8g2.setCursor(u8g2.getCursorX() - 20, u8g2.getCursorY() + 12);
             u8g2.print("fpm");
@@ -139,11 +138,25 @@ void VarioMenuPage::draw() {
           u8g2.setFont(leaf_6x12);
           break;
 
+        case cursor_vario_volumeShortcut:
+          u8g2.setCursor(80, menu_items_y[i]);
+          menu_ui::printGlyph(settings.volumeShortcut ? menu_ui::ICON_ON : menu_ui::ICON_OFF);
+          break;
+
         case cursor_vario_back:
           menu_ui::drawBackIcon(setting_choice_x, menu_items_y[i]);
           break;
       }
       menu_ui::endRow();
+    }
+
+    if (settings.volumeShortcut) {
+      u8g2.drawRFrame(3, 129, 90, 44, 3);
+      u8g2.setFont(leaf_5x8);
+      u8g2.drawStr(10, 140, "Hold UP or DOWN");
+      u8g2.drawStr(7, 150, "on a vario page to");
+      u8g2.drawStr(6, 160, "temporarily change");
+      u8g2.drawStr(20, 170, "vario volume");
     }
   } while (u8g2.nextPage());
 }
@@ -178,6 +191,10 @@ void VarioMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count)
       break;
     case cursor_vario_sinkalarm:
       if (state == ButtonEvent::CLICKED) settings.adjustSinkAlarm(dir);
+      break;
+    case cursor_vario_volumeShortcut:
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT))
+        settings.toggleBoolOnOff(&settings.volumeShortcut);
       break;
     case cursor_vario_back:
       if (state == ButtonEvent::CLICKED) {

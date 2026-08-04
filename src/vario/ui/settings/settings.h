@@ -36,6 +36,7 @@
 #define DEF_CLIMB_START 5       // cm/s when climb note begins
 #define DEF_VOLUME_VARIO 2      // 0=off, 1=low, 2=med, 3=high
 #define DEF_QUIET_MODE 0        // 0 = off, 1 = on (ON means no beeping until flight recording)
+#define DEF_VOLUME_SHORTCUT 0   // 0 = disabled, 1 = enabled
 // 0 == linear pitch interpolation; 1 == major C-scale for climb, minor scale for descent
 #define DEF_VARIO_TONES 0
 // In units of 10 cm/s (a sink rate of only 30cm/s means the air itself is going up).  '0' is off.
@@ -120,6 +121,8 @@ class Settings {
   int8_t vario_climbAvg;
   int8_t vario_climbStart;
   int8_t vario_volume;
+  bool volumeShortcut;
+  int8_t shortcutVolumeLevel;
   bool vario_quietMode;
   bool vario_tones;
   int8_t vario_liftyAir;
@@ -224,6 +227,8 @@ setting | samples | time avg
   void adjustClimbStart(Button dir);
   void adjustLiftyAir(Button dir);
   void adjustVolumeVario(Button dir);
+  bool adjustShortcutVolume(Button dir);
+  void resetShortcutVolume(void);
   void adjustVolumeSystem(Button dir);
   void adjustTimeZone(Button dir);
   void adjustAutoOff(Button dir);
