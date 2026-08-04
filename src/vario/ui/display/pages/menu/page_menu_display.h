@@ -19,7 +19,8 @@ class DisplayMenuPage : public SettingsMenuPage {
   bool cursorUsesLeftButton() const override;
 
  private:
-  static constexpr char* labels[6] = {"Back", "Basic", "User", "Therm Nav", "Wpt Nav", "Contrast"};
+  static constexpr char* labels[6] = {"Back",        "Basic",        "User",
+                                      "Thermal Nav", "Waypoint Nav", "Contrast"};
 };
 
 #endif

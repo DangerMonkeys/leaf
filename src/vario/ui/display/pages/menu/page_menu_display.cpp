@@ -55,7 +55,8 @@ void DisplayMenuPage::draw() {
 
     uint8_t y_spacing = 16;
     uint8_t setting_name_x = 3;
-    uint8_t setting_choice_x = 78;
+    uint8_t setting_choice_x = 80;
+    uint8_t contrast_value_x = 78;
     uint8_t menu_items_y[] = {190, 60, 75, 90, 105, 135};
 
     for (int i = 0; i <= cursor_max; i++) {
@@ -97,6 +98,7 @@ void DisplayMenuPage::draw() {
             menu_ui::printGlyph(menu_ui::ICON_OFF);
           break;
         case cursor_display_contrast:
+          u8g2.setCursor(contrast_value_x, menu_items_y[i]);
           if (settings.disp_contrast < 10) u8g2.print(" ");
           u8g2.print(settings.disp_contrast);
           break;
