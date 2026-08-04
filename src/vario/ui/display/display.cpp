@@ -200,7 +200,10 @@ void Display::showOnSplash() {
 // Will first display charging screen if charging, or splash screen if in the process of turning on
 // / waking up Then will display any current modal pages before falling back to the current page
 void Display::update() {
+  clearLastRenderContext();
+
   if (displayPage_ == MainPage::Blank) {
+    lastRenderContext_ = DisplayRenderContext::Blank;
     clear();
     return;
   }
@@ -209,10 +212,12 @@ void Display::update() {
   if (!spiLock) return;
 
   if (displayPage_ == MainPage::Charging) {
+    lastRenderContext_ = DisplayRenderContext::Charging;
     chargingPage_draw();
     return;
   }
   if (showStartupSplash_) {
+    lastRenderContext_ = DisplayRenderContext::StartupSplash;
     display_on_splash();
     if (showSplashScreenFrames_ > 0) {
       showSplashScreenFrames_--;
@@ -224,6 +229,7 @@ void Display::update() {
   }
   // If user setting to SHOW_WARNING and also we need to showWarning, then display it
   if (settings.system_showWarning && showWarning_) {
+    lastRenderContext_ = DisplayRenderContext::Warning;
     warningPage_draw();
     return;
   } else {
@@ -232,6 +238,7 @@ void Display::update() {
 
   auto modalPage = mainMenuPage.get_modal_page();
   if (modalPage != NULL) {
+    lastRenderContext_ = DisplayRenderContext::ModalMenu;
     modalPage->draw();
     return;
   }
@@ -240,24 +247,31 @@ void Display::update() {
 
   switch (displayPage_) {
     case MainPage::Simple:
+      lastRenderContext_ = DisplayRenderContext::Simple;
       simplePage_draw();
       break;
     case MainPage::Thermal:
+      lastRenderContext_ = DisplayRenderContext::Thermal;
       thermalPage_draw();
       break;
     case MainPage::ThermalAdv:
+      lastRenderContext_ = DisplayRenderContext::ThermalAdv;
       thermalPageAdv_draw();
       break;
     case MainPage::Debug:
+      lastRenderContext_ = DisplayRenderContext::Debug;
       debugPage_draw();
       break;
     case MainPage::Debug2:
+      lastRenderContext_ = DisplayRenderContext::Debug2;
       debug2Page_draw();
       break;
     case MainPage::Nav:
+      lastRenderContext_ = DisplayRenderContext::Nav;
       navigatePage_draw();
       break;
     case MainPage::Menu:
+      lastRenderContext_ = DisplayRenderContext::MainMenu;
       mainMenuPage.draw();
       break;
   }

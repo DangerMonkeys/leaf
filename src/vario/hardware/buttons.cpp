@@ -11,6 +11,7 @@
 
 #include <Arduino.h>
 
+#include "diagnostics/cpu_utilization.h"
 #include "hardware/configuration.h"
 #include "instruments/baro.h"
 #include "power.h"
@@ -56,6 +57,8 @@ Button Buttons::init() {
 }
 
 void Buttons::report(Button button, ButtonEvent state) {
+  cpu_utilization::recordButtonEvent(button, state);
+
   etl::imessage_bus* bus = bus_;
   if (bus) {
     bus->receive(ButtonEventMessage(button, state, holdCounter_));

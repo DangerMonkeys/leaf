@@ -199,6 +199,7 @@ void Settings::loadDefaults() {
   diag_networkEvents = DEF_DIAG_NETWORK_EVENTS;
   diag_webRequests = DEF_DIAG_WEB_REQUESTS;
   diag_vario = DEF_DIAG_VARIO;
+  diag_cpuUtilization = DEF_DIAG_CPU_UTILIZATION;
 
   // Boot Flags
   boot_enterBootloader = DEF_ENTER_BOOTLOAD;
@@ -277,6 +278,7 @@ void Settings::retrieve() {
   diag_networkEvents = leafPrefs.getBool("DIAG_NETWORK", DEF_DIAG_NETWORK_EVENTS);
   diag_webRequests = leafPrefs.getBool("DIAG_WEB_REQ", DEF_DIAG_WEB_REQUESTS);
   diag_vario = leafPrefs.getBool("DIAG_VARIO", DEF_DIAG_VARIO);
+  diag_cpuUtilization = leafPrefs.getBool("DIAG_CPU_UTIL", DEF_DIAG_CPU_UTILIZATION);
 
   // Boot Flags
   boot_enterBootloader = leafPrefs.getBool("ENTER_BOOTLOAD");
@@ -360,6 +362,7 @@ void Settings::save() {
   leafPrefs.putBool("DIAG_NETWORK", diag_networkEvents);
   leafPrefs.putBool("DIAG_WEB_REQ", diag_webRequests);
   leafPrefs.putBool("DIAG_VARIO", diag_vario);
+  leafPrefs.putBool("DIAG_CPU_UTIL", diag_cpuUtilization);
   // Boot Flags
   leafPrefs.putBool("ENTER_BOOTLOAD", boot_enterBootloader);
   leafPrefs.putBool("BOOT_TO_ON", boot_toOnState);

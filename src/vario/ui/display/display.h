@@ -33,6 +33,22 @@ enum class MainPage : uint8_t {
 };
 DEFINE_WRAPPING_BOUNDS(MainPage, MainPage::Debug, MainPage::Menu);
 
+enum class DisplayRenderContext : uint8_t {
+  None = 0,
+  Blank = 1,
+  Charging = 2,
+  StartupSplash = 3,
+  Warning = 4,
+  Simple = 10,
+  Thermal = 11,
+  ThermalAdv = 12,
+  Nav = 13,
+  Debug = 14,
+  Debug2 = 15,
+  MainMenu = 20,
+  ModalMenu = 30,
+};
+
 class Display {
  public:
   void init();
@@ -53,6 +69,8 @@ class Display {
 
   bool displayingWarning() { return showWarning_; }
   void dismissWarning() { showWarning_ = false; }
+  void clearLastRenderContext() { lastRenderContext_ = DisplayRenderContext::None; }
+  DisplayRenderContext lastRenderContext() const { return lastRenderContext_; }
 
  private:
   MainPage sanitizedMainPage(MainPage targetPage);
@@ -69,6 +87,7 @@ class Display {
   bool showStartupSplash_ = false;
 
   bool showWarning_ = true;
+  DisplayRenderContext lastRenderContext_ = DisplayRenderContext::None;
 };
 
 extern Display display;
