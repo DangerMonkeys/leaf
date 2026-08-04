@@ -74,10 +74,20 @@ namespace {
     return dx2 * dx2 + dy2 * dy2 <= int32_t(MAP_D_5000M) * MAP_D_5000M;
   }
 
-  bool discContainsPixel(int16_t px, int16_t py, int16_t cx, int16_t cy, uint8_t radius) {
+  bool softDiscContainsPixel(int16_t px, int16_t py, int16_t cx, int16_t cy, uint8_t radius) {
     const int16_t dx = px - cx;
     const int16_t dy = py - cy;
-    return dx * dx + dy * dy <= radius * radius;
+    const int32_t diameterPlusOne = 2 * radius + 1;
+    return 4 * (int32_t(dx) * dx + int32_t(dy) * dy) <= diameterPlusOne * diameterPlusOne;
+  }
+
+  bool softCircleContainsPixel(int16_t px, int16_t py, int16_t cx, int16_t cy, uint8_t radius) {
+    const int16_t dx = px - cx;
+    const int16_t dy = py - cy;
+    const int32_t distance4 = 4 * (int32_t(dx) * dx + int32_t(dy) * dy);
+    const int32_t outer = int32_t(2 * radius + 1) * (2 * radius + 1);
+    const int32_t inner = radius > 0 ? int32_t(2 * radius - 1) * (2 * radius - 1) : 0;
+    return distance4 <= outer && distance4 >= inner;
   }
 
   void drawClippedPixel(int16_t x, int16_t y) {
@@ -88,7 +98,7 @@ namespace {
     for (int16_t y = cy - radius; y <= cy + radius; y++) {
       int16_t segmentStart = INT16_MIN;
       for (int16_t x = cx - radius; x <= cx + radius; x++) {
-        const bool draw = discContainsPixel(x, y, cx, cy, radius) && mapContainsPixel(x, y);
+        const bool draw = softDiscContainsPixel(x, y, cx, cy, radius) && mapContainsPixel(x, y);
         if (draw && segmentStart == INT16_MIN) {
           segmentStart = x;
         } else if (!draw && segmentStart != INT16_MIN) {
@@ -104,14 +114,7 @@ namespace {
   void drawClippedCircle(int16_t cx, int16_t cy, uint8_t radius) {
     for (int16_t y = cy - radius; y <= cy + radius; y++) {
       for (int16_t x = cx - radius; x <= cx + radius; x++) {
-        if (!discContainsPixel(x, y, cx, cy, radius)) continue;
-        if (discContainsPixel(x - 1, y, cx, cy, radius) &&
-            discContainsPixel(x + 1, y, cx, cy, radius) &&
-            discContainsPixel(x, y - 1, cx, cy, radius) &&
-            discContainsPixel(x, y + 1, cx, cy, radius)) {
-          continue;
-        }
-        drawClippedPixel(x, y);
+        if (softCircleContainsPixel(x, y, cx, cy, radius)) drawClippedPixel(x, y);
       }
     }
   }

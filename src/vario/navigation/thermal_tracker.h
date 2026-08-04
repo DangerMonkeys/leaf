@@ -2,7 +2,7 @@
 
 #include <Arduino.h>
 
-constexpr uint8_t MAX_SAVED_THERMALS = 20;
+constexpr uint8_t MAX_SAVED_THERMALS = 15;
 constexpr uint8_t MAX_THERMAL_NODES = 4;
 constexpr uint8_t MAX_THERMAL_DISPLAY_ITEMS = MAX_SAVED_THERMALS;
 
@@ -40,7 +40,7 @@ struct ThermalDisplayItem {
 
 class ThermalTracker {
  public:
-  static constexpr uint8_t MAX_DETECTOR_SAMPLES = 70;
+  static constexpr uint8_t MAX_DETECTOR_SAMPLES = 40;
 
   void reset();
   void updateDetector();
@@ -64,10 +64,10 @@ class ThermalTracker {
 
   static constexpr uint16_t DETECTION_WINDOW_S = 30;
   static constexpr int16_t CANDIDATE_GAIN_M = 10;
-  static constexpr int16_t CANDIDATE_TURN_DEG = 90;
+  static constexpr int16_t CANDIDATE_TURN_DEG = 60;
   static constexpr uint16_t SAVE_DURATION_S = 25;
-  static constexpr int16_t SAVE_GAIN_M = 100;
-  static constexpr uint16_t MERGE_RADIUS_M = 300;
+  static constexpr int16_t SAVE_GAIN_M = 65;
+  static constexpr uint16_t MERGE_RADIUS_M = 225;
   static constexpr double METERS_PER_DEG_LAT = 111320.0;
 
   bool readCurrentFix(Sample& sample);

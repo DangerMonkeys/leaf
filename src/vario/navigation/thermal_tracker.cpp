@@ -453,12 +453,10 @@ void ThermalTracker::seedTestThermalsForFlight() {
   readSeedReference(current);
   memset(thermals_, 0, sizeof(thermals_));
 
-  const int16_t bearingsDeg[MAX_SAVED_THERMALS] = {-6,  18,   -38,  55,  -72, 96,  -118,
-                                                   145, 178,  -165, 28,  -24, 72,  -88,
-                                                   122, -138, 8,    -52, 104, -176};
-  const uint16_t distancesM[MAX_SAVED_THERMALS] = {420,  780,  1100, 1450, 1800, 2300, 2700,
-                                                   3200, 3800, 4400, 5200, 5600, 6100, 6600,
-                                                   7000, 900,  1350, 2450, 3600, 5900};
+  const int16_t bearingsDeg[MAX_SAVED_THERMALS] = {-6,  18,   -38, 55,  -72, 96,  -118, 145,
+                                                   178, -165, 28,  -24, 72,  -88, 122};
+  const uint16_t distancesM[MAX_SAVED_THERMALS] = {420,  780,  1100, 1450, 1800, 2300, 2700, 3200,
+                                                   3800, 4400, 5200, 5600, 6100, 6600, 7000};
 
   for (uint8_t i = 0; i < MAX_SAVED_THERMALS; ++i) {
     SavedThermal& thermal = thermals_[i];
