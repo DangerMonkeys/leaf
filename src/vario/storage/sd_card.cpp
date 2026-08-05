@@ -37,6 +37,7 @@ constexpr DWORD SD_CARD_FORMAT_ALLOCATION_UNIT_SIZE = 16384;
 constexpr auto SD_CARD_VOLUME_LABEL = "LEAF VARIO";
 constexpr auto SD_CARD_MOUNT_POINT = "/sdcard";
 constexpr auto SD_CARD_FORMAT_MOUNT_POINT = "/sdcard_format";
+constexpr uint32_t SD_CARD_REMOUNT_DELAYS_MS[] = {500, 1000, 2000, 3000};
 
 SDCard sdcard;
 
@@ -209,9 +210,25 @@ void SDCard::unmount() {
 }
 
 bool SDCard::format() {
+  const FormatResult result = formatDetailed();
+  return result.formatted && result.mounted;
+}
+
+SDCard::FormatResult SDCard::formatDetailed() {
+  FormatResult result;
   if (!isCardPresent()) {
     if (DEBUG_SDCARD) Serial.println("SDcard Format Failed: no card present");
-    return false;
+    result.stage = "card_detection";
+    result.error = ESP_ERR_NOT_FOUND;
+    return result;
+  }
+
+  // Prevent the USB host from reading or writing the SD card while its filesystem and block
+  // device are being torn down. mount() configures and starts this LUN again after formatting.
+  if (msc_) {
+    msc_->mediaPresent(false);
+    msc_->end();
+    delay(100);
   }
 
   if (mounted_) {
@@ -220,16 +237,68 @@ bool SDCard::format() {
 
   if (DEBUG_SDCARD) Serial.println("Formatting SDcard");
 
-  if (!formatUnmounted()) {
-    return false;
+  if (!formatUnmounted(result.error, result.stage)) {
+    // The format may have failed before changing the card. Attempt to restore normal access.
+    mounted_ = mountWithRetries(result.mountAttempts);
+    result.mounted = mounted_;
+    return result;
   }
 
-  mounted_ = mount();
-  return mounted_;
+  result.formatted = true;
+  result.stage = "remount";
+  mounted_ = mountWithRetries(result.mountAttempts);
+  result.mounted = mounted_;
+  if (mounted_) {
+    result.stage = "complete";
+    result.error = ESP_OK;
+  }
+  return result;
 }
 
-bool SDCard::formatUnmounted() {
+SDCard::FormatResult SDCard::remountAfterFormat() {
+  FormatResult result;
+  result.formatted = true;
+  result.stage = "remount";
+
+  if (!isCardPresent()) {
+    result.stage = "card_detection";
+    result.error = ESP_ERR_NOT_FOUND;
+    return result;
+  }
+
+  if (mounted_) {
+    result.mounted = true;
+    result.stage = "complete";
+    return result;
+  }
+
+  mounted_ = mountWithRetries(result.mountAttempts);
+  result.mounted = mounted_;
+  if (mounted_) result.stage = "complete";
+  return result;
+}
+
+bool SDCard::mountWithRetries(uint8_t& attempts) {
+  attempts = 0;
+  for (uint32_t delayMs : SD_CARD_REMOUNT_DELAYS_MS) {
+    attempts++;
+    SD_MMC.end();
+    SD_MMC.setPins(SDIO_CLK, SDIO_CMD, SDIO_D0, SDIO_D1, SDIO_D2, SDIO_D3);
+    delay(delayMs);
+    if (mount()) return true;
+    if (DEBUG_SDCARD) {
+      Serial.printf("SDcard Remount Failed: attempt %u after %lu ms\n", attempts,
+                    static_cast<unsigned long>(delayMs));
+    }
+  }
+  return false;
+}
+
+bool SDCard::formatUnmounted(esp_err_t& error, const char*& stage) {
   if (DEBUG_SDCARD) Serial.println("Formatting unmounted SDcard");
+
+  error = ESP_OK;
+  stage = "temporary_mount";
 
   SD_MMC.end();
   SD_MMC.setPins(SDIO_CLK, SDIO_CMD, SDIO_D0, SDIO_D1, SDIO_D2, SDIO_D3);
@@ -265,13 +334,17 @@ bool SDCard::formatUnmounted() {
                                      &card);
     if (result != ESP_OK) {
       if (DEBUG_SDCARD) Serial.printf("SDcard Format Failed: mount/format returned 0x%x\n", result);
+      error = result;
+      stage = "mount_and_format";
       return false;
     }
   } else {
+    stage = "format";
     result = esp_vfs_fat_sdcard_format_cfg(SD_CARD_FORMAT_MOUNT_POINT, card, &mountConfig);
     if (result != ESP_OK) {
       if (DEBUG_SDCARD) Serial.printf("SDcard Format Failed: format returned 0x%x\n", result);
       esp_vfs_fat_sdcard_unmount(SD_CARD_FORMAT_MOUNT_POINT, card);
+      error = result;
       return false;
     }
   }
@@ -280,6 +353,8 @@ bool SDCard::formatUnmounted() {
   if (result != ESP_OK) {
     if (result != ESP_ERR_INVALID_STATE) {
       if (DEBUG_SDCARD) Serial.printf("SDcard Format Failed: unmount returned 0x%x\n", result);
+      error = result;
+      stage = "temporary_unmount";
       return false;
     }
 
@@ -288,6 +363,7 @@ bool SDCard::formatUnmounted() {
 
   SD_MMC.end();
   SD_MMC.setPins(SDIO_CLK, SDIO_CMD, SDIO_D0, SDIO_D1, SDIO_D2, SDIO_D3);
+  error = ESP_OK;
   return true;
 }
 

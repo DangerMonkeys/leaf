@@ -684,6 +684,80 @@ button:disabled {
   cursor: pointer;
 }
 
+.serial-port-panel {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-subtle);
+}
+
+.serial-port-panel h2,
+.serial-port-panel p {
+  margin: 0;
+}
+
+.serial-port-list {
+  display: grid;
+  gap: 8px;
+}
+
+.serial-port-option {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  align-items: center;
+  gap: 9px;
+  cursor: pointer;
+}
+
+.serial-port-option input {
+  position: relative;
+  box-sizing: border-box;
+  width: 16px !important;
+  min-width: 16px !important;
+  max-width: 16px;
+  height: 16px !important;
+  min-height: 16px !important;
+  max-height: 16px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid #82918b;
+  border-radius: 3px;
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--field);
+  cursor: pointer;
+}
+
+.serial-port-option input:checked {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.serial-port-option input:checked::after {
+  position: absolute;
+  top: 1px;
+  left: 4px;
+  width: 4px;
+  height: 8px;
+  border: solid #0b0d0b;
+  border-width: 0 2px 2px 0;
+  content: "";
+  transform: rotate(45deg);
+}
+
+.serial-port-option input:focus-visible {
+  outline: 2px solid rgb(216 255 0 / 50%);
+  outline-offset: 2px;
+}
+
+.task-retry-button {
+  width: fit-content;
+  min-height: 36px;
+  padding: 7px 12px;
+}
+
 .bootloader-check input {
   width: 24px;
   min-height: 24px;
