@@ -235,6 +235,12 @@
   let retrieveTestDetailsPollTimer = null;
   let setupCancellationRequested = false;
   let serialPorts = {{ serial_ports | tojson }};
+  let pendingRunId = {{ pending_run_id | tojson }};
+
+  function setupRunUrl(path) {
+    if (!pendingRunId) return path;
+    return `${path}?run_id=${encodeURIComponent(pendingRunId)}`;
+  }
 
   function renderSerialPorts() {
     serialPortList.replaceChildren();
@@ -672,10 +678,15 @@
     if (!canEnableBootloaderMode()) return;
     bootloaderCheckbox.checked = true;
     bootloaderCheckbox.disabled = true;
-    const response = await fetch("/api/setup/flash", {
+    const response = await fetch(setupRunUrl("/api/setup/flash"), {
       method: "POST",
     });
-    applyFlashTaskState(await response.json());
+    const payload = await response.json();
+    if (payload.pending_run_id && payload.pending_run_id !== pendingRunId) {
+      pendingRunId = payload.pending_run_id;
+      window.history.replaceState({}, "", `/setup?run_id=${encodeURIComponent(pendingRunId)}`);
+    }
+    applyFlashTaskState(payload);
   }
 
   async function startDiscoveryTask() {
@@ -754,7 +765,7 @@
   }
 
   async function handoffSetupSession() {
-    const response = await fetch("/api/setup/handoff", { method: "POST" });
+    const response = await fetch(setupRunUrl("/api/setup/handoff"), { method: "POST" });
     const payload = await response.json();
     if (!response.ok) {
       discoveryDetails.textContent = payload.detail || "Commissioning session could not be started.";
