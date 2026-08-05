@@ -15,6 +15,7 @@ from factory_interface.settings import load_settings
 HTTP_TIMEOUT_SECONDS = DEFAULT_HTTP_TIMEOUT_SECONDS
 RESET_REBOOT_GRACE_SECONDS = 2.0
 RESET_RECONNECT_POLL_SECONDS = 1.0
+SD_FORMAT_HTTP_TIMEOUT_SECONDS = 180.0
 
 
 @dataclass
@@ -92,7 +93,12 @@ def fetch_json(url: str, *, method: str = "GET") -> dict:
         return json.loads(response.read().decode("utf-8"))
 
 
-def post_json(url: str, payload: dict) -> dict:
+def post_json(
+    url: str,
+    payload: dict,
+    *,
+    timeout: float = HTTP_TIMEOUT_SECONDS,
+) -> dict:
     data = json.dumps(payload).encode("utf-8")
     request = Request(
         url,
@@ -103,7 +109,7 @@ def post_json(url: str, payload: dict) -> dict:
     try:
         with urlopen_with_timeout_retries(
             request,
-            timeout=HTTP_TIMEOUT_SECONDS,
+            timeout=timeout,
         ) as response:
             return json.loads(response.read().decode("utf-8"))
     except HTTPError as exc:
@@ -162,9 +168,7 @@ async def run_reset_nonvolatile_memory() -> None:
             payload = await asyncio.to_thread(
                 post_json,
                 f"{base_url}/settings/factory-reset",
-                {
-                    "force_format_sd_card": load_settings().force_format_sd_card_during_commissioning
-                },
+                {"force_format_sd_card": False},
             )
             if not payload.get("reset_requested", False):
                 raise RuntimeError("Device did not acknowledge the reset request.")
@@ -177,8 +181,33 @@ async def run_reset_nonvolatile_memory() -> None:
             await asyncio.sleep(RESET_REBOOT_GRACE_SECONDS)
             await wait_for_device(base_url, device_id)
 
+            if load_settings().force_format_sd_card_during_commissioning:
+                selected_device = get_find_device_task().device
+                if selected_device is not None:
+                    base_url = (
+                        f"http://{selected_device.ip_address}:{selected_device.port}"
+                    )
+
+                task.details = "Formatting SD card..."
+                format_payload = await asyncio.to_thread(
+                    post_json,
+                    f"{base_url}/sd-card/format",
+                    {},
+                    timeout=SD_FORMAT_HTTP_TIMEOUT_SECONDS,
+                )
+                if not format_payload.get("formatted", False):
+                    raise RuntimeError("Device did not report a successful SD format.")
+                if not format_payload.get("mounted", False):
+                    raise RuntimeError("Device formatted the SD card but did not remount it.")
+                if not format_payload.get("label_set", False):
+                    raise RuntimeError("Device remounted the SD card but did not set its label.")
+
             task.status = "success"
-            task.details = "Nonvolatile memory reset."
+            task.details = (
+                "Nonvolatile memory reset; SD card formatted and remounted."
+                if load_settings().force_format_sd_card_during_commissioning
+                else "Nonvolatile memory reset."
+            )
             task.reconnect_status = "success"
             task.reconnect_details = "Device reconnected."
         except asyncio.CancelledError:

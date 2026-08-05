@@ -16,6 +16,7 @@ from factory_interface.network_discovery import (
     stop_preflash_monitor,
 )
 from factory_interface.settings import load_settings, resolve_application_firmware_file
+from factory_interface.serial_ports import eligible_serial_ports
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -271,12 +272,20 @@ def build_flash_firmware_commands() -> tuple[list[list[str]], Path]:
 
     upload_flash_mode = platformio_upload_flash_mode(flash_mode)
     upload_flash_freq = normalize_frequency(flash_freq)
+    serial_ports = eligible_serial_ports()
+    if not serial_ports:
+        raise FlashCommandError(
+            "No eligible serial ports are available. Connect a device or allow a port."
+        )
+    selected_port = serial_ports[0] if len(serial_ports) == 1 else None
+    port_arguments = ["--port", selected_port] if selected_port is not None else []
 
     erase_nvs_command = [
         sys.executable,
         str(esptool_path),
         "--chip",
         "esp32s3",
+        *port_arguments,
         "--baud",
         str(upload_speed),
         "--before",
@@ -293,6 +302,7 @@ def build_flash_firmware_commands() -> tuple[list[list[str]], Path]:
         str(esptool_path),
         "--chip",
         "esp32s3",
+        *port_arguments,
         "--baud",
         str(upload_speed),
         "--before",

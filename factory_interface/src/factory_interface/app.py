@@ -16,6 +16,10 @@ from factory_interface.commissioning_sessions import (
     get_commissioning_session,
     list_commissioning_sessions,
     manually_rediscover_session_device,
+    restart_commissioning_device,
+    retry_commissioning_format,
+    retry_commissioning_mount,
+    retry_commissioning_self_test,
 )
 from factory_interface.commissioning_tasks import (
     cancel_flash_task,
@@ -80,6 +84,7 @@ from factory_interface.settings import (
     refresh_github_releases,
     save_settings,
 )
+from factory_interface.serial_ports import available_serial_ports
 
 PACKAGE_DIR = Path(__file__).resolve().parent
 
@@ -91,6 +96,13 @@ app.mount(
 )
 
 templates = Jinja2Templates(directory=PACKAGE_DIR / "templates")
+
+
+def static_asset_version(filename: str) -> int:
+    return (PACKAGE_DIR / "static" / filename).stat().st_mtime_ns
+
+
+templates.env.globals["static_asset_version"] = static_asset_version
 
 OPERATOR_COOKIE_NAME = "factory_interface_operator_name"
 
@@ -279,6 +291,7 @@ async def setup_device(request: Request) -> HTMLResponse:
                 "force_format_sd_card_during_commissioning": (
                     settings.force_format_sd_card_during_commissioning
                 ),
+                "serial_ports": available_serial_ports(),
             },
         ),
     )
@@ -387,6 +400,33 @@ async def save_setup_notes(request: Request) -> JSONResponse:
     settings.setup_notes = notes
     save_settings(settings)
     return JSONResponse({"setup_notes": settings.setup_notes})
+
+
+@app.get("/api/setup/serial-ports", response_class=JSONResponse)
+async def get_serial_ports() -> JSONResponse:
+    return JSONResponse({"ports": available_serial_ports()})
+
+
+@app.post("/api/setup/serial-ports/ignore", response_class=JSONResponse)
+async def set_serial_port_ignored(request: Request) -> JSONResponse:
+    payload = await request.json()
+    device = payload.get("device")
+    ignored = payload.get("ignored")
+    if not isinstance(device, str) or not device.strip():
+        return JSONResponse({"detail": "Serial port is required."}, status_code=400)
+    if not isinstance(ignored, bool):
+        return JSONResponse({"detail": "Ignored must be true or false."}, status_code=400)
+
+    device = device.strip()
+    settings = load_settings()
+    ignored_ports = set(settings.ignored_serial_ports)
+    if ignored:
+        ignored_ports.add(device)
+    else:
+        ignored_ports.discard(device)
+    settings.ignored_serial_ports = sorted(ignored_ports, key=str.lower)
+    save_settings(settings)
+    return JSONResponse({"ports": available_serial_ports()})
 
 
 @app.post("/api/setup/handoff", response_class=JSONResponse)
@@ -504,6 +544,66 @@ async def cancel_setup_session(mac_address: str) -> JSONResponse:
     session = cancel_commissioning_session(mac_address)
     if session is None:
         return JSONResponse({"detail": "Commissioning session not found."}, status_code=404)
+    return JSONResponse(session.snapshot())
+
+
+@app.post(
+    "/api/setup/sessions/{mac_address}/retry-format",
+    response_class=JSONResponse,
+)
+async def retry_setup_session_format(mac_address: str) -> JSONResponse:
+    session = get_commissioning_session(mac_address)
+    if session is None:
+        return JSONResponse({"detail": "Commissioning session not found."}, status_code=404)
+    try:
+        retry_commissioning_format(session)
+    except RuntimeError as exc:
+        return JSONResponse({"detail": str(exc)}, status_code=409)
+    return JSONResponse(session.snapshot())
+
+
+@app.post(
+    "/api/setup/sessions/{mac_address}/retry-mount",
+    response_class=JSONResponse,
+)
+async def retry_setup_session_mount(mac_address: str) -> JSONResponse:
+    session = get_commissioning_session(mac_address)
+    if session is None:
+        return JSONResponse({"detail": "Commissioning session not found."}, status_code=404)
+    try:
+        retry_commissioning_mount(session)
+    except RuntimeError as exc:
+        return JSONResponse({"detail": str(exc)}, status_code=409)
+    return JSONResponse(session.snapshot())
+
+
+@app.post(
+    "/api/setup/sessions/{mac_address}/restart-device",
+    response_class=JSONResponse,
+)
+async def restart_setup_session_device(mac_address: str) -> JSONResponse:
+    session = get_commissioning_session(mac_address)
+    if session is None:
+        return JSONResponse({"detail": "Commissioning session not found."}, status_code=404)
+    try:
+        restart_commissioning_device(session)
+    except RuntimeError as exc:
+        return JSONResponse({"detail": str(exc)}, status_code=409)
+    return JSONResponse(session.snapshot())
+
+
+@app.post(
+    "/api/setup/sessions/{mac_address}/retry-self-test",
+    response_class=JSONResponse,
+)
+async def retry_setup_session_self_test(mac_address: str) -> JSONResponse:
+    session = get_commissioning_session(mac_address)
+    if session is None:
+        return JSONResponse({"detail": "Commissioning session not found."}, status_code=404)
+    try:
+        retry_commissioning_self_test(session)
+    except RuntimeError as exc:
+        return JSONResponse({"detail": str(exc)}, status_code=409)
     return JSONResponse(session.snapshot())
 
 

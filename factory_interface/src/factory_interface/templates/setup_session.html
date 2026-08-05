@@ -23,7 +23,7 @@
       <ul>
         <li>Firmware: {{ session.preflight.application_firmware_label }}</li>
         <li>Non-application binaries: {{ session.preflight.non_application_binaries_label }}</li>
-        <li>SD card force-format: {{ "enabled" if session.preflight.force_format_sd_card else "disabled" }}</li>
+        <li>SD card format: {{ "enabled" if session.preflight.force_format_sd_card else "disabled" }}</li>
       </ul>
     </div>
 
@@ -83,6 +83,17 @@
     </div>
 
     <div class="checklist-item checklist-item-with-details">
+      <button class="task-icon task-icon-empty" id="prepare-sd-card-task-icon" type="button" aria-label="Toggle SD card preparation details" disabled></button>
+      <span>Format SD card</span>
+      <div class="checklist-details-group" id="prepare-sd-card-details-group" hidden>
+        <p class="checklist-details" id="prepare-sd-card-details"></p>
+        <button class="task-retry-button" id="retry-format" type="button" hidden>Retry formatting</button>
+        <button class="task-retry-button" id="retry-mount" type="button" hidden>Retry SD mount</button>
+        <button class="task-retry-button" id="restart-device" type="button" hidden>Restart Leaf and continue</button>
+      </div>
+    </div>
+
+    <div class="checklist-item checklist-item-with-details">
       <button class="task-icon task-icon-empty" id="firmware-version-task-icon" type="button" aria-label="Toggle firmware version details" disabled></button>
       <span>Read firmware version</span>
       <p class="checklist-details" id="firmware-version-details" hidden></p>
@@ -91,7 +102,10 @@
     <div class="checklist-item checklist-item-with-details">
       <button class="task-icon task-icon-empty" id="self-test-task-icon" type="button" aria-label="Toggle verification test details" disabled></button>
       <span>Verification tests</span>
-      <div class="checklist-details verification-test-details" id="self-test-details" hidden></div>
+      <div class="checklist-details-group" id="self-test-details-group" hidden>
+        <div class="checklist-details verification-test-details" id="self-test-details"></div>
+        <button class="task-retry-button" id="retry-self-test" type="button" hidden>Restart self tests</button>
+      </div>
     </div>
 
     <div class="checklist-item checklist-item-with-details">
@@ -139,9 +153,24 @@
   const discardUrl = `/api/setup/sessions/${encodeURIComponent(macAddress)}`;
   const manualDiscoveryUrl =
     `/api/setup/sessions/${encodeURIComponent(macAddress)}/network-discovery/manual`;
+  const retryFormatUrl = `/api/setup/sessions/${encodeURIComponent(macAddress)}/retry-format`;
+  const retryMountUrl = `/api/setup/sessions/${encodeURIComponent(macAddress)}/retry-mount`;
+  const restartDeviceUrl =
+    `/api/setup/sessions/${encodeURIComponent(macAddress)}/restart-device`;
+  const retrySelfTestUrl =
+    `/api/setup/sessions/${encodeURIComponent(macAddress)}/retry-self-test`;
+  const retryFormatButton = document.querySelector("#retry-format");
+  const retryMountButton = document.querySelector("#retry-mount");
+  const restartDeviceButton = document.querySelector("#restart-device");
+  const retrySelfTestButton = document.querySelector("#retry-self-test");
   let pollTimer = null;
 
   const controls = {
+    prepare_sd_card: {
+      icon: document.querySelector("#prepare-sd-card-task-icon"),
+      details: document.querySelector("#prepare-sd-card-details"),
+      detailsContainer: document.querySelector("#prepare-sd-card-details-group"),
+    },
     network_discovery: {
       icon: document.querySelector("#discovery-task-icon"),
       details: document.querySelector("#discovery-details"),
@@ -158,6 +187,7 @@
     interactive_self_test: {
       icon: document.querySelector("#self-test-task-icon"),
       details: document.querySelector("#self-test-details"),
+      detailsContainer: document.querySelector("#self-test-details-group"),
     },
     retrieve_test_details: {
       icon: document.querySelector("#retrieve-test-details-task-icon"),
@@ -241,6 +271,7 @@
     setTaskIcon(control.icon, task.status);
     if (name === "interactive_self_test") {
       renderVerificationTests(control.details, task);
+      control.detailsContainer.hidden = task.status === "idle";
       return;
     }
     setDetails(control.details, task.details, task.status, control.detailsContainer || control.details);
@@ -249,6 +280,7 @@
   function applySession(session) {
     summary.textContent = `${session.mac_address} - ${session.details}`;
     applyTaskState("network_discovery", session.tasks.network_discovery);
+    applyTaskState("prepare_sd_card", session.tasks.prepare_sd_card);
     applyTaskState("firmware_version", session.tasks.firmware_version);
     applyTaskState("fanet_id", session.tasks.fanet_id);
     applyTaskState("interactive_self_test", session.tasks.interactive_self_test);
@@ -256,6 +288,15 @@
     applyTaskState("persist_results", session.tasks.persist_results);
     applyTaskState("clear_self_test_results", session.tasks.clear_self_test_results);
     applyTaskState("notify_commissioning_complete", session.tasks.notify_commissioning_complete);
+    const sdTask = session.tasks.prepare_sd_card;
+    const sdResult = sdTask.result || {};
+    const remountFailure =
+      sdTask.status === "failure" && sdResult.formatted === true && sdResult.mounted !== true;
+    retryFormatButton.hidden =
+      sdTask.status !== "failure" || sdResult.formatted === true;
+    retryMountButton.hidden = !remountFailure;
+    restartDeviceButton.hidden = !remountFailure;
+    retrySelfTestButton.hidden = session.tasks.interactive_self_test.status !== "failure";
 
     if (session.status !== "running" && pollTimer) {
       clearInterval(pollTimer);
@@ -281,6 +322,21 @@
       },
       body: JSON.stringify({ ip_address: ipAddress }),
     });
+  }
+
+  async function retrySessionTask(url, button) {
+    button.disabled = true;
+    try {
+      const response = await fetch(url, { method: "POST" });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.detail || "Task could not be restarted.");
+      applySession(payload);
+      if (!pollTimer) pollTimer = setInterval(refreshSession, 1000);
+    } catch (error) {
+      summary.textContent = error.message || "Task could not be restarted.";
+    } finally {
+      button.disabled = false;
+    }
   }
 
   async function submitManualIp(form, input, details, fallbackText) {
@@ -313,6 +369,22 @@
     window.location.href = "/";
   });
 
+  retryFormatButton.addEventListener("click", () => {
+    retrySessionTask(retryFormatUrl, retryFormatButton);
+  });
+
+  retryMountButton.addEventListener("click", () => {
+    retrySessionTask(retryMountUrl, retryMountButton);
+  });
+
+  restartDeviceButton.addEventListener("click", () => {
+    retrySessionTask(restartDeviceUrl, restartDeviceButton);
+  });
+
+  retrySelfTestButton.addEventListener("click", () => {
+    retrySessionTask(retrySelfTestUrl, retrySelfTestButton);
+  });
+
   discoveryManualIpForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     await submitManualIp(
@@ -330,12 +402,10 @@
   Object.values(controls).forEach((control) => {
     control.icon.addEventListener("click", () => {
       const detailsContainer = control.detailsContainer || control.details;
-      detailsContainer.hidden = false;
-      if (control.detailsContainer) {
-        const form = control.detailsContainer.querySelector(".manual-ip-entry");
+      detailsContainer.hidden = !detailsContainer.hidden;
+      const form = detailsContainer.querySelector?.(".manual-ip-entry");
+      if (form) {
         form.hidden = !form.hidden;
-      } else {
-        control.details.hidden = !control.details.hidden;
       }
     });
   });
