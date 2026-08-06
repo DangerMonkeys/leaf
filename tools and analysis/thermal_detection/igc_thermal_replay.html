@@ -547,6 +547,7 @@ const paramByKey = new Map(paramSpecs.map(spec => [spec[0], spec]));
 const qualityParamKeys = new Set(["quality_climb_1_mps", "quality_climb_2_mps", "quality_gain_m", "quality_near_altitude_margin_m"]);
 const minMapZoom = 0.35;
 const groundCircleDiameterRatio = 1.088;
+const groundCircleZoomShrinkExponent = 0.6;
 const paramGroups = [
   ["Quality score", ["quality_climb_1_mps", "quality_climb_2_mps", "quality_gain_m", "quality_near_altitude_margin_m"]],
   ["Candidate detection", ["window_s", "min_gain_m", "min_turn_deg", "turn_reversal_hysteresis_deg", "stale_tolerance_s"]],
@@ -1699,7 +1700,9 @@ function drawEarthBackdrop(map) {
   };
   const centerPoint = project3d(center, map);
   const baseScale = Math.max(0.001, mapBaseScaleFor(map));
-  const radiusM = map.w * groundCircleDiameterRatio / (2 * baseScale * minMapZoom);
+  const zoomRatio = Math.max(1, (mapView?.zoom ?? minMapZoom) / minMapZoom);
+  const zoomShrink = Math.pow(zoomRatio, groundCircleZoomShrinkExponent);
+  const radiusM = map.w * groundCircleDiameterRatio / (2 * baseScale * minMapZoom * zoomShrink);
   const samples = 96;
   const ring = [];
   for (let i = 0; i < samples; i += 1) {
