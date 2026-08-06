@@ -590,9 +590,11 @@ const groundCircleDiameterRatio = 1.088;
 const groundCircleZoomShrinkExponent = 0.6;
 const defaultPerspectiveAmount = 0.18;
 const maxPerspectiveAmount = 0.6;
-const followTargetVerticalOffsetRatio = 0.25;
+const followMinAltitudeVerticalOffsetRatio = -0.35;
+const followMaxAltitudeVerticalOffsetRatio = 0.25;
 const followCatchupStartRatio = 0.18;
 const followCatchupFullRatio = 0.38;
+const orbitYawRateRadPerS = 0.06;
 const paramGroups = [
   ["Quality score", ["quality_climb_1_mps", "quality_climb_2_mps", "quality_gain_m", "quality_near_altitude_margin_m"]],
   ["Candidate detection", ["window_s", "min_gain_m", "min_turn_deg", "turn_reversal_hysteresis_deg", "stale_tolerance_s"]],
@@ -604,6 +606,7 @@ let pendingParams = {...defaultParams};
 let rawFixes = embedded.fixes;
 let processed = [];
 let bounds = null;
+let flightAltitudeRange = {min: 0, max: 1};
 let sourceName = embedded.source;
 let playing = false;
 let paramsDirty = false;
@@ -614,9 +617,11 @@ let isPanning = false;
 let mapDragMode = null;
 let lastPan = null;
 let selectedCard = null;
-let followCurrentFix = false;
+let followCurrentFix = true;
 let pausedFollowMapPanned = false;
 let followControlRect = null;
+let orbitCamera = false;
+let orbitControlRect = null;
 let currentTerrainInfo = embedded.terrain || null;
 let currentTerrainMesh = embedded.terrainMesh || null;
 let currentTerrainGroundAlts = embedded.fixes.map(f => f.groundAlt);
@@ -908,6 +913,7 @@ function recomputeMetrics({resetCamera = true} = {}) {
     fix.thermal = null;
   }
   bounds = buildBounds(processed);
+  flightAltitudeRange = buildFlightAltitudeRange(processed);
   if (resetCamera || !mapView) resetMapCamera();
   replayT = Math.min(replayT, processed[processed.length - 1].t);
   updateSummary();
@@ -1440,7 +1446,22 @@ function rotatePivotPosition() {
   return null;
 }
 
-function centerMapOnPosition(position, verticalOffsetRatio = followTargetVerticalOffsetRatio) {
+function followVerticalOffsetRatioForAltitude(altitude) {
+  const minAlt = flightAltitudeRange.min;
+  const maxAlt = flightAltitudeRange.max;
+  if (!Number.isFinite(altitude) || !Number.isFinite(minAlt) || !Number.isFinite(maxAlt)) {
+    return followMaxAltitudeVerticalOffsetRatio;
+  }
+  const normalized = clamp((altitude - minAlt) / Math.max(1, maxAlt - minAlt), 0, 1);
+  return followMinAltitudeVerticalOffsetRatio +
+    normalized * (followMaxAltitudeVerticalOffsetRatio - followMinAltitudeVerticalOffsetRatio);
+}
+
+function followVerticalOffsetRatioForPosition(position) {
+  return followVerticalOffsetRatioForAltitude(position?.z ?? position?.detectorAlt ?? position?.alt);
+}
+
+function centerMapOnPosition(position, verticalOffsetRatio = followMaxAltitudeVerticalOffsetRatio) {
   if (!position) return;
   if (!mapView) resetMapCamera();
   const {map} = mapLayout();
@@ -1482,11 +1503,11 @@ function smoothedFollowPosition(index, visualFix = null) {
   return {x: acc.x / total, y: acc.y / total, z: acc.z / total};
 }
 
-function applyFollowScreenCatchup(target, map) {
+function applyFollowScreenCatchup(target, map, verticalOffsetRatio = followMaxAltitudeVerticalOffsetRatio) {
   if (!target || !mapView) return;
   const projected = project3d(target, map);
   const desiredX = map.x + map.w / 2;
-  const desiredY = map.y + map.h / 2 - map.h * followTargetVerticalOffsetRatio;
+  const desiredY = map.y + map.h / 2 - map.h * verticalOffsetRatio;
   const dx = projected.x - desiredX;
   const dy = projected.y - desiredY;
   const start = Math.min(map.w, map.h) * followCatchupStartRatio;
@@ -1608,10 +1629,26 @@ function buildBounds(fixes) {
   };
 }
 
+function buildFlightAltitudeRange(fixes) {
+  const alts = fixes.map(f => f.detectorAlt).filter(v => Number.isFinite(v));
+  if (!alts.length) return {min: 0, max: 1};
+  return {min: Math.min(...alts), max: Math.max(...alts)};
+}
+
 function visibleAltitudeRange(fixes) {
   const alts = fixes.map(f => f.detectorAlt).filter(v => Number.isFinite(v));
   alts.push(...fixes.map(f => f.groundAlt).filter(v => Number.isFinite(v)));
   return {min: Math.min(...alts), max: Math.max(...alts)};
+}
+
+function defaultMapYaw() {
+  if (!processed.length) return -0.7;
+  const first = processed[0];
+  const last = processed[processed.length - 1];
+  const dx = last.x - first.x;
+  const dy = last.y - first.y;
+  if (!Number.isFinite(dx) || !Number.isFinite(dy) || Math.hypot(dx, dy) < 1) return -0.7;
+  return Math.atan2(-dx, dy) - Math.PI / 2;
 }
 
 function resetMapCamera() {
@@ -1619,9 +1656,9 @@ function resetMapCamera() {
   mapView = {
     cx: (bounds.maxX + bounds.minX) / 2,
     cy: (bounds.maxY + bounds.minY) / 2,
-    zoom: 1,
-    yaw: -0.7,
-    pitch: 0.9,
+    zoom: 1.2,
+    yaw: defaultMapYaw(),
+    pitch: 1.35,
     cz: 0,
     panX: 0,
     panY: 0
@@ -1922,6 +1959,15 @@ function followControlBox(map) {
 function terrainControlBox(map) {
   return {
     x: map.x + map.w - 88,
+    y: map.y + 106,
+    w: 78,
+    h: 24
+  };
+}
+
+function orbitControlBox(map) {
+  return {
+    x: map.x + map.w - 88,
     y: map.y + 78,
     w: 78,
     h: 24
@@ -1960,6 +2006,32 @@ function drawMapFollowControl(map) {
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
   ctx.fillText("Follow", box.x + 26, box.y + box.h / 2);
+  ctx.restore();
+}
+
+function drawMapOrbitControl(map) {
+  const box = orbitControlBox(map);
+  orbitControlRect = box;
+  ctx.save();
+  ctx.fillStyle = "rgba(5, 5, 5, 0.62)";
+  ctx.fillRect(box.x, box.y, box.w, box.h);
+  ctx.strokeStyle = orbitCamera ? "#84c8ff" : "#777";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(box.x + 7, box.y + 6, 12, 12);
+  if (orbitCamera) {
+    ctx.strokeStyle = "#84c8ff";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(box.x + 9, box.y + 12);
+    ctx.lineTo(box.x + 12, box.y + 16);
+    ctx.lineTo(box.x + 18, box.y + 8);
+    ctx.stroke();
+  }
+  ctx.fillStyle = "#ddd";
+  ctx.font = "12px system-ui, sans-serif";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText("Orbit", box.x + 26, box.y + box.h / 2);
   ctx.restore();
 }
 
@@ -2139,8 +2211,10 @@ function lockFollowToReplayTime() {
   const i = currentIndex();
   const visualFix = visualFixAt(replayT) || processed[i];
   const {map} = mapLayout();
-  centerMapOnPosition(smoothedFollowPosition(i, visualFix));
-  applyFollowScreenCatchup(visualFix, map);
+  const followPosition = smoothedFollowPosition(i, visualFix);
+  const verticalOffsetRatio = followVerticalOffsetRatioForPosition(followPosition);
+  centerMapOnPosition(followPosition, verticalOffsetRatio);
+  applyFollowScreenCatchup(visualFix, map, verticalOffsetRatio);
 }
 
 function fmtTime(t) {
@@ -2361,8 +2435,10 @@ function draw() {
   const H = canvas.height;
   const {tape, map, vario, profile, profileLabel} = mapLayout();
   if (followCurrentFix && playing) {
-    centerMapOnPosition(smoothedFollowPosition(i, visualFix));
-    applyFollowScreenCatchup(visualFix, map);
+    const followPosition = smoothedFollowPosition(i, visualFix);
+    const verticalOffsetRatio = followVerticalOffsetRatioForPosition(followPosition);
+    centerMapOnPosition(followPosition, verticalOffsetRatio);
+    applyFollowScreenCatchup(visualFix, map, verticalOffsetRatio);
   }
   updateScrubLayout(profile);
   const altRange = visibleAltitudeRange(processed);
@@ -2461,6 +2537,7 @@ function draw() {
   ctx.fillStyle = "#bbb";
   ctx.fillText("3D: left/right pan, middle rotate, wheel zoom", map.x + 10, map.y + 10);
   drawMapFollowControl(map);
+  drawMapOrbitControl(map);
   drawMapTerrainControl(map);
   drawMapPerspectiveControl(map);
   ctx.restore();
@@ -2781,6 +2858,7 @@ function tick(now) {
   lastNow = now;
   if (playing) {
     replayT += dt * speedFromSlider();
+    if (orbitCamera && mapView) mapView.yaw += dt * orbitYawRateRadPerS;
     if (replayT >= bounds.duration) {
       replayT = bounds.duration;
       playing = false;
@@ -2909,8 +2987,18 @@ canvas.addEventListener("pointerdown", event => {
     followCurrentFix = !followCurrentFix;
     pausedFollowMapPanned = false;
     if (followCurrentFix && playing) {
-      centerMapOnPosition(smoothedFollowPosition(currentIndex()));
+      const i = currentIndex();
+      const visualFix = visualFixAt(replayT) || processed[i];
+      const followPosition = smoothedFollowPosition(i, visualFix);
+      centerMapOnPosition(followPosition, followVerticalOffsetRatioForPosition(followPosition));
     }
+    event.preventDefault();
+    draw();
+    return;
+  }
+  orbitControlRect = orbitControlBox(map);
+  if (event.button === 0 && orbitControlRect && pointInRect(point, orbitControlRect)) {
+    orbitCamera = !orbitCamera;
     event.preventDefault();
     draw();
     return;
