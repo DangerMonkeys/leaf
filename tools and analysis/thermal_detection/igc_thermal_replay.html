@@ -525,7 +525,7 @@ const qualityDefaults = {
 };
 const mergeDefaults = {
   center_merge_radius_m: 200,
-  spline_merge_radius_m: 80,
+  spline_merge_radius_m: 100,
   max_altitude_extrapolation_m: 250
 };
 const defaultParamStorageKey = "leaf.thermalReplay.defaultParams.v1";
@@ -586,6 +586,10 @@ const paramSpecs = [
 const paramByKey = new Map(paramSpecs.map(spec => [spec[0], spec]));
 const qualityParamKeys = new Set(["quality_climb_1_mps", "quality_climb_2_mps", "quality_gain_m", "quality_near_altitude_margin_m"]);
 const minMapZoom = 0.35;
+const leafDetectorSampleBuffer = 40;
+const leafThermalNodeCount = 4;
+const leafSpineBucketHeightM = 200;
+const leafEntryCoreTurnDeg = 180;
 const groundCircleDiameterRatio = 1.088;
 const groundCircleZoomShrinkExponent = 0.6;
 const defaultPerspectiveAmount = 0.18;
@@ -904,7 +908,7 @@ function recomputeMetrics({resetCamera = true} = {}) {
       ? fix.climbMps
       : (fix.detectorAlt - processed[varioStart].detectorAlt) / varioDt;
     fix.climb30 = (fix.detectorAlt - processed[climbStart].detectorAlt) / Math.max(1, fix.t - processed[climbStart].t);
-    const start = priorIndex(processed, i, params.window_s);
+    const start = Math.max(priorIndex(processed, i, params.window_s), i - leafDetectorSampleBuffer + 1);
     const window = processed.slice(start, i + 1);
     fix.windowDuration = window[window.length - 1].t - window[0].t;
     fix.windowGain = fix.detectorAlt - window[0].detectorAlt;
@@ -922,56 +926,190 @@ function recomputeMetrics({resetCamera = true} = {}) {
 function detectThermalsThrough(fixes, endIndex) {
   const saved = [];
   const failed = [];
-  let active = [];
+  const buffer = [];
+  let active = null;
   let lastCandidateT = null;
+  let episodeStartAfterT = -Infinity;
   for (let i = 0; i <= endIndex; i++) {
     const fix = fixes[i];
+    buffer.push(fix);
+    if (buffer.length > leafDetectorSampleBuffer) buffer.shift();
     if (fix.candidate) {
-      if (!active.length) {
-        const windowStart = priorIndex(fixes, i, params.window_s);
-        const qualifyingWindow = fixes.slice(windowStart, i + 1);
+      if (!active) {
+        const qualifyingWindow = buffer.filter(point =>
+          point.t > episodeStartAfterT && fix.t - point.t <= params.window_s
+        );
+        if (!leafWindowLooksThermal(qualifyingWindow)) continue;
         let entryOffset = 0;
         for (let j = 1; j < qualifyingWindow.length; j += 1) {
           if (qualifyingWindow[j].detectorAlt < qualifyingWindow[entryOffset].detectorAlt) {
             entryOffset = j;
           }
         }
-        active = qualifyingWindow.slice(entryOffset);
+        active = createLeafEpisodeAccumulator(saved.length + failed.length + 1);
+        for (const point of qualifyingWindow.slice(entryOffset)) addLeafEpisodePoint(active, point);
       } else {
-        active.push(fix);
+        addLeafEpisodePoint(active, fix);
       }
       lastCandidateT = fix.t;
       continue;
     }
-    if (active.length && lastCandidateT !== null && fix.t - lastCandidateT <= params.stale_tolerance_s) {
-      active.push(fix);
+    if (active && lastCandidateT !== null && fix.t - lastCandidateT <= params.stale_tolerance_s) {
+      addLeafEpisodePoint(active, fix);
       continue;
     }
-    if (active.length) {
-      const episodeId = saved.length + failed.length + 1;
-      evaluateEpisode(active, saved, failed, episodeId, fix);
-      active = [];
+    if (active) {
+      evaluateLeafEpisode(active, saved, failed, fix);
+      episodeStartAfterT = fix.t;
+      active = null;
       lastCandidateT = null;
     }
   }
   return {saved, failed};
 }
 
-function evaluateEpisode(points, saved, failed, episodeId, closingFix = null) {
-  let peakIndex = 0;
-  for (let i = 1; i < points.length; i += 1) {
-    if (points[i].detectorAlt >= points[peakIndex].detectorAlt) peakIndex = i;
+function leafWindowLooksThermal(window) {
+  if (window.length < 2) return false;
+  const gain = window[window.length - 1].detectorAlt - window[0].detectorAlt;
+  const turn = longestDirectionalArc(window, params.turn_reversal_hysteresis_deg);
+  return gain >= params.min_gain_m && turn >= params.min_turn_deg;
+}
+
+function emptyLeafBuckets() {
+  return Array.from({length: leafThermalNodeCount}, () => ({
+    weight: 0,
+    x: 0,
+    y: 0,
+    z: 0,
+    count: 0
+  }));
+}
+
+function cloneLeafBuckets(buckets) {
+  return buckets.map(bucket => ({...bucket}));
+}
+
+function createLeafEpisodeAccumulator(id) {
+  return {
+    id,
+    entry: null,
+    entryCore: null,
+    peak: null,
+    buckets: emptyLeafBuckets(),
+    peakBuckets: emptyLeafBuckets(),
+    totalWeight: 0,
+    sumX: 0,
+    sumY: 0,
+    sumZ: 0,
+    sumLat: 0,
+    sumLon: 0,
+    peakTotalWeight: 0,
+    peakSumX: 0,
+    peakSumY: 0,
+    peakSumZ: 0,
+    peakSumLat: 0,
+    peakSumLon: 0,
+    maxClimb30: -Infinity,
+    peakMaxClimb30: -Infinity,
+    lastBearing: null,
+    turnDeg: 0,
+    entryCoreTurnDeg: 0,
+    entryCoreLastBearing: null,
+    peakTurnDeg: 0
+  };
+}
+
+function leafPointWeight(point) {
+  return Math.max(0.2, Math.min(5, point.climb30) + 0.5);
+}
+
+function addLeafEpisodePoint(active, point) {
+  if (!active.entry) active.entry = point;
+
+  const weight = leafPointWeight(point);
+  const gainFromEntry = Math.max(0, point.detectorAlt - active.entry.detectorAlt);
+  const bucketIndex = Math.max(0, Math.min(
+    leafThermalNodeCount - 1,
+    Math.floor(gainFromEntry / leafSpineBucketHeightM)
+  ));
+  const bucket = active.buckets[bucketIndex];
+  bucket.weight += weight;
+  bucket.x += point.x * weight;
+  bucket.y += point.y * weight;
+  bucket.z += point.detectorAlt * weight;
+  bucket.count += 1;
+
+  active.totalWeight += weight;
+  active.sumX += point.x * weight;
+  active.sumY += point.y * weight;
+  active.sumZ += point.detectorAlt * weight;
+  active.sumLat += point.lat * weight;
+  active.sumLon += point.lon * weight;
+  active.maxClimb30 = Math.max(active.maxClimb30, point.climb30);
+
+  if (point.bearing !== null) {
+    if (active.lastBearing !== null) active.turnDeg += Math.abs(angleDelta(point.bearing, active.lastBearing));
+    active.lastBearing = point.bearing;
+
+    if (!active.entryCore) {
+      if (active.entryCoreLastBearing !== null) {
+        active.entryCoreTurnDeg += Math.abs(angleDelta(point.bearing, active.entryCoreLastBearing));
+      }
+      active.entryCoreLastBearing = point.bearing;
+      if (active.entryCoreTurnDeg >= leafEntryCoreTurnDeg) active.entryCore = point;
+    }
   }
-  const episodePoints = points.slice(0, peakIndex + 1);
-  const entry = episodePoints[0];
-  const peak = episodePoints[episodePoints.length - 1];
+
+  if (!active.peak || point.detectorAlt >= active.peak.detectorAlt) {
+    active.peak = point;
+    active.peakBuckets = cloneLeafBuckets(active.buckets);
+    active.peakTotalWeight = active.totalWeight;
+    active.peakSumX = active.sumX;
+    active.peakSumY = active.sumY;
+    active.peakSumZ = active.sumZ;
+    active.peakSumLat = active.sumLat;
+    active.peakSumLon = active.sumLon;
+    active.peakMaxClimb30 = active.maxClimb30;
+    active.peakTurnDeg = active.turnDeg;
+  }
+}
+
+function leafAccumulatorCenter(active) {
+  const total = Math.max(0.0001, active.peakTotalWeight);
+  return {
+    x: active.peakSumX / total,
+    y: active.peakSumY / total,
+    z: active.peakSumZ / total,
+    lat: active.peakSumLat / total,
+    lon: active.peakSumLon / total
+  };
+}
+
+function buildLeafStreamingSpine(active) {
+  let nodes = active.peakBuckets
+    .filter(bucket => bucket.weight > 0)
+    .map(bucket => ({x: bucket.x / bucket.weight, y: bucket.y / bucket.weight, z: bucket.z / bucket.weight}))
+    .sort((a, b) => a.z - b.z);
+  if (nodes.length && active.entry && active.entryCore) {
+    nodes[0] = itemPosition(active.entryCore);
+  }
+  if (nodes.length === 1 && active.entry && active.peak && active.entry !== active.peak) {
+    const coreEntry = active.entryCore || active.entry;
+    nodes = [itemPosition(coreEntry), itemPosition(active.peak)].sort((a, b) => a.z - b.z);
+  }
+  return nodes.slice(0, leafThermalNodeCount);
+}
+
+function evaluateLeafEpisode(active, saved, failed, closingFix = null) {
+  if (!active.entry || !active.peak) return;
+  const entry = active.entry;
+  const peak = active.peak;
   const duration = peak.t - entry.t;
   const gain = peak.detectorAlt - entry.detectorAlt;
-  const turnDeg = episodeTurnDeg(episodePoints);
-  const center = weightedCenter(episodePoints);
-  const spine = buildThermalSpine(episodePoints);
+  const center = leafAccumulatorCenter(active);
+  const spine = buildLeafStreamingSpine(active);
   const episode = {
-    id: episodeId,
+    id: active.id,
     x: center.x,
     y: center.y,
     z: center.z,
@@ -984,7 +1122,7 @@ function evaluateEpisode(points, saved, failed, episodeId, closingFix = null) {
     duration_s: duration,
     gain_m: gain,
     avg_climb_mps: gain / Math.max(1, duration),
-    turns: turnDeg / 360,
+    turns: active.peakTurnDeg / 360,
     spine,
     ended_by_gain: closingFix ? closingFix.windowGain < params.min_gain_m : false,
     ended_by_turn: closingFix ? closingFix.windowTurn < params.min_turn_deg : false,
@@ -1010,13 +1148,17 @@ function evaluateEpisode(points, saved, failed, episodeId, closingFix = null) {
     gain_m: episode.gain_m,
     avg_climb_mps: episode.avg_climb_mps,
     turns: episode.turns,
-    max_climb_mps: Math.max(...episodePoints.map(p => p.climb30)),
+    max_climb_mps: Number.isFinite(active.peakMaxClimb30) ? active.peakMaxClimb30 : episode.avg_climb_mps,
     spine,
     ended_by_gain: episode.ended_by_gain,
     ended_by_turn: episode.ended_by_turn
   };
   saved.push(next);
-  for (const point of episodePoints) point.thermal = next.id;
+  for (const point of fixesInRange(entry.t, peak.t)) point.thermal = next.id;
+}
+
+function fixesInRange(startT, endT) {
+  return processed.filter(point => point.t >= startT && point.t <= endT);
 }
 
 function horizontalDistance(a, b) {
@@ -1143,11 +1285,24 @@ function extrapolatedSpineDistance(a, b) {
   const upperRange = upper === a ? aRange : bRange;
   const gap = upperRange.min - lowerRange.max;
   if (gap < 0 || gap > maxGap) return null;
-  const altitude = lowerRange.max + gap / 2;
-  const lowerPoint = spinePointAtAltitude(lower.spine, altitude, maxGap);
-  const upperPoint = spinePointAtAltitude(upper.spine, altitude, maxGap);
-  if (!lowerPoint || !upperPoint) return null;
-  return {method: "EXT", distance_m: horizontalDistance(lowerPoint, upperPoint)};
+  const checks = [
+    {method: "EXT-MID", altitude: lowerRange.max + gap / 2, lowerMaxGap: maxGap, upperMaxGap: maxGap},
+    {method: "EXT-DOWN", altitude: lowerRange.max, lowerMaxGap: 0, upperMaxGap: maxGap},
+    {method: "EXT-UP", altitude: upperRange.min, lowerMaxGap: maxGap, upperMaxGap: 0}
+  ];
+  let best = null;
+  for (const check of checks) {
+    const lowerPoint = spinePointAtAltitude(lower.spine, check.altitude, check.lowerMaxGap);
+    const upperPoint = spinePointAtAltitude(upper.spine, check.altitude, check.upperMaxGap);
+    if (!lowerPoint || !upperPoint) continue;
+    const candidate = {
+      method: check.method,
+      distance_m: horizontalDistance(lowerPoint, upperPoint),
+      altitude_m: check.altitude
+    };
+    if (!best || candidate.distance_m < best.distance_m) best = candidate;
+  }
+  return best;
 }
 
 function rangesOverlap(aRange, bRange) {
@@ -1272,7 +1427,7 @@ function mostRecentMergeLink(merge) {
 function mergeDistanceLabel(merge) {
   const link = mostRecentMergeLink(merge);
   if (!link) return "--";
-  return `${link.method || "CTR"}dist: ${Math.round(link.distance_m)}m`;
+  return `${link.method || "CTR"}: ${Math.round(link.distance_m)}m`;
 }
 
 function mergedFromSources(sources, mergeLinks = null, consumed = false) {
