@@ -546,9 +546,7 @@ const paramSpecs = [
 const paramByKey = new Map(paramSpecs.map(spec => [spec[0], spec]));
 const qualityParamKeys = new Set(["quality_climb_1_mps", "quality_climb_2_mps", "quality_gain_m", "quality_near_altitude_margin_m"]);
 const minMapZoom = 0.35;
-const groundOvalWidthRatio = 1.28;
-const groundOvalHeightRatio = 0.48;
-const groundOvalMinTiltRatio = 0.08;
+const groundCircleDiameterRatio = 1.088;
 const paramGroups = [
   ["Quality score", ["quality_climb_1_mps", "quality_climb_2_mps", "quality_gain_m", "quality_near_altitude_margin_m"]],
   ["Candidate detection", ["window_s", "min_gain_m", "min_turn_deg", "turn_reversal_hysteresis_deg", "stale_tolerance_s"]],
@@ -1303,6 +1301,12 @@ function mapScaleFor(map) {
   return Math.min(map.w / spanX, map.h / spanY) * (mapView ? mapView.zoom : 1);
 }
 
+function mapBaseScaleFor(map) {
+  const spanX = Math.max(1, bounds.maxX - bounds.minX);
+  const spanY = Math.max(1, bounds.maxY - bounds.minY);
+  return Math.min(map.w / spanX, map.h / spanY) * 0.86;
+}
+
 function mapTransforms(map) {
   if (!mapView) resetMapCamera();
   const scale = mapScaleFor(map);
@@ -1694,18 +1698,21 @@ function drawEarthBackdrop(map) {
     z: bounds.minAlt
   };
   const centerPoint = project3d(center, map);
-  const radiusX = map.w * groundOvalWidthRatio / 2;
-  const tiltScale = Math.max(groundOvalMinTiltRatio, Math.cos(mapView ? mapView.pitch : 0));
-  const radiusY = radiusX * groundOvalHeightRatio * tiltScale;
+  const baseScale = Math.max(0.001, mapBaseScaleFor(map));
+  const radiusM = map.w * groundCircleDiameterRatio / (2 * baseScale * minMapZoom);
   const samples = 96;
   const ring = [];
   for (let i = 0; i < samples; i += 1) {
     const a = i / samples * Math.PI * 2;
-    ring.push({
-      x: centerPoint.x + Math.cos(a) * radiusX,
-      y: centerPoint.y + Math.sin(a) * radiusY
-    });
+    ring.push(project3d({
+      x: center.x + Math.cos(a) * radiusM,
+      y: center.y + Math.sin(a) * radiusM,
+      z: center.z
+    }, map));
   }
+  const centerOffsetX = map.x + map.w / 2 - centerPoint.x;
+  for (const point of ring) point.x += centerOffsetX;
+  centerPoint.x += centerOffsetX;
   const lower = [];
   const columnStep = Math.max(8, map.w / 96);
   for (let sx = map.x; sx <= map.x + map.w + 0.5; sx += columnStep) {
