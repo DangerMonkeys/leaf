@@ -18,6 +18,10 @@ namespace {
 
   int16_t headingDelta(int16_t newer, int16_t older) { return wrap180(newer - older); }
 
+  uint16_t absHeadingDelta(int16_t newer, int16_t older) {
+    return static_cast<uint16_t>(abs(headingDelta(newer, older)));
+  }
+
   uint8_t sampleIndex(uint8_t newestIndex, uint8_t offset) {
     return (newestIndex + ThermalTracker::MAX_DETECTOR_SAMPLES - offset) %
            ThermalTracker::MAX_DETECTOR_SAMPLES;
@@ -27,6 +31,25 @@ namespace {
     if (value > 32767) return 32767;
     if (value < -32768) return -32768;
     return static_cast<int16_t>(roundf(value));
+  }
+
+  int16_t clampInt16(double value) {
+    if (value > 32767) return 32767;
+    if (value < -32768) return -32768;
+    return static_cast<int16_t>(round(value));
+  }
+
+  int16_t clampInt16(int32_t value) {
+    if (value > 32767) return 32767;
+    if (value < -32768) return -32768;
+    return static_cast<int16_t>(value);
+  }
+
+  uint32_t distanceSq(int32_t dx, int32_t dy) {
+    const int64_t x = dx;
+    const int64_t y = dy;
+    const int64_t result = x * x + y * y;
+    return result > UINT32_MAX ? UINT32_MAX : static_cast<uint32_t>(result);
   }
 }  // namespace
 
@@ -38,8 +61,9 @@ void ThermalTracker::reset() {
   lastLonE7_ = 0;
   nextSample_ = 0;
   sampleCount_ = 0;
-  candidateActive_ = false;
-  candidateStartS_ = 0;
+  episodeStartAfterS_ = 0;
+  episodeBoundaryValid_ = false;
+  resetEpisode();
   displayItemCount_ = 0;
   memset(samples_, 0, sizeof(samples_));
   memset(thermals_, 0, sizeof(thermals_));
@@ -109,7 +133,18 @@ void ThermalTracker::updateDetector() {
   evaluateDetector();
 }
 
-void ThermalTracker::addSample(const Sample& sample) {
+void ThermalTracker::addSample(Sample sample) {
+  for (uint8_t offset = 1; offset <= sampleCount_; ++offset) {
+    const Sample& prior = samples_[sampleIndex(nextSample_, offset)];
+    if (!prior.valid) continue;
+    if (sample.timeS <= prior.timeS) continue;
+    const uint32_t dt = sample.timeS - prior.timeS;
+    if (dt > DETECTION_WINDOW_S) break;
+    sample.climb30Cms = static_cast<int16_t>(
+        constrain((static_cast<int32_t>(sample.altM - prior.altM) * 100) / static_cast<int32_t>(dt),
+                  -32768L, 32767L));
+  }
+
   samples_[nextSample_] = sample;
   nextSample_ = (nextSample_ + 1) % MAX_DETECTOR_SAMPLES;
   if (sampleCount_ < MAX_DETECTOR_SAMPLES) sampleCount_++;
@@ -120,56 +155,180 @@ void ThermalTracker::evaluateDetector() {
 
   const uint8_t newestIndex = sampleIndex(nextSample_, 1);
   const Sample& newest = samples_[newestIndex];
-  uint8_t oldestOffset = 0;
-  for (uint8_t offset = 0; offset < sampleCount_; ++offset) {
-    const Sample& candidate = samples_[sampleIndex(nextSample_, offset + 1)];
-    if (!candidate.valid || newest.timeS - candidate.timeS > DETECTION_WINDOW_S) break;
-    oldestOffset = offset + 1;
-  }
-  if (oldestOffset < 2) return;
+  uint8_t offsets[MAX_DETECTOR_SAMPLES];
+  const uint8_t offsetCount = collectCandidateWindow(offsets, MAX_DETECTOR_SAMPLES);
+  int16_t windowGainM = 0;
+  uint16_t windowTurnDeg = 0;
+  const bool thermalWindow = windowLooksThermal(offsets, offsetCount, windowGainM, windowTurnDeg);
 
-  const Sample& oldest = samples_[sampleIndex(nextSample_, oldestOffset)];
-  const int16_t gainM = newest.altM - oldest.altM;
-  int16_t turnDeg = 0;
-  for (uint8_t offset = oldestOffset; offset > 1; --offset) {
-    const Sample& a = samples_[sampleIndex(nextSample_, offset)];
-    const Sample& b = samples_[sampleIndex(nextSample_, offset - 1)];
-    turnDeg += abs(headingDelta(b.courseDeg, a.courseDeg));
-  }
-  const bool windowLooksThermal = gainM >= CANDIDATE_GAIN_M && turnDeg >= CANDIDATE_TURN_DEG;
-
-  if (windowLooksThermal) {
-    if (!candidateActive_) {
-      candidateActive_ = true;
-      candidateStartS_ = oldest.timeS;
+  if (thermalWindow) {
+    if (!episode_.active) {
+      uint8_t entryIndex = 0;
+      for (uint8_t i = 1; i < offsetCount; ++i) {
+        const Sample& sample = samples_[sampleIndex(nextSample_, offsets[i])];
+        const Sample& entry = samples_[sampleIndex(nextSample_, offsets[entryIndex])];
+        if (sample.altM < entry.altM) entryIndex = i;
+      }
+      resetEpisode();
+      for (uint8_t i = entryIndex; i < offsetCount; ++i) {
+        addEpisodePoint(samples_[sampleIndex(nextSample_, offsets[i])]);
+      }
+    } else {
+      addEpisodePoint(newest);
     }
     return;
   }
 
-  if (!candidateActive_) return;
-
-  uint8_t startOffset = 1;
-  uint8_t endOffset = 1;
-  for (uint8_t offset = 1; offset <= sampleCount_; ++offset) {
-    const Sample& sample = samples_[sampleIndex(nextSample_, offset)];
-    if (!sample.valid || sample.timeS < candidateStartS_) break;
-    startOffset = offset;
+  if (episode_.active) {
+    evaluateEpisode(newest);
+    episodeStartAfterS_ = newest.timeS;
+    episodeBoundaryValid_ = true;
+    resetEpisode();
   }
-  const Sample& start = samples_[sampleIndex(nextSample_, startOffset)];
-  const Sample& end = samples_[sampleIndex(nextSample_, endOffset)];
-  const uint16_t durationS = end.timeS > start.timeS ? end.timeS - start.timeS : 0;
-  const int16_t episodeGainM = end.altM - start.altM;
-  if (durationS >= SAVE_DURATION_S && episodeGainM >= SAVE_GAIN_M) {
-    saveCandidate(startOffset, endOffset, episodeGainM, durationS);
-  }
-  candidateActive_ = false;
 }
 
-void ThermalTracker::saveCandidate(uint8_t startOffset, uint8_t endOffset, int16_t gainM,
-                                   uint16_t durationS) {
+uint8_t ThermalTracker::collectCandidateWindow(uint8_t* offsets, uint8_t maxOffsets) const {
+  if (sampleCount_ < 2 || maxOffsets == 0) return 0;
+
+  const Sample& newest = samples_[sampleIndex(nextSample_, 1)];
+  uint8_t count = 0;
+  for (uint8_t offset = sampleCount_; offset >= 1; --offset) {
+    const Sample& sample = samples_[sampleIndex(nextSample_, offset)];
+    if (!sample.valid) continue;
+    if (newest.timeS < sample.timeS || newest.timeS - sample.timeS > DETECTION_WINDOW_S) continue;
+    if (episodeBoundaryValid_ && sample.timeS <= episodeStartAfterS_) continue;
+    offsets[count++] = offset;
+    if (count >= maxOffsets) break;
+  }
+  return count;
+}
+
+bool ThermalTracker::windowLooksThermal(const uint8_t* offsets, uint8_t count, int16_t& gainM,
+                                        uint16_t& turnDeg) const {
+  if (count < 2) return false;
+  const Sample& oldest = samples_[sampleIndex(nextSample_, offsets[0])];
+  const Sample& newest = samples_[sampleIndex(nextSample_, offsets[count - 1])];
+  gainM = newest.altM - oldest.altM;
+  turnDeg = longestDirectionalArc(offsets, count);
+  return gainM >= CANDIDATE_GAIN_M && turnDeg >= CANDIDATE_TURN_DEG;
+}
+
+uint16_t ThermalTracker::longestDirectionalArc(const uint8_t* offsets, uint8_t count) const {
+  int8_t direction = 0;
+  uint16_t arc = 0;
+  uint16_t reversalArc = 0;
+  uint16_t longest = 0;
+  int16_t lastBearing = 0;
+  bool hasLastBearing = false;
+
+  for (uint8_t i = 0; i < count; ++i) {
+    const Sample& sample = samples_[sampleIndex(nextSample_, offsets[i])];
+    if (!hasLastBearing) {
+      lastBearing = sample.courseDeg;
+      hasLastBearing = true;
+      continue;
+    }
+
+    const int16_t delta = headingDelta(sample.courseDeg, lastBearing);
+    lastBearing = sample.courseDeg;
+    if (delta == 0) continue;
+
+    const int8_t deltaDirection = delta > 0 ? 1 : -1;
+    const uint16_t magnitude = static_cast<uint16_t>(abs(delta));
+    if (direction == 0) {
+      direction = deltaDirection;
+      arc = magnitude;
+      longest = max(longest, arc);
+      continue;
+    }
+    if (deltaDirection == direction) {
+      reversalArc = 0;
+      arc += magnitude;
+      longest = max(longest, arc);
+      continue;
+    }
+
+    reversalArc += magnitude;
+    if (reversalArc >= TURN_REVERSAL_HYSTERESIS_DEG) {
+      longest = max(longest, arc);
+      direction = deltaDirection;
+      arc = reversalArc;
+      reversalArc = 0;
+      longest = max(longest, arc);
+    }
+  }
+  return max(longest, arc);
+}
+
+void ThermalTracker::resetEpisode() { memset(&episode_, 0, sizeof(episode_)); }
+
+void ThermalTracker::addEpisodePoint(const Sample& sample) {
+  if (!episode_.active) {
+    episode_.active = true;
+    episode_.entry = sample;
+    episode_.hasEntry = true;
+  }
+  if (!episode_.hasEntry) return;
+
+  const int16_t climbWeightCms = max<int16_t>(-30, min<int16_t>(500, sample.climb30Cms));
+  const uint8_t weight = static_cast<uint8_t>(max<int16_t>(2, climbWeightCms / 10 + 5));
+  const int16_t gainFromEntryM = max<int16_t>(0, sample.altM - episode_.entry.altM);
+  uint8_t bucketIndex = gainFromEntryM / SPINE_BUCKET_HEIGHT_M;
+  if (bucketIndex >= MAX_THERMAL_NODES) bucketIndex = MAX_THERMAL_NODES - 1;
+  SpineBucket& bucket = episode_.buckets[bucketIndex];
+  bucket.weight += weight;
+  bucket.sumX += static_cast<int32_t>(sample.xM) * weight;
+  bucket.sumY += static_cast<int32_t>(sample.yM) * weight;
+  bucket.sumAlt += static_cast<int32_t>(sample.altM) * weight;
+
+  episode_.totalWeight += weight;
+  episode_.sumX += static_cast<int32_t>(sample.xM) * weight;
+  episode_.sumY += static_cast<int32_t>(sample.yM) * weight;
+  episode_.sumAlt += static_cast<int32_t>(sample.altM) * weight;
+
+  if (episode_.hasLastBearing)
+    episode_.turnDeg += absHeadingDelta(sample.courseDeg, episode_.lastBearingDeg);
+  episode_.lastBearingDeg = sample.courseDeg;
+  episode_.hasLastBearing = true;
+
+  if (!episode_.hasEntryCore) {
+    if (episode_.hasEntryCoreLastBearing) {
+      episode_.entryCoreTurnDeg +=
+          absHeadingDelta(sample.courseDeg, episode_.entryCoreLastBearingDeg);
+    }
+    episode_.entryCoreLastBearingDeg = sample.courseDeg;
+    episode_.hasEntryCoreLastBearing = true;
+    if (episode_.entryCoreTurnDeg >= ENTRY_CORE_TURN_DEG) {
+      episode_.entryCore = sample;
+      episode_.hasEntryCore = true;
+    }
+  }
+
+  if (!episode_.hasPeak || sample.altM >= episode_.peak.altM) {
+    episode_.peak = sample;
+    episode_.hasPeak = true;
+    memcpy(episode_.peakBuckets, episode_.buckets, sizeof(episode_.peakBuckets));
+    episode_.peakTotalWeight = episode_.totalWeight;
+    episode_.peakSumX = episode_.sumX;
+    episode_.peakSumY = episode_.sumY;
+    episode_.peakSumAlt = episode_.sumAlt;
+    episode_.peakTurnDeg = episode_.turnDeg;
+  }
+}
+
+void ThermalTracker::evaluateEpisode(const Sample& closingSample) {
+  (void)closingSample;
+  if (!episode_.hasEntry || !episode_.hasPeak || episode_.peak.timeS <= episode_.entry.timeS)
+    return;
+  const uint16_t durationS = episode_.peak.timeS - episode_.entry.timeS;
+  const int16_t gainM = episode_.peak.altM - episode_.entry.altM;
+  if (durationS >= SAVE_DURATION_S && gainM >= SAVE_GAIN_M) saveEpisode(gainM, durationS);
+}
+
+void ThermalTracker::saveEpisode(int16_t gainM, uint16_t durationS) {
   ThermalNode nodes[MAX_THERMAL_NODES];
   uint8_t nodeCount = 0;
-  buildSpine(startOffset, endOffset, nodes, nodeCount);
+  buildSpineFromEpisode(nodes, nodeCount);
   if (nodeCount == 0) return;
 
   const int16_t avgClimbCms =
@@ -182,79 +341,210 @@ void ThermalTracker::saveCandidate(uint8_t startOffset, uint8_t endOffset, int16
   }
 }
 
-void ThermalTracker::buildSpine(uint8_t startOffset, uint8_t endOffset, ThermalNode* nodes,
-                                uint8_t& nodeCount) {
+void ThermalTracker::buildSpineFromEpisode(ThermalNode* nodes, uint8_t& nodeCount) const {
   nodeCount = 0;
-  if (startOffset < endOffset) return;
+  if (!episode_.hasEntry || !episode_.hasPeak) return;
 
-  const Sample& start = samples_[sampleIndex(nextSample_, startOffset)];
-  const Sample& end = samples_[sampleIndex(nextSample_, endOffset)];
-  int16_t minAlt = min(start.altM, end.altM);
-  int16_t maxAlt = max(start.altM, end.altM);
-  for (uint8_t offset = endOffset; offset <= startOffset; ++offset) {
-    const Sample& sample = samples_[sampleIndex(nextSample_, offset)];
-    minAlt = min(minAlt, sample.altM);
-    maxAlt = max(maxAlt, sample.altM);
+  for (uint8_t bucket = 0; bucket < MAX_THERMAL_NODES; ++bucket) {
+    const SpineBucket& source = episode_.peakBuckets[bucket];
+    if (source.weight <= 0) continue;
+    nodes[nodeCount].xM = clampInt16(source.sumX / source.weight);
+    nodes[nodeCount].yM = clampInt16(source.sumY / source.weight);
+    nodes[nodeCount].altM = clampInt16(source.sumAlt / source.weight);
+    nodeCount++;
   }
 
-  nodeCount = MAX_THERMAL_NODES;
-  if (maxAlt - minAlt < 60) nodeCount = 2;
-  int32_t sumX[MAX_THERMAL_NODES] = {};
-  int32_t sumY[MAX_THERMAL_NODES] = {};
-  int32_t sumAlt[MAX_THERMAL_NODES] = {};
-  uint8_t counts[MAX_THERMAL_NODES] = {};
-  const int16_t span = max<int16_t>(1, maxAlt - minAlt);
-
-  for (uint8_t offset = endOffset; offset <= startOffset; ++offset) {
-    const Sample& sample = samples_[sampleIndex(nextSample_, offset)];
-    uint8_t bucket = ((sample.altM - minAlt) * nodeCount) / (span + 1);
-    if (bucket >= nodeCount) bucket = nodeCount - 1;
-    sumX[bucket] += sample.xM;
-    sumY[bucket] += sample.yM;
-    sumAlt[bucket] += sample.altM;
-    counts[bucket]++;
+  if (nodeCount > 0 && episode_.hasEntryCore) {
+    nodes[0].xM = episode_.entryCore.xM;
+    nodes[0].yM = episode_.entryCore.yM;
+    nodes[0].altM = episode_.entryCore.altM;
   }
-
-  uint8_t written = 0;
-  for (uint8_t bucket = 0; bucket < nodeCount; ++bucket) {
-    if (counts[bucket] == 0) continue;
-    nodes[written].xM = sumX[bucket] / counts[bucket];
-    nodes[written].yM = sumY[bucket] / counts[bucket];
-    nodes[written].altM = sumAlt[bucket] / counts[bucket];
-    written++;
+  if (nodeCount == 1 && episode_.peak.timeS != episode_.entry.timeS) {
+    const Sample& low = episode_.hasEntryCore ? episode_.entryCore : episode_.entry;
+    nodes[0].xM = low.xM;
+    nodes[0].yM = low.yM;
+    nodes[0].altM = low.altM;
+    nodes[1].xM = episode_.peak.xM;
+    nodes[1].yM = episode_.peak.yM;
+    nodes[1].altM = episode_.peak.altM;
+    nodeCount = 2;
   }
-  nodeCount = written;
 }
 
 int8_t ThermalTracker::findMergeTarget(const ThermalNode* nodes, uint8_t nodeCount) const {
   if (nodeCount == 0) return -1;
 
+  const uint32_t centerRadiusSq =
+      static_cast<uint32_t>(CENTER_MERGE_RADIUS_M) * CENTER_MERGE_RADIUS_M;
+  const uint32_t splineRadiusSq =
+      static_cast<uint32_t>(SPLINE_MERGE_RADIUS_M) * SPLINE_MERGE_RADIUS_M;
+  for (uint8_t i = 0; i < MAX_SAVED_THERMALS; ++i) {
+    const SavedThermal& thermal = thermals_[i];
+    if (!thermal.valid || thermal.nodeCount == 0) continue;
+
+    uint32_t splineDistanceSq = UINT32_MAX;
+    if (sameAltitudeSpineDistanceSq(thermal, nodes, nodeCount, splineDistanceSq) &&
+        splineDistanceSq <= splineRadiusSq)
+      return i;
+    if (extrapolatedSpineDistanceSq(thermal, nodes, nodeCount, splineDistanceSq) &&
+        splineDistanceSq <= splineRadiusSq)
+      return i;
+    if (centerDistanceSq(thermal, nodes, nodeCount) <= centerRadiusSq) return i;
+  }
+  return -1;
+}
+
+uint32_t ThermalTracker::centerDistanceSq(const SavedThermal& thermal, const ThermalNode* nodes,
+                                          uint8_t nodeCount) const {
   int32_t sumX = 0;
   int32_t sumY = 0;
   for (uint8_t i = 0; i < nodeCount; ++i) {
     sumX += nodes[i].xM;
     sumY += nodes[i].yM;
   }
-  const int16_t x = sumX / nodeCount;
-  const int16_t y = sumY / nodeCount;
+  const int32_t x = sumX / max<uint8_t>(1, nodeCount);
+  const int32_t y = sumY / max<uint8_t>(1, nodeCount);
 
-  for (uint8_t i = 0; i < MAX_SAVED_THERMALS; ++i) {
-    const SavedThermal& thermal = thermals_[i];
-    if (!thermal.valid || thermal.nodeCount == 0) continue;
-    int32_t thermalX = 0;
-    int32_t thermalY = 0;
-    for (uint8_t n = 0; n < thermal.nodeCount; ++n) {
-      thermalX += thermal.nodes[n].xM;
-      thermalY += thermal.nodes[n].yM;
-    }
-    thermalX /= thermal.nodeCount;
-    thermalY /= thermal.nodeCount;
-    if (hypot(static_cast<float>(thermalX - x), static_cast<float>(thermalY - y)) <=
-        MERGE_RADIUS_M) {
-      return i;
+  int32_t thermalX = 0;
+  int32_t thermalY = 0;
+  for (uint8_t n = 0; n < thermal.nodeCount; ++n) {
+    thermalX += thermal.nodes[n].xM;
+    thermalY += thermal.nodes[n].yM;
+  }
+  thermalX /= max<uint8_t>(1, thermal.nodeCount);
+  thermalY /= max<uint8_t>(1, thermal.nodeCount);
+  return distanceSq(thermalX - x, thermalY - y);
+}
+
+bool ThermalTracker::altitudeRange(const ThermalNode* nodes, uint8_t nodeCount, int16_t& minAlt,
+                                   int16_t& maxAlt) const {
+  if (nodeCount == 0) return false;
+  minAlt = nodes[0].altM;
+  maxAlt = nodes[0].altM;
+  for (uint8_t i = 1; i < nodeCount; ++i) {
+    minAlt = min(minAlt, nodes[i].altM);
+    maxAlt = max(maxAlt, nodes[i].altM);
+  }
+  return true;
+}
+
+bool ThermalTracker::pointAtAltitude(const ThermalNode* nodes, uint8_t nodeCount, int16_t altM,
+                                     uint16_t maxExtrapolationM, ThermalNode& point) const {
+  if (nodeCount == 0) return false;
+  if (nodeCount == 1) {
+    if (abs(nodes[0].altM - altM) > maxExtrapolationM) return false;
+    point = nodes[0];
+    point.altM = altM;
+    return true;
+  }
+
+  const ThermalNode* lower = &nodes[0];
+  const ThermalNode* upper = &nodes[nodeCount - 1];
+  if (altM < nodes[0].altM) {
+    if (nodes[0].altM - altM > maxExtrapolationM) return false;
+    lower = &nodes[0];
+    upper = &nodes[1];
+  } else if (altM > nodes[nodeCount - 1].altM) {
+    if (altM - nodes[nodeCount - 1].altM > maxExtrapolationM) return false;
+    lower = &nodes[nodeCount - 2];
+    upper = &nodes[nodeCount - 1];
+  } else {
+    for (uint8_t i = 1; i < nodeCount; ++i) {
+      if (altM <= nodes[i].altM) {
+        lower = &nodes[i - 1];
+        upper = &nodes[i];
+        break;
+      }
     }
   }
-  return -1;
+
+  if (lower->altM == upper->altM) {
+    point = *lower;
+    point.altM = altM;
+    return true;
+  }
+
+  const int32_t dz = upper->altM - lower->altM;
+  point.xM = clampInt16(lower->xM + ((static_cast<int32_t>(upper->xM - lower->xM) *
+                                      static_cast<int32_t>(altM - lower->altM)) /
+                                     dz));
+  point.yM = clampInt16(lower->yM + ((static_cast<int32_t>(upper->yM - lower->yM) *
+                                      static_cast<int32_t>(altM - lower->altM)) /
+                                     dz));
+  point.altM = altM;
+  return true;
+}
+
+bool ThermalTracker::sameAltitudeSpineDistanceSq(const SavedThermal& thermal,
+                                                 const ThermalNode* nodes, uint8_t nodeCount,
+                                                 uint32_t& distanceSqOut) const {
+  int16_t aMin = 0;
+  int16_t aMax = 0;
+  int16_t bMin = 0;
+  int16_t bMax = 0;
+  if (!altitudeRange(thermal.nodes, thermal.nodeCount, aMin, aMax) ||
+      !altitudeRange(nodes, nodeCount, bMin, bMax))
+    return false;
+
+  const int16_t overlapMin = max(aMin, bMin);
+  const int16_t overlapMax = min(aMax, bMax);
+  if (overlapMin > overlapMax) return false;
+
+  int16_t altitudes[3] = {overlapMin, static_cast<int16_t>((overlapMin + overlapMax) / 2),
+                          overlapMax};
+  bool found = false;
+  distanceSqOut = UINT32_MAX;
+  for (uint8_t i = 0; i < 3; ++i) {
+    if (i > 0 && altitudes[i] == altitudes[i - 1]) continue;
+    ThermalNode aPoint;
+    ThermalNode bPoint;
+    if (!pointAtAltitude(thermal.nodes, thermal.nodeCount, altitudes[i], 0, aPoint) ||
+        !pointAtAltitude(nodes, nodeCount, altitudes[i], 0, bPoint))
+      continue;
+    distanceSqOut = min(distanceSqOut, distanceSq(aPoint.xM - bPoint.xM, aPoint.yM - bPoint.yM));
+    found = true;
+  }
+  return found;
+}
+
+bool ThermalTracker::extrapolatedSpineDistanceSq(const SavedThermal& thermal,
+                                                 const ThermalNode* nodes, uint8_t nodeCount,
+                                                 uint32_t& distanceSqOut) const {
+  int16_t aMin = 0;
+  int16_t aMax = 0;
+  int16_t bMin = 0;
+  int16_t bMax = 0;
+  if (!altitudeRange(thermal.nodes, thermal.nodeCount, aMin, aMax) ||
+      !altitudeRange(nodes, nodeCount, bMin, bMax))
+    return false;
+  if (max(aMin, bMin) <= min(aMax, bMax)) return false;
+
+  const ThermalNode* lowerNodes = aMax < bMin ? thermal.nodes : nodes;
+  const uint8_t lowerCount = aMax < bMin ? thermal.nodeCount : nodeCount;
+  const ThermalNode* upperNodes = aMax < bMin ? nodes : thermal.nodes;
+  const uint8_t upperCount = aMax < bMin ? nodeCount : thermal.nodeCount;
+  const int16_t lowerMax = aMax < bMin ? aMax : bMax;
+  const int16_t upperMin = aMax < bMin ? bMin : aMin;
+  const int16_t gap = upperMin - lowerMax;
+  if (gap < 0 || gap > MAX_ALTITUDE_EXTRAPOLATION_M) return false;
+
+  const int16_t altitudes[3] = {static_cast<int16_t>(lowerMax + gap / 2), lowerMax, upperMin};
+  const uint16_t lowerGaps[3] = {MAX_ALTITUDE_EXTRAPOLATION_M, 0, MAX_ALTITUDE_EXTRAPOLATION_M};
+  const uint16_t upperGaps[3] = {MAX_ALTITUDE_EXTRAPOLATION_M, MAX_ALTITUDE_EXTRAPOLATION_M, 0};
+
+  bool found = false;
+  distanceSqOut = UINT32_MAX;
+  for (uint8_t i = 0; i < 3; ++i) {
+    ThermalNode lowerPoint;
+    ThermalNode upperPoint;
+    if (!pointAtAltitude(lowerNodes, lowerCount, altitudes[i], lowerGaps[i], lowerPoint) ||
+        !pointAtAltitude(upperNodes, upperCount, altitudes[i], upperGaps[i], upperPoint))
+      continue;
+    distanceSqOut = min(distanceSqOut,
+                        distanceSq(lowerPoint.xM - upperPoint.xM, lowerPoint.yM - upperPoint.yM));
+    found = true;
+  }
+  return found;
 }
 
 void ThermalTracker::mergeThermal(uint8_t target, const ThermalNode* nodes, uint8_t nodeCount,
@@ -337,8 +627,8 @@ ThermalNode ThermalTracker::pointAtAltitude(const SavedThermal& thermal, int16_t
   }
   const ThermalNode& a = thermal.nodes[lower];
   const ThermalNode& b = thermal.nodes[upper];
-  nearAltitude = altM >= thermal.nodes[0].altM - 250 &&
-                 altM <= thermal.nodes[thermal.nodeCount - 1].altM + 250;
+  nearAltitude = altM >= thermal.nodes[0].altM - 100 &&
+                 altM <= thermal.nodes[thermal.nodeCount - 1].altM + 100;
   if (a.altM == b.altM) return a;
 
   const float t = static_cast<float>(altM - a.altM) / static_cast<float>(b.altM - a.altM);
@@ -351,8 +641,8 @@ ThermalNode ThermalTracker::pointAtAltitude(const SavedThermal& thermal, int16_t
 
 uint8_t ThermalTracker::qualityFor(const SavedThermal& thermal, bool nearAltitude) const {
   uint8_t q = 1;
-  if (thermal.avgClimbCms >= 100) q++;
-  if (thermal.avgClimbCms >= 220) q++;
+  if (thermal.avgClimbCms >= 120) q++;
+  if (thermal.avgClimbCms >= 240) q++;
   if (thermal.gainM >= 250) q++;
   if (nearAltitude) q++;
   return constrain(q, 1, 5);
