@@ -95,6 +95,10 @@
       border-radius: 6px;
       padding: 7px 12px;
     }
+    #playPause {
+      width: 68px;
+      text-align: center;
+    }
     input[type="range"] { width: 150px; }
     input[type="number"] {
       width: 72px;
@@ -288,6 +292,12 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
+    }
+    #speedLabel {
+      display: inline-block;
+      min-width: 5ch;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
     }
     .speed-track {
       position: relative;
@@ -548,6 +558,9 @@ const qualityParamKeys = new Set(["quality_climb_1_mps", "quality_climb_2_mps", 
 const minMapZoom = 0.35;
 const groundCircleDiameterRatio = 1.088;
 const groundCircleZoomShrinkExponent = 0.6;
+const defaultPerspectiveAmount = 0.18;
+const maxPerspectiveAmount = 0.6;
+const followTargetVerticalOffsetRatio = 0.25;
 const paramGroups = [
   ["Quality score", ["quality_climb_1_mps", "quality_climb_2_mps", "quality_gain_m", "quality_near_altitude_margin_m"]],
   ["Candidate detection", ["window_s", "min_gain_m", "min_turn_deg", "turn_reversal_hysteresis_deg", "stale_tolerance_s"]],
@@ -573,6 +586,8 @@ let followCurrentFix = false;
 let followControlRect = null;
 let showMapTerrain = Boolean(embedded.terrainMesh);
 let terrainControlRect = null;
+let perspectiveAmount = defaultPerspectiveAmount;
+let perspectiveControlRect = null;
 let currentFrameItems = {saved: [], failed: [], merged: []};
 let replayT = 0;
 let lastNow = performance.now();
@@ -1110,6 +1125,26 @@ function qualityBadge(item) {
   return `<span class="quality-badge" aria-label="Quality ${score} of 5"><span class="quality-dot${score >= 5 ? " is-filled" : ""}" style="--hollow:${hollow}%"></span><b>${score}</b></span>`;
 }
 
+function qualityHollowRatio(item) {
+  const hollowByScore = [0, 0.62, 0.46, 0.30, 0.14, 0];
+  return hollowByScore[thermalQuality(item)] ?? 0.62;
+}
+
+function qualityMapInnerRadius(item, radius) {
+  const cardRadius = 9;
+  const cardHollow = qualityHollowRatio(item);
+  if (cardHollow <= 0) return 0;
+  const cssGradientRadius = cardRadius * Math.SQRT2;
+  const cssColorStart = cssGradientRadius * cardHollow + 1;
+  return radius * Math.min(1, cssColorStart / cardRadius);
+}
+
+function qualityStrokeWidth(item, consumed = false) {
+  const score = thermalQuality(item);
+  const width = 1.8 + (score - 1) * 0.45;
+  return consumed ? Math.max(1.2, width - 0.5) : width;
+}
+
 function savedAccounting(saved, activeMerged) {
   const consumedIds = new Set(activeMerged.flatMap(merge => merge.sourceIds));
   const activeSingles = saved.filter(th => !consumedIds.has(th.id));
@@ -1142,14 +1177,15 @@ function itemPosition(item) {
   return item ? {x: item.x, y: item.y, z: item.z ?? item.detectorAlt ?? bounds.minAlt} : null;
 }
 
-function centerMapOnPosition(position) {
+function centerMapOnPosition(position, verticalOffsetRatio = followTargetVerticalOffsetRatio) {
   if (!position) return;
   if (!mapView) resetMapCamera();
+  const {map} = mapLayout();
   mapView.cx = position.x;
   mapView.cy = position.y;
   mapView.cz = Math.max(0, (position.z ?? bounds.minAlt) - bounds.minAlt);
   mapView.panX = 0;
-  mapView.panY = 0;
+  mapView.panY = -map.h * verticalOffsetRatio;
 }
 
 function smoothedFollowPosition(index) {
@@ -1170,7 +1206,7 @@ function smoothedFollowPosition(index) {
   return {x: acc.x / total, y: acc.y / total, z: acc.z / total};
 }
 
-function selectCard(kind, id) {
+function selectCard(kind, id, centerSelection = true) {
   const key = String(id);
   let item = null;
   if (kind === "thermal") item = currentFrameItems.saved.find(th => String(th.id) === key);
@@ -1179,7 +1215,7 @@ function selectCard(kind, id) {
   const position = itemPosition(item);
   if (!position) return;
   selectedCard = {kind, id: key};
-  centerMapOnPosition(position);
+  if (centerSelection) centerMapOnPosition(position, 0);
   draw();
 }
 
@@ -1193,24 +1229,38 @@ function handleCardListClick(event) {
 
 function hitMapItem(point, map) {
   const hits = [];
-  for (const candidate of currentFrameItems.failed || []) {
-    const p = project3d(candidate, map);
-    hits.push({kind: "candidate", id: candidate.id, d: Math.hypot(point.x - p.x, point.y - p.y), r: 15});
-  }
-  for (const thermal of currentFrameItems.saved || []) {
-    for (const node of thermal.spine || [thermal]) {
-      const p = project3d(node, map);
-      hits.push({kind: "thermal", id: thermal.id, d: Math.hypot(point.x - p.x, point.y - p.y), r: 16});
-    }
-  }
+  const activeMergeSourceIds = new Set((currentFrameItems.merged || [])
+    .filter(merge => !merge.consumed)
+    .flatMap(merge => merge.sourceIds || []));
+  const addHit = (kind, id, projected, radius, priority) => {
+    const d = Math.hypot(point.x - projected.x, point.y - projected.y);
+    if (d <= radius) hits.push({kind, id, d, priority});
+  };
   for (const merge of (currentFrameItems.merged || []).filter(item => !item.consumed)) {
     for (const node of merge.spine || [merge]) {
-      const p = project3d(node, map);
-      hits.push({kind: "merged", id: merge.key, d: Math.hypot(point.x - p.x, point.y - p.y), r: 16});
+      addHit("merged", merge.key, project3d(node, map), 16, 0);
     }
   }
-  hits.sort((a, b) => a.d - b.d);
-  return hits[0] && hits[0].d <= hits[0].r ? hits[0] : null;
+  for (const thermal of (currentFrameItems.saved || []).filter(item => !activeMergeSourceIds.has(item.id))) {
+    for (const node of thermal.spine || [thermal]) {
+      addHit("thermal", thermal.id, project3d(node, map), 16, 1);
+    }
+  }
+  for (const candidate of currentFrameItems.failed || []) {
+    addHit("candidate", candidate.id, project3d(candidate, map), 15, 2);
+  }
+  for (const merge of (currentFrameItems.merged || []).filter(item => item.consumed)) {
+    for (const node of merge.spine || [merge]) {
+      addHit("merged", merge.key, project3d(node, map), 16, 3);
+    }
+  }
+  for (const thermal of (currentFrameItems.saved || []).filter(item => activeMergeSourceIds.has(item.id))) {
+    for (const node of thermal.spine || [thermal]) {
+      addHit("thermal", thermal.id, project3d(node, map), 16, 4);
+    }
+  }
+  hits.sort((a, b) => a.priority - b.priority || a.d - b.d);
+  return hits[0] || null;
 }
 
 function episodeTurnDeg(points) {
@@ -1335,7 +1385,10 @@ function project3d(point, map, groundAlt = bounds.minAlt) {
   const ry = x * sy + y * cy;
   const py = ry * cp - z * sp;
   const depth = ry * sp + z * cp;
-  const perspective = 1;
+  const perspectiveSpan = Math.max(1, bounds.maxX - bounds.minX, bounds.maxY - bounds.minY);
+  const perspective = perspectiveAmount <= 0
+    ? 1
+    : clamp(1 / (1 - depth * perspectiveAmount / perspectiveSpan), 0.45, 2.2);
   return {
     x: map.x + map.w / 2 + mapView.panX + rx * scale * perspective,
     y: map.y + map.h / 2 + mapView.panY + py * scale * perspective,
@@ -1397,13 +1450,43 @@ function drawPolyline3d(points, map, color, width, alpha = 1, ground = false) {
   ctx.restore();
 }
 
-function drawSpine3d(spine, map, color, label, radius = 9) {
+function drawQualityNode(point, item, color, radius, selected = false) {
+  const innerRadius = qualityMapInnerRadius(item, radius);
+  ctx.save();
+  if (selected) {
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(point.x, point.y, radius + 4, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.fillStyle = color;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
+  if (innerRadius > 0) {
+    ctx.arc(point.x, point.y, innerRadius, 0, Math.PI * 2, true);
+    ctx.fill("evenodd");
+  } else {
+    ctx.fill();
+  }
+  ctx.beginPath();
+  ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawSpine3d(item, map, color, label, options = {}) {
+  const spine = item?.spine || [item];
   if (!spine || !spine.length) return;
+  const radius = options.radius ?? 9;
   const projected = spine.map(node => project3d(node, map));
   ctx.save();
+  ctx.globalAlpha = options.alpha ?? 1;
   ctx.strokeStyle = color;
   ctx.fillStyle = color;
-  ctx.lineWidth = 3;
+  ctx.lineWidth = qualityStrokeWidth(item, options.consumed);
   if (projected.length > 1) {
     ctx.beginPath();
     ctx.moveTo(projected[0].x, projected[0].y);
@@ -1411,9 +1494,7 @@ function drawSpine3d(spine, map, color, label, radius = 9) {
     ctx.stroke();
   }
   for (const point of projected) {
-    ctx.beginPath();
-    ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
-    ctx.stroke();
+    drawQualityNode(point, item, color, radius, options.selected);
   }
   const labelPoint = projected[projected.length - 1];
   ctx.fillText(label, labelPoint.x + radius + 2, labelPoint.y - radius - 2);
@@ -1489,7 +1570,7 @@ function drawGroundPlane(map) {
 function followControlBox(map) {
   return {
     x: map.x + map.w - 88,
-    y: map.y + 8,
+    y: map.y + 50,
     w: 78,
     h: 24
   };
@@ -1498,9 +1579,18 @@ function followControlBox(map) {
 function terrainControlBox(map) {
   return {
     x: map.x + map.w - 88,
-    y: map.y + 36,
+    y: map.y + 78,
     w: 78,
     h: 24
+  };
+}
+
+function perspectiveControlBox(map) {
+  return {
+    x: map.x + map.w - 170,
+    y: map.y + 8,
+    w: 160,
+    h: 38
   };
 }
 
@@ -1560,6 +1650,48 @@ function drawMapTerrainControl(map) {
   ctx.restore();
 }
 
+function drawMapPerspectiveControl(map) {
+  const box = perspectiveControlBox(map);
+  perspectiveControlRect = box;
+  const trackX = box.x + 10;
+  const trackW = box.w - 20;
+  const trackY = box.y + 27;
+  const knobX = trackX + perspectiveAmount / maxPerspectiveAmount * trackW;
+  ctx.save();
+  ctx.fillStyle = "rgba(5, 5, 5, 0.62)";
+  ctx.fillRect(box.x, box.y, box.w, box.h);
+  ctx.fillStyle = "#ddd";
+  ctx.font = "12px system-ui, sans-serif";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText("Perspective", box.x + 10, box.y + 12);
+  ctx.textAlign = "right";
+  ctx.fillText(perspectiveAmount.toFixed(2), box.x + box.w - 10, box.y + 12);
+  ctx.strokeStyle = "rgba(221, 221, 221, 0.42)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(trackX, trackY);
+  ctx.lineTo(trackX + trackW, trackY);
+  ctx.stroke();
+  ctx.strokeStyle = "#84c8ff";
+  ctx.beginPath();
+  ctx.moveTo(trackX, trackY);
+  ctx.lineTo(knobX, trackY);
+  ctx.stroke();
+  ctx.fillStyle = "#84c8ff";
+  ctx.beginPath();
+  ctx.arc(knobX, trackY, 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function setPerspectiveFromPoint(point, map) {
+  const box = perspectiveControlBox(map);
+  const trackX = box.x + 10;
+  const trackW = box.w - 20;
+  perspectiveAmount = clamp((point.x - trackX) / trackW, 0, 1) * maxPerspectiveAmount;
+}
+
 function fillCenteredText(text, x, y, color, font = "11px system-ui, sans-serif") {
   ctx.save();
   ctx.fillStyle = color;
@@ -1606,6 +1738,10 @@ function niceGridStep(span) {
 
 function pointInRect(point, rect) {
   return point.x >= rect.x && point.x <= rect.x + rect.w && point.y >= rect.y && point.y <= rect.y + rect.h;
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
 }
 
 function canvasPoint(event) {
@@ -1830,9 +1966,12 @@ function draw() {
   const merged = buildMergedThermals(saved);
   const activeMerged = merged.filter(merge => !merge.consumed);
   const savedTotals = savedAccounting(saved, activeMerged);
+  const activeSaved = saved.filter(th => !savedTotals.consumedIds.has(th.id));
+  const consumedSaved = saved.filter(th => savedTotals.consumedIds.has(th.id));
+  const consumedMerged = merged.filter(merge => merge.consumed);
   const displayedSaved = [
-    ...saved.filter(th => !savedTotals.consumedIds.has(th.id)),
-    ...saved.filter(th => savedTotals.consumedIds.has(th.id))
+    ...activeSaved,
+    ...consumedSaved
   ];
   currentFrameItems = {saved, failed, merged};
   const W = canvas.width;
@@ -1875,8 +2014,32 @@ function draw() {
     ctx.fillStyle = "#84c8ff";
     ctx.fillRect(point.x - 1, point.y - 1, 2, 2);
   }
-  for (const th of saved) {
-    drawSpine3d(th.spine, map, "#ffd166", `T${th.id}`);
+  for (const th of consumedSaved) {
+    drawSpine3d(th, map, "#ffd166", `T${th.id}`, {
+      alpha: isSelected("thermal", th.id) ? 0.62 : 0.28,
+      consumed: true,
+      selected: isSelected("thermal", th.id)
+    });
+  }
+  for (const merge of consumedMerged) {
+    const point = project3d(merge, map);
+    ctx.save();
+    ctx.globalAlpha = isSelected("merged", merge.key) ? 0.62 : 0.28;
+    ctx.strokeStyle = "#9cff57";
+    ctx.lineWidth = 1;
+    for (const source of merge.sources) {
+      const sourcePoint = project3d(source, map);
+      ctx.beginPath();
+      ctx.moveTo(point.x, point.y);
+      ctx.lineTo(sourcePoint.x, sourcePoint.y);
+      ctx.stroke();
+    }
+    ctx.restore();
+    drawSpine3d(merge, map, "#9cff57", compactMergedLabel(merge), {
+      alpha: isSelected("merged", merge.key) ? 0.62 : 0.28,
+      consumed: true,
+      selected: isSelected("merged", merge.key)
+    });
   }
   for (const candidate of failed) {
     const point = project3d(candidate, map);
@@ -1894,6 +2057,9 @@ function draw() {
     ctx.fillStyle = "#84c8ff";
     ctx.fillText(`C${candidate.id}`, point.x + 10, point.y + 8);
   }
+  for (const th of activeSaved) {
+    drawSpine3d(th, map, "#ffd166", `T${th.id}`, {selected: isSelected("thermal", th.id)});
+  }
   for (const merge of activeMerged) {
     const point = project3d(merge, map);
     ctx.strokeStyle = "#9cff57";
@@ -1905,7 +2071,7 @@ function draw() {
       ctx.lineTo(sourcePoint.x, sourcePoint.y);
       ctx.stroke();
     }
-    drawSpine3d(merge.spine, map, "#9cff57", compactMergedLabel(merge));
+    drawSpine3d(merge, map, "#9cff57", compactMergedLabel(merge), {selected: isSelected("merged", merge.key)});
   }
   const fixPoint = project3d(fix, map);
   ctx.fillStyle = "#fff";
@@ -1916,6 +2082,7 @@ function draw() {
   ctx.fillText("3D: left/right pan, middle rotate, wheel zoom", map.x + 10, map.y + 10);
   drawMapFollowControl(map);
   drawMapTerrainControl(map);
+  drawMapPerspectiveControl(map);
   ctx.restore();
 
   ctx.fillStyle = "#bbb";
@@ -1957,6 +2124,33 @@ function draw() {
   ctx.moveTo(profile.x, profY(altRange.min));
   ctx.lineTo(profile.x + profile.w, profY(altRange.min));
   ctx.stroke();
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(profile.x, profile.y, profile.w, profile.h);
+  ctx.clip();
+  const profileSky = ctx.createLinearGradient(0, profile.y, 0, profile.y + profile.h);
+  profileSky.addColorStop(0, "#12354a");
+  profileSky.addColorStop(0.58, "#092133");
+  profileSky.addColorStop(1, "#061522");
+  ctx.fillStyle = profileSky;
+  ctx.fillRect(profile.x, profile.y, profile.w, profile.h);
+  const terrainProfile = processed.filter(p => Number.isFinite(p.groundAlt));
+  if (terrainProfile.length) {
+    const profileGround = ctx.createLinearGradient(0, profile.y, 0, profile.y + profile.h);
+    profileGround.addColorStop(0, "rgba(38, 78, 31, 0.88)");
+    profileGround.addColorStop(0.55, "rgba(19, 52, 17, 0.94)");
+    profileGround.addColorStop(1, "rgba(4, 22, 9, 0.98)");
+    ctx.fillStyle = profileGround;
+    ctx.beginPath();
+    ctx.moveTo(profX(terrainProfile[0].t), profile.y + profile.h);
+    ctx.lineTo(profX(terrainProfile[0].t), profY(terrainProfile[0].groundAlt));
+    for (const p of terrainProfile.slice(1)) ctx.lineTo(profX(p.t), profY(p.groundAlt));
+    const lastTerrain = terrainProfile[terrainProfile.length - 1];
+    ctx.lineTo(profX(lastTerrain.t), profile.y + profile.h);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
   const windowEndX = profX(fix.t);
   const displayWindowS = Number(pendingParams.window_s ?? params.window_s);
   const windowStartX = profX(Math.max(0, fix.t - displayWindowS));
@@ -1968,7 +2162,6 @@ function draw() {
   ctx.moveTo(profX(processed[0].t), profY(processed[0].detectorAlt));
   for (const p of processed.slice(1)) ctx.lineTo(profX(p.t), profY(p.detectorAlt));
   ctx.stroke();
-  const terrainProfile = processed.filter(p => Number.isFinite(p.groundAlt));
   if (terrainProfile.length) {
     ctx.strokeStyle = "rgba(156, 255, 87, 0.72)";
     ctx.lineWidth = 1.5;
@@ -2233,7 +2426,14 @@ canvas.addEventListener("wheel", event => {
   event.preventDefault();
   if (!mapView) resetMapCamera();
   const zoomFactor = Math.exp(event.deltaY * 0.001);
-  mapView.zoom = Math.max(minMapZoom, Math.min(80, mapView.zoom * zoomFactor));
+  const oldZoom = mapView.zoom;
+  const newZoom = Math.max(minMapZoom, Math.min(80, oldZoom * zoomFactor));
+  const actualZoomFactor = newZoom / Math.max(minMapZoom, oldZoom);
+  const cursorX = point.x - (map.x + map.w / 2);
+  const cursorY = point.y - (map.y + map.h / 2);
+  mapView.panX = cursorX - actualZoomFactor * (cursorX - mapView.panX);
+  mapView.panY = cursorY - actualZoomFactor * (cursorY - mapView.panY);
+  mapView.zoom = newZoom;
   draw();
 }, {passive: false});
 canvas.addEventListener("contextmenu", event => {
@@ -2276,11 +2476,22 @@ canvas.addEventListener("pointerdown", event => {
     draw();
     return;
   }
+  perspectiveControlRect = perspectiveControlBox(map);
+  if (event.button === 0 && perspectiveControlRect && pointInRect(point, perspectiveControlRect)) {
+    setPerspectiveFromPoint(point, map);
+    mapDragMode = "perspective";
+    isPanning = true;
+    lastPan = point;
+    event.preventDefault();
+    if (canvas.setPointerCapture) canvas.setPointerCapture(event.pointerId);
+    draw();
+    return;
+  }
   if (event.button === 0) {
     const hit = hitMapItem(point, map);
     if (hit) {
       event.preventDefault();
-      selectCard(hit.kind, hit.id);
+      selectCard(hit.kind, hit.id, false);
       return;
     }
   }
@@ -2301,6 +2512,9 @@ canvas.addEventListener("pointermove", event => {
     replayT = Math.max(0, Math.min(bounds.duration, (point.x - profile.x) / Math.max(1, profile.w) * bounds.duration));
     playing = false;
     playPause.textContent = "Play";
+  } else if (mapDragMode === "perspective") {
+    const {map} = mapLayout();
+    setPerspectiveFromPoint(point, map);
   } else if (mapDragMode === "rotate") {
     mapView.yaw += dx * 0.008;
     mapView.pitch = Math.max(0, Math.min(Math.PI / 2, mapView.pitch - dy * 0.006));
