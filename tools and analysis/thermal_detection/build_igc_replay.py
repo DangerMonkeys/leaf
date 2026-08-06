@@ -1057,6 +1057,8 @@ function evaluateEpisode(points, saved, failed, episodeId, closingFix = null) {{
     lon: center.lon,
     start_s: entry.t,
     end_s: peak.t,
+    min_alt_m: entry.detectorAlt,
+    max_alt_m: peak.detectorAlt,
     duration_s: duration,
     gain_m: gain,
     avg_climb_mps: gain / Math.max(1, duration),
@@ -1080,6 +1082,8 @@ function evaluateEpisode(points, saved, failed, episodeId, closingFix = null) {{
     lon: center.lon,
     start_s: episode.start_s,
     end_s: episode.end_s,
+    min_alt_m: episode.min_alt_m,
+    max_alt_m: episode.max_alt_m,
     duration_s: episode.duration_s,
     gain_m: episode.gain_m,
     avg_climb_mps: episode.avg_climb_mps,
@@ -1219,6 +1223,8 @@ function mergedFromSources(sources) {{
     z: weighted("z"),
     start_s: Math.min(...ordered.map(th => th.start_s)),
     end_s: Math.max(...ordered.map(th => th.end_s)),
+    min_alt_m: Math.min(...ordered.map(th => th.min_alt_m)),
+    max_alt_m: Math.max(...ordered.map(th => th.max_alt_m)),
     gain_m: accruedGain,
     duration_s: activeTime,
     avg_climb_mps: accruedGain / Math.max(1, activeTime),
@@ -1266,6 +1272,16 @@ function itemPosition(item) {{
   return item ? {{x: item.x, y: item.y, z: item.z ?? item.detectorAlt ?? bounds.minAlt}} : null;
 }}
 
+function selectedItemPosition() {{
+  if (!selectedCard) return null;
+  const key = String(selectedCard.id);
+  let item = null;
+  if (selectedCard.kind === "thermal") item = currentFrameItems.saved.find(th => String(th.id) === key);
+  else if (selectedCard.kind === "candidate") item = currentFrameItems.failed.find(candidate => String(candidate.id) === key);
+  else if (selectedCard.kind === "merged") item = currentFrameItems.merged.find(merge => merge.key === key);
+  return itemPosition(item);
+}}
+
 function centerMapOnPosition(position) {{
   if (!position) return;
   if (!mapView) resetMapCamera();
@@ -1274,6 +1290,19 @@ function centerMapOnPosition(position) {{
   mapView.cz = Math.max(0, (position.z ?? bounds.minAlt) - bounds.minAlt);
   mapView.panX = 0;
   mapView.panY = 0;
+}}
+
+function pivotMapOnPosition(position, map) {{
+  if (!position) return false;
+  if (!mapView) resetMapCamera();
+  const before = project3d(position, map);
+  mapView.cx = position.x;
+  mapView.cy = position.y;
+  mapView.cz = Math.max(0, (position.z ?? bounds.minAlt) - bounds.minAlt);
+  const after = project3d(position, map);
+  mapView.panX += before.x - after.x;
+  mapView.panY += before.y - after.y;
+  return true;
 }}
 
 function smoothedFollowPosition(index) {{
@@ -2060,6 +2089,9 @@ canvas.addEventListener("pointerdown", event => {{
   }}
   isPanning = true;
   mapDragMode = event.button === 1 ? "rotate" : "pan";
+  if (mapDragMode === "rotate") {{
+    pivotMapOnPosition(selectedItemPosition(), map);
+  }}
   lastPan = point;
   canvas.classList.add("is-panning");
   event.preventDefault();

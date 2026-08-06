@@ -381,6 +381,8 @@
     }
     .param-tools {
       display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
       justify-content: flex-end;
       margin: 14px 0 10px;
     }
@@ -483,6 +485,10 @@
       </dl>
       <div class="saved-mix" id="saved"></div>
       <div class="param-grid" id="params"></div>
+      <div class="param-tools">
+        <button id="saveDefaults" type="button">Save as default</button>
+        <button id="copyValues" type="button">Copy values</button>
+      </div>
     </aside>
   </div>
   <dialog id="howDialog">
@@ -517,7 +523,22 @@ const qualityDefaults = {
   quality_gain_m: 250,
   quality_near_altitude_margin_m: 250
 };
-const defaultParams = {...embedded.defaults, ...qualityDefaults};
+const defaultParamStorageKey = "leaf.thermalReplay.defaultParams.v1";
+function loadSavedDefaultParams(fallback) {
+  try {
+    const saved = JSON.parse(localStorage.getItem(defaultParamStorageKey) || "null");
+    if (!saved || typeof saved !== "object") return fallback;
+    const next = {...fallback};
+    for (const key of Object.keys(next)) {
+      const value = Number(saved[key]);
+      if (Number.isFinite(value)) next[key] = value;
+    }
+    return next;
+  } catch {
+    return fallback;
+  }
+}
+let defaultParams = loadSavedDefaultParams({...embedded.defaults, ...qualityDefaults});
 const canvas = document.getElementById("replay");
 const ctx = canvas.getContext("2d");
 const playPause = document.getElementById("playPause");
@@ -530,6 +551,8 @@ const fileInput = document.getElementById("fileInput");
 const restartWithParams = document.getElementById("restartWithParams");
 const resetMapView = document.getElementById("resetMapView");
 const resetDefaults = document.getElementById("resetDefaults");
+const saveDefaults = document.getElementById("saveDefaults");
+const copyValues = document.getElementById("copyValues");
 const showGpsAlt = document.getElementById("showGpsAlt");
 const showPressureAlt = document.getElementById("showPressureAlt");
 const howThisWorks = document.getElementById("howThisWorks");
@@ -537,10 +560,10 @@ const howDialog = document.getElementById("howDialog");
 const closeHowDialog = document.getElementById("closeHowDialog");
 const helpRunSummary = document.getElementById("helpRunSummary");
 const paramSpecs = [
-  ["quality_climb_1_mps", "Quality climb +1", 0.1, 5, 0.1, "m/s", "Average climb threshold, in meters per second, that adds one quality point."],
-  ["quality_climb_2_mps", "Quality climb +2", 0.2, 8, 0.1, "m/s", "Average climb threshold, in meters per second, that adds a second quality point."],
-  ["quality_gain_m", "Quality gain", 25, 1000, 25, "m", "Thermal altitude gain, in meters, that adds one quality point."],
-  ["quality_near_altitude_margin_m", "Quality near top", 25, 1000, 25, "m", "Altitude margin, in meters below the flight's maximum altitude, that adds one quality point."],
+  ["quality_climb_1_mps", "Climb +1", 0.1, 5, 0.1, "m/s", "Average climb threshold, in meters per second, that adds one quality point."],
+  ["quality_climb_2_mps", "Climb +2", 0.2, 8, 0.1, "m/s", "Average climb threshold, in meters per second, that adds a second quality point."],
+  ["quality_gain_m", "Gain", 25, 1000, 25, "m", "Thermal altitude gain, in meters, that adds one quality point."],
+  ["quality_near_altitude_margin_m", "Altitude", 25, 1000, 25, "m", "Altitude margin, in meters around a saved thermal's min/max altitude range, that adds one quality point."],
   ["window_s", "Window", 20, 180, 5, "sec", "How far back in time, in seconds, the detector looks when calculating altitude gain and accumulated turn for the current fix."],
   ["min_gain_m", "Candidate gain", 5, 120, 5, "m", "Minimum net altitude gain, in meters, required within the time window before the current fix can count as a thermal candidate. Uses the selected detector altitude source."],
   ["min_turn_deg", "Continuous arc", 90, 540, 10, "deg", "Minimum continuous turn in one direction required within the time window. Opposite-direction circles are evaluated as separate arcs instead of cancelling each other."],
@@ -585,12 +608,17 @@ let mapDragMode = null;
 let lastPan = null;
 let selectedCard = null;
 let followCurrentFix = false;
+let pausedFollowMapPanned = false;
 let followControlRect = null;
-let showMapTerrain = Boolean(embedded.terrainMesh);
+let currentTerrainInfo = embedded.terrain || null;
+let currentTerrainMesh = embedded.terrainMesh || null;
+let currentTerrainGroundAlts = embedded.fixes.map(f => f.groundAlt);
+let showMapTerrain = Boolean(currentTerrainMesh);
 let terrainControlRect = null;
 let perspectiveAmount = defaultPerspectiveAmount;
 let perspectiveControlRect = null;
 let currentFrameItems = {saved: [], failed: [], merged: []};
+let currentQualityAltitude = null;
 let replayT = 0;
 let lastNow = performance.now();
 
@@ -647,6 +675,81 @@ function parseIgc(text) {
   if (!fixes.length) throw new Error("No valid B records found.");
   unwrapTimes(fixes);
   return fixes;
+}
+
+const terrainCachePrefix = "leaf.thermalReplay.terrain.v1:";
+
+function terrainSignature(source, fixes) {
+  if (!fixes.length) return source || "empty";
+  const first = fixes[0];
+  const last = fixes[fixes.length - 1];
+  const coord = value => Number(value).toFixed(5);
+  const duration = Math.round(last.t - first.t);
+  return [
+    source || "unknown",
+    fixes.length,
+    duration,
+    coord(first.lat),
+    coord(first.lon),
+    coord(last.lat),
+    coord(last.lon)
+  ].join("|");
+}
+
+function terrainCacheKey(source, fixes) {
+  return terrainCachePrefix + terrainSignature(source, fixes);
+}
+
+function validTerrainCacheEntry(entry) {
+  return entry &&
+    typeof entry === "object" &&
+    entry.mesh &&
+    Array.isArray(entry.mesh.elevations) &&
+    Number.isFinite(entry.mesh.rows) &&
+    Number.isFinite(entry.mesh.cols) &&
+    entry.mesh.elevations.length === entry.mesh.rows * entry.mesh.cols;
+}
+
+function saveTerrainCache(source, fixes) {
+  if (!currentTerrainMesh) return;
+  const groundAlts = fixes.map(f => Number.isFinite(f.groundAlt) ? f.groundAlt : null);
+  const entry = {
+    source,
+    savedAt: new Date().toISOString(),
+    terrain: currentTerrainInfo,
+    mesh: currentTerrainMesh,
+    groundAlts
+  };
+  try {
+    localStorage.setItem(terrainCacheKey(source, fixes), JSON.stringify(entry));
+  } catch {
+    // localStorage may be full or unavailable for file:// pages; terrain still works for this session.
+  }
+}
+
+function loadTerrainCache(source, fixes) {
+  try {
+    const entry = JSON.parse(localStorage.getItem(terrainCacheKey(source, fixes)) || "null");
+    return validTerrainCacheEntry(entry) ? entry : null;
+  } catch {
+    return null;
+  }
+}
+
+function useTerrainCacheEntry(entry) {
+  currentTerrainInfo = entry?.terrain || null;
+  currentTerrainMesh = entry?.mesh || null;
+  currentTerrainGroundAlts = Array.isArray(entry?.groundAlts) ? entry.groundAlts : [];
+  showMapTerrain = Boolean(currentTerrainMesh);
+}
+
+function loadCachedTerrainFor(source, fixes) {
+  useTerrainCacheEntry(loadTerrainCache(source, fixes));
+}
+
+function seedEmbeddedTerrainCache() {
+  if (!embedded.terrainMesh) return;
+  saveTerrainCache(embedded.source, embedded.fixes);
 }
 
 function unwrapTimes(fixes) {
@@ -766,6 +869,7 @@ function ensureAltitudeControls() {
 function recomputeMetrics({resetCamera = true} = {}) {
   processed = rawFixes.map(f => ({...f}));
   project(processed);
+  applyActiveTerrain(processed);
   ensureAltitudeControls();
   for (let i = 0; i < processed.length; i++) {
     const fix = processed[i];
@@ -862,6 +966,8 @@ function evaluateEpisode(points, saved, failed, episodeId, closingFix = null) {
     lon: center.lon,
     start_s: entry.t,
     end_s: peak.t,
+    min_alt_m: entry.detectorAlt,
+    max_alt_m: peak.detectorAlt,
     duration_s: duration,
     gain_m: gain,
     avg_climb_mps: gain / Math.max(1, duration),
@@ -885,6 +991,8 @@ function evaluateEpisode(points, saved, failed, episodeId, closingFix = null) {
     lon: center.lon,
     start_s: episode.start_s,
     end_s: episode.end_s,
+    min_alt_m: episode.min_alt_m,
+    max_alt_m: episode.max_alt_m,
     duration_s: episode.duration_s,
     gain_m: episode.gain_m,
     avg_climb_mps: episode.avg_climb_mps,
@@ -1061,6 +1169,8 @@ function mergedFromSources(sources, mergeLinks = null, consumed = false) {
     z: weighted("z"),
     start_s: Math.min(...ordered.map(th => th.start_s)),
     end_s: Math.max(...ordered.map(th => th.end_s)),
+    min_alt_m: Math.min(...ordered.map(th => th.min_alt_m)),
+    max_alt_m: Math.max(...ordered.map(th => th.max_alt_m)),
     gain_m: accruedGain,
     duration_s: activeTime,
     avg_climb_mps: accruedGain / Math.max(1, activeTime),
@@ -1110,13 +1220,22 @@ function buildMergedThermals(saved) {
   return [...activeMerged, ...consumedMerged];
 }
 
-function thermalQuality(item) {
+function thermalNearAltitude(item, currentAlt = currentQualityAltitude) {
+  if (!item || !Number.isFinite(currentAlt)) return false;
+  const minAlt = Number.isFinite(item.min_alt_m) ? item.min_alt_m : item.z ?? item.detectorAlt;
+  const maxAlt = Number.isFinite(item.max_alt_m) ? item.max_alt_m : item.z ?? item.detectorAlt;
+  if (!Number.isFinite(minAlt) || !Number.isFinite(maxAlt)) return false;
+  return currentAlt >= minAlt - params.quality_near_altitude_margin_m &&
+    currentAlt <= maxAlt + params.quality_near_altitude_margin_m;
+}
+
+function thermalQuality(item, currentAlt = currentQualityAltitude) {
   if (!item) return 1;
   let score = 1;
   if (item.avg_climb_mps >= params.quality_climb_1_mps) score += 1;
   if (item.avg_climb_mps >= params.quality_climb_2_mps) score += 1;
   if (item.gain_m >= params.quality_gain_m) score += 1;
-  if (bounds && bounds.maxAlt - (item.z ?? item.detectorAlt ?? bounds.minAlt) <= params.quality_near_altitude_margin_m) score += 1;
+  if (thermalNearAltitude(item, currentAlt)) score += 1;
   return Math.max(1, Math.min(5, score));
 }
 
@@ -1179,6 +1298,29 @@ function itemPosition(item) {
   return item ? {x: item.x, y: item.y, z: item.z ?? item.detectorAlt ?? bounds.minAlt} : null;
 }
 
+function selectedItemPosition() {
+  if (!selectedCard) return null;
+  const key = String(selectedCard.id);
+  let item = null;
+  if (selectedCard.kind === "thermal") item = currentFrameItems.saved.find(th => String(th.id) === key);
+  else if (selectedCard.kind === "candidate") item = currentFrameItems.failed.find(candidate => String(candidate.id) === key);
+  else if (selectedCard.kind === "merged") item = currentFrameItems.merged.find(merge => merge.key === key);
+  return itemPosition(item);
+}
+
+function currentPilotPosition() {
+  if (!processed.length) return null;
+  const fix = visualFixAt(replayT) || processed[currentIndex()];
+  return itemPosition(fix);
+}
+
+function rotatePivotPosition() {
+  if (followCurrentFix && !playing && !pausedFollowMapPanned) {
+    return currentPilotPosition();
+  }
+  return selectedItemPosition();
+}
+
 function centerMapOnPosition(position, verticalOffsetRatio = followTargetVerticalOffsetRatio) {
   if (!position) return;
   if (!mapView) resetMapCamera();
@@ -1188,6 +1330,19 @@ function centerMapOnPosition(position, verticalOffsetRatio = followTargetVertica
   mapView.cz = Math.max(0, (position.z ?? bounds.minAlt) - bounds.minAlt);
   mapView.panX = 0;
   mapView.panY = -map.h * verticalOffsetRatio;
+}
+
+function pivotMapOnPosition(position, map) {
+  if (!position) return false;
+  if (!mapView) resetMapCamera();
+  const before = project3d(position, map);
+  mapView.cx = position.x;
+  mapView.cy = position.y;
+  mapView.cz = Math.max(0, (position.z ?? bounds.minAlt) - bounds.minAlt);
+  const after = project3d(position, map);
+  mapView.panX += before.x - after.x;
+  mapView.panY += before.y - after.y;
+  return true;
 }
 
 function smoothedFollowPosition(index, visualFix = null) {
@@ -1321,8 +1476,8 @@ function buildBounds(fixes) {
   const ys = fixes.map(f => f.y);
   const alts = fixes.map(f => f.detectorAlt).filter(v => Number.isFinite(v));
   const terrainAlts = fixes.map(f => f.groundAlt).filter(v => Number.isFinite(v));
-  if (embedded.terrainMesh) {
-    alts.push(embedded.terrainMesh.minElevation, embedded.terrainMesh.maxElevation);
+  if (currentTerrainMesh) {
+    alts.push(currentTerrainMesh.minElevation, currentTerrainMesh.maxElevation);
   }
   alts.push(...terrainAlts);
   return {
@@ -1434,7 +1589,7 @@ function nearestGroundAlt(point) {
 }
 
 function terrainMeshAlt(x, y) {
-  const mesh = embedded.terrainMesh;
+  const mesh = currentTerrainMesh;
   if (!mesh || !mesh.elevations) return null;
   const col = (x - mesh.x0) / mesh.stepM;
   const row = (y - mesh.y0) / mesh.stepM;
@@ -1452,6 +1607,18 @@ function terrainMeshAlt(x, y) {
   return z00 * (1 - tx) * (1 - ty) + z10 * tx * (1 - ty) + z01 * (1 - tx) * ty + z11 * tx * ty;
 }
 
+function applyActiveTerrain(fixes) {
+  for (let i = 0; i < fixes.length; i += 1) {
+    const cachedAlt = currentTerrainGroundAlts[i];
+    if (Number.isFinite(cachedAlt)) {
+      fixes[i].groundAlt = cachedAlt;
+      continue;
+    }
+    const meshAlt = terrainMeshAlt(fixes[i].x, fixes[i].y);
+    fixes[i].groundAlt = Number.isFinite(meshAlt) ? meshAlt : null;
+  }
+}
+
 function groundAltAt(point) {
   if (showMapTerrain) {
     const meshAlt = terrainMeshAlt(point.x, point.y);
@@ -1466,6 +1633,8 @@ function drawPolyline3d(points, map, color, width, alpha = 1, ground = false) {
   ctx.globalAlpha = alpha;
   ctx.strokeStyle = color;
   ctx.lineWidth = width;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
   ctx.beginPath();
   const first = project3d(ground ? {x: points[0].x, y: points[0].y, z: groundAltAt(points[0])} : points[0], map);
   ctx.moveTo(first.x, first.y);
@@ -1502,6 +1671,33 @@ function drawQualityNode(point, item, color, radius, selected = false) {
   ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
   ctx.stroke();
   ctx.restore();
+}
+
+function candidateOverlayWidth() {
+  const zoom = mapView?.zoom ?? 1;
+  return clamp(5 + Math.log2(Math.max(1, zoom)) * 1.6, 5, 12);
+}
+
+function drawCandidateOverlay(points, map) {
+  let run = [];
+  const flush = () => {
+    if (run.length < 2) {
+      run = [];
+      return;
+    }
+    const width = candidateOverlayWidth();
+    drawPolyline3d(run, map, "#0f5f91", width + 4, 0.38);
+    drawPolyline3d(run, map, "#84c8ff", width, 0.5);
+    run = [];
+  };
+  for (const point of points) {
+    if (point.candidate) {
+      run.push(point);
+    } else {
+      flush();
+    }
+  }
+  flush();
 }
 
 function drawSpine3d(item, map, color, label, options = {}) {
@@ -1551,7 +1747,7 @@ function drawVerticalSlice(points, map, currentT) {
 }
 
 function drawGroundPlane(map) {
-  if (showMapTerrain && embedded.terrainMesh) {
+  if (showMapTerrain && currentTerrainMesh) {
     drawTerrainMesh(map);
     return;
   }
@@ -1648,7 +1844,7 @@ function drawMapFollowControl(map) {
 }
 
 function drawMapTerrainControl(map) {
-  if (!embedded.terrainMesh) {
+  if (!currentTerrainMesh) {
     terrainControlRect = null;
     return;
   }
@@ -1819,6 +2015,7 @@ function visualFixAt(t) {
 
 function lockFollowToReplayTime() {
   if (!followCurrentFix || !processed.length) return;
+  pausedFollowMapPanned = false;
   const i = currentIndex();
   const visualFix = visualFixAt(replayT) || processed[i];
   const {map} = mapLayout();
@@ -1840,7 +2037,7 @@ function fmtDuration(t) {
 }
 
 function drawTerrainMesh(map) {
-  const mesh = embedded.terrainMesh;
+  const mesh = currentTerrainMesh;
   if (!mesh || !mesh.elevations) return;
   const cells = [];
   for (let row = 0; row < mesh.rows - 1; row += 1) {
@@ -2022,6 +2219,7 @@ function draw() {
   const i = currentIndex();
   const fix = processed[i];
   const visualFix = visualFixAt(replayT) || fix;
+  currentQualityAltitude = visualFix.detectorAlt;
   const elapsed = processed.slice(0, i + 1);
   const elapsedVisual = visualFix.t > fix.t && i < processed.length - 1 ? [...elapsed, visualFix] : elapsed;
   const candidatePoints = elapsed.filter(p => p.candidate);
@@ -2074,12 +2272,8 @@ function draw() {
   drawPolyline3d(processed, map, "#7aa67a", 1, 0.35, true);
   drawPolyline3d(processed, map, "#565656", 1, 0.58);
   drawPolyline3d(elapsedVisual, map, "#d8d8d8", 2, 1);
+  drawCandidateOverlay(elapsedVisual, map);
   drawVerticalSlice(elapsedVisual, map, visualFix.t);
-  for (const p of candidatePoints) {
-    const point = project3d(p, map);
-    ctx.fillStyle = "#84c8ff";
-    ctx.fillRect(point.x - 1, point.y - 1, 2, 2);
-  }
   for (const th of consumedSaved) {
     drawSpine3d(th, map, "#ffd166", `T${th.id}`, {
       alpha: isSelected("thermal", th.id) ? 0.62 : 0.28,
@@ -2357,6 +2551,60 @@ function buildParamControls() {
   updateParamDisabled();
 }
 
+function compactParamLabel(label) {
+  return label.toLowerCase().replace(/\s+\+/g, "+");
+}
+
+function compactNumber(value) {
+  return Number(value).toLocaleString(undefined, {
+    maximumFractionDigits: 2,
+    useGrouping: false
+  });
+}
+
+function parameterValueText() {
+  return paramSpecs
+    .map(([key, label, , , , unit]) =>
+      `${compactParamLabel(label)}: ${compactNumber(pendingParams[key])}${unit}`)
+    .join("\n");
+}
+
+function showButtonConfirmation(button, text) {
+  const original = button.textContent;
+  button.textContent = text;
+  window.setTimeout(() => {
+    button.textContent = original;
+  }, 1200);
+}
+
+function saveCurrentDefaults() {
+  defaultParams = {...pendingParams};
+  try {
+    localStorage.setItem(defaultParamStorageKey, JSON.stringify(defaultParams));
+    showButtonConfirmation(saveDefaults, "Saved");
+  } catch {
+    showButtonConfirmation(saveDefaults, "Save failed");
+  }
+}
+
+async function copyCurrentValues() {
+  const text = parameterValueText();
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.left = "-9999px";
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand("copy");
+    textarea.remove();
+  }
+  showButtonConfirmation(copyValues, "Copied");
+}
+
 function updateSummary() {
   const pressureAvailable = hasPressureAltitude(rawFixes);
   helpRunSummary.textContent =
@@ -2387,6 +2635,8 @@ function updateParamDisabled() {
     if (num) num.disabled = disabled;
   }
   resetDefaults.disabled = playing;
+  saveDefaults.disabled = false;
+  copyValues.disabled = false;
   fileInput.disabled = playing;
   restartWithParams.disabled = !processed.length;
   ensureAltitudeControls();
@@ -2425,6 +2675,7 @@ function tick(now) {
 playPause.addEventListener("click", () => {
   if (paramsDirty) return;
   playing = !playing;
+  if (playing && followCurrentFix) pausedFollowMapPanned = false;
   playPause.textContent = playing ? "Pause" : "Play";
   lastNow = performance.now();
   updateParamDisabled();
@@ -2485,6 +2736,8 @@ resetDefaults.addEventListener("click", () => {
   buildParamControls();
   markParamsDirty();
 });
+saveDefaults.addEventListener("click", saveCurrentDefaults);
+copyValues.addEventListener("click", copyCurrentValues);
 canvas.addEventListener("wheel", event => {
   if (!bounds) return;
   resizeCanvasToDisplay();
@@ -2531,6 +2784,7 @@ canvas.addEventListener("pointerdown", event => {
   followControlRect = followControlBox(map);
   if (event.button === 0 && followControlRect && pointInRect(point, followControlRect)) {
     followCurrentFix = !followCurrentFix;
+    pausedFollowMapPanned = false;
     if (followCurrentFix && playing) {
       centerMapOnPosition(smoothedFollowPosition(currentIndex()));
     }
@@ -2539,7 +2793,7 @@ canvas.addEventListener("pointerdown", event => {
     return;
   }
   terrainControlRect = terrainControlBox(map);
-  if (event.button === 0 && embedded.terrainMesh && terrainControlRect && pointInRect(point, terrainControlRect)) {
+  if (event.button === 0 && currentTerrainMesh && terrainControlRect && pointInRect(point, terrainControlRect)) {
     showMapTerrain = !showMapTerrain;
     event.preventDefault();
     draw();
@@ -2569,6 +2823,9 @@ canvas.addEventListener("pointerdown", event => {
   }
   isPanning = true;
   mapDragMode = event.button === 1 ? "rotate" : "pan";
+  if (mapDragMode === "rotate") {
+    pivotMapOnPosition(rotatePivotPosition(), map);
+  }
   lastPan = point;
   canvas.classList.add("is-panning");
   event.preventDefault();
@@ -2592,6 +2849,9 @@ canvas.addEventListener("pointermove", event => {
     mapView.yaw += dx * 0.008;
     mapView.pitch = Math.max(0, Math.min(Math.PI / 2, mapView.pitch - dy * 0.006));
   } else {
+    if (followCurrentFix && !playing && Math.hypot(dx, dy) > 0) {
+      pausedFollowMapPanned = true;
+    }
     mapView.panX += dx;
     mapView.panY += dy;
   }
@@ -2615,6 +2875,7 @@ fileInput.addEventListener("change", async () => {
   try {
     rawFixes = parseIgc(text);
     sourceName = file.name;
+    loadCachedTerrainFor(sourceName, rawFixes);
     params = {...pendingParams};
     altitudeSource = preferredAltitudeSource(rawFixes);
     pendingAltitudeSource = altitudeSource;
@@ -2632,6 +2893,7 @@ fileInput.addEventListener("change", async () => {
   }
 });
 
+seedEmbeddedTerrainCache();
 buildParamControls();
 recomputeMetrics();
 speed.value = sliderValueForSpeed(30).toFixed(3);
