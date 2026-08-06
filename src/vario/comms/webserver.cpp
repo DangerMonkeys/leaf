@@ -2140,6 +2140,13 @@ load();
   void startCommissioningSelfTest(WebServer& target) {
     if (!requireCommissioningHttp(target)) return;
 
+    // The diagnostic network defers the production test while commissioning is pending so the
+    // factory interface can format the SD card first. Mark the explicitly requested test as the
+    // production test without preventing a failed test from being restarted.
+    if (!settings.productionTest) {
+      settings.productionTest = true;
+      settings.save();
+    }
     requestInteractiveSelfTest();
     target.send(200, "application/json", selfTestSnapshotJson());
   }
@@ -2162,6 +2169,25 @@ load();
     clearSelfTestDetailsFiles(target);
   }
 
+  String sdCardFormatResultJson(const SDCard::FormatResult& result, bool labelSet) {
+    String json = "{\"formatted\":";
+    json += result.formatted ? "true" : "false";
+    json += ",\"mounted\":";
+    json += result.mounted ? "true" : "false";
+    json += ",\"label_set\":";
+    json += labelSet ? "true" : "false";
+    json += ",\"stage\":\"";
+    json += result.stage;
+    json += "\",\"mount_attempts\":";
+    json += result.mountAttempts;
+    json += ",\"esp_error_code\":";
+    json += static_cast<int>(result.error);
+    json += ",\"esp_error\":\"";
+    json += esp_err_to_name(result.error);
+    json += "\"}";
+    return json;
+  }
+
   void formatCommissioningSdCard(WebServer& target) {
     if (!requireCommissioningHttp(target)) return;
 
@@ -2175,17 +2201,30 @@ load();
       return;
     }
 
-    if (!sdcard.format()) {
-      target.send(500, "application/json", "{\"formatted\":false}");
+    const SDCard::FormatResult result = sdcard.formatDetailed();
+    const bool labelSet = result.mounted && sdcard.setLabel();
+    target.send(200, "application/json", sdCardFormatResultJson(result, labelSet));
+  }
+
+  void remountCommissioningSdCard(WebServer& target) {
+    if (!requireCommissioningHttp(target)) return;
+
+    if (selfTest.updateNeeded() || interactive_self_test_pending) {
+      target.send(409, "application/json", "{\"detail\":\"Self test is running or pending.\"}");
       return;
     }
 
-    if (!sdcard.setLabel()) {
-      target.send(500, "application/json", "{\"formatted\":true,\"label_set\":false}");
-      return;
-    }
+    const SDCard::FormatResult result = sdcard.remountAfterFormat();
+    const bool labelSet = result.mounted && sdcard.setLabel();
+    target.send(200, "application/json", sdCardFormatResultJson(result, labelSet));
+  }
 
-    target.send(200, "application/json", "{\"formatted\":true,\"label_set\":true}");
+  void restartCommissioningDevice(WebServer& target) {
+    if (!requireCommissioningHttp(target)) return;
+
+    target.send(200, "application/json", "{\"restart_requested\":true}");
+    delay(250);
+    ESP.restart();
   }
 
   void markCommissioningComplete(WebServer& target) {
@@ -2215,6 +2254,9 @@ load();
     user_server.on("/self-test/results", HTTP_DELETE,
                    []() { clearCommissioningSelfTestResults(user_server); });
     user_server.on("/sd-card/format", HTTP_POST, []() { formatCommissioningSdCard(user_server); });
+    user_server.on("/sd-card/remount", HTTP_POST,
+                   []() { remountCommissioningSdCard(user_server); });
+    user_server.on("/restart", HTTP_POST, []() { restartCommissioningDevice(user_server); });
     user_server.on("/commissioning/complete", HTTP_POST,
                    []() { markCommissioningComplete(user_server); });
 
@@ -2230,6 +2272,10 @@ load();
                    []() { startCommissioningSelfTest(user_server); });
     user_server.on("/api/debug/sd-card/format", HTTP_POST,
                    []() { formatCommissioningSdCard(user_server); });
+    user_server.on("/api/debug/sd-card/remount", HTTP_POST,
+                   []() { remountCommissioningSdCard(user_server); });
+    user_server.on("/api/debug/restart", HTTP_POST,
+                   []() { restartCommissioningDevice(user_server); });
     user_server.on("/api/debug/self-test/details", HTTP_GET,
                    []() { sendCommissioningSelfTestDetails(user_server); });
     user_server.on("/api/debug/self-test/results", HTTP_DELETE,

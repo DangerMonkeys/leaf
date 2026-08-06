@@ -162,7 +162,8 @@ void Settings::loadDefaults() {
   vario_climbAvg = DEF_CLIMB_AVERAGE;
   vario_climbStart = DEF_CLIMB_START;
   vario_volume = DEF_VOLUME_VARIO;
-  speaker.setVolume(Speaker::SoundChannel::Vario, (SpeakerVolume)vario_volume);
+  volumeShortcut = DEF_VOLUME_SHORTCUT;
+  resetShortcutVolume();
   vario_quietMode = DEF_QUIET_MODE;
   vario_tones = DEF_VARIO_TONES;
   vario_liftyAir = DEF_LIFTY_AIR;
@@ -242,7 +243,8 @@ void Settings::retrieve() {
   vario_climbAvg = leafPrefs.getChar("CLIMB_AVERAGE");
   vario_climbStart = leafPrefs.getChar("CLIMB_START");
   vario_volume = leafPrefs.getChar("VOLUME_VARIO");
-  speaker.setVolume(Speaker::SoundChannel::Vario, (SpeakerVolume)vario_volume);
+  volumeShortcut = leafPrefs.getBool("VOL_SHORTCUT", DEF_VOLUME_SHORTCUT);
+  resetShortcutVolume();
   vario_quietMode = leafPrefs.getBool("QUIET_MODE");
   vario_tones = leafPrefs.getBool("VARIO_TONES");
   vario_liftyAir = leafPrefs.getChar("LIFTY_AIR");
@@ -338,6 +340,7 @@ void Settings::save() {
   leafPrefs.putChar("CLIMB_AVERAGE", vario_climbAvg);
   leafPrefs.putChar("CLIMB_START", vario_climbStart);
   leafPrefs.putChar("VOLUME_VARIO", vario_volume);
+  leafPrefs.putBool("VOL_SHORTCUT", volumeShortcut);
   leafPrefs.putBool("QUIET_MODE", vario_quietMode);
   leafPrefs.putBool("VARIO_TONES", vario_tones);
   leafPrefs.putChar("LIFTY_AIR", vario_liftyAir);
@@ -617,6 +620,32 @@ void Settings::adjustVolumeVario(Button dir) {
     speaker.setVolume(Speaker::SoundChannel::Vario, (SpeakerVolume)vario_volume);
   }
   speaker.playSound(sound);
+  resetShortcutVolume();
+}
+
+bool Settings::adjustShortcutVolume(Button dir) {
+  sound_t sound = fx::neutral;
+
+  if (dir == Button::UP) {
+    if (shortcutVolumeLevel >= VOLUME_MAX) return false;
+    shortcutVolumeLevel++;
+    sound = fx::increase;
+  } else if (dir == Button::DOWN) {
+    if (shortcutVolumeLevel <= 0) return false;
+    shortcutVolumeLevel--;
+    sound = shortcutVolumeLevel == 0 ? fx::cancel : fx::decrease;
+  } else {
+    return false;
+  }
+
+  speaker.setVolume(Speaker::SoundChannel::Vario, (SpeakerVolume)shortcutVolumeLevel);
+  speaker.playSound(sound);
+  return true;
+}
+
+void Settings::resetShortcutVolume() {
+  shortcutVolumeLevel = vario_volume;
+  speaker.setVolume(Speaker::SoundChannel::Vario, (SpeakerVolume)shortcutVolumeLevel);
 }
 
 void Settings::adjustVolumeSystem(Button dir) {

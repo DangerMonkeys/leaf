@@ -7,18 +7,67 @@
     <a class="button-link" href="/setup">New device</a>
   </div>
 
-  {% if sessions %}
-  <div class="session-list" aria-label="Commissioning sessions">
+  <div
+    class="session-list"
+    id="session-list"
+    aria-label="Commissioning sessions"
+    {% if not sessions %}hidden{% endif %}
+  >
     {% for session in sessions %}
-    <a class="session-row" href="/setup/{{ session.mac_address }}">
-      <span class="session-mac">{{ session.mac_address }}</span>
+    <a class="session-row" href="{{ session.url }}">
+      <span class="session-mac">{{ session.label }}</span>
       <span class="session-status session-status-{{ session.status }}">{{ session.status }}</span>
       <span class="session-details">{{ session.details }}</span>
     </a>
     {% endfor %}
   </div>
-  {% else %}
-  <p class="status-message">No commissioning sessions are active.</p>
-  {% endif %}
+  <p class="status-message" id="no-sessions" {% if sessions %}hidden{% endif %}>
+    No commissioning sessions are active.
+  </p>
 </section>
+
+<script>
+  const sessionList = document.querySelector("#session-list");
+  const noSessions = document.querySelector("#no-sessions");
+
+  function renderSessions(sessions) {
+    sessionList.replaceChildren();
+    sessionList.hidden = sessions.length === 0;
+    noSessions.hidden = sessions.length !== 0;
+
+    sessions.forEach((session) => {
+      const row = document.createElement("a");
+      row.className = "session-row";
+      row.href = session.url;
+
+      const label = document.createElement("span");
+      label.className = "session-mac";
+      label.textContent = session.label;
+
+      const status = document.createElement("span");
+      status.className = `session-status session-status-${session.status}`;
+      status.textContent = session.status;
+
+      const details = document.createElement("span");
+      details.className = "session-details";
+      details.textContent = session.details;
+
+      row.append(label, status, details);
+      sessionList.append(row);
+    });
+  }
+
+  async function refreshSessions() {
+    try {
+      const response = await fetch("/api/setup/session-summaries");
+      if (!response.ok) return;
+      const payload = await response.json();
+      renderSessions(payload.sessions);
+    } catch (error) {
+      // Keep the last rendered state during a temporary connection interruption.
+    }
+  }
+
+  setInterval(refreshSessions, 1000);
+</script>
 {% endblock %}

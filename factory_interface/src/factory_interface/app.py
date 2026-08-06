@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 from urllib.parse import parse_qs
 
@@ -16,6 +17,10 @@ from factory_interface.commissioning_sessions import (
     get_commissioning_session,
     list_commissioning_sessions,
     manually_rediscover_session_device,
+    restart_commissioning_device,
+    retry_commissioning_format,
+    retry_commissioning_mount,
+    retry_commissioning_self_test,
 )
 from factory_interface.commissioning_tasks import (
     cancel_flash_task,
@@ -80,6 +85,15 @@ from factory_interface.settings import (
     refresh_github_releases,
     save_settings,
 )
+from factory_interface.pending_setup_runs import (
+    PendingSetupRun,
+    create_pending_setup_run,
+    get_pending_setup_run,
+    latest_running_pending_setup_run,
+    list_pending_setup_runs,
+    remove_pending_setup_run,
+)
+from factory_interface.serial_ports import available_serial_ports, eligible_serial_ports
 
 PACKAGE_DIR = Path(__file__).resolve().parent
 
@@ -91,6 +105,13 @@ app.mount(
 )
 
 templates = Jinja2Templates(directory=PACKAGE_DIR / "templates")
+
+
+def static_asset_version(filename: str) -> int:
+    return (PACKAGE_DIR / "static" / filename).stat().st_mtime_ns
+
+
+templates.env.globals["static_asset_version"] = static_asset_version
 
 OPERATOR_COOKIE_NAME = "factory_interface_operator_name"
 
@@ -162,6 +183,119 @@ def reset_setup_tasks_if_complete() -> None:
     reset_fanet_id_task()
     reset_self_test_task()
     reset_self_test_details_task()
+
+
+def setup_preflight(settings: FactoryInterfaceSettings) -> dict:
+    return {
+        "application_firmware_label": describe_application_firmware_source(
+            settings.application_firmware_source,
+            settings,
+        ),
+        "non_application_binaries_label": describe_non_application_binary_path(
+            settings.non_application_firmware_path,
+        ),
+        "firmware_files": firmware_file_sources(settings),
+        "force_format_sd_card": settings.force_format_sd_card_during_commissioning,
+        "notes": settings.setup_notes,
+        "flash": get_flash_task().snapshot(),
+    }
+
+
+def commissioning_session_summaries() -> list[dict]:
+    sessions = []
+    for run in list_pending_setup_runs():
+        sessions.append(run.snapshot())
+    for session in list_commissioning_sessions():
+        sessions.append(
+            {
+                "kind": "device",
+                "label": session.mac_address,
+                "url": f"/setup/{session.mac_address}",
+                "status": session.status,
+                "details": session.details,
+                "created_at": session.created_at.isoformat(),
+                "updated_at": session.updated_at.isoformat(),
+            }
+        )
+    return sorted(sessions, key=lambda item: item["created_at"], reverse=True)
+
+
+def promote_pending_setup_run(
+    run: PendingSetupRun,
+    device,
+):
+    mac_address = device.mac_address or device.device_id
+    if not mac_address:
+        raise RuntimeError("Discovery response did not include a MAC address.")
+
+    existing_session = get_commissioning_session(mac_address)
+    if existing_session is None:
+        existing_session = active_commissioning_session_for_device(device)
+    if existing_session is not None and existing_session.status == "running":
+        remove_pending_setup_run(run.run_id)
+        return existing_session
+
+    preflight = dict(run.preflight)
+    preflight["flash"] = get_flash_task().snapshot()
+    session = create_commissioning_session(
+        mac_address=mac_address,
+        operator=run.operator,
+        notes=run.notes,
+        device=device,
+        preflight=preflight,
+    )
+    remove_pending_setup_run(run.run_id)
+    return session
+
+
+async def monitor_pending_setup_run(run: PendingSetupRun) -> None:
+    try:
+        while get_pending_setup_run(run.run_id) is run:
+            flash_task = get_flash_task()
+            discovery_task = get_find_device_task()
+
+            if discovery_task.status == "success" and discovery_task.device is not None:
+                try:
+                    promote_pending_setup_run(run, discovery_task.device)
+                except Exception as exc:
+                    run.status = "failure"
+                    run.details = f"{type(exc).__name__}: {exc}"
+                    run.touch()
+                return
+
+            if flash_task.status == "failure":
+                run.status = "failure"
+                run.details = "Firmware flashing failed."
+                run.touch()
+                return
+
+            if discovery_task.status == "failure":
+                run.status = "failure"
+                run.details = discovery_task.error or "Network discovery failed."
+                run.touch()
+                return
+
+            if flash_task.status == "running":
+                details = "Flashing firmware."
+            elif discovery_task.status == "running":
+                details = "Searching for the newly flashed device."
+            else:
+                details = "Preparing commissioning."
+            if run.details != details:
+                run.details = details
+                run.touch()
+            await asyncio.sleep(0.25)
+    except asyncio.CancelledError:
+        return
+    finally:
+        if run.monitor_task is asyncio.current_task():
+            run.monitor_task = None
+
+
+def start_pending_setup_monitor(run: PendingSetupRun) -> None:
+    if run.monitor_task is not None:
+        run.monitor_task.cancel()
+    run.monitor_task = asyncio.create_task(monitor_pending_setup_run(run))
 
 
 def settings_template_context(
@@ -249,9 +383,7 @@ async def setup_sessions(request: Request) -> HTMLResponse:
             request,
             {
                 "title": "Commissioning sessions",
-                "sessions": [
-                    session.snapshot() for session in list_commissioning_sessions()
-                ],
+                "sessions": commissioning_session_summaries(),
             },
         ),
     )
@@ -259,7 +391,15 @@ async def setup_sessions(request: Request) -> HTMLResponse:
 
 @app.get("/setup", response_class=HTMLResponse)
 async def setup_device(request: Request) -> HTMLResponse:
-    reset_setup_tasks_if_complete()
+    run_id = request.query_params.get("run_id", "").strip()
+    pending_run = get_pending_setup_run(run_id) if run_id else None
+    if run_id and pending_run is None:
+        return RedirectResponse(url="/", status_code=303)
+    if pending_run is None:
+        running_pending_run = latest_running_pending_setup_run()
+        if running_pending_run is not None:
+            return RedirectResponse(url=running_pending_run.snapshot()["url"], status_code=303)
+        reset_setup_tasks_if_complete()
     settings = load_settings()
     return templates.TemplateResponse(
         request,
@@ -279,6 +419,8 @@ async def setup_device(request: Request) -> HTMLResponse:
                 "force_format_sd_card_during_commissioning": (
                     settings.force_format_sd_card_during_commissioning
                 ),
+                "serial_ports": available_serial_ports(),
+                "pending_run_id": pending_run.run_id if pending_run else None,
             },
         ),
     )
@@ -389,6 +531,33 @@ async def save_setup_notes(request: Request) -> JSONResponse:
     return JSONResponse({"setup_notes": settings.setup_notes})
 
 
+@app.get("/api/setup/serial-ports", response_class=JSONResponse)
+async def get_serial_ports() -> JSONResponse:
+    return JSONResponse({"ports": available_serial_ports()})
+
+
+@app.post("/api/setup/serial-ports/ignore", response_class=JSONResponse)
+async def set_serial_port_ignored(request: Request) -> JSONResponse:
+    payload = await request.json()
+    device = payload.get("device")
+    ignored = payload.get("ignored")
+    if not isinstance(device, str) or not device.strip():
+        return JSONResponse({"detail": "Serial port is required."}, status_code=400)
+    if not isinstance(ignored, bool):
+        return JSONResponse({"detail": "Ignored must be true or false."}, status_code=400)
+
+    device = device.strip()
+    settings = load_settings()
+    ignored_ports = set(settings.ignored_serial_ports)
+    if ignored:
+        ignored_ports.add(device)
+    else:
+        ignored_ports.discard(device)
+    settings.ignored_serial_ports = sorted(ignored_ports, key=str.lower)
+    save_settings(settings)
+    return JSONResponse({"ports": available_serial_ports()})
+
+
 @app.post("/api/setup/handoff", response_class=JSONResponse)
 async def handoff_setup_session(request: Request) -> JSONResponse:
     discovery_task = get_find_device_task()
@@ -409,47 +578,36 @@ async def handoff_setup_session(request: Request) -> JSONResponse:
     if existing_session is not None and existing_session.status == "running":
         return JSONResponse(
             {
-                "detail": (
-                    "Discovered device already has an active commissioning session: "
-                    f"{existing_session.mac_address}."
-                )
-            },
-            status_code=409,
+                "session": existing_session.snapshot(),
+                "url": f"/setup/{existing_session.mac_address}",
+            }
         )
     active_session = active_commissioning_session_for_device(device)
     if active_session is not None:
         return JSONResponse(
             {
-                "detail": (
-                    "Discovered device already has an active commissioning session: "
-                    f"{active_session.mac_address}."
-                )
-            },
-            status_code=409,
+                "session": active_session.snapshot(),
+                "url": f"/setup/{active_session.mac_address}",
+            }
         )
 
-    operator_name = get_operator_name(request) or "unknown"
-    settings = load_settings()
-    preflight = {
-        "application_firmware_label": describe_application_firmware_source(
-            settings.application_firmware_source,
-            settings,
-        ),
-        "non_application_binaries_label": describe_non_application_binary_path(
-            settings.non_application_firmware_path,
-        ),
-        "firmware_files": firmware_file_sources(settings),
-        "force_format_sd_card": settings.force_format_sd_card_during_commissioning,
-        "notes": settings.setup_notes,
-        "flash": get_flash_task().snapshot(),
-    }
-    session = create_commissioning_session(
-        mac_address=mac_address,
-        operator=operator_name,
-        notes=settings.setup_notes,
-        device=device,
-        preflight=preflight,
-    )
+    run_id = request.query_params.get("run_id", "").strip()
+    pending_run = get_pending_setup_run(run_id) if run_id else None
+    if pending_run is None:
+        pending_run = latest_running_pending_setup_run()
+
+    if pending_run is not None:
+        session = promote_pending_setup_run(pending_run, device)
+    else:
+        operator_name = get_operator_name(request) or "unknown"
+        settings = load_settings()
+        session = create_commissioning_session(
+            mac_address=mac_address,
+            operator=operator_name,
+            notes=settings.setup_notes,
+            device=device,
+            preflight=setup_preflight(settings),
+        )
     return JSONResponse(
         {
             "session": session.snapshot(),
@@ -463,6 +621,11 @@ async def get_setup_sessions() -> JSONResponse:
     return JSONResponse(
         {"sessions": [session.snapshot() for session in list_commissioning_sessions()]}
     )
+
+
+@app.get("/api/setup/session-summaries", response_class=JSONResponse)
+async def get_setup_session_summaries() -> JSONResponse:
+    return JSONResponse({"sessions": commissioning_session_summaries()})
 
 
 @app.get("/api/setup/sessions/{mac_address}", response_class=JSONResponse)
@@ -507,6 +670,66 @@ async def cancel_setup_session(mac_address: str) -> JSONResponse:
     return JSONResponse(session.snapshot())
 
 
+@app.post(
+    "/api/setup/sessions/{mac_address}/retry-format",
+    response_class=JSONResponse,
+)
+async def retry_setup_session_format(mac_address: str) -> JSONResponse:
+    session = get_commissioning_session(mac_address)
+    if session is None:
+        return JSONResponse({"detail": "Commissioning session not found."}, status_code=404)
+    try:
+        retry_commissioning_format(session)
+    except RuntimeError as exc:
+        return JSONResponse({"detail": str(exc)}, status_code=409)
+    return JSONResponse(session.snapshot())
+
+
+@app.post(
+    "/api/setup/sessions/{mac_address}/retry-mount",
+    response_class=JSONResponse,
+)
+async def retry_setup_session_mount(mac_address: str) -> JSONResponse:
+    session = get_commissioning_session(mac_address)
+    if session is None:
+        return JSONResponse({"detail": "Commissioning session not found."}, status_code=404)
+    try:
+        retry_commissioning_mount(session)
+    except RuntimeError as exc:
+        return JSONResponse({"detail": str(exc)}, status_code=409)
+    return JSONResponse(session.snapshot())
+
+
+@app.post(
+    "/api/setup/sessions/{mac_address}/restart-device",
+    response_class=JSONResponse,
+)
+async def restart_setup_session_device(mac_address: str) -> JSONResponse:
+    session = get_commissioning_session(mac_address)
+    if session is None:
+        return JSONResponse({"detail": "Commissioning session not found."}, status_code=404)
+    try:
+        restart_commissioning_device(session)
+    except RuntimeError as exc:
+        return JSONResponse({"detail": str(exc)}, status_code=409)
+    return JSONResponse(session.snapshot())
+
+
+@app.post(
+    "/api/setup/sessions/{mac_address}/retry-self-test",
+    response_class=JSONResponse,
+)
+async def retry_setup_session_self_test(mac_address: str) -> JSONResponse:
+    session = get_commissioning_session(mac_address)
+    if session is None:
+        return JSONResponse({"detail": "Commissioning session not found."}, status_code=404)
+    try:
+        retry_commissioning_self_test(session)
+    except RuntimeError as exc:
+        return JSONResponse({"detail": str(exc)}, status_code=409)
+    return JSONResponse(session.snapshot())
+
+
 @app.delete("/api/setup/sessions/{mac_address}", response_class=JSONResponse)
 async def discard_setup_session(mac_address: str) -> JSONResponse:
     if not discard_commissioning_session(mac_address):
@@ -539,9 +762,41 @@ async def cancel_setup_task() -> JSONResponse:
 
 
 @app.post("/api/setup/flash", response_class=JSONResponse)
-async def start_flash_firmware_task() -> JSONResponse:
-    task = start_flash_firmware()
-    return JSONResponse(task.snapshot())
+async def start_flash_firmware_task(request: Request) -> JSONResponse:
+    run_id = request.query_params.get("run_id", "").strip()
+    pending_run = get_pending_setup_run(run_id) if run_id else None
+    if pending_run is None:
+        pending_run = latest_running_pending_setup_run()
+    pending_run_was_running = pending_run is not None and pending_run.status == "running"
+
+    settings = load_settings()
+    if pending_run is None:
+        pending_run = create_pending_setup_run(
+            operator=get_operator_name(request) or "unknown",
+            notes=settings.setup_notes,
+            preflight=setup_preflight(settings),
+            serial_ports=eligible_serial_ports(),
+        )
+    elif pending_run.status != "running":
+        pending_run.status = "running"
+        pending_run.details = "Preparing to flash firmware."
+        pending_run.preflight = setup_preflight(settings)
+        pending_run.serial_ports = eligible_serial_ports()
+        pending_run.touch()
+
+    flash_task = get_flash_task()
+    discovery_task = get_find_device_task()
+    setup_already_running = pending_run_was_running and (
+        flash_task.status == "running"
+        or discovery_task.status in {"running", "success"}
+    )
+    if not setup_already_running:
+        flash_task = start_flash_firmware()
+    start_pending_setup_monitor(pending_run)
+
+    payload = flash_task.snapshot()
+    payload["pending_run_id"] = pending_run.run_id
+    return JSONResponse(payload)
 
 
 @app.get("/api/setup/flash", response_class=JSONResponse)

@@ -10,7 +10,7 @@ class VarioMenuPage : public SettingsMenuPage {
  public:
   VarioMenuPage() {
     cursor_position = 0;
-    cursor_max = 5;
+    cursor_max = 6;
   }
   void draw();
 
@@ -19,7 +19,7 @@ class VarioMenuPage : public SettingsMenuPage {
   bool cursorUsesLeftButton() const override;
 
  private:
-  static constexpr char* labels[6] = {
+  static constexpr char* labels[7] = {
       "Back",
       "Beep Vol",
       /*"Tones",*/
@@ -29,6 +29,7 @@ class VarioMenuPage : public SettingsMenuPage {
       "ClimbStart",
       /*"LiftyAir",*/
       "SinkAlarm",
+      "Vol Shortcut",
   };
 };
 

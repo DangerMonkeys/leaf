@@ -47,6 +47,10 @@ HTTP_TIMEOUT_SECONDS = DEFAULT_HTTP_TIMEOUT_SECONDS
 SELF_TEST_POLL_SECONDS = 1.0
 SELF_TEST_HTTP_TIMEOUT_SECONDS = 20.0
 SELF_TEST_COMMUNICATION_GRACE_SECONDS = 180.0
+SD_FORMAT_HTTP_TIMEOUT_SECONDS = 180.0
+REBOOT_GRACE_SECONDS = 2.0
+RECONNECT_POLL_SECONDS = 1.0
+RECONNECT_TIMEOUT_SECONDS = 120.0
 
 
 def idle_task(details: str = "") -> dict:
@@ -82,6 +86,7 @@ class CommissioningSession:
                 "details": f"IP address: {self.device.ip_address}:{self.device.port}",
                 "device": self.device.snapshot(),
             },
+            "prepare_sd_card": idle_task(),
             "firmware_version": idle_task(),
             "fanet_id": idle_task(),
             "interactive_self_test": idle_task(),
@@ -164,7 +169,12 @@ def fetch_text(
         raise RuntimeError(f"HTTP {exc.code} from {url}: {detail}") from exc
 
 
-def post_json(url: str, payload: dict) -> dict:
+def post_json(
+    url: str,
+    payload: dict,
+    *,
+    timeout: float = HTTP_TIMEOUT_SECONDS,
+) -> dict:
     data = json.dumps(payload).encode("utf-8")
     request = Request(
         url,
@@ -175,7 +185,7 @@ def post_json(url: str, payload: dict) -> dict:
     try:
         with urlopen_with_timeout_retries(
             request,
-            timeout=HTTP_TIMEOUT_SECONDS,
+            timeout=timeout,
         ) as response:
             return json.loads(response.read().decode("utf-8"))
     except HTTPError as exc:
@@ -227,6 +237,122 @@ async def read_session_mac_address(session: CommissioningSession) -> str:
             f"Device MAC address changed from {session.mac_address} to {mac_address}."
         )
     return mac_address
+
+
+def sd_preparation_details(payload: dict) -> str:
+    stage = str(payload.get("stage", "unknown"))
+    attempts = int(payload.get("mount_attempts", 0))
+    error = str(payload.get("esp_error", "unknown"))
+    return f"stage={stage}; mount attempts={attempts}; ESP error={error}"
+
+
+async def prepare_session_sd_card(session: CommissioningSession) -> None:
+    task = session.tasks["prepare_sd_card"]
+    if not session.preflight.get("force_format_sd_card", False):
+        task.update({"status": "success", "details": "SD card formatting disabled."})
+        session.touch()
+        return
+
+    task.update({"status": "running", "details": "Formatting SD card..."})
+    session.touch()
+    payload = await asyncio.to_thread(
+        post_json,
+        f"{device_base_url(session)}/sd-card/format",
+        {},
+        timeout=SD_FORMAT_HTTP_TIMEOUT_SECONDS,
+    )
+    task["result"] = payload
+    details = sd_preparation_details(payload)
+    if not payload.get("formatted", False):
+        raise RuntimeError(
+            f"SD card format failed ({details})."
+        )
+    if not payload.get("mounted", False):
+        raise RuntimeError(f"SD card formatted but did not remount ({details}).")
+    if not payload.get("label_set", False):
+        raise RuntimeError(f"SD card remounted but its label could not be set ({details}).")
+
+    task.update(
+        {
+            "status": "success",
+            "details": "SD card formatted and remounted.",
+        }
+    )
+    session.touch()
+
+
+async def remount_session_sd_card(session: CommissioningSession) -> None:
+    task = session.tasks["prepare_sd_card"]
+    task.update({"status": "running", "details": "Retrying SD card mount..."})
+    session.touch()
+    payload = await asyncio.to_thread(
+        post_json,
+        f"{device_base_url(session)}/sd-card/remount",
+        {},
+        timeout=SD_FORMAT_HTTP_TIMEOUT_SECONDS,
+    )
+    task["result"] = payload
+    details = sd_preparation_details(payload)
+    if not payload.get("mounted", False):
+        raise RuntimeError(f"SD card still did not mount ({details}).")
+    if not payload.get("label_set", False):
+        raise RuntimeError(f"SD card mounted but its label could not be set ({details}).")
+    task.update({"status": "success", "details": "SD card mounted successfully."})
+    session.touch()
+
+
+async def wait_for_session_device(session: CommissioningSession) -> None:
+    deadline = time.monotonic() + RECONNECT_TIMEOUT_SECONDS
+    while time.monotonic() < deadline:
+        try:
+            await read_session_mac_address(session)
+            return
+        except (OSError, URLError, TimeoutError, RuntimeError):
+            pass
+
+        try:
+            responses = await probe_ip_once(session.device.ip_address)
+            for response in responses:
+                if response_matches_session(response, session):
+                    session.device = response
+                    await read_session_mac_address(session)
+                    return
+        except (OSError, URLError, TimeoutError, RuntimeError):
+            pass
+        await asyncio.sleep(RECONNECT_POLL_SECONDS)
+
+    raise TimeoutError("Timed out waiting for the device to reconnect.")
+
+
+async def restart_and_resume_session(session: CommissioningSession) -> None:
+    task = session.tasks["prepare_sd_card"]
+    try:
+        task.update({"status": "running", "details": "Restarting Leaf..."})
+        session.touch()
+        payload = await asyncio.to_thread(
+            post_json,
+            f"{device_base_url(session)}/restart",
+            {},
+        )
+        if not payload.get("restart_requested", False):
+            raise RuntimeError("Device did not acknowledge the restart request.")
+        await asyncio.sleep(REBOOT_GRACE_SECONDS)
+        task["details"] = "Waiting for Leaf to reconnect..."
+        session.touch()
+        await wait_for_session_device(session)
+        await remount_session_sd_card(session)
+        await run_commissioning_session(session, sd_preparation="skip")
+    except asyncio.CancelledError:
+        mark_running_task_failed(session, "Commissioning session was cancelled.")
+        session.status = "failure"
+        session.details = "Commissioning session was cancelled."
+    except Exception as exc:
+        mark_running_task_failed(session, f"{type(exc).__name__}: {exc}")
+        session.status = "failure"
+        session.details = f"{type(exc).__name__}: {exc}"
+    finally:
+        session.worker_task = None
+        session.touch()
 
 
 def active_fanet_ids(except_mac_address: str | None = None) -> set[int]:
@@ -471,7 +597,11 @@ def persist_configuration_event(session: CommissioningSession) -> int:
         return event.id or 0
 
 
-async def run_commissioning_session(session: CommissioningSession) -> None:
+async def run_commissioning_session(
+    session: CommissioningSession,
+    *,
+    sd_preparation: str = "format",
+) -> None:
     try:
         mac_address = await read_session_mac_address(session)
         session.mac_address = mac_address
@@ -479,6 +609,11 @@ async def run_commissioning_session(session: CommissioningSession) -> None:
             f"IP address: {session.device.ip_address}:{session.device.port}; "
             f"MAC address: {mac_address}"
         )
+
+        if sd_preparation == "format":
+            await prepare_session_sd_card(session)
+        elif sd_preparation == "remount":
+            await remount_session_sd_card(session)
 
         firmware_task = session.tasks["firmware_version"]
         firmware_task.update({"status": "running", "details": "Reading firmware version..."})
@@ -722,6 +857,90 @@ def create_commissioning_session(
     commissioning_sessions[key] = session
     session.worker_task = asyncio.create_task(run_commissioning_session(session))
     return session
+
+
+def retry_commissioning_format(session: CommissioningSession) -> CommissioningSession:
+    if session.worker_task is not None:
+        raise RuntimeError("Commissioning session is still running.")
+    if session.tasks["prepare_sd_card"].get("status") != "failure":
+        raise RuntimeError("SD card formatting has not failed.")
+    result = session.tasks["prepare_sd_card"].get("result", {})
+    if result.get("formatted", False):
+        raise RuntimeError("The SD card is already formatted; retry mounting instead.")
+
+    reset_session_tasks_from(session, "prepare_sd_card")
+    session.status = "running"
+    session.details = "Retrying SD card formatting."
+    session.worker_task = asyncio.create_task(run_commissioning_session(session))
+    session.touch()
+    return session
+
+
+def retry_commissioning_self_test(session: CommissioningSession) -> CommissioningSession:
+    if session.worker_task is not None:
+        raise RuntimeError("Commissioning session is still running.")
+    if session.tasks["interactive_self_test"].get("status") != "failure":
+        raise RuntimeError("Verification tests have not failed.")
+
+    reset_session_tasks_from(session, "interactive_self_test")
+    session.self_test_result = None
+    session.self_test_details = None
+    session.status = "running"
+    session.details = "Restarting verification tests."
+    session.worker_task = asyncio.create_task(
+        run_commissioning_session(session, sd_preparation="skip")
+    )
+    session.touch()
+    return session
+
+
+def retry_commissioning_mount(session: CommissioningSession) -> CommissioningSession:
+    validate_remount_recovery(session)
+    reset_session_tasks_from(session, "prepare_sd_card")
+    session.status = "running"
+    session.details = "Retrying SD card mount."
+    session.worker_task = asyncio.create_task(
+        run_commissioning_session(session, sd_preparation="remount")
+    )
+    session.touch()
+    return session
+
+
+def restart_commissioning_device(session: CommissioningSession) -> CommissioningSession:
+    validate_remount_recovery(session)
+    reset_session_tasks_from(session, "prepare_sd_card")
+    session.status = "running"
+    session.details = "Restarting Leaf to recover the SD card."
+    session.worker_task = asyncio.create_task(restart_and_resume_session(session))
+    session.touch()
+    return session
+
+
+def validate_remount_recovery(session: CommissioningSession) -> None:
+    if session.worker_task is not None:
+        raise RuntimeError("Commissioning session is still running.")
+    task = session.tasks["prepare_sd_card"]
+    result = task.get("result", {})
+    if task.get("status") != "failure" or not result.get("formatted", False):
+        raise RuntimeError("The SD card does not have a recoverable remount failure.")
+    if result.get("mounted", False):
+        raise RuntimeError("The SD card is already mounted.")
+
+
+def reset_session_tasks_from(session: CommissioningSession, task_name: str) -> None:
+    task_order = [
+        "prepare_sd_card",
+        "firmware_version",
+        "interactive_self_test",
+        "retrieve_test_details",
+        "fanet_id",
+        "persist_results",
+        "clear_self_test_results",
+        "notify_commissioning_complete",
+    ]
+    start_index = task_order.index(task_name)
+    for name in task_order[start_index:]:
+        session.tasks[name] = idle_task()
 
 
 def get_commissioning_session(mac_address: str) -> CommissioningSession | None:

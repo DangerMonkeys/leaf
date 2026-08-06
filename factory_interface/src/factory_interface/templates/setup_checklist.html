@@ -15,8 +15,21 @@
       <ul>
         <li>Firmware: {{ application_firmware_label }}</li>
         <li>Non-application binaries: {{ non_application_binaries_label }}</li>
-        <li>SD card force-format: {{ "enabled" if force_format_sd_card_during_commissioning else "disabled" }}</li>
+        <li>SD card format: {{ "enabled" if force_format_sd_card_during_commissioning else "disabled" }}</li>
       </ul>
+    </div>
+
+    <div class="serial-port-panel">
+      <div class="field-label-row">
+        <h2>Serial ports</h2>
+        <button id="refresh-serial-ports" type="button">Refresh</button>
+      </div>
+      <p class="checklist-details">
+        Ignore ports that should not be used for flashing. Choices persist across commissioning
+        sessions.
+      </p>
+      <div id="serial-port-list" class="serial-port-list"></div>
+      <p id="serial-port-summary" class="checklist-details"></p>
     </div>
 
     <div class="checklist-item">
@@ -185,6 +198,9 @@
 
 <script>
   const setupNotes = document.querySelector("#setup-notes");
+  const serialPortList = document.querySelector("#serial-port-list");
+  const serialPortSummary = document.querySelector("#serial-port-summary");
+  const refreshSerialPortsButton = document.querySelector("#refresh-serial-ports");
   const binariesConfirmed = document.querySelector("#binaries-confirmed");
   const setupNotesConfirmed = document.querySelector("#setup-notes-confirmed");
   const setupNotesError = document.querySelector("#setup-notes-error");
@@ -218,6 +234,78 @@
   let selfTestPollTimer = null;
   let retrieveTestDetailsPollTimer = null;
   let setupCancellationRequested = false;
+  let serialPorts = {{ serial_ports | tojson }};
+  let pendingRunId = {{ pending_run_id | tojson }};
+
+  function setupRunUrl(path) {
+    if (!pendingRunId) return path;
+    return `${path}?run_id=${encodeURIComponent(pendingRunId)}`;
+  }
+
+  function renderSerialPorts() {
+    serialPortList.replaceChildren();
+    if (serialPorts.length === 0) {
+      serialPortList.textContent = "No serial ports detected.";
+      serialPortSummary.textContent = "Flashing requires at least one eligible serial port.";
+      return;
+    }
+
+    serialPorts.forEach((port) => {
+      const label = document.createElement("label");
+      label.className = "serial-port-option";
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = Boolean(port.ignored);
+      checkbox.addEventListener("change", async () => {
+        checkbox.disabled = true;
+        try {
+          const response = await fetch("/api/setup/serial-ports/ignore", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ device: port.device, ignored: checkbox.checked }),
+          });
+          const payload = await response.json();
+          if (!response.ok) throw new Error(payload.detail || "Could not save serial port choice.");
+          serialPorts = payload.ports;
+          renderSerialPorts();
+        } catch (error) {
+          checkbox.checked = !checkbox.checked;
+          checkbox.disabled = false;
+          serialPortSummary.textContent = error.message || "Could not save serial port choice.";
+        }
+      });
+      const text = document.createElement("span");
+      text.textContent = `Ignore ${port.device} — ${port.description}`;
+      label.append(checkbox, text);
+      serialPortList.appendChild(label);
+    });
+
+    const eligible = serialPorts.filter((port) => !port.ignored);
+    if (eligible.length === 1) {
+      serialPortSummary.textContent = `Flash will use ${eligible[0].device}.`;
+    } else if (eligible.length > 1) {
+      serialPortSummary.textContent =
+        `${eligible.length} ports are eligible; esptool will use its standard port search.`;
+    } else {
+      serialPortSummary.textContent =
+        "All detected ports are ignored; allow a port before flashing.";
+    }
+  }
+
+  async function refreshSerialPorts() {
+    refreshSerialPortsButton.disabled = true;
+    try {
+      const response = await fetch("/api/setup/serial-ports");
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.detail || "Could not read serial ports.");
+      serialPorts = payload.ports;
+      renderSerialPorts();
+    } catch (error) {
+      serialPortSummary.textContent = error.message || "Could not read serial ports.";
+    } finally {
+      refreshSerialPortsButton.disabled = false;
+    }
+  }
   const taskStatuses = {
     flash: "idle",
     discovery: "idle",
@@ -590,10 +678,15 @@
     if (!canEnableBootloaderMode()) return;
     bootloaderCheckbox.checked = true;
     bootloaderCheckbox.disabled = true;
-    const response = await fetch("/api/setup/flash", {
+    const response = await fetch(setupRunUrl("/api/setup/flash"), {
       method: "POST",
     });
-    applyFlashTaskState(await response.json());
+    const payload = await response.json();
+    if (payload.pending_run_id && payload.pending_run_id !== pendingRunId) {
+      pendingRunId = payload.pending_run_id;
+      window.history.replaceState({}, "", `/setup?run_id=${encodeURIComponent(pendingRunId)}`);
+    }
+    applyFlashTaskState(payload);
   }
 
   async function startDiscoveryTask() {
@@ -672,7 +765,7 @@
   }
 
   async function handoffSetupSession() {
-    const response = await fetch("/api/setup/handoff", { method: "POST" });
+    const response = await fetch(setupRunUrl("/api/setup/handoff"), { method: "POST" });
     const payload = await response.json();
     if (!response.ok) {
       discoveryDetails.textContent = payload.detail || "Commissioning session could not be started.";
@@ -736,6 +829,8 @@
     updateBootloaderModeAvailability();
   });
 
+  refreshSerialPortsButton.addEventListener("click", refreshSerialPorts);
+
   bootloaderCheckbox.addEventListener("change", () => {
     if (bootloaderCheckbox.checked) {
       startFlashTask();
@@ -793,6 +888,7 @@
     notifyCommissioningCompleteDetails.hidden = !notifyCommissioningCompleteDetails.hidden;
   });
 
+  renderSerialPorts();
   refreshFlashTaskState();
   refreshDiscoveryTaskState();
   refreshFirmwareVersionTaskState();

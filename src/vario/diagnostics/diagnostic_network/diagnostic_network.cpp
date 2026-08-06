@@ -90,6 +90,11 @@ void DiagnosticNetwork::update() {
       Serial.println("DiagnosticNetwork: Connected to network");
       printed_end_state_ = true;
     }
+    // During factory commissioning, wait for the factory interface to format the SD card and
+    // explicitly start the test. Preserve the automatic production-test behavior for older or
+    // non-commissioning diagnostic flows.
+    if (settings.commissioningPending) return;
+
     // begin self test (mark as official production test)
     if (!settings.productionTest && settings.consumeProductionTestForceFormatSdCard()) {
       Serial.println("DiagnosticNetwork: force-formatting SD card before production self test");
