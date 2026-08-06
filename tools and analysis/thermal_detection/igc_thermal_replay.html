@@ -561,6 +561,8 @@ const groundCircleZoomShrinkExponent = 0.6;
 const defaultPerspectiveAmount = 0.18;
 const maxPerspectiveAmount = 0.6;
 const followTargetVerticalOffsetRatio = 0.25;
+const followCatchupStartRatio = 0.18;
+const followCatchupFullRatio = 0.38;
 const paramGroups = [
   ["Quality score", ["quality_climb_1_mps", "quality_climb_2_mps", "quality_gain_m", "quality_near_altitude_margin_m"]],
   ["Candidate detection", ["window_s", "min_gain_m", "min_turn_deg", "turn_reversal_hysteresis_deg", "stale_tolerance_s"]],
@@ -1188,7 +1190,7 @@ function centerMapOnPosition(position, verticalOffsetRatio = followTargetVertica
   mapView.panY = -map.h * verticalOffsetRatio;
 }
 
-function smoothedFollowPosition(index) {
+function smoothedFollowPosition(index, visualFix = null) {
   if (!processed.length) return null;
   const windowCount = Math.min(100, processed.length);
   const end = Math.max(windowCount - 1, index);
@@ -1196,7 +1198,7 @@ function smoothedFollowPosition(index) {
   let total = 0;
   const acc = {x: 0, y: 0, z: 0};
   for (let i = start; i <= end && i < processed.length; i += 1) {
-    const point = processed[i];
+    const point = visualFix && i === index ? visualFix : processed[i];
     acc.x += point.x;
     acc.y += point.y;
     acc.z += point.detectorAlt;
@@ -1204,6 +1206,22 @@ function smoothedFollowPosition(index) {
   }
   if (!total) return itemPosition(processed[index]);
   return {x: acc.x / total, y: acc.y / total, z: acc.z / total};
+}
+
+function applyFollowScreenCatchup(target, map) {
+  if (!target || !mapView) return;
+  const projected = project3d(target, map);
+  const desiredX = map.x + map.w / 2;
+  const desiredY = map.y + map.h / 2 - map.h * followTargetVerticalOffsetRatio;
+  const dx = projected.x - desiredX;
+  const dy = projected.y - desiredY;
+  const start = Math.min(map.w, map.h) * followCatchupStartRatio;
+  const full = Math.min(map.w, map.h) * followCatchupFullRatio;
+  const distance = Math.hypot(dx, dy);
+  if (distance <= start) return;
+  const catchup = clamp((distance - start) / Math.max(1, full - start), 0, 1);
+  mapView.panX -= dx * catchup;
+  mapView.panY -= dy * catchup;
 }
 
 function selectCard(kind, id, centerSelection = true) {
@@ -1752,15 +1770,42 @@ function canvasPoint(event) {
   };
 }
 
-function currentIndex() {
+function currentIndex(t = replayT) {
   let lo = 0;
   let hi = processed.length - 1;
   while (lo < hi) {
     const mid = Math.ceil((lo + hi) / 2);
-    if (processed[mid].t <= replayT) lo = mid;
+    if (processed[mid].t <= t) lo = mid;
     else hi = mid - 1;
   }
   return lo;
+}
+
+function lerpNumeric(a, b, ratio) {
+  if (Number.isFinite(a) && Number.isFinite(b)) return a + (b - a) * ratio;
+  return Number.isFinite(a) ? a : b;
+}
+
+function visualFixAt(t) {
+  if (!processed.length) return null;
+  const i = currentIndex(t);
+  const a = processed[i];
+  const b = processed[Math.min(processed.length - 1, i + 1)];
+  if (!a || !b || a === b || b.t <= a.t) return a;
+  const ratio = clamp((t - a.t) / (b.t - a.t), 0, 1);
+  return {
+    ...a,
+    t,
+    x: lerpNumeric(a.x, b.x, ratio),
+    y: lerpNumeric(a.y, b.y, ratio),
+    alt: lerpNumeric(a.alt, b.alt, ratio),
+    pressureAlt: lerpNumeric(a.pressureAlt, b.pressureAlt, ratio),
+    detectorAlt: lerpNumeric(a.detectorAlt, b.detectorAlt, ratio),
+    groundAlt: lerpNumeric(a.groundAlt, b.groundAlt, ratio),
+    vario: lerpNumeric(a.vario, b.vario, ratio),
+    climb30: lerpNumeric(a.climb30, b.climb30, ratio),
+    bearing: lerpNumeric(a.bearing, b.bearing, ratio)
+  };
 }
 
 function fmtTime(t) {
@@ -1958,7 +2003,9 @@ function draw() {
   resizeCanvasToDisplay();
   const i = currentIndex();
   const fix = processed[i];
+  const visualFix = visualFixAt(replayT) || fix;
   const elapsed = processed.slice(0, i + 1);
+  const elapsedVisual = visualFix.t > fix.t && i < processed.length - 1 ? [...elapsed, visualFix] : elapsed;
   const candidatePoints = elapsed.filter(p => p.candidate);
   const detected = detectThermalsThrough(processed, i);
   const saved = detected.saved;
@@ -1978,7 +2025,8 @@ function draw() {
   const H = canvas.height;
   const {tape, map, vario, profile, profileLabel} = mapLayout();
   if (followCurrentFix && playing) {
-    centerMapOnPosition(smoothedFollowPosition(i));
+    centerMapOnPosition(smoothedFollowPosition(i, visualFix));
+    applyFollowScreenCatchup(visualFix, map);
   }
   updateScrubLayout(profile);
   const altRange = visibleAltitudeRange(processed);
@@ -2007,8 +2055,8 @@ function draw() {
   drawGroundPlane(map);
   drawPolyline3d(processed, map, "#7aa67a", 1, 0.35, true);
   drawPolyline3d(processed, map, "#565656", 1, 0.58);
-  drawPolyline3d(elapsed, map, "#d8d8d8", 2, 1);
-  drawVerticalSlice(elapsed, map, fix.t);
+  drawPolyline3d(elapsedVisual, map, "#d8d8d8", 2, 1);
+  drawVerticalSlice(elapsedVisual, map, visualFix.t);
   for (const p of candidatePoints) {
     const point = project3d(p, map);
     ctx.fillStyle = "#84c8ff";
@@ -2073,7 +2121,7 @@ function draw() {
     }
     drawSpine3d(merge, map, "#9cff57", compactMergedLabel(merge), {selected: isSelected("merged", merge.key)});
   }
-  const fixPoint = project3d(fix, map);
+  const fixPoint = project3d(visualFix, map);
   ctx.fillStyle = "#fff";
   ctx.beginPath();
   ctx.arc(fixPoint.x, fixPoint.y, 6, 0, Math.PI * 2);
@@ -2097,8 +2145,8 @@ function draw() {
     ctx.lineTo(tape.x + tape.w, y);
     ctx.stroke();
   }
-  const altY = altToY(fix.detectorAlt);
-  drawAltitudeMarker(tape.x, altY, tape.w, fix.detectorAlt, altitudeSource === "pressure" ? "#c9a0ff" : "#fff", true, tape.y, tape.y + tape.h);
+  const altY = altToY(visualFix.detectorAlt);
+  drawAltitudeMarker(tape.x, altY, tape.w, visualFix.detectorAlt, altitudeSource === "pressure" ? "#c9a0ff" : "#fff", true, tape.y, tape.y + tape.h);
 
   const mid = vario.y + vario.h / 2;
   ctx.strokeStyle = "#777";
@@ -2106,14 +2154,14 @@ function draw() {
   ctx.moveTo(vario.x, mid);
   ctx.lineTo(vario.x + vario.w, mid);
   ctx.stroke();
-  const clampedVario = Math.max(-7, Math.min(7, fix.vario));
+  const clampedVario = Math.max(-7, Math.min(7, visualFix.vario));
   const barH = Math.abs(clampedVario) / 7 * (vario.h / 2);
   ctx.fillStyle = clampedVario >= 0 ? "#84c8ff" : "#ff8c78";
   if (clampedVario >= 0) ctx.fillRect(vario.x + 12, mid - barH, vario.w - 24, barH);
   else ctx.fillRect(vario.x + 12, mid, vario.w - 24, barH);
   ctx.fillStyle = "rgba(5, 5, 5, 0.78)";
   ctx.fillRect(vario.x + 5, mid - 10, vario.w - 10, 20);
-  fillCenteredText(`${fix.vario >= 0 ? "+" : ""}${fix.vario.toFixed(1)}`, vario.x + vario.w / 2, mid, "#fff", "11px system-ui, sans-serif");
+  fillCenteredText(`${visualFix.vario >= 0 ? "+" : ""}${visualFix.vario.toFixed(1)}`, vario.x + vario.w / 2, mid, "#fff", "11px system-ui, sans-serif");
   ctx.fillStyle = "#bbb";
   ctx.font = "15px system-ui, sans-serif";
   ctx.fillText("+7 m/s", vario.x + 7, vario.y + 8);
@@ -2151,9 +2199,9 @@ function draw() {
     ctx.fill();
   }
   ctx.restore();
-  const windowEndX = profX(fix.t);
+  const windowEndX = profX(visualFix.t);
   const displayWindowS = Number(pendingParams.window_s ?? params.window_s);
-  const windowStartX = profX(Math.max(0, fix.t - displayWindowS));
+  const windowStartX = profX(Math.max(0, visualFix.t - displayWindowS));
   ctx.fillStyle = "rgba(132,200,255,0.16)";
   ctx.fillRect(windowStartX, profile.y, Math.max(1, windowEndX - windowStartX), profile.h);
   ctx.strokeStyle = altitudeSource === "pressure" ? "#c9a0ff" : "#d8d8d8";
@@ -2203,8 +2251,8 @@ function draw() {
   }
   ctx.strokeStyle = "#fff";
   ctx.beginPath();
-  ctx.moveTo(profX(fix.t), profile.y);
-  ctx.lineTo(profX(fix.t), profile.y + profile.h);
+  ctx.moveTo(profX(visualFix.t), profile.y);
+  ctx.lineTo(profX(visualFix.t), profile.y + profile.h);
   ctx.stroke();
   ctx.fillStyle = "#bbb";
   ctx.font = "14px system-ui, sans-serif";
@@ -2214,7 +2262,7 @@ function draw() {
   fillWrappedText(altitudeSource === "pressure" ? "IGC pressure" : "GPS", profileLabel.x, profileLabel.y + 42, profileLabel.w, 16);
   ctx.fillStyle = "#ddd";
   ctx.font = "22px system-ui, sans-serif";
-  ctx.fillText(fmtTime(fix.t), profileLabel.x, profileLabel.y + profileLabel.h - 26);
+  ctx.fillText(fmtTime(visualFix.t), profileLabel.x, profileLabel.y + profileLabel.h - 26);
 
   document.getElementById("sourceName").textContent = sourceName;
   document.getElementById("gain").textContent = `${fix.windowGain.toFixed(0)} m`;
@@ -2250,7 +2298,7 @@ function draw() {
       `<div><span>Dist</span><b>${mergeDistanceLabel(merge)}</b></div>` +
     `</article>`
   ).join("");
-  scrub.value = String(Math.round(fix.t / Math.max(1, bounds.duration) * 1000));
+  scrub.value = String(Math.round(visualFix.t / Math.max(1, bounds.duration) * 1000));
 }
 
 function buildParamControls() {
