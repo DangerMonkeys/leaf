@@ -250,11 +250,11 @@ void Power::shutdown(bool deadBattery) {
 
   switch (display.getPage()) {
     case MainPage::Debug:
-    case MainPage::Simple:
-    case MainPage::Thermal:
+    case MainPage::Basic:
+    case MainPage::User:
     case MainPage::ThermalAdv:
-    case MainPage::ThermalNav:
-    case MainPage::Nav:
+    case MainPage::ThermalTrack:
+    case MainPage::Navigate:
       settings.startPage = (uint8_t)display.getPage();
       break;
     default:

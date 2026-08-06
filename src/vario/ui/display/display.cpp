@@ -29,7 +29,7 @@
 #include "ui/display/pages/primary/page_simple.h"
 #include "ui/display/pages/primary/page_thermal.h"
 #include "ui/display/pages/primary/page_thermal_adv.h"
-#include "ui/display/pages/primary/page_thermal_nav.h"
+#include "ui/display/pages/primary/page_thermal_track.h"
 #include "ui/settings/settings.h"
 #include "wind_estimate/wind_estimate.h"
 
@@ -90,15 +90,15 @@ bool Display::isMainPageVisible(MainPage targetPage) const {
     case MainPage::Debug:
     case MainPage::Debug2:
       return settings.dev_mode && settings.disp_showDebugPage;
-    case MainPage::Simple:
-      return settings.disp_showSimplePage;
-    case MainPage::Thermal:
-      return settings.disp_showThmPage;
+    case MainPage::Basic:
+      return settings.disp_showBasicPage;
+    case MainPage::User:
+      return settings.disp_showUserPage;
     case MainPage::ThermalAdv:
       return settings.disp_showThmAdvPage;
-    case MainPage::ThermalNav:
-      return settings.disp_showThermalNavPage;
-    case MainPage::Nav:
+    case MainPage::ThermalTrack:
+      return settings.labs_thermalTrack && settings.disp_showThermalTrackPage;
+    case MainPage::Navigate:
       return settings.disp_showNavPage;
     case MainPage::Menu:
     case MainPage::Charging:
@@ -109,13 +109,14 @@ bool Display::isMainPageVisible(MainPage targetPage) const {
 }
 
 bool Display::hasEnabledPrimaryPage() const {
-  return settings.disp_showSimplePage || settings.disp_showThmPage ||
-         settings.disp_showThmAdvPage || settings.disp_showThermalNavPage ||
+  return settings.disp_showBasicPage || settings.disp_showUserPage ||
+         settings.disp_showThmAdvPage ||
+         (settings.labs_thermalTrack && settings.disp_showThermalTrackPage) ||
          settings.disp_showNavPage;
 }
 
 void Display::ensurePrimaryPageEnabled() {
-  if (!hasEnabledPrimaryPage()) settings.disp_showThmPage = true;
+  if (!hasEnabledPrimaryPage()) settings.disp_showUserPage = true;
 }
 
 MainPage Display::firstVisiblePrimaryPage(MainPage preferredPage) const {
@@ -124,13 +125,14 @@ MainPage Display::firstVisiblePrimaryPage(MainPage preferredPage) const {
     return preferredPage;
   }
 
-  if (settings.disp_showThmPage) return MainPage::Thermal;
-  if (settings.disp_showSimplePage) return MainPage::Simple;
-  if (settings.disp_showThermalNavPage) return MainPage::ThermalNav;
-  if (settings.disp_showNavPage) return MainPage::Nav;
+  if (settings.disp_showUserPage) return MainPage::User;
+  if (settings.disp_showBasicPage) return MainPage::Basic;
+  if (settings.labs_thermalTrack && settings.disp_showThermalTrackPage)
+    return MainPage::ThermalTrack;
+  if (settings.disp_showNavPage) return MainPage::Navigate;
   if (settings.disp_showThmAdvPage) return MainPage::ThermalAdv;
   if (settings.dev_mode && settings.disp_showDebugPage) return MainPage::Debug;
-  return MainPage::Thermal;
+  return MainPage::User;
 }
 
 MainPage Display::sanitizedMainPage(MainPage targetPage) {
@@ -149,7 +151,7 @@ void Display::turnPage(PageAction action) {
 
   switch (action) {
     case PageAction::Home:
-      displayPage_ = sanitizedMainPage(MainPage::Thermal);
+      displayPage_ = sanitizedMainPage(MainPage::User);
       break;
 
     case PageAction::Next: {
@@ -251,21 +253,21 @@ void Display::update() {
   if (!isMainPageVisible(displayPage_)) displayPage_ = sanitizedMainPage(displayPage_);
 
   switch (displayPage_) {
-    case MainPage::Simple:
-      lastRenderContext_ = DisplayRenderContext::Simple;
+    case MainPage::Basic:
+      lastRenderContext_ = DisplayRenderContext::Basic;
       simplePage_draw();
       break;
-    case MainPage::Thermal:
-      lastRenderContext_ = DisplayRenderContext::Thermal;
+    case MainPage::User:
+      lastRenderContext_ = DisplayRenderContext::User;
       thermalPage_draw();
       break;
     case MainPage::ThermalAdv:
       lastRenderContext_ = DisplayRenderContext::ThermalAdv;
       thermalPageAdv_draw();
       break;
-    case MainPage::ThermalNav:
-      lastRenderContext_ = DisplayRenderContext::ThermalNav;
-      thermalNavPage_draw();
+    case MainPage::ThermalTrack:
+      lastRenderContext_ = DisplayRenderContext::ThermalTrack;
+      thermalTrackPage_draw();
       break;
     case MainPage::Debug:
       lastRenderContext_ = DisplayRenderContext::Debug;
@@ -275,8 +277,8 @@ void Display::update() {
       lastRenderContext_ = DisplayRenderContext::Debug2;
       debug2Page_draw();
       break;
-    case MainPage::Nav:
-      lastRenderContext_ = DisplayRenderContext::Nav;
+    case MainPage::Navigate:
+      lastRenderContext_ = DisplayRenderContext::Navigate;
       navigatePage_draw();
       break;
     case MainPage::Menu:
@@ -306,6 +308,7 @@ void Display::clearPage() {
   displayMenuPage.resetCursor();
   unitsMenuPage.resetCursor();
   systemMenuPage.backToSystemMenu();
+  leafLabsMenuPage.resetCursor();
   developerMenuPage.resetCursor();
   wifiMenuPage.resetCursor();
   displayPage_ = MainPage::Blank;

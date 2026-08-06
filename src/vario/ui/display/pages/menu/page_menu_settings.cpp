@@ -22,6 +22,7 @@ enum settings_menu_items {
   cursor_settings_units,
   cursor_settings_logging,
   cursor_settings_connect,
+  cursor_settings_leaf_labs,
   cursor_settings_system,
   cursor_settings_fanet,
 };
@@ -34,24 +35,26 @@ enum settings_menu_pages {
   page_menu_settings_units,
   page_menu_settings_logging,
   page_menu_settings_connect,
+  page_menu_settings_leaf_labs,
   page_menu_settings_system,
 };
 
 uint8_t settings_menu_page = page_menu_settings_root;
 
 namespace {
-  constexpr char* labels[9] = {"Back",    "Vario",   "Altimeter", "Display", "Units",
-                               "Logging", "Connect", "System",    "Fanet"};
+  constexpr char* labels[10] = {"Back",    "Vario",   "Altimeter", "Display", "Units",
+                                "Logging", "Connect", "Leaf Labs", "System",  "Fanet"};
 
-  constexpr uint8_t glyphs[9] = {0,
-                                 menu_ui::GLYPH_VARIO,
-                                 menu_ui::GLYPH_ALTIMETER,
-                                 menu_ui::GLYPH_DISPLAY,
-                                 menu_ui::GLYPH_UNITS,
-                                 menu_ui::GLYPH_LOGGING,
-                                 menu_ui::GLYPH_CONNECTIVITY,
-                                 menu_ui::GLYPH_SETTINGS,
-                                 menu_ui::GLYPH_FANET};
+  constexpr uint8_t glyphs[10] = {0,
+                                  menu_ui::GLYPH_VARIO,
+                                  menu_ui::GLYPH_ALTIMETER,
+                                  menu_ui::GLYPH_DISPLAY,
+                                  menu_ui::GLYPH_UNITS,
+                                  menu_ui::GLYPH_LOGGING,
+                                  menu_ui::GLYPH_CONNECTIVITY,
+                                  menu_ui::GLYPH_LEAF_LABS,
+                                  menu_ui::GLYPH_SETTINGS,
+                                  menu_ui::GLYPH_FANET};
 }  // namespace
 
 void SettingsRootMenuPage::backToSettingsMenu() { settings_menu_page = page_menu_settings_root; }
@@ -92,6 +95,8 @@ bool SettingsRootMenuPage::button_event(Button button, ButtonEvent state, uint8_
       return logMenuPage.button_event(button, state, count);
     case page_menu_settings_connect:
       return wifiMenuPage.button_event(button, state, count);
+    case page_menu_settings_leaf_labs:
+      return leafLabsMenuPage.button_event(button, state, count);
     case page_menu_settings_system:
       return systemMenuPage.button_event(button, state, count);
   }
@@ -121,6 +126,9 @@ void SettingsRootMenuPage::draw() {
     case page_menu_settings_connect:
       wifiMenuPage.draw();
       break;
+    case page_menu_settings_leaf_labs:
+      leafLabsMenuPage.draw();
+      break;
     case page_menu_settings_system:
       systemMenuPage.draw();
       break;
@@ -135,7 +143,7 @@ void SettingsRootMenuPage::drawSettingsMenu() {
 
     uint8_t setting_name_x = 2;
     uint8_t setting_choice_x = 76;
-    uint8_t menu_items_y[] = {190, 60, 75, 90, 105, 120, 135, 150, 165};
+    uint8_t menu_items_y[] = {190, 47, 62, 77, 92, 107, 122, 137, 152, 167};
 
     for (int i = 0; i <= cursor_max; i++) {
       if (row_hidden(i)) continue;
@@ -202,6 +210,12 @@ void SettingsRootMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t
       if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
         speaker.playSound(fx::increase);
         settings_menu_page = page_menu_settings_connect;
+      }
+      break;
+    case cursor_settings_leaf_labs:
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
+        speaker.playSound(fx::increase);
+        settings_menu_page = page_menu_settings_leaf_labs;
       }
       break;
     case cursor_settings_system:

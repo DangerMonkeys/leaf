@@ -10,7 +10,7 @@ class SettingsRootMenuPage : public SettingsMenuPage {
  public:
   SettingsRootMenuPage() {
     cursor_position = 0;
-    cursor_max = 8;
+    cursor_max = 9;
   }
   void draw();
   bool button_event(Button button, ButtonEvent state, uint8_t count) override;

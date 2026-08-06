@@ -79,6 +79,9 @@
 #define DEF_DIAG_CPU_UTILIZATION 0
 #define DEF_ECO_MODE 0  // default off to allow reprogramming easier
 
+// Leaf Labs Settings
+#define DEF_LABS_THERMAL_TRACK 0  // default hide experimental thermal tracking
+
 // Boot Flags
 // Boot-to-ON Flag (when resetting from system updates,
 // reboot to "ON" even if not holding power button)
@@ -89,17 +92,17 @@
 #define DEF_CONTRAST 7  // default contrast setting
 // Primary Alt field on Nav page (Baro Alt, GPS Alt, Alt above waypoint, etc)
 #define DEF_NAVPG_ALT_TYP 1
-#define DEF_THMPG_ALT_TYP 1     // Primary Alt field on Thermal page
-#define DEF_THMPG_ALT2_TYP 1    // Secondary Alt field on Thermal page
-#define DEF_THMPG_USR1 0        // User field 1 on Thermal page
-#define DEF_THMPG_USR2 1        // User field 2 on Thermal page
-#define DEF_SHOW_DEBUG 0        // Enable debug page
-#define DEF_SHOW_SIMPLE 1       // Enable simple page
-#define DEF_SHOW_THRM 1         // Enable thermal page
-#define DEF_SHOW_THRM_ADV 0     // Enable thermal adv page
-#define DEF_SHOW_THERMAL_NAV 1  // Enable thermal nav page
-#define DEF_SHOW_NAV 0          // Enable nav page
-#define DEF_STARTPAGE 2         // Start on Thermal page
+#define DEF_THMPG_ALT_TYP 1       // Primary Alt field on User page
+#define DEF_THMPG_ALT2_TYP 1      // Secondary Alt field on User page
+#define DEF_THMPG_USR1 0          // User field 1 on User page
+#define DEF_THMPG_USR2 1          // User field 2 on User page
+#define DEF_SHOW_DEBUG 0          // Enable debug page
+#define DEF_SHOW_BASIC 1          // Enable basic page
+#define DEF_SHOW_USER 1           // Enable user page
+#define DEF_SHOW_THRM_ADV 0       // Enable thermal adv page
+#define DEF_SHOW_THERMAL_TRACK 0  // Enable thermal track page
+#define DEF_SHOW_NAV 0            // Enable navigate page
+#define DEF_STARTPAGE 3           // Start on User page
 
 // Fanet settings
 #define DEF_FANET_REGION 0  // OFF by default
@@ -171,6 +174,9 @@ setting | samples | time avg
   bool diag_vario;
   bool diag_cpuUtilization;
 
+  // Leaf Labs options
+  bool labs_thermalTrack;
+
   // Boot Flags
   bool boot_enterBootloader;
   bool boot_toOnState;
@@ -184,10 +190,10 @@ setting | samples | time avg
   uint8_t disp_thmPageUser1;
   uint8_t disp_thmPageUser2;
   bool disp_showDebugPage;
-  bool disp_showSimplePage;
-  bool disp_showThmPage;
+  bool disp_showBasicPage;
+  bool disp_showUserPage;
   bool disp_showThmAdvPage;
-  bool disp_showThermalNavPage;
+  bool disp_showThermalTrackPage;
   bool disp_showNavPage;
   uint8_t startPage;
 

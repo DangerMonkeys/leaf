@@ -1,4 +1,4 @@
-#include "ui/display/pages/primary/page_thermal_nav.h"
+#include "ui/display/pages/primary/page_thermal_track.h"
 
 #include <Arduino.h>
 #include <U8g2lib.h>
@@ -23,14 +23,14 @@ namespace {
   constexpr uint8_t MAP_D_1500M = 74;
   constexpr uint8_t MAP_D_5000M = 96;
 
-  enum ThermalNavPageItem : uint8_t {
-    cursor_thermalNavPage_none,
-    cursor_thermalNavPage_timer,
+  enum ThermalTrackPageItem : uint8_t {
+    cursor_thermalTrackPage_none,
+    cursor_thermalTrackPage_timer,
   };
-  constexpr uint8_t THERMAL_NAV_CURSOR_MAX = cursor_thermalNavPage_timer;
-  constexpr uint8_t THERMAL_NAV_CURSOR_TIMEOUT = 8;
-  int8_t thermalNavPageCursor = cursor_thermalNavPage_none;
-  uint8_t thermalNavPageCursorTimeCount = 0;
+  constexpr uint8_t THERMAL_TRACK_CURSOR_MAX = cursor_thermalTrackPage_timer;
+  constexpr uint8_t THERMAL_TRACK_CURSOR_TIMEOUT = 8;
+  int8_t thermalTrackPageCursor = cursor_thermalTrackPage_none;
+  uint8_t thermalTrackPageCursorTimeCount = 0;
 
   constexpr uint8_t POINTER_W = 12;
   constexpr uint8_t POINTER_H = 11;
@@ -215,30 +215,30 @@ namespace {
     }
   }
 
-  void thermalNavPageCursorMove(Button button) {
+  void thermalTrackPageCursorMove(Button button) {
     if (button == Button::UP) {
-      thermalNavPageCursor--;
-      if (thermalNavPageCursor < 0) thermalNavPageCursor = THERMAL_NAV_CURSOR_MAX;
+      thermalTrackPageCursor--;
+      if (thermalTrackPageCursor < 0) thermalTrackPageCursor = THERMAL_TRACK_CURSOR_MAX;
     }
     if (button == Button::DOWN) {
-      thermalNavPageCursor++;
-      if (thermalNavPageCursor > THERMAL_NAV_CURSOR_MAX) thermalNavPageCursor = 0;
+      thermalTrackPageCursor++;
+      if (thermalTrackPageCursor > THERMAL_TRACK_CURSOR_MAX) thermalTrackPageCursor = 0;
     }
-    speaker.playSound(thermalNavPageCursor == cursor_thermalNavPage_none ? fx::doubleClick
-                                                                         : fx::click);
+    speaker.playSound(thermalTrackPageCursor == cursor_thermalTrackPage_none ? fx::doubleClick
+                                                                             : fx::click);
   }
 }  // namespace
 
-void thermalNavPage_draw() {
-  if (thermalNavPageCursor != cursor_thermalNavPage_none &&
-      thermalNavPageCursorTimeCount++ >= THERMAL_NAV_CURSOR_TIMEOUT) {
-    thermalNavPageCursor = cursor_thermalNavPage_none;
-    thermalNavPageCursorTimeCount = 0;
+void thermalTrackPage_draw() {
+  if (thermalTrackPageCursor != cursor_thermalTrackPage_none &&
+      thermalTrackPageCursorTimeCount++ >= THERMAL_TRACK_CURSOR_TIMEOUT) {
+    thermalTrackPageCursor = cursor_thermalTrackPage_none;
+    thermalTrackPageCursorTimeCount = 0;
   }
 
   u8g2.firstPage();
   do {
-    display_headerAndFooter(thermalNavPageCursor == cursor_thermalNavPage_timer, false);
+    display_headerAndFooter(thermalTrackPageCursor == cursor_thermalTrackPage_timer, false);
 
     const ThermalDisplayItem* selected = thermalTracker.selectedDisplayItem();
 
@@ -251,15 +251,15 @@ void thermalNavPage_draw() {
   } while (u8g2.nextPage());
 }
 
-void thermalNavPage_button(Button button, ButtonEvent state, uint8_t count) {
-  thermalNavPageCursorTimeCount = 0;
+void thermalTrackPage_button(Button button, ButtonEvent state, uint8_t count) {
+  thermalTrackPageCursorTimeCount = 0;
 
-  switch (thermalNavPageCursor) {
-    case cursor_thermalNavPage_none:
+  switch (thermalTrackPageCursor) {
+    case cursor_thermalTrackPage_none:
       switch (button) {
         case Button::UP:
         case Button::DOWN:
-          if (state == ButtonEvent::CLICKED) thermalNavPageCursorMove(button);
+          if (state == ButtonEvent::CLICKED) thermalTrackPageCursorMove(button);
           break;
         case Button::RIGHT:
           if (state == ButtonEvent::CLICKED) {
@@ -281,11 +281,11 @@ void thermalNavPage_button(Button button, ButtonEvent state, uint8_t count) {
           break;
       }
       break;
-    case cursor_thermalNavPage_timer:
+    case cursor_thermalTrackPage_timer:
       switch (button) {
         case Button::UP:
         case Button::DOWN:
-          if (state == ButtonEvent::CLICKED) thermalNavPageCursorMove(button);
+          if (state == ButtonEvent::CLICKED) thermalTrackPageCursorMove(button);
           break;
         case Button::LEFT:
         case Button::RIGHT:
@@ -293,11 +293,11 @@ void thermalNavPage_button(Button button, ButtonEvent state, uint8_t count) {
         case Button::CENTER:
           if (state == ButtonEvent::CLICKED && !flightTimer_isRunning()) {
             flightTimer_start();
-            thermalNavPageCursor = cursor_thermalNavPage_none;
+            thermalTrackPageCursor = cursor_thermalTrackPage_none;
           } else if (state == ButtonEvent::HELD && flightTimer_isRunning()) {
             buttons.consumeButton();
             flightTimer_stop();
-            thermalNavPageCursor = cursor_thermalNavPage_none;
+            thermalTrackPageCursor = cursor_thermalTrackPage_none;
           }
           break;
       }

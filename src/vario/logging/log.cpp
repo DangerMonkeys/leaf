@@ -116,7 +116,7 @@ void log_update() {
 
         // get first set of log values
         log_captureValues();
-        thermalTracker.seedTestThermalsForFlight();
+        if (settings.labs_thermalTrack) thermalTracker.seedTestThermalsForFlight();
 
         // initial min/max values
         logbook.alt_max = logbook.alt_start;

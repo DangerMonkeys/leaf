@@ -430,11 +430,11 @@ void TaskManager::doNecessaryTasks(void) {
     performTask.gps = false;
   }
   if (performTask.thermalDetector) {
-    thermalTracker.updateDetector();
+    if (settings.labs_thermalTrack) thermalTracker.updateDetector();
     performTask.thermalDetector = false;
   }
   if (performTask.thermalNavigation) {
-    thermalTracker.updateNavigation();
+    if (settings.labs_thermalTrack) thermalTracker.updateNavigation();
     performTask.thermalNavigation = false;
   }
   if (performTask.power) {

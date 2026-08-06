@@ -49,7 +49,7 @@ namespace cpu_utilization {
         case 49:
           return "temp_rh_start";
         case 69:
-          return "thermal_nav";
+          return "thermal_track";
         case 79:
           return "power_sd";
         case 99:

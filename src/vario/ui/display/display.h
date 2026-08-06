@@ -23,11 +23,11 @@ enum class PageAction : uint8_t {
 enum class MainPage : uint8_t {
   Debug = 0,
   Debug2 = 1,
-  Simple = 2,
-  Thermal = 3,
+  Basic = 2,
+  User = 3,
   ThermalAdv = 4,
-  ThermalNav = 5,
-  Nav = 6,
+  ThermalTrack = 5,
+  Navigate = 6,
   Menu = 7,
   Charging = 8,
   Blank = 9
@@ -40,13 +40,13 @@ enum class DisplayRenderContext : uint8_t {
   Charging = 2,
   StartupSplash = 3,
   Warning = 4,
-  Simple = 10,
-  Thermal = 11,
+  Basic = 10,
+  User = 11,
   ThermalAdv = 12,
-  Nav = 13,
+  Navigate = 13,
   Debug = 14,
   Debug2 = 15,
-  ThermalNav = 16,
+  ThermalTrack = 16,
   MainMenu = 20,
   ModalMenu = 30,
 };
@@ -79,11 +79,11 @@ class Display {
   MainPage firstVisiblePrimaryPage(MainPage preferredPage) const;
   bool isScrollableMainPageVisible(MainPage targetPage) const;
 
-  MainPage displayPage_ = MainPage::Thermal;
+  MainPage displayPage_ = MainPage::User;
 
   // track the page we used to be on, so we can "go back" if needed (like cancelling out of a menu
   // heirarchy)
-  MainPage displayPagePrior_ = MainPage::Thermal;
+  MainPage displayPagePrior_ = MainPage::User;
 
   uint8_t showSplashScreenFrames_ = 0;
   bool showStartupSplash_ = false;
