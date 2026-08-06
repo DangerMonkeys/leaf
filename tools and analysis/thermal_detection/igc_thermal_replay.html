@@ -1237,11 +1237,20 @@ function selectCard(kind, id, centerSelection = true) {
   draw();
 }
 
+function clearSelection() {
+  if (!selectedCard) return;
+  selectedCard = null;
+  draw();
+}
+
 function handleCardListClick(event) {
   if (event.button !== undefined && event.button !== 0) return;
   const card = event.target.closest("[data-select-kind]");
-  if (!card) return;
   event.preventDefault();
+  if (!card) {
+    clearSelection();
+    return;
+  }
   selectCard(card.dataset.selectKind, card.dataset.selectId);
 }
 
@@ -1806,6 +1815,15 @@ function visualFixAt(t) {
     climb30: lerpNumeric(a.climb30, b.climb30, ratio),
     bearing: lerpNumeric(a.bearing, b.bearing, ratio)
   };
+}
+
+function lockFollowToReplayTime() {
+  if (!followCurrentFix || !processed.length) return;
+  const i = currentIndex();
+  const visualFix = visualFixAt(replayT) || processed[i];
+  const {map} = mapLayout();
+  centerMapOnPosition(smoothedFollowPosition(i, visualFix));
+  applyFollowScreenCatchup(visualFix, map);
 }
 
 function fmtTime(t) {
@@ -2414,6 +2432,8 @@ playPause.addEventListener("click", () => {
 speed.addEventListener("input", updateSpeedLabel);
 scrub.addEventListener("input", () => {
   replayT = Number(scrub.value) / 1000 * bounds.duration;
+  lockFollowToReplayTime();
+  draw();
 });
 restartWithParams.addEventListener("click", restartRunWithPendingParams);
 document.addEventListener("keydown", event => {
@@ -2498,6 +2518,7 @@ canvas.addEventListener("pointerdown", event => {
     replayT = Math.max(0, Math.min(bounds.duration, (point.x - profile.x) / Math.max(1, profile.w) * bounds.duration));
     playing = false;
     playPause.textContent = "Play";
+    lockFollowToReplayTime();
     mapDragMode = "scrub";
     isPanning = true;
     lastPan = point;
@@ -2542,6 +2563,9 @@ canvas.addEventListener("pointerdown", event => {
       selectCard(hit.kind, hit.id, false);
       return;
     }
+    clearSelection();
+    event.preventDefault();
+    return;
   }
   isPanning = true;
   mapDragMode = event.button === 1 ? "rotate" : "pan";
@@ -2560,6 +2584,7 @@ canvas.addEventListener("pointermove", event => {
     replayT = Math.max(0, Math.min(bounds.duration, (point.x - profile.x) / Math.max(1, profile.w) * bounds.duration));
     playing = false;
     playPause.textContent = "Play";
+    lockFollowToReplayTime();
   } else if (mapDragMode === "perspective") {
     const {map} = mapLayout();
     setPerspectiveFromPoint(point, map);
