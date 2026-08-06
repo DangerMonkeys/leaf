@@ -403,8 +403,8 @@ void ThermalTracker::rebuildDisplayItems() {
     item.selected = false;
     item.clamped = clamped;
     item.nearAltitude = nearAltitude;
-    item.x = static_cast<int8_t>(roundf(48 + sin(turnDeg * DEG_TO_RAD) * radius));
-    item.y = static_cast<int8_t>(roundf(109 - cos(turnDeg * DEG_TO_RAD) * radius));
+    item.xOffset = static_cast<int8_t>(roundf(sin(turnDeg * DEG_TO_RAD) * radius));
+    item.yOffset = static_cast<int8_t>(roundf(-cos(turnDeg * DEG_TO_RAD) * radius));
 
     const uint16_t absTurn = abs(turnDeg);
     if (absTurn < selectedAbsTurn) {
@@ -457,24 +457,26 @@ void ThermalTracker::seedTestThermalsForFlight() {
                                                    178, -165, 28,  -24, 72,  -88, 122};
   const uint16_t distancesM[MAX_SAVED_THERMALS] = {420,  780,  1100, 1450, 1800, 2300, 2700, 3200,
                                                    3800, 4400, 5200, 5600, 6100, 6600, 7000};
+  const uint8_t targetQualities[MAX_SAVED_THERMALS] = {1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5};
 
   for (uint8_t i = 0; i < MAX_SAVED_THERMALS; ++i) {
     SavedThermal& thermal = thermals_[i];
     thermal.valid = true;
     thermal.seeded = true;
     thermal.nodeCount = MAX_THERMAL_NODES;
-    thermal.avgClimbCms = 80 + (i % 6) * 45;
-    thermal.gainM = 90 + (i % 7) * 75;
+    thermal.avgClimbCms = targetQualities[i] >= 4 ? 260 : targetQualities[i] == 3 ? 125 : 80;
+    thermal.gainM = targetQualities[i] == 5 ? 315 : 90;
     thermal.durationS = 60 + (i % 5) * 50;
     thermal.lastSeenS = millis() / 1000;
 
     const float absoluteBearing = currentTrackDeg_ + bearingsDeg[i];
     const int16_t baseX = currentXM_ + sin(absoluteBearing * DEG_TO_RAD) * distancesM[i];
     const int16_t baseY = currentYM_ + cos(absoluteBearing * DEG_TO_RAD) * distancesM[i];
+    const int16_t baseAltitudeOffsetM = targetQualities[i] == 1 ? 600 : -180 + (i % 4) * 80;
     for (uint8_t n = 0; n < MAX_THERMAL_NODES; ++n) {
       thermal.nodes[n].xM = baseX + (static_cast<int8_t>(n) - 1) * (8 + i % 4);
       thermal.nodes[n].yM = baseY + n * (10 + i % 5);
-      thermal.nodes[n].altM = currentAltM_ - 180 + n * 120 + (i % 4) * 80;
+      thermal.nodes[n].altM = currentAltM_ + baseAltitudeOffsetM + n * 120;
     }
   }
   seededThisFlight_ = true;

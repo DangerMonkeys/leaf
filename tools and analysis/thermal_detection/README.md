@@ -5,8 +5,11 @@ This folder contains an exploratory GPS/IGC-pressure altitude thermal detector a
 The generator parses IGC `B` records, preserves both GPS and IGC pressure-altitude fields when present, skips invalid zero GPS-altitude samples, projects fixes into a local meter grid, and detects thermal candidates using:
 
 - net selected-source altitude gain over a rolling window
-- net signed turn over the same window, using an 8-second smoothed GPS bearing
-- minimum episode duration and total gain before saving a thermal
+- the longest continuous same-direction arc over the same window, using a 5-second smoothed GPS
+  bearing and direction-reversal hysteresis so opposite circles do not cancel and short S-turns do
+  not combine
+- a persistent episode-entry snapshot plus minimum entry-to-peak duration and total gain before
+  saving a thermal
 
 Build the replay from an IGC file:
 
@@ -31,4 +34,6 @@ The replay page includes:
 - mouse-wheel map zoom, click-drag map panning, and a Reset Map button for inspecting saved thermal locations
 - live algorithm sliders/value boxes for tuning thresholds
 - realtime replay semantics: saved thermals appear only after the simulated detector reaches the save point
+- long-episode semantics: the detector snapshots the bottom of the first qualifying window and
+  evaluates through the episode peak, so the rolling-window length does not cap slow thermal climbs
 - pause-only detector-source and parameter editing; changed settings require restarting the replay so one run always uses one consistent detector state

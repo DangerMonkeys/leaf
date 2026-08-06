@@ -9,13 +9,14 @@ from pathlib import Path
 DEFAULTS = {
     "window_s": 30,
     "min_gain_m": 10,
-    "min_turn_deg": 90,
+    "min_turn_deg": 180,
+    "turn_reversal_hysteresis_deg": 30,
     "min_duration_s": 25,
-    "min_save_gain_m": 100,
-    "merge_radius_m": 300,
+    "min_save_gain_m": 65,
+    "merge_radius_m": 225,
     "bearing_lookback_s": 5,
     "min_bearing_distance_m": 10,
-    "stale_tolerance_s": 20,
+    "stale_tolerance_s": 0,
     "vario_avg_s": 5,
 }
 
@@ -465,10 +466,12 @@ def render_html(payload: dict) -> str:
       <h2>How Thermal Detection Works</h2>
       <p id="helpRunSummary"></p>
       <ol>
-        <li>Each flight log point is checked against the moving time window. A point becomes a candidate point only when both Candidate gain and Candidate turn are met inside that window.</li>
+        <li>Each flight log point is checked against the moving time window. A point becomes a candidate only when Candidate gain and the minimum continuous same-direction arc are both met.</li>
+        <li>Small counter-direction excursions are ignored until they reach Turn reversal. Once that hysteresis is crossed, a new opposite-direction arc begins, so complete circles in opposite directions do not cancel while short S-turns do not combine.</li>
         <li>A candidate episode starts when candidate points begin. It stays open while candidate points continue, including short non-candidate gaps up to Candidate gap seconds.</li>
         <li>The episode ends after the detector has gone longer than Candidate gap seconds since the last candidate point.</li>
-        <li>When the episode ends, it is evaluated against Save duration and Save gain. Passing episodes become saved thermals. Failed episodes become candidate cards.</li>
+        <li>When the first rolling window qualifies, the episode snapshots the lowest point in that window as its entry. That entry remains fixed even after it falls outside the rolling window, so long, gentle climbs are not limited by the detector window length.</li>
+        <li>When the episode ends, it is evaluated from that entry through its peak altitude against Save duration and Save gain. Trailing level flight or sink after the peak is excluded. Passing episodes become saved thermals; failed episodes become candidate cards.</li>
       </ol>
       <ul>
         <li>Thermal cards show saved thermal episodes: gain, duration, average climb, and total turns.</li>
@@ -505,7 +508,8 @@ const helpRunSummary = document.getElementById("helpRunSummary");
 const paramSpecs = [
   ["window_s", "Window", 20, 180, 5, "sec", "How far back in time, in seconds, the detector looks when calculating altitude gain and accumulated turn for the current fix."],
   ["min_gain_m", "Candidate gain", 5, 120, 5, "m", "Minimum net altitude gain, in meters, required within the time window before the current fix can count as a thermal candidate. Uses the selected detector altitude source."],
-  ["min_turn_deg", "Candidate turn", 20, 540, 10, "deg", "Minimum net heading change, in degrees, required within the time window before the current fix can count as circling. 360 deg is one full turn."],
+  ["min_turn_deg", "Continuous arc", 90, 540, 10, "deg", "Minimum continuous turn in one direction required within the time window. Opposite-direction circles are evaluated as separate arcs instead of cancelling each other."],
+  ["turn_reversal_hysteresis_deg", "Turn reversal", 0, 90, 5, "deg", "Counter-direction movement required before a directional arc is considered to have reversed. Smaller excursions are treated as GPS noise without discarding normal small same-direction bearing changes."],
   ["min_duration_s", "Save duration", 5, 180, 5, "sec", "Minimum candidate episode length, in seconds, required before the detector is allowed to save the episode as a thermal."],
   ["min_save_gain_m", "Save gain", 10, 180, 5, "m", "Minimum total altitude gain, in meters, across a candidate episode before saving a thermal marker. Uses the selected detector altitude source."],
   ["merge_radius_m", "Merge radius", 50, 1000, 25, "m", "Maximum horizontal distance, in meters, between saved thermal centers before the replay shows them as a derived merged thermal. This does not change the original T numbers."],
@@ -516,7 +520,7 @@ const paramSpecs = [
 ];
 const paramByKey = new Map(paramSpecs.map(spec => [spec[0], spec]));
 const paramGroups = [
-  ["Candidate detection", ["window_s", "min_gain_m", "min_turn_deg", "stale_tolerance_s"]],
+  ["Candidate detection", ["window_s", "min_gain_m", "min_turn_deg", "turn_reversal_hysteresis_deg", "stale_tolerance_s"]],
   ["Pass/fail criteria", ["min_duration_s", "min_save_gain_m", "merge_radius_m"]],
   ["Smoothing / averaging", ["bearing_lookback_s", "min_bearing_distance_m", "vario_avg_s"]]
 ];
@@ -608,6 +612,47 @@ function bearing(a, b) {{
   return angleDeg(b.x - a.x, b.y - a.y);
 }}
 
+function longestDirectionalArc(points, reversalHysteresisDeg) {{
+  let direction = 0;
+  let arc = 0;
+  let reversalArc = 0;
+  let longest = 0;
+  let lastBearing = null;
+  for (const point of points) {{
+    if (point.bearing === null) continue;
+    if (lastBearing === null) {{
+      lastBearing = point.bearing;
+      continue;
+    }}
+    const delta = angleDelta(point.bearing, lastBearing);
+    lastBearing = point.bearing;
+    if (delta === 0) continue;
+    const deltaDirection = Math.sign(delta);
+    const magnitude = Math.abs(delta);
+    if (direction === 0) {{
+      direction = deltaDirection;
+      arc = magnitude;
+      longest = Math.max(longest, arc);
+      continue;
+    }}
+    if (deltaDirection === direction) {{
+      reversalArc = 0;
+      arc += magnitude;
+      longest = Math.max(longest, arc);
+      continue;
+    }}
+    reversalArc += magnitude;
+    if (reversalArc >= reversalHysteresisDeg) {{
+      longest = Math.max(longest, arc);
+      direction = deltaDirection;
+      arc = reversalArc;
+      reversalArc = 0;
+      longest = Math.max(longest, arc);
+    }}
+  }}
+  return Math.max(longest, arc);
+}}
+
 function priorIndex(fixes, i, secondsBack) {{
   const target = fixes[i].t - secondsBack;
   let j = i;
@@ -666,14 +711,7 @@ function recomputeMetrics() {{
     const window = processed.slice(start, i + 1);
     fix.windowDuration = window[window.length - 1].t - window[0].t;
     fix.windowGain = fix.detectorAlt - window[0].detectorAlt;
-    let signedTurn = 0;
-    let lastBearing = null;
-    for (const point of window) {{
-      if (point.bearing === null) continue;
-      if (lastBearing !== null) signedTurn += angleDelta(point.bearing, lastBearing);
-      lastBearing = point.bearing;
-    }}
-    fix.windowTurn = Math.abs(signedTurn);
+    fix.windowTurn = longestDirectionalArc(window, params.turn_reversal_hysteresis_deg);
     fix.candidate = fix.windowGain >= params.min_gain_m && fix.windowTurn >= params.min_turn_deg;
     fix.thermal = null;
   }}
@@ -691,7 +729,19 @@ function detectThermalsThrough(fixes, endIndex) {{
   for (let i = 0; i <= endIndex; i++) {{
     const fix = fixes[i];
     if (fix.candidate) {{
-      active.push(fix);
+      if (!active.length) {{
+        const windowStart = priorIndex(fixes, i, params.window_s);
+        const qualifyingWindow = fixes.slice(windowStart, i + 1);
+        let entryOffset = 0;
+        for (let j = 1; j < qualifyingWindow.length; j += 1) {{
+          if (qualifyingWindow[j].detectorAlt < qualifyingWindow[entryOffset].detectorAlt) {{
+            entryOffset = j;
+          }}
+        }}
+        active = qualifyingWindow.slice(entryOffset);
+      }} else {{
+        active.push(fix);
+      }}
       lastCandidateT = fix.t;
       continue;
     }}
@@ -710,12 +760,18 @@ function detectThermalsThrough(fixes, endIndex) {{
 }}
 
 function evaluateEpisode(points, saved, failed, episodeId, closingFix = null) {{
-  const duration = points[points.length - 1].t - points[0].t;
-  const alts = points.map(p => p.detectorAlt);
-  const gain = Math.max(...alts) - Math.min(...alts);
-  const turnDeg = episodeTurnDeg(points);
-  const center = weightedCenter(points);
-  const spine = buildThermalSpine(points);
+  let peakIndex = 0;
+  for (let i = 1; i < points.length; i += 1) {{
+    if (points[i].detectorAlt >= points[peakIndex].detectorAlt) peakIndex = i;
+  }}
+  const episodePoints = points.slice(0, peakIndex + 1);
+  const entry = episodePoints[0];
+  const peak = episodePoints[episodePoints.length - 1];
+  const duration = peak.t - entry.t;
+  const gain = peak.detectorAlt - entry.detectorAlt;
+  const turnDeg = episodeTurnDeg(episodePoints);
+  const center = weightedCenter(episodePoints);
+  const spine = buildThermalSpine(episodePoints);
   const episode = {{
     id: episodeId,
     x: center.x,
@@ -723,8 +779,8 @@ function evaluateEpisode(points, saved, failed, episodeId, closingFix = null) {{
     z: center.z,
     lat: center.lat,
     lon: center.lon,
-    start_s: points[0].t,
-    end_s: points[points.length - 1].t,
+    start_s: entry.t,
+    end_s: peak.t,
     duration_s: duration,
     gain_m: gain,
     avg_climb_mps: gain / Math.max(1, duration),
@@ -752,13 +808,13 @@ function evaluateEpisode(points, saved, failed, episodeId, closingFix = null) {{
     gain_m: episode.gain_m,
     avg_climb_mps: episode.avg_climb_mps,
     turns: episode.turns,
-    max_climb_mps: Math.max(...points.map(p => p.climb30)),
+    max_climb_mps: Math.max(...episodePoints.map(p => p.climb30)),
     spine,
     ended_by_gain: episode.ended_by_gain,
     ended_by_turn: episode.ended_by_turn
   }};
   saved.push(next);
-  for (const point of points) point.thermal = next.id;
+  for (const point of episodePoints) point.thermal = next.id;
 }}
 
 function thermalDistance(a, b) {{

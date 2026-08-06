@@ -34,8 +34,8 @@ struct ThermalDisplayItem {
   bool selected = false;
   bool clamped = false;
   bool nearAltitude = false;
-  int8_t x = 0;
-  int8_t y = 0;
+  int8_t xOffset = 0;
+  int8_t yOffset = 0;
 };
 
 class ThermalTracker {
