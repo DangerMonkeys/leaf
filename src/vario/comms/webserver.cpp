@@ -548,7 +548,7 @@ namespace {
     if (power.info().onState == PowerState::OffUSB) {
       display.clear();
       display.showOnSplash();
-      display.setPage(MainPage::Thermal);
+      display.setPage(MainPage::User);
       power.switchToOnState();
       if (selfTest.updateNeeded()) return;
 

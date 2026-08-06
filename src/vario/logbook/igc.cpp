@@ -13,6 +13,7 @@
 #include "time.h"
 #include "ui/settings/settings.h"
 #include "utils/string_utils.h"
+#include "wind_estimate/wind_estimate.h"
 
 namespace {
   String utcTimeString() {
@@ -87,6 +88,47 @@ namespace {
     char buf[8];
     snprintf(buf, sizeof(buf), "%07lu", static_cast<unsigned long>(radiusM));
     return String(buf);
+  }
+
+  String fixedWidthUnsigned(float value, uint16_t maxValue) {
+    const uint16_t rounded = constrain(static_cast<int>(value + 0.5f), 0, maxValue);
+    char buf[4];
+    snprintf(buf, sizeof(buf), "%03u", rounded);
+    return String(buf);
+  }
+
+  String fixedWidthDegrees(float degrees) {
+    int rounded = static_cast<int>(degrees + 0.5f) % 360;
+    if (rounded < 0) rounded += 360;
+    return fixedWidthUnsigned(rounded, 359);
+  }
+
+  String varioField() {
+    if (!baro.climbRateFilteredValid()) return "000";
+
+    const int32_t climbTenthsMps = baro.climbRateFiltered() >= 0
+                                       ? (baro.climbRateFiltered() + 5) / 10
+                                       : -((-baro.climbRateFiltered() + 5) / 10);
+    char buf[5];
+    if (climbTenthsMps >= 0) {
+      snprintf(buf, sizeof(buf), "%03ld", constrain(climbTenthsMps, 0L, 999L));
+    } else {
+      snprintf(buf, sizeof(buf), "-%02ld", constrain(-climbTenthsMps, 0L, 99L));
+    }
+    return String(buf);
+  }
+
+  String igcBRecordExtensions() {
+    const WindEstimate& windEstimate = windEstimator.getWindEstimate();
+    String extensions = toDigits((int)gps.fixInfo.error, 3);
+    extensions += fixedWidthUnsigned(gps.speed.isValid() ? gps.speed.kmph() : 0, 999);
+    extensions += fixedWidthDegrees(gps.course.isValid() ? gps.course.deg() : 0);
+    extensions += fixedWidthDegrees(
+        windEstimate.validEstimate ? windEstimate.windDirectionFrom * RAD_TO_DEG : 0);
+    extensions +=
+        fixedWidthUnsigned(windEstimate.validEstimate ? windEstimate.windSpeed * 3.6f : 0, 999);
+    extensions += varioField();
+    return extensions;
   }
 
   String cPointAreaDescription(const char* role, const Waypoint& waypoint, uint16_t radiusM) {
@@ -172,7 +214,7 @@ void Igc::log(unsigned long durationSec) {
   logger.writeBRecord(utcTimeString(),  // Time in HHMMSS
                       latDegreeToStr(gps.location.lat()), lngDegreeToStr(gps.location.lng()), true,
                       baro.alt() / 100,  // cm to meters
-                      gps.altitude.meters(), toDigits((int)gps.fixInfo.error, 3));
+                      gps.altitude.meters(), igcBRecordExtensions());
 }
 
 bool Igc::startFlight() {
@@ -212,8 +254,10 @@ bool Igc::startFlight() {
   logger.fix_accuracy = 2;  // Quectel LC86G spec: 2.0m CEP horizontal accuracy
   logger.writeHeader();
 
-  // Log the I record (saying we're going to log the, now manditory, FXA record)
-  const IRecordExtension extensions[] = {IRecordExtension(3, "FXA")};
+  // Log the I record for the extension values appended to each B fix record.
+  const IRecordExtension extensions[] = {IRecordExtension(3, "FXA"), IRecordExtension(3, "GSP"),
+                                         IRecordExtension(3, "TRT"), IRecordExtension(3, "WDI"),
+                                         IRecordExtension(3, "WSP"), IRecordExtension(3, "VAR")};
   logger.writeIRecord(sizeof(extensions) / sizeof(extensions[0]), extensions);
   writeActiveNavigationDeclaration();
 

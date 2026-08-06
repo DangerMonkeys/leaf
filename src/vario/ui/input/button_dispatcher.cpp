@@ -18,6 +18,7 @@
 #include "ui/display/pages/primary/page_simple.h"
 #include "ui/display/pages/primary/page_thermal.h"
 #include "ui/display/pages/primary/page_thermal_adv.h"
+#include "ui/display/pages/primary/page_thermal_track.h"
 #include "ui/settings/settings.h"
 
 ButtonDispatcher buttonDispatcher;
@@ -50,16 +51,19 @@ void ButtonDispatcher::on_receive(const ButtonEventMessage& msg) {
     bool draw_now = mainMenuPage.button_event(msg.button, msg.event, msg.holdCount);
     if (draw_now) display.update();
 
-  } else if (currentPage == MainPage::Simple) {
+  } else if (currentPage == MainPage::Basic) {
     simplePage_button(msg.button, msg.event, msg.holdCount);
 
-  } else if (currentPage == MainPage::Thermal) {
+  } else if (currentPage == MainPage::User) {
     thermalPage_button(msg.button, msg.event, msg.holdCount);
 
   } else if (currentPage == MainPage::ThermalAdv) {
     thermalPageAdv_button(msg.button, msg.event, msg.holdCount);
 
-  } else if (currentPage == MainPage::Nav) {
+  } else if (currentPage == MainPage::ThermalTrack) {
+    thermalTrackPage_button(msg.button, msg.event, msg.holdCount);
+
+  } else if (currentPage == MainPage::Navigate) {
     navigatePage_button(msg.button, msg.event, msg.holdCount);
 
   } else if (currentPage == MainPage::Debug) {  // NOT CHARGING PAGE (i.e., our debug test page)

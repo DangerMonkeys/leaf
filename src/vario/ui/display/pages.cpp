@@ -5,6 +5,7 @@
 #include "ui/display/pages/menu/page_menu_display.h"
 #include "ui/display/pages/menu/page_menu_flight_tools.h"
 #include "ui/display/pages/menu/page_menu_gps.h"
+#include "ui/display/pages/menu/page_menu_leaf_labs.h"
 #include "ui/display/pages/menu/page_menu_log.h"
 #include "ui/display/pages/menu/page_menu_nav_data.h"
 #include "ui/display/pages/menu/page_menu_settings.h"
@@ -24,6 +25,7 @@ FlightToolsMenuPage flightToolsMenuPage;
 NavDataMenuPage navDataMenuPage;
 UnitsMenuPage unitsMenuPage;
 GPSMenuPage gpsMenuPage;
+LeafLabsMenuPage leafLabsMenuPage;
 LogMenuPage logMenuPage;
 SettingsRootMenuPage settingsMenuPage;
 SystemMenuPage systemMenuPage;

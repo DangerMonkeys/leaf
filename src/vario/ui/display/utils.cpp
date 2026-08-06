@@ -14,6 +14,36 @@ namespace {
     const int32_t r2 = int32_t(diameter) * diameter;
     return dx2 * dx2 + dy2 * dy2 <= r2;
   }
+
+  int16_t floorSqrt(int32_t n) {
+    int16_t root = 0;
+    while (static_cast<int32_t>(root + 1) * (root + 1) <= n) {
+      root++;
+    }
+    return root;
+  }
+
+  bool circleRowSpanD(int16_t centerX, int16_t centerY, uint8_t diameter, int16_t py,
+                      int16_t& start, int16_t& end) {
+    const int16_t centerX2 = (diameter & 1) ? 2 * centerX + 1 : 2 * centerX;
+    const int16_t centerY2 = (diameter & 1) ? 2 * centerY + 1 : 2 * centerY;
+    const int32_t dy2 = int32_t(py) * 2 + 1 - centerY2;
+    const int32_t remaining = int32_t(diameter) * diameter - dy2 * dy2;
+    if (remaining < 0) return false;
+
+    int16_t maxDx2 = floorSqrt(remaining);
+    const uint8_t dxParity = (centerX2 & 1) ? 0 : 1;
+    if ((maxDx2 & 1) != dxParity) maxDx2--;
+    if (maxDx2 < 0) return false;
+
+    start = (centerX2 - maxDx2 - 1) / 2;
+    end = (centerX2 + maxDx2 - 1) / 2;
+    return end >= start;
+  }
+
+  void drawHLineIfOrdered(int16_t start, int16_t y, int16_t end) {
+    if (end >= start) u8g2.drawHLine(start, y, end - start + 1);
+  }
 }  // namespace
 
 void drawCircleD(int16_t centerX, int16_t centerY, uint8_t diameter) {
@@ -25,20 +55,34 @@ void drawCircleD(int16_t centerX, int16_t centerY, uint8_t diameter) {
     return;
   }
 
-  const int16_t left = centerX - diameter / 2;
   const int16_t top = centerY - diameter / 2;
-  const int16_t centerX2 = 2 * centerX;
-  const int16_t centerY2 = 2 * centerY;
-
   for (int16_t py = top; py < top + diameter; ++py) {
-    for (int16_t px = left; px < left + diameter; ++px) {
-      if (evenCircleContainsPixel(px, py, centerX2, centerY2, diameter) &&
-          (!evenCircleContainsPixel(px - 1, py, centerX2, centerY2, diameter) ||
-           !evenCircleContainsPixel(px + 1, py, centerX2, centerY2, diameter) ||
-           !evenCircleContainsPixel(px, py - 1, centerX2, centerY2, diameter) ||
-           !evenCircleContainsPixel(px, py + 1, centerX2, centerY2, diameter))) {
-        u8g2.drawPixel(px, py);
-      }
+    int16_t start;
+    int16_t end;
+    if (!circleRowSpanD(centerX, centerY, diameter, py, start, end)) continue;
+
+    int16_t prevStart;
+    int16_t prevEnd;
+    const bool hasPrev = circleRowSpanD(centerX, centerY, diameter, py - 1, prevStart, prevEnd);
+    int16_t nextStart;
+    int16_t nextEnd;
+    const bool hasNext = circleRowSpanD(centerX, centerY, diameter, py + 1, nextStart, nextEnd);
+
+    u8g2.drawPixel(start, py);
+    if (end != start) u8g2.drawPixel(end, py);
+
+    if (!hasPrev) {
+      drawHLineIfOrdered(start, py, end);
+    } else {
+      drawHLineIfOrdered(start, py, prevStart - 1);
+      drawHLineIfOrdered(prevEnd + 1, py, end);
+    }
+
+    if (!hasNext) {
+      drawHLineIfOrdered(start, py, end);
+    } else {
+      drawHLineIfOrdered(start, py, nextStart - 1);
+      drawHLineIfOrdered(nextEnd + 1, py, end);
     }
   }
 }
@@ -67,6 +111,30 @@ void drawDiscD(int16_t centerX, int16_t centerY, uint8_t diameter) {
       }
     }
     if (end >= start) u8g2.drawHLine(start, py, end - start + 1);
+  }
+}
+
+void drawRingD(int16_t centerX, int16_t centerY, uint8_t outerDiameter, uint8_t thickness) {
+  if (outerDiameter == 0 || thickness == 0) return;
+
+  const uint8_t innerDiameter = outerDiameter > 2 * thickness ? outerDiameter - 2 * thickness : 0;
+  const int16_t top = centerY - outerDiameter / 2;
+  for (int16_t py = top; py < top + outerDiameter; ++py) {
+    int16_t outerStart;
+    int16_t outerEnd;
+    if (!circleRowSpanD(centerX, centerY, outerDiameter, py, outerStart, outerEnd)) continue;
+
+    int16_t innerStart;
+    int16_t innerEnd;
+    const bool hasInner = innerDiameter > 0 &&
+                          circleRowSpanD(centerX, centerY, innerDiameter, py, innerStart, innerEnd);
+    if (!hasInner) {
+      drawHLineIfOrdered(outerStart, py, outerEnd);
+      continue;
+    }
+
+    drawHLineIfOrdered(outerStart, py, innerStart - 1);
+    drawHLineIfOrdered(innerEnd + 1, py, outerEnd);
   }
 }
 

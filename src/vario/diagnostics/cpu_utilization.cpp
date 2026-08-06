@@ -32,6 +32,43 @@ namespace cpu_utilization {
     uint32_t lastWriteUs = 0;
     uint8_t currentButtonEventMask = 0;
 
+    const char* blockLabel(uint8_t blockIndex) {
+      switch (blockIndex) {
+        case 3:
+          return "cpu_report";
+        case 9:
+        case 59:
+          return "gps";
+        case 19:
+          return "thermal_detect_nav";
+        case 29:
+          return "log";
+        case 39:
+        case 89:
+          return "display";
+        case 49:
+          return "temp_rh_start";
+        case 69:
+          return "thermal_track";
+        case 79:
+          return "power_sd";
+        case 99:
+          return "temp_rh_read";
+      }
+
+      switch (blockIndex % 10) {
+        case 0:
+        case 5:
+          return "baro_adc";
+        case 2:
+          return "imu_wind";
+        case 7:
+          return "imu";
+        default:
+          return "base";
+      }
+    }
+
     void resetActive() {
       memset(&active, 0, sizeof(active));
       active.millis = millis();
@@ -46,7 +83,7 @@ namespace cpu_utilization {
       file.print(
           "millis,sequence,total_us,max_us,avg_us,overrun_count,dropped_reports,previous_write_us");
       for (uint8_t i = 0; i < BLOCKS_PER_SECOND; i++) {
-        file.printf(",b%02u_us", i);
+        file.printf(",b%02u_%s_us", i, blockLabel(i));
       }
       for (uint8_t i = 0; i < BLOCKS_PER_SECOND; i++) {
         file.printf(",b%02u_button_mask", i);

@@ -10,14 +10,16 @@
 struct ManagedTasks {
   bool buttons = true;       // poll & process buttons
   bool speakerTimer = true;  // adjust speaker notes
-  bool baro = true;         // (1) preprocess on-chip ADC pressure, (2) read pressure and preprocess
-                            // on-chip ADC temperature, (3) read temp and calulate true Alt, (4)
-                            // filter Alt, update climb, and store values etc
-  bool imu = true;          // read sensors and update values
-  bool gps = true;          // process any NMEA strings and update values
-  bool display = true;      // update display
-  bool power = true;        // check battery, check auto-turn-off, etc
-  bool log = true;          // check auto-start, increment timers, update log file, etc
+  bool baro = true;     // (1) preprocess on-chip ADC pressure, (2) read pressure and preprocess
+                        // on-chip ADC temperature, (3) read temp and calulate true Alt, (4)
+                        // filter Alt, update climb, and store values etc
+  bool imu = true;      // read sensors and update values
+  bool gps = true;      // process any NMEA strings and update values
+  bool display = true;  // update display
+  bool thermalDetector = true;    // detect/save thermals from the latest GPS fix and pressure alt
+  bool thermalNavigation = true;  // update relative thermal locations for display/nav
+  bool power = true;              // check battery, check auto-turn-off, etc
+  bool log = true;                // check auto-start, increment timers, update log file, etc
   bool tempRH = true;       // (1) trigger temp & humidity measurements, (2) process values and save
   bool sdCard = true;       // check if SD card state has changed and attempt remount if needed
   bool memoryStats = true;  // Prints memory usage reports

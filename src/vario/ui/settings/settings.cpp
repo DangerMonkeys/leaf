@@ -201,6 +201,9 @@ void Settings::loadDefaults() {
   diag_vario = DEF_DIAG_VARIO;
   diag_cpuUtilization = DEF_DIAG_CPU_UTILIZATION;
 
+  // Leaf Labs
+  labs_thermalTrack = DEF_LABS_THERMAL_TRACK;
+
   // Boot Flags
   boot_enterBootloader = DEF_ENTER_BOOTLOAD;
   boot_toOnState = DEF_BOOT_TO_ON;
@@ -213,9 +216,10 @@ void Settings::loadDefaults() {
   disp_thmPageUser1 = DEF_THMPG_USR1;
   disp_thmPageUser2 = DEF_THMPG_USR2;
   disp_showDebugPage = DEF_SHOW_DEBUG;
-  disp_showSimplePage = DEF_SHOW_SIMPLE;
-  disp_showThmPage = DEF_SHOW_THRM;
+  disp_showBasicPage = DEF_SHOW_BASIC;
+  disp_showUserPage = DEF_SHOW_USER;
   disp_showThmAdvPage = DEF_SHOW_THRM_ADV;
+  disp_showThermalTrackPage = DEF_SHOW_THERMAL_TRACK;
   disp_showNavPage = DEF_SHOW_NAV;
   startPage = DEF_STARTPAGE;
 
@@ -280,6 +284,9 @@ void Settings::retrieve() {
   diag_vario = leafPrefs.getBool("DIAG_VARIO", DEF_DIAG_VARIO);
   diag_cpuUtilization = leafPrefs.getBool("DIAG_CPU_UTIL", DEF_DIAG_CPU_UTILIZATION);
 
+  // Leaf Labs
+  labs_thermalTrack = leafPrefs.getBool("LAB_THERM_TRACK", DEF_LABS_THERMAL_TRACK);
+
   // Boot Flags
   boot_enterBootloader = leafPrefs.getBool("ENTER_BOOTLOAD");
   boot_toOnState = leafPrefs.getBool("BOOT_TO_ON");
@@ -294,12 +301,16 @@ void Settings::retrieve() {
   disp_thmPageUser1 = leafPrefs.getUChar("THMPG_USR1");
   disp_thmPageUser2 = leafPrefs.getUChar("THMPG_USR2");
   disp_showDebugPage = leafPrefs.getBool("SHOW_DEBUG");
-  disp_showSimplePage = leafPrefs.getBool("SHOW_SIMPLE", DEF_SHOW_SIMPLE);
-  disp_showThmPage = leafPrefs.getBool("SHOW_THRM");
+  disp_showBasicPage =
+      leafPrefs.getBool("SHOW_BASIC", leafPrefs.getBool("SHOW_SIMPLE", DEF_SHOW_BASIC));
+  disp_showUserPage = leafPrefs.getBool("SHOW_USER", leafPrefs.getBool("SHOW_THRM", DEF_SHOW_USER));
   disp_showThmAdvPage = leafPrefs.getBool("SHOW_THRM_ADV");
+  disp_showThermalTrackPage = leafPrefs.getBool(
+      "SHOW_THERM_TRK", leafPrefs.getBool("SHOW_THERM_NAV", DEF_SHOW_THERMAL_TRACK));
+  if (!labs_thermalTrack) disp_showThermalTrackPage = false;
   disp_showNavPage = leafPrefs.getBool("SHOW_NAV");
   startPage = leafPrefs.getUChar("START_PAGE", DEF_STARTPAGE);
-  if (startPage > (uint8_t)MainPage::Nav) startPage = DEF_STARTPAGE;
+  if (startPage > (uint8_t)MainPage::Navigate) startPage = DEF_STARTPAGE;
 
   // Fanet settings
   fanet_region = (FanetRadioRegion)leafPrefs.getUInt("FANET_REGION");
@@ -363,6 +374,8 @@ void Settings::save() {
   leafPrefs.putBool("DIAG_WEB_REQ", diag_webRequests);
   leafPrefs.putBool("DIAG_VARIO", diag_vario);
   leafPrefs.putBool("DIAG_CPU_UTIL", diag_cpuUtilization);
+  // Leaf Labs
+  leafPrefs.putBool("LAB_THERM_TRACK", labs_thermalTrack);
   // Boot Flags
   leafPrefs.putBool("ENTER_BOOTLOAD", boot_enterBootloader);
   leafPrefs.putBool("BOOT_TO_ON", boot_toOnState);
@@ -375,9 +388,10 @@ void Settings::save() {
   leafPrefs.putUChar("THMPG_USR1", disp_thmPageUser1);
   leafPrefs.putUChar("THMPG_USR2", disp_thmPageUser2);
   leafPrefs.putBool("SHOW_DEBUG", disp_showDebugPage);
-  leafPrefs.putBool("SHOW_SIMPLE", disp_showSimplePage);
-  leafPrefs.putBool("SHOW_THRM", disp_showThmPage);
+  leafPrefs.putBool("SHOW_BASIC", disp_showBasicPage);
+  leafPrefs.putBool("SHOW_USER", disp_showUserPage);
   leafPrefs.putBool("SHOW_THRM_ADV", disp_showThmAdvPage);
+  leafPrefs.putBool("SHOW_THERM_TRK", disp_showThermalTrackPage);
   leafPrefs.putBool("SHOW_NAV", disp_showNavPage);
   leafPrefs.putUChar("START_PAGE", startPage);
   // Fanet Settings
@@ -704,7 +718,7 @@ void Settings::adjustDisplayField_navPage_alt(Button dir) {
   speaker.playSound(fx::neutral);
 }
 
-// Change which altitude is shown on the Thermal page (Baro Alt or GPS Alt)
+// Change which altitude is shown on the User page (Baro Alt or GPS Alt)
 void Settings::adjustDisplayField_thermalPage_alt(Button dir) {
   if (dir == Button::RIGHT) {
     disp_thmPageAltType++;

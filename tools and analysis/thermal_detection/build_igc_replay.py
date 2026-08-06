@@ -2,6 +2,11 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
+import re
+import time
+import urllib.parse
+import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -9,13 +14,14 @@ from pathlib import Path
 DEFAULTS = {
     "window_s": 30,
     "min_gain_m": 10,
-    "min_turn_deg": 90,
+    "min_turn_deg": 180,
+    "turn_reversal_hysteresis_deg": 30,
     "min_duration_s": 25,
-    "min_save_gain_m": 100,
-    "merge_radius_m": 300,
+    "min_save_gain_m": 65,
+    "merge_radius_m": 225,
     "bearing_lookback_s": 5,
     "min_bearing_distance_m": 10,
-    "stale_tolerance_s": 20,
+    "stale_tolerance_s": 0,
     "vario_avg_s": 5,
 }
 
@@ -27,7 +33,28 @@ class Fix:
     lon: float
     alt: int
     pressure_alt: int | None
+    track_deg: int | None
+    climb_mps: float | None
+    ground_alt: float | None = None
 
+
+@dataclass
+class Projection:
+    lat0_rad: float
+    lon0_rad: float
+    radius_m: float = 6371000.0
+
+    def to_xy(self, lat: float, lon: float) -> tuple[float, float]:
+        lat_rad = lat * math.pi / 180.0
+        lon_rad = lon * math.pi / 180.0
+        x = (lon_rad - self.lon0_rad) * math.cos(self.lat0_rad) * self.radius_m
+        y = (lat_rad - self.lat0_rad) * self.radius_m
+        return x, y
+
+    def to_lat_lon(self, x: float, y: float) -> tuple[float, float]:
+        lat_rad = self.lat0_rad + y / self.radius_m
+        lon_rad = self.lon0_rad + x / (math.cos(self.lat0_rad) * self.radius_m)
+        return lat_rad * 180.0 / math.pi, lon_rad * 180.0 / math.pi
 
 def parse_coord(value: str, hemi: str, deg_digits: int) -> float:
     deg = int(value[:deg_digits])
@@ -36,7 +63,61 @@ def parse_coord(value: str, hemi: str, deg_digits: int) -> float:
     return -result if hemi in ("S", "W") else result
 
 
-def parse_b_record(line: str) -> Fix | None:
+def projection_for(fixes: list[Fix]) -> Projection:
+    return Projection(
+        lat0_rad=sum(f.lat for f in fixes) / len(fixes) * math.pi / 180.0,
+        lon0_rad=sum(f.lon for f in fixes) / len(fixes) * math.pi / 180.0,
+    )
+
+
+def parse_i_record_extensions(line: str) -> dict[str, tuple[int, int]] | None:
+    if not line.startswith("I") or len(line) < 3:
+        return None
+    try:
+        count = int(line[1:3])
+    except ValueError:
+        return None
+    extensions: dict[str, tuple[int, int]] = {}
+    for i in range(count):
+        offset = 3 + i * 7
+        try:
+            start = int(line[offset : offset + 2]) - 1
+            end = int(line[offset + 2 : offset + 4])
+        except ValueError:
+            continue
+        code = line[offset + 4 : offset + 7]
+        if code.strip():
+            extensions[code] = (start, end)
+    return extensions
+
+
+def extension_value(line: str, extensions: dict[str, tuple[int, int]], code: str) -> str | None:
+    ext = extensions.get(code)
+    if not ext:
+        return None
+    start, end = ext
+    if len(line) < end:
+        return None
+    return line[start:end]
+
+
+def parse_track_extension(value: str | None) -> int | None:
+    if value is None or len(value) != 3 or not value.isdigit():
+        return None
+    degrees = int(value)
+    return degrees if 0 <= degrees <= 359 else None
+
+
+def parse_vario_extension(value: str | None) -> float | None:
+    if value is None:
+        return None
+    try:
+        return int(value) / 10.0
+    except ValueError:
+        return None
+
+
+def parse_b_record(line: str, extensions: dict[str, tuple[int, int]]) -> Fix | None:
     if len(line) < 35 or not line.startswith("B"):
         return None
     time_s = int(line[1:3]) * 3600 + int(line[3:5]) * 60 + int(line[5:7])
@@ -46,7 +127,15 @@ def parse_b_record(line: str) -> Fix | None:
         return None
     lat = parse_coord(line[7:14], line[14], 2)
     lon = parse_coord(line[15:23], line[23], 3)
-    return Fix(time_s, lat, lon, gps_alt, pressure_alt if pressure_alt > 0 else None)
+    return Fix(
+        time_s,
+        lat,
+        lon,
+        gps_alt,
+        pressure_alt if pressure_alt > 0 else None,
+        parse_track_extension(extension_value(line, extensions, "TRT")),
+        parse_vario_extension(extension_value(line, extensions, "VAR")),
+    )
 
 
 def unwrap_times(fixes: list[Fix]) -> None:
@@ -63,27 +152,215 @@ def unwrap_times(fixes: list[Fix]) -> None:
 
 
 def load_igc(path: Path) -> list[Fix]:
-    fixes = [fix for line in path.read_text(errors="replace").splitlines() if (fix := parse_b_record(line))]
+    fixes: list[Fix] = []
+    extensions: dict[str, tuple[int, int]] = {}
+    for line in path.read_text(errors="replace").splitlines():
+        next_extensions = parse_i_record_extensions(line)
+        if next_extensions is not None:
+            extensions = next_extensions
+            continue
+        fix = parse_b_record(line, extensions)
+        if fix:
+            fixes.append(fix)
     if not fixes:
         raise ValueError(f"No valid B records found in {path}")
     unwrap_times(fixes)
     return fixes
 
 
-def build_payload(igc_path: Path) -> dict:
-    fixes = load_igc(igc_path)
+def sample_terrain(
+    fixes: list[Fix],
+    dataset: str,
+    api_base: str,
+    sample_step_s: int,
+    batch_size: int,
+    throttle_state: dict[str, float],
+) -> None:
+    sample_step_s = max(1, sample_step_s)
+    batch_size = max(1, min(100, batch_size))
+    sample_indices: list[int] = []
+    last_t: int | None = None
+    for i, fix in enumerate(fixes):
+        if last_t is None or fix.t - last_t >= sample_step_s or i == len(fixes) - 1:
+            sample_indices.append(i)
+            last_t = fix.t
+    locations = [(fixes[i].lat, fixes[i].lon) for i in sample_indices]
+    elevations = query_terrain_elevations(locations, dataset, api_base, batch_size, throttle_state)
+    samples = [
+        (index, elevation)
+        for index, elevation in zip(sample_indices, elevations)
+        if elevation is not None
+    ]
+    if not samples:
+        return
+    for index, elevation in samples:
+        fixes[index].ground_alt = elevation
+    for (left_i, left_alt), (right_i, right_alt) in zip(samples, samples[1:]):
+        left_t = fixes[left_i].t
+        right_t = fixes[right_i].t
+        span_t = max(1, right_t - left_t)
+        for i in range(left_i + 1, right_i):
+            ratio = (fixes[i].t - left_t) / span_t
+            fixes[i].ground_alt = left_alt + (right_alt - left_alt) * ratio
+    first_i, first_alt = samples[0]
+    last_i, last_alt = samples[-1]
+    for i in range(0, first_i):
+        fixes[i].ground_alt = first_alt
+    for i in range(last_i + 1, len(fixes)):
+        fixes[i].ground_alt = last_alt
+
+
+def query_terrain_elevations(
+    locations: list[tuple[float, float]],
+    dataset: str,
+    api_base: str,
+    batch_size: int,
+    throttle_state: dict[str, float],
+) -> list[float | None]:
+    batch_size = max(1, min(100, batch_size))
+    endpoint = f"{api_base.rstrip('/')}/{dataset}"
+    elevations: list[float | None] = []
+    for batch_start in range(0, len(locations), batch_size):
+        batch_locations = locations[batch_start : batch_start + batch_size]
+        encoded_locations = "|".join(f"{lat:.7f},{lon:.7f}" for lat, lon in batch_locations)
+        url = f"{endpoint}?{urllib.parse.urlencode({'locations': encoded_locations})}"
+        last_request_time = throttle_state.get("last_request_time", 0.0)
+        wait_s = 1.0 - (time.monotonic() - last_request_time)
+        if last_request_time and wait_s > 0:
+            time.sleep(wait_s)
+        with urllib.request.urlopen(url, timeout=30) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+        throttle_state["last_request_time"] = time.monotonic()
+        if payload.get("status") != "OK":
+            raise RuntimeError(f"Terrain request failed: {payload!r}")
+        results = payload.get("results") or []
+        if len(results) != len(batch_locations):
+            raise RuntimeError(f"Terrain response length mismatch: got {len(results)}, expected {len(batch_locations)}")
+        for result in results:
+            elevation = result.get("elevation")
+            elevations.append(float(elevation) if elevation is not None else None)
+    return elevations
+
+
+def build_terrain_mesh(
+    fixes: list[Fix],
+    dataset: str,
+    api_base: str,
+    resolution_m: int,
+    batch_size: int,
+    throttle_state: dict[str, float],
+) -> dict | None:
+    projection = projection_for(fixes)
+    points = [projection.to_xy(f.lat, f.lon) for f in fixes]
+    xs = [p[0] for p in points]
+    ys = [p[1] for p in points]
+    resolution_m = max(200, resolution_m)
+    margin = max(750, resolution_m * 2)
+    x0 = math.floor((min(xs) - margin) / resolution_m) * resolution_m
+    x1 = math.ceil((max(xs) + margin) / resolution_m) * resolution_m
+    y0 = math.floor((min(ys) - margin) / resolution_m) * resolution_m
+    y1 = math.ceil((max(ys) + margin) / resolution_m) * resolution_m
+    cols = int(round((x1 - x0) / resolution_m)) + 1
+    rows = int(round((y1 - y0) / resolution_m)) + 1
+    locations: list[tuple[float, float]] = []
+    for row in range(rows):
+        y = y0 + row * resolution_m
+        for col in range(cols):
+            x = x0 + col * resolution_m
+            locations.append(projection.to_lat_lon(x, y))
+    elevations = query_terrain_elevations(locations, dataset, api_base, batch_size, throttle_state)
+    finite = [elevation for elevation in elevations if elevation is not None]
+    if not finite:
+        return None
     return {
+        "x0": round(x0, 1),
+        "y0": round(y0, 1),
+        "stepM": resolution_m,
+        "rows": rows,
+        "cols": cols,
+        "minElevation": round(min(finite), 1),
+        "maxElevation": round(max(finite), 1),
+        "elevations": [round(elevation, 1) if elevation is not None else None for elevation in elevations],
+    }
+
+
+def build_payload(
+    igc_path: Path,
+    include_terrain: bool = False,
+    terrain_dataset: str = "srtm90m",
+    terrain_api_base: str = "https://api.opentopodata.org/v1",
+    terrain_sample_step_s: int = 10,
+    terrain_grid_resolution_m: int = 500,
+    terrain_batch_size: int = 100,
+) -> dict:
+    fixes = load_igc(igc_path)
+    terrain_mesh = None
+    if include_terrain:
+        throttle_state: dict[str, float] = {}
+        sample_terrain(
+            fixes,
+            terrain_dataset,
+            terrain_api_base,
+            terrain_sample_step_s,
+            terrain_batch_size,
+            throttle_state,
+        )
+        terrain_mesh = build_terrain_mesh(
+            fixes,
+            terrain_dataset,
+            terrain_api_base,
+            terrain_grid_resolution_m,
+            terrain_batch_size,
+            throttle_state,
+        )
+    payload = {
         "source": igc_path.name,
         "defaults": DEFAULTS,
         "fixes": [
-            {"t": f.t, "lat": round(f.lat, 7), "lon": round(f.lon, 7), "alt": f.alt, "pressureAlt": f.pressure_alt}
+            {
+                "t": f.t,
+                "lat": round(f.lat, 7),
+                "lon": round(f.lon, 7),
+                "alt": f.alt,
+                "pressureAlt": f.pressure_alt,
+                "trackDeg": f.track_deg,
+                "climbMps": f.climb_mps,
+                "groundAlt": round(f.ground_alt, 1) if f.ground_alt is not None else None,
+            }
             for f in fixes
         ],
     }
+    if include_terrain:
+        payload["terrain"] = {
+            "dataset": terrain_dataset,
+            "sampleStepS": terrain_sample_step_s,
+            "gridResolutionM": terrain_grid_resolution_m,
+            "source": terrain_api_base.rstrip("/"),
+        }
+        if terrain_mesh:
+            payload["terrainMesh"] = terrain_mesh
+    return payload
 
 
 def render_html(payload: dict) -> str:
     data = json.dumps(payload, separators=(",", ":"))
+    template_path = Path(__file__).with_name("igc_thermal_replay.html")
+    if template_path.exists():
+        template = template_path.read_text(encoding="utf-8")
+        rendered = re.sub(
+            r"const embedded = .*?;\nconst qualityDefaults",
+            f"const embedded = {data};\nconst qualityDefaults",
+            template,
+            count=1,
+            flags=re.S,
+        )
+        if rendered != template:
+            return rendered
+        raise RuntimeError(
+            f"Could not update embedded payload in {template_path}. "
+            "The replay HTML no longer has the current template marker."
+        )
+    raise RuntimeError(f"Replay HTML template not found: {template_path}")
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -465,10 +742,12 @@ def render_html(payload: dict) -> str:
       <h2>How Thermal Detection Works</h2>
       <p id="helpRunSummary"></p>
       <ol>
-        <li>Each flight log point is checked against the moving time window. A point becomes a candidate point only when both Candidate gain and Candidate turn are met inside that window.</li>
+        <li>Each flight log point is checked against the moving time window. A point becomes a candidate only when Candidate gain and the minimum continuous same-direction arc are both met.</li>
+        <li>Small counter-direction excursions are ignored until they reach Turn reversal. Once that hysteresis is crossed, a new opposite-direction arc begins, so complete circles in opposite directions do not cancel while short S-turns do not combine.</li>
         <li>A candidate episode starts when candidate points begin. It stays open while candidate points continue, including short non-candidate gaps up to Candidate gap seconds.</li>
         <li>The episode ends after the detector has gone longer than Candidate gap seconds since the last candidate point.</li>
-        <li>When the episode ends, it is evaluated against Save duration and Save gain. Passing episodes become saved thermals. Failed episodes become candidate cards.</li>
+        <li>When the first rolling window qualifies, the episode snapshots the lowest point in that window as its entry. That entry remains fixed even after it falls outside the rolling window, so long, gentle climbs are not limited by the detector window length.</li>
+        <li>When the episode ends, it is evaluated from that entry through its peak altitude against Save duration and Save gain. Trailing level flight or sink after the peak is excluded. Passing episodes become saved thermals; failed episodes become candidate cards.</li>
       </ol>
       <ul>
         <li>Thermal cards show saved thermal episodes: gain, duration, average climb, and total turns.</li>
@@ -505,7 +784,8 @@ const helpRunSummary = document.getElementById("helpRunSummary");
 const paramSpecs = [
   ["window_s", "Window", 20, 180, 5, "sec", "How far back in time, in seconds, the detector looks when calculating altitude gain and accumulated turn for the current fix."],
   ["min_gain_m", "Candidate gain", 5, 120, 5, "m", "Minimum net altitude gain, in meters, required within the time window before the current fix can count as a thermal candidate. Uses the selected detector altitude source."],
-  ["min_turn_deg", "Candidate turn", 20, 540, 10, "deg", "Minimum net heading change, in degrees, required within the time window before the current fix can count as circling. 360 deg is one full turn."],
+  ["min_turn_deg", "Continuous arc", 90, 540, 10, "deg", "Minimum continuous turn in one direction required within the time window. Opposite-direction circles are evaluated as separate arcs instead of cancelling each other."],
+  ["turn_reversal_hysteresis_deg", "Turn reversal", 0, 90, 5, "deg", "Counter-direction movement required before a directional arc is considered to have reversed. Smaller excursions are treated as GPS noise without discarding normal small same-direction bearing changes."],
   ["min_duration_s", "Save duration", 5, 180, 5, "sec", "Minimum candidate episode length, in seconds, required before the detector is allowed to save the episode as a thermal."],
   ["min_save_gain_m", "Save gain", 10, 180, 5, "m", "Minimum total altitude gain, in meters, across a candidate episode before saving a thermal marker. Uses the selected detector altitude source."],
   ["merge_radius_m", "Merge radius", 50, 1000, 25, "m", "Maximum horizontal distance, in meters, between saved thermal centers before the replay shows them as a derived merged thermal. This does not change the original T numbers."],
@@ -516,7 +796,7 @@ const paramSpecs = [
 ];
 const paramByKey = new Map(paramSpecs.map(spec => [spec[0], spec]));
 const paramGroups = [
-  ["Candidate detection", ["window_s", "min_gain_m", "min_turn_deg", "stale_tolerance_s"]],
+  ["Candidate detection", ["window_s", "min_gain_m", "min_turn_deg", "turn_reversal_hysteresis_deg", "stale_tolerance_s"]],
   ["Pass/fail criteria", ["min_duration_s", "min_save_gain_m", "merge_radius_m"]],
   ["Smoothing / averaging", ["bearing_lookback_s", "min_bearing_distance_m", "vario_avg_s"]]
 ];
@@ -608,6 +888,47 @@ function bearing(a, b) {{
   return angleDeg(b.x - a.x, b.y - a.y);
 }}
 
+function longestDirectionalArc(points, reversalHysteresisDeg) {{
+  let direction = 0;
+  let arc = 0;
+  let reversalArc = 0;
+  let longest = 0;
+  let lastBearing = null;
+  for (const point of points) {{
+    if (point.bearing === null) continue;
+    if (lastBearing === null) {{
+      lastBearing = point.bearing;
+      continue;
+    }}
+    const delta = angleDelta(point.bearing, lastBearing);
+    lastBearing = point.bearing;
+    if (delta === 0) continue;
+    const deltaDirection = Math.sign(delta);
+    const magnitude = Math.abs(delta);
+    if (direction === 0) {{
+      direction = deltaDirection;
+      arc = magnitude;
+      longest = Math.max(longest, arc);
+      continue;
+    }}
+    if (deltaDirection === direction) {{
+      reversalArc = 0;
+      arc += magnitude;
+      longest = Math.max(longest, arc);
+      continue;
+    }}
+    reversalArc += magnitude;
+    if (reversalArc >= reversalHysteresisDeg) {{
+      longest = Math.max(longest, arc);
+      direction = deltaDirection;
+      arc = reversalArc;
+      reversalArc = 0;
+      longest = Math.max(longest, arc);
+    }}
+  }}
+  return Math.max(longest, arc);
+}}
+
 function priorIndex(fixes, i, secondsBack) {{
   const target = fixes[i].t - secondsBack;
   let j = i;
@@ -666,14 +987,7 @@ function recomputeMetrics() {{
     const window = processed.slice(start, i + 1);
     fix.windowDuration = window[window.length - 1].t - window[0].t;
     fix.windowGain = fix.detectorAlt - window[0].detectorAlt;
-    let signedTurn = 0;
-    let lastBearing = null;
-    for (const point of window) {{
-      if (point.bearing === null) continue;
-      if (lastBearing !== null) signedTurn += angleDelta(point.bearing, lastBearing);
-      lastBearing = point.bearing;
-    }}
-    fix.windowTurn = Math.abs(signedTurn);
+    fix.windowTurn = longestDirectionalArc(window, params.turn_reversal_hysteresis_deg);
     fix.candidate = fix.windowGain >= params.min_gain_m && fix.windowTurn >= params.min_turn_deg;
     fix.thermal = null;
   }}
@@ -691,7 +1005,19 @@ function detectThermalsThrough(fixes, endIndex) {{
   for (let i = 0; i <= endIndex; i++) {{
     const fix = fixes[i];
     if (fix.candidate) {{
-      active.push(fix);
+      if (!active.length) {{
+        const windowStart = priorIndex(fixes, i, params.window_s);
+        const qualifyingWindow = fixes.slice(windowStart, i + 1);
+        let entryOffset = 0;
+        for (let j = 1; j < qualifyingWindow.length; j += 1) {{
+          if (qualifyingWindow[j].detectorAlt < qualifyingWindow[entryOffset].detectorAlt) {{
+            entryOffset = j;
+          }}
+        }}
+        active = qualifyingWindow.slice(entryOffset);
+      }} else {{
+        active.push(fix);
+      }}
       lastCandidateT = fix.t;
       continue;
     }}
@@ -710,12 +1036,18 @@ function detectThermalsThrough(fixes, endIndex) {{
 }}
 
 function evaluateEpisode(points, saved, failed, episodeId, closingFix = null) {{
-  const duration = points[points.length - 1].t - points[0].t;
-  const alts = points.map(p => p.detectorAlt);
-  const gain = Math.max(...alts) - Math.min(...alts);
-  const turnDeg = episodeTurnDeg(points);
-  const center = weightedCenter(points);
-  const spine = buildThermalSpine(points);
+  let peakIndex = 0;
+  for (let i = 1; i < points.length; i += 1) {{
+    if (points[i].detectorAlt >= points[peakIndex].detectorAlt) peakIndex = i;
+  }}
+  const episodePoints = points.slice(0, peakIndex + 1);
+  const entry = episodePoints[0];
+  const peak = episodePoints[episodePoints.length - 1];
+  const duration = peak.t - entry.t;
+  const gain = peak.detectorAlt - entry.detectorAlt;
+  const turnDeg = episodeTurnDeg(episodePoints);
+  const center = weightedCenter(episodePoints);
+  const spine = buildThermalSpine(episodePoints);
   const episode = {{
     id: episodeId,
     x: center.x,
@@ -723,8 +1055,10 @@ function evaluateEpisode(points, saved, failed, episodeId, closingFix = null) {{
     z: center.z,
     lat: center.lat,
     lon: center.lon,
-    start_s: points[0].t,
-    end_s: points[points.length - 1].t,
+    start_s: entry.t,
+    end_s: peak.t,
+    min_alt_m: entry.detectorAlt,
+    max_alt_m: peak.detectorAlt,
     duration_s: duration,
     gain_m: gain,
     avg_climb_mps: gain / Math.max(1, duration),
@@ -748,17 +1082,19 @@ function evaluateEpisode(points, saved, failed, episodeId, closingFix = null) {{
     lon: center.lon,
     start_s: episode.start_s,
     end_s: episode.end_s,
+    min_alt_m: episode.min_alt_m,
+    max_alt_m: episode.max_alt_m,
     duration_s: episode.duration_s,
     gain_m: episode.gain_m,
     avg_climb_mps: episode.avg_climb_mps,
     turns: episode.turns,
-    max_climb_mps: Math.max(...points.map(p => p.climb30)),
+    max_climb_mps: Math.max(...episodePoints.map(p => p.climb30)),
     spine,
     ended_by_gain: episode.ended_by_gain,
     ended_by_turn: episode.ended_by_turn
   }};
   saved.push(next);
-  for (const point of points) point.thermal = next.id;
+  for (const point of episodePoints) point.thermal = next.id;
 }}
 
 function thermalDistance(a, b) {{
@@ -887,6 +1223,8 @@ function mergedFromSources(sources) {{
     z: weighted("z"),
     start_s: Math.min(...ordered.map(th => th.start_s)),
     end_s: Math.max(...ordered.map(th => th.end_s)),
+    min_alt_m: Math.min(...ordered.map(th => th.min_alt_m)),
+    max_alt_m: Math.max(...ordered.map(th => th.max_alt_m)),
     gain_m: accruedGain,
     duration_s: activeTime,
     avg_climb_mps: accruedGain / Math.max(1, activeTime),
@@ -934,6 +1272,16 @@ function itemPosition(item) {{
   return item ? {{x: item.x, y: item.y, z: item.z ?? item.detectorAlt ?? bounds.minAlt}} : null;
 }}
 
+function selectedItemPosition() {{
+  if (!selectedCard) return null;
+  const key = String(selectedCard.id);
+  let item = null;
+  if (selectedCard.kind === "thermal") item = currentFrameItems.saved.find(th => String(th.id) === key);
+  else if (selectedCard.kind === "candidate") item = currentFrameItems.failed.find(candidate => String(candidate.id) === key);
+  else if (selectedCard.kind === "merged") item = currentFrameItems.merged.find(merge => merge.key === key);
+  return itemPosition(item);
+}}
+
 function centerMapOnPosition(position) {{
   if (!position) return;
   if (!mapView) resetMapCamera();
@@ -942,6 +1290,19 @@ function centerMapOnPosition(position) {{
   mapView.cz = Math.max(0, (position.z ?? bounds.minAlt) - bounds.minAlt);
   mapView.panX = 0;
   mapView.panY = 0;
+}}
+
+function pivotMapOnPosition(position, map) {{
+  if (!position) return false;
+  if (!mapView) resetMapCamera();
+  const before = project3d(position, map);
+  mapView.cx = position.x;
+  mapView.cy = position.y;
+  mapView.cz = Math.max(0, (position.z ?? bounds.minAlt) - bounds.minAlt);
+  const after = project3d(position, map);
+  mapView.panX += before.x - after.x;
+  mapView.panY += before.y - after.y;
+  return true;
 }}
 
 function smoothedFollowPosition(index) {{
@@ -1728,6 +2089,9 @@ canvas.addEventListener("pointerdown", event => {{
   }}
   isPanning = true;
   mapDragMode = event.button === 1 ? "rotate" : "pan";
+  if (mapDragMode === "rotate") {{
+    pivotMapOnPosition(selectedItemPosition(), map);
+  }}
   lastPan = point;
   canvas.classList.add("is-panning");
   event.preventDefault();
@@ -1802,11 +2166,29 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Build a Leaf GPS thermal detector replay from an IGC file.")
     parser.add_argument("igc", type=Path)
     parser.add_argument("--out", type=Path, default=Path(__file__).with_name("igc_thermal_replay.html"))
+    parser.add_argument("--terrain", action="store_true", help="Fetch and embed public terrain elevations.")
+    parser.add_argument("--terrain-dataset", default="srtm90m", help="Open Topo Data dataset name.")
+    parser.add_argument("--terrain-api-base", default="https://api.opentopodata.org/v1")
+    parser.add_argument("--terrain-sample-step-s", type=int, default=10)
+    parser.add_argument("--terrain-grid-resolution-m", type=int, default=500)
+    parser.add_argument("--terrain-batch-size", type=int, default=100)
     args = parser.parse_args()
-    payload = build_payload(args.igc)
+    payload = build_payload(
+        args.igc,
+        include_terrain=args.terrain,
+        terrain_dataset=args.terrain_dataset,
+        terrain_api_base=args.terrain_api_base,
+        terrain_sample_step_s=args.terrain_sample_step_s,
+        terrain_grid_resolution_m=args.terrain_grid_resolution_m,
+        terrain_batch_size=args.terrain_batch_size,
+    )
     args.out.write_text(render_html(payload), encoding="utf-8")
     print(f"Wrote {args.out}")
-    print(json.dumps({"source": payload["source"], "valid_fix_count": len(payload["fixes"])}, indent=2))
+    print(json.dumps({
+        "source": payload["source"],
+        "valid_fix_count": len(payload["fixes"]),
+        "terrain": payload.get("terrain"),
+    }, indent=2))
     print(json.dumps(payload["defaults"], indent=2))
 
 
