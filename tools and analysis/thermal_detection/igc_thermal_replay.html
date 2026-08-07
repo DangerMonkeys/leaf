@@ -442,7 +442,7 @@
           <label class="speed-control">Speed
             <span class="speed-track">
               <span class="speed-ticks" id="speedTicks"></span>
-              <input id="speed" type="range" min="0" max="1" step="0.001" value="0.493">
+              <input id="speed" type="range" min="0" max="1" step="0.001" value="0">
             </span>
             <span id="speedLabel">30x</span>
           </label>
@@ -599,6 +599,20 @@ const followMaxAltitudeVerticalOffsetRatio = 0.25;
 const followCatchupStartRatio = 0.18;
 const followCatchupFullRatio = 0.38;
 const orbitYawRateRadPerS = 0.06;
+const leafScreenW = 96;
+const leafScreenH = 192;
+const leafPipHeaderH = 18;
+const leafPipGap = 8;
+const thermalCoreLookbackS = 40;
+const thermalCoreMinSamples = 8;
+const thermalCoreMinTurnDeg = 180;
+const thermalCoreMinRadiusM = 18;
+const thermalCoreMaxRadiusM = 180;
+const windBinCount = 8;
+const windSamplesPerBin = 6;
+const windStandardAirspeed = 10;
+const windAdjustmentStepMps = 0.1;
+const windIterationsPerFix = 8;
 const paramGroups = [
   ["Quality score", ["quality_climb_1_mps", "quality_climb_2_mps", "quality_gain_m", "quality_near_altitude_margin_m"]],
   ["Candidate detection", ["window_s", "min_gain_m", "min_turn_deg", "turn_reversal_hysteresis_deg", "stale_tolerance_s"]],
@@ -635,6 +649,12 @@ let perspectiveAmount = defaultPerspectiveAmount;
 let perspectiveControlRect = null;
 let currentFrameItems = {saved: [], failed: [], merged: []};
 let currentQualityAltitude = null;
+let corePipCollapsed = false;
+let trackPipCollapsed = false;
+let corePipHeaderRect = null;
+let trackPipHeaderRect = null;
+let corePipRect = null;
+let trackPipRect = null;
 let replayT = 0;
 let lastNow = performance.now();
 
@@ -872,6 +892,204 @@ function altitudeSourceLabel() {
   return altitudeSource === "pressure" ? "IGC pressure altitude" : "GPS altitude";
 }
 
+function windDxOf(angle, speed) {
+  return Math.cos(angle) * speed;
+}
+
+function windDyOf(angle, speed) {
+  return Math.sin(angle) * speed;
+}
+
+function windSpeedOf(wx, wy) {
+  return Math.hypot(wx, wy);
+}
+
+function windDirectionOf(wx, wy) {
+  return Math.atan2(wy, wx);
+}
+
+function createWindEstimatorState() {
+  return {
+    windSpeed: 0,
+    windDirectionTrue: 0,
+    windDirectionFrom: Math.PI,
+    airspeed: windStandardAirspeed,
+    airspeedLive: 0,
+    error: Number.MAX_VALUE,
+    recentBin: -1,
+    validEstimate: false,
+    bins: Array.from({length: windBinCount}, () => ({
+      angle: Array(windSamplesPerBin).fill(0),
+      speed: Array(windSamplesPerBin).fill(0),
+      dx: Array(windSamplesPerBin).fill(0),
+      dy: Array(windSamplesPerBin).fill(0),
+      averageAngle: 0,
+      averageSpeed: 0,
+      averageDx: 0,
+      averageDy: 0,
+      index: 0,
+      sampleCount: 0
+    }))
+  };
+}
+
+function submitVelocityForWindEstimate(state, groundVelocity) {
+  let relativeAngle = groundVelocity.trackAngle;
+  if (state.validEstimate) {
+    const dx = windDxOf(groundVelocity.trackAngle, groundVelocity.speed);
+    const dy = windDyOf(groundVelocity.trackAngle, groundVelocity.speed);
+    const wx = windDxOf(state.windDirectionTrue, state.windSpeed / 2);
+    const wy = windDyOf(state.windDirectionTrue, state.windSpeed / 2);
+    relativeAngle = windDirectionOf(dx - wx, dy - wy);
+  }
+  if (relativeAngle < 0) relativeAngle += 2 * Math.PI;
+  const binAngleSpan = 2 * Math.PI / windBinCount;
+  for (let b = 0; b < windBinCount; b += 1) {
+    if (relativeAngle < (b + 1) * binAngleSpan) {
+      const bin = state.bins[b];
+      bin.angle[bin.index] = groundVelocity.trackAngle;
+      bin.speed[bin.index] = groundVelocity.speed;
+      bin.index += 1;
+      bin.sampleCount += 1;
+      state.recentBin = b;
+      if (bin.sampleCount > windSamplesPerBin) bin.sampleCount = windSamplesPerBin;
+      if (bin.index >= windSamplesPerBin) bin.index = 0;
+      break;
+    }
+  }
+  if (state.validEstimate) {
+    state.airspeedLive = windSpeedOf(
+      windDxOf(groundVelocity.trackAngle, groundVelocity.speed) +
+        windDxOf(state.windDirectionFrom, state.windSpeed),
+      windDyOf(groundVelocity.trackAngle, groundVelocity.speed) +
+        windDyOf(state.windDirectionFrom, state.windSpeed)
+    );
+  }
+}
+
+function convertWindSamplesToDxDy(state) {
+  for (const bin of state.bins) {
+    for (let s = 0; s < bin.sampleCount; s += 1) {
+      bin.dx[s] = windDxOf(bin.angle[s], bin.speed[s]);
+      bin.dy[s] = windDyOf(bin.angle[s], bin.speed[s]);
+    }
+  }
+}
+
+function averageWindSamplePoints(state) {
+  for (const bin of state.bins) {
+    if (!bin.sampleCount) continue;
+    let sumAngle = 0;
+    let sumSpeed = 0;
+    for (let s = 0; s < bin.sampleCount; s += 1) {
+      sumAngle += bin.angle[s];
+      sumSpeed += bin.speed[s];
+    }
+    bin.averageAngle = sumAngle / bin.sampleCount;
+    bin.averageSpeed = sumSpeed / bin.sampleCount;
+    bin.averageDx = windDxOf(bin.averageAngle, bin.averageSpeed);
+    bin.averageDy = windDyOf(bin.averageAngle, bin.averageSpeed);
+  }
+}
+
+function windEstimatorHasEnoughPoints(state) {
+  let populatedBinCount = 0;
+  let continuousEmptyBinCount = 0;
+  let firstBinToHavePoints = 0;
+  let haveStartingBin = false;
+  let populatedSpan = 0;
+  const requiredPopulatedBins = 3;
+  const binsRequiredForSemiCircle = windBinCount / 2;
+  for (let i = 0; i < windBinCount; i += 1) {
+    if (state.bins[i].sampleCount > 0) {
+      populatedBinCount += 1;
+      continuousEmptyBinCount = 0;
+      if (!haveStartingBin) {
+        firstBinToHavePoints = i;
+        haveStartingBin = true;
+      } else {
+        populatedSpan = i - firstBinToHavePoints;
+      }
+    } else {
+      continuousEmptyBinCount += 1;
+      if (continuousEmptyBinCount >= binsRequiredForSemiCircle) return false;
+    }
+  }
+  return populatedBinCount >= requiredPopulatedBins && populatedSpan >= binsRequiredForSemiCircle;
+}
+
+function windEstimateErrorOf(state, wx, wy, airspeed) {
+  let sumSquareError = 0;
+  let n = 0;
+  for (const bin of state.bins) {
+    for (let sample = 0; sample < bin.sampleCount; sample += 1) {
+      const dx = bin.dx[sample] - wx;
+      const dy = bin.dy[sample] - wy;
+      const dr = Math.hypot(dx, dy) - airspeed;
+      sumSquareError += dr * dr;
+      n += 1;
+    }
+  }
+  return n ? Math.sqrt(sumSquareError / n) : Number.MAX_VALUE;
+}
+
+function updateWindEstimate(state) {
+  convertWindSamplesToDxDy(state);
+  if (!windEstimatorHasEnoughPoints(state)) return false;
+  averageWindSamplePoints(state);
+  let wx = windDxOf(state.windDirectionTrue, state.windSpeed);
+  let wy = windDyOf(state.windDirectionTrue, state.windSpeed);
+  let bestError = windEstimateErrorOf(state, wx, wy, state.airspeed);
+  const adjustments = [
+    [windAdjustmentStepMps, 0, 0],
+    [-windAdjustmentStepMps, 0, 0],
+    [0, windAdjustmentStepMps, 0],
+    [0, -windAdjustmentStepMps, 0],
+    [0, 0, windAdjustmentStepMps],
+    [0, 0, -windAdjustmentStepMps]
+  ];
+  let bestAdjustment = null;
+  for (const adjustment of adjustments) {
+    const newError = windEstimateErrorOf(
+      state,
+      wx + adjustment[0],
+      wy + adjustment[1],
+      state.airspeed + adjustment[2]
+    );
+    if (newError < bestError) {
+      bestError = newError;
+      bestAdjustment = adjustment;
+    }
+  }
+  if (bestAdjustment) {
+    state.airspeed += bestAdjustment[2];
+    wx += bestAdjustment[0];
+    wy += bestAdjustment[1];
+    state.windSpeed = windSpeedOf(wx, wy);
+    state.windDirectionTrue = windDirectionOf(wx, wy);
+    state.windDirectionFrom = state.windDirectionTrue + Math.PI;
+    state.error = bestError;
+  } else {
+    state.validEstimate = true;
+    state.error = bestError;
+  }
+  return state.validEstimate;
+}
+
+function windSnapshot(state) {
+  return {
+    validEstimate: state.validEstimate,
+    windSpeed: state.windSpeed,
+    windDirectionTrue: state.windDirectionTrue,
+    windDirectionFrom: state.windDirectionFrom,
+    windFromDeg: ((state.windDirectionFrom * 180 / Math.PI) % 360 + 360) % 360,
+    airspeed: state.airspeed,
+    airspeedLive: state.airspeedLive,
+    error: state.error,
+    recentBin: state.recentBin
+  };
+}
+
 function ensureAltitudeControls() {
   const pressureAvailable = hasPressureAltitude(rawFixes);
   if (!pressureAvailable && pendingAltitudeSource === "pressure") pendingAltitudeSource = "gps";
@@ -887,6 +1105,7 @@ function recomputeMetrics({resetCamera = true} = {}) {
   project(processed);
   applyActiveTerrain(processed);
   ensureAltitudeControls();
+  const windState = createWindEstimatorState();
   for (let i = 0; i < processed.length; i++) {
     const fix = processed[i];
     fix.detectorAlt = altitudeFor(fix, altitudeSource);
@@ -901,6 +1120,15 @@ function recomputeMetrics({resetCamera = true} = {}) {
         fix.bearing = bearing(processed[bearingStart], fix);
       }
     }
+    const displayBearingStart = priorIndex(processed, i, 1);
+    fix.displayBearing = fix.bearing;
+    if (Number.isFinite(fix.trackDeg)) {
+      fix.displayBearing = fix.trackDeg;
+    } else if (displayBearingStart < i) {
+      const dx = fix.x - processed[displayBearingStart].x;
+      const dy = fix.y - processed[displayBearingStart].y;
+      if (Math.hypot(dx, dy) >= 1.5) fix.displayBearing = bearing(processed[displayBearingStart], fix);
+    }
     const varioStart = priorIndex(processed, i, params.vario_avg_s);
     const climbStart = priorIndex(processed, i, 30);
     const varioDt = Math.max(1, fix.t - processed[varioStart].t);
@@ -908,6 +1136,22 @@ function recomputeMetrics({resetCamera = true} = {}) {
       ? fix.climbMps
       : (fix.detectorAlt - processed[varioStart].detectorAlt) / varioDt;
     fix.climb30 = (fix.detectorAlt - processed[climbStart].detectorAlt) / Math.max(1, fix.t - processed[climbStart].t);
+    fix.groundSpeedMps = 0;
+    if (i > 0) {
+      const previous = processed[i - 1];
+      const dt = Math.max(1, fix.t - previous.t);
+      const dx = fix.x - previous.x;
+      const dy = fix.y - previous.y;
+      fix.groundSpeedMps = Math.hypot(dx, dy) / dt;
+    }
+    if (Number.isFinite(fix.bearing) && fix.groundSpeedMps >= 1.5) {
+      submitVelocityForWindEstimate(windState, {
+        trackAngle: fix.bearing * Math.PI / 180,
+        speed: fix.groundSpeedMps
+      });
+      for (let step = 0; step < windIterationsPerFix; step += 1) updateWindEstimate(windState);
+    }
+    fix.wind = windSnapshot(windState);
     const start = Math.max(priorIndex(processed, i, params.window_s), i - leafDetectorSampleBuffer + 1);
     const window = processed.slice(start, i + 1);
     fix.windowDuration = window[window.length - 1].t - window[0].t;
@@ -1642,20 +1886,36 @@ function pivotMapOnPosition(position, map) {
 
 function smoothedFollowPosition(index, visualFix = null) {
   if (!processed.length) return null;
-  const windowCount = Math.min(100, processed.length);
-  const end = Math.max(windowCount - 1, index);
-  const start = Math.max(0, end - windowCount + 1);
+  const current = visualFix || processed[index];
+  const endT = current?.t ?? processed[index].t;
+  const startT = Math.max(0, endT - 12);
   let total = 0;
-  const acc = {x: 0, y: 0, z: 0};
-  for (let i = start; i <= end && i < processed.length; i += 1) {
-    const point = visualFix && i === index ? visualFix : processed[i];
-    acc.x += point.x;
-    acc.y += point.y;
-    acc.z += point.detectorAlt;
+  const acc = {x: 0, y: 0, z: 0, weight: 0};
+  for (let i = 0; i <= index && i < processed.length; i += 1) {
+    const point = processed[i];
+    if (point.t < startT || point.t > endT) continue;
+    const age = Math.max(0, endT - point.t);
+    const weight = Math.exp(-age / 5);
+    acc.x += point.x * weight;
+    acc.y += point.y * weight;
+    acc.z += point.detectorAlt * weight;
+    acc.weight += weight;
     total += 1;
   }
-  if (!total) return itemPosition(processed[index]);
-  return {x: acc.x / total, y: acc.y / total, z: acc.z / total};
+  if (visualFix && visualFix.t >= startT) {
+    const weight = 1.25;
+    acc.x += visualFix.x * weight;
+    acc.y += visualFix.y * weight;
+    acc.z += visualFix.detectorAlt * weight;
+    acc.weight += weight;
+    total += 1;
+  }
+  if (!total || acc.weight <= 0) return itemPosition(current);
+  return {
+    x: current.x,
+    y: current.y,
+    z: acc.z / acc.weight
+  };
 }
 
 function applyFollowScreenCatchup(target, map, verticalOffsetRatio = followMaxAltitudeVerticalOffsetRatio) {
@@ -2338,6 +2598,11 @@ function lerpNumeric(a, b, ratio) {
   return Number.isFinite(a) ? a : b;
 }
 
+function lerpAngleDeg(a, b, ratio) {
+  if (Number.isFinite(a) && Number.isFinite(b)) return (a + angleDelta(b, a) * ratio + 360) % 360;
+  return Number.isFinite(a) ? a : b;
+}
+
 function visualFixAt(t) {
   if (!processed.length) return null;
   const i = currentIndex(t);
@@ -2356,7 +2621,10 @@ function visualFixAt(t) {
     groundAlt: lerpNumeric(a.groundAlt, b.groundAlt, ratio),
     vario: lerpNumeric(a.vario, b.vario, ratio),
     climb30: lerpNumeric(a.climb30, b.climb30, ratio),
-    bearing: lerpNumeric(a.bearing, b.bearing, ratio)
+    bearing: lerpAngleDeg(a.bearing, b.bearing, ratio),
+    displayBearing: lerpAngleDeg(a.displayBearing, b.displayBearing, ratio),
+    groundSpeedMps: lerpNumeric(a.groundSpeedMps, b.groundSpeedMps, ratio),
+    wind: ratio < 0.5 ? a.wind : b.wind
   };
 }
 
@@ -2383,6 +2651,669 @@ function fmtDuration(t) {
   const m = Math.floor(t / 60);
   const s = Math.floor(t % 60);
   return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+function fitCircle(points) {
+  if (points.length < 3) return null;
+  const meanX = avg(points.map(p => p.x));
+  const meanY = avg(points.map(p => p.y));
+  let suu = 0, suv = 0, svv = 0, suuu = 0, svvv = 0, suvv = 0, svuu = 0;
+  for (const point of points) {
+    const u = point.x - meanX;
+    const v = point.y - meanY;
+    const uu = u * u;
+    const vv = v * v;
+    suu += uu;
+    suv += u * v;
+    svv += vv;
+    suuu += uu * u;
+    svvv += vv * v;
+    suvv += u * vv;
+    svuu += v * uu;
+  }
+  const det = suu * svv - suv * suv;
+  if (Math.abs(det) < 1e-9) return null;
+  const rhsU = -(suuu + suvv);
+  const rhsV = -(svuu + svvv);
+  const a = (rhsU * svv - rhsV * suv) / det;
+  const b = (suu * rhsV - suv * rhsU) / det;
+  const cx = meanX - a / 2;
+  const cy = meanY - b / 2;
+  const distances = points.map(p => Math.hypot(p.x - cx, p.y - cy));
+  const radius = avg(distances);
+  const residual = Math.sqrt(avg(distances.map(d => (d - radius) ** 2)));
+  if (!Number.isFinite(radius) || radius <= 0) return null;
+  return {x: cx, y: cy, radius, residual};
+}
+
+function recentReplaySamples(index, visualFix, secondsBack = thermalCoreLookbackS) {
+  if (!processed.length) return [];
+  const endT = visualFix?.t ?? processed[index]?.t ?? replayT;
+  const startT = endT - secondsBack;
+  const samples = processed.filter((point, i) => i <= index && point.t >= startT && point.t <= endT);
+  if (visualFix && visualFix.t > (samples[samples.length - 1]?.t ?? -Infinity)) samples.push(visualFix);
+  return samples.filter(point =>
+    Number.isFinite(point.x) &&
+    Number.isFinite(point.y) &&
+    Number.isFinite(point.bearing) &&
+    Number.isFinite(point.vario)
+  );
+}
+
+function windCorrectCoreSamples(samples, visualFix) {
+  const wind = visualFix?.wind;
+  if (!wind?.validEstimate || !Number.isFinite(wind.windSpeed)) return samples.map(point => ({...point}));
+  const wx = Math.sin(wind.windDirectionTrue) * wind.windSpeed;
+  const wy = Math.cos(wind.windDirectionTrue) * wind.windSpeed;
+  const originT = visualFix.t;
+  return samples.map(point => {
+    const dt = point.t - originT;
+    return {
+      ...point,
+      groundX: point.x,
+      groundY: point.y,
+      x: point.x - wx * dt,
+      y: point.y - wy * dt
+    };
+  });
+}
+
+function turnStats(points) {
+  let signed = 0;
+  let absolute = 0;
+  let lastBearing = null;
+  let firstBearing = null;
+  let firstT = null;
+  let lastT = null;
+  for (const point of points) {
+    if (!Number.isFinite(point.bearing)) continue;
+    if (firstBearing === null) {
+      firstBearing = point.bearing;
+      firstT = point.t;
+    }
+    if (lastBearing !== null) {
+      const delta = angleDelta(point.bearing, lastBearing);
+      signed += delta;
+      absolute += Math.abs(delta);
+    }
+    lastBearing = point.bearing;
+    lastT = point.t;
+  }
+  const direction = Math.abs(signed) < 45 ? 0 : signed > 0 ? 1 : -1;
+  const duration = firstT !== null && lastT !== null ? Math.max(1, lastT - firstT) : 1;
+  return {signed, absolute, direction, turnRateDps: absolute / duration};
+}
+
+function recentTurnRateDps(points, secondsBack = 6) {
+  if (points.length < 2) return 0;
+  const endT = points[points.length - 1].t;
+  const recent = points.filter(point => endT - point.t <= secondsBack && Number.isFinite(point.bearing));
+  if (recent.length < 2) return 0;
+  let total = 0;
+  let last = recent[0].bearing;
+  for (const point of recent.slice(1)) {
+    total += Math.abs(angleDelta(point.bearing, last));
+    last = point.bearing;
+  }
+  return total / Math.max(1, recent[recent.length - 1].t - recent[0].t);
+}
+
+function estimateThermalCore(index, visualFix) {
+  const groundSamples = recentReplaySamples(index, visualFix);
+  const samples = windCorrectCoreSamples(groundSamples, visualFix);
+  const stats = turnStats(samples);
+  const fit = fitCircle(samples);
+  const turnOk = stats.absolute >= thermalCoreMinTurnDeg && stats.direction !== 0;
+  if (samples.length < thermalCoreMinSamples || !turnOk || !Number.isFinite(visualFix.bearing)) {
+    return {valid: false, samples, stats, fit, reason: "WAIT"};
+  }
+
+  const currentBearing = visualFix.bearing;
+  const bins = Array.from({length: 12}, () => ({weight: 0, lift: 0, age: 0}));
+  let currentWeight = 0;
+  let currentLift = 0;
+  let oppositeWeight = 0;
+  let oppositeLift = 0;
+  let recentWeight = 0;
+  let recentLift = 0;
+  let priorWeight = 0;
+  let priorLift = 0;
+  const nowT = visualFix.t;
+  for (const sample of samples) {
+    const age = Math.max(0, nowT - sample.t);
+    const ageWeight = Math.exp(-age / 12);
+    const signedPhase = stats.direction * angleDelta(sample.bearing, currentBearing);
+    const phase = (signedPhase + 360) % 360;
+    const oppositeDistance = Math.abs(angleDelta(phase, 180));
+    const currentDistance = Math.min(phase, 360 - phase);
+    const bin = bins[Math.min(bins.length - 1, Math.floor(phase / 360 * bins.length))];
+    bin.weight += ageWeight;
+    bin.lift += sample.vario * ageWeight;
+    bin.age += age * ageWeight;
+    if (currentDistance <= 35) {
+      currentWeight += ageWeight;
+      currentLift += sample.vario * ageWeight;
+    }
+    if (oppositeDistance <= 35) {
+      oppositeWeight += ageWeight;
+      oppositeLift += sample.vario * ageWeight;
+    }
+    if (age <= 5) {
+      recentWeight += ageWeight;
+      recentLift += sample.vario * ageWeight;
+    } else if (age <= 16) {
+      priorWeight += ageWeight;
+      priorLift += sample.vario * ageWeight;
+    }
+  }
+
+  for (const bin of bins) {
+    bin.avgLift = bin.weight > 0 ? bin.lift / bin.weight : null;
+    bin.avgAge = bin.weight > 0 ? bin.age / bin.weight : null;
+  }
+
+  const currentAvg = currentWeight > 0 ? currentLift / currentWeight : visualFix.vario;
+  const oppositeAvg = oppositeWeight > 0 ? oppositeLift / oppositeWeight : null;
+  const recentAvg = recentWeight > 0 ? recentLift / recentWeight : visualFix.vario;
+  const priorAvg = priorWeight > 0 ? priorLift / priorWeight : recentAvg;
+  const symmetry = oppositeAvg === null ? 0 : currentAvg - oppositeAvg;
+  const trend = recentAvg - priorAvg;
+  const confidence = clamp(
+    (samples.length / leafDetectorSampleBuffer) * 0.25 +
+    (stats.absolute / 360) * 0.45 +
+    (oppositeWeight > 0 ? 0.3 : 0),
+    0,
+    1
+  );
+  const advice = confidence < 0.34
+    ? 0
+    : clamp(symmetry / 0.9 * 0.65 + trend / 1.1 * 0.35, -1, 1);
+  const actualTurnRateDps = recentTurnRateDps(samples);
+  const suggestedTurnRateDps = clamp(actualTurnRateDps * (1 - advice * 0.5), 0, 40);
+  let cue = "HOLD";
+  if (confidence < 0.34) cue = "WEAK";
+  else if (advice <= -0.55) cue = "TIGHT++";
+  else if (advice <= -0.2) cue = "TIGHT";
+  else if (advice >= 0.55) cue = "WIDE++";
+  else if (advice >= 0.2) cue = "WIDE";
+
+  return {
+    valid: confidence >= 0.34,
+    samples,
+    stats,
+    fit,
+    confidence,
+    bins,
+    cue,
+    currentAvg,
+    oppositeAvg,
+    symmetry,
+    trend,
+    advice,
+    actualTurnRateDps,
+    suggestedTurnRateDps,
+    displayRadius: fit && fit.radius >= thermalCoreMinRadiusM && fit.radius <= thermalCoreMaxRadiusM
+      ? fit.radius
+      : Math.max(35, Math.min(95, visualFix.groundSpeedMps * 8 || 65))
+  };
+}
+
+function leafPipScale(map) {
+  const expandedCount = (corePipCollapsed ? 0 : 1) + (trackPipCollapsed ? 0 : 1);
+  const collapsedCount = (corePipCollapsed ? 1 : 0) + (trackPipCollapsed ? 1 : 0);
+  const available = map.h - 22 - leafPipGap - collapsedCount * leafPipHeaderH - expandedCount * leafPipGap;
+  if (expandedCount <= 0) return 1.4;
+  return clamp(Math.floor((available / expandedCount) / leafScreenH * 100) / 100, 0.78, 1.28);
+}
+
+function leafPipLayouts(map) {
+  const scale = leafPipScale(map);
+  const w = leafScreenW * scale;
+  const screenH = leafScreenH * scale;
+  const x = map.x + map.w - w - 12;
+  let y = map.y + map.h - 12;
+  const place = collapsed => {
+    const h = leafPipHeaderH + (collapsed ? 0 : screenH);
+    y -= h;
+    const rect = {x, y, w, h, scale, screenH, collapsed};
+    y -= leafPipGap;
+    return rect;
+  };
+  const track = place(trackPipCollapsed);
+  const core = place(corePipCollapsed);
+  return {core, track};
+}
+
+function drawLeafPipFrame(rect, title, collapsed) {
+  ctx.save();
+  ctx.fillStyle = "rgba(8, 8, 8, 0.88)";
+  ctx.strokeStyle = "#777";
+  ctx.lineWidth = 1;
+  ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+  ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+  ctx.fillStyle = "#eee";
+  ctx.font = "12px system-ui, sans-serif";
+  ctx.textBaseline = "middle";
+  ctx.fillText(`[${title} ${collapsed ? "^" : "v"}]`, rect.x + 6, rect.y + leafPipHeaderH / 2);
+  ctx.restore();
+  return {x: rect.x, y: rect.y, w: rect.w, h: leafPipHeaderH};
+}
+
+function beginLeafScreen(rect) {
+  ctx.save();
+  ctx.translate(rect.x, rect.y + leafPipHeaderH);
+  ctx.scale(rect.scale, rect.scale);
+  ctx.fillStyle = "#f4f4f4";
+  ctx.fillRect(0, 0, leafScreenW, leafScreenH);
+  ctx.strokeStyle = "#111";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(0.5, 0.5, leafScreenW - 1, leafScreenH - 1);
+  ctx.beginPath();
+  ctx.rect(0, 0, leafScreenW, leafScreenH);
+  ctx.clip();
+}
+
+function endLeafScreen() {
+  ctx.restore();
+}
+
+function drawLeafAircraft(x, y, size = 11) {
+  ctx.save();
+  ctx.fillStyle = "#111";
+  ctx.strokeStyle = "#f4f4f4";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(x, y - size);
+  ctx.lineTo(x + size * 0.72, y + size * 0.75);
+  ctx.lineTo(x, y + size * 0.34);
+  ctx.lineTo(x - size * 0.72, y + size * 0.75);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+}
+
+function coreScreenPoint(point, fix, headingDeg, aircraftX, aircraftY, metersPerPx) {
+  const dx = point.x - fix.x;
+  const dy = point.y - fix.y;
+  const h = headingDeg * Math.PI / 180;
+  const right = Math.cos(h) * dx - Math.sin(h) * dy;
+  const ahead = Math.sin(h) * dx + Math.cos(h) * dy;
+  return {x: aircraftX + right / metersPerPx, y: aircraftY - ahead / metersPerPx};
+}
+
+function drawCoreTurnRateBar(estimate) {
+  const x = 13;
+  const y = 49;
+  const w = 70;
+  const h = 7;
+  const maxRate = 40;
+  const direction = estimate.stats?.direction || 1;
+  const xForRate = rate => {
+    const ratio = clamp(rate / maxRate, 0, 1);
+    return direction > 0 ? x + ratio * w : x + (1 - ratio) * w;
+  };
+  const actualX = xForRate(estimate.actualTurnRateDps || 0);
+  const suggestedX = xForRate(estimate.suggestedTurnRateDps ?? estimate.actualTurnRateDps ?? 0);
+  ctx.save();
+  ctx.strokeStyle = "#111";
+  ctx.fillStyle = "#111";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x, y, w, h);
+  ctx.beginPath();
+  ctx.moveTo(direction > 0 ? x : x + w, y + h + 1);
+  ctx.lineTo(direction > 0 ? x : x + w, y + h + 4);
+  ctx.moveTo(direction > 0 ? x + w : x, y + h + 1);
+  ctx.lineTo(direction > 0 ? x + w : x, y + h + 4);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(actualX, y + h / 2, 3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(suggestedX, y - 4);
+  ctx.lineTo(suggestedX - 3, y - 9);
+  ctx.lineTo(suggestedX + 3, y - 9);
+  ctx.closePath();
+  ctx.fill();
+  ctx.font = "6px system-ui, sans-serif";
+  ctx.textBaseline = "top";
+  ctx.textAlign = "center";
+  ctx.fillText("0", direction > 0 ? x : x + w, y + h + 5);
+  ctx.fillText("40", direction > 0 ? x + w : x, y + h + 5);
+  ctx.restore();
+}
+
+function drawCoreTargetBullseye(cx, cy) {
+  ctx.save();
+  ctx.fillStyle = "#f4f4f4";
+  ctx.strokeStyle = "#111";
+  ctx.lineWidth = 1;
+
+  const left = cx - 28;
+  const right = cx + 28;
+  const top = cy - 11;
+  const bottom = cy + 11;
+  const innerTop = cy - 4;
+  const innerBottom = cy + 4;
+
+  ctx.beginPath();
+  ctx.moveTo(left, innerTop);
+  ctx.lineTo(cx - 6, innerTop);
+  ctx.lineTo(cx - 6, top);
+  ctx.lineTo(cx + 6, top);
+  ctx.lineTo(cx + 6, innerTop);
+  ctx.lineTo(right, innerTop);
+  ctx.lineTo(right, innerBottom);
+  ctx.lineTo(cx + 6, innerBottom);
+  ctx.lineTo(cx + 6, bottom);
+  ctx.lineTo(cx - 6, bottom);
+  ctx.lineTo(cx - 6, innerBottom);
+  ctx.lineTo(left, innerBottom);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawMaskedPlusGlyph(cx, cy) {
+  ctx.save();
+  const drawPlus = (fill, armHalfW, armHalfL) => {
+    ctx.fillStyle = fill;
+    ctx.fillRect(cx - armHalfW, cy - armHalfL, armHalfW * 2, armHalfL * 2);
+    ctx.fillRect(cx - armHalfL, cy - armHalfW, armHalfL * 2, armHalfW * 2);
+  };
+  drawPlus("#f4f4f4", 4, 10);
+  drawPlus("#111", 2, 8);
+  ctx.restore();
+}
+
+function drawCoreLeafScreen(rect, estimate, visualFix) {
+  if (rect.collapsed) return;
+  beginLeafScreen(rect);
+  const direction = estimate.stats?.direction || 0;
+  const aircraftX = direction < 0 ? 76 : direction > 0 ? 20 : 48;
+  const aircraftY = 118;
+  const heading = Number.isFinite(visualFix.displayBearing)
+    ? visualFix.displayBearing
+    : Number.isFinite(visualFix.bearing) ? visualFix.bearing : 0;
+  const displayRadiusM = estimate.displayRadius || estimate.fit?.radius || 70;
+  const ringRadius = 38;
+  const metersPerPx = Math.max(1.1, displayRadiusM / ringRadius);
+  const turnSide = direction < 0 ? -1 : direction > 0 ? 1 : 0;
+  const ringCx = turnSide ? aircraftX + turnSide * ringRadius : aircraftX;
+  const ringCy = aircraftY;
+  const advice = estimate.valid ? estimate.advice || 0 : 0;
+  const dynamicRadius = ringRadius * (1 + advice * 0.36);
+  const dynamicCx = turnSide ? aircraftX + turnSide * dynamicRadius : aircraftX;
+
+  ctx.strokeStyle = "#d0d0d0";
+  ctx.lineWidth = 1;
+  for (let x = 0; x <= leafScreenW; x += 12) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, leafScreenH);
+    ctx.stroke();
+  }
+  for (let y = 0; y <= leafScreenH; y += 12) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(leafScreenW, y);
+    ctx.stroke();
+  }
+
+  if (estimate.valid && Math.abs(advice) >= 0.08) {
+    ctx.strokeStyle = "#111";
+    ctx.lineWidth = Math.abs(advice) >= 0.55 ? 3 : 2;
+    ctx.beginPath();
+    const startAngle = turnSide > 0 ? Math.PI : 0;
+    const endAngle = startAngle + turnSide * Math.PI * 0.75;
+    ctx.arc(dynamicCx, ringCy, dynamicRadius, startAngle, endAngle, turnSide < 0);
+    ctx.stroke();
+  }
+
+  const samples = estimate.samples || [];
+  const climbs = samples.map(p => p.vario).filter(Number.isFinite);
+  const minClimb = climbs.length ? Math.min(...climbs) : 0;
+  const maxClimb = climbs.length ? Math.max(...climbs) : 1;
+  for (const sample of samples) {
+    const p = coreScreenPoint(sample, visualFix, heading, aircraftX, aircraftY, metersPerPx);
+    if (p.x < -6 || p.x > leafScreenW + 6 || p.y < -6 || p.y > leafScreenH + 6) continue;
+    const strength = clamp((sample.vario - minClimb) / Math.max(0.1, maxClimb - minClimb), 0, 1);
+    ctx.strokeStyle = "#111";
+    ctx.fillStyle = "#111";
+    if (strength <= 0.25) {
+      ctx.fillRect(Math.round(p.x), Math.round(p.y), 1, 1);
+    } else {
+      ctx.lineWidth = 1;
+      const diameter = strength > 0.78 ? 7 : strength > 0.52 ? 5 : 3;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, diameter / 2, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+
+  drawCoreTargetBullseye(ringCx, ringCy);
+  drawMaskedPlusGlyph(dynamicCx, ringCy);
+
+  drawLeafAircraft(aircraftX, aircraftY, 11);
+  ctx.fillStyle = "#111";
+  ctx.font = "16px system-ui, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+  ctx.fillText(estimate.cue || (estimate.valid ? "HOLD" : "WAIT"), 48, 5);
+  ctx.font = "7px system-ui, sans-serif";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "top";
+  const opposite = Number.isFinite(estimate.oppositeAvg) ? estimate.oppositeAvg.toFixed(1) : "--";
+  ctx.fillText(`now ${Number.isFinite(estimate.currentAvg) ? estimate.currentAvg.toFixed(1) : "--"}`, 4, 27);
+  ctx.fillText(`opp ${opposite}`, 4, 36);
+  ctx.fillText(`${Math.round((estimate.confidence || 0) * 100)}%`, 76, 36);
+  drawCoreTurnRateBar(estimate);
+  ctx.textAlign = "start";
+  endLeafScreen();
+}
+
+function mapThermalTrackRadius(distanceM) {
+  if (distanceM <= 500) return distanceM / 500 * 25;
+  if (distanceM <= 1500) return 25 + (distanceM - 500) / 1000 * 12;
+  if (distanceM <= 5000) return 37 + (distanceM - 1500) / 3500 * 11;
+  return 48;
+}
+
+function thermalTrackItems(savedThermals, visualFix) {
+  const items = [];
+  for (const thermal of savedThermals) {
+    const point = spinePointAtAltitude(thermal.spine || [thermal], visualFix.detectorAlt, 250) || thermal;
+    const dx = point.x - visualFix.x;
+    const dy = point.y - visualFix.y;
+    const distanceM = Math.hypot(dx, dy);
+    const bearingDeg = angleDeg(dx, dy);
+    const turnDeg = angleDelta(bearingDeg, Number.isFinite(visualFix.bearing) ? visualFix.bearing : 0);
+    const radius = mapThermalTrackRadius(distanceM);
+    items.push({
+      thermal,
+      distanceM,
+      turnDeg,
+      quality: thermalQuality(thermal),
+      x: 48 + Math.sin(turnDeg * Math.PI / 180) * radius,
+      y: 124 - Math.cos(turnDeg * Math.PI / 180) * radius
+    });
+  }
+  items.sort((a, b) => b.quality - a.quality || Math.abs(a.turnDeg) - Math.abs(b.turnDeg));
+  if (items.length) {
+    let selected = items[0];
+    for (const item of items) {
+      if (Math.abs(item.turnDeg) < Math.abs(selected.turnDeg)) selected = item;
+    }
+    selected.selected = true;
+  }
+  return items;
+}
+
+function drawTrackLeafScreen(rect, savedThermals, visualFix) {
+  if (rect.collapsed) return;
+  beginLeafScreen(rect);
+  ctx.fillStyle = "#f4f4f4";
+  ctx.fillRect(0, 0, leafScreenW, leafScreenH);
+  ctx.fillStyle = "#111";
+  ctx.font = "18px system-ui, sans-serif";
+  ctx.textBaseline = "top";
+  ctx.fillText(`${Math.round(visualFix.detectorAlt)}`, 28, 15);
+  ctx.font = "8px system-ui, sans-serif";
+  ctx.fillText("m", 79, 30);
+
+  const barTop = 16;
+  const barX = 5;
+  const barH = 100;
+  const mid = barTop + barH / 2;
+  ctx.strokeStyle = "#111";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(barX, barTop, 16, barH);
+  ctx.beginPath();
+  ctx.moveTo(barX, mid);
+  ctx.lineTo(barX + 16, mid);
+  ctx.stroke();
+  const climb = clamp(visualFix.vario, -5, 5);
+  const fillH = Math.abs(climb) / 5 * (barH / 2);
+  ctx.fillStyle = "#111";
+  if (climb >= 0) ctx.fillRect(barX + 3, mid - fillH, 10, fillH);
+  else ctx.fillRect(barX + 3, mid, 10, fillH);
+
+  const items = thermalTrackItems(savedThermals, visualFix);
+  const selected = items.find(item => item.selected);
+  ctx.font = "9px system-ui, sans-serif";
+  ctx.fillText(selected ? `${selected.thermal.avg_climb_mps >= 0 ? "+" : ""}${selected.thermal.avg_climb_mps.toFixed(1)}m/s` : "--.-m/s", 28, 49);
+  const distText = selected ? selected.distanceM < 1000 ? `${Math.round(selected.distanceM)}m` : `${(selected.distanceM / 1000).toFixed(1)}km` : "--.-km";
+  ctx.fillText(distText, 34, 64);
+
+  const cx = 48;
+  const cy = 124;
+  ctx.strokeStyle = "#111";
+  ctx.lineWidth = 1;
+  for (const r of [25, 37, 48]) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, 48, 0, Math.PI * 2);
+  ctx.clip();
+  for (const item of items) {
+    ctx.lineWidth = item.quality >= 4 ? 3 : item.quality >= 2 ? 2 : 1;
+    ctx.beginPath();
+    ctx.arc(item.x, item.y, 4, 0, Math.PI * 2);
+    if (item.quality >= 5) ctx.fill();
+    else ctx.stroke();
+  }
+  for (const item of items) {
+    if (!item.selected) continue;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(item.x, item.y, 6, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.restore();
+  drawLeafAircraft(cx, cy, 6);
+  ctx.font = "7px system-ui, sans-serif";
+  ctx.fillText("0.5", 41, 147);
+  ctx.fillText("1.5", 41, 160);
+  ctx.fillText("5km", 40, 173);
+  endLeafScreen();
+}
+
+function drawLeafPips(map, savedThermals, visualFix, coreEstimate) {
+  const layouts = leafPipLayouts(map);
+  corePipRect = layouts.core;
+  trackPipRect = layouts.track;
+  corePipHeaderRect = drawLeafPipFrame(layouts.core, "Core", corePipCollapsed);
+  drawCoreLeafScreen(layouts.core, coreEstimate, visualFix);
+  trackPipHeaderRect = drawLeafPipFrame(layouts.track, "Track", trackPipCollapsed);
+  drawTrackLeafScreen(layouts.track, savedThermals, visualFix);
+}
+
+function drawWindWidget(map, visualFix) {
+  const wind = visualFix?.wind;
+  const x = map.x + 10;
+  const y = map.y + map.h - 104;
+  const w = 148;
+  const h = 88;
+  ctx.save();
+  ctx.fillStyle = "rgba(8, 8, 8, 0.78)";
+  ctx.strokeStyle = "#777";
+  ctx.lineWidth = 1;
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeRect(x, y, w, h);
+  ctx.fillStyle = "#ddd";
+  ctx.font = "12px system-ui, sans-serif";
+  ctx.textBaseline = "top";
+  ctx.fillText("Wind estimate", x + 8, y + 7);
+  const cx = x + 39;
+  const cy = y + 51;
+  ctx.strokeStyle = "#777";
+  ctx.beginPath();
+  ctx.arc(cx, cy, 22, 0, Math.PI * 2);
+  ctx.moveTo(cx, cy - 25);
+  ctx.lineTo(cx, cy - 18);
+  ctx.moveTo(cx + 25, cy);
+  ctx.lineTo(cx + 18, cy);
+  ctx.moveTo(cx, cy + 25);
+  ctx.lineTo(cx, cy + 18);
+  ctx.moveTo(cx - 25, cy);
+  ctx.lineTo(cx - 18, cy);
+  ctx.stroke();
+  ctx.fillStyle = "#999";
+  ctx.font = "9px system-ui, sans-serif";
+  ctx.fillText("N", cx - 3, cy - 35);
+  if (wind?.validEstimate) {
+    const fromRad = wind.windDirectionFrom;
+    const arrowLen = clamp(wind.windSpeed / 8, 0.25, 1) * 20;
+    const dx = Math.sin(fromRad) * arrowLen;
+    const dy = -Math.cos(fromRad) * arrowLen;
+    ctx.strokeStyle = "#84c8ff";
+    ctx.fillStyle = "#84c8ff";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cx - dx, cy - dy);
+    ctx.lineTo(cx + dx, cy + dy);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(cx + dx, cy + dy, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#ddd";
+    ctx.font = "11px system-ui, sans-serif";
+    ctx.fillText(`${Math.round(wind.windFromDeg)} deg`, x + 77, y + 31);
+    ctx.fillText(`${wind.windSpeed.toFixed(1)} m/s`, x + 77, y + 47);
+    ctx.fillStyle = "#aaa";
+    ctx.font = "10px system-ui, sans-serif";
+    ctx.fillText(`air ${wind.airspeed.toFixed(1)}`, x + 77, y + 64);
+    ctx.fillText(`err ${wind.error.toFixed(2)}`, x + 8, y + 73);
+  } else {
+    ctx.fillStyle = "#aaa";
+    ctx.font = "11px system-ui, sans-serif";
+    ctx.fillText("warming up", x + 77, y + 39);
+    ctx.font = "10px system-ui, sans-serif";
+    ctx.fillText("needs turn span", x + 77, y + 56);
+  }
+  ctx.restore();
+}
+
+function toggleLeafPipAt(point) {
+  if (corePipHeaderRect && pointInRect(point, corePipHeaderRect)) {
+    corePipCollapsed = !corePipCollapsed;
+    draw();
+    return true;
+  }
+  if (trackPipHeaderRect && pointInRect(point, trackPipHeaderRect)) {
+    trackPipCollapsed = !trackPipCollapsed;
+    draw();
+    return true;
+  }
+  if ((corePipRect && pointInRect(point, corePipRect)) ||
+      (trackPipRect && pointInRect(point, trackPipRect))) {
+    return true;
+  }
+  return false;
 }
 
 function drawTerrainMesh(map) {
@@ -2578,6 +3509,7 @@ function draw() {
   const merged = buildMergedThermals(saved);
   const activeMerged = merged.filter(merge => !merge.consumed);
   const savedTotals = savedAccounting(saved, activeMerged);
+  const coreEstimate = estimateThermalCore(i, visualFix);
   const activeSaved = saved.filter(th => !savedTotals.consumedIds.has(th.id));
   const consumedSaved = saved.filter(th => savedTotals.consumedIds.has(th.id));
   const consumedMerged = merged.filter(merge => merge.consumed);
@@ -2590,10 +3522,9 @@ function draw() {
   const H = canvas.height;
   const {tape, map, vario, profile, profileLabel} = mapLayout();
   if (followCurrentFix && playing) {
-    const followPosition = smoothedFollowPosition(i, visualFix);
+    const followPosition = itemPosition(visualFix);
     const verticalOffsetRatio = followVerticalOffsetRatioForPosition(followPosition);
     centerMapOnPosition(followPosition, verticalOffsetRatio);
-    applyFollowScreenCatchup(visualFix, map, verticalOffsetRatio);
   }
   updateScrubLayout(profile);
   const altRange = visibleAltitudeRange(processed);
@@ -2695,7 +3626,9 @@ function draw() {
   drawMapOrbitControl(map);
   drawMapTerrainControl(map);
   drawMapPerspectiveControl(map);
+  drawWindWidget(map, visualFix);
   ctx.restore();
+  drawLeafPips(map, savedTotals.savedThermals, visualFix, coreEstimate);
 
   ctx.fillStyle = "#bbb";
   ctx.font = "15px system-ui, sans-serif";
@@ -3123,6 +4056,10 @@ canvas.addEventListener("pointerdown", event => {
   resizeCanvasToDisplay();
   const {map, profile} = mapLayout();
   const point = canvasPoint(event);
+  if (event.button === 0 && toggleLeafPipAt(point)) {
+    event.preventDefault();
+    return;
+  }
   if (event.button === 0 && pointInRect(point, profile)) {
     replayT = Math.max(0, Math.min(bounds.duration, (point.x - profile.x) / Math.max(1, profile.w) * bounds.duration));
     playing = false;
@@ -3144,7 +4081,7 @@ canvas.addEventListener("pointerdown", event => {
     if (followCurrentFix && playing) {
       const i = currentIndex();
       const visualFix = visualFixAt(replayT) || processed[i];
-      const followPosition = smoothedFollowPosition(i, visualFix);
+      const followPosition = itemPosition(visualFix);
       centerMapOnPosition(followPosition, followVerticalOffsetRatioForPosition(followPosition));
     }
     event.preventDefault();
@@ -3262,7 +4199,7 @@ fileInput.addEventListener("change", async () => {
 seedEmbeddedTerrainCache();
 buildParamControls();
 recomputeMetrics();
-speed.value = sliderValueForSpeed(30).toFixed(3);
+speed.value = sliderValueForSpeed(1).toFixed(3);
 buildSpeedTicks();
 updateSpeedLabel();
 updateParamDisabled();
