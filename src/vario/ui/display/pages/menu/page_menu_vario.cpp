@@ -150,13 +150,14 @@ void VarioMenuPage::draw() {
       menu_ui::endRow();
     }
 
-    if (settings.volumeShortcut) {
-      u8g2.drawRFrame(3, 129, 90, 44, 3);
-      u8g2.setFont(leaf_5x8);
-      u8g2.drawStr(10, 140, "Hold UP or DOWN");
-      u8g2.drawStr(7, 150, "on a vario page to");
-      u8g2.drawStr(6, 160, "temporarily change");
-      u8g2.drawStr(20, 170, "vario volume");
+    if (cursor_position == cursor_vario_volumeShortcut) {
+      const char* const noteLines[] = {
+          "Hold UP or DOWN",
+          "on a vario page to",
+          "temporarily change",
+          "vario volume",
+      };
+      menu_ui::drawNoteBox(menu_items_y[cursor_vario_volumeShortcut], noteLines, 4);
     }
   } while (u8g2.nextPage());
 }

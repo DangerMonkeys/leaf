@@ -64,6 +64,16 @@ void LeafLabsMenuPage::draw() {
       }
       menu_ui::endRow();
     }
+
+    if (cursor_position == cursor_leaf_labs_thermal_track) {
+      const char* const noteLines[] = {
+          "Detects and saves",
+          "thermals as you",
+          "fly, then shows",
+          "them on a map",
+      };
+      menu_ui::drawNoteBox(menu_items_y[cursor_leaf_labs_thermal_track], noteLines, 4);
+    }
   } while (u8g2.nextPage());
 }
 

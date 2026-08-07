@@ -239,6 +239,82 @@
       "y": 160,
       "text": "5km",
       "font": "leaf_5x8"
+    },
+    {
+      "id": 53,
+      "type": "text",
+      "name": "text 53",
+      "color": 1,
+      "visible": true,
+      "x": 69,
+      "y": 190,
+      "text": "3:24",
+      "font": "leaf_6x12"
+    },
+    {
+      "id": 54,
+      "type": "box",
+      "name": "box 54",
+      "color": 1,
+      "visible": true,
+      "x": 53,
+      "y": 176,
+      "w": 43,
+      "h": 16,
+      "fill": false,
+      "rounded": true,
+      "r": 2
+    },
+    {
+      "id": 55,
+      "type": "box",
+      "name": "box 55",
+      "color": 1,
+      "visible": true,
+      "x": 24,
+      "y": 161,
+      "w": 48,
+      "h": 15,
+      "fill": false,
+      "rounded": false,
+      "r": 1
+    },
+    {
+      "id": 56,
+      "type": "varioBar",
+      "name": "varioBar 56",
+      "color": 1,
+      "visible": true,
+      "x": 0,
+      "y": 0,
+      "w": 17,
+      "posTick": 10,
+      "negTick": 10
+    },
+    {
+      "id": 57,
+      "type": "text",
+      "name": "text 57",
+      "color": 1,
+      "visible": true,
+      "x": 20,
+      "y": 25,
+      "text": "14,250'",
+      "font": "leaf_21h"
+    },
+    {
+      "id": 58,
+      "type": "box",
+      "name": "box 58",
+      "color": 1,
+      "visible": true,
+      "x": 22,
+      "y": 27,
+      "w": 54,
+      "h": 33,
+      "fill": false,
+      "rounded": true,
+      "r": 7
     }
   ]
 }

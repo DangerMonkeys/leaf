@@ -65,6 +65,7 @@ namespace menu_ui {
   void drawLabel(uint8_t x, uint8_t y, const char* label, uint8_t glyph = 0);
   void drawEnterIcon(uint8_t x, uint8_t y, bool selected);
   void drawBackIcon(uint8_t x, uint8_t y);
+  void drawNoteBox(uint8_t rowY, const char* const* lines, uint8_t lineCount);
 }  // namespace menu_ui
 
 // Base class for all Pages to be drawn with Menu Items with support for

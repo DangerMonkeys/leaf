@@ -68,6 +68,26 @@ namespace menu_ui {
     u8g2.setCursor(ICON_BACK_X, y);
     printGlyph(ICON_BACK);
   }
+
+  void drawNoteBox(uint8_t rowY, const char* const* lines, uint8_t lineCount) {
+    constexpr uint8_t x = 3;
+    constexpr uint8_t w = 90;
+    constexpr uint8_t h = 44;
+    constexpr uint8_t r = 3;
+    const uint8_t y = rowY + 1;
+
+    u8g2.setDrawColor(0);
+    u8g2.drawRBox(x, y, w, h, r);
+    u8g2.setDrawColor(1);
+    u8g2.drawRFrame(x, y, w, h, r);
+
+    u8g2.setFont(leaf_5x8);
+    for (uint8_t i = 0; i < lineCount; i++) {
+      const uint8_t lineX = (96 - u8g2.getStrWidth(lines[i])) / 2;
+      u8g2.drawStr(lineX, y + 11 + i * 10, lines[i]);
+    }
+    u8g2.setFont(leaf_6x12);
+  }
 }  // namespace menu_ui
 
 void MenuPage::cursor_prev() {
