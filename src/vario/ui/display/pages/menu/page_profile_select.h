@@ -34,6 +34,9 @@ class PageProfileSelect : public MenuPage {
   void drawContentRow(uint8_t y, uint8_t contentIndex);
   void drawProfileRow(uint8_t y, const char* text, bool selected, bool checked);
   void drawBackRow();
+  void drawStatus();
+  void drawEmptyProfilesMessage();
+  void drawCenteredText(uint8_t y, const char* text);
   void drawFittedText(uint8_t x, uint8_t y, const char* text, uint8_t maxWidth);
   bool cursorOnBack() const;
   bool selectableRow(uint8_t contentIndex) const;
