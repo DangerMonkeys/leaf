@@ -6,120 +6,204 @@
 <title>Leaf Thermal Core Simulator</title>
 <style>
   :root {
-    color-scheme: light dark;
-    --bg: #f6f7f8;
-    --fg: #14171a;
-    --muted: #5f6872;
-    --panel: #ffffff;
-    --border: #cbd1d8;
-    --accent: #1f6feb;
-    --accent-soft: #dceaff;
-    --good: #128a45;
-    --warn: #b15b00;
-    --bad: #b42318;
-    --canvas: #e9edf1;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #111417;
-      --fg: #edf0f3;
-      --muted: #a2abb5;
-      --panel: #191d22;
-      --border: #39414b;
-      --accent: #78a8ff;
-      --accent-soft: #1d2c46;
-      --good: #54c878;
-      --warn: #e6a14a;
-      --bad: #f17468;
-      --canvas: #20262d;
-    }
+    color-scheme: dark;
+    --bg: #303030;
+    --bg-deep: #202423;
+    --panel: #505050;
+    --panel-subtle: #444746;
+    --field: #f7faf6;
+    --field-ink: #17201b;
+    --fg: #f6f8f3;
+    --muted: #dce5d6;
+    --muted-dim: #aeb8aa;
+    --border: #727872;
+    --accent: #d8ff00;
+    --accent-strong: #c5e900;
+    --accent-soft: rgb(216 255 0 / 16%);
+    --hero-green: #84b53f;
+    --good: #69d178;
+    --climb: #2784d8;
+    --sink: #cf3f3f;
+    --warn: #ffb459;
+    --bad: #ef766f;
+    --canvas: #171d1b;
+    --focus: rgb(216 255 0 / 36%);
   }
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background: var(--bg);
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background:
+      radial-gradient(circle at 18% 0%, rgb(132 181 63 / 18%), transparent 34rem),
+      linear-gradient(135deg, #3b3b3b 0%, var(--bg) 42%, #242827 100%);
     color: var(--fg);
+  }
+  .topbar {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 18px;
+    min-height: 58px;
+    padding: 10px 18px;
+    border-bottom: 1px solid rgb(255 255 255 / 10%);
+    background: var(--accent);
+    color: #0b0d0b;
+  }
+  .brand-mark {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    min-width: 0;
+  }
+  .brand-leaf {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  .brand-title {
+    color: #202423;
+    font-size: 15px;
+    font-weight: 750;
+  }
+  .brand-subtitle {
+    color: rgb(11 13 11 / 70%);
+    font-size: 12px;
+    font-weight: 700;
+    text-align: right;
   }
   .app {
     display: grid;
-    grid-template-columns: minmax(640px, 1fr) 330px;
-    gap: 14px;
-    padding: 14px;
-    min-height: 100vh;
+    grid-template-columns: 300px minmax(560px, 1fr) 340px;
+    gap: 16px;
+    min-height: calc(100vh - 58px);
+    padding: 16px;
   }
   .stage {
     min-width: 0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 10px;
+    border: 1px solid rgb(255 255 255 / 10%);
+    border-radius: 10px;
+    background: linear-gradient(180deg, #252b29, #1b211f);
+    box-shadow: 0 18px 34px rgb(0 0 0 / 28%);
   }
   canvas {
     display: block;
-    width: 100%;
+    width: min(100%, calc((100vh - 110px) * 1.441));
+    max-height: calc(100vh - 110px);
     height: auto;
     background: var(--canvas);
-    border: 1px solid var(--border);
+    border: 1px solid rgb(216 255 0 / 24%);
+    border-radius: 8px;
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 5%);
   }
   .side {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
+    min-width: 0;
   }
   .card {
     background: var(--panel);
     border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 10px;
+    padding: 12px;
+    box-shadow: 0 8px 18px rgb(0 0 0 / 16%);
   }
   h1, h2 {
-    margin: 0 0 8px;
-    font-size: 16px;
-    font-weight: 600;
+    margin: 0 0 10px;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.015em;
   }
-  h2 { font-size: 14px; }
+  h1 {
+    font-size: 18px;
+  }
+  h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    text-transform: uppercase;
+  }
+  h2::before {
+    width: 5px;
+    height: 18px;
+    border-radius: 999px;
+    background: var(--accent);
+    content: "";
+  }
   .row {
     display: grid;
     grid-template-columns: 1fr auto;
     align-items: center;
     gap: 8px;
-    margin: 8px 0;
+    margin: 10px 0;
   }
   .row label, .row .label {
     font-size: 12px;
+    font-weight: 750;
     color: var(--muted);
   }
   .row output {
+    color: #ffffff;
     font-variant-numeric: tabular-nums;
     font-size: 12px;
+    font-weight: 800;
   }
   input[type="range"] {
     grid-column: 1 / -1;
     width: 100%;
+    accent-color: var(--accent);
   }
   input[type="number"], input[type="text"] {
     width: 96px;
-    padding: 6px 7px;
-    color: var(--fg);
-    background: var(--bg);
-    border: 1px solid var(--border);
+    min-height: 36px;
+    padding: 7px 9px;
+    color: var(--field-ink);
+    background: var(--field);
+    border: 1px solid #b9c7c1;
     border-radius: 6px;
+    font: inherit;
+    font-weight: 700;
   }
   button {
     appearance: none;
     border: 1px solid var(--border);
-    background: var(--panel);
+    background: var(--panel-subtle);
     color: var(--fg);
     border-radius: 6px;
-    padding: 7px 10px;
+    min-height: 36px;
+    padding: 7px 11px;
     font: inherit;
+    font-size: 13px;
+    font-weight: 800;
     cursor: pointer;
   }
+  button:hover,
+  button:focus-visible,
+  input:focus-visible {
+    border-color: var(--accent);
+    outline: 3px solid var(--focus);
+  }
   button.primary {
-    color: white;
-    background: #1f6feb;
-    border-color: #1f6feb;
+    color: #0b0d0b;
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  button[aria-pressed="true"] {
+    color: #0b0d0b;
+    background: var(--accent);
+    border-color: var(--accent);
   }
   .buttons {
     display: flex;
-    gap: 8px;
+    gap: 7px;
     flex-wrap: wrap;
   }
   .stats {
@@ -130,19 +214,22 @@
   .stat {
     border: 1px solid var(--border);
     border-radius: 6px;
-    padding: 7px;
-    background: color-mix(in srgb, var(--panel), var(--bg) 35%);
+    padding: 9px;
+    background: var(--panel-subtle);
   }
   .stat span {
     display: block;
-    color: var(--muted);
+    color: var(--muted-dim);
     font-size: 11px;
+    font-weight: 750;
+    text-transform: uppercase;
   }
   .stat strong {
     display: block;
     margin-top: 3px;
-    font-size: 18px;
-    font-weight: 600;
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: 800;
     font-variant-numeric: tabular-nums;
   }
   .hint {
@@ -158,6 +245,12 @@
     margin: 8px 0;
     color: var(--muted);
     font-size: 12px;
+    font-weight: 750;
+  }
+  .check input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent);
   }
   .trial-list {
     width: 100%;
@@ -165,30 +258,84 @@
     font-size: 12px;
   }
   .trial-list th, .trial-list td {
-    padding: 4px 3px;
+    padding: 6px 3px;
     text-align: right;
     border-bottom: 1px solid var(--border);
     font-variant-numeric: tabular-nums;
   }
+  .trial-list th {
+    color: var(--muted-dim);
+    font-size: 11px;
+    text-transform: uppercase;
+  }
   .trial-list th:first-child, .trial-list td:first-child { text-align: left; }
+  @media (max-width: 1220px) {
+    .app {
+      grid-template-columns: minmax(560px, 1fr) 340px;
+    }
+    .info-side {
+      display: contents;
+    }
+    .info-side .intro-card,
+    .info-side .scenario-card,
+    .info-side .trial-card,
+    .info-side .score-card,
+    .info-side .trials-card {
+      grid-column: 1 / -1;
+    }
+  }
   @media (max-width: 980px) {
-    .app { grid-template-columns: 1fr; }
+    .app {
+      grid-template-columns: 1fr;
+    }
+    .info-side {
+      display: flex;
+    }
+    canvas {
+      width: 100%;
+      max-height: none;
+    }
+  }
+  @media (max-width: 640px) {
+    .topbar {
+      grid-template-columns: 1fr;
+      gap: 2px;
+    }
+    .brand-subtitle {
+      text-align: left;
+    }
+    .app {
+      padding: 10px;
+    }
   }
 </style>
 </head>
 <body>
+<header class="topbar">
+  <div class="brand-mark">
+    <div class="brand-leaf">Leaf</div>
+    <div class="brand-title">Thermal Core Trainer</div>
+  </div>
+  <div class="brand-subtitle">Vario skills and turn-rate guidance lab</div>
+</header>
 <main class="app">
-  <section class="stage">
-    <canvas id="sim" width="980" height="680" aria-label="Thermal core simulator"></canvas>
-  </section>
-
-  <aside class="side">
-    <section class="card">
+  <aside class="side info-side">
+    <section class="card intro-card">
       <h1>Thermal core simulator</h1>
       <p class="hint">Left/right arrows ramp turn rate. Hold Shift for faster trim. Space pauses. The seed makes the same thermal repeatable.</p>
     </section>
 
-    <section class="card">
+    <section class="card scenario-card">
+      <h2>Scenario</h2>
+      <div class="buttons">
+        <button class="preset" type="button" data-preset="easy">Easy</button>
+        <button class="preset" type="button" data-preset="medium">Med</button>
+        <button class="preset" type="button" data-preset="hard">Hard</button>
+        <button class="preset" type="button" data-preset="expert">Expert</button>
+      </div>
+    </section>
+
+    <section class="card trial-card">
       <h2>Trial</h2>
       <div class="row">
         <label for="seed">Seed</label>
@@ -198,7 +345,6 @@
         <label for="duration">Duration</label><output id="durationOut"></output>
         <input id="duration" type="range" min="60" max="480" step="30" value="180">
       </div>
-      <label class="check"><input id="showThermal" type="checkbox" checked> Show thermal visual</label>
       <div class="buttons">
         <button id="start" class="primary" type="button">Start</button>
         <button id="reset" type="button">Reset</button>
@@ -207,38 +353,30 @@
       </div>
     </section>
 
-    <section class="card">
-      <h2>Thermal</h2>
-      <div class="row">
-        <label for="wind">Wind</label><output id="windOut"></output>
-        <input id="wind" type="range" min="0" max="20" step="1" value="8">
-      </div>
-      <div class="row">
-        <label for="diameter">Nominal diameter</label><output id="diameterOut"></output>
-        <input id="diameter" type="range" min="50" max="400" step="5" value="110">
-      </div>
-      <div class="row">
-        <label for="diameterVariance">Diameter variance</label><output id="diameterVarianceOut"></output>
-        <input id="diameterVariance" type="range" min="0" max="60" step="5" value="25">
-      </div>
-      <div class="row">
-        <label for="strength">Net core strength</label><output id="strengthOut"></output>
-        <input id="strength" type="range" min="1" max="5" step="0.1" value="3.0">
-      </div>
-      <div class="row">
-        <label for="strengthVariance">Strength variance</label><output id="strengthVarianceOut"></output>
-        <input id="strengthVariance" type="range" min="0" max="70" step="5" value="30">
-      </div>
-      <div class="row">
-        <label for="texture">Lumpiness</label><output id="textureOut"></output>
-        <input id="texture" type="range" min="0" max="80" step="5" value="30">
-      </div>
-      <div class="row">
-        <label for="sink">Glider sink</label><output id="sinkOut"></output>
-        <input id="sink" type="range" min="0.6" max="1.6" step="0.1" value="1.0">
+    <section class="card score-card">
+      <h2>Score</h2>
+      <div class="stats">
+        <div class="stat"><span>Altitude gain</span><strong id="gain">0 m</strong></div>
+        <div class="stat"><span>Avg climb</span><strong id="avgClimb">0.0</strong></div>
+        <div class="stat"><span>Centering</span><strong id="centering">0%</strong></div>
+        <div class="stat"><span>Score</span><strong id="score">0</strong></div>
       </div>
     </section>
 
+    <section class="card trials-card">
+      <h2>Trials</h2>
+      <table class="trial-list">
+        <thead><tr><th>#</th><th>seed</th><th>gain</th><th>avg</th><th>center</th><th>score</th></tr></thead>
+        <tbody id="trials"></tbody>
+      </table>
+    </section>
+  </aside>
+
+  <section class="stage">
+    <canvas id="sim" width="980" height="680" aria-label="Thermal core simulator"></canvas>
+  </section>
+
+  <aside class="side config-side">
     <section class="card">
       <h2>Audio</h2>
       <div class="row">
@@ -251,21 +389,36 @@
     </section>
 
     <section class="card">
-      <h2>Score</h2>
-      <div class="stats">
-        <div class="stat"><span>Altitude gain</span><strong id="gain">0 m</strong></div>
-        <div class="stat"><span>Avg climb</span><strong id="avgClimb">0.0</strong></div>
-        <div class="stat"><span>Centering</span><strong id="centering">0%</strong></div>
-        <div class="stat"><span>Score</span><strong id="score">0</strong></div>
+      <h2>Thermal</h2>
+      <label class="check"><input id="showThermal" type="checkbox"> Show thermal visual</label>
+      <div class="row">
+        <label for="wind">Wind</label><output id="windOut"></output>
+        <input id="wind" type="range" min="0" max="20" step="1" value="8">
       </div>
-    </section>
-
-    <section class="card">
-      <h2>Trials</h2>
-      <table class="trial-list">
-        <thead><tr><th>#</th><th>seed</th><th>gain</th><th>avg</th><th>center</th><th>score</th></tr></thead>
-        <tbody id="trials"></tbody>
-      </table>
+      <div class="row">
+        <label for="diameter">Nominal diameter</label><output id="diameterOut"></output>
+        <input id="diameter" type="range" min="50" max="400" step="5" value="200">
+      </div>
+      <div class="row">
+        <label for="diameterVariance">Diameter variance</label><output id="diameterVarianceOut"></output>
+        <input id="diameterVariance" type="range" min="0" max="70" step="1" value="25">
+      </div>
+      <div class="row">
+        <label for="strength">Net core strength</label><output id="strengthOut"></output>
+        <input id="strength" type="range" min="1" max="6" step="0.1" value="4.0">
+      </div>
+      <div class="row">
+        <label for="strengthVariance">Strength variance</label><output id="strengthVarianceOut"></output>
+        <input id="strengthVariance" type="range" min="0" max="70" step="1" value="30">
+      </div>
+      <div class="row">
+        <label for="texture">Lumpiness</label><output id="textureOut"></output>
+        <input id="texture" type="range" min="0" max="80" step="1" value="30">
+      </div>
+      <div class="row">
+        <label for="sink">Glider sink</label><output id="sinkOut"></output>
+        <input id="sink" type="range" min="0.6" max="1.6" step="0.1" value="1.0">
+      </div>
     </section>
   </aside>
 </main>
@@ -275,6 +428,11 @@
 
 const canvas = document.getElementById("sim");
 const ctx = canvas.getContext("2d");
+const simW = 980;
+const simH = 680;
+let canvasCssW = simW;
+let canvasCssH = simH;
+let canvasPixelRatio = 1;
 
 const ui = {
   seed: document.getElementById("seed"),
@@ -329,11 +487,76 @@ let lastFrame = performance.now();
 let accumulator = 0;
 let trials = [];
 let keys = new Set();
+let activeTargetTurnRateDps = 19;
 
 let state = freshState(Number(ui.seed.value));
 
+const thermalPresets = {
+  easy: {
+    showThermal: true,
+    wind: 0,
+    diameter: 200,
+    diameterVariance: 0,
+    strength: 6,
+    strengthVariance: 0,
+    texture: 0,
+    sink: 1,
+    targetTurnRate: 15
+  },
+  medium: {
+    showThermal: true,
+    wind: 4,
+    diameter: 225,
+    diameterVariance: 12.5,
+    strength: 5,
+    strengthVariance: 15,
+    texture: 15,
+    sink: 1,
+    targetTurnRate: 17
+  },
+  hard: {
+    showThermal: false,
+    wind: 8,
+    diameter: 200,
+    diameterVariance: 25,
+    strength: 4,
+    strengthVariance: 30,
+    texture: 30,
+    sink: 1,
+    targetTurnRate: 19
+  },
+  expert: {
+    showThermal: false,
+    wind: 12,
+    diameter: 175,
+    diameterVariance: 50,
+    strength: 4,
+    strengthVariance: 50,
+    texture: 50,
+    sink: 1,
+    targetTurnRate: 21
+  }
+};
+
 function clamp(v, min, max) {
   return Math.max(min, Math.min(max, v));
+}
+
+function resizeCanvasForDisplay() {
+  const rect = canvas.getBoundingClientRect();
+  const cssW = Math.max(1, rect.width);
+  const cssH = Math.max(1, rect.height);
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  const backingW = Math.round(cssW * dpr);
+  const backingH = Math.round(cssH * dpr);
+  if (canvas.width !== backingW || canvas.height !== backingH || canvasPixelRatio !== dpr) {
+    canvas.width = backingW;
+    canvas.height = backingH;
+    canvasCssW = cssW;
+    canvasCssH = cssH;
+    canvasPixelRatio = dpr;
+  }
+  ctx.setTransform(cssW / simW * dpr, 0, 0, cssH / simH * dpr, 0, 0);
 }
 
 function lerp(a, b, t) {
@@ -391,23 +614,36 @@ function makeThermal(seed) {
     bendX: (rand() - 0.5) * 0.10,
     bendY: (rand() - 0.5) * 0.10,
     driftJitterX: (rand() - 0.5) * 0.55,
-    driftJitterY: (rand() - 0.5) * 0.55
+    driftJitterY: (rand() - 0.5) * 0.55,
+    entryOffsetFraction: (rand() - 0.5) * 1.0
   };
 }
 
 function freshState(seed) {
   const thermal = makeThermal(seed);
+  const params = readParams();
+  const startAlt = 1000;
+  const startHeading = 8;
+  const h = startHeading * Math.PI / 180;
+  const forward = {x: Math.sin(h), y: Math.cos(h)};
+  const right = {x: Math.cos(h), y: -Math.sin(h)};
+  const profile = thermalProfileAt(0, startAlt, params, thermal);
+  const center = thermalCenterAt(0, startAlt, params, thermal);
+  const lateralOffset = thermal.entryOffsetFraction * profile.radius * 0.5;
+  const leadInDistance = profile.radius * 1.12 + 45;
+  const startX = center.x - forward.x * leadInDistance + right.x * lateralOffset;
+  const startY = center.y - forward.y * leadInDistance + right.y * lateralOffset;
   return {
     running: false,
     finished: false,
     t: 0,
     seed,
     thermal,
-    x: -25,
-    y: 0,
-    z: 1000,
-    heading: 8,
-    turnRate: 18,
+    x: startX,
+    y: startY,
+    z: startAlt,
+    heading: startHeading,
+    turnRate: 0,
     vario: 0,
     lift: 0,
     centerDistanceSum: 0,
@@ -418,7 +654,7 @@ function freshState(seed) {
     altitudeTrace: [],
     varioTrace: [],
     lastSampleT: -1,
-    startAlt: 1000,
+    startAlt,
     finishStats: null
   };
 }
@@ -433,6 +669,27 @@ function resetTrial(seed = Number(ui.seed.value)) {
 function newSeed() {
   const seed = Math.floor(1000 + Math.random() * 900000);
   resetTrial(seed);
+}
+
+function applyThermalPreset(name) {
+  const preset = thermalPresets[name];
+  if (!preset) return;
+  ui.showThermal.checked = preset.showThermal;
+  ui.wind.value = preset.wind;
+  ui.diameter.value = preset.diameter;
+  ui.diameterVariance.value = preset.diameterVariance;
+  ui.strength.value = preset.strength;
+  ui.strengthVariance.value = preset.strengthVariance;
+  ui.texture.value = preset.texture;
+  ui.sink.value = preset.sink;
+  activeTargetTurnRateDps = preset.targetTurnRate;
+  document.querySelectorAll(".preset").forEach(button => {
+    button.setAttribute("aria-pressed", button.dataset.preset === name ? "true" : "false");
+  });
+  if (!state.running) {
+    state = freshState(Number(ui.seed.value));
+  }
+  updateOutputs();
 }
 
 function windVector(params, thermal = state.thermal) {
@@ -454,10 +711,10 @@ function thermalCenterAt(t, alt, params, thermal = state.thermal) {
   };
 }
 
-function thermalProfileAt(t, alt, params) {
+function thermalProfileAt(t, alt, params, thermal = state.thermal) {
   const z = (alt - 1000) / 110;
-  const diameterWave = smoothWave(z, state.thermal.phaseA, state.thermal.phaseB, 1.25, 2.7);
-  const strengthWave = smoothWave(z, state.thermal.phaseC, state.thermal.phaseD, 1.0, 2.35);
+  const diameterWave = smoothWave(z, thermal.phaseA, thermal.phaseB, 1.25, 2.7);
+  const strengthWave = smoothWave(z, thermal.phaseC, thermal.phaseD, 1.0, 2.35);
   const diameter = params.diameterM * (1 + params.diameterVariance * diameterWave);
   const strength = (params.strength + params.sink) * (1 + params.strengthVariance * strengthWave);
   return {
@@ -498,6 +755,19 @@ function ensureAudio() {
   beepOsc.connect(beepGain);
   beepGain.connect(audioCtx.destination);
   beepOsc.start();
+}
+
+async function unlockAudio(warmup = false) {
+  ensureAudio();
+  if (audioCtx.state === "suspended") await audioCtx.resume();
+  if (warmup) testToneUntil = audioCtx.currentTime + 0.08;
+}
+
+async function toggleRun() {
+  await unlockAudio(true);
+  if (state.finished) resetTrial(state.seed);
+  state.running = !state.running;
+  ui.start.textContent = state.running ? "Pause" : "Start";
 }
 
 function stopAudioTone() {
@@ -768,10 +1038,10 @@ function drawMainMap(rect, estimate) {
   ctx.beginPath();
   ctx.rect(rect.x, rect.y, rect.w, rect.h);
   ctx.clip();
-  ctx.fillStyle = "#eef2f6";
+  ctx.fillStyle = "#eef4ee";
   ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
 
-  ctx.strokeStyle = "#d3d8de";
+  ctx.strokeStyle = "#d3ddd0";
   ctx.lineWidth = 1;
   const grid = 50 * scale;
   for (let gx = rect.x - 200; gx < rect.x + rect.w + 200; gx += grid) {
@@ -790,14 +1060,14 @@ function drawMainMap(rect, estimate) {
   if (params.showThermal) {
     const c = mapPoint(center.x, center.y, focusX, focusY, scale, rect);
     const grd = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, profile.radius * scale * 1.45);
-    grd.addColorStop(0, "rgba(56, 150, 80, 0.34)");
-    grd.addColorStop(0.55, "rgba(56, 150, 80, 0.15)");
+    grd.addColorStop(0, "rgba(132, 181, 63, 0.42)");
+    grd.addColorStop(0.55, "rgba(132, 181, 63, 0.18)");
     grd.addColorStop(1, "rgba(56, 150, 80, 0)");
     ctx.fillStyle = grd;
     ctx.beginPath();
     ctx.arc(c.x, c.y, profile.radius * scale * 1.45, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = "rgba(20, 90, 40, 0.55)";
+    ctx.strokeStyle = "rgba(75, 124, 38, 0.62)";
     ctx.setLineDash([5, 5]);
     ctx.beginPath();
     ctx.arc(c.x, c.y, profile.radius * scale, 0, Math.PI * 2);
@@ -805,8 +1075,8 @@ function drawMainMap(rect, estimate) {
     ctx.setLineDash([]);
   }
 
-  ctx.strokeStyle = "#333";
-  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = "#202423";
+  ctx.lineWidth = 1.8;
   ctx.beginPath();
   let started = false;
   for (const sample of state.samples) {
@@ -821,24 +1091,24 @@ function drawMainMap(rect, estimate) {
   ctx.stroke();
 
   const p = mapPoint(state.x, state.y, focusX, focusY, scale, rect);
-  drawArrow(p.x, p.y, state.heading, 13, "#111");
+  drawArrow(p.x, p.y, state.heading, 13, "#202423");
 
   const wind = windVector(params);
   const wx = rect.x + 42;
   const wy = rect.y + 50;
-  ctx.strokeStyle = "#111";
+  ctx.strokeStyle = "#202423";
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(wx, wy);
   ctx.lineTo(wx + wind.x * 6, wy - wind.y * 6);
   ctx.stroke();
-  ctx.fillStyle = "#111";
+  ctx.fillStyle = "#202423";
   ctx.beginPath();
   ctx.arc(wx + wind.x * 6, wy - wind.y * 6, 3, 0, Math.PI * 2);
   ctx.fill();
-  drawText(`${params.windMph.toFixed(0)} mph wind`, rect.x + 10, rect.y + 18, 12, "left", "#111");
+  drawText(`${params.windMph.toFixed(0)} mph wind`, rect.x + 10, rect.y + 18, 12, "left", "#202423");
 
-  drawText(estimate.cue, rect.x + rect.w - 16, rect.y + 18, 16, "right", "#111");
+  drawText(estimate.cue, rect.x + rect.w - 16, rect.y + 18, 16, "right", "#202423");
   ctx.restore();
 }
 
@@ -865,9 +1135,65 @@ function drawTape(rect, value, minValue, maxValue, label, units, active = true) 
   ctx.restore();
 }
 
+function drawVarioBar(rect, value) {
+  ctx.save();
+  ctx.fillStyle = "#f7faf6";
+  ctx.strokeStyle = "#202423";
+  ctx.lineWidth = 1;
+  ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+  ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+  const mid = rect.y + rect.h / 2;
+  ctx.strokeStyle = "#707a72";
+  ctx.beginPath();
+  ctx.moveTo(rect.x, mid);
+  ctx.lineTo(rect.x + rect.w, mid);
+  ctx.stroke();
+
+  const clamped = clamp(value, -7, 7);
+  const barH = Math.abs(clamped) / 7 * (rect.h / 2);
+  ctx.fillStyle = clamped >= 0 ? "#2374d8" : "#cf3f3f";
+  const inset = 12;
+  if (clamped >= 0) {
+    ctx.fillRect(rect.x + inset, mid - barH, rect.w - inset * 2, barH);
+  } else {
+    ctx.fillRect(rect.x + inset, mid, rect.w - inset * 2, barH);
+  }
+
+  for (let i = -6; i <= 6; i += 2) {
+    const y = mid - i / 7 * (rect.h / 2);
+    ctx.strokeStyle = i === 0 ? "#202423" : "#9aa59a";
+    ctx.beginPath();
+    ctx.moveTo(rect.x - 8, y);
+    ctx.lineTo(rect.x - 2, y);
+    ctx.moveTo(rect.x + rect.w + 2, y);
+    ctx.lineTo(rect.x + rect.w + 8, y);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = "#202423";
+  ctx.fillRect(rect.x + 5, mid - 12, rect.w - 10, 24);
+  drawText(`${value >= 0 ? "+" : ""}${value.toFixed(1)}`, rect.x + rect.w / 2, mid, 12, "center", "#fff");
+  drawText("+7", rect.x - 12, rect.y + 4, 11, "right", "#dce5d6");
+  drawText("-7", rect.x - 12, rect.y + rect.h - 4, 11, "right", "#dce5d6");
+  drawText("m/s", rect.x + rect.w / 2, rect.y - 14, 11, "center", "#dce5d6");
+  ctx.restore();
+}
+
+function drawAltitudeBox(rect, altitude) {
+  ctx.save();
+  ctx.fillStyle = "#eef4ee";
+  ctx.strokeStyle = "rgba(216, 255, 0, 0.60)";
+  ctx.lineWidth = 1;
+  ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+  ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+  drawText("Altitude (m)", rect.x + rect.w / 2, rect.y + 14, 10, "center", "#202423");
+  drawText(altitude.toFixed(0), rect.x + rect.w / 2, rect.y + 39, 24, "center", "#202423");
+  ctx.restore();
+}
+
 function drawTurnRate(rect, estimate) {
   ctx.save();
-  ctx.strokeStyle = "#111";
+  ctx.strokeStyle = "#dce5d6";
   ctx.lineWidth = 1;
   ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
   const center = rect.x + rect.w / 2;
@@ -875,25 +1201,129 @@ function drawTurnRate(rect, estimate) {
   ctx.moveTo(center, rect.y);
   ctx.lineTo(center, rect.y + rect.h);
   ctx.stroke();
+  const target = clamp(activeTargetTurnRateDps, 0, maxTurnRateDps);
+  for (const side of [-1, 1]) {
+    const targetX = center + side * target / maxTurnRateDps * rect.w / 2;
+    const gradient = ctx.createLinearGradient(targetX - 14, rect.y, targetX + 14, rect.y);
+    gradient.addColorStop(0, "rgba(0, 0, 0, 0)");
+    gradient.addColorStop(0.42, "rgba(216, 255, 0, 0.18)");
+    gradient.addColorStop(0.5, "rgba(216, 255, 0, 0.72)");
+    gradient.addColorStop(0.58, "rgba(216, 255, 0, 0.18)");
+    gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(targetX - 14, rect.y + 1, 28, rect.h - 2);
+    ctx.strokeStyle = "rgba(216, 255, 0, 0.78)";
+    ctx.beginPath();
+    ctx.moveTo(targetX, rect.y + 1);
+    ctx.lineTo(targetX, rect.y + rect.h - 1);
+    ctx.stroke();
+  }
   const actualX = center + state.turnRate / maxTurnRateDps * rect.w / 2;
-  ctx.fillStyle = "#111";
+  ctx.strokeStyle = "#d8ff00";
+  ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.arc(actualX, rect.y + rect.h / 2, 7, 0, Math.PI * 2);
-  ctx.fill();
-  if (estimate.valid) {
-    const sign = state.turnRate < 0 ? -1 : 1;
-    const suggestedSigned = sign * estimate.suggestedTurnRateDps;
-    const suggestedX = center + suggestedSigned / maxTurnRateDps * rect.w / 2;
+  ctx.stroke();
+  drawText("-30", rect.x, rect.y + rect.h + 13, 11, "left", "#dce5d6");
+  drawText("+30", rect.x + rect.w, rect.y + rect.h + 13, 11, "right", "#dce5d6");
+  ctx.restore();
+}
+
+function drawTurnRateModule(rect, estimate) {
+  ctx.save();
+  ctx.fillStyle = "#202423";
+  ctx.strokeStyle = "rgba(216, 255, 0, 0.35)";
+  ctx.lineWidth = 1;
+  ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+  ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+  drawText("Turn rate", rect.x + rect.w / 2, rect.y + 15, 12, "center", "#dce5d6");
+  drawTurnRate({x: rect.x + 12, y: rect.y + 36, w: rect.w - 24, h: 18}, estimate);
+  drawBankSilhouette(rect.x + rect.w / 2, rect.y + 112, state.turnRate);
+  ctx.restore();
+}
+
+function drawBankSilhouette(cx, cy, turnRateDps) {
+  const bank = clamp(turnRateDps / maxTurnRateDps, -1, 1) * 42 * Math.PI / 180;
+  ctx.save();
+  ctx.strokeStyle = "rgba(216, 255, 0, 0.18)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(cx - 56, cy + 8);
+  ctx.lineTo(cx + 56, cy + 8);
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(bank);
+
+  const canopyY = -28;
+  const pilotY = 34;
+  const canopyPoint = t => {
+    const x = -48 + t * 96;
+    const arch = Math.sin(t * Math.PI);
+    return {
+      x,
+      y: canopyY + 18 - arch * 21
+    };
+  };
+
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.strokeStyle = "#202423";
+  ctx.lineWidth = 7;
+  ctx.beginPath();
+  ctx.moveTo(-50, canopyY + 18);
+  ctx.bezierCurveTo(-36, canopyY - 15, 36, canopyY - 15, 50, canopyY + 18);
+  ctx.stroke();
+
+  ctx.strokeStyle = "#d8ff00";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(-48, canopyY + 16);
+  ctx.bezierCurveTo(-35, canopyY - 11, 35, canopyY - 11, 48, canopyY + 16);
+  ctx.stroke();
+
+  ctx.strokeStyle = "rgba(32, 36, 35, 0.72)";
+  ctx.lineWidth = 1.3;
+  for (let i = 1; i < 8; i += 1) {
+    const p = canopyPoint(i / 8);
     ctx.beginPath();
-    ctx.moveTo(suggestedX, rect.y - 2);
-    ctx.lineTo(suggestedX - 5, rect.y - 10);
-    ctx.lineTo(suggestedX + 5, rect.y - 10);
-    ctx.closePath();
-    ctx.fill();
+    ctx.moveTo(p.x, p.y + 2);
+    ctx.lineTo(p.x * 0.18, pilotY - 11);
+    ctx.stroke();
   }
-  drawText("-30", rect.x, rect.y + rect.h + 13, 11, "left", "#111");
-  drawText("turn rate", center, rect.y - 15, 11, "center", "#111");
-  drawText("+30", rect.x + rect.w, rect.y + rect.h + 13, 11, "right", "#111");
+
+  ctx.strokeStyle = "#202423";
+  ctx.lineWidth = 1.7;
+  ctx.beginPath();
+  for (const t of [0.06, 0.18, 0.32, 0.50, 0.68, 0.82, 0.94]) {
+    const p = canopyPoint(t);
+    ctx.moveTo(p.x, p.y + 4);
+    ctx.lineTo((t - 0.5) * 18, pilotY - 8);
+  }
+  ctx.stroke();
+
+  ctx.strokeStyle = "#d8ff00";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(-8, pilotY - 10);
+  ctx.lineTo(-4, pilotY + 1);
+  ctx.moveTo(8, pilotY - 10);
+  ctx.lineTo(4, pilotY + 1);
+  ctx.stroke();
+
+  ctx.fillStyle = "#202423";
+  ctx.strokeStyle = "#d8ff00";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(0, pilotY - 13, 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.ellipse(0, pilotY, 6, 11, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
   ctx.restore();
 }
 
@@ -1057,12 +1487,16 @@ function drawCoreTurnBarInLeaf(estimate) {
 
 function drawTrace(rect, trace, minV, maxV, label) {
   ctx.save();
-  ctx.strokeStyle = "#111";
+  ctx.fillStyle = "#eef4ee";
+  ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+  ctx.strokeStyle = "#202423";
   ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
-  drawText(label, rect.x + 8, rect.y + 12, 11, "left", "#111");
+  drawText(label, rect.x + 8, rect.y + 12, 11, "left", "#202423");
   if (trace.length > 1) {
     const startT = trace[0].t;
     const endT = trace[trace.length - 1].t;
+    ctx.strokeStyle = "#202423";
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
     trace.forEach((p, i) => {
       const x = rect.x + (p.t - startT) / Math.max(1, endT - startT) * rect.w;
@@ -1076,33 +1510,27 @@ function drawTrace(rect, trace, minV, maxV, label) {
 }
 
 function draw() {
+  resizeCanvasForDisplay();
   const estimate = estimateCoreGuidance();
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "#e9edf1";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  const map = {x: 16, y: 18, w: 690, h: 520};
-  const altTape = {x: 724, y: 18, w: 58, h: 520};
-  const varioTape = {x: 796, y: 18, w: 58, h: 520};
+  ctx.clearRect(0, 0, simW, simH);
+  ctx.fillStyle = "#171d1b";
+  ctx.fillRect(0, 0, simW, simH);
+  const map = {x: 16, y: 18, w: 720, h: 520};
+  const altitudeBox = {x: 750, y: 18, w: 96, h: 58};
+  const varioTape = {x: 760, y: 108, w: 74, h: 430};
   const core = {x: 872, y: 18, w: 96, h: 192};
-  const turn = {x: 872, y: 236, w: 96, h: 18};
+  const turnModule = {x: 860, y: 232, w: 112, h: 166};
   drawMainMap(map, estimate);
-  drawTape(altTape, state.z, state.startAlt - 20, state.startAlt + 360, "alt", "m");
-  drawTape(varioTape, state.vario, -5, 7, "vario", "");
+  drawAltitudeBox(altitudeBox, state.z);
+  drawVarioBar(varioTape, state.vario);
   drawCoreScreen(core, estimate);
-  drawTurnRate(turn, estimate);
+  drawTurnRateModule(turnModule, estimate);
   drawTrace({x: 16, y: 562, w: 460, h: 90}, state.altitudeTrace, state.startAlt - 20, state.startAlt + 360, "altitude");
-  drawTrace({x: 494, y: 562, w: 360, h: 90}, state.varioTrace, -5, 7, "vario");
+  drawTrace({x: 494, y: 562, w: 340, h: 90}, state.varioTrace, -5, 7, "vario");
 
-  const stats = currentStats();
-  drawText(`${state.running ? "RUN" : state.finished ? "DONE" : "READY"}  ${state.t.toFixed(0)}s`, 872, 306, 14, "left", "#111");
-  drawText(`alt ${state.z.toFixed(0)}m`, 872, 332, 12, "left", "#111");
-  drawText(`vario ${state.vario >= 0 ? "+" : ""}${state.vario.toFixed(1)}m/s`, 872, 354, 12, "left", "#111");
-  drawText(`turn ${state.turnRate >= 0 ? "+" : ""}${state.turnRate.toFixed(1)} deg/s`, 872, 376, 12, "left", "#111");
-  drawText(`gain ${stats.gain.toFixed(0)}m`, 872, 398, 12, "left", "#111");
-  drawText(`center ${Math.round(stats.centering * 100)}%`, 872, 420, 12, "left", "#111");
-  drawText(`score ${stats.score}`, 872, 442, 12, "left", "#111");
+  drawText(`${state.running ? "RUN" : state.finished ? "DONE" : "READY"}  ${state.t.toFixed(0)}s`, 916, 424, 14, "center", "#d8ff00");
   if (!state.running && !state.finished) {
-    drawText("Press Start, then fly by vario or Core.", map.x + map.w / 2, map.y + map.h / 2, 18, "center", "#111");
+    drawText("Press Start, then fly by vario or Core.", map.x + map.w / 2, map.y + map.h / 2, 18, "center", "#202423");
   }
 }
 
@@ -1138,11 +1566,7 @@ function loop(now) {
 }
 
 ui.start.addEventListener("click", async () => {
-  ensureAudio();
-  if (audioCtx.state === "suspended") await audioCtx.resume();
-  if (state.finished) resetTrial(state.seed);
-  state.running = !state.running;
-  ui.start.textContent = state.running ? "Pause" : "Start";
+  await toggleRun();
 });
 ui.reset.addEventListener("click", () => {
   resetTrial(Number(ui.seed.value));
@@ -1157,9 +1581,11 @@ ui.newSeed.addEventListener("click", () => {
   ui.start.textContent = "Start";
 });
 ui.testTone.addEventListener("click", async () => {
-  ensureAudio();
-  if (audioCtx.state === "suspended") await audioCtx.resume();
+  await unlockAudio(false);
   testToneUntil = audioCtx.currentTime + 0.75;
+});
+document.querySelectorAll(".preset").forEach(button => {
+  button.addEventListener("click", () => applyThermalPreset(button.dataset.preset));
 });
 
 for (const el of [ui.seed, ui.duration, ui.wind, ui.diameter, ui.diameterVariance, ui.strength, ui.strengthVariance, ui.texture, ui.showThermal, ui.sink, ui.volume]) {
@@ -1171,15 +1597,14 @@ window.addEventListener("keydown", event => {
   if (["ArrowLeft", "ArrowRight", "Space", "ShiftLeft", "ShiftRight"].includes(event.code)) event.preventDefault();
   keys.add(event.code);
   if (event.code === "Space") {
-    state.running = !state.running;
-    ui.start.textContent = state.running ? "Pause" : "Start";
+    toggleRun();
   }
 });
 window.addEventListener("keyup", event => {
   keys.delete(event.code);
 });
 
-updateOutputs();
+applyThermalPreset("hard");
 requestAnimationFrame(loop);
 </script>
 </body>
