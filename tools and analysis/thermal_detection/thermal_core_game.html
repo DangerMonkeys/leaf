@@ -83,8 +83,10 @@
   .stage {
     min-width: 0;
     display: flex;
+    flex-direction: column;
+    gap: 10px;
     justify-content: center;
-    align-items: flex-start;
+    align-items: center;
     padding: 10px;
     border: 1px solid rgb(255 255 255 / 10%);
     border-radius: 10px;
@@ -100,6 +102,10 @@
     border: 1px solid rgb(216 255 0 / 24%);
     border-radius: 8px;
     box-shadow: inset 0 0 0 1px rgb(255 255 255 / 5%);
+  }
+  .stage:has(.tutorial-card:not([hidden])) canvas {
+    width: min(100%, calc((100vh - 260px) * 1.441));
+    max-height: calc(100vh - 260px);
   }
   .side {
     display: flex;
@@ -238,6 +244,35 @@
     font-size: 12px;
     line-height: 1.35;
   }
+  .tutorial-card {
+    width: min(100%, calc((100vh - 260px) * 1.441));
+    border-color: var(--accent);
+    background: linear-gradient(90deg, #202423, #465038 55%, #202423);
+    padding: 14px 16px;
+  }
+  .tutorial-card[hidden] {
+    display: none;
+  }
+  .tutorial-title {
+    margin: 0 0 6px;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+  .tutorial-message {
+    margin: 0 0 10px;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 650;
+    line-height: 1.35;
+  }
+  .tutorial-goal {
+    margin: 0 0 10px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.35;
+  }
   .check {
     display: flex;
     align-items: center;
@@ -333,6 +368,9 @@
         <button class="preset" type="button" data-preset="hard">Hard</button>
         <button class="preset" type="button" data-preset="expert">Expert</button>
       </div>
+      <div class="buttons">
+        <button id="tutorialStart" type="button">Start Tutorial</button>
+      </div>
     </section>
 
     <section class="card trial-card">
@@ -373,6 +411,15 @@
   </aside>
 
   <section class="stage">
+    <section id="tutorialCard" class="card tutorial-card" hidden>
+      <h2>Tutorial</h2>
+      <p id="tutorialTitle" class="tutorial-title"></p>
+      <p id="tutorialMessage" class="tutorial-message"></p>
+      <p id="tutorialGoal" class="tutorial-goal"></p>
+      <div class="buttons">
+        <button id="tutorialContinue" class="primary" type="button">Continue</button>
+      </div>
+    </section>
     <canvas id="sim" width="980" height="680" aria-label="Thermal core simulator"></canvas>
   </section>
 
@@ -451,6 +498,12 @@ const ui = {
   same: document.getElementById("same"),
   newSeed: document.getElementById("newSeed"),
   testTone: document.getElementById("testTone"),
+  tutorialStart: document.getElementById("tutorialStart"),
+  tutorialCard: document.getElementById("tutorialCard"),
+  tutorialTitle: document.getElementById("tutorialTitle"),
+  tutorialMessage: document.getElementById("tutorialMessage"),
+  tutorialGoal: document.getElementById("tutorialGoal"),
+  tutorialContinue: document.getElementById("tutorialContinue"),
   durationOut: document.getElementById("durationOut"),
   windOut: document.getElementById("windOut"),
   diameterOut: document.getElementById("diameterOut"),
@@ -488,6 +541,100 @@ let accumulator = 0;
 let trials = [];
 let keys = new Set();
 let activeTargetTurnRateDps = 19;
+let tutorial = {
+  active: false,
+  step: 0,
+  phase: "idle",
+  showTargetMarkers: true,
+  showThermalRings: true,
+  pauseForCallout: false,
+  turnPromptHeading: null,
+  peakVario: -Infinity,
+  goalSeconds: 0,
+  orbitAngle: 0,
+  orbitCount: 0,
+  orbitMinRadius: Infinity,
+  orbitMaxRadius: 0,
+  orbitMaxError: 0,
+  orbitLastBearing: null,
+  lastOrbitFailed: false,
+  lastInstruction: ""
+};
+
+const tutorialSteps = [
+  {
+    title: "1. Center with visual help",
+    briefTitle: "Now center the thermal",
+    practiceTitle: "1b. Center by sound",
+    completeTitle: "Visual centering complete",
+    showThermal: true,
+    showRings: true,
+    showTargetMarkers: false,
+    targetRadius: false,
+    intro:
+      "Fly straight into the lift. When the vario peaks and just begins to fade, you are about halfway through the core. That is the moment to start turning.",
+    brief:
+      "Now the goal is to keep the vario constant. If it starts to drop, you are moving away from the center and need to tighten your turn. If it starts to increase, you are moving toward the center and need to widen your turn. Try to fly a few orbits centered on the thermal.",
+    practice:
+      "Hold this turn and listen. If the beeps fade, tighten slightly. If they build, widen slightly.",
+    complete:
+      "Good. You used the vario trend and visual rings to move your circle toward the thermal center."
+  },
+  {
+    title: "2. Core at a target rate",
+    briefTitle: "Now core the thermal",
+    practiceTitle: "2b. Core at target rate",
+    completeTitle: "Target-rate coring complete",
+    showThermal: true,
+    showRings: true,
+    showTargetMarkers: true,
+    targetRadius: true,
+    intro:
+      "This time the green target bands are back. They represent the nominal turn rate that gives an efficient target radius around the core.",
+    brief:
+      "Now add the target turn-rate habit. Use vario changes to slide your circle onto the center, then return toward the green target band so the bank stays efficient.",
+    practice:
+      "Use the green target bands as your home base. Tighten or widen just enough to move the circle, then settle back near the target.",
+    complete:
+      "Good. You held a radius close to the target turn-rate circle."
+  },
+  {
+    title: "3. Center without rings",
+    briefTitle: "Now center without rings",
+    practiceTitle: "3b. Fuzzy-blob centering",
+    completeTitle: "Blob-only centering complete",
+    showThermal: true,
+    showRings: false,
+    showTargetMarkers: true,
+    targetRadius: false,
+    intro:
+      "Try the same entry and centering exercise again, but without the concentric rings. You still get the fuzzy green thermal shape, but the constant-vario path is no longer drawn for you.",
+    brief:
+      "Same idea: keep the vario as constant as possible. Fading beeps mean tighten; building beeps mean widen.",
+    practice:
+      "Use the sound first. Let the fuzzy thermal visual confirm what your ears are telling you.",
+    complete:
+      "Good. You centered the thermal without the constant-radius guide rings."
+  },
+  {
+    title: "4. Center by vario only",
+    briefTitle: "Now fly by sound only",
+    practiceTitle: "4b. Sound-only centering",
+    completeTitle: "Sound-only centering complete",
+    showThermal: false,
+    showRings: false,
+    showTargetMarkers: true,
+    targetRadius: false,
+    intro:
+      "Final basic drill: the thermal visual is hidden. Fly the same technique using only the vario tone and the flight instruments.",
+    brief:
+      "Trust the vario. If it fades, tighten. If it builds, widen. The goal is still a steady-radius circle centered on the lift.",
+    practice:
+      "Listen for symmetry. Try to make each orbit sound boring and steady.",
+    complete:
+      "Congratulations, you can center a thermal with only the vario."
+  }
+];
 
 let state = freshState(Number(ui.seed.value));
 
@@ -692,6 +839,116 @@ function applyThermalPreset(name) {
   updateOutputs();
 }
 
+function setTutorialText(title, message, goal = "", canContinue = false) {
+  ui.tutorialCard.hidden = !tutorial.active;
+  ui.tutorialTitle.textContent = title;
+  ui.tutorialMessage.textContent = message;
+  ui.tutorialGoal.textContent = goal;
+  ui.tutorialContinue.hidden = !canContinue;
+}
+
+function resetTutorialOrbitProgress() {
+  tutorial.goalSeconds = 0;
+  tutorial.orbitAngle = 0;
+  tutorial.orbitCount = 0;
+  tutorial.orbitMinRadius = Infinity;
+  tutorial.orbitMaxRadius = 0;
+  tutorial.orbitMaxError = 0;
+  tutorial.orbitLastBearing = null;
+  tutorial.lastOrbitFailed = false;
+}
+
+function tutorialGoalText(metrics = null) {
+  const lesson = tutorialSteps[tutorial.step] || tutorialSteps[0];
+  if (!metrics) {
+    return lesson.targetRadius
+      ? "Goal: complete 2 consecutive orbits within +/-10% of the thermal diameter from the target turn-rate radius."
+      : "Goal: complete 2 consecutive smooth orbits at any radius, with radial spread under 25% of the thermal diameter.";
+  }
+  if (lesson.targetRadius) {
+    return `Goal progress: ${tutorial.orbitCount}/2 target-radius orbits. Max radius error: ${Math.round(metrics.error)}m / ${Math.round(metrics.allowedError)}m.`;
+  }
+  return `Goal progress: ${tutorial.orbitCount}/2 smooth orbits. Current radius spread: ${Math.round(metrics.spread)}m / ${Math.round(metrics.allowedSpread)}m.`;
+}
+
+function configureTutorialStep(step) {
+  const lesson = tutorialSteps[step] || tutorialSteps[0];
+  tutorial.step = step;
+  tutorial.phase = "entry";
+  tutorial.pauseForCallout = false;
+  tutorial.turnPromptHeading = null;
+  tutorial.peakVario = -Infinity;
+  resetTutorialOrbitProgress();
+  tutorial.lastInstruction = "";
+  applyThermalPreset("easy");
+  ui.showThermal.checked = lesson.showThermal;
+  tutorial.showThermalRings = lesson.showRings;
+  tutorial.showTargetMarkers = lesson.showTargetMarkers;
+  ui.duration.value = 480;
+  state = freshState(Number(ui.seed.value));
+  state.running = false;
+  state.finished = false;
+  ui.start.textContent = "Start";
+  updateOutputs();
+  setTutorialText(
+    lesson.title,
+    lesson.intro,
+    "First goal: wait for the peak, then turn about 90 degrees. Press Space bar to start."
+  );
+}
+
+function startTutorial() {
+  tutorial.active = true;
+  ui.tutorialCard.hidden = false;
+  ui.tutorialStart.textContent = "Exit Tutorial";
+  configureTutorialStep(0);
+}
+
+function exitTutorial() {
+  tutorial.active = false;
+  tutorial.showTargetMarkers = true;
+  tutorial.showThermalRings = true;
+  ui.tutorialCard.hidden = true;
+  ui.tutorialStart.textContent = "Start Tutorial";
+  state.running = false;
+  ui.start.textContent = "Start";
+  stopAudioTone();
+}
+
+function continueTutorial() {
+  if (!tutorial.active) return;
+  const lesson = tutorialSteps[tutorial.step] || tutorialSteps[0];
+  tutorial.pauseForCallout = false;
+  if (tutorial.phase === "centering-brief") {
+    tutorial.phase = lesson.targetRadius ? "coring" : "centering";
+    resetTutorialOrbitProgress();
+    tutorial.lastInstruction = "";
+    state.running = true;
+    ui.start.textContent = "Pause";
+    setTutorialText(
+      lesson.practiceTitle,
+      lesson.practice,
+      tutorialGoalText()
+    );
+    return;
+  }
+  if (tutorial.phase === "step-complete") {
+    if (tutorial.step < tutorialSteps.length - 1) configureTutorialStep(tutorial.step + 1);
+    else {
+      setTutorialText(
+        "Tutorial complete",
+        "Congratulations, you can center a thermal with only the vario.",
+        "Next: try more random invisible thermals, then practice different entries such as aimed at the center, offset toward the edge, or crossing through the middle.",
+        false
+      );
+      tutorial.active = false;
+      ui.tutorialStart.textContent = "Start Tutorial";
+      state.running = false;
+      ui.start.textContent = "Start";
+    }
+  }
+}
+
 function windVector(params, thermal = state.thermal) {
   return {
     x: Math.sin(thermal.windDir) * params.windMps,
@@ -730,7 +987,10 @@ function liftAt(x, y, alt, t, params) {
   const dy = y - center.y;
   const r = Math.hypot(dx, dy);
   const nr = r / Math.max(1, profile.radius);
-  const core = profile.strength * Math.exp(-nr * nr * 1.65);
+  const coreShape = tutorial.active
+    ? Math.max(0, 1 - nr)
+    : Math.exp(-nr * nr * 1.65);
+  const core = profile.strength * coreShape;
   const edgeSink = -0.45 * Math.max(0, nr - 1.0);
   const az = Math.atan2(dy, dx);
   const lump = Math.sin(az * 3 + t * 0.045 + state.thermal.lumpPhase) * 0.6 +
@@ -874,8 +1134,137 @@ function updatePhysics(stepDt) {
     state.lastSampleT = state.t;
     sampleNow(params);
   }
+  updateTutorial(stepDt);
   updateAudio(stepDt);
-  if (state.t >= params.duration) finishTrial();
+  if (!tutorial.active && state.t >= params.duration) finishTrial();
+}
+
+function updateTutorial(stepDt) {
+  if (!tutorial.active || tutorial.pauseForCallout) return;
+  const lesson = tutorialSteps[tutorial.step] || tutorialSteps[0];
+  tutorial.peakVario = Math.max(tutorial.peakVario, state.vario);
+  if (tutorial.phase === "entry") {
+    if (tutorial.peakVario > 1.0 && state.t > 6 && state.vario < tutorial.peakVario - 0.25) {
+      tutorial.phase = "turn-callout";
+      tutorial.turnPromptHeading = state.heading;
+      setTutorialText(
+        tutorial.step === 0 ? "Start turning now" : "Turn now",
+        "The vario just peaked and began to fade. You have crossed into the useful part of the thermal. Start a smooth turn now.",
+        "First goal: turn about 90 degrees soon after the peak."
+      );
+    }
+    return;
+  }
+
+  if (tutorial.phase === "turn-callout") {
+    if (tutorial.turnPromptHeading != null && Math.abs(angleDeltaDeg(tutorial.turnPromptHeading, state.heading)) >= 90) {
+      tutorial.phase = "centering-brief";
+      tutorial.turnPromptHeading = null;
+      tutorial.pauseForCallout = true;
+      state.running = false;
+      ui.start.textContent = "Start";
+      setTutorialText(
+        lesson.briefTitle,
+        lesson.brief,
+        "Press Space bar or Continue to begin the orbit practice.",
+        true
+      );
+    }
+    return;
+  }
+
+  const recent = state.varioTrace.slice(-50);
+  const varioTrend = recent.length >= 2 ? recent[recent.length - 1].v - recent[0].v : 0;
+  if (tutorial.phase === "centering" || tutorial.phase === "coring") {
+    let instruction = "Hold this turn and listen for a steady beep.";
+    if (Math.abs(state.turnRate) < 6) {
+      instruction = "Build a smooth turn with the arrow keys.";
+    } else if (varioTrend > 0.18) {
+      instruction = "Lift is improving: widen slightly so your circle moves toward the core.";
+    } else if (varioTrend < -0.18) {
+      instruction = "Lift is fading: tighten slightly to avoid sliding away from the core.";
+    }
+    const orbit = updateTutorialOrbitProgress(readParams());
+    if (orbit.failed) {
+      instruction = lesson.targetRadius
+        ? "That orbit missed the target radius. Re-center, return to the green band, and try again."
+        : "That orbit wandered too much. Re-center and try for two smoother laps.";
+    }
+
+    if (instruction !== tutorial.lastInstruction || orbit.changed) {
+      tutorial.lastInstruction = instruction;
+      setTutorialText(
+        lesson.practiceTitle,
+        instruction,
+        tutorialGoalText(orbit)
+      );
+    }
+
+    if (tutorial.orbitCount >= 2) {
+      tutorial.phase = "step-complete";
+      tutorial.pauseForCallout = true;
+      state.running = false;
+      ui.start.textContent = "Start";
+      setTutorialText(
+        lesson.completeTitle,
+        lesson.complete,
+        tutorial.step < tutorialSteps.length - 1 ? "Press Continue for the next drill." : "Press Continue to finish.",
+        true
+      );
+    }
+  }
+}
+
+function updateTutorialOrbitProgress(params) {
+  const lesson = tutorialSteps[tutorial.step] || tutorialSteps[0];
+  const center = thermalCenterAt(state.t, state.z, params);
+  const profile = thermalProfileAt(state.t, state.z, params);
+  const dx = state.x - center.x;
+  const dy = state.y - center.y;
+  const radius = Math.hypot(dx, dy);
+  const bearing = (Math.atan2(dx, dy) * 180 / Math.PI + 360) % 360;
+  const allowedSpread = profile.radius * 2 * 0.25;
+  const targetRadius = baseAirspeed / Math.max(0.01, activeTargetTurnRateDps * Math.PI / 180);
+  const allowedError = profile.radius * 2 * 0.10;
+  const radiusError = Math.abs(radius - targetRadius);
+  let changed = false;
+  let failed = false;
+
+  tutorial.orbitMinRadius = Math.min(tutorial.orbitMinRadius, radius);
+  tutorial.orbitMaxRadius = Math.max(tutorial.orbitMaxRadius, radius);
+  tutorial.orbitMaxError = Math.max(tutorial.orbitMaxError, radiusError);
+
+  if (tutorial.orbitLastBearing == null) {
+    tutorial.orbitLastBearing = bearing;
+    return {spread: 0, allowedSpread, error: radiusError, allowedError, targetRadius, changed, failed};
+  }
+
+  const delta = Math.abs(angleDeltaDeg(tutorial.orbitLastBearing, bearing));
+  tutorial.orbitLastBearing = bearing;
+  if (delta < 45) tutorial.orbitAngle += delta;
+
+  let spread = tutorial.orbitMaxRadius - tutorial.orbitMinRadius;
+  let error = tutorial.orbitMaxError;
+  while (tutorial.orbitAngle >= 360) {
+    const orbitPassed = lesson.targetRadius ? error <= allowedError : spread <= allowedSpread;
+    if (orbitPassed) {
+      tutorial.orbitCount += 1;
+      tutorial.lastOrbitFailed = false;
+    } else {
+      tutorial.orbitCount = 0;
+      tutorial.lastOrbitFailed = true;
+      failed = true;
+    }
+    tutorial.orbitAngle -= 360;
+    tutorial.orbitMinRadius = radius;
+    tutorial.orbitMaxRadius = radius;
+    tutorial.orbitMaxError = radiusError;
+    spread = 0;
+    error = radiusError;
+    changed = true;
+  }
+
+  return {spread, allowedSpread, error, allowedError, targetRadius, changed, failed};
 }
 
 function turnStats(samples) {
@@ -1020,6 +1409,54 @@ function drawArrow(x, y, heading, size, fill = "#111") {
   ctx.restore();
 }
 
+function drawTurnPreview(x, y, headingDeg, turnRateDps, scale) {
+  const previewSeconds = 2.2;
+  const steps = 28;
+  const startOffsetM = 5;
+  const rateRad = turnRateDps * Math.PI / 180;
+  let heading = headingDeg * Math.PI / 180;
+  let px = x + Math.sin(heading) * startOffsetM * scale;
+  let py = y - Math.cos(heading) * startOffsetM * scale;
+
+  ctx.save();
+  ctx.strokeStyle = "rgba(216, 255, 0, 0.92)";
+  ctx.lineWidth = 3;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.beginPath();
+  ctx.moveTo(px, py);
+  for (let i = 1; i <= steps; i++) {
+    const dtStep = previewSeconds / steps;
+    heading += rateRad * dtStep;
+    px += Math.sin(heading) * baseAirspeed * dtStep * scale;
+    py -= Math.cos(heading) * baseAirspeed * dtStep * scale;
+    ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+
+  ctx.strokeStyle = "rgba(32, 36, 35, 0.92)";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.fillStyle = "#d8ff00";
+  for (const seconds of [1, 2]) {
+    let tickHeading = headingDeg * Math.PI / 180;
+    let tx = x + Math.sin(tickHeading) * startOffsetM * scale;
+    let ty = y - Math.cos(tickHeading) * startOffsetM * scale;
+    const tickSteps = Math.round(steps * seconds / previewSeconds);
+    for (let i = 1; i <= tickSteps; i++) {
+      const dtStep = previewSeconds / steps;
+      tickHeading += rateRad * dtStep;
+      tx += Math.sin(tickHeading) * baseAirspeed * dtStep * scale;
+      ty -= Math.cos(tickHeading) * baseAirspeed * dtStep * scale;
+    }
+    ctx.beginPath();
+    ctx.arc(tx, ty, 2.2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
 function mapPoint(worldX, worldY, centerX, centerY, scale, rect) {
   return {
     x: rect.x + rect.w / 2 + (worldX - centerX) * scale,
@@ -1041,24 +1478,9 @@ function drawMainMap(rect, estimate) {
   ctx.fillStyle = "#eef4ee";
   ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
 
-  ctx.strokeStyle = "#d3ddd0";
-  ctx.lineWidth = 1;
-  const grid = 50 * scale;
-  for (let gx = rect.x - 200; gx < rect.x + rect.w + 200; gx += grid) {
-    ctx.beginPath();
-    ctx.moveTo(gx, rect.y);
-    ctx.lineTo(gx, rect.y + rect.h);
-    ctx.stroke();
-  }
-  for (let gy = rect.y - 200; gy < rect.y + rect.h + 200; gy += grid) {
-    ctx.beginPath();
-    ctx.moveTo(rect.x, gy);
-    ctx.lineTo(rect.x + rect.w, gy);
-    ctx.stroke();
-  }
+  const c = mapPoint(center.x, center.y, focusX, focusY, scale, rect);
 
   if (params.showThermal) {
-    const c = mapPoint(center.x, center.y, focusX, focusY, scale, rect);
     const grd = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, profile.radius * scale * 1.45);
     grd.addColorStop(0, "rgba(132, 181, 63, 0.42)");
     grd.addColorStop(0.55, "rgba(132, 181, 63, 0.18)");
@@ -1067,11 +1489,25 @@ function drawMainMap(rect, estimate) {
     ctx.beginPath();
     ctx.arc(c.x, c.y, profile.radius * scale * 1.45, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = "rgba(75, 124, 38, 0.62)";
-    ctx.setLineDash([5, 5]);
-    ctx.beginPath();
-    ctx.arc(c.x, c.y, profile.radius * scale, 0, Math.PI * 2);
-    ctx.stroke();
+    if (!tutorial.active || tutorial.showThermalRings) {
+      ctx.strokeStyle = "rgba(75, 124, 38, 0.62)";
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, profile.radius * scale, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+
+  if (tutorial.active && tutorial.showThermalRings) {
+    ctx.strokeStyle = "rgba(32, 36, 35, 0.18)";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 7]);
+    for (const ring of [0.25, 0.5, 0.75, 1]) {
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, profile.radius * scale * ring, 0, Math.PI * 2);
+      ctx.stroke();
+    }
     ctx.setLineDash([]);
   }
 
@@ -1091,6 +1527,7 @@ function drawMainMap(rect, estimate) {
   ctx.stroke();
 
   const p = mapPoint(state.x, state.y, focusX, focusY, scale, rect);
+  drawTurnPreview(p.x, p.y, state.heading, state.turnRate, scale);
   drawArrow(p.x, p.y, state.heading, 13, "#202423");
 
   const wind = windVector(params);
@@ -1201,22 +1638,24 @@ function drawTurnRate(rect, estimate) {
   ctx.moveTo(center, rect.y);
   ctx.lineTo(center, rect.y + rect.h);
   ctx.stroke();
-  const target = clamp(activeTargetTurnRateDps, 0, maxTurnRateDps);
-  for (const side of [-1, 1]) {
-    const targetX = center + side * target / maxTurnRateDps * rect.w / 2;
-    const gradient = ctx.createLinearGradient(targetX - 14, rect.y, targetX + 14, rect.y);
-    gradient.addColorStop(0, "rgba(0, 0, 0, 0)");
-    gradient.addColorStop(0.42, "rgba(216, 255, 0, 0.18)");
-    gradient.addColorStop(0.5, "rgba(216, 255, 0, 0.72)");
-    gradient.addColorStop(0.58, "rgba(216, 255, 0, 0.18)");
-    gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
-    ctx.fillStyle = gradient;
-    ctx.fillRect(targetX - 14, rect.y + 1, 28, rect.h - 2);
-    ctx.strokeStyle = "rgba(216, 255, 0, 0.78)";
-    ctx.beginPath();
-    ctx.moveTo(targetX, rect.y + 1);
-    ctx.lineTo(targetX, rect.y + rect.h - 1);
-    ctx.stroke();
+  if (!tutorial.active || tutorial.showTargetMarkers) {
+    const target = clamp(activeTargetTurnRateDps, 0, maxTurnRateDps);
+    for (const side of [-1, 1]) {
+      const targetX = center + side * target / maxTurnRateDps * rect.w / 2;
+      const gradient = ctx.createLinearGradient(targetX - 14, rect.y, targetX + 14, rect.y);
+      gradient.addColorStop(0, "rgba(0, 0, 0, 0)");
+      gradient.addColorStop(0.42, "rgba(216, 255, 0, 0.18)");
+      gradient.addColorStop(0.5, "rgba(216, 255, 0, 0.72)");
+      gradient.addColorStop(0.58, "rgba(216, 255, 0, 0.18)");
+      gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(targetX - 14, rect.y + 1, 28, rect.h - 2);
+      ctx.strokeStyle = "rgba(216, 255, 0, 0.78)";
+      ctx.beginPath();
+      ctx.moveTo(targetX, rect.y + 1);
+      ctx.lineTo(targetX, rect.y + rect.h - 1);
+      ctx.stroke();
+    }
   }
   const actualX = center + state.turnRate / maxTurnRateDps * rect.w / 2;
   ctx.strokeStyle = "#d8ff00";
@@ -1515,11 +1954,11 @@ function draw() {
   ctx.clearRect(0, 0, simW, simH);
   ctx.fillStyle = "#171d1b";
   ctx.fillRect(0, 0, simW, simH);
-  const map = {x: 16, y: 18, w: 720, h: 520};
-  const altitudeBox = {x: 750, y: 18, w: 96, h: 58};
-  const varioTape = {x: 760, y: 108, w: 74, h: 430};
+  const map = {x: 16, y: 18, w: 520, h: 520};
+  const altitudeBox = {x: 560, y: 18, w: 96, h: 58};
+  const varioTape = {x: 570, y: 108, w: 74, h: 430};
   const core = {x: 872, y: 18, w: 96, h: 192};
-  const turnModule = {x: 860, y: 232, w: 112, h: 166};
+  const turnModule = {x: map.x + map.w - 128, y: map.y + map.h - 184, w: 112, h: 166};
   drawMainMap(map, estimate);
   drawAltitudeBox(altitudeBox, state.z);
   drawVarioBar(varioTape, state.vario);
@@ -1529,8 +1968,24 @@ function draw() {
   drawTrace({x: 494, y: 562, w: 340, h: 90}, state.varioTrace, -5, 7, "vario");
 
   drawText(`${state.running ? "RUN" : state.finished ? "DONE" : "READY"}  ${state.t.toFixed(0)}s`, 916, 424, 14, "center", "#d8ff00");
-  if (!state.running && !state.finished) {
-    drawText("Press Start, then fly by vario or Core.", map.x + map.w / 2, map.y + map.h / 2, 18, "center", "#202423");
+  if (tutorial.active && tutorial.phase === "turn-callout") {
+    ctx.save();
+    ctx.font = "22px system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = "rgba(238, 244, 238, 0.92)";
+    ctx.strokeText("START TURNING NOW", map.x + map.w / 2, map.y + map.h * 0.34);
+    ctx.fillStyle = "#202423";
+    ctx.fillText("START TURNING NOW", map.x + map.w / 2, map.y + map.h * 0.34);
+    ctx.font = "13px system-ui, sans-serif";
+    ctx.lineWidth = 4;
+    ctx.strokeText("Turn about 90 degrees", map.x + map.w / 2, map.y + map.h * 0.34 + 28);
+    ctx.fillText("Turn about 90 degrees", map.x + map.w / 2, map.y + map.h * 0.34 + 28);
+    ctx.restore();
+  }
+  if (!state.running && !state.finished && !(tutorial.active && tutorial.phase === "turn-callout")) {
+    drawText("Press Space to start", map.x + map.w / 2, map.y + map.h / 2, 18, "center", "#202423");
   }
 }
 
@@ -1584,8 +2039,16 @@ ui.testTone.addEventListener("click", async () => {
   await unlockAudio(false);
   testToneUntil = audioCtx.currentTime + 0.75;
 });
+ui.tutorialStart.addEventListener("click", () => {
+  if (tutorial.active) exitTutorial();
+  else startTutorial();
+});
+ui.tutorialContinue.addEventListener("click", continueTutorial);
 document.querySelectorAll(".preset").forEach(button => {
-  button.addEventListener("click", () => applyThermalPreset(button.dataset.preset));
+  button.addEventListener("click", () => {
+    if (tutorial.active) exitTutorial();
+    applyThermalPreset(button.dataset.preset);
+  });
 });
 
 for (const el of [ui.seed, ui.duration, ui.wind, ui.diameter, ui.diameterVariance, ui.strength, ui.strengthVariance, ui.texture, ui.showThermal, ui.sink, ui.volume]) {
@@ -1595,8 +2058,13 @@ for (const el of [ui.seed, ui.duration, ui.wind, ui.diameter, ui.diameterVarianc
 
 window.addEventListener("keydown", event => {
   if (["ArrowLeft", "ArrowRight", "Space", "ShiftLeft", "ShiftRight"].includes(event.code)) event.preventDefault();
+  if (event.code === "Space" && event.repeat) return;
   keys.add(event.code);
   if (event.code === "Space") {
+    if (tutorial.active && tutorial.pauseForCallout) {
+      continueTutorial();
+      return;
+    }
     toggleRun();
   }
 });
