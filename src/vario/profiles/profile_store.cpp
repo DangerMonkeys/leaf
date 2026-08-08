@@ -50,6 +50,11 @@ namespace {
 
   bool loadProfiles(JsonDocument& doc) {
     heap_monitor::checkpoint("profiles-load-start");
+    if (!SD_MMC.exists(ProfileStore::filePath())) {
+      heap_monitor::checkpoint("profiles-load-missing");
+      return true;
+    }
+
     File file = SD_MMC.open(ProfileStore::filePath(), "r");
     if (!file) {
       heap_monitor::checkpoint("profiles-load-open-fail");

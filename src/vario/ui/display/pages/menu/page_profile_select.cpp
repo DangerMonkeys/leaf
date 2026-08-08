@@ -16,6 +16,7 @@ namespace {
   constexpr uint8_t CHECKBOX_X = 83;
   constexpr uint8_t TEXT_MAX_WIDTH = 78;
   constexpr uint8_t MAX_PROFILE_NAME_LENGTH = 64;
+  constexpr uint8_t DISPLAY_WIDTH = 96;
 
   String gliderName(const GliderProfile& glider) { return glider.resolvedDisplayName(); }
 }  // namespace
@@ -68,9 +69,7 @@ void PageProfileSelect::draw() {
     menu_ui::drawTitle("Profiles", menu_ui::GLYPH_PROFILE);
 
     if (contentCount_ == 0) {
-      u8g2.setFont(leaf_6x12);
-      u8g2.setCursor(2, 67);
-      u8g2.print(status_[0] == '\0' ? "No profiles found" : status_);
+      drawStatus();
     } else {
       ensureCursorVisible();
       const uint8_t remainingRows = contentCount_ - firstVisible_;
@@ -243,10 +242,40 @@ void PageProfileSelect::drawProfileRow(uint8_t y, const char* text, bool selecte
 }
 
 void PageProfileSelect::drawBackRow() {
+  u8g2.setFont(leaf_6x12);
   menu_ui::beginRow(MENU_BACK_Y, cursorOnBack());
   menu_ui::drawLabel(2, MENU_BACK_Y, "Back");
   menu_ui::drawBackIcon(74, MENU_BACK_Y);
   menu_ui::endRow();
+}
+
+void PageProfileSelect::drawStatus() {
+  if (status_[0] != '\0') {
+    u8g2.setFont(leaf_5x8);
+    drawCenteredText(82, status_);
+    return;
+  }
+
+  drawEmptyProfilesMessage();
+}
+
+void PageProfileSelect::drawEmptyProfilesMessage() {
+  static constexpr const char* lines[] = {"No profiles",     "available.", "Use the Web App",
+                                          "to create Pilot", "and Glider", "profiles."};
+  static constexpr uint8_t firstLineY = 55;
+  static constexpr uint8_t lineSpacing = 13;
+
+  u8g2.setFont(leaf_5x8);
+  for (uint8_t i = 0; i < sizeof(lines) / sizeof(lines[0]); ++i) {
+    drawCenteredText(firstLineY + i * lineSpacing, lines[i]);
+  }
+}
+
+void PageProfileSelect::drawCenteredText(uint8_t y, const char* text) {
+  const int16_t width = u8g2.getStrWidth(text);
+  const int16_t x = width < DISPLAY_WIDTH ? (DISPLAY_WIDTH - width) / 2 : 0;
+  u8g2.setCursor(x, y);
+  u8g2.print(text);
 }
 
 void PageProfileSelect::drawFittedText(uint8_t x, uint8_t y, const char* text, uint8_t maxWidth) {
