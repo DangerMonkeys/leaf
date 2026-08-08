@@ -1,0 +1,1186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Leaf Thermal Core Simulator</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f6f7f8;
+    --fg: #14171a;
+    --muted: #5f6872;
+    --panel: #ffffff;
+    --border: #cbd1d8;
+    --accent: #1f6feb;
+    --accent-soft: #dceaff;
+    --good: #128a45;
+    --warn: #b15b00;
+    --bad: #b42318;
+    --canvas: #e9edf1;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111417;
+      --fg: #edf0f3;
+      --muted: #a2abb5;
+      --panel: #191d22;
+      --border: #39414b;
+      --accent: #78a8ff;
+      --accent-soft: #1d2c46;
+      --good: #54c878;
+      --warn: #e6a14a;
+      --bad: #f17468;
+      --canvas: #20262d;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+  }
+  .app {
+    display: grid;
+    grid-template-columns: minmax(640px, 1fr) 330px;
+    gap: 14px;
+    padding: 14px;
+    min-height: 100vh;
+  }
+  .stage {
+    min-width: 0;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: var(--canvas);
+    border: 1px solid var(--border);
+  }
+  .side {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+  }
+  h1, h2 {
+    margin: 0 0 8px;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  h2 { font-size: 14px; }
+  .row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 0;
+  }
+  .row label, .row .label {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .row output {
+    font-variant-numeric: tabular-nums;
+    font-size: 12px;
+  }
+  input[type="range"] {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+  input[type="number"], input[type="text"] {
+    width: 96px;
+    padding: 6px 7px;
+    color: var(--fg);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+  button {
+    appearance: none;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--fg);
+    border-radius: 6px;
+    padding: 7px 10px;
+    font: inherit;
+    cursor: pointer;
+  }
+  button.primary {
+    color: white;
+    background: #1f6feb;
+    border-color: #1f6feb;
+  }
+  .buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .stat {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px;
+    background: color-mix(in srgb, var(--panel), var(--bg) 35%);
+  }
+  .stat span {
+    display: block;
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .stat strong {
+    display: block;
+    margin-top: 3px;
+    font-size: 18px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .hint {
+    margin: 0;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.35;
+  }
+  .check {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 8px 0;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .trial-list {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .trial-list th, .trial-list td {
+    padding: 4px 3px;
+    text-align: right;
+    border-bottom: 1px solid var(--border);
+    font-variant-numeric: tabular-nums;
+  }
+  .trial-list th:first-child, .trial-list td:first-child { text-align: left; }
+  @media (max-width: 980px) {
+    .app { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<main class="app">
+  <section class="stage">
+    <canvas id="sim" width="980" height="680" aria-label="Thermal core simulator"></canvas>
+  </section>
+
+  <aside class="side">
+    <section class="card">
+      <h1>Thermal core simulator</h1>
+      <p class="hint">Left/right arrows ramp turn rate. Hold Shift for faster trim. Space pauses. The seed makes the same thermal repeatable.</p>
+    </section>
+
+    <section class="card">
+      <h2>Trial</h2>
+      <div class="row">
+        <label for="seed">Seed</label>
+        <input id="seed" type="number" value="2641" step="1">
+      </div>
+      <div class="row">
+        <label for="duration">Duration</label><output id="durationOut"></output>
+        <input id="duration" type="range" min="60" max="480" step="30" value="180">
+      </div>
+      <label class="check"><input id="showThermal" type="checkbox" checked> Show thermal visual</label>
+      <div class="buttons">
+        <button id="start" class="primary" type="button">Start</button>
+        <button id="reset" type="button">Reset</button>
+        <button id="same" type="button">Repeat</button>
+        <button id="newSeed" type="button">New seed</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Thermal</h2>
+      <div class="row">
+        <label for="wind">Wind</label><output id="windOut"></output>
+        <input id="wind" type="range" min="0" max="20" step="1" value="8">
+      </div>
+      <div class="row">
+        <label for="diameter">Nominal diameter</label><output id="diameterOut"></output>
+        <input id="diameter" type="range" min="50" max="400" step="5" value="110">
+      </div>
+      <div class="row">
+        <label for="diameterVariance">Diameter variance</label><output id="diameterVarianceOut"></output>
+        <input id="diameterVariance" type="range" min="0" max="60" step="5" value="25">
+      </div>
+      <div class="row">
+        <label for="strength">Net core strength</label><output id="strengthOut"></output>
+        <input id="strength" type="range" min="1" max="5" step="0.1" value="3.0">
+      </div>
+      <div class="row">
+        <label for="strengthVariance">Strength variance</label><output id="strengthVarianceOut"></output>
+        <input id="strengthVariance" type="range" min="0" max="70" step="5" value="30">
+      </div>
+      <div class="row">
+        <label for="texture">Lumpiness</label><output id="textureOut"></output>
+        <input id="texture" type="range" min="0" max="80" step="5" value="30">
+      </div>
+      <div class="row">
+        <label for="sink">Glider sink</label><output id="sinkOut"></output>
+        <input id="sink" type="range" min="0.6" max="1.6" step="0.1" value="1.0">
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Audio</h2>
+      <div class="row">
+        <label for="volume">Vario volume</label><output id="volumeOut"></output>
+        <input id="volume" type="range" min="0" max="100" step="1" value="35">
+      </div>
+      <div class="buttons">
+        <button id="testTone" type="button">Test tone</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Score</h2>
+      <div class="stats">
+        <div class="stat"><span>Altitude gain</span><strong id="gain">0 m</strong></div>
+        <div class="stat"><span>Avg climb</span><strong id="avgClimb">0.0</strong></div>
+        <div class="stat"><span>Centering</span><strong id="centering">0%</strong></div>
+        <div class="stat"><span>Score</span><strong id="score">0</strong></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Trials</h2>
+      <table class="trial-list">
+        <thead><tr><th>#</th><th>seed</th><th>gain</th><th>avg</th><th>center</th><th>score</th></tr></thead>
+        <tbody id="trials"></tbody>
+      </table>
+    </section>
+  </aside>
+</main>
+
+<script>
+"use strict";
+
+const canvas = document.getElementById("sim");
+const ctx = canvas.getContext("2d");
+
+const ui = {
+  seed: document.getElementById("seed"),
+  duration: document.getElementById("duration"),
+  wind: document.getElementById("wind"),
+  diameter: document.getElementById("diameter"),
+  diameterVariance: document.getElementById("diameterVariance"),
+  strength: document.getElementById("strength"),
+  strengthVariance: document.getElementById("strengthVariance"),
+  texture: document.getElementById("texture"),
+  showThermal: document.getElementById("showThermal"),
+  sink: document.getElementById("sink"),
+  volume: document.getElementById("volume"),
+  start: document.getElementById("start"),
+  reset: document.getElementById("reset"),
+  same: document.getElementById("same"),
+  newSeed: document.getElementById("newSeed"),
+  testTone: document.getElementById("testTone"),
+  durationOut: document.getElementById("durationOut"),
+  windOut: document.getElementById("windOut"),
+  diameterOut: document.getElementById("diameterOut"),
+  diameterVarianceOut: document.getElementById("diameterVarianceOut"),
+  strengthOut: document.getElementById("strengthOut"),
+  strengthVarianceOut: document.getElementById("strengthVarianceOut"),
+  textureOut: document.getElementById("textureOut"),
+  sinkOut: document.getElementById("sinkOut"),
+  volumeOut: document.getElementById("volumeOut"),
+  gain: document.getElementById("gain"),
+  avgClimb: document.getElementById("avgClimb"),
+  centering: document.getElementById("centering"),
+  score: document.getElementById("score"),
+  trials: document.getElementById("trials")
+};
+
+const leafScreenW = 96;
+const leafScreenH = 192;
+const maxTurnRateDps = 30;
+const baseAirspeed = 10.0;
+const dt = 1 / 60;
+const coreLookbackS = 40;
+const coreMinSamples = 16;
+const coreBinCount = 12;
+const mphToMps = 0.44704;
+
+let audioCtx = null;
+let beepOsc = null;
+let beepGain = null;
+let beepTimer = 0;
+let beepOn = false;
+let testToneUntil = 0;
+let lastFrame = performance.now();
+let accumulator = 0;
+let trials = [];
+let keys = new Set();
+
+let state = freshState(Number(ui.seed.value));
+
+function clamp(v, min, max) {
+  return Math.max(min, Math.min(max, v));
+}
+
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+function angleDeltaDeg(a, b) {
+  let d = ((b - a + 540) % 360) - 180;
+  return d;
+}
+
+function seededRandom(seed) {
+  let x = seed >>> 0;
+  return function rand() {
+    x ^= x << 13;
+    x ^= x >>> 17;
+    x ^= x << 5;
+    return ((x >>> 0) / 4294967296);
+  };
+}
+
+function smoothWave(z, phaseA, phaseB, scaleA, scaleB) {
+  return Math.sin(z * scaleA + phaseA) * 0.62 + Math.sin(z * scaleB + phaseB) * 0.38;
+}
+
+function readParams() {
+  return {
+    seed: Number(ui.seed.value) || 1,
+    duration: Number(ui.duration.value),
+    windMph: Number(ui.wind.value),
+    windMps: Number(ui.wind.value) * mphToMps,
+    diameterM: Number(ui.diameter.value),
+    diameterVariance: Number(ui.diameterVariance.value) / 100,
+    strength: Number(ui.strength.value),
+    strengthVariance: Number(ui.strengthVariance.value) / 100,
+    texture: Number(ui.texture.value) / 100,
+    showThermal: ui.showThermal.checked,
+    sink: Number(ui.sink.value),
+    volume: Number(ui.volume.value) / 100
+  };
+}
+
+function makeThermal(seed) {
+  const rand = seededRandom(seed);
+  const windDir = rand() * Math.PI * 2;
+  const slantDir = windDir + (rand() - 0.5) * 0.55;
+  return {
+    phaseA: rand() * Math.PI * 2,
+    phaseB: rand() * Math.PI * 2,
+    phaseC: rand() * Math.PI * 2,
+    phaseD: rand() * Math.PI * 2,
+    lumpPhase: rand() * Math.PI * 2,
+    windDir,
+    slantDir,
+    bendX: (rand() - 0.5) * 0.10,
+    bendY: (rand() - 0.5) * 0.10,
+    driftJitterX: (rand() - 0.5) * 0.55,
+    driftJitterY: (rand() - 0.5) * 0.55
+  };
+}
+
+function freshState(seed) {
+  const thermal = makeThermal(seed);
+  return {
+    running: false,
+    finished: false,
+    t: 0,
+    seed,
+    thermal,
+    x: -25,
+    y: 0,
+    z: 1000,
+    heading: 8,
+    turnRate: 18,
+    vario: 0,
+    lift: 0,
+    centerDistanceSum: 0,
+    centerDistanceSqSum: 0,
+    centerRadiusSum: 0,
+    centerSamples: 0,
+    samples: [],
+    altitudeTrace: [],
+    varioTrace: [],
+    lastSampleT: -1,
+    startAlt: 1000,
+    finishStats: null
+  };
+}
+
+function resetTrial(seed = Number(ui.seed.value)) {
+  stopAudioTone();
+  state = freshState(seed);
+  ui.seed.value = String(seed);
+  updateOutputs();
+}
+
+function newSeed() {
+  const seed = Math.floor(1000 + Math.random() * 900000);
+  resetTrial(seed);
+}
+
+function windVector(params, thermal = state.thermal) {
+  return {
+    x: Math.sin(thermal.windDir) * params.windMps,
+    y: Math.cos(thermal.windDir) * params.windMps
+  };
+}
+
+function thermalCenterAt(t, alt, params, thermal = state.thermal) {
+  const wind = windVector(params, thermal);
+  const windSlantDeg = lerp(0, 18, clamp(params.windMph / 20, 0, 1));
+  const slant = Math.tan(windSlantDeg * Math.PI / 180);
+  const relAlt = alt - 1000;
+  const slow = Math.sin(t * 0.010 + thermal.phaseD) * 8;
+  return {
+    x: wind.x * t + Math.sin(thermal.slantDir) * relAlt * slant + thermal.bendX * relAlt + thermal.driftJitterX * slow,
+    y: wind.y * t + Math.cos(thermal.slantDir) * relAlt * slant + thermal.bendY * relAlt + thermal.driftJitterY * slow
+  };
+}
+
+function thermalProfileAt(t, alt, params) {
+  const z = (alt - 1000) / 110;
+  const diameterWave = smoothWave(z, state.thermal.phaseA, state.thermal.phaseB, 1.25, 2.7);
+  const strengthWave = smoothWave(z, state.thermal.phaseC, state.thermal.phaseD, 1.0, 2.35);
+  const diameter = params.diameterM * (1 + params.diameterVariance * diameterWave);
+  const strength = (params.strength + params.sink) * (1 + params.strengthVariance * strengthWave);
+  return {
+    radius: clamp(diameter * 0.5, 18, 320),
+    strength: clamp(strength, 0.2, 9)
+  };
+}
+
+function liftAt(x, y, alt, t, params) {
+  const center = thermalCenterAt(t, alt, params);
+  const profile = thermalProfileAt(t, alt, params);
+  const dx = x - center.x;
+  const dy = y - center.y;
+  const r = Math.hypot(dx, dy);
+  const nr = r / Math.max(1, profile.radius);
+  const core = profile.strength * Math.exp(-nr * nr * 1.65);
+  const edgeSink = -0.45 * Math.max(0, nr - 1.0);
+  const az = Math.atan2(dy, dx);
+  const lump = Math.sin(az * 3 + t * 0.045 + state.thermal.lumpPhase) * 0.6 +
+    Math.sin(az * 5 - t * 0.032 + state.thermal.phaseB) * 0.4;
+  const shaped = core * (1 + params.texture * 0.28 * lump) + edgeSink;
+  return {
+    lift: shaped,
+    radius: profile.radius,
+    strength: profile.strength,
+    distance: r,
+    center
+  };
+}
+
+function ensureAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  beepOsc = audioCtx.createOscillator();
+  beepGain = audioCtx.createGain();
+  beepOsc.type = "sine";
+  beepGain.gain.value = 0;
+  beepOsc.connect(beepGain);
+  beepGain.connect(audioCtx.destination);
+  beepOsc.start();
+}
+
+function stopAudioTone() {
+  beepOn = false;
+  if (beepGain && audioCtx) {
+    beepGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.01);
+  }
+}
+
+function updateAudio(stepDt) {
+  if (audioCtx && beepOsc && beepGain && audioCtx.currentTime < testToneUntil) {
+    beepOsc.frequency.setTargetAtTime(820, audioCtx.currentTime, 0.02);
+    beepGain.gain.setTargetAtTime(readParams().volume * 0.12, audioCtx.currentTime, 0.01);
+    return;
+  }
+  if (!state.running || state.finished || !audioCtx || !beepOsc || !beepGain) {
+    stopAudioTone();
+    return;
+  }
+  const volume = readParams().volume;
+  const climb = Math.max(0, state.vario);
+  if (volume <= 0 || climb <= 0.05) {
+    stopAudioTone();
+    return;
+  }
+  const pitch = 420 + Math.min(5, climb) * 145;
+  const period = clamp(0.74 - climb * 0.09, 0.17, 0.72);
+  const duty = clamp(0.20 + climb * 0.11, 0.18, 0.82);
+  beepTimer = (beepTimer + stepDt) % period;
+  const nextOn = beepTimer < period * duty;
+  beepOsc.frequency.setTargetAtTime(pitch, audioCtx.currentTime, 0.025);
+  if (nextOn !== beepOn) beepOn = nextOn;
+  const target = beepOn ? volume * 0.12 : 0;
+  beepGain.gain.setTargetAtTime(target, audioCtx.currentTime, 0.012);
+}
+
+function liveCoreSample(params) {
+  const wind = windVector(params);
+  const airX = state.x - wind.x * state.t;
+  const airY = state.y - wind.y * state.t;
+  return {
+    t: state.t,
+    x: state.x,
+    y: state.y,
+    airX,
+    airY,
+    z: state.z,
+    heading: state.heading,
+    turnRate: state.turnRate,
+    vario: state.vario,
+    lift: state.lift
+  };
+}
+
+function coreSamples(params) {
+  const samples = state.samples.slice();
+  const live = liveCoreSample(params);
+  if (!samples.length || live.t - samples[samples.length - 1].t > 0.02) samples.push(live);
+  return samples;
+}
+
+function sampleNow(params) {
+  const sample = liveCoreSample(params);
+  state.samples.push({
+    ...sample
+  });
+  while (state.samples.length && state.t - state.samples[0].t > coreLookbackS) state.samples.shift();
+}
+
+function updatePhysics(stepDt) {
+  const params = readParams();
+  if (!state.running || state.finished) {
+    updateAudio(stepDt);
+    return;
+  }
+  const fast = keys.has("ShiftLeft") || keys.has("ShiftRight");
+  const trimAccel = fast ? 34 : 14;
+  if (keys.has("ArrowLeft")) state.turnRate -= trimAccel * stepDt;
+  if (keys.has("ArrowRight")) state.turnRate += trimAccel * stepDt;
+  state.turnRate = clamp(state.turnRate, -maxTurnRateDps, maxTurnRateDps);
+
+  state.heading = (state.heading + state.turnRate * stepDt + 360) % 360;
+  const h = state.heading * Math.PI / 180;
+  const wind = windVector(params);
+  state.x += Math.sin(h) * baseAirspeed * stepDt + wind.x * stepDt;
+  state.y += Math.cos(h) * baseAirspeed * stepDt + wind.y * stepDt;
+
+  const liftInfo = liftAt(state.x, state.y, state.z, state.t, params);
+  state.lift = liftInfo.lift;
+  state.vario = state.lift - params.sink;
+  state.z += state.vario * stepDt;
+  state.t += stepDt;
+
+  state.centerDistanceSum += liftInfo.distance * stepDt;
+  state.centerDistanceSqSum += liftInfo.distance * liftInfo.distance * stepDt;
+  state.centerRadiusSum += liftInfo.radius * stepDt;
+  state.centerSamples += stepDt;
+
+  state.altitudeTrace.push({t: state.t, v: state.z});
+  state.varioTrace.push({t: state.t, v: state.vario});
+  while (state.altitudeTrace.length && state.t - state.altitudeTrace[0].t > 180) state.altitudeTrace.shift();
+  while (state.varioTrace.length && state.t - state.varioTrace[0].t > 90) state.varioTrace.shift();
+  if (state.t - state.lastSampleT >= 1) {
+    state.lastSampleT = state.t;
+    sampleNow(params);
+  }
+  updateAudio(stepDt);
+  if (state.t >= params.duration) finishTrial();
+}
+
+function turnStats(samples) {
+  if (samples.length < 2) return {direction: 1, turnRateDps: 0, totalTurn: 0};
+  let total = 0;
+  for (let i = 1; i < samples.length; i += 1) {
+    total += angleDeltaDeg(samples[i - 1].heading, samples[i].heading);
+  }
+  const elapsed = Math.max(1, samples[samples.length - 1].t - samples[0].t);
+  const direction = total < -5 ? -1 : total > 5 ? 1 : (state.turnRate < 0 ? -1 : 1);
+  return {
+    direction,
+    turnRateDps: Math.abs(total) / elapsed,
+    totalTurn: total
+  };
+}
+
+function estimateCoreGuidance() {
+  const samples = coreSamples(readParams());
+  const stats = turnStats(samples);
+  const direction = stats.direction || (state.turnRate < 0 ? -1 : 1);
+  const actualTurnRateDps = Math.abs(state.turnRate);
+  const result = {
+    valid: false,
+    cue: "WAIT",
+    advice: 0,
+    stats,
+    actualTurnRateDps,
+    suggestedTurnRateDps: actualTurnRateDps,
+    samples
+  };
+  if (samples.length < coreMinSamples || Math.abs(stats.totalTurn) < 120) return result;
+
+  const latest = samples[samples.length - 1];
+  const bins = Array.from({length: coreBinCount}, () => ({sum: 0, weight: 0, avgLift: NaN}));
+  for (const sample of samples) {
+    const age = latest.t - sample.t;
+    const bearing = Math.atan2(sample.airY - latest.airY, sample.airX - latest.airX);
+    const headingRad = (90 - latest.heading) * Math.PI / 180;
+    let phase = bearing - headingRad;
+    while (phase < 0) phase += Math.PI * 2;
+    while (phase >= Math.PI * 2) phase -= Math.PI * 2;
+    if (direction < 0) phase = (Math.PI * 2 - phase) % (Math.PI * 2);
+    const index = Math.floor(phase / (Math.PI * 2) * coreBinCount) % coreBinCount;
+    const weight = clamp(1 - age / coreLookbackS, 0.15, 1);
+    bins[index].sum += sample.vario * weight;
+    bins[index].weight += weight;
+  }
+  for (const bin of bins) {
+    if (bin.weight > 0) bin.avgLift = bin.sum / bin.weight;
+  }
+
+  const nowBins = [11, 0, 1].map(i => bins[(i + coreBinCount) % coreBinCount].avgLift).filter(Number.isFinite);
+  const oppBins = [5, 6, 7].map(i => bins[(i + coreBinCount) % coreBinCount].avgLift).filter(Number.isFinite);
+  const nowAvg = nowBins.length ? nowBins.reduce((a, b) => a + b, 0) / nowBins.length : latest.vario;
+  const oppAvg = oppBins.length ? oppBins.reduce((a, b) => a + b, 0) / oppBins.length : latest.vario;
+  const recent = samples.slice(-6).map(s => s.vario);
+  const trend = recent.length >= 2 ? recent[recent.length - 1] - recent[0] : 0;
+  const liftDelta = nowAvg - oppAvg;
+
+  let advice = clamp((liftDelta * 0.42) + (trend * 0.28), -1, 1);
+  if (latest.vario < -0.3 && oppAvg > nowAvg) advice -= 0.18;
+  if (actualTurnRateDps < 4) advice = Math.min(advice, -0.35);
+  advice = clamp(advice, -1, 1);
+
+  let cue = "HOLD";
+  if (advice > 0.55) cue = "WIDE++";
+  else if (advice > 0.18) cue = "WIDE";
+  else if (advice < -0.55) cue = "TIGHT++";
+  else if (advice < -0.18) cue = "TIGHT";
+  if (latest.vario < -1.3) cue = "WEAK";
+
+  result.valid = true;
+  result.cue = cue;
+  result.advice = advice;
+  result.bins = bins;
+  result.nowAvg = nowAvg;
+  result.oppositeAvg = oppAvg;
+  result.suggestedTurnRateDps = clamp(actualTurnRateDps * (1 - advice * 0.5), 0, maxTurnRateDps);
+  return result;
+}
+
+function finishTrial() {
+  if (state.finished) return;
+  state.running = false;
+  state.finished = true;
+  ui.start.textContent = "Start";
+  stopAudioTone();
+  state.finishStats = currentStats();
+  trials.unshift({
+    seed: state.seed,
+    ...state.finishStats
+  });
+  trials = trials.slice(0, 8);
+  renderTrials();
+}
+
+function currentStats() {
+  const params = readParams();
+  const gain = state.z - state.startAlt;
+  const avg = state.t > 0 ? gain / state.t : 0;
+  const meanDist = state.centerSamples > 0 ? state.centerDistanceSum / state.centerSamples : 0;
+  const meanDistSq = state.centerSamples > 0 ? state.centerDistanceSqSum / state.centerSamples : 0;
+  const avgRadius = state.centerSamples > 0 ? state.centerRadiusSum / state.centerSamples : Math.max(1, params.diameterM * 0.5);
+  const radialStd = Math.sqrt(Math.max(0, meanDistSq - meanDist * meanDist));
+  const nearScore = Math.exp(-Math.pow(meanDist / Math.max(1, avgRadius * 0.70), 2));
+  const uniformScore = Math.exp(-Math.pow(radialStd / Math.max(1, avgRadius * 0.22), 2));
+  const centering = clamp(nearScore * uniformScore, 0, 1);
+  const score = Math.max(0, Math.round(gain + centering * 180 + avg * 70));
+  return {gain, avg, centering, meanDist, radialStd, score, duration: params.duration};
+}
+
+function renderTrials() {
+  ui.trials.innerHTML = "";
+  trials.forEach((trial, i) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${i + 1}</td><td>${trial.seed}</td><td>${trial.gain.toFixed(0)}</td><td>${trial.avg.toFixed(1)}</td><td>${Math.round(trial.centering * 100)}%</td><td>${trial.score}</td>`;
+    ui.trials.appendChild(tr);
+  });
+}
+
+function drawText(text, x, y, size = 12, align = "left", color = "#111") {
+  ctx.fillStyle = color;
+  ctx.font = `${size}px system-ui, sans-serif`;
+  ctx.textAlign = align;
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, x, y);
+}
+
+function drawArrow(x, y, heading, size, fill = "#111") {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(heading * Math.PI / 180);
+  ctx.fillStyle = fill;
+  ctx.beginPath();
+  ctx.moveTo(0, -size);
+  ctx.lineTo(size * 0.62, size * 0.72);
+  ctx.lineTo(0, size * 0.38);
+  ctx.lineTo(-size * 0.62, size * 0.72);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function mapPoint(worldX, worldY, centerX, centerY, scale, rect) {
+  return {
+    x: rect.x + rect.w / 2 + (worldX - centerX) * scale,
+    y: rect.y + rect.h / 2 - (worldY - centerY) * scale
+  };
+}
+
+function drawMainMap(rect, estimate) {
+  const params = readParams();
+  const center = thermalCenterAt(state.t, state.z, params);
+  const profile = thermalProfileAt(state.t, state.z, params);
+  const focusX = lerp(state.x, center.x, 0.25);
+  const focusY = lerp(state.y, center.y, 0.25);
+  const scale = Math.min(rect.w, rect.h) / 330;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(rect.x, rect.y, rect.w, rect.h);
+  ctx.clip();
+  ctx.fillStyle = "#eef2f6";
+  ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+
+  ctx.strokeStyle = "#d3d8de";
+  ctx.lineWidth = 1;
+  const grid = 50 * scale;
+  for (let gx = rect.x - 200; gx < rect.x + rect.w + 200; gx += grid) {
+    ctx.beginPath();
+    ctx.moveTo(gx, rect.y);
+    ctx.lineTo(gx, rect.y + rect.h);
+    ctx.stroke();
+  }
+  for (let gy = rect.y - 200; gy < rect.y + rect.h + 200; gy += grid) {
+    ctx.beginPath();
+    ctx.moveTo(rect.x, gy);
+    ctx.lineTo(rect.x + rect.w, gy);
+    ctx.stroke();
+  }
+
+  if (params.showThermal) {
+    const c = mapPoint(center.x, center.y, focusX, focusY, scale, rect);
+    const grd = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, profile.radius * scale * 1.45);
+    grd.addColorStop(0, "rgba(56, 150, 80, 0.34)");
+    grd.addColorStop(0.55, "rgba(56, 150, 80, 0.15)");
+    grd.addColorStop(1, "rgba(56, 150, 80, 0)");
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, profile.radius * scale * 1.45, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(20, 90, 40, 0.55)";
+    ctx.setLineDash([5, 5]);
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, profile.radius * scale, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  ctx.strokeStyle = "#333";
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  let started = false;
+  for (const sample of state.samples) {
+    const p = mapPoint(sample.x, sample.y, focusX, focusY, scale, rect);
+    if (!started) {
+      ctx.moveTo(p.x, p.y);
+      started = true;
+    } else {
+      ctx.lineTo(p.x, p.y);
+    }
+  }
+  ctx.stroke();
+
+  const p = mapPoint(state.x, state.y, focusX, focusY, scale, rect);
+  drawArrow(p.x, p.y, state.heading, 13, "#111");
+
+  const wind = windVector(params);
+  const wx = rect.x + 42;
+  const wy = rect.y + 50;
+  ctx.strokeStyle = "#111";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(wx, wy);
+  ctx.lineTo(wx + wind.x * 6, wy - wind.y * 6);
+  ctx.stroke();
+  ctx.fillStyle = "#111";
+  ctx.beginPath();
+  ctx.arc(wx + wind.x * 6, wy - wind.y * 6, 3, 0, Math.PI * 2);
+  ctx.fill();
+  drawText(`${params.windMph.toFixed(0)} mph wind`, rect.x + 10, rect.y + 18, 12, "left", "#111");
+
+  drawText(estimate.cue, rect.x + rect.w - 16, rect.y + 18, 16, "right", "#111");
+  ctx.restore();
+}
+
+function drawTape(rect, value, minValue, maxValue, label, units, active = true) {
+  ctx.save();
+  ctx.strokeStyle = "#111";
+  ctx.fillStyle = "#fff";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+  const mid = rect.y + rect.h / 2;
+  for (let i = 0; i <= 10; i += 1) {
+    const y = rect.y + rect.h - i / 10 * rect.h;
+    ctx.beginPath();
+    ctx.moveTo(rect.x, y);
+    ctx.lineTo(rect.x + (i % 5 === 0 ? 12 : 7), y);
+    ctx.stroke();
+  }
+  const t = clamp((value - minValue) / Math.max(1, maxValue - minValue), 0, 1);
+  const y = rect.y + rect.h - t * rect.h;
+  ctx.fillStyle = active ? "#111" : "#777";
+  ctx.fillRect(rect.x + 6, y - 12, rect.w - 12, 24);
+  drawText(`${value >= 0 && label === "vario" ? "+" : ""}${value.toFixed(label === "alt" ? 0 : 1)}${units}`, rect.x + rect.w / 2, y, 11, "center", "#fff");
+  drawText(label, rect.x + rect.w / 2, rect.y - 12, 11, "center", "#111");
+  ctx.restore();
+}
+
+function drawTurnRate(rect, estimate) {
+  ctx.save();
+  ctx.strokeStyle = "#111";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+  const center = rect.x + rect.w / 2;
+  ctx.beginPath();
+  ctx.moveTo(center, rect.y);
+  ctx.lineTo(center, rect.y + rect.h);
+  ctx.stroke();
+  const actualX = center + state.turnRate / maxTurnRateDps * rect.w / 2;
+  ctx.fillStyle = "#111";
+  ctx.beginPath();
+  ctx.arc(actualX, rect.y + rect.h / 2, 7, 0, Math.PI * 2);
+  ctx.fill();
+  if (estimate.valid) {
+    const sign = state.turnRate < 0 ? -1 : 1;
+    const suggestedSigned = sign * estimate.suggestedTurnRateDps;
+    const suggestedX = center + suggestedSigned / maxTurnRateDps * rect.w / 2;
+    ctx.beginPath();
+    ctx.moveTo(suggestedX, rect.y - 2);
+    ctx.lineTo(suggestedX - 5, rect.y - 10);
+    ctx.lineTo(suggestedX + 5, rect.y - 10);
+    ctx.closePath();
+    ctx.fill();
+  }
+  drawText("-30", rect.x, rect.y + rect.h + 13, 11, "left", "#111");
+  drawText("turn rate", center, rect.y - 15, 11, "center", "#111");
+  drawText("+30", rect.x + rect.w, rect.y + rect.h + 13, 11, "right", "#111");
+  ctx.restore();
+}
+
+function coreScreenPoint(sample, latest, heading, aircraftX, aircraftY, metersPerPx) {
+  const dx = sample.airX - latest.airX;
+  const dy = sample.airY - latest.airY;
+  const h = heading * Math.PI / 180;
+  const right = dx * Math.cos(h) - dy * Math.sin(h);
+  const forward = dx * Math.sin(h) + dy * Math.cos(h);
+  return {
+    x: aircraftX + right / metersPerPx,
+    y: aircraftY - forward / metersPerPx
+  };
+}
+
+function drawMaskedPlusGlyph(cx, cy) {
+  const drawPlus = (fill, armHalfW, armHalfL) => {
+    ctx.fillStyle = fill;
+    ctx.fillRect(cx - armHalfW, cy - armHalfL, armHalfW * 2, armHalfL * 2);
+    ctx.fillRect(cx - armHalfL, cy - armHalfW, armHalfL * 2, armHalfW * 2);
+  };
+  drawPlus("#f4f4f4", 4, 10);
+  drawPlus("#111", 2, 8);
+}
+
+function drawCoreTargetScale(cx, cy) {
+  ctx.fillStyle = "#f4f4f4";
+  ctx.strokeStyle = "#111";
+  ctx.lineWidth = 1;
+  const left = cx - 28;
+  const right = cx + 28;
+  const top = cy - 11;
+  const bottom = cy + 11;
+  const innerTop = cy - 4;
+  const innerBottom = cy + 4;
+  ctx.beginPath();
+  ctx.moveTo(left, innerTop);
+  ctx.lineTo(cx - 6, innerTop);
+  ctx.lineTo(cx - 6, top);
+  ctx.lineTo(cx + 6, top);
+  ctx.lineTo(cx + 6, innerTop);
+  ctx.lineTo(right, innerTop);
+  ctx.lineTo(right, innerBottom);
+  ctx.lineTo(cx + 6, innerBottom);
+  ctx.lineTo(cx + 6, bottom);
+  ctx.lineTo(cx - 6, bottom);
+  ctx.lineTo(cx - 6, innerBottom);
+  ctx.lineTo(left, innerBottom);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+}
+
+function drawCoreScreen(rect, estimate) {
+  ctx.save();
+  ctx.fillStyle = "#f4f4f4";
+  ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+  ctx.strokeStyle = "#111";
+  ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+  ctx.translate(rect.x, rect.y);
+
+  ctx.strokeStyle = "#d0d0d0";
+  ctx.lineWidth = 1;
+  for (let x = 0; x <= leafScreenW; x += 12) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, leafScreenH);
+    ctx.stroke();
+  }
+  for (let y = 0; y <= leafScreenH; y += 12) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(leafScreenW, y);
+    ctx.stroke();
+  }
+
+  const direction = estimate.stats?.direction || (state.turnRate < 0 ? -1 : 1);
+  const turnSide = direction < 0 ? -1 : 1;
+  const aircraftX = direction < 0 ? 76 : 20;
+  const aircraftY = 118;
+  const ringRadius = 38;
+  const ringCx = aircraftX + turnSide * ringRadius;
+  const ringCy = aircraftY;
+  const advice = estimate.valid ? estimate.advice : 0;
+  const dynamicRadius = ringRadius * (1 + advice * 0.36);
+  const dynamicCx = aircraftX + turnSide * dynamicRadius;
+  const samples = estimate.samples || [];
+  const latest = samples[samples.length - 1] || {
+    airX: state.x,
+    airY: state.y,
+    heading: state.heading
+  };
+  const metersPerPx = 1.8;
+
+  const climbs = samples.map(p => p.vario).filter(Number.isFinite);
+  const minClimb = climbs.length ? Math.min(...climbs) : -1;
+  const maxClimb = climbs.length ? Math.max(...climbs) : 3;
+  for (const sample of samples) {
+    const p = coreScreenPoint(sample, latest, latest.heading, aircraftX, aircraftY, metersPerPx);
+    if (p.x < -6 || p.x > leafScreenW + 6 || p.y < -6 || p.y > leafScreenH + 6) continue;
+    const strength = clamp((sample.vario - minClimb) / Math.max(0.1, maxClimb - minClimb), 0, 1);
+    ctx.strokeStyle = "#111";
+    ctx.fillStyle = "#111";
+    if (strength <= 0.25) {
+      ctx.fillRect(Math.round(p.x), Math.round(p.y), 1, 1);
+    } else {
+      ctx.lineWidth = 1;
+      const diameter = strength > 0.78 ? 7 : strength > 0.52 ? 5 : 3;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, diameter / 2, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+
+  if (estimate.valid && Math.abs(advice) >= 0.08) {
+    ctx.strokeStyle = "#111";
+    ctx.lineWidth = Math.abs(advice) >= 0.55 ? 3 : 2;
+    ctx.beginPath();
+    const startAngle = turnSide > 0 ? Math.PI : 0;
+    const endAngle = startAngle + turnSide * Math.PI * 0.75;
+    ctx.arc(dynamicCx, ringCy, dynamicRadius, startAngle, endAngle, turnSide < 0);
+    ctx.stroke();
+  }
+
+  drawCoreTargetScale(ringCx, ringCy);
+  drawMaskedPlusGlyph(dynamicCx, ringCy);
+  drawArrow(aircraftX, aircraftY, 0, 11, "#111");
+
+  drawText(estimate.cue || "WAIT", 48, 13, 16, "center", "#111");
+  drawText(`now ${Number.isFinite(estimate.nowAvg) ? estimate.nowAvg.toFixed(1) : "--"} / opp ${Number.isFinite(estimate.oppositeAvg) ? estimate.oppositeAvg.toFixed(1) : "--"}`, 6, 36, 7, "left", "#111");
+  drawCoreTurnBarInLeaf(estimate);
+  ctx.restore();
+}
+
+function drawCoreTurnBarInLeaf(estimate) {
+  const x = 13;
+  const y = 49;
+  const w = 70;
+  const h = 7;
+  const direction = estimate.stats?.direction || (state.turnRate < 0 ? -1 : 1);
+  const actual = clamp(estimate.actualTurnRateDps || 0, 0, 40);
+  const suggested = clamp(estimate.suggestedTurnRateDps || 0, 0, 40);
+  const actualRatio = actual / 40;
+  const suggestedRatio = suggested / 40;
+  const actualX = direction > 0 ? x + actualRatio * w : x + (1 - actualRatio) * w;
+  const suggestedX = direction > 0 ? x + suggestedRatio * w : x + (1 - suggestedRatio) * w;
+  ctx.strokeStyle = "#111";
+  ctx.fillStyle = "#111";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x, y, w, h);
+  ctx.beginPath();
+  ctx.arc(actualX, y + h / 2, 3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(suggestedX, y - 4);
+  ctx.lineTo(suggestedX - 3, y - 9);
+  ctx.lineTo(suggestedX + 3, y - 9);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawTrace(rect, trace, minV, maxV, label) {
+  ctx.save();
+  ctx.strokeStyle = "#111";
+  ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+  drawText(label, rect.x + 8, rect.y + 12, 11, "left", "#111");
+  if (trace.length > 1) {
+    const startT = trace[0].t;
+    const endT = trace[trace.length - 1].t;
+    ctx.beginPath();
+    trace.forEach((p, i) => {
+      const x = rect.x + (p.t - startT) / Math.max(1, endT - startT) * rect.w;
+      const y = rect.y + rect.h - clamp((p.v - minV) / Math.max(1, maxV - minV), 0, 1) * rect.h;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function draw() {
+  const estimate = estimateCoreGuidance();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#e9edf1";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const map = {x: 16, y: 18, w: 690, h: 520};
+  const altTape = {x: 724, y: 18, w: 58, h: 520};
+  const varioTape = {x: 796, y: 18, w: 58, h: 520};
+  const core = {x: 872, y: 18, w: 96, h: 192};
+  const turn = {x: 872, y: 236, w: 96, h: 18};
+  drawMainMap(map, estimate);
+  drawTape(altTape, state.z, state.startAlt - 20, state.startAlt + 360, "alt", "m");
+  drawTape(varioTape, state.vario, -5, 7, "vario", "");
+  drawCoreScreen(core, estimate);
+  drawTurnRate(turn, estimate);
+  drawTrace({x: 16, y: 562, w: 460, h: 90}, state.altitudeTrace, state.startAlt - 20, state.startAlt + 360, "altitude");
+  drawTrace({x: 494, y: 562, w: 360, h: 90}, state.varioTrace, -5, 7, "vario");
+
+  const stats = currentStats();
+  drawText(`${state.running ? "RUN" : state.finished ? "DONE" : "READY"}  ${state.t.toFixed(0)}s`, 872, 306, 14, "left", "#111");
+  drawText(`alt ${state.z.toFixed(0)}m`, 872, 332, 12, "left", "#111");
+  drawText(`vario ${state.vario >= 0 ? "+" : ""}${state.vario.toFixed(1)}m/s`, 872, 354, 12, "left", "#111");
+  drawText(`turn ${state.turnRate >= 0 ? "+" : ""}${state.turnRate.toFixed(1)} deg/s`, 872, 376, 12, "left", "#111");
+  drawText(`gain ${stats.gain.toFixed(0)}m`, 872, 398, 12, "left", "#111");
+  drawText(`center ${Math.round(stats.centering * 100)}%`, 872, 420, 12, "left", "#111");
+  drawText(`score ${stats.score}`, 872, 442, 12, "left", "#111");
+  if (!state.running && !state.finished) {
+    drawText("Press Start, then fly by vario or Core.", map.x + map.w / 2, map.y + map.h / 2, 18, "center", "#111");
+  }
+}
+
+function updateOutputs() {
+  const p = readParams();
+  ui.durationOut.value = `${p.duration}s`;
+  ui.windOut.value = `${p.windMph.toFixed(0)} mph`;
+  ui.diameterOut.value = `${p.diameterM.toFixed(0)} m`;
+  ui.diameterVarianceOut.value = `+/-${Math.round(p.diameterVariance * 100)}%`;
+  ui.strengthOut.value = `${p.strength.toFixed(1)} m/s`;
+  ui.strengthVarianceOut.value = `+/-${Math.round(p.strengthVariance * 100)}%`;
+  ui.textureOut.value = `${Math.round(p.texture * 100)}%`;
+  ui.sinkOut.value = `${p.sink.toFixed(1)} m/s`;
+  ui.volumeOut.value = `${Math.round(p.volume * 100)}%`;
+  const stats = currentStats();
+  ui.gain.textContent = `${stats.gain.toFixed(0)} m`;
+  ui.avgClimb.textContent = `${stats.avg.toFixed(1)}`;
+  ui.centering.textContent = `${Math.round(stats.centering * 100)}%`;
+  ui.score.textContent = String(stats.score);
+}
+
+function loop(now) {
+  const elapsed = Math.min(0.08, (now - lastFrame) / 1000);
+  lastFrame = now;
+  accumulator += elapsed;
+  while (accumulator >= dt) {
+    updatePhysics(dt);
+    accumulator -= dt;
+  }
+  updateOutputs();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+ui.start.addEventListener("click", async () => {
+  ensureAudio();
+  if (audioCtx.state === "suspended") await audioCtx.resume();
+  if (state.finished) resetTrial(state.seed);
+  state.running = !state.running;
+  ui.start.textContent = state.running ? "Pause" : "Start";
+});
+ui.reset.addEventListener("click", () => {
+  resetTrial(Number(ui.seed.value));
+  ui.start.textContent = "Start";
+});
+ui.same.addEventListener("click", () => {
+  resetTrial(state.seed);
+  ui.start.textContent = "Start";
+});
+ui.newSeed.addEventListener("click", () => {
+  newSeed();
+  ui.start.textContent = "Start";
+});
+ui.testTone.addEventListener("click", async () => {
+  ensureAudio();
+  if (audioCtx.state === "suspended") await audioCtx.resume();
+  testToneUntil = audioCtx.currentTime + 0.75;
+});
+
+for (const el of [ui.seed, ui.duration, ui.wind, ui.diameter, ui.diameterVariance, ui.strength, ui.strengthVariance, ui.texture, ui.showThermal, ui.sink, ui.volume]) {
+  el.addEventListener("input", updateOutputs);
+  el.addEventListener("change", updateOutputs);
+}
+
+window.addEventListener("keydown", event => {
+  if (["ArrowLeft", "ArrowRight", "Space", "ShiftLeft", "ShiftRight"].includes(event.code)) event.preventDefault();
+  keys.add(event.code);
+  if (event.code === "Space") {
+    state.running = !state.running;
+    ui.start.textContent = state.running ? "Pause" : "Start";
+  }
+});
+window.addEventListener("keyup", event => {
+  keys.delete(event.code);
+});
+
+updateOutputs();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
