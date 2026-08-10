@@ -18,7 +18,7 @@ Fill out [this brief questionnaire](https://docs.google.com/forms/d/e/1FAIpQLScC
 ## Contact Us!
 [Email](mailto:leafvario@gmail.com) us!
 
-Chat on our [Leaf Discord Server](https://discord.com/channels/1325634753663209472/1325634753663209476)
+Chat on our [Leaf Discord Server](https://discord.gg/m7nC8Dgbu6)
 
 ## Leaf Vario Website
 
