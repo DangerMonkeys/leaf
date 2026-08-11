@@ -4,6 +4,7 @@
 #include <U8g2lib.h>
 
 #include "hardware/buttons.h"
+#include "instruments/baro.h"
 #include "logging/log.h"
 #include "navigation/thermal_tracker.h"
 #include "power.h"
@@ -18,13 +19,20 @@
 
 namespace {
   constexpr int16_t MAP_CX = 48;
-  constexpr int16_t MAP_CY = 109;
+  constexpr int16_t MAP_CY = 124;
   constexpr uint8_t MAP_D_500M = 50;
   constexpr uint8_t MAP_D_1500M = 74;
   constexpr uint8_t MAP_D_5000M = 96;
+  constexpr uint8_t MAP_R_5000M = MAP_D_5000M / 2;
+  constexpr uint8_t VARIO_BAR_TOP = 16;
+  constexpr uint8_t VARIO_BAR_WIDTH = 17;
+  constexpr uint8_t VARIO_BAR_HALF_HEIGHT = 50;
+  constexpr uint8_t ALT_X = 28;
+  constexpr uint8_t ALT_BASELINE_Y = 39;
 
   enum ThermalTrackPageItem : uint8_t {
     cursor_thermalTrackPage_none,
+    cursor_thermalTrackPage_alt,
     cursor_thermalTrackPage_timer,
   };
   constexpr uint8_t THERMAL_TRACK_CURSOR_MAX = cursor_thermalTrackPage_timer;
@@ -48,7 +56,7 @@ namespace {
 
   void printSelectedClimb(const ThermalDisplayItem* selected) {
     u8g2.setFont(leaf_6x12);
-    u8g2.setCursor(27, 42);
+    u8g2.setCursor(27, 57);
     if (selected == nullptr) {
       u8g2.print(settings.units_climb ? "----fpm" : "--.-m/s");
       return;
@@ -58,7 +66,7 @@ namespace {
 
   void printSelectedDistance(const ThermalDisplayItem* selected) {
     u8g2.setFont(leaf_6x12);
-    u8g2.setCursor(34, 57);
+    u8g2.setCursor(34, 72);
     if (selected == nullptr) {
       u8g2.print(settings.units_distance ? "--.-mi" : "--.-km");
       return;
@@ -158,6 +166,12 @@ namespace {
     drawCircleD(MAP_CX, MAP_CY, MAP_D_5000M);
   }
 
+  void maskMapCircle() {
+    u8g2.setDrawColor(0);
+    u8g2.drawDisc(MAP_CX, MAP_CY, MAP_R_5000M);
+    u8g2.setDrawColor(1);
+  }
+
   void drawDistanceScaleLabels() {
     u8g2.setFont(leaf_5x8);
     constexpr uint8_t labelHeight = 8;
@@ -174,9 +188,9 @@ namespace {
       u8g2.print(text);
     };
 
-    drawLabel(41, 136, settings.units_distance ? "0.3" : "0.5", padding);
-    drawLabel(41, 148, settings.units_distance ? "1.0" : "1.5", 0);
-    drawLabel(settings.units_distance ? 41 : 40, 160, settings.units_distance ? "3mi" : "5km",
+    drawLabel(41, 151, settings.units_distance ? "0.3" : "0.5", padding);
+    drawLabel(41, 163, settings.units_distance ? "1.0" : "1.5", 0);
+    drawLabel(settings.units_distance ? 41 : 40, 175, settings.units_distance ? "3mi" : "5km",
               padding);
     u8g2.setDrawColor(1);
   }
@@ -215,6 +229,43 @@ namespace {
     }
   }
 
+  void drawAltitudeField() {
+    const uint8_t altType = settings.disp_thmPageAltType == altType_MSL ? altType_MSL : altType_GPS;
+    display_alt_type(ALT_X, ALT_BASELINE_Y, leaf_21h, altType);
+    u8g2.setFont(leaf_labels);
+    u8g2.setCursor(78, ALT_BASELINE_Y + 10);
+    u8g2.print(settings.units_alt ? "ft" : "m");
+    u8g2.setCursor(78, ALT_BASELINE_Y + 18);
+    print_alt_label(altType);
+
+    if (thermalTrackPageCursor == cursor_thermalTrackPage_alt) {
+      display_selectionBox(ALT_X, ALT_BASELINE_Y - 23, 96 - ALT_X, 25, 6);
+    }
+  }
+
+  void drawSelectedThermalReadout(const ThermalDisplayItem* selected) {
+    printSelectedClimb(selected);
+    printSelectedDistance(selected);
+  }
+
+  void toggleAltitudeType() {
+    if (settings.disp_thmPageAltType == altType_MSL)
+      settings.disp_thmPageAltType = altType_GPS;
+    else
+      settings.disp_thmPageAltType = altType_MSL;
+    speaker.playSound(fx::neutral);
+  }
+
+  bool thermalTrackPageVolumeShortcut(Button button, ButtonEvent state) {
+    if (!settings.volumeShortcut || (button != Button::UP && button != Button::DOWN) ||
+        state != ButtonEvent::INCREMENTED) {
+      return false;
+    }
+
+    if (!settings.adjustShortcutVolume(button)) buttons.consumeButton();
+    return true;
+  }
+
   void thermalTrackPageCursorMove(Button button) {
     if (button == Button::UP) {
       thermalTrackPageCursor--;
@@ -241,12 +292,16 @@ void thermalTrackPage_draw() {
     display_headerAndFooter(thermalTrackPageCursor == cursor_thermalTrackPage_timer, false);
 
     const ThermalDisplayItem* selected = thermalTracker.selectedDisplayItem();
+    const int32_t climbRate = baro.climbRateFilteredValid() ? baro.climbRateFiltered() : 0;
 
+    display_varioBar(VARIO_BAR_TOP, VARIO_BAR_HALF_HEIGHT, VARIO_BAR_HALF_HEIGHT, VARIO_BAR_WIDTH,
+                     climbRate);
+    maskMapCircle();
     drawThermals();
     drawMapRingsAndLabels();
     drawUserTriangle();
-    printSelectedClimb(selected);
-    printSelectedDistance(selected);
+    drawAltitudeField();
+    drawSelectedThermalReadout(selected);
     drawDistanceScaleLabels();
   } while (u8g2.nextPage());
 }
@@ -259,7 +314,11 @@ void thermalTrackPage_button(Button button, ButtonEvent state, uint8_t count) {
       switch (button) {
         case Button::UP:
         case Button::DOWN:
-          if (state == ButtonEvent::CLICKED) thermalTrackPageCursorMove(button);
+          if (thermalTrackPageVolumeShortcut(button, state)) {
+            break;
+          } else if (state == ButtonEvent::CLICKED) {
+            thermalTrackPageCursorMove(button);
+          }
           break;
         case Button::RIGHT:
           if (state == ButtonEvent::CLICKED) {
@@ -278,6 +337,20 @@ void thermalTrackPage_button(Button button, ButtonEvent state, uint8_t count) {
             power.shutdown();
             return;
           }
+          break;
+      }
+      break;
+    case cursor_thermalTrackPage_alt:
+      switch (button) {
+        case Button::UP:
+        case Button::DOWN:
+          if (state == ButtonEvent::CLICKED) thermalTrackPageCursorMove(button);
+          break;
+        case Button::LEFT:
+        case Button::RIGHT:
+          break;
+        case Button::CENTER:
+          if (state == ButtonEvent::CLICKED) toggleAltitudeType();
           break;
       }
       break;
