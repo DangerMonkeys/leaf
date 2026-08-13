@@ -104,11 +104,11 @@ namespace {
   }
 
   String varioField() {
-    if (!baro.climbRateFilteredValid()) return "000";
+    if (!baro.climbRate1SecAverageValid()) return "000";
 
-    const int32_t climbTenthsMps = baro.climbRateFiltered() >= 0
-                                       ? (baro.climbRateFiltered() + 5) / 10
-                                       : -((-baro.climbRateFiltered() + 5) / 10);
+    const int32_t climbRateCms = baro.climbRate1SecAverage();
+    const int32_t climbTenthsMps =
+        climbRateCms >= 0 ? (climbRateCms + 5) / 10 : -((-climbRateCms + 5) / 10);
     char buf[5];
     if (climbTenthsMps >= 0) {
       snprintf(buf, sizeof(buf), "%03ld", constrain(climbTenthsMps, 0L, 999L));

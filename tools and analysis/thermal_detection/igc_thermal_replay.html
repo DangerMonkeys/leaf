@@ -647,6 +647,14 @@ let showMapTerrain = Boolean(currentTerrainMesh);
 let terrainControlRect = null;
 let perspectiveAmount = defaultPerspectiveAmount;
 let perspectiveControlRect = null;
+let soundEnabled = false;
+let soundVolume = 0.35;
+let soundControlRect = null;
+let audioCtx = null;
+let beepOsc = null;
+let beepGain = null;
+let beepTimer = 0;
+let beepOn = false;
 let currentFrameItems = {saved: [], failed: [], merged: []};
 let currentQualityAltitude = null;
 let corePipCollapsed = false;
@@ -2365,7 +2373,7 @@ function drawGroundPlane(map) {
 function followControlBox(map) {
   return {
     x: map.x + map.w - 88,
-    y: map.y + 50,
+    y: map.y + 110,
     w: 78,
     h: 24
   };
@@ -2374,7 +2382,7 @@ function followControlBox(map) {
 function terrainControlBox(map) {
   return {
     x: map.x + map.w - 88,
-    y: map.y + 106,
+    y: map.y + 166,
     w: 78,
     h: 24
   };
@@ -2383,7 +2391,7 @@ function terrainControlBox(map) {
 function orbitControlBox(map) {
   return {
     x: map.x + map.w - 88,
-    y: map.y + 78,
+    y: map.y + 138,
     w: 78,
     h: 24
   };
@@ -2398,6 +2406,14 @@ function perspectiveControlBox(map) {
   };
 }
 
+function soundControlBox(map) {
+  return {
+    x: map.x + map.w - 170,
+    y: map.y + 50,
+    w: 160,
+    h: 52
+  };
+}
 function drawMapFollowControl(map) {
   const box = followControlBox(map);
   followControlRect = box;
@@ -2520,6 +2536,66 @@ function setPerspectiveFromPoint(point, map) {
   const trackX = box.x + 10;
   const trackW = box.w - 20;
   perspectiveAmount = clamp((point.x - trackX) / trackW, 0, 1) * maxPerspectiveAmount;
+}
+function soundVolumeTrack(box) {
+  return {
+    x: box.x + 70,
+    y: box.y + 36,
+    w: box.w - 82
+  };
+}
+
+function setSoundVolumeFromPoint(point, box) {
+  const track = soundVolumeTrack(box);
+  soundVolume = clamp((point.x - track.x) / Math.max(1, track.w), 0, 1);
+}
+
+function drawMapSoundControl(map) {
+  const box = soundControlBox(map);
+  soundControlRect = box;
+  const track = soundVolumeTrack(box);
+  const knobX = track.x + soundVolume * track.w;
+  ctx.save();
+  ctx.fillStyle = "rgba(5, 5, 5, 0.62)";
+  ctx.fillRect(box.x, box.y, box.w, box.h);
+  ctx.strokeStyle = soundEnabled ? "#84c8ff" : "#777";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(box.x + 8, box.y + 8, 12, 12);
+  if (soundEnabled) {
+    ctx.strokeStyle = "#84c8ff";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(box.x + 10, box.y + 14);
+    ctx.lineTo(box.x + 13, box.y + 18);
+    ctx.lineTo(box.x + 19, box.y + 10);
+    ctx.stroke();
+  }
+  ctx.fillStyle = "#ddd";
+  ctx.font = "12px system-ui, sans-serif";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText("Sound", box.x + 27, box.y + 14);
+  ctx.fillStyle = "#aaa";
+  ctx.fillText("Vol", box.x + 10, box.y + 36);
+  ctx.strokeStyle = "rgba(221, 221, 221, 0.42)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(track.x, track.y);
+  ctx.lineTo(track.x + track.w, track.y);
+  ctx.stroke();
+  ctx.strokeStyle = "#84c8ff";
+  ctx.beginPath();
+  ctx.moveTo(track.x, track.y);
+  ctx.lineTo(knobX, track.y);
+  ctx.stroke();
+  ctx.fillStyle = "#84c8ff";
+  ctx.beginPath();
+  ctx.arc(knobX, track.y, 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#aaa";
+  ctx.textAlign = "right";
+  ctx.fillText(`${Math.round(soundVolume * 100)}%`, box.x + box.w - 10, box.y + 14);
+  ctx.restore();
 }
 
 function fillCenteredText(text, x, y, color, font = "11px system-ui, sans-serif") {
@@ -3444,6 +3520,49 @@ function drawEarthBackdrop(map) {
   ctx.stroke();
 }
 
+function ensureAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  beepOsc = audioCtx.createOscillator();
+  beepGain = audioCtx.createGain();
+  beepOsc.type = "sine";
+  beepGain.gain.value = 0;
+  beepOsc.connect(beepGain);
+  beepGain.connect(audioCtx.destination);
+  beepOsc.start();
+}
+
+async function unlockAudio() {
+  ensureAudio();
+  if (audioCtx.state === "suspended") await audioCtx.resume();
+}
+
+function stopAudioTone() {
+  beepOn = false;
+  if (beepGain && audioCtx) {
+    beepGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.01);
+  }
+}
+
+function updateAudio(stepDt, vario) {
+  if (!soundEnabled || !playing || !audioCtx || !beepOsc || !beepGain) {
+    stopAudioTone();
+    return;
+  }
+  const climb = Math.max(0, vario || 0);
+  if (soundVolume <= 0 || climb <= 0.05) {
+    stopAudioTone();
+    return;
+  }
+  const pitch = 420 + Math.min(5, climb) * 145;
+  const period = clamp(0.74 - climb * 0.09, 0.17, 0.72);
+  const duty = clamp(0.20 + climb * 0.11, 0.18, 0.82);
+  beepTimer = (beepTimer + stepDt) % period;
+  const nextOn = beepTimer < period * duty;
+  beepOsc.frequency.setTargetAtTime(pitch, audioCtx.currentTime, 0.025);
+  if (nextOn !== beepOn) beepOn = nextOn;
+  beepGain.gain.setTargetAtTime(beepOn ? soundVolume * 0.12 : 0, audioCtx.currentTime, 0.012);
+}
 function speedFromSlider() {
   return Math.round(10 ** (Number(speed.value) * 3));
 }
@@ -3622,6 +3741,7 @@ function draw() {
   ctx.fill();
   ctx.fillStyle = "#bbb";
   ctx.fillText("3D: left/right pan, middle rotate, wheel zoom", map.x + 10, map.y + 10);
+  drawMapSoundControl(map);
   drawMapFollowControl(map);
   drawMapOrbitControl(map);
   drawMapTerrainControl(map);
@@ -3954,12 +4074,15 @@ function tick(now) {
       updateParamDisabled();
     }
   }
+  const audioFix = processed.length ? (visualFixAt(replayT) || processed[currentIndex()]) : null;
+  updateAudio(dt, audioFix?.vario || 0);
   draw();
   requestAnimationFrame(tick);
 }
 
-playPause.addEventListener("click", () => {
+playPause.addEventListener("click", async () => {
   if (paramsDirty) return;
+  if (soundEnabled) await unlockAudio();
   playing = !playing;
   if (playing && followCurrentFix) {
     pausedFollowMapPanned = false;
@@ -4103,6 +4226,24 @@ canvas.addEventListener("pointerdown", event => {
     return;
   }
   perspectiveControlRect = perspectiveControlBox(map);
+  soundControlRect = soundControlBox(map);
+  if (event.button === 0 && soundControlRect && pointInRect(point, soundControlRect)) {
+    const checkboxRect = {x: soundControlRect.x + 5, y: soundControlRect.y + 5, w: 58, h: 20};
+    if (pointInRect(point, checkboxRect)) {
+      soundEnabled = !soundEnabled;
+      if (soundEnabled) unlockAudio();
+      else stopAudioTone();
+    } else {
+      setSoundVolumeFromPoint(point, soundControlRect);
+      mapDragMode = "sound-volume";
+      isPanning = true;
+      lastPan = point;
+      if (canvas.setPointerCapture) canvas.setPointerCapture(event.pointerId);
+    }
+    event.preventDefault();
+    draw();
+    return;
+  }
   if (event.button === 0 && perspectiveControlRect && pointInRect(point, perspectiveControlRect)) {
     setPerspectiveFromPoint(point, map);
     mapDragMode = "perspective";
@@ -4148,6 +4289,9 @@ canvas.addEventListener("pointermove", event => {
   } else if (mapDragMode === "perspective") {
     const {map} = mapLayout();
     setPerspectiveFromPoint(point, map);
+  } else if (mapDragMode === "sound-volume") {
+    const {map} = mapLayout();
+    setSoundVolumeFromPoint(point, soundControlBox(map));
   } else if (mapDragMode === "rotate") {
     mapView.yaw += dx * 0.008;
     mapView.pitch = Math.max(0, Math.min(Math.PI / 2, mapView.pitch - dy * 0.006));

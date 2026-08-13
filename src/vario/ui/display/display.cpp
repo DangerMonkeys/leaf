@@ -28,7 +28,7 @@
 #include "ui/display/pages/primary/page_navigate.h"
 #include "ui/display/pages/primary/page_simple.h"
 #include "ui/display/pages/primary/page_thermal.h"
-#include "ui/display/pages/primary/page_thermal_adv.h"
+#include "ui/display/pages/primary/page_thermal_core.h"
 #include "ui/display/pages/primary/page_thermal_track.h"
 #include "ui/settings/settings.h"
 #include "wind_estimate/wind_estimate.h"
@@ -94,8 +94,8 @@ bool Display::isMainPageVisible(MainPage targetPage) const {
       return settings.disp_showBasicPage;
     case MainPage::User:
       return settings.disp_showUserPage;
-    case MainPage::ThermalAdv:
-      return settings.disp_showThmAdvPage;
+    case MainPage::ThermalCore:
+      return settings.labs_thermalCore && settings.disp_showThermalCorePage;
     case MainPage::ThermalTrack:
       return settings.labs_thermalTrack && settings.disp_showThermalTrackPage;
     case MainPage::Navigate:
@@ -110,7 +110,7 @@ bool Display::isMainPageVisible(MainPage targetPage) const {
 
 bool Display::hasEnabledPrimaryPage() const {
   return settings.disp_showBasicPage || settings.disp_showUserPage ||
-         settings.disp_showThmAdvPage ||
+         (settings.labs_thermalCore && settings.disp_showThermalCorePage) ||
          (settings.labs_thermalTrack && settings.disp_showThermalTrackPage) ||
          settings.disp_showNavPage;
 }
@@ -127,10 +127,10 @@ MainPage Display::firstVisiblePrimaryPage(MainPage preferredPage) const {
 
   if (settings.disp_showUserPage) return MainPage::User;
   if (settings.disp_showBasicPage) return MainPage::Basic;
+  if (settings.labs_thermalCore && settings.disp_showThermalCorePage) return MainPage::ThermalCore;
   if (settings.labs_thermalTrack && settings.disp_showThermalTrackPage)
     return MainPage::ThermalTrack;
   if (settings.disp_showNavPage) return MainPage::Navigate;
-  if (settings.disp_showThmAdvPage) return MainPage::ThermalAdv;
   if (settings.dev_mode && settings.disp_showDebugPage) return MainPage::Debug;
   return MainPage::User;
 }
@@ -261,9 +261,9 @@ void Display::update() {
       lastRenderContext_ = DisplayRenderContext::User;
       thermalPage_draw();
       break;
-    case MainPage::ThermalAdv:
-      lastRenderContext_ = DisplayRenderContext::ThermalAdv;
-      thermalPageAdv_draw();
+    case MainPage::ThermalCore:
+      lastRenderContext_ = DisplayRenderContext::ThermalCore;
+      thermalCorePage_draw();
       break;
     case MainPage::ThermalTrack:
       lastRenderContext_ = DisplayRenderContext::ThermalTrack;

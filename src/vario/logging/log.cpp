@@ -1,5 +1,6 @@
 
 #include "logging/log.h"
+#include "navigation/thermal_core.h"
 
 #include <Arduino.h>
 
@@ -283,6 +284,7 @@ void flightTimer_start() {
   settings.resetShortcutVolume();
   flight = &igcFlight;
   thermalTracker.reset();
+  thermalCore.reset();
 
   logbook.logStartedAt = millis() / 1000;
   log_captureValues();

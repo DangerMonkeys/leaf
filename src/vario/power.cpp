@@ -252,7 +252,7 @@ void Power::shutdown(bool deadBattery) {
     case MainPage::Debug:
     case MainPage::Basic:
     case MainPage::User:
-    case MainPage::ThermalAdv:
+    case MainPage::ThermalCore:
     case MainPage::ThermalTrack:
     case MainPage::Navigate:
       settings.startPage = (uint8_t)display.getPage();

@@ -15,7 +15,7 @@ enum display_menu_items {
   cursor_display_back,
   cursor_display_show_basic,
   cursor_display_show_user,
-  // cursor_display_show_thrm_adv,  // currently not used and half-developed
+  cursor_display_show_thermal_core,
   cursor_display_show_thermal_track,
   cursor_display_show_navigate,
   cursor_display_contrast,
@@ -26,7 +26,7 @@ namespace {
     uint8_t count = 0;
     if (settings.disp_showBasicPage) count++;
     if (settings.disp_showUserPage) count++;
-    if (settings.disp_showThmAdvPage) count++;
+    if (settings.labs_thermalCore && settings.disp_showThermalCorePage) count++;
     if (settings.labs_thermalTrack && settings.disp_showThermalTrackPage) count++;
     if (settings.disp_showNavPage) count++;
     return count;
@@ -79,14 +79,12 @@ void DisplayMenuPage::draw() {
           else
             menu_ui::printGlyph(menu_ui::ICON_OFF);
           break;
-          /*
-          case cursor_display_show_thrm_adv:
-            if (settings.disp_showThmAdvPage)
-              u8g2.print(char(125));
-            else
-              u8g2.print(char(123));
-            break;
-          */
+        case cursor_display_show_thermal_core:
+          if (settings.disp_showThermalCorePage)
+            menu_ui::printGlyph(menu_ui::ICON_ON);
+          else
+            menu_ui::printGlyph(menu_ui::ICON_OFF);
+          break;
         case cursor_display_show_thermal_track:
           if (settings.disp_showThermalTrackPage)
             menu_ui::printGlyph(menu_ui::ICON_ON);
@@ -169,6 +167,10 @@ void DisplayMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t coun
       if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT))
         togglePrimaryPageSetting(&settings.disp_showNavPage);
       break;
+    case cursor_display_show_thermal_core:
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT))
+        togglePrimaryPageSetting(&settings.disp_showThermalCorePage);
+      break;
     case cursor_display_show_thermal_track:
       if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT))
         togglePrimaryPageSetting(&settings.disp_showThermalTrackPage);
@@ -195,7 +197,8 @@ bool DisplayMenuPage::cursorUsesLeftButton() const {
 }
 
 bool DisplayMenuPage::row_hidden(uint8_t row) const {
-  return row == cursor_display_show_thermal_track && !settings.labs_thermalTrack;
+  return (row == cursor_display_show_thermal_core && !settings.labs_thermalCore) ||
+         (row == cursor_display_show_thermal_track && !settings.labs_thermalTrack);
 }
 
 uint8_t DisplayMenuPage::row_y(uint8_t row) const {

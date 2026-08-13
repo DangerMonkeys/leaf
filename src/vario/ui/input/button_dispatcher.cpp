@@ -17,7 +17,7 @@
 #include "ui/display/pages/primary/page_navigate.h"
 #include "ui/display/pages/primary/page_simple.h"
 #include "ui/display/pages/primary/page_thermal.h"
-#include "ui/display/pages/primary/page_thermal_adv.h"
+#include "ui/display/pages/primary/page_thermal_core.h"
 #include "ui/display/pages/primary/page_thermal_track.h"
 #include "ui/settings/settings.h"
 
@@ -57,8 +57,8 @@ void ButtonDispatcher::on_receive(const ButtonEventMessage& msg) {
   } else if (currentPage == MainPage::User) {
     thermalPage_button(msg.button, msg.event, msg.holdCount);
 
-  } else if (currentPage == MainPage::ThermalAdv) {
-    thermalPageAdv_button(msg.button, msg.event, msg.holdCount);
+  } else if (currentPage == MainPage::ThermalCore) {
+    thermalCorePage_button(msg.button, msg.event, msg.holdCount);
 
   } else if (currentPage == MainPage::ThermalTrack) {
     thermalTrackPage_button(msg.button, msg.event, msg.holdCount);

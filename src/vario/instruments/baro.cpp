@@ -29,9 +29,6 @@ constexpr uint32_t CLIMB_AVERAGE_S = 4;
 // number of seconds to average the climb rate before declaring that the averaged value is valid
 constexpr uint32_t CLIMB_AVERAGE_INIT_S = 1;
 
-// sample rate of altitudes; used to compute smaple count from duration
-constexpr uint32_t SAMPLES_PER_SECOND = 20;
-
 constexpr size_t BARO_STARTUP_DISCARD_SAMPLES = 20;
 
 // Singleton barometer instance for device
@@ -128,9 +125,11 @@ void Barometer::init(void) {
   validAltInitial_ = false;
   validClimbRateRaw_ = false;
   validClimbRateFiltered_ = false;
+  validClimbRate1SecAverage_ = false;
   climbFilter.reset();
+  climb1SecFilter.reset();
   climbRateAverage_ = 0;
-  nInitSamplesRemaining_ = CLIMB_AVERAGE_INIT_S * SAMPLES_PER_SECOND;
+  nInitSamplesRemaining_ = CLIMB_AVERAGE_INIT_S * BARO_SAMPLES_PER_SECOND;
   startupDiscardSamplesRemaining_ = BARO_STARTUP_DISCARD_SAMPLES;
 
   state_ = State::WaitingForFirstReading;
@@ -276,6 +275,20 @@ bool Barometer::climbRateFilteredValid() {
   return true;
 }
 
+int32_t Barometer::climbRate1SecAverage() {
+  assertState("Barometer::climbRate1SecAverage", State::Ready);
+  if (!validClimbRate1SecAverage_) {
+    fatalError("Barometer::climbRate1SecAverage accessed before valid");
+  }
+  return climbRate1SecAverage_;
+}
+
+bool Barometer::climbRate1SecAverageValid() {
+  if (state_ != State::Ready) return false;
+  if (!validClimbRate1SecAverage_) return false;
+  return true;
+}
+
 float Barometer::climbRateAverage() {
   assertState("Barometer::climbRateAverage", State::Ready);
   if (nInitSamplesRemaining_ > 0) {
@@ -343,18 +356,27 @@ void Barometer::filterClimb() {
   climbRateFiltered_ = (int32_t)(climbFilterAvg * 100);
   validClimbRateFiltered_ = true;
 
+  climb1SecFilter.update(climbRateRaw_);
+  const float climb1SecAvg = climb1SecFilter.getAverage();
+  if (isnan(climb1SecAvg) || isinf(climb1SecAvg)) {
+    fatalError("climb1SecAvg in Barometer::filterClimb was %g after climb1SecFilter.getAverage()",
+               climb1SecAvg);
+  }
+  climbRate1SecAverage_ = static_cast<int32_t>(climb1SecAvg * 100);
+  validClimbRate1SecAverage_ = true;
+
   // use new value in the long-running average
   if (nInitSamplesRemaining_ > 1) {
     climbRateAverage_ += climbRateFiltered_;
     nInitSamplesRemaining_--;
   } else if (nInitSamplesRemaining_ == 1) {
     climbRateAverage_ =
-        (climbRateAverage_ + climbRateFiltered_) / (CLIMB_AVERAGE_INIT_S * SAMPLES_PER_SECOND);
+        (climbRateAverage_ + climbRateFiltered_) / (CLIMB_AVERAGE_INIT_S * BARO_SAMPLES_PER_SECOND);
     nInitSamplesRemaining_ = 0;
   } else {
     // now calculate the longer-running average climb value
     // (this is a smoother, slower-changing value for things like glide ratio, etc)
-    uint32_t total_samples = CLIMB_AVERAGE_S * SAMPLES_PER_SECOND;
+    uint32_t total_samples = CLIMB_AVERAGE_S * BARO_SAMPLES_PER_SECOND;
 
     climbRateAverage_ =
         (climbRateAverage_ * (total_samples - 1) + climbRateFiltered_) / total_samples;
