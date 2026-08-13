@@ -23,6 +23,7 @@
 #include "instruments/imu.h"
 #include "logging/log.h"
 #include "navigation/gpx.h"
+#include "navigation/thermal_core.h"
 #include "navigation/thermal_tracker.h"
 #include "navigation/user_waypoints.h"
 #include "power.h"
@@ -430,11 +431,12 @@ void TaskManager::doNecessaryTasks(void) {
     performTask.gps = false;
   }
   if (performTask.thermalDetector) {
-    if (settings.labs_thermalTrack) thermalTracker.updateDetector();
+    if (settings.labs_thermalCore || settings.labs_thermalTrack) thermalTracker.updateDetector();
     performTask.thermalDetector = false;
   }
   if (performTask.thermalNavigation) {
     if (settings.labs_thermalTrack) thermalTracker.updateNavigation();
+    if (settings.labs_thermalCore) thermalCore.update();
     performTask.thermalNavigation = false;
   }
   if (performTask.power) {

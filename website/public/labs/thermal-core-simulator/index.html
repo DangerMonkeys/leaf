@@ -1181,7 +1181,10 @@ function continueTutorial() {
   if (tutorial.phase === "step-complete") {
     if (tutorial.step < tutorialSteps.length - 1) {
       const nextStep = tutorial.step + 1;
-      configureTutorialStep(nextStep, tutorialSteps[nextStep]?.stepInStage === 0 || tutorialSteps[nextStep]?.resetOnEnter);
+      const nextLesson = tutorialSteps[nextStep] || tutorialSteps[0];
+      const startsNewStage = nextLesson.stageIndex !== lesson.stageIndex;
+      const resetsWithinStage = nextLesson.stageIndex === 3 && nextLesson.resetOnEnter;
+      configureTutorialStep(nextStep, startsNewStage || resetsWithinStage);
     }
     else {
       setTutorialText(

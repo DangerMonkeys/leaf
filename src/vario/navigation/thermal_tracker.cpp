@@ -87,6 +87,9 @@ bool ThermalTracker::readCurrentFix(Sample& sample) {
   sample.yM = clampInt16((fix.latitude - originLat_) * METERS_PER_DEG_LAT);
   sample.altM = static_cast<int16_t>(baro.altAdjusted() / 100);
   sample.courseDeg = static_cast<int16_t>(roundf(fix.courseDeg));
+  sample.climb1SecCms = static_cast<int16_t>(constrain(
+      baro.climbRate1SecAverageValid() ? baro.climbRate1SecAverage() : baro.climbRateFiltered(),
+      -32768L, 32767L));
   sample.timeS = millis() / 1000;
 
   currentXM_ = sample.xM;
@@ -108,6 +111,9 @@ void ThermalTracker::readSeedReference(Sample& sample) {
   sample.yM = clampInt16((latitude - originLat_) * METERS_PER_DEG_LAT);
   sample.altM = static_cast<int16_t>(baro.altAdjusted() / 100);
   sample.courseDeg = hasFix ? static_cast<int16_t>(roundf(fix.courseDeg)) : 0;
+  sample.climb1SecCms = static_cast<int16_t>(constrain(
+      baro.climbRate1SecAverageValid() ? baro.climbRate1SecAverage() : baro.climbRateFiltered(),
+      -32768L, 32767L));
   sample.timeS = millis() / 1000;
 
   currentXM_ = sample.xM;
@@ -131,6 +137,23 @@ void ThermalTracker::updateDetector() {
 
   addSample(sample);
   evaluateDetector();
+}
+
+uint8_t ThermalTracker::recentCoreSamples(CoreSample* out, uint8_t maxCount) const {
+  if (out == nullptr || maxCount == 0) return 0;
+
+  const uint8_t count = min(sampleCount_, maxCount);
+  for (uint8_t i = 0; i < count; ++i) {
+    const uint8_t offset = count - i;
+    const Sample& sample = samples_[sampleIndex(nextSample_, offset)];
+    out[i].valid = sample.valid;
+    out[i].xM = sample.xM;
+    out[i].yM = sample.yM;
+    out[i].courseDeg = sample.courseDeg;
+    out[i].climbCms = sample.climb1SecCms;
+    out[i].timeS = sample.timeS;
+  }
+  return count;
 }
 
 void ThermalTracker::addSample(Sample sample) {

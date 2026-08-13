@@ -42,10 +42,20 @@ class ThermalTracker {
  public:
   static constexpr uint8_t MAX_DETECTOR_SAMPLES = 40;
 
+  struct CoreSample {
+    bool valid = false;
+    int16_t xM = 0;
+    int16_t yM = 0;
+    int16_t courseDeg = 0;
+    int16_t climbCms = 0;
+    uint32_t timeS = 0;
+  };
+
   void reset();
   void updateDetector();
   void updateNavigation();
   void seedTestThermalsForFlight();
+  uint8_t recentCoreSamples(CoreSample* out, uint8_t maxCount) const;
 
   const ThermalDisplayItem* displayItems() const { return displayItems_; }
   uint8_t displayItemCount() const { return displayItemCount_; }
@@ -60,6 +70,7 @@ class ThermalTracker {
     int16_t altM = 0;
     int16_t courseDeg = 0;
     int16_t climb30Cms = 0;
+    int16_t climb1SecCms = 0;
     uint32_t timeS = 0;
   };
 

@@ -26,7 +26,6 @@
 #include "ui/display/pages/primary/page_navigate.h"
 #include "ui/display/pages/primary/page_simple.h"
 #include "ui/display/pages/primary/page_thermal.h"
-#include "ui/display/pages/primary/page_thermal_adv.h"
 #include "ui/input/buttons.h"
 #include "ui/settings/settings.h"
 #include "utils/magic_enum.h"

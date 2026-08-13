@@ -202,6 +202,7 @@ void Settings::loadDefaults() {
   diag_cpuUtilization = DEF_DIAG_CPU_UTILIZATION;
 
   // Leaf Labs
+  labs_thermalCore = DEF_LABS_THERMAL_CORE;
   labs_thermalTrack = DEF_LABS_THERMAL_TRACK;
 
   // Boot Flags
@@ -218,7 +219,7 @@ void Settings::loadDefaults() {
   disp_showDebugPage = DEF_SHOW_DEBUG;
   disp_showBasicPage = DEF_SHOW_BASIC;
   disp_showUserPage = DEF_SHOW_USER;
-  disp_showThmAdvPage = DEF_SHOW_THRM_ADV;
+  disp_showThermalCorePage = DEF_SHOW_THERMAL_CORE;
   disp_showThermalTrackPage = DEF_SHOW_THERMAL_TRACK;
   disp_showNavPage = DEF_SHOW_NAV;
   startPage = DEF_STARTPAGE;
@@ -285,6 +286,7 @@ void Settings::retrieve() {
   diag_cpuUtilization = leafPrefs.getBool("DIAG_CPU_UTIL", DEF_DIAG_CPU_UTILIZATION);
 
   // Leaf Labs
+  labs_thermalCore = leafPrefs.getBool("LAB_THERM_CORE", DEF_LABS_THERMAL_CORE);
   labs_thermalTrack = leafPrefs.getBool("LAB_THERM_TRACK", DEF_LABS_THERMAL_TRACK);
 
   // Boot Flags
@@ -304,7 +306,8 @@ void Settings::retrieve() {
   disp_showBasicPage =
       leafPrefs.getBool("SHOW_BASIC", leafPrefs.getBool("SHOW_SIMPLE", DEF_SHOW_BASIC));
   disp_showUserPage = leafPrefs.getBool("SHOW_USER", leafPrefs.getBool("SHOW_THRM", DEF_SHOW_USER));
-  disp_showThmAdvPage = leafPrefs.getBool("SHOW_THRM_ADV");
+  disp_showThermalCorePage = leafPrefs.getBool("SHOW_THERM_CORE", DEF_SHOW_THERMAL_CORE);
+  if (!labs_thermalCore) disp_showThermalCorePage = false;
   disp_showThermalTrackPage = leafPrefs.getBool(
       "SHOW_THERM_TRK", leafPrefs.getBool("SHOW_THERM_NAV", DEF_SHOW_THERMAL_TRACK));
   if (!labs_thermalTrack) disp_showThermalTrackPage = false;
@@ -375,6 +378,7 @@ void Settings::save() {
   leafPrefs.putBool("DIAG_VARIO", diag_vario);
   leafPrefs.putBool("DIAG_CPU_UTIL", diag_cpuUtilization);
   // Leaf Labs
+  leafPrefs.putBool("LAB_THERM_CORE", labs_thermalCore);
   leafPrefs.putBool("LAB_THERM_TRACK", labs_thermalTrack);
   // Boot Flags
   leafPrefs.putBool("ENTER_BOOTLOAD", boot_enterBootloader);
@@ -390,7 +394,7 @@ void Settings::save() {
   leafPrefs.putBool("SHOW_DEBUG", disp_showDebugPage);
   leafPrefs.putBool("SHOW_BASIC", disp_showBasicPage);
   leafPrefs.putBool("SHOW_USER", disp_showUserPage);
-  leafPrefs.putBool("SHOW_THRM_ADV", disp_showThmAdvPage);
+  leafPrefs.putBool("SHOW_THERM_CORE", disp_showThermalCorePage);
   leafPrefs.putBool("SHOW_THERM_TRK", disp_showThermalTrackPage);
   leafPrefs.putBool("SHOW_NAV", disp_showNavPage);
   leafPrefs.putUChar("START_PAGE", startPage);

@@ -18,6 +18,7 @@
 
 #define FILTER_VALS_MAX 20  // total array size max;
 #define DEFAULT_SAMPLES_TO_AVERAGE 3
+#define BARO_SAMPLES_PER_SECOND 20
 
 // Barometer reporting altitude, adjusted altitude, climb rate, and other information.
 // Requires a pressure source.
@@ -60,6 +61,11 @@ class Barometer : public MessageSink<Barometer, PressureUpdate>,
   int32_t climbRateFiltered();
 
   bool climbRateFilteredValid();
+
+  // fixed 1-second averaged climb rate, independent of user vario sensitivity (cm/s)
+  int32_t climbRate1SecAverage();
+
+  bool climbRate1SecAverageValid();
 
   // long-term (several seconds) averaged climb rate for smoothing out glide ratio and other
   // calculations (cm/s)
@@ -116,6 +122,9 @@ class Barometer : public MessageSink<Barometer, PressureUpdate>,
   int32_t climbRateFiltered_;
   bool validClimbRateFiltered_ = false;
 
+  int32_t climbRate1SecAverage_;
+  bool validClimbRate1SecAverage_ = false;
+
   // Current representation of average climb rate, or a temporary sum of climb rate samples during
   // initialization
   float climbRateAverage_;
@@ -136,6 +145,7 @@ class Barometer : public MessageSink<Barometer, PressureUpdate>,
   // == User Settings for Vario ==
 
   RunningAverage<float, FILTER_VALS_MAX> climbFilter{DEFAULT_SAMPLES_TO_AVERAGE};
+  RunningAverage<float, BARO_SAMPLES_PER_SECOND> climb1SecFilter{BARO_SAMPLES_PER_SECOND};
 
   void onUnexpectedState(const char* action, State actual) const;
   friend struct StateAssertMixin<Barometer>;

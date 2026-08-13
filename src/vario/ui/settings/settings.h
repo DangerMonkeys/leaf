@@ -81,6 +81,7 @@
 #define DEF_ECO_MODE 0  // default off to allow reprogramming easier
 
 // Leaf Labs Settings
+#define DEF_LABS_THERMAL_CORE 0   // default hide experimental thermal core page
 #define DEF_LABS_THERMAL_TRACK 0  // default hide experimental thermal tracking
 
 // Boot Flags
@@ -100,7 +101,7 @@
 #define DEF_SHOW_DEBUG 0          // Enable debug page
 #define DEF_SHOW_BASIC 1          // Enable basic page
 #define DEF_SHOW_USER 1           // Enable user page
-#define DEF_SHOW_THRM_ADV 0       // Enable thermal adv page
+#define DEF_SHOW_THERMAL_CORE 1   // Enable thermal core page when lab is enabled
 #define DEF_SHOW_THERMAL_TRACK 0  // Enable thermal track page
 #define DEF_SHOW_NAV 0            // Enable navigate page
 #define DEF_STARTPAGE 3           // Start on User page
@@ -178,6 +179,7 @@ setting | samples | time avg
   bool diag_cpuUtilization;
 
   // Leaf Labs options
+  bool labs_thermalCore;
   bool labs_thermalTrack;
 
   // Boot Flags
@@ -195,7 +197,7 @@ setting | samples | time avg
   bool disp_showDebugPage;
   bool disp_showBasicPage;
   bool disp_showUserPage;
-  bool disp_showThmAdvPage;
+  bool disp_showThermalCorePage;
   bool disp_showThermalTrackPage;
   bool disp_showNavPage;
   uint8_t startPage;
