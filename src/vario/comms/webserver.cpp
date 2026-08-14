@@ -10,8 +10,8 @@
 #include <ctype.h>
 #include <esp_heap_caps.h>
 #include <math.h>
-#include <stdexcept>
 #include <time.h>
+#include <stdexcept>
 #include "comms/ble.h"
 #include "comms/factory_discovery.h"
 #include "comms/fanet_radio.h"
@@ -1533,7 +1533,8 @@ namespace {
     pollHandle.trim();
     expiresAt.trim();
     if (code.isEmpty() || pollHandle.isEmpty()) {
-      target.send(502, "application/json", "{\"detail\":\"Leaf Log pairing response was invalid.\"}");
+      target.send(502, "application/json",
+                  "{\"detail\":\"Leaf Log pairing response was invalid.\"}");
       return;
     }
 
@@ -3060,12 +3061,10 @@ load();
         });
       });
       user_server.on("/api/leaf-log/pair/start", HTTP_POST, []() {
-        handleUserRequest("POST /api/leaf-log/pair/start",
-                          []() { startLeafLogPair(user_server); });
+        handleUserRequest("POST /api/leaf-log/pair/start", []() { startLeafLogPair(user_server); });
       });
       user_server.on("/api/leaf-log/pair/poll", HTTP_POST, []() {
-        handleUserRequest("POST /api/leaf-log/pair/poll",
-                          []() { pollLeafLogPair(user_server); });
+        handleUserRequest("POST /api/leaf-log/pair/poll", []() { pollLeafLogPair(user_server); });
       });
       user_server.on("/api/routes/import", HTTP_POST, []() {
         handleUserRequest("POST /api/routes/import", []() {
