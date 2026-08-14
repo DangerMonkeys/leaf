@@ -83,6 +83,7 @@
 // Leaf Labs Settings
 #define DEF_LABS_THERMAL_CORE 0   // default hide experimental thermal core page
 #define DEF_LABS_THERMAL_TRACK 0  // default hide experimental thermal tracking
+#define DEF_LABS_LEAF_LOG 0       // default hide experimental Leaf Log linking
 
 // Boot Flags
 // Boot-to-ON Flag (when resetting from system updates,
@@ -181,6 +182,7 @@ setting | samples | time avg
   // Leaf Labs options
   bool labs_thermalCore;
   bool labs_thermalTrack;
+  bool labs_leafLog;
 
   // Boot Flags
   bool boot_enterBootloader;

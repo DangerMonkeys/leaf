@@ -15,9 +15,17 @@ enum leaf_labs_menu_items {
   cursor_leaf_labs_back,
   cursor_leaf_labs_thermal_core,
   cursor_leaf_labs_thermal_track,
+  cursor_leaf_labs_leaf_log,
 };
 
 namespace {
+  void setLeafLogEnabled(bool enabled) {
+    if (settings.labs_leafLog == enabled) return;
+
+    settings.labs_leafLog = enabled;
+    speaker.playSound(enabled ? fx::enter : fx::cancel);
+  }
+
   void setThermalCoreEnabled(bool enabled) {
     if (settings.labs_thermalCore == enabled) return;
 
@@ -59,7 +67,7 @@ void LeafLabsMenuPage::draw() {
 
     uint8_t setting_name_x = 2;
     uint8_t setting_choice_x = 81;
-    uint8_t menu_items_y[] = {190, 92, 107};
+    uint8_t menu_items_y[] = {190, 86, 101, 116};
 
     for (int i = 0; i <= cursor_max; i++) {
       const bool selected = i == cursor_position;
@@ -72,6 +80,9 @@ void LeafLabsMenuPage::draw() {
           break;
         case cursor_leaf_labs_thermal_track:
           menu_ui::printGlyph(settings.labs_thermalTrack ? menu_ui::ICON_ON : menu_ui::ICON_OFF);
+          break;
+        case cursor_leaf_labs_leaf_log:
+          menu_ui::printGlyph(settings.labs_leafLog ? menu_ui::ICON_ON : menu_ui::ICON_OFF);
           break;
         case cursor_leaf_labs_back:
           menu_ui::drawBackIcon(setting_choice_x, menu_items_y[i]);
@@ -96,6 +107,13 @@ void LeafLabsMenuPage::draw() {
           "them on a map",
       };
       menu_ui::drawNoteBox(menu_items_y[cursor_leaf_labs_thermal_track], noteLines, 4);
+    } else if (cursor_position == cursor_leaf_labs_leaf_log) {
+      const char* const noteLines[] = {
+          "Shows Leaf Log",
+          "linking in the",
+          "Leaf web app",
+      };
+      menu_ui::drawNoteBox(menu_items_y[cursor_leaf_labs_leaf_log], noteLines, 3);
     }
   } while (u8g2.nextPage());
 }
@@ -110,6 +128,11 @@ void LeafLabsMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t cou
     case cursor_leaf_labs_thermal_track:
       if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
         setThermalTrackEnabled(!settings.labs_thermalTrack);
+      }
+      break;
+    case cursor_leaf_labs_leaf_log:
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
+        setLeafLogEnabled(!settings.labs_leafLog);
       }
       break;
     case cursor_leaf_labs_back:

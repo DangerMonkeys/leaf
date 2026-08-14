@@ -10,7 +10,7 @@ class LeafLabsMenuPage : public SettingsMenuPage {
  public:
   LeafLabsMenuPage() {
     cursor_position = 0;
-    cursor_max = 2;
+    cursor_max = 3;
   }
   void draw();
 
@@ -18,7 +18,7 @@ class LeafLabsMenuPage : public SettingsMenuPage {
   void setting_change(Button dir, ButtonEvent state, uint8_t count);
 
  private:
-  static constexpr char* labels[3] = {"Back", "Thermal\037Core", "Thermal\037Track"};
+  static constexpr char* labels[4] = {"Back", "Thermal\037Core", "Thermal\037Track", "Leaf Log"};
 };
 
 #endif

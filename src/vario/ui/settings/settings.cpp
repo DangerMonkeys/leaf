@@ -204,6 +204,7 @@ void Settings::loadDefaults() {
   // Leaf Labs
   labs_thermalCore = DEF_LABS_THERMAL_CORE;
   labs_thermalTrack = DEF_LABS_THERMAL_TRACK;
+  labs_leafLog = DEF_LABS_LEAF_LOG;
 
   // Boot Flags
   boot_enterBootloader = DEF_ENTER_BOOTLOAD;
@@ -288,6 +289,7 @@ void Settings::retrieve() {
   // Leaf Labs
   labs_thermalCore = leafPrefs.getBool("LAB_THERM_CORE", DEF_LABS_THERMAL_CORE);
   labs_thermalTrack = leafPrefs.getBool("LAB_THERM_TRACK", DEF_LABS_THERMAL_TRACK);
+  labs_leafLog = leafPrefs.getBool("LAB_LEAF_LOG", DEF_LABS_LEAF_LOG);
 
   // Boot Flags
   boot_enterBootloader = leafPrefs.getBool("ENTER_BOOTLOAD");
@@ -380,6 +382,7 @@ void Settings::save() {
   // Leaf Labs
   leafPrefs.putBool("LAB_THERM_CORE", labs_thermalCore);
   leafPrefs.putBool("LAB_THERM_TRACK", labs_thermalTrack);
+  leafPrefs.putBool("LAB_LEAF_LOG", labs_leafLog);
   // Boot Flags
   leafPrefs.putBool("ENTER_BOOTLOAD", boot_enterBootloader);
   leafPrefs.putBool("BOOT_TO_ON", boot_toOnState);
