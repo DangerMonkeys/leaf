@@ -58,6 +58,13 @@ void display_batt_charging_fullscreen(uint8_t x, uint8_t y, bool warning);
 void display_GPS_icon(uint8_t x, uint8_t y);
 void display_fanet_icon(const uint8_t& x, const uint8_t& y);
 
+// The glider on a map: a hollow dart with a notched tail, cleared to background inside so it
+// reads on top of a track or a circuit.  `headingRad` is measured clockwise from straight up the
+// screen, and `noseLengthPx` is the distance from the centre to the nose -- the glyph reaches
+// about 1.06 * noseLengthPx in its worst direction, which is the margin a caller has to keep it
+// away from the edge of the display.
+void display_gliderPointer(int16_t x, int16_t y, float headingRad, uint8_t noseLengthPx);
+
 void display_windSockArrow(int16_t x, int16_t y, int16_t radius);
 void display_windSockRing(int16_t x, int16_t y, int16_t radius, int16_t size, bool showPointer);
 void display_windSpeedCentered(uint8_t x, uint8_t y, const uint8_t* font);

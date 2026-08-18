@@ -111,9 +111,13 @@ void ThermalTracker::readSeedReference(Sample& sample) {
   sample.yM = clampInt16((latitude - originLat_) * METERS_PER_DEG_LAT);
   sample.altM = static_cast<int16_t>(baro.altAdjusted() / 100);
   sample.courseDeg = hasFix ? static_cast<int16_t>(roundf(fix.courseDeg)) : 0;
-  sample.climb1SecCms = static_cast<int16_t>(constrain(
-      baro.climbRate1SecAverageValid() ? baro.climbRate1SecAverage() : baro.climbRateFiltered(),
-      -32768L, 32767L));
+  // Unlike readCurrentFix, this runs whether or not the sensors are ready: it is called from the
+  // flight-start path, and the timer can auto-start on ground speed within a few seconds of boot,
+  // before the barometer has declared a climb rate.  Reading one unguarded there is fatal.
+  const int32_t climbCms = baro.climbRate1SecAverageValid() ? baro.climbRate1SecAverage()
+                           : baro.climbRateFilteredValid()  ? baro.climbRateFiltered()
+                                                            : 0;
+  sample.climb1SecCms = static_cast<int16_t>(constrain(climbCms, -32768L, 32767L));
   sample.timeS = millis() / 1000;
 
   currentXM_ = sample.xM;
@@ -154,6 +158,14 @@ uint8_t ThermalTracker::recentCoreSamples(CoreSample* out, uint8_t maxCount) con
     out[i].timeS = sample.timeS;
   }
   return count;
+}
+
+bool ThermalTracker::toLocalMeters(double latitude, double longitude, float& xM,
+                                   float& yM) const {
+  if (!originValid_) return false;
+  xM = static_cast<float>((longitude - originLon_) * metersPerDegLon_);
+  yM = static_cast<float>((latitude - originLat_) * METERS_PER_DEG_LAT);
+  return true;
 }
 
 void ThermalTracker::addSample(Sample sample) {

@@ -1,0 +1,865 @@
+{
+  "description": "Two thermals on a light-wind summer day, flown the way they are actually flown: entered late and off to one side, read over a lap or two, then walked onto the core by flattening the turn where it points at the lift. The first climb is right-handed and the second left-handed, so the Thermal Core page has to draw both mirror images of its layout. Every climb rate in the file comes from a Gaussian core placed in the air mass, not from a number picked by hand: the glider flies past it, feels what the geometry gives it, and the asymmetry the page has to detect is a real consequence of where the circle sits.",
+  "_authoring_notes": [
+    "Wind is 2 m/s from 250, and the scenario player adds it on top of these AIR headings. It matters more here than it looks: a lap is 18 s, so the air mass - and the thermal in it - moves 36 m a lap, further than the 27 m circle radius. The markers on the page are drawn in the ground frame, so the trail is a drifting spiral rather than a closed circle, and samples older than about 25 s have slid off the upwind edge of the 96x96 map. That is the real behaviour, and it is deliberately not designed away.",
+    "The geometry: 9.5 m/s of airspeed at 20 deg/s is a 27 m radius, an 18 s lap and about 19 degrees of bank, which is a paraglider working a core. Circling legs are cut into 3 s pieces (60 deg of arc), which is as finely as the vario can resolve a change in lift anyway - climb reaches the detector through the Kalman fusion and a 1 s average, so a shorter leg would only be smoothed back out.",
+    "Thermal 1 is entered 27 m off the core: the glider flew within 10 m of the middle, the pilot reacted a second and a half after the surge and took another second and a half to roll in, and that lag alone puts the circle a full radius out. Two laps at 27 m read -0.2 to +4.2 m/s - a Ring9 marker on the strong side and crosses opposite it - and average +1.65. Then two corrections: flatten the turn for 1.25 s where the heading points from the circle centre at the core (12 m of circle), then 1.5 s more (14 m). Flying straight walks the circle centre along the heading, which is what re-centring physically is. Centred to 1 m the lap reads +1.9 to +2.5 all the way round and averages +2.26 - better than the uncentred lap by more than half a metre a second, and steady instead of surging.",
+    "Thermal 2 is the same story mirrored: a softer edge, two and a half seconds of reaction, 31 m off, two laps of -0.1 to +3.6, one 2.5 s flatten worth 24 m, then three steady laps at +2.2. It is turned to the LEFT, so the page has to put the glider on the right of the map and bend its arc the other way. A sign error in the phase mirroring shows here and nowhere else.",
+    "Three things are in the recording on purpose besides the climbs. A dying bubble 24 m off the wing on the first glide lifts the vario to +0.5 for a few seconds without ever justifying a turn - the page must stay in its no-turn layout, glider centred, no arc. The last two laps of thermal 1 are the thermal dying under the glider rather than the glider flying out of it: the whole lap weakens together, +2.3 to +0.2, so the markers shrink evenly instead of going asymmetric. And the glide between the two climbs is 82 s of straight flight, which is long enough for the 40 s sample window to empty of turning (120 deg of accumulated turn is the threshold) and force the page back to its no-turn layout before the second climb rebuilds it.",
+    "Altitudes are honest: launch at 1350 m, the glide costs 60 m, thermal 1 climbs to 1583 m before it dies, the glide to the next trigger costs 82 m, and thermal 2 tops out at 1674 m. The barometer sees exactly this, because the player converts these altitudes to pressure with the inverse of the firmware's own altitude formula."
+  ],
+  "start": {
+    "lat": 47.51,
+    "lon": 11.18,
+    "altitudeM": 1350,
+    "headingDeg": 250.0,
+    "hour": 13
+  },
+  "wind": {
+    "speedMps": 2.0,
+    "fromDeg": 250
+  },
+  "ambient": {
+    "temperatureC": 24.0,
+    "humidity": 35.0
+  },
+  "legs": [
+    {
+      "durationS": 24.0,
+      "airspeedMps": 2.0,
+      "climbMps": 0.0,
+      "headingDeg": 250.0,
+      "comment": "on launch, wing up into the breeze: airspeed cancels the wind, so the fix sits still while the startup checks run"
+    },
+    {
+      "durationS": 4.0,
+      "airspeedMps": 9.0,
+      "climbMps": -1.37,
+      "headingDeg": 250.0,
+      "comment": "launch run, into wind"
+    },
+    {
+      "durationS": 3.5,
+      "airspeedMps": 10.5,
+      "climbMps": -1.62,
+      "turnRateDegPerS": 25.0,
+      "comment": "turn away from the hill onto the glide"
+    },
+    {
+      "durationS": 3.5,
+      "airspeedMps": 10.5,
+      "climbMps": -1.65,
+      "turnRateDegPerS": 25.0
+    },
+    {
+      "durationS": 9.0,
+      "airspeedMps": 11.0,
+      "climbMps": -1.54,
+      "headingDeg": 65.0,
+      "comment": "glide out at 11 m/s, sinking through neutral air"
+    },
+    {
+      "durationS": 9.0,
+      "airspeedMps": 11.0,
+      "climbMps": -1.43,
+      "headingDeg": 65.0
+    },
+    {
+      "durationS": 6.0,
+      "airspeedMps": 11.0,
+      "climbMps": -0.18,
+      "headingDeg": 65.0,
+      "comment": "the air improves for a few seconds - a dying bubble 24 m off the left wing, not worth a turn"
+    },
+    {
+      "durationS": 6.0,
+      "airspeedMps": 11.0,
+      "climbMps": -0.23,
+      "headingDeg": 65.0
+    },
+    {
+      "durationS": 6.0,
+      "airspeedMps": 11.0,
+      "climbMps": -1.4,
+      "headingDeg": 65.0,
+      "comment": "back into sink, then lift builds hard: the edge of the day's thermal, 10 m off the right wing"
+    },
+    {
+      "durationS": 6.0,
+      "airspeedMps": 11.0,
+      "climbMps": -1.52,
+      "headingDeg": 65.0
+    },
+    {
+      "durationS": 6.0,
+      "airspeedMps": 11.0,
+      "climbMps": -1.54,
+      "headingDeg": 65.0
+    },
+    {
+      "durationS": 6.0,
+      "airspeedMps": 11.0,
+      "climbMps": -1.41,
+      "headingDeg": 65.0
+    },
+    {
+      "durationS": 6.0,
+      "airspeedMps": 11.0,
+      "climbMps": 1.61,
+      "headingDeg": 65.0
+    },
+    {
+      "durationS": 1.5,
+      "airspeedMps": 10.0,
+      "climbMps": 3.69,
+      "headingDeg": 65.0,
+      "comment": "a second and a half of reaction"
+    },
+    {
+      "durationS": 1.5,
+      "airspeedMps": 9.8,
+      "climbMps": 2.67,
+      "turnRateDegPerS": 13.0,
+      "comment": "rolling into a right-hand turn"
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 0.96,
+      "turnRateDegPerS": 20.0,
+      "comment": "lap 1, 27 m off the core: one strong surge a lap, and sink opposite it"
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": -0.01,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 0.22,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 1.68,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 3.83,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 3.12,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 1.03,
+      "turnRateDegPerS": 20.0,
+      "comment": "lap 2, still uncorrected - a lap or two is what it takes to read the asymmetry"
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": -0.01,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 0.17,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 1.78,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 3.72,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 3.21,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 2.5,
+      "airspeedMps": 9.5,
+      "climbMps": 1.12,
+      "turnRateDegPerS": 20.0,
+      "comment": "circling on to the correction point"
+    },
+    {
+      "durationS": 2.5,
+      "airspeedMps": 9.5,
+      "climbMps": 0.04,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 2.5,
+      "airspeedMps": 9.5,
+      "climbMps": 0.01,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 2.75,
+      "airspeedMps": 9.5,
+      "climbMps": 0.7,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 1.25,
+      "airspeedMps": 9.5,
+      "climbMps": 1.89,
+      "comment": "flatten heading straight at the core: the re-centring, and worth about 12 m of circle"
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 2.96,
+      "turnRateDegPerS": 20.0,
+      "comment": "lap 3, now 13 m off: the surge is wider and the weak side is no longer sinking"
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 3.59,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 2.59,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 1.39,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 0.9,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 1.62,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 2.9,
+      "turnRateDegPerS": 20.0,
+      "comment": "lap 4"
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 3.6,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 2.64,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 1.3,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 1.01,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 1.54,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 2.95,
+      "turnRateDegPerS": 20.0,
+      "comment": "circling on to the second correction point"
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 3.61,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 2.57,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 1.4,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 0.9,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 1.61,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 1.5,
+      "airspeedMps": 9.5,
+      "climbMps": 2.48,
+      "comment": "a second flatten, another 14 m, and this one finishes the job"
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 2.42,
+      "turnRateDegPerS": 20.0,
+      "comment": "lap 5, centred to 1 m: steady lift all the way round, and a better average than the peak of lap 1"
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 2.47,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 2.37,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 2.35,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 2.43,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 2.31,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 2.31,
+      "turnRateDegPerS": 20.0,
+      "comment": "lap 6, centred"
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 2.08,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 1.95,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 1.84,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 1.68,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 1.71,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 1.51,
+      "turnRateDegPerS": 20.0,
+      "comment": "lap 7, centred - and the thermal is past its best"
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 1.43,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 1.25,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 1.07,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 1.05,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 0.86,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 0.84,
+      "turnRateDegPerS": 20.0,
+      "comment": "lap 8: the thermal is dying under the glider, not being flown out of - the whole lap weakens together"
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 0.65,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 0.5,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 0.43,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 0.24,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 0.25,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 0.07,
+      "turnRateDegPerS": 20.0,
+      "comment": "lap 9, ragged and barely climbing: time to leave"
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": -0.04,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": -0.14,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": -0.33,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": -0.33,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": -0.53,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 3.5,
+      "airspeedMps": 10.0,
+      "climbMps": -0.62,
+      "turnRateDegPerS": 20.0,
+      "comment": "roll out and leave on 075"
+    },
+    {
+      "durationS": 3.75,
+      "airspeedMps": 10.0,
+      "climbMps": -0.84,
+      "turnRateDegPerS": 20.0
+    },
+    {
+      "durationS": 10.0,
+      "airspeedMps": 11.0,
+      "climbMps": -1.35,
+      "headingDeg": 74.5,
+      "comment": "on glide: from here the 40 s sample window empties of turning"
+    },
+    {
+      "durationS": 10.0,
+      "airspeedMps": 11.0,
+      "climbMps": -1.52,
+      "headingDeg": 74.5
+    },
+    {
+      "durationS": 10.0,
+      "airspeedMps": 11.0,
+      "climbMps": -1.54,
+      "headingDeg": 74.5,
+      "comment": "still gliding - 35 s of straight flight is what it takes for the accumulated turn to fall below the 120 deg threshold"
+    },
+    {
+      "durationS": 10.0,
+      "airspeedMps": 11.0,
+      "climbMps": -1.52,
+      "headingDeg": 74.5
+    },
+    {
+      "durationS": 10.0,
+      "airspeedMps": 11.0,
+      "climbMps": -1.53,
+      "headingDeg": 74.5
+    },
+    {
+      "durationS": 10.0,
+      "airspeedMps": 11.0,
+      "climbMps": -1.54,
+      "headingDeg": 74.5
+    },
+    {
+      "durationS": 11.0,
+      "airspeedMps": 11.0,
+      "climbMps": -1.51,
+      "headingDeg": 74.5,
+      "comment": "the next thermal is 22 m off the left wing now"
+    },
+    {
+      "durationS": 11.0,
+      "airspeedMps": 11.0,
+      "climbMps": 0.01,
+      "headingDeg": 74.5
+    },
+    {
+      "durationS": 2.5,
+      "airspeedMps": 10.0,
+      "climbMps": 2.41,
+      "headingDeg": 74.5,
+      "comment": "lift again - this one is softer edged and two and a half seconds go by before the turn"
+    },
+    {
+      "durationS": 1.5,
+      "airspeedMps": 9.8,
+      "climbMps": 1.23,
+      "turnRateDegPerS": -13.0,
+      "comment": "rolling into a LEFT-hand turn this time"
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 0.22,
+      "turnRateDegPerS": -20.0,
+      "comment": "left lap 1, 31 m off the core: everything the right-hand climb did, mirrored"
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 0.01,
+      "turnRateDegPerS": -20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 0.69,
+      "turnRateDegPerS": -20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 2.56,
+      "turnRateDegPerS": -20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 3.32,
+      "turnRateDegPerS": -20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 1.69,
+      "turnRateDegPerS": -20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 0.31,
+      "turnRateDegPerS": -20.0,
+      "comment": "left lap 2, still off"
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": -0.09,
+      "turnRateDegPerS": -20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 0.77,
+      "turnRateDegPerS": -20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 2.53,
+      "turnRateDegPerS": -20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 3.29,
+      "turnRateDegPerS": -20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 1.77,
+      "turnRateDegPerS": -20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 0.21,
+      "turnRateDegPerS": -20.0,
+      "comment": "circling on to the correction point"
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 0.01,
+      "turnRateDegPerS": -20.0
+    },
+    {
+      "durationS": 2.75,
+      "airspeedMps": 9.5,
+      "climbMps": 0.66,
+      "turnRateDegPerS": -20.0
+    },
+    {
+      "durationS": 2.5,
+      "airspeedMps": 9.5,
+      "climbMps": 2.02,
+      "comment": "one decisive flatten straight at the core, worth 24 m"
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 2.61,
+      "turnRateDegPerS": -20.0,
+      "comment": "left lap 3, centred to 5 m"
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 2.62,
+      "turnRateDegPerS": -20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 2.33,
+      "turnRateDegPerS": -20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 1.85,
+      "turnRateDegPerS": -20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 1.75,
+      "turnRateDegPerS": -20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 2.14,
+      "turnRateDegPerS": -20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 2.51,
+      "turnRateDegPerS": -20.0,
+      "comment": "left lap 4, centred"
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 2.71,
+      "turnRateDegPerS": -20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 2.27,
+      "turnRateDegPerS": -20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 1.86,
+      "turnRateDegPerS": -20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 1.8,
+      "turnRateDegPerS": -20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 2.05,
+      "turnRateDegPerS": -20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 2.61,
+      "turnRateDegPerS": -20.0,
+      "comment": "left lap 5, centred and still climbing"
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 2.63,
+      "turnRateDegPerS": -20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 2.31,
+      "turnRateDegPerS": -20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 1.88,
+      "turnRateDegPerS": -20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 1.74,
+      "turnRateDegPerS": -20.0
+    },
+    {
+      "durationS": 3.0,
+      "airspeedMps": 9.5,
+      "climbMps": 2.15,
+      "turnRateDegPerS": -20.0
+    },
+    {
+      "durationS": 3.5,
+      "airspeedMps": 10.5,
+      "climbMps": 2.38,
+      "turnRateDegPerS": -20.0,
+      "comment": "roll out and head home"
+    },
+    {
+      "durationS": 3.5,
+      "airspeedMps": 10.5,
+      "climbMps": 2.23,
+      "turnRateDegPerS": -20.0
+    },
+    {
+      "durationS": 3.5,
+      "airspeedMps": 10.5,
+      "climbMps": 1.49,
+      "turnRateDegPerS": -20.0
+    },
+    {
+      "durationS": 3.5,
+      "airspeedMps": 10.5,
+      "climbMps": 1.36,
+      "turnRateDegPerS": -20.0
+    },
+    {
+      "durationS": 3.5,
+      "airspeedMps": 10.5,
+      "climbMps": 1.75,
+      "turnRateDegPerS": -20.0
+    },
+    {
+      "durationS": 12.0,
+      "airspeedMps": 11.0,
+      "climbMps": -0.15,
+      "headingDeg": 250.0,
+      "comment": "straight home, so the recording ends in the no-turn layout"
+    },
+    {
+      "durationS": 12.0,
+      "airspeedMps": 11.0,
+      "climbMps": -1.54,
+      "headingDeg": 250.0
+    }
+  ]
+}

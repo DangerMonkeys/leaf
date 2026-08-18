@@ -64,7 +64,7 @@ captured one are replayed by exactly the same code.
 |---|---|---|
 | `*.log` | Real captured GPS, IMU, pressure and ambient data | `BusLogger` on a device (Leaf Labs → start bus log) |
 | `*.igc` | GPS fixes and pressure altitude at 1 Hz | Any flight logged by Leaf or another vario |
-| `*.json` | Hand-authored flights: legs of heading, airspeed, climb and turn rate, in a wind | Written by you; `sim/recordings/` holds a thermal climb |
+| `*.json` | Hand-authored flights: legs of heading, airspeed, climb and turn rate, in a wind | Written by you; `sim/recordings/` holds a thermal climb and a thermal-centring exercise |
 
 The two `.igc` examples are real winch flights at the same field, a few minutes apart.
 
