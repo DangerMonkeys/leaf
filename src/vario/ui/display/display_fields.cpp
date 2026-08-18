@@ -813,6 +813,37 @@ void display_fanet_icon(const uint8_t& x, const uint8_t& y) {
 }
 
 // Wind Sock Center Pointer
+void display_gliderPointer(int16_t x, int16_t y, float headingRad, uint8_t noseLengthPx) {
+  const float s = sinf(headingRad);
+  const float c = cosf(headingRad);
+  // Lateral is positive to the right of the nose, forward is positive towards it.
+  const auto at = [&](float lateral, float forward, int16_t& ox, int16_t& oy) {
+    ox = static_cast<int16_t>(lroundf(x + lateral * c + forward * s));
+    oy = static_cast<int16_t>(lroundf(y + lateral * s - forward * c));
+  };
+
+  const float nose = noseLengthPx;
+  const float wing = 0.75f * nose;
+  const float notch = 0.375f * nose;
+
+  int16_t nx, ny, lx, ly, rx, ry, tx, ty;
+  at(0, nose, nx, ny);
+  at(-wing, -wing, lx, ly);
+  at(wing, -wing, rx, ry);
+  at(0, -notch, tx, ty);
+
+  // The fill is only ever an eraser; the four strokes are the shape.  Done the other way round --
+  // filling the dart and stroking it back in -- the swept wings taper to under a pixel, the fill
+  // drops them, and the strokes are left hanging off the tips as whiskers.
+  u8g2.setDrawColor(0);
+  u8g2.drawTriangle(nx, ny, lx, ly, rx, ry);
+  u8g2.setDrawColor(1);
+  u8g2.drawLine(nx, ny, lx, ly);
+  u8g2.drawLine(nx, ny, rx, ry);
+  u8g2.drawLine(lx, ly, tx, ty);
+  u8g2.drawLine(rx, ry, tx, ty);
+}
+
 void display_windSockArrow(int16_t x, int16_t y, int16_t radius) {
   const WindEstimate& windEstimate = windEstimator.getWindEstimate();
   float wind_angle = windEstimate.windDirectionTrue;

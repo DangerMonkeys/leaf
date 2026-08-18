@@ -1,0 +1,83 @@
+# Walks the Thermal Core page through sim/recordings/thermal-core.json and screenshots every
+# state it can be in.  Times are device seconds, which track scenario seconds because the
+# recording starts playing at boot.
+#
+#   leafsim --port 0 --speed 0 --accept-warning \
+#           --setting LAB_THERM_CORE=1 --setting SHOW_THERM_CORE=1 \
+#           --setting SHOW_THERM_TRK=0 --setting SHOW_NAV=0 \
+#           --scenario sim/recordings/thermal-core.json --play \
+#           --script sim/scripts/thermal-core.txt
+#
+# With the other flight pages hidden, one RIGHT from the User page lands on Thermal Core.
+#
+# Build with OPT="-O1 -g -DDEBUG_THERMAL_CORE" to get the estimator's own numbers on the serial
+# console alongside these screenshots.
+20   press         RIGHT
+21   expect-page   ThermalCore
+
+# --- gliding, no turn ------------------------------------------------------------------------
+# Straight flight: the glider sits in the middle of the map, the trail runs straight down it at the
+# zoomed-out glide scale, and there is no core marker and no status line, because there is no
+# circle to advise on.  AVG reads the sink of the glide.
+40   status
+42   screenshot    sim/build/tc-01-glide.png
+
+# The dying bubble: the vario lifts to about +0.5 m/s for a few seconds.  Rings appear in the
+# trail, but the layout must not change - lift alone is not a thermal.
+60   status
+61   screenshot    sim/build/tc-02-bubble.png
+
+# --- thermal 1, right hand, entered 27 m off the core ----------------------------------------
+# Circling starts at 98 s.  Four seconds of sustained turn and 200 degrees of sweep are needed
+# before the page commits to a direction, so the turn layout appears around 109 s and not before,
+# and the core marker follows a couple of seconds later once the fit has a lap to work with.
+100  status
+104  screenshot    sim/build/tc-03-rolling-in.png
+
+# Lap 2 of an uncentred circle.  The trail should be a closed circle rather than a downwind
+# spiral - that is the wind correction working - with the fat side of the necklace towards the
+# core, the bullseye sitting on that side about 23 m from the circle centre tick, and OPEN
+# appearing for the few seconds each lap when the nose lines up with the correction.
+130  status
+132  screenshot    sim/build/tc-04-offset-lap.png
+
+# The first correction is flown at 144 s: 1.25 s of straight flight aimed at the core.
+147  screenshot    sim/build/tc-05-correcting.png
+160  status
+162  screenshot    sim/build/tc-06-half-centred.png
+
+# Centred to a metre from 201 s: +1.9 to +2.5 m/s all the way round, so the trail is one uniform
+# ring size, the circle centre tick disappears under the bullseye, and the status line reads
+# CENTRED.  AVG should be reading about +2.2.
+215  status
+217  screenshot    sim/build/tc-07-centred.png
+235  screenshot    sim/build/tc-08-centred-later.png
+
+# The thermal dies under the glider: the whole lap weakens together rather than going lopsided.
+265  status
+285  status
+287  screenshot    sim/build/tc-09-dying.png
+
+# --- the glide between climbs ----------------------------------------------------------------
+# Rolled out at 298 s.  The turn layout must be gone by about 307 s - the turn rate is measured
+# over four seconds and the circling state needs three more of level flight to release - and the
+# page must not keep drawing a circle the pilot is no longer flying just because the buffer
+# still holds one.
+312  screenshot    sim/build/tc-10-just-left.png
+345  status
+347  screenshot    sim/build/tc-11-aged-out.png
+
+# --- thermal 2, left hand, entered 31 m off the core ------------------------------------------
+# Everything mirrored: glider on the right of the map, core marker to the left.  A sign error in
+# the body-frame rotation or in the turn direction shows here and nowhere else.
+390  status
+412  screenshot    sim/build/tc-12-left-offset.png
+430  screenshot    sim/build/tc-13-left-correcting.png
+470  status
+472  screenshot    sim/build/tc-14-left-centred.png
+
+# --- home -------------------------------------------------------------------------------------
+505  status
+520  screenshot    sim/build/tc-15-home.png
+521  expect-page   ThermalCore
+525  quit

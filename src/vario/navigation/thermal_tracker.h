@@ -57,6 +57,11 @@ class ThermalTracker {
   void seedTestThermalsForFlight();
   uint8_t recentCoreSamples(CoreSample* out, uint8_t maxCount) const;
 
+  // The local east/north metre frame the detector works in, shared with thermal_core so both
+  // features measure from the same origin.  False until the first fix has established it.
+  bool localFrameValid() const { return originValid_; }
+  bool toLocalMeters(double latitude, double longitude, float& xM, float& yM) const;
+
   const ThermalDisplayItem* displayItems() const { return displayItems_; }
   uint8_t displayItemCount() const { return displayItemCount_; }
   const ThermalDisplayItem* selectedDisplayItem() const;

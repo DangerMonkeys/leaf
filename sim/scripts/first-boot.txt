@@ -1,0 +1,13 @@
+# A first power-up: wait out the startup checks, accept the safety warning, land on a flight page.
+# The warning page needs DOWN to move the cursor onto ACCEPT before CENTER confirms it, exactly as
+# it does on a real device.
+#
+#   leafsim --port 0 --speed 0 --scenario sim/recordings/thermal-climb.json --play \
+#           --script sim/scripts/first-boot.txt
+20   screenshot    sim/build/01-warning.png
+22   press         DOWN
+24   press         CENTER
+30   screenshot    sim/build/02-flying.png
+31   expect-page   User
+32   expect-serial SD card: mounted
+33   quit
