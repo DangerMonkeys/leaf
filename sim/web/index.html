@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>leafsim</title>
+<style>
+  :root {
+    --bg: #14161a;
+    --panel: #1c1f25;
+    --panel-2: #23272f;
+    --line: #2f343d;
+    --text: #e6e9ef;
+    --muted: #9aa3b2;
+    --accent: #7fc98b;
+    --warn: #e0b060;
+    --lcd-on: #21252a;
+    --lcd-off: #c7ccc1;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  section.wide { grid-column: 1 / -1; }
+  #path3d {
+    width: 100%; height: auto; display: block; margin-top: 8px;
+    background: #10131a; border: 1px solid var(--line); border-radius: 6px;
+    cursor: grab; touch-action: none;
+  }
+  #path3d.dragging { cursor: grabbing; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  header {
+    display: flex; align-items: baseline; gap: 12px;
+    padding: 12px 18px; border-bottom: 1px solid var(--line);
+  }
+  header h1 { font-size: 15px; margin: 0; letter-spacing: .04em; }
+  header .sub { color: var(--muted); font-size: 12px; }
+  #link { margin-left: auto; color: var(--muted); font-size: 12px; }
+  #link b { color: var(--accent); }
+
+  main { display: grid; grid-template-columns: auto 1fr; gap: 18px; padding: 18px; align-items: start; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+
+  .device { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .shell {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+    padding: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.35);
+  }
+  canvas#lcd { display: block; image-rendering: pixelated; border-radius: 3px; }
+
+  .dpad { display: grid; grid-template-columns: repeat(3, 54px); grid-template-rows: repeat(3, 44px); gap: 6px; }
+  .dpad button {
+    background: var(--panel-2); color: var(--text); border: 1px solid var(--line);
+    border-radius: 8px; font-size: 15px; cursor: pointer;
+  }
+  .dpad button:active, .dpad button.held { background: var(--accent); color: #10130f; }
+  .dpad .spacer { visibility: hidden; }
+  .hint { color: var(--muted); font-size: 11px; text-align: center; }
+
+  .panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+  section {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px;
+  }
+  section h2 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: .09em;
+    color: var(--muted); margin: 0 0 10px;
+  }
+  .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .row + .row { margin-top: 8px; }
+  button.action, select {
+    background: var(--panel-2); color: var(--text); border: 1px solid var(--line);
+    border-radius: 7px; padding: 6px 10px; cursor: pointer; font-size: 13px;
+  }
+  button.action:hover { border-color: var(--accent); }
+  button.action.on { background: var(--accent); color: #10130f; border-color: var(--accent); }
+  input[type=range] { flex: 1; min-width: 120px; accent-color: var(--accent); }
+  label.check { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; }
+
+  dl.readout { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 0; font-family: var(--mono); font-size: 12px; }
+  dl.readout dt { color: var(--muted); }
+  dl.readout dd { margin: 0; text-align: right; }
+
+  #serial {
+    font-family: var(--mono); font-size: 11px; line-height: 1.4; color: var(--muted);
+    background: #0f1114; border: 1px solid var(--line); border-radius: 8px;
+    height: 220px; overflow-y: auto; padding: 8px; white-space: pre-wrap; word-break: break-word;
+  }
+  #serial .fatal { color: #e07070; }
+  .pill { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .pill b { color: var(--text); }
+</style>
+</head>
+<body>
+<header>
+  <h1>leafsim</h1>
+  <span class="sub">Leaf firmware on a virtual board</span>
+  <span id="link">connecting…</span>
+</header>
+
+<main>
+  <div class="device">
+    <div class="shell"><canvas id="lcd" width="288" height="576"></canvas></div>
+
+    <div class="dpad">
+      <div class="spacer"></div>
+      <button data-button="UP">▲</button>
+      <div class="spacer"></div>
+      <button data-button="LEFT">◀</button>
+      <button data-button="CENTER">●</button>
+      <button data-button="RIGHT">▶</button>
+      <div class="spacer"></div>
+      <button data-button="DOWN">▼</button>
+      <div class="spacer"></div>
+    </div>
+    <div class="hint">arrow keys + enter · a held key is a held button</div>
+    <div class="row">
+      <button class="action" id="screenshot">Screenshot</button>
+      <button class="action" id="restart">Restart</button>
+      <label class="check"><input type="checkbox" id="sound"> speaker</label>
+    </div>
+  </div>
+
+  <div class="panels">
+    <section>
+      <h2>Clock</h2>
+      <div class="row">
+        <button class="action speed" data-speed="0.25">¼×</button>
+        <button class="action speed" data-speed="1">1×</button>
+        <button class="action speed" data-speed="5">5×</button>
+        <button class="action speed" data-speed="20">20×</button>
+        <button class="action speed" data-speed="0">max</button>
+      </div>
+      <div class="row">
+        <button class="action" id="pause">Pause</button>
+        <button class="action" id="step100">Step 100 ms</button>
+        <button class="action" id="step1000">Step 1 s</button>
+      </div>
+      <div class="row"><span class="pill">device uptime <b id="uptime">–</b></span></div>
+    </section>
+
+    <section>
+      <h2>Scenario</h2>
+      <div class="row">
+        <select id="scenarioList"><option value="">— pick a recording —</option></select>
+        <button class="action" id="load">Load</button>
+      </div>
+      <div class="row">
+        <button class="action" id="play">Play</button>
+        <input type="range" id="seek" min="0" max="1000" value="0">
+      </div>
+      <div class="row"><span class="pill" id="scenarioPos">no scenario loaded</span></div>
+    </section>
+
+    <section class="wide">
+      <h2>Flight path</h2>
+      <div class="row">
+        <span class="pill">drag to orbit · wheel to zoom · shift-drag to pan</span>
+        <label class="check"><input type="checkbox" id="pathFollow" checked> follow glider</label>
+        <button class="action" id="pathReset">Reset view</button>
+      </div>
+      <canvas id="path3d" width="900" height="420"></canvas>
+      <div class="row"><span class="pill" id="pathInfo">no track loaded</span></div>
+    </section>
+
+    <section>
+      <h2>Instruments</h2>
+      <dl class="readout">
+        <dt>page</dt><dd id="s-page">–</dd>
+        <dt>altitude</dt><dd id="s-alt">–</dd>
+        <dt>climb</dt><dd id="s-climb">–</dd>
+        <dt>pressure</dt><dd id="s-press">–</dd>
+        <dt>temperature</dt><dd id="s-temp">–</dd>
+        <dt>gps</dt><dd id="s-gps">–</dd>
+        <dt>ground speed</dt><dd id="s-speed">–</dd>
+        <dt>track</dt><dd id="s-course">–</dd>
+        <dt>flight timer</dt><dd id="s-timer">–</dd>
+        <dt>speaker</dt><dd id="s-tone">–</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>Board</h2>
+      <div class="row">
+        <span class="pill">battery <b id="s-batt">–</b></span>
+        <input type="range" id="battery" min="0" max="100" value="90">
+      </div>
+      <div class="row">
+        <label class="check"><input type="checkbox" id="charging"> charging</label>
+        <label class="check"><input type="checkbox" id="card" checked> SD card inserted</label>
+      </div>
+      <div class="row">
+        <input type="text" id="injectLine" placeholder="inject a bus line, e.g. P0,92310"
+               style="flex:1;background:#0f1114;color:var(--text);border:1px solid var(--line);border-radius:7px;padding:6px 8px;font-family:var(--mono);font-size:12px">
+        <button class="action" id="inject">Inject</button>
+      </div>
+    </section>
+
+    <section style="grid-column: 1 / -1">
+      <h2>Serial console</h2>
+      <div id="serial"></div>
+    </section>
+  </div>
+</main>
+
+<script>
+(() => {
+  const canvas = document.getElementById('lcd');
+  const context = canvas.getContext('2d');
+  const LCD_ON = '#21252a', LCD_OFF = '#c7ccc1';
+  const scale = 3;
+
+  function drawFrame(frame) {
+    const bytes = atob(frame.pixels);
+    if (canvas.width !== frame.width * scale) {
+      canvas.width = frame.width * scale;
+      canvas.height = frame.height * scale;
+    }
+    context.fillStyle = LCD_OFF;
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = LCD_ON;
+    for (let y = 0; y < frame.height; y++) {
+      for (let x = 0; x < frame.width; x++) {
+        const index = y * frame.width + x;
+        const bit = (bytes.charCodeAt(index >> 3) >> (7 - (index & 7))) & 1;
+        if (bit) context.fillRect(x * scale, y * scale, scale, scale);
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------- control API
+  const post = (path, body) =>
+    fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(body || {}) });
+
+  const press = (button, action) => post('/api/button', { button, action });
+
+  document.querySelectorAll('.dpad button[data-button]').forEach(element => {
+    const name = element.dataset.button;
+    element.addEventListener('mousedown', () => { element.classList.add('held'); press(name, 'down'); });
+    element.addEventListener('mouseup', () => { element.classList.remove('held'); press(name, 'up'); });
+    element.addEventListener('mouseleave', () => {
+      if (element.classList.contains('held')) { element.classList.remove('held'); press(name, 'up'); }
+    });
+  });
+
+  const KEYS = { ArrowUp: 'UP', ArrowDown: 'DOWN', ArrowLeft: 'LEFT', ArrowRight: 'RIGHT',
+                 Enter: 'CENTER', ' ': 'CENTER' };
+  const down = new Set();
+  addEventListener('keydown', event => {
+    const button = KEYS[event.key];
+    if (!button || event.target.tagName === 'INPUT') return;
+    event.preventDefault();
+    if (down.has(button)) return;
+    down.add(button);
+    press(button, 'down');
+    document.querySelector(`[data-button="${button}"]`)?.classList.add('held');
+  });
+  addEventListener('keyup', event => {
+    const button = KEYS[event.key];
+    if (!button || !down.has(button)) return;
+    down.delete(button);
+    press(button, 'up');
+    document.querySelector(`[data-button="${button}"]`)?.classList.remove('held');
+  });
+
+  // Selection follows the device's reported speed rather than the last click, so a run started
+  // with --speed 5 shows 5x, and so does one driven from a script.
+  function showSpeed(speed) {
+    document.querySelectorAll('.speed').forEach(element =>
+      element.classList.toggle('on', Number(element.dataset.speed) === speed));
+  }
+  document.querySelectorAll('.speed').forEach(element => {
+    element.addEventListener('click', () =>
+      post('/api/clock', { speed: Number(element.dataset.speed) }));
+  });
+
+  let paused = false;
+  document.getElementById('pause').addEventListener('click', event => {
+    paused = !paused;
+    event.target.classList.toggle('on', paused);
+    event.target.textContent = paused ? 'Resume' : 'Pause';
+    post('/api/clock', { paused });
+  });
+  document.getElementById('step100').addEventListener('click', () => post('/api/clock', { stepMs: 100 }));
+  document.getElementById('step1000').addEventListener('click', () => post('/api/clock', { stepMs: 1000 }));
+  document.getElementById('restart').addEventListener('click', () => post('/api/restart'));
+  document.getElementById('screenshot').addEventListener('click', () => {
+    window.open('/api/screenshot.png?scale=4', '_blank');
+  });
+
+  document.getElementById('load').addEventListener('click', async () => {
+    const file = document.getElementById('scenarioList').value;
+    if (!file) return;
+    const response = await (await post('/api/scenario', { load: file })).json();
+    if (!response.ok) appendSerial('scenario: ' + response.error, true);
+  });
+  let playing = false;
+  document.getElementById('play').addEventListener('click', () => {
+    playing = !playing;
+    post('/api/scenario', { play: playing });
+  });
+  document.getElementById('seek').addEventListener('change', event => {
+    if (!scenarioLength) return;
+    post('/api/scenario', { seek: (event.target.value / 1000) * scenarioLength });
+  });
+
+  document.getElementById('battery').addEventListener('change', event =>
+    post('/api/board', { batteryPercent: Number(event.target.value) }));
+  document.getElementById('charging').addEventListener('change', event =>
+    post('/api/board', { charging: event.target.checked }));
+  document.getElementById('card').addEventListener('change', event =>
+    post('/api/board', { cardPresent: event.target.checked }));
+  document.getElementById('inject').addEventListener('click', () => {
+    const field = document.getElementById('injectLine');
+    if (field.value.trim()) post('/api/inject', { line: field.value.trim() });
+  });
+
+  fetch('/api/scenarios').then(response => response.json()).then(data => {
+    const list = document.getElementById('scenarioList');
+    data.files.forEach(name => {
+      const option = document.createElement('option');
+      option.value = name;
+      option.textContent = name;
+      list.appendChild(option);
+    });
+  });
+
+  // ---------------------------------------------------------------- speaker
+  // Tone events carry the frequency the firmware wrote to the LEDC channel and the volume it set
+  // on the amplifier's two gain pins, so the browser can play what the device would sound like.
+  let audio = null, oscillator = null, gain = null;
+  document.getElementById('sound').addEventListener('change', event => {
+    if (event.target.checked) {
+      audio = new (window.AudioContext || window.webkitAudioContext)();
+      oscillator = audio.createOscillator();
+      gain = audio.createGain();
+      oscillator.type = 'square';
+      gain.gain.value = 0;
+      oscillator.connect(gain).connect(audio.destination);
+      oscillator.start();
+    } else if (audio) {
+      oscillator.stop();
+      audio.close();
+      audio = null;
+    }
+  });
+  function playTone(event) {
+    if (!audio) return;
+    const now = audio.currentTime;
+    if (!event.hz) {
+      gain.gain.setTargetAtTime(0, now, 0.005);
+      return;
+    }
+    oscillator.frequency.setValueAtTime(event.hz, now);
+    gain.gain.setTargetAtTime(0.02 + 0.03 * event.volume, now, 0.005);
+  }
+
+  // ---------------------------------------------------------------- status
+  const serial = document.getElementById('serial');
+  function appendSerial(text, isFatal) {
+    const line = document.createElement('div');
+    if (isFatal) line.className = 'fatal';
+    line.textContent = text;
+    serial.appendChild(line);
+    while (serial.childElementCount > 500) serial.removeChild(serial.firstChild);
+    serial.scrollTop = serial.scrollHeight;
+  }
+
+  const text = (id, value) => { document.getElementById(id).textContent = value; };
+  let scenarioLength = 0, seeking = false;
+  document.getElementById('seek').addEventListener('input', () => { seeking = true; });
+  document.getElementById('seek').addEventListener('change', () => { seeking = false; });
+
+  function showStatus(status) {
+    showSpeed(status.speed);
+    text('uptime', (status.uptimeMs / 1000).toFixed(1) + ' s');
+    text('s-page', status.page);
+    text('s-alt', status.baro.altitudeM.toFixed(1) + ' m');
+    text('s-climb', status.baro.climbMps.toFixed(2) + ' m/s');
+    text('s-press', status.baro.pressureHpa.toFixed(2) + ' hPa');
+    text('s-temp', status.baro.temperatureC.toFixed(1) + ' °C');
+    text('s-gps', status.gps.fix
+      ? `${status.gps.lat.toFixed(5)}, ${status.gps.lon.toFixed(5)} (${status.gps.satellites} sats)`
+      : 'no fix');
+    text('s-speed', status.gps.speedKmh.toFixed(1) + ' km/h');
+    text('s-course', status.gps.courseDeg.toFixed(0) + '°');
+    text('s-timer', status.flightTimer ? 'running' : 'stopped');
+    text('s-tone', status.speaker.toneHz ? `${status.speaker.toneHz} Hz (vol ${status.speaker.volume})` : 'silent');
+    text('s-batt', status.power.batteryPercent + '% · ' + status.power.batteryMv + ' mV');
+
+    scenarioLength = status.scenario.lengthS;
+    if (status.scenario.name) {
+      text('scenarioPos',
+        `${status.scenario.name} — ${status.scenario.positionS.toFixed(1)}s / ${scenarioLength.toFixed(1)}s`
+        + (status.scenario.playing ? ' · playing' : ' · paused'));
+      if (!seeking && scenarioLength > 0) {
+        document.getElementById('seek').value = (status.scenario.positionS / scenarioLength) * 1000;
+      }
+      playing = status.scenario.playing;
+      document.getElementById('play').textContent = playing ? 'Pause' : 'Play';
+      document.getElementById('play').classList.toggle('on', playing);
+    }
+
+    // Loading is queued onto the device thread, so fetching the track straight after the POST
+    // races the install and comes back empty. The name in the status stream is the reliable
+    // signal that a recording is actually in place -- and it also catches one loaded from the
+    // command line before the panel was open.
+    if (status.scenario.name !== loadedTrackName) {
+      loadedTrackName = status.scenario.name;
+      loadTrack();
+    }
+
+    if (track && track.points.length) {
+      // The track is sampled at 1 Hz from the recording's own clock, so the playhead is a lookup
+      // rather than a search: find the last fix at or before the scenario position.
+      const at = status.scenario.positionS;
+      let i = gliderIndex;
+      while (i + 1 < track.points.length && track.points[i + 1].t <= at) i++;
+      while (i > 0 && track.points[i].t > at) i--;
+      gliderIndex = i;
+      text('pathInfo', summarisePath());
+      drawPath();
+    }
+  }
+
+  // ---------------------------------------------------------------- flight path (3D)
+  //
+  // A hand-rolled projection on a 2D canvas rather than a WebGL library: the page is served off
+  // the emulator itself with no network, the scene is a polyline and a rectangle, and a painter's
+  // algorithm over a few hundred points is nothing. Axes are metres east / north / up from the
+  // first fix, which keeps the maths in the same frame the firmware works in.
+  const view = { yaw: -0.6, pitch: 0.5, zoom: 1, panX: 0, panY: 0, follow: true };
+  const DEFAULT_VIEW = { ...view };
+  let track = null;        // [{x, y, z, t}]
+  let loadedTrackName = null;
+  let trackBounds = null;
+  let gliderIndex = 0;
+
+  const METRES_PER_DEG_LAT = 111320;
+
+  function project(p) {
+    // Yaw about the vertical axis, then tilt. Orthographic: a flight path is small enough
+    // that perspective adds distortion without adding information.
+    const cy = Math.cos(view.yaw), sy = Math.sin(view.yaw);
+    const cp = Math.cos(view.pitch), sp = Math.sin(view.pitch);
+    const x = p.x * cy - p.y * sy;
+    const y = p.x * sy + p.y * cy;
+    // Screen y grows downward, so both the tilted north axis and altitude have to be negated
+    // going into it: up on the screen is up in the world, and further away is higher up the
+    // canvas.  Without the sign on the altitude term the whole flight is drawn upside down --
+    // climbs descend, and the ground grid floats above the track.
+    return {
+      sx: x,
+      sy: -(y * sp + p.z * cp),
+      depth: y * cp - p.z * sp,
+    };
+  }
+
+  function pathScale(canvas) {
+    if (!trackBounds) return 1;
+    const span = Math.max(trackBounds.spanXY, 1);
+    return (Math.min(canvas.width, canvas.height * 1.8) / span) * 0.55 * view.zoom;
+  }
+
+  function toScreen(canvas, p, scale, origin) {
+    const q = project({ x: p.x - origin.x, y: p.y - origin.y, z: p.z - origin.z });
+    return {
+      x: canvas.width / 2 + q.sx * scale + view.panX,
+      y: canvas.height / 2 + q.sy * scale + view.panY,
+      depth: q.depth,
+    };
+  }
+
+  function drawPath() {
+    const canvas = document.getElementById('path3d');
+    const g = canvas.getContext('2d');
+    g.clearRect(0, 0, canvas.width, canvas.height);
+    if (!track || !track.points.length) return;
+
+    const scale = pathScale(canvas);
+    const origin = view.follow && track.points[gliderIndex]
+      ? { ...track.points[gliderIndex], z: trackBounds.z0 }
+      : { x: trackBounds.cx, y: trackBounds.cy, z: trackBounds.z0 };
+
+    // Ground grid, at the altitude of the lowest fix, so height is readable as distance above it.
+    const gridStep = trackBounds.spanXY > 1200 ? 200 : 100;
+    const half = Math.ceil(trackBounds.spanXY / gridStep) * gridStep;
+    g.strokeStyle = '#222833';
+    g.lineWidth = 1;
+    for (let d = -half; d <= half; d += gridStep) {
+      for (const line of [
+        [{ x: trackBounds.cx + d, y: trackBounds.cy - half, z: trackBounds.z0 },
+         { x: trackBounds.cx + d, y: trackBounds.cy + half, z: trackBounds.z0 }],
+        [{ x: trackBounds.cx - half, y: trackBounds.cy + d, z: trackBounds.z0 },
+         { x: trackBounds.cx + half, y: trackBounds.cy + d, z: trackBounds.z0 }],
+      ]) {
+        const a = toScreen(canvas, line[0], scale, origin);
+        const b = toScreen(canvas, line[1], scale, origin);
+        g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke();
+      }
+    }
+
+    // Drop lines every 10 s: without them a 3D polyline gives no sense of height at all.
+    g.strokeStyle = 'rgba(127,201,139,0.18)';
+    for (let i = 0; i < track.points.length; i += 10) {
+      const p = track.points[i];
+      const top = toScreen(canvas, p, scale, origin);
+      const foot = toScreen(canvas, { x: p.x, y: p.y, z: trackBounds.z0 }, scale, origin);
+      g.beginPath(); g.moveTo(top.x, top.y); g.lineTo(foot.x, foot.y); g.stroke();
+    }
+
+    // The track, coloured by climb rate: green climbing, red sinking.
+    g.lineWidth = 2;
+    for (let i = 1; i < track.points.length; i++) {
+      const a = track.points[i - 1], b = track.points[i];
+      const dt = Math.max(b.t - a.t, 0.1);
+      const climb = (b.z - a.z) / dt;
+      const flown = i <= gliderIndex;
+      const hue = climb > 0.1 ? 140 : climb < -0.1 ? 8 : 45;
+      const light = flown ? 62 : 30;
+      g.strokeStyle = `hsl(${hue} 65% ${light}%)`;
+      const pa = toScreen(canvas, a, scale, origin);
+      const pb = toScreen(canvas, b, scale, origin);
+      g.beginPath(); g.moveTo(pa.x, pa.y); g.lineTo(pb.x, pb.y); g.stroke();
+    }
+
+    // The glider: a dot with a vertical drop line to the ground.
+    const here = track.points[gliderIndex];
+    if (here) {
+      const foot = toScreen(canvas, { x: here.x, y: here.y, z: trackBounds.z0 }, scale, origin);
+      const dot = toScreen(canvas, here, scale, origin);
+      g.strokeStyle = '#e6e9ef';
+      g.lineWidth = 1;
+      g.beginPath(); g.moveTo(dot.x, dot.y); g.lineTo(foot.x, foot.y); g.stroke();
+      g.fillStyle = '#ffffff';
+      g.beginPath(); g.arc(dot.x, dot.y, 4.5, 0, Math.PI * 2); g.fill();
+    }
+  }
+
+  function summarisePath() {
+    if (!track || !track.points.length) return 'no track loaded';
+    const here = track.points[gliderIndex];
+    let line = `${track.points.length} fixes · ${trackBounds.spanXY.toFixed(0)} m across · `
+      + `${trackBounds.z0.toFixed(0)}–${trackBounds.z1.toFixed(0)} m`;
+    if (here) line += ` · glider ${here.z.toFixed(0)} m at ${here.t.toFixed(0)} s`;
+    return line;
+  }
+
+  async function loadTrack() {
+    try {
+      const data = await (await fetch('/api/track')).json();
+      if (!data.points.length) { track = null; trackBounds = null; text('pathInfo', 'no track loaded'); drawPath(); return; }
+      const ref = { lat: data.points[0][1], lon: data.points[0][2] };
+      const mPerLon = METRES_PER_DEG_LAT * Math.cos(ref.lat * Math.PI / 180);
+      const points = data.points.map(([t, lat, lon, alt]) => ({
+        t, x: (lon - ref.lon) * mPerLon, y: (lat - ref.lat) * METRES_PER_DEG_LAT, z: alt,
+      }));
+      const xs = points.map(p => p.x), ys = points.map(p => p.y), zs = points.map(p => p.z);
+      trackBounds = {
+        cx: (Math.min(...xs) + Math.max(...xs)) / 2,
+        cy: (Math.min(...ys) + Math.max(...ys)) / 2,
+        z0: Math.min(...zs), z1: Math.max(...zs),
+        spanXY: Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys), 100),
+      };
+      track = { ref, points };
+      gliderIndex = 0;
+      text('pathInfo', summarisePath());
+      drawPath();
+    } catch (e) {
+      text('pathInfo', 'track unavailable');
+    }
+  }
+
+  (function wirePath() {
+    const canvas = document.getElementById('path3d');
+    let dragging = null;
+    canvas.addEventListener('pointerdown', e => {
+      dragging = { x: e.clientX, y: e.clientY, pan: e.shiftKey };
+      canvas.setPointerCapture(e.pointerId);
+      canvas.classList.add('dragging');
+    });
+    canvas.addEventListener('pointermove', e => {
+      if (!dragging) return;
+      const dx = e.clientX - dragging.x, dy = e.clientY - dragging.y;
+      dragging.x = e.clientX; dragging.y = e.clientY;
+      if (dragging.pan) {
+        view.panX += dx; view.panY += dy;
+      } else {
+        view.yaw += dx * 0.01;
+        view.pitch = Math.max(0.05, Math.min(1.5, view.pitch + dy * 0.01));
+      }
+      drawPath();
+    });
+    const endDrag = () => { dragging = null; canvas.classList.remove('dragging'); };
+    canvas.addEventListener('pointerup', endDrag);
+    canvas.addEventListener('pointercancel', endDrag);
+    canvas.addEventListener('wheel', e => {
+      e.preventDefault();
+      view.zoom = Math.max(0.15, Math.min(12, view.zoom * (e.deltaY < 0 ? 1.12 : 0.89)));
+      drawPath();
+    }, { passive: false });
+
+    document.getElementById('pathReset').addEventListener('click', () => {
+      Object.assign(view, DEFAULT_VIEW, { follow: document.getElementById('pathFollow').checked });
+      drawPath();
+    });
+    document.getElementById('pathFollow').addEventListener('change', e => {
+      view.follow = e.target.checked;
+      drawPath();
+    });
+  })();
+
+  // ---------------------------------------------------------------- event stream
+  function connect() {
+    const stream = new EventSource('/api/events');
+    stream.addEventListener('open', () => {
+      document.getElementById('link').innerHTML = 'device <b>connected</b>';
+    });
+    stream.addEventListener('frame', event => drawFrame(JSON.parse(event.data)));
+    stream.addEventListener('status', event => showStatus(JSON.parse(event.data)));
+    stream.addEventListener('serial', event => {
+      const line = JSON.parse(event.data);
+      appendSerial(line, line.startsWith('FATAL'));
+    });
+    stream.addEventListener('tone', event => playTone(JSON.parse(event.data)));
+    stream.addEventListener('error', () => {
+      document.getElementById('link').textContent = 'reconnecting…';
+      stream.close();
+      setTimeout(connect, 1000);
+    });
+  }
+  connect();
+})();
+</script>
+</body>
+</html>

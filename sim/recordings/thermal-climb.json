@@ -1,0 +1,44 @@
+{
+  "description": "Ground start, tow-free launch into a thermal: straight glide, then 360s at 2 m/s, then a glide out. Wind from the west at 4 m/s, so the climb drifts downwind and the wind estimator has something to find.",
+  "start": {
+    "lat": 47.5,
+    "lon": 11.2,
+    "altitudeM": 1200,
+    "headingDeg": 90,
+    "hour": 13
+  },
+  "wind": {
+    "speedMps": 4.0,
+    "fromDeg": 270
+  },
+  "ambient": {
+    "temperatureC": 18.0,
+    "humidity": 45.0
+  },
+  "legs": [
+    {
+      "durationS": 30,
+      "airspeedMps": 0.2,
+      "climbMps": 0.0,
+      "headingDeg": 90
+    },
+    {
+      "durationS": 60,
+      "airspeedMps": 10.0,
+      "climbMps": -1.1,
+      "headingDeg": 90
+    },
+    {
+      "durationS": 240,
+      "airspeedMps": 9.0,
+      "climbMps": 2.0,
+      "turnRateDegPerS": 24
+    },
+    {
+      "durationS": 90,
+      "airspeedMps": 11.0,
+      "climbMps": -1.4,
+      "headingDeg": 250
+    }
+  ]
+}
