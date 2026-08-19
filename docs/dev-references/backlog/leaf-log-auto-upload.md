@@ -24,6 +24,11 @@ Auto-upload is enabled only when:
 Orphan IGC migration is intentionally out of scope. The uploader scans logbook JSON entries and does
 not search `/tracks` for unreferenced files.
 
+Changing what happens when the user powers Leaf on while a computer owns the mass-storage volume is
+also out of scope. Preserve the current power-on behavior in this release; the ownership and UX
+tradeoffs are tracked separately in
+[`usb-mass-storage-power-on-ownership.md`](usb-mass-storage-power-on-ownership.md).
+
 ## Leaf Log API contract
 
 The source of truth is `leaf-log/docs/device-api-contract.md` in the Leaf Log repository.
@@ -103,10 +108,12 @@ When uploads finish, are cancelled, or encounter a bounded failure, release firm
 present the medium to the host. Network or Leaf Log failure must fail open to mass storage; a failed
 sync must never leave the USB drive unavailable indefinitely.
 
-Once the medium has been presented, the host owns the filesystem until explicit eject or disconnect.
-Neither MSC inactivity nor USB suspend releases ownership. The Arduino USB framework supports
-`USBMSC::onStartStop()`; an explicit host eject can safely return ownership to firmware and resume a
-cancelled or incomplete upload batch while Leaf remains plugged in.
+For purposes of the charging-mode uploader, once the medium has been presented, the host owns the
+filesystem until explicit eject or disconnect. Neither MSC inactivity nor USB suspend releases
+ownership. The Arduino USB framework supports `USBMSC::onStartStop()`; an explicit host eject can
+safely return ownership to firmware and resume a cancelled or incomplete upload batch while Leaf
+remains plugged in. A user-requested transition to normal powered-on operation retains its existing
+behavior in this release and is covered by the separate power-on ownership backlog.
 
 ### Charging state machine
 
@@ -167,10 +174,12 @@ Register `USBMSC::onStartStop()` and treat only an explicit eject (`start == fal
 `load_eject` do not release the filesystem. After an eject-triggered upload, keep the medium ejected
 until USB disconnect; the first version does not re-present it during the same USB session.
 
-An exclusive firmware transaction API in `SDCard` is still useful for enforcing these transitions.
-It should prevent `mediaPresent(true)` while firmware files are open and prevent firmware filesystem
-access in `HostOwned`. Atomics should communicate cancellation and USB events safely between callback
-and task contexts.
+An exclusive firmware transaction API in `SDCard` is still useful for enforcing these charging-mode
+transitions. It should prevent `mediaPresent(true)` while firmware files are open and prevent the
+Leaf Log sync and other charging-mode work from accessing the filesystem in `HostOwned`. Atomics
+should communicate cancellation and USB events safely between callback and task contexts. Expanding
+that guarantee across the transition to normal powered-on operation belongs to the separate
+power-on ownership backlog.
 
 Do not reclaim the medium after an inactivity timeout. A mounted FAT filesystem may retain cached
 state and open files indefinitely, so lack of recent MSC callbacks is not an ownership release.
