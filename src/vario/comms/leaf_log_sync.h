@@ -36,7 +36,8 @@ class LeafLogSync {
   void beginSession(bool fromEject);
   void beginEligibilityScan();
   void finishToMassStorage();
-  void handleTransientFailure();
+  void handleTransientFailure(const char* reason, int httpStatus = 0, uint32_t elapsedMs = 0,
+                              size_t fileSize = 0, size_t responseSize = 0);
 
   State state_ = State::Idle;
   File scanDirectory_;

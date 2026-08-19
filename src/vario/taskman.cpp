@@ -227,14 +227,8 @@ void TaskManager::updateWhileCharging() {
       goToSleep = false;  // we don't want to sleep again as soon as we wake up; we want to wait
                           // until we've done 'doTasks' before sleeping again
 
-      // Wake up if button pushes
-      esp_sleep_enable_ext0_wakeup((gpio_num_t)BUTTON_PIN_CENTER, HIGH);
-      esp_sleep_enable_ext0_wakeup(
-          (gpio_num_t)BUTTON_PIN_LEFT,
-          HIGH);  // TODO: we probably only need to wake up with center button
-      esp_sleep_enable_ext0_wakeup((gpio_num_t)BUTTON_PIN_RIGHT, HIGH);
-      esp_sleep_enable_ext0_wakeup((gpio_num_t)BUTTON_PIN_UP, HIGH);
-      esp_sleep_enable_ext0_wakeup((gpio_num_t)BUTTON_PIN_DOWN, HIGH);
+      // Wake up if any of the five active-high buttons is pressed.
+      buttons.enableSleepWakeFromAnyButton();
 
       // or wake up with timer
       uint32_t microsNow = static_cast<uint32_t>(micros());

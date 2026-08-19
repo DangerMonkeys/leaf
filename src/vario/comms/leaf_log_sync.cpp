@@ -7,6 +7,8 @@
 #include "comms/leaf_log_client.h"
 #include "comms/leaf_log_credentials.h"
 #include "comms/wifi_coordinator.h"
+#include "diagnostics/diagnostic_logs.h"
+#include "hardware/buttons.h"
 #include "storage/sd_card.h"
 #include "ui/settings/settings.h"
 
@@ -18,6 +20,7 @@ namespace {
 LeafLogSync leafLogSync;
 
 void LeafLogSync::beginSession(bool fromEject) {
+  buttons.armUrgentPressCapture();
   resumedAfterEject_ = fromEject;
   sessionTotalKnown_ = false;
   completedCount_ = 0;
@@ -54,6 +57,8 @@ void LeafLogSync::update() {
     return;
   }
 
+  if (buttons.urgentPressLatched()) requestCancel();
+
   if (cancelRequested_.load(std::memory_order_acquire) && state_ != State::Uploading) {
     finishToMassStorage();
     return;
@@ -77,7 +82,7 @@ void LeafLogSync::update() {
         if (candidate.disposition == LeafLogCandidate::Disposition::Rejected &&
             !candidate.rejectionReason.isEmpty() && !candidate.rejectionPersisted) {
           if (!LogbookStore::recordLeafLogRejection(path, candidate.rejectionReason)) {
-            handleTransientFailure();
+            handleTransientFailure("record_rejection_failed");
             return;
           }
           beginEligibilityScan();
@@ -105,18 +110,28 @@ void LeafLogSync::update() {
       }
       break;
     }
-    case State::ConnectingWifi:
+    case State::ConnectingWifi: {
+      if (WiFi.status() == WL_CONNECTED) {
+        state_ = State::WaitingForTime;
+        stateStartedMs_ = millis();
+        break;
+      }
+
       if (!wifiAttemptStarted_) {
         leaf_wifi::attemptSavedNetworkConnection();
         wifiAttemptStarted_ = true;
       }
+
+      const bool connectionInProgress = leaf_wifi::savedNetworkConnectionInProgress();
       if (WiFi.status() == WL_CONNECTED) {
         state_ = State::WaitingForTime;
         stateStartedMs_ = millis();
-      } else if (!leaf_wifi::savedNetworkConnectionInProgress()) {
-        handleTransientFailure();
+      } else if (!connectionInProgress) {
+        handleTransientFailure("wifi_connect_failed", static_cast<int>(WiFi.status()),
+                               millis() - stateStartedMs_);
       }
       break;
+    }
     case State::WaitingForTime:
       if (time(nullptr) >= VALID_TIME_EPOCH) {
         state_ = State::Uploading;
@@ -125,16 +140,20 @@ void LeafLogSync::update() {
           configTime(0, 0, "pool.ntp.org", "time.nist.gov");
           timeStarted_ = true;
         }
-        if (millis() - stateStartedMs_ >= 8000) handleTransientFailure();
+        if (millis() - stateStartedMs_ >= 8000) {
+          handleTransientFailure("network_time_timeout", 0, millis() - stateStartedMs_);
+        }
       }
       break;
     case State::Uploading: {
       const auto credential = leaf_log_credentials::load();
-      auto result = leaf_log_client::uploadIgc(current_.trackPath, current_.trackFilename,
-                                               credential.token, cancelRequested_);
+      auto result =
+          leaf_log_client::uploadIgc(current_.trackPath, current_.trackFilename, credential.token,
+                                     cancelRequested_, buttons.urgentPressSignal());
       if (result.outcome == leaf_log_client::UploadOutcome::Delivered) {
         if (!LogbookStore::recordLeafLogFlightId(current_.logbookPath, result.flightId)) {
-          handleTransientFailure();
+          handleTransientFailure("record_flight_id_failed", result.httpStatus, result.elapsedMs,
+                                 result.fileSize, result.responseSize);
           break;
         }
         if (!result.accountHandle.isEmpty() && !result.accountDisplayName.isEmpty()) {
@@ -152,7 +171,8 @@ void LeafLogSync::update() {
                 current_.logbookPath, result.outcome == leaf_log_client::UploadOutcome::Invalid
                                           ? "invalid_igc"
                                           : "too_large")) {
-          handleTransientFailure();
+          handleTransientFailure("record_rejection_failed", result.httpStatus, result.elapsedMs,
+                                 result.fileSize, result.responseSize);
           break;
         }
         completedCount_++;
@@ -161,7 +181,8 @@ void LeafLogSync::update() {
       } else if (result.outcome == leaf_log_client::UploadOutcome::Cancelled) {
         finishToMassStorage();
       } else {
-        handleTransientFailure();
+        handleTransientFailure(result.diagnostic, result.httpStatus, result.elapsedMs,
+                               result.fileSize, result.responseSize);
       }
       break;
     }
@@ -178,6 +199,9 @@ void LeafLogSync::update() {
 }
 
 void LeafLogSync::finishToMassStorage() {
+  const bool suppressButton = buttons.urgentPressLatched();
+  buttons.disarmUrgentPressCapture();
+  if (suppressButton) buttons.suppressEventsUntilRelease();
   if (scanDirectory_) scanDirectory_.close();
   leaf_wifi::disconnectFromNetwork();
   cancelRequested_.store(false, std::memory_order_release);
@@ -188,11 +212,29 @@ void LeafLogSync::finishToMassStorage() {
   state_ = State::HostOwned;
 }
 
-void LeafLogSync::handleTransientFailure() {
+void LeafLogSync::handleTransientFailure(const char* reason, int httpStatus, uint32_t elapsedMs,
+                                         size_t fileSize, size_t responseSize) {
   leaf_wifi::disconnectFromNetwork();
   const uint8_t index = min<uint8_t>(retryIndex_, 2);
-  retryAtMs_ = millis() + RETRY_DELAYS_MS[index];
+  const uint32_t delayMs = RETRY_DELAYS_MS[index];
+  retryAtMs_ = millis() + delayMs;
   if (retryIndex_ < 2) retryIndex_++;
+
+  String detail = "reason=";
+  detail += reason ? reason : "unknown";
+  detail += ",track=";
+  detail += current_.trackFilename;
+  detail += ",http=";
+  detail += httpStatus;
+  detail += ",elapsed_ms=";
+  detail += elapsedMs;
+  detail += ",file_bytes=";
+  detail += fileSize;
+  detail += ",response_bytes=";
+  detail += responseSize;
+  Serial.printf("Leaf Log retry: %s delay_ms=%lu\n", detail.c_str(),
+                static_cast<unsigned long>(delayMs));
+  diagnostic_logs::appendSystemEvent("leaf_log", "retry", detail, "delay_ms", delayMs, true);
   state_ = State::Backoff;
 }
 

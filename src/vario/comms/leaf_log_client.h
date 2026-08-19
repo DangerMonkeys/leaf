@@ -19,11 +19,15 @@ namespace leaf_log_client {
   struct UploadResult {
     UploadOutcome outcome = UploadOutcome::TransientFailure;
     int httpStatus = 0;
+    const char* diagnostic = "not_started";
+    uint32_t elapsedMs = 0;
+    size_t fileSize = 0;
+    size_t responseSize = 0;
     String flightId;
     String accountHandle;
     String accountDisplayName;
   };
 
   UploadResult uploadIgc(const String& trackPath, const String& filename, const String& token,
-                         std::atomic<bool>& cancelRequested);
+                         std::atomic<bool>& cancelRequested, std::atomic<bool>& urgentButtonPress);
 }  // namespace leaf_log_client

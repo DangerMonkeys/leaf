@@ -14,9 +14,21 @@
 #include "ui/input/buttons.h"
 #include "ui/settings/settings.h"
 
-/*********************************************************************************
-**   CHARGING PAGE    ************************************************************
-*********************************************************************************/
+namespace {
+  constexpr uint8_t LEAF_LOG_DIALOG_WIDTH = 96;
+  constexpr uint8_t LEAF_LOG_DIALOG_Y = 94;
+  constexpr uint8_t LEAF_LOG_DIALOG_HEIGHT = 67;
+  constexpr uint8_t LEAF_LOG_DIALOG_SEPARATOR_HEIGHT = 4;
+
+  void printCentered(const char* text, uint8_t baselineY) {
+    int16_t x = (LEAF_LOG_DIALOG_WIDTH - u8g2.getStrWidth(text)) / 2;
+    if (x < 0) x = 0;
+    u8g2.setCursor(x, baselineY);
+    u8g2.print(text);
+  }
+}  // namespace
+
+// CHARGING PAGE
 void chargingPage_draw() {
   const auto& info = power.info();
   u8g2.firstPage();
@@ -83,26 +95,29 @@ void chargingPage_draw() {
     }
 
     if (leafLogSync.screenActive()) {
+      u8g2.setDrawColor(0);
+      u8g2.drawBox(0, LEAF_LOG_DIALOG_Y - LEAF_LOG_DIALOG_SEPARATOR_HEIGHT, LEAF_LOG_DIALOG_WIDTH,
+                   LEAF_LOG_DIALOG_SEPARATOR_HEIGHT);
       u8g2.setDrawColor(1);
-      u8g2.drawRBox(3, 132, 90, 48, 3);
+      u8g2.drawRBox(0, LEAF_LOG_DIALOG_Y, LEAF_LOG_DIALOG_WIDTH, LEAF_LOG_DIALOG_HEIGHT, 3);
       u8g2.setDrawColor(0);
       u8g2.setFont(leaf_6x12);
-      u8g2.setCursor(8, 146);
-      u8g2.print("Leaf Log");
+      printCentered("Leaf Log", 109);
+
       u8g2.setFont(leaf_5x8);
-      u8g2.setCursor(8, 158);
+      char status[32];
       if (leafLogSync.retryPending()) {
-        u8g2.print(leafLogSync.statusLine());
+        snprintf(status, sizeof(status), "%s", leafLogSync.statusLine());
       } else if (leafLogSync.progressKnown() && leafLogSync.totalCount() > 0) {
-        u8g2.print("Uploading ");
-        u8g2.print(leafLogSync.currentCount());
-        u8g2.print(" of ");
-        u8g2.print(leafLogSync.totalCount());
+        snprintf(status, sizeof(status), "Uploading %u of %u", leafLogSync.currentCount(),
+                 leafLogSync.totalCount());
       } else {
-        u8g2.print(leafLogSync.statusLine());
+        snprintf(status, sizeof(status), "%s", leafLogSync.statusLine());
       }
-      u8g2.setCursor(8, 171);
-      u8g2.print("Press button for USB");
+      printCentered(status, 124);
+      printCentered("Press any button", 138);
+      printCentered("to cancel and", 148);
+      printCentered("enable USB drive", 158);
       u8g2.setDrawColor(1);
     }
 
@@ -110,7 +125,7 @@ void chargingPage_draw() {
 }
 
 void chargingPage_button(Button button, ButtonEvent state, uint8_t count) {
-  if (button != Button::NONE && state == ButtonEvent::CLICKED &&
+  if (button != Button::NONE && state == ButtonEvent::PRESSED &&
       leafLogSync.interceptsChargingButtons()) {
     leafLogSync.requestCancel();
     buttons.consumeButton();
