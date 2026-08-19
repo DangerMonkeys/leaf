@@ -8,6 +8,7 @@
 #include "comms/ble.h"
 #include "comms/factory_discovery.h"
 #include "comms/fanet_radio.h"
+#include "comms/leaf_log_sync.h"
 #include "diagnostics/cpu_utilization.h"
 #include "diagnostics/diagnostic_network/diagnostic_network.h"
 #include "diagnostics/heap_monitor.h"
@@ -195,6 +196,7 @@ void TaskManager::update() {
 
 void TaskManager::updateWhileCharging() {
   if (nextChargeTimerBlock.exchange(false, std::memory_order_acq_rel)) {
+    leafLogSync.update();
     // Display Charging Page
     display.setPage(MainPage::Charging);
     display.update();  // update display based on battery charge state etc
@@ -214,7 +216,7 @@ void TaskManager::updateWhileCharging() {
 
     // Prep to end this cycle and sleep
     if (buttons.inspectPins() == Button::NONE && diagnostic_network.canSleepWhileCharging() &&
-        !leaf_usb::shouldStayAwakeForHost()) {
+        leafLogSync.canSleepWhileCharging() && !leaf_usb::shouldStayAwakeForHost()) {
       goToSleep = true;  // get ready to sleep if no button is being pushed
     } else {
       goToSleep = false;

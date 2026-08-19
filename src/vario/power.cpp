@@ -1,6 +1,7 @@
 // Includes
 #include "power.h"
 
+#include "comms/leaf_log_credentials.h"
 #include "diagnostics/diagnostic_network/diagnostic_network.h"
 #include "diagnostics/heap_monitor.h"
 #include "hardware/Leaf_I2C.h"
@@ -158,7 +159,9 @@ void Power::initPeripherals() {
   }
 
   // then initialize the rest of the devices
-  sdcard.init();
+  const bool reserveForLeafLog = info_.onState == PowerState::OffUSB && settings.labs_leafLog &&
+                                 leaf_log_credentials::load().linked();
+  sdcard.init(reserveForLeafLog);
   heap_monitor::checkpoint("periph-sd");
   Serial.println(" - Finished SDcard");
   lc86g.init();

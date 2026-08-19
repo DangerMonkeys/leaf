@@ -47,7 +47,8 @@ namespace {
   bool bootUpdateRequested = false;
 }
 
-void SDCard::init(void) {
+void SDCard::init(bool reserveMassStorage) {
+  reserveMassStorageOnMount_ = reserveMassStorage;
   // Shouldn't need to call set pins since we're using the default pins
   // TODO: try removing this setPins call
   if (!SD_MMC.setPins(SDIO_CLK, SDIO_CMD, SDIO_D0, SDIO_D1, SDIO_D2, SDIO_D3)) {
@@ -110,6 +111,7 @@ namespace {
   }
 
   int32_t onRead(uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize) {
+    if (!sdcard.hostOwnsMassStorage()) return -1;
     // Check bufSize is a multiple of block size
     if (bufsize % 512) {
       return -1;
@@ -127,6 +129,7 @@ namespace {
   }
 
   int32_t onWrite(uint32_t lba, uint32_t offset, uint8_t* buffer, uint32_t bufsize) {
+    if (!sdcard.hostOwnsMassStorage()) return -1;
     // Check bufSize is a multiple of block size
     if (bufsize % 512) {
       return -1;
@@ -142,9 +145,16 @@ namespace {
 
     return bufsize;
   }
+
+  bool onStartStop(uint8_t, bool start, bool loadEject) {
+    if (!start && loadEject) {
+      sdcard.notifyExplicitEject();
+    }
+    return true;
+  }
 }  // namespace
 
-bool SDCard::setupMassStorage() {
+bool SDCard::setupMassStorage(bool mediaPresent) {
   const uint64_t sectorCount = SD_MMC.cardSize() / 512;
   if (sectorCount == 0) {
     if (DEBUG_SDCARD) Serial.println("Mass Storage Failed: SD card size is unknown");
@@ -162,8 +172,11 @@ bool SDCard::setupMassStorage() {
   msc_->productRevision("1.0");
   msc_->onRead(onRead);
   msc_->onWrite(onWrite);
+  msc_->onStartStop(onStartStop);
   msc_->isWritable(true);
-  msc_->mediaPresent(true);
+  ownership_.store(mediaPresent ? SDCardOwnership::HostOwned : SDCardOwnership::FirmwareReserved,
+                   std::memory_order_release);
+  msc_->mediaPresent(mediaPresent);
   msc_->begin(sectorCount, 512);
   if (settings.dev_mode) {
     if (!firmwareMSC_) firmwareMSC_ = new (std::nothrow) FirmwareMSC();
@@ -190,7 +203,7 @@ bool SDCard::mount() {
     if (bootUpdateRequested) sd_firmware_update::handleBootUpdate();
 
 #ifndef DISABLE_MASS_STORAGE
-    if (sdcard.setupMassStorage()) {
+    if (sdcard.setupMassStorage(!reserveMassStorageOnMount_)) {
       if (DEBUG_SDCARD) Serial.println("Mass Storage Success");
     } else {
       if (DEBUG_SDCARD) Serial.println("Mass Storage Failed");
@@ -200,6 +213,42 @@ bool SDCard::mount() {
   }
 
   return success;
+}
+
+bool SDCard::reserveForFirmwareUpload() {
+  SDCardOwnership expected = SDCardOwnership::FirmwareReserved;
+  return ownership_.compare_exchange_strong(expected, SDCardOwnership::FirmwareUploading,
+                                            std::memory_order_acq_rel);
+}
+
+void SDCard::presentMassStorage() {
+  if (!msc_) return;
+  ownership_.store(SDCardOwnership::HostOwned, std::memory_order_release);
+  msc_->mediaPresent(true);
+}
+
+void SDCard::keepMassStorageEjected() {
+  ownership_.store(SDCardOwnership::FirmwareReserved, std::memory_order_release);
+  if (msc_) msc_->mediaPresent(false);
+}
+
+void SDCard::notifyExplicitEject() {
+  if (ownership_.load(std::memory_order_acquire) != SDCardOwnership::HostOwned) return;
+  explicitEject_.store(true, std::memory_order_release);
+}
+
+void SDCard::updateUsbOwnership() {
+  if (ownership_.load(std::memory_order_acquire) == SDCardOwnership::HostOwned &&
+      !leaf_usb::hostMounted()) {
+    ownership_.store(SDCardOwnership::FirmwareReserved, std::memory_order_release);
+    if (msc_) msc_->mediaPresent(false);
+  }
+}
+
+bool SDCard::takeExplicitEject() {
+  if (!explicitEject_.exchange(false, std::memory_order_acq_rel)) return false;
+  keepMassStorageEjected();
+  return true;
 }
 
 void SDCard::unmount() {

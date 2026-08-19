@@ -92,6 +92,8 @@ components:
           $ref: "#/components/schemas/FlightMetrics"
         track:
           $ref: "#/components/schemas/TrackReference"
+        leaf_log:
+          $ref: "#/components/schemas/LeafLogDelivery"
         device:
           $ref: "#/components/schemas/DeviceInfo"
         pilot:
@@ -238,6 +240,30 @@ components:
           type: number
           format: float
           nullable: true
+    LeafLogDelivery:
+      description: >
+        Durable Leaf Log delivery result. flight_id and rejected are mutually
+        exclusive; successful delivery replaces a prior rejection.
+      type: object
+      nullable: true
+      additionalProperties: true
+      properties:
+        flight_id:
+          type: string
+          nullable: true
+          description: Leaf Log flight identifier returned by a successful ingest.
+        rejected:
+          type: string
+          nullable: true
+          enum:
+            - invalid_logbook
+            - unsafe_track_path
+            - missing_track
+            - empty_track
+            - too_large
+            - invalid_igc
+            - null
+          description: Stable terminal reason that suppresses automatic retry.
     TrackReference:
       description: Link to the optional second-by-second GPS tracklog for this flight.
       type: object

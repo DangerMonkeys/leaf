@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <U8g2lib.h>
 
+#include "comms/leaf_log_sync.h"
 #include "hardware/buttons.h"
 #include "power.h"
 #include "storage/sd_card.h"
@@ -81,10 +82,39 @@ void chargingPage_draw() {
       u8g2.print((char)60);
     }
 
+    if (leafLogSync.screenActive()) {
+      u8g2.setDrawColor(1);
+      u8g2.drawRBox(3, 132, 90, 48, 3);
+      u8g2.setDrawColor(0);
+      u8g2.setFont(leaf_6x12);
+      u8g2.setCursor(8, 146);
+      u8g2.print("Leaf Log");
+      u8g2.setFont(leaf_5x8);
+      u8g2.setCursor(8, 158);
+      if (leafLogSync.uploadedCount() || leafLogSync.pendingCount()) {
+        u8g2.print("Uploading ");
+        u8g2.print(leafLogSync.uploadedCount() + 1);
+        u8g2.print(" of ");
+        u8g2.print(leafLogSync.uploadedCount() + leafLogSync.pendingCount());
+      } else {
+        u8g2.print(leafLogSync.statusLine());
+      }
+      u8g2.setCursor(8, 171);
+      u8g2.print("Press button for USB");
+      u8g2.setDrawColor(1);
+    }
+
   } while (u8g2.nextPage());
 }
 
 void chargingPage_button(Button button, ButtonEvent state, uint8_t count) {
+  if (button != Button::NONE && state == ButtonEvent::CLICKED &&
+      leafLogSync.interceptsChargingButtons()) {
+    leafLogSync.requestCancel();
+    buttons.consumeButton();
+    display.update();
+    return;
+  }
   switch (button) {
     case Button::CENTER:
       if (state == ButtonEvent::INCREMENTED && count == 1) {

@@ -8,6 +8,7 @@
 #include "ui/display/fonts.h"
 #include "ui/display/logbook_card.h"
 #include "ui/display/pages.h"
+#include "ui/settings/settings.h"
 
 namespace {
   constexpr uint8_t MENU_INPUT_X = 74;
@@ -108,6 +109,17 @@ void PageLogbook::draw() {
   do {
     menu_ui::drawTitle("Logbook", menu_ui::GLYPH_LOGGING);
     if (summary.valid) {
+      if (settings.labs_leafLog && summary.leafLogStatus != LeafLogFlightStatus::NotApplicable) {
+        u8g2.setFont(leaf_6x12);
+        u8g2.setCursor(84, 13);
+        if (summary.leafLogStatus == LeafLogFlightStatus::Uploaded) {
+          menu_ui::printGlyph(menu_ui::ICON_ON);
+        } else if (summary.leafLogStatus == LeafLogFlightStatus::NotUploaded) {
+          menu_ui::printGlyph(menu_ui::ICON_OFF);
+        } else {
+          u8g2.print('!');
+        }
+      }
       drawEntry();
     } else {
       drawEmpty();
