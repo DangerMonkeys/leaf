@@ -91,11 +91,13 @@ void chargingPage_draw() {
       u8g2.print("Leaf Log");
       u8g2.setFont(leaf_5x8);
       u8g2.setCursor(8, 158);
-      if (leafLogSync.uploadedCount() || leafLogSync.pendingCount()) {
+      if (leafLogSync.retryPending()) {
+        u8g2.print(leafLogSync.statusLine());
+      } else if (leafLogSync.progressKnown() && leafLogSync.totalCount() > 0) {
         u8g2.print("Uploading ");
-        u8g2.print(leafLogSync.uploadedCount() + 1);
+        u8g2.print(leafLogSync.currentCount());
         u8g2.print(" of ");
-        u8g2.print(leafLogSync.uploadedCount() + leafLogSync.pendingCount());
+        u8g2.print(leafLogSync.totalCount());
       } else {
         u8g2.print(leafLogSync.statusLine());
       }

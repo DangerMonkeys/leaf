@@ -75,8 +75,11 @@ namespace leaf_log_client {
     } else if (result.httpStatus == 413) {
       result.outcome = UploadOutcome::TooLarge;
     } else if (result.httpStatus == 200) {
+      // Railway serves Next.js JSON responses with chunked transfer encoding. HTTPClient's
+      // raw network stream still contains the chunk framing, while getString() decodes it.
+      const String responseBody = http.getString();
       JsonDocument response;
-      const DeserializationError error = deserializeJson(response, http.getStream());
+      const DeserializationError error = deserializeJson(response, responseBody);
       result.flightId = response["flightId"] | "";
       JsonObject account = response["account"];
       result.accountHandle = account["handle"] | "";
