@@ -197,9 +197,18 @@ For each `/logbook/*.json` file, require:
 - No terminal `leaf_log.rejected` reason.
 
 The local `pilot.id` does not affect upload routing. Every eligible flight on the device is uploaded
-to the Leaf Log account that owns the device token. Malformed entries, KML tracks, missing tracks, and
-orphan IGC files are skipped. Directory iteration can remain unsorted, and the uploader continues
-through the backlog while uploads succeed.
+to the Leaf Log account that owns the device token. KML tracks and orphan IGC files remain
+`NotApplicable`. A locally invalid IGC entry is not uploaded, but it must be assigned a durable
+terminal rejection so the user can see that Leaf considered it and why it could not be delivered.
+This includes malformed logbook data, unsafe track paths, missing track files, empty track files, and
+oversized track files. Directory iteration can remain unsorted, and the uploader continues through
+the backlog while uploads or local classification succeed.
+
+Syntactically broken JSON that cannot appear in either logbook UI remains untouched and is skipped;
+do not create a sidecar or rejection index for it. For parseable JSON, classify in a deterministic
+order: invalid schema, no saved IGC intended, unsafe or missing track path, missing file, empty file,
+then oversized file. `track.saved == false` and a valid KML reference are `NotApplicable`, not
+failures. A saved track with no usable path is `invalid_logbook`.
 
 ## Recording delivery
 
@@ -215,7 +224,8 @@ or `status: "failed"`, preserve the existing logbook document and add only:
 The presence of `leaf_log.flight_id` is the authoritative delivered marker. Leaf does not persist the
 server status, dedupe result, or upload timestamp because they do not affect future device behavior.
 
-A terminal local rejection uses the same object with one mutually exclusive reason:
+A terminal local rejection in a parseable logbook document uses the same object with one mutually
+exclusive reason:
 
 ```json
 "leaf_log": {
@@ -223,10 +233,20 @@ A terminal local rejection uses the same object with one mutually exclusive reas
 }
 ```
 
-Initially supported reasons should remain small and stable, such as `invalid` and `too_large`.
-`rejected` is written only for a permanent condition and suppresses automatic retries. Repair tooling
-or a manual JSON edit may remove it to retry that flight; a later successful upload replaces it with
-`flight_id`.
+Initially supported reason codes are:
+
+- `invalid_logbook` - parseable JSON is not a valid Leaf logbook object or lacks the fields needed
+  to identify its saved track.
+- `unsafe_track_path` - the normalized track path is not contained under `/tracks`.
+- `missing_track` - the referenced IGC file does not exist or cannot be opened.
+- `empty_track` - the referenced IGC file has zero bytes.
+- `too_large` - the referenced IGC exceeds 5 MB locally, or Leaf Log returns HTTP `413`.
+- `invalid_igc` - Leaf Log returns HTTP `400` for the submitted bytes.
+
+`rejected` is written only for a permanent condition and suppresses automatic retries. These codes
+are persisted rather than collapsed into a generic failure so both UIs can explain the result. Repair
+tooling or a manual JSON edit may remove the rejection to retry that flight; a later successful upload
+replaces it with `flight_id`.
 
 Update the JSON using a temporary file plus backup/rename replacement, preserving unknown fields.
 This should follow the existing atomic profile-writing pattern. A power loss must leave either the
@@ -237,15 +257,17 @@ logbook YAML schema.
 
 Expose the persisted result when browsing logbook entries. Derive one of four states:
 
-- `NotApplicable` - no eligible IGC track; show no Leaf Log status.
+- `NotApplicable` - a valid entry does not claim a saved IGC track, such as a KML entry or
+  `track.saved == false`; show no Leaf Log status.
 - `NotUploaded` - eligible IGC with neither `flight_id` nor `rejected`.
 - `Uploaded` - `leaf_log.flight_id` is present.
 - `Rejected` - `leaf_log.rejected` is present.
 
 When the Leaf Log Labs setting is enabled, the Leaf web app logbook entry card should show a compact
 icon plus accessible phrase: `Not uploaded to Leaf Log`, `Uploaded to Leaf Log`, or
-`Leaf Log upload rejected`. A rejected entry should also show the short reason, such as `Too large`
-or `Invalid file`. Use a tooltip or accessible label for icons rather than relying on color alone.
+`Leaf Log upload rejected`. A rejected entry should also show a short reason mapped from the stable
+code: `Invalid logbook`, `Unsafe track path`, `Track file missing`, `Track file empty`, `Too large`,
+or `Invalid IGC`. Use a tooltip or accessible label for icons rather than relying on color alone.
 
 Add the same state to the on-device Logbook screen in the upper-right corner, immediately to the
 right of the `/ LOGBOOK \` title tab. Use the checkbox glyphs already used by other menu settings:
@@ -263,8 +285,8 @@ logbook-entry JSON response. Do not re-open the JSON separately in each UI.
 - Network error or HTTP `5xx`: leave the entry unchanged and retry with backoff.
 - HTTP `401`: stop the batch, erase the invalid token from NVS, persist
   `reconnect_required`, and do not retry every file.
-- HTTP `400` or `413`: record a terminal local rejection so the same immutable file is not attempted
-  during every charging session.
+- HTTP `400`: record `invalid_igc`; HTTP `413`: record `too_large`, so the same immutable file is not
+  attempted during every charging session.
 - Invalid success JSON or a missing `flightId`: treat as transient and do not mark delivered.
 - User cancellation: safely close network and filesystem work, then present mass storage.
 - Data host connected while firmware owns the unpresented medium: continue the cancellable upload;
@@ -455,7 +477,14 @@ duplicating them in the uploader.
 - Revoked token (`401`): stop batch and surface reconnect-required state.
 - Server `5xx` or network loss with a host waiting: retain unuploaded state and present mass storage.
 - Server `5xx` or network loss on a power-only charger: retry with 5/15/60-minute backoff.
-- Oversized or invalid IGC: record terminal rejection and continue with later entries.
+- Syntactically valid but schema-invalid logbook object: record `invalid_logbook` in the entry and
+  show the failed icon and reason.
+- Syntactically invalid logbook JSON: leave it untouched, create no auxiliary status file, and skip
+  it because it cannot appear in either logbook UI.
+- Unsafe track path, missing track, or empty track: record the corresponding terminal rejection,
+  show its failed icon and reason, and continue with later entries.
+- Oversized or server-rejected IGC: record `too_large` or `invalid_igc` and continue with later
+  entries.
 - Logbook entries containing different or missing local pilot IDs: upload all otherwise eligible
   entries to the account associated with the device token.
 - Re-pairing: replace the locally stored device token and use the new account for future uploads.
@@ -477,7 +506,7 @@ duplicating them in the uploader.
 - Pairing response: cache the returned public handle and display name, and never expose account email.
 - Upload after changing the Leaf Log profile: refresh the cached handle/display name from the successful
   ingest response without affecting token ownership.
-- KML entry, malformed JSON, missing track, and orphan IGC: skip safely.
+- KML entry and orphan IGC: remain `NotApplicable` and are not uploaded.
 - Power loss during JSON replacement: recover the original or complete updated entry.
 - Large backlog: remain responsive, avoid watchdog resets, and continue while uploads succeed.
 
