@@ -1,7 +1,8 @@
 // The emulator's control surface: a small HTTP server for the browser panel and for scripts.
 //
-// Every request is handled on its own thread and turned into a command queued for the device
-// thread, so nothing here touches firmware state directly.
+// Every request is handled on its own thread.  Most are queued for the device thread; buttons,
+// board state and the clock are applied directly, on state guarded for it -- see runtime.h for
+// why those three cannot be queued.
 //
 //   GET  /                      the control panel
 //   GET  /api/state             device status as JSON
@@ -21,6 +22,7 @@
 #include <stdint.h>
 
 #include <atomic>
+#include <memory>
 #include <string>
 #include <thread>
 
@@ -35,10 +37,12 @@ namespace sim {
 
    private:
     void acceptLoop();
-    void handleConnection(int client);
+    static void handleConnection(int client, std::atomic<bool>& running);
 
     int listenSocket_ = -1;
-    std::atomic<bool> running_{false};
+    // Shared rather than a member flag: connection threads are detached and an event stream only
+    // notices the shutdown on its next 50ms pass, which is long after the server itself is gone.
+    std::shared_ptr<std::atomic<bool>> running_ = std::make_shared<std::atomic<bool>>(false);
     std::thread acceptThread_;
   };
 
