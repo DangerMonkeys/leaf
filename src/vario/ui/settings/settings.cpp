@@ -6,6 +6,7 @@
 #include <esp_wifi.h>
 #include <nvs_flash.h>
 
+#include "comms/leaf_log_credentials.h"
 #include "comms/wifi_coordinator.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
@@ -126,6 +127,7 @@ bool Settings::diagnosticNetworkScanAllowed() const {
 void Settings::reset() {
   loadDefaults();
   leaf_wifi::clearSavedNetworkCredentials();
+  leaf_log_credentials::clear();
   save();
 }
 

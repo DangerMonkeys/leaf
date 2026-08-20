@@ -2,6 +2,25 @@
 
 #include "Arduino.h"
 
+enum class LeafLogFlightStatus : uint8_t {
+  NotApplicable,
+  NotUploaded,
+  Uploaded,
+  Rejected,
+};
+
+struct LeafLogCandidate {
+  enum class Disposition : uint8_t { NotApplicable, Pending, Delivered, Rejected };
+
+  Disposition disposition = Disposition::NotApplicable;
+  String logbookPath;
+  String trackPath;
+  String trackFilename;
+  String rejectionReason;
+  size_t trackSize = 0;
+  bool rejectionPersisted = false;
+};
+
 struct LogbookEntrySummary {
   bool valid = false;
   String path;
@@ -31,7 +50,11 @@ struct LogbookEntrySummary {
   float maxTemperatureC = 0;
   float minTemperatureC = 0;
   bool trackSaved = false;
+  String trackFormat;
   String trackPath;
+  LeafLogFlightStatus leafLogStatus = LeafLogFlightStatus::NotApplicable;
+  String leafLogRejection;
+  String leafLogFlightId;
 };
 
 struct LogbookNavigation {
@@ -54,6 +77,11 @@ class LogbookStore {
                                        uint16_t& total);
   static bool navigationForPath(const String& currentPath, LogbookNavigation& navigation);
   static bool readSummary(const String& path, LogbookEntrySummary& summary);
+  static bool classifyForLeafLog(const String& path, LeafLogCandidate& candidate);
+  static bool recordLeafLogFlightId(const String& path, const String& flightId);
+  static bool recordLeafLogRejection(const String& path, const String& reason);
+  static const char* leafLogStatusName(LeafLogFlightStatus status);
+  static const char* leafLogRejectionLabel(const String& reason);
   static bool deleteEntry(const String& path);
   static bool isLogbookJsonPath(const String& path);
   static String normalizePath(const String& path);
