@@ -4,3 +4,4 @@
 #define DRAM_ATTR
 #define RTC_DATA_ATTR
 #define EXT_RAM_ATTR
+#define ARDUINO_ISR_ATTR

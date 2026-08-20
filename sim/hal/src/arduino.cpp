@@ -21,6 +21,15 @@ void delayMicroseconds(uint32_t us) { sim::clock().advanceUs(us); }
 void yield(void) { sim::clock().advanceUs(50); }
 extern "C" void vPortYield(void) { yield(); }
 
+void configTime(long gmtOffsetSec, int daylightOffsetSec, const char* server1,
+                const char* server2, const char* server3) {
+  (void)gmtOffsetSec;
+  (void)daylightOffsetSec;
+  (void)server1;
+  (void)server2;
+  (void)server3;
+}
+
 // ---------------------------------------------------------------- pins
 
 void pinMode(uint8_t pin, uint8_t mode) { sim::board().pinMode(pin, mode); }
@@ -43,6 +52,12 @@ void analogWrite(uint8_t pin, int value) {
 void attachInterrupt(uint8_t pin, void (*handler)(void), int mode) {
   (void)pin;
   (void)handler;
+  (void)mode;
+}
+void attachInterruptArg(uint8_t pin, void (*handler)(void*), void* arg, int mode) {
+  (void)pin;
+  (void)handler;
+  (void)arg;
   (void)mode;
 }
 void detachInterrupt(uint8_t pin) { (void)pin; }
