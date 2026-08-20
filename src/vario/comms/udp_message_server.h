@@ -3,30 +3,23 @@
 #include <AsyncUDP.h>
 #include "etl/message_bus.h"
 
+#include "dispatch/message_injector.h"
 #include "dispatch/message_source.h"
 
+// Receives injected sensor messages over UDP (see sim/play_buslog.py).  The wire format and its
+// parsing live in MessageInjector, shared with the device emulator.
 class UDPMessageServer : public IMessageSource {
  public:
   void init();
 
   // IMessageSource
-  void publishTo(etl::imessage_bus* bus) { bus_ = bus; }
-  void stopPublishing() { bus_ = nullptr; }
+  void publishTo(etl::imessage_bus* bus) { injector_.setBus(bus); }
+  void stopPublishing() { injector_.setBus(nullptr); }
 
  private:
   void onPacket(AsyncUDPPacket& packet);
 
-  unsigned long getAdjustedTime(unsigned long dt);
-
-  void onComment(const char* line, size_t len);
-  void onCommand(const char* line, size_t len);
-  void onAmbientUpdate(const char* line, size_t len);
-  void onGPSMessage(const char* line, size_t len);
-  void onMotionUpdate(const char* line, size_t len);
-  void onPressureUpdate(const char* line, size_t len);
-
-  etl::imessage_bus* bus_ = nullptr;
-  unsigned long tStart_ = 0;
+  MessageInjector injector_;
 };
 
 extern UDPMessageServer udpMessageServer;

@@ -30,6 +30,21 @@
 - The app requires the operator cookie for API calls. Browser sessions may already have it, but direct API smoke tests need `factory_interface_operator_name=<name>`.
 - Port `8000` may already be in use locally. Starting uvicorn on another port, such as `8001`, works for smoke testing.
 
+## Device emulator (`sim/`)
+
+- `sim/` builds the real firmware for the host and runs it against a virtual ESP32 board: display,
+  buttons, SD card, settings, and sensor data played from a recording. See `sim/README.md`.
+- Behaviour changes that touch the display, menus, instruments or navigation can be checked without
+  hardware:
+  `docker run --rm -v "<repo>:/leaf" -w /leaf gcc:13 sh -c "make -C sim -j8 && ./sim/build/leafsim --port 0 --speed 0 --scenario sim/recordings/thermal-climb.json --play --script sim/scripts/first-boot.txt"`
+  A script's `expect-page` / `expect-serial` failures set a non-zero exit code, and `screenshot`
+  steps write PNGs of the actual screen.
+- The emulator needs `.pio/libdeps` populated (one `pio run` is enough) because it compiles against
+  the same ETL / ArduinoJson / IgcLogger / FANET versions as the firmware.
+- Sensor injection shares one parser with the device: `src/vario/dispatch/message_injector.h` backs
+  both the emulator's scenario player and the on-device UDP server, so `sim/play_buslog.py` drives
+  either. Changing that wire format changes both.
+
 ## Core Dump Analysis
 
 For ESP32 core dump retrieval and analysis:

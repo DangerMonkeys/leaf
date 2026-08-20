@@ -99,6 +99,11 @@ void log_update() {
         // We don't have a valid GPS location yet, try again later
         return;
 
+      if (baro.state() != Barometer::State::Ready)
+        // The baro is still discarding its startup samples, so it can't set a launch altitude
+        // yet; try again later
+        return;
+
       // We have a GPS fix, we're able to start recording of the flight.
       // Do all the necessary starting actions as we start the recording.
       // TODO:  A second sound effect to show that recording has now started??
