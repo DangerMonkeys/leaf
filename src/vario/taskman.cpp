@@ -173,7 +173,8 @@ void TaskManager::update() {
   // when re-entering PowerState::On, be sure to start from tasks #1, so baro ADC can be re-prepped
   // before reading
 
-  if (WiFi.status() == WL_CONNECTED || webserver_user_app_active()) {
+  if (sdcard.firmwareOwnsMassStorage() &&
+      (WiFi.status() == WL_CONNECTED || webserver_user_app_active())) {
     webserver_setup();
     webserver_loop();
     factoryDiscovery.update();
@@ -197,6 +198,17 @@ void TaskManager::update() {
 void TaskManager::updateWhileCharging() {
   if (nextChargeTimerBlock.exchange(false, std::memory_order_acq_rel)) {
     leafLogSync.update();
+    if (leafLogSync.takePowerOnReady()) {
+      display.clear();
+      display.showOnSplash();
+      display.setPage((MainPage)settings.startPage);
+      speaker.playSound(fx::enter);
+      if (!power.switchToOnState()) {
+        display.setPage(MainPage::Charging);
+        display.update();
+      }
+      return;
+    }
     // Display Charging Page
     display.setPage(MainPage::Charging);
     display.update();  // update display based on battery charge state etc

@@ -23,7 +23,7 @@ class Buttons : IMessageSource {
   // check the instantaneous state of the button hardware pins
   Button inspectPins();
 
-  // Capture any physical button edge independently of the polling state machine. This is used by
+  // Capture the center-button edge independently of the polling state machine. This is used by
   // blocking operations that must remain cancellable even when update() cannot run.
   void armUrgentPressCapture();
   void disarmUrgentPressCapture();

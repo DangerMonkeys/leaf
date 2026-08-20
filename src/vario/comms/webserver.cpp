@@ -3363,7 +3363,10 @@ void webserver_setup() {
   });
 
   user_server.on("/api/debug/mass-storage", HTTP_GET, []() {
-    // Serial.end();
+    if (power.info().onState != PowerState::OffUSB) {
+      user_server.send(409, "text/plain", "SD mass storage is available only in charging mode");
+      return;
+    }
     sdcard.setupMassStorage();
     user_server.send(200, "text/html", "OK!");
   });
