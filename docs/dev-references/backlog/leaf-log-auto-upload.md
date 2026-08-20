@@ -270,9 +270,9 @@ code: `Invalid logbook`, `Unsafe track path`, `Track file missing`, `Track file 
 or `Invalid IGC`. Use a tooltip or accessible label for icons rather than relying on color alone.
 
 Add the same state to the on-device Logbook screen in the upper-right corner, immediately to the
-right of the `/ LOGBOOK \` title tab. Use the checkbox glyphs already used by other menu settings:
-an empty box for `NotUploaded` and a checked box for `Uploaded`. Use the warning glyph available in
-one of Leaf's fonts for `Rejected`; identify the exact font code point during implementation.
+right of the `/ LOGBOOK \` title tab. Use the Leaf glyphs in `leaf_8x14`: an empty leaf (141) for
+`NotUploaded`, a solid leaf (140) for `Uploaded`, and an exclamation leaf (143) for `Rejected`.
+Code point 142 is reserved for a future state with explicit semantics.
 `NotApplicable` shows no glyph. Keep a stable icon-sized area so paging between entries does not move
 the title or other content.
 

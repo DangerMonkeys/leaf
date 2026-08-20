@@ -14,6 +14,9 @@ namespace {
   constexpr uint8_t MENU_INPUT_X = 74;
   constexpr uint8_t MENU_BACK_Y = 190;
   constexpr uint8_t DELETE_HOLD_COUNT = 5;
+  constexpr uint8_t LEAF_LOG_ICON_UPLOADED = 140;
+  constexpr uint8_t LEAF_LOG_ICON_NOT_UPLOADED = 141;
+  constexpr uint8_t LEAF_LOG_ICON_REJECTED = 143;
 }  // namespace
 
 PageLogbook::PageLogbook() {
@@ -110,14 +113,14 @@ void PageLogbook::draw() {
     menu_ui::drawTitle("Logbook", menu_ui::GLYPH_LOGGING);
     if (summary.valid) {
       if (settings.labs_leafLog && summary.leafLogStatus != LeafLogFlightStatus::NotApplicable) {
-        u8g2.setFont(leaf_6x12);
-        u8g2.setCursor(84, 13);
+        u8g2.setFont(leaf_8x14);
+        u8g2.setCursor(menu_ui::ICON_CHECKBOX_X, 14);
         if (summary.leafLogStatus == LeafLogFlightStatus::Uploaded) {
-          menu_ui::printGlyph(menu_ui::ICON_ON);
+          menu_ui::printGlyph(LEAF_LOG_ICON_UPLOADED);
         } else if (summary.leafLogStatus == LeafLogFlightStatus::NotUploaded) {
-          menu_ui::printGlyph(menu_ui::ICON_OFF);
+          menu_ui::printGlyph(LEAF_LOG_ICON_NOT_UPLOADED);
         } else {
-          u8g2.print('!');
+          menu_ui::printGlyph(LEAF_LOG_ICON_REJECTED);
         }
       }
       drawEntry();
