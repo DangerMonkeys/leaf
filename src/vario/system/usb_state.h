@@ -3,6 +3,8 @@
 namespace leaf_usb {
   void init();
   bool begin();
+  bool connect();
+  bool disconnect();
 
   bool started();
   bool hostMounted();

@@ -44,8 +44,6 @@ components:
           type: string
           nullable: true
           description: Glider used for the next flight. If null and exactly one valid glider exists, that glider is treated as active.
-        leaf_log:
-          $ref: "#/components/schemas/LeafLogLink"
         pilots:
           type: array
           items:
@@ -91,22 +89,3 @@ components:
           type: string
           nullable: true
           description: Optional preferred display label. If missing, firmware derives one from brand, model, and size.
-    LeafLogLink:
-      type: object
-      additionalProperties: true
-      nullable: true
-      description: Device-level Leaf Log pairing metadata.
-      properties:
-        pilot_id:
-          type: string
-          nullable: true
-          description: Default pilot selected when linking or uploading to Leaf Log.
-        account_email:
-          type: string
-          nullable: true
-          format: email
-          description: Temporary testing label for the Leaf Log account used to create the token.
-        token:
-          type: string
-          nullable: true
-          description: Device upload token returned by Leaf Log after activation.

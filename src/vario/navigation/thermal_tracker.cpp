@@ -55,7 +55,6 @@ namespace {
 
 void ThermalTracker::reset() {
   originValid_ = false;
-  seededThisFlight_ = false;
   lastDetectorSecond_ = 0;
   lastLatE7_ = 0;
   lastLonE7_ = 0;
@@ -97,29 +96,6 @@ bool ThermalTracker::readCurrentFix(Sample& sample) {
   currentAltM_ = sample.altM;
   currentTrackDeg_ = sample.courseDeg;
   return true;
-}
-
-void ThermalTracker::readSeedReference(Sample& sample) {
-  GPSPositionSnapshot fix;
-  const bool hasFix = gps.lastValidFix(fix);
-  const double latitude = hasFix ? fix.latitude : 0.0;
-  const double longitude = hasFix ? fix.longitude : 0.0;
-  if (!originValid_) establishOrigin(latitude, longitude);
-
-  sample.valid = true;
-  sample.xM = clampInt16((longitude - originLon_) * metersPerDegLon_);
-  sample.yM = clampInt16((latitude - originLat_) * METERS_PER_DEG_LAT);
-  sample.altM = static_cast<int16_t>(baro.altAdjusted() / 100);
-  sample.courseDeg = hasFix ? static_cast<int16_t>(roundf(fix.courseDeg)) : 0;
-  sample.climb1SecCms = static_cast<int16_t>(constrain(
-      baro.climbRate1SecAverageValid() ? baro.climbRate1SecAverage() : baro.climbRateFiltered(),
-      -32768L, 32767L));
-  sample.timeS = millis() / 1000;
-
-  currentXM_ = sample.xM;
-  currentYM_ = sample.yM;
-  currentAltM_ = sample.altM;
-  currentTrackDeg_ = sample.courseDeg;
 }
 
 void ThermalTracker::updateDetector() {
@@ -595,14 +571,12 @@ void ThermalTracker::mergeThermal(uint8_t target, const ThermalNode* nodes, uint
   thermal.avgClimbCms =
       (thermal.avgClimbCms * oldDuration + avgClimbCms * newDuration) / totalDuration;
   thermal.lastSeenS = millis() / 1000;
-  thermal.seeded = false;
 }
 
 void ThermalTracker::storeThermal(const ThermalNode* nodes, uint8_t nodeCount, int16_t gainM,
                                   int16_t avgClimbCms, uint16_t durationS) {
   SavedThermal& thermal = thermals_[replacementIndex()];
   thermal.valid = true;
-  thermal.seeded = false;
   thermal.nodeCount = min<uint8_t>(nodeCount, MAX_THERMAL_NODES);
   for (uint8_t i = 0; i < thermal.nodeCount; ++i) thermal.nodes[i] = nodes[i];
   thermal.gainM = gainM;
@@ -621,7 +595,6 @@ uint8_t ThermalTracker::replacementIndex() const {
   for (uint8_t i = 0; i < MAX_SAVED_THERMALS; ++i) {
     const SavedThermal& thermal = thermals_[i];
     int32_t score = thermal.gainM + thermal.avgClimbCms + thermal.durationS / 2;
-    if (thermal.seeded) score -= 10000;
     if (score < weakestScore) {
       weakestScore = score;
       weakest = i;
@@ -757,41 +730,4 @@ uint8_t ThermalTracker::savedThermalCount() const {
     if (thermal.valid) count++;
   }
   return count;
-}
-
-void ThermalTracker::seedTestThermalsForFlight() {
-  if (seededThisFlight_) return;
-
-  Sample current;
-  readSeedReference(current);
-  memset(thermals_, 0, sizeof(thermals_));
-
-  const int16_t bearingsDeg[MAX_SAVED_THERMALS] = {-6,  18,   -38, 55,  -72, 96,  -118, 145,
-                                                   178, -165, 28,  -24, 72,  -88, 122};
-  const uint16_t distancesM[MAX_SAVED_THERMALS] = {420,  780,  1100, 1450, 1800, 2300, 2700, 3200,
-                                                   3800, 4400, 5200, 5600, 6100, 6600, 7000};
-  const uint8_t targetQualities[MAX_SAVED_THERMALS] = {1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5};
-
-  for (uint8_t i = 0; i < MAX_SAVED_THERMALS; ++i) {
-    SavedThermal& thermal = thermals_[i];
-    thermal.valid = true;
-    thermal.seeded = true;
-    thermal.nodeCount = MAX_THERMAL_NODES;
-    thermal.avgClimbCms = targetQualities[i] >= 4 ? 260 : targetQualities[i] == 3 ? 125 : 80;
-    thermal.gainM = targetQualities[i] == 5 ? 315 : 90;
-    thermal.durationS = 60 + (i % 5) * 50;
-    thermal.lastSeenS = millis() / 1000;
-
-    const float absoluteBearing = currentTrackDeg_ + bearingsDeg[i];
-    const int16_t baseX = currentXM_ + sin(absoluteBearing * DEG_TO_RAD) * distancesM[i];
-    const int16_t baseY = currentYM_ + cos(absoluteBearing * DEG_TO_RAD) * distancesM[i];
-    const int16_t baseAltitudeOffsetM = targetQualities[i] == 1 ? 600 : -180 + (i % 4) * 80;
-    for (uint8_t n = 0; n < MAX_THERMAL_NODES; ++n) {
-      thermal.nodes[n].xM = baseX + (static_cast<int8_t>(n) - 1) * (8 + i % 4);
-      thermal.nodes[n].yM = baseY + n * (10 + i % 5);
-      thermal.nodes[n].altM = currentAltM_ + baseAltitudeOffsetM + n * 120;
-    }
-  }
-  seededThisFlight_ = true;
-  rebuildDisplayItems();
 }

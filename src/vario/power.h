@@ -52,7 +52,7 @@ class Power {
   void shutdown();
   void shutdown(bool deadBattery);
 
-  void switchToOnState();
+  bool switchToOnState();
 
   void update();
 

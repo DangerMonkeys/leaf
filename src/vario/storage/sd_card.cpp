@@ -4,6 +4,7 @@
 #include <FS.h>
 #include <SD_MMC.h>
 #include <driver/sdmmc_host.h>
+#include <esp_heap_caps.h>
 #include <esp_vfs_fat.h>
 #include <ff.h>
 #include <sdmmc_cmd.h>
@@ -47,7 +48,10 @@ namespace {
   bool bootUpdateRequested = false;
 }
 
-void SDCard::init(void) {
+void SDCard::init(bool reserveMassStorage) {
+  reserveMassStorageOnMount_ = reserveMassStorage;
+  ownership_.store(SDCardOwnership::FirmwareReserved, std::memory_order_release);
+  heap_monitor::setSdLoggingEnabled(false);
   // Shouldn't need to call set pins since we're using the default pins
   // TODO: try removing this setPins call
   if (!SD_MMC.setPins(SDIO_CLK, SDIO_CMD, SDIO_D0, SDIO_D1, SDIO_D2, SDIO_D3)) {
@@ -75,6 +79,16 @@ void SDCard::init(void) {
 
 void SDCard::update() {
   bool cardPresentNow = isCardPresent();
+  const SDCardOwnership current = ownership_.load(std::memory_order_acquire);
+  if (current == SDCardOwnership::HostOwned) {
+    if (!cardPresentNow) acquireForFirmwareUse();
+    return;
+  }
+  if (current == SDCardOwnership::TransitioningToHost ||
+      current == SDCardOwnership::TransitioningToFirmware) {
+    return;
+  }
+
   // if we have a card when we didn't before...
   if (cardPresentNow && !mounted_) {
     // then mount it!
@@ -94,6 +108,8 @@ void SDCard::update() {
 namespace {
   constexpr const char* STANDARD_DIRECTORIES[] = {"/waypoints", "/routes", "/logbook", "/tracks",
                                                   "/firmware"};
+  constexpr uint32_t SD_SECTOR_SIZE = 512;
+  constexpr uint32_t MSC_BUFFER_SIZE = 4096;
 
   bool ensureDirectory(const char* path) {
     if (SD_MMC.exists(path)) return true;
@@ -110,41 +126,32 @@ namespace {
   }
 
   int32_t onRead(uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize) {
-    // Check bufSize is a multiple of block size
-    if (bufsize % 512) {
-      return -1;
-    }
+    if (!sdcard.beginHostIo()) return -1;
+    struct HostIoGuard {
+      ~HostIoGuard() { sdcard.endHostIo(); }
+    } guard;
 
-    auto bufferOffset = 0;
-    for (int sector = lba; sector < lba + bufsize / 512; sector++) {
-      if (!SD_MMC.readRAW((uint8_t*)buffer + bufferOffset, sector)) {
-        return -1;
-      }
-      bufferOffset += 512;
-    }
-
-    return bufsize;
+    return sdcard.readHostSectors(lba, offset, buffer, bufsize);
   }
 
   int32_t onWrite(uint32_t lba, uint32_t offset, uint8_t* buffer, uint32_t bufsize) {
-    // Check bufSize is a multiple of block size
-    if (bufsize % 512) {
-      return -1;
-    }
+    if (!sdcard.beginHostIo()) return -1;
+    struct HostIoGuard {
+      ~HostIoGuard() { sdcard.endHostIo(); }
+    } guard;
 
-    auto bufferOffset = 0;
-    for (int sector = lba; sector < lba + bufsize / 512; sector++) {
-      if (!SD_MMC.writeRAW(buffer + bufferOffset, sector)) {
-        return -1;
-      }
-      bufferOffset += 512;
-    }
+    return sdcard.writeHostSectors(lba, offset, buffer, bufsize);
+  }
 
-    return bufsize;
+  bool onStartStop(uint8_t, bool start, bool loadEject) {
+    if (!start && loadEject) {
+      sdcard.notifyExplicitEject();
+    }
+    return true;
   }
 }  // namespace
 
-bool SDCard::setupMassStorage() {
+bool SDCard::setupMassStorage(bool mediaPresent) {
   const uint64_t sectorCount = SD_MMC.cardSize() / 512;
   if (sectorCount == 0) {
     if (DEBUG_SDCARD) Serial.println("Mass Storage Failed: SD card size is unknown");
@@ -162,20 +169,33 @@ bool SDCard::setupMassStorage() {
   msc_->productRevision("1.0");
   msc_->onRead(onRead);
   msc_->onWrite(onWrite);
+  msc_->onStartStop(onStartStop);
   msc_->isWritable(true);
-  msc_->mediaPresent(true);
-  msc_->begin(sectorCount, 512);
+  mscSectorCount_ = static_cast<uint32_t>(sectorCount);
+  msc_->mediaPresent(false);
+  if (!msc_->begin(mscSectorCount_, SD_SECTOR_SIZE)) {
+    if (DEBUG_SDCARD) Serial.println("Mass Storage Failed: could not start USB MSC LUN");
+    return false;
+  }
+  mscStarted_ = true;
   if (settings.dev_mode) {
     if (!firmwareMSC_) firmwareMSC_ = new (std::nothrow) FirmwareMSC();
     if (firmwareMSC_) firmwareMSC_->begin();
   }
-  return leaf_usb::begin();
+  if (!leaf_usb::begin()) return false;
+  if (mediaPresent) return presentMassStorage();
+
+  heap_monitor::setSdLoggingEnabled(mounted_);
+  ownership_.store(SDCardOwnership::FirmwareReserved, std::memory_order_release);
+  return true;
 }
 
 bool SDCard::mount() {
+  if (mounted_) return true;
+
   bool success = false;
 
-  if (!SD_MMC.begin(SD_CARD_MOUNT_POINT, false, false)) {
+  if (!SD_MMC.begin(SD_CARD_MOUNT_POINT, false, false, SDMMC_FREQ_DEFAULT)) {
     if (DEBUG_SDCARD) Serial.println("SDcard Mount Failed");
     success = false;
   } else {
@@ -190,7 +210,7 @@ bool SDCard::mount() {
     if (bootUpdateRequested) sd_firmware_update::handleBootUpdate();
 
 #ifndef DISABLE_MASS_STORAGE
-    if (sdcard.setupMassStorage()) {
+    if (sdcard.setupMassStorage(!reserveMassStorageOnMount_)) {
       if (DEBUG_SDCARD) Serial.println("Mass Storage Success");
     } else {
       if (DEBUG_SDCARD) Serial.println("Mass Storage Failed");
@@ -202,11 +222,227 @@ bool SDCard::mount() {
   return success;
 }
 
+bool SDCard::reserveForFirmwareUpload() {
+  SDCardOwnership expected = SDCardOwnership::FirmwareReserved;
+  return ownership_.compare_exchange_strong(expected, SDCardOwnership::FirmwareUploading,
+                                            std::memory_order_acq_rel);
+}
+
+bool SDCard::startRawHost() {
+  sdmmc_host_t host = SDMMC_HOST_DEFAULT();
+  host.slot = SDMMC_HOST_SLOT_1;
+  host.flags = SDMMC_HOST_FLAG_4BIT;
+  host.max_freq_khz = SDMMC_FREQ_DEFAULT;
+
+  sdmmc_slot_config_t slot = SDMMC_SLOT_CONFIG_DEFAULT();
+  slot.clk = static_cast<gpio_num_t>(SDIO_CLK);
+  slot.cmd = static_cast<gpio_num_t>(SDIO_CMD);
+  slot.d0 = static_cast<gpio_num_t>(SDIO_D0);
+  slot.d1 = static_cast<gpio_num_t>(SDIO_D1);
+  slot.d2 = static_cast<gpio_num_t>(SDIO_D2);
+  slot.d3 = static_cast<gpio_num_t>(SDIO_D3);
+  slot.width = 4;
+  slot.flags |= SDMMC_SLOT_FLAG_INTERNAL_PULLUP;
+
+  esp_err_t result = sdmmc_host_init();
+  if (result == ESP_OK) result = sdmmc_host_init_slot(host.slot, &slot);
+  if (result == ESP_OK) result = sdmmc_card_init(&host, &rawHostCard_);
+  if (result != ESP_OK) {
+    if (DEBUG_SDCARD) Serial.printf("Mass Storage Failed: raw SD init returned 0x%x\n", result);
+    sdmmc_host_deinit();
+    rawHostCard_ = {};
+    return false;
+  }
+
+  rawHostInitialized_ = true;
+  return true;
+}
+
+void SDCard::stopRawHost() {
+  if (rawHostInitialized_) {
+    sdmmc_host_deinit();
+    rawHostInitialized_ = false;
+    rawHostCard_ = {};
+  }
+  if (mscBuffer_) {
+    heap_caps_free(mscBuffer_);
+    mscBuffer_ = nullptr;
+  }
+}
+
+bool SDCard::presentMassStorage() {
+  if (!msc_ || !mscStarted_ || !mounted_) return false;
+
+  ownership_.store(SDCardOwnership::TransitioningToHost, std::memory_order_release);
+  heap_monitor::setSdLoggingEnabled(false);
+
+  mscBuffer_ = static_cast<uint8_t*>(
+      heap_caps_malloc(MSC_BUFFER_SIZE, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL));
+  if (!mscBuffer_) {
+    if (DEBUG_SDCARD) Serial.println("Mass Storage Failed: could not allocate DMA buffer");
+    ownership_.store(SDCardOwnership::FirmwareReserved, std::memory_order_release);
+    heap_monitor::setSdLoggingEnabled(true);
+    return false;
+  }
+
+  SD_MMC.end();
+  mounted_ = false;
+  if (!startRawHost() || rawHostCard_.csd.sector_size != SD_SECTOR_SIZE ||
+      rawHostCard_.csd.capacity == 0) {
+    stopRawHost();
+    ownership_.store(SDCardOwnership::FirmwareReserved, std::memory_order_release);
+    if (isCardPresent()) {
+      SD_MMC.setPins(SDIO_CLK, SDIO_CMD, SDIO_D0, SDIO_D1, SDIO_D2, SDIO_D3);
+      mount();
+    }
+    return false;
+  }
+
+  mscSectorCount_ = rawHostCard_.csd.capacity;
+  if (!msc_->begin(mscSectorCount_, SD_SECTOR_SIZE)) {
+    stopRawHost();
+    ownership_.store(SDCardOwnership::FirmwareReserved, std::memory_order_release);
+    if (isCardPresent()) {
+      SD_MMC.setPins(SDIO_CLK, SDIO_CMD, SDIO_D0, SDIO_D1, SDIO_D2, SDIO_D3);
+      mount();
+    }
+    return false;
+  }
+
+  ownership_.store(SDCardOwnership::HostOwned, std::memory_order_release);
+  msc_->mediaPresent(true);
+  if (leaf_usb::connect()) return true;
+
+  msc_->mediaPresent(false);
+  ownership_.store(SDCardOwnership::TransitioningToFirmware, std::memory_order_release);
+  stopRawHost();
+  ownership_.store(SDCardOwnership::FirmwareReserved, std::memory_order_release);
+  if (isCardPresent()) {
+    SD_MMC.setPins(SDIO_CLK, SDIO_CMD, SDIO_D0, SDIO_D1, SDIO_D2, SDIO_D3);
+    mount();
+  }
+  return false;
+}
+
+bool SDCard::acquireForFirmwareUse(uint32_t timeoutMs, bool disconnectUsb) {
+  SDCardOwnership current = ownership_.load(std::memory_order_acquire);
+  if (current == SDCardOwnership::FirmwareReserved ||
+      current == SDCardOwnership::FirmwareUploading) {
+    if (disconnectUsb && !leaf_usb::disconnect()) return false;
+    if (mounted_) heap_monitor::setSdLoggingEnabled(true);
+    return true;
+  }
+
+  if (current == SDCardOwnership::TransitioningToHost) return false;
+
+  ownership_.store(SDCardOwnership::TransitioningToFirmware, std::memory_order_release);
+  if (msc_) msc_->mediaPresent(false);
+  if (disconnectUsb && !leaf_usb::disconnect()) return false;
+
+  const uint32_t startedMs = millis();
+  while (activeHostIo_.load(std::memory_order_acquire) != 0) {
+    if (timeoutMs == 0) return false;
+    if (millis() - startedMs >= timeoutMs) {
+      Serial.printf("SD ownership transition timed out with %u host operations active\n",
+                    activeHostIo_.load(std::memory_order_acquire));
+      return false;
+    }
+    delay(1);
+  }
+
+  stopRawHost();
+  ownership_.store(SDCardOwnership::FirmwareReserved, std::memory_order_release);
+  if (isCardPresent()) {
+    SD_MMC.setPins(SDIO_CLK, SDIO_CMD, SDIO_D0, SDIO_D1, SDIO_D2, SDIO_D3);
+    if (!mount()) {
+      Serial.println("SD ownership transition failed to remount the card");
+      return false;
+    }
+  }
+  if (mounted_) heap_monitor::setSdLoggingEnabled(true);
+  return true;
+}
+
+void SDCard::keepMassStorageEjected() { acquireForFirmwareUse(); }
+
+void SDCard::notifyExplicitEject() {
+  if (ownership_.load(std::memory_order_acquire) != SDCardOwnership::HostOwned) return;
+  explicitEject_.store(true, std::memory_order_release);
+}
+
+void SDCard::updateUsbOwnership() {
+  if (ownership_.load(std::memory_order_acquire) == SDCardOwnership::HostOwned &&
+      !leaf_usb::hostMounted()) {
+    acquireForFirmwareUse();
+  }
+}
+
+bool SDCard::takeExplicitEject() {
+  if (!explicitEject_.load(std::memory_order_acquire)) return false;
+  if (!acquireForFirmwareUse(0)) return false;
+  explicitEject_.store(false, std::memory_order_release);
+  return true;
+}
+
 void SDCard::unmount() {
+  if (!acquireForFirmwareUse()) return;
   heap_monitor::checkpoint("sd-unmount");
   heap_monitor::setSdLoggingEnabled(false);
   SD_MMC.end();
   mounted_ = false;
+}
+
+bool SDCard::beginHostIo() {
+  if (ownership_.load(std::memory_order_acquire) != SDCardOwnership::HostOwned) return false;
+
+  activeHostIo_.fetch_add(1, std::memory_order_acq_rel);
+  if (ownership_.load(std::memory_order_acquire) == SDCardOwnership::HostOwned) return true;
+
+  activeHostIo_.fetch_sub(1, std::memory_order_acq_rel);
+  return false;
+}
+
+void SDCard::endHostIo() { activeHostIo_.fetch_sub(1, std::memory_order_acq_rel); }
+
+int32_t SDCard::readHostSectors(uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize) {
+  if (!rawHostInitialized_ || !mscBuffer_ || offset % SD_SECTOR_SIZE != 0 || bufsize == 0 ||
+      bufsize % SD_SECTOR_SIZE != 0 || bufsize > MSC_BUFFER_SIZE) {
+    return -1;
+  }
+
+  const uint64_t firstSector = static_cast<uint64_t>(lba) + offset / SD_SECTOR_SIZE;
+  const size_t sectorCount = bufsize / SD_SECTOR_SIZE;
+  if (firstSector + sectorCount > rawHostCard_.csd.capacity) return -1;
+
+  const esp_err_t result = sdmmc_read_sectors(&rawHostCard_, mscBuffer_, firstSector, sectorCount);
+  if (result != ESP_OK) {
+    Serial.printf("Mass Storage Read Failed: lba=%llu sectors=%u error=0x%x\n", firstSector,
+                  static_cast<unsigned>(sectorCount), result);
+    return -1;
+  }
+  memcpy(buffer, mscBuffer_, bufsize);
+  return static_cast<int32_t>(bufsize);
+}
+
+int32_t SDCard::writeHostSectors(uint32_t lba, uint32_t offset, const uint8_t* buffer,
+                                 uint32_t bufsize) {
+  if (!rawHostInitialized_ || !mscBuffer_ || offset % SD_SECTOR_SIZE != 0 || bufsize == 0 ||
+      bufsize % SD_SECTOR_SIZE != 0 || bufsize > MSC_BUFFER_SIZE) {
+    return -1;
+  }
+
+  const uint64_t firstSector = static_cast<uint64_t>(lba) + offset / SD_SECTOR_SIZE;
+  const size_t sectorCount = bufsize / SD_SECTOR_SIZE;
+  if (firstSector + sectorCount > rawHostCard_.csd.capacity) return -1;
+
+  memcpy(mscBuffer_, buffer, bufsize);
+  const esp_err_t result = sdmmc_write_sectors(&rawHostCard_, mscBuffer_, firstSector, sectorCount);
+  if (result != ESP_OK) {
+    Serial.printf("Mass Storage Write Failed: lba=%llu sectors=%u error=0x%x\n", firstSector,
+                  static_cast<unsigned>(sectorCount), result);
+    return -1;
+  }
+  return static_cast<int32_t>(bufsize);
 }
 
 bool SDCard::format() {
@@ -220,6 +456,12 @@ SDCard::FormatResult SDCard::formatDetailed() {
     if (DEBUG_SDCARD) Serial.println("SDcard Format Failed: no card present");
     result.stage = "card_detection";
     result.error = ESP_ERR_NOT_FOUND;
+    return result;
+  }
+
+  if (!acquireForFirmwareUse()) {
+    result.stage = "ownership_transition";
+    result.error = ESP_ERR_TIMEOUT;
     return result;
   }
 

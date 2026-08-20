@@ -9,6 +9,7 @@
 #include <stdarg.h>
 
 #include "hardware/buttons.h"
+#include "storage/sd_card.h"
 #include "system/version_info.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
@@ -41,6 +42,7 @@ bool useFile() {
   if (fatal_error_file) {
     return true;
   }
+  if (!sdcard.firmwareCanAccessFilesystem()) return false;
 
   unsigned int i = 1;
   char fileName[32];

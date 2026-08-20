@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <atomic>
 #include "etl/message_bus.h"
 
 #include "dispatch/message_source.h"
@@ -22,6 +23,19 @@ class Buttons : IMessageSource {
   // check the instantaneous state of the button hardware pins
   Button inspectPins();
 
+  // Capture the center-button edge independently of the polling state machine. This is used by
+  // blocking operations that must remain cancellable even when update() cannot run.
+  void armUrgentPressCapture();
+  void disarmUrgentPressCapture();
+  bool urgentPressLatched() const { return urgentPressLatched_.load(std::memory_order_acquire); }
+  std::atomic<bool>& urgentPressSignal() { return urgentPressLatched_; }
+
+  // Prevent the physical press used for an urgent action from later becoming a normal click/hold.
+  void suppressEventsUntilRelease();
+
+  // Configure light sleep to wake when any of the five active-high button GPIOs is pressed.
+  void enableSleepWakeFromAnyButton();
+
   // IMessageSource
   void publishTo(etl::imessage_bus* bus) { bus_ = bus; }
   void stopPublishing() { bus_ = nullptr; }
@@ -31,6 +45,8 @@ class Buttons : IMessageSource {
   enum class State : uint8_t { Up, Debouncing, Down, Held, HeldLong };
 
   void startDebouncing(Button button);
+
+  static void ARDUINO_ISR_ATTR onPressInterrupt(void* arg);
 
   void report(Button button, ButtonEvent state);
 
@@ -50,6 +66,9 @@ class Buttons : IMessageSource {
   // True when input from the current button has been consumed and so the current button should not
   // emit any additional action events other than RELEASED.
   bool consumed_ = false;
+  bool suppressUntilRelease_ = false;
+  std::atomic<bool> urgentPressArmed_{false};
+  std::atomic<bool> urgentPressLatched_{false};
 
   etl::imessage_bus* bus_ = nullptr;
 };

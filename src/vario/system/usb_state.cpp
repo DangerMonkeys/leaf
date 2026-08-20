@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <USB.h>
+#include <tusb.h>
 
 #include "system/usb_serial.h"
 
@@ -19,6 +20,7 @@ namespace leaf_usb {
 
     bool initialized = false;
     bool usb_started = false;
+    bool usb_connected = false;
     bool host_mounted = false;
     bool host_suspended = false;
     uint32_t usb_started_ms = 0;
@@ -26,10 +28,12 @@ namespace leaf_usb {
     void onUsbEvent(void*, esp_event_base_t, int32_t event_id, void*) {
       switch (event_id) {
         case ARDUINO_USB_STARTED_EVENT:
+          usb_connected = true;
           host_mounted = true;
           host_suspended = false;
           break;
         case ARDUINO_USB_STOPPED_EVENT:
+          usb_connected = false;
           host_mounted = false;
           host_suspended = false;
           break;
@@ -84,7 +88,32 @@ namespace leaf_usb {
     const bool success = USB.begin();
     if (success && !usb_started) {
       usb_started = true;
+      usb_connected = true;
       usb_started_ms = millis();
+    }
+    return success;
+  }
+
+  bool connect() {
+    if (!usb_started) return begin();
+    if (usb_connected) return true;
+
+    const bool success = tud_connect();
+    if (success) {
+      usb_connected = true;
+      usb_started_ms = millis();
+    }
+    return success;
+  }
+
+  bool disconnect() {
+    if (!usb_started || !usb_connected) return true;
+
+    const bool success = tud_disconnect();
+    if (success) {
+      usb_connected = false;
+      host_mounted = false;
+      host_suspended = false;
     }
     return success;
   }

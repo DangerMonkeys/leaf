@@ -10,6 +10,7 @@
 #include "hardware/buttons.h"
 
 #include <Arduino.h>
+#include <esp_sleep.h>
 
 #include "diagnostics/cpu_utilization.h"
 #include "hardware/configuration.h"
@@ -44,6 +45,19 @@ const uint16_t HOLD_LONG_TIME_MS = 3500 - HOLD_TIME_MS;
 // time in ms between increment events while holding the button
 const uint16_t INCREMENT_TIME_MS = 500;
 
+namespace {
+  constexpr uint64_t BUTTON_WAKE_MASK = (1ULL << BUTTON_PIN_CENTER) | (1ULL << BUTTON_PIN_LEFT) |
+                                        (1ULL << BUTTON_PIN_RIGHT) | (1ULL << BUTTON_PIN_UP) |
+                                        (1ULL << BUTTON_PIN_DOWN);
+}
+
+void ARDUINO_ISR_ATTR Buttons::onPressInterrupt(void* arg) {
+  auto* self = static_cast<Buttons*>(arg);
+  if (self->urgentPressArmed_.load(std::memory_order_relaxed)) {
+    self->urgentPressLatched_.store(true, std::memory_order_release);
+  }
+}
+
 Button Buttons::init() {
   // configure pins
   pinMode(BUTTON_PIN_UP, INPUT_PULLDOWN);
@@ -52,7 +66,35 @@ Button Buttons::init() {
   pinMode(BUTTON_PIN_RIGHT, INPUT_PULLDOWN);
   pinMode(BUTTON_PIN_CENTER, INPUT_PULLDOWN);
 
+  // Only center controls the charging-mode Leaf Log handoff. The directional buttons remain
+  // available for their normal charging-screen behavior and cannot accidentally cancel uploads.
+  attachInterruptArg(BUTTON_PIN_CENTER, onPressInterrupt, this, RISING);
+
   return inspectPins();
+}
+
+void Buttons::armUrgentPressCapture() {
+  urgentPressLatched_.store(false, std::memory_order_release);
+  urgentPressArmed_.store(true, std::memory_order_release);
+}
+
+void Buttons::disarmUrgentPressCapture() {
+  urgentPressArmed_.store(false, std::memory_order_release);
+}
+
+void Buttons::suppressEventsUntilRelease() {
+  state_ = State::Up;
+  currentButton_ = Button::NONE;
+  holdCounter_ = 0;
+  consumed_ = false;
+  suppressUntilRelease_ = inspectPins() != Button::NONE;
+}
+
+void Buttons::enableSleepWakeFromAnyButton() {
+  const esp_err_t error = esp_sleep_enable_ext1_wakeup(BUTTON_WAKE_MASK, ESP_EXT1_WAKEUP_ANY_HIGH);
+  if (error != ESP_OK) {
+    Serial.printf("Button ext1 sleep wake configuration failed: %d\n", error);
+  }
 }
 
 void Buttons::report(Button button, ButtonEvent state) {
@@ -72,6 +114,16 @@ void Buttons::startDebouncing(Button button) {
 
 void Buttons::update() {
   Button button = inspectPins();
+
+  if (suppressUntilRelease_) {
+    if (button == Button::NONE) {
+      suppressUntilRelease_ = false;
+      state_ = State::Up;
+      currentButton_ = Button::NONE;
+      consumed_ = false;
+    }
+    return;
+  }
 
   if (state_ == State::Up) {
     if (button != Button::NONE) {

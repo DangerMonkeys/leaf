@@ -8,6 +8,7 @@
 #include "comms/ble.h"
 #include "comms/factory_discovery.h"
 #include "comms/fanet_radio.h"
+#include "comms/leaf_log_sync.h"
 #include "diagnostics/cpu_utilization.h"
 #include "diagnostics/diagnostic_network/diagnostic_network.h"
 #include "diagnostics/heap_monitor.h"
@@ -172,7 +173,8 @@ void TaskManager::update() {
   // when re-entering PowerState::On, be sure to start from tasks #1, so baro ADC can be re-prepped
   // before reading
 
-  if (WiFi.status() == WL_CONNECTED || webserver_user_app_active()) {
+  if (sdcard.firmwareOwnsMassStorage() &&
+      (WiFi.status() == WL_CONNECTED || webserver_user_app_active())) {
     webserver_setup();
     webserver_loop();
     factoryDiscovery.update();
@@ -195,6 +197,18 @@ void TaskManager::update() {
 
 void TaskManager::updateWhileCharging() {
   if (nextChargeTimerBlock.exchange(false, std::memory_order_acq_rel)) {
+    leafLogSync.update();
+    if (leafLogSync.takePowerOnReady()) {
+      display.clear();
+      display.showOnSplash();
+      display.setPage((MainPage)settings.startPage);
+      speaker.playSound(fx::enter);
+      if (!power.switchToOnState()) {
+        display.setPage(MainPage::Charging);
+        display.update();
+      }
+      return;
+    }
     // Display Charging Page
     display.setPage(MainPage::Charging);
     display.update();  // update display based on battery charge state etc
@@ -214,7 +228,7 @@ void TaskManager::updateWhileCharging() {
 
     // Prep to end this cycle and sleep
     if (buttons.inspectPins() == Button::NONE && diagnostic_network.canSleepWhileCharging() &&
-        !leaf_usb::shouldStayAwakeForHost()) {
+        leafLogSync.canSleepWhileCharging() && !leaf_usb::shouldStayAwakeForHost()) {
       goToSleep = true;  // get ready to sleep if no button is being pushed
     } else {
       goToSleep = false;
@@ -225,14 +239,8 @@ void TaskManager::updateWhileCharging() {
       goToSleep = false;  // we don't want to sleep again as soon as we wake up; we want to wait
                           // until we've done 'doTasks' before sleeping again
 
-      // Wake up if button pushes
-      esp_sleep_enable_ext0_wakeup((gpio_num_t)BUTTON_PIN_CENTER, HIGH);
-      esp_sleep_enable_ext0_wakeup(
-          (gpio_num_t)BUTTON_PIN_LEFT,
-          HIGH);  // TODO: we probably only need to wake up with center button
-      esp_sleep_enable_ext0_wakeup((gpio_num_t)BUTTON_PIN_RIGHT, HIGH);
-      esp_sleep_enable_ext0_wakeup((gpio_num_t)BUTTON_PIN_UP, HIGH);
-      esp_sleep_enable_ext0_wakeup((gpio_num_t)BUTTON_PIN_DOWN, HIGH);
+      // Wake up if any of the five active-high buttons is pressed.
+      buttons.enableSleepWakeFromAnyButton();
 
       // or wake up with timer
       uint32_t microsNow = static_cast<uint32_t>(micros());
