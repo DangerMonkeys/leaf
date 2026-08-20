@@ -21,8 +21,8 @@ void delayMicroseconds(uint32_t us) { sim::clock().advanceUs(us); }
 void yield(void) { sim::clock().advanceUs(50); }
 extern "C" void vPortYield(void) { yield(); }
 
-void configTime(long gmtOffsetSec, int daylightOffsetSec, const char* server1,
-                const char* server2, const char* server3) {
+void configTime(long gmtOffsetSec, int daylightOffsetSec, const char* server1, const char* server2,
+                const char* server3) {
   (void)gmtOffsetSec;
   (void)daylightOffsetSec;
   (void)server1;

@@ -293,7 +293,11 @@ namespace sim {
     int firstSecondOfDay = 0;
     double previousLat = 0;
     double previousLon = 0;
-    int previousSecond = 0;
+    int previousSecondOfDay = 0;
+    int previousElapsedS = 0;
+    // B records carry a time of day, not a date, so an evening flight that runs past midnight
+    // sees the clock wrap back to zero.  Each wrap adds a day here.
+    int dayOffsetS = 0;
 
     while (std::getline(in, line)) {
       // B HHMMSS DDMMmmm N DDDMMmmm E A PPPPP GGGGG
@@ -320,14 +324,18 @@ namespace sim {
         firstSecondOfDay = secondOfDay;
         previousLat = latitude;
         previousLon = longitude;
-        previousSecond = secondOfDay;
+        previousSecondOfDay = secondOfDay;
       }
 
-      const uint32_t atMs = (uint32_t)((secondOfDay - firstSecondOfDay) * 1000);
+      // A jump backwards of more than half a day is midnight, not a fix arriving out of order.
+      if (secondOfDay < previousSecondOfDay - 43200) dayOffsetS += 86400;
+
+      const int elapsedS = secondOfDay + dayOffsetS - firstSecondOfDay;
+      const uint32_t atMs = (uint32_t)(elapsedS * 1000);
 
       // IGC has no speed or heading, so derive them from consecutive fixes: that is what the
       // receiver reports on a real flight, and the firmware's wind and navigation code needs it.
-      const int dt = secondOfDay - previousSecond;
+      const int dt = elapsedS - previousElapsedS;
       double speedKnots = 0;
       double courseDeg = 0;
       if (dt > 0) {
@@ -376,7 +384,8 @@ namespace sim {
 
       previousLat = latitude;
       previousLon = longitude;
-      previousSecond = secondOfDay;
+      previousSecondOfDay = secondOfDay;
+      previousElapsedS = elapsedS;
     }
 
     if (!haveFirst) {
@@ -529,6 +538,8 @@ namespace sim {
   }
 
   void Scenario::seek(double seconds) {
+    // Only the input cursor moves; see the note in scenario.h on why this is a jump rather than
+    // a scrub.
     std::lock_guard<std::mutex> lock(mutex_);
     if (seconds < 0) seconds = 0;
     positionMs_ = (uint32_t)(seconds * 1000);

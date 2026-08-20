@@ -84,7 +84,7 @@ bool SDCard::presentMassStorage() { return false; }
 bool SDCard::reserveForFirmwareUpload() {
   SDCardOwnership expected = SDCardOwnership::FirmwareReserved;
   return ownership_.compare_exchange_strong(expected, SDCardOwnership::FirmwareUploading,
-                                             std::memory_order_acq_rel);
+                                            std::memory_order_acq_rel);
 }
 
 bool SDCard::acquireForFirmwareUse(uint32_t timeoutMs, bool disconnectUsb) {
@@ -115,7 +115,7 @@ int32_t SDCard::readHostSectors(uint32_t lba, uint32_t offset, void* buffer, uin
 }
 
 int32_t SDCard::writeHostSectors(uint32_t lba, uint32_t offset, const uint8_t* buffer,
-                                  uint32_t bufsize) {
+                                 uint32_t bufsize) {
   (void)lba;
   (void)offset;
   (void)buffer;
