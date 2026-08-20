@@ -1,7 +1,7 @@
 // Includes
 #include "power.h"
 
-#include "comms/leaf_log_credentials.h"
+#include "comms/leaf_log_sync.h"
 #include "diagnostics/diagnostic_network/diagnostic_network.h"
 #include "diagnostics/heap_monitor.h"
 #include "hardware/Leaf_I2C.h"
@@ -20,6 +20,7 @@
 #include "logging/log.h"
 #include "power.h"
 #include "storage/sd_card.h"
+#include "system/usb_state.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
@@ -159,9 +160,10 @@ void Power::initPeripherals() {
   }
 
   // then initialize the rest of the devices
-  const bool reserveForLeafLog = info_.onState == PowerState::OffUSB && settings.labs_leafLog &&
-                                 leaf_log_credentials::load().linked();
-  sdcard.init(reserveForLeafLog);
+  // The SD LUN starts absent in every power state. Charging mode runs Leaf Log first and explicitly
+  // presents the card; operating mode retains exclusive firmware ownership.
+  sdcard.init(true);
+  if (info_.onState == PowerState::On) leaf_usb::disconnect();
   heap_monitor::checkpoint("periph-sd");
   Serial.println(" - Finished SDcard");
   lc86g.init();
@@ -208,8 +210,6 @@ void Power::sleepPeripherals() {
 void Power::wakePeripherals() {
   heap_monitor::checkpoint("wake-periph-start");
   Serial.println("wake_peripherals: ");
-  sdcard.mount();  // re-initialize SD card in case card state was changed while in charging/USB
-                   // mode
   heap_monitor::checkpoint("wake-periph-sd");
   Serial.println(" - waking GPS");
   lc86g.wake();
@@ -224,7 +224,12 @@ void Power::wakePeripherals() {
   Serial.println(" - DONE");
 }
 
-void Power::switchToOnState() {
+bool Power::switchToOnState() {
+  if (!sdcard.acquireForFirmwareUse(2000, true)) {
+    Serial.println("switch_to_on_state: SD ownership transition failed");
+    return false;
+  }
+  leafLogSync.prepareForOperating();
   latchOn();
   Serial.println("switch_to_on_state");
   info_.onState = PowerState::On;
@@ -233,6 +238,7 @@ void Power::switchToOnState() {
     diagnostic_network.reset("switch_to_on_state");
   }
   maybeStartBusLog();
+  return true;
 }
 
 void Power::maybeStartBusLog() {
@@ -268,6 +274,7 @@ void Power::shutdown(bool deadBattery) {
   if (flightTimer_isRunning()) {
     flightTimer_stop(false);
   }
+  busLog.endLog();
 
   // Show user we're shutting down
   display.clearPage();
@@ -305,6 +312,11 @@ void Power::shutdown(bool deadBattery) {
   // plugged into USB, then we can show necessary charging updates etc
   info_.onState = PowerState::OffUSB;
   display.setPage(MainPage::Charging);
+  if (sdcard.acquireForFirmwareUse()) {
+    leafLogSync.prepareForCharging();
+  } else {
+    Serial.println("power_shutdown: SD unavailable for charging transition");
+  }
 }
 
 void Power::latchOn() { digitalWrite(POWER_LATCH, HIGH); }

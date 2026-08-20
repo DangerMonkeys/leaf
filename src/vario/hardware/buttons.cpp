@@ -66,10 +66,8 @@ Button Buttons::init() {
   pinMode(BUTTON_PIN_RIGHT, INPUT_PULLDOWN);
   pinMode(BUTTON_PIN_CENTER, INPUT_PULLDOWN);
 
-  attachInterruptArg(BUTTON_PIN_UP, onPressInterrupt, this, RISING);
-  attachInterruptArg(BUTTON_PIN_DOWN, onPressInterrupt, this, RISING);
-  attachInterruptArg(BUTTON_PIN_LEFT, onPressInterrupt, this, RISING);
-  attachInterruptArg(BUTTON_PIN_RIGHT, onPressInterrupt, this, RISING);
+  // Only center controls the charging-mode Leaf Log handoff. The directional buttons remain
+  // available for their normal charging-screen behavior and cannot accidentally cancel uploads.
   attachInterruptArg(BUTTON_PIN_CENTER, onPressInterrupt, this, RISING);
 
   return inspectPins();

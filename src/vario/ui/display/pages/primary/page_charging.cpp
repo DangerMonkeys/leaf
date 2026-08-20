@@ -86,7 +86,7 @@ void chargingPage_draw() {
     // SD Card Mounted
     u8g2.setCursor(12, 191);
     u8g2.setFont(leaf_icons);
-    if (!sdcard.isMounted()) {
+    if (!sdcard.isCardPresent()) {
       u8g2.print((char)61);
       u8g2.setFont(leaf_6x12);
       u8g2.print(" NO SD!");
@@ -106,7 +106,7 @@ void chargingPage_draw() {
 
       u8g2.setFont(leaf_5x8);
       char status[32];
-      if (leafLogSync.retryPending()) {
+      if (leafLogSync.retryPending() || leafLogSync.powerOnPending()) {
         snprintf(status, sizeof(status), "%s", leafLogSync.statusLine());
       } else if (leafLogSync.progressKnown() && leafLogSync.totalCount() > 0) {
         snprintf(status, sizeof(status), "Uploading %u of %u", leafLogSync.currentCount(),
@@ -115,9 +115,16 @@ void chargingPage_draw() {
         snprintf(status, sizeof(status), "%s", leafLogSync.statusLine());
       }
       printCentered(status, 124);
-      printCentered("Press any button", 138);
-      printCentered("to cancel and", 148);
-      printCentered("enable USB drive", 158);
+      if (leafLogSync.powerOnPending()) {
+        printCentered("Please wait...", 148);
+      } else if (leafLogSync.massStorageUnavailable()) {
+        printCentered("Press to retry.", 143);
+        printCentered("Hold to turn on.", 155);
+      } else {
+        printCentered("Press to cancel", 138);
+        printCentered("and open USB drive.", 148);
+        printCentered("Hold to turn on.", 158);
+      }
       u8g2.setDrawColor(1);
     }
 
@@ -125,23 +132,20 @@ void chargingPage_draw() {
 }
 
 void chargingPage_button(Button button, ButtonEvent state, uint8_t count) {
-  if (button != Button::NONE && state == ButtonEvent::PRESSED &&
+  if (button == Button::CENTER && state == ButtonEvent::PRESSED &&
       leafLogSync.interceptsChargingButtons()) {
     leafLogSync.requestCancel();
+    display.update();
+    return;
+  }
+  if (button == Button::CENTER && state == ButtonEvent::HELD) {
+    leafLogSync.requestPowerOn();
     buttons.consumeButton();
     display.update();
     return;
   }
   switch (button) {
     case Button::CENTER:
-      if (state == ButtonEvent::INCREMENTED && count == 1) {
-        buttons.consumeButton();
-        display.clear();
-        display.showOnSplash();
-        display.setPage((MainPage)settings.startPage);
-        speaker.playSound(fx::enter);
-        power.switchToOnState();
-      }
       break;
     case Button::UP:
       switch (state) {

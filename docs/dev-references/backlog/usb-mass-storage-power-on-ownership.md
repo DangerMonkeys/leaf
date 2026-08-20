@@ -5,7 +5,7 @@ description: Decide how Leaf should enter normal powered-on operation while a co
 
 # USB Mass-storage Ownership During Power-on Backlog
 
-Status: behavior and implementation approach require a separate product decision.
+Status: product behavior selected; implementation in progress on the Leaf Log ownership follow-up.
 
 ## Problem
 
@@ -20,6 +20,22 @@ it does not provide exclusive filesystem ownership and can risk filesystem corru
 
 USB suspend, a stop/spindown command, or a period without MSC activity does not prove that the host
 has released the filesystem. Only an explicit eject or USB disconnect is a safe ownership handoff.
+
+## Selected behavior
+
+- Normal powered-on operation always retains exclusive firmware ownership of the SD card. Plugging
+  USB into an operating Leaf provides power and charging but does not present the SD LUN.
+- Turning Leaf off while it remains plugged in closes firmware files, enters charging mode, runs a
+  fresh Leaf Log upload session when enabled, and presents mass storage afterward.
+- Holding center during Leaf Log activity cancels directly into powered-on operation without first
+  presenting the SD card. A short center press cancels to USB mass storage; directional presses do
+  not interrupt Leaf Log.
+- Holding center after mass storage is already present deliberately removes the SD medium, rejects
+  new host operations, drains in-flight MSC callbacks, remounts the filesystem, and powers on.
+  Because a USB device cannot flush unsent host caches, this last transition remains a deliberate
+  forced-removal operation and should be treated as uncommon.
+- Firmware performs no filesystem access while the host owns the SD card. SD-backed diagnostics are
+  paused rather than buffered or written concurrently.
 
 ## Scope
 
@@ -64,17 +80,15 @@ each affected feature behaves without storage.
 Ask the user to eject the drive or deliberately continue with storage unavailable. This makes the
 tradeoff visible but adds a new transition UI and still requires the no-SD operating mode.
 
-Leaf must not silently revoke a mounted medium from the host or infer ownership release from MSC
-inactivity.
+Leaf must not revoke a mounted medium in the background or infer ownership release from MSC
+inactivity. The explicit center-hold power-on action is the only deliberate forced-removal path.
 
-## Decisions required
+## Decisions resolved
 
-- Which power-on behavior should become the long-term product behavior?
-- If power-on without firmware SD access is allowed, which features are disabled and how is that
-  state represented on-device?
-- Does a center-button request remain pending until eject, or must the user press the button again?
-- After firmware reacquires the card, should it automatically continue power-on and resume all
-  storage-dependent services?
+- Powered-on operation does not expose the SD LUN.
+- Power-on never proceeds without firmware SD ownership.
+- A center hold is a deliberate request to reclaim the card and continue power-on automatically.
+- Returning to charging mode starts Leaf Log before presenting mass storage.
 
 ## Suggested implementation boundaries
 

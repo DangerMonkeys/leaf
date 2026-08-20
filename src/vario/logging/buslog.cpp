@@ -28,8 +28,8 @@ String BusLogger::desiredFileName() const {
 }
 
 bool BusLogger::startLog() {
-  if (!sdcard.isMounted()) {
-    Serial.println("BusLogger::startLog failed: sdcard not mounted");
+  if (!sdcard.firmwareCanAccessFilesystem()) {
+    Serial.println("BusLogger::startLog failed: sdcard unavailable to firmware");
     return false;
   }
   if (!bus_) {

@@ -2,6 +2,7 @@
 
 #include <SD_MMC.h>
 
+#include "storage/sd_card.h"
 #include "ui/settings/settings.h"
 
 namespace diagnostic_logs {
@@ -25,6 +26,7 @@ namespace diagnostic_logs {
   }
 
   bool ensureDirectory() {
+    if (!sdcard.firmwareCanAccessFilesystem()) return false;
     if (SD_MMC.exists(DIAGNOSTICS_DIR)) return true;
     return SD_MMC.mkdir(DIAGNOSTICS_DIR);
   }
