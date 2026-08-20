@@ -3,6 +3,7 @@
 #include <ArduinoJson.h>
 #include <SD_MMC.h>
 #include <arpa/inet.h>
+#include <fcntl.h>
 #include <netinet/in.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -183,7 +184,9 @@ namespace sim {
   HttpServer::~HttpServer() { stop(); }
 
   bool HttpServer::start(uint16_t port) {
-    listenSocket_ = ::socket(AF_INET, SOCK_STREAM, 0);
+    // Close-on-exec throughout: a device restart replaces the process image, and a listening
+    // socket inherited into the new one would still hold the port when it tries to bind.
+    listenSocket_ = ::socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0);
     if (listenSocket_ < 0) return false;
 
     int reuse = 1;
@@ -222,7 +225,7 @@ namespace sim {
 
   void HttpServer::acceptLoop() {
     while (running_) {
-      const int client = ::accept(listenSocket_, nullptr, nullptr);
+      const int client = ::accept4(listenSocket_, nullptr, nullptr, SOCK_CLOEXEC);
       if (client < 0) continue;
       std::thread([this, client] {
         handleConnection(client);
@@ -337,6 +340,12 @@ namespace sim {
       if (!sendString(client, header)) return;
 
       uint64_t lastFrame = UINT64_MAX;
+      // Cursors of this connection's own, so several open tabs each see the whole stream
+      // instead of dividing it between them, and a script's expect-serial keeps its lines.
+      // The console starts at zero -- a tab opened late still gets the boot log -- while tones
+      // start at the present, because replaying an hour of beeps at someone is not useful.
+      uint64_t serialCursor = 0;
+      uint64_t toneCursor = board().toneEventCount();
       while (running_) {
         const uint64_t sequence = device.frameSequence();
         if (sequence != lastFrame) {
@@ -351,12 +360,14 @@ namespace sim {
           return;
         }
 
-        const auto lines = device.drainSerial();
+        std::vector<std::string> lines;
+        serialCursor = device.serialSince(serialCursor, lines);
         for (const std::string& line : lines) {
           if (!sendString(client, "event: serial\ndata: \"" + jsonEscape(line) + "\"\n\n")) return;
         }
 
-        const auto tones = board().drainToneEvents();
+        std::vector<ToneEvent> tones;
+        toneCursor = board().toneEventsSince(toneCursor, tones);
         for (const ToneEvent& tone : tones) {
           std::ostringstream out;
           out << "event: tone\ndata: {\"atMs\":" << tone.atMs << ",\"hz\":" << tone.frequencyHz

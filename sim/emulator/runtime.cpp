@@ -5,7 +5,11 @@
 #include <SD_MMC.h>
 
 #include <dirent.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include <chrono>
 #include <fstream>
@@ -50,6 +54,14 @@ namespace sim {
     // How long a queued "click" holds the button down: long enough to survive the 5ms debounce,
     // short enough that it never turns into a hold (800ms).
     constexpr uint32_t CLICK_HOLD_MS = 60;
+
+    // The command line to start again on a restart.
+    std::vector<std::string> g_relaunchArgs;
+
+    // A restart replaces the process, so a firmware bug that reboots on boot would otherwise
+    // fork-bomb a CI job with no output.  The count survives execv in the environment.
+    constexpr const char* RESTART_COUNT_ENV = "LEAFSIM_RESTART_COUNT";
+    constexpr long MAX_RESTARTS = 16;
 
     void ensureDirectory(const std::string& path) {
       if (path.empty()) return;
@@ -140,10 +152,43 @@ namespace sim {
     printf("leafsim: wrote %s\n", options_.screenshotOnExit.c_str());
   }
 
+  void Runtime::setRelaunchArguments(int argc, char** argv) {
+    g_relaunchArgs.clear();
+    for (int i = 0; i < argc; i++) g_relaunchArgs.push_back(argv[i]);
+  }
+
+  void Runtime::relaunch() {
+    // Re-running setup() is not a restart.  The firmware's globals are statics that outlive it:
+    // the message bus above all, whose subscriber list is a fixed-capacity vector setup() only
+    // ever appends to, so a second pass overflows it and fatal-errors on the way.  Timers, task
+    // state, the open log and the listening UDP server would all survive too.  Replacing the
+    // process image is the only thing here that is really ESP.restart(); everything that should
+    // outlive a reboot already lives outside the process, in the card and settings directories.
+    Serial.println("--- emulated device restarting ---");
+    Serial.flush();
+    fflush(stderr);
+
+    long restarts = 0;
+    if (const char* seen = getenv(RESTART_COUNT_ENV)) restarts = strtol(seen, nullptr, 10);
+    if (restarts >= MAX_RESTARTS) {
+      fprintf(stderr, "leafsim: %ld restarts, giving up rather than looping\n", restarts);
+      exit(4);
+    }
+    setenv(RESTART_COUNT_ENV, std::to_string(restarts + 1).c_str(), 1);
+
+    std::vector<char*> argv;
+    for (std::string& argument : g_relaunchArgs) argv.push_back(&argument[0]);
+    argv.push_back(nullptr);
+    execvp(argv[0], argv.data());
+
+    fprintf(stderr, "leafsim: could not restart: %s\n", strerror(errno));
+    exit(4);
+  }
+
   void Runtime::boot() {
-    // A reboot re-runs setup(), which installs the task timers again.  The old ones have to go
-    // first, or the device would run its task schedule twice over.  (Firmware statics do not
-    // reset, so this is a warm restart, not a power cycle.)
+    // Timers are installed by setup(); the emulated device only ever boots once per process (a
+    // restart is a new process, see relaunch()), but clearing them keeps boot() honest about
+    // what it assumes.
     clock().clearTimers();
 
     Board& b = board();
@@ -191,11 +236,7 @@ namespace sim {
       updateStatus();
     }
 
-    if (g_restartRequested) {
-      g_restartRequested = false;
-      Serial.println("--- emulated device restarting ---");
-      booted_ = false;
-    }
+    if (g_restartRequested) relaunch();
   }
 
   void Runtime::run() {
@@ -314,7 +355,9 @@ namespace sim {
     clock().setPaused(false);
   }
 
-  void Runtime::restart() { g_restartRequested = true; }
+  void Runtime::restart() {
+    g_restartRequested = true;
+  }  // acted on by step(), on the device thread
 
   // ---------------------------------------------------------------- observation
 
@@ -323,7 +366,9 @@ namespace sim {
     std::lock_guard<std::mutex> lock(stateMutex_);
     if (!(captured == frame_)) {
       frame_ = std::move(captured);
-      frameSequence_++;
+      // Released after the frame is in place, so a reader that sees the new sequence number and
+      // then takes the lock cannot come away with the previous frame.
+      frameSequence_.fetch_add(1, std::memory_order_release);
     }
   }
 
@@ -392,7 +437,11 @@ namespace sim {
     return status_;
   }
 
-  std::vector<std::string> Runtime::drainSerial() { return HostConsole::drainLines(); }
+  uint64_t Runtime::serialSince(uint64_t cursor, std::vector<std::string>& into) {
+    return HostConsole::linesSince(cursor, into);
+  }
+
+  uint64_t Runtime::serialCursor() { return HostConsole::lineCount(); }
 
   std::string Runtime::screenshotPng(int scale) { return encodePng(frame(), scale); }
 

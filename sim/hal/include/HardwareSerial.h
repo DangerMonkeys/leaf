@@ -41,8 +41,15 @@ class HostConsole : public HardwareSerial {
   int peek() override { return -1; }
   void flush() override;
 
-  // Lines the emulator UI shows, drained rather than accumulated forever.
-  static std::vector<std::string> drainLines();
+  // The console is an append-only transcript, not a queue: the script's expect-serial assertions
+  // and every connected browser read it through a cursor of their own, so no consumer can take a
+  // line out from under another.  Appends the lines after `cursor` to `into` and returns the
+  // cursor to pass next time.  A consumer that falls more than the retained history behind
+  // silently resumes at the oldest line still held.
+  static uint64_t linesSince(uint64_t cursor, std::vector<std::string>& into);
+
+  // Sequence number one past the newest line, for a consumer that only wants what happens next.
+  static uint64_t lineCount();
 };
 
 class HostGpsSerial : public HardwareSerial {

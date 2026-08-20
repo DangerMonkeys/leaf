@@ -45,6 +45,7 @@ namespace sim {
 
     std::vector<Step> steps_;
     size_t nextIndex_ = 0;
+    uint64_t serialCursor_ = 0;  // this script's place in the console transcript
     int failures_ = 0;
     bool quitRequested_ = false;
   };

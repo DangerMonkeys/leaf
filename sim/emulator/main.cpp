@@ -58,6 +58,10 @@ namespace {
 }  // namespace
 
 int main(int argc, char** argv) {
+  // Kept before anything can consume argv: a restart replaces the process with this same command
+  // line, which is the only faithful way to emulate ESP.restart().
+  sim::Runtime::setRelaunchArguments(argc, argv);
+
   sim::Runtime::Options options;
   std::string scenarioPath;
   std::string scriptPath;
@@ -129,8 +133,10 @@ int main(int argc, char** argv) {
 
   options.screenshotOnExit = screenshotPath;
   options.screenshotScale = scale;
-  options.exitOnFatalError =
-      runSeconds > 0;  // headless runs report and stop; interactive ones wait
+  // Headless runs report and stop; interactive ones leave the error on screen.  A script is a
+  // headless run even without --run-seconds: its length comes from its last step below, long
+  // after configure() has to know whether to install the hook.
+  options.exitOnFatalError = runSeconds > 0 || !scriptPath.empty();
 
   sim::Runtime& device = sim::runtime();
   device.configure(options);
