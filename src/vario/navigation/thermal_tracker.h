@@ -14,7 +14,6 @@ struct ThermalNode {
 
 struct SavedThermal {
   bool valid = false;
-  bool seeded = false;
   uint8_t nodeCount = 0;
   ThermalNode nodes[MAX_THERMAL_NODES];
   int16_t avgClimbCms = 0;
@@ -54,7 +53,6 @@ class ThermalTracker {
   void reset();
   void updateDetector();
   void updateNavigation();
-  void seedTestThermalsForFlight();
   uint8_t recentCoreSamples(CoreSample* out, uint8_t maxCount) const;
 
   const ThermalDisplayItem* displayItems() const { return displayItems_; }
@@ -122,7 +120,6 @@ class ThermalTracker {
   static constexpr double METERS_PER_DEG_LAT = 111320.0;
 
   bool readCurrentFix(Sample& sample);
-  void readSeedReference(Sample& sample);
   void establishOrigin(double latitude, double longitude);
   void addSample(Sample sample);
   void evaluateDetector();
@@ -168,8 +165,6 @@ class ThermalTracker {
   uint32_t lastDetectorSecond_ = 0;
   int32_t lastLatE7_ = 0;
   int32_t lastLonE7_ = 0;
-  bool seededThisFlight_ = false;
-
   Sample samples_[MAX_DETECTOR_SAMPLES];
   uint8_t nextSample_ = 0;
   uint8_t sampleCount_ = 0;
