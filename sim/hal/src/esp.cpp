@@ -4,6 +4,7 @@
 #include <esp_debug_helpers.h>
 #include <esp_heap_caps.h>
 #include <esp_mac.h>
+#include <esp_sleep.h>
 #include <esp_system.h>
 #include <esp_wifi.h>
 #include <execinfo.h>
@@ -41,6 +42,11 @@ esp_err_t esp_sleep_enable_timer_wakeup(uint64_t timeInUs) {
 esp_err_t esp_sleep_enable_ext0_wakeup(int gpioNum, int level) {
   (void)gpioNum;
   (void)level;
+  return ESP_OK;
+}
+esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t mask, esp_sleep_ext1_wakeup_mode_t mode) {
+  (void)mask;
+  (void)mode;
   return ESP_OK;
 }
 

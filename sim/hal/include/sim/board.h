@@ -42,8 +42,15 @@ namespace sim {
     uint32_t currentTone() const;
     void setVolumePins(bool a, bool b);
     uint8_t volume() const;
-    // Tone changes since the last drain, for the UI to turn into audible beeps.
-    std::vector<ToneEvent> drainToneEvents();
+    // Tone changes, kept as an append-only stream so several listening browsers each hear the
+    // whole beep rather than dividing the events between them.  Appends everything after
+    // `cursor` to `into` and returns the cursor to pass next time; a listener that falls behind
+    // resumes at the oldest event still held.
+    uint64_t toneEventsSince(uint64_t cursor, std::vector<ToneEvent>& into) const;
+
+    // Sequence number one past the newest tone event.  A browser starts here rather than at zero:
+    // tones are live events, and replaying the whole flight's beeps on connect is not useful.
+    uint64_t toneEventCount() const;
 
     // ------------------------------------------------------------------ GPS UART
     // Bytes the emulator pushes here are read back by the firmware's Serial0, so recorded NMEA
@@ -78,6 +85,7 @@ namespace sim {
     bool volA_ = false;
     bool volB_ = false;
     std::vector<ToneEvent> toneEvents_;
+    uint64_t toneFirstSeq_ = 0;  // sequence number of toneEvents_.front()
 
     std::deque<uint8_t> gpsRx_;
     std::string gpsTx_;

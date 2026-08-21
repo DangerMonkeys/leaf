@@ -11,6 +11,8 @@ namespace leaf_usb {
 
   void init() {}
   bool begin() { return true; }
+  bool connect() { return true; }
+  bool disconnect() { return true; }
   bool started() { return true; }
   bool hostMounted() { return false; }
   bool hostSuspended() { return false; }

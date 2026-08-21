@@ -105,6 +105,10 @@ uint64_t esp_timer_get_time(void);
 void delay(uint32_t ms);
 void delayMicroseconds(uint32_t us);
 void yield(void);
+// NTP sync has nowhere to reach in the emulator, so this is a no-op: whatever already seeds the
+// system clock (see sim/hal/src/system_clock.cpp) is what code guarded on a valid time will see.
+void configTime(long gmtOffsetSec, int daylightOffsetSec, const char* server1,
+                const char* server2 = nullptr, const char* server3 = nullptr);
 
 // ---------------------------------------------------------------- pins
 void pinMode(uint8_t pin, uint8_t mode);
@@ -114,6 +118,7 @@ uint16_t analogRead(uint8_t pin);
 uint32_t analogReadMilliVolts(uint8_t pin);
 void analogWrite(uint8_t pin, int value);
 void attachInterrupt(uint8_t pin, void (*handler)(void), int mode);
+void attachInterruptArg(uint8_t pin, void (*handler)(void*), void* arg, int mode);
 void detachInterrupt(uint8_t pin);
 uint8_t digitalPinToInterrupt(uint8_t pin);
 

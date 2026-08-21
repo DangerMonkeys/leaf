@@ -48,6 +48,12 @@ namespace sim {
 
     void play();
     void pause();
+
+    // Moves the *input* cursor, and nothing else.  The firmware keeps whatever state it had
+    // reached: barometer filters, GPS fix, navigation, the flight timer and the log all stay
+    // where they were, so seeking backwards replays earlier inputs into later state and seeking
+    // forwards skips everything in between.  It is a jump in the recording, not a scrub of the
+    // device -- a faithful scrub would mean rebooting and replaying to the requested time.
     void seek(double seconds);
 
     // Called from the device loop: publishes everything due at the current device time.

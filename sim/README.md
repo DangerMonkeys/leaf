@@ -165,8 +165,14 @@ POST /api/clock              {"speed":10} {"paused":true} {"stepMs":500}
 POST /api/scenario           {"load":"flight.igc"} {"play":true} {"seek":42.0}
 POST /api/inject             {"line":"P1234,92310"}
 POST /api/board              {"batteryPercent":42,"charging":true,"cardPresent":false}
-POST /api/restart            reboot the emulated device
+POST /api/restart            reboot the emulated device (a real process restart)
 ```
+
+`seek` moves the recording's cursor and nothing else. The firmware keeps the state it had already
+reached -- barometer filters, GPS fix, navigation, the flight timer, the open log -- so seeking
+back replays earlier data into later state, and seeking forward skips everything in between. To
+land the device in the state a given moment of a flight would really have produced, restart and
+replay to that time at `--speed 0`.
 
 ## What is real and what is not
 

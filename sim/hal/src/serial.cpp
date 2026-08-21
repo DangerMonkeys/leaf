@@ -19,7 +19,10 @@ HostConsole Serial2;
 namespace {
   std::mutex g_consoleMutex;
   std::string g_pending;             // partial line not yet terminated
-  std::vector<std::string> g_lines;  // completed lines waiting for the UI
+  std::vector<std::string> g_lines;  // the retained tail of the transcript
+  // Sequence number of g_lines.front(); everything older has been dropped.  Consumers hold a
+  // sequence number rather than an index so that trimming the tail cannot shift them.
+  uint64_t g_firstSeq = 0;
   constexpr size_t MAX_PENDING_LINES = 2000;
 
   void pushChar(char c) {
@@ -31,7 +34,9 @@ namespace {
       g_lines.push_back(g_pending);
       g_pending.clear();
       if (g_lines.size() > MAX_PENDING_LINES) {
-        g_lines.erase(g_lines.begin(), g_lines.begin() + (g_lines.size() - MAX_PENDING_LINES));
+        const size_t dropped = g_lines.size() - MAX_PENDING_LINES;
+        g_lines.erase(g_lines.begin(), g_lines.begin() + dropped);
+        g_firstSeq += dropped;
       }
       return;
     }
@@ -55,11 +60,17 @@ size_t HostConsole::write(const uint8_t* buffer, size_t size) {
 
 void HostConsole::flush() { fflush(stdout); }
 
-std::vector<std::string> HostConsole::drainLines() {
+uint64_t HostConsole::linesSince(uint64_t cursor, std::vector<std::string>& into) {
   std::lock_guard<std::mutex> lock(g_consoleMutex);
-  std::vector<std::string> out;
-  out.swap(g_lines);
-  return out;
+  const uint64_t end = g_firstSeq + g_lines.size();
+  if (cursor < g_firstSeq) cursor = g_firstSeq;  // fell behind; resume at the oldest line held
+  for (uint64_t seq = cursor; seq < end; seq++) into.push_back(g_lines[(size_t)(seq - g_firstSeq)]);
+  return end;
+}
+
+uint64_t HostConsole::lineCount() {
+  std::lock_guard<std::mutex> lock(g_consoleMutex);
+  return g_firstSeq + g_lines.size();
 }
 
 size_t HostGpsSerial::write(uint8_t c) {

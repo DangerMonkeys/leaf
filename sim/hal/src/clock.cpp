@@ -21,8 +21,11 @@ namespace sim {
   }
 
   void Clock::setSpeed(double speed) {
-    speed_ = speed < 0 ? 0 : speed;
-    anchored_ = false;
+    // Called from the HTTP threads as well as the device thread, hence the atomics: the store
+    // publishes the new speed, and dropping the anchor tells the device thread to re-anchor its
+    // pacing to it on the next advance.
+    speed_.store(speed < 0 ? 0 : speed, std::memory_order_relaxed);
+    anchored_.store(false, std::memory_order_relaxed);
   }
 
   void Clock::advanceUs(uint64_t us) {
@@ -30,33 +33,34 @@ namespace sim {
 
     // A paused clock blocks the device thread instead of advancing: from the firmware's point of
     // view the world simply stops, which is what makes single-stepping a flight useful.
-    while (paused_) {
+    while (paused_.load(std::memory_order_relaxed)) {
       std::this_thread::sleep_for(std::chrono::microseconds(PAUSE_POLL_US));
-      anchored_ = false;
+      anchored_.store(false, std::memory_order_relaxed);
     }
 
-    const uint64_t target = nowUs_ + us;
+    const uint64_t target = nowUs() + us;
     fireDueTimers(target);
-    nowUs_ = target;
+    nowUs_.store(target, std::memory_order_relaxed);
 
-    if (speed_ <= 0) return;  // free-running: as fast as the host can manage
+    const double speed = speed_.load(std::memory_order_relaxed);
+    if (speed <= 0) return;  // free-running: as fast as the host can manage
 
-    if (!anchored_) {
+    if (!anchored_.load(std::memory_order_relaxed)) {
       anchorHostUs_ = hostUs();
-      anchorSimUs_ = nowUs_;
-      anchored_ = true;
+      anchorSimUs_ = target;
+      anchored_.store(true, std::memory_order_relaxed);
       return;
     }
 
-    const uint64_t simElapsed = nowUs_ - anchorSimUs_;
-    const uint64_t hostTarget = anchorHostUs_ + (uint64_t)(simElapsed / speed_);
+    const uint64_t simElapsed = target - anchorSimUs_;
+    const uint64_t hostTarget = anchorHostUs_ + (uint64_t)(simElapsed / speed);
     const uint64_t hostNow = hostUs();
     if (hostTarget > hostNow) {
       std::this_thread::sleep_for(std::chrono::microseconds(hostTarget - hostNow));
     } else if (hostNow - hostTarget > 250000) {
       // The host fell far behind (a long scenario load, a debugger break).  Re-anchor rather than
       // sprinting to catch up, which would replay a burst of sensor data at the wrong rate.
-      anchored_ = false;
+      anchored_.store(false, std::memory_order_relaxed);
     }
   }
 
@@ -75,7 +79,7 @@ namespace sim {
       if (soonest < 0) return;
 
       Timer& t = timers_[soonest];
-      nowUs_ = soonestAt > nowUs_ ? soonestAt : nowUs_;
+      if (soonestAt > nowUs()) nowUs_.store(soonestAt, std::memory_order_relaxed);
       if (t.autoReload) {
         t.nextUs = soonestAt + t.periodUs;
       } else {

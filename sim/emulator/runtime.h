@@ -1,9 +1,16 @@
 // The emulated device: the firmware's setup()/loop() driven by the virtual clock.
 //
 // Everything the firmware does happens on one thread (the "device thread"), exactly as it does on
-// the ESP32's Arduino loop task.  The HTTP server runs on other threads and never touches
-// firmware state directly; it queues commands that the device thread applies between passes
-// through loop(), which keeps the emulator free of races the real device cannot have.
+// the ESP32's Arduino loop task.  The HTTP server runs on other threads and never calls into
+// firmware; it queues commands that the device thread applies between passes through loop(),
+// which keeps the emulator free of races the real device cannot have.
+//
+// Three things deliberately do not go through that queue, because queueing them would not work:
+// button presses and board state are pin writes rather than firmware calls, and a device halted
+// in the fatal-error handler is still reading pins while draining no queue; and the clock is
+// driven straight from the asking thread, because a paused clock blocks the device thread inside
+// advanceUs(), so the thread that unpauses cannot be the one waiting to drain the queue.  The
+// state all three touch is guarded by its own mutex or atomics -- see Board and Clock.
 #pragma once
 
 #include <stdint.h>
@@ -118,13 +125,28 @@ namespace sim {
     void setSpeed(double speed);
     void setPaused(bool paused);
     void stepMilliseconds(uint32_t ms);
+
+    // Reboots the device, which means replacing this process: see relaunch() in runtime.cpp for
+    // why re-running setup() is not a restart.  Also reached from the firmware's own
+    // ESP.restart(), so a settings reset or the fatal-error handler's reboot behaves the same.
     void restart();
+
+    // The command line this process was started with, kept so a restart can start it again.
+    static void setRelaunchArguments(int argc, char** argv);
 
     // ---------------------------------------------------------------- observation (any thread)
     Frame frame();
-    uint64_t frameSequence() const { return frameSequence_; }
+    // Bumped by the device thread whenever the screen changes; the event stream polls it from its
+    // own thread to decide whether a new frame is worth sending, so it is atomic rather than
+    // guarded by stateMutex_ -- the poll must not queue behind a frame copy.
+    uint64_t frameSequence() const { return frameSequence_.load(std::memory_order_acquire); }
     Status status();
-    std::vector<std::string> drainSerial();
+    // Console lines after `cursor`, appended to `into`; returns the cursor to pass next time.
+    // Every consumer keeps its own, so a browser watching the console cannot swallow a line the
+    // script's expect-serial was waiting for.  serialCursor() is the "only what happens next"
+    // starting point.
+    uint64_t serialSince(uint64_t cursor, std::vector<std::string>& into);
+    uint64_t serialCursor();
     std::string screenshotPng(int scale);
 
     // Writes the exit screenshot, if one was requested.
@@ -137,6 +159,7 @@ namespace sim {
     void captureDisplay();
     void updateStatus();
     static void onClockAdvance();
+    [[noreturn]] void relaunch();
 
     Options options_;
     bool booted_ = false;
@@ -163,7 +186,7 @@ namespace sim {
 
     std::mutex stateMutex_;
     Frame frame_;
-    uint64_t frameSequence_ = 0;
+    std::atomic<uint64_t> frameSequence_{0};
     Status status_;
     uint32_t lastCaptureMs_ = 0;
   };

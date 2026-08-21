@@ -13,8 +13,9 @@
 namespace sim {
 
   namespace {
-    // Console output the script can assert on.  Kept here rather than in the runtime because only
-    // expect-serial needs a full transcript; the UI drains its own copy.
+    // Everything the console has said so far, flattened for expect-serial to search.  The lines
+    // themselves come from the runtime's shared transcript through this script's own cursor, so
+    // a browser watching the same console does not consume them first.
     std::string g_transcript;
   }  // namespace
 
@@ -64,10 +65,12 @@ namespace sim {
   }
 
   void Script::update(uint32_t nowMs) {
-    // Keep the transcript current for expect-serial.  Draining here means the UI and the script
-    // do not compete for the same lines.
-    for (const std::string& line : runtime().drainSerial()) {
-      printf("%s\n", line.c_str());
+    // Keep the transcript current for expect-serial.  The lines are not echoed here: HostConsole
+    // already writes them to stdout as the firmware prints them, so printing again would double
+    // every line of a scripted run's log.
+    std::vector<std::string> lines;
+    serialCursor_ = runtime().serialSince(serialCursor_, lines);
+    for (const std::string& line : lines) {
       g_transcript += line;
       g_transcript += "\n";
     }

@@ -8,6 +8,8 @@
 
 #include <stdint.h>
 
+#include <atomic>
+
 namespace sim {
 
   // Hardware timer interrupts (the 10ms task timer and 500ms charge timer the firmware installs).
@@ -15,11 +17,15 @@ namespace sim {
   // is the same place the device sees them: in the middle of the main loop.
   using TimerCallback = void (*)();
 
+  // Everything the device thread owns is plain; the four fields below are atomic because the
+  // emulator's HTTP threads drive the clock directly rather than through the runtime's command
+  // queue.  They have to: a paused clock blocks the device thread inside advanceUs(), so the
+  // thread that unpauses cannot be the one waiting to drain a queued command.
   class Clock {
    public:
-    uint64_t nowUs() const { return nowUs_; }
-    uint32_t millis() const { return (uint32_t)(nowUs_ / 1000); }
-    uint32_t micros() const { return (uint32_t)nowUs_; }
+    uint64_t nowUs() const { return nowUs_.load(std::memory_order_relaxed); }
+    uint32_t millis() const { return (uint32_t)(nowUs() / 1000); }
+    uint32_t micros() const { return (uint32_t)nowUs(); }
 
     // Moves virtual time forward, firing any timer callbacks due along the way, and blocks in real
     // time if the clock is pacing to a speed multiplier.
@@ -27,11 +33,11 @@ namespace sim {
 
     // Speed multiplier: 1.0 tracks wall clock, 10.0 runs ten times faster, 0 runs flat out.
     void setSpeed(double speed);
-    double speed() const { return speed_; }
+    double speed() const { return speed_.load(std::memory_order_relaxed); }
 
     // Paused clocks refuse to advance, so the firmware sees time standing still.
-    void setPaused(bool paused) { paused_ = paused; }
-    bool paused() const { return paused_; }
+    void setPaused(bool paused) { paused_.store(paused, std::memory_order_relaxed); }
+    bool paused() const { return paused_.load(std::memory_order_relaxed); }
 
     // Runs one timer slot; returns the handle index used by timerBegin()/timerAlarm().
     int addTimer(uint32_t frequencyHz);
@@ -67,15 +73,16 @@ namespace sim {
     static constexpr int MAX_TIMERS = 8;
     Timer timers_[MAX_TIMERS];
 
-    uint64_t nowUs_ = 0;
-    double speed_ = 1.0;
-    bool paused_ = false;
+    std::atomic<uint64_t> nowUs_{0};
+    std::atomic<double> speed_{1.0};
+    std::atomic<bool> paused_{false};
     StallHook stallHook_ = nullptr;
 
     // Wall-clock anchor for pacing; reset whenever speed changes or the clock is unpaused.
+    // Only the device thread reads the anchor itself; setSpeed() invalidates it from any thread.
     uint64_t anchorHostUs_ = 0;
     uint64_t anchorSimUs_ = 0;
-    bool anchored_ = false;
+    std::atomic<bool> anchored_{false};
   };
 
   Clock& clock();

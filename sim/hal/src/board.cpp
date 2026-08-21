@@ -83,8 +83,11 @@ namespace sim {
     event.frequencyHz = frequencyHz;
     event.volume = (uint8_t)((volA_ ? 1 : 0) + (volB_ ? 2 : 0));
     toneEvents_.push_back(event);
-    // The UI drains these; if nobody is listening, keep the buffer bounded.
-    if (toneEvents_.size() > 512) toneEvents_.erase(toneEvents_.begin(), toneEvents_.begin() + 256);
+    // Nobody may be listening, so keep the retained tail bounded; the sequence numbers carry on.
+    if (toneEvents_.size() > 512) {
+      toneEvents_.erase(toneEvents_.begin(), toneEvents_.begin() + 256);
+      toneFirstSeq_ += 256;
+    }
   }
 
   uint32_t Board::currentTone() const {
@@ -103,11 +106,19 @@ namespace sim {
     return (uint8_t)((volA_ ? 1 : 0) + (volB_ ? 2 : 0));
   }
 
-  std::vector<ToneEvent> Board::drainToneEvents() {
+  uint64_t Board::toneEventsSince(uint64_t cursor, std::vector<ToneEvent>& into) const {
     std::lock_guard<std::mutex> lock(mutex_);
-    std::vector<ToneEvent> out;
-    out.swap(toneEvents_);
-    return out;
+    const uint64_t end = toneFirstSeq_ + toneEvents_.size();
+    if (cursor < toneFirstSeq_) cursor = toneFirstSeq_;
+    for (uint64_t seq = cursor; seq < end; seq++) {
+      into.push_back(toneEvents_[(size_t)(seq - toneFirstSeq_)]);
+    }
+    return end;
+  }
+
+  uint64_t Board::toneEventCount() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return toneFirstSeq_ + toneEvents_.size();
   }
 
   void Board::gpsFeed(const std::string& bytes) {

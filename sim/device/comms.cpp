@@ -11,6 +11,7 @@
 
 #include "comms/ble.h"
 #include "comms/factory_discovery.h"
+#include "comms/leaf_log_client.h"
 #include "comms/ota.h"
 #include "comms/sd_firmware_update.h"
 #include "comms/webserver.h"
@@ -99,6 +100,17 @@ String webserver_user_app_url() { return String(); }
 String webserver_leaf_ap_ssid() { return String(); }
 String webserver_leaf_ap_password() { return String(); }
 String webserver_leaf_ap_wifi_qr() { return String(); }
+
+// ---------------------------------------------------------------- Leaf Log
+//
+// leaf_log_client.cpp and leaf_log_sync.cpp are real firmware, compiled for the emulator like
+// everything above storage/network hardware -- but these two accessors live inside webserver.cpp
+// upstream, which is excluded here (see FW_EXCLUDE), so they need a stand-in too. HTTPClient::begin
+// always fails in the emulator (no network path out), so neither value is ever actually used for a
+// request; the CA cert is left empty rather than duplicating the real PEM for no reason.
+
+const char* leafLogBaseUrl() { return "https://leaflog.norcalflight.com"; }
+const char* leafLogCaCertificate() { return ""; }
 
 // ---------------------------------------------------------------- OTA and SD firmware update
 
