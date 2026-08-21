@@ -1,24 +1,55 @@
 #include "comms/ble.h"
 
 #include <Arduino.h>
+#include <algorithm>
+#include <atomic>
 
 #include <NimBLEDevice.h>
 #include "TinyGPSPlus.h"
 #include "comms/fanet_radio.h"
 #include "comms/webserver.h"
+#include "diagnostics/diagnostic_logs.h"
 #include "diagnostics/heap_monitor.h"
+#include "esp_heap_caps.h"
 #include "etl/string.h"
 #include "etl/string_stream.h"
 #include "etl/variant.h"
+#include "instruments/ambient.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
+#include "power.h"
 #include "utils/lock_guard.h"
 
 // These UUIDs are for BLE UART services and characteristics.
 // This is required to be UART due to a requirement for
 // compatibility with SeeYou Navigator.
-#define LEAF_SERVICE_UUID "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"  // SPP service
-#define LEAF_LK8EX1_UUID "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"   // SPP characteristic (TX/RX)
+#define LEAF_SERVICE_UUID "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"  // Nordic UART service
+#define LEAF_RX_UUID "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"       // Central-to-Leaf writes
+#define LEAF_TX_UUID "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"       // Leaf-to-central notifications
+
+namespace {
+  constexpr unsigned long BLE_HEAP_CHECK_INTERVAL_MS = 5000;
+
+  enum BleDiagnosticEvent : uint32_t {
+    BLE_DIAG_CONNECTED = 1 << 0,
+    BLE_DIAG_DISCONNECTED = 1 << 1,
+    BLE_DIAG_ADV_RESTARTED = 1 << 2,
+    BLE_DIAG_ADV_RESTART_FAILED = 1 << 3,
+    BLE_DIAG_NUS_NOTIFY_FAILED = 1 << 4,
+    BLE_DIAG_PERIODIC_QUEUE_FULL = 1 << 5,
+    BLE_DIAG_GPS_QUEUE_FULL = 1 << 6,
+    BLE_DIAG_FANET_QUEUE_FULL = 1 << 7,
+  };
+
+  std::atomic<uint32_t> pendingBleDiagnosticEvents{0};
+  std::atomic<int> lastBleDisconnectReason{0};
+  std::atomic<uint32_t> nusNotifySuccessCount{0};
+  std::atomic<uint32_t> nusNotifyFailureCount{0};
+
+  void markBleDiagnosticEvent(BleDiagnosticEvent event) {
+    pendingBleDiagnosticEvents.fetch_or(static_cast<uint32_t>(event), std::memory_order_relaxed);
+  }
+}  // namespace
 
 /// @brief Internal struct to be passed in the message queues to wakup the BLE task
 struct WakeupMessage {
@@ -43,13 +74,17 @@ class ServerCallbacks : public NimBLEServerCallbacks {
      *  Timeout: 10 millisecond increments.
      */
     pServer->updateConnParams(connInfo.getConnHandle(), 24, 48, 0, 180);
+    markBleDiagnosticEvent(BLE_DIAG_CONNECTED);
   }
 
   // This one seems import to re-advertise
   void onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reason) override {
+    lastBleDisconnectReason.store(reason, std::memory_order_relaxed);
+    markBleDiagnosticEvent(BLE_DIAG_DISCONNECTED);
     if (BLE::get().isStarted()) {
       // Re-advertise after a disconnect when BLE is enabled.
-      NimBLEDevice::startAdvertising();
+      markBleDiagnosticEvent(NimBLEDevice::startAdvertising() ? BLE_DIAG_ADV_RESTARTED
+                                                              : BLE_DIAG_ADV_RESTART_FAILED);
     }
   }
 
@@ -73,10 +108,12 @@ void BLE::setup() {
   pServer = NimBLEDevice::createServer();
   pServer->setCallbacks(&serverCallbacks);
 
-  // Create the characteristic and start advertising climb rate information
+  // Expose the standard Nordic UART RX characteristic for BLE serial clients such as XCSoar.
+  // Leaf does not currently process incoming data, so the default callback is intentionally used.
   pService = pServer->createService(LEAF_SERVICE_UUID);
-  pCharacteristic = pService->createCharacteristic(LEAF_LK8EX1_UUID,
-                                                   NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
+  pRxCharacteristic = pService->createCharacteristic(LEAF_RX_UUID, NIMBLE_PROPERTY::WRITE_NR, 64);
+  pCharacteristic =
+      pService->createCharacteristic(LEAF_TX_UUID, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
   pService->start();
 
   /** Create an advertising instance and add the services to the advertised data */
@@ -165,6 +202,7 @@ void BLE::end() {
   // Reset null pointers.
   pServer = nullptr;
   pService = nullptr;
+  pRxCharacteristic = nullptr;
   pCharacteristic = nullptr;
   pAdvertising = nullptr;
   heap_monitor::checkpoint("ble-end-after");
@@ -178,10 +216,14 @@ void BLE::on_receive(const GpsMessage& msg) {
   // for the next periodic send.
   if (msg.nmea.substr(0, 6) == "$GPGGA" || msg.nmea.substr(0, 6) == "$GNGGA") {
     WakeupMessage message(WakeupMessage::Reason::GPS_GPGGA, msg.nmea);
-    xQueueSend(BLE::get().xQueue, &message, 0);
+    if (xQueueSend(BLE::get().xQueue, &message, 0) != pdTRUE) {
+      markBleDiagnosticEvent(BLE_DIAG_GPS_QUEUE_FULL);
+    }
   } else if (msg.nmea.substr(0, 6) == "$GPRMC" || msg.nmea.substr(0, 6) == "$GNRMC") {
     WakeupMessage message(WakeupMessage::Reason::GPS_GPRMC, msg.nmea);
-    xQueueSend(BLE::get().xQueue, &message, 0);
+    if (xQueueSend(BLE::get().xQueue, &message, 0) != pdTRUE) {
+      markBleDiagnosticEvent(BLE_DIAG_GPS_QUEUE_FULL);
+    }
   }
 }
 
@@ -190,7 +232,9 @@ void BLE::on_receive(const FanetPacket& msg) {
   if (pServer == nullptr) return;
 
   WakeupMessage message(WakeupMessage::Reason::FANET_RX, msg);
-  xQueueSend(BLE::get().xQueue, &message, 0);
+  if (xQueueSend(BLE::get().xQueue, &message, 0) != pdTRUE) {
+    markBleDiagnosticEvent(BLE_DIAG_FANET_QUEUE_FULL);
+  }
 }
 
 // FreeRTOS Task
@@ -200,6 +244,7 @@ void BLE::bleTask(void* args) {
   while (true) {
     // Sleep until there's some message to send out.
     xQueueReceive(ble->xQueue, &message, portMAX_DELAY);
+    ble->processDiagnostics();
     switch (message.reason) {
       case WakeupMessage::Reason::PERIODIC:
         // Periodic wakeup to send out the last known Vario & Baro data.
@@ -214,9 +259,10 @@ void BLE::bleTask(void* args) {
           continue;
         }
         auto& gpsGpggaBuffer = etl::get<NMEAString>(message.message);
+        ble->addChecksumToNMEA(gpsGpggaBuffer);
         ble->pCharacteristic->setValue((const uint8_t*)gpsGpggaBuffer.c_str(),
                                        gpsGpggaBuffer.size());
-        ble->pCharacteristic->notify();
+        ble->recordNusNotifyResult(ble->pCharacteristic->notify());
         ble->lastGpsGgaMs = millis();
       } break;
       case WakeupMessage::Reason::GPS_GPRMC: {
@@ -225,9 +271,10 @@ void BLE::bleTask(void* args) {
           continue;
         }
         auto& gpsGprmcBuffer = etl::get<NMEAString>(message.message);
+        ble->addChecksumToNMEA(gpsGprmcBuffer);
         ble->pCharacteristic->setValue((const uint8_t*)gpsGprmcBuffer.c_str(),
                                        gpsGprmcBuffer.size());
-        ble->pCharacteristic->notify();
+        ble->recordNusNotifyResult(ble->pCharacteristic->notify());
 
         ble->lastGpsGprmcMs = millis();
         break;
@@ -241,7 +288,9 @@ void BLE::timerCallback(TimerHandle_t timer) {
   // (wake up the BLE task)
   if (BLE::get().xQueue == nullptr) return;
   WakeupMessage message(WakeupMessage::Reason::PERIODIC);
-  xQueueSend(BLE::get().xQueue, &message, 0);
+  if (xQueueSend(BLE::get().xQueue, &message, 0) != pdTRUE) {
+    markBleDiagnosticEvent(BLE_DIAG_PERIODIC_QUEUE_FULL);
+  }
 }
 
 void BLE::sendVarioUpdate() {
@@ -249,15 +298,59 @@ void BLE::sendVarioUpdate() {
   NMEAString nmea;
   etl::string_stream stream(nmea);
   int32_t climbRate = baro.climbRateFilteredValid() ? baro.climbRateFiltered() : 0;
+  char temperature[16] = "99";
+  if (ambient.state() == Ambient::State::Ready) {
+    snprintf(temperature, sizeof(temperature), "%.1f", ambient.temp());
+  }
+  const int battery = std::clamp<int>(power.info().batteryPercent, 0, 100);
+
   stream << "$LK8EX1," << static_cast<int32_t>(baro.pressure()) << ","
-         << static_cast<uint>(baro.altF()) << "," << climbRate << ","
-         << "99,999,";  // Temperature in C.  If not available, send 99
-                        // Battery voltage OR percentage.  If percentage, add 1000 (if 1014 is
-                        // 14%). 999
+         << static_cast<uint>(baro.altF()) << "," << climbRate << "," << temperature << ","
+         << (1000 + battery) << ",";
 
   addChecksumToNMEA(nmea);
   pCharacteristic->setValue((const uint8_t*)nmea.c_str(), nmea.size());
-  pCharacteristic->notify();
+  recordNusNotifyResult(pCharacteristic->notify());
+}
+
+void BLE::recordNusNotifyResult(bool success) {
+  if (success) {
+    nusNotifySuccessCount.fetch_add(1, std::memory_order_relaxed);
+  } else {
+    nusNotifyFailureCount.fetch_add(1, std::memory_order_relaxed);
+    markBleDiagnosticEvent(BLE_DIAG_NUS_NOTIFY_FAILED);
+  }
+}
+
+void BLE::processDiagnostics() {
+  const uint32_t events = pendingBleDiagnosticEvents.exchange(0, std::memory_order_relaxed);
+  if (events & BLE_DIAG_CONNECTED) heap_monitor::checkpoint("ble-connected");
+  if (events & BLE_DIAG_DISCONNECTED) {
+    const int reason = lastBleDisconnectReason.load(std::memory_order_relaxed);
+    diagnostic_logs::appendSystemEvent("ble", "disconnected", String(reason), "reason", reason,
+                                       true);
+    diagnostic_logs::appendSystemEvent(
+        "ble", "notify_success", String(), "count",
+        static_cast<int32_t>(nusNotifySuccessCount.load(std::memory_order_relaxed)), true);
+    diagnostic_logs::appendSystemEvent(
+        "ble", "notify_failure", String(), "count",
+        static_cast<int32_t>(nusNotifyFailureCount.load(std::memory_order_relaxed)), true);
+    heap_monitor::checkpoint("ble-disconnected");
+  }
+  if (events & BLE_DIAG_ADV_RESTARTED) heap_monitor::checkpoint("ble-adv-restart-ok");
+  if (events & BLE_DIAG_ADV_RESTART_FAILED) heap_monitor::checkpoint("ble-adv-restart-fail");
+  if (events & BLE_DIAG_NUS_NOTIFY_FAILED) heap_monitor::checkpoint("ble-notify-fail");
+  if (events & BLE_DIAG_PERIODIC_QUEUE_FULL) heap_monitor::checkpoint("ble-periodic-q-full");
+  if (events & BLE_DIAG_GPS_QUEUE_FULL) heap_monitor::checkpoint("ble-gps-q-full");
+  if (events & BLE_DIAG_FANET_QUEUE_FULL) heap_monitor::checkpoint("ble-fanet-q-full");
+
+  const unsigned long now = millis();
+  if (now - lastBleHeapCheckMs >= BLE_HEAP_CHECK_INTERVAL_MS) {
+    if (!heap_caps_check_integrity_all(false)) {
+      heap_monitor::checkpoint("ble-heap-invalid");
+    }
+    lastBleHeapCheckMs = now;
+  }
 }
 
 void BLE::sendFanetUpdate(FanetPacket& msg) {
@@ -347,7 +440,7 @@ void BLE::sendFanetUpdate(FanetPacket& msg) {
 
   addChecksumToNMEA(stringified);
   pCharacteristic->setValue((const uint8_t*)stringified.c_str(), stringified.size());
-  pCharacteristic->notify();
+  recordNusNotifyResult(pCharacteristic->notify());
   Serial.println(stringified.c_str());
 }
 

@@ -38,6 +38,7 @@ class BLE : public MessageSink<BLE, GpsMessage, FanetPacket> {
   BLE()
       : pServer(nullptr),
         pService(nullptr),
+        pRxCharacteristic(nullptr),
         pCharacteristic(nullptr),
         pAdvertising(nullptr),
         xQueue(nullptr),
@@ -49,6 +50,9 @@ class BLE : public MessageSink<BLE, GpsMessage, FanetPacket> {
 
   NimBLEServer* pServer;
   NimBLEService* pService;
+  // Nordic UART RX is intentionally receive-only for now: clients may write, but Leaf ignores it.
+  NimBLECharacteristic* pRxCharacteristic;
+  // Nordic UART TX carries CRLF-terminated LK8EX1, GPS, and PFLAA sentences.
   NimBLECharacteristic* pCharacteristic;
   NimBLEAdvertising* pAdvertising;
 
@@ -64,6 +68,9 @@ class BLE : public MessageSink<BLE, GpsMessage, FanetPacket> {
   static void timerCallback(TimerHandle_t timer);
 
   void sendVarioUpdate();
+  // NimBLE reports whether an update was submitted, not final over-the-air delivery.
+  void recordNusNotifyResult(bool success);
+  void processDiagnostics();
   void sendGpsUpdate(TinyGPSPlus& gps);
   void sendFanetUpdate(FanetPacket& packetMsg);
 
@@ -78,4 +85,5 @@ class BLE : public MessageSink<BLE, GpsMessage, FanetPacket> {
 
   unsigned long lastGpsGgaMs = 0;
   unsigned long lastGpsGprmcMs = 0;
+  unsigned long lastBleHeapCheckMs = 0;
 };
