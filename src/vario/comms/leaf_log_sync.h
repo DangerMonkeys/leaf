@@ -48,7 +48,8 @@ class LeafLogSync {
   void finishForPowerOn();
   void finishToMassStorage();
   void handleTransientFailure(const char* reason, int httpStatus = 0, uint32_t elapsedMs = 0,
-                              size_t fileSize = 0, size_t responseSize = 0);
+                              size_t fileSize = 0, size_t responseSize = 0,
+                              const String& transportDetail = String());
 
   State state_ = State::Idle;
   File scanDirectory_;

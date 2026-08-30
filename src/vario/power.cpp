@@ -1,6 +1,7 @@
 // Includes
 #include "power.h"
 
+#include "comms/ble.h"
 #include "comms/leaf_log_sync.h"
 #include "diagnostics/diagnostic_network/diagnostic_network.h"
 #include "diagnostics/heap_monitor.h"
@@ -234,6 +235,7 @@ bool Power::switchToOnState() {
   Serial.println("switch_to_on_state");
   info_.onState = PowerState::On;
   wakePeripherals();
+  if (settings.system_bluetoothOn) BLE::get().start();
   if (diagnostic_network.shouldResetWhenSwitchingOn()) {
     diagnostic_network.reset("switch_to_on_state");
   }
@@ -303,6 +305,7 @@ void Power::shutdown(bool deadBattery) {
 
   // finally, turn off devices
   sleepPeripherals();
+  BLE::get().end();
   display.clear();
   delay(100);
   latchOff();  // turn off 3.3V regulator (if we're plugged into USB, we'll stay on)

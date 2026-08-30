@@ -90,7 +90,7 @@ void setup() {
 
   // Initialize the BLE stack only when the saved setting asks for it. BLE still subscribes to the
   // bus below so it can be enabled later from settings without rebooting.
-  if (settings.system_bluetoothOn) {
+  if (power.info().onState == PowerState::On && settings.system_bluetoothOn) {
     Serial.println("Initializing Bluetooth Module");
     BLE::get().setup();
     heap_monitor::checkpoint("setup-ble");

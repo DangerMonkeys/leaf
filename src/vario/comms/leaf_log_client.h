@@ -23,6 +23,7 @@ namespace leaf_log_client {
     uint32_t elapsedMs = 0;
     size_t fileSize = 0;
     size_t responseSize = 0;
+    String transportDetail;
     String flightId;
     String accountHandle;
     String accountDisplayName;

@@ -3,10 +3,20 @@
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 #include <SD_MMC.h>
+#include <WiFi.h>
 #include <WiFiClientSecure.h>
 
 namespace leaf_log_client {
   namespace {
+    String baseUrlHost() {
+      String host = leafLogBaseUrl();
+      const int schemeEnd = host.indexOf("://");
+      if (schemeEnd >= 0) host.remove(0, schemeEnd + 3);
+      const int pathStart = host.indexOf('/');
+      if (pathStart >= 0) host.remove(pathStart);
+      return host;
+    }
+
     class CancellableFileStream : public Stream {
      public:
       CancellableFileStream(File& file, std::atomic<bool>& cancelled,
@@ -62,6 +72,17 @@ namespace leaf_log_client {
     }
     result.fileSize = file.size();
 
+    const String host = baseUrlHost();
+    IPAddress resolvedIp;
+    if (host.isEmpty() || !WiFi.hostByName(host.c_str(), resolvedIp)) {
+      result.diagnostic = "dns_lookup_failed";
+      result.transportDetail = "host=" + host + ",dns=failed";
+      result.elapsedMs = millis() - startedMs;
+      file.close();
+      return result;
+    }
+    result.transportDetail = "host=" + host + ",dns=ok,ip=" + resolvedIp.toString();
+
     WiFiClientSecure client;
     client.setCACert(leafLogCaCertificate());
     HTTPClient http;
@@ -80,6 +101,14 @@ namespace leaf_log_client {
 
     CancellableFileStream stream(file, cancelRequested, urgentButtonPress, millis() + 60000);
     result.httpStatus = http.sendRequest("POST", &stream, result.fileSize);
+    if (result.httpStatus <= 0) {
+      char errorText[160] = {};
+      const int tlsError = client.lastError(errorText, sizeof(errorText));
+      result.transportDetail += ",tls_error=";
+      result.transportDetail += tlsError;
+      result.transportDetail += ",tls_text=";
+      result.transportDetail += errorText[0] == '\0' ? "none" : errorText;
+    }
     file.close();
 
     if (stream.deadlineExceeded()) {

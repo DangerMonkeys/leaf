@@ -197,7 +197,7 @@ void LeafLogSync::update() {
         finishRequestedExit();
       } else {
         handleTransientFailure(result.diagnostic, result.httpStatus, result.elapsedMs,
-                               result.fileSize, result.responseSize);
+                               result.fileSize, result.responseSize, result.transportDetail);
       }
       break;
     }
@@ -294,7 +294,8 @@ void LeafLogSync::finishToMassStorage() {
 }
 
 void LeafLogSync::handleTransientFailure(const char* reason, int httpStatus, uint32_t elapsedMs,
-                                         size_t fileSize, size_t responseSize) {
+                                         size_t fileSize, size_t responseSize,
+                                         const String& transportDetail) {
   leaf_wifi::disconnectFromNetwork();
   const uint8_t index = min<uint8_t>(retryIndex_, 2);
   const uint32_t delayMs = RETRY_DELAYS_MS[index];
@@ -313,6 +314,10 @@ void LeafLogSync::handleTransientFailure(const char* reason, int httpStatus, uin
   detail += fileSize;
   detail += ",response_bytes=";
   detail += responseSize;
+  if (!transportDetail.isEmpty()) {
+    detail += ',';
+    detail += transportDetail;
+  }
   Serial.printf("Leaf Log retry: %s delay_ms=%lu\n", detail.c_str(),
                 static_cast<unsigned long>(delayMs));
   diagnostic_logs::appendSystemEvent("leaf_log", "retry", detail, "delay_ms", delayMs, true);
