@@ -36,7 +36,7 @@ The source of truth is `leaf-log/docs/device-api-contract.md` in the Leaf Log re
 Upload one flight with:
 
 ```text
-POST https://leaflog.norcalflight.com/api/ingest
+POST https://log.leafvario.com/api/ingest
 Authorization: Bearer llk_...
 X-Filename: <original-name>.igc
 Content-Type: application/octet-stream

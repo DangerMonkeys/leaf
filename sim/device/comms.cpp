@@ -109,7 +109,7 @@ String webserver_leaf_ap_wifi_qr() { return String(); }
 // always fails in the emulator (no network path out), so neither value is ever actually used for a
 // request; the CA cert is left empty rather than duplicating the real PEM for no reason.
 
-const char* leafLogBaseUrl() { return "https://leaflog.norcalflight.com"; }
+const char* leafLogBaseUrl() { return "https://log.leafvario.com"; }
 const char* leafLogCaCertificate() { return ""; }
 
 // ---------------------------------------------------------------- OTA and SD firmware update

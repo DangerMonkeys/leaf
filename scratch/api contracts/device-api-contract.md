@@ -4,7 +4,7 @@ This is the **contract the Leaf firmware consumes** to pair with a pilot's Leaf 
 account and auto-upload IGC flights. The Leaf Log side is implemented and live; this
 document is the source of truth for the firmware implementation.
 
-- **Base URL:** `https://leaflog.norcalflight.com`
+- **Base URL:** `https://log.leafvario.com`
 - **Transport:** HTTPS, directly to the base URL. No reverse proxy, no plain HTTP.
 - **Auth:** a scoped, revocable **bearer token** the device obtains via pairing.
 - **All three device endpoints are `POST`** and are safe to call from the device
@@ -67,7 +67,7 @@ After `pair/start`, the device must surface this URL so the pilot can activate o
 phone/computer:
 
 ```
-https://leaflog.norcalflight.com/activate?code=<code>
+https://log.leafvario.com/activate?code=<code>
 ```
 
 - `<code>` is the `code` from `pair/start` (URL-safe as-is; don't add the cosmetic dash).
@@ -165,7 +165,7 @@ Upload one IGC flight.
   start returning `401` — the firmware should detect this and prompt a re-pair rather
   than retrying forever.
 - **Base URL should be configurable** (to point at a staging/self-hosted instance),
-  defaulting to `https://leaflog.norcalflight.com`.
+  defaulting to `https://log.leafvario.com`.
 
 ## Not the firmware's job
 - The **claim** step (pilot enters the code) happens on the Leaf Log website — there is
@@ -178,7 +178,7 @@ Upload one IGC flight.
 ## Test it without a device (curl)
 
 ```bash
-BASE=https://leaflog.norcalflight.com
+BASE=https://log.leafvario.com
 
 # 1. start pairing
 curl -s -X POST $BASE/api/devices/pair/start

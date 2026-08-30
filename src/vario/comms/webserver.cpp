@@ -96,7 +96,7 @@ namespace {
   static constexpr const char* NAV_UPLOAD_TEMP_FILE = "/waypoints/upload.tmp";
   static constexpr size_t WIFI_SETUP_NETWORKS_JSON_RESERVE = 896;
   static constexpr uint32_t WEB_REQUEST_SLOW_MS = 1000;
-  static constexpr const char* LEAF_LOG_BASE_URL = "https://leaflog.norcalflight.com";
+  static constexpr const char* LEAF_LOG_BASE_URL = "https://log.leafvario.com";
   static constexpr uint32_t LEAF_LOG_TIME_MIN_EPOCH = 1704067200UL;
 
   static constexpr const char* ISRG_ROOT_X1_CA =
