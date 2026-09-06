@@ -4,6 +4,7 @@ description: How to set up and use your Leaf Vario
 ---
 import "./style.css"
 import ManualContactLinks from "../../../website/src/components/manual-contact-links.astro"
+import LeafLogStatusIcon from "./LeafLogStatusIcon.astro"
 import leafLogotype from "./leaf-logotype.png"
 import leafGreenBg from "./leaf-green-bg.png"
 import button from "./button.png"
@@ -24,6 +25,7 @@ import displayMenu from "./menu_images/Display.png"
 import unitsMenu from "./menu_images/Units.png"
 import loggingMenu from "./menu_images/Logging.png"
 import connectMenu from "./menu_images/Connect.png"
+import leafLabsMenu from "./menu_images/LeafLabs.png"
 import systemMenu from "./menu_images/System.png"
 import navDataMenu from "./menu_images/NavData.png"
 import gpsMenu from "./menu_images/GPS.png"
@@ -243,6 +245,7 @@ Below is an overview of available Leaf settings. For full descriptions of each o
       <li><strong>Units</strong>: Choose altitude, speed, distance, temperature, and time units.</li>
       <li><strong>Logging</strong>: Configure IGC logging and automatic start/stop behavior.</li>
       <li><strong>Connect</strong>: Configure WiFi and Bluetooth features.</li>
+      <li><strong>Leaf Labs</strong>: Try experimental features including Thermal Core, Thermal Track, and Leaf Log. These features are off by default and may change as they are refined.</li>
       <li><strong>System</strong>: Set time zone, volume, auto-off, firmware updates, and reset options.</li>
     </ul>
   </div>
@@ -327,11 +330,14 @@ Below is an overview of available Leaf settings. For full descriptions of each o
   <img src={varioMenu.src} alt="Vario Settings" />
   <div>
     <ul>
-      <li><strong>Beep Vol</strong>: Sets the climb and sink audio volume.</li>
-      <li><strong>QuietMode</strong>: Mutes vario beeps until a flight log is started.</li>
+      <li><strong>Beep Volume</strong>: Sets the climb and sink audio volume.</li>
+      <li><strong>Vol Shortcut</strong>: When enabled, hold UP or DOWN on a flight page to temporarily adjust vario volume without changing the saved Beep Volume setting.</li>
+      <li><strong>Quiet Mode</strong>: Mutes vario beeps until a flight log is started.</li>
       <li><strong>Sensitivity</strong>: Controls how quickly the vario responds. Higher values feel more immediate.</li>
       <li><strong>ClimbStart</strong>: Sets the climb rate needed before climb beeps begin.</li>
       <li><strong>SinkAlarm</strong>: Sets the descent rate needed before the sink alarm sounds.</li>
+      <li><strong>Climb Avg</strong>: Averages the numerical climb-rate value shown on flight pages. Choose from <strong>OFF</strong> to <strong>5 seconds</strong>, in 1-second steps. A longer window steadies the displayed number but makes it react more slowly. Averaging the climb rate value does not change the responsiveness of the vario bar or the audio beeps.</li>
+      <li><strong>Glide Avg</strong>: Averages the displayed glide ratio. Choose from <strong>OFF</strong> to <strong>20 seconds</strong>, in 2-second steps. A longer window produces a steadier glide ratio but responds more slowly to changes.</li>
     </ul>
   </div>
 </div>
@@ -362,6 +368,8 @@ Below is an overview of available Leaf settings. For full descriptions of each o
       <li><strong>Show Pages</strong>: Choose which flight pages are available as you scroll left and right.</li>
       <li className="manual-subnote"><strong>Basic</strong>: Shows the simplified thermal page.</li>
       <li className="manual-subnote"><strong>User</strong>: Shows the thermal page with configurable user fields.</li>
+      <li className="manual-subnote"><strong>Thermal Core</strong>: Shows the live thermal-centering page when Thermal Core is enabled in Leaf Labs.</li>
+      <li className="manual-subnote"><strong>Thermal Track</strong>: Shows the thermal map page when Thermal Track is enabled in Leaf Labs.</li>
       <li className="manual-subnote"><strong>Navigate</strong>: Shows the GPS navigation page.</li>
       <li><strong>Contrast</strong>: Adjusts the screen contrast for current lighting and temperature.</li>
     </ul>
@@ -436,7 +444,7 @@ Below is an overview of available Leaf settings. For full descriptions of each o
 
 ### Accessing the SD card
 
-Leaf functions as a mass-storage device. Simply plug it in to any computer or smartphone and you should see a "LEAF VARIO" drive appear with the SD card contents.
+Leaf functions as a mass-storage device. Plug it in to any computer or smartphone and you should see a "LEAF VARIO" drive appear with the SD card contents. If Leaf Log is paired and has pending flights, the drive appears after the automatic upload check finishes; press CENTER on Leaf to cancel the check and open the drive immediately.
 *Note: a second drive may also appear with the firmware files. This can be ignored as it is only used for the rare occasion when you may wish to manually update the firmware.*
 
 ### Saving Track Logs
@@ -535,7 +543,7 @@ After a successful connection, Leaf will save that network and try to reconnect 
 
 <br />
 
-When Leaf is connected to a network with internet access, you will be able to check for firmware updates, access the Leaf Web App from any device on that network, and support future online logbook upload features.
+When Leaf is connected to a network with internet access, you can check for firmware updates, access the Leaf Web App from any device on that network, and use automatic Leaf Log uploads when that experimental feature is enabled and paired.
 
 ### Connecting to a Phone Hotspot
 
@@ -595,6 +603,7 @@ The Leaf Web App gives you a larger screen for tasks that are easier on a phone,
       <li><strong>Profiles</strong>: Quickly select the active pilot and glider.</li>
       <li><strong>Logbook</strong>: See a summary of recent saved flights.</li>
       <li><strong>Navigation</strong>: See the waypoint file, points, and routes currently loaded.</li>
+      <li><strong>Leaf Log</strong>: When enabled in Leaf Labs, pair this Leaf with a Leaf Log account.</li>
     </ul>
   </div>
 </div>
@@ -620,6 +629,7 @@ The Leaf Web App gives you a larger screen for tasks that are easier on a phone,
     <ul>
       <li>Open <strong>Logbook</strong> to review saved flight summaries.</li>
       <li>Flight summaries include time, duration, altitude, vario, distance, speed, acceleration, and observed wind information when available.</li>
+      <li>When Leaf Log is enabled, an icon beside each IGC track shows whether it was uploaded, is still pending, or was rejected.</li>
       <li>Deleting a logbook entry from the Web App also deletes the recorded IGC track file for that flight.</li>
     </ul>
   </div>
@@ -694,6 +704,69 @@ After the upgrade attempt, Leaf will create a status message inside the `firmwar
 #### Flash firmware via USB cable and programming tools
 
 For advanced users who wish to reprogram the firmware manually, the "Boot" button is located behind the smallest speaker hole. To enter bootloader mode, turn Leaf off, then press and hold the Boot button while plugging in the USB cable, then release the Boot button. Or, while already plugged into USB, press and hold the "Boot" button then press and release the "Reset" button, then release the "Boot" button. Once in bootloader mode, the firmware can be uploaded using Arduino, PlatformIO, or Espressif tools.
+
+# Leaf Labs
+
+Leaf Labs is home to experimental features that are ready to try but may continue to change. Open <strong>Main Menu &rarr; Settings &rarr; Leaf Labs</strong> to enable them.
+
+<div className="manual-menu-card">
+  <img src={leafLabsMenu.src} alt="Leaf Labs settings" />
+  <div>
+    <ul>
+      <li><strong>Thermal Core</strong>: Adds a live thermal-centering page.</li>
+      <li><strong>Thermal Track</strong>: Detects thermals during a flight and adds a map page showing them.</li>
+      <li><strong>Leaf Log</strong>: Adds Leaf Log account linking to the Leaf Web App and enables automatic flight uploads while charging.</li>
+    </ul>
+  </div>
+</div>
+
+## Thermal Core
+
+Thermal Core shows turn guidance to help you circle in lift. Also, a "bread crumb" trail is drawn showing areas of stronger and weaker lift, to help you visualize where the strongest center of the thermal may be.
+
+Enabling Thermal Core automatically adds its flight page. You can also show or hide it later under <strong>Settings &rarr; Display</strong>.
+
+## Thermal Track
+
+Thermal Track detects and saves thermals on a map as you fly, relative to your current position. This can help you return to previous thermals when needed. The saved thermals are marked darker depending on a combination of their strength, the height of climb they provided, and if they are more confidently available at your present altitude. Thermals are saved in 3D to account for slant due to wind drift, and Leaf will try to guide you to the best location at your present altitude.
+
+Enabling Thermal Track automatically adds its flight page. You can also show or hide it later under <strong>Settings &rarr; Display</strong>.
+
+## Leaf Log
+
+Leaf Log is an experimental online flight log. Once this Leaf is paired with your Leaf Log account, eligible IGC flight recordings can upload automatically whenever the unit is plugged in and charging.
+
+### Pairing with Leaf Log
+
+1. Enable <strong>Main Menu &rarr; Settings &rarr; Leaf Labs &rarr; Leaf Log</strong>.
+2. Open the <a href="#leaf-web-app">Leaf Web App</a> while Leaf is connected to a saved WiFi network with internet access. In the <strong>Leaf Log</strong> card, choose <strong>Get Activation Code</strong>.
+3. Once a code is generated, choose <strong>Open Leaf Log</strong>. Sign in with your email and approve the device to link it to your account. The Leaf Web App will automatically show the linked account when pairing is complete.
+4. You will need to close the Leaf Log website page or switch back to the Web App page in your phone browser to see the Web App again.
+
+The pairing belongs to the Leaf device, so flights recorded on it can upload to the linked account regardless of which local pilot profile is active. Use <strong>Unlink</strong> in the Leaf Web App before lending or transferring the device if you do not want later flights sent to that account.
+
+### Automatic uploads while charging
+
+When Leaf is off and connected to USB power, it checks the SD card for eligible IGC flights that have not been uploaded. If Leaf Log is enabled and paired, it connects to a saved WiFi network and uploads them automatically. The charging screen shows the current Leaf Log status and upload progress.
+
+Keep Leaf connected to power and within range of the saved WiFi network until the upload finishes. A completed flight is not uploaded again. If a temporary network or server problem occurs, the flight remains pending and Leaf retries during the charging session or the next time it is charged.
+
+While Leaf Log is checking or uploading, the <strong>LEAF VARIO</strong> USB drive waits to appear. Press CENTER to cancel the Leaf Log task and open the USB drive, or hold CENTER to cancel and turn Leaf on. The Leaf Web App Logbook shows whether each IGC flight was uploaded, is still pending, or was rejected.
+
+<div className="manual-leaf-log-status-list" aria-label="Leaf Log upload status icons">
+  <div>
+    <LeafLogStatusIcon status="uploaded" />
+    <p><strong>Filled Leaf — Uploaded:</strong> The flight was successfully uploaded to Leaf Log.</p>
+  </div>
+  <div>
+    <LeafLogStatusIcon status="not-uploaded" />
+    <p><strong>Hollow Leaf — Not uploaded:</strong> The flight has not been uploaded to Leaf Log yet.</p>
+  </div>
+  <div>
+    <LeafLogStatusIcon status="rejected" />
+    <p><strong>Error Leaf — Upload rejected:</strong> Leaf Log could not accept the flight. The Web App shows the reason when available.</p>
+  </div>
+</div>
 
 # Troubleshooting
 

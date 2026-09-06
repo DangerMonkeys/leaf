@@ -1,0 +1,49 @@
+---
+interface Props {
+  status: "uploaded" | "not-uploaded" | "rejected";
+}
+
+const { status } = Astro.props;
+
+const icons = {
+  uploaded: {
+    label: "Uploaded to Leaf Log",
+    path: "M1 0h3v1h-3zM1 1h1v1h-1zM3 1h4v1h-4zM1 2h2v1h-2zM4 2h6v1h-6zM2 3h1v1h-1zM5 3h7v1h-7zM2 4h2v1h-2zM6 4h7v1h-7zM2 5h3v1h-3zM8 5h5v1h-5zM2 6h4v1h-4zM9 6h4v1h-4zM1 7h6v1h-6zM10 7h2v1h-2zM1 8h7v1h-7zM10 8h2v1h-2zM1 9h8v1h-8zM10 9h1v1h-1zM2 10h9v1h-9zM9 11h1v1h-1zM7 12h2v1h-2zM3 13h4v1h-4z",
+  },
+  "not-uploaded": {
+    label: "Not uploaded to Leaf Log",
+    path: "M1 0h3v1h-3zM1 1h1v1h-1zM4 1h3v1h-3zM1 2h1v1h-1zM7 2h3v1h-3zM2 3h1v1h-1zM10 3h2v1h-2zM2 4h1v1h-1zM12 4h1v1h-1zM2 5h1v1h-1zM12 5h1v1h-1zM2 6h1v1h-1zM12 6h1v1h-1zM1 7h1v1h-1zM11 7h1v1h-1zM1 8h1v1h-1zM11 8h1v1h-1zM1 9h1v1h-1zM10 9h1v1h-1zM2 10h9v1h-9zM9 11h1v1h-1zM7 12h2v1h-2zM3 13h4v1h-4z",
+  },
+  rejected: {
+    label: "Leaf Log upload rejected",
+    path: "M1 0h3v1h-3zM1 1h1v1h-1zM4 1h3v1h-3zM1 2h1v1h-1zM3 2h1v1h-1zM7 2h1v1h-1zM9 2h4v1h-4zM2 3h1v1h-1zM4 3h1v1h-1zM9 3h4v1h-4zM2 4h1v1h-1zM5 4h1v1h-1zM9 4h4v1h-4zM2 5h1v1h-1zM6 5h2v1h-2zM9 5h4v1h-4zM2 6h1v1h-1zM7 6h1v1h-1zM10 6h2v1h-2zM1 7h1v1h-1zM8 7h1v1h-1zM10 7h2v1h-2zM1 8h1v1h-1zM10 8h2v1h-2zM1 9h1v1h-1zM2 10h6v1h-6zM10 10h2v1h-2zM9 11h4v1h-4zM7 12h1v1h-1zM10 12h2v1h-2zM3 13h4v1h-4z",
+  },
+} as const;
+
+const icon = icons[status];
+---
+
+<span class="leaf-log-status-icon">
+  <svg viewBox="0 0 14 14" role="img" aria-label={icon.label} shape-rendering="crispEdges">
+    <title>{icon.label}</title>
+    <path fill="currentColor" d={icon.path}></path>
+  </svg>
+</span>
+
+<style>
+  .leaf-log-status-icon {
+    display: inline-grid;
+    width: 2.35rem;
+    height: 2.35rem;
+    flex: 0 0 2.35rem;
+    place-items: center;
+    color: #d8ff00;
+    background: #4d4d4d;
+    border-radius: 0.35rem;
+  }
+
+  svg {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+</style>
