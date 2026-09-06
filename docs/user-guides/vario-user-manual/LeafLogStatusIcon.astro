@@ -1,6 +1,6 @@
 ---
 interface Props {
-  status: "uploaded" | "not-uploaded" | "rejected";
+  status: "uploaded" | "not-uploaded" | "rejected" | "none";
 }
 
 const { status } = Astro.props;
@@ -18,16 +18,26 @@ const icons = {
     label: "Leaf Log upload rejected",
     path: "M1 0h3v1h-3zM1 1h1v1h-1zM4 1h3v1h-3zM1 2h1v1h-1zM3 2h1v1h-1zM7 2h1v1h-1zM9 2h4v1h-4zM2 3h1v1h-1zM4 3h1v1h-1zM9 3h4v1h-4zM2 4h1v1h-1zM5 4h1v1h-1zM9 4h4v1h-4zM2 5h1v1h-1zM6 5h2v1h-2zM9 5h4v1h-4zM2 6h1v1h-1zM7 6h1v1h-1zM10 6h2v1h-2zM1 7h1v1h-1zM8 7h1v1h-1zM10 7h2v1h-2zM1 8h1v1h-1zM10 8h2v1h-2zM1 9h1v1h-1zM2 10h6v1h-6zM10 10h2v1h-2zM9 11h4v1h-4zM7 12h1v1h-1zM10 12h2v1h-2zM3 13h4v1h-4z",
   },
+  none: {
+    label: "No Leaf Log icon",
+    path: "",
+  },
 } as const;
 
 const icon = icons[status];
 ---
 
-<span class="leaf-log-status-icon">
-  <svg viewBox="0 0 14 14" role="img" aria-label={icon.label} shape-rendering="crispEdges">
-    <title>{icon.label}</title>
-    <path fill="currentColor" d={icon.path}></path>
-  </svg>
+<span class:list={["leaf-log-status-icon", { "leaf-log-status-icon-none": status === "none" }]}>
+  {
+    icon.path ? (
+      <svg viewBox="0 0 14 14" role="img" aria-label={icon.label} shape-rendering="crispEdges">
+        <title>{icon.label}</title>
+        <path fill="currentColor" d={icon.path}></path>
+      </svg>
+    ) : (
+      <span aria-label={icon.label}>No icon</span>
+    )
+  }
 </span>
 
 <style>
@@ -45,5 +55,16 @@ const icon = icons[status];
   svg {
     width: 1.75rem;
     height: 1.75rem;
+  }
+
+  .leaf-log-status-icon-none {
+    color: #65655f;
+    background: transparent;
+    border: 1px dashed #8c8c84;
+    font-size: 0.62rem;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    text-transform: uppercase;
   }
 </style>
