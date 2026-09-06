@@ -233,6 +233,8 @@ setting | samples | time avg
   bool consumeProductionTestForceFormatSdCard(void);
   void beginCommissioning(void);
   void markCommissioningComplete(void);
+  bool commissioningRepairAvailable(void) const;
+  bool repairCommissioningState(void);
   bool diagnosticNetworkScanAllowed(void) const;
 
   // adjust-settings functions

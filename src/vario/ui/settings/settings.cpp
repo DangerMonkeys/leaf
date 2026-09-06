@@ -31,6 +31,28 @@ Preferences leafPrefs;
 namespace {
   constexpr auto FACTORY_FLAGS_NAMESPACE = "factoryFlags";
   constexpr auto FORCE_FORMAT_SD_CARD_KEY = "FORCE_FMT_SD";
+
+  bool hasFactoryAssignedLeafFanetAddress(const String& address) {
+    if (address.length() != 6) return false;
+
+    uint32_t value = 0;
+    for (size_t i = 0; i < address.length(); i++) {
+      const char character = address[i];
+      uint8_t nibble = 0;
+      if (character >= '0' && character <= '9') {
+        nibble = character - '0';
+      } else if (character >= 'A' && character <= 'F') {
+        nibble = character - 'A' + 10;
+      } else if (character >= 'a' && character <= 'f') {
+        nibble = character - 'a' + 10;
+      } else {
+        return false;
+      }
+      value = (value << 4) | nibble;
+    }
+
+    return value >= 0x0C0001 && value <= 0x0CFFFF;
+  }
 }  // namespace
 
 bool Settings::init() {
@@ -119,6 +141,29 @@ void Settings::markCommissioningComplete() {
   save();
 }
 
+bool Settings::commissioningRepairAvailable() const {
+  const bool badCommissioningState =
+      !productionTest && commissioningPending && !commissioningComplete;
+  return badCommissioningState && (hasFactoryAssignedLeafFanetAddress(fanet_address) || dev_mode);
+}
+
+bool Settings::repairCommissioningState() {
+  // Treat a repeated request after a lost response as a successful no-op.
+  if (productionTest && !commissioningPending && commissioningComplete &&
+      (hasFactoryAssignedLeafFanetAddress(fanet_address) || dev_mode)) {
+    return true;
+  }
+  if (!commissioningRepairAvailable()) return false;
+
+  productionTest = true;
+  commissioningPending = false;
+  commissioningComplete = true;
+  save();
+  Serial.printf("Device maintenance: repaired commissioning state for FANET %s\n",
+                fanet_address.c_str());
+  return true;
+}
+
 bool Settings::diagnosticNetworkScanAllowed() const {
   if (commissioningComplete) return false;
   return commissioningPending || !productionTest || boot_firstTime;
@@ -126,6 +171,8 @@ bool Settings::diagnosticNetworkScanAllowed() const {
 
 // Reset Leaf user settings and info to defaults
 void Settings::reset() {
+  // Factory identity and commissioning state are intentionally not part of the user settings
+  // reset. loadDefaults() leaves those fields unchanged.
   loadDefaults();
   leaf_wifi::clearSavedNetworkCredentials();
   leaf_log_credentials::clear();
@@ -190,9 +237,6 @@ void Settings::loadDefaults() {
   system_wifiOn = DEF_WIFI_ON;
   system_bluetoothOn = DEF_BLUETOOTH_ON;
   system_showWarning = DEF_SHOW_WARNING;
-  productionTest = DEF_PRODUCTIONTEST;
-  commissioningPending = DEF_COMMISSIONING_PENDING;
-  commissioningComplete = DEF_COMMISSIONING_COMPLETE;
 
   // Developer Options
   dev_mode = DEF_DEV_MODE;

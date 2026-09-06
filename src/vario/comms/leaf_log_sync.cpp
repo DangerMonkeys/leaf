@@ -10,6 +10,7 @@
 #include "diagnostics/diagnostic_logs.h"
 #include "hardware/buttons.h"
 #include "storage/sd_card.h"
+#include "system/usb_state.h"
 #include "ui/settings/settings.h"
 
 namespace {
@@ -43,6 +44,13 @@ void LeafLogSync::beginEligibilityScan() {
 }
 
 void LeafLogSync::update() {
+  // Turning on always takes precedence over charging-mode work and commissioning suppression.
+  // The user must never be trapped on the charging screen by an SD/Leaf Log policy decision.
+  if (powerOnRequested_.load(std::memory_order_acquire)) {
+    finishForPowerOn();
+    return;
+  }
+
   if (massStorageSuppressedForChargingSession_) {
     // Commissioning owns the card for diagnostics and test results. Keep this decision latched for
     // the charging session so completing commissioning does not expose the drive mid-workflow.
@@ -234,6 +242,7 @@ void LeafLogSync::prepareForCharging() {
   centerIntentStartedMs_ = 0;
   resumedAfterEject_ = false;
   massStorageSuppressedForChargingSession_ = settings.commissioningPending;
+  powerOnClosingUsb_ = false;
   state_ = State::Idle;
 }
 
@@ -245,6 +254,7 @@ void LeafLogSync::prepareForOperating() {
   centerIntentStartedMs_ = 0;
   resumedAfterEject_ = false;
   massStorageSuppressedForChargingSession_ = false;
+  powerOnClosingUsb_ = false;
   state_ = State::Idle;
 }
 
@@ -336,6 +346,9 @@ void LeafLogSync::handleTransientFailure(const char* reason, int httpStatus, uin
 void LeafLogSync::requestCancel() { cancelRequested_.store(true, std::memory_order_release); }
 
 void LeafLogSync::requestPowerOn() {
+  // HostOwned means the LUN was presented internally. hostMounted confirms that a real USB host
+  // actually enumerated it, so a charge-only connection does not claim that USB needs closing.
+  powerOnClosingUsb_ = sdcard.hostOwnsMassStorage() && leaf_usb::hostMounted();
   powerOnRequested_.store(true, std::memory_order_release);
   cancelRequested_.store(true, std::memory_order_release);
   if (state_ == State::Idle || state_ == State::HostOwned || state_ == State::Ejected) {
@@ -373,8 +386,8 @@ const char* LeafLogSync::statusLine() const {
     case State::Uploading:
       return "Uploading to Leaf Log";
     case State::AwaitingCenterIntent:
-      return powerOnRequested_.load(std::memory_order_acquire) ? "Closing USB..."
-                                                               : "Hold center to turn on";
+      if (!powerOnRequested_.load(std::memory_order_acquire)) return "Hold center to turn on";
+      return powerOnClosingUsb_ ? "Closing USB..." : "";
     case State::Backoff:
       return "Retry pending...";
     case State::MassStorageUnavailable:

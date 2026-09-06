@@ -34,6 +34,7 @@ class LeafLogSync {
   bool retryPending() const { return state_ == State::Backoff; }
   bool massStorageUnavailable() const { return state_ == State::MassStorageUnavailable; }
   bool powerOnPending() const { return powerOnRequested_.load(std::memory_order_acquire); }
+  bool powerOnClosingUsb() const { return powerOnPending() && powerOnClosingUsb_; }
   bool progressKnown() const { return sessionTotalKnown_; }
   const char* statusLine() const;
   uint16_t currentCount() const {
@@ -61,6 +62,7 @@ class LeafLogSync {
   bool timeStarted_ = false;
   bool resumedAfterEject_ = false;
   bool massStorageSuppressedForChargingSession_ = false;
+  bool powerOnClosingUsb_ = false;
   bool sessionTotalKnown_ = false;
   uint16_t completedCount_ = 0;
   uint16_t sessionTotalCount_ = 0;

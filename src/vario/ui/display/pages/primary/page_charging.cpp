@@ -15,13 +15,13 @@
 #include "ui/settings/settings.h"
 
 namespace {
-  constexpr uint8_t LEAF_LOG_DIALOG_WIDTH = 96;
-  constexpr uint8_t LEAF_LOG_DIALOG_Y = 94;
-  constexpr uint8_t LEAF_LOG_DIALOG_HEIGHT = 67;
-  constexpr uint8_t LEAF_LOG_DIALOG_SEPARATOR_HEIGHT = 4;
+  constexpr uint8_t CHARGING_DIALOG_WIDTH = 96;
+  constexpr uint8_t CHARGING_DIALOG_Y = 94;
+  constexpr uint8_t CHARGING_DIALOG_HEIGHT = 67;
+  constexpr uint8_t CHARGING_DIALOG_SEPARATOR_HEIGHT = 4;
 
   void printCentered(const char* text, uint8_t baselineY) {
-    int16_t x = (LEAF_LOG_DIALOG_WIDTH - u8g2.getStrWidth(text)) / 2;
+    int16_t x = (CHARGING_DIALOG_WIDTH - u8g2.getStrWidth(text)) / 2;
     if (x < 0) x = 0;
     u8g2.setCursor(x, baselineY);
     u8g2.print(text);
@@ -96,17 +96,20 @@ void chargingPage_draw() {
 
     if (leafLogSync.screenActive()) {
       u8g2.setDrawColor(0);
-      u8g2.drawBox(0, LEAF_LOG_DIALOG_Y - LEAF_LOG_DIALOG_SEPARATOR_HEIGHT, LEAF_LOG_DIALOG_WIDTH,
-                   LEAF_LOG_DIALOG_SEPARATOR_HEIGHT);
+      u8g2.drawBox(0, CHARGING_DIALOG_Y - CHARGING_DIALOG_SEPARATOR_HEIGHT, CHARGING_DIALOG_WIDTH,
+                   CHARGING_DIALOG_SEPARATOR_HEIGHT);
       u8g2.setDrawColor(1);
-      u8g2.drawRBox(0, LEAF_LOG_DIALOG_Y, LEAF_LOG_DIALOG_WIDTH, LEAF_LOG_DIALOG_HEIGHT, 3);
+      u8g2.drawRBox(0, CHARGING_DIALOG_Y, CHARGING_DIALOG_WIDTH, CHARGING_DIALOG_HEIGHT, 3);
       u8g2.setDrawColor(0);
       u8g2.setFont(leaf_6x12);
-      printCentered("Leaf Log", 109);
+      printCentered(leafLogSync.powerOnPending() ? "Turning On" : "Leaf Log", 109);
 
       u8g2.setFont(leaf_5x8);
       char status[32];
-      if (leafLogSync.retryPending() || leafLogSync.powerOnPending()) {
+      if (leafLogSync.powerOnPending()) {
+        snprintf(status, sizeof(status), "%s",
+                 leafLogSync.powerOnClosingUsb() ? "Closing USB..." : "");
+      } else if (leafLogSync.retryPending()) {
         snprintf(status, sizeof(status), "%s", leafLogSync.statusLine());
       } else if (leafLogSync.progressKnown() && leafLogSync.totalCount() > 0) {
         snprintf(status, sizeof(status), "Uploading %u of %u", leafLogSync.currentCount(),

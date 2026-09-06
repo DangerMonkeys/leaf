@@ -1,0 +1,9 @@
+# A charge-only boot with commissioning still pending must always honor a center-button hold.
+# This reproduces the v0.2.2 failure where commissioning suppression returned before processing
+# the power-on request and left the charging dialog frozen indefinitely.
+#
+# Run with a fresh state directory and --charge-mode.
+20.0  expect-page  Charging
+21.0  hold         CENTER 1000
+24.0  expect-page  User
+25.0  quit
