@@ -291,6 +291,7 @@ void Power::shutdown(bool deadBattery) {
     display_off_splash();
   }
 
+  BLE::get().end();
   baro.sleep();  // stop getting climbrate updates so we don't hear vario beeps while shutting down
 
   // play shutdown sound
@@ -310,7 +311,6 @@ void Power::shutdown(bool deadBattery) {
 
   // finally, turn off devices
   sleepPeripherals();
-  BLE::get().end();
   display.clear();
   delay(100);
   latchOff();  // turn off 3.3V regulator (if we're plugged into USB, we'll stay on)
