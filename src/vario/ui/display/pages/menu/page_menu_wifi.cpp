@@ -115,6 +115,8 @@ void WifiMenuPage::draw() {
       u8g2.setCursor(bluetooth_item_name_x, 148);
       u8g2.print("Name: ");
       u8g2.print(settings.getBluetoothName());
+      u8g2.setCursor(bluetooth_item_name_x, 160);
+      u8g2.print(BLE::get().statusText());
       u8g2.setFont(leaf_6x12);
     }
 

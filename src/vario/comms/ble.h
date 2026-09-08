@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <atomic>
 
 #include <NimBLEDevice.h>
 #include "TinyGPSPlus.h"
@@ -23,8 +24,11 @@ class BLE : public MessageSink<BLE, GpsMessage, FanetPacket> {
   /// @brief Stops advertising, does not free up resources
   void stop();
 
-  /// @brief True when BLE advertising should be active
+  /// @brief True when BLE should accept connections, including while already connected
   bool isStarted() const { return started; }
+
+  /// @brief Last runtime state sampled by the BLE task, safe to read from the display task
+  const char* statusText() const;
 
   /// @brief True when BLE resources are currently allocated
   bool isSetup() const { return pServer != nullptr; }
@@ -38,6 +42,7 @@ class BLE : public MessageSink<BLE, GpsMessage, FanetPacket> {
   void on_receive_unknown(const etl::imessage& msg) {}
 
  private:
+  enum class State : uint8_t { Off, Waiting, Advertising, Connected };
   enum class WakeupReason : uint8_t { PERIODIC, FANET_RX, GPS_GPGGA, GPS_GPRMC };
 
   struct WakeupMessage {
@@ -59,7 +64,10 @@ class BLE : public MessageSink<BLE, GpsMessage, FanetPacket> {
         xTask(nullptr),
         started(false) {}
 
-  bool started;  // Bluetooth advertising started
+  std::atomic<bool> started;  // Desired state; advertising pauses while a central is connected.
+  std::atomic<State> state_{State::Off};
+  // Serialize advertising attempts with start/stop so a retry cannot undo a user disabling BLE.
+  SemaphoreHandle_t xAdvertisingMutex = nullptr;
 
   NimBLEServer* pServer;
   NimBLEService* pService;
@@ -90,6 +98,8 @@ class BLE : public MessageSink<BLE, GpsMessage, FanetPacket> {
   static bool ownsInlineBuffer(const NMEAString& nmea);
 
   void sendVarioUpdate();
+  void maintainAdvertising();
+  void setState(State state);
   // NimBLE reports whether an update was submitted, not final over-the-air delivery.
   void recordNusNotifyResult(bool success);
   void processDiagnostics();
@@ -108,4 +118,5 @@ class BLE : public MessageSink<BLE, GpsMessage, FanetPacket> {
   unsigned long lastGpsGgaMs = 0;
   unsigned long lastGpsGprmcMs = 0;
   unsigned long lastBleHeapCheckMs = 0;
+  unsigned long lastAdvertisingAttemptMs = 0;
 };
