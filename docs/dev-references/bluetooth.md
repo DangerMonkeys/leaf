@@ -8,6 +8,17 @@ description: Leaf BLE serial protocol and diagnostics
 Leaf exposes a Nordic UART Service (NUS) so that flight applications can treat it as a BLE serial
 device. The implementation has been tested with XCSoar, XCTrack, and SeeYou Navigator.
 
+## Device name and advertising
+
+The complete Bluetooth name is `LeafXXXX`, where `XXXX` is the last four hexadecimal digits of
+Leaf's Wi-Fi station MAC address. The Connect menu and the GAP Device Name characteristic use
+this same eight-character name. The Wi-Fi access point name remains `Leaf-XXXX`.
+
+The primary advertisement contains flags (3 bytes), the Nordic UART service UUID (18 bytes), and
+the complete Bluetooth name (10 bytes including field overhead), totaling 31 bytes. Both the
+service and the full device identifier are available without a scan response. Advertising data
+is reset on each setup so Bluetooth restarts do not accumulate old fields.
+
 ## GATT interface
 
 | Item | UUID | Properties | Purpose |

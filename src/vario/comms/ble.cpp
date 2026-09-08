@@ -8,7 +8,6 @@
 #include <NimBLEDevice.h>
 #include "TinyGPSPlus.h"
 #include "comms/fanet_radio.h"
-#include "comms/webserver.h"
 #include "diagnostics/diagnostic_logs.h"
 #include "diagnostics/fatal_error.h"
 #include "diagnostics/heap_monitor.h"
@@ -20,6 +19,7 @@
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "power.h"
+#include "ui/settings/settings.h"
 #include "utils/lock_guard.h"
 
 // These UUIDs are for BLE UART services and characteristics.
@@ -91,8 +91,8 @@ void BLE::setup() {
 
   heap_monitor::checkpoint("ble-setup-before");
 
-  // Initialize BLE with the same unique, user-visible name as the Leaf AP.
-  const String name = webserver_leaf_ap_ssid();
+  // Preserve all four device ID digits while fitting the complete name in the advertisement.
+  const String name = settings.getBluetoothName();
   NimBLEDevice::init(name.c_str());
 
   // Create a server using the callback class to re-advertise on a disconnect
@@ -107,15 +107,19 @@ void BLE::setup() {
       pService->createCharacteristic(LEAF_TX_UUID, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
   pService->start();
 
-  /** Create an advertising instance and add the services to the advertised data */
+  // Flags (3 bytes), the 128-bit UART UUID (18), and the complete LeafXXXX name (10)
+  // fill the 31-byte primary advertisement, so discovery does not need a scan response.
+  NimBLEAdvertisementData advertisement;
   pAdvertising = NimBLEDevice::getAdvertising();
-  pAdvertising->setName(name.c_str());
-  pAdvertising->addServiceUUID(pService->getUUID());
-  /**
-   *  If your device is battery powered you may consider setting scan response
-   *  to false as it will extend battery life at the expense of less data sent.
-   */
-  pAdvertising->enableScanResponse(true);
+  // deinit(false) retains this object; reset it to avoid accumulating fields on each setup.
+  if (!advertisement.setFlags(BLE_HS_ADV_F_DISC_GEN | BLE_HS_ADV_F_BREDR_UNSUP) ||
+      !advertisement.addServiceUUID(pService->getUUID()) || !advertisement.setName(name.c_str()) ||
+      !pAdvertising->reset() || !pAdvertising->setAdvertisementData(advertisement)) {
+    Serial.println("BLE: failed to configure advertising");
+    heap_monitor::checkpoint("ble-adv-config-fail");
+    end();
+    return;
+  }
 
   // FreeRTOS queues byte-copy their items, so queue pointers to preconstructed C++ objects rather
   // than WakeupMessage itself. In particular, etl::string contains a pointer to its inline buffer.
@@ -158,9 +162,9 @@ void BLE::start() {
   if (pAdvertising == nullptr) setup();
   if (pAdvertising == nullptr || started) return;
   heap_monitor::checkpoint("ble-start-before");
-  pAdvertising->start();
-  started = true;
-  heap_monitor::checkpoint("ble-start-after");
+  started = pAdvertising->start();
+  if (!started) Serial.println("BLE: failed to start advertising");
+  heap_monitor::checkpoint(started ? "ble-start-after" : "ble-start-fail");
 }
 
 void BLE::stop() {

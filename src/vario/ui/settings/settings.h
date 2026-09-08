@@ -229,6 +229,7 @@ setting | samples | time avg
   void factoryResetVario(void);
   void totallyEraseNVS(void);
   String getMacAddress(void);
+  String getBluetoothName(void);
   void setProductionTestForceFormatSdCard(bool forceFormat);
   bool consumeProductionTestForceFormatSdCard(void);
   void beginCommissioning(void);
