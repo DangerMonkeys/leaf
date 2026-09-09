@@ -115,6 +115,12 @@ String Settings::getMacAddress() {
   return String(macStr);
 }
 
+String Settings::getBluetoothName() {
+  String mac = getMacAddress();
+  mac.replace(":", "");
+  return String("Leaf") + mac.substring(mac.length() - 4);
+}
+
 void Settings::setProductionTestForceFormatSdCard(bool forceFormat) {
   leafPrefs.begin(FACTORY_FLAGS_NAMESPACE, RW_MODE);
   leafPrefs.putBool(FORCE_FORMAT_SD_CARD_KEY, forceFormat);

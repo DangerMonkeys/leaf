@@ -8,6 +8,21 @@ description: Leaf BLE serial protocol and diagnostics
 Leaf exposes a Nordic UART Service (NUS) so that flight applications can treat it as a BLE serial
 device. The implementation has been tested with XCSoar, XCTrack, and SeeYou Navigator.
 
+## Device name and advertising
+
+The complete Bluetooth name is `LeafXXXX`, where `XXXX` is the last four hexadecimal digits of
+Leaf's Wi-Fi station MAC address. The Connect menu and the GAP Device Name characteristic use
+this same eight-character name. The Wi-Fi access point name remains `Leaf-XXXX`.
+
+The primary advertisement contains flags (3 bytes), the Nordic UART service UUID (18 bytes), and
+the complete Bluetooth name (10 bytes including field overhead), totaling 31 bytes. Both the
+service and the full device identifier are available without a scan response. Advertising data
+is reset on each setup so Bluetooth restarts do not accumulate old fields.
+
+Disabling Bluetooth tears down both the radio stack and its server, services, and characteristics.
+Re-enabling it creates a fresh GATT database with a single Nordic UART service. The server callback
+has static lifetime and is not owned by NimBLE, allowing the server to be safely deleted.
+
 ## GATT interface
 
 | Item | UUID | Properties | Purpose |
@@ -21,7 +36,17 @@ NUS interface during service discovery. Leaf currently accepts but does not inte
 also does not echo received data.
 
 Only one BLE central connection is supported at a time. When an application disconnects, Leaf
-restarts advertising so another application can connect.
+restarts advertising so another application can connect. The BLE task checks the connection count
+and actual advertising state on each wakeup. While enabled and disconnected, it retries inactive
+advertising at most once per second, including after a failed initial start. Disconnect callbacks
+record diagnostics; restarting happens in the BLE task. Advertising attempts are serialized with
+start/stop, so recovery cannot undo an intentional Bluetooth shutdown.
+
+The Connect menu shows the sampled runtime state below the Bluetooth name: `Advertising`,
+`Connected`, `Retrying...`, or `Inactive`. `Connected` means NimBLE still reports a central connection;
+it does not confirm that the phone has subscribed to NMEA notifications. If the phone reports a
+disconnect but Leaf remains `Connected`, advertising retries deliberately leave that connection
+alone. This distinguishes a missed disconnect or retained phone connection from a failed restart.
 
 ## Transmitted data
 
@@ -49,6 +74,7 @@ in-memory history buffer is created. The instrumentation records:
 
 - connection and disconnection checkpoints, including the NimBLE disconnect reason;
 - advertising restart success or failure;
+- changes in the sampled connection/advertising state (also shown in the Connect menu);
 - cumulative NUS notification submission counts at disconnect;
 - immediately reported notification-submission failures;
 - full periodic, GPS, or FANET BLE queues; and
@@ -57,6 +83,7 @@ in-memory history buffer is created. The instrumentation records:
 Leaf also checks heap integrity every five seconds while the BLE task is running. A healthy check is
 silent; only a failure produces a `ble-heap-invalid` event. Consequently, normal operation adds no
 per-sentence SD writes and only a few records around each connection transition.
+SD diagnostics require Developer Mode and the System Events diagnostic log to be enabled.
 
 NimBLE's characteristic-update API is asynchronous. A successful `notify()` result means the update
 was submitted to NimBLE; it is not confirmation that the phone received the notification over the

@@ -8,7 +8,6 @@
 #include <NimBLEDevice.h>
 #include "TinyGPSPlus.h"
 #include "comms/fanet_radio.h"
-#include "comms/webserver.h"
 #include "diagnostics/diagnostic_logs.h"
 #include "diagnostics/fatal_error.h"
 #include "diagnostics/heap_monitor.h"
@@ -20,6 +19,7 @@
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "power.h"
+#include "ui/settings/settings.h"
 #include "utils/lock_guard.h"
 
 // These UUIDs are for BLE UART services and characteristics.
@@ -31,6 +31,7 @@
 
 namespace {
   constexpr unsigned long BLE_HEAP_CHECK_INTERVAL_MS = 5000;
+  constexpr unsigned long BLE_ADVERTISING_RETRY_INTERVAL_MS = 1000;
 
   enum BleDiagnosticEvent : uint32_t {
     BLE_DIAG_CONNECTED = 1 << 0,
@@ -41,6 +42,7 @@ namespace {
     BLE_DIAG_PERIODIC_QUEUE_FULL = 1 << 5,
     BLE_DIAG_GPS_QUEUE_FULL = 1 << 6,
     BLE_DIAG_FANET_QUEUE_FULL = 1 << 7,
+    BLE_DIAG_STATE_CHANGED = 1 << 8,
   };
 
   std::atomic<uint32_t> pendingBleDiagnosticEvents{0};
@@ -68,15 +70,11 @@ class ServerCallbacks : public NimBLEServerCallbacks {
     markBleDiagnosticEvent(BLE_DIAG_CONNECTED);
   }
 
-  // This one seems import to re-advertise
   void onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reason) override {
     lastBleDisconnectReason.store(reason, std::memory_order_relaxed);
     markBleDiagnosticEvent(BLE_DIAG_DISCONNECTED);
-    if (BLE::get().isStarted()) {
-      // Re-advertise after a disconnect when BLE is enabled.
-      markBleDiagnosticEvent(NimBLEDevice::startAdvertising() ? BLE_DIAG_ADV_RESTARTED
-                                                              : BLE_DIAG_ADV_RESTART_FAILED);
-    }
+    // The BLE task resumes advertising after the host has processed this event. It also retries
+    // failed starts, rather than relying on this callback's single opportunity to restart.
   }
 
 } serverCallbacks;
@@ -91,13 +89,14 @@ void BLE::setup() {
 
   heap_monitor::checkpoint("ble-setup-before");
 
-  // Initialize BLE with the same unique, user-visible name as the Leaf AP.
-  const String name = webserver_leaf_ap_ssid();
+  // Preserve all four device ID digits while fitting the complete name in the advertisement.
+  const String name = settings.getBluetoothName();
   NimBLEDevice::init(name.c_str());
 
-  // Create a server using the callback class to re-advertise on a disconnect
+  // The callback records connection events; the BLE task owns advertising recovery.
   pServer = NimBLEDevice::createServer();
-  pServer->setCallbacks(&serverCallbacks);
+  // This callback has static lifetime; the server must not delete it during shutdown.
+  pServer->setCallbacks(&serverCallbacks, false);
 
   // Expose the standard Nordic UART RX characteristic for BLE serial clients such as XCSoar.
   // Leaf does not currently process incoming data, so the default callback is intentionally used.
@@ -107,23 +106,28 @@ void BLE::setup() {
       pService->createCharacteristic(LEAF_TX_UUID, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
   pService->start();
 
-  /** Create an advertising instance and add the services to the advertised data */
+  // Flags (3 bytes), the 128-bit UART UUID (18), and the complete LeafXXXX name (10)
+  // fill the 31-byte primary advertisement, so discovery does not need a scan response.
+  NimBLEAdvertisementData advertisement;
   pAdvertising = NimBLEDevice::getAdvertising();
-  pAdvertising->setName(name.c_str());
-  pAdvertising->addServiceUUID(pService->getUUID());
-  /**
-   *  If your device is battery powered you may consider setting scan response
-   *  to false as it will extend battery life at the expense of less data sent.
-   */
-  pAdvertising->enableScanResponse(true);
+  // Reset advertising defaults before installing the complete payload.
+  if (!advertisement.setFlags(BLE_HS_ADV_F_DISC_GEN | BLE_HS_ADV_F_BREDR_UNSUP) ||
+      !advertisement.addServiceUUID(pService->getUUID()) || !advertisement.setName(name.c_str()) ||
+      !pAdvertising->reset() || !pAdvertising->setAdvertisementData(advertisement)) {
+    Serial.println("BLE: failed to configure advertising");
+    heap_monitor::checkpoint("ble-adv-config-fail");
+    end();
+    return;
+  }
 
   // FreeRTOS queues byte-copy their items, so queue pointers to preconstructed C++ objects rather
   // than WakeupMessage itself. In particular, etl::string contains a pointer to its inline buffer.
   static_assert(std::is_trivially_copyable_v<WakeupMessage*>);
   xQueue = xQueueCreate(QUEUE_CAPACITY, sizeof(WakeupMessage*));
   xFreeQueue = xQueueCreate(QUEUE_CAPACITY, sizeof(WakeupMessage*));
-  if (xQueue == nullptr || xFreeQueue == nullptr) {
-    fatalError("Failed to create BLE message queues");
+  xAdvertisingMutex = xSemaphoreCreateMutex();
+  if (xQueue == nullptr || xFreeQueue == nullptr || xAdvertisingMutex == nullptr) {
+    fatalError("Failed to create BLE queues or advertising mutex");
     return;
   }
   for (WakeupMessage& slot : messagePool_) {
@@ -156,19 +160,72 @@ uint8_t checksum(std::string_view string) {
 
 void BLE::start() {
   if (pAdvertising == nullptr) setup();
-  if (pAdvertising == nullptr || started) return;
+  if (pAdvertising == nullptr || xAdvertisingMutex == nullptr) return;
+  LockGuard guard(xAdvertisingMutex);
+  if (!guard || started) return;
   heap_monitor::checkpoint("ble-start-before");
-  pAdvertising->start();
+  // Preserve the requested state even if the first attempt fails, so the task can retry it.
   started = true;
-  heap_monitor::checkpoint("ble-start-after");
+  lastAdvertisingAttemptMs = millis();
+  const bool success = pAdvertising->start();
+  setState(success ? State::Advertising : State::Waiting);
+  if (!success) Serial.println("BLE: failed to start advertising; will retry");
+  heap_monitor::checkpoint(success ? "ble-start-after" : "ble-start-fail");
 }
 
 void BLE::stop() {
-  if (pAdvertising == nullptr || !started) return;
+  if (xAdvertisingMutex == nullptr) {
+    started = false;
+    setState(State::Off);
+    return;
+  }
+  LockGuard guard(xAdvertisingMutex);
+  if (!guard) return;
   heap_monitor::checkpoint("ble-stop-before");
-  pAdvertising->stop();
   started = false;
+  if (pAdvertising != nullptr) pAdvertising->stop();
+  setState(State::Off);
   heap_monitor::checkpoint("ble-stop-after");
+}
+
+void BLE::maintainAdvertising() {
+  LockGuard guard(xAdvertisingMutex, 0, false);
+  if (!guard || !started || pServer == nullptr || pAdvertising == nullptr) return;
+
+  if (pServer->getConnectedCount() > 0) {
+    setState(State::Connected);
+    return;
+  }
+  if (pAdvertising->isAdvertising()) {
+    setState(State::Advertising);
+    return;
+  }
+
+  setState(State::Waiting);
+  const unsigned long now = millis();
+  if (now - lastAdvertisingAttemptMs < BLE_ADVERTISING_RETRY_INTERVAL_MS) return;
+  lastAdvertisingAttemptMs = now;
+  const bool success = pAdvertising->start();
+  markBleDiagnosticEvent(success ? BLE_DIAG_ADV_RESTARTED : BLE_DIAG_ADV_RESTART_FAILED);
+  if (success && pAdvertising->isAdvertising()) setState(State::Advertising);
+}
+
+void BLE::setState(State state) {
+  if (state_.exchange(state) != state) markBleDiagnosticEvent(BLE_DIAG_STATE_CHANGED);
+}
+
+const char* BLE::statusText() const {
+  switch (state_.load()) {
+    case State::Off:
+      return "Inactive";
+    case State::Waiting:
+      return "Retrying...";
+    case State::Advertising:
+      return "Advertising";
+    case State::Connected:
+      return "Connected";
+  }
+  return "Unknown";
 }
 
 void BLE::end() {
@@ -177,10 +234,7 @@ void BLE::end() {
     return;
 
   heap_monitor::checkpoint("ble-end-before");
-  if (pAdvertising != nullptr && started) {
-    pAdvertising->stop();
-  }
-  started = false;
+  stop();
 
   // Delete FreeRTOS objects
   if (xTimer != nullptr) {
@@ -200,11 +254,16 @@ void BLE::end() {
     vQueueDelete(xFreeQueue);
     xFreeQueue = nullptr;
   }
+  if (xAdvertisingMutex != nullptr) {
+    vSemaphoreDelete(xAdvertisingMutex);
+    xAdvertisingMutex = nullptr;
+  }
   heap_monitor::registerTask("ble", nullptr);
 
-  // Delete any objects created and deinit manually.. Seems to crash setting this to true
+  // setup() creates a fresh UART service, so also release NimBLE's server and its GATT state.
+  // Keeping them with deinit(false) would reuse the old server and accumulate duplicate services.
   if (pServer != nullptr) {
-    NimBLEDevice::deinit(false);
+    NimBLEDevice::deinit(true);
   }
 
   // Reset null pointers.
@@ -251,6 +310,7 @@ void BLE::bleTask(void* args) {
     if (xQueueReceive(ble->xQueue, &message, portMAX_DELAY) != pdTRUE || message == nullptr) {
       continue;
     }
+    ble->maintainAdvertising();
     ble->processDiagnostics();
     switch (message->reason) {
       case WakeupReason::PERIODIC:
@@ -384,6 +444,10 @@ void BLE::recordNusNotifyResult(bool success) {
 
 void BLE::processDiagnostics() {
   const uint32_t events = pendingBleDiagnosticEvents.exchange(0, std::memory_order_relaxed);
+  if (events & BLE_DIAG_STATE_CHANGED) {
+    Serial.printf("BLE: %s\n", statusText());
+    diagnostic_logs::appendSystemEvent("ble", "state", statusText());
+  }
   if (events & BLE_DIAG_CONNECTED) heap_monitor::checkpoint("ble-connected");
   if (events & BLE_DIAG_DISCONNECTED) {
     const int reason = lastBleDisconnectReason.load(std::memory_order_relaxed);

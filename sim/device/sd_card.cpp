@@ -56,7 +56,7 @@ void SDCard::update() {
 
 bool SDCard::format() { return formatDetailed().formatted; }
 
-SDCard::FormatResult SDCard::formatDetailed() {
+SDCard::FormatResult SDCard::formatDetailed(bool /*remount*/) {
   // Formatting would mean deleting the user's folder of test data. The emulator declines, and
   // says so, rather than quietly reporting success it did not achieve.
   FormatResult result;

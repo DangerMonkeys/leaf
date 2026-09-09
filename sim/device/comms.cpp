@@ -33,6 +33,7 @@ void BLE::setup() { Serial.println("BLE: not emulated"); }
 void BLE::start() { started = true; }
 void BLE::stop() { started = false; }
 void BLE::end() { started = false; }
+const char* BLE::statusText() const { return "Unavailable"; }
 void BLE::on_receive(const GpsMessage& msg) {}
 void BLE::on_receive(const FanetPacket& msg) {}
 void BLE::sendVarioUpdate() {}

@@ -44,7 +44,7 @@
 #define DEF_LIFTY_AIR -4  // default -0.4m/s sink will trigger lifty air
 
 #define DEF_ALT_SETTING 29.921  // altimeter setting
-#define DEF_ALT_SYNC_GPS 0  // lock altimeter to GPS alt (to avoid local pressure setting issues)
+#define DEF_ALT_SYNC_GPS 1  // lock altimeter to GPS alt (to avoid local pressure setting issues)
 
 // Default GPS & Track Log Settings
 #define DEF_DISTANCE_FLOWN 0  // 0 = xc distance, 1 = path distance
@@ -229,6 +229,7 @@ setting | samples | time avg
   void factoryResetVario(void);
   void totallyEraseNVS(void);
   String getMacAddress(void);
+  String getBluetoothName(void);
   void setProductionTestForceFormatSdCard(bool forceFormat);
   bool consumeProductionTestForceFormatSdCard(void);
   void beginCommissioning(void);
