@@ -1,0 +1,33 @@
+# Capture the menu screens used by the user manual. Enable the experimental pages so the Display
+# menu shows them, then walk through the page carousel and menus with the real button flow.
+20   press         DOWN
+22   press         CENTER
+28   expect-page   ThermalCore
+30   press         RIGHT
+32   expect-page   ThermalTrack
+34   press         RIGHT
+36   expect-page   Menu
+41   screenshot    docs/user-guides/vario-user-manual/menu_images/MainMenu.png
+43   press         DOWN
+45   press         DOWN
+47   press         CENTER
+49   screenshot    docs/user-guides/vario-user-manual/menu_images/Settings.png
+51   press         DOWN
+53   press         CENTER
+55   screenshot    docs/user-guides/vario-user-manual/menu_images/Vario.png
+57   press         LEFT
+59   press         UP
+61   screenshot    docs/user-guides/vario-user-manual/menu_images/Settings.png
+63   press         DOWN
+65   press         DOWN
+67   press         DOWN
+69   press         CENTER
+71   screenshot    docs/user-guides/vario-user-manual/menu_images/Display.png
+73   press         LEFT
+75   press         DOWN
+77   press         DOWN
+79   press         DOWN
+81   press         DOWN
+83   press         CENTER
+85   screenshot    docs/user-guides/vario-user-manual/menu_images/LeafLabs.png
+87   quit

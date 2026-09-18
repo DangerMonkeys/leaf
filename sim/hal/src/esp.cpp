@@ -7,7 +7,12 @@
 #include <esp_sleep.h>
 #include <esp_system.h>
 #include <esp_wifi.h>
+#if __has_include(<execinfo.h>)
 #include <execinfo.h>
+#define LEAF_SIM_HAS_EXECINFO 1
+#else
+#define LEAF_SIM_HAS_EXECINFO 0
+#endif
 #include <nvs_flash.h>
 #include <stdio.h>
 #include <string.h>
@@ -114,12 +119,17 @@ esp_err_t esp_wifi_get_config(wifi_interface_t iface, wifi_config_t* conf) {
 esp_err_t esp_wifi_set_config(wifi_interface_t iface, wifi_config_t* conf) { return ESP_OK; }
 
 void esp_backtrace_print(int depth) {
+#if LEAF_SIM_HAS_EXECINFO
   void* frames[64];
   if (depth > 64) depth = 64;
   const int count = backtrace(frames, depth);
   fflush(stdout);
   fprintf(stderr, "--- emulator backtrace (%d frames) ---\n", count);
   backtrace_symbols_fd(frames, count, 2);
+#else
+  (void)depth;
+  fprintf(stderr, "--- emulator backtrace unavailable on this host ---\n");
+#endif
 }
 
 void esp_rom_install_channel_putc(int channel, void (*putc)(char)) {
