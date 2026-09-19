@@ -17,6 +17,8 @@ Speaker speaker;
 namespace {
   constexpr unsigned long NOTE_DURATION_MS = 40;
   constexpr unsigned long TIMING_TOLERANCE_MS = 2;
+  constexpr uint32_t VARIO_TEST_RAMP_MS = 5000;
+  constexpr uint32_t VARIO_TEST_HOLD_MS = 1500;
 }  // namespace
 
 void Speaker::init(void) {
@@ -110,8 +112,23 @@ void Speaker::playNote(uint16_t note) {
 void Speaker::updateVarioNote(int32_t verticalRate) {
   assertState("Speaker::updateVarioNote", State::Uninitialized, State::Active);
 
+  if (varioTestActive_) return;
+  setVarioNote(verticalRate, true);
+}
+
+void Speaker::startVarioTest(int32_t targetVerticalRate) {
+  assertState("Speaker::startVarioTest", State::Uninitialized, State::Active);
+  varioTestTargetRate_ = targetVerticalRate;
+  varioTestStartedMs_ = millis();
+  varioTestActive_ = targetVerticalRate != 0;
+  setVarioNote(0, false);
+}
+
+void Speaker::setVarioNote(int32_t verticalRate, bool respectQuietMode) {
+  assertState("Speaker::setVarioNote", State::Uninitialized, State::Active);
+
   // don't play any beeps if Quiet Mode is turned on, and we haven't started a flight
-  if (settings.vario_quietMode && !flightTimer_isRunning()) {
+  if (respectQuietMode && settings.vario_quietMode && !flightTimer_isRunning()) {
     varioNote_ = note::NONE;
     return;
   }
@@ -130,41 +147,59 @@ void Speaker::updateVarioNote(int32_t verticalRate) {
 
   if (verticalRate > settings.vario_climbStart) {
     // first clamp to thresholds if climbRate is over the max
-    if (verticalRate >= CLIMB_MAX) {
-      newVarioNote = verticalRate * (CLIMB_NOTE_MAX - CLIMB_NOTE_MIN) / CLIMB_MAX + CLIMB_NOTE_MIN;
-      if (newVarioNote > CLIMB_NOTE_MAXMAX) newVarioNote = CLIMB_NOTE_MAXMAX;
-      newVarioPlaySamples = CLIMB_PLAY_SAMPLES_MIN;
+    if (verticalRate >= settings.varioAudio.climbMax) {
+      newVarioNote = verticalRate *
+                         (settings.varioAudio.climbNoteMax - settings.varioAudio.climbNoteMin) /
+                         settings.varioAudio.climbMax +
+                     settings.varioAudio.climbNoteMin;
+      if (newVarioNote > settings.varioAudio.climbNoteMaxMax)
+        newVarioNote = settings.varioAudio.climbNoteMaxMax;
+      newVarioPlaySamples = settings.varioAudio.climbPlaySamplesMin;
       newVarioRestSamples = 0;  // just hold a continuous tone, no rest in between
     } else {
-      newVarioNote = verticalRate * (CLIMB_NOTE_MAX - CLIMB_NOTE_MIN) / CLIMB_MAX + CLIMB_NOTE_MIN;
+      newVarioNote = verticalRate *
+                         (settings.varioAudio.climbNoteMax - settings.varioAudio.climbNoteMin) /
+                         settings.varioAudio.climbMax +
+                     settings.varioAudio.climbNoteMin;
       newVarioPlaySamples =
-          CLIMB_PLAY_SAMPLES_MAX -
-          (verticalRate * (CLIMB_PLAY_SAMPLES_MAX - CLIMB_PLAY_SAMPLES_MIN) / CLIMB_MAX);
+          settings.varioAudio.climbPlaySamplesMax -
+          (verticalRate *
+           (settings.varioAudio.climbPlaySamplesMax - settings.varioAudio.climbPlaySamplesMin) /
+           settings.varioAudio.climbMax);
       newVarioRestSamples =
-          CLIMB_REST_SAMPLES_MAX -
-          (verticalRate * (CLIMB_REST_SAMPLES_MAX - CLIMB_REST_SAMPLES_MIN) / CLIMB_MAX);
+          settings.varioAudio.climbRestSamplesMax -
+          (verticalRate *
+           (settings.varioAudio.climbRestSamplesMax - settings.varioAudio.climbRestSamplesMin) /
+           settings.varioAudio.climbMax);
     }
 
     // if we trigger sink threshold
   } else if (sinkAlarmEnabled && verticalRate < sinkAlarm_cms) {
-    const int32_t sinkRateRange = sinkAlarm_cms - SINK_MAX;
+    const int32_t sinkRateRange = sinkAlarm_cms - settings.varioAudio.sinkMax;
     const int32_t sinkRatePastAlarm = sinkAlarm_cms - verticalRate;
-    int32_t sinkNote =
-        SINK_NOTE_MIN - sinkRatePastAlarm * (SINK_NOTE_MIN - SINK_NOTE_MAX) / sinkRateRange;
-    if (sinkNote < SINK_NOTE_MAXMAX) sinkNote = SINK_NOTE_MAXMAX;
+    int32_t sinkNote = settings.varioAudio.sinkNoteMin -
+                       sinkRatePastAlarm *
+                           (settings.varioAudio.sinkNoteMin - settings.varioAudio.sinkNoteMax) /
+                           sinkRateRange;
+    if (sinkNote < settings.varioAudio.sinkNoteMaxMax)
+      sinkNote = settings.varioAudio.sinkNoteMaxMax;
     newVarioNote = sinkNote;
 
     // first clamp to thresholds if sinkRate is over the max
-    if (verticalRate <= SINK_MAX) {
-      newVarioPlaySamples = SINK_PLAY_SAMPLES_MAX;
+    if (verticalRate <= settings.varioAudio.sinkMax) {
+      newVarioPlaySamples = settings.varioAudio.sinkPlaySamplesMax;
       newVarioRestSamples = 0;  // just hold a continuous tone, no pulses
     } else {
       newVarioPlaySamples =
-          SINK_PLAY_SAMPLES_MIN +
-          (verticalRate * (SINK_PLAY_SAMPLES_MAX - SINK_PLAY_SAMPLES_MIN) / SINK_MAX);
+          settings.varioAudio.sinkPlaySamplesMin +
+          ((sinkAlarm_cms - verticalRate) *
+           (settings.varioAudio.sinkPlaySamplesMax - settings.varioAudio.sinkPlaySamplesMin) /
+           sinkRateRange);
       newVarioRestSamples =
-          SINK_REST_SAMPLES_MIN +
-          (verticalRate * (SINK_REST_SAMPLES_MAX - SINK_REST_SAMPLES_MIN) / SINK_MAX);
+          settings.varioAudio.sinkRestSamplesMin +
+          ((sinkAlarm_cms - verticalRate) *
+           (settings.varioAudio.sinkRestSamplesMax - settings.varioAudio.sinkRestSamplesMin) /
+           sinkRateRange);
     }
 
   } else {
@@ -178,6 +213,27 @@ void Speaker::updateVarioNote(int32_t verticalRate) {
   varioNote_ = newVarioNote;
   varioPlaySamples_ = newVarioPlaySamples;
   varioRestSamples_ = newVarioRestSamples;
+}
+
+void Speaker::updateVarioTest() {
+  if (!varioTestActive_) return;
+
+  const uint32_t elapsed = millis() - varioTestStartedMs_;
+  const uint32_t rampDownStart = VARIO_TEST_RAMP_MS + VARIO_TEST_HOLD_MS;
+  const uint32_t end = rampDownStart + VARIO_TEST_RAMP_MS;
+  int32_t verticalRate = 0;
+  if (elapsed < VARIO_TEST_RAMP_MS) {
+    verticalRate = static_cast<int32_t>(static_cast<int64_t>(varioTestTargetRate_) * elapsed /
+                                        VARIO_TEST_RAMP_MS);
+  } else if (elapsed < rampDownStart) {
+    verticalRate = varioTestTargetRate_;
+  } else if (elapsed < end) {
+    verticalRate = static_cast<int32_t>(static_cast<int64_t>(varioTestTargetRate_) *
+                                        (end - elapsed) / VARIO_TEST_RAMP_MS);
+  } else {
+    varioTestActive_ = false;
+  }
+  setVarioNote(verticalRate, false);
 }
 
 bool Speaker::update() {
@@ -197,6 +253,8 @@ bool Speaker::update() {
   if (!shouldUpdate()) {
     return playingSound_;
   }
+
+  updateVarioTest();
 
   if (playingSound_ && fxVolume_ != SpeakerVolume::Off) {
     // prioritize sound effects from UI & Button etc before we get to vario beeps

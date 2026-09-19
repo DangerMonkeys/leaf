@@ -22,7 +22,30 @@ namespace {
       {0, -1.2, -1.4, -1.6, -1.8, -2.0, -2.5, -3.0, -4.0, -5.0, -6.0},   // m/s
       {0, -240, -280, -320, -360, -400, -500, -600, -800, -1000, -1200}  // fpm
   };
-}
+
+  bool validVarioAudioProfile(const VarioAudioProfile& profile) {
+    const bool climbValid =
+        profile.climbMax >= 100 && profile.climbMax <= 2000 && profile.climbNoteMin >= 100 &&
+        profile.climbNoteMin < profile.climbNoteMax && profile.climbNoteMax <= 4000 &&
+        profile.climbNoteMax <= profile.climbNoteMaxMax && profile.climbNoteMaxMax <= 5000 &&
+        profile.climbPlaySamplesMin >= 1 && profile.climbPlaySamplesMin <= 50 &&
+        profile.climbPlaySamplesMax >= profile.climbPlaySamplesMin &&
+        profile.climbPlaySamplesMax <= 50 && profile.climbRestSamplesMin >= 1 &&
+        profile.climbRestSamplesMin <= 100 &&
+        profile.climbRestSamplesMax >= profile.climbRestSamplesMin &&
+        profile.climbRestSamplesMax <= 100;
+    const bool sinkValid =
+        profile.sinkMax >= -2000 && profile.sinkMax <= -700 && profile.sinkNoteMin >= 100 &&
+        profile.sinkNoteMin <= 2000 && profile.sinkNoteMax >= 50 &&
+        profile.sinkNoteMax < profile.sinkNoteMin && profile.sinkNoteMaxMax >= 30 &&
+        profile.sinkNoteMaxMax <= profile.sinkNoteMax && profile.sinkPlaySamplesMin >= 1 &&
+        profile.sinkPlaySamplesMin <= profile.sinkPlaySamplesMax &&
+        profile.sinkPlaySamplesMax <= 50 && profile.sinkRestSamplesMin >= 1 &&
+        profile.sinkRestSamplesMin <= profile.sinkRestSamplesMax &&
+        profile.sinkRestSamplesMax <= 100;
+    return climbValid && sinkValid;
+  }
+}  // namespace
 
 Settings settings;
 
@@ -224,6 +247,7 @@ void Settings::loadDefaults() {
   vario_quietMode = DEF_QUIET_MODE;
   vario_tones = DEF_VARIO_TONES;
   vario_liftyAir = DEF_LIFTY_AIR;
+  varioAudio = VarioAudioProfile{};
   vario_altSetting = DEF_ALT_SETTING;
   vario_altSyncToGPS = DEF_ALT_SYNC_GPS;
 
@@ -309,6 +333,23 @@ void Settings::retrieve() {
   vario_quietMode = leafPrefs.getBool("QUIET_MODE");
   vario_tones = leafPrefs.getBool("VARIO_TONES");
   vario_liftyAir = leafPrefs.getChar("LIFTY_AIR");
+  varioAudio.climbMax = leafPrefs.getInt("clMax", CLIMB_MAX);
+  varioAudio.climbNoteMin = leafPrefs.getUShort("clHzStart", CLIMB_NOTE_MIN);
+  varioAudio.climbNoteMax = leafPrefs.getUShort("clHzCont", CLIMB_NOTE_MAX);
+  varioAudio.climbNoteMaxMax = leafPrefs.getUShort("clHzCap", CLIMB_NOTE_MAXMAX);
+  varioAudio.climbPlaySamplesMax = leafPrefs.getUShort("clOnStart", CLIMB_PLAY_SAMPLES_MAX);
+  varioAudio.climbPlaySamplesMin = leafPrefs.getUShort("clOnCont", CLIMB_PLAY_SAMPLES_MIN);
+  varioAudio.climbRestSamplesMax = leafPrefs.getUShort("clOffStart", CLIMB_REST_SAMPLES_MAX);
+  varioAudio.climbRestSamplesMin = leafPrefs.getUShort("clOffCont", CLIMB_REST_SAMPLES_MIN);
+  varioAudio.sinkMax = leafPrefs.getInt("skMax", SINK_MAX);
+  varioAudio.sinkNoteMin = leafPrefs.getUShort("skHzStart", SINK_NOTE_MIN);
+  varioAudio.sinkNoteMax = leafPrefs.getUShort("skHzCont", SINK_NOTE_MAX);
+  varioAudio.sinkNoteMaxMax = leafPrefs.getUShort("skHzFloor", SINK_NOTE_MAXMAX);
+  varioAudio.sinkPlaySamplesMin = leafPrefs.getUShort("skOnStart", SINK_PLAY_SAMPLES_MIN);
+  varioAudio.sinkPlaySamplesMax = leafPrefs.getUShort("skOnCont", SINK_PLAY_SAMPLES_MAX);
+  varioAudio.sinkRestSamplesMin = leafPrefs.getUShort("skOffStart", SINK_REST_SAMPLES_MIN);
+  varioAudio.sinkRestSamplesMax = leafPrefs.getUShort("skOffCont", SINK_REST_SAMPLES_MAX);
+  if (!validVarioAudioProfile(varioAudio)) varioAudio = VarioAudioProfile{};
   vario_altSetting = leafPrefs.getFloat("ALT_SETTING");
   vario_altSyncToGPS = leafPrefs.getBool("ALT_SYNC_GPS");
 
@@ -409,6 +450,22 @@ void Settings::save() {
   leafPrefs.putBool("QUIET_MODE", vario_quietMode);
   leafPrefs.putBool("VARIO_TONES", vario_tones);
   leafPrefs.putChar("LIFTY_AIR", vario_liftyAir);
+  leafPrefs.putInt("clMax", varioAudio.climbMax);
+  leafPrefs.putUShort("clHzStart", varioAudio.climbNoteMin);
+  leafPrefs.putUShort("clHzCont", varioAudio.climbNoteMax);
+  leafPrefs.putUShort("clHzCap", varioAudio.climbNoteMaxMax);
+  leafPrefs.putUShort("clOnStart", varioAudio.climbPlaySamplesMax);
+  leafPrefs.putUShort("clOnCont", varioAudio.climbPlaySamplesMin);
+  leafPrefs.putUShort("clOffStart", varioAudio.climbRestSamplesMax);
+  leafPrefs.putUShort("clOffCont", varioAudio.climbRestSamplesMin);
+  leafPrefs.putInt("skMax", varioAudio.sinkMax);
+  leafPrefs.putUShort("skHzStart", varioAudio.sinkNoteMin);
+  leafPrefs.putUShort("skHzCont", varioAudio.sinkNoteMax);
+  leafPrefs.putUShort("skHzFloor", varioAudio.sinkNoteMaxMax);
+  leafPrefs.putUShort("skOnStart", varioAudio.sinkPlaySamplesMin);
+  leafPrefs.putUShort("skOnCont", varioAudio.sinkPlaySamplesMax);
+  leafPrefs.putUShort("skOffStart", varioAudio.sinkRestSamplesMin);
+  leafPrefs.putUShort("skOffCont", varioAudio.sinkRestSamplesMax);
   leafPrefs.putFloat("ALT_SETTING", vario_altSetting);
   leafPrefs.putBool("ALT_SYNC_GPS", vario_altSyncToGPS);
   // GPS & Track Log Settings
