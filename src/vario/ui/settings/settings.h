@@ -122,17 +122,17 @@
 #define DEF_UNITS_hours 1     // 0 (24-hour time),  1 (12 hour time),
 
 struct VarioAudioProfile {
+  int32_t climbContinuous = CLIMB_CONTINUOUS;
   int32_t climbMax = CLIMB_MAX;
-  uint16_t climbNoteMin = CLIMB_NOTE_MIN;
+  uint16_t climbNoteStart = CLIMB_NOTE_START;
   uint16_t climbNoteMax = CLIMB_NOTE_MAX;
-  uint16_t climbNoteMaxMax = CLIMB_NOTE_MAXMAX;
   uint16_t climbPlaySamplesMax = CLIMB_PLAY_SAMPLES_MAX;
   uint16_t climbRestSamplesMax = CLIMB_REST_SAMPLES_MAX;
 
+  int32_t sinkContinuous = SINK_CONTINUOUS;
   int32_t sinkMax = SINK_MAX;
+  uint16_t sinkNoteStart = SINK_NOTE_START;
   uint16_t sinkNoteMin = SINK_NOTE_MIN;
-  uint16_t sinkNoteMax = SINK_NOTE_MAX;
-  uint16_t sinkNoteMaxMax = SINK_NOTE_MAXMAX;
   uint16_t sinkPlaySamplesMin = SINK_PLAY_SAMPLES_MIN;
   uint16_t sinkRestSamplesMin = SINK_REST_SAMPLES_MIN;
 };

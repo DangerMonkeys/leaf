@@ -143,53 +143,51 @@ void Speaker::setVarioNote(int32_t verticalRate, bool respectQuietMode) {
     sinkAlarm_cms = settings.vario_sinkAlarm * 100;  // convert m/s to cm/s
   }
 
-  if (verticalRate > settings.vario_climbStart) {
-    // first clamp to thresholds if climbRate is over the max
-    if (verticalRate >= settings.varioAudio.climbMax) {
-      newVarioNote = verticalRate *
-                         (settings.varioAudio.climbNoteMax - settings.varioAudio.climbNoteMin) /
-                         settings.varioAudio.climbMax +
-                     settings.varioAudio.climbNoteMin;
-      if (newVarioNote > settings.varioAudio.climbNoteMaxMax)
-        newVarioNote = settings.varioAudio.climbNoteMaxMax;
+  if (verticalRate >= settings.vario_climbStart) {
+    const int32_t clampedRate =
+        verticalRate > settings.varioAudio.climbMax ? settings.varioAudio.climbMax : verticalRate;
+    const int32_t ratePastStart = clampedRate - settings.vario_climbStart;
+    const int32_t rateRange = settings.varioAudio.climbMax - settings.vario_climbStart;
+    newVarioNote = settings.varioAudio.climbNoteStart +
+                   ratePastStart *
+                       (settings.varioAudio.climbNoteMax - settings.varioAudio.climbNoteStart) /
+                       rateRange;
+
+    if (verticalRate >= settings.varioAudio.climbContinuous) {
       newVarioPlaySamples = 1;
       newVarioRestSamples = 0;  // just hold a continuous tone, no rest in between
     } else {
-      newVarioNote = verticalRate *
-                         (settings.varioAudio.climbNoteMax - settings.varioAudio.climbNoteMin) /
-                         settings.varioAudio.climbMax +
-                     settings.varioAudio.climbNoteMin;
+      const int32_t timingRange = settings.varioAudio.climbContinuous - settings.vario_climbStart;
+      const int32_t timingProgress = verticalRate - settings.vario_climbStart;
       newVarioPlaySamples =
           settings.varioAudio.climbPlaySamplesMax -
-          (verticalRate * settings.varioAudio.climbPlaySamplesMax / settings.varioAudio.climbMax);
+          (timingProgress * settings.varioAudio.climbPlaySamplesMax / timingRange);
       newVarioRestSamples =
           settings.varioAudio.climbRestSamplesMax -
-          (verticalRate * settings.varioAudio.climbRestSamplesMax / settings.varioAudio.climbMax);
+          (timingProgress * settings.varioAudio.climbRestSamplesMax / timingRange);
     }
 
     // if we trigger sink threshold
-  } else if (sinkAlarmEnabled && verticalRate < sinkAlarm_cms) {
+  } else if (sinkAlarmEnabled && verticalRate <= sinkAlarm_cms) {
     const int32_t sinkRateRange = sinkAlarm_cms - settings.varioAudio.sinkMax;
-    const int32_t sinkRatePastAlarm = sinkAlarm_cms - verticalRate;
-    int32_t sinkNote = settings.varioAudio.sinkNoteMin -
-                       sinkRatePastAlarm *
-                           (settings.varioAudio.sinkNoteMin - settings.varioAudio.sinkNoteMax) /
-                           sinkRateRange;
-    if (sinkNote < settings.varioAudio.sinkNoteMaxMax)
-      sinkNote = settings.varioAudio.sinkNoteMaxMax;
-    newVarioNote = sinkNote;
+    const int32_t clampedRate =
+        verticalRate < settings.varioAudio.sinkMax ? settings.varioAudio.sinkMax : verticalRate;
+    const int32_t sinkRatePastAlarm = sinkAlarm_cms - clampedRate;
+    newVarioNote = settings.varioAudio.sinkNoteStart -
+                   sinkRatePastAlarm *
+                       (settings.varioAudio.sinkNoteStart - settings.varioAudio.sinkNoteMin) /
+                       sinkRateRange;
 
-    // first clamp to thresholds if sinkRate is over the max
-    if (verticalRate <= settings.varioAudio.sinkMax) {
+    if (verticalRate <= settings.varioAudio.sinkContinuous) {
       newVarioPlaySamples = 1;
       newVarioRestSamples = 0;  // just hold a continuous tone, no pulses
     } else {
-      newVarioPlaySamples =
-          settings.varioAudio.sinkPlaySamplesMin -
-          ((sinkAlarm_cms - verticalRate) * settings.varioAudio.sinkPlaySamplesMin / sinkRateRange);
-      newVarioRestSamples =
-          settings.varioAudio.sinkRestSamplesMin -
-          ((sinkAlarm_cms - verticalRate) * settings.varioAudio.sinkRestSamplesMin / sinkRateRange);
+      const int32_t timingRange = sinkAlarm_cms - settings.varioAudio.sinkContinuous;
+      const int32_t timingProgress = sinkAlarm_cms - verticalRate;
+      newVarioPlaySamples = settings.varioAudio.sinkPlaySamplesMin -
+                            (timingProgress * settings.varioAudio.sinkPlaySamplesMin / timingRange);
+      newVarioRestSamples = settings.varioAudio.sinkRestSamplesMin -
+                            (timingProgress * settings.varioAudio.sinkRestSamplesMin / timingRange);
     }
 
   } else {

@@ -2264,23 +2264,25 @@ leafLogButtons();routeButtons();routeEditButtons();loadStatus();loadDeviceMainte
     target.sendContent_P(cursor);
     static constexpr char USER_APP_VARIO_SCRIPT[] PROGMEM = R"leafvario(
 <style>
-.vario-settings-card{color:white}.vs-general{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;background:var(--sub);border-radius:7px;padding:10px}.vs-general-title{grid-column:1/-1;font-size:16px;margin:0}.vs-general label{margin:0}.vs-general .checkline{margin-top:24px}.vs-group{border:1px solid #858b83;border-radius:7px;padding:10px;background:rgba(0,0,0,.1);margin-top:12px}.vs-group-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;border-bottom:1px solid #777;padding-bottom:8px}.vs-group-head strong{font-size:19px}.vs-section-actions{display:flex;gap:7px;flex-wrap:wrap}.vs-section-actions button{width:auto;padding:7px 9px;font-size:13px}.vs-section-msg{width:100%;min-height:15px;margin:0;font-size:12px}.vs-layout{display:grid;grid-template-columns:64px minmax(0,1fr);gap:10px;margin-top:8px}.vs-gauge{position:sticky;top:10px;height:390px;align-self:start}.vs-track{position:absolute;left:28px;top:18px;bottom:18px;width:32px;border:2px solid #dfe5d9;border-radius:8px;background:#303332;overflow:hidden}.vs-track:after{content:"";position:absolute;left:0;right:0;top:50%;border-top:2px solid white;z-index:3}.vs-fill{position:absolute;left:0;right:0;height:0;background:var(--leaf)}.vs-rate{position:absolute;z-index:4;left:0;right:0;top:calc(50% - 14px);height:28px;display:flex;align-items:center;justify-content:center;background:white;color:#111;font-size:10px;font-weight:900;border-radius:4px}.vs-scale{position:absolute;left:0;top:18px;bottom:18px;width:22px;text-align:right;font-size:10px;color:#e2e7dc}.vs-scale span{position:absolute;left:0;right:0;transform:translateY(-50%);font-variant-numeric:tabular-nums}.vs-field{margin:9px 0}.vs-field>span{display:block;color:#e2e7dc;font-size:12px;font-weight:700;margin-bottom:3px}.vs-step{display:grid;grid-template-columns:34px minmax(72px,1fr) auto 34px;gap:5px;align-items:center}.vs-step button{width:34px;height:36px;padding:0}.vs-step input{min-width:0;padding:7px;text-align:center}.vs-step b{font-size:11px;min-width:22px}.vs-field input[type=range]{padding:0;margin:7px 0 0;height:18px;border:0;background:transparent;accent-color:var(--leaf)}.vs-derived{color:var(--leaf);font-size:12px;font-weight:750;margin:-2px 0 10px}.vs-dirty{color:var(--leaf)}@media(max-width:520px){.vs-general{grid-template-columns:1fr}.vs-general-title{grid-column:auto}.vs-general .checkline{margin-top:4px}.vs-section-actions{width:100%}.vs-section-actions button{flex:1}.vs-layout{grid-template-columns:60px minmax(0,1fr);gap:7px}.vs-track{left:27px;width:29px}}
+.vario-settings-card{color:white}.vs-general{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;background:var(--sub);border-radius:7px;padding:10px}.vs-general-title{grid-column:1/-1;font-size:16px;margin:0}.vs-general label{margin:0}.vs-general .checkline{margin-top:24px}.vs-group{border:1px solid #858b83;border-radius:7px;padding:10px;background:rgba(0,0,0,.1);margin-top:12px}.vs-group-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;border-bottom:1px solid #777;padding-bottom:8px}.vs-group-head strong{font-size:19px}.vs-section-actions{display:flex;gap:7px;flex-wrap:wrap}.vs-section-actions button{width:auto;padding:7px 9px;font-size:13px}.vs-section-msg{width:100%;min-height:15px;margin:0;font-size:12px}.vs-layout{display:grid;grid-template-columns:58px minmax(0,1fr);gap:16px;margin-top:8px}.vs-gauge{position:sticky;top:10px;height:390px;align-self:start}.vs-track{position:absolute;left:23px;top:18px;bottom:18px;width:31px;border:2px solid #dfe5d9;border-radius:8px;background:#303332;overflow:hidden}.vs-track:after{content:"";position:absolute;left:0;right:0;top:50%;border-top:2px solid white;z-index:3}.vs-fill{position:absolute;left:0;right:0;height:0;background:var(--leaf)}.vs-rate{position:absolute;z-index:4;left:0;right:0;top:calc(50% - 14px);height:28px;display:flex;align-items:center;justify-content:center;background:white;color:#111;font-size:10px;font-weight:900;border-radius:4px}.vs-scale{position:absolute;left:0;top:18px;bottom:18px;width:18px;text-align:right;font-size:10px;color:#e2e7dc}.vs-scale span{position:absolute;left:0;right:0;transform:translateY(-50%);font-variant-numeric:tabular-nums}.vs-field{margin:9px 0}.vs-field>span{display:block;color:#e2e7dc;font-size:12px;font-weight:700;margin-bottom:3px}.vs-field.invalid>span{color:#ff8585}.vs-error{display:none;color:#ff8585;font-size:11px;font-weight:700;margin-top:4px}.vs-field.invalid .vs-error{display:block}.vs-step{display:grid;grid-template-columns:34px minmax(72px,1fr) auto 34px;gap:5px;align-items:center}.vs-step button{width:34px;height:36px;padding:0}.vs-step input{min-width:0;padding:7px;text-align:center}.vs-step b{font-size:11px;min-width:22px}.vs-field input[type=range]{padding:0;margin:7px 0 0;height:18px;border:0;background:transparent;accent-color:var(--leaf)}.vs-divider{border:0;border-top:1px solid #777;margin:15px 0 12px}.vs-derived{color:var(--leaf);font-size:12px;font-weight:750;margin:-2px 0 10px}.vs-dirty{color:var(--leaf)}@media(max-width:520px){.vs-general{grid-template-columns:1fr}.vs-general-title{grid-column:auto}.vs-general .checkline{margin-top:4px}.vs-section-actions{width:100%}.vs-section-actions button{flex:1}.vs-layout{grid-template-columns:55px minmax(0,1fr);gap:12px}.vs-track{left:22px;width:29px}}
 </style>
 <script>
 (function(){
 const main=document.getElementById('mainView');if(!main)return;
-const numberField=(label,key,min,max,step,unit,slider=false,scale=1)=>`<div class=vs-field><span>${label}</span><div class=vs-step><button type=button data-step="-${step}" data-for="${key}">&minus;</button><input type=number data-vs="${key}" data-scale="${scale}" min="${min}" max="${max}" step="${step}"><b>${unit}</b><button type=button data-step="${step}" data-for="${key}">+</button></div>${slider?`<input type=range data-range="${key}" min="${min}" max="${max}" step="${step}">`:''}</div>`;
-const sectionHeader=(kind,label)=>`<div class=vs-group-head><strong>${label}</strong><div class=vs-section-actions><button type=button data-test="${kind}">Test ${label}</button><button type=button class=hero data-save disabled>Save to Leaf</button><button type=button class=secondary data-defaults="${kind}">Restore</button></div><p class="muted msg vs-section-msg" data-vs-msg></p></div>`;
+const numberField=(label,key,min,max,step,unit,slider=false,scale=1)=>`<div class=vs-field><span>${label}</span><div class=vs-step><button type=button data-step="-${step}" data-for="${key}">&minus;</button><input type=number data-vs="${key}" data-scale="${scale}" min="${min}" max="${max}" step="${step}"><b>${unit}</b><button type=button data-step="${step}" data-for="${key}">+</button></div>${slider?`<input type=range data-range="${key}" min="${min}" max="${max}" step="${step}">`:''}<div class=vs-error data-error="${key}"></div></div>`;
+const sectionHeader=(kind,label)=>`<div class=vs-group-head><strong>${label}</strong><div class=vs-section-actions><button type=button class=hero data-test="${kind}">Test ${label}</button><button type=button class=hero data-save disabled>Save to Leaf</button><button type=button class=secondary data-defaults="${kind}">Defaults</button></div><p class="muted msg vs-section-msg" data-vs-msg></p></div>`;
 const gauge=kind=>`<div class=vs-gauge><div id=vs${kind}Scale class=vs-scale></div><div class=vs-track><div id=vs${kind}Fill class=vs-fill></div><div id=vs${kind}Rate class=vs-rate>0.0</div></div></div>`;
-const card=document.createElement('section');card.className='vario-settings-card';card.innerHTML=`<h2>Vario Settings</h2><div class=vs-general><strong class=vs-general-title>General</strong><label>Beep volume<select data-vs=volume><option value=0>Off</option><option value=1>Low</option><option value=2>Medium</option><option value=3>High</option></select></label><label>Sensitivity<select data-vs=sensitivity><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label><label class=checkline><input type=checkbox data-vs=quiet_mode>Quiet mode until flight starts</label><label class=checkline><input type=checkbox data-vs=volume_shortcut>Enable volume shortcut</label>${numberField('Climb display average','climb_display_average_s',0,5,1,'s')}${numberField('Glide average','glide_average_s',0,20,2,'s')}</div><div class=vs-group>${sectionHeader('climb','Climb')}<div class=vs-layout>${gauge('Climb')}<div>${numberField('Tone starts at','climb_start_cms',0,.2,.05,'m/s',false,100)}${numberField('Starting tone','climb_start_hz',100,2000,5,'Hz',true)}${numberField('Starting tone length','climb_beep_start_ms',40,2000,40,'ms')}${numberField('Starting tone pause','climb_rest_start_ms',40,4000,40,'ms')}${numberField('Continuous at','climb_max_cms',1,20,.1,'m/s',false,100)}${numberField('Continuous tone','climb_continuous_hz',100,4000,5,'Hz',true)}${numberField('Maximum tone','climb_max_hz',100,5000,5,'Hz',true)}<div class=vs-derived id=vsClimbDerived></div></div></div></div><div class=vs-group>${sectionHeader('sink','Sink')}<div class=vs-layout>${gauge('Sink')}<div><label>Tone starts at<select data-vs=sink_alarm_cms><option value=0>Off</option><option value=-120>−1.2 m/s</option><option value=-140>−1.4 m/s</option><option value=-160>−1.6 m/s</option><option value=-180>−1.8 m/s</option><option value=-200>−2.0 m/s</option><option value=-250>−2.5 m/s</option><option value=-300>−3.0 m/s</option><option value=-400>−4.0 m/s</option><option value=-500>−5.0 m/s</option><option value=-600>−6.0 m/s</option></select></label>${numberField('Starting tone','sink_start_hz',100,2000,5,'Hz',true)}${numberField('Starting tone length','sink_beep_start_ms',40,2000,40,'ms')}${numberField('Starting tone pause','sink_rest_start_ms',40,4000,40,'ms')}${numberField('Continuous at','sink_max_cms',-20,-7,.1,'m/s',false,100)}${numberField('Continuous tone','sink_continuous_hz',50,2000,5,'Hz',true)}${numberField('Minimum tone','sink_min_hz',30,2000,5,'Hz',true)}<div class=vs-derived id=vsSinkDerived></div></div></div></div>`;
+const card=document.createElement('section');card.className='vario-settings-card';card.innerHTML=`<h2>Vario Settings</h2><div class=vs-general><strong class=vs-general-title>General</strong><label>Beep volume<select data-vs=volume><option value=0>Off</option><option value=1>Low</option><option value=2>Medium</option><option value=3>High</option></select></label><label>Sensitivity<select data-vs=sensitivity><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label><label class=checkline><input type=checkbox data-vs=quiet_mode>Quiet mode until flight starts</label><label class=checkline><input type=checkbox data-vs=volume_shortcut>Enable volume shortcut</label>${numberField('Climb display average','climb_display_average_s',0,5,1,'s')}${numberField('Glide average','glide_average_s',0,20,2,'s')}</div><div class=vs-group>${sectionHeader('climb','Climb')}<div class=vs-layout>${gauge('Climb')}<div>${numberField('Tone starts at','climb_start_cms',0,.2,.05,'m/s',false,100)}${numberField('Starting tone','climb_start_hz',100,2000,5,'Hz',true)}${numberField('Starting tone length','climb_beep_start_ms',40,2000,40,'ms')}${numberField('Starting tone pause','climb_rest_start_ms',40,4000,40,'ms')}<hr class=vs-divider>${numberField('Continuous at','climb_continuous_cms',1,20,.1,'m/s',false,100)}<div class=vs-derived id=vsClimbDerived></div><hr class=vs-divider>${numberField('Maximum climb','climb_max_cms',1,20,.1,'m/s',false,100)}${numberField('Maximum tone','climb_max_hz',100,5000,5,'Hz',true)}</div></div></div><div class=vs-group>${sectionHeader('sink','Sink')}<div class=vs-layout>${gauge('Sink')}<div><div class=vs-field><span>Tone starts at</span><select data-vs=sink_alarm_cms><option value=0>Off</option><option value=-120>−1.2 m/s</option><option value=-140>−1.4 m/s</option><option value=-160>−1.6 m/s</option><option value=-180>−1.8 m/s</option><option value=-200>−2.0 m/s</option><option value=-250>−2.5 m/s</option><option value=-300>−3.0 m/s</option><option value=-400>−4.0 m/s</option><option value=-500>−5.0 m/s</option><option value=-600>−6.0 m/s</option></select><div class=vs-error data-error=sink_alarm_cms></div></div>${numberField('Starting tone','sink_start_hz',100,2000,5,'Hz',true)}${numberField('Starting tone length','sink_beep_start_ms',40,2000,40,'ms')}${numberField('Starting tone pause','sink_rest_start_ms',40,4000,40,'ms')}<hr class=vs-divider>${numberField('Continuous at','sink_continuous_cms',-20,-.7,.1,'m/s',false,100)}<div class=vs-derived id=vsSinkDerived></div><hr class=vs-divider>${numberField('Maximum sink','sink_max_cms',-20,-.8,.1,'m/s',false,100)}${numberField('Minimum tone','sink_min_hz',30,2000,5,'Hz',true)}</div></div></div>`;
 let anchor=main.querySelector('.status-panel');anchor?anchor.after(card):main.prepend(card);
-const q=s=>card.querySelector(s),qa=s=>[...card.querySelectorAll(s)],defaults={volume:2,volume_shortcut:false,quiet_mode:false,sensitivity:3,climb_display_average_s:0,glide_average_s:10,climb_start_cms:5,climb_max_cms:800,climb_start_hz:523,climb_continuous_hz:1568,climb_max_hz:2093,climb_beep_start_ms:400,climb_rest_start_ms:240,sink_alarm_cms:-250,sink_max_cms:-800,sink_start_hz:330,sink_continuous_hz:196,sink_min_hz:131,sink_beep_start_ms:320,sink_rest_start_ms:800};let dirty=false,running=false;
+const q=s=>card.querySelector(s),qa=s=>[...card.querySelectorAll(s)],defaults={volume:2,volume_shortcut:false,quiet_mode:false,sensitivity:3,climb_display_average_s:0,glide_average_s:10,climb_start_cms:5,climb_continuous_cms:800,climb_max_cms:1200,climb_start_hz:523,climb_max_hz:2093,climb_beep_start_ms:400,climb_rest_start_ms:240,sink_alarm_cms:-250,sink_continuous_cms:-800,sink_max_cms:-1070,sink_start_hz:330,sink_min_hz:131,sink_beep_start_ms:320,sink_rest_start_ms:800};let dirty=false,running=false,formValid=true;
 function message(t,bad=false){qa('[data-vs-msg]').forEach(e=>{e.textContent=t||'';e.classList.toggle('vs-dirty',bad)})}
 function setForm(d){qa('[data-vs]').forEach(e=>{let k=e.dataset.vs,v=d[k];if(e.type=='checkbox')e.checked=!!v;else{let scale=Number(e.dataset.scale)||1;e.value=Number(v)/scale}});qa('[data-range]').forEach(r=>{let i=q(`[data-vs="${r.dataset.range}"]`);if(i)r.value=i.value});dirty=false;updateDerived();updateButtons()}
 function readForm(){let d={};qa('[data-vs]').forEach(e=>{let k=e.dataset.vs;if(e.type=='checkbox')d[k]=e.checked;else d[k]=Math.round(Number(e.value)*(Number(e.dataset.scale)||1))});return d}
-function updateDerived(){let v=k=>Number(q(`[data-vs="${k}"]`).value),cs=v('climb_start_hz'),cc=v('climb_continuous_hz'),cm=v('climb_max_hz'),cr=v('climb_max_cms');let climb=cc>cs&&cm>=cc?(cm-cs)*cr/(cc-cs):NaN;q('#vsClimbDerived').textContent=Number.isFinite(climb)?`Maximum tone reached at +${climb.toFixed(1)} m/s`:'Choose increasing tone values to calculate maximum climb.';let alarm=v('sink_alarm_cms')/100,ss=v('sink_start_hz'),sc=v('sink_continuous_hz'),sm=v('sink_min_hz'),sr=v('sink_max_cms'),sink=alarm<0&&ss>sc&&sm<=sc?alarm-(ss-sm)*(alarm-sr)/(ss-sc):NaN;q('#vsSinkDerived').textContent=Number.isFinite(sink)?`Minimum tone reached at ${sink.toFixed(1)} m/s`:'Enable sink tones and choose decreasing tone values to calculate maximum sink.'}
-function changed(){dirty=true;updateDerived();message('Unsaved changes — save to enable tests.',true);updateButtons()}
-function updateButtons(){qa('[data-save]').forEach(b=>b.disabled=running||!dirty);qa('[data-test]').forEach(b=>b.disabled=running||dirty);qa('[data-defaults]').forEach(b=>b.disabled=running)}
+const value=k=>Number(q(`[data-vs="${k}"]`).value),rate=n=>`${n>0?'+':''}${n.toFixed(2).replace(/0+$/,'').replace(/\.$/,'')} m/s`;
+function validate(){qa('.vs-field').forEach(f=>f.classList.remove('invalid'));qa('[data-error]').forEach(e=>e.textContent='');let valid=true,fail=(key,text)=>{let input=q(`[data-vs="${key}"]`),field=input&&input.closest('.vs-field'),error=q(`[data-error="${key}"]`);if(field)field.classList.add('invalid');if(error)error.textContent=text;valid=false},climbStart=value('climb_start_cms'),climbContinuous=value('climb_continuous_cms'),climbMax=value('climb_max_cms'),climbStartTone=value('climb_start_hz'),climbMaxTone=value('climb_max_hz'),sinkStart=value('sink_alarm_cms')/100,sinkContinuous=value('sink_continuous_cms'),sinkMax=value('sink_max_cms'),sinkStartTone=value('sink_start_hz'),sinkMinTone=value('sink_min_hz');if(climbContinuous<=climbStart)fail('climb_continuous_cms',`Must be higher than Tone starts at (${rate(climbStart)}).`);if(climbMax<=climbContinuous)fail('climb_max_cms',`Must be higher than Continuous at (${rate(climbContinuous)}).`);if(climbMaxTone<=climbStartTone)fail('climb_max_hz',`Must be higher than Starting tone (${climbStartTone} Hz).`);if(sinkContinuous>=sinkStart)fail('sink_continuous_cms',`Must be lower than Tone starts at (${sinkStart==0?'Off / 0 m/s':rate(sinkStart)}).`);if(sinkMax>=sinkContinuous)fail('sink_max_cms',`Must be lower than Continuous at (${rate(sinkContinuous)}).`);if(sinkMinTone>=sinkStartTone)fail('sink_min_hz',`Must be lower than Starting tone (${sinkStartTone} Hz).`);formValid=valid;return valid}
+function updateDerived(){validate();let climbStart=value('climb_start_cms'),climbContinuous=value('climb_continuous_cms'),climbMax=value('climb_max_cms'),climbStartTone=value('climb_start_hz'),climbMaxTone=value('climb_max_hz'),climbTone=climbStartTone+(climbContinuous-climbStart)*(climbMaxTone-climbStartTone)/(climbMax-climbStart);q('#vsClimbDerived').textContent=Number.isFinite(climbTone)&&climbMax>climbStart?`Interpolated continuous tone: ${Math.round(climbTone)} Hz`:'';let sinkStart=value('sink_alarm_cms')/100,sinkContinuous=value('sink_continuous_cms'),sinkMax=value('sink_max_cms'),sinkStartTone=value('sink_start_hz'),sinkMinTone=value('sink_min_hz'),sinkTone=sinkStartTone-(sinkStart-sinkContinuous)*(sinkStartTone-sinkMinTone)/(sinkStart-sinkMax);q('#vsSinkDerived').textContent=Number.isFinite(sinkTone)&&sinkStart>sinkMax?`Interpolated continuous tone: ${Math.round(sinkTone)} Hz`:''}
+function changed(){dirty=true;updateDerived();message(formValid?'Unsaved changes — save to enable tests.':'Fix the highlighted settings before saving.',true);updateButtons()}
+function updateButtons(){qa('[data-save]').forEach(b=>b.disabled=running||!dirty||!formValid);qa('[data-test]').forEach(b=>b.disabled=running||dirty||!formValid);qa('[data-defaults]').forEach(b=>b.disabled=running)}
 let scaleModes={Climb:'',Sink:''};
 function renderScale(kind,rate){let high=Math.abs(rate)>5,mode=high?'high':'low';if(scaleModes[kind]==mode)return;scaleModes[kind]=mode;let climb=kind=='Climb',values=climb?(high?[10,9,8,7,6,5]:[5,4,3,2,1,0]):(high?[-5,-6,-7,-8,-9,-10]:[0,-1,-2,-3,-4,-5]),start=climb?0:50;q(`#vs${kind}Scale`).innerHTML=values.map((v,i)=>`<span style="top:${start+i*10}%">${v>0?'+':''}${v}</span>`).join('')}
 function setRate(kind,rate){q(`#vs${kind}Rate`).textContent=(rate>0?'+':'')+rate.toFixed(1);renderScale(kind,rate);let fill=q(`#vs${kind}Fill`),m=Math.min(Math.abs(rate),10),h=m<=5?m/5*50:Math.max(0,(10-m)/5*50);fill.style.height=h+'%';fill.style.top=kind=='Climb'?(m<=5?50-h:0)+'%':(m<=5?50:100-h)+'%'}
@@ -2396,17 +2398,17 @@ load();
     doc["climb_display_average_s"] = settings.vario_climbDisplayAverage;
     doc["glide_average_s"] = settings.glideAverageSeconds;
     doc["climb_start_cms"] = settings.vario_climbStart;
+    doc["climb_continuous_cms"] = audio.climbContinuous;
     doc["climb_max_cms"] = audio.climbMax;
-    doc["climb_start_hz"] = audio.climbNoteMin;
-    doc["climb_continuous_hz"] = audio.climbNoteMax;
-    doc["climb_max_hz"] = audio.climbNoteMaxMax;
+    doc["climb_start_hz"] = audio.climbNoteStart;
+    doc["climb_max_hz"] = audio.climbNoteMax;
     doc["climb_beep_start_ms"] = audio.climbPlaySamplesMax * 40;
     doc["climb_rest_start_ms"] = audio.climbRestSamplesMax * 40;
     doc["sink_alarm_cms"] = sinkAlarmCms();
+    doc["sink_continuous_cms"] = audio.sinkContinuous;
     doc["sink_max_cms"] = audio.sinkMax;
-    doc["sink_start_hz"] = audio.sinkNoteMin;
-    doc["sink_continuous_hz"] = audio.sinkNoteMax;
-    doc["sink_min_hz"] = audio.sinkNoteMaxMax;
+    doc["sink_start_hz"] = audio.sinkNoteStart;
+    doc["sink_min_hz"] = audio.sinkNoteMin;
     doc["sink_beep_start_ms"] = audio.sinkPlaySamplesMin * 40;
     doc["sink_rest_start_ms"] = audio.sinkRestSamplesMin * 40;
 
@@ -2450,16 +2452,16 @@ load();
     const int32_t sinkAlarm = integer("sink_alarm_cms", sinkAlarmCms());
 
     VarioAudioProfile audio = settings.varioAudio;
+    audio.climbContinuous = integer("climb_continuous_cms", audio.climbContinuous);
     audio.climbMax = integer("climb_max_cms", audio.climbMax);
-    const int32_t climbNoteMin = integer("climb_start_hz", audio.climbNoteMin);
-    const int32_t climbNoteMax = integer("climb_continuous_hz", audio.climbNoteMax);
-    const int32_t climbNoteMaxMax = integer("climb_max_hz", audio.climbNoteMaxMax);
+    const int32_t climbNoteStart = integer("climb_start_hz", audio.climbNoteStart);
+    const int32_t climbNoteMax = integer("climb_max_hz", audio.climbNoteMax);
     const int32_t climbBeepStart = integer("climb_beep_start_ms", audio.climbPlaySamplesMax * 40);
     const int32_t climbRestStart = integer("climb_rest_start_ms", audio.climbRestSamplesMax * 40);
+    audio.sinkContinuous = integer("sink_continuous_cms", audio.sinkContinuous);
     audio.sinkMax = integer("sink_max_cms", audio.sinkMax);
-    const int32_t sinkNoteMin = integer("sink_start_hz", audio.sinkNoteMin);
-    const int32_t sinkNoteMax = integer("sink_continuous_hz", audio.sinkNoteMax);
-    const int32_t sinkNoteMaxMax = integer("sink_min_hz", audio.sinkNoteMaxMax);
+    const int32_t sinkNoteStart = integer("sink_start_hz", audio.sinkNoteStart);
+    const int32_t sinkNoteMin = integer("sink_min_hz", audio.sinkNoteMin);
     const int32_t sinkBeepStart = integer("sink_beep_start_ms", audio.sinkPlaySamplesMin * 40);
     const int32_t sinkRestStart = integer("sink_rest_start_ms", audio.sinkRestSamplesMin * 40);
 
@@ -2468,14 +2470,16 @@ load();
         climbRestStart >= 40 && climbRestStart <= 4000 && climbRestStart % 40 == 0 &&
         sinkBeepStart >= 40 && sinkBeepStart <= 2000 && sinkBeepStart % 40 == 0 &&
         sinkRestStart >= 40 && sinkRestStart <= 4000 && sinkRestStart % 40 == 0;
-    const bool climbValid =
-        climbStart >= 0 && climbStart <= 20 && climbStart % 5 == 0 && audio.climbMax >= 100 &&
-        audio.climbMax <= 2000 && climbNoteMin >= 100 && climbNoteMin < climbNoteMax &&
-        climbNoteMax <= 4000 && climbNoteMax <= climbNoteMaxMax && climbNoteMaxMax <= 5000;
+    const bool climbValid = climbStart >= 0 && climbStart <= 20 && climbStart % 5 == 0 &&
+                            audio.climbContinuous >= 100 &&
+                            audio.climbContinuous < audio.climbMax && audio.climbMax <= 2000 &&
+                            climbNoteStart >= 100 && climbNoteStart < climbNoteMax &&
+                            climbNoteMax <= 5000;
     const bool sinkValid = isAllowedSinkAlarm(sinkAlarm) && audio.sinkMax >= -2000 &&
-                           audio.sinkMax <= -700 && sinkNoteMin >= 100 && sinkNoteMin <= 2000 &&
-                           sinkNoteMax >= 50 && sinkNoteMax < sinkNoteMin && sinkNoteMaxMax >= 30 &&
-                           sinkNoteMaxMax <= sinkNoteMax;
+                           audio.sinkMax < audio.sinkContinuous && audio.sinkContinuous <= -700 &&
+                           audio.sinkContinuous < sinkAlarm && sinkNoteStart >= 100 &&
+                           sinkNoteStart <= 2000 && sinkNoteMin >= 30 &&
+                           sinkNoteMin < sinkNoteStart;
     const bool generalValid = volume >= 0 && volume <= 3 && sensitivity >= 1 && sensitivity <= 5 &&
                               climbDisplayAverage >= 0 && climbDisplayAverage <= 5 &&
                               glideAverage >= 0 && glideAverage <= 20 && glideAverage % 2 == 0;
@@ -2485,14 +2489,12 @@ load();
       return;
     }
 
-    audio.climbNoteMin = climbNoteMin;
+    audio.climbNoteStart = climbNoteStart;
     audio.climbNoteMax = climbNoteMax;
-    audio.climbNoteMaxMax = climbNoteMaxMax;
     audio.climbPlaySamplesMax = climbBeepStart / 40;
     audio.climbRestSamplesMax = climbRestStart / 40;
+    audio.sinkNoteStart = sinkNoteStart;
     audio.sinkNoteMin = sinkNoteMin;
-    audio.sinkNoteMax = sinkNoteMax;
-    audio.sinkNoteMaxMax = sinkNoteMaxMax;
     audio.sinkPlaySamplesMin = sinkBeepStart / 40;
     audio.sinkRestSamplesMin = sinkRestStart / 40;
 
@@ -2513,22 +2515,12 @@ load();
     sendVarioSettings(target);
   }
 
-  int32_t divideRoundUp(int64_t numerator, int32_t denominator) {
-    return static_cast<int32_t>((numerator + denominator - 1) / denominator);
-  }
-
   void startVarioTest(WebServer& target) {
     const String kind = extractJsonStringValue(target.arg("plain"), "kind");
     const VarioAudioProfile& audio = settings.varioAudio;
     int32_t targetRate = 0;
     if (kind == "climb") {
-      const int32_t pitchRange = audio.climbNoteMax - audio.climbNoteMin;
-      targetRate =
-          pitchRange == 0
-              ? audio.climbMax
-              : divideRoundUp(static_cast<int64_t>(audio.climbNoteMaxMax - audio.climbNoteMin) *
-                                  audio.climbMax,
-                              pitchRange);
+      targetRate = audio.climbMax;
     } else if (kind == "sink") {
       const int32_t alarm = sinkAlarmCms();
       if (alarm == 0) {
@@ -2536,12 +2528,7 @@ load();
                     "{\"detail\":\"Enable Sink Alarm before testing the sink tone.\"}");
         return;
       }
-      const int32_t pitchRange = audio.sinkNoteMin - audio.sinkNoteMax;
-      const int32_t rateRange = alarm - audio.sinkMax;
-      targetRate =
-          alarm -
-          divideRoundUp(static_cast<int64_t>(audio.sinkNoteMin - audio.sinkNoteMaxMax) * rateRange,
-                        pitchRange);
+      targetRate = audio.sinkMax;
     } else {
       target.send(400, "application/json", "{\"detail\":\"Test kind must be climb or sink.\"}");
       return;
