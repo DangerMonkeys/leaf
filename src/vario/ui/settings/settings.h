@@ -5,6 +5,7 @@
 #include <functional>
 
 #include "comms/fanet_radio_types.h"
+#include "ui/audio/dynamic_effects.h"
 #include "ui/input/buttons.h"
 #include "ui/settings/setting.h"
 
@@ -120,6 +121,22 @@
 #define DEF_UNITS_distance 1  // 0 (km, or m for <1km),	1 (miles, or ft for < 1000 feet)
 #define DEF_UNITS_hours 1     // 0 (24-hour time),  1 (12 hour time),
 
+struct VarioAudioProfile {
+  int32_t climbContinuous = CLIMB_CONTINUOUS;
+  int32_t climbMax = CLIMB_MAX;
+  uint16_t climbNoteStart = CLIMB_NOTE_START;
+  uint16_t climbNoteMax = CLIMB_NOTE_MAX;
+  uint16_t climbPlaySamplesMax = CLIMB_PLAY_SAMPLES_MAX;
+  uint16_t climbRestSamplesMax = CLIMB_REST_SAMPLES_MAX;
+
+  int32_t sinkContinuous = SINK_CONTINUOUS;
+  int32_t sinkMax = SINK_MAX;
+  uint16_t sinkNoteStart = SINK_NOTE_START;
+  uint16_t sinkNoteMin = SINK_NOTE_MIN;
+  uint16_t sinkPlaySamplesMin = SINK_PLAY_SAMPLES_MIN;
+  uint16_t sinkRestSamplesMin = SINK_REST_SAMPLES_MIN;
+};
+
 class Settings {
  public:
   // Vario Settings
@@ -136,6 +153,7 @@ class Settings {
   bool vario_quietMode;
   bool vario_tones;
   int8_t vario_liftyAir;
+  VarioAudioProfile varioAudio;
   float vario_altSetting;
   bool vario_altSyncToGPS;
 

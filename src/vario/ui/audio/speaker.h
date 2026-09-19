@@ -39,6 +39,14 @@ class Speaker : private StateAssertMixin<Speaker> {
   // Update the sound the vario plays according to climb/sink rate in cm/s
   void updateVarioNote(int32_t verticalRate);
 
+  // Temporarily replace live barometer input with a smooth 0 -> target -> 0 test sweep.
+  void startVarioTest(int32_t targetVerticalRate);
+  static constexpr uint32_t varioTestRampMs() { return 15000; }
+  static constexpr uint32_t varioTestHoldMs() { return 1500; }
+  static constexpr uint32_t varioTestDurationMs() {
+    return varioTestRampMs() * 2 + varioTestHoldMs();
+  }
+
   // Call periodically to play sounds.  Returns true if there are notes left to play.
   bool update();
 
@@ -47,6 +55,9 @@ class Speaker : private StateAssertMixin<Speaker> {
 
   // Set the specified note to be played once as a sound
   void playNote(note::note_t note);
+
+  // Play one vario-frequency tone for a fixed duration, ignoring quiet mode.
+  void playVarioToneFor(note::note_t note, uint32_t durationMs);
 
  private:
   State state_;
@@ -90,6 +101,12 @@ class Speaker : private StateAssertMixin<Speaker> {
   // method #1 -- fixed sample length)
   uint8_t fxSampleCount_ = 0;
 
+  bool varioTestActive_ = false;
+  int32_t varioTestTargetRate_ = 0;
+  uint32_t varioTestStartedMs_ = 0;
+  note::note_t previewTone_ = note::NONE;
+  uint32_t previewToneUntilMs_ = 0;
+
   // this is to allow playing single notes by changing single_note[0], while
   // still having a NOTE_END terminator following.
   uint16_t singleNote_[2] = {0, note::END};
@@ -104,6 +121,8 @@ class Speaker : private StateAssertMixin<Speaker> {
   bool shouldUpdate();
   bool updateSound();
   void updateVario();
+  void setVarioNote(int32_t verticalRate, bool respectQuietMode);
+  void updateVarioTest();
 
   void playTone(uint32_t freq);
 };

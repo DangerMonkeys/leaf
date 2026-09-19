@@ -23,6 +23,7 @@
 #include "diagnostics/memory_report.h"
 #include "diagnostics/self_test/selfTest.h"
 #include "etl/string_stream.h"
+#include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "logbook/logbook_store.h"
 #include "navigation/gpx.h"
@@ -32,6 +33,7 @@
 #include "profiles/profile_store.h"
 #include "storage/sd_card.h"
 #include "system/version_info.h"
+#include "ui/audio/speaker.h"
 #include "ui/display/display.h"
 #include "ui/settings/settings.h"
 #include "utils/lock_guard.h"
@@ -2181,9 +2183,13 @@ let profiles={schema:'leaf.profiles',schema_version:'v0.1.0',active_pilot_id:nul
 const $=id=>document.getElementById(id),clean=v=>{v=(v||'').trim();return v?v:null},newId=()=>Math.floor(Math.random()*0xffffffff).toString(16).padStart(8,'0');
 $('routeDefaultRadius').value=DEFAULT_WAYPOINT_RADIUS_M;
 document.querySelector('#mainView .status-panel').insertAdjacentHTML('afterend','<section id="deviceMaintenanceCard" style="display:none"><h2>Device Maintenance</h2><p class="muted">A previous settings reset left this Leaf needing a one-time repair. Repairing it will restore USB storage and charging features. Your flights, tracks, profiles, and settings will not be erased.</p><div class="actions"><button class="hero" id="deviceRepair">Repair Device</button><p class="muted msg" id="deviceMaintenanceMsg"></p></div></section>');
+$('leafLogCard').insertAdjacentHTML('beforeend','<div class="delete-confirm" id="leafLogUnlinkConfirm"><p class="delete-warning">Unlink this Leaf from Leaf Log?</p><div class="row"><button class="danger" id="leafLogConfirmUnlink">Confirm Unlink</button><button class="hero" id="leafLogCancelUnlink">Cancel</button></div></div>');
 function renderDeviceMaintenance(){let card=$('deviceMaintenanceCard'),button=$('deviceRepair'),visible=deviceMaintenanceState.setup_repair_available||deviceRepairCompleted;card.style.display=visible?'block':'none';if(!visible)return;if(deviceRepairCompleted){button.style.display='none';msg('deviceMaintenanceMsg','Repair complete. USB storage and charging features will be restored the next time Leaf enters charging mode.');return}button.style.display='block';button.disabled=deviceMaintenanceBusy;msg('deviceMaintenanceMsg',deviceMaintenanceBusy?'Repairing device...':deviceMaintenanceError)}
 async function loadDeviceMaintenanceStatus(){try{let r=await fetch('/api/device-maintenance/status'),d=await r.json().catch(()=>({}));if(!r.ok)throw d;deviceMaintenanceState=d}catch(e){deviceMaintenanceState={setup_repair_available:false}}renderDeviceMaintenance()}
 async function repairDevice(){if(deviceMaintenanceBusy||!deviceMaintenanceState.setup_repair_available)return;deviceMaintenanceBusy=true;deviceMaintenanceError='';renderDeviceMaintenance();try{let r=await fetch('/api/device-maintenance/repair-commissioning',{method:'POST'}),d=await r.json().catch(()=>({}));if(!r.ok||!d.repaired)throw d;deviceMaintenanceState={setup_repair_available:false};deviceRepairCompleted=true}catch(x){deviceMaintenanceError=x&&x.detail?x.detail:'Unable to repair device.'}deviceMaintenanceBusy=false;renderDeviceMaintenance()}
+function showLeafLogUnlinkConfirm(){$('leafLogWifi').style.display='none';$('leafLogUnlinkConfirm').style.display='block';msg('leafLogMsg','')}
+function resetLeafLogUnlinkConfirm(){$('leafLogUnlinkConfirm').style.display='none';leafLogButtons()}
+async function confirmLeafLogUnlink(){$('leafLogUnlinkConfirm').style.display='none';msg('leafLogStatus','Unlinking...');try{await fetch('/api/leaf-log/unlink',{method:'POST'})}finally{await loadLeafLogStatus()}}
 function pilotLabel(p){return p.name||'Unnamed pilot'}function gliderLabel(g){return g.display_name||[g.brand,g.model,g.size].filter(Boolean).join(' ')||'Unnamed glider'}
 function selectedPilot(){return profiles.pilots.find(p=>p.id==profiles.active_pilot_id)}function selectedGlider(){return profiles.gliders.find(g=>g.id==profiles.active_glider_id)}
 function msg(id,t){$(id).textContent=t||''}function validEmail(v){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((v||'').trim())}function show(v){$('mainView').classList.toggle('active',v=='main');$('navView').classList.toggle('active',v=='nav');$('profilesView').classList.toggle('active',v=='profiles');$('logbookView').classList.toggle('active',v=='logbook');$('previewView').classList.toggle('active',v=='preview')}
@@ -2221,7 +2227,7 @@ function render(){fillSelect($('pilotList'),profiles.pilots,pilotLabel);fillSele
 function normalize(){profiles.schema='leaf.profiles';profiles.schema_version='v0.1.0';delete profiles.leaf_log;profiles.pilots=(profiles.pilots||[]).filter(p=>p&&p.id&&p.name);profiles.gliders=(profiles.gliders||[]).filter(g=>g&&g.id&&g.model);if(!profiles.pilots.find(p=>p.id==profiles.active_pilot_id))profiles.active_pilot_id=profiles.pilots.length==1?profiles.pilots[0].id:null;if(!profiles.gliders.find(g=>g.id==profiles.active_glider_id))profiles.active_glider_id=profiles.gliders.length==1?profiles.gliders[0].id:null}
 async function save(){normalize();let r=await fetch('/api/profiles',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(profiles)});if(!r.ok)throw new Error();render()}
 function leafLogLinked(){return !!leafLogState.linked}function leafLogButtons(){let card=$('leafLogCard');if(!LEAF_LOG_ENABLED){card.style.display='none';return}card.style.display='block';let network=userStatus.mode=='network',linked=leafLogLinked(),a=leafLogState.account||{};if(leafLogBusy){$('leafLogStart').textContent='Getting Code...';$('leafLogStart').disabled=true;$('leafLogWifi').style.display='none';msg('leafLogStatus','Getting activation code...');msg('leafLogMsg','Contacting Leaf Log. This can take a few seconds.');return}$('leafLogStart').textContent=linked?'Linked':'Get Activation Code';$('leafLogStart').disabled=linked||!network;$('leafLogWifi').style.display=(linked||!network)?'block':'none';$('leafLogWifi').textContent=linked?'Unlink':'WiFi Setup';if(linked){$('leafLogPanel').classList.remove('active');msg('leafLogMsg','');msg('leafLogStatus','Linked to '+(a.displayName||'Leaf Log')+(a.handle?' (@'+a.handle+')':''));}else if(leafLogState.reconnect_required)msg('leafLogStatus','Reconnect required.');else if(!network)msg('leafLogStatus','Join a WiFi network to link.');else msg('leafLogStatus','Not linked.')}async function loadLeafLogStatus(){try{leafLogState=await(await fetch('/api/leaf-log/status')).json()}catch(e){leafLogState={linked:false,reconnect_required:false,account:{}}}leafLogButtons()}async function startLeafLog(){leafLogButtons();if($('leafLogStart').disabled)return;leafLogBusy=true;leafLogButtons();try{let r=await fetch('/api/leaf-log/pair/start',{method:'POST'}),d=await r.json().catch(()=>({}));if(!r.ok||!d.ok)throw d;leafLogBusy=false;leafLogActivationUrl=d.activation_url||'';$('leafLogCodeText').textContent=d.code?'Code '+d.code:'Open Leaf Log to continue';$('leafLogPanel').classList.add('active');$('leafLogStart').textContent='Get Activation Code';msg('leafLogStatus','Activation code ready.');msg('leafLogMsg','Open Leaf Log, sign in, then approve this device.');pollLeafLog()}catch(x){leafLogBusy=false;msg('leafLogMsg',x&&x.detail?x.detail:'Unable to start Leaf Log linking.');leafLogButtons()}}function pollLeafLog(){if(leafLogPollTimer)clearTimeout(leafLogPollTimer);leafLogPollTimer=setTimeout(async()=>{try{let r=await fetch('/api/leaf-log/pair/poll',{method:'POST'}),d=await r.json().catch(()=>({}));if(!r.ok)throw d;if(d.status=='pending'){msg('leafLogMsg','Waiting for Leaf Log approval...');pollLeafLog();return}if(d.status=='claimed'&&d.saved){msg('leafLogMsg','Leaf Log linked.');await loadLeafLogStatus();return}msg('leafLogMsg','Linking ended: '+(d.status||'unknown')+'.')}catch(x){msg('leafLogMsg',x&&x.detail?x.detail:'Unable to check Leaf Log approval.')}} ,3000)}async function unlinkLeafLog(){if(!confirm('Unlink this Leaf from Leaf Log?'))return;msg('leafLogStatus','Unlinking...');try{await fetch('/api/leaf-log/unlink',{method:'POST'})}finally{await loadLeafLogStatus()}}function leafLogUrl(){return leafLogActivationUrl}function versionText(s){let fw=s.firmware_display_version||'',hw=s.hardware_display_version||'';if(!fw){let a=(s.firmware_version||'').split('+');fw=a[0]||'unknown';hw=a[1]||hw||'';if(fw[0]!='v')fw='v'+fw;if(hw&&hw[0]=='h')hw=hw.slice(1);if(hw&&hw[0]!='v')hw='v'+hw}return `firmware: ${fw}`+(hw?`\nhardware: ${hw}`:'')}
-async function checkFirmware(){let b=$('firmwareCheck');msg('firmwareCheckMsg','checking...');b.disabled=true;try{let r=await fetch('/api/firmware/update-status',{method:'POST'}),d=await r.json().catch(()=>({}));if(!r.ok||!d.ok)throw d;msg('firmwareCheckMsg',d.message||'')}catch(x){msg('firmwareCheckMsg','unable to check for updates')}b.disabled=false}function useUnits(u){if(u)unitPrefs=u}function logParts(t,h12){if(!t)return{day:'--',date:'--',time:'--'};let a=t.split('T'),d=a[0]||'--',hm=(a[1]||'').slice(0,5)||'--',dt=new Date(t),day=isNaN(dt)?'--':dt.toLocaleDateString('en-US',{weekday:'long'}),date=isNaN(dt)?d:dt.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}),h=Number(hm.slice(0,2)),m=hm.slice(3,5);if(h12&&Number.isFinite(h)){let ap=h>=12?'PM':'AM';h=h%12||12;hm=h+':'+m+'\u00a0'+ap}return{day:day,date:date,time:hm}}function logDateTime(t,h12){let p=logParts(t,h12);return p.date?(p.date+'  '+p.time):''}
+async function checkFirmware(){let b=$('firmwareCheck');msg('firmwareCheckMsg','checking...');b.disabled=true;try{let r=await fetch('/api/firmware/update-status',{method:'POST'}),d=await r.json().catch(()=>({}));if(!r.ok||!d.ok)throw d;msg('firmwareCheckMsg',d.message||'')}catch(x){let e='unable to check for updates',d=x&&(x.detail||x.message);if(userStatus&&userStatus.dev_mode&&d)e+=': '+d;msg('firmwareCheckMsg',e)}b.disabled=false}function useUnits(u){if(u)unitPrefs=u}function logParts(t,h12){if(!t)return{day:'--',date:'--',time:'--'};let a=t.split('T'),d=a[0]||'--',hm=(a[1]||'').slice(0,5)||'--',dt=new Date(t),day=isNaN(dt)?'--':dt.toLocaleDateString('en-US',{weekday:'long'}),date=isNaN(dt)?d:dt.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}),h=Number(hm.slice(0,2)),m=hm.slice(3,5);if(h12&&Number.isFinite(h)){let ap=h>=12?'PM':'AM';h=h%12||12;hm=h+':'+m+'\u00a0'+ap}return{day:day,date:date,time:hm}}function logDateTime(t,h12){let p=logParts(t,h12);return p.date?(p.date+'  '+p.time):''}
 function dur(s){s=Number(s)||0;let h=Math.floor(s/3600),m=Math.floor((s%3600)/60);return h?h+'h '+m+'m':m+'m'}
 function good(v){return v!==null&&v!==undefined&&v!==""&&Number.isFinite(Number(v))}function m(v){if(!good(v))return'--';v=Number(v);return unitPrefs.alt_feet?Math.round(v*3.28084)+' ft':Math.round(v)+' m'}function ms(v){if(!good(v))return'--';v=Number(v);return unitPrefs.climb_fpm?Math.round(v*196.85)+' fpm':v.toFixed(1)+' m/s'}function spd(v){if(!good(v))return'--';v=Number(v);return unitPrefs.speed_mph?(v*2.23694).toFixed(1)+' mph':(v*3.6).toFixed(1)+' kph'}function windSpd(v){if(!good(v))return'--';v=Number(v);return unitPrefs.speed_mph?Math.round(v*2.23694)+' mph':Math.round(v*3.6)+' kph'}function dist(v){if(!good(v))return'--';v=Number(v);if(unitPrefs.distance_miles)return v>805?(v*0.000621371).toFixed(2)+' mi':Math.round(v*3.28084)+' ft';return v>=1000?(v/1000).toFixed(2)+' km':Math.round(v)+' m'}function tempVal(c){if(!good(c))return'--';c=Number(c);return unitPrefs.temp_f?Math.round(c*9/5+32):Math.round(c)}function tempRange(a,b){return good(a)&&good(b)?tempVal(a)+'\u00b0 / '+tempVal(b)+'\u00b0'+(unitPrefs.temp_f?'F':'C'):'--'}function hdg(d){if(!good(d))return'--';d=(Math.round(Number(d))%360+360)%360;if(!unitPrefs.heading_cardinal)return d+' deg';let a=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];return a[Math.round(d/22.5)%16]}function wind(v,d){return windSpd(v)+' '+hdg(d)}
 function altShown(v){if(!good(v))return NaN;v=Number(v);return unitPrefs.alt_feet?Math.round(v*3.28084):Math.round(v)}
@@ -2244,7 +2250,9 @@ $('pilotSave').onclick=()=>{let name=clean($('pilotName').value);if(!name){msg('
 $('gliderSave').onclick=()=>{let model=clean($('gliderModel').value);if(!model){msg('gliderMsg','Glider model is required.');return}let g=selectedGlider();if(!g){g={id:newId(),model:''};profiles.gliders.push(g);profiles.active_glider_id=g.id}g.brand=clean($('gliderBrand').value);g.model=model;g.size=clean($('gliderSize').value);g.display_name=clean($('gliderDisplay').value);save().then(()=>msg('gliderMsg','Glider profile saved.')).catch(()=>msg('gliderMsg','Unable to save glider.'))};
 $('pilotDelete').onclick=()=>{let p=selectedPilot();if(!p)return;profiles.pilots=profiles.pilots.filter(x=>x.id!=p.id);profiles.active_pilot_id=null;save().then(()=>msg('pilotMsg','Pilot profile deleted.')).catch(()=>msg('pilotMsg','Unable to delete pilot.'))};
 $('gliderDelete').onclick=()=>{let g=selectedGlider();if(!g)return;profiles.gliders=profiles.gliders.filter(x=>x.id!=g.id);profiles.active_glider_id=null;save().then(()=>msg('gliderMsg','Glider profile deleted.')).catch(()=>msg('gliderMsg','Unable to delete glider.'))};
-$('leafLogWifi').onclick=()=>{if(leafLogLinked())unlinkLeafLog();else location.href='/wifi?scan=1&return=app'};
+$('leafLogConfirmUnlink').onclick=confirmLeafLogUnlink;
+$('leafLogCancelUnlink').onclick=resetLeafLogUnlinkConfirm;
+$('leafLogWifi').onclick=()=>{if(leafLogLinked())showLeafLogUnlinkConfirm();else location.href='/wifi?scan=1&return=app'};
 $('deviceRepair').onclick=repairDevice;
 leafLogButtons();routeButtons();routeEditButtons();loadStatus();loadDeviceMaintenanceStatus();loadProfiles();loadLeafLogStatus();loadLogbook();loadNavData();loadUserWaypoints();
 </script></body></html>)leafapp";
@@ -2260,6 +2268,62 @@ leafLogButtons();routeButtons();routeEditButtons();loadStatus();loadDeviceMainte
       cursor = match + placeholderLen;
     }
     target.sendContent_P(cursor);
+    static constexpr char USER_APP_VARIO_SCRIPT[] PROGMEM = R"leafvario(
+<style>
+#leafLogUnlinkConfirm{box-sizing:border-box;margin-top:10px}
+.vario-settings-card{color:white}.vs-general{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;background:var(--sub);border-radius:7px;padding:10px}.vs-general-title{grid-column:1/-1;font-size:16px;margin:0}.vs-general label{margin:0}.vs-general .checkline{margin-top:24px}.vs-group{border:1px solid #858b83;border-radius:7px;padding:10px;background:rgba(0,0,0,.1);margin-top:12px}.vs-group-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;border-bottom:1px solid #777;padding-bottom:8px}.vs-group-head strong{font-size:19px}.vs-section-actions{display:flex;gap:7px;flex-wrap:wrap}.vs-section-actions button{width:auto;padding:7px 9px;font-size:13px}.vs-section-msg{width:100%;min-height:15px;margin:0;font-size:12px}.vs-layout{display:grid;grid-template-columns:58px minmax(0,1fr);gap:16px;margin-top:8px}.vs-gauge{position:sticky;top:10px;height:390px;align-self:start}.vs-track{position:absolute;left:23px;top:18px;bottom:18px;width:31px;border:2px solid #dfe5d9;border-radius:8px;background:#303332;overflow:hidden}.vs-track:after{content:"";position:absolute;left:0;right:0;top:50%;border-top:2px solid white;z-index:3}.vs-fill{position:absolute;left:0;right:0;height:0;background:var(--leaf)}.vs-rate{position:absolute;z-index:4;left:0;right:0;top:calc(50% - 14px);height:28px;display:flex;align-items:center;justify-content:center;background:white;color:#111;font-size:10px;font-weight:900;border-radius:4px}.vs-scale{position:absolute;left:0;top:18px;bottom:18px;width:18px;text-align:right;font-size:10px;color:#e2e7dc}.vs-scale span{position:absolute;left:0;right:0;transform:translateY(-50%);font-variant-numeric:tabular-nums}.vs-field{margin:9px 0}.vs-field>span{display:block;color:#e2e7dc;font-size:12px;font-weight:700;margin-bottom:3px}.vs-field.invalid>span{color:#ff8585}.vs-error{display:none;color:#ff8585;font-size:11px;font-weight:700;margin-top:4px}.vs-field.invalid .vs-error{display:block}.vs-step{display:grid;grid-template-columns:34px minmax(72px,1fr) auto 34px;gap:5px;align-items:center}.vs-step button{width:34px;height:36px;padding:0}.vs-step input{min-width:0;padding:7px;text-align:center}.vs-step b{font-size:11px;min-width:22px}.vs-field input[type=range]{padding:0;margin:7px 0 0;height:18px;border:0;background:transparent;accent-color:var(--leaf)}.vs-divider{border:0;border-top:1px solid #777;margin:15px 0 12px}.vs-derived{color:var(--leaf);font-size:12px;font-weight:750;margin:-2px 0 10px}.vs-dirty{color:var(--leaf)}@media(max-width:520px){.vs-general{grid-template-columns:1fr}.vs-general-title{grid-column:auto}.vs-general .checkline{margin-top:4px}.vs-section-actions{width:100%}.vs-section-actions button{flex:1}.vs-layout{grid-template-columns:55px minmax(0,1fr);gap:12px}.vs-track{left:22px;width:29px}}
+.vs-general-title{display:none}.vs-general .vs-step{grid-template-columns:28px minmax(34px,1fr) auto 28px;gap:3px}.vs-general .vs-step button{width:28px}@media(max-width:520px){.vs-general{grid-template-columns:repeat(2,minmax(0,1fr))}.vs-general-title{display:none}.vs-general .checkline{margin-top:24px}}
+.settings-status-tools{display:flex;align-items:center;justify-content:flex-end;gap:14px}.settings-gear{display:flex;align-items:center;justify-content:center;flex:0 0 42px;width:42px;height:42px;padding:0;background:transparent;color:#e2e7dc;border:0;box-shadow:none}.settings-gear svg{width:42px;height:42px;fill:none;stroke:currentColor;stroke-width:1.35;stroke-linecap:round;stroke-linejoin:round}.vs-step{grid-template-columns:30px minmax(58px,110px) auto 30px;justify-content:start}.vs-step button{width:30px}.vs-step.has-tone{grid-template-columns:30px minmax(58px,110px) auto 30px 34px}.vs-step .vs-tone-play{width:34px;background:var(--leaf);border-color:var(--leaf);color:#0b0d0b;font-size:17px}.vs-field input[type=range]{width:224px;max-width:100%;display:block}.vs-section-msg:empty{display:block}.vs-section-msg{min-height:16px}.vs-general-group .vs-general{background:transparent;padding:0;margin-top:8px}
+</style>
+<script>
+(function(){
+const main=document.getElementById('mainView');if(!main)return;
+const settingsView=document.createElement('div');settingsView.id='settingsView';settingsView.className='view';settingsView.innerHTML='<div class=subbar><button class=back id=backSettingsMain aria-label=Back>&#x276e;</button><h2>Settings</h2></div>';main.after(settingsView);
+const battery=document.getElementById('batteryBox'),statusSide=main.querySelector('.status-side'),statusTools=document.createElement('div'),settingsButton=document.createElement('button');statusTools.className='settings-status-tools';settingsButton.type='button';settingsButton.className='settings-gear';settingsButton.setAttribute('aria-label','Open Settings');settingsButton.title='Settings';settingsButton.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.09a2 2 0 0 1 1 1.74v.5a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>';if(statusSide&&battery){statusSide.insertBefore(statusTools,battery);statusTools.append(battery,settingsButton)}
+const numberField=(label,key,min,max,step,unit,slider=false,scale=1)=>`<div class=vs-field><span>${label}</span><div class=vs-step><button type=button data-step="-${step}" data-for="${key}">&minus;</button><input type=number data-vs="${key}" data-scale="${scale}" min="${min}" max="${max}" step="${step}"><b>${unit}</b><button type=button data-step="${step}" data-for="${key}">+</button></div>${slider?`<input type=range data-range="${key}" min="${min}" max="${max}" step="${step}">`:''}<div class=vs-error data-error="${key}"></div></div>`;
+const sectionHeader=(kind,label)=>`<div class=vs-group-head><strong>${label}</strong><div class=vs-section-actions><button type=button class=hero data-test="${kind}">Test ${label}</button><button type=button class=hero data-save="${kind}" disabled>Save to Leaf</button><button type=button class=secondary data-defaults="${kind}">Defaults</button></div><p class="muted msg vs-section-msg" data-vs-msg="${kind}"></p></div>`;
+const gauge=kind=>`<div class=vs-gauge><div id=vs${kind}Scale class=vs-scale></div><div class=vs-track><div id=vs${kind}Fill class=vs-fill></div><div id=vs${kind}Rate class=vs-rate>0.0</div></div></div>`;
+const card=document.createElement('section');card.className='vario-settings-card';card.innerHTML=`<h2>Vario Settings</h2><div class=vs-general><strong class=vs-general-title>General</strong><label>Beep volume<select data-vs=volume><option value=0>Off</option><option value=1>Low</option><option value=2>Medium</option><option value=3>High</option></select></label><label>Sensitivity<select data-vs=sensitivity><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label><label class=checkline><input type=checkbox data-vs=quiet_mode>Quiet mode until flight starts</label><label class=checkline><input type=checkbox data-vs=volume_shortcut>Enable volume shortcut</label>${numberField('Climb display average','climb_display_average_s',0,5,1,'s')}${numberField('Glide average','glide_average_s',0,20,2,'s')}</div><div class=vs-group>${sectionHeader('climb','Climb')}<div class=vs-layout>${gauge('Climb')}<div>${numberField('Tone starts at','climb_start_cms',0,.2,.05,'m/s',false,100)}${numberField('Starting tone','climb_start_hz',100,2000,5,'Hz',true)}${numberField('Starting tone length','climb_beep_start_ms',40,2000,40,'ms')}${numberField('Starting tone pause','climb_rest_start_ms',40,4000,40,'ms')}<hr class=vs-divider>${numberField('Continuous at','climb_continuous_cms',1,20,.1,'m/s',false,100)}<div class=vs-derived id=vsClimbDerived></div><hr class=vs-divider>${numberField('Maximum climb','climb_max_cms',1,20,.1,'m/s',false,100)}${numberField('Maximum tone','climb_max_hz',100,5000,5,'Hz',true)}</div></div></div><div class=vs-group>${sectionHeader('sink','Sink')}<div class=vs-layout>${gauge('Sink')}<div><div class=vs-field><span>Tone starts at</span><select data-vs=sink_alarm_cms><option value=0>Off</option><option value=-120>−1.2 m/s</option><option value=-140>−1.4 m/s</option><option value=-160>−1.6 m/s</option><option value=-180>−1.8 m/s</option><option value=-200>−2.0 m/s</option><option value=-250>−2.5 m/s</option><option value=-300>−3.0 m/s</option><option value=-400>−4.0 m/s</option><option value=-500>−5.0 m/s</option><option value=-600>−6.0 m/s</option></select><div class=vs-error data-error=sink_alarm_cms></div></div>${numberField('Starting tone','sink_start_hz',100,2000,5,'Hz',true)}${numberField('Starting tone length','sink_beep_start_ms',40,2000,40,'ms')}${numberField('Starting tone pause','sink_rest_start_ms',40,4000,40,'ms')}<hr class=vs-divider>${numberField('Continuous at','sink_continuous_cms',-20,-.7,.1,'m/s',false,100)}<div class=vs-derived id=vsSinkDerived></div><hr class=vs-divider>${numberField('Maximum sink','sink_max_cms',-20,-.8,.1,'m/s',false,100)}${numberField('Minimum tone','sink_min_hz',30,2000,5,'Hz',true)}</div></div></div>`;
+settingsView.append(card);settingsButton.onclick=()=>{show('settings');settingsView.classList.add('active')};settingsView.querySelector('#backSettingsMain').onclick=()=>{settingsView.classList.remove('active');show('main')};
+const q=s=>card.querySelector(s),qa=s=>[...card.querySelectorAll(s)],defaults={volume:2,volume_shortcut:false,quiet_mode:false,sensitivity:3,climb_display_average_s:0,glide_average_s:10,climb_start_cms:5,climb_continuous_cms:800,climb_max_cms:1200,climb_start_hz:523,climb_max_hz:2093,climb_beep_start_ms:400,climb_rest_start_ms:240,sink_alarm_cms:-250,sink_continuous_cms:-800,sink_max_cms:-1070,sink_start_hz:330,sink_min_hz:131,sink_beep_start_ms:320,sink_rest_start_ms:800},sectionKeys={general:['volume','volume_shortcut','quiet_mode','sensitivity','climb_display_average_s','glide_average_s'],climb:['climb_start_cms','climb_continuous_cms','climb_max_cms','climb_start_hz','climb_max_hz','climb_beep_start_ms','climb_rest_start_ms'],sink:['sink_alarm_cms','sink_continuous_cms','sink_max_cms','sink_start_hz','sink_min_hz','sink_beep_start_ms','sink_rest_start_ms']},help={general:'Overall vario behavior and display smoothing.',climb:'Climb tone timing, pitch, and rate thresholds.',sink:'Sink alarm timing, pitch, and rate thresholds.'};let dirty={general:false,climb:false,sink:false},running=false,busy='',formValid={general:true,climb:true,sink:true},rateFpm=false,rateScale=100,rateUnit='m/s',savedSignatures={general:'',climb:'',sink:''};
+let general=q('.vs-general'),generalGroup=document.createElement('div');generalGroup.className='vs-group vs-general-group';general.before(generalGroup);generalGroup.innerHTML='<div class=vs-group-head><strong>General</strong><div class=vs-section-actions><button type=button class=hero data-save="general" disabled>Save to Leaf</button><button type=button class=secondary data-defaults="general">Defaults</button></div><p class="muted msg vs-section-msg" data-vs-msg="general"></p></div>';generalGroup.append(general);
+const rename=(key,text)=>{let e=q(`[data-vs="${key}"]`),s=e&&e.closest('.vs-field').querySelector(':scope>span');if(s)s.textContent=text};
+let climbStartField=q('[data-vs="climb_start_cms"]').closest('.vs-field');climbStartField.innerHTML='<span>Beeping starts at</span><select data-vs=climb_start_cms></select><div class=vs-error data-error=climb_start_cms></div>';rename('climb_rest_start_ms','Starting pause length');rename('climb_continuous_cms','Continuous above');rename('climb_max_hz','Final tone');rename('sink_alarm_cms','Sink alarm starts at');rename('sink_continuous_cms','Continuous below');rename('sink_min_hz','Final tone');
+['climb_start_hz','climb_max_hz','sink_start_hz','sink_min_hz'].forEach(k=>{let row=q(`[data-vs="${k}"]`).closest('.vs-step'),b=document.createElement('button');row.classList.add('has-tone');b.type='button';b.className='vs-tone-play';b.dataset.tone=k;b.title='Play this tone';b.setAttribute('aria-label','Play this tone');b.innerHTML='&#9654;';row.append(b)});
+function message(kind,t,bad=false){let e=q(`[data-vs-msg="${kind}"]`);if(!e)return;e.textContent=t||help[kind];e.classList.toggle('vs-dirty',bad)}
+const rateSpecs={climb_continuous_cms:[100,2000,10],climb_max_cms:[100,2000,10],sink_continuous_cms:[-2000,-700,10],sink_max_cms:[-2000,-800,10]},climbStartCms=[0,5,10,15,20],climbStartFpm=[0,10,20,30,40],sinkAlarmCms=[0,-120,-140,-160,-180,-200,-250,-300,-400,-500,-600],sinkAlarmFpm=[0,-240,-280,-320,-360,-400,-500,-600,-800,-1000,-1200];
+const shownRate=cms=>rateFpm?Math.round(cms*196.85/100):Number((cms/100).toFixed(2)),cmsAsShown=cms=>cms/rateScale;
+function fillRateSelect(key,cmsValues,fpmValues,off){let e=q(`[data-vs="${key}"]`);e.innerHTML=cmsValues.map((cms,i)=>`<option value="${cms}">${off&&i==0?'Off':(rateFpm?fpmValues[i]:shownRate(cms))+' '+rateUnit}</option>`).join('')}
+function configureUnits(fpm){rateFpm=!!fpm;rateScale=rateFpm?100/196.85:100;rateUnit=rateFpm?'fpm':'m/s';Object.entries(rateSpecs).forEach(([k,s])=>{let e=q(`[data-vs="${k}"]`),u=e.closest('.vs-step').querySelector('b');e.dataset.rate='1';e.dataset.scale=rateScale;e.min=shownRate(s[0]);e.max=shownRate(s[1]);e.step=rateFpm?20:s[2]/100;if(u)u.textContent=rateUnit;qa(`[data-step][data-for="${k}"]`).forEach((b,i)=>b.dataset.step=(i?1:-1)*(rateFpm?20:s[2]/100))});fillRateSelect('climb_start_cms',climbStartCms,climbStartFpm,false);fillRateSelect('sink_alarm_cms',sinkAlarmCms,sinkAlarmFpm,true);scaleModes={Climb:'',Sink:''}}
+function setControl(e,v){if(e.type=='checkbox')e.checked=!!v;else if(e.dataset.rate)e.value=shownRate(Number(v));else{let scale=Number(e.dataset.scale)||1;e.value=Number(v)/scale}}
+function readForm(){let d={};qa('[data-vs]').forEach(e=>{let k=e.dataset.vs;if(e.type=='checkbox')d[k]=e.checked;else d[k]=Math.round(Number(e.value)*(Number(e.dataset.scale)||1))});return d}
+function readSection(kind){let all=readForm(),d={};sectionKeys[kind].forEach(k=>d[k]=all[k]);return d}
+function syncRanges(kind){qa('[data-range]').forEach(r=>{if(!sectionKeys[kind].includes(r.dataset.range))return;let i=q(`[data-vs="${r.dataset.range}"]`);if(i)r.value=i.value})}
+function setSectionForm(kind,d){sectionKeys[kind].forEach(k=>{let e=q(`[data-vs="${k}"]`);if(e&&d[k]!==undefined)setControl(e,d[k])});syncRanges(kind);savedSignatures[kind]=JSON.stringify(readSection(kind));dirty[kind]=false;message(kind,'');updateDerived(kind);updateButtons()}
+function setForm(d){configureUnits(d.climb_fpm);Object.keys(sectionKeys).forEach(kind=>{sectionKeys[kind].forEach(k=>{let e=q(`[data-vs="${k}"]`);if(e&&d[k]!==undefined)setControl(e,d[k])});syncRanges(kind);savedSignatures[kind]=JSON.stringify(readSection(kind));dirty[kind]=false;message(kind,'')});updateDerived('climb');updateDerived('sink');updateButtons();setRate('Climb',0);setRate('Sink',0)}
+const value=k=>Number(q(`[data-vs="${k}"]`).value),rate=n=>`${n>0?'+':''}${rateFpm?Math.round(n):n.toFixed(2).replace(/0+$/,'').replace(/\.$/,'')} ${rateUnit}`;
+function validate(kind){sectionKeys[kind].forEach(k=>{let input=q(`[data-vs="${k}"]`),field=input&&input.closest('.vs-field'),error=q(`[data-error="${k}"]`);if(field)field.classList.remove('invalid');if(error)error.textContent=''});let valid=true,fail=(key,text)=>{let input=q(`[data-vs="${key}"]`),field=input&&input.closest('.vs-field'),error=q(`[data-error="${key}"]`);if(field)field.classList.add('invalid');if(error)error.textContent=text;valid=false};if(kind=='climb'){let start=cmsAsShown(value('climb_start_cms')),continuous=value('climb_continuous_cms'),max=value('climb_max_cms'),startTone=value('climb_start_hz'),maxTone=value('climb_max_hz');if(continuous<=start)fail('climb_continuous_cms',`Must be higher than Beeping starts at (${rate(start)}).`);if(max<=continuous)fail('climb_max_cms',`Must be higher than Continuous above (${rate(continuous)}).`);if(maxTone<=startTone)fail('climb_max_hz',`Must be higher than Starting tone (${startTone} Hz).`)}else if(kind=='sink'){let start=cmsAsShown(value('sink_alarm_cms')),continuous=value('sink_continuous_cms'),max=value('sink_max_cms'),startTone=value('sink_start_hz'),minTone=value('sink_min_hz');if(continuous>=start)fail('sink_continuous_cms',`Must be lower than Sink alarm starts at (${start==0?'Off':rate(start)}).`);if(max>=continuous)fail('sink_max_cms',`Must be lower than Continuous below (${rate(continuous)}).`);if(minTone>=startTone)fail('sink_min_hz',`Must be lower than Starting tone (${startTone} Hz).`)}formValid[kind]=valid;return valid}
+function updateDerived(kind){validate(kind);if(kind=='climb'){let start=cmsAsShown(value('climb_start_cms')),continuous=value('climb_continuous_cms'),max=value('climb_max_cms'),startTone=value('climb_start_hz'),maxTone=value('climb_max_hz'),tone=startTone+(continuous-start)*(maxTone-startTone)/(max-start);q('#vsClimbDerived').textContent=Number.isFinite(tone)&&max>start?`Interpolated continuous tone: ${Math.round(tone)} Hz`:''}else if(kind=='sink'){let start=cmsAsShown(value('sink_alarm_cms')),continuous=value('sink_continuous_cms'),max=value('sink_max_cms'),startTone=value('sink_start_hz'),minTone=value('sink_min_hz'),tone=startTone-(start-continuous)*(startTone-minTone)/(start-max);q('#vsSinkDerived').textContent=Number.isFinite(tone)&&start>max?`Interpolated continuous tone: ${Math.round(tone)} Hz`:''}}
+function kindForKey(key){return key.startsWith('climb_')?'climb':key.startsWith('sink_')?'sink':'general'}
+function changed(kind){updateDerived(kind);dirty[kind]=JSON.stringify(readSection(kind))!==savedSignatures[kind];message(kind,dirty[kind]?(formValid[kind]?(kind=='general'?'Unsaved changes.':'Unsaved changes — save to enable tests.'):'Fix the highlighted settings before saving.'):'',dirty[kind]);updateButtons()}
+function updateButtons(){qa('[data-save]').forEach(b=>{let kind=b.dataset.save;b.disabled=running||busy==kind||!dirty[kind]||!formValid[kind]});qa('[data-test]').forEach(b=>{let kind=b.dataset.test;b.disabled=running||busy==kind||dirty[kind]||!formValid[kind]});qa('[data-defaults]').forEach(b=>b.disabled=running||busy==b.dataset.defaults);qa('[data-tone]').forEach(b=>b.disabled=running||busy==kindForKey(b.dataset.tone))}
+let scaleModes={Climb:'',Sink:''};
+function renderScale(kind,rate){let mid=rateFpm?1000:5,end=mid*2,high=Math.abs(rate)>mid,mode=(high?'high':'low')+(rateFpm?'f':'m');if(scaleModes[kind]==mode)return;scaleModes[kind]=mode;let climb=kind=='Climb',step=mid/5,values=climb?(high?[end,end-step,end-step*2,end-step*3,end-step*4,mid]:[mid,mid-step,mid-step*2,mid-step*3,mid-step*4,0]):(high?[-mid,-mid-step,-mid-step*2,-mid-step*3,-mid-step*4,-end]:[0,-step,-step*2,-step*3,-step*4,-mid]),start=climb?0:50;q(`#vs${kind}Scale`).innerHTML=values.map((v,i)=>`<span style="top:${start+i*10}%">${v>0?'+':''}${v}</span>`).join('')}
+function setRate(kind,rate){q(`#vs${kind}Rate`).textContent=(rate>0?'+':'')+(rateFpm?Math.round(rate):rate.toFixed(1));renderScale(kind,rate);let mid=rateFpm?1000:5,end=mid*2,fill=q(`#vs${kind}Fill`),m=Math.min(Math.abs(rate),end),h=m<=mid?m/mid*50:Math.max(0,(end-m)/mid*50);fill.style.height=h+'%';fill.style.top=kind=='Climb'?(m<=mid?50-h:0)+'%':(m<=mid?50:100-h)+'%'}
+function animateRate(target,ramp,hold){let gaugeKind=target>=0?'Climb':'Sink',kind=gaugeKind.toLowerCase(),start=performance.now(),duration=ramp*2+hold;setRate(gaugeKind,0);function frame(now){let e=now-start,rate=e<ramp?target*e/ramp:e<ramp+hold?target:e<duration?target*(duration-e)/ramp:0;setRate(gaugeKind,rate);if(e<duration)requestAnimationFrame(frame);else{running=false;updateButtons();message(kind,'Test complete.')}}requestAnimationFrame(frame)}
+async function load(){Object.keys(sectionKeys).forEach(k=>message(k,'Loading...'));try{let r=await fetch('/api/settings/vario'),d=await r.json();if(!r.ok)throw d;setForm(d)}catch(e){Object.keys(sectionKeys).forEach(k=>message(k,'Unable to load vario settings.',true))}}
+async function save(kind){busy=kind;updateButtons();message(kind,'Saving...');try{let r=await fetch('/api/settings/vario',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(readSection(kind))}),d=await r.json().catch(()=>({}));if(!r.ok)throw d;setSectionForm(kind,d);busy='';updateButtons();message(kind,'Settings saved.')}catch(e){busy='';message(kind,e&&e.detail?e.detail:'Unable to save vario settings.',true);updateButtons()}}
+async function test(kind){if(dirty[kind]){message(kind,'Save changes before testing.',true);return}running=true;updateButtons();message(kind,'Running '+kind+' test...');try{let r=await fetch('/api/settings/vario/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kind:kind})}),d=await r.json().catch(()=>({}));if(!r.ok)throw d;animateRate(cmsAsShown(Number(d.target_cms)),Number(d.ramp_ms)||15000,Number(d.hold_ms)||1500)}catch(e){running=false;updateButtons();message(kind,e&&e.detail?e.detail:'Unable to start test.',true)}}
+async function playTone(key,button){let kind=kindForKey(key),frequency=Math.round(value(key));button.disabled=true;message(kind,`Playing ${frequency} Hz...`);try{let r=await fetch('/api/settings/vario/tone',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({frequency_hz:frequency})}),d=await r.json().catch(()=>({}));if(!r.ok)throw d;setTimeout(()=>{button.disabled=false;message(kind,dirty[kind]?'Unsaved changes — save to enable tests.':'',dirty[kind])},500)}catch(e){button.disabled=false;message(kind,e&&e.detail?e.detail:'Unable to play tone.',true)}}
+function restore(kind){sectionKeys[kind].forEach(k=>setControl(q(`[data-vs="${k}"]`),defaults[k]));syncRanges(kind);changed(kind);if(dirty[kind])message(kind,`${kind[0].toUpperCase()+kind.slice(1)} defaults loaded — save to apply.`,true)}
+const snapped=(v,step)=>{let p=(String(step).split('.')[1]||'').length;return Number(v.toFixed(p))};
+card.onclick=e=>{let step=e.target.closest('[data-step]');if(step){let key=step.dataset.for,i=q(`[data-vs="${key}"]`),amount=Number(step.dataset.step),v=snapped(Number(i.value)+amount,Math.abs(amount));i.value=Math.max(Number(i.min),Math.min(Number(i.max),v));let r=q(`[data-range="${key}"]`);if(r)r.value=i.value;changed(kindForKey(key));return}let tone=e.target.closest('[data-tone]');if(tone){playTone(tone.dataset.tone,tone);return}let t=e.target.closest('[data-test]');if(t){test(t.dataset.test);return}let s=e.target.closest('[data-save]');if(s){save(s.dataset.save);return}let d=e.target.closest('[data-defaults]');if(d)restore(d.dataset.defaults)};
+card.oninput=e=>{if(e.target.dataset.range){let key=e.target.dataset.range,i=q(`[data-vs="${key}"]`);i.value=e.target.value;changed(kindForKey(key))}else if(e.target.dataset.vs){let key=e.target.dataset.vs,r=q(`[data-range="${key}"]`);if(r)r.value=e.target.value;changed(kindForKey(key))}};
+card.onchange=e=>{let i=e.target;if(i.matches('input[type=number][data-vs]')){let step=Number(i.step)||1;i.value=snapped(Number(i.value),step);let r=q(`[data-range="${i.dataset.vs}"]`);if(r)r.value=i.value;changed(kindForKey(i.dataset.vs))}};
+setRate('Climb',0);setRate('Sink',0);load();
+})();
+</script>)leafvario";
+    target.sendContent_P(USER_APP_VARIO_SCRIPT);
     if (!settings.dev_mode) {
       return;
     }
@@ -2344,6 +2408,213 @@ load();
     json += "}";
     sendNoStoreHeaders(target);
     target.send(200, "application/json", json);
+  }
+
+  int32_t sinkAlarmCms() {
+    if (settings.vario_sinkAlarm_units) {
+      static constexpr int32_t FPM_OPTIONS[] = {0,    -240, -280, -320,  -360, -400,
+                                                -500, -600, -800, -1000, -1200};
+      static constexpr int32_t CMS_OPTIONS[] = {0,    -120, -140, -160, -180, -200,
+                                                -250, -300, -400, -500, -600};
+      size_t closest = 0;
+      float closestError = INFINITY;
+      for (size_t i = 0; i < sizeof(FPM_OPTIONS) / sizeof(FPM_OPTIONS[0]); i++) {
+        const float error = fabsf(settings.vario_sinkAlarm - FPM_OPTIONS[i]);
+        if (error < closestError) {
+          closest = i;
+          closestError = error;
+        }
+      }
+      return CMS_OPTIONS[closest];
+    }
+    return settings.vario_sinkAlarm * 100;
+  }
+
+  void sendVarioSettings(WebServer& target) {
+    const VarioAudioProfile& audio = settings.varioAudio;
+    JsonDocument doc;
+    doc["volume"] = settings.vario_volume;
+    doc["volume_shortcut"] = settings.volumeShortcut;
+    doc["quiet_mode"] = settings.vario_quietMode;
+    doc["sensitivity"] = static_cast<int8_t>(settings.vario_sensitivity);
+    doc["climb_display_average_s"] = settings.vario_climbDisplayAverage;
+    doc["glide_average_s"] = settings.glideAverageSeconds;
+    doc["climb_fpm"] = settings.units_climb;
+    doc["climb_start_cms"] = settings.vario_climbStart;
+    doc["climb_continuous_cms"] = audio.climbContinuous;
+    doc["climb_max_cms"] = audio.climbMax;
+    doc["climb_start_hz"] = audio.climbNoteStart;
+    doc["climb_max_hz"] = audio.climbNoteMax;
+    doc["climb_beep_start_ms"] = audio.climbPlaySamplesMax * 40;
+    doc["climb_rest_start_ms"] = audio.climbRestSamplesMax * 40;
+    doc["sink_alarm_cms"] = sinkAlarmCms();
+    doc["sink_continuous_cms"] = audio.sinkContinuous;
+    doc["sink_max_cms"] = audio.sinkMax;
+    doc["sink_start_hz"] = audio.sinkNoteStart;
+    doc["sink_min_hz"] = audio.sinkNoteMin;
+    doc["sink_beep_start_ms"] = audio.sinkPlaySamplesMin * 40;
+    doc["sink_rest_start_ms"] = audio.sinkRestSamplesMin * 40;
+
+    String json;
+    json.reserve(768);
+    serializeJson(doc, json);
+    sendNoStoreHeaders(target);
+    target.send(200, "application/json", json);
+  }
+
+  bool isAllowedSinkAlarm(int32_t value) {
+    static constexpr int32_t OPTIONS[] = {0,    -120, -140, -160, -180, -200,
+                                          -250, -300, -400, -500, -600};
+    for (int32_t option : OPTIONS) {
+      if (value == option) return true;
+    }
+    return false;
+  }
+
+  void updateVarioSettings(WebServer& target) {
+    JsonDocument doc;
+    const DeserializationError error = deserializeJson(doc, target.arg("plain"));
+    if (error || !doc.is<JsonObject>()) {
+      target.send(400, "application/json", "{\"detail\":\"Invalid settings JSON.\"}");
+      return;
+    }
+
+    const auto integer = [&doc](const char* key, int32_t current) {
+      return doc[key].isNull() ? current : doc[key].as<int32_t>();
+    };
+    const auto boolean = [&doc](const char* key, bool current) {
+      return doc[key].isNull() ? current : doc[key].as<bool>();
+    };
+
+    const int32_t volume = integer("volume", settings.vario_volume);
+    const int32_t sensitivity = integer("sensitivity", settings.vario_sensitivity);
+    const int32_t climbDisplayAverage =
+        integer("climb_display_average_s", settings.vario_climbDisplayAverage);
+    const int32_t glideAverage = integer("glide_average_s", settings.glideAverageSeconds);
+    const int32_t climbStart = integer("climb_start_cms", settings.vario_climbStart);
+    const int32_t sinkAlarm = integer("sink_alarm_cms", sinkAlarmCms());
+
+    VarioAudioProfile audio = settings.varioAudio;
+    audio.climbContinuous = integer("climb_continuous_cms", audio.climbContinuous);
+    audio.climbMax = integer("climb_max_cms", audio.climbMax);
+    const int32_t climbNoteStart = integer("climb_start_hz", audio.climbNoteStart);
+    const int32_t climbNoteMax = integer("climb_max_hz", audio.climbNoteMax);
+    const int32_t climbBeepStart = integer("climb_beep_start_ms", audio.climbPlaySamplesMax * 40);
+    const int32_t climbRestStart = integer("climb_rest_start_ms", audio.climbRestSamplesMax * 40);
+    audio.sinkContinuous = integer("sink_continuous_cms", audio.sinkContinuous);
+    audio.sinkMax = integer("sink_max_cms", audio.sinkMax);
+    const int32_t sinkNoteStart = integer("sink_start_hz", audio.sinkNoteStart);
+    const int32_t sinkNoteMin = integer("sink_min_hz", audio.sinkNoteMin);
+    const int32_t sinkBeepStart = integer("sink_beep_start_ms", audio.sinkPlaySamplesMin * 40);
+    const int32_t sinkRestStart = integer("sink_rest_start_ms", audio.sinkRestSamplesMin * 40);
+
+    const bool timingValid =
+        climbBeepStart >= 40 && climbBeepStart <= 2000 && climbBeepStart % 40 == 0 &&
+        climbRestStart >= 40 && climbRestStart <= 4000 && climbRestStart % 40 == 0 &&
+        sinkBeepStart >= 40 && sinkBeepStart <= 2000 && sinkBeepStart % 40 == 0 &&
+        sinkRestStart >= 40 && sinkRestStart <= 4000 && sinkRestStart % 40 == 0;
+    const bool climbValid = climbStart >= 0 && climbStart <= 20 && climbStart % 5 == 0 &&
+                            audio.climbContinuous >= 100 &&
+                            audio.climbContinuous < audio.climbMax && audio.climbMax <= 2000 &&
+                            climbNoteStart >= 100 && climbNoteStart < climbNoteMax &&
+                            climbNoteMax <= 5000;
+    const bool sinkValid = isAllowedSinkAlarm(sinkAlarm) && audio.sinkMax >= -2000 &&
+                           audio.sinkMax < audio.sinkContinuous && audio.sinkContinuous <= -700 &&
+                           audio.sinkContinuous < sinkAlarm && sinkNoteStart >= 100 &&
+                           sinkNoteStart <= 2000 && sinkNoteMin >= 30 &&
+                           sinkNoteMin < sinkNoteStart;
+    const bool generalValid = volume >= 0 && volume <= 3 && sensitivity >= 1 && sensitivity <= 5 &&
+                              climbDisplayAverage >= 0 && climbDisplayAverage <= 5 &&
+                              glideAverage >= 0 && glideAverage <= 20 && glideAverage % 2 == 0;
+    if (!timingValid || !climbValid || !sinkValid || !generalValid) {
+      target.send(422, "application/json",
+                  "{\"detail\":\"One or more vario settings are out of range.\"}");
+      return;
+    }
+
+    audio.climbNoteStart = climbNoteStart;
+    audio.climbNoteMax = climbNoteMax;
+    audio.climbPlaySamplesMax = climbBeepStart / 40;
+    audio.climbRestSamplesMax = climbRestStart / 40;
+    audio.sinkNoteStart = sinkNoteStart;
+    audio.sinkNoteMin = sinkNoteMin;
+    audio.sinkPlaySamplesMin = sinkBeepStart / 40;
+    audio.sinkRestSamplesMin = sinkRestStart / 40;
+
+    settings.vario_volume = volume;
+    settings.volumeShortcut = boolean("volume_shortcut", settings.volumeShortcut);
+    settings.vario_quietMode = boolean("quiet_mode", settings.vario_quietMode);
+    settings.vario_sensitivity = sensitivity;
+    settings.vario_climbDisplayAverage = climbDisplayAverage;
+    settings.glideAverageSeconds = glideAverage;
+    settings.vario_climbStart = climbStart;
+    if (settings.units_climb) {
+      static constexpr int32_t CMS_OPTIONS[] = {0,    -120, -140, -160, -180, -200,
+                                                -250, -300, -400, -500, -600};
+      static constexpr int32_t FPM_OPTIONS[] = {0,    -240, -280, -320,  -360, -400,
+                                                -500, -600, -800, -1000, -1200};
+      for (size_t i = 0; i < sizeof(CMS_OPTIONS) / sizeof(CMS_OPTIONS[0]); i++) {
+        if (sinkAlarm == CMS_OPTIONS[i]) {
+          settings.vario_sinkAlarm = FPM_OPTIONS[i];
+          break;
+        }
+      }
+      settings.vario_sinkAlarm_units = true;
+    } else {
+      settings.vario_sinkAlarm = sinkAlarm / 100.0f;
+      settings.vario_sinkAlarm_units = false;
+    }
+    settings.varioAudio = audio;
+    settings.resetShortcutVolume();
+    baro.setClimbDisplayAverageSeconds(settings.vario_climbDisplayAverage);
+    gps.setGlideAverageSeconds(settings.glideAverageSeconds);
+    settings.save();
+    speaker.playSound(fx::enter);
+    sendVarioSettings(target);
+  }
+
+  void playVarioTone(WebServer& target) {
+    JsonDocument doc;
+    const DeserializationError error = deserializeJson(doc, target.arg("plain"));
+    const int32_t frequency = doc["frequency_hz"] | 0;
+    if (error || frequency < 30 || frequency > 5000) {
+      target.send(422, "application/json", "{\"detail\":\"Tone frequency is out of range.\"}");
+      return;
+    }
+    speaker.playVarioToneFor(static_cast<note::note_t>(frequency), 500);
+    target.send(202, "application/json", "{\"started\":true,\"duration_ms\":500}");
+  }
+
+  void startVarioTest(WebServer& target) {
+    const String kind = extractJsonStringValue(target.arg("plain"), "kind");
+    const VarioAudioProfile& audio = settings.varioAudio;
+    int32_t targetRate = 0;
+    if (kind == "climb") {
+      targetRate = audio.climbMax;
+    } else if (kind == "sink") {
+      const int32_t alarm = sinkAlarmCms();
+      if (alarm == 0) {
+        target.send(409, "application/json",
+                    "{\"detail\":\"Enable Sink Alarm before testing the sink tone.\"}");
+        return;
+      }
+      targetRate = audio.sinkMax;
+    } else {
+      target.send(400, "application/json", "{\"detail\":\"Test kind must be climb or sink.\"}");
+      return;
+    }
+
+    speaker.startVarioTest(targetRate);
+    String json = "{\"started\":true,\"target_cms\":";
+    json += targetRate;
+    json += ",\"ramp_ms\":";
+    json += Speaker::varioTestRampMs();
+    json += ",\"hold_ms\":";
+    json += Speaker::varioTestHoldMs();
+    json += ",\"duration_ms\":";
+    json += Speaker::varioTestDurationMs();
+    json += "}";
+    target.send(202, "application/json", json);
   }
 
   void sendDebugSessionStatus(WebServer& target) {
@@ -3164,6 +3435,18 @@ load();
           if (diagnosticsEnabled()) user_app_route_status_count++;
           sendUserStatus(user_server);
         });
+      });
+      user_server.on("/api/settings/vario", HTTP_GET, []() {
+        handleUserRequest("GET /api/settings/vario", []() { sendVarioSettings(user_server); });
+      });
+      user_server.on("/api/settings/vario", HTTP_PUT, []() {
+        handleUserRequest("PUT /api/settings/vario", []() { updateVarioSettings(user_server); });
+      });
+      user_server.on("/api/settings/vario/test", HTTP_POST, []() {
+        handleUserRequest("POST /api/settings/vario/test", []() { startVarioTest(user_server); });
+      });
+      user_server.on("/api/settings/vario/tone", HTTP_POST, []() {
+        handleUserRequest("POST /api/settings/vario/tone", []() { playVarioTone(user_server); });
       });
       user_server.on("/api/firmware/update-status", HTTP_POST, []() {
         handleUserRequest("POST /api/firmware/update-status",

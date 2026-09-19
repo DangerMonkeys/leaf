@@ -22,7 +22,23 @@ namespace {
       {0, -1.2, -1.4, -1.6, -1.8, -2.0, -2.5, -3.0, -4.0, -5.0, -6.0},   // m/s
       {0, -240, -280, -320, -360, -400, -500, -600, -800, -1000, -1200}  // fpm
   };
-}
+
+  bool validVarioAudioProfile(const VarioAudioProfile& profile) {
+    const bool climbValid =
+        profile.climbContinuous >= 100 && profile.climbContinuous < profile.climbMax &&
+        profile.climbMax <= 2000 && profile.climbNoteStart >= 100 &&
+        profile.climbNoteStart < profile.climbNoteMax && profile.climbNoteMax <= 5000 &&
+        profile.climbPlaySamplesMax >= 1 && profile.climbPlaySamplesMax <= 50 &&
+        profile.climbRestSamplesMax >= 1 && profile.climbRestSamplesMax <= 100;
+    const bool sinkValid = profile.sinkMax >= -2000 && profile.sinkMax < profile.sinkContinuous &&
+                           profile.sinkContinuous <= -700 && profile.sinkNoteStart >= 100 &&
+                           profile.sinkNoteStart <= 2000 && profile.sinkNoteMin >= 30 &&
+                           profile.sinkNoteMin < profile.sinkNoteStart &&
+                           profile.sinkPlaySamplesMin >= 1 && profile.sinkPlaySamplesMin <= 50 &&
+                           profile.sinkRestSamplesMin >= 1 && profile.sinkRestSamplesMin <= 100;
+    return climbValid && sinkValid;
+  }
+}  // namespace
 
 Settings settings;
 
@@ -224,6 +240,7 @@ void Settings::loadDefaults() {
   vario_quietMode = DEF_QUIET_MODE;
   vario_tones = DEF_VARIO_TONES;
   vario_liftyAir = DEF_LIFTY_AIR;
+  varioAudio = VarioAudioProfile{};
   vario_altSetting = DEF_ALT_SETTING;
   vario_altSyncToGPS = DEF_ALT_SYNC_GPS;
 
@@ -309,6 +326,19 @@ void Settings::retrieve() {
   vario_quietMode = leafPrefs.getBool("QUIET_MODE");
   vario_tones = leafPrefs.getBool("VARIO_TONES");
   vario_liftyAir = leafPrefs.getChar("LIFTY_AIR");
+  varioAudio.climbContinuous = leafPrefs.getInt("clMax", CLIMB_CONTINUOUS);
+  varioAudio.climbMax = leafPrefs.getInt("clRateCap", CLIMB_MAX);
+  varioAudio.climbNoteStart = leafPrefs.getUShort("clHzStart", CLIMB_NOTE_START);
+  varioAudio.climbNoteMax = leafPrefs.getUShort("clHzCap", CLIMB_NOTE_MAX);
+  varioAudio.climbPlaySamplesMax = leafPrefs.getUShort("clOnStart", CLIMB_PLAY_SAMPLES_MAX);
+  varioAudio.climbRestSamplesMax = leafPrefs.getUShort("clOffStart", CLIMB_REST_SAMPLES_MAX);
+  varioAudio.sinkContinuous = leafPrefs.getInt("skMax", SINK_CONTINUOUS);
+  varioAudio.sinkMax = leafPrefs.getInt("skRateFloor", SINK_MAX);
+  varioAudio.sinkNoteStart = leafPrefs.getUShort("skHzStart", SINK_NOTE_START);
+  varioAudio.sinkNoteMin = leafPrefs.getUShort("skHzFloor", SINK_NOTE_MIN);
+  varioAudio.sinkPlaySamplesMin = leafPrefs.getUShort("skOnStart", SINK_PLAY_SAMPLES_MIN);
+  varioAudio.sinkRestSamplesMin = leafPrefs.getUShort("skOffStart", SINK_REST_SAMPLES_MIN);
+  if (!validVarioAudioProfile(varioAudio)) varioAudio = VarioAudioProfile{};
   vario_altSetting = leafPrefs.getFloat("ALT_SETTING");
   vario_altSyncToGPS = leafPrefs.getBool("ALT_SYNC_GPS");
 
@@ -409,6 +439,18 @@ void Settings::save() {
   leafPrefs.putBool("QUIET_MODE", vario_quietMode);
   leafPrefs.putBool("VARIO_TONES", vario_tones);
   leafPrefs.putChar("LIFTY_AIR", vario_liftyAir);
+  leafPrefs.putInt("clMax", varioAudio.climbContinuous);
+  leafPrefs.putInt("clRateCap", varioAudio.climbMax);
+  leafPrefs.putUShort("clHzStart", varioAudio.climbNoteStart);
+  leafPrefs.putUShort("clHzCap", varioAudio.climbNoteMax);
+  leafPrefs.putUShort("clOnStart", varioAudio.climbPlaySamplesMax);
+  leafPrefs.putUShort("clOffStart", varioAudio.climbRestSamplesMax);
+  leafPrefs.putInt("skMax", varioAudio.sinkContinuous);
+  leafPrefs.putInt("skRateFloor", varioAudio.sinkMax);
+  leafPrefs.putUShort("skHzStart", varioAudio.sinkNoteStart);
+  leafPrefs.putUShort("skHzFloor", varioAudio.sinkNoteMin);
+  leafPrefs.putUShort("skOnStart", varioAudio.sinkPlaySamplesMin);
+  leafPrefs.putUShort("skOffStart", varioAudio.sinkRestSamplesMin);
   leafPrefs.putFloat("ALT_SETTING", vario_altSetting);
   leafPrefs.putBool("ALT_SYNC_GPS", vario_altSyncToGPS);
   // GPS & Track Log Settings
