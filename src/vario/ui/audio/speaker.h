@@ -41,7 +41,11 @@ class Speaker : private StateAssertMixin<Speaker> {
 
   // Temporarily replace live barometer input with a smooth 0 -> target -> 0 test sweep.
   void startVarioTest(int32_t targetVerticalRate);
-  static constexpr uint32_t varioTestDurationMs() { return 11500; }
+  static constexpr uint32_t varioTestRampMs() { return 15000; }
+  static constexpr uint32_t varioTestHoldMs() { return 1500; }
+  static constexpr uint32_t varioTestDurationMs() {
+    return varioTestRampMs() * 2 + varioTestHoldMs();
+  }
 
   // Call periodically to play sounds.  Returns true if there are notes left to play.
   bool update();

@@ -17,8 +17,6 @@ Speaker speaker;
 namespace {
   constexpr unsigned long NOTE_DURATION_MS = 40;
   constexpr unsigned long TIMING_TOLERANCE_MS = 2;
-  constexpr uint32_t VARIO_TEST_RAMP_MS = 5000;
-  constexpr uint32_t VARIO_TEST_HOLD_MS = 1500;
 }  // namespace
 
 void Speaker::init(void) {
@@ -219,17 +217,17 @@ void Speaker::updateVarioTest() {
   if (!varioTestActive_) return;
 
   const uint32_t elapsed = millis() - varioTestStartedMs_;
-  const uint32_t rampDownStart = VARIO_TEST_RAMP_MS + VARIO_TEST_HOLD_MS;
-  const uint32_t end = rampDownStart + VARIO_TEST_RAMP_MS;
+  const uint32_t rampDownStart = varioTestRampMs() + varioTestHoldMs();
+  const uint32_t end = rampDownStart + varioTestRampMs();
   int32_t verticalRate = 0;
-  if (elapsed < VARIO_TEST_RAMP_MS) {
+  if (elapsed < varioTestRampMs()) {
     verticalRate = static_cast<int32_t>(static_cast<int64_t>(varioTestTargetRate_) * elapsed /
-                                        VARIO_TEST_RAMP_MS);
+                                        varioTestRampMs());
   } else if (elapsed < rampDownStart) {
     verticalRate = varioTestTargetRate_;
   } else if (elapsed < end) {
     verticalRate = static_cast<int32_t>(static_cast<int64_t>(varioTestTargetRate_) *
-                                        (end - elapsed) / VARIO_TEST_RAMP_MS);
+                                        (end - elapsed) / varioTestRampMs());
   } else {
     varioTestActive_ = false;
   }
