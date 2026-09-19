@@ -147,16 +147,18 @@ void Speaker::updateVarioNote(int32_t verticalRate) {
 
     // if we trigger sink threshold
   } else if (sinkAlarmEnabled && verticalRate < sinkAlarm_cms) {
+    const int32_t sinkRateRange = sinkAlarm_cms - SINK_MAX;
+    const int32_t sinkRatePastAlarm = sinkAlarm_cms - verticalRate;
+    int32_t sinkNote =
+        SINK_NOTE_MIN - sinkRatePastAlarm * (SINK_NOTE_MIN - SINK_NOTE_MAX) / sinkRateRange;
+    if (sinkNote < SINK_NOTE_MAXMAX) sinkNote = SINK_NOTE_MAXMAX;
+    newVarioNote = sinkNote;
+
     // first clamp to thresholds if sinkRate is over the max
     if (verticalRate <= SINK_MAX) {
-      newVarioNote = SINK_NOTE_MIN - verticalRate * (SINK_NOTE_MIN - SINK_NOTE_MAX) / SINK_MAX;
-      if (newVarioNote < SINK_NOTE_MAXMAX || newVarioNote > SINK_NOTE_MAX)
-        newVarioNote = SINK_NOTE_MAXMAX;  // the second condition (|| > SINK_NOTE_MAX) is to prevent
-                                          // uint16 wrap-around to a much higher number
       newVarioPlaySamples = SINK_PLAY_SAMPLES_MAX;
       newVarioRestSamples = 0;  // just hold a continuous tone, no pulses
     } else {
-      newVarioNote = SINK_NOTE_MIN - verticalRate * (SINK_NOTE_MIN - SINK_NOTE_MAX) / SINK_MAX;
       newVarioPlaySamples =
           SINK_PLAY_SAMPLES_MIN +
           (verticalRate * (SINK_PLAY_SAMPLES_MAX - SINK_PLAY_SAMPLES_MIN) / SINK_MAX);

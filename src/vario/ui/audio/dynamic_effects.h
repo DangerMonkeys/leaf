@@ -14,9 +14,9 @@ constexpr int32_t CLIMB_NOTE_MAX = 1568;
 constexpr uint16_t CLIMB_NOTE_MAXMAX = 2093;
 
 // SINK TONE DEFINITIONS
-constexpr int32_t SINK_MAX = -800;      // at this sink rate, tone doesn't get lower
-constexpr int32_t SINK_NOTE_MIN = 392;  // highest tone pitch for sink >  settings.vario_sinkAlarm
-// lowest tone pitch for sink @ SINK_MAX (when vario bottoms out and starts holding a solid tone)
+constexpr int32_t SINK_MAX = -800;      // at this sink rate, the tone becomes continuous
+constexpr int32_t SINK_NOTE_MIN = 330;  // tone pitch in Hz at settings.vario_sinkAlarm
+// tone pitch at SINK_MAX, where the vario starts holding a solid tone
 constexpr int32_t SINK_NOTE_MAX = 196;
 // bottom tone pitch for sink (when vario is truly pegged, even in solid tone mode)
 constexpr uint16_t SINK_NOTE_MAXMAX = 131;
