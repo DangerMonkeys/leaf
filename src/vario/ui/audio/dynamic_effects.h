@@ -23,11 +23,7 @@ constexpr uint16_t SINK_NOTE_MAXMAX = 131;
 
 // FOR APPROACH #1 (fixed sample-size length speaker timer)
 constexpr uint16_t CLIMB_PLAY_SAMPLES_MAX = 10;
-constexpr uint16_t CLIMB_PLAY_SAMPLES_MIN = 1;
 constexpr uint16_t CLIMB_REST_SAMPLES_MAX = 6;
-constexpr uint16_t CLIMB_REST_SAMPLES_MIN = 1;
 
 constexpr int32_t SINK_PLAY_SAMPLES_MIN = 8;  // play 8, rest 20, flytec 4030
-constexpr int32_t SINK_PLAY_SAMPLES_MAX = 8;
 constexpr int32_t SINK_REST_SAMPLES_MIN = 20;
-constexpr int32_t SINK_REST_SAMPLES_MAX = 20;

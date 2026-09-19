@@ -28,21 +28,15 @@ namespace {
         profile.climbMax >= 100 && profile.climbMax <= 2000 && profile.climbNoteMin >= 100 &&
         profile.climbNoteMin < profile.climbNoteMax && profile.climbNoteMax <= 4000 &&
         profile.climbNoteMax <= profile.climbNoteMaxMax && profile.climbNoteMaxMax <= 5000 &&
-        profile.climbPlaySamplesMin >= 1 && profile.climbPlaySamplesMin <= 50 &&
-        profile.climbPlaySamplesMax >= profile.climbPlaySamplesMin &&
-        profile.climbPlaySamplesMax <= 50 && profile.climbRestSamplesMin >= 1 &&
-        profile.climbRestSamplesMin <= 100 &&
-        profile.climbRestSamplesMax >= profile.climbRestSamplesMin &&
-        profile.climbRestSamplesMax <= 100;
-    const bool sinkValid =
-        profile.sinkMax >= -2000 && profile.sinkMax <= -700 && profile.sinkNoteMin >= 100 &&
-        profile.sinkNoteMin <= 2000 && profile.sinkNoteMax >= 50 &&
-        profile.sinkNoteMax < profile.sinkNoteMin && profile.sinkNoteMaxMax >= 30 &&
-        profile.sinkNoteMaxMax <= profile.sinkNoteMax && profile.sinkPlaySamplesMin >= 1 &&
-        profile.sinkPlaySamplesMin <= profile.sinkPlaySamplesMax &&
-        profile.sinkPlaySamplesMax <= 50 && profile.sinkRestSamplesMin >= 1 &&
-        profile.sinkRestSamplesMin <= profile.sinkRestSamplesMax &&
-        profile.sinkRestSamplesMax <= 100;
+        profile.climbPlaySamplesMax >= 1 && profile.climbPlaySamplesMax <= 50 &&
+        profile.climbRestSamplesMax >= 1 && profile.climbRestSamplesMax <= 100;
+    const bool sinkValid = profile.sinkMax >= -2000 && profile.sinkMax <= -700 &&
+                           profile.sinkNoteMin >= 100 && profile.sinkNoteMin <= 2000 &&
+                           profile.sinkNoteMax >= 50 && profile.sinkNoteMax < profile.sinkNoteMin &&
+                           profile.sinkNoteMaxMax >= 30 &&
+                           profile.sinkNoteMaxMax <= profile.sinkNoteMax &&
+                           profile.sinkPlaySamplesMin >= 1 && profile.sinkPlaySamplesMin <= 50 &&
+                           profile.sinkRestSamplesMin >= 1 && profile.sinkRestSamplesMin <= 100;
     return climbValid && sinkValid;
   }
 }  // namespace
@@ -338,17 +332,13 @@ void Settings::retrieve() {
   varioAudio.climbNoteMax = leafPrefs.getUShort("clHzCont", CLIMB_NOTE_MAX);
   varioAudio.climbNoteMaxMax = leafPrefs.getUShort("clHzCap", CLIMB_NOTE_MAXMAX);
   varioAudio.climbPlaySamplesMax = leafPrefs.getUShort("clOnStart", CLIMB_PLAY_SAMPLES_MAX);
-  varioAudio.climbPlaySamplesMin = leafPrefs.getUShort("clOnCont", CLIMB_PLAY_SAMPLES_MIN);
   varioAudio.climbRestSamplesMax = leafPrefs.getUShort("clOffStart", CLIMB_REST_SAMPLES_MAX);
-  varioAudio.climbRestSamplesMin = leafPrefs.getUShort("clOffCont", CLIMB_REST_SAMPLES_MIN);
   varioAudio.sinkMax = leafPrefs.getInt("skMax", SINK_MAX);
   varioAudio.sinkNoteMin = leafPrefs.getUShort("skHzStart", SINK_NOTE_MIN);
   varioAudio.sinkNoteMax = leafPrefs.getUShort("skHzCont", SINK_NOTE_MAX);
   varioAudio.sinkNoteMaxMax = leafPrefs.getUShort("skHzFloor", SINK_NOTE_MAXMAX);
   varioAudio.sinkPlaySamplesMin = leafPrefs.getUShort("skOnStart", SINK_PLAY_SAMPLES_MIN);
-  varioAudio.sinkPlaySamplesMax = leafPrefs.getUShort("skOnCont", SINK_PLAY_SAMPLES_MAX);
   varioAudio.sinkRestSamplesMin = leafPrefs.getUShort("skOffStart", SINK_REST_SAMPLES_MIN);
-  varioAudio.sinkRestSamplesMax = leafPrefs.getUShort("skOffCont", SINK_REST_SAMPLES_MAX);
   if (!validVarioAudioProfile(varioAudio)) varioAudio = VarioAudioProfile{};
   vario_altSetting = leafPrefs.getFloat("ALT_SETTING");
   vario_altSyncToGPS = leafPrefs.getBool("ALT_SYNC_GPS");
@@ -455,17 +445,13 @@ void Settings::save() {
   leafPrefs.putUShort("clHzCont", varioAudio.climbNoteMax);
   leafPrefs.putUShort("clHzCap", varioAudio.climbNoteMaxMax);
   leafPrefs.putUShort("clOnStart", varioAudio.climbPlaySamplesMax);
-  leafPrefs.putUShort("clOnCont", varioAudio.climbPlaySamplesMin);
   leafPrefs.putUShort("clOffStart", varioAudio.climbRestSamplesMax);
-  leafPrefs.putUShort("clOffCont", varioAudio.climbRestSamplesMin);
   leafPrefs.putInt("skMax", varioAudio.sinkMax);
   leafPrefs.putUShort("skHzStart", varioAudio.sinkNoteMin);
   leafPrefs.putUShort("skHzCont", varioAudio.sinkNoteMax);
   leafPrefs.putUShort("skHzFloor", varioAudio.sinkNoteMaxMax);
   leafPrefs.putUShort("skOnStart", varioAudio.sinkPlaySamplesMin);
-  leafPrefs.putUShort("skOnCont", varioAudio.sinkPlaySamplesMax);
   leafPrefs.putUShort("skOffStart", varioAudio.sinkRestSamplesMin);
-  leafPrefs.putUShort("skOffCont", varioAudio.sinkRestSamplesMax);
   leafPrefs.putFloat("ALT_SETTING", vario_altSetting);
   leafPrefs.putBool("ALT_SYNC_GPS", vario_altSyncToGPS);
   // GPS & Track Log Settings

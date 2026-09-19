@@ -152,7 +152,7 @@ void Speaker::setVarioNote(int32_t verticalRate, bool respectQuietMode) {
                      settings.varioAudio.climbNoteMin;
       if (newVarioNote > settings.varioAudio.climbNoteMaxMax)
         newVarioNote = settings.varioAudio.climbNoteMaxMax;
-      newVarioPlaySamples = settings.varioAudio.climbPlaySamplesMin;
+      newVarioPlaySamples = 1;
       newVarioRestSamples = 0;  // just hold a continuous tone, no rest in between
     } else {
       newVarioNote = verticalRate *
@@ -161,14 +161,10 @@ void Speaker::setVarioNote(int32_t verticalRate, bool respectQuietMode) {
                      settings.varioAudio.climbNoteMin;
       newVarioPlaySamples =
           settings.varioAudio.climbPlaySamplesMax -
-          (verticalRate *
-           (settings.varioAudio.climbPlaySamplesMax - settings.varioAudio.climbPlaySamplesMin) /
-           settings.varioAudio.climbMax);
+          (verticalRate * settings.varioAudio.climbPlaySamplesMax / settings.varioAudio.climbMax);
       newVarioRestSamples =
           settings.varioAudio.climbRestSamplesMax -
-          (verticalRate *
-           (settings.varioAudio.climbRestSamplesMax - settings.varioAudio.climbRestSamplesMin) /
-           settings.varioAudio.climbMax);
+          (verticalRate * settings.varioAudio.climbRestSamplesMax / settings.varioAudio.climbMax);
     }
 
     // if we trigger sink threshold
@@ -185,19 +181,15 @@ void Speaker::setVarioNote(int32_t verticalRate, bool respectQuietMode) {
 
     // first clamp to thresholds if sinkRate is over the max
     if (verticalRate <= settings.varioAudio.sinkMax) {
-      newVarioPlaySamples = settings.varioAudio.sinkPlaySamplesMax;
+      newVarioPlaySamples = 1;
       newVarioRestSamples = 0;  // just hold a continuous tone, no pulses
     } else {
       newVarioPlaySamples =
-          settings.varioAudio.sinkPlaySamplesMin +
-          ((sinkAlarm_cms - verticalRate) *
-           (settings.varioAudio.sinkPlaySamplesMax - settings.varioAudio.sinkPlaySamplesMin) /
-           sinkRateRange);
+          settings.varioAudio.sinkPlaySamplesMin -
+          ((sinkAlarm_cms - verticalRate) * settings.varioAudio.sinkPlaySamplesMin / sinkRateRange);
       newVarioRestSamples =
-          settings.varioAudio.sinkRestSamplesMin +
-          ((sinkAlarm_cms - verticalRate) *
-           (settings.varioAudio.sinkRestSamplesMax - settings.varioAudio.sinkRestSamplesMin) /
-           sinkRateRange);
+          settings.varioAudio.sinkRestSamplesMin -
+          ((sinkAlarm_cms - verticalRate) * settings.varioAudio.sinkRestSamplesMin / sinkRateRange);
     }
 
   } else {

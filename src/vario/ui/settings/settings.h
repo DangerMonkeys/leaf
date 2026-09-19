@@ -127,18 +127,14 @@ struct VarioAudioProfile {
   uint16_t climbNoteMax = CLIMB_NOTE_MAX;
   uint16_t climbNoteMaxMax = CLIMB_NOTE_MAXMAX;
   uint16_t climbPlaySamplesMax = CLIMB_PLAY_SAMPLES_MAX;
-  uint16_t climbPlaySamplesMin = CLIMB_PLAY_SAMPLES_MIN;
   uint16_t climbRestSamplesMax = CLIMB_REST_SAMPLES_MAX;
-  uint16_t climbRestSamplesMin = CLIMB_REST_SAMPLES_MIN;
 
   int32_t sinkMax = SINK_MAX;
   uint16_t sinkNoteMin = SINK_NOTE_MIN;
   uint16_t sinkNoteMax = SINK_NOTE_MAX;
   uint16_t sinkNoteMaxMax = SINK_NOTE_MAXMAX;
   uint16_t sinkPlaySamplesMin = SINK_PLAY_SAMPLES_MIN;
-  uint16_t sinkPlaySamplesMax = SINK_PLAY_SAMPLES_MAX;
   uint16_t sinkRestSamplesMin = SINK_REST_SAMPLES_MIN;
-  uint16_t sinkRestSamplesMax = SINK_REST_SAMPLES_MAX;
 };
 
 class Settings {
