@@ -108,10 +108,8 @@ void AHT20::update() {
   } else if (state_ == State::Measuring) {
     completeMeasurement();
   } else if (state_ == State::Disabled) {
-    etl::imessage_bus* bus = bus_;
-    if (bus) {
-      bus->receive(AmbientUpdate(0.0f, 0.0f));
-    }
+    // A missing ambient sensor is non-fatal. Leave the instrument without data so consumers do
+    // not mistake a synthetic value for a real measurement.
   } else {
     fatalError("AHT20::update with unsupported state %s (%u)", nameOf(state_).c_str(), state_);
   }
@@ -131,10 +129,16 @@ void AHT20::maybeTriggerMeasurement() {
 void AHT20::completeMeasurement() {
   assertState("AHT20::completeMeasurement", State::Measuring, State::WaitingForInitialMeasurement);
 
-  if (millis() - tLastAction_ <= dtMeasurement_) {
+  const bool initialMeasurement = state_ == State::WaitingForInitialMeasurement;
+  const unsigned long elapsed = millis() - tLastAction_;
+  if (elapsed <= dtMeasurement_) {
     return;
   }
   if (isBusy()) {
+    if (elapsed > 1000) {
+      disable("AHT20 measurement did not complete after 1000ms");
+      return;
+    }
     if (DEBUG_TEMPRH) Serial.println("Temp_RH - missed values due to sensor busy");
     return;
   }
@@ -155,25 +159,29 @@ void AHT20::completeMeasurement() {
     Serial.println(rh);
   }
   etl::imessage_bus* bus = bus_;
-  if (bus) {
-    bool sane = true;
-    if (isnan(temperature) | isinf(temperature) || temperature < -90 || temperature > 180) {
-      char msg[100];
-      snprintf(msg, sizeof(msg), "AHT20 invalid temp %X", sensorData.temperature);
-      Serial.println(msg);
+  bool sane = true;
+  if (isnan(temperature) || isinf(temperature) || temperature < -90 || temperature > 180) {
+    char msg[100];
+    snprintf(msg, sizeof(msg), "AHT20 invalid temp %X", sensorData.temperature);
+    Serial.println(msg);
+    if (bus) {
       bus->receive(CommentMessage(msg));
-      sane = false;
     }
-    if (isnan(rh) || isinf(rh) || rh < 0 || rh > 100) {
-      char msg[100];
-      snprintf(msg, sizeof(msg), "AHT20 invalid RH %X", sensorData.humidity);
-      Serial.println(msg);
+    sane = false;
+  }
+  if (isnan(rh) || isinf(rh) || rh < 0 || rh > 100) {
+    char msg[100];
+    snprintf(msg, sizeof(msg), "AHT20 invalid RH %X", sensorData.humidity);
+    Serial.println(msg);
+    if (bus) {
       bus->receive(CommentMessage(msg));
-      sane = false;
     }
-    if (sane) {
-      bus->receive(AmbientUpdate(temperature, rh));
-    }
+    sane = false;
+  }
+  if (sane && bus) {
+    bus->receive(AmbientUpdate(temperature, rh));
+  } else if (!sane && initialMeasurement) {
+    disable("AHT20 initial measurement was invalid");
   }
 }
 
@@ -186,11 +194,8 @@ bool AHT20::softReset() {
 
 void AHT20::disable(const char* reason) {
   Serial.println(reason);
+  available_ = false;
   state_ = State::Disabled;
-  etl::imessage_bus* bus = bus_;
-  if (bus) {
-    bus->receive(AmbientUpdate(0.0f, 0.0f));
-  }
 }
 
 bool AHT20::readData(SensorData& sensorData) {

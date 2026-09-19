@@ -38,16 +38,12 @@ void Ambient::onUnexpectedState(const char* action, State actual) const {
 }
 
 float Ambient::temp() const {
-  if (state() == State::NoData) {
-    return 0.0f;
-  }
+  assertState("Ambient::temp() called", State::Ready, State::Stale);
   return temperature_;
 }
 
 float Ambient::humidity() const {
-  if (state() == State::NoData) {
-    return 0.0f;
-  }
+  assertState("Ambient::humidity() called", State::Ready, State::Stale);
   return relativeHumidity_;
 }
 

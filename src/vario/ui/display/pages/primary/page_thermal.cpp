@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <U8g2lib.h>
 
+#include "hardware/aht20.h"
 #include "hardware/buttons.h"
 #include "instruments/ambient.h"
 #include "instruments/baro.h"
@@ -36,6 +37,23 @@ uint8_t thermal_page_cursor_timeCount =
         // after the timeOut value is reached.
 uint8_t thermal_page_cursor_timeOut =
     8;  // after 8 page draws (4 seconds) reset the cursor if a button hasn't been pushed.
+
+namespace {
+  uint8_t nextAvailableUserField(uint8_t field) {
+    do {
+      field++;
+      if (field >= static_cast<uint8_t>(ThermalPageUserFields::NONE)) field = 0;
+    } while (!aht20.isAvailable() && field == static_cast<uint8_t>(ThermalPageUserFields::TEMP));
+    return field;
+  }
+
+  uint8_t availableUserField(uint8_t field) {
+    if (!aht20.isAvailable() && field == static_cast<uint8_t>(ThermalPageUserFields::TEMP)) {
+      return nextAvailableUserField(field);
+    }
+    return field;
+  }
+}  // namespace
 
 void thermalPage_draw() {
   // if cursor is selecting something, count toward the timeOut value before we reset cursor
@@ -128,6 +146,7 @@ void thermalPage_draw() {
 }
 
 void drawUserField(uint8_t x, uint8_t y, uint8_t field, bool selected) {
+  field = availableUserField(field);
   switch (field) {
     case static_cast<int>(ThermalPageUserFields::ABOVE_LAUNCH):
       display_altAboveLaunch(x, y);
@@ -307,9 +326,10 @@ void thermalPage_button(Button button, ButtonEvent state, uint8_t count) {
         case Button::RIGHT:
           break;
         case Button::CENTER:
-          if (state == ButtonEvent::CLICKED) settings.disp_thmPageUser1++;
-          if (settings.disp_thmPageUser1 >= static_cast<int>(ThermalPageUserFields::NONE))
-            settings.disp_thmPageUser1 = 0;
+          if (state == ButtonEvent::CLICKED) {
+            settings.disp_thmPageUser1 =
+                nextAvailableUserField(availableUserField(settings.disp_thmPageUser1));
+          }
           break;
       }
       break;
@@ -324,9 +344,10 @@ void thermalPage_button(Button button, ButtonEvent state, uint8_t count) {
         case Button::RIGHT:
           break;
         case Button::CENTER:
-          if (state == ButtonEvent::CLICKED) settings.disp_thmPageUser2++;
-          if (settings.disp_thmPageUser2 >= static_cast<int>(ThermalPageUserFields::NONE))
-            settings.disp_thmPageUser2 = 0;
+          if (state == ButtonEvent::CLICKED) {
+            settings.disp_thmPageUser2 =
+                nextAvailableUserField(availableUserField(settings.disp_thmPageUser2));
+          }
           break;
       }
       break;
