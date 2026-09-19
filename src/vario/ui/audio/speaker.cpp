@@ -184,10 +184,10 @@ void Speaker::setVarioNote(int32_t verticalRate, bool respectQuietMode) {
     } else {
       const int32_t timingRange = sinkAlarm_cms - settings.varioAudio.sinkContinuous;
       const int32_t timingProgress = sinkAlarm_cms - verticalRate;
-      newVarioPlaySamples = settings.varioAudio.sinkPlaySamplesMin -
-                            (timingProgress * settings.varioAudio.sinkPlaySamplesMin / timingRange);
       newVarioRestSamples = settings.varioAudio.sinkRestSamplesMin -
                             (timingProgress * settings.varioAudio.sinkRestSamplesMin / timingRange);
+      newVarioPlaySamples = settings.varioAudio.sinkPlaySamplesMin +
+                            (settings.varioAudio.sinkRestSamplesMin - newVarioRestSamples);
     }
 
   } else {
