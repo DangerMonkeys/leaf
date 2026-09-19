@@ -120,6 +120,7 @@ void Speaker::updateVarioNote(int32_t verticalRate) {
   uint16_t newVarioPlaySamples = 0;
   uint16_t newVarioRestSamples = 0;
 
+  const bool sinkAlarmEnabled = settings.vario_sinkAlarm < 0.0f;
   int sinkAlarm_cms;
   if (settings.vario_sinkAlarm_units) {
     sinkAlarm_cms = settings.vario_sinkAlarm * 100 / 196.85;  // convert fpm to cm/s
@@ -145,7 +146,7 @@ void Speaker::updateVarioNote(int32_t verticalRate) {
     }
 
     // if we trigger sink threshold
-  } else if (verticalRate < sinkAlarm_cms) {
+  } else if (sinkAlarmEnabled && verticalRate < sinkAlarm_cms) {
     // first clamp to thresholds if sinkRate is over the max
     if (verticalRate <= SINK_MAX) {
       newVarioNote = SINK_NOTE_MIN - verticalRate * (SINK_NOTE_MIN - SINK_NOTE_MAX) / SINK_MAX;
