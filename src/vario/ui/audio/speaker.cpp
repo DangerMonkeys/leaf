@@ -38,7 +38,8 @@ void Speaker::init(void) {
 void Speaker::mute() {
   assertState("Speaker::mute", State::Uninitialized, State::Active);
   playingSound_ = false;  // clear FX sound
-  updateVarioNote(0);     // clear vario note
+  previewTone_ = note::NONE;
+  updateVarioNote(0);  // clear vario note
   if (state_ != State::Uninitialized) {
     playTone(0);  // mute speaker pin
   }
@@ -105,6 +106,12 @@ void Speaker::playNote(uint16_t note) {
   assertState("Speaker::playNote", State::Uninitialized, State::Active);
   singleNote_[0] = note;
   playSound(singleNote_);
+}
+
+void Speaker::playVarioToneFor(uint16_t note, uint32_t durationMs) {
+  assertState("Speaker::playVarioToneFor", State::Uninitialized, State::Active);
+  previewTone_ = note;
+  previewToneUntilMs_ = millis() + durationMs;
 }
 
 void Speaker::updateVarioNote(int32_t verticalRate) {
@@ -239,7 +246,17 @@ bool Speaker::update() {
   }
 
   if (!shouldUpdate()) {
-    return playingSound_;
+    return playingSound_ || previewTone_ != note::NONE;
+  }
+
+  if (previewTone_ != note::NONE) {
+    if (static_cast<int32_t>(previewToneUntilMs_ - millis()) > 0) {
+      setVolume(varioVolume_);
+      playTone(previewTone_);
+      return true;
+    }
+    previewTone_ = note::NONE;
+    playTone(0);
   }
 
   updateVarioTest();

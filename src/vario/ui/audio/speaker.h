@@ -56,6 +56,9 @@ class Speaker : private StateAssertMixin<Speaker> {
   // Set the specified note to be played once as a sound
   void playNote(note::note_t note);
 
+  // Play one vario-frequency tone for a fixed duration, ignoring quiet mode.
+  void playVarioToneFor(note::note_t note, uint32_t durationMs);
+
  private:
   State state_;
 
@@ -101,6 +104,8 @@ class Speaker : private StateAssertMixin<Speaker> {
   bool varioTestActive_ = false;
   int32_t varioTestTargetRate_ = 0;
   uint32_t varioTestStartedMs_ = 0;
+  note::note_t previewTone_ = note::NONE;
+  uint32_t previewToneUntilMs_ = 0;
 
   // this is to allow playing single notes by changing single_note[0], while
   // still having a NOTE_END terminator following.
