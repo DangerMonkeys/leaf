@@ -48,6 +48,7 @@ DEFINES := \
   -DARDUINO=200 \
   -DARDUINO_USB_MODE=1 \
   -DARDUINO_USB_CDC_ON_BOOT=1 \
+  -D__GLIBC_USE_C2X_STRTOL=0 \
   -DDEBUG_WIFI \
   -DDISABLE_MASS_STORAGE \
   -DDISABLE_BATTERY_SHUTDOWN \
@@ -100,7 +101,7 @@ EMU_SOURCES := $(shell find $(SIM)/emulator -name '*.cpp' 2>/dev/null)
 U8G2_C   := $(wildcard $(U8G2)/clib/*.c)
 U8G2_CPP := $(U8G2)/U8g2lib.cpp $(U8G2)/U8x8lib.cpp
 TINY_CPP := $(wildcard $(TINYGPS)/*.cpp)
-IGC_CPP  := $(wildcard $(DEPLINK)/igc/*.cpp)
+IGC_CPP  := $(wildcard $(LIBENV)/IgcLogger/src/*.cpp)
 
 OBJ_FW   := $(patsubst $(ROOT)/%.cpp,$(BUILD)/fw/%.o,$(FW_SOURCES)) \
             $(patsubst $(ROOT)/%.c,$(BUILD)/fw/%.o,$(FW_C))
@@ -108,7 +109,7 @@ OBJ_SIM  := $(patsubst $(SIM)/%.cpp,$(BUILD)/sim/%.o,$(HAL_SOURCES) $(DEV_SOURCE
 OBJ_LIB  := $(patsubst $(U8G2)/%.c,$(BUILD)/lib/u8g2/%.o,$(U8G2_C)) \
             $(patsubst $(U8G2)/%.cpp,$(BUILD)/lib/u8g2/%.o,$(U8G2_CPP)) \
             $(patsubst $(TINYGPS)/%.cpp,$(BUILD)/lib/tinygps/%.o,$(TINY_CPP)) \
-            $(patsubst $(DEPLINK)/igc/%.cpp,$(BUILD)/lib/igc/%.o,$(IGC_CPP))
+            $(patsubst $(LIBENV)/IgcLogger/src/%.cpp,$(BUILD)/lib/igc/%.o,$(IGC_CPP))
 
 OBJECTS := $(OBJ_FW) $(OBJ_SIM) $(OBJ_LIB)
 TARGET  := $(BUILD)/leafsim
@@ -151,7 +152,7 @@ $(BUILD)/lib/tinygps/%.o: $(TINYGPS)/%.cpp | deps
 	@echo "  CXX   tinygps/$*"
 	@$(CXX) $(CXXFLAGS) -MMD -MP -c $< -o $@
 
-$(BUILD)/lib/igc/%.o: $(DEPLINK)/igc/%.cpp | deps
+$(BUILD)/lib/igc/%.o: $(LIBENV)/IgcLogger/src/%.cpp | deps
 	@mkdir -p $(dir $@)
 	@echo "  CXX   igc/$*"
 	@$(CXX) $(CXXFLAGS) -MMD -MP -c $< -o $@
