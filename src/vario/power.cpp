@@ -1,6 +1,7 @@
 // Includes
 #include "power.h"
 
+#include "battery_characterization.h"
 #include "comms/ble.h"
 #include "comms/leaf_log_sync.h"
 #include "diagnostics/diagnostic_network/diagnostic_network.h"
@@ -417,12 +418,23 @@ void Power::readBatteryState() {
   // Test internal calibration of ADC:
   info_.batteryMV = analogReadMilliVolts(BATT_SENSE) * 69 / 41;
 
-  if (info_.batteryMV < BATT_EMPTY_MV) {
+  // The ISET current measurement is available on v3.2.6+; earlier variants estimate the charge
+  // current from terminal voltage instead. Never compensate the raw voltage used for shutdown.
+  const uint16_t percentMV =
+      battery_characterization::voltageForPercent(info_.batteryMV, info_.charging,
+#ifdef ISET
+                                                  true,
+#else
+                                                  false,
+#endif
+                                                  info_.chargeCurrentMA);
+
+  if (percentMV < BATT_EMPTY_MV) {
     info_.batteryPercent = 0;
-  } else if (info_.batteryMV > BATT_FULL_MV) {
+  } else if (percentMV > BATT_FULL_MV) {
     info_.batteryPercent = 100;
   } else {
-    info_.batteryPercent = 100 * (info_.batteryMV - BATT_EMPTY_MV) / (BATT_FULL_MV - BATT_EMPTY_MV);
+    info_.batteryPercent = 100 * (percentMV - BATT_EMPTY_MV) / (BATT_FULL_MV - BATT_EMPTY_MV);
   }
 
   // use a 2% hysteresis on battery% to avoid rapid fluctuations as ADC values change

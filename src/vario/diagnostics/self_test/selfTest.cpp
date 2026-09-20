@@ -3,6 +3,7 @@
 #include <FS.h>
 #include <SD_MMC.h>
 
+#include "hardware/aht20.h"
 #include "hardware/buttons.h"
 #include "instruments/ambient.h"
 #include "instruments/baro.h"
@@ -263,7 +264,10 @@ SelfTest::Status SelfTest::testIMU() {
 uint16_t ambientTestCounter = 0;
 SelfTest::Status SelfTest::testAmbient() {
   Status result = Status::Running;
-  if (ambient.state() != Ambient::State::Ready) {
+  if (!aht20.isAvailable()) {
+    selfTestInfo("`Test=AMBIENT`,    `Result=FAIL`, `Message=Ambient sensor unavailable`");
+    result = Status::Fail;
+  } else if (ambient.state() != Ambient::State::Ready) {
     if (ambientTestCounter++ >= 400) {
       selfTestInfo("`Test=AMBIENT`,    `Result=FAIL`, `Message=Ambient sensor not ready`");
       result = Status::Fail;

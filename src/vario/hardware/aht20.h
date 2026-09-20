@@ -16,6 +16,9 @@ class AHT20 : public IPollable, IMessageSource, private StateAssertMixin<AHT20> 
   // IPollable
   void update();
 
+  // False when the sensor could not be initialized or stopped responding during this boot.
+  bool isAvailable() const { return available_; }
+
   // IMessageSource
   void publishTo(etl::imessage_bus* bus) { bus_ = bus; }
   void stopPublishing() { bus_ = nullptr; }
@@ -28,6 +31,7 @@ class AHT20 : public IPollable, IMessageSource, private StateAssertMixin<AHT20> 
     WaitingForInitialMeasurement,
     Measuring,
     Idle,
+    Disabled,
   };
 
   State state() const { return state_; }
@@ -40,6 +44,7 @@ class AHT20 : public IPollable, IMessageSource, private StateAssertMixin<AHT20> 
   void startFirstMeasurement();
   void maybeTriggerMeasurement();
   void completeMeasurement();
+  void disable(const char* reason);
 
   // Checks if the AHT20 is connected to the I2C bus
   bool isConnected();
@@ -66,6 +71,7 @@ class AHT20 : public IPollable, IMessageSource, private StateAssertMixin<AHT20> 
   bool softReset();
 
   State state_ = State::Uninitialized;
+  bool available_ = true;
 
   unsigned long tLastAction_;
   unsigned long dtMeasurement_;
