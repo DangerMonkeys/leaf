@@ -79,8 +79,6 @@ class Speaker : private StateAssertMixin<Speaker> {
   bool betweenVarioBeeps_ = false;           // are we resting (silence) between beeps?
   bool playingSound_ = false;                // are we playing a sound?
 
-  uint32_t lastTone_ = 0;
-
   // == trackers for fixed-sample length speaker timer approach #1 ==
 
   // amount of samples we should play for
@@ -123,8 +121,6 @@ class Speaker : private StateAssertMixin<Speaker> {
   void updateVario();
   void setVarioNote(int32_t verticalRate, bool respectQuietMode);
   void updateVarioTest();
-
-  void playTone(uint32_t freq);
 };
 
 extern Speaker speaker;

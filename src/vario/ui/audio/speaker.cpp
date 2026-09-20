@@ -9,6 +9,7 @@
 #include "ui/audio/dynamic_effects.h"
 #include "ui/audio/notes.h"
 #include "ui/audio/sound_effects.h"
+#include "ui/audio/speaker_driver.h"
 #include "ui/settings/settings.h"
 #include "utils/magic_enum.h"
 
@@ -22,9 +23,8 @@ namespace {
 void Speaker::init(void) {
   assertState("Speaker::init", State::Uninitialized);
 
-  // configure speaker pinout and PWM channel
-  pinMode(SPEAKER_PIN, OUTPUT);
-  ledcAttach(SPEAKER_PIN, 1000, 10);
+  // configure speaker pinout for timer-driven square wave output
+  speaker_driver::init();
 
   // set speaker volume pins as outputs IF NOT ON the IO Expander
   if (!SPEAKER_VOLA_IOEX) pinMode(SPEAKER_VOLA, OUTPUT);
@@ -41,7 +41,7 @@ void Speaker::mute() {
   previewTone_ = note::NONE;
   updateVarioNote(0);  // clear vario note
   if (state_ != State::Uninitialized) {
-    playTone(0);  // mute speaker pin
+    speaker_driver::playTone(0);  // mute speaker pin
   }
   speakerMute_ = true;
 }
@@ -241,7 +241,7 @@ bool Speaker::update() {
 
   // If speaker is muted, ensure silence and don't play sound
   if (speakerMute_) {
-    playTone(0);
+    speaker_driver::playTone(0);
     return false;
   }
 
@@ -252,11 +252,11 @@ bool Speaker::update() {
   if (previewTone_ != note::NONE) {
     if (static_cast<int32_t>(previewToneUntilMs_ - millis()) > 0) {
       setVolume(varioVolume_);
-      playTone(previewTone_);
+      speaker_driver::playTone(previewTone_, true);
       return true;
     }
     previewTone_ = note::NONE;
-    playTone(0);
+    speaker_driver::playTone(0);
   }
 
   updateVarioTest();
@@ -273,7 +273,7 @@ bool Speaker::update() {
 
   } else {
     // play silence
-    playTone(0);
+    speaker_driver::playTone(0);
   }
 
   return false;
@@ -313,7 +313,7 @@ bool Speaker::shouldUpdate() {
 bool Speaker::updateSound() {
   setVolume(fxVolume_);
   if (*soundPlaying_ != note::END) {
-    playTone(*soundPlaying_);
+    speaker_driver::playTone(*soundPlaying_);
     fxNoteLast_ = *soundPlaying_;  // save last note
 
     // if we've played this note for enough samples
@@ -324,7 +324,7 @@ bool Speaker::updateSound() {
     return true;
 
   } else {  // Else, we're at END_OF_TONE
-    playTone(0);
+    speaker_driver::playTone(0);
     playingSound_ = false;
     fxNoteLast_ = note::NONE;
     return false;
@@ -335,7 +335,7 @@ void Speaker::updateVario() {
   setVolume(varioVolume_);
   //  Handle the beeps and rests of a vario sound "measure"
   if (betweenVarioBeeps_) {
-    playTone(0);  // "play" silence since we're resting between beeps
+    speaker_driver::playTone(0);  // "play" silence since we're resting between beeps
 
     // stop playing rest if we've done it long enough
     if (++varioRestSampleCount_ >= varioRestSamples_) {
@@ -345,20 +345,13 @@ void Speaker::updateVario() {
     }
 
   } else {
-    playTone(varioNote_);
+    speaker_driver::playTone(varioNote_, true);
     varioNoteLast_ = varioNote_;
 
     if (++varioPlaySampleCount_ >= varioPlaySamples_) {
       varioPlaySampleCount_ = 0;
       if (varioRestSamples_) betweenVarioBeeps_ = true;  // next time through we want to rest
     }
-  }
-}
-
-void Speaker::playTone(uint32_t freq) {
-  if (freq != lastTone_) {
-    ledcWriteTone(SPEAKER_PIN, freq);
-    lastTone_ = freq;
   }
 }
 

@@ -30,7 +30,6 @@ screen?  / Advanced options?
 
 Features and Performance
 *#10* ->Wind estimate based on GPS speed/bearing vectors
-->Improve tone updates (hold pitch for at least a few samples so it doesn't sound so 'wandering')
 ->Better altitude filter to reduce noise but speed up reaction time
 *#13* ->Include accelerometer in vario signal
 % Keep a running/filtered average of speed, glide, and climb, to use in various calculations
