@@ -8,6 +8,7 @@
 #include "comms/leaf_log_credentials.h"
 #include "comms/wifi_coordinator.h"
 #include "diagnostics/diagnostic_logs.h"
+#include "diagnostics/diagnostic_network/diagnostic_network.h"
 #include "hardware/buttons.h"
 #include "storage/sd_card.h"
 #include "system/usb_state.h"
@@ -51,9 +52,9 @@ void LeafLogSync::update() {
     return;
   }
 
-  if (massStorageSuppressedForChargingSession_) {
-    // Commissioning owns the card for diagnostics and test results. Keep this decision latched for
-    // the charging session so completing commissioning does not expose the drive mid-workflow.
+  if (diagnostic_network.chargingWorkBlocked()) {
+    // Give factory discovery first use of WiFi and the SD card. If no factory network is found,
+    // ordinary Leaf Log upload and USB mass storage continue during this charging session.
     sdcard.keepMassStorageEjected();
     return;
   }
@@ -141,7 +142,7 @@ void LeafLogSync::update() {
       break;
     }
     case State::ConnectingWifi: {
-      if (WiFi.status() == WL_CONNECTED) {
+      if (WiFi.status() == WL_CONNECTED && !diagnostic_network.connected()) {
         state_ = State::WaitingForTime;
         stateStartedMs_ = millis();
         break;
@@ -153,7 +154,7 @@ void LeafLogSync::update() {
       }
 
       const bool connectionInProgress = leaf_wifi::savedNetworkConnectionInProgress();
-      if (WiFi.status() == WL_CONNECTED) {
+      if (WiFi.status() == WL_CONNECTED && !diagnostic_network.connected()) {
         state_ = State::WaitingForTime;
         stateStartedMs_ = millis();
       } else if (!connectionInProgress) {
@@ -241,7 +242,6 @@ void LeafLogSync::prepareForCharging() {
   powerOnReady_.store(false, std::memory_order_release);
   centerIntentStartedMs_ = 0;
   resumedAfterEject_ = false;
-  massStorageSuppressedForChargingSession_ = settings.commissioningPending;
   powerOnClosingUsb_ = false;
   state_ = State::Idle;
 }
@@ -253,7 +253,6 @@ void LeafLogSync::prepareForOperating() {
   powerOnRequested_.store(false, std::memory_order_release);
   centerIntentStartedMs_ = 0;
   resumedAfterEject_ = false;
-  massStorageSuppressedForChargingSession_ = false;
   powerOnClosingUsb_ = false;
   state_ = State::Idle;
 }

@@ -20,7 +20,9 @@ class DiagnosticNetwork : private StateAssertMixin<DiagnosticNetwork> {
   };
 
   State state() const { return state_; }
+  static const char* ssid();
   bool connected() const;
+  bool chargingWorkBlocked() const;
 
   void update();
   void reset(const char* reason);
@@ -40,6 +42,8 @@ class DiagnosticNetwork : private StateAssertMixin<DiagnosticNetwork> {
 
   bool printed_end_state_ = false;
   bool off_usb_scan_attempted_ = false;
+  bool search_started_ = false;
+  uint32_t search_started_ms_ = 0;
 
   void maybeLookForNetwork();
   void checkForDiagnosticNetwork();

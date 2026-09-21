@@ -14,14 +14,8 @@ namespace {
   constexpr uint16_t HTTP_PORT = 80;
   constexpr const char* REQUEST_PREFIX = "LEAF_DISCOVERY_REQUEST/1 ";
   constexpr size_t REQUEST_PREFIX_LEN = 25;
-  constexpr const char* DIAGNOSTIC_NETWORK_SSID = "LeafDiagnostics";
-
-  bool connectedToDiagnosticWifi() {
-    return WiFi.status() == WL_CONNECTED && WiFi.SSID() == DIAGNOSTIC_NETWORK_SSID;
-  }
-
   bool discoveryEligible() {
-    return connectedToDiagnosticWifi() && power.info().onState == PowerState::OffUSB;
+    return diagnostic_network.connected() && power.info().onState == PowerState::OffUSB;
   }
 
   const char* wifiStatusName(wl_status_t status) {
@@ -131,7 +125,7 @@ void FactoryDiscovery::onPacket(AsyncUDPPacket& packet) {
     ignored_not_off_usb_++;
     return;
   }
-  if (!connectedToDiagnosticWifi()) {
+  if (!diagnostic_network.connected()) {
     ignored_not_diagnostic_wifi_++;
     return;
   }
@@ -173,7 +167,7 @@ String FactoryDiscovery::statusJson() const {
   const wl_status_t status = WiFi.status();
   const String ssid = WiFi.SSID();
   const bool connected = status == WL_CONNECTED;
-  const bool connected_to_diagnostic_wifi = connectedToDiagnosticWifi();
+  const bool connected_to_diagnostic_wifi = diagnostic_network.connected();
   const Power::Info& power_info = power.info();
   const bool off_usb = power_info.onState == PowerState::OffUSB;
   const bool diagnostic_network_connected = diagnostic_network.connected();
@@ -232,7 +226,7 @@ String FactoryDiscovery::statusJson() const {
   json += ",\"ssid\":";
   appendJsonString(json, ssid);
   json += ",\"expected_ssid\":";
-  appendJsonString(json, DIAGNOSTIC_NETWORK_SSID);
+  appendJsonString(json, diagnostic_network.ssid());
   json += ",\"connected_to_diagnostic_wifi\":";
   json += connected_to_diagnostic_wifi ? "true" : "false";
   json += ",\"local_ip\":";
@@ -271,11 +265,11 @@ String FactoryDiscovery::statusJson() const {
   if (!connected) {
     appendJsonString(json, "WiFi is not connected.");
   } else if (!connected_to_diagnostic_wifi) {
-    appendJsonString(json, "WiFi is connected, but not to the LeafDiagnostics SSID.");
+    appendJsonString(json, "WiFi is connected, but not to the factory network.");
   } else if (!off_usb) {
-    appendJsonString(json, "Device is on LeafDiagnostics, but is not in OffUSB.");
+    appendJsonString(json, "Device is on the factory network, but is not in OffUSB.");
   } else if (!listening_) {
-    appendJsonString(json, "Device is on LeafDiagnostics, but discovery UDP is not listening.");
+    appendJsonString(json, "Device is on the factory network, but discovery UDP is not listening.");
   } else {
     appendJsonString(json, "Device should respond to valid discovery pings.");
   }
