@@ -19,6 +19,7 @@
 #include "comms/ota.h"
 #include "comms/wifi_coordinator.h"
 #include "diagnostics/diagnostic_logs.h"
+#include "diagnostics/diagnostic_network/diagnostic_network.h"
 #include "diagnostics/heap_monitor.h"
 #include "diagnostics/memory_report.h"
 #include "diagnostics/self_test/selfTest.h"
@@ -161,12 +162,8 @@ namespace {
     return diagnostic_logs::enabled(diagnostic_logs::Log::WebRequests);
   }
 
-  bool connectedToDiagnosticWifi() {
-    return WiFi.status() == WL_CONNECTED && WiFi.SSID() == "LeafDiagnostics";
-  }
-
   bool commissioningHttpAllowed() {
-    return connectedToDiagnosticWifi() && !settings.commissioningComplete;
+    return diagnostic_network.connected() && !settings.commissioningComplete;
   }
 
   void logWifiSetupTiming(const char* event) {
@@ -2664,7 +2661,7 @@ load();
 
     target.send(403, "application/json",
                 "{\"detail\":\"Commissioning endpoints are only available on the "
-                "LeafDiagnostics network before commissioning is complete.\"}");
+                "factory network before commissioning is complete.\"}");
     return false;
   }
 
@@ -2824,10 +2821,10 @@ load();
   }
 
   void sendCommissioningStatus(WebServer& target) {
-    if (!connectedToDiagnosticWifi()) {
+    if (!diagnostic_network.connected()) {
       target.send(403, "application/json",
                   "{\"detail\":\"Commissioning status is only available on the "
-                  "LeafDiagnostics network.\"}");
+                  "factory network.\"}");
       return;
     }
 
@@ -2840,10 +2837,10 @@ load();
   }
 
   void markCommissioningComplete(WebServer& target) {
-    if (!connectedToDiagnosticWifi()) {
+    if (!diagnostic_network.connected()) {
       target.send(403, "application/json",
                   "{\"detail\":\"Commissioning endpoints are only available on the "
-                  "LeafDiagnostics network.\"}");
+                  "factory network.\"}");
       return;
     }
 

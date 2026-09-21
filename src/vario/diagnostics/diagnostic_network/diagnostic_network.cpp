@@ -15,19 +15,29 @@ static constexpr const char* DIAGNOSTIC_NETWORK_PASSWORD = "leafdiagnostics";
 
 static constexpr int32_t MIN_RSSI_DBM = -85;  // ignore super-weak signals
 static constexpr uint32_t CONNECT_TIMEOUT_MS = 15000;
+static constexpr uint32_t SEARCH_TIMEOUT_MS = 20000;
 static constexpr uint32_t SCAN_RETRY_DELAY_MS = 2000;
 
 DiagnosticNetwork diagnostic_network;
 
+const char* DiagnosticNetwork::ssid() { return DIAGNOSTIC_NETWORK_SSID; }
+
 bool DiagnosticNetwork::connected() const {
-  return state_ == State::ConnectedToNetwork && WiFi.status() == WL_CONNECTED &&
-         WiFi.SSID() == DIAGNOSTIC_NETWORK_SSID;
+  return WiFi.status() == WL_CONNECTED && WiFi.SSID() == ssid();
+}
+
+bool DiagnosticNetwork::chargingWorkBlocked() const {
+  if (connected()) return true;
+  if (!settings.diagnosticNetworkScanAllowed() || !leaf_wifi::diagnosticsAllowed()) return false;
+  return state_ == State::Ready || state_ == State::WifiResetting ||
+         state_ == State::LookingForNetwork || state_ == State::ConnectingToNetwork;
 }
 
 void DiagnosticNetwork::reset(const char* reason) {
   Serial.printf("DiagnosticNetwork: reset (%s)\n", reason ? reason : "unknown");
   printed_end_state_ = false;
   off_usb_scan_attempted_ = false;
+  search_started_ = false;
   error_msg_ = "No error";
   state_ = State::Ready;
   next_scan_attempt_ms_ = millis() + SCAN_RETRY_DELAY_MS;
@@ -43,11 +53,25 @@ bool DiagnosticNetwork::canSleepWhileCharging() const { return shouldResetWhenSw
 
 void DiagnosticNetwork::update() {
   if (!settings.diagnosticNetworkScanAllowed()) {
+    // Preserve the factory connection for acknowledgement/retry of the completion request.
+    // Charging work stays held until this connection ends; the next boot skips factory search.
+    if (connected()) return;
     if (!printed_end_state_) {
       Serial.println("DiagnosticNetwork: skipped; commissioning is complete");
       printed_end_state_ = true;
     }
     state_ = State::NoNetworkFound;
+    return;
+  }
+
+  if (search_started_ &&
+      (state_ == State::Ready || state_ == State::WifiResetting ||
+       state_ == State::LookingForNetwork) &&
+      millis() - search_started_ms_ >= SEARCH_TIMEOUT_MS) {
+    WiFi.scanDelete();
+    WiFi.disconnect();
+    error_msg_ = "Timeout searching for diagnostic network";
+    state_ = State::Error;
     return;
   }
 
@@ -141,6 +165,10 @@ void DiagnosticNetwork::maybeLookForNetwork() {
 
   Serial.printf("DiagnosticNetwork: starting scan (USBinput=%d onState=%s)\n", info.USBinput,
                 nameOf(info.onState));
+  if (!search_started_) {
+    search_started_ = true;
+    search_started_ms_ = now;
+  }
   Serial.printf("DiagnosticNetwork: pre-scan status=%d mode=%d freeHeap=%u\n", WiFi.status(),
                 WiFi.getMode(), ESP.getFreeHeap());
 
@@ -191,7 +219,7 @@ void DiagnosticNetwork::checkForDiagnosticNetwork() {
 
   if (found && bestRssi > MIN_RSSI_DBM) {
     t0_ = millis();
-    WiFi.begin(DIAGNOSTIC_NETWORK_SSID, DIAGNOSTIC_NETWORK_PASSWORD);
+    WiFi.begin(ssid(), DIAGNOSTIC_NETWORK_PASSWORD);
     state_ = State::ConnectingToNetwork;
     return;
   } else {
