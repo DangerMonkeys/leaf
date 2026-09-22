@@ -26,6 +26,17 @@ namespace {
     u8g2.setCursor(x, baselineY);
     u8g2.print(text);
   }
+
+  void formatProgress(char* status, size_t statusSize, const char* verb, uint16_t current,
+                      uint16_t total) {
+    snprintf(status, statusSize, "%s %u of %u", verb, current, total);
+    if (u8g2.getStrWidth(status) <= CHARGING_DIALOG_WIDTH) return;
+
+    snprintf(status, statusSize, "%s %u/%u", verb, current, total);
+    if (u8g2.getStrWidth(status) <= CHARGING_DIALOG_WIDTH) return;
+
+    snprintf(status, statusSize, "%s", verb);
+  }
 }  // namespace
 
 // CHARGING PAGE
@@ -109,11 +120,20 @@ void chargingPage_draw() {
       if (leafLogSync.powerOnPending()) {
         snprintf(status, sizeof(status), "%s",
                  leafLogSync.powerOnClosingUsb() ? "Closing USB..." : "");
+      } else if (leafLogSync.massStorageUnavailable()) {
+        snprintf(status, sizeof(status), "%s",
+                 leafLogSync.completionPending() ? "Uploads complete" : "USB unavailable");
+      } else if (leafLogSync.completionNotice()) {
+        snprintf(status, sizeof(status), "%s", leafLogSync.statusLine());
       } else if (leafLogSync.retryPending()) {
         snprintf(status, sizeof(status), "%s", leafLogSync.statusLine());
+      } else if (leafLogSync.completionPending() && leafLogSync.progressKnown() &&
+                 leafLogSync.totalCount() > 0) {
+        formatProgress(status, sizeof(status), "Uploaded", leafLogSync.currentCount(),
+                       leafLogSync.totalCount());
       } else if (leafLogSync.progressKnown() && leafLogSync.totalCount() > 0) {
-        snprintf(status, sizeof(status), "Uploading %u of %u", leafLogSync.currentCount(),
-                 leafLogSync.totalCount());
+        formatProgress(status, sizeof(status), "Uploading", leafLogSync.currentCount(),
+                       leafLogSync.totalCount());
       } else {
         snprintf(status, sizeof(status), "%s", leafLogSync.statusLine());
       }
@@ -121,8 +141,17 @@ void chargingPage_draw() {
       if (leafLogSync.powerOnPending()) {
         printCentered("Please wait...", 148);
       } else if (leafLogSync.massStorageUnavailable()) {
-        printCentered("Press to retry.", 143);
-        printCentered("Hold to turn on.", 155);
+        if (leafLogSync.completionPending()) printCentered("USB unavailable", 137);
+        printCentered("Press to retry.", 148);
+        printCentered("Hold to turn on.", 159);
+      } else if (leafLogSync.completionNotice()) {
+        printCentered("USB drive ready", 143);
+      } else if (leafLogSync.completionPending()) {
+        printCentered("Preparing USB...", 143);
+        printCentered("Please wait...", 155);
+      } else if (leafLogSync.retryPending()) {
+        printCentered("Retry scheduled", 143);
+        printCentered("Press to cancel.", 155);
       } else {
         printCentered("Press to cancel", 138);
         printCentered("and open USB drive.", 148);

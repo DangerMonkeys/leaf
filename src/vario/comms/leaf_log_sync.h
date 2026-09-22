@@ -16,6 +16,7 @@ class LeafLogSync {
     Uploading,
     AwaitingCenterIntent,
     Finishing,
+    Complete,
     HostOwned,
     Ejected,
     MassStorageUnavailable,
@@ -33,6 +34,8 @@ class LeafLogSync {
   bool screenActive() const;
   bool retryPending() const { return state_ == State::Backoff; }
   bool massStorageUnavailable() const { return state_ == State::MassStorageUnavailable; }
+  bool completionPending() const { return sessionCompletionPending_; }
+  bool completionNotice() const { return state_ == State::Complete; }
   bool powerOnPending() const { return powerOnRequested_.load(std::memory_order_acquire); }
   bool powerOnClosingUsb() const { return powerOnPending() && powerOnClosingUsb_; }
   bool progressKnown() const { return sessionTotalKnown_; }
@@ -48,6 +51,7 @@ class LeafLogSync {
   void finishRequestedExit();
   void finishForPowerOn();
   void finishToMassStorage();
+  void recordCompletedItem();
   void handleTransientFailure(const char* reason, int httpStatus = 0, uint32_t elapsedMs = 0,
                               size_t fileSize = 0, size_t responseSize = 0,
                               const String& transportDetail = String());
@@ -63,13 +67,16 @@ class LeafLogSync {
   bool resumedAfterEject_ = false;
   bool powerOnClosingUsb_ = false;
   bool sessionTotalKnown_ = false;
+  bool sessionCompletionPending_ = false;
   uint16_t completedCount_ = 0;
   uint16_t sessionTotalCount_ = 0;
   uint16_t pendingCount_ = 0;
   uint32_t stateStartedMs_ = 0;
+  uint32_t completionStartedMs_ = 0;
   uint32_t centerIntentStartedMs_ = 0;
   uint32_t retryAtMs_ = 0;
   uint8_t retryIndex_ = 0;
+  State completionExitState_ = State::HostOwned;
 };
 
 extern LeafLogSync leafLogSync;
