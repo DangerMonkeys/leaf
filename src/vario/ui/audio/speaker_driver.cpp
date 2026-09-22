@@ -9,7 +9,6 @@
 #include <driver/mcpwm_gen.h>
 #include <driver/mcpwm_oper.h>
 #include <driver/mcpwm_timer.h>
-#include <esp_timer.h>
 #include "diagnostics/fatal_error.h"
 #include "hardware/configuration.h"
 
@@ -19,26 +18,18 @@ namespace speaker_driver {
     // 1 MHz supports down to ~15 Hz with a 16-bit peak counter while keeping 1 Hz granularity.
     constexpr uint32_t MCPWM_RESOLUTION_HZ = 1000000;
     constexpr uint32_t BOOTSTRAP_FREQUENCY_HZ = 1000;
-    constexpr int64_t SMOOTH_STEP_INTERVAL_US = 1000;
-    // Smoothing target: limit each 1 ms step to at most 0.5% of current frequency.
-    // This keeps large jumps perceptually smoother while still converging quickly.
-    constexpr uint32_t SMOOTH_MAX_PPM_PER_STEP = 5000;
 
     mcpwm_timer_handle_t pwmTimer = nullptr;
     mcpwm_oper_handle_t pwmOperator = nullptr;
     mcpwm_cmpr_handle_t pwmComparator = nullptr;
     mcpwm_gen_handle_t pwmGenerator = nullptr;
-    esp_timer_handle_t smoothTimer = nullptr;
 
-    std::atomic<uint32_t> speakerRequestedFrequency{0};
     std::atomic<uint32_t> speakerActiveFrequency{0};
     std::atomic<bool> timerRunning{false};
     std::atomic<bool> timerEnabled{false};
-    std::atomic<bool> smoothActive{false};
 
     // Serializes mcpwm_timer_set_period + mcpwm_comparator_set_compare_value so the two-step
-    // update is never interleaved with a concurrent applyFrequency call from another task
-    // (e.g. the esp_timer smooth callback running on a different core).
+    // update is never interleaved with a concurrent applyFrequency call from another task.
     std::mutex applyMutex;
 
     void checkEsp(const char* step, esp_err_t err) {
@@ -52,25 +43,6 @@ namespace speaker_driver {
       uint32_t ticks = MCPWM_RESOLUTION_HZ / frequency;
       if (ticks < 2) ticks = 2;
       return ticks;
-    }
-
-    uint32_t nextActiveFrequency(uint32_t activeFrequency, uint32_t requestedFrequency) {
-      if (requestedFrequency == activeFrequency) return activeFrequency;
-
-      uint32_t step = (activeFrequency * SMOOTH_MAX_PPM_PER_STEP) / 1000000U;
-      if (step < 1) step = 1;
-
-      if (requestedFrequency > activeFrequency) {
-        const uint32_t delta = requestedFrequency - activeFrequency;
-        if (step > delta) step = delta;
-        const uint32_t next = activeFrequency + step;
-        return next > requestedFrequency ? requestedFrequency : next;
-      }
-
-      const uint32_t delta = activeFrequency - requestedFrequency;
-      if (step > delta) step = delta;
-      return activeFrequency > requestedFrequency + step ? activeFrequency - step
-                                                         : requestedFrequency;
     }
 
     void applyFrequency(uint32_t frequency) {
@@ -92,46 +64,6 @@ namespace speaker_driver {
       checkEsp("timer_set_period", setPeriodErr);
       checkEsp("comparator_set", setComparatorErr);
       speakerActiveFrequency.store(frequency, std::memory_order_relaxed);
-    }
-
-    void stopSmoothTimer() {
-      if (smoothTimer == nullptr) return;
-      if (esp_timer_is_active(smoothTimer))
-        checkEsp("smooth_timer_stop", esp_timer_stop(smoothTimer));
-    }
-
-    void ensureSmoothTimerStarted() {
-      if (smoothTimer == nullptr) return;
-      if (!esp_timer_is_active(smoothTimer)) {
-        checkEsp("smooth_timer_start",
-                 esp_timer_start_periodic(smoothTimer, SMOOTH_STEP_INTERVAL_US));
-      }
-    }
-
-    void onSmoothStep(void*) {
-      if (!timerRunning.load(std::memory_order_relaxed) ||
-          !smoothActive.load(std::memory_order_relaxed)) {
-        stopSmoothTimer();
-        return;
-      }
-
-      const uint32_t requested = speakerRequestedFrequency.load(std::memory_order_relaxed);
-      const uint32_t active = speakerActiveFrequency.load(std::memory_order_relaxed);
-
-      if (requested == 0 || active == 0) {
-        smoothActive.store(false, std::memory_order_relaxed);
-        stopSmoothTimer();
-        return;
-      }
-
-      if (requested == active) {
-        smoothActive.store(false, std::memory_order_relaxed);
-        stopSmoothTimer();
-        return;
-      }
-
-      const uint32_t next = nextActiveFrequency(active, requested);
-      applyFrequency(next);
     }
   }  // namespace
 
@@ -189,28 +121,14 @@ namespace speaker_driver {
                  pwmGenerator, MCPWM_GEN_COMPARE_EVENT_ACTION(
                                    MCPWM_TIMER_DIRECTION_UP, pwmComparator, MCPWM_GEN_ACTION_LOW)));
 
-    const esp_timer_create_args_t smoothTimerConfig = {
-        .callback = &onSmoothStep,
-        .arg = nullptr,
-        .dispatch_method = ESP_TIMER_TASK,
-        .name = "speaker_smooth",
-        .skip_unhandled_events = true,
-    };
-    checkEsp("smooth_timer_create", esp_timer_create(&smoothTimerConfig, &smoothTimer));
-
     applyFrequency(BOOTSTRAP_FREQUENCY_HZ);
     checkEsp("force_low", mcpwm_generator_set_force_level(pwmGenerator, 0, true));
   }
 
-  void playTone(uint32_t frequency, bool smoothTransition) {
+  void playTone(uint32_t frequency) {
     if (pwmTimer == nullptr) return;
 
-    speakerRequestedFrequency.store(frequency, std::memory_order_relaxed);
-
     if (frequency == 0) {
-      smoothActive.store(false, std::memory_order_relaxed);
-      stopSmoothTimer();
-
       if (timerRunning.load(std::memory_order_relaxed)) {
         checkEsp("timer_stop", mcpwm_timer_start_stop(pwmTimer, MCPWM_TIMER_STOP_EMPTY));
         timerRunning.store(false, std::memory_order_relaxed);
@@ -226,17 +144,7 @@ namespace speaker_driver {
       return;
     }
 
-    const uint32_t active = speakerActiveFrequency.load(std::memory_order_relaxed);
-    const bool canSmooth = smoothTransition && active != 0;
-
-    if (canSmooth) {
-      smoothActive.store(true, std::memory_order_relaxed);
-      ensureSmoothTimerStarted();
-    } else {
-      smoothActive.store(false, std::memory_order_relaxed);
-      stopSmoothTimer();
-      applyFrequency(frequency);
-    }
+    applyFrequency(frequency);
 
     if (!timerEnabled.load(std::memory_order_relaxed)) {
       checkEsp("timer_enable", mcpwm_timer_enable(pwmTimer));

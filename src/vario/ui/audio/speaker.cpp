@@ -252,7 +252,7 @@ bool Speaker::update() {
   if (previewTone_ != note::NONE) {
     if (static_cast<int32_t>(previewToneUntilMs_ - millis()) > 0) {
       setVolume(varioVolume_);
-      speaker_driver::playTone(previewTone_, true);
+      speaker_driver::playTone(previewTone_);
       return true;
     }
     previewTone_ = note::NONE;
@@ -345,7 +345,7 @@ void Speaker::updateVario() {
     }
 
   } else {
-    speaker_driver::playTone(varioNote_, true);
+    speaker_driver::playTone(varioNote_);
     varioNoteLast_ = varioNote_;
 
     if (++varioPlaySampleCount_ >= varioPlaySamples_) {
