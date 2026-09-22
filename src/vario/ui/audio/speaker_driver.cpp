@@ -18,7 +18,7 @@ namespace speaker_driver {
     // Keep resolution low enough that the lowest tones fit within MCPWM peak-tick limits.
     // 1 MHz supports down to ~15 Hz with a 16-bit peak counter while keeping 1 Hz granularity.
     constexpr uint32_t MCPWM_RESOLUTION_HZ = 1000000;
-    constexpr uint32_t DEFAULT_FREQUENCY_HZ = 1000;
+    constexpr uint32_t BOOTSTRAP_FREQUENCY_HZ = 1000;
     constexpr int64_t SMOOTH_STEP_INTERVAL_US = 1000;
     // Smoothing target: limit each 1 ms step to at most 0.5% of current frequency.
     // This keeps large jumps perceptually smoother while still converging quickly.
@@ -48,7 +48,7 @@ namespace speaker_driver {
     }
 
     uint32_t periodTicksForFrequency(uint32_t frequency) {
-      if (frequency == 0) return MCPWM_RESOLUTION_HZ / DEFAULT_FREQUENCY_HZ;
+      if (frequency == 0) return MCPWM_RESOLUTION_HZ / BOOTSTRAP_FREQUENCY_HZ;
       uint32_t ticks = MCPWM_RESOLUTION_HZ / frequency;
       if (ticks < 2) ticks = 2;
       return ticks;
@@ -143,7 +143,7 @@ namespace speaker_driver {
         .clk_src = MCPWM_TIMER_CLK_SRC_DEFAULT,
         .resolution_hz = MCPWM_RESOLUTION_HZ,
         .count_mode = MCPWM_TIMER_COUNT_MODE_UP,
-        .period_ticks = periodTicksForFrequency(DEFAULT_FREQUENCY_HZ),
+        .period_ticks = periodTicksForFrequency(BOOTSTRAP_FREQUENCY_HZ),
         .intr_priority = 0,
         .flags =
             {
@@ -198,7 +198,7 @@ namespace speaker_driver {
     };
     checkEsp("smooth_timer_create", esp_timer_create(&smoothTimerConfig, &smoothTimer));
 
-    applyFrequency(DEFAULT_FREQUENCY_HZ);
+    applyFrequency(BOOTSTRAP_FREQUENCY_HZ);
     checkEsp("force_low", mcpwm_generator_set_force_level(pwmGenerator, 0, true));
   }
 
