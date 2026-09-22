@@ -422,11 +422,11 @@ bool LeafLogSync::screenActive() const {
 const char* LeafLogSync::statusLine() const {
   switch (state_) {
     case State::CheckingEligibility:
-      return "Checking Leaf Log...";
+      return "Checking flights...";
     case State::ConnectingWifi:
-      return "Connecting...";
+      return "Starting WiFi...";
     case State::WaitingForTime:
-      return "Setting network time...";
+      return "Connecting...";
     case State::Uploading:
       return "Uploading to Leaf Log";
     case State::AwaitingCenterIntent:
