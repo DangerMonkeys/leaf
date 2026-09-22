@@ -140,14 +140,17 @@ void LeafLogSync::update() {
                  sdcard.ownership() != SDCardOwnership::FirmwareUploading) {
         finishToMassStorage();
       } else {
-        state_ = State::ConnectingWifi;
+        const bool wifiReady = WiFi.status() == WL_CONNECTED && !diagnostic_network.connected();
+        state_ = wifiReady ? (time(nullptr) >= VALID_TIME_EPOCH ? State::Uploading
+                                                                : State::WaitingForTime)
+                           : State::ConnectingWifi;
         stateStartedMs_ = millis();
       }
       break;
     }
     case State::ConnectingWifi: {
       if (WiFi.status() == WL_CONNECTED && !diagnostic_network.connected()) {
-        state_ = State::WaitingForTime;
+        state_ = time(nullptr) >= VALID_TIME_EPOCH ? State::Uploading : State::WaitingForTime;
         stateStartedMs_ = millis();
         break;
       }
@@ -159,7 +162,7 @@ void LeafLogSync::update() {
 
       const bool connectionInProgress = leaf_wifi::savedNetworkConnectionInProgress();
       if (WiFi.status() == WL_CONNECTED && !diagnostic_network.connected()) {
-        state_ = State::WaitingForTime;
+        state_ = time(nullptr) >= VALID_TIME_EPOCH ? State::Uploading : State::WaitingForTime;
         stateStartedMs_ = millis();
       } else if (!connectionInProgress) {
         handleTransientFailure("wifi_connect_failed", static_cast<int>(WiFi.status()),

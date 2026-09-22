@@ -35,6 +35,10 @@ class LeafLogSync {
   bool retryPending() const { return state_ == State::Backoff; }
   bool massStorageUnavailable() const { return state_ == State::MassStorageUnavailable; }
   bool uploading() const { return state_ == State::Uploading; }
+  bool preparingNext() const {
+    return state_ == State::CheckingEligibility && sessionTotalKnown_ && completedCount_ > 0 &&
+           completedCount_ < sessionTotalCount_;
+  }
   bool completionPending() const { return sessionCompletionPending_; }
   bool completionNotice() const { return state_ == State::Complete; }
   bool powerOnPending() const { return powerOnRequested_.load(std::memory_order_acquire); }

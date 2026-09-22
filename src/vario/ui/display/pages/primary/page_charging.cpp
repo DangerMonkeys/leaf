@@ -131,6 +131,9 @@ void chargingPage_draw() {
                  leafLogSync.totalCount() > 0) {
         formatProgress(status, sizeof(status), "Uploaded", leafLogSync.currentCount(),
                        leafLogSync.totalCount());
+      } else if (leafLogSync.preparingNext()) {
+        formatProgress(status, sizeof(status), "Preparing", leafLogSync.currentCount(),
+                       leafLogSync.totalCount());
       } else if (leafLogSync.uploading() && leafLogSync.progressKnown() &&
                  leafLogSync.totalCount() > 0) {
         formatProgress(status, sizeof(status), "Uploading", leafLogSync.currentCount(),
