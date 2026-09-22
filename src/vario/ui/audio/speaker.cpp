@@ -18,6 +18,8 @@ Speaker speaker;
 namespace {
   constexpr unsigned long NOTE_DURATION_MS = 40;
   constexpr unsigned long TIMING_TOLERANCE_MS = 2;
+  // 4% max note change per smoothing tick, minimum 1Hz per tick.
+  constexpr uint32_t VARIO_SMOOTH_MAX_PPM_PER_STEP = 40000;
 }  // namespace
 
 void Speaker::init(void) {
@@ -239,11 +241,19 @@ bool Speaker::update() {
     fatalError("Unsupported Speaker::update state %d (%u)", nameOf(state_).c_str(), state_);
   }
 
+  if (!varioToneActive()) {
+    // Leaving vario-tone context: forget smoothing state so next tone starts immediately.
+    varioSmoothNote_ = note::NONE;
+  }
+
   // If speaker is muted, ensure silence and don't play sound
   if (speakerMute_) {
     speaker_driver::playTone(0);
     return false;
   }
+
+  // Run vario smoothing independently of NOTE_DURATION_MS cadence so SFX timing is unaffected.
+  updateVarioSmoothing();
 
   if (!shouldUpdate()) {
     return playingSound_ || previewTone_ != note::NONE;
@@ -340,19 +350,52 @@ void Speaker::updateVario() {
     // stop playing rest if we've done it long enough
     if (++varioRestSampleCount_ >= varioRestSamples_) {
       varioRestSampleCount_ = 0;
-      varioNoteLast_ = note::NONE;
       betweenVarioBeeps_ = false;  // next time through we want to play sound
     }
 
   } else {
-    speaker_driver::playTone(varioNote_);
-    varioNoteLast_ = varioNote_;
+    // Starting from silence is immediate; only in-tone note-to-note changes are smoothed.
+    if (varioSmoothNote_ == note::NONE) {
+      varioSmoothNote_ = varioNote_;
+      speaker_driver::playTone(varioSmoothNote_);
+    }
 
     if (++varioPlaySampleCount_ >= varioPlaySamples_) {
       varioPlaySampleCount_ = 0;
       if (varioRestSamples_) betweenVarioBeeps_ = true;  // next time through we want to rest
     }
   }
+}
+
+void Speaker::updateVarioSmoothing() {
+  if (!varioToneActive()) return;
+  if (varioSmoothNote_ == note::NONE) return;  // start handled in updateVario()
+  if (varioSmoothNote_ == varioNote_) return;
+
+  varioSmoothNote_ = stepToward(varioSmoothNote_, varioNote_);
+  speaker_driver::playTone(varioSmoothNote_);
+}
+
+bool Speaker::varioToneActive() const {
+  return !speakerMute_ && !playingSound_ && previewTone_ == note::NONE &&
+         varioVolume_ != SpeakerVolume::Off && !betweenVarioBeeps_ && varioNote_ != note::NONE;
+}
+
+note::note_t Speaker::stepToward(note::note_t current, note::note_t target) {
+  if (current == target) return current;
+
+  uint32_t step = static_cast<uint32_t>(current) * VARIO_SMOOTH_MAX_PPM_PER_STEP / 1000000U;
+  if (step < 1) step = 1;
+
+  if (target > current) {
+    const uint32_t delta = static_cast<uint32_t>(target - current);
+    if (step > delta) step = delta;
+    return static_cast<note::note_t>(static_cast<uint32_t>(current) + step);
+  }
+
+  const uint32_t delta = static_cast<uint32_t>(current - target);
+  if (step > delta) step = delta;
+  return static_cast<note::note_t>(static_cast<uint32_t>(current) - step);
 }
 
 void Speaker::onUnexpectedState(const char* action, State actual) const {
