@@ -33,6 +33,7 @@ namespace speaker_driver {
     std::atomic<uint32_t> speakerRequestedFrequency{0};
     std::atomic<uint32_t> speakerActiveFrequency{0};
     std::atomic<bool> timerRunning{false};
+    std::atomic<bool> timerEnabled{false};
     std::atomic<bool> smoothActive{false};
 
     // Serializes mcpwm_timer_set_period + mcpwm_comparator_set_compare_value so the two-step
@@ -199,7 +200,6 @@ namespace speaker_driver {
 
     applyFrequency(DEFAULT_FREQUENCY_HZ);
     checkEsp("force_low", mcpwm_generator_set_force_level(pwmGenerator, 0, true));
-    checkEsp("timer_enable", mcpwm_timer_enable(pwmTimer));
   }
 
   void playTone(uint32_t frequency, bool smoothTransition) {
@@ -214,6 +214,11 @@ namespace speaker_driver {
       if (timerRunning.load(std::memory_order_relaxed)) {
         checkEsp("timer_stop", mcpwm_timer_start_stop(pwmTimer, MCPWM_TIMER_STOP_EMPTY));
         timerRunning.store(false, std::memory_order_relaxed);
+      }
+
+      if (timerEnabled.load(std::memory_order_relaxed)) {
+        checkEsp("timer_disable", mcpwm_timer_disable(pwmTimer));
+        timerEnabled.store(false, std::memory_order_relaxed);
       }
 
       speakerActiveFrequency.store(0, std::memory_order_relaxed);
@@ -231,6 +236,11 @@ namespace speaker_driver {
       smoothActive.store(false, std::memory_order_relaxed);
       stopSmoothTimer();
       applyFrequency(frequency);
+    }
+
+    if (!timerEnabled.load(std::memory_order_relaxed)) {
+      checkEsp("timer_enable", mcpwm_timer_enable(pwmTimer));
+      timerEnabled.store(true, std::memory_order_relaxed);
     }
 
     checkEsp("force_release", mcpwm_generator_set_force_level(pwmGenerator, -1, true));

@@ -130,6 +130,7 @@ extern "C" {
 // Timer
 esp_err_t mcpwm_new_timer(const mcpwm_timer_config_t* config, mcpwm_timer_handle_t* ret_timer);
 esp_err_t mcpwm_timer_enable(mcpwm_timer_handle_t timer);
+esp_err_t mcpwm_timer_disable(mcpwm_timer_handle_t timer);
 esp_err_t mcpwm_timer_start_stop(mcpwm_timer_handle_t timer, mcpwm_timer_start_stop_cmd_t command);
 esp_err_t mcpwm_timer_set_period(mcpwm_timer_handle_t timer, uint32_t period_ticks);
 

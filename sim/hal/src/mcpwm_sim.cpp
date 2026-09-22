@@ -54,6 +54,12 @@ esp_err_t mcpwm_new_timer(const mcpwm_timer_config_t* config, mcpwm_timer_handle
 
 esp_err_t mcpwm_timer_enable(mcpwm_timer_handle_t) { return ESP_OK; }
 
+esp_err_t mcpwm_timer_disable(mcpwm_timer_handle_t) {
+  s_running = false;
+  updateTone();
+  return ESP_OK;
+}
+
 esp_err_t mcpwm_timer_start_stop(mcpwm_timer_handle_t, mcpwm_timer_start_stop_cmd_t command) {
   s_running = (command == MCPWM_TIMER_START_NO_STOP);
   updateTone();
