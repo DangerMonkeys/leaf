@@ -1,17 +1,11 @@
-// Sim implementations of the ESP-IDF MCPWM and esp_timer APIs.
+// Sim implementations of the ESP-IDF MCPWM APIs used by the speaker driver.
 //
 // Only the speaker driver uses these APIs, so the implementation is deliberately minimal:
 //
 //   - MCPWM: tracks resolution_hz + period_ticks and calls sim::board().writeTone() whenever
 //     the frequency or mute state changes.  No actual PWM signal is generated.
-//
-//   - esp_timer (periodic): drives the callback synchronously in a tight loop until the callback
-//     cancels itself.  For the speaker's smoothing use case this converges in O(log delta) steps
-//     and lets the same graduated ramp logic run in the emulator without a background thread or
-//     virtual-clock integration.
 
 #include <driver/mcpwm_timer.h>
-#include <esp_timer.h>
 
 #include "sim/board.h"
 
@@ -31,12 +25,6 @@ namespace {
       sim::board().writeTone(s_resolution_hz / s_period_ticks);
     }
   }
-
-  struct FakeTimer {
-    void (*callback)(void*);
-    void* arg;
-    bool active;
-  };
 
 }  // namespace
 
@@ -110,34 +98,6 @@ esp_err_t mcpwm_generator_set_force_level(mcpwm_gen_handle_t, int level, bool) {
   s_forced_low = (level == 0);
   updateTone();
   return ESP_OK;
-}
-
-// ------------------------------------------------------------------ esp_timer stubs
-
-esp_err_t esp_timer_create(const esp_timer_create_args_t* args, esp_timer_handle_t* out_handle) {
-  auto* t = new FakeTimer{args->callback, args->arg, false};
-  *out_handle = reinterpret_cast<esp_timer_handle_t>(t);
-  return ESP_OK;
-}
-
-// Drive the callback synchronously until it cancels the timer (e.g. smoothing converged).
-// This is safe because the speaker's smoothing loop converges in O(log delta) iterations.
-esp_err_t esp_timer_start_periodic(esp_timer_handle_t handle, uint64_t /*period_us*/) {
-  auto* t = reinterpret_cast<FakeTimer*>(handle);
-  t->active = true;
-  while (t->active) {
-    t->callback(t->arg);
-  }
-  return ESP_OK;
-}
-
-esp_err_t esp_timer_stop(esp_timer_handle_t handle) {
-  reinterpret_cast<FakeTimer*>(handle)->active = false;
-  return ESP_OK;
-}
-
-bool esp_timer_is_active(esp_timer_handle_t handle) {
-  return reinterpret_cast<FakeTimer*>(handle)->active;
 }
 
 }  // extern "C"
