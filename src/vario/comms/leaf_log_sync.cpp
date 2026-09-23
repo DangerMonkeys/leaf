@@ -17,6 +17,8 @@
 namespace {
   constexpr time_t VALID_TIME_EPOCH = 1704067200;
   constexpr uint32_t CENTER_POWER_ON_HOLD_MS = 900;
+  constexpr uint32_t COMPLETION_POPUP_MS = 5UL * 1000;
+  constexpr uint32_t NOTICE_POPUP_MS = 30UL * 1000;
   constexpr uint32_t RETRY_DELAYS_MS[] = {5UL * 60 * 1000, 15UL * 60 * 1000, 60UL * 60 * 1000};
 }  // namespace
 
@@ -26,8 +28,10 @@ void LeafLogSync::beginSession(bool fromEject) {
   buttons.armUrgentPressCapture();
   resumedAfterEject_ = fromEject;
   sessionTotalKnown_ = false;
+  sessionCompletionPending_ = false;
   completedCount_ = 0;
   sessionTotalCount_ = 0;
+  completionStartedMs_ = 0;
   retryIndex_ = 0;
   beginEligibilityScan();
 }
@@ -136,14 +140,17 @@ void LeafLogSync::update() {
                  sdcard.ownership() != SDCardOwnership::FirmwareUploading) {
         finishToMassStorage();
       } else {
-        state_ = State::ConnectingWifi;
+        const bool wifiReady = WiFi.status() == WL_CONNECTED && !diagnostic_network.connected();
+        state_ = wifiReady ? (time(nullptr) >= VALID_TIME_EPOCH ? State::Uploading
+                                                                : State::WaitingForTime)
+                           : State::ConnectingWifi;
         stateStartedMs_ = millis();
       }
       break;
     }
     case State::ConnectingWifi: {
       if (WiFi.status() == WL_CONNECTED && !diagnostic_network.connected()) {
-        state_ = State::WaitingForTime;
+        state_ = time(nullptr) >= VALID_TIME_EPOCH ? State::Uploading : State::WaitingForTime;
         stateStartedMs_ = millis();
         break;
       }
@@ -155,7 +162,7 @@ void LeafLogSync::update() {
 
       const bool connectionInProgress = leaf_wifi::savedNetworkConnectionInProgress();
       if (WiFi.status() == WL_CONNECTED && !diagnostic_network.connected()) {
-        state_ = State::WaitingForTime;
+        state_ = time(nullptr) >= VALID_TIME_EPOCH ? State::Uploading : State::WaitingForTime;
         stateStartedMs_ = millis();
       } else if (!connectionInProgress) {
         handleTransientFailure("wifi_connect_failed", static_cast<int>(WiFi.status()),
@@ -190,7 +197,7 @@ void LeafLogSync::update() {
         if (!result.accountHandle.isEmpty() && !result.accountDisplayName.isEmpty()) {
           leaf_log_credentials::updateAccount(result.accountHandle, result.accountDisplayName);
         }
-        completedCount_++;
+        recordCompletedItem();
         retryIndex_ = 0;
         beginEligibilityScan();
       } else if (result.outcome == leaf_log_client::UploadOutcome::Unauthorized) {
@@ -206,7 +213,7 @@ void LeafLogSync::update() {
                                  result.fileSize, result.responseSize);
           break;
         }
-        completedCount_++;
+        recordCompletedItem();
         retryIndex_ = 0;
         beginEligibilityScan();
       } else if (result.outcome == leaf_log_client::UploadOutcome::Cancelled) {
@@ -226,6 +233,12 @@ void LeafLogSync::update() {
     case State::Finishing:
       finishToMassStorage();
       break;
+    case State::Complete:
+      if (millis() - stateStartedMs_ >= COMPLETION_POPUP_MS) {
+        sessionCompletionPending_ = false;
+        state_ = completionExitState_;
+      }
+      break;
     case State::MassStorageUnavailable:
     case State::Ejected:
     case State::Idle:
@@ -243,6 +256,8 @@ void LeafLogSync::prepareForCharging() {
   centerIntentStartedMs_ = 0;
   resumedAfterEject_ = false;
   powerOnClosingUsb_ = false;
+  sessionCompletionPending_ = false;
+  completionStartedMs_ = 0;
   state_ = State::Idle;
 }
 
@@ -254,7 +269,17 @@ void LeafLogSync::prepareForOperating() {
   centerIntentStartedMs_ = 0;
   resumedAfterEject_ = false;
   powerOnClosingUsb_ = false;
+  sessionCompletionPending_ = false;
+  completionStartedMs_ = 0;
   state_ = State::Idle;
+}
+
+void LeafLogSync::recordCompletedItem() {
+  completedCount_++;
+  if (sessionTotalKnown_ && sessionTotalCount_ > 0 && completedCount_ >= sessionTotalCount_) {
+    sessionCompletionPending_ = true;
+    completionStartedMs_ = millis();
+  }
 }
 
 void LeafLogSync::finishRequestedExit() {
@@ -302,12 +327,25 @@ void LeafLogSync::finishToMassStorage() {
   cancelRequested_.store(false, std::memory_order_release);
   powerOnRequested_.store(false, std::memory_order_release);
   centerIntentStartedMs_ = 0;
+  State exitState = State::HostOwned;
   if (resumedAfterEject_) {
     sdcard.keepMassStorageEjected();
     resumedAfterEject_ = false;
-    state_ = State::Ejected;
+    exitState = State::Ejected;
   } else {
-    state_ = sdcard.presentMassStorage() ? State::HostOwned : State::MassStorageUnavailable;
+    if (!sdcard.presentMassStorage()) {
+      state_ = State::MassStorageUnavailable;
+      stateStartedMs_ = millis();
+      return;
+    }
+  }
+
+  if (sessionCompletionPending_) {
+    completionExitState_ = exitState;
+    state_ = State::Complete;
+    stateStartedMs_ = millis();
+  } else {
+    state_ = exitState;
   }
 }
 
@@ -340,6 +378,7 @@ void LeafLogSync::handleTransientFailure(const char* reason, int httpStatus, uin
                 static_cast<unsigned long>(delayMs));
   diagnostic_logs::appendSystemEvent("leaf_log", "retry", detail, "delay_ms", delayMs, true);
   state_ = State::Backoff;
+  stateStartedMs_ = millis();
 }
 
 void LeafLogSync::requestCancel() { cancelRequested_.store(true, std::memory_order_release); }
@@ -372,23 +411,34 @@ bool LeafLogSync::canSleepWhileCharging() const {
          state_ == State::MassStorageUnavailable;
 }
 
-bool LeafLogSync::screenActive() const { return interceptsChargingButtons(); }
+bool LeafLogSync::screenActive() const {
+  if (state_ == State::Complete) return millis() - stateStartedMs_ < COMPLETION_POPUP_MS;
+  if (state_ == State::Backoff || state_ == State::MassStorageUnavailable) {
+    return millis() - stateStartedMs_ < NOTICE_POPUP_MS;
+  }
+  if (state_ == State::CheckingEligibility && sessionCompletionPending_) {
+    return millis() - completionStartedMs_ < NOTICE_POPUP_MS;
+  }
+  return interceptsChargingButtons();
+}
 
 const char* LeafLogSync::statusLine() const {
   switch (state_) {
     case State::CheckingEligibility:
-      return "Checking Leaf Log...";
+      return "Checking flights...";
     case State::ConnectingWifi:
-      return "Connecting...";
+      return "Starting WiFi...";
     case State::WaitingForTime:
-      return "Setting network time...";
+      return "Connecting...";
     case State::Uploading:
       return "Uploading to Leaf Log";
     case State::AwaitingCenterIntent:
       if (!powerOnRequested_.load(std::memory_order_acquire)) return "Hold center to turn on";
       return powerOnClosingUsb_ ? "Closing USB..." : "";
     case State::Backoff:
-      return "Retry pending...";
+      return "Upload paused";
+    case State::Complete:
+      return "Uploads complete";
     case State::MassStorageUnavailable:
       return "USB drive unavailable";
     default:
