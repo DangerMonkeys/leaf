@@ -73,13 +73,10 @@ class Speaker : private StateAssertMixin<Speaker> {
   sound_t soundPlaying_ = fx::silence;
 
   // notes we should play, and if we're currently playing
-  note::note_t varioNote_ = note::NONE;      // note to play for vario beeps
-  note::note_t varioNoteLast_ = note::NONE;  // last note played for vario beeps
-  note::note_t fxNoteLast_ = note::NONE;     // last note played for sound effects
-  bool betweenVarioBeeps_ = false;           // are we resting (silence) between beeps?
-  bool playingSound_ = false;                // are we playing a sound?
-
-  uint32_t lastTone_ = 0;
+  note::note_t varioNote_ = note::NONE;   // note to play for vario beeps
+  note::note_t fxNoteLast_ = note::NONE;  // last note played for sound effects
+  bool betweenVarioBeeps_ = false;        // are we resting (silence) between beeps?
+  bool playingSound_ = false;             // are we playing a sound?
 
   // == trackers for fixed-sample length speaker timer approach #1 ==
 
@@ -107,6 +104,9 @@ class Speaker : private StateAssertMixin<Speaker> {
   note::note_t previewTone_ = note::NONE;
   uint32_t previewToneUntilMs_ = 0;
 
+  // Independent vario-only smoothing state (does not affect SFX tempo/cadence).
+  note::note_t varioSmoothNote_ = note::NONE;
+
   // this is to allow playing single notes by changing single_note[0], while
   // still having a NOTE_END terminator following.
   uint16_t singleNote_[2] = {0, note::END};
@@ -121,10 +121,11 @@ class Speaker : private StateAssertMixin<Speaker> {
   bool shouldUpdate();
   bool updateSound();
   void updateVario();
+  void updateVarioSmoothing();
+  bool varioToneActive() const;
+  static note::note_t stepToward(note::note_t current, note::note_t target);
   void setVarioNote(int32_t verticalRate, bool respectQuietMode);
   void updateVarioTest();
-
-  void playTone(uint32_t freq);
 };
 
 extern Speaker speaker;

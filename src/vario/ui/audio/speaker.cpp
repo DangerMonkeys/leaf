@@ -9,6 +9,7 @@
 #include "ui/audio/dynamic_effects.h"
 #include "ui/audio/notes.h"
 #include "ui/audio/sound_effects.h"
+#include "ui/audio/speaker_driver.h"
 #include "ui/settings/settings.h"
 #include "utils/magic_enum.h"
 
@@ -17,14 +18,15 @@ Speaker speaker;
 namespace {
   constexpr unsigned long NOTE_DURATION_MS = 40;
   constexpr unsigned long TIMING_TOLERANCE_MS = 2;
+  // 4% max note change per smoothing tick, minimum 1Hz per tick.
+  constexpr uint32_t VARIO_SMOOTH_MAX_PPM_PER_STEP = 40000;
 }  // namespace
 
 void Speaker::init(void) {
   assertState("Speaker::init", State::Uninitialized);
 
-  // configure speaker pinout and PWM channel
-  pinMode(SPEAKER_PIN, OUTPUT);
-  ledcAttach(SPEAKER_PIN, 1000, 10);
+  // configure speaker pinout for timer-driven square wave output
+  speaker_driver::init();
 
   // set speaker volume pins as outputs IF NOT ON the IO Expander
   if (!SPEAKER_VOLA_IOEX) pinMode(SPEAKER_VOLA, OUTPUT);
@@ -41,7 +43,7 @@ void Speaker::mute() {
   previewTone_ = note::NONE;
   updateVarioNote(0);  // clear vario note
   if (state_ != State::Uninitialized) {
-    playTone(0);  // mute speaker pin
+    speaker_driver::playTone(0);  // mute speaker pin
   }
   speakerMute_ = true;
 }
@@ -239,11 +241,19 @@ bool Speaker::update() {
     fatalError("Unsupported Speaker::update state %d (%u)", nameOf(state_).c_str(), state_);
   }
 
+  if (!varioToneActive()) {
+    // Leaving vario-tone context: forget smoothing state so next tone starts immediately.
+    varioSmoothNote_ = note::NONE;
+  }
+
   // If speaker is muted, ensure silence and don't play sound
   if (speakerMute_) {
-    playTone(0);
+    speaker_driver::playTone(0);
     return false;
   }
+
+  // Run vario smoothing independently of NOTE_DURATION_MS cadence so SFX timing is unaffected.
+  updateVarioSmoothing();
 
   if (!shouldUpdate()) {
     return playingSound_ || previewTone_ != note::NONE;
@@ -252,11 +262,11 @@ bool Speaker::update() {
   if (previewTone_ != note::NONE) {
     if (static_cast<int32_t>(previewToneUntilMs_ - millis()) > 0) {
       setVolume(varioVolume_);
-      playTone(previewTone_);
+      speaker_driver::playTone(previewTone_);
       return true;
     }
     previewTone_ = note::NONE;
-    playTone(0);
+    speaker_driver::playTone(0);
   }
 
   updateVarioTest();
@@ -273,7 +283,7 @@ bool Speaker::update() {
 
   } else {
     // play silence
-    playTone(0);
+    speaker_driver::playTone(0);
   }
 
   return false;
@@ -313,7 +323,7 @@ bool Speaker::shouldUpdate() {
 bool Speaker::updateSound() {
   setVolume(fxVolume_);
   if (*soundPlaying_ != note::END) {
-    playTone(*soundPlaying_);
+    speaker_driver::playTone(*soundPlaying_);
     fxNoteLast_ = *soundPlaying_;  // save last note
 
     // if we've played this note for enough samples
@@ -324,7 +334,7 @@ bool Speaker::updateSound() {
     return true;
 
   } else {  // Else, we're at END_OF_TONE
-    playTone(0);
+    speaker_driver::playTone(0);
     playingSound_ = false;
     fxNoteLast_ = note::NONE;
     return false;
@@ -335,18 +345,20 @@ void Speaker::updateVario() {
   setVolume(varioVolume_);
   //  Handle the beeps and rests of a vario sound "measure"
   if (betweenVarioBeeps_) {
-    playTone(0);  // "play" silence since we're resting between beeps
+    speaker_driver::playTone(0);  // "play" silence since we're resting between beeps
 
     // stop playing rest if we've done it long enough
     if (++varioRestSampleCount_ >= varioRestSamples_) {
       varioRestSampleCount_ = 0;
-      varioNoteLast_ = note::NONE;
       betweenVarioBeeps_ = false;  // next time through we want to play sound
     }
 
   } else {
-    playTone(varioNote_);
-    varioNoteLast_ = varioNote_;
+    // Starting from silence is immediate; only in-tone note-to-note changes are smoothed.
+    if (varioSmoothNote_ == note::NONE) {
+      varioSmoothNote_ = varioNote_;
+      speaker_driver::playTone(varioSmoothNote_);
+    }
 
     if (++varioPlaySampleCount_ >= varioPlaySamples_) {
       varioPlaySampleCount_ = 0;
@@ -355,11 +367,35 @@ void Speaker::updateVario() {
   }
 }
 
-void Speaker::playTone(uint32_t freq) {
-  if (freq != lastTone_) {
-    ledcWriteTone(SPEAKER_PIN, freq);
-    lastTone_ = freq;
+void Speaker::updateVarioSmoothing() {
+  if (!varioToneActive()) return;
+  if (varioSmoothNote_ == note::NONE) return;  // start handled in updateVario()
+  if (varioSmoothNote_ == varioNote_) return;
+
+  varioSmoothNote_ = stepToward(varioSmoothNote_, varioNote_);
+  speaker_driver::playTone(varioSmoothNote_);
+}
+
+bool Speaker::varioToneActive() const {
+  return !speakerMute_ && !playingSound_ && previewTone_ == note::NONE &&
+         varioVolume_ != SpeakerVolume::Off && !betweenVarioBeeps_ && varioNote_ != note::NONE;
+}
+
+note::note_t Speaker::stepToward(note::note_t current, note::note_t target) {
+  if (current == target) return current;
+
+  uint32_t step = static_cast<uint32_t>(current) * VARIO_SMOOTH_MAX_PPM_PER_STEP / 1000000U;
+  if (step < 1) step = 1;
+
+  if (target > current) {
+    const uint32_t delta = static_cast<uint32_t>(target - current);
+    if (step > delta) step = delta;
+    return static_cast<note::note_t>(static_cast<uint32_t>(current) + step);
   }
+
+  const uint32_t delta = static_cast<uint32_t>(current - target);
+  if (step > delta) step = delta;
+  return static_cast<note::note_t>(static_cast<uint32_t>(current) - step);
 }
 
 void Speaker::onUnexpectedState(const char* action, State actual) const {
