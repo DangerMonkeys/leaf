@@ -138,6 +138,7 @@ void FactoryDiscovery::onPacket(AsyncUDPPacket& packet) {}
 DiagnosticNetwork diagnostic_network;
 
 bool DiagnosticNetwork::connected() const { return false; }
+bool DiagnosticNetwork::chargingWorkBlocked() const { return false; }
 void DiagnosticNetwork::update() {}
 void DiagnosticNetwork::reset(const char* reason) { state_ = State::Ready; }
 bool DiagnosticNetwork::canSleepWhileCharging() const { return true; }

@@ -356,9 +356,11 @@
   });
 
   // ---------------------------------------------------------------- speaker
-  // Tone events carry the frequency the firmware wrote to the LEDC channel and the volume it set
+  // Tone events carry the frequency the firmware wrote to the speaker channel and the volume it set
   // on the amplifier's two gain pins, so the browser can play what the device would sound like.
   let audio = null, oscillator = null, gain = null;
+  let toneDeviceTime = null, toneAudioTime = 0, toneGain = 0, simulatorSpeed = 1;
+  const AUDIO_BUFFER_SECONDS = 0.075;
   document.getElementById('sound').addEventListener('change', event => {
     if (event.target.checked) {
       audio = new (window.AudioContext || window.webkitAudioContext)();
@@ -368,6 +370,9 @@
       gain.gain.value = 0;
       oscillator.connect(gain).connect(audio.destination);
       oscillator.start();
+      toneDeviceTime = null;
+      toneAudioTime = 0;
+      toneGain = 0;
     } else if (audio) {
       oscillator.stop();
       audio.close();
@@ -378,19 +383,27 @@
     if (!audio) return;
     const now = audio.currentTime;
 
+    // The event stream is intentionally polled in 50 ms chunks along with the screen and status.
+    // Recreate the firmware's timing from its device timestamps instead of playing every update in
+    // a received chunk at once. A small buffer keeps the schedule ahead of ordinary poll jitter.
+    let at = now + AUDIO_BUFFER_SECONDS;
+    if (simulatorSpeed > 0 && toneDeviceTime !== null && event.atMs >= toneDeviceTime &&
+        event.atMs - toneDeviceTime < 1000) {
+      at = toneAudioTime + (event.atMs - toneDeviceTime) / (1000 * simulatorSpeed);
+      if (at < now) at = now + AUDIO_BUFFER_SECONDS;
+    }
+    toneDeviceTime = event.atMs;
+    toneAudioTime = at;
+
     // Volume zero disables the physical Leaf's speaker amplifier, even if PWM is still running.
     // Reach an exact zero after a short click-suppressing ramp instead of leaving the oscillator at
     // a small gain or using an exponential target that only approaches silence asymptotically.
-    if (gain.gain.cancelAndHoldAtTime) {
-      gain.gain.cancelAndHoldAtTime(now);
-    } else {
-      const currentGain = gain.gain.value;
-      gain.gain.cancelScheduledValues(now);
-      gain.gain.setValueAtTime(currentGain, now);
-    }
     const targetGain = event.hz && event.volume ? 0.02 + 0.03 * event.volume : 0;
-    if (event.hz) oscillator.frequency.setValueAtTime(event.hz, now);
-    gain.gain.linearRampToValueAtTime(targetGain, now + 0.005);
+    gain.gain.cancelScheduledValues(at);
+    gain.gain.setValueAtTime(toneGain, at);
+    gain.gain.linearRampToValueAtTime(targetGain, at + 0.005);
+    toneGain = targetGain;
+    if (event.hz) oscillator.frequency.setValueAtTime(event.hz, at);
   }
 
   // ---------------------------------------------------------------- status
@@ -410,6 +423,7 @@
   document.getElementById('seek').addEventListener('change', () => { seeking = false; });
 
   function showStatus(status) {
+    simulatorSpeed = status.speed;
     showSpeed(status.speed);
     text('uptime', (status.uptimeMs / 1000).toFixed(1) + ' s');
     text('s-page', status.page);
