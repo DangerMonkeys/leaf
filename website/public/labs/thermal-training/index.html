@@ -1,0 +1,4068 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Leaf Thermal Training</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #303030;
+    --bg-deep: #202423;
+    --panel: #505050;
+    --panel-subtle: #444746;
+    --field: #f7faf6;
+    --field-ink: #17201b;
+    --fg: #f6f8f3;
+    --muted: #dce5d6;
+    --muted-dim: #aeb8aa;
+    --border: #727872;
+    --accent: #d8ff00;
+    --accent-strong: #c5e900;
+    --accent-soft: rgb(216 255 0 / 16%);
+    --hero-green: #84b53f;
+    --good: #69d178;
+    --climb: #2784d8;
+    --sink: #cf3f3f;
+    --warn: #ffb459;
+    --bad: #ef766f;
+    --canvas: #171d1b;
+    --focus: rgb(216 255 0 / 36%);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background:
+      radial-gradient(circle at 18% 0%, rgb(132 181 63 / 18%), transparent 34rem),
+      linear-gradient(135deg, #3b3b3b 0%, var(--bg) 42%, #242827 100%);
+    color: var(--fg);
+  }
+  .topbar {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 18px;
+    min-height: 58px;
+    padding: 10px 18px;
+    border-bottom: 1px solid rgb(255 255 255 / 10%);
+    background: var(--accent);
+    color: #0b0d0b;
+  }
+  .brand-mark {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    min-width: 0;
+  }
+  .brand-leaf {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  .brand-title {
+    color: #202423;
+    font-size: 15px;
+    font-weight: 750;
+  }
+  .brand-subtitle {
+    color: rgb(11 13 11 / 70%);
+    font-size: 12px;
+    font-weight: 700;
+    text-align: right;
+  }
+  .app {
+    display: grid;
+    grid-template-columns: 300px minmax(560px, 1fr) 340px;
+    gap: 16px;
+    min-height: calc(100vh - 58px);
+    padding: 16px;
+  }
+  .stage {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+    border: 1px solid rgb(255 255 255 / 10%);
+    border-radius: 10px;
+    background: linear-gradient(180deg, #252b29, #1b211f);
+    box-shadow: 0 18px 34px rgb(0 0 0 / 28%);
+  }
+  canvas {
+    display: block;
+    width: min(100%, calc((100vh - 110px) * 1.441));
+    max-height: calc(100vh - 110px);
+    height: auto;
+    background: var(--canvas);
+    border: 1px solid rgb(216 255 0 / 24%);
+    border-radius: 8px;
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 5%);
+  }
+  .stage:has(.tutorial-card:not([hidden])) canvas {
+    width: min(100%, calc((100vh - 260px) * 1.441));
+    max-height: calc(100vh - 260px);
+  }
+  .side {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 8px 18px rgb(0 0 0 / 16%);
+  }
+  h1, h2 {
+    margin: 0 0 10px;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.015em;
+  }
+  h1 {
+    font-size: 18px;
+  }
+  h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    text-transform: uppercase;
+  }
+  h2::before {
+    width: 5px;
+    height: 18px;
+    border-radius: 999px;
+    background: var(--accent);
+    content: "";
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 8px;
+    margin: 10px 0;
+  }
+  .row label, .row .label {
+    font-size: 12px;
+    font-weight: 750;
+    color: var(--muted);
+  }
+  .row output {
+    color: #ffffff;
+    font-variant-numeric: tabular-nums;
+    font-size: 12px;
+    font-weight: 800;
+  }
+  input[type="range"] {
+    grid-column: 1 / -1;
+    width: 100%;
+    accent-color: var(--accent);
+  }
+  input[type="number"], input[type="text"] {
+    width: 96px;
+    min-height: 36px;
+    padding: 7px 9px;
+    color: var(--field-ink);
+    background: var(--field);
+    border: 1px solid #b9c7c1;
+    border-radius: 6px;
+    font: inherit;
+    font-weight: 700;
+  }
+  .seed-row {
+    grid-template-columns: 1fr 96px auto;
+  }
+  .seed-row label {
+    grid-column: 1;
+  }
+  .seed-row input {
+    grid-column: 2;
+  }
+  .seed-row button {
+    grid-column: 3;
+    white-space: nowrap;
+  }
+  button {
+    appearance: none;
+    border: 1px solid var(--border);
+    background: var(--panel-subtle);
+    color: var(--fg);
+    border-radius: 6px;
+    min-height: 36px;
+    padding: 7px 11px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  button:hover,
+  button:focus-visible,
+  input:focus-visible {
+    border-color: var(--accent);
+    outline: 3px solid var(--focus);
+  }
+  button.primary {
+    color: #0b0d0b;
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  button[aria-pressed="true"] {
+    color: #0b0d0b;
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  button:disabled,
+  input:disabled {
+    cursor: not-allowed;
+    opacity: 0.42;
+    filter: grayscale(0.9);
+  }
+  .tutorial-active .free-fly-card,
+  .tutorial-active .config-side .card:not(.audio-card) {
+    opacity: 0.48;
+  }
+  .tutorial-active #tutorialStart {
+    color: #0b0d0b;
+    background: var(--accent);
+    border-color: var(--accent);
+    opacity: 1;
+    filter: none;
+  }
+  .buttons {
+    display: flex;
+    gap: 7px;
+    flex-wrap: wrap;
+  }
+  .stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .stat {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 9px;
+    background: var(--panel-subtle);
+  }
+  .stat span {
+    display: block;
+    color: var(--muted-dim);
+    font-size: 11px;
+    font-weight: 750;
+    text-transform: uppercase;
+  }
+  .stat strong {
+    display: block;
+    margin-top: 3px;
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+  .hint {
+    margin: 0;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.35;
+  }
+  .tutorial-card {
+    width: min(100%, calc((100vh - 260px) * 1.441));
+    border-color: var(--accent);
+    background: linear-gradient(90deg, #202423, #465038 55%, #202423);
+    padding: 14px 16px;
+  }
+  .tutorial-card[hidden] {
+    display: none;
+  }
+  .tutorial-control-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .tutorial-stage-picker {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  body:not(.tutorial-active) .tutorial-stage-picker {
+    display: none;
+  }
+  .stage-arrow {
+    display: inline-grid;
+    place-items: center;
+    min-width: 30px;
+    width: 30px;
+    min-height: 30px;
+    padding: 0;
+    color: #0b0d0b;
+    background: var(--accent);
+    border-color: var(--accent);
+    font-size: 16px;
+  }
+  .stage-readout {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+  .tutorial-title {
+    margin: 0 0 6px;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+  .tutorial-message {
+    margin: 0 0 10px;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 650;
+    line-height: 1.35;
+  }
+  .tutorial-goal {
+    margin: 0 0 10px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.35;
+  }
+  .check {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 8px 0;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 750;
+  }
+  .check input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent);
+  }
+  .trial-list {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .trial-list th, .trial-list td {
+    padding: 6px 3px;
+    text-align: right;
+    border-bottom: 1px solid var(--border);
+    font-variant-numeric: tabular-nums;
+  }
+  .trial-list th {
+    color: var(--muted-dim);
+    font-size: 11px;
+    text-transform: uppercase;
+  }
+  .trial-list th:first-child, .trial-list td:first-child { text-align: left; }
+  @media (max-width: 1220px) {
+    .app {
+      grid-template-columns: minmax(560px, 1fr) 340px;
+    }
+    .info-side {
+      display: contents;
+    }
+    .info-side .intro-card,
+    .info-side .free-fly-card,
+    .info-side .score-card,
+    .info-side .trials-card {
+      grid-column: 1 / -1;
+    }
+  }
+  @media (max-width: 980px) {
+    .app {
+      grid-template-columns: 1fr;
+    }
+    .info-side {
+      display: flex;
+    }
+    canvas {
+      width: 100%;
+      max-height: none;
+    }
+  }
+  @media (max-width: 640px) {
+    .topbar {
+      grid-template-columns: 1fr;
+      gap: 2px;
+    }
+    .brand-subtitle {
+      text-align: left;
+    }
+    .app {
+      padding: 10px;
+    }
+  }
+  /* Thermal Training: Leaf Log-inspired, calmer game shell. */
+  :root {
+    color-scheme: light;
+    --training-blue: #0099ff;
+    --training-blue-strong: #007dcc;
+    --training-lime: #d8ff00;
+    --training-ink: #17212b;
+    --training-muted: #66717d;
+    --training-paper: #ffffff;
+    --training-surface: #f4f6f7;
+    --training-line: #dce2e6;
+  }
+  body {
+    overflow: hidden;
+    background: #e9edef;
+    color: var(--training-ink);
+    font-family: Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  .topbar {
+    min-height: 64px;
+    padding: 0 22px;
+    background: rgba(255,255,255,.94);
+    color: var(--training-ink);
+    border-bottom: 1px solid var(--training-line);
+    box-shadow: 0 1px 10px rgba(22,33,43,.06);
+    backdrop-filter: blur(14px);
+  }
+  .brand-mark { align-items: center; gap: 12px; }
+  .brand-leaf {
+    color: #000;
+    font-family: "Roboto Condensed", Roboto, sans-serif;
+    font-size: 25px;
+    font-weight: 900;
+    letter-spacing: -.04em;
+  }
+  .brand-divider { width: 1px; height: 24px; background: var(--training-line); }
+  .brand-title { color: var(--training-ink); font-size: 16px; font-weight: 700; }
+  .top-actions { display: flex; align-items: center; gap: 8px; }
+  button {
+    min-height: 40px;
+    border: 1px solid var(--training-line);
+    border-radius: 12px;
+    background: #fff;
+    color: var(--training-ink);
+    font-size: 14px;
+    font-weight: 700;
+    box-shadow: 0 2px 7px rgba(22,33,43,.06);
+  }
+  button:hover { transform: translateY(-1px); border-color: #b8c3ca; }
+  button.primary, button[aria-pressed="true"] {
+    border-color: var(--training-blue);
+    background: var(--training-blue);
+    color: #fff;
+  }
+  button:hover, button:focus-visible, input:focus-visible {
+    outline: 3px solid rgba(0,153,255,.2);
+    border-color: var(--training-blue);
+  }
+  .icon-button { width: 42px; padding: 0; font-size: 19px; box-shadow: none; }
+  .app {
+    display: block;
+    min-height: calc(100vh - 64px);
+    padding: 0;
+  }
+  .stage {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: calc(100vh - 64px);
+    padding: 18px;
+    overflow: hidden;
+    border: 0;
+    border-radius: 0;
+    background: #d7dde0;
+    box-shadow: none;
+  }
+  canvas {
+    width: min(calc(100vw - 36px), calc((100vh - 172px) * 1.256));
+    max-height: calc(100vh - 172px);
+    border: 1px solid rgba(255,255,255,.8);
+    border-radius: 22px;
+    background: #d7dcde;
+    box-shadow: 0 22px 60px rgba(28,39,48,.18);
+  }
+  .stage:has(.tutorial-card:not([hidden])) canvas {
+    width: min(calc(100vw - 36px), calc((100vh - 172px) * 1.256));
+    max-height: calc(100vh - 172px);
+  }
+  .hud {
+    position: absolute;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .hud.top-left {
+    top: calc(var(--map-top, 58px) + 14px);
+    left: calc(var(--map-left, 18px) + 14px);
+  }
+  .hud.top-right { top: 18px; right: 20px; }
+  .hud.bottom {
+    top: calc(var(--map-top, 58px) + var(--map-height, 620px) + 12px);
+    bottom: auto;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .tutorial-roadmap {
+    position: absolute;
+    z-index: 4;
+    top: max(8px, calc(var(--map-top, 58px) - 48px));
+    left: var(--map-left, 18px);
+    width: var(--map-width, calc(100% - 36px));
+    height: 44px;
+    padding: 0 8px;
+    color: #66717d;
+    font-family: Roboto, sans-serif;
+    pointer-events: none;
+  }
+  .tutorial-roadmap ol {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .tutorial-roadmap-step {
+    position: relative;
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    text-align: center;
+  }
+  .tutorial-roadmap-step:not(:last-child)::after {
+    position: absolute;
+    z-index: 0;
+    top: 8px;
+    left: calc(50% + 9px);
+    width: calc(100% - 18px);
+    height: 2px;
+    border-radius: 999px;
+    background: #aeb8bf;
+    content: "";
+  }
+  .tutorial-roadmap-dot {
+    position: relative;
+    z-index: 1;
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+    border: 2px solid #aeb8bf;
+    border-radius: 50%;
+    background: #d7dde0;
+    box-shadow: 0 0 0 3px #d7dde0;
+  }
+  .tutorial-roadmap-title {
+    position: relative;
+    z-index: 1;
+    max-width: 104px;
+    color: #7c8790;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 11px;
+  }
+  .tutorial-roadmap-step.active .tutorial-roadmap-dot {
+    border-color: #17212b;
+    background: #d8ff00;
+    box-shadow: 0 0 0 3px #d7dde0, 0 0 0 5px rgba(216,255,0,.4);
+  }
+  .tutorial-roadmap-step.active .tutorial-roadmap-title {
+    color: #007dcc;
+    font-weight: 700;
+  }
+  .map-summary-card {
+    position: absolute;
+    z-index: 4;
+    top: calc(var(--map-top, 18px) + 14px);
+    right: calc(var(--map-right, 18px) + 14px);
+    width: 104px;
+    padding: 6px 10px;
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 16px;
+    background: rgba(26,26,26,.85);
+    box-shadow: 0 10px 22px rgba(20,30,40,.24);
+    color: #fff;
+    font-family: Roboto, sans-serif;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    pointer-events: none;
+  }
+  .map-summary-values {
+    display: flex;
+    flex-direction: column;
+  }
+  .map-summary-value {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    min-width: 0;
+    padding: 5px 0;
+  }
+  .map-summary-value + .map-summary-value {
+    border-top: 1px solid rgba(255,255,255,.11);
+  }
+  .map-summary-value span {
+    color: #9ca3af;
+    font-size: 8px;
+    font-weight: 700;
+    line-height: 10px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+  .map-summary-value strong {
+    margin: 0;
+    color: #fff;
+    font-family: "Roboto Condensed", Roboto, sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 20px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .replay-telemetry {
+    position: absolute;
+    z-index: 4;
+    top: calc(var(--map-top, 18px) + 14px);
+    left: 50%;
+    width: 320px;
+    max-width: calc(100% - 32px);
+    padding: 10px 16px 9px;
+    transform: translateX(-50%);
+    border-radius: 16px;
+    background: rgba(26, 26, 26, .85);
+    box-shadow: 0 10px 22px rgba(20, 30, 40, .24);
+    color: #fff;
+    font-family: Roboto, sans-serif;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    pointer-events: none;
+  }
+  .replay-telemetry-values {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: center;
+  }
+  .replay-telemetry-cell {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .replay-telemetry-label {
+    color: #9ca3af;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 12px;
+    letter-spacing: .025em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .replay-telemetry-reading {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 4px;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .replay-telemetry-value {
+    font-family: "Roboto Condensed", Roboto, sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .replay-telemetry-unit {
+    font-size: 12px;
+    font-weight: 500;
+    opacity: .8;
+  }
+  .replay-turn-rate {
+    position: relative;
+    height: 24px;
+    margin-top: 8px;
+    padding: 0 12px;
+    border-top: 1px solid rgba(255,255,255,.11);
+  }
+  .replay-turn-track {
+    --ideal-left: 16.667%;
+    --ideal-right: 83.333%;
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    left: 20px;
+    height: 14px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.23);
+    box-shadow: inset 0 1px 2px rgba(0,0,0,.22), inset 0 0 0 1px rgba(255,255,255,.06);
+  }
+  .replay-turn-track::before {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(90deg,
+      rgba(235,68,68,.95) 0%,
+      rgba(235,68,68,.86) calc(var(--ideal-left) - 10%),
+      rgba(235,68,68,0) calc(var(--ideal-left) - 1%),
+      rgba(235,68,68,0) calc(var(--ideal-right) + 1%),
+      rgba(235,68,68,.86) calc(var(--ideal-right) + 10%),
+      rgba(235,68,68,.95) 100%);
+    content: "";
+  }
+  .replay-turn-track.hide-guidance::before,
+  .replay-turn-track.hide-guidance .replay-turn-target {
+    opacity: 0;
+  }
+  .replay-turn-label {
+    position: absolute;
+    top: 6px;
+    color: #9ca3af;
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 12px;
+  }
+  .replay-turn-label.left { left: 0; }
+  .replay-turn-label.right { right: 0; }
+  .replay-turn-target,
+  .replay-turn-actual {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 999px;
+  }
+  .replay-turn-target {
+    z-index: 1;
+    width: 34px;
+    height: 12px;
+    opacity: .9;
+    filter: blur(2.2px);
+    background: radial-gradient(ellipse at center,
+      rgba(216,255,0,.98) 0%,
+      rgba(216,255,0,.9) 38%,
+      rgba(216,255,0,.38) 62%,
+      rgba(216,255,0,0) 100%);
+  }
+  .replay-turn-actual {
+    z-index: 2;
+    width: 14px;
+    height: 14px;
+    border: 2px solid #fff;
+    background: #0099ff;
+    box-shadow: 0 1px 3px rgba(0,0,0,.22);
+  }
+  .hud-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 48px;
+    padding: 8px 12px;
+    border: 1px solid rgba(255,255,255,.9);
+    border-radius: 15px;
+    background: rgba(255,255,255,.9);
+    box-shadow: 0 8px 22px rgba(23,34,44,.13);
+    backdrop-filter: blur(12px);
+  }
+  .hud-card strong { font-size: 19px; font-variant-numeric: tabular-nums; }
+  .hud-card span { color: var(--training-muted); font-size: 12px; font-weight: 700; }
+  .stat-pair { display: grid; line-height: 1.05; }
+  .mode-badge { color: var(--training-blue-strong)!important; text-transform: uppercase; letter-spacing: .06em; }
+  .tutorial-card {
+    position: absolute;
+    z-index: 4;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+    clip-path: inset(50%);
+    left: 50%;
+    width: min(720px, calc(100vw - 34px));
+    transform: translateX(-50%);
+    padding: 16px 18px;
+    border: 1px solid rgba(255,255,255,.9);
+    border-radius: 18px;
+    background: rgba(255,255,255,.96);
+    color: var(--training-ink);
+    box-shadow: 0 12px 34px rgba(23,34,44,.17);
+  }
+  .tutorial-card h2, .tutorial-title, .tutorial-message { color: var(--training-ink); }
+  .tutorial-card h2 { margin-bottom: 5px; color: var(--training-blue-strong); font-size: 12px; }
+  .tutorial-card h2::before { background: var(--training-blue); }
+  .tutorial-title { margin-bottom: 4px; font-size: 16px; text-transform: none; }
+  .tutorial-message { margin-bottom: 5px; font-size: 14px; }
+  .tutorial-goal { margin: 0; color: var(--training-muted); font-size: 13px; }
+  .panel {
+    position: fixed;
+    z-index: 12;
+    top: 74px;
+    right: 12px;
+    width: min(340px, calc(100vw - 24px));
+    max-height: calc(100vh - 88px);
+    overflow: auto;
+    padding: 14px;
+    border: 1px solid var(--training-line);
+    border-radius: 18px;
+    background: rgba(255,255,255,.97);
+    box-shadow: 0 18px 50px rgba(20,30,40,.18);
+  }
+  .panel[hidden] { display: none; }
+  .card { margin-bottom: 10px; border: 0; border-radius: 14px; background: var(--training-surface); box-shadow: none; }
+  .card h2, .card h1 { color: var(--training-ink); }
+  .card h2::before { background: var(--training-blue); }
+  .stat { border-color: var(--training-line); border-radius: 11px; background: #fff; }
+  .stat strong { color: var(--training-ink); }
+  .stat span, .hint, .row label, .row .label { color: var(--training-muted); }
+  .launch-screen {
+    position: fixed;
+    inset: 64px 0 0;
+    z-index: 20;
+    display: grid;
+    place-items: center;
+    padding: 22px;
+    background:
+      radial-gradient(circle at 60% 28%, rgba(255,255,255,.9), transparent 34%),
+      repeating-radial-gradient(ellipse at 32% 72%, transparent 0 34px, rgba(74,88,97,.07) 35px 37px),
+      linear-gradient(140deg, #eef1f2, #cbd3d7);
+  }
+  .launch-screen[hidden] { display: none; }
+  .launch-card {
+    width: min(820px, 100%);
+    padding: 34px;
+    border: 1px solid rgba(255,255,255,.9);
+    border-radius: 26px;
+    background: rgba(255,255,255,.94);
+    box-shadow: 0 26px 70px rgba(23,34,44,.17);
+  }
+  .launch-card h1 {
+    margin: 0 0 8px;
+    color: var(--training-ink);
+    font-family: "Roboto Condensed", Roboto, sans-serif;
+    font-size: clamp(30px, 5vw, 48px);
+    letter-spacing: -.035em;
+  }
+  .launch-card > p { margin: 0 0 26px; color: var(--training-muted); font-size: 16px; }
+  .mode-grid { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 12px; }
+  .mode-card {
+    display: grid;
+    align-content: space-between;
+    min-height: 184px;
+    padding: 20px;
+    text-align: left;
+    border-radius: 18px;
+    box-shadow: none;
+  }
+  .mode-card.featured { background: var(--training-blue); border-color: var(--training-blue); color: #fff; }
+  .mode-card .mode-icon { font-size: 32px; }
+  .mode-card strong { display: block; margin: 15px 0 5px; font-size: 20px; }
+  .mode-card small { color: inherit; opacity: .72; font-size: 14px; line-height: 1.35; }
+  .difficulty-row { display: flex; gap: 7px; margin-top: 14px; }
+  .difficulty-row button { flex: 1; min-height: 36px; padding: 5px; border-radius: 10px; box-shadow: none; }
+  .friend-panel { text-align: center; padding: 16px 8px; }
+  .friend-panel .avatar-stack { margin: 10px 0; font-size: 28px; letter-spacing: -8px; }
+  .friend-panel p { color: var(--training-muted); font-size: 14px; line-height: 1.4; }
+  .sr-controls { display: none; }
+  @media (max-width: 760px) {
+    body { overflow: auto; }
+    .topbar { padding: 0 12px; }
+    .brand-divider, .brand-title { display: none; }
+    .stage { height: calc(100svh - 64px); padding: 8px; }
+    canvas { width: 100%; border-radius: 16px; }
+    .hud.top-left {
+      top: calc(var(--map-top, 58px) + 10px);
+      left: calc(var(--map-left, 8px) + 10px);
+    }
+    .hud.top-right { top: 12px; right: 12px; }
+    .map-summary-card {
+      top: calc(var(--map-top, 8px) + 68px);
+      right: calc(var(--map-right, 8px) + 10px);
+      width: 92px;
+      padding: 5px 8px;
+      border-radius: 13px;
+    }
+    .map-summary-value strong { font-size: 15px; line-height: 17px; }
+    .replay-telemetry { width: 192px; padding: 8px 6px 7px; }
+    .replay-telemetry-cell { gap: 2px; }
+    .replay-telemetry-label { font-size: 8px; line-height: 10px; }
+    .replay-telemetry-value { font-size: 16px; }
+    .replay-telemetry-unit { font-size: 9px; }
+    .replay-turn-rate { margin-top: 6px; }
+    .tutorial-roadmap { top: max(6px, calc(var(--map-top, 58px) - 46px)); padding: 0 2px; }
+    .tutorial-roadmap-title { max-width: 50px; font-size: 8px; line-height: 9px; }
+    .tutorial-roadmap-dot { width: 15px; height: 15px; }
+    .tutorial-roadmap-step:not(:last-child)::after { top: 6.5px; left: calc(50% + 8px); width: calc(100% - 16px); }
+    .hud-card { min-height: 42px; padding: 6px 9px; }
+    .hud-card strong { font-size: 16px; }
+    .mode-grid { grid-template-columns: 1fr; }
+    .mode-card { min-height: 125px; }
+    .launch-card { padding: 24px 18px; max-height: calc(100svh - 88px); overflow: auto; }
+    .launch-screen { padding: 12px; }
+    .hud.bottom { top: calc(var(--map-top, 58px) + var(--map-height, 620px) + 10px); }
+  }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand-mark">
+    <div class="brand-leaf">Leaf</div>
+    <div class="brand-divider"></div>
+    <div class="brand-title">Thermal Training</div>
+  </div>
+  <div class="top-actions">
+    <button id="homeButton" class="icon-button" type="button" aria-label="Choose training mode" title="Choose training mode">⌂</button>
+    <button id="settingsButton" class="icon-button" type="button" aria-label="Training settings" title="Training settings">⚙</button>
+  </div>
+</header>
+<main class="app">
+  <section class="stage">
+    <nav class="tutorial-roadmap" aria-label="Tutorial roadmap">
+      <ol>
+        <li class="tutorial-roadmap-step active" data-roadmap-step="0" aria-current="step"><span class="tutorial-roadmap-dot"></span><span class="tutorial-roadmap-title">Center a thermal</span></li>
+        <li class="tutorial-roadmap-step" data-roadmap-step="1"><span class="tutorial-roadmap-dot"></span><span class="tutorial-roadmap-title">Thermal Sizes</span></li>
+        <li class="tutorial-roadmap-step" data-roadmap-step="2"><span class="tutorial-roadmap-dot"></span><span class="tutorial-roadmap-title">Which way to turn</span></li>
+        <li class="tutorial-roadmap-step" data-roadmap-step="3"><span class="tutorial-roadmap-dot"></span><span class="tutorial-roadmap-title">Wind</span></li>
+        <li class="tutorial-roadmap-step" data-roadmap-step="4"><span class="tutorial-roadmap-dot"></span><span class="tutorial-roadmap-title">Variable Strength</span></li>
+        <li class="tutorial-roadmap-step" data-roadmap-step="5"><span class="tutorial-roadmap-dot"></span><span class="tutorial-roadmap-title">Thermal with a friend</span></li>
+      </ol>
+    </nav>
+    <div class="map-summary-card" role="group" aria-label="Training flight summary">
+      <div class="map-summary-values">
+        <div class="map-summary-value"><span>Time</span><strong id="mapSummaryTime">0s</strong></div>
+        <div class="map-summary-value"><span>Gain</span><strong id="gainHud">0 m</strong></div>
+        <div class="map-summary-value"><span>Score</span><strong id="scoreHud">0</strong></div>
+      </div>
+    </div>
+    <div class="replay-telemetry" role="group" aria-label="Flight instruments">
+      <div class="replay-telemetry-values">
+        <div class="replay-telemetry-cell">
+          <span class="replay-telemetry-label">Altitude MSL</span>
+          <span class="replay-telemetry-reading">
+            <span id="telemetryAltitude" class="replay-telemetry-value">1,000</span>
+            <span id="telemetryAltitudeUnit" class="replay-telemetry-unit">m</span>
+          </span>
+        </div>
+        <div class="replay-telemetry-cell">
+          <span class="replay-telemetry-label">Vario</span>
+          <span class="replay-telemetry-reading">
+            <span id="telemetryVario" class="replay-telemetry-value">+0.0</span>
+            <span id="telemetryVarioUnit" class="replay-telemetry-unit">m/s</span>
+          </span>
+        </div>
+      </div>
+      <div class="replay-turn-rate" aria-label="Turn rate">
+        <span class="replay-turn-label left">L</span>
+        <span class="replay-turn-label right">R</span>
+        <div id="telemetryTurnTrack" class="replay-turn-track">
+          <span id="telemetryTurnTargetLeft" class="replay-turn-target left-zone"></span>
+          <span id="telemetryTurnTargetRight" class="replay-turn-target right-zone"></span>
+          <span id="telemetryTurnActual" class="replay-turn-actual"></span>
+        </div>
+      </div>
+    </div>
+    <section id="tutorialCard" class="card tutorial-card" hidden>
+      <h2 id="tutorialStageTitle">Tutorial</h2>
+      <p id="tutorialTitle" class="tutorial-title"></p>
+      <p id="tutorialMessage" class="tutorial-message"></p>
+      <p id="tutorialGoal" class="tutorial-goal"></p>
+    </section>
+    <canvas id="sim" width="980" height="780" aria-label="Thermal core simulator"></canvas>
+    <div class="hud bottom">
+      <button id="leftControl" class="icon-button" type="button" aria-label="Turn left">↶</button>
+      <button id="startControl" class="primary" type="button">▶ Start</button>
+      <button id="rightControl" class="icon-button" type="button" aria-label="Turn right">↷</button>
+    </div>
+  </section>
+
+  <aside id="settingsPanel" class="panel" hidden>
+    <section class="card tutorial-start-card">
+      <h2>Guided tutorial</h2>
+      <div class="tutorial-control-row">
+        <button id="tutorialStart" type="button">Start Tutorial</button>
+        <div class="tutorial-stage-picker">
+          <button id="tutorialPrevStage" class="stage-arrow" type="button" aria-label="Previous tutorial stage">&lt;</button>
+          <span id="tutorialStageReadout" class="stage-readout">Stage 1 of 2</span>
+          <button id="tutorialNextStage" class="stage-arrow" type="button" aria-label="Next tutorial stage">&gt;</button>
+        </div>
+      </div>
+    </section>
+    <section class="card free-fly-card">
+      <h2>Solo flight</h2>
+      <div class="buttons">
+        <button class="preset" type="button" data-preset="easy">Easy</button>
+        <button class="preset" type="button" data-preset="medium">Medium</button>
+        <button class="preset" type="button" data-preset="hard">Hard</button>
+      </div>
+      <div class="row seed-row">
+        <label for="seed">Thermal seed</label>
+        <input id="seed" type="number" value="2641" step="1">
+        <button id="newSeed" type="button">↻</button>
+      </div>
+      <div class="row">
+        <label for="duration">Duration</label><output id="durationOut"></output>
+        <input id="duration" type="range" min="60" max="480" step="30" value="180">
+      </div>
+      <div class="buttons">
+        <button id="start" class="primary" type="button">Start</button>
+        <button id="reset" type="button">Reset</button>
+        <button id="same" type="button">Repeat</button>
+      </div>
+    </section>
+    <section class="card audio-card">
+      <h2>Audio</h2>
+      <div class="row">
+        <label for="volume">Vario volume</label><output id="volumeOut"></output>
+        <input id="volume" type="range" min="0" max="100" step="1" value="35">
+      </div>
+      <div class="buttons">
+        <button id="testTone" type="button">Test tone</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Advanced thermal</h2>
+      <label class="check"><input id="showThermal" type="checkbox"> Show thermal visual</label>
+      <div class="row">
+        <label for="wind">Wind</label><output id="windOut"></output>
+        <input id="wind" type="range" min="0" max="20" step="1" value="8">
+      </div>
+      <div class="row">
+        <label for="diameter">Nominal diameter</label><output id="diameterOut"></output>
+        <input id="diameter" type="range" min="50" max="400" step="5" value="200">
+      </div>
+      <div class="row">
+        <label for="diameterVariance">Diameter variance</label><output id="diameterVarianceOut"></output>
+        <input id="diameterVariance" type="range" min="0" max="70" step="1" value="25">
+      </div>
+      <div class="row">
+        <label for="strength">Net core strength</label><output id="strengthOut"></output>
+        <input id="strength" type="range" min="1" max="6" step="0.1" value="4.0">
+      </div>
+      <div class="row">
+        <label for="strengthVariance">Strength variance</label><output id="strengthVarianceOut"></output>
+        <input id="strengthVariance" type="range" min="0" max="70" step="1" value="30">
+      </div>
+      <div class="row">
+        <label for="texture">Lumpiness</label><output id="textureOut"></output>
+        <input id="texture" type="range" min="0" max="80" step="1" value="30">
+      </div>
+      <div class="row">
+        <label for="sink">Glider sink</label><output id="sinkOut"></output>
+        <input id="sink" type="range" min="0.6" max="1.6" step="0.1" value="1.0">
+      </div>
+    </section>
+  </aside>
+
+  <section class="sr-controls" aria-hidden="true">
+    <div class="stats">
+      <div class="stat"><span>Altitude gain</span><strong id="gain">0 m</strong></div>
+      <div class="stat"><span>Avg climb</span><strong id="avgClimb">0.0</strong></div>
+      <div class="stat"><span>Centering</span><strong id="centering">0%</strong></div>
+      <div class="stat"><span>Score</span><strong id="score">0</strong></div>
+    </div>
+    <table><tbody id="trials"></tbody></table>
+  </section>
+</main>
+
+<section id="launchScreen" class="launch-screen" aria-label="Choose training mode">
+  <div class="launch-card">
+    <h1>Learn to find the core.</h1>
+    <p>Listen to the vario, feel the turn, and build the instincts you’ll use in the air.</p>
+    <div class="mode-grid">
+      <button id="launchTutorial" class="mode-card featured" type="button">
+        <span class="mode-icon">◎</span>
+        <span><strong>Guided tutorial</strong><small>Learn one skill at a time with the original Leaf training steps.</small></span>
+      </button>
+      <div class="mode-card">
+        <span class="mode-icon">△</span>
+        <span><strong>Solo flight</strong><small>Choose a thermal, then chase your best score.</small></span>
+        <div class="difficulty-row">
+          <button type="button" data-launch-preset="easy">Easy</button>
+          <button type="button" data-launch-preset="medium">Med</button>
+          <button type="button" data-launch-preset="hard">Hard</button>
+        </div>
+      </div>
+      <button id="launchFriends" class="mode-card" type="button">
+        <span class="mode-icon">♧</span>
+        <span><strong>Friend challenge</strong><small>Send the same thermal to friends and compare scores.</small></span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<aside id="friendsPanel" class="panel" hidden>
+  <section class="friend-panel">
+    <div class="mode-icon">♧</div>
+    <h2>Challenge your flying friends</h2>
+    <div class="avatar-stack" aria-hidden="true">● ● ●</div>
+    <p>Friend challenges will use your Leaf Log account and existing friends. For this prototype, choose a solo flight first—your result will be ready to share.</p>
+    <button id="leafLogButton" class="primary" type="button">Continue with Leaf Log</button>
+    <button id="friendsClose" type="button">Not now</button>
+  </section>
+</aside>
+
+<script>
+"use strict";
+
+const canvas = document.getElementById("sim");
+const ctx = canvas.getContext("2d");
+const terrainMapImage = new Image();
+terrainMapImage.src = "terrain-calaveras.png";
+const simW = 980;
+const simH = 780;
+let canvasCssW = simW;
+let canvasCssH = simH;
+let canvasPixelRatio = 1;
+
+const ui = {
+  seed: document.getElementById("seed"),
+  duration: document.getElementById("duration"),
+  wind: document.getElementById("wind"),
+  diameter: document.getElementById("diameter"),
+  diameterVariance: document.getElementById("diameterVariance"),
+  strength: document.getElementById("strength"),
+  strengthVariance: document.getElementById("strengthVariance"),
+  texture: document.getElementById("texture"),
+  showThermal: document.getElementById("showThermal"),
+  sink: document.getElementById("sink"),
+  volume: document.getElementById("volume"),
+  start: document.getElementById("start"),
+  reset: document.getElementById("reset"),
+  same: document.getElementById("same"),
+  newSeed: document.getElementById("newSeed"),
+  testTone: document.getElementById("testTone"),
+  tutorialStart: document.getElementById("tutorialStart"),
+  tutorialCard: document.getElementById("tutorialCard"),
+  tutorialStageTitle: document.getElementById("tutorialStageTitle"),
+  tutorialPrevStage: document.getElementById("tutorialPrevStage"),
+  tutorialNextStage: document.getElementById("tutorialNextStage"),
+  tutorialStageReadout: document.getElementById("tutorialStageReadout"),
+  tutorialTitle: document.getElementById("tutorialTitle"),
+  tutorialMessage: document.getElementById("tutorialMessage"),
+  tutorialGoal: document.getElementById("tutorialGoal"),
+  durationOut: document.getElementById("durationOut"),
+  windOut: document.getElementById("windOut"),
+  diameterOut: document.getElementById("diameterOut"),
+  diameterVarianceOut: document.getElementById("diameterVarianceOut"),
+  strengthOut: document.getElementById("strengthOut"),
+  strengthVarianceOut: document.getElementById("strengthVarianceOut"),
+  textureOut: document.getElementById("textureOut"),
+  sinkOut: document.getElementById("sinkOut"),
+  volumeOut: document.getElementById("volumeOut"),
+  gain: document.getElementById("gain"),
+  avgClimb: document.getElementById("avgClimb"),
+  centering: document.getElementById("centering"),
+  score: document.getElementById("score"),
+  trials: document.getElementById("trials"),
+  telemetryAltitude: document.getElementById("telemetryAltitude"),
+  telemetryAltitudeUnit: document.getElementById("telemetryAltitudeUnit"),
+  telemetryVario: document.getElementById("telemetryVario"),
+  telemetryVarioUnit: document.getElementById("telemetryVarioUnit"),
+  telemetryTurnTrack: document.getElementById("telemetryTurnTrack"),
+  telemetryTurnTargetLeft: document.getElementById("telemetryTurnTargetLeft"),
+  telemetryTurnTargetRight: document.getElementById("telemetryTurnTargetRight"),
+  telemetryTurnActual: document.getElementById("telemetryTurnActual")
+};
+
+const leafScreenW = 96;
+const leafScreenH = 192;
+const maxTurnRateDps = 30;
+const nominalTargetTurnRateDps = 20;
+const baseAirspeed = 10.0;
+const dt = 1 / 60;
+const coreLookbackS = 40;
+const coreMinSamples = 16;
+const coreBinCount = 12;
+const mphToMps = 0.44704;
+
+let audioCtx = null;
+let beepOsc = null;
+let beepGain = null;
+let beepTimer = 0;
+let beepOn = false;
+let testToneUntil = 0;
+let lastFrame = performance.now();
+let accumulator = 0;
+let trials = [];
+let keys = new Set();
+let steeringHoldSeconds = {left: 0, right: 0};
+let activeTargetTurnRateDps = nominalTargetTurnRateDps;
+let corePrototypeVisible = false;
+let corePrototypeHeaderRect = null;
+let pausedByUser = false;
+let tutorial = {
+  active: false,
+  step: 0,
+  phase: "idle",
+  showTargetMarkers: true,
+  showThermalRings: true,
+  pauseForCallout: false,
+  turnPromptHeading: null,
+  peakVario: -Infinity,
+  goalSeconds: 0,
+  orbitAngle: 0,
+  orbitCount: 0,
+  orbitMinRadius: Infinity,
+  orbitMaxRadius: 0,
+  orbitMaxError: 0,
+  orbitMinVario: Infinity,
+  orbitTime: 0,
+  orbitTargetTime: 0,
+  orbitLastBearing: null,
+  lastOrbitFailed: false,
+  lastInstruction: "",
+  stepStartedAt: 0,
+  hintOpen: false,
+  hintBubbleRect: null,
+  hintBoxRect: null,
+  hintPausedRun: false,
+  hintForced: false,
+  userPaused: false
+};
+
+const stageConfigs = [
+  {
+    title: "TUTORIAL STAGE ONE",
+    showThermal: true,
+    showRings: true,
+    visualHelp: "Visual guidance is progressively removed across the five steps.",
+    stageComplete:
+      "Great! You found and centered the thermal with just your ears! You have completed the first stage. Continue on to the next stage to learn even more about thermalling!"
+  },
+  {
+    title: "TUTORIAL STAGE TWO",
+    showThermal: true,
+    showRings: true,
+    visualHelp: "Use an 80 m thermal and progressively remove visual help.",
+    stageComplete:
+      "Good experiment. Small lift can make the vario beep, but it may not be large enough to justify circling."
+  }
+];
+
+const baseTutorialSteps = [
+  {
+    title: 'Find the "halfway point" into the thermal',
+    practiceTitle: "Step 1: Find the halfway point",
+    completeTitle: "Halfway point found",
+    showTargetMarkers: false,
+    successType: "entryTurn",
+    directions:
+      "Fly straight into the lift. Don't turn. When the vario peaks and then starts to decrease, you are halfway through the core. That is the moment to start turning.",
+    goal:
+      "Goal: Fly straight, wait for the vario to peak, then turn about 90 degrees.",
+    complete:
+      "Great! You found the halfway point and started the turn soon after the vario peak."
+  },
+  {
+    title: "Step 2: Turn around the center of the thermal",
+    practiceTitle: "Step 2: Turn around the center",
+    completeTitle: "Centered orbits complete",
+    showTargetMarkers: false,
+    successType: "radiusBand",
+    directions:
+      "Now the goal is to keep the vario constant. If it starts to drop, you are moving away from the center and need to tighten your turn momentarily. If it starts to increase, you are moving toward the center and need to widen your turn momentarily",
+    goal:
+      "Goal: Fly two consecutive orbits around the thermal. Don't get too close to the center or the edge.",
+    complete:
+      "Great! You flew two centered orbits without drifting too close to the middle or the edge."
+  },
+  {
+    title: "Step 3: Optimize your turn rate",
+    practiceTitle: "Step 3: Optimize your turn rate",
+    completeTitle: "Optimized turn-rate complete",
+    showTargetMarkers: true,
+    successType: "optimizedTurn",
+    directions:
+      "The turn indicator will be green at the optimum bank angle.  Turning too steep will increase your descent rate, so don't stay in the red zone for long. Center your circles around the thermal and stay as close to the optimal turn rate as you can.",
+    goal:
+      "Goal: Fly 2 consecutive orbits staying near optimal turn-rate while staying centered on the thermal.",
+    complete:
+      "Great! You stayed centered while keeping the turn rate near the efficient range.\n\nGreat job, you centered the thermal at the optimum turn rate. Next, practice again without the visual circle help. The fuzzy green thermal is still shown, but rely on the vario sound for most of your guidance."
+  },
+  {
+    title: "Put it all together",
+    practiceTitle: "Put it all together",
+    completeTitle: "Minimal visual help complete",
+    showTargetMarkers: true,
+    successType: "combinedCore",
+    showThermal: true,
+    showRings: false,
+    flightTrackOpacity: 0.35,
+    resetOnEnter: true,
+    directions:
+      "Put all the steps together to find the halfway point and then center at the optimum rate.  The dashed circles are now hidden so rely mostly on the vario sound.  The fuzzy green thermal highlight is still shown.",
+    goal:
+      "Goal: Find and center the thermal, then fly two consecutive orbits staying near optimal turn-rate while staying centered on the thermal",
+    complete:
+      "Great! You found and centered the thermal with minimal visual help."
+  },
+  {
+    title: "Thermal with your ears only",
+    practiceTitle: "Thermal with your ears only",
+    completeTitle: "Audio-only thermal complete",
+    showTargetMarkers: true,
+    successType: "combinedCore",
+    showThermal: false,
+    showRings: false,
+    flightTrackOpacity: 0,
+    resetOnEnter: true,
+    directions:
+      "Try again, this time with no visual references.  You'll have to rely entirely on the audio feedback from the vario",
+    goal:
+      "Goal: Find and center the thermal, then fly two consecutive orbits staying near optimal turn-rate while staying centered on the thermal",
+    complete:
+      "Great! You found and centered the thermal with just your ears! You have completed the first stage. Continue on to the next stage to learn even more about thermalling!"
+  }
+];
+
+const centerThermalTutorialSteps = baseTutorialSteps.map((step, stepIndex) => ({
+  ...step,
+  stageIndex: 0,
+  stepInStage: stepIndex,
+  stageTitle: stageConfigs[0].title,
+  showThermal: step.showThermal ?? stageConfigs[0].showThermal,
+  showRings: step.showRings ?? stageConfigs[0].showRings,
+  flightTrackOpacity: step.flightTrackOpacity ?? 1,
+  visualHelp: stageConfigs[0].visualHelp,
+  stageComplete: stageConfigs[0].stageComplete
+}));
+
+const tutorialSteps = [
+  ...centerThermalTutorialSteps,
+  {
+    title: "Understanding Thermal Sizes",
+    practiceTitle: "Step 1: Circle the small thermal",
+    completeTitle: "Small thermal with visual help complete",
+    showTargetMarkers: true,
+    successType: "thermalSize",
+    diameterM: 80,
+    resetOnEnter: true,
+    stageIndex: 1,
+    stepInStage: 0,
+    stageTitle: stageConfigs[1].title,
+    showThermal: true,
+    showRings: true,
+    visualHelp: stageConfigs[1].visualHelp,
+    stageComplete: stageConfigs[1].stageComplete,
+    directions:
+      "The previous thermal we explored required us to fly straight into it for 7 to 8 seconds before we detected the middle using the vario peak. Count how many seconds it takes to find the middle of this thermal, then try to circle it like before.",
+    goal:
+      "Goal: fly straight, wait for the vario to peak, then turn about 90 degrees and try to stay in lift for 2 consecutive orbits. Press Space bar to start.",
+    practiceDirections:
+      "Now try to circle this small thermal like before. The goal is not a perfect centered turn; just see whether you can stay in lift for 2 full orbits.",
+    practiceGoal:
+      "Goal: fly 2 consecutive orbits without leaving the lift.",
+    complete:
+      "Great job coring a small thermal. At this small size, it only took ~4 seconds between entering the thermal and finding the vario peak."
+  },
+  {
+    title: "Step 2: Small thermal without circle guidance",
+    practiceTitle: "Step 2: Fuzzy thermal only",
+    completeTitle: "Fuzzy-only small thermal complete",
+    showTargetMarkers: true,
+    successType: "thermalSize",
+    diameterM: 80,
+    timeoutSeconds: 180,
+    resetOnEnter: true,
+    stageIndex: 1,
+    stepInStage: 1,
+    stageTitle: stageConfigs[1].title,
+    showThermal: true,
+    showRings: false,
+    visualHelp: "Show fuzzy green thermal only. Hide outer boundary and concentric rings.",
+    stageComplete: stageConfigs[1].stageComplete,
+    directions:
+      "Try the same small thermal again, this time without the circle guidance. Use the fuzzy green thermal and the vario trend to stay in lift. Remember to practice counting seconds until the peak to get a sense for how large a thermal might be.",
+    goal:
+      "Goal: fly straight, wait for the vario to peak, then turn about 90 degrees and try to stay in lift. Press Space bar to start.",
+    practiceDirections:
+      "Now try to circle the small thermal using the fuzzy thermal shape and the vario. If it is too small to hold cleanly, keep flying and notice how quickly the lift fades.",
+    practiceGoal:
+      "Goal: fly 2 consecutive orbits without leaving the lift, or continue for 3 minutes.",
+    complete:
+      "Great job. Without the guide rings, the same small lift takes more precise adjustments.",
+    timeoutComplete:
+      "Time limit reached. It's much harder to stay in lift when a thermal is small."
+  },
+  {
+    title: "Step 3: Small thermal by vario only",
+    practiceTitle: "Step 3: Vario-only small thermal",
+    completeTitle: "Vario-only small thermal complete",
+    showTargetMarkers: true,
+    successType: "thermalSize",
+    diameterM: 80,
+    timeoutSeconds: 180,
+    resetOnEnter: true,
+    stageIndex: 1,
+    stepInStage: 2,
+    stageTitle: stageConfigs[1].title,
+    showThermal: false,
+    showRings: false,
+    visualHelp: "Hide thermal visual, outer boundary, and concentric rings.",
+    stageComplete: stageConfigs[1].stageComplete,
+    stageEndUsesStepComplete: true,
+    directions:
+      "Now try the same small thermal with no visual help. In real flight, you only have the vario to go on. For practice, keep counting seconds until the peak. But eventually you'll start to get a \"feel\" for the size of the thermal without counting.",
+    goal:
+      "Goal: fly straight, wait for the vario to peak, then turn about 90 degrees and try to stay in lift. Press Space bar to start.",
+    practiceDirections:
+      "Circle by sound only. If the lift fades too quickly to hold, that is the lesson: some thermals are real, but still too small to use.",
+    practiceGoal:
+      "Goal: fly 2 consecutive orbits without leaving the lift, or continue for 3 minutes.",
+    complete:
+      "Great job! This is a good lesson that a ~4 second thermal might be about the smallest you can stay in. Any smaller and it might be worth passing by until you find a larger thermal.",
+    timeoutComplete:
+      "Time limit reached. As your thermal skills improve, you may be able to stay in lift this small. But this is a good exercise to determine what thermals are worth turning in, and which ones might be worth passing by."
+  }
+];
+
+let state = freshState(Number(ui.seed.value));
+
+const thermalPresets = {
+  easy: {
+    showThermal: true,
+    wind: 0,
+    diameter: 200,
+    diameterVariance: 0,
+    strength: 6,
+    strengthVariance: 0,
+    texture: 0,
+    sink: 1,
+    targetTurnRate: nominalTargetTurnRateDps
+  },
+  medium: {
+    showThermal: true,
+    wind: 4,
+    diameter: 225,
+    diameterVariance: 12.5,
+    strength: 5,
+    strengthVariance: 15,
+    texture: 15,
+    sink: 1,
+    targetTurnRate: nominalTargetTurnRateDps
+  },
+  hard: {
+    showThermal: false,
+    wind: 8,
+    diameter: 200,
+    diameterVariance: 25,
+    strength: 4,
+    strengthVariance: 30,
+    texture: 30,
+    sink: 1,
+    targetTurnRate: nominalTargetTurnRateDps
+  },
+  expert: {
+    showThermal: false,
+    wind: 12,
+    diameter: 175,
+    diameterVariance: 50,
+    strength: 4,
+    strengthVariance: 50,
+    texture: 50,
+    sink: 1,
+    targetTurnRate: nominalTargetTurnRateDps
+  }
+};
+
+function clamp(v, min, max) {
+  return Math.max(min, Math.min(max, v));
+}
+
+function resizeCanvasForDisplay() {
+  const rect = canvas.getBoundingClientRect();
+  const stageRect = canvas.parentElement.getBoundingClientRect();
+  canvas.parentElement.style.setProperty("--map-top", `${rect.top - stageRect.top}px`);
+  canvas.parentElement.style.setProperty("--map-left", `${rect.left - stageRect.left}px`);
+  canvas.parentElement.style.setProperty("--map-right", `${stageRect.right - rect.right}px`);
+  canvas.parentElement.style.setProperty("--map-width", `${rect.width}px`);
+  canvas.parentElement.style.setProperty("--map-height", `${rect.height}px`);
+  const cssW = Math.max(1, rect.width);
+  const cssH = Math.max(1, rect.height);
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  const backingW = Math.round(cssW * dpr);
+  const backingH = Math.round(cssH * dpr);
+  if (canvas.width !== backingW || canvas.height !== backingH || canvasPixelRatio !== dpr) {
+    canvas.width = backingW;
+    canvas.height = backingH;
+    canvasCssW = cssW;
+    canvasCssH = cssH;
+    canvasPixelRatio = dpr;
+  }
+  ctx.setTransform(cssW / simW * dpr, 0, 0, cssH / simH * dpr, 0, 0);
+}
+
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+function angleDeltaDeg(a, b) {
+  let d = ((b - a + 540) % 360) - 180;
+  return d;
+}
+
+function seededRandom(seed) {
+  let x = seed >>> 0;
+  return function rand() {
+    x ^= x << 13;
+    x ^= x >>> 17;
+    x ^= x << 5;
+    return ((x >>> 0) / 4294967296);
+  };
+}
+
+function smoothWave(z, phaseA, phaseB, scaleA, scaleB) {
+  return Math.sin(z * scaleA + phaseA) * 0.62 + Math.sin(z * scaleB + phaseB) * 0.38;
+}
+
+function readParams() {
+  return {
+    seed: Number(ui.seed.value) || 1,
+    duration: Number(ui.duration.value),
+    windMph: Number(ui.wind.value),
+    windMps: Number(ui.wind.value) * mphToMps,
+    diameterM: Number(ui.diameter.value),
+    diameterVariance: Number(ui.diameterVariance.value) / 100,
+    strength: Number(ui.strength.value),
+    strengthVariance: Number(ui.strengthVariance.value) / 100,
+    texture: Number(ui.texture.value) / 100,
+    showThermal: ui.showThermal.checked,
+    sink: Number(ui.sink.value),
+    volume: Number(ui.volume.value) / 100
+  };
+}
+
+function makeThermal(seed) {
+  const rand = seededRandom(seed);
+  const windDir = rand() * Math.PI * 2;
+  const slantDir = windDir + (rand() - 0.5) * 0.55;
+  return {
+    phaseA: rand() * Math.PI * 2,
+    phaseB: rand() * Math.PI * 2,
+    phaseC: rand() * Math.PI * 2,
+    phaseD: rand() * Math.PI * 2,
+    lumpPhase: rand() * Math.PI * 2,
+    windDir,
+    slantDir,
+    bendX: (rand() - 0.5) * 0.10,
+    bendY: (rand() - 0.5) * 0.10,
+    driftJitterX: (rand() - 0.5) * 0.55,
+    driftJitterY: (rand() - 0.5) * 0.55,
+    entryOffsetFraction: (rand() - 0.5) * 1.0
+  };
+}
+
+function freshState(seed) {
+  const thermal = makeThermal(seed);
+  const params = readParams();
+  const startAlt = 1000;
+  const startHeading = 8;
+  const h = startHeading * Math.PI / 180;
+  const forward = {x: Math.sin(h), y: Math.cos(h)};
+  const right = {x: Math.cos(h), y: -Math.sin(h)};
+  const profile = thermalProfileAt(0, startAlt, params, thermal);
+  const center = thermalCenterAt(0, startAlt, params, thermal);
+  const lateralOffset = thermal.entryOffsetFraction * profile.radius * 0.5;
+  const leadInDistance = profile.radius * 1.12 + 45;
+  const startX = center.x - forward.x * leadInDistance + right.x * lateralOffset;
+  const startY = center.y - forward.y * leadInDistance + right.y * lateralOffset;
+  return {
+    running: false,
+    finished: false,
+    t: 0,
+    seed,
+    thermal,
+    x: startX,
+    y: startY,
+    z: startAlt,
+    heading: startHeading,
+    turnRate: 0,
+    vario: 0,
+    lift: 0,
+    centerDistanceSum: 0,
+    centerDistanceSqSum: 0,
+    centerRadiusSum: 0,
+    centerSamples: 0,
+    samples: [],
+    altitudeTrace: [],
+    varioTrace: [],
+    lastSampleT: -1,
+    startAlt,
+    finishStats: null
+  };
+}
+
+function resetTrial(seed = Number(ui.seed.value)) {
+  stopAudioTone();
+  pausedByUser = false;
+  state = freshState(seed);
+  ui.seed.value = String(seed);
+  updateOutputs();
+}
+
+function newSeed() {
+  const seed = Math.floor(1000 + Math.random() * 900000);
+  resetTrial(seed);
+}
+
+function applyThermalPreset(name, resetIdleState = true) {
+  const preset = thermalPresets[name];
+  if (!preset) return;
+  ui.showThermal.checked = preset.showThermal;
+  ui.wind.value = preset.wind;
+  ui.diameter.value = preset.diameter;
+  ui.diameterVariance.value = preset.diameterVariance;
+  ui.strength.value = preset.strength;
+  ui.strengthVariance.value = preset.strengthVariance;
+  ui.texture.value = preset.texture;
+  ui.sink.value = preset.sink;
+  activeTargetTurnRateDps = preset.targetTurnRate;
+  document.querySelectorAll(".preset").forEach(button => {
+    button.setAttribute("aria-pressed", button.dataset.preset === name ? "true" : "false");
+  });
+  if (resetIdleState && !state.running) {
+    state = freshState(Number(ui.seed.value));
+  }
+  updateOutputs();
+}
+
+function setTutorialText(title, message, goal = "") {
+  const lesson = tutorialSteps[tutorial.step];
+  ui.tutorialCard.hidden = !tutorial.active;
+  ui.tutorialStageTitle.textContent = lesson?.stageTitle || "Tutorial";
+  updateTutorialStageControls();
+  ui.tutorialTitle.textContent = title;
+  ui.tutorialMessage.textContent = message;
+  ui.tutorialGoal.textContent = goal;
+}
+
+function updateTutorialStageControls() {
+  const lesson = tutorialSteps[tutorial.step];
+  const stageIndex = lesson?.stageIndex ?? 0;
+  ui.tutorialStageReadout.textContent = `Stage ${stageIndex + 1} of ${stageConfigs.length}`;
+  ui.tutorialPrevStage.disabled = stageIndex <= 0;
+  ui.tutorialNextStage.disabled = stageIndex >= stageConfigs.length - 1;
+  document.querySelectorAll(".tutorial-roadmap-step").forEach((step, index) => {
+    const active = index === stageIndex;
+    step.classList.toggle("active", active);
+    if (active) step.setAttribute("aria-current", "step");
+    else step.removeAttribute("aria-current");
+  });
+}
+
+function setTutorialUiLocked(locked) {
+  document.body.classList.toggle("tutorial-active", locked);
+  const allowed = new Set(["tutorialStart", "tutorialPrevStage", "tutorialNextStage", "volume", "testTone"]);
+  document.querySelectorAll("button, input").forEach(control => {
+    control.disabled = locked && !allowed.has(control.id);
+  });
+  ui.tutorialStart.classList.toggle("primary", locked);
+  if (locked) updateTutorialStageControls();
+}
+
+function resetTutorialOrbitProgress() {
+  tutorial.goalSeconds = 0;
+  tutorial.orbitAngle = 0;
+  tutorial.orbitCount = 0;
+  tutorial.orbitMinRadius = Infinity;
+  tutorial.orbitMaxRadius = 0;
+  tutorial.orbitMaxError = 0;
+  tutorial.orbitMinVario = Infinity;
+  tutorial.orbitTime = 0;
+  tutorial.orbitTargetTime = 0;
+  tutorial.orbitLastBearing = null;
+  tutorial.lastOrbitFailed = false;
+}
+
+function firstTutorialStepForStage(stageIndex) {
+  const stepIndex = tutorialSteps.findIndex(step => step.stageIndex === stageIndex);
+  return stepIndex >= 0 ? stepIndex : 0;
+}
+
+function isLastTutorialStepInStage(stepIndex) {
+  const lesson = tutorialSteps[stepIndex];
+  const nextLesson = tutorialSteps[stepIndex + 1];
+  return !nextLesson || nextLesson.stageIndex !== lesson.stageIndex;
+}
+
+function tutorialGoalText(metrics = null) {
+  const lesson = tutorialSteps[tutorial.step] || tutorialSteps[0];
+  if (!metrics) return lesson.goal;
+  if (lesson.successType === "radiusBand") {
+    return `Goal progress: ${tutorial.orbitCount}/2 centered orbits. Radius range: ${Math.round(metrics.minRadius)}-${Math.round(metrics.maxRadius)}m.`;
+  }
+  if (["optimizedTurn", "combinedCore"].includes(lesson.successType)) {
+    return `Goal progress: ${tutorial.orbitCount}/2 optimized orbits. Spread: ${Math.round(metrics.spread)}m / ${Math.round(metrics.allowedSpread)}m. Target-rate time: ${Math.round(metrics.targetRatio * 100)}%.`;
+  }
+  if (lesson.successType === "thermalSize") {
+    const timeoutText = lesson.timeoutSeconds
+      ? ` Time limit: ${Math.max(0, Math.ceil(lesson.timeoutSeconds - (state.t - tutorial.stepStartedAt)))}s.`
+      : "";
+    return `Goal progress: ${tutorial.orbitCount}/2 lift orbits. Weakest vario this orbit: ${metrics.minVario.toFixed(1)} m/s.${timeoutText}`;
+  }
+  return `Goal progress: ${tutorial.orbitCount}/2 smooth orbits. Current radius spread: ${Math.round(metrics.spread)}m / ${Math.round(metrics.allowedSpread)}m.`;
+}
+
+function configureTutorialStep(step, resetState = true) {
+  const lesson = tutorialSteps[step] || tutorialSteps[0];
+  pausedByUser = false;
+  tutorial.step = step;
+  tutorial.phase = ["entryTurn", "thermalSize", "combinedCore"].includes(lesson.successType) ? "entry" : "ready-practice";
+  tutorial.pauseForCallout = false;
+  tutorial.turnPromptHeading = null;
+  tutorial.peakVario = -Infinity;
+  resetTutorialOrbitProgress();
+  tutorial.lastInstruction = "";
+  tutorial.stepStartedAt = state.t;
+  tutorial.hintOpen = false;
+  tutorial.hintPausedRun = false;
+  tutorial.hintForced = false;
+  tutorial.userPaused = false;
+  applyThermalPreset("easy", false);
+  if (lesson.diameterM) ui.diameter.value = lesson.diameterM;
+  ui.showThermal.checked = lesson.showThermal;
+  tutorial.showThermalRings = lesson.showRings;
+  tutorial.showTargetMarkers = lesson.showTargetMarkers;
+  ui.duration.value = 480;
+  if (resetState) state = freshState(Number(ui.seed.value));
+  tutorial.stepStartedAt = state.t;
+  state.running = false;
+  state.finished = false;
+  ui.start.textContent = "Start";
+  updateOutputs();
+  setTutorialText(
+    lesson.title,
+    lesson.directions,
+    lesson.goal.includes("Press Space") ? lesson.goal : `${lesson.goal} Press Space bar to start.`
+  );
+}
+
+function jumpTutorialStage(delta) {
+  if (!tutorial.active) return;
+  const current = tutorialSteps[tutorial.step] || tutorialSteps[0];
+  const nextStage = clamp(current.stageIndex + delta, 0, stageConfigs.length - 1);
+  if (nextStage === current.stageIndex) return;
+  configureTutorialStep(firstTutorialStepForStage(nextStage), true);
+  setTutorialUiLocked(true);
+}
+
+function startTutorial() {
+  tutorial.active = true;
+  ui.tutorialCard.hidden = false;
+  ui.tutorialStart.textContent = "Exit Tutorial";
+  configureTutorialStep(0);
+  setTutorialUiLocked(true);
+}
+
+function exitTutorial() {
+  tutorial.active = false;
+  tutorial.showTargetMarkers = true;
+  tutorial.showThermalRings = true;
+  tutorial.hintOpen = false;
+  tutorial.hintPausedRun = false;
+  tutorial.hintForced = false;
+  ui.tutorialCard.hidden = true;
+  ui.tutorialStart.textContent = "Start Tutorial";
+  state.running = false;
+  ui.start.textContent = "Start";
+  tutorial.userPaused = false;
+  pausedByUser = false;
+  setTutorialUiLocked(false);
+  stopAudioTone();
+}
+
+function continueTutorial() {
+  if (!tutorial.active) return;
+  const lesson = tutorialSteps[tutorial.step] || tutorialSteps[0];
+  tutorial.pauseForCallout = false;
+  if (tutorial.phase === "ready-practice") {
+    tutorial.phase = "practice";
+    resetTutorialOrbitProgress();
+    tutorial.lastInstruction = "";
+    tutorial.stepStartedAt = state.t;
+    tutorial.hintOpen = false;
+    tutorial.hintPausedRun = false;
+    tutorial.hintForced = false;
+    tutorial.userPaused = false;
+    pausedByUser = false;
+    state.running = true;
+    ui.start.textContent = "Pause";
+    return;
+  }
+  if (tutorial.phase === "step-complete") {
+    if (tutorial.step < tutorialSteps.length - 1) {
+      const nextStep = tutorial.step + 1;
+      const nextLesson = tutorialSteps[nextStep] || tutorialSteps[0];
+      const startsNewStage = nextLesson.stageIndex !== lesson.stageIndex;
+      const resetsWithinStage = Boolean(nextLesson.resetOnEnter);
+      configureTutorialStep(nextStep, startsNewStage || resetsWithinStage);
+    }
+    else {
+      setTutorialText(
+        "Tutorial complete",
+        lesson.stageComplete,
+        "Try Easy, Medium, Hard, or Expert in Free Fly Scenario.",
+        false
+      );
+      tutorial.active = false;
+      ui.tutorialStart.textContent = "Start Tutorial";
+      state.running = false;
+      tutorial.userPaused = false;
+      ui.start.textContent = "Start";
+      setTutorialUiLocked(false);
+    }
+  }
+}
+
+function windVector(params, thermal = state.thermal) {
+  return {
+    x: Math.sin(thermal.windDir) * params.windMps,
+    y: Math.cos(thermal.windDir) * params.windMps
+  };
+}
+
+function thermalCenterAt(t, alt, params, thermal = state.thermal) {
+  const wind = windVector(params, thermal);
+  const windSlantDeg = lerp(0, 18, clamp(params.windMph / 20, 0, 1));
+  const slant = Math.tan(windSlantDeg * Math.PI / 180);
+  const relAlt = alt - 1000;
+  const slow = Math.sin(t * 0.010 + thermal.phaseD) * 8;
+  return {
+    x: wind.x * t + Math.sin(thermal.slantDir) * relAlt * slant + thermal.bendX * relAlt + thermal.driftJitterX * slow,
+    y: wind.y * t + Math.cos(thermal.slantDir) * relAlt * slant + thermal.bendY * relAlt + thermal.driftJitterY * slow
+  };
+}
+
+function thermalProfileAt(t, alt, params, thermal = state.thermal) {
+  const z = (alt - 1000) / 110;
+  const diameterWave = smoothWave(z, thermal.phaseA, thermal.phaseB, 1.25, 2.7);
+  const strengthWave = smoothWave(z, thermal.phaseC, thermal.phaseD, 1.0, 2.35);
+  const diameter = params.diameterM * (1 + params.diameterVariance * diameterWave);
+  const strength = (params.strength + params.sink) * (1 + params.strengthVariance * strengthWave);
+  return {
+    radius: clamp(diameter * 0.5, 18, 320),
+    strength: clamp(strength, 0.2, 9)
+  };
+}
+
+function liftAt(x, y, alt, t, params) {
+  const center = thermalCenterAt(t, alt, params);
+  const profile = thermalProfileAt(t, alt, params);
+  const dx = x - center.x;
+  const dy = y - center.y;
+  const r = Math.hypot(dx, dy);
+  const nr = r / Math.max(1, profile.radius);
+  const coreShape = tutorial.active
+    ? Math.max(0, 1 - nr)
+    : Math.exp(-nr * nr * 1.65);
+  const core = profile.strength * coreShape;
+  const edgeSink = -0.45 * Math.max(0, nr - 1.0);
+  const az = Math.atan2(dy, dx);
+  const lump = Math.sin(az * 3 + t * 0.045 + state.thermal.lumpPhase) * 0.6 +
+    Math.sin(az * 5 - t * 0.032 + state.thermal.phaseB) * 0.4;
+  const shaped = core * (1 + params.texture * 0.28 * lump) + edgeSink;
+  return {
+    lift: shaped,
+    radius: profile.radius,
+    strength: profile.strength,
+    distance: r,
+    center
+  };
+}
+
+function ensureAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  beepOsc = audioCtx.createOscillator();
+  beepGain = audioCtx.createGain();
+  beepOsc.type = "sine";
+  beepGain.gain.value = 0;
+  beepOsc.connect(beepGain);
+  beepGain.connect(audioCtx.destination);
+  beepOsc.start();
+}
+
+async function unlockAudio(warmup = false) {
+  ensureAudio();
+  if (audioCtx.state === "suspended") await audioCtx.resume();
+  if (warmup) testToneUntil = audioCtx.currentTime + 0.08;
+}
+
+async function toggleRun() {
+  await unlockAudio(true);
+  if (tutorial.active && tutorial.phase === "ready-practice" && !state.running) {
+    continueTutorial();
+    return;
+  }
+  if (state.finished) resetTrial(state.seed);
+  const wasRunning = state.running;
+  state.running = !state.running;
+  pausedByUser = wasRunning && !state.running;
+  if (tutorial.active) tutorial.userPaused = !state.running;
+  ui.start.textContent = state.running ? "Pause" : "Start";
+}
+
+function stopAudioTone() {
+  beepOn = false;
+  if (beepGain && audioCtx) {
+    beepGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.01);
+  }
+}
+
+function updateAudio(stepDt) {
+  if (audioCtx && beepOsc && beepGain && audioCtx.currentTime < testToneUntil) {
+    beepOsc.frequency.setTargetAtTime(820, audioCtx.currentTime, 0.02);
+    beepGain.gain.setTargetAtTime(readParams().volume * 0.12, audioCtx.currentTime, 0.01);
+    return;
+  }
+  if (!state.running || state.finished || !audioCtx || !beepOsc || !beepGain) {
+    stopAudioTone();
+    return;
+  }
+  const volume = readParams().volume;
+  const climb = Math.max(0, state.vario);
+  if (volume <= 0 || climb <= 0.05) {
+    stopAudioTone();
+    return;
+  }
+  const pitch = 420 + Math.min(5, climb) * 145;
+  const period = clamp(0.74 - climb * 0.09, 0.17, 0.72);
+  const duty = clamp(0.20 + climb * 0.11, 0.18, 0.82);
+  beepTimer = (beepTimer + stepDt) % period;
+  const nextOn = beepTimer < period * duty;
+  beepOsc.frequency.setTargetAtTime(pitch, audioCtx.currentTime, 0.025);
+  if (nextOn !== beepOn) beepOn = nextOn;
+  const target = beepOn ? volume * 0.12 : 0;
+  beepGain.gain.setTargetAtTime(target, audioCtx.currentTime, 0.012);
+}
+
+function liveCoreSample(params) {
+  const wind = windVector(params);
+  const airX = state.x - wind.x * state.t;
+  const airY = state.y - wind.y * state.t;
+  return {
+    t: state.t,
+    x: state.x,
+    y: state.y,
+    airX,
+    airY,
+    z: state.z,
+    heading: state.heading,
+    turnRate: state.turnRate,
+    vario: state.vario,
+    lift: state.lift
+  };
+}
+
+function coreSamples(params) {
+  const samples = state.samples.slice();
+  const live = liveCoreSample(params);
+  if (!samples.length || live.t - samples[samples.length - 1].t > 0.02) samples.push(live);
+  return samples;
+}
+
+function sampleNow(params) {
+  const sample = liveCoreSample(params);
+  state.samples.push({
+    ...sample
+  });
+  while (state.samples.length && state.t - state.samples[0].t > coreLookbackS) state.samples.shift();
+}
+
+function updatePhysics(stepDt) {
+  const params = readParams();
+  if (!keys.has("ArrowLeft")) steeringHoldSeconds.left = 0;
+  if (!keys.has("ArrowRight")) steeringHoldSeconds.right = 0;
+  if (!state.running || state.finished) {
+    updateAudio(stepDt);
+    return;
+  }
+  const slowTrimAccel = 14;
+  const fastTrimAccel = 34;
+  const rampSeconds = 2;
+  if (keys.has("ArrowLeft")) {
+    const ramp = clamp(steeringHoldSeconds.left / rampSeconds, 0, 1);
+    state.turnRate -= lerp(slowTrimAccel, fastTrimAccel, ramp) * stepDt;
+    steeringHoldSeconds.left += stepDt;
+  }
+  if (keys.has("ArrowRight")) {
+    const ramp = clamp(steeringHoldSeconds.right / rampSeconds, 0, 1);
+    state.turnRate += lerp(slowTrimAccel, fastTrimAccel, ramp) * stepDt;
+    steeringHoldSeconds.right += stepDt;
+  }
+  state.turnRate = clamp(state.turnRate, -maxTurnRateDps, maxTurnRateDps);
+
+  state.heading = (state.heading + state.turnRate * stepDt + 360) % 360;
+  const h = state.heading * Math.PI / 180;
+  const wind = windVector(params);
+  state.x += Math.sin(h) * baseAirspeed * stepDt + wind.x * stepDt;
+  state.y += Math.cos(h) * baseAirspeed * stepDt + wind.y * stepDt;
+
+  const liftInfo = liftAt(state.x, state.y, state.z, state.t, params);
+  state.lift = liftInfo.lift;
+  state.vario = state.lift - params.sink;
+  state.z += state.vario * stepDt;
+  state.t += stepDt;
+
+  state.centerDistanceSum += liftInfo.distance * stepDt;
+  state.centerDistanceSqSum += liftInfo.distance * liftInfo.distance * stepDt;
+  state.centerRadiusSum += liftInfo.radius * stepDt;
+  state.centerSamples += stepDt;
+
+  state.altitudeTrace.push({t: state.t, v: state.z});
+  state.varioTrace.push({t: state.t, v: state.vario});
+  while (state.altitudeTrace.length && state.t - state.altitudeTrace[0].t > 180) state.altitudeTrace.shift();
+  while (state.varioTrace.length && state.t - state.varioTrace[0].t > 90) state.varioTrace.shift();
+  if (state.t - state.lastSampleT >= 1) {
+    state.lastSampleT = state.t;
+    sampleNow(params);
+  }
+  updateTutorial(stepDt);
+  updateAudio(stepDt);
+  if (!tutorial.active && state.t >= params.duration) finishTrial();
+}
+
+function updateTutorial(stepDt) {
+  if (!tutorial.active || tutorial.pauseForCallout) return;
+  const lesson = tutorialSteps[tutorial.step] || tutorialSteps[0];
+  tutorial.peakVario = Math.max(tutorial.peakVario, state.vario);
+  if (tutorial.phase === "entry") {
+    if (tutorial.peakVario > 1.0 && state.t > 6 && state.vario < tutorial.peakVario - 0.25) {
+      tutorial.phase = "turn-callout";
+      tutorial.turnPromptHeading = state.heading;
+      tutorial.lastInstruction = "";
+    } else if (Math.abs(state.turnRate) >= 3) {
+      tutorial.lastInstruction = "DON'T TURN - Fly straight until the vario peaks";
+    } else {
+      tutorial.lastInstruction = "";
+    }
+    return;
+  }
+
+  if (tutorial.phase === "turn-callout") {
+    if (tutorial.turnPromptHeading != null && Math.abs(angleDeltaDeg(tutorial.turnPromptHeading, state.heading)) >= 75) {
+      tutorial.turnPromptHeading = null;
+      tutorial.pauseForCallout = true;
+      state.running = false;
+      tutorial.userPaused = false;
+      ui.start.textContent = "Start";
+      if (["thermalSize", "combinedCore"].includes(lesson.successType)) {
+        tutorial.phase = "practice";
+        tutorial.pauseForCallout = false;
+        resetTutorialOrbitProgress();
+        tutorial.lastInstruction = "";
+        tutorial.stepStartedAt = state.t;
+        state.running = true;
+        ui.start.textContent = "Pause";
+        return;
+      }
+      tutorial.phase = "step-complete";
+      setTutorialText(
+        lesson.completeTitle,
+        lesson.complete,
+        "Press Space to continue."
+      );
+    }
+    return;
+  }
+
+  const recent = state.varioTrace.slice(-50);
+  const elapsed = recent.length >= 2 ? Math.max(0.1, recent[recent.length - 1].t - recent[0].t) : 1;
+  const varioTrend = recent.length >= 2 ? (recent[recent.length - 1].v - recent[0].v) / elapsed : 0;
+  if (tutorial.phase === "practice") {
+    if (state.vario <= 0) {
+      tutorial.lastInstruction = "FIND LIFT";
+    } else if (["radiusBand", "thermalSize", "combinedCore"].includes(lesson.successType)) {
+      let instruction;
+      if (varioTrend > 0.15) instruction = "VARIO INCREASING - widen your turn to move away from the center";
+      else if (varioTrend < -0.15) instruction = "VARIO DECREASING - tighten your turn to move closer to the center";
+      else instruction = lesson.successType === "combinedCore"
+        ? "VARIO STEADY - Hold the optimum turn rate"
+        : "VARIO STEADY - Hold a constant turn rate";
+      tutorial.lastInstruction = instruction;
+    }
+    const orbit = updateTutorialOrbitProgress(readParams(), stepDt);
+    const timedOut = lesson.timeoutSeconds && state.t - tutorial.stepStartedAt >= lesson.timeoutSeconds;
+    if (lesson.successType === "optimizedTurn" && state.vario > 0) {
+      const centeredEnough = orbit.spread <= orbit.allowedSpread;
+      const turnRateGood = orbit.targetRatio >= 0.75;
+      if (!centeredEnough && turnRateGood) {
+        tutorial.lastInstruction = "CENTER THE THERMAL - listen to the vario changes and adjust your turns to line up with the circle center.";
+      } else if (centeredEnough && !turnRateGood) {
+        tutorial.lastInstruction = "SMOOTH OUT THE TURN - use a consistent turn rate near the optimum rate.";
+      } else {
+        tutorial.lastInstruction = "";
+      }
+    }
+
+    if (tutorial.orbitCount >= 2 || timedOut) {
+      tutorial.phase = "step-complete";
+      tutorial.pauseForCallout = true;
+      state.running = false;
+      ui.start.textContent = "Start";
+      const useStageComplete = isLastTutorialStepInStage(tutorial.step) && !lesson.stageEndUsesStepComplete;
+      setTutorialText(
+        useStageComplete ? lesson.stageTitle : lesson.completeTitle,
+        timedOut
+          ? lesson.timeoutComplete || "Time limit reached. That still counts here: the point is learning when lift is too small or fleeting to be worth circling."
+          : useStageComplete ? lesson.stageComplete : lesson.complete,
+        tutorial.step < tutorialSteps.length - 1 ? "Press Space to continue." : "Press Space to finish."
+      );
+    }
+  }
+}
+
+function updateTutorialOrbitProgress(params, stepDt) {
+  const lesson = tutorialSteps[tutorial.step] || tutorialSteps[0];
+  const center = thermalCenterAt(state.t, state.z, params);
+  const profile = thermalProfileAt(state.t, state.z, params);
+  const dx = state.x - center.x;
+  const dy = state.y - center.y;
+  const radius = Math.hypot(dx, dy);
+  const bearing = (Math.atan2(dx, dy) * 180 / Math.PI + 360) % 360;
+  const allowedSpread = profile.radius * 2 * 0.25;
+  const optimizedAllowedSpread = profile.radius * 0.15;
+  const targetRadius = baseAirspeed / Math.max(0.01, activeTargetTurnRateDps * Math.PI / 180);
+  const allowedError = profile.radius * 2 * 0.10;
+  const radiusError = Math.abs(radius - targetRadius);
+  const turnRateTargetGood = Math.abs(Math.abs(state.turnRate) - activeTargetTurnRateDps) <= activeTargetTurnRateDps * 0.25;
+  let changed = false;
+  let failed = false;
+
+  tutorial.orbitMinRadius = Math.min(tutorial.orbitMinRadius, radius);
+  tutorial.orbitMaxRadius = Math.max(tutorial.orbitMaxRadius, radius);
+  tutorial.orbitMaxError = Math.max(tutorial.orbitMaxError, radiusError);
+  tutorial.orbitMinVario = Math.min(tutorial.orbitMinVario, state.vario);
+  tutorial.orbitTime += stepDt;
+  if (turnRateTargetGood) tutorial.orbitTargetTime += stepDt;
+
+  if (tutorial.orbitLastBearing == null) {
+    tutorial.orbitLastBearing = bearing;
+    return {spread: 0, allowedSpread, optimizedAllowedSpread, error: radiusError, allowedError, targetRadius, minRadius: radius, maxRadius: radius, minVario: state.vario, targetRatio: 0, changed, failed};
+  }
+
+  const delta = Math.abs(angleDeltaDeg(tutorial.orbitLastBearing, bearing));
+  tutorial.orbitLastBearing = bearing;
+  if (delta < 45) tutorial.orbitAngle += delta;
+
+  let spread = tutorial.orbitMaxRadius - tutorial.orbitMinRadius;
+  let error = tutorial.orbitMaxError;
+  let targetRatio = tutorial.orbitTime > 0 ? tutorial.orbitTargetTime / tutorial.orbitTime : 0;
+  while (tutorial.orbitAngle >= 360) {
+    const orbitPassed =
+      lesson.successType === "radiusBand"
+        ? tutorial.orbitMinRadius >= profile.radius * 0.10 && tutorial.orbitMaxRadius <= profile.radius * 0.75
+        : ["optimizedTurn", "combinedCore"].includes(lesson.successType)
+          ? spread <= optimizedAllowedSpread && targetRatio >= 0.75
+          : lesson.successType === "thermalSize"
+            ? tutorial.orbitMinVario > 0
+            : spread <= allowedSpread;
+    if (orbitPassed) {
+      tutorial.orbitCount += 1;
+      tutorial.lastOrbitFailed = false;
+    } else {
+      tutorial.orbitCount = 0;
+      tutorial.lastOrbitFailed = true;
+      failed = true;
+    }
+    tutorial.orbitAngle -= 360;
+    tutorial.orbitMinRadius = radius;
+    tutorial.orbitMaxRadius = radius;
+    tutorial.orbitMaxError = radiusError;
+    tutorial.orbitMinVario = state.vario;
+    tutorial.orbitTime = 0;
+    tutorial.orbitTargetTime = 0;
+    spread = 0;
+    error = radiusError;
+    targetRatio = turnRateTargetGood ? 1 : 0;
+    changed = true;
+  }
+
+  return {
+    spread,
+    allowedSpread: ["optimizedTurn", "combinedCore"].includes(lesson.successType) ? optimizedAllowedSpread : allowedSpread,
+    optimizedAllowedSpread,
+    error,
+    allowedError,
+    targetRadius,
+    minRadius: tutorial.orbitMinRadius,
+    maxRadius: tutorial.orbitMaxRadius,
+    minVario: tutorial.orbitMinVario,
+    targetRatio,
+    changed,
+    failed
+  };
+}
+
+function turnStats(samples) {
+  if (samples.length < 2) return {direction: 1, turnRateDps: 0, totalTurn: 0};
+  let total = 0;
+  for (let i = 1; i < samples.length; i += 1) {
+    total += angleDeltaDeg(samples[i - 1].heading, samples[i].heading);
+  }
+  const elapsed = Math.max(1, samples[samples.length - 1].t - samples[0].t);
+  const direction = total < -5 ? -1 : total > 5 ? 1 : (state.turnRate < 0 ? -1 : 1);
+  return {
+    direction,
+    turnRateDps: Math.abs(total) / elapsed,
+    totalTurn: total
+  };
+}
+
+function estimateCoreGuidance() {
+  const samples = coreSamples(readParams());
+  const stats = turnStats(samples);
+  const direction = stats.direction || (state.turnRate < 0 ? -1 : 1);
+  const actualTurnRateDps = Math.abs(state.turnRate);
+  const result = {
+    valid: false,
+    cue: "WAIT",
+    advice: 0,
+    stats,
+    actualTurnRateDps,
+    suggestedTurnRateDps: actualTurnRateDps,
+    samples
+  };
+  if (samples.length < coreMinSamples || Math.abs(stats.totalTurn) < 120) return result;
+
+  const latest = samples[samples.length - 1];
+  const bins = Array.from({length: coreBinCount}, () => ({sum: 0, weight: 0, avgLift: NaN}));
+  for (const sample of samples) {
+    const age = latest.t - sample.t;
+    const bearing = Math.atan2(sample.airY - latest.airY, sample.airX - latest.airX);
+    const headingRad = (90 - latest.heading) * Math.PI / 180;
+    let phase = bearing - headingRad;
+    while (phase < 0) phase += Math.PI * 2;
+    while (phase >= Math.PI * 2) phase -= Math.PI * 2;
+    if (direction < 0) phase = (Math.PI * 2 - phase) % (Math.PI * 2);
+    const index = Math.floor(phase / (Math.PI * 2) * coreBinCount) % coreBinCount;
+    const weight = clamp(1 - age / coreLookbackS, 0.15, 1);
+    bins[index].sum += sample.vario * weight;
+    bins[index].weight += weight;
+  }
+  for (const bin of bins) {
+    if (bin.weight > 0) bin.avgLift = bin.sum / bin.weight;
+  }
+
+  const nowBins = [11, 0, 1].map(i => bins[(i + coreBinCount) % coreBinCount].avgLift).filter(Number.isFinite);
+  const oppBins = [5, 6, 7].map(i => bins[(i + coreBinCount) % coreBinCount].avgLift).filter(Number.isFinite);
+  const nowAvg = nowBins.length ? nowBins.reduce((a, b) => a + b, 0) / nowBins.length : latest.vario;
+  const oppAvg = oppBins.length ? oppBins.reduce((a, b) => a + b, 0) / oppBins.length : latest.vario;
+  const recent = samples.slice(-6).map(s => s.vario);
+  const trend = recent.length >= 2 ? recent[recent.length - 1] - recent[0] : 0;
+  const liftDelta = nowAvg - oppAvg;
+
+  let advice = clamp((liftDelta * 0.42) + (trend * 0.28), -1, 1);
+  if (latest.vario < -0.3 && oppAvg > nowAvg) advice -= 0.18;
+  if (actualTurnRateDps < 4) advice = Math.min(advice, -0.35);
+  advice = clamp(advice, -1, 1);
+
+  let cue = "HOLD";
+  if (advice > 0.55) cue = "WIDE++";
+  else if (advice > 0.18) cue = "WIDE";
+  else if (advice < -0.55) cue = "TIGHT++";
+  else if (advice < -0.18) cue = "TIGHT";
+  if (latest.vario < -1.3) cue = "WEAK";
+
+  result.valid = true;
+  result.cue = cue;
+  result.advice = advice;
+  result.bins = bins;
+  result.nowAvg = nowAvg;
+  result.oppositeAvg = oppAvg;
+  result.suggestedTurnRateDps = clamp(actualTurnRateDps * (1 - advice * 0.5), 0, maxTurnRateDps);
+  return result;
+}
+
+function finishTrial() {
+  if (state.finished) return;
+  pausedByUser = false;
+  state.running = false;
+  state.finished = true;
+  ui.start.textContent = "Start";
+  stopAudioTone();
+  state.finishStats = currentStats();
+  trials.unshift({
+    seed: state.seed,
+    ...state.finishStats
+  });
+  trials = trials.slice(0, 8);
+  renderTrials();
+}
+
+function currentStats() {
+  const params = readParams();
+  const gain = state.z - state.startAlt;
+  const avg = state.t > 0 ? gain / state.t : 0;
+  const meanDist = state.centerSamples > 0 ? state.centerDistanceSum / state.centerSamples : 0;
+  const meanDistSq = state.centerSamples > 0 ? state.centerDistanceSqSum / state.centerSamples : 0;
+  const avgRadius = state.centerSamples > 0 ? state.centerRadiusSum / state.centerSamples : Math.max(1, params.diameterM * 0.5);
+  const radialStd = Math.sqrt(Math.max(0, meanDistSq - meanDist * meanDist));
+  const nearScore = Math.exp(-Math.pow(meanDist / Math.max(1, avgRadius * 0.70), 2));
+  const uniformScore = Math.exp(-Math.pow(radialStd / Math.max(1, avgRadius * 0.22), 2));
+  const centering = clamp(nearScore * uniformScore, 0, 1);
+  const score = Math.max(0, Math.round(gain + centering * 180 + avg * 70));
+  return {gain, avg, centering, meanDist, radialStd, score, duration: params.duration};
+}
+
+function renderTrials() {
+  ui.trials.innerHTML = "";
+  trials.forEach((trial, i) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${i + 1}</td><td>${trial.seed}</td><td>${trial.gain.toFixed(0)}</td><td>${trial.avg.toFixed(1)}</td><td>${Math.round(trial.centering * 100)}%</td><td>${trial.score}</td>`;
+    ui.trials.appendChild(tr);
+  });
+}
+
+function drawText(text, x, y, size = 12, align = "left", color = "#111") {
+  ctx.fillStyle = color;
+  ctx.font = `600 ${size}px Roboto, "Segoe UI", sans-serif`;
+  ctx.textAlign = align;
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, x, y);
+}
+
+function drawArrow(x, y, heading, size, fill = "#111") {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(heading * Math.PI / 180);
+  ctx.fillStyle = fill;
+  ctx.beginPath();
+  ctx.moveTo(0, -size);
+  ctx.lineTo(size * 0.62, size * 0.72);
+  ctx.lineTo(0, size * 0.38);
+  ctx.lineTo(-size * 0.62, size * 0.72);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function turnRateCueColor(turnRateDps, alpha = 1) {
+  const danger = clamp((Math.abs(turnRateDps) - 24) / 6, 0, 1);
+  const r = Math.round(216 + (224 - 216) * danger);
+  const g = Math.round(255 + (56 - 255) * danger);
+  const b = Math.round(0 + (45 - 0) * danger);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function turnRateGlowColor(turnRateDps, alphaScale = 1) {
+  const rate = Math.abs(turnRateDps);
+  const target = clamp(activeTargetTurnRateDps, 0, maxTurnRateDps);
+  const targetGlow = clamp(1 - Math.abs(rate - target) / 7.5, 0, 1);
+  const danger = clamp((rate - 24) / 6, 0, 1);
+  if (danger > 0) {
+    return {
+      color: turnRateCueColor(turnRateDps, (0.25 + danger * 0.68) * alphaScale),
+      active: true
+    };
+  }
+  if (targetGlow > 0) {
+    return {
+      color: `rgba(216, 255, 0, ${targetGlow * 0.86 * alphaScale})`,
+      active: true
+    };
+  }
+  return {color: "rgba(32, 36, 35, 0)", active: false};
+}
+
+function drawTurnPreview(x, y, headingDeg, turnRateDps, scale) {
+  const previewSeconds = 2.2;
+  const steps = 28;
+  const startOffsetM = 5;
+  const rateRad = turnRateDps * Math.PI / 180;
+  let heading = headingDeg * Math.PI / 180;
+  let px = x + Math.sin(heading) * startOffsetM * scale;
+  let py = y - Math.cos(heading) * startOffsetM * scale;
+  const showTurnColors = !tutorial.active || tutorial.showTargetMarkers;
+  const glow = showTurnColors ? turnRateGlowColor(turnRateDps, 1) : {active: false};
+
+  ctx.save();
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.beginPath();
+  ctx.moveTo(px, py);
+  for (let i = 1; i <= steps; i++) {
+    const dtStep = previewSeconds / steps;
+    heading += rateRad * dtStep;
+    px += Math.sin(heading) * baseAirspeed * dtStep * scale;
+    py -= Math.cos(heading) * baseAirspeed * dtStep * scale;
+    ctx.lineTo(px, py);
+  }
+  if (glow.active) {
+    ctx.strokeStyle = glow.color;
+    ctx.lineWidth = 11;
+    ctx.stroke();
+  }
+
+  ctx.strokeStyle = "rgba(32, 36, 35, 0.92)";
+  ctx.lineWidth = 2.4;
+  ctx.setLineDash([1, 6]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+function mapPoint(worldX, worldY, centerX, centerY, scale, rect) {
+  return {
+    x: rect.x + rect.w / 2 + (worldX - centerX) * scale,
+    y: rect.y + rect.h / 2 - (worldY - centerY) * scale
+  };
+}
+
+function drawTerrain(rect, focusX, focusY) {
+  const altitudeParallax = clamp((state.z - state.startAlt) / 700, 0, 1);
+  const parallax = 0.18 + altitudeParallax * 0.12;
+  const offsetX = ((focusX * parallax) % 170 + 170) % 170;
+  const offsetY = ((focusY * parallax) % 145 + 145) % 145;
+  if (terrainMapImage.complete && terrainMapImage.naturalWidth) {
+    const imageScale = Math.max(
+      rect.w / terrainMapImage.naturalWidth,
+      rect.h / terrainMapImage.naturalHeight
+    ) * (1.08 - altitudeParallax * .035);
+    const drawW = terrainMapImage.naturalWidth * imageScale;
+    const drawH = terrainMapImage.naturalHeight * imageScale;
+    const travelX = Math.max(0, drawW - rect.w);
+    const travelY = Math.max(0, drawH - rect.h);
+    const panX = clamp(.5 + Math.sin(focusX * .0025) * .34, 0, 1) * travelX;
+    const panY = clamp(.5 + Math.sin(focusY * .0021) * .34, 0, 1) * travelY;
+    ctx.drawImage(terrainMapImage, rect.x - panX, rect.y - panY, drawW, drawH);
+    ctx.fillStyle = "rgba(255,255,255,.10)";
+    ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+    return;
+  }
+  const base = ctx.createLinearGradient(rect.x, rect.y, rect.x + rect.w, rect.y + rect.h);
+  base.addColorStop(0, "#e7eaeb");
+  base.addColorStop(.52, "#cbd1d3");
+  base.addColorStop(1, "#eef0f1");
+  ctx.fillStyle = base;
+  ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+
+  ctx.save();
+  ctx.lineWidth = 1;
+  for (let layer = 0; layer < 7; layer++) {
+    ctx.strokeStyle = `rgba(74, 86, 93, ${0.07 + layer * 0.012})`;
+    const spacing = 52 + layer * 11;
+    for (let y = rect.y - spacing; y < rect.y + rect.h + spacing; y += spacing) {
+      ctx.beginPath();
+      for (let x = rect.x - 30; x <= rect.x + rect.w + 30; x += 8) {
+        const px = x + Math.sin((y + offsetY + layer * 31) * .018) * (13 + layer * 2);
+        const py = y + Math.sin((x + offsetX) * .021 + layer * .9) * (13 + layer * 3);
+        if (x === rect.x - 30) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+    }
+  }
+  ctx.globalAlpha = .22;
+  ctx.fillStyle = "#aab2b5";
+  for (let i = 0; i < 10; i++) {
+    const x = rect.x + ((i * 137 - offsetX * .45) % (rect.w + 100)) - 50;
+    const y = rect.y + ((i * 83 - offsetY * .45) % (rect.h + 90)) - 45;
+    ctx.beginPath();
+    ctx.ellipse(x, y, 80 + (i % 3) * 25, 28 + (i % 4) * 9, i * .43, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawParaglider(x, y, headingDeg, turnRateDps) {
+  const bank = clamp(turnRateDps / maxTurnRateDps, -1, 1);
+  const bankAbs = Math.abs(bank);
+  const span = 32;
+  const wingShiftX = bank * 5.5;
+  const pilotX = -bank * 10;
+
+  // Project a point on the canopy. In a left bank (negative bank), the
+  // right side grows and spreads toward the viewer while the left compresses.
+  function wingPoint(u, edge = "trailing") {
+    const isInsideWing = bank !== 0 && Math.sign(u) === Math.sign(bank);
+    const foldAmount = isInsideWing ? Math.pow(bankAbs, .62) : 0;
+    const compressedAbsU = Math.abs(u) <= .78
+      ? Math.abs(u)
+      : .78 + (Math.abs(u) - .78) * (1 - foldAmount * .94);
+    const curvedU = Math.sign(u) * compressedAbsU;
+    const perspective = 1 - bank * u * 0.28;
+    const projectedU = curvedU * (1 - bank * curvedU * 0.13);
+    const centerFullness = Math.pow(Math.max(0, 1 - u * u), 0.62);
+    const chord = (4.2 + 14.8 * centerFullness) * perspective;
+    const bankHeight = bank * u * 5.2;
+    const trailingY = -7 + 2.1 * centerFullness + bankHeight;
+    return {
+      x: wingShiftX + projectedU * span,
+      y: edge === "leading" ? trailingY - chord : trailingY,
+      perspective
+    };
+  }
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(headingDeg * Math.PI / 180);
+
+  // The inflated canopy uses the same attachment geometry at every bank;
+  // projection alone changes the apparent wingtip and rib spacing.
+  const leftTrail = wingPoint(-1, "trailing");
+  const leftLead = wingPoint(-1, "leading");
+  const rightLead = wingPoint(1, "leading");
+  const rightTrail = wingPoint(1, "trailing");
+  const highlightPosition = .5 - bank * .28;
+  const highlightSpread = .26;
+  const leftTipLight = clamp(.28 + bank * .16, .08, .52);
+  const rightTipLight = clamp(.28 - bank * .16, .08, .52);
+  const canopyBlue = light => `hsl(201 96% ${Math.round(24 + light * 56)}%)`;
+  const wingGradient = ctx.createLinearGradient(leftTrail.x, 0, rightTrail.x, 0);
+  wingGradient.addColorStop(0, canopyBlue(leftTipLight));
+  wingGradient.addColorStop(
+    Math.max(.07, highlightPosition - highlightSpread),
+    canopyBlue(.62 + bank * .08)
+  );
+  wingGradient.addColorStop(highlightPosition, canopyBlue(1));
+  wingGradient.addColorStop(
+    Math.min(.93, highlightPosition + highlightSpread),
+    canopyBlue(.62 - bank * .08)
+  );
+  wingGradient.addColorStop(1, canopyBlue(rightTipLight));
+  ctx.fillStyle = wingGradient;
+  ctx.strokeStyle = "#142031";
+  ctx.lineWidth = 1.65;
+  ctx.lineJoin = "round";
+  ctx.beginPath();
+  ctx.moveTo(leftTrail.x, leftTrail.y);
+  ctx.quadraticCurveTo(
+    leftTrail.x - 1.8 * leftTrail.perspective,
+    (leftTrail.y + leftLead.y) / 2,
+    leftLead.x,
+    leftLead.y
+  );
+  for (let i = 1; i < 32; i++) {
+    const u = -1 + i / 16;
+    const point = wingPoint(u, "leading");
+    ctx.lineTo(point.x, point.y);
+  }
+  ctx.lineTo(rightLead.x, rightLead.y);
+  ctx.quadraticCurveTo(
+    rightTrail.x + 1.8 * rightTrail.perspective,
+    (rightTrail.y + rightLead.y) / 2,
+    rightTrail.x,
+    rightTrail.y
+  );
+  for (let i = 31; i >= 0; i--) {
+    const u = -1 + i / 16;
+    const point = wingPoint(u, "trailing");
+    ctx.lineTo(point.x, point.y);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // Full-width ribs. Equal cell positions in 3D become deliberately unequal
+  // on screen as the nearer half of the canopy expands.
+  ctx.strokeStyle = "rgba(239, 245, 248, .72)";
+  ctx.lineWidth = 1;
+  for (let i = 1; i < 18; i++) {
+    const u = -1 + i / 9;
+    const lead = wingPoint(u, "leading");
+    const trail = wingPoint(u, "trailing");
+    ctx.beginPath();
+    ctx.moveTo(lead.x, lead.y + 1);
+    ctx.quadraticCurveTo(
+      (lead.x + trail.x) / 2 - bank * u * 1.8,
+      (lead.y + trail.y) / 2,
+      trail.x,
+      trail.y - .4
+    );
+    ctx.stroke();
+  }
+
+  // Suspension lines keep fixed attachment points on wing and harness. Their
+  // changing lengths and angles make the pilot/wing counter-shift legible.
+  ctx.strokeStyle = "rgba(20, 32, 49, .78)";
+  ctx.lineWidth = 1.15;
+  const suspensionGroups = [
+    {u: -.82, harness: -3.8},
+    {u: -.56, harness: -2.7},
+    {u: -.30, harness: -1.4},
+    {u: .30, harness: 1.4},
+    {u: .56, harness: 2.7},
+    {u: .82, harness: 3.8}
+  ];
+  for (const line of suspensionGroups) {
+    const attach = wingPoint(line.u, "trailing");
+    ctx.beginPath();
+    ctx.moveTo(attach.x, attach.y);
+    ctx.lineTo(pilotX + line.harness, 8.5 + bankAbs * 1.5);
+    ctx.stroke();
+  }
+
+  // Harness/body, displaced opposite the wing center by the turn load.
+  ctx.save();
+  ctx.translate(pilotX, 10);
+  ctx.rotate(bank * .24);
+  ctx.fillStyle = "#142031";
+  ctx.beginPath();
+  ctx.ellipse(0, 3.8, 7.5, 4.6, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // The pilot's head leans into the turn rather than staying over the harness.
+  const headLean = bank * 4.2;
+  ctx.fillStyle = "#142031";
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(headLean, -2.5, 3.6, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+
+  // A small center mark makes the wing's counter-shift readable at a glance.
+  ctx.fillStyle = "#d8ff00";
+  ctx.beginPath();
+  ctx.arc(wingShiftX, wingPoint(0, "trailing").y - .8, 1.35, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawMainMap(rect, estimate) {
+  const params = readParams();
+  const center = thermalCenterAt(state.t, state.z, params);
+  const profile = thermalProfileAt(state.t, state.z, params);
+  const focusX = lerp(state.x, center.x, 0.25);
+  const focusY = lerp(state.y, center.y, 0.25);
+  const scale = Math.min(rect.w, rect.h) / 330;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(rect.x, rect.y, rect.w, rect.h);
+  ctx.clip();
+  drawTerrain(rect, focusX, focusY);
+
+  const c = mapPoint(center.x, center.y, focusX, focusY, scale, rect);
+
+  if (params.showThermal) {
+    const grd = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, profile.radius * scale * 1.45);
+    grd.addColorStop(0, "rgba(132, 181, 63, 0.42)");
+    grd.addColorStop(0.55, "rgba(132, 181, 63, 0.18)");
+    grd.addColorStop(1, "rgba(56, 150, 80, 0)");
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, profile.radius * scale * 1.45, 0, Math.PI * 2);
+    ctx.fill();
+    if (!tutorial.active || tutorial.showThermalRings) {
+      ctx.strokeStyle = "rgba(75, 124, 38, 0.62)";
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, profile.radius * scale, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+
+  if (tutorial.active && tutorial.showThermalRings) {
+    ctx.strokeStyle = "rgba(32, 36, 35, 0.18)";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 7]);
+    for (const ring of [0.25, 0.5, 0.75, 1]) {
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, profile.radius * scale * ring, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+  }
+
+  const flightTrackOpacity = tutorial.active
+    ? (tutorialSteps[tutorial.step]?.flightTrackOpacity ?? 1)
+    : 1;
+  if (state.samples.length > 1 && flightTrackOpacity > 0) {
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = `rgba(255,255,255,${0.88 * flightTrackOpacity})`;
+    ctx.lineWidth = 5.2;
+    ctx.beginPath();
+    state.samples.forEach((sample, index) => {
+      const point = mapPoint(sample.x, sample.y, focusX, focusY, scale, rect);
+      if (index === 0) ctx.moveTo(point.x, point.y); else ctx.lineTo(point.x, point.y);
+    });
+    ctx.stroke();
+    ctx.lineWidth = 3.1;
+    for (let index = 1; index < state.samples.length; index++) {
+      const previous = state.samples[index - 1];
+      const sample = state.samples[index];
+      const from = mapPoint(previous.x, previous.y, focusX, focusY, scale, rect);
+      const to = mapPoint(sample.x, sample.y, focusX, focusY, scale, rect);
+      ctx.strokeStyle = `rgba(105,115,122,${0.9 * flightTrackOpacity})`;
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.lineTo(to.x, to.y);
+      ctx.stroke();
+    }
+  }
+
+  const p = mapPoint(state.x, state.y, focusX, focusY, scale, rect);
+  drawTurnPreview(p.x, p.y, state.heading, state.turnRate, scale);
+  drawParaglider(p.x, p.y, state.heading, state.turnRate);
+
+  const wind = windVector(params);
+  const windCard = {x: rect.x + 12, y: rect.y + 12, w: 112, h: 54};
+  drawReplayDarkCard(windCard, 12);
+  drawText("WIND", windCard.x + windCard.w / 2, windCard.y + 15, 10, "center", "#9ca3af");
+  if (params.windMph < .05) {
+    drawText("0 mph", windCard.x + windCard.w / 2, windCard.y + 37, 15, "center", "#f7f8f9");
+  } else {
+    const magnitude = Math.max(.001, Math.hypot(wind.x, wind.y));
+    const dx = wind.x / magnitude;
+    const dy = -wind.y / magnitude;
+    const centerX = windCard.x + 25;
+    const centerY = windCard.y + 37;
+    const startX = centerX - dx * 7;
+    const startY = centerY - dy * 7;
+    const endX = centerX + dx * 8;
+    const endY = centerY + dy * 8;
+    ctx.strokeStyle = "rgba(255,255,255,.9)";
+    ctx.lineWidth = 2;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(endX, endY);
+    ctx.stroke();
+    ctx.fillStyle = "#d8ff00";
+    ctx.beginPath();
+    ctx.arc(endX, endY, 2.6, 0, Math.PI * 2);
+    ctx.fill();
+    drawText(`${params.windMph.toFixed(0)} mph`, windCard.x + 70, windCard.y + 37, 15, "center", "#f7f8f9");
+  }
+
+  ctx.restore();
+}
+
+function drawTape(rect, value, minValue, maxValue, label, units, active = true) {
+  ctx.save();
+  ctx.strokeStyle = "#111";
+  ctx.fillStyle = "#fff";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+  const mid = rect.y + rect.h / 2;
+  for (let i = 0; i <= 10; i += 1) {
+    const y = rect.y + rect.h - i / 10 * rect.h;
+    ctx.beginPath();
+    ctx.moveTo(rect.x, y);
+    ctx.lineTo(rect.x + (i % 5 === 0 ? 12 : 7), y);
+    ctx.stroke();
+  }
+  const t = clamp((value - minValue) / Math.max(1, maxValue - minValue), 0, 1);
+  const y = rect.y + rect.h - t * rect.h;
+  ctx.fillStyle = active ? "#111" : "#777";
+  ctx.fillRect(rect.x + 6, y - 12, rect.w - 12, 24);
+  drawText(`${value >= 0 && label === "vario" ? "+" : ""}${value.toFixed(label === "alt" ? 0 : 1)}${units}`, rect.x + rect.w / 2, y, 11, "center", "#fff");
+  drawText(label, rect.x + rect.w / 2, rect.y - 12, 11, "center", "#111");
+  ctx.restore();
+}
+
+function drawVarioBar(rect, value) {
+  ctx.save();
+  ctx.fillStyle = "#f7faf6";
+  ctx.strokeStyle = "#202423";
+  ctx.lineWidth = 1;
+  ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+  ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+  const mid = rect.y + rect.h / 2;
+  ctx.strokeStyle = "#707a72";
+  ctx.beginPath();
+  ctx.moveTo(rect.x, mid);
+  ctx.lineTo(rect.x + rect.w, mid);
+  ctx.stroke();
+
+  const clamped = clamp(value, -7, 7);
+  const barH = Math.abs(clamped) / 7 * (rect.h / 2);
+  ctx.fillStyle = clamped >= 0 ? "#2374d8" : "#cf3f3f";
+  const inset = 12;
+  if (clamped >= 0) {
+    ctx.fillRect(rect.x + inset, mid - barH, rect.w - inset * 2, barH);
+  } else {
+    ctx.fillRect(rect.x + inset, mid, rect.w - inset * 2, barH);
+  }
+
+  for (let i = -6; i <= 6; i += 2) {
+    const y = mid - i / 7 * (rect.h / 2);
+    ctx.strokeStyle = i === 0 ? "#202423" : "#9aa59a";
+    ctx.beginPath();
+    ctx.moveTo(rect.x - 8, y);
+    ctx.lineTo(rect.x - 2, y);
+    ctx.moveTo(rect.x + rect.w + 2, y);
+    ctx.lineTo(rect.x + rect.w + 8, y);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = "#202423";
+  ctx.fillRect(rect.x + 5, mid - 12, rect.w - 10, 24);
+  drawText(`${value >= 0 ? "+" : ""}${value.toFixed(1)}`, rect.x + rect.w / 2, mid, 12, "center", "#fff");
+  drawText("+7", rect.x - 12, rect.y + 4, 11, "right", "#dce5d6");
+  drawText("-7", rect.x - 12, rect.y + rect.h - 4, 11, "right", "#dce5d6");
+  drawText("m/s", rect.x + rect.w / 2, rect.y - 14, 11, "center", "#dce5d6");
+  ctx.restore();
+}
+
+function drawAltitudeBox(rect, altitude) {
+  ctx.save();
+  ctx.fillStyle = "#eef4ee";
+  ctx.strokeStyle = "rgba(216, 255, 0, 0.60)";
+  ctx.lineWidth = 1;
+  ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+  ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+  drawText("Altitude (m)", rect.x + rect.w / 2, rect.y + 14, 10, "center", "#202423");
+  drawText(altitude.toFixed(0), rect.x + rect.w / 2, rect.y + 39, 24, "center", "#202423");
+  ctx.restore();
+}
+
+function drawTurnRate(rect, estimate) {
+  ctx.save();
+  ctx.strokeStyle = "#dce5d6";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+  const center = rect.x + rect.w / 2;
+  const rateX = rate => center + clamp(rate, -maxTurnRateDps, maxTurnRateDps) / maxTurnRateDps * rect.w / 2;
+  const target = clamp(activeTargetTurnRateDps, 0, maxTurnRateDps);
+  const showTurnColors = !tutorial.active || tutorial.showTargetMarkers;
+  if (showTurnColors) {
+    for (const side of [-1, 1]) {
+      const dangerStartX = rateX(side * 24);
+      const dangerEndX = rateX(side * maxTurnRateDps);
+      const dangerGradient = ctx.createLinearGradient(dangerStartX, rect.y, dangerEndX, rect.y);
+      dangerGradient.addColorStop(0, "rgba(224, 56, 45, 0)");
+      dangerGradient.addColorStop(1, "rgba(224, 56, 45, 0.76)");
+      ctx.fillStyle = dangerGradient;
+      ctx.fillRect(Math.min(dangerStartX, dangerEndX), rect.y + 1, Math.abs(dangerEndX - dangerStartX), rect.h - 2);
+    }
+    for (const side of [-1, 1]) {
+      const targetX = rateX(side * target);
+      const bandHalfWidth = rect.w * 0.13;
+      const gradient = ctx.createLinearGradient(targetX - bandHalfWidth, rect.y, targetX + bandHalfWidth, rect.y);
+      gradient.addColorStop(0, "rgba(216, 255, 0, 0)");
+      gradient.addColorStop(0.35, "rgba(216, 255, 0, 0.18)");
+      gradient.addColorStop(0.5, "rgba(216, 255, 0, 0.78)");
+      gradient.addColorStop(0.65, "rgba(216, 255, 0, 0.18)");
+      gradient.addColorStop(1, "rgba(216, 255, 0, 0)");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(targetX - bandHalfWidth, rect.y + 1, bandHalfWidth * 2, rect.h - 2);
+      ctx.strokeStyle = "rgba(216, 255, 0, 0.92)";
+      ctx.beginPath();
+      ctx.moveTo(targetX, rect.y + 1);
+      ctx.lineTo(targetX, rect.y + rect.h - 1);
+      ctx.stroke();
+    }
+    for (const side of [-1, 1]) {
+      const warningX = rateX(side * 24);
+      ctx.strokeStyle = "rgba(224, 56, 45, 0.62)";
+      ctx.beginPath();
+      ctx.moveTo(warningX, rect.y + 3);
+      ctx.lineTo(warningX, rect.y + rect.h - 3);
+      ctx.stroke();
+    }
+  }
+  ctx.strokeStyle = "#dce5d6";
+  ctx.beginPath();
+  ctx.moveTo(center, rect.y);
+  ctx.lineTo(center, rect.y + rect.h);
+  ctx.stroke();
+  const actualX = rateX(state.turnRate);
+  ctx.strokeStyle = showTurnColors ? turnRateCueColor(state.turnRate, 1) : "#dce5d6";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(actualX, rect.y + rect.h / 2, 7, 0, Math.PI * 2);
+  ctx.stroke();
+  drawText("-30", rect.x, rect.y + rect.h + 13, 11, "left", "#dce5d6");
+  drawText("+30", rect.x + rect.w, rect.y + rect.h + 13, 11, "right", "#dce5d6");
+  ctx.restore();
+}
+
+function drawTurnRateModule(rect, estimate) {
+  ctx.save();
+  ctx.fillStyle = "#202423";
+  ctx.strokeStyle = "rgba(216, 255, 0, 0.35)";
+  ctx.lineWidth = 1;
+  ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+  ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+  drawText("Turn rate", rect.x + rect.w / 2, rect.y + 15, 12, "center", "#dce5d6");
+  drawTurnRate({x: rect.x + 12, y: rect.y + 36, w: rect.w - 24, h: 18}, estimate);
+  drawBankSilhouette(rect.x + rect.w / 2, rect.y + 112, state.turnRate);
+  ctx.restore();
+}
+
+function drawBankSilhouette(cx, cy, turnRateDps) {
+  const bank = clamp(turnRateDps / maxTurnRateDps, -1, 1) * 42 * Math.PI / 180;
+  ctx.save();
+  ctx.strokeStyle = "rgba(216, 255, 0, 0.18)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(cx - 56, cy + 8);
+  ctx.lineTo(cx + 56, cy + 8);
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(bank);
+
+  const canopyY = -28;
+  const pilotY = 34;
+  const canopyPoint = t => {
+    const x = -48 + t * 96;
+    const arch = Math.sin(t * Math.PI);
+    return {
+      x,
+      y: canopyY + 18 - arch * 21
+    };
+  };
+
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.strokeStyle = "#202423";
+  ctx.lineWidth = 7;
+  ctx.beginPath();
+  ctx.moveTo(-50, canopyY + 18);
+  ctx.bezierCurveTo(-36, canopyY - 15, 36, canopyY - 15, 50, canopyY + 18);
+  ctx.stroke();
+
+  ctx.strokeStyle = "#d8ff00";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(-48, canopyY + 16);
+  ctx.bezierCurveTo(-35, canopyY - 11, 35, canopyY - 11, 48, canopyY + 16);
+  ctx.stroke();
+
+  ctx.strokeStyle = "rgba(32, 36, 35, 0.72)";
+  ctx.lineWidth = 1.3;
+  for (let i = 1; i < 8; i += 1) {
+    const p = canopyPoint(i / 8);
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y + 2);
+    ctx.lineTo(p.x * 0.18, pilotY - 11);
+    ctx.stroke();
+  }
+
+  ctx.strokeStyle = "#202423";
+  ctx.lineWidth = 1.7;
+  ctx.beginPath();
+  for (const t of [0.06, 0.18, 0.32, 0.50, 0.68, 0.82, 0.94]) {
+    const p = canopyPoint(t);
+    ctx.moveTo(p.x, p.y + 4);
+    ctx.lineTo((t - 0.5) * 18, pilotY - 8);
+  }
+  ctx.stroke();
+
+  ctx.strokeStyle = "#d8ff00";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(-8, pilotY - 10);
+  ctx.lineTo(-4, pilotY + 1);
+  ctx.moveTo(8, pilotY - 10);
+  ctx.lineTo(4, pilotY + 1);
+  ctx.stroke();
+
+  ctx.fillStyle = "#202423";
+  ctx.strokeStyle = "#d8ff00";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(0, pilotY - 13, 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.ellipse(0, pilotY, 6, 11, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+}
+
+function coreScreenPoint(sample, latest, heading, aircraftX, aircraftY, metersPerPx) {
+  const dx = sample.airX - latest.airX;
+  const dy = sample.airY - latest.airY;
+  const h = heading * Math.PI / 180;
+  const right = dx * Math.cos(h) - dy * Math.sin(h);
+  const forward = dx * Math.sin(h) + dy * Math.cos(h);
+  return {
+    x: aircraftX + right / metersPerPx,
+    y: aircraftY - forward / metersPerPx
+  };
+}
+
+function drawMaskedPlusGlyph(cx, cy) {
+  const drawPlus = (fill, armHalfW, armHalfL) => {
+    ctx.fillStyle = fill;
+    ctx.fillRect(cx - armHalfW, cy - armHalfL, armHalfW * 2, armHalfL * 2);
+    ctx.fillRect(cx - armHalfL, cy - armHalfW, armHalfL * 2, armHalfW * 2);
+  };
+  drawPlus("#f4f4f4", 4, 10);
+  drawPlus("#111", 2, 8);
+}
+
+function drawCoreTargetScale(cx, cy) {
+  ctx.fillStyle = "#f4f4f4";
+  ctx.strokeStyle = "#111";
+  ctx.lineWidth = 1;
+  const left = cx - 28;
+  const right = cx + 28;
+  const top = cy - 11;
+  const bottom = cy + 11;
+  const innerTop = cy - 4;
+  const innerBottom = cy + 4;
+  ctx.beginPath();
+  ctx.moveTo(left, innerTop);
+  ctx.lineTo(cx - 6, innerTop);
+  ctx.lineTo(cx - 6, top);
+  ctx.lineTo(cx + 6, top);
+  ctx.lineTo(cx + 6, innerTop);
+  ctx.lineTo(right, innerTop);
+  ctx.lineTo(right, innerBottom);
+  ctx.lineTo(cx + 6, innerBottom);
+  ctx.lineTo(cx + 6, bottom);
+  ctx.lineTo(cx - 6, bottom);
+  ctx.lineTo(cx - 6, innerBottom);
+  ctx.lineTo(left, innerBottom);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+}
+
+function drawCoreScreen(rect, estimate) {
+  ctx.save();
+  ctx.fillStyle = "#f4f4f4";
+  ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+  ctx.strokeStyle = "#111";
+  ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+  ctx.translate(rect.x, rect.y);
+
+  ctx.strokeStyle = "#d0d0d0";
+  ctx.lineWidth = 1;
+  for (let x = 0; x <= leafScreenW; x += 12) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, leafScreenH);
+    ctx.stroke();
+  }
+  for (let y = 0; y <= leafScreenH; y += 12) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(leafScreenW, y);
+    ctx.stroke();
+  }
+
+  const direction = estimate.stats?.direction || (state.turnRate < 0 ? -1 : 1);
+  const turnSide = direction < 0 ? -1 : 1;
+  const aircraftX = direction < 0 ? 76 : 20;
+  const aircraftY = 118;
+  const ringRadius = 38;
+  const ringCx = aircraftX + turnSide * ringRadius;
+  const ringCy = aircraftY;
+  const advice = estimate.valid ? estimate.advice : 0;
+  const dynamicRadius = ringRadius * (1 + advice * 0.36);
+  const dynamicCx = aircraftX + turnSide * dynamicRadius;
+  const samples = estimate.samples || [];
+  const latest = samples[samples.length - 1] || {
+    airX: state.x,
+    airY: state.y,
+    heading: state.heading
+  };
+  const metersPerPx = 1.8;
+
+  const climbs = samples.map(p => p.vario).filter(Number.isFinite);
+  const minClimb = climbs.length ? Math.min(...climbs) : -1;
+  const maxClimb = climbs.length ? Math.max(...climbs) : 3;
+  for (const sample of samples) {
+    const p = coreScreenPoint(sample, latest, latest.heading, aircraftX, aircraftY, metersPerPx);
+    if (p.x < -6 || p.x > leafScreenW + 6 || p.y < -6 || p.y > leafScreenH + 6) continue;
+    const strength = clamp((sample.vario - minClimb) / Math.max(0.1, maxClimb - minClimb), 0, 1);
+    ctx.strokeStyle = "#111";
+    ctx.fillStyle = "#111";
+    if (strength <= 0.25) {
+      ctx.fillRect(Math.round(p.x), Math.round(p.y), 1, 1);
+    } else {
+      ctx.lineWidth = 1;
+      const diameter = strength > 0.78 ? 7 : strength > 0.52 ? 5 : 3;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, diameter / 2, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+
+  if (estimate.valid && Math.abs(advice) >= 0.08) {
+    ctx.strokeStyle = "#111";
+    ctx.lineWidth = Math.abs(advice) >= 0.55 ? 3 : 2;
+    ctx.beginPath();
+    const startAngle = turnSide > 0 ? Math.PI : 0;
+    const endAngle = startAngle + turnSide * Math.PI * 0.75;
+    ctx.arc(dynamicCx, ringCy, dynamicRadius, startAngle, endAngle, turnSide < 0);
+    ctx.stroke();
+  }
+
+  drawCoreTargetScale(ringCx, ringCy);
+  drawMaskedPlusGlyph(dynamicCx, ringCy);
+  drawArrow(aircraftX, aircraftY, 0, 11, "#111");
+
+  drawText(estimate.cue || "WAIT", 48, 13, 16, "center", "#111");
+  drawText(`now ${Number.isFinite(estimate.nowAvg) ? estimate.nowAvg.toFixed(1) : "--"} / opp ${Number.isFinite(estimate.oppositeAvg) ? estimate.oppositeAvg.toFixed(1) : "--"}`, 6, 36, 7, "left", "#111");
+  drawCoreTurnBarInLeaf(estimate);
+  ctx.restore();
+}
+
+function drawCoreTurnBarInLeaf(estimate) {
+  const x = 13;
+  const y = 49;
+  const w = 70;
+  const h = 7;
+  const direction = estimate.stats?.direction || (state.turnRate < 0 ? -1 : 1);
+  const actual = clamp(estimate.actualTurnRateDps || 0, 0, 40);
+  const suggested = clamp(estimate.suggestedTurnRateDps || 0, 0, 40);
+  const actualRatio = actual / 40;
+  const suggestedRatio = suggested / 40;
+  const actualX = direction > 0 ? x + actualRatio * w : x + (1 - actualRatio) * w;
+  const suggestedX = direction > 0 ? x + suggestedRatio * w : x + (1 - suggestedRatio) * w;
+  ctx.strokeStyle = "#111";
+  ctx.fillStyle = "#111";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x, y, w, h);
+  ctx.beginPath();
+  ctx.arc(actualX, y + h / 2, 3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(suggestedX, y - 4);
+  ctx.lineTo(suggestedX - 3, y - 9);
+  ctx.lineTo(suggestedX + 3, y - 9);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawCorePrototypePanel(header, screen, estimate) {
+  corePrototypeHeaderRect = header;
+  ctx.save();
+  ctx.fillStyle = "#202423";
+  ctx.strokeStyle = "rgba(216, 255, 0, 0.45)";
+  ctx.lineWidth = 1;
+  drawRoundedRect(header.x, header.y, header.w, header.h, 6);
+  ctx.fill();
+  ctx.stroke();
+  drawText("ThermalCore Prototype Page", header.x + 10, header.y + header.h / 2, 11, "left", "#dce5d6");
+  drawText(corePrototypeVisible ? "^" : "v", header.x + header.w - 12, header.y + header.h / 2, 14, "center", "#d8ff00");
+  ctx.restore();
+
+  if (corePrototypeVisible) drawCoreScreen(screen, estimate);
+}
+
+function drawTrace(rect, trace, minV, maxV, label) {
+  ctx.save();
+  ctx.fillStyle = "#eef4ee";
+  ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+  ctx.strokeStyle = "#202423";
+  ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+  drawText(label, rect.x + 8, rect.y + 12, 11, "left", "#202423");
+  if (trace.length > 1) {
+    const startT = trace[0].t;
+    const endT = trace[trace.length - 1].t;
+    ctx.strokeStyle = "#202423";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    trace.forEach((p, i) => {
+      const x = rect.x + (p.t - startT) / Math.max(1, endT - startT) * rect.w;
+      const y = rect.y + rect.h - clamp((p.v - minV) / Math.max(1, maxV - minV), 0, 1) * rect.h;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function shouldShowTutorialHint() {
+  const lesson = tutorialSteps[tutorial.step];
+  if (tutorial.hintForced) return true;
+  return Boolean(
+    tutorial.active &&
+    tutorial.phase === "practice" &&
+    lesson?.successType === "optimizedTurn" &&
+    lesson.stageIndex >= 1 &&
+    state.t - tutorial.stepStartedAt >= 60 &&
+    tutorial.orbitCount < 2
+  );
+}
+
+function drawRoundedRect(x, y, w, h, r) {
+  r = Math.max(0, Math.min(r, w / 2, h / 2));
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function wrapTextLines(text, maxWidth) {
+  const paragraphs = text.split("\n");
+  const lines = [];
+  for (const paragraph of paragraphs) {
+    if (!paragraph) {
+      lines.push("");
+      continue;
+    }
+    const words = paragraph.split(/\s+/);
+    let line = "";
+    for (const word of words) {
+      const testLine = line ? `${line} ${word}` : word;
+      if (ctx.measureText(testLine).width > maxWidth && line) {
+        lines.push(line);
+        line = word;
+      } else {
+        line = testLine;
+      }
+    }
+    if (line) lines.push(line);
+    lines.push("");
+  }
+  if (lines[lines.length - 1] === "") lines.pop();
+  return lines;
+}
+
+function drawWrappedLines(lines, x, y, lineHeight) {
+  let lineY = y;
+  for (const line of lines) {
+    if (line) ctx.fillText(line, x, lineY);
+    lineY += line ? lineHeight : lineHeight * 0.75;
+  }
+  return lineY - y;
+}
+
+function drawTutorialHint(turnModule) {
+  tutorial.hintBubbleRect = null;
+  tutorial.hintBoxRect = null;
+  if (!shouldShowTutorialHint()) {
+    if (tutorial.hintOpen) closeTutorialHint(false);
+    return;
+  }
+
+  ctx.save();
+  if (tutorial.hintOpen) {
+    const tipText =
+      "Keep your ears on the vario beeping, and your eyes on the turn rate indicator. Try to generally hold near the optimum turn rate.\n\n" +
+      "If the vario starts to decrease, tighten your turn briefly until the vario feels roughly constant, then quickly come back to the optimum turn rate.\n\n" +
+      "If the vario starts to increase, widen your turn briefly until the vario feels roughly constant, then come back to the optimum turn rate.\n\n" +
+      "You're trying to make subtle shifts to your circles while holding near the optimum turn rate most of the time. By keeping your eyes on the turn rate, you're teaching yourself the exact same response you'll use when thermaling in a real paraglider.";
+    const boxW = turnModule.w + 104;
+    const textW = boxW - 24;
+    const lineH = 10.8;
+    ctx.font = "600 9px Roboto, 'Segoe UI', sans-serif";
+    const lines = wrapTextLines(tipText, textW);
+    const textH = lines.reduce((sum, line) => sum + (line ? lineH : lineH * 0.75), 0);
+    const titleH = 28;
+    const boxH = Math.ceil(titleH + 18 + textH + 12);
+    const box = {x: turnModule.x + turnModule.w - boxW, y: Math.max(18, turnModule.y - boxH - 14), w: boxW, h: boxH};
+    tutorial.hintBoxRect = box;
+    ctx.fillStyle = "rgba(238, 244, 238, 0.96)";
+    ctx.strokeStyle = "#202423";
+    ctx.lineWidth = 1.5;
+    drawRoundedRect(box.x, box.y, box.w, box.h, 6);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#d8ff00";
+    ctx.beginPath();
+    ctx.moveTo(box.x + 6, box.y);
+    ctx.lineTo(box.x + box.w - 6, box.y);
+    ctx.quadraticCurveTo(box.x + box.w, box.y, box.x + box.w, box.y + 6);
+    ctx.lineTo(box.x + box.w, box.y + titleH);
+    ctx.lineTo(box.x, box.y + titleH);
+    ctx.lineTo(box.x, box.y + 6);
+    ctx.quadraticCurveTo(box.x, box.y, box.x + 6, box.y);
+    ctx.closePath();
+    ctx.fill();
+    drawText("Pro Tip:", box.x + 12, box.y + titleH / 2, 13, "left", "#202423");
+    ctx.fillStyle = "#202423";
+    ctx.font = "600 9px Roboto, 'Segoe UI', sans-serif";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    drawWrappedLines(lines, box.x + 12, box.y + titleH + 10, lineH);
+  } else {
+    const bubble = {x: turnModule.x + turnModule.w - 48, y: turnModule.y - 38, w: 44, h: 24};
+    tutorial.hintBubbleRect = bubble;
+    ctx.fillStyle = "#d8ff00";
+    ctx.strokeStyle = "#202423";
+    ctx.lineWidth = 1;
+    drawRoundedRect(bubble.x, bubble.y, bubble.w, bubble.h, 12);
+    ctx.fill();
+    ctx.stroke();
+    drawText("? tip", bubble.x + bubble.w / 2, bubble.y + bubble.h / 2, 11, "center", "#202423");
+  }
+  ctx.restore();
+}
+
+function openTutorialHint() {
+  tutorial.hintOpen = true;
+  tutorial.hintPausedRun = state.running;
+  if (state.running) {
+    state.running = false;
+    ui.start.textContent = "Start";
+    stopAudioTone();
+  }
+}
+
+function closeTutorialHint(resume = true) {
+  const shouldResume = tutorial.hintOpen && tutorial.hintPausedRun;
+  tutorial.hintOpen = false;
+  tutorial.hintPausedRun = false;
+  tutorial.hintForced = false;
+  if (resume && shouldResume && tutorial.active && tutorial.phase === "practice") {
+    state.running = true;
+    ui.start.textContent = "Pause";
+  }
+}
+
+function drawReplayCard(rect, radius = 12) {
+  ctx.save();
+  ctx.shadowColor = "rgba(20, 30, 40, .16)";
+  ctx.shadowBlur = 16;
+  ctx.shadowOffsetY = 5;
+  ctx.fillStyle = "rgba(255,255,255,.93)";
+  drawRoundedRect(rect.x, rect.y, rect.w, rect.h, radius);
+  ctx.fill();
+  ctx.shadowColor = "transparent";
+  ctx.strokeStyle = "rgba(255,255,255,.94)";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawReplayDarkCard(rect, radius = 12) {
+  ctx.save();
+  ctx.shadowColor = "rgba(20,30,40,.24)";
+  ctx.shadowBlur = 18;
+  ctx.shadowOffsetY = 5;
+  ctx.fillStyle = "rgba(26,26,26,.85)";
+  drawRoundedRect(rect.x, rect.y, rect.w, rect.h, radius);
+  ctx.fill();
+  ctx.shadowColor = "transparent";
+  ctx.strokeStyle = "rgba(255,255,255,.08)";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawReplayTelemetry(rect) {
+  const mixReplayColor = (from, to, amount) => {
+    const mixed = from.map((channel, index) => Math.round(channel + (to[index] - channel) * amount));
+    return `rgb(${mixed.join(", ")})`;
+  };
+  const white = [255, 255, 255];
+  const climb = [216, 255, 0];
+  const sink = [0, 153, 255];
+  const varioAmount = clamp((Math.abs(state.vario) - .35) / 3.15, 0, 1);
+  const varioColor = mixReplayColor(white, state.vario >= 0 ? climb : sink, varioAmount);
+  const altitudeAmount = clamp((state.z - (state.startAlt - 20)) / 380, 0, 1);
+  const altitudeColor = altitudeAmount <= .5
+    ? mixReplayColor(sink, white, altitudeAmount * 2)
+    : mixReplayColor(white, climb, (altitudeAmount - .5) * 2);
+
+  ctx.save();
+  ctx.shadowColor = "rgba(20,30,40,.24)";
+  ctx.shadowBlur = 18;
+  ctx.shadowOffsetY = 5;
+  ctx.fillStyle = "rgba(0,0,0,.85)";
+  drawRoundedRect(rect.x, rect.y, rect.w, rect.h, 16);
+  ctx.fill();
+  ctx.shadowColor = "transparent";
+
+  function drawInstrumentCell(centerX, label, value, unit, color) {
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#9ca3af";
+    ctx.font = "700 10px Roboto, 'Segoe UI', sans-serif";
+    ctx.fillText(label, centerX, rect.y + 15);
+    ctx.font = "700 24px 'Roboto Condensed', Roboto, sans-serif";
+    const valueWidth = ctx.measureText(value).width;
+    ctx.font = "500 12px Roboto, 'Segoe UI', sans-serif";
+    const unitWidth = ctx.measureText(unit).width;
+    const totalWidth = valueWidth + 5 + unitWidth;
+    const startX = centerX - totalWidth / 2;
+    ctx.fillStyle = color;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    ctx.font = "700 24px 'Roboto Condensed', Roboto, sans-serif";
+    ctx.fillText(value, startX, rect.y + 48);
+    ctx.globalAlpha = .8;
+    ctx.font = "500 12px Roboto, 'Segoe UI', sans-serif";
+    ctx.fillText(unit, startX + valueWidth + 5, rect.y + 48);
+    ctx.globalAlpha = 1;
+  }
+
+  drawInstrumentCell(rect.x + rect.w * .25, "ALTITUDE MSL", state.z.toFixed(0), "m", altitudeColor);
+  drawInstrumentCell(
+    rect.x + rect.w * .75,
+    "VARIO",
+    `${state.vario >= 0 ? "+" : ""}${state.vario.toFixed(1)}`,
+    "m/s",
+    varioColor
+  );
+
+  ctx.strokeStyle = "rgba(255,255,255,.11)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(rect.x + 14, rect.y + 60);
+  ctx.lineTo(rect.x + rect.w - 14, rect.y + 60);
+  ctx.stroke();
+  const track = {x: rect.x + 28, y: rect.y + 78, w: rect.w - 56};
+  ctx.lineCap = "round";
+  ctx.strokeStyle = "rgba(255,255,255,.23)";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(track.x, track.y);
+  ctx.lineTo(track.x + track.w, track.y);
+  ctx.stroke();
+  const centerX = track.x + track.w / 2;
+  ctx.strokeStyle = "rgba(255,255,255,.48)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(centerX, track.y - 6);
+  ctx.lineTo(centerX, track.y + 6);
+  ctx.stroke();
+  for (const side of [-1, 1]) {
+    const targetX = centerX + side * activeTargetTurnRateDps / maxTurnRateDps * track.w / 2;
+    ctx.strokeStyle = "#d8ff00";
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.moveTo(targetX - 4, track.y);
+    ctx.lineTo(targetX + 4, track.y);
+    ctx.stroke();
+  }
+  const actualX = centerX + state.turnRate / maxTurnRateDps * track.w / 2;
+  ctx.fillStyle = "#0099ff";
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(actualX, track.y, 6, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  drawText("L", track.x - 12, track.y, 9, "center", "#9ca3af");
+  drawText("R", track.x + track.w + 12, track.y, 9, "center", "#9ca3af");
+  ctx.restore();
+}
+
+function fillVerticalMeterSegment(x, y, w, h, roundAtTop) {
+  if (h <= 0) return;
+  const radius = Math.min(w / 2, h / 2);
+  drawRoundedRect(x, y, w, h, radius);
+  ctx.fill();
+  if (roundAtTop) ctx.fillRect(x, y + radius, w, Math.max(0, h - radius));
+  else ctx.fillRect(x, y, w, Math.max(0, h - radius));
+}
+
+function drawReplayVarioBar(rect, value) {
+  drawReplayDarkCard(rect, 14);
+  drawText("VARIO", rect.x + rect.w / 2, rect.y + 18, 10, "center", "#9ca3af");
+  const track = {x: rect.x + 9, y: rect.y + 36, w: 14, h: rect.h - 60};
+  const mid = track.y + track.h / 2;
+  ctx.fillStyle = "rgba(255,255,255,.22)";
+  drawRoundedRect(track.x, track.y, track.w, track.h, 9);
+  ctx.fill();
+  const half = track.h / 2;
+  const rollover = value > 5;
+  if (value > 0) {
+    ctx.fillStyle = "#d8ff00";
+    if (rollover) {
+      const emptied = clamp((value - 5) / 5, 0, 1) * half;
+      fillVerticalMeterSegment(track.x, track.y, track.w, Math.max(0, half - emptied), true);
+    } else {
+      const amount = clamp(value / 5, 0, 1) * half;
+      fillVerticalMeterSegment(track.x, mid - amount, track.w, amount, true);
+    }
+  } else if (value < 0) {
+    ctx.fillStyle = "#0099ff";
+    const amount = clamp(Math.abs(value) / 5, 0, 1) * half;
+    fillVerticalMeterSegment(track.x, mid, track.w, amount, false);
+  }
+  ctx.strokeStyle = "rgba(255,255,255,.72)";
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(track.x, mid);
+  ctx.lineTo(track.x + track.w, mid);
+  ctx.stroke();
+  drawText(rollover ? "+10" : "+5", rect.x + rect.w - 5, track.y + 2, 9, "right", "#c7cdd2");
+  drawText(rollover ? "+5" : "0", rect.x + rect.w - 5, mid, 9, "right", "#c7cdd2");
+  drawText("−5", rect.x + rect.w - 5, track.y + track.h - 2, 9, "right", "#c7cdd2");
+  drawText("m/s", rect.x + rect.w / 2, rect.y + rect.h - 13, 10, "center", "#9ca3af");
+}
+
+function drawReplayTurnCard(rect) {
+  drawReplayCard(rect, 14);
+  drawText("TURN RATE", rect.x + 15, rect.y + 17, 10, "left", "#66717d");
+  drawText(`${Math.abs(state.turnRate).toFixed(0)}°/s`, rect.x + rect.w - 14, rect.y + 17, 15, "right", "#17212b");
+  const line = {x: rect.x + 17, y: rect.y + 49, w: rect.w - 34};
+  ctx.strokeStyle = "#d7dde1";
+  ctx.lineWidth = 6;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(line.x, line.y);
+  ctx.lineTo(line.x + line.w, line.y);
+  ctx.stroke();
+  for (const side of [-1, 1]) {
+    const targetX = line.x + line.w / 2 + side * activeTargetTurnRateDps / maxTurnRateDps * line.w / 2;
+    ctx.strokeStyle = "#d8ff00";
+    ctx.lineWidth = 9;
+    ctx.beginPath();
+    ctx.moveTo(targetX - 5, line.y);
+    ctx.lineTo(targetX + 5, line.y);
+    ctx.stroke();
+  }
+  const actualX = line.x + line.w / 2 + state.turnRate / maxTurnRateDps * line.w / 2;
+  ctx.fillStyle = "#0099ff";
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(actualX, line.y, 7, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  drawText("L", line.x, rect.y + rect.h - 15, 10, "left", "#66717d");
+  drawText("R", line.x + line.w, rect.y + rect.h - 15, 10, "right", "#66717d");
+}
+
+function cleanTutorialGoal(goal) {
+  return String(goal || "")
+    .replace(/^Goal:\s*/i, "")
+    .replace(/\s*Press Space(?: bar)? to start\.?\s*$/i, "")
+    .trim();
+}
+
+function measureTutorialSection(section) {
+  section.titleLines = [];
+  if (section.kind === "instructions") {
+    ctx.font = "500 13px Roboto, 'Segoe UI', sans-serif";
+    section.bodyLines = section.body ? wrapTextLines(section.body, section.w - 36) : [];
+    const bodyHeight = section.bodyLines.reduce((sum, line) => sum + (line ? 17 : 8), 0);
+    ctx.font = "700 15px 'Roboto Condensed', Roboto, sans-serif";
+    section.titleLines = section.title ? wrapTextLines(section.title, section.w - 36) : [];
+    section.h = Math.max(60, 24 + section.titleLines.length * 18 + (section.body ? 4 : 0) + bodyHeight);
+  } else if (section.kind === "goal") {
+    ctx.font = "700 13px Roboto, 'Segoe UI', sans-serif";
+    const labelWidth = ctx.measureText("Goal:").width;
+    section.bodyX = 18 + labelWidth + 12;
+    ctx.font = "600 13px Roboto, 'Segoe UI', sans-serif";
+    const bodyWidth = ctx.measureText(section.body).width;
+    section.w = clamp(Math.ceil(18 + labelWidth + 12 + bodyWidth + 18), 250, 620);
+    section.bodyLines = section.body ? wrapTextLines(section.body, section.w - section.bodyX - 18) : [];
+    const bodyHeight = section.bodyLines.reduce((sum, line) => sum + (line ? 17 : 8), 0);
+    section.h = Math.max(38, bodyHeight + 18);
+  } else {
+    ctx.font = "700 13px Roboto, 'Segoe UI', sans-serif";
+    section.w = clamp(Math.ceil(ctx.measureText(section.body).width + 40), 150, 360);
+    section.bodyLines = section.body ? wrapTextLines(section.body, section.w - 32) : [];
+    const bodyHeight = section.bodyLines.reduce((sum, line) => sum + (line ? 17 : 8), 0);
+    section.h = Math.max(36, bodyHeight + 16);
+  }
+  return section;
+}
+
+function drawTutorialSection(section) {
+  const card = {x: section.x, y: section.y, w: section.w, h: section.h};
+  if (section.kind === "action") {
+    ctx.save();
+    ctx.shadowColor = "rgba(20,30,40,.22)";
+    ctx.shadowBlur = 16;
+    ctx.shadowOffsetY = 5;
+    ctx.fillStyle = "#0099ff";
+    drawRoundedRect(card.x, card.y, card.w, card.h, card.h / 2);
+    ctx.fill();
+    ctx.restore();
+  } else {
+    drawReplayCard(card, section.kind === "goal" ? 14 : 16);
+    ctx.fillStyle = section.accent;
+    drawRoundedRect(card.x, card.y, 5, card.h, 2.5);
+    ctx.fill();
+  }
+
+  ctx.textAlign = "left";
+  ctx.textBaseline = "top";
+  if (section.kind === "instructions") {
+    let textY = card.y + 12;
+    ctx.fillStyle = "#17212b";
+    ctx.font = "700 15px 'Roboto Condensed', Roboto, sans-serif";
+    for (const line of section.titleLines) {
+      ctx.fillText(line, card.x + 18, textY);
+      textY += 18;
+    }
+    textY += 5;
+    ctx.fillStyle = "#27343d";
+    ctx.font = "500 13px Roboto, 'Segoe UI', sans-serif";
+    for (const line of section.bodyLines) {
+      if (line) ctx.fillText(line, card.x + 18, textY);
+      textY += line ? 17 : 8;
+    }
+  } else if (section.kind === "goal") {
+    const lineHeight = 17;
+    let textY = card.y + card.h / 2 - (section.bodyLines.length - 1) * lineHeight / 2;
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#718600";
+    ctx.font = "700 13px Roboto, 'Segoe UI', sans-serif";
+    ctx.fillText("Goal:", card.x + 18, textY);
+    ctx.fillStyle = "#27343d";
+    ctx.font = "600 13px Roboto, 'Segoe UI', sans-serif";
+    for (const line of section.bodyLines) {
+      if (line) ctx.fillText(line, card.x + section.bodyX, textY);
+      textY += line ? lineHeight : 8;
+    }
+  } else {
+    const lineHeight = 17;
+    let textY = card.y + card.h / 2 - (section.bodyLines.length - 1) * lineHeight / 2;
+    ctx.fillStyle = "#fff";
+    ctx.font = "700 13px Roboto, 'Segoe UI', sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    for (const line of section.bodyLines) {
+      if (line) ctx.fillText(line, card.x + card.w / 2, textY);
+      textY += lineHeight;
+    }
+  }
+}
+
+function drawStageOneTutorialCards(map, lesson) {
+  const isDebrief = tutorial.phase === "step-complete";
+  const isAtStepStart = Math.abs(state.t - tutorial.stepStartedAt) < .05;
+  const isPreStart = !isDebrief && !state.running && !tutorial.userPaused && isAtStepStart;
+  const goal = cleanTutorialGoal(lesson.goal);
+  let sections;
+
+  if (isDebrief) {
+    sections = [
+      {
+        kind: "instructions",
+        title: ui.tutorialTitle.textContent,
+        body: ui.tutorialMessage.textContent,
+        w: 620,
+        accent: "#0099ff"
+      },
+      {
+        kind: "action",
+        title: "",
+        body: ui.tutorialGoal.textContent,
+        w: 300
+      }
+    ];
+  } else if (isPreStart) {
+    sections = [
+      {
+        kind: "instructions",
+        title: lesson.title.replace(":", "."),
+        body: lesson.directions,
+        w: 620,
+        accent: "#0099ff"
+      },
+      {
+        kind: "goal",
+        title: "",
+        body: goal,
+        w: 620,
+        accent: "#d8ff00"
+      },
+      {
+        kind: "action",
+        title: "",
+        body: "Press Space bar to start.",
+        w: 300
+      }
+    ];
+  } else {
+    sections = [
+      {
+        kind: "goal",
+        title: "",
+        body: goal,
+        w: 620,
+        accent: "#d8ff00"
+      }
+    ];
+  }
+
+  const gap = 10;
+  const bottomY = map.y + map.h - 18;
+  ctx.save();
+  const measured = sections.map(measureTutorialSection);
+  const totalH = measured.reduce((sum, section) => sum + section.h, 0) + gap * (measured.length - 1);
+  let y = bottomY - totalH;
+  measured.forEach(section => {
+    section.x = map.x + (map.w - section.w) / 2;
+    section.y = y;
+    drawTutorialSection(section);
+    y += section.h + gap;
+  });
+  ctx.restore();
+}
+
+function drawTutorialMapCard(map) {
+  if (!tutorial.active || ui.tutorialCard.hidden) return;
+  const lesson = tutorialSteps[tutorial.step] || tutorialSteps[0];
+  if (lesson.stageIndex === 0) {
+    drawStageOneTutorialCards(map, lesson);
+    return;
+  }
+  const cardW = 620;
+  const textW = cardW - 36;
+  ctx.save();
+  ctx.font = "600 13px Roboto, 'Segoe UI', sans-serif";
+  const messageLines = wrapTextLines(ui.tutorialMessage.textContent, textW);
+  ctx.font = "600 12px Roboto, 'Segoe UI', sans-serif";
+  const goalLines = wrapTextLines(ui.tutorialGoal.textContent, textW);
+  const messageH = messageLines.reduce((height, line) => height + (line ? 17 : 8), 0);
+  const goalH = goalLines.reduce((height, line) => height + (line ? 16 : 7), 0);
+  const cardH = clamp(64 + messageH + goalH, 108, 190);
+  const card = {
+    x: map.x + (map.w - cardW) / 2,
+    y: map.y + map.h - cardH - 18,
+    w: cardW,
+    h: cardH
+  };
+  drawReplayCard(card, 16);
+  ctx.fillStyle = "#0099ff";
+  drawRoundedRect(card.x, card.y, 6, card.h, 3);
+  ctx.fill();
+  drawText(ui.tutorialStageTitle.textContent, card.x + 20, card.y + 17, 10, "left", "#007dcc");
+  drawText(ui.tutorialTitle.textContent, card.x + 20, card.y + 38, 16, "left", "#17212b");
+
+  ctx.fillStyle = "#27343d";
+  ctx.font = "600 13px Roboto, 'Segoe UI', sans-serif";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "top";
+  let textY = card.y + 52;
+  for (const line of messageLines) {
+    if (line) ctx.fillText(line, card.x + 20, textY);
+    textY += line ? 17 : 8;
+  }
+  ctx.fillStyle = "#66717d";
+  ctx.font = "600 12px Roboto, 'Segoe UI', sans-serif";
+  textY += 3;
+  for (const line of goalLines) {
+    if (line) ctx.fillText(line, card.x + 20, textY);
+    textY += line ? 16 : 7;
+  }
+  ctx.restore();
+}
+
+function drawPausedOverlay(map) {
+  if (!pausedByUser) return;
+  const card = {x: map.x + map.w / 2 - 145, y: map.y + map.h / 2 - 34, w: 290, h: 68};
+  ctx.save();
+  ctx.shadowColor = "rgba(20,30,40,.28)";
+  ctx.shadowBlur = 18;
+  ctx.shadowOffsetY = 6;
+  ctx.fillStyle = "#0099ff";
+  drawRoundedRect(card.x, card.y, card.w, card.h, card.h / 2);
+  ctx.fill();
+  ctx.restore();
+  drawText("PAUSED", map.x + map.w / 2, card.y + 22, 16, "center", "#fff");
+  drawText("Press space to continue", map.x + map.w / 2, card.y + 46, 12, "center", "rgba(255,255,255,.9)");
+}
+
+function draw() {
+  resizeCanvasForDisplay();
+  const estimate = estimateCoreGuidance();
+  ctx.clearRect(0, 0, simW, simH);
+  ctx.fillStyle = "#eef1f2";
+  ctx.fillRect(0, 0, simW, simH);
+  const map = {x: 0, y: 0, w: simW, h: simH};
+  const telemetry = {x: 330, y: 18, w: 320, h: 82};
+  const varioTape = {x: 18, y: 92, w: 50, h: 300};
+  const turnModule = {x: telemetry.x, y: telemetry.y + telemetry.h + 38, w: telemetry.w, h: 0};
+  drawMainMap(map, estimate);
+  drawReplayVarioBar(varioTape, state.vario);
+  drawTutorialHint(turnModule);
+  corePrototypeHeaderRect = null;
+  drawTutorialMapCard(map);
+  if (tutorial.active && tutorial.phase === "turn-callout") {
+    ctx.save();
+    ctx.font = "700 22px 'Roboto Condensed', Roboto, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = "rgba(238, 244, 238, 0.92)";
+    ctx.strokeText("START TURNING NOW", map.x + map.w / 2, map.y + map.h * 0.34);
+    ctx.fillStyle = "#202423";
+    ctx.fillText("START TURNING NOW", map.x + map.w / 2, map.y + map.h * 0.34);
+    ctx.font = "600 13px Roboto, 'Segoe UI', sans-serif";
+    ctx.lineWidth = 4;
+    ctx.strokeText("Turn about 90 degrees", map.x + map.w / 2, map.y + map.h * 0.34 + 28);
+    ctx.fillText("Turn about 90 degrees", map.x + map.w / 2, map.y + map.h * 0.34 + 28);
+    ctx.restore();
+  }
+  const popupLesson = tutorialSteps[tutorial.step];
+  const showEntryPopup = tutorial.phase === "entry" && tutorial.lastInstruction;
+  const showPracticePopup = tutorial.phase === "practice" &&
+    ["radiusBand", "optimizedTurn", "thermalSize", "combinedCore"].includes(popupLesson?.successType) &&
+    tutorial.lastInstruction;
+  if (tutorial.active && (showEntryPopup || showPracticePopup)) {
+    const parts = tutorial.lastInstruction.split(" - ");
+    ctx.save();
+    ctx.font = "700 18px 'Roboto Condensed', Roboto, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = "rgba(238, 244, 238, 0.92)";
+    ctx.strokeText(parts[0], map.x + map.w / 2, map.y + map.h * 0.27);
+    ctx.fillStyle = "#202423";
+    ctx.fillText(parts[0], map.x + map.w / 2, map.y + map.h * 0.27);
+    if (parts[1]) {
+      ctx.font = "600 12px Roboto, 'Segoe UI', sans-serif";
+      ctx.lineWidth = 4;
+      ctx.strokeText(parts[1], map.x + map.w / 2, map.y + map.h * 0.27 + 24);
+      ctx.fillText(parts[1], map.x + map.w / 2, map.y + map.h * 0.27 + 24);
+    }
+    ctx.restore();
+  }
+  const showMapStartPrompt = !state.running && !state.finished && (
+    !tutorial.active || tutorial.userPaused
+  ) && !pausedByUser;
+  if (showMapStartPrompt) {
+    drawText("Press Space to start", map.x + map.w / 2, map.y + map.h / 2, 18, "center", "#202423");
+  }
+  drawPausedOverlay(map);
+}
+
+function updateOutputs() {
+  const p = readParams();
+  ui.durationOut.value = `${p.duration}s`;
+  ui.windOut.value = `${p.windMph.toFixed(0)} mph`;
+  ui.diameterOut.value = `${p.diameterM.toFixed(0)} m`;
+  ui.diameterVarianceOut.value = `+/-${Math.round(p.diameterVariance * 100)}%`;
+  ui.strengthOut.value = `${p.strength.toFixed(1)} m/s`;
+  ui.strengthVarianceOut.value = `+/-${Math.round(p.strengthVariance * 100)}%`;
+  ui.textureOut.value = `${Math.round(p.texture * 100)}%`;
+  ui.sinkOut.value = `${p.sink.toFixed(1)} m/s`;
+  ui.volumeOut.value = `${Math.round(p.volume * 100)}%`;
+  const stats = currentStats();
+  ui.gain.textContent = `${stats.gain.toFixed(0)} m`;
+  ui.avgClimb.textContent = `${stats.avg.toFixed(1)}`;
+  ui.centering.textContent = `${Math.round(stats.centering * 100)}%`;
+  ui.score.textContent = String(stats.score);
+  document.getElementById("gainHud").textContent = `${stats.gain.toFixed(0)} m`;
+  document.getElementById("scoreHud").textContent = String(stats.score);
+  document.getElementById("mapSummaryTime").textContent = `${state.t.toFixed(0)}s`;
+  document.getElementById("startControl").textContent = state.running ? "Ⅱ Pause" : "▶ Start";
+
+  const mixReplayColor = (from, to, amount) => {
+    const mixed = from.map((channel, index) => Math.round(channel + (to[index] - channel) * amount));
+    return `rgb(${mixed.join(", ")})`;
+  };
+  const white = [255, 255, 255];
+  const climb = [216, 255, 0];
+  const sink = [0, 153, 255];
+  const varioAmount = clamp((Math.abs(state.vario) - .35) / 3.15, 0, 1);
+  const altitudeAmount = clamp((state.z - (state.startAlt - 20)) / 380, 0, 1);
+  const altitudeColor = altitudeAmount <= .5
+    ? mixReplayColor(sink, white, altitudeAmount * 2)
+    : mixReplayColor(white, climb, (altitudeAmount - .5) * 2);
+  const varioColor = mixReplayColor(white, state.vario >= 0 ? climb : sink, varioAmount);
+  ui.telemetryAltitude.textContent = Math.round(state.z).toLocaleString("en-US");
+  ui.telemetryAltitude.style.color = altitudeColor;
+  ui.telemetryAltitudeUnit.style.color = altitudeColor;
+  ui.telemetryVario.textContent = `${state.vario >= 0 ? "+" : ""}${state.vario.toFixed(1)}`;
+  ui.telemetryVario.style.color = varioColor;
+  ui.telemetryVarioUnit.style.color = varioColor;
+  const targetOffset = activeTargetTurnRateDps / maxTurnRateDps * 50;
+  ui.telemetryTurnTrack.style.setProperty("--ideal-left", `${50 - targetOffset}%`);
+  ui.telemetryTurnTrack.style.setProperty("--ideal-right", `${50 + targetOffset}%`);
+  ui.telemetryTurnTrack.classList.toggle("hide-guidance", tutorial.active && !tutorial.showTargetMarkers);
+  ui.telemetryTurnTargetLeft.style.left = `${50 - targetOffset}%`;
+  ui.telemetryTurnTargetRight.style.left = `${50 + targetOffset}%`;
+  ui.telemetryTurnActual.style.left = `${50 + clamp(state.turnRate / maxTurnRateDps, -1, 1) * 50}%`;
+}
+
+function loop(now) {
+  const elapsed = Math.min(0.08, (now - lastFrame) / 1000);
+  lastFrame = now;
+  accumulator += elapsed;
+  while (accumulator >= dt) {
+    updatePhysics(dt);
+    accumulator -= dt;
+  }
+  updateOutputs();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+ui.start.addEventListener("click", async () => {
+  await toggleRun();
+});
+ui.reset.addEventListener("click", () => {
+  resetTrial(Number(ui.seed.value));
+  ui.start.textContent = "Start";
+});
+ui.same.addEventListener("click", () => {
+  resetTrial(state.seed);
+  ui.start.textContent = "Start";
+});
+ui.newSeed.addEventListener("click", () => {
+  newSeed();
+  ui.start.textContent = "Start";
+});
+ui.testTone.addEventListener("click", async () => {
+  await unlockAudio(false);
+  testToneUntil = audioCtx.currentTime + 0.75;
+});
+ui.tutorialStart.addEventListener("click", () => {
+  if (tutorial.active) exitTutorial();
+  else startTutorial();
+});
+ui.tutorialPrevStage.addEventListener("click", () => jumpTutorialStage(-1));
+ui.tutorialNextStage.addEventListener("click", () => jumpTutorialStage(1));
+canvas.addEventListener("click", event => {
+  const rect = canvas.getBoundingClientRect();
+  const x = (event.clientX - rect.left) / Math.max(1, rect.width) * simW;
+  const y = (event.clientY - rect.top) / Math.max(1, rect.height) * simH;
+  const bubble = tutorial.hintBubbleRect;
+  const box = tutorial.hintBoxRect;
+  const coreHeader = corePrototypeHeaderRect;
+  const inCoreHeader = coreHeader &&
+    x >= coreHeader.x &&
+    x <= coreHeader.x + coreHeader.w &&
+    y >= coreHeader.y &&
+    y <= coreHeader.y + coreHeader.h;
+  const inBubble = bubble &&
+    x >= bubble.x &&
+    x <= bubble.x + bubble.w &&
+    y >= bubble.y &&
+    y <= bubble.y + bubble.h;
+  const inBox = box &&
+    x >= box.x &&
+    x <= box.x + box.w &&
+    y >= box.y &&
+    y <= box.y + box.h;
+  if (inCoreHeader) {
+    corePrototypeVisible = !corePrototypeVisible;
+  } else if (inBubble) {
+    if (tutorial.hintOpen) closeTutorialHint();
+    else openTutorialHint();
+  } else if (tutorial.hintOpen && !inBox) {
+    closeTutorialHint();
+  }
+});
+document.querySelectorAll(".preset").forEach(button => {
+  button.addEventListener("click", () => {
+    if (tutorial.active) exitTutorial();
+    applyThermalPreset(button.dataset.preset);
+    const name = button.dataset.preset;
+    setTrainingMode(name[0].toUpperCase() + name.slice(1), "△");
+  });
+});
+
+for (const el of [ui.seed, ui.duration, ui.wind, ui.diameter, ui.diameterVariance, ui.strength, ui.strengthVariance, ui.texture, ui.showThermal, ui.sink, ui.volume]) {
+  el.addEventListener("input", updateOutputs);
+  el.addEventListener("change", updateOutputs);
+}
+
+window.addEventListener("keydown", event => {
+  if (["ArrowLeft", "ArrowRight", "Space", "KeyT"].includes(event.code)) event.preventDefault();
+  if (event.code === "KeyT" && event.repeat) return;
+  if (event.code === "KeyT") {
+    if (tutorial.hintOpen) closeTutorialHint();
+    else {
+      tutorial.hintForced = true;
+      openTutorialHint();
+    }
+    return;
+  }
+  if (event.code === "Space" && event.repeat) return;
+  keys.add(event.code);
+  if (event.code === "Space") {
+    if (tutorial.active && tutorial.pauseForCallout) {
+      continueTutorial();
+      return;
+    }
+    toggleRun();
+  }
+});
+window.addEventListener("keyup", event => {
+  keys.delete(event.code);
+  if (event.code === "ArrowLeft") steeringHoldSeconds.left = 0;
+  if (event.code === "ArrowRight") steeringHoldSeconds.right = 0;
+});
+
+const launchScreen = document.getElementById("launchScreen");
+const settingsPanel = document.getElementById("settingsPanel");
+const friendsPanel = document.getElementById("friendsPanel");
+function setTrainingMode() {
+  launchScreen.hidden = true;
+  friendsPanel.hidden = true;
+  settingsPanel.hidden = true;
+}
+
+document.getElementById("launchTutorial").addEventListener("click", () => {
+  setTrainingMode("Tutorial", "◎");
+  if (!tutorial.active) startTutorial();
+});
+
+document.querySelectorAll("[data-launch-preset]").forEach(button => {
+  button.addEventListener("click", async event => {
+    event.stopPropagation();
+    const name = button.dataset.launchPreset;
+    if (tutorial.active) exitTutorial();
+    applyThermalPreset(name);
+    setTrainingMode(name[0].toUpperCase() + name.slice(1), "△");
+    await toggleRun();
+  });
+});
+
+document.getElementById("launchFriends").addEventListener("click", () => {
+  friendsPanel.hidden = false;
+});
+document.getElementById("friendsClose").addEventListener("click", () => {
+  friendsPanel.hidden = true;
+});
+document.getElementById("leafLogButton").addEventListener("click", () => {
+  document.querySelector("#friendsPanel .friend-panel").innerHTML = `
+    <div class="mode-icon">✓</div>
+    <h2>Leaf Log connection ready</h2>
+    <p>This first draft shows where sign-in, friend selection, and challenge delivery will live. Account connection comes in the Leaf Log integration pass.</p>
+    <button class="primary" type="button" onclick="document.getElementById('friendsPanel').hidden=true">Choose a solo flight</button>`;
+});
+document.getElementById("settingsButton").addEventListener("click", () => {
+  friendsPanel.hidden = true;
+  settingsPanel.hidden = !settingsPanel.hidden;
+});
+document.getElementById("homeButton").addEventListener("click", () => {
+  settingsPanel.hidden = true;
+  friendsPanel.hidden = true;
+  launchScreen.hidden = false;
+});
+document.getElementById("startControl").addEventListener("click", async () => {
+  if (tutorial.active && tutorial.pauseForCallout) continueTutorial();
+  else await toggleRun();
+});
+
+function bindSteeringButton(id, code) {
+  const button = document.getElementById(id);
+  const press = event => { event.preventDefault(); keys.add(code); };
+  const release = event => {
+    event.preventDefault();
+    keys.delete(code);
+    if (code === "ArrowLeft") steeringHoldSeconds.left = 0;
+    if (code === "ArrowRight") steeringHoldSeconds.right = 0;
+  };
+  button.addEventListener("pointerdown", press);
+  button.addEventListener("pointerup", release);
+  button.addEventListener("pointercancel", release);
+  button.addEventListener("pointerleave", release);
+}
+bindSteeringButton("leftControl", "ArrowLeft");
+bindSteeringButton("rightControl", "ArrowRight");
+
+applyThermalPreset("easy");
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

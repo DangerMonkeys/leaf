@@ -1,0 +1,336 @@
+THERMAL TRAINING — IMPLEMENTED TUTORIAL COPY
+
+This document records all tutorial wording and per-step presentation rules currently
+implemented in the prototype. The tutorial currently contains two stages:
+
+1. Center a Thermal — five steps
+2. Thermal Sizes — three steps
+
+
+STANDARD ACTIONS
+======================================================================
+
+Before each step:
+Press Space bar to start.
+
+After each completed step:
+Press Space to continue.
+
+After the final step:
+Press Space to finish.
+
+
+======================================================================
+STAGE 1 — CENTER A THERMAL
+======================================================================
+
+Stage structure:
+Visual guidance is progressively removed across five steps.
+
+
+STEP 1 — FIND THE HALFWAY POINT
+----------------------------------------------------------------------
+
+Presentation:
+- Fuzzy green thermal, outer boundary, and concentric rings shown
+- Green/red optimum turn-rate guidance hidden
+- Flight track fully visible
+
+Title:
+Find the "halfway point" into the thermal
+
+Instructions:
+Fly straight into the lift. Don't turn. When the vario peaks and then starts to decrease, you are halfway through the core. That is the moment to start turning.
+
+Goal:
+Fly straight, wait for the vario to peak, then turn about 90 degrees.
+
+Popup guidance:
+[If the user turns before the vario peak]
+DON'T TURN
+Fly straight until the vario peaks
+
+[Just as or after the vario peaks]
+START TURNING NOW
+Turn about 90 degrees
+
+Completion feedback:
+Great! You found the halfway point and started the turn soon after the vario peak.
+
+
+STEP 2 — TURN AROUND THE CENTER
+----------------------------------------------------------------------
+
+Presentation:
+- Fuzzy green thermal, outer boundary, and concentric rings shown
+- Green/red optimum turn-rate guidance hidden
+- Flight track fully visible
+
+Title:
+Step 2: Turn around the center of the thermal
+
+Instructions:
+Now the goal is to keep the vario constant. If it starts to drop, you are moving away from the center and need to tighten your turn momentarily. If it starts to increase, you are moving toward the center and need to widen your turn momentarily
+
+Goal:
+Fly two consecutive orbits around the thermal. Don't get too close to the center or the edge.
+
+Popup guidance:
+[Constant vario]
+VARIO STEADY
+Hold a constant turn rate
+
+[Decreasing vario]
+VARIO DECREASING
+tighten your turn to move closer to the center
+
+[Increasing vario]
+VARIO INCREASING
+widen your turn to move away from the center
+
+Completion feedback:
+Great! You flew two centered orbits without drifting too close to the middle or the edge.
+
+
+STEP 3 — OPTIMIZE YOUR TURN RATE
+----------------------------------------------------------------------
+
+Presentation:
+- Fuzzy green thermal, outer boundary, and concentric rings shown
+- Green/red optimum turn-rate guidance shown
+- Flight track fully visible
+
+Title:
+Step 3: Optimize your turn rate
+
+Instructions:
+The turn indicator will be green at the optimum bank angle.  Turning too steep will increase your descent rate, so don't stay in the red zone for long. Center your circles around the thermal and stay as close to the optimal turn rate as you can.
+
+Goal:
+Fly 2 consecutive orbits staying near optimal turn-rate while staying centered on the thermal.
+
+Completion feedback:
+Great! You stayed centered while keeping the turn rate near the efficient range.
+
+Transition feedback:
+Great job, you centered the thermal at the optimum turn rate. Next, practice again without the visual circle help. The fuzzy green thermal is still shown, but rely on the vario sound for most of your guidance.
+
+
+STEP 4 — PUT IT ALL TOGETHER
+----------------------------------------------------------------------
+
+Flow:
+After the user starts, the simulation runs continuously through finding the vario
+peak, turning about 90 degrees, centering, and completing two optimized orbits.
+There is no intermediate pause.
+
+Presentation:
+- Fuzzy green thermal shown
+- Outer boundary and concentric rings hidden
+- Green/red optimum turn-rate guidance shown
+- Flight track shown at 35% opacity
+
+Title:
+Put it all together
+
+Instructions:
+Put all the steps together to find the halfway point and then center at the optimum rate.  The dashed circles are now hidden so rely mostly on the vario sound.  The fuzzy green thermal highlight is still shown.
+
+Goal:
+Find and center the thermal, then fly two consecutive orbits staying near optimal turn-rate while staying centered on the thermal
+
+Popup guidance before the 90-degree turn:
+[If the user turns before the vario peak]
+DON'T TURN
+Fly straight until the vario peaks
+
+[Just as or after the vario peaks]
+START TURNING NOW
+Turn about 90 degrees
+
+Popup guidance after the 90-degree turn:
+[Constant vario]
+VARIO STEADY
+Hold the optimum turn rate
+
+[Decreasing vario]
+VARIO DECREASING
+tighten your turn to move closer to the center
+
+[Increasing vario]
+VARIO INCREASING
+widen your turn to move away from the center
+
+Completion feedback:
+Great! You found and centered the thermal with minimal visual help.
+
+
+STEP 5 — THERMAL WITH YOUR EARS ONLY
+----------------------------------------------------------------------
+
+Flow:
+After the user starts, the simulation runs continuously through finding the vario
+peak, turning about 90 degrees, centering, and completing two optimized orbits.
+There is no intermediate pause.
+
+Presentation:
+- Thermal visualization, outer boundary, and concentric rings hidden
+- Green/red optimum turn-rate guidance shown
+- Flight track hidden
+
+Title:
+Thermal with your ears only
+
+Instructions:
+Try again, this time with no visual references.  You'll have to rely entirely on the audio feedback from the vario
+
+Goal:
+Find and center the thermal, then fly two consecutive orbits staying near optimal turn-rate while staying centered on the thermal
+
+Popup guidance before the 90-degree turn:
+[If the user turns before the vario peak]
+DON'T TURN
+Fly straight until the vario peaks
+
+[Just as or after the vario peaks]
+START TURNING NOW
+Turn about 90 degrees
+
+Popup guidance after the 90-degree turn:
+[Constant vario]
+VARIO STEADY
+Hold the optimum turn rate
+
+[Decreasing vario]
+VARIO DECREASING
+tighten your turn to move closer to the center
+
+[Increasing vario]
+VARIO INCREASING
+widen your turn to move away from the center
+
+Completion and stage feedback:
+Great! You found and centered the thermal with just your ears! You have completed the first stage. Continue on to the next stage to learn even more about thermalling!
+
+
+======================================================================
+STAGE 2 — THERMAL SIZES
+======================================================================
+
+Stage setup:
+- Uses an 80 m thermal
+- Visual guidance is progressively removed across three steps
+- Green/red optimum turn-rate guidance shown throughout
+
+
+STEP 1 — SMALL THERMAL WITH VISUAL HELP
+----------------------------------------------------------------------
+
+Presentation:
+- Fuzzy green thermal, outer boundary, and concentric rings shown
+
+Title:
+Understanding Thermal Sizes
+
+Instructions:
+The previous thermal we explored required us to fly straight into it for 7 to 8 seconds before we detected the middle using the vario peak. Count how many seconds it takes to find the middle of this thermal, then try to circle it like before.
+
+Initial goal:
+fly straight, wait for the vario to peak, then turn about 90 degrees and try to stay in lift for 2 consecutive orbits.
+
+After-turn guidance:
+Now try to circle this small thermal like before. The goal is not a perfect centered turn; just see whether you can stay in lift for 2 full orbits.
+
+After-turn goal:
+fly 2 consecutive orbits without leaving the lift.
+
+Popup guidance:
+[Just as or after the vario peaks]
+START TURNING NOW
+Turn about 90 degrees
+
+[Constant vario]
+VARIO STEADY
+Hold a constant turn rate
+
+[Decreasing vario]
+VARIO DECREASING
+tighten your turn to move closer to the center
+
+[Increasing vario]
+VARIO INCREASING
+widen your turn to move away from the center
+
+Completion feedback:
+Great job coring a small thermal. At this small size, it only took ~4 seconds between entering the thermal and finding the vario peak.
+
+
+STEP 2 — SMALL THERMAL WITHOUT CIRCLE GUIDANCE
+----------------------------------------------------------------------
+
+Presentation:
+- Fuzzy green thermal shown
+- Outer boundary and concentric rings hidden
+- Three-minute time limit
+
+Title:
+Step 2: Small thermal without circle guidance
+
+Instructions:
+Try the same small thermal again, this time without the circle guidance. Use the fuzzy green thermal and the vario trend to stay in lift. Remember to practice counting seconds until the peak to get a sense for how large a thermal might be.
+
+Initial goal:
+fly straight, wait for the vario to peak, then turn about 90 degrees and try to stay in lift.
+
+After-turn guidance:
+Now try to circle the small thermal using the fuzzy thermal shape and the vario. If it is too small to hold cleanly, keep flying and notice how quickly the lift fades.
+
+After-turn goal:
+fly 2 consecutive orbits without leaving the lift, or continue for 3 minutes.
+
+Popup guidance:
+Uses the same peak and vario-trend guidance as Stage 2, Step 1.
+
+Completion feedback:
+Great job. Without the guide rings, the same small lift takes more precise adjustments.
+
+Timeout feedback:
+Time limit reached. It's much harder to stay in lift when a thermal is small.
+
+
+STEP 3 — SMALL THERMAL BY VARIO ONLY
+----------------------------------------------------------------------
+
+Presentation:
+- Thermal visualization, outer boundary, and concentric rings hidden
+- Three-minute time limit
+
+Title:
+Step 3: Small thermal by vario only
+
+Instructions:
+Now try the same small thermal with no visual help. In real flight, you only have the vario to go on. For practice, keep counting seconds until the peak. But eventually you'll start to get a "feel" for the size of the thermal without counting.
+
+Initial goal:
+fly straight, wait for the vario to peak, then turn about 90 degrees and try to stay in lift.
+
+After-turn guidance:
+Circle by sound only. If the lift fades too quickly to hold, that is the lesson: some thermals are real, but still too small to use.
+
+After-turn goal:
+fly 2 consecutive orbits without leaving the lift, or continue for 3 minutes.
+
+Popup guidance:
+Uses the same peak and vario-trend guidance as Stage 2, Step 1.
+
+Completion feedback:
+Great job! This is a good lesson that a ~4 second thermal might be about the smallest you can stay in. Any smaller and it might be worth passing by until you find a larger thermal.
+
+Timeout feedback:
+Time limit reached. As your thermal skills improve, you may be able to stay in lift this small. But this is a good exercise to determine what thermals are worth turning in, and which ones might be worth passing by.
+
+
+STAGE 2 COMPLETION FEEDBACK
+----------------------------------------------------------------------
+
+Good experiment. Small lift can make the vario beep, but it may not be large enough to justify circling.
