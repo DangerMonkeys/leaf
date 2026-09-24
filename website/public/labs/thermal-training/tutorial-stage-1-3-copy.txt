@@ -10,14 +10,23 @@ implemented in the prototype. The tutorial currently contains two stages:
 STANDARD ACTIONS
 ======================================================================
 
-Before each step:
-Press Space bar to start.
+Desktop before each step:
+Press Space to start.
 
-After each completed step:
+Desktop after each completed step:
 Press Space to continue.
 
-After the final step:
+Desktop after the final step:
 Press Space to finish.
+
+Mobile before each step:
+Click here to start.
+
+Mobile after each completed step:
+Click here to continue.
+
+Mobile after the final step:
+Click here to finish.
 
 
 ======================================================================
@@ -37,7 +46,7 @@ Presentation:
 - Flight track fully visible
 
 Title:
-Find the "halfway point" into the thermal
+Step 1: Find the "halfway point" into the thermal
 
 Instructions:
 Fly straight into the lift. Don't turn. When the vario peaks and then starts to decrease, you are halfway through the core. That is the moment to start turning.
@@ -50,7 +59,7 @@ Popup guidance:
 DON'T TURN
 Fly straight until the vario peaks
 
-[Just as or after the vario peaks]
+[Immediately after the vario peaks]
 START TURNING NOW
 Turn about 90 degrees
 
@@ -235,14 +244,8 @@ Understanding Thermal Sizes
 Instructions:
 The previous thermal we explored required us to fly straight into it for 7 to 8 seconds before we detected the middle using the vario peak. Count how many seconds it takes to find the middle of this thermal, then try to circle it like before.
 
-Initial goal:
-fly straight, wait for the vario to peak, then turn about 90 degrees and try to stay in lift for 2 consecutive orbits.
-
-After-turn guidance:
-Now try to circle this small thermal like before. The goal is not a perfect centered turn; just see whether you can stay in lift for 2 full orbits.
-
-After-turn goal:
-fly 2 consecutive orbits without leaving the lift.
+Goal:
+fly straight, count the seconds until the vario peaks, then turn and try to stay in lift for 2 consecutive orbits.
 
 Popup guidance:
 [Just as or after the vario peaks]
@@ -262,7 +265,7 @@ VARIO INCREASING
 widen your turn to move away from the center
 
 Completion feedback:
-Great job coring a small thermal. At this small size, it only took ~4 seconds between entering the thermal and finding the vario peak.
+Great job coring a small thermal. You probably counted about 4 seconds between entering the thermal and finding the vario peak.
 
 
 STEP 2 — SMALL THERMAL WITHOUT CIRCLE GUIDANCE
@@ -277,25 +280,19 @@ Title:
 Step 2: Small thermal without circle guidance
 
 Instructions:
-Try the same small thermal again, this time without the circle guidance. Use the fuzzy green thermal and the vario trend to stay in lift. Remember to practice counting seconds until the peak to get a sense for how large a thermal might be.
+Try the same thermal again, this time without the circle guide rings (the fuzzy green thermal is still shown). Remember to practice counting seconds until the peak to get a sense for how large the thermal is.
 
 Initial goal:
-fly straight, wait for the vario to peak, then turn about 90 degrees and try to stay in lift.
-
-After-turn guidance:
-Now try to circle the small thermal using the fuzzy thermal shape and the vario. If it is too small to hold cleanly, keep flying and notice how quickly the lift fades.
-
-After-turn goal:
-fly 2 consecutive orbits without leaving the lift, or continue for 3 minutes.
+fly straight, count the seconds until the vario peaks, then turn and try to stay in lift for 2 consecutive orbits.
 
 Popup guidance:
 Uses the same peak and vario-trend guidance as Stage 2, Step 1.
 
 Completion feedback:
-Great job. Without the guide rings, the same small lift takes more precise adjustments.
+Great job. Without the guide rings, you must rely on the audible vario changes and react quickly and precisely.
 
 Timeout feedback:
-Time limit reached. It's much harder to stay in lift when a thermal is small.
+Time limit reached. It's much harder to stay in lift when a thermal is small.  You have to react quickly to the vario changes, and even predict the needed turn adjustments a second or two ahead of time.
 
 
 STEP 3 — SMALL THERMAL BY VARIO ONLY
@@ -309,16 +306,10 @@ Title:
 Step 3: Small thermal by vario only
 
 Instructions:
-Now try the same small thermal with no visual help. In real flight, you only have the vario to go on. For practice, keep counting seconds until the peak. But eventually you'll start to get a "feel" for the size of the thermal without counting.
+Now try the same small thermal with no visual help. In real flight, you only have the vario sound. For practice, keep counting seconds until the peak. But eventually you'll start to get a feel for the size of the thermal without counting.
 
 Initial goal:
-fly straight, wait for the vario to peak, then turn about 90 degrees and try to stay in lift.
-
-After-turn guidance:
-Circle by sound only. If the lift fades too quickly to hold, that is the lesson: some thermals are real, but still too small to use.
-
-After-turn goal:
-fly 2 consecutive orbits without leaving the lift, or continue for 3 minutes.
+fly straight, count the seconds until the vario peaks, then turn and try to stay in lift for 2 consecutive orbits.
 
 Popup guidance:
 Uses the same peak and vario-trend guidance as Stage 2, Step 1.
@@ -328,9 +319,3 @@ Great job! This is a good lesson that a ~4 second thermal might be about the sma
 
 Timeout feedback:
 Time limit reached. As your thermal skills improve, you may be able to stay in lift this small. But this is a good exercise to determine what thermals are worth turning in, and which ones might be worth passing by.
-
-
-STAGE 2 COMPLETION FEEDBACK
-----------------------------------------------------------------------
-
-Good experiment. Small lift can make the vario beep, but it may not be large enough to justify circling.
