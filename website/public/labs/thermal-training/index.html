@@ -1615,7 +1615,7 @@
 const canvas = document.getElementById("sim");
 const ctx = canvas.getContext("2d");
 const terrainMapImage = new Image();
-terrainMapImage.src = "terrain-calaveras.png";
+terrainMapImage.src = "terrain-background.png";
 const simW = 980;
 const simH = 780;
 let canvasCssW = simW;
@@ -3379,27 +3379,28 @@ function mapPoint(worldX, worldY, centerX, centerY, scale, rect) {
   };
 }
 
-function drawTerrain(rect, focusX, focusY, zoom = 1) {
-  const altitudeParallax = clamp((state.z - state.startAlt) / 700, 0, 1);
-  const parallax = 0.18 + altitudeParallax * 0.12;
-  const offsetX = ((focusX * parallax) % 170 + 170) % 170;
-  const offsetY = ((focusY * parallax) % 145 + 145) % 145;
+function drawTerrain(rect, focusX, focusY, mapScale, zoom = 1) {
+  const altitudeSeparation = clamp((state.z - state.startAlt) / 700, 0, 1);
+  const groundParallax = lerp(0.24, 0.16, altitudeSeparation);
   if (terrainMapImage.complete && terrainMapImage.naturalWidth) {
-    const imageScale = Math.max(
-      rect.w / terrainMapImage.naturalWidth,
-      rect.h / terrainMapImage.naturalHeight
-    ) * (1.08 - altitudeParallax * .035) * zoom;
-    const drawW = terrainMapImage.naturalWidth * imageScale;
-    const drawH = terrainMapImage.naturalHeight * imageScale;
-    const travelX = Math.max(0, drawW - rect.w);
-    const travelY = Math.max(0, drawH - rect.h);
-    const panX = clamp(.5 + Math.sin(focusX * .0025) * .34, 0, 1) * travelX;
-    const panY = clamp(.5 + Math.sin(focusY * .0021) * .34, 0, 1) * travelY;
-    ctx.drawImage(terrainMapImage, rect.x - panX, rect.y - panY, drawW, drawH);
-    ctx.fillStyle = "rgba(255,255,255,.10)";
+    const tileSize = 760 * zoom * lerp(1, 0.86, altitudeSeparation);
+    const groundScale = mapScale * groundParallax;
+    const offsetX = ((-focusX * groundScale) % tileSize + tileSize) % tileSize;
+    const offsetY = ((focusY * groundScale) % tileSize + tileSize) % tileSize;
+    const startX = rect.x + offsetX - tileSize;
+    const startY = rect.y + offsetY - tileSize;
+    for (let y = startY; y < rect.y + rect.h; y += tileSize) {
+      for (let x = startX; x < rect.x + rect.w; x += tileSize) {
+        // A one-pixel overlap avoids hairline seams from fractional canvas scaling.
+        ctx.drawImage(terrainMapImage, x, y, tileSize + 1, tileSize + 1);
+      }
+    }
+    ctx.fillStyle = "rgba(255,255,255,.14)";
     ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
     return;
   }
+  const offsetX = ((focusX * groundParallax) % 170 + 170) % 170;
+  const offsetY = ((focusY * groundParallax) % 145 + 145) % 145;
   const base = ctx.createLinearGradient(rect.x, rect.y, rect.x + rect.w, rect.y + rect.h);
   base.addColorStop(0, "#e7eaeb");
   base.addColorStop(.52, "#cbd1d3");
@@ -3610,8 +3611,10 @@ function drawMainMap(rect, estimate) {
   const params = readParams();
   const center = thermalCenterAt(state.t, state.z, params);
   const profile = thermalProfileAt(state.t, state.z, params);
-  const focusX = lerp(state.x, center.x, 0.25);
-  const focusY = lerp(state.y, center.y, 0.25);
+  // Keep the pilot fixed while the airborne scene moves at full map scale.
+  // The ground is drawn separately with reduced parallax to read as far below.
+  const focusX = state.x;
+  const focusY = state.y;
   const mobileMap = isMobileLayout();
   const mapZoom = mobileMap ? 1.5 : 1;
   const scale = Math.min(rect.w, rect.h) / 330 * mapZoom;
@@ -3619,7 +3622,7 @@ function drawMainMap(rect, estimate) {
   ctx.beginPath();
   ctx.rect(rect.x, rect.y, rect.w, rect.h);
   ctx.clip();
-  drawTerrain(rect, focusX, focusY, mapZoom);
+  drawTerrain(rect, focusX, focusY, scale, mapZoom);
 
   const c = mapPoint(center.x, center.y, focusX, focusY, scale, rect);
 
