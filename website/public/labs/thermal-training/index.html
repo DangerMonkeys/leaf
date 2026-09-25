@@ -1382,8 +1382,8 @@
         <li class="tutorial-roadmap-stage-item"><button class="tutorial-roadmap-stage" type="button" data-roadmap-stage="1"><span class="tutorial-roadmap-dot"></span><span class="tutorial-roadmap-title">Thermal Sizes</span></button></li>
         <li class="tutorial-roadmap-stage-item"><button class="tutorial-roadmap-stage" type="button" data-roadmap-stage="2"><span class="tutorial-roadmap-dot"></span><span class="tutorial-roadmap-title">Wind</span></button></li>
         <li class="tutorial-roadmap-stage-item"><button class="tutorial-roadmap-stage" type="button" data-roadmap-stage="3"><span class="tutorial-roadmap-dot"></span><span class="tutorial-roadmap-title">Which way to turn</span></button></li>
-        <li class="tutorial-roadmap-stage-item"><button class="tutorial-roadmap-stage" type="button" data-roadmap-stage="4" data-unavailable="true" disabled title="Coming later"><span class="tutorial-roadmap-dot"></span><span class="tutorial-roadmap-title">Variable Strength</span></button></li>
-        <li class="tutorial-roadmap-stage-item"><button class="tutorial-roadmap-stage" type="button" data-roadmap-stage="5" data-unavailable="true" disabled title="Coming later"><span class="tutorial-roadmap-dot"></span><span class="tutorial-roadmap-title">Thermal with a friend</span></button></li>
+        <li class="tutorial-roadmap-stage-item"><button class="tutorial-roadmap-stage" type="button" data-roadmap-stage="4"><span class="tutorial-roadmap-dot"></span><span class="tutorial-roadmap-title">Thermal with friends</span></button></li>
+        <li class="tutorial-roadmap-stage-item"><button class="tutorial-roadmap-stage" type="button" data-roadmap-stage="5" data-unavailable="true" disabled title="Coming later"><span class="tutorial-roadmap-dot"></span><span class="tutorial-roadmap-title">Variable Strength</span></button></li>
       </ol>
       <div id="tutorialRoadmapSubsteps" class="tutorial-roadmap-substeps" aria-label="Steps in selected tutorial stage"></div>
     </nav>
@@ -1616,6 +1616,8 @@ const canvas = document.getElementById("sim");
 const ctx = canvas.getContext("2d");
 const terrainMapImage = new Image();
 terrainMapImage.src = "terrain-background.png";
+const friendPanoramaImage = new Image();
+friendPanoramaImage.src = "thermal-friends-panorama.png";
 const simW = 980;
 const simH = 780;
 let canvasCssW = simW;
@@ -1699,6 +1701,14 @@ const mphToMps = 0.44704;
 const turnPromptDelayS = 0.5;
 const maxTurnRateSinkMps = 0.5;
 const maxSpiralSinkMps = 7;
+const friendMinRadiusFactor = 0.65;
+const friendMaxRadiusFactor = 1.45;
+const friendOutOfPositionSpacingDeg = 45;
+const friendGuidanceSpacingDeg = 90;
+const friendInitialSeparationDeg = 100;
+const friendSeparationPerOrbitDeg = 15;
+const friendSeparationGrowthOrbits = 4;
+const friendSeparationCorrectionRateDps = 3;
 
 let audioCtx = null;
 let beepOsc = null;
@@ -1753,7 +1763,20 @@ let tutorial = {
   turnDirectionBaseSeed: 0,
   turnDirectionEntryHeading: 0,
   turnDirectionBankStartedAt: null,
-  turnDirectionBankVisual: 0
+  turnDirectionBankVisual: 0,
+  friendGliders: [],
+  friendJoinedOrbit: false,
+  friendJoinedAt: null,
+  friendCollision: false,
+  friendCollisionGlider: null,
+  friendCollisionDistanceM: 15,
+  friendIdealRadius: 0,
+  friendSuccessfulOrbits: 0,
+  friendPositionViolation: null,
+  friendPositionWarningType: null,
+  friendTogetherAltitude: 0,
+  friendTogetherVario: 0,
+  friendTogetherLift: 0
 };
 
 const stageConfigs = [
@@ -1786,6 +1809,14 @@ const stageConfigs = [
     visualHelp: "Hide the thermal during entry, but keep the flight track and turn-rate colors visible.",
     stageComplete:
       "Great work. You completed all of the thermal entries and practiced choosing a turn direction from the pull and bank cues."
+  },
+  {
+    title: "TUTORIAL STAGE FIVE",
+    showThermal: true,
+    showRings: true,
+    visualHelp: "Keep the thermal, ideal orbit, flight track, and turn-rate guidance visible.",
+    stageComplete:
+      "Great work. You safely joined other pilots, then used another glider's relative climb to center the thermal as a team."
   }
 ];
 
@@ -1962,7 +1993,7 @@ const tutorialSteps = [
     successType: "wind",
     requiredOrbits: 10,
     diameterM: 140,
-    windMph: 12,
+    windMph: 10,
     resetOnEnter: true,
     stageIndex: 2,
     stepInStage: 0,
@@ -1986,7 +2017,7 @@ const tutorialSteps = [
     successType: "wind",
     requiredOrbits: 10,
     diameterM: 140,
-    windMph: 12,
+    windMph: 10,
     resetOnEnter: true,
     stageIndex: 2,
     stepInStage: 1,
@@ -2026,6 +2057,56 @@ const tutorialSteps = [
       "Goal: Watch carefully for cues as you approach and enter each thermal. Once the vario peaks, pick the best way to turn. Note: you may not always observe both the pull and bank effects.",
     complete:
       "Great work. You completed all 10 thermal entries and practiced choosing a direction from pull and bank cues."
+  },
+  {
+    title: "Step 1: Thermal Entry",
+    roadmapLabel: "1. Thermal Entry",
+    completeTitle: "Thermal with friends complete",
+    showTargetMarkers: true,
+    successType: "thermalFriends",
+    requiredOrbits: 5,
+    diameterM: 140,
+    windMph: 0,
+    resetOnEnter: true,
+    stageIndex: 4,
+    stepInStage: 0,
+    stageTitle: stageConfigs[4].title,
+    showThermal: true,
+    showRings: true,
+    flightTrackOpacity: 1,
+    visualHelp: stageConfigs[4].visualHelp,
+    stageComplete: stageConfigs[4].stageComplete,
+    directions:
+      "You are joining a thermal with two other paragliders. Steer wide of their circles until there is a gap to move into. Once in the thermal, try to keep your position. If you're falling behind, turn a bit tighter to \"cut the corner\" and advance in the circle. If you're catching up to the glider ahead of you, move outward slightly to add some distance to your circle and avoid getting too close. But make small adjustments and keep your circle reasonable so you don't confuse other pilots.",
+    goal:
+      "Goal: Enter the thermal safely without getting too close to another glider. Then orbit 5 times while maintaining your place in the circle. Keep your adjustments small and smooth.",
+    complete:
+      "Great work. You entered the thermal safely and maintained your place with the other gliders for five orbits."
+  },
+  {
+    title: "Step 2: Work together",
+    roadmapLabel: "2. Work together",
+    completeTitle: "Working together complete",
+    showTargetMarkers: false,
+    successType: "thermalFriendsTogether",
+    requiredOrbits: 3,
+    diameterM: 140,
+    windMph: 0,
+    resetOnEnter: true,
+    stageIndex: 4,
+    stepInStage: 1,
+    stageTitle: stageConfigs[4].title,
+    showThermal: false,
+    showRings: false,
+    flightTrackOpacity: 0,
+    visualHelp: "Use the vario and the other pilot's relative altitude. The thermal itself is hidden.",
+    stageComplete: stageConfigs[4].stageComplete,
+    directions:
+      "Circle with one other pilot directly across the thermal from you. If you move closer to the core, they move farther away and begin to fall relative to you. If they rise above you, their side of the circle has stronger lift. Use the vario sound and their position in the side view to adjust the center of your circle.",
+    goal:
+      "Goal: Work together to center the thermal for 3 consecutive orbits. Keep the other pilot near your altitude by making small, smooth corrections.",
+    complete:
+      "Great work. You used the other pilot's relative climb and the vario sound to center the thermal together."
   }
 ];
 
@@ -2283,12 +2364,13 @@ function updateTutorialOverlayCards() {
   const lesson = tutorialSteps[tutorial.step] || tutorialSteps[0];
   const isDebrief = tutorial.phase === "step-complete";
   const isTurnDirectionResult = tutorial.phase === "turn-direction-result";
+  const isFriendCollision = tutorial.phase === "friend-collision";
   const isAtStepStart = Math.abs(state.t - tutorial.stepStartedAt) < .05;
   const isPreStart = !isDebrief && !state.running && !tutorial.userPaused && isAtStepStart;
 
-  ui.tutorialInstructionsPanel.hidden = !(isPreStart || isDebrief);
+  ui.tutorialInstructionsPanel.hidden = !(isPreStart || isDebrief || isFriendCollision);
   ui.tutorialGoalPanel.hidden = isDebrief;
-  ui.tutorialActionCard.hidden = !(isPreStart || isDebrief || isTurnDirectionResult);
+  ui.tutorialActionCard.hidden = !(isPreStart || isDebrief || isTurnDirectionResult || isFriendCollision);
   const showWindDiagram = isPreStart && lesson.successType === "wind" && lesson.stepInStage === 0;
   const showWhichWayInstructions = isPreStart && lesson.successType === "turnDirection";
   ui.windDriftDiagram.hidden = !showWindDiagram;
@@ -2315,6 +2397,8 @@ function updateTutorialOverlayCards() {
     ui.tutorialActionCard.textContent = tutorialStartPrompt();
   } else if (isTurnDirectionResult) {
     ui.tutorialActionCard.textContent = `Entry ${tutorial.turnDirectionTrialIndex + 1}/${tutorial.turnDirectionScenarios.length} complete — click or press Space to continue`;
+  } else if (isFriendCollision) {
+    ui.tutorialActionCard.textContent = tutorialActionPrompt("restart this step");
   } else if (isDebrief) {
     ui.tutorialMessage.hidden = false;
     ui.tutorialMessageFollowup.textContent = "";
@@ -2382,6 +2466,225 @@ function resetTutorialOrbitProgress() {
   tutorial.orbitTargetTime = 0;
   tutorial.orbitLastBearing = null;
   tutorial.lastOrbitFailed = false;
+}
+
+function resetFriendThermalState() {
+  tutorial.friendGliders = [];
+  tutorial.friendJoinedOrbit = false;
+  tutorial.friendJoinedAt = null;
+  tutorial.friendCollision = false;
+  tutorial.friendCollisionGlider = null;
+  tutorial.friendIdealRadius = 0;
+  tutorial.friendSuccessfulOrbits = 0;
+  tutorial.friendPositionViolation = null;
+  tutorial.friendPositionWarningType = null;
+  tutorial.friendTogetherAltitude = 0;
+  tutorial.friendTogetherVario = 0;
+  tutorial.friendTogetherLift = 0;
+}
+
+function updateFriendGliders(params, stepDt = 0) {
+  if (!tutorial.friendGliders.length) return;
+  const center = thermalCenterAt(state.t, state.z, params);
+  const joinedElapsed = tutorial.friendJoinedAt == null
+    ? 0
+    : Math.max(0, state.t - tutorial.friendJoinedAt);
+  const targetSeparation = friendInitialSeparationDeg +
+    Math.min(tutorial.friendSuccessfulOrbits, friendSeparationGrowthOrbits) * friendSeparationPerOrbitDeg;
+  let separationCorrection = 0;
+  if (tutorial.friendGliders.length === 2) {
+    const currentSeparation = (tutorial.friendGliders[1].angle - tutorial.friendGliders[0].angle + 360) % 360;
+    const separationError = angleDeltaDeg(currentSeparation, targetSeparation);
+    separationCorrection = clamp(
+      separationError * 0.12,
+      -friendSeparationCorrectionRateDps,
+      friendSeparationCorrectionRateDps
+    );
+  }
+  for (const [index, glider] of tutorial.friendGliders.entries()) {
+    const radiusFactor = tutorial.friendJoinedOrbit
+      ? 1 + Math.sin(joinedElapsed * 0.24 + glider.radiusPhase) * 0.05
+      : 1;
+    const speedFactor = tutorial.friendJoinedOrbit
+      ? 1 + Math.sin(joinedElapsed * 0.19 + glider.speedPhase) * 0.10
+      : 1;
+    const separationTurnAdjustment = index === 0 ? -separationCorrection / 2 : separationCorrection / 2;
+    glider.turnRate = nominalTargetTurnRateDps * speedFactor + separationTurnAdjustment;
+    glider.angle = (glider.angle + glider.turnRate * stepDt + 360) % 360;
+    glider.radius = tutorial.friendIdealRadius * radiusFactor;
+    const angleRad = glider.angle * Math.PI / 180;
+    glider.x = center.x + Math.sin(angleRad) * glider.radius;
+    glider.y = center.y + Math.cos(angleRad) * glider.radius;
+    glider.heading = (glider.angle + 90) % 360;
+  }
+}
+
+function setupFriendThermalScenario() {
+  state = freshState(Number(ui.seed.value));
+  const params = readParams();
+  const center = thermalCenterAt(0, state.startAlt, params, state.thermal);
+  const idealRadius = baseAirspeed / (nominalTargetTurnRateDps * Math.PI / 180);
+  const entryBearing = 0;
+  const entryHeading = 90;
+  const leadInDistance = 95;
+  const arrivalSeconds = leadInDistance / baseAirspeed;
+  const entryAngleRad = entryBearing * Math.PI / 180;
+  const headingRad = entryHeading * Math.PI / 180;
+  state.x = center.x + Math.sin(entryAngleRad) * idealRadius - Math.sin(headingRad) * leadInDistance;
+  state.y = center.y + Math.cos(entryAngleRad) * idealRadius - Math.cos(headingRad) * leadInDistance;
+  state.heading = entryHeading;
+  state.turnRate = 0;
+  state.effectiveTurnRate = 0;
+  const blockingAngle = (entryBearing - nominalTargetTurnRateDps * arrivalSeconds + 360) % 360;
+  tutorial.friendIdealRadius = idealRadius;
+  tutorial.friendGliders = [
+    {color: "green", angle: blockingAngle, radiusPhase: 0, speedPhase: 0},
+    {
+      color: "yellow",
+      angle: (blockingAngle + friendInitialSeparationDeg) % 360,
+      radiusPhase: Math.PI,
+      speedPhase: Math.PI / 6
+    }
+  ];
+  updateFriendGliders(params, 0);
+}
+
+function setupFriendTogetherScenario() {
+  state = freshState(Number(ui.seed.value));
+  const params = readParams();
+  const center = thermalCenterAt(0, state.startAlt, params, state.thermal);
+  const idealRadius = baseAirspeed / (nominalTargetTurnRateDps * Math.PI / 180);
+  state.x = center.x;
+  state.y = center.y + idealRadius;
+  state.heading = 90;
+  state.turnRate = nominalTargetTurnRateDps;
+  state.effectiveTurnRate = nominalTargetTurnRateDps;
+  tutorial.friendIdealRadius = idealRadius;
+  tutorial.friendJoinedOrbit = true;
+  tutorial.friendJoinedAt = 0;
+  tutorial.friendTogetherAltitude = state.z;
+  tutorial.friendGliders = [{color: "yellow"}];
+  updateFriendTogetherScenario(params, 0);
+}
+
+function updateFriendTogetherScenario(params, stepDt) {
+  const center = thermalCenterAt(state.t, state.z, params);
+  const dx = state.x - center.x;
+  const dy = state.y - center.y;
+  const userRadius = Math.max(0.01, Math.hypot(dx, dy));
+  const unitX = dx / userRadius;
+  const unitY = dy / userRadius;
+  const friendRadius = clamp(
+    tutorial.friendIdealRadius * 2 - userRadius,
+    tutorial.friendIdealRadius * 0.25,
+    tutorial.friendIdealRadius * 1.75
+  );
+  const friend = tutorial.friendGliders[0] || {color: "yellow"};
+  friend.x = center.x - unitX * friendRadius;
+  friend.y = center.y - unitY * friendRadius;
+  friend.radius = friendRadius;
+  friend.angle = (Math.atan2(friend.x - center.x, friend.y - center.y) * 180 / Math.PI + 360) % 360;
+  friend.heading = (state.heading + 180) % 360;
+  friend.turnRate = actualTurnRateDps();
+  const friendLiftInfo = liftAt(
+    friend.x,
+    friend.y,
+    tutorial.friendTogetherAltitude || state.z,
+    state.t,
+    params
+  );
+  tutorial.friendTogetherLift = friendLiftInfo.lift;
+  tutorial.friendTogetherVario = friendLiftInfo.lift - params.sink;
+  tutorial.friendTogetherAltitude += tutorial.friendTogetherVario * stepDt;
+  tutorial.friendGliders = [friend];
+}
+
+function failFriendThermalStep(otherGlider) {
+  tutorial.friendCollision = true;
+  tutorial.friendCollisionGlider = otherGlider;
+  tutorial.phase = "friend-collision";
+  tutorial.pauseForCallout = true;
+  tutorial.userPaused = false;
+  state.running = false;
+  ui.start.textContent = "Start";
+  stopAudioTone();
+  setTutorialText(
+    "Too close",
+    `You came within ${tutorial.friendCollisionDistanceM} m of another glider. Leave more room and wait for a safe gap before joining the circle.`,
+    tutorialActionPrompt("restart this step")
+  );
+}
+
+function updateFriendPositionViolation(type) {
+  if (type === tutorial.friendPositionViolation) return;
+  tutorial.friendPositionViolation = type;
+  tutorial.friendPositionWarningType = type;
+  if (!type) return;
+  resetTutorialOrbitProgress();
+}
+
+function updateFriendThermalScenario(params, stepDt) {
+  updateFriendGliders(params, stepDt);
+  let nearestDistance = Infinity;
+  let nearestGlider = null;
+  for (const glider of tutorial.friendGliders) {
+    const distance = Math.hypot(state.x - glider.x, state.y - glider.y);
+    if (distance < nearestDistance) {
+      nearestDistance = distance;
+      nearestGlider = glider;
+    }
+  }
+  if (nearestDistance < tutorial.friendCollisionDistanceM) {
+    failFriendThermalStep(nearestGlider);
+    return false;
+  }
+
+  const center = thermalCenterAt(state.t, state.z, params);
+  const userRadius = Math.hypot(state.x - center.x, state.y - center.y);
+  const widestFriendRadius = Math.max(...tutorial.friendGliders.map(glider => glider.radius));
+  if (!tutorial.friendJoinedOrbit && userRadius < widestFriendRadius * 1.1) {
+    tutorial.friendJoinedOrbit = true;
+    tutorial.friendJoinedAt = state.t;
+    resetTutorialOrbitProgress();
+  }
+
+  if (!tutorial.friendJoinedOrbit) {
+    tutorial.lastInstruction = "WAIT FOR A GAP - Stay outside the circle until the entry is clear";
+    return true;
+  }
+
+  const userBearing = (Math.atan2(state.x - center.x, state.y - center.y) * 180 / Math.PI + 360) % 360;
+  const turnDirection = actualTurnRateDps() < 0 ? -1 : 1;
+  const gapsAhead = tutorial.friendGliders.map(glider => turnDirection > 0
+    ? (glider.angle - userBearing + 360) % 360
+    : (userBearing - glider.angle + 360) % 360
+  );
+  const nearestAhead = Math.min(...gapsAhead);
+  const gapsBehind = tutorial.friendGliders.map(glider => turnDirection > 0
+    ? (userBearing - glider.angle + 360) % 360
+    : (glider.angle - userBearing + 360) % 360
+  );
+  const nearestBehind = Math.min(...gapsBehind);
+  let positionViolation = null;
+  if (userRadius < tutorial.friendIdealRadius * friendMinRadiusFactor) {
+    positionViolation = "inside";
+  } else if (userRadius > tutorial.friendIdealRadius * friendMaxRadiusFactor) {
+    positionViolation = "outside";
+  } else if (nearestAhead < friendOutOfPositionSpacingDeg) {
+    positionViolation = "ahead";
+  } else if (nearestBehind < friendOutOfPositionSpacingDeg) {
+    positionViolation = "behind";
+  }
+  updateFriendPositionViolation(positionViolation);
+
+  if (nearestAhead < friendGuidanceSpacingDeg) {
+    tutorial.lastInstruction = "GETTING TOO FAR AHEAD - Move outward slightly to add distance";
+  } else if (nearestBehind < friendGuidanceSpacingDeg) {
+    tutorial.lastInstruction = "FALLING TOO FAR BEHIND - Turn a bit tighter to cut the corner";
+  } else {
+    tutorial.lastInstruction = "HOLD YOUR PLACE - Match the spacing of the other gliders";
+  }
+  return !positionViolation;
 }
 
 function buildTurnDirectionScenarios(seed) {
@@ -2454,9 +2757,13 @@ function setupTurnDirectionTrial(index, autoStart = false) {
   return true;
 }
 
+function isCenteredTurnDirectionScenario(scenario) {
+  return !scenario || Math.abs(scenario.offsetFraction) < 0.12;
+}
+
 function turnDirectionResultText(chosenDirection) {
   const scenario = tutorial.turnDirectionScenario;
-  if (!scenario || Math.abs(scenario.offsetFraction) < 0.12) {
+  if (isCenteredTurnDirectionScenario(scenario)) {
     return "Near the center, either turn direction is reasonable.";
   }
   const correctDirection = -Math.sign(scenario.offsetFraction);
@@ -2480,6 +2787,14 @@ function isLastTutorialStepInStage(stepIndex) {
 function tutorialGoalText(metrics = null) {
   const lesson = tutorialSteps[tutorial.step] || tutorialSteps[0];
   const requiredOrbits = lesson.requiredOrbits || 2;
+  if (lesson.successType === "thermalFriends") {
+    return tutorial.friendJoinedOrbit
+      ? `Goal progress: ${tutorial.orbitCount}/${requiredOrbits} orbits while holding your place in the circle.`
+      : "Goal progress: Stay clear of the other gliders and wait for a gap to join their circle.";
+  }
+  if (lesson.successType === "thermalFriendsTogether") {
+    return `Goal progress: ${tutorial.orbitCount}/${requiredOrbits} centered orbits. Keep the other pilot near your altitude.`;
+  }
   if (!metrics) return lesson.goal;
   if (lesson.successType === "radiusBand") {
     return `Goal progress: ${tutorial.orbitCount}/2 centered orbits. Radius range: ${Math.round(metrics.minRadius)}-${Math.round(metrics.maxRadius)}m.`;
@@ -2509,6 +2824,7 @@ function configureTutorialStep(step, resetState = true) {
   tutorial.peakVario = -Infinity;
   tutorial.peakVarioAt = null;
   resetTutorialOrbitProgress();
+  resetFriendThermalState();
   tutorial.lastInstruction = "";
   tutorial.stepStartedAt = state.t;
   tutorial.hintOpen = false;
@@ -2526,6 +2842,10 @@ function configureTutorialStep(step, resetState = true) {
     tutorial.turnDirectionBaseSeed = Number(ui.seed.value) || 1;
     tutorial.turnDirectionScenarios = buildTurnDirectionScenarios(tutorial.turnDirectionBaseSeed);
     setupTurnDirectionTrial(0, false);
+  } else if (lesson.successType === "thermalFriends") {
+    setupFriendThermalScenario();
+  } else if (lesson.successType === "thermalFriendsTogether") {
+    setupFriendTogetherScenario();
   } else if (resetState) {
     state = freshState(Number(ui.seed.value));
   }
@@ -2593,6 +2913,11 @@ function continueTutorial() {
   if (!tutorial.active) return;
   const lesson = tutorialSteps[tutorial.step] || tutorialSteps[0];
   tutorial.pauseForCallout = false;
+  if (tutorial.phase === "friend-collision") {
+    configureTutorialStep(tutorial.step, true);
+    continueTutorial();
+    return;
+  }
   if (tutorial.phase === "turn-direction-result") {
     const nextIndex = tutorial.turnDirectionTrialIndex + 1;
     if (nextIndex < tutorial.turnDirectionScenarios.length) {
@@ -2662,11 +2987,10 @@ function windVector(params, thermal = state.thermal) {
 function thermalWindDriftRatio(params) {
   // "Net core strength" is the climb the pilot sees after glider sink. The
   // thermal air itself rises faster by the sink rate, so it spends less time
-  // accumulating horizontal wind drift for the same altitude gain. Reduce
-  // that physical ratio by another 20% so the training effect is easier to see.
+  // accumulating horizontal wind drift for the same altitude gain.
   const thermalAirRiseMps = params.strength + params.sink;
   const physicalDriftRatio = params.strength / Math.max(0.2, thermalAirRiseMps);
-  return clamp(physicalDriftRatio * 0.8, 0, 1);
+  return clamp(physicalDriftRatio, 0, 1);
 }
 
 function thermalCenterAt(t, alt, params, thermal = state.thermal) {
@@ -2977,18 +3301,22 @@ function updateTutorial(stepDt) {
       if (lesson.successType === "turnDirection") {
         const chosenDirection = completedTurnDelta < 0 ? -1 : 1;
         const scenario = tutorial.turnDirectionScenario;
-        const cueLabel = scenario?.pull && scenario?.bank
-          ? "This entry included both pull and bank cues."
-          : scenario?.pull
-            ? "This entry included the pull cue only."
-            : "This entry included the bank cue only.";
+        const cueLabel = isCenteredTurnDirectionScenario(scenario)
+          ? ""
+          : scenario.pull && scenario.bank
+            ? "This entry included both pull and bank cues."
+            : scenario.pull
+              ? "This entry included the pull cue only."
+              : "This entry included the bank cue only.";
         tutorial.phase = "turn-direction-result";
         tutorial.lastInstruction = "";
         tutorial.turnDirectionBankVisual = 0;
         state.bankCue = 0;
         ui.showThermal.checked = true;
         tutorial.showThermalRings = true;
-        ui.tutorialGoal.textContent = `${turnDirectionResultText(chosenDirection)} ${cueLabel}`;
+        ui.tutorialGoal.textContent = [turnDirectionResultText(chosenDirection), cueLabel]
+          .filter(Boolean)
+          .join(" ");
         stopAudioTone();
         return;
       }
@@ -3022,6 +3350,42 @@ function updateTutorial(stepDt) {
   const recent = state.varioTrace.slice(-50);
   const elapsed = recent.length >= 2 ? Math.max(0.1, recent[recent.length - 1].t - recent[0].t) : 1;
   const varioTrend = recent.length >= 2 ? (recent[recent.length - 1].v - recent[0].v) / elapsed : 0;
+  if (tutorial.phase === "practice" && lesson.successType === "thermalFriendsTogether") {
+    updateFriendTogetherScenario(readParams(), stepDt);
+    updateTutorialOrbitProgress(readParams(), stepDt);
+    ui.tutorialGoal.textContent = tutorialGoalText();
+    if (tutorial.orbitCount >= lesson.requiredOrbits) {
+      tutorial.phase = "step-complete";
+      tutorial.pauseForCallout = true;
+      state.running = false;
+      ui.start.textContent = "Start";
+      setTutorialText(
+        lesson.stageTitle,
+        lesson.stageComplete,
+        tutorial.step < tutorialSteps.length - 1 ? tutorialActionPrompt("continue") : tutorialActionPrompt("finish")
+      );
+    }
+    return;
+  }
+  if (tutorial.phase === "practice" && lesson.successType === "thermalFriends") {
+    const positionValid = updateFriendThermalScenario(readParams(), stepDt);
+    if (tutorial.phase === "friend-collision") return;
+    if (tutorial.friendJoinedOrbit && positionValid) updateTutorialOrbitProgress(readParams(), stepDt);
+    ui.tutorialGoal.textContent = tutorialGoalText();
+    if (tutorial.orbitCount >= lesson.requiredOrbits) {
+      tutorial.phase = "step-complete";
+      tutorial.pauseForCallout = true;
+      state.running = false;
+      ui.start.textContent = "Start";
+      const useStageComplete = isLastTutorialStepInStage(tutorial.step);
+      setTutorialText(
+        useStageComplete ? lesson.stageTitle : lesson.completeTitle,
+        useStageComplete ? lesson.stageComplete : lesson.complete,
+        tutorial.step < tutorialSteps.length - 1 ? tutorialActionPrompt("continue") : tutorialActionPrompt("finish")
+      );
+    }
+    return;
+  }
   if (tutorial.phase === "practice") {
     if (state.vario <= 0) {
       tutorial.lastInstruction = "FIND LIFT";
@@ -3124,11 +3488,17 @@ function updateTutorialOrbitProgress(params, stepDt) {
         ? tutorial.orbitMinRadius >= profile.radius * 0.10 && tutorial.orbitMaxRadius <= profile.radius * 0.75
         : ["optimizedTurn", "combinedCore"].includes(lesson.successType)
           ? spread <= optimizedAllowedSpread && targetRatio >= 0.75
+          : lesson.successType === "thermalFriends"
+            ? tutorial.orbitMinRadius >= targetRadius * friendMinRadiusFactor &&
+              tutorial.orbitMaxRadius <= targetRadius * friendMaxRadiusFactor
+          : lesson.successType === "thermalFriendsTogether"
+            ? spread <= optimizedAllowedSpread && tutorial.orbitMaxError <= allowedError
           : ["thermalSize", "wind"].includes(lesson.successType)
             ? tutorial.orbitMinVario > 0
             : spread <= allowedSpread;
     if (orbitPassed) {
       tutorial.orbitCount += 1;
+      if (lesson.successType === "thermalFriends") tutorial.friendSuccessfulOrbits += 1;
       tutorial.lastOrbitFailed = false;
     } else {
       tutorial.orbitCount = 0;
@@ -3435,7 +3805,7 @@ function drawTerrain(rect, focusX, focusY, mapScale, zoom = 1) {
   ctx.restore();
 }
 
-function drawParaglider(x, y, headingDeg, turnRateDps, visualScale = 1) {
+function drawParaglider(x, y, headingDeg, turnRateDps, visualScale = 1, canopy = "blue", danger = false) {
   const bank = clamp(turnRateDps / maxTurnRateDps, -1, 1);
   const bankAbs = Math.abs(bank);
   const span = 32;
@@ -3479,20 +3849,23 @@ function drawParaglider(x, y, headingDeg, turnRateDps, visualScale = 1) {
   const highlightSpread = .26;
   const leftTipLight = clamp(.28 + bank * .16, .08, .52);
   const rightTipLight = clamp(.28 - bank * .16, .08, .52);
-  const penalty = clamp(state.spiralPenalty || 0, 0, 1);
+  const palettes = {
+    blue: {dark: [5, 75, 128], light: [220, 245, 255]},
+    green: {dark: [20, 100, 42], light: [190, 255, 170]},
+    yellow: {dark: [150, 98, 0], light: [255, 244, 120]},
+    red: {dark: [125, 15, 20], light: [255, 220, 220]}
+  };
+  const palette = danger ? palettes.red : (palettes[canopy] || palettes.blue);
+  const penalty = canopy === "blue" && !danger ? clamp(state.spiralPenalty || 0, 0, 1) : 0;
   const canopyColor = light => {
     const shade = clamp(light, 0, 1);
-    const blue = [
-      lerp(5, 220, shade),
-      lerp(75, 245, shade),
-      lerp(128, 255, shade)
-    ];
+    const base = palette.dark.map((channel, index) => lerp(channel, palette.light[index], shade));
     const red = [
       lerp(125, 255, shade),
       lerp(15, 220, shade),
       lerp(20, 220, shade)
     ];
-    const mixed = blue.map((channel, index) => Math.round(lerp(channel, red[index], penalty)));
+    const mixed = base.map((channel, index) => Math.round(lerp(channel, red[index], penalty)));
     return `rgb(${mixed.join(", ")})`;
   };
   const wingGradient = ctx.createLinearGradient(leftTrail.x, 0, rightTrail.x, 0);
@@ -3625,6 +3998,8 @@ function drawMainMap(rect, estimate) {
   drawTerrain(rect, focusX, focusY, scale, mapZoom);
 
   const c = mapPoint(center.x, center.y, focusX, focusY, scale, rect);
+  const activeLesson = tutorialSteps[tutorial.step];
+  const isFriendThermalLesson = tutorial.active && activeLesson?.successType === "thermalFriends";
 
   if (params.showThermal) {
     const grd = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, profile.radius * scale * 1.45);
@@ -3635,7 +4010,7 @@ function drawMainMap(rect, estimate) {
     ctx.beginPath();
     ctx.arc(c.x, c.y, profile.radius * scale * 1.45, 0, Math.PI * 2);
     ctx.fill();
-    if (!tutorial.active || tutorial.showThermalRings) {
+    if ((!tutorial.active || tutorial.showThermalRings) && !isFriendThermalLesson) {
       ctx.strokeStyle = mobileMap ? "rgba(62, 108, 28, 0.92)" : "rgba(75, 124, 38, 0.62)";
       ctx.lineWidth = mobileMap ? 4 : 1;
       ctx.setLineDash(mobileMap ? [11, 7] : [5, 5]);
@@ -3646,13 +4021,30 @@ function drawMainMap(rect, estimate) {
     }
   }
 
-  if (tutorial.active && tutorial.showThermalRings) {
+  if (tutorial.active && tutorial.showThermalRings && !isFriendThermalLesson) {
     ctx.strokeStyle = mobileMap ? "rgba(28, 45, 25, 0.46)" : "rgba(32, 36, 35, 0.18)";
     ctx.lineWidth = mobileMap ? 3 : 1;
     ctx.setLineDash(mobileMap ? [7, 9] : [3, 7]);
     for (const ring of [0.25, 0.5, 0.75, 1]) {
       ctx.beginPath();
       ctx.arc(c.x, c.y, profile.radius * scale * ring, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+  }
+
+  if (isFriendThermalLesson && tutorial.friendIdealRadius > 0) {
+    ctx.lineWidth = mobileMap ? 4 : 2;
+    ctx.setLineDash(mobileMap ? [14, 9] : [8, 6]);
+    const orbitGuides = [
+      {factor: friendMinRadiusFactor, color: "rgba(45, 55, 60, 0.62)"},
+      {factor: 1, color: "rgba(89, 126, 20, 0.9)"},
+      {factor: friendMaxRadiusFactor, color: "rgba(45, 55, 60, 0.62)"}
+    ];
+    for (const guide of orbitGuides) {
+      ctx.strokeStyle = guide.color;
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, tutorial.friendIdealRadius * guide.factor * scale, 0, Math.PI * 2);
       ctx.stroke();
     }
     ctx.setLineDash([]);
@@ -3686,10 +4078,25 @@ function drawMainMap(rect, estimate) {
     }
   }
 
+  if (tutorial.active && ["thermalFriends", "thermalFriendsTogether"].includes(activeLesson?.successType)) {
+    for (const glider of tutorial.friendGliders) {
+      const friendPoint = mapPoint(glider.x, glider.y, focusX, focusY, scale, rect);
+      drawParaglider(
+        friendPoint.x,
+        friendPoint.y,
+        glider.heading,
+        glider.turnRate,
+        mapZoom * 0.9,
+        glider.color,
+        tutorial.friendCollisionGlider === glider
+      );
+    }
+  }
+
   const p = mapPoint(state.x, state.y, focusX, focusY, scale, rect);
   drawTurnPreview(p.x, p.y, state.heading, actualTurnRateDps(), scale);
   const visualTurnRate = actualTurnRateDps() + (state.bankCue || 0) * maxTurnRateDps * 0.62;
-  drawParaglider(p.x, p.y, state.heading, visualTurnRate, mapZoom);
+  drawParaglider(p.x, p.y, state.heading, visualTurnRate, mapZoom, "blue", tutorial.friendCollision);
 
   ctx.restore();
 }
@@ -4527,12 +4934,13 @@ function drawTutorialSection(section) {
 
 function drawTutorialCards(map, lesson) {
   const isDebrief = tutorial.phase === "step-complete";
+  const isFriendCollision = tutorial.phase === "friend-collision";
   const isAtStepStart = Math.abs(state.t - tutorial.stepStartedAt) < .05;
   const isPreStart = !isDebrief && !state.running && !tutorial.userPaused && isAtStepStart;
   const goal = cleanTutorialGoal(ui.tutorialGoal.textContent || lesson.goal);
   let sections;
 
-  if (isDebrief) {
+  if (isDebrief || isFriendCollision) {
     sections = [
       {
         kind: "instructions",
@@ -4634,6 +5042,134 @@ function drawPausedOverlay(map) {
   drawText(tutorialActionPrompt("continue"), map.x + map.w / 2, card.y + 46 * popupScale, 12 * popupScale, "center", "rgba(255,255,255,.9)");
 }
 
+function drawFriendPositionWarning(map) {
+  if (!tutorial.friendPositionWarningType || !state.running) return;
+  const popupScale = isMobileLayout() ? 2 : 1;
+  const centerX = map.x + map.w / 2;
+  const headlineY = map.y + map.h * 0.22;
+  const warningText = {
+    ahead: "Don't get too far ahead",
+    behind: "Don't fall too far behind",
+    inside: "Don't go too far inside",
+    outside: "Don't go too far outside"
+  };
+  const detail = warningText[tutorial.friendPositionWarningType] || "Return to your position";
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.lineWidth = 6 * popupScale;
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.94)";
+  ctx.font = `800 ${22 * popupScale}px 'Roboto Condensed', Roboto, sans-serif`;
+  ctx.strokeText("OUT OF POSITION", centerX, headlineY);
+  ctx.fillStyle = "#d92f2f";
+  ctx.fillText("OUT OF POSITION", centerX, headlineY);
+  ctx.font = `650 ${13 * popupScale}px Roboto, 'Segoe UI', sans-serif`;
+  ctx.lineWidth = 4 * popupScale;
+  ctx.strokeText(detail, centerX, headlineY + 29 * popupScale);
+  ctx.fillStyle = "#202423";
+  ctx.fillText(detail, centerX, headlineY + 29 * popupScale);
+  ctx.restore();
+}
+
+function drawSideViewParaglider(x, y, scale = 1) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scale, scale);
+  const canopy = ctx.createLinearGradient(-34, -20, 34, -8);
+  canopy.addColorStop(0, '#e5ef42');
+  canopy.addColorStop(0.52, '#f4c928');
+  canopy.addColorStop(1, '#ef8d21');
+  ctx.fillStyle = canopy;
+  ctx.strokeStyle = '#142031';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(-36, -9);
+  ctx.quadraticCurveTo(0, -37, 36, -9);
+  ctx.quadraticCurveTo(0, -20, -36, -9);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(20, 32, 49, 0.75)';
+  ctx.lineWidth = 1.1;
+  for (const attachX of [-26, -12, 12, 26]) {
+    ctx.beginPath();
+    ctx.moveTo(attachX, -12 - Math.abs(attachX) * 0.08);
+    ctx.lineTo(attachX * 0.13, 13);
+    ctx.stroke();
+  }
+  ctx.fillStyle = '#142031';
+  ctx.beginPath();
+  ctx.ellipse(0, 17, 7, 10, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#f4c7a1';
+  ctx.beginPath();
+  ctx.arc(0, 7, 3.8, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawFriendTogetherSideView(map) {
+  const lesson = tutorialSteps[tutorial.step];
+  if (!tutorial.active || lesson?.successType !== 'thermalFriendsTogether') return;
+  const mobile = isMobileLayout();
+  const pane = {
+    w: mobile ? 230 : 270,
+    h: clamp(map.h * (mobile ? 0.44 : 0.5), 250, 360)
+  };
+  pane.x = map.x + map.w - pane.w - (mobile ? 12 : 18);
+  pane.y = map.y + (mobile ? 118 : 126);
+
+  ctx.save();
+  ctx.fillStyle = '#bfe2fb';
+  drawRoundedRect(pane.x, pane.y, pane.w, pane.h, 16);
+  ctx.fill();
+  drawRoundedRect(pane.x, pane.y, pane.w, pane.h, 16);
+  ctx.clip();
+  if (friendPanoramaImage.complete && friendPanoramaImage.naturalWidth) {
+    const displayWidth = pane.h * friendPanoramaImage.naturalWidth / friendPanoramaImage.naturalHeight;
+    const panoramaOffset = (state.heading / 360 * displayWidth) % displayWidth;
+    let drawX = pane.x - panoramaOffset;
+    while (drawX + displayWidth < pane.x) drawX += displayWidth;
+    for (; drawX < pane.x + pane.w; drawX += displayWidth) {
+      ctx.drawImage(friendPanoramaImage, drawX, pane.y, displayWidth, pane.h);
+    }
+  }
+  const altitudeLineY = pane.y + pane.h * 0.48;
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([7, 7]);
+  ctx.beginPath();
+  ctx.moveTo(pane.x + 14, altitudeLineY);
+  ctx.lineTo(pane.x + pane.w - 14, altitudeLineY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(20, 32, 49, 0.82)';
+  ctx.font = `700 ${mobile ? 12 : 11}px Roboto, 'Segoe UI', sans-serif`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('YOUR ALTITUDE', pane.x + 16, altitudeLineY - 7);
+  const relativeAltitude = tutorial.friendTogetherAltitude - state.z;
+  const friendY = altitudeLineY - clamp(relativeAltitude * 5, -pane.h * 0.29, pane.h * 0.29);
+  drawSideViewParaglider(pane.x + pane.w * 0.58, friendY, mobile ? 1.15 : 1.05);
+  const headerGradient = ctx.createLinearGradient(0, pane.y, 0, pane.y + 48);
+  headerGradient.addColorStop(0, 'rgba(20, 32, 49, 0.72)');
+  headerGradient.addColorStop(1, 'rgba(20, 32, 49, 0)');
+  ctx.fillStyle = headerGradient;
+  ctx.fillRect(pane.x, pane.y, pane.w, 52);
+  ctx.fillStyle = '#fff';
+  ctx.font = `800 ${mobile ? 14 : 13}px 'Roboto Condensed', Roboto, sans-serif`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('SIDE VIEW · OTHER PILOT', pane.x + 14, pane.y + 12);
+  ctx.restore();
+  ctx.save();
+  ctx.strokeStyle = 'rgba(20, 32, 49, 0.8)';
+  ctx.lineWidth = 2;
+  drawRoundedRect(pane.x, pane.y, pane.w, pane.h, 16);
+  ctx.stroke();
+  ctx.restore();
+}
+
 function draw() {
   resizeCanvasForDisplay();
   const estimate = estimateCoreGuidance();
@@ -4643,17 +5179,21 @@ function draw() {
   const map = {x: 0, y: 0, w: simW, h: canvasLogicalH};
   const telemetry = {x: 330, y: 18, w: 320, h: 82};
   const turnModule = {x: telemetry.x, y: telemetry.y + telemetry.h + 38, w: telemetry.w, h: 0};
-  const spiralWarningActive = tutorial.active &&
+  const friendPositionWarningActive = Boolean(tutorial.friendPositionWarningType && state.running);
+  const spiralWarningActive = !friendPositionWarningActive && tutorial.active &&
     tutorial.showTargetMarkers &&
     tutorial.phase !== "step-complete" &&
     state.running &&
     (state.maxTurnRateSeconds >= 2 || state.spiralPenalty > .01);
   const popupTextScale = isMobileLayout() ? 2 : 1;
   drawMainMap(map, estimate);
-  if (!spiralWarningActive) drawTutorialHint(turnModule);
+  drawFriendTogetherSideView(map);
+  if (!spiralWarningActive && !friendPositionWarningActive) drawTutorialHint(turnModule);
   corePrototypeHeaderRect = null;
   updateTutorialOverlayCards();
-  if (spiralWarningActive) {
+  if (friendPositionWarningActive) {
+    drawFriendPositionWarning(map);
+  } else if (spiralWarningActive) {
     ctx.save();
     ctx.font = `700 ${22 * popupTextScale}px 'Roboto Condensed', Roboto, sans-serif`;
     ctx.textAlign = "center";
@@ -4691,9 +5231,9 @@ function draw() {
   const popupLesson = tutorialSteps[tutorial.step];
   const showEntryPopup = tutorial.phase === "entry" && tutorial.lastInstruction;
   const showPracticePopup = tutorial.phase === "practice" &&
-    ["radiusBand", "optimizedTurn", "thermalSize", "combinedCore", "wind"].includes(popupLesson?.successType) &&
+    ["radiusBand", "optimizedTurn", "thermalSize", "combinedCore", "wind", "thermalFriends"].includes(popupLesson?.successType) &&
     tutorial.lastInstruction;
-  if (!spiralWarningActive && tutorial.active && (showEntryPopup || showPracticePopup)) {
+  if (!spiralWarningActive && !friendPositionWarningActive && tutorial.active && (showEntryPopup || showPracticePopup)) {
     const parts = tutorial.lastInstruction.split(" - ");
     ctx.save();
     ctx.font = `700 ${18 * popupTextScale}px 'Roboto Condensed', Roboto, sans-serif`;
