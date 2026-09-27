@@ -1809,6 +1809,7 @@ let tutorial = {
   turnDirectionBankStartedAt: null,
   turnDirectionBankVisual: 0,
   friendGliders: [],
+  friendTurnDirection: null,
   friendJoinedOrbit: false,
   friendJoinedAt: null,
   friendCollision: false,
@@ -2563,6 +2564,7 @@ function resetFriendThermalState() {
 
 function updateFriendGliders(params, stepDt = 0) {
   if (!tutorial.friendGliders.length) return;
+  const direction = tutorial.friendTurnDirection ?? -1;
   const center = thermalCenterAt(state.t, state.z, params);
   const joinedElapsed = tutorial.friendJoinedAt == null
     ? 0
@@ -2571,7 +2573,7 @@ function updateFriendGliders(params, stepDt = 0) {
     Math.min(tutorial.friendSuccessfulOrbits, friendSeparationGrowthOrbits) * friendSeparationPerOrbitDeg;
   let separationCorrection = 0;
   if (tutorial.friendGliders.length === 2) {
-    const currentSeparation = (tutorial.friendGliders[1].angle - tutorial.friendGliders[0].angle + 360) % 360;
+    const currentSeparation = (direction * (tutorial.friendGliders[1].angle - tutorial.friendGliders[0].angle) + 360) % 360;
     const separationError = angleDeltaDeg(currentSeparation, targetSeparation);
     separationCorrection = clamp(
       separationError * 0.12,
@@ -2587,23 +2589,24 @@ function updateFriendGliders(params, stepDt = 0) {
       ? 1 + Math.sin(joinedElapsed * 0.19 + glider.speedPhase) * 0.10
       : 1;
     const separationTurnAdjustment = index === 0 ? -separationCorrection / 2 : separationCorrection / 2;
-    glider.turnRate = nominalTargetTurnRateDps * speedFactor + separationTurnAdjustment;
+    glider.turnRate = direction * (nominalTargetTurnRateDps * speedFactor + separationTurnAdjustment);
     glider.angle = (glider.angle + glider.turnRate * stepDt + 360) % 360;
     glider.radius = tutorial.friendIdealRadius * radiusFactor;
     const angleRad = glider.angle * Math.PI / 180;
     glider.x = center.x + Math.sin(angleRad) * glider.radius;
     glider.y = center.y + Math.cos(angleRad) * glider.radius;
-    glider.heading = (glider.angle + 90) % 360;
+    glider.heading = (glider.angle + direction * 90 + 360) % 360;
   }
 }
 
 function setupFriendThermalScenario() {
+  const direction = tutorial.friendTurnDirection ?? -1;
   state = freshState(Number(ui.seed.value));
   const params = readParams();
   const center = thermalCenterAt(0, state.startAlt, params, state.thermal);
   const idealRadius = baseAirspeed / (nominalTargetTurnRateDps * Math.PI / 180);
   const entryBearing = 0;
-  const entryHeading = 90;
+  const entryHeading = (direction * 90 + 360) % 360;
   const leadInDistance = 95;
   const arrivalSeconds = leadInDistance / baseAirspeed;
   const entryAngleRad = entryBearing * Math.PI / 180;
@@ -2613,13 +2616,13 @@ function setupFriendThermalScenario() {
   state.heading = entryHeading;
   state.turnRate = 0;
   state.effectiveTurnRate = 0;
-  const blockingAngle = (entryBearing - nominalTargetTurnRateDps * arrivalSeconds + 360) % 360;
+  const blockingAngle = (entryBearing - direction * nominalTargetTurnRateDps * arrivalSeconds + 360) % 360;
   tutorial.friendIdealRadius = idealRadius;
   tutorial.friendGliders = [
     {color: "green", angle: blockingAngle, radiusPhase: 0, speedPhase: 0},
     {
       color: "yellow",
-      angle: (blockingAngle + friendInitialSeparationDeg) % 360,
+      angle: (blockingAngle + direction * friendInitialSeparationDeg + 360) % 360,
       radiusPhase: Math.PI,
       speedPhase: Math.PI / 6
     }
@@ -2628,7 +2631,8 @@ function setupFriendThermalScenario() {
 }
 
 function setupFriendTogetherScenario(harder = false, startAltitude = 1000) {
-  const c = harder ? FriendTraining.harderConfig : FriendTraining.config;
+  const c = {...(harder ? FriendTraining.harderConfig : FriendTraining.config),
+    turnDirection: tutorial.friendTurnDirection ?? FriendTraining.config.turnDirection};
   ui.diameter.value = c.diameterM;
   // Range inputs otherwise silently clamp this lesson's stronger core to 6.
   ui.strength.max = Math.max(6, c.initialCoreClimbMps);
@@ -2659,7 +2663,7 @@ function setupFriendTogetherScenario(harder = false, startAltitude = 1000) {
   tutorial.friendTogetherAltitude = state.z;
   tutorial.friendTogetherVario = state.vario;
   tutorial.friendTogetherLift = state.lift;
-  tutorial.friendGliders = [FriendTraining.createFriend(state, state.vario)];
+  tutorial.friendGliders = [FriendTraining.createFriend(state, state.vario, c)];
   tutorial.friendClimbGoal = {baseZ: state.z, gainM: 0, valid: true, reason: null, complete: false};
   requestFriendModel();
 }
@@ -2921,6 +2925,14 @@ function tutorialGoalText(metrics = null) {
 
 function configureTutorialStep(step, resetState = true) {
   const lesson = tutorialSteps[step] || tutorialSteps[0];
+  const friendTypes = ['thermalFriends', 'thermalFriendsTogether'];
+  const wasFriends = friendTypes.includes(tutorialSteps[tutorial.step]?.successType);
+  if (!friendTypes.includes(lesson.successType)) tutorial.friendTurnDirection = null;
+  else if (lesson.successType === 'thermalFriends' || !wasFriends ||
+    ![-1, 1].includes(tutorial.friendTurnDirection)) {
+    // A fresh stage/Entry attempt chooses a side; later steps and retries keep it.
+    tutorial.friendTurnDirection = Math.random() < .5 ? -1 : 1;
+  }
   const nextStartAltitude = lesson.harderConditions
     ? (tutorial.phase === 'step-complete' && tutorial.step !== step ? state.z
       : tutorial.step === step ? state.startAlt : 1000) : 1000;
@@ -2956,6 +2968,12 @@ function configureTutorialStep(step, resetState = true) {
     setupFriendTogetherScenario(Boolean(lesson.harderConditions), nextStartAltitude);
   } else if (resetState) {
     state = freshState(Number(ui.seed.value));
+  }
+  if (Number(ui.wind.value) > 0) {
+    // Wind varies per attempt, independently of the reproducible thermal seed.
+    const windDir = Math.random() * Math.PI * 2;
+    state.thermal.slantDir += windDir - state.thermal.windDir;
+    state.thermal.windDir = windDir;
   }
   tutorial.stepStartedAt = state.t;
   state.running = false;
@@ -3002,6 +3020,7 @@ function startTutorial() {
 
 function exitTutorial() {
   tutorial.active = false;
+  tutorial.friendTurnDirection = null;
   tutorial.showTargetMarkers = true;
   tutorial.showThermalRings = true;
   tutorial.hintOpen = false;
@@ -5497,7 +5516,8 @@ function drawFriendTogetherSideView(map) {
   const lesson = tutorialSteps[tutorial.step];
   if (!tutorial.active || lesson?.successType !== 'thermalFriendsTogether') return;
   const friend = tutorial.friendGliders[0];
-  const view = friend ? FriendTraining.viewObservation(friend, state) : null;
+  const viewConfig = state.thermal?.friendConfig || FriendTraining.config;
+  const view = friend ? FriendTraining.viewObservation(friend, state, viewConfig) : null;
   const pane = friendTogetherLayout(map, friendViewTopClearance).side;
   if (pane.h <= 0) return;
   // No instrument chrome: the full panel is the spherical viewing area.
@@ -5514,7 +5534,7 @@ function drawFriendTogetherSideView(map) {
     // Its distant skyline becomes the same midpoint as a level pilot's anchor.
     const crop = FriendTraining.panoramaCrop(friendPanoramaImage.naturalWidth, friendPanoramaImage.naturalHeight);
     const displayWidth = pane.h * crop.sw / crop.sh;
-    const insideSide = Math.sign(FriendTraining.config.turnDirection);
+    const insideSide = Math.sign(viewConfig.turnDirection);
     const trackingBearing = (state.heading + insideSide * 90 + (view?.headYawDeg ?? 0) + 720) % 360;
     const panoramaOffset = (trackingBearing / 360 * displayWidth) % displayWidth;
     let drawX = pane.x - panoramaOffset;
@@ -5525,7 +5545,7 @@ function drawFriendTogetherSideView(map) {
     }
   }
   const pilotViews = tutorial.friendGliders.map(glider => ({glider,
-    view: FriendTraining.viewObservation(glider,state,FriendTraining.config,view?.headYawDeg ?? 0)}))
+    view: FriendTraining.viewObservation(glider,state,viewConfig,view?.headYawDeg ?? 0)}))
     .sort((a,b)=>b.view.distance-a.view.distance);
   for (const entry of pilotViews) {
     const view=entry.view;

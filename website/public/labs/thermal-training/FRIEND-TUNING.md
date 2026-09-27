@@ -15,13 +15,15 @@ colored turn guidance, and NPC steering. Overrides are:
 | Thermal wander speed | 0–2 mph over 10 seconds (2x displacement for a shared seed) |
 | Strength range | ±50% of initial net core climb (3–9 m/s at core) |
 | Strength change limit | 4 percentage points/second |
-| Wind | 6 mph, seeded random direction |
+| Wind | 6 mph, fresh random direction on each step start/retry |
 | Arrival trigger | 200 m of user gain, once per attempt |
 | Clearance in both steps | At least 20 m Euclidean 3D distance from every NPC, including approaching traffic |
 
 Pilots receive full wind advection. The thermal adds wind drift using the Wind
 stage's `thermalWindDriftRatio` (6/7 at the current baseline), on top of its own
-wandering. Direction is reproducible for a given scenario seed. The NPC's guard
+wandering. Wind direction is independent of the scenario seed and is also
+rerolled for each start/retry of either Wind-stage step. Pausing/resuming does
+not reroll it. The NPC's guard
 prediction includes both its wind advection and the thermal's total velocity.
 
 The newcomer approaches from a seeded random bearing, initially 65 m outside an
@@ -85,12 +87,19 @@ pilot colors are preserved. NPC turn forecasts are hidden. The player's colored
 leading turn arc remains visible. Forecast helpers remain available for debugging.
 
 Both pilots begin at 1,000 m MSL, opposite each other on a 28.65 m radius, flying
-10 m/s and turning left at 20 degrees/s (18 seconds per orbit, about 19.6 degrees
+10 m/s and turning at 20 degrees/s (18 seconds per orbit, about 19.6 degrees
 bank). The thermal is 140 m **in diameter**. Its translation is independent of
 airmass wind: the wind instrument correctly remains at 0 mph in this lesson.
 
 The weather uses the scenario seed, advances only on fixed simulation ticks,
-and stops when paused. Restarting the same seed repeats the same weather.
+and stops when paused. Restarting the same seed repeats thermal wander and
+strength variation, but a windy step independently chooses a new wind direction.
+The friends stage chooses left or right with equal probability when entered.
+Starting/restarting Thermal Entry chooses again. Steps 2 and 3, their retries,
+and continuation between them retain that choice. Refreshing the page or
+entering the stage directly at Step 2/3 without an active stage run chooses
+again. The choice is page-session state, not stored persistently. Entry geometry,
+both NPC controllers, initial flight headings and the side-view shoulder use it.
 There is no additional altitude-dependent bend, diameter variation, texture,
 or legacy random drift in this lesson. Strength variation means a percentage
 of the initial **net core climb**, not a compounding percentage of its last value.
@@ -177,7 +186,7 @@ traced white/black/lime texture, pod harness and three-tier suspension. Observer
 position relative to the friend's heading determines yaw and elevation; airspeed
 and turn rate determine bank. Directly opposite, same-altitude pilots see the
 wing nearly side-on; other angles reveal more of its span. The view faces the user's
-initial inside wingtip (heading minus 90 degrees for this left-turn lesson).
+initial inside wingtip (heading minus 90 degrees for left turns, plus 90 for right).
 The viewing shoulder stays fixed even when steering reverses; it does not flip
 180 degrees at zero turn rate. A bounded head turn follows the friend using
 `headYaw = 45 * sin(offWingtipBearing)`, continuous through the unseen rear wrap.
@@ -269,7 +278,7 @@ All new defaults are in `friend-training.js`, `FriendTraining.config`.
 |---|---:|---|
 | `airspeedMps` | 10 m/s | Airspeed of both pilots in this lesson |
 | `idealTurnDps` | 20 degrees/s | Nominal turn-rate magnitude |
-| `turnDirection` | -1 | Left (-1), right (+1) |
+| `turnDirection` | random per stage run | Left (-1), right (+1); config fallback is -1 |
 | `initialSeparationDeg` | 180 degrees | Initial azimuth separation |
 | `varioFilterS` | 0.6 s | NPC vario smoothing |
 | `trendFilterS` | 0.8 s | Smoothing of vario derivative |

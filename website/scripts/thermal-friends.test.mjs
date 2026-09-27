@@ -159,6 +159,7 @@ test('real lesson integration: reset, pause, both pilots update once, and other 
       center:thermalCenterAt(10,state.z,readParams()),windVector:windVector(readParams()),
       wander:{x:state.thermal.friendWeather.x,y:state.thermal.friendWeather.y}});
     globalThis.forceGain=(gain)=>{state.z=state.startAlt+gain;updateFriendTogetherScenario(readParams(),1/60);};
+    globalThis.setDirection=(direction)=>{tutorial.friendTurnDirection=direction;setupFriendTogetherScenario();};
   `,context);
   const initial = context.snapshot();
   near(initial.y, radius); near(initial.friend.y,-radius); near(initial.rate,-20);
@@ -191,6 +192,13 @@ test('real lesson integration: reset, pause, both pilots update once, and other 
   context.hardReset(); assert.equal(context.hardSnapshot().count,1);
   near(context.hardSnapshot().windDir,hard.windDir);
   context.reset(); near(context.hardSnapshot().wind,0);
+  for(const direction of [-1,1]) {
+    context.setDirection(direction);
+    const s=context.snapshot();
+    near(s.rate,direction*20);near(s.friend.turnRate,direction*20);
+    near(s.friend.heading,(180+direction*90+360)%360);
+    near(context.hardSnapshot().settings.turnDirection,direction);
+  }
 });
 
 test('harder weather doubles spatial wandering, strength range and rate; wind advects all pilots', () => {
@@ -212,7 +220,7 @@ test('harder weather doubles spatial wandering, strength range and rate; wind ad
 
 test('step 3 continues from the completed altitude, restarts at its baseline and has direct navigation', () => {
   const html=fs.readFileSync(new URL('../public/labs/thermal-training/index.html',import.meta.url),'utf8');
-  const calls=[],state={z:1500.1,startAlt:1000,t:115},tutorial={step:0,phase:'step-complete'};
+  const calls=[],state={z:1500.1,startAlt:1000,t:115,thermal:{windDir:0,slantDir:.1}},tutorial={step:0,phase:'step-complete'};
   const lesson={successType:'thermalFriendsTogether',harderConditions:true,windMph:6,goal:'Goal: climb'};
   const ui={wind:{},showThermal:{},duration:{},start:{}};
   const scope=vm.createContext({state,tutorial,ui,tutorialSteps:[{},lesson],
@@ -229,10 +237,11 @@ test('step 3 continues from the completed altitude, restarts at its baseline and
   assert.match(html,/roadmapLabel: "3\. Harder conditions"/);
 });
 
-test('newcomer approaches outside, holds for a gap, joins continuously and stays clear in steady traffic', () => {
-  const c=F.harderConfig;
+test('newcomer approaches outside, holds for a gap, joins continuously and stays clear in either turn direction', () => {
+ for(const direction of [-1,1]) {
+  const c={...F.harderConfig,turnDirection:direction};
   for(const seed of [1,42,12345,8743981]) {
-    const u={...user(),vario:4,windX:1,windY:2},f={...F.createFriend(u,4),windX:1,windY:2};
+    const u={...user(),heading:(direction*90+360)%360,turnRate:direction*20,vario:4,windX:1,windY:2},f={...F.createFriend(u,4,c),windX:1,windY:2};
     const p=F.createArrivingFriend(u,f,seed,c),same=F.createArrivingFriend(u,f,seed,c);
     near(p.x,same.x);near(p.y,same.y);assert.equal(p.phase,'approach');
     p.windX=1;p.windY=2;
@@ -249,6 +258,70 @@ test('newcomer approaches outside, holds for a gap, joins continuously and stays
     }
     assert.ok(held && merged,`Seed ${seed} did not hold then merge (${p.phase})`);
   }
+ }
+});
+
+test('stage direction persists across continuation/retries; entry restart, fresh or direct entry can reroll; each windy step rerolls wind', () => {
+  const html=fs.readFileSync(new URL('../public/labs/thermal-training/index.html',import.meta.url),'utf8');
+  const lessons=[{successType:'other'}, {successType:'thermalFriends'},
+    {successType:'thermalFriendsTogether'}, {successType:'thermalFriendsTogether',harderConditions:true,windMph:6},
+    {successType:'wind',windMph:10},{successType:'wind',windMph:10}].map(l=>({windMph:0,goal:'Goal',...l}));
+  let randomValue=.1,randomCalls=0;
+  const math=Object.create(Math);math.random=()=>{randomCalls++;return randomValue;};
+  const fresh=()=>({z:1000,startAlt:1000,t:0,thermal:{windDir:1,slantDir:1.2}});
+  const scope=vm.createContext({Math:math,state:fresh(),tutorial:{step:0,phase:'practice',friendTurnDirection:null},
+    tutorialSteps:lessons,ui:{wind:{value:0},showThermal:{},duration:{},start:{},seed:{value:42}},
+    resetTutorialOrbitProgress:()=>{},resetFriendThermalState:()=>{},applyThermalPreset:()=>{},
+    setupFriendThermalScenario:()=>{scope.state=fresh();},
+    setupFriendTogetherScenario:()=>{scope.state=fresh();},freshState:fresh,
+    updateOutputs:()=>{},setTutorialText:()=>{},tutorialStartPrompt:()=>''});
+  vm.runInContext(html.match(/function configureTutorialStep\([^]*?\n}/)[0],scope);
+  scope.configureTutorialStep(1);assert.equal(scope.tutorial.friendTurnDirection,-1);assert.equal(randomCalls,1);
+  randomValue=.9;
+  for(const step of [2,2,2]) {scope.configureTutorialStep(step);assert.equal(scope.tutorial.friendTurnDirection,-1);}
+  assert.equal(randomCalls,1);
+  scope.configureTutorialStep(3);near(scope.state.thermal.windDir,.9*Math.PI*2);assert.equal(randomCalls,2);
+  randomValue=.3;scope.configureTutorialStep(3);
+  assert.equal(scope.tutorial.friendTurnDirection,-1);near(scope.state.thermal.windDir,.3*Math.PI*2);
+  randomValue=.9;scope.configureTutorialStep(1);assert.equal(scope.tutorial.friendTurnDirection,1);
+  scope.configureTutorialStep(2);scope.configureTutorialStep(3);assert.equal(scope.tutorial.friendTurnDirection,1);
+  scope.configureTutorialStep(0);assert.equal(scope.tutorial.friendTurnDirection,null);
+  randomValue=.2;scope.configureTutorialStep(3);assert.equal(scope.tutorial.friendTurnDirection,-1);
+  // A refreshed page has no session direction; direct Step 2 starts independently.
+  scope.tutorial.friendTurnDirection=null;randomValue=.8;scope.configureTutorialStep(2);
+  assert.equal(scope.tutorial.friendTurnDirection,1);
+  for(const [step,random] of [[4,.15],[4,.75],[5,.4],[3,.6]]) {
+    randomValue=random;scope.configureTutorialStep(step);
+    near(scope.state.thermal.windDir,random*Math.PI*2);
+    near(scope.state.thermal.slantDir-scope.state.thermal.windDir,.2);
+  }
+});
+
+test('Thermal Entry mirrors approach, headings and NPC orbit spacing with the stage direction', () => {
+  const html=fs.readFileSync(new URL('../public/labs/thermal-training/index.html',import.meta.url),'utf8');
+  const functions=['setupFriendThermalScenario','updateFriendGliders'].map(name=>
+    html.match(new RegExp('function '+name+'\\([^]*?\\n}'))[0]).join('\n');
+  const flights=[];
+  for(const direction of [-1,1]) {
+    const tutorial={friendTurnDirection:direction,friendJoinedAt:null,friendSuccessfulOrbits:0};
+    const scope=vm.createContext({tutorial,ui:{seed:{value:42}},baseAirspeed:10,nominalTargetTurnRateDps:20,
+      friendInitialSeparationDeg:100,friendSeparationGrowthOrbits:3,friendSeparationPerOrbitDeg:10,friendSeparationCorrectionRateDps:2,
+      clamp:(n,a,b)=>Math.max(a,Math.min(b,n)),angleDeltaDeg:(a,b)=>(b-a+540)%360-180,
+      freshState:()=>({startAlt:1000,z:1000,t:0}),readParams:()=>({}),thermalCenterAt:()=>({x:0,y:0})});
+    vm.runInContext(functions,scope);scope.setupFriendThermalScenario();
+    near(scope.state.x,-direction*95);near(scope.state.y,radius);
+    for(let i=0;i<600;i++) {scope.state.t+=dt;scope.updateFriendGliders({},dt);}
+    for(const glider of tutorial.friendGliders) {
+      assert.equal(Math.sign(glider.turnRate),direction);
+      near((glider.heading-glider.angle+360)%360,(direction*90+360)%360);
+    }
+    flights.push(tutorial.friendGliders);
+  }
+  for(let i=0;i<2;i++) {near(flights[0][i].x,-flights[1][i].x);near(flights[0][i].y,flights[1][i].y);}
+  const side=html.match(/function drawFriendTogetherSideView\([^]*?\n}/)[0];
+  assert.ok(side.includes('state.thermal?.friendConfig || FriendTraining.config'));
+  assert.ok(side.includes('viewObservation(friend, state, viewConfig)'));
+  assert.ok(side.includes('Math.sign(viewConfig.turnDirection)'));
 });
 
 test('three-pilot goal drops phase/height tests but measures full 3D separation from either NPC', () => {
