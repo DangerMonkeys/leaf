@@ -142,6 +142,7 @@ void IMU::processMotion(const MotionUpdate& m) {
 
   accelTot_ = sqrt(m.ax * m.ax + m.ay * m.ay + m.az * m.az);
   validAccelTot_ = true;
+  gLoad_.addSample((float)accelTot_, m.t);
   lastDeviceAccelX_ = m.ax;
   lastDeviceAccelY_ = m.ay;
   lastDeviceAccelZ_ = m.az;
