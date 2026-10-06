@@ -66,13 +66,23 @@ namespace {
   constexpr float G_LOAD_AIRBORNE_MIN_SPEED_MPS = AUTO_START_MIN_SPEED * 0.44704f;
   constexpr int32_t G_LOAD_AIRBORNE_MIN_CLIMB_CMS = 50;
 
-  bool looksAirborne() {
-    if (gps.hasUsableFix() && gps.hasFreshGroundSpeed() &&
-        gps.speed.mps() > G_LOAD_AIRBORNE_MIN_SPEED_MPS) {
-      return true;
+  GLoadDiagnostics captureGLoadDiagnostics() {
+    GLoadDiagnostics d;
+    d.checkMs = millis();
+    d.speedValid = gps.hasUsableFix() && gps.hasFreshGroundSpeed();
+    if (d.speedValid) {
+      d.speedMps = gps.speed.mps();
+      d.fast = gps.speed.mps() > G_LOAD_AIRBORNE_MIN_SPEED_MPS;
     }
-    return baro.state() == Barometer::State::Ready && baro.climbRateFilteredValid() &&
-           abs(baro.climbRateFiltered()) > G_LOAD_AIRBORNE_MIN_CLIMB_CMS;
+    d.climbValid = baro.state() == Barometer::State::Ready && baro.climbRateFilteredValid();
+    if (d.climbValid) {
+      d.climbCms = baro.climbRateFiltered();
+      d.vertical = abs(d.climbCms) > G_LOAD_AIRBORNE_MIN_CLIMB_CMS;
+    }
+    d.rawValid = imu.accelValid();
+    if (d.rawValid) d.rawG = imu.getAccel();
+    d.rawSampleMs = imu.lastMotionTime();
+    return d;
   }
 }  // namespace
 
@@ -496,7 +506,11 @@ void log_checkMinMaxValues() {
   }
 
   // g-force records come from the filtered, in-flight-only tracker rather than the raw sample
-  imu.gLoad().updateAirborne(looksAirborne());
+  const GLoadDiagnostics gLoadDiagnostics = captureGLoadDiagnostics();
+  imu.gLoad().updateAirborne(gLoadDiagnostics.looksAirborne());
+  if (trackLogEnabledForFlight && flight == &igcFlight) {
+    igcFlight.logGLoadDiagnostics(gLoadDiagnostics);
+  }
   if (imu.gLoad().valid()) {
     logbook.accel_max = imu.gLoad().maxG();
     logbook.accel_min = imu.gLoad().minG();

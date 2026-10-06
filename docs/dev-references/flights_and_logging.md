@@ -162,3 +162,48 @@ Erase Flight    ➡
 ⇦Prev|Back⏎|Next⇨
 </pre>
 
+# G-load diagnostic IGC records
+
+The g-load experiment writes three Leaf manufacturer comment (`LXLF`) records per logging
+update (approximately once per second), immediately after the PR's airborne detector updates.
+These records use device milliseconds so detector checks can be replayed without GPS timestamp
+rounding. They continue during GPS outages once an IGC file is open, including ground and takeoff
+exclusion periods. GPS B records and the existing flight detection / filtering are unchanged.
+
+The file header includes `LXLFGLCFG V=1 SLEW=3.0 AVG=10 IGNORE=15000 BUCKET=30000 LAND=5`.
+The settings describe slew in g/s, averaging samples, launch exclusion and pending bucket duration
+in milliseconds, and consecutive ground checks to declare landing.
+
+Example diagnostic group:
+
+```text
+LXLFGL T=123450 S=3.580 C=-32 SV=1 CV=1 FS=1 VC=0 L=1
+LXLFGA T=123450 RT=123400 FT=123400 R=1.020 F=1.080 RV=1 FV=1
+LXLFGS T=123450 ON=1 A=1 G=0 I=0 P=1 B=120000 E=1
+```
+
+- Common `T`: detector-check time in milliseconds since boot (wraps with the device clock).
+- `GL`: detector inputs. `S` is ground speed in m/s, rounded to three decimals; `C` is the exact
+  filtered climb in cm/s. `SV` / `CV` indicate usable speed / climb inputs. `FS` is the actual
+  speed-above-8-mph result; `VC` is the actual absolute-climb-above-50-cm/s result. `L` is their
+  OR result, before landing debounce. Replay using these flags, not rounded `S`.
+- `GA`: `R` is the current `imu.getAccel()` magnitude in g; `F` is `gLoad().filtered()` in g.
+  `RT` / `FT` are their respective latest sample timestamps, allowing stale values to be identified.
+  `RV` is IMU acceleration validity; `FV` means the filter window has produced a value. `FV` does
+  not guarantee freshness: compare `T` and `FT` on hardware. Unavailable values are `NA`;
+  an acceleration too large for the fixed-width diagnostic field is `OVF`.
+- `GS`: state after the detector check. `ON` is tracker activity; `A` is debounced airborne state;
+  `G` is the consecutive ground-check count; `I` is remaining launch exclusion in milliseconds
+  on the IMU sample clock. `P` indicates a pending bucket; `B` is its start timestamp (0 without
+  a bucket); `E` indicates that committed extrema exist. `P` remains 0 until an eligible IMU
+  sample starts a bucket. Older committed extrema survive landing and relaunch within one log.
+
+These are once-per-second snapshots, so raw acceleration spikes between checks can still be
+missed. The records are diagnostic comments and require a reader that understands this format.
+
+The host regression test is `sim/tests/g_load_diagnostics.cpp` (compile with `-Isrc/vario`).
+For an end-to-end check, run the simulator with `sim/recordings/g-load-diagnostics.json`,
+`sim/scripts/g-load-diagnostics.txt`, `--accept-warning --setting AUTO_STOP=0 --setting TRACK_SAVE=1`,
+and fresh SD/state directories. Run `python sim/tests/check_g_load_igc.py <generated.igc>` afterward.
+It verifies complete 1 Hz groups, detector-state replay, landing/relaunch, and continued records
+through the script's GPS outage.

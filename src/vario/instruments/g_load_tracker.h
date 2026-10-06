@@ -25,6 +25,36 @@ class GLoadTracker {
   static constexpr uint32_t PENDING_BUCKET_MS = 30000;  // Two buckets held back: 30-60s
   static constexpr uint8_t GROUND_SECONDS_TO_LAND = 5;
 
+  struct DiagnosticState {
+    bool active;
+    bool airborne;
+    uint8_t groundSeconds;
+    uint32_t ignoreRemainingMs;
+    bool pending;
+    uint32_t bucketStartMs;
+    bool committed;
+    bool filteredReady;
+    uint32_t sampleMs;
+    float filteredG;
+  };
+
+  // A read-only snapshot; exclusion timing uses the IMU sample clock, like addSample().
+  DiagnosticState diagnosticState() const {
+    uint32_t remaining = 0;
+    if (active_ && airborne_) {
+      if (takeoffGuardArmed_) {
+        remaining = TAKEOFF_IGNORE_MS;
+      } else {
+        int32_t delta = (int32_t)(countFromMs_ - lastSampleMs_);
+        if (delta > 0) remaining = (uint32_t)delta;
+      }
+    }
+    return {active_,          airborne_,      groundSeconds_,
+            remaining,        bucketStarted_, bucketStarted_ ? bucketStartMs_ : 0,
+            committed_.valid, filteredReady_, lastSampleMs_,
+            filtered_};
+  }
+
   // Start a new flight: clears all extremes.  Nothing counts until airborne.
   void startFlight() {
     discardPending();
@@ -69,6 +99,7 @@ class GLoadTracker {
       slewed_ = 1.0f;
       averageCount_ = 0;
       averageIndex_ = 0;
+      filteredReady_ = false;
       dt = 0;
     }
     lastSampleMs_ = tMs;
@@ -88,6 +119,7 @@ class GLoadTracker {
     float sum = 0;
     for (float v : window_) sum += v;
     filtered_ = sum / AVERAGE_SAMPLES;
+    filteredReady_ = true;
 
     if (!active_ || !airborne_) return;
     if (takeoffGuardArmed_) {
@@ -160,6 +192,7 @@ class GLoadTracker {
   float window_[AVERAGE_SAMPLES] = {};
   uint8_t averageIndex_ = 0;
   uint8_t averageCount_ = 0;
+  bool filteredReady_ = false;
   float filtered_ = 1.0f;
 
   bool bucketStarted_ = false;

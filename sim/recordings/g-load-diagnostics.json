@@ -1,0 +1,11 @@
+{
+  "description": "G-load diagnostics: launch, slow level segment, relaunch and shallow glide.",
+  "start": { "lat": 47.5, "lon": 11.2, "altitudeM": 1200, "headingDeg": 90, "hour": 13 },
+  "wind": { "speedMps": 0, "fromDeg": 270 },
+  "legs": [
+    { "durationS": 30, "airspeedMps": 0.2, "climbMps": 0, "headingDeg": 90 },
+    { "durationS": 40, "airspeedMps": 10, "climbMps": -1, "headingDeg": 90 },
+    { "durationS": 12, "airspeedMps": 1, "climbMps": 0, "headingDeg": 90 },
+    { "durationS": 180, "airspeedMps": 10, "climbMps": -1, "headingDeg": 90 }
+  ]
+}
