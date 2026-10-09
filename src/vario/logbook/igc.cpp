@@ -224,7 +224,7 @@ bool Igc::startFlight() {
   logger.setOutput(file);
 
   // Log the Header
-  // A record to look like "AXLFLeaf1"
+  // A record to look like "AXLVLeaf1"
   logger.setManufacturerId(IGC_MANUFACTURER_CODE);
   logger.setLoggerId("Lea");
   logger.setIdExtension("f1");

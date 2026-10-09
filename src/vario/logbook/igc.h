@@ -5,7 +5,7 @@
 struct Waypoint;
 
 // X for non-registered, LF for Leaf
-#define IGC_MANUFACTURER_CODE "XLF"
+#define IGC_MANUFACTURER_CODE "XLV"
 
 class Igc : public Flight {
  public:
