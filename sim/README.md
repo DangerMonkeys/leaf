@@ -82,7 +82,20 @@ through the normal recording player or sent through the device's existing UDP in
 Storage is bounded to 600 trail points (five minutes) and 60,000 sensor lines (roughly twenty
 minutes). The flight model and UI are simulator-only; physical firmware memory use is unchanged.
 
-Regression checks: `make -C sim test-free-flight test-thermal-core` inside the usual container.
+Regression checks: `make -C sim test-free-flight test-thermal-core test-thermal-track` inside the
+usual container.
+
+Thermal Core shows a lift-weighted center after a complete turn with sufficient lift and spatial
+coverage. Its thin geographic north/south and east/west lines rotate with the map and are clipped
+inside its border. The estimate uses the latest lap's altitude-projected breadcrumbs, with angular
+weighting and gentle smoothing; it estimates the sampled lift, not an unseen thermal core. Reveal
+the live thermal to compare the estimate with the simulator's independent ground truth. Partial
+turns, weak lift, stale GPS samples and nearly straight paths suppress the lines.
+
+ThermalTrack shares Thermal Core's compact vario and climb field, with altitude and its
+selectable source above the climb value. The wind circle omits compass letters to leave room for
+the selected thermal's climb and distance. Steering arrows beside that distance use the same
+20/40/60-degree thresholds as waypoint navigation; they are hidden when no thermal is selected.
 
 Three formats, one playback path. Everything is normalised at load time into the bus-log line
 format the device itself records (`dispatch/message_injector.h`), so a synthetic flight and a

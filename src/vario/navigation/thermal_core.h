@@ -28,6 +28,10 @@ struct ThermalCoreEstimate {
   int8_t adviceQ7 = 0;
   uint8_t markerCount = 0;
   ThermalCoreMarker markers[THERMAL_CORE_MAX_MARKERS];
+  bool centerValid = false;
+  int16_t centerX = 0;
+  int16_t centerY = 0;
+  int16_t mapCourseDeciDeg = 0;
 };
 
 class ThermalCore {
@@ -45,6 +49,11 @@ class ThermalCore {
   uint32_t lastGuidanceSampleMs_ = 0;
   bool episodeClimbScaleValid_ = false;
   int16_t episodeMaxClimbCms_ = 0;
+  bool centerValid_ = false;
+  float centerEastM_ = 0;
+  float centerNorthM_ = 0;
+  float centerAltitudeM_ = 0;
+  uint32_t lastCenterSampleMs_ = 0;
 };
 
 extern ThermalCore thermalCore;

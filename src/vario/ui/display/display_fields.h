@@ -16,6 +16,7 @@ void display_speed(uint8_t x, uint8_t y, const uint8_t* font, bool units);
 void display_distance(uint8_t cursor_x, uint8_t cursor_y, double distance);
 void display_heading(uint8_t cursor_x, uint8_t cursor_y, bool degSymbol);
 void display_headingTurn(uint8_t cursor_x, uint8_t cursor_y);
+void display_turnIndicators(uint8_t leftX, uint8_t rightX, uint8_t baselineY, double turnDeg);
 
 void display_alt(uint8_t cursor_x, uint8_t cursor_y, const uint8_t* font, int32_t displayAlt);
 void display_altAboveLaunch(uint8_t x, uint8_t y);
@@ -61,7 +62,8 @@ void display_GPS_icon(uint8_t x, uint8_t y);
 void display_fanet_icon(const uint8_t& x, const uint8_t& y);
 
 void display_windSockArrow(int16_t x, int16_t y, int16_t radius);
-void display_windSockRing(int16_t x, int16_t y, int16_t radius, int16_t size, bool showPointer);
+void display_windSockRing(int16_t x, int16_t y, int16_t radius, int16_t size, bool showPointer,
+                          bool showCompass = true);
 void display_windSpeedCentered(uint8_t x, uint8_t y, const uint8_t* font);
 void displayWaypointDropletPointer(uint8_t centerX, uint8_t centerY, uint8_t pointRadius,
                                    float direction);

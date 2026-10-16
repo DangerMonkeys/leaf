@@ -13,9 +13,9 @@
 #include "ui/display/display.h"
 #include "ui/display/display_fields.h"
 #include "ui/display/fonts.h"
+#include "ui/display/thermal_page_fields.h"
 #include "ui/display/utils.h"
 #include "ui/settings/settings.h"
-#include "utils/string_utils.h"
 
 namespace {
   constexpr int16_t MAP_CX = 48;
@@ -24,14 +24,15 @@ namespace {
   constexpr uint8_t MAP_D_1500M = 74;
   constexpr uint8_t MAP_D_5000M = 96;
   constexpr uint8_t MAP_R_5000M = MAP_D_5000M / 2;
-  constexpr uint8_t VARIO_BAR_TOP = 16;
-  constexpr uint8_t VARIO_BAR_WIDTH = 17;
-  constexpr uint8_t VARIO_BAR_HALF_HEIGHT = 50;
-  constexpr uint8_t ALT_LABEL_X = VARIO_BAR_WIDTH + 2;
-  constexpr uint8_t ALT_X = 28;
-  constexpr uint8_t ALT_BASELINE_Y = 39;
-  constexpr uint8_t ALT_VALUE_BASELINE_Y = ALT_BASELINE_Y + 4;
-  constexpr uint8_t ALT_INFO_BASELINE_Y = ALT_VALUE_BASELINE_Y - 20;
+  constexpr uint8_t ALT_X = thermal_page::VARIO_BAR_WIDTH + 1;
+  constexpr uint8_t ALT_VALUE_BASELINE_Y = 24;
+  constexpr uint8_t ALT_INFO_BASELINE_Y = 34;
+  constexpr uint8_t WIND_X = 69;
+  constexpr uint8_t WIND_Y = 29;
+  constexpr uint8_t SELECTED_CLIMB_BASELINE_Y = 57;
+  constexpr uint8_t SELECTED_DISTANCE_BASELINE_Y = 73;
+  constexpr uint8_t DISTANCE_LEFT_ARROW_X = 39;
+  constexpr uint8_t DISTANCE_RIGHT_ARROW_X = 88;
 
   enum ThermalTrackPageItem : uint8_t {
     cursor_thermalTrackPage_none,
@@ -57,41 +58,50 @@ namespace {
       {2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2},
   };
 
-  void printSelectedClimb(const ThermalDisplayItem* selected) {
+  void printSelectedValue(const char* value, uint8_t baselineY) {
     u8g2.setFont(leaf_6x12);
-    u8g2.setCursor(27, 57);
+    const int16_t width = u8g2.getStrWidth(value);
+    const int16_t x = min<int16_t>(95 - width, WIND_X - (width + 1) / 2);
+    u8g2.drawStr(x, baselineY, value);
+  }
+
+  void printSelectedClimb(const ThermalDisplayItem* selected) {
+    char value[14];
+    const char unit = static_cast<char>(131 + settings.units_climb);
     if (selected == nullptr) {
-      u8g2.print(settings.units_climb ? "----fpm" : "--.-m/s");
-      return;
+      snprintf(value, sizeof(value), "%s%c", settings.units_climb ? "----" : "--.-", unit);
+    } else if (settings.units_climb) {
+      const int32_t fpm = static_cast<int32_t>(selected->avgClimbCms) * 197 / 1000 * 10;
+      snprintf(value, sizeof(value), "%ld%c", static_cast<long>(fpm), unit);
+    } else {
+      snprintf(value, sizeof(value), "%.1f%c", selected->avgClimbCms / 100.0f, unit);
     }
-    u8g2.print(formatClimbRate(selected->avgClimbCms, settings.units_climb, true));
+    printSelectedValue(value, SELECTED_CLIMB_BASELINE_Y);
   }
 
   void printSelectedDistance(const ThermalDisplayItem* selected) {
-    u8g2.setFont(leaf_6x12);
-    u8g2.setCursor(34, 72);
+    char value[14];
     if (selected == nullptr) {
-      u8g2.print(settings.units_distance ? "--.-mi" : "--.-km");
-      return;
-    }
-
-    if (settings.units_distance) {
+      snprintf(value, sizeof(value), "%s", settings.units_distance ? "--.-mi" : "--.-km");
+    } else if (settings.units_distance) {
       constexpr float FEET_PER_METER = 3.28084f;
       constexpr float FEET_PER_MILE = 5280.0f;
       const float distanceFeet = selected->distanceM * FEET_PER_METER;
       if (distanceFeet <= 1000.0f) {
-        u8g2.print(static_cast<uint16_t>(roundf(distanceFeet)));
-        u8g2.print("ft");
+        snprintf(value, sizeof(value), "%u%c", static_cast<unsigned>(roundf(distanceFeet)),
+                 static_cast<char>(128));
       } else {
-        u8g2.print(distanceFeet / FEET_PER_MILE, 1);
-        u8g2.print("mi");
+        snprintf(value, sizeof(value), "%.1fmi", distanceFeet / FEET_PER_MILE);
       }
     } else if (selected->distanceM < 1000) {
-      u8g2.print(selected->distanceM);
-      u8g2.print('m');
+      snprintf(value, sizeof(value), "%dm", selected->distanceM);
     } else {
-      u8g2.print(selected->distanceM / 1000.0f, 1);
-      u8g2.print("km");
+      snprintf(value, sizeof(value), "%.1fkm", selected->distanceM / 1000.0f);
+    }
+    printSelectedValue(value, SELECTED_DISTANCE_BASELINE_Y);
+    if (selected != nullptr) {
+      display_turnIndicators(DISTANCE_LEFT_ARROW_X, DISTANCE_RIGHT_ARROW_X,
+                             SELECTED_DISTANCE_BASELINE_Y, selected->turnDeg);
     }
   }
 
@@ -234,17 +244,15 @@ namespace {
 
   void drawAltitudeField() {
     const uint8_t altType = settings.disp_thmPageAltType == altType_MSL ? altType_MSL : altType_GPS;
-    u8g2.setFont(leaf_labels);
-    u8g2.setCursor(ALT_LABEL_X, ALT_INFO_BASELINE_Y);
-    u8g2.print(settings.units_alt ? "ft" : "m");
-    u8g2.print(' ');
+    display_alt_type(ALT_X, ALT_VALUE_BASELINE_Y, leaf_6x12, altType);
+    u8g2.setCursor(ALT_X + 3, ALT_INFO_BASELINE_Y);
     print_alt_label(altType);
-
-    display_alt_type(ALT_X, ALT_VALUE_BASELINE_Y, leaf_21h, altType);
+    u8g2.print(' ');
+    u8g2.print(settings.units_alt ? "ft" : "m");
 
     if (thermalTrackPageCursor == cursor_thermalTrackPage_alt) {
-      display_selectionBox(ALT_LABEL_X - 1, ALT_VALUE_BASELINE_Y - 23, 96 - (ALT_LABEL_X - 1), 25,
-                           6);
+      // Keep the source/units below the cursor, clear of its white internal border.
+      display_selectionBox(ALT_X, ALT_VALUE_BASELINE_Y - 13, 38, 15, 4);
     }
   }
 
@@ -298,15 +306,16 @@ void thermalTrackPage_draw() {
 
     const ThermalDisplayItem* selected = thermalTracker.selectedDisplayItem();
     const int32_t climbRate = baro.climbRateFilteredValid() ? baro.climbRateFiltered() : 0;
+    const int32_t displayClimbRate = baro.climbRateFilteredValid() ? baro.climbRateForDisplay() : 0;
 
-    display_varioBar(VARIO_BAR_TOP, VARIO_BAR_HALF_HEIGHT, VARIO_BAR_HALF_HEIGHT, VARIO_BAR_WIDTH,
-                     climbRate);
-    display_climbRatePointerTriangle(VARIO_BAR_WIDTH, VARIO_BAR_TOP + VARIO_BAR_HALF_HEIGHT, 7);
+    thermal_page::drawVario(climbRate);
     maskMapCircle();
     drawThermals();
     drawMapRingsAndLabels();
     drawUserTriangle();
     drawAltitudeField();
+    thermal_page::drawClimbRate(displayClimbRate, true);
+    display_windSockRing(WIND_X, WIND_Y, 12, 7, false, false);
     drawSelectedThermalReadout(selected);
     drawDistanceScaleLabels();
   } while (u8g2.nextPage());

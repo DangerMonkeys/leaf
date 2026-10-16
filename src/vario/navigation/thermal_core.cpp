@@ -2,6 +2,7 @@
 
 #include <math.h>
 #include "instruments/baro.h"
+#include "navigation/thermal_center.h"
 #include "ui/settings/settings.h"
 
 ThermalCore thermalCore;
@@ -217,6 +218,9 @@ void ThermalCore::reset() {
   lastGuidanceSampleMs_ = 0;
   episodeClimbScaleValid_ = false;
   episodeMaxClimbCms_ = 0;
+  centerValid_ = false;
+  centerEastM_ = centerNorthM_ = centerAltitudeM_ = 0;
+  lastCenterSampleMs_ = 0;
 }
 
 void ThermalCore::update() {
@@ -297,6 +301,32 @@ void ThermalCore::update() {
   const uint32_t nowMs = millis();
   const MapReference mapReference = extrapolatedMapReference(samples, sampleCount, nowMs);
   const float targetAltM = baro.altAdjusted() / 100.0f;
+  estimate_.mapCourseDeciDeg = static_cast<int16_t>(roundf(mapReference.courseDeg * 10));
+
+  const auto center = estimateThermalLiftCenter(samples, sampleCount, direction, targetAltM,
+                                                settings.vario_climbStart);
+  if (center.valid && nowMs - latest.capturedAtMs <= MAX_TURN_SAMPLE_INTERVAL_MS) {
+    if (!centerValid_) {
+      centerEastM_ = center.eastM;
+      centerNorthM_ = center.northM;
+    } else {
+      // Transport the smoothed estimate to today's altitude before blending new observations.
+      // This keeps smoothing from undoing the breadcrumbs' altitude-based projection.
+      centerEastM_ += center.slopeEast * (targetAltM - centerAltitudeM_);
+      centerNorthM_ += center.slopeNorth * (targetAltM - centerAltitudeM_);
+      if (latest.capturedAtMs != lastCenterSampleMs_) {
+        centerEastM_ += (center.eastM - centerEastM_) * 0.35f;
+        centerNorthM_ += (center.northM - centerNorthM_) * 0.35f;
+      }
+    }
+    centerAltitudeM_ = targetAltM;
+    lastCenterSampleMs_ = latest.capturedAtMs;
+    centerValid_ = estimate_.centerValid = true;
+    pointToScreen(centerEastM_, centerNorthM_, mapReference.xM, mapReference.yM,
+                  mapReference.courseDeg, aircraftX, estimate_.centerX, estimate_.centerY);
+  } else {
+    centerValid_ = false;
+  }
 
   for (uint8_t i = 0; i < sampleCount; ++i) {
     // Project lift to the pilot's current altitude along the slope captured at observation.

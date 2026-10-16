@@ -15,6 +15,7 @@
 #include "ui/display/display.h"
 #include "ui/display/display_fields.h"
 #include "ui/display/fonts.h"
+#include "ui/display/thermal_page_fields.h"
 #include "ui/display/utils.h"
 #include "ui/input/buttons.h"
 #include "ui/settings/settings.h"
@@ -34,19 +35,13 @@ namespace {
   constexpr int16_t CENTER_AIRCRAFT_X = 48;
   constexpr int16_t TARGET_RADIUS = 38;
   constexpr int16_t TARGET_SHIFT_MAX = 19;
-  constexpr uint8_t VARIO_BAR_TOP = 11;
-  constexpr uint8_t VARIO_BAR_WIDTH = 17;
-  constexpr uint8_t VARIO_BAR_HALF_HEIGHT = 30;
+  constexpr uint8_t VARIO_BAR_WIDTH = thermal_page::VARIO_BAR_WIDTH;
   constexpr uint8_t ALT_X = 37;
   constexpr uint8_t ALT_VALUE_BASELINE_Y = 69;
   constexpr uint8_t ALT_TYPE_X = VARIO_BAR_WIDTH + 1;
   constexpr uint8_t ALT_UNITS_X = ALT_TYPE_X + 8;
-  constexpr uint8_t ALT_TYPE_BASELINE_Y = ALT_VALUE_BASELINE_Y - 1;
+  constexpr uint8_t ALT_TYPE_BASELINE_Y = ALT_VALUE_BASELINE_Y + 2;
   constexpr uint8_t ALT_UNITS_BASELINE_Y = ALT_TYPE_BASELINE_Y - 8;
-  constexpr uint8_t CLIMB_BOX_X = VARIO_BAR_WIDTH;
-  constexpr uint8_t CLIMB_UNITS_CENTER_X = CLIMB_BOX_X + 9;
-  constexpr uint8_t CLIMB_BOX_HEIGHT = 14;
-  constexpr uint8_t CLIMB_BOX_Y = VARIO_BAR_TOP + VARIO_BAR_HALF_HEIGHT - CLIMB_BOX_HEIGHT / 2;
   constexpr uint8_t AIRCRAFT_GLYPH_WIDTH = 19;
   constexpr uint8_t AIRCRAFT_GLYPH_HEIGHT = 19;
   constexpr uint32_t AIRCRAFT_BLACK[AIRCRAFT_GLYPH_HEIGHT] = {
@@ -223,6 +218,40 @@ namespace {
     }
   }
 
+  bool clipCenterAxis(float origin, float direction, float low, float high, float& first,
+                      float& last) {
+    if (fabsf(direction) < 0.00001f) return origin >= low && origin <= high;
+    const float a = (low - origin) / direction;
+    const float b = (high - origin) / direction;
+    first = max(first, min(a, b));
+    last = min(last, max(a, b));
+    return first <= last;
+  }
+
+  void drawCenterAxis(int16_t cx, int16_t cy, float dx, float dy) {
+    float first = -100000;
+    float last = 100000;
+    if (!clipCenterAxis(cx, dx, MAP_LEFT + 1, MAP_LEFT + MAP_WIDTH - 2, first, last) ||
+        !clipCenterAxis(cy, dy, MAP_TOP + 1, MAP_TOP + MAP_HEIGHT - 2, first, last)) {
+      return;
+    }
+    // Clip before passing coordinates to u8g2's unsigned pixel API. The clip window below is
+    // an additional guard, including for rounding at the map's edges.
+    u8g2.drawLine(roundf(cx + first * dx), roundf(cy + first * dy), roundf(cx + last * dx),
+                  roundf(cy + last * dy));
+  }
+
+  void drawLiftCenter(const ThermalCoreEstimate& estimate) {
+    if (!estimate.centerValid) return;
+    const float heading = estimate.mapCourseDeciDeg * 0.1f * DEG_TO_RAD;
+    u8g2.setClipWindow(MAP_LEFT + 1, MAP_TOP + 1, MAP_LEFT + MAP_WIDTH - 1,
+                       MAP_TOP + MAP_HEIGHT - 1);
+    // Geographic north and east in the same rotating reference frame as the breadcrumbs.
+    drawCenterAxis(estimate.centerX, estimate.centerY, -sinf(heading), -cosf(heading));
+    drawCenterAxis(estimate.centerX, estimate.centerY, cosf(heading), -sinf(heading));
+    u8g2.setMaxClipWindow();
+  }
+
   void drawAircraft(int16_t x, int16_t y) {
     const int16_t x0 = x - AIRCRAFT_GLYPH_WIDTH / 2;
     const int16_t y0 = y - AIRCRAFT_GLYPH_HEIGHT / 2;
@@ -301,63 +330,6 @@ namespace {
     }
   }
 
-  void drawClimbRateField(int32_t climbRate) {
-    u8g2.setFont(leaf_5h);
-    const char* units = settings.units_climb ? "fpm" : "m/s";
-    u8g2.drawStr(CLIMB_UNITS_CENTER_X - (u8g2.getStrWidth(units) + 1) / 2, CLIMB_BOX_Y - 2, units);
-
-    const uint8_t zeroY = VARIO_BAR_TOP + VARIO_BAR_HALF_HEIGHT;
-    u8g2.setFont(leaf_5x8);
-    u8g2.setFontMode(1);
-    u8g2.setDrawColor(0);
-    u8g2.drawGlyph(CLIMB_BOX_X - 6, zeroY + 5, climbRate < 0 ? '-' : '+');
-    u8g2.setFontMode(0);
-    u8g2.setDrawColor(1);
-
-    // The triangle shows the sign; the box shows the magnitude.
-    climbRate = abs(climbRate);
-    char value[12];
-    const uint8_t* digitFonts[12];
-    if (settings.units_climb) {
-      // Keep the same ten-fpm resolution as the other flight pages.
-      const int32_t fpm = min<int32_t>(climbRate * 197 / 1000 * 10, 9999);
-      snprintf(value, sizeof(value), fpm < 1000 ? "%03ld" : "%04ld", static_cast<long>(fpm));
-      digitFonts[0] = leaf_6x12;
-      digitFonts[1] = leaf_6x10;
-      digitFonts[2] = fpm < 1000 ? leaf_6x10 : leaf_5x8;
-      digitFonts[3] = leaf_5x8;
-    } else {
-      const int32_t tenths = min<int32_t>((climbRate + 5) / 10, 999);
-      snprintf(value, sizeof(value), "%ld.%ld", static_cast<long>(tenths / 10),
-               static_cast<long>(tenths % 10));
-      for (uint8_t i = 0; value[i]; ++i) digitFonts[i] = leaf_6x12;
-    }
-
-    int16_t width = 0;
-    uint8_t digitWidths[12];
-    for (uint8_t i = 0; value[i]; ++i) {
-      u8g2.setFont(digitFonts[i]);
-      digitWidths[i] = u8g2_GetGlyphWidth(u8g2.getU8g2(), value[i]);
-      if (value[i + 1]) {
-        width += digitWidths[i];
-      } else {
-        // Exclude the final glyph's advance spacing for an exact one-pixel right margin.
-        const u8g2_t* fontState = u8g2.getU8g2();
-        width += fontState->glyph_x_offset + fontState->font_decode.glyph_width;
-      }
-    }
-    u8g2.drawBox(CLIMB_BOX_X, CLIMB_BOX_Y, width + 1, CLIMB_BOX_HEIGHT);
-    int16_t x = CLIMB_BOX_X;
-    u8g2.setDrawColor(0);
-    for (uint8_t i = 0; value[i]; ++i) {
-      u8g2.setFont(digitFonts[i]);
-      const uint8_t height = digitFonts[i] == leaf_6x12 ? 12 : digitFonts[i] == leaf_6x10 ? 10 : 8;
-      u8g2.drawGlyph(x, CLIMB_BOX_Y + height + 1, value[i]);
-      x += digitWidths[i];
-    }
-    u8g2.setDrawColor(1);
-  }
-
   void drawGuidanceLine(int16_t cx, int16_t cy) {
     u8g2.setDrawColor(0);
     u8g2.drawBox(cx - 2, cy - 8, 6, 16);
@@ -426,13 +398,12 @@ namespace {
     const bool hasTurn = turnSide != 0;
     const bool hasGuidance = estimate.valid;
 
-    display_varioBar(VARIO_BAR_TOP, VARIO_BAR_HALF_HEIGHT, VARIO_BAR_HALF_HEIGHT, VARIO_BAR_WIDTH,
-                     climbRate);
-    display_climbRatePointerTriangle(VARIO_BAR_WIDTH, VARIO_BAR_TOP + VARIO_BAR_HALF_HEIGHT, 8);
+    thermal_page::drawVario(climbRate);
     display_windSockRing(61, 29, 12, 7, true);
     drawAltitudeField();
-    drawClimbRateField(displayClimbRate);
+    thermal_page::drawClimbRate(displayClimbRate);
 
+    drawLiftCenter(estimate);
     for (uint8_t i = 0; i < estimate.markerCount; ++i) {
       drawMarker(estimate.markers[i]);
     }
