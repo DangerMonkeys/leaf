@@ -6,6 +6,7 @@
 
 #include "hardware/buttons.h"
 #include "instruments/baro.h"
+#include "instruments/gps.h"
 #include "logging/log.h"
 #include "navigation/thermal_core.h"
 #include "power.h"
@@ -20,27 +21,32 @@
 
 namespace {
   constexpr int16_t MAP_LEFT = 0;
-  constexpr int16_t MAP_TOP = 76;
-  constexpr int16_t MAP_SIZE = 96;
-  constexpr int16_t MAP_CENTER_Y = MAP_TOP + MAP_SIZE / 2;
-  constexpr int16_t GUIDANCE_CENTER_X = MAP_LEFT + MAP_SIZE / 2;
-  constexpr int16_t GUIDANCE_CENTER_Y = MAP_TOP;
+  constexpr int16_t MAP_TOP = 71;
+  constexpr int16_t MAP_WIDTH = 96;
+  constexpr int16_t MAP_HEIGHT = 104;
+  // Expanding the top edge must not shift the aircraft or breadcrumb projection.
+  constexpr int16_t MAP_CENTER_Y = 124;
+  constexpr int16_t GUIDANCE_CENTER_X = MAP_LEFT + MAP_WIDTH / 2;
+  constexpr int16_t GUIDANCE_CENTER_Y = MAP_TOP + 11;
   constexpr int16_t AIRCRAFT_Y = MAP_CENTER_Y - 9;
   constexpr int16_t LEFT_AIRCRAFT_X = 20;
   constexpr int16_t RIGHT_AIRCRAFT_X = 76;
   constexpr int16_t CENTER_AIRCRAFT_X = 48;
   constexpr int16_t TARGET_RADIUS = 38;
   constexpr int16_t TARGET_SHIFT_MAX = 19;
-  constexpr uint8_t VARIO_BAR_TOP = 16;
+  constexpr uint8_t VARIO_BAR_TOP = 11;
   constexpr uint8_t VARIO_BAR_WIDTH = 17;
   constexpr uint8_t VARIO_BAR_HALF_HEIGHT = 30;
-  constexpr uint8_t ALT_LABEL_X = VARIO_BAR_WIDTH + 2;
-  constexpr uint8_t ALT_X = 28;
-  constexpr uint8_t ALT_BASELINE_Y = 39;
-  constexpr uint8_t ALT_VALUE_BASELINE_Y = ALT_BASELINE_Y + 4;
-  constexpr uint8_t ALT_INFO_BASELINE_Y = ALT_VALUE_BASELINE_Y - 20;
-  constexpr uint8_t CLIMB_X = 30;
-  constexpr uint8_t CLIMB_BASELINE_Y = 63;
+  constexpr uint8_t ALT_X = 37;
+  constexpr uint8_t ALT_VALUE_BASELINE_Y = 69;
+  constexpr uint8_t ALT_TYPE_X = VARIO_BAR_WIDTH + 1;
+  constexpr uint8_t ALT_UNITS_X = ALT_TYPE_X + 8;
+  constexpr uint8_t ALT_TYPE_BASELINE_Y = ALT_VALUE_BASELINE_Y - 1;
+  constexpr uint8_t ALT_UNITS_BASELINE_Y = ALT_TYPE_BASELINE_Y - 8;
+  constexpr uint8_t CLIMB_BOX_X = VARIO_BAR_WIDTH;
+  constexpr uint8_t CLIMB_UNITS_CENTER_X = CLIMB_BOX_X + 9;
+  constexpr uint8_t CLIMB_BOX_HEIGHT = 14;
+  constexpr uint8_t CLIMB_BOX_Y = VARIO_BAR_TOP + VARIO_BAR_HALF_HEIGHT - CLIMB_BOX_HEIGHT / 2;
   constexpr uint8_t AIRCRAFT_GLYPH_WIDTH = 19;
   constexpr uint8_t AIRCRAFT_GLYPH_HEIGHT = 19;
   constexpr uint32_t AIRCRAFT_BLACK[AIRCRAFT_GLYPH_HEIGHT] = {
@@ -170,8 +176,8 @@ namespace {
 
   bool markerFitsMap(const ThermalCoreMarker& marker) {
     const uint8_t radius = markerRadius(marker);
-    return marker.x - radius > MAP_LEFT && marker.x + radius < MAP_LEFT + MAP_SIZE - 1 &&
-           marker.y - radius > MAP_TOP && marker.y + radius < MAP_TOP + MAP_SIZE - 1;
+    return marker.x - radius > MAP_LEFT && marker.x + radius < MAP_LEFT + MAP_WIDTH - 1 &&
+           marker.y - radius > MAP_TOP && marker.y + radius < MAP_TOP + MAP_HEIGHT - 1;
   }
 
   void drawMarker(const ThermalCoreMarker& marker) {
@@ -245,46 +251,90 @@ namespace {
   void drawAltitudeField() {
     const uint8_t altType = settings.disp_thmPageAltType == altType_MSL ? altType_MSL : altType_GPS;
     u8g2.setFont(leaf_labels);
-    u8g2.setCursor(ALT_LABEL_X, ALT_INFO_BASELINE_Y);
-    u8g2.print(settings.units_alt ? "ft" : "m");
-    u8g2.print(' ');
+    u8g2.setCursor(ALT_TYPE_X, ALT_TYPE_BASELINE_Y);
     print_alt_label(altType);
+    u8g2.setCursor(ALT_UNITS_X, ALT_UNITS_BASELINE_Y);
+    u8g2.print(settings.units_alt ? "ft" : "m");
 
-    display_alt_type(ALT_X, ALT_VALUE_BASELINE_Y, leaf_21h, altType);
+    const int32_t altitudeCm = altType == altType_MSL
+                                   ? baro.altAdjusted()
+                                   : static_cast<int32_t>(100 * gps.altitude.meters());
+    const int32_t altitude = settings.units_alt ? altitudeCm * 100 / 3048 : altitudeCm / 100;
+    if (altitude >= 10000 || (altitude <= -1000 && altitude >= -9999)) {
+      // Wide values need tighter spacing to fit the new position without clipping digits.
+      const int32_t magnitude = min<int32_t>(abs(altitude), 99999);
+      char value[12];
+      snprintf(value, sizeof(value), "%s%ld,%03ld", altitude < 0 ? "-" : "",
+               static_cast<long>(magnitude / 1000), static_cast<long>(magnitude % 1000));
+      u8g2.setFont(leaf_10x17);
+      uint8_t x = ALT_X;
+      for (uint8_t i = 0; value[i]; ++i) {
+        x += u8g2.drawGlyph(x, ALT_VALUE_BASELINE_Y, value[i]) - 1;
+      }
+    } else {
+      display_alt_type(ALT_X, ALT_VALUE_BASELINE_Y, leaf_10x17, altType);
+    }
 
     if (thermalCorePageCursor == cursor_thermalCorePage_alt) {
-      display_selectionBox(ALT_LABEL_X - 1, ALT_VALUE_BASELINE_Y - 23, 96 - (ALT_LABEL_X - 1), 25,
-                           6);
+      display_selectionBox(ALT_X - 1, ALT_VALUE_BASELINE_Y - 18, 96 - (ALT_X - 1), 19, 7);
     }
   }
 
   void drawClimbRateField(int32_t climbRate) {
-    u8g2.setFont(leaf_8x14);
-    u8g2.setCursor(CLIMB_X, CLIMB_BASELINE_Y);
-    if (climbRate >= 0) {
-      u8g2.print('+');
-    } else {
-      u8g2.print('-');
-      climbRate *= -1;
-    }
-
-    if (settings.units_climb) {
-      climbRate = climbRate * 197 / 1000 * 10;
-      if (climbRate < 1000) u8g2.print(" ");
-      if (climbRate < 100) u8g2.print(" ");
-      if (climbRate < 10) u8g2.print(" ");
-      u8g2.print(climbRate);
-    } else {
-      climbRate = (climbRate + 5) / 10;
-      const float climbInMS = static_cast<float>(climbRate) / 10;
-      if (climbInMS < 10) u8g2.print(" ");
-      u8g2.print(climbInMS, 1);
-    }
-
     u8g2.setFont(leaf_5h);
-    u8g2.print(" ");
-    u8g2.setFont(leaf_6x12);
-    u8g2.print(settings.units_climb ? "fpm" : "m/s");
+    const char* units = settings.units_climb ? "fpm" : "m/s";
+    u8g2.drawStr(CLIMB_UNITS_CENTER_X - (u8g2.getStrWidth(units) + 1) / 2, CLIMB_BOX_Y - 2, units);
+
+    const uint8_t zeroY = VARIO_BAR_TOP + VARIO_BAR_HALF_HEIGHT;
+    u8g2.setFont(leaf_5x8);
+    u8g2.setFontMode(1);
+    u8g2.setDrawColor(0);
+    u8g2.drawGlyph(CLIMB_BOX_X - 6, zeroY + 5, climbRate < 0 ? '-' : '+');
+    u8g2.setFontMode(0);
+    u8g2.setDrawColor(1);
+
+    // The triangle shows the sign; the box shows the magnitude.
+    climbRate = abs(climbRate);
+    char value[12];
+    const uint8_t* digitFonts[12];
+    if (settings.units_climb) {
+      // Keep the same ten-fpm resolution as the other flight pages.
+      const int32_t fpm = min<int32_t>(climbRate * 197 / 1000 * 10, 9999);
+      snprintf(value, sizeof(value), fpm < 1000 ? "%03ld" : "%04ld", static_cast<long>(fpm));
+      digitFonts[0] = leaf_6x12;
+      digitFonts[1] = leaf_6x10;
+      digitFonts[2] = fpm < 1000 ? leaf_6x10 : leaf_5x8;
+      digitFonts[3] = leaf_5x8;
+    } else {
+      const int32_t tenths = min<int32_t>((climbRate + 5) / 10, 999);
+      snprintf(value, sizeof(value), "%ld.%ld", static_cast<long>(tenths / 10),
+               static_cast<long>(tenths % 10));
+      for (uint8_t i = 0; value[i]; ++i) digitFonts[i] = leaf_6x12;
+    }
+
+    int16_t width = 0;
+    uint8_t digitWidths[12];
+    for (uint8_t i = 0; value[i]; ++i) {
+      u8g2.setFont(digitFonts[i]);
+      digitWidths[i] = u8g2_GetGlyphWidth(u8g2.getU8g2(), value[i]);
+      if (value[i + 1]) {
+        width += digitWidths[i];
+      } else {
+        // Exclude the final glyph's advance spacing for an exact one-pixel right margin.
+        const u8g2_t* fontState = u8g2.getU8g2();
+        width += fontState->glyph_x_offset + fontState->font_decode.glyph_width;
+      }
+    }
+    u8g2.drawBox(CLIMB_BOX_X, CLIMB_BOX_Y, width + 1, CLIMB_BOX_HEIGHT);
+    int16_t x = CLIMB_BOX_X;
+    u8g2.setDrawColor(0);
+    for (uint8_t i = 0; value[i]; ++i) {
+      u8g2.setFont(digitFonts[i]);
+      const uint8_t height = digitFonts[i] == leaf_6x12 ? 12 : digitFonts[i] == leaf_6x10 ? 10 : 8;
+      u8g2.drawGlyph(x, CLIMB_BOX_Y + height + 1, value[i]);
+      x += digitWidths[i];
+    }
+    u8g2.setDrawColor(1);
   }
 
   void drawGuidanceLine(int16_t cx, int16_t cy) {
@@ -357,7 +407,8 @@ namespace {
 
     display_varioBar(VARIO_BAR_TOP, VARIO_BAR_HALF_HEIGHT, VARIO_BAR_HALF_HEIGHT, VARIO_BAR_WIDTH,
                      climbRate);
-    display_climbRatePointerTriangle(VARIO_BAR_WIDTH, VARIO_BAR_TOP + VARIO_BAR_HALF_HEIGHT, 7);
+    display_climbRatePointerTriangle(VARIO_BAR_WIDTH, VARIO_BAR_TOP + VARIO_BAR_HALF_HEIGHT, 8);
+    display_windSockRing(61, 29, 12, 7, true);
     drawAltitudeField();
     drawClimbRateField(displayClimbRate);
 
@@ -368,7 +419,7 @@ namespace {
     const int16_t neutralTargetCx =
         hasTurn ? aircraftX + turnSide * TARGET_RADIUS : CENTER_AIRCRAFT_X;
     drawAircraft(aircraftX, AIRCRAFT_Y);
-    u8g2.drawFrame(MAP_LEFT, MAP_TOP, MAP_SIZE, MAP_SIZE);
+    u8g2.drawFrame(MAP_LEFT, MAP_TOP, MAP_WIDTH, MAP_HEIGHT);
 
     if (hasTurn) drawTargetScale(GUIDANCE_CENTER_X, GUIDANCE_CENTER_Y);
     if (hasGuidance) {

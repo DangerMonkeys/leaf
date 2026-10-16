@@ -26,8 +26,8 @@ namespace {
   constexpr int16_t RIGHT_AIRCRAFT_X = 76;
   constexpr int16_t CENTER_AIRCRAFT_X = 48;
   constexpr int16_t SCREEN_W = 96;
-  constexpr int16_t MAP_TOP = 76;
-  constexpr int16_t MAP_SIZE = 96;
+  constexpr int16_t MAP_TOP = 71;
+  constexpr int16_t MAP_HEIGHT = 104;
   constexpr uint32_t MAX_MAP_EXTRAPOLATION_MS = 1000;
   constexpr uint32_t MIN_TURN_SAMPLE_INTERVAL_MS = 250;
   constexpr uint32_t MAX_TURN_SAMPLE_INTERVAL_MS = 2000;
@@ -316,7 +316,7 @@ void ThermalCore::update() {
     pointToScreen(breadcrumbXM, breadcrumbYM, mapReference.xM, mapReference.yM,
                   mapReference.courseDeg, aircraftX, x, y);
     ThermalCoreMarker& marker = estimate_.markers[i];
-    marker.visible = x >= 0 && x < SCREEN_W && y >= MAP_TOP && y < MAP_TOP + MAP_SIZE;
+    marker.visible = x >= 0 && x < SCREEN_W && y >= MAP_TOP && y < MAP_TOP + MAP_HEIGHT;
     marker.x = x;
     marker.y = y;
     marker.glyph = glyphForClimb(samples[i].climbCms, breadcrumbMaxClimbCms);

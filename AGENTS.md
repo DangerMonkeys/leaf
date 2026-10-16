@@ -37,6 +37,21 @@
 
 ## Device emulator (`sim/`)
 
+- On Windows, check `docker info` before launching the emulator. If Docker Desktop needs to be
+  started from the Codex desktop app, launch it through Windows Explorer:
+  `Start-Process -FilePath 'C:\Windows\explorer.exe' -ArgumentList '"C:\Program Files\Docker\Docker\Docker Desktop.exe"' -WindowStyle Hidden`
+  Then wait for `docker info` to succeed before building/running. Direct agent-shell launches
+  (`docker desktop start` or `Start-Process` on Docker Desktop.exe itself) failed locally with
+  `sailor-ingest.sock: The file cannot be accessed by the system`; the Explorer launch recovered
+  successfully on 2026-10-15. This is consistent with reported Windows app-context/AppData
+  virtualization issues, rather than evidence that Docker's saved data is damaged.
+- If that socket error has already left Docker in its failed-startup dialog, quit the failed
+  Docker instance before relaunching through Explorer. If it cannot quit normally, verify the
+  engine is unavailable and stop only the failed `Docker Desktop`, `com.docker.backend`, and
+  `docker-desktop` processes. Do not interrupt a healthy engine or unrelated containers.
+  Do not delete/rename socket directories or factory-reset Docker for this error; neither was
+  needed for the verified recovery. If the tool sandbox denies Docker named-pipe access, use
+  the normal tool escalation flow; that permission error is separate from the startup failure.
 - `sim/` builds the real firmware for the host and runs it against a virtual ESP32 board: display,
   buttons, SD card, settings, and sensor data played from a recording. See `sim/README.md`.
 - Behaviour changes that touch the display, menus, instruments or navigation can be checked without

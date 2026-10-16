@@ -51,10 +51,20 @@
   }
   canvas#lcd {
     display: block;
+    margin: 0 auto;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
     border-radius: 3px;
+    cursor: crosshair;
   }
+  .lcd-options {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    margin-top: 10px; white-space: nowrap;
+  }
+  .lcd-options button.action { padding: 2px 6px; min-width: 26px; }
+  .lcd-options button:disabled { opacity: .35; cursor: default; }
+  .lcd-options output { min-width: 3ch; text-align: center; font: 12px var(--mono); }
+  .lcd-options #lcdCoordinates { min-width: 11ch; text-align: left; color: var(--muted); }
 
   .dpad { display: grid; grid-template-columns: repeat(3, 54px); grid-template-rows: repeat(3, 44px); gap: 6px; }
   .dpad button {
@@ -107,7 +117,17 @@
 
 <main>
   <div class="device">
-    <div class="shell"><canvas id="lcd" width="288" height="576"></canvas></div>
+    <div class="shell">
+      <canvas id="lcd" width="288" height="576"></canvas>
+      <div class="lcd-options" role="group" aria-label="LCD display options">
+        <label class="check"><input type="checkbox" id="showPixels"> Show pixels</label>
+        <button class="action" id="lcdZoomOut" type="button" aria-label="Zoom LCD out">−</button>
+        <output id="lcdZoom" aria-live="polite">3×</output>
+        <button class="action" id="lcdZoomIn" type="button" aria-label="Zoom LCD in">+</button>
+        <output id="lcdCoordinates" aria-label="LCD pixel coordinates"
+                title="Pixel coordinates start at x:0 y:0 in the top-left corner">x:— y:—</output>
+      </div>
+    </div>
 
     <div class="dpad">
       <div class="spacer"></div>
@@ -218,7 +238,14 @@
   const canvas = document.getElementById('lcd');
   const context = canvas.getContext('2d');
   const LCD_ON = '#21252a', LCD_OFF = '#c7ccc1';
-  const preferredCssScale = 3;
+  const showPixels = document.getElementById('showPixels');
+  const zoomOut = document.getElementById('lcdZoomOut');
+  const zoomIn = document.getElementById('lcdZoomIn');
+  const coordinates = document.getElementById('lcdCoordinates');
+  const MIN_LCD_ZOOM = 1, MAX_LCD_ZOOM = 12;
+  let lcdZoom = Math.max(MIN_LCD_ZOOM, Math.min(MAX_LCD_ZOOM,
+    Math.round(3 * (window.devicePixelRatio || 1))));
+  let lastFrame = null;
   let lcdPhysicalScale = 0;
   let lcdDeviceScale = 0;
 
@@ -227,7 +254,7 @@
     // becomes fractional on displays using 125%, 150%, or browser zoom, which makes nominally
     // identical one-pixel lines alternate in thickness.
     const deviceScale = window.devicePixelRatio || 1;
-    const physicalScale = Math.max(1, Math.round(preferredCssScale * deviceScale));
+    const physicalScale = lcdZoom;
     const cssScale = physicalScale / deviceScale;
     if (lcdPhysicalScale === physicalScale && lcdDeviceScale === deviceScale &&
         canvas.width === frame.width * physicalScale) return;
@@ -239,9 +266,13 @@
     canvas.style.width = `${frame.width * cssScale}px`;
     canvas.style.height = `${frame.height * cssScale}px`;
     context.imageSmoothingEnabled = false;
+    document.getElementById('lcdZoom').textContent = `${lcdZoom}×`;
+    zoomOut.disabled = lcdZoom === MIN_LCD_ZOOM;
+    zoomIn.disabled = lcdZoom === MAX_LCD_ZOOM;
   }
 
   function drawFrame(frame) {
+    lastFrame = frame;
     const bytes = atob(frame.pixels);
     configureLcdScale(frame);
     context.fillStyle = LCD_OFF;
@@ -255,7 +286,37 @@
                                   lcdPhysicalScale, lcdPhysicalScale);
       }
     }
+    // One physical-pixel line per LCD boundary; at 1× there is no room for an overlay.
+    if (showPixels.checked && lcdPhysicalScale > 1) {
+      context.fillStyle = 'rgba(105, 120, 135, .28)';
+      for (let x = 1; x < frame.width; x++)
+        context.fillRect(x * lcdPhysicalScale, 0, 1, canvas.height);
+      for (let y = 1; y < frame.height; y++)
+        context.fillRect(0, y * lcdPhysicalScale, canvas.width, 1);
+    }
   }
+
+  const redrawLcd = () => { if (lastFrame) drawFrame(lastFrame); };
+  showPixels.addEventListener('change', redrawLcd);
+  zoomOut.addEventListener('click', () => {
+    lcdZoom = Math.max(MIN_LCD_ZOOM, lcdZoom - 1);
+    redrawLcd();
+  });
+  zoomIn.addEventListener('click', () => {
+    lcdZoom = Math.min(MAX_LCD_ZOOM, lcdZoom + 1);
+    redrawLcd();
+  });
+  addEventListener('resize', redrawLcd);
+  canvas.addEventListener('pointermove', event => {
+    if (!lastFrame) return;
+    const bounds = canvas.getBoundingClientRect();
+    const x = Math.max(0, Math.min(lastFrame.width - 1,
+      Math.floor((event.clientX - bounds.left) * lastFrame.width / bounds.width)));
+    const y = Math.max(0, Math.min(lastFrame.height - 1,
+      Math.floor((event.clientY - bounds.top) * lastFrame.height / bounds.height)));
+    coordinates.textContent = `x:${x} y:${y}`;
+  });
+  canvas.addEventListener('pointerleave', () => { coordinates.textContent = 'x:— y:—'; });
 
   // ---------------------------------------------------------------- control API
   const post = (path, body) =>
@@ -278,7 +339,7 @@
   const down = new Set();
   addEventListener('keydown', event => {
     const button = KEYS[event.key];
-    if (!button || event.target.tagName === 'INPUT') return;
+    if (!button || event.target.tagName === 'INPUT' || event.target.closest('.lcd-options')) return;
     event.preventDefault();
     if (down.has(button)) return;
     down.add(button);
