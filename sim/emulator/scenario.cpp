@@ -161,6 +161,36 @@ namespace sim {
     return instance;
   }
 
+  std::vector<std::string> flightSensorLines(const FlightSensorState& state, bool gpsDue,
+                                             bool ambientDue) {
+    std::vector<std::string> lines;
+    char pressure[64];
+    snprintf(pressure, sizeof(pressure), "P%u,%d", state.atMs,
+             pressureFromAltitude(state.altitudeM));
+    lines.emplace_back(pressure);
+    lines.push_back(motionLine(state.atMs, state.verticalAccelG));
+    if (gpsDue) {
+      Fix fix;
+      fix.atMs = state.atMs;
+      const uint32_t second = state.atMs / 1000;
+      fix.hour = (12 + second / 3600) % 24;
+      fix.minute = (second / 60) % 60;
+      fix.second = second % 60;
+      fix.latitude = state.latitude;
+      fix.longitude = state.longitude;
+      fix.gnssAltitudeM = state.altitudeM;
+      fix.speedKnots = std::hypot(state.eastMps, state.northMps) * METRES_PER_SECOND_TO_KNOTS;
+      fix.courseDeg = std::atan2(state.eastMps, state.northMps) / RADIANS_PER_DEGREE;
+      if (fix.courseDeg < 0) fix.courseDeg += 360;
+      std::vector<std::string> sentences;
+      appendFixSentences(fix, sentences);
+      for (const auto& sentence : sentences)
+        lines.push_back("G" + std::to_string(state.atMs) + "," + sentence);
+    }
+    if (ambientDue) lines.push_back("A" + std::to_string(state.atMs) + ",24.0,40.0");
+    return lines;
+  }
+
   // ---------------------------------------------------------------- loading
 
   bool Scenario::load(const std::string& path, std::string& error) {

@@ -20,6 +20,15 @@
 
 namespace sim {
 
+  struct FlightSensorState {
+    uint32_t atMs = 0;
+    double latitude = 47.5, longitude = 11.2, altitudeM = 1000;
+    double eastMps = 0, northMps = 0, verticalAccelG = 0;
+  };
+  // The live world uses the recording player's exact GPS/pressure/motion encoding.
+  std::vector<std::string> flightSensorLines(const FlightSensorState& state, bool gpsDue,
+                                             bool ambientDue);
+
   class Scenario {
    public:
     // One fix of the loaded recording, pulled back out for the flight-path view.  Built from the

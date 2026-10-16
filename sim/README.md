@@ -56,6 +56,34 @@ FANET headers. The emulator uses the same library versions as the firmware.
 
 ## Recordings
 
+### Live free flight
+
+Choose **Free flight · live thermal** in the Scenario card and click **Load**. The training-style
+map appears beside the real firmware LCD. Left/right arrows adjust persistent turn rate,
+up/down arrows adjust airspeed, **C** straightens, and **Space** pauses/resumes the shared clock.
+Leaf's buttons remain clickable. Steering buttons also work with a mouse or touch. Held input
+is released on focus loss, and the server expires unrefreshed input after 750 ms.
+
+The thermal is a fixed-source, tilted plume by default. Show/hide its cross-section at the
+glider's current altitude without changing the flight physics. Controls adjust diameter, peak
+upward air speed, peakiness, wind speed/direction, tilt, variation with height, texture and glider
+sink. Higher peakiness produces a more concentrated core. The optional drifting-column mode is
+useful for comparing assumptions. This is a simplified flight model: sink is independent of
+airspeed/bank and the terrain is graphical, with no collision or terrain-lift model.
+
+The emulator owns flight physics and time, synthesizing pressure and motion at 20 Hz and GPS
+at 1 Hz through the recording player's sensor encoder. The firmware estimates its own wind and
+lift; no thermal truth or browser-side estimate is supplied to it. Restart flight clears recent
+thermal history and preserves current altitude to avoid a pressure jump. Pause and single-step
+stop/advance both the world and firmware together. Loading a recording exits live mode.
+
+**Save flight recording** downloads the recent sensor stream as a `.log` that can be replayed
+through the normal recording player or sent through the device's existing UDP injection path.
+Storage is bounded to 600 trail points (five minutes) and 60,000 sensor lines (roughly twenty
+minutes). The flight model and UI are simulator-only; physical firmware memory use is unchanged.
+
+Regression checks: `make -C sim test-free-flight test-thermal-core` inside the usual container.
+
 Three formats, one playback path. Everything is normalised at load time into the bus-log line
 format the device itself records (`dispatch/message_injector.h`), so a synthetic flight and a
 captured one are replayed by exactly the same code.
