@@ -1,8 +1,8 @@
 #include "navigation/thermal_core.h"
 
 #include <math.h>
+#include "instruments/baro.h"
 #include "ui/settings/settings.h"
-#include "wind_estimate/wind_estimate.h"
 
 ThermalCore thermalCore;
 
@@ -33,17 +33,11 @@ namespace {
   constexpr uint32_t MAX_TURN_SAMPLE_INTERVAL_MS = 2000;
   constexpr uint16_t MIN_TURN_EXTRAPOLATION_SPEED_CMS = 200;
   constexpr float MAX_TURN_RATE_DPS = 90.0f;
-  constexpr float MAX_USABLE_WIND_MPS = 20.0f;
 
   struct MapReference {
     float xM = 0;
     float yM = 0;
     float courseDeg = 0;
-  };
-
-  struct WindVector {
-    float eastMps = 0;
-    float northMps = 0;
   };
 
   int16_t wrap180(int16_t deg) {
@@ -54,7 +48,7 @@ namespace {
 
   int16_t headingDelta(int16_t newer, int16_t older) { return wrap180(newer - older); }
 
-  int16_t recentTurnTotalDeg(const ThermalTracker::CoreSample* samples, uint8_t count,
+  int16_t recentTurnTotalDeg(const ThermalTracker::CoreSamples& samples, uint8_t count,
                              uint8_t windowSamples) {
     const uint8_t first = count > windowSamples ? count - windowSamples : 0;
     int16_t total = 0;
@@ -64,7 +58,7 @@ namespace {
     return total;
   }
 
-  int16_t recentClimbAverageCms(const ThermalTracker::CoreSample* samples, uint8_t count,
+  int16_t recentClimbAverageCms(const ThermalTracker::CoreSamples& samples, uint8_t count,
                                 uint8_t windowSamples) {
     const uint8_t first = count > windowSamples ? count - windowSamples : 0;
     int32_t total = 0;
@@ -72,7 +66,7 @@ namespace {
     return count > first ? static_cast<int16_t>(total / (count - first)) : 0;
   }
 
-  bool recentCourseWindowIsStraight(const ThermalTracker::CoreSample* samples, uint8_t count,
+  bool recentCourseWindowIsStraight(const ThermalTracker::CoreSamples& samples, uint8_t count,
                                     uint32_t& windowSpanMs) {
     windowSpanMs = 0;
     if (count < 2) return false;
@@ -137,7 +131,7 @@ namespace {
     return ThermalCoreMarkerGlyph::Ring11;
   }
 
-  int16_t maxClimb(const ThermalTracker::CoreSample* samples, uint8_t count) {
+  int16_t maxClimb(const ThermalTracker::CoreSamples& samples, uint8_t count) {
     int16_t result = settings.vario_climbStart;
     for (uint8_t i = 0; i < count; ++i) result = max(result, samples[i].climbCms);
     return result;
@@ -156,20 +150,31 @@ namespace {
     const float dy = pointYM - referenceYM;
     const float right = cosf(heading) * dx - sinf(heading) * dy;
     const float ahead = sinf(heading) * dx + cosf(heading) * dy;
-    x = static_cast<int16_t>(roundf(aircraftX + right / METERS_PER_PX));
-    y = static_cast<int16_t>(roundf(MAP_CENTER_Y - ahead / METERS_PER_PX));
+    // Large altitude changes can project far beyond this small map. Saturate before narrowing
+    // so an off-screen projection cannot wrap back into the visible screen.
+    x = static_cast<int16_t>(constrain(roundf(aircraftX + right / METERS_PER_PX),
+                                       static_cast<float>(INT16_MIN),
+                                       static_cast<float>(INT16_MAX)));
+    y = static_cast<int16_t>(constrain(roundf(MAP_CENTER_Y - ahead / METERS_PER_PX),
+                                       static_cast<float>(INT16_MIN),
+                                       static_cast<float>(INT16_MAX)));
     if (rightOut != nullptr) *rightOut = right;
     if (aheadOut != nullptr) *aheadOut = ahead;
   }
 
   void sampleToScreen(const ThermalTracker::CoreSample& sample,
-                      const ThermalTracker::CoreSample& latest, int16_t aircraftX, int16_t& x,
-                      int16_t& y, float* rightOut = nullptr, float* aheadOut = nullptr) {
-    pointToScreen(sample.xM, sample.yM, latest.xM, latest.yM, latest.courseDeg, aircraftX, x, y,
+                      const ThermalTracker::CoreSample& latest, float targetAltM, int16_t aircraftX,
+                      int16_t& x, int16_t& y, float* rightOut = nullptr,
+                      float* aheadOut = nullptr) {
+    float projectedXM = 0;
+    float projectedYM = 0;
+    sample.wind.project(sample.xM, sample.yM, sample.altM, sample.climbCms, targetAltM, projectedXM,
+                        projectedYM);
+    pointToScreen(projectedXM, projectedYM, latest.xM, latest.yM, latest.courseDeg, aircraftX, x, y,
                   rightOut, aheadOut);
   }
 
-  float anticipatedTurnRate(const ThermalTracker::CoreSample* samples, uint8_t sampleCount) {
+  float anticipatedTurnRate(const ThermalTracker::CoreSamples& samples, uint8_t sampleCount) {
     if (sampleCount < 2) return 0;
 
     const ThermalTracker::CoreSample& latest = samples[sampleCount - 1];
@@ -185,7 +190,7 @@ namespace {
     return constrain(turnRate, -MAX_TURN_RATE_DPS, MAX_TURN_RATE_DPS);
   }
 
-  MapReference extrapolatedMapReference(const ThermalTracker::CoreSample* samples,
+  MapReference extrapolatedMapReference(const ThermalTracker::CoreSamples& samples,
                                         uint8_t sampleCount, uint32_t nowMs) {
     const ThermalTracker::CoreSample& latest = samples[sampleCount - 1];
     const uint32_t elapsedMs = nowMs - latest.capturedAtMs;
@@ -200,17 +205,6 @@ namespace {
             latest.yM + cosf(midpointCourseRad) * distanceM, projectedCourseDeg};
   }
 
-  WindVector currentWindVector() {
-    const WindEstimate& wind = windEstimator.getWindEstimate();
-    if (!wind.validEstimate || !isfinite(wind.windSpeed) || !isfinite(wind.windDirectionTrue) ||
-        wind.windSpeed < 0 || wind.windSpeed > MAX_USABLE_WIND_MPS) {
-      return {};
-    }
-
-    // windDirectionTrue is the direction the air mass is moving toward, in radians east of north.
-    return {sinf(wind.windDirectionTrue) * wind.windSpeed,
-            cosf(wind.windDirectionTrue) * wind.windSpeed};
-  }
 }  // namespace
 
 void ThermalCore::reset() {
@@ -225,8 +219,8 @@ void ThermalCore::reset() {
 }
 
 void ThermalCore::update() {
-  ThermalTracker::CoreSample samples[THERMAL_CORE_MAX_MARKERS];
-  const uint8_t sampleCount = thermalTracker.recentCoreSamples(samples, THERMAL_CORE_MAX_MARKERS);
+  const auto samples = thermalTracker.recentCoreSamples();
+  const uint8_t sampleCount = samples.size();
   estimate_ = {};
   if (sampleCount == 0) return;
 
@@ -298,19 +292,19 @@ void ThermalCore::update() {
 
   // The tracker deliberately records one sample per second. Project the aircraft position and
   // ground-track bearing forward for the intervening display refresh so the map moves at 2 Hz.
-  // The guidance calculation below continues to use the unprojected 1 Hz samples.
+  // Guidance keeps the latest actual 1 Hz aircraft reference, with the same altitude projection.
   const uint32_t nowMs = millis();
   const MapReference mapReference = extrapolatedMapReference(samples, sampleCount, nowMs);
-  const WindVector wind = currentWindVector();
+  const float targetAltM = baro.altAdjusted() / 100.0f;
 
   for (uint8_t i = 0; i < sampleCount; ++i) {
-    // Carry each historical air parcel downwind to the current display time. This removes the
-    // air mass's translation from the trail while leaving the estimator's ground-frame inputs
-    // and guidance calculation unchanged.
-    const uint32_t ageMs = min(nowMs - samples[i].capturedAtMs, LOOKBACK_S * 1000UL);
-    const float ageS = ageMs / 1000.0f;
-    const float breadcrumbXM = samples[i].xM + wind.eastMps * ageS;
-    const float breadcrumbYM = samples[i].yM + wind.northMps * ageS;
+    // Project lift to the pilot's current altitude along the slope captured at observation.
+    // Elapsed time alone does not move a source-fed plume's lift at a fixed altitude.
+    const auto sample = samples[i];
+    float breadcrumbXM = 0;
+    float breadcrumbYM = 0;
+    sample.wind.project(sample.xM, sample.yM, sample.altM, sample.climbCms, targetAltM,
+                        breadcrumbXM, breadcrumbYM);
     int16_t x = 0;
     int16_t y = 0;
     pointToScreen(breadcrumbXM, breadcrumbYM, mapReference.xM, mapReference.yM,
@@ -319,7 +313,7 @@ void ThermalCore::update() {
     marker.visible = x >= 0 && x < SCREEN_W && y >= MAP_TOP && y < MAP_TOP + MAP_HEIGHT;
     marker.x = x;
     marker.y = y;
-    marker.glyph = glyphForClimb(samples[i].climbCms, breadcrumbMaxClimbCms);
+    marker.glyph = glyphForClimb(sample.climbCms, breadcrumbMaxClimbCms);
   }
 
   if (!turnGuidanceActive_ || direction == 0) return;
@@ -340,7 +334,7 @@ void ThermalCore::update() {
     float ahead = 0;
     int16_t unusedX = 0;
     int16_t unusedY = 0;
-    sampleToScreen(sample, latest, aircraftX, unusedX, unusedY, &right, &ahead);
+    sampleToScreen(sample, latest, targetAltM, aircraftX, unusedX, unusedY, &right, &ahead);
     float phase = atan2f(right, ahead) * RAD_TO_DEG;
     if (phase < 0) phase += 360.0f;
     if (direction < 0) phase = 360.0f - phase;

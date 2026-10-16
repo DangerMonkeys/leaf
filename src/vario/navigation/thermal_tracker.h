@@ -2,6 +2,8 @@
 
 #include <Arduino.h>
 
+#include "navigation/thermal_projection.h"
+
 constexpr uint8_t MAX_SAVED_THERMALS = 15;
 constexpr uint8_t MAX_THERMAL_NODES = 4;
 constexpr uint8_t MAX_THERMAL_DISPLAY_ITEMS = MAX_SAVED_THERMALS;
@@ -45,17 +47,35 @@ class ThermalTracker {
     bool valid = false;
     int16_t xM = 0;
     int16_t yM = 0;
+    int16_t altM = 0;
     int16_t courseDeg = 0;
     int16_t climbCms = 0;
     uint16_t speedCms = 0;
+    ThermalSampleWind wind;
     uint32_t timeS = 0;
     uint32_t capturedAtMs = 0;
+  };
+
+  // Non-owning chronological view. Consume within the current main-loop update; the tracker
+  // must not be updated/reset while a view is in use. Only the requested sample is copied.
+  class CoreSamples {
+   public:
+    uint8_t size() const { return count_; }
+    CoreSample operator[](uint8_t index) const;
+
+   private:
+    friend class ThermalTracker;
+    CoreSamples(const ThermalTracker& tracker, uint8_t first, uint8_t count)
+        : tracker_(tracker), first_(first), count_(count) {}
+    const ThermalTracker& tracker_;
+    uint8_t first_;
+    uint8_t count_;
   };
 
   void reset();
   void updateDetector();
   void updateNavigation();
-  uint8_t recentCoreSamples(CoreSample* out, uint8_t maxCount) const;
+  CoreSamples recentCoreSamples() const;
 
   const ThermalDisplayItem* displayItems() const { return displayItems_; }
   uint8_t displayItemCount() const { return displayItemCount_; }
@@ -170,6 +190,8 @@ class ThermalTracker {
   int32_t lastLatE7_ = 0;
   int32_t lastLonE7_ = 0;
   Sample samples_[MAX_DETECTOR_SAMPLES];
+  // Parallel storage avoids growing/padding Sample and its saved episode copies.
+  ThermalSampleWind sampleWind_[MAX_DETECTOR_SAMPLES];
   uint8_t nextSample_ = 0;
   uint8_t sampleCount_ = 0;
   uint32_t episodeStartAfterS_ = 0;
