@@ -12,6 +12,7 @@ enum class ThermalCoreMarkerGlyph : uint8_t {
   Ring7 = 2,
   Ring9 = 3,
   Ring11 = 4,
+  FilledRing11 = 5,
 };
 
 struct ThermalCoreMarker {

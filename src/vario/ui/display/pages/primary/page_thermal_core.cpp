@@ -158,6 +158,23 @@ namespace {
     u8g2.drawHLine(x - 1, y + 5, 3);
   }
 
+  void stampFilledRing11(int16_t x, int16_t y) {
+    u8g2.drawHLine(x - 1, y - 5, 3);
+    u8g2.drawHLine(x - 3, y - 4, 7);
+    u8g2.drawHLine(x - 4, y - 3, 9);
+    u8g2.drawHLine(x - 4, y - 2, 9);
+    u8g2.drawHLine(x - 5, y - 1, 5);
+    u8g2.drawHLine(x + 1, y - 1, 5);
+    u8g2.drawHLine(x - 5, y, 4);
+    u8g2.drawHLine(x + 2, y, 4);
+    u8g2.drawHLine(x - 5, y + 1, 5);
+    u8g2.drawHLine(x + 1, y + 1, 5);
+    u8g2.drawHLine(x - 4, y + 2, 9);
+    u8g2.drawHLine(x - 4, y + 3, 9);
+    u8g2.drawHLine(x - 3, y + 4, 7);
+    u8g2.drawHLine(x - 1, y + 5, 3);
+  }
+
   uint8_t markerRadius(const ThermalCoreMarker& marker) {
     switch (marker.glyph) {
       case ThermalCoreMarkerGlyph::Cross3:
@@ -169,6 +186,7 @@ namespace {
       case ThermalCoreMarkerGlyph::Ring9:
         return 4;
       case ThermalCoreMarkerGlyph::Ring11:
+      case ThermalCoreMarkerGlyph::FilledRing11:
         return 5;
     }
     return 5;
@@ -198,6 +216,9 @@ namespace {
         break;
       case ThermalCoreMarkerGlyph::Ring11:
         stampRing11(marker.x, marker.y);
+        break;
+      case ThermalCoreMarkerGlyph::FilledRing11:
+        stampFilledRing11(marker.x, marker.y);
         break;
     }
   }

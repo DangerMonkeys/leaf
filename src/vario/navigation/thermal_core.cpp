@@ -115,20 +115,21 @@ namespace {
     return 0;
   }
 
-  constexpr int16_t DEFAULT_BREADCRUMB_SCALE_CMS = 400;
+  constexpr int16_t DEFAULT_BREADCRUMB_SCALE_CMS = 350;
 
   ThermalCoreMarkerGlyph glyphForClimb(int16_t climbCms, int16_t episodeMaxClimbCms) {
     const int16_t climbStart = settings.vario_climbStart;
     if (climbCms < climbStart) return ThermalCoreMarkerGlyph::Cross3;
 
-    // Keep familiar 1 m/s buckets unless this thermal exceeds 4 m/s. Above that, expand all
-    // four buckets proportionally so the strongest breadcrumb still occupies the largest glyph.
+    // Use 0.75 m/s bands through 3 m/s, then the filled ring. Above a 3.5 m/s episode peak,
+    // expand the boundaries proportionally. Multiplying by 14 keeps the initial bands unchanged.
     const int32_t scaleCms = max<int16_t>(DEFAULT_BREADCRUMB_SCALE_CMS, episodeMaxClimbCms);
-    const int32_t scaledClimb = static_cast<int32_t>(climbCms) * 4;
-    if (scaledClimb < scaleCms) return ThermalCoreMarkerGlyph::Ring5;
-    if (scaledClimb < scaleCms * 2) return ThermalCoreMarkerGlyph::Ring7;
-    if (scaledClimb < scaleCms * 3) return ThermalCoreMarkerGlyph::Ring9;
-    return ThermalCoreMarkerGlyph::Ring11;
+    const int32_t scaledClimb = static_cast<int32_t>(climbCms) * 14;
+    if (scaledClimb <= scaleCms * 3) return ThermalCoreMarkerGlyph::Ring5;
+    if (scaledClimb <= scaleCms * 6) return ThermalCoreMarkerGlyph::Ring7;
+    if (scaledClimb <= scaleCms * 9) return ThermalCoreMarkerGlyph::Ring9;
+    if (scaledClimb <= scaleCms * 12) return ThermalCoreMarkerGlyph::Ring11;
+    return ThermalCoreMarkerGlyph::FilledRing11;
   }
 
   int16_t maxClimb(const ThermalTracker::CoreSamples& samples, uint8_t count) {
