@@ -114,6 +114,33 @@ int main() {
     check(f.tracker.maxG() < 1.05f, "ground: impact discarded after landing", f.tracker.maxG());
   }
 
+  {  // Hovering (no ground speed, no climb) for a while is not a landing: the spiral is kept.
+    Flight f;
+    f.tracker.startFlight();
+    f.level(30000);
+    f.level(10000, 2.5f);
+    f.airborne = false;
+    f.level(15000);
+    f.airborne = true;
+    f.level(90000);
+    check(fabsf(f.tracker.maxG() - 2.5f) < 0.05f, "hover: spiral before hover kept",
+          f.tracker.maxG());
+  }
+
+  {  // Top landing: touchdown discarded, and the relaunch surge falls in the takeoff guard.
+    Flight f;
+    f.tracker.startFlight();
+    f.level(120000);
+    f.level(1000, 3.0f);  // touchdown
+    f.airborne = false;
+    f.level(40000);
+    f.airborne = true;
+    f.level(5000);
+    f.level(3000, 1.8f);  // relaunch surge
+    f.level(120000);
+    check(f.tracker.maxG() < 1.05f, "top landing: impact and relaunch ignored", f.tracker.maxG());
+  }
+
   {  // Nothing counts before startFlight or while on the ground.
     Flight f;
     f.level(60000, 2.0f);

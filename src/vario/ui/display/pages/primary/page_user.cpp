@@ -181,7 +181,8 @@ void drawUserField(uint8_t x, uint8_t y, uint8_t field, bool selected) {
       u8g2.setFont(leaf_5h);
       u8g2.print("ACCEL (G FORCE)");
       // TODO: show missing accel differently than 0
-      display_accel(x + 20, y, imu.accelValid() ? imu.getAccel() : 0);
+      // Filtered like the logbook g-load records, so the live value and the records agree
+      display_accel(x + 20, y, imu.accelValid() ? imu.gLoad().filtered() : 0);
       break;
     case static_cast<int>(UserPageFields::DIST):
       // Distance
