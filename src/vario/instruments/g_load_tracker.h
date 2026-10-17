@@ -23,7 +23,11 @@ class GLoadTracker {
   static constexpr uint32_t MAX_SAMPLE_GAP_MS = 500;
   static constexpr uint32_t TAKEOFF_IGNORE_MS = 15000;
   static constexpr uint32_t PENDING_BUCKET_MS = 30000;  // Two buckets held back: 30-60s
-  static constexpr uint8_t GROUND_SECONDS_TO_LAND = 5;
+  // Long enough that hovering in a steady ridge breeze is not mistaken for a landing.
+  static constexpr uint8_t GROUND_SECONDS_TO_LAND = 20;
+  // The touchdown must still be held back (not yet committed) when the landing is confirmed.
+  static_assert(GROUND_SECONDS_TO_LAND * 1000 < PENDING_BUCKET_MS,
+                "landing must be confirmed before the touchdown can be committed");
 
   // Start a new flight: clears all extremes.  Nothing counts until airborne.
   void startFlight() {
