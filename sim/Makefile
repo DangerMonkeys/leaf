@@ -33,6 +33,7 @@ INCLUDES := \
   -I$(ROOT)/src/variants/$(VARIANT) \
   -I$(DEPLINK)/etl \
   -I$(DEPLINK)/igc \
+  -I$(DEPLINK)/md5 \
   -I$(DEPLINK)/fanet \
   -I$(DEPLINK)/json \
   -I$(U8G2) \
@@ -167,6 +168,7 @@ deps:
 	@mkdir -p $(DEPLINK)
 	@ln -sfn "$(LIBENV)/Embedded Template Library/include" $(DEPLINK)/etl
 	@ln -sfn "$(LIBENV)/IgcLogger/src" $(DEPLINK)/igc
+	@ln -sfn "$(LIBENV)/MD5/src" $(DEPLINK)/md5
 	@ln -sfn "$(LIBENV)/FANET Protocol implementation in c__/include" $(DEPLINK)/fanet
 	@ln -sfn "$(LIBENV)/ArduinoJson/src" $(DEPLINK)/json
 
