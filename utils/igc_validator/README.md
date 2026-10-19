@@ -4,6 +4,19 @@ Tiny C checker for XLV files using IgcLogger v0.0.6's MD5 G record.
 No Python runtime. This verifies a checksum, not recorder authenticity or
 CIVL/XContest approval.
 
+## Windows download
+
+The repository includes [dist/vali-xlv.exe](dist/vali-xlv.exe), a standalone
+32-bit x86 Windows executable that also runs on x64 Windows. Download the raw
+file from GitHub, then run it from PowerShell:
+
+```powershell
+.\vali-xlv.exe C:\path\to\flight.igc
+```
+
+Rebuild and commit this executable whenever `validate.c` changes, using the
+Docker `windows` target below (`make -B windows` forces a rebuild).
+
 ## macOS
 
 With Apple's command-line developer tools installed, from the repository root:

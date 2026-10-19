@@ -1,5 +1,6 @@
 __pycache__/
 .venv/
 build/
-dist/
+dist/*
+!dist/vali-xlv.exe
 *.spec
