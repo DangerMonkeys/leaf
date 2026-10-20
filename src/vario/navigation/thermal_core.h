@@ -36,6 +36,8 @@ struct ThermalCoreEstimate {
 
 class ThermalCore {
  public:
+  static constexpr float MAP_METERS_PER_PX = 1.15f;
+
   void reset();
   void update();
   const ThermalCoreEstimate& estimate() const { return estimate_; }
@@ -47,12 +49,15 @@ class ThermalCore {
   int8_t activeTurnDirection_ = 0;
   uint32_t straightDurationMs_ = 0;
   uint32_t lastGuidanceSampleMs_ = 0;
+  uint32_t lastSustainedTurnMs_ = 0;
   bool episodeClimbScaleValid_ = false;
   int16_t episodeMaxClimbCms_ = 0;
   bool centerValid_ = false;
   float centerEastM_ = 0;
   float centerNorthM_ = 0;
   float centerAltitudeM_ = 0;
+  float centerSlopeEast_ = 0;
+  float centerSlopeNorth_ = 0;
   uint32_t lastCenterSampleMs_ = 0;
 };
 

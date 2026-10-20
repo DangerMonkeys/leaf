@@ -60,8 +60,8 @@
 
 # --- the glide between climbs ----------------------------------------------------------------
 # Rolled out at 298 s.  The turn layout must be gone when the robust course envelope over seven
-# seconds is no more than 45 degrees and the recent three-second climb average is no more than
-# +0.2 m/s, or after 15 straight seconds even in lift.  It must stay gone even though the
+# seconds is no more than 10 degrees for 15 straight seconds, regardless of lift. Gentle turns
+# in either direction get a 30-second grace period. It must stay gone even though the
 # breadcrumb buffer still contains the previous circle.
 312  screenshot    sim/build/tc-10-just-left.png
 345  status

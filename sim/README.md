@@ -90,7 +90,19 @@ coverage. Its thin geographic north/south and east/west lines rotate with the ma
 inside its border. The estimate uses the latest lap's altitude-projected breadcrumbs, with angular
 weighting and gentle smoothing; it estimates the sampled lift, not an unseen thermal core. Reveal
 the live thermal to compare the estimate with the simulator's independent ground truth. Partial
-turns, weak lift, stale GPS samples and nearly straight paths suppress the lines.
+turns, weak lift and nearly straight paths cannot establish a new center. Once established, the
+last good center survives a brief exit or turn reversal: 15 seconds of straight flight ends
+guidance regardless of lift, while gentle turns in either direction allow up to 30 seconds
+without sustained circling or a new center fit. Roughly 2 degrees/second counts as turning.
+The retained center still projects to the current altitude and map bearing. Stale GPS hides it.
+
+A 30 m target circle is drawn over the breadcrumbs at the calculated lift center. It has two
+black circles at its radius and one pixel outside, with white circles one pixel inside and two
+pixels outside. At its center, two black triangles form a wind arrow with a fluted tail. A
+six-pixel-radius white disc clears the breadcrumbs and crosshairs, leaving a white buffer around
+the five-pixel-radius black outline. The arrow's tip and both tail tips touch the outline. It points
+where the wind is blowing and rotates with the map; it is hidden without a valid wind estimate.
+Auxiliary widening/tightening rings are removed and the top-of-map turn reticle is disabled.
 
 ThermalTrack shares Thermal Core's compact vario and climb field, with altitude and its
 selectable source above the climb value. The wind circle omits compass letters to leave room for

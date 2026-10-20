@@ -14,14 +14,12 @@ namespace {
   constexpr uint16_t REENTRY_TURN_DEG = 90;
   constexpr uint32_t TURN_EXIT_COURSE_WINDOW_MS = 7000;
   constexpr uint32_t TURN_EXIT_MIN_COURSE_WINDOW_MS = 6000;
-  constexpr uint16_t TURN_EXIT_MAX_COURSE_DEVIATION_DEG = 45;
-  constexpr uint32_t TURN_EXIT_LOW_LIFT_MS = 8000;
-  constexpr uint32_t TURN_EXIT_HARD_MS = 15000;
-  constexpr uint8_t TURN_EXIT_LIFT_SAMPLES = 3;
-  constexpr int16_t TURN_EXIT_MAX_CLIMB_CMS = 20;
+  // Over this window, roughly 2 degrees/second in either direction counts as a gentle turn.
+  constexpr uint16_t TURN_EXIT_MAX_COURSE_DEVIATION_DEG = 10;
+  constexpr uint32_t TURN_EXIT_STRAIGHT_MS = 15000;
+  constexpr uint32_t TURN_EXIT_TURNING_MS = 30000;
   constexpr uint8_t GUIDANCE_BIN_COUNT = 12;
   constexpr uint8_t LOOKBACK_S = 40;
-  constexpr float METERS_PER_PX = 1.15f;
   constexpr int16_t MAP_CENTER_Y = 124;
   constexpr int16_t LEFT_AIRCRAFT_X = 20;
   constexpr int16_t RIGHT_AIRCRAFT_X = 76;
@@ -57,14 +55,6 @@ namespace {
       total += headingDelta(samples[i].courseDeg, samples[i - 1].courseDeg);
     }
     return total;
-  }
-
-  int16_t recentClimbAverageCms(const ThermalTracker::CoreSamples& samples, uint8_t count,
-                                uint8_t windowSamples) {
-    const uint8_t first = count > windowSamples ? count - windowSamples : 0;
-    int32_t total = 0;
-    for (uint8_t i = first; i < count; ++i) total += samples[i].climbCms;
-    return count > first ? static_cast<int16_t>(total / (count - first)) : 0;
   }
 
   bool recentCourseWindowIsStraight(const ThermalTracker::CoreSamples& samples, uint8_t count,
@@ -154,12 +144,12 @@ namespace {
     const float ahead = sinf(heading) * dx + cosf(heading) * dy;
     // Large altitude changes can project far beyond this small map. Saturate before narrowing
     // so an off-screen projection cannot wrap back into the visible screen.
-    x = static_cast<int16_t>(constrain(roundf(aircraftX + right / METERS_PER_PX),
+    x = static_cast<int16_t>(constrain(roundf(aircraftX + right / ThermalCore::MAP_METERS_PER_PX),
                                        static_cast<float>(INT16_MIN),
                                        static_cast<float>(INT16_MAX)));
-    y = static_cast<int16_t>(constrain(roundf(MAP_CENTER_Y - ahead / METERS_PER_PX),
-                                       static_cast<float>(INT16_MIN),
-                                       static_cast<float>(INT16_MAX)));
+    y = static_cast<int16_t>(
+        constrain(roundf(MAP_CENTER_Y - ahead / ThermalCore::MAP_METERS_PER_PX),
+                  static_cast<float>(INT16_MIN), static_cast<float>(INT16_MAX)));
     if (rightOut != nullptr) *rightOut = right;
     if (aheadOut != nullptr) *aheadOut = ahead;
   }
@@ -216,10 +206,12 @@ void ThermalCore::reset() {
   activeTurnDirection_ = 0;
   straightDurationMs_ = 0;
   lastGuidanceSampleMs_ = 0;
+  lastSustainedTurnMs_ = 0;
   episodeClimbScaleValid_ = false;
   episodeMaxClimbCms_ = 0;
   centerValid_ = false;
   centerEastM_ = centerNorthM_ = centerAltitudeM_ = 0;
+  centerSlopeEast_ = centerSlopeNorth_ = 0;
   lastCenterSampleMs_ = 0;
 }
 
@@ -227,9 +219,13 @@ void ThermalCore::update() {
   const auto samples = thermalTracker.recentCoreSamples();
   const uint8_t sampleCount = samples.size();
   estimate_ = {};
-  if (sampleCount == 0) return;
+  if (sampleCount == 0) {
+    reset();
+    return;
+  }
 
   const ThermalTracker::CoreSample& latest = samples[sampleCount - 1];
+  const uint32_t nowMs = millis();
   const bool guidanceWasActive = turnGuidanceActive_;
   const uint8_t turnWindowSamples =
       turnGuidancePreviouslyActive_ ? REENTRY_TURN_SAMPLES : INITIAL_TURN_SAMPLES;
@@ -246,7 +242,7 @@ void ThermalCore::update() {
           lastGuidanceSampleMs_ == 0 ? 0 : latest.capturedAtMs - lastGuidanceSampleMs_;
       straightDurationMs_ = straightDurationMs_ == 0
                                 ? courseWindowSpanMs
-                                : min(straightDurationMs_ + newSampleMs, TURN_EXIT_HARD_MS);
+                                : min(straightDurationMs_ + newSampleMs, TURN_EXIT_STRAIGHT_MS);
     } else {
       straightDurationMs_ = 0;
     }
@@ -254,12 +250,10 @@ void ThermalCore::update() {
   }
 
   if (turnGuidanceActive_) {
-    const int16_t recentClimbCms =
-        recentClimbAverageCms(samples, sampleCount, TURN_EXIT_LIFT_SAMPLES);
-    const bool lowLiftExit =
-        straightDurationMs_ >= TURN_EXIT_LOW_LIFT_MS && recentClimbCms <= TURN_EXIT_MAX_CLIMB_CMS;
-    const bool hardExit = straightDurationMs_ >= TURN_EXIT_HARD_MS;
-    if (lowLiftExit || hardExit) {
+    if (hasSufficientRecentTurn) lastSustainedTurnMs_ = latest.capturedAtMs;
+    const bool straightExit = straightDurationMs_ >= TURN_EXIT_STRAIGHT_MS;
+    const bool turningExit = nowMs - lastSustainedTurnMs_ >= TURN_EXIT_TURNING_MS;
+    if (straightExit || turningExit) {
       turnGuidanceActive_ = false;
       activeTurnDirection_ = 0;
     } else {
@@ -270,6 +264,7 @@ void ThermalCore::update() {
     turnGuidanceActive_ = true;
     turnGuidancePreviouslyActive_ = true;
     activeTurnDirection_ = directionForTurn(recentTurn);
+    lastSustainedTurnMs_ = latest.capturedAtMs;
   }
 
   const int16_t recentMaxClimbCms = maxClimb(samples, sampleCount);
@@ -298,34 +293,42 @@ void ThermalCore::update() {
   // The tracker deliberately records one sample per second. Project the aircraft position and
   // ground-track bearing forward for the intervening display refresh so the map moves at 2 Hz.
   // Guidance keeps the latest actual 1 Hz aircraft reference, with the same altitude projection.
-  const uint32_t nowMs = millis();
   const MapReference mapReference = extrapolatedMapReference(samples, sampleCount, nowMs);
   const float targetAltM = baro.altAdjusted() / 100.0f;
   estimate_.mapCourseDeciDeg = static_cast<int16_t>(roundf(mapReference.courseDeg * 10));
 
   const auto center = estimateThermalLiftCenter(samples, sampleCount, direction, targetAltM,
                                                 settings.vario_climbStart);
-  if (center.valid && nowMs - latest.capturedAtMs <= MAX_TURN_SAMPLE_INTERVAL_MS) {
+  const bool samplesFresh = nowMs - latest.capturedAtMs <= MAX_TURN_SAMPLE_INTERVAL_MS;
+  if (centerValid_) {
+    // Keep a retained center at the pilot's current altitude while a reversal interrupts the fit.
+    centerEastM_ += centerSlopeEast_ * (targetAltM - centerAltitudeM_);
+    centerNorthM_ += centerSlopeNorth_ * (targetAltM - centerAltitudeM_);
+    centerAltitudeM_ = targetAltM;
+  }
+  if (center.valid && samplesFresh) {
     if (!centerValid_) {
       centerEastM_ = center.eastM;
       centerNorthM_ = center.northM;
     } else {
-      // Transport the smoothed estimate to today's altitude before blending new observations.
-      // This keeps smoothing from undoing the breadcrumbs' altitude-based projection.
-      centerEastM_ += center.slopeEast * (targetAltM - centerAltitudeM_);
-      centerNorthM_ += center.slopeNorth * (targetAltM - centerAltitudeM_);
       if (latest.capturedAtMs != lastCenterSampleMs_) {
         centerEastM_ += (center.eastM - centerEastM_) * 0.35f;
         centerNorthM_ += (center.northM - centerNorthM_) * 0.35f;
       }
     }
     centerAltitudeM_ = targetAltM;
+    centerSlopeEast_ = center.slopeEast;
+    centerSlopeNorth_ = center.slopeNorth;
     lastCenterSampleMs_ = latest.capturedAtMs;
-    centerValid_ = estimate_.centerValid = true;
+    centerValid_ = true;
+  } else if (!turnGuidanceActive_ || nowMs - lastCenterSampleMs_ >= TURN_EXIT_TURNING_MS) {
+    centerValid_ = false;
+  }
+  // A missing lap fit gets a grace period; missing GPS still hides the map target immediately.
+  estimate_.centerValid = centerValid_ && samplesFresh;
+  if (estimate_.centerValid) {
     pointToScreen(centerEastM_, centerNorthM_, mapReference.xM, mapReference.yM,
                   mapReference.courseDeg, aircraftX, estimate_.centerX, estimate_.centerY);
-  } else {
-    centerValid_ = false;
   }
 
   for (uint8_t i = 0; i < sampleCount; ++i) {

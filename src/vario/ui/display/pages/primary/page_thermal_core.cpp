@@ -19,6 +19,7 @@
 #include "ui/display/utils.h"
 #include "ui/input/buttons.h"
 #include "ui/settings/settings.h"
+#include "wind_estimate/wind_estimate.h"
 
 namespace {
   constexpr int16_t MAP_LEFT = 0;
@@ -27,14 +28,17 @@ namespace {
   constexpr int16_t MAP_HEIGHT = 102;
   // Moving the top edge must not shift the aircraft or breadcrumb projection.
   constexpr int16_t MAP_CENTER_Y = 124;
-  constexpr int16_t GUIDANCE_CENTER_X = MAP_LEFT + MAP_WIDTH / 2;
-  constexpr int16_t GUIDANCE_CENTER_Y = MAP_TOP + 11;
+  // constexpr int16_t GUIDANCE_CENTER_X = MAP_LEFT + MAP_WIDTH / 2;
+  // constexpr int16_t GUIDANCE_CENTER_Y = MAP_TOP + 11;
   constexpr int16_t AIRCRAFT_Y = MAP_CENTER_Y - 9;
   constexpr int16_t LEFT_AIRCRAFT_X = 20;
   constexpr int16_t RIGHT_AIRCRAFT_X = 76;
   constexpr int16_t CENTER_AIRCRAFT_X = 48;
-  constexpr int16_t TARGET_RADIUS = 38;
-  constexpr int16_t TARGET_SHIFT_MAX = 19;
+  // constexpr int16_t TARGET_RADIUS = 38;
+  // constexpr int16_t TARGET_SHIFT_MAX = 19;
+  constexpr float TARGET_RADIUS_M = 30.0f;
+  constexpr int16_t WIND_ARROW_RADIUS_PX = 5;
+  constexpr int16_t WIND_CLEAR_RADIUS_PX = 6;
   constexpr uint8_t ALT_X = 15;
   constexpr uint8_t ALT_VALUE_BASELINE_Y = 30;
   constexpr uint8_t ALT_TYPE_BASELINE_Y = 33;
@@ -248,6 +252,143 @@ namespace {
     u8g2.setMaxClipWindow();
   }
 
+  void drawMapPixel(int32_t x, int32_t y) {
+    // Keep coordinates signed until clipped: off-screen centers must not wrap through u8g2's
+    // unsigned pixel API and draw on the opposite side of the map.
+    if (x > MAP_LEFT && x < MAP_LEFT + MAP_WIDTH - 1 && y > MAP_TOP &&
+        y < MAP_TOP + MAP_HEIGHT - 1) {
+      u8g2.drawPixel(x, y);
+    }
+  }
+
+  template <typename Pixel>
+  void visitCirclePixels(int16_t radius, const Pixel& pixel) {
+    int16_t x = radius;
+    int16_t y = 0;
+    int16_t error = 1 - radius;
+    while (x >= y) {
+      pixel(x, y);
+      pixel(y, x);
+      pixel(-y, x);
+      pixel(-x, y);
+      pixel(-x, -y);
+      pixel(-y, -x);
+      pixel(y, -x);
+      pixel(x, -y);
+      ++y;
+      if (error < 0) {
+        error += 2 * y + 1;
+      } else {
+        --x;
+        error += 2 * (y - x) + 1;
+      }
+    }
+  }
+
+  void drawClippedCircle(int16_t cx, int16_t cy, int16_t radius) {
+    visitCirclePixels(radius, [=](int16_t x, int16_t y) { drawMapPixel(cx + x, cy + y); });
+  }
+
+  void drawLiftTarget(const ThermalCoreEstimate& estimate) {
+    if (!estimate.centerValid) return;
+    const int16_t radius = roundf(TARGET_RADIUS_M / ThermalCore::MAP_METERS_PER_PX);
+    // Emphasize the main target with a two-pixel black outline and white edges on both sides.
+    u8g2.setDrawColor(1);
+    drawClippedCircle(estimate.centerX, estimate.centerY, radius);
+    drawClippedCircle(estimate.centerX, estimate.centerY, radius + 1);
+    u8g2.setDrawColor(0);
+    drawClippedCircle(estimate.centerX, estimate.centerY, radius - 1);
+    drawClippedCircle(estimate.centerX, estimate.centerY, radius + 2);
+    u8g2.setDrawColor(1);
+  }
+
+  void drawLiftWindArrow(const ThermalCoreEstimate& estimate) {
+    if (!estimate.centerValid) return;
+    const WindEstimate& wind = windEstimator.getWindEstimate();
+    if (!wind.validEstimate || !isfinite(wind.windDirectionTrue)) return;
+
+    // Point where the air is moving, in the same track-up frame as the center and breadcrumbs.
+    const float angle = wind.windDirectionTrue - estimate.mapCourseDeciDeg * 0.1f * DEG_TO_RAD;
+    const float dx = sinf(angle);
+    const float dy = -cosf(angle);
+    u8g2.setDrawColor(0);
+    // Fill the same rasterized circle used for outlines, leaving a white buffer outside the rim.
+    visitCirclePixels(WIND_CLEAR_RADIUS_PX, [&](int16_t x, int16_t y) {
+      if (x < 0) return;
+      for (int16_t fillX = -x; fillX <= x; ++fillX) {
+        drawMapPixel(estimate.centerX + fillX, estimate.centerY + y);
+      }
+    });
+    u8g2.setDrawColor(1);
+    drawClippedCircle(estimate.centerX, estimate.centerY, WIND_ARROW_RADIUS_PX);
+    // All three vertices lie on the circle: tip (5, 0), wider base (-4, +/-3).
+    // Snap the rotated vertices to actual outline pixels so they touch at every bearing.
+    struct Point {
+      int16_t x = 0;
+      int16_t y = 0;
+    };
+    Point vertex[3];
+    const float along[3] = {5, -4, -4};
+    const float across[3] = {0, 3, -3};
+    float bestDistance[3] = {INFINITY, INFINITY, INFINITY};
+    visitCirclePixels(WIND_ARROW_RADIUS_PX, [&](int16_t x, int16_t y) {
+      for (uint8_t i = 0; i < 3; ++i) {
+        const float offsetX = x - (dx * along[i] - dy * across[i]);
+        const float offsetY = y - (dy * along[i] + dx * across[i]);
+        const float distance = offsetX * offsetX + offsetY * offsetY;
+        if (distance < bestDistance[i]) {
+          bestDistance[i] = distance;
+          vertex[i] = {x, y};
+        }
+      }
+    });
+    const auto edge = [](const Point& a, const Point& b, int16_t x, int16_t y) {
+      return (b.x - a.x) * (y - a.y) - (b.y - a.y) * (x - a.x);
+    };
+    const Point notch = {static_cast<int16_t>(roundf(-dx)), static_cast<int16_t>(roundf(-dy))};
+    const auto inside = [&](const Point& a, const Point& b, const Point& c, int16_t x, int16_t y) {
+      const int16_t ab = edge(a, b, x, y);
+      const int16_t bc = edge(b, c, x, y);
+      const int16_t ca = edge(c, a, x, y);
+      return (ab >= 0 && bc >= 0 && ca >= 0) || (ab <= 0 && bc <= 0 && ca <= 0);
+    };
+    // Fill in local signed coordinates to clip safely even when the center is off-screen.
+    // Two triangles share the tip-to-notch edge, leaving a fluted tail between the rim vertices.
+    for (int16_t y = -WIND_ARROW_RADIUS_PX; y <= WIND_ARROW_RADIUS_PX; ++y) {
+      for (int16_t x = -WIND_ARROW_RADIUS_PX; x <= WIND_ARROW_RADIUS_PX; ++x) {
+        if (inside(vertex[0], vertex[1], notch, x, y) ||
+            inside(vertex[0], vertex[2], notch, x, y)) {
+          drawMapPixel(estimate.centerX + x, estimate.centerY + y);
+        }
+      }
+    }
+    // Keep the thin tail tips connected at diagonal bearings, including between pixel centers.
+    const auto line = [&](Point a, const Point& b) {
+      const int16_t deltaX = abs(b.x - a.x);
+      const int16_t deltaY = -abs(b.y - a.y);
+      const int16_t stepX = a.x < b.x ? 1 : -1;
+      const int16_t stepY = a.y < b.y ? 1 : -1;
+      int16_t error = deltaX + deltaY;
+      while (true) {
+        drawMapPixel(estimate.centerX + a.x, estimate.centerY + a.y);
+        if (a.x == b.x && a.y == b.y) break;
+        const int16_t twiceError = error * 2;
+        if (twiceError >= deltaY) {
+          error += deltaY;
+          a.x += stepX;
+        }
+        if (twiceError <= deltaX) {
+          error += deltaX;
+          a.y += stepY;
+        }
+      }
+    };
+    line(vertex[0], vertex[1]);
+    line(vertex[1], notch);
+    line(notch, vertex[2]);
+    line(vertex[2], vertex[0]);
+  }
+
   void drawAircraft(int16_t x, int16_t y) {
     const int16_t x0 = x - AIRCRAFT_GLYPH_WIDTH / 2;
     const int16_t y0 = y - AIRCRAFT_GLYPH_HEIGHT / 2;
@@ -267,6 +408,7 @@ namespace {
     }
   }
 
+  /* Top-of-map turn guidance disabled.
   void drawTargetScale(int16_t cx, int16_t cy) {
     const int16_t left = cx - 25;
     const int16_t right = cx + 25;
@@ -294,6 +436,8 @@ namespace {
     u8g2.drawLine(left, innerBottom, left, innerTop);
   }
 
+  */
+
   void drawAltitudeField() {
     const uint8_t altType = settings.disp_thmPageAltType == altType_MSL ? altType_MSL : altType_GPS;
     const int32_t altitudeCm = altType == altType_MSL
@@ -315,6 +459,7 @@ namespace {
     }
   }
 
+  /*
   void drawGuidanceLine(int16_t cx, int16_t cy) {
     u8g2.setDrawColor(0);
     u8g2.drawBox(cx - 2, cy - 8, 6, 16);
@@ -358,6 +503,8 @@ namespace {
     if (distance >= 14) drawWideGuidanceArrow(firstBaseX + direction * 7, cy, direction);
   }
 
+  */
+
   void toggleAltitudeType() {
     if (settings.disp_thmPageAltType == altType_MSL)
       settings.disp_thmPageAltType = altType_GPS;
@@ -371,10 +518,11 @@ namespace {
     const int32_t displayClimbRate = baro.climbRateFilteredValid() ? baro.climbRateForDisplay() : 0;
     const ThermalCoreEstimate& estimate = thermalCore.estimate();
     const int8_t direction = estimate.direction;
-    const int8_t turnSide = direction < 0 ? -1 : direction > 0 ? 1 : 0;
     const int16_t aircraftX = direction < 0   ? RIGHT_AIRCRAFT_X
                               : direction > 0 ? LEFT_AIRCRAFT_X
                                               : CENTER_AIRCRAFT_X;
+    /*
+    const int8_t turnSide = direction < 0 ? -1 : direction > 0 ? 1 : 0;
     const int16_t adviceShift = estimate.valid ? (estimate.adviceQ7 * TARGET_SHIFT_MAX) / 127 : 0;
     const int16_t dynamicRadius =
         min<int16_t>(TARGET_RADIUS + TARGET_SHIFT_MAX,
@@ -382,6 +530,7 @@ namespace {
     const int16_t targetCx = turnSide == 0 ? aircraftX : aircraftX + turnSide * dynamicRadius;
     const bool hasTurn = turnSide != 0;
     const bool hasGuidance = estimate.valid;
+    */
 
     thermal_page::drawVario(climbRate, 2, thermal_page::CORE_VARIO_BAR_WIDTH);
     display_windSockRing(77, 33, 12, 7, true);
@@ -392,17 +541,23 @@ namespace {
     for (uint8_t i = 0; i < estimate.markerCount; ++i) {
       drawMarker(estimate.markers[i]);
     }
+    drawLiftTarget(estimate);
+    drawLiftWindArrow(estimate);
 
+    /*
     const int16_t neutralTargetCx =
         hasTurn ? aircraftX + turnSide * TARGET_RADIUS : CENTER_AIRCRAFT_X;
+    */
     drawAircraft(aircraftX, AIRCRAFT_Y);
     u8g2.drawFrame(MAP_LEFT, MAP_TOP, MAP_WIDTH, MAP_HEIGHT);
 
+    /*
     if (hasTurn) drawTargetScale(GUIDANCE_CENTER_X, GUIDANCE_CENTER_Y);
     if (hasGuidance) {
       const int16_t guidanceCx = GUIDANCE_CENTER_X + targetCx - neutralTargetCx;
       drawGuidanceReticle(guidanceCx, GUIDANCE_CENTER_Y, GUIDANCE_CENTER_X);
     }
+    */
   }
 }  // namespace
 
