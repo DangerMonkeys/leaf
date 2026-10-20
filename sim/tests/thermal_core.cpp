@@ -93,7 +93,7 @@ namespace {
           for (int x = 0; x < frame.width; ++x) {
             const size_t p = y * frame.width + x;
             if (frame.pixels[p] == baseline.pixels[p]) continue;
-            if (!(x > 0 && x < 95 && y > 71 && y < 174)) {
+            if (!(x > 0 && x < 95 && y > 73 && y < 174)) {
               fprintf(stderr, "Crosshair escaped: course=%d cx=%d pixel=%d,%d before=%d after=%d\n",
                       course, cx, x, y, baseline.pixels[p], frame.pixels[p]);
               assert(false);

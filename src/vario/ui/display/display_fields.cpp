@@ -914,22 +914,33 @@ void display_windSockRing(int16_t x, int16_t y, int16_t radius, int16_t size, bo
     u8g2.setDrawColor(1);
     return;
   }
-  uint8_t compassRadius = radius + 6;
+  const float compassRadius = radius + 5.5f;
+  const int16_t compassBoundsRadius = radius + 6;
+  // Keep the established bounds while reducing the circular radius. Move whole letters
+  // without clipping their pixels: horizontal bounds are inset two pixels, vertical one.
+  const auto compassCoordinate = [compassBoundsRadius](int16_t center, double offset,
+                                                       uint8_t inset) {
+    const int16_t position = static_cast<int16_t>(center + 0.5f + offset);
+    return constrain(position, center - compassBoundsRadius + inset,
+                     center + compassBoundsRadius - inset);
+  };
   float displayCourse = -1 * gps.course.deg() * DEG_TO_RAD;
-  uint8_t compassN_x = x + 0.5f + sin(displayCourse) * compassRadius;
-  uint8_t compassN_y = y + 0.5f - cos(displayCourse) * compassRadius;
-  uint8_t compassE_x = x + 0.5f + sin(displayCourse + PI / 2) * compassRadius;
-  uint8_t compassE_y = y + 0.5f - cos(displayCourse + PI / 2) * compassRadius;
-  uint8_t compassS_x = x + 0.5f + sin(displayCourse + PI) * compassRadius;
-  uint8_t compassS_y = y + 0.5f - cos(displayCourse + PI) * compassRadius;
-  uint8_t compassW_x = x + 0.5f + sin(displayCourse + 3 * PI / 2) * compassRadius;
-  uint8_t compassW_y = y + 0.5f - cos(displayCourse + 3 * PI / 2) * compassRadius;
+  const int16_t compassN_x = compassCoordinate(x, sin(displayCourse) * compassRadius, 2);
+  const int16_t compassN_y = compassCoordinate(y, -cos(displayCourse) * compassRadius, 1);
+  const int16_t compassE_x = compassCoordinate(x, sin(displayCourse + PI / 2) * compassRadius, 2);
+  const int16_t compassE_y = compassCoordinate(y, -cos(displayCourse + PI / 2) * compassRadius, 1);
+  const int16_t compassS_x = compassCoordinate(x, sin(displayCourse + PI) * compassRadius, 2);
+  const int16_t compassS_y = compassCoordinate(y, -cos(displayCourse + PI) * compassRadius, 1);
+  const int16_t compassW_x =
+      compassCoordinate(x, sin(displayCourse + 3 * PI / 2) * compassRadius, 2);
+  const int16_t compassW_y =
+      compassCoordinate(y, -cos(displayCourse + 3 * PI / 2) * compassRadius, 1);
 
   uint8_t fontOffsetH = 2;
   uint8_t fontOffsetV = 4;
 
   // cutoff top most value if near the pointer arrow (if there is a pointer arrow)
-  uint8_t cutoff_y = y - compassRadius + 1;
+  uint8_t cutoff_y = y - compassBoundsRadius + 2;
 
   u8g2.setFont(leaf_compass);
   u8g2.setDrawColor(2);
@@ -1057,16 +1068,19 @@ void display_header(bool showTurnArrows) {
     // Speed in upper right corner
     u8g2.setFont(leaf_8x14);
     speedIsThreeDigits = display_speed(70, 14);
-    u8g2.setFont(leaf_5h);
-    const uint8_t speedUnitsY = display.getPage() == MainPage::Navigate ? 21 : 20;
-    u8g2.setCursor(82, speedUnitsY);
-    if (display.getPage() == MainPage::Navigate) {
-      u8g2.setDrawColor(0);  // draw white on black for nav page
+    if (display.getPage() != MainPage::ThermalCore) {
+      u8g2.setFont(leaf_5h);
+      const uint8_t speedUnitsX = display.getPage() == MainPage::Navigate ? 82 : 83;
+      const uint8_t speedUnitsY = display.getPage() == MainPage::Navigate ? 21 : 20;
+      u8g2.setCursor(speedUnitsX, speedUnitsY);
+      if (display.getPage() == MainPage::Navigate) {
+        u8g2.setDrawColor(0);  // draw white on black for nav page
+      }
+      if (settings.units_speed)
+        u8g2.print("MPH");
+      else
+        u8g2.print("KPH");
     }
-    if (settings.units_speed)
-      u8g2.print("MPH");
-    else
-      u8g2.print("KPH");
 
     u8g2.setDrawColor(1);
   }

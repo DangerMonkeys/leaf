@@ -22,10 +22,10 @@
 
 namespace {
   constexpr int16_t MAP_LEFT = 0;
-  constexpr int16_t MAP_TOP = 71;
+  constexpr int16_t MAP_TOP = 73;
   constexpr int16_t MAP_WIDTH = 96;
-  constexpr int16_t MAP_HEIGHT = 104;
-  // Expanding the top edge must not shift the aircraft or breadcrumb projection.
+  constexpr int16_t MAP_HEIGHT = 102;
+  // Moving the top edge must not shift the aircraft or breadcrumb projection.
   constexpr int16_t MAP_CENTER_Y = 124;
   constexpr int16_t GUIDANCE_CENTER_X = MAP_LEFT + MAP_WIDTH / 2;
   constexpr int16_t GUIDANCE_CENTER_Y = MAP_TOP + 11;
@@ -35,13 +35,9 @@ namespace {
   constexpr int16_t CENTER_AIRCRAFT_X = 48;
   constexpr int16_t TARGET_RADIUS = 38;
   constexpr int16_t TARGET_SHIFT_MAX = 19;
-  constexpr uint8_t VARIO_BAR_WIDTH = thermal_page::VARIO_BAR_WIDTH;
-  constexpr uint8_t ALT_X = 37;
-  constexpr uint8_t ALT_VALUE_BASELINE_Y = 69;
-  constexpr uint8_t ALT_TYPE_X = VARIO_BAR_WIDTH + 1;
-  constexpr uint8_t ALT_UNITS_X = ALT_TYPE_X + 8;
-  constexpr uint8_t ALT_TYPE_BASELINE_Y = ALT_VALUE_BASELINE_Y + 2;
-  constexpr uint8_t ALT_UNITS_BASELINE_Y = ALT_TYPE_BASELINE_Y - 8;
+  constexpr uint8_t ALT_X = 15;
+  constexpr uint8_t ALT_VALUE_BASELINE_Y = 30;
+  constexpr uint8_t ALT_TYPE_BASELINE_Y = 33;
   constexpr uint8_t AIRCRAFT_GLYPH_WIDTH = 19;
   constexpr uint8_t AIRCRAFT_GLYPH_HEIGHT = 19;
   constexpr uint32_t AIRCRAFT_BLACK[AIRCRAFT_GLYPH_HEIGHT] = {
@@ -300,33 +296,22 @@ namespace {
 
   void drawAltitudeField() {
     const uint8_t altType = settings.disp_thmPageAltType == altType_MSL ? altType_MSL : altType_GPS;
-    u8g2.setFont(leaf_labels);
-    u8g2.setCursor(ALT_TYPE_X, ALT_TYPE_BASELINE_Y);
-    print_alt_label(altType);
-    u8g2.setCursor(ALT_UNITS_X, ALT_UNITS_BASELINE_Y);
-    u8g2.print(settings.units_alt ? "ft" : "m");
-
     const int32_t altitudeCm = altType == altType_MSL
                                    ? baro.altAdjusted()
                                    : static_cast<int32_t>(100 * gps.altitude.meters());
     const int32_t altitude = settings.units_alt ? altitudeCm * 100 / 3048 : altitudeCm / 100;
-    if (altitude >= 10000 || (altitude <= -1000 && altitude >= -9999)) {
-      // Wide values need tighter spacing to fit the new position without clipping digits.
-      const int32_t magnitude = min<int32_t>(abs(altitude), 99999);
-      char value[12];
-      snprintf(value, sizeof(value), "%s%ld,%03ld", altitude < 0 ? "-" : "",
-               static_cast<long>(magnitude / 1000), static_cast<long>(magnitude % 1000));
-      u8g2.setFont(leaf_10x17);
-      uint8_t x = ALT_X;
-      for (uint8_t i = 0; value[i]; ++i) {
-        x += u8g2.drawGlyph(x, ALT_VALUE_BASELINE_Y, value[i]) - 1;
-      }
-    } else {
-      display_alt_type(ALT_X, ALT_VALUE_BASELINE_Y, leaf_10x17, altType);
-    }
+    uint8_t tensX;
+    const uint8_t endX =
+        thermal_page::drawCoreAltitude(altitude, ALT_X, ALT_VALUE_BASELINE_Y, &tensX);
+    u8g2.setFont(leaf_5h);
+    u8g2.setCursor(tensX, ALT_TYPE_BASELINE_Y);
+    u8g2.print(altType == altType_MSL ? "MSL" : "GPS");
 
     if (thermalCorePageCursor == cursor_thermalCorePage_alt) {
-      display_selectionBox(ALT_X - 1, ALT_VALUE_BASELINE_Y - 18, 96 - (ALT_X - 1), 19, 7);
+      // Preserve the existing right edge even though the compact value is now narrower.
+      const bool compact = abs(altitude) >= 10000 || altitude <= -1000;
+      const uint8_t cursorRight = endX + (compact ? 3 : 0);
+      display_selectionBox(ALT_X, ALT_VALUE_BASELINE_Y - 18, cursorRight - ALT_X + 1, 22, 7);
     }
   }
 
@@ -398,10 +383,10 @@ namespace {
     const bool hasTurn = turnSide != 0;
     const bool hasGuidance = estimate.valid;
 
-    thermal_page::drawVario(climbRate);
-    display_windSockRing(61, 29, 12, 7, true);
+    thermal_page::drawVario(climbRate, 2, thermal_page::CORE_VARIO_BAR_WIDTH);
+    display_windSockRing(77, 33, 12, 7, true);
     drawAltitudeField();
-    thermal_page::drawClimbRate(displayClimbRate);
+    thermal_page::drawCoreClimbRate(displayClimbRate);
 
     drawLiftCenter(estimate);
     for (uint8_t i = 0; i < estimate.markerCount; ++i) {
