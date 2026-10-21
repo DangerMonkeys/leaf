@@ -36,7 +36,9 @@ typedef struct {
 
 class WiFiClass {
  public:
-  wl_status_t status() { return WL_DISCONNECTED; }
+  wl_status_t status() { return status_; }
+  // Regression tests may supply a connection while still using a fake upload transport.
+  void simSetStatus(wl_status_t status) { status_ = status; }
   bool begin() { return false; }
   bool begin(const char* ssid, const char* password = nullptr) { return false; }
   bool mode(wifi_mode_t mode) { return true; }
@@ -63,6 +65,9 @@ class WiFiClass {
   void onEvent(T callback) {}
   template <typename T>
   void onEvent(T callback, WiFiEvent_t event) {}
+
+ private:
+  wl_status_t status_ = WL_DISCONNECTED;
 };
 
 extern WiFiClass WiFi;

@@ -196,6 +196,9 @@ void TaskManager::update() {
 }
 
 void TaskManager::updateWhileCharging() {
+  // Scanning yields after a short work slice rather than waiting for the 500ms display timer.
+  if (leafLogSync.scanning()) leafLogSync.update();
+
   if (nextChargeTimerBlock.exchange(false, std::memory_order_acq_rel)) {
     leafLogSync.update();
     if (leafLogSync.takePowerOnReady()) {
