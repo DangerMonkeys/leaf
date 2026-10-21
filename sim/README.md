@@ -121,10 +121,18 @@ the five-pixel-radius black outline. The arrow's tip and both tail tips touch th
 where the wind is blowing and rotates with the map; it is hidden without a valid wind estimate.
 Auxiliary widening/tightening rings are removed and the top-of-map turn reticle is disabled.
 
-ThermalTrack shares Thermal Core's compact vario and climb field, with altitude and its
-selectable source above the climb value. The wind circle omits compass letters to leave room for
-the selected thermal's climb and distance. Steering arrows beside that distance use the same
-20/40/60-degree thresholds as waypoint navigation; they are hidden when no thermal is selected.
+ThermalTrack shares Thermal Core's upper layout, including the narrow vario, large climb field,
+altitude with its selectable source, and wind circle with compass letters and speed. The selected
+thermal's distance and strength share the strip from (15,57) to (95,73), with fixed positions and
+font sizes. Strength and its unit align to the right edge; distance centers between fixed steering
+arrow slots, with 6x12 numbers and 5x8 m/km/mi labels. Distances use feet/metres below 1,000,
+tenths of miles/kilometres below 10, then whole miles/kilometres capped at 99. Steering arrows use
+the same 20/40/60-degree thresholds as waypoint
+navigation and are hidden without a selected thermal.
+
+The pilot triangle's tip sits at the map center. A single-pixel line runs from its tip to the
+selected thermal's outer selection ring, stopping before the marker's hollow interior. The
+line is clipped to the map and connects directly to the pilot's tip.
 
 Three formats, one playback path. Everything is normalised at load time into the bus-log line
 format the device itself records (`dispatch/message_injector.h`), so a synthetic flight and a

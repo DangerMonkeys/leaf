@@ -12,6 +12,7 @@
 #include "scenario.h"
 #include "sim/clock.h"
 #include "ui/display/display.h"
+#include "ui/display/fonts.h"
 #include "ui/display/pages/primary/page_thermal_core.h"
 #include "ui/display/pages/primary/page_thermal_track.h"
 #include "ui/display/thermal_page_fields.h"
@@ -34,21 +35,12 @@ namespace {
 
   void checkSharedVario() {
     const auto track = drawTrack();
-    u8g2.firstPage();
-    do {
-      thermal_page::drawVario(baro.climbRateFilteredValid() ? baro.climbRateFiltered() : 0);
-      thermal_page::drawClimbRate(
-          baro.climbRateFilteredValid() ? baro.climbRateForDisplay() : 0, true);
-    } while (u8g2.nextPage());
-    const auto compact = sim::captureFrame();
-    for (int y = 11; y <= 71; ++y) {
-      for (int x = 0; x < 17; ++x) {
-        assert(compact.pixels[y * compact.width + x] == track.pixels[y * track.width + x]);
-      }
-    }
-    for (int y = 34; y < 48; ++y) {
-      for (int x = 17; x < 35; ++x) {
-        assert(compact.pixels[y * compact.width + x] == track.pixels[y * track.width + x]);
+    thermalCorePage_draw();
+    const auto core = sim::captureFrame();
+    // The entire upper section matches Core, including altitude, wind and climb fields.
+    for (int y = 0; y < 57; ++y) {
+      for (int x = 0; x < track.width; ++x) {
+        assert(core.pixels[y * core.width + x] == track.pixels[y * track.width + x]);
       }
     }
   }
@@ -172,13 +164,118 @@ namespace {
         for (int x = 0; x < frame.width; ++x) {
           const size_t p = y * frame.width + x;
           if (frame.pixels[p] == straight.pixels[p]) continue;
-          assert(y >= 63 && y < 73);
-          assert(turn < -20 ? (x >= 39 && x < 47) : (turn > 20 && x >= 88 && x < 96));
+          assert(y >= 61 && y < 71);
+          assert(turn < -20 ? (x >= 15 && x < 23) : (turn > 20 && x >= 54 && x < 62));
           ++changed;
         }
       }
       assert(abs(turn) <= 20 ? changed == 0 : changed > 0);
     }
+  }
+
+  void checkReadoutBounds(ThermalDisplayItem& selected) {
+    selected.turnDeg = 0;
+    const auto baseline = drawTrack();
+    for (int16_t climb : {200, 551, 1059, -32768}) {
+      for (int16_t distance : {187, 304, 305, 999, 1000, 9999, 10000, 16093, 16094, 32767}) {
+        selected.avgClimbCms = climb;
+        selected.distanceM = distance;
+        const auto frame = drawTrack();
+        bool rightAligned = false;
+        for (int y = 0; y < frame.height; ++y) {
+          for (int x = 0; x < frame.width; ++x) {
+            const size_t p = y * frame.width + x;
+            if (frame.pixels[p] != baseline.pixels[p]) {
+              assert(x >= 15 && x <= 95 && y >= 57 && y <= 73);
+            }
+          }
+          if (y >= 57 && y <= 73) rightAligned |= frame.pixels[y * frame.width + 95];
+        }
+        assert(rightAligned);
+      }
+    }
+    selected.avgClimbCms = 1059;
+    // Four-digit fpm strength must leave the same arrow slots for every distance format.
+    for (int16_t distance : {304, 999, 1000, 9999, 10000, 32767}) {
+      selected.distanceM = distance;
+      checkArrows(selected);
+    }
+  }
+
+  void checkFixedReadoutCapacity() {
+    const struct {
+      const char* number;
+      const char* unit;
+    } distances[] = {{"999", "m"}, {"9.9", "km"}, {"9.9", "mi"},
+                     {"99", "km"}, {"99", "mi"}, {"--", "km"}, {"--", "mi"}};
+    for (const auto& distance : distances) {
+      u8g2.setFont(leaf_6x12);
+      const int16_t numberWidth = u8g2.getStrWidth(distance.number);
+      u8g2.setFont(leaf_5x8);
+      assert(numberWidth + 1 + u8g2.getStrWidth(distance.unit) <= 30);
+    }
+    u8g2.setFont(leaf_6x12);
+    const int16_t digitsWidth = u8g2.getStrWidth("999");
+    u8g2.setFont(leaf_6x12);
+    const char feet[] = {static_cast<char>(128), '\0'};
+    assert(digitsWidth + 1 + u8g2.getStrWidth(feet) <= 30);
+    for (char unit : {static_cast<char>(131), static_cast<char>(132)}) {
+      const char strength[] = {'9', '9', '9', '9', unit, '\0'};
+      assert(u8g2.getStrWidth(strength) <= 34);
+    }
+  }
+
+  void checkSelectedThermalLine(ThermalDisplayItem& selected) {
+    auto* items = const_cast<ThermalDisplayItem*>(thermalTracker.displayItems());
+    const uint8_t count = thermalTracker.displayItemCount();
+    const std::vector<ThermalDisplayItem> originals(items, items + count);
+    for (uint8_t i = 0; i < count; ++i) items[i].valid = &items[i] == &selected;
+    const struct { int8_t x, y; } positions[] = {
+        {0, -20}, {20, 0}, {0, 20}, {-20, 0}, {20, -20}, {-20, -20},
+        {20, 20}, {-20, 20}, {47, 0}, {-48, 0}, {0, -48}, {0, 47}, {0, 0}, {0, -4}};
+    for (uint8_t quality = 1; quality <= 5; ++quality) {
+      selected.quality = quality;
+      for (const auto& position : positions) {
+        selected.xOffset = position.x;
+        selected.yOffset = position.y;
+        selected.selected = false;
+        const auto withoutLine = drawTrack();
+        selected.selected = true;
+        const auto withLine = drawTrack();
+        const int cx = 48 + position.x, cy = 124 + position.y;
+        // Every interior pixel, including hollow centers, survives in all directions and at
+        // the map edge. The selection ring and line can only add pixels outside this interior.
+        for (int y = std::max(0, cy - 5); y <= std::min(191, cy + 5); ++y) {
+          for (int x = std::max(0, cx - 5); x <= std::min(95, cx + 5); ++x) {
+            if ((x - cx) * (x - cx) + (y - cy) * (y - cy) > 25) continue;
+            const int p = y * withLine.width + x;
+            assert(withLine.pixels[p] == withoutLine.pixels[p]);
+          }
+        }
+        for (int y = 74; y < 176; ++y) {
+          for (int x = 0; x < 96; ++x) {
+            const int p = y * withLine.width + x;
+            if (withLine.pixels[p] == withoutLine.pixels[p]) continue;
+            const int dx2 = 2 * x + 1 - 96, dy2 = 2 * y + 1 - 248;
+            assert(dx2 * dx2 + dy2 * dy2 <= 96 * 96);
+          }
+        }
+      }
+    }
+    selected.xOffset = 0;
+    selected.yOffset = -20;
+    selected.quality = 1;
+    const auto north = drawTrack();
+    assert(north.pixels[123 * 96 + 47] && north.pixels[123 * 96 + 48]);
+    assert(!north.pixels[124 * 96 + 48]);  // hollow pilot, four pixels below the old position
+    for (int y = 104; y <= 107; ++y) assert(!north.pixels[y * 96 + 48]);
+    assert(!north.pixels[109 * 96 + 48]);
+    for (int y = 110; y <= 123; ++y) assert(north.pixels[y * 96 + 48]);
+    save(north, "sim/build-tests/thermal-track-line-north.png");
+    selected.xOffset = 20;
+    selected.yOffset = -14;
+    save(drawTrack(), "sim/build-tests/thermal-track-line-hollow.png");
+    for (uint8_t i = 0; i < count; ++i) items[i] = originals[i];
   }
 }  // namespace
 
@@ -193,6 +290,7 @@ int main() {
   options.cardRoot = "sim/build-tests/thermal-track-test/card";
   device.configure(options);
   device.boot();
+  checkFixedReadoutCapacity();
   checkCoreClimbLayout();
   checkCoreAltitudeLayout();
   settings.labs_thermalTrack = settings.labs_thermalCore = true;
@@ -210,6 +308,7 @@ int main() {
   selected->avgClimbCms = 200;
   selected->xOffset = 9;
   selected->yOffset = -13;
+  checkSelectedThermalLine(*selected);
 
   for (bool imperial : {false, true}) {
     settings.units_alt = settings.units_climb = settings.units_distance = imperial;
@@ -218,6 +317,17 @@ int main() {
     selected->turnDeg = -50;
     save(drawTrack(), imperial ? "sim/build-tests/thermal-track-imperial.png"
                                : "sim/build-tests/thermal-track-metric.png");
+    checkReadoutBounds(*selected);
+    selected->avgClimbCms = 1059;
+    selected->distanceM = imperial ? 304 : 999;
+    selected->turnDeg = 80;
+    save(drawTrack(), imperial ? "sim/build-tests/thermal-track-four-digit-imperial.png"
+                               : "sim/build-tests/thermal-track-three-digit-metric.png");
+    selected->distanceM = imperial ? 16093 : 9999;
+    save(drawTrack(), imperial ? "sim/build-tests/thermal-track-decimal-imperial.png"
+                               : "sim/build-tests/thermal-track-decimal-metric.png");
+    selected->distanceM = 187;
+    selected->avgClimbCms = 200;
   }
 
   const auto baseline = drawTrack();
@@ -228,7 +338,7 @@ int main() {
     for (int x = 0; x < cursor.width; ++x) {
       const size_t p = y * cursor.width + x;
       if (cursor.pixels[p] == baseline.pixels[p]) continue;
-      assert(x >= 18 && x <= 55 && y >= 11 && y <= 25);
+      assert(x >= 15 && x <= 62 && y >= 12 && y <= 33);
       ++changed;
     }
   }

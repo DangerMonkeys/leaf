@@ -5,6 +5,7 @@
 
 #include "hardware/buttons.h"
 #include "instruments/baro.h"
+#include "instruments/gps.h"
 #include "logging/log.h"
 #include "navigation/thermal_tracker.h"
 #include "power.h"
@@ -24,15 +25,22 @@ namespace {
   constexpr uint8_t MAP_D_1500M = 74;
   constexpr uint8_t MAP_D_5000M = 96;
   constexpr uint8_t MAP_R_5000M = MAP_D_5000M / 2;
-  constexpr uint8_t ALT_X = thermal_page::VARIO_BAR_WIDTH + 1;
-  constexpr uint8_t ALT_VALUE_BASELINE_Y = 24;
-  constexpr uint8_t ALT_INFO_BASELINE_Y = 34;
-  constexpr uint8_t WIND_X = 69;
-  constexpr uint8_t WIND_Y = 29;
-  constexpr uint8_t SELECTED_CLIMB_BASELINE_Y = 57;
-  constexpr uint8_t SELECTED_DISTANCE_BASELINE_Y = 73;
-  constexpr uint8_t DISTANCE_LEFT_ARROW_X = 39;
-  constexpr uint8_t DISTANCE_RIGHT_ARROW_X = 88;
+  constexpr uint8_t ALT_X = 15;
+  constexpr uint8_t ALT_VALUE_BASELINE_Y = 30;
+  constexpr uint8_t ALT_TYPE_BASELINE_Y = 33;
+  constexpr uint8_t WIND_X = 77;
+  constexpr uint8_t WIND_Y = 33;
+  constexpr uint8_t SELECTED_RIGHT = 96;  // exclusive: last screen pixel is x=95
+  constexpr uint8_t SELECTED_TOP = 57;
+  constexpr uint8_t SELECTED_BOTTOM = 74;
+  constexpr uint8_t SELECTED_BASELINE_Y = 71;
+  // Fixed slots leave a blank column between the arrows, distance and strength.
+  constexpr uint8_t SELECTED_STRENGTH_LEFT = 62;
+  constexpr uint8_t SELECTED_DISTANCE_LEFT = 23;
+  constexpr uint8_t SELECTED_DISTANCE_RIGHT = 53;
+  constexpr uint8_t DISTANCE_LEFT_ARROW_X = 15;
+  constexpr uint8_t DISTANCE_RIGHT_ARROW_X = 54;
+  constexpr uint8_t SELECTED_THERMAL_RADIUS = 6;
 
   enum ThermalTrackPageItem : uint8_t {
     cursor_thermalTrackPage_none,
@@ -46,6 +54,9 @@ namespace {
 
   constexpr uint8_t POINTER_W = 12;
   constexpr uint8_t POINTER_H = 11;
+  constexpr int16_t POINTER_TOP = MAP_CY - 2;
+  constexpr int16_t POINTER_TIP_X = MAP_CX;
+  constexpr int16_t POINTER_TIP_Y = POINTER_TOP + 1;
   constexpr uint8_t POINTER_TRANSPARENT = 2;
   constexpr uint8_t POINTER_WHITE = 0;
   constexpr uint8_t POINTER_BLACK = 1;
@@ -58,13 +69,6 @@ namespace {
       {2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2},
   };
 
-  void printSelectedValue(const char* value, uint8_t baselineY) {
-    u8g2.setFont(leaf_6x12);
-    const int16_t width = u8g2.getStrWidth(value);
-    const int16_t x = min<int16_t>(95 - width, WIND_X - (width + 1) / 2);
-    u8g2.drawStr(x, baselineY, value);
-  }
-
   void printSelectedClimb(const ThermalDisplayItem* selected) {
     char value[14];
     const char unit = static_cast<char>(131 + settings.units_climb);
@@ -76,32 +80,50 @@ namespace {
     } else {
       snprintf(value, sizeof(value), "%.1f%c", selected->avgClimbCms / 100.0f, unit);
     }
-    printSelectedValue(value, SELECTED_CLIMB_BASELINE_Y);
+    u8g2.setFont(leaf_6x12);
+    const int16_t x = SELECTED_RIGHT - u8g2.getStrWidth(value);
+    u8g2.setClipWindow(SELECTED_STRENGTH_LEFT, SELECTED_TOP, SELECTED_RIGHT, SELECTED_BOTTOM);
+    u8g2.drawStr(x, SELECTED_BASELINE_Y, value);
+    u8g2.setMaxClipWindow();
   }
 
   void printSelectedDistance(const ThermalDisplayItem* selected) {
     char value[14];
+    const char feet[] = {static_cast<char>(128), '\0'};
+    const char* unit = settings.units_distance ? "mi" : "km";
+    const uint8_t* unitFont = leaf_5x8;
     if (selected == nullptr) {
-      snprintf(value, sizeof(value), "%s", settings.units_distance ? "--.-mi" : "--.-km");
-    } else if (settings.units_distance) {
-      constexpr float FEET_PER_METER = 3.28084f;
-      constexpr float FEET_PER_MILE = 5280.0f;
-      const float distanceFeet = selected->distanceM * FEET_PER_METER;
-      if (distanceFeet <= 1000.0f) {
-        snprintf(value, sizeof(value), "%u%c", static_cast<unsigned>(roundf(distanceFeet)),
-                 static_cast<char>(128));
-      } else {
-        snprintf(value, sizeof(value), "%.1fmi", distanceFeet / FEET_PER_MILE);
-      }
-    } else if (selected->distanceM < 1000) {
-      snprintf(value, sizeof(value), "%dm", selected->distanceM);
+      snprintf(value, sizeof(value), "--");
     } else {
-      snprintf(value, sizeof(value), "%.1fkm", selected->distanceM / 1000.0f);
+      const float shortDistance =
+          max<int16_t>(0, selected->distanceM) * (settings.units_distance ? 3.28084f : 1.0f);
+      if (shortDistance < 1000.0f) {
+        unit = settings.units_distance ? feet : "m";
+        if (settings.units_distance) unitFont = leaf_6x12;
+        snprintf(value, sizeof(value), "%u",
+                 static_cast<unsigned>(min<float>(999, roundf(shortDistance))));
+      } else {
+        const float longDistance = shortDistance / (settings.units_distance ? 5280.0f : 1000.0f);
+        snprintf(value, sizeof(value), longDistance < 10 ? "%.1f" : "%.0f",
+                 min<float>(longDistance < 10 ? 9.9f : 99.0f, longDistance));
+      }
     }
-    printSelectedValue(value, SELECTED_DISTANCE_BASELINE_Y);
+    u8g2.setFont(leaf_6x12);
+    const int16_t valueWidth = u8g2.getStrWidth(value);
+    u8g2.setFont(unitFont);
+    const int16_t width = valueWidth + 1 + u8g2.getStrWidth(unit);
+    const int16_t x =
+        SELECTED_DISTANCE_LEFT + (SELECTED_DISTANCE_RIGHT - SELECTED_DISTANCE_LEFT - width) / 2;
+    u8g2.setClipWindow(SELECTED_DISTANCE_LEFT, SELECTED_TOP, SELECTED_DISTANCE_RIGHT,
+                       SELECTED_BOTTOM);
+    u8g2.setFont(leaf_6x12);
+    u8g2.drawStr(x, SELECTED_BASELINE_Y, value);
+    u8g2.setFont(unitFont);
+    u8g2.drawStr(x + valueWidth + 1, SELECTED_BASELINE_Y, unit);
+    u8g2.setMaxClipWindow();
     if (selected != nullptr) {
-      display_turnIndicators(DISTANCE_LEFT_ARROW_X, DISTANCE_RIGHT_ARROW_X,
-                             SELECTED_DISTANCE_BASELINE_Y, selected->turnDeg);
+      display_turnIndicators(DISTANCE_LEFT_ARROW_X, DISTANCE_RIGHT_ARROW_X, SELECTED_BASELINE_Y,
+                             selected->turnDeg);
     }
   }
 
@@ -152,6 +174,38 @@ namespace {
     for (int16_t y = cy - radius; y <= cy + radius; y++) {
       for (int16_t x = cx - radius; x <= cx + radius; x++) {
         if (softCircleContainsPixel(x, y, cx, cy, radius)) drawClippedPixel(x, y);
+      }
+    }
+  }
+
+  void drawSelectedThermalLine(const ThermalDisplayItem* selected) {
+    if (selected == nullptr || !selected->valid) return;
+    const int16_t targetX = MAP_CX + selected->xOffset;
+    const int16_t targetY = MAP_CY + selected->yOffset;
+    int16_t x = POINTER_TIP_X;
+    int16_t y = POINTER_TIP_Y;
+    const int16_t dx = abs(targetX - x);
+    const int16_t dy = -abs(targetY - y);
+    const int16_t stepX = x < targetX ? 1 : -1;
+    const int16_t stepY = y < targetY ? 1 : -1;
+    int16_t error = dx + dy;
+    while (true) {
+      // Stop at the selection ring's first edge; never draw into the hollow marker.
+      if (softDiscContainsPixel(x, y, targetX, targetY, SELECTED_THERMAL_RADIUS)) {
+        if (softCircleContainsPixel(x, y, targetX, targetY, SELECTED_THERMAL_RADIUS)) {
+          drawClippedPixel(x, y);
+        }
+        break;
+      }
+      drawClippedPixel(x, y);
+      const int16_t twiceError = 2 * error;
+      if (twiceError >= dy) {
+        error += dy;
+        x += stepX;
+      }
+      if (twiceError <= dx) {
+        error += dx;
+        y += stepY;
       }
     }
   }
@@ -210,7 +264,7 @@ namespace {
 
   void drawUserTriangle() {
     const int16_t x0 = MAP_CX - POINTER_W / 2;
-    const int16_t y0 = MAP_CY - 6;
+    const int16_t y0 = POINTER_TOP;
 
     for (uint8_t y = 0; y < POINTER_H; ++y) {
       for (uint8_t x = 0; x < POINTER_W; ++x) {
@@ -236,7 +290,7 @@ namespace {
       if (items[i].valid && items[i].selected) {
         const int16_t x = MAP_CX + items[i].xOffset;
         const int16_t y = MAP_CY + items[i].yOffset;
-        drawClippedCircle(x, y, 6);
+        drawClippedCircle(x, y, SELECTED_THERMAL_RADIUS);
         break;
       }
     }
@@ -244,15 +298,22 @@ namespace {
 
   void drawAltitudeField() {
     const uint8_t altType = settings.disp_thmPageAltType == altType_MSL ? altType_MSL : altType_GPS;
-    display_alt_type(ALT_X, ALT_VALUE_BASELINE_Y, leaf_6x12, altType);
-    u8g2.setCursor(ALT_X + 3, ALT_INFO_BASELINE_Y);
-    print_alt_label(altType);
-    u8g2.print(' ');
-    u8g2.print(settings.units_alt ? "ft" : "m");
+    const int32_t altitudeCm = altType == altType_MSL
+                                   ? baro.altAdjusted()
+                                   : static_cast<int32_t>(100 * gps.altitude.meters());
+    const int32_t altitude = settings.units_alt ? altitudeCm * 100 / 3048 : altitudeCm / 100;
+    uint8_t tensX;
+    const uint8_t endX =
+        thermal_page::drawCoreAltitude(altitude, ALT_X, ALT_VALUE_BASELINE_Y, &tensX);
+    u8g2.setFont(leaf_5h);
+    u8g2.setCursor(tensX, ALT_TYPE_BASELINE_Y);
+    u8g2.print(altType == altType_MSL ? "MSL" : "GPS");
 
     if (thermalTrackPageCursor == cursor_thermalTrackPage_alt) {
-      // Keep the source/units below the cursor, clear of its white internal border.
-      display_selectionBox(ALT_X, ALT_VALUE_BASELINE_Y - 13, 38, 15, 4);
+      // Preserve the existing right edge even though the compact value is now narrower.
+      const bool compact = abs(altitude) >= 10000 || altitude <= -1000;
+      const uint8_t cursorRight = endX + (compact ? 3 : 0);
+      display_selectionBox(ALT_X, ALT_VALUE_BASELINE_Y - 18, cursorRight - ALT_X + 1, 22, 7);
     }
   }
 
@@ -308,14 +369,15 @@ void thermalTrackPage_draw() {
     const int32_t climbRate = baro.climbRateFilteredValid() ? baro.climbRateFiltered() : 0;
     const int32_t displayClimbRate = baro.climbRateFilteredValid() ? baro.climbRateForDisplay() : 0;
 
-    thermal_page::drawVario(climbRate);
+    thermal_page::drawVario(climbRate, 2, thermal_page::CORE_VARIO_BAR_WIDTH);
     maskMapCircle();
     drawThermals();
     drawMapRingsAndLabels();
     drawUserTriangle();
+    drawSelectedThermalLine(selected);
+    display_windSockRing(WIND_X, WIND_Y, 12, 7, true);
     drawAltitudeField();
-    thermal_page::drawClimbRate(displayClimbRate, true);
-    display_windSockRing(WIND_X, WIND_Y, 12, 7, false, false);
+    thermal_page::drawCoreClimbRate(displayClimbRate);
     drawSelectedThermalReadout(selected);
     drawDistanceScaleLabels();
   } while (u8g2.nextPage());

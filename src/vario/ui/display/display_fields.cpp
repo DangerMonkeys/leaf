@@ -1068,7 +1068,7 @@ void display_header(bool showTurnArrows) {
     // Speed in upper right corner
     u8g2.setFont(leaf_8x14);
     speedIsThreeDigits = display_speed(70, 14);
-    if (display.getPage() != MainPage::ThermalCore) {
+    if (display.getPage() != MainPage::ThermalCore && display.getPage() != MainPage::ThermalTrack) {
       u8g2.setFont(leaf_5h);
       const uint8_t speedUnitsX = display.getPage() == MainPage::Navigate ? 82 : 83;
       const uint8_t speedUnitsY = display.getPage() == MainPage::Navigate ? 21 : 20;
