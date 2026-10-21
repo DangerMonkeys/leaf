@@ -22,7 +22,11 @@ int main() {
   assert(projectVerticalAcceleration(0, 0, 0, 0, 0, 1, v, g) && v == -1);
   assert(!projectVerticalAcceleration(0, 0, 1, 0, 0, 0, v, g));
   assert(!projectVerticalAcceleration(0, 0, 1, 0, 0, 2, v, g));
-  assert(!projectVerticalAcceleration(4, 0, 1, 0, 0, 1, v, g));
+  // High acceleration inside the operating range must not reset validity.
+  assert(projectVerticalAcceleration(4, 0, 1, 0, 0, 1, v, g) && fabs(v) < 1e-12);
+  assert(projectVerticalAcceleration(0, 0, 6, 0, 0, 1, v, g) && v == 5);
+  assert(projectVerticalAcceleration(0, 0, -6, 0, 0, 1, v, g) && v == -7);
+  assert(!projectVerticalAcceleration(8, 0, 1, 0, 0, 1, v, g));
   assert(!projectVerticalAcceleration(NAN, 0, 1, 0, 0, 1, v, g));
   assert(!projectVerticalAcceleration(0, 0, 1, 0, INFINITY, 1, v, g));
 }

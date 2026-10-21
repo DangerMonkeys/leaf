@@ -46,6 +46,11 @@ class LSM6DSV : public IPollable, public IMessageSource {
   void updateSelfTest();
   void finishSelfTest(bool passed);
   bool beginTestPhase(uint8_t phase);
+#ifdef LEAF_IMU_STARTUP_TRACE
+  void traceStartup(const MotionUpdate& sample, uint16_t fifoWords, bool published);
+  uint32_t traceStarted_ = 0;
+  uint8_t traceSeen_ = 0;
+#endif
 
   stmdev_ctx_t ctx_{};
   etl::imessage_bus* bus_ = nullptr;
@@ -55,7 +60,9 @@ class LSM6DSV : public IPollable, public IMessageSource {
   uint8_t retries_ = 0;
   MotionUpdate pending_{0};
   uint8_t counter_ = 0;
-  bool haveCounter_ = false;
+  bool haveCounter_ = false, pendingClipped_ = false;
+  bool clippedSincePublish_ = false;
+  uint32_t lastClipReport_ = 0;
   uint32_t packets_ = 0, matched_ = 0, mismatched_ = 0, published_ = 0, updates_ = 0;
   uint32_t empty_ = 0, invalidGravity_ = 0, invalidAccel_ = 0, resets_ = 0, ioErrors_ = 0;
   double climbSum_ = 0, climbSumSquares_ = 0;

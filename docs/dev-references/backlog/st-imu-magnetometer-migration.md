@@ -1,25 +1,37 @@
 ---
 title: ST IMU and Separate Magnetometer Migration Backlog
-description: Hardware v3.2.8 implementation plan for the LSM6DSVTR, gravity and climb-rate processing, moving startup, power management, and commissioning.
+description: Hardware v3.2.8 implementation status, bench results, and remaining validation for the LSM6DSVTR, startup, climb processing, power management, and commissioning.
 ---
 
 # ST IMU and Separate Magnetometer Migration Backlog
 
 ## Status and scope
 
-Plan updated on **2026-10-20** after receipt of the v3.2.8 PCBs and confirmation of the fitted
-parts, addresses, orientation, interrupt wiring, and startup requirements.
+Status updated on **2026-10-21**. Core v3.2.8 support is implemented in commit `6ff70157`
+(`Add Leaf v3.2.8 LSM6DSV IMU support`). Development/release builds, a v3.2.6 regression
+build, and the recorded simulator checks passed. One board passed the proposed resting mean
+climb target in two orientations; physical moving-start, continuous-rotation, temperature,
+power/fault and flight qualification remain open. Overall commissioning is incomplete,
+including a separate POWER self-test failure. This is a development checkpoint.
+
+The **2026-10-21 follow-up** adds startup/motion capture, fixes resets caused by
+brief acceleration saturation, and gates Kalman bias learning using the existing ICM sample
+tolerances. The operating range is now +/-8 g. The first gated fixed-orientation motion test
+kept output available and recovered promptly; see the acceleration-dropout record below for
+the current installed image, measured results and remaining qualification.
 
 The hardware-support branch is `codex/hardware-v3.2.8`, created from `origin/main` at
 `82a74de7`. This document was brought forward from `codex/leaf-log-site-link`, where it was
-introduced in `26026ae6`. The branch and hardware-history entry are prepared; firmware
-implementation and new-board hardware verification have not started.
+introduced in `26026ae6`. The implementation/measurement record and checkpoint below supersede
+the earlier planning sections wherever they differ.
 
 Replace Leaf's TDK ICM-20948 with the ST LSM6DSVTR on v3.2.8, retain the ICM implementation
 for older boards, and keep the new driver and acceleration calculation as simple as possible.
-The first implementation continues to **poll the FIFO**, uses on-chip gravity direction, and
-does not use magnetometer measurements. Removal of Leaf's gravity correction on v3.2.8 is a
-measurement-dependent objective, not yet a demonstrated result.
+The implementation **polls the FIFO**, uses on-chip gravity direction, and does not use
+magnetometer measurements. V3.2.8 bypasses the old learned scalar gravity correction and uses
+an experimental barometer-observed Kalman acceleration-bias state instead. Measured resting
+accelerometer residuals required correction; removal of all correction is not supported by the
+current evidence. Older ICM boards retain their existing path.
 
 The confirmed component changes are also recorded in `vario/hardware/hardware_changes.md`.
 
@@ -603,7 +615,7 @@ Reference: [CPT-9019A-SMT-TR datasheet](https://www.sameskydevices.com/product/r
   works with both local application builds and release assets. Non-application images still come
   from a suitable local PlatformIO build.
 - Record actual build, simulator, commissioning, and hardware results here when performed.
-  The documentation/planning work has not established any new-board test pass.
+  See the implementation record for completed checks; unchecked physical items remain open.
 
 ## Proposed acceptance criteria
 
@@ -894,6 +906,327 @@ environment's Python if the system `python` command is the Microsoft Store alias
 - Compile/run `sim/tests/gravity_projection.cpp` with a C++17 compiler and `-Isrc/vario`.
 - Build the default simulator and run `sim/scripts/first-boot.txt` with
   `sim/recordings/thermal-climb.json` and `--play` for the legacy startup regression.
+
+## Startup investigation (2026-10-21)
+
+The next active task is to distinguish **first available sensor data**, **trustworthy gravity
+direction**, **qualified climb output**, and **leaving the splash screen**. These are different
+milestones. No shorter warm-up or flight-validity claim follows from the code audit alone.
+
+### Current boot/wake sequence, as implemented
+
+| Stage | Current behavior | Reason / tuning status |
+| --- | --- | --- |
+| Cold driver initialization | Install I2C callbacks, wait 10 ms, call `wake()` | Initial boot allowance, following ST's example; not a multi-second stabilization wait |
+| Every driver wake/recovery | Invalidate pending motion and filter; check WHO_AM_I; software POR | Starts a known configuration; POR helper itself waits 30 ms |
+| Sensor configuration | BDU, +/-4 g, +/-2000 dps, accel/gyro/SFLP at 60 Hz | Required to produce the selected measurements |
+| Bias/orientation initialization | Load commissioned gyro bias from NVS (otherwise zero); call ST's `lsm6dsv_sflp_game_gbias_set()` | The helper resets SFLP and seeds its initialization with a current accelerometer reading; it does not average stationary readings at ordinary boot |
+| FIFO enable and acquisition | Batch accel + gravity; stream FIFO; poll at approximately 20 Hz | Raw records may arrive before Leaf publishes anything; first arrival is not yet measured |
+| Leaf warm-up hold | Drain/pair records but publish none until 3000 ms after FIFO configuration | Conservative Leaf policy, not an identified ST requirement for a 3-second delay |
+| Barometer startup (in parallel) | Discard 20 pressure readings; the next reading establishes altitude | Approximately 1 second at 20 Hz; separate from SFLP settling |
+| Climb-filter qualification | Process 20 fresh pressure/motion updates after publication starts | Approximately 1 additional second at 20 Hz; sample count, not measured convergence |
+| Splash completion | Barometer + IMU progress complete AND six splash renders | Display normally updates at 2 Hz; roughly 3-second presentation floor, overlapping the acquisition waits, plus frame scheduling |
+
+Nominal IMU qualification is therefore **configuration time + about 4 seconds**, assuming
+fresh pressure and regular scheduling. The approximately 1-second barometer wait and 3-second
+splash minimum mostly overlap that interval; they must not be added again as sequential waits.
+Actual user-visible boot additionally includes other peripheral initialization and any disclaimer.
+Wake from charging currently follows the same IMU POR/configure/seed/hold path as ordinary boot,
+apart from the cold `init()` 10-ms delay. ESP32 idle between normal polls does not restart SFLP.
+
+`IMU::processGravity()` directly satisfies the old `STARTUP_NON_VERT_SAMPLES` counter. The
+old orientation/gravity-acceptance gate and its 8-second escape path do not delay normal SFLP
+startup. Only the 20 filter updates remain. The progress bar counts 20 discarded barometer
+samples plus 20 filter samples; it does not measure the fixed 3-second hold or gravity accuracy.
+The driver's `Ready` status means the hold expired, which can precede valid climb by a second.
+
+Code references: `src/vario/hardware/lsm6dsv.cpp`,
+`src/libraries/LSM6DSV/src/lsm6dsv_reg.c`, `src/vario/instruments/imu.cpp`,
+`src/vario/instruments/baro.cpp`, `src/vario/taskman.cpp`,
+`src/vario/ui/display/display.cpp` and `display_fields.cpp`.
+
+### What the new IMU changes
+
+ST documents separate physical sensor turn-on/filter settling and embedded fusion initialization.
+The datasheet lists typical gyroscope turn-on at 30 ms; that is **not a guarantee of 30-ms
+gravity convergence**. Its reference fusion example uses a 10-ms boot allowance and then polls
+fusion output, without Leaf's fixed 3-second publication hold.
+
+AN5922 section 6.5.1 describes seeding saved gyro bias when stillness cannot be guaranteed.
+The procedure resets SFLP and supplies current acceleration for initialization. Leaf invokes
+this path even for a missing calibration (with zero bias), so it need not deliberately ramp
+from a fixed assumed level orientation. Verify the resulting orientation/transient on hardware.
+An airborne accelerometer reading includes maneuver acceleration; this initialization does not
+prove a correct vertical during a sustained turn. Gravity magnitude near 1 g and a completed
+sample counter also do not prove correct direction or converged acceleration bias.
+
+Sources: [LSM6DSV datasheet](https://www.st.com/resource/en/datasheet/lsm6dsv.pdf),
+[AN5922 section 6.5.1](https://www.st.com/resource/en/application_note/DM00945663-.pdf), and
+[ST's fusion example](https://github.com/STMicroelectronics/STMems_Standard_C_drivers/blob/master/lsm6dsv_STdC/examples/lsm6dsv_sensor_fusion.c).
+
+### First probe and subsequent tuning
+
+The v3.2.8 dev environment enables `LEAF_IMU_STARTUP_TRACE`; release leaves it disabled.
+It records configuration/reset/sensor-enable/bias/FIFO milestones, first acceleration/gravity
+records, first complete/published pair, first valid climb, and splash completion. While a USB
+capture host is attached it records the newest complete pair at the host poll rate,
+including the otherwise discarded first 3 seconds, plus projected acceleration, pressure/time,
+barometer readiness, publication/filter validity, startup sample count, climb, bias and FIFO level.
+The trace observes early pairs without publishing them or changing the existing holds.
+Times are host observations, not reconstructed acquisition timestamps. Measure trace overhead
+and confirm any tuned result with tracing disabled; simulator injection bypasses the sensor
+and cannot qualify SFLP's physical startup behavior.
+
+Capture using the PlatformIO Python:
+
+```powershell
+& 'C:\Users\oxoth\.platformio\penv\Scripts\python.exe' 'tools and analysis/utils/imu_test/capture_startup.py' --seconds 60
+```
+
+The helper auto-detects one Espressif port, sets RTS inactive/DTR active before opening,
+preserves the raw log, and extracts CSV samples + JSON milestones under `.pio/imu-startup/`.
+Keep the connection open across wake trials; attach before pressing Leaf's power button.
+Offline extraction: `capture_startup.py --analyze <capture.log>`. Do not erase NVS to test
+ordinary startup. Missing-calibration trials require a separate deliberately controlled step.
+
+Run repeated flat, inverted, upright and side starts/wakes with the same saved calibration,
+then gentle continuous rotation and controlled lift/lower. Record first data, gravity-direction
+transient, vertical residual, first qualified climb and first run screen separately. For a
+stationary trial only, compare gravity direction with normalized acceleration and a settled
+reference; agreement during motion cannot establish true gravity. Add missing-bias and sustained
+turn trials before accepting a shorter moving-start policy.
+
+Tune one gate at a time: first test shorter publication holds while retaining the 20-update
+qualification, then evaluate the filter qualification separately. A shorter hold could let the
+filter learn while the present code discards measurements, but feeding unsettled fusion can
+also contaminate its bias state. Keep unqualified output unavailable. Use covariance/innovation
+and recorded startup errors to assess a better readiness rule; don't require near-zero
+acceleration or fixed orientation, which would reject genuine airborne starts.
+
+The six-frame splash floor can be shortened independently once the user-visible startup policy
+is chosen. An earlier run screen with explicit unavailable climb is also possible. A small
+separate power optimization is to avoid initializing active fusion on USB charging-only boot:
+`Power::initPeripherals()` currently configures the IMU and immediately sleeps it. Preserve
+known chip power-down and recovery behavior when changing that sequence. Avoid adding a second
+retained-fusion wake mode until its power/accuracy benefit is measured.
+
+### First measured wakes with startup tracing
+
+On 2026-10-21 the same MAC `7c:4f:ad:3b:ac:b0` was identified and the probe dev application
+was written/verified in both OTA slots, preserving the bootloader and NVS calibration. Its
+SHA-256 is `03fa4b252f50ddeb13c552ac46ae112a39823d62710206b02a2a678d719c5a4e`.
+This replaces the previously installed diagnostic application; the previous checkpoint's
+saved artifacts are retained. The probe binary/ELF are also saved locally under
+`.pio/imu-validation/startup-probe/`. Startup holds and validity behavior are unchanged.
+
+The user performed two charging-to-operating wakes, flat screen-up and upright, with the
+same saved gyro bias and one serial connection. Raw capture: `.pio/imu-startup/flat-wake.log`;
+CSV + JSON extraction use that same basename, and analysis is in `wake-statistics.json`.
+There are 200 early sample rows per wake. These are **warm wakes on one board**, not cold
+boots, missing-calibration tests, or moving-start acceptance.
+
+| Observed milestone, relative to `configure_begin` | Flat | Upright |
+| --- | ---: | ---: |
+| Software POR complete | 31 ms | 31 ms |
+| Saved gyro bias seeded | 59 ms | 59 ms |
+| FIFO configured | 61 ms | 61 ms |
+| First complete pair observed | 83 ms | 99 ms |
+| Barometer first observed ready in pair trace | 627 ms | 648 ms |
+| First published pair | 3081 ms | 3100 ms |
+| First qualified climb | 4030 ms | 4050 ms |
+| Splash completion | 4461 ms | 4231 ms |
+
+The initial gravity vectors were approximately `[0.00275, -0.00104, 0.99942] g` flat and
+`[0.02708, 0.99942, 0.00805] g` upright: the upright wake did not begin with flat gravity.
+Compared with each trial's own mean direction over 7–10 seconds, first-pair direction differed
+by 0.77 and 1.44 degrees respectively. It stayed within 0.2 degrees of that late direction
+from approximately 1.28 and 2.35 seconds; within 0.1 degrees from 1.58 and 3.45 seconds.
+These are observed direction changes, **not absolute attitude error or accepted readiness
+thresholds**. Small physical movement, especially while holding upright, can contribute.
+
+Projected vertical residual remained orientation-dependent: mean over 1–3 seconds was
+approximately -0.00927 g flat and -0.000045 g upright. During qualified samples in the
+4–6-second window, mean climb was -0.0801 / -0.0582 m/s and maximum absolute sampled climb
+was 0.233 / 0.259 m/s (flat / upright). Over 7–10 seconds, mean climb was -0.0264 / +0.00073
+m/s. These short-window statistics are not a repeat of the settled 60-second acceptance test.
+Pressure noise/handling and bias convergence were not independently separated. In particular,
+completion of 20 filter updates did not establish that startup transients had ended.
+
+The measurements support testing a shorter publication hold, but do not establish that
+immediate data should be trusted as climb output. First compare roughly 1- and 2-second
+holds against the 3-second baseline using captured/replayed data and more physical starts;
+retain the filter qualification initially and explicitly measure early climb/bias error.
+Then decide whether to qualify by a better readiness rule, allow internal filter settling
+before exposing climb, and/or shorten the splash minimum. Keep moving/turn starts in the
+acceptance set; don't tune a rule solely to resting data.
+
+Verification for the probe: repository formatter, v3.2.8 dev/release builds, v3.2.8 simulator
+build and both existing biased/unbiased moving-start + fault/recovery replays passed.
+Capture extraction was exercised with multiple wakes, interleaved diagnostics and partial
+records, then with the real capture. Binary inspection confirmed early sample tracing is
+present in dev and absent from release. The release image was built, not flashed. Physical
+trace-overhead comparison, cold boot, inverted starts, moving starts and any shortened-hold
+experiments remain open. The prior v3.2.6 regression result is unchanged; it was not rerun for
+this development-only instrumentation pass.
+
+## Acceleration dropout investigation (2026-10-21)
+
+The user reported successful startup during rotation, followed by climb becoming `--` during
+rapid raises/lowers. The first reproduction capture is
+`.pio/imu-startup/acceleration-dropout-01.log`. It recorded **`Accelerometer clipped
+(I2C errors=0)`** after a period of valid motion. The user continued gentle movement for
+approximately ten seconds and then rested the device; neither restored output. No automatic
+reconfiguration was recorded after this captured fault.
+
+The existing +/-4 g driver treated a single saturated raw axis as a fatal hardware fault:
+invalidate motion/filter, power down SFLP/gyro/accel, then retry configuration and repeat the
+3-second hold and 20-update qualification. This explains multi-second interruption after
+brief saturation. Ordinary acceleration does not have a stillness gate on the new path.
+Code inspection also found that the three recovery attempts were a lifetime budget between
+explicit wakes; successful recovered operation never replenished it. Repeated faults could
+therefore leave the IMU disabled indefinitely. Prior attempts were not logged in this capture,
+so exhaustion is a code-supported explanation for non-recovery, not a directly observed count.
+
+The correction under test:
+
+- Operate at +/-8 g, verify the full-scale register, use the matching FIFO conversion, and
+  update projection bounds consistently. Keep commissioning stimulation/calibration at its
+  existing +/-4 g setting; normal configuration restoration selects +/-8 g afterward.
+- Reject an entire clipped FIFO time slot without calling the hardware fault/reset path.
+  Preserve pairing in either tag order and continue draining to a usable pair. Count and
+  rate-limit reports of clipping, including raw axis values.
+- Complete clipped slots prove acquisition is alive, so sustained saturation does not itself
+  restart the chip. Only fresh unsaturated data is published: the existing 250-ms freshness
+  limit still makes climb unavailable if no usable acceleration arrives. No invented zero
+  acceleration, stale-valid output or untested barometer-only fallback is introduced.
+- Replenish the recovery budget after at least ten seconds since configuration with qualified
+  output. Persistent consecutive bring-up/recovery failures remain bounded.
+- Log every climb-validity transition in the dev build, with motion/pressure freshness,
+  filter initialization/sample progress, reset count and clipped-sample count. Include time
+  and retry count in fault reports and counters in periodic diagnostics.
+
+ST documents +/-8 g as a supported accelerometer range; AN5922's gyro-bias initialization
+procedure accounts for the current full scale. This does not establish dynamic accuracy or
+noise acceptance at the new setting. Recheck stationary noise/bias, startup and moving data.
+Sources: [LSM6DSV product/datasheet](https://www.st.com/en/mems-and-sensors/lsm6dsv.html) and
+[AN5922 section 6.5.1](https://www.st.com/resource/en/application_note/DM00945663-.pdf).
+
+`sim/tests/imu_acceleration.py` generates physically consistent pressure/acceleration input
+with repeated +6 g specific-force peaks and negative acceleration, asserting continuous
+validity on every 50-ms step during and after motion. This exercises the real instrument/filter
+path, not the stubbed hardware FIFO. Projection checks cover high signed acceleration inside
+range, rejection at full scale, freefall and invalid gravity. Physical saturation rejection,
+power/fault recovery, and range/noise results must be recorded separately after testing.
+
+### Saturation fix: first physical repeat
+
+The saturation-handling dev image (SHA-256
+`34ac489c1bd5b46ca3ddf343a49d40192d738504be6e4fef5a9ee26d1a1207ca`) was built and
+verified in both app slots. The user confirmed values stayed available throughout repeated
+raises/lowers and rotations. Capture `.pio/imu-startup/acceleration-fixed-01.log` recorded
+**100 clipped raw samples**, zero hardware resets, zero FIFO mismatches and zero validity
+losses after initial qualification (`t=56043 ms` through the last periodic report at
+`t=255090 ms`). Thus the brief-saturation handling itself was exercised, not only the wider
+range. Dev/release builds, projection tests, high-acceleration continuity replay and the
+existing biased fault/recovery replay passed. The standalone hardware recovery-budget
+replenishment path still needs deliberate fault-injection testing.
+
+This repeat exposed a separate bias-learning defect. Sampled bias changed from approximately
+-0.1 m/s² to as much as **-2.4708 m/s²** during motion, with false resting climb and slow
+recovery afterward. The user independently observed this and requested excluding dynamic
+samples from bias learning. Merely preserving availability does not qualify climb accuracy.
+The archived motion-fix binary is in `.pio/imu-validation/motion-fix/`; its ELF was not retained
+before the following build cleaned that environment's intermediate output.
+
+### Bias-learning gate and shared legacy thresholds
+
+Initial consideration of a 0.9–1.1 g window is superseded by the request to reuse the existing
+ICM learning bounds. Code/history review established:
+
+| Gate / limit | Existing ICM value |
+| --- | --- |
+| Raw total-acceleration learning window | 0.935–1.065 g (`abs(total - 1) <= 0.065`) |
+| Vertical-residual learning window | +/-0.10 g |
+| Learned scalar-gravity clamp | 0.94–1.06 g |
+| Gravity plausibility check | 0.9–1.1 g |
+| Commissioning acceleration check | Strictly between 0.8 and 1.2 g |
+
+An older magnitude gate was +/-0.12 g (0.88–1.12 g), before `bd2fcee9` on June 23.
+The manufacturing-offset change in `96df01d4` on July 15 widened the scalar clamp from +/-2%
+to +/-6% and widened the learning gate from +/-5% to +/-6.5%, leaving margin for the clamp's
+limits. The old gravity-performance backlog describes the pre-fix measurements, not the
+current settings.
+
+The new SFLP bias-learning gate now references the **same two tolerance constants** as the
+existing ICM gravity learner. It pauses bias updates outside the magnitude/vertical windows,
+on any discarded saturation reported since the previous update, and for two seconds after
+the last disturbance. It does not pause motion/pressure processing, reset readiness, require
+zero climb, discard genuine acceleration from prediction or change the old ICM learner.
+Only the bias component of the Kalman observation gain is suppressed, with that same gain
+used in the Joseph covariance update. Bias process noise remains unchanged for this first test.
+
+Motion messages/logs/replay carry an optional `clippedSinceLastUpdate` bit after the existing
+SFLP reset field. The accompanying acceleration is usable; the bit records missing saturated
+slots that must not train a long-term correction. Old recordings omit it and remain valid.
+The dev serial trace now captures ongoing paired motion/pressure/filter samples while a USB
+capture host is attached, with clipping and learning-allowed fields, to characterize post-motion
+settling; it is no longer limited to the first ten seconds. Release omits this trace.
+
+Tests include the real Kalman implementation with bias held exactly constant during maneuver
+and pressure disturbances while prediction still responds to acceleration; replay covers
+under-observed maneuver impulses, pressure disturbance, clipping metadata on otherwise calm
+data, two-second holdoff, and 1.064/1.066 g samples on either side of the shared upper gate.
+Do not infer flight readiness or an ICM bias-filter migration from these changes.
+
+### Shared bias gate: first physical repeat
+
+The dev application with the shared gates was flashed and verified in both slots on the same
+board, preserving NVS and the bootloader. SHA-256:
+`d45ead12476d698697159844255c965a69cddfe442aa421673ed62e5c3915b1b`.
+This is the current installed image, superseding the ungated saturation-fix image above.
+Matching binary and ELF are retained in `.pio/imu-validation/bias-gate/`.
+
+Capture `.pio/imu-startup/bias-gated-motion-01.log` includes ongoing paired samples with
+learning/clipping flags; its CSV/JSON extraction and `bias-gated-statistics.json` hold the
+measurements. The user kept the screen upward, established a resting baseline, performed
+rapid raises/lowers, and rested the device again. The user confirmed availability throughout
+and prompt recovery. In the analyzed initial 51.6-second segment:
+
+- Detected dynamic samples ran from approximately 15.98 to 31.18 seconds after configuration.
+- Peak observed total acceleration was **6.746 g**, with no clipping flag in that trial and
+  no invalid samples after startup. This complements the preceding 100-clipped-sample
+  continuity trial; the new gate's physical clipping-metadata path still needs a repeat
+  that actually clips at +/-8 g.
+- Serialized bias stayed exactly **-0.09819 m/s²** throughout the paused-learning interval.
+- Mean climb in the first 0–2 seconds after the last detected dynamic sample was -0.136 m/s,
+  with RMS 0.208 m/s. A short velocity transient remains; this is not instantaneous recovery.
+- At 2–5 seconds after that sample: **mean -0.00624 m/s, RMS 0.03274 m/s**.
+- At 5–10 seconds: mean +0.01017 m/s, RMS 0.03455 m/s.
+- At 10–20 seconds: mean +0.00626 m/s, RMS 0.02567 m/s.
+- The completed capture contains 4208 paired rows and no invalid samples after startup.
+  Its final settled 60-second window (150.48–210.43 seconds after configuration) contains
+  1200 samples: **mean climb +0.00161 m/s, RMS 0.03544 m/s**, mean bias -0.10003 m/s²,
+  with learning allowed throughout. This meets the resting mean target for this board/face.
+
+The maneuver/pressure-disturbance replay, upper/lower gate boundaries, independent vertical
+gate, clipping metadata/holdoff, direct Kalman frozen-bias test, high-acceleration continuity,
+existing biased recovery replay and legacy/new filter comparison all passed. The existing
+comparison still preserves low sustained acceleration and moving startup. Formatter,
+`leaf_3_2_8_dev`, `leaf_3_2_8_release` and `leaf_3_2_6_release` builds passed. Firmware builds
+were run sequentially; only the v3.2.8 dev image was flashed. The serial capture is closed.
+
+To reproduce the added checks, generate recordings with `python sim/tests/imu_acceleration.py`
+and `python sim/tests/imu_bias_maneuver.py`, then use each printed v3.2.8 simulator command
+(without `--play`). The direct filter test compiles/runs in the documented Docker environment:
+`g++ -std=c++17 -Isrc/vario -Isim/hal/include sim/tests/kalman_bias.cpp src/vario/math/kalman.cpp -o sim/build328/kalman_bias && ./sim/build328/kalman_bias`.
+Keep the existing recovery replays, projection test and `imu_filter_comparison.py` alongside
+these checks.
+
+This is a successful first fixed-orientation bench test, not a six-face, temperature,
+coordinated-turn, flight or manufacturing qualification. Next compare rotation plus
+translation, orientation-dependent bias adaptation, actual saturation with the learning gate,
+and noise/latency on several boards. Keep the old ICM estimator until its separate migration
+is requested and validated with real ICM data.
 
 ## Remaining assumptions and decisions
 

@@ -39,7 +39,7 @@ double KalmanFilterPA::getAcceleration() const {
 }
 
 void KalmanFilterPA::update(double measuredTime, double measuredPosition,
-                            double measuredAcceleration) {
+                            double measuredAcceleration, bool allowBiasLearning) {
   if (isnan(measuredTime) || isinf(measuredTime) || isnan(measuredPosition) ||
       isinf(measuredPosition) || isnan(measuredAcceleration) || isinf(measuredAcceleration)) {
     fatalErrorInfo("measuredTime=%g, measuredPosition=%g, measuredAcceleration=%g", measuredTime,
@@ -67,7 +67,7 @@ void KalmanFilterPA::update(double measuredTime, double measuredPosition,
   t_ = measuredTime;
 
   if (estimateAccelerationBias_) {
-    updateWithBias(dt, measuredPosition, measuredAcceleration);
+    updateWithBias(dt, measuredPosition, measuredAcceleration, allowBiasLearning);
     return;
   }
 
@@ -118,8 +118,8 @@ void KalmanFilterPA::update(double measuredTime, double measuredPosition,
   p11_ -= k11 * p11_;
 }
 
-void KalmanFilterPA::updateWithBias(double dt, double measuredPosition,
-                                    double measuredAcceleration) {
+void KalmanFilterPA::updateWithBias(double dt, double measuredPosition, double measuredAcceleration,
+                                    bool allowBiasLearning) {
   // State [altitude, climb, vertical acceleration bias]. Gravity direction remains entirely
   // SFLP's responsibility. Bias is observable from barometric motion, including during flight;
   // it is never inferred by assuming the device's measured acceleration ought to be zero.
@@ -142,6 +142,10 @@ void KalmanFilterPA::updateWithBias(double dt, double measuredPosition,
   const double innovationVariance = predicted[0][0] + pVar_;
   double gain[3];
   for (int i = 0; i < 3; ++i) gain[i] = predicted[i][0] / innovationVariance;
+  // Keep maneuver/pressure transients out of the slowly learned sensor correction. Prediction
+  // and barometric position/velocity correction continue using the measured acceleration.
+  // Use this constrained gain in Joseph's update too, preserving covariance consistency.
+  if (!allowBiasLearning) gain[2] = 0;
   const double residual = measuredPosition - p_;
   p_ += gain[0] * residual;
   v_ += gain[1] * residual;

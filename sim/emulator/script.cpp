@@ -162,6 +162,22 @@ namespace sim {
                  minimum, maximum, imu.velocityValid(), imu.kalmanVelocity()); ++failures_;
         } else printf("script: ok climb %g in [%g,%g]\n", imu.getVelocity(), minimum, maximum);
       }
+    } else if (step.command == "expect-bias") {
+      std::istringstream bounds(argument);
+      double minimum = 0, maximum = 0;
+      bounds >> minimum >> maximum;
+      const double bias = imu.accelerationBias();
+      if (!bounds || !imu.velocityValid() || bias < minimum || bias > maximum) {
+        printf("script: FAIL bias expected [%g,%g], valid=%d, actual=%g\n",
+               minimum, maximum, imu.velocityValid(), bias); ++failures_;
+      } else printf("script: ok bias %g in [%g,%g]\n", bias, minimum, maximum);
+    } else if (step.command == "expect-bias-learning") {
+      const bool expected = argument == "active";
+      if ((argument != "active" && argument != "paused") ||
+          imu.biasLearningAllowed() != expected) {
+        printf("script: FAIL bias learning expected %s, active=%d\n", argument.c_str(),
+               imu.biasLearningAllowed()); ++failures_;
+      } else printf("script: ok bias learning %s\n", argument.c_str());
     } else if (step.command == "expect-page") {
       const std::string page = device.status().page;
       if (page != argument) {

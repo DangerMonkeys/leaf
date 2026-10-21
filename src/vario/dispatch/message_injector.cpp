@@ -248,6 +248,10 @@ void MessageInjector::onMotionUpdate(const char* line, size_t len) {
     if (!to_double(line, b, e, m.gz)) return;
     next_field(line, len, pos, b, e);
     m.reset = b < e && line[b] == '1';
+    if (pos < len) {
+      next_field(line, len, pos, b, e);
+      m.clippedSinceLastUpdate = b < e && line[b] == '1';
+    }
   }
 
   bus->receive(m);

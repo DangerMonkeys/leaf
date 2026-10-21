@@ -39,6 +39,7 @@ class IMU : public MessageSink<IMU, MotionUpdate>, public IMessageSource {
   float kalmanVelocity() const;
   float kalmanAcceleration() const;
   float accelerationBias() const { return kalmanvert_.getAccelerationBias(); }
+  bool biasLearningAllowed() const { return biasLearningAllowed_; }
   unsigned long lastMotionTime() const;
   float lastDeviceAccelX() const;
   float lastDeviceAccelY() const;
@@ -130,5 +131,7 @@ class IMU : public MessageSink<IMU, MotionUpdate>, public IMessageSource {
   uint32_t lastPressureTime_ = 0;
   uint32_t lastKalmanTime_ = 0;
   double kalmanTime_ = 0;
+  bool biasLearningAllowed_ = true, haveBiasDisturbance_ = false;
+  uint32_t lastBiasDisturbance_ = 0;
 };
 extern IMU imu;

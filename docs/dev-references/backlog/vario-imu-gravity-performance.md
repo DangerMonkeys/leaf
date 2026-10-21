@@ -5,6 +5,13 @@ description: Findings and future tuning notes for IMU gravity estimation and sta
 
 # Vario IMU Gravity Performance Backlog
 
+**Historical findings; status clarified 2026-10-21.** The clamp/gate changes proposed below
+were implemented in `96df01d4` on July 15. The current ICM learner accepts total acceleration
+within **0.935–1.065 g** and vertical residual within **+/-0.10 g**, with learned gravity
+clamped to **0.94–1.06 g**. References below to a +/-2% clamp and +/-5% sample gate describe
+the original failing configuration. The v3.2.8 bias-learning gate now reuses the two current
+sample tolerances; this does not replace the ICM's existing learner.
+
 The v3.2.8 replacement plan is recorded in the
 [ST IMU and Separate Magnetometer Migration Backlog](st-imu-magnetometer-migration.md).
 That plan retains the ICM path for older boards and evaluates whether the new LSM6DSV needs

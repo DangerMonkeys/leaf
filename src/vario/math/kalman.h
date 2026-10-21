@@ -6,7 +6,8 @@ class KalmanFilterPA {
   KalmanFilterPA(double positionVariance, double accelerationVariance)
       : pVar_(positionVariance), aVar_(accelerationVariance) {}
 
-  void update(double measuredTime, double measuredPosition, double measuredAcceleration);
+  void update(double measuredTime, double measuredPosition, double measuredAcceleration,
+              bool allowBiasLearning = true);
 
   bool initialized() const { return initialized_; }
   // A moving start needs uncertainty in initial velocity, not a confident zero-velocity prior.
@@ -24,7 +25,8 @@ class KalmanFilterPA {
 
  private:
   void init(double initialTime, double initialPosition, double initialAcceleration);
-  void updateWithBias(double dt, double measuredPosition, double measuredAcceleration);
+  void updateWithBias(double dt, double measuredPosition, double measuredAcceleration,
+                      bool allowBiasLearning);
 
   bool initialized_ = false;
   double initialVelocityVariance_ = 0;

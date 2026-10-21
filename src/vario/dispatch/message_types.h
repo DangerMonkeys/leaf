@@ -90,6 +90,10 @@ struct MotionUpdate : public etl::message<MOTION_UPDATE> {
   // A discontinuity invalidates the previous filter epoch (reset, sleep, FIFO loss).
   bool reset = false;
 
+  // A saturated FIFO slot was discarded since the previous published update. The acceleration
+  // carried here is usable, but it must not teach the bias estimator about missing impulses.
+  bool clippedSinceLastUpdate = false;
+
   MotionUpdate(unsigned long t) : t(t) {};
 };
 

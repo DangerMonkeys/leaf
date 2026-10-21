@@ -31,6 +31,8 @@ namespace {
   constexpr double MAX_GRAVITY_G = 1.1;
   constexpr double MIN_GRAVITY_ESTIMATE_G = 0.94;
   constexpr double MAX_GRAVITY_ESTIMATE_G = 1.06;
+  // Shared sample windows for legacy gravity learning and SFLP bias learning. On SFLP they
+  // gate bias learning only; climb prediction and data validity remain separate.
   constexpr double GRAVITY_UPDATE_ACCEL_TOLERANCE_G = 0.065;
   constexpr double GRAVITY_UPDATE_VERTICAL_TOLERANCE_G = 0.10;
   constexpr double GRAVITY_UPDATE_MAX_SLEW_G_PER_S = 0.05;
@@ -39,6 +41,7 @@ namespace {
   constexpr uint16_t KALMAN_STARTUP_REPORT_SAMPLES = IMU_SAMPLE_RATE;
   constexpr uint16_t STARTUP_NON_VERT_SAMPLES = IMU_SAMPLE_RATE;
   constexpr uint32_t STARTUP_IMU_MAX_READINESS_MS = 8000;
+  constexpr uint32_t BIAS_LEARNING_RECOVERY_MS = 2000;
 
   bool normalizeQuaternion(double* qw, double* qx, double* qy, double* qz) {
     double qVecMagnitude2 = (*qx * *qx) + (*qy * *qy) + (*qz * *qz);
@@ -316,6 +319,16 @@ void IMU::on_receive(const MotionUpdate& msg) {
       wake();
       return;
     }
+    const bool disturbed = msg.clippedSinceLastUpdate ||
+                           fabs(accelTot_ - 1.0) > GRAVITY_UPDATE_ACCEL_TOLERANCE_G ||
+                           fabs(accelVert_) > GRAVITY_UPDATE_VERTICAL_TOLERANCE_G;
+    if (disturbed) {
+      haveBiasDisturbance_ = true;
+      lastBiasDisturbance_ = msg.t;
+    }
+    biasLearningAllowed_ = !haveBiasDisturbance_ ||
+                           uint32_t(msg.t - lastBiasDisturbance_) >= BIAS_LEARNING_RECOVERY_MS;
+    if (biasLearningAllowed_) haveBiasDisturbance_ = false;
     if (baro.state() != Barometer::State::Ready || !baro.pressureFresh()) {
       motionSampleBaroNotReadyCount_++;
       kalmanvert_.reset(25.0, true);
@@ -331,7 +344,7 @@ void IMU::on_receive(const MotionUpdate& msg) {
     else
       kalmanTime_ = 0;
     lastKalmanTime_ = msg.t;
-    kalmanvert_.update(kalmanTime_, baro.altF(), kalmanAccelVert_ * 9.80665);
+    kalmanvert_.update(kalmanTime_, baro.altF(), kalmanAccelVert_ * 9.80665, biasLearningAllowed_);
     ++kalmanUpdateSampleCount_;
     if (kalmanStartupSamplesRemaining_) --kalmanStartupSamplesRemaining_;
     return;
@@ -388,6 +401,8 @@ void IMU::wake() {
   startupReadinessStartMs_ = 0;
   tLastGravityUpdate_ = 0;
   kalmanStartupSamplesRemaining_ = KALMAN_STARTUP_REPORT_SAMPLES;
+  biasLearningAllowed_ = true;
+  haveBiasDisturbance_ = false;
 }
 
 bool IMU::accelValid() { return validAccelTot_ && uint32_t(millis() - lastMotionTime_) <= 250; }

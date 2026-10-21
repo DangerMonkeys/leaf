@@ -89,8 +89,8 @@ void BusLogger::on_receive(const MotionUpdate& msg) {
   file_.printf("M%d,%s,%g,%g,%g,%s,%g,%g,%g", msg.t - tStart_, msg.hasAcceleration ? "A" : "a",
                msg.ax, msg.ay, msg.az, msg.hasOrientation ? "Q" : "q", msg.qx, msg.qy, msg.qz);
   if (msg.hasGravity || msg.reset) {
-    file_.printf(",%s,%g,%g,%g,%u", msg.hasGravity ? "V" : "v", msg.gx, msg.gy, msg.gz,
-                 msg.reset ? 1 : 0);
+    file_.printf(",%s,%g,%g,%g,%u,%u", msg.hasGravity ? "V" : "v", msg.gx, msg.gy, msg.gz,
+                 msg.reset ? 1 : 0, msg.clippedSinceLastUpdate ? 1 : 0);
   }
   file_.println();
 }

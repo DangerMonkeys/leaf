@@ -230,6 +230,9 @@ void Display::update() {
       showSplashScreenFrames_--;
     }
     if (showSplashScreenFrames_ == 0 && display_startupProgressComplete()) {
+#ifdef LEAF_IMU_STARTUP_TRACE
+      Serial.printf("IMU_STARTUP_UI,%lu,splash_complete\n", (unsigned long)millis());
+#endif
       showStartupSplash_ = false;
     }
     return;
