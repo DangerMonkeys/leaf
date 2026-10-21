@@ -115,7 +115,7 @@ OBJ_LIB  := $(patsubst $(U8G2)/%.c,$(BUILD)/lib/u8g2/%.o,$(U8G2_C)) \
 OBJECTS := $(OBJ_FW) $(OBJ_SIM) $(OBJ_LIB)
 TARGET  := $(BUILD)/leafsim
 
-.PHONY: all clean deps test-thermal-core test-free-flight test-thermal-track test-display-settings
+.PHONY: all clean deps test-thermal-core test-free-flight test-thermal-track test-display-settings test-leaf-log-sync
 all: $(TARGET)
 
 # Regression checks use the same firmware/HAL objects, with a test entry point instead of the UI.
@@ -143,6 +143,15 @@ $(BUILD)/display_settings_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJE
 test-display-settings: $(BUILD)/display_settings_test
 	@cd $(ROOT) && $(BUILD)/display_settings_test
 	@cd $(ROOT) && $(BUILD)/display_settings_test --verify-persistence
+
+# Exercise the real sync/storage code with deterministic upload outcomes, without network access.
+LEAF_LOG_TEST_OBJECTS := $(filter-out $(BUILD)/sim/emulator/main.o $(BUILD)/fw/src/vario/comms/leaf_log_client.o,$(OBJECTS))
+
+$(BUILD)/leaf_log_sync_test: $(LEAF_LOG_TEST_OBJECTS) $(SIM)/tests/leaf_log_sync.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/leaf_log_sync.cpp $(LEAF_LOG_TEST_OBJECTS) $(LDFLAGS)
+
+test-leaf-log-sync: $(BUILD)/leaf_log_sync_test
+	@cd $(ROOT) && $(BUILD)/leaf_log_sync_test
 
 $(TARGET): $(OBJECTS)
 	@echo "  LD    $(notdir $@)"

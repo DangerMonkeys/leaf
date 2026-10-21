@@ -20,6 +20,33 @@ namespace {
   constexpr uint32_t COMPLETION_POPUP_MS = 5UL * 1000;
   constexpr uint32_t NOTICE_POPUP_MS = 30UL * 1000;
   constexpr uint32_t RETRY_DELAYS_MS[] = {5UL * 60 * 1000, 15UL * 60 * 1000, 60UL * 60 * 1000};
+  constexpr uint32_t SCAN_SLICE_MS = 10;
+  constexpr uint8_t SCAN_SLICE_ENTRIES = 32;
+  constexpr const char* SCAN_PATHS = "/.leaf-log-scan.tmp";
+  constexpr const char* PENDING_PATHS = "/.leaf-log-pending.tmp";
+  constexpr size_t MAX_QUEUED_PATH_BYTES = 512;
+
+  // Length prefixes also support filenames containing newlines. These lists are scratch data,
+  // rebuilt each session; the upload/rejection markers in the logbook remain authoritative.
+  bool writeQueuedPath(File& file, const String& path) {
+    const size_t length = path.length();
+    if (length == 0 || length > MAX_QUEUED_PATH_BYTES) return false;
+    const uint8_t prefix[] = {static_cast<uint8_t>(length), static_cast<uint8_t>(length >> 8)};
+    return file.write(prefix, sizeof(prefix)) == sizeof(prefix) &&
+           file.write(reinterpret_cast<const uint8_t*>(path.c_str()), length) == length;
+  }
+
+  bool readQueuedPath(File& file, String& path) {
+    uint8_t prefix[2];
+    if (file.read(prefix, sizeof(prefix)) != sizeof(prefix)) return false;
+    const size_t length = prefix[0] | (static_cast<size_t>(prefix[1]) << 8);
+    if (length == 0 || length > MAX_QUEUED_PATH_BYTES) return false;
+    char buffer[MAX_QUEUED_PATH_BYTES + 1];
+    if (file.readBytes(buffer, length) != length) return false;
+    buffer[length] = '\0';
+    path = buffer;
+    return path.length() == length && LogbookStore::isLogbookJsonPath(path);
+  }
 }  // namespace
 
 LeafLogSync leafLogSync;
@@ -37,14 +64,162 @@ void LeafLogSync::beginSession(bool fromEject) {
 }
 
 void LeafLogSync::beginEligibilityScan() {
-  if (scanDirectory_) scanDirectory_.close();
+  clearSessionFiles();
   current_ = LeafLogCandidate();
   pendingCount_ = 0;
-  cancelRequested_.store(false, std::memory_order_release);
   wifiAttemptStarted_ = false;
   timeStarted_ = false;
-  scanDirectory_ = SD_MMC.open(LogbookStore::directoryPath());
   state_ = State::CheckingEligibility;
+  stateStartedMs_ = millis();
+
+  const auto credential = leaf_log_credentials::load();
+  if (!settings.labs_leafLog || !credential.linked() || !sdcard.firmwareCanAccessFilesystem()) {
+    finishToMassStorage();
+    return;
+  }
+  scanDirectory_ = SD_MMC.open(LogbookStore::directoryPath());
+  if (!scanDirectory_) {
+    finishToMassStorage();
+    return;
+  }
+  scanPaths_ = SD_MMC.open(SCAN_PATHS, "w", true);
+  if (!scanPaths_ || scanPaths_.isDirectory()) handleTransientFailure("scan_queue_open_failed");
+}
+
+void LeafLogSync::clearSessionFiles() {
+  if (scanDirectory_) scanDirectory_.close();
+  if (scanPaths_) scanPaths_.close();
+  if (pendingPaths_) pendingPaths_.close();
+  // Never touch the filesystem after it has been handed to a USB host.
+  if (sdcard.firmwareCanAccessFilesystem()) {
+    if (SD_MMC.exists(SCAN_PATHS)) SD_MMC.remove(SCAN_PATHS);
+    if (SD_MMC.exists(PENDING_PATHS)) SD_MMC.remove(PENDING_PATHS);
+  }
+}
+
+void LeafLogSync::scanEligibility() {
+  if (!sdcard.firmwareCanAccessFilesystem()) {
+    finishToMassStorage();
+    return;
+  }
+  if (sessionTotalKnown_) {
+    selectNextUpload();
+    return;
+  }
+
+  const uint32_t startedMs = millis();
+  for (uint8_t entries = 0; entries < SCAN_SLICE_ENTRIES; ++entries) {
+    // A single filesystem operation may exceed the budget; yield/check cancellation between them.
+    if (cancelRequested_.load(std::memory_order_acquire) ||
+        powerOnRequested_.load(std::memory_order_acquire) || buttons.urgentPressLatched()) {
+      return;
+    }
+    if (entries > 0 && millis() - startedMs >= SCAN_SLICE_MS) return;
+
+    String path;
+    if (scanDirectory_) {
+      path = scanDirectory_.getNextFileName();
+      if (!path.isEmpty()) {
+        path = LogbookStore::normalizePath(path);
+        if (LogbookStore::isLogbookJsonPath(path) && !writeQueuedPath(scanPaths_, path)) {
+          handleTransientFailure("scan_queue_write_failed");
+          return;
+        }
+        continue;
+      }
+      // Close the directory before recovery or result writes can rename its entries.
+      scanDirectory_.close();
+      scanPaths_.close();
+      scanPaths_ = SD_MMC.open(SCAN_PATHS, "r");
+      pendingPaths_ = SD_MMC.open(PENDING_PATHS, "w", true);
+      if (!scanPaths_ || !pendingPaths_ || pendingPaths_.isDirectory()) {
+        handleTransientFailure("pending_queue_open_failed");
+        return;
+      }
+    }
+
+    if (!scanPaths_.available()) {
+      scanPaths_.close();
+      SD_MMC.remove(SCAN_PATHS);
+      pendingPaths_.close();
+      pendingPaths_ = SD_MMC.open(PENDING_PATHS, "r");
+      if (!pendingPaths_) {
+        handleTransientFailure("pending_queue_open_failed");
+        return;
+      }
+      sessionTotalCount_ = pendingCount_;
+      sessionTotalKnown_ = true;
+      return;
+    }
+    if (!readQueuedPath(scanPaths_, path)) {
+      handleTransientFailure("scan_queue_read_failed");
+      return;
+    }
+    LeafLogCandidate candidate;
+    if (!LogbookStore::classifyForLeafLog(path, candidate)) continue;
+    if (candidate.disposition == LeafLogCandidate::Disposition::Rejected &&
+        !candidate.rejectionReason.isEmpty() && !candidate.rejectionPersisted) {
+      if (!LogbookStore::recordLeafLogRejection(path, candidate.rejectionReason)) {
+        handleTransientFailure("record_rejection_failed");
+        return;
+      }
+    } else if (candidate.disposition == LeafLogCandidate::Disposition::Pending) {
+      if (pendingCount_ == UINT16_MAX || !writeQueuedPath(pendingPaths_, path)) {
+        handleTransientFailure("pending_queue_write_failed");
+        return;
+      }
+      pendingCount_++;
+    }
+  }
+}
+
+void LeafLogSync::selectNextUpload() {
+  if (!pendingPaths_.available()) {
+    finishToMassStorage();
+    return;
+  }
+  // Keep the read position until classification succeeds, so retries cannot drop an entry.
+  const size_t position = pendingPaths_.position();
+  String path;
+  if (!readQueuedPath(pendingPaths_, path) || !LogbookStore::classifyForLeafLog(path, current_)) {
+    pendingPaths_.seek(position);
+    current_ = LeafLogCandidate();
+    handleTransientFailure("pending_entry_read_failed");
+    return;
+  }
+  if (current_.disposition != LeafLogCandidate::Disposition::Pending) {
+    if (current_.disposition == LeafLogCandidate::Disposition::Rejected &&
+        !current_.rejectionPersisted &&
+        !LogbookStore::recordLeafLogRejection(path, current_.rejectionReason)) {
+      pendingPaths_.seek(position);
+      current_ = LeafLogCandidate();
+      handleTransientFailure("record_rejection_failed");
+      return;
+    }
+    recordCompletedItem();
+    current_ = LeafLogCandidate();
+    return;
+  }
+  startCurrentUpload();
+}
+
+void LeafLogSync::startCurrentUpload() {
+  const auto credential = leaf_log_credentials::load();
+  if (!settings.labs_leafLog || !credential.linked() || !sdcard.firmwareCanAccessFilesystem()) {
+    finishToMassStorage();
+    return;
+  }
+  wifiAttemptStarted_ = false;
+  timeStarted_ = false;
+  if (!sdcard.reserveForFirmwareUpload() &&
+      sdcard.ownership() != SDCardOwnership::FirmwareUploading) {
+    finishToMassStorage();
+    return;
+  }
+  const bool wifiReady = WiFi.status() == WL_CONNECTED && !diagnostic_network.connected();
+  state_ = wifiReady
+               ? (time(nullptr) >= VALID_TIME_EPOCH ? State::Uploading : State::WaitingForTime)
+               : State::ConnectingWifi;
   stateStartedMs_ = millis();
 }
 
@@ -100,54 +275,9 @@ void LeafLogSync::update() {
   }
 
   switch (state_) {
-    case State::CheckingEligibility: {
-      const auto credential = leaf_log_credentials::load();
-      if (!settings.labs_leafLog || !credential.linked() || !sdcard.isMounted() ||
-          !scanDirectory_) {
-        finishToMassStorage();
-        return;
-      }
-
-      String path;
-      while (!(path = scanDirectory_.getNextFileName()).isEmpty()) {
-        path = LogbookStore::normalizePath(path);
-        if (!LogbookStore::isLogbookJsonPath(path)) continue;
-        LeafLogCandidate candidate;
-        if (!LogbookStore::classifyForLeafLog(path, candidate)) return;
-        if (candidate.disposition == LeafLogCandidate::Disposition::Rejected &&
-            !candidate.rejectionReason.isEmpty() && !candidate.rejectionPersisted) {
-          if (!LogbookStore::recordLeafLogRejection(path, candidate.rejectionReason)) {
-            handleTransientFailure("record_rejection_failed");
-            return;
-          }
-          beginEligibilityScan();
-          return;
-        }
-        if (candidate.disposition == LeafLogCandidate::Disposition::Pending) {
-          pendingCount_++;
-          if (current_.logbookPath.isEmpty()) current_ = candidate;
-        }
-        return;
-      }
-      scanDirectory_.close();
-      if (!sessionTotalKnown_) {
-        sessionTotalCount_ = pendingCount_;
-        sessionTotalKnown_ = true;
-      }
-      if (current_.logbookPath.isEmpty()) {
-        finishToMassStorage();
-      } else if (!sdcard.reserveForFirmwareUpload() &&
-                 sdcard.ownership() != SDCardOwnership::FirmwareUploading) {
-        finishToMassStorage();
-      } else {
-        const bool wifiReady = WiFi.status() == WL_CONNECTED && !diagnostic_network.connected();
-        state_ = wifiReady ? (time(nullptr) >= VALID_TIME_EPOCH ? State::Uploading
-                                                                : State::WaitingForTime)
-                           : State::ConnectingWifi;
-        stateStartedMs_ = millis();
-      }
+    case State::CheckingEligibility:
+      scanEligibility();
       break;
-    }
     case State::ConnectingWifi: {
       if (WiFi.status() == WL_CONNECTED && !diagnostic_network.connected()) {
         state_ = time(nullptr) >= VALID_TIME_EPOCH ? State::Uploading : State::WaitingForTime;
@@ -199,7 +329,8 @@ void LeafLogSync::update() {
         }
         recordCompletedItem();
         retryIndex_ = 0;
-        beginEligibilityScan();
+        current_ = LeafLogCandidate();
+        state_ = State::CheckingEligibility;
       } else if (result.outcome == leaf_log_client::UploadOutcome::Unauthorized) {
         leaf_log_credentials::markReconnectRequired();
         finishToMassStorage();
@@ -215,7 +346,8 @@ void LeafLogSync::update() {
         }
         recordCompletedItem();
         retryIndex_ = 0;
-        beginEligibilityScan();
+        current_ = LeafLogCandidate();
+        state_ = State::CheckingEligibility;
       } else if (result.outcome == leaf_log_client::UploadOutcome::Cancelled) {
         finishRequestedExit();
       } else {
@@ -225,7 +357,14 @@ void LeafLogSync::update() {
       break;
     }
     case State::Backoff:
-      if (static_cast<int32_t>(millis() - retryAtMs_) >= 0) beginEligibilityScan();
+      if (static_cast<int32_t>(millis() - retryAtMs_) >= 0) {
+        if (!sessionTotalKnown_)
+          beginEligibilityScan();
+        else if (!current_.logbookPath.isEmpty())
+          startCurrentUpload();
+        else
+          state_ = State::CheckingEligibility;
+      }
       break;
     case State::AwaitingCenterIntent:
       finishRequestedExit();
@@ -248,7 +387,7 @@ void LeafLogSync::update() {
 }
 
 void LeafLogSync::prepareForCharging() {
-  if (scanDirectory_) scanDirectory_.close();
+  clearSessionFiles();
   buttons.disarmUrgentPressCapture();
   cancelRequested_.store(false, std::memory_order_release);
   powerOnRequested_.store(false, std::memory_order_release);
@@ -262,7 +401,7 @@ void LeafLogSync::prepareForCharging() {
 }
 
 void LeafLogSync::prepareForOperating() {
-  if (scanDirectory_) scanDirectory_.close();
+  clearSessionFiles();
   buttons.disarmUrgentPressCapture();
   cancelRequested_.store(false, std::memory_order_release);
   powerOnRequested_.store(false, std::memory_order_release);
@@ -304,7 +443,7 @@ void LeafLogSync::finishRequestedExit() {
 void LeafLogSync::finishForPowerOn() {
   buttons.disarmUrgentPressCapture();
   buttons.suppressEventsUntilRelease();
-  if (scanDirectory_) scanDirectory_.close();
+  clearSessionFiles();
   leaf_wifi::disconnectFromNetwork();
   cancelRequested_.store(false, std::memory_order_release);
   centerIntentStartedMs_ = 0;
@@ -322,7 +461,7 @@ void LeafLogSync::finishToMassStorage() {
   const bool suppressButton = buttons.urgentPressLatched();
   buttons.disarmUrgentPressCapture();
   if (suppressButton) buttons.suppressEventsUntilRelease();
-  if (scanDirectory_) scanDirectory_.close();
+  clearSessionFiles();
   leaf_wifi::disconnectFromNetwork();
   cancelRequested_.store(false, std::memory_order_release);
   powerOnRequested_.store(false, std::memory_order_release);
@@ -352,6 +491,7 @@ void LeafLogSync::finishToMassStorage() {
 void LeafLogSync::handleTransientFailure(const char* reason, int httpStatus, uint32_t elapsedMs,
                                          size_t fileSize, size_t responseSize,
                                          const String& transportDetail) {
+  if (!sessionTotalKnown_) clearSessionFiles();
   leaf_wifi::disconnectFromNetwork();
   const uint8_t index = min<uint8_t>(retryIndex_, 2);
   const uint32_t delayMs = RETRY_DELAYS_MS[index];

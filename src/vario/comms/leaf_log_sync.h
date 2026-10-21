@@ -35,6 +35,7 @@ class LeafLogSync {
   bool retryPending() const { return state_ == State::Backoff; }
   bool massStorageUnavailable() const { return state_ == State::MassStorageUnavailable; }
   bool uploading() const { return state_ == State::Uploading; }
+  bool scanning() const { return state_ == State::CheckingEligibility; }
   bool preparingNext() const {
     return state_ == State::CheckingEligibility && sessionTotalKnown_ && completedCount_ > 0 &&
            completedCount_ < sessionTotalCount_;
@@ -53,6 +54,10 @@ class LeafLogSync {
  private:
   void beginSession(bool fromEject);
   void beginEligibilityScan();
+  void scanEligibility();
+  void selectNextUpload();
+  void startCurrentUpload();
+  void clearSessionFiles();
   void finishRequestedExit();
   void finishForPowerOn();
   void finishToMassStorage();
@@ -63,6 +68,8 @@ class LeafLogSync {
 
   State state_ = State::Idle;
   File scanDirectory_;
+  File scanPaths_;
+  File pendingPaths_;
   LeafLogCandidate current_;
   std::atomic<bool> cancelRequested_{false};
   std::atomic<bool> powerOnRequested_{false};
