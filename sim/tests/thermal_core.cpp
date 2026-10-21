@@ -525,7 +525,6 @@ namespace {
     options.cardRoot = "sim/build-tests/thermal-core-test/sdcard";
     device.configure(options);
     device.boot();
-    settings.labs_thermalCore = true;
     settings.disp_showThermalCorePage = true;
     sim::scenario().setBus(&bus);
     std::string error;
@@ -565,8 +564,8 @@ namespace {
     }
     if (!wrapped || !sawWind) {
       const auto status = device.status();
-      fprintf(stderr, "History check: %zu samples, wrapped=%d wind=%d labs=%d timer=%d\n",
-              history.size(), wrapped, sawWind, settings.labs_thermalCore,
+      fprintf(stderr, "History check: %zu samples, wrapped=%d wind=%d core=%d timer=%d\n",
+              history.size(), wrapped, sawWind, settings.disp_showThermalCorePage,
               status.flightTimerRunning);
     }
     assert(wrapped && sawWind && sawCenter);

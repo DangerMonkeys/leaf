@@ -293,8 +293,7 @@ int main() {
   checkFixedReadoutCapacity();
   checkCoreClimbLayout();
   checkCoreAltitudeLayout();
-  settings.labs_thermalTrack = settings.labs_thermalCore = true;
-  settings.disp_showThermalTrackPage = true;
+  settings.disp_showThermalTrackPage = settings.disp_showThermalCorePage = true;
   sim::scenario().setBus(&bus);
   std::string error;
   assert(sim::scenario().load("sim/recordings/thermal-core.json", error));

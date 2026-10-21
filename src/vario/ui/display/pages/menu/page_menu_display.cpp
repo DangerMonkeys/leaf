@@ -16,6 +16,7 @@ enum display_menu_items {
   cursor_display_show_basic,
   cursor_display_show_user,
   cursor_display_show_thermal_core,
+  cursor_display_auto_thermal_core,
   cursor_display_show_thermal_track,
   cursor_display_show_navigate,
   cursor_display_contrast,
@@ -26,8 +27,8 @@ namespace {
     uint8_t count = 0;
     if (settings.disp_showBasicPage) count++;
     if (settings.disp_showUserPage) count++;
-    if (settings.labs_thermalCore && settings.disp_showThermalCorePage) count++;
-    if (settings.labs_thermalTrack && settings.disp_showThermalTrackPage) count++;
+    if (settings.disp_showThermalCorePage) count++;
+    if (settings.disp_showThermalTrackPage) count++;
     if (settings.disp_showNavPage) count++;
     return count;
   }
@@ -64,7 +65,10 @@ void DisplayMenuPage::draw() {
       const uint8_t y = row_y(i);
       const bool selected = i == cursor_position;
       menu_ui::beginRow(y, selected);
-      menu_ui::drawLabel(setting_name_x, y, labels[i]);
+      if (i == cursor_display_auto_thermal_core) u8g2.setFont(leaf_5x8);
+      menu_ui::drawLabel(i == cursor_display_auto_thermal_core ? 8 : setting_name_x,
+                         i == cursor_display_auto_thermal_core ? y - 4 : y, labels[i]);
+      u8g2.setFont(leaf_6x12);
       u8g2.setCursor(setting_choice_x, y);
       switch (i) {
         case cursor_display_show_basic:
@@ -84,6 +88,10 @@ void DisplayMenuPage::draw() {
             menu_ui::printGlyph(menu_ui::ICON_ON);
           else
             menu_ui::printGlyph(menu_ui::ICON_OFF);
+          break;
+        case cursor_display_auto_thermal_core:
+          menu_ui::printGlyph(settings.autoSwitchToThermalCorePage ? menu_ui::ICON_ON
+                                                                   : menu_ui::ICON_OFF);
           break;
         case cursor_display_show_thermal_track:
           if (settings.disp_showThermalTrackPage)
@@ -168,8 +176,14 @@ void DisplayMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t coun
         togglePrimaryPageSetting(&settings.disp_showNavPage);
       break;
     case cursor_display_show_thermal_core:
-      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT))
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
         togglePrimaryPageSetting(&settings.disp_showThermalCorePage);
+        if (!settings.disp_showThermalCorePage) settings.autoSwitchToThermalCorePage = false;
+      }
+      break;
+    case cursor_display_auto_thermal_core:
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT))
+        settings.toggleBoolOnOff(&settings.autoSwitchToThermalCorePage);
       break;
     case cursor_display_show_thermal_track:
       if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT))
@@ -197,8 +211,7 @@ bool DisplayMenuPage::cursorUsesLeftButton() const {
 }
 
 bool DisplayMenuPage::row_hidden(uint8_t row) const {
-  return (row == cursor_display_show_thermal_core && !settings.labs_thermalCore) ||
-         (row == cursor_display_show_thermal_track && !settings.labs_thermalTrack);
+  return row == cursor_display_auto_thermal_core && !settings.disp_showThermalCorePage;
 }
 
 uint8_t DisplayMenuPage::row_y(uint8_t row) const {

@@ -527,7 +527,7 @@ namespace sim {
             thermalTracker.reset();
             thermalCore.reset();
             windEstimator.clearWindEstimate();
-            settings.labs_thermalCore = settings.disp_showThermalCorePage = true;
+            settings.disp_showThermalCorePage = true;
             display.setPage(MainPage::ThermalCore);
             freeFlight().start(clock().millis(), scenario().injectorBus(), altitudeM);
           });

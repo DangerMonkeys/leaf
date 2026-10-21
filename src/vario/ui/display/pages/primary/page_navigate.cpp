@@ -23,11 +23,12 @@ enum navigate_page_items {
   cursor_navigatePage_none,
   cursor_navigatePage_alt1,
   cursor_navigatePage_waypoint,
-  // cursor_navigatePage_userField1,
-  // cursor_navigatePage_userField2,
+  cursor_navigatePage_field1,
+  cursor_navigatePage_field2,
+  cursor_navigatePage_field3,
+  cursor_navigatePage_field4,
   cursor_navigatePage_timer
 };
-uint8_t navigatePage_cursorMax = 3;
 
 int8_t navigatePage_cursorPosition = cursor_navigatePage_none;
 uint8_t navigatePage_cursorTimeCount =
@@ -426,48 +427,51 @@ void navigatePage_draw() {
     u8g2.drawBox(varioBarWidth, topOfFrame + varioBarHeight - 3,
                  percent_progress * (96 - varioBarWidth), 2);
 
-    // User Fields ****************************************************
-
-    // Layout
-    uint8_t userFieldsRow1Y = topOfFrame + varioBarHeight;
-    uint8_t userFieldsRow2Y = 20 + userFieldsRow1Y;
-    uint8_t userFieldsCol1X = 3;
-    uint8_t userFieldsCol2X = 52;
-
-    //  1 | 2
-    // ---|---
-    //  3 | 4
-
-    // User Field 1 -- Time to waypoint
-    display_waypointTimeRemaining(userFieldsCol1X + 5, userFieldsRow1Y + 20, leaf_6x12);
-    u8g2.setFont(leaf_5h);
-    u8g2.setCursor(userFieldsCol1X, userFieldsRow1Y + 7);
-    u8g2.print("TIME>&");
-    u8g2.setFont(leaf_6x12);
-
-    // User Field 2  -- Dist to waypoint
-    double displayDistance = 0;
-    if (navigator.hasNavSolution()) displayDistance = navigator.pointDistanceRemaining;
-    display_distance(userFieldsCol2X + 5, userFieldsRow1Y + 20, displayDistance);
-    u8g2.setFont(leaf_5h);
-    u8g2.setCursor(userFieldsCol2X, userFieldsRow1Y + 7);
-    u8g2.print("DIST>&");
-    u8g2.setFont(leaf_6x12);
-
-    // User Field 3 -- Glide Ratio
-    display_glide(userFieldsCol1X + 5, userFieldsRow2Y + 20, gps.getGlideRatio());
-    u8g2.setFont(leaf_5h);
-    u8g2.setCursor(userFieldsCol1X, userFieldsRow2Y + 7);
-    u8g2.print("`GLIDE");
-    u8g2.setFont(leaf_6x12);
-
-    // User Field 4	-- Glide Ratio to Waypoint
-    display_glide(userFieldsCol2X + 5, userFieldsRow2Y + 20,
-                  navigator.hasNavSolution() ? navigator.glideToActive : 0);
-    u8g2.setFont(leaf_5h);
-    u8g2.setCursor(userFieldsCol2X, userFieldsRow2Y + 7);
-    u8g2.print("`>&");
-    u8g2.setFont(leaf_6x12);
+    // Four independently configurable fields, in two columns and two rows.
+    const char* labels[] = {"TIME>&", "TIME>GOAL", "DIST>&", "DIST>GOAL",
+                            "`GLIDE", "`>&",       "`>GOAL"};
+    for (uint8_t i = 0; i < 4; ++i) {
+      const uint8_t x = i % 2 == 0 ? 3 : 52;
+      const uint8_t y = topOfFrame + varioBarHeight + (i / 2) * 21;
+      const bool selected = navigatePage_cursorPosition == cursor_navigatePage_field1 + i;
+      const NavField field = settings.disp_navFields[i];
+      u8g2.setFont(leaf_6x12);
+      switch (field) {
+        case NavField::TimeToWaypoint:
+        case NavField::TimeToGoal: {
+          const uint32_t seconds = !navigator.hasNavSolution()     ? 0
+                                   : field == NavField::TimeToGoal ? navigator.goalTimeRemaining()
+                                                                   : navigator.pointTimeRemaining;
+          // Seven-character hour strings still fit inside the narrow selection box.
+          display_navTimeRemaining(x + 5, y + 20, seconds >= 3600 ? leaf_5x8 : leaf_6x12, seconds);
+          break;
+        }
+        case NavField::DistanceToWaypoint:
+        case NavField::DistanceToGoal:
+          display_distance(x + 5, y + 20,
+                           !navigator.hasNavSolution()         ? 0
+                           : field == NavField::DistanceToGoal ? navigator.goalDistanceRemaining()
+                                                               : navigator.pointDistanceRemaining,
+                           38);
+          break;
+        case NavField::CurrentGlide:
+          display_glide(x + 5, y + 20, gps.getGlideRatio());
+          break;
+        case NavField::GlideToWaypoint:
+          display_glide(x + 5, y + 20, navigator.hasNavSolution() ? navigator.glideToActive : 0);
+          break;
+        case NavField::GlideToGoal:
+          display_glide(x + 5, y + 20, navigator.glideToGoal());
+          break;
+        case NavField::Count:
+          break;
+      }
+      u8g2.setDrawColor(1);
+      u8g2.setFont(leaf_5h);
+      u8g2.setCursor(x, y + 7);
+      u8g2.print(labels[static_cast<uint8_t>(field)]);
+      if (selected) display_selectionBox(x - 3, y, i % 2 == 0 ? 48 : 47, 21, 3);
+    }
 
     // Footer Info ****************************************************
 
@@ -475,13 +479,54 @@ void navigatePage_draw() {
 }
 
 void nav_cursor_move(Button button) {
+  // Vertical movement stays in the selected column. The timer enters the right column.
   if (button == Button::UP) {
-    navigatePage_cursorPosition--;
-    if (navigatePage_cursorPosition < 0) navigatePage_cursorPosition = navigatePage_cursorMax;
-  }
-  if (button == Button::DOWN) {
-    navigatePage_cursorPosition++;
-    if (navigatePage_cursorPosition > navigatePage_cursorMax) navigatePage_cursorPosition = 0;
+    switch (navigatePage_cursorPosition) {
+      case cursor_navigatePage_none:
+        navigatePage_cursorPosition = cursor_navigatePage_timer;
+        break;
+      case cursor_navigatePage_timer:
+        navigatePage_cursorPosition = cursor_navigatePage_field4;
+        break;
+      case cursor_navigatePage_field3:
+        navigatePage_cursorPosition = cursor_navigatePage_field1;
+        break;
+      case cursor_navigatePage_field4:
+        navigatePage_cursorPosition = cursor_navigatePage_field2;
+        break;
+      case cursor_navigatePage_field1:
+      case cursor_navigatePage_field2:
+        navigatePage_cursorPosition = cursor_navigatePage_waypoint;
+        break;
+      default:
+        --navigatePage_cursorPosition;
+        break;
+    }
+  } else if (button == Button::DOWN) {
+    switch (navigatePage_cursorPosition) {
+      case cursor_navigatePage_waypoint:
+        navigatePage_cursorPosition = cursor_navigatePage_field2;
+        break;
+      case cursor_navigatePage_field1:
+        navigatePage_cursorPosition = cursor_navigatePage_field3;
+        break;
+      case cursor_navigatePage_field2:
+        navigatePage_cursorPosition = cursor_navigatePage_field4;
+        break;
+      case cursor_navigatePage_field3:
+      case cursor_navigatePage_field4:
+        navigatePage_cursorPosition = cursor_navigatePage_timer;
+        break;
+      case cursor_navigatePage_timer:
+        navigatePage_cursorPosition = cursor_navigatePage_none;
+        break;
+      default:
+        ++navigatePage_cursorPosition;
+        break;
+    }
+  } else if (button == Button::LEFT || button == Button::RIGHT) {
+    const uint8_t field = navigatePage_cursorPosition - cursor_navigatePage_field1;
+    navigatePage_cursorPosition = cursor_navigatePage_field1 + (field ^ 1);
   }
   speaker.playSound(navigatePage_cursorPosition == cursor_navigatePage_none ? fx::doubleClick
                                                                             : fx::click);
@@ -604,6 +649,22 @@ void navigatePage_button(Button button, ButtonEvent state, uint8_t count) {
             navigatePage_cursorPosition = cursor_navigatePage_none;
           }
           break;
+      }
+      break;
+    case cursor_navigatePage_field1:
+    case cursor_navigatePage_field2:
+    case cursor_navigatePage_field3:
+    case cursor_navigatePage_field4:
+      if (state == ButtonEvent::CLICKED) {
+        if (button == Button::CENTER) {
+          NavField& field =
+              settings.disp_navFields[navigatePage_cursorPosition - cursor_navigatePage_field1];
+          field = static_cast<NavField>((static_cast<uint8_t>(field) + 1) %
+                                        static_cast<uint8_t>(NavField::Count));
+          speaker.playSound(fx::neutral);
+        } else {
+          nav_cursor_move(button);
+        }
       }
       break;
     case cursor_navigatePage_timer:

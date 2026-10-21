@@ -273,8 +273,6 @@ void Settings::loadDefaults() {
   diag_cpuUtilization = DEF_DIAG_CPU_UTILIZATION;
 
   // Leaf Labs
-  labs_thermalCore = DEF_LABS_THERMAL_CORE;
-  labs_thermalTrack = DEF_LABS_THERMAL_TRACK;
   labs_leafLog = DEF_LABS_LEAF_LOG;
 
   // Boot Flags
@@ -284,6 +282,8 @@ void Settings::loadDefaults() {
   // Display Settings
   disp_contrast = DEF_CONTRAST;
   disp_navPageAltType = DEF_NAVPG_ALT_TYP;
+  for (uint8_t i = 0; i < 4; ++i) disp_navFields[i] = DEFAULT_NAV_FIELDS[i];
+  autoSwitchToThermalCorePage = false;
   disp_thmPageAltType = DEF_THMPG_ALT_TYP;
   disp_thmPageAlt2Type = DEF_THMPG_ALT2_TYP;
   disp_thmPageUser1 = DEF_THMPG_USR1;
@@ -376,8 +376,6 @@ void Settings::retrieve() {
   diag_cpuUtilization = leafPrefs.getBool("DIAG_CPU_UTIL", DEF_DIAG_CPU_UTILIZATION);
 
   // Leaf Labs
-  labs_thermalCore = leafPrefs.getBool("LAB_THERM_CORE", DEF_LABS_THERMAL_CORE);
-  labs_thermalTrack = leafPrefs.getBool("LAB_THERM_TRACK", DEF_LABS_THERMAL_TRACK);
   labs_leafLog = leafPrefs.getBool("LAB_LEAF_LOG", DEF_LABS_LEAF_LOG);
 
   // Boot Flags
@@ -391,17 +389,33 @@ void Settings::retrieve() {
   disp_navPageAltType = leafPrefs.getUChar("NAVPG_ALT_TYP");
   disp_thmPageAltType = leafPrefs.getUChar("THMPG_ALT_TYP");
   disp_thmPageAlt2Type = leafPrefs.getUChar("THMPG_ALT2_TYP");
+  const char* navKeys[] = {"NAVPG_USR1", "NAVPG_USR2", "NAVPG_USR3", "NAVPG_USR4"};
+  for (uint8_t i = 0; i < 4; ++i) {
+    const uint8_t value =
+        leafPrefs.getUChar(navKeys[i], static_cast<uint8_t>(DEFAULT_NAV_FIELDS[i]));
+    disp_navFields[i] = value < static_cast<uint8_t>(NavField::Count) ? static_cast<NavField>(value)
+                                                                      : DEFAULT_NAV_FIELDS[i];
+  }
   disp_thmPageUser1 = leafPrefs.getUChar("THMPG_USR1");
   disp_thmPageUser2 = leafPrefs.getUChar("THMPG_USR2");
   disp_showDebugPage = leafPrefs.getBool("SHOW_DEBUG");
   disp_showBasicPage =
       leafPrefs.getBool("SHOW_BASIC", leafPrefs.getBool("SHOW_SIMPLE", DEF_SHOW_BASIC));
   disp_showUserPage = leafPrefs.getBool("SHOW_USER", leafPrefs.getBool("SHOW_THRM", DEF_SHOW_USER));
-  disp_showThermalCorePage = leafPrefs.getBool("SHOW_THERM_CORE", DEF_SHOW_THERMAL_CORE);
-  if (!labs_thermalCore) disp_showThermalCorePage = false;
+  const bool thermalDisplayMigrated = leafPrefs.getBool("THERM_DISPLAY", false);
+  disp_showThermalCorePage =
+      leafPrefs.getBool("SHOW_THERM_CORE", thermalDisplayMigrated ? DEF_SHOW_THERMAL_CORE : true);
   disp_showThermalTrackPage = leafPrefs.getBool(
       "SHOW_THERM_TRK", leafPrefs.getBool("SHOW_THERM_NAV", DEF_SHOW_THERMAL_TRACK));
-  if (!labs_thermalTrack) disp_showThermalTrackPage = false;
+  // Preserve the effective visibility of the former Labs/display toggle pair on upgrade.
+  if (!thermalDisplayMigrated) {
+    disp_showThermalCorePage =
+        leafPrefs.getBool("LAB_THERM_CORE", false) && disp_showThermalCorePage;
+    disp_showThermalTrackPage =
+        leafPrefs.getBool("LAB_THERM_TRACK", false) && disp_showThermalTrackPage;
+  }
+  autoSwitchToThermalCorePage =
+      disp_showThermalCorePage && leafPrefs.getBool("AUTO_THERM_CORE", false);
   disp_showNavPage = leafPrefs.getBool("SHOW_NAV");
   startPage = leafPrefs.getUChar("START_PAGE", DEF_STARTPAGE);
   if (startPage > (uint8_t)MainPage::Navigate) startPage = DEF_STARTPAGE;
@@ -482,8 +496,6 @@ void Settings::save() {
   leafPrefs.putBool("DIAG_VARIO", diag_vario);
   leafPrefs.putBool("DIAG_CPU_UTIL", diag_cpuUtilization);
   // Leaf Labs
-  leafPrefs.putBool("LAB_THERM_CORE", labs_thermalCore);
-  leafPrefs.putBool("LAB_THERM_TRACK", labs_thermalTrack);
   leafPrefs.putBool("LAB_LEAF_LOG", labs_leafLog);
   // Boot Flags
   leafPrefs.putBool("ENTER_BOOTLOAD", boot_enterBootloader);
@@ -494,6 +506,12 @@ void Settings::save() {
   leafPrefs.putUChar("NAVPG_ALT_TYP", disp_navPageAltType);
   leafPrefs.putUChar("THMPG_ALT_TYP", disp_thmPageAltType);
   leafPrefs.putUChar("THMPG_ALT2_TYP", disp_thmPageAlt2Type);
+  const char* navKeys[] = {"NAVPG_USR1", "NAVPG_USR2", "NAVPG_USR3", "NAVPG_USR4"};
+  for (uint8_t i = 0; i < 4; ++i)
+    leafPrefs.putUChar(navKeys[i], static_cast<uint8_t>(disp_navFields[i]));
+  if (!disp_showThermalCorePage) autoSwitchToThermalCorePage = false;
+  leafPrefs.putBool("AUTO_THERM_CORE", autoSwitchToThermalCorePage);
+  leafPrefs.putBool("THERM_DISPLAY", true);
   leafPrefs.putUChar("THMPG_USR1", disp_thmPageUser1);
   leafPrefs.putUChar("THMPG_USR2", disp_thmPageUser2);
   leafPrefs.putBool("SHOW_DEBUG", disp_showDebugPage);

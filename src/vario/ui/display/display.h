@@ -66,6 +66,7 @@ class Display {
   bool isMainPageVisible(MainPage targetPage) const;
   bool hasEnabledPrimaryPage() const;
   void ensurePrimaryPageEnabled();
+  void updateThermalAutoSwitch(bool guidanceAvailable);
 
   void showOnSplash();
 
@@ -84,6 +85,9 @@ class Display {
   // track the page we used to be on, so we can "go back" if needed (like cancelling out of a menu
   // heirarchy)
   MainPage displayPagePrior_ = MainPage::User;
+  MainPage thermalReturnPage_ = MainPage::User;
+  bool thermalAutoSwitchActive_ = false;
+  bool thermalGuidanceWasAvailable_ = false;
 
   uint8_t showSplashScreenFrames_ = 0;
   bool showStartupSplash_ = false;

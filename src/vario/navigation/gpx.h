@@ -131,6 +131,9 @@ class Navigator {
   // True if a specific waypoint is active, or if a route is active with a next route point.
   bool hasActivePoint() const;
   bool hasNavSolution() const;
+  double goalDistanceRemaining() const { return hasNavSolution() ? totalDistanceRemaining_ : 0; }
+  uint32_t goalTimeRemaining() const;
+  float glideToGoal() const { return hasNavSolution() ? glideToGoal_ : 0; }
   bool hasLastNav() const { return lastNavType_ != LastNavType::None; }
   bool lastNavIsRoute() const { return lastNavType_ == LastNavType::Route; }
   bool lastNavIsPoint() const { return lastNavType_ == LastNavType::Point; }
@@ -221,7 +224,7 @@ class Navigator {
   int32_t altAboveGoal_ = 0;
 
   // glide ratio from current position to final (goal) waypoint, ALONG the
-  // route //TODO: should this be along route or straight to?
+  // route, through every remaining waypoint.
   float glideToGoal_ = 0;
 
   // distance remaining to last waypoint

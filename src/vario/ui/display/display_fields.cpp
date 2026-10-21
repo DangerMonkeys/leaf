@@ -67,16 +67,20 @@ void display_clockTime(uint8_t x, uint8_t y, bool show_ampm) {
 }
 
 void display_waypointTimeRemaining(uint8_t x, uint8_t y, const uint8_t* font) {
+  display_navTimeRemaining(x, y, font, navigator.pointTimeRemaining);
+}
+
+void display_navTimeRemaining(uint8_t x, uint8_t y, const uint8_t* font, uint32_t seconds) {
   u8g2.setDrawColor(1);
   u8g2.setCursor(x, y);
   u8g2.setFont(font);
 
-  if (navigator.pointTimeRemaining == 0) {
+  if (seconds == 0) {
     u8g2.print("--:--");
   } else {
-    uint8_t sec = navigator.pointTimeRemaining % 60;
-    uint32_t min = navigator.pointTimeRemaining / 60;
-    uint8_t hrs = min / 60;
+    uint8_t sec = seconds % 60;
+    uint32_t min = seconds / 60;
+    uint32_t hrs = min / 60;
     min = min % 60;  // get rid of any minutes over 60 now that we have the hours
 
     if (hrs > 9) {
@@ -158,14 +162,13 @@ void display_speed(uint8_t x, uint8_t y, const uint8_t* font, bool units) {
 }
 
 // Display distance
-void display_distance(uint8_t cursor_x, uint8_t cursor_y, double distance) {
+void display_distance(uint8_t cursor_x, uint8_t cursor_y, double distance, uint8_t maxWidth) {
   u8g2.setCursor(cursor_x, cursor_y);
   uint8_t decimalPlaces = 0;
   uint8_t unitsSmall = true;  // assume m or ft, switch to km or mi if needed
 
-  if (distance == 0) {
-    u8g2.print("----");
-  } else {
+  const bool unknown = distance == 0;
+  if (!unknown) {
     if (settings.units_distance) {
       distance *= 3.28084;  // convert to feet
       if (distance > 1000) {
@@ -182,14 +185,28 @@ void display_distance(uint8_t cursor_x, uint8_t cursor_y, double distance) {
         if (distance < 1000) decimalPlaces = 1;
       }
     }
-
-    u8g2.print(distance, decimalPlaces);
   }
 
-  if (unitsSmall && settings.units_distance) u8g2.print((char)128);
-  if (!unitsSmall && settings.units_distance) u8g2.print((char)130);
-  if (unitsSmall && !settings.units_distance) u8g2.print((char)127);
-  if (!unitsSmall && !settings.units_distance) u8g2.print((char)129);
+  const uint8_t unit =
+      settings.units_distance ? (unitsSmall ? 128 : 130) : (unitsSmall ? 127 : 129);
+  if (maxWidth) {
+    // Nav's narrow columns need smaller digits for values such as 999.9 km.
+    // Keep the existing unit glyph, which is only present in the normal field font.
+    char text[16];
+    if (unknown)
+      strcpy(text, "----");
+    else
+      snprintf(text, sizeof(text), "%.*f", static_cast<int>(decimalPlaces), distance);
+    const char unitText[] = {static_cast<char>(unit), '\0'};
+    if (u8g2.getStrWidth(text) + u8g2.getStrWidth(unitText) > maxWidth) u8g2.setFont(leaf_5x8);
+    u8g2.print(text);
+    u8g2.setFont(leaf_6x12);
+  } else if (unknown) {
+    u8g2.print("----");
+  } else {
+    u8g2.print(distance, decimalPlaces);
+  }
+  u8g2.print(static_cast<char>(unit));
 }
 
 void display_heading(uint8_t cursor_x, uint8_t cursor_y, bool degSymbol) {

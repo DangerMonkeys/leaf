@@ -115,7 +115,7 @@ OBJ_LIB  := $(patsubst $(U8G2)/%.c,$(BUILD)/lib/u8g2/%.o,$(U8G2_C)) \
 OBJECTS := $(OBJ_FW) $(OBJ_SIM) $(OBJ_LIB)
 TARGET  := $(BUILD)/leafsim
 
-.PHONY: all clean deps test-thermal-core test-free-flight test-thermal-track
+.PHONY: all clean deps test-thermal-core test-free-flight test-thermal-track test-display-settings
 all: $(TARGET)
 
 # Regression checks use the same firmware/HAL objects, with a test entry point instead of the UI.
@@ -136,6 +136,13 @@ $(BUILD)/thermal_track_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS
 
 test-thermal-track: $(BUILD)/thermal_track_test
 	@cd $(ROOT) && $(BUILD)/thermal_track_test
+
+$(BUILD)/display_settings_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/display_settings.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/display_settings.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-display-settings: $(BUILD)/display_settings_test
+	@cd $(ROOT) && $(BUILD)/display_settings_test
+	@cd $(ROOT) && $(BUILD)/display_settings_test --verify-persistence
 
 $(TARGET): $(OBJECTS)
 	@echo "  LD    $(notdir $@)"

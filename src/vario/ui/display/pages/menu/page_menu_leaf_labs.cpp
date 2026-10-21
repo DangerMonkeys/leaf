@@ -13,8 +13,6 @@
 
 enum leaf_labs_menu_items {
   cursor_leaf_labs_back,
-  cursor_leaf_labs_thermal_core,
-  cursor_leaf_labs_thermal_track,
   cursor_leaf_labs_leaf_log,
 };
 
@@ -26,27 +24,6 @@ namespace {
     speaker.playSound(enabled ? fx::enter : fx::cancel);
   }
 
-  void setThermalCoreEnabled(bool enabled) {
-    if (settings.labs_thermalCore == enabled) return;
-
-    settings.labs_thermalCore = enabled;
-    settings.disp_showThermalCorePage = enabled;
-    if (!enabled && display.getPage() == MainPage::ThermalCore) {
-      display.setPage(MainPage::User);
-    }
-    speaker.playSound(enabled ? fx::enter : fx::cancel);
-  }
-
-  void setThermalTrackEnabled(bool enabled) {
-    if (settings.labs_thermalTrack == enabled) return;
-
-    settings.labs_thermalTrack = enabled;
-    settings.disp_showThermalTrackPage = enabled;
-    if (!enabled && display.getPage() == MainPage::ThermalTrack) {
-      display.setPage(MainPage::User);
-    }
-    speaker.playSound(enabled ? fx::enter : fx::cancel);
-  }
 }  // namespace
 
 void LeafLabsMenuPage::draw() {
@@ -67,7 +44,7 @@ void LeafLabsMenuPage::draw() {
 
     uint8_t setting_name_x = 2;
     uint8_t setting_choice_x = 81;
-    uint8_t menu_items_y[] = {190, 86, 101, 116};
+    uint8_t menu_items_y[] = {190, 86};
 
     for (int i = 0; i <= cursor_max; i++) {
       const bool selected = i == cursor_position;
@@ -75,12 +52,6 @@ void LeafLabsMenuPage::draw() {
       menu_ui::drawLabel(setting_name_x, menu_items_y[i], labels[i]);
       u8g2.setCursor(setting_choice_x, menu_items_y[i]);
       switch (i) {
-        case cursor_leaf_labs_thermal_core:
-          menu_ui::printGlyph(settings.labs_thermalCore ? menu_ui::ICON_ON : menu_ui::ICON_OFF);
-          break;
-        case cursor_leaf_labs_thermal_track:
-          menu_ui::printGlyph(settings.labs_thermalTrack ? menu_ui::ICON_ON : menu_ui::ICON_OFF);
-          break;
         case cursor_leaf_labs_leaf_log:
           menu_ui::printGlyph(settings.labs_leafLog ? menu_ui::ICON_ON : menu_ui::ICON_OFF);
           break;
@@ -91,23 +62,7 @@ void LeafLabsMenuPage::draw() {
       menu_ui::endRow();
     }
 
-    if (cursor_position == cursor_leaf_labs_thermal_core) {
-      const char* const noteLines[] = {
-          "Shows a live",
-          "thermal centering",
-          "target while you",
-          "circle in lift",
-      };
-      menu_ui::drawNoteBox(menu_items_y[cursor_leaf_labs_thermal_core], noteLines, 4);
-    } else if (cursor_position == cursor_leaf_labs_thermal_track) {
-      const char* const noteLines[] = {
-          "Detects and saves",
-          "thermals as you",
-          "fly, then shows",
-          "them on a map",
-      };
-      menu_ui::drawNoteBox(menu_items_y[cursor_leaf_labs_thermal_track], noteLines, 4);
-    } else if (cursor_position == cursor_leaf_labs_leaf_log) {
+    if (cursor_position == cursor_leaf_labs_leaf_log) {
       const char* const noteLines[] = {
           "Shows Leaf Log",
           "linking in the",
@@ -120,16 +75,6 @@ void LeafLabsMenuPage::draw() {
 
 void LeafLabsMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) {
   switch (cursor_position) {
-    case cursor_leaf_labs_thermal_core:
-      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
-        setThermalCoreEnabled(!settings.labs_thermalCore);
-      }
-      break;
-    case cursor_leaf_labs_thermal_track:
-      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
-        setThermalTrackEnabled(!settings.labs_thermalTrack);
-      }
-      break;
     case cursor_leaf_labs_leaf_log:
       if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
         setLeafLogEnabled(!settings.labs_leafLog);

@@ -43,7 +43,7 @@ namespace {
         "  --speed X           clock speed: 1 = real time, 10 = ten times faster, 0 = flat out\n"
         "  --charge-mode       boot as if plugged in without the power button held\n"
         "  --accept-warning    answer the safety disclaimer (presses DOWN then CENTER for you)\n"
-        "  --setting KEY=VALUE set a saved setting before boot, e.g. LAB_THERM_TRACK=1\n"
+        "  --setting KEY=VALUE set a saved setting before boot, e.g. THERM_DISPLAY=1 --setting SHOW_THERM_TRK=1\n"
         "                      (repeatable; keys are the NVS keys in ui/settings/settings.cpp)\n"
         "  --script FILE       run a timed script of button presses and assertions\n"
         "  --run-seconds N     run for N seconds of device time, then exit (headless runs)\n"
