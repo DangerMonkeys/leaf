@@ -17,6 +17,7 @@
 AsyncUDP::~AsyncUDP() { close(); }
 
 bool AsyncUDP::listen(uint16_t port) {
+  close();
   socket_ = ::socket(AF_INET, SOCK_DGRAM, 0);
   if (socket_ < 0) return false;
 
@@ -34,9 +35,9 @@ bool AsyncUDP::listen(uint16_t port) {
   }
 
   running_ = true;
-  // Detached rather than joined: close() shuts the socket down, which drops the thread out of
-  // recvfrom, and the emulator only ever closes on the way out.
-  std::thread([this] {
+  // Runtime developer mode can close and reopen the listener. Join the old receiver before
+  // reusing its socket or callback.
+  receiver_ = std::thread([this] {
     // Packets are handed to the firmware's handler on this thread.  The message bus takes its own
     // recursive mutex, which is what makes that safe against the device loop.
     std::vector<uint8_t> buffer(2048);
@@ -50,7 +51,7 @@ bool AsyncUDP::listen(uint16_t port) {
       AsyncUDPPacket packet(buffer.data(), (size_t)received, IPAddress(from.sin_addr.s_addr));
       callback_(packet);
     }
-  }).detach();
+  });
   return true;
 }
 
@@ -58,6 +59,7 @@ void AsyncUDP::close() {
   running_ = false;
   if (socket_ >= 0) {
     ::shutdown(socket_, SHUT_RDWR);
+    if (receiver_.joinable()) receiver_.join();
     ::close(socket_);
     socket_ = -1;
   }

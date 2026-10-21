@@ -7,6 +7,8 @@ description: Hardware v3.2.8 implementation status, bench results, and remaining
 
 ## Status and scope
 
+The build and tracing instructions below describe the original hardware migration. The dev firmware configuration and `LEAF_IMU_STARTUP_TRACE` have since been retired. Use `leaf_3_2_8_release` for current builds; historical capture logs can still be analyzed with `capture_startup.py --analyze`.
+
 Status updated on **2026-10-21**. Initial v3.2.8 hardware support is ready for PR review;
 flight, temperature, multiple-board and electrical fault/current qualification remain follow-ups.
 Core v3.2.8 support is implemented in commit `6ff70157`

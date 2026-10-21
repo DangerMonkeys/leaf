@@ -39,7 +39,7 @@ def find_build_paths(required_files: tuple[str, ...]) -> list[Path]:
 
   build_paths = []
   for path in sorted(build_root.iterdir()):
-    if not path.is_dir():
+    if not path.is_dir() or not path.name.endswith("_release"):
       continue
     if all((path / filename).exists() for filename in required_files):
       build_paths.append(path)

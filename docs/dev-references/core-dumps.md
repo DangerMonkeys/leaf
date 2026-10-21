@@ -3,9 +3,9 @@ title: Core Dumps
 description: Generating and reading core dumps
 ---
 
-Dev builds are configured to perform core dumps to flash. If you need to investigate say a deadlock,
-you can always throw an unhandled exception (or assert(0)) to generate a core dump with stack
-traces.
+For current builds, use the matching release ELF, for example `.pio/build/leaf_3_2_6_release/firmware.elf`. The transcripts below are historical and retain their original build paths. Always use the exact ELF from the firmware that produced the dump.
+
+The configured ESP32 framework enables core dumps to flash in release builds. Decode a dump with the exact matching ELF. The former dev environment is no longer available.
 
 The best way I've found to look at them, is with the Espressif IDF toolkit.
 

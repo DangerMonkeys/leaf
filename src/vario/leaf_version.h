@@ -6,7 +6,7 @@
 // The values here do not matter; they are set automatically
 // at build time via src/scripts/versioning.py:
 // ---------------------------------------------------------------
-// Full semantic version (e.g., "0.9.0-9bbad.dev+h2.3.5")
+// Full semantic version (e.g., "0.9.0-9bbad+h2.3.5")
 #define FIRMWARE_VERSION "0.0.0+build.script.error"
 // Latest tag version (e.g., "0.9.0")
 #define TAG_VERSION "0.0.0"

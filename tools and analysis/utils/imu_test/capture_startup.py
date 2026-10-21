@@ -1,6 +1,7 @@
-"""Capture the v3.2.8 dev startup probe without asserting USB reset controls.
+"""Analyze archived v3.2.8 startup-probe logs or capture older firmware.
 
-Run before waking Leaf; keep this connection open across orientation/wake trials.
+Current release firmware no longer emits these probes. Live capture is only useful
+with historical firmware that contained the retired dev startup tracing.
 Use --analyze LOG to regenerate CSV/JSON without connecting to hardware.
 """
 

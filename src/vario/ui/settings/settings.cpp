@@ -263,6 +263,7 @@ void Settings::loadDefaults() {
 
   // Developer Options
   dev_mode = DEF_DEV_MODE;
+  dev_udpInjection = DEF_DEV_UDP_INJECTION;
   dev_startLogAtBoot = DEF_DEV_START_LOG_AT_BOOT;
   dev_startDisconnected = DEF_DEV_START_DISCONNECTED;
   dev_fanetFwd = DEF_DEV_FANET_FWD;
@@ -366,6 +367,7 @@ void Settings::retrieve() {
 
   // Developer Options
   dev_mode = leafPrefs.getBool("DEV_MODE", leafPrefs.getBool("DEVELOPER_MENU", DEF_DEV_MODE));
+  dev_udpInjection = dev_mode && leafPrefs.getBool("DEV_UDP_INJECT", DEF_DEV_UDP_INJECTION);
   dev_startLogAtBoot = leafPrefs.getBool("DEV_STARTLOG");
   dev_startDisconnected = leafPrefs.getBool("DEV_STARTDISCON");
   dev_fanetFwd = leafPrefs.getBool("DEV_FANET_FWD", DEF_DEV_FANET_FWD);
@@ -438,6 +440,7 @@ void Settings::retrieve() {
 
 void Settings::save() {
   // Save settings before shutdown (or other times as needed)
+  if (!dev_mode) dev_udpInjection = false;
 
   leafPrefs.begin("varioPrefs", RW_MODE);
 
@@ -487,6 +490,7 @@ void Settings::save() {
   leafPrefs.putString("MAC_ADDRESS", macAddress);
   // Developer Options
   leafPrefs.putBool("DEV_MODE", dev_mode);
+  leafPrefs.putBool("DEV_UDP_INJECT", dev_udpInjection);
   leafPrefs.putBool("DEV_STARTLOG", dev_startLogAtBoot);
   leafPrefs.putBool("DEV_STARTDISCON", dev_startDisconnected);
   leafPrefs.putBool("DEV_FANET_FWD", dev_fanetFwd);
@@ -886,9 +890,19 @@ void Settings::toggleBoolNeutral(bool* unitSetting) {
   speaker.playSound(fx::neutral);
 }
 
+void Settings::setDeveloperMode(bool enabled) {
+  dev_mode = enabled;
+  if (!dev_mode) dev_udpInjection = false;
+}
+
+void Settings::setUdpInjectionEnabled(bool enabled) { dev_udpInjection = dev_mode && enabled; }
+
 // flip on/off certain settings and play on/off sounds
 void Settings::toggleBoolOnOff(bool* switchSetting) {
-  *switchSetting = !*switchSetting;
+  if (switchSetting == &dev_mode)
+    setDeveloperMode(!dev_mode);
+  else
+    *switchSetting = !*switchSetting;
   if (*switchSetting)
     speaker.playSound(fx::enter);  // if we turned it on
   else

@@ -71,6 +71,7 @@
 
 // Developer Settings
 #define DEF_DEV_MODE 0                // default hide developer-mode features
+#define DEF_DEV_UDP_INJECTION 0       // explicitly opt in to replayed sensor input
 #define DEF_DEV_START_LOG_AT_BOOT 0   // default do not start log at boot
 #define DEF_DEV_START_DISCONNECTED 0  // default do not disconnect hardware at boot
 #define DEF_DEV_FANET_FWD 0           //  DO rebroadcast Fanet packets (turn off for range testing)
@@ -203,6 +204,7 @@ setting | samples | time avg
 
   // developer options
   bool dev_mode;
+  bool dev_udpInjection = DEF_DEV_UDP_INJECTION;
   bool dev_startLogAtBoot;
   bool dev_startDisconnected;
   bool dev_fanetFwd;
@@ -255,6 +257,9 @@ setting | samples | time avg
   void loadDefaults(void);
   void save(void);
   void retrieve(void);
+  void setDeveloperMode(bool enabled);
+  void setUdpInjectionEnabled(bool enabled);
+  bool udpInjectionEnabled() const { return dev_mode && dev_udpInjection; }
   void reset(void);
   void factoryResetVario(void);
   void totallyEraseNVS(void);

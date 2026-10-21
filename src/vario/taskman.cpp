@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <HardwareSerial.h>
+#include <WiFi.h>
 #include <atomic>
 #include "task.h"
 
@@ -9,6 +10,8 @@
 #include "comms/factory_discovery.h"
 #include "comms/fanet_radio.h"
 #include "comms/leaf_log_sync.h"
+#include "comms/udp_message_server.h"
+#include "comms/webserver.h"
 #include "diagnostics/cpu_utilization.h"
 #include "diagnostics/diagnostic_network/diagnostic_network.h"
 #include "diagnostics/heap_monitor.h"
@@ -36,17 +39,6 @@
 #include "ui/settings/settings.h"
 #include "utils/magic_enum.h"
 #include "wind_estimate/wind_estimate.h"
-
-#ifdef MEMORY_PROFILING
-#include "diagnostics/memory_report.h"
-#endif
-
-#include <WiFi.h>
-#include "comms/webserver.h"
-
-#ifdef DEBUG_WIFI
-#include "comms/udp_message_server.h"
-#endif
 
 // Bit of a hack for now as we don't have a good way to pass big chunks
 // of data around, so, we do it on the stack.  Default is 8KB
@@ -103,17 +95,6 @@ namespace {
 //             SETUP              ///////////////
 /////////////////////////////////////////////////
 void TaskManager::init() {
-#ifdef DEBUG_WIFI
-  // Start WiFi
-  WiFi.begin();
-  WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
-    Serial.println("WiFi Event " + WiFi.localIP().toString() + ": " + event);
-  });
-
-  // Start UDP message server
-  udpMessageServer.init();
-#endif
-
   // Adjust the priority of this (the loop event)'s FreeRTOS priority
   vTaskPrioritySet(NULL, 10);
 
@@ -169,6 +150,8 @@ TODO: In addition to the timer-driven interrupt, we may consider also setting wa
 the pushbuttons, the GPS 1PPS signal, and perhaps others.
 */
 void TaskManager::update() {
+  udpMessageServer.update();
+
   // LOOP NOTES:
   // when re-entering PowerState::On, be sure to start from tasks #1, so baro ADC can be re-prepped
   // before reading
@@ -388,12 +371,7 @@ void TaskManager::setNecessaryTasksForBlock() {
         performTask.power = true;   // every second: power checks
         performTask.sdCard = true;  // check if SD card state has changed and remount if needed
       }
-// 8 - LCD
-#ifdef MEMORY_PROFILING
-      if (current100msBlock == 9) {
-        performTask.memoryStats = 1;
-      }
-#endif
+      // 8 - LCD
       if (current100msBlock == 9)
         performTask.tempRH = true;  // read and process temp & humidity measurement
       break;
@@ -433,21 +411,6 @@ void TaskManager::doNecessaryTasks(void) {
   }
   if (performTask.imu) {
     MotionSensor::getInstance().update();
-#ifdef LEAF_IMU_STARTUP_TRACE
-    static bool haveValidityReport = false, previousClimbValid = false;
-    const bool climbValid = imu.velocityValid();
-    if (!haveValidityReport || climbValid != previousClimbValid) {
-      haveValidityReport = true;
-      previousClimbValid = climbValid;
-      Serial.printf(
-          "IMU_VALIDITY,t=%lu valid=%d motion_fresh=%d pressure_fresh=%d filter=%d "
-          "samples=%u/%u resets=%lu clips=%lu\n",
-          (unsigned long)millis(), climbValid, imu.accelValid(), baro.pressureFresh(),
-          imu.kalmanValid(), imu.startupSamplesCompleted(), imu.startupSamplesRequired(),
-          (unsigned long)MotionSensor::getInstance().fifoResetCount(),
-          (unsigned long)MotionSensor::getInstance().invalidAccelerationPacketCount());
-    }
-#endif
     if (!imu.velocityValid()) baro.invalidateClimb();
     checkpointOnce(loggedFirstImuTask, "task-imu-first");
     performTask.imu = false;
@@ -512,12 +475,6 @@ void TaskManager::doNecessaryTasks(void) {
     checkpointOnce(loggedFirstSelfTestTask, "task-self-test-first");
     performTask.selfTest = false;
   }
-#ifdef MEMORY_PROFILING
-  if (performTask.memoryStats) {
-    printMemoryUsage();
-    performTask.memoryStats = false;
-  }
-#endif
 
   diagnostic_network.update();
   checkpointOnce(loggedFirstDiagnosticNetwork, "task-diag-net-first");

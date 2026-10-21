@@ -17,6 +17,7 @@
 #include "comms/fanet_radio.h"
 #include "comms/leaf_log_credentials.h"
 #include "comms/ota.h"
+#include "comms/udp_message_server.h"
 #include "comms/wifi_coordinator.h"
 #include "diagnostics/diagnostic_logs.h"
 #include "diagnostics/diagnostic_network/diagnostic_network.h"
@@ -2337,10 +2338,10 @@ let s=el("section",{id:"developerCard"}),h=el("h2",{text:"Developer"}),status=el
 let shot=el("button",{class:"hero",id:"devScreenshot",text:"Screenshot"}),msc=el("button",{class:"secondary",id:"devMassStorage",text:"Mass Storage"}),mem=el("button",{class:"secondary",id:"devMemory",text:"Memory"}),fan=el("button",{class:"secondary",id:"devFanet",text:"FANET"});
 actions.style.flexWrap="wrap";
 actions.appendChild(shot);actions.appendChild(msc);actions.appendChild(mem);actions.appendChild(fan);
-s.appendChild(h);s.appendChild(status);s.appendChild(row("Keep web app on","devAlwaysOn"));s.appendChild(row("Keep Bluetooth disabled","devKeepBleDisabled"));s.appendChild(row("System events log","devDiagSystem"));s.appendChild(row("Network events log","devDiagNetwork"));s.appendChild(row("Web requests log","devDiagWeb"));s.appendChild(row("Vario log","devDiagVario"));s.appendChild(row("CPU utilization log","devDiagCpu"));s.appendChild(actions);s.appendChild(msgEl);main.appendChild(s);
-async function load(){try{let r=await Promise.all([fetch("/api/debug/session"),fetch("/api/user/status")]),d=await r[0].json(),u=await r[1].json();document.getElementById("devAlwaysOn").checked=!!d.always_on;document.getElementById("devKeepBleDisabled").checked=!!d.keep_bluetooth_disabled;document.getElementById("devDiagSystem").checked=!!d.diag_system_events;document.getElementById("devDiagNetwork").checked=!!d.diag_network_events;document.getElementById("devDiagWeb").checked=!!d.diag_web_requests;document.getElementById("devDiagVario").checked=!!d.diag_vario;document.getElementById("devDiagCpu").checked=!!d.diag_cpu_utilization;status.textContent="web app: "+(d.web_app_active?"active":"off")+"\nmode: "+(d.using_leaf_wifi?"Leaf AP":"network")+"\nfirmware: "+(u.firmware_display_version||u.firmware_version||"")+"\nmac: "+(u.mac_address||"")}catch(e){status.textContent="Developer controls unavailable."}}
-async function save(){msg("Saving...");try{let body={always_on:document.getElementById("devAlwaysOn").checked,keep_bluetooth_disabled:document.getElementById("devKeepBleDisabled").checked,diag_system_events:document.getElementById("devDiagSystem").checked,diag_network_events:document.getElementById("devDiagNetwork").checked,diag_web_requests:document.getElementById("devDiagWeb").checked,diag_vario:document.getElementById("devDiagVario").checked,diag_cpu_utilization:document.getElementById("devDiagCpu").checked};await fetch("/api/debug/session",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});msg("Saved.");load()}catch(e){msg("Unable to save developer settings.")}}
-["devAlwaysOn","devKeepBleDisabled","devDiagSystem","devDiagNetwork","devDiagWeb","devDiagVario","devDiagCpu"].forEach(id=>document.getElementById(id).onchange=save);
+s.appendChild(h);s.appendChild(status);s.appendChild(row("Keep web app on","devAlwaysOn"));s.appendChild(row("Keep Bluetooth disabled","devKeepBleDisabled"));s.appendChild(row("UDP sensor injection","devUdpInjection"));s.appendChild(el("p",{class:"muted",text:"Accept test sensor data over WiFi (UDP 7431)."}));s.appendChild(row("System events log","devDiagSystem"));s.appendChild(row("Network events log","devDiagNetwork"));s.appendChild(row("Web requests log","devDiagWeb"));s.appendChild(row("Vario log","devDiagVario"));s.appendChild(row("CPU utilization log","devDiagCpu"));s.appendChild(actions);s.appendChild(msgEl);main.appendChild(s);
+async function load(){try{let r=await Promise.all([fetch("/api/debug/session"),fetch("/api/user/status")]);if(r.some(x=>!x.ok))throw new Error("Developer controls unavailable");let d=await r[0].json(),u=await r[1].json();document.getElementById("devAlwaysOn").checked=!!d.always_on;document.getElementById("devKeepBleDisabled").checked=!!d.keep_bluetooth_disabled;document.getElementById("devUdpInjection").checked=!!d.udp_sensor_injection;document.getElementById("devDiagSystem").checked=!!d.diag_system_events;document.getElementById("devDiagNetwork").checked=!!d.diag_network_events;document.getElementById("devDiagWeb").checked=!!d.diag_web_requests;document.getElementById("devDiagVario").checked=!!d.diag_vario;document.getElementById("devDiagCpu").checked=!!d.diag_cpu_utilization;status.textContent="web app: "+(d.web_app_active?"active":"off")+"\nmode: "+(d.using_leaf_wifi?"Leaf AP":"network")+"\nfirmware: "+(u.firmware_display_version||u.firmware_version||"")+"\nmac: "+(u.mac_address||"")}catch(e){status.textContent="Developer controls unavailable."}}
+async function save(){msg("Saving...");try{let body={always_on:document.getElementById("devAlwaysOn").checked,keep_bluetooth_disabled:document.getElementById("devKeepBleDisabled").checked,udp_sensor_injection:document.getElementById("devUdpInjection").checked,diag_system_events:document.getElementById("devDiagSystem").checked,diag_network_events:document.getElementById("devDiagNetwork").checked,diag_web_requests:document.getElementById("devDiagWeb").checked,diag_vario:document.getElementById("devDiagVario").checked,diag_cpu_utilization:document.getElementById("devDiagCpu").checked};let r=await fetch("/api/debug/session",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});if(!r.ok)throw new Error("Developer settings were rejected");msg("Saved.");load()}catch(e){msg("Unable to save developer settings.")}}
+["devAlwaysOn","devKeepBleDisabled","devUdpInjection","devDiagSystem","devDiagNetwork","devDiagWeb","devDiagVario","devDiagCpu"].forEach(id=>document.getElementById(id).onchange=save);
 shot.onclick=()=>window.open("/app/debug/screenshot","_blank","noopener");
 mem.onclick=()=>window.open("/app/debug/memory","_blank","noopener");
 fan.onclick=()=>window.open("/app/debug/fanet","_blank","noopener");
@@ -2616,10 +2617,16 @@ load();
   }
 
   void sendDebugSessionStatus(WebServer& target) {
+    if (!settings.dev_mode) {
+      target.send(403, "application/json", "{\"detail\":\"Developer mode is disabled.\"}");
+      return;
+    }
     String json = "{\"always_on\":";
     json += user_app_always_on ? "true" : "false";
     json += ",\"keep_bluetooth_disabled\":";
     json += user_app_keep_bluetooth_disabled ? "true" : "false";
+    json += ",\"udp_sensor_injection\":";
+    json += settings.udpInjectionEnabled() ? "true" : "false";
     json += ",\"web_app_active\":";
     json += user_app_enabled ? "true" : "false";
     json += ",\"using_leaf_wifi\":";
@@ -2640,7 +2647,14 @@ load();
   }
 
   void updateDebugSessionStatus(WebServer& target) {
+    if (!settings.dev_mode) {
+      target.send(403, "application/json", "{\"detail\":\"Developer mode is disabled.\"}");
+      return;
+    }
     const String body = target.arg("plain");
+    settings.setUdpInjectionEnabled(
+        extractJsonBoolValue(body, "udp_sensor_injection", settings.dev_udpInjection));
+    udpMessageServer.update();
     user_app_always_on = extractJsonBoolValue(body, "always_on", user_app_always_on);
     user_app_keep_bluetooth_disabled =
         extractJsonBoolValue(body, "keep_bluetooth_disabled", user_app_keep_bluetooth_disabled);

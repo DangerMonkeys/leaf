@@ -15,23 +15,16 @@ jobs:
     env:
       PLATFORMIO_CORE_VERSION: "6.1.19"
       PLATFORMIO_BUILD_CACHE_DIR: ${{ github.workspace }}/.pio/build-cache
-      PIO_ENV: ${{ matrix.hardware-variant }}_${{ matrix.behavior-variant }}
+      PIO_ENV: ${{ matrix.hardware-variant }}_release
     strategy:
       matrix:
         hardware-variant:
-          - leaf_3_2_2
           - leaf_3_2_3
           - leaf_3_2_5
           - leaf_3_2_6
           - leaf_3_2_7
           - leaf_3_2_8
-        behavior-variant:
-          - dev
-          - release
-        exclude:
-          - hardware-variant: leaf_3_2_2
-            behavior-variant: release
-    name: ${{ matrix.hardware-variant }} ${{ matrix.behavior-variant }}
+    name: ${{ matrix.hardware-variant }} release
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -83,25 +76,23 @@ jobs:
       # Restoring firmware.bin from the build cache can skip the post-build
       # rename action. Always prepare the expected release filename explicitly.
       - name: Prepare release firmware artifact
-        if: matrix.behavior-variant == 'release'
         run: Copy-Item ".pio/build/${{ env.PIO_ENV }}/firmware.bin" ".pio/build/${{ env.PIO_ENV }}/firmware-${{ matrix.hardware-variant }}.bin"
 
       - name: Upload firmware artifacts
-        if: matrix.behavior-variant == 'release'
         uses: actions/upload-artifact@v4
         with:
           name: firmware-${{ matrix.hardware-variant }}
           path: |
-            .pio/build/${{ matrix.hardware-variant }}_${{ matrix.behavior-variant }}/firmware-*.bin
+            .pio/build/${{ env.PIO_ENV }}/firmware-*.bin
 
       - name: Upload latest_firmware.json artifact
-        if: matrix.behavior-variant == 'release' && matrix.hardware-variant == 'leaf_3_2_5' # Arbitrary single job from the matrix (any job will work)
+        if: matrix.hardware-variant == 'leaf_3_2_5' # Arbitrary single job from the matrix (any job will work)
         uses: actions/upload-artifact@v4
         with:
           name: versions
           path: |
-            .pio/build/${{ matrix.hardware-variant }}_${{ matrix.behavior-variant }}/latest_versions.json
-            .pio/build/${{ matrix.hardware-variant }}_${{ matrix.behavior-variant }}/leaf.version
+            .pio/build/${{ env.PIO_ENV }}/latest_versions.json
+            .pio/build/${{ env.PIO_ENV }}/leaf.version
 
   update_release:
     name: Update release with build artifacts

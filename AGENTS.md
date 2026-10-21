@@ -71,12 +71,12 @@ For ESP32 core dump retrieval and analysis:
 
 **Reference**: [Leaf Core Dump Guide](https://leafvario.com/dev-references/core-dumps/)
 
-**Firmware location**: `.pio/build/leaf_3_2_6_dev/firmware.elf`
+**Firmware location**: `.pio/build/leaf_3_2_6_release/firmware.elf`
 
 **Device path (macOS)**: `/dev/tty.usbmodem*`
 
 **Quick steps**:
 ```bash
 cd esp-idf && . ./export.sh
-espcoredump.py -p /dev/tty.usbmodem* info_corefile .pio/build/leaf_3_2_6_dev/firmware.elf
+espcoredump.py -p /dev/tty.usbmodem* info_corefile .pio/build/leaf_3_2_6_release/firmware.elf
 ```
