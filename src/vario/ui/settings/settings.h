@@ -82,9 +82,7 @@
 #define DEF_ECO_MODE 0  // default off to allow reprogramming easier
 
 // Leaf Labs Settings
-#define DEF_LABS_THERMAL_CORE 0   // default hide experimental thermal core page
-#define DEF_LABS_THERMAL_TRACK 0  // default hide experimental thermal tracking
-#define DEF_LABS_LEAF_LOG 0       // default hide experimental Leaf Log linking
+#define DEF_LABS_LEAF_LOG 0  // default hide experimental Leaf Log linking
 
 // Boot Flags
 // Boot-to-ON Flag (when resetting from system updates,
@@ -103,7 +101,7 @@
 #define DEF_SHOW_DEBUG 0          // Enable debug page
 #define DEF_SHOW_BASIC 1          // Enable basic page
 #define DEF_SHOW_USER 1           // Enable user page
-#define DEF_SHOW_THERMAL_CORE 1   // Enable thermal core page when lab is enabled
+#define DEF_SHOW_THERMAL_CORE 0   // Enable thermal core page
 #define DEF_SHOW_THERMAL_TRACK 0  // Enable thermal track page
 #define DEF_SHOW_NAV 0            // Enable navigate page
 #define DEF_STARTPAGE 3           // Start on User page
@@ -136,6 +134,20 @@ struct VarioAudioProfile {
   uint16_t sinkPlaySamplesMin = SINK_PLAY_SAMPLES_MIN;
   uint16_t sinkRestSamplesMin = SINK_REST_SAMPLES_MIN;
 };
+
+enum class NavField : uint8_t {
+  TimeToWaypoint,
+  TimeToGoal,
+  DistanceToWaypoint,
+  DistanceToGoal,
+  CurrentGlide,
+  GlideToWaypoint,
+  GlideToGoal,
+  Count
+};
+
+constexpr NavField DEFAULT_NAV_FIELDS[4] = {NavField::TimeToWaypoint, NavField::DistanceToWaypoint,
+                                            NavField::CurrentGlide, NavField::GlideToWaypoint};
 
 class Settings {
  public:
@@ -201,8 +213,6 @@ setting | samples | time avg
   bool diag_cpuUtilization;
 
   // Leaf Labs options
-  bool labs_thermalCore;
-  bool labs_thermalTrack;
   bool labs_leafLog;
 
   // Boot Flags
@@ -213,6 +223,7 @@ setting | samples | time avg
   // Display Settings
   uint8_t disp_contrast;
   uint8_t disp_navPageAltType;
+  NavField disp_navFields[4];
   uint8_t disp_thmPageAltType;
   uint8_t disp_thmPageAlt2Type;
   uint8_t disp_thmPageUser1;
@@ -221,6 +232,7 @@ setting | samples | time avg
   bool disp_showBasicPage;
   bool disp_showUserPage;
   bool disp_showThermalCorePage;
+  bool autoSwitchToThermalCorePage;
   bool disp_showThermalTrackPage;
   bool disp_showNavPage;
   uint8_t startPage;

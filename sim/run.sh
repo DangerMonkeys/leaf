@@ -6,7 +6,7 @@
 #
 # Anything after `--` is passed straight to leafsim, so the invocations in README.md work here:
 #
-#   ./sim/run.sh -- --setting LAB_THERM_TRACK=1
+#   ./sim/run.sh -- --setting THERM_DISPLAY=1 --setting SHOW_THERM_TRK=1
 set -e
 
 PORT=8080

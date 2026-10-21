@@ -13,6 +13,7 @@
 #include "instruments/gps.h"
 #include "logging/log.h"
 #include "navigation/gpx.h"
+#include "navigation/thermal_core.h"
 #include "power.h"
 #include "storage/sd_card.h"
 #include "ui/audio/speaker.h"
@@ -95,9 +96,9 @@ bool Display::isMainPageVisible(MainPage targetPage) const {
     case MainPage::User:
       return settings.disp_showUserPage;
     case MainPage::ThermalCore:
-      return settings.labs_thermalCore && settings.disp_showThermalCorePage;
+      return settings.disp_showThermalCorePage;
     case MainPage::ThermalTrack:
-      return settings.labs_thermalTrack && settings.disp_showThermalTrackPage;
+      return settings.disp_showThermalTrackPage;
     case MainPage::Navigate:
       return settings.disp_showNavPage;
     case MainPage::Menu:
@@ -110,8 +111,7 @@ bool Display::isMainPageVisible(MainPage targetPage) const {
 
 bool Display::hasEnabledPrimaryPage() const {
   return settings.disp_showBasicPage || settings.disp_showUserPage ||
-         (settings.labs_thermalCore && settings.disp_showThermalCorePage) ||
-         (settings.labs_thermalTrack && settings.disp_showThermalTrackPage) ||
+         settings.disp_showThermalCorePage || settings.disp_showThermalTrackPage ||
          settings.disp_showNavPage;
 }
 
@@ -127,9 +127,8 @@ MainPage Display::firstVisiblePrimaryPage(MainPage preferredPage) const {
 
   if (settings.disp_showUserPage) return MainPage::User;
   if (settings.disp_showBasicPage) return MainPage::Basic;
-  if (settings.labs_thermalCore && settings.disp_showThermalCorePage) return MainPage::ThermalCore;
-  if (settings.labs_thermalTrack && settings.disp_showThermalTrackPage)
-    return MainPage::ThermalTrack;
+  if (settings.disp_showThermalCorePage) return MainPage::ThermalCore;
+  if (settings.disp_showThermalTrackPage) return MainPage::ThermalTrack;
   if (settings.disp_showNavPage) return MainPage::Navigate;
   if (settings.dev_mode && settings.disp_showDebugPage) return MainPage::Debug;
   return MainPage::User;
@@ -186,14 +185,47 @@ void Display::turnPage(PageAction action) {
       displayPage_ = sanitizedMainPage(displayPagePrior_);
   }
 
-  if (displayPage_ != tempPage) displayPagePrior_ = tempPage;
+  if (displayPage_ != tempPage) {
+    thermalAutoSwitchActive_ = false;
+    displayPagePrior_ = tempPage;
+  }
 }
 
 void Display::setPage(MainPage targetPage) {
   MainPage tempPage = displayPage_;
   displayPage_ = sanitizedMainPage(targetPage);
 
-  if (displayPage_ != tempPage) displayPagePrior_ = tempPage;
+  if (displayPage_ != tempPage) {
+    thermalAutoSwitchActive_ = false;
+    displayPagePrior_ = tempPage;
+  }
+}
+
+void Display::updateThermalAutoSwitch(bool guidanceAvailable) {
+  const bool newGuidance = guidanceAvailable && !thermalGuidanceWasAvailable_;
+  thermalGuidanceWasAvailable_ = guidanceAvailable;
+  if (!settings.disp_showThermalCorePage) settings.autoSwitchToThermalCorePage = false;
+  if (!settings.autoSwitchToThermalCorePage) {
+    thermalAutoSwitchActive_ = false;
+    return;
+  }
+
+  // Menus, dialogs and startup screens always retain control of the display.
+  const bool flightPageVisible = isScrollableMainPageVisible(displayPage_) &&
+                                 !mainMenuPage.get_modal_page() && !showStartupSplash_ &&
+                                 !(settings.system_showWarning && showWarning_);
+  if (thermalAutoSwitchActive_) {
+    if (displayPage_ != MainPage::ThermalCore || !flightPageVisible) {
+      thermalAutoSwitchActive_ = false;
+    } else if (!guidanceAvailable) {
+      thermalAutoSwitchActive_ = false;
+      setPage(thermalReturnPage_);
+    }
+  } else if (newGuidance && flightPageVisible && displayPage_ != MainPage::ThermalCore) {
+    thermalReturnPage_ = displayPage_;
+    setPage(MainPage::ThermalCore);
+    thermalAutoSwitchActive_ = true;
+  }
 }
 
 void Display::showOnSplash() {
@@ -207,6 +239,7 @@ void Display::showOnSplash() {
 // Will first display charging screen if charging, or splash screen if in the process of turning on
 // / waking up Then will display any current modal pages before falling back to the current page
 void Display::update() {
+  updateThermalAutoSwitch(settings.disp_showThermalCorePage && thermalCore.estimate().centerValid);
   clearLastRenderContext();
 
   if (displayPage_ == MainPage::Blank) {

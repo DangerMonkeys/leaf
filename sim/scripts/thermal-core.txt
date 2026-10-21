@@ -3,7 +3,7 @@
 # recording starts playing at boot.
 #
 #   leafsim --port 0 --speed 0 --accept-warning \
-#           --setting LAB_THERM_CORE=1 --setting SHOW_THERM_CORE=1 \
+#           --setting THERM_DISPLAY=1 --setting SHOW_THERM_CORE=1 \
 #           --setting SHOW_THERM_TRK=0 --setting SHOW_NAV=0 --setting SHOW_LANDING=0 \
 #           --scenario sim/recordings/thermal-core.json --play \
 #           --script sim/scripts/thermal-core.txt

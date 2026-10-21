@@ -439,12 +439,13 @@ void TaskManager::doNecessaryTasks(void) {
     performTask.gps = false;
   }
   if (performTask.thermalDetector) {
-    if (settings.labs_thermalCore || settings.labs_thermalTrack) thermalTracker.updateDetector();
+    if (settings.disp_showThermalCorePage || settings.disp_showThermalTrackPage)
+      thermalTracker.updateDetector();
     performTask.thermalDetector = false;
   }
   if (performTask.thermalNavigation) {
-    if (settings.labs_thermalTrack) thermalTracker.updateNavigation();
-    if (settings.labs_thermalCore) thermalCore.update();
+    if (settings.disp_showThermalTrackPage) thermalTracker.updateNavigation();
+    if (settings.disp_showThermalCorePage) thermalCore.update();
     performTask.thermalNavigation = false;
   }
   if (performTask.power) {

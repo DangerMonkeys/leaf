@@ -454,12 +454,29 @@ void Navigator::update() {
     if (pointDistanceRemaining < activeRadius && !reachedGoal_ && flightTimer_isLogging())
       sequenceWaypoint();  //  (this will also update distance to the new point)
 
+    // Sequencing may have changed the active point and its cylinder.
+    pointDistanceRemaining = gps.distanceBetween(gps.location.lat(), gps.location.lng(),
+                                                 activePoint.latitude(), activePoint.longitude());
+    totalDistanceRemaining_ = pointDistanceRemaining;
+    goalPoint_ = activePoint;
+    if (activeRouteIndex) {
+      const Route& route = routes[activeRouteIndex];
+      goalPoint_ = routePoint(activeRouteIndex, RouteIndex(route.totalPoints));
+      for (int i = activeRoutePointIndex; i < route.totalPoints; ++i) {
+        const Waypoint& from = routePoint(activeRouteIndex, RouteIndex(i));
+        const Waypoint& to = routePoint(activeRouteIndex, RouteIndex(i + 1));
+        totalDistanceRemaining_ +=
+            gps.distanceBetween(from.latitude(), from.longitude(), to.latitude(), to.longitude());
+      }
+    }
+
     // update time remaining
     if (!gps.hasFreshGroundSpeed() || gps.speed.mps() < 0.5) {
       pointTimeRemaining = 0;
     } else {
       const double distanceToCylinder =
-          pointDistanceRemaining > activeRadius ? pointDistanceRemaining - activeRadius : 0;
+          fmax(0.0, pointDistanceRemaining -
+                        (activeRouteIndex ? activeRoutePoint.radiusM : defaultWaypointRadius));
       pointTimeRemaining = distanceToCylinder / gps.speed.mps();
     }
 
@@ -485,8 +502,8 @@ void Navigator::update() {
 
     // get glide to active (and goal point, if we're on a route)
     glideToActive = pointDistanceRemaining / (gps.altitude.meters() - activePoint.ele);
-    if (activeRouteIndex)
-      glideToGoal_ = totalDistanceRemaining_ / (gps.altitude.meters() - goalPoint_.ele);
+    const double heightAboveGoal = gps.altitude.meters() - goalPoint_.ele;
+    glideToGoal_ = heightAboveGoal > 0 ? totalDistanceRemaining_ / heightAboveGoal : 0;
 
     // update relative altimeters (in cm)
     // alt above active point
@@ -580,27 +597,7 @@ bool Navigator::activateRoute(RouteID routeIndex, RouteIndex routePointIndex, bo
     sequenceWaypoint(playSound);
     if (!gpsPositionUsable()) clearNavSolution();
 
-    // calculate TOTAL Route distance
-    totalDistanceRemaining_ = 0;
-    // if we have at least 2 points:
-    if (routes[activeRouteIndex].totalPoints >= 2) {
-      for (int i = 1; i < routes[activeRouteIndex].totalPoints; i++) {
-        totalDistanceRemaining_ +=
-            gps.distanceBetween(routePoint(activeRouteIndex, RouteIndex(i)).latitude(),
-                                routePoint(activeRouteIndex, RouteIndex(i)).longitude(),
-                                routePoint(activeRouteIndex, RouteIndex(i + 1)).latitude(),
-                                routePoint(activeRouteIndex, RouteIndex(i + 1)).longitude());
-      }
-      // otherwise our Route only has 1 point, so the Route distance is from where we are now to
-      // that one point
-    } else if (routes[activeRouteIndex].totalPoints == 1) {
-      totalDistanceRemaining_ =
-          gpsPositionUsable()
-              ? gps.distanceBetween(gps.location.lat(), gps.location.lng(),
-                                    routePoint(activeRouteIndex, RouteIndex(1)).latitude(),
-                                    routePoint(activeRouteIndex, RouteIndex(1)).longitude())
-              : 0;
-    }
+    update();  // Populate remaining-route metrics for the selected starting point.
   }
   savePersistedState();
   return navigating;
@@ -695,7 +692,20 @@ bool Navigator::gpsPositionUsable() const { return gps.hasUsableFix(); }
 
 bool Navigator::hasNavSolution() const { return hasActivePoint() && gpsPositionUsable(); }
 
+uint32_t Navigator::goalTimeRemaining() const {
+  if (!hasNavSolution() || !gps.hasFreshGroundSpeed() || gps.speed.mps() < 0.5) return 0;
+  // Match waypoint ETA's cylinder arrival convention at the final destination.
+  const uint16_t radius =
+      activeRouteIndex
+          ? routePointMeta(activeRouteIndex, RouteIndex(routes[activeRouteIndex].totalPoints))
+                .radiusM
+          : defaultWaypointRadius;
+  return fmax(0.0, totalDistanceRemaining_ - radius) / gps.speed.mps();
+}
+
 void Navigator::clearNavSolution() {
+  totalDistanceRemaining_ = 0;
+  glideToGoal_ = 0;
   pointDistanceRemaining = 0;
   pointTimeRemaining = 0;
   turnToActive = 0;

@@ -23,7 +23,7 @@ Both runners pass anything they do not recognise straight to `leafsim`, so every
 below works through them (after `--` for `run.sh`):
 
 ```sh
-./sim/run.sh -- --setting LAB_THERM_TRACK=1
+./sim/run.sh -- --setting THERM_DISPLAY=1 --setting SHOW_THERM_TRK=1
 ```
 
 The first build takes a few minutes; later ones are incremental. Nothing is installed on your
@@ -82,7 +82,7 @@ through the normal recording player or sent through the device's existing UDP in
 Storage is bounded to 600 trail points (five minutes) and 60,000 sensor lines (roughly twenty
 minutes). The flight model and UI are simulator-only; physical firmware memory use is unchanged.
 
-Regression checks: `make -C sim test-free-flight test-thermal-core test-thermal-track` inside the
+Regression checks: `make -C sim test-free-flight test-thermal-core test-thermal-track test-display-settings` inside the
 usual container.
 
 Thermal Core shows a lift-weighted center after a complete turn with sufficient lift and spatial
@@ -210,13 +210,11 @@ sentences parses as a position but never sets the fix, and every one of those fi
 The scenario generator emits `GNGGA` / `GNRMC` / `GNGSA` / `GPGSV` for this reason. If you feed a
 hand-made recording and the values are missing, check the talker IDs first.
 
-**Leaf Labs features** — off by default on a device and therefore off in the
-emulator: `taskman` only runs their update calls when the setting is on, so their pages draw
-their frame and nothing else. Turn them on in the menus (the setting persists in `sim/state`),
-or preset them:
+**Thermal pages**: enable Thermal Core and Thermal Track in the Display menu. The setting
+persists in `sim/state`. To preset the promoted display settings (bypassing legacy Labs migration):
 
 ```sh
-leafsim --setting LAB_THERM_TRACK=1 --setting SHOW_THERM_TRK=1
+leafsim --setting THERM_DISPLAY=1 --setting SHOW_THERM_TRK=1
 ```
 
 `--setting` writes into the emulated device's saved settings before boot, using the NVS keys from

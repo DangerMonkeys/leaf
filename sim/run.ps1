@@ -6,7 +6,7 @@
 # Any trailing arguments are passed straight to leafsim, so the invocations in README.md work
 # here too:
 #
-#   .\sim\run.ps1 -Scenario sim/recordings/example.igc --setting LAB_THERM_TRACK=1
+#   .\sim\run.ps1 -Scenario sim/recordings/example.igc --setting THERM_DISPLAY=1 --setting SHOW_THERM_TRK=1
 [CmdletBinding()]
 param(
   [int]$Port = 8080,
