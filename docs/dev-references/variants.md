@@ -11,12 +11,11 @@ To create a "variant", add one like the following. The "hardware/configuration.h
 variant.h in the variant directory if the variant flag is set, and we can put variant specific defines here.
 
 ```
-[env:leaf_3_2_2_dev]
-extends = dev
+[env:leaf_3_2_2_release]
+extends = env:_release
 build_flags =
-    ${env:dev.build_flags}
+    ${env:_release.build_flags}
     -Isrc/variants/leaf_3_2_2
-    -D VARIANT
 ```
 
 ## Configuration Flags Available:

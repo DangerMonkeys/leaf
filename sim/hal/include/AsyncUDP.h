@@ -7,8 +7,10 @@
 
 #include <stdint.h>
 
+#include <atomic>
 #include <functional>
 #include <string>
+#include <thread>
 
 #include "IPAddress.h"
 
@@ -38,5 +40,6 @@ class AsyncUDP {
  private:
   int socket_ = -1;
   std::function<void(AsyncUDPPacket&)> callback_;
-  bool running_ = false;
+  std::atomic<bool> running_{false};
+  std::thread receiver_;
 };

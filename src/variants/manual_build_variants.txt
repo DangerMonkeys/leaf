@@ -1,0 +1,2 @@
+# Supported lab hardware built manually, without published release assets or OTA announcements.
+leaf_3_2_2

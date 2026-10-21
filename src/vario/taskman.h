@@ -20,9 +20,8 @@ struct ManagedTasks {
   bool thermalNavigation = true;  // update relative thermal locations for display/nav
   bool power = true;              // check battery, check auto-turn-off, etc
   bool log = true;                // check auto-start, increment timers, update log file, etc
-  bool tempRH = true;       // (1) trigger temp & humidity measurements, (2) process values and save
-  bool sdCard = true;       // check if SD card state has changed and attempt remount if needed
-  bool memoryStats = true;  // Prints memory usage reports
+  bool tempRH = true;  // (1) trigger temp & humidity measurements, (2) process values and save
+  bool sdCard = true;  // check if SD card state has changed and attempt remount if needed
   bool estimateWind = true;     // estimate wind speed and direction
   bool selfTest = true;         // run self test tasks
   bool cpuUtilization = false;  // write CPU utilization diagnostics

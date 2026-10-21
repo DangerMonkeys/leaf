@@ -19,7 +19,7 @@ VARIANT ?= leaf_3_2_7
 # contain spaces, which make cannot express in a prerequisite, so they are linked into the build
 # tree under stable names before anything compiles.
 LIBDEPS := $(ROOT)/.pio/libdeps
-LIBENV  := $(firstword $(wildcard $(LIBDEPS)/$(VARIANT)_release $(LIBDEPS)/$(VARIANT)_dev $(LIBDEPS)/*))
+LIBENV  := $(firstword $(wildcard $(LIBDEPS)/$(VARIANT)_release $(LIBDEPS)/*_release))
 DEPLINK := $(BUILD)/deps
 
 U8G2    := $(ROOT)/src/libraries/U8g2/src
@@ -42,17 +42,14 @@ INCLUDES := \
   -I$(MAGICEN)
 
 # ARDUINO_USB_* keep the firmware on the plain `Serial` path (the USBCDC swap in
-# system/usb_serial.h has no meaning without USB hardware).  DEBUG_WIFI is on so the device's own
-# UDP injection server is compiled in: the emulator serves it over a real socket, which is what
-# lets sim/play_buslog.py drive the emulator exactly as it drives hardware.
+# system/usb_serial.h has no meaning without USB hardware). UDP injection uses the same
+# runtime developer-mode and injection opt-in gates as hardware, with a host socket for WiFi.
 DEFINES := \
   -DLEAF_SIM=1 \
   -DARDUINO=200 \
   -DARDUINO_USB_MODE=1 \
   -DARDUINO_USB_CDC_ON_BOOT=1 \
   -D__GLIBC_USE_C2X_STRTOL=0 \
-  -DDEBUG_WIFI \
-  -DDISABLE_MASS_STORAGE \
   -DDISABLE_BATTERY_SHUTDOWN \
   -DARDUINOJSON_ENABLE_PROGMEM=0 \
   -DARDUINOJSON_ENABLE_STD_STRING=1
@@ -117,8 +114,14 @@ OBJ_LIB  := $(patsubst $(U8G2)/%.c,$(BUILD)/lib/u8g2/%.o,$(U8G2_C)) \
 OBJECTS := $(OBJ_FW) $(OBJ_SIM) $(OBJ_LIB)
 TARGET  := $(BUILD)/leafsim
 
-.PHONY: all clean deps test-thermal-core test-free-flight test-thermal-track test-display-settings test-leaf-log-sync
+.PHONY: all clean deps test-thermal-core test-free-flight test-thermal-track test-display-settings test-leaf-log-sync test-udp-injection
 all: $(TARGET)
+
+$(BUILD)/udp_injection_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/udp_injection.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/udp_injection.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-udp-injection: $(BUILD)/udp_injection_test
+	@cd $(ROOT) && $(BUILD)/udp_injection_test
 
 # Regression checks use the same firmware/HAL objects, with a test entry point instead of the UI.
 $(BUILD)/thermal_core_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/thermal_core.cpp

@@ -72,11 +72,9 @@ void SDCard::init(bool reserveMassStorage) {
     bootUpdateRequested = false;
   }
 
-#ifndef DISABLE_MASS_STORAGE
   if (!cardPresent || !mounted_) {
     leaf_usb::begin();
   }
-#endif
 }
 
 void SDCard::update() {
@@ -211,14 +209,12 @@ bool SDCard::mount() {
     boot_diagnostics::writeReportsToSd();
     if (bootUpdateRequested) sd_firmware_update::handleBootUpdate();
 
-#ifndef DISABLE_MASS_STORAGE
     if (sdcard.setupMassStorage(!reserveMassStorageOnMount_)) {
       if (DEBUG_SDCARD) Serial.println("Mass Storage Success");
     } else {
       if (DEBUG_SDCARD) Serial.println("Mass Storage Failed");
       leaf_usb::begin();
     }
-#endif
   }
 
   return success;

@@ -7,14 +7,9 @@ Today debugging RAM usage isn't great and needs much love. The Leaf only has 512
 and most of that is used by WiFi and Bluetooth stacks. Some writeup
 https://www.scottyob.com/post/2025-02-27-esp32-memory/
 
-## Enabling Periodic Heap Dump
+## Reading memory usage
 
-Dumping memory state over Serial is noisy. To turn on the 1 second dump, you can
-uncomment out the line in platformio.ini
-
-```
-	; -D MEMORY_PROFILING  # Enables memory profiling troubleshooting features
-```
+Enable the runtime `dev_mode` setting, connect Leaf to WiFi, and open `/app/debug/memory` on the device webserver. This returns a memory snapshot; the retired build-time periodic serial dump is no longer available. Existing heap diagnostics remain available.
 
 This will yield:
 

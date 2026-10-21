@@ -210,13 +210,15 @@ def make_version_files(env, tag_version) -> None:
             continue  # Skip lines that don't take the form `variant=tag version`
         variant_tag_versions[cols[0]] = cols[1]
 
-    # Set tag versions of current variants to the most recent tag version
+    # Lab hardware can still be built manually, but has no asset in GitHub releases.
+    # Do not announce an OTA update that cannot be downloaded.
+    with open(os.path.join(variants_folder, "manual_build_variants.txt"), "r") as f:
+        manual_build_variants = {line.split("#", 1)[0].strip() for line in f}
+
+    # Set tag versions of published variants to the most recent tag version
     for item in os.listdir(variants_folder):
         item_path = os.path.join(variants_folder, item)
-        if os.path.isdir(item_path):
-            # Every subfolder of src/variants is considered a hardware variant
-            # If the folder exists, presumably the variant is still supported, so
-            # the current tag version is the most recent firmware.
+        if os.path.isdir(item_path) and item not in manual_build_variants:
             variant_tag_versions[item] = tag_version
     
     # Write collection of latest versions

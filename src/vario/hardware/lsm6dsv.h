@@ -48,11 +48,6 @@ class LSM6DSV : public IPollable, public IMessageSource {
   bool beginTestPhase(uint8_t phase);
   void captureFlatBias(const MotionUpdate& sample);
   void finishFlatBiasCapture();
-#ifdef LEAF_IMU_STARTUP_TRACE
-  void traceStartup(const MotionUpdate& sample, uint16_t fifoWords, bool published);
-  uint32_t traceStarted_ = 0;
-  uint8_t traceSeen_ = 0;
-#endif
 
   stmdev_ctx_t ctx_{};
   etl::imessage_bus* bus_ = nullptr;

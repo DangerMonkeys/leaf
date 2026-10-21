@@ -1,6 +1,7 @@
 #include "Arduino.h"
 #include "comms/ble.h"
 #include "comms/fanet_radio.h"
+#include "comms/udp_message_server.h"
 #include "diagnostics/boot_diagnostics.h"
 #include "diagnostics/buttons.h"
 #include "diagnostics/heap_monitor.h"
@@ -24,10 +25,6 @@
 #include "ui/input/button_dispatcher.h"
 #include "ui/settings/settings.h"
 #include "wind_estimate/wind_estimate.h"
-
-#ifdef DEBUG_WIFI
-#include "comms/udp_message_server.h"
-#endif
 
 #ifdef RUN_EMBEDDED_TESTS
 #include "tests/tests.h"
@@ -76,9 +73,7 @@ void setup() {
     Serial.println("Leaving hardware devices unconnected to bus");
   }
 
-#ifdef DEBUG_WIFI
   udpMessageServer.publishTo(&bus);
-#endif
 
   baro.subscribeTo(&bus);
   baro.publishTo(&bus);

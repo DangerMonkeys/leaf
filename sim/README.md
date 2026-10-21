@@ -85,6 +85,9 @@ minutes). The flight model and UI are simulator-only; physical firmware memory u
 Regression checks: `make -C sim test-free-flight test-thermal-core test-thermal-track test-display-settings` inside the
 usual container.
 
+`make -C sim test-udp-injection` checks real UDP packets, the developer-mode and injection-setting gates, persistence, and repeated disable/enable cycles without a reboot.
+`node sim/tests/developer_card.cjs` checks the embedded web developer card's injection toggle and rejected saves.
+
 Thermal Core shows a lift-weighted center after a complete turn with sufficient lift and spatial
 coverage. Its thin geographic north/south and east/west lines rotate with the map and are clipped
 inside its border. The estimate uses the latest lap's altitude-projected breadcrumbs, with angular
@@ -159,7 +162,7 @@ leafsim --scenario flight.igc --export-log flight.log
 ```
 
 …which can then be replayed **against real hardware** with `sim/play_buslog.py`, the script that
-already existed for injecting data into a device over WiFi. The emulator also listens on UDP 7431
+already existed for injecting data into a device over WiFi. With `--setting DEV_MODE=1 --setting DEV_UDP_INJECT=1`, the emulator also listens on UDP 7431
 itself, so that same script can drive the emulator with no changes.
 
 ## Headless runs and CI

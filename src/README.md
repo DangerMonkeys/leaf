@@ -19,7 +19,7 @@ To use [PlatformIO](https://platformio.org/) to develop this project:
 
 * Open the [root repository folder](..) (File -> Open Folder...)
 * Change build environment as desired
-    * Click second-from-right icon in PlatformIO toolbar (small bar at bottom of IDE) and select "release" or "dev" environment appropriate to your hardware (e.g., "leaf_3_2_5_dev")
+    * Click second-from-right icon in PlatformIO toolbar (small bar at bottom of IDE) and select the release environment appropriate to your hardware (e.g., "leaf_3_2_5_release")
 * Build and upload firmware
     * If needed (if upload fails and/or if running a release version with mass storage enabled), put in bootloader mode:
         * Unplug device (leaf)
@@ -64,19 +64,18 @@ A hardware variant refers to a specific type of hardware.  It is formed by repla
 
 #### Behavior variant
 
-There are multiple different sets of desired firmware behavior:
+All supported hardware uses the `release` environment. Developer features are controlled by the runtime `dev_mode` setting in that firmware.
 
-* `release`: Standard production firmware that should be used by most consumers.
-* `dev`: Debug firmware that may be useful to developers.
+UDP sensor injection accepts messages on port 7431 only when `dev_mode` and the web app Developer card's **UDP sensor injection** setting are both enabled, and Leaf is connected to WiFi or hosting its access point. Injection is off by default. Disabling `dev_mode` also clears the saved injection setting, so enabling developer mode again does not resume injection. Connect using the usual WiFi controls; developer mode does not automatically start WiFi or keep it connected after leaving the menu.
 
-Only `release` firmware is published as part of a release.
+For replay while using the flight pages, enable the web app's developer control to keep the app always on before leaving the menu.
 
-Behavior variant names should be very short alphanumeric names starting with an alphabet character.  No underscores are allowed.
+The v3.2.2 lab hardware can be built manually with `pio run -e leaf_3_2_2_release`; GitHub CI builds only field hardware.
 
 #### Firmware version
 
 A firmware version is a [semantic version](https://semver.org) describing a particular firmware binary.  It is composed of the tag version of the most recent release tag in the history of the branch from which the firmware was built, plus a prerelease label when appropriate, plus build metadata.
 
-When firmware is built from a commit tagged as a release, no prerelease label is added (e.g., `0.0.9+h2.3.5`).  When firmware is built from a clean workspace at a commit later than a tagged release, a prerelease label of the first three characters of the commit hash is added (e.g., `0.0.9-fa8+h2.3.5`).  If the workspace is dirty (there are uncommitted changes that would affect the repository), a "d" is appended to the prerelease label (e.g., `0.0.9-fa8d+h2.3.5` for local changes on top of commit faa8 after/on the `0.0.9` tag version).  If the behavior variant is something other than `release`, then the behavior variant is added as a prerelease identifier (e.g., `0.0.9-dev+h2.3.5` for a dev variant of the `0.0.9` tag version, `0.0.9-fa8d.dev+h2.3.5` for local changes to a dev variant of commit faa8 after tag version `0.0.9`).
+When firmware is built from a commit tagged as a release, no prerelease label is added (e.g., `0.0.9+h2.3.5`).  When firmware is built from a clean workspace at a commit later than a tagged release, a prerelease label of the first three characters of the commit hash is added (e.g., `0.0.9-fa8+h2.3.5`).  If the workspace is dirty (there are uncommitted changes that would affect the repository), a "d" is appended to the prerelease label (e.g., `0.0.9-fa8d+h2.3.5` for local changes on top of commit faa8 after/on the `0.0.9` tag version).
 
 The build metadata is the hardware version prefixed with "h" (e.g., `h2.3.5` for leaf hardware version 2.3.5).  The build metadata is appended to the firmware version with a plus, per semantic versioning.  Note that hardware type is not encoded in firmware version.
