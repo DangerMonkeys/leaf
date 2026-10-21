@@ -1,0 +1,7 @@
+{
+  "name": "LSM6DSV",
+  "version": "5.0.1",
+  "description": "STMicroelectronics LSM6DSV standard C register driver",
+  "license": "BSD-3-Clause",
+  "build": { "includeDir": "src", "srcDir": "src" }
+}

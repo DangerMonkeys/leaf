@@ -1,5 +1,8 @@
 #pragma once
 
+// Structured commissioning details, written to serial and the current self_test_N.txt.
+void selfTestInfo(const char* msg, ...);
+
 // Self Test functions for Vario device
 #include <Arduino.h>
 #include "selfTest_displayScreens.h"
@@ -15,6 +18,7 @@ class SelfTest {
   String resultsFileName() const;
   void confirmCommissioningComplete();
   bool commissioningCompleteConfirmed() const;
+  void restoreVarioAudio();
 
   // results for all self tests, including both automated and interactive
   struct Results {

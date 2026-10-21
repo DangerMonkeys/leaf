@@ -16,8 +16,8 @@
 #include "hardware/Leaf_SPI.h"
 #include "hardware/aht20.h"
 #include "hardware/buttons.h"
-#include "hardware/icm_20948.h"
 #include "hardware/lc86g.h"
+#include "hardware/motion_sensor.h"
 #include "hardware/ms5611.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
@@ -429,7 +429,23 @@ void TaskManager::doNecessaryTasks(void) {
     performTask.estimateWind = false;
   }
   if (performTask.imu) {
-    ICM20948::getInstance().update();
+    MotionSensor::getInstance().update();
+#ifdef LEAF_IMU_STARTUP_TRACE
+    static bool haveValidityReport = false, previousClimbValid = false;
+    const bool climbValid = imu.velocityValid();
+    if (!haveValidityReport || climbValid != previousClimbValid) {
+      haveValidityReport = true;
+      previousClimbValid = climbValid;
+      Serial.printf(
+          "IMU_VALIDITY,t=%lu valid=%d motion_fresh=%d pressure_fresh=%d filter=%d "
+          "samples=%u/%u resets=%lu clips=%lu\n",
+          (unsigned long)millis(), climbValid, imu.accelValid(), baro.pressureFresh(),
+          imu.kalmanValid(), imu.startupSamplesCompleted(), imu.startupSamplesRequired(),
+          (unsigned long)MotionSensor::getInstance().fifoResetCount(),
+          (unsigned long)MotionSensor::getInstance().invalidAccelerationPacketCount());
+    }
+#endif
+    if (!imu.velocityValid()) baro.invalidateClimb();
     checkpointOnce(loggedFirstImuTask, "task-imu-first");
     performTask.imu = false;
   }

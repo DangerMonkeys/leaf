@@ -11,9 +11,9 @@
 #include "hardware/aht20.h"
 #include "hardware/buttons.h"
 #include "hardware/configuration.h"
-#include "hardware/icm_20948.h"
 #include "hardware/io_pins.h"
 #include "hardware/lc86g.h"
+#include "hardware/motion_sensor.h"
 #include "hardware/ms5611.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
@@ -187,7 +187,7 @@ void Power::initPeripherals() {
   ms5611.init();
   heap_monitor::checkpoint("periph-baro");
   Serial.println(" - Finished Baro");
-  ICM20948::getInstance().init();
+  MotionSensor::getInstance().init();
   heap_monitor::checkpoint("periph-imu");
   Serial.println(" - Finished IMU");
 
@@ -208,6 +208,8 @@ void Power::sleepPeripherals() {
   lc86g.sleep();
   Serial.println(" - Sleeping baro");
   baro.sleep();
+  MotionSensor::getInstance().sleep();
+  imu.wake();  // Invalidate the estimator before any subsequent wake.
   Serial.println(" - Sleeping speaker");
   speaker.mute();
   Serial.println("Shut down speaker");
@@ -224,6 +226,7 @@ void Power::wakePeripherals() {
   Serial.println(" - waking baro and IMU");
   baro.wake();
   imu.wake();
+  MotionSensor::getInstance().wake();
   heap_monitor::checkpoint("wake-periph-baro-imu");
   Serial.println(" - waking speaker");
   speaker.unMute();

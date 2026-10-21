@@ -5,6 +5,7 @@
 #include "dispatch/message_sink.h"
 #include "dispatch/message_source.h"
 #include "dispatch/message_types.h"
+#include "math/flat_acceleration_bias.h"
 #include "math/kalman.h"
 
 #define POSITION_MEASURE_STANDARD_DEVIATION 0.1f
@@ -38,6 +39,11 @@ class IMU : public MessageSink<IMU, MotionUpdate>, public IMessageSource {
   float kalmanPosition() const;
   float kalmanVelocity() const;
   float kalmanAcceleration() const;
+  float accelerationBias() const { return kalmanvert_.getAccelerationBias(); }
+  bool biasLearningAllowed() const { return biasLearningAllowed_; }
+  void setAccelerationBiasReference(const FlatAccelerationBias& reference) {
+    flatBiasReference_ = reference;
+  }
   unsigned long lastMotionTime() const;
   float lastDeviceAccelX() const;
   float lastDeviceAccelY() const;
@@ -70,12 +76,14 @@ class IMU : public MessageSink<IMU, MotionUpdate>, public IMessageSource {
 
  private:
   void processMotion(const MotionUpdate& m);
+  void processGravity(const MotionUpdate& m);
   bool startupReadinessTimedOut() const;
 
   etl::imessage_bus* bus_ = nullptr;
 
   // Kalman filter object for vertical climb rate and position
   KalmanFilterPA kalmanvert_;
+  FlatAccelerationBias flatBiasReference_;
 
   uint16_t kalmanStartupSamplesRemaining_;
 
@@ -123,5 +131,12 @@ class IMU : public MessageSink<IMU, MotionUpdate>, public IMessageSource {
   uint16_t gravityVerticalRejectCount_ = 0;
   uint16_t startupNonVertSamples_ = 0;
   uint32_t startupReadinessStartMs_ = 0;
+  bool gravityVectorMode_ = false;
+  bool haveMotionTime_ = false;
+  uint32_t lastPressureTime_ = 0;
+  uint32_t lastKalmanTime_ = 0;
+  double kalmanTime_ = 0;
+  bool biasLearningAllowed_ = true, haveBiasDisturbance_ = false;
+  uint32_t lastBiasDisturbance_ = 0;
 };
 extern IMU imu;

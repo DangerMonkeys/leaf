@@ -9,8 +9,8 @@
 #include "hardware/aht20.h"
 #include "hardware/buttons.h"
 #include "hardware/configuration.h"
-#include "hardware/icm_20948.h"
 #include "hardware/lc86g.h"
+#include "hardware/motion_sensor.h"
 #include "hardware/ms5611.h"
 #include "instruments/ambient.h"
 #include "instruments/baro.h"
@@ -69,7 +69,7 @@ void setup() {
   if (!settings.dev_startDisconnected) {
     Serial.println("Connecting hardware devices to bus");
     aht20.publishTo(&bus);
-    ICM20948::getInstance().publishTo(&bus);
+    MotionSensor::getInstance().publishTo(&bus);
     lc86g.publishTo(&bus);
     ms5611.publishTo(&bus);
   } else {

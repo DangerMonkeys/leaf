@@ -9,6 +9,9 @@
 #include "runtime.h"
 #include "scenario.h"
 #include "sim/board.h"
+#include "instruments/imu.h"
+#include "instruments/baro.h"
+#include "../tests/commissioning_checks.h"
 
 namespace sim {
 
@@ -143,6 +146,41 @@ namespace sim {
           s.uptimeMs / 1000.0, s.page.c_str(), s.gpsFix ? 1 : 0, s.satellites, s.speedKmh,
           s.altitudeM, s.climbRateMps, s.flightTimerRunning ? 1 : 0, s.flightLogging ? 1 : 0,
           s.clockSynced ? 1 : 0, s.windValid ? 1 : 0, s.windSpeedMps, s.windFromDeg, s.airspeedMps);
+    } else if (step.command == "expect-climb") {
+      // Check the real estimator, including readiness, rather than a default-zero UI value.
+      if (argument == "invalid") {
+        if (imu.velocityValid() || baro.climbRateFilteredValid()) {
+          printf("script: FAIL climb remained valid at %lu, motion=%lu, pressure=%lu\n",
+                 (unsigned long)millis(), imu.lastMotionTime(), (unsigned long)baro.lastPressureTime()); ++failures_;
+        } else printf("script: ok climb invalid\n");
+      } else {
+        std::istringstream bounds(argument);
+        double minimum = 0, maximum = 0;
+        bounds >> minimum >> maximum;
+        if (!bounds || !imu.velocityValid() || !baro.climbRateFilteredValid() ||
+            imu.getVelocity() < minimum || imu.getVelocity() > maximum) {
+          printf("script: FAIL climb expected [%g,%g], valid=%d, actual=%g\n",
+                 minimum, maximum, imu.velocityValid(), imu.kalmanVelocity()); ++failures_;
+        } else printf("script: ok climb %g in [%g,%g]\n", imu.getVelocity(), minimum, maximum);
+      }
+    } else if (step.command == "expect-bias") {
+      std::istringstream bounds(argument);
+      double minimum = 0, maximum = 0;
+      bounds >> minimum >> maximum;
+      const double bias = imu.accelerationBias();
+      if (!bounds || !imu.velocityValid() || bias < minimum || bias > maximum) {
+        printf("script: FAIL bias expected [%g,%g], valid=%d, actual=%g\n",
+               minimum, maximum, imu.velocityValid(), bias); ++failures_;
+      } else printf("script: ok bias %g in [%g,%g]\n", bias, minimum, maximum);
+    } else if (step.command == "expect-bias-learning") {
+      const bool expected = argument == "active";
+      if ((argument != "active" && argument != "paused") ||
+          imu.biasLearningAllowed() != expected) {
+        printf("script: FAIL bias learning expected %s, active=%d\n", argument.c_str(),
+               imu.biasLearningAllowed()); ++failures_;
+      } else printf("script: ok bias learning %s\n", argument.c_str());
+    } else if (step.command == "check-commissioning") {
+      if (!checkCommissioning()) ++failures_;
     } else if (step.command == "expect-page") {
       const std::string page = device.status().page;
       if (page != argument) {

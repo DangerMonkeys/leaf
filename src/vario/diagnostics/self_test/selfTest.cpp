@@ -5,6 +5,7 @@
 
 #include "hardware/aht20.h"
 #include "hardware/buttons.h"
+#include "hardware/motion_sensor.h"
 #include "instruments/ambient.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
@@ -36,12 +37,12 @@ uint32_t gpsSerialInitialPassedChecksumCount = 0;
 uint32_t gpsSerialStartMillis = 0;
 
 bool gpsFixTestInitialized = false;
-uint32_t gpsFixInitialSentencesWithFixCount = 0;
+uint32_t gpsFixInitialObservationSequence = 0;
 uint32_t gpsFixStartMillis = 0;
 uint32_t gpsFixRemainingSeconds = GPS_FIX_TEST_TIMEOUT_MS / 1000;
 uint32_t gpsFixLastDisplayUpdateMillis = 0;
 bool gpsFixTestCancelled = false;
-bool varioMutedUntilRestart = false;
+bool varioMutedForGpsTest = false;
 SelfTest_PageGPSFix selfTest_pageGPSFix{&gpsFixRemainingSeconds, &gpsFixTestCancelled};
 
 bool waitForVarioStartButton = false;
@@ -227,7 +228,23 @@ SelfTest::Status SelfTest::testIMU() {
   if (!imuTestInitialized) {
     imuTestInitialized = true;
     imuTestStartMillis = millis();
+#ifdef USE_LSM6DSV
+    MotionSensor::getInstance().startSelfTest();
+#endif
   }
+
+#ifdef USE_LSM6DSV
+  auto& sensor = MotionSensor::getInstance();
+  if (sensor.testResult() == LSM6DSV::TestResult::Running) return Status::Running;
+  if (sensor.testResult() != LSM6DSV::TestResult::Pass) {
+    selfTestInfo(
+        "`Test=IMU`, `Result=FAIL`, `Message=Electrical test or stationary bias failed`, "
+        "`Status=%s`",
+        sensor.status());
+    imuTestInitialized = false;
+    return Status::Fail;
+  }
+#endif
 
   if (!imu.accelValid() || !imu.velocityValid()) {
     uint32_t elapsedMillis = millis() - imuTestStartMillis;
@@ -248,7 +265,10 @@ SelfTest::Status SelfTest::testIMU() {
     // Check if acceleration values are within a reasonable range
     if (accelTotal < 1.2f && accelTotal > 0.8f) {
       result = Status::Pass;
-      selfTestInfo("`Test=IMU`,        `Result=PASS`, `Accel=%g`", accelTotal);
+      selfTestInfo(
+          "`Test=IMU`,        `Result=PASS`, `Accel=%g`, `Gravity=%g`, `VerticalAccel=%g`, "
+          "`Climb_mps=%g`",
+          accelTotal, imu.gravityEstimate(), imu.verticalAccel(), imu.getVelocity());
     } else {
       selfTestInfo("`Test=IMU`,        `Result=FAIL`, `Accel=%g`, `Message=Out of range`",
                    accelTotal);
@@ -333,12 +353,12 @@ SelfTest::Status SelfTest::testGPSfix() {
   if (!gpsFixTestInitialized) {
     gpsFixTestInitialized = true;
     gpsFixTestCancelled = false;
-    gpsFixInitialSentencesWithFixCount = gps.sentencesWithFix();
+    gpsFixInitialObservationSequence = gps.fixObservation().sequence;
     gpsFixStartMillis = millisNow;
     gpsFixLastDisplayUpdateMillis = 0;
     gpsFixRemainingSeconds = GPS_FIX_TEST_TIMEOUT_MS / 1000;
     speaker.setVolume(Speaker::SoundChannel::Vario, SpeakerVolume::Off);
-    varioMutedUntilRestart = true;
+    varioMutedForGpsTest = true;
     selfTest_pageGPSFix.show();
     display.update();
   }
@@ -349,12 +369,14 @@ SelfTest::Status SelfTest::testGPSfix() {
     return Status::Fail;
   }
 
-  if (gps.sentencesWithFix() > gpsFixInitialSentencesWithFixCount) {
+  const GPSFixObservation fix = gps.fixObservation();
+  if (fix.sequence != gpsFixInitialObservationSequence && fix.quality && fix.satellitesUsed &&
+      uint32_t(millisNow - fix.receivedMs) <= 3000) {
     gpsFixTestInitialized = false;
     uint32_t timeToFixSeconds = GPS_FIX_TEST_TIMEOUT_MS / 1000 - gpsFixRemainingSeconds;
     selfTest_pageGPSFix.close();
     selfTestInfo("`Test=GPS_FIX`,    `Result=PASS`, `Sec_to_fix=%d`, `Fix_sats=%d`",
-                 timeToFixSeconds, gps.fixInfo.numberOfSats);
+                 timeToFixSeconds, fix.satellitesUsed);
     return Status::Pass;
   }
 
@@ -652,7 +674,7 @@ SelfTest::Status SpeakerInteractiveTest::update() {
     Serial.println("* SELF TEST * SPEAKER * Test complete");
 
     // return volume to user setting and cancel any sounds playing
-    if (!varioMutedUntilRestart) {
+    if (!varioMutedForGpsTest) {
       speaker.setVolume(Speaker::SoundChannel::Vario, (SpeakerVolume)settings.vario_volume);
     }
     speaker.setVolume(Speaker::SoundChannel::FX, (SpeakerVolume)settings.system_volume);
@@ -753,6 +775,12 @@ void SelfTest::confirmCommissioningComplete() {
 
 bool SelfTest::commissioningCompleteConfirmed() const { return commissioning_complete_confirmed; }
 
+void SelfTest::restoreVarioAudio() {
+  if (!varioMutedForGpsTest) return;
+  varioMutedForGpsTest = false;
+  speaker.setVolume(Speaker::SoundChannel::Vario, (SpeakerVolume)settings.vario_volume);
+}
+
 void SelfTest::closeTestFile() {
   if (self_test_file) {
     self_test_file.close();
@@ -819,6 +847,7 @@ SelfTest::Status SelfTest::runInteractiveTests(bool closeFileWhenDone) {
 }
 
 void SelfTest::clearResults() {
+  restoreVarioAudio();
   if (self_test_file) {
     self_test_file.close();
   }
@@ -829,6 +858,9 @@ void SelfTest::clearResults() {
   selfTest.statusAutoTests = Status::Unknown;
   selfTest.statusInteractiveTests = Status::Unknown;
   ambientTestCounter = 0;
+#ifdef USE_LSM6DSV
+  MotionSensor::getInstance().cancelSelfTest();
+#endif
   baroTestInitialized = false;
   imuTestInitialized = false;
 

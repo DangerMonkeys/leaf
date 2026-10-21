@@ -13,6 +13,7 @@
 
 #include "hardware/aht20.h"
 #include "hardware/icm_20948.h"
+#include "hardware/motion_sensor.h"
 #include "hardware/ms5611.h"
 
 // ---------------------------------------------------------------- MS5611 barometer
@@ -48,6 +49,16 @@ uint32_t ICM20948::invalidAccelerationPacketCount() const {
 uint32_t ICM20948::fifoResetCount() const { return fifoResetCount_; }
 
 // ---------------------------------------------------------------- AHT20 temperature / humidity
+
+#ifdef USE_LSM6DSV
+// SFLP messages are injected by the scenario; electrical self-test requires real hardware.
+void LSM6DSV::init() { wake(); Serial.println("LSM6DSV: emulated gravity-vector messages"); }
+void LSM6DSV::update() { ++updates_; }
+void LSM6DSV::sleep() { sleeping_ = true; status_ = "Sleeping"; }
+void LSM6DSV::wake() { sleeping_ = false; status_ = "Simulated"; }
+void LSM6DSV::startSelfTest() { testResult_ = TestResult::Fail; }
+void LSM6DSV::cancelSelfTest() { testResult_ = TestResult::Idle; }
+#endif
 
 AHT20 aht20;
 

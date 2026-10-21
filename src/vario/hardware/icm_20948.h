@@ -8,6 +8,9 @@
 class ICM20948 : public IPollable, IMessageSource {
  public:
   void init();
+  // Preserve the legacy chip's existing power behaviour.
+  void sleep() {}
+  void wake() {}
 
   // IPollable
   void update();

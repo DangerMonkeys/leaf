@@ -13,6 +13,7 @@
 //   A<dt>,<temperature>,<relativeHumidity>       ambient update
 //   G<dt>,<nmea sentence>                        GPS sentence
 //   M<dt>,<A|a>,<ax>,<ay>,<az>,<Q|q>,<qx>,<qy>,<qz>   motion update
+//       optional suffix: ,<V|v>,<gx>,<gy>,<gz>,<reset:0|1>[,<clipped:0|1>] (gravity in g)
 //   P<dt>,<pressure>                             pressure update
 //   #<dt>,<text>                                 comment (logged, not published)
 //   !<command>                                   control: sensor connect/disconnect, time reset

@@ -266,6 +266,18 @@ void LeafGPS::on_receive(const GpsMessage& msg) {
     }
   }
   if (newSentence) {
+    if (msg.nmea.length() >= 7 && msg.nmea[0] == '$' && msg.nmea[3] == 'G' && msg.nmea[4] == 'G' &&
+        msg.nmea[5] == 'A' && msg.nmea[6] == ',') {
+      ++fixObservation_.sequence;
+      fixObservation_.receivedMs = millis();
+      fixObservation_.quality = fixObservation_.satellitesUsed = 0;
+      int quality = 0, used = 0;
+      if (parseNmeaIntField(msg.nmea, 6, quality) && quality >= 0 && quality <= 8 &&
+          parseNmeaIntField(msg.nmea, 7, used) && used >= 0 && used <= 255) {
+        fixObservation_.quality = quality;
+        fixObservation_.satellitesUsed = used;
+      }
+    }
     updateSatList(msg.nmea);
     syncSystemClockIfNeeded();
 

@@ -1,0 +1,5 @@
+6 check-commissioning
+6.1 expect-serial commissioning: PASS
+6.1 expect-serial Fix_sats=8
+6.1 expect-serial Fix_sats=7
+6.2 quit

@@ -35,6 +35,9 @@ class Speaker : private StateAssertMixin<Speaker> {
 
   // Play sounds on the specified channel at the specified volume
   void setVolume(SoundChannel channel, SpeakerVolume volume);
+  SpeakerVolume volume(SoundChannel channel) const {
+    return channel == SoundChannel::Vario ? varioVolume_ : fxVolume_;
+  }
 
   // Update the sound the vario plays according to climb/sink rate in cm/s
   void updateVarioNote(int32_t verticalRate);

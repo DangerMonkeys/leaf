@@ -32,6 +32,11 @@ class Barometer : public MessageSink<Barometer, PressureUpdate>,
   enum class State : uint8_t { Uninitialized, WaitingForFirstReading, Ready, Sleeping };
 
   State state() const { return state_; }
+  uint32_t lastPressureTime() const { return lastPressureTime_; }
+  bool pressureFresh() const {
+    return state_ == State::Ready && uint32_t(millis() - lastPressureTime_) <= 250;
+  }
+  void invalidateClimb();
 
   // MessageSink<Barometer, PressureUpdate>
   void on_receive(const PressureUpdate& msg);
@@ -120,6 +125,7 @@ class Barometer : public MessageSink<Barometer, PressureUpdate>,
   etl::imessage_bus* bus_ = nullptr;
 
   Pressure pressure_;
+  uint32_t lastPressureTime_ = 0;
 
   float altF_;
   bool validAltF_ = false;
