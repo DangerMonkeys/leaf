@@ -15,6 +15,7 @@
 #include <fstream>
 #include <thread>
 
+#include "free_flight.h"
 #include "hardware/configuration.h"
 #include "instruments/ambient.h"
 #include "instruments/baro.h"
@@ -219,6 +220,7 @@ namespace sim {
     drainCommands();
     if (options_.acceptWarning) answerWarningScreen();
     scenario().update(clock().millis());
+    freeFlight().update(clock().millis());
     if (script().loaded()) script().update(clock().millis());
 
     clock().advanceUs(LOOP_QUANTUM_US);
@@ -433,8 +435,23 @@ namespace sim {
   }
 
   Status Runtime::status() {
-    std::lock_guard<std::mutex> lock(stateMutex_);
-    return status_;
+    Status s;
+    {
+      std::lock_guard<std::mutex> lock(stateMutex_);
+      s = status_;
+    }
+    // A paused device thread cannot refresh its cached snapshot. Report live clock controls
+    // here so the browser's Resume button never gets stuck displaying a stale Pause state.
+    s.clockSpeed = clock().speed();
+    s.paused = clock().paused();
+    const auto live = freeFlight().snapshot(false);
+    if (live.active) {
+      s.scenarioName = "Free flight";
+      s.scenarioPositionS = live.model.elapsedS;
+      s.scenarioLengthS = 0;
+      s.scenarioPlaying = !s.paused;
+    }
+    return s;
   }
 
   uint64_t Runtime::serialSince(uint64_t cursor, std::vector<std::string>& into) {

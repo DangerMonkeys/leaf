@@ -115,8 +115,27 @@ OBJ_LIB  := $(patsubst $(U8G2)/%.c,$(BUILD)/lib/u8g2/%.o,$(U8G2_C)) \
 OBJECTS := $(OBJ_FW) $(OBJ_SIM) $(OBJ_LIB)
 TARGET  := $(BUILD)/leafsim
 
-.PHONY: all clean deps
+.PHONY: all clean deps test-thermal-core test-free-flight test-thermal-track
 all: $(TARGET)
+
+# Regression checks use the same firmware/HAL objects, with a test entry point instead of the UI.
+$(BUILD)/thermal_core_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/thermal_core.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/thermal_core.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-thermal-core: $(BUILD)/thermal_core_test
+	@cd $(ROOT) && $(BUILD)/thermal_core_test
+
+$(BUILD)/free_flight_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/free_flight.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/free_flight.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-free-flight: $(BUILD)/free_flight_test
+	@cd $(ROOT) && $(BUILD)/free_flight_test
+
+$(BUILD)/thermal_track_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/thermal_track.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/thermal_track.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-thermal-track: $(BUILD)/thermal_track_test
+	@cd $(ROOT) && $(BUILD)/thermal_track_test
 
 $(TARGET): $(OBJECTS)
 	@echo "  LD    $(notdir $@)"

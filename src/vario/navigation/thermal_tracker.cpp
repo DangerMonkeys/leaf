@@ -6,6 +6,7 @@
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "navigation/gpx.h"
+#include "wind_estimate/wind_estimate.h"
 
 ThermalTracker thermalTracker;
 
@@ -65,6 +66,7 @@ void ThermalTracker::reset() {
   resetEpisode();
   displayItemCount_ = 0;
   memset(samples_, 0, sizeof(samples_));
+  for (auto& wind : sampleWind_) wind = {};
   memset(thermals_, 0, sizeof(thermals_));
   memset(displayItems_, 0, sizeof(displayItems_));
 }
@@ -121,23 +123,26 @@ void ThermalTracker::updateDetector() {
   evaluateDetector();
 }
 
-uint8_t ThermalTracker::recentCoreSamples(CoreSample* out, uint8_t maxCount) const {
-  if (out == nullptr || maxCount == 0) return 0;
+ThermalTracker::CoreSamples ThermalTracker::recentCoreSamples() const {
+  return {*this, sampleIndex(nextSample_, sampleCount_), sampleCount_};
+}
 
-  const uint8_t count = min(sampleCount_, maxCount);
-  for (uint8_t i = 0; i < count; ++i) {
-    const uint8_t offset = count - i;
-    const Sample& sample = samples_[sampleIndex(nextSample_, offset)];
-    out[i].valid = sample.valid;
-    out[i].xM = sample.xM;
-    out[i].yM = sample.yM;
-    out[i].courseDeg = sample.courseDeg;
-    out[i].climbCms = sample.climb1SecCms;
-    out[i].speedCms = sample.speedCms;
-    out[i].timeS = sample.timeS;
-    out[i].capturedAtMs = sample.capturedAtMs;
-  }
-  return count;
+ThermalTracker::CoreSample ThermalTracker::CoreSamples::operator[](uint8_t index) const {
+  if (index >= count_) return {};
+  const uint8_t slot = (first_ + index) % MAX_DETECTOR_SAMPLES;
+  const Sample& sample = tracker_.samples_[slot];
+  CoreSample result;
+  result.valid = sample.valid;
+  result.xM = sample.xM;
+  result.yM = sample.yM;
+  result.altM = sample.altM;
+  result.courseDeg = sample.courseDeg;
+  result.climbCms = sample.climb1SecCms;
+  result.speedCms = sample.speedCms;
+  result.wind = tracker_.sampleWind_[slot];
+  result.timeS = sample.timeS;
+  result.capturedAtMs = sample.capturedAtMs;
+  return result;
 }
 
 void ThermalTracker::addSample(Sample sample) {
@@ -153,6 +158,9 @@ void ThermalTracker::addSample(Sample sample) {
   }
 
   samples_[nextSample_] = sample;
+  const WindEstimate& wind = windEstimator.getWindEstimate();
+  sampleWind_[nextSample_] =
+      ThermalSampleWind::capture(wind.validEstimate, wind.windSpeed, wind.windDirectionTrue);
   nextSample_ = (nextSample_ + 1) % MAX_DETECTOR_SAMPLES;
   if (sampleCount_ < MAX_DETECTOR_SAMPLES) sampleCount_++;
 }

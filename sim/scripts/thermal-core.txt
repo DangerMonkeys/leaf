@@ -34,10 +34,10 @@
 100  status
 104  screenshot    sim/build/tc-03-rolling-in.png
 
-# Lap 2 of an uncentred circle.  The trail should be a closed circle rather than a downwind
-# spiral - that is the wind correction working - with the fat side of the necklace towards the
-# core, the bullseye sitting on that side about 23 m from the circle centre tick, and OPEN
-# appearing for the few seconds each lap when the nose lines up with the correction.
+# Lap 2 of an uncentred circle. Breadcrumbs are projected to current altitude using each
+# observation's captured wind and inferred rising-air speed. This recording models a drifting
+# thermal, so the projected trail need not close into a circle. Check both the strong-lift side
+# of the trail and the guidance as the glider turns.
 130  status
 132  screenshot    sim/build/tc-04-offset-lap.png
 
@@ -59,10 +59,9 @@
 287  screenshot    sim/build/tc-09-dying.png
 
 # --- the glide between climbs ----------------------------------------------------------------
-# Rolled out at 298 s.  The turn layout must be gone when the robust course envelope over seven
-# seconds is no more than 45 degrees and the recent three-second climb average is no more than
-# +0.2 m/s, or after 15 straight seconds even in lift.  It must stay gone even though the
-# breadcrumb buffer still contains the previous circle.
+# Rolled out at 298 s. The turn layout recenters after the straight segment. The retained target
+# hides once the pilot has stayed beyond 100 m for five seconds, even though the breadcrumb
+# buffer still contains the previous circle. A return within 100 m can restore it without a lap.
 312  screenshot    sim/build/tc-10-just-left.png
 345  status
 347  screenshot    sim/build/tc-11-aged-out.png

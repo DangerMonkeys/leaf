@@ -14,10 +14,16 @@
 #include <sstream>
 
 #include "display_capture.h"
+#include "free_flight.h"
+#include "navigation/thermal_core.h"
+#include "navigation/thermal_tracker.h"
 #include "runtime.h"
 #include "scenario.h"
 #include "sim/board.h"
 #include "sim/clock.h"
+#include "ui/display/display.h"
+#include "ui/settings/settings.h"
+#include "wind_estimate/wind_estimate.h"
 
 namespace sim {
 
@@ -126,6 +132,36 @@ namespace sim {
       return out;
     }
 
+    std::string freeFlightJson() {
+      const auto s = freeFlight().snapshot();
+      const auto& m = s.model;
+      const auto& p = m.parameters;
+      std::ostringstream out;
+      out.setf(std::ios::fixed);
+      out.precision(3);
+      out << "{\"active\":" << (s.active ? "true" : "false") << ",\"x\":" << m.x << ",\"y\":" << m.y
+          << ",\"z\":" << m.z << ",\"heading\":" << m.headingDeg
+          << ",\"turnRate\":" << m.turnRateDps << ",\"airspeed\":" << m.airspeedMps
+          << ",\"climb\":" << m.climbMps << ",\"lift\":" << m.liftMps
+          << ",\"elapsed\":" << m.elapsedS << ",\"startAlt\":" << m.sourceAltM
+          << ",\"centerX\":" << s.centerX << ",\"centerY\":" << s.centerY
+          << ",\"radius\":" << s.radiusM << ",\"strength\":" << s.strengthMps
+          << ",\"parameters\":{\"windMps\":" << p.windMps << ",\"windFromDeg\":" << p.windFromDeg
+          << ",\"diameterM\":" << p.diameterM << ",\"strengthMps\":" << p.strengthMps
+          << ",\"peakiness\":" << p.peakiness << ",\"diameterVariance\":" << p.diameterVariance
+          << ",\"strengthVariance\":" << p.strengthVariance << ",\"texture\":" << p.texture
+          << ",\"tiltDeg\":" << p.tiltDeg << ",\"sinkMps\":" << p.sinkMps
+          << ",\"drifting\":" << (p.drifting ? "true" : "false") << ",\"seed\":" << p.seed
+          << "},\"trail\":[";
+      for (size_t i = 0; i < s.trail.size(); ++i) {
+        if (i) out << ',';
+        const auto& v = s.trail[i];
+        out << '[' << v.x << ',' << v.y << ',' << v.z << ',' << v.climb << ',' << v.t << ']';
+      }
+      out << "]}";
+      return out.str();
+    }
+
     std::string statusJson(const Status& s) {
       std::ostringstream out;
       out.setf(std::ios::fixed);
@@ -157,7 +193,7 @@ namespace sim {
           << ",\"scenario\":{\"name\":\"" << jsonEscape(s.scenarioName)
           << "\",\"positionS\":" << s.scenarioPositionS << ",\"lengthS\":" << s.scenarioLengthS
           << ",\"playing\":" << (s.scenarioPlaying ? "true" : "false") << "}";
-      out << "}";
+      out << ",\"freeFlight\":" << freeFlightJson() << "}";
       return out.str();
     }
 
@@ -275,6 +311,23 @@ namespace sim {
       std::string page = readFile("sim/web/index.html");
       if (page.empty()) page = "<h1>leafsim</h1><p>sim/web/index.html not found.</p>";
       sendResponse(client, "200 OK", "text/html; charset=utf-8", page);
+      return;
+    }
+
+    if (method == "GET" && path == "/free-flight.js") {
+      sendResponse(client, "200 OK", "text/javascript; charset=utf-8",
+                   readFile("sim/web/free-flight.js"));
+      return;
+    }
+
+    if (method == "GET" && path == "/free-flight-terrain.png") {
+      sendResponse(client, "200 OK", "image/png",
+                   readFile("website/public/labs/thermal-training/terrain-background.png"));
+      return;
+    }
+
+    if (method == "GET" && path == "/api/free-flight/log") {
+      sendResponse(client, "200 OK", "text/plain; charset=utf-8", freeFlight().recording());
       return;
     }
 
@@ -422,6 +475,10 @@ namespace sim {
             return;
           }
         }
+        if (request["load"].is<const char*>()) {
+          freeFlight().stop();
+          device.setPaused(false);
+        }
         if (request["seek"].is<double>()) scenario().seek(request["seek"].as<double>());
         if (request["play"].is<bool>()) {
           if (request["play"].as<bool>()) {
@@ -429,6 +486,51 @@ namespace sim {
           } else {
             scenario().pause();
           }
+        }
+        sendJson(client, "{\"ok\":true}");
+        return;
+      }
+
+      if (path == "/api/free-flight") {
+        auto p = freeFlight().snapshot(false).model.parameters;
+        const auto config = request["parameters"];
+        if (!config.isNull()) {
+          p.windMps = config["windMps"] | p.windMps;
+          p.windFromDeg = config["windFromDeg"] | p.windFromDeg;
+          p.diameterM = config["diameterM"] | p.diameterM;
+          p.strengthMps = config["strengthMps"] | p.strengthMps;
+          p.peakiness = config["peakiness"] | p.peakiness;
+          p.diameterVariance = config["diameterVariance"] | p.diameterVariance;
+          p.strengthVariance = config["strengthVariance"] | p.strengthVariance;
+          p.texture = config["texture"] | p.texture;
+          p.tiltDeg = config["tiltDeg"] | p.tiltDeg;
+          p.sinkMps = config["sinkMps"] | p.sinkMps;
+          p.drifting = config["drifting"] | p.drifting;
+          p.seed = config["seed"] | p.seed;
+          freeFlight().configure(p);
+        }
+        if (request["steering"].is<double>() || request["speedInput"].is<double>() ||
+            request["straighten"].is<bool>()) {
+          freeFlight().controls(request["steering"] | 0.0, request["speedInput"] | 0.0,
+                                request["straighten"] | false);
+        }
+        if ((request["start"] | false) || (request["reset"] | false)) {
+          device.setPaused(false);
+          device.setSpeed(1);
+          device.post([&device] {
+            const auto previous = freeFlight().snapshot(false);
+            const auto instruments = device.status();
+            const double altitudeM = previous.active         ? previous.model.z
+                                     : instruments.baroReady ? instruments.altitudeM
+                                                             : 1000;
+            scenario().pause();
+            thermalTracker.reset();
+            thermalCore.reset();
+            windEstimator.clearWindEstimate();
+            settings.labs_thermalCore = settings.disp_showThermalCorePage = true;
+            display.setPage(MainPage::ThermalCore);
+            freeFlight().start(clock().millis(), scenario().injectorBus(), altitudeM);
+          });
         }
         sendJson(client, "{\"ok\":true}");
         return;

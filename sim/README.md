@@ -56,6 +56,84 @@ FANET headers. The emulator uses the same library versions as the firmware.
 
 ## Recordings
 
+### Live free flight
+
+Choose **Free flight · live thermal** in the Scenario card and click **Load**. The training-style
+map appears beside the real firmware LCD. Left/right arrows adjust persistent turn rate,
+up/down arrows adjust airspeed, **C** straightens, and **Space** pauses/resumes the shared clock.
+Leaf's buttons remain clickable. Steering buttons also work with a mouse or touch. Held input
+is released on focus loss, and the server expires unrefreshed input after 750 ms.
+
+The thermal is a fixed-source, tilted plume by default. Show/hide its cross-section at the
+glider's current altitude without changing the flight physics. Controls adjust diameter, peak
+upward air speed, peakiness, wind speed/direction, tilt, variation with height, texture and glider
+sink. Higher peakiness produces a more concentrated core. The optional drifting-column mode is
+useful for comparing assumptions. This is a simplified flight model: sink is independent of
+airspeed/bank and the terrain is graphical, with no collision or terrain-lift model.
+
+The emulator owns flight physics and time, synthesizing pressure and motion at 20 Hz and GPS
+at 1 Hz through the recording player's sensor encoder. The firmware estimates its own wind and
+lift; no thermal truth or browser-side estimate is supplied to it. Restart flight clears recent
+thermal history and preserves current altitude to avoid a pressure jump. Pause and single-step
+stop/advance both the world and firmware together. Loading a recording exits live mode.
+
+**Save flight recording** downloads the recent sensor stream as a `.log` that can be replayed
+through the normal recording player or sent through the device's existing UDP injection path.
+Storage is bounded to 600 trail points (five minutes) and 60,000 sensor lines (roughly twenty
+minutes). The flight model and UI are simulator-only; physical firmware memory use is unchanged.
+
+Regression checks: `make -C sim test-free-flight test-thermal-core test-thermal-track` inside the
+usual container.
+
+Thermal Core shows a lift-weighted center after a complete turn with sufficient lift and spatial
+coverage. Its thin geographic north/south and east/west lines rotate with the map and are clipped
+inside its border. The estimate uses the latest lap's altitude-projected breadcrumbs, with angular
+weighting and gentle smoothing; it estimates the sampled lift, not an unseen thermal core. Reveal
+the live thermal to compare the estimate with the simulator's independent ground truth. Partial
+turns, weak lift and nearly straight paths cannot establish a new center. Once established, the
+last good center remains visible within 100 m, even when the recent trail cannot fit a new lap.
+It hides after five continuous seconds beyond 100 m and restores on return within 100 m. The
+retained center still projects to the current altitude and map bearing. Stale GPS temporarily
+hides it and interrupts the departure timer; it does not erase the center.
+
+Climb quality is signed, time-weighted net climb over the latest one or two completed,
+non-overlapping turns. A candidate within 40 m adjusts the center using the existing 35% smoothing.
+A candidate more than 40 m away switches the target directly only if its average climb is better
+and its position stays within 15 m for three seconds. Equal or weaker candidates also smooth.
+Incomplete fits retain the old center and its climb history. Fresh fits exclude connecting flight
+after three seconds of straight flight or a confirmed 30-degree direction reversal. Only two lap
+summaries are stored; the breadcrumb buffer stays at 40 samples.
+
+For a coherent strong-side/weak-side lift gradient, the target's displacement from the geometric
+orbit center is amplified by up to 4x, capped at roughly one directional orbit radius and the
+sampled strong-side extent. Gain ramps above a 0.3 m/s contrast deadband and reaches its maximum
+at a coherent 1 m/s contrast. Isolated spikes and scattered noise get no extra gain. Multiple
+weaker observations surrounding the strongest region reduce gain to 1, retaining an interior
+estimate when the peak is bracketed. All geometry uses the same altitude projection; the retained
+target's slant includes the amplified displacement. Position smoothing and distance retention
+remain unchanged.
+
+A 30 m target circle is drawn over the breadcrumbs at the calculated lift center. It has two
+black circles at its radius and one pixel outside, with white circles one pixel inside and two
+pixels outside. At its center, two black triangles form a wind arrow with a fluted tail. A
+six-pixel-radius white disc clears the breadcrumbs and crosshairs, leaving a white buffer around
+the five-pixel-radius black outline. The arrow's tip and both tail tips touch the outline. It points
+where the wind is blowing and rotates with the map; it is hidden without a valid wind estimate.
+Auxiliary widening/tightening rings are removed and the top-of-map turn reticle is disabled.
+
+ThermalTrack shares Thermal Core's upper layout, including the narrow vario, large climb field,
+altitude with its selectable source, and wind circle with compass letters and speed. The selected
+thermal's distance and strength share the strip from (15,57) to (95,73), with fixed positions and
+font sizes. Strength and its unit align to the right edge; distance centers between fixed steering
+arrow slots, with 6x12 numbers and 5x8 m/km/mi labels. Distances use feet/metres below 1,000,
+tenths of miles/kilometres below 10, then whole miles/kilometres capped at 99. Steering arrows use
+the same 20/40/60-degree thresholds as waypoint
+navigation and are hidden without a selected thermal.
+
+The pilot triangle's tip sits at the map center. A single-pixel line runs from its tip to the
+selected thermal's outer selection ring, stopping before the marker's hollow interior. The
+line is clipped to the map and connects directly to the pilot's tip.
+
 Three formats, one playback path. Everything is normalised at load time into the bus-log line
 format the device itself records (`dispatch/message_injector.h`), so a synthetic flight and a
 captured one are replayed by exactly the same code.
