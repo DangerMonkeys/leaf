@@ -60,6 +60,20 @@ namespace {
     logbook.startLocationLng = fix.longitude;
     logbookEntry.captureFirstFix(logbook);
   }
+
+  // Rough in-flight check for g-load statistics: moving over the ground faster than walking, or
+  // climbing/sinking noticeably (covers flying with little ground speed in strong wind).
+  constexpr float G_LOAD_AIRBORNE_MIN_SPEED_MPS = AUTO_START_MIN_SPEED * 0.44704f;
+  constexpr int32_t G_LOAD_AIRBORNE_MIN_CLIMB_CMS = 50;
+
+  bool looksAirborne() {
+    if (gps.hasUsableFix() && gps.hasFreshGroundSpeed() &&
+        gps.speed.mps() > G_LOAD_AIRBORNE_MIN_SPEED_MPS) {
+      return true;
+    }
+    return baro.state() == Barometer::State::Ready && baro.climbRateFilteredValid() &&
+           abs(baro.climbRateFiltered()) > G_LOAD_AIRBORNE_MIN_CLIMB_CMS;
+  }
 }  // namespace
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -291,6 +305,7 @@ void flightTimer_start() {
   flight = &igcFlight;
   thermalTracker.reset();
   thermalCore.reset();
+  imu.gLoad().startFlight();
 
   logbook.logStartedAt = millis() / 1000;
   log_captureValues();
@@ -314,6 +329,7 @@ void flightTimer_stop(bool showSummary) {
   }
 
   // ending values
+  imu.gLoad().stopFlight();
   log_captureEndingValues();
 
   const String trackFormat = flight->started() ? flight->trackLogFormat() : "";
@@ -454,11 +470,11 @@ void log_checkMinMaxValues() {
     }
   }
 
-  // check accel / g-force for log records
-  if (logbook.accel > logbook.accel_max) {
-    logbook.accel_max = logbook.accel;
-  } else if (logbook.accel < logbook.accel_min) {
-    logbook.accel_min = logbook.accel;
+  // g-force records come from the filtered, in-flight-only tracker rather than the raw sample
+  imu.gLoad().updateAirborne(looksAirborne());
+  if (imu.gLoad().valid()) {
+    logbook.accel_max = imu.gLoad().maxG();
+    logbook.accel_min = imu.gLoad().minG();
   }
 
   // Check speed value for log records

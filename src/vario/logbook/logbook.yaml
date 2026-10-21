@@ -228,10 +228,14 @@ components:
           type: number
           format: float
           nullable: true
+          description: >-
+            Highest sustained in-flight acceleration magnitude in g (slew-limited, 0.5 s average;
+            launch and landing excluded). Limited by the accelerometer's +/-4 g per-axis range.
         min_accel_g:
           type: number
           format: float
           nullable: true
+          description: Lowest sustained in-flight acceleration magnitude in g, filtered like max_accel_g.
         max_temperature_c:
           type: number
           format: float
