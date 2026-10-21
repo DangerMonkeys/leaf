@@ -7,18 +7,31 @@ description: Hardware v3.2.8 implementation status, bench results, and remaining
 
 ## Status and scope
 
-Status updated on **2026-10-21**. Core v3.2.8 support is implemented in commit `6ff70157`
+Status updated on **2026-10-21**. Initial v3.2.8 hardware support is ready for PR review;
+flight, temperature, multiple-board and electrical fault/current qualification remain follow-ups.
+Core v3.2.8 support is implemented in commit `6ff70157`
 (`Add Leaf v3.2.8 LSM6DSV IMU support`). Development/release builds, a v3.2.6 regression
 build, and the recorded simulator checks passed. One board passed the proposed resting mean
-climb target in two orientations; physical moving-start, continuous-rotation, temperature,
-power/fault and flight qualification remain open. Overall commissioning is incomplete,
-including a separate POWER self-test failure. This is a development checkpoint.
+climb target in all six orientations, and a combined motion test reached 7.06 g without losing
+valid output. Orientation changes exposed a 20-30-second bias-settling problem. Physical
+moving-start, sustained rotation, temperature, power/fault and flight qualification remain open.
+A full test commissioning passed on this
+board on 2026-10-21, including POWER and interactive checks; see the commissioning follow-up
+below. The earlier POWER failure has not been explained. This is a development checkpoint.
 
 The **2026-10-21 follow-up** adds startup/motion capture, fixes resets caused by
 brief acceleration saturation, and gates Kalman bias learning using the existing ICM sample
 tolerances. The operating range is now +/-8 g. The first gated fixed-orientation motion test
-kept output available and recovered promptly; see the acceleration-dropout record below for
-the current installed image, measured results and remaining qualification.
+kept output available and recovered promptly; see the follow-up records below for measured
+results, installed-image history and remaining qualification.
+
+The latest commissioning follow-up adds a saved flat-orientation acceleration-bias startup
+seed for v3.2.8, coherent GPS satellites-used records, and restoration of vario audio when the
+final self-test page is dismissed. Hardware capture/readback and reboot persistence passed;
+the operator confirmed the expected audio behavior. Three stationary runs passed, including
+two during normal desk typing. A deliberate stronger desk disturbance verified that rejected
+gyro windows are discarded and an automatic clean retry can complete the same test. See the
+commissioning rejection/recovery record below; older ICM behavior remains unchanged.
 
 The hardware-support branch is `codex/hardware-v3.2.8`, created from `origin/main` at
 `82a74de7`. This document was brought forward from `codex/leaf-log-site-link`, where it was
@@ -850,9 +863,9 @@ are used, and the new hardware currently uses the experimental Kalman bias corre
   retained in this document. Preserve the ELF if investigating this particular flashed image.
 - Application-only flashing writes both `0x10000` and `0x340000`. Preserve the working DIO
   bootloader. For a new blank board, follow the existing factory DIO bootloader-upload behavior.
-- The full commissioning run was not completed. IMU electrical/bias checks passed, but the
-  separate POWER check failed and interactive checks remained pending. Do not mark the device
-  fully commissioned based on the IMU result alone.
+- At this earlier checkpoint the full commissioning run was not completed: the POWER check
+  failed and interactive checks remained pending. The later complete test commissioning below
+  supersedes that incomplete result; it does not explain the earlier POWER failure.
 
 ### Next work, in order
 
@@ -870,10 +883,10 @@ are used, and the new hardware currently uses the experimental Kalman bias corre
 4. Exercise hardware communication failures, stale data, backlog and saturation; review recovery
    limits and fault reporting. Verify repeated off/charging/wake cycles and actual IMU power-down
    current. Software recovery and power-down exist, but physical fault/current tests are pending.
-5. Run the complete factory reset, electrical test, calibration, saved-results retrieval and
-   interactive commissioning sequence. Check missing/corrupt calibration, interrupted tests,
-   recommissioning and update retention. Investigate the POWER failure rather than weakening
-   its check to obtain a pass; establish production thresholds using more than one board.
+5. The complete commissioning sequence passed once in the later test session below. Check
+   missing/corrupt calibration, interrupted tests, recommissioning and update retention.
+   Investigate the earlier POWER failure rather than weakening its check; establish production
+   thresholds using more than one board.
 6. Collect representative flight recordings, including sustained turns and moving startup.
    Compare response and false indications against the existing implementation. Then review the
    firmware changes, decide which temporary serial diagnostics to retain, and validate the normal
@@ -1228,6 +1241,436 @@ translation, orientation-dependent bias adaptation, actual saturation with the l
 and noise/latency on several boards. Keep the old ICM estimator until its separate migration
 is requested and validated with real ICM data.
 
+## Complete test commissioning, 2026-10-21
+
+The local factory interface completed commissioning for MAC `7C:4F:AD:3B:AC:B0` using
+release firmware `0.2.4-6ffd+h3.2.8`. The selected release application's SHA-256 before the
+subsequent notes-only change was
+`6c9256272c26cdb05ff6d311f09ee9ae0081b4ac3f37aa580b4a2f12371b64b7`.
+The server reported `status=success`, every automatic/interactive test passed, and Leaf
+acknowledged successful commissioning. SD formatting/restart, detailed-results retrieval,
+temporary database persistence, and clearing the device's result file all completed. The
+database was in memory for this test; no production database was fetched or changed. This
+exercises the persistence code but does not establish durable database retention.
+
+IMU results:
+
+- Accelerometer electrical responses, X/Y/Z: 265.984, 264.301, 176.095 mg; all passed.
+- Gyro electrical responses, X/Y/Z: 399.686, 415.562, 411.250 dps; all passed.
+- Stationarity passed; saved gyro bias: -0.4214, +0.2310, -0.2163 dps. Operational
+  configuration restored with zero I2C errors.
+- Final IMU check: acceleration 0.98849 g, gravity 0.999471 g, projected residual
+  -0.0109814 g, and climb +0.00404984 m/s. This is a single reading, not a resting-window
+  accuracy/noise qualification.
+- Interactive vario: 1.25 m altitude change, maximum climb +1.88 m/s, minimum -1.21 m/s.
+- POWER passed with USB present, charging true, 88% battery and 4071 mV. The earlier
+  charging-false failure did not recur in this run; its cause remains open.
+
+The IMU notes have been shortened for subsequent runs: one three-axis electrical-response
+line per sensor, one gyro-bias/stationarity/save-result line, and the final IMU result. Normal
+output is four lines rather than ten. Numeric responses remain in X/Y/Z order, with units;
+faults retain extra electrical/configuration/I2C diagnostics. Test thresholds, sample counts,
+calibration behavior and normal motion processing are unchanged. Existing completed-session
+notes remain the original firmware output.
+
+Formatter, `leaf_3_2_8_release` build and diff checks passed for the notes change. No Leaf USB
+port was present at verification (only the unrelated COM4 device), so the shorter-note firmware
+has not been flashed or physically rerun. The commissioned release image and its ELF are
+archived locally under `.pio/imu-validation/commissioning-pass/`; the new release binary/ELF
+are under `.pio/imu-validation/commissioning-notes/`. The existing local database's SHA-256
+was unchanged after the test session.
+
+Next checks, in order:
+
+1. Reboot and sleep/wake without erasing NVS; verify the commissioned gyro bias is restored
+   and moving startup still works. Check retention across an application update as well.
+2. Record resting windows on all six faces, including transitions between faces. Measure
+   mean/RMS climb, residual acceleration and bias settling; use the existing +/-0.05 m/s
+   60-second mean-climb target as engineering acceptance. Do not require six-face production
+   calibration until those measurements justify it.
+3. Combine rotation and translation, including starts while moving and actual acceleration
+   clipping with the bias gate enabled. Verify output continuity and prompt recovery.
+4. Exercise movement during commissioning, cancellation/retry, missing/corrupt calibration,
+   and communication failures. Verify safe configuration restoration and successful recalibration.
+5. Extend to more boards, temperature, power/current and representative flight recordings;
+   turn the measured residual/noise limits into production self-test criteria.
+
+## Calibration-retention follow-up, 2026-10-21
+
+The commissioned board was updated with the diagnostic application only, writing both OTA
+slots and preserving the bootloader/NVS. Image SHA-256:
+`0e57e9bf5a5c206831da12d4529b9b4e997291cc75ac26945ff506cbdc11e9ec`.
+This image also includes the shorter self-test notes. Both application-slot hashes verified.
+The initial release USB port COM44 changed to the ROM/native interface COM42 on the first
+upload attempt; the retry succeeded. Recording uses the same non-resetting DTR/RTS settings
+as earlier probes, with automatic reconnection across physical power loss.
+
+The first wake after the application update reported `saved_bias_seeded` at 59 ms and valid
+climb at 4031 ms after configuration began. The user then turned Leaf off, unplugged USB for
+five seconds, reconnected it into charging mode, and turned it on again. Device uptime reset;
+the trace reported `saved_bias_seeded` during cold initialization (device time 819 ms) and
+again at the following wake (59 ms after configuration). Climb became valid at 4030 ms, and
+the user confirmed normal output. No commissioning/self-test or NVS erase was repeated.
+This verifies valid saved gyro calibration was reused across an application update, cold
+restart and charging-to-run wake on this board; the startup diagnostic does not print the
+three saved numeric bias values, so it is not a byte-for-byte calibration comparison.
+
+The completed local recording is
+`.pio/imu-startup/calibration-retention-20261021-111426.log`; matching diagnostic binary/ELF
+are under `.pio/imu-validation/calibration-retention/`. The recorder is stopped and the serial
+port released. That diagnostic image was used for these measurements; the later release
+installation is recorded below. Six-face resting measurements follow.
+
+### Six-face resting measurements
+
+The screen-up position after the cold restart was held still. In configuration session 3,
+the 60-second window at 20-80 seconds after configuration contained 1200 samples: mean climb
+-0.007762 m/s, RMS 0.036993 m/s, zero invalid/clipped-flag samples, with bias learning allowed
+throughout. Mean acceleration was 0.989422 g; projected residual was -0.0100572 g and mean
+Kalman bias -0.098495 m/s². Mean gravity vector was approximately (-0.01012, -0.00024, +0.99942) g.
+This face passes the +/-0.05 m/s mean-climb engineering target. Summaries are stored locally
+beside the capture as `calibration-retention-20261021-111426.windows.json`.
+
+Screen-down then produced an orientation-dependent transient that the user reported took
+about 30 seconds to settle. The last transition into a persistent negative-Z orientation was
+at session-3 elapsed time 325078 ms. Relative to that transition:
+
+| Seconds afterward | Mean climb, m/s | RMS climb, m/s | Bias at window end, m/s² |
+| --- | --- | --- | --- |
+| 0-5 | +0.17060 | 0.18540 | -0.06126 |
+| 5-10 | +0.07912 | 0.08627 | -0.01054 |
+| 10-20 | +0.04389 | 0.06161 | +0.03711 |
+| 20-30 | +0.02588 | 0.05379 | +0.06498 |
+| 30-40 | +0.01353 | 0.03581 | +0.07331 |
+| 40-60 | +0.00266 | 0.03227 | +0.08061 |
+
+The 60-second screen-down resting window at 20-80 seconds after that transition contained
+1200 valid samples: mean climb +0.006755 m/s, RMS 0.038524 m/s, no invalid/clipped-flag samples,
+and learning allowed throughout. Mean acceleration was 1.006297 g, projected residual
++0.0082456 g and mean bias +0.072406 m/s². Mean gravity was approximately
+(+0.07310, +0.01230, -0.99529) g, so the supported device was slightly tilted.
+
+Both measured faces pass the steady mean-climb target, but the orientation-change delay is
+an open behavior problem, not a pass hidden by settling time. The opposite residual signs
+suggest an accelerometer offset component. Complete the remaining faces and quantify offset
+versus scale/attitude error before deciding whether to add commissioning accelerometer
+calibration or change bias dynamics. Avoid solving this solely by faster unrestricted bias
+learning, which could again absorb actual motion.
+
+Upright (+Y gravity) also passed. Its final persistent orientation began at 489628 ms;
+the 20-80-second window contained 1200 valid samples, mean climb +0.000187 m/s and RMS
+0.037727 m/s, with no clipped flags and learning allowed throughout. Mean total acceleration
+was 0.999975 g, projected residual +0.0003645 g and mean Kalman bias +0.002866 m/s². This
+orientation's raw residual was substantially smaller than either Z-facing position.
+
+Upside-down (-Y gravity) passed as well. Its final transition was at 610128 ms; the
+20-80-second window contained 1200 valid samples, mean climb -0.003508 m/s, RMS 0.032322 m/s,
+no clipped flags, and learning allowed throughout. Mean total acceleration was 0.994098 g,
+projected residual -0.0038075 g and mean bias -0.036692 m/s².
+
+Both X-facing positions then passed. Left edge is +X gravity (last transition 729628 ms);
+right edge is -X gravity (858878 ms). Their windows likewise cover 20-80 seconds after the
+last persistent orientation transition. All six windows contained 1200 samples each, with
+zero invalid/clipped-flag samples and bias learning allowed throughout:
+
+| Position | Mean climb, m/s | RMS climb, m/s | Mean total acceleration, g | Mean projected residual, g | Mean learned bias, m/s² |
+| --- | --- | --- | --- | --- | --- |
+| Screen-up (+Z) | -0.007762 | 0.036993 | 0.989422 | -0.0100572 | -0.098495 |
+| Screen-down (-Z) | +0.006755 | 0.038524 | 1.006297 | +0.0082456 | +0.072406 |
+| Upright (+Y) | +0.000187 | 0.037727 | 0.999975 | +0.0003645 | +0.002866 |
+| Upside-down (-Y) | -0.003508 | 0.032322 | 0.994098 | -0.0038075 | -0.036692 |
+| Left edge (+X) | +0.004841 | 0.037057 | 0.997773 | -0.0010585 | -0.012812 |
+| Right edge (-X) | +0.005419 | 0.035607 | 0.999713 | +0.0006531 | +0.005238 |
+
+The six means pass the +/-0.05 m/s target, with 7200 valid samples in the measured windows.
+This does not close orientation-change settling: the screen-up/down flip still produced a
+noticeable false-climb transient. The right-edge window had more small support/attitude
+variation (Y/Z raw standard deviations 0.00371/0.00536 g versus roughly 0.0003-0.0019 g
+per axis on the other faces); all remained within the learning gates.
+
+An exploratory sphere fit to the six raw acceleration means estimates body-axis offset
+(-0.001015, +0.003222, -0.008493) g and common radius 0.997902 g, with 0.000566 g radial RMS
+residual. A separate four-parameter fit of projected residual against gravity direction gives
+0.000492 g RMS residual across those same six means. These fits support investigating a
+fixed body-axis accelerometer calibration to reduce the scalar Kalman bias's orientation
+changes; they are training-data fits, not independent calibration validation or proof that
+the entire error is accelerometer offset. SFLP gravity magnitude, scale, attitude, temperature
+and support variation also need consideration. Nothing has been applied or saved to Leaf.
+The exploratory fit is in the local `.windows.fit.json` beside the capture. Validate a candidate
+correction on separate intermediate-angle/rotation data before adding production calibration.
+
+### Combined raise/lower/rotation and recovery
+
+The user raised/lowered Leaf while rolling and tilting it, then rested it screen-up. Detected
+disturbances span session-3 elapsed time 1000078-1035328 ms (35.25 seconds). All 706 motion
+samples stayed valid; peak total acceleration was 7.061681 g. Learning was paused throughout
+all 706 samples and the serialized bias remained exactly -0.00072 m/s². No clipping flags were
+recorded, so this does not validate actual saturation at the new operating range. The user
+confirmed values stayed available.
+
+Recovery after the last detected disturbance:
+
+| Seconds afterward | Mean climb, m/s | RMS climb, m/s |
+| --- | --- | --- |
+| 0-2 (learning holdoff) | -0.203846 | 0.245784 |
+| 2-5 | -0.050161 | 0.063012 |
+| 5-10 | -0.038407 | 0.051474 |
+| 10-20 | -0.017714 | 0.037179 |
+| 20-30 | -0.006055 | 0.025268 |
+| 30-45 | -0.001469 | 0.037865 |
+| 45-60 | -0.000182 | 0.037294 |
+| 60-80 | +0.002041 | 0.033879 |
+
+The 20-80-second resting window contained 1200 valid samples, mean climb -0.000741 m/s,
+RMS 0.034571 m/s and mean bias -0.101343 m/s². Returning from the X-facing orientation to
+screen-up requires a different scalar correction; the motion gate prevented high-g samples
+from changing the bias, but cannot itself remove that orientation dependence.
+
+Across the whole final configuration, all 23606 samples after first-valid climb remained
+valid. Final diagnostics showed 69848 matched pairs, zero mismatches, clips, FIFO resets or
+retries. Detailed offline results are `.motion.json`, `.windows.json`, `.windows.fit.json`,
+and the capture helper's `.csv`/`.json` beside the raw log. This completes the initial retention,
+six-face and combined-motion walkthrough on this board; independent validation remains open.
+
+### Decision: defer accelerometer commissioning calibration
+
+On 2026-10-21 the user deferred the proposed accelerometer-calibration prototype to avoid
+additional commissioning work. Expected use is a device mounted in a chosen position and
+left there. Keep commissioning unchanged: electrical tests and saved gyro bias remain;
+do not add a six-face operator procedure, saved accelerometer coefficients or automatic
+accelerometer calibration. The six-face measurements above are engineering evidence only.
+
+Retain the current gated runtime Kalman bias correction. The measured 20-30-second settling
+after a large orientation change remains a documented limitation, not a requirement to add
+factory calibration now. Revisit the proposal if representative mounted-use/flight testing
+shows material false climb, or new board/temperature measurements justify the operator cost.
+Fixed mounting does not eliminate pitch/bank changes relative to gravity, so sustained-turn
+and normal flight validation remain necessary. The exploratory coefficients have not been
+applied or saved to the device.
+
+### Follow-up proposal: reuse the existing flat stationary window
+
+The user subsequently asked whether the flat commissioning position could supply one saved
+acceleration-bias measurement without extra operator work, since flat or 30-45-degree pitched
+mounting is common. This is a narrower proposal than the deferred six-face calibration and
+was initially a proposal; the later implementation below supersedes that status. It does not
+require a new six-face production procedure.
+
+A useful approach is to capture a stationary mean residual in the normal operating
+configuration after electrical stimulation is disabled, save its orientation/validity metadata,
+and evaluate using it as the initial Kalman bias estimate for similar mounting orientations.
+Reuse the existing stillness/warm-up period; retain uncertainty and runtime learning. The
+current electrical/gyro-calibration sampling uses +/-4 g, while operation uses +/-8 g, so do
+not silently assume a residual from the stimulation-test configuration is the operating one.
+One flat position cannot identify all three axis offsets and scale errors. A fixed scalar
+subtraction at every orientation could worsen other mounts; intermediate-angle validation
+is still needed. Such a seed may reduce initial false climb but does not by itself shorten
+the fixed startup gates or resolve later large-orientation-change settling.
+
+### Next work after this walkthrough
+
+1. Validate representative fixed-mount use, moving startup, normal pitch/bank changes and
+   sustained turns with the current estimator. Measure useful response and false climb;
+   accelerometer-calibration prototyping is deferred by the decision above.
+2. Validate on more boards and across temperature; establish production residual/noise/settling
+   thresholds without adding accelerometer-calibration steps to commissioning.
+3. Complete commissioning rejection/cancellation/corrupt-record checks, actual clipping with
+   the learning gate enabled, communication/power-current tests, and representative flight data.
+4. Re-run self-test with the shortened notes and validate the final normal release image on
+   hardware. Current self-test pass evidence is from the earlier, more verbose release output.
+
+## Release firmware installed, 2026-10-21
+
+At the user's request, flashed the previously verified `leaf_3_2_8_release` application from
+`.pio/imu-validation/commissioning-notes/firmware.bin` to both `0x10000` and `0x340000` on
+MAC `7C:4F:AD:3B:AC:B0`. Both 2286384-byte app-slot writes passed hash verification. The
+bootloader, partitions and NVS were not written. Image SHA-256:
+`7ef3612add722a8217e33e7c8889324bc2dfc886530f6a1f4a7e43d254b2fc3e`.
+Its matching ELF is archived beside the binary. The image includes the shorter IMU self-test
+notes and omits the development startup trace.
+
+Esptool hard-reset the board after upload; it re-enumerated from native COM42 as the release
+USB composite device on COM44. Flash log: `.pio/imu-startup/release-closeout-flash.log`.
+This confirms application installation and USB enumeration, not the remaining user-visible
+release smoke checks: rest/moving startup, charging/off/on behavior and shortened-note self-test.
+
+### Second complete test commissioning and GPS result interpretation
+
+The next test commissioning also completed successfully on release firmware
+`0.2.4-a5dd+h3.2.8`; every reported self-test passed. The shortened IMU output was verified
+on hardware: two three-axis response lines, a stationary/saved gyro-bias line, and the final
+IMU result. Saved gyro bias was (-0.4130, +0.2618, -0.2037) dps; final acceleration 0.989943 g,
+gravity 0.999461 g, residual -0.00951897 g and climb +0.0280679 m/s. This closes the
+shortened-note/self-test rerun item, without establishing the other release smoke checks.
+
+GPS_FIX logged PASS after 77 seconds with `Fix_sats=8`; the later factory poll showed 10
+satellites. The first commissioning had logged PASS with `Fix_sats=0`, while its later poll
+showed six. Code inspection explains how this can occur:
+
+- `SelfTest::testGPSfix()` passes when TinyGPSPlus's `sentencesWithFix()` counter increases
+  after the test starts. That counter advances for checksum-valid RMC/GGA messages reporting
+  a fix; passing does not depend on `fixInfo.numberOfSats`.
+- The logged `Fix_sats` comes from `fixInfo.numberOfSats`, populated only when a GSV
+  satellite-display message group completes. It counts accepted satellite entries in view,
+  not satellites used in the positioning fix. It can lag the fix message or hold a zero count.
+- The GGA satellites-used field is separately parsed as `gps.satellites`. The GSV list also
+  filters satellite identifiers to 1-80, so it is not a complete count for all constellations.
+
+The first zero is consistent with message timing or an incomplete/empty GSV snapshot; no
+raw NMEA from that instant was retained to prove its exact cause. Treat this as a reporting
+source/label mismatch, not evidence by itself that GPS had no fix. Recommended follow-up is
+to capture a fresh, consistent GGA fix/satellites-used snapshot for the result, and label any
+separate GSV count as satellites in view (unknown if not yet available). Do not substitute a
+possibly stale GGA count when the pass was triggered by an earlier RMC message. No GPS code
+or pass criteria have been changed in this investigation.
+
+## Flat commissioning bias, GPS records and audio restoration, 2026-10-21
+
+At the user's request, the existing flat commissioning step now captures a single acceleration
+bias reference for v3.2.8. Pre-v3.2.8 ICM gravity estimation/calibration is unchanged; extending
+the reference to ICM is deferred to a future estimator migration. The shared GPS/audio fixes
+below apply to both hardware paths.
+
+After electrical tests and gyro-bias capture, normal +/-8 g/SFLP operation is restored. During
+the existing three-second warm-up, discard the first second then average 100 paired samples
+at 60 Hz. The operator prompt remains flat/still; there is no new operator step or separate
+boot-time stationary calibration. Capture requires near-flat +Z gravity (`gz > 0.95` after
+normalization), mean acceleration between 0.9 and 1.1 g, per-axis acceleration/gravity-direction
+variance below 0.0004, and projected-residual variance below 0.0004 g². Clipping, motion,
+invalid data and the self-test watchdog prevent accepting a bad reference. The watchdog was
+subsequently extended from 15 to 25 seconds for bounded stationary-window retries below.
+
+The versioned `FlatAccelerationBias` record stores mean projected residual and normalized
+reference gravity in NVS `imu328/flatBias`, independent of the unchanged `gyroBias` record.
+Saving includes immediate readback/validation; failure fails the IMU test. A concise
+`FlatBias_g`/`Saved` result adds one line to the shortened notes. Missing/corrupt references
+are ignored and retain the prior zero-seed behavior. NVS erasure clears both records.
+
+On ordinary initialization/recovery, the scalar reference is projected by the alignment of
+the current and recorded gravity directions and used only within 60 degrees of the reference.
+It seeds the Kalman acceleration-bias state; it is not continuously subtracted from raw
+acceleration. Other orientations use the original zero seed. Initial uncertainty remains
+0.25 m/s², and runtime learning/gating is unchanged, so a different mounting error can still
+be learned. Existing startup gates and later-orientation settling are unchanged. This is
+one-orientation initialization assistance, not a full body-axis accelerometer calibration.
+
+GPS self-test now waits for a checksum-valid, newly received GGA observation after test start,
+with nonzero fix quality and satellites used, no older than three seconds. Status and used
+satellite count are copied from that same GGA sentence. `Fix_sats` therefore records satellites
+used in the passing fix, independent of GSV display updates; RMC alone or stale/no-fix GGA
+cannot pass this test. The existing timeout/cancellation behavior remains.
+
+Vario audio stays muted through the GPS test, awaiting-confirmation and COMPLETE screens.
+Actual removal of the final confirmation/results page restores the configured vario volume;
+covering it with another modal does not. Configured Off stays Off, and quiet-mode/power mute
+behavior is preserved. Starting another self-test also clears the prior test's temporary mute.
+
+Verification so far: repository formatter/diff checks; real Kalman/reference tests covering
+flat/45-degree/side/inverted/malformed records, retained learning and legacy behavior; and
+simulator integration exercising stale GGA, fresh RMC, zero GSV, bad checksum, no-fix GGA,
+GP/GN talkers, coherent satellites-used results, final-page cover/removal and Low/High/Off
+volume restoration. All passed, as did `leaf_3_2_8_release` and `leaf_3_2_6_release` builds.
+The build's generated version header was restored to the checked-in baseline after verification.
+The candidate binary/ELF are archived under `.pio/imu-validation/commissioning-bias/`;
+build/test logs are `.pio/commissioning-*`.
+
+Installed the 2290832-byte release application into both OTA slots on the same board, with
+both hashes verified and bootloader/NVS untouched. The USB app port COM44 transitioned to
+COM42 on the first upload attempt; the single retry succeeded. Binary SHA-256:
+`415e4d410fd3d96484a509f8c3565b34c8490644a29d5501f39cdbc98d429491`.
+Flash logs are `.pio/imu-startup/commissioning-bias-flash{1,2}.log`. A fresh commissioning
+run and physical COMPLETE-screen/audio-dismissal verification were requested after installation.
+
+### Commissioning rejection during hardware verification
+
+The first hardware commissioning with the new flat-reference code failed in the existing
+gyro stationarity phase, before flat-reference acquisition. Electrical responses all passed:
+accel (266.033, 264.276, 177.388) mg; gyro (399.896, 415.828, 411.208) dps. The candidate
+gyro bias (-0.4109, +0.2723, -0.1610) dps was plausible, but `Stationary=0`, `Saved=0`;
+configuration restored with zero I2C errors. All other tests passed, including GPS_FIX after
+28 seconds with five satellites used, versus eight in the later GSV/display snapshot.
+The user confirmed Leaf was flat and untouched throughout the prompt.
+
+The original failure log did not include individual variances or mean acceleration, so its
+precise failing limit is unknown. Do not assume operator movement or weaken the thresholds.
+Added failure-only mean-acceleration and per-axis gyro/acceleration standard deviations, plus
+100 raw stationary-window samples in the diagnostic build only, to distinguish noise,
+post-stimulation settling and sampling issues.
+
+Three diagnostic repeats passed without changing thresholds. The operator reported normal
+typing on the same desk, which is an expected commissioning condition. Per-axis gyro
+standard deviations (dps) were (0.12894, 0.15301, 0.04725),
+(0.15507, 0.12265, 0.05187), and (0.13461, 0.12734, 0.05622), against the existing
+0.2 dps limit. Acceleration standard deviations were at most 0.00644 g, against 0.02 g.
+The first second of the first repeat was quieter than its remaining four seconds; this is
+consistent with desk vibration, but does not identify the precise original failing limit.
+The captured logs are `.pio/imu-startup/stationarity-01.log` and
+`.pio/imu-startup/stationarity-repeats.log`.
+
+Flat-reference capture and immediate NVS readback passed in all three repeats:
+-0.009237, -0.009068 and -0.009312 g. Subsequent reboot traces confirmed the saved
+reference was restored. This verifies physical capture/persistence, not temperature coverage
+or general multi-orientation calibration. Physical COMPLETE-screen/audio restoration remains
+pending completion of the interactive tests.
+
+Added bounded automatic recovery for a disturbed gyro measurement: retain all original
+mean/variance limits and require a fresh complete 100-sample window, with at most three
+attempts. Rejected samples are discarded and never saved. Persistent disturbance still fails;
+electrical, I2C, storage and flat-reference failures do not receive a blanket retry. Increase the
+driver watchdog from 15 to 25 seconds to accommodate the extra windows while remaining
+inside the existing 30-second outer IMU timeout. No extra operator step is introduced.
+Both updated v3.2.8 diagnostic and release builds passed. The diagnostic image was installed
+in both OTA slots, preserving NVS/bootloader. A deliberate repeated desk-tapping test then
+exercised all three windows: gyro standard deviations were (0.54008, 0.74460, 0.10662),
+(0.25584, 0.35727, 0.06455), then (0.02322, 0.02865, 0.03414) dps after tapping stopped.
+The first two windows were rejected and discarded; the third passed and saved
+(-0.4130, +0.2765, -0.1827) dps. Flat capture subsequently passed with -0.011142 g and
+the final IMU test passed. This demonstrates recovery after stronger intermittent disturbance;
+it does not establish that every desk/vibration spectrum will pass, or that the original
+unlogged failure was definitely vibration. Logs and per-window statistics are in
+`.pio/imu-startup/stationarity-retry-test.{log,stats.json}`.
+
+The release binary/ELF are archived in `.pio/imu-validation/stationarity-retry-release/`;
+application SHA-256 `3489c3f571e545aa4b90ee37aad0c11c2c1fbecc94685bf9e70c6662f077e8d6`.
+The remaining interactive checks were completed and the device reported ALL PASS.
+GPS_FIX recorded six satellites used after 96 seconds, while the later display/API
+satellite count was eleven; the record now reflects the qualifying GGA observation.
+The complete SD report is saved at `.pio/imu-startup/stationarity-retry-self-test.txt`.
+The operator confirmed all tests passed and audio behaved as expected. The LCD showed
+"awaiting commissioning confirmation", as expected for this direct diagnostic test outside
+the factory-interface session; no production commissioning record was written.
+
+Installed the 2291632-byte release application into both OTA slots, with hashes verified
+and bootloader/calibration NVS preserved. The single detected Espressif port was COM42;
+upload succeeded without a retry. After reboot the device endpoint reported release version
+`0.2.4-a5dd+h3.2.8` (without `.dev`). Upload log:
+`.pio/imu-startup/stationarity-retry-release-flash.log`. The test server's application source
+continues to point at the updated local v3.2.8 release build. The production database remains
+unchanged. Physical testing above used the matching diagnostic build; the release build
+compiled and was installed/booted, but was not put through another complete commission.
+
+## Optional older-hardware estimator migration
+
+The user requested that the backlog retain the option to migrate **v3.2.7 and earlier
+ICM-20948 hardware** to the v3.2.8 Kalman acceleration-bias approach, together with captured
+flat-acceleration offsets during the existing commissioning step. This remains deferred and
+is not implemented by this hardware-support PR.
+
+Keep ICM quaternion orientation, replace its separate learned gravity magnitude with the
+barometer-observed Kalman bias state, and seed that state from a validated flat commissioning
+reference for similar mounts. Capture the residual before any legacy gravity correction so
+the reference is not already corrected. Apply only one bias/gravity correction mechanism.
+Reuse the current 0.935–1.065 g total-acceleration and +/-0.10 g projected-residual learning
+windows, with clipping/holdoff protection and uninterrupted motion output.
+
+No extra worker pose or six-face procedure is intended. Missing records on existing units
+must allow normal moving startup and runtime learning without forced recommissioning.
+Define hardware-specific storage/versioning and preserve legacy calibration/rollback behavior.
+Validate across multiple ICM boards, manufacturing variation, temperature, orientations,
+moving startup, turns and high acceleration before enabling the migration. The more detailed
+scope and acceptance checks are in the
+[gravity-performance backlog](vario-imu-gravity-performance.md#optional-icm-estimator-migration-deferred).
+
 ## Remaining assumptions and decisions
 
 ### Confirmed and no longer open
@@ -1249,8 +1692,8 @@ is requested and validated with real ICM data.
   startup/fault thresholds from measured latency, noise, and sustained-turn behavior.
 - Validate saved gyro-bias reuse across temperature and resets, and define missing-calibration
   behavior that remains compatible with moving startup.
-- Establish production commissioning thresholds and whether six-position accelerometer
-  calibration is worthwhile. Saved gyro bias does not settle this accelerometer question.
+- Establish production commissioning thresholds. Additional accelerometer calibration and
+  any six-position production procedure are deferred by the user's decision above.
 
 ### Product choice still open
 

@@ -14,6 +14,9 @@
 namespace {
   constexpr uint8_t ADDRESS = 0x6A;
   constexpr uint32_t WARMUP_MS = 3000;
+  // Four electrical phases, up to three five-second bias windows, then flat capture.
+  // Leave time within the enclosing 30-second IMU test for valid climb to return.
+  constexpr uint32_t SELF_TEST_TIMEOUT_MS = 25000;
   static_assert(SFLP_ACCEL_FULL_SCALE_G == 8.0,
                 "Update the operating full scale and FIFO conversion together");
 #ifdef LEAF_IMU_STARTUP_TRACE
@@ -126,6 +129,15 @@ bool LSM6DSV::configure() {
                   validBias(bias);
     prefs.end();
   }
+  FlatAccelerationBias flatBias{};
+  if (prefs.begin("imu328", true)) {
+    if (prefs.getBytesLength("flatBias") != sizeof(flatBias) ||
+        prefs.getBytes("flatBias", &flatBias, sizeof(flatBias)) != sizeof(flatBias) ||
+        !flatBias.valid())
+      flatBias = {};
+    prefs.end();
+  }
+  imu.setAccelerationBiasReference(flatBias);
   // Seed even an uncommissioned board with zero rather than learning a gyro bias in flight.
   lsm6dsv_sflp_gbias_t seed{};
   if (calibrated_) {
@@ -154,6 +166,8 @@ bool LSM6DSV::configure() {
   status_ = "Warming up";
   Serial.printf("LSM6DSV: id=0x%02X, 60Hz, +/-8g, SFLP gravity, gyro bias %s\n", id,
                 calibrated_ ? "restored" : "NOT commissioned (zero seed)");
+  Serial.printf("LSM6DSV: flat bias %s %.6f g\n", flatBias.valid() ? "restored" : "absent",
+                flatBias.residualG);
   return true;
 }
 
@@ -187,6 +201,10 @@ void LSM6DSV::wake() {
 }
 
 void LSM6DSV::fault(const char* reason) {
+  if (testResult_ == TestResult::Running) {
+    testResult_ = TestResult::Fail;
+    selfTestInfo("`Test=IMU`, `Result=FAIL`, `Message=%s`", reason);
+  }
   running_ = false;
   status_ = reason;
   resets_++;
@@ -201,8 +219,14 @@ void LSM6DSV::update() {
   updates_++;
   if (sleeping_) return;
   if (testResult_ == TestResult::Running) {
-    updateSelfTest();
-    return;
+    if (testPhase_ < 5) {
+      updateSelfTest();
+      return;
+    }
+    if (uint32_t(millis() - testStarted_) > SELF_TEST_TIMEOUT_MS) {
+      finishSelfTest(false);
+      return;
+    }
   }
   if (!running_) {
     if (retries_ < 3 && uint32_t(millis() - retryAt_) >= 2000) {
@@ -285,11 +309,16 @@ void LSM6DSV::update() {
     }
     if (pending_.hasAcceleration && pending_.hasGravity) {
       if (!pendingClipped_) {
+        if (testResult_ == TestResult::Running && testPhase_ == 5 &&
+            uint32_t(now - started_) >= 1000 && testSamples_ < 100)
+          captureFlatBias(pending_);
         ++matched_;
         latest = pending_;
         // Publish only the newest complete pair once per host poll (~20 Hz). Host receive time
         // is used deliberately, never replaying buffered samples against a single baro reading.
         latest.t = now;
+      } else if (testResult_ == TestResult::Running && testPhase_ == 5) {
+        flatCaptureFailed_ = true;
       }
       pending_ = MotionUpdate(now);
       pendingClipped_ = false;
@@ -297,6 +326,10 @@ void LSM6DSV::update() {
       // expires instrument freshness normally; it must not reboot an otherwise healthy chip.
       lastPair_ = now;
     }
+  }
+  if (testResult_ == TestResult::Running && testPhase_ == 5 && testSamples_ >= 100) {
+    finishFlatBiasCapture();
+    return;
   }
   if (uint32_t(now - lastPair_) > (uint32_t(now - started_) < WARMUP_MS ? WARMUP_MS : 500)) {
     fault("No paired gravity data");
@@ -402,11 +435,10 @@ void LSM6DSV::startSelfTest() {
   invalidate();
   running_ = false;
   testStarted_ = millis();
+  biasWindows_ = 0;
   testResult_ = TestResult::Running;
   status_ = "Self-test: keep still";
-  selfTestInfo(
-      "`Test=IMU`, `Chip=LSM6DSV`, `Address=0x6A`, `Message=Keep stationary for self-test and gyro "
-      "bias`");
+  Serial.println("LSM6DSV: keep stationary for self-test and gyro bias");
   uint8_t id = 0;
   if (sleeping_ || lsm6dsv_device_id_get(&ctx_, &id) != 0 || id != LSM6DSV_ID || !powerDown() ||
       lsm6dsv_sw_por(&ctx_) != 0 || lsm6dsv_block_data_update_set(&ctx_, 1) != 0 ||
@@ -417,7 +449,7 @@ void LSM6DSV::startSelfTest() {
 }
 
 void LSM6DSV::updateSelfTest() {
-  if (uint32_t(millis() - testStarted_) > 15000) {
+  if (uint32_t(millis() - testStarted_) > SELF_TEST_TIMEOUT_MS) {
     finishSelfTest(false);
     return;
   }
@@ -450,21 +482,48 @@ void LSM6DSV::updateSelfTest() {
     accelSum_[i] += a;
     accelSumSq_[i] += a * a;
   }
+#ifdef LEAF_IMU_STARTUP_TRACE
+  if (testPhase_ == 4 && Serial)
+    Serial.printf("IMU_CAL_SAMPLE,%lu,%u,%.4f,%.4f,%.4f,%.6f,%.6f,%.6f\n",
+                  (unsigned long)(millis() - phaseStarted_), testSamples_,
+                  lsm6dsv_from_fs2000_to_mdps(raw[0]) * .001,
+                  lsm6dsv_from_fs2000_to_mdps(raw[1]) * .001,
+                  lsm6dsv_from_fs2000_to_mdps(raw[2]) * .001, lsm6dsv_from_fs4_to_mg(acc[0]) * .001,
+                  lsm6dsv_from_fs4_to_mg(acc[1]) * .001, lsm6dsv_from_fs4_to_mg(acc[2]) * .001);
+#endif
   if (++testSamples_ < (testPhase_ == 4 ? 100 : 5)) return;
   bool pass = true;
   if (testPhase_ == 4) {
     BiasRecord bias{BIAS_VERSION, float(sum_[0] / 100), float(sum_[1] / 100), float(sum_[2] / 100)};
     pass = validBias(bias);
     double norm2 = 0;
+    double gyroStd[3]{}, accelStd[3]{};
     for (int i = 0; i < 3; ++i) {
       double mean = sum_[i] / 100, a = accelSum_[i] / 100;
       // Stationarity is required only here, during operator-controlled commissioning.
       pass &= sumSq_[i] / 100 - mean * mean < .04 && accelSumSq_[i] / 100 - a * a < .0004;
+      gyroStd[i] = sqrt(fmax(0, sumSq_[i] / 100 - mean * mean));
+      accelStd[i] = sqrt(fmax(0, accelSumSq_[i] / 100 - a * a));
       norm2 += a * a;
     }
     pass &= norm2 > .81 && norm2 < 1.21;
-    selfTestInfo("`Test=IMU`, `GyroBias_dps=%g,%g,%g`, `Stationary=%d`", bias.x, bias.y, bias.z,
-                 pass);
+    const bool stationary = pass;
+    ++biasWindows_;
+    if (!stationary)
+      selfTestInfo(
+          "`Test=IMU`, `Message=Stationarity limit exceeded`, `BiasValid=%d`, "
+          "`MeanAccel_g=%.6f`, `GyroStd_dps=%.4f,%.4f,%.4f`, "
+          "`AccelStd_g=%.6f,%.6f,%.6f`",
+          validBias(bias), sqrt(norm2), gyroStd[0], gyroStd[1], gyroStd[2], accelStd[0],
+          accelStd[1], accelStd[2]);
+    // Desk taps can spoil one otherwise stationary window. Retry a fresh, complete
+    // window without relaxing any limits or mixing rejected data into the saved bias.
+    if (!stationary && biasWindows_ < 3) {
+      selfTestInfo("`Test=IMU`, `Message=Retrying stationary measurement`, `Attempt=%u/3`",
+                   biasWindows_ + 1);
+      if (!beginTestPhase(4)) finishSelfTest(false);
+      return;
+    }
     if (pass) {
       Preferences prefs;
       pass = prefs.begin("imu328", false);
@@ -473,21 +532,26 @@ void LSM6DSV::updateSelfTest() {
         prefs.end();
       }
     }
+    selfTestInfo("`Test=IMU`, `GyroBias_dps=%.4f,%.4f,%.4f`, `Stationary=%d`, `Saved=%d`", bias.x,
+                 bias.y, bias.z, stationary, pass);
     finishSelfTest(pass);
     return;
   }
+  double response[3]{};
   for (int i = 0; i < 3; ++i) {
     double mean = sum_[i] / 5;
     if ((testPhase_ & 1) == 0)
       baseline_[i] = mean;
     else {
-      double response = fabs(mean - baseline_[i]);
-      bool axisPass = response >= (gyro ? 150 : 50) && response <= (gyro ? 700 : 1700);
+      response[i] = fabs(mean - baseline_[i]);
+      bool axisPass = response[i] >= (gyro ? 150 : 50) && response[i] <= (gyro ? 700 : 1700);
       pass &= axisPass;
-      selfTestInfo("`Test=IMU`, `Sensor=%s`, `Axis=%d`, `Response=%g`, `Units=%s`, `Pass=%d`",
-                   gyro ? "gyro" : "accel", i, response, gyro ? "dps" : "mg", axisPass);
     }
   }
+  if (testPhase_ & 1)
+    selfTestInfo("`Test=IMU`, `Sensor=%s`, `Response_%s=%.3f,%.3f,%.3f`, `Pass=%d`",
+                 gyro ? "gyro" : "accel", gyro ? "dps" : "mg", response[0], response[1],
+                 response[2], pass);
   if (!pass || !beginTestPhase(testPhase_ + 1)) finishSelfTest(false);
 }
 
@@ -498,10 +562,82 @@ void LSM6DSV::finishSelfTest(bool passed) {
     restored &= running_;
   }
   testResult_ = passed && restored ? TestResult::Pass : TestResult::Fail;
+  if (testResult_ == TestResult::Pass) {
+    // Capture normal-range data during the existing three-second warm-up. Keep the same
+    // operator stillness prompt and do not restart acquisition when capture finishes.
+    beginTestPhase(5);
+    flatCaptureFailed_ = false;
+    residualSum_ = residualSumSq_ = 0;
+    for (int i = 0; i < 3; ++i) gravitySum_[i] = gravitySumSq_[i] = 0;
+    testResult_ = TestResult::Running;
+  }
   if (!restored) fault("Self-test restore fault");
-  selfTestInfo("`Test=IMU`, `ElectricalAndBias=%s`, `ConfigRestored=%d`, `I2CErrors=%lu`",
-               testResult_ == TestResult::Pass ? "PASS" : "FAIL", restored,
-               (unsigned long)ioErrors_);
+  // A clean restore is implicit in the final IMU result. Keep extra details for faults.
+  if (!passed || !restored || ioErrors_)
+    selfTestInfo("`Test=IMU`, `ElectricalAndBias=%s`, `ConfigRestored=%d`, `I2CErrors=%lu`",
+                 passed && restored ? "PASS" : "FAIL", restored, (unsigned long)ioErrors_);
+}
+
+void LSM6DSV::captureFlatBias(const MotionUpdate& sample) {
+  double residual = 0, gravity = 0;
+  if (!projectVerticalAcceleration(sample.ax, sample.ay, sample.az, sample.gx, sample.gy, sample.gz,
+                                   residual, gravity)) {
+    flatCaptureFailed_ = true;
+    return;
+  }
+  const double a[3] = {sample.ax, sample.ay, sample.az};
+  const double g[3] = {sample.gx / gravity, sample.gy / gravity, sample.gz / gravity};
+  for (int i = 0; i < 3; ++i) {
+    accelSum_[i] += a[i];
+    accelSumSq_[i] += a[i] * a[i];
+    gravitySum_[i] += g[i];
+    gravitySumSq_[i] += g[i] * g[i];
+  }
+  residualSum_ += residual;
+  residualSumSq_ += residual * residual;
+  ++testSamples_;
+}
+
+void LSM6DSV::finishFlatBiasCapture() {
+  FlatAccelerationBias reference{};
+  reference.version = FlatAccelerationBias::VERSION;
+  reference.residualG = residualSum_ / 100;
+  const double norm = sqrt(gravitySum_[0] * gravitySum_[0] + gravitySum_[1] * gravitySum_[1] +
+                           gravitySum_[2] * gravitySum_[2]);
+  const double inverseNorm = norm > 1e-6 ? 1 / norm : 0;
+  reference.gx = gravitySum_[0] * inverseNorm;
+  reference.gy = gravitySum_[1] * inverseNorm;
+  reference.gz = gravitySum_[2] * inverseNorm;
+  bool pass = !flatCaptureFailed_ && reference.valid();
+  double accelNorm2 = 0;
+  for (int i = 0; i < 3; ++i) {
+    const double a = accelSum_[i] / 100, g = gravitySum_[i] / 100;
+    accelNorm2 += a * a;
+    pass &= accelSumSq_[i] / 100 - a * a < .0004 && gravitySumSq_[i] / 100 - g * g < .0004;
+  }
+  pass &= accelNorm2 > .81 && accelNorm2 < 1.21 &&
+          residualSumSq_ / 100 - reference.residualG * reference.residualG < .0004;
+  if (pass) {
+    Preferences prefs;
+    pass = prefs.begin("imu328", false);
+    if (pass) {
+      FlatAccelerationBias restored{};
+      pass = prefs.putBytes("flatBias", &reference, sizeof(reference)) == sizeof(reference) &&
+             prefs.getBytes("flatBias", &restored, sizeof(restored)) == sizeof(restored) &&
+             restored.valid() && restored.residualG == reference.residualG &&
+             restored.gx == reference.gx && restored.gy == reference.gy &&
+             restored.gz == reference.gz;
+      prefs.end();
+    }
+  }
+  selfTestInfo("`Test=IMU`, `FlatBias_g=%.6f`, `Saved=%d`", reference.residualG, pass);
+  if (pass) {
+    imu.setAccelerationBiasReference(reference);
+    imu.wake();
+    testResult_ = TestResult::Pass;
+  } else {
+    finishSelfTest(false);
+  }
 }
 
 void LSM6DSV::cancelSelfTest() {

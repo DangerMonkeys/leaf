@@ -307,7 +307,8 @@ void IMU::on_receive(const MotionUpdate& msg) {
     return;
   }
   if (msg.hasGravity) {
-    if (!gravityVectorMode_) kalmanvert_.reset(25.0, true);  // Initial climb uncertainty: 5 m/s.
+    const double initialBias = flatBiasReference_.initialBias(msg.gx, msg.gy, msg.gz);
+    if (!gravityVectorMode_) kalmanvert_.reset(25.0, true, initialBias);
     gravityVectorMode_ = true;
     if (!msg.hasAcceleration) {
       wake();
@@ -331,7 +332,7 @@ void IMU::on_receive(const MotionUpdate& msg) {
     if (biasLearningAllowed_) haveBiasDisturbance_ = false;
     if (baro.state() != Barometer::State::Ready || !baro.pressureFresh()) {
       motionSampleBaroNotReadyCount_++;
-      kalmanvert_.reset(25.0, true);
+      kalmanvert_.reset(25.0, true, initialBias);
       kalmanStartupSamplesRemaining_ = KALMAN_STARTUP_REPORT_SAMPLES;
       return;
     }

@@ -18,6 +18,7 @@ class SelfTest {
   String resultsFileName() const;
   void confirmCommissioningComplete();
   bool commissioningCompleteConfirmed() const;
+  void restoreVarioAudio();
 
   // results for all self tests, including both automated and interactive
   struct Results {

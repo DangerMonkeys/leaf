@@ -12,11 +12,13 @@ class KalmanFilterPA {
   bool initialized() const { return initialized_; }
   // A moving start needs uncertainty in initial velocity, not a confident zero-velocity prior.
   // Default preserves the historical ICM initialization.
-  void reset(double initialVelocityVariance = 0, bool estimateAccelerationBias = false) {
+  void reset(double initialVelocityVariance = 0, bool estimateAccelerationBias = false,
+             double initialAccelerationBias = 0) {
     initialized_ = false;
     bias_ = 0;
     initialVelocityVariance_ = initialVelocityVariance;
     estimateAccelerationBias_ = estimateAccelerationBias;
+    initialAccelerationBias_ = initialAccelerationBias;
   }
   double getAccelerationBias() const { return estimateAccelerationBias_ ? bias_ : 0; }
   double getPosition() const;
@@ -32,6 +34,7 @@ class KalmanFilterPA {
   double initialVelocityVariance_ = 0;
   bool estimateAccelerationBias_ = false;
   double bias_ = 0;
+  double initialAccelerationBias_ = 0;
   double covariance_[3][3]{};
 
   // Position variance

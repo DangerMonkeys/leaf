@@ -122,6 +122,9 @@ class SelfTest_PageResults : public SimpleSettingsMenuPage {
   const char* get_title() const override { return "Test Results"; }
   void show();
   void draw_extra() override;
+
+ protected:
+  void closed(bool removed_from_Stack) override;
 };
 
 // Commissioning Confirmation Self-Test Page
@@ -130,4 +133,7 @@ class SelfTest_PageCommissioningConfirmation : public SimpleSettingsMenuPage {
   const char* get_title() const override { return "Commissioning"; }
   void show();
   void draw_extra() override;
+
+ protected:
+  void closed(bool removed_from_Stack) override;
 };

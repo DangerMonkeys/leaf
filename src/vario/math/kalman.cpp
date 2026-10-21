@@ -14,7 +14,8 @@ void KalmanFilterPA::init(double initialTime, double initialPosition, double ini
   p12_ = 0;
   p21_ = 0;
   p22_ = initialVelocityVariance_;
-  bias_ = 0;
+  bias_ = estimateAccelerationBias_ ? initialAccelerationBias_ : 0;
+  a_ = initialAcceleration - bias_;
   for (auto& row : covariance_)
     for (double& value : row) value = 0;
   covariance_[0][0] = pVar_;

@@ -46,6 +46,8 @@ class LSM6DSV : public IPollable, public IMessageSource {
   void updateSelfTest();
   void finishSelfTest(bool passed);
   bool beginTestPhase(uint8_t phase);
+  void captureFlatBias(const MotionUpdate& sample);
+  void finishFlatBiasCapture();
 #ifdef LEAF_IMU_STARTUP_TRACE
   void traceStartup(const MotionUpdate& sample, uint16_t fifoWords, bool published);
   uint32_t traceStarted_ = 0;
@@ -69,8 +71,11 @@ class LSM6DSV : public IPollable, public IMessageSource {
   uint16_t climbSamples_ = 0;
 
   TestResult testResult_ = TestResult::Idle;
-  uint8_t testPhase_ = 0, testSamples_ = 0;
+  uint8_t testPhase_ = 0, testSamples_ = 0, biasWindows_ = 0;
   uint32_t testStarted_ = 0, phaseStarted_ = 0;
   bool discardTestSample_ = true;
+  bool flatCaptureFailed_ = false;
+  double residualSum_ = 0, residualSumSq_ = 0;
+  double gravitySum_[3]{}, gravitySumSq_[3]{};
   double sum_[3]{}, sumSq_[3]{}, baseline_[3]{}, accelSum_[3]{}, accelSumSq_[3]{};
 };

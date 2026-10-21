@@ -11,6 +11,7 @@
 #include "sim/board.h"
 #include "instruments/imu.h"
 #include "instruments/baro.h"
+#include "../tests/commissioning_checks.h"
 
 namespace sim {
 
@@ -178,6 +179,8 @@ namespace sim {
         printf("script: FAIL bias learning expected %s, active=%d\n", argument.c_str(),
                imu.biasLearningAllowed()); ++failures_;
       } else printf("script: ok bias learning %s\n", argument.c_str());
+    } else if (step.command == "check-commissioning") {
+      if (!checkCommissioning()) ++failures_;
     } else if (step.command == "expect-page") {
       const std::string page = device.status().page;
       if (page != argument) {

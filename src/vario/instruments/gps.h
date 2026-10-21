@@ -45,6 +45,14 @@ struct GPSFixInfo {
   uint8_t fixMode;
 };
 
+// One checksum-valid GGA report, keeping fix status and satellites-used coherent.
+struct GPSFixObservation {
+  uint32_t sequence = 0;
+  uint32_t receivedMs = 0;
+  uint8_t quality = 0;
+  uint8_t satellitesUsed = 0;
+};
+
 struct NMEASentenceContents {
   bool speed;
   bool course;
@@ -98,6 +106,7 @@ class LeafGPS : public TinyGPSPlus, IMessageSource, public MessageSink<LeafGPS, 
   bool hasUsableFix() const;
   bool hasFreshGroundSpeed() const;
   bool lastValidFix(GPSPositionSnapshot& snapshot) const;
+  GPSFixObservation fixObservation() const { return fixObservation_; }
 
   float getGlideRatio(void) { return glideRatio; }
   void setGlideAverageSeconds(uint8_t seconds);
@@ -166,6 +175,7 @@ class LeafGPS : public TinyGPSPlus, IMessageSource, public MessageSink<LeafGPS, 
   bool gsvSentenceGroupActive = false;
   bool systemTimeSyncedThisBoot_ = false;
   GPSPositionSnapshot lastValidFix_;
+  GPSFixObservation fixObservation_;
 };
 extern LeafGPS gps;
 

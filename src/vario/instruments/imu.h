@@ -5,6 +5,7 @@
 #include "dispatch/message_sink.h"
 #include "dispatch/message_source.h"
 #include "dispatch/message_types.h"
+#include "math/flat_acceleration_bias.h"
 #include "math/kalman.h"
 
 #define POSITION_MEASURE_STANDARD_DEVIATION 0.1f
@@ -40,6 +41,9 @@ class IMU : public MessageSink<IMU, MotionUpdate>, public IMessageSource {
   float kalmanAcceleration() const;
   float accelerationBias() const { return kalmanvert_.getAccelerationBias(); }
   bool biasLearningAllowed() const { return biasLearningAllowed_; }
+  void setAccelerationBiasReference(const FlatAccelerationBias& reference) {
+    flatBiasReference_ = reference;
+  }
   unsigned long lastMotionTime() const;
   float lastDeviceAccelX() const;
   float lastDeviceAccelY() const;
@@ -79,6 +83,7 @@ class IMU : public MessageSink<IMU, MotionUpdate>, public IMessageSource {
 
   // Kalman filter object for vertical climb rate and position
   KalmanFilterPA kalmanvert_;
+  FlatAccelerationBias flatBiasReference_;
 
   uint16_t kalmanStartupSamplesRemaining_;
 
