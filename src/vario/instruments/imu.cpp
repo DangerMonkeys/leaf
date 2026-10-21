@@ -4,6 +4,7 @@
 #include "hardware/Leaf_I2C.h"
 #include "logging/log.h"
 #include "logging/telemetry.h"
+#include "math/gravity_projection.h"
 #include "math/kalman.h"
 #include "storage/sd_card.h"
 #include "utils/const_math.h"
@@ -265,8 +266,76 @@ void IMU::processMotion(const MotionUpdate& m) {
   }
 }
 
+void IMU::processGravity(const MotionUpdate& m) {
+  validAccelVert_ =
+      projectVerticalAcceleration(m.ax, m.ay, m.az, m.gx, m.gy, m.gz, accelVert_, gravity_);
+  if (!validAccelVert_) {
+    validAccelTot_ = validLastWorldVerticalAccel_ = false;
+    return;
+  }
+  motionSampleProcessedCount_++;
+  lastMotionTime_ = m.t;
+  lastDeviceAccelX_ = m.ax;
+  lastDeviceAccelY_ = m.ay;
+  lastDeviceAccelZ_ = m.az;
+  accelTot_ = sqrt(m.ax * m.ax + m.ay * m.ay + m.az * m.az);
+  validAccelTot_ = true;
+  kalmanAccelVert_ = accelVert_;
+  lastWorldVerticalAccel_ = accelVert_ + gravity_;
+  validLastWorldVerticalAccel_ = true;
+  // No horizontal orientation or quaternion is requested from the chip.
+  lastWorldAccelX_ = lastWorldAccelY_ = lastQuatX_ = lastQuatY_ = lastQuatZ_ = NAN;
+  startupNonVertSamples_ = STARTUP_NON_VERT_SAMPLES;
+}
+
 void IMU::on_receive(const MotionUpdate& msg) {
   motionSampleCount_++;
+  if (msg.reset) {
+    wake();
+    return;
+  }
+  if (haveMotionTime_) {
+    const int32_t dt = static_cast<int32_t>(msg.t - lastMotionTime_);
+    if (dt <= 0) return;
+    if (dt > 250 || gravityVectorMode_ != msg.hasGravity) wake();
+  }
+  if (static_cast<uint32_t>(millis() - msg.t) > 250) {
+    wake();
+    return;
+  }
+  if (msg.hasGravity) {
+    if (!gravityVectorMode_) kalmanvert_.reset(25.0, true);  // Initial climb uncertainty: 5 m/s.
+    gravityVectorMode_ = true;
+    if (!msg.hasAcceleration) {
+      wake();
+      return;
+    }
+    processGravity(msg);
+    haveMotionTime_ = true;
+    if (!validAccelVert_) {
+      wake();
+      return;
+    }
+    if (baro.state() != Barometer::State::Ready || !baro.pressureFresh()) {
+      motionSampleBaroNotReadyCount_++;
+      kalmanvert_.reset(25.0, true);
+      kalmanStartupSamplesRemaining_ = KALMAN_STARTUP_REPORT_SAMPLES;
+      return;
+    }
+    // Each pressure observation is used at most once. Do not make the filter overconfident
+    // by replaying a FIFO burst against the same pressure measurement.
+    if (kalmanvert_.initialized() && lastPressureTime_ == baro.lastPressureTime()) return;
+    lastPressureTime_ = baro.lastPressureTime();
+    if (kalmanvert_.initialized())
+      kalmanTime_ += uint32_t(msg.t - lastKalmanTime_) * .001;
+    else
+      kalmanTime_ = 0;
+    lastKalmanTime_ = msg.t;
+    kalmanvert_.update(kalmanTime_, baro.altF(), kalmanAccelVert_ * 9.80665);
+    ++kalmanUpdateSampleCount_;
+    if (kalmanStartupSamplesRemaining_) --kalmanStartupSamplesRemaining_;
+    return;
+  }
   if (baro.state() != Barometer::State::Ready) {
     if (msg.hasAcceleration && msg.hasOrientation) {
       processMotion(msg);
@@ -288,6 +357,7 @@ void IMU::on_receive(const MotionUpdate& msg) {
   }
 
   processMotion(msg);
+  haveMotionTime_ = true;
 
   if (validAccelVert_) {
     // update kalman filter
@@ -308,6 +378,10 @@ void IMU::on_receive(const MotionUpdate& msg) {
 }
 
 void IMU::wake() {
+  kalmanvert_.reset();
+  validAccelVert_ = validAccelTot_ = validLastWorldVerticalAccel_ = false;
+  haveMotionTime_ = false;
+  gravityVectorMode_ = false;
   gravity_ = 1.0;
   gravityVerticalRejectCount_ = 0;
   startupNonVertSamples_ = 0;
@@ -316,7 +390,7 @@ void IMU::wake() {
   kalmanStartupSamplesRemaining_ = KALMAN_STARTUP_REPORT_SAMPLES;
 }
 
-bool IMU::accelValid() { return validAccelTot_; }
+bool IMU::accelValid() { return validAccelTot_ && uint32_t(millis() - lastMotionTime_) <= 250; }
 
 float IMU::getAccel() {
   if (!accelValid()) {
@@ -326,7 +400,8 @@ float IMU::getAccel() {
 }
 
 bool IMU::velocityValid() {
-  return kalmanvert_.initialized() && kalmanStartupSamplesRemaining_ == 0 &&
+  return accelValid() && baro.pressureFresh() && kalmanvert_.initialized() &&
+         kalmanStartupSamplesRemaining_ == 0 &&
          (startupNonVertSamples_ >= STARTUP_NON_VERT_SAMPLES || startupReadinessTimedOut());
 }
 

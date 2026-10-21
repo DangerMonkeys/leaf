@@ -1,3 +1,5 @@
+#include "hardware/configuration.h"
+#ifndef USE_LSM6DSV
 /*
  * TDK InvenSense ICM-20498
  * 6 DOF Gyro+Accel plus 3-axis mag
@@ -212,3 +214,5 @@ uint32_t ICM20948::invalidAccelerationPacketCount() const {
 }
 
 uint32_t ICM20948::fifoResetCount() const { return fifoResetCount_; }
+
+#endif

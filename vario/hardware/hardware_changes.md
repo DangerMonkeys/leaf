@@ -7,6 +7,14 @@ Brief summary of hardware changes
 
 ## PCBA
 
+### v3.2.8
++ Replace the ICM-20948 with an ST LSM6DSVTR 6-axis IMU (accelerometer and gyroscope), with on-chip sensor fusion and gravity-vector output. I2C address: 0x6A.
++ Add a separate MEMSIC MMC5983MA magnetometer at I2C address 0x30. Magnetometer data support is not required for the initial v3.2.8 firmware.
++ Mount both sensors on the top of the PCB, with +Y pointing generally forward relative to the board. The user's mounting orientation may differ.
++ Connect IMU INT1 to IO expander P14 (TCA_P14). Initial firmware support will continue polling the IMU; this interrupt path is available for future tap gestures such as double-tap.
++ IMU INT2 and magnetometer INT are unused.
++ Change the piezo speaker to a Same Sky CPT-9019A-SMT-TR; no additional speaker firmware changes are required.
+
 ### v3.2.7
 This version is identical to v3.2.6, except the IO_expander address pins were incorrectly wired in v3.2.6.  This version fixes that.
 + IO Expander Address: IOEX_ADDR = 0x20 (same as v3.2.5)

@@ -2,7 +2,7 @@
 #include <U8g2lib.h>
 
 #include "hardware/buttons.h"
-#include "hardware/icm_20948.h"
+#include "hardware/motion_sensor.h"
 #include "instruments/imu.h"
 #include "power.h"
 #include "ui/audio/sound_effects.h"
@@ -36,7 +36,7 @@ namespace {
 void debug2Page_draw() {
   u8g2.firstPage();
   do {
-    const ICM20948& icm = ICM20948::getInstance();
+    const MotionSensor& icm = MotionSensor::getInstance();
     const uint32_t updateCalls = icm.imuUpdateCallCount();
     const uint32_t fifoPackets = icm.motionFifoPacketCount();
     const uint32_t busSamples = imu.motionSampleCount();
@@ -47,7 +47,11 @@ void debug2Page_draw() {
     uint8_t y = 8;
     u8g2.setFont(leaf_5h);
     u8g2.setCursor(x, y);
+#ifdef USE_LSM6DSV
+    u8g2.print(icm.status());
+#else
     u8g2.print("IMU FIFO");
+#endif
     y += 8;
     u8g2.setFont(leaf_5x8);
     printCounterLine(x, y, "upd", updateCalls, 0, false);

@@ -31,6 +31,7 @@ INCLUDES := \
   -I$(SIM)/emulator \
   -I$(ROOT)/src/vario \
   -I$(ROOT)/src/variants/$(VARIANT) \
+  -I$(ROOT)/src/libraries/LSM6DSV/src \
   -I$(DEPLINK)/etl \
   -I$(DEPLINK)/igc \
   -I$(DEPLINK)/md5 \
@@ -72,6 +73,7 @@ LDFLAGS  := -lm -lpthread -lstdc++fs
 FW_EXCLUDE := \
   src/vario/hardware/aht20.cpp \
   src/vario/hardware/icm_20948.cpp \
+  src/vario/hardware/lsm6dsv.cpp \
   src/vario/hardware/ms5611.cpp \
   src/vario/hardware/io_pins.cpp \
   src/vario/hardware/Leaf_I2C.cpp \

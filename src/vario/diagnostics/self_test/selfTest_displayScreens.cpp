@@ -1,6 +1,7 @@
 #include "selfTest_displayScreens.h"
 
 #include "diagnostics/self_test/selfTest.h"
+#include "hardware/motion_sensor.h"
 #include "instruments/gps.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
@@ -16,6 +17,15 @@ void SelfTest_PageRunning::draw_extra() {
   u8g2.setFont(leaf_6x12);
   u8g2.setCursor(9, 65);
   u8g2.print("Running Test...");
+#ifdef USE_LSM6DSV
+  if (MotionSensor::getInstance().testResult() == LSM6DSV::TestResult::Running) {
+    u8g2.setCursor(9, 85);
+    u8g2.print("Keep Leaf still");
+    u8g2.setFont(leaf_5x8);
+    u8g2.setCursor(9, 99);
+    u8g2.print("Checking IMU");
+  }
+#endif
 }
 
 void SelfTest_PageRunning::close() {

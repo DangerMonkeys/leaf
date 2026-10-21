@@ -139,6 +139,8 @@ void Barometer::init(void) {
 }
 
 void Barometer::on_receive(const PressureUpdate& msg) {
+  if (uint32_t(millis() - msg.t) > 250 || msg.pressure <= 0) return;
+  lastPressureTime_ = msg.t;
   if (state_ == State::Uninitialized) {
     init();
   }
@@ -273,6 +275,7 @@ int32_t Barometer::climbRateFiltered() {
 }
 
 bool Barometer::climbRateFilteredValid() {
+  if (!imu.velocityValid()) return false;
   if (state_ != State::Ready) return false;
   if (!validClimbRateFiltered_) return false;
   return true;
@@ -310,6 +313,7 @@ int32_t Barometer::climbRate1SecAverage() {
 }
 
 bool Barometer::climbRate1SecAverageValid() {
+  if (!imu.velocityValid()) return false;
   if (state_ != State::Ready) return false;
   if (!validClimbRate1SecAverage_) return false;
   return true;
@@ -326,7 +330,7 @@ float Barometer::climbRateAverage() {
 }
 
 bool Barometer::climbRateAverageValid() {
-  return state_ == State::Ready && nInitSamplesRemaining_ == 0;
+  return state_ == State::Ready && imu.velocityValid() && nInitSamplesRemaining_ == 0;
 }
 
 uint16_t Barometer::startupSamplesCompleted() const {
@@ -342,7 +346,10 @@ void Barometer::filterAltitude() {
   // Note, IMU will have taken an accel reading and updated the Kalman
 
   // get instant climb rate
-  if (!imu.velocityValid()) return;
+  if (!imu.velocityValid()) {
+    invalidateClimb();
+    return;
+  }
   climbRateRaw_ = imu.getVelocity();  // in m/s
   if (isnan(climbRateRaw_) || isinf(climbRateRaw_)) {
     fatalError("climbRate in Barometer::filterAltitude was %g after imu.getVelocity()",
@@ -360,6 +367,18 @@ void Barometer::filterAltitude() {
   if (validClimbRateFiltered_) {
     speaker.updateVarioNote(climbRateFiltered_);
   }
+}
+
+void Barometer::invalidateClimb() {
+  validClimbRateRaw_ = validClimbRateFiltered_ = validClimbRate1SecAverage_ = false;
+  climbFilter.reset();
+  climb1SecFilter.reset();
+  climbDisplayHistory_.fill(0);
+  climbDisplayHistoryCount_ = climbDisplayHistoryIndex_ = climbDisplayBlockCount_ = 0;
+  climbDisplayBlockSum_ = 0;
+  climbRateAverage_ = 0;
+  nInitSamplesRemaining_ = CLIMB_AVERAGE_INIT_S * BARO_SAMPLES_PER_SECOND;
+  speaker.updateVarioNote(0);
 }
 
 // Filter ClimbRate

@@ -1,0 +1,927 @@
+---
+title: ST IMU and Separate Magnetometer Migration Backlog
+description: Hardware v3.2.8 implementation plan for the LSM6DSVTR, gravity and climb-rate processing, moving startup, power management, and commissioning.
+---
+
+# ST IMU and Separate Magnetometer Migration Backlog
+
+## Status and scope
+
+Plan updated on **2026-10-20** after receipt of the v3.2.8 PCBs and confirmation of the fitted
+parts, addresses, orientation, interrupt wiring, and startup requirements.
+
+The hardware-support branch is `codex/hardware-v3.2.8`, created from `origin/main` at
+`82a74de7`. This document was brought forward from `codex/leaf-log-site-link`, where it was
+introduced in `26026ae6`. The branch and hardware-history entry are prepared; firmware
+implementation and new-board hardware verification have not started.
+
+Replace Leaf's TDK ICM-20948 with the ST LSM6DSVTR on v3.2.8, retain the ICM implementation
+for older boards, and keep the new driver and acceleration calculation as simple as possible.
+The first implementation continues to **poll the FIFO**, uses on-chip gravity direction, and
+does not use magnetometer measurements. Removal of Leaf's gravity correction on v3.2.8 is a
+measurement-dependent objective, not yet a demonstrated result.
+
+The confirmed component changes are also recorded in `vario/hardware/hardware_changes.md`.
+
+## Confirmed hardware and requirements
+
+| Item | Confirmed detail |
+| --- | --- |
+| Hardware version | Leaf v3.2.8 |
+| Replacement IMU | ST LSM6DSVTR (LSM6DSV), I2C address `0x6A` |
+| Separate magnetometer | MEMSIC MMC5983MA, I2C address `0x30` |
+| Sensor mounting | Both chips on top of the PCB; +Y points generally forward relative to the board |
+| User mounting | May differ; vertical acceleration must not assume a fixed mounting orientation |
+| IMU INT1 | Connected to IO expander P14 (`TCA_P14`) |
+| IMU INT2 | Unused |
+| Magnetometer INT | Unused |
+| Speaker | Same Sky CPT-9019A-SMT-TR; no additional speaker firmware changes required |
+| Initial acquisition | Periodic FIFO polling; interrupt routing disabled |
+| Future interrupt use | Preserve INT1 for features such as tap/double-tap gestures |
+| Magnetometer scope | No magnetic data, compass calibration, heading fusion, or required magnetometer commissioning test |
+| Moving startup | Must support being switched on while flying, with a 3-10 second warm-up acceptable |
+| Older hardware | Retain the ICM-20948 driver and existing gravity-estimation behavior |
+
+Use the existing I2C bus. Other pins and peripherals are provisionally assumed to match v3.2.7;
+confirm any additional board differences during bring-up. The supplied addresses and INT1 route
+resolve the earlier open questions about those connections.
+
+## Hardware variant and build support
+
+- Add `src/variants/leaf_3_2_8/variant.h` and development/release PlatformIO environments.
+- Select the LSM6DSV at compile time for v3.2.8. Keep existing variants on the ICM path.
+- Add `leaf_3_2_8_dev` and `leaf_3_2_8_release` to the CI build matrix.
+- Verify hardware-version reporting, firmware filenames, release metadata, OTA selection, and
+  factory-interface discovery of local builds and release assets.
+- Preserve the existing legacy target of the generic `firmware.bin`; v3.2.8 needs its own asset.
+- Confirm the existing flash size, partition layout, and non-application binaries remain suitable.
+- Keep the repository's default build environment unchanged unless deliberately selected for change.
+
+The existing variant creation process is described in `src/variants/README.md`.
+
+## Initial Polling Implementation
+
+The current `src/vario/hardware/icm_20948.cpp` driver polls DMP FIFO data through the task manager
+at roughly 20 Hz. It requests acceleration and Quat9 orientation. Retain that periodic service
+model as the starting point, adapting rates and FIFO parsing for the new device.
+
+ST's [sensor-fusion example](https://github.com/STMicroelectronics/STMems_Standard_C_drivers/blob/master/lsm6dsv_STdC/examples/lsm6dsv_sensor_fusion.c)
+polls FIFO status and retrieves quaternion, gravity, and gyro-bias data without configuring either
+interrupt pin. This supports the polling approach for onboard fusion as well as ordinary acquisition.
+
+## Required Vario Output
+
+The first firmware goal is not a complete nine-axis orientation solution. Leaf needs a reliable
+gravity direction and a gravity-compensated acceleration along world Z for the climb-rate Kalman
+filter. Magnetic heading is not required for this calculation.
+
+The current `src/vario/instruments/imu.cpp` path reconstructs quaternion W, rotates raw acceleration
+into a world frame, takes world Z, subtracts the learned `gravity_` value, and converts the result
+from g to m/s^2 for `kalmanvert_.update()`. With the LSM6DSV, direct projection onto the SFLP
+gravity direction can replace the quaternion rotation. This makes yaw drift irrelevant to the
+vario and avoids quaternion sign and convention errors.
+
+Preserve this output contract:
+
+- Positive acceleration means upward.
+- A stationary Leaf produces approximately zero acceleration in every orientation.
+- The value passed to the Kalman filter is in m/s^2.
+- Invalid, stale, or unstabilized fusion data must not appear as a plausible nonzero acceleration.
+- Barometric altitude remains the long-term climb-rate reference; the IMU supplies fast response.
+
+## SFLP Gravity Vector
+
+SFLP combines accelerometer and gyroscope data internally and produces a game-rotation quaternion,
+a gravity vector, and an estimated gyro bias. The gravity vector describes vertical in the IMU's
+sensor coordinate frame. It is not already gravity-subtracted linear acceleration and is not a
+world-coordinate vector.
+
+The gravity vector is available only through the FIFO as three signed 16-bit components. Its tag
+is `0x17` (`LSM6DSV_SFLP_GRAVITY_VECTOR_TAG`), range is +/-2 g, and sensitivity is
+0.061 mg/LSB. Raw accelerometer records use tag `0x02` (`LSM6DSV_XL_NC_TAG`). See:
+
+- [LSM6DSV datasheet, Section 2.7, Table 1, and the FIFO/register tables](https://www.st.com/resource/en/datasheet/lsm6dsv.pdf).
+- [AN5922](https://www.st.com/resource/en/application_note/an5922-lsm6dsv-6axis-imu-with-embedded-sensor-fusion-i3c-oiseis-for-smart-applications-stmicroelectronics.pdf).
+- [AN5763, Section 9.6.3](https://www.st.com/resource/en/application_note/an5763-lsm6dsv16x-alwayson-3axis-accelerometer-and-3axis-gyroscope-with-embedded-machine-learning-core-and-qvar-detection-stmicroelectronics.pdf)
+  for the shared SFLP FIFO encodings.
+- ST's [LSM6DSV FIFO example](https://github.com/STMicroelectronics/STMems_Standard_C_drivers/blob/master/lsm6dsv_STdC/examples/lsm6dsv_fifo.c).
+- ST's [platform-independent LSM6DSV driver](https://github.com/STMicroelectronics/lsm6dsv-pid).
+
+ST does not publish the SFLP filter equations, gains, covariance, exact dynamic transfer function,
+or processing latency. Treat it as a proprietary six-axis estimator and characterize it on the
+bench and in flight.
+
+### Coordinate and sign contract
+
+Use these definitions at the driver/instrument boundary:
+
+- `a_sensor = [ax, ay, az]`: raw acceleration converted to g in IMU axes.
+- `g_sensor = [gx, gy, gz]`: SFLP gravity vector converted to g in the same axes.
+- `up_sensor`: normalized gravity vector, pointing upward in the IMU frame.
+- `accel_up_g`: net world-vertical acceleration, positive upward, in g.
+
+Apply the same documented sensor-to-board axis transform to acceleration and gravity, or leave
+both in sensor coordinates. The dot product is invariant to a common transform, but diagnostics
+must not silently mix board and sensor axis labels.
+
+Confirm the sign on real hardware:
+
+1. With IMU +Z upward, raw acceleration and SFLP gravity should both be approximately
+   `(0, 0, +1 g)`.
+2. With the board upside down, both should reverse.
+3. If SFLP uses the opposite convention, negate the gravity vector once in the hardware driver.
+4. Verify stationary output is zero, upward acceleration is positive, and a controlled downward
+   acceleration is negative.
+
+### World-vertical acceleration calculation
+
+Perform the calculation entirely in sensor coordinates:
+
+```text
+gravity_magnitude = length(g_sensor)
+up_sensor = g_sensor / gravity_magnitude
+measured_up_g = dot(a_sensor, up_sensor)
+accel_up_g = measured_up_g - gravity_reference_g
+accel_up_mps2 = accel_up_g * 9.80665
+```
+
+An initial bring-up implementation can subtract the SFLP magnitude:
+
+```cpp
+float gravityMagnitude = sqrtf(gx * gx + gy * gy + gz * gz);
+
+if (gravityMagnitude > 0.8f && gravityMagnitude < 1.2f) {
+  float ux = gx / gravityMagnitude;
+  float uy = gy / gravityMagnitude;
+  float uz = gz / gravityMagnitude;
+
+  float measuredUpG = ax * ux + ay * uy + az * uz;
+  float accelUpG = measuredUpG - gravityMagnitude;
+  float accelUpMps2 = accelUpG * 9.80665f;
+}
+```
+
+For v3.2.8 bring-up, bypass Leaf's current learned gravity magnitude, clamps, slew limits, and
+recovery heuristics. The equivalent direct projection is:
+
+```text
+accel_up_g = dot(a_sensor - g_sensor, normalized(g_sensor))
+```
+
+This is the initial candidate, not a guarantee of sufficient production accuracy. Do not assume
+the SFLP vector magnitude measures local gravitational strength or corrects accelerometer
+offset, scale, and temperature errors. Characterize gravity magnitude and the remaining vertical
+residual across orientations, temperatures, and several boards before deciding to ship without
+additional correction.
+
+If correction is necessary, distinguish per-axis offset, scale error, local-gravity mismatch,
+and fusion-direction error. Choose the smallest justified correction. Evaluate six-position
+per-axis calibration if the error is orientation-dependent; retain a learned scalar only if
+measurements justify it and its update rules cannot absorb real flight acceleration. Do not
+average the first seconds of flying acceleration and call the result gravity or sensor offset.
+
+The earlier blanket recommendation to retain Leaf's learned scalar on the new chip is superseded
+by this evaluation plan. Older ICM boards retain their existing estimator. See the
+[IMU gravity performance backlog](vario-imu-gravity-performance.md) for the original evidence.
+
+Do not calculate `length(a_sensor) - 1`: that loses the up/down sign and mistakes horizontal
+acceleration for vertical acceleration. Do not use physical sensor Z directly because Leaf does
+not remain level in flight.
+
+### Proposed configuration and FIFO decoding
+
+Start near ST's reference configuration, then tune from measurements:
+
+- Accelerometer high-performance mode, +/-4 g, 60 Hz.
+- Gyroscope enabled, initially +/-2000 dps and 60 Hz. The full-scale choice follows ST's example;
+  60 Hz is Leaf's proposed starting rate. Revisit the range after confirming SFLP requirements
+  and measuring actual flight rates.
+- SFLP at 60 Hz. Test 30 Hz later if lower power is valuable and latency remains acceptable.
+- FIFO stream/continuous mode.
+- Batch raw acceleration and SFLP gravity at the same nominal rate.
+- Initially batch quaternion and gyro bias for diagnostics; remove unneeded streams after validation.
+- Use timestamps to establish acquisition timing, alignment, and fusion latency. A timestamp-free
+  production path is acceptable only if it still establishes reliable sample timing and age.
+
+These ranges, rates, filters, and diagnostic streams are proposed settings, not confirmed final
+tuning. SFLP must run no faster than either the accelerometer or gyroscope. Include all enabled
+streams when calculating FIFO production, drain limits, and bus traffic.
+
+Representative driver calls are:
+
+```cpp
+lsm6dsv_sw_por(&dev_ctx);
+lsm6dsv_block_data_update_set(&dev_ctx, PROPERTY_ENABLE);
+lsm6dsv_xl_full_scale_set(&dev_ctx, LSM6DSV_4g);
+lsm6dsv_gy_full_scale_set(&dev_ctx, LSM6DSV_2000dps);
+
+lsm6dsv_fifo_sflp_raw_t sflpFifo = {};
+sflpFifo.gravity = 1;
+sflpFifo.game_rotation = 1;  // Optional diagnostic stream.
+sflpFifo.gbias = 1;          // Optional diagnostic stream.
+lsm6dsv_fifo_sflp_batch_set(&dev_ctx, sflpFifo);
+
+lsm6dsv_fifo_xl_batch_set(&dev_ctx, LSM6DSV_XL_BATCHED_AT_60Hz);
+lsm6dsv_fifo_mode_set(&dev_ctx, LSM6DSV_STREAM_MODE);
+lsm6dsv_xl_data_rate_set(&dev_ctx, LSM6DSV_ODR_AT_60Hz);
+lsm6dsv_gy_data_rate_set(&dev_ctx, LSM6DSV_ODR_AT_60Hz);
+lsm6dsv_sflp_data_rate_set(&dev_ctx, LSM6DSV_SFLP_60Hz);
+lsm6dsv_sflp_game_rotation_set(&dev_ctx, PROPERTY_ENABLE);
+```
+
+The last API enables the SFLP engine even if gravity is the only retained output. Confirm names
+against the exact ST driver revision used in Leaf.
+
+Drain the FIFO with `lsm6dsv_fifo_status_get()` and `lsm6dsv_fifo_out_raw_get()`. Convert raw
+acceleration with the helper matching its configured full scale. Convert gravity with
+`lsm6dsv_from_sflp_to_mg()` and divide by 1000 for g. Decode the three little-endian signed values
+explicitly or with `memcpy` rather than unsafe unaligned pointer casts.
+
+### Timing and pairing
+
+Acceleration and gravity are separate FIFO records. Combining a new acceleration sample with an
+old gravity direction during rapid rotation creates false vertical acceleration.
+
+- Preserve FIFO order and associate each acceleration sample with the nearest gravity sample.
+- During bring-up, use sensor timestamps or log host times to measure phase and SFLP latency.
+- Reject output when gravity is invalid, unstabilized, stale, implausibly small/large, or too far
+  in time from the acceleration sample.
+- Initially retain approximately 20 Hz host polling and the existing downstream cadence. Drain
+  accumulated 60 Hz records and identify temporally matched pairs, rather than combining the newest
+  value from each stream without checking its age.
+- Evaluate deliberate filtering/decimation or selection of the newest valid matched pair for each
+  processing interval. A later 60 Hz filter path must not treat one barometer measurement as several
+  independent measurements. Record the final choice and its measured latency/noise here.
+- Track FIFO overruns, bounded-drain truncation, stale pairs, invalid vectors, bus errors, and
+  SFLP recovery.
+
+### Startup while moving and gyro calibration
+
+Startup and wake must work while Leaf is already flying. A **3-10 second warm-up** before useful
+output is acceptable. A stationary period is not a prerequisite, and ten seconds elapsed is not
+proof that the gravity estimate is valid. The datasheet's typical calibration/stabilization times
+are context, not a guarantee for an airborne start.
+
+- Discard sensor/fusion startup transients. Require fresh, finite, plausibly sized vectors,
+  appropriate pairing, and a sequence of usable samples before enabling climb output.
+- Readiness must not depend on motionlessness, a fixed mounting angle, or acceleration remaining
+  close to 1 g. Do not carry the old stillness-like startup gate into the new path.
+- Show startup progress and unavailable climb output during warm-up; keep vario audio muted until
+  measurements and the filter are ready.
+- Initialize the Kalman filter from fresh barometric altitude and valid acceleration. Its initial
+  zero velocity is an initialization assumption, not a measurement that Leaf is stationary;
+  verify convergence during an ongoing climb or sink.
+- Test cold starts and wake-ups during straight flight, climb/sink, rotation, and sustained turns.
+
+ST documents gyro-bias estimation while stationary and a procedure to seed SFLP with a previously
+measured bias when stillness cannot be guaranteed (AN5922, Section 6.5.1). The proposed initial
+design captures trusted gyro bias during stationary commissioning, stores it with a calibration
+version, and restores it before fusion warm-up. Use ST's supported API/sequence for the pinned
+driver version, including required reset and unit conversions.
+
+Capture that calibration **after the factory nonvolatile reset and chip self-test**. Restore it
+on ordinary cold boot; retain a trusted copy in RAM for charging-mode wake where suitable. Avoid
+frequent flash writes. Define validity checks, sensor/configuration compatibility, and deliberate
+invalidation or migration of stored records. Test OTA retention, recommissioning, temperature
+changes, and missing/corrupt calibration after a factory reset. Missing calibration must produce
+defined behavior, not an endless request to remain still.
+
+Saved gyro bias is separate from accelerometer correction and Leaf's gravity-magnitude estimator.
+It does not by itself prove gravity convergence during sustained acceleration. If moving-start
+qualification fails, revisit calibration or fallback behavior before claiming the requirement met.
+
+### Fault handling and output validity
+
+- Bound initialization retries and verify chip identity, reset completion, and configuration.
+  Missing/wrong hardware must yield a useful diagnostic or commissioning failure.
+- Reject invalid, stale, saturated, or badly paired samples. Handle FIFO overflow, partial reads,
+  repeated bus failures, and unexpected chip resets without publishing plausible stale values.
+- Reset/requalify fusion and filter state after a significant interruption. Count faults and recovery.
+- Propagate invalid climb data through display, audio, logging, and other consumers. Preserve
+  available barometric altitude without advertising an old fused climb rate as current.
+
+The proposed initial behavior is a visible fault and muted vario audio during recovery. A
+barometer-only climb fallback is an **open product decision** and requires an explicit, tested
+filter path. Passing zero acceleration into the existing filter is not automatically such a
+fallback. This supersedes the earlier tentative instruction to continue barometric updates with
+an intentional zero correction.
+
+### Accuracy and dynamic limitations
+
+The datasheet specifies SFLP attitude accuracy, not derived vertical-acceleration accuracy:
+
+| Condition | Pitch error | Roll error |
+| --- | ---: | ---: |
+| Static | 1.5 degrees | 1.5 degrees |
+| Low dynamic | 0.5 degrees | 0.5 degrees |
+| High dynamic | 1.6 degrees | 1.2 degrees |
+
+The accelerometer specification includes approximately +/-12 mg zero-g offset and
++/-0.07 mg/degree C offset drift. A 12 mg vertical error is about 0.118 m/s^2 and can create
+a persistent climb-rate bias. Whether additional correction is necessary is a validation question;
+the SFLP gravity quantization of 0.061 mg/LSB is unlikely to dominate.
+
+As a planning check, a numerical reproduction of Leaf's current Kalman equations at 20 Hz, with
+perfectly constant barometric altitude and the current 0.1 m position / 0.3 m/s^2 acceleration
+standard-deviation settings, converged to approximately **0.093 m/s false climb for a constant
+12 mg acceleration residual**. This was a 300-second numerical calculation, not a new-board
+measurement. The filter has no explicit accelerometer-bias state, so barometric correction alone
+does not guarantee zero steady-state velocity error from biased acceleration.
+
+No six-axis system can perfectly distinguish gravity from sustained linear acceleration. During
+a coordinated turn, the accelerometer measures gravity plus centripetal acceleration. Gyro
+integration helps through short dynamics, but prolonged acceleration can pull the estimated
+gravity direction. This is particularly relevant during sustained thermalling, so the barometer
+must correct long-term IMU errors.
+
+For small gravity-direction error `theta`, horizontal-to-vertical leakage is approximately
+`horizontal_acceleration * sin(theta)`. Evaluate this with real turn accelerations, not only
+stationary tests.
+
+## Driver and Message Implementation Work
+
+- Pin ST's platform-independent LSM6DSV C driver, retain its license, and add a thin adapter to
+  Leaf's existing I2C bus. Keep chip register handling separate from instrument/filter logic.
+- Add a small compile-time-selected interface for initialization, polling, sleep, wake, bus
+  publishing, and diagnostics. Avoid a broad sensor-framework rewrite.
+- Replace direct ICM singleton dependencies in startup, task scheduling, power handling, debug
+  displays, and message injection/replay controls with the selected hardware interface.
+- Check identity at `0x6A`, apply reset and configuration, and verify critical settings. Avoid
+  the unbounded initialization retry loop used by the current ICM driver.
+- Poll the unread FIFO entry count and drain available entries on each service pass. Avoid waiting
+  for a large watermark that would unnecessarily delay low-rate updates.
+- Select supported accelerometer, gyroscope, fusion, and batching rates explicitly. Do not assume
+  the current ICM rates or packet structure transfer directly.
+- Parse FIFO tags and preserve sample timing and the association between orientation and acceleration.
+  Count all enabled streams when calculating FIFO production and required service capacity.
+- Allow for delayed service during logging, display work, or other bus activity. Track overruns,
+  invalid data, read failures, and recovery, with a bounded drain strategy that can catch up.
+- Initially retain approximately 20 Hz host polling, then measure latency and backlog before fixing
+  the final rate. This interval adds up to approximately 50 ms of notification delay, plus scheduling
+  delays; it does not require the sensor itself to sample at 20 Hz.
+- Extend `MotionUpdate` with an optional gravity vector and explicit validity/timing semantics.
+  Keep raw acceleration available and preserve the existing ICM orientation fields. Do not require
+  an orientation quaternion for the v3.2.8 gravity-vector path or fabricate one for compatibility.
+- Define units and sensor/board coordinate conventions at that boundary. Preserve total
+  acceleration independently for flight logging, g-load metrics, and automatic flight-stop logic.
+- Update bus logging, `src/vario/dispatch/message_injector.h` / `.cpp`, simulator recordings, and
+  replay tooling together. The simulator and on-device UDP injection share the parser. Keep old
+  recordings readable and retain a way to exercise both IMU processing paths.
+- Add diagnostics for gravity XYZ/magnitude, gravity age, pairing delta, projected acceleration,
+  applied correction (if any), gyro bias, temperature, FIFO levels/overruns, invalid vectors,
+  calibration status, startup state, and SFLP restarts. Preserve useful legacy diagnostics.
+
+## Kalman and climb-rate integration
+
+Retain `KalmanFilterPA` initially. Feed it positive-up vertical acceleration in m/s^2 and
+barometric altitude in meters. Start from the existing noise settings, then characterize residual
+noise, latency, and motion response before changing the weights. Do not infer appropriate filter
+noise solely from the component's static accuracy specifications.
+
+- Establish a common monotonic timebase for IMU and pressure data. Use acquisition time rather
+  than assigning every queued sample the host time at which it was read.
+- Bound sample age and the time difference between acceleration, gravity, and barometer data.
+- Process a barometric observation once; draining several IMU samples must not count the same
+  altitude repeatedly as independent evidence.
+- Handle duplicate/out-of-order samples, clock rollover, long gaps, and delayed processing.
+- Add an explicit filter reset/invalidation path for sleep, wake, sensor reset, and long data gaps.
+  The current filter reinitializes when an update gap exceeds one second, but `IMU::wake()` does
+  not explicitly clear it or all cached validity flags.
+- Ensure stale IMU velocity cannot remain marked valid. Clear or requalify the downstream climb
+  averages/display history as needed, and stop stale climb values from driving audio or navigation.
+- Retain barometric altitude as the long-term reference and check climb response during an
+  airborne start; startup must not assume the true climb rate is zero.
+
+Current integration points are `src/vario/instruments/imu.cpp`, `src/vario/math/kalman.cpp`, and
+`src/vario/instruments/baro.cpp`. The last currently consumes the IMU filter's velocity and drives
+climb filtering and vario audio, so invalidation must extend beyond the hardware driver.
+
+## Power lifecycle
+
+The current ICM wrapper exposes initialization and polling without chip sleep/wake operations.
+`Power::sleepPeripherals()` sleeps other peripherals, while `Power::wakePeripherals()` calls the
+IMU instrument's partial reset. Add deliberate hardware and instrument transitions for v3.2.8.
+
+| Leaf state or transition | Planned IMU behavior |
+| --- | --- |
+| Cold boot into operating mode | Initialize sensors/fusion, discard transients, obtain fresh pressure and motion, then qualify climb output within the moving-start target |
+| Cold boot directly into USB charging mode | Keep the IMU powered down; avoid unnecessary fusion startup |
+| Normal operation | Keep sensors and fusion running continuously, including between normal host polling cycles and during brief ESP32 idle/sleep intervals |
+| Shutdown into USB charging mode | Stop publishing, invalidate motion/filter output, disable fusion/FIFO activity, and power down accelerometer and gyro |
+| Battery-powered shutdown | Perform the same orderly stop before releasing the power latch |
+| Wake from USB charging mode | Restore configuration and trusted calibration, flush old FIFO data, restart fusion, reset filter state, and requalify output while moving |
+| Unexpected sensor reset | Detect interruption, recover configuration, and repeat readiness checks |
+| Self-test entry/exit | Suspend normal publishing, isolate test samples, restore configuration, flush FIFO, and restart fusion/filter readiness |
+
+Prefer power-down for long charging/off periods. Consider gyro sleep for short interruptions only
+if measured wake latency justifies another state. Do not suspend the IMU on every short host idle
+period or introduce motion-triggered sleep during flight. Disable unwanted interrupt sources while
+charging so the new device does not prevent host sleep. Verify repeated transitions and current
+consumption on both USB and battery.
+
+## Commissioning and self-tests
+
+The current `SelfTest::testIMU()` waits for valid acceleration and velocity, then accepts total
+acceleration between 0.8 and 1.2 g. That broad check can pass a sensor with enough residual error
+to produce false climb. Update v3.2.8 testing while retaining the old-board path.
+
+1. Verify chip identity and fresh data with bounded timeouts and specific failure reasons.
+2. Run ST's accelerometer and gyroscope stimulation self-tests using the required ranges, settling
+   delays, and limits from the pinned driver example. Suspend normal motion publishing so test
+   acceleration cannot reach the vario, logs, or flight logic.
+3. Restore normal settings and flush test data. Reinitialize fusion and filter readiness even if a
+   test fails or is cancelled, while retaining the failure result.
+4. After the commissioning nonvolatile reset and chip self-test, capture trusted gyro bias during
+   a stationary window and persist the versioned calibration. Ordinary boot does not require
+   repeating this stationary step.
+5. Measure acceleration magnitude, gravity magnitude, projected residual mean/noise, sample rate,
+   temperature, and settling behavior. Establish production thresholds using several new boards.
+6. Retain the interactive lift/lower vario test, with upward/downward sign and audible response
+   checks. Retain speaker and other existing commissioning tests.
+
+Use six-face orientation testing during engineering qualification. Add it to routine production
+calibration only if the measured accelerometer errors justify the additional operator work.
+The unused MMC5983MA must not be a required test or a reason to fail initial v3.2.8 commissioning.
+
+Record chip identity, calibration version/status, numeric results, and useful fault reasons in
+the existing `/self_test_N.txt` output. Verify the highest-numbered result can still be retrieved
+through `GET /self-test/details` and persisted in the factory session's `test_results`.
+Keep existing task names and success/failure/cancellation semantics compatible with the setup
+flow. If checklist text changes, keep `setup_checklist.html` and `setup_session.html` in sync and
+confirm terminal states do not accidentally auto-start the next task.
+
+Replace obsolete gravity-learning readiness labels/counters in startup progress and debug UI with
+the actual v3.2.8 sensor/fusion/calibration state. Keep diagnostics meaningful for older boards.
+
+Reference: ST's [LSM6DSV self-test example](https://github.com/STMicroelectronics/STMems_Standard_C_drivers/blob/master/lsm6dsv_STdC/examples/lsm6dsv_self_test.c).
+
+## INT1 and future interrupt work
+
+The completed v3.2.8 board connects **IMU INT1 to IO expander P14 (`TCA_P14`)**. INT2 is unused.
+Initial support retains polling with interrupt sources disabled. Tap/double-tap gestures are a
+future use for the existing INT1 path; gesture implementation is outside this initial migration.
+
+The pins are not fully interchangeable. INT1 provides the best coverage for a single connection.
+
+| Interrupt source | Routing |
+| --- | --- |
+| Normal accelerometer and gyroscope data-ready | Either pin |
+| FIFO watermark, full, overrun, and batching counter | Either pin |
+| Wake-up, free-fall, taps, orientation, activity/inactivity | Either pin |
+| Step detection, tilt, significant motion, FSM events | Either pin |
+| Sensor-hub transaction complete | INT1 only |
+| Temperature data-ready, EIS gyroscope data-ready, timestamp overflow warning, embedded-function end-of-operation | INT2 natively; movable to INT1 |
+| OIS data-ready | INT2 only; no documented INT1 remapping |
+
+For the four movable signals, set `CTRL4.INT2_ON_INT1` (bit 4 at `0x13`) and their corresponding
+INT2 source enables. They are ORed onto INT1 and removed from INT2. This is not a universal
+remapping switch. OIS data-ready overrides other INT2 output settings.
+See the [datasheet, sections 9.11–9.17, 9.62–9.63, 9.73, and 13.7–13.10](https://www.st.com/resource/en/datasheet/lsm6dsv.pdf).
+
+INT2 also supports external input functions: sampling synchronization, DEN tagging, and sensor-hub
+triggering. Revisit its connection if these become requirements; they are not part of initial polling.
+See the [datasheet, sections 6.6, 9.51, and 15.3](https://www.st.com/resource/en/datasheet/lsm6dsv.pdf).
+
+## When Interrupts Would Help
+
+Potential reasons to use the connected INT1 later include waking the host on motion, reducing
+unnecessary polling, or responding to FIFO status sooner. Two interrupt connections would additionally
+allow routine data notifications and urgent events to use separate host handling and wake policies.
+
+With one line, firmware must inspect status and service every pending source. Because enabled sources
+are ORed, one asserted source can hide another source's edge. Check clearing and latching behavior
+before mixing event types. The embedded-function end-of-operation signal is intended for execution
+timing/debug and should not be treated as an ordinary motion event.
+See [AN5922, section 5.1](https://www.st.com/resource/en/application_note/an5922-lsm6dsv-6axis-imu-with-embedded-sensor-fusion-i3c-oiseis-for-smart-applications-stmicroelectronics.pdf).
+
+The v3.2.8 connection uses the IO-expander path rather than a direct MCU GPIO, consistent with
+the existing v3.2.6/v3.2.7 arrangement. Before implementing gestures or wake-on-motion, verify the
+complete expander interrupt, source-clearing/latching, and ESP32 sleep-wake path. Connecting INT1
+alone does not establish that wake-on-motion is implemented. Preserve other users of the shared
+expander interrupt when servicing IMU events.
+
+## Separate Magnetometer and Fusion
+
+The LSM6DSV is a six-axis device without an integrated magnetometer. Its embedded SFLP fusion uses
+acceleration and angular rate and produces a game rotation quaternion, gravity, and gyro bias through
+the FIFO. It does not directly replace Leaf's existing magnetically referenced Quat9 output.
+See [AN5922, section 9](https://www.st.com/resource/en/application_note/an5922-lsm6dsv-6axis-imu-with-embedded-sensor-fusion-i3c-oiseis-for-smart-applications-stmicroelectronics.pdf).
+
+The fitted magnetometer is **MMC5983MA at `0x30`**, with INT unused. Selection is no longer open.
+Do not add a magnetic data stream, compass calibration, heading fusion, or a required magnetometer
+self-test for initial v3.2.8 support. Confirm that it remains inactive on cold boot and across
+ESP32-only resets; add only minimal power-management handling if measurements show it is needed.
+
+Leaf's old ICM driver requests Quat9, so the integrated magnetometer participates indirectly even
+though Leaf does not expose a compass reading. The replacement uses explicitly six-axis SFLP;
+its yaw drift does not require magnetic correction for the vertical projection.
+
+If magnetic heading is added later, separately design the access path, host-side fusion,
+CPU/flash budget, sensor-axis mapping, hard/soft-iron calibration and persistence, and behavior
+under magnetic disturbance. Attaching a magnetometer to the sensor hub does not by itself turn
+SFLP into nine-axis fusion. These future choices do not block the current migration.
+
+## Speaker replacement
+
+The fitted speaker is **CPT-9019A-SMT-TR**. The hardware owner confirmed that no additional
+speaker firmware changes are needed, so retain tone generation, volume control, and existing
+sound settings. It is an externally driven piezo transducer with a 4 kHz rated frequency; this
+does not mean Leaf's tone range should be changed to 4 kHz.
+
+Include ordinary audio regression checks during board qualification: audible tone range, all
+volume levels, actual terminal drive voltage, and silence after shutdown. Check whether loud
+tones introduce mechanical vibration or electrical interference into IMU/barometer measurements.
+Make additional audio changes only if those tests identify a concrete problem.
+
+Reference: [CPT-9019A-SMT-TR datasheet](https://www.sameskydevices.com/product/resource/cpt-9019a-smt-tr.pdf).
+
+## Verification Backlog
+
+### Automated processing and recovery checks
+
+- Exercise projection in multiple orientations, upside-down mounting, and known upward/downward
+  acceleration. A common sensor-to-board rotation must not change the scalar result.
+- Reject zero/invalid gravity vectors, non-finite acceleration, saturation, stale data, and
+  deliberately misaligned FIFO records.
+- Exercise partial FIFO reads, overruns, delayed polling, bounded draining, and sensor-reset recovery.
+- Cover duplicate/out-of-order timestamps, clock rollover, long gaps, and reuse of barometer samples.
+- Verify startup while moving, filter invalidation/reset, and repeated charging-mode sleep/wake.
+- Replay old ICM recordings and new gravity-vector recordings through the shared injection path.
+
+### Bench bring-up
+
+- Verify identity, reset, SFLP enable, ODRs, full scales, and conversion factors.
+- Verify gravity direction/sign in all six stationary orientations.
+- Verify stationary `accel_up_g` is near zero in all six orientations, first without Leaf gravity
+  correction and then with any evidence-supported calibration being evaluated.
+- Verify upward movement is positive and downward movement is negative.
+- Measure SFLP startup, output cadence, gravity magnitude, latency, and phase versus acceleration.
+- Exercise delayed FIFO service, overrun recovery, IMU reset, and stale-pair rejection.
+- Compare direct gravity projection with SFLP-quaternion rotation as a development cross-check.
+- Repeat on several boards and over relevant temperatures. Log gravity magnitude, acceleration
+  residual mean/noise, gyro bias, and current consumption.
+- Exercise USB-only boot, battery boot, USB shutdown, low-battery shutdown, repeated wake cycles,
+  missing/corrupt calibration, and factory reset/recommissioning.
+- Check loud speaker operation and other bus activity for interference and timing delays.
+
+### Vario and simulator integration
+
+- Preserve ICM gravity learning. Evaluate whether v3.2.8 needs any correction using the criteria
+  below and the [IMU gravity performance backlog](vario-imu-gravity-performance.md).
+- Add recordings containing acceleration and gravity vectors to exercise the real path in `sim/`.
+- Confirm invalid IMU data cannot inject persistent acceleration into the Kalman filter.
+- Confirm stationary filtered climb settles near zero across orientations and temperatures.
+- Compare noise, response, and settling against the ICM-20948 implementation.
+- Verify startup progress, diagnostic pages/logs, unavailable climb indications, audio, automatic
+  flight-stop behavior, and navigation consumers do not retain stale motion/climb data.
+
+### Flight validation
+
+- Log straight flight, pitch/roll transitions, turbulence, turn entry/exit, and sustained
+  thermalling at multiple bank angles.
+- Correlate IMU acceleration, barometric response, and the current ICM implementation.
+- Look for false impulses from sample misalignment and long-duration bias in coordinated turns.
+- Include cold starts and wake-ups during flight, with and without saved gyro calibration, and
+  during sustained banked turns. Allow the agreed 3-10 second warm-up without requiring stillness.
+- Tune ODR, processing rate, validity gates, any required calibration, and Kalman noise from evidence
+  rather than carrying ICM settings forward unchanged.
+- Measure power and end-to-end latency before deciding whether to enable INT1.
+
+### Manufacturing, builds, and release compatibility
+
+- Update IMU commissioning as described above; do not require the unused magnetometer to pass.
+- Decide from board measurements whether additional accelerometer calibration or manufacturing
+  limits are needed beyond the proposed stationary gyro-bias capture.
+- Verify test pass/failure/cancellation paths and persisted results through the factory interface.
+- Keep the ICM-20948 driver selectable and check older-board commissioning for regressions.
+- Run the formatter and simulator checks, then build both v3.2.8 environments and the existing
+  ICM variants covered by CI. Include `leaf_3_2_6_release` as a legacy regression build.
+- Follow `AGENTS.md` for hardware verification when firmware implementation begins: detect the
+  connected board/port, confirm the v3.2.8 target, and flash the matching firmware to both OTA slots
+  using the confirmed partition layout. Do not flash a new-board image to an older board.
+- Verify OTA/release selection returns the hardware-specific binary and that factory selection
+  works with both local application builds and release assets. Non-application images still come
+  from a suitable local PlatformIO build.
+- Record actual build, simulator, commissioning, and hardware results here when performed.
+  The documentation/planning work has not established any new-board test pass.
+
+## Proposed acceptance criteria
+
+These are proposed engineering targets; characterize environmental/barometer noise and agree any
+necessary adjustment before treating them as production limits.
+
+- After settling, stationary mean climb within **+/-0.05 m/s over a 60-second window** in each
+  orientation, across several boards. Record residual noise separately from the mean.
+- Positive-up acceleration and correct climb/sink response, with no orientation-dependent bias
+  large enough to violate the stationary target.
+- Useful climb output after **3-10 seconds** when started or awakened while moving/flying, including
+  ongoing climb/sink. No stationary-start requirement and no automatic declaration of validity
+  solely because a timeout elapsed.
+- Measured motion response/latency comparable to or better than the existing path, with no false
+  impulses during rotation or persistent bias during representative sustained turns.
+- Invalid, absent, stale, or reset sensor data cannot drive a persistent false climb tone or remain
+  silently marked valid. Fault indication and recovery behave as specified.
+- Sleep/shutdown stop unnecessary IMU activity; wake does not replay old FIFO/filter state.
+- Commissioning detects relevant sensor faults, saves calibration/results correctly, and remains
+  operable without magnetometer data.
+- Old hardware, old recordings, release selection, and OTA behavior retain their required behavior.
+
+Do not remove the legacy ICM estimator globally when these targets pass on v3.2.8. Record the
+new-board correction choice and the measurements supporting it separately.
+
+## Implementation sequence
+
+1. Add the v3.2.8 variant, pinned ST driver, selected hardware interface, and bounded bring-up.
+2. Add paired acceleration/gravity messages, diagnostic capture, and direct vertical projection.
+3. Integrate timestamps, validity, Kalman reset, and downstream climb/audio handling.
+4. Implement moving startup, calibration persistence, and the full power lifecycle.
+5. Update commissioning, factory result retrieval, debug/startup UI, and replay/simulator support.
+6. Run automated, bench, temperature, power, and moving-start checks; decide whether extra
+   accelerometer correction is necessary and tune from the measurements.
+7. Complete flight validation and legacy/build/release regression checks before considering support ready.
+
+## Expected code and documentation touchpoints
+
+| Area | Files or directories |
+| --- | --- |
+| Hardware variant and build matrix | `src/variants/leaf_3_2_8/`, `platformio.ini`, `.github/workflows/build.yaml` |
+| Selected driver and bus configuration | `src/vario/hardware/`, including new LSM6DSV wrapper and the ICM compatibility path |
+| Startup, polling, and power | `src/vario/main.cpp`, `src/vario/taskman.cpp`, `src/vario/power.cpp` |
+| Projection, filter, and climb | `src/vario/instruments/imu.*`, `src/vario/math/kalman.*`, `src/vario/instruments/baro.*` |
+| Motion messages and replay | `src/vario/dispatch/message_types.h`, `message_injector.*`, `src/vario/logging/buslog.*` |
+| Calibration persistence | Existing settings/storage facilities, with a versioned sensor-calibration record |
+| Commissioning | `src/vario/diagnostics/self_test/`, relevant `factory_interface/src/factory_interface/` integration |
+| Startup/debug and diagnostics | Display fields, debug pages, and vario diagnostic logging |
+| Simulator | `sim/device/sensors.cpp`, `sim/Makefile`, recordings, replay tools, and focused tests |
+| Versioning and firmware selection | Verify existing `src/scripts/` and factory/OTA discovery; change only where required |
+| Hardware and design record | `vario/hardware/hardware_changes.md` and this backlog |
+
+## Implementation and bring-up record (2026-10-20)
+
+Branch: `codex/hardware-v3.2.8`, based on `origin/main` at `82a74de7`.
+
+Implemented the v3.2.8 dev/release environments and CI entry, compile-time motion-driver
+selection, and vendored LSM6DSV register driver v5.0.1. The wrapper uses 60 Hz accel/gyro/SFLP,
+±4 g and ±2000 dps, and batches acceleration and gravity only. Interrupt routes and sensor hub
+remain disabled; no MMC5983MA driver is initialized. ICM hardware retains its previous driver
+and Leaf gravity estimator.
+
+FIFO words are associated by the two-bit time-slot counter, with incomplete groups rejected.
+The newest complete pair is published once per existing 20 Hz host poll. This first implementation
+uses host receive time, **not reconstructed sensor timestamps**; it rejects overrun, more than
+16 queued words, and polling gaps over 200 ms. It does not replay a FIFO burst against one
+pressure observation. Measuring phase/latency and deciding whether sensor timestamp reconstruction
+is needed remain bench/flight validation work.
+
+The new instrument path projects `(a - g)` onto normalized SFLP gravity. It does not learn Leaf's
+scalar gravity correction. An experimental third Kalman state estimates residual vertical
+acceleration bias using barometric altitude (see comparison below). Startup/wake/reset use a
+three-second driver warm-up followed by
+20 fresh Kalman updates. Pressure and motion expire after 250 ms, reset invalidates the filter,
+and invalid climb clears downstream averages and the vario tone. New-hardware climb displays
+show `--` while invalid. Each pressure sample is used at most once; elapsed Kalman time handles
+the millisecond clock wrapping. Moving initialization uses a 5 m/s initial velocity standard
+deviation instead of a confident zero-velocity prior. Legacy filter initialization is preserved.
+
+Commissioning now runs asynchronous accelerometer and gyro electrical self-tests using ST's
+response limits, then collects 100 stationary gyro/acceleration samples for a versioned gyro-bias
+record in NVS namespace `imu328`. A factory NVS erase clears that record. Normal boot only restores
+it; it never runs stationary calibration. Missing calibration uses a zero seed and an explicit
+diagnostic status. Electrical tests always disable stimulus and restore operational configuration
+on completion/failure; shutdown cancels the test. Structured results use the existing
+`self_test_N.txt` and `/self-test/details` path. Production calibration thresholds still need
+validation across boards and temperature.
+
+Recording format remains compatible with old motion lines, with optional
+`,V,gx,gy,gz,reset` fields for SFLP data (lowercase `v` means no gravity). Simulator tests cover
+already-climbing startup, IMU loss, pressure loss, reset, invalid gravity, duplicate motion
+timestamps, recovery, and changed mounting. `sim/tests/imu_replay.py` creates the fixtures;
+`sim/tests/gravity_projection.cpp` checks sign, six faces, arbitrary tilt, horizontal acceleration,
+freefall, clipping, and nonfinite input.
+
+Initial verification:
+
+- v3.2.8 release and dev builds passed; v3.2.6 release regression build passed.
+- Existing simulator first-boot test passed. Gravity projection and full estimator replay checks
+  passed. The recovery test exposed overshoot from the old zero-velocity/zero-uncertainty prior;
+  the new initialization recovered approximately 1.99–2.00 m/s for a 2.00 m/s input.
+- The connected board's flash was blank. Bootloader, partition table and both OTA slots were
+  installed and verified. For a blank board, the **bootloader must be written with DIO mode**:
+  forcing QIO caused a ROM-loader watchdog reset (`ets_loader.c 78`), resolved by correcting only
+  the bootloader header to DIO. The existing factory interface already translates QIO to DIO
+  for upload. Application-only flashing leaves that bootloader untouched.
+- The user confirmed startup, liability screen and a normal vario page. Detailed physical IMU,
+  commissioning, power/current, temperature and flight validation are still in progress; a
+  successful build or synthetic replay is not evidence that those measurements have passed.
+
+### Correction comparison and first commissioning measurements
+
+The first v3.2.8 board produced approximately 0.988–0.990 g resting acceleration while SFLP
+gravity remained approximately 1 g. Direct projection therefore left about −0.01 to −0.012 g
+vertical acceleration and roughly −0.06 to −0.18 m/s apparent sink in sampled diagnostics.
+This is evidence for a residual correction, not evidence by itself for a particular correction
+model. One orientation on one board cannot distinguish axis offset, scale error, temperature
+effects, or all attitude errors.
+
+On-device commissioning passed all six electrical responses: accelerometer 265.374, 264.691,
+175.875 mg; gyro 399.91, 415.8, 411.46 dps. The stationary check passed and saved gyro bias
+−0.4452, +0.2310, −0.1967 dps. Reconfiguration restored the bias with zero I2C errors.
+The subsequent IMU check passed with acceleration 0.990289 g, gravity 1.00044 g, residual
+−0.0101508 g and climb −0.119822 m/s. Thus gyro commissioning did **not** remove the
+accelerometer residual. These electrical/communication checks do not certify climb accuracy.
+FIFO diagnostics showed approximately 59 matched pairs/s and zero counter mismatches.
+
+The overall self-test is **not** a pass: the separate POWER check reported USB present,
+charging false, 79% / 3921 mV and "Inconsistent power state". Interactive tests were still
+pending at capture end. Preserve this result for separate power/commissioning investigation.
+
+At the user's suggestion, compared the existing gravity estimate against the experimental
+Kalman bias state using the actual two instrument paths in the simulator. The existing scalar
+filter absorbs 90% of accepted vertical-force changes over five seconds, with its existing
+gates/slew limits. It removes a resting offset quickly, but can also learn genuine sustained
+vertical acceleration. The alternative state is `[altitude, climb, vertical acceleration bias]`:
+prediction uses measured vertical acceleration minus bias; barometric altitude updates all
+three states. Initial bias standard deviation is 0.25 m/s², bias random walk is 0.005 m/s²/√s,
+and initial velocity standard deviation remains 5 m/s. These are provisional tuning values.
+The two correction mechanisms are not enabled together.
+
+`sim/tests/imu_filter_comparison.py` generates a consistent 2 m/s moving start, twenty seconds
+of +0.3 m/s² vertical acceleration, constant climb, −0.4 m/s² deceleration to rest, and a
+projected bias step from −0.012 g to +0.008 g. Pressure is quantized to 1 Pa. Results from
+2026-10-20 (synthetic, ideal attitude and synchronized sensors, no added random noise):
+
+| Window | Existing gravity filter | Kalman bias state |
+| --- | ---: | ---: |
+| Moving startup, 6–10 s, RMS climb error | 0.0100 m/s | 0.0048 m/s |
+| Sustained acceleration, 25–39 s, RMS climb error | 0.2333 m/s | 0.0067 m/s |
+| Steady climb after acceleration, 43–49 s, RMS error | 0.0311 m/s | 0.0049 m/s |
+| Resting, 85–100 s, mean climb error | +0.00006 m/s | −0.00016 m/s |
+| 30–45 s after bias step, mean climb error | approximately zero | +0.0106 m/s |
+
+This supports bench evaluation of the bias state; it does not establish flight readiness or
+prove superiority under pressure disturbances or changing attitude. The existing filter reacts
+faster to a changed offset. The comparison's old path retains its historical velocity prior;
+the new path uses the moving-start prior. Neither scalar correction fixes an incorrect gravity
+direction. Pressure lag, airflow disturbances, temperature changes, sustained turns and rotation
+of a per-axis bias into the vertical still require recorded-data and physical validation.
+
+The user proposed using a successful bias estimator for the old IMU too. That is a sensible
+follow-up: retain ICM quaternion-based vertical projection, replace only its scalar correction,
+then validate startup, drift, maneuvers and fault recovery with real ICM recordings/hardware.
+For this hardware-support branch, the ICM continues using its existing correction. Do not
+remove it solely on the basis of the new-board synthetic comparison.
+
+The experimental bias build was flashed to both application slots and the saved gyro calibration
+was restored after restart. In the first resting orientation (gravity approximately
+`[0.187, 0.018, 0.982] g`), twelve consecutive five-second diagnostic windows contained 1201
+valid climb updates over approximately 60.05 seconds, beginning about 13 seconds after wake:
+mean climb **−0.00035 m/s**, RMS climb **0.03377 m/s**. The estimated vertical bias settled
+near **−0.095 m/s²**. Statistics accumulate every published valid update; these are not means
+of the occasional point readings. No FIFO counter mismatches or IMU recovery events were
+observed in that interval. This meets the resting mean target in this orientation only.
+It does not establish six-face, moving-start, temperature or flight acceptance.
+
+Two timed diagnostic captures closed/reopened the ESP32 USB Serial/JTAG port with pySerial's
+default RTS assertion, coinciding with a return to the charging screen and a restarted device
+clock. This is consistent with the native USB reset-control sequence, not yet evidence of an
+IMU crash. Subsequent capture explicitly sets `rts=False` **before** opening the port and keeps
+one connection open. See the USB Serial/JTAG reset-control states in the
+[ESP32-S3 technical reference manual](https://documentation.espressif.com/esp32-s3_technical_reference_manual_en.pdf).
+Keep this setting in bench-capture scripts and investigate any restart that occurs independently
+of host control-line changes. The interrupted upright capture is excluded from resting statistics.
+With RTS inactive, a subsequent close/reopen check retained the running device clock
+(approximately 299–309 seconds), valid climb and increasing FIFO pair count without a restart.
+This supports the host-control explanation for the two interrupted captures.
+
+After the bias estimator and diagnostic averages were added, formatting, v3.2.8 dev/release
+builds, v3.2.6 release regression, gravity-projection tests, biased/unbiased SFLP fault/recovery
+replays, the filter comparison and the legacy simulator first-boot check passed.
+The diagnostic application remains installed for bench testing; both OTA slots were verified.
+Its SHA-256 is `003a4390e798396f6acd708eaef5b65fc4ba2beddd894104e0f8a26ef65089ac`.
+The release image was built but has not replaced this diagnostic application.
+
+With the capture connection held open and RTS inactive, the repeated upright test remained
+operational. Gravity was approximately `[-0.192, 0.922, 0.338] g`. A separate 60-second window
+beginning about 13 seconds after wake contained 1200 valid updates: mean climb **−0.00318 m/s**,
+RMS **0.03596 m/s**, with bias around −0.03 to −0.04 m/s² and no counter mismatches.
+This meets the resting mean target in the second tested orientation. Because the connection
+restart interrupted the original rotation test, this second window validates a fresh wake in
+that orientation, not uninterrupted in-flight adaptation to a 90-degree rotation.
+
+Outstanding physical acceptance includes six faces, continuous orientation changes/turns,
+moving cold start and wake, temperature drift, sensor/pressure latency, low-power current and
+fault injection. The unrelated POWER self-test failure also needs resolution before calling
+commissioning complete. No flight-readiness claim or global ICM-estimator replacement follows
+from these two resting windows.
+
+## Resume from this checkpoint (2026-10-20)
+
+This is an implemented, bench-tested development checkpoint, not a flight-qualified release.
+The implementation record above supersedes earlier planning alternatives where they differ.
+In particular, acceleration/gravity are the only FIFO streams enabled, host receive timestamps
+are used, and the new hardware currently uses the experimental Kalman bias correction.
+
+### Device and local artifacts
+
+- The tested ESP32-S3 board is MAC `7c:4f:ad:3b:ac:b0`. Both OTA slots contain the v3.2.8
+  **dev** application identified by the SHA-256 above. Its gyro calibration is saved in NVS.
+  Do not erase NVS merely to resume ordinary testing.
+- Auto-detect the Espressif USB port on each connection. The dev application uses native USB
+  Serial/JTAG; the release application's USB availability changes with the power state.
+  For diagnostic capture, construct the serial object without opening it, set `rts=False`
+  and `dtr=True`, then open it. Keep the connection open throughout a measurement.
+- Local, **gitignored** artifacts are under `.pio/imu-validation/`: the tested dev binary/ELF,
+  release binary, and two resting-statistics summaries. Captures are `.pio/imu-board-test.log`,
+  `.pio/imu-bias-board-test.log`, `.pio/imu-bias-upright.log`, and
+  `.pio/imu-serial-reopen-check.log`. Build output is in `.pio/imu-{dev,release,legacy}-build.log`.
+  These files are not available from a fresh clone; the measured results and image hash are
+  retained in this document. Preserve the ELF if investigating this particular flashed image.
+- Application-only flashing writes both `0x10000` and `0x340000`. Preserve the working DIO
+  bootloader. For a new blank board, follow the existing factory DIO bootloader-upload behavior.
+- The full commissioning run was not completed. IMU electrical/bias checks passed, but the
+  separate POWER check failed and interactive checks remained pending. Do not mark the device
+  fully commissioned based on the IMU result alone.
+
+### Next work, in order
+
+1. Capture controlled vertical movement, continuous rotation, and starts/wakes while moving.
+   Confirm correct climb sign, response latency and useful data within 3–10 seconds. Keep
+   barometric altitude, raw acceleration, gravity, correction and climb together in the record.
+   Synthetic moving-start tests passed; physical moving-start acceptance is still open.
+2. Expand the resting checks to all six faces, multiple boards and temperature changes. Test
+   how quickly the bias state follows orientation-dependent error and whether saved gyro bias
+   remains useful across temperature. Decide whether any per-axis accelerometer calibration is
+   needed; do not enable the legacy gravity learner alongside the bias estimator.
+3. Measure IMU/barometer phase and latency under realistic scheduler load. Decide whether the
+   simple newest-pair/host-time approach is sufficient before adding sensor timestamp handling.
+   Finalize rates, validity thresholds and Kalman noise from these measurements.
+4. Exercise hardware communication failures, stale data, backlog and saturation; review recovery
+   limits and fault reporting. Verify repeated off/charging/wake cycles and actual IMU power-down
+   current. Software recovery and power-down exist, but physical fault/current tests are pending.
+5. Run the complete factory reset, electrical test, calibration, saved-results retrieval and
+   interactive commissioning sequence. Check missing/corrupt calibration, interrupted tests,
+   recommissioning and update retention. Investigate the POWER failure rather than weakening
+   its check to obtain a pass; establish production thresholds using more than one board.
+6. Collect representative flight recordings, including sustained turns and moving startup.
+   Compare response and false indications against the existing implementation. Then review the
+   firmware changes, decide which temporary serial diagnostics to retain, and validate the normal
+   release USB/charging and update paths on hardware before release.
+
+Magnetometer support, tap gestures and migrating the ICM to the bias estimator are follow-ups,
+not prerequisites for the agreed initial v3.2.8 scope. Barometer-only fallback remains a separate
+product decision; the current implementation invalidates fused climb and mutes the vario.
+
+### Reproducing the automated checks
+
+Run the repository formatter and the `leaf_3_2_8_dev`, `leaf_3_2_8_release` and
+`leaf_3_2_6_release` PlatformIO builds according to `AGENTS.md`. Build firmware environments
+sequentially because they share the generated `src/vario/leaf_version.h`; do not commit generated
+version values. The last completed builds and checks passed; no firmware code changed afterward
+while preparing this handoff.
+
+For the new-board simulator, build in the repository's documented Docker environment with
+`make -C sim BUILD=/leaf/sim/build328 VARIANT=leaf_3_2_8 -j8`. On Windows use the PlatformIO
+environment's Python if the system `python` command is the Microsoft Store alias.
+
+- Generate replay fixtures with `python sim/tests/imu_replay.py` and
+  `python sim/tests/imu_replay.py -0.012`. Run `sim/build328/leafsim` against each corresponding
+  `sim/build/imu-sflp.log` or `sim/build/imu-sflp-biased.log` and matching `.txt` using
+  `--port 0 --speed 0 --scenario ... --script ...`.
+  **Omit `--play`**: the script starts playback at a defined device time. The generator prints
+  the default simulator path; use `sim/build328/leafsim` for the v3.2.8 build.
+- Run `python sim/tests/imu_filter_comparison.py` on the host; it invokes the built v3.2.8
+  simulator through Docker and saves its fixtures/output/summary under `sim/build/`.
+- Compile/run `sim/tests/gravity_projection.cpp` with a C++17 compiler and `-Isrc/vario`.
+- Build the default simulator and run `sim/scripts/first-boot.txt` with
+  `sim/recordings/thermal-climb.json` and `--play` for the legacy startup regression.
+
+## Remaining assumptions and decisions
+
+### Confirmed and no longer open
+
+- Exact IMU, magnetometer, speaker, I2C addresses, top-side mounting, and +Y board direction.
+- INT1 through IO expander P14; INT2 and magnetometer INT unused.
+- Polling first, with future tap/double-tap support deferred.
+- No initial magnetometer data/fusion or speaker firmware work.
+- Startup while flying is mandatory; a 3-10 second warm-up is acceptable.
+
+### Board and measurement checks
+
+- Confirm the remaining v3.2.8 pins/peripherals and flash layout match the v3.2.7 baseline.
+- Verify the actual sensor-vector signs and axis labeling; mounting information alone does not
+  establish the driver's sign convention.
+- Extend residual accelerometer/gravity measurements across temperature and orientation before
+  finalizing the experimental Kalman bias correction or adding per-axis calibration.
+- Finalize full scales, sample/filter rates, FIFO pairing, timestamp mapping, decimation, and
+  startup/fault thresholds from measured latency, noise, and sustained-turn behavior.
+- Validate saved gyro-bias reuse across temperature and resets, and define missing-calibration
+  behavior that remains compatible with moving startup.
+- Establish production commissioning thresholds and whether six-position accelerometer
+  calibration is worthwhile. Saved gyro bias does not settle this accelerometer question.
+
+### Product choice still open
+
+For persistent IMU failure, the proposed initial behavior is a visible fault and muted vario
+audio during recovery. Whether Leaf must continue with a tested **barometer-only climb mode**
+has not been confirmed. Preserve this as an explicit decision rather than silently treating zero
+acceleration or stale velocity as a fallback.

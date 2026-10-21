@@ -5,6 +5,7 @@
 
 #include "hardware/aht20.h"
 #include "hardware/buttons.h"
+#include "hardware/motion_sensor.h"
 #include "instruments/ambient.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
@@ -227,7 +228,23 @@ SelfTest::Status SelfTest::testIMU() {
   if (!imuTestInitialized) {
     imuTestInitialized = true;
     imuTestStartMillis = millis();
+#ifdef USE_LSM6DSV
+    MotionSensor::getInstance().startSelfTest();
+#endif
   }
+
+#ifdef USE_LSM6DSV
+  auto& sensor = MotionSensor::getInstance();
+  if (sensor.testResult() == LSM6DSV::TestResult::Running) return Status::Running;
+  if (sensor.testResult() != LSM6DSV::TestResult::Pass) {
+    selfTestInfo(
+        "`Test=IMU`, `Result=FAIL`, `Message=Electrical test or stationary bias failed`, "
+        "`Status=%s`",
+        sensor.status());
+    imuTestInitialized = false;
+    return Status::Fail;
+  }
+#endif
 
   if (!imu.accelValid() || !imu.velocityValid()) {
     uint32_t elapsedMillis = millis() - imuTestStartMillis;
@@ -248,7 +265,10 @@ SelfTest::Status SelfTest::testIMU() {
     // Check if acceleration values are within a reasonable range
     if (accelTotal < 1.2f && accelTotal > 0.8f) {
       result = Status::Pass;
-      selfTestInfo("`Test=IMU`,        `Result=PASS`, `Accel=%g`", accelTotal);
+      selfTestInfo(
+          "`Test=IMU`,        `Result=PASS`, `Accel=%g`, `Gravity=%g`, `VerticalAccel=%g`, "
+          "`Climb_mps=%g`",
+          accelTotal, imu.gravityEstimate(), imu.verticalAccel(), imu.getVelocity());
     } else {
       selfTestInfo("`Test=IMU`,        `Result=FAIL`, `Accel=%g`, `Message=Out of range`",
                    accelTotal);
@@ -829,6 +849,9 @@ void SelfTest::clearResults() {
   selfTest.statusAutoTests = Status::Unknown;
   selfTest.statusInteractiveTests = Status::Unknown;
   ambientTestCounter = 0;
+#ifdef USE_LSM6DSV
+  MotionSensor::getInstance().cancelSelfTest();
+#endif
   baroTestInitialized = false;
   imuTestInitialized = false;
 

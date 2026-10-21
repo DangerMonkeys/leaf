@@ -7,8 +7,8 @@
 
 #include "dispatch/message_types.h"
 #include "hardware/aht20.h"
-#include "hardware/icm_20948.h"
 #include "hardware/lc86g.h"
+#include "hardware/motion_sensor.h"
 #include "hardware/ms5611.h"
 
 namespace {
@@ -117,13 +117,13 @@ void MessageInjector::onCommand(const char* line, size_t len) {
   if (equals_const(line, len, "!Disconnect sensors")) {
     Serial.println("Disconnecting HW sensors");
     aht20.stopPublishing();
-    ICM20948::getInstance().stopPublishing();
+    MotionSensor::getInstance().stopPublishing();
     lc86g.stopPublishing();
     ms5611.stopPublishing();
   } else if (equals_const(line, len, "!Reconnect sensors")) {
     Serial.println("Reconnecting HW sensors");
     aht20.publishTo(bus_);
-    ICM20948::getInstance().publishTo(bus_);
+    MotionSensor::getInstance().publishTo(bus_);
     lc86g.publishTo(bus_);
     ms5611.publishTo(bus_);
   } else if (equals_const(line, len, "!Reset reference time")) {
@@ -235,6 +235,20 @@ void MessageInjector::onMotionUpdate(const char* line, size_t len) {
   next_field(line, len, pos, b, e);
   to_double(line, b, e, d);
   m.qz = d;
+
+  // Optional SFLP extension. Original nine-field recordings remain valid.
+  if (pos < len) {
+    next_field(line, len, pos, b, e);
+    m.hasGravity = b < e && line[b] == 'V';
+    next_field(line, len, pos, b, e);
+    if (!to_double(line, b, e, m.gx)) return;
+    next_field(line, len, pos, b, e);
+    if (!to_double(line, b, e, m.gy)) return;
+    next_field(line, len, pos, b, e);
+    if (!to_double(line, b, e, m.gz)) return;
+    next_field(line, len, pos, b, e);
+    m.reset = b < e && line[b] == '1';
+  }
 
   bus->receive(m);
 }

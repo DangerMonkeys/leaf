@@ -75,13 +75,20 @@ struct MotionUpdate : public etl::message<MOTION_UPDATE> {
   bool hasOrientation = false;
 
   // Orientation quaternion, containing orientation information if hasOrientation is true
-  double qx, qy, qz;
+  double qx = 0, qy = 0, qz = 0;
 
   // Whether this update includes acceleration information
   bool hasAcceleration = false;
 
   // Acceleration vector, containing acceleration information if hasAcceleration is true
-  double ax, ay, az;
+  double ax = 0, ay = 0, az = 0;
+
+  // SFLP gravity in sensor coordinates, in g. Independent of mounting and yaw.
+  bool hasGravity = false;
+  double gx = 0, gy = 0, gz = 0;
+
+  // A discontinuity invalidates the previous filter epoch (reset, sleep, FIFO loss).
+  bool reset = false;
 
   MotionUpdate(unsigned long t) : t(t) {};
 };

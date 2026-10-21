@@ -16,8 +16,8 @@
 #include "hardware/Leaf_SPI.h"
 #include "hardware/aht20.h"
 #include "hardware/buttons.h"
-#include "hardware/icm_20948.h"
 #include "hardware/lc86g.h"
+#include "hardware/motion_sensor.h"
 #include "hardware/ms5611.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
@@ -429,7 +429,8 @@ void TaskManager::doNecessaryTasks(void) {
     performTask.estimateWind = false;
   }
   if (performTask.imu) {
-    ICM20948::getInstance().update();
+    MotionSensor::getInstance().update();
+    if (!imu.velocityValid()) baro.invalidateClimb();
     checkpointOnce(loggedFirstImuTask, "task-imu-first");
     performTask.imu = false;
   }

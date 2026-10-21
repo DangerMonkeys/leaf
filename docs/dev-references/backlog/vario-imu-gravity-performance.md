@@ -5,6 +5,16 @@ description: Findings and future tuning notes for IMU gravity estimation and sta
 
 # Vario IMU Gravity Performance Backlog
 
+The v3.2.8 replacement plan is recorded in the
+[ST IMU and Separate Magnetometer Migration Backlog](st-imu-magnetometer-migration.md).
+That plan retains the ICM path for older boards and evaluates whether the new LSM6DSV needs
+additional gravity/accelerometer correction. The findings below describe the original ICM issue.
+
+The migration record also contains an experimental comparison against a Kalman acceleration-bias
+state. If bench and flight validation support it, evaluate that shared correction for the ICM
+while retaining its quaternion projection. Do not run both correction mechanisms together or
+remove the ICM gravity filter based only on the new-board synthetic tests.
+
 ## Context
 
 Some test units report a persistent non-zero climb rate while sitting stationary. A diagnostic
