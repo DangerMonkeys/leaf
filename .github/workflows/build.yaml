@@ -12,6 +12,10 @@ on:
 jobs:
   build:
     runs-on: windows-latest
+    env:
+      PLATFORMIO_CORE_VERSION: "6.1.19"
+      PLATFORMIO_BUILD_CACHE_DIR: ${{ github.workspace }}/.pio/build-cache
+      PIO_ENV: ${{ matrix.hardware-variant }}_${{ matrix.behavior-variant }}
     strategy:
       matrix:
         hardware-variant:
@@ -35,23 +39,52 @@ jobs:
           fetch-tags: true # Ensures tags are available
           fetch-depth: 0 # Ensures full history is fetched
 
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/pip
-            ~/.platformio/.cache
-          key: ${{ runner.os }}-pio
-
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: pip
+          cache-dependency-path: .github/workflows/build.yaml
+
+      # All variants use the same pinned platform and toolchain. Share this
+      # large cache instead of storing a copy for every matrix entry.
+      - name: Cache PlatformIO toolchain and downloads
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio/.cache
+            ~/.platformio/platforms
+            ~/.platformio/packages
+          key: ${{ runner.os }}-${{ runner.arch }}-pio-tools-v1-${{ env.PLATFORMIO_CORE_VERSION }}-${{ hashFiles('platformio.ini', 'src/variants/**/platformio.ini') }}
+
+      - name: Cache PlatformIO project libraries
+        uses: actions/cache@v4
+        with:
+          path: .pio/libdeps/${{ env.PIO_ENV }}
+          key: ${{ runner.os }}-${{ runner.arch }}-pio-libs-v1-${{ env.PLATFORMIO_CORE_VERSION }}-${{ env.PIO_ENV }}-${{ hashFiles('platformio.ini', 'src/variants/**/platformio.ini') }}
+
+      # GitHub caches are immutable. Save a new snapshot for each commit and
+      # restore the latest compatible snapshot so unchanged objects can be reused.
+      # Keep variants separate because their compiler flags and signatures differ.
+      - name: Cache PlatformIO compiled files
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PLATFORMIO_BUILD_CACHE_DIR }}
+          key: ${{ runner.os }}-${{ runner.arch }}-pio-build-v1-${{ env.PLATFORMIO_CORE_VERSION }}-${{ env.PIO_ENV }}-${{ hashFiles('platformio.ini', 'src/variants/**/platformio.ini', 'src/scripts/*.py') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-pio-build-v1-${{ env.PLATFORMIO_CORE_VERSION }}-${{ env.PIO_ENV }}-${{ hashFiles('platformio.ini', 'src/variants/**/platformio.ini', 'src/scripts/*.py') }}-
 
       - name: Install PlatformIO Core
-        run: pip install platformio==6.1.19
+        run: pip install platformio==${{ env.PLATFORMIO_CORE_VERSION }}
 
       - name: Build PlatformIO Project
-        run: pio run --environment ${{ matrix.hardware-variant }}_${{ matrix.behavior-variant }}
+        run: pio run --environment ${{ env.PIO_ENV }}
+
+      # Restoring firmware.bin from the build cache can skip the post-build
+      # rename action. Always prepare the expected release filename explicitly.
+      - name: Prepare release firmware artifact
+        if: matrix.behavior-variant == 'release'
+        run: Copy-Item ".pio/build/${{ env.PIO_ENV }}/firmware.bin" ".pio/build/${{ env.PIO_ENV }}/firmware-${{ matrix.hardware-variant }}.bin"
 
       - name: Upload firmware artifacts
         if: matrix.behavior-variant == 'release'
