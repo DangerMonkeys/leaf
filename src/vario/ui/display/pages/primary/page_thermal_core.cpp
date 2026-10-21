@@ -305,7 +305,9 @@ namespace {
   void drawLiftWindArrow(const ThermalCoreEstimate& estimate) {
     if (!estimate.centerValid) return;
     const WindEstimate& wind = windEstimator.getWindEstimate();
-    if (!wind.validEstimate || !isfinite(wind.windDirectionTrue)) return;
+    if (!wind.validEstimate || !isfinite(wind.windSpeed) || wind.windSpeed <= 0 ||
+        !isfinite(wind.windDirectionTrue))
+      return;
 
     // Point where the air is moving, in the same track-up frame as the center and breadcrumbs.
     const float angle = wind.windDirectionTrue - estimate.mapCourseDeciDeg * 0.1f * DEG_TO_RAD;

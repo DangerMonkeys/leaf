@@ -91,10 +91,27 @@ inside its border. The estimate uses the latest lap's altitude-projected breadcr
 weighting and gentle smoothing; it estimates the sampled lift, not an unseen thermal core. Reveal
 the live thermal to compare the estimate with the simulator's independent ground truth. Partial
 turns, weak lift and nearly straight paths cannot establish a new center. Once established, the
-last good center survives a brief exit or turn reversal: 15 seconds of straight flight ends
-guidance regardless of lift, while gentle turns in either direction allow up to 30 seconds
-without sustained circling or a new center fit. Roughly 2 degrees/second counts as turning.
-The retained center still projects to the current altitude and map bearing. Stale GPS hides it.
+last good center remains visible within 100 m, even when the recent trail cannot fit a new lap.
+It hides after five continuous seconds beyond 100 m and restores on return within 100 m. The
+retained center still projects to the current altitude and map bearing. Stale GPS temporarily
+hides it and interrupts the departure timer; it does not erase the center.
+
+Climb quality is signed, time-weighted net climb over the latest one or two completed,
+non-overlapping turns. A candidate within 40 m adjusts the center using the existing 35% smoothing.
+A candidate more than 40 m away switches the target directly only if its average climb is better
+and its position stays within 15 m for three seconds. Equal or weaker candidates also smooth.
+Incomplete fits retain the old center and its climb history. Fresh fits exclude connecting flight
+after three seconds of straight flight or a confirmed 30-degree direction reversal. Only two lap
+summaries are stored; the breadcrumb buffer stays at 40 samples.
+
+For a coherent strong-side/weak-side lift gradient, the target's displacement from the geometric
+orbit center is amplified by up to 4x, capped at roughly one directional orbit radius and the
+sampled strong-side extent. Gain ramps above a 0.3 m/s contrast deadband and reaches its maximum
+at a coherent 1 m/s contrast. Isolated spikes and scattered noise get no extra gain. Multiple
+weaker observations surrounding the strongest region reduce gain to 1, retaining an interior
+estimate when the peak is bracketed. All geometry uses the same altitude projection; the retained
+target's slant includes the amplified displacement. Position smoothing and distance retention
+remain unchanged.
 
 A 30 m target circle is drawn over the breadcrumbs at the calculated lift center. It has two
 black circles at its radius and one pixel outside, with white circles one pixel inside and two

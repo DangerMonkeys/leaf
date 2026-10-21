@@ -12,12 +12,8 @@ namespace {
   constexpr uint16_t INITIAL_TURN_DEG = 120;
   constexpr uint8_t REENTRY_TURN_SAMPLES = 10;
   constexpr uint16_t REENTRY_TURN_DEG = 90;
-  constexpr uint32_t TURN_EXIT_COURSE_WINDOW_MS = 7000;
-  constexpr uint32_t TURN_EXIT_MIN_COURSE_WINDOW_MS = 6000;
-  // Over this window, roughly 2 degrees/second in either direction counts as a gentle turn.
-  constexpr uint16_t TURN_EXIT_MAX_COURSE_DEVIATION_DEG = 10;
-  constexpr uint32_t TURN_EXIT_STRAIGHT_MS = 15000;
-  constexpr uint32_t TURN_EXIT_TURNING_MS = 30000;
+  constexpr uint32_t FIT_STRAIGHT_BREAK_MS = 3000;
+  constexpr uint16_t FIT_REVERSE_BREAK_DEG = 30;
   constexpr uint8_t GUIDANCE_BIN_COUNT = 12;
   constexpr uint8_t LOOKBACK_S = 40;
   constexpr int16_t MAP_CENTER_Y = 124;
@@ -48,62 +44,14 @@ namespace {
   int16_t headingDelta(int16_t newer, int16_t older) { return wrap180(newer - older); }
 
   int16_t recentTurnTotalDeg(const ThermalTracker::CoreSamples& samples, uint8_t count,
-                             uint8_t windowSamples) {
+                             uint8_t windowSamples, uint32_t segmentStartMs) {
     const uint8_t first = count > windowSamples ? count - windowSamples : 0;
     int16_t total = 0;
     for (uint8_t i = first + 1; i < count; ++i) {
+      if (static_cast<int32_t>(samples[i - 1].capturedAtMs - segmentStartMs) < 0) continue;
       total += headingDelta(samples[i].courseDeg, samples[i - 1].courseDeg);
     }
     return total;
-  }
-
-  bool recentCourseWindowIsStraight(const ThermalTracker::CoreSamples& samples, uint8_t count,
-                                    uint32_t& windowSpanMs) {
-    windowSpanMs = 0;
-    if (count < 2) return false;
-
-    const uint32_t latestMs = samples[count - 1].capturedAtMs;
-    uint8_t first = count - 1;
-    while (first > 0 && latestMs - samples[first - 1].capturedAtMs <= TURN_EXIT_COURSE_WINDOW_MS) {
-      first--;
-    }
-
-    windowSpanMs = latestMs - samples[first].capturedAtMs;
-    const uint8_t pointCount = count - first;
-    if (windowSpanMs < TURN_EXIT_MIN_COURSE_WINDOW_MS || pointCount < 5) return false;
-
-    // Unwrap the course through the window, then measure its angular envelope. Discarding one
-    // value from each extreme makes the result insensitive to one isolated GPS course jump.
-    int32_t unwrappedDeg = 0;
-    int32_t lowest = 0;
-    int32_t secondLowest = INT32_MAX;
-    int32_t highest = 0;
-    int32_t secondHighest = INT32_MIN;
-    for (uint8_t i = first + 1; i < count; ++i) {
-      unwrappedDeg += headingDelta(samples[i].courseDeg, samples[i - 1].courseDeg);
-      if (unwrappedDeg < lowest) {
-        secondLowest = lowest;
-        lowest = unwrappedDeg;
-      } else if (unwrappedDeg < secondLowest) {
-        secondLowest = unwrappedDeg;
-      }
-      if (unwrappedDeg > highest) {
-        secondHighest = highest;
-        highest = unwrappedDeg;
-      } else if (unwrappedDeg > secondHighest) {
-        secondHighest = unwrappedDeg;
-      }
-    }
-
-    const int32_t robustLowest = secondLowest == INT32_MAX ? lowest : secondLowest;
-    const int32_t robustHighest = secondHighest == INT32_MIN ? highest : secondHighest;
-    return robustHighest - robustLowest <= TURN_EXIT_MAX_COURSE_DEVIATION_DEG;
-  }
-
-  int8_t directionForTurn(int16_t totalDeg) {
-    if (totalDeg > 5) return 1;
-    if (totalDeg < -5) return -1;
-    return 0;
   }
 
   constexpr int16_t DEFAULT_BREADCRUMB_SCALE_CMS = 350;
@@ -203,16 +151,52 @@ void ThermalCore::reset() {
   estimate_ = {};
   turnGuidanceActive_ = false;
   turnGuidancePreviouslyActive_ = false;
-  activeTurnDirection_ = 0;
-  straightDurationMs_ = 0;
   lastGuidanceSampleMs_ = 0;
-  lastSustainedTurnMs_ = 0;
+  fitStartMs_ = fitStraightMs_ = fitReverseStartMs_ = 0;
+  fitReverseDeg_ = 0;
+  fitDirection_ = 0;
   episodeClimbScaleValid_ = false;
   episodeMaxClimbCms_ = 0;
-  centerValid_ = false;
-  centerEastM_ = centerNorthM_ = centerAltitudeM_ = 0;
-  centerSlopeEast_ = centerSlopeNorth_ = 0;
-  lastCenterSampleMs_ = 0;
+  target_.reset();
+}
+
+void ThermalCore::updateTurnSegment(const ThermalTracker::CoreSample& latest,
+                                    const ThermalTracker::CoreSample& prior) {
+  const uint32_t intervalMs = latest.capturedAtMs - prior.capturedAtMs;
+  const int16_t delta = headingDelta(latest.courseDeg, prior.courseDeg);
+  if (!latest.valid || !prior.valid || intervalMs < MIN_TURN_SAMPLE_INTERVAL_MS ||
+      intervalMs > MAX_TURN_SAMPLE_INTERVAL_MS || abs(delta) > 90) {
+    fitDirection_ = 0;
+    fitStartMs_ = latest.capturedAtMs;
+    fitStraightMs_ = fitReverseDeg_ = 0;
+    return;
+  }
+  if (static_cast<uint32_t>(abs(delta)) * 1000 <= 2 * intervalMs) {
+    fitStraightMs_ = min(fitStraightMs_ + intervalMs, FIT_STRAIGHT_BREAK_MS);
+    if (fitStraightMs_ >= FIT_STRAIGHT_BREAK_MS) {
+      fitDirection_ = 0;
+      fitStartMs_ = latest.capturedAtMs;
+      fitReverseDeg_ = 0;
+    }
+    return;
+  }
+  fitStraightMs_ = 0;
+  const int8_t direction = delta > 0 ? 1 : -1;
+  if (fitDirection_ == 0) {
+    fitDirection_ = direction;
+    fitStartMs_ = prior.capturedAtMs;
+    fitReverseDeg_ = 0;
+  } else if (direction != fitDirection_) {
+    if (fitReverseDeg_ == 0) fitReverseStartMs_ = prior.capturedAtMs;
+    fitReverseDeg_ += abs(delta);
+    if (fitReverseDeg_ >= FIT_REVERSE_BREAK_DEG) {
+      fitDirection_ = direction;
+      fitStartMs_ = fitReverseStartMs_;
+      fitReverseDeg_ = 0;
+    }
+  } else {
+    fitReverseDeg_ = 0;
+  }
 }
 
 void ThermalCore::update() {
@@ -227,44 +211,24 @@ void ThermalCore::update() {
   const ThermalTracker::CoreSample& latest = samples[sampleCount - 1];
   const uint32_t nowMs = millis();
   const bool guidanceWasActive = turnGuidanceActive_;
+  if (latest.capturedAtMs != lastGuidanceSampleMs_) {
+    if (sampleCount >= 2) updateTurnSegment(latest, samples[sampleCount - 2]);
+    lastGuidanceSampleMs_ = latest.capturedAtMs;
+  }
   const uint8_t turnWindowSamples =
       turnGuidancePreviouslyActive_ ? REENTRY_TURN_SAMPLES : INITIAL_TURN_SAMPLES;
   const uint16_t requiredTurnDeg =
       turnGuidancePreviouslyActive_ ? REENTRY_TURN_DEG : INITIAL_TURN_DEG;
-  const int16_t recentTurn = recentTurnTotalDeg(samples, sampleCount, turnWindowSamples);
+  const int16_t recentTurn =
+      recentTurnTotalDeg(samples, sampleCount, turnWindowSamples, fitStartMs_);
   const bool hasSufficientRecentTurn =
       sampleCount >= turnWindowSamples && abs(recentTurn) >= requiredTurnDeg;
 
-  if (latest.capturedAtMs != lastGuidanceSampleMs_) {
-    uint32_t courseWindowSpanMs = 0;
-    if (recentCourseWindowIsStraight(samples, sampleCount, courseWindowSpanMs)) {
-      const uint32_t newSampleMs =
-          lastGuidanceSampleMs_ == 0 ? 0 : latest.capturedAtMs - lastGuidanceSampleMs_;
-      straightDurationMs_ = straightDurationMs_ == 0
-                                ? courseWindowSpanMs
-                                : min(straightDurationMs_ + newSampleMs, TURN_EXIT_STRAIGHT_MS);
-    } else {
-      straightDurationMs_ = 0;
-    }
-    lastGuidanceSampleMs_ = latest.capturedAtMs;
-  }
-
-  if (turnGuidanceActive_) {
-    if (hasSufficientRecentTurn) lastSustainedTurnMs_ = latest.capturedAtMs;
-    const bool straightExit = straightDurationMs_ >= TURN_EXIT_STRAIGHT_MS;
-    const bool turningExit = nowMs - lastSustainedTurnMs_ >= TURN_EXIT_TURNING_MS;
-    if (straightExit || turningExit) {
-      turnGuidanceActive_ = false;
-      activeTurnDirection_ = 0;
-    } else {
-      const int8_t recentDirection = directionForTurn(recentTurn);
-      if (recentDirection != 0) activeTurnDirection_ = recentDirection;
-    }
-  } else if (straightDurationMs_ == 0 && hasSufficientRecentTurn) {
+  if (fitDirection_ == 0) {
+    turnGuidanceActive_ = false;
+  } else if (!turnGuidanceActive_ && hasSufficientRecentTurn) {
     turnGuidanceActive_ = true;
     turnGuidancePreviouslyActive_ = true;
-    activeTurnDirection_ = directionForTurn(recentTurn);
-    lastSustainedTurnMs_ = latest.capturedAtMs;
   }
 
   const int16_t recentMaxClimbCms = maxClimb(samples, sampleCount);
@@ -282,7 +246,7 @@ void ThermalCore::update() {
   const int16_t breadcrumbMaxClimbCms =
       episodeClimbScaleValid_ ? episodeMaxClimbCms_ : DEFAULT_BREADCRUMB_SCALE_CMS;
 
-  const int8_t direction = turnGuidanceActive_ ? activeTurnDirection_ : 0;
+  const int8_t direction = turnGuidanceActive_ ? fitDirection_ : 0;
   const int16_t aircraftX = direction < 0   ? RIGHT_AIRCRAFT_X
                             : direction > 0 ? LEFT_AIRCRAFT_X
                                             : CENTER_AIRCRAFT_X;
@@ -298,36 +262,14 @@ void ThermalCore::update() {
   estimate_.mapCourseDeciDeg = static_cast<int16_t>(roundf(mapReference.courseDeg * 10));
 
   const auto center = estimateThermalLiftCenter(samples, sampleCount, direction, targetAltM,
-                                                settings.vario_climbStart);
+                                                settings.vario_climbStart, fitStartMs_);
   const bool samplesFresh = nowMs - latest.capturedAtMs <= MAX_TURN_SAMPLE_INTERVAL_MS;
-  if (centerValid_) {
-    // Keep a retained center at the pilot's current altitude while a reversal interrupts the fit.
-    centerEastM_ += centerSlopeEast_ * (targetAltM - centerAltitudeM_);
-    centerNorthM_ += centerSlopeNorth_ * (targetAltM - centerAltitudeM_);
-    centerAltitudeM_ = targetAltM;
-  }
-  if (center.valid && samplesFresh) {
-    if (!centerValid_) {
-      centerEastM_ = center.eastM;
-      centerNorthM_ = center.northM;
-    } else {
-      if (latest.capturedAtMs != lastCenterSampleMs_) {
-        centerEastM_ += (center.eastM - centerEastM_) * 0.35f;
-        centerNorthM_ += (center.northM - centerNorthM_) * 0.35f;
-      }
-    }
-    centerAltitudeM_ = targetAltM;
-    centerSlopeEast_ = center.slopeEast;
-    centerSlopeNorth_ = center.slopeNorth;
-    lastCenterSampleMs_ = latest.capturedAtMs;
-    centerValid_ = true;
-  } else if (!turnGuidanceActive_ || nowMs - lastCenterSampleMs_ >= TURN_EXIT_TURNING_MS) {
-    centerValid_ = false;
-  }
-  // A missing lap fit gets a grace period; missing GPS still hides the map target immediately.
-  estimate_.centerValid = centerValid_ && samplesFresh;
+  target_.projectToAltitude(targetAltM);
+  if (samplesFresh) target_.observe(center, latest.capturedAtMs);
+  target_.updateVisibility(latest.xM, latest.yM, latest.capturedAtMs, samplesFresh);
+  estimate_.centerValid = target_.visible() && samplesFresh;
   if (estimate_.centerValid) {
-    pointToScreen(centerEastM_, centerNorthM_, mapReference.xM, mapReference.yM,
+    pointToScreen(target_.eastM(), target_.northM(), mapReference.xM, mapReference.yM,
                   mapReference.courseDeg, aircraftX, estimate_.centerX, estimate_.centerY);
   }
 

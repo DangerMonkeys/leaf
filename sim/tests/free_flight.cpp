@@ -28,6 +28,21 @@ int main() {
   a.parameters.drifting = true;
   a.profile(1000, cx, cy, radius, strength);
   assert(fabs(hypot(cx, cy) - 600) < .01);
+
+  // Zero wind stops time drift, while the independent plume tilt still shifts
+  // the center with altitude. A vertical plume stays centered at every height.
+  auto calm = a;
+  calm.parameters.windMps = 0;
+  calm.profile(1100, cx, cy, radius, strength);
+  const double calmX = cx, calmY = cy;
+  assert(fabs(hypot(cx, cy) - 50) < .01);
+  calm.elapsedS += 600;
+  calm.profile(1100, cx, cy, radius, strength);
+  assert(fabs(cx - calmX) < .001 && fabs(cy - calmY) < .001);
+  calm.parameters.tiltDeg = 0;
+  calm.profile(1100, cx, cy, radius, strength);
+  assert(fabs(cx) < .001 && fabs(cy) < .001);
+
   a.parameters.drifting = false;
   a.elapsedS = 0;
   const double edge = a.liftAt(60, 0, 1000);

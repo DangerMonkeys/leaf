@@ -40,16 +40,39 @@ namespace {
     };
     auto center = locate(circle);
     assert(center.valid);
+    assert(center.lapStartMs == 1000 && center.lapEndMs == 37000);
+    assert(fabsf(center.climbIntegralCmsMs / center.lapDurationMs - 200) < 0.01f);
+    assert(!estimateThermalLiftCenter(circle, circle.size(), 1, 1000, 5, 2000).valid);
     assert(fabsf(center.eastM - 100) < 0.2f && fabsf(center.northM - 200) < 0.2f);
     assert(!estimateThermalLiftCenter(circle, 28, 1, 1000, 5).valid);  // partial turn
     assert(!locate(circle, 1000, -1).valid);                           // wrong turn direction
     auto samples = circle;
+    uint32_t timeMs = 1000;
+    for (uint8_t i = 0; i < samples.size(); ++i) {
+      if (i) timeMs += i <= 18 ? 500 : 1500;
+      samples[i].capturedAtMs = timeMs;
+      samples[i].climbCms = i <= 18 ? 300 : -100;
+    }
+    center = locate(samples);
+    assert(center.valid);
+    // 9 seconds at +3 m/s, then 27 seconds including a transition to -1 m/s.
+    // Signed, time-weighted averaging differs substantially from angle/lift weighting.
+    assert(fabsf(center.lapDurationMs - 36000) < 0.01f);
+    assert(fabsf(center.climbIntegralCmsMs / center.lapDurationMs - 8.333333f) < 0.01f);
+    samples = circle;
+    for (uint8_t i = 0; i < samples.size(); ++i) {
+      samples[i].courseDeg = (i * 11 + 90) % 360;
+    }
+    center = locate(samples);
+    assert(center.valid && fabsf(center.lapDurationMs - 360000.0f / 11) < 0.01f);
+    assert(center.lapStartMs == 4273);
+    samples = circle;
     for (uint8_t i = 0; i < samples.size(); ++i) {
       samples[i].climbCms = roundf(200 + 100 * sinf(i * 10 * DEG_TO_RAD));
     }
     center = locate(samples);
-    // A known sinusoidal lift difference shifts the centroid 7.5 m toward the strong side.
-    assert(center.valid && fabsf(center.eastM - 107.5f) < 0.3f);
+    // The centroid alone shifts only 7.5 m. Coherent lopsided lift now guides to the strong edge.
+    assert(center.valid && fabsf(center.eastM - 130) < 0.4f && center.guidanceGain > 3.8f);
     assert(fabsf(center.northM - 200) < 0.3f);
     for (auto& sample : samples) sample.climbCms = -100;
     assert(!locate(samples).valid);
@@ -72,6 +95,244 @@ namespace {
     assert(fabsf(center.slopeNorth - 2.0f / 3) < 0.001f);
     for (auto& sample : samples) sample.courseDeg = (360 - sample.courseDeg) % 360;
     assert(locate(samples, 1100, -1).valid);  // also supports left turns
+  }
+
+  void checkGuidanceGain() {
+    std::array<ThermalTracker::CoreSample, 37> circle;
+    for (uint8_t i = 0; i < circle.size(); ++i) {
+      auto& sample = circle[i];
+      const float angle = i * 10 * DEG_TO_RAD;
+      sample.valid = true;
+      sample.xM = roundf(100 + 30 * sinf(angle));
+      sample.yM = roundf(200 + 30 * cosf(angle));
+      sample.altM = 1000;
+      sample.courseDeg = (i * 10 + 90) % 360;
+      sample.climbCms = 200;
+      sample.capturedAtMs = 1000 + i * 1000;
+    }
+    const auto locate = [&](const auto& samples, float altitude = 1000, int8_t direction = 1,
+                            uint32_t segmentStartMs = 0) {
+      return estimateThermalLiftCenter(samples, samples.size(), direction, altitude, 5,
+                                       segmentStartMs);
+    };
+    auto center = locate(circle);
+    assert(center.valid && center.guidanceGain == 1);
+    assert(fabsf(center.eastM - 100) < 0.2f && fabsf(center.northM - 200) < 0.2f);
+    for (int phase : {0, 90, 180, 270}) {
+      auto samples = circle;
+      for (uint8_t i = 0; i < samples.size(); ++i) {
+        samples[i].climbCms = roundf(200 + 100 * cosf((i * 10 - phase) * DEG_TO_RAD));
+      }
+      center = locate(samples);
+      assert(center.valid && center.guidanceGain > 3.8f);
+      assert(fabsf(center.eastM - (100 + 30 * sinf(phase * DEG_TO_RAD))) < 0.4f);
+      assert(fabsf(center.northM - (200 + 30 * cosf(phase * DEG_TO_RAD))) < 0.4f);
+      for (auto& sample : samples) sample.courseDeg = (360 - sample.courseDeg) % 360;
+      const auto left = locate(samples, 1000, -1);
+      assert(left.valid && fabsf(left.eastM - center.eastM) < 0.01f);
+      assert(fabsf(left.northM - center.northM) < 0.01f);
+    }
+    auto samples = circle;
+    for (uint8_t i = 0; i < samples.size(); ++i) {
+      samples[i].climbCms = roundf(200 + 10 * sinf(i * 10 * DEG_TO_RAD));
+    }
+    center = locate(samples);
+    assert(center.valid && center.guidanceGain == 1);  // below 0.3 m/s contrast deadband
+    for (uint8_t i = 0; i < samples.size(); ++i) {
+      samples[i].climbCms = roundf(200 + 25 * sinf(i * 10 * DEG_TO_RAD));
+    }
+    center = locate(samples);
+    assert(center.valid && center.guidanceGain > 1.5f && center.guidanceGain < 2.2f);
+    samples = circle;
+    samples[9].climbCms = 1000;
+    center = locate(samples);
+    assert(center.valid && center.guidanceGain == 1);  // a single hot breadcrumb gets no boost
+    samples = circle;
+    for (uint8_t i = 0; i < samples.size(); ++i) samples[i].climbCms = i % 2 ? 100 : 300;
+    center = locate(samples);
+    assert(center.valid && center.guidanceGain == 1);  // scattered noise is not a coherent slope
+    samples = circle;
+    for (uint8_t i = 0; i < samples.size(); ++i) {
+      samples[i].climbCms = roundf(200 + 190 * sinf(i * 10 * DEG_TO_RAD));
+    }
+    center = locate(samples);
+    assert(center.valid && center.eastM > 129 &&
+           center.eastM <= 130.4f);  // bounded at sampled edge
+    for (uint8_t i = 0; i < samples.size(); ++i) {
+      const float angle = i * 10 + 8 * sinf(i * 20 * DEG_TO_RAD);
+      samples[i].xM = roundf(100 + 45 * sinf(angle * DEG_TO_RAD));
+      samples[i].yM = roundf(200 + 20 * cosf(angle * DEG_TO_RAD));
+      samples[i].courseDeg = static_cast<int16_t>(roundf(angle + 90)) % 360;
+      samples[i].climbCms = roundf(200 + (samples[i].xM - 100) * 100.0f / 45);
+    }
+    center = locate(samples);
+    assert(center.valid && center.eastM > 142 && center.eastM < 146);
+    assert(fabsf(center.northM - 200) <
+           1);  // uneven speed/oval path retains the strong-side direction
+
+    samples = circle;
+    for (uint8_t i = 0; i < samples.size(); ++i) {
+      samples[i].climbCms = 200 + 50 * roundf(2 * sinf(i * 10 * DEG_TO_RAD));
+      samples[i].wind.east = (samples[i].climbCms + 100) / 50;
+      samples[i].wind.north = 0;  // every observation has the same 0.5 m/m eastward slant
+    }
+    const auto below = locate(samples);
+    const auto above = locate(samples, 1100);
+    assert(below.valid && above.valid && below.guidanceGain > 3);
+    assert(fabsf(above.eastM - below.eastM - 50) < 0.01f);
+    assert(fabsf(above.northM - below.northM) < 0.01f && fabsf(above.slopeEast - 0.5f) < 0.001f);
+
+    // A recent outer lap surrounds the inner lap's strongest region with weaker observations.
+    // The peak is bracketed, so the inner estimate should not be extrapolated to its edge.
+    for (uint8_t i = 0; i < samples.size(); ++i) {
+      const float angle = i * 20 * DEG_TO_RAD;
+      const float radius = i < 18 ? 40 : 20;
+      samples[i] = circle[i];
+      samples[i].xM = roundf(100 + radius * cosf(angle));
+      samples[i].yM = roundf(200 + radius * sinf(angle));
+      samples[i].courseDeg = (i * 20 + 90) % 360;
+      const float x = samples[i].xM - 110, y = samples[i].yM - 200;
+      samples[i].climbCms = roundf(50 + 300 * expf(-(x * x + y * y) / 450));
+    }
+    center = locate(samples);
+    assert(center.valid && center.guidanceGain == 1 && center.eastM < 110);
+    const auto unbracketed = locate(samples, 1000, 1, samples[18].capturedAtMs);
+    assert(unbracketed.valid && unbracketed.guidanceGain > 3);
+    assert(unbracketed.eastM >
+           center.eastM + 8);  // old segments cannot supply surrounding evidence
+  }
+
+  ThermalLiftCenter targetLap(float eastM, float climbCms, uint32_t startMs, uint32_t endMs) {
+    ThermalLiftCenter lap;
+    lap.valid = true;
+    lap.eastM = eastM;
+    lap.lapStartMs = startMs;
+    lap.lapEndMs = endMs;
+    lap.lapDurationMs = endMs - startMs;
+    lap.climbIntegralCmsMs = climbCms * lap.lapDurationMs;
+    return lap;
+  }
+
+  ThermalCoreTarget establishedTarget(float climbCms = 200) {
+    ThermalCoreTarget target;
+    target.projectToAltitude(1000);
+    target.observe(targetLap(0, climbCms, 1000, 19000), 19000);
+    target.updateVisibility(0, 0, 19000, true);
+    return target;
+  }
+
+  void checkClimbHistory() {
+    ThermalCoreClimbHistory history;
+    history.add(targetLap(0, 100, 1000, 19000));
+    history.add(targetLap(0, 900, 2000, 20000));  // overlapping sliding fit is not another turn
+    assert(fabsf(history.averageCms() - 100) < 0.01f);
+    history.add(targetLap(0, 300, 19000, 28000));
+    assert(fabsf(history.averageCms() - 166.66667f) < 0.01f);
+    history.add(targetLap(0, 500, 28000, 46000));
+    assert(fabsf(history.averageCms() - 433.33333f) < 0.01f);  // oldest turn discarded
+    history.add(targetLap(0, -100, 46000, 64000));
+    assert(fabsf(history.averageCms() - 200) < 0.01f);
+  }
+
+  void checkDistanceRetention() {
+    auto target = establishedTarget();
+    // Incomplete fits and straight flight nearby have no timeout, including exactly 100 m.
+    for (uint32_t ms = 20000; ms <= 80000; ms += 1000) {
+      target.observe({}, ms);
+      target.updateVisibility(100, 0, ms, true);
+      assert(target.visible() && target.averageClimbCms() == 200);
+    }
+    for (uint32_t ms = 81000; ms < 86000; ms += 1000) {
+      target.updateVisibility(100.01f, 0, ms, true);
+      assert(target.visible());
+    }
+    target.updateVisibility(100.01f, 0, 86000, true);
+    assert(!target.visible() && target.hasCenter());
+    target.updateVisibility(100, 0, 87000, true);
+    assert(target.visible());
+    for (uint32_t ms = 88000; ms <= 92000; ms += 1000) target.updateVisibility(101, 0, ms, true);
+    target.updateVisibility(99, 0, 93000, true);  // interrupts the departure timer
+    for (uint32_t ms = 94000; ms <= 98000; ms += 1000) {
+      target.updateVisibility(101, 0, ms, true);
+      assert(target.visible());
+    }
+    target.updateVisibility(101, 0, 99000, true);
+    assert(!target.visible());
+    target.updateVisibility(0, 0, 100000, true);
+    target.updateVisibility(101, 0, 101000, true);
+    target.updateVisibility(101, 0, 102000, true);
+    target.updateVisibility(101, 0, 105000, false);  // GPS outage cannot count as continuous exit
+    for (uint32_t ms = 108000; ms <= 112000; ms += 1000) {
+      target.updateVisibility(101, 0, ms, true);
+      assert(target.visible());
+    }
+    target.updateVisibility(101, 0, 113000, true);
+    assert(!target.visible());
+    target.updateVisibility(0, 0, 114000, true);
+    assert(target.visible());
+
+    ThermalCoreTarget projected;
+    projected.projectToAltitude(1000);
+    auto lap = targetLap(0, 200, 1000, 19000);
+    lap.slopeEast = 2;
+    projected.observe(lap, 19000);
+    projected.projectToAltitude(1050);
+    assert(projected.eastM() == 100);
+    projected.updateVisibility(200, 0, 20000, true);
+    assert(projected.visible());  // distance is measured at today's altitude
+    projected.reset();
+    assert(!projected.hasCenter() && !projected.visible());
+  }
+
+  void checkCenterReplacement() {
+    auto target = establishedTarget();
+    target.observe(targetLap(40, 300, 20000, 38000), 38000);
+    assert(fabsf(target.eastM() - 14) < 0.01f);  // exactly 40 m still smooths
+    const float once = target.eastM();
+    target.observe(targetLap(40, 300, 20000, 38000), 38000);
+    assert(target.eastM() == once);  // repeated display updates do not smooth twice
+
+    target = establishedTarget();
+    for (uint32_t ms = 38000; ms <= 41000; ms += 1000) {
+      target.observe(targetLap(80, 300, ms - 18000, ms), ms);
+      if (ms < 41000) {
+        assert(target.eastM() == 0 && target.averageClimbCms() == 200);
+      }
+    }
+    assert(target.eastM() == 80 && target.averageClimbCms() == 300);
+    for (float candidateClimb : {100.0f, 200.0f}) {
+      target = establishedTarget();
+      target.observe(targetLap(80, candidateClimb, 20000, 38000), 38000);
+      assert(fabsf(target.eastM() - 28) < 0.01f);  // weaker and equal candidates smooth immediately
+      target.observe(targetLap(80, candidateClimb, 21000, 39000), 39000);
+      assert(fabsf(target.eastM() - 46.2f) < 0.01f);
+    }
+
+    target = establishedTarget();
+    target.observe(targetLap(80, 300, 20000, 38000), 38000);
+    for (uint32_t ms = 39000; ms <= 42000; ms += 1000) {
+      target.observe(targetLap(100, 300, ms - 18000, ms), ms);  // moved >15 m; restart confirmation
+      if (ms < 42000) assert(target.eastM() == 0);
+    }
+    assert(target.eastM() == 100);
+    target = establishedTarget();
+    target.observe(targetLap(80, 300, 20000, 38000), 38000);
+    target.observe({}, 39000);  // invalid fit interrupts confirmation without losing the old center
+    for (uint32_t ms = 40000; ms <= 43000; ms += 1000) {
+      target.observe(targetLap(80, 300, ms - 18000, ms), ms);
+      if (ms < 43000) assert(target.eastM() == 0 && target.visible());
+    }
+    assert(target.eastM() == 80);
+
+    target = establishedTarget();
+    for (uint32_t ms = 20000; ms <= 25000; ms += 1000) target.updateVisibility(200, 0, ms, true);
+    assert(!target.visible());
+    for (uint32_t ms = 38000; ms <= 41000; ms += 1000) {
+      target.observe(targetLap(200, 300, ms - 18000, ms), ms);
+      target.updateVisibility(200, 0, ms, true);
+    }
+    assert(target.eastM() == 200 &&
+           target.visible());  // hidden old target replaced without a blink
   }
 
   void checkCenterDrawing() {
@@ -326,7 +587,8 @@ namespace {
 
   void checkGuidanceRetention() {
     auto& device = sim::runtime();
-    const auto startFlight = [&](int initialDirection, float exitRate, bool reverse) {
+    const auto startFlight = [&](int initialDirection, float exitRate, bool reverse,
+                                 float exitSpeed = 1.0f, bool returnToCenter = false) {
       sim::scenario().pause();
       thermalTracker.reset();
       thermalCore.reset();
@@ -337,8 +599,16 @@ namespace {
             << "},\"legs\":["
             << "{\"durationS\":60,\"airspeedMps\":9.5,\"climbMps\":2,\"turnRateDegPerS\":"
             << initialDirection * 20 << "},"
-            << "{\"durationS\":" << (reverse ? 5 : 45)
-            << ",\"airspeedMps\":9.5,\"climbMps\":2,\"turnRateDegPerS\":" << exitRate << "}";
+            << "{\"durationS\":"
+            << (reverse          ? 5
+                : returnToCenter ? 20
+                                 : 45)
+            << ",\"airspeedMps\":" << exitSpeed
+            << ",\"climbMps\":2,\"turnRateDegPerS\":" << exitRate << "}";
+        if (returnToCenter) {
+          out << ",{\"durationS\":20,\"airspeedMps\":9.5,\"climbMps\":2,\"headingDeg\":"
+              << (initialDirection * 1200 + 180 + 3600) % 360 << "}";
+        }
         if (reverse) {
           out << ",{\"durationS\":60,\"airspeedMps\":9.5,\"climbMps\":2,\"turnRateDegPerS\":"
               << -initialDirection * 20 << "}";
@@ -359,16 +629,22 @@ namespace {
         const uint32_t start = startFlight(direction, exitRate, false);
         flyUntil(start + 60000);
         assert(thermalCore.estimate().centerValid);
-        // Lift stays strong: straight flight must still time out after 15 seconds.
+        // Slow excursions stay nearby even after the old straight/turning timers would expire.
         flyUntil(start + 73000);
         assert(thermalCore.estimate().centerValid);
         flyUntil(start + 80000);
-        assert(thermalCore.estimate().centerValid == (exitRate != 0));
+        assert(thermalCore.estimate().centerValid);
         flyUntil(start + 100000);
-        assert(!thermalCore.estimate().centerValid && thermalCore.estimate().direction == 0);
+        assert(thermalCore.estimate().centerValid);
       }
 
-      const uint32_t start = startFlight(direction, 0, true);
+      uint32_t start = startFlight(direction, 0, false, 9.5f, true);
+      flyUntil(start + 80000);
+      assert(!thermalCore.estimate().centerValid);  // >100 m away long enough to hide
+      flyUntil(start + 100000);
+      assert(thermalCore.estimate().centerValid);  // return restores without any new turn
+
+      start = startFlight(direction, 0, true);
       flyUntil(start + 60000);
       assert(thermalCore.estimate().centerValid);
       // Five seconds straight, then a full turn in the opposite direction. The last good
@@ -383,6 +659,9 @@ namespace {
     sim::scenario().pause();
     flyUntil(sim::clock().millis() + 4000);
     assert(!thermalCore.estimate().centerValid);
+    sim::scenario().play();
+    flyUntil(sim::clock().millis() + 3000);
+    assert(thermalCore.estimate().centerValid);  // GPS recovery restores the cached nearby center
     thermalTracker.reset();
     thermalCore.update();
     assert(!thermalCore.estimate().centerValid && thermalCore.estimate().direction == 0);
@@ -391,10 +670,15 @@ namespace {
 
 int main() {
   checkLiftCenter();
+  checkGuidanceGain();
+  checkClimbHistory();
+  checkDistanceRetention();
+  checkCenterReplacement();
   checkProjection();
   checkRecordedHistory();
   checkGuidanceRetention();
   puts(
-      "Thermal projection, lift center, target rings, turn retention and recorded-history checks "
+      "Thermal projection, lap climb averages, target replacement, distance retention and display "
+      "checks "
       "passed");
 }

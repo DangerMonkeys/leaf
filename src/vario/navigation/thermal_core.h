@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 
+#include "navigation/thermal_core_target.h"
 #include "navigation/thermal_tracker.h"
 
 constexpr uint8_t THERMAL_CORE_MAX_MARKERS = ThermalTracker::MAX_DETECTOR_SAMPLES;
@@ -43,22 +44,20 @@ class ThermalCore {
   const ThermalCoreEstimate& estimate() const { return estimate_; }
 
  private:
+  void updateTurnSegment(const ThermalTracker::CoreSample& latest,
+                         const ThermalTracker::CoreSample& prior);
   ThermalCoreEstimate estimate_;
   bool turnGuidanceActive_ = false;
   bool turnGuidancePreviouslyActive_ = false;
-  int8_t activeTurnDirection_ = 0;
-  uint32_t straightDurationMs_ = 0;
   uint32_t lastGuidanceSampleMs_ = 0;
-  uint32_t lastSustainedTurnMs_ = 0;
+  uint32_t fitStartMs_ = 0;
+  uint32_t fitStraightMs_ = 0;
+  uint32_t fitReverseStartMs_ = 0;
+  uint16_t fitReverseDeg_ = 0;
+  int8_t fitDirection_ = 0;
   bool episodeClimbScaleValid_ = false;
   int16_t episodeMaxClimbCms_ = 0;
-  bool centerValid_ = false;
-  float centerEastM_ = 0;
-  float centerNorthM_ = 0;
-  float centerAltitudeM_ = 0;
-  float centerSlopeEast_ = 0;
-  float centerSlopeNorth_ = 0;
-  uint32_t lastCenterSampleMs_ = 0;
+  ThermalCoreTarget target_;
 };
 
 extern ThermalCore thermalCore;

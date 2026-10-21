@@ -59,10 +59,9 @@
 287  screenshot    sim/build/tc-09-dying.png
 
 # --- the glide between climbs ----------------------------------------------------------------
-# Rolled out at 298 s.  The turn layout must be gone when the robust course envelope over seven
-# seconds is no more than 10 degrees for 15 straight seconds, regardless of lift. Gentle turns
-# in either direction get a 30-second grace period. It must stay gone even though the
-# breadcrumb buffer still contains the previous circle.
+# Rolled out at 298 s. The turn layout recenters after the straight segment. The retained target
+# hides once the pilot has stayed beyond 100 m for five seconds, even though the breadcrumb
+# buffer still contains the previous circle. A return within 100 m can restore it without a lap.
 312  screenshot    sim/build/tc-10-just-left.png
 345  status
 347  screenshot    sim/build/tc-11-aged-out.png
