@@ -10,7 +10,7 @@
 //   3.5    screenshot out/menu.png
 //   4      inject P0,92310       one bus-log line, as if a sensor had reported it
 //   5      scenario play         play / pause / seek <seconds>
-//   6      expect-page Thermal   fails the run if the device is not on that page
+//   6      expect-page User   fails the run if the device is not on that page
 //   7      expect-serial mounted fails the run if that text never appeared on the console
 //   8      quit                  stop the emulator (exit code reflects any failed expectation)
 #pragma once

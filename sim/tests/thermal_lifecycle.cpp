@@ -17,11 +17,11 @@
 #include "sim/clock.h"
 #include "ui/display/display.h"
 #include "ui/display/display_fields.h"
+#include "ui/display/pages/primary/page_basic.h"
 #include "ui/display/pages/primary/page_navigate.h"
-#include "ui/display/pages/primary/page_simple.h"
-#include "ui/display/pages/primary/page_thermal.h"
 #include "ui/display/pages/primary/page_thermal_core.h"
 #include "ui/display/pages/primary/page_thermal_track.h"
+#include "ui/display/pages/primary/page_user.h"
 #include "ui/settings/settings.h"
 
 extern MessageBus<11> bus;
@@ -74,26 +74,26 @@ namespace {
   }
 
   void drawAllPages() {
-    simplePage_draw();
-    thermalPage_draw();
+    basicPage_draw();
+    userPage_draw();
     thermalCorePage_draw();
     thermalTrackPage_draw();
     navigatePage_draw();
   }
 
   void selectPageCursors() {
-    simplePage_button(Button::DOWN, ButtonEvent::CLICKED, 0);
-    thermalPage_button(Button::DOWN, ButtonEvent::CLICKED, 0);
+    basicPage_button(Button::DOWN, ButtonEvent::CLICKED, 0);
+    userPage_button(Button::DOWN, ButtonEvent::CLICKED, 0);
     thermalCorePage_button(Button::DOWN, ButtonEvent::CLICKED, 0);
     thermalTrackPage_button(Button::DOWN, ButtonEvent::CLICKED, 0);
   }
 
   void checkCursorsCleared() {
     for (auto button :
-         {simplePage_button, thermalPage_button, thermalCorePage_button, thermalTrackPage_button}) {
-      const auto altType = settings.disp_thmPageAltType;
+         {basicPage_button, userPage_button, thermalCorePage_button, thermalTrackPage_button}) {
+      const auto altType = settings.disp_userPageAltType;
       button(Button::CENTER, ButtonEvent::CLICKED, 0);
-      assert(settings.disp_thmPageAltType == altType);
+      assert(settings.disp_userPageAltType == altType);
       assert(!flightTimer_isRunning());
     }
   }
@@ -108,10 +108,10 @@ namespace {
       assert(!thermalCore.estimate().centerValid);
       for (bool feet : {false, true}) {
         settings.units_alt = feet;
-        settings.disp_thmPageAltType = altType_MSL;
+        settings.disp_userPageAltType = altType_MSL;
         settings.disp_navPageAltType = altType_MSL;
         drawAllPages();
-        settings.disp_thmPageAltType = altType_aboveLaunch;
+        settings.disp_userPageAltType = altType_aboveLaunch;
         settings.disp_navPageAltType = altType_aboveLaunch;
         drawAllPages();
       }
@@ -123,7 +123,7 @@ namespace {
     assertEmpty();
     flightTimer_stop(false);
     assertEmpty();
-    settings.disp_thmPageAltType = altType_MSL;
+    settings.disp_userPageAltType = altType_MSL;
     sim::scenario().play();
     flyFor(12000);
     assert(baro.state() == Barometer::State::Ready);

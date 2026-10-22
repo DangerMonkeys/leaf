@@ -285,10 +285,10 @@ void Settings::loadDefaults() {
   disp_navPageAltType = DEF_NAVPG_ALT_TYP;
   for (uint8_t i = 0; i < 4; ++i) disp_navFields[i] = DEFAULT_NAV_FIELDS[i];
   autoSwitchToThermalCorePage = false;
-  disp_thmPageAltType = DEF_THMPG_ALT_TYP;
-  disp_thmPageAlt2Type = DEF_THMPG_ALT2_TYP;
-  disp_thmPageUser1 = DEF_THMPG_USR1;
-  disp_thmPageUser2 = DEF_THMPG_USR2;
+  disp_userPageAltType = DEF_USERPG_ALT_TYP;
+  disp_userPageAlt2Type = DEF_USERPG_ALT2_TYP;
+  disp_userPageUser1 = DEF_USERPG_USR1;
+  disp_userPageUser2 = DEF_USERPG_USR2;
   disp_showDebugPage = DEF_SHOW_DEBUG;
   disp_showBasicPage = DEF_SHOW_BASIC;
   disp_showUserPage = DEF_SHOW_USER;
@@ -389,8 +389,9 @@ void Settings::retrieve() {
   disp_contrast = leafPrefs.getUChar("CONTRAST");
   if (disp_contrast < CONTRAST_MIN || disp_contrast > CONTRAST_MAX) disp_contrast = DEF_CONTRAST;
   disp_navPageAltType = leafPrefs.getUChar("NAVPG_ALT_TYP");
-  disp_thmPageAltType = leafPrefs.getUChar("THMPG_ALT_TYP");
-  disp_thmPageAlt2Type = leafPrefs.getUChar("THMPG_ALT2_TYP");
+  // Retain the legacy storage keys so Basic/User page preferences survive the code rename.
+  disp_userPageAltType = leafPrefs.getUChar("THMPG_ALT_TYP");
+  disp_userPageAlt2Type = leafPrefs.getUChar("THMPG_ALT2_TYP");
   const char* navKeys[] = {"NAVPG_USR1", "NAVPG_USR2", "NAVPG_USR3", "NAVPG_USR4"};
   for (uint8_t i = 0; i < 4; ++i) {
     const uint8_t value =
@@ -398,8 +399,8 @@ void Settings::retrieve() {
     disp_navFields[i] = value < static_cast<uint8_t>(NavField::Count) ? static_cast<NavField>(value)
                                                                       : DEFAULT_NAV_FIELDS[i];
   }
-  disp_thmPageUser1 = leafPrefs.getUChar("THMPG_USR1");
-  disp_thmPageUser2 = leafPrefs.getUChar("THMPG_USR2");
+  disp_userPageUser1 = leafPrefs.getUChar("THMPG_USR1");
+  disp_userPageUser2 = leafPrefs.getUChar("THMPG_USR2");
   disp_showDebugPage = leafPrefs.getBool("SHOW_DEBUG");
   disp_showBasicPage =
       leafPrefs.getBool("SHOW_BASIC", leafPrefs.getBool("SHOW_SIMPLE", DEF_SHOW_BASIC));
@@ -508,16 +509,16 @@ void Settings::save() {
   // Display Settings
   leafPrefs.putUChar("CONTRAST", disp_contrast);
   leafPrefs.putUChar("NAVPG_ALT_TYP", disp_navPageAltType);
-  leafPrefs.putUChar("THMPG_ALT_TYP", disp_thmPageAltType);
-  leafPrefs.putUChar("THMPG_ALT2_TYP", disp_thmPageAlt2Type);
+  leafPrefs.putUChar("THMPG_ALT_TYP", disp_userPageAltType);
+  leafPrefs.putUChar("THMPG_ALT2_TYP", disp_userPageAlt2Type);
   const char* navKeys[] = {"NAVPG_USR1", "NAVPG_USR2", "NAVPG_USR3", "NAVPG_USR4"};
   for (uint8_t i = 0; i < 4; ++i)
     leafPrefs.putUChar(navKeys[i], static_cast<uint8_t>(disp_navFields[i]));
   if (!disp_showThermalCorePage) autoSwitchToThermalCorePage = false;
   leafPrefs.putBool("AUTO_THERM_CORE", autoSwitchToThermalCorePage);
   leafPrefs.putBool("THERM_DISPLAY", true);
-  leafPrefs.putUChar("THMPG_USR1", disp_thmPageUser1);
-  leafPrefs.putUChar("THMPG_USR2", disp_thmPageUser2);
+  leafPrefs.putUChar("THMPG_USR1", disp_userPageUser1);
+  leafPrefs.putUChar("THMPG_USR2", disp_userPageUser2);
   leafPrefs.putBool("SHOW_DEBUG", disp_showDebugPage);
   leafPrefs.putBool("SHOW_BASIC", disp_showBasicPage);
   leafPrefs.putBool("SHOW_USER", disp_showUserPage);
@@ -871,15 +872,15 @@ void Settings::adjustDisplayField_navPage_alt(Button dir) {
 }
 
 // Change which altitude is shown on the User page (Baro Alt or GPS Alt)
-void Settings::adjustDisplayField_thermalPage_alt(Button dir) {
+void Settings::adjustDisplayField_userPage_alt(Button dir) {
   if (dir == Button::RIGHT) {
-    disp_thmPageAltType++;
-    if (disp_thmPageAltType >= 2) disp_thmPageAltType = 0;
+    disp_userPageAltType++;
+    if (disp_userPageAltType >= 2) disp_userPageAltType = 0;
   } else {
-    if (disp_thmPageAltType == 0)
-      disp_thmPageAltType = 1;
+    if (disp_userPageAltType == 0)
+      disp_userPageAltType = 1;
     else
-      disp_thmPageAltType--;
+      disp_userPageAltType--;
   }
   speaker.playSound(fx::neutral);
 }

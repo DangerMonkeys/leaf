@@ -23,9 +23,9 @@ GPS Logging
 
 UI
 *#9* ->Additional menu screens (choose GPX file to load; list of waypoints and routes; possibly
-create/save/edit waypoint and create/save/edit route) Final touches on Thermal Page & Nav Page (need
-to show "NO gps" when don't have fix for various fields) User editable fields on various pages Debug
-screen?  / Advanced options?
+create/save/edit waypoint and create/save/edit route) Final touches on User Page & Navigate Page
+(need to show "NO gps" when don't have fix for various fields) User editable fields on various pages
+Debug screen?  / Advanced options?
 
 
 Features and Performance

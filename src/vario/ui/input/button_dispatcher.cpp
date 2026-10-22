@@ -11,14 +11,14 @@
 #include "ui/display/menu_page.h"
 #include "ui/display/pages.h"
 #include "ui/display/pages/dialogs/page_warning.h"
+#include "ui/display/pages/primary/page_basic.h"
 #include "ui/display/pages/primary/page_charging.h"
 #include "ui/display/pages/primary/page_debug.h"
 #include "ui/display/pages/primary/page_debug2.h"
 #include "ui/display/pages/primary/page_navigate.h"
-#include "ui/display/pages/primary/page_simple.h"
-#include "ui/display/pages/primary/page_thermal.h"
 #include "ui/display/pages/primary/page_thermal_core.h"
 #include "ui/display/pages/primary/page_thermal_track.h"
+#include "ui/display/pages/primary/page_user.h"
 #include "ui/settings/settings.h"
 
 ButtonDispatcher buttonDispatcher;
@@ -52,10 +52,10 @@ void ButtonDispatcher::on_receive(const ButtonEventMessage& msg) {
     if (draw_now) display.update();
 
   } else if (currentPage == MainPage::Basic) {
-    simplePage_button(msg.button, msg.event, msg.holdCount);
+    basicPage_button(msg.button, msg.event, msg.holdCount);
 
   } else if (currentPage == MainPage::User) {
-    thermalPage_button(msg.button, msg.event, msg.holdCount);
+    userPage_button(msg.button, msg.event, msg.holdCount);
 
   } else if (currentPage == MainPage::ThermalCore) {
     thermalCorePage_button(msg.button, msg.event, msg.holdCount);

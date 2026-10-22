@@ -24,14 +24,14 @@
 #include "ui/display/menu_page.h"
 #include "ui/display/pages.h"
 #include "ui/display/pages/dialogs/page_warning.h"
+#include "ui/display/pages/primary/page_basic.h"
 #include "ui/display/pages/primary/page_charging.h"
 #include "ui/display/pages/primary/page_debug.h"
 #include "ui/display/pages/primary/page_debug2.h"
 #include "ui/display/pages/primary/page_navigate.h"
-#include "ui/display/pages/primary/page_simple.h"
-#include "ui/display/pages/primary/page_thermal.h"
 #include "ui/display/pages/primary/page_thermal_core.h"
 #include "ui/display/pages/primary/page_thermal_track.h"
+#include "ui/display/pages/primary/page_user.h"
 #include "ui/settings/settings.h"
 #include "wind_estimate/wind_estimate.h"
 
@@ -205,8 +205,8 @@ void Display::setPage(MainPage targetPage) {
 void Display::resetThermalState() {
   thermalTracker.reset();
   thermalCore.reset();
-  simplePage_reset();
-  thermalPage_reset();
+  basicPage_reset();
+  userPage_reset();
   thermalCorePage_reset();
   thermalTrackPage_reset();
   thermalReturnPage_ = MainPage::User;
@@ -311,11 +311,11 @@ void Display::updateFrame() {
   switch (displayPage_) {
     case MainPage::Basic:
       lastRenderContext_ = DisplayRenderContext::Basic;
-      simplePage_draw();
+      basicPage_draw();
       break;
     case MainPage::User:
       lastRenderContext_ = DisplayRenderContext::User;
-      thermalPage_draw();
+      userPage_draw();
       break;
     case MainPage::ThermalCore:
       lastRenderContext_ = DisplayRenderContext::ThermalCore;

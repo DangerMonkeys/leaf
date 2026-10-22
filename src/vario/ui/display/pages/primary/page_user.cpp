@@ -17,62 +17,62 @@
 #include "ui/display/display.h"
 #include "ui/display/display_fields.h"
 #include "ui/display/fonts.h"
-#include "ui/display/pages/primary/page_thermal.h"
+#include "ui/display/pages/primary/page_user.h"
 #include "ui/input/buttons.h"
 #include "ui/settings/settings.h"
 #include "wind_estimate/wind_estimate.h"
 
-enum thermal_page_items {
-  cursor_thermalPage_none,
-  cursor_thermalPage_alt1,
-  cursor_thermalPage_userField1,
-  cursor_thermalPage_userField2,
-  cursor_thermalPage_timer
+enum user_page_items {
+  cursor_userPage_none,
+  cursor_userPage_alt1,
+  cursor_userPage_userField1,
+  cursor_userPage_userField2,
+  cursor_userPage_timer
 };
-uint8_t thermal_page_cursor_max = 4;
+uint8_t user_page_cursor_max = 4;
 
-int8_t thermal_page_cursor_position = cursor_thermalPage_none;
-uint8_t thermal_page_cursor_timeCount =
+int8_t user_page_cursor_position = cursor_userPage_none;
+uint8_t user_page_cursor_timeCount =
     0;  // count up for every page_draw, and if no button is pressed, then reset cursor to "none"
         // after the timeOut value is reached.
-uint8_t thermal_page_cursor_timeOut =
+uint8_t user_page_cursor_timeOut =
     8;  // after 8 page draws (4 seconds) reset the cursor if a button hasn't been pushed.
 
 namespace {
   uint8_t nextAvailableUserField(uint8_t field) {
     do {
       field++;
-      if (field >= static_cast<uint8_t>(ThermalPageUserFields::NONE)) field = 0;
-    } while (!aht20.isAvailable() && field == static_cast<uint8_t>(ThermalPageUserFields::TEMP));
+      if (field >= static_cast<uint8_t>(UserPageFields::NONE)) field = 0;
+    } while (!aht20.isAvailable() && field == static_cast<uint8_t>(UserPageFields::TEMP));
     return field;
   }
 
   uint8_t availableUserField(uint8_t field) {
-    if (!aht20.isAvailable() && field == static_cast<uint8_t>(ThermalPageUserFields::TEMP)) {
+    if (!aht20.isAvailable() && field == static_cast<uint8_t>(UserPageFields::TEMP)) {
       return nextAvailableUserField(field);
     }
     return field;
   }
 }  // namespace
 
-void thermalPage_reset() {
-  thermal_page_cursor_position = cursor_thermalPage_none;
-  thermal_page_cursor_timeCount = 0;
+void userPage_reset() {
+  user_page_cursor_position = cursor_userPage_none;
+  user_page_cursor_timeCount = 0;
 }
 
-void thermalPage_draw() {
+void userPage_draw() {
   // if cursor is selecting something, count toward the timeOut value before we reset cursor
-  if (thermal_page_cursor_position != cursor_thermalPage_none &&
-      thermal_page_cursor_timeCount++ >= thermal_page_cursor_timeOut) {
-    thermal_page_cursor_position = cursor_thermalPage_none;
-    thermal_page_cursor_timeCount = 0;
+  if (user_page_cursor_position != cursor_userPage_none &&
+      user_page_cursor_timeCount++ >= user_page_cursor_timeOut) {
+    user_page_cursor_position = cursor_userPage_none;
+    user_page_cursor_timeCount = 0;
   }
 
   u8g2.firstPage();
   do {
     // draw all status icons, clock, timer, etc (and pass along if timer is selected)
     bool showHeadingTurnArrows = false;
-    display_headerAndFooter(thermal_page_cursor_position == cursor_thermalPage_timer,
+    display_headerAndFooter(user_page_cursor_position == cursor_userPage_timer,
                             showHeadingTurnArrows);
 
     // wind & compass
@@ -101,7 +101,7 @@ void thermalPage_draw() {
     // Altitude header labels
     u8g2.setFont(leaf_labels);
     u8g2.setCursor(varioBarWidth + 52, alt_y - 1);
-    print_alt_label(settings.disp_thmPageAltType);
+    print_alt_label(settings.disp_userPageAltType);
     u8g2.setCursor(varioBarWidth + 60, alt_y - 9);
     if (settings.units_alt)
       u8g2.print("ft");
@@ -109,10 +109,10 @@ void thermalPage_draw() {
       u8g2.print("m");
 
     // Alt value
-    display_alt_type(varioBarWidth + 2, alt_y + 21, leaf_21h, settings.disp_thmPageAltType);
+    display_alt_type(varioBarWidth + 2, alt_y + 21, leaf_21h, settings.disp_userPageAltType);
 
     // if selected, draw the box around it
-    if (thermal_page_cursor_position == cursor_thermalPage_alt1) {
+    if (user_page_cursor_position == cursor_userPage_alt1) {
       display_selectionBox(varioBarWidth + 1, alt_y - 2, 96 - (varioBarWidth + 1), 25, 7);
     }
 
@@ -137,13 +137,13 @@ void thermalPage_draw() {
     uint8_t userfield_x = varioBarWidth + 4;
 
     // User Field 1 ****************************************************
-    bool isSelected = (thermal_page_cursor_position == cursor_thermalPage_userField1);
-    drawUserField(userfield_x, userfield_y, settings.disp_thmPageUser1, isSelected);
+    bool isSelected = (user_page_cursor_position == cursor_userPage_userField1);
+    drawUserField(userfield_x, userfield_y, settings.disp_userPageUser1, isSelected);
 
     // User Field 2 ****************************************************
     userfield_y += 27;
-    isSelected = (thermal_page_cursor_position == cursor_thermalPage_userField2);
-    drawUserField(userfield_x, userfield_y, settings.disp_thmPageUser2, isSelected);
+    isSelected = (user_page_cursor_position == cursor_userPage_userField2);
+    drawUserField(userfield_x, userfield_y, settings.disp_userPageUser2, isSelected);
 
     // Footer Info ****************************************************
 
@@ -153,17 +153,17 @@ void thermalPage_draw() {
 void drawUserField(uint8_t x, uint8_t y, uint8_t field, bool selected) {
   field = availableUserField(field);
   switch (field) {
-    case static_cast<int>(ThermalPageUserFields::ABOVE_LAUNCH):
+    case static_cast<int>(UserPageFields::ABOVE_LAUNCH):
       display_altAboveLaunch(x, y);
       break;
-    case static_cast<int>(ThermalPageUserFields::GLIDE):
+    case static_cast<int>(UserPageFields::GLIDE):
       // Glide Ratio
       u8g2.setCursor(x, y - 14);
       u8g2.setFont(leaf_5h);
       u8g2.print("` GLIDE");
       display_glide(x + 20, y, gps.getGlideRatio());
       break;
-    case static_cast<int>(ThermalPageUserFields::TEMP):
+    case static_cast<int>(UserPageFields::TEMP):
       // Temperature
       u8g2.setCursor(x, y - 14);
       u8g2.setFont(leaf_5h);
@@ -175,7 +175,7 @@ void drawUserField(uint8_t x, uint8_t y, uint8_t field, bool selected) {
       u8g2.print("HUMID");
       display_humidity(x + 34, y, ambient);
       break;
-    case static_cast<int>(ThermalPageUserFields::ACCEL):
+    case static_cast<int>(UserPageFields::ACCEL):
       // Acceleration
       u8g2.setCursor(x, y - 14);
       u8g2.setFont(leaf_5h);
@@ -183,7 +183,7 @@ void drawUserField(uint8_t x, uint8_t y, uint8_t field, bool selected) {
       // TODO: show missing accel differently than 0
       display_accel(x + 20, y, imu.accelValid() ? imu.getAccel() : 0);
       break;
-    case static_cast<int>(ThermalPageUserFields::DIST):
+    case static_cast<int>(UserPageFields::DIST):
       // Distance
       u8g2.setCursor(x, y - 14);
       u8g2.setFont(leaf_5h);
@@ -191,7 +191,7 @@ void drawUserField(uint8_t x, uint8_t y, uint8_t field, bool selected) {
       u8g2.setFont(leaf_6x12);
       display_distance(x + 20, y, logbook.distanceAlongPath);
       break;
-    case static_cast<int>(ThermalPageUserFields::AIRSPEED):
+    case static_cast<int>(UserPageFields::AIRSPEED):
       u8g2.setCursor(x, y - 14);
       u8g2.setFont(leaf_5h);
       u8g2.print("APPROX AIRSPEED");
@@ -226,20 +226,20 @@ void drawUserField(uint8_t x, uint8_t y, uint8_t field, bool selected) {
   }
 }
 
-void thermal_page_cursor_move(Button button) {
+void user_page_cursor_move(Button button) {
   if (button == Button::UP) {
-    thermal_page_cursor_position--;
-    if (thermal_page_cursor_position < 0) thermal_page_cursor_position = thermal_page_cursor_max;
+    user_page_cursor_position--;
+    if (user_page_cursor_position < 0) user_page_cursor_position = user_page_cursor_max;
   }
   if (button == Button::DOWN) {
-    thermal_page_cursor_position++;
-    if (thermal_page_cursor_position > thermal_page_cursor_max) thermal_page_cursor_position = 0;
+    user_page_cursor_position++;
+    if (user_page_cursor_position > user_page_cursor_max) user_page_cursor_position = 0;
   }
-  speaker.playSound(thermal_page_cursor_position == cursor_thermalPage_none ? fx::doubleClick
-                                                                            : fx::click);
+  speaker.playSound(user_page_cursor_position == cursor_userPage_none ? fx::doubleClick
+                                                                      : fx::click);
 }
 
-bool thermalPage_volumeShortcut(Button button, ButtonEvent state) {
+bool userPage_volumeShortcut(Button button, ButtonEvent state) {
   if (!settings.volumeShortcut || (button != Button::UP && button != Button::DOWN) ||
       state != ButtonEvent::INCREMENTED) {
     return false;
@@ -249,19 +249,19 @@ bool thermalPage_volumeShortcut(Button button, ButtonEvent state) {
   return true;
 }
 
-void thermalPage_button(Button button, ButtonEvent state, uint8_t count) {
+void userPage_button(Button button, ButtonEvent state, uint8_t count) {
   // reset cursor time out count if a button is pushed
-  thermal_page_cursor_timeCount = 0;
+  user_page_cursor_timeCount = 0;
 
-  switch (thermal_page_cursor_position) {
-    case cursor_thermalPage_none:
+  switch (user_page_cursor_position) {
+    case cursor_userPage_none:
       switch (button) {
         case Button::UP:
         case Button::DOWN:
-          if (thermalPage_volumeShortcut(button, state)) {
+          if (userPage_volumeShortcut(button, state)) {
             break;
           } else if (state == ButtonEvent::CLICKED) {
-            thermal_page_cursor_move(button);
+            user_page_cursor_move(button);
           }
           break;
         case Button::RIGHT:
@@ -284,11 +284,11 @@ void thermalPage_button(Button button, ButtonEvent state, uint8_t count) {
           break;
       }
       break;
-    case cursor_thermalPage_alt1:
+    case cursor_userPage_alt1:
       switch (button) {
         case Button::UP:
         case Button::DOWN:
-          if (state == ButtonEvent::CLICKED) thermal_page_cursor_move(button);
+          if (state == ButtonEvent::CLICKED) user_page_cursor_move(button);
           break;
         case Button::LEFT:
           if (settings.disp_navPageAltType == altType_MSL &&
@@ -306,13 +306,13 @@ void thermalPage_button(Button button, ButtonEvent state, uint8_t count) {
           break;
         case Button::CENTER:
           if (state == ButtonEvent::CLICKED) {
-            settings.adjustDisplayField_thermalPage_alt(Button::CENTER);
+            settings.adjustDisplayField_userPage_alt(Button::CENTER);
           } else if (state == ButtonEvent::INCREMENTED && count == 1 &&
-                     settings.disp_thmPageAltType == altType_MSL) {
+                     settings.disp_userPageAltType == altType_MSL) {
             if (baro.syncToGPSAlt()) {  // successful adjustment of altimeter setting to match
                                         // GPS altitude
               speaker.playSound(fx::enter);
-              thermal_page_cursor_position = cursor_thermalPage_none;
+              user_page_cursor_position = cursor_userPage_none;
             } else {  // unsuccessful
               speaker.playSound(fx::cancel);
             }
@@ -320,11 +320,11 @@ void thermalPage_button(Button button, ButtonEvent state, uint8_t count) {
           break;
       }
       break;
-    case cursor_thermalPage_userField1:
+    case cursor_userPage_userField1:
       switch (button) {
         case Button::UP:
         case Button::DOWN:
-          if (state == ButtonEvent::CLICKED) thermal_page_cursor_move(button);
+          if (state == ButtonEvent::CLICKED) user_page_cursor_move(button);
           break;
         case Button::LEFT:
           break;
@@ -332,17 +332,17 @@ void thermalPage_button(Button button, ButtonEvent state, uint8_t count) {
           break;
         case Button::CENTER:
           if (state == ButtonEvent::CLICKED) {
-            settings.disp_thmPageUser1 =
-                nextAvailableUserField(availableUserField(settings.disp_thmPageUser1));
+            settings.disp_userPageUser1 =
+                nextAvailableUserField(availableUserField(settings.disp_userPageUser1));
           }
           break;
       }
       break;
-    case cursor_thermalPage_userField2:
+    case cursor_userPage_userField2:
       switch (button) {
         case Button::UP:
         case Button::DOWN:
-          if (state == ButtonEvent::CLICKED) thermal_page_cursor_move(button);
+          if (state == ButtonEvent::CLICKED) user_page_cursor_move(button);
           break;
         case Button::LEFT:
           break;
@@ -350,17 +350,17 @@ void thermalPage_button(Button button, ButtonEvent state, uint8_t count) {
           break;
         case Button::CENTER:
           if (state == ButtonEvent::CLICKED) {
-            settings.disp_thmPageUser2 =
-                nextAvailableUserField(availableUserField(settings.disp_thmPageUser2));
+            settings.disp_userPageUser2 =
+                nextAvailableUserField(availableUserField(settings.disp_userPageUser2));
           }
           break;
       }
       break;
-    case cursor_thermalPage_timer:
+    case cursor_userPage_timer:
       switch (button) {
         case Button::UP:
         case Button::DOWN:
-          if (state == ButtonEvent::CLICKED) thermal_page_cursor_move(button);
+          if (state == ButtonEvent::CLICKED) user_page_cursor_move(button);
           break;
         case Button::LEFT:
           break;
@@ -369,11 +369,11 @@ void thermalPage_button(Button button, ButtonEvent state, uint8_t count) {
         case Button::CENTER:
           if (state == ButtonEvent::CLICKED && !flightTimer_isRunning()) {
             flightTimer_start();
-            thermal_page_cursor_position = cursor_thermalPage_none;
+            user_page_cursor_position = cursor_userPage_none;
           } else if (state == ButtonEvent::HELD && flightTimer_isRunning()) {
             buttons.consumeButton();
             flightTimer_stop();
-            thermal_page_cursor_position = cursor_thermalPage_none;
+            user_page_cursor_position = cursor_userPage_none;
           }
 
           break;
