@@ -10,6 +10,7 @@
 #include <functional>
 #include <set>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "comms/leaf_log_client.h"
@@ -56,6 +57,7 @@ namespace {
 
   void step() {
     leafLogSync.update();
+    std::this_thread::yield();
     sim::clock().advanceUs(1000);
   }
 
@@ -65,7 +67,7 @@ namespace {
   }
 
   void finish() {
-    for (int i = 0; i < 200 && !leafLogSync.massStorageUnavailable(); ++i) step();
+    for (int i = 0; i < 100000 && !leafLogSync.massStorageUnavailable(); ++i) step();
     // The emulator declines USB presentation; this is its normal terminal handoff state.
     assert(leafLogSync.massStorageUnavailable());
     assert(!std::filesystem::exists(root + "/.leaf-log-scan.tmp"));
@@ -142,7 +144,7 @@ namespace {
     addFlight("later");
     outcomes = {Outcome::TransientFailure, Outcome::Delivered, Outcome::Delivered};
     scan();
-    for (int i = 0; i < 20 && !leafLogSync.retryPending(); ++i) step();
+    for (int i = 0; i < 100000 && !leafLogSync.retryPending(); ++i) step();
     assert(leafLogSync.retryPending() && attempts.size() == 1);
     addFlight("next-session");
     sim::clock().advanceUs(5ULL * 60 * 1000000);
@@ -246,6 +248,41 @@ namespace {
     assert(leafLogSync.massStorageUnavailable());
     assert(millis() - startedMs < 5000 && attempts.empty());
   }
+
+  void boundedSessionsAndConfirmation() {
+    reset("session-limit");
+    for (int i = 0; i < 105; ++i) addFlight("flight-" + std::to_string(i));
+    scan();
+    assert(leafLogSync.totalCount() == 100);
+    finish();
+    assert(attempts.size() == 100);
+    unsigned pending = 0;
+    for (int i = 0; i < 105; ++i) {
+      if (classify("flight-" + std::to_string(i)).disposition ==
+          LeafLogCandidate::Disposition::Pending)
+        ++pending;
+    }
+    assert(pending == 5);
+    leafLogSync.prepareForCharging();
+    sdcard.acquireForFirmwareUse(0, true);
+    step();
+    scan();
+    assert(leafLogSync.totalCount() == 5);
+    finish();
+    assert(attempts.size() == 105);
+
+    reset("confirmation-timeout");
+    addFlight("flight");
+    leafLogSync.requestChargingClick();
+    assert(leafLogSync.cancelConfirmation());
+    sim::clock().advanceUs(5000000);
+    assert(!leafLogSync.cancelConfirmation());
+    leafLogSync.requestChargingClick();
+    assert(leafLogSync.cancelConfirmation());
+    leafLogSync.requestChargingClick();
+    finish();
+    assert(attempts.empty());
+  }
 }  // namespace
 
 namespace leaf_log_client {
@@ -273,6 +310,7 @@ int main() {
   alreadySyncedAndUnauthorized();
   cancelAndPowerOn();
   queueFailureAndStaleFiles();
+  boundedSessionsAndConfirmation();
   chargingScheduler();
   leafLogSync.prepareForCharging();
   std::filesystem::remove_all(directory);

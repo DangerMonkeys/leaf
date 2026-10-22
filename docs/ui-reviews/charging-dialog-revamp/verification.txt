@@ -1,0 +1,81 @@
+make: Entering directory '/leaf/sim'
+  CXX   src/vario/ui/display/pages/primary/page_charging
+/leaf/src/vario/ui/display/pages/primary/page_charging.cpp: In function 'void chargingPage_button(Button, ButtonEvent, uint8_t)':
+/leaf/src/vario/ui/display/pages/primary/page_charging.cpp:244:14: warning: enumeration value 'PRESSED' not handled in switch [-Wswitch]
+  244 |       switch (state) {
+      |              ^
+/leaf/src/vario/ui/display/pages/primary/page_charging.cpp:244:14: warning: enumeration value 'RELEASED' not handled in switch [-Wswitch]
+/leaf/src/vario/ui/display/pages/primary/page_charging.cpp:244:14: warning: enumeration value 'HELD_LONG' not handled in switch [-Wswitch]
+/leaf/src/vario/ui/display/pages/primary/page_charging.cpp:244:14: warning: enumeration value 'INCREMENTED' not handled in switch [-Wswitch]
+/leaf/src/vario/ui/display/pages/primary/page_charging.cpp:256:14: warning: enumeration value 'PRESSED' not handled in switch [-Wswitch]
+  256 |       switch (state) {
+      |              ^
+/leaf/src/vario/ui/display/pages/primary/page_charging.cpp:256:14: warning: enumeration value 'RELEASED' not handled in switch [-Wswitch]
+/leaf/src/vario/ui/display/pages/primary/page_charging.cpp:256:14: warning: enumeration value 'HELD_LONG' not handled in switch [-Wswitch]
+/leaf/src/vario/ui/display/pages/primary/page_charging.cpp:256:14: warning: enumeration value 'INCREMENTED' not handled in switch [-Wswitch]
+/leaf/src/vario/ui/display/pages/primary/page_charging.cpp:240:10: warning: enumeration value 'NONE' not handled in switch [-Wswitch]
+  240 |   switch (button) {
+      |          ^
+/leaf/src/vario/ui/display/pages/primary/page_charging.cpp:240:10: warning: enumeration value 'LEFT' not handled in switch [-Wswitch]
+/leaf/src/vario/ui/display/pages/primary/page_charging.cpp:240:10: warning: enumeration value 'RIGHT' not handled in switch [-Wswitch]
+  LD    leafsim
+Built /leaf/sim/build/leafsim
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: OffUSB
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port... GPS initialize sat messages... GPS initialize done...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done.
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+sleep_peripherals: OffUSB
+ - Sleeping GPS
+LC86G::sleep now: 245
+ready: 400
+delay: 155
+************ !!!!!!!!!!! GPS SLEEPING COMMAND SENT !!!!!!!!!!! ************
+ - Sleeping baro
+ - Sleeping speaker
+Shut down speaker
+ - DONE
+ - DONE
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+SD card: mounted
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+button: CENTER state: RELEASED    hold count: 0
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+button: CENTER state: RELEASED    hold count: 0
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+button: CENTER state: RELEASED    hold count: 0
+SD card: mounted
+SD card: mounted
+SD card: mounted
+SD card: mounted
+SD card: mounted
+SD card: mounted
+Leaf Log retry: reason=not_started,track=8.igc,http=0,elapsed_ms=0,file_bytes=0,response_bytes=0 delay_ms=300000
+SD card: mounted
+SD card: mounted
+SD card: mounted
+SD card: mounted
+Charging dialogs passed: exact reference artwork, corrected scan, live input, confirmation, ownership, completion and 46 native 96x192 captures.
+make: Leaving directory '/leaf/sim'

@@ -194,6 +194,13 @@ $(BUILD)/leaf_log_sync_test: $(LEAF_LOG_TEST_OBJECTS) $(SIM)/tests/leaf_log_sync
 test-leaf-log-sync: $(BUILD)/leaf_log_sync_test
 	@cd $(ROOT) && $(BUILD)/leaf_log_sync_test
 
+.PHONY: test-charging-dialogs
+$(BUILD)/charging_dialogs_test: $(LEAF_LOG_TEST_OBJECTS) $(SIM)/tests/charging_dialogs.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/charging_dialogs.cpp $(LEAF_LOG_TEST_OBJECTS) $(LDFLAGS)
+
+test-charging-dialogs: $(BUILD)/charging_dialogs_test
+	@cd $(ROOT) && $(BUILD)/charging_dialogs_test $(ROOT)/docs/ui-reviews/charging-dialog-revamp/screenshots
+
 $(TARGET): $(OBJECTS)
 	@echo "  LD    $(notdir $@)"
 	@$(CXX) -o $@ $(OBJECTS) $(LDFLAGS)

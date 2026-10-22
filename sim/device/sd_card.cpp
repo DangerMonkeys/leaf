@@ -15,6 +15,7 @@
 #include "hardware/configuration.h"
 #include "hardware/io_pins.h"
 #include "logging/log.h"
+#include "sim/usb.h"
 #include "storage/sd_card.h"
 
 SDCard sdcard;
@@ -79,7 +80,11 @@ bool SDCard::setupMassStorage(bool mediaPresent) {
   return false;
 }
 
-bool SDCard::presentMassStorage() { return false; }
+bool SDCard::presentMassStorage() {
+  if (!sim::usbMassStorageAvailable() || !mounted_ || !isCardPresent()) return false;
+  ownership_.store(SDCardOwnership::HostOwned, std::memory_order_release);
+  return true;
+}
 
 bool SDCard::reserveForFirmwareUpload() {
   SDCardOwnership expected = SDCardOwnership::FirmwareReserved;
@@ -88,17 +93,24 @@ bool SDCard::reserveForFirmwareUpload() {
 }
 
 bool SDCard::acquireForFirmwareUse(uint32_t timeoutMs, bool disconnectUsb) {
+  if (sim::usbAcquireBlocked()) return false;
   (void)timeoutMs;
   (void)disconnectUsb;
   ownership_.store(SDCardOwnership::FirmwareReserved, std::memory_order_release);
   return true;
 }
 
-void SDCard::keepMassStorageEjected() {}
+void SDCard::keepMassStorageEjected() { acquireForFirmwareUse(); }
 
-void SDCard::notifyExplicitEject() {}
+void SDCard::notifyExplicitEject() {
+  if (hostOwnsMassStorage()) explicitEject_.store(true, std::memory_order_release);
+}
 
-bool SDCard::takeExplicitEject() { return false; }
+bool SDCard::takeExplicitEject() {
+  if (!explicitEject_.exchange(false, std::memory_order_acq_rel)) return false;
+  acquireForFirmwareUse();
+  return true;
+}
 
 void SDCard::updateUsbOwnership() {}
 

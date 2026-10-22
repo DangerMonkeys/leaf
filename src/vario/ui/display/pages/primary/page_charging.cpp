@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <U8g2lib.h>
 
+#include "charging_dialog_art.h"
 #include "comms/leaf_log_sync.h"
 #include "hardware/buttons.h"
 #include "power.h"
@@ -16,9 +17,13 @@
 
 namespace {
   constexpr uint8_t CHARGING_DIALOG_WIDTH = 96;
-  constexpr uint8_t CHARGING_DIALOG_Y = 94;
-  constexpr uint8_t CHARGING_DIALOG_HEIGHT = 67;
-  constexpr uint8_t CHARGING_DIALOG_SEPARATOR_HEIGHT = 4;
+  constexpr uint8_t CHARGING_DIALOG_Y = 141;
+  constexpr uint8_t CHARGING_DIALOG_HEIGHT = 51;
+  constexpr uint8_t SMALL_DIALOG_HEIGHT = 23;
+  // Extend the centered 22px panel upward by one row for equal text margins.
+  // Its bottom edge and contents stay fixed; the version footer starts at 184.
+  constexpr uint8_t SMALL_DIALOG_Y = 150;
+  constexpr uint8_t FOOTER_BASELINE_Y = 192;
 
   void printCentered(const char* text, uint8_t baselineY) {
     int16_t x = (CHARGING_DIALOG_WIDTH - u8g2.getStrWidth(text)) / 2;
@@ -27,15 +32,112 @@ namespace {
     u8g2.print(text);
   }
 
-  void formatProgress(char* status, size_t statusSize, const char* verb, uint16_t current,
-                      uint16_t total) {
-    snprintf(status, statusSize, "%s %u of %u", verb, current, total);
-    if (u8g2.getStrWidth(status) <= CHARGING_DIALOG_WIDTH) return;
+  void glyph(const charging_art::Glyph& art, bool transparent = false) {
+    u8g2.setBitmapMode(transparent);
+    u8g2.drawXBMP(art.x, CHARGING_DIALOG_Y + art.y, art.width, art.height, art.pixels);
+    u8g2.setBitmapMode(0);
+  }
 
-    snprintf(status, statusSize, "%s %u/%u", verb, current, total);
-    if (u8g2.getStrWidth(status) <= CHARGING_DIALOG_WIDTH) return;
+  void dialogBase(uint8_t yTop, uint8_t height) {
+    u8g2.setDrawColor(1);
+    u8g2.drawBox(0, yTop, 96, height);
+    u8g2.setDrawColor(0);
+    // Two-pixel corner cutouts, copied from the reference panel.
+    for (uint8_t y : {yTop, uint8_t(yTop + height - 1)}) {
+      u8g2.drawBox(0, y, 2, 1);
+      u8g2.drawBox(94, y, 2, 1);
+    }
+    for (uint8_t y : {uint8_t(yTop + 1), uint8_t(yTop + height - 2)}) {
+      u8g2.drawPixel(0, y);
+      u8g2.drawPixel(95, y);
+    }
+  }
 
-    snprintf(status, statusSize, "%s", verb);
+  void smallDialog(const char* line1, const char* line2 = nullptr, bool usb = false) {
+    dialogBase(SMALL_DIALOG_Y, SMALL_DIALOG_HEIGHT);
+    // Keep the reference USB icon at its existing screen position.
+    if (usb) {
+      const auto& icon = charging_art::usb_icon;
+      u8g2.drawXBMP(icon.x, SMALL_DIALOG_Y + 1 + icon.y, icon.width, icon.height, icon.pixels);
+    }
+    u8g2.setFont(leaf_5x8);
+    const int16_t center = usb ? 70 : 48;
+    const auto line = [&](const char* text, uint8_t y) {
+      u8g2.setCursor(center - u8g2.getStrWidth(text) / 2, y);
+      u8g2.print(text);
+    };
+    line(line1, SMALL_DIALOG_Y + (line2 ? 10 : 15));
+    if (line2) line(line2, SMALL_DIALOG_Y + 20);
+    u8g2.setDrawColor(1);
+  }
+
+  void leafLogDialog() {
+    using Phase = LeafLogSync::ScreenPhase;
+    const auto phase = leafLogSync.screenPhase();
+    static Phase lastPhase = Phase::Scanning;
+    static uint32_t phaseTick = millis() / 500;
+    if (phase != lastPhase) {
+      lastPhase = phase;
+      phaseTick = millis() / 500;
+    }
+    const uint32_t tick = millis() / 500 - phaseTick;
+    const bool confirming = leafLogSync.cancelConfirmation();
+    dialogBase(CHARGING_DIALOG_Y, CHARGING_DIALOG_HEIGHT);
+    glyph(charging_art::wordmark);
+    u8g2.setFont(leaf_8x14);
+    u8g2.drawGlyph(30, CHARGING_DIALOG_Y + 16, 140);
+    if (confirming) {
+      u8g2.setFont(leaf_5x8);
+      printCentered("Cancel Uploads?", 178);
+    } else {
+      if (phase == Phase::Transfer && tick % 11 < 10) {
+        // Existing hollow leaf, moving four pixels every 500ms. Draw it behind
+        // the device and cloud; the final frame is fully hidden in the cloud.
+        u8g2.drawGlyph(21 + 4 * (tick % 11), CHARGING_DIALOG_Y + 39, 142);
+      }
+      glyph(charging_art::device);
+      if (phase == Phase::Connecting || phase == Phase::Transfer || phase == Phase::Complete ||
+          phase == Phase::Paused) {
+        // Preserve the cloud's shaped edge while it covers the moving leaf.
+        glyph(charging_art::cloud, true);
+      }
+      switch (phase) {
+        case Phase::Scanning:
+          u8g2.drawBox(17, CHARGING_DIALOG_Y + 27 + 2 * (tick % 7), 8, 2);
+          break;
+        case Phase::Wifi:
+          if (tick % 4 >= 1) glyph(charging_art::wifi_1, true);
+          if (tick % 4 >= 2) glyph(charging_art::wifi_2, true);
+          if (tick % 4 >= 3) glyph(charging_art::wifi_3, true);
+          break;
+        case Phase::Connecting:
+          u8g2.drawBox(30, CHARGING_DIALOG_Y + 33, 2, 3);
+          u8g2.drawBox(54, CHARGING_DIALOG_Y + 33, 2, 3);
+          if (tick % 4 != 0)
+            u8g2.drawHLine(32, CHARGING_DIALOG_Y + 34, 7 * (tick % 4) + (tick % 4 == 3));
+          break;
+        case Phase::Transfer:
+          break;
+        case Phase::Complete:
+          glyph(charging_art::checkmark);
+          break;
+        case Phase::Paused:
+          for (uint8_t dot = 0; dot < tick % 4; ++dot) {
+            u8g2.drawBox(36 + dot * 7, CHARGING_DIALOG_Y + 33, 2, 2);
+          }
+          break;
+      }
+    }
+    if (!confirming && (phase == Phase::Transfer || phase == Phase::Complete) &&
+        leafLogSync.progressKnown() && leafLogSync.totalCount() > 0) {
+      char count[12];
+      snprintf(count, sizeof(count), "%u/%u", leafLogSync.currentCount(), leafLogSync.totalCount());
+      u8g2.setFont(leaf_5x8);
+      // Keep the longest allowed 100/100 on screen, one row above the original reference.
+      u8g2.setCursor(73 - u8g2.getStrWidth(count) / 2, 190);
+      u8g2.print(count);
+    }
+    u8g2.setDrawColor(1);
   }
 }  // namespace
 
@@ -73,7 +175,8 @@ void chargingPage_draw() {
     u8g2.print("mV");
     u8g2.setDrawColor(1);
 
-    if (settings.dev_mode) {
+    if (settings.dev_mode && !leafLogSync.screenActive() && !sdcard.hostOwnsMassStorage() &&
+        !leafLogSync.cancelPending()) {
       // If Developer Mode enabled, show Input Current max limit
       u8g2.setFont(leaf_6x12);
       u8g2.setCursor(10, 157);
@@ -88,89 +191,43 @@ void chargingPage_draw() {
         u8g2.print(" OFF");
     }
 
-    // Display the current SW version
-    u8g2.setCursor(0, 172);
-    u8g2.setFont(leaf_5x8);
-    u8g2.print("v");
-    u8g2.print(LeafVersionInfo::firmwareVersion());
-
-    // SD Card Mounted
-    u8g2.setCursor(12, 191);
-    u8g2.setFont(leaf_icons);
+    // A present card needs no status icon. Use the bottom line for the combined
+    // firmware/hardware version, or replace it with an explicit missing-card warning.
     if (!sdcard.isCardPresent()) {
+      u8g2.setCursor(0, FOOTER_BASELINE_Y);
+      u8g2.setFont(leaf_icons);
       u8g2.print((char)61);
+      u8g2.setCursor(15, FOOTER_BASELINE_Y);
       u8g2.setFont(leaf_6x12);
-      u8g2.print(" NO SD!");
+      u8g2.print("NO SD CARD!");
     } else {
-      u8g2.print((char)60);
-    }
-
-    if (leafLogSync.screenActive()) {
-      u8g2.setDrawColor(0);
-      u8g2.drawBox(0, CHARGING_DIALOG_Y - CHARGING_DIALOG_SEPARATOR_HEIGHT, CHARGING_DIALOG_WIDTH,
-                   CHARGING_DIALOG_SEPARATOR_HEIGHT);
-      u8g2.setDrawColor(1);
-      u8g2.drawRBox(0, CHARGING_DIALOG_Y, CHARGING_DIALOG_WIDTH, CHARGING_DIALOG_HEIGHT, 3);
-      u8g2.setDrawColor(0);
-      u8g2.setFont(leaf_6x12);
-      printCentered(leafLogSync.powerOnPending() ? "Turning On" : "Leaf Log", 109);
-
+      u8g2.setCursor(0, FOOTER_BASELINE_Y);
       u8g2.setFont(leaf_5x8);
-      char status[32];
-      if (leafLogSync.powerOnPending()) {
-        snprintf(status, sizeof(status), "%s",
-                 leafLogSync.powerOnClosingUsb() ? "Closing USB..." : "");
-      } else if (leafLogSync.massStorageUnavailable()) {
-        snprintf(status, sizeof(status), "%s",
-                 leafLogSync.completionPending() ? "Uploads complete" : "USB unavailable");
-      } else if (leafLogSync.completionNotice()) {
-        snprintf(status, sizeof(status), "%s", leafLogSync.statusLine());
-      } else if (leafLogSync.retryPending()) {
-        snprintf(status, sizeof(status), "%s", leafLogSync.statusLine());
-      } else if (leafLogSync.completionPending() && leafLogSync.progressKnown() &&
-                 leafLogSync.totalCount() > 0) {
-        formatProgress(status, sizeof(status), "Uploaded", leafLogSync.currentCount(),
-                       leafLogSync.totalCount());
-      } else if (leafLogSync.preparingNext()) {
-        formatProgress(status, sizeof(status), "Preparing", leafLogSync.currentCount(),
-                       leafLogSync.totalCount());
-      } else if (leafLogSync.uploading() && leafLogSync.progressKnown() &&
-                 leafLogSync.totalCount() > 0) {
-        formatProgress(status, sizeof(status), "Uploading", leafLogSync.currentCount(),
-                       leafLogSync.totalCount());
-      } else {
-        snprintf(status, sizeof(status), "%s", leafLogSync.statusLine());
-      }
-      printCentered(status, 124);
-      if (leafLogSync.powerOnPending()) {
-        printCentered("Please wait...", 148);
-      } else if (leafLogSync.massStorageUnavailable()) {
-        if (leafLogSync.completionPending()) printCentered("USB unavailable", 137);
-        printCentered("Press to retry.", 148);
-        printCentered("Hold to turn on.", 159);
-      } else if (leafLogSync.completionNotice()) {
-        printCentered("USB drive ready", 143);
-      } else if (leafLogSync.completionPending()) {
-        printCentered("Preparing USB...", 143);
-        printCentered("Please wait...", 155);
-      } else if (leafLogSync.retryPending()) {
-        printCentered("Retry scheduled", 143);
-        printCentered("Press to cancel.", 155);
-      } else {
-        printCentered("Press to cancel", 138);
-        printCentered("and open USB drive.", 148);
-        printCentered("Hold to turn on.", 158);
-      }
-      u8g2.setDrawColor(1);
+      u8g2.print("v");
+      u8g2.print(LeafVersionInfo::firmwareVersion());
     }
 
+    if (leafLogSync.powerOnPending()) {
+      if (leafLogSync.powerOnClosingUsb())
+        smallDialog("Closing", "USB Drive", true);
+      else
+        smallDialog("Turning On");
+    } else if (leafLogSync.cancelPending()) {
+      smallDialog("Opening", "USB Drive", true);
+    } else if (leafLogSync.massStorageUnavailable()) {
+      if (leafLogSync.screenActive()) smallDialog("USB Drive", "Not Ready", true);
+    } else if (leafLogSync.screenActive()) {
+      leafLogDialog();
+    } else if (sdcard.hostOwnsMassStorage()) {
+      smallDialog("USB Drive", "Available", true);
+    }
   } while (u8g2.nextPage());
 }
 
 void chargingPage_button(Button button, ButtonEvent state, uint8_t count) {
-  if (button == Button::CENTER && state == ButtonEvent::PRESSED &&
+  if (button == Button::CENTER && state == ButtonEvent::CLICKED &&
       leafLogSync.interceptsChargingButtons()) {
-    leafLogSync.requestCancel();
+    leafLogSync.requestChargingClick();
     display.update();
     return;
   }

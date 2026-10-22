@@ -2,6 +2,7 @@
 
 #include <SD_MMC.h>
 #include <WiFi.h>
+#include <freertos/task.h>
 #include <time.h>
 
 #include "comms/leaf_log_client.h"
@@ -52,7 +53,10 @@ namespace {
 LeafLogSync leafLogSync;
 
 void LeafLogSync::beginSession(bool fromEject) {
-  buttons.armUrgentPressCapture();
+  // Uploads no longer block input polling. A first center tap asks for confirmation,
+  // so the old interrupt-to-abort shortcut must not cancel the transport.
+  buttons.disarmUrgentPressCapture();
+  cancelConfirmation_ = false;
   resumedAfterEject_ = fromEject;
   sessionTotalKnown_ = false;
   sessionCompletionPending_ = false;
@@ -111,7 +115,7 @@ void LeafLogSync::scanEligibility() {
   for (uint8_t entries = 0; entries < SCAN_SLICE_ENTRIES; ++entries) {
     // A single filesystem operation may exceed the budget; yield/check cancellation between them.
     if (cancelRequested_.load(std::memory_order_acquire) ||
-        powerOnRequested_.load(std::memory_order_acquire) || buttons.urgentPressLatched()) {
+        powerOnRequested_.load(std::memory_order_acquire)) {
       return;
     }
     if (entries > 0 && millis() - startedMs >= SCAN_SLICE_MS) return;
@@ -138,7 +142,7 @@ void LeafLogSync::scanEligibility() {
       }
     }
 
-    if (!scanPaths_.available()) {
+    if (pendingCount_ >= MAX_SESSION_FLIGHTS || !scanPaths_.available()) {
       scanPaths_.close();
       SD_MMC.remove(SCAN_PATHS);
       pendingPaths_.close();
@@ -224,6 +228,14 @@ void LeafLogSync::startCurrentUpload() {
 }
 
 void LeafLogSync::update() {
+  if (uploadRunning_) {
+    // Do not hand the card to USB, disconnect WiFi or overwrite the request while
+    // the worker can still be using it. Cancel/power-on flags interrupt its stream.
+    if (!uploadDone_.load(std::memory_order_acquire)) return;
+    uploadRunning_ = false;
+    finishUpload(uploadResult_);
+    if (powerOnReady_.load(std::memory_order_acquire)) return;
+  }
   // Turning on always takes precedence over charging-mode work and commissioning suppression.
   // The user must never be trapped on the charging screen by an SD/Leaf Log policy decision.
   if (powerOnRequested_.load(std::memory_order_acquire)) {
@@ -267,9 +279,7 @@ void LeafLogSync::update() {
     return;
   }
 
-  if (buttons.urgentPressLatched()) requestCancel();
-
-  if (cancelRequested_.load(std::memory_order_acquire) && state_ != State::Uploading) {
+  if (cancelRequested_.load(std::memory_order_acquire)) {
     finishRequestedExit();
     return;
   }
@@ -313,49 +323,9 @@ void LeafLogSync::update() {
         }
       }
       break;
-    case State::Uploading: {
-      const auto credential = leaf_log_credentials::load();
-      auto result =
-          leaf_log_client::uploadIgc(current_.trackPath, current_.trackFilename, credential.token,
-                                     cancelRequested_, buttons.urgentPressSignal());
-      if (result.outcome == leaf_log_client::UploadOutcome::Delivered) {
-        if (!LogbookStore::recordLeafLogFlightId(current_.logbookPath, result.flightId)) {
-          handleTransientFailure("record_flight_id_failed", result.httpStatus, result.elapsedMs,
-                                 result.fileSize, result.responseSize);
-          break;
-        }
-        if (!result.accountHandle.isEmpty() && !result.accountDisplayName.isEmpty()) {
-          leaf_log_credentials::updateAccount(result.accountHandle, result.accountDisplayName);
-        }
-        recordCompletedItem();
-        retryIndex_ = 0;
-        current_ = LeafLogCandidate();
-        state_ = State::CheckingEligibility;
-      } else if (result.outcome == leaf_log_client::UploadOutcome::Unauthorized) {
-        leaf_log_credentials::markReconnectRequired();
-        finishToMassStorage();
-      } else if (result.outcome == leaf_log_client::UploadOutcome::Invalid ||
-                 result.outcome == leaf_log_client::UploadOutcome::TooLarge) {
-        if (!LogbookStore::recordLeafLogRejection(
-                current_.logbookPath, result.outcome == leaf_log_client::UploadOutcome::Invalid
-                                          ? "invalid_igc"
-                                          : "too_large")) {
-          handleTransientFailure("record_rejection_failed", result.httpStatus, result.elapsedMs,
-                                 result.fileSize, result.responseSize);
-          break;
-        }
-        recordCompletedItem();
-        retryIndex_ = 0;
-        current_ = LeafLogCandidate();
-        state_ = State::CheckingEligibility;
-      } else if (result.outcome == leaf_log_client::UploadOutcome::Cancelled) {
-        finishRequestedExit();
-      } else {
-        handleTransientFailure(result.diagnostic, result.httpStatus, result.elapsedMs,
-                               result.fileSize, result.responseSize, result.transportDetail);
-      }
+    case State::Uploading:
+      launchUpload();
       break;
-    }
     case State::Backoff:
       if (static_cast<int32_t>(millis() - retryAtMs_) >= 0) {
         if (!sessionTotalKnown_)
@@ -387,6 +357,7 @@ void LeafLogSync::update() {
 }
 
 void LeafLogSync::prepareForCharging() {
+  cancelConfirmation_ = false;
   clearSessionFiles();
   buttons.disarmUrgentPressCapture();
   cancelRequested_.store(false, std::memory_order_release);
@@ -401,6 +372,7 @@ void LeafLogSync::prepareForCharging() {
 }
 
 void LeafLogSync::prepareForOperating() {
+  cancelConfirmation_ = false;
   clearSessionFiles();
   buttons.disarmUrgentPressCapture();
   cancelRequested_.store(false, std::memory_order_release);
@@ -441,6 +413,7 @@ void LeafLogSync::finishRequestedExit() {
 }
 
 void LeafLogSync::finishForPowerOn() {
+  cancelConfirmation_ = false;
   buttons.disarmUrgentPressCapture();
   buttons.suppressEventsUntilRelease();
   clearSessionFiles();
@@ -458,6 +431,7 @@ void LeafLogSync::finishForPowerOn() {
 }
 
 void LeafLogSync::finishToMassStorage() {
+  cancelConfirmation_ = false;
   const bool suppressButton = buttons.urgentPressLatched();
   buttons.disarmUrgentPressCapture();
   if (suppressButton) buttons.suppressEventsUntilRelease();
@@ -521,9 +495,32 @@ void LeafLogSync::handleTransientFailure(const char* reason, int httpStatus, uin
   stateStartedMs_ = millis();
 }
 
-void LeafLogSync::requestCancel() { cancelRequested_.store(true, std::memory_order_release); }
+void LeafLogSync::requestCancel() {
+  cancelConfirmation_ = false;
+  cancelRequested_.store(true, std::memory_order_release);
+}
+
+bool LeafLogSync::cancelConfirmation() const {
+  return cancelConfirmation_ && !sessionCompletionPending_ && !powerOnPending() &&
+         millis() - cancelConfirmationStartedMs_ < 5000;
+}
+
+void LeafLogSync::requestChargingClick() {
+  if (powerOnPending()) return;
+  if (massStorageUnavailable()) {
+    requestCancel();  // Retry the USB handoff, without restarting the upload session.
+  } else if (interceptsChargingButtons() && !sessionCompletionPending_) {
+    if (cancelConfirmation()) {
+      requestCancel();
+    } else {
+      cancelConfirmation_ = true;
+      cancelConfirmationStartedMs_ = millis();
+    }
+  }
+}
 
 void LeafLogSync::requestPowerOn() {
+  cancelConfirmation_ = false;
   // HostOwned means the LUN was presented internally. hostMounted confirms that a real USB host
   // actually enumerated it, so a charge-only connection does not claim that USB needs closing.
   powerOnClosingUsb_ = sdcard.hostOwnsMassStorage() && leaf_usb::hostMounted();
@@ -552,14 +549,45 @@ bool LeafLogSync::canSleepWhileCharging() const {
 }
 
 bool LeafLogSync::screenActive() const {
+  if (powerOnPending() || state_ == State::Backoff) return true;
   if (state_ == State::Complete) return millis() - stateStartedMs_ < COMPLETION_POPUP_MS;
-  if (state_ == State::Backoff || state_ == State::MassStorageUnavailable) {
+  if (state_ == State::MassStorageUnavailable) {
     return millis() - stateStartedMs_ < NOTICE_POPUP_MS;
   }
   if (state_ == State::CheckingEligibility && sessionCompletionPending_) {
     return millis() - completionStartedMs_ < NOTICE_POPUP_MS;
   }
   return interceptsChargingButtons();
+}
+
+LeafLogSync::ScreenPhase LeafLogSync::screenPhase() const {
+  if (sessionCompletionPending_ || completionNotice()) return ScreenPhase::Complete;
+  if (retryPending()) return ScreenPhase::Paused;
+  if (state_ == State::ConnectingWifi) return ScreenPhase::Wifi;
+  if (state_ == State::WaitingForTime) return ScreenPhase::Connecting;
+  if (preparingNext() || uploading()) return ScreenPhase::Transfer;
+  return ScreenPhase::Scanning;
+}
+
+void LeafLogSync::launchUpload() {
+  uploadPath_ = current_.trackPath;
+  uploadFilename_ = current_.trackFilename;
+  uploadToken_ = leaf_log_credentials::load().token;
+  uploadDone_.store(false, std::memory_order_release);
+  uploadRunning_ = true;
+  if (xTaskCreate(uploadTask, "LeafLogUpload", 12 * 1024, this, 10, nullptr) != pdPASS) {
+    uploadRunning_ = false;
+    handleTransientFailure("upload_task_start_failed");
+  }
+}
+
+void LeafLogSync::uploadTask(void* context) {
+  auto* self = static_cast<LeafLogSync*>(context);
+  self->uploadResult_ =
+      leaf_log_client::uploadIgc(self->uploadPath_, self->uploadFilename_, self->uploadToken_,
+                                 self->cancelRequested_, self->powerOnRequested_);
+  self->uploadDone_.store(true, std::memory_order_release);
+  vTaskDelete(nullptr);
 }
 
 const char* LeafLogSync::statusLine() const {
@@ -583,5 +611,47 @@ const char* LeafLogSync::statusLine() const {
       return "USB drive unavailable";
     default:
       return "";
+  }
+}
+
+void LeafLogSync::finishUpload(const leaf_log_client::UploadResult& result) {
+  if (result.outcome == leaf_log_client::UploadOutcome::Delivered) {
+    if (!LogbookStore::recordLeafLogFlightId(current_.logbookPath, result.flightId)) {
+      handleTransientFailure("record_flight_id_failed", result.httpStatus, result.elapsedMs,
+                             result.fileSize, result.responseSize);
+      return;
+    }
+    if (!result.accountHandle.isEmpty() && !result.accountDisplayName.isEmpty()) {
+      leaf_log_credentials::updateAccount(result.accountHandle, result.accountDisplayName);
+    }
+    recordCompletedItem();
+    retryIndex_ = 0;
+    current_ = LeafLogCandidate();
+    state_ = State::CheckingEligibility;
+  } else if (result.outcome == leaf_log_client::UploadOutcome::Unauthorized) {
+    leaf_log_credentials::markReconnectRequired();
+    if (powerOnPending())
+      finishForPowerOn();
+    else
+      finishToMassStorage();
+  } else if (result.outcome == leaf_log_client::UploadOutcome::Invalid ||
+             result.outcome == leaf_log_client::UploadOutcome::TooLarge) {
+    if (!LogbookStore::recordLeafLogRejection(
+            current_.logbookPath, result.outcome == leaf_log_client::UploadOutcome::Invalid
+                                      ? "invalid_igc"
+                                      : "too_large")) {
+      handleTransientFailure("record_rejection_failed", result.httpStatus, result.elapsedMs,
+                             result.fileSize, result.responseSize);
+      return;
+    }
+    recordCompletedItem();
+    retryIndex_ = 0;
+    current_ = LeafLogCandidate();
+    state_ = State::CheckingEligibility;
+  } else if (result.outcome == leaf_log_client::UploadOutcome::Cancelled) {
+    finishRequestedExit();
+  } else {
+    handleTransientFailure(result.diagnostic, result.httpStatus, result.elapsedMs, result.fileSize,
+                           result.responseSize, result.transportDetail);
   }
 }

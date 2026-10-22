@@ -5,7 +5,22 @@
 
 #include <Arduino.h>
 
+#include "sim/usb.h"
 #include "system/usb_state.h"
+
+namespace {
+  bool massStorageAvailable = false;
+  bool hostMounted = false;
+  bool acquireBlocked = false;
+}  // namespace
+namespace sim {
+  void setUsbMassStorageAvailable(bool available) { massStorageAvailable = available; }
+  void setUsbHostMounted(bool mounted) { hostMounted = mounted; }
+  void setUsbAcquireBlocked(bool blocked) { acquireBlocked = blocked; }
+  bool usbMassStorageAvailable() { return massStorageAvailable; }
+  bool usbHostMounted() { return hostMounted; }
+  bool usbAcquireBlocked() { return acquireBlocked; }
+}  // namespace sim
 
 namespace leaf_usb {
 
@@ -14,7 +29,7 @@ namespace leaf_usb {
   bool connect() { return true; }
   bool disconnect() { return true; }
   bool started() { return true; }
-  bool hostMounted() { return false; }
+  bool hostMounted() { return sim::usbHostMounted(); }
   bool hostSuspended() { return false; }
   bool shouldStayAwakeForHost() { return false; }
 
