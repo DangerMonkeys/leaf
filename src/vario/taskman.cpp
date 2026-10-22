@@ -86,6 +86,7 @@ namespace {
   bool loggedFirstSelfTestTask = false;
   bool loggedFirstDiagnosticNetwork = false;
   bool loggedFirstFactoryDiscovery = false;
+  uint32_t lastChargingButtonPollMs = 0;
 
   void checkpointOnce(bool& logged, const char* event) {
     if (logged) return;
@@ -156,7 +157,7 @@ the pushbuttons, the GPS 1PPS signal, and perhaps others.
 */
 void TaskManager::update() {
   cpu_utilization::update();
-  const bool networkWork = sdcard.firmwareOwnsMassStorage() &&
+  const bool networkWork = !leafLogSync.transferInFlight() && sdcard.firmwareOwnsMassStorage() &&
                            (WiFi.status() == WL_CONNECTED || webserver_user_app_active());
   const bool heartbeatDue = millis() - lastMemoryHeartbeatMs >= MEMORY_HEARTBEAT_MS;
   {
@@ -195,6 +196,13 @@ void TaskManager::update() {
 }
 
 void TaskManager::updateWhileCharging() {
+  // A tap/second tap must be observable while an upload worker is running. Keep
+  // debounce and hold timing independent of the 500ms display/charging cadence.
+  if (millis() - lastChargingButtonPollMs >= 5) {
+    lastChargingButtonPollMs = millis();
+    buttons.update();
+  }
+  if (buttons.inspectPins() != Button::NONE) goToSleep = false;
   // Scanning yields after a short work slice rather than waiting for the 500ms display timer.
   if (leafLogSync.scanning()) leafLogSync.update();
 
@@ -216,17 +224,19 @@ void TaskManager::updateWhileCharging() {
     display.update();  // update display based on battery charge state etc
 
     // Check SD Card State and remount if card was inserted
-    sdcard.update();
+    // An upload owns an open SD file on its worker. Defer mount/unmount changes
+    // until it has closed the file and published its result.
+    if (!leafLogSync.transferInFlight()) sdcard.update();
 
     // update battery level and charge state
     power.readBatteryState();
 
     // Try to connect to the diagnostic network once while in charge-only mode. If it connects,
     // the connection will be preserved when the device switches to the on state.
-    diagnostic_network.update();
+    if (!leafLogSync.transferInFlight()) diagnostic_network.update();
 
     // Check Buttons
-    buttons.update();  // check Button for any presses (user can turn ON from charging state)
+    buttons.update();  // also poll on a charging tick immediately after waking
 
     // Prep to end this cycle and sleep
     if (buttons.inspectPins() == Button::NONE && diagnostic_network.canSleepWhileCharging() &&

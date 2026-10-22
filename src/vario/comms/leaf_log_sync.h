@@ -4,10 +4,13 @@
 #include <FS.h>
 #include <atomic>
 
+#include "comms/leaf_log_client.h"
 #include "logbook/logbook_store.h"
 
 class LeafLogSync {
  public:
+  static constexpr uint16_t MAX_SESSION_FLIGHTS = 100;
+  enum class ScreenPhase : uint8_t { Scanning, Wifi, Connecting, Transfer, Paused, Complete };
   enum class State : uint8_t {
     Idle,
     CheckingEligibility,
@@ -27,11 +30,16 @@ class LeafLogSync {
   void prepareForCharging();
   void prepareForOperating();
   void requestCancel();
+  void requestChargingClick();
   void requestPowerOn();
   bool takePowerOnReady();
   bool interceptsChargingButtons() const;
   bool canSleepWhileCharging() const;
   bool screenActive() const;
+  ScreenPhase screenPhase() const;
+  bool cancelConfirmation() const;
+  bool transferInFlight() const { return uploadRunning_; }
+  bool cancelPending() const { return cancelRequested_.load(std::memory_order_acquire); }
   bool retryPending() const { return state_ == State::Backoff; }
   bool massStorageUnavailable() const { return state_ == State::MassStorageUnavailable; }
   bool uploading() const { return state_ == State::Uploading; }
@@ -65,6 +73,9 @@ class LeafLogSync {
   void handleTransientFailure(const char* reason, int httpStatus = 0, uint32_t elapsedMs = 0,
                               size_t fileSize = 0, size_t responseSize = 0,
                               const String& transportDetail = String());
+  void launchUpload();
+  void finishUpload(const leaf_log_client::UploadResult& result);
+  static void uploadTask(void* context);
 
   State state_ = State::Idle;
   File scanDirectory_;
@@ -74,6 +85,16 @@ class LeafLogSync {
   std::atomic<bool> cancelRequested_{false};
   std::atomic<bool> powerOnRequested_{false};
   std::atomic<bool> powerOnReady_{false};
+  // The worker owns only its immutable request and result. The main loop keeps
+  // all sync state, logbook writes and SD/USB ownership changes.
+  bool uploadRunning_ = false;
+  std::atomic<bool> uploadDone_{false};
+  String uploadPath_;
+  String uploadFilename_;
+  String uploadToken_;
+  leaf_log_client::UploadResult uploadResult_;
+  bool cancelConfirmation_ = false;
+  uint32_t cancelConfirmationStartedMs_ = 0;
   bool wifiAttemptStarted_ = false;
   bool timeStarted_ = false;
   bool resumedAfterEject_ = false;

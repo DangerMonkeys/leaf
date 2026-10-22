@@ -1,0 +1,122 @@
+[
+  {
+    "file": "00-charging-no-popup.png",
+    "name": "Charging, no popup",
+    "shown_when": "Baseline before sync or with no active notice."
+  },
+  {
+    "file": "01-leaf-log-checking-flights.png",
+    "name": "Checking flights…",
+    "shown_when": "Find eligible flights on the SD card."
+  },
+  {
+    "file": "02-leaf-log-starting-wifi.png",
+    "name": "Starting WiFi…",
+    "shown_when": "Selected flight needs a saved WiFi connection."
+  },
+  {
+    "file": "03-leaf-log-connecting-network-time.png",
+    "name": "Connecting…",
+    "shown_when": "WiFi ready; waiting for a valid network clock."
+  },
+  {
+    "file": "04-leaf-log-uploading-1-of-2.png",
+    "name": "Uploading 1 of 2",
+    "shown_when": "First flight upload and response handling."
+  },
+  {
+    "file": "05-leaf-log-preparing-2-of-2.png",
+    "name": "Preparing 2 of 2",
+    "shown_when": "Select/recheck the next flight after the first result."
+  },
+  {
+    "file": "06-leaf-log-uploading-2-of-2.png",
+    "name": "Uploading 2 of 2",
+    "shown_when": "Second flight upload and response handling."
+  },
+  {
+    "file": "07-leaf-log-uploaded-2-of-2-preparing-usb.png",
+    "name": "Uploaded 2 of 2 / Preparing USB…",
+    "shown_when": "Batch processed; SD handoff is next."
+  },
+  {
+    "file": "08-leaf-log-uploads-complete-usb-ready.png",
+    "name": "Uploads complete / USB drive ready",
+    "shown_when": "Five-second completion notice."
+  },
+  {
+    "file": "09-charging-after-completion-popup.png",
+    "name": "Charging after completion",
+    "shown_when": "Completion notice closed; no popup."
+  },
+  {
+    "file": "10-leaf-log-upload-paused-retry-scheduled.png",
+    "name": "Upload paused / Retry scheduled",
+    "shown_when": "Transient failure; visible for 30 seconds."
+  },
+  {
+    "file": "11-charging-retry-pending-popup-hidden.png",
+    "name": "Retry pending, popup hidden",
+    "shown_when": "Retry still scheduled after notice disappears."
+  },
+  {
+    "file": "12-leaf-log-hold-center-to-turn-on.png",
+    "name": "Hold center to turn on",
+    "shown_when": "Waiting to distinguish tap from hold. Text clips."
+  },
+  {
+    "file": "13-leaf-log-usb-unavailable-press-to-retry.png",
+    "name": "USB unavailable",
+    "shown_when": "USB handoff failed; press retries USB."
+  },
+  {
+    "file": "14-leaf-log-uploads-complete-usb-unavailable.png",
+    "name": "Uploads complete / USB unavailable",
+    "shown_when": "Batch processed but USB handoff failed."
+  },
+  {
+    "file": "15-turning-on-please-wait.png",
+    "name": "Turning On / Please wait…",
+    "shown_when": "Power-on request without a confirmed mounted USB host."
+  },
+  {
+    "file": "16-turning-on-closing-usb.png",
+    "name": "Turning On / Closing USB…",
+    "shown_when": "Power-on request with mounted host; SD return pending."
+  },
+  {
+    "file": "17-charging-no-sd-card-no-popup.png",
+    "name": "No SD card, no popup",
+    "shown_when": "Missing-card indicator is part of the charging page."
+  },
+  {
+    "file": "18-leaf-log-preparing-compact-counter.png",
+    "name": "Preparing 100/100",
+    "shown_when": "Compact counter fallback for a large queue."
+  },
+  {
+    "file": "19-leaf-log-uploading-compact-counter.png",
+    "name": "Uploading 100/100",
+    "shown_when": "Compact counter fallback for a large queue."
+  },
+  {
+    "file": "20-leaf-log-uploaded-compact-counter.png",
+    "name": "Uploaded 1000/1000",
+    "shown_when": "Compact counter fallback while preparing USB."
+  },
+  {
+    "file": "21-leaf-log-preparing-without-counter.png",
+    "name": "Preparing",
+    "shown_when": "Verb-only fallback when even a compact counter is too wide."
+  },
+  {
+    "file": "22-leaf-log-uploading-without-counter.png",
+    "name": "Uploading",
+    "shown_when": "Verb-only fallback when even a compact counter is too wide."
+  },
+  {
+    "file": "23-leaf-log-uploaded-without-counter.png",
+    "name": "Uploaded",
+    "shown_when": "Verb-only fallback while preparing USB."
+  }
+]

@@ -161,6 +161,13 @@ void vQueueDelete(QueueHandle_t queue) { delete (SimQueue*)queue; }
 
 BaseType_t xTaskCreate(TaskFunction_t fn, const char* name, uint32_t stackDepth, void* parameters,
                        UBaseType_t priority, TaskHandle_t* createdTask) {
+  // Short-lived, self-deleting jobs need no retained handle allocation.
+  if (!createdTask) {
+    std::thread([fn, parameters] {
+      if (fn) fn(parameters);
+    }).detach();
+    return pdPASS;
+  }
   auto* task = new SimTask();
   task->name = name ? name : "task";
   task->thread = std::thread([fn, parameters] {

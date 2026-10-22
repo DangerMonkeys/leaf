@@ -1,0 +1,74 @@
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: OffUSB
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port... GPS initialize sat messages... GPS initialize done...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done.
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+sleep_peripherals: OffUSB
+ - Sleeping GPS
+LC86G::sleep now: 245
+ready: 400
+delay: 155
+************ !!!!!!!!!!! GPS SLEEPING COMMAND SENT !!!!!!!!!!! ************
+ - Sleeping baro
+ - Sleeping speaker
+Shut down speaker
+ - DONE
+ - DONE
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+CAPTURE 00-charging-no-popup |
+SD card: mounted
+CAPTURE 01-leaf-log-checking-flights | Checking flights...
+CAPTURE 02-leaf-log-starting-wifi | Starting WiFi...
+CAPTURE 03-leaf-log-connecting-network-time | Connecting...
+CAPTURE 04-leaf-log-uploading-1-of-2 | Uploading to Leaf Log
+CAPTURE 05-leaf-log-preparing-2-of-2 | Checking flights...
+CAPTURE 06-leaf-log-uploading-2-of-2 | Uploading to Leaf Log
+CAPTURE 07-leaf-log-uploaded-2-of-2-preparing-usb | Checking flights...
+CAPTURE 08-leaf-log-uploads-complete-usb-ready | Uploads complete
+CAPTURE 09-charging-after-completion-popup |
+SD card: mounted
+Leaf Log retry: reason=offline_simulated_outcome,track=flight-1.igc,http=0,elapsed_ms=0,file_bytes=0,response_bytes=0 delay_ms=300000
+CAPTURE 10-leaf-log-upload-paused-retry-scheduled | Upload paused
+CAPTURE 11-charging-retry-pending-popup-hidden | Upload paused
+SD card: mounted
+CAPTURE 12-leaf-log-hold-center-to-turn-on | Hold center to turn on
+CAPTURE 13-leaf-log-usb-unavailable-press-to-retry | USB drive unavailable
+SD card: mounted
+CAPTURE 14-leaf-log-uploads-complete-usb-unavailable | USB drive unavailable
+SD card: mounted
+CAPTURE 15-turning-on-please-wait | Checking flights...
+SD card: mounted
+CAPTURE 16-turning-on-closing-usb | Closing USB...
+SD card: mounted
+CAPTURE 17-charging-no-sd-card-no-popup |
+SD card: mounted
+SD card: mounted
+SD card: mounted
+CAPTURE 18-leaf-log-preparing-compact-counter | Checking flights...
+CAPTURE 19-leaf-log-uploading-compact-counter | Uploading to Leaf Log
+SD card: mounted
+CAPTURE 20-leaf-log-uploaded-compact-counter | Checking flights...
+SD card: mounted
+CAPTURE 21-leaf-log-preparing-without-counter | Checking flights...
+CAPTURE 22-leaf-log-uploading-without-counter | Uploading to Leaf Log
+CAPTURE 23-leaf-log-uploaded-without-counter | Checking flights...
+Catalog complete: 24 screenshots; all flow assertions passed.
