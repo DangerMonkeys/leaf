@@ -1,26 +1,26 @@
-# Schema 3 GPS sentence profiling
-
-[Simulator report](simulator.html) demonstrates sentence type/checksum summaries, exclusive
-processing stages, complete-line dispatch phase and retained deadline crossings. Its data comes
-from the integration-test executable, not an approved operational workload or real device.
-
-- Uses the actual GPS parser, LC86G UART driver and message bus with host HAL.
-- Exercises fragmented valid GGA, a rejected checksum, ordinary injected playback and a
-  deterministic 20 ms virtual stall during a valid dispatch. The stall is not ESP32 CPU cost.
-- Includes normal page timing and separate button/recovery data. Existing simulator regressions,
-  pure accounting under ASan/UBSan, lifecycle/thread ownership and 21 report tests pass.
-- Capture allocation is 22,496 bytes: 176 bytes more than schema 2. Recent slot history is eight
-  slots and memory history sixteen samples; full-run aggregates, endpoints/minima and retained
-  worst slot/predecessor records remain. GPS retains eight recent sentences and four crossings.
-- New buffers remain capture-only. Disabled hooks read the capture flag without collecting
-  timestamps; the read path avoids new checks on every empty idle poll. Only small counters
-  and owner state are permanent. The internal memory reserve is unchanged.
-- GPS processing includes elapsed blocking/preemption on hardware; the simulator uses host
-  thread CPU. First-read timestamps observe firmware ingestion rather than wire arrival.
-- Raw evidence, metadata, report JSON and executable/source identification are retained here.
-  The executable hash identifies `runtime_capture_integration_test`. The firmware version
-  string in the simulator is the repository placeholder; the build variant identifies the board.
-
+# Schema 3 GPS sentence profiling
+
+[Simulator report](simulator.html) demonstrates sentence type/checksum summaries, exclusive
+processing stages, complete-line dispatch phase and retained deadline crossings. Its data comes
+from the integration-test executable, not an approved operational workload or real device.
+
+- Uses the actual GPS parser, LC86G UART driver and message bus with host HAL.
+- Exercises fragmented valid GGA, a rejected checksum, ordinary injected playback and a
+  deterministic 20 ms virtual stall during a valid dispatch. The stall is not ESP32 CPU cost.
+- Includes normal page timing and separate button/recovery data. Existing simulator regressions,
+  pure accounting under ASan/UBSan, lifecycle/thread ownership and 21 report tests pass.
+- Capture allocation is 22,496 bytes: 176 bytes more than schema 2. Recent slot history is eight
+  slots and memory history sixteen samples; full-run aggregates, endpoints/minima and retained
+  worst slot/predecessor records remain. GPS retains eight recent sentences and four crossings.
+- New buffers remain capture-only. Disabled hooks read the capture flag without collecting
+  timestamps; the read path avoids new checks on every empty idle poll. Only small counters
+  and owner state are permanent. The internal memory reserve is unchanged.
+- GPS processing includes elapsed blocking/preemption on hardware; the simulator uses host
+  thread CPU. First-read timestamps observe firmware ingestion rather than wire arrival.
+- Raw evidence, metadata, report JSON and executable/source identification are retained here.
+  The executable hash identifies `runtime_capture_integration_test`. The firmware version
+  string in the simulator is the repository placeholder; the build variant identifies the board.
+
 ## Hardware findings
 
 [Hardware report](device-gps.html) and [raw capture](device-gps-raw.json): 80.691 seconds from
