@@ -8,6 +8,7 @@
 #include <NimBLEDevice.h>
 #include "TinyGPSPlus.h"
 #include "comms/fanet_radio.h"
+#include "diagnostics/cpu_utilization.h"
 #include "diagnostics/diagnostic_logs.h"
 #include "diagnostics/fatal_error.h"
 #include "diagnostics/heap_monitor.h"
@@ -278,6 +279,7 @@ void BLE::end() {
 void BLE::on_receive(const GpsMessage& msg) {
   // Short circuit if not initialized
   if (pServer == nullptr) return;
+  cpu_utilization::GpsStageScope enqueueTime(runtime_capture::GpsStage::BleEnqueue);
 
   // If the GPS message is a GPGGA or GPRMC, we store it in the buffers
   // for the next periodic send.

@@ -1,0 +1,14 @@
+{
+  "label": "Simulator smoke capture - uncommitted stage 1",
+  "commit": "7ed9b81337dcbccb37845a3e81c06fe2892ef596",
+  "working_tree": "Uncommitted changes on codex/runtime-telemetry; not release evidence",
+  "profile": "manual-smoke-v1",
+  "scenario": "thermal-climb.json / fresh state / 120 virtual seconds / accept-warning",
+  "toolchain": "gcc:13 sha256:8a4492a0802455f656af78b0c47c36b98d5b42b866a1e44dce25c06b743f5303 / VARIANT=leaf_3_2_8",
+  "coverage_notes": "Headless simulator smoke capture. Sensor bus callbacks and normal IGC operations exercised. Radio and hardware drivers stubbed.",
+  "limitations": "Uncalibrated host CPU costs. No automated burdened workload or approved operational baseline.",
+  "source_manifest_sha256": "a16a8343068af90247417002132859ae64f063c5ee50b4b63f1b580c8e05039f",
+  "source_manifest": "source-manifest.json",
+  "version_note": "Repository placeholder firmware version; hardware field comes from explicit leaf_3_2_8 build variant. Executable hash and source manifest identify the assessed simulator.",
+  "firmware_sha256": "e8311f92301c667e99f47d512819f45c980f502f58046f541da9db79eaabc710"
+}

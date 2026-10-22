@@ -76,6 +76,7 @@ class Display {
   DisplayRenderContext lastRenderContext() const { return lastRenderContext_; }
 
  private:
+  void updateFrame();
   MainPage sanitizedMainPage(MainPage targetPage);
   MainPage firstVisiblePrimaryPage(MainPage preferredPage) const;
   bool isScrollableMainPageVisible(MainPage targetPage) const;

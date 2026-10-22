@@ -1,0 +1,20 @@
+`hardware_version=leaf_3_2_8`
+`firmware_version=0.2.4-f1fd+h3.2.8`
+`MACaddress=7C:4F:AD:3B:AC:B0`
+* `Test=SD_CARD`,    `Result=PASS`, `Message=Saving self test results`
+* `Test=BARO`,       `Result=PASS`, `Alt_m=45.3829`
+* `Test=IMU`, `Sensor=accel`, `Response_mg=273.744,267.448,177.803`, `Pass=1`
+* `Test=IMU`, `Sensor=gyro`, `Response_dps=399.700,418.572,412.146`, `Pass=1`
+* `Test=IMU`, `Message=Stationarity limit exceeded`, `BiasValid=1`, `MeanAccel_g=0.992247`, `GyroStd_dps=3.1484,4.7745,0.6119`, `AccelStd_g=0.004345,0.002930,0.008146`
+* `Test=IMU`, `Message=Retrying stationary measurement`, `Attempt=2/3`
+* `Test=IMU`, `GyroBias_dps=-0.4158,0.2793,-0.1547`, `Stationary=1`, `Saved=1`
+* `Test=IMU`, `FlatBias_g=-0.007915`, `Saved=1`
+* `Test=IMU`,        `Result=PASS`, `Accel=0.99164`, `Gravity=0.999447`, `VerticalAccel=-0.00780694`, `Climb_mps=0.143336`
+* `Test=GPS_SERIAL`, `Result=PASS`, `Message=Valid NMEA sentence received`
+* `Test=AMBIENT`,    `Result=PASS`, `Temp=26.9063`
+* `Test=POWER`,      `Result=PASS`, `Batt%=100%`, `Batt_mV=4146`, `Batt_charge=0`, `USB_input=0`
+* `Test=VARIO`,      `Result=PASS`, `DeltaAlt_m=0.75`, `MaxClimb_ms=2.10`, `MaxSink_ms=-1.39`
+* `Test=BUTTONS`,    `Result=PASS`, `Up=1`, `Down=1`, `Left=1`, `Right=1`, `Center=1`
+* `Test=SPEAKER`,    `Result=PASS`, `Message=PASS - via user input`
+* `Test=GPS_FIX`,    `Result=PASS`, `Sec_to_fix=0`, `Fix_sats=12`
+* `Test=ALL`,        `Result=PASS`, `Message=ALL TESTS PASSED`

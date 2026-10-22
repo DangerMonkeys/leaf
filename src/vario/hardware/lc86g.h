@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <atomic>
 #include "etl/message_bus.h"
 
 #include "dispatch/message_source.h"
@@ -15,7 +16,11 @@ class LC86G : IPowerControl, IMessageSource {
   LC86G(HardwareSerial& serial) : gpsPort_(serial) {}
 
   void init();
-  bool readLine();
+  // Yield between characters when the scheduler advances; retain any partial sentence.
+  // A completed sentence is still dispatched inline before returning true.
+  bool readLine(const std::atomic<uint32_t>& timerTicks, uint32_t slotTick,
+                bool sampleEmptyPoll = false);
+  bool hasPendingData() { return gpsPort_.available() > 0; }
 
   // IPowerControl
   void sleep();

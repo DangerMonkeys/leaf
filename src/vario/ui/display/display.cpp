@@ -8,6 +8,7 @@
 #include <Arduino.h>
 #include <U8g2lib.h>
 
+#include "diagnostics/cpu_utilization.h"
 #include "hardware/Leaf_SPI.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
@@ -239,6 +240,16 @@ void Display::showOnSplash() {
 // Will first display charging screen if charging, or splash screen if in the process of turning on
 // / waking up Then will display any current modal pages before falling back to the current page
 void Display::update() {
+  if (!cpu_utilization::capturing()) {
+    updateFrame();
+    return;
+  }
+  const uint64_t start = cpu_utilization::workClockUs();
+  updateFrame();
+  cpu_utilization::recordDisplay(static_cast<uint8_t>(lastRenderContext_), start);
+}
+
+void Display::updateFrame() {
   updateThermalAutoSwitch(settings.disp_showThermalCorePage && thermalCore.estimate().centerValid);
   clearLastRenderContext();
 

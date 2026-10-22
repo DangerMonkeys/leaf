@@ -1,0 +1,23 @@
+{
+  "environment": "leaf_3_2_8_release",
+  "base_commit": "7ed9b81337dcbccb37845a3e81c06fe2892ef596",
+  "branch": "codex/runtime-telemetry",
+  "working_tree": "uncommitted",
+  "firmware_sha256": "9b8aec7b3bf8097a21c2ba0c8c443089a04b9f68bd5243f024c9ef3bed0a1b2d",
+  "source_manifest_sha256": "d8e97ae89634537489d7f06a25e14e156b3833ae480e2ffc79a3985455e49881",
+  "capture_bytes": 22496,
+  "device_capture": {
+    "file": "device-gps-raw.json",
+    "sd_path": "/diagnostics/runtime_3.json",
+    "sha256": "c2c4c7096dd16cca697b8b7dbaee402fff317e1d84b187176d9985083069dedf",
+    "duration_s": 80.69086
+  },
+  "flash_result": "Both OTA slots flashed; esptool hashes verified; device reset",
+  "monitor_static_symbol_bytes": 116,
+  "ota_offsets": [
+    "0x10000",
+    "0x340000"
+  ],
+  "static_ram_bytes": 103564,
+  "static_ram_change_from_schema2_bytes": 8
+}

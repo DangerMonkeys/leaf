@@ -1,0 +1,23 @@
+{
+  "label": "Leaf 3.2.8: five flight pages / GPS-BLE-IGC bench assessment",
+  "commit": "7ed9b81337dcbccb37845a3e81c06fe2892ef596",
+  "working_tree": "Uncommitted codex/runtime-telemetry schema 2; not approved release evidence",
+  "profile": "manual-flight-pages-v2",
+  "scenario": "Physical Leaf; operator visited five flight pages for approximately 30 seconds each; 173.16-second capture",
+  "toolchain": "PlatformIO 6.1.19 / leaf_3_2_8_release / pioarduino 53.03.10 / xtensa 13.2.0+20240530",
+  "device_id": "Leaf 3.2.8 / USB serial 7C4FAD3BACB0",
+  "sd_card": "Installed Leaf SD card; model and capacity not recorded",
+  "coverage_notes": "All five flight page types have normal render samples. BLE enabled in captured settings; connected-client traffic not verified. Latest IGC file contains 301 valid GPS-fix records at 1 Hz with no gaps; exact telemetry overlap and timer state are not encoded in the capture. FANET disabled. Optional diagnostic SD logs disabled.",
+  "limitations": "Single short manual bench capture; no approved compatible baseline, external overhead calibration, sustained soak, verified BLE traffic or functional sensor-recovery assessment. Debug pages were not visited.",
+  "capture_file_on_device": "/diagnostics/runtime_2.json",
+  "firmware_sha256": "868d330ded62ae9ef599aeba308a9bd41dccc27c90728b68d8abcc525ca8e917",
+  "source_manifest": "source-manifest.json",
+  "source_manifest_sha256": "e56d94ce4bb6297d832a000273428cb8fa2a27dcd769f1bef5d37d4bae3db556",
+  "igc_evidence": {
+    "summary_file": "device-flight-igc-summary.json",
+    "sha256": "7cbf487a3736dc3fe15da6101ed96f5eec11c914f73dbd96fe4908ac7358a8c7",
+    "fix_records": 301,
+    "valid_fix_records": 301,
+    "maximum_gap_seconds": 1
+  }
+}

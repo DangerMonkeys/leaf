@@ -1,0 +1,36 @@
+{
+  "label": "MIXED WORKLOAD: UART yielding / Navigate plus final manual self-test",
+  "commit": "a642048",
+  "build_base_commit": "f1f65c87fd1b36b6f7487ee6f98bdb8f536b4208",
+  "working_tree": "Character-yield source committed as a642048 after this exact binary was built from f1f65c8 plus the change; source manifest and binary hash identify it",
+  "profile": "manual-uart-yield-with-selftest-v4",
+  "scenario": "Physical Leaf, 116.391 seconds total. Operator reports approximately 90 seconds of normal running followed by approximately 30 seconds of manual self-test before STOP and Save Timing. Navigate is the only sampled flight page. Self-test boundaries are approximate and not encoded.",
+  "toolchain": "PlatformIO 6.1.19 / leaf_3_2_8_release / pioarduino 53.03.10 / xtensa 13.2.0+20240530",
+  "device_id": "Leaf 3.2.8 / USB serial 7C4FAD3BACB0",
+  "sd_card": "Installed Leaf SD card; model and capacity not recorded",
+  "coverage_notes": "BLE enabled in captured settings; connected-client traffic unverified. FANET and optional diagnostic SD logs disabled. 1525 checksum-accepted GPS dispatches, zero rejected/omitted/reset/partial-ingestion sentences. Navigate has 158 normal renders. Manual self-test log reports all tests passed, with one stationary IMU measurement retry and saved biases. Its SD writes and tasks are part of the capture and are not automatically excluded by button filtering.",
+  "limitations": "Mixed workload, not a clean before/after or release baseline. Whole-run slot aggregates and a bounded recent trace cannot reconstruct or subtract the first/last 90/30-second portions. Self-test work can appear in normal slots when no button/recovery flag is present. Different duration, approximate boundaries and changed GPS phase confound direct performance comparisons. Heap endpoint change also includes self-test lifecycle. UART receive-overflow telemetry is absent; zero parser rejects/resets does not prove no dropped bytes.",
+  "capture_file_on_device": "/diagnostics/runtime_4.json",
+  "firmware_sha256": "aa191f216c65ed228ee339a1e3f18ee95856d14a0f0274790f87dcce83bf17c4",
+  "source_manifest": "source-manifest.json",
+  "source_manifest_sha256": "e42cbf6dc40f888438528d6632a0e0899d72e97a3d93b75d635314096e5bde05",
+  "self_test_evidence": {
+    "file": "device-self-test.txt",
+    "sha256": "557c9d09e2b3126973e9a9a1123c3876a5cbdedcc15a6068a0a33e5aa8d3168f",
+    "all_tests": "PASS",
+    "boundaries": "No monotonic start/end timestamps in this log"
+  },
+  "igc_evidence": {
+    "sd_path": "/tracks/2026-10-21-XLV-000-03.igc",
+    "sha256": "df7618992430b696643c7f6bd409d168bfa55eee640e1f55ee271bd49ff12d64",
+    "bytes": 8280,
+    "fix_records": 144,
+    "valid_fix_records": 144,
+    "first_fix_utc": "014221",
+    "last_fix_utc": "014445",
+    "maximum_gap_seconds": 2,
+    "gaps_over_one_second": 1,
+    "limitations": "Newest IGC associated with this device session. Exact telemetry overlap and sensor recovery correctness are not encoded. No positions copied."
+  },
+  "interpretation": "GPS sentence crossings 41/1525 (2.69%) versus 75/1057 (7.10%) in revision 3; maximum sentence lateness 0.516 ms versus 1.825 ms. This is encouraging, not a controlled improvement estimate. Remaining normal crossings total 202, and three normal occupied-duration overruns include a retained 77.004 ms assigned-task block at capture +96.909 s, consistent with the reported self-test period; its exact subtask is not measured. Full-run phase chart spans slots 51-70 but 12 coalesced ticks across normal/recovery intervals can shift logical indices, so the wider chart cannot establish wider bursts caused by character yielding. Heap endpoint is 408 B below start, with zero allocation failures; self-test allocations/lifecycle prevent interpreting this as a leak."
+}

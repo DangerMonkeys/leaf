@@ -19,6 +19,7 @@
 #include "comms/ota.h"
 #include "comms/udp_message_server.h"
 #include "comms/wifi_coordinator.h"
+#include "diagnostics/cpu_utilization.h"
 #include "diagnostics/diagnostic_logs.h"
 #include "diagnostics/diagnostic_network/diagnostic_network.h"
 #include "diagnostics/heap_monitor.h"
@@ -3764,6 +3765,48 @@ void webserver_setup() {
   user_server.on("/api/debug/session", HTTP_GET, []() { sendDebugSessionStatus(user_server); });
 
   user_server.on("/api/debug/session", HTTP_POST, []() { updateDebugSessionStatus(user_server); });
+
+  user_server.on("/api/debug/runtime", HTTP_POST, []() {
+    if (!settings.dev_mode) {
+      user_server.send(403, "text/plain", "Developer mode is disabled");
+      return;
+    }
+    const String action = user_server.arg("action");
+    bool ok = true;
+    if (action == "start") {
+      ok = cpu_utilization::start();
+      if (ok) settings.diag_cpuUtilization = true;
+    } else if (action == "freeze") {
+      settings.diag_cpuUtilization = false;
+      cpu_utilization::freeze();
+    } else if (action == "export") {
+      ok = cpu_utilization::exportToSd();
+    } else {
+      user_server.send(400, "text/plain", "Use action=start, freeze, or export");
+      return;
+    }
+    user_server.send(ok ? 200 : 409, "text/plain", cpu_utilization::status());
+  });
+
+  user_server.on("/api/debug/runtime/download", HTTP_GET, []() {
+    if (!settings.dev_mode) {
+      user_server.send(403, "text/plain", "Developer mode is disabled");
+      return;
+    }
+    if (cpu_utilization::capturing() || !cpu_utilization::exportedPath()[0] ||
+        !sdcard.firmwareCanAccessFilesystem()) {
+      user_server.send(409, "text/plain", "Freeze and export a capture first");
+      return;
+    }
+    File file = SD_MMC.open(cpu_utilization::exportedPath(), FILE_READ);
+    if (!file) {
+      user_server.send(404, "text/plain", "Capture file unavailable");
+      return;
+    }
+    user_server.sendHeader("Content-Disposition", "attachment; filename=runtime.json");
+    user_server.streamFile(file, "application/json");
+    file.close();
+  });
 
   user_server.on("/app/debug/memory", HTTP_GET,
                  []() { user_server.send(200, "text/plain", getMemoryUsage()); });

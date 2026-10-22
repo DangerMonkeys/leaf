@@ -1,0 +1,18 @@
+{
+  "sd_path": "/fatal_error_1.txt",
+  "raw_file": "startup-fatal-error-1.txt",
+  "raw_sha256": "3e86d1aded377a8daff9d0de5ed53bcddabd9483c9e637337cbd406b96e7c433",
+  "firmware_sha256": "aa191f216c65ed228ee339a1e3f18ee95856d14a0f0274790f87dcce83bf17c4",
+  "elf_sha256": "ef66a9aea17e51db848f24da12c2eada036e99fbac6b5016a963598a9364aae6",
+  "decoded_file": "startup-fatal-error-1-decoded.txt",
+  "decoder": "PlatformIO xtensa-esp32s3-elf-addr2line",
+  "firmware_source_commit": "a642048 (built from f1f65c8 plus character yielding; revision-4 source manifest)",
+  "sd_read_finished": true,
+  "device_firmware_changed": false,
+  "reproduction": {
+    "source": "startup-fatal-repro.cpp",
+    "output": "startup-fatal-repro.txt",
+    "exit_code": 3,
+    "expected_message": "Barometer::altAdjusted while WaitingForFirstReading (1)"
+  }
+}

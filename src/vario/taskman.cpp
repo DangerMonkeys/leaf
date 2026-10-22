@@ -52,8 +52,11 @@ namespace {
   const uint32_t TASK_TIMER_FREQ = 1000;     // run at 1000Hz
   const uint64_t TASK_TIMER_PERIOD_MS = 10;  // trigger the ISR every 10ms
   // Set by interrupt at the start of the next task time block
-  std::atomic<bool> nextTaskTimerBlock{false};
-  void IRAM_ATTR onTaskTimer() { nextTaskTimerBlock.store(true, std::memory_order_release); }
+  // A sequence preserves coalesced timer ticks without changing the one-dispatch policy.
+  std::atomic<uint32_t> taskTimerTicks{0};
+  uint32_t consumedTaskTick = 0;
+  uint64_t taskTimerEpochUs = 0;
+  void IRAM_ATTR onTaskTimer() { taskTimerTicks.fetch_add(1, std::memory_order_release); }
 
   const uint32_t CHARGE_TIMER_FREQ = 1000;      // run at 1000Hz
   const uint64_t CHARGE_TIMER_PERIOD_MS = 500;  // trigger the ISR every 500ms
@@ -114,7 +117,9 @@ void TaskManager::init() {
     // timer, ISR call.  NOTE: timerDetachInterrupt() does the opposite
     timerAttachInterrupt(taskTimer_, &onTaskTimer);
     // auto reload timer ever time we've counted a sample length
+    taskTimerEpochUs = cpu_utilization::nowUs();
     timerAlarm(taskTimer_, TASK_TIMER_PERIOD_MS, true, 0);
+    cpu_utilization::timerArmed(cpu_utilization::nowUs() - taskTimerEpochUs);
 
     // Start Charge System Timer for Interrupt Events (this will tell Main Loop to do tasks every
     // interrupt cycle)
@@ -150,30 +155,41 @@ TODO: In addition to the timer-driven interrupt, we may consider also setting wa
 the pushbuttons, the GPS 1PPS signal, and perhaps others.
 */
 void TaskManager::update() {
-  udpMessageServer.update();
+  cpu_utilization::update();
+  const bool networkWork = sdcard.firmwareOwnsMassStorage() &&
+                           (WiFi.status() == WL_CONNECTED || webserver_user_app_active());
+  const bool heartbeatDue = millis() - lastMemoryHeartbeatMs >= MEMORY_HEARTBEAT_MS;
+  {
+    cpu_utilization::Scope services(
+        runtime_capture::Work::Services, true,
+        networkWork || heartbeatDue ||
+            (cpu_utilization::capturing() && settings.udpInjectionEnabled()));
+    udpMessageServer.update();
 
-  // LOOP NOTES:
-  // when re-entering PowerState::On, be sure to start from tasks #1, so baro ADC can be re-prepped
-  // before reading
+    // LOOP NOTES:
+    // when re-entering PowerState::On, be sure to start from tasks #1, so baro ADC can be
+    // re-prepped before reading
 
-  if (sdcard.firmwareOwnsMassStorage() &&
-      (WiFi.status() == WL_CONNECTED || webserver_user_app_active())) {
-    webserver_setup();
-    webserver_loop();
-    factoryDiscovery.update();
-  }
+    if (networkWork) {
+      webserver_setup();
+      webserver_loop();
+      factoryDiscovery.update();
+    }
 
-  if (millis() - lastMemoryHeartbeatMs >= MEMORY_HEARTBEAT_MS) {
-    lastMemoryHeartbeatMs = millis();
-    heap_monitor::checkpoint("main-heartbeat");
+    if (heartbeatDue) {
+      lastMemoryHeartbeatMs = millis();
+      heap_monitor::checkpoint("main-heartbeat");
+    }
   }
 
   const auto& info = power.info();
   if (info.onState == PowerState::On)
     updateWhileOn();
-  else if (info.onState == PowerState::OffUSB)
+  else if (info.onState == PowerState::OffUSB) {
+    // Charging uses a different cadence; finish the 10ms capture at the mode boundary.
+    cpu_utilization::freeze();
     updateWhileCharging();
-  else
+  } else
     fatalError("Unsupported onState '%s' (%u) in TaskManager::update()",
                nameOf(info.onState).c_str(), info.onState);
 }
@@ -263,41 +279,52 @@ void TaskManager::updateWhileCharging() {
 
 void TaskManager::updateWhileOn() {
   bool startedTaskBlock = false;
-  bool recordCpuUtilization = false;
-  uint32_t taskBlockStartUs = 0;
-  uint8_t taskBlockIndex = 0;
   uint8_t taskBlockButtonMask = 0;
-  uint8_t taskBlockDisplayContext = 0;
 
   // Check flag set by timer interrupt
-  if (nextTaskTimerBlock.exchange(false, std::memory_order_acq_rel)) {
+  const uint32_t tick = taskTimerTicks.load(std::memory_order_acquire);
+  if (tick != consumedTaskTick) {
+    consumedTaskTick = tick;
     startedTaskBlock = true;
-    recordCpuUtilization = cpu_utilization::enabled();
-    taskBlockStartUs = static_cast<uint32_t>(micros());
-    if (recordCpuUtilization) {
+    // setNecessaryTasksForBlock advances the logical index, including one direct baro call.
+    if (cpu_utilization::capturing()) {
+      const uint64_t actualStartUs = cpu_utilization::nowUs();
+      const uint8_t nextIndex = (current100msBlock * 10 + current10msBlock + 1) % 100;
+      cpu_utilization::beginSlot(nextIndex, tick, taskTimerEpochUs + uint64_t(tick) * 10000,
+                                 actualStartUs);
       taskBlockButtonMask = cpu_utilization::buttonPinMask(buttons.inspectPins());
       display.clearLastRenderContext();
     }
     // We only do this once every 10ms
+    cpu_utilization::Scope tasks(runtime_capture::Work::Tasks);
     setNecessaryTasksForBlock();
-    taskBlockIndex = current100msBlock * 10 + current10msBlock;
   }
 
-  doNecessaryTasks();
+  {
+    const bool diagnosticWork =
+        diagnostic_network.state() != DiagnosticNetwork::State::NoNetworkFound &&
+        diagnostic_network.state() != DiagnosticNetwork::State::Error;
+    cpu_utilization::Scope work(
+        startedTaskBlock ? runtime_capture::Work::Tasks : runtime_capture::Work::Services, true,
+        startedTaskBlock || diagnosticWork);
+    doNecessaryTasks();
+  }
 
-  if (startedTaskBlock && recordCpuUtilization) {
+  if (startedTaskBlock && cpu_utilization::capturing()) {
     taskBlockButtonMask |= cpu_utilization::buttonPinMask(buttons.inspectPins());
-    taskBlockDisplayContext = static_cast<uint8_t>(display.lastRenderContext());
-    cpu_utilization::recordBlock(taskBlockIndex, taskBlockStartUs, static_cast<uint32_t>(micros()),
-                                 taskBlockButtonMask, taskBlockDisplayContext);
+    cpu_utilization::tasksFinished(taskBlockButtonMask,
+                                   static_cast<uint8_t>(display.lastRenderContext()));
   }
 
   // GPS Serial Buffer Read
   // stop reading if no more data is available, OR, if our 10ms time block is up (because main timer
-  // interrupt fired and set setTasks to true)
+  // interrupt advanced taskTimerTicks). readLine also checks between individual characters;
+  // sentence-completion callbacks remain inline and may finish after the tick.
   bool gpsHasData = true;
-  while (gpsHasData && !nextTaskTimerBlock.load(std::memory_order_acquire)) {
-    gpsHasData = lc86g.readLine();
+  bool sampleEmptyPoll = startedTaskBlock;
+  while (gpsHasData && taskTimerTicks.load(std::memory_order_acquire) == consumedTaskTick) {
+    gpsHasData = lc86g.readLine(taskTimerTicks, consumedTaskTick, sampleEmptyPoll);
+    sampleEmptyPoll = false;
   }
 }
 
@@ -323,6 +350,7 @@ void TaskManager::setNecessaryTasksForBlock() {
   // statements allow for tasks every second, spaced out on different 100ms blocks)
   switch (current10msBlock) {
     case 0:
+      cpu_utilization::baroStarting();
       ms5611.update();  // begin updating MS5611 every 50ms on the 0th and 5th blocks
       break;
     case 1:
@@ -332,11 +360,11 @@ void TaskManager::setNecessaryTasksForBlock() {
       performTask.estimateWind = true;  // estimate wind speed and direction
       break;
     case 3:
-      if (current100msBlock == 0) performTask.cpuUtilization = true;
       break;
     case 4:
       break;
     case 5:
+      cpu_utilization::baroStarting();
       ms5611.update();  // begin updating MS5611 every 50ms on the 0th and 5th blocks
       break;
     case 6:
@@ -390,6 +418,7 @@ void TaskManager::doNecessaryTasks(void) {
   // prep & read).  If other tasks delay the start of the MS5611 prep step by >1ms, then next cycle
   // when we read ADC, the MS5611 won't be ready.
   if (performTask.baro) {
+    cpu_utilization::baroStarting();
     ms5611.update();
     checkpointOnce(loggedFirstBaroTask, "task-baro-first");
     performTask.baro = false;
@@ -465,10 +494,6 @@ void TaskManager::doNecessaryTasks(void) {
     sdcard.update();
     checkpointOnce(loggedFirstSdCardTask, "task-sdcard-first");
     performTask.sdCard = false;
-  }
-  if (performTask.cpuUtilization) {
-    cpu_utilization::writePendingReport();
-    performTask.cpuUtilization = false;
   }
   if (performTask.selfTest) {
     selfTest.update();

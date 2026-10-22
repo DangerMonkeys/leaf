@@ -1,0 +1,19 @@
+{
+  "sd_path": "/tracks/2026-10-21-XLV-000-01.igc",
+  "sha256": "7cbf487a3736dc3fe15da6101ed96f5eec11c914f73dbd96fe4908ac7358a8c7",
+  "bytes": 16915,
+  "fix_records": 301,
+  "valid_fix_records": 301,
+  "first_fix_utc": "002910",
+  "last_fix_utc": "003410",
+  "interval_counts_seconds": {
+    "1": 300
+  },
+  "maximum_gap_seconds": 1,
+  "date_header": "HFDTE221026",
+  "version_headers": [
+    "HFRFWFIRMWAREVERSION:v0.2.4-7edd",
+    "HFRHWHARDWAREVERSION:v3.2.8"
+  ],
+  "limitation": "Observed IGC artifact and valid GPS fix records; exact capture/IGC overlap cannot be established from monotonic telemetry timestamps alone. BLE client traffic is not measured."
+}

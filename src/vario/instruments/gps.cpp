@@ -9,6 +9,7 @@
 #include <TinyGPSPlus.h>
 #include <sys/time.h>
 
+#include "diagnostics/cpu_utilization.h"
 #include "dispatch/message_types.h"
 #include "hardware/lc86g.h"
 #include "instruments/baro.h"
@@ -250,6 +251,7 @@ void LeafGPS::on_receive(const GpsMessage& msg) {
   bool newSentence = false;
   {
     GpsLockGuard mutex;  // Ensure we have a lock on write
+    cpu_utilization::GpsStageScope parse(runtime_capture::GpsStage::Parse);
     for (size_t i = 0; i < msg.nmea.length(); i++) {
       char a = msg.nmea[i];
       newSentence = gps.encode(a);
@@ -265,26 +267,31 @@ void LeafGPS::on_receive(const GpsMessage& msg) {
       newSentence = gps.encode('\r');
     }
   }
+  if (cpu_utilization::capturing()) cpu_utilization::gpsValidity(newSentence);
   if (newSentence) {
-    if (msg.nmea.length() >= 7 && msg.nmea[0] == '$' && msg.nmea[3] == 'G' && msg.nmea[4] == 'G' &&
-        msg.nmea[5] == 'A' && msg.nmea[6] == ',') {
-      ++fixObservation_.sequence;
-      fixObservation_.receivedMs = millis();
-      fixObservation_.quality = fixObservation_.satellitesUsed = 0;
-      int quality = 0, used = 0;
-      if (parseNmeaIntField(msg.nmea, 6, quality) && quality >= 0 && quality <= 8 &&
-          parseNmeaIntField(msg.nmea, 7, used) && used >= 0 && used <= 255) {
-        fixObservation_.quality = quality;
-        fixObservation_.satellitesUsed = used;
+    {
+      cpu_utilization::GpsStageScope updates(runtime_capture::GpsStage::Update);
+      if (msg.nmea.length() >= 7 && msg.nmea[0] == '$' && msg.nmea[3] == 'G' &&
+          msg.nmea[4] == 'G' && msg.nmea[5] == 'A' && msg.nmea[6] == ',') {
+        ++fixObservation_.sequence;
+        fixObservation_.receivedMs = millis();
+        fixObservation_.quality = fixObservation_.satellitesUsed = 0;
+        int quality = 0, used = 0;
+        if (parseNmeaIntField(msg.nmea, 6, quality) && quality >= 0 && quality <= 8 &&
+            parseNmeaIntField(msg.nmea, 7, used) && used >= 0 && used <= 255) {
+          fixObservation_.quality = quality;
+          fixObservation_.satellitesUsed = used;
+        }
       }
-    }
-    updateSatList(msg.nmea);
-    syncSystemClockIfNeeded();
+      updateSatList(msg.nmea);
+      syncSystemClockIfNeeded();
 
-    NMEASentenceContents contents = {.speed = gps.speed.isUpdated(),
-                                     .course = gps.course.isUpdated()};
+      NMEASentenceContents contents = {.speed = gps.speed.isUpdated(),
+                                       .course = gps.course.isUpdated()};
+    }
     // Push the parsed reading onto the bus!
     if (bus_ && gps.location.isUpdated()) {
+      cpu_utilization::GpsStageScope callbacks(runtime_capture::GpsStage::ReadingCallbacks);
       bus_->receive(GpsReading(gps));
     }
   } else {

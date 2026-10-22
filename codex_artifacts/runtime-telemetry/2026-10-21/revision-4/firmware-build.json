@@ -1,0 +1,41 @@
+{
+  "environment": "leaf_3_2_8_release",
+  "base_commit": "f1f65c87fd1b36b6f7487ee6f98bdb8f536b4208",
+  "branch": "codex/runtime-telemetry",
+  "working_tree": "UART character-yield change uncommitted at build time; captured source hashes identify the code",
+  "firmware_sha256": "aa191f216c65ed228ee339a1e3f18ee95856d14a0f0274790f87dcce83bf17c4",
+  "source_manifest_sha256": "e42cbf6dc40f888438528d6632a0e0899d72e97a3d93b75d635314096e5bde05",
+  "capture_bytes": 22496,
+  "static_ram_bytes": 103564,
+  "static_ram_change_from_schema3_bytes": 0,
+  "device_capture": {
+    "file": "device-uart-clean-raw.json",
+    "sd_path": "/diagnostics/runtime_5.json",
+    "sha256": "82a978dcc5c94d0b2e738796d5b5be2851f9992abc360510defb8cb3d760465c",
+    "duration_s": 117.461042,
+    "qualification": "Manual repeat without reported self-test; review required; not duration-matched to revision 3"
+  },
+  "flash_result": "Both OTA app slots flashed; both hashes verified; hard reset. App-mode COM44 changed to bootloader COM42 on retry.",
+  "ota_offsets": [
+    "0x10000",
+    "0x340000"
+  ],
+  "validation": [
+    "Full firmware formatter completed",
+    "Simulator build passed (leaf_3_2_8)",
+    "test-gps-uart-yield: four expiry positions with capture off and on; pending tick consumes no bytes, partial lines preserved, callbacks inline, subsequent sentence not consumed on expired slot",
+    "test-runtime-capture passed",
+    "test-runtime-lifecycle passed",
+    "test-runtime-integration passed",
+    "test-udp-injection passed",
+    "PlatformIO leaf_3_2_8_release build passed"
+  ],
+  "limitations": "Virtual regression tests verify yielding and byte preservation, not physical UART overflow, workload improvement or sensor continuity. A new comparable device capture is required.",
+  "previous_mixed_device_capture": {
+    "file": "device-uart-selftest-raw.json",
+    "sd_path": "/diagnostics/runtime_4.json",
+    "sha256": "7a0a95b7dd8f8579d0d38c4151f3ae0f099d65c59ef620ebb008cfad43d9a170",
+    "duration_s": 116.390804,
+    "qualification": "Mixed manual self-test workload; not an approved comparable baseline"
+  }
+}

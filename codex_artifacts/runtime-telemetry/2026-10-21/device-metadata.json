@@ -1,0 +1,15 @@
+{
+  "label": "Leaf 3.2.8 manual bench capture - uncommitted stage 1",
+  "commit": "7ed9b81337dcbccb37845a3e81c06fe2892ef596",
+  "working_tree": "Uncommitted codex/runtime-telemetry; not release evidence",
+  "profile": "manual-bench-v1",
+  "scenario": "operator-menu-capture / real drivers / stationary bench / approximately 55 seconds",
+  "toolchain": "PlatformIO 6.1.19 / leaf_3_2_8_release / pioarduino 53.03.10 / xtensa 13.2.0+20240530",
+  "device_id": "Leaf 3.2.8 / USB serial 7C4FAD3BACB0",
+  "sd_card": "Installed Leaf SD card; model not recorded",
+  "coverage_notes": "Operator verified Runtime START, STOP and Save Timing. Real sensor/GPS driver activity. BLE, FANET and thermal pages disabled in captured settings. Flight IGC output and network workloads not verified.",
+  "limitations": "Short manual bench smoke assessment, no approved comparison baseline, no external overhead measurement.",
+  "source_manifest_sha256": "802804c0070ab2e00ddd4baf0b52a124c0780bc95809068d989c5ef4acb4b9c1",
+  "source_manifest": "device-source-manifest.json",
+  "firmware_sha256": "3aa028d257cce71483c3af92dd08bbf687eaad6369d1bbd25c055451327836b6"
+}

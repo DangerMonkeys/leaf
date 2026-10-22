@@ -1,0 +1,12 @@
+0x420281a3: fatalError(char const*, ...) at /leaf/src/vario/diagnostics/fatal_error.cpp:86
+ (inlined by) fatalError(char const*, ...) at /leaf/src/vario/diagnostics/fatal_error.cpp:191
+0x4202e422: Barometer::onUnexpectedState(char const*, Barometer::State) const at /leaf/src/vario/instruments/baro.cpp:222 (discriminator 4)
+0x4202e4ab: void StateAssertMixin<Barometer>::assertState<Barometer::State>(char const*, Barometer::State) const at /leaf/src/vario/utils/state_assert_mixin.h:47
+0x4202e5c6: Barometer::altAdjusted() at /leaf/src/vario/instruments/baro.cpp:248
+0x420414ca: ThermalCore::update() at /leaf/src/vario/navigation/thermal_core.cpp:261
+0x4204b26b: TaskManager::doNecessaryTasks() at /leaf/src/vario/taskman.cpp:459 (discriminator 1)
+0x4204b467: TaskManager::updateWhileOn() at /leaf/src/vario/taskman.cpp:310
+0x4204b583: TaskManager::update() at /leaf/src/vario/taskman.cpp:187
+0x4203908e: loop() at /leaf/src/vario/main.cpp:128
+0x42098fb0: loopTask(void*) at /platformio/packages/framework-arduinoespressif32/cores/esp32/main.cpp:74
+0x40384a32: vPortTaskWrapper at /home/runner/work/esp32-arduino-lib-builder/esp32-arduino-lib-builder/esp-idf/components/freertos/FreeRTOS-Kernel/portable/xtensa/port.c:139

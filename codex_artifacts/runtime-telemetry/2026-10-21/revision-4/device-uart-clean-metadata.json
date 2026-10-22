@@ -1,0 +1,30 @@
+{
+  "label": "Navigate / GPS / BLE / IGC repeat after UART character yielding",
+  "commit": "a642048",
+  "build_base_commit": "f1f65c87fd1b36b6f7487ee6f98bdb8f536b4208",
+  "working_tree": "Character-yield source committed after this exact binary was built; unchanged installed firmware identified by source manifest and binary hash",
+  "profile": "manual-gps-profile-v3",
+  "scenario": "Physical Leaf on Navigate; 117.461-second recorded interval. Operator described a repeat approximately 90-second run after the previous accidental self-test capture; no self-test reported this time. 225 normal Navigate renders and 1657 complete UART GPS sentences.",
+  "toolchain": "PlatformIO 6.1.19 / leaf_3_2_8_release / pioarduino 53.03.10 / xtensa 13.2.0+20240530",
+  "device_id": "Leaf 3.2.8 / USB serial 7C4FAD3BACB0",
+  "sd_card": "Installed Leaf SD card; model and capacity not recorded",
+  "coverage_notes": "Captured settings match revision 3: BLE enabled; FANET and optional diagnostic SD logs disabled; thermal features enabled. Connected BLE-client traffic unverified. All 1657 sentences parser-checksum accepted; no omitted/nested/asynchronous/unassigned/partial-ingestion sentences or UART assembly resets. Latest IGC has 130 valid fix records at one-second intervals without gaps. Exact monotonic overlap is not encoded. Navigate is the only measured flight page. Buttons/menu navigation and recovery are separately retained.",
+  "limitations": "Short manual bench run with at least 114 normal samples per slot; not automated operational qualification. Prior clean run is 80.691 seconds; durations, GPS phase and GSV counts differ, so formal baseline comparison is withheld. Enabled radios do not establish verified traffic. No independent full-profiler overhead calibration or hardware UART overflow counters. No claim of long-term memory stability or sensor-recovery correctness. A normal slot-78 start/barometer delay of 7.663/7.719 ms is retained only as a maximum; its event predecessor is unavailable and its cause cannot be reconstructed.",
+  "capture_file_on_device": "/diagnostics/runtime_5.json",
+  "firmware_sha256": "aa191f216c65ed228ee339a1e3f18ee95856d14a0f0274790f87dcce83bf17c4",
+  "source_manifest": "source-manifest.json",
+  "source_manifest_sha256": "e42cbf6dc40f888438528d6632a0e0899d72e97a3d93b75d635314096e5bde05",
+  "igc_evidence": {
+    "sd_path": "/tracks/2026-10-21-XLV-000-04.igc",
+    "sha256": "b8fde7da2f347742b01c4e03fe6c0aaa8c235d59278dfbb1e3c1063f0069ee06",
+    "bytes": 7510,
+    "fix_records": 130,
+    "valid_fix_records": 130,
+    "first_fix_utc": "015339",
+    "last_fix_utc": "015548",
+    "maximum_gap_seconds": 1,
+    "gaps_over_one_second": 0,
+    "limitations": "Latest IGC associated by device session. Exact monotonic capture overlap is not encoded. No position records copied; continuity does not establish every sensor deadline or UART byte reception."
+  },
+  "interpretation": "32/1657 GPS sentences cross deadlines (1.93%), maximum sentence lateness 0.354 ms, versus 75/1057 (7.10%) and 1.825 ms before character yielding. Observational comparison, not a controlled causal estimate. Normal slots still show 156 shallow crossings, maximum 0.386 ms, with zero accumulated-duration overruns and zero coalesced ticks. Heap ends 32 B above start, zero allocation failures, largest free block unchanged. Button recovery has 3 coalesced ticks and delays; slot 78 also has an unexplained normal barometer-call delay and needs follow-up. This capture does not establish wider individual GPS bursts from the phase chart."
+}

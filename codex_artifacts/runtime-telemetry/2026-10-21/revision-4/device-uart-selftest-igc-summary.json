@@ -1,0 +1,12 @@
+{
+  "sd_path": "/tracks/2026-10-21-XLV-000-03.igc",
+  "sha256": "df7618992430b696643c7f6bd409d168bfa55eee640e1f55ee271bd49ff12d64",
+  "bytes": 8280,
+  "fix_records": 144,
+  "valid_fix_records": 144,
+  "first_fix_utc": "014221",
+  "last_fix_utc": "014445",
+  "maximum_gap_seconds": 2,
+  "gaps_over_one_second": 1,
+  "limitations": "Newest IGC associated with this device session. Exact telemetry overlap and sensor recovery correctness are not encoded. No positions copied."
+}

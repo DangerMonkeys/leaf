@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "active_references": [
+    {
+      "id": "leaf-3_2_8-navigate-v1",
+      "status": "active_provisional_development_reference",
+      "selected_on": "2026-10-21",
+      "selection_authority": "User requested the latest repeat test as the reference for future firmware changes",
+      "hardware": "leaf_3_2_8",
+      "source": "device",
+      "profile": "leaf-3_2_8-navigate-gps-ble-igc-v1",
+      "scenario": "physical-leaf-navigate-v1",
+      "report": "leaf-3_2_8-navigate-v1/report.json",
+      "instructions": "leaf-3_2_8-navigate-v1/README.md",
+      "manifest": "leaf-3_2_8-navigate-v1/manifest.json",
+      "release_qualification": false,
+      "promotion_note": "First advisory reference; known thermal startup/recovery and unexplained barometer-delay issues remain unresolved"
+    }
+  ]
+}
