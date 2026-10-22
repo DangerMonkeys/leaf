@@ -8,7 +8,13 @@
   "capture_bytes": 22496,
   "static_ram_bytes": 103564,
   "static_ram_change_from_schema3_bytes": 0,
-  "device_capture": "Pending new operator capture; revision-3/device-gps-raw.json predates this scheduling change",
+  "device_capture": {
+    "file": "device-uart-clean-raw.json",
+    "sd_path": "/diagnostics/runtime_5.json",
+    "sha256": "82a978dcc5c94d0b2e738796d5b5be2851f9992abc360510defb8cb3d760465c",
+    "duration_s": 117.461042,
+    "qualification": "Manual repeat without reported self-test; review required; not duration-matched to revision 3"
+  },
   "flash_result": "Both OTA app slots flashed; both hashes verified; hard reset. App-mode COM44 changed to bootloader COM42 on retry.",
   "ota_offsets": [
     "0x10000",
@@ -24,5 +30,12 @@
     "test-udp-injection passed",
     "PlatformIO leaf_3_2_8_release build passed"
   ],
-  "limitations": "Virtual regression tests verify yielding and byte preservation, not physical UART overflow, workload improvement or sensor continuity. A new comparable device capture is required."
+  "limitations": "Virtual regression tests verify yielding and byte preservation, not physical UART overflow, workload improvement or sensor continuity. A new comparable device capture is required.",
+  "previous_mixed_device_capture": {
+    "file": "device-uart-selftest-raw.json",
+    "sd_path": "/diagnostics/runtime_4.json",
+    "sha256": "7a0a95b7dd8f8579d0d38c4151f3ae0f099d65c59ef620ebb008cfad43d9a170",
+    "duration_s": 116.390804,
+    "qualification": "Mixed manual self-test workload; not an approved comparable baseline"
+  }
 }

@@ -8,6 +8,9 @@
 - Runtime reports are a release requirement, not a per-PR gate. Stage 1 uses manual bounded
   captures; automated burdened workloads and publication enforcement remain backlog work.
 - See `docs/dev-references/runtime-assessment.md` for capture/export and baseline reporting.
+- Runtime comparison references are registered in `utils/runtime_report/baselines/index.json`.
+  Use the matching versioned report and workload instructions; preserve known issues and
+  compatibility checks. Baseline selection is not a release pass or a per-PR gate.
 - Changes to the task-manager slot schedule must keep the exported labels in
   `src/vario/diagnostics/cpu_utilization.cpp` synchronized with the scheduled functions.
 

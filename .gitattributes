@@ -1,2 +1,8 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Preserve checksum-pinned runtime references and the source evidence for baseline v1.
+/utils/runtime_report/baselines/** -text whitespace=cr-at-eol
+/codex_artifacts/runtime-telemetry/2026-10-21/revision-4/** -text whitespace=cr-at-eol
+# Raw device/simulator transcripts retain their original spaces and blank lines.
+/codex_artifacts/runtime-telemetry/2026-10-21/revision-4/*.txt -whitespace

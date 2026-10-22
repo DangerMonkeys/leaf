@@ -1,0 +1,44 @@
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: On
+0 playSound 5296560
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port... GPS initialize sat messages... GPS initialize done...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done. 
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+LSM6DSV: emulated gravity-vector messages
+ - Finished IMU
+ - DONE
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+Speaker::update skipped 5 intervals
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+7475 playSound 5342182
+button: DOWN   state: RELEASED    hold count: 0
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+7785 playSound 5342168
+button: CENTER state: RELEASED    hold count: 0
+****************************** autoStart TRUE via speed
+28815 playSound 5286392
+Sectors: 16777216
+28815 playSound 5286360
+REPRO: cached thermal samples=1; barometer ready before sleep
+REPRO: barometer waiting after wake, thermal samples retained; call ThermalCore::update
+FATAL ERROR: Barometer::altAdjusted while WaitingForFirstReading (1)
+leafsim: device halted -- FATAL ERROR: Barometer::altAdjusted while WaitingForFirstReading (1)

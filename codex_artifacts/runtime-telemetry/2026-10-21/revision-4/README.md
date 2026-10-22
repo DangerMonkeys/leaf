@@ -13,11 +13,12 @@ plus the character-yield change. Static RAM stays at 103,564 B; capture allocati
 terminators and expiry during callbacks with capture both off and on. Telemetry accounting,
 lifecycle, integration and UDP regressions also pass.
 
-No post-change hardware capture has been collected yet. For a useful comparison, repeat the
-previous approximately 80-second Navigate-page capture with matching GPS/BLE/IGC conditions.
-Then STOP, Save Timing, and return to charging USB. The previous data and reports remain
-unchanged in [revision 3](../revision-3/device-gps.html). Improvement and physical receive-buffer
-continuity remain unmeasured until a new device run is available.
+[Post-change device report](device-uart-selftest.html) now captures the operator's approximately
+90-second Navigate run followed by approximately 30 seconds of accidental manual self-test.
+The actual capture lasts 116.391 seconds. It is explicitly marked as a mixed workload and
+comparison to revision 3 is withheld. See [reviewed findings](device-uart-selftest-findings.md).
+Raw evidence, metadata, the self-test log and a position-free IGC summary are preserved here.
+No firmware change or reflash was performed while retrieving this capture.
 
 ## History
 
@@ -35,3 +36,26 @@ Consequently, the immediate pre-change firmware yielded between lines; it did no
 drain the entire UART buffer before checking the timer. Neither implementation checked the
 timer between characters inside a line. These attributions come from local Git author records;
 they do not establish who reviewed or merged each PR.
+
+## Startup fatal-error diagnosis
+
+[Decoded diagnosis and simulator reproduction](startup-fatal-findings.md) identify an unguarded
+ThermalCore altitude read while the barometer restarts after USB-charging wake. The SD log was
+retrieved and verified; installed firmware was left unchanged for the pending timing repeat.
+
+## Latest repeat without self-test
+
+[Repeat device report](device-uart-clean.html) and [reviewed findings](device-uart-clean-findings.md)
+preserve `/diagnostics/runtime_5.json`, a 117.461-second recorded interval. Sentence crossings
+are 32/1,657 (1.93%) with maximum 0.354 ms lateness; normal slots have zero duration overruns
+and zero coalesced ticks. Heap endpoint is +32 B, no allocation failures; latest IGC records
+130 valid one-second fixes with no gaps. Button recovery and a separate unexplained 7.719 ms
+normal barometer-call delay remain attention items. The longer run is not a formally comparable
+baseline against revision 3. Previous mixed self-test evidence remains intact.
+
+## Selected development baseline
+
+The latest repeat was selected by the user as the provisional Navigate reference. Its immutable
+versioned bundle is `utils/runtime_report/baselines/leaf-3_2_8-navigate-v1/`; the active registry
+and runtime-assessment guide point future comparisons there. Raw evidence is unchanged. Known
+issues and incomplete coverage remain recorded; selection does not establish release fitness.

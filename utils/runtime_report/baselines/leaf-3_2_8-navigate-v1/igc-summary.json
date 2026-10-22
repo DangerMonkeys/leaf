@@ -1,0 +1,12 @@
+{
+  "sd_path": "/tracks/2026-10-21-XLV-000-04.igc",
+  "sha256": "b8fde7da2f347742b01c4e03fe6c0aaa8c235d59278dfbb1e3c1063f0069ee06",
+  "bytes": 7510,
+  "fix_records": 130,
+  "valid_fix_records": 130,
+  "first_fix_utc": "015339",
+  "last_fix_utc": "015548",
+  "maximum_gap_seconds": 1,
+  "gaps_over_one_second": 0,
+  "limitations": "Latest IGC associated by device session. Exact monotonic capture overlap is not encoded. No position records copied; continuity does not establish every sensor deadline or UART byte reception."
+}

@@ -1,0 +1,13 @@
+{
+  "label": "REPLACE: candidate Navigate assessment label",
+  "commit": "REPLACE: full candidate source commit",
+  "profile": "leaf-3_2_8-navigate-gps-ble-igc-v1",
+  "scenario": "physical-leaf-navigate-v1",
+  "scenario_description": "REPLACE: actual recorded duration, page activity, GPS/BLE/IGC conditions and any deviations",
+  "toolchain": "PlatformIO 6.1.19 / leaf_3_2_8_release / pioarduino 53.03.10 / xtensa 13.2.0+20240530",
+  "device_id": "Leaf 3.2.8 / USB serial 7C4FAD3BACB0",
+  "sd_card": "Installed Leaf SD card; model and capacity not recorded",
+  "coverage_notes": "REPLACE: actual GPS fix, IGC output, connected BLE client/traffic, Navigate renders and any interactions; preserve unverified coverage as unverified",
+  "limitations": "REPLACE: run-specific limitations and differences from the reference",
+  "comparison_reference": "leaf-3_2_8-navigate-v1"
+}

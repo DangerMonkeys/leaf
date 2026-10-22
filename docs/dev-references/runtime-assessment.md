@@ -82,6 +82,15 @@ Use scenario playback on the device thread for stage 1 simulator captures.
 
 ## Generate and compare reports
 
+The current provisional device reference is
+[Leaf 3.2.8 Navigate v1](../../utils/runtime_report/baselines/leaf-3_2_8-navigate-v1/README.md).
+Its bundle pins the latest repeat capture, firmware/source identity, known issues and repeat
+instructions. Use its `report.json` as `--baseline`; aim for 120 seconds total recorded time
+and matching settings/workload. Start from its candidate metadata template so stable scenario
+identifiers remain separate from run-specific descriptions. This reference covers Navigate
+only and does not replace the wider release assessments. See the
+[reference registry](../../utils/runtime_report/baselines/README.md) before selecting a baseline.
+
 Create a metadata JSON alongside the raw capture, for example:
 
 ```json

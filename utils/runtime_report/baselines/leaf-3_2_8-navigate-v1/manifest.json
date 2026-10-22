@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "baseline_id": "leaf-3_2_8-navigate-v1",
+  "status": "active_provisional_development_reference",
+  "selected_on": "2026-10-21",
+  "raw_capture_sha256": "82a978dcc5c94d0b2e738796d5b5be2851f9992abc360510defb8cb3d760465c",
+  "firmware_sha256": "aa191f216c65ed228ee339a1e3f18ee95856d14a0f0274790f87dcce83bf17c4",
+  "files_sha256": {
+    "candidate-metadata-template.json": "3b806c6c0c56b6db9a6e605a930b55abea95dfd22876aaca325d8933d440e859",
+    "capture.json": "82a978dcc5c94d0b2e738796d5b5be2851f9992abc360510defb8cb3d760465c",
+    "firmware-build.json": "90443abceb55a63093a12817b9df60ff41a28b8c78d575661757a53cded392d4",
+    "igc-summary.json": "0a10d1ea3a232ff8410fa1c0db5e445c84c177dd5cd0b83b1829d8c0cff4be0b",
+    "metadata.json": "82ec2416257a7d3273b3b6a8b9440f6f118ceba99e85eb031b1c8df0300a0ff4",
+    "README.md": "3eed5e3f70b0ea7ee8954490d12c236a8bf9a53d4968749891e795b805d5cf6b",
+    "report.html": "a4281269d8a7e3063a378c381e7369edd1a0bba393bc3846c6b268fc988450c3",
+    "report.json": "1e9990ff761b71230b29ca24af66a3b9dd7d0809021bd6c520f8b0cb4b8f0cc8",
+    "source-manifest.json": "e42cbf6dc40f888438528d6632a0e0899d72e97a3d93b75d635314096e5bde05"
+  }
+}
