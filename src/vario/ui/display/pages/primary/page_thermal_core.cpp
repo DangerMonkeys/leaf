@@ -441,7 +441,14 @@ namespace {
   */
 
   void drawAltitudeField() {
-    const uint8_t altType = settings.disp_thmPageAltType == altType_MSL ? altType_MSL : altType_GPS;
+    const uint8_t altType =
+        settings.disp_userPageAltType == altType_MSL ? altType_MSL : altType_GPS;
+    if (altType == altType_MSL && baro.state() != Barometer::State::Ready) {
+      u8g2.setFont(leaf_10x17);
+      u8g2.setCursor(ALT_X, ALT_VALUE_BASELINE_Y);
+      u8g2.print(" ---");
+      return;
+    }
     const int32_t altitudeCm = altType == altType_MSL
                                    ? baro.altAdjusted()
                                    : static_cast<int32_t>(100 * gps.altitude.meters());
@@ -508,10 +515,10 @@ namespace {
   */
 
   void toggleAltitudeType() {
-    if (settings.disp_thmPageAltType == altType_MSL)
-      settings.disp_thmPageAltType = altType_GPS;
+    if (settings.disp_userPageAltType == altType_MSL)
+      settings.disp_userPageAltType = altType_GPS;
     else
-      settings.disp_thmPageAltType = altType_MSL;
+      settings.disp_userPageAltType = altType_MSL;
     speaker.playSound(fx::neutral);
   }
 
@@ -562,6 +569,11 @@ namespace {
     */
   }
 }  // namespace
+
+void thermalCorePage_reset() {
+  thermalCorePageCursor = cursor_thermalCorePage_none;
+  thermalCorePageCursorTimeCount = 0;
+}
 
 void thermalCorePage_draw() {
   if (thermalCorePageCursor != cursor_thermalCorePage_none &&

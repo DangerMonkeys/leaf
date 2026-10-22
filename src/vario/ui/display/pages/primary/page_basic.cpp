@@ -16,27 +16,32 @@
 #include "ui/display/display.h"
 #include "ui/display/display_fields.h"
 #include "ui/display/fonts.h"
-#include "ui/display/pages/primary/page_simple.h"
+#include "ui/display/pages/primary/page_basic.h"
 #include "ui/input/buttons.h"
 #include "ui/settings/settings.h"
 #include "wind_estimate/wind_estimate.h"
 
-enum simple_page_items { cursor_simplePage_none, cursor_simplePage_alt1, cursor_simplePage_timer };
-uint8_t simple_page_cursor_max = 2;
+enum basic_page_items { cursor_basicPage_none, cursor_basicPage_alt1, cursor_basicPage_timer };
+uint8_t basic_page_cursor_max = 2;
 
-int8_t simple_page_cursor_position = cursor_simplePage_none;
-uint8_t simple_page_cursor_timeCount =
+int8_t basic_page_cursor_position = cursor_basicPage_none;
+uint8_t basic_page_cursor_timeCount =
     0;  // count up for every page_draw, and if no button is pressed, then reset cursor to "none"
         // after the timeOut value is reached.
-uint8_t simple_page_cursor_timeOut =
+uint8_t basic_page_cursor_timeOut =
     10;  // after 8 page draws (4 seconds) reset the cursor if a button hasn't been pushed.
 
-void simplePage_draw() {
+void basicPage_reset() {
+  basic_page_cursor_position = cursor_basicPage_none;
+  basic_page_cursor_timeCount = 0;
+}
+
+void basicPage_draw() {
   // if cursor is selecting something, count toward the timeOut value before we reset cursor
-  if (simple_page_cursor_position != cursor_simplePage_none &&
-      simple_page_cursor_timeCount++ >= simple_page_cursor_timeOut) {
-    simple_page_cursor_position = cursor_simplePage_none;
-    simple_page_cursor_timeCount = 0;
+  if (basic_page_cursor_position != cursor_basicPage_none &&
+      basic_page_cursor_timeCount++ >= basic_page_cursor_timeOut) {
+    basic_page_cursor_position = cursor_basicPage_none;
+    basic_page_cursor_timeCount = 0;
   }
 
   u8g2.firstPage();
@@ -44,7 +49,7 @@ void simplePage_draw() {
     // Draw clock and full footer, but not the full usual header items of the other pages
     u8g2.setFont(leaf_6x10);
     display_clockTime(0, 10, false);
-    display_footer(simple_page_cursor_position == cursor_simplePage_timer);
+    display_footer(basic_page_cursor_position == cursor_basicPage_timer);
 
     // Speed
     uint8_t speed_x = 59;
@@ -118,7 +123,7 @@ void simplePage_draw() {
     // Altitude header labels
     u8g2.setFont(leaf_labels);
     u8g2.setCursor(varioBarWidth + 3, alt_y - 1);
-    print_alt_label(settings.disp_thmPageAltType);
+    print_alt_label(settings.disp_userPageAltType);
     u8g2.print(" Altitude ");
     // u8g2.setCursor(varioBarWidth + 50, alt_y - 1);
     if (settings.units_alt)
@@ -127,30 +132,30 @@ void simplePage_draw() {
       u8g2.print("m");
 
     // Alt value
-    display_alt_type(varioBarWidth + 1, alt_y + 28, leaf_28h, settings.disp_thmPageAltType);
+    display_alt_type(varioBarWidth + 1, alt_y + 28, leaf_28h, settings.disp_userPageAltType);
 
     // if selected, draw the box around it
-    if (simple_page_cursor_position == cursor_simplePage_alt1) {
+    if (basic_page_cursor_position == cursor_basicPage_alt1) {
       display_selectionBox(varioBarWidth + 1, alt_y - 2, 96 - (varioBarWidth + 1), 32, 7);
     }
 
   } while (u8g2.nextPage());
 }
 
-void simple_page_cursor_move(Button button) {
+void basic_page_cursor_move(Button button) {
   if (button == Button::UP) {
-    simple_page_cursor_position--;
-    if (simple_page_cursor_position < 0) simple_page_cursor_position = simple_page_cursor_max;
+    basic_page_cursor_position--;
+    if (basic_page_cursor_position < 0) basic_page_cursor_position = basic_page_cursor_max;
   }
   if (button == Button::DOWN) {
-    simple_page_cursor_position++;
-    if (simple_page_cursor_position > simple_page_cursor_max) simple_page_cursor_position = 0;
+    basic_page_cursor_position++;
+    if (basic_page_cursor_position > basic_page_cursor_max) basic_page_cursor_position = 0;
   }
-  speaker.playSound(simple_page_cursor_position == cursor_simplePage_none ? fx::doubleClick
-                                                                          : fx::click);
+  speaker.playSound(basic_page_cursor_position == cursor_basicPage_none ? fx::doubleClick
+                                                                        : fx::click);
 }
 
-bool simplePage_volumeShortcut(Button button, ButtonEvent state) {
+bool basicPage_volumeShortcut(Button button, ButtonEvent state) {
   if (!settings.volumeShortcut || (button != Button::UP && button != Button::DOWN) ||
       state != ButtonEvent::INCREMENTED) {
     return false;
@@ -160,19 +165,19 @@ bool simplePage_volumeShortcut(Button button, ButtonEvent state) {
   return true;
 }
 
-void simplePage_button(Button button, ButtonEvent state, uint8_t count) {
+void basicPage_button(Button button, ButtonEvent state, uint8_t count) {
   // reset cursor time out count if a button is pushed
-  simple_page_cursor_timeCount = 0;
+  basic_page_cursor_timeCount = 0;
 
-  switch (simple_page_cursor_position) {
-    case cursor_simplePage_none:
+  switch (basic_page_cursor_position) {
+    case cursor_basicPage_none:
       switch (button) {
         case Button::UP:
         case Button::DOWN:
-          if (simplePage_volumeShortcut(button, state)) {
+          if (basicPage_volumeShortcut(button, state)) {
             break;
           } else if (state == ButtonEvent::CLICKED) {
-            simple_page_cursor_move(button);
+            basic_page_cursor_move(button);
           }
           break;
         case Button::RIGHT:
@@ -195,11 +200,11 @@ void simplePage_button(Button button, ButtonEvent state, uint8_t count) {
           break;
       }
       break;
-    case cursor_simplePage_alt1:
+    case cursor_basicPage_alt1:
       switch (button) {
         case Button::UP:
         case Button::DOWN:
-          if (state == ButtonEvent::CLICKED) simple_page_cursor_move(button);
+          if (state == ButtonEvent::CLICKED) basic_page_cursor_move(button);
           break;
         case Button::LEFT:
           if (settings.disp_navPageAltType == altType_MSL &&
@@ -217,14 +222,14 @@ void simplePage_button(Button button, ButtonEvent state, uint8_t count) {
           break;
         case Button::CENTER:
           if (state == ButtonEvent::CLICKED) {
-            // for now use the same alt field setting on both simple & thermal pages
-            settings.adjustDisplayField_thermalPage_alt(Button::CENTER);
+            // for now use the same alt field setting on both Basic and User pages
+            settings.adjustDisplayField_userPage_alt(Button::CENTER);
           } else if (state == ButtonEvent::INCREMENTED && count == 1 &&
-                     settings.disp_thmPageAltType == altType_MSL) {
+                     settings.disp_userPageAltType == altType_MSL) {
             if (baro.syncToGPSAlt()) {  // successful adjustment of altimeter setting to match
                                         // GPS altitude
               speaker.playSound(fx::enter);
-              simple_page_cursor_position = cursor_simplePage_none;
+              basic_page_cursor_position = cursor_basicPage_none;
             } else {  // unsuccessful
               speaker.playSound(fx::cancel);
             }
@@ -233,11 +238,11 @@ void simplePage_button(Button button, ButtonEvent state, uint8_t count) {
       }
       break;
 
-    case cursor_simplePage_timer:
+    case cursor_basicPage_timer:
       switch (button) {
         case Button::UP:
         case Button::DOWN:
-          if (state == ButtonEvent::CLICKED) simple_page_cursor_move(button);
+          if (state == ButtonEvent::CLICKED) basic_page_cursor_move(button);
           break;
         case Button::LEFT:
           break;
@@ -246,11 +251,11 @@ void simplePage_button(Button button, ButtonEvent state, uint8_t count) {
         case Button::CENTER:
           if (state == ButtonEvent::CLICKED && !flightTimer_isRunning()) {
             flightTimer_start();
-            simple_page_cursor_position = cursor_simplePage_none;
+            basic_page_cursor_position = cursor_basicPage_none;
           } else if (state == ButtonEvent::HELD && flightTimer_isRunning()) {
             buttons.consumeButton();
             flightTimer_stop();
-            simple_page_cursor_position = cursor_simplePage_none;
+            basic_page_cursor_position = cursor_basicPage_none;
           }
 
           break;

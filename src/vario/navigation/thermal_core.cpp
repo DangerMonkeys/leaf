@@ -200,6 +200,10 @@ void ThermalCore::updateTurnSegment(const ThermalTracker::CoreSample& latest,
 }
 
 void ThermalCore::update() {
+  if (baro.state() != Barometer::State::Ready) {
+    reset();
+    return;
+  }
   const auto samples = thermalTracker.recentCoreSamples();
   const uint8_t sampleCount = samples.size();
   estimate_ = {};

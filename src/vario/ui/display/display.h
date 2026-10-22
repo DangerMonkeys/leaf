@@ -13,7 +13,7 @@ extern U8G2_ST75256_WO256X128_F_4W_HW_SPI u8g2;  // Leaf 3.2.2 June Hung
 #endif
 
 enum class PageAction : uint8_t {
-  Home,  // go to home screen (probably thermal page)
+  Home,  // go to the User page
   Prev,  // go to page -1
   Next,  // go to page +1
   Back   // go to page we were just on before (i.e. step back in a menu tree, or cancel a dialog
@@ -67,6 +67,7 @@ class Display {
   bool hasEnabledPrimaryPage() const;
   void ensurePrimaryPageEnabled();
   void updateThermalAutoSwitch(bool guidanceAvailable);
+  void resetThermalState();
 
   void showOnSplash();
 

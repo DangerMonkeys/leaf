@@ -179,6 +179,8 @@ class ThermalTracker {
   void sortDisplayItems();
 
   bool originValid_ = false;
+  bool requireFreshFix_ = false;
+  uint32_t resetAtMs_ = 0;
   double originLat_ = 0;
   double originLon_ = 0;
   double metersPerDegLon_ = 0;

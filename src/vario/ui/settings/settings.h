@@ -95,10 +95,10 @@
 #define DEF_CONTRAST 7  // default contrast setting
 // Primary Alt field on Nav page (Baro Alt, GPS Alt, Alt above waypoint, etc)
 #define DEF_NAVPG_ALT_TYP 1
-#define DEF_THMPG_ALT_TYP 1       // Primary Alt field on User page
-#define DEF_THMPG_ALT2_TYP 1      // Secondary Alt field on User page
-#define DEF_THMPG_USR1 0          // User field 1 on User page
-#define DEF_THMPG_USR2 1          // User field 2 on User page
+#define DEF_USERPG_ALT_TYP 1      // Primary Alt field on User page
+#define DEF_USERPG_ALT2_TYP 1     // Secondary Alt field on User page
+#define DEF_USERPG_USR1 0         // User field 1 on User page
+#define DEF_USERPG_USR2 1         // User field 2 on User page
 #define DEF_SHOW_DEBUG 0          // Enable debug page
 #define DEF_SHOW_BASIC 1          // Enable basic page
 #define DEF_SHOW_USER 1           // Enable user page
@@ -226,10 +226,10 @@ setting | samples | time avg
   uint8_t disp_contrast;
   uint8_t disp_navPageAltType;
   NavField disp_navFields[4];
-  uint8_t disp_thmPageAltType;
-  uint8_t disp_thmPageAlt2Type;
-  uint8_t disp_thmPageUser1;
-  uint8_t disp_thmPageUser2;
+  uint8_t disp_userPageAltType;
+  uint8_t disp_userPageAlt2Type;
+  uint8_t disp_userPageUser1;
+  uint8_t disp_userPageUser2;
   bool disp_showDebugPage;
   bool disp_showBasicPage;
   bool disp_showUserPage;
@@ -290,7 +290,7 @@ setting | samples | time avg
   void adjustAutoOff(Button dir);
 
   void adjustDisplayField_navPage_alt(Button dir);
-  void adjustDisplayField_thermalPage_alt(Button dir);
+  void adjustDisplayField_userPage_alt(Button dir);
 
   void toggleBoolNeutral(bool* boolSetting);
   void toggleBoolOnOff(bool* switchSetting);

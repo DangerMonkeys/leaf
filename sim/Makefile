@@ -171,6 +171,13 @@ $(BUILD)/thermal_track_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS
 test-thermal-track: $(BUILD)/thermal_track_test
 	@cd $(ROOT) && $(BUILD)/thermal_track_test
 
+.PHONY: test-thermal-lifecycle
+$(BUILD)/thermal_lifecycle_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/thermal_lifecycle.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/thermal_lifecycle.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-thermal-lifecycle: $(BUILD)/thermal_lifecycle_test
+	@cd $(ROOT) && $(BUILD)/thermal_lifecycle_test
+
 $(BUILD)/display_settings_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/display_settings.cpp
 	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/display_settings.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
 

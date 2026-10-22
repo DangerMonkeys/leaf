@@ -280,6 +280,13 @@ void display_headingTurn(uint8_t cursor_x, uint8_t cursor_y) {
 }
 
 void display_alt_type(uint8_t cursor_x, uint8_t cursor_y, const uint8_t* font, uint8_t altType) {
+  if ((altType == altType_MSL || altType == altType_aboveLaunch) &&
+      baro.state() != Barometer::State::Ready) {
+    u8g2.setCursor(cursor_x, cursor_y);
+    u8g2.setFont(font);
+    u8g2.print(" ---");
+    return;
+  }
   int32_t displayAlt = 0;
 
   switch (altType) {

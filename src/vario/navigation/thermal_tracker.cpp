@@ -56,6 +56,10 @@ namespace {
 
 void ThermalTracker::reset() {
   originValid_ = false;
+  originLat_ = originLon_ = metersPerDegLon_ = 0;
+  currentXM_ = currentYM_ = currentAltM_ = currentTrackDeg_ = 0;
+  requireFreshFix_ = true;
+  resetAtMs_ = millis();
   lastDetectorSecond_ = 0;
   lastLatE7_ = 0;
   lastLonE7_ = 0;
@@ -80,10 +84,16 @@ void ThermalTracker::establishOrigin(double latitude, double longitude) {
 
 bool ThermalTracker::readCurrentFix(Sample& sample) {
   GPSPositionSnapshot fix;
-  if (!gps.lastValidFix(fix) || !baro.climbRateFilteredValid()) return false;
-  if (!originValid_) establishOrigin(fix.latitude, fix.longitude);
+  if (!gps.hasUsableFix() || !gps.lastValidFix(fix) || !baro.climbRateFilteredValid()) return false;
 
   const uint32_t nowMs = millis();
+  // A cached fix must not repopulate a cleared session. Fresh collection is also allowed
+  // without a flight timer, once a position received after the reset is available.
+  if (requireFreshFix_) {
+    if (uint32_t(nowMs - fix.capturedAtMs) >= uint32_t(nowMs - resetAtMs_)) return false;
+    requireFreshFix_ = false;
+  }
+  if (!originValid_) establishOrigin(fix.latitude, fix.longitude);
   const int32_t speedCms =
       isfinite(fix.speedMps) ? static_cast<int32_t>(roundf(fix.speedMps * 100.0f)) : 0;
 

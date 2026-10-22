@@ -6,6 +6,7 @@
 #include "ui/input/buttons.h"
 
 void thermalCorePage_draw(void);
+void thermalCorePage_reset();
 void thermalCorePage_button(Button button, ButtonEvent state, uint8_t count);
 
 #endif

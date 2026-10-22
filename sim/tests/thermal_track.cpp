@@ -343,9 +343,9 @@ int main() {
   }
   assert(changed > 0);
   save(cursor, "sim/build-tests/thermal-track-alt-cursor.png");
-  const auto altType = settings.disp_thmPageAltType;
+  const auto altType = settings.disp_userPageAltType;
   thermalTrackPage_button(Button::CENTER, ButtonEvent::CLICKED, 0);
-  assert(settings.disp_thmPageAltType != altType);
+  assert(settings.disp_userPageAltType != altType);
   thermalTrackPage_button(Button::UP, ButtonEvent::CLICKED, 0);  // leave altitude selection
 
   selected->distanceM = 32767;
