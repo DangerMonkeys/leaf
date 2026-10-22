@@ -46,25 +46,30 @@
 
   .device { display: flex; flex-direction: column; align-items: center; gap: 14px; }
   .shell {
+    align-self: flex-start;
     background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
     padding: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.35);
+  }
+  .lcd-bezel {
+    width: max-content; margin: 0 auto;
+    padding: var(--lcd-border, 12px); background: var(--lcd-off);
+    border-radius: var(--lcd-border, 12px);
   }
   canvas#lcd {
     display: block;
     margin: 0 auto;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
-    border-radius: 3px;
     cursor: crosshair;
   }
   .lcd-options {
-    display: flex; align-items: center; justify-content: center; gap: 6px;
-    margin-top: 10px; white-space: nowrap;
+    display: flex; align-items: center; justify-content: flex-start; gap: 6px;
+    width: max-content; margin-bottom: 10px; white-space: nowrap;
   }
   .lcd-options button.action { padding: 2px 6px; min-width: 26px; }
   .lcd-options button:disabled { opacity: .35; cursor: default; }
   .lcd-options output { min-width: 3ch; text-align: center; font: 12px var(--mono); }
-  .lcd-options #lcdCoordinates { min-width: 11ch; text-align: left; color: var(--muted); }
+  #lcdCoordinates { display: block; width: 11ch; margin: 10px auto 0; color: var(--muted); font: 12px var(--mono); }
 
   .dpad { display: grid; grid-template-columns: repeat(3, 54px); grid-template-rows: repeat(3, 44px); gap: 6px; }
   .dpad button {
@@ -83,6 +88,7 @@
     font-size: 11px; text-transform: uppercase; letter-spacing: .09em;
     color: var(--muted); margin: 0 0 10px;
   }
+  section h2.subsection { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); }
   .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .row + .row { margin-top: 8px; }
   button.action, a.action, select {
@@ -131,15 +137,18 @@
 <main>
   <div class="device">
     <div class="shell">
-      <canvas id="lcd" width="288" height="576"></canvas>
       <div class="lcd-options" role="group" aria-label="LCD display options">
-        <label class="check"><input type="checkbox" id="showPixels"> Show pixels</label>
         <button class="action" id="lcdZoomOut" type="button" aria-label="Zoom LCD out">−</button>
         <output id="lcdZoom" aria-live="polite">3×</output>
         <button class="action" id="lcdZoomIn" type="button" aria-label="Zoom LCD in">+</button>
-        <output id="lcdCoordinates" aria-label="LCD pixel coordinates"
-                title="Pixel coordinates start at x:0 y:0 in the top-left corner">x:— y:—</output>
+        <label class="check"><input type="checkbox" id="showPixels"> Show pixels</label>
+        <button class="action" id="screenshot" type="button">Screenshot</button>
       </div>
+      <div class="lcd-bezel">
+        <canvas id="lcd" width="288" height="576"></canvas>
+      </div>
+      <output id="lcdCoordinates" aria-label="LCD pixel coordinates"
+              title="Pixel coordinates start at x:0 y:0 in the top-left corner">x:— y:—</output>
     </div>
 
     <div class="dpad">
@@ -154,16 +163,16 @@
       <div class="spacer"></div>
     </div>
     <div class="hint" id="keyboardHint">arrow keys + enter · a held key is a held button</div>
-    <div class="row">
-      <button class="action" id="screenshot">Screenshot</button>
-      <button class="action" id="restart">Restart</button>
-      <label class="check"><input type="checkbox" id="sound"> speaker</label>
-    </div>
   </div>
 
   <div class="panels">
-    <section>
-      <h2>Clock</h2>
+    <section class="device-controls" aria-labelledby="deviceControlsTitle clockControlsTitle">
+      <h2 id="deviceControlsTitle">Device</h2>
+      <div class="row">
+        <button class="action" id="restart" type="button">Restart</button>
+        <label class="check"><input type="checkbox" id="sound"> Speaker</label>
+      </div>
+      <h2 class="subsection" id="clockControlsTitle">Clock</h2>
       <div class="row">
         <button class="action speed" data-speed="0.25">¼×</button>
         <button class="action speed" data-speed="1">1×</button>
@@ -310,6 +319,8 @@
     canvas.height = frame.height * physicalScale;
     canvas.style.width = `${frame.width * cssScale}px`;
     canvas.style.height = `${frame.height * cssScale}px`;
+    // The inactive glass surrounds the active pixels without changing the framebuffer or PNG.
+    canvas.parentElement.style.setProperty('--lcd-border', `${4 * cssScale}px`);
     context.imageSmoothingEnabled = false;
     document.getElementById('lcdZoom').textContent = `${lcdZoom}×`;
     zoomOut.disabled = lcdZoom === MIN_LCD_ZOOM;
@@ -428,7 +439,7 @@
   document.getElementById('step1000').addEventListener('click', () => post('/api/clock', { stepMs: 1000 }));
   document.getElementById('restart').addEventListener('click', () => post('/api/restart'));
   document.getElementById('screenshot').addEventListener('click', () => {
-    window.open('/api/screenshot.png?scale=4', '_blank');
+    window.open('/api/screenshot.png?scale=1', '_blank');
   });
 
   document.getElementById('load').addEventListener('click', async () => {
