@@ -117,6 +117,28 @@ TARGET  := $(BUILD)/leafsim
 .PHONY: all clean deps test-thermal-core test-free-flight test-thermal-track test-display-settings test-leaf-log-sync test-udp-injection
 all: $(TARGET)
 
+.PHONY: test-runtime-capture
+$(BUILD)/runtime_capture_test: $(SIM)/tests/runtime_capture.cpp $(ROOT)/src/vario/diagnostics/runtime_capture.h $(ROOT)/src/vario/diagnostics/gps_profile.h
+	@mkdir -p $(BUILD)
+	@$(CXX) -std=c++17 -Wall -Wextra -g -I$(ROOT)/src/vario $< -o $@
+
+test-runtime-capture: $(BUILD)/runtime_capture_test
+	@$(BUILD)/runtime_capture_test
+
+.PHONY: test-runtime-lifecycle
+$(BUILD)/runtime_capture_lifecycle_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/runtime_capture_lifecycle.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/runtime_capture_lifecycle.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS) -Wl,--wrap=heap_caps_get_free_size,--wrap=heap_caps_malloc,--wrap=heap_caps_free
+
+test-runtime-lifecycle: $(BUILD)/runtime_capture_lifecycle_test
+	@cd $(ROOT) && $(BUILD)/runtime_capture_lifecycle_test
+
+.PHONY: test-runtime-integration
+$(BUILD)/runtime_capture_integration_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/runtime_capture_integration.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/runtime_capture_integration.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-runtime-integration: $(BUILD)/runtime_capture_integration_test
+	@cd $(ROOT) && $(BUILD)/runtime_capture_integration_test
+
 $(BUILD)/udp_injection_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/udp_injection.cpp
 	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/udp_injection.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
 

@@ -1,5 +1,16 @@
 # Agent Notes
 
+## Publishing firmware releases
+
+- Before publishing a new firmware release (including prereleases), follow
+  `docs/dev-references/releasing.md` and attach reviewed simulator and device runtime reports
+  for the exact candidate, or record an explicit maintainer-approved exception.
+- Runtime reports are a release requirement, not a per-PR gate. Stage 1 uses manual bounded
+  captures; automated burdened workloads and publication enforcement remain backlog work.
+- See `docs/dev-references/runtime-assessment.md` for capture/export and baseline reporting.
+- Changes to the task-manager slot schedule must keep the exported labels in
+  `src/vario/diagnostics/cpu_utilization.cpp` synchronized with the scheduled functions.
+
 ## factory_interface setup tasks
 
 - The `/setup` workflow does not use per-browser sessions. It is backed by process-wide module-level task singletons in `factory_interface/src/factory_interface/*_task.py` and `commissioning_tasks.py`. Multiple operators/browser tabs share the same setup task state.

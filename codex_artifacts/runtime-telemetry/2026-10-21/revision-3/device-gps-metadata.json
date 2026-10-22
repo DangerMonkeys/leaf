@@ -1,0 +1,29 @@
+{
+  "label": "Leaf 3.2.8: GPS sentence timing / Navigate page",
+  "commit": "7ed9b81337dcbccb37845a3e81c06fe2892ef596",
+  "working_tree": "Uncommitted codex/runtime-telemetry schema 3; manual diagnostic evidence, not approved release evidence",
+  "profile": "manual-gps-profile-v3",
+  "scenario": "Physical Leaf; 80.69-second capture with 149 normal Navigate page renders and 1057 complete UART GPS sentence dispatches; button/menu activity separated",
+  "toolchain": "PlatformIO 6.1.19 / leaf_3_2_8_release / pioarduino 53.03.10 / xtensa 13.2.0+20240530",
+  "device_id": "Leaf 3.2.8 / USB serial 7C4FAD3BACB0",
+  "sd_card": "Installed Leaf SD card; model and capacity not recorded",
+  "coverage_notes": "BLE enabled in captured settings; connected-client traffic not verified. FANET disabled; optional diagnostic SD logs disabled. All 1057 sentences checksum accepted; checksum acceptance alone does not prove a position fix. Newest IGC has 107 valid fix records at 1 Hz without gaps; exact monotonic overlap with the capture is not encoded. Navigate is the only flight page with measured renders.",
+  "limitations": "One short manual bench run with at least 76 samples per normal slot. No approved compatible baseline, external profiler overhead calibration, sustained soak, verified BLE traffic or functional recovery assessment. Device stage elapsed time includes blocking/preemption. The new and previous captures use different schemas, durations and workloads and are not a regression comparison.",
+  "capture_file_on_device": "/diagnostics/runtime_3.json",
+  "firmware_sha256": "9b8aec7b3bf8097a21c2ba0c8c443089a04b9f68bd5243f024c9ef3bed0a1b2d",
+  "source_manifest": "source-manifest.json",
+  "source_manifest_sha256": "d8e97ae89634537489d7f06a25e14e156b3833ae480e2ffc79a3985455e49881",
+  "igc_evidence": {
+    "file_on_device": "/tracks/2026-10-21-XLV-000-02.igc",
+    "sha256": "7be80ca8d1506854b82434bdc4f5ecaa9e7e92ef9570b7a557267c31417122df",
+    "bytes": 6245,
+    "fix_records": 107,
+    "valid_fix_records": 107,
+    "first_fix_utc": "011842",
+    "last_fix_utc": "012028",
+    "maximum_gap_seconds": 1,
+    "gaps_over_one_second": 0,
+    "limitations": "IGC file is associated by device/session context. Exact monotonic telemetry overlap is not encoded; continuity does not establish recovery correctness or BLE client activity."
+  },
+  "interpretation": "All 100 normal slot deadline crossings occurred in slots 80-89, with zero normal accumulated-duration overruns or coalesced ticks. GPS dispatches are phase clustered: 1051/1057 in slots 80-89. Active UART read stages account for 77.7% of measured GPS sentence processing elapsed time. Worst retained slot began 3 us late; GGA read began at +9.887 ms, line ready at +11.389 ms, callbacks ended at +11.825 ms. Thus UART reading had already crossed the deadline before complete-line dispatch; post-line work added 0.436 ms. Its preceding slot completed useful work before its own deadline. Sentence crossings (75, all contexts) and normal slot crossings (100) measure different units/coverage: UART chunks can cross without completing a sentence, and multiple sentences can share a slot. No missing, nested, asynchronous or partial-ingestion dispatches were reported."
+}

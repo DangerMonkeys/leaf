@@ -1,4 +1,5 @@
 #include "dispatch/message_injector.h"
+#include "diagnostics/cpu_utilization.h"
 
 #include <Arduino.h>
 #include <cstdint>
@@ -162,6 +163,11 @@ void MessageInjector::onAmbientUpdate(const char* line, size_t len) {
   float rh = 0.0f;
   (void)to_float(line, b, e, rh);
 
+  // Scenario delivery bypasses the simulator's UART/driver tasks. Measure only the
+  // firmware callbacks, excluding recording generation and wire-format parsing.
+#ifdef LEAF_SIM
+  cpu_utilization::Scope callbacks(runtime_capture::Work::Services);
+#endif
   bus->receive(AmbientUpdate(temp, rh));
 }
 
@@ -181,6 +187,10 @@ void MessageInjector::onGPSMessage(const char* line, size_t len) {
   (void)to_ulong(line, b, e, dt);
   (void)dt;  // GpsMessage doesn't carry time; parsed for validation only
 
+#ifdef LEAF_SIM
+  cpu_utilization::Scope callbacks(runtime_capture::Work::Gps);
+#endif
+  cpu_utilization::GpsSentenceScope sentence(line + pos, len - pos, true);
   bus->receive(GpsMessage(NMEAString(line + pos, len - pos)));
 }
 
@@ -254,6 +264,9 @@ void MessageInjector::onMotionUpdate(const char* line, size_t len) {
     }
   }
 
+#ifdef LEAF_SIM
+  cpu_utilization::Scope callbacks(runtime_capture::Work::Services);
+#endif
   bus->receive(m);
 }
 
@@ -280,5 +293,8 @@ void MessageInjector::onPressureUpdate(const char* line, size_t len) {
 
   unsigned long t = adjustedTime(dt);
   int32_t p = static_cast<int32_t>(pLong);
+#ifdef LEAF_SIM
+  cpu_utilization::Scope callbacks(runtime_capture::Work::Services);
+#endif
   bus->receive(PressureUpdate(t, p));
 }

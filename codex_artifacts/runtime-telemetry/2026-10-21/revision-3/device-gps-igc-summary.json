@@ -1,0 +1,12 @@
+{
+  "file_on_device": "/tracks/2026-10-21-XLV-000-02.igc",
+  "sha256": "7be80ca8d1506854b82434bdc4f5ecaa9e7e92ef9570b7a557267c31417122df",
+  "bytes": 6245,
+  "fix_records": 107,
+  "valid_fix_records": 107,
+  "first_fix_utc": "011842",
+  "last_fix_utc": "012028",
+  "maximum_gap_seconds": 1,
+  "gaps_over_one_second": 0,
+  "limitations": "IGC file is associated by device/session context. Exact monotonic telemetry overlap is not encoded; continuity does not establish recovery correctness or BLE client activity."
+}

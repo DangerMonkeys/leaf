@@ -284,7 +284,7 @@ namespace fs {
     if (root_.empty()) return false;
     const std::string host = joinPath(root_, path);
     if (hostIsDir(host)) return true;
-    ensureParentDirs(host + "/x");
+    ensureParentDirs(host);
     return ::mkdir(host.c_str(), 0777) == 0;
   }
   bool FS::mkdir(const String& path) { return mkdir(path.c_str()); }

@@ -1,0 +1,12 @@
+{
+  "label": "Simulator instrumentation validation: pages and button recovery",
+  "commit": "7ed9b81337dcbccb37845a3e81c06fe2892ef596",
+  "working_tree": "Uncommitted codex/runtime-telemetry, schema 2; not approved release evidence",
+  "profile": "telemetry-integration-v2",
+  "scenario": "thermal-climb recording; seven page types held 60 virtual seconds each; menu visit; held RIGHT button with 10/20ms loop stalls",
+  "toolchain": "gcc:13 sha256:8a4492a0802455f656af78b0c47c36b98d5b42b866a1e44dce25c06b743f5303 / VARIANT=leaf_3_2_8",
+  "coverage_notes": "Actual firmware scheduler and display render paths under host HAL. All seven page contexts and interaction exclusions asserted. No radio/hardware-driver performance measurement.",
+  "limitations": "Integration-test executable, not an operational workload. Host CPU is uncalibrated. Simulated stalls check scheduling progress and accounting, not physical sensor or flight-data correctness.",
+  "source_manifest": "source-manifest.json",
+  "source_manifest_sha256": "e56d94ce4bb6297d832a000273428cb8fa2a27dcd769f1bef5d37d4bae3db556"
+}

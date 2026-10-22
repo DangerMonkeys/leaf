@@ -15,7 +15,8 @@ class LC86G : IPowerControl, IMessageSource {
   LC86G(HardwareSerial& serial) : gpsPort_(serial) {}
 
   void init();
-  bool readLine();
+  bool readLine(bool sampleEmptyPoll = false);
+  bool hasPendingData() { return gpsPort_.available() > 0; }
 
   // IPowerControl
   void sleep();

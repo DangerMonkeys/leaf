@@ -167,6 +167,12 @@ itself, so that same script can drive the emulator with no changes.
 
 ## Headless runs and CI
 
+For bounded runtime telemetry, add `--runtime-capture path/to/capture.json` to a finite run.
+It records host thread CPU work separately from virtual timing and exports after freezing on
+normal exit. Device heap/stack placeholders are omitted. See
+[runtime assessment](../docs/dev-references/runtime-assessment.md) for report generation and
+measurement limits. These reports are required for published firmware releases, not every PR.
+
 The emulator runs without a browser, driven by a timed script, and exits with a non-zero status if
 an expectation fails — which makes screen-level regression tests possible.
 

@@ -1,0 +1,32 @@
+{
+  "base_commit": "7ed9b81337dcbccb37845a3e81c06fe2892ef596",
+  "branch": "codex/runtime-telemetry",
+  "state": "uncommitted",
+  "files_sha256": {
+    "AGENTS.md": "904048ea0fddd6a53e074a992ae93f28c8f467abedb932badef043fbb4ae8efc",
+    "docs/dev-references/backlog/runtime-resource-assessment.md": "393193983d53cb0de90ff2b7efc6c3ebe1d604119900813eb57b5668d40db301",
+    "docs/dev-references/releasing.md": "c9a147fad40b295f19807103d28bea142ab72b51a4c9f025c88b750fede066a0",
+    "docs/dev-references/runtime-assessment.md": "0925d6fda798bd3e255f5c9d38bdfec5234616cc6e8d7d74a840a09efbff95b7",
+    "sim/.gitignore": "7a48512ac1a03c2b013a948dd0db5d0af3304b9f30ca9a9192f35d4fad165081",
+    "sim/Makefile": "cf970ab5c216a697eaed1155eeabd211a157e7546bc336db60b79a199e940dfa",
+    "sim/README.md": "bdb76b1ca7d20f92ceee5661e06ef6c214ad7af50cfb49b3e3faf7243e205d38",
+    "sim/emulator/main.cpp": "cb1935af3670d031c4c546636e14ea78674ad86527af4dbb0d45ddb740b612ce",
+    "sim/hal/src/fs.cpp": "38b972193bcb34303a50c4b591d503c45033571f46887e8def2e531245a9c81c",
+    "sim/tests/runtime_capture.cpp": "70e94d3a725f3d00c6d80950e8f3a44173fa66f77c3a159ef88141b4f56a6dab",
+    "sim/tests/runtime_capture_lifecycle.cpp": "80f03ff244d4be613b005fc1a23b2cc4ea2a071812d0996d2236551fe1960b18",
+    "src/vario/comms/webserver.cpp": "fac211b2896f9d0669c26ef93074dc49044db0184dfcd90354c26a3482f934d7",
+    "src/vario/diagnostics/cpu_utilization.cpp": "04dd8597efb08d31cef7491f0f20c26a9c85c207bfd5404b6aa723a43409e5a9",
+    "src/vario/diagnostics/cpu_utilization.h": "575a4ee58e26b4fdb9a3ba5d58fea62b5e7e9d702f3f3a3eb268e977db657101",
+    "src/vario/diagnostics/heap_monitor.cpp": "ff96dc75e349985e245ab78c36af105eaf8c3af3cb353b4af33308c869c5a14c",
+    "src/vario/diagnostics/heap_monitor.h": "2ff6bcf2c81c80494ef2af53bd3eaf33b20fb7307b7b958e7d42f8ffc6ed6263",
+    "src/vario/diagnostics/runtime_capture.h": "d585c0a09d1d3d748ec04192d8334cbe1cdd214a4eb681be0c6edc31223fc409",
+    "src/vario/dispatch/message_injector.cpp": "618ce3909741e766a907a30e86b3f6448dd1e498e46b941fdf933059b62f1628",
+    "src/vario/hardware/lc86g.h": "ad0357459fa749f1a056c2e00da32f27aa99edf9f00d34fa5bbe48aed6d232e0",
+    "src/vario/taskman.cpp": "4d367f9674cdc8184c6e0f20de38042a3bbb9dc1900b4bc19a9a0b9e885ec3d3",
+    "src/vario/taskman.h": "ba60cc934ad84b70ef55657dcb104252fd36f838960f91ce3e972a0d244aae59",
+    "src/vario/ui/display/pages/menu/page_menu_developer.cpp": "d36e71921c75ca72192e21a2a7d575581ed4d1c74c0794d1c5cbab35fc4b47c6",
+    "src/vario/ui/display/pages/menu/page_menu_developer.h": "9d4b48582219895e09534d061622a9b941b08ed4f90dfe47b800da4c710eb167",
+    "utils/runtime_report/report.py": "3a444fdcf834015c1deb889934b22dd1332efddef7a5f8e3d424c2d1b830f39a",
+    "utils/runtime_report/test_report.py": "4d696efc745260f6519fb1e92bd8f04da70a235ba6c7e61a4750ddbe97f5590d"
+  }
+}

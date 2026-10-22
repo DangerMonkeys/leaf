@@ -2,6 +2,7 @@
 
 #include "etl/message_bus.h"
 
+#include "diagnostics/cpu_utilization.h"
 #include "dispatch/message_types.h"
 #include "hardware/configuration.h"
 #include "hardware/io_pins.h"
@@ -81,15 +82,26 @@ void LC86G::init() {
   */
 }
 
-bool LC86G::readLine() {
-  while (gpsPort_.available()) {
+bool LC86G::readLine(bool sampleEmptyPoll) {
+  const bool samplePoll = sampleEmptyPoll && cpu_utilization::capturing();
+  const uint64_t pollStart = samplePoll ? cpu_utilization::workClockUs() : 0;
+  if (!gpsPort_.available()) {
+    if (samplePoll) cpu_utilization::addWork(runtime_capture::Work::Poll, pollStart, false);
+    return false;
+  }
+  // Classify at the actual read, including bytes arriving after the scheduler's last check.
+  cpu_utilization::Scope gpsWork(runtime_capture::Work::Gps);
+  cpu_utilization::GpsUartScope uart(newLineIndex_ != 0, cpu_utilization::capturing());
+  do {
     char c = gpsPort_.read();
     if (c == '\n' || c == '\r') {
       // End of line
       newLine_[newLineIndex_] = '\0';
       if (newLineIndex_ > 0) {  // Ignore blank lines and second character in CR+LF
         newLine_.resize(newLineIndex_);
+        uart.finish(true);
         etl::imessage_bus* bus = bus_;
+        cpu_utilization::GpsSentenceScope sentence(newLine_.c_str(), newLine_.length());
         if (bus) {
           bus->receive(GpsMessage(newLine_));  // Send the complete NMEA sentence to the bus
         }
@@ -111,9 +123,11 @@ bool LC86G::readLine() {
             "'%s'\n",
             newLine_.capacity(), newLineIndex_, newLine_.length(), newLine_.c_str());
         newLineIndex_ = 0;
+        uart.discard();
       }
     }
-  }
+  } while (gpsPort_.available());
+  uart.finish(newLineIndex_ != 0);
   return false;
 }
 

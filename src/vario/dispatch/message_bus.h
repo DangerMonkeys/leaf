@@ -2,6 +2,7 @@
 
 #include "etl/message_bus.h"
 
+#include "diagnostics/cpu_utilization.h"
 #include "diagnostics/fatal_error.h"
 
 // How much time to block waiting for the message bus mutex (protecting against concurrent
@@ -58,7 +59,10 @@ class MessageBus : public etl::message_bus<MAX_ROUTERS_> {
 
 template <uint_least8_t MAX_ROUTERS_>
 inline void MessageBus<MAX_ROUTERS_>::receive(const etl::imessage& message) {
-  Locked locked = lock();
+  Locked locked = [&] {
+    cpu_utilization::GpsStageScope wait(runtime_capture::GpsStage::BusWait);
+    return lock();
+  }();
   if (!locked.valid()) {
     fatalError("Lock acquisition failed in MessageBus::receive");
   } else {

@@ -4,6 +4,7 @@
 #include <SD_MMC.h>
 #include <string.h>
 
+#include "diagnostics/cpu_utilization.h"
 #include "diagnostics/diagnostic_logs.h"
 #include "esp_heap_caps.h"
 #include "esp_system.h"
@@ -142,7 +143,9 @@ namespace heap_monitor {
     nextSample = (nextSample + 1) % SAMPLE_COUNT;
     if (sampleTotal < SAMPLE_COUNT) sampleTotal++;
 
-    if (!sdLoggingEnabled || !diagnostic_logs::ensureDirectory()) return;
+    // Retain the bounded RAM history during timing capture; exporting is explicit.
+    if (cpu_utilization::capturing() || !sdLoggingEnabled || !diagnostic_logs::ensureDirectory())
+      return;
 
     const bool existed = SD_MMC.exists(diagnostic_logs::SYSTEM_EVENTS_PATH);
     File file = SD_MMC.open(diagnostic_logs::SYSTEM_EVENTS_PATH, "a", true);
@@ -172,6 +175,16 @@ namespace heap_monitor {
         return;
       }
     }
+  }
+
+  void snapshot(Snapshot& s) {
+    s.internalFree = heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    s.internalMin = heap_caps_get_minimum_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    s.internalLargest = heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    s.loopStack = stackHighWaterFor("loop");
+    s.bleStack = stackHighWaterFor("ble");
+    s.fanetTxStack = stackHighWaterFor("fanet_tx");
+    s.fanetRxStack = stackHighWaterFor("fanet_rx");
   }
 
   void setSdLoggingEnabled(bool enabled) { sdLoggingEnabled = enabled; }

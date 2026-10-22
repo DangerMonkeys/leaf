@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 
+#include "diagnostics/cpu_utilization.h"
 #include "diagnostics/self_test/selfTest.h"
 #include "hardware/buttons.h"
 #include "logging/buslog.h"
@@ -19,6 +20,8 @@ enum developer_menu_items {
   cursor_developer_fanetReTx,
   cursor_developer_showDebugPg,
   cursor_developer_runSelfTest,
+  cursor_developer_runtime,
+  cursor_developer_exportRuntime,
   cursor_developer_startupStart,
   cursor_developer_startupDisconnect,
   cursor_developer_busLogControl
@@ -35,7 +38,7 @@ void DeveloperMenuPage::draw() {
     uint8_t y_spacing = 16;
     uint8_t setting_name_x = 2;
     uint8_t setting_choice_x = 76;
-    uint8_t menu_items_y[] = {190, 35, 50, 65, 135, 150, 170};
+    uint8_t menu_items_y[] = {190, 35, 50, 65, 80, 95, 135, 150, 170};
 
     // draw Bus Logger Section
     u8g2.drawHLine(0, 105, 96);
@@ -62,7 +65,14 @@ void DeveloperMenuPage::draw() {
             menu_ui::printGlyph(menu_ui::ICON_OFF);
           break;
         case cursor_developer_runSelfTest:
+        case cursor_developer_exportRuntime:
           menu_ui::drawEnterIcon(setting_choice_x, menu_items_y[i], selected);
+          break;
+        case cursor_developer_runtime:
+          u8g2.setCursor(u8g2.getCursorX() - 18, u8g2.getCursorY());
+          u8g2.print(cpu_utilization::capturing()                                  ? "STOP"
+                     : strcmp(cpu_utilization::status(), "allocation_failed") == 0 ? "ERR"
+                                                                                   : "START");
           break;
         case cursor_developer_startupStart:
           if (settings.dev_startLogAtBoot)
@@ -95,6 +105,22 @@ void DeveloperMenuPage::draw() {
 
 void DeveloperMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) {
   switch (cursor_position) {
+    case cursor_developer_runtime:
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
+        if (cpu_utilization::capturing()) {
+          settings.diag_cpuUtilization = false;
+          cpu_utilization::freeze();
+        } else {
+          const bool started = cpu_utilization::start();
+          settings.diag_cpuUtilization = started;
+          if (!started) speaker.playSound(fx::bad);
+        }
+      }
+      break;
+    case cursor_developer_exportRuntime:
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT))
+        speaker.playSound(cpu_utilization::exportToSd() ? fx::confirm : fx::bad);
+      break;
     case cursor_developer_fanetReTx: {
       if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT))
         settings.toggleBoolOnOff(&settings.dev_fanetFwd);

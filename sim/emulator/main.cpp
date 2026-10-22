@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "diagnostics/cpu_utilization.h"
 #include "dispatch/message_bus.h"
 #include "http_server.h"
 #include "runtime.h"
@@ -43,12 +44,14 @@ namespace {
         "  --speed X           clock speed: 1 = real time, 10 = ten times faster, 0 = flat out\n"
         "  --charge-mode       boot as if plugged in without the power button held\n"
         "  --accept-warning    answer the safety disclaimer (presses DOWN then CENTER for you)\n"
-        "  --setting KEY=VALUE set a saved setting before boot, e.g. THERM_DISPLAY=1 --setting SHOW_THERM_TRK=1\n"
+        "  --setting KEY=VALUE set a saved setting before boot, e.g. THERM_DISPLAY=1 --setting "
+        "SHOW_THERM_TRK=1\n"
         "                      (repeatable; keys are the NVS keys in ui/settings/settings.cpp)\n"
         "  --script FILE       run a timed script of button presses and assertions\n"
         "  --run-seconds N     run for N seconds of device time, then exit (headless runs)\n"
         "  --screenshot FILE   write a PNG of the screen before exiting\n"
         "  --export-log FILE   write the loaded scenario out as a device-format bus log\n"
+        "  --runtime-capture FILE  capture bounded telemetry and export JSON on normal exit\n"
         "  --scale N           screenshot scale factor (default 3)\n"
         "  --help\n");
   }
@@ -67,6 +70,7 @@ int main(int argc, char** argv) {
   std::string scriptPath;
   std::string screenshotPath;
   std::string exportPath;
+  std::string runtimeCapturePath;
   std::vector<std::string> presetSettings;
   bool autoPlay = false;
   double runSeconds = 0;
@@ -121,6 +125,9 @@ int main(int argc, char** argv) {
     } else if (argMatches(arg, "--export-log") && next) {
       exportPath = next;
       i++;
+    } else if (argMatches(arg, "--runtime-capture") && next) {
+      runtimeCapturePath = next;
+      i++;
     } else if (argMatches(arg, "--scale") && next) {
       scale = atoi(next);
       i++;
@@ -129,6 +136,11 @@ int main(int argc, char** argv) {
       printUsage();
       return 2;
     }
+  }
+
+  if (!runtimeCapturePath.empty() && runSeconds <= 0 && scriptPath.empty()) {
+    fprintf(stderr, "--runtime-capture requires --run-seconds or --script\n");
+    return 2;
   }
 
   options.screenshotOnExit = screenshotPath;
@@ -205,6 +217,13 @@ int main(int argc, char** argv) {
     if (runSeconds <= 0) runSeconds = sim::script().lastStepMs() / 1000.0 + 2.0;
   }
 
+  if (!runtimeCapturePath.empty()) {
+    settings.dev_mode = true;
+    settings.diag_cpuUtilization = true;
+    cpu_utilization::update();
+    if (!cpu_utilization::capturing()) return 1;
+  }
+
   if (runSeconds > 0) {
     const uint64_t until = sim::clock().nowUs() + (uint64_t)(runSeconds * 1000000.0);
     while (sim::clock().nowUs() < until && !sim::script().quitRequested()) device.step();
@@ -215,6 +234,29 @@ int main(int argc, char** argv) {
 
   device.writeExitScreenshot();
   server.stop();
+
+  if (!runtimeCapturePath.empty()) {
+    cpu_utilization::freeze();
+    class HostPrint : public Print {
+     public:
+      explicit HostPrint(FILE* file) : file_(file) {}
+      size_t write(uint8_t byte) override { return fwrite(&byte, 1, 1, file_); }
+
+     private:
+      FILE* file_;
+    };
+    FILE* file = fopen(runtimeCapturePath.c_str(), "wb");
+    if (!file) {
+      perror("runtime capture");
+      return 1;
+    }
+    HostPrint output(file);
+    const bool written = cpu_utilization::writeJson(output);
+    const bool failed = ferror(file) != 0;
+    const bool closed = fclose(file) == 0;
+    if (!written || failed || !closed) return 1;
+    printf("leafsim: runtime capture exported to %s\n", runtimeCapturePath.c_str());
+  }
 
   const int failures = sim::script().failures();
   if (failures > 0) {

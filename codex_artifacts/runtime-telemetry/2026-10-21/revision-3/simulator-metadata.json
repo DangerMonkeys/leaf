@@ -1,0 +1,12 @@
+{
+  "label": "GPS sentence profiler validation (simulator)",
+  "commit": "7ed9b81337dcbccb37845a3e81c06fe2892ef596",
+  "working_tree": "Uncommitted codex/runtime-telemetry schema 3; not operational release evidence",
+  "profile": "telemetry-integration-v3",
+  "scenario": "thermal-climb playback; seven page types for 60 virtual seconds each; button/stall cases; fragmented valid UART GGA and bad checksum; synthetic 20ms dispatch stall",
+  "toolchain": "gcc:13 sha256:8a4492a0802455f656af78b0c47c36b98d5b42b866a1e44dce25c06b743f5303 / VARIANT=leaf_3_2_8",
+  "coverage_notes": "Real parser, UART driver and message-bus paths under host HAL. Synthetic UART fixture and injected playback are combined. All seven page contexts are exercised. Radio and physical driver performance is not measured.",
+  "limitations": "Integration executable and uncalibrated host CPU, not device performance. The retained sentence crossing is a deterministic virtual stall. No new hardware GPS profile captured yet.",
+  "source_manifest": "source-manifest.json",
+  "source_manifest_sha256": "d8e97ae89634537489d7f06a25e14e156b3833ae480e2ffc79a3985455e49881"
+}

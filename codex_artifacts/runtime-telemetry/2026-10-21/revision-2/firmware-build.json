@@ -1,0 +1,15 @@
+{
+  "environment": "leaf_3_2_8_release",
+  "base_commit": "7ed9b81337dcbccb37845a3e81c06fe2892ef596",
+  "branch": "codex/runtime-telemetry",
+  "working_tree": "uncommitted",
+  "firmware_sha256": "868d330ded62ae9ef599aeba308a9bd41dccc27c90728b68d8abcc525ca8e917",
+  "source_manifest_sha256": "e56d94ce4bb6297d832a000273428cb8fa2a27dcd769f1bef5d37d4bae3db556",
+  "device_capture": "device-flight-raw.json; schema 2 operator capture, report requires review",
+  "flash_result": "Both OTA app slots flashed and esptool hashes verified; device reset",
+  "ota_offsets": [
+    "0x10000",
+    "0x340000"
+  ],
+  "static_ram_bytes": 103556
+}
