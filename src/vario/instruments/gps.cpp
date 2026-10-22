@@ -383,7 +383,7 @@ void LeafGPS::updateLastValidFix() {
   lastValidFix_.speedMps = speed.mps();
   lastValidFix_.courseDeg = course.deg();
   lastValidFix_.fixError = fixInfo.error;
-  lastValidFix_.capturedAtMs = millis();
+  lastValidFix_.capturedAtMs = millis() - location.age();
 }
 
 void LeafGPS::testSats() {

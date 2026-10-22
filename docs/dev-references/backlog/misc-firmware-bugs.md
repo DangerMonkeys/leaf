@@ -7,8 +7,11 @@ description: Confirmed firmware defects and focused follow-up fixes.
 
 ## Thermal state survives shutdown and flight stop; altitude read before barometer ready
 
-Status: open. Reported and reproduced on Leaf 3.2.8 on 2026-10-21. Fix and lifecycle
-regression coverage are pending; recording this item does not change the firmware.
+Status: fix implemented on `codex/fix-thermal-state-baro-readiness`; simulator lifecycle,
+Thermal Core/Track and display regressions and the `leaf_3_2_6_release` firmware build pass.
+Reported and reproduced on Leaf 3.2.8 on 2026-10-21. Repeated hardware lifecycle checks
+remain required before closing this item. The `leaf_3_2_6_release` candidate was flashed
+successfully to both OTA slots on the connected Leaf, with both write hashes verified.
 
 ### Evidence and cause
 
@@ -62,3 +65,22 @@ The verified SD log, decoded stack, build identity and simulator reproduction ar
   archived logs, configured page preferences and ordinary logging remain correct.
 - Run simulator lifecycle regressions and verify repeated shutdown/charging/wake and
   flight-stop/restart cycles on hardware before closing this item.
+
+### Implementation
+
+- Flight start, manual/automatic stop and every orderly shutdown share a reset that clears
+  ThermalTracker history, saved thermals and navigation selection; ThermalCore fits, targets,
+  guidance and breadcrumbs; Basic/User/Core/Track page cursors; and display auto-switch state.
+  Shutdown also resets sessions with no active flight. Preferences and completed logs remain.
+- Collection can restart without an active timer, but only after a newly received usable GPS
+  position and valid climb readings. GPS snapshots retain the position receipt timestamp;
+  refreshing a snapshot cannot make a pre-reset position look new.
+- The on-device `baro` call audit found missing readiness guards in ThermalCore updates,
+  IGC record writes, flight-stop initial-altitude reset, shared altitude rendering and Core/Track
+  altitude rendering. These now skip unavailable sensor reads, clear Core guidance or draw
+  unavailable altitude as appropriate. Existing climb validity helpers include readiness;
+  GPS altitude synchronization checks readiness internally. Barometer assertions remain intact.
+- `make -C sim test-thermal-lifecycle` covers populated manual/automatic stops, final logbook
+  data and retained track files, repeated stops, stale GPS, delayed pressure, all four page
+  cursors, auto-switch state and charging shutdown/wake with active/non-logging sessions,
+  enabled/hidden thermal pages and normal/low-battery shutdown.

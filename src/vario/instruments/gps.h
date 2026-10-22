@@ -66,6 +66,7 @@ struct GPSPositionSnapshot {
   float speedMps = 0;
   float courseDeg = 0;
   float fixError = 0;
+  // Receipt time of the position, rather than the most recent snapshot refresh.
   uint32_t capturedAtMs = 0;
 };
 

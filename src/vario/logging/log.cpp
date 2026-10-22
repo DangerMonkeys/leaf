@@ -1,6 +1,5 @@
 
 #include "logging/log.h"
-#include "navigation/thermal_core.h"
 
 #include <Arduino.h>
 
@@ -13,11 +12,11 @@
 #include "logbook/igc.h"
 #include "logbook/logbook_entry.h"
 #include "navigation/gpx.h"
-#include "navigation/thermal_tracker.h"
 #include "power.h"
 #include "storage/sd_card.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
+#include "ui/display/display.h"
 #include "ui/display/pages/dialogs/page_alert_timerAutoStop.h"
 #include "ui/display/pages/dialogs/page_flight_summary.h"
 #include "ui/display/pages/fanet/page_fanet_stats.h"
@@ -289,8 +288,7 @@ void flightTimer_start() {
   speaker.playSound(fx::enter);
   settings.resetShortcutVolume();
   flight = &igcFlight;
-  thermalTracker.reset();
-  thermalCore.reset();
+  display.resetThermalState();
 
   logbook.logStartedAt = millis() / 1000;
   log_captureValues();
@@ -308,6 +306,8 @@ void flightTimer_stop(bool showSummary) {
   power.resetAutoOffCounter();  // reset the auto-off counter when we stop a flight (it could have
                                 // counted up to nearly the limit prior to auto-starting a log)
   flightTimer_resetAutoStop();
+  // Also clear non-logging thermal sessions and repeated stop/shutdown requests.
+  display.resetThermalState();
   // Short Circuit, no need to do anything if there's no flight recording.
   if (flight == NULL) {
     return;
@@ -340,7 +340,7 @@ void flightTimer_stop(bool showSummary) {
 
   // reset initial alt
   // (to enable properly checking again for auto-start conditions now that timer is stopped)
-  baro.setAltInitial();
+  if (baro.state() == Barometer::State::Ready) baro.setAltInitial();
 }
 
 void flightTimer_toggle() {

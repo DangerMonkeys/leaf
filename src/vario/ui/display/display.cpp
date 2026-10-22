@@ -202,6 +202,18 @@ void Display::setPage(MainPage targetPage) {
   }
 }
 
+void Display::resetThermalState() {
+  thermalTracker.reset();
+  thermalCore.reset();
+  simplePage_reset();
+  thermalPage_reset();
+  thermalCorePage_reset();
+  thermalTrackPage_reset();
+  thermalReturnPage_ = MainPage::User;
+  thermalAutoSwitchActive_ = false;
+  thermalGuidanceWasAvailable_ = false;
+}
+
 void Display::updateThermalAutoSwitch(bool guidanceAvailable) {
   const bool newGuidance = guidanceAvailable && !thermalGuidanceWasAvailable_;
   thermalGuidanceWasAvailable_ = guidanceAvailable;

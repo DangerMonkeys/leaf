@@ -55,6 +55,11 @@ namespace {
   }
 }  // namespace
 
+void thermalPage_reset() {
+  thermal_page_cursor_position = cursor_thermalPage_none;
+  thermal_page_cursor_timeCount = 0;
+}
+
 void thermalPage_draw() {
   // if cursor is selecting something, count toward the timeOut value before we reset cursor
   if (thermal_page_cursor_position != cursor_thermalPage_none &&

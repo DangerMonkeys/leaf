@@ -282,9 +282,7 @@ void Power::shutdown(bool deadBattery) {
   }
 
   // save logs and system data
-  if (flightTimer_isRunning()) {
-    flightTimer_stop(false);
-  }
+  flightTimer_stop(false);
   busLog.endLog();
 
   // Show user we're shutting down

@@ -7,6 +7,7 @@
 
 // draw the pixels to the display
 void simplePage_draw(void);
+void simplePage_reset();
 
 // handle button presses relative to what's shown on the display
 void simplePage_button(Button button, ButtonEvent state, uint8_t count);

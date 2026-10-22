@@ -31,6 +31,11 @@ uint8_t simple_page_cursor_timeCount =
 uint8_t simple_page_cursor_timeOut =
     10;  // after 8 page draws (4 seconds) reset the cursor if a button hasn't been pushed.
 
+void simplePage_reset() {
+  simple_page_cursor_position = cursor_simplePage_none;
+  simple_page_cursor_timeCount = 0;
+}
+
 void simplePage_draw() {
   // if cursor is selecting something, count toward the timeOut value before we reset cursor
   if (simple_page_cursor_position != cursor_simplePage_none &&

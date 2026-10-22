@@ -67,6 +67,7 @@ class Display {
   bool hasEnabledPrimaryPage() const;
   void ensurePrimaryPageEnabled();
   void updateThermalAutoSwitch(bool guidanceAvailable);
+  void resetThermalState();
 
   void showOnSplash();
 
