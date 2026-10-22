@@ -139,6 +139,13 @@ $(BUILD)/runtime_capture_integration_test: $(filter-out $(BUILD)/sim/emulator/ma
 test-runtime-integration: $(BUILD)/runtime_capture_integration_test
 	@cd $(ROOT) && $(BUILD)/runtime_capture_integration_test
 
+.PHONY: test-gps-uart-yield
+$(BUILD)/gps_uart_yield_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/gps_uart_yield.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/gps_uart_yield.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-gps-uart-yield: $(BUILD)/gps_uart_yield_test
+	@cd $(ROOT) && $(BUILD)/gps_uart_yield_test
+
 $(BUILD)/udp_injection_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/udp_injection.cpp
 	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/udp_injection.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
 

@@ -82,7 +82,8 @@ void LC86G::init() {
   */
 }
 
-bool LC86G::readLine(bool sampleEmptyPoll) {
+bool LC86G::readLine(const std::atomic<uint32_t>& timerTicks, uint32_t slotTick,
+                     bool sampleEmptyPoll) {
   const bool samplePoll = sampleEmptyPoll && cpu_utilization::capturing();
   const uint64_t pollStart = samplePoll ? cpu_utilization::workClockUs() : 0;
   if (!gpsPort_.available()) {
@@ -93,6 +94,9 @@ bool LC86G::readLine(bool sampleEmptyPoll) {
   cpu_utilization::Scope gpsWork(runtime_capture::Work::Gps);
   cpu_utilization::GpsUartScope uart(newLineIndex_ != 0, cpu_utilization::capturing());
   do {
+    // The interrupt only signals the next slot. Return before another character so its
+    // scheduled tasks can run; keep newLineIndex_ and the partial line for the next call.
+    if (timerTicks.load(std::memory_order_acquire) != slotTick) break;
     char c = gpsPort_.read();
     if (c == '\n' || c == '\r') {
       // End of line

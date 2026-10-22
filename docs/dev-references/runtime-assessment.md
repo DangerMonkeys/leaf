@@ -185,6 +185,12 @@ Slot GPS work is classified inside the UART driver when bytes are actually avail
 than from an earlier scheduler availability check. This also covers arrivals between those
 checks. One truly empty poll per dispatched slot is sampled separately.
 
+The UART reader checks the task timer between characters, retains partial sentences when the
+slot expires, and resumes after the next slot's scheduled tasks. The check uses the existing
+atomic tick counter; it does not read a clock or create a telemetry record per character.
+Complete-sentence parsing and callbacks still run inline, so a sentence completed near the
+boundary can cross its deadline. This intentionally remains visible in the report.
+
 The profiler retains eight recent sentences and the four largest sentence deadline crossings,
 plus full-run per-type statistics and phase counts. It emits no sentence text/coordinates and
 performs no formatting, allocation or I/O while recording. Recent slot history is eight slots
@@ -258,6 +264,7 @@ STOP deliberately retains data until export; successful export releases the buff
 make -C sim test-runtime-capture
 make -C sim test-runtime-lifecycle
 make -C sim test-runtime-integration
+make -C sim test-gps-uart-yield
 python -m unittest discover -s utils/runtime_report -p 'test_*.py'
 ```
 

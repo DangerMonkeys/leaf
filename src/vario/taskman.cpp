@@ -318,11 +318,12 @@ void TaskManager::updateWhileOn() {
 
   // GPS Serial Buffer Read
   // stop reading if no more data is available, OR, if our 10ms time block is up (because main timer
-  // interrupt fired and set setTasks to true)
+  // interrupt advanced taskTimerTicks). readLine also checks between individual characters;
+  // sentence-completion callbacks remain inline and may finish after the tick.
   bool gpsHasData = true;
   bool sampleEmptyPoll = startedTaskBlock;
   while (gpsHasData && taskTimerTicks.load(std::memory_order_acquire) == consumedTaskTick) {
-    gpsHasData = lc86g.readLine(sampleEmptyPoll);
+    gpsHasData = lc86g.readLine(taskTimerTicks, consumedTaskTick, sampleEmptyPoll);
     sampleEmptyPoll = false;
   }
 }

@@ -1,0 +1,37 @@
+# UART yielding between characters
+
+Telemetry and earlier baseline reports were committed first as `f1f65c8`. This build adds an
+atomic tick comparison before each UART character read, retaining partial sentences across
+slots. Scheduled tasks run before UART reading resumes in the next slot. Sentence parsing
+and completion callbacks stay inline, as requested; they can still cross the boundary.
+There are no new capture records, timestamps, locks or allocations per character.
+
+`firmware-build.json` identifies the exact Leaf 3.2.8 image installed to both OTA app slots.
+Its firmware/source hashes identify the tested version, built from the first telemetry commit
+plus the character-yield change. Static RAM stays at 103,564 B; capture allocation stays at
+22,496 B. The bounded yield regression covers partial lines, final payload characters,
+terminators and expiry during callbacks with capture both off and on. Telemetry accounting,
+lifecycle, integration and UDP regressions also pass.
+
+No post-change hardware capture has been collected yet. For a useful comparison, repeat the
+previous approximately 80-second Navigate-page capture with matching GPS/BLE/IGC conditions.
+Then STOP, Save Timing, and return to charging USB. The previous data and reports remain
+unchanged in [revision 3](../revision-3/device-gps.html). Improvement and physical receive-buffer
+continuity remain unmeasured until a new device run is available.
+
+## History
+
+Git attributes the change from one-character reads to draining available data to **Benjamin
+Pelletier**, July 18, 2025, commit `78c514a09d17bc40096679508aecf325bdc51ea1`,
+[Split GPS hardware abstraction from GPS instrument (#162)](https://github.com/DangerMonkeys/leaf/pull/162).
+The earlier `readBufferOnce()` consumed one character per scheduler timer check. The new
+`readData()` loop processed available lines without an internal slot-expiry check. This was
+already present in v0.1.0.
+
+**Benjamin Pelletier** later introduced the current per-sentence scheduler yield on August 12,
+2025, commit `927e00d90d1700784cebb10826b234b45c9b4d66`,
+[Transmit GPS text via message bus (#175)](https://github.com/DangerMonkeys/leaf/pull/175).
+Consequently, the immediate pre-change firmware yielded between lines; it did not invariably
+drain the entire UART buffer before checking the timer. Neither implementation checked the
+timer between characters inside a line. These attributions come from local Git author records;
+they do not establish who reviewed or merged each PR.
