@@ -8,10 +8,14 @@ description: Confirmed firmware defects and focused follow-up fixes.
 ## Thermal state survives shutdown and flight stop; altitude read before barometer ready
 
 Status: fix implemented on `codex/fix-thermal-state-baro-readiness`; simulator lifecycle,
-Thermal Core/Track and display regressions and the `leaf_3_2_6_release` firmware build pass.
+Thermal Core/Track and display regressions and the `leaf_3_2_6_release` and
+`leaf_3_2_8_release` firmware builds pass.
 Reported and reproduced on Leaf 3.2.8 on 2026-10-21. Repeated hardware lifecycle checks
-remain required before closing this item. The `leaf_3_2_6_release` candidate was flashed
-successfully to both OTA slots on the connected Leaf, with both write hashes verified.
+remain required before closing this item. The matching `leaf_3_2_8_release` candidate was
+flashed to both OTA slots on the connected Leaf 3.2.8, with both write hashes verified.
+Serial output confirms the main loop runs and handles the center button. An earlier default
+3.2.6 flash used the wrong motion-sensor driver for this device and stalled in IMU initialization;
+verified flash writes alone did not establish a successful hardware boot.
 
 ### Evidence and cause
 
