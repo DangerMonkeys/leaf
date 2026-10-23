@@ -286,7 +286,7 @@ void Power::shutdown(bool deadBattery) {
   }
 
   // save logs and system data
-  flightTimer_stop(false);
+  flightTimer_stop(false, deadBattery ? FlightEndCause::LowBattery : FlightEndCause::PowerOff);
   busLog.endLog();
 
   // Show user we're shutting down

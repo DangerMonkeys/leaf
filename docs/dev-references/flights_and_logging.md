@@ -37,6 +37,84 @@ graph TD
 ```
 
 
+### Automatic flight start and launch diagnostics
+
+Auto Start uses one exponentially fading motion score, sampled once per second:
+
+```text
+motion = max(speed_mph, 0) / 4.2 + max(climb_mps, 0) / 0.7
+maximum_input = 1 / (1 - exp(-3 / 2.4))
+target = min(motion, maximum_input)
+score = target + (previous_score - target) * exp(-elapsed_seconds / 2.4)
+start when score >= 1
+```
+
+The three tuning constants are in `src/vario/logging/flight_auto_start.h`: speed scale
+4.2 mph, climb scale 0.7 m/s, and memory 2.4 seconds. The cap requires at least three seconds
+of observations from an empty detector. Stronger signals start sooner; weaker signals reinforce
+each other. Combined motion at or below one never starts a flight by itself. The original eight
+launch patterns are calibration examples rather than separate rules.
+
+With an empty detector and valid inputs sampled at 1 Hz, the regression calibration is:
+
+| Input pattern | Detection time |
+| --- | --- |
+| 8 mph | 3 s |
+| 6 or 7 mph for one second, then 5 mph | 5 s |
+| 1.2 or 1.0 m/s climb alone | 3 s |
+| 0.8 m/s climb alone | 5 s |
+| 4 mph plus 0.4 m/s climb | 3 s |
+| 3 mph plus 0.3 m/s climb | 5 s |
+
+These are detector timings; sensor acquisition/filter response and polling phase can add delay.
+The fused-sensor simulator regression also checks a vertical launch without GPS within ten seconds.
+
+GPS speed must pass the existing fresh-fix/speed checks. Climb uses a fresh barometer and the
+valid fixed one-second IMU/barometer average, independently of display smoothing. Invalid
+channels contribute nothing; losing both resets the score. Descending adds no climb points.
+A gap over two seconds resets detection instead of treating unknown time as movement.
+Toggling Auto Start resets the score immediately on either edge, even between scheduled checks.
+Showing a flight summary and starting/stopping a flight also reset it.
+Climb alone can start the timer without GPS; track recording still waits for GPS, synced time,
+a ready barometer and a writable SD card.
+
+While idle, a fixed RAM ring retains thirty one-second samples, including with Auto Start disabled.
+At timer start it freezes until the IGC file opens, so waiting for GPS cannot overwrite the
+launch evidence. It includes the triggering sample and clears at flight stop. A manual start
+refreshes the current second before freezing. These are diagnostic records, not backfilled
+GPS fixes or flight time.
+
+The IGC writer emits manufacturer L records after the normal header/declaration:
+
+```text
+LXLVSTART V=1 CAUSE=AUTO T_MS=42000 N=30
+LXLVSTARTCFG SPEED_MPH=4.20 CLIMB_MPS=0.70 MEMORY_S=2.40 MIN_MS=3000
+LXLVSTARTFIELDS DT_MS V=MPH C=M/S S=SCORE F=1:SPEED,2:CLIMB,4:ON,8:BLOCK
+LXLVSTARTDATA DT_MS=-1000 V=8 C=0.1 S=0.876543 F=07
+```
+
+Start causes are `AUTO` or `MANUAL`. `T_MS` is timer-start uptime in milliseconds; `DT_MS`
+is the sample offset from that moment. `V` and `C` retain signed sensor readings (`NA` if
+unusable), `S` is the score after evaluation, and hexadecimal `F` contains speed-valid (1),
+climb-valid (2), Auto Start enabled (4), and summary blocking (8) bits. Repeated calls in a
+clock-second replace that second with the latest reading. Offsets work across millis rollover;
+gaps clear stale history rather than presenting it as recent.
+
+At normal close, an end-cause record precedes the G checksum:
+
+```text
+LXLVEND V=1 CAUSE=AUTO T_MS=123000
+```
+
+End causes are `AUTO`, `MANUAL`, `POWER_OFF`, or `LOW_BATTERY`. This labels existing
+auto-stop behavior; its thresholds are unchanged. All diagnostic records use the normal IGC
+writer and are included in its checksum. Abrupt power loss cannot write an end record. Flights
+with track saving disabled, or stopped before an IGC file opens, have no IGC diagnostics.
+These temporary records support field tuning.
+
+Run `make -C sim test-flight-auto-start test-thermal-lifecycle` in the usual container for
+calibration, invalid input, lifecycle, delayed-GPS history and IGC start/end-cause checks.
+
 ### What Happens During Each State
 
 The table below outlines what actions do/don't happen during each state:

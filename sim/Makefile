@@ -306,3 +306,10 @@ clean:
 	@echo "Cleaned $(BUILD)"
 
 -include $(shell find $(BUILD) -name '*.d' 2>/dev/null)
+
+.PHONY: test-flight-auto-start
+$(BUILD)/flight_auto_start_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/flight_auto_start.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/flight_auto_start.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-flight-auto-start: $(BUILD)/flight_auto_start_test
+	@cd $(ROOT) && $(BUILD)/flight_auto_start_test
