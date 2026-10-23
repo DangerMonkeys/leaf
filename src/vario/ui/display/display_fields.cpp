@@ -4,7 +4,6 @@
 #include <U8g2lib.h>
 
 #include "comms/fanet_radio.h"
-#include "hardware/motion_sensor.h"
 #include "instruments/ambient.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
@@ -1198,13 +1197,7 @@ void display_on_splash() {
 
     u8g2.setFont(leaf_6x12);
     u8g2.setCursor(28, 149);
-#ifdef USE_LSM6DSV
-    u8g2.setFont(leaf_5x8);
-    u8g2.setCursor(0, 149);
-    u8g2.print(MotionSensor::getInstance().status());
-#else
     u8g2.print("HELLO");
-#endif
 
     uint16_t progressCompleted = display_startupProgressCompleted();
     uint16_t progressRequired = display_startupProgressRequired();
