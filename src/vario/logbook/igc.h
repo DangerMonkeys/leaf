@@ -19,6 +19,7 @@ class Igc : public Flight {
   void log(unsigned long durationSec) override;
   void logGLoadDiagnostics(const GLoadDiagnostics& diagnostics);
   void markSavedPoint(const Waypoint& waypoint);
+  void markEnd(const char* cause);
 
  private:
   IgcLogger logger;

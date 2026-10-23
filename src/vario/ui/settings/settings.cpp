@@ -10,6 +10,7 @@
 #include "comms/wifi_coordinator.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
+#include "logging/log.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
@@ -904,6 +905,8 @@ void Settings::toggleBoolOnOff(bool* switchSetting) {
     setDeveloperMode(!dev_mode);
   else
     *switchSetting = !*switchSetting;
+  // Clear evidence on either edge, even when off/on happens between logging ticks.
+  if (switchSetting == &log_autoStart) flightTimer_resetAutoStart();
   if (*switchSetting)
     speaker.playSound(fx::enter);  // if we turned it on
   else

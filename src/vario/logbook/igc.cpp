@@ -8,6 +8,7 @@
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "instruments/imu.h"
+#include "logging/log.h"
 #include "navigation/gpx.h"
 #include "profiles/profile_store.h"
 #include "system/version_info.h"
@@ -274,6 +275,7 @@ bool Igc::startFlight() {
            (unsigned long)GLoadTracker::FRESH_MS, (unsigned long)GLoadTracker::MAX_SAMPLE_GAP_MS);
   logger.writeLRecord(gLoadConfig);
   writeActiveNavigationDeclaration();
+  log_writeStartDiagnostics(logger);
 
   return true;
 }
@@ -283,6 +285,14 @@ void Igc::logGLoadDiagnostics(const GLoadDiagnostics& diagnostics) {
   // Deliberately independent of GPS fix validity: detector checks continue through GPS outages.
   writeGLoadDiagnostics(diagnostics, imu.gLoad().diagnosticState(), imu.gLoad().takeInterval(),
                         [this](const char* line) { logger.writeLRecord(line); });
+}
+
+void Igc::markEnd(const char* cause) {
+  if (!started()) return;
+  char line[64];
+  snprintf(line, sizeof(line), "END V=1 CAUSE=%s T_MS=%lu", cause,
+           static_cast<unsigned long>(millis()));
+  logger.writeLRecord(line);  // Included in the normal G-record checksum at close.
 }
 
 void Igc::end(const FlightStats stats, bool showSummary) {

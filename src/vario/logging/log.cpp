@@ -11,6 +11,7 @@
 #include "logbook/flight.h"
 #include "logbook/igc.h"
 #include "logbook/logbook_entry.h"
+#include "logging/flight_auto_start.h"
 #include "navigation/gpx.h"
 #include "power.h"
 #include "storage/sd_card.h"
@@ -44,6 +45,18 @@ LogbookEntryFile logbookEntry;
 PageAlertTimerAutoStop pageAlertTimerAutoStop;
 
 namespace {
+  FlightAutoStart autoStartDetector;
+  FlightStartHistory startHistory;
+
+  FlightAutoStart::Sample autoStartSample() {
+    FlightAutoStart::Sample sample;
+    sample.speedValid = gps.hasFreshGroundSpeed();
+    if (sample.speedValid) sample.speedMph = gps.speed.mph();
+    sample.climbValid = baro.pressureFresh() && baro.climbRate1SecAverageValid();
+    if (sample.climbValid) sample.climbMps = baro.climbRate1SecAverage() / 100.0f;
+    return sample;
+  }
+
   void captureFirstGpsFixForLogbook() {
     GPSPositionSnapshot fix;
     if (!gps.lastValidFix(fix)) return;
@@ -101,17 +114,13 @@ namespace {
 void log_update() {
   // Check auto-start criteria if we haven't begun a flight yet
   if (!flight) {
-    // If auto start is configured, and we match the criteria, start the flight
-    if (settings.log_autoStart) {
-      if (flightTimer_autoStart()) flightTimer_start();  // start a log if auto-start is on
-    } else {
-      // Otherwise, there's nothing to do here.
-      return;
-    }
+    // Always sample while idle, including when auto-start is disabled, so manual
+    // flights also retain their recent launch inputs.
+    if (flightTimer_autoStart()) flightTimer_start(FlightStartCause::Automatic);
     // Check auto-stop criteria if we have started a flight (and AutoStop is ON)
   } else {
     if (settings.log_autoStop) {
-      if (flightTimer_autoStop()) flightTimer_stop();  // stop the log if auto-stop is on
+      if (flightTimer_autoStop()) flightTimer_stop(true, FlightEndCause::Automatic);
     }
   }
 
@@ -192,59 +201,53 @@ void log_update() {
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Auto Start & Stop check functions.
 
-uint8_t autoStartCounter = 0;
 uint8_t autoStopCounter = 0;
 int32_t autoStopAltitude = 0;
 
+void flightTimer_resetAutoStart() { autoStartDetector.reset(); }
+
 bool flightTimer_autoStart() {
-  bool startTheTimer = false;  // default to not auto-start
-
-  if (PageFlightSummary::isShowing()) {
-    autoStartCounter = 0;
-    return false;
-  }
-
-  if (!gps.hasFreshGroundSpeed()) {
-    autoStartCounter = 0;
-    return false;
-  }
-
-  // keep track of how many times (seconds) we've been continuously over the min speed threshold
-  if (gps.speed.mph() > AUTO_START_MIN_SPEED) {
-    autoStartCounter++;
-    if (autoStartCounter >= AUTO_START_MIN_SEC) {
-      startTheTimer = true;
-      Serial.println("****************************** autoStart TRUE via speed");
-    }
+  if (flight) return false;
+  const auto sample = autoStartSample();
+  const bool inhibited = PageFlightSummary::isShowing();
+  bool start = false;
+  if (!settings.log_autoStart || inhibited) {
+    autoStartDetector.reset();
   } else {
-    autoStartCounter = 0;
+    start = autoStartDetector.update(millis(), sample);
   }
+  startHistory.record(millis(), sample, autoStartDetector.score(), settings.log_autoStart,
+                      inhibited);
+  if (start) Serial.println("****************************** autoStart TRUE via motion score");
+  return start;
+}
 
-  /*   Auto Start from altitude change was leading to false-positives.  Further, if auto-start by
-  Altitude is triggered before a GPS fix is obtained, then gps.speed is reported as 0, triggering
-  log auto-stop. Plus, a saved tracklog file is only recorded when we have a fix anyway, so it
-  doesn't make sense to start the log before we have a fix.  So, for now, we'll only auto-start from
-  speed. We can re-evaluate auto-start from altitude change in the future if we want to add it back
-  as an additional criteria for auto-starting (in addition to speed).  The main benefit of
-  auto-starting from altitude (before a fix) is to capture the total flight time for a saved
-  logbook.
-
-  // check if current altitude has changed enough from startup to trigger timer start
-  if (baro.state() == Barometer::State::Ready) {
-    int32_t altDifference = baro.altAboveInitial();
-    if (altDifference < 0) altDifference *= -1;
-    if (altDifference > AUTO_START_MIN_ALT) {
-      startTheTimer = true;
-      Serial.println("****************************** autoStart TRUE via alt");
-    }
+void log_writeStartDiagnostics(IgcLogger& logger) {
+  if (!startHistory.frozen()) return;
+  char line[80];
+  snprintf(line, sizeof(line), "START V=1 CAUSE=%s T_MS=%lu N=%u",
+           startHistory.cause() == FlightStartCause::Automatic ? "AUTO" : "MANUAL",
+           static_cast<unsigned long>(startHistory.startedAtMs()),
+           static_cast<unsigned>(startHistory.size()));
+  logger.writeLRecord(line);
+  snprintf(line, sizeof(line), "STARTCFG SPEED_MPH=%.2f CLIMB_MPS=%.2f MEMORY_S=%.2f MIN_MS=%lu",
+           FlightAutoStart::SPEED_SCALE_MPH, FlightAutoStart::CLIMB_SCALE_MPS,
+           FlightAutoStart::MEMORY_SECONDS,
+           static_cast<unsigned long>(FlightAutoStart::MIN_DETECTION_MS));
+  logger.writeLRecord(line);
+  logger.writeLRecord("STARTFIELDS DT_MS V=MPH C=M/S S=SCORE F=1:SPEED,2:CLIMB,4:ON,8:BLOCK");
+  for (size_t i = 0; i < startHistory.size(); ++i) {
+    const auto& entry = startHistory.at(i);
+    char speed[16] = "NA", climb[16] = "NA";
+    if (entry.flags & FlightStartHistory::SpeedValid)
+      snprintf(speed, sizeof(speed), "%.4g", entry.speedMph);
+    if (entry.flags & FlightStartHistory::ClimbValid)
+      snprintf(climb, sizeof(climb), "%.4g", entry.climbMps);
+    const int32_t relativeMs = -static_cast<int32_t>(startHistory.startedAtMs() - entry.atMs);
+    snprintf(line, sizeof(line), "STARTDATA DT_MS=%ld V=%s C=%s S=%.6f F=%02X",
+             static_cast<long>(relativeMs), speed, climb, entry.score, entry.flags);
+    logger.writeLRecord(line);
   }
-  */
-
-  if (startTheTimer) {
-    autoStartCounter = 0;
-  }
-
-  return startTheTimer;
 }
 
 bool showingAlert_ = false;
@@ -325,12 +328,17 @@ void flightTimer_markSavedPoint(const Waypoint& waypoint) {
 }
 
 // start timer
-void flightTimer_start() {
+void flightTimer_start(FlightStartCause cause) {
   // Short-circuit if a flight is already started
   if (flight != NULL) {
     return;
   }
 
+  // Freeze before resetting the detector, including its final triggering score.
+  startHistory.record(millis(), autoStartSample(), autoStartDetector.score(),
+                      settings.log_autoStart, PageFlightSummary::isShowing());
+  startHistory.freeze(millis(), cause);
+  autoStartDetector.reset();
   flightTimer_resetAutoStop();
 
   // start timer
@@ -351,7 +359,9 @@ void flightTimer_start() {
 }
 
 // stop timer
-void flightTimer_stop(bool showSummary) {
+void flightTimer_stop(bool showSummary, FlightEndCause cause) {
+  autoStartDetector.reset();
+  startHistory.reset();
   windEstimator.clearWindEstimate();  // clear the wind estimate when we stop a flight
   power.resetAutoOffCounter();  // reset the auto-off counter when we stop a flight (it could have
                                 // counted up to nearly the limit prior to auto-starting a log)
@@ -375,7 +385,24 @@ void flightTimer_stop(bool showSummary) {
   const String trackPath = flight->started() ? flight->trackLogPath() : "";
 
   // Close the tracklog before finalizing the logbook reference to it.
-  if (flight->started()) flight->end(logbook, false);
+  if (flight->started()) {
+    const char* causeName = "MANUAL";
+    switch (cause) {
+      case FlightEndCause::Automatic:
+        causeName = "AUTO";
+        break;
+      case FlightEndCause::PowerOff:
+        causeName = "POWER_OFF";
+        break;
+      case FlightEndCause::LowBattery:
+        causeName = "LOW_BATTERY";
+        break;
+      case FlightEndCause::Manual:
+        break;
+    }
+    igcFlight.markEnd(causeName);
+    flight->end(logbook, false);
+  }
 
   u8g2.firstPage();
   do {

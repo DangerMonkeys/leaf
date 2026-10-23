@@ -17,6 +17,7 @@
 #include "sim/clock.h"
 #include "ui/display/display.h"
 #include "ui/display/display_fields.h"
+#include "ui/display/pages/dialogs/page_flight_summary.h"
 #include "ui/display/pages/primary/page_basic.h"
 #include "ui/display/pages/primary/page_navigate.h"
 #include "ui/display/pages/primary/page_thermal_core.h"
@@ -228,11 +229,18 @@ int main() {
   checkAutoSwitchReset();
 
   // Automatic start must also leave an in-progress field edit alone.
-  extern uint8_t autoStartCounter;
-  autoStartCounter = AUTO_START_MIN_SEC - 1;
   settings.log_autoStart = true;
   selectPageCursors();
-  log_update();
+  sim::scenario().play();
+  for (unsigned i = 0; i < 60 && !flightTimer_isRunning(); ++i) flyFor(100);
+  sim::scenario().pause();
+  if (!flightTimer_isRunning()) {
+    fprintf(stderr,
+            "Auto-start fixture: ms=%lu fresh=%d mph=%.2f climbValid=%d summary=%d enabled=%d\n",
+            static_cast<unsigned long>(millis()), gps.hasFreshGroundSpeed(), gps.speed.mph(),
+            baro.climbRate1SecAverageValid(), PageFlightSummary::isShowing(),
+            settings.log_autoStart);
+  }
   assert(flightTimer_isRunning());
   checkCursorsPreserved();
   settings.log_autoStart = false;
