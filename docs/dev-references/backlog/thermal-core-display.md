@@ -1,117 +1,64 @@
 ---
 title: Thermal Core Display Backlog
-description: Future display plan for a thermal core mode that helps pilots center their climbing turn.
+description: Implemented Thermal Core guidance, display controls, and remaining field validation.
 ---
 
 # Thermal Core Display Backlog
 
-Leaf's thermal tracking work currently detects, saves, and maps previously found thermals. A possible
-next step is a live "thermal core" mode: while the pilot is actively circling in lift, estimate the
-target circle that should keep the glider better centered in the thermal and present that guidance on
-the 96 px wide LCD.
+Status reconciled **2026-10-22**: Thermal Core is implemented. Guidance/layout improvements
+merged in `97ff8083` (#415), display controls and automatic switching in `a6e069a6` (#417),
+and lifecycle/readiness fixes plus Basic/User naming in `dd70c883` (#424).
 
-This note captures the current display plan so the work can resume from the same design point.
+## Implemented behavior
 
-## Display Goals
+- Thermal Core and Thermal Track are selectable under `Settings > Display`, alongside Basic,
+  User and Navigate. The thermal pages are no longer Leaf Labs-only prototypes. At least one
+  primary page must remain enabled; legacy page settings migrate to the current names.
+- ThermalTracker retains up to 40 roughly 1 Hz detector samples. Each contains both the broad
+  30-second climb signal and a 1-second climb average for live guidance. Core samples expose
+  the faster climb, position, course, altitude, timestamp, speed and wind projection.
+- The track-up map uses a turn-dependent aircraft position, recent lift-weighted breadcrumbs,
+  a lift-center target circle and geographic north/south/east/west lines clipped to the map.
+  It uses a fixed 1.15 m/pixel scale rather than the original proposed automatic zoom.
+- Breadcrumbs use a cross for weak lift, progressively larger 5/7/9/11 px rings and a filled
+  strongest-lift marker. The glyph scale expands for stronger thermal episodes; it is not
+  the original proposal's uniform 5 px circles with varying ring thickness.
+- Center estimation uses the latest complete turn with sufficient lift and spatial coverage,
+  angular weighting, altitude-projected samples and smoothing. Partial turns, weak lift and
+  nearly straight paths cannot establish a new center. It estimates sampled lift rather than
+  locating unseen lift.
+- A retained center remains available within 100 m, hides after five continuous seconds outside
+  that range, and restores on return. Stale GPS hides guidance without erasing the retained
+  center. The map also shows a wind arrow and a graphical steering reticle.
+- Optional Auto Thermal Core switches into Core when guidance is available and manages return
+  to the previous page. Manual page selection and page-disable behavior are covered by the
+  display-settings regression.
+- Flight start, stop and orderly shutdown clear thermal histories, saved session thermals,
+  fitted guidance/targets, page cursors and automatic-switch state. Collection restarts only
+  with new usable GPS and valid climb readings. Barometer readiness guards prevent retained
+  guidance from reading unavailable altitude after wake.
 
-- Preserve spatial awareness. The page should show the pilot where they are relative to the target
-  circle, not only say "turn more" or "turn less".
-- Stay readable at a glance on the small monochrome LCD.
-- Prefer one primary spatial idea over multiple competing overlays.
-- Support left and right thermaling without wasting half the screen.
-- Make recent lift history visible without cluttering the page.
+## Evidence and iteration
 
-## Proposed Layout
+[`sim/README.md`](../../../sim/README.md) documents live thermal training, the display,
+center behavior and recording/replay controls. Implementation is in `src/vario/navigation/`
+and the Core/Track pages in `src/vario/ui/display/pages/primary/`.
 
-- Draw the pilot as a fixed track-up arrow.
-- Bias the arrow horizontally based on turn direction:
-  - Left turn: place the arrow slightly right of center, leaving more room for the thermal circle on
-    the left.
-  - Right turn: place the arrow slightly left of center, leaving more room for the thermal circle on
-    the right.
-  - Unknown or low-confidence turn direction: fall back to a centered arrow.
-- Reuse the black/white glyph style from the existing thermal track page's aircraft pointer in
-  `src/vario/ui/display/pages/primary/page_thermal_track.cpp`.
-- Show only the current best target circle. Do not also draw the pilot's fitted/current flown circle;
-  the breadcrumbs already show recent flown path and a second circle is likely to be confusing.
-- Draw north-south and east-west cross lines through the target circle center. These lines should give
-  the pilot a stronger sense of the circle center and the display's rotation as the track-up view
-  changes.
-- Show recent breadcrumbs from the detector buffer, roughly the last 20-40 seconds.
-- Draw breadcrumbs as small circles with 5 px diameter.
-- Encode relative lift strength with ring thickness:
-  - 1 px ring: weaker/recent baseline lift.
-  - 2 px ring: moderate lift.
-  - 3 px ring: strongest recent lift.
-- Keep the aircraft marker visually dominant enough to orient the pilot, but not so large that it
-  hides the target circle or nearby breadcrumbs.
+Existing regression targets are `test-thermal-core`, `test-thermal-track`,
+`test-free-flight`, `test-display-settings` and `test-thermal-lifecycle`.
+The lifecycle bug's recorded simulator/build/flash evidence and remaining device checks are in
+[Miscellaneous firmware bugs](misc-firmware-bugs.md).
 
-## Coordinate Behavior
+## Remaining work
 
-- Use a track-up transform: the aircraft arrow points up and world coordinates rotate around the
-  aircraft according to current GPS course/track.
-- The aircraft remains in a fixed screen position for the current turn direction instead of being
-  centered on the display.
-- Scale should prioritize showing the useful portion of the target circle and recent breadcrumbs.
-  It is acceptable for the circle to be clipped by screen edges.
-- Prefer showing the next local arc of the target circle over fitting the entire circle at all costs.
-- Avoid abrupt zoom or center jumps; smooth scale and circle placement enough that the display feels
-  stable while circling.
-
-## Data Inputs
-
-The current thermal detector buffer lives in `ThermalTracker`:
-
-- `MAX_DETECTOR_SAMPLES = 40`.
-- Samples are approximately 1 Hz, though GPS updates may occasionally be missed.
-- Samples already include local meter coordinates, altitude, GPS course, time, and `climb30Cms`.
-
-For thermal core mode, add or expose a faster climb signal per sample:
-
-- Keep a running roughly 1 second average of baro climb rate.
-- Store that value with each detector sample, for example as `climb1sCms` or `climbFastCms`.
-- Continue using `climb30Cms` for broad thermal detection and saved thermal spine weighting.
-- Use the faster climb value for breadcrumb strength and live core/circle estimation.
-
-## Target Circle Estimation Context
-
-The target circle is conceptually distinct from the current flown circle:
-
-- The estimator may fit the pilot's current circle internally to understand turn geometry.
-- The display should only show the target circle that the pilot should migrate toward.
-- The target circle should be smoothed and confidence gated before display.
-- If confidence is low, consider showing breadcrumbs and the aircraft only, or a clearly degraded
-  target circle.
-
-Potential estimator inputs:
-
-- Recent local `xM/yM` positions from the detector buffer.
-- Recent course deltas to infer left/right turn direction and turn coverage.
-- Recent 1 second averaged climb values to identify stronger portions of the circle.
-- Optional lag compensation, where climb observed now is associated with aircraft position a few
-  seconds earlier.
-
-## Open Questions
-
-- Exact aircraft arrow size and pixel glyph.
-- Exact biased aircraft positions for left and right turns on the 96 px wide display.
-- Whether the NS/EW target-center lines should be full-screen clipped lines, short crosshairs, or
-  just line segments inside/near the target circle.
-- Whether breadcrumb ring thickness is enough to distinguish lift strength on the real LCD, or whether
-  strongest lift needs a filled center pixel/cross.
-- Whether a tiny text cue such as `HOLD`, `IN`, `OUT`, or `WEAK` should be included as a secondary
-  cue after the spatial display is working.
-- How much smoothing is needed so the target circle does not jump as detector samples enter and leave
-  the 40-sample buffer.
-
-## Suggested First Prototype
-
-1. Add the per-sample 1 second averaged climb signal to the thermal detector data path.
-2. Build a Leaf Labs-only thermal core display page using simulated or debug target-circle values.
-3. Render:
-   - biased track-up aircraft glyph,
-   - one target circle,
-   - NS/EW cross lines through the target center,
-   - 20-40 seconds of lift-weighted breadcrumbs.
-4. Tune layout with screenshots or a host-side LCD preview tool if available.
-5. Connect the display to the live estimator once the page is readable and stable.
+- Consider showing a bearing pointer to the next waypoint on Thermal Core and Thermal Track
+  while navigation is active. This would help the pilot see exactly when to stop circling and
+  head toward the next waypoint without first switching to the Nav page.
+- Add a data field with user-selectable options in the blank space on Thermal Core, above
+  the map and below the climb rate.
+- Evaluate center stability, steering usefulness and readability in representative real flight,
+  including weak/irregular lift, strong wind, turn reversals and loss/recovery of GPS.
+- Tune estimator and layout from that evidence; the old arrow-size, breadcrumb-style and
+  first-prototype tasks are resolved by the implementation.
+- Complete repeated device shutdown/charging/wake and flight-stop/restart checks before closing
+  the lifecycle bug. Successful simulator regressions and flash writes do not close that check.

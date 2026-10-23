@@ -5,7 +5,7 @@ description: Future improvements for using accelerometer data in flight summarie
 
 # Accelerometer Flight Metrics Backlog
 
-Leaf currently tracks max/min acceleration using the same value displayed in the optional thermal-page user field. That is acceptable for the first logbook schema, but the sampled value can miss peaks between once-per-second log updates and can also capture short non-flight shocks, such as the device being bumped.
+Leaf currently tracks max/min acceleration using the same value displayed in the optional User Page acceleration field. That is acceptable for the first logbook schema, but the sampled value can miss peaks between once-per-second log updates and can also capture short non-flight shocks, such as the device being bumped.
 
 Future work:
 

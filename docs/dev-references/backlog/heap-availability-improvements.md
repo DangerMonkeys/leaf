@@ -34,6 +34,15 @@ Completed or mostly completed work:
    - The main web app and setup HTML are served from flash-backed storage where practical.
    - This should continue to be checked with release-build `.data`/`.bss` reports, but the largest static web assets have already been addressed.
 
+6. Bounded runtime assessment and Leaf Log preparation (status checked 2026-10-22).
+   - Runtime capture/reporting is implemented in `e432ee66` (#421), including memory samples
+     and registered-task stack headroom. A provisional v3.2.8 Navigate reference is available;
+     see [runtime assessment](../runtime-assessment.md). This provides evidence, not a completed
+     stack-resizing or long-term leak audit.
+   - Leaf Log now scans in bounded slices and reuses an SD-backed pending queue within a session
+     (`2b9cb5e1`, #418), rather than rescanning all logbook JSON after every upload. The session
+     cap is 100 pending flights; queue storage is scratch data, not an unbounded RAM collection.
+
 Remaining possible follow-up items:
 
 1. Audit and reduce task stack reservations.
@@ -44,7 +53,9 @@ Remaining possible follow-up items:
 
 2. Selective additional web response streaming.
    - Prefer `sendContent()`/streaming writers over building full JSON/HTML responses in heap-backed `String` objects when response size grows with SD-card content.
-   - Remaining candidates include profiles, logbook entries/details, route editor data, and OTA/version responses.
+   - Profiles already use `streamFile()`, and logbook summary/detail responses already use a
+     bounded `JsonStream`; these are completed streaming paths. Audit remaining route-edit/save
+     builders and OTA/version responses only where measured response size or heap churn warrants it.
    - Do this selectively based on measured web-app pressure; avoid turning small fixed responses into complex streaming code.
 
 3. Replace hot-path dynamic `String` usage with fixed buffers or reusable scratch storage.
@@ -68,7 +79,9 @@ Remaining possible follow-up items:
     - Re-test repeated enter/exit cycles to ensure heap returns close to the prior baseline.
 
 7. Keep heap diagnostics as a regression tool while optimizing.
-    - Preserve lifecycle checkpoints during this work and use `/diagnostics/heap_lifecycle.csv` as the primary before/after evidence.
+    - Preserve lifecycle checkpoints during this work and use `/diagnostics/system_events.csv`
+      plus bounded runtime capture exports as before/after evidence. `heap_lifecycle.csv` is
+      a historical filename; see [current diagnostic files](diagnostic-files-cleanup.md).
     - Track free heap, largest free block, minimum free heap, current task, and stack high-water values.
     - Use extended real-world dev-mode logs before reducing stack reservations or making further lifecycle changes.
 

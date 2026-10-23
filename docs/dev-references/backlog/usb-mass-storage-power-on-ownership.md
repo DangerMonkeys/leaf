@@ -1,117 +1,66 @@
 ---
 title: USB Mass-storage Ownership During Power-on Backlog
-description: Decide how Leaf should enter normal powered-on operation while a computer owns the SD card through USB mass storage.
+description: Implemented firmware/USB SD ownership and remaining hardware qualification.
 ---
 
 # USB Mass-storage Ownership During Power-on Backlog
 
-Status: product behavior selected; implementation in progress on the Leaf Log ownership follow-up.
+Status reconciled **2026-10-22**: the selected ownership and power-on behavior is implemented
+in `storage/sd_card.*`, `comms/leaf_log_sync.*`, `power.cpp` and `taskman.cpp`.
+Charging dialogs and cancel confirmation were updated in `18fc69af` (#425).
+This is no longer an undecided product design or an unimplemented Leaf Log follow-up.
 
-## Problem
+## Implemented behavior
 
-When Leaf boots from USB power without a center-button press, it enters `PowerState::OffUSB` and
-presents the SD card as writable USB mass storage. A computer may mount the FAT filesystem, retain
-open files, and cache writes.
+- Powered-on Leaf retains firmware SD ownership. Plugging USB into an operating Leaf provides
+  power/charging without presenting the SD mass-storage LUN.
+- Turning Leaf off while plugged in closes flight work, enters charging, starts an eligible
+  Leaf Log session and presents mass storage after completion or confirmed cancellation.
+- During upload activity, one short center press shows `Cancel Uploads?`; a second within
+  five seconds confirms cancellation to USB. Directional presses do not cancel. Holding center
+  requests power-on directly and cancels active transfer work.
+- If mass storage is presented, holding center requests deliberate forced removal:
+  reject new host operations, drain active MSC callbacks, stop raw host access, remount FAT,
+  then continue power-on. `Closing USB Drive` appears when a host has actually enumerated;
+  a power-only connection shows `Turning On`.
+- Firmware filesystem access is gated by ownership. Diagnostics pause while the host owns the
+  card. Raw MSC reads/writes require host ownership and active-callback accounting.
+- Explicit eject or USB disconnect returns ownership; suspend, inactivity and stop/spindown
+  without `load_eject` do not. An eject-triggered upload keeps the medium ejected afterward.
+- Failed USB presentation shows `USB Drive Not Ready` temporarily and supports a center-click
+  handoff retry. Power-on can still be requested.
 
-The center button can then switch Leaf into normal powered-on operation without requiring the host
-to eject the volume. The firmware continues to use the mounted filesystem while USB MSC callbacks
-can read and write the same card at the raw-block level. This is the device's current behavior, but
-it does not provide exclusive filesystem ownership and can risk filesystem corruption.
+The authoritative states are `FirmwareReserved`, `FirmwareUploading`, `TransitioningToHost`,
+`HostOwned` and `TransitioningToFirmware`. The historical concurrent FAT/raw-block behavior
+described by the original proposal has been replaced; it is not the intended current behavior.
 
-USB suspend, a stop/spindown command, or a period without MSC activity does not prove that the host
-has released the filesystem. Only an explicit eject or USB disconnect is a safe ownership handoff.
+## Ownership limits
 
-## Selected behavior
+A deliberate center hold cannot flush writes still cached by the computer. Eject before
+power-on remains preferable when the host has mounted the drive. Firmware must never infer
+release from inactivity or revoke a mounted medium in the background.
 
-- Normal powered-on operation always retains exclusive firmware ownership of the SD card. Plugging
-  USB into an operating Leaf provides power and charging but does not present the SD LUN.
-- Turning Leaf off while it remains plugged in closes firmware files, enters charging mode, runs a
-  fresh Leaf Log upload session when enabled, and presents mass storage afterward.
-- Holding center during Leaf Log activity cancels directly into powered-on operation without first
-  presenting the SD card. A short center press cancels to USB mass storage; directional presses do
-  not interrupt Leaf Log.
-- Holding center after mass storage is already present deliberately removes the SD medium, rejects
-  new host operations, drains in-flight MSC callbacks, remounts the filesystem, and powers on.
-  Because a USB device cannot flush unsent host caches, this last transition remains a deliberate
-  forced-removal operation and should be treated as uncommon.
-- Firmware performs no filesystem access while the host owns the SD card. SD-backed diagnostics are
-  paused rather than buffered or written concurrently.
+The alternatives of requiring eject before power-on or allowing normal operation without SD
+access were not selected. Power-on waits for the firmware acquisition path; it does not proceed
+with simultaneous firmware/host filesystem access.
 
-## Scope
+The current ownership mechanism does not complete the broader transaction/durability audit.
+[SD card write robustness](sd-card-write-robustness.md) still tracks open-handle coordination,
+checked writes, recovery and power-interruption validation for all storage users.
 
-Resolve what Leaf should do when the user requests normal powered-on operation while the USB host
-owns the SD card. This is intentionally separate from the Leaf Log auto-upload work. The first Leaf
-Log auto-upload release may coordinate SD ownership while Leaf remains in USB charging mode, but it
-must preserve the existing power-on behavior rather than introduce a new restriction at the same
-time.
+## Verification and remaining work
 
-The eventual solution should cover:
+`sim/tests/leaf_log_sync.cpp` and `sim/tests/charging_dialogs.cpp` cover ownership decisions,
+cancel/hold handling, draining active callbacks, handoff failure, ejection and display behavior.
+The [charging-dialog capture record](../../ui-reviews/charging-dialog-revamp/verification.txt)
+records the #425 simulator checks. Host-directory mocks do not qualify physical USB/FAT behavior.
 
-- The center-button transition from `PowerState::OffUSB` to `PowerState::On` while the MSC medium is
-  presented.
-- What the on-device UI tells the user when a host eject or disconnect is required.
-- Whether normal operation may continue with SD-dependent features unavailable.
-- Track logging, logbook writes, profiles, firmware updates, diagnostics, and every other firmware
-  filesystem user while the host retains ownership.
-- Reacquiring firmware ownership after explicit eject or disconnect.
-- Re-presenting the medium later in the same USB session, if supported.
+Retain the following device matrix for qualification:
 
-## Product approaches to evaluate
-
-### Require eject before power-on
-
-Keep Leaf in charging mode and show an instruction such as `Eject USB drive to turn on`. Complete
-the power-on transition only after explicit host eject or disconnect.
-
-This provides the clearest ownership boundary, but changes the current center-button behavior and
-may surprise a user who expects Leaf to turn on immediately.
-
-### Power on without SD access
-
-Allow the power-state transition while the host retains ownership, but prevent all firmware
-filesystem access until eject or disconnect. The UI must clearly show that logging and other
-SD-dependent features are unavailable.
-
-This preserves immediate power-on, but requires auditing and gating all SD users and defining how
-each affected feature behaves without storage.
-
-### Prompt for an explicit choice
-
-Ask the user to eject the drive or deliberately continue with storage unavailable. This makes the
-tradeoff visible but adds a new transition UI and still requires the no-SD operating mode.
-
-Leaf must not revoke a mounted medium in the background or infer ownership release from MSC
-inactivity. The explicit center-hold power-on action is the only deliberate forced-removal path.
-
-## Decisions resolved
-
-- Powered-on operation does not expose the SD LUN.
-- Power-on never proceeds without firmware SD ownership.
-- A center hold is a deliberate request to reclaim the card and continue power-on automatically.
-- Returning to charging mode starts Leaf Log before presenting mass storage.
-
-## Suggested implementation boundaries
-
-- `src/vario/storage/sd_card.*` - authoritative firmware/host ownership state and guarded handoffs.
-- `src/vario/system/usb_state.*` - USB connection, suspend, resume, and disconnect events.
-- `src/vario/ui/display/pages/primary/page_charging.*` - power-on request and user guidance.
-- `src/vario/power.*` and `src/vario/taskman.*` - defer or constrain the transition to normal
-  operation.
-- All direct `SD_MMC` users - audit or route through an ownership-aware transaction API if normal
-  operation without SD access is selected.
-
-## Test matrix
-
-- Power-only charger: center-button power-on remains immediate.
-- Computer with the drive mounted: the selected behavior is deterministic and never permits
-  concurrent host and firmware filesystem access.
-- Explicit host eject before power-on: firmware reacquires the card and powers on normally.
-- Explicit host eject after a pending power-on request: the documented automatic or second-press
-  behavior occurs.
-- USB disconnect with a pending power-on request: firmware safely reacquires the card.
-- USB suspend or MSC inactivity: host ownership is retained.
-- Stop/spindown without `load_eject`: host ownership is retained.
-- Removal or failure of the SD card during the transition: Leaf fails safely and reports the missing
-  storage state.
-- Track logging and every other storage-dependent feature remain disabled until firmware ownership
-  is established.
+- Power-only charger and an enumerated computer, with Leaf Log enabled/disabled.
+- Mounted-drive center hold, including host I/O already in flight and cached host writes.
+- Explicit eject/disconnect before and during a pending request; repeated eject commands.
+- USB suspend, inactivity and stop/spindown without eject: retain host ownership.
+- SD removal, remount failure and handoff retry during each transition.
+- Repeated operating/charging/upload/USB transitions, ensuring flight logging and other firmware
+  storage users resume only with firmware ownership.
