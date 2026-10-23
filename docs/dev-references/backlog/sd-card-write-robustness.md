@@ -403,8 +403,11 @@ with serial capture are prepared but no flight-save result has yet been observed
 checks, using disposable/backed-up SD data, are:
 
 - Repeat normal timer start/stop saves, with and without a usable GPS fix; inspect summaries,
-  final JSON, retained backups, and temporary-file cleanup. Record attempts and elapsed time from
-  `logbook finalization` serial output. Compare repeated-cycle heap observations without treating
+  final JSON, retained backups, and temporary-file cleanup. USB deliberately disconnects when
+  leaving charge mode, so an attached USB monitor cannot collect subsequent `logbook finalization`
+  lines in normal operation. Use a saved developer runtime capture for instrument/button-task
+  stalls and heap observations, or explicit test instrumentation for exact save telemetry.
+  Compare repeated-cycle heap observations without treating
   the before/after snapshot as a measurement of peak allocation or post-reset release.
 - With Save IGC temporarily off, start a test flight, allow its initial placeholder to settle,
   remove the card, and stop. Check the short failure display and restored UI responsiveness.
@@ -416,6 +419,17 @@ checks, using disposable/backed-up SD data, are:
   and newer-temporary candidate sets. Release host ownership, select them in the logbook, and
   inspect promotion/cleanup on the next host handoff. Delete a test record, restart, and verify
   that it does not return. Preserve existing flight files and restore changed test settings.
+
+The first physical check exposed a charge-to-on freeze with a USB serial capture open: the LCD
+went blank and startup did not finish. Closing the capture and retrying on the same firmware
+restored normal startup. The installed Arduino USBCDC writer loops without a deadline while its
+FIFO is full; software USB detach can leave cached connection/DTR state asserted with no host
+able to drain it. A follow-up replaces only Leaf's native USB diagnostic writer with bounded,
+best-effort FIFO writes and a non-waiting transmit lock, and disables output before software
+detach. Reconnection enables it again. Saturated, contended, disconnected, and ISR diagnostics
+may be dropped; no extra output queue is allocated. A focused host test compiles the real writer
+against a permanently stalled endpoint, including stale connected state, partial writes, lock
+contention, detach, and reconnect. Physical confirmation of that fix remains pending.
 
 Real ESP32 save/recovery operation, peak heap/largest block/stack headroom,
 slow/nearly-full-card timing, and controlled power interruption across multiple cards still need
