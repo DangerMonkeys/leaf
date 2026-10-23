@@ -5,8 +5,8 @@
 #include <assert.h>
 #include <sys/time.h>
 
-#include <atomic>
 #include <array>
+#include <atomic>
 #include <filesystem>
 #include <fstream>
 #include <functional>
@@ -82,7 +82,8 @@ namespace {
       const auto name = std::to_string(i);
       std::ofstream(root + "/tracks/" + name + ".igc") << "AXXXTEST\n";
       std::ofstream(root + "/logbook/" + name + ".json")
-          << "{\"schema\":\"leaf.logbook.flight\",\"track\":{\"saved\":true,\"format\":\"igc\","
+          << "{\"schema\":\"leaf.logbook.flight\",\"schema_version\":\"v0.1.0\",\"flight_id\":"
+             "\"sim-flight\",\"track\":{\"saved\":true,\"format\":\"igc\","
              "\"path\":\"/tracks/" +
                  name + ".igc\"}}";
     }

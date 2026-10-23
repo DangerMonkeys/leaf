@@ -30,6 +30,7 @@ bool flightTimer_autoStop(void);
 void flightTimer_start(void);
 void flightTimer_stop(bool showSummary = true);
 void flightTimer_toggle(void);
+bool flightTimer_ownsLogbookPath(const String& path);
 bool flightTimer_isRunning(void);  // If the timer is running
 bool flightTimer_isLogging(void);  // If the flight recorder log is logging
 void flightTimer_markSavedPoint(const Waypoint& waypoint);

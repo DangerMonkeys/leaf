@@ -26,6 +26,7 @@ PageLogbook::PageLogbook() {
 }
 
 void PageLogbook::showNewest() {
+  deleteFailed = false;
   modal = false;
   cursor_position = CURSOR_BACK;
   deletePending = 0;
@@ -33,6 +34,7 @@ void PageLogbook::showNewest() {
 }
 
 void PageLogbook::showModalNewest() {
+  deleteFailed = false;
   modal = true;
   cursor_position = CURSOR_BACK;
   deletePending = 0;
@@ -55,13 +57,14 @@ void PageLogbook::loadNewest() {
 }
 
 void PageLogbook::loadPath(const String& path) {
+  deleteFailed = false;
   currentPath = LogbookStore::normalizePath(path);
   deletePending = 0;
   if (!LogbookStore::readSummary(currentPath, summary)) {
     summary = LogbookEntrySummary();
-    position = 0;
-    total = LogbookStore::count();
-    cursor_max = CURSOR_BACK;
+    position = total = 0;
+    LogbookStore::entryPositionNewestFirst(currentPath, position, total);
+    cursor_max = total ? cursor_page : CURSOR_BACK;
     cursor_position = CURSOR_BACK;
     return;
   }
@@ -70,7 +73,7 @@ void PageLogbook::loadPath(const String& path) {
 }
 
 void PageLogbook::loadAdjacent(bool newer) {
-  if (!summary.valid) return;
+  if (currentPath.isEmpty()) return;
 
   String path;
   const bool found = newer ? LogbookStore::nextEntryPath(currentPath, path)
@@ -84,7 +87,7 @@ void PageLogbook::loadAdjacent(bool newer) {
 }
 
 void PageLogbook::deleteCurrent() {
-  if (!summary.valid) return;
+  if (currentPath.isEmpty()) return;
 
   String replacementPath;
   if (!LogbookStore::previousEntryPath(currentPath, replacementPath)) {
@@ -92,6 +95,7 @@ void PageLogbook::deleteCurrent() {
   }
 
   if (LogbookStore::deleteEntry(currentPath)) {
+    deleteFailed = false;
     buttons.consumeButton();
     speaker.playSound(fx::confirm);
     if (replacementPath.isEmpty()) {
@@ -101,6 +105,9 @@ void PageLogbook::deleteCurrent() {
     }
   } else {
     deletePending = 0;
+    // Read the remaining main without running recovery after a partial deletion.
+    LogbookStore::readSummary(currentPath, summary, false);
+    deleteFailed = true;
     speaker.playSound(fx::bad);
   }
 }
@@ -127,6 +134,11 @@ void PageLogbook::draw() {
     } else {
       drawEmpty();
     }
+    if (deleteFailed) {
+      u8g2.setFont(leaf_5x8);
+      u8g2.setCursor(0, 170);
+      u8g2.print("Not fully deleted");
+    }
     drawBackRow();
   } while (u8g2.nextPage());
 }
@@ -134,14 +146,18 @@ void PageLogbook::draw() {
 void PageLogbook::drawEmpty() {
   u8g2.setFont(leaf_6x12);
   u8g2.setCursor(0, 67);
-  u8g2.print("No flights");
+  u8g2.print(total ? "Unavailable" : "No flights");
+  if (total) {
+    drawDeleteRow(156);
+    if (!deleteFailed) drawPageRow(171);
+  }
 }
 
 void PageLogbook::drawEntry() {
   logbook_card::drawFlightCard(summary);
 
   drawDeleteRow(156);
-  drawPageRow(171);
+  if (!deleteFailed) drawPageRow(171);
 
   if (deletePending) {
     uint8_t width =

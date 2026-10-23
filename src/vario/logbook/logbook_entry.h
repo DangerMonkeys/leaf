@@ -12,6 +12,7 @@ class LogbookEntryFile {
   bool refreshStartTimeFromSyncedClock(const FlightStats& stats);
   bool finalize(const FlightStats& stats, const String& trackFormat = "",
                 const String& trackPath = "");
+  void setTrack(const String& format, const String& path);
   void reset();
   static bool deleteFiles(const String& logbookPath, const String& trackPath);
 
@@ -27,8 +28,7 @@ class LogbookEntryFile {
   bool ensureLogbookDirectory() const;
   time_t startEpochFromStats(const FlightStats& stats) const;
   void refreshFirstFixTimeIfPossible();
-  bool writeJson(const FlightStats& stats, bool finalEntry, const String& trackFormat,
-                 const String& trackPath) const;
+  bool writeJson(const FlightStats& stats, bool finalEntry) const;
   bool renameToSyncedTimestampIfNeeded();
 
   String flightId_;
@@ -42,6 +42,12 @@ class LogbookEntryFile {
   unsigned long firstFixDurationSeconds_ = 0;
   float startTemperatureC_ = 0;
   float firstFixTemperatureC_ = 0;
+  String trackFormat_;
+  String trackPath_;
+  uint32_t nextPlaceholderMs_ = 0;
+  time_t endEpoch_ = 0;
+  int16_t timezoneMinutes_ = 0;
+  bool endTimeValid_ = false;
   PilotProfile pilot_;
   GliderProfile glider_;
 };

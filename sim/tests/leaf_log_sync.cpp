@@ -41,7 +41,8 @@ namespace {
 
   void addFlight(const std::string& name, bool delivered = false, bool trackExists = true) {
     writeFile("/logbook/" + name + ".json",
-              "{\"schema\":\"leaf.logbook.flight\",\"track\":{\"saved\":true,"
+              "{\"schema\":\"leaf.logbook.flight\",\"schema_version\":\"v0.1.0\",\"flight_id\":"
+              "\"sim-flight\",\"track\":{\"saved\":true,"
               "\"format\":\"igc\",\"path\":\"/tracks/" +
                   name + ".igc\"}" +
                   (delivered ? ",\"leaf_log\":{\"flight_id\":\"already-uploaded\"}" : "") + "}");

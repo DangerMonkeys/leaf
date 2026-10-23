@@ -17,6 +17,7 @@
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
+#include "ui/display/fonts.h"
 #include "ui/display/pages/dialogs/page_alert_timerAutoStop.h"
 #include "ui/display/pages/dialogs/page_flight_summary.h"
 #include "ui/display/pages/fanet/page_fanet_stats.h"
@@ -118,6 +119,7 @@ void log_update() {
         baro.setLaunchAlt();
         logbook.alt_start = baro.altAtLaunch();
         captureFirstGpsFixForLogbook();
+        logbookEntry.setTrack(flight->trackLogFormat(), flight->trackLogPath());
 
         // get first set of log values
         log_captureValues();
@@ -266,6 +268,10 @@ void flightTimer_resetAutoStop() {
 
 // check if running
 bool flightTimer_isRunning() { return flight != NULL; }
+bool flightTimer_ownsLogbookPath(const String& path) {
+  if (!flight) return false;
+  return path == logbookEntry.path() || path.endsWith("_" + logbookEntry.flightId() + ".json");
+}
 bool flightTimer_isLogging() {
   return flightTimer_isRunning() && (!trackLogEnabledForFlight || (bool)flight->started());
 }
@@ -322,14 +328,33 @@ void flightTimer_stop(bool showSummary) {
   // Close the tracklog before finalizing the logbook reference to it.
   if (flight->started()) flight->end(logbook, false);
 
-  logbookEntry.finalize(logbook, trackFormat, trackPath);
+  u8g2.firstPage();
+  do {
+    u8g2.setFont(leaf_6x12);
+    u8g2.setCursor(0, 85);
+    u8g2.print("Saving flight...");
+  } while (u8g2.nextPage());
+  const bool summarySaved = logbookEntry.finalize(logbook, trackFormat, trackPath);
+  if (!summarySaved) {
+    u8g2.firstPage();
+    do {
+      u8g2.setFont(leaf_6x12);
+      u8g2.setCursor(0, 75);
+      u8g2.print("Logbook save");
+      u8g2.setCursor(0, 90);
+      u8g2.print("failed");
+      u8g2.setCursor(0, 115);
+      u8g2.print(trackPath.isEmpty() ? "No track file" : "Track unverified");
+    } while (u8g2.nextPage());
+    delay(1000);  // Visible outcome before shutdown clears the display; no acknowledgement.
+  }
   if (showSummary) {
     static PageFlightSummary dialog;
-    dialog.show(logbook, logbookEntry.path(), trackPath);
+    dialog.show(logbook, logbookEntry.path(), trackPath, summarySaved);
   }
   logbookEntry.reset();
   // TODO:  A much cooler end flight sound.  Perhaps even an easter egg?
-  speaker.playSound(fx::confirm);
+  speaker.playSound(summarySaved ? fx::confirm : fx::bad);
   settings.resetShortcutVolume();
   flight = NULL;
   trackLogEnabledForFlight = false;

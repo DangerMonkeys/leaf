@@ -1,9 +1,11 @@
 #include "comms/leaf_log_sync.h"
+#include "logbook/logbook_io.h"
 
 #include <SD_MMC.h>
 #include <WiFi.h>
 #include <freertos/task.h>
 #include <time.h>
+#include <cstring>
 
 #include "comms/leaf_log_client.h"
 #include "comms/leaf_log_credentials.h"
@@ -102,6 +104,8 @@ void LeafLogSync::clearSessionFiles() {
 }
 
 void LeafLogSync::scanEligibility() {
+  logbook_io::Guard transaction;
+  if (!transaction) return;
   if (!sdcard.firmwareCanAccessFilesystem()) {
     finishToMassStorage();
     return;
@@ -124,8 +128,9 @@ void LeafLogSync::scanEligibility() {
     if (scanDirectory_) {
       path = scanDirectory_.getNextFileName();
       if (!path.isEmpty()) {
-        path = LogbookStore::normalizePath(path);
-        if (LogbookStore::isLogbookJsonPath(path) && !writeQueuedPath(scanPaths_, path)) {
+        String logicalPath;
+        if (logbook_io::candidatePath(path, logicalPath) &&
+            !writeQueuedPath(scanPaths_, logicalPath)) {
           handleTransientFailure("scan_queue_write_failed");
           return;
         }
@@ -490,7 +495,12 @@ void LeafLogSync::handleTransientFailure(const char* reason, int httpStatus, uin
   }
   Serial.printf("Leaf Log retry: %s delay_ms=%lu\n", detail.c_str(),
                 static_cast<unsigned long>(delayMs));
-  diagnostic_logs::appendSystemEvent("leaf_log", "retry", detail, "delay_ms", delayMs, true);
+  const bool storageFailure =
+      reason && (strncmp(reason, "record_", 7) == 0 || strncmp(reason, "pending_", 8) == 0 ||
+                 strncmp(reason, "scan_queue_", 11) == 0 || strncmp(reason, "track_", 6) == 0);
+  // Reporting a storage failure must not recursively write to the same failing card.
+  if (!storageFailure)
+    diagnostic_logs::appendSystemEvent("leaf_log", "retry", detail, "delay_ms", delayMs, true);
   state_ = State::Backoff;
   stateStartedMs_ = millis();
 }

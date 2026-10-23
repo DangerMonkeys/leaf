@@ -14,6 +14,7 @@
 
 #include "hardware/configuration.h"
 #include "hardware/io_pins.h"
+#include "logbook/logbook_io.h"
 #include "logging/log.h"
 #include "sim/usb.h"
 #include "storage/sd_card.h"
@@ -40,6 +41,8 @@ bool SDCard::mount() {
 }
 
 void SDCard::unmount() {
+  logbook_io::Guard transaction;
+  if (!transaction) return;
   SD_MMC.end();
   mounted_ = false;
 }
@@ -81,6 +84,8 @@ bool SDCard::setupMassStorage(bool mediaPresent) {
 }
 
 bool SDCard::presentMassStorage() {
+  logbook_io::Guard transaction;
+  if (!transaction) return false;
   if (!sim::usbMassStorageAvailable() || !mounted_ || !isCardPresent()) return false;
   ownership_.store(SDCardOwnership::HostOwned, std::memory_order_release);
   return true;
@@ -93,6 +98,8 @@ bool SDCard::reserveForFirmwareUpload() {
 }
 
 bool SDCard::acquireForFirmwareUse(uint32_t timeoutMs, bool disconnectUsb) {
+  logbook_io::Guard transaction;
+  if (!transaction) return false;
   if (sim::usbAcquireBlocked()) return false;
   (void)timeoutMs;
   (void)disconnectUsb;
