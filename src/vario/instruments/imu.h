@@ -5,6 +5,7 @@
 #include "dispatch/message_sink.h"
 #include "dispatch/message_source.h"
 #include "dispatch/message_types.h"
+#include "instruments/g_load_tracker.h"
 #include "math/flat_acceleration_bias.h"
 #include "math/kalman.h"
 
@@ -27,6 +28,9 @@ class IMU : public MessageSink<IMU, MotionUpdate>, public IMessageSource {
 
   bool accelValid();
   float getAccel();
+
+  // Filtered g-load extremes for flight statistics (see GLoadTracker)
+  GLoadTracker& gLoad() { return gLoad_; }
 
   bool velocityValid();
   float getVelocity();
@@ -93,6 +97,7 @@ class IMU : public MessageSink<IMU, MotionUpdate>, public IMessageSource {
 
   double accelTot_;
   bool validAccelTot_ = false;
+  GLoadTracker gLoad_;
 
   // Best estimate for strength of gravity
   double gravity_ = 1.0;

@@ -60,6 +60,40 @@ namespace {
     logbook.startLocationLng = fix.longitude;
     logbookEntry.captureFirstFix(logbook);
   }
+
+  // Rough in-flight check for g-load statistics: moving over the ground faster than walking, or
+  // climbing/sinking noticeably (covers flying with little ground speed in strong wind).
+
+  GLoadDiagnostics captureGLoadDiagnostics() {
+    GLoadDiagnostics d;
+    d.checkMs = millis();
+    d.speedValid = gps.hasUsableFix() && gps.hasFreshGroundSpeed();
+    if (d.speedValid) {
+      d.speedMps = gps.speed.mps();
+      d.fast = gps.speed.mps() > GLoadDiagnostics::MIN_SPEED_MPS;
+    }
+    d.climbValid = baro.state() == Barometer::State::Ready && baro.climbRateFilteredValid();
+    if (d.climbValid) {
+      d.climbCms = baro.climbRateFiltered();
+      d.vertical = abs(d.climbCms) > GLoadDiagnostics::MIN_CLIMB_CMS;
+    }
+    d.rawValid = imu.accelValid();
+    if (d.rawValid) d.rawG = imu.getAccel();
+    d.rawSampleMs = imu.lastMotionTime();
+    return d;
+  }
+
+  void captureGLoadExtrema() {
+    logbook.accel_max = imu.gLoad().valid() ? imu.gLoad().maxG() : NAN;
+    logbook.accel_min = imu.gLoad().valid() ? imu.gLoad().minG() : NAN;
+  }
+
+  void writeGLoadSnapshot(const GLoadDiagnostics& d) {
+    if (trackLogEnabledForFlight && flight == &igcFlight && igcFlight.started())
+      igcFlight.logGLoadDiagnostics(d);
+    else
+      imu.gLoad().takeInterval();  // Keep intervals bounded even without a track file.
+  }
 }  // namespace
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -90,19 +124,27 @@ void log_update() {
 
     // Current second of the flight
     logbook.duration = currentSecondSinceBoot - logbook.logStartedAt;
+    const GLoadDiagnostics gLoadDiagnostics = captureGLoadDiagnostics();
+    imu.gLoad().updateAirborne(gLoadDiagnostics.looksAirborne(),
+                               gLoadDiagnostics.detectorInputsValid());
+    captureGLoadExtrema();
     logbookEntry.writePlaceholder(logbook);
     logbookEntry.refreshStartTimeFromSyncedClock(logbook);
 
     // We wish to save a tracklog, but the tracklog has not yet started.
     if (trackLogEnabledForFlight && !flight->started()) {
-      if (!gps.hasUsableFix())
+      if (!gps.hasUsableFix()) {
         // We don't have a valid GPS location yet, try again later
+        writeGLoadSnapshot(gLoadDiagnostics);
         return;
+      }
 
-      if (baro.state() != Barometer::State::Ready)
+      if (baro.state() != Barometer::State::Ready) {
         // The baro is still discarding its startup samples, so it can't set a launch altitude
         // yet; try again later
+        writeGLoadSnapshot(gLoadDiagnostics);
         return;
+      }
 
       // We have a GPS fix, we're able to start recording of the flight.
       // Do all the necessary starting actions as we start the recording.
@@ -143,6 +185,7 @@ void log_update() {
     if (trackLogEnabledForFlight && gps.hasUsableFix()) flight->log(logbook.duration);
     log_captureValues();      // TODO:  Update this to an "Update Flight Stats" or something
     log_checkMinMaxValues();  // TODO:  Probably rename this to be "bound Flight Stats"
+    writeGLoadSnapshot(gLoadDiagnostics);
   }
 }
 
@@ -295,6 +338,7 @@ void flightTimer_start() {
   settings.resetShortcutVolume();
   flight = &igcFlight;
   display.resetThermalState();
+  imu.gLoad().startFlight();
 
   logbook.logStartedAt = millis() / 1000;
   log_captureValues();
@@ -320,6 +364,11 @@ void flightTimer_stop(bool showSummary) {
   }
 
   // ending values
+  imu.gLoad().stopFlight();
+  captureGLoadExtrema();
+  auto gLoadDiagnostics = captureGLoadDiagnostics();
+  gLoadDiagnostics.ending = true;
+  writeGLoadSnapshot(gLoadDiagnostics);  // Includes pending values discarded at stop, before G.
   log_captureEndingValues();
 
   const String trackFormat = flight->started() ? flight->trackLogFormat() : "";
@@ -477,13 +526,6 @@ void log_checkMinMaxValues() {
     } else if (logbook.temperature < logbook.temperature_min) {
       logbook.temperature_min = logbook.temperature;
     }
-  }
-
-  // check accel / g-force for log records
-  if (logbook.accel > logbook.accel_max) {
-    logbook.accel_max = logbook.accel;
-  } else if (logbook.accel < logbook.accel_min) {
-    logbook.accel_min = logbook.accel;
   }
 
   // Check speed value for log records

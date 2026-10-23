@@ -46,8 +46,8 @@ class FlightStats {
   float temperature_min = 0;
 
   float accel = 1;
-  float accel_max = 1;
-  float accel_min = 1;
+  float accel_max = NAN;
+  float accel_min = NAN;
 
   // Flight duration, in seconds
   unsigned long duration = 0;

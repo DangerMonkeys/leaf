@@ -146,6 +146,7 @@ void IMU::processMotion(const MotionUpdate& m) {
 
   accelTot_ = sqrt(m.ax * m.ax + m.ay * m.ay + m.az * m.az);
   validAccelTot_ = true;
+  gLoad_.addSample((float)accelTot_, m.t, 4.0f * 1.732051f);
   lastDeviceAccelX_ = m.ax;
   lastDeviceAccelY_ = m.ay;
   lastDeviceAccelZ_ = m.az;
@@ -284,6 +285,7 @@ void IMU::processGravity(const MotionUpdate& m) {
   accelTot_ = sqrt(m.ax * m.ax + m.ay * m.ay + m.az * m.az);
   validAccelTot_ = true;
   kalmanAccelVert_ = accelVert_;
+  gLoad_.addSample((float)accelTot_, m.t, 8.0f * 1.732051f);
   lastWorldVerticalAccel_ = accelVert_ + gravity_;
   validLastWorldVerticalAccel_ = true;
   // No horizontal orientation or quaternion is requested from the chip.
@@ -293,6 +295,7 @@ void IMU::processGravity(const MotionUpdate& m) {
 
 void IMU::on_receive(const MotionUpdate& msg) {
   motionSampleCount_++;
+  if (msg.clippedSinceLastUpdate) gLoad_.recordClipping();
   if (msg.reset) {
     wake();
     return;
@@ -392,6 +395,7 @@ void IMU::on_receive(const MotionUpdate& msg) {
 }
 
 void IMU::wake() {
+  gLoad_.resetFilter();
   kalmanvert_.reset();
   validAccelVert_ = validAccelTot_ = validLastWorldVerticalAccel_ = false;
   haveMotionTime_ = false;

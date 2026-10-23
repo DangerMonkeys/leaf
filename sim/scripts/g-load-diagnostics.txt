@@ -1,0 +1,8 @@
+# Run with AUTO_STOP=0 and TRACK_SAVE=1. Pause all inputs to verify records continue
+# after GPS ages out, and sample timestamps reveal stale acceleration.
+115 status
+120 scenario pause
+128 status
+130 scenario play
+200 status
+220 quit

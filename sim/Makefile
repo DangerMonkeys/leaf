@@ -117,6 +117,23 @@ TARGET  := $(BUILD)/leafsim
 .PHONY: all clean deps test-thermal-core test-free-flight test-thermal-track test-display-settings test-leaf-log-sync test-udp-injection
 all: $(TARGET)
 
+.PHONY: test-g-load
+$(BUILD)/g_load_tracker_test: $(SIM)/tests/g_load_tracker.cpp $(ROOT)/src/vario/instruments/g_load_tracker.h
+	@mkdir -p $(BUILD)
+	@$(CXX) -std=c++17 -Wall -Wextra -g -I$(ROOT)/src/vario $< -o $@
+
+$(BUILD)/g_load_diagnostics_test: $(SIM)/tests/g_load_diagnostics.cpp $(ROOT)/src/vario/logbook/g_load_diagnostics.h $(ROOT)/src/vario/instruments/g_load_tracker.h
+	@mkdir -p $(BUILD)
+	@$(CXX) -std=c++17 -Wall -Wextra -g -I$(ROOT)/src/vario $< -o $@
+
+$(BUILD)/g_load_integration_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/g_load_integration.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/g_load_integration.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-g-load: $(BUILD)/g_load_tracker_test $(BUILD)/g_load_diagnostics_test $(BUILD)/g_load_integration_test
+	@$(BUILD)/g_load_tracker_test
+	@$(BUILD)/g_load_diagnostics_test
+	@cd $(ROOT) && $(BUILD)/g_load_integration_test
+
 .PHONY: test-runtime-capture
 $(BUILD)/runtime_capture_test: $(SIM)/tests/runtime_capture.cpp $(ROOT)/src/vario/diagnostics/runtime_capture.h $(ROOT)/src/vario/diagnostics/gps_profile.h
 	@mkdir -p $(BUILD)

@@ -209,8 +209,8 @@ bool LogbookStore::readSummary(const String& path, LogbookEntrySummary& summary,
   summary.maxWindDirectionFromDeg = maxWind["direction_from_deg"] | 0.0f;
   summary.pathDistanceM = metrics["path_distance_m"] | 0.0f;
   summary.straightLineDistanceM = metrics["straight_line_distance_m"] | 0.0f;
-  summary.maxAccelG = metrics["max_accel_g"] | 1.0f;
-  summary.minAccelG = metrics["min_accel_g"] | 1.0f;
+  summary.maxAccelG = metrics["max_accel_g"] | NAN;
+  summary.minAccelG = metrics["min_accel_g"] | NAN;
   summary.maxTemperatureC = metrics["max_temperature_c"] | 0.0f;
   summary.minTemperatureC = metrics["min_temperature_c"] | 0.0f;
 

@@ -1,0 +1,16 @@
+name: G-load regression tests
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  tracker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check tracker and diagnostic records
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Isrc/vario sim/tests/g_load_tracker.cpp -o /tmp/g-load-tracker
+          /tmp/g-load-tracker
+          g++ -std=c++17 -Wall -Wextra -Isrc/vario sim/tests/g_load_diagnostics.cpp -o /tmp/g-load-diagnostics
+          /tmp/g-load-diagnostics
