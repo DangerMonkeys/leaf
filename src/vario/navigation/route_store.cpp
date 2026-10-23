@@ -304,7 +304,7 @@ namespace route_store {
         outPoint["name"] = waypoint["name"] | "";
         outPoint["lat"] = lat;
         outPoint["lon"] = lon;
-        outPoint["alt_m"] = waypoint["altSmoothed"] | 0;
+        outPoint["alt_m"] = waypoint["altSmoothed"] | NAN;
         const uint16_t radiusM = point["radius"] | defaultWaypointRadius;
         outPoint["radius_m"] = radiusOrDefault(radiusM);
         outPoint["role"] = roleName(fullRoleForPoint(point, index == total));
@@ -429,7 +429,7 @@ namespace route_store {
         waypoint.setName(point["name"] | "");
         waypoint.setLatitude(point["lat"] | 0.0);
         waypoint.setLongitude(point["lon"] | 0.0);
-        waypoint.ele = point["alt_m"] | 0.0;
+        waypoint.ele = point["alt_m"] | NAN;
 
         WaypointID waypointIndex = navigator.addWaypoint(waypoint)
                                        ? WaypointID(navigator.totalWaypoints)

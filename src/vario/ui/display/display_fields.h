@@ -53,6 +53,7 @@ void display_unsignedClimbRate_short(uint8_t x, uint8_t y, int16_t displayClimbR
 
 void display_accel(uint8_t x, uint8_t y, float accel);
 void display_glide(uint8_t x, uint8_t y, float glide);
+void display_navAltitudeSurplus(uint8_t x, uint8_t y, float surplusM);
 void display_temp(uint8_t x, uint8_t y, const Ambient& ambient);
 void display_humidity(uint8_t x, uint8_t y, const Ambient& ambient);
 

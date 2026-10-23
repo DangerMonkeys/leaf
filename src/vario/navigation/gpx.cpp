@@ -194,13 +194,14 @@ namespace {
   }
 
   float parseElevationMeters(const char* text) {
-    if (text == nullptr) return 0;
-    return atof(text);
+    if (text == nullptr) return NAN;
+    char* end;
+    const float elevation = strtof(text, &end);
+    return end != text && isfinite(elevation) ? elevation : NAN;
   }
 
   float parseElevationFeetAsMeters(const char* text) {
-    if (text == nullptr) return 0;
-    return atof(text) * 0.3048f;
+    return parseElevationMeters(text) * 0.3048f;
   }
 
   bool validCoordinate(double lat, double lon) {
@@ -302,7 +303,7 @@ namespace {
       char name[64];
       char latText[32];
       char lonText[32];
-      char eleText[32] = "0";
+      char eleText[32] = "";
       double lat = 0;
       double lon = 0;
       float ele = 0;
@@ -501,18 +502,21 @@ void Navigator::update() {
     }
 
     // get glide to active (and goal point, if we're on a route)
-    glideToActive = pointDistanceRemaining / (gps.altitude.meters() - activePoint.ele);
+    const double heightAboveWaypoint = gps.altitude.meters() - activePoint.ele;
+    glideToActive = isfinite(heightAboveWaypoint) && heightAboveWaypoint > 0
+                        ? pointDistanceRemaining / heightAboveWaypoint
+                        : 0;
     const double heightAboveGoal = gps.altitude.meters() - goalPoint_.ele;
     glideToGoal_ = heightAboveGoal > 0 ? totalDistanceRemaining_ / heightAboveGoal : 0;
 
     // update relative altimeters (in cm)
     // alt above active point
-    altAboveWaypoint = 100 * (gps.altitude.meters() - activePoint.ele);
+    altAboveWaypoint = isfinite(heightAboveWaypoint) ? 100 * heightAboveWaypoint : -1000000;
 
     // alt above goal (if we're on a route and have a goal; otherwise, set relative goal alt to same
     // as next point)
     if (activeRouteIndex)
-      altAboveGoal_ = 100 * (gps.altitude.meters() - goalPoint_.ele);
+      altAboveGoal_ = isfinite(heightAboveGoal) ? 100 * heightAboveGoal : -1000000;
     else
       altAboveGoal_ = altAboveWaypoint;
   }
@@ -701,6 +705,29 @@ uint32_t Navigator::goalTimeRemaining() const {
                 .radiusM
           : defaultWaypointRadius;
   return fmax(0.0, totalDistanceRemaining_ - radius) / gps.speed.mps();
+}
+
+float Navigator::arrivalAltitudeSurplus(double distanceM, float elevationM) const {
+  const float glide = gps.getGlideRatio();  // Uses the pilot's configured averaging window.
+  if (!hasNavSolution() || !gps.hasFreshGroundSpeed() || !baro.climbRateFilteredValid() ||
+      !isfinite(glide) || glide <= 0 || !isfinite(distanceM) || distanceM < 0 ||
+      !isfinite(elevationM))
+    return NAN;
+  const double surplusM = gps.altitude.meters() - elevationM - distanceM / glide;
+  return isfinite(surplusM) && surplusM >= 0 ? surplusM : NAN;
+}
+
+float Navigator::arrivalAltitudeAboveWaypoint() const {
+  return arrivalAltitudeSurplus(pointDistanceRemaining, activePoint.ele);
+}
+
+float Navigator::arrivalAltitudeAboveGoal() const {
+  if (!hasNavSolution()) return NAN;
+  const Waypoint& goal =
+      activeRouteIndex
+          ? routePoint(activeRouteIndex, RouteIndex(routes[activeRouteIndex].totalPoints))
+          : activePoint;
+  return arrivalAltitudeSurplus(totalDistanceRemaining_, goal.ele);
 }
 
 void Navigator::clearNavSolution() {

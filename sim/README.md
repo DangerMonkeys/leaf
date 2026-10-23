@@ -137,6 +137,15 @@ The pilot triangle's tip sits at the map center. A single-pixel line runs from i
 selected thermal's outer selection ring, stopping before the marker's hollow interior. The
 line is clipped to the map and connects directly to the pilot's tip.
 
+Navigate has nine independently selectable field options. `ALT^&` (waypoint glyph) and
+`ALT^GOAL` predict arrival height above the destination: GPS altitude minus destination
+elevation minus remaining distance divided by the current averaged glide ratio. Goal distance
+includes every remaining route leg; a standalone waypoint is also its own goal. Values use the
+altitude unit setting. Missing elevation, stale GPS, unavailable/ascending glide, or negative
+surplus displays `--`; a known zero or negative terrain elevation remains valid.
+Unknown elevations stay unknown through imports and Web App route saves. Older saved files
+that already substituted zero for missing elevation cannot recover that distinction automatically.
+
 Three formats, one playback path. Everything is normalised at load time into the bus-log line
 format the device itself records (`dispatch/message_injector.h`), so a synthetic flight and a
 captured one are replayed by exactly the same code.

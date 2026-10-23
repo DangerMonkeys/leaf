@@ -633,6 +633,37 @@ void display_glide(uint8_t x, uint8_t y, float glide) {
   }
 }
 
+void display_navAltitudeSurplus(uint8_t x, uint8_t y, float surplusM) {
+  constexpr uint8_t width = 43;
+  u8g2.setDrawColor(1);
+  if (!isfinite(surplusM) || surplusM < 0) {
+    u8g2.setFont(leaf_6x12);
+    u8g2.setCursor(x + (width - u8g2.getStrWidth("--")) / 2, y);
+    u8g2.print("--");
+    return;
+  }
+
+  const double altitude = min<double>(surplusM * (settings.units_alt ? 1.0 / 0.3048 : 1.0), 99999);
+  char value[8];
+  snprintf(value, sizeof(value), "%lu", static_cast<unsigned long>(altitude));
+  const char* units = settings.units_alt ? "ft" : "m";
+  const auto advance = [](const char* text) {
+    uint8_t result = 0;
+    while (*text) result += u8g2_GetGlyphWidth(u8g2.getU8g2(), *text++);
+    return result;
+  };
+  u8g2.setFont(leaf_5x8);
+  const uint8_t unitsWidth = advance(units);
+  u8g2.setFont(leaf_6x12);
+  if (advance(value) + unitsWidth + 1 > width) u8g2.setFont(leaf_5x8);
+  const uint8_t totalWidth = advance(value) + unitsWidth + 1;
+  u8g2.setCursor(x + (width - totalWidth) / 2, y);
+  u8g2.print(value);
+  u8g2.setCursor(u8g2.getCursorX() + 1, y);
+  u8g2.setFont(leaf_5x8);
+  u8g2.print(units);
+}
+
 void display_temp(uint8_t x, uint8_t y, const Ambient& ambient) {
   u8g2.setCursor(x, y);
   u8g2.setDrawColor(1);

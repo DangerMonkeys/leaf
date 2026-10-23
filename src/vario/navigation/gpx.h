@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <FS.h>
+#include <math.h>
 #include <string.h>
 
 #include "navigation/nav_ids.h"
@@ -24,7 +25,8 @@ struct Waypoint {
   char name[maxGpxNameLength + 1] = "";
   int32_t latE7 = 0;
   int32_t lonE7 = 0;
-  float ele = 0;
+  // Missing elevation must remain distinct from a known sea-level waypoint.
+  float ele = NAN;
 
   void setName(const char* value) {
     strncpy(name, value ? value : "", maxGpxNameLength);
@@ -134,6 +136,9 @@ class Navigator {
   double goalDistanceRemaining() const { return hasNavSolution() ? totalDistanceRemaining_ : 0; }
   uint32_t goalTimeRemaining() const;
   float glideToGoal() const { return hasNavSolution() ? glideToGoal_ : 0; }
+  // Predicted arrival height above the destination, in metres; NAN if unavailable/negative.
+  float arrivalAltitudeAboveWaypoint() const;
+  float arrivalAltitudeAboveGoal() const;
   bool hasLastNav() const { return lastNavType_ != LastNavType::None; }
   bool lastNavIsRoute() const { return lastNavType_ == LastNavType::Route; }
   bool lastNavIsPoint() const { return lastNavType_ == LastNavType::Point; }
@@ -204,6 +209,7 @@ class Navigator {
 
  private:
   bool gpsPositionUsable() const;
+  float arrivalAltitudeSurplus(double distanceM, float elevationM) const;
   void clearNavSolution();
   bool sequenceWaypoint(bool playSound = true);
   void loadRoutes(void);

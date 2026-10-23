@@ -205,10 +205,6 @@ void Display::setPage(MainPage targetPage) {
 void Display::resetThermalState() {
   thermalTracker.reset();
   thermalCore.reset();
-  basicPage_reset();
-  userPage_reset();
-  thermalCorePage_reset();
-  thermalTrackPage_reset();
   thermalReturnPage_ = MainPage::User;
   thermalAutoSwitchActive_ = false;
   thermalGuidanceWasAvailable_ = false;
@@ -352,6 +348,12 @@ void Display::clear() {
 
 void Display::clearPage() {
   clear();
+  // Clear editing selections with shutdown UI cleanup, independently of flight timer events.
+  basicPage_reset();
+  userPage_reset();
+  thermalCorePage_reset();
+  thermalTrackPage_reset();
+  navigatePage_reset();
   mainMenuPage.pop_all_pages();
   mainMenuPage.resetCursor();
   settingsMenuPage.resetCursor();
