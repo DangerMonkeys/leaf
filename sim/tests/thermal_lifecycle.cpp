@@ -82,19 +82,51 @@ namespace {
   }
 
   void selectPageCursors() {
+    basicPage_reset();
+    userPage_reset();
+    thermalCorePage_reset();
+    thermalTrackPage_reset();
+    navigatePage_reset();
+    // Keep these selections from timing out as other page handlers redraw the display.
+    display.setPage(MainPage::Menu);
     basicPage_button(Button::DOWN, ButtonEvent::CLICKED, 0);
     userPage_button(Button::DOWN, ButtonEvent::CLICKED, 0);
     thermalCorePage_button(Button::DOWN, ButtonEvent::CLICKED, 0);
     thermalTrackPage_button(Button::DOWN, ButtonEvent::CLICKED, 0);
+    navigatePage_button(Button::DOWN, ButtonEvent::CLICKED, 0);
+  }
+
+  void checkCursorsPreserved() {
+    for (auto button : {basicPage_button, userPage_button, thermalCorePage_button,
+                        thermalTrackPage_button, navigatePage_button}) {
+      const auto altType = settings.disp_userPageAltType;
+      const auto navAltType = settings.disp_navPageAltType;
+      const bool running = flightTimer_isRunning();
+      // A center click must still edit the selected altitude field after the timer changes.
+      button(Button::CENTER, ButtonEvent::CLICKED, 0);
+      if (button == navigatePage_button) {
+        assert(settings.disp_navPageAltType != navAltType);
+        assert(settings.disp_userPageAltType == altType);
+      } else {
+        assert(settings.disp_userPageAltType != altType);
+        assert(settings.disp_navPageAltType == navAltType);
+      }
+      assert(flightTimer_isRunning() == running);
+      settings.disp_userPageAltType = altType;
+      settings.disp_navPageAltType = navAltType;
+    }
   }
 
   void checkCursorsCleared() {
-    for (auto button :
-         {basicPage_button, userPage_button, thermalCorePage_button, thermalTrackPage_button}) {
+    for (auto button : {basicPage_button, userPage_button, thermalCorePage_button,
+                        thermalTrackPage_button, navigatePage_button}) {
       const auto altType = settings.disp_userPageAltType;
+      const auto navAltType = settings.disp_navPageAltType;
+      const bool running = flightTimer_isRunning();
       button(Button::CENTER, ButtonEvent::CLICKED, 0);
       assert(settings.disp_userPageAltType == altType);
-      assert(!flightTimer_isRunning());
+      assert(settings.disp_navPageAltType == navAltType);
+      assert(flightTimer_isRunning() == running);
     }
   }
 
@@ -169,7 +201,9 @@ int main() {
   std::string error;
   assert(sim::scenario().load("sim/recordings/thermal-core.json", error));
 
+  selectPageCursors();
   flightTimer_start();
+  checkCursorsPreserved();
   populate();
   assert(igcFlight.started());
   const String trackPath = igcFlight.trackLogPath();
@@ -179,7 +213,7 @@ int main() {
   selectPageCursors();
   flightTimer_stop(false);
   assertEmpty();
-  checkCursorsCleared();
+  checkCursorsPreserved();
   assert(!flightTimer_isRunning());
   assert(SD_MMC.exists(trackPath.c_str()) && SD_MMC.exists(entryPath.c_str()));
   File entry = SD_MMC.open(entryPath.c_str());
@@ -192,7 +226,15 @@ int main() {
   checkNoCachedFix();
   checkAutoSwitchReset();
 
-  flightTimer_start();
+  // Automatic start must also leave an in-progress field edit alone.
+  extern uint8_t autoStartCounter;
+  autoStartCounter = AUTO_START_MIN_SEC - 1;
+  settings.log_autoStart = true;
+  selectPageCursors();
+  log_update();
+  assert(flightTimer_isRunning());
+  checkCursorsPreserved();
+  settings.log_autoStart = false;
   populate();
   checkUnavailableBarometer();
 
@@ -205,9 +247,11 @@ int main() {
   autoStopCounter = AUTO_STOP_MIN_SEC - 1;
   autoStopAltitude = baro.alt();
   settings.log_autoStop = true;
+  selectPageCursors();
   log_update();
   assert(!flightTimer_isRunning());
   assertEmpty();
+  checkCursorsPreserved();
   settings.log_autoStop = false;
 
   // Exercise active/non-logging sessions, enabled/hidden features and normal/low-battery exits.

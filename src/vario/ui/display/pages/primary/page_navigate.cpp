@@ -131,6 +131,11 @@ void navigatePage_destinationSelect(Button dir) {
   }
 }
 
+void navigatePage_reset() {
+  navigatePage_cursorPosition = cursor_navigatePage_none;
+  navigatePage_cursorTimeCount = 0;
+}
+
 void navigatePage_draw() {
   // if cursor is selecting something, count toward the timeOut value before we reset cursor
   if (navigatePage_cursorPosition != cursor_navigatePage_none &&
@@ -428,8 +433,9 @@ void navigatePage_draw() {
                  percent_progress * (96 - varioBarWidth), 2);
 
     // Four independently configurable fields, in two columns and two rows.
-    const char* labels[] = {"TIME>&", "TIME>GOAL", "DIST>&", "DIST>GOAL",
-                            "`GLIDE", "`>&",       "`>GOAL"};
+    const char* labels[] = {"TIME>&", "TIME>GOAL", "DIST>&", "DIST>GOAL", "`GLIDE",
+                            "`>&",    "`>GOAL",    "ALT^&",  "ALT^GOAL"};
+    static_assert(sizeof(labels) / sizeof(labels[0]) == static_cast<uint8_t>(NavField::Count));
     for (uint8_t i = 0; i < 4; ++i) {
       const uint8_t x = i % 2 == 0 ? 3 : 52;
       const uint8_t y = topOfFrame + varioBarHeight + (i / 2) * 21;
@@ -462,6 +468,12 @@ void navigatePage_draw() {
           break;
         case NavField::GlideToGoal:
           display_glide(x + 5, y + 20, navigator.glideToGoal());
+          break;
+        case NavField::AltitudeAboveWaypoint:
+          display_navAltitudeSurplus(x, y + 20, navigator.arrivalAltitudeAboveWaypoint());
+          break;
+        case NavField::AltitudeAboveGoal:
+          display_navAltitudeSurplus(x, y + 20, navigator.arrivalAltitudeAboveGoal());
           break;
         case NavField::Count:
           break;

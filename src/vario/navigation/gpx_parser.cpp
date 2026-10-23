@@ -221,7 +221,7 @@ bool GPXParser::readWaypoint(Waypoint* waypoint, const char* tag_name, bool requ
   waypoint->setName("");
   waypoint->latE7 = 0;
   waypoint->lonE7 = 0;
-  waypoint->ele = 0;
+  waypoint->ele = NAN;
 
   // Read attributes of opening tag (until tag is closed)
   bool found_lat = false;
@@ -291,7 +291,11 @@ bool GPXParser::readWaypoint(Waypoint* waypoint, const char* tag_name, bool requ
         _error += " while reading ele value in waypoint";
         return false;
       }
-      waypoint->ele = atof(value);
+      char* end;
+      const float elevation = strtof(value, &end);
+      const bool parsedElevation = end != value;
+      while (*end == ' ' || *end == '\t' || *end == '\r' || *end == '\n') ++end;
+      waypoint->ele = parsedElevation && *end == '\0' && isfinite(elevation) ? elevation : NAN;
       ReadTagNameResult closing_outcome = readTagName(key);
       if (closing_outcome == ReadTagNameResult::Error) {
         _error += " while reading name of tag that should be a closing ele tag in waypoint";

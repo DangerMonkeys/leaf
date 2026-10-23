@@ -144,6 +144,8 @@ enum class NavField : uint8_t {
   CurrentGlide,
   GlideToWaypoint,
   GlideToGoal,
+  AltitudeAboveWaypoint,
+  AltitudeAboveGoal,
   Count
 };
 

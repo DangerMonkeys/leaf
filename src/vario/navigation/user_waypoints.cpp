@@ -133,7 +133,7 @@ namespace user_waypoints {
       waypoint.setName(cleanName(point["name"] | "").c_str());
       waypoint.setLatitude(point["lat"] | 0.0);
       waypoint.setLongitude(point["lon"] | 0.0);
-      waypoint.ele = point["alt_m"] | 0.0;
+      waypoint.ele = point["alt_m"] | NAN;
       return waypoint;
     }
 
