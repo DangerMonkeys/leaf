@@ -375,6 +375,10 @@ Completed verification:
 | Attached Leaf 3.2.8 application flash | Passed; both OTA slots (`0x10000`, `0x340000`) written and verified by esptool. Initial app-mode `COM44` disconnected during connection; the prescribed rescan/retry succeeded on ROM-mode `COM42`. Application USB returned as `COM44`. |
 | USB startup follow-up build/flash | Passed from clean commit `2567ddc3`; 103,804 bytes static RAM, 2,366,896 bytes reported flash use; both OTA slots written and verified, with the same app-to-ROM port nudge/retry |
 | Native USB diagnostic regression | Passed: real writer and connection lifecycle compiled against a stalled endpoint; 10,000 full-FIFO attempts return without waiting, with stale connection state, partial writes, contention, ISR, detach/reconnect, and failed transitions covered |
+| Leaf 3.2.8 normal no-fix saves | Passed on follow-up candidate: three operator-run short flights, responsive starts and normal summaries; each JSON parses, has `complete=true`, revision 2, 11-second duration, and one revision-1 incomplete backup. No `.tmp` files remain; `track.saved=false` and no new IGC are correct without a GPS fix. Operator estimated the stop-only saving display at about 200 ms; this is not an instrumented save-duration measurement. |
+| Leaf 3.2.8 absent-card stop and next flight | Passed with Save IGC off: operator removed the card after the placeholder settled, stopped, observed prompt failure feedback/UI return, reinserted, and completed another flight. Card inspection found the first revision-1 incomplete placeholder preserved and the new flight completed at revision 2 with 12-second duration and one prior placeholder backup. No `.tmp` files remain. This tests persistent absence, not all-three-attempt transient recovery. |
+| Leaf 3.2.8 staged candidate recovery | Passed: isolated temporary-only (revision 5), backup-only (revision 3), and newer-completed-temporary-over-placeholder (revision 3) fixtures displayed expected durations of 111/222/333 seconds. Post-handoff inspection confirmed correct promoted main payloads/revisions, no remaining `.tmp`, and one prior incomplete backup for the replacement case. No physical power interruption was induced. |
+| Leaf 3.2.8 deletion and cold boot | Passed: operator deleted all three synthetic entries through the device and confirmed they stayed absent after unplugged shutdown and a fresh boot. Inspection found no matching main/temporary/backup or old-filename candidates, and both test-only referenced GPX files were removed, including the old alias's track. No `.tmp` files remain; the original five JSON records remain readable and original five IGC files remain present. Save IGC was requested restored to ON. |
 | `test-logbook-io` | Passed: injected write/sync/close/rename/cleanup/read/allocation failures, real JSON allocation denial, abrupt process exits, recovery/conflicts/limits, revisions, deletion/aliases, bounded retries, shutdown, new flights, and upload-status preservation |
 | Existing Leaf Log sync regression suite | Passed |
 | Existing thermal flight-lifecycle/shutdown regression suite | Passed |
@@ -404,9 +408,10 @@ USB-startup follow-up flashed application SHA256:
 This binary identifies clean commit `2567ddc35460e244bd7bfcb961a8b4e7165bf365`.
 
 The initial implementation verification found no attached Leaf and did not attempt a flash. A
-Leaf 3.2.8 was subsequently attached and flashed as recorded above; manual save/removal checks
-with serial capture are prepared but no flight-save result has yet been observed. Proposed hardware
-checks, using disposable/backed-up SD data, are:
+Leaf 3.2.8 was subsequently attached and flashed as recorded above; manual no-fix saves,
+absent-card/new-flight, staged recovery, and deletion/cold-boot checks passed as recorded in the table.
+Hardware checks, using
+disposable/backed-up SD data, are:
 
 - Repeat normal timer start/stop saves, with and without a usable GPS fix; inspect summaries,
   final JSON, retained backups, and temporary-file cleanup. USB deliberately disconnects when
@@ -438,10 +443,11 @@ against a permanently stalled endpoint, including stale connected state, partial
 contention, detach, and reconnect. On the flashed follow-up candidate, the operator confirmed
 that charge-to-on now reaches normal operation with the USB serial monitor open. The monitor
 captured the center press/hold and observed the expected USB detach. This confirms one startup
-cycle under the previously failing condition; repeated cycles and flight-save checks remain pending.
+cycle under the previously failing condition; repeated monitored startup cycles and GPS-fix flight
+checks remain pending.
 The follow-up also passed the logbook regression and charging suite with 46 display captures.
 
-Real ESP32 save/recovery operation, peak heap/largest block/stack headroom,
+GPS/IGC association, active-flight shutdown, peak heap/largest block/stack headroom,
 slow/nearly-full-card timing, and controlled power interruption across multiple cards still need
 qualification. Linux vfat and process-exit tests do not reproduce target FatFs metadata ordering,
 SD-controller power loss, or the original incident's root cause. Reviewed exact-candidate runtime
