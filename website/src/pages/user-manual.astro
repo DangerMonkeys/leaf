@@ -18,6 +18,7 @@ const outline = [
     children: [
       { href: "#getting-around", label: "Getting Around" },
       { href: "#user-page", label: "User Page" },
+      { href: "#thermal-pages", label: "Thermal Pages" },
       { href: "#nav-page", label: "Nav Page" },
       { href: "#before-your-first-flight", label: "First Flight" },
     ],
@@ -39,14 +40,23 @@ const outline = [
     label: "Navigation",
   },
   { href: "#connect-to-wifi", label: "Connect to WiFi" },
-  { href: "#leaf-web-app", label: "Leaf Web App" },
+  {
+    href: "#leaf-web-app",
+    label: "Leaf Web App",
+    children: [
+      { href: "#opening-the-web-app", label: "Opening the Web App" },
+      { href: "#profiles", label: "Profiles" },
+      { href: "#logbook", label: "Logbook" },
+      { href: "#loading-waypoints", label: "Loading Waypoints" },
+      { href: "#creating-and-importing-routes", label: "Creating & Importing Routes" },
+      { href: "#web-app-vario-settings", label: "Vario Settings" },
+    ],
+  },
   { href: "#firmware-updates", label: "Firmware Updates" },
   {
     href: "#leaf-labs",
     label: "Leaf Labs",
     children: [
-      { href: "#thermal-core", label: "Thermal Core" },
-      { href: "#thermal-track", label: "Thermal Track" },
       { href: "#leaf-log", label: "Leaf Log" },
     ],
   },
