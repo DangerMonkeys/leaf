@@ -373,6 +373,8 @@ Completed verification:
 | `leaf_3_2_6_release` firmware build | Passed; 103,508 bytes static RAM, 2,383,724 bytes reported flash use |
 | `leaf_3_2_8_release` firmware build | Passed from clean implementation commit `2d928d0f`; 103,804 bytes static RAM, 2,366,328 bytes reported flash use |
 | Attached Leaf 3.2.8 application flash | Passed; both OTA slots (`0x10000`, `0x340000`) written and verified by esptool. Initial app-mode `COM44` disconnected during connection; the prescribed rescan/retry succeeded on ROM-mode `COM42`. Application USB returned as `COM44`. |
+| USB startup follow-up build/flash | Passed from clean commit `2567ddc3`; 103,804 bytes static RAM, 2,366,896 bytes reported flash use; both OTA slots written and verified, with the same app-to-ROM port nudge/retry |
+| Native USB diagnostic regression | Passed: real writer and connection lifecycle compiled against a stalled endpoint; 10,000 full-FIFO attempts return without waiting, with stale connection state, partial writes, contention, ISR, detach/reconnect, and failed transitions covered |
 | `test-logbook-io` | Passed: injected write/sync/close/rename/cleanup/read/allocation failures, real JSON allocation denial, abrupt process exits, recovery/conflicts/limits, revisions, deletion/aliases, bounded retries, shutdown, new flights, and upload-status preservation |
 | Existing Leaf Log sync regression suite | Passed |
 | Existing thermal flight-lifecycle/shutdown regression suite | Passed |
@@ -393,9 +395,13 @@ remain pending.
 Built `leaf_3_2_6_release` application SHA256:
 `0323b3eb3702720b805392ed71d7368b1885ec202b52e7924b926d163564c7fb`.
 
-Flashed `leaf_3_2_8_release` application SHA256:
+Initial flashed `leaf_3_2_8_release` application SHA256:
 `2889ca71122ee5a30c1a4f9ee59a3f49b66c71f61296e34dbe4c035a6ac9875b`.
 This binary identifies clean commit `2d928d0fbaa141d521037822b0610f4f67c78a5a`.
+
+USB-startup follow-up flashed application SHA256:
+`ef71fc6f0f2890f46fa5765f41ed64cf2926e0f373cce1a425e0c96e316ffe60`.
+This binary identifies clean commit `2567ddc35460e244bd7bfcb961a8b4e7165bf365`.
 
 The initial implementation verification found no attached Leaf and did not attempt a flash. A
 Leaf 3.2.8 was subsequently attached and flashed as recorded above; manual save/removal checks
@@ -429,7 +435,11 @@ best-effort FIFO writes and a non-waiting transmit lock, and disables output bef
 detach. Reconnection enables it again. Saturated, contended, disconnected, and ISR diagnostics
 may be dropped; no extra output queue is allocated. A focused host test compiles the real writer
 against a permanently stalled endpoint, including stale connected state, partial writes, lock
-contention, detach, and reconnect. Physical confirmation of that fix remains pending.
+contention, detach, and reconnect. On the flashed follow-up candidate, the operator confirmed
+that charge-to-on now reaches normal operation with the USB serial monitor open. The monitor
+captured the center press/hold and observed the expected USB detach. This confirms one startup
+cycle under the previously failing condition; repeated cycles and flight-save checks remain pending.
+The follow-up also passed the logbook regression and charging suite with 46 display captures.
 
 Real ESP32 save/recovery operation, peak heap/largest block/stack headroom,
 slow/nearly-full-card timing, and controlled power interruption across multiple cards still need
