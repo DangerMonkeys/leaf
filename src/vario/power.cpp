@@ -18,6 +18,7 @@
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "instruments/imu.h"
+#include "logbook/logbook_io.h"
 #include "logging/buslog.h"
 #include "logging/log.h"
 #include "power.h"
@@ -266,6 +267,9 @@ void Power::maybeStartBusLog() {
 void Power::shutdown() { shutdown(false); }
 
 void Power::shutdown(bool deadBattery) {
+  // Finish an already-running logbook operation before shutdown starts, and prevent
+  // another reader/save from crossing the final-save/power-latch boundary.
+  logbook_io::Guard transaction(true);
   Serial.println("power_shutdown");
 
   switch (display.getPage()) {

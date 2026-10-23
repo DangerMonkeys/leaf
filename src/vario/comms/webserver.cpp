@@ -3097,7 +3097,7 @@ load();
                   "{\"ok\":false,\"error\":\"bad_path\",\"detail\":\"Invalid log path.\"}");
       return;
     }
-    if (!SD_MMC.exists(path)) {
+    if (!SD_MMC.exists(path) && !SD_MMC.exists(path + ".tmp") && !SD_MMC.exists(path + ".bak")) {
       heap_monitor::checkpoint("logbook-entry-missing");
       target.send(404, "application/json",
                   "{\"ok\":false,\"error\":\"missing\",\"detail\":\"Log file was not found.\"}");
@@ -3106,7 +3106,7 @@ load();
 
     LogbookEntrySummary summary;
     if (!LogbookStore::readSummary(path, summary)) {
-      heap_monitor::checkpoint("logbook-entry-fail");
+      // Storage failure details are already recorded to serial; do not write diagnostics to SD.
       LogbookNavigation navigation;
       LogbookStore::navigationForPath(path, navigation);
 
@@ -3177,7 +3177,7 @@ load();
                   "{\"ok\":false,\"error\":\"bad_path\",\"detail\":\"Invalid log path.\"}");
       return;
     }
-    if (!SD_MMC.exists(path)) {
+    if (!SD_MMC.exists(path) && !SD_MMC.exists(path + ".tmp") && !SD_MMC.exists(path + ".bak")) {
       heap_monitor::checkpoint("logbook-delete-missing");
       target.send(404, "application/json",
                   "{\"ok\":false,\"error\":\"missing\",\"detail\":\"Log file was not found.\"}");
@@ -3188,10 +3188,10 @@ load();
     LogbookStore::navigationForPath(path, navigation);
 
     if (!LogbookStore::deleteEntry(path)) {
-      heap_monitor::checkpoint("logbook-delete-fail");
-      target.send(
-          500, "application/json",
-          "{\"ok\":false,\"error\":\"delete_failed\",\"detail\":\"Log could not be deleted.\"}");
+      // Do not attempt another SD write merely to report failed deletion.
+      target.send(500, "application/json",
+                  "{\"ok\":false,\"error\":\"delete_failed\",\"detail\":\"Flight could not be "
+                  "fully deleted.\"}");
       return;
     }
 
@@ -3244,7 +3244,7 @@ load();
     }
 
     LogbookEntrySummary summary;
-    if (!SD_MMC.exists(logbookPath) || !LogbookStore::readSummary(logbookPath, summary)) {
+    if (!LogbookStore::readSummary(logbookPath, summary)) {
       heap_monitor::checkpoint("logbook-track-missing-log");
       target.send(404, "application/json",
                   "{\"ok\":false,\"error\":\"missing\",\"detail\":\"Log file was not found.\"}");

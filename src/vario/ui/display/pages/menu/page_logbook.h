@@ -41,4 +41,5 @@ class PageLogbook : public SettingsMenuPage {
   uint16_t total = 0;
   uint8_t deletePending = 0;
   bool modal = false;
+  bool deleteFailed = false;
 };

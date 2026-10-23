@@ -65,6 +65,14 @@ components:
         - schema_version
         - flight_id
       properties:
+        revision:
+          type: integer
+          minimum: 1
+          maximum: 4294967295
+          description: Optional per-flight replacement sequence; older files may omit it.
+        complete:
+          type: boolean
+          description: Summary finalized; does not certify track durability or upload acceptance.
         schema:
           type: string
           enum:

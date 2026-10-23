@@ -208,6 +208,21 @@ $(BUILD)/leaf_log_sync_test: $(LEAF_LOG_TEST_OBJECTS) $(SIM)/tests/leaf_log_sync
 test-leaf-log-sync: $(BUILD)/leaf_log_sync_test
 	@cd $(ROOT) && $(BUILD)/leaf_log_sync_test
 
+.PHONY: test-logbook-io
+$(BUILD)/logbook_io_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/logbook_io.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/logbook_io.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-logbook-io: $(BUILD)/logbook_io_test
+	@cd $(ROOT) && $(BUILD)/logbook_io_test
+
+.PHONY: test-usb-serial
+$(BUILD)/usb_serial_test: $(SIM)/tests/usb_serial.cpp $(wildcard $(SIM)/tests/usb_serial_hal/*.h) $(ROOT)/src/vario/system/usb_serial.cpp $(ROOT)/src/vario/system/usb_serial.h $(ROOT)/src/vario/system/usb_state.cpp $(ROOT)/src/vario/system/usb_state.h
+	@mkdir -p $(BUILD)
+	@$(CXX) -std=c++17 -Wall -Wextra -Werror -DARDUINO_USB_MODE=0 -DARDUINO_USB_CDC_ON_BOOT=0 -DCONFIG_IDF_TARGET_ESP32S3=0 -I$(SIM)/tests/usb_serial_hal -I$(ROOT)/src/vario -o $@ $(SIM)/tests/usb_serial.cpp $(ROOT)/src/vario/system/usb_serial.cpp $(ROOT)/src/vario/system/usb_state.cpp
+
+test-usb-serial: $(BUILD)/usb_serial_test
+	@$(BUILD)/usb_serial_test
+
 .PHONY: test-charging-dialogs
 $(BUILD)/charging_dialogs_test: $(LEAF_LOG_TEST_OBJECTS) $(SIM)/tests/charging_dialogs.cpp
 	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/charging_dialogs.cpp $(LEAF_LOG_TEST_OBJECTS) $(LDFLAGS)

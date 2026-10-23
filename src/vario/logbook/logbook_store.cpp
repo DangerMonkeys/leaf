@@ -4,6 +4,8 @@
 #include <SD_MMC.h>
 
 #include "logbook/logbook_entry.h"
+#include "logbook/logbook_io.h"
+#include "storage/sd_card.h"
 
 namespace {
   constexpr const char* LOGBOOK_DIR = "/logbook";
@@ -14,8 +16,7 @@ namespace {
       String next = dir.getNextFileName();
       if (next.isEmpty()) return false;
 
-      path = LogbookStore::normalizePath(next);
-      if (LogbookStore::isLogbookJsonPath(path)) return true;
+      if (logbook_io::candidatePath(next, path)) return true;
     }
   }
 
@@ -40,61 +41,29 @@ namespace {
     return true;
   }
 
-  void recoverAtomicResult(const String& path) {
-    const String tempPath = path + ".tmp";
-    const String backupPath = path + ".bak";
-    if (!SD_MMC.exists(path) && SD_MMC.exists(backupPath)) {
-      SD_MMC.rename(backupPath, path);
-    }
-    if (SD_MMC.exists(path) && SD_MMC.exists(backupPath)) SD_MMC.remove(backupPath);
-    if (SD_MMC.exists(tempPath)) SD_MMC.remove(tempPath);
-  }
-
   bool writeLeafLogResult(const String& path, const char* key, const String& value) {
     if (value.isEmpty()) return false;
     const String normalizedPath = LogbookStore::normalizePath(path);
-    File source = SD_MMC.open(normalizedPath, "r");
-    if (!source) return false;
-
+    logbook_io::Guard guard;
+    if (!guard) return false;
+    uint32_t revision;
+    uint64_t previous;
+    if (!logbook_io::prepare(normalizedPath, revision, previous)) return false;
     JsonDocument doc;
-    const DeserializationError error = deserializeJson(doc, source);
-    source.close();
-    if (error || !doc.is<JsonObject>()) return false;
-
+    if (!logbook_io::load(normalizedPath, doc)) return false;
+    doc["revision"] = revision;
+    if (doc["complete"].isNull()) doc["complete"] = doc["end"].is<JsonObject>();
     JsonObject leafLog = doc["leaf_log"].to<JsonObject>();
     leafLog.clear();
     leafLog[key] = value;
 
-    const String tempPath = normalizedPath + ".tmp";
-    const String backupPath = normalizedPath + ".bak";
-    if (SD_MMC.exists(tempPath)) SD_MMC.remove(tempPath);
-    if (SD_MMC.exists(backupPath)) SD_MMC.remove(backupPath);
-
-    File temp = SD_MMC.open(tempPath, "w", true);
-    if (!temp) return false;
-    const size_t written = serializeJson(doc, temp);
-    temp.flush();
-    temp.close();
-    if (written == 0) {
-      SD_MMC.remove(tempPath);
-      return false;
-    }
-
-    if (!SD_MMC.rename(normalizedPath, backupPath)) {
-      SD_MMC.remove(tempPath);
-      return false;
-    }
-    if (!SD_MMC.rename(tempPath, normalizedPath)) {
-      SD_MMC.rename(backupPath, normalizedPath);
-      SD_MMC.remove(tempPath);
-      return false;
-    }
-    SD_MMC.remove(backupPath);
-    return true;
+    return logbook_io::commit(normalizedPath, doc, previous);
   }
 }  // namespace
 
 uint16_t LogbookStore::count() {
+  logbook_io::Guard guard;
+  if (!guard || !sdcard.firmwareCanAccessFilesystem()) return 0;
   File dir = SD_MMC.open(LOGBOOK_DIR);
   if (!dir) return 0;
 
@@ -107,6 +76,8 @@ uint16_t LogbookStore::count() {
 }
 
 bool LogbookStore::newestEntryPath(String& path) {
+  logbook_io::Guard guard;
+  if (!guard || !sdcard.firmwareCanAccessFilesystem()) return false;
   File dir = SD_MMC.open(LOGBOOK_DIR);
   if (!dir) return false;
 
@@ -153,6 +124,8 @@ bool LogbookStore::entryPositionNewestFirst(const String& currentPath, uint16_t&
 }
 
 bool LogbookStore::navigationForPath(const String& currentPath, LogbookNavigation& navigation) {
+  logbook_io::Guard guard;
+  if (!guard || !sdcard.firmwareCanAccessFilesystem()) return false;
   navigation = LogbookNavigation();
   File dir = SD_MMC.open(LOGBOOK_DIR);
   if (!dir) return false;
@@ -186,18 +159,15 @@ bool LogbookStore::navigationForPath(const String& currentPath, LogbookNavigatio
   return true;
 }
 
-bool LogbookStore::readSummary(const String& path, LogbookEntrySummary& summary) {
+bool LogbookStore::readSummary(const String& path, LogbookEntrySummary& summary, bool recover) {
+  logbook_io::Guard guard;
+  if (!guard || !sdcard.firmwareCanAccessFilesystem()) return false;
   summary = LogbookEntrySummary();
   const String normalizedPath = normalizePath(path);
-  recoverAtomicResult(normalizedPath);
-
-  File file = SD_MMC.open(normalizedPath, "r");
-  if (!file) return false;
-
+  // Preserve a readable main on an unresolved conflict; writes/uploads remain blocked.
+  if (recover) logbook_io::recover(normalizedPath);
   JsonDocument doc;
-  DeserializationError error = deserializeJson(doc, file);
-  file.close();
-  if (error) return false;
+  if (!logbook_io::load(normalizedPath, doc)) return false;
 
   summary.valid = true;
   summary.path = normalizedPath;
@@ -264,16 +234,13 @@ bool LogbookStore::readSummary(const String& path, LogbookEntrySummary& summary)
 }
 
 bool LogbookStore::classifyForLeafLog(const String& path, LeafLogCandidate& candidate) {
+  logbook_io::Guard guard;
+  if (!guard || !sdcard.firmwareCanAccessFilesystem()) return false;
   candidate = LeafLogCandidate();
   candidate.logbookPath = normalizePath(path);
-  recoverAtomicResult(candidate.logbookPath);
-
-  File file = SD_MMC.open(candidate.logbookPath, "r");
-  if (!file) return false;
+  if (!logbook_io::recover(candidate.logbookPath)) return false;
   JsonDocument doc;
-  const DeserializationError error = deserializeJson(doc, file);
-  file.close();
-  if (error || !doc.is<JsonObject>()) return false;
+  if (!logbook_io::load(candidate.logbookPath, doc)) return false;
 
   JsonObjectConst root = doc.as<JsonObjectConst>();
   JsonObjectConst leafLog = root["leaf_log"];
@@ -289,6 +256,7 @@ bool LogbookStore::classifyForLeafLog(const String& path, LeafLogCandidate& cand
     return true;
   }
 
+  if (root["complete"].is<bool>() && !root["complete"].as<bool>()) return true;
   const String schema = root["schema"] | "";
   JsonObjectConst track = root["track"];
   if (schema != "leaf.logbook.flight" || track.isNull()) {
@@ -364,20 +332,17 @@ const char* LogbookStore::leafLogRejectionLabel(const String& reason) {
 }
 
 bool LogbookStore::deleteEntry(const String& path) {
-  LogbookEntrySummary summary;
-  if (readSummary(path, summary)) {
-    return LogbookEntryFile::deleteFiles(summary.path, summary.trackPath);
-  }
-
-  const String normalizedPath = normalizePath(path);
-  if (normalizedPath.isEmpty() || !SD_MMC.exists(normalizedPath)) return false;
-  return SD_MMC.remove(normalizedPath);
+  // The shared eraser discovers tracks and filename aliases without running recovery.
+  return logbook_io::erase(normalizePath(path));
 }
 
 bool LogbookStore::isLogbookJsonPath(const String& path) {
   const String normalizedPath = normalizePath(path);
   if (!normalizedPath.startsWith(String(LOGBOOK_DIR) + "/")) return false;
   if (!normalizedPath.endsWith(".json")) return false;
+  if (normalizedPath.indexOf("..") >= 0 || normalizedPath.indexOf('\\') >= 0 ||
+      normalizedPath.indexOf('/', 9) >= 0)
+    return false;
   if (normalizedPath.endsWith(".tmp")) return false;
   return filenameFromPath(normalizedPath).length() > 5;
 }

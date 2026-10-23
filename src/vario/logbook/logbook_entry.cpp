@@ -6,7 +6,9 @@
 #include <math.h>
 #include <time.h>
 
+#include <esp_heap_caps.h>
 #include "instruments/gps.h"
+#include "logbook/logbook_io.h"
 #include "profiles/profile_store.h"
 #include "system/version_info.h"
 #include "ui/settings/settings.h"
@@ -27,20 +29,21 @@ namespace {
     strftime(out, len, "%FT%TZ", &cal);
   }
 
-  void formatLocalTime(char* out, size_t len, time_t epoch) {
+  void formatLocalTime(char* out, size_t len, time_t epoch, int16_t offsetMinutes) {
     tm cal;
-    localtime_r(&epoch, &cal);
+    const time_t localEpoch = epoch + time_t(offsetMinutes) * 60;
+    gmtime_r(&localEpoch, &cal);
     strftime(out, len, "%FT%T", &cal);
   }
 
-  void addSystemTime(JsonObject event, bool valid, time_t epoch) {
+  void addSystemTime(JsonObject event, bool valid, time_t epoch, int16_t offsetMinutes) {
     event["time_valid"] = valid;
     if (!valid) return;
 
     char utc[24];
     char local[24];
     formatUtcTime(utc, sizeof(utc), epoch);
-    formatLocalTime(local, sizeof(local), epoch);
+    formatLocalTime(local, sizeof(local), epoch, offsetMinutes);
     event["time_utc"] = utc;
     event["time_local"] = local;
   }
@@ -64,7 +67,9 @@ namespace {
 }  // namespace
 
 bool LogbookEntryFile::begin(const FlightStats& stats) {
+  reset();
   flightId_ = generateFlightId();
+  timezoneMinutes_ = settings.system_timeZone;
   startTimeValid_ = gps.systemTimeSyncedThisBoot();
   if (startTimeValid_) {
     startEpoch_ = startEpochFromStats(stats);
@@ -82,8 +87,12 @@ bool LogbookEntryFile::writePlaceholder(const FlightStats& stats) {
     if (!begin(stats)) return false;
   }
   if (placeholderWritten_) return true;
-  if (!ensureLogbookDirectory()) return false;
-  placeholderWritten_ = writeJson(stats, false, "", "");
+  if (nextPlaceholderMs_ && static_cast<int32_t>(millis() - nextPlaceholderMs_) < 0) return false;
+  nextPlaceholderMs_ = millis() + 30000;
+  logbook_io::Guard transaction;
+  if (!transaction || !ensureLogbookDirectory()) return false;
+  if (startTimeValid_) renameToSyncedTimestampIfNeeded();
+  placeholderWritten_ = writeJson(stats, false);
   return placeholderWritten_;
 }
 
@@ -99,39 +108,67 @@ void LogbookEntryFile::captureFirstFix(const FlightStats& stats) {
   }
   firstFixTemperatureC_ = stats.temperature;
   placeholderWritten_ = false;
+  nextPlaceholderMs_ = 0;
 }
 
 bool LogbookEntryFile::refreshStartTimeFromSyncedClock(const FlightStats& stats) {
   if (!active() || startTimeValid_ || !gps.systemTimeSyncedThisBoot()) return false;
-
   startTimeValid_ = true;
   startEpoch_ = startEpochFromStats(stats);
   refreshFirstFixTimeIfPossible();
-  if (!renameToSyncedTimestampIfNeeded()) return false;
-  placeholderWritten_ = writeJson(stats, false, "", "");
-  return placeholderWritten_;
+  placeholderWritten_ = false;
+  nextPlaceholderMs_ = 0;
+  return writePlaceholder(stats);
+}
+
+void LogbookEntryFile::setTrack(const String& format, const String& path) {
+  if (trackPath_ == path && trackFormat_ == format) return;
+  trackFormat_ = format;
+  trackPath_ = path;
+  placeholderWritten_ = false;
+  nextPlaceholderMs_ = 0;
 }
 
 bool LogbookEntryFile::finalize(const FlightStats& stats, const String& trackFormat,
                                 const String& trackPath) {
-  if (!active()) {
-    if (!begin(stats)) return false;
-  }
-  if (!ensureLogbookDirectory()) return false;
-
-  if (!startTimeValid_ && gps.systemTimeSyncedThisBoot()) {
+  if (!active() && !begin(stats)) return false;
+  setTrack(trackFormat, trackPath);
+  endEpoch_ = time(nullptr);
+  endTimeValid_ = gps.systemTimeSyncedThisBoot();
+  if (!startTimeValid_ && endTimeValid_) {
     startTimeValid_ = true;
     startEpoch_ = startEpochFromStats(stats);
     refreshFirstFixTimeIfPossible();
-    if (!renameToSyncedTimestampIfNeeded()) return false;
   }
-
-  return writeJson(stats, true, trackFormat, trackPath);
+  const uint32_t started = millis();
+  const size_t heapBefore = heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+  bool saved = false;
+  unsigned attempts = 0;
+  for (; attempts < 3 && (attempts == 0 || millis() - started < 2000);) {
+    ++attempts;
+    {
+      logbook_io::Guard transaction;
+      if (transaction && ensureLogbookDirectory()) {
+        // A failed filename update must not prevent saving the immutable payload at its old path.
+        if (startTimeValid_) renameToSyncedTimestampIfNeeded();
+        saved = writeJson(stats, true);
+      }
+    }
+    if (saved || !logbook_io::retryable() || attempts == 3 || millis() - started >= 1900) break;
+    delay(100);  // Yield to the system between attempts; no background retry state is retained.
+  }
+  Serial.printf(
+      "logbook finalization: saved=%d attempts=%u elapsed_ms=%lu heap_before=%u heap_after=%u "
+      "stats_bytes=%u entry_bytes=%u\n",
+      saved, attempts, static_cast<unsigned long>(millis() - started), unsigned(heapBefore),
+      unsigned(heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)),
+      unsigned(sizeof(FlightStats)), unsigned(sizeof(LogbookEntryFile)));
+  return saved;
 }
 
 void LogbookEntryFile::reset() {
-  flightId_ = "";
-  path_ = "";
+  flightId_ = String();
+  path_ = String();
   startTimeValid_ = false;
   placeholderWritten_ = false;
   firstFixCaptured_ = false;
@@ -141,28 +178,18 @@ void LogbookEntryFile::reset() {
   firstFixDurationSeconds_ = 0;
   startTemperatureC_ = 0;
   firstFixTemperatureC_ = 0;
+  trackFormat_ = String();
+  trackPath_ = String();
+  nextPlaceholderMs_ = 0;
+  endEpoch_ = 0;
+  endTimeValid_ = false;
+  timezoneMinutes_ = 0;
   pilot_ = PilotProfile();
   glider_ = GliderProfile();
 }
 
 bool LogbookEntryFile::deleteFiles(const String& logbookPath, const String& trackPath) {
-  bool success = true;
-
-  if (!trackPath.isEmpty()) {
-    const String absoluteTrackPath = absolutePath(trackPath);
-    if (SD_MMC.exists(absoluteTrackPath)) {
-      success = SD_MMC.remove(absoluteTrackPath) && success;
-    }
-  }
-
-  if (!logbookPath.isEmpty()) {
-    const String absoluteLogbookPath = absolutePath(logbookPath);
-    if (SD_MMC.exists(absoluteLogbookPath)) {
-      success = SD_MMC.remove(absoluteLogbookPath) && success;
-    }
-  }
-
-  return success;
+  return logbook_io::erase(absolutePath(logbookPath), trackPath);
 }
 
 String LogbookEntryFile::generateFlightId() const {
@@ -173,7 +200,8 @@ String LogbookEntryFile::generateFlightId() const {
 
 String LogbookEntryFile::timestampFileStem() const {
   tm cal;
-  localtime_r(&startEpoch_, &cal);
+  const time_t localEpoch = startEpoch_ + time_t(timezoneMinutes_) * 60;
+  gmtime_r(&localEpoch, &cal);
 
   char stem[32];
   strftime(stem, sizeof(stem), "%F_%H-%M-%S", &cal);
@@ -188,15 +216,12 @@ String LogbookEntryFile::pathForStem(const String& stem) const {
   return String(LOGBOOK_DIR) + "/" + stem + ".json";
 }
 
-bool LogbookEntryFile::ensureLogbookDirectory() const {
-  if (SD_MMC.exists(LOGBOOK_DIR)) return true;
-  return SD_MMC.mkdir(LOGBOOK_DIR);
-}
+bool LogbookEntryFile::ensureLogbookDirectory() const { return logbook_io::ensureDirectory(); }
 
 bool LogbookEntryFile::renameToSyncedTimestampIfNeeded() {
   const String newPath = pathForStem(timestampFileStem());
   if (newPath == path_) return true;
-  if (!SD_MMC.rename(path_, newPath)) return false;
+  if (!logbook_io::relocate(path_, newPath)) return false;
   path_ = newPath;
   return true;
 }
@@ -216,36 +241,41 @@ void LogbookEntryFile::refreshFirstFixTimeIfPossible() {
   placeholderWritten_ = false;
 }
 
-bool LogbookEntryFile::writeJson(const FlightStats& stats, bool finalEntry,
-                                 const String& trackFormat, const String& trackPath) const {
+bool LogbookEntryFile::writeJson(const FlightStats& stats, bool finalEntry) const {
   if (path_.isEmpty()) return false;
-
-  const String tmpPath = path_ + ".tmp";
+  logbook_io::Guard transaction;
+  if (!transaction) return false;
+  uint32_t revision;
+  uint64_t previous;
+  if (!logbook_io::prepare(path_, revision, previous)) return false;
   JsonDocument doc;
 
   doc["schema"] = SCHEMA_NAME;
   doc["schema_version"] = SCHEMA_VERSION;
   doc["flight_id"] = flightId_;
+  doc["revision"] = revision;
+  doc["complete"] = finalEntry;
 
   JsonObject clock = doc["clock"].to<JsonObject>();
-  clock["system_time_synced_this_boot"] = gps.systemTimeSyncedThisBoot();
+  clock["system_time_synced_this_boot"] =
+      finalEntry ? endTimeValid_ : gps.systemTimeSyncedThisBoot();
   clock["time_source"] = startTimeValid_ ? "gps" : "unsynced";
-  clock["timezone_offset_minutes"] = settings.system_timeZone;
+  clock["timezone_offset_minutes"] = timezoneMinutes_;
 
   JsonObject start = doc["start"].to<JsonObject>();
-  addSystemTime(start, startTimeValid_, startEpoch_);
+  addSystemTime(start, startTimeValid_, startEpoch_, timezoneMinutes_);
   addFloat(start, "temperature_c", startTemperatureC_);
 
   if (firstFixCaptured_) {
     JsonObject firstFix = doc["first_fix"].to<JsonObject>();
-    addSystemTime(firstFix, firstFixTimeValid_, firstFixEpoch_);
+    addSystemTime(firstFix, firstFixTimeValid_, firstFixEpoch_, timezoneMinutes_);
     addLocation(firstFix, stats.startLocationLat, stats.startLocationLng, stats.gpsalt_start, true);
     addFloat(firstFix, "temperature_c", firstFixTemperatureC_);
   }
 
   if (finalEntry) {
     JsonObject end = doc["end"].to<JsonObject>();
-    addSystemTime(end, gps.systemTimeSyncedThisBoot(), time(nullptr));
+    addSystemTime(end, endTimeValid_, endEpoch_, timezoneMinutes_);
     addLocation(end, stats.endLocationLat, stats.endLocationLng, stats.gpsalt_end,
                 stats.endLocationLat != 0 || stats.endLocationLng != 0);
     addFloat(end, "temperature_c", stats.temperature);
@@ -274,10 +304,10 @@ bool LogbookEntryFile::writeJson(const FlightStats& stats, bool finalEntry,
   addFloat(metrics, "min_temperature_c", stats.temperature_min);
 
   JsonObject track = doc["track"].to<JsonObject>();
-  track["saved"] = !trackPath.isEmpty();
-  if (!trackPath.isEmpty()) {
-    if (!trackFormat.isEmpty()) track["format"] = trackFormat;
-    track["path"] = trackPath;
+  track["saved"] = !trackPath_.isEmpty();
+  if (!trackPath_.isEmpty()) {
+    if (!trackFormat_.isEmpty()) track["format"] = trackFormat_;
+    track["path"] = trackPath_;
   }
 
   JsonObject device = doc["device"].to<JsonObject>();
@@ -317,13 +347,5 @@ bool LogbookEntryFile::writeJson(const FlightStats& stats, bool finalEntry,
   notes["pilot_notes"] = "";
   notes["tags"].to<JsonArray>();
 
-  File file = SD_MMC.open(tmpPath, "w", true);
-  if (!file) return false;
-
-  serializeJsonPretty(doc, file);
-  file.println();
-  file.close();
-
-  SD_MMC.remove(path_);
-  return SD_MMC.rename(tmpPath, path_);
+  return logbook_io::commit(path_, doc, previous);
 }

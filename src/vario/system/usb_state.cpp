@@ -79,6 +79,7 @@ namespace leaf_usb {
 
 #if !ARDUINO_USB_MODE && !ARDUINO_USB_CDC_ON_BOOT
     USBSerial.begin(115200);
+    USBSerial.setTransmitEnabled(true);
 #endif
     USB.manufacturerName("Leaf");
     USB.productName("Leaf Vario");
@@ -100,6 +101,9 @@ namespace leaf_usb {
 
     const bool success = tud_connect();
     if (success) {
+#if !ARDUINO_USB_MODE && !ARDUINO_USB_CDC_ON_BOOT
+      USBSerial.setTransmitEnabled(true);
+#endif
       usb_connected = true;
       usb_started_ms = millis();
     }
@@ -107,6 +111,11 @@ namespace leaf_usb {
   }
 
   bool disconnect() {
+#if !ARDUINO_USB_MODE && !ARDUINO_USB_CDC_ON_BOOT
+    // Stop diagnostics before detaching. TinyUSB's cached DTR/configuration can remain
+    // true until a later bus event, although no host can drain the transmit FIFO.
+    USBSerial.setTransmitEnabled(false);
+#endif
     if (!usb_started || !usb_connected) return true;
 
     const bool success = tud_disconnect();
@@ -115,6 +124,9 @@ namespace leaf_usb {
       host_mounted = false;
       host_suspended = false;
     }
+#if !ARDUINO_USB_MODE && !ARDUINO_USB_CDC_ON_BOOT
+    if (!success) USBSerial.setTransmitEnabled(true);
+#endif
     return success;
   }
 

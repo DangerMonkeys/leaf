@@ -76,7 +76,7 @@ class LogbookStore {
   static bool entryPositionNewestFirst(const String& currentPath, uint16_t& position,
                                        uint16_t& total);
   static bool navigationForPath(const String& currentPath, LogbookNavigation& navigation);
-  static bool readSummary(const String& path, LogbookEntrySummary& summary);
+  static bool readSummary(const String& path, LogbookEntrySummary& summary, bool recover = true);
   static bool classifyForLeafLog(const String& path, LeafLogCandidate& candidate);
   static bool recordLeafLogFlightId(const String& path, const String& flightId);
   static bool recordLeafLogRejection(const String& path, const String& reason);

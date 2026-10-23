@@ -1,4 +1,5 @@
 #include "storage/sd_card.h"
+#include "logbook/logbook_io.h"
 
 #include <cstring>
 
@@ -191,6 +192,8 @@ bool SDCard::setupMassStorage(bool mediaPresent) {
 }
 
 bool SDCard::mount() {
+  logbook_io::Guard transaction;
+  if (!transaction) return false;
   if (mounted_) return true;
 
   bool success = false;
@@ -269,6 +272,8 @@ void SDCard::stopRawHost() {
 }
 
 bool SDCard::presentMassStorage() {
+  logbook_io::Guard transaction;
+  if (!transaction) return false;
   if (!msc_ || !mscStarted_ || !mounted_) return false;
 
   ownership_.store(SDCardOwnership::TransitioningToHost, std::memory_order_release);
@@ -323,6 +328,8 @@ bool SDCard::presentMassStorage() {
 }
 
 bool SDCard::acquireForFirmwareUse(uint32_t timeoutMs, bool disconnectUsb) {
+  logbook_io::Guard transaction;
+  if (!transaction) return false;
   SDCardOwnership current = ownership_.load(std::memory_order_acquire);
   if (current == SDCardOwnership::FirmwareReserved ||
       current == SDCardOwnership::FirmwareUploading) {
@@ -383,6 +390,8 @@ bool SDCard::takeExplicitEject() {
 }
 
 void SDCard::unmount() {
+  logbook_io::Guard transaction;
+  if (!transaction) return;
   if (!acquireForFirmwareUse()) return;
   heap_monitor::checkpoint("sd-unmount");
   heap_monitor::setSdLoggingEnabled(false);
@@ -450,6 +459,12 @@ bool SDCard::format() {
 
 SDCard::FormatResult SDCard::formatDetailed(bool remount) {
   FormatResult result;
+  logbook_io::Guard transaction;
+  if (!transaction) {
+    result.stage = "logbook_busy";
+    result.error = ESP_ERR_INVALID_STATE;
+    return result;
+  }
   if (!isCardPresent()) {
     if (DEBUG_SDCARD) Serial.println("SDcard Format Failed: no card present");
     result.stage = "card_detection";
@@ -507,6 +522,12 @@ SDCard::FormatResult SDCard::formatDetailed(bool remount) {
 
 SDCard::FormatResult SDCard::remountAfterFormat() {
   FormatResult result;
+  logbook_io::Guard transaction;
+  if (!transaction) {
+    result.stage = "logbook_busy";
+    result.error = ESP_ERR_INVALID_STATE;
+    return result;
+  }
   result.formatted = true;
   result.stage = "remount";
 
