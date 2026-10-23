@@ -158,6 +158,7 @@ void ThermalCore::reset() {
   episodeClimbScaleValid_ = false;
   episodeMaxClimbCms_ = 0;
   target_.reset();
+  climbHistory_.reset();
 }
 
 void ThermalCore::updateTurnSegment(const ThermalTracker::CoreSample& latest,
@@ -272,6 +273,9 @@ void ThermalCore::update() {
   if (samplesFresh) target_.observe(center, latest.capturedAtMs);
   target_.updateVisibility(latest.xM, latest.yM, latest.capturedAtMs, samplesFresh);
   estimate_.centerValid = target_.visible() && samplesFresh;
+  // Use the circle's visibility without adding a second set of display thresholds. Raw
+  // pressure altitude keeps manual MSL/GPS altitude corrections out of the climb history.
+  climbHistory_.update(estimate_.centerValid, nowMs, baro.alt());
   if (estimate_.centerValid) {
     pointToScreen(target_.eastM(), target_.northM(), mapReference.xM, mapReference.yM,
                   mapReference.courseDeg, aircraftX, estimate_.centerX, estimate_.centerY);

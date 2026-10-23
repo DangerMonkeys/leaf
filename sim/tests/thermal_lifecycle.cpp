@@ -42,6 +42,7 @@ namespace {
     const auto& estimate = thermalCore.estimate();
     assert(!estimate.valid && !estimate.centerValid && estimate.markerCount == 0);
     assert(estimate.direction == 0 && estimate.adviceQ7 == 0);
+    assert(thermalCore.climbHistory().size() == 0);
   }
 
   void populate() {

@@ -12,16 +12,21 @@ namespace thermal_page {
     display_climbRatePointerTriangle(width, VARIO_BAR_TOP + topOffset + VARIO_BAR_HALF_HEIGHT, 8);
   }
 
-  static void drawClimbRateField(int32_t climbRate, bool unitsBelow, bool large) {
-    const uint8_t boxHeight = large ? 16 : CLIMB_BOX_HEIGHT;
+  static void drawClimbRateField(int32_t climbRate, bool unitsBelow, bool large,
+                                 int16_t fieldX = -1, int16_t fieldY = -1) {
+    const bool average = fieldX >= 0;
+    const bool negative = climbRate < 0;
+    const uint8_t boxHeight = large ? CORE_CLIMB_BOX_HEIGHT : CLIMB_BOX_HEIGHT;
     const uint8_t zeroY = VARIO_BAR_TOP + VARIO_BAR_HALF_HEIGHT + (large ? 2 : 0);
-    const uint8_t boxY = zeroY - boxHeight / 2;
-    const uint8_t boxX = large ? CORE_VARIO_BAR_WIDTH : CLIMB_BOX_X;
-    u8g2.setFont(leaf_5x8);
-    u8g2.setFontMode(1);
-    u8g2.setDrawColor(0);
-    u8g2.drawGlyph(boxX - 6, zeroY + 5, climbRate < 0 ? '-' : '+');
-    u8g2.setFontMode(0);
+    const uint8_t boxY = average ? fieldY : zeroY - boxHeight / 2;
+    const uint8_t boxX = average ? fieldX : large ? CORE_VARIO_BAR_WIDTH : CLIMB_BOX_X;
+    if (!average) {
+      u8g2.setFont(leaf_5x8);
+      u8g2.setFontMode(1);
+      u8g2.setDrawColor(0);
+      u8g2.drawGlyph(boxX - 6, zeroY + 5, negative ? '-' : '+');
+      u8g2.setFontMode(0);
+    }
     u8g2.setDrawColor(1);
 
     // The triangle shows the sign; the box shows the magnitude.
@@ -51,13 +56,19 @@ namespace thermal_page {
     uint8_t digitWidths[12];
     for (uint8_t i = 0; value[i]; ++i) {
       u8g2.setFont(digitFonts[i]);
-      digitWidths[i] = u8g2_GetGlyphWidth(u8g2.getU8g2(), value[i]);
+      digitWidths[i] =
+          u8g2_GetGlyphWidth(u8g2.getU8g2(), large && value[i] != '.' ? '0' : value[i]);
       if (value[i + 1]) {
         width += digitWidths[i];
       } else {
         // Exclude the final glyph's advance spacing for an exact one-pixel right margin.
-        const u8g2_t* fontState = u8g2.getU8g2();
-        width += fontState->glyph_x_offset + fontState->font_decode.glyph_width;
+        if (large) {
+          // Fixed digit slots also keep narrow glyphs and leading blanks from moving the field.
+          width += digitWidths[i] - 1;
+        } else {
+          const u8g2_t* fontState = u8g2.getU8g2();
+          width += fontState->glyph_x_offset + fontState->font_decode.glyph_width;
+        }
       }
     }
     if (!large) {
@@ -67,9 +78,11 @@ namespace thermal_page {
       u8g2.drawStr(CLIMB_UNITS_CENTER_X - (u8g2.getStrWidth(units) + 1) / 2, unitsY, units);
     }
 
-    u8g2.drawBox(boxX, boxY, width + 1 + (large ? 9 : 0), boxHeight);
-    int16_t x = boxX;
-    u8g2.setDrawColor(0);
+    const int16_t fieldWidth = large ? CORE_CLIMB_BOX_WIDTH : width + 1;
+    if (!average) u8g2.drawBox(boxX, boxY, fieldWidth, boxHeight);
+    const int16_t unitsX = boxX + fieldWidth - 7;
+    int16_t x = large ? unitsX - 2 - width : boxX;
+    u8g2.setDrawColor(average ? 1 : 0);
     for (uint8_t i = 0; value[i]; ++i) {
       u8g2.setFont(digitFonts[i]);
       const uint8_t height = digitFonts[i] == leaf_8x14   ? 14
@@ -82,7 +95,11 @@ namespace thermal_page {
     if (large) {
       // Existing 5x12 unit glyphs fit the narrow strip after the digits.
       u8g2.setFont(leaf_6x12);
-      u8g2.drawGlyph(boxX + width + 2, boxY + 14, settings.units_climb ? 132 : 131);
+      u8g2.drawGlyph(unitsX, boxY + 14, settings.units_climb ? 132 : 131);
+    }
+    if (average && negative) {
+      u8g2.setFont(leaf_5x8);
+      u8g2.drawGlyph(boxX + 1, boxY + 11, '-');
     }
     u8g2.setDrawColor(1);
   }
@@ -92,6 +109,10 @@ namespace thermal_page {
   }
 
   void drawCoreClimbRate(int32_t climbRate) { drawClimbRateField(climbRate, false, true); }
+
+  void drawCoreClimbAverage(int32_t climbRate, uint8_t x, uint8_t top) {
+    drawClimbRateField(climbRate, false, true, x, top);
+  }
 
   uint8_t drawCoreAltitude(int32_t altitude, uint8_t x, uint8_t baselineY, uint8_t* tensX) {
     altitude = constrain(altitude, -99999, 99999);
