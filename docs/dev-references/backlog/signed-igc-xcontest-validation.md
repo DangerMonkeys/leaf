@@ -5,8 +5,11 @@ description: Staged plan for producing tamper-evident Leaf IGC files that can be
 
 # Signed IGC Files and XContest Validation
 
-Status: proposed. External registration, security architecture, validator delivery, and firmware
-implementation are all required before this work can be considered complete.
+Status reconciled **2026-10-22**: authenticated signing and contest acceptance remain proposed.
+Checksum generation and a local validator were implemented in `daae85f2` (#414), with a prebuilt
+Windows validator added in `82a74de7`. These complete a local integrity-checking step, not this
+backlog's signing/acceptance goal. External registration, reviewed signing/key architecture,
+production validator deployment and end-to-end contest qualification remain open.
 
 ## Goal
 
@@ -23,16 +26,24 @@ The target outcome is not merely an IGC file containing a hash-looking G record.
 identifier, firmware signing algorithm, protected-record rules, validation executable, CIVL
 registration, and XContest deployment must all agree.
 
-## Current problem
+## Current implementation and remaining problem
 
-Leaf currently writes IGC track files but does not append a real cryptographic G record. A file may
-still upload and display, but a scoring service cannot prove that its protected records are identical
-to what the device recorded.
+Leaf pins IgcLogger `v0.0.6` and appends its incremental, unkeyed MD5 G record on normal flight
+completion. `utils/igc_validator/` contains a maintained C checker and a standalone Windows
+executable. The checker requires an `AXLV` header, at least one B record and a final 32-hex-digit
+G record, accepts LF/CRLF and rejects a checksum mismatch. See the
+[validator README](../../../utils/igc_validator/README.md) for exact rules and build/use commands.
 
-Leaf also currently uses the manufacturer identifier `XLF`. That identifier is already assigned to
-Logfly in the CIVL validation system. Validation is selected from the identifier at the start of the
-IGC A record, so a service using the CIVL mapping dispatches an `XLF` file to Logfly's validator. A
-Leaf-generated signature cannot pass an unrelated product's validator.
+Current firmware uses `XLV` in A/L records and filenames, replacing the historical `XLF` code.
+This repository review establishes the implementation, not an assigned CIVL identifier or deployed
+contest validator. The A-record identity is still fixed (`Lea` plus `f1`), and filenames still
+use serial `000`; stable recorder identity remains part of the future signing design.
+
+An unkeyed checksum can be recomputed after editing and does not authenticate a recorder.
+Neither a passing local checker nor a changed manufacturer code establishes CIVL/XContest
+acceptance. Do not present the checksum work as authenticated signing or retroactively sign
+historical files. The stages below describe the remaining authenticated-signing program;
+their signer/validator scope goes beyond the existing checksum implementation.
 
 Adding firmware signing without resolving the identifier and validator therefore does not make Leaf
 files scoreable. Likewise, registering an identifier without implementing matching signing does not
@@ -70,8 +81,8 @@ deploy the resulting validator.
 2. Contact FAI/CIVL through the current flight-recorder and validator submission process.
 3. Describe Leaf accurately as an ESP32-S3 hardware variometer/flight recorder with internal GNSS,
    pressure sensing, incremental SD-card logging, open-source firmware, and field updates.
-4. Request an available three-character identifier for Leaf. Do not select another unregistered
-   code unilaterally, and do not continue using `XLF`.
+4. Confirm an assigned three-character identifier for Leaf. Coordinate the current `XLV` code
+   or any required replacement with CIVL; a code in firmware is not proof of registration.
 5. Confirm the intended approval/acceptance level and whether CIVL expects an `X..`, `V..`, or other
    class of identifier for Leaf.
 6. Agree on the signature algorithm and exact byte canonicalization before shipping it broadly.
@@ -168,6 +179,9 @@ key in production.
 
 ## Stage 3: implement and test the signing component
 
+Incremental checksum generation exists. The authenticated signer, key policy and signing-failure
+contract below remain open; do not recreate the checksum as though no G-record path existed.
+
 The logging component should provide an incremental signing interface suitable for Leaf's
 record-at-a-time SD writes.
 
@@ -203,6 +217,9 @@ Include tests in the maintained source tree rather than relying only on an exter
 
 ## Stage 4: build the Leaf validation program
 
+The portable checksum checker and Windows distribution already exist. Extend or replace them
+for the agreed authenticated format; the requirements below are not claims about today's checker.
+
 The validator is a first-class deliverable, not an afterthought or private test script.
 
 It should:
@@ -226,7 +243,7 @@ validator merely agreeing with each other is not enough to prove the cryptograph
 ## Stage 5: integrate signing into Leaf firmware
 
 1. Update the pinned logging dependency or internal component to a reviewed immutable release.
-2. Replace `IGC_MANUFACTURER_CODE` with the identifier assigned to Leaf. This must update A records,
+2. Reconcile `IGC_MANUFACTURER_CODE` (currently `XLV`) with the identifier assigned to Leaf. This must update A records,
    Leaf L records, and long filenames consistently.
 3. Replace the current fixed logger identity and filename serial `000` with a stable, documented
    device serial representation that satisfies the assigned format. Consider collision resistance
@@ -246,6 +263,10 @@ validator merely agreeing with each other is not enough to prove the cryptograph
 10. Ensure release builds that can produce accepted signatures cannot enable sensor-injection or
     other test features that permit fabricated flight data. Keep simulator and development behavior
     explicit and separate.
+
+    Separate dev builds were retired in #420. Current release firmware can opt into UDP injection
+    only with both Developer mode and the injection setting enabled. Those runtime gates do not
+    themselves establish the production signing trust boundary required here.
 
 Consider periodically preserving enough non-secret signing state to survive expected controlled
 transitions, but do not design next-boot signing of user-editable SD data without CIVL approval.

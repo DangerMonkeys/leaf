@@ -5,8 +5,16 @@ description: Release timing and memory assessment, implementation stages and fol
 
 # Runtime resource assessment
 
-Status: stage 1 implemented; reviewed operational baselines and subsequent automation remain
-pending. Required evidence for publishing a firmware release; not a per-PR requirement.
+Status reconciled **2026-10-22**: stage 1 is implemented and merged in `e432ee66` (#421).
+A provisional Leaf 3.2.8 Navigate comparison reference is registered in
+[`utils/runtime_report/baselines/index.json`](../../../utils/runtime_report/baselines/index.json).
+It remains `review_required`, with unresolved timing/recovery and workload-coverage limits;
+selection is not a release pass. Reviewed operational qualification and subsequent automation
+remain pending. Reports are required for the exact firmware release candidate, not per PR.
+
+Use [Runtime assessment](../runtime-assessment.md) for current capture/export instructions and
+the [versioned baseline instructions](../../../utils/runtime_report/baselines/leaf-3_2_8-navigate-v1/README.md)
+for compatible comparisons. Preserve existing baseline bundles and their known issues.
 
 ## Intent
 
@@ -16,6 +24,9 @@ expensive work from a late start caused by earlier work, include GPS and foregro
 services, and expose accumulated timer ticks without changing scheduler behavior.
 
 ## Stage 1: bounded telemetry and baseline reports
+
+Implemented scope is listed below. These are no longer outstanding implementation tasks;
+broader qualification remains open under stages 2 and 3 and the baseline's attention items.
 
 - Replace synchronous per-second CPU CSV writes with fixed-capacity RAM capture and
   explicit freeze/export. Keep production IGC writes in the measured workload.

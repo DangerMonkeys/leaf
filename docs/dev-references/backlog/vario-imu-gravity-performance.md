@@ -67,12 +67,12 @@ fields. The main test session included:
 
 This suggests the accelerometer scale error is not equal across orthogonal axes.
 
-## Current Findings
+## Historical findings (before the July clamp/gate fix)
 
 In the affected unit's flat orientation:
 
 - Device/world vertical acceleration was around `1.048g` to `1.052g`.
-- The gravity estimate was pinned at the current upper clamp of `1.020g`.
+- The gravity estimate was pinned at the then-current upper clamp of `1.020g`.
 - The remaining vertical acceleration residual was about `+0.03g`.
 - The Kalman/filter chain converted that residual into a persistent positive climb rate, commonly
   around `+0.18 m/s`.
@@ -88,14 +88,14 @@ The barometer did not appear to be the primary cause in this log. Baro altitude 
 smaller than the reported climb-rate bias, while the IMU vertical acceleration residual closely
 matched the sign and persistence of the climb-rate error.
 
-## Likely Cause
+## Historical cause
 
-The current gravity estimate clamp is too narrow for at least some IMU modules. A stationary IMU
+The original gravity estimate clamp was too narrow for at least some IMU modules. A stationary IMU
 whose aligned accelerometer axis reads above `1.02g` cannot be learned correctly because the
 estimate is clamped before it reaches the observed resting value. The Kalman filter then sees a
 small constant upward acceleration even when Leaf is motionless.
 
-There is also a related gate: `GRAVITY_UPDATE_ACCEL_TOLERANCE_G` is currently `0.05g`. If we expect
+There was also a related gate: `GRAVITY_UPDATE_ACCEL_TOLERANCE_G` was `0.05g`. If we expect
 some stationary IMUs to read as much as 6% high or low, then stillness detection must accept at
 least that same error range. Otherwise, the samples needed to learn the corrected gravity value can
 be rejected before they update the estimate.
@@ -106,10 +106,9 @@ be rejected before they update the estimate.
 - Increase `GRAVITY_UPDATE_ACCEL_TOLERANCE_G` from `0.05g` to at least `0.06g`.
 - Consider using `0.065g` for the accel tolerance to avoid rejecting otherwise-stationary samples
   at the edge due to noise and quantization.
-- Continue collecting `vario.csv` logs from additional units before implementing the change, so the
-  final bounds cover observed IMU variation without making the estimator too willing to learn during
-  real motion.
-- After changing bounds, repeat stationary flat/upright tests and confirm:
+- Remaining qualification: collect `vario.csv` logs from additional ICM units to assess the
+  implemented bounds against observed variation and real motion.
+- Repeat stationary flat/upright tests on those units and confirm:
   - `gravity_g` converges near the observed resting `awz_g`.
   - `vertical_accel_g` is near zero when stationary.
   - `climb_filtered_cms` settles near zero in multiple orientations.

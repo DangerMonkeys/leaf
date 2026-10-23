@@ -53,6 +53,9 @@ test-station orchestration, and publication enforcement are deferred. No PR gate
 - Create a draft release and verify the tag resolves to the tested candidate. Check that each
   advertised hardware variant has the correct artifact and that required reports or explicit
   exceptions are present before publishing.
+- Prepare the website update locally: review the user manual, screenshots, and setup/update
+  instructions against the release candidate. Hold the website/manual PR until the firmware
+  release is ready for users.
 - The current GitHub build workflow listens for `release: created`, and also supports manual
   dispatch. Obtain and assess candidate artifacts before publication, using manual dispatch
   against the fixed tag if CI artifacts are needed. Do not depend on a publication-time build
@@ -64,3 +67,7 @@ test-station orchestration, and publication enforcement are deferred. No PR gate
   and repeat affected assessment/review before promoting that artifact.
 - Publish only after review. Check public notes, asset names, versions metadata, and the
   published tag. Retain the full assessment bundle and any exceptions with the release.
+- **Update website**: submit and merge the prepared website/manual PR alongside the firmware
+  release, once the new firmware is available to users. Merging to `main` immediately triggers
+  website deployment, so do not publish instructions for unreleased features early. Verify the
+  deployment succeeds and the live manual, screenshots, and firmware links match the release.
