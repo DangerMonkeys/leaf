@@ -1,0 +1,67 @@
+{
+  "interpretation": "Descriptive only: workload, GPS phase, settings and duration differ. This does not isolate bitmap CPU savings.",
+  "previous_file": "../thermal-track-2026-10-22/runtime_6.json",
+  "current_file": "runtime_7.json",
+  "pages": [
+    {
+      "page": "Basic",
+      "previous_count": 8,
+      "current_count": 24,
+      "previous_mean_ms": 4.84525,
+      "current_mean_ms": 5.806666666666667,
+      "mean_change_percent": 19.842457389539582,
+      "previous_max_ms": 4.886,
+      "current_max_ms": 6.183,
+      "previous_deadline_crossings": 0,
+      "current_deadline_crossings": 0
+    },
+    {
+      "page": "User",
+      "previous_count": 10,
+      "current_count": 23,
+      "previous_mean_ms": 5.4296999999999995,
+      "current_mean_ms": 6.345826086956522,
+      "mean_change_percent": 16.872499161215583,
+      "previous_max_ms": 5.759,
+      "current_max_ms": 8.727,
+      "previous_deadline_crossings": 0,
+      "current_deadline_crossings": 0
+    },
+    {
+      "page": "Thermal Core",
+      "previous_count": 8,
+      "current_count": 25,
+      "previous_mean_ms": 4.444,
+      "current_mean_ms": 5.331840000000001,
+      "mean_change_percent": 19.97839783978399,
+      "previous_max_ms": 4.48,
+      "current_max_ms": 5.706,
+      "previous_deadline_crossings": 0,
+      "current_deadline_crossings": 0
+    },
+    {
+      "page": "Navigate",
+      "previous_count": 9,
+      "current_count": 31,
+      "previous_mean_ms": 6.4415555555555555,
+      "current_mean_ms": 7.120516129032259,
+      "mean_change_percent": 10.54032007674186,
+      "previous_max_ms": 6.507,
+      "current_max_ms": 7.354,
+      "previous_deadline_crossings": 0,
+      "current_deadline_crossings": 0
+    },
+    {
+      "page": "Thermal Track",
+      "previous_count": 25,
+      "current_count": 32,
+      "previous_mean_ms": 7.3772,
+      "current_mean_ms": 6.68353125,
+      "mean_change_percent": -9.40287304126226,
+      "previous_max_ms": 7.475,
+      "current_max_ms": 7.379,
+      "previous_deadline_crossings": 13,
+      "current_deadline_crossings": 0
+    }
+  ]
+}

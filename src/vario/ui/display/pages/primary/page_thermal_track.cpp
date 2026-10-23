@@ -15,16 +15,28 @@
 #include "ui/display/display_fields.h"
 #include "ui/display/fonts.h"
 #include "ui/display/thermal_page_fields.h"
-#include "ui/display/utils.h"
+#include "ui/display/thermal_track_bitmaps.h"
 #include "ui/settings/settings.h"
 
 namespace {
   constexpr int16_t MAP_CX = 48;
   constexpr int16_t MAP_CY = 124;
-  constexpr uint8_t MAP_D_500M = 50;
-  constexpr uint8_t MAP_D_1500M = 74;
-  constexpr uint8_t MAP_D_5000M = 96;
-  constexpr uint8_t MAP_R_5000M = MAP_D_5000M / 2;
+  namespace bitmap = thermal_track_bitmaps;
+#ifdef WO256X128
+  constexpr bool BITMAP_REVERSE = true;
+#else
+  constexpr bool BITMAP_REVERSE = false;
+#endif
+  constexpr auto mapOverlay = bitmap::makeOverlay<BITMAP_REVERSE>();
+  static_assert(thermal_page::VARIO_BAR_TOP + 2 + 2 * thermal_page::VARIO_BAR_HALF_HEIGHT <
+                    MAP_CY - bitmap::MAP_DIAMETER / 2,
+                "Draw the vario after the map only while it stays above the map");
+
+  bitmap::Canvas mapCanvas() {
+    return {u8g2.getBufferPtr(), int(u8g2.getBufferTileWidth()) * 8, u8g2.getDisplayWidth(),
+            u8g2.getDisplayHeight(), BITMAP_REVERSE};
+  }
+
   constexpr uint8_t ALT_X = 15;
   constexpr uint8_t ALT_VALUE_BASELINE_Y = 30;
   constexpr uint8_t ALT_TYPE_BASELINE_Y = 33;
@@ -127,58 +139,7 @@ namespace {
     }
   }
 
-  bool mapContainsPixel(int16_t x, int16_t y) {
-    const int32_t dx2 = int32_t(x) * 2 + 1 - 2 * MAP_CX;
-    const int32_t dy2 = int32_t(y) * 2 + 1 - 2 * MAP_CY;
-    return dx2 * dx2 + dy2 * dy2 <= int32_t(MAP_D_5000M) * MAP_D_5000M;
-  }
-
-  bool softDiscContainsPixel(int16_t px, int16_t py, int16_t cx, int16_t cy, uint8_t radius) {
-    const int16_t dx = px - cx;
-    const int16_t dy = py - cy;
-    const int32_t diameterPlusOne = 2 * radius + 1;
-    return 4 * (int32_t(dx) * dx + int32_t(dy) * dy) <= diameterPlusOne * diameterPlusOne;
-  }
-
-  bool softCircleContainsPixel(int16_t px, int16_t py, int16_t cx, int16_t cy, uint8_t radius) {
-    const int16_t dx = px - cx;
-    const int16_t dy = py - cy;
-    const int32_t distance4 = 4 * (int32_t(dx) * dx + int32_t(dy) * dy);
-    const int32_t outer = int32_t(2 * radius + 1) * (2 * radius + 1);
-    const int32_t inner = radius > 0 ? int32_t(2 * radius - 1) * (2 * radius - 1) : 0;
-    return distance4 <= outer && distance4 >= inner;
-  }
-
-  void drawClippedPixel(int16_t x, int16_t y) {
-    if (mapContainsPixel(x, y)) u8g2.drawPixel(x, y);
-  }
-
-  void drawClippedDisc(int16_t cx, int16_t cy, uint8_t radius) {
-    for (int16_t y = cy - radius; y <= cy + radius; y++) {
-      int16_t segmentStart = INT16_MIN;
-      for (int16_t x = cx - radius; x <= cx + radius; x++) {
-        const bool draw = softDiscContainsPixel(x, y, cx, cy, radius) && mapContainsPixel(x, y);
-        if (draw && segmentStart == INT16_MIN) {
-          segmentStart = x;
-        } else if (!draw && segmentStart != INT16_MIN) {
-          u8g2.drawHLine(segmentStart, y, x - segmentStart);
-          segmentStart = INT16_MIN;
-        }
-      }
-      if (segmentStart != INT16_MIN)
-        u8g2.drawHLine(segmentStart, y, cx + radius - segmentStart + 1);
-    }
-  }
-
-  void drawClippedCircle(int16_t cx, int16_t cy, uint8_t radius) {
-    for (int16_t y = cy - radius; y <= cy + radius; y++) {
-      for (int16_t x = cx - radius; x <= cx + radius; x++) {
-        if (softCircleContainsPixel(x, y, cx, cy, radius)) drawClippedPixel(x, y);
-      }
-    }
-  }
-
-  void drawSelectedThermalLine(const ThermalDisplayItem* selected) {
+  void drawSelectedThermalLine(const bitmap::Canvas& canvas, const ThermalDisplayItem* selected) {
     if (selected == nullptr || !selected->valid) return;
     const int16_t targetX = MAP_CX + selected->xOffset;
     const int16_t targetY = MAP_CY + selected->yOffset;
@@ -191,13 +152,15 @@ namespace {
     int16_t error = dx + dy;
     while (true) {
       // Stop at the selection ring's first edge; never draw into the hollow marker.
-      if (softDiscContainsPixel(x, y, targetX, targetY, SELECTED_THERMAL_RADIUS)) {
-        if (softCircleContainsPixel(x, y, targetX, targetY, SELECTED_THERMAL_RADIUS)) {
-          drawClippedPixel(x, y);
+      if (bitmap::selectionDisc.contains(x - targetX + SELECTED_THERMAL_RADIUS,
+                                         y - targetY + SELECTED_THERMAL_RADIUS)) {
+        if (bitmap::selection.contains(x - targetX + SELECTED_THERMAL_RADIUS,
+                                       y - targetY + SELECTED_THERMAL_RADIUS)) {
+          canvas.pixel(x, y);
         }
         break;
       }
-      drawClippedPixel(x, y);
+      canvas.pixel(x, y);
       const int16_t twiceError = 2 * error;
       if (twiceError >= dy) {
         error += dy;
@@ -210,87 +173,49 @@ namespace {
     }
   }
 
-  void drawQualityMarker(int16_t x, int16_t y, uint8_t quality) {
-    quality = constrain(quality, 1, 5);
-    if (quality >= 4) {
-      drawClippedDisc(x, y, 4);
-      if (quality == 4 && mapContainsPixel(x, y)) {
-        u8g2.setDrawColor(0);
-        u8g2.drawPixel(x, y);
-        u8g2.setDrawColor(1);
-      }
-      return;
-    }
-
-    drawClippedCircle(x, y, 4);
-    if (quality >= 2) drawClippedCircle(x, y, 3);
-    if (quality >= 3) drawClippedCircle(x, y, 2);
-  }
-
-  void drawMapRingsAndLabels() {
-    drawCircleD(MAP_CX, MAP_CY, MAP_D_500M);
-    drawCircleD(MAP_CX, MAP_CY, MAP_D_1500M);
-    drawCircleD(MAP_CX, MAP_CY, MAP_D_5000M);
-  }
-
-  void maskMapCircle() {
-    u8g2.setDrawColor(0);
-    u8g2.drawDisc(MAP_CX, MAP_CY, MAP_R_5000M);
-    u8g2.setDrawColor(1);
-  }
-
   void drawDistanceScaleLabels() {
     u8g2.setFont(leaf_5x8);
-    constexpr uint8_t labelHeight = 8;
-    constexpr uint8_t padding = 1;
+    // Transparent glyphs keep the map visible through counters and between strokes.
+    u8g2.setFontMode(1);
 
-    const auto drawLabel = [&](int16_t x, int16_t baselineY, const char* text,
-                               uint8_t horizontalPadding) {
-      const uint8_t labelWidth = u8g2.getStrWidth(text);
+    const auto drawLabel = [&](int16_t x, int16_t baselineY, const char* text) {
       u8g2.setDrawColor(0);
-      u8g2.drawRBox(x - horizontalPadding, baselineY - labelHeight - 1,
-                    labelWidth + 2 * horizontalPadding, labelHeight + 2 * padding, 1);
+      u8g2.drawStr(x, baselineY - 1, text);
+      u8g2.drawStr(x, baselineY + 1, text);
+      u8g2.drawStr(x - 1, baselineY, text);
+      u8g2.drawStr(x + 1, baselineY, text);
       u8g2.setDrawColor(1);
-      u8g2.setCursor(x, baselineY);
-      u8g2.print(text);
+      u8g2.drawStr(x, baselineY, text);
     };
 
-    drawLabel(41, 151, settings.units_distance ? "0.3" : "0.5", padding);
-    drawLabel(41, 163, settings.units_distance ? "1.0" : "1.5", 0);
-    drawLabel(settings.units_distance ? 41 : 40, 175, settings.units_distance ? "3mi" : "5km",
-              padding);
+    drawLabel(41, 151, settings.units_distance ? "0.3" : "0.5");
+    drawLabel(41, 163, settings.units_distance ? "1.0" : "1.5");
+    drawLabel(settings.units_distance ? 41 : 40, 175, settings.units_distance ? "3mi" : "5km");
+    u8g2.setFontMode(0);
     u8g2.setDrawColor(1);
   }
 
-  void drawUserTriangle() {
-    const int16_t x0 = MAP_CX - POINTER_W / 2;
-    const int16_t y0 = POINTER_TOP;
+  constexpr auto userTriangle = [] {
+    bitmap::Sprite<POINTER_W, POINTER_H> result{};
+    for (int y = 0; y < POINTER_H; ++y)
+      for (int x = 0; x < POINTER_W; ++x)
+        if (POINTER_GLYPH[y][x] != POINTER_TRANSPARENT)
+          result.set(x, y, POINTER_GLYPH[y][x] == POINTER_BLACK);
+    return result;
+  }();
 
-    for (uint8_t y = 0; y < POINTER_H; ++y) {
-      for (uint8_t x = 0; x < POINTER_W; ++x) {
-        const uint8_t pixel = POINTER_GLYPH[y][x];
-        if (pixel == POINTER_TRANSPARENT) continue;
-        u8g2.setDrawColor(pixel == POINTER_BLACK ? 1 : 0);
-        u8g2.drawPixel(x0 + x, y0 + y);
-      }
-    }
-    u8g2.setDrawColor(1);
-  }
-
-  void drawThermals() {
-    const ThermalDisplayItem* items = thermalTracker.displayItems();
-    const uint8_t count = thermalTracker.displayItemCount();
+  void drawThermals(const bitmap::Canvas& canvas, const ThermalDisplayItem* items, uint8_t count) {
     for (uint8_t i = 0; i < count; ++i) {
       if (!items[i].valid) continue;
       const int16_t x = MAP_CX + items[i].xOffset;
       const int16_t y = MAP_CY + items[i].yOffset;
-      drawQualityMarker(x, y, items[i].quality);
+      const uint8_t quality = constrain(items[i].quality, 1, 5);
+      canvas.draw(x - 4, y - 4, bitmap::markers[quality - 1]);
     }
     for (uint8_t i = 0; i < count; ++i) {
       if (items[i].valid && items[i].selected) {
-        const int16_t x = MAP_CX + items[i].xOffset;
-        const int16_t y = MAP_CY + items[i].yOffset;
-        drawClippedCircle(x, y, SELECTED_THERMAL_RADIUS);
+        canvas.draw(MAP_CX + items[i].xOffset - SELECTED_THERMAL_RADIUS,
+                    MAP_CY + items[i].yOffset - SELECTED_THERMAL_RADIUS, bitmap::selection);
         break;
       }
     }
@@ -375,18 +300,22 @@ void thermalTrackPage_draw() {
 
   u8g2.firstPage();
   do {
-    display_headerAndFooter(thermalTrackPageCursor == cursor_thermalTrackPage_timer, false);
-
+    const ThermalDisplayItem* items = thermalTracker.displayItems();
+    const uint8_t count = thermalTracker.displayItemCount();
     const ThermalDisplayItem* selected = thermalTracker.selectedDisplayItem();
     const int32_t climbRate = baro.climbRateFilteredValid() ? baro.climbRateFiltered() : 0;
     const int32_t displayClimbRate = baro.climbRateFilteredValid() ? baro.climbRateForDisplay() : 0;
 
+    const auto canvas = mapCanvas();
+    drawThermals(canvas, items, count);
+    canvas.draw(MAP_CX - POINTER_W / 2, POINTER_TOP, userTriangle);
+    drawSelectedThermalLine(canvas, selected);
+    // White erases marker/line overhang, black stamps the range rings, and all
+    // other map pixels remain transparent. Draw neighboring UI only afterward.
+    canvas.overlay(mapOverlay);
+
+    display_headerAndFooter(thermalTrackPageCursor == cursor_thermalTrackPage_timer, false);
     thermal_page::drawVario(climbRate, 2, thermal_page::CORE_VARIO_BAR_WIDTH);
-    maskMapCircle();
-    drawThermals();
-    drawMapRingsAndLabels();
-    drawUserTriangle();
-    drawSelectedThermalLine(selected);
     display_windSockRing(WIND_X, WIND_Y, 12, 7, true);
     drawAltitudeField();
     thermal_page::drawCoreClimbRate(displayClimbRate);

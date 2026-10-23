@@ -1,0 +1,3 @@
+# Keep compiled images and position-bearing flight logs local.
+firmware.bin
+*.igc

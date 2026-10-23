@@ -1,0 +1,66 @@
+{
+  "comparison_type": "descriptive-unmatched",
+  "limitations": "Short exploratory bench capture, 8-25 normal renders per page. Not a release assessment. Prior screenshot is runtime_2.json (schema 2), while this capture is schema 3; firmware, workload, duration, sensor/GPS conditions and GPS arrival phase are not controlled between the runs. Reported earlier/newer page values are descriptive, not a formal matched-baseline comparison.",
+  "pages": [
+    {
+      "page": "Basic",
+      "renders": 8,
+      "old_mean_ms": 5.730846153846154,
+      "new_mean_ms": 4.84525,
+      "mean_reduction_percent": 15.453148279888861,
+      "old_max_ms": 6.201,
+      "new_max_ms": 4.886,
+      "deadline_crossings": 0,
+      "render_slots": 8,
+      "max_occupied_slot_ms": 8.189
+    },
+    {
+      "page": "User",
+      "renders": 10,
+      "old_mean_ms": 6.037326923076923,
+      "new_mean_ms": 5.4296999999999995,
+      "mean_reduction_percent": 10.064502565768729,
+      "old_max_ms": 6.664,
+      "new_max_ms": 5.759,
+      "deadline_crossings": 0,
+      "render_slots": 10,
+      "max_occupied_slot_ms": 9.149
+    },
+    {
+      "page": "Thermal Core",
+      "renders": 8,
+      "old_mean_ms": 5.11435,
+      "new_mean_ms": 4.444,
+      "mean_reduction_percent": 13.107237478858513,
+      "old_max_ms": 5.271,
+      "new_max_ms": 4.48,
+      "deadline_crossings": 0,
+      "render_slots": 8,
+      "max_occupied_slot_ms": 8.116
+    },
+    {
+      "page": "Navigate",
+      "renders": 9,
+      "old_mean_ms": 6.922875,
+      "new_mean_ms": 6.4415555555555555,
+      "mean_reduction_percent": 6.95259475932245,
+      "old_max_ms": 7.203,
+      "new_max_ms": 6.507,
+      "deadline_crossings": 0,
+      "render_slots": 9,
+      "max_occupied_slot_ms": 9.551
+    },
+    {
+      "page": "Thermal Track",
+      "renders": 25,
+      "old_mean_ms": 8.0033125,
+      "new_mean_ms": 7.3772,
+      "mean_reduction_percent": 7.82316696992652,
+      "old_max_ms": 8.788,
+      "new_max_ms": 7.475,
+      "deadline_crossings": 13,
+      "render_slots": 25,
+      "max_occupied_slot_ms": 9.922
+    }
+  ]
+}

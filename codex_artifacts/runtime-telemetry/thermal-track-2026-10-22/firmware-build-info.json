@@ -1,0 +1,76 @@
+{
+  "board": "esp32-s3-devkitc-1",
+  "build_flags_raw": [
+    "-D PIO_BUILD_SYSTEM",
+    "-D ETL_TARGET_OS_FREERTOS",
+    "-D ARDUINO_USB_MODE=0",
+    "-D ARDUINO_USB_CDC_ON_BOOT=0",
+    "-D ARDUINO_USB_MSC_ON_BOOT=0",
+    "-D ARDUINO_USB_DFU_ON_BOOT=0",
+    "-Isrc/vario",
+    "-Isrc/vario/compat",
+    "-Isrc/variants/leaf_3_2_8",
+    "-DLEAF_THERMAL_DISPLAY_TEST"
+  ],
+  "ccflags": "-ffile-prefix-map=C:/Users/oxoth/projects/leaf=/leaf -fmacro-prefix-map=C:/Users/oxoth/projects/leaf=/leaf -ffile-prefix-map=C:\\Users\\oxoth\\projects\\leaf=/leaf -fmacro-prefix-map=C:\\Users\\oxoth\\projects\\leaf=/leaf -ffile-prefix-map=C:/Users/oxoth/.platformio=/platformio -fmacro-prefix-map=C:/Users/oxoth/.platformio=/platformio -ffile-prefix-map=C:\\Users\\oxoth\\.platformio=/platformio -fmacro-prefix-map=C:\\Users\\oxoth\\.platformio=/platformio",
+  "cflags": "",
+  "cppdefines": null,
+  "cpppath_norm": [],
+  "cpppath_raw": [],
+  "cxxflags": "-ffile-prefix-map=C:/Users/oxoth/projects/leaf=/leaf -fmacro-prefix-map=C:/Users/oxoth/projects/leaf=/leaf -ffile-prefix-map=C:\\Users\\oxoth\\projects\\leaf=/leaf -fmacro-prefix-map=C:\\Users\\oxoth\\projects\\leaf=/leaf -ffile-prefix-map=C:/Users/oxoth/.platformio=/platformio -fmacro-prefix-map=C:/Users/oxoth/.platformio=/platformio -ffile-prefix-map=C:\\Users\\oxoth\\.platformio=/platformio -fmacro-prefix-map=C:\\Users\\oxoth\\.platformio=/platformio",
+  "env_name": "leaf_3_2_8_thermaltest",
+  "git": {
+    "describe": "v0.2.4-17-g8427b318-dirty",
+    "dirty": true,
+    "head": "8427b318ffb68ce1360d7c247d6eaacf4d6997ad",
+    "root": "C:/Users/oxoth/projects/leaf",
+    "status": "M sim/Makefile\n M src/variants/leaf_3_2_8/platformio.ini\n M src/vario/ui/display/pages/primary/page_thermal_track.cpp\n M src/vario/ui/display/utils.cpp\n?? sim/tests/display_circles.cpp\n?? src/vario/ui/display/circle_geometry.h",
+    "status_sha256": "9b90da8fe1df049acd24b5ceab34ba6789927c37774904d35c1aba588e4dc633"
+  },
+  "libpath_norm": [
+    "$build_dir"
+  ],
+  "libpath_raw": [
+    "$BUILD_DIR"
+  ],
+  "libs": null,
+  "linkflags": "",
+  "paths": {
+    "build_dir_norm": "C:\\Users\\oxoth\\projects\\leaf\\.pio\\build\\leaf_3_2_8_thermaltest",
+    "build_dir_raw": "C:\\Users\\oxoth\\projects\\leaf\\.pio\\build\\leaf_3_2_8_thermaltest",
+    "build_dir_real": "C:\\Users\\oxoth\\projects\\leaf\\.pio\\build\\leaf_3_2_8_thermaltest",
+    "cwd_norm": "C:\\Users\\oxoth\\projects\\leaf",
+    "cwd_raw": "C:\\Users\\oxoth\\projects\\leaf",
+    "cwd_real": "C:\\Users\\oxoth\\projects\\leaf",
+    "project_dir_norm": "C:\\Users\\oxoth\\projects\\leaf",
+    "project_dir_raw": "C:\\Users\\oxoth\\projects\\leaf",
+    "project_dir_real": "C:\\Users\\oxoth\\projects\\leaf"
+  },
+  "pio_framework": [
+    "arduino"
+  ],
+  "pio_platform": "espressif32",
+  "platform": {
+    "name": "<platformio.platform.espressif32.Espressif32Platform object at 0x0000011AB5D0A310>",
+    "packages": {
+      "framework-arduinoespressif32": "3.1.0"
+    },
+    "version": "53.03.10"
+  },
+  "preexisting_objects": {
+    "framework_count": 0,
+    "lib_counts": {}
+  },
+  "sconsflags": "",
+  "signature_raw_sha1": "a643701c5d84ea4f7e2099fefd88223d7ff01ac4",
+  "signature_stable_sha1": "308e215adb6c4332d4338bfadee3642d836c2baf",
+  "timestamp_utc": "2026-10-22T18:26:59Z",
+  "tools": {
+    "ar_version": null,
+    "gcc_version": null,
+    "gpp_version": null,
+    "platform": "Windows-10-10.0.26200-SP0",
+    "platformio_core": null,
+    "python": "3.11.7"
+  }
+}

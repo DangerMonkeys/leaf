@@ -1,0 +1,14 @@
+{
+  "label": "Leaf 3.2.8 Thermal Track optimizations - ten-thermal bench sweep",
+  "commit": "8427b318ffb68ce1360d7c247d6eaacf4d6997ad",
+  "dirty": true,
+  "profile": "manual-page-sweep-v1",
+  "scenario": "static-bench-ten-fixed-thermal-markers-v1",
+  "toolchain": "leaf_3_2_8_thermaltest; pinned PlatformIO configuration (see firmware-build-info.json)",
+  "coverage_notes": "User reports about ten seconds on Thermal Track and at least a few seconds on each other primary page; 37.361 s exported duration. Ten fixed synthetic markers in Thermal Track, including markers under distance labels; outlined text labels. Developer capture stopped and exported before SD retrieval. BLE setting enabled; actual client activity not established.",
+  "device_id": "7C4FAD3BACB0",
+  "sd_card": "Connected Leaf SD card; model/capacity not recorded",
+  "limitations": "Short exploratory bench capture, 8-25 normal renders per page. Not a release assessment. Prior screenshot is runtime_2.json (schema 2), while this capture is schema 3; firmware, workload, duration, sensor/GPS conditions and GPS arrival phase are not controlled between the runs. Reported earlier/newer page values are descriptive, not a formal matched-baseline comparison.",
+  "flashed_firmware_verified": "USB I:/FIRMWARE.BIN SHA256 matches the test-build firmware exactly",
+  "firmware_sha256": "b7bdf5a79ecba91d905f8f4cb9f17941a0db64b05c3a0d5d0385344b71303b0f"
+}
