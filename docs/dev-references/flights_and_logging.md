@@ -164,46 +164,79 @@ Erase Flight    ➡
 
 # G-load diagnostic IGC records
 
-The g-load experiment writes three Leaf manufacturer comment (`LXLF`) records per logging
-update (approximately once per second), immediately after the PR's airborne detector updates.
-These records use device milliseconds so detector checks can be replayed without GPS timestamp
-rounding. They continue during GPS outages once an IGC file is open, including ground and takeoff
-exclusion periods. GPS B records and the existing flight detection / filtering are unchanged.
+The g-load experiment writes ten Leaf manufacturer comment (`LXLV`) records per logging
+update, approximately once per second. State and interval ranges are bounded in memory; no
+per-sample SD writes are added. Diagnostics continue through GPS outages after an IGC file opens.
+The tracker also runs while waiting for the first GPS fix, or with track saving disabled.
+Raw acceleration used by auto-stop and self-test is unchanged. The User page shows the fresh
+filtered value, or `--.- g` during startup, missing input, and filter recovery.
 
-The file header includes `LXLFGLCFG V=1 SLEW=3.0 AVG=10 IGNORE=15000 BUCKET=30000 LAND=5`.
-The settings describe slew in g/s, averaging samples, launch exclusion and pending bucket duration
-in milliseconds, and consecutive ground checks to declare landing.
-
-Example diagnostic group:
+V2 headers describe the actual parameters:
 
 ```text
-LXLFGL T=123450 S=3.580 C=-32 SV=1 CV=1 FS=1 VC=0 L=1
-LXLFGA T=123450 RT=123400 FT=123400 R=1.020 F=1.080 RV=1 FV=1
-LXLFGS T=123450 ON=1 A=1 G=0 I=0 P=1 B=120000 E=1
+LXLVGLCFG V=2 SLEW=3.0 AVG=10 IGNORE=15000 BUCKET=30000 LAND=20 AIR=3
+LXLVGLDET SPEED=3.57632 CLIMB=50 FRESH=250 GAP=500
 ```
 
-- Common `T`: detector-check time in milliseconds since boot (wraps with the device clock).
-- `GL`: detector inputs. `S` is ground speed in m/s, rounded to three decimals; `C` is the exact
-  filtered climb in cm/s. `SV` / `CV` indicate usable speed / climb inputs. `FS` is the actual
-  speed-above-8-mph result; `VC` is the actual absolute-climb-above-50-cm/s result. `L` is their
-  OR result, before landing debounce. Replay using these flags, not rounded `S`.
-- `GA`: `R` is the current `imu.getAccel()` magnitude in g; `F` is `gLoad().filtered()` in g.
-  `RT` / `FT` are their respective latest sample timestamps, allowing stale values to be identified.
-  `RV` is IMU acceleration validity; `FV` means the filter window has produced a value. `FV` does
-  not guarantee freshness: compare `T` and `FT` on hardware. Unavailable values are `NA`;
-  an acceleration too large for the fixed-width diagnostic field is `OVF`.
-- `GS`: state after the detector check. `ON` is tracker activity; `A` is debounced airborne state;
-  `G` is the consecutive ground-check count; `I` is remaining launch exclusion in milliseconds
-  on the IMU sample clock. `P` indicates a pending bucket; `B` is its start timestamp (0 without
-  a bucket); `E` indicates that committed extrema exist. `P` remains 0 until an eligible IMU
-  sample starts a bucket. Older committed extrema survive landing and relaunch within one log.
+The settings describe slew in g/s, averaging samples, launch exclusion and pending bucket length
+in milliseconds, and consecutive detector checks. Airborne entry requires three qualifying
+checks; landing requires twenty nonqualifying checks. A check qualifies with valid speed over
+8 mph OR valid absolute climb over 50 cm/s. Ground confirmation requires both measurements to
+be valid and below their thresholds. Otherwise confirmation counters clear and airborne state
+is retained. This is a g-load eligibility detector, separate
+from the flight timer's existing auto-start/stop logic. These thresholds remain experimental.
 
-These are once-per-second snapshots, so raw acceleration spikes between checks can still be
-missed. The records are diagnostic comments and require a reader that understands this format.
+Each group starts with `GL`; all ten records have a common `T` in device milliseconds, wrapping
+at 32 bits. Preserve file order rather than sorting by timestamps. The first group may follow
+earlier detector activity while waiting for GPS. One final, potentially partial interval is
+written on timer stop before the IGC G checksum. It has `Z=1` and can share a `T` with the last
+periodic group. Periodic groups have `Z=0`.
 
-The host regression test is `sim/tests/g_load_diagnostics.cpp` (compile with `-Isrc/vario`).
-For an end-to-end check, run the simulator with `sim/recordings/g-load-diagnostics.json`,
+| Record | Fields |
+| --- | --- |
+| `GL` | Inputs: `S` speed (m/s), `C` climb (cm/s), `SV`/`CV` input validity, `FS` actual speed threshold result, `VC` actual climb threshold result, `L=FS OR VC`, `Z` final group. Replay flags rather than rounded `S`. |
+| `GA` | Snapshots: raw `R` and filtered `F` (g), raw sample time `RT`, filter sample time `FT`, and validity `RV`/`FV`. In V2 `FV` includes window readiness AND age <=250 ms. |
+| `GS` | State after the check: active `ON`, airborne `A`, ground-check count `G`, airborne-check count `H`, launch guard remaining `I` (ms on the sample clock), pending flag `P`, current bucket start `B`, committed-extrema flag `E`, transition `D`. |
+| `GQ` | Interval counts: accepted raw samples `N`, filtered outputs `F`, rejected samples `RJ`, gaps over 500 ms `GP`, clipping notifications `CL`, instrument/filter resets `RS`. Counts saturate at 65535. |
+| `GR` / `GF` | Raw / filtered extrema over samples delivered since the preceding diagnostic group. |
+| `GC` / `GP` | Current / previous pending bucket extrema, respectively. |
+| `GE` | Committed flight extrema; preserved through landing/relaunch within one timer session. |
+| `GD` | Pending extrema discarded since the preceding group, including at landing and timer stop. |
+
+`D` values are 0=no transition, 1=confirmed airborne, 2=confirmed landing, 3=insufficient detector
+input, 4=tracker started, 5=tracker stopped. Counts are checks, not exact elapsed seconds.
+`I` is armed only on confirmed airborne entry and starts from the next eligible filtered sample.
+
+Every range record has `LO`/`HI` in g and the respective sample timestamps `LT`/`HT`.
+Empty ranges use `LO=NA HI=NA LT=0 HT=0`. Interval ranges cover delivered motion samples
+through handling and exclusion periods, not just flight-eligible samples. They preserve peaks
+between the old 1 Hz snapshots, but cannot recover samples dropped by the hardware FIFO/host
+polling path. `CL` counts published notifications that one or more slots clipped, not the number
+of lost slots; only LSM6DSV currently supplies that notification. Zero does not prove no clipping.
+
+For example, a knock can be visible in the interval even when the snapshot has returned to rest:
+
+```text
+LXLVGR T=123450 LO=0.800 HI=4.111 LT=122800 HT=123150
+LXLVGF T=123450 LO=0.950 HI=1.120 LT=122950 HT=123300
+```
+
+Unavailable snapshots are `NA`; out-of-field snapshot numbers use `OVF`. All diagnostic lines
+fit within 76 bytes, including the manufacturer prefix and excluding CRLF. V1 logs from the
+earlier experiment used `LXLF`, three snapshots per update, five ground checks, and `FV` did not
+guarantee freshness. Readers must use `GLCFG V` and the recorded settings to distinguish them.
+
+The ten-sample average is approximately 0.5 seconds at the nominal 20 Hz delivered sample rate;
+it is not a fixed-duration resampler. ICM-20948 uses +/-4 g per axis and LSM6DSV +/-8 g per axis;
+the accepted magnitude bound accounts for all three axes. Flight extrema remain unavailable
+until history is committed (roughly 15+60 seconds after confirmed entry). Unavailable values
+are persisted as JSON null and displayed as dashes, rather than defaulting to 1 g.
+
+Run `make -C sim test-g-load` inside the normal simulator container for tracker, serialization,
+both real IMU instrument paths, and saved logbook/IGC checks. The standalone tracker and record
+tests also run in `.github/workflows/g-load.yaml`.
+For end-to-end replay, use `sim/recordings/g-load-diagnostics.json`,
 `sim/scripts/g-load-diagnostics.txt`, `--accept-warning --setting AUTO_STOP=0 --setting TRACK_SAVE=1`,
-and fresh SD/state directories. Run `python sim/tests/check_g_load_igc.py <generated.igc>` afterward.
-It verifies complete 1 Hz groups, detector-state replay, landing/relaunch, and continued records
-through the script's GPS outage.
+and fresh SD/state directories, then run `python sim/tests/check_g_load_igc.py <generated.igc>`.
+Populate the selected PlatformIO environment's dependencies at their current pinned versions;
+an old cached IgcLogger can omit checksums and does not verify the current firmware behavior.

@@ -2,170 +2,202 @@
 
 #include <stdint.h>
 
-// Tracks the peak sustained g-load of a flight for the logbook (min/max accel).
-//
-// Every IMU sample (~20Hz) passes through:
-//   1. a slew limiter, so one- or two-sample knocks barely move the value while the gradual onset
-//      of a spiral, wingover or surge passes through almost untouched;
-//   2. a 0.5s moving average, so the value reflects sustained load rather than vibration.
-//
-// Only samples taken while airborne count, and not during the first seconds after becoming
-// airborne (launch run and first surge).  Extremes are held back for a while before being
-// committed, and the held-back part is discarded on landing or when the flight stops, so the
-// touchdown and packing up never reach the logbook.
-//
-// The raw accelerometer value (IMU::getAccel) is unaffected by this filtering.
+// Sustained load, independent of the raw IMU value used by auto-stop and self-test.
+// All storage is bounded; diagnostics summarize samples rather than writing at IMU rate.
 class GLoadTracker {
  public:
   static constexpr float MAX_SLEW_G_PER_S = 3.0f;
-  static constexpr float MAX_PLAUSIBLE_G = 8.0f;
-  static constexpr uint8_t AVERAGE_SAMPLES = 10;  // 0.5s at 20Hz
+  static constexpr float MAX_PLAUSIBLE_G = 14.0f;  // Resultant of three +/-8g axes.
+  static constexpr uint8_t AVERAGE_SAMPLES = 10;   // Approximately 0.5s at 20Hz.
   static constexpr uint32_t MAX_SAMPLE_GAP_MS = 500;
+  static constexpr uint32_t FRESH_MS = 250;
   static constexpr uint32_t TAKEOFF_IGNORE_MS = 15000;
-  static constexpr uint32_t PENDING_BUCKET_MS = 30000;  // Two buckets held back: 30-60s
-  // Long enough that hovering in a steady ridge breeze is not mistaken for a landing.
+  static constexpr uint32_t PENDING_BUCKET_MS = 30000;  // Hold back 30-60s.
   static constexpr uint8_t GROUND_SECONDS_TO_LAND = 20;
-  // The touchdown must still be held back (not yet committed) when the landing is confirmed.
+  static constexpr uint8_t AIR_SECONDS_TO_FLY = 3;
   static_assert(GROUND_SECONDS_TO_LAND * 1000 < PENDING_BUCKET_MS,
                 "landing must be confirmed before the touchdown can be committed");
 
+  struct Range {
+    bool valid = false;
+    float min = 1.0f, max = 1.0f;
+    uint32_t minMs = 0, maxMs = 0;
+    void add(float v, uint32_t t) {
+      if (!valid) {
+        valid = true;
+        min = max = v;
+        minMs = maxMs = t;
+      } else {
+        if (v < min) {
+          min = v;
+          minMs = t;
+        }
+        if (v > max) {
+          max = v;
+          maxMs = t;
+        }
+      }
+    }
+    void add(const Range& other) {
+      if (!other.valid) return;
+      add(other.min, other.minMs);
+      add(other.max, other.maxMs);
+    }
+  };
+  struct Interval {
+    Range raw, filtered, discarded;
+    uint16_t samples = 0, filteredSamples = 0, rejected = 0;
+    uint16_t gaps = 0, clippingReports = 0, resets = 0;
+  };
+  enum class Transition : uint8_t { None, Airborne, Landed, Unknown, Started, Stopped };
   struct DiagnosticState {
-    bool active;
-    bool airborne;
-    uint8_t groundSeconds;
+    bool active, airborne;
+    uint8_t groundSeconds, airSeconds;
     uint32_t ignoreRemainingMs;
     bool pending;
     uint32_t bucketStartMs;
-    bool committed;
-    bool filteredReady;
+    bool committed, filteredReady;
     uint32_t sampleMs;
     float filteredG;
+    Transition transition;
+    Range current, previous, extrema;
   };
-
-  // A read-only snapshot; exclusion timing uses the IMU sample clock, like addSample().
   DiagnosticState diagnosticState() const {
     uint32_t remaining = 0;
     if (active_ && airborne_) {
-      if (takeoffGuardArmed_) {
+      if (takeoffGuardArmed_)
         remaining = TAKEOFF_IGNORE_MS;
-      } else {
-        int32_t delta = (int32_t)(countFromMs_ - lastSampleMs_);
-        if (delta > 0) remaining = (uint32_t)delta;
-      }
+      else if (int32_t(countFromMs_ - lastSampleMs_) > 0)
+        remaining = countFromMs_ - lastSampleMs_;
     }
-    return {active_,          airborne_,      groundSeconds_,
-            remaining,        bucketStarted_, bucketStarted_ ? bucketStartMs_ : 0,
-            committed_.valid, filteredReady_, lastSampleMs_,
-            filtered_};
+    return {active_,
+            airborne_,
+            groundSeconds_,
+            airSeconds_,
+            remaining,
+            bucketStarted_,
+            bucketStarted_ ? bucketStartMs_ : 0,
+            committed_.valid,
+            filteredReady_,
+            lastSampleMs_,
+            filtered_,
+            transition_,
+            current_,
+            previous_,
+            committed_};
   }
-
-  // Start a new flight: clears all extremes.  Nothing counts until airborne.
+  Interval takeInterval() {
+    const Interval result = interval_;
+    interval_ = Interval();
+    return result;
+  }
   void startFlight() {
     discardPending();
+    interval_ = Interval();
     committed_ = Range();
     active_ = true;
-    airborne_ = false;
-    takeoffGuardArmed_ = false;
-    groundSeconds_ = 0;
+    airborne_ = takeoffGuardArmed_ = false;
+    groundSeconds_ = airSeconds_ = 0;
+    transition_ = Transition::Started;
   }
-
-  // End the flight, discarding extremes that have not been committed yet.
   void stopFlight() {
     discardPending();
-    active_ = false;
-    airborne_ = false;
+    active_ = airborne_ = takeoffGuardArmed_ = false;
+    groundSeconds_ = airSeconds_ = 0;
+    transition_ = Transition::Stopped;
   }
-
-  // Called about once per second with whether the flight currently looks airborne.  Becoming
-  // airborne restarts the takeoff guard; landing (debounced) discards the held-back extremes.
-  void updateAirborne(bool airborneNow) {
+  // Check counts, approximately once per second. Unknown input must not invent a landing.
+  void updateAirborne(bool airborneNow, bool inputsValid = true) {
+    transition_ = Transition::None;
     if (!active_) return;
+    if (!inputsValid) {
+      groundSeconds_ = airSeconds_ = 0;
+      transition_ = Transition::Unknown;
+      return;
+    }
     if (airborneNow) {
       groundSeconds_ = 0;
-      if (!airborne_) {
+      if (airSeconds_ < AIR_SECONDS_TO_FLY) ++airSeconds_;
+      if (!airborne_ && airSeconds_ >= AIR_SECONDS_TO_FLY) {
         airborne_ = true;
         takeoffGuardArmed_ = true;
+        transition_ = Transition::Airborne;
       }
-    } else if (airborne_ && ++groundSeconds_ >= GROUND_SECONDS_TO_LAND) {
-      airborne_ = false;
-      discardPending();
+    } else {
+      airSeconds_ = 0;
+      if (airborne_ && ++groundSeconds_ >= GROUND_SECONDS_TO_LAND) {
+        airborne_ = takeoffGuardArmed_ = false;
+        discardPending();
+        transition_ = Transition::Landed;
+      }
     }
   }
-
-  // Feed one accelerometer magnitude sample, in g.
-  void addSample(float accelG, uint32_t tMs) {
-    if (!(accelG >= 0.0f && accelG <= MAX_PLAUSIBLE_G)) return;  // also rejects NaN
-
+  // Discontinuities invalidate live filtering without erasing committed flight history.
+  void resetFilter() {
+    increment(interval_.resets);
+    hasSample_ = filteredReady_ = false;
+    averageCount_ = averageIndex_ = 0;
+  }
+  void recordClipping() { increment(interval_.clippingReports); }
+  // maxMagnitudeG is derived from the active chip's per-axis range by IMU.
+  void addSample(float accelG, uint32_t tMs, float maxMagnitudeG = MAX_PLAUSIBLE_G) {
+    if (!(accelG >= 0.0f && accelG <= maxMagnitudeG && accelG <= MAX_PLAUSIBLE_G)) {
+      increment(interval_.rejected);
+      return;
+    }
     uint32_t dt = tMs - lastSampleMs_;
-    if (!hasSample_ || dt == 0 || dt > MAX_SAMPLE_GAP_MS) {
-      // (Re)start the filter at rest; a gap means the history no longer describes the present.
+    if (haveSampleTime_ && int32_t(dt) <= 0) {
+      increment(interval_.rejected);
+      return;
+    }
+    if (haveSampleTime_ && dt > MAX_SAMPLE_GAP_MS) increment(interval_.gaps);
+    interval_.raw.add(accelG, tMs);
+    increment(interval_.samples);
+    if (!hasSample_ || dt > MAX_SAMPLE_GAP_MS) {
       hasSample_ = true;
       slewed_ = 1.0f;
-      averageCount_ = 0;
-      averageIndex_ = 0;
+      averageCount_ = averageIndex_ = 0;
       filteredReady_ = false;
       dt = 0;
     }
+    haveSampleTime_ = true;
     lastSampleMs_ = tMs;
-
-    float maxStep = MAX_SLEW_G_PER_S * dt * 0.001f;
+    const float maxStep = MAX_SLEW_G_PER_S * dt * 0.001f;
     float step = accelG - slewed_;
     if (step > maxStep) step = maxStep;
     if (step < -maxStep) step = -maxStep;
     slewed_ += step;
-
     window_[averageIndex_] = slewed_;
     averageIndex_ = (averageIndex_ + 1) % AVERAGE_SAMPLES;
-    if (averageCount_ < AVERAGE_SAMPLES) {
-      averageCount_++;
-      return;
-    }
+    if (averageCount_ < AVERAGE_SAMPLES) ++averageCount_;
+    if (averageCount_ < AVERAGE_SAMPLES) return;
     float sum = 0;
     for (float v : window_) sum += v;
     filtered_ = sum / AVERAGE_SAMPLES;
     filteredReady_ = true;
-
+    interval_.filtered.add(filtered_, tMs);
+    increment(interval_.filteredSamples);
     if (!active_ || !airborne_) return;
     if (takeoffGuardArmed_) {
-      // Timed on the sample clock, which may differ from millis() when samples are injected.
       takeoffGuardArmed_ = false;
       countFromMs_ = tMs + TAKEOFF_IGNORE_MS;
     }
-    if ((int32_t)(tMs - countFromMs_) < 0) return;
+    if (int32_t(tMs - countFromMs_) < 0) return;
     rollBuckets(tMs);
-    current_.add(filtered_);
+    current_.add(filtered_, tMs);
   }
-
-  // Latest filtered (slew-limited, averaged) value in g, 1g until the window has filled.
+  bool filteredValid(uint32_t nowMs) const {
+    return filteredReady_ && uint32_t(nowMs - lastSampleMs_) <= FRESH_MS;
+  }
   float filtered() const { return filtered_; }
-
-  // Committed flight extremes; valid() is false until at least one bucket was committed.
   bool valid() const { return committed_.valid; }
   float maxG() const { return committed_.max; }
   float minG() const { return committed_.min; }
 
  private:
-  struct Range {
-    bool valid = false;
-    float min = 1.0f;
-    float max = 1.0f;
-
-    void add(float v) {
-      if (!valid) {
-        valid = true;
-        min = max = v;
-        return;
-      }
-      if (v > max) max = v;
-      if (v < min) min = v;
-    }
-    void add(const Range& other) {
-      if (!other.valid) return;
-      add(other.min);
-      add(other.max);
-    }
-  };
-
+  static void increment(uint16_t& count) {
+    if (count != UINT16_MAX) ++count;
+  }
   void rollBuckets(uint32_t tMs) {
     if (!bucketStarted_) {
       bucketStarted_ = true;
@@ -177,31 +209,25 @@ class GLoadTracker {
       bucketStartMs_ = tMs;
     }
   }
-
   void discardPending() {
-    previous_ = Range();
-    current_ = Range();
+    interval_.discarded.add(previous_);
+    interval_.discarded.add(current_);
+    previous_ = current_ = Range();
     bucketStarted_ = false;
   }
-
-  bool active_ = false;
-  bool airborne_ = false;
-  uint8_t groundSeconds_ = 0;
-  bool takeoffGuardArmed_ = false;
+  bool active_ = false, airborne_ = false, takeoffGuardArmed_ = false;
+  uint8_t groundSeconds_ = 0, airSeconds_ = 0;
   uint32_t countFromMs_ = 0;
-
-  bool hasSample_ = false;
+  bool hasSample_ = false, haveSampleTime_ = false;
   uint32_t lastSampleMs_ = 0;
   float slewed_ = 1.0f;
   float window_[AVERAGE_SAMPLES] = {};
-  uint8_t averageIndex_ = 0;
-  uint8_t averageCount_ = 0;
+  uint8_t averageIndex_ = 0, averageCount_ = 0;
   bool filteredReady_ = false;
   float filtered_ = 1.0f;
-
   bool bucketStarted_ = false;
   uint32_t bucketStartMs_ = 0;
-  Range current_;
-  Range previous_;
-  Range committed_;
+  Range current_, previous_, committed_;
+  Interval interval_;
+  Transition transition_ = Transition::None;
 };

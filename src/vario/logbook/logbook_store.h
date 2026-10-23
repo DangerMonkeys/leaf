@@ -45,8 +45,8 @@ struct LogbookEntrySummary {
   float maxWindDirectionFromDeg = 0;
   float pathDistanceM = 0;
   float straightLineDistanceM = 0;
-  float maxAccelG = 1;
-  float minAccelG = 1;
+  float maxAccelG = NAN;
+  float minAccelG = NAN;
   float maxTemperatureC = 0;
   float minTemperatureC = 0;
   bool trackSaved = false;

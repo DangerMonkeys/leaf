@@ -238,7 +238,8 @@ components:
           nullable: true
           description: >-
             Highest sustained in-flight acceleration magnitude in g (slew-limited, 0.5 s average;
-            launch and landing excluded). Limited by the accelerometer's +/-4 g per-axis range.
+            launch and landing excluded). Null until eligible history is committed. Sensor range
+            is +/-4 g per axis on ICM-20948 hardware and +/-8 g per axis on LSM6DSV hardware.
         min_accel_g:
           type: number
           format: float

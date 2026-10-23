@@ -161,6 +161,69 @@ int main() {
     check(f.tracker.maxG() < 1.05f, "implausible: rejected", f.tracker.maxG());
   }
 
+  {
+    GLoadTracker g;
+    g.startFlight();
+    g.updateAirborne(true);
+    g.updateAirborne(true);
+    check(!g.diagnosticState().airborne, "two handling pulses do not arm flight", 0);
+    g.updateAirborne(false);
+    for (int i = 0; i < 3; ++i) g.updateAirborne(true);
+    check(g.diagnosticState().ignoreRemainingMs == 15000, "guard starts on confirmed departure", 0);
+    for (int i = 0; i < 30; ++i) g.updateAirborne(false, false);
+    check(g.diagnosticState().airborne, "missing instruments do not invent landing", 0);
+    for (int i = 0; i < 19; ++i) g.updateAirborne(false);
+    check(g.diagnosticState().airborne, "nineteen quiet checks keep flight", 0);
+    g.updateAirborne(false);
+    check(!g.diagnosticState().airborne, "twentieth quiet check lands", 0);
+  }
+  {
+    Flight f;
+    f.tracker.startFlight();
+    f.level(60000, 1.6f);
+    f.tracker.stopFlight();
+    check(!f.tracker.valid(), "short flight has unavailable extrema", 0);
+    auto interval = f.tracker.takeInterval();
+    check(interval.discarded.valid && interval.discarded.max > 1.59f,
+          "stop exposes discarded pending load", interval.discarded.max);
+    check(!f.tracker.takeInterval().discarded.valid, "interval drains exactly once", 0);
+  }
+  {
+    Flight f;
+    f.level(3000, 2.5f);
+    check(f.tracker.filteredValid(f.t), "warm filter is fresh", f.tracker.filtered());
+    f.t += 1000;
+    check(!f.tracker.filteredValid(f.t), "old value expires without new samples", 0);
+    f.tracker.addSample(1, f.t);
+    check(!f.tracker.filteredValid(f.t), "fresh raw sample cannot revive old filtered load", 0);
+    auto interval = f.tracker.takeInterval();
+    check(interval.gaps == 1, "sample gap is diagnosed", interval.gaps);
+    f.level(1000);
+    f.tracker.resetFilter();
+    check(!f.tracker.filteredValid(f.t), "IMU reset invalidates live filter", 0);
+  }
+  {
+    GLoadTracker g;
+    for (uint32_t t = 1000; t < 2000; t += 50) g.addSample(t == 1550 ? 6 : 1, t);
+    g.recordClipping();
+    g.addSample(NAN, 2000);
+    g.addSample(1, 1950);  // Duplicate sample clock must not reset the window.
+    auto q = g.takeInterval();
+    check(q.raw.max == 6 && q.raw.maxMs == 1550 && q.samples == 20,
+          "interval captures peaks between 1Hz snapshots", q.raw.max);
+    check(q.rejected == 2 && q.clippingReports == 1, "rejects and clipping are counted",
+          q.rejected);
+    g.addSample(9, 2000, 4 * 1.732051f);
+    check(g.takeInterval().rejected == 1, "ICM resultant bound enforced", 0);
+    g.addSample(9, 2050, 8 * 1.732051f);
+    check(g.takeInterval().samples == 1, "LSM supports valid resultant above 8g", 0);
+  }
+  {
+    GLoadTracker g;
+    const uint32_t start = UINT32_MAX - 400;
+    for (uint32_t dt = 0; dt < 1000; dt += 50) g.addSample(1, start + dt);
+    check(g.filteredValid(start + 1000), "sample age survives millisecond rollover", g.filtered());
+  }
   printf(failures ? "%d FAILED\n" : "all passed\n", failures);
   return failures ? 1 : 0;
 }

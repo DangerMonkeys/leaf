@@ -612,7 +612,10 @@ void display_accel(uint8_t x, uint8_t y, float accel) {
   u8g2.setCursor(x, y);
   u8g2.setDrawColor(1);
   u8g2.setFont(leaf_6x12);
-  u8g2.print(accel, 1);
+  if (isfinite(accel))
+    u8g2.print(accel, 1);
+  else
+    u8g2.print("--.-");
   u8g2.print(" g");
 }
 

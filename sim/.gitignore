@@ -4,6 +4,7 @@ state/
 sdcard/
 build-tests/
 build328/
+build6/
 build-runtime-*/
 
 # Bus logs are recordings, often large.  Commit one deliberately with `git add -f` if a scenario
