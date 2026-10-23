@@ -1,0 +1,4740 @@
+{
+  "build_window": {
+    "duration_seconds": 155.94805717468262,
+    "end_utc": "2026-10-22T18:29:34Z",
+    "start_utc": "2026-10-22T18:26:59Z"
+  },
+  "environment": "leaf_3_2_8_thermaltest",
+  "final_artifacts": {
+    "firmware.bin": {
+      "exists": true,
+      "mtime_epoch": 1792693774.9129648,
+      "mtime_utc": "2026-10-22T18:29:34Z",
+      "size": 2336000
+    },
+    "firmware.elf": {
+      "exists": true,
+      "mtime_epoch": 1792693774.180513,
+      "mtime_utc": "2026-10-22T18:29:34Z",
+      "size": 36438052
+    },
+    "firmware.hex": {
+      "exists": false
+    },
+    "firmware.map": {
+      "exists": true,
+      "mtime_epoch": 1792693774.2075565,
+      "mtime_utc": "2026-10-22T18:29:34Z",
+      "size": 23757549
+    }
+  },
+  "generated_at_utc": "2026-10-22T18:29:34Z",
+  "identifiers": {
+    "board": "esp32-s3-devkitc-1",
+    "env_name": "leaf_3_2_8_thermaltest",
+    "git": {
+      "describe": "v0.2.4-17-g8427b318-dirty",
+      "dirty": true,
+      "head": "8427b318ffb68ce1360d7c247d6eaacf4d6997ad",
+      "root": "C:/Users/oxoth/projects/leaf",
+      "status": "M sim/Makefile\n M src/variants/leaf_3_2_8/platformio.ini\n M src/vario/ui/display/pages/primary/page_thermal_track.cpp\n M src/vario/ui/display/utils.cpp\n?? sim/tests/display_circles.cpp\n?? src/vario/ui/display/circle_geometry.h",
+      "status_sha256": "9b90da8fe1df049acd24b5ceab34ba6789927c37774904d35c1aba588e4dc633"
+    },
+    "paths": {
+      "build_dir_norm": "C:\\Users\\oxoth\\projects\\leaf\\.pio\\build\\leaf_3_2_8_thermaltest",
+      "build_dir_raw": "C:\\Users\\oxoth\\projects\\leaf\\.pio\\build\\leaf_3_2_8_thermaltest",
+      "build_dir_real": "C:\\Users\\oxoth\\projects\\leaf\\.pio\\build\\leaf_3_2_8_thermaltest",
+      "cwd_norm": "C:\\Users\\oxoth\\projects\\leaf",
+      "cwd_raw": "C:\\Users\\oxoth\\projects\\leaf",
+      "cwd_real": "C:\\Users\\oxoth\\projects\\leaf",
+      "project_dir_norm": "C:\\Users\\oxoth\\projects\\leaf",
+      "project_dir_raw": "C:\\Users\\oxoth\\projects\\leaf",
+      "project_dir_real": "C:\\Users\\oxoth\\projects\\leaf"
+    },
+    "pio_framework": [
+      "arduino"
+    ],
+    "pio_platform": "espressif32",
+    "signature_raw_sha1": "a643701c5d84ea4f7e2099fefd88223d7ff01ac4",
+    "signature_stable_sha1": "308e215adb6c4332d4338bfadee3642d836c2baf"
+  },
+  "notes": [
+    "Files listed have mtime >= build start (from capture_build_info.py).",
+    "If build start was unavailable, the list may be empty or incomplete.",
+    "Compare build_result.prev.json vs build_result.json to spot unusual bursts of work."
+  ],
+  "summary_version": 1,
+  "touched_files": {
+    "by_category_counts": {
+      "framework": 53,
+      "libdeps": 405,
+      "project_or_misc": 122
+    },
+    "by_category_sizes": {
+      "framework": 3436448,
+      "libdeps": 83444322,
+      "project_or_misc": 100161833
+    },
+    "by_type_counts": {
+      "a": 22,
+      "bin": 4,
+      "elf": 1,
+      "hex": 0,
+      "map": 1,
+      "o": 552,
+      "other": 0
+    },
+    "by_type_sizes": {
+      "a": 43608378,
+      "bin": 4695232,
+      "elf": 36438052,
+      "hex": 0,
+      "map": 23757549,
+      "o": 78543392,
+      "other": 0
+    },
+    "count": 580,
+    "list": [
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693749.48529,
+        "mtime_utc": "2026-10-22T18:29:09Z",
+        "path": "FrameworkArduino/ColorFormat.c.o",
+        "size": 44624,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693754.6103017,
+        "mtime_utc": "2026-10-22T18:29:14Z",
+        "path": "FrameworkArduino/Esp.cpp.o",
+        "size": 129596,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693751.7455063,
+        "mtime_utc": "2026-10-22T18:29:11Z",
+        "path": "FrameworkArduino/FirmwareMSC.cpp.o",
+        "size": 84212,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693753.6065352,
+        "mtime_utc": "2026-10-22T18:29:13Z",
+        "path": "FrameworkArduino/FunctionalInterrupt.cpp.o",
+        "size": 33200,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693753.8504443,
+        "mtime_utc": "2026-10-22T18:29:13Z",
+        "path": "FrameworkArduino/HEXBuilder.cpp.o",
+        "size": 45472,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693752.0287545,
+        "mtime_utc": "2026-10-22T18:29:12Z",
+        "path": "FrameworkArduino/HWCDC.cpp.o",
+        "size": 137848,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693754.3342118,
+        "mtime_utc": "2026-10-22T18:29:14Z",
+        "path": "FrameworkArduino/HardwareSerial.cpp.o",
+        "size": 154584,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693751.4655814,
+        "mtime_utc": "2026-10-22T18:29:11Z",
+        "path": "FrameworkArduino/IPAddress.cpp.o",
+        "size": 97360,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693754.2563095,
+        "mtime_utc": "2026-10-22T18:29:14Z",
+        "path": "FrameworkArduino/MD5Builder.cpp.o",
+        "size": 59436,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693750.763174,
+        "mtime_utc": "2026-10-22T18:29:10Z",
+        "path": "FrameworkArduino/MacAddress.cpp.o",
+        "size": 64116,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693754.4360337,
+        "mtime_utc": "2026-10-22T18:29:14Z",
+        "path": "FrameworkArduino/Print.cpp.o",
+        "size": 110348,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693754.5333629,
+        "mtime_utc": "2026-10-22T18:29:14Z",
+        "path": "FrameworkArduino/SHA1Builder.cpp.o",
+        "size": 110680,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693754.3100698,
+        "mtime_utc": "2026-10-22T18:29:14Z",
+        "path": "FrameworkArduino/Stream.cpp.o",
+        "size": 80088,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693754.3039145,
+        "mtime_utc": "2026-10-22T18:29:14Z",
+        "path": "FrameworkArduino/StreamString.cpp.o",
+        "size": 55792,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693754.5412748,
+        "mtime_utc": "2026-10-22T18:29:14Z",
+        "path": "FrameworkArduino/Tone.cpp.o",
+        "size": 42812,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693752.7301939,
+        "mtime_utc": "2026-10-22T18:29:12Z",
+        "path": "FrameworkArduino/USB.cpp.o",
+        "size": 108512,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693752.686053,
+        "mtime_utc": "2026-10-22T18:29:12Z",
+        "path": "FrameworkArduino/USBCDC.cpp.o",
+        "size": 114648,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693752.7420313,
+        "mtime_utc": "2026-10-22T18:29:12Z",
+        "path": "FrameworkArduino/USBMSC.cpp.o",
+        "size": 58316,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693751.9715621,
+        "mtime_utc": "2026-10-22T18:29:11Z",
+        "path": "FrameworkArduino/WMath.cpp.o",
+        "size": 18792,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693756.9461682,
+        "mtime_utc": "2026-10-22T18:29:16Z",
+        "path": "FrameworkArduino/WString.cpp.o",
+        "size": 238284,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693756.6252134,
+        "mtime_utc": "2026-10-22T18:29:16Z",
+        "path": "FrameworkArduino/base64.cpp.o",
+        "size": 42108,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693753.1117685,
+        "mtime_utc": "2026-10-22T18:29:13Z",
+        "path": "FrameworkArduino/cbuf.cpp.o",
+        "size": 52380,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693756.7604897,
+        "mtime_utc": "2026-10-22T18:29:16Z",
+        "path": "FrameworkArduino/chip-debug-report.cpp.o",
+        "size": 69204,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693753.7916477,
+        "mtime_utc": "2026-10-22T18:29:13Z",
+        "path": "FrameworkArduino/esp32-hal-adc.c.o",
+        "size": 95576,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693753.4008625,
+        "mtime_utc": "2026-10-22T18:29:13Z",
+        "path": "FrameworkArduino/esp32-hal-bt.c.o",
+        "size": 20960,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693754.3609958,
+        "mtime_utc": "2026-10-22T18:29:14Z",
+        "path": "FrameworkArduino/esp32-hal-cpu.c.o",
+        "size": 31668,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693753.1990738,
+        "mtime_utc": "2026-10-22T18:29:13Z",
+        "path": "FrameworkArduino/esp32-hal-dac.c.o",
+        "size": 1292,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693754.5658262,
+        "mtime_utc": "2026-10-22T18:29:14Z",
+        "path": "FrameworkArduino/esp32-hal-gpio.c.o",
+        "size": 49544,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693755.0557506,
+        "mtime_utc": "2026-10-22T18:29:15Z",
+        "path": "FrameworkArduino/esp32-hal-i2c-slave.c.o",
+        "size": 131764,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693754.8464196,
+        "mtime_utc": "2026-10-22T18:29:14Z",
+        "path": "FrameworkArduino/esp32-hal-i2c.c.o",
+        "size": 74044,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693755.090956,
+        "mtime_utc": "2026-10-22T18:29:15Z",
+        "path": "FrameworkArduino/esp32-hal-ledc.c.o",
+        "size": 89280,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693754.8721874,
+        "mtime_utc": "2026-10-22T18:29:14Z",
+        "path": "FrameworkArduino/esp32-hal-matrix.c.o",
+        "size": 8240,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693755.8040085,
+        "mtime_utc": "2026-10-22T18:29:15Z",
+        "path": "FrameworkArduino/esp32-hal-misc.c.o",
+        "size": 69996,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693754.9932692,
+        "mtime_utc": "2026-10-22T18:29:14Z",
+        "path": "FrameworkArduino/esp32-hal-periman.c.o",
+        "size": 42360,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693755.274591,
+        "mtime_utc": "2026-10-22T18:29:15Z",
+        "path": "FrameworkArduino/esp32-hal-psram.c.o",
+        "size": 7144,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693755.601504,
+        "mtime_utc": "2026-10-22T18:29:15Z",
+        "path": "FrameworkArduino/esp32-hal-rgb-led.c.o",
+        "size": 14364,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693755.9704504,
+        "mtime_utc": "2026-10-22T18:29:15Z",
+        "path": "FrameworkArduino/esp32-hal-rmt.c.o",
+        "size": 80664,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693755.6409583,
+        "mtime_utc": "2026-10-22T18:29:15Z",
+        "path": "FrameworkArduino/esp32-hal-sigmadelta.c.o",
+        "size": 22288,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693756.4041035,
+        "mtime_utc": "2026-10-22T18:29:16Z",
+        "path": "FrameworkArduino/esp32-hal-spi.c.o",
+        "size": 158884,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693756.4141798,
+        "mtime_utc": "2026-10-22T18:29:16Z",
+        "path": "FrameworkArduino/esp32-hal-time.c.o",
+        "size": 21344,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693756.1102207,
+        "mtime_utc": "2026-10-22T18:29:16Z",
+        "path": "FrameworkArduino/esp32-hal-timer.c.o",
+        "size": 52372,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693756.722415,
+        "mtime_utc": "2026-10-22T18:29:16Z",
+        "path": "FrameworkArduino/esp32-hal-tinyusb.c.o",
+        "size": 133800,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693755.1449094,
+        "mtime_utc": "2026-10-22T18:29:15Z",
+        "path": "FrameworkArduino/esp32-hal-touch-ng.c.o",
+        "size": 1300,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693756.1988926,
+        "mtime_utc": "2026-10-22T18:29:16Z",
+        "path": "FrameworkArduino/esp32-hal-touch.c.o",
+        "size": 45028,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693756.7824094,
+        "mtime_utc": "2026-10-22T18:29:16Z",
+        "path": "FrameworkArduino/esp32-hal-uart.c.o",
+        "size": 169356,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693756.0312872,
+        "mtime_utc": "2026-10-22T18:29:16Z",
+        "path": "FrameworkArduino/firmware_msc_fat.c.o",
+        "size": 35076,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693756.3824878,
+        "mtime_utc": "2026-10-22T18:29:16Z",
+        "path": "FrameworkArduino/freertos_stats.cpp.o",
+        "size": 15428,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693755.544141,
+        "mtime_utc": "2026-10-22T18:29:15Z",
+        "path": "FrameworkArduino/libb64/cdecode.c.o",
+        "size": 17708,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693755.4400308,
+        "mtime_utc": "2026-10-22T18:29:15Z",
+        "path": "FrameworkArduino/libb64/cencode.c.o",
+        "size": 15904,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693757.9336684,
+        "mtime_utc": "2026-10-22T18:29:17Z",
+        "path": "FrameworkArduino/main.cpp.o",
+        "size": 33100,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693756.1988926,
+        "mtime_utc": "2026-10-22T18:29:16Z",
+        "path": "FrameworkArduino/stdlib_noniso.c.o",
+        "size": 25424,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693756.4568617,
+        "mtime_utc": "2026-10-22T18:29:16Z",
+        "path": "FrameworkArduino/wiring_pulse.c.o",
+        "size": 11516,
+        "type": "o"
+      },
+      {
+        "category": "framework",
+        "mtime_epoch": 1792693756.618153,
+        "mtime_utc": "2026-10-22T18:29:16Z",
+        "path": "FrameworkArduino/wiring_shift.c.o",
+        "size": 8612,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693735.5092502,
+        "mtime_utc": "2026-10-22T18:28:55Z",
+        "path": "lib064/libTCA9555.a",
+        "size": 68196,
+        "type": "a"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693741.2055988,
+        "mtime_utc": "2026-10-22T18:29:01Z",
+        "path": "lib0cd/libNetworkClientSecure.a",
+        "size": 523916,
+        "type": "a"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693739.7888525,
+        "mtime_utc": "2026-10-22T18:28:59Z",
+        "path": "lib2db/libWiFi.a",
+        "size": 1277078,
+        "type": "a"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693748.6789763,
+        "mtime_utc": "2026-10-22T18:29:08Z",
+        "path": "lib2ef/libWebServer.a",
+        "size": 935966,
+        "type": "a"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693751.5494726,
+        "mtime_utc": "2026-10-22T18:29:11Z",
+        "path": "lib3ba/libLSM6DSV.a",
+        "size": 623770,
+        "type": "a"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693738.5612538,
+        "mtime_utc": "2026-10-22T18:28:58Z",
+        "path": "lib45d/libNetwork.a",
+        "size": 1254804,
+        "type": "a"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693742.2224174,
+        "mtime_utc": "2026-10-22T18:29:02Z",
+        "path": "lib541/libSD_MMC.a",
+        "size": 154494,
+        "type": "a"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693732.4346538,
+        "mtime_utc": "2026-10-22T18:28:52Z",
+        "path": "lib5b2/libNimBLE-Arduino.a",
+        "size": 10149650,
+        "type": "a"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693735.5162523,
+        "mtime_utc": "2026-10-22T18:28:55Z",
+        "path": "lib5b4/libWire.a",
+        "size": 143656,
+        "type": "a"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693744.3885915,
+        "mtime_utc": "2026-10-22T18:29:04Z",
+        "path": "lib5e5/libAsyncUDP.a",
+        "size": 268964,
+        "type": "a"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693743.4729033,
+        "mtime_utc": "2026-10-22T18:29:03Z",
+        "path": "lib6f3/libUpdate.a",
+        "size": 197260,
+        "type": "a"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693736.225413,
+        "mtime_utc": "2026-10-22T18:28:56Z",
+        "path": "lib7af/libTinyGPSPlus-ESP32.a",
+        "size": 100710,
+        "type": "a"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693753.4897668,
+        "mtime_utc": "2026-10-22T18:29:13Z",
+        "path": "lib85b/libSparkFun_9DoF_IMU_Breakout_-_ICM_20948_-_Arduino_Library.a",
+        "size": 511120,
+        "type": "a"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693701.6965754,
+        "mtime_utc": "2026-10-22T18:28:21Z",
+        "path": "lib8c0/libSPI.a",
+        "size": 77934,
+        "type": "a"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693758.0607233,
+        "mtime_utc": "2026-10-22T18:29:18Z",
+        "path": "libFrameworkArduino.a",
+        "size": 3463884,
+        "type": "a"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693742.142302,
+        "mtime_utc": "2026-10-22T18:29:02Z",
+        "path": "liba3a/libPreferences.a",
+        "size": 150988,
+        "type": "a"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693751.425596,
+        "mtime_utc": "2026-10-22T18:29:11Z",
+        "path": "libc0d/libU8g2.a",
+        "size": 16535318,
+        "type": "a"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693718.2694125,
+        "mtime_utc": "2026-10-22T18:28:38Z",
+        "path": "libc73/libRadioLib.a",
+        "size": 5789198,
+        "type": "a"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693745.681267,
+        "mtime_utc": "2026-10-22T18:29:05Z",
+        "path": "libca4/libDNSServer.a",
+        "size": 156772,
+        "type": "a"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693741.772296,
+        "mtime_utc": "2026-10-22T18:29:01Z",
+        "path": "libcef/libFS.a",
+        "size": 416122,
+        "type": "a"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693702.2818346,
+        "mtime_utc": "2026-10-22T18:28:22Z",
+        "path": "libf2e/libIgcLogger.a",
+        "size": 286232,
+        "type": "a"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693743.0795438,
+        "mtime_utc": "2026-10-22T18:29:03Z",
+        "path": "libf95/libHTTPClient.a",
+        "size": 522346,
+        "type": "a"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693735.321411,
+        "mtime_utc": "2026-10-22T18:28:55Z",
+        "path": "lib064/TCA9555/TCA9555.cpp.o",
+        "size": 67196,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693740.9790232,
+        "mtime_utc": "2026-10-22T18:29:00Z",
+        "path": "lib0cd/NetworkClientSecure/NetworkClientSecure.cpp.o",
+        "size": 243904,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693740.838266,
+        "mtime_utc": "2026-10-22T18:29:00Z",
+        "path": "lib0cd/NetworkClientSecure/ssl_client.cpp.o",
+        "size": 276872,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693738.843708,
+        "mtime_utc": "2026-10-22T18:28:58Z",
+        "path": "lib2db/WiFi/AP.cpp.o",
+        "size": 174728,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693739.0600069,
+        "mtime_utc": "2026-10-22T18:28:59Z",
+        "path": "lib2db/WiFi/STA.cpp.o",
+        "size": 233940,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693738.8946893,
+        "mtime_utc": "2026-10-22T18:28:58Z",
+        "path": "lib2db/WiFi/WiFi.cpp.o",
+        "size": 99164,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693738.9678159,
+        "mtime_utc": "2026-10-22T18:28:58Z",
+        "path": "lib2db/WiFi/WiFiAP.cpp.o",
+        "size": 76108,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693739.401283,
+        "mtime_utc": "2026-10-22T18:28:59Z",
+        "path": "lib2db/WiFi/WiFiGeneric.cpp.o",
+        "size": 233272,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693739.3436105,
+        "mtime_utc": "2026-10-22T18:28:59Z",
+        "path": "lib2db/WiFi/WiFiMulti.cpp.o",
+        "size": 192372,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693739.2496316,
+        "mtime_utc": "2026-10-22T18:28:59Z",
+        "path": "lib2db/WiFi/WiFiSTA.cpp.o",
+        "size": 145580,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693739.333336,
+        "mtime_utc": "2026-10-22T18:28:59Z",
+        "path": "lib2db/WiFi/WiFiScan.cpp.o",
+        "size": 113416,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693746.9291208,
+        "mtime_utc": "2026-10-22T18:29:06Z",
+        "path": "lib2ef/WebServer/Parsing.cpp.o",
+        "size": 266812,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693748.4510257,
+        "mtime_utc": "2026-10-22T18:29:08Z",
+        "path": "lib2ef/WebServer/WebServer.cpp.o",
+        "size": 658084,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693740.5350485,
+        "mtime_utc": "2026-10-22T18:29:00Z",
+        "path": "lib2ef/WebServer/detail/mimetable.cpp.o",
+        "size": 4172,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693751.3599827,
+        "mtime_utc": "2026-10-22T18:29:11Z",
+        "path": "lib3ba/LSM6DSV/lsm6dsv_reg.c.o",
+        "size": 614260,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693737.874368,
+        "mtime_utc": "2026-10-22T18:28:57Z",
+        "path": "lib45d/Network/NetworkClient.cpp.o",
+        "size": 276320,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693737.5267406,
+        "mtime_utc": "2026-10-22T18:28:57Z",
+        "path": "lib45d/Network/NetworkEvents.cpp.o",
+        "size": 408296,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693737.4718478,
+        "mtime_utc": "2026-10-22T18:28:57Z",
+        "path": "lib45d/Network/NetworkInterface.cpp.o",
+        "size": 246552,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693737.083445,
+        "mtime_utc": "2026-10-22T18:28:57Z",
+        "path": "lib45d/Network/NetworkManager.cpp.o",
+        "size": 120312,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693737.7677388,
+        "mtime_utc": "2026-10-22T18:28:57Z",
+        "path": "lib45d/Network/NetworkServer.cpp.o",
+        "size": 58724,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693737.1179476,
+        "mtime_utc": "2026-10-22T18:28:57Z",
+        "path": "lib45d/Network/NetworkUdp.cpp.o",
+        "size": 134456,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693741.9711847,
+        "mtime_utc": "2026-10-22T18:29:01Z",
+        "path": "lib541/SD_MMC/SD_MMC.cpp.o",
+        "size": 153176,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693719.6649022,
+        "mtime_utc": "2026-10-22T18:28:39Z",
+        "path": "lib5b2/NimBLE-Arduino/NimBLE2904.cpp.o",
+        "size": 141048,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693717.4376242,
+        "mtime_utc": "2026-10-22T18:28:37Z",
+        "path": "lib5b2/NimBLE-Arduino/NimBLEAddress.cpp.o",
+        "size": 139432,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693720.4605868,
+        "mtime_utc": "2026-10-22T18:28:40Z",
+        "path": "lib5b2/NimBLE-Arduino/NimBLEAdvertisedDevice.cpp.o",
+        "size": 498848,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693720.7914252,
+        "mtime_utc": "2026-10-22T18:28:40Z",
+        "path": "lib5b2/NimBLE-Arduino/NimBLEAdvertisementData.cpp.o",
+        "size": 569784,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693720.6334374,
+        "mtime_utc": "2026-10-22T18:28:40Z",
+        "path": "lib5b2/NimBLE-Arduino/NimBLEAdvertising.cpp.o",
+        "size": 430620,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693720.5870278,
+        "mtime_utc": "2026-10-22T18:28:40Z",
+        "path": "lib5b2/NimBLE-Arduino/NimBLEAttValue.cpp.o",
+        "size": 131060,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693718.3824866,
+        "mtime_utc": "2026-10-22T18:28:38Z",
+        "path": "lib5b2/NimBLE-Arduino/NimBLEBeacon.cpp.o",
+        "size": 83268,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693722.7455344,
+        "mtime_utc": "2026-10-22T18:28:42Z",
+        "path": "lib5b2/NimBLE-Arduino/NimBLECharacteristic.cpp.o",
+        "size": 461168,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693723.1148367,
+        "mtime_utc": "2026-10-22T18:28:43Z",
+        "path": "lib5b2/NimBLE-Arduino/NimBLEClient.cpp.o",
+        "size": 479700,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693723.130912,
+        "mtime_utc": "2026-10-22T18:28:43Z",
+        "path": "lib5b2/NimBLE-Arduino/NimBLEDescriptor.cpp.o",
+        "size": 173184,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693723.960891,
+        "mtime_utc": "2026-10-22T18:28:43Z",
+        "path": "lib5b2/NimBLE-Arduino/NimBLEDevice.cpp.o",
+        "size": 535460,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693720.306054,
+        "mtime_utc": "2026-10-22T18:28:40Z",
+        "path": "lib5b2/NimBLE-Arduino/NimBLEEddystoneTLM.cpp.o",
+        "size": 107248,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693717.5101664,
+        "mtime_utc": "2026-10-22T18:28:37Z",
+        "path": "lib5b2/NimBLE-Arduino/NimBLEExtAdvertising.cpp.o",
+        "size": 1344,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693723.3951542,
+        "mtime_utc": "2026-10-22T18:28:43Z",
+        "path": "lib5b2/NimBLE-Arduino/NimBLEHIDDevice.cpp.o",
+        "size": 224912,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693723.7713778,
+        "mtime_utc": "2026-10-22T18:28:43Z",
+        "path": "lib5b2/NimBLE-Arduino/NimBLERemoteCharacteristic.cpp.o",
+        "size": 339068,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693723.4185178,
+        "mtime_utc": "2026-10-22T18:28:43Z",
+        "path": "lib5b2/NimBLE-Arduino/NimBLERemoteDescriptor.cpp.o",
+        "size": 145132,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693723.8748033,
+        "mtime_utc": "2026-10-22T18:28:43Z",
+        "path": "lib5b2/NimBLE-Arduino/NimBLERemoteService.cpp.o",
+        "size": 299084,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693723.582733,
+        "mtime_utc": "2026-10-22T18:28:43Z",
+        "path": "lib5b2/NimBLE-Arduino/NimBLERemoteValueAttribute.cpp.o",
+        "size": 174492,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693724.128708,
+        "mtime_utc": "2026-10-22T18:28:44Z",
+        "path": "lib5b2/NimBLE-Arduino/NimBLEScan.cpp.o",
+        "size": 401108,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693724.4937305,
+        "mtime_utc": "2026-10-22T18:28:44Z",
+        "path": "lib5b2/NimBLE-Arduino/NimBLEServer.cpp.o",
+        "size": 518688,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693724.3230743,
+        "mtime_utc": "2026-10-22T18:28:44Z",
+        "path": "lib5b2/NimBLE-Arduino/NimBLEService.cpp.o",
+        "size": 446848,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693721.420249,
+        "mtime_utc": "2026-10-22T18:28:41Z",
+        "path": "lib5b2/NimBLE-Arduino/NimBLEUUID.cpp.o",
+        "size": 123444,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693721.7072394,
+        "mtime_utc": "2026-10-22T18:28:41Z",
+        "path": "lib5b2/NimBLE-Arduino/NimBLEUtils.cpp.o",
+        "size": 91316,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693721.2663195,
+        "mtime_utc": "2026-10-22T18:28:41Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/esp_port/esp-hci/src/esp_nimble_hci.c.o",
+        "size": 34760,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693721.2758038,
+        "mtime_utc": "2026-10-22T18:28:41Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/esp_port/port/src/esp_nimble_mem.c.o",
+        "size": 6940,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693721.2089553,
+        "mtime_utc": "2026-10-22T18:28:41Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/ext/tinycrypt/src/aes_decrypt.c.o",
+        "size": 23280,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693721.275297,
+        "mtime_utc": "2026-10-22T18:28:41Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/ext/tinycrypt/src/aes_encrypt.c.o",
+        "size": 19848,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693721.2359622,
+        "mtime_utc": "2026-10-22T18:28:41Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/ext/tinycrypt/src/cbc_mode.c.o",
+        "size": 11620,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693721.8605433,
+        "mtime_utc": "2026-10-22T18:28:41Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/ext/tinycrypt/src/ccm_mode.c.o",
+        "size": 23688,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693721.8407142,
+        "mtime_utc": "2026-10-22T18:28:41Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/ext/tinycrypt/src/cmac_mode.c.o",
+        "size": 18436,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693721.8675566,
+        "mtime_utc": "2026-10-22T18:28:41Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/ext/tinycrypt/src/ctr_mode.c.o",
+        "size": 8240,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693722.312905,
+        "mtime_utc": "2026-10-22T18:28:42Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/ext/tinycrypt/src/ctr_prng.c.o",
+        "size": 22996,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693722.876524,
+        "mtime_utc": "2026-10-22T18:28:42Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/ext/tinycrypt/src/ecc.c.o",
+        "size": 105812,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693722.4620292,
+        "mtime_utc": "2026-10-22T18:28:42Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/ext/tinycrypt/src/ecc_dh.c.o",
+        "size": 15096,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693722.0841086,
+        "mtime_utc": "2026-10-22T18:28:42Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/ext/tinycrypt/src/ecc_dsa.c.o",
+        "size": 30424,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693722.0671089,
+        "mtime_utc": "2026-10-22T18:28:42Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/ext/tinycrypt/src/ecc_platform_specific.c.o",
+        "size": 1328,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693722.4283996,
+        "mtime_utc": "2026-10-22T18:28:42Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/ext/tinycrypt/src/hmac.c.o",
+        "size": 14852,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693722.6066225,
+        "mtime_utc": "2026-10-22T18:28:42Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/ext/tinycrypt/src/hmac_prng.c.o",
+        "size": 15204,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693722.7123446,
+        "mtime_utc": "2026-10-22T18:28:42Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/ext/tinycrypt/src/sha256.c.o",
+        "size": 29100,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693723.1526058,
+        "mtime_utc": "2026-10-22T18:28:43Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/ext/tinycrypt/src/utils.c.o",
+        "size": 8892,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693722.8401723,
+        "mtime_utc": "2026-10-22T18:28:42Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/controller/src/ble_ll.c.o",
+        "size": 1300,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693722.8262503,
+        "mtime_utc": "2026-10-22T18:28:42Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/controller/src/ble_ll_adv.c.o",
+        "size": 1308,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693722.9191172,
+        "mtime_utc": "2026-10-22T18:28:42Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/controller/src/ble_ll_conn.c.o",
+        "size": 1308,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693722.9491582,
+        "mtime_utc": "2026-10-22T18:28:42Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/controller/src/ble_ll_conn_hci.c.o",
+        "size": 1316,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693723.0601952,
+        "mtime_utc": "2026-10-22T18:28:43Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/controller/src/ble_ll_ctrl.c.o",
+        "size": 1308,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693723.0883415,
+        "mtime_utc": "2026-10-22T18:28:43Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/controller/src/ble_ll_dtm.c.o",
+        "size": 1308,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693723.1696062,
+        "mtime_utc": "2026-10-22T18:28:43Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/controller/src/ble_ll_hci.c.o",
+        "size": 1308,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693723.2417252,
+        "mtime_utc": "2026-10-22T18:28:43Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/controller/src/ble_ll_hci_ev.c.o",
+        "size": 1316,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693723.2572317,
+        "mtime_utc": "2026-10-22T18:28:43Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/controller/src/ble_ll_hci_vs.c.o",
+        "size": 1316,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693723.3293774,
+        "mtime_utc": "2026-10-22T18:28:43Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/controller/src/ble_ll_iso.c.o",
+        "size": 1308,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693723.3303747,
+        "mtime_utc": "2026-10-22T18:28:43Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/controller/src/ble_ll_rand.c.o",
+        "size": 1308,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693723.3636863,
+        "mtime_utc": "2026-10-22T18:28:43Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/controller/src/ble_ll_resolv.c.o",
+        "size": 1316,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693723.4314456,
+        "mtime_utc": "2026-10-22T18:28:43Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/controller/src/ble_ll_rfmgmt.c.o",
+        "size": 1316,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693723.4986362,
+        "mtime_utc": "2026-10-22T18:28:43Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/controller/src/ble_ll_scan.c.o",
+        "size": 1308,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693723.5374262,
+        "mtime_utc": "2026-10-22T18:28:43Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/controller/src/ble_ll_scan_aux.c.o",
+        "size": 1316,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693723.5797367,
+        "mtime_utc": "2026-10-22T18:28:43Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/controller/src/ble_ll_sched.c.o",
+        "size": 1312,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693723.5823033,
+        "mtime_utc": "2026-10-22T18:28:43Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/controller/src/ble_ll_supp_cmd.c.o",
+        "size": 1316,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693723.6390796,
+        "mtime_utc": "2026-10-22T18:28:43Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/controller/src/ble_ll_sync.c.o",
+        "size": 1308,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693723.6289568,
+        "mtime_utc": "2026-10-22T18:28:43Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/controller/src/ble_ll_trace.c.o",
+        "size": 1312,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693723.6854258,
+        "mtime_utc": "2026-10-22T18:28:43Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/controller/src/ble_ll_utils.c.o",
+        "size": 1312,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693723.7001686,
+        "mtime_utc": "2026-10-22T18:28:43Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/controller/src/ble_ll_whitelist.c.o",
+        "size": 1320,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693723.8728526,
+        "mtime_utc": "2026-10-22T18:28:43Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/drivers/nrf51/src/ble_hw.c.o",
+        "size": 1304,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693723.9518924,
+        "mtime_utc": "2026-10-22T18:28:43Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/drivers/nrf51/src/ble_phy.c.o",
+        "size": 1304,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693724.045912,
+        "mtime_utc": "2026-10-22T18:28:44Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/drivers/nrf52/src/ble_hw.c.o",
+        "size": 1304,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693724.1580794,
+        "mtime_utc": "2026-10-22T18:28:44Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/drivers/nrf52/src/ble_phy.c.o",
+        "size": 1304,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693724.2148073,
+        "mtime_utc": "2026-10-22T18:28:44Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/drivers/nrf52/src/ble_phy_trace.c.o",
+        "size": 1316,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693724.6208074,
+        "mtime_utc": "2026-10-22T18:28:44Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/access.c.o",
+        "size": 1300,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693724.7525992,
+        "mtime_utc": "2026-10-22T18:28:44Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/adv.c.o",
+        "size": 1292,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693724.7962236,
+        "mtime_utc": "2026-10-22T18:28:44Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/adv_ext.c.o",
+        "size": 1300,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693724.8121457,
+        "mtime_utc": "2026-10-22T18:28:44Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/adv_legacy.c.o",
+        "size": 1308,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693724.851203,
+        "mtime_utc": "2026-10-22T18:28:44Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/aes-ccm.c.o",
+        "size": 1300,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693724.8841982,
+        "mtime_utc": "2026-10-22T18:28:44Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/app_keys.c.o",
+        "size": 1304,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693724.9239452,
+        "mtime_utc": "2026-10-22T18:28:44Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/beacon.c.o",
+        "size": 1300,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693725.060288,
+        "mtime_utc": "2026-10-22T18:28:45Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/cdb.c.o",
+        "size": 1292,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693725.066422,
+        "mtime_utc": "2026-10-22T18:28:45Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/cfg.c.o",
+        "size": 1292,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693725.130918,
+        "mtime_utc": "2026-10-22T18:28:45Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/cfg_cli.c.o",
+        "size": 1300,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693725.2416117,
+        "mtime_utc": "2026-10-22T18:28:45Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/cfg_srv.c.o",
+        "size": 1300,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693725.3357654,
+        "mtime_utc": "2026-10-22T18:28:45Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/crypto.c.o",
+        "size": 1300,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693725.3357654,
+        "mtime_utc": "2026-10-22T18:28:45Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/friend.c.o",
+        "size": 1300,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693725.4171257,
+        "mtime_utc": "2026-10-22T18:28:45Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/glue.c.o",
+        "size": 1296,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693725.4336092,
+        "mtime_utc": "2026-10-22T18:28:45Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/health_cli.c.o",
+        "size": 1308,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693725.4589791,
+        "mtime_utc": "2026-10-22T18:28:45Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/health_srv.c.o",
+        "size": 1308,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693725.4777994,
+        "mtime_utc": "2026-10-22T18:28:45Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/heartbeat.c.o",
+        "size": 1304,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693725.4955983,
+        "mtime_utc": "2026-10-22T18:28:45Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/light_model.c.o",
+        "size": 1308,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693725.5151918,
+        "mtime_utc": "2026-10-22T18:28:45Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/lpn.c.o",
+        "size": 1292,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693725.5302742,
+        "mtime_utc": "2026-10-22T18:28:45Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/mesh.c.o",
+        "size": 1296,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693725.5594254,
+        "mtime_utc": "2026-10-22T18:28:45Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/model_cli.c.o",
+        "size": 1304,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693725.593404,
+        "mtime_utc": "2026-10-22T18:28:45Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/model_srv.c.o",
+        "size": 1304,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693725.6120665,
+        "mtime_utc": "2026-10-22T18:28:45Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/msg.c.o",
+        "size": 1292,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693725.6504345,
+        "mtime_utc": "2026-10-22T18:28:45Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/net.c.o",
+        "size": 1292,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693725.6819315,
+        "mtime_utc": "2026-10-22T18:28:45Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/nodes.c.o",
+        "size": 1296,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693725.7133665,
+        "mtime_utc": "2026-10-22T18:28:45Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/pb_adv.c.o",
+        "size": 1300,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693725.7431505,
+        "mtime_utc": "2026-10-22T18:28:45Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/pb_gatt.c.o",
+        "size": 1300,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693725.83023,
+        "mtime_utc": "2026-10-22T18:28:45Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/pb_gatt_srv.c.o",
+        "size": 1308,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693725.902322,
+        "mtime_utc": "2026-10-22T18:28:45Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/prov.c.o",
+        "size": 1296,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693725.919053,
+        "mtime_utc": "2026-10-22T18:28:45Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/prov_device.c.o",
+        "size": 1308,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693725.959406,
+        "mtime_utc": "2026-10-22T18:28:45Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/provisioner.c.o",
+        "size": 1308,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693725.9808717,
+        "mtime_utc": "2026-10-22T18:28:45Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/proxy.c.o",
+        "size": 1296,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693726.0325685,
+        "mtime_utc": "2026-10-22T18:28:46Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/proxy_msg.c.o",
+        "size": 1304,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693726.0544908,
+        "mtime_utc": "2026-10-22T18:28:46Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/proxy_srv.c.o",
+        "size": 1304,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693726.0744278,
+        "mtime_utc": "2026-10-22T18:28:46Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/rpl.c.o",
+        "size": 1292,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693726.0969737,
+        "mtime_utc": "2026-10-22T18:28:46Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/settings.c.o",
+        "size": 1304,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693726.2064557,
+        "mtime_utc": "2026-10-22T18:28:46Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/shell.c.o",
+        "size": 1296,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693726.235932,
+        "mtime_utc": "2026-10-22T18:28:46Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/subnet.c.o",
+        "size": 1300,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693726.2852006,
+        "mtime_utc": "2026-10-22T18:28:46Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/mesh/src/transport.c.o",
+        "size": 1304,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693727.1590645,
+        "mtime_utc": "2026-10-22T18:28:47Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/services/ans/src/ble_svc_ans.c.o",
+        "size": 33248,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693727.2207272,
+        "mtime_utc": "2026-10-22T18:28:47Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/services/bas/src/ble_svc_bas.c.o",
+        "size": 14732,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693727.248686,
+        "mtime_utc": "2026-10-22T18:28:47Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/services/gap/src/ble_svc_gap.c.o",
+        "size": 21952,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693727.2552993,
+        "mtime_utc": "2026-10-22T18:28:47Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/services/gatt/src/ble_svc_gatt.c.o",
+        "size": 20744,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693727.3050737,
+        "mtime_utc": "2026-10-22T18:28:47Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/services/ias/src/ble_svc_ias.c.o",
+        "size": 15304,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693727.4199066,
+        "mtime_utc": "2026-10-22T18:28:47Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_aes_ccm.c.o",
+        "size": 2280,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693727.549236,
+        "mtime_utc": "2026-10-22T18:28:47Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_att.c.o",
+        "size": 37576,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693727.7908778,
+        "mtime_utc": "2026-10-22T18:28:47Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_att_clt.c.o",
+        "size": 90160,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693727.713444,
+        "mtime_utc": "2026-10-22T18:28:47Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_att_cmd.c.o",
+        "size": 71780,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693728.449808,
+        "mtime_utc": "2026-10-22T18:28:48Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_att_svr.c.o",
+        "size": 216640,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693727.611967,
+        "mtime_utc": "2026-10-22T18:28:47Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_ead.c.o",
+        "size": 2268,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693727.7670808,
+        "mtime_utc": "2026-10-22T18:28:47Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_eddystone.c.o",
+        "size": 16196,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693729.1150498,
+        "mtime_utc": "2026-10-22T18:28:49Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_gap.c.o",
+        "size": 289840,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693728.85455,
+        "mtime_utc": "2026-10-22T18:28:48Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_gattc.c.o",
+        "size": 299560,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693727.8447912,
+        "mtime_utc": "2026-10-22T18:28:47Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_gattc_cache.c.o",
+        "size": 2292,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693728.027666,
+        "mtime_utc": "2026-10-22T18:28:48Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_gattc_cache_conn.c.o",
+        "size": 2308,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693728.7406936,
+        "mtime_utc": "2026-10-22T18:28:48Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_gatts.c.o",
+        "size": 168228,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693728.3368616,
+        "mtime_utc": "2026-10-22T18:28:48Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_gatts_lcl.c.o",
+        "size": 24292,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693728.4450517,
+        "mtime_utc": "2026-10-22T18:28:48Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_hs.c.o",
+        "size": 97260,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693728.5348067,
+        "mtime_utc": "2026-10-22T18:28:48Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_hs_adv.c.o",
+        "size": 80588,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693728.7208874,
+        "mtime_utc": "2026-10-22T18:28:48Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_hs_atomic.c.o",
+        "size": 21772,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693728.713253,
+        "mtime_utc": "2026-10-22T18:28:48Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_hs_cfg.c.o",
+        "size": 9944,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693728.9963546,
+        "mtime_utc": "2026-10-22T18:28:48Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_hs_conn.c.o",
+        "size": 57988,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693728.9203763,
+        "mtime_utc": "2026-10-22T18:28:48Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_hs_flow.c.o",
+        "size": 40688,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693728.9341645,
+        "mtime_utc": "2026-10-22T18:28:48Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_hs_hci.c.o",
+        "size": 58804,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693728.9311652,
+        "mtime_utc": "2026-10-22T18:28:48Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_hs_hci_cmd.c.o",
+        "size": 11884,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693729.241926,
+        "mtime_utc": "2026-10-22T18:28:49Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_hs_hci_evt.c.o",
+        "size": 74444,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693729.2469263,
+        "mtime_utc": "2026-10-22T18:28:49Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_hs_hci_util.c.o",
+        "size": 33792,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693729.1999748,
+        "mtime_utc": "2026-10-22T18:28:49Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_hs_id.c.o",
+        "size": 25488,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693729.212003,
+        "mtime_utc": "2026-10-22T18:28:49Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_hs_log.c.o",
+        "size": 7540,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693729.299461,
+        "mtime_utc": "2026-10-22T18:28:49Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_hs_mbuf.c.o",
+        "size": 15416,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693729.299461,
+        "mtime_utc": "2026-10-22T18:28:49Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_hs_misc.c.o",
+        "size": 23020,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693729.4192674,
+        "mtime_utc": "2026-10-22T18:28:49Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_hs_mqueue.c.o",
+        "size": 15540,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693729.9075904,
+        "mtime_utc": "2026-10-22T18:28:49Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_hs_periodic_sync.c.o",
+        "size": 2308,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693729.8729715,
+        "mtime_utc": "2026-10-22T18:28:49Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_hs_pvcy.c.o",
+        "size": 33024,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693728.968326,
+        "mtime_utc": "2026-10-22T18:28:48Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_hs_resolv.c.o",
+        "size": 1308,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693729.005718,
+        "mtime_utc": "2026-10-22T18:28:49Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_hs_shutdown.c.o",
+        "size": 1312,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693730.1676822,
+        "mtime_utc": "2026-10-22T18:28:50Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_hs_startup.c.o",
+        "size": 17240,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693730.158254,
+        "mtime_utc": "2026-10-22T18:28:50Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_hs_stop.c.o",
+        "size": 36440,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693730.1923227,
+        "mtime_utc": "2026-10-22T18:28:50Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_ibeacon.c.o",
+        "size": 10008,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693730.4238605,
+        "mtime_utc": "2026-10-22T18:28:50Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_l2cap.c.o",
+        "size": 49796,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693730.312431,
+        "mtime_utc": "2026-10-22T18:28:50Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_l2cap_coc.c.o",
+        "size": 2288,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693730.4964113,
+        "mtime_utc": "2026-10-22T18:28:50Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_l2cap_sig.c.o",
+        "size": 56868,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693730.3701835,
+        "mtime_utc": "2026-10-22T18:28:50Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_l2cap_sig_cmd.c.o",
+        "size": 22368,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693731.3394086,
+        "mtime_utc": "2026-10-22T18:28:51Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_sm.c.o",
+        "size": 204072,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693730.6403503,
+        "mtime_utc": "2026-10-22T18:28:50Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_sm_alg.c.o",
+        "size": 54592,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693730.5830982,
+        "mtime_utc": "2026-10-22T18:28:50Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_sm_cmd.c.o",
+        "size": 17220,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693730.6061585,
+        "mtime_utc": "2026-10-22T18:28:50Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_sm_lgcy.c.o",
+        "size": 21556,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693730.8010612,
+        "mtime_utc": "2026-10-22T18:28:50Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_sm_sc.c.o",
+        "size": 71680,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693730.787526,
+        "mtime_utc": "2026-10-22T18:28:50Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_store.c.o",
+        "size": 56360,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693730.71885,
+        "mtime_utc": "2026-10-22T18:28:50Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_store_util.c.o",
+        "size": 22188,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693730.809175,
+        "mtime_utc": "2026-10-22T18:28:50Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/src/ble_uuid.c.o",
+        "size": 24988,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693730.9630017,
+        "mtime_utc": "2026-10-22T18:28:50Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/store/config/src/ble_store_config.c.o",
+        "size": 73604,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693729.8290029,
+        "mtime_utc": "2026-10-22T18:28:49Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/store/config/src/ble_store_config_conf.c.o",
+        "size": 1336,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693731.1650357,
+        "mtime_utc": "2026-10-22T18:28:51Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/store/config/src/ble_store_nvs.c.o",
+        "size": 64160,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693731.098046,
+        "mtime_utc": "2026-10-22T18:28:51Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/host/util/src/addr.c.o",
+        "size": 7840,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693730.3908956,
+        "mtime_utc": "2026-10-22T18:28:50Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/transport/src/monitor.c.o",
+        "size": 1300,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693731.2489023,
+        "mtime_utc": "2026-10-22T18:28:51Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/nimble/transport/src/transport.c.o",
+        "size": 29804,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693730.930998,
+        "mtime_utc": "2026-10-22T18:28:50Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/porting/nimble/src/endian.c.o",
+        "size": 25476,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693730.6283488,
+        "mtime_utc": "2026-10-22T18:28:50Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/porting/nimble/src/hal_timer.c.o",
+        "size": 1304,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693731.4965632,
+        "mtime_utc": "2026-10-22T18:28:51Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/porting/nimble/src/mem.c.o",
+        "size": 22000,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693731.63634,
+        "mtime_utc": "2026-10-22T18:28:51Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/porting/nimble/src/nimble_port.c.o",
+        "size": 29020,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693731.3877676,
+        "mtime_utc": "2026-10-22T18:28:51Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/porting/nimble/src/os_cputime.c.o",
+        "size": 16532,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693731.092102,
+        "mtime_utc": "2026-10-22T18:28:51Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/porting/nimble/src/os_cputime_pwr2.c.o",
+        "size": 2252,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693731.8950195,
+        "mtime_utc": "2026-10-22T18:28:51Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/porting/nimble/src/os_mbuf.c.o",
+        "size": 96500,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693731.701788,
+        "mtime_utc": "2026-10-22T18:28:51Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/porting/nimble/src/os_mempool.c.o",
+        "size": 35448,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693731.6421075,
+        "mtime_utc": "2026-10-22T18:28:51Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/porting/nimble/src/os_msys_init.c.o",
+        "size": 11224,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693731.7263737,
+        "mtime_utc": "2026-10-22T18:28:51Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/porting/npl/freertos/src/nimble_port_freertos.c.o",
+        "size": 9912,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693731.831553,
+        "mtime_utc": "2026-10-22T18:28:51Z",
+        "path": "lib5b2/NimBLE-Arduino/nimble/porting/npl/freertos/src/npl_os_freertos.c.o",
+        "size": 53108,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693734.837412,
+        "mtime_utc": "2026-10-22T18:28:54Z",
+        "path": "lib5b4/Wire/Wire.cpp.o",
+        "size": 142428,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693744.1373763,
+        "mtime_utc": "2026-10-22T18:29:04Z",
+        "path": "lib5e5/AsyncUDP/AsyncUDP.cpp.o",
+        "size": 265368,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693740.0803607,
+        "mtime_utc": "2026-10-22T18:29:00Z",
+        "path": "lib6f3/Update/HttpsOTAUpdate.cpp.o",
+        "size": 32016,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693743.161858,
+        "mtime_utc": "2026-10-22T18:29:03Z",
+        "path": "lib6f3/Update/Updater.cpp.o",
+        "size": 163712,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693735.984979,
+        "mtime_utc": "2026-10-22T18:28:55Z",
+        "path": "lib7af/TinyGPSPlus-ESP32/TinyGPSPlus.cpp.o",
+        "size": 99244,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693753.19,
+        "mtime_utc": "2026-10-22T18:29:13Z",
+        "path": "lib85b/SparkFun_9DoF_IMU_Breakout_-_ICM_20948_-_Arduino_Library/ICM_20948.cpp.o",
+        "size": 289524,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693749.5139482,
+        "mtime_utc": "2026-10-22T18:29:09Z",
+        "path": "lib85b/SparkFun_9DoF_IMU_Breakout_-_ICM_20948_-_Arduino_Library/util/ICM_20948_C.c.o",
+        "size": 215296,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693701.1251013,
+        "mtime_utc": "2026-10-22T18:28:21Z",
+        "path": "lib8c0/SPI/SPI.cpp.o",
+        "size": 76960,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693741.9051218,
+        "mtime_utc": "2026-10-22T18:29:01Z",
+        "path": "liba3a/Preferences/Preferences.cpp.o",
+        "size": 149252,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693750.8801775,
+        "mtime_utc": "2026-10-22T18:29:10Z",
+        "path": "libc0d/U8g2/U8g2lib.cpp.o",
+        "size": 51576,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693747.667659,
+        "mtime_utc": "2026-10-22T18:29:07Z",
+        "path": "libc0d/U8g2/U8x8lib.cpp.o",
+        "size": 92360,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693742.1187897,
+        "mtime_utc": "2026-10-22T18:29:02Z",
+        "path": "libc0d/U8g2/clib/mui.c.o",
+        "size": 73020,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693742.559783,
+        "mtime_utc": "2026-10-22T18:29:02Z",
+        "path": "libc0d/U8g2/clib/mui_u8g2.c.o",
+        "size": 182140,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693741.6346748,
+        "mtime_utc": "2026-10-22T18:29:01Z",
+        "path": "libc0d/U8g2/clib/u8g2_bitmap.c.o",
+        "size": 23332,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693741.6565554,
+        "mtime_utc": "2026-10-22T18:29:01Z",
+        "path": "libc0d/U8g2/clib/u8g2_box.c.o",
+        "size": 25000,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693742.1742744,
+        "mtime_utc": "2026-10-22T18:29:02Z",
+        "path": "libc0d/U8g2/clib/u8g2_buffer.c.o",
+        "size": 27716,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693741.6771827,
+        "mtime_utc": "2026-10-22T18:29:01Z",
+        "path": "libc0d/U8g2/clib/u8g2_button.c.o",
+        "size": 19804,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693741.8958917,
+        "mtime_utc": "2026-10-22T18:29:01Z",
+        "path": "libc0d/U8g2/clib/u8g2_circle.c.o",
+        "size": 47136,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693741.74412,
+        "mtime_utc": "2026-10-22T18:29:01Z",
+        "path": "libc0d/U8g2/clib/u8g2_cleardisplay.c.o",
+        "size": 10000,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693742.4295015,
+        "mtime_utc": "2026-10-22T18:29:02Z",
+        "path": "libc0d/U8g2/clib/u8g2_d_memory.c.o",
+        "size": 208548,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693746.5885508,
+        "mtime_utc": "2026-10-22T18:29:06Z",
+        "path": "libc0d/U8g2/clib/u8g2_d_setup.c.o",
+        "size": 1447000,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693742.6881056,
+        "mtime_utc": "2026-10-22T18:29:02Z",
+        "path": "libc0d/U8g2/clib/u8g2_font.c.o",
+        "size": 115736,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693745.916847,
+        "mtime_utc": "2026-10-22T18:29:05Z",
+        "path": "libc0d/U8g2/clib/u8g2_fonts.c.o",
+        "size": 11371100,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693742.8776047,
+        "mtime_utc": "2026-10-22T18:29:02Z",
+        "path": "libc0d/U8g2/clib/u8g2_hvline.c.o",
+        "size": 20364,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693742.5224366,
+        "mtime_utc": "2026-10-22T18:29:02Z",
+        "path": "libc0d/U8g2/clib/u8g2_input_value.c.o",
+        "size": 18128,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693742.7065299,
+        "mtime_utc": "2026-10-22T18:29:02Z",
+        "path": "libc0d/U8g2/clib/u8g2_intersection.c.o",
+        "size": 11240,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693742.8601482,
+        "mtime_utc": "2026-10-22T18:29:02Z",
+        "path": "libc0d/U8g2/clib/u8g2_kerning.c.o",
+        "size": 13376,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693742.8658037,
+        "mtime_utc": "2026-10-22T18:29:02Z",
+        "path": "libc0d/U8g2/clib/u8g2_line.c.o",
+        "size": 14416,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693743.2756352,
+        "mtime_utc": "2026-10-22T18:29:03Z",
+        "path": "libc0d/U8g2/clib/u8g2_ll_hvline.c.o",
+        "size": 17468,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693742.9249332,
+        "mtime_utc": "2026-10-22T18:29:02Z",
+        "path": "libc0d/U8g2/clib/u8g2_message.c.o",
+        "size": 21040,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693743.3454292,
+        "mtime_utc": "2026-10-22T18:29:03Z",
+        "path": "libc0d/U8g2/clib/u8g2_polygon.c.o",
+        "size": 34664,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693743.4783413,
+        "mtime_utc": "2026-10-22T18:29:03Z",
+        "path": "libc0d/U8g2/clib/u8g2_selection_list.c.o",
+        "size": 28812,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693743.930209,
+        "mtime_utc": "2026-10-22T18:29:03Z",
+        "path": "libc0d/U8g2/clib/u8g2_setup.c.o",
+        "size": 41504,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693743.8899064,
+        "mtime_utc": "2026-10-22T18:29:03Z",
+        "path": "libc0d/U8g2/clib/u8log.c.o",
+        "size": 24056,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693743.5222237,
+        "mtime_utc": "2026-10-22T18:29:03Z",
+        "path": "libc0d/U8g2/clib/u8log_u8g2.c.o",
+        "size": 14428,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693743.6687112,
+        "mtime_utc": "2026-10-22T18:29:03Z",
+        "path": "libc0d/U8g2/clib/u8log_u8x8.c.o",
+        "size": 11428,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693743.6843903,
+        "mtime_utc": "2026-10-22T18:29:03Z",
+        "path": "libc0d/U8g2/clib/u8x8_8x8.c.o",
+        "size": 50780,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693743.8919063,
+        "mtime_utc": "2026-10-22T18:29:03Z",
+        "path": "libc0d/U8g2/clib/u8x8_byte.c.o",
+        "size": 56016,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693743.8945987,
+        "mtime_utc": "2026-10-22T18:29:03Z",
+        "path": "libc0d/U8g2/clib/u8x8_cad.c.o",
+        "size": 68656,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693743.911032,
+        "mtime_utc": "2026-10-22T18:29:03Z",
+        "path": "libc0d/U8g2/clib/u8x8_capture.c.o",
+        "size": 17936,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693743.995054,
+        "mtime_utc": "2026-10-22T18:29:03Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_a2printer.c.o",
+        "size": 15560,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693744.191371,
+        "mtime_utc": "2026-10-22T18:29:04Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_gp1247ai.c.o",
+        "size": 14756,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693744.2405097,
+        "mtime_utc": "2026-10-22T18:29:04Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_gp1287ai.c.o",
+        "size": 14816,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693744.2410395,
+        "mtime_utc": "2026-10-22T18:29:04Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_gu800.c.o",
+        "size": 15944,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693744.4791598,
+        "mtime_utc": "2026-10-22T18:29:04Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_hd44102.c.o",
+        "size": 22820,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693744.4746456,
+        "mtime_utc": "2026-10-22T18:29:04Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_il3820_296x128.c.o",
+        "size": 21508,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693744.418267,
+        "mtime_utc": "2026-10-22T18:29:04Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_ist3020.c.o",
+        "size": 13848,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693744.6197102,
+        "mtime_utc": "2026-10-22T18:29:04Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_ist3088.c.o",
+        "size": 16188,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693744.6271448,
+        "mtime_utc": "2026-10-22T18:29:04Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_ist7920.c.o",
+        "size": 13900,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693744.8026946,
+        "mtime_utc": "2026-10-22T18:29:04Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_ks0108.c.o",
+        "size": 19192,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693744.640693,
+        "mtime_utc": "2026-10-22T18:29:04Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_lc7981.c.o",
+        "size": 28008,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693744.7333877,
+        "mtime_utc": "2026-10-22T18:29:04Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_ld7032_60x32.c.o",
+        "size": 25240,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693744.698449,
+        "mtime_utc": "2026-10-22T18:29:04Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_ls013b7dh03.c.o",
+        "size": 17244,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693744.99071,
+        "mtime_utc": "2026-10-22T18:29:04Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_max7219.c.o",
+        "size": 22600,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693744.9102235,
+        "mtime_utc": "2026-10-22T18:29:04Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_pcd8544_84x48.c.o",
+        "size": 12940,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693744.9847102,
+        "mtime_utc": "2026-10-22T18:29:04Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_pcf8812.c.o",
+        "size": 12924,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693745.2312481,
+        "mtime_utc": "2026-10-22T18:29:05Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_pcf8814_hx1230.c.o",
+        "size": 13880,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693745.1933846,
+        "mtime_utc": "2026-10-22T18:29:05Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_s1d15300.c.o",
+        "size": 14948,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693745.2343926,
+        "mtime_utc": "2026-10-22T18:29:05Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_s1d15721.c.o",
+        "size": 15916,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693745.279454,
+        "mtime_utc": "2026-10-22T18:29:05Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_s1d15e06.c.o",
+        "size": 15568,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693745.31295,
+        "mtime_utc": "2026-10-22T18:29:05Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_sbn1661.c.o",
+        "size": 13168,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693745.3796213,
+        "mtime_utc": "2026-10-22T18:29:05Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_sed1330.c.o",
+        "size": 23816,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693745.4179318,
+        "mtime_utc": "2026-10-22T18:29:05Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_sh1106_64x32.c.o",
+        "size": 14156,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693745.5196028,
+        "mtime_utc": "2026-10-22T18:29:05Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_sh1106_72x40.c.o",
+        "size": 14176,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693745.64088,
+        "mtime_utc": "2026-10-22T18:29:05Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_sh1107.c.o",
+        "size": 36516,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693745.5668807,
+        "mtime_utc": "2026-10-22T18:29:05Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_sh1108.c.o",
+        "size": 17496,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693745.7774274,
+        "mtime_utc": "2026-10-22T18:29:05Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_sh1122.c.o",
+        "size": 17316,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693745.7811823,
+        "mtime_utc": "2026-10-22T18:29:05Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_ssd1305.c.o",
+        "size": 23628,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693745.7547617,
+        "mtime_utc": "2026-10-22T18:29:05Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_ssd1306_128x32.c.o",
+        "size": 19692,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693746.0197885,
+        "mtime_utc": "2026-10-22T18:29:06Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_ssd1306_128x64_noname.c.o",
+        "size": 29060,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693745.8896341,
+        "mtime_utc": "2026-10-22T18:29:05Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_ssd1306_2040x16.c.o",
+        "size": 14220,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693746.064828,
+        "mtime_utc": "2026-10-22T18:29:06Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_ssd1306_48x64.c.o",
+        "size": 14224,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693746.0529912,
+        "mtime_utc": "2026-10-22T18:29:06Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_ssd1306_64x32.c.o",
+        "size": 17236,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693746.0795434,
+        "mtime_utc": "2026-10-22T18:29:06Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_ssd1306_64x48.c.o",
+        "size": 14196,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693746.136526,
+        "mtime_utc": "2026-10-22T18:29:06Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_ssd1306_72x40.c.o",
+        "size": 14200,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693746.1280277,
+        "mtime_utc": "2026-10-22T18:29:06Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_ssd1306_96x16.c.o",
+        "size": 14196,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693746.1664462,
+        "mtime_utc": "2026-10-22T18:29:06Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_ssd1306_96x40.c.o",
+        "size": 18716,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693746.2778244,
+        "mtime_utc": "2026-10-22T18:29:06Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_ssd1309.c.o",
+        "size": 24104,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693746.3665278,
+        "mtime_utc": "2026-10-22T18:29:06Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_ssd1316.c.o",
+        "size": 17212,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693746.374306,
+        "mtime_utc": "2026-10-22T18:29:06Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_ssd1317.c.o",
+        "size": 15044,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693746.494542,
+        "mtime_utc": "2026-10-22T18:29:06Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_ssd1318.c.o",
+        "size": 17124,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693746.7219052,
+        "mtime_utc": "2026-10-22T18:29:06Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_ssd1320.c.o",
+        "size": 33764,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693746.712475,
+        "mtime_utc": "2026-10-22T18:29:06Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_ssd1322.c.o",
+        "size": 34352,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693746.660392,
+        "mtime_utc": "2026-10-22T18:29:06Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_ssd1325.c.o",
+        "size": 24364,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693746.7142775,
+        "mtime_utc": "2026-10-22T18:29:06Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_ssd1326.c.o",
+        "size": 18204,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693746.7336726,
+        "mtime_utc": "2026-10-22T18:29:06Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_ssd1327.c.o",
+        "size": 40028,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693746.914572,
+        "mtime_utc": "2026-10-22T18:29:06Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_ssd1329.c.o",
+        "size": 29360,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693746.9081993,
+        "mtime_utc": "2026-10-22T18:29:06Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_ssd1362.c.o",
+        "size": 30948,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693746.8093612,
+        "mtime_utc": "2026-10-22T18:29:06Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_ssd1606_172x72.c.o",
+        "size": 19116,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693746.9081993,
+        "mtime_utc": "2026-10-22T18:29:06Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_ssd1607_200x200.c.o",
+        "size": 29444,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693746.952395,
+        "mtime_utc": "2026-10-22T18:29:06Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_st7511.c.o",
+        "size": 14464,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693746.9416912,
+        "mtime_utc": "2026-10-22T18:29:06Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_st75160.c.o",
+        "size": 14820,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693747.272709,
+        "mtime_utc": "2026-10-22T18:29:07Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_st75256.c.o",
+        "size": 74476,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693747.062049,
+        "mtime_utc": "2026-10-22T18:29:07Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_st7528.c.o",
+        "size": 22056,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693747.0405192,
+        "mtime_utc": "2026-10-22T18:29:07Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_st75320.c.o",
+        "size": 16048,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693747.208977,
+        "mtime_utc": "2026-10-22T18:29:07Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_st7539.c.o",
+        "size": 13752,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693747.4711523,
+        "mtime_utc": "2026-10-22T18:29:07Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_st7565.c.o",
+        "size": 52652,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693747.5697389,
+        "mtime_utc": "2026-10-22T18:29:07Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_st7567.c.o",
+        "size": 65160,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693747.4323728,
+        "mtime_utc": "2026-10-22T18:29:07Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_st7571.c.o",
+        "size": 17188,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693747.4921339,
+        "mtime_utc": "2026-10-22T18:29:07Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_st7586s_erc240160.c.o",
+        "size": 15504,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693747.565738,
+        "mtime_utc": "2026-10-22T18:29:07Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_st7586s_jlx384160.c.o",
+        "size": 17332,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693747.5395782,
+        "mtime_utc": "2026-10-22T18:29:07Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_st7586s_s028hn118a.c.o",
+        "size": 17348,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693747.556945,
+        "mtime_utc": "2026-10-22T18:29:07Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_st7586s_ymc240160.c.o",
+        "size": 15784,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693747.6062272,
+        "mtime_utc": "2026-10-22T18:29:07Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_st7588.c.o",
+        "size": 15608,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693747.6527057,
+        "mtime_utc": "2026-10-22T18:29:07Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_st7920.c.o",
+        "size": 21320,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693747.7222478,
+        "mtime_utc": "2026-10-22T18:29:07Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_t6963.c.o",
+        "size": 25748,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693747.7274694,
+        "mtime_utc": "2026-10-22T18:29:07Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_uc1601.c.o",
+        "size": 20140,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693747.80971,
+        "mtime_utc": "2026-10-22T18:29:07Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_uc1604.c.o",
+        "size": 14924,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693747.8069513,
+        "mtime_utc": "2026-10-22T18:29:07Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_uc1608.c.o",
+        "size": 23508,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693747.882681,
+        "mtime_utc": "2026-10-22T18:29:07Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_uc1609.c.o",
+        "size": 13384,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693747.9168391,
+        "mtime_utc": "2026-10-22T18:29:07Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_uc1610.c.o",
+        "size": 16420,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693747.9561255,
+        "mtime_utc": "2026-10-22T18:29:07Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_uc1611.c.o",
+        "size": 37400,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693747.9118373,
+        "mtime_utc": "2026-10-22T18:29:07Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_uc1617.c.o",
+        "size": 21704,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693748.1635973,
+        "mtime_utc": "2026-10-22T18:29:08Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_uc1638.c.o",
+        "size": 20304,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693748.1350522,
+        "mtime_utc": "2026-10-22T18:29:08Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_uc1701_dogs102.c.o",
+        "size": 13976,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693748.1897628,
+        "mtime_utc": "2026-10-22T18:29:08Z",
+        "path": "libc0d/U8g2/clib/u8x8_d_uc1701_mini12864.c.o",
+        "size": 14012,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693748.2477422,
+        "mtime_utc": "2026-10-22T18:29:08Z",
+        "path": "libc0d/U8g2/clib/u8x8_debounce.c.o",
+        "size": 11024,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693748.381105,
+        "mtime_utc": "2026-10-22T18:29:08Z",
+        "path": "libc0d/U8g2/clib/u8x8_display.c.o",
+        "size": 19508,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693748.4952374,
+        "mtime_utc": "2026-10-22T18:29:08Z",
+        "path": "libc0d/U8g2/clib/u8x8_fonts.c.o",
+        "size": 519056,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693748.2606752,
+        "mtime_utc": "2026-10-22T18:29:08Z",
+        "path": "libc0d/U8g2/clib/u8x8_gpio.c.o",
+        "size": 5796,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693748.3438995,
+        "mtime_utc": "2026-10-22T18:29:08Z",
+        "path": "libc0d/U8g2/clib/u8x8_input_value.c.o",
+        "size": 13488,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693748.4108768,
+        "mtime_utc": "2026-10-22T18:29:08Z",
+        "path": "libc0d/U8g2/clib/u8x8_message.c.o",
+        "size": 17356,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693748.4456556,
+        "mtime_utc": "2026-10-22T18:29:08Z",
+        "path": "libc0d/U8g2/clib/u8x8_selection_list.c.o",
+        "size": 16488,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693748.3861063,
+        "mtime_utc": "2026-10-22T18:29:08Z",
+        "path": "libc0d/U8g2/clib/u8x8_setup.c.o",
+        "size": 11176,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693748.429946,
+        "mtime_utc": "2026-10-22T18:29:08Z",
+        "path": "libc0d/U8g2/clib/u8x8_string.c.o",
+        "size": 17544,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693748.4973629,
+        "mtime_utc": "2026-10-22T18:29:08Z",
+        "path": "libc0d/U8g2/clib/u8x8_u16toa.c.o",
+        "size": 8344,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693748.4373398,
+        "mtime_utc": "2026-10-22T18:29:08Z",
+        "path": "libc0d/U8g2/clib/u8x8_u8toa.c.o",
+        "size": 7184,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693701.4031036,
+        "mtime_utc": "2026-10-22T18:28:21Z",
+        "path": "libc73/RadioLib/Hal.cpp.o",
+        "size": 28548,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693701.84558,
+        "mtime_utc": "2026-10-22T18:28:21Z",
+        "path": "libc73/RadioLib/Module.cpp.o",
+        "size": 97308,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693701.7430336,
+        "mtime_utc": "2026-10-22T18:28:21Z",
+        "path": "libc73/RadioLib/hal/Arduino/ArduinoHal.cpp.o",
+        "size": 65588,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693702.5388896,
+        "mtime_utc": "2026-10-22T18:28:22Z",
+        "path": "libc73/RadioLib/modules/CC1101/CC1101.cpp.o",
+        "size": 209276,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693702.39869,
+        "mtime_utc": "2026-10-22T18:28:22Z",
+        "path": "libc73/RadioLib/modules/LLCC68/LLCC68.cpp.o",
+        "size": 75164,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693703.217683,
+        "mtime_utc": "2026-10-22T18:28:23Z",
+        "path": "libc73/RadioLib/modules/LR11x0/LR1110.cpp.o",
+        "size": 78960,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693703.8152187,
+        "mtime_utc": "2026-10-22T18:28:23Z",
+        "path": "libc73/RadioLib/modules/LR11x0/LR1120.cpp.o",
+        "size": 80168,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693704.0107234,
+        "mtime_utc": "2026-10-22T18:28:24Z",
+        "path": "libc73/RadioLib/modules/LR11x0/LR1121.cpp.o",
+        "size": 50556,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693706.5245235,
+        "mtime_utc": "2026-10-22T18:28:26Z",
+        "path": "libc73/RadioLib/modules/LR11x0/LR11x0.cpp.o",
+        "size": 628548,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693706.7207215,
+        "mtime_utc": "2026-10-22T18:28:26Z",
+        "path": "libc73/RadioLib/modules/RF69/RF69.cpp.o",
+        "size": 210724,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693706.4876645,
+        "mtime_utc": "2026-10-22T18:28:26Z",
+        "path": "libc73/RadioLib/modules/SX123x/SX1231.cpp.o",
+        "size": 65444,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693706.4746637,
+        "mtime_utc": "2026-10-22T18:28:26Z",
+        "path": "libc73/RadioLib/modules/SX123x/SX1233.cpp.o",
+        "size": 70336,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693706.4426124,
+        "mtime_utc": "2026-10-22T18:28:26Z",
+        "path": "libc73/RadioLib/modules/SX126x/STM32WLx.cpp.o",
+        "size": 19836,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693707.2922018,
+        "mtime_utc": "2026-10-22T18:28:27Z",
+        "path": "libc73/RadioLib/modules/SX126x/STM32WLx_Module.cpp.o",
+        "size": 19860,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693707.335564,
+        "mtime_utc": "2026-10-22T18:28:27Z",
+        "path": "libc73/RadioLib/modules/SX126x/SX1261.cpp.o",
+        "size": 62080,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693707.4952748,
+        "mtime_utc": "2026-10-22T18:28:27Z",
+        "path": "libc73/RadioLib/modules/SX126x/SX1262.cpp.o",
+        "size": 76220,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693708.1970317,
+        "mtime_utc": "2026-10-22T18:28:28Z",
+        "path": "libc73/RadioLib/modules/SX126x/SX1268.cpp.o",
+        "size": 76236,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693709.5377886,
+        "mtime_utc": "2026-10-22T18:28:29Z",
+        "path": "libc73/RadioLib/modules/SX126x/SX126x.cpp.o",
+        "size": 362176,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693708.7625017,
+        "mtime_utc": "2026-10-22T18:28:28Z",
+        "path": "libc73/RadioLib/modules/SX126x/SX126x_LR_FHSS.cpp.o",
+        "size": 79752,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693708.9404995,
+        "mtime_utc": "2026-10-22T18:28:28Z",
+        "path": "libc73/RadioLib/modules/SX127x/SX1272.cpp.o",
+        "size": 131060,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693708.91298,
+        "mtime_utc": "2026-10-22T18:28:28Z",
+        "path": "libc73/RadioLib/modules/SX127x/SX1273.cpp.o",
+        "size": 72572,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693709.8614066,
+        "mtime_utc": "2026-10-22T18:28:29Z",
+        "path": "libc73/RadioLib/modules/SX127x/SX1276.cpp.o",
+        "size": 71216,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693710.1441958,
+        "mtime_utc": "2026-10-22T18:28:30Z",
+        "path": "libc73/RadioLib/modules/SX127x/SX1277.cpp.o",
+        "size": 79732,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693710.8377423,
+        "mtime_utc": "2026-10-22T18:28:30Z",
+        "path": "libc73/RadioLib/modules/SX127x/SX1278.cpp.o",
+        "size": 146664,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693710.7512486,
+        "mtime_utc": "2026-10-22T18:28:30Z",
+        "path": "libc73/RadioLib/modules/SX127x/SX1279.cpp.o",
+        "size": 71204,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693712.2233942,
+        "mtime_utc": "2026-10-22T18:28:32Z",
+        "path": "libc73/RadioLib/modules/SX127x/SX127x.cpp.o",
+        "size": 300580,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693711.5373623,
+        "mtime_utc": "2026-10-22T18:28:31Z",
+        "path": "libc73/RadioLib/modules/SX128x/SX1280.cpp.o",
+        "size": 76464,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693711.423593,
+        "mtime_utc": "2026-10-22T18:28:31Z",
+        "path": "libc73/RadioLib/modules/SX128x/SX1281.cpp.o",
+        "size": 55788,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693711.6911986,
+        "mtime_utc": "2026-10-22T18:28:31Z",
+        "path": "libc73/RadioLib/modules/SX128x/SX1282.cpp.o",
+        "size": 56808,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693712.6281555,
+        "mtime_utc": "2026-10-22T18:28:32Z",
+        "path": "libc73/RadioLib/modules/SX128x/SX128x.cpp.o",
+        "size": 262960,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693711.599294,
+        "mtime_utc": "2026-10-22T18:28:31Z",
+        "path": "libc73/RadioLib/modules/Si443x/Si4430.cpp.o",
+        "size": 62048,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693712.0745013,
+        "mtime_utc": "2026-10-22T18:28:32Z",
+        "path": "libc73/RadioLib/modules/Si443x/Si4431.cpp.o",
+        "size": 60440,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693712.028565,
+        "mtime_utc": "2026-10-22T18:28:32Z",
+        "path": "libc73/RadioLib/modules/Si443x/Si4432.cpp.o",
+        "size": 61996,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693712.9816477,
+        "mtime_utc": "2026-10-22T18:28:32Z",
+        "path": "libc73/RadioLib/modules/Si443x/Si443x.cpp.o",
+        "size": 168636,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693712.5577617,
+        "mtime_utc": "2026-10-22T18:28:32Z",
+        "path": "libc73/RadioLib/modules/nRF24/nRF24.cpp.o",
+        "size": 134384,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693712.722302,
+        "mtime_utc": "2026-10-22T18:28:32Z",
+        "path": "libc73/RadioLib/protocols/AFSK/AFSK.cpp.o",
+        "size": 36056,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693713.7056327,
+        "mtime_utc": "2026-10-22T18:28:33Z",
+        "path": "libc73/RadioLib/protocols/APRS/APRS.cpp.o",
+        "size": 73160,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693714.0926006,
+        "mtime_utc": "2026-10-22T18:28:34Z",
+        "path": "libc73/RadioLib/protocols/AX25/AX25.cpp.o",
+        "size": 100148,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693713.8696282,
+        "mtime_utc": "2026-10-22T18:28:33Z",
+        "path": "libc73/RadioLib/protocols/BellModem/BellModem.cpp.o",
+        "size": 47304,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693714.0260408,
+        "mtime_utc": "2026-10-22T18:28:34Z",
+        "path": "libc73/RadioLib/protocols/ExternalRadio/ExternalRadio.cpp.o",
+        "size": 55512,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693714.853011,
+        "mtime_utc": "2026-10-22T18:28:34Z",
+        "path": "libc73/RadioLib/protocols/FSK4/FSK4.cpp.o",
+        "size": 52240,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693715.0349529,
+        "mtime_utc": "2026-10-22T18:28:35Z",
+        "path": "libc73/RadioLib/protocols/Hellschreiber/Hellschreiber.cpp.o",
+        "size": 50700,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693717.2328422,
+        "mtime_utc": "2026-10-22T18:28:37Z",
+        "path": "libc73/RadioLib/protocols/LoRaWAN/LoRaWAN.cpp.o",
+        "size": 375964,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693715.98333,
+        "mtime_utc": "2026-10-22T18:28:35Z",
+        "path": "libc73/RadioLib/protocols/LoRaWAN/LoRaWANBands.cpp.o",
+        "size": 31812,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693716.2653499,
+        "mtime_utc": "2026-10-22T18:28:36Z",
+        "path": "libc73/RadioLib/protocols/Morse/Morse.cpp.o",
+        "size": 55852,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693717.008976,
+        "mtime_utc": "2026-10-22T18:28:37Z",
+        "path": "libc73/RadioLib/protocols/Pager/Pager.cpp.o",
+        "size": 105976,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693716.7728734,
+        "mtime_utc": "2026-10-22T18:28:36Z",
+        "path": "libc73/RadioLib/protocols/PhysicalLayer/PhysicalLayer.cpp.o",
+        "size": 109552,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693716.7436965,
+        "mtime_utc": "2026-10-22T18:28:36Z",
+        "path": "libc73/RadioLib/protocols/Print/ITA2String.cpp.o",
+        "size": 41164,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693716.8287392,
+        "mtime_utc": "2026-10-22T18:28:36Z",
+        "path": "libc73/RadioLib/protocols/Print/Print.cpp.o",
+        "size": 108244,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693717.1919968,
+        "mtime_utc": "2026-10-22T18:28:37Z",
+        "path": "libc73/RadioLib/protocols/RTTY/RTTY.cpp.o",
+        "size": 51096,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693717.417796,
+        "mtime_utc": "2026-10-22T18:28:37Z",
+        "path": "libc73/RadioLib/protocols/SSTV/SSTV.cpp.o",
+        "size": 61664,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693717.299761,
+        "mtime_utc": "2026-10-22T18:28:37Z",
+        "path": "libc73/RadioLib/utils/CRC.cpp.o",
+        "size": 35896,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693717.7084656,
+        "mtime_utc": "2026-10-22T18:28:37Z",
+        "path": "libc73/RadioLib/utils/Cryptography.cpp.o",
+        "size": 79632,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693717.8693204,
+        "mtime_utc": "2026-10-22T18:28:37Z",
+        "path": "libc73/RadioLib/utils/FEC.cpp.o",
+        "size": 68672,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693717.9073584,
+        "mtime_utc": "2026-10-22T18:28:37Z",
+        "path": "libc73/RadioLib/utils/Utils.cpp.o",
+        "size": 23096,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693745.4164863,
+        "mtime_utc": "2026-10-22T18:29:05Z",
+        "path": "libca4/DNSServer/DNSServer.cpp.o",
+        "size": 156064,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693741.0818248,
+        "mtime_utc": "2026-10-22T18:29:01Z",
+        "path": "libcef/FS/FS.cpp.o",
+        "size": 156676,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693741.4852493,
+        "mtime_utc": "2026-10-22T18:29:01Z",
+        "path": "libcef/FS/vfs_api.cpp.o",
+        "size": 255504,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693702.000861,
+        "mtime_utc": "2026-10-22T18:28:22Z",
+        "path": "libf2e/IgcLogger/IgcLogger.cpp.o",
+        "size": 285380,
+        "type": "o"
+      },
+      {
+        "category": "libdeps",
+        "mtime_epoch": 1792693742.8248138,
+        "mtime_utc": "2026-10-22T18:29:02Z",
+        "path": "libf95/HTTPClient/HTTPClient.cpp.o",
+        "size": 518524,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693696.2744267,
+        "mtime_utc": "2026-10-22T18:28:16Z",
+        "path": "bootloader.bin",
+        "size": 20160,
+        "type": "bin"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693774.94754,
+        "mtime_utc": "2026-10-22T18:29:34Z",
+        "path": "firmware-leaf_3_2_8.bin",
+        "size": 2336000,
+        "type": "bin"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693774.9129648,
+        "mtime_utc": "2026-10-22T18:29:34Z",
+        "path": "firmware.bin",
+        "size": 2336000,
+        "type": "bin"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693695.5691288,
+        "mtime_utc": "2026-10-22T18:28:15Z",
+        "path": "partitions.bin",
+        "size": 3072,
+        "type": "bin"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693774.180513,
+        "mtime_utc": "2026-10-22T18:29:34Z",
+        "path": "firmware.elf",
+        "size": 36438052,
+        "type": "elf"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693774.2075565,
+        "mtime_utc": "2026-10-22T18:29:34Z",
+        "path": "firmware.map",
+        "size": 23757549,
+        "type": "map"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693645.8110235,
+        "mtime_utc": "2026-10-22T18:27:25Z",
+        "path": "src/comms/ble.cpp.o",
+        "size": 995332,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693644.2764113,
+        "mtime_utc": "2026-10-22T18:27:24Z",
+        "path": "src/comms/factory_discovery.cpp.o",
+        "size": 231608,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693648.7882555,
+        "mtime_utc": "2026-10-22T18:27:28Z",
+        "path": "src/comms/fanet_radio.cpp.o",
+        "size": 1681264,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693649.2538378,
+        "mtime_utc": "2026-10-22T18:27:29Z",
+        "path": "src/comms/leaf_log_client.cpp.o",
+        "size": 545860,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693644.2210677,
+        "mtime_utc": "2026-10-22T18:27:24Z",
+        "path": "src/comms/leaf_log_credentials.cpp.o",
+        "size": 90264,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693647.9213867,
+        "mtime_utc": "2026-10-22T18:27:27Z",
+        "path": "src/comms/leaf_log_sync.cpp.o",
+        "size": 399968,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693650.3929482,
+        "mtime_utc": "2026-10-22T18:27:30Z",
+        "path": "src/comms/ota.cpp.o",
+        "size": 617172,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693646.9822576,
+        "mtime_utc": "2026-10-22T18:27:26Z",
+        "path": "src/comms/sd_firmware_update.cpp.o",
+        "size": 237688,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693647.1871514,
+        "mtime_utc": "2026-10-22T18:27:27Z",
+        "path": "src/comms/udp_message_server.cpp.o",
+        "size": 201924,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693666.9987185,
+        "mtime_utc": "2026-10-22T18:27:46Z",
+        "path": "src/comms/webserver.cpp.o",
+        "size": 3848708,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693647.7018585,
+        "mtime_utc": "2026-10-22T18:27:27Z",
+        "path": "src/comms/wifi_coordinator.cpp.o",
+        "size": 247816,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693647.1477199,
+        "mtime_utc": "2026-10-22T18:27:27Z",
+        "path": "src/diagnostics/boot_diagnostics.cpp.o",
+        "size": 108760,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693647.5419478,
+        "mtime_utc": "2026-10-22T18:27:27Z",
+        "path": "src/diagnostics/buttons.cpp.o",
+        "size": 136140,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693647.9625692,
+        "mtime_utc": "2026-10-22T18:27:27Z",
+        "path": "src/diagnostics/cpu_utilization.cpp.o",
+        "size": 356516,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693647.2046182,
+        "mtime_utc": "2026-10-22T18:27:27Z",
+        "path": "src/diagnostics/diagnostic_logs.cpp.o",
+        "size": 163772,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693648.005009,
+        "mtime_utc": "2026-10-22T18:27:28Z",
+        "path": "src/diagnostics/diagnostic_network/diagnostic_network.cpp.o",
+        "size": 269000,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693653.0279114,
+        "mtime_utc": "2026-10-22T18:27:33Z",
+        "path": "src/diagnostics/fatal_error.cpp.o",
+        "size": 233944,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693647.3847919,
+        "mtime_utc": "2026-10-22T18:27:27Z",
+        "path": "src/diagnostics/heap_monitor.cpp.o",
+        "size": 143600,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693653.6483998,
+        "mtime_utc": "2026-10-22T18:27:33Z",
+        "path": "src/diagnostics/self_test/selfTest.cpp.o",
+        "size": 404500,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693653.8643959,
+        "mtime_utc": "2026-10-22T18:27:33Z",
+        "path": "src/diagnostics/self_test/selfTest_displayScreens.cpp.o",
+        "size": 265636,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693652.7211585,
+        "mtime_utc": "2026-10-22T18:27:32Z",
+        "path": "src/dispatch/message_injector.cpp.o",
+        "size": 247608,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693647.059911,
+        "mtime_utc": "2026-10-22T18:27:27Z",
+        "path": "src/hardware/Leaf_I2C.cpp.o",
+        "size": 21796,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693651.613031,
+        "mtime_utc": "2026-10-22T18:27:31Z",
+        "path": "src/hardware/Leaf_SPI.cpp.o",
+        "size": 35628,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693655.4646518,
+        "mtime_utc": "2026-10-22T18:27:35Z",
+        "path": "src/hardware/aht20.cpp.o",
+        "size": 261168,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693660.9918325,
+        "mtime_utc": "2026-10-22T18:27:40Z",
+        "path": "src/hardware/buttons.cpp.o",
+        "size": 241116,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693652.8437881,
+        "mtime_utc": "2026-10-22T18:27:32Z",
+        "path": "src/hardware/icm_20948.cpp.o",
+        "size": 19748,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693652.488347,
+        "mtime_utc": "2026-10-22T18:27:32Z",
+        "path": "src/hardware/io_pins.cpp.o",
+        "size": 36220,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693655.8808198,
+        "mtime_utc": "2026-10-22T18:27:35Z",
+        "path": "src/hardware/lc86g.cpp.o",
+        "size": 234940,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693656.2148297,
+        "mtime_utc": "2026-10-22T18:27:36Z",
+        "path": "src/hardware/lsm6dsv.cpp.o",
+        "size": 273696,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693655.7382946,
+        "mtime_utc": "2026-10-22T18:27:35Z",
+        "path": "src/hardware/ms5611.cpp.o",
+        "size": 176020,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693655.6521041,
+        "mtime_utc": "2026-10-22T18:27:35Z",
+        "path": "src/instruments/ambient.cpp.o",
+        "size": 142608,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693657.4738784,
+        "mtime_utc": "2026-10-22T18:27:37Z",
+        "path": "src/instruments/baro.cpp.o",
+        "size": 423652,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693661.8170402,
+        "mtime_utc": "2026-10-22T18:27:41Z",
+        "path": "src/instruments/gps.cpp.o",
+        "size": 402020,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693657.1869767,
+        "mtime_utc": "2026-10-22T18:27:37Z",
+        "path": "src/instruments/imu.cpp.o",
+        "size": 290948,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693657.2723086,
+        "mtime_utc": "2026-10-22T18:27:37Z",
+        "path": "src/logbook/flight.cpp.o",
+        "size": 176448,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693658.8131285,
+        "mtime_utc": "2026-10-22T18:27:38Z",
+        "path": "src/logbook/igc.cpp.o",
+        "size": 282480,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693660.5326755,
+        "mtime_utc": "2026-10-22T18:27:40Z",
+        "path": "src/logbook/logbook_entry.cpp.o",
+        "size": 685572,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693663.250878,
+        "mtime_utc": "2026-10-22T18:27:43Z",
+        "path": "src/logbook/logbook_store.cpp.o",
+        "size": 906868,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693661.1614301,
+        "mtime_utc": "2026-10-22T18:27:41Z",
+        "path": "src/logging/buslog.cpp.o",
+        "size": 299744,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693667.0526981,
+        "mtime_utc": "2026-10-22T18:27:47Z",
+        "path": "src/logging/log.cpp.o",
+        "size": 279324,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693662.8601282,
+        "mtime_utc": "2026-10-22T18:27:42Z",
+        "path": "src/main.cpp.o",
+        "size": 690300,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693658.6147542,
+        "mtime_utc": "2026-10-22T18:27:38Z",
+        "path": "src/math/kalman.cpp.o",
+        "size": 59692,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693658.884127,
+        "mtime_utc": "2026-10-22T18:27:38Z",
+        "path": "src/math/linear_regression.cpp.o",
+        "size": 22780,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693665.9090781,
+        "mtime_utc": "2026-10-22T18:27:45Z",
+        "path": "src/navigation/gpx.cpp.o",
+        "size": 1030836,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693662.0598755,
+        "mtime_utc": "2026-10-22T18:27:42Z",
+        "path": "src/navigation/gpx_parser.cpp.o",
+        "size": 144028,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693656.237801,
+        "mtime_utc": "2026-10-22T18:27:36Z",
+        "path": "src/navigation/nav_ids.cpp.o",
+        "size": 11228,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693666.7629597,
+        "mtime_utc": "2026-10-22T18:27:46Z",
+        "path": "src/navigation/route_store.cpp.o",
+        "size": 1141432,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693664.9231899,
+        "mtime_utc": "2026-10-22T18:27:44Z",
+        "path": "src/navigation/thermal_core.cpp.o",
+        "size": 262016,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693665.3117642,
+        "mtime_utc": "2026-10-22T18:27:45Z",
+        "path": "src/navigation/thermal_tracker.cpp.o",
+        "size": 253296,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693667.5091343,
+        "mtime_utc": "2026-10-22T18:27:47Z",
+        "path": "src/navigation/user_waypoints.cpp.o",
+        "size": 867404,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693671.4842007,
+        "mtime_utc": "2026-10-22T18:27:51Z",
+        "path": "src/power.cpp.o",
+        "size": 622608,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693667.0593314,
+        "mtime_utc": "2026-10-22T18:27:47Z",
+        "path": "src/profiles/profile_store.cpp.o",
+        "size": 734744,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693663.6654747,
+        "mtime_utc": "2026-10-22T18:27:43Z",
+        "path": "src/storage/files.cpp.o",
+        "size": 90636,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693667.6691012,
+        "mtime_utc": "2026-10-22T18:27:47Z",
+        "path": "src/storage/sd_card.cpp.o",
+        "size": 253060,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693660.511676,
+        "mtime_utc": "2026-10-22T18:27:40Z",
+        "path": "src/system/usb_serial.cpp.o",
+        "size": 23120,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693665.1605315,
+        "mtime_utc": "2026-10-22T18:27:45Z",
+        "path": "src/system/usb_state.cpp.o",
+        "size": 55908,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693661.8107462,
+        "mtime_utc": "2026-10-22T18:27:41Z",
+        "path": "src/system/version_info.cpp.o",
+        "size": 21516,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693677.6532059,
+        "mtime_utc": "2026-10-22T18:27:57Z",
+        "path": "src/taskman.cpp.o",
+        "size": 435172,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693669.9838412,
+        "mtime_utc": "2026-10-22T18:27:49Z",
+        "path": "src/tests/fanet_tests.cpp.o",
+        "size": 371464,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693669.415658,
+        "mtime_utc": "2026-10-22T18:27:49Z",
+        "path": "src/tests/gps_tests.cpp.o",
+        "size": 160048,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693669.1912293,
+        "mtime_utc": "2026-10-22T18:27:49Z",
+        "path": "src/tests/tests.cpp.o",
+        "size": 65788,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693667.3773017,
+        "mtime_utc": "2026-10-22T18:27:47Z",
+        "path": "src/ui/audio/audio_tests.cpp.o",
+        "size": 40460,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693671.1634033,
+        "mtime_utc": "2026-10-22T18:27:51Z",
+        "path": "src/ui/audio/speaker.cpp.o",
+        "size": 251692,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693669.123557,
+        "mtime_utc": "2026-10-22T18:27:49Z",
+        "path": "src/ui/audio/speaker_driver.cpp.o",
+        "size": 83392,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693677.7549405,
+        "mtime_utc": "2026-10-22T18:27:57Z",
+        "path": "src/ui/display/display.cpp.o",
+        "size": 284460,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693678.715643,
+        "mtime_utc": "2026-10-22T18:27:58Z",
+        "path": "src/ui/display/display_fields.cpp.o",
+        "size": 528804,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693677.9719887,
+        "mtime_utc": "2026-10-22T18:27:57Z",
+        "path": "src/ui/display/logbook_card.cpp.o",
+        "size": 227316,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693678.2314417,
+        "mtime_utc": "2026-10-22T18:27:58Z",
+        "path": "src/ui/display/menu_page.cpp.o",
+        "size": 218736,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693673.398625,
+        "mtime_utc": "2026-10-22T18:27:53Z",
+        "path": "src/ui/display/pages.cpp.o",
+        "size": 124860,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693678.9174573,
+        "mtime_utc": "2026-10-22T18:27:58Z",
+        "path": "src/ui/display/pages/dialogs/page_alert_autoOff.cpp.o",
+        "size": 146884,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693679.7493355,
+        "mtime_utc": "2026-10-22T18:27:59Z",
+        "path": "src/ui/display/pages/dialogs/page_alert_timerAutoStop.cpp.o",
+        "size": 153744,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693679.7038949,
+        "mtime_utc": "2026-10-22T18:27:59Z",
+        "path": "src/ui/display/pages/dialogs/page_flight_summary.cpp.o",
+        "size": 158812,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693679.6347678,
+        "mtime_utc": "2026-10-22T18:27:59Z",
+        "path": "src/ui/display/pages/dialogs/page_list_select.cpp.o",
+        "size": 94992,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693681.2270477,
+        "mtime_utc": "2026-10-22T18:28:01Z",
+        "path": "src/ui/display/pages/dialogs/page_menu_about.cpp.o",
+        "size": 225192,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693679.8599021,
+        "mtime_utc": "2026-10-22T18:27:59Z",
+        "path": "src/ui/display/pages/dialogs/page_message.cpp.o",
+        "size": 115100,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693680.0461652,
+        "mtime_utc": "2026-10-22T18:28:00Z",
+        "path": "src/ui/display/pages/dialogs/page_qr.cpp.o",
+        "size": 89684,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693680.421935,
+        "mtime_utc": "2026-10-22T18:28:00Z",
+        "path": "src/ui/display/pages/dialogs/page_warning.cpp.o",
+        "size": 119984,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693682.345716,
+        "mtime_utc": "2026-10-22T18:28:02Z",
+        "path": "src/ui/display/pages/fanet/page_fanet.cpp.o",
+        "size": 172772,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693682.792477,
+        "mtime_utc": "2026-10-22T18:28:02Z",
+        "path": "src/ui/display/pages/fanet/page_fanet_ground.cpp.o",
+        "size": 214436,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693676.7424889,
+        "mtime_utc": "2026-10-22T18:27:56Z",
+        "path": "src/ui/display/pages/fanet/page_fanet_ground_select.cpp.o",
+        "size": 79096,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693683.7975895,
+        "mtime_utc": "2026-10-22T18:28:03Z",
+        "path": "src/ui/display/pages/fanet/page_fanet_neighbors.cpp.o",
+        "size": 376628,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693684.5591598,
+        "mtime_utc": "2026-10-22T18:28:04Z",
+        "path": "src/ui/display/pages/fanet/page_fanet_stats.cpp.o",
+        "size": 240724,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693685.6726863,
+        "mtime_utc": "2026-10-22T18:28:05Z",
+        "path": "src/ui/display/pages/menu/page_gpx_file_select.cpp.o",
+        "size": 282376,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693686.4775808,
+        "mtime_utc": "2026-10-22T18:28:06Z",
+        "path": "src/ui/display/pages/menu/page_logbook.cpp.o",
+        "size": 226064,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693690.6501315,
+        "mtime_utc": "2026-10-22T18:28:10Z",
+        "path": "src/ui/display/pages/menu/page_menu_altimeter.cpp.o",
+        "size": 188336,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693690.9290783,
+        "mtime_utc": "2026-10-22T18:28:10Z",
+        "path": "src/ui/display/pages/menu/page_menu_developer.cpp.o",
+        "size": 206352,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693690.647132,
+        "mtime_utc": "2026-10-22T18:28:10Z",
+        "path": "src/ui/display/pages/menu/page_menu_display.cpp.o",
+        "size": 193316,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693692.668609,
+        "mtime_utc": "2026-10-22T18:28:12Z",
+        "path": "src/ui/display/pages/menu/page_menu_flight_tools.cpp.o",
+        "size": 227732,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693691.7044096,
+        "mtime_utc": "2026-10-22T18:28:11Z",
+        "path": "src/ui/display/pages/menu/page_menu_gps.cpp.o",
+        "size": 198868,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693692.0868444,
+        "mtime_utc": "2026-10-22T18:28:12Z",
+        "path": "src/ui/display/pages/menu/page_menu_leaf_labs.cpp.o",
+        "size": 174760,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693692.3822627,
+        "mtime_utc": "2026-10-22T18:28:12Z",
+        "path": "src/ui/display/pages/menu/page_menu_log.cpp.o",
+        "size": 186632,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693693.0513728,
+        "mtime_utc": "2026-10-22T18:28:13Z",
+        "path": "src/ui/display/pages/menu/page_menu_nav_data.cpp.o",
+        "size": 222036,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693694.3380706,
+        "mtime_utc": "2026-10-22T18:28:14Z",
+        "path": "src/ui/display/pages/menu/page_menu_settings.cpp.o",
+        "size": 205960,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693693.0533824,
+        "mtime_utc": "2026-10-22T18:28:13Z",
+        "path": "src/ui/display/pages/menu/page_menu_system.cpp.o",
+        "size": 195992,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693693.4595788,
+        "mtime_utc": "2026-10-22T18:28:13Z",
+        "path": "src/ui/display/pages/menu/page_menu_units.cpp.o",
+        "size": 174028,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693693.5100436,
+        "mtime_utc": "2026-10-22T18:28:13Z",
+        "path": "src/ui/display/pages/menu/page_menu_vario.cpp.o",
+        "size": 184972,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693694.9847894,
+        "mtime_utc": "2026-10-22T18:28:14Z",
+        "path": "src/ui/display/pages/menu/page_menu_wifi.cpp.o",
+        "size": 750476,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693695.1542926,
+        "mtime_utc": "2026-10-22T18:28:15Z",
+        "path": "src/ui/display/pages/menu/page_nav_data_select.cpp.o",
+        "size": 201336,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693696.1029766,
+        "mtime_utc": "2026-10-22T18:28:16Z",
+        "path": "src/ui/display/pages/menu/page_profile_select.cpp.o",
+        "size": 206100,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693696.2249467,
+        "mtime_utc": "2026-10-22T18:28:16Z",
+        "path": "src/ui/display/pages/primary/page_basic.cpp.o",
+        "size": 201356,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693697.032837,
+        "mtime_utc": "2026-10-22T18:28:17Z",
+        "path": "src/ui/display/pages/primary/page_charging.cpp.o",
+        "size": 278808,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693697.6069832,
+        "mtime_utc": "2026-10-22T18:28:17Z",
+        "path": "src/ui/display/pages/primary/page_debug.cpp.o",
+        "size": 202444,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693698.4763014,
+        "mtime_utc": "2026-10-22T18:28:18Z",
+        "path": "src/ui/display/pages/primary/page_debug2.cpp.o",
+        "size": 187956,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693699.165609,
+        "mtime_utc": "2026-10-22T18:28:19Z",
+        "path": "src/ui/display/pages/primary/page_menu_main.cpp.o",
+        "size": 197144,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693705.0306742,
+        "mtime_utc": "2026-10-22T18:28:25Z",
+        "path": "src/ui/display/pages/primary/page_navigate.cpp.o",
+        "size": 287644,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693704.6356173,
+        "mtime_utc": "2026-10-22T18:28:24Z",
+        "path": "src/ui/display/pages/primary/page_thermal_core.cpp.o",
+        "size": 312172,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693704.9562461,
+        "mtime_utc": "2026-10-22T18:28:24Z",
+        "path": "src/ui/display/pages/primary/page_thermal_track.cpp.o",
+        "size": 262048,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693705.460309,
+        "mtime_utc": "2026-10-22T18:28:25Z",
+        "path": "src/ui/display/pages/primary/page_user.cpp.o",
+        "size": 221728,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693705.8316884,
+        "mtime_utc": "2026-10-22T18:28:25Z",
+        "path": "src/ui/display/thermal_page_fields.cpp.o",
+        "size": 181812,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693703.4633875,
+        "mtime_utc": "2026-10-22T18:28:23Z",
+        "path": "src/ui/display/utils.cpp.o",
+        "size": 99840,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693706.376295,
+        "mtime_utc": "2026-10-22T18:28:26Z",
+        "path": "src/ui/input/button_dispatcher.cpp.o",
+        "size": 155552,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693706.7795372,
+        "mtime_utc": "2026-10-22T18:28:26Z",
+        "path": "src/ui/settings/settings.cpp.o",
+        "size": 299276,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693699.6142268,
+        "mtime_utc": "2026-10-22T18:28:19Z",
+        "path": "src/utils/lock_guard.cpp.o",
+        "size": 78120,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693695.1712923,
+        "mtime_utc": "2026-10-22T18:28:15Z",
+        "path": "src/utils/qrcodex.c.o",
+        "size": 110508,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693698.804947,
+        "mtime_utc": "2026-10-22T18:28:18Z",
+        "path": "src/utils/string_utils.cpp.o",
+        "size": 73272,
+        "type": "o"
+      },
+      {
+        "category": "project_or_misc",
+        "mtime_epoch": 1792693702.957822,
+        "mtime_utc": "2026-10-22T18:28:22Z",
+        "path": "src/wind_estimate/wind_estimate.cpp.o",
+        "size": 214064,
+        "type": "o"
+      }
+    ]
+  }
+}

@@ -153,6 +153,20 @@ test-udp-injection: $(BUILD)/udp_injection_test
 	@cd $(ROOT) && $(BUILD)/udp_injection_test
 
 # Regression checks use the same firmware/HAL objects, with a test entry point instead of the UI.
+.PHONY: test-display-circles
+$(BUILD)/display_circles_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/display_circles.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/display_circles.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-display-circles: $(BUILD)/display_circles_test
+	@cd $(ROOT) && $(BUILD)/display_circles_test
+
+.PHONY: test-thermal-track-bitmaps
+$(BUILD)/thermal_track_bitmaps_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/thermal_track_bitmaps.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/thermal_track_bitmaps.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-thermal-track-bitmaps: $(BUILD)/thermal_track_bitmaps_test
+	@cd $(ROOT) && $(BUILD)/thermal_track_bitmaps_test
+
 $(BUILD)/thermal_core_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/thermal_core.cpp
 	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/thermal_core.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
 

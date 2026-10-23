@@ -1,0 +1,329 @@
+diff --git a/sim/Makefile b/sim/Makefile
+index b117b2e0..ff7fab79 100644
+--- a/sim/Makefile
++++ b/sim/Makefile
+@@ -153,6 +153,13 @@ test-udp-injection: $(BUILD)/udp_injection_test
+ 	@cd $(ROOT) && $(BUILD)/udp_injection_test
+ 
+ # Regression checks use the same firmware/HAL objects, with a test entry point instead of the UI.
++.PHONY: test-display-circles
++$(BUILD)/display_circles_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/display_circles.cpp
++	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/display_circles.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
++
++test-display-circles: $(BUILD)/display_circles_test
++	@cd $(ROOT) && $(BUILD)/display_circles_test
++
+ $(BUILD)/thermal_core_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/thermal_core.cpp
+ 	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/thermal_core.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+ 
+diff --git a/src/variants/leaf_3_2_8/platformio.ini b/src/variants/leaf_3_2_8/platformio.ini
+index ddd03837..5ae9884c 100644
+--- a/src/variants/leaf_3_2_8/platformio.ini
++++ b/src/variants/leaf_3_2_8/platformio.ini
+@@ -3,3 +3,10 @@ extends = env:_release
+ build_flags =
+     ${env:_release.build_flags}
+     -Isrc/variants/leaf_3_2_8
++
++# Synthetic map markers for display/timing checks; normal release builds use real thermals.
++[env:leaf_3_2_8_thermaltest]
++extends = env:leaf_3_2_8_release
++build_flags =
++    ${env:leaf_3_2_8_release.build_flags}
++    -DLEAF_THERMAL_DISPLAY_TEST
+diff --git a/src/vario/ui/display/pages/primary/page_thermal_track.cpp b/src/vario/ui/display/pages/primary/page_thermal_track.cpp
+index b9bd8726..e443bf5e 100644
+--- a/src/vario/ui/display/pages/primary/page_thermal_track.cpp
++++ b/src/vario/ui/display/pages/primary/page_thermal_track.cpp
+@@ -11,6 +11,7 @@
+ #include "power.h"
+ #include "ui/audio/sound_effects.h"
+ #include "ui/audio/speaker.h"
++#include "ui/display/circle_geometry.h"
+ #include "ui/display/display.h"
+ #include "ui/display/display_fields.h"
+ #include "ui/display/fonts.h"
+@@ -25,6 +26,7 @@ namespace {
+   constexpr uint8_t MAP_D_1500M = 74;
+   constexpr uint8_t MAP_D_5000M = 96;
+   constexpr uint8_t MAP_R_5000M = MAP_D_5000M / 2;
++  constexpr circle_geometry::EvenCircleClip<MAP_D_5000M> mapClip(MAP_CX, MAP_CY);
+   constexpr uint8_t ALT_X = 15;
+   constexpr uint8_t ALT_VALUE_BASELINE_Y = 30;
+   constexpr uint8_t ALT_TYPE_BASELINE_Y = 33;
+@@ -42,6 +44,32 @@ namespace {
+   constexpr uint8_t DISTANCE_RIGHT_ARROW_X = 54;
+   constexpr uint8_t SELECTED_THERMAL_RADIUS = 6;
+ 
++#ifdef LEAF_THERMAL_DISPLAY_TEST
++  constexpr ThermalDisplayItem testThermal(int8_t x, int8_t y, int16_t distance, int16_t turn,
++                                           int16_t climb, uint8_t quality, bool selected = false) {
++    ThermalDisplayItem item{};
++    item.valid = true;
++    item.xOffset = x;
++    item.yOffset = y;
++    item.distanceM = distance;
++    item.turnDeg = turn;
++    item.avgClimbCms = climb;
++    item.quality = quality;
++    item.selected = selected;
++    return item;
++  }
++
++  // The first three markers sit beneath the range labels. Cover every quality glyph
++  // and retain a selected target/steering line for a representative test workload.
++  constexpr ThermalDisplayItem testThermals[] = {
++      testThermal(-5, 23, 470, -168, 320, 5),       testThermal(5, 35, 1360, 172, 180, 5),
++      testThermal(0, 44, 3700, 180, 250, 3),        testThermal(-30, -22, 1560, -54, 95, 1),
++      testThermal(26, -30, 2350, 41, 260, 4, true), testThermal(-14, -37, 2350, -21, 140, 2),
++      testThermal(37, 3, 1560, 95, 210, 3),         testThermal(-38, 9, 2150, -103, 300, 5),
++      testThermal(23, 20, 960, 131, 170, 2),        testThermal(-20, 27, 1210, -143, 280, 4),
++  };
++#endif
++
+   enum ThermalTrackPageItem : uint8_t {
+     cursor_thermalTrackPage_none,
+     cursor_thermalTrackPage_alt,
+@@ -127,11 +155,7 @@ namespace {
+     }
+   }
+ 
+-  bool mapContainsPixel(int16_t x, int16_t y) {
+-    const int32_t dx2 = int32_t(x) * 2 + 1 - 2 * MAP_CX;
+-    const int32_t dy2 = int32_t(y) * 2 + 1 - 2 * MAP_CY;
+-    return dx2 * dx2 + dy2 * dy2 <= int32_t(MAP_D_5000M) * MAP_D_5000M;
+-  }
++  bool mapContainsPixel(int16_t x, int16_t y) { return mapClip.contains(x, y); }
+ 
+   bool softDiscContainsPixel(int16_t px, int16_t py, int16_t cx, int16_t cy, uint8_t radius) {
+     const int16_t dx = px - cx;
+@@ -153,27 +177,35 @@ namespace {
+     if (mapContainsPixel(x, y)) u8g2.drawPixel(x, y);
+   }
+ 
++  void drawClippedSpan(int16_t y, int16_t start, int16_t end) {
++    // Clip while coordinates are signed: off-screen marker pixels must not wrap
++    // through u8g2's unsigned coordinate API.
++    if (mapClip.clipSpan(y, start, end)) u8g2.drawHLine(start, y, end - start + 1);
++  }
++
+   void drawClippedDisc(int16_t cx, int16_t cy, uint8_t radius) {
++    // floor((radius + 0.5)^2) is radius*(radius+1), preserving the soft-disc pixels.
++    circle_geometry::RowExtents outer(int32_t(radius) * (radius + 1), -int16_t(radius));
+     for (int16_t y = cy - radius; y <= cy + radius; y++) {
+-      int16_t segmentStart = INT16_MIN;
+-      for (int16_t x = cx - radius; x <= cx + radius; x++) {
+-        const bool draw = softDiscContainsPixel(x, y, cx, cy, radius) && mapContainsPixel(x, y);
+-        if (draw && segmentStart == INT16_MIN) {
+-          segmentStart = x;
+-        } else if (!draw && segmentStart != INT16_MIN) {
+-          u8g2.drawHLine(segmentStart, y, x - segmentStart);
+-          segmentStart = INT16_MIN;
+-        }
+-      }
+-      if (segmentStart != INT16_MIN)
+-        u8g2.drawHLine(segmentStart, y, cx + radius - segmentStart + 1);
++      const int16_t extent = outer.next();
++      drawClippedSpan(y, cx - extent, cx + extent);
+     }
+   }
+ 
+   void drawClippedCircle(int16_t cx, int16_t cy, uint8_t radius) {
++    circle_geometry::RowExtents outer(int32_t(radius) * (radius + 1), -int16_t(radius));
++    // The hollow interior excludes distance^2 <= radius*(radius-1). Subtract its
++    // span from the outer disc, leaving at most two short strokes per row.
++    circle_geometry::RowExtents inner(radius ? int32_t(radius) * (radius - 1) : -1,
++                                      -int16_t(radius));
+     for (int16_t y = cy - radius; y <= cy + radius; y++) {
+-      for (int16_t x = cx - radius; x <= cx + radius; x++) {
+-        if (softCircleContainsPixel(x, y, cx, cy, radius)) drawClippedPixel(x, y);
++      const int16_t outerExtent = outer.next();
++      const int16_t innerExtent = inner.next();
++      if (innerExtent < 0) {
++        drawClippedSpan(y, cx - outerExtent, cx + outerExtent);
++      } else {
++        drawClippedSpan(y, cx - outerExtent, cx - innerExtent - 1);
++        drawClippedSpan(y, cx + innerExtent + 1, cx + outerExtent);
+       }
+     }
+   }
+@@ -241,24 +273,23 @@ namespace {
+ 
+   void drawDistanceScaleLabels() {
+     u8g2.setFont(leaf_5x8);
+-    constexpr uint8_t labelHeight = 8;
+-    constexpr uint8_t padding = 1;
++    // Transparent glyphs keep the map visible through counters and between strokes.
++    u8g2.setFontMode(1);
+ 
+-    const auto drawLabel = [&](int16_t x, int16_t baselineY, const char* text,
+-                               uint8_t horizontalPadding) {
+-      const uint8_t labelWidth = u8g2.getStrWidth(text);
++    const auto drawLabel = [&](int16_t x, int16_t baselineY, const char* text) {
+       u8g2.setDrawColor(0);
+-      u8g2.drawRBox(x - horizontalPadding, baselineY - labelHeight - 1,
+-                    labelWidth + 2 * horizontalPadding, labelHeight + 2 * padding, 1);
++      u8g2.drawStr(x, baselineY - 1, text);
++      u8g2.drawStr(x, baselineY + 1, text);
++      u8g2.drawStr(x - 1, baselineY, text);
++      u8g2.drawStr(x + 1, baselineY, text);
+       u8g2.setDrawColor(1);
+-      u8g2.setCursor(x, baselineY);
+-      u8g2.print(text);
++      u8g2.drawStr(x, baselineY, text);
+     };
+ 
+-    drawLabel(41, 151, settings.units_distance ? "0.3" : "0.5", padding);
+-    drawLabel(41, 163, settings.units_distance ? "1.0" : "1.5", 0);
+-    drawLabel(settings.units_distance ? 41 : 40, 175, settings.units_distance ? "3mi" : "5km",
+-              padding);
++    drawLabel(41, 151, settings.units_distance ? "0.3" : "0.5");
++    drawLabel(41, 163, settings.units_distance ? "1.0" : "1.5");
++    drawLabel(settings.units_distance ? 41 : 40, 175, settings.units_distance ? "3mi" : "5km");
++    u8g2.setFontMode(0);
+     u8g2.setDrawColor(1);
+   }
+ 
+@@ -277,9 +308,7 @@ namespace {
+     u8g2.setDrawColor(1);
+   }
+ 
+-  void drawThermals() {
+-    const ThermalDisplayItem* items = thermalTracker.displayItems();
+-    const uint8_t count = thermalTracker.displayItemCount();
++  void drawThermals(const ThermalDisplayItem* items, uint8_t count) {
+     for (uint8_t i = 0; i < count; ++i) {
+       if (!items[i].valid) continue;
+       const int16_t x = MAP_CX + items[i].xOffset;
+@@ -377,13 +406,21 @@ void thermalTrackPage_draw() {
+   do {
+     display_headerAndFooter(thermalTrackPageCursor == cursor_thermalTrackPage_timer, false);
+ 
++#ifdef LEAF_THERMAL_DISPLAY_TEST
++    const ThermalDisplayItem* items = testThermals;
++    constexpr uint8_t count = sizeof(testThermals) / sizeof(testThermals[0]);
++    const ThermalDisplayItem* selected = &testThermals[4];
++#else
++    const ThermalDisplayItem* items = thermalTracker.displayItems();
++    const uint8_t count = thermalTracker.displayItemCount();
+     const ThermalDisplayItem* selected = thermalTracker.selectedDisplayItem();
++#endif
+     const int32_t climbRate = baro.climbRateFilteredValid() ? baro.climbRateFiltered() : 0;
+     const int32_t displayClimbRate = baro.climbRateFilteredValid() ? baro.climbRateForDisplay() : 0;
+ 
+     thermal_page::drawVario(climbRate, 2, thermal_page::CORE_VARIO_BAR_WIDTH);
+     maskMapCircle();
+-    drawThermals();
++    drawThermals(items, count);
+     drawMapRingsAndLabels();
+     drawUserTriangle();
+     drawSelectedThermalLine(selected);
+diff --git a/src/vario/ui/display/utils.cpp b/src/vario/ui/display/utils.cpp
+index a9847ffa..285a6b99 100644
+--- a/src/vario/ui/display/utils.cpp
++++ b/src/vario/ui/display/utils.cpp
+@@ -44,6 +44,55 @@ namespace {
+   void drawHLineIfOrdered(int16_t start, int16_t y, int16_t end) {
+     if (end >= start) u8g2.drawHLine(start, y, end - start + 1);
+   }
++
++  struct CircleRow {
++    int16_t start = 0;
++    int16_t end = 0;
++    bool valid = false;
++  };
++
++  // Walk an even-diameter circle from top to bottom. Doubled pixel-center coordinates
++  // preserve the exact inclusion rule used by circleRowSpanD, without square roots.
++  // The horizontal extent grows toward the equator, then shrinks: O(diameter) total
++  // steps and constant storage, including for circles that are mostly off-screen.
++  class EvenCircleRows {
++   public:
++    EvenCircleRows(int16_t centerX, uint8_t diameter)
++        : centerX_(centerX),
++          remaining_(diameter),
++          dy2_(1 - int16_t(diameter)),
++          distanceSq_(1 + int32_t(dy2_) * dy2_),
++          radiusSq_(int32_t(diameter) * diameter) {}
++
++    CircleRow next() {
++      if (remaining_ == 0) return {};
++
++      // Changing a doubled coordinate by two changes its square by 4*x + 4.
++      while (distanceSq_ > radiusSq_) {
++        distanceSq_ += 4 - 4 * dx2_;
++        dx2_ -= 2;
++      }
++      while (distanceSq_ + 4 * dx2_ + 4 <= radiusSq_) {
++        distanceSq_ += 4 * dx2_ + 4;
++        dx2_ += 2;
++      }
++
++      const int16_t halfWidth = (dx2_ + 1) / 2;
++      const CircleRow row{int16_t(centerX_ - halfWidth), int16_t(centerX_ + halfWidth - 1), true};
++      distanceSq_ += 4 * dy2_ + 4;
++      dy2_ += 2;
++      --remaining_;
++      return row;
++    }
++
++   private:
++    int16_t centerX_;
++    uint8_t remaining_;
++    int16_t dy2_;
++    int16_t dx2_ = 1;
++    int32_t distanceSq_;
++    int32_t radiusSq_;
++  };
+ }  // namespace
+ 
+ void drawCircleD(int16_t centerX, int16_t centerY, uint8_t diameter) {
+@@ -56,34 +105,32 @@ void drawCircleD(int16_t centerX, int16_t centerY, uint8_t diameter) {
+   }
+ 
+   const int16_t top = centerY - diameter / 2;
++  EvenCircleRows rows(centerX, diameter);
++  CircleRow previous;
++  CircleRow current = rows.next();
+   for (int16_t py = top; py < top + diameter; ++py) {
+-    int16_t start;
+-    int16_t end;
+-    if (!circleRowSpanD(centerX, centerY, diameter, py, start, end)) continue;
+-
+-    int16_t prevStart;
+-    int16_t prevEnd;
+-    const bool hasPrev = circleRowSpanD(centerX, centerY, diameter, py - 1, prevStart, prevEnd);
+-    int16_t nextStart;
+-    int16_t nextEnd;
+-    const bool hasNext = circleRowSpanD(centerX, centerY, diameter, py + 1, nextStart, nextEnd);
++    const CircleRow next = rows.next();
++    const int16_t start = current.start;
++    const int16_t end = current.end;
+ 
+     u8g2.drawPixel(start, py);
+     if (end != start) u8g2.drawPixel(end, py);
+ 
+-    if (!hasPrev) {
++    if (!previous.valid) {
+       drawHLineIfOrdered(start, py, end);
+     } else {
+-      drawHLineIfOrdered(start, py, prevStart - 1);
+-      drawHLineIfOrdered(prevEnd + 1, py, end);
++      drawHLineIfOrdered(start, py, previous.start - 1);
++      drawHLineIfOrdered(previous.end + 1, py, end);
+     }
+ 
+-    if (!hasNext) {
++    if (!next.valid) {
+       drawHLineIfOrdered(start, py, end);
+     } else {
+-      drawHLineIfOrdered(start, py, nextStart - 1);
+-      drawHLineIfOrdered(nextEnd + 1, py, end);
++      drawHLineIfOrdered(start, py, next.start - 1);
++      drawHLineIfOrdered(next.end + 1, py, end);
+     }
++    previous = current;
++    current = next;
+   }
+ }
+ 

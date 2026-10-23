@@ -44,6 +44,55 @@ namespace {
   void drawHLineIfOrdered(int16_t start, int16_t y, int16_t end) {
     if (end >= start) u8g2.drawHLine(start, y, end - start + 1);
   }
+
+  struct CircleRow {
+    int16_t start = 0;
+    int16_t end = 0;
+    bool valid = false;
+  };
+
+  // Walk an even-diameter circle from top to bottom. Doubled pixel-center coordinates
+  // preserve the exact inclusion rule used by circleRowSpanD, without square roots.
+  // The horizontal extent grows toward the equator, then shrinks: O(diameter) total
+  // steps and constant storage, including for circles that are mostly off-screen.
+  class EvenCircleRows {
+   public:
+    EvenCircleRows(int16_t centerX, uint8_t diameter)
+        : centerX_(centerX),
+          remaining_(diameter),
+          dy2_(1 - int16_t(diameter)),
+          distanceSq_(1 + int32_t(dy2_) * dy2_),
+          radiusSq_(int32_t(diameter) * diameter) {}
+
+    CircleRow next() {
+      if (remaining_ == 0) return {};
+
+      // Changing a doubled coordinate by two changes its square by 4*x + 4.
+      while (distanceSq_ > radiusSq_) {
+        distanceSq_ += 4 - 4 * dx2_;
+        dx2_ -= 2;
+      }
+      while (distanceSq_ + 4 * dx2_ + 4 <= radiusSq_) {
+        distanceSq_ += 4 * dx2_ + 4;
+        dx2_ += 2;
+      }
+
+      const int16_t halfWidth = (dx2_ + 1) / 2;
+      const CircleRow row{int16_t(centerX_ - halfWidth), int16_t(centerX_ + halfWidth - 1), true};
+      distanceSq_ += 4 * dy2_ + 4;
+      dy2_ += 2;
+      --remaining_;
+      return row;
+    }
+
+   private:
+    int16_t centerX_;
+    uint8_t remaining_;
+    int16_t dy2_;
+    int16_t dx2_ = 1;
+    int32_t distanceSq_;
+    int32_t radiusSq_;
+  };
 }  // namespace
 
 void drawCircleD(int16_t centerX, int16_t centerY, uint8_t diameter) {
@@ -56,34 +105,32 @@ void drawCircleD(int16_t centerX, int16_t centerY, uint8_t diameter) {
   }
 
   const int16_t top = centerY - diameter / 2;
+  EvenCircleRows rows(centerX, diameter);
+  CircleRow previous;
+  CircleRow current = rows.next();
   for (int16_t py = top; py < top + diameter; ++py) {
-    int16_t start;
-    int16_t end;
-    if (!circleRowSpanD(centerX, centerY, diameter, py, start, end)) continue;
-
-    int16_t prevStart;
-    int16_t prevEnd;
-    const bool hasPrev = circleRowSpanD(centerX, centerY, diameter, py - 1, prevStart, prevEnd);
-    int16_t nextStart;
-    int16_t nextEnd;
-    const bool hasNext = circleRowSpanD(centerX, centerY, diameter, py + 1, nextStart, nextEnd);
+    const CircleRow next = rows.next();
+    const int16_t start = current.start;
+    const int16_t end = current.end;
 
     u8g2.drawPixel(start, py);
     if (end != start) u8g2.drawPixel(end, py);
 
-    if (!hasPrev) {
+    if (!previous.valid) {
       drawHLineIfOrdered(start, py, end);
     } else {
-      drawHLineIfOrdered(start, py, prevStart - 1);
-      drawHLineIfOrdered(prevEnd + 1, py, end);
+      drawHLineIfOrdered(start, py, previous.start - 1);
+      drawHLineIfOrdered(previous.end + 1, py, end);
     }
 
-    if (!hasNext) {
+    if (!next.valid) {
       drawHLineIfOrdered(start, py, end);
     } else {
-      drawHLineIfOrdered(start, py, nextStart - 1);
-      drawHLineIfOrdered(nextEnd + 1, py, end);
+      drawHLineIfOrdered(start, py, next.start - 1);
+      drawHLineIfOrdered(next.end + 1, py, end);
     }
+    previous = current;
+    current = next;
   }
 }
 

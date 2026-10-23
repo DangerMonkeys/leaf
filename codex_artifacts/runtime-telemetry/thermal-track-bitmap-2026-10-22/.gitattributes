@@ -1,0 +1,4 @@
+# Preserve captured input bytes and historical source evidence.
+runtime_*.json -text -whitespace
+source-diff.patch -text -diff
+untracked-source/** -text

@@ -1,0 +1,39 @@
+{
+  "capture_duration_seconds": 72.260556,
+  "verified_firmware_sha256": "1847d9102bfe5b5d9fb40b6beb8cbbbc3108df9b7cd0986936401472f5fbd548",
+  "flight_log": {
+    "file": "2026-10-22-XLV-000-01.igc",
+    "valid_fixes": 121,
+    "utc_start": "03:00:07",
+    "utc_end": "03:02:07",
+    "max_fix_gap_seconds": 1,
+    "caveat": "IGC wall-clock range is separate from capture uptime; capture does not export a UTC alignment."
+  },
+  "normal_scheduler": {
+    "deadline_crossings": 43,
+    "duration_overruns": 0,
+    "skipped_ticks": 0,
+    "max_completion_delay_us": 290,
+    "crossing_slots": [
+      75,
+      76,
+      77,
+      78,
+      79,
+      80,
+      81,
+      82,
+      83,
+      84
+    ],
+    "display_page_deadline_crossings": 0,
+    "caveat": "GPS dispatch phase moved from slots 35-40 in runtime_6 to mainly 77-85 in runtime_7, away from display slots 39/89. Zero display crossings cannot be attributed to bitmap rendering alone."
+  },
+  "button_and_recovery": {
+    "button_deadline_crossings": 21,
+    "button_max_occupied_ms": 21.877,
+    "recovery_deadline_crossings": 2,
+    "recovery_skipped_ticks": 2
+  },
+  "interpretation": "Thermal Track mean fell from 7.3772 ms to 6.68353125 ms (9.403% lower observed), and now ranks below Navigate (7.120516 ms). All other measured page means increased. Workloads differ, so the measured reduction does not isolate bitmap speedup."
+}

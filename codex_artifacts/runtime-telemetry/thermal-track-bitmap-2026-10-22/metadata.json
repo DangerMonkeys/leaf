@@ -1,0 +1,14 @@
+{
+  "label": "Leaf 3.2.8 bitmap Thermal Track - logging and wind page sweep",
+  "commit": "8427b318ffb68ce1360d7c247d6eaacf4d6997ad",
+  "dirty": true,
+  "profile": "manual-page-sweep-v1",
+  "scenario": "real-gps-logging-wind-ten-fixed-thermal-markers-v1",
+  "toolchain": "leaf_3_2_8_thermaltest; pinned PlatformIO configuration; exact firmware.bin preserved",
+  "coverage_notes": "User reports logging active, enough collected points for a valid wind estimate, then about 10-12 seconds on each page from Navigate through Basic. Capture spans 72.261 seconds. Ten fixed synthetic Thermal Track markers, bitmap rings/erase/markers/pilot, outlined distance labels. BLE enabled; client activity not established. Debug pages enabled but unvisited. Latest IGC preserved separately; this export does not record wind estimate validity or its value.",
+  "device_id": "7C4FAD3BACB0",
+  "sd_card": "Connected Leaf SD card; model/capacity not recorded",
+  "limitations": "Short exploratory manual sweep, 23-32 normal renders per page; not a release assessment. Prior runtime_6 had different GPS activity/arrival phase, shorter duration, debug setting and unconfirmed flight logging/wind conditions. Descriptive before/after only; no matched-baseline speedup attribution. Render times include SPI wait, raster drawing and transfer.",
+  "flashed_firmware_verified": "USB I:/FIRMWARE.BIN SHA256 equals local test build and preserved firmware.bin",
+  "firmware_sha256": "1847d9102bfe5b5d9fb40b6beb8cbbbc3108df9b7cd0986936401472f5fbd548"
+}

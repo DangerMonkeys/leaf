@@ -1,0 +1,36 @@
+{
+  "environment": "leaf_3_2_8_release",
+  "firmware_sha256": "53b01335f285333694f7de9d4a72f067700c0fa97a9920d7c6293cd3225640a9",
+  "base_commit": "18fc69afdb958460c54b93d3fd40032d746c7521",
+  "synthetic_thermals": false,
+  "formatter": "passed",
+  "firmware_build": "passed",
+  "simulator_tests": {
+    "circle_framebuffer_cases": 30720,
+    "clipped_geometry_cases": 252,
+    "bitmap_cases": 3446,
+    "thermal_track_layout_controls": "passed"
+  },
+  "source_sha256": {
+    "sim/Makefile": "e2ed744fe08b6376d3726a66ec3f71e6b362a50fdaf77047a7e345a9a048342a",
+    "sim/tests/display_circles.cpp": "c607d4d166320ab58e5f1cd7df6b0ab2ca65bf5a4d5aba93b20621b9bb1b0ad0",
+    "sim/tests/thermal_track_bitmaps.cpp": "aac3086d8623c8bac4650b934306351cc651c8d0240e0a15abb2d7044dcece70",
+    "src/vario/ui/display/circle_geometry.h": "638540f01c0d98988a48c6afcd80b92cd7802436985d05e7308e42e3bb608acf",
+    "src/vario/ui/display/thermal_track_bitmaps.h": "6bac287c7cbfc04078163692a62d7cf8f05cadb72cdb729b3ab6452d91b34609",
+    "src/vario/ui/display/pages/primary/page_thermal_track.cpp": "fd48bb73a81e427c802ce7f483c4a3d06f85441d6bc0b67b08505a2ceefb1b83",
+    "src/vario/ui/display/utils.cpp": "29d56d97e29804bcc92b2b8d41a55fa20ca5c701e61a43631f16929cef81ef95"
+  },
+  "runtime_capture": "Prior runtime_7 measures the synthetic-marker test build, not this final production image.",
+  "flash": {
+    "status": "passed",
+    "hardware": "Leaf 3.2.8",
+    "port": "auto-detected COM44 app USB, re-enumerated COM42 bootloader",
+    "app_offsets": [
+      "0x10000",
+      "0x340000"
+    ],
+    "both_written_hashes_verified": true,
+    "reset": "RTC WDT hard reset",
+    "first_attempt": "App USB port disappeared during reset; retried once on re-enumerated bootloader."
+  }
+}
