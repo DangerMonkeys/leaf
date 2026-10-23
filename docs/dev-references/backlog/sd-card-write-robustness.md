@@ -371,6 +371,8 @@ Completed verification:
 | --- | --- |
 | Repository formatter and whitespace checks | Passed |
 | `leaf_3_2_6_release` firmware build | Passed; 103,508 bytes static RAM, 2,383,724 bytes reported flash use |
+| `leaf_3_2_8_release` firmware build | Passed from clean implementation commit `2d928d0f`; 103,804 bytes static RAM, 2,366,328 bytes reported flash use |
+| Attached Leaf 3.2.8 application flash | Passed; both OTA slots (`0x10000`, `0x340000`) written and verified by esptool. Initial app-mode `COM44` disconnected during connection; the prescribed rescan/retry succeeded on ROM-mode `COM42`. Application USB returned as `COM44`. |
 | `test-logbook-io` | Passed: injected write/sync/close/rename/cleanup/read/allocation failures, real JSON allocation denial, abrupt process exits, recovery/conflicts/limits, revisions, deletion/aliases, bounded retries, shutdown, new flights, and upload-status preservation |
 | Existing Leaf Log sync regression suite | Passed |
 | Existing thermal flight-lifecycle/shutdown regression suite | Passed |
@@ -388,12 +390,34 @@ These identified static costs exclude the mutex's runtime backing allocation and
 strings. There is no boot-session completed-flight buffer; actual target heap/stack measurements
 remain pending.
 
-Built application SHA256:
+Built `leaf_3_2_6_release` application SHA256:
 `0323b3eb3702720b805392ed71d7368b1885ec202b52e7924b926d163564c7fb`.
 
-Physical verification was not performed: the automatic scan found no Espressif VID `303A` port;
-the only enumerated port was `COM4`, VID:PID `043E:9A39`, which was not assumed to be a Leaf.
-No flash was attempted. Real ESP32 save/recovery operation, peak heap/largest block/stack headroom,
+Flashed `leaf_3_2_8_release` application SHA256:
+`2889ca71122ee5a30c1a4f9ee59a3f49b66c71f61296e34dbe4c035a6ac9875b`.
+This binary identifies clean commit `2d928d0fbaa141d521037822b0610f4f67c78a5a`.
+
+The initial implementation verification found no attached Leaf and did not attempt a flash. A
+Leaf 3.2.8 was subsequently attached and flashed as recorded above; manual save/removal checks
+with serial capture are prepared but no flight-save result has yet been observed. Proposed hardware
+checks, using disposable/backed-up SD data, are:
+
+- Repeat normal timer start/stop saves, with and without a usable GPS fix; inspect summaries,
+  final JSON, retained backups, and temporary-file cleanup. Record attempts and elapsed time from
+  `logbook finalization` serial output. Compare repeated-cycle heap observations without treating
+  the before/after snapshot as a measurement of peak allocation or post-reset release.
+- With Save IGC temporarily off, start a test flight, allow its initial placeholder to settle,
+  remove the card, and stop. Check the short failure display and restored UI responsiveness.
+  Reinsert, then start/stop a new flight and confirm that the earlier failure does not block it.
+  This exercises known-absent media; it does not reproduce an interrupted in-flight IGC write or
+  a transient failure requiring all three attempts.
+- Stop via ordinary shutdown with a flight active, then restart and inspect its saved summary.
+- While the host safely owns the card, stage isolated synthetic temporary-only, backup-only,
+  and newer-temporary candidate sets. Release host ownership, select them in the logbook, and
+  inspect promotion/cleanup on the next host handoff. Delete a test record, restart, and verify
+  that it does not return. Preserve existing flight files and restore changed test settings.
+
+Real ESP32 save/recovery operation, peak heap/largest block/stack headroom,
 slow/nearly-full-card timing, and controlled power interruption across multiple cards still need
 qualification. Linux vfat and process-exit tests do not reproduce target FatFs metadata ordering,
 SD-controller power loss, or the original incident's root cause. Reviewed exact-candidate runtime
