@@ -124,8 +124,22 @@ the five-pixel-radius black outline. The arrow's tip and both tail tips touch th
 where the wind is blowing and rotates with the map; it is hidden without a valid wind estimate.
 Auxiliary widening/tightening rings are removed and the top-of-map turn reticle is disabled.
 
+Thermal Core's climb-history widget sits above the map. Its left graph extends up to the climb
+field, with one column per five seconds and a fixed 25 m/pixel vertical scale. Present altitude
+stays at (53,55), level with the average field's top border; older altitudes are relative to it.
+The graph fills down from the curve to the map border, with off-screen portions clipped. Its
+left and top edges use the existing vario and live climb box, without duplicate borders. Its
+right divider meets the live climb box at x=54.
+The right field shows trailing-minute net climb in the selected climb units, using the available
+duration during the first minute. It refreshes every five seconds, with a live partial average
+in the first bucket. Both contents follow the center circle's visibility and clear together;
+the average field's outline and divider always remain. The average uses the same fixed digit
+slots, fonts and unit spacing as the live climb field. One 100-byte integer history serves both
+fields, without heap allocation, and continues collecting while another page is displayed.
+
 ThermalTrack shares Thermal Core's upper layout, including the narrow vario, large climb field,
-altitude with its selectable source, and wind circle with compass letters and speed. The selected
+altitude with its selectable source, and wind circle with compass letters and speed. Both pages
+use a fixed 41-by-16-pixel climb field in either m/s or fpm. The selected
 thermal's distance and strength share the strip from (15,57) to (95,73), with fixed positions and
 font sizes. Strength and its unit align to the right edge; distance centers between fixed steering
 arrow slots, with 6x12 numbers and 5x8 m/km/mi labels. Distances use feet/metres below 1,000,

@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 
+#include "navigation/thermal_climb_history.h"
 #include "navigation/thermal_core_target.h"
 #include "navigation/thermal_tracker.h"
 
@@ -42,6 +43,7 @@ class ThermalCore {
   void reset();
   void update();
   const ThermalCoreEstimate& estimate() const { return estimate_; }
+  const ThermalClimbHistory& climbHistory() const { return climbHistory_; }
 
  private:
   void updateTurnSegment(const ThermalTracker::CoreSample& latest,
@@ -58,6 +60,7 @@ class ThermalCore {
   bool episodeClimbScaleValid_ = false;
   int16_t episodeMaxClimbCms_ = 0;
   ThermalCoreTarget target_;
+  ThermalClimbHistory climbHistory_;
 };
 
 extern ThermalCore thermalCore;

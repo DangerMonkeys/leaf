@@ -22,6 +22,36 @@
 extern MessageBus<11> bus;
 
 namespace {
+  void checkWidgetHistory() {
+    ThermalClimbHistory history;
+    assert(sizeof(history) == 100);
+    // Fractional starting meters must not masquerade as climb in the first partial bucket.
+    history.update(true, 1000, 100049);
+    history.update(true, 1500, 100149);
+    assert(history.averageCms() == 200);
+    for (uint32_t ms = 2000; ms <= 251000; ms += 500) {
+      history.update(true, ms, 100049 + (ms - 1000) / 5);
+    }
+    assert(history.size() == 40 && history.averageCms() == 200);
+    assert(history.altitudeM(39) == 1110);  // ring wrapped; 195 seconds retained
+    history.update(true, 251500, 150149);
+    assert(history.altitudeAgoCm(1) == 149100);  // five seconds before the live reference
+    for (uint32_t ms = 252000; ms <= 311000; ms += 500) history.update(true, ms, 150049);
+    assert(history.averageCms() == 0);  // trailing minute forgets the earlier strong climb
+    history.update(false, 311500, 150049);
+    assert(!history.size() && history.averageCms() == 0);
+    history.update(true, 312000, -100049);
+    history.update(true, 317000, -101049);
+    assert(history.size() == 2 && history.averageCms() == -200);
+    history.reset();
+    const uint32_t start = UINT32_MAX - 2000;
+    history.update(true, start, 100000);
+    history.update(true, start + 5500, 101100);
+    assert(history.size() == 2 && history.averageCms() == 200);
+    // Interpolation handles a late update without lengthening the five-second buckets.
+    assert(history.altitudeM(0) == 1010);
+  }
+
   void checkLiftCenter() {
     std::array<ThermalTracker::CoreSample, 37> circle;
     for (uint8_t i = 0; i < circle.size(); ++i) {
@@ -355,7 +385,8 @@ namespace {
           for (int x = 0; x < frame.width; ++x) {
             const size_t p = y * frame.width + x;
             if (frame.pixels[p] == baseline.pixels[p]) continue;
-            if (!(x > 0 && x < 95 && y > 73 && y < 174)) {
+            const bool widget = x >= 14 && x < 95 && y >= 51 && y < 73;
+            if (!(x > 0 && x < 95 && y > 73 && y < 174) && !widget) {
               fprintf(stderr, "Crosshair escaped: course=%d cx=%d pixel=%d,%d before=%d after=%d\n",
                       course, cx, x, y, baseline.pixels[p], frame.pixels[p]);
               assert(false);
@@ -374,6 +405,67 @@ namespace {
     estimate = {};
     thermalCorePage_draw();
     assert(sim::captureFrame() == baseline);  // no clip-window or crosshair state leaks
+  }
+
+  void checkWidgetDrawing() {
+    auto& estimate = const_cast<ThermalCoreEstimate&>(thermalCore.estimate());
+    auto& history = const_cast<ThermalClimbHistory&>(thermalCore.climbHistory());
+    const auto savedHistory = history;
+    const bool savedUnits = settings.units_climb;
+    history.reset();
+    estimate = {};
+    const auto draw = [&]() {
+      thermalCorePage_draw();
+      return sim::captureFrame();
+    };
+    const auto save = [&](const sim::Frame& frame, const char* path) {
+      const auto png = sim::encodePng(frame, 4);
+      std::ofstream out(path, std::ios::binary);
+      out.write(png.data(), png.size());
+      assert(out.good());
+    };
+    const auto empty = draw();
+    const auto black = [&](int x, int y) { return empty.pixels[y * empty.width + x]; };
+    for (int x = 14; x < 54; ++x) assert(!black(x, 51) && black(x, 73));
+    for (int x = 54; x < 96; ++x) assert(black(x, 55) && black(x, 73));
+    for (int y = 51; y < 73; ++y) {
+      assert(!black(14, y));
+      assert(black(54, y));
+      for (int x = 15; x < 54; ++x) assert(!black(x, y));
+    }
+    save(empty, "sim/build-tests/climb-history-empty.png");
+    int32_t altitudeCm = 100000;
+    for (uint32_t ms = 0; ms <= 195000; ms += 500) {
+      // Strong climb first, tapering to flat over the last minute.
+      if (ms) altitudeCm += ms <= 120000 ? 150 : (195000 - ms) / 500;
+      history.update(true, ms, altitudeCm);
+    }
+    estimate.centerValid = true;
+    estimate.centerX = 48;
+    estimate.centerY = 124;
+    for (bool imperial : {false, true}) {
+      settings.units_climb = imperial;
+      const auto frame = draw();
+      assert(frame.pixels[55 * frame.width + 53]);  // present altitude sits just left of divider
+      assert(!frame.pixels[54 * frame.width + 53]);
+      int filledColumns = 0;
+      for (int x = 15; x < 54; ++x) {
+        bool filled = false;
+        for (int y = 51; y < 73; ++y) {
+          if (frame.pixels[y * frame.width + x]) filled = true;
+          if (filled) assert(frame.pixels[y * frame.width + x]);  // no holes below the curve
+        }
+        if (filled) ++filledColumns;
+      }
+      assert(filledColumns > 20);  // older high-gain history may be clipped below the graph
+      save(frame, imperial ? "sim/build-tests/climb-history-fpm.png"
+                           : "sim/build-tests/climb-history-metric.png");
+    }
+    // Losing the circle must hide the contents even if a stale history was accidentally retained.
+    estimate = {};
+    settings.units_climb = savedUnits;
+    assert(draw() == empty);
+    history = savedHistory;
   }
 
   void expectPosition(const ThermalSampleWind& wind, float altitudeM, int16_t climbCms,
@@ -572,6 +664,7 @@ namespace {
     checkCenterDrawing();  // GPS is now fixed, so the searching icon no longer blinks per draw.
     checkTargetDrawing();
     checkWindArrowDrawing();
+    checkWidgetDrawing();
     const auto before = thermalTracker.recentCoreSamples()[0];
     windEstimator.clearWindEstimate();
     const auto after = thermalTracker.recentCoreSamples()[0];
@@ -658,9 +751,11 @@ namespace {
     sim::scenario().pause();
     flyUntil(sim::clock().millis() + 4000);
     assert(!thermalCore.estimate().centerValid);
+    assert(!thermalCore.climbHistory().size());
     sim::scenario().play();
     flyUntil(sim::clock().millis() + 3000);
     assert(thermalCore.estimate().centerValid);  // GPS recovery restores the cached nearby center
+    assert(thermalCore.climbHistory().size() > 0 && thermalCore.climbHistory().size() <= 2);
     thermalTracker.reset();
     thermalCore.update();
     assert(!thermalCore.estimate().centerValid && thermalCore.estimate().direction == 0);
@@ -668,6 +763,7 @@ namespace {
 }  // namespace
 
 int main() {
+  checkWidgetHistory();
   checkLiftCenter();
   checkGuidanceGain();
   checkClimbHistory();

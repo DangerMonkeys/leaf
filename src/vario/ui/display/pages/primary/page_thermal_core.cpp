@@ -26,6 +26,13 @@ namespace {
   constexpr int16_t MAP_TOP = 73;
   constexpr int16_t MAP_WIDTH = 96;
   constexpr int16_t MAP_HEIGHT = 102;
+  constexpr int16_t HISTORY_LEFT = thermal_page::CORE_VARIO_BAR_WIDTH;
+  constexpr int16_t HISTORY_TOP =
+      thermal_page::CORE_CLIMB_BOX_TOP + thermal_page::CORE_CLIMB_BOX_HEIGHT;
+  constexpr int16_t HISTORY_DIVIDER = HISTORY_LEFT + thermal_page::CORE_CLIMB_BOX_WIDTH - 1;
+  constexpr int16_t HISTORY_VALUE_TOP = MAP_TOP - 18;
+  constexpr int16_t HISTORY_CURRENT_Y = HISTORY_VALUE_TOP;
+  constexpr int32_t HISTORY_CM_PER_PIXEL = 2500;
   // Moving the top edge must not shift the aircraft or breadcrumb projection.
   constexpr int16_t MAP_CENTER_Y = 124;
   // constexpr int16_t GUIDANCE_CENTER_X = MAP_LEFT + MAP_WIDTH / 2;
@@ -522,6 +529,32 @@ namespace {
     speaker.playSound(fx::neutral);
   }
 
+  void drawClimbHistory(const ThermalCoreEstimate& estimate) {
+    // The vario and climb field already form the graph's left and upper edges.
+    u8g2.drawFrame(HISTORY_DIVIDER, HISTORY_VALUE_TOP, MAP_WIDTH - HISTORY_DIVIDER,
+                   MAP_TOP - HISTORY_VALUE_TOP + 1);
+    u8g2.drawVLine(HISTORY_DIVIDER, HISTORY_TOP, MAP_TOP - HISTORY_TOP);
+    if (!estimate.centerValid) return;
+
+    const auto& history = thermalCore.climbHistory();
+    if (!history.size()) return;
+    for (uint8_t age = 0; age < history.size() && age < HISTORY_DIVIDER - HISTORY_LEFT; ++age) {
+      const int32_t deltaCm = history.currentAltitudeCm() - history.altitudeAgoCm(age);
+      const int16_t y = HISTORY_CURRENT_Y + (deltaCm + (deltaCm >= 0 ? HISTORY_CM_PER_PIXEL / 2
+                                                                     : -HISTORY_CM_PER_PIXEL / 2)) /
+                                                HISTORY_CM_PER_PIXEL;
+      // Fill only actual history columns, clipping before the unsigned drawing API.
+      const int16_t top = max<int16_t>(HISTORY_TOP, y);
+      if (top < MAP_TOP) {
+        u8g2.drawVLine(HISTORY_DIVIDER - 1 - age, top, MAP_TOP - top);
+      }
+    }
+    u8g2.setClipWindow(HISTORY_DIVIDER + 1, HISTORY_VALUE_TOP + 1, MAP_WIDTH - 1, MAP_TOP);
+    thermal_page::drawCoreClimbAverage(history.averageCms(), HISTORY_DIVIDER + 1,
+                                       HISTORY_VALUE_TOP + 1);
+    u8g2.setMaxClipWindow();
+  }
+
   void drawThermalCoreContent() {
     const int32_t climbRate = baro.climbRateFilteredValid() ? baro.climbRateFiltered() : 0;
     const int32_t displayClimbRate = baro.climbRateFilteredValid() ? baro.climbRateForDisplay() : 0;
@@ -559,6 +592,7 @@ namespace {
     */
     drawAircraft(aircraftX, AIRCRAFT_Y);
     u8g2.drawFrame(MAP_LEFT, MAP_TOP, MAP_WIDTH, MAP_HEIGHT);
+    drawClimbHistory(estimate);
 
     /*
     if (hasTurn) drawTargetScale(GUIDANCE_CENTER_X, GUIDANCE_CENTER_Y);
