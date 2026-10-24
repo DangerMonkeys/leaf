@@ -12,6 +12,12 @@ It remains `review_required`, with unresolved timing/recovery and workload-cover
 selection is not a release pass. Reviewed operational qualification and subsequent automation
 remain pending. Reports are required for the exact firmware release candidate, not per PR.
 
+The newer Core climb-history widget (#429), checked logbook finalization (#430), sustained
+g-load/interval diagnostics (#431) and launch-history diagnostics (#432) are not qualified by
+that older Navigate baseline. Include their actual activity, SD-write load, save stalls and
+memory use in the candidate assessment, alongside the existing flight/web/transition workload.
+The additional records are part of normal IGC logging, not only Developer-mode CSV capture.
+
 Use [Runtime assessment](../runtime-assessment.md) for current capture/export instructions and
 the [versioned baseline instructions](../../../utils/runtime_report/baselines/leaf-3_2_8-navigate-v1/README.md)
 for compatible comparisons. Preserve existing baseline bundles and their known issues.

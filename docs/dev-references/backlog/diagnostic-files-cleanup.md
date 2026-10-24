@@ -5,7 +5,7 @@ description: Current developer diagnostic files and remaining cleanup work.
 
 # Diagnostic Files Cleanup Backlog
 
-Status reconciled **2026-10-22**: diagnostic categories and their Developer controls are
+Status reconciled **2026-10-24**: diagnostic categories and their Developer controls are
 implemented. Separate dev firmware builds were retired in `c840faf9` (#420); runtime Developer
 mode and each category's setting control logging in the release image.
 
@@ -32,6 +32,19 @@ stream timing rows to SD in the measured path. See [Runtime assessment](../runti
 for capture allocation, export, comparison and simulator limitations.
 The runtime capture also has an implemented download endpoint, `/api/debug/runtime/download`,
 after freeze/export; a general CSV file-management UI is separate work.
+
+## Flight diagnostics in IGC files
+
+The `/diagnostics` categories above are separate from manufacturer L records added to normal
+IGC tracks in #431 and #432. G-load interval diagnostics are written once per second while the
+IGC is open, with a final group at stop. Launch diagnostics retain up to thirty one-second
+pre-start inputs and their scores; start/end records identify the timer cause. These records
+use the normal checksum-aware IGC writer and do not require Developer mode or a CSV toggle.
+No IGC diagnostics are available when track saving is disabled or the flight ends before its
+IGC opens. See [Flights and Logging](../flights_and_logging.md).
+
+These temporary field-tuning records add SD traffic to the flight workload. Measure their
+effect in exact-candidate runtime reports and decide what to retain or gate after validation.
 
 ## Remaining work
 

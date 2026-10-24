@@ -5,7 +5,7 @@ description: Implemented charging-mode upload, device pairing, USB handoff, and 
 
 # Leaf Log Auto-upload Backlog
 
-Status reconciled **2026-10-22** against `main` at `18fc69af`: auto-upload, device-level NVS
+Status reconciled **2026-10-24** against `main` at `18fc69af`: auto-upload, device-level NVS
 pairing, logbook result/status handling and USB ownership are implemented. Preparation/queue
 improvements merged in `2b9cb5e1` (#418), the linked-device website shortcut in `6c51405c`
 (#422), and charging dialogs/live input in `18fc69af` (#425).
@@ -119,12 +119,15 @@ a normalized path under `/tracks`, an existing nonempty file within the size lim
 delivered/rejected marker. A valid legacy IGC path can establish its format.
 
 Schema-invalid but parseable entries receive a terminal reason where possible. Syntactically
-broken JSON stays untouched and gets no sidecar. KML and `track.saved == false` are
+broken JSON without a valid recovery candidate stays untouched and gets no sidecar. KML and `track.saved == false` are
 `NotApplicable`. Rejections suppress automatic retry; repair tooling/manual edits may clear one.
 
-`LogbookStore` preserves unknown fields and uses temporary/backup replacement for result patches.
-This existing mechanism does **not** complete checked-write, recovery-validation or power-loss
-hardening; those remain in the SD robustness backlog. The optional result is documented in
+Since `605810eb` (#430), `LogbookStore` uses the shared checked logbook save/recovery routine
+for result patches. It preserves unknown fields and completion state, advances the revision,
+checks write/sync/close and readback, and retains a previous backup. Upload classification also
+resolves recoverable candidates. This completes the focused Phase 1 result-update work, not
+physical power-loss qualification or the firmware-wide Phase 2 audit; see the
+[SD robustness backlog](sd-card-write-robustness.md). The optional result is documented in
 `src/vario/logbook/logbook.yaml`.
 
 Both logbook UIs use shared summary parsing for `NotApplicable`, `NotUploaded`, `Uploaded`
@@ -189,8 +192,9 @@ Retain these as qualification work rather than claiming the entire original test
   re-pair/unlink cleanup failure and observed cancellation deadlines.
 - Repeated physical USB mount/eject/suspend/disconnect, center-hold reclaim and active host I/O,
   including power-only charging, missing/removable SD cards and factory discovery interactions.
-- Power interruption/short-write/recovery tests for result replacement, coordinated with the
-  SD robustness backlog.
+- Physical power-interruption and result-update tests on the integrated candidate, coordinated
+  with the SD robustness backlog. Phase 1 simulator tests already cover injected short writes,
+  recovery and upload-status preservation; device staged recovery has also passed.
 - Long charging sessions with many flights, slow/full cards and retry pauses: measure input
   responsiveness, worker stack/heap use, power cost and watchdog behavior.
 - Consider allowing sleep during retry backoff while preserving live input and retry deadlines.

@@ -5,9 +5,10 @@ description: Implemented firmware/USB SD ownership and remaining hardware qualif
 
 # USB Mass-storage Ownership During Power-on Backlog
 
-Status reconciled **2026-10-22**: the selected ownership and power-on behavior is implemented
+Status reconciled **2026-10-24**: the selected ownership and power-on behavior is implemented
 in `storage/sd_card.*`, `comms/leaf_log_sync.*`, `power.cpp` and `taskman.cpp`.
-Charging dialogs and cancel confirmation were updated in `18fc69af` (#425).
+Charging dialogs and cancel confirmation were updated in `18fc69af` (#425). Phase 1 logbook
+transaction coordination and bounded native USB diagnostics merged in `605810eb` (#430).
 This is no longer an undecided product design or an unimplemented Leaf Log follow-up.
 
 ## Implemented behavior
@@ -44,9 +45,9 @@ The alternatives of requiring eject before power-on or allowing normal operation
 access were not selected. Power-on waits for the firmware acquisition path; it does not proceed
 with simultaneous firmware/host filesystem access.
 
-The current ownership mechanism does not complete the broader transaction/durability audit.
-[SD card write robustness](sd-card-write-robustness.md) still tracks open-handle coordination,
-checked writes, recovery and power-interruption validation for all storage users.
+Phase 1 adds checked logbook/result saves, recovery and transaction coordination at ownership
+transitions. The broader all-writer lifecycle/durability audit and physical power-interruption
+qualification remain in [SD card write robustness](sd-card-write-robustness.md).
 
 ## Verification and remaining work
 
@@ -54,6 +55,12 @@ checked writes, recovery and power-interruption validation for all storage users
 cancel/hold handling, draining active callbacks, handoff failure, ejection and display behavior.
 The [charging-dialog capture record](../../ui-reviews/charging-dialog-revamp/verification.txt)
 records the #425 simulator checks. Host-directory mocks do not qualify physical USB/FAT behavior.
+
+During #430 hardware testing, an open USB serial monitor exposed a charge-to-on freeze caused
+by diagnostic writes waiting on a full transmit FIFO after detach. Native USB output is now
+bounded and best effort, and disabled before software detach. Focused stalled-endpoint tests
+passed; one monitored startup cycle reached normal operation on Leaf 3.2.8. Repeat cycles and
+the broader matrix below remain qualification work.
 
 Retain the following device matrix for qualification:
 

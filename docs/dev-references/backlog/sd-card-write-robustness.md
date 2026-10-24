@@ -5,11 +5,17 @@ description: Two-phase plan for recoverable logbook saves and resource-conscious
 
 # SD Card Write Robustness Backlog
 
-Status: Phase 1 implementation is present on `codex/sd-write-hardening-phase-1`; physical-device
-qualification remains pending. Investigation completed on 2026-10-21; the maintainer refined the
-scope on 2026-10-22 to automatic recovery with revision/completion metadata and a short, bounded
-final-save sequence without session-long RAM retention. The implementation/verification record
-below distinguishes automated checks from unperformed hardware and power-interruption tests.
+Status reconciled **2026-10-24**: Phase 1 merged to `main` in `605810eb` (#430). Automated
+fault-injection and FAT-backed tests passed. Leaf 3.2.8 checks also passed for no-GPS saves,
+absent-card failure followed by a new flight, staged candidate recovery, and deletion/cold boot.
+The USB diagnostic startup fix passed an initial monitored charge-to-on check. GPS/IGC flights,
+active-flight shutdown, target resource measurements and controlled power interruption remain
+qualification work; Phase 2 remains unimplemented.
+
+Investigation completed on 2026-10-21; the maintainer refined the scope on 2026-10-22 to automatic
+recovery with revision/completion metadata and a short, bounded final-save sequence without
+session-long RAM retention. The implementation/verification record below distinguishes completed
+checks from remaining qualification; it does not establish physical power-loss durability.
 
 ## Goal and phase boundaries
 
@@ -90,7 +96,12 @@ FAT-backed and controlled hardware interruption tests must establish the new seq
 behavior before claiming power-loss resilience. The incident alone cannot establish a recurrence
 rate or quantify the risk reduction.
 
-## Current weaknesses and implementation boundaries
+## Historical weaknesses identified before Phase 1
+
+The following table describes the investigated code before #430. Phase 1 replaces the unchecked
+logbook/result saves and destructive recovery, and handles finalization failures through the
+bounded save sequence and user feedback. Continuous-track and other-writer guarantees remain
+Phase 2 work; these historical rows are not a list of current logbook implementation defects.
 
 | Area | Observed behavior | Consequence |
 | --- | --- | --- |
@@ -102,10 +113,11 @@ rate or quantify the risk reduction.
 | `src/vario/power.cpp` | Stops the flight before power-down but cannot act on the ignored save result | Shutdown cannot reliably report or retry a failed finalization |
 | Other writers | Profiles, routes, waypoints, web handlers, and diagnostics use different save strategies | Fixes confined to flight JSON leave similar weaknesses elsewhere |
 
-These flight-save weaknesses were present in `v0.2.3` and remained in the current code reviewed.
-Current `storage/sd_card.*` already implements firmware/USB ownership states and handoffs; extend
-and audit that design in phase 2 rather than introducing another ownership mechanism. Its presence
-does not establish that USB caused this incident or that every caller already observes it correctly.
+These flight-save weaknesses were present in `v0.2.3` and in the code reviewed during the
+original investigation. Current `storage/sd_card.*` implements firmware/USB ownership states and
+handoffs, with Phase 1 logbook transaction coordination. Extend and audit that design across all
+storage users in Phase 2 rather than introducing another ownership mechanism. Its presence does
+not establish that USB caused this incident or that every caller already observes it correctly.
 
 ### Synchronization details that affect the design
 
@@ -124,7 +136,7 @@ overwrite-rename semantics will not work. The replacement sequence must remain r
 multiple metadata operations. Even successful sync and readback cannot prove survival of a later
 power interruption or SD-controller failure.
 
-## Phase 1: agreed focused logbook hardening
+## Phase 1: implemented focused logbook hardening
 
 The 2026-10-22 scope replaces the original proposal to keep failed completed flights in RAM for
 later background retries. Complete one short save sequence, report its outcome, preserve recoverable

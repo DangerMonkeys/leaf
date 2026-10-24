@@ -12,6 +12,15 @@ after `82a74de7`, and compares every one of the 19 existing backlog documents wi
 source, simulator coverage and recorded validation. Older completed work was also reconciled
 where a note still described it as unimplemented.
 
+## Follow-up, 2026-10-24
+
+The original review below covers the fixed October 22 snapshot. Its affected backlog rows have
+been updated for #428–#432: cursor handling is separate from timer events, Core has a climb-history
+widget, Phase 1 logbook hardening is merged with partial device qualification, sustained g-load
+filtering/diagnostics are implemented, and Auto Start uses a speed/climb score. See the
+[October 24 release-readiness review](release-readiness-2026-10-24.md) for current scope and
+remaining validation. The original validation record at the end describes the October 22 review.
+
 ## Main-branch changes reviewed
 
 | Commit | Change and backlog impact |
@@ -37,7 +46,7 @@ or release approval. Test plans retained in notes are not a claim that every cas
 
 | Note | Reconciled status / remaining work |
 | --- | --- |
-| [Accelerometer flight metrics](backlog/accelerometer-flight-metrics.md) | Filtering/spike rejection remains open; log statistics still sample acceleration extrema. Updated the User Page name. |
+| [Accelerometer flight metrics](backlog/accelerometer-flight-metrics.md) | Updated October 24: sustained filtering, flight-aware extrema and interval diagnostics merged in #431. Real-flight detector tuning and diagnostic workload assessment remain. |
 | [Diagnostic files cleanup](backlog/diagnostic-files-cleanup.md) | Category toggles, consolidated files and runtime download exist; CSV management, rotation and retention remain open. |
 | [Factory commissioning](backlog/factory-commissioning-followup.md) | Existing completion record matches code. Partition-derived NVS erase, dedicated Auto-Off timeout testing and broader calibration qualification remain open. |
 | [Heap availability](backlog/heap-availability-improvements.md) | Runtime memory evidence and queue reuse exist. Profile/logbook responses already stream. Stack sizing, measured allocation/lifecycle tuning and long runs remain open. |
@@ -48,10 +57,10 @@ or release approval. Test plans retained in notes are not a claim that every cas
 | [Miscellaneous firmware bugs](backlog/misc-firmware-bugs.md) | Thermal fix merged; simulator/build/flash evidence preserved. Repeated device lifecycle checks remain open. |
 | [One-button bootloader entry](backlog/one-button-bootloader-entry.md) | No application BOOT long-press handler found; proposed flow and hardware strap/reset verification remain open. |
 | [Runtime resource assessment](backlog/runtime-resource-assessment.md) | Stage 1 and provisional Navigate reference exist; operational qualification, automated workloads and publication enforcement remain open. |
-| [SD card write robustness](backlog/sd-card-write-robustness.md) | Both hardening phases remain open. Current finalization still ignores save failure, and replacement/recovery still lack the proposed checks. USB ownership does not complete this work. |
+| [SD card write robustness](backlog/sd-card-write-robustness.md) | Updated October 24: Phase 1 checked saves, automatic recovery, bounded finalization and deletion merged in #430. Simulator/FAT tests and several device checks passed. Remaining physical/resource qualification and firmware-wide Phase 2 work are open. |
 | [Signed IGC / XContest](backlog/signed-igc-xcontest-validation.md) | XLV/MD5 G records and local/native Windows validation exist (#414 and `82a74de7`). Authenticated signing, assigned registration, trust/key policy and contest deployment/acceptance remain unestablished. |
 | [ST IMU migration](backlog/st-imu-magnetometer-migration.md) | Initial support merged; dated bring-up records retained as history. Moving-start/flight, temperature, multiple-board, current/fault and broader retention qualification remain. Magnetometer, gestures and ICM estimator migration are deferred. |
-| [Thermal Core display](backlog/thermal-core-display.md) | Core, lift-center/target guidance, actual glyphs/layout, Display controls and lifecycle reset exist; representative field evaluation remains. |
+| [Thermal Core display](backlog/thermal-core-display.md) | Updated October 24: #428 separates cursors from timer events; #429 fills the area above the map with climb history and trailing-minute net climb. Guidance/layout, Display controls and lifecycle reset exist; waypoint-bearing cues and representative field evaluation remain. |
 | [USB ownership](backlog/usb-mass-storage-power-on-ownership.md) | Selected ownership/power-on path exists; obsolete alternative product proposals removed. Physical USB/FAT/cache and complete storage-user qualification remain. |
 | [IMU gravity performance](backlog/vario-imu-gravity-performance.md) | ICM clamp/gate fix is historical and implemented; corrected historical wording. Optional ICM Kalman migration and broader unit/temperature characterization remain open. |
 | [Waypoint handling](backlog/waypoint-handling-improvements.md) | Existing RAM/name/scroll completion record matches code. CUP naming, selector context, capacity/storage options and GPX name-only policy remain open; parser still resolves name-only route points. |

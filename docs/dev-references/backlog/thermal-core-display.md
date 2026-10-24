@@ -5,9 +5,11 @@ description: Implemented Thermal Core guidance, display controls, and remaining 
 
 # Thermal Core Display Backlog
 
-Status reconciled **2026-10-22**: Thermal Core is implemented. Guidance/layout improvements
+Status reconciled **2026-10-24**: Thermal Core is implemented. Guidance/layout improvements
 merged in `97ff8083` (#415), display controls and automatic switching in `a6e069a6` (#417),
-and lifecycle/readiness fixes plus Basic/User naming in `dd70c883` (#424).
+and lifecycle/readiness fixes plus Basic/User naming in `dd70c883` (#424). Cursor handling was
+separated from flight timer events in `54cc79f8` (#428), and the climb-history widget was added
+in `9e0f90a6` (#429).
 
 ## Implemented behavior
 
@@ -33,10 +35,18 @@ and lifecycle/readiness fixes plus Basic/User naming in `dd70c883` (#424).
 - Optional Auto Thermal Core switches into Core when guidance is available and manages return
   to the previous page. Manual page selection and page-disable behavior are covered by the
   display-settings regression.
+- The space above the map contains an altitude-history graph and trailing-minute net climb.
+  History uses five-second samples at a fixed 25 m/pixel scale; the average uses the available
+  duration during the first minute. Both follow the center circle's visibility and clear when
+  it disappears. Collection continues while another page is displayed, using one shared
+  100-byte history without heap allocation.
 - Flight start, stop and orderly shutdown clear thermal histories, saved session thermals,
-  fitted guidance/targets, page cursors and automatic-switch state. Collection restarts only
-  with new usable GPS and valid climb readings. Barometer readiness guards prevent retained
-  guidance from reading unavailable altitude after wake.
+  fitted guidance/targets and automatic-switch state. Collection restarts only with new usable
+  GPS and valid climb readings. Barometer readiness guards prevent retained guidance from
+  reading unavailable altitude after wake.
+- Editing cursors and their timeout counters are independent of flight timer events. Shutdown
+  clears the Basic, User, Core, Track and Navigate cursors alongside menu/modal state; manual
+  or automatic flight start/stop preserves in-progress field selections.
 
 ## Evidence and iteration
 
@@ -54,10 +64,10 @@ The lifecycle bug's recorded simulator/build/flash evidence and remaining device
 - Consider showing a bearing pointer to the next waypoint on Thermal Core and Thermal Track
   while navigation is active. This would help the pilot see exactly when to stop circling and
   head toward the next waypoint without first switching to the Nav page.
-- Add a data field with user-selectable options in the blank space on Thermal Core, above
-  the map and below the climb rate.
-- Evaluate center stability, steering usefulness and readability in representative real flight,
-  including weak/irregular lift, strong wind, turn reversals and loss/recovery of GPS.
+- Evaluate center stability, steering usefulness, climb-history readability and the trailing-minute
+  average in representative real flight, including weak/irregular lift, strong wind, turn
+  reversals and loss/recovery of GPS. Check both m/s and fpm and history clearing/recollection
+  when the center disappears and returns.
 - Tune estimator and layout from that evidence; the old arrow-size, breadcrumb-style and
   first-prototype tasks are resolved by the implementation.
 - Complete repeated device shutdown/charging/wake and flight-stop/restart checks before closing
