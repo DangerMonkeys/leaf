@@ -423,7 +423,7 @@ void FanetRadio::taskRadioTx(void* pvParameters) {
 }
 
 bool FanetRadio::fanet_sendFrame(uint8_t codingRate, etl::span<const uint8_t> data) {
-  if (state != FanetRadioState::RUNNING) {
+  if (!isDetected() || state != FanetRadioState::RUNNING) {
     return false;
   }
 
@@ -577,7 +577,7 @@ void FanetRadio::begin(const FanetRadioRegion& region) {
 #endif
 
   logDetectionResult();
-  if (state == FanetRadioState::UNINSTALLED) {
+  if (!isDetected()) {
     return;  // Short circuit if the radio module is not installed
   }
 
@@ -710,7 +710,7 @@ void FanetRadio::end() {
 
   logDetectionResult();
   // Short circuit unloading if the radio module is missing.
-  if (state == FanetRadioState::UNINSTALLED || state == FanetRadioState::FAILED_RADIO_PROBE ||
+  if (!isDetected() || state == FanetRadioState::FAILED_RADIO_PROBE ||
       state == FanetRadioState::FAILED_RADIO_INIT || state == FanetRadioState::FAILED_OTHER ||
       radio == nullptr) {
     logEvent("end", "radio-unavailable");
@@ -736,7 +736,7 @@ FanetRadioState FanetRadio::getState() { return state; }
 void FanetRadio::setCurrentLocation(const float& lat, const float& lon, const uint32_t& alt,
                                     const int& heading, const float& climbRate,
                                     const float& speedKmh) {
-  if (state != FanetRadioState::RUNNING) {
+  if (!isDetected() || state != FanetRadioState::RUNNING) {
     return;
   }
 
@@ -794,7 +794,7 @@ void FanetRadio::setCurrentLocation(const float& lat, const float& lon, const ui
 }
 
 const FANET::Protocol::Stats FanetRadio::getStats() const {
-  if (state != FanetRadioState::RUNNING) return {};
+  if (!isDetected() || state != FanetRadioState::RUNNING) return {};
 
   LockGuard lock(x_fanet_manager_mutex);
   if (!lock) return {};
@@ -802,7 +802,7 @@ const FANET::Protocol::Stats FanetRadio::getStats() const {
 }
 
 const FanetNeighbors::NeighborMap& FanetRadio::getNeighborTable() const {
-  if (state != FanetRadioState::RUNNING || x_fanet_manager_mutex == nullptr) {
+  if (!isDetected() || state != FanetRadioState::RUNNING || x_fanet_manager_mutex == nullptr) {
     return neighbors.get();
   }
   LockGuard lock(x_fanet_manager_mutex);
@@ -851,7 +851,7 @@ String FanetRadio::getAddress() {
 }
 
 void FanetRadio::setGroundTrackingMode(const FANET::GroundTrackingPayload::TrackingType& mode) {
-  if (state != FanetRadioState::RUNNING) {
+  if (!isDetected() || state != FanetRadioState::RUNNING) {
     return;
   }
   // Acquire the manager lock, notify the manager

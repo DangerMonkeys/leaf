@@ -79,21 +79,22 @@ namespace cpu_utilization {
     bool gpsProfiling() { return capturing() && onCaptureThread() && data->gps.active; }
 
     void settingsJson(char* out, size_t length) {
-      snprintf(out, length,
-               "{\"ble\":%s,\"fanet_region\":%u,\"thermal_core\":%s,\"thermal_track\":%s,"
-               "\"basic_page\":%s,\"user_page\":%s,\"nav_page\":%s,\"debug_pages\":%s,"
-               "\"system_log\":%s,\"network_log\":%s,\"web_log\":%s,\"vario_log\":%s}",
-               settings.system_bluetoothOn ? "true" : "false", (unsigned)settings.fanet_region,
-               settings.disp_showThermalCorePage ? "true" : "false",
-               settings.disp_showThermalTrackPage ? "true" : "false",
-               settings.disp_showBasicPage ? "true" : "false",
-               settings.disp_showUserPage ? "true" : "false",
-               settings.disp_showNavPage ? "true" : "false",
-               settings.disp_showDebugPage ? "true" : "false",
-               settings.diag_systemEvents ? "true" : "false",
-               settings.diag_networkEvents ? "true" : "false",
-               settings.diag_webRequests ? "true" : "false",
-               settings.diag_vario ? "true" : "false");
+      snprintf(
+          out, length,
+          "{\"ble\":%s,\"fanet_region\":%u,\"thermal_core\":%s,\"thermal_track\":%s,"
+          "\"basic_page\":%s,\"user_page\":%s,\"nav_page\":%s,\"debug_pages\":%s,"
+          "\"system_log\":%s,\"network_log\":%s,\"web_log\":%s,\"vario_log\":%s,\"fanet_log\":%s}",
+          settings.system_bluetoothOn ? "true" : "false", (unsigned)settings.fanet_region,
+          settings.disp_showThermalCorePage ? "true" : "false",
+          settings.disp_showThermalTrackPage ? "true" : "false",
+          settings.disp_showBasicPage ? "true" : "false",
+          settings.disp_showUserPage ? "true" : "false",
+          settings.disp_showNavPage ? "true" : "false",
+          settings.disp_showDebugPage ? "true" : "false",
+          settings.diag_systemEvents ? "true" : "false",
+          settings.diag_networkEvents ? "true" : "false",
+          settings.diag_webRequests ? "true" : "false", settings.diag_vario ? "true" : "false",
+          settings.dev_logFanet ? "true" : "false");
     }
 
 #ifndef LEAF_SIM

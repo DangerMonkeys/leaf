@@ -75,6 +75,7 @@
 #define DEF_DEV_START_LOG_AT_BOOT 0   // default do not start log at boot
 #define DEF_DEV_START_DISCONNECTED 0  // default do not disconnect hardware at boot
 #define DEF_DEV_FANET_FWD 0           //  DO rebroadcast Fanet packets (turn off for range testing)
+#define DEF_DEV_LOG_FANET 0           // Record neighbor observations while the flight timer runs
 #define DEF_DIAG_SYSTEM_EVENTS 0
 #define DEF_DIAG_NETWORK_EVENTS 0
 #define DEF_DIAG_WEB_REQUESTS 0
@@ -210,6 +211,7 @@ setting | samples | time avg
   bool dev_startLogAtBoot;
   bool dev_startDisconnected;
   bool dev_fanetFwd;
+  bool dev_logFanet = DEF_DEV_LOG_FANET;
   bool diag_systemEvents;
   bool diag_networkEvents;
   bool diag_webRequests;

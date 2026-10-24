@@ -22,11 +22,13 @@ logging should stay enabled when measuring flight behavior.
    plays the error sound, shows ERR, and prints the allocation reason on serial.
 2. Exercise the intended operating mode manually. Record settings, active page, sensor source,
    radio/client activity, SD card, and elapsed time. Do not assume enabled features were exercised.
-3. Select **Runtime: STOP** to freeze. Returning to charging mode also freezes the 10 ms capture.
+3. Select **Runtime: STOP** to freeze and save a new `/diagnostics/runtime_N.json` on the SD
+   card. Saving happens after measurement stops; the confirmation sound indicates success.
    The unfinished final slot is retained in the trace but excluded from aggregate statistics.
-4. Select **Save Timing**. Export only works after freezing and writes a new
-   `/diagnostics/runtime_N.json` on the SD card. The confirmation sound indicates success.
-5. Retrieve the file after capture, using SD mass storage or the web app. Firmware and host
+   If saving fails, the row shows **Runtime: SAVE**; click it to retry without replacing the
+   capture. Returning to charging mode also freezes the 10 ms capture, leaving **Runtime: SAVE**
+   available to export it later. A successful save returns the row to **Runtime: START**.
+4. Retrieve the file after capture, using SD mass storage or the web app. Firmware and host
    must not own the card simultaneously. Starting another capture replaces the in-RAM data;
    previously exported files remain intact. A successful SD export releases the capture buffer;
    a failed export preserves it for retry. The memory type and footprint are reported. Until
@@ -42,8 +44,13 @@ Invoke-WebRequest -Uri 'http://<leaf>/api/debug/runtime/download' -OutFile runti
 ```
 
 The existing CPU utilization checkbox now enables bounded RAM capture; disabling it freezes.
-It no longer writes a wide CSV every second. Export is explicit. Commands affect the current
+It no longer writes a wide CSV every second. The menu's STOP action also exports; the HTTP
+freeze/export actions remain separate. Commands affect the current
 boot; CPU-checkbox settings saved by the existing settings UI still persist normally.
+
+The neighbor CSV opt-in is recorded as `fanet_log` in the captured settings. Keep Log FANET
+disabled for clean timing captures. Older reports without this setting remain readable, but
+their settings do not exactly match new captures for baseline comparisons.
 
 The web app stops BLE and FANET. For a flight capture, start/stop with the device menu before
 opening the web app to retrieve results. Test web activity and transitions in separate captures.

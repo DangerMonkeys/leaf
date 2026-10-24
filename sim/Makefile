@@ -149,6 +149,13 @@ $(BUILD)/runtime_capture_lifecycle_test: $(filter-out $(BUILD)/sim/emulator/main
 test-runtime-lifecycle: $(BUILD)/runtime_capture_lifecycle_test
 	@cd $(ROOT) && $(BUILD)/runtime_capture_lifecycle_test
 
+.PHONY: test-developer-logging
+$(BUILD)/developer_logging_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/developer_logging.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/developer_logging.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-developer-logging: $(BUILD)/developer_logging_test
+	@cd $(ROOT) && $(BUILD)/developer_logging_test
+
 .PHONY: test-runtime-integration
 $(BUILD)/runtime_capture_integration_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/runtime_capture_integration.cpp
 	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/runtime_capture_integration.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)

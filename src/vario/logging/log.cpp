@@ -11,6 +11,7 @@
 #include "logbook/flight.h"
 #include "logbook/igc.h"
 #include "logbook/logbook_entry.h"
+#include "logging/fanet_log.h"
 #include "logging/flight_auto_start.h"
 #include "navigation/gpx.h"
 #include "power.h"
@@ -123,6 +124,8 @@ void log_update() {
       if (flightTimer_autoStop()) flightTimer_stop(true, FlightEndCause::Automatic);
     }
   }
+
+  fanet_log::update();
 
   // Now do all the regular log stuff if we have an active log
   if (flight) {
@@ -355,11 +358,13 @@ void flightTimer_start(FlightStartCause cause) {
   trackLogEnabledForFlight = settings.log_saveTrack;
 
   // Start the Fanet radio
+  fanet_log::beginFlight();
   fanetRadio.begin(settings.fanet_region);
 }
 
 // stop timer
 void flightTimer_stop(bool showSummary, FlightEndCause cause) {
+  fanet_log::endFlight();
   autoStartDetector.reset();
   startHistory.reset();
   windEstimator.clearWindEstimate();  // clear the wind estimate when we stop a flight

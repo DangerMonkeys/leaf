@@ -854,7 +854,7 @@ void display_fanet_icon(const uint8_t& x, const uint8_t& y) {
 #endif
 
   // If the radio is missing, don't bother rendering it at all
-  if (fanetRadio.getState() == FanetRadioState::UNINSTALLED) {
+  if (!fanetRadio.isDetected()) {
     return;
   }
 
