@@ -392,3 +392,13 @@ $(BUILD)/training_pilot_names_test: $(SIM)/tests/training_pilot_names.cpp $(ROOT
 
 test-training-names: $(BUILD)/training_pilot_names_test
 	@$<
+
+.PHONY: test-version-markers
+$(BUILD)/version_markers_test: $(SIM)/tests/version_markers.cpp $(ROOT)/src/vario/system/version_info.cpp $(ROOT)/src/vario/leaf_version.h
+	@mkdir -p $(BUILD)
+	@$(CXX) -std=c++17 -Wall -Wextra -Werror -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(ROOT)/src/vario $< $(ROOT)/src/vario/system/version_info.cpp -o $@
+
+test-version-markers: $(BUILD)/version_markers_test
+	@$<
+	@grep -aq 'LEAF_HARDWARE_VARIANT=' $<
+	@grep -aq 'LEAF_FIRMWARE_VERSION=' $<

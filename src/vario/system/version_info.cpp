@@ -52,8 +52,13 @@ namespace {
 }  // namespace
 
 // --- canonical C-string getters (no heap, no static ctors, no Arduino.h) ---
-const char* LeafVersionInfo::firmwareVersion() { return FIRMWARE_VERSION; }
-const char* LeafVersionInfo::hardwareVariant() { return HARDWARE_VARIANT; }
+const char* LeafVersionInfo::firmwareVersion() {
+  // Reference the complete marker so linker section GC cannot discard SD-update identity.
+  return LEAF_FIRMWARE_VERSION_MARKER + sizeof("LEAF_FIRMWARE_VERSION=") - 1;
+}
+const char* LeafVersionInfo::hardwareVariant() {
+  return LEAF_FIRMWARE_HARDWARE_MARKER + sizeof("LEAF_HARDWARE_VARIANT=") - 1;
+}
 const char* LeafVersionInfo::tagVersion() { return TAG_VERSION; }
 const char* LeafVersionInfo::otaVersionsUrl() { return OTA_VERSIONS_URL; }
 const char* LeafVersionInfo::otaReleasesApiUrl() { return OTA_RELEASES_API_URL; }

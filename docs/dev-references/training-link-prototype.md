@@ -41,6 +41,10 @@ For example, v3.2.6 is `firmware-leaf_student_3_2_6-3.2.6-training.bin`. The exp
 is accepted by normal Leaf's SD filename check, and the student variant token is accepted when
 updating an existing student build. Packaging verifies the corresponding embedded student and
 `+h3.2.6` version markers, so a renamed wrong-hardware binary cannot pass the package check.
+The version accessors reference the complete embedded identity strings so linker garbage
+collection retains the full `LEAF_HARDWARE_VARIANT=leaf_student_...` marker. This allows the
+existing student updater to accept the next student image; normal firmware can also match the
+`+h3.2.x` marker. These strings live in flash and do not introduce a student RAM name cache.
 Copy only the matching `.bin` to `/firmware`, retaining its name and leaving no other `.bin`
 there; safely eject and restart. See `/firmware/update_status.txt` for the update result.
 
