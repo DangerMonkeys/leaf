@@ -617,3 +617,37 @@ this revision:
   The operator found the UI confusing; usability improvements remain open. The current altitude
   label also defaults to GPS when neither altitude source is usable, despite showing dashes for
   the value; make this unavailable state explicit in the next UI pass.
+
+
+### Three student SD-update downloads (2026-10-25)
+
+GitHub Actions run [40214479077](https://github.com/DangerMonkeys/leaf/actions/runs/40214479077)
+succeeded for all three student environments from commit
+`5913ac35e7d05d4e81df077d67d139a7cab117bf`:
+
+- [Student 3.2.5](https://github.com/DangerMonkeys/leaf/actions/runs/40214479077/artifacts/12607505456)
+- [Student 3.2.6](https://github.com/DangerMonkeys/leaf/actions/runs/40214479077/artifacts/12606604404)
+- [Student 3.2.7](https://github.com/DangerMonkeys/leaf/actions/runs/40214479077/artifacts/12606963908)
+
+These ZIPs require GitHub sign-in and have 90-day retention. Each contains one hardware-specific
+application image, source-commit/size metadata, SHA256SUMS and installation instructions. The
+actual downloaded files passed SHA256, ESP image checksum, exact embedded student/+h hardware
+marker and filename checks for both normal and existing student SD updaters. Copy only the `.bin`
+from the matching ZIP to `/firmware`, leave its filename unchanged, remove other `.bin` files,
+safely eject storage and restart. These checks verify image/SD compatibility, not a physical SD
+installation on all three boards or flight/resource qualification.
+
+The packaging tests include SD token boundaries and wrong-role/hardware/version/image rejection.
+A host test with linker garbage collection verifies that the version accessors preserve their
+values and retain the complete update markers. The normal 3.2.6 build passed with 104,572 static
+RAM bytes (unchanged) and 2,394,232 reported flash bytes (+48). Local student compilation also
+passed for all three hardware targets; the downloadable candidates are the fixed-commit CI
+artifacts above. Logs and downloaded verification metadata are retained locally under
+`.pio/training-downloads/5913ac35/`.
+
+A separate attached 3.2.7 instructor (`48:ca:43:59:ae:6c`) was built and flashed to both app slots
+at the operator's request. Its SHA256 is
+`26782b78e465fa1f6b70aa1e30da45c6a38a0182177b481e2c8bf4802ec24591`;
+static RAM/flash remain 36,456 / 679,840 bytes. Both written app hashes verified. Its USB console
+did not reappear after reset, so startup/display confirmation is pending; this does not extend
+the previous instructor's live pairing/runtime evidence to this board.
