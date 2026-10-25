@@ -35,11 +35,21 @@ class PackageTests(unittest.TestCase):
                 output = self.root / hardware
                 binary = module.package(self.root, environment, output)
                 self.assertEqual(binary.name,
-                    f"firmware-leaf_student_{hardware}-training-{hardware.replace('_', '.')}.bin")
+                    f"firmware-leaf_student_{hardware}-{hardware.replace('_', '.')}-training.bin")
                 manifest = json.loads((output / "build-info.json").read_text())
                 self.assertEqual(manifest["size_bytes"], binary.stat().st_size)
                 self.assertIn(manifest["sha256"], (output / "SHA256SUMS.txt").read_text())
                 self.assertEqual(manifest["source_commit"], "a" * 40)
+
+    def test_sd_filename_boundaries(self):
+        accepts = module.sd_filename_matches
+        self.assertFalse(accepts("firmware-leaf_student_3_2_6.bin", "leaf_3_2_6"))
+        self.assertFalse(accepts("firmware-3.2.6.bin", "leaf_3_2_6"))
+        name = "firmware-leaf_student_3_2_6-3.2.6-training.bin"
+        self.assertTrue(accepts(name, "leaf_3_2_6"))
+        self.assertTrue(accepts(name, "leaf_student_3_2_6"))
+        self.assertFalse(accepts(name, "leaf_3_2_5"))
+        self.assertFalse(accepts(name, "leaf_3_2_7"))
 
     def test_reject_wrong_hardware_and_version(self):
         environment = self.image("3_2_6", marker="LEAF_HARDWARE_VARIANT=leaf_student_3_2_7")

@@ -8,6 +8,16 @@ import shutil
 import subprocess
 
 
+def sd_filename_matches(name: str, variant: str) -> bool:
+    """Mirror the current SD updater's variant/numeric token boundary checks."""
+    name = name.lower()
+    variant = variant.lower()
+    if re.search(re.escape(variant) + r"(?![0-9])", name):
+        return True
+    token = variant.removeprefix("leaf_").replace("_", ".")
+    return re.search(r"(?<![0-9.])" + re.escape(token) + r"(?![0-9.])", name) is not None
+
+
 def package(project: Path, environment: str, output: Path) -> Path:
     match = re.fullmatch(r"leaf_student_(3_2_[567])_training", environment)
     if not match:
@@ -23,7 +33,9 @@ def package(project: Path, environment: str, output: Path) -> Path:
     if ("+h" + hardware + "\0").encode() not in data:
         raise ValueError("Firmware version does not contain the matching hardware marker")
     # Normal firmware accepts the dotted token; existing student firmware accepts its variant.
-    name = f"firmware-{variant}-training-{hardware}.bin"
+    name = f"firmware-{variant}-{hardware}-training.bin"
+    if not all(sd_filename_matches(name, target) for target in ("leaf_" + match.group(1), variant)):
+        raise ValueError("Filename must be accepted by normal and student SD updaters")
     output.mkdir(parents=True, exist_ok=True)
     destination = output / name
     shutil.copyfile(source, destination)

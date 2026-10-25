@@ -37,7 +37,7 @@ The `Student training test builds` Actions workflow builds all three student var
 branch commit and uploads separate 90-day artifacts; downloading requires GitHub sign-in.
 These are experimental build artifacts, not published firmware releases or flight qualification.
 Each ZIP contains one application `.bin`, SHA256SUMS, source-commit metadata and SD instructions.
-For example, v3.2.6 is `firmware-leaf_student_3_2_6-training-3.2.6.bin`. The explicit dotted token
+For example, v3.2.6 is `firmware-leaf_student_3_2_6-3.2.6-training.bin`. The explicit dotted token
 is accepted by normal Leaf's SD filename check, and the student variant token is accepted when
 updating an existing student build. Packaging verifies the corresponding embedded student and
 `+h3.2.6` version markers, so a renamed wrong-hardware binary cannot pass the package check.
