@@ -9,6 +9,12 @@ Status: open; investigation recorded 2026-10-24. Capture tooling is implemented;
 configuration changes and physical measurements below remain outstanding. Work branch:
 `codex/lora-fanet-range`.
 
+Related product backlog: [Student/instructor training link](student-instructor-training-link.md),
+updated 2026-10-24. That work specifies separate student and sensor-free instructor firmware
+roles, up to four students, focused audio/Bluetooth output, and an ordered prototype/test plan.
+It may reuse radio-driver and range findings here, but its dedicated RF mode is separate from
+the interoperable FANET configuration evaluated in this note.
+
 Improve useful direct FANET range while preserving interoperability with other FANET instruments.
 Evaluate firmware and antenna placement independently so that a change in one does not obscure
 the effect of the other. Published antenna gain and advertised product range are supporting
