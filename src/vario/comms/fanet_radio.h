@@ -132,6 +132,7 @@ class FanetRadio : public etl::message_router<FanetRadio, GpsReading>,
   // Fanet::FanetManager* manager = nullptr;
   etl::array<uint8_t, FANET_MAX_FRAME_SIZE> buffer = {0};  // Radio module buffer
   SX1262* radio = nullptr;
+  uint8_t appliedCodingRate_ = 0;  // Denominator (5 or 8); zero means unknown after a failed write.
 
   // RX Task:
   // Used to handle the process of any incoming packets destined for this

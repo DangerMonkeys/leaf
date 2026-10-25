@@ -29,6 +29,8 @@ namespace {
   constexpr uint32_t FANET_SPI_PROBE_BUSY_TIMEOUT_MS = 100;
   constexpr uint32_t FANET_SPI_LOCK_TIMEOUT_MS = 25;
   constexpr uint32_t FANET_RADIO_SPI_CLOCK_HZ = 1000000;
+  constexpr int8_t FANET_TX_POWER_DBM = 22;
+  constexpr float SX1262_TX_CURRENT_LIMIT_MA = 140.0f;
 
   bool sx1262StatusLooksValid(uint8_t status) { return status != 0x00 && status != 0xFF; }
 
@@ -437,12 +439,22 @@ bool FanetRadio::fanet_sendFrame(uint8_t codingRate, etl::span<const uint8_t> da
 
   // TODO:  Check if a frame is currently receiving
 
-  // Requested coding rate
-  // if (!radio->setCodingRate(codingRate)) {
-  //   Serial.println("[FanetRadio] Failed to set coding rate " + String(codingRate));
-  //   return false;
-  // }
-  // Not sure why the above is locking up.
+  // FANET requests 4/8 below eight neighbors, otherwise 4/5. Change modulation only in
+  // standby; taskRadioTx holds both locks and restores reception even if this send fails.
+  if (codingRate != appliedCodingRate_) {
+    auto standbyState =
+        callRadio("tx-coding-standby", "standby", [&]() { return radio->standby(); });
+    if (standbyState != RADIOLIB_ERR_NONE) return false;
+
+    // RadioLib updates its cached modulation parameters before the SPI write succeeds.
+    // Invalidate our cache so a failed write is retried, including a return to the old rate.
+    appliedCodingRate_ = 0;
+    auto codingState = callRadio("tx-coding-rate", "setCodingRate",
+                                 [&]() { return radio->setCodingRate(codingRate); });
+    if (codingState != RADIOLIB_ERR_NONE) return false;
+    appliedCodingRate_ = codingRate;
+    logEvent("tx-coding-rate-applied", "4/" + String(codingRate), "denominator", codingRate, true);
+  }
 
   // Send the frame out on the wire.
   logEvent("tx-start", "transmit", "bytes", data.size(), true);
@@ -637,7 +649,7 @@ void FanetRadio::begin(const FanetRadioRegion& region) {
     case FanetRadioRegion::US:
       logEvent("begin-radio-start", "US");
       radioInitState = callRadio("begin-radio", "US", [&]() {
-        return radio->begin(920.800f, 500.0f, 7U, 5U, 0xF1, 22U, 8U, 1.8f, false);
+        return radio->begin(920.800f, 500.0f, 7U, 5U, 0xF1, FANET_TX_POWER_DBM, 8U, 1.8f, false);
       });
       if (radioInitState == RADIOLIB_ERR_NONE) {
         syncWordState =
@@ -647,7 +659,7 @@ void FanetRadio::begin(const FanetRadioRegion& region) {
     case FanetRadioRegion::EUROPE:
       logEvent("begin-radio-start", "EUROPE");
       radioInitState = callRadio("begin-radio", "EUROPE", [&]() {
-        return radio->begin(868.200f, 250.0f, 7U, 5U, 0xF1, 22U, 8U, 1.8f, false);
+        return radio->begin(868.200f, 250.0f, 7U, 5U, 0xF1, FANET_TX_POWER_DBM, 8U, 1.8f, false);
       });
       if (radioInitState == RADIOLIB_ERR_NONE) {
         syncWordState = callRadio("begin-sync-word", "EUROPE",
@@ -663,6 +675,27 @@ void FanetRadio::begin(const FanetRadioRegion& region) {
   }
   if (syncWordState != RADIOLIB_ERR_NONE) {
     state = FanetRadioState::FAILED_RADIO_INIT;
+    return;
+  }
+
+  appliedCodingRate_ = 5;  // begin() resets the radio to 4/5 on every region change/restart.
+  logEvent("begin-tx-power", "requested", "dBm", FANET_TX_POWER_DBM, true);
+
+  // RadioLib 7.1.2 initializes OCP to 60 mA and preserves it during PA setup. The SX1262
+  // needs its 140 mA limit for the requested +22 dBm; set it after begin() configures the PA.
+  auto currentLimitState = callRadio("begin-current-limit", "setCurrentLimit", [&]() {
+    return radio->setCurrentLimit(SX1262_TX_CURRENT_LIMIT_MA);
+  });
+  if (currentLimitState != RADIOLIB_ERR_NONE) {
+    state = FanetRadioState::FAILED_RADIO_INIT;
+    return;
+  }
+  const float currentLimitMa = radio->getCurrentLimit();
+  logEvent("begin-current-limit-readback", "getCurrentLimit", "mA",
+           static_cast<int32_t>(currentLimitMa), true);
+  if (currentLimitMa != SX1262_TX_CURRENT_LIMIT_MA) {
+    state = FanetRadioState::FAILED_RADIO_INIT;
+    logEvent("begin-current-limit", "readback-mismatch");
     return;
   }
 

@@ -63,33 +63,36 @@ measure expected packet counts and CRC/header failures; those diagnostics remain
 
 ### 1. Configure and verify the SX1262 transmitter current limit
 
-- [ ] After successful radio initialization, explicitly set the SX1262 current limit to 140 mA
+- [x] After successful radio initialization, explicitly set the SX1262 current limit to 140 mA
   with `setCurrentLimit(140.0f)`, checking the return status. Read back and log the configured limit.
-- [ ] Retain a record of requested transmit power separately from measured RF output power.
+- [x] Retain a record of requested transmit power separately from measured RF output power.
 - [ ] Measure conducted output at 920.8 MHz before and after the change, using suitable RF test
   equipment and attenuation. Check the module supply during TX bursts, including lower battery
   charge, for voltage drop or resets. Record TX current and any battery-life impact.
 
-The reviewed Leaf configuration requests 22 dBm, but installed RadioLib 7.1.2 initializes the
-current limit to 60 mA and restores that limit when setting output power. Leaf does not currently
-override it. This is a strong candidate for reduced output, not a measurement of Leaf's actual
-power. Seeed specifies approximately 125 mA module current at 22 dBm; Semtech identifies 140 mA
-as the SX1262 OCP configuration after PA setup. A separate RadioLib user's report measured
+Leaf requests 22 dBm, but installed RadioLib 7.1.2 initializes the current limit to 60 mA and
+restores that limit when setting output power. Leaf now overrides it after radio initialization,
+checks the result, and rejects initialization unless the readback is 140 mA. The old 60 mA limit
+was a plausible cause of reduced output; neither the configured power nor this change measures
+Leaf's actual RF output. Seeed specifies approximately 125 mA module current at 22 dBm; Semtech
+identifies 140 mA as the SX1262 OCP configuration after PA setup. A separate RadioLib user's report measured
 16-17 dBm at a 60 mA limit versus 21.5 dBm at 140 mA; do not assume the same gain for Leaf.
 
 ### 2. Apply the FANET library's adaptive coding rate
 
-- [ ] Restore application of the requested coding rate in `FanetRadio::fanet_sendFrame()`:
-  currently the protocol requests 4/8 below eight neighbors and 4/5 at eight or more neighbors,
-  but Leaf's setter is commented out and the radio remains at the initial 4/5 setting.
-- [ ] Handle radio standby/configuration/TX transitions under the existing synchronization.
+- [x] Restore application of the requested coding rate in `FanetRadio::fanet_sendFrame()`:
+  the protocol requests 4/8 below eight neighbors and 4/5 at eight or more neighbors. Leaf now
+  applies that rate before transmission and logs each successful transition.
+- [x] Handle radio standby/configuration/TX transitions under the existing synchronization.
   Compare return status with `RADIOLIB_ERR_NONE`; the old commented `if (!setCodingRate(...))`
   check treats zero/success as failure and must not simply be uncommented.
 - [ ] Verify interoperability with an independent FANET instrument and transitions across the
   neighbor threshold. Keep explicit headers, payload CRC, and the standard coding-rate format.
 - [ ] Make airtime accounting reflect actual regional bandwidth and applied coding rate.
   The reviewed protocol dependency calculates airtime using a fixed 250 kHz bandwidth; US
-  operation uses 500 kHz. Account for the longer packets when stronger coding is selected.
+  operation uses 500 kHz. The dependency already includes the requested coding rate, so restoring
+  it makes the coding match this accounting; US airtime remains conservatively overestimated.
+  Correcting regional bandwidth requires a separate protocol-dependency change.
 - [ ] Measure packet delivery near the reception limit and under interference, alongside airtime.
   Stronger payload coding is not a substitute for receiving the preamble/header successfully.
 
