@@ -28,6 +28,7 @@ namespace training {
     if (initialized_) return true;
     Lock lock(2, false);
     if (!lock) return false;
+    started_ = true;
     // Explicit bench-only US profile. Production RF operating profile remains unqualified.
     lastError = chip_.begin(920.8f, 500.0f, 7, 5, 0x12, 10, 8, 1.8f, false);
     // Match Leaf's normal radio path, including the variant-specific external RX switch.
@@ -56,7 +57,8 @@ namespace training {
       initialized_ = false;
     }
   }
-  bool Radio::end() {
+  bool Radio::end(bool sleep) {
+    if (!started_) return true;
     Lock lock(2, false);
     if (!lock) return false;
     // Even a failed initialization may have installed/changed radio state.
@@ -65,7 +67,8 @@ namespace training {
     chip_.clearDio1Action();
     initialized_ = transmitting_ = false;
     irq.store(false);
-    return true;
+    if (sleep) lastError = chip_.sleep();
+    return lastError == RADIOLIB_ERR_NONE;
   }
   bool Radio::send(const Packet& packet) {
     if (!initialized_ || transmitting_) return false;

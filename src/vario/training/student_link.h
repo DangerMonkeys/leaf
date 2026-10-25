@@ -42,9 +42,10 @@ namespace training {
       accepted_ = true;
       return true;
     }
-    Packet hello(uint32_t id, uint32_t session) const {
+    Packet hello(uint32_t id, uint32_t session, const char* name = nullptr) const {
       Packet p;
       p.header = {Type::Hello, DISCOVERY_GROUP, id, session, nonce_};
+      copyPilotName(p.pilotName, name, HELLO_NAME_BYTES);
       return p;
     }
     Packet acceptance(uint32_t id, uint32_t session) const {
@@ -62,7 +63,8 @@ namespace training {
           p.assignedSlot >= STUDENTS)
         return false;
       if (p.header.type == Type::Offer && !offered_) {
-        offer_ = p;
+        offer_.header = p.header;
+        offer_.assignedSlot = p.assignedSlot;
         offered_ = true;
       } else if (p.header.type == Type::Confirm && accepted(now) &&
                  p.header.sender == offer_.header.sender &&
@@ -94,7 +96,11 @@ namespace training {
     }
 
    private:
-    Packet offer_;
+    // Only retain routing fields. Never keep packet/name/telemetry buffers on the student.
+    struct Offer {
+      Header header;
+      uint8_t assignedSlot = 0;
+    } offer_;
     uint32_t pairAt_ = 0, nonce_ = 0, peerSession_ = 0, sequence_ = 0, lastPoll_ = 0;
     bool pairing_ = false, offered_ = false, accepted_ = false, seen_ = false;
   };

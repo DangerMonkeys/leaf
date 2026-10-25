@@ -1,6 +1,7 @@
 #pragma once
 #include <stddef.h>
 #include <stdint.h>
+#include "pilot_name.h"
 namespace training {
   constexpr uint8_t STUDENTS = 4;
   constexpr size_t MAX_PACKET = 64;
@@ -39,6 +40,7 @@ namespace training {
     // header.sequence echoes the student's fresh pairing-window nonce.
     uint32_t target = 0, targetSession = 0;
     uint8_t assignedSlot = 0;
+    char pilotName[PILOT_NAME_BYTES + 1]{};
   };
   size_t encode(const Packet&, uint8_t*, size_t);
   bool decode(const uint8_t*, size_t, Packet&);
@@ -48,6 +50,7 @@ namespace training {
     Telemetry data;
     uint32_t id = 0, session = 0, receivedAt = 0;
     bool received = false;
+    char pilotName[PILOT_NAME_BYTES + 1]{};
   };
   class Receiver {
    public:

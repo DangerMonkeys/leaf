@@ -55,8 +55,16 @@ so their absence or failure does not gate startup.
 Board-control transactions use a 10 ms timeout. An expander communication fault is nonfatal,
 is reported as unavailable volume, and disables further gain writes rather than retrying on the
 RF/audio loop. PWM muting remains independent of expander access. Full battery protection,
-charge-state reporting and shutdown/sleep still need implementation/qualification; the prototype
-is not the normal Leaf power-management implementation.
+charge-state reporting and full power-management qualification remain outstanding; the prototype
+is not the normal Leaf power-management implementation. Basic instructor power control is now
+implemented independently of local sensors: hold center for three seconds in any screen to mute
+PWM/gain, cancel pairing and polling, put the radio to sleep, stop Bluetooth, turn off the LED and
+backlight, and release GPIO48's regulator latch. On battery, releasing the button then cuts power.
+USB keeps an inactive `Power off` screen alive; another three-second center hold performs a clean
+restart, with fresh remote state and the saved roster/focus/volume. A button held through boot must
+be released before another power gesture is accepted. As in the preceding instructor prototype,
+attaching USB or a physical battery power-on starts the instructor automatically. Battery startup
+is triggered by the hardware button, without an additional software three-second wait.
 
 ## Climb-driven audio
 
@@ -124,8 +132,32 @@ diagnostic `pair`, `offer`, `cancel`, `status`, `focus <0..3>` and other control
 `group <number>` is a diagnostic reset of the entire roster, not part of field setup. Instructor
 `group 0` disables RF until Add student is requested; `7101` is a historical bench group, not a default.
 
-Instructor buttons on the main roster: Up/Down select focus, Left cycles mute/low/medium/high,
-Right opens Add student, and holding center for three seconds forgets the focused student.
+The main instructor screen uses Leaf's instrument fonts and the Thermal Core upper-panel
+geometry: GPS ground course, ground speed, altitude, climb, and the signed vario bar. It displays
+all four student slots below the instruments and a Settings row at the bottom. A solid dot means
+a recent RF reply; a struck-out circle means stale/lost. The speaker glyph identifies the active
+student. Rounded inverted rows are the cursor; moving that cursor does not change audio or the
+4 Hz source until the student is selected. There are no permanent control-help lines or role title.
+
+Up/Down browse the four slots and Settings; short center or Right selects. Settings contains
+Volume, Altitude units, Speed units, Climb units, Add student, Unpair (the focused slot), and Back.
+Left/Right decrease/increase volume, short center cycles it; either direction or short center
+switches the two choices for each unit. Unit choices are stored in instructor NVS independently
+of student settings, with metric defaults. Pairing also accepts short center or Right on the
+highlighted candidate. Left leaves pairing or returns from action rows. Unpair presents the full
+student ID with Cancel selected by default; select Unpair explicitly to remove it.
+
+Altitude uses fresh GPS altitude when available, otherwise fresh transmitted barometric altitude.
+The latter is **unadjusted pressure altitude**, labeled BARO rather than MSL; it is not the student's
+calibrated MSL readout. GPS-derived course/speed and GPS altitude disappear when GPS data age reaches
+2.5 s. Barometric altitude/climb require pressure age below 750 ms, and all focused values require
+an RF reply younger than 750 ms. Missing data uses dashes, independently of valid remaining fields.
+The display uses meters/feet, km/h/mph, and m/s/fpm; radio values and local audio remain in their
+original units. Wind and thermal-map data are not available in this protocol and are not inferred.
+
+Holding center for three seconds remains reserved for power in every screen. Power-off cancels
+the current pairing window while retaining any already-saved link.
+
 In discovery, Up/Down select a candidate, Right offers the link, and Left closes pairing. A center
 hold started during pairing cannot remove a saved student. Display slot labels are 1-4; diagnostic
 commands and wire slots remain 0-3. Button presses play the normal
@@ -134,8 +166,7 @@ Leaf click at the selected volume; mute also silences these local clicks. USB co
 and `forget`. `unmute` restores the remembered nonzero gain within the current session. Every
 boot enables volume at medium minimum, preserving a saved high setting; mute is temporary.
 Roster and selected focus persist. Group plus all four roster IDs are saved as one NVS blob;
-legacy per-slot bench settings are read when that blob is absent. Student naming remains follow-up work.
-
+legacy per-slot bench settings are read when that blob is absent. Pilot labels now come from the student's active pilot profile; see the metadata section below.
 
 The instructor advertises as `InstXXXX` (last four hex digits of its derived device ID), using
 Leaf's Nordic UART service and RX/TX UUIDs. Pair the phone through its flying app and select the
@@ -394,3 +425,171 @@ remains future work. Do not infer exact phase or end-to-end timing from host wav
 Group/session IDs, explicit enrollment and CRC provide bench filtering, **not authentication or
 encryption**. Authentication/replay policy and a qualified RF profile remain necessary product
 work. No firmware release or operational four-student capability is claimed by this prototype.
+
+
+## Instructor readability and power controls (2026-10-24)
+
+- Final instructor target `leaf_instructor_3_2_7_training` built and was flashed to both application
+  slots on instructor `48:ca:43:59:ae:a8` (`594362e6`), preserving NVS. Exact binary SHA256:
+  `38cd3f0fb742bbebacf7b06d61c3289844a1953aa7f7c6f63f045ead44ab3866`.
+- Static RAM is 36,008 bytes (48 more than the discovery milestone); reported flash usage is
+  669,448 bytes (6,580 more). These are build sizes, not runtime resource qualification. Normal
+  display refresh remains 4 Hz, with a 10 Hz progress animation only during a power hold.
+- Formatter, instructor button tests, enrollment tests, climb-audio regression and instructor UI
+  screenshot tests passed. Screens use only 6x12 and 5x8 fonts; tests measure actual glyph bounds
+  for four discovery candidates, four saved rows, fresh/stale/missing data, long IDs, removal,
+  link menu and power screens. The screenshots were visually reviewed. Button tests include
+  debounce, boot-held release gating, timer rollover, single-action holds, and cancelling an
+  incomplete hold without selecting a menu item. The v3.2.5 student target also built successfully
+  to check the shared radio shutdown API; its installed firmware was not changed.
+- An initial UI image (`f0839bb1c53606b19316d7ca531ca09b3e10bc04883eb868e2195d95c847bce1`)
+  produced a bounded, no-reset serial capture of `power off`, then the intentional software
+  restart. After restart the saved group 7101, volume high, IO-expander controls and radio were
+  available, with zero radio errors and no reported radio/BLE shutdown failure. The final image
+  adds clean cancellation of an incomplete power hold; this earlier power-transition observation
+  is not attributed to the final binary.
+- The final image booted with the saved group, focus and high volume, working expander/radio, and
+  zero radio errors in the bounded serial check. No student telemetry was received in these
+  captures; the earlier live-pair confirmation belongs to the preceding discovery binary.
+  The operator subsequently confirmed that the new interface button behavior works.
+  This confirmation belongs to that image, before the compact flight-panel revision below. Phone-side BLE disappearance/reconnect, battery-current measurements, full battery
+  protection and charging behavior still require separate qualification/implementation.
+
+
+## Compact instructor flight panel (2026-10-24)
+
+- The operator confirmed the preceding interface's button behavior before this revision. The
+  center-hold power logic is unchanged. UI text now follows Leaf's instrument/menu typography,
+  omits the role title and standing button hints, and uses rounded inverted selection rows.
+- The instrument area occupies the upper 78 pixels, based on Thermal Core's 14-pixel vario bar,
+  41-pixel inverted climb field and heading/speed/altitude arrangement. Four student rows and
+  Settings fill the rest. The active slot is identified above the roster and by its speaker glyph;
+  the cursor can browse another student or Settings without changing the audio/BLE/poll focus.
+- Settings contains volume, independently saved altitude/speed/climb units, pairing, focused-slot
+  unpair confirmation and Back. Unpair defaults to Cancel. Center or Right activates a student,
+  a settings item or a pairing candidate. The RF protocol, schedule and local vario audio engine
+  are unchanged; the installed student firmware remains compatible.
+- Formatter, navigation/power tests, enrollment/audio regressions and actual framebuffer screenshot
+  checks passed. The latter cover metric/US units, all GPS/pressure freshness combinations used
+  by the panel, signed/extreme protocol values, unavailable fields, cursor positions, setup notices
+  and confirmation screens. The main, settings, discovery and missing-data screens were inspected.
+- `leaf_instructor_3_2_7_training` built and was flashed to both app slots on `48:ca:43:59:ae:a8`,
+  preserving NVS. SHA256:
+  `014b4fa205d09428e659919950d8967001f1641cfb1ad318205a579050a04c2e`.
+  Static RAM is 36,088 bytes (80 more than the preceding UI image); reported flash usage is
+  677,264 bytes (7,816 more). Display refresh remains 4 Hz. This is build-size evidence, not a
+  full runtime resource assessment.
+- A bounded no-reset serial capture showed saved group 7101, focus slot 2, volume high, available
+  board controls and radio, advancing TX and zero radio errors. No student RF replies arrived in
+  this capture. The sample flight-value screenshots use simulated telemetry; live GPS display,
+  phone app behavior and operator evaluation of the revised interaction remain to be checked.
+
+
+## Automatic pilot labels
+
+The student supplies the **active pilot profile name** from the existing `/profiles/profiles.json`
+store, including its existing single-pilot fallback. No second name-entry interface is needed.
+No active/valid profile produces an empty label, so the instructor falls back to slot/device ID.
+A name is a label only: pairing, routing and source isolation still use device IDs and sessions.
+Duplicate names remain distinguishable by slot, and discovery/unpair screens keep the device ID.
+
+The student reads the profile only while sending pairing discovery announcements. The JSON,
+profile strings and SD lock are released before transmitting, and no name cache is retained on
+the student. A failed SD lock attempt defers the announcement; unavailable storage or a missing
+profile produces the existing ID fallback. Normal telemetry, reconnects, profile saves and SD
+mounts do no training-name work. The saved student offer holds only routing fields, not a full
+packet with its name/telemetry buffers.
+
+Hello (3) may append a byte count and 1..32 UTF-8 name bytes before CRC (33..64 bytes). The
+32-byte limit fits the existing 64-byte RF frame; truncation preserves code-point boundaries and
+whitespace/control characters are normalized. An announcement is repeated only within the
+pairing window, with the profile read into temporary memory each time. The instructor selects
+that named announcement, retains the selected label and saves it before sending Confirm. Thus
+lost announcements/Offer/Accept/Confirm frames use existing pairing retries; no separate name
+request or acknowledgement is needed. The experimental NameRequest/PilotName frames and
+periodic scheduler have been removed. Poll stays 24 bytes, Telemetry 64 bytes and ordinary
+Hello/Offer/Accept/Confirm 31 bytes. The normal 4 Hz / 1 Hz flight schedule is unchanged.
+
+The instructor stores an ID-tagged name cache in NVS at pair/unpair. Labels survive power loss,
+training disable/enable, reconnects and student boot-session changes. Re-pairing refreshes or
+clears the label; selecting another pilot profile does not update it automatically. Both roles
+need this update for named pairing: new instructors still accept old students' unnamed Hello,
+but instructors predating name support cannot decode named Hello. Existing saved bindings can
+still carry flight data without re-pairing; re-pair once to add a label.
+
+Names remain labels only and cannot refresh telemetry freshness or keep audio alive. The LCD's
+bitmap fonts render common Latin accents as plain letters and unsupported characters as `?`;
+the bounded on-air/NVS UTF-8 label is preserved. Long labels use a surname initial or ellipsis,
+and unpair shows the full bounded label. The instructor's existing 40-byte label capacity and
+NVS record layout are retained so saved labels from the previous prototype remain readable.
+
+
+### Earlier cached-name candidate verification (2026-10-24)
+
+These results describe the superseded RAM-cache/periodic-metadata candidate, not the
+pairing-only revision above.
+
+- Builds passed for v3.2.5 student, v3.2.7 instructor and normal v3.2.6 firmware. The normal build
+  checks that the extracted profile-resolution helper preserves the non-training configuration.
+- Codec/scheduling, student/instructor enrollment, audio, UTF-8/name normalization, changed/empty
+  labels, session/ID/sequence/deadline checks, and name-versus-flight freshness tests passed.
+  The name protocol/helper tests also passed AddressSanitizer and UndefinedBehaviorSanitizer.
+- Actual student menu/profile-store integration passed in a fresh training simulator build:
+  active selection updates the cache, cached reads remain unchanged until explicit refresh,
+  single-pilot fallback resolves, ambiguous/no profile clears, and existing training enable/pair/
+  cancel/FANET handoff behavior continues to work. A prior inherited simulator object cache had
+  obsolete dependency target paths; its class-layout mismatch was excluded by using a fresh build.
+- Named roster, long labels, accented names, discovery-with-ID and unpair screens rendered with
+  glyph/shape bounds checked and were visually reviewed using simulated profile names.
+- Instructor SHA256 `17c1376bfb31373db68e710770cc3a753a719c5b73b0792fc54a85204677b952`
+  was flashed to both app slots on `48:ca:43:59:ae:a8`. Static RAM is 36,536 bytes (+448 versus
+  the compact panel); reported flash is 680,732 bytes (+3,468). A bounded no-reset capture showed
+  the saved group/focus/high volume, expander/radio ready, advancing TX and zero radio errors.
+  No student telemetry arrived in that capture; live label transfer still awaits the student update.
+- The matching v3.2.5 student image is built (105,604 static RAM bytes; 2,409,604 reported flash
+  bytes) and awaits USB connection for flashing. Existing pairings do not need to be recreated.
+
+
+### Pairing-only label revision (2026-10-24)
+
+The permanent student name cache and lock, SD/profile-save refresh hooks, full saved offer packet,
+and both roles' periodic metadata handling have been removed. The instructor keeps names only
+from pairing and NVS. Earlier installed-image results do not establish this revision's behavior. Verification for
+this revision:
+
+- Formatter and all three firmware builds passed: v3.2.5 student, v3.2.7 instructor and normal
+  v3.2.6. The normal build remains at 104,572 static RAM / 2,394,184 reported flash bytes.
+- Student static RAM is 105,452 bytes: 152 fewer than the cached-name candidate and 56 fewer
+  than the pre-name student. Reported flash is 2,409,168 bytes. The student retains no name cache
+  or synchronization lock, and its compact pure pairing state is 64 bytes. Temporary packet,
+  profile/JSON and stack memory is still used during pairing; these numbers are static build
+  evidence, not a peak runtime memory or timing assessment. The link map contains neither
+  cachedPilotName nor pilotNameMux.
+- Pairing/name tests passed for dropped announcements and confirmations, ID/session isolation,
+  re-pair label changes/clearing, reconnect label retention, unchanged flight freshness, UTF-8
+  truncation and legacy frame sizes. AddressSanitizer/UndefinedBehaviorSanitizer passed. The
+  existing codec, enrollment, source isolation, audio and power-control tests passed too.
+- A fresh training simulator build passed actual profile selection/single-pilot/ambiguous/missing
+  profile tests and the existing enable/pair/cancel/FANET lifecycle and instructor screen checks.
+  The simulator's radio stand-in does not deliver RF packets; the pure pairing tests cover the
+  wire handshake; the operator subsequently confirmed physical named pairing below.
+- Instructor SHA256 `ee5544e847996f63970bc0f8a51ded3cfe82cd90d32d82fc134944dd1c2eb135`
+  was flashed and hash-verified in both app slots on `48:ca:43:59:ae:a8`, preserving NVS.
+  Static RAM is 36,456 bytes (-80 versus the cached-name image); reported flash is 679,840.
+  A bounded no-reset USB capture showed saved group 7101, focus 2, high volume, radio/expander
+  ready, TX advancing from 30 to 45 and zero radio errors. No student telemetry was received.
+- Student SHA256 `f2ae3c710fd6e209a7a82ee6e10afa92e96baa6514f34fc63e9e979c7f0a2ac9`
+  was subsequently flashed and hash-verified in both app slots on v3.2.5 `f0:f5:bd:56:16:a0`
+  on 2026-10-25. A bounded TinyUSB console capture verified the preserved group 7101, slot 0,
+  instructor ID `594362e6` and enabled training setting. The board was in OffUSB charging mode
+  (`pwr=2`), so inactive radio and zero RX/TX were expected; radio errors were zero. Power it on
+  for the RF check, then pair again to store its current pilot label. Re-pairing reuses the existing
+  slot. Both updated roles are now installed. Captures: `.pio/training-pairing-only-student-flash.log` and
+  `.pio/training-pairing-only-student-runtime.log`.
+
+- On 2026-10-25 the operator confirmed that these two installed images paired successfully and
+  shared the student's pilot name. This confirms live named pairing, without extending the earlier
+  USB captures to imply continuous telemetry/audio, reconnect or power-loss label verification.
+  The operator found the UI confusing; usability improvements remain open. The current altitude
+  label also defaults to GPS when neither altitude source is usable, despite showing dashes for
+  the value; make this unavailable state explicit in the next UI pass.

@@ -46,6 +46,33 @@ namespace {
     return glider;
   }
 
+  bool resolvePilot(const JsonDocument& doc, PilotProfile& pilot) {
+    JsonArrayConst pilots = doc["pilots"].as<JsonArrayConst>();
+    if (pilots.isNull()) return false;
+
+    const String activeId = optionalString(doc["active_pilot_id"]);
+    PilotProfile onlyPilot;
+    uint16_t validPilotCount = 0;
+
+    for (JsonObjectConst item : pilots) {
+      PilotProfile candidate = pilotFromJson(item);
+      if (!candidate.valid()) continue;
+
+      validPilotCount++;
+      onlyPilot = candidate;
+      if (!activeId.isEmpty() && candidate.id == activeId) {
+        pilot = candidate;
+        return true;
+      }
+    }
+
+    if (activeId.isEmpty() && validPilotCount == 1) {
+      pilot = onlyPilot;
+      return true;
+    }
+
+    return false;
+  }
   bool loadProfiles(JsonDocument& doc) {
     heap_monitor::checkpoint("profiles-load-start");
     if (!SD_MMC.exists(ProfileStore::filePath())) {
@@ -137,37 +164,10 @@ String GliderProfile::profileName() const { return joinGliderName(brand, model, 
 
 bool ProfileStore::activePilot(PilotProfile& pilot) {
   pilot = PilotProfile();
-
   JsonDocument doc;
-  if (!loadProfiles(doc)) return false;
-
-  JsonArrayConst pilots = doc["pilots"].as<JsonArrayConst>();
-  if (pilots.isNull()) return false;
-
-  const String activeId = optionalString(doc["active_pilot_id"]);
-  PilotProfile onlyPilot;
-  uint16_t validPilotCount = 0;
-
-  for (JsonObjectConst item : pilots) {
-    PilotProfile candidate = pilotFromJson(item);
-    if (!candidate.valid()) continue;
-
-    validPilotCount++;
-    onlyPilot = candidate;
-    if (!activeId.isEmpty() && candidate.id == activeId) {
-      pilot = candidate;
-      return true;
-    }
-  }
-
-  if (activeId.isEmpty() && validPilotCount == 1) {
-    pilot = onlyPilot;
-    return true;
-  }
-
-  return false;
+  const bool found = loadProfiles(doc) && resolvePilot(doc, pilot);
+  return found;
 }
-
 bool ProfileStore::activeGlider(GliderProfile& glider) {
   glider = GliderProfile();
 

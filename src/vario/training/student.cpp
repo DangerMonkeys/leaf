@@ -6,7 +6,10 @@
 #include "esp_random.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
+#include "logbook/logbook_io.h"
 #include "power.h"
+#include "profiles/profile_store.h"
+#include "storage/sd_card.h"
 namespace training {
   Student student;
   void Student::begin() {
@@ -152,8 +155,21 @@ namespace training {
     if (wantsRadio && reserved_ && radio_.ready() && !radio_.busy() && pairing() &&
         uint32_t(now - pairTxAt_) >= nextPairTxMs_) {
       // Jitter bounds collisions when several students open discovery together.
-      const Packet control =
-          accepting() ? link_.acceptance(deviceId(), session_) : link_.hello(deviceId(), session_);
+      Packet control;
+      if (accepting()) {
+        control = link_.acceptance(deviceId(), session_);
+      } else {
+        control = link_.hello(deviceId(), session_);
+        // Setup only: release the profile/JSON and SD lock before sending. Never read profiles
+        // or retain a pilot-name cache during the flight telemetry path.
+        logbook_io::Guard transaction;
+        if (!transaction) return;
+        if (sdcard.firmwareCanAccessFilesystem()) {
+          PilotProfile pilot;
+          if (ProfileStore::activePilot(pilot))
+            copyPilotName(control.pilotName, pilot.name.c_str(), HELLO_NAME_BYTES);
+        }
+      }
       if (radio_.send(control)) {
         pairTxAt_ = now;
         nextPairTxMs_ = accepting() ? 500 : 750 + esp_random() % 500;

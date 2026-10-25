@@ -8,7 +8,7 @@ namespace training {
     initialized_ = sim::board().fanetPresent;
     return initialized_;
   }
-  bool Radio::end() {
+  bool Radio::end(bool) {
     initialized_ = transmitting_ = false;
     return true;
   }

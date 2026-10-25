@@ -48,13 +48,14 @@ namespace training {
   }
   size_t encode(const Packet& f, uint8_t* out, size_t cap) {
     const bool control = f.header.type >= Type::Hello && f.header.type <= Type::Confirm;
-    size_t n = f.header.type == Type::Poll        ? 24
-               : f.header.type == Type::Telemetry ? 64
-               : control                          ? 31
-                                                  : 0;
+    const bool request = f.header.type == Type::Poll;
+    const bool namedHello = f.header.type == Type::Hello && f.pilotName[0];
+    if (namedHello && !validPilotName(f.pilotName, HELLO_NAME_BYTES)) return 0;
+    size_t n = request ? 24 : f.header.type == Type::Telemetry ? 64 : control ? 31 : 0;
+    if (namedHello) n += 1 + strlen(f.pilotName);
     if (!out || !n || cap < n || !f.header.group || !f.header.sender || !f.header.session ||
         (f.header.type == Type::Telemetry && !validData(f.data)) ||
-        (f.header.type == Type::Poll && (f.requestedSlot >= STUDENTS || f.focusSlot >= STUDENTS)) ||
+        (request && (f.requestedSlot >= STUDENTS || f.focusSlot >= STUDENTS)) ||
         (control && (!f.header.sequence || f.assignedSlot >= STUDENTS ||
                      (f.header.type == Type::Hello ? (f.header.group != DISCOVERY_GROUP ||
                                                       f.target || f.targetSession || f.assignedSlot)
@@ -66,13 +67,18 @@ namespace training {
     put(p, uint8_t(f.header.type), 1);
     for (auto v : {f.header.group, f.header.sender, f.header.session, f.header.sequence})
       put(p, v, 4);
-    if (f.header.type == Type::Poll) {
+    if (request) {
       put(p, f.requestedSlot, 1);
       put(p, f.focusSlot, 1);
     } else if (control) {
       put(p, f.target, 4);
       put(p, f.targetSession, 4);
       put(p, f.assignedSlot, 1);
+      if (namedHello) {
+        put(p, strlen(f.pilotName), 1);
+        memcpy(p, f.pilotName, strlen(f.pilotName));
+        p += strlen(f.pilotName);
+      }
     } else {
       const auto& d = f.data;
       put(p, d.slot, 1);
@@ -95,26 +101,34 @@ namespace training {
     return n;
   }
   bool decode(const uint8_t* in, size_t n, Packet& out) {
-    if (!in || (n != 24 && n != 31 && n != 64)) return false;
+    if (!in || n < 24 || n > MAX_PACKET) return false;
     const uint8_t* p = in;
     if (get(p, 2) != 0x4c54 || get(p, 1) != 1) return false;
     Packet f;
     f.header.type = Type(get(p, 1));
-    if (!((f.header.type == Type::Poll && n == 24) ||
-          (f.header.type == Type::Telemetry && n == 64) ||
+    const bool request = f.header.type == Type::Poll;
+    const bool namedHello = f.header.type == Type::Hello && n >= 33;
+    if (!((request && n == 24) || namedHello || (f.header.type == Type::Telemetry && n == 64) ||
           (f.header.type >= Type::Hello && f.header.type <= Type::Confirm && n == 31)))
       return false;
     f.header.group = get(p, 4);
     f.header.sender = get(p, 4);
     f.header.session = get(p, 4);
     f.header.sequence = get(p, 4);
-    if (f.header.type == Type::Poll) {
+    if (request) {
       f.requestedSlot = get(p, 1);
       f.focusSlot = get(p, 1);
-    } else if (n == 31) {
+    } else if (n == 31 || namedHello) {
       f.target = get(p, 4);
       f.targetSession = get(p, 4);
       f.assignedSlot = get(p, 1);
+      if (namedHello) {
+        const size_t length = get(p, 1);
+        if (!length || length > HELLO_NAME_BYTES || n != 32 + length) return false;
+        memcpy(f.pilotName, p, length);
+        p += length;
+        if (memchr(f.pilotName, 0, length)) return false;
+      }
     } else {
       auto& d = f.data;
       d.slot = get(p, 1);

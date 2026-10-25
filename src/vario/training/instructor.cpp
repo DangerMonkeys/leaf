@@ -17,8 +17,10 @@
 #include "console.h"
 #include "esp_random.h"
 #include "hardware/configuration.h"
+#include "instructor_controls.h"
 #include "instructor_link.h"
 #include "instructor_pairing_screen.h"
+#include "instructor_screen.h"
 #include "protocol.h"
 #include "radio.h"
 #include "ui/audio/notes.h"
@@ -32,7 +34,10 @@ namespace {
   U8G2_ST75256_JLX19296_F_4W_HW_SPI lcd(U8G2_R1, 10, 17, 18);
   uint32_t session = 0, sequence = 0, lastPollAt = 0;
   uint8_t tick = 0;
-  bool muted = false;
+  bool muted = false, powered = true;
+  training::InstructorButtons controls;
+  training::InstructorNavigation navigation;
+  training::InstructorUnits units;
   char notice[20]{};
   uint32_t noticeAt = 0;
   void inform(const char* text) {
@@ -55,6 +60,29 @@ namespace {
     if (config.store.putBytes("roster", words, sizeof(words)) == sizeof(words)) return true;
     inform("Save failed");
     return false;
+  }
+  struct NameCache {
+    uint32_t ids[training::STUDENTS]{};
+    char names[training::STUDENTS][training::PILOT_NAME_BYTES + 1]{};
+  };
+  void saveNames() {
+    NameCache cache;
+    for (uint8_t i = 0; i < training::STUDENTS; ++i) {
+      cache.ids[i] = receiver.students[i].id;
+      training::copyPilotName(cache.names[i], receiver.students[i].pilotName);
+    }
+    if (config.store.putBytes("pilot_names", &cache, sizeof(cache)) != sizeof(cache))
+      inform("Name save failed");
+  }
+  void loadNames() {
+    NameCache cache;
+    if (config.store.getBytesLength("pilot_names") != sizeof(cache) ||
+        config.store.getBytes("pilot_names", &cache, sizeof(cache)) != sizeof(cache))
+      return;
+    for (uint8_t i = 0; i < training::STUDENTS; ++i)
+      if (cache.ids[i] && cache.ids[i] == receiver.students[i].id &&
+          training::validPilotName(cache.names[i]))
+        training::copyPilotName(receiver.students[i].pilotName, cache.names[i]);
   }
   void loadRoster() {
     auto r = roster();
@@ -178,6 +206,7 @@ namespace {
     if (value >= training::STUDENTS) return;
     if (receiver.focus != value) config.store.putUChar("focus", value);
     receiver.focus = value;
+    navigation.row = value;
     receiver.cancel();
     climbAudio.reset();
     tick = 0;
@@ -202,6 +231,7 @@ namespace {
       inform("Radio unavailable");
       return;
     }
+    navigation.page = training::InstructorPage::Roster;
     enrollment.open(millis());
     inform("Searching students");
   }
@@ -234,6 +264,8 @@ namespace {
     receiver.cancel();
     receiver.students[slot] = {};
     receiver.students[slot].id = enrollment.peer();
+    training::copyPilotName(receiver.students[slot].pilotName, enrollment.peerName());
+    saveNames();
     focus(slot);
     enrollment.committed(now);
     inform("Student saved");
@@ -244,6 +276,7 @@ namespace {
     if (!saveRoster(r)) return;
     enrollment.cancel();
     receiver.students[receiver.focus] = {};
+    saveNames();
     focus(receiver.focus);
     inform("Student removed");
   }
@@ -332,100 +365,153 @@ namespace {
             "pair, offer, cancel, focus <0..3>, forget, volume <0..3>, mute, unmute, beep, status");
     }
   }
-  void buttons() {
-    static const uint8_t pins[] = {5, 4, 3, 6, 2};  // up/down/left/right/center, all direct GPIO.
-    static uint8_t raw = 0, stable = 0;
-    static uint32_t changed = 0, centerAt = 0;
-    static bool forgotten = false;
+  uint8_t readButtons() {
+    static const uint8_t pins[] = {5, 4, 3, 6, 2};  // up/down/left/right/center, direct GPIO.
     uint8_t value = 0;
     for (unsigned i = 0; i < 5; ++i)
       if (digitalRead(pins[i])) value |= 1 << i;
-    if (value != raw) {
-      raw = value;
-      changed = millis();
+    return value;
+  }
+  void togglePower() {
+    if (!powered) {
+      // A clean restart rebuilds BLE/radio state and invalidates every old remote sample.
+      gpio_set_level(GPIO_NUM_48, 1);
+      ESP.restart();
+      return;
     }
-    if (value != stable && uint32_t(millis() - changed) >= 20) {
-      uint8_t pressed = value & ~stable;
-      stable = value;
-      if (enrollment.active(millis())) {
-        if (pressed & 1) enrollment.move(-1, millis());
-        if (pressed & 2) enrollment.move(1, millis());
-        if (pressed & 4) {
-          enrollment.cancel();
-          inform("Pairing closed");
-        }
-        if (pressed & 8) chooseStudent();
-      } else {
-        if (pressed & 1) focus((receiver.focus + 3) % 4);
-        if (pressed & 2) focus((receiver.focus + 1) % 4);
-        if (pressed & 4) setVolume(muted ? 1 : (volume + 1) % 4);
-        if (pressed & 8) pair();
+    powered = false;
+    enrollment.cancel();
+    receiver.cancel();
+    climbAudio.reset();
+    soundTest = false;
+    ledcWriteTone(14, 0);
+    playingTone = outputHz = 0;
+    if (speakerControlReady) ioExpander.write8(0, volumeOutputs(0));
+    appliedVolume = 0;
+    // Standby cancels any in-flight packet; sleep also disables the RF switch.
+    if (!radio.end(true)) Serial.println("INSTRUCTOR: radio shutdown failed");
+    NimBLEDevice::getAdvertising()->stop();
+    if (!NimBLEDevice::deinit(false)) Serial.println("INSTRUCTOR: BLE shutdown failed");
+    restartAdvertising.store(false);
+    outputLength = outputAt = 0;
+    lcd.clearBuffer();
+    training::drawInstructorPower(lcd, false, 0);
+    lcd.sendBuffer();
+    digitalWrite(21, LOW);  // Backlight and status LED off.
+    digitalWrite(47, LOW);
+    Serial.println("INSTRUCTOR: power off; hold center 3s to restart on USB");
+    // Battery operation ends here once the user releases the physical power button.
+    // USB can keep the MCU alive; its off loop accepts only the next power hold.
+    gpio_set_level(GPIO_NUM_48, 0);
+  }
+  void uiAction(training::InstructorAction action, int8_t direction = 1, bool cycle = true) {
+    using Action = training::InstructorAction;
+    switch (action) {
+      case Action::Focus:
+        focus(navigation.row);
+        break;
+      case Action::Volume: {
+        int level = muted ? 0 : volume;
+        level = cycle ? (level + 1) % 4 : std::clamp<int>(level + direction, 0, 3);
+        setVolume(level);
+        break;
       }
-      if (pressed) testSound(note::C4, vario_audio::FRAME_MS * FX_NOTE_SAMPLE_COUNT);
-      if (pressed & 16) {
-        centerAt = millis();
-        forgotten = enrollment.active(millis());
-      }
+      case Action::AltitudeUnits:
+        units.altitudeFeet = !units.altitudeFeet;
+        config.store.putBool("ui_alt_ft", units.altitudeFeet);
+        break;
+      case Action::SpeedUnits:
+        units.speedMph = !units.speedMph;
+        config.store.putBool("ui_speed_mph", units.speedMph);
+        break;
+      case Action::ClimbUnits:
+        units.climbFpm = !units.climbFpm;
+        config.store.putBool("ui_climb_fpm", units.climbFpm);
+        break;
+      case Action::Pair:
+        pair();
+        break;
+      case Action::AskRemove:
+        if (receiver.students[receiver.focus].id)
+          navigation.askRemove();
+        else
+          inform("No saved student");
+        break;
+      case Action::Remove:
+        forget();
+        navigation.page = training::InstructorPage::Roster;
+        break;
+      default:
+        break;
     }
-    if (enrollment.active(millis())) forgotten = true;
-    if ((stable & 16) && !forgotten && !enrollment.active(millis()) &&
-        uint32_t(millis() - centerAt) >= 3000) {
-      forget();
-      forgotten = true;
+  }
+  void buttons() {
+    const auto event = controls.update(readButtons(), millis());
+    // This gesture has priority in every view, including discovery and confirmation.
+    if (event.power) {
+      togglePower();
+      return;
+    }
+    if (!powered) return;
+    if (event.pressed) testSound(note::C4, vario_audio::FRAME_MS * FX_NOTE_SAMPLE_COUNT);
+    if (controls.centerDown()) return;
+    const uint8_t pressed = event.pressed;
+    if (enrollment.active(millis())) {
+      if (pressed & 1) enrollment.move(-1, millis());
+      if (pressed & 2) enrollment.move(1, millis());
+      if (pressed & 4) {
+        enrollment.cancel();
+        navigation.page = training::InstructorPage::Settings;
+      }
+      if ((pressed & 8) || event.click) chooseStudent();
+      return;
+    }
+    if (pressed & 1) navigation.move(-1);
+    if (pressed & 2) navigation.move(1);
+    if (pressed & 4) {
+      if (navigation.page == training::InstructorPage::Settings && navigation.setting < 4)
+        uiAction(navigation.select(), -1, false);
+      else
+        navigation.back();
+    } else if ((pressed & 8) || event.click) {
+      uiAction(navigation.select(), 1, event.click);
     }
   }
   void display() {
-    static uint32_t last = 0;
-    if (uint32_t(millis() - last) < 250 || radio.busy()) return;
-    last = millis();
-    lcd.clearBuffer();
-    lcd.setFont(u8g2_font_5x7_tf);
-    char line[32];
-    if (enrollment.active(millis())) {
-      training::drawInstructorPairing(lcd, enrollment, roster(), millis(), training::deviceId());
-      if (notice[0] && uint32_t(millis() - noticeAt) < 2500) lcd.drawStr(0, 140, notice);
-      lcd.sendBuffer();
+    static uint32_t last = 0, lastHolding = 0;
+    const uint32_t now = millis();
+    const uint32_t holding = controls.holding(now);
+    // Keep normal refresh at 4 Hz. Animate a power hold at 10 Hz; leave USB-off idle.
+    if (!powered && holding < training::InstructorButtons::PREVIEW_MS &&
+        lastHolding < training::InstructorButtons::PREVIEW_MS)
       return;
+    if (uint32_t(now - last) < (holding >= training::InstructorButtons::PREVIEW_MS ? 100U : 250U) ||
+        (powered && radio.busy()))
+      return;
+    last = now;
+    lastHolding = holding;
+    lcd.clearBuffer();
+    if (!powered || holding >= training::InstructorButtons::PREVIEW_MS) {
+      training::drawInstructorPower(lcd, powered, holding);
+    } else if (enrollment.active(now)) {
+      training::drawInstructorPairing(lcd, enrollment, roster(), now, training::deviceId());
+
+    } else if (navigation.page != training::InstructorPage::Roster) {
+      static const char* const names[] = {"Off", "Low", "Med", "High"};
+      training::drawInstructorSettings(
+          lcd, navigation, receiver.focus, receiver.students[receiver.focus].id,
+          training::deviceId(), units,
+          muted                  ? names[0]
+          : !speakerControlReady ? "?"
+                                 : names[volume],
+          bleName, server->getConnectedCount(),
+          notice[0] && uint32_t(now - noticeAt) < 2500 ? notice : nullptr,
+          receiver.students[receiver.focus].pilotName);
+    } else {
+      training::drawInstructorRoster(
+          lcd, receiver, now, navigation, units, radio.ready(), server->getConnectedCount(),
+          muted ? 0 : volume, notice[0] && uint32_t(now - noticeAt) < 2500 ? notice : nullptr);
     }
-    lcd.drawStr(0, 8, "LEAF INSTRUCTOR");
-    snprintf(line, sizeof(line), "Inst %08lx", (unsigned long)training::deviceId());
-    lcd.drawStr(0, 20, line);
-    if (radio.ready())
-      snprintf(line, sizeof(line), "RX %lu", (unsigned long)accepted);
-    else
-      snprintf(line, sizeof(line), "Radio off/fault");
-    lcd.drawStr(0, 32, line);
-    for (unsigned i = 0; i < 4; ++i) {
-      const auto& s = receiver.students[i];
-      if (!s.id)
-        snprintf(line, sizeof(line), "%c%u Unpaired", receiver.focus == i ? '>' : ' ', i + 1);
-      else
-        snprintf(line, sizeof(line), "%c%u %08lx %s", receiver.focus == i ? '>' : ' ', i + 1,
-                 (unsigned long)s.id,
-                 s.received && uint32_t(millis() - s.receivedAt) <
-                                   (i == receiver.focus ? training::LINK_STALE_MS : 2500)
-                     ? "live"
-                     : "lost");
-      lcd.drawStr(0, 48 + i * 14, line);
-    }
-    if (receiver.climbFresh(millis()))
-      snprintf(line, sizeof(line), "Climb %+.2f m/s",
-               receiver.students[receiver.focus].data.climbCms / 100.0);
-    else
-      snprintf(line, sizeof(line), "No fresh climb");
-    lcd.drawStr(0, 110, line);
-    static const char* const volumeNames[] = {"Audio muted", "Volume low", "Volume medium",
-                                              "Volume high"};
-    lcd.drawStr(0, 124,
-                muted                  ? volumeNames[0]
-                : !speakerControlReady ? "Volume unavailable"
-                                       : volumeNames[volume]);
-    lcd.drawStr(0, 138, server->getConnectedCount() ? "Phone connected" : bleName);
-    lcd.drawStr(0, 152,
-                notice[0] && uint32_t(millis() - noticeAt) < 4000 ? notice : "Right: add student");
-    lcd.drawStr(0, 164, "Up/down: focus");
-    lcd.drawStr(0, 176, "Left: volume");
-    lcd.drawStr(0, 188, "Hold OK: forget");
     lcd.sendBuffer();
   }
 }  // namespace
@@ -439,6 +525,7 @@ void setup() {
   // Keep all USB writes bounded even with a closed/unplugged serial monitor.
   Serial.setTxTimeoutMs(1);
   for (uint8_t pin : {2, 3, 4, 5, 6}) pinMode(pin, INPUT_PULLDOWN);
+  controls.begin(readButtons(), millis());
   pinMode(10, OUTPUT);
   digitalWrite(10, HIGH);
   pinMode(46, OUTPUT);
@@ -452,14 +539,19 @@ void setup() {
   if (!ledcAttach(14, 1000, 8)) Serial.println("INSTRUCTOR: speaker PWM init failed");
   ledcWriteTone(14, 0);
   config.begin();
+  units.altitudeFeet = config.store.getBool("ui_alt_ft", false);
+  units.speedMph = config.store.getBool("ui_speed_mph", false);
+  units.climbFpm = config.store.getBool("ui_climb_fpm", false);
   volume = config.store.getUChar("volume", 2);
   // Always start audible: medium minimum, retaining a saved high setting.
   if (volume < 2 || volume > 3) volume = 2;
   initBoardControls();
   applyBoardVolume();
   loadRoster();
+  loadNames();
   receiver.focus = config.store.getUChar("focus", 0);
   if (receiver.focus >= training::STUDENTS) receiver.focus = 0;
+  navigation.row = receiver.focus;
   bus.subscribe(sink);
   session = esp_random();
   if (!session) session = 1;
@@ -484,12 +576,17 @@ void setup() {
   if (!advertised) Serial.println("INSTRUCTOR: BLE advertising failed");
   if (config.group) radio.begin();
   Serial.println(
-      "INSTRUCTOR BENCH v1: Right adds a student; group/slots assigned automatically; "
+      "INSTRUCTOR BENCH v1: Select a student or Settings; group/slots assigned automatically; "
       "audio starts enabled at medium or saved high volume.");
 }
 void loop() {
-  commands();
   buttons();
+  if (!powered) {
+    display();
+    delay(5);
+    return;
+  }
+  commands();
   const uint32_t now = millis();
   const auto expired = enrollment.expire(now);
   if (expired != training::InstructorLink::Phase::Closed)

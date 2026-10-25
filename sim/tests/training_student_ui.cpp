@@ -1,12 +1,15 @@
 #include <Arduino.h>
 #include <Preferences.h>
 #include <assert.h>
+#include <filesystem>
 #include <fstream>
 #include "comms/fanet_radio.h"
 #include "display_capture.h"
+#include "profiles/profile_store.h"
 #include "runtime.h"
 #include "sim/board.h"
 #include "sim/clock.h"
+#include "training/pilot_name.h"
 #include "training/student.h"
 #include "ui/display/display.h"
 #include "ui/display/pages.h"
@@ -28,6 +31,27 @@ int main() {
   options.cardRoot = "sim/build-tests/training-student/card";
   device.configure(options);
   device.boot();
+  const auto profiles = std::filesystem::path(options.cardRoot) / "profiles";
+  std::filesystem::create_directories(profiles);
+  auto writeProfile = [&](const char* json) {
+    std::ofstream f(profiles / "profiles.json");
+    f << json;
+    assert(f.good());
+  };
+  writeProfile(
+      R"({"schema":"leaf.profiles","active_pilot_id":"a","pilots":[{"id":"a","name":"Alex Taylor"},{"id":"b","name":"Beth Wong"}]})");
+  PilotProfile pilot;
+  assert(ProfileStore::activePilot(pilot) && pilot.name == "Alex Taylor");
+  assert(ProfileStore::selectPilot("b"));
+  assert(ProfileStore::activePilot(pilot) && pilot.name == "Beth Wong");
+  writeProfile(R"({"schema":"leaf.profiles","pilots":[{"id":"b","name":"Beth Renamed"}]})");
+  assert(ProfileStore::activePilot(pilot) && pilot.name == "Beth Renamed");
+  writeProfile(
+      R"({"schema":"leaf.profiles","pilots":[{"id":"a","name":"Alex"},{"id":"b","name":"Beth"}]})");
+  assert(!ProfileStore::activePilot(pilot));
+  std::filesystem::remove(profiles / "profiles.json");
+  assert(!ProfileStore::activePilot(pilot));
+
   sim::board().fanetPresent = true;
   fanetRadio.setup();
   settings.fanet_region = FanetRadioRegion::US;

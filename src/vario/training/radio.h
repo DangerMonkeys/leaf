@@ -8,7 +8,7 @@ namespace training {
   class Radio {
    public:
     bool begin();
-    bool end();
+    bool end(bool sleep = false);
     bool receive(Packet& packet);
     bool send(const Packet& packet);
     bool ready() const { return initialized_; }
@@ -20,7 +20,7 @@ namespace training {
     void restartRx();
     Module module_{46, 15, 0, 16};
     SX1262 chip_{&module_};
-    bool initialized_ = false, transmitting_ = false;
+    bool initialized_ = false, transmitting_ = false, started_ = false;
     uint32_t txAt_ = 0;
     uint8_t bytes_[MAX_PACKET]{};
   };

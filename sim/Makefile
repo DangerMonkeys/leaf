@@ -364,7 +364,14 @@ $(BUILD)/training_student_ui_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(O
 test-training-student-ui: $(BUILD)/training_student_ui_test
 	@cd $(ROOT) && $(BUILD)/training_student_ui_test
 
-.PHONY: test-training-instructor test-training-instructor-ui
+.PHONY: test-training-instructor test-training-instructor-ui test-training-instructor-controls
+$(BUILD)/training_instructor_controls_test: $(SIM)/tests/training_instructor_controls.cpp $(ROOT)/src/vario/training/instructor_controls.h
+	@mkdir -p $(BUILD)
+	@$(CXX) -std=c++17 -Wall -Wextra -Werror -I$(ROOT)/src/vario $< -o $@
+
+test-training-instructor-controls: $(BUILD)/training_instructor_controls_test
+	@$<
+
 $(BUILD)/training_instructor_test: $(SIM)/tests/training_instructor_link.cpp $(ROOT)/src/vario/training/protocol.cpp $(ROOT)/src/vario/training/protocol.h $(ROOT)/src/vario/training/student_link.h $(ROOT)/src/vario/training/instructor_link.h
 	@mkdir -p $(BUILD)
 	@$(CXX) -std=c++17 -Wall -Wextra -Werror -I$(ROOT)/src/vario $< $(ROOT)/src/vario/training/protocol.cpp -o $@
@@ -372,8 +379,16 @@ $(BUILD)/training_instructor_test: $(SIM)/tests/training_instructor_link.cpp $(R
 test-training-instructor: $(BUILD)/training_instructor_test
 	@$<
 
-$(BUILD)/training_instructor_ui_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/training_instructor_ui.cpp $(ROOT)/src/vario/training/instructor_pairing_screen.h $(ROOT)/src/vario/training/instructor_link.h
+$(BUILD)/training_instructor_ui_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/training_instructor_ui.cpp $(ROOT)/src/vario/training/pilot_name.h $(ROOT)/src/vario/training/instructor_ui.h $(ROOT)/src/vario/training/instructor_instruments.h $(ROOT)/src/vario/training/instructor_screen.h $(ROOT)/src/vario/training/instructor_controls.h $(ROOT)/src/vario/training/instructor_pairing_screen.h $(ROOT)/src/vario/training/instructor_link.h
 	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/training_instructor_ui.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
 
 test-training-instructor-ui: $(BUILD)/training_instructor_ui_test
 	@cd $(ROOT) && $(BUILD)/training_instructor_ui_test
+
+.PHONY: test-training-names
+$(BUILD)/training_pilot_names_test: $(SIM)/tests/training_pilot_names.cpp $(ROOT)/src/vario/training/protocol.cpp $(ROOT)/src/vario/training/pilot_name.h $(ROOT)/src/vario/training/student_link.h $(ROOT)/src/vario/training/instructor_link.h
+	@mkdir -p $(BUILD)
+	@$(CXX) -std=c++17 -Wall -Wextra -Werror -I$(ROOT)/src/vario $< $(ROOT)/src/vario/training/protocol.cpp -o $@
+
+test-training-names: $(BUILD)/training_pilot_names_test
+	@$<

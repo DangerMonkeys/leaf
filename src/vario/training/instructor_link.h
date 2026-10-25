@@ -32,6 +32,7 @@ namespace training {
     enum class Phase : uint8_t { Closed, Discovering, Offering, Confirming };
     struct Candidate {
       uint32_t id = 0, session = 0, nonce = 0, seenAt = 0;
+      char pilotName[PILOT_NAME_BYTES + 1]{};
       bool fresh(uint32_t now) const { return id && uint32_t(now - seenAt) < 4000; }
     };
     Candidate candidates[STUDENTS];
@@ -75,7 +76,13 @@ namespace training {
             break;
           }
       if (index < 0) return false;
-      candidates[index] = {p.header.sender, p.header.session, p.header.sequence, now};
+      auto& candidate = candidates[index];
+      const bool same = candidate.id == p.header.sender && candidate.session == p.header.session &&
+                        candidate.nonce == p.header.sequence;
+      char previous[PILOT_NAME_BYTES + 1]{};
+      if (same) copyPilotName(previous, candidate.pilotName);
+      candidate = {p.header.sender, p.header.session, p.header.sequence, now};
+      copyPilotName(candidate.pilotName, p.pilotName[0] ? p.pilotName : previous);
       return true;
     }
     void move(int direction, uint32_t now) {
@@ -103,6 +110,7 @@ namespace training {
       return true;
     }
     uint32_t peer() const { return peer_.id; }
+    const char* peerName() const { return peer_.pilotName; }
     uint8_t slot() const { return slot_; }
     bool matchesAccept(const Packet& p, uint32_t now, uint32_t id, uint32_t session) const {
       return active(now) && (phase_ == Phase::Offering || phase_ == Phase::Confirming) &&

@@ -131,6 +131,36 @@ Build two firmware loads from shared protocol and Leaf components:
 
 ## Work item 3: instructor firmware on standard boards
 
+- [ ] Refine UI usability following the 2026-10-25 operator test: live pairing/name sharing worked,
+  but the interaction was confusing. Gather the unclear steps before revising the flow. Make the
+  altitude-source unavailable state explicit instead of labeling missing data GPS.
+
+- [x] Use the student's existing active pilot profile as the instructor label, with no separate
+  keyboard/input path. Read the profile only during pairing; send a bounded UTF-8 label in the
+  discovery announcement and persist it on the instructor. No student name cache, periodic
+  metadata requests or profile-edit hooks. Pair again to update a changed name. Retain ID/session
+  routing; the student retains only compact offer fields, never a whole packet/name buffer.
+  Show names in discovery, roster, focused instruments and unpair confirmation, with ID fallback
+  for missing profiles/older firmware and IDs available for duplicate-name identification.
+
+- [x] Replace the initial text dashboard with a compact Thermal Core-inspired instrument panel,
+  using Leaf fonts and rounded inverted cursor rows. Put four student slots and Settings below;
+  browsing preserves the active source until selection. Move volume, unit choices and linking
+  into Settings, persist display units locally, and default unpair confirmation to Cancel.
+  Preserve independent GPS/pressure freshness and label the transmitted pressure altitude BARO.
+  Course/speed are GPS ground values; unavailable wind/thermal data are not fabricated.
+
+- [x] Improve instructor readability with 6x12 primary text and 5x8 secondary status/help. Keep all
+  four students visible, give focus climb/link/GPS status a dedicated area, and move setup details
+  into a link menu. Add explicit removal confirmation instead of a center-hold shortcut.
+- [x] Reserve a three-second center hold globally for power. Release the regulator latch on
+  shutdown; mute audio/gain, sleep the radio and stop BLE. While USB supplies power, show the off
+  screen and accept a separate hold for a clean restart. Consume boot-held and already-triggered
+  presses until release so one hold cannot immediately reverse power state or delete a link.
+  Simulator checks cover button debounce/hold/release/rollover and actual display glyph bounds.
+  USB and battery shutdown/restart, BLE disappearance/reconnect and saved links/volume still need
+  verification on the new binary; full battery protection/charging UI remain separate work.
+
 - [x] Add button-based discovery and linking compatible with the student's Leaf Labs menu: show
   up to four fresh candidate IDs, require explicit instructor selection plus student confirmation,
   assign/reuse a roster slot, generate a group on first setup, and persist the group/roster atomically.
