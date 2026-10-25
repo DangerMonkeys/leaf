@@ -1,0 +1,55 @@
+name: Student training test builds
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/instructor-student-link]
+    paths:
+      - 'src/**'
+      - 'platformio.ini'
+      - '.github/workflows/training-builds.yaml'
+
+permissions:
+  contents: read
+
+jobs:
+  student:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        hardware: ['3_2_5', '3_2_6', '3_2_7']
+    name: Student ${{ matrix.hardware }}
+    env:
+      PIO_ENV: leaf_student_${{ matrix.hardware }}_training
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Cache PlatformIO toolchain
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio/.cache
+            ~/.platformio/platforms
+            ~/.platformio/packages
+          key: ${{ runner.os }}-${{ runner.arch }}-pio-tools-v1-6.1.19-${{ hashFiles('platformio.ini', 'src/variants/**/platformio.ini') }}
+      - name: Install PlatformIO
+        run: pip install platformio==6.1.19
+      - name: Check firmware packaging
+        run: python -m unittest discover -s src/scripts/tests -p test_package_training_firmware.py -v
+      - name: Build student firmware
+        run: pio run -e $env:PIO_ENV
+      - name: Package and verify SD update
+        run: python src/scripts/package_training_firmware.py --environment $env:PIO_ENV --output-dir training-download
+      - name: Upload experimental student firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: leaf-student-${{ matrix.hardware }}-training
+          path: training-download/
+          if-no-files-found: error
+          retention-days: 90

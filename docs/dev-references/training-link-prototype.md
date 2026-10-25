@@ -19,6 +19,7 @@ From the repository root:
 
 ```powershell
 pio run -e leaf_student_3_2_5_training
+pio run -e leaf_student_3_2_6_training
 pio run -e leaf_student_3_2_7_training
 pio run -e leaf_instructor_3_2_6_training
 pio run -e leaf_instructor_3_2_7_training
@@ -26,9 +27,28 @@ pio run -e leaf_instructor_3_2_7_training
 
 Use the local PlatformIO executable if `pio` is not on PATH. Images and separately named
 `firmware-leaf_student_3_2_7.bin` / `firmware-leaf_instructor_3_2_7.bin` artifacts are under
-`.pio/build/<environment>/`. The normal release defaults are unchanged. Student targets support v3.2.5 and v3.2.7; the
+`.pio/build/<environment>/`. The normal release defaults are unchanged. Student targets support v3.2.5, v3.2.6 and v3.2.7; the
 instructor targets support v3.2.6 and v3.2.7. Add/qualify other hardware revisions separately.
 The training radio uses each variant's external RF-switch pin as well as the module's DIO2 switch.
+
+### Student SD-update downloads
+
+The `Student training test builds` Actions workflow builds all three student variants from the
+branch commit and uploads separate 90-day artifacts; downloading requires GitHub sign-in.
+These are experimental build artifacts, not published firmware releases or flight qualification.
+Each ZIP contains one application `.bin`, SHA256SUMS, source-commit metadata and SD instructions.
+For example, v3.2.6 is `firmware-leaf_student_3_2_6-training-3.2.6.bin`. The explicit dotted token
+is accepted by normal Leaf's SD filename check, and the student variant token is accepted when
+updating an existing student build. Packaging verifies the corresponding embedded student and
+`+h3.2.6` version markers, so a renamed wrong-hardware binary cannot pass the package check.
+Copy only the matching `.bin` to `/firmware`, retaining its name and leaving no other `.bin`
+there; safely eject and restart. See `/firmware/update_status.txt` for the update result.
+
+To create the same package locally after a build:
+
+```powershell
+python src/scripts/package_training_firmware.py --environment leaf_student_3_2_6_training --output-dir .pio/training-downloads/3.2.6
+```
 
 - **Student:** the normal Leaf application plus one bus subscriber and a polled training
   service. Parsed GPS updates feed a fixed-size snapshot; pressure/altitude/climb come from
