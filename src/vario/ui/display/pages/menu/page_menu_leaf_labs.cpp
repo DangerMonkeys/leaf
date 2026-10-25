@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 
+#include "page_menu_training.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
@@ -14,6 +15,9 @@
 enum leaf_labs_menu_items {
   cursor_leaf_labs_back,
   cursor_leaf_labs_leaf_log,
+#ifdef LEAF_TRAINING_STUDENT
+  cursor_leaf_labs_training,
+#endif
 };
 
 namespace {
@@ -44,7 +48,11 @@ void LeafLabsMenuPage::draw() {
 
     uint8_t setting_name_x = 2;
     uint8_t setting_choice_x = 81;
+#ifdef LEAF_TRAINING_STUDENT
+    uint8_t menu_items_y[] = {190, 86, 106};
+#else
     uint8_t menu_items_y[] = {190, 86};
+#endif
 
     for (int i = 0; i <= cursor_max; i++) {
       const bool selected = i == cursor_position;
@@ -55,6 +63,11 @@ void LeafLabsMenuPage::draw() {
         case cursor_leaf_labs_leaf_log:
           menu_ui::printGlyph(settings.labs_leafLog ? menu_ui::ICON_ON : menu_ui::ICON_OFF);
           break;
+#ifdef LEAF_TRAINING_STUDENT
+        case cursor_leaf_labs_training:
+          menu_ui::drawEnterIcon(setting_choice_x, menu_items_y[i], selected);
+          break;
+#endif
         case cursor_leaf_labs_back:
           menu_ui::drawBackIcon(setting_choice_x, menu_items_y[i]);
           break;
@@ -68,7 +81,11 @@ void LeafLabsMenuPage::draw() {
           "linking in the",
           "Leaf web app",
       };
+#ifdef LEAF_TRAINING_STUDENT
+      menu_ui::drawNoteBox(112, noteLines, 3);
+#else
       menu_ui::drawNoteBox(menu_items_y[cursor_leaf_labs_leaf_log], noteLines, 3);
+#endif
     }
   } while (u8g2.nextPage());
 }
@@ -80,6 +97,14 @@ void LeafLabsMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t cou
         setLeafLogEnabled(!settings.labs_leafLog);
       }
       break;
+#ifdef LEAF_TRAINING_STUDENT
+    case cursor_leaf_labs_training:
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
+        speaker.playSound(fx::increase);
+        TrainingMenuPage::show();
+      }
+      break;
+#endif
     case cursor_leaf_labs_back:
       if (state == ButtonEvent::CLICKED) {
         speaker.playSound(fx::cancel);

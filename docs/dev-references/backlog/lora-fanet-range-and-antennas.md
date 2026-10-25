@@ -10,8 +10,9 @@ configuration changes and physical measurements below remain outstanding. Work b
 `codex/lora-fanet-range`.
 
 Related product backlog: [Student/instructor training link](student-instructor-training-link.md),
-updated 2026-10-24. That work specifies separate student and sensor-free instructor firmware
-roles, up to four students, focused audio/Bluetooth output, and an ordered prototype/test plan.
+updated 2026-10-24. That work specifies separate student and instructor firmware roles, with
+instructor flight data independent of local sensors, normal board controls, up to four students,
+focused audio/Bluetooth output, and an ordered prototype/test plan.
 It may reuse radio-driver and range findings here, but its dedicated RF mode is separate from
 the interoperable FANET configuration evaluated in this note.
 

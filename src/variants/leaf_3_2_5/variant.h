@@ -1,7 +1,11 @@
 #pragma once
 
 // For OTA updates
+#ifdef LEAF_TRAINING_STUDENT
+#define LEAF_FIRMWARE_NAME "leaf_student_3_2_5"
+#else
 #define LEAF_FIRMWARE_NAME "leaf_3_2_5"
+#endif
 
 // This variant is intended to be used with a LoRa radio
 #define FANET_CAPABLE

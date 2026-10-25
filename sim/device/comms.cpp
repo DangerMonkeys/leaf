@@ -56,8 +56,26 @@ void FanetRadio::setup() {
   state = fanetDetected_ ? FanetRadioState::UNINITIALIZED : FanetRadioState::UNINSTALLED;
 }
 void FanetRadio::subscribe(etl::imessage_bus* bus) {}
+#ifdef LEAF_TRAINING_STUDENT
+void FanetRadio::begin(const FanetRadioRegion& region) {
+  requestedRegion_ = region;
+  if (!trainingReserved_) state = region == FanetRadioRegion::OFF ? FanetRadioState::UNINITIALIZED : FanetRadioState::RUNNING;
+}
+void FanetRadio::end() { requestedRegion_ = FanetRadioRegion::OFF; if (!trainingReserved_) setup(); }
+bool FanetRadio::reserveForTraining() {
+  if (!isDetected()) return false;
+  trainingReserved_ = true;
+  state = FanetRadioState::UNINITIALIZED;
+  return true;
+}
+void FanetRadio::releaseFromTraining() {
+  trainingReserved_ = false;
+  if (requestedRegion_ != FanetRadioRegion::OFF) begin(settings.fanet_region);
+}
+#else
 void FanetRadio::begin(const FanetRadioRegion& region) { setup(); }
 void FanetRadio::end() { setup(); }
+#endif
 void FanetRadio::logDetectionResult() { Serial.println("FANET: radio not emulated"); }
 FanetRadioState FanetRadio::getState() { return state; }
 void FanetRadio::setGroundTrackingMode(const FANET::GroundTrackingPayload::TrackingType& mode) {}

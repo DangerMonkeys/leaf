@@ -3,7 +3,11 @@
 #include <TCA9555.h>
 
 // For OTA updates
+#ifdef LEAF_TRAINING_STUDENT
+#define LEAF_FIRMWARE_NAME "leaf_student_3_2_7"
+#else
 #define LEAF_FIRMWARE_NAME "leaf_3_2_7"
+#endif
 
 // This variant allows for optional use of a LoRa radio module (needs to be soft-enabled by user in
 // menu confirguration)

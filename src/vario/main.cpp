@@ -20,6 +20,7 @@
 #include "logging/buslog.h"
 #include "power.h"
 #include "taskman.h"
+#include "training/student.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/input/button_dispatcher.h"
@@ -36,7 +37,11 @@
 // a message bus and hook the module's event routers into the bus
 
 // Main message bus
+#ifdef LEAF_TRAINING_STUDENT
+MessageBus<12> bus;
+#else
 MessageBus<11> bus;
+#endif
 
 TaskManager taskman;
 
@@ -50,7 +55,7 @@ void setup() {
   spi_init();
   Serial.println(" - Finished SPI");
 
-#ifdef FANET_CAPABLE
+#if defined(FANET_CAPABLE)
   fanetRadio.subscribe(&bus);
   fanetRadio.setup();
   fanetRadio.publishTo(&bus);
@@ -117,6 +122,10 @@ void setup() {
   // Provide bus logger access to the bus
   busLog.setBus(&bus);
 
+#ifdef LEAF_TRAINING_STUDENT
+  training::student.subscribeTo(&bus);
+  training::student.begin();
+#endif
   Serial.println("Leaf Initialized");
   heap_monitor::checkpoint("setup-complete");
 }
@@ -126,5 +135,11 @@ void loop() {
   run_tests(&bus);
 #else
   taskman.update();
+#ifdef LEAF_TRAINING_STUDENT
+  {
+    cpu_utilization::Scope trainingWork(runtime_capture::Work::Services);
+    training::student.update();
+  }
+#endif
 #endif
 }

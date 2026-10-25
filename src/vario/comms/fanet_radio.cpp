@@ -322,7 +322,9 @@ void FanetRadio::processRxPacket() {
 
   int16_t rxState = RADIOLIB_ERR_UNKNOWN;
   size_t length;
+  float rssi = 0, snr = 0;
   if (auto lockGuard = SpiLockGuard(FANET_SPI_LOCK_TIMEOUT_MS, false)) {
+    if (state != FanetRadioState::RUNNING) return;
     length = radio.getPacketLength();
 
     // If a 0 length packet is here, I'm guessing the "done" DIO pin was fired
@@ -335,6 +337,10 @@ void FanetRadio::processRxPacket() {
     // A packet is able to be read
     rxState =
         callRadio("rx-read", "readData", [&]() { return radio.readData(buffer.data(), length); });
+    if (rxState == RADIOLIB_ERR_NONE) {
+      rssi = radio.getRSSI();
+      snr = radio.getSNR();
+    }
   } else {
     logEvent("rx-read", "spi-lock-timeout");
     return;
@@ -345,14 +351,12 @@ void FanetRadio::processRxPacket() {
   }
 
   if (rxState == RADIOLIB_ERR_NONE) {
-    auto rssi = radio.getRSSI();
-    auto snr = radio.getSNR();
-
     // A packet was received successfully.  Process it in our Fanet manager
     // etl::optional<Fanet::Packet> optPacket;
     etl::span<uint8_t> packetSpan{buffer.data(), length};
 
     if (LockGuard(x_fanet_manager_mutex)) {
+      if (state != FanetRadioState::RUNNING) return;
       packetSpan;
       protocol->handleRx(rssi, packetSpan);
       neighbors.updateFromTable(protocol->neighborTable());
@@ -400,6 +404,7 @@ void FanetRadio::taskRadioTx(void* pvParameters) {
     // requesting information from our Fanet Manager
     uint32_t sleepMs = 0;
     if (auto spiLock = SpiLockGuard(FANET_SPI_LOCK_TIMEOUT_MS, false)) {
+      if (fanetRadio.state != FanetRadioState::RUNNING) continue;
       LockGuard lock(fanetRadio.x_fanet_manager_mutex);
       if (!lock) {
         fanetRadio.logEvent("tx-manager-lock", "failed");
@@ -572,6 +577,10 @@ void FanetRadio::setup() {
 }
 
 void FanetRadio::begin(const FanetRadioRegion& region) {
+#ifdef LEAF_TRAINING_STUDENT
+  requestedRegion_ = region;
+  if (trainingReserved_) return;
+#endif
 #ifndef FANET_CAPABLE
   return;  // Model does not support Fanet
 #endif
@@ -623,6 +632,10 @@ void FanetRadio::begin(const FanetRadioRegion& region) {
     return;
   }
 
+#ifdef LEAF_TRAINING_STUDENT
+  if (trainingReserved_) return;
+#endif
+  radio->setPacketReceivedAction(onRxIsr);
   Serial.println("[FanetRadio] Initializing");
 
   // Initialize the radio for the settings of the given region
@@ -704,6 +717,13 @@ void FanetRadio::begin(const FanetRadioRegion& region) {
 }
 
 void FanetRadio::end() {
+#ifdef LEAF_TRAINING_STUDENT
+  requestedRegion_ = FanetRadioRegion::OFF;
+  if (trainingReserved_) {
+    trackingMode = etl::nullopt;
+    return;
+  }
+#endif
 #ifndef FANET_CAPABLE
   return;  // Model does not support Fanet
 #endif
@@ -722,6 +742,9 @@ void FanetRadio::end() {
     logEvent("end", "spi-lock-timeout");
     return;
   }
+#ifdef LEAF_TRAINING_STUDENT
+  if (trainingReserved_) return;
+#endif
   heap_monitor::checkpoint("fanet-end-start");
   logEvent("end-sleep-start", "sleep");
   callRadio("end-sleep", "sleep", [&]() { return radio->sleep(false); });
@@ -730,6 +753,34 @@ void FanetRadio::end() {
   logEvent("end", "uninitialized");
   heap_monitor::checkpoint("fanet-end-end");
 }
+
+#ifdef LEAF_TRAINING_STUDENT
+bool FanetRadio::reserveForTraining() {
+  if (trainingReserved_) return true;
+  if (!isDetected() || !radio || !x_fanet_manager_mutex ||
+      state == FanetRadioState::FAILED_RADIO_PROBE)
+    return false;
+  // Workers take SPI first and recheck state under it. No callback or TX can survive handoff.
+  SpiLockGuard spiLock(FANET_SPI_LOCK_TIMEOUT_MS, false);
+  if (!spiLock) return false;
+  LockGuard lock(x_fanet_manager_mutex, pdMS_TO_TICKS(25), false);
+  if (!lock) return false;
+  if (radio->standby() != RADIOLIB_ERR_NONE) return false;
+  radio->clearDio1Action();
+  state = FanetRadioState::UNINITIALIZED;
+  // Never replay queued tracking/forwarding packets after an instructor session.
+  protocol->init();
+  m_nextAllowedTrackingTimeMs = 0;
+  trainingReserved_ = true;
+  return true;
+}
+void FanetRadio::releaseFromTraining() {
+  if (!trainingReserved_) return;
+  trainingReserved_ = false;
+  // begin/end requests made while training owned the radio retain the normal flight lifecycle.
+  if (requestedRegion_ != FanetRadioRegion::OFF) begin(settings.fanet_region);
+}
+#endif
 
 FanetRadioState FanetRadio::getState() { return state; }
 
@@ -748,6 +799,7 @@ void FanetRadio::setCurrentLocation(const float& lat, const float& lon, const ui
 
   // Queue the update in the TX.
   if (LockGuard(x_fanet_manager_mutex)) {
+    if (state != FanetRadioState::RUNNING) return;
     // TODO:  Enable ground tracking modes.
 
     // TX the packet.

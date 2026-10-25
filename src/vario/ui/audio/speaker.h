@@ -3,9 +3,9 @@
 #include <Arduino.h>
 
 #include "hardware/configuration.h"
-#include "ui/audio/dynamic_effects.h"
 #include "ui/audio/notes.h"
 #include "ui/audio/sound_effects.h"
+#include "ui/audio/vario_audio.h"
 #include "utils/state_assert_mixin.h"
 
 using sound_t = const note::note_t*;
@@ -65,7 +65,7 @@ class Speaker : private StateAssertMixin<Speaker> {
  private:
   State state_;
 
-  unsigned long tLastUpdate_;
+  uint32_t tLastUpdate_;
 
   SpeakerVolume fxVolume_ = SpeakerVolume::Low;
   SpeakerVolume varioVolume_ = SpeakerVolume::Low;
@@ -76,29 +76,11 @@ class Speaker : private StateAssertMixin<Speaker> {
   sound_t soundPlaying_ = fx::silence;
 
   // notes we should play, and if we're currently playing
-  note::note_t varioNote_ = note::NONE;   // note to play for vario beeps
-  note::note_t fxNoteLast_ = note::NONE;  // last note played for sound effects
-  bool betweenVarioBeeps_ = false;        // are we resting (silence) between beeps?
-  bool playingSound_ = false;             // are we playing a sound?
+  vario_audio::Voice vario_;
+  note::note_t fxNoteLast_ = note::NONE;
+  bool playingSound_ = false;  // are we playing a sound?
 
-  // == trackers for fixed-sample length speaker timer approach #1 ==
-
-  // amount of samples we should play for
-  uint16_t varioPlaySamples_ = CLIMB_PLAY_SAMPLES_MAX;
-
-  // amount of samples we should rest for
-  uint16_t varioRestSamples_ = CLIMB_REST_SAMPLES_MAX;
-
-  // track how many samples (beats) we've played per note when playing sound effects (using
-  // method #1 -- fixed sample length)
-  uint8_t varioPlaySampleCount_ = 0;
-
-  // track how many samples (beats) we've played per note when playing sound effects (using
-  // method #1 -- fixed sample length)
-  uint8_t varioRestSampleCount_ = 0;
-
-  // track how many samples (beats) we've played per note when playing sound effects (using
-  // method #1 -- fixed sample length)
+  // Sound effects retain their own sample count and production priority over vario audio.
   uint8_t fxSampleCount_ = 0;
 
   bool varioTestActive_ = false;
@@ -106,9 +88,6 @@ class Speaker : private StateAssertMixin<Speaker> {
   uint32_t varioTestStartedMs_ = 0;
   note::note_t previewTone_ = note::NONE;
   uint32_t previewToneUntilMs_ = 0;
-
-  // Independent vario-only smoothing state (does not affect SFX tempo/cadence).
-  note::note_t varioSmoothNote_ = note::NONE;
 
   // this is to allow playing single notes by changing single_note[0], while
   // still having a NOTE_END terminator following.
@@ -126,7 +105,6 @@ class Speaker : private StateAssertMixin<Speaker> {
   void updateVario();
   void updateVarioSmoothing();
   bool varioToneActive() const;
-  static note::note_t stepToward(note::note_t current, note::note_t target);
   void setVarioNote(int32_t verticalRate, bool respectQuietMode);
   void updateVarioTest();
 };

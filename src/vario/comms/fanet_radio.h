@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <RadioLib.h>
+#include <atomic>
 #include "FreeRTOS.h"
 #include "comms/fanet_neighbors.h"
 #include "comms/fanet_radio_types.h"
@@ -52,6 +53,11 @@ class FanetRadio : public etl::message_router<FanetRadio, GpsReading>,
 
   // Request to cleanly stop the radio module
   void end();
+#ifdef LEAF_TRAINING_STUDENT
+  bool reserveForTraining();
+  void releaseFromTraining();
+  bool trainingReserved() const { return trainingReserved_.load(); }
+#endif
 
   // Logs the cached boot-time detection result once system event logging is available.
   void logDetectionResult();
@@ -113,6 +119,10 @@ class FanetRadio : public etl::message_router<FanetRadio, GpsReading>,
   }
 
   FanetRadioState state = FanetRadioState::UNINITIALIZED;  // The current state of the radio module
+#ifdef LEAF_TRAINING_STUDENT
+  std::atomic<bool> trainingReserved_{false};
+  FanetRadioRegion requestedRegion_ = FanetRadioRegion::OFF;
+#endif
   bool fanetDetected_ = false;
   bool detectionResultLogged_ = false;
   uint8_t detectionCycles_ = 0;

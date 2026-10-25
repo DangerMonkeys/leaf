@@ -5,7 +5,7 @@
 #include <functional>
 
 #include "comms/fanet_radio_types.h"
-#include "ui/audio/dynamic_effects.h"
+#include "ui/audio/vario_audio.h"
 #include "ui/input/buttons.h"
 #include "ui/settings/setting.h"
 
@@ -29,13 +29,13 @@
 
 // Default Settings
 // Default Vario Settings
-#define DEF_SINK_ALARM -2.5f    // m/s sink
-#define DEF_SINK_ALARM_UNITS 0  // 0 = m/s, 1 = fpm
-#define DEF_VARIO_SENSE 3       // 3 = avg of 6 samples (6/20 of a second)
+#define DEF_SINK_ALARM (vario_audio::DEFAULT_SINK_ALARM_CMS / 100.0f)  // m/s sink
+#define DEF_SINK_ALARM_UNITS 0                                         // 0 = m/s, 1 = fpm
+#define DEF_VARIO_SENSE 3  // 3 = avg of 6 samples (6/20 of a second)
 #define DEF_CLIMB_DISPLAY_AVERAGE 0
 #define DEF_GLIDE_AVERAGE 10
-#define DEF_CLIMB_START 5      // cm/s when climb note begins
-#define DEF_VOLUME_VARIO 2     // 0=off, 1=low, 2=med, 3=high
+#define DEF_CLIMB_START vario_audio::DEFAULT_CLIMB_START_CMS  // cm/s when climb note begins
+#define DEF_VOLUME_VARIO 2                                    // 0=off, 1=low, 2=med, 3=high
 #define DEF_QUIET_MODE 0       // 0 = off, 1 = on (ON means no beeping until flight recording)
 #define DEF_VOLUME_SHORTCUT 0  // 0 = disabled, 1 = enabled
 // 0 == linear pitch interpolation; 1 == major C-scale for climb, minor scale for descent
@@ -120,22 +120,6 @@
 #define DEF_UNITS_heading 1   // 0 (342 deg), 		  1 (NNW)
 #define DEF_UNITS_distance 1  // 0 (km, or m for <1km),	1 (miles, or ft for < 1000 feet)
 #define DEF_UNITS_hours 1     // 0 (24-hour time),  1 (12 hour time),
-
-struct VarioAudioProfile {
-  int32_t climbContinuous = CLIMB_CONTINUOUS;
-  int32_t climbMax = CLIMB_MAX;
-  uint16_t climbNoteStart = CLIMB_NOTE_START;
-  uint16_t climbNoteMax = CLIMB_NOTE_MAX;
-  uint16_t climbPlaySamplesMax = CLIMB_PLAY_SAMPLES_MAX;
-  uint16_t climbRestSamplesMax = CLIMB_REST_SAMPLES_MAX;
-
-  int32_t sinkContinuous = SINK_CONTINUOUS;
-  int32_t sinkMax = SINK_MAX;
-  uint16_t sinkNoteStart = SINK_NOTE_START;
-  uint16_t sinkNoteMin = SINK_NOTE_MIN;
-  uint16_t sinkPlaySamplesMin = SINK_PLAY_SAMPLES_MIN;
-  uint16_t sinkRestSamplesMin = SINK_REST_SAMPLES_MIN;
-};
 
 enum class NavField : uint8_t {
   TimeToWaypoint,

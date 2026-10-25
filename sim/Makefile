@@ -12,6 +12,7 @@
 ROOT    := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))..)
 SIM     := $(ROOT)/sim
 BUILD   ?= $(SIM)/build
+TRAINING ?= 0
 VARIANT ?= leaf_3_2_7
 
 # ----------------------------------------------------------------- dependencies
@@ -86,6 +87,11 @@ FW_EXCLUDE := \
   src/vario/comms/wifi_coordinator.cpp \
   src/vario/comms/factory_discovery.cpp \
   src/vario/diagnostics/diagnostic_network/diagnostic_network.cpp
+
+ifeq ($(TRAINING),1)
+CXXFLAGS += -DLEAF_TRAINING_STUDENT
+FW_EXCLUDE += src/vario/training/radio.cpp
+endif
 
 FW_ALL     := $(patsubst $(ROOT)/%,%,$(shell find $(ROOT)/src/vario -name '*.cpp'))
 FW_SOURCES := $(addprefix $(ROOT)/,$(filter-out $(FW_EXCLUDE),$(FW_ALL)))
@@ -320,3 +326,54 @@ $(BUILD)/flight_auto_start_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJ
 
 test-flight-auto-start: $(BUILD)/flight_auto_start_test
 	@cd $(ROOT) && $(BUILD)/flight_auto_start_test
+
+# Pure host regression for training packets and selected-source state; no device runtime needed.
+.PHONY: test-training
+$(BUILD)/training_link_test: $(SIM)/tests/training_link.cpp $(ROOT)/src/vario/training/protocol.cpp $(ROOT)/src/vario/training/protocol.h
+	@mkdir -p $(BUILD)
+	@$(CXX) -std=c++17 -Wall -Wextra -Werror -I$(ROOT)/src/vario $(SIM)/tests/training_link.cpp $(ROOT)/src/vario/training/protocol.cpp -o $@
+
+test-training: $(BUILD)/training_link_test
+	@$<
+
+.PHONY: test-training-audio test-vario-audio-production
+$(BUILD)/training_audio_test: $(SIM)/tests/training_audio.cpp $(ROOT)/src/vario/training/protocol.cpp $(ROOT)/src/vario/training/climb_audio.h $(ROOT)/src/vario/ui/audio/vario_audio.h
+	@mkdir -p $(BUILD)
+	@$(CXX) -std=c++17 -Wall -Wextra -Werror -I$(ROOT)/src/vario $(SIM)/tests/training_audio.cpp $(ROOT)/src/vario/training/protocol.cpp -o $@
+
+test-training-audio: $(BUILD)/training_audio_test
+	@$<
+
+$(BUILD)/vario_audio_production_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/vario_audio_production.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/vario_audio_production.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-vario-audio-production: $(BUILD)/vario_audio_production_test
+	@cd $(ROOT) && $(BUILD)/vario_audio_production_test
+
+.PHONY: test-training-student test-training-student-ui
+$(BUILD)/training_student_test: $(SIM)/tests/training_student_link.cpp $(ROOT)/src/vario/training/protocol.cpp $(ROOT)/src/vario/training/student_link.h $(ROOT)/src/vario/training/protocol.h
+	@mkdir -p $(BUILD)
+	@$(CXX) -std=c++17 -Wall -Wextra -Werror -I$(ROOT)/src/vario $< $(ROOT)/src/vario/training/protocol.cpp -o $@
+
+test-training-student: $(BUILD)/training_student_test
+	@$<
+
+$(BUILD)/training_student_ui_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/training_student_ui.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/training_student_ui.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-training-student-ui: $(BUILD)/training_student_ui_test
+	@cd $(ROOT) && $(BUILD)/training_student_ui_test
+
+.PHONY: test-training-instructor test-training-instructor-ui
+$(BUILD)/training_instructor_test: $(SIM)/tests/training_instructor_link.cpp $(ROOT)/src/vario/training/protocol.cpp $(ROOT)/src/vario/training/protocol.h $(ROOT)/src/vario/training/student_link.h $(ROOT)/src/vario/training/instructor_link.h
+	@mkdir -p $(BUILD)
+	@$(CXX) -std=c++17 -Wall -Wextra -Werror -I$(ROOT)/src/vario $< $(ROOT)/src/vario/training/protocol.cpp -o $@
+
+test-training-instructor: $(BUILD)/training_instructor_test
+	@$<
+
+$(BUILD)/training_instructor_ui_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/training_instructor_ui.cpp $(ROOT)/src/vario/training/instructor_pairing_screen.h $(ROOT)/src/vario/training/instructor_link.h
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/training_instructor_ui.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-training-instructor-ui: $(BUILD)/training_instructor_ui_test
+	@cd $(ROOT) && $(BUILD)/training_instructor_ui_test

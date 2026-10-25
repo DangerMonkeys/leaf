@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 
 constexpr uint8_t FX_NOTE_SAMPLE_COUNT = 2;  // number of samples to play per FX Note
 

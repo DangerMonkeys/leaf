@@ -5,9 +5,26 @@ description: Two firmware roles for a four-student LoRa training link, focused a
 
 # Student and instructor training link
 
-Status: proposed; requirements updated 2026-10-24 on `codex/lora-fanet-range`.
-The training transport, instructor application and phone integration are not implemented.
-The bench diagnostics below establish useful hardware evidence only.
+Status: initial bench implementation in progress; requirements updated 2026-10-24.
+Transport, instructor UI and Bluetooth output have initial implementations; hardware and
+phone-app qualification remain outstanding.
+
+## Initial implementation, 2026-10-24
+
+A first bench prototype is in progress on `codex/instructor-student-link`, in a separate worktree
+based on `89d938cf`. See [build/setup and wire-format notes](../training-link-prototype.md).
+It adds v3.2.5/v3.2.7 student and v3.2.6/v3.2.7 instructor build targets, a bounded codec and polled RF
+owner, student bus-derived snapshots,
+four receiver records/focus selection, an instructor boot path independent of local flight sensors,
+normal I2C-expander speaker gain control, climb-driven production vario audio and BLE NMEA output. Host tests exercise the protocol and receiver model. The checklists below remain the
+full product scope: sustained two-device and four-transmitter operation, app compatibility, exact audio
+cadence, hardware power/speaker behavior, resource budgets and production RF/security qualification
+are not established by these implementation/build tests.
+
+A first v3.2.5 student / v3.2.7 instructor bench check now receives focused telemetry at nominal
+4 Hz, with working normal expander volume control. Restart restores medium-enabled volume and
+the saved pairing. See the prototype guide's bench record for binary hashes and limits; actual
+phone-app, audible-fidelity, sensor-fault and capacity qualification remain outstanding.
 
 ## Agreed scope
 
@@ -16,10 +33,12 @@ Build two firmware loads from shared protocol and Leaf components:
 | Firmware role | Required behavior | Packaging decision |
 | --- | --- | --- |
 | Student | Operate as a normal flying Leaf, pair with an instructor, and transmit selected sensor/flight values without compromising local instruments or audio. | Start with a distinct training build for evaluation. Retain the option of a selectable production training mode if measured CPU, memory, timing and battery costs are acceptable; otherwise ship a separate binary. |
-| Instructor | Boot without onboard sensors or an I2C bus, receive up to four paired students through one LoRa radio, offer basic setup/focus controls, and reproduce the focused student's audio and Bluetooth flight-data output. | Dedicated instructor binary with its own boot/task composition and firmware identity; never require normal sensor initialization to succeed. |
+| Instructor | Run on standard LoRa-equipped Leafs using normal board controls, including I2C-expander speaker volume, without depending on local flight sensors. Receive up to four paired students through one LoRa radio, offer basic setup/focus controls, and generate the focused student's vario audio and Bluetooth flight-data output. | Dedicated instructor binary with its own boot/task composition and firmware identity; never require normal sensor initialization to succeed. |
 
-- United States first. A dedicated training RF mode is acceptable; simultaneous normal FANET
-  tracking is not required for the initial implementation.
+- United States first. Student Training lives under Settings > Leaf Labs. Training and FANET
+  use the radio exclusively: training enabled suspends normal FANET; training disabled restores
+  normal FANET behavior according to the user's existing settings. Local instruments, audio, logging
+  and Bluetooth continue normally in either mode. Simultaneous FANET/training is out of scope.
 - The instructor's Leaf display is primarily for pairing/configuration, a four-student roster,
   focus selection, link freshness and fault status. A paired mobile app supplies the advanced map.
 - Exactly one focused student supplies the instructor speaker and the Bluetooth ownship stream.
@@ -34,6 +53,12 @@ Build two firmware loads from shared protocol and Leaf components:
 - [ ] Define a versioned binary protocol over the existing LoRa hardware, separate from FANET
   framing and timing. Reuse the SPI/radio driver where practical, with explicit mutually exclusive
   radio ownership. Compare candidate PHY settings using measured airtime, delivery and freshness.
+- [ ] Carry the SX1262 power/current setup from `codex/lora-fanet-radio-settings` (`20d2ff29`)
+  into the shared training radio: request 22 dBm, set 140 mA after initialization, check status
+  and verify/read back the limit. Both roles need it because telemetry requires an instructor
+  poll. Current training builds request 10 dBm with RadioLib's default 60 mA limit. Retain the
+  current PHY/schedule initially; measure delivered packets, freshness, RF output and supply/TX
+  current before claiming range. FANET's neighbor-dependent coding policy is separate.
 - [ ] Resolve the US operating profile against the exact module, antenna, power and applicable
   operating requirements before choosing the final frequency/bandwidth/channel-access policy.
   Do not assume the current FANET profile or a private sync word establishes suitability.
@@ -71,37 +96,61 @@ Build two firmware loads from shared protocol and Leaf components:
 - [ ] Serialize/transmit in bounded scheduled work, with preallocated buffers and limited control
   processing. Training transport never feeds its received control messages back into local sensor
   data or changes the student's instrument/audio configuration.
-- [ ] Add pairing, training status, link/focus state and a way to leave training mode. Instructor
+- [x] Add Settings > Leaf Labs > Training on the student, with Enabled, Pair and Unpair, plus
+  saved instructor identity and current link state. Store enable separately from pairing; disabling
+  stops training RF work and preserves enrollment, and re-enabling reconnects without re-pairing.
+  Persist enable state and enrollment across power loss. Student-side discovery/control frames are
+  implemented, along with the instructor discovery/offer/confirmation workflow. Pairing requires an explicit action and
+  a bounded confirmation window; never silently bind to a different instructor after link loss.
+  Unpair explicitly clears enrollment and cancels pending training traffic; require confirmation.
+  Distinguish Disabled, Not paired, Connecting and Connected on screen.
+- [x] Support normal FANET with training disabled in the same student binary, with runtime
+  exclusive radio handoff instead of unconditional student-build FANET exclusions.
+  Preserve the user's normal FANET settings rather than overwriting them when toggling training.
+- [ ] Implement exclusive radio handoff when toggling training: stop/quiesce FANET TX/RX and
+  callbacks before starting training, and stop training traffic/callbacks before restoring normal
+  FANET radio configuration and lifecycle. Preserve saved pairing and normal FANET preferences.
+  Test repeated toggles, an in-flight packet, reboot in either mode, training without a paired
+  instructor, and instructor loss. Do not add simultaneous FANET/training scheduling. Instructor
   loss must not interrupt normal local instruments, audio, logging or flight operation.
-- [ ] Start with transmitted climb/audio-driving values and the student's relevant audio settings.
-  To match what the student actually hears, evaluate compact tone/envelope commands (frequency,
-  on/off, cadence and generation timestamp) if reconstructing from reduced-rate climb data differs
-  materially. Reuse the tone engine; do not stream microphone recordings or PCM audio.
+- [x] Generate instructor vario audio locally from received climb rates using shared production
+  pitch/cadence/smoothing code. Keep beep timing running between 4 Hz updates and across a missed
+  packet, and silence invalid/stale climb or old-focus audio. Do not sample student PWM for rhythm.
+- [x] Exclude student UI/button sound effects and student volume from instructor vario generation.
+  Retain local instructor button clicks. Existing V1 student binaries remain compatible; the old
+  tone field is ignored and new student builds leave it zero.
+- [ ] Add instructor-owned sound-profile and threshold configuration, reusing production profile
+  validation and controls where practical. The first local engine uses production defaults. Do
+  not transfer student profiles: the instructor should use its own familiar sound settings,
+  independently of student volume, quiet mode and UI sounds.
 - [ ] Measure training off/on under matched GPS/IMU/barometer, audio, display, SD and BLE workloads.
   Record task CPU/time, missed deadlines, heap/largest block, stack headroom, queue drops, flash/RAM
   size and battery/current impact. Define numeric budgets before the production-mode decision.
 - [ ] Decide selectable production mode versus separate student binary from that evidence.
   With training off, ensure transport tasks/queues and active radio work are released or absent.
 
-## Work item 3: instructor firmware and sensor-free board support
+## Work item 3: instructor firmware on standard boards
 
+- [x] Add button-based discovery and linking compatible with the student's Leaf Labs menu: show
+  up to four fresh candidate IDs, require explicit instructor selection plus student confirmation,
+  assign/reuse a roster slot, generate a group on first setup, and persist the group/roster atomically.
+  Retry Offer/Confirm without duplicate enrollment, reject stale/wrong-session controls, and never
+  evict another student when full. Preserve existing bench settings and normal audio/Bluetooth.
+  The operator confirmed successful button pairing and live data on one v3.2.5 student and one
+  v3.2.7 instructor. RF-loss/reboot cases and four-student hardware qualification remain outstanding.
 - [ ] Create a distinct instructor build target/identity, shared protocol library and minimal boot
   path. Do not start barometer, IMU, ambient sensor or local GNSS tasks; do not wait for their
   readiness or run the local Kalman estimator. Avoid local ownship/flight logging assumptions.
-- [ ] Make the firmware genuinely independent of I2C: no `Wire.begin`, IO-expander initialization,
-  polling, retries or hidden I2C access through power, speaker, GPS, SD-detect or diagnostic code.
-  Display and LoRa use shared SPI with bounded locking; buttons, audio timing, power latch,
-  backlight and supported battery sensing use the applicable direct GPIO/ADC paths.
-- [ ] Audit non-sensor expander dependencies before claiming the faulty board is fully usable.
-  On v3.2.6/v3.2.7, `SPEAKER_VOLA/B`, charging/status signals, SD detect and GPS controls are mapped
-  through the I2C expander. The maintainer's selected prototype approach (2026-10-24) is to solder
-  the speaker gain controls for **fixed maximum volume**, with firmware mute/unmute and no
-  expander-controlled volume setting. The modification is authorized/planned, not yet verified.
-  Existing power-line pull-ups/pull-downs are expected by the maintainer to provide sufficient
-  hardware defaults without the expander. Retain those defaults and verify boot, USB/battery
-  operation, charging and shutdown; do not assume unavailable expander status can still be read.
-  Do not silently reintroduce I2C to satisfy these services. SD storage must not be a boot
-  requirement; use existing onboard nonvolatile settings for pairing/configuration.
+- [ ] Initialize normal board controls using the hardware variant's I2C-expander address, output
+  latches and pin directions. Use the expander for speaker off/low/medium/high gain, preserving
+  unrelated outputs. Display and LoRa continue to use SPI; do not initialize unused flight sensors
+  through these services. Standard boards must not require soldering or bypass modifications.
+- [ ] Bound I2C transactions and treat unavailable unused sensors as nonfatal. A missing or
+  unresponsive IMU, barometer or ambient sensor must not delay instructor startup or RF processing.
+  If the expander itself is unavailable, report the board-control fault and continue display,
+  LoRa and BLE without repeated bus retries. Qualify normal USB/battery operation, charging and
+  shutdown with the standard board controls; do not rely on resistor defaults as their replacement.
+  SD storage must not be a boot requirement; use onboard nonvolatile settings for pairing/configuration.
 - [ ] Keep four fixed-size per-student state records with independent sequence/time/validity,
   link statistics, audio configuration and last sample. A background packet cannot overwrite
   the focused student's active state. Do not publish all students as one ownship bus stream.
@@ -110,10 +159,10 @@ Build two firmware loads from shared protocol and Leaf components:
   interfaces where needed rather than pretending local sensors are initialized or sending remote
   climb values back through the pressure/Kalman pipeline. Prevent forwarding loops.
 - [ ] Basic UI: pair/remove/name students, show up to four entries and their freshness/link state,
-  select focus, show requested versus confirmed fast rate, set speaker mute and Bluetooth,
-  and configure the applicable RF profile. The prototype has fixed maximum hardware gain;
-  do not offer a nonfunctional volume control. Restore pairing after reboot; start safely without
-  a fix.
+  select focus, show requested versus confirmed fast rate, set speaker volume/mute and Bluetooth,
+  and configure the applicable RF profile. Remember gain, but enable volume on every boot at medium minimum (retain saved high).
+  Keep low/mute available during use; stale or absent telemetry must still produce no tone.
+  Restore pairing after reboot; start safely without a fix.
 - [ ] Make focus changes atomic across active snapshot, audio, BLE queues and scheduler generation.
   Flush old-student pending output and silence old tones before activating the new student. Send
   the new rate allocation and show its acknowledgment/timeout independently of local selection.
@@ -141,41 +190,24 @@ Build two firmware loads from shared protocol and Leaf components:
   flushing, units/checksums and return of a valid fix. If an app retains old tracks or cannot
   represent a source switch, document the limitation and an explicit session/reconnect procedure.
 
-## Hardware evidence and prototype selection
+## Hardware platform and qualification
 
-The tested v3.2.7 has a working GPIO41 input positive control, but grounding SDA/SCL through
-100 ohms did not register on GPIO8/9 even with the physical lines measured near 0.119 V.
-With temporary jumpers **SDA to GPIO42 and SCL to GPIO41**, two scanner runs found addresses
-`0x20`, `0x38` and `0x77` at 10/100/400 kHz, also confirmed by a software scan. No IMU responded.
-This supports an original GPIO8/9 connection/input fault and a responsive remaining sensor bus;
-it neither identifies the failed physical connection nor qualifies display/radio/audio/BLE.
+Use standard, unmodified LoRa-equipped Leaf boards for both roles. Student build targets are
+v3.2.5 and v3.2.7; instructor targets are v3.2.6 and v3.2.7. Qualify the expander address, pin
+assignments and power controls before adding other hardware revisions. The student requires working flight sensors. The instructor uses normal
+board controls but obtains flight values only from its students, so absent or unresponsive local
+IMU/barometer/ambient sensors must not prevent operation.
 
-Bench result record (2026-10-24, USB serial device `34:CD:B0:36:F3:80`):
-
-| Check | Run 1 | Run 2 |
-| --- | --- | --- |
-| External pull-ups, no internal bias | SDA/SCL HIGH in 128/128 samples | SDA/SCL HIGH in 128/128 samples |
-| Independent open-drain pull/release | Pass | Pass |
-| Hardware scan, each of 10/100/400 kHz | 3 ACK, 109 NACK, 0 other errors | 3 ACK, 109 NACK, 0 other errors |
-| Independent software scan, approximately 10 kHz | 3 ACK, 109 NACK | 3 ACK, 109 NACK |
-
-All scans found the same three addresses listed above. Original GPIO8/9 remained inputs without
-internal pulls. Diagnostic image SHA256:
-`7b86b70f48898531d8bf3df23c59e81227db9e8729f1eda2bc2f54762327e235`.
-This record preserves the result independently of the temporary diagnostic project/capture files.
-
-Use this board as the first instructor prototype after verifying its radio/display/audio paths.
-Its I2C jumpers are diagnostic aids, not dependencies of the instructor design. Qualify final
-receiver firmware with them removed and with I2C unavailable. Use a healthy LoRa-equipped Leaf
-for the student. The v3.2.6 with a bad IMU can be an additional instructor/fault-test unit;
-barometer-only operation does not demonstrate normal student IMU behavior.
+Verify expander-controlled volume on a normal board and separately exercise sensor faults while
+board controls remain available. Also test a board-control communication fault: it must be bounded
+and reported without blocking display, radio or Bluetooth operation. Full power management and
+charging behavior still require qualification independently of sensor independence.
 
 ## Ordered implementation and test plan
 
-1. **Hardware and protocol feasibility.** Inventory one healthy student Leaf and the v3.2.7
-   instructor candidate, checking both radios and antennas. Prove instructor SPI display, buttons,
-   power latch and audible output without I2C; apply/verify the agreed maximum-volume speaker
-   modification and verify the existing power-line resistor defaults as described above.
+1. **Hardware and protocol feasibility.** Inventory two standard, unmodified LoRa-equipped Leafs,
+   checking both radios and antennas. Prove instructor SPI display, buttons, power latch and
+   expander-controlled speaker gain/mute. Verify normal board-control defaults and power behavior.
    Specify packet fields, validity, pairing/session rules and measured US airtime/capacity budget.
    Freeze initial rates and numeric resource/freshness targets before implementing the scheduler.
 2. **Small shared transport and automated coverage.** Implement a bounded codec, student snapshot
@@ -187,12 +219,15 @@ barometer-only operation does not demonstrate normal student IMU behavior.
    timestamped bus-derived flight values over RF, first without BLE or complex UI. Verify valid
    sensor data and local vario operation on the student, and decoded values on the instructor.
    Exercise pairing, both-end reboot, RF loss/recovery and no-GPS startup. Record sample-to-receive
-   latency, loss, achieved cadence and SPI/display contention. Boot and run the receiver with I2C
-   disconnected/held low and no SD card; it must have no sensor waits or I2C retries.
+   latency, loss, achieved cadence and SPI/display contention. Boot and run the receiver without
+   an SD card and with unused flight sensors missing or unresponsive; it must not wait for sensors.
+   Verify volume with a working expander, then separately test an expander communication fault
+   for bounded, nonfatal handling without repeated I2C retries.
 4. **Focused experience and phone integration.** Add the minimal UI, selected-source bus adapter,
    speaker and BLE output. Replay known climb/sink/audio sequences to the student, compare student
-   and instructor tones/timing, and verify correct remote position/vario in at least one actual
-   target app before expanding compatibility. Drop the RF link and verify freshness/audio behavior.
+   and instructor tones/timing, exercise all gain levels/mute across focus changes and stale links,
+   and verify correct remote position/vario in at least one actual target app before expanding
+   compatibility. Drop the RF link and verify freshness/audio behavior.
    Record app/OS settings, transmitted/decoded values, latency and reconnect results.
 5. **Four-student behavior.** Use four simulated identities to test state isolation and roster/UI
    limits, then exercise actual RF contention with additional radios/independent transmitters.
@@ -209,10 +244,11 @@ barometer-only operation does not demonstrate normal student IMU behavior.
 
 ## Acceptance evidence to retain
 
-- [ ] One healthy student and one sensor-free instructor run together, with exact source commit,
-  firmware roles/hashes, board identities, RF/antenna settings and hardware modifications recorded.
-- [ ] Instructor boots/operates without I2C or onboard sensor readiness, with verified usable
-  display/buttons, LoRa, speaker and BLE. Normal student behavior remains correct on RF loss.
+- [ ] One student and one instructor run together on standard boards, with exact source commit,
+  firmware roles/hashes, board identities and RF/antenna settings recorded.
+- [ ] Instructor boots/operates without unused onboard sensor readiness, with verified usable
+  display/buttons, LoRa, expander-controlled speaker gain/mute and BLE. Sensor faults and bounded
+  board-control fault handling are tested. Normal student behavior remains correct on RF loss.
 - [ ] Provisional 4 Hz focused / 1 Hz background operation is either supported by measured airtime,
   freshness and loss results or replaced by documented achievable rates. Agree latency and stale
   limits before qualification; sample age remains visible and stale audio does not continue.

@@ -3,6 +3,7 @@ build/
 state/
 sdcard/
 build-tests/
+build-student/
 build328/
 build6/
 build-runtime-*/
