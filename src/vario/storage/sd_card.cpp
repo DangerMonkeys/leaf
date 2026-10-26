@@ -1,5 +1,6 @@
 #include "storage/sd_card.h"
 #include "logbook/logbook_io.h"
+#include "logbook/logbook_store.h"
 
 #include <cstring>
 
@@ -276,6 +277,8 @@ bool SDCard::presentMassStorage() {
   if (!transaction) return false;
   if (!msc_ || !mscStarted_ || !mounted_) return false;
 
+  LogbookStore::beginRepairSession(false);
+
   ownership_.store(SDCardOwnership::TransitioningToHost, std::memory_order_release);
   heap_monitor::setSdLoggingEnabled(false);
 
@@ -393,6 +396,7 @@ void SDCard::unmount() {
   logbook_io::Guard transaction;
   if (!transaction) return;
   if (!acquireForFirmwareUse()) return;
+  LogbookStore::beginRepairSession(false);
   heap_monitor::checkpoint("sd-unmount");
   heap_monitor::setSdLoggingEnabled(false);
   SD_MMC.end();

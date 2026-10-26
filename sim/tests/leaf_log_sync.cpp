@@ -51,8 +51,10 @@ namespace {
 
   LeafLogCandidate classify(const std::string& name) {
     LeafLogCandidate candidate;
-    assert(LogbookStore::classifyForLeafLog(String(("/logbook/" + name + ".json").c_str()),
-                                            candidate));
+    const bool classified =
+        LogbookStore::classifyForLeafLog(String(("/logbook/" + name + ".json").c_str()), candidate);
+    if (!classified) fprintf(stderr, "Classification failed for test flight %s\n", name.c_str());
+    assert(classified);
     return candidate;
   }
 

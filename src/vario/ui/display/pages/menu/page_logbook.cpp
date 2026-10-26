@@ -1,6 +1,8 @@
 #include "ui/display/pages/menu/page_logbook.h"
 
 #include "hardware/buttons.h"
+#include "logbook/logbook_io.h"
+#include "storage/sd_card.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
@@ -26,23 +28,28 @@ PageLogbook::PageLogbook() {
 }
 
 void PageLogbook::showNewest() {
-  deleteFailed = false;
   modal = false;
   cursor_position = CURSOR_BACK;
   deletePending = 0;
-  loadNewest();
+  LogbookStore::beginRepairSession();
+  waitingForRepair = LogbookStore::repairPending();
+  if (waitingForRepair) cursor_max = CURSOR_BACK;
+  if (!waitingForRepair) loadNewest();
 }
 
 void PageLogbook::showModalNewest() {
-  deleteFailed = false;
   modal = true;
   cursor_position = CURSOR_BACK;
   deletePending = 0;
-  loadNewest();
+  LogbookStore::beginRepairSession();
+  waitingForRepair = LogbookStore::repairPending();
+  if (waitingForRepair) cursor_max = CURSOR_BACK;
+  if (!waitingForRepair) loadNewest();
   push_page(this);
 }
 
 void PageLogbook::loadNewest() {
+  unavailable = !logbook_io::directoryAvailable();
   String path;
   if (!LogbookStore::newestEntryPath(path)) {
     currentPath = "";
@@ -57,10 +64,9 @@ void PageLogbook::loadNewest() {
 }
 
 void PageLogbook::loadPath(const String& path) {
-  deleteFailed = false;
   currentPath = LogbookStore::normalizePath(path);
   deletePending = 0;
-  if (!LogbookStore::readSummary(currentPath, summary)) {
+  if (!LogbookStore::readSummary(currentPath, summary, false)) {
     summary = LogbookEntrySummary();
     position = total = 0;
     LogbookStore::entryPositionNewestFirst(currentPath, position, total);
@@ -95,7 +101,6 @@ void PageLogbook::deleteCurrent() {
   }
 
   if (LogbookStore::deleteEntry(currentPath)) {
-    deleteFailed = false;
     buttons.consumeButton();
     speaker.playSound(fx::confirm);
     if (replacementPath.isEmpty()) {
@@ -105,20 +110,30 @@ void PageLogbook::deleteCurrent() {
     }
   } else {
     deletePending = 0;
-    // Read the remaining main without running recovery after a partial deletion.
-    LogbookStore::readSummary(currentPath, summary, false);
-    deleteFailed = true;
-    speaker.playSound(fx::bad);
+    // Refresh what remains without a per-file alert or recovery that could undo
+    // a partial deletion. A still-present flight remains available to delete again.
+    if (LogbookStore::readSummary(currentPath, summary, false))
+      LogbookStore::entryPositionNewestFirst(currentPath, position, total);
+    else
+      loadNewest();
   }
 }
 
 bool PageLogbook::cursorUsesLeftButton() const { return cursor_position == cursor_page; }
 
 void PageLogbook::draw() {
+  if (waitingForRepair && !LogbookStore::repairPending()) {
+    waitingForRepair = false;
+    loadNewest();
+  }
   u8g2.firstPage();
   do {
     menu_ui::drawTitle("Logbook", menu_ui::GLYPH_LOGGING);
-    if (summary.valid) {
+    if (waitingForRepair) {
+      u8g2.setFont(leaf_6x12);
+      u8g2.setCursor(0, 67);
+      u8g2.print("Opening logbook");
+    } else if (summary.valid) {
       if (settings.labs_leafLog && summary.leafLogStatus != LeafLogFlightStatus::NotApplicable) {
         u8g2.setFont(leaf_8x14);
         u8g2.setCursor(menu_ui::ICON_CHECKBOX_X, 14);
@@ -134,11 +149,6 @@ void PageLogbook::draw() {
     } else {
       drawEmpty();
     }
-    if (deleteFailed) {
-      u8g2.setFont(leaf_5x8);
-      u8g2.setCursor(0, 170);
-      u8g2.print("Not fully deleted");
-    }
     drawBackRow();
   } while (u8g2.nextPage());
 }
@@ -146,10 +156,11 @@ void PageLogbook::draw() {
 void PageLogbook::drawEmpty() {
   u8g2.setFont(leaf_6x12);
   u8g2.setCursor(0, 67);
-  u8g2.print(total ? "Unavailable" : "No flights");
+  u8g2.print(unavailable || !sdcard.firmwareCanAccessFilesystem() || total ? "Unavailable"
+                                                                           : "No flights");
   if (total) {
     drawDeleteRow(156);
-    if (!deleteFailed) drawPageRow(171);
+    drawPageRow(171);
   }
 }
 
@@ -157,7 +168,7 @@ void PageLogbook::drawEntry() {
   logbook_card::drawFlightCard(summary);
 
   drawDeleteRow(156);
-  if (!deleteFailed) drawPageRow(171);
+  drawPageRow(171);
 
   if (deletePending) {
     uint8_t width =
@@ -238,6 +249,8 @@ void PageLogbook::setting_change(Button dir, ButtonEvent state, uint8_t count) {
     }
     return;
   }
+
+  if (waitingForRepair) return;
 
   if (cursor_position == cursor_page) {
     if (state == ButtonEvent::CLICKED) {

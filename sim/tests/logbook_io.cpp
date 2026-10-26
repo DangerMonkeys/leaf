@@ -9,6 +9,7 @@
 #include <chrono>
 #include <filesystem>
 #include <fstream>
+#include <map>
 #include <string>
 #include <thread>
 #include "display_capture.h"
@@ -19,6 +20,7 @@
 #include "runtime.h"
 #include "sim/clock.h"
 #include "storage/sd_card.h"
+#include "ui/audio/speaker.h"
 #include "ui/display/pages/dialogs/page_flight_summary.h"
 #include "ui/display/pages/menu/page_logbook.h"
 #include "ui/settings/settings.h"
@@ -33,11 +35,15 @@ namespace {
   uint32_t faultDelay = 0;
   int injectedError = EIO;
   const char* crashStage = nullptr;
+  bool requireMuted = false;
+  std::map<std::string, unsigned> stages;
   int crash(const char* stage) {
     if (!strcmp(stage, crashStage)) _exit(101);
     return 0;
   }
   int inject(const char* stage) {
+    ++stages[stage];
+    if (requireMuted) assert(speaker.muted());
     if (failStage != stage) return 0;
     ++calls;
     if (faultDelay) sim::clock().advanceUs(uint64_t(faultDelay) * 1000);
@@ -47,6 +53,7 @@ namespace {
   }
   void faults(const char* stage = "", unsigned count = 0, int error = EIO, uint32_t delay = 0) {
     failStage = stage;
+    stages.clear();
     failures = count;
     calls = 0;
     injectedError = error;
@@ -101,13 +108,14 @@ namespace {
   }
   void reset() {
     faults();
+    LogbookStore::beginRepairSession(false);
     std::filesystem::remove_all(root + "/logbook");
     std::filesystem::create_directories(root + "/logbook");
   }
   const String path = "/logbook/2026-10-22_12-00-00_1234abcd.json";
   void replacementFailures() {
-    for (const char* stage : {"open", "write", "short_write", "flush", "sync", "close",
-                              "backup_rotate", "backup", "promote", "read", "allocation"}) {
+    for (const char* stage :
+         {"open", "write", "short_write", "flush", "close", "backup_rotate", "backup", "promote"}) {
       reset();
       assert(save(path, false, 0));
       assert(save(path, false, 2));
@@ -134,9 +142,8 @@ namespace {
     assert(logbook_io::recover(path));
   }
   void interruptedProcess() {
-    for (const char* stage :
-         {"open", "write", "flush", "sync", "close", "backup_rotate", "backup", "promote",
-          "after_temp_validation", "after_backup", "after_promote"}) {
+    for (const char* stage : {"open", "write", "flush", "close", "backup_rotate", "backup",
+                              "promote", "after_temp_close", "after_backup", "after_promote"}) {
       reset();
       assert(save(path, false, 0));
       assert(save(path, false, 2));
@@ -157,6 +164,33 @@ namespace {
       assert(logbook_io::load(path, doc));
       assert((doc["metrics"]["duration_seconds"] | 0U) >= 2);
       assert(save(path, true, 100));
+      assert(!exists(path + ".tmp"));
+    }
+  }
+  void interruptedRepair() {
+    for (const char* stage : {"backup_rotate", "backup", "repair_after_backup", "promote",
+                              "repair_after_promote", "temp_cleanup"}) {
+      reset();
+      candidate(path, 2, false);
+      candidate(path + ".tmp", 3, true, 100);
+      candidate(path + ".bak", 1, false);
+      if (!strcmp(stage, "temp_cleanup")) {
+        candidate(path, 3, true, 100);
+        candidate(path + ".tmp", 2, false);
+      }
+      const pid_t child = fork();
+      assert(child >= 0);
+      if (child == 0) {
+        crashStage = stage;
+        logbook_io::setFaultHook(crash);
+        logbook_io::recover(path);
+        _exit(102);
+      }
+      int status;
+      assert(waitpid(child, &status, 0) == child);
+      assert(WIFEXITED(status) && WEXITSTATUS(status) == 101);
+      faults();
+      assert(logbook_io::recover(path) && revision(path) == 3);
       assert(!exists(path + ".tmp"));
     }
   }
@@ -189,6 +223,10 @@ namespace {
       reset();
       candidate(path + suffix, 4);
       String found;
+      LogbookStore::beginRepairSession();
+      for (unsigned i = 0; LogbookStore::repairPending() && i < 1000; ++i)
+        LogbookStore::serviceRepair();
+      assert(!LogbookStore::repairPending());
       assert(LogbookStore::count() == 1);
       assert(LogbookStore::newestEntryPath(found) && found == path);
       LogbookEntrySummary summary;
@@ -235,7 +273,7 @@ namespace {
     candidate(path + ".tmp", 1);
     raw(path, "{} trailing");
     assert(logbook_io::recover(path));
-    for (const char* stage : {"recovery_sync", "recovery_close"}) {
+    for (const char* stage : {"promote"}) {
       reset();
       candidate(path + ".tmp", 1);
       faults(stage, 1);
@@ -409,6 +447,183 @@ namespace {
             .count());
     entry.reset();
   }
+  void lightweightSaves() {
+    reset();
+    FlightStats stats;
+    stats.gpsalt_above_launch_max = 7.440002f;
+    stats.speed_max = 9.9f;
+    LogbookEntryFile entry;
+    assert(entry.begin(stats));
+    faults("read", 1000);
+    assert(entry.writePlaceholder(stats));
+    stats.duration = 120;
+    assert(entry.finalize(stats));
+    LogbookEntrySummary summary;
+    entry.summary(stats, summary);
+    assert(summary.durationSeconds == 120 && calls == 0);
+    faults();
+    JsonDocument doc;
+    assert(logbook_io::load(entry.path(), doc));
+    assert(doc["complete"].as<bool>() && !exists(entry.path() + ".tmp"));
+
+    // A failed placeholder is not retried by ordinary 1 Hz logging updates.
+    reset();
+    assert(entry.begin(stats));
+    faults("open", 10);
+    assert(!entry.writePlaceholder(stats));
+    sim::clock().advanceUs(60000000);
+    assert(!entry.writePlaceholder(stats) && calls == 1);
+    faults();
+    assert(entry.finalize(stats));
+
+    // A checked temporary is reused across stop-time promotion retries.
+    reset();
+    assert(entry.begin(stats));
+    faults("promote", 2);
+    assert(entry.finalize(stats) && calls == 3);
+    assert(stages["open"] == 1 && stages["read"] == 0);
+    faults();
+
+    // Several launch milestones share one update; later ordinary updates do no I/O.
+    reset();
+    assert(entry.begin(stats));
+    assert(entry.writePlaceholder(stats));
+    entry.setTrack("igc", "/tracks/test.igc");
+    stats.startLocationLat = 47;
+    entry.captureFirstFix(stats);
+    assert(entry.writePlaceholder(stats));
+    for (int i = 0; i < 60; ++i) assert(entry.writePlaceholder(stats));
+    assert(stages["open"] == 2 && stages["read"] == 0);
+    assert(entry.finalize(stats));
+
+    // A failed startup staging file never prevents the completed flight save.
+    reset();
+    assert(entry.begin(stats));
+    faults("short_write", 10000);
+    assert(!entry.writePlaceholder(stats));
+    faults();
+    assert(entry.finalize(stats));
+    assert(logbook_io::load(entry.path(), doc) && doc["complete"].as<bool>());
+
+    // The actual stop path stays muted throughout storage work, has no JSON reads,
+    // and restores an already-muted speaker without enabling it.
+    for (bool muted : {false, true}) {
+      reset();
+      if (muted)
+        speaker.mute();
+      else
+        speaker.unMute();
+      flightTimer_start();
+      requireMuted = true;
+      faults("read", 1000);
+      flightTimer_stop(true);
+      requireMuted = false;
+      assert(calls == 0 && speaker.muted() == muted);
+      faults();
+      PageFlightSummary page;
+      page.pop_all_pages();
+    }
+    speaker.unMute();
+  }
+  void quietRepair() {
+    reset();
+    candidate(path, 2, false);
+    candidate(path + ".tmp", 3, true, 90);
+    faults("promote", 10);
+    LogbookStore::beginRepairSession();
+    for (unsigned i = 0; LogbookStore::repairPending() && i < 1000; ++i)
+      LogbookStore::serviceRepair();
+    assert(!LogbookStore::repairPending() && calls == 1 && exists(path + ".tmp"));
+    assert(LogbookStore::count() == 0);  // Do not present the one-second placeholder as a flight.
+    LeafLogCandidate upload;
+    assert(!LogbookStore::classifyForLeafLog(path, upload) && calls == 1);
+    faults();
+    LogbookStore::beginRepairSession();
+    for (unsigned i = 0; LogbookStore::repairPending() && i < 1000; ++i)
+      LogbookStore::serviceRepair();
+    assert(!LogbookStore::repairPending() && LogbookStore::count() == 1);
+    assert(!exists(path + ".tmp") && revision(path) == 3);
+
+    // A new flight abandons maintenance before another file can be read or changed.
+    reset();
+    candidate(path + ".tmp", 3);
+    LogbookStore::beginRepairSession();
+    flightTimer_start();
+    faults("read", 1000);
+    LogbookStore::serviceRepair();
+    assert(!LogbookStore::repairPending() && calls == 0 && exists(path + ".tmp"));
+    faults();
+    flightTimer_stop(false);
+
+    // A complete main with an ambiguous equal-revision temp may be viewed, but
+    // must not be uploaded or overwritten with a result marker.
+    reset();
+    candidate(path, 3, true, 90);
+    candidate(path + ".tmp", 3, true, 100);
+    assert(!LogbookStore::classifyForLeafLog(path, upload));
+    assert(!LogbookStore::recordLeafLogFlightId(path, "must-not-write"));
+    assert(revision(path) == 3 && exists(path + ".tmp"));
+
+    // A redundant temp that cannot be cleaned up is still readable, but must
+    // not cause an upload whose result cannot be committed over that temp.
+    reset();
+    candidate(path, 3, true);
+    candidate(path + ".tmp", 2, false);
+    faults("temp_cleanup", 10);
+    assert(!LogbookStore::classifyForLeafLog(path, upload) && calls == 1);
+    assert(!LogbookStore::recordLeafLogFlightId(path, "must-not-write") && calls == 1);
+    LogbookEntrySummary readable;
+    assert(LogbookStore::readSummary(path, readable, false));
+    faults();
+    LogbookStore::beginRepairSession(false);
+    assert(LogbookStore::classifyForLeafLog(path, upload) && !exists(path + ".tmp"));
+
+    // Upload preparation also recovers an incomplete main from its completed backup.
+    reset();
+    candidate(path, 3, false);
+    candidate(path + ".bak", 2, true);
+    assert(LogbookStore::classifyForLeafLog(path, upload) && revision(path) == 2);
+  }
+  void fieldEvidence() {
+    const char* evidence = getenv("LEAF_FIELD_EVIDENCE");
+    if (!evidence) return;
+    unsigned devices = 0, repaired = 0;
+    for (const auto& directory : std::filesystem::recursive_directory_iterator(evidence)) {
+      if (!directory.is_directory() || directory.path().filename() != "logbook") continue;
+      reset();
+      // The evidence mount is read-only. All recovery operates on disposable copies.
+      std::filesystem::copy(directory.path(), root + "/logbook",
+                            std::filesystem::copy_options::recursive |
+                                std::filesystem::copy_options::overwrite_existing);
+      std::map<std::string, std::string> completed;
+      for (const auto& file : std::filesystem::directory_iterator(root + "/logbook")) {
+        if (file.path().extension() != ".tmp") continue;
+        const String temporary = String("/logbook/") + file.path().filename().c_str();
+        JsonDocument doc;
+        if (logbook_io::load(temporary, doc) && doc["complete"].as<bool>()) {
+          std::ifstream input(file.path());
+          completed[file.path().stem().string()] =
+              std::string(std::istreambuf_iterator<char>(input), {});
+        }
+      }
+      LogbookStore::beginRepairSession();
+      for (unsigned i = 0; LogbookStore::repairPending() && i < 10000; ++i)
+        LogbookStore::serviceRepair();
+      assert(!LogbookStore::repairPending());
+      for (const auto& [filename, original] : completed) {
+        std::ifstream input(root + "/logbook/" + filename);
+        const std::string current(std::istreambuf_iterator<char>(input), {});
+        assert(current == original);
+        assert(!std::filesystem::exists(root + "/logbook/" + filename + ".tmp"));
+        ++repaired;
+      }
+      ++devices;
+    }
+    assert(devices > 0 && repaired > 0);
+    printf(
+        "Field evidence copies: %u devices, %u completed temporary records recovered unchanged.\n",
+        devices, repaired);
+  }
   void fullCard() {
     if (!getenv("LEAF_TEST_FILL_CARD")) return;
     struct statfs filesystem;
@@ -468,6 +683,10 @@ namespace {
       }
     } logbookPage;
     logbookPage.showNewest();
+    logbookPage.draw();
+    screenshot("opening-logbook");
+    while (LogbookStore::repairPending()) LogbookStore::serviceRepair();
+    logbookPage.draw();
     faults("delete_backup", 1);
     logbookPage.attemptDelete();
     logbookPage.draw();
@@ -476,8 +695,15 @@ namespace {
     reset();
     raw(path, "{broken");
     logbookPage.showNewest();
+    while (LogbookStore::repairPending()) LogbookStore::serviceRepair();
     logbookPage.draw();
-    screenshot("unavailable-record");
+    screenshot("unreadable-record-hidden");
+    SD_MMC.simSetPresent(false);
+    logbookPage.showNewest();
+    while (LogbookStore::repairPending()) LogbookStore::serviceRepair();
+    logbookPage.draw();
+    screenshot("card-unavailable");
+    SD_MMC.simSetPresent(true);
     summary.dismiss();
   }
 }  // namespace
@@ -500,6 +726,7 @@ int main() {
   settings.system_autoOff = 0;
   replacementFailures();
   interruptedProcess();
+  interruptedRepair();
   recoverySets();
   deletionAndRename();
   uploadStatus();
@@ -508,6 +735,9 @@ int main() {
   flightTimer_stop(false);
   fullCard();
   latency();
+  lightweightSaves();
+  quietRepair();
+  fieldEvidence();
   ui();
   faults();
   assert(!logbook_io::erase("/logbook/../profiles/profiles.json"));

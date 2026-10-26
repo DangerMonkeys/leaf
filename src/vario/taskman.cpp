@@ -25,6 +25,7 @@
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "instruments/imu.h"
+#include "logbook/logbook_store.h"
 #include "logging/log.h"
 #include "navigation/gpx.h"
 #include "navigation/thermal_core.h"
@@ -166,6 +167,7 @@ void TaskManager::update() {
         networkWork || heartbeatDue ||
             (cpu_utilization::capturing() && settings.udpInjectionEnabled()));
     udpMessageServer.update();
+    if (!leafLogSync.scanning() && !leafLogSync.transferInFlight()) LogbookStore::serviceRepair();
 
     // LOOP NOTES:
     // when re-entering PowerState::On, be sure to start from tasks #1, so baro ADC can be

@@ -39,10 +39,10 @@ void PageFlightSummary::draw() {
     }
     menu_ui::endRow();
 
-    if (deleteFailed || saveFailed) {
+    if (saveFailed) {
       u8g2.setFont(leaf_5x8);
       u8g2.setCursor(0, 170);
-      u8g2.print(deleteFailed ? "Not fully deleted" : "Logbook save failed");
+      u8g2.print("Logbook save failed");
     }
     if (deletePending) {
       uint8_t width =
@@ -77,9 +77,11 @@ void PageFlightSummary::setting_change(Button dir, ButtonEvent state, uint8_t co
           speaker.playSound(fx::confirm);
           pop_page();
         } else {
-          deleteFailed = true;
-          LogbookStore::readSummary(logbookPath, summary, false);
-          speaker.playSound(fx::bad);
+          LogbookEntrySummary remaining;
+          if (LogbookStore::readSummary(logbookPath, remaining, false))
+            summary = remaining;
+          else
+            pop_page();
         }
       }
     } else if (state == ButtonEvent::RELEASED || state == ButtonEvent::CLICKED) {

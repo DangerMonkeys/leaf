@@ -137,13 +137,13 @@ void log_update() {
     imu.gLoad().updateAirborne(gLoadDiagnostics.looksAirborne(),
                                gLoadDiagnostics.detectorInputsValid());
     captureGLoadExtrema();
-    logbookEntry.writePlaceholder(logbook);
     logbookEntry.refreshStartTimeFromSyncedClock(logbook);
 
     // We wish to save a tracklog, but the tracklog has not yet started.
     if (trackLogEnabledForFlight && !flight->started()) {
       if (!gps.hasUsableFix()) {
         // We don't have a valid GPS location yet, try again later
+        logbookEntry.writePlaceholder(logbook);
         writeGLoadSnapshot(gLoadDiagnostics);
         return;
       }
@@ -151,6 +151,7 @@ void log_update() {
       if (baro.state() != Barometer::State::Ready) {
         // The baro is still discarding its startup samples, so it can't set a launch altitude
         // yet; try again later
+        logbookEntry.writePlaceholder(logbook);
         writeGLoadSnapshot(gLoadDiagnostics);
         return;
       }
@@ -190,6 +191,8 @@ void log_update() {
       captureFirstGpsFixForLogbook();
     }
 
+    // Coalesce clock, first-fix and track association before the single milestone write.
+    logbookEntry.writePlaceholder(logbook);
     // Generate a tracklog record.
     if (trackLogEnabledForFlight && gps.hasUsableFix()) flight->log(logbook.duration);
     log_captureValues();      // TODO:  Update this to an "Update Flight Stats" or something
@@ -334,6 +337,9 @@ void flightTimer_start(FlightStartCause cause) {
     return;
   }
 
+  // Release an idle repair iterator before this flight can create any files.
+  LogbookStore::beginRepairSession(false);
+
   // Freeze before resetting the detector, including its final triggering score.
   startHistory.record(millis(), autoStartSample(), autoStartDetector.score(),
                       settings.log_autoStart, PageFlightSummary::isShowing());
@@ -373,6 +379,9 @@ void flightTimer_stop(bool showSummary, FlightEndCause cause) {
     return;
   }
 
+  const bool previouslyMuted = speaker.muted();
+  speaker.mute();  // Stop hardware output before any final IGC or JSON file work.
+
   // ending values
   imu.gLoad().stopFlight();
   captureGLoadExtrema();
@@ -411,7 +420,7 @@ void flightTimer_stop(bool showSummary, FlightEndCause cause) {
     u8g2.print("Saving flight...");
   } while (u8g2.nextPage());
   const bool summarySaved = logbookEntry.finalize(logbook, trackFormat, trackPath);
-  if (!summarySaved) {
+  if (!summarySaved && !showSummary) {
     u8g2.firstPage();
     do {
       u8g2.setFont(leaf_6x12);
@@ -426,10 +435,13 @@ void flightTimer_stop(bool showSummary, FlightEndCause cause) {
   }
   if (showSummary) {
     static PageFlightSummary dialog;
-    dialog.show(logbook, logbookEntry.path(), trackPath, summarySaved);
+    LogbookEntrySummary snapshot;
+    logbookEntry.summary(logbook, snapshot);
+    dialog.show(logbook, logbookEntry.path(), trackPath, summarySaved, &snapshot);
   }
   logbookEntry.reset();
   // TODO:  A much cooler end flight sound.  Perhaps even an easter egg?
+  if (!previouslyMuted) speaker.unMute();
   speaker.playSound(summarySaved ? fx::confirm : fx::bad);
   settings.resetShortcutVolume();
   flight = NULL;

@@ -92,7 +92,8 @@ namespace logbook_io {
         return count;
       }
     };
-    // Fingerprints compare complete readback without keeping a second JSON document/String.
+    // Recovery compares parsed candidates only. Never compare original floating-point
+    // values with a serialized-and-parsed copy: JSON round trips can change precision.
     uint64_t fingerprint(const JsonDocument& doc, bool core = false) {
       HashWriter writer;
       for (JsonPairConst pair : doc.as<JsonObjectConst>()) {
@@ -212,20 +213,6 @@ namespace logbook_io {
       if (a.core == b.core && a.versioned != b.versioned) return a.versioned ? 1 : -1;
       return 2;
     }
-    bool syncCandidate(const String& path) {
-      FILE* file = fopen(physical(path).c_str(), "r+b");
-      if (!file) return fail("recovery_open", errno);
-      bool ok = true;
-      if (fflush(file) != 0) ok = fail("recovery_flush", errno);
-      const int injected = fault("recovery_sync");
-      const int synced = fsync(fileno(file));
-      if (ok && (injected || synced)) ok = fail("recovery_sync", injected ? injected : errno);
-      const int closeFault = fault("recovery_close");
-      const int closed = fclose(file);
-      if (ok && (closeFault || closed))
-        ok = fail("recovery_close", closeFault ? closeFault : errno);
-      return ok;
-    }
     bool recoverLocked(const String& path) {
       if (!accessible()) return false;
       if (!safePath(path)) return fail("recovery_path", EINVAL);
@@ -256,18 +243,14 @@ namespace logbook_io {
         return true;
       }
       if (best != 0) {
-        // The previous attempt may have failed sync/close. Structural validity alone must
-        // not turn that failed write into a successful commit on the next attempt.
-        if (!syncCandidate(paths[best])) return false;
         if (candidates[0].valid && best == 1) {
           if (!removeFile(paths[2], "backup_rotate") || !renameFile(paths[0], paths[2], "backup"))
             return false;
         } else if (!removeFile(paths[0], "invalid_main_remove"))
           return false;
+        if (int e = fault("repair_after_backup")) return fail("repair_after_backup", e);
         if (!renameFile(paths[best], paths[0], "promote")) return false;
-        if (!readDocument(paths[0], doc) || fingerprint(doc) != candidates[best].payload ||
-            (doc["revision"] | 0U) != candidates[best].revision)
-          return fail("promoted_validation", EBADMSG);
+        if (int e = fault("repair_after_promote")) return fail("repair_after_promote", e);
       }
       // A previous backup is intentional. Only the now-redundant temporary is disposable.
       if (!removeFile(paths[1], "temp_cleanup")) {
@@ -308,7 +291,16 @@ namespace logbook_io {
   }
   bool recover(const String& path) {
     Guard guard;
-    return guard && recoverLocked(path);
+    if (!guard) return false;
+    if (flightTimer_isRunning()) return fail("repair_active", EBUSY);
+    return recoverLocked(path);
+  }
+  bool needsRepair(const String& path) {
+    Guard guard;
+    if (!guard || !accessible() || !safePath(path)) return false;
+    if (SD_MMC.exists(path + ".tmp")) return true;
+    struct stat info;
+    return stat(physical(path).c_str(), &info) != 0 || info.st_size == 0;
   }
   bool ensureDirectory() {
     Guard guard;
@@ -319,9 +311,32 @@ namespace logbook_io {
     if (errno != ENOENT) return fail("directory", errno);
     return mkdir(physical("/logbook").c_str(), 0775) == 0 || fail("directory_create", errno);
   }
+  bool directoryAvailable() {
+    Guard guard;
+    if (!guard || !accessible()) return false;
+    struct stat info;
+    if (stat(physical("/logbook").c_str(), &info) == 0) {
+      File directory = SD_MMC.open("/logbook");
+      return S_ISDIR(info.st_mode) && directory && directory.isDirectory();
+    }
+    if (errno != ENOENT) return false;
+    // A readable card with no logbook directory is an ordinary empty logbook.
+    File directory = SD_MMC.open("/");
+    return directory && directory.isDirectory();
+  }
   bool prepare(const String& path, uint32_t& revision, uint64_t& previousPayload) {
     Guard guard;
     if (!guard) return false;
+    if (!needsRepair(path)) {
+      JsonDocument doc;
+      if (load(path, doc)) {
+        const uint32_t current = doc["revision"] | 0U;
+        if (current == UINT32_MAX) return fail("revision_overflow", EOVERFLOW);
+        revision = current + 1;
+        previousPayload = 0;
+        return true;
+      }
+    }
     if (!recover(path)) {
       if (strcmp(result.stage, "no_valid_candidate")) return false;
       // All existing candidates were read successfully and found malformed. They cannot
@@ -344,56 +359,75 @@ namespace logbook_io {
     revision = highest + 1;
     return true;
   }
-  bool commit(const String& path, JsonDocument& doc, uint64_t previousPayload) {
+  bool commit(const String& path, JsonDocument& doc, uint64_t, PendingWrite* pending) {
     Guard guard;
     if (!guard) return false;
     if (!accessible() || !safePath(path) || !validate(doc, path)) return false;
-    const uint64_t payload = fingerprint(doc);
     const uint32_t revision = doc["revision"] | 0U;
-    if (previousPayload && payload == previousPayload) return true;
+    PendingWrite local;
+    PendingWrite& state = pending ? *pending : local;
+    if (state.revision != revision) {
+      state.revision = revision;
+      state.closed = state.promoted = false;
+    }
+    if (state.promoted) {
+      result = {};
+      return true;
+    }
     const String temp = path + ".tmp";
     const String backup = path + ".bak";
-    // prepare must have resolved candidates; never truncate an unexplained surviving temporary.
     bool exists;
     if (!existsChecked(temp, exists)) return false;
-    if (exists) return fail("unresolved_temp", EEXIST);
-    const size_t expected = measureJson(doc) + 1;
-    if (expected > MAX_BYTES) return fail("length", EFBIG);
-    if (int e = fault("open")) return fail("open", e);
-    FILE* file = fopen(physical(temp).c_str(), "wb");
-    if (!file) return fail("open", errno);
-    struct Writer {
-      FILE* file;
-      size_t write(uint8_t c) { return write(&c, 1); }
-      size_t write(const uint8_t* bytes, size_t count) {
-        if (int e = fault("write")) {
-          errno = e;
-          return 0;
+    if (!state.closed) {
+      if (exists) {
+        // Only this active writer may replace its own failed staging file. Preserve
+        // its bytes at the free main name when no earlier main survived. Unknown
+        // temporaries are left for the non-operational repair path.
+        if (!state.ownsTemporary) return fail("unresolved_temp", EEXIST);
+        bool mainExists;
+        if (!existsChecked(path, mainExists)) return false;
+        if (!mainExists) {
+          if (!renameFile(temp, path, "preserve_temporary")) return false;
+        } else if (!removeFile(temp, "failed_temp_cleanup")) {
+          return false;
         }
-        if (fault("short_write")) count /= 2;
-        return fwrite(bytes, 1, count, file);
       }
-    } writer{file};
-    size_t actual = serializeJson(doc, writer);
-    actual += writer.write(uint8_t('\n'));
-    bool ok = actual == expected && !ferror(file);
-    if (!ok) fail("write", errno, expected, actual);
-    // Always close; preserve the first failure instead of replacing it with cleanup errors.
-    const int flushFault = fault("flush");
-    const int flushed = fflush(file);
-    if (ok && (flushFault || flushed)) ok = fail("flush", flushFault ? flushFault : errno);
-    const int syncFault = fault("sync");
-    const int synced = fsync(fileno(file));
-    if (ok && (syncFault || synced)) ok = fail("sync", syncFault ? syncFault : errno);
-    const int closeFault = fault("close");
-    const int closed = fclose(file);
-    if (ok && (closeFault || closed)) ok = fail("close", closeFault ? closeFault : errno);
-    if (!ok) return false;
-    // Reuse the caller's document only after serialization has finished.
-    if (!readDocument(temp, doc, expected) || fingerprint(doc) != payload ||
-        (doc["revision"] | 0U) != revision)
-      return fail("temporary_validation", result.error ? result.error : EBADMSG);
-    if (int e = fault("after_temp_validation")) return fail("after_temp_validation", e);
+      const size_t expected = measureJson(doc) + 1;
+      if (expected > MAX_BYTES) return fail("length", EFBIG);
+      if (int e = fault("open")) return fail("open", e);
+      FILE* file = fopen(physical(temp).c_str(), "wb");
+      if (!file) return fail("open", errno);
+      state.ownsTemporary = true;
+      struct Writer {
+        FILE* file;
+        size_t write(uint8_t c) { return write(&c, 1); }
+        size_t write(const uint8_t* bytes, size_t count) {
+          if (int e = fault("write")) {
+            errno = e;
+            return 0;
+          }
+          if (fault("short_write")) count /= 2;
+          return fwrite(bytes, 1, count, file);
+        }
+      } writer{file};
+      size_t actual = serializeJson(doc, writer);
+      actual += writer.write(uint8_t('\n'));
+      bool ok = actual == expected && !ferror(file);
+      if (!ok) fail("write", errno, expected, actual);
+      const int flushFault = fault("flush");
+      const int flushed = fflush(file);
+      if (ok && (flushFault || flushed)) ok = fail("flush", flushFault ? flushFault : errno);
+      // ESP-IDF closes through FatFs f_close(), which already synchronizes the file.
+      // Check that result instead of requesting another sync immediately before it.
+      const int closeFault = fault("close");
+      const int closed = fclose(file);
+      if (ok && (closeFault || closed)) ok = fail("close", closeFault ? closeFault : errno);
+      if (!ok) return false;
+      state.closed = true;
+      if (int e = fault("after_temp_close")) return fail("after_temp_close", e);
+    } else if (!exists) {
+      return fail("missing_temporary", ENOENT);
+    }
     if (!existsChecked(path, exists)) return false;
     if (exists) {
       if (!removeFile(backup, "backup_rotate") || !renameFile(path, backup, "backup")) return false;
@@ -405,10 +439,9 @@ namespace logbook_io {
       result = original;
       return false;
     }
+    state.promoted = true;
+    state.ownsTemporary = false;
     if (int e = fault("after_promote")) return fail("after_promote", e);
-    if (!readDocument(path, doc, expected) || fingerprint(doc) != payload ||
-        (doc["revision"] | 0U) != revision)
-      return fail("promoted_validation", result.error ? result.error : EBADMSG);
     result = {};
     return true;
   }
@@ -425,11 +458,11 @@ namespace logbook_io {
     if (backup && SD_MMC.exists(path + ".tmp")) return false;
     return true;
   }
-  bool relocate(const String& oldPath, const String& newPath) {
+  bool relocate(const String& oldPath, const String& newPath, bool inspectExisting) {
     Guard guard;
     if (!guard || !accessible() || !safePath(oldPath) || !safePath(newPath)) return false;
     if (oldPath == newPath) return true;
-    if (!recoverLocked(oldPath)) return false;
+    if (inspectExisting && !recoverLocked(oldPath)) return false;
     if (SD_MMC.exists(newPath) || SD_MMC.exists(newPath + ".tmp") ||
         SD_MMC.exists(newPath + ".bak"))
       return fail("rename_collision", EEXIST);

@@ -55,6 +55,7 @@ namespace {
 LeafLogSync leafLogSync;
 
 void LeafLogSync::beginSession(bool fromEject) {
+  LogbookStore::beginRepairSession(false);
   // Uploads no longer block input polling. A first center tap asks for confirmation,
   // so the old interrupt-to-abort shortcut must not cancel the transport.
   buttons.disarmUrgentPressCapture();
