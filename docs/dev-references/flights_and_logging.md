@@ -50,7 +50,7 @@ Any one of these independent paths can start the timer:
 | Path | Conditions over the same three-second window | Extra confirmation |
 | --- | --- | --- |
 | Forward | Mean fresh GPS speed ≥2.2352 m/s (5 mph) **and** net GPS displacement ≥5 m | 1 second |
-| Vertical | Net pressure-altitude change magnitude ≥3 m **and** mean vertical-rate magnitude **>0.5 m/s**, agreeing on direction | None |
+| Vertical | Net pressure-altitude change magnitude ≥3 m **and** mean vertical-rate magnitude **>0.5 m/s**, agreeing on direction | 1 second |
 | Blended | Corroborated forward and vertical evidence satisfy the nonlinear boundary below | 1 second |
 
 For the blended path:
@@ -69,11 +69,11 @@ require both ≥3.5 mph and ≥3.5 m GPS displacement, plus ≥1.5 m pressure de
 and ≥0.25 m/s agreeing mean vertical rate. Evidence may saturate at one without
 changing these decisions.
 
-Forward and blended candidates must remain qualified for one further elapsed
-second. A low individual speed reading changes its rolling average rather than
-clearing the history. A failed candidate resets that path's confirmation only;
-changing vertical direction also restarts blended confirmation. The vertical path
-does not require GPS, and the forward path does not require barometric data.
+All three candidates must remain qualified for one further elapsed second. A low
+individual speed reading changes its rolling average rather than clearing the
+history. A failed candidate resets that path's confirmation only; changing vertical
+direction also restarts vertical and blended confirmation. The vertical path does
+not require GPS, and the forward path does not require barometric data.
 
 Constants live in `src/vario/logging/flight_auto_start.h`.
 A first sample establishes time, and a gap over two seconds resets the detector

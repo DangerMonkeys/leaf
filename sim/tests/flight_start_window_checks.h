@@ -58,19 +58,54 @@ namespace flight_start_test {
     }
 
     for (float sign : {-1.f, 1.f}) {
-      // GPS-free ascent/descent needs actual pressure departure and signed vario.
-      Detector vertical;
-      for (uint32_t t = 0; t <= 3000; t += 1000) {
-        Sample s = motion(t, 0, sign);
-        s.speedValid = s.positionValid = false;
-        assert(vertical.update(t, s) == (t == 3000));
+      // GPS-free ascent/descent needs actual pressure departure and signed vario,
+      // then one further elapsed second of qualification in the same direction.
+      for (uint32_t period : {250u, 1000u}) {
+        Detector vertical;
+        for (uint32_t t = 0; t <= 4000; t += period) {
+          Sample s = motion(t, 0, sign);
+          s.speedValid = s.positionValid = false;
+          assert(vertical.update(t, s) == (t == 4000));
+          if (t == 3000) assert(vertical.candidates() == Detector::Vertical);
+        }
+        assert(vertical.triggered() == Detector::Vertical);
       }
-      assert(vertical.triggered() == Detector::Vertical);
+
+      // A pressure excursion that only qualifies once cannot start a flight.
+      // After the failed window, a later excursion needs its own confirmation.
+      Detector excursion;
+      for (uint32_t t = 0; t <= 8000; t += 1000) {
+        Sample s = motion(t, 0, sign);
+        if (t >= 4000) s.altitudeM -= 3 * sign;
+        assert(excursion.update(t, s) == (t == 8000));
+      }
+
+      // An ascent candidate and a descent candidate cannot share confirmation.
+      Detector reversal;
+      for (uint32_t t = 0; t <= 3000; t += 1000) assert(!reversal.update(t, motion(t, 0, sign)));
+      Sample reverse = motion(4000, 0, sign);
+      reverse.altitudeM = 1000 - 4 * sign;
+      reverse.climbMps = -10 * sign;
+      assert(!reversal.update(4000, reverse));
+      assert(reversal.candidates() == Detector::Vertical);
+      reverse.altitudeM = 1000 - 5 * sign;
+      reverse.climbMps = -sign;
+      assert(reversal.update(5000, reverse));
+      assert(reversal.triggered() == Detector::Vertical);
+
+      // Confirmation measures elapsed time, even with repeated checks.
+      Detector elapsed;
+      for (uint32_t t = 0; t <= 3000; t += 1000) assert(!elapsed.update(t, motion(t, 0, 2 * sign)));
+      for (unsigned i = 0; i < 10; ++i) assert(!elapsed.update(3000, motion(3000, 0, 2 * sign)));
+      assert(!elapsed.update(3999, motion(3999, 0, 2 * sign)));
+      assert(elapsed.update(4000, motion(4000, 0, 2 * sign)));
+      elapsed.reset();
+      assert(!elapsed.update(5000, motion(5000, 0, 2 * sign)));
 
       // The vertical vario comparison is strictly >0.5, in either direction.
       for (float rate : {.5f, .5001f}) {
         Detector d;
-        for (uint32_t t = 0; t <= 3000; t += 1000) {
+        for (uint32_t t = 0; t <= 4000; t += 1000) {
           Sample s = motion(t, 0, sign);
           s.climbMps = sign * rate;
           d.update(t, s);
@@ -123,10 +158,10 @@ namespace flight_start_test {
       assert(noBaro.update(t, s) == (t == 4000));
     }
     Detector lostAltitude;
-    for (uint32_t t = 0; t <= 5000; t += 1000) {
+    for (uint32_t t = 0; t <= 6000; t += 1000) {
       Sample s = motion(t, 0, 1);
       if (t == 1000) s.altitudeValid = false;
-      assert(lostAltitude.update(t, s) == (t == 5000));
+      assert(lostAltitude.update(t, s) == (t == 6000));
     }
 
     // Invalid speed must invalidate its whole window and restart confirmation.
@@ -150,9 +185,12 @@ namespace flight_start_test {
 
     Detector irregular;
     for (uint32_t t : {0u, 2000u, 4000u}) irregular.update(t, motion(t, 0, 1));
-    assert(irregular.triggered() == Detector::Vertical);
+    assert(irregular.candidates() == Detector::Vertical);
+    assert(irregular.triggered() == Detector::None);
     assert(std::abs(irregular.window().altitudeChangeM - 3) < .001f);
     assert(std::abs(irregular.window().meanClimbMps - 1) < .001f);
+    assert(irregular.update(5000, motion(5000, 0, 1)));
+    assert(irregular.triggered() == Detector::Vertical);
     Detector rollover;
     for (uint32_t t = 0; t <= 4000; t += 1000)
       assert(rollover.update(UINT32_MAX - 1500 + t, motion(t, 6)) == (t == 4000));

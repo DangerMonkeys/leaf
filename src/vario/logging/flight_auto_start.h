@@ -66,6 +66,7 @@ class FlightAutoStart {
     score_ = 0;
     candidates_ = triggered_ = None;
     forwardConfirmation_ = Confirmation();
+    verticalConfirmation_ = Confirmation();
     blendConfirmation_ = Confirmation();
   }
 
@@ -88,6 +89,7 @@ class FlightAutoStart {
     candidates_ = triggered_ = None;
     if (count_ < 2 || uint32_t(nowMs - entries_[0].atMs) < WINDOW_MS) {
       forwardConfirmation_ = Confirmation();
+      verticalConfirmation_ = Confirmation();
       blendConfirmation_ = Confirmation();
       return false;
     }
@@ -120,8 +122,8 @@ class FlightAutoStart {
     if (blendEligible) score_ = std::max(score_, blendScore);
 
     if (forwardConfirmation_.update(nowMs, forwardCandidate)) triggered_ |= Forward;
-    if (verticalCandidate) triggered_ |= Vertical;
     const int8_t direction = window_.altitudeChangeM > 0 ? 1 : -1;
+    if (verticalConfirmation_.update(nowMs, verticalCandidate, direction)) triggered_ |= Vertical;
     if (blendConfirmation_.update(nowMs, blendCandidate, direction)) triggered_ |= Blended;
     return triggered_ != None;
   }
@@ -219,5 +221,5 @@ class FlightAutoStart {
   Window window_;
   float score_ = 0;
   uint8_t candidates_ = None, triggered_ = None;
-  Confirmation forwardConfirmation_, blendConfirmation_;
+  Confirmation forwardConfirmation_, verticalConfirmation_, blendConfirmation_;
 };
