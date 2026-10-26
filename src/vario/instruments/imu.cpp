@@ -1,5 +1,7 @@
 #include "instruments/imu.h"
 
+#include "instruments/vario_timing.h"
+
 #include "dispatch/message_types.h"
 #include "hardware/Leaf_I2C.h"
 #include "logging/log.h"
@@ -300,14 +302,12 @@ void IMU::on_receive(const MotionUpdate& msg) {
     wake();
     return;
   }
+  // A late sample is not evidence of a broken filter. Preserve the current estimate.
+  if (static_cast<uint32_t>(millis() - msg.t) > vario_timing::SENSOR_FRESH_MS) return;
   if (haveMotionTime_) {
     const int32_t dt = static_cast<int32_t>(msg.t - lastMotionTime_);
     if (dt <= 0) return;
-    if (dt > 250 || gravityVectorMode_ != msg.hasGravity) wake();
-  }
-  if (static_cast<uint32_t>(millis() - msg.t) > 250) {
-    wake();
-    return;
+    if (gravityVectorMode_ != msg.hasGravity) wake();
   }
   if (msg.hasGravity) {
     const double initialBias = flatBiasReference_.initialBias(msg.gx, msg.gy, msg.gz);
@@ -335,8 +335,8 @@ void IMU::on_receive(const MotionUpdate& msg) {
     if (biasLearningAllowed_) haveBiasDisturbance_ = false;
     if (baro.state() != Barometer::State::Ready || !baro.pressureFresh()) {
       motionSampleBaroNotReadyCount_++;
-      kalmanvert_.reset(25.0, true, initialBias);
-      kalmanStartupSamplesRemaining_ = KALMAN_STARTUP_REPORT_SAMPLES;
+      // A temporary pressure outage must not erase velocity or learned bias. The Kalman
+      // timestamp guard handles a genuinely long interval when observations resume.
       return;
     }
     // Each pressure observation is used at most once. Do not make the filter overconfident
@@ -377,6 +377,12 @@ void IMU::on_receive(const MotionUpdate& msg) {
   haveMotionTime_ = true;
 
   if (validAccelVert_) {
+    // As on SFLP, consume each fresh pressure observation once. Reusing a held altitude
+    // during an outage would incorrectly pull an otherwise continuous climb toward zero.
+    if (!baro.pressureFresh() ||
+        (kalmanvert_.initialized() && lastPressureTime_ == baro.lastPressureTime()))
+      return;
+    lastPressureTime_ = baro.lastPressureTime();
     // update kalman filter
     kalmanvert_.update(millis() / 1000.0, baro.altF(), kalmanAccelVert_ * 9.80665f);
     kalmanUpdateSampleCount_++;
@@ -410,7 +416,9 @@ void IMU::wake() {
   haveBiasDisturbance_ = false;
 }
 
-bool IMU::accelValid() { return validAccelTot_ && uint32_t(millis() - lastMotionTime_) <= 250; }
+bool IMU::accelValid() {
+  return validAccelTot_ && uint32_t(millis() - lastMotionTime_) <= vario_timing::SENSOR_FRESH_MS;
+}
 
 float IMU::getAccel() {
   if (!accelValid()) {

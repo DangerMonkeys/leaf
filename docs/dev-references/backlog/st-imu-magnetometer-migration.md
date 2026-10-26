@@ -56,6 +56,47 @@ current evidence. Older ICM boards retain their existing path.
 
 The confirmed component changes are also recorded in `vario/hardware/hardware_changes.md`.
 
+## Scheduling-delay tolerance follow-up (2026-10-26)
+
+The runtime interruption policy now separates a late host poll from a failed sensor:
+
+- Motion and pressure freshness is 500 ms, inclusive. Stale messages are discarded without
+  resetting a healthy estimator; both IMU paths consume each fresh pressure observation once. Output can
+  become unavailable while retaining qualified climb-averaging history.
+- The shared Kalman filter reinitializes only when the update interval exceeds 1.5 seconds.
+  Duplicate/non-increasing timestamps remain ignored. Genuine instrument resets still clear
+  startup qualification and climb history.
+- LSM polling delays no longer power-cycle the sensor. Drain up to 64 FIFO words (about half
+  a second at two words per 60 Hz sample), publishing only the newest complete pair. An
+  excessive/full/overrun FIFO is discarded without restarting SFLP or Kalman; the next poll
+  obtains fresh data. Host polling gaps over 500 ms start a fresh paired-data observation
+  window; repeated overruns during timely polling still trip the existing watchdog.
+- Communication faults, invalid-data rejection, the existing 500 ms paired-data watchdog,
+  two-second retry delay, three-second warm-up and bounded recovery budget remain in place.
+- Covariance storage is shared between the legacy and bias-enabled filters. Commissioning
+  reuses the gyro sums for the later gravity-reference phase. Periodic climb mean/RMS
+  accumulation is removed; normal sensor status/counters and vario diagnostics remain.
+  ESP32 class-layout checks show `KalmanFilterPA` shrinking from 192 to 160 bytes and
+  `LSM6DSV` from 448 to 384 bytes, saving 96 bytes combined. No sample buffers were added.
+
+Focused tests (inside the simulator container):
+
+```sh
+make -C sim VARIANT=leaf_3_2_8 BUILD=/leaf/sim/build328 test-vario-continuity test-lsm6dsv-continuity
+```
+
+The latter compiles both the real LSM host driver and ST register decoder, replacing register
+I/O rather than substituting the sensor driver. It covers bounded backlog draining/discard,
+communication faults, missing/invalid pairs, retry/warm-up and all commissioning phases.
+These tests do not establish physical sensor-fusion behavior or flight performance across
+missing acceleration. The filter still applies the newest acceleration over each elapsed
+update interval.
+
+Verification on 2026-10-26: formatter, `leaf_3_2_6_release` and `leaf_3_2_8_release` builds,
+continuity/bias tests, real-driver register-model tests, g-load and thermal lifecycle tests,
+and the existing unbiased/biased recovery and bias-maneuver replays passed. No Espressif/Leaf
+serial port was connected; no firmware was flashed and physical validation remains outstanding.
+
 ## Confirmed hardware and requirements
 
 | Item | Confirmed detail |

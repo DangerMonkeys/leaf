@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 
+#include "instruments/vario_timing.h"
+
 // Sustained load, independent of the raw IMU value used by auto-stop and self-test.
 // All storage is bounded; diagnostics summarize samples rather than writing at IMU rate.
 class GLoadTracker {
@@ -10,7 +12,7 @@ class GLoadTracker {
   static constexpr float MAX_PLAUSIBLE_G = 14.0f;  // Resultant of three +/-8g axes.
   static constexpr uint8_t AVERAGE_SAMPLES = 10;   // Approximately 0.5s at 20Hz.
   static constexpr uint32_t MAX_SAMPLE_GAP_MS = 500;
-  static constexpr uint32_t FRESH_MS = 250;
+  static constexpr uint32_t FRESH_MS = vario_timing::SENSOR_FRESH_MS;
   static constexpr uint32_t TAKEOFF_IGNORE_MS = 15000;
   static constexpr uint32_t PENDING_BUCKET_MS = 30000;  // Hold back 30-60s.
   static constexpr uint8_t GROUND_SECONDS_TO_LAND = 20;

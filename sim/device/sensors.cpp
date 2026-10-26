@@ -50,7 +50,7 @@ uint32_t ICM20948::fifoResetCount() const { return fifoResetCount_; }
 
 // ---------------------------------------------------------------- AHT20 temperature / humidity
 
-#ifdef USE_LSM6DSV
+#if defined(USE_LSM6DSV) && !defined(LEAF_SIM_REAL_LSM6DSV)
 // SFLP messages are injected by the scenario; electrical self-test requires real hardware.
 void LSM6DSV::init() { wake(); Serial.println("LSM6DSV: emulated gravity-vector messages"); }
 void LSM6DSV::update() { ++updates_; }

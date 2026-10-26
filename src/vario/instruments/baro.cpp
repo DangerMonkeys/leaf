@@ -4,6 +4,8 @@
  */
 #include "instruments/baro.h"
 
+#include "instruments/vario_timing.h"
+
 #include <SD_MMC.h>
 
 #include "diagnostics/diagnostic_logs.h"
@@ -139,7 +141,7 @@ void Barometer::init(void) {
 }
 
 void Barometer::on_receive(const PressureUpdate& msg) {
-  if (uint32_t(millis() - msg.t) > 250 || msg.pressure <= 0) return;
+  if (uint32_t(millis() - msg.t) > vario_timing::SENSOR_FRESH_MS || msg.pressure <= 0) return;
   lastPressureTime_ = msg.t;
   if (state_ == State::Uninitialized) {
     init();
@@ -371,6 +373,10 @@ void Barometer::filterAltitude() {
 
 void Barometer::invalidateClimb() {
   validClimbRateRaw_ = validClimbRateFiltered_ = validClimbRate1SecAverage_ = false;
+  speaker.updateVarioNote(0);
+  // Stale output can be suppressed without losing an already qualified filter's history.
+  // Genuine resets still clear averaging and require normal startup qualification.
+  if (imu.kalmanValid() && imu.startupSamplesCompleted() == imu.startupSamplesRequired()) return;
   climbFilter.reset();
   climb1SecFilter.reset();
   climbDisplayHistory_.fill(0);
@@ -378,7 +384,6 @@ void Barometer::invalidateClimb() {
   climbDisplayBlockSum_ = 0;
   climbRateAverage_ = 0;
   nInitSamplesRemaining_ = CLIMB_AVERAGE_INIT_S * BARO_SAMPLES_PER_SECOND;
-  speaker.updateVarioNote(0);
 }
 
 // Filter ClimbRate
