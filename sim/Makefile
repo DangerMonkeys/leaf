@@ -308,7 +308,15 @@ clean:
 -include $(shell find $(BUILD) -name '*.d' 2>/dev/null)
 
 .PHONY: test-flight-auto-start
-$(BUILD)/flight_auto_start_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/flight_auto_start.cpp
+.PHONY: test-flight-start-window
+$(BUILD)/flight_start_window_test: $(SIM)/tests/flight_start_window.cpp $(SIM)/tests/flight_start_window_checks.h $(ROOT)/src/vario/logging/flight_auto_start.h $(ROOT)/src/vario/logging/flight_start_history.h
+	@mkdir -p $(@D)
+	@$(CXX) -std=c++17 -Wall -Wextra -I$(ROOT)/src/vario -o $@ $(SIM)/tests/flight_start_window.cpp
+
+test-flight-start-window: $(BUILD)/flight_start_window_test
+	@$<
+
+$(BUILD)/flight_auto_start_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/flight_auto_start.cpp $(SIM)/tests/flight_start_window_checks.h
 	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/flight_auto_start.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
 
 test-flight-auto-start: $(BUILD)/flight_auto_start_test

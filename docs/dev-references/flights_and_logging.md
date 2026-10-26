@@ -39,66 +39,97 @@ graph TD
 
 ### Automatic flight start and launch diagnostics
 
-Auto Start uses one exponentially fading motion score, sampled once per second:
+Auto Start evaluates a rolling three-second history while idle. All input channels
+must be valid throughout their required window; the left endpoint is interpolated
+when samples do not land exactly three seconds apart. Speed and signed vertical
+rate use time-weighted averages. Altitude and position use net endpoint departure,
+not accumulated absolute movement.
+
+Any one of these independent paths can start the timer:
+
+| Path | Conditions over the same three-second window | Extra confirmation |
+| --- | --- | --- |
+| Forward | Mean fresh GPS speed ≥2.2352 m/s (5 mph) **and** net GPS displacement ≥5 m | 1 second |
+| Vertical | Net pressure-altitude change magnitude ≥3 m **and** mean vertical-rate magnitude **>0.5 m/s**, agreeing on direction | None |
+| Blended | Corroborated forward and vertical evidence satisfy the nonlinear boundary below | 1 second |
+
+For the blended path:
 
 ```text
-motion = max(speed_mph, 0) / 4.2 + max(climb_mps, 0) / 0.7
-maximum_input = 1 / (1 - exp(-3 / 2.4))
-target = min(motion, maximum_input)
-score = target + (previous_score - target) * exp(-elapsed_seconds / 2.4)
-start when score >= 1
+S = min(mean_speed_mps / 2.2352, net_GPS_displacement_m / 5)
+U = min(abs(net_pressure_altitude_change_m) / 3, abs(mean_vertical_rate_mps) / 0.5)
+qualify when S >= 0.7, U >= 0.5, and S + U*U >= 1
 ```
 
-The three tuning constants are in `src/vario/logging/flight_auto_start.h`: speed scale
-4.2 mph, climb scale 0.7 m/s, and memory 2.4 seconds. The cap requires at least three seconds
-of observations from an empty detector. Stronger signals start sooner; weaker signals reinforce
-each other. Combined motion at or below one never starts a flight by itself. The original eight
-launch patterns are calibration examples rather than separate rules.
+Pressure-altitude change and mean vertical rate must have the same nonzero sign
+before either vertical path receives credit. Ascent and descent behave identically.
+Average signed vertical-rate readings first, then take the magnitude; alternating
+climb/sink readings must not accumulate as positive motion. The blended floors
+require both ≥3.5 mph and ≥3.5 m GPS displacement, plus ≥1.5 m pressure departure
+and ≥0.25 m/s agreeing mean vertical rate. Evidence may saturate at one without
+changing these decisions.
 
-With an empty detector and valid inputs sampled at 1 Hz, the regression calibration is:
+Forward and blended candidates must remain qualified for one further elapsed
+second. A low individual speed reading changes its rolling average rather than
+clearing the history. A failed candidate resets that path's confirmation only;
+changing vertical direction also restarts blended confirmation. The vertical path
+does not require GPS, and the forward path does not require barometric data.
 
-| Input pattern | Detection time |
-| --- | --- |
-| 8 mph | 3 s |
-| 6 or 7 mph for one second, then 5 mph | 5 s |
-| 1.2 or 1.0 m/s climb alone | 3 s |
-| 0.8 m/s climb alone | 5 s |
-| 4 mph plus 0.4 m/s climb | 3 s |
-| 3 mph plus 0.3 m/s climb | 5 s |
+Constants live in `src/vario/logging/flight_auto_start.h`.
+A first sample establishes time, and a gap over two seconds resets the detector
+instead of counting unseen movement. Storage is bounded (32 samples, sufficient
+for the normal 1 Hz check and 250 ms regression sampling). Toggling Auto Start,
+showing a flight summary, and starting/stopping a flight reset the detector.
+These are detector timings; sensor acquisition, filtering and polling add delay.
+A larger departure bubble and auto-stop retuning have not been finalized here;
+existing auto-stop behavior is unchanged.
 
-These are detector timings; sensor acquisition/filter response and polling phase can add delay.
-The fused-sensor simulator regression also checks a vertical launch without GPS within ten seconds.
+Pressure departure uses the fresh **unadjusted pressure altitude** in centimeters
+converted to meters. It is not GPS altitude, QNH-adjusted altitude, or an integral
+of the IMU velocity estimate. Speed and position use the existing usable/fresh GPS
+checks; vario uses the valid fixed one-second average, independently of display
+smoothing. Losing a required channel invalidates that path's window until fresh
+history replaces it. Track recording still waits for GPS, synced time, a ready
+barometer, and a writable SD card after the timer starts.
 
-GPS speed must pass the existing fresh-fix/speed checks. Climb uses a fresh barometer and the
-valid fixed one-second IMU/barometer average, independently of display smoothing. Invalid
-channels contribute nothing; losing both resets the score. Descending adds no climb points.
-A gap over two seconds resets detection instead of treating unknown time as movement.
-Toggling Auto Start resets the score immediately on either edge, even between scheduled checks.
-Showing a flight summary and starting/stopping a flight also reset it.
-Climb alone can start the timer without GPS; track recording still waits for GPS, synced time,
-a ready barometer and a writable SD card.
+While idle, a fixed RAM ring retains thirty one-second diagnostic samples,
+including when Auto Start is disabled. At timer start it freezes until the IGC
+opens, preserving evidence through a delayed GPS acquisition. A manual start
+refreshes the current second before freezing. These are diagnostics, not backfilled
+track fixes or flight time.
 
-While idle, a fixed RAM ring retains thirty one-second samples, including with Auto Start disabled.
-At timer start it freezes until the IGC file opens, so waiting for GPS cannot overwrite the
-launch evidence. It includes the triggering sample and clears at flight stop. A manual start
-refreshes the current second before freezing. These are diagnostic records, not backfilled
-GPS fixes or flight time.
-
-The IGC writer emits manufacturer L records after the normal header/declaration:
+Version 2 manufacturer L records retain the new pressure/position history and
+explicit path decisions:
 
 ```text
-LXLVSTART V=1 CAUSE=AUTO T_MS=42000 N=30
-LXLVSTARTCFG SPEED_MPH=4.20 CLIMB_MPS=0.70 MEMORY_S=2.40 MIN_MS=3000
-LXLVSTARTFIELDS DT_MS V=MPH C=M/S S=SCORE F=1:SPEED,2:CLIMB,4:ON,8:BLOCK
-LXLVSTARTDATA DT_MS=-1000 V=8 C=0.1 S=0.876543 F=07
+LXLVSTART V=2 CAUSE=AUTO T_MS=42000 N=30
+LXLVSTARTCFG WINDOW_MS=3000 GAP_MS=2000 CONFIRM_MS=1000
+LXLVSTARTFORWARD SPEED_MPS=2.23520 DIST_M=5.00
+LXLVSTARTVERT DIST_M=3.00 CLIMB_MPS_GT=0.50 SIGN=AGREE
+LXLVSTARTBLEND S_MIN=0.70 U_MIN=0.50 SCORE=S+U^2 SIGN=AGREE
+LXLVSTARTUNITS V=M/S C=M/S A=M LAT/LON=DEG S=UNCONFIRMED_SCORE
+LXLVSTARTFLAGS F=1:SPEED,2:CLIMB,4:ON,8:BLOCK,16:ALT,32:POS
+LXLVSTARTPATHS Q=CANDIDATE T=TRIGGER 1:FORWARD,2:VERTICAL,4:BLEND
+LXLVSTARTDATA DT_MS=-1000 V=2.3 C=-0.3 S=1.02 F=37
+LXLVSTARTALT DT_MS=-1000 A=638.25
+LXLVSTARTPOS DT_MS=-1000 LAT=37.4620000 LON=-121.8630000
+LXLVSTARTPATH DT_MS=-1000 Q=01 T=00
 ```
 
-Start causes are `AUTO` or `MANUAL`. `T_MS` is timer-start uptime in milliseconds; `DT_MS`
-is the sample offset from that moment. `V` and `C` retain signed sensor readings (`NA` if
-unusable), `S` is the score after evaluation, and hexadecimal `F` contains speed-valid (1),
-climb-valid (2), Auto Start enabled (4), and summary blocking (8) bits. Repeated calls in a
-clock-second replace that second with the latest reading. Offsets work across millis rollover;
-gaps clear stale history rather than presenting it as recent.
+Start causes remain AUTO or MANUAL. T_MS is timer-start uptime; DT_MS is the
+sample offset. V is now **m/s**, whereas version 1 used mph. C remains signed
+m/s. A is unadjusted pressure altitude with centimeter precision; latitude and
+longitude are decimal degrees. Unusable speed/climb are NA; unavailable altitude
+and position omit their corresponding records. F is a hexadecimal validity/state
+mask. Q and T are hexadecimal candidate and confirmed-trigger masks. S is the
+maximum unconfirmed normalized evidence across eligible paths; **S ≥1 alone is
+not a start decision**. Use T for the evaluated result. Manual refreshes do not
+claim an automatic path decision.
+
+Calls within the same clock-second replace that diagnostic entry. Offsets work
+across millis rollover, and gaps clear stale history. Version 1 recordings remain
+historical evidence for the previous fading-score detector and must be interpreted
+with their original units/configuration.
 
 At normal close, an end-cause record precedes the G checksum:
 
@@ -106,14 +137,14 @@ At normal close, an end-cause record precedes the G checksum:
 LXLVEND V=1 CAUSE=AUTO T_MS=123000
 ```
 
-End causes are `AUTO`, `MANUAL`, `POWER_OFF`, or `LOW_BATTERY`. This labels existing
-auto-stop behavior; its thresholds are unchanged. All diagnostic records use the normal IGC
-writer and are included in its checksum. Abrupt power loss cannot write an end record. Flights
-with track saving disabled, or stopped before an IGC file opens, have no IGC diagnostics.
-These temporary records support field tuning.
+End causes are AUTO, MANUAL, POWER_OFF, or LOW_BATTERY. Abrupt power loss cannot
+write an end record. Flights with track saving disabled, or stopped before an IGC
+opens, have no IGC diagnostics. The normal writer includes all diagnostics in its
+checksum.
 
-Run `make -C sim test-flight-auto-start test-thermal-lifecycle` in the usual container for
-calibration, invalid input, lifecycle, delayed-GPS history and IGC start/end-cause checks.
+Run `make -C sim test-flight-start-window test-flight-auto-start test-thermal-lifecycle`
+in the usual container for model boundaries, sign reflection, GPS/barometer
+dropouts, history, real fused-sensor launches and IGC lifecycle checks.
 
 ### What Happens During Each State
 
