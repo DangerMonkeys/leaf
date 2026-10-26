@@ -232,6 +232,10 @@ $(BUILD)/logbook_io_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) 
 test-logbook-io: $(BUILD)/logbook_io_test
 	@cd $(ROOT) && $(BUILD)/logbook_io_test
 
+# Deterministic visual inventory; does not change firmware rendering or require hardware.
+$(BUILD)/sd_dialogs_capture: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/sd_dialogs.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/sd_dialogs.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
 .PHONY: test-usb-serial
 $(BUILD)/usb_serial_test: $(SIM)/tests/usb_serial.cpp $(wildcard $(SIM)/tests/usb_serial_hal/*.h) $(ROOT)/src/vario/system/usb_serial.cpp $(ROOT)/src/vario/system/usb_serial.h $(ROOT)/src/vario/system/usb_state.cpp $(ROOT)/src/vario/system/usb_state.h
 	@mkdir -p $(BUILD)

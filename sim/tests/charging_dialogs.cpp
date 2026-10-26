@@ -7,6 +7,7 @@
 
 #include <array>
 #include <atomic>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <functional>
@@ -17,6 +18,7 @@
 #include "comms/leaf_log_credentials.h"
 #include "comms/leaf_log_sync.h"
 #include "display_capture.h"
+#include "logbook/logbook_io.h"
 #include "power.h"
 #include "runtime.h"
 #include "sim/board.h"
@@ -199,6 +201,8 @@ namespace {
     snapshot("cancel-expired");
     chargingPage_button(Button::CENTER, ButtonEvent::CLICKED, 0);
     chargingPage_button(Button::CENTER, ButtonEvent::CLICKED, 0);
+    assert(leafLogSync.cancelPending());
+    snapshot("opening-usb");
     waitFor([] { return sdcard.hostOwnsMassStorage(); });
     snapshot("cancelled-usb-available");
   }
@@ -303,6 +307,27 @@ namespace {
     snapshot("complete-100-of-100");
   }
 
+  bool capturedRepair = false;
+  int captureRepair(const char* stage) {
+    if (!strcmp(stage, "promote") && !capturedRepair) {
+      snapshot("scanning-repair");
+      capturedRepair = true;
+    }
+    return 0;
+  }
+  void repairDuringScan() {
+    reset("repair", 1);
+    std::ofstream(root + "/logbook/0.json.tmp")
+        << "{\"schema\":\"leaf.logbook.flight\",\"schema_version\":\"v0.1.0\","
+           "\"flight_id\":\"sim-flight\",\"revision\":2,\"complete\":true,"
+           "\"start\":{\"time_valid\":false},\"end\":{\"time_valid\":false},"
+           "\"metrics\":{\"duration_seconds\":1458},\"track\":{\"saved\":true,"
+           "\"format\":\"igc\",\"path\":\"/tracks/0.igc\"}}";
+    logbook_io::setFaultHook(captureRepair);
+    scan();
+    logbook_io::setFaultHook(nullptr);
+    assert(capturedRepair && !std::filesystem::exists(root + "/logbook/0.json.tmp"));
+  }
   void missingCardFooter() {
     reset("footer", 0);
     leafLogSync.prepareForCharging();
@@ -344,6 +369,7 @@ int main(int argc, char** argv) {
   referenceAnimations();
   completionAndOwnership();
   pausedAndFinishDuringConfirmation();
+  repairDuringScan();
   missingCardFooter();
   printf(
       "Charging dialogs passed: exact reference artwork, corrected scan, live input, confirmation, "

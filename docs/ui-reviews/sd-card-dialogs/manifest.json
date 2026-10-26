@@ -1,0 +1,944 @@
+{
+  "source_commit": "c88afbb4",
+  "dimensions": "96x192",
+  "screens": [
+    {
+      "id": "saving/normal",
+      "title": "Saving flight...",
+      "condition": "Actual flightTimer_stop frame immediately before JSON staging is opened.",
+      "renderer": "src/vario/logging/log.cpp:flightTimer_stop",
+      "file": "screenshots/saving/normal.png",
+      "number": 1,
+      "pixel_sha256": "df89a8fbc2e552d55b9e487e84872e701fff6850818f4acf8b44694316f639a9",
+      "file_sha256": "35f079a3f9427d02e45751cadfc7fb019ca89d14c7b16ddd69fa91cb1be29fca"
+    },
+    {
+      "id": "summary/unsynced",
+      "title": "Summary: unknown date/time",
+      "condition": "Completed save without GPS clock synchronization; Date? / Time? are existing placeholders.",
+      "renderer": "src/vario/ui/display/pages/dialogs/page_flight_summary.cpp",
+      "file": "screenshots/summary/unsynced.png",
+      "number": 2,
+      "pixel_sha256": "a857f39e7ceb17325042ffc7356ed7931d192ace82c88b4b1548e9781784acfd",
+      "file_sha256": "db9027c53152e64236f8bab8a67fd3d52df28f7375e1430ae64b53d47e0c0c58"
+    },
+    {
+      "id": "saving/retrying",
+      "title": "Saving flight...",
+      "condition": "Actual flightTimer_stop frame immediately before JSON staging is opened.",
+      "renderer": "src/vario/logging/log.cpp:flightTimer_stop",
+      "file": "screenshots/saving/retrying.png",
+      "number": 3,
+      "pixel_sha256": "df89a8fbc2e552d55b9e487e84872e701fff6850818f4acf8b44694316f639a9",
+      "file_sha256": "35f079a3f9427d02e45751cadfc7fb019ca89d14c7b16ddd69fa91cb1be29fca",
+      "same_pixels_as": 1
+    },
+    {
+      "id": "summary/saved-imperial",
+      "title": "Summary: saved (imperial)",
+      "condition": "Real stop succeeds on its third attempt; the summary has no success/retry notice.",
+      "renderer": "src/vario/ui/display/pages/dialogs/page_flight_summary.cpp",
+      "file": "screenshots/summary/saved-imperial.png",
+      "number": 4,
+      "pixel_sha256": "8a4eb4b47f4855348cd70766846c86f448379fd1db6d347aa4dabb6faae5628d",
+      "file_sha256": "89dc7160ac254aa9c6ca74870dea9a44852af97c7b4eead3697c348dddb80c22"
+    },
+    {
+      "id": "summary/saved-metric",
+      "title": "Summary: saved (metric)",
+      "condition": "Same saved flight in metric units.",
+      "renderer": "src/vario/ui/display/pages/dialogs/page_flight_summary.cpp",
+      "file": "screenshots/summary/saved-metric.png",
+      "number": 5,
+      "pixel_sha256": "a124ca10cd5204613559aaf381242a82ab85a5b683fa15694eed96665a8ac320",
+      "file_sha256": "fccdaf14d783655316739a7b8ae22a75266b0c895655968d7fcfd9e63a5ef7c6"
+    },
+    {
+      "id": "summary/delete-selected",
+      "title": "Summary: Delete selected",
+      "condition": "Existing hold-to-delete affordance.",
+      "renderer": "src/vario/ui/display/pages/dialogs/page_flight_summary.cpp",
+      "file": "screenshots/summary/delete-selected.png",
+      "number": 6,
+      "pixel_sha256": "210b4b35bf6fff78531008933124ae8815e3b0ba051c1ae911026221ede2d941",
+      "file_sha256": "0b66012b941443d6d084f0999bf5a53f4a56d8897b1a5c221ba36c40276b6567"
+    },
+    {
+      "id": "summary/delete-hold",
+      "title": "Summary: delete hold in progress",
+      "condition": "Three of five hold increments.",
+      "renderer": "src/vario/ui/display/pages/dialogs/page_flight_summary.cpp",
+      "file": "screenshots/summary/delete-hold.png",
+      "number": 7,
+      "pixel_sha256": "eee40e1cbcb985ae10a3f0c06b7d593c7926e6cdff6c5a31fe9b8ad91533da79",
+      "file_sha256": "d6ad5e31f609ae68c7eef16cffcd73580d91b89583e62129d57a039dc8500902"
+    },
+    {
+      "id": "summary/delete-failed-quiet",
+      "title": "Summary: deletion failed quietly",
+      "condition": "Injected main-file removal failure. Remaining readable summary stays visible; no cleanup alert.",
+      "renderer": "src/vario/ui/display/pages/dialogs/page_flight_summary.cpp",
+      "file": "screenshots/summary/delete-failed-quiet.png",
+      "number": 8,
+      "pixel_sha256": "210b4b35bf6fff78531008933124ae8815e3b0ba051c1ae911026221ede2d941",
+      "file_sha256": "0b66012b941443d6d084f0999bf5a53f4a56d8897b1a5c221ba36c40276b6567",
+      "same_pixels_as": 6
+    },
+    {
+      "id": "summary/save-failed-imperial",
+      "title": "Summary: terminal save failure",
+      "condition": "All three stop attempts fail. RAM statistics plus Logbook save failed; no acknowledgement.",
+      "renderer": "src/vario/ui/display/pages/dialogs/page_flight_summary.cpp",
+      "file": "screenshots/summary/save-failed-imperial.png",
+      "number": 9,
+      "pixel_sha256": "485d700958c73a4241019dd7094897f65caa568077d608628944f488505fcbc0",
+      "file_sha256": "c04f7981fc834166ce60537e1cab3fd3fc65a0a902e4dd381e69d67685f1574a"
+    },
+    {
+      "id": "summary/save-failed-metric",
+      "title": "Summary: terminal save failure (metric)",
+      "condition": "Same terminal failure with metric units and numeric wind direction.",
+      "renderer": "src/vario/ui/display/pages/dialogs/page_flight_summary.cpp",
+      "file": "screenshots/summary/save-failed-metric.png",
+      "number": 10,
+      "pixel_sha256": "4d1a50f27edce1291a6ee5dfd162e2e29d11ba70c6b2a36d71b0189dd5029419",
+      "file_sha256": "ccb527a2f21e7272422f35c386f7f1aebeb7cba7ee8d0b45d5a682338f55788d"
+    },
+    {
+      "id": "summary/save-failed-card-missing",
+      "title": "Summary: card removed before stop",
+      "condition": "Card removed after the placeholder. Terminal failure retains RAM statistics; no extra missing-card popup.",
+      "renderer": "src/vario/ui/display/pages/dialogs/page_flight_summary.cpp",
+      "file": "screenshots/summary/save-failed-card-missing.png",
+      "number": 11,
+      "pixel_sha256": "03bb6f01546ac4b5ceebdadad545fdd0b50919ef492f28112e9d324d01d25d96",
+      "file_sha256": "aca5d1a10585458570b2d5014023c681e332a57d059807255287767b7abc7134"
+    },
+    {
+      "id": "summary/populated-metrics",
+      "title": "Summary: all optional metrics present",
+      "condition": "Synthetic RAM snapshot with valid g-load and wind. Earlier actual-stop fixtures have no injected IMU samples.",
+      "renderer": "src/vario/ui/display/pages/dialogs/page_flight_summary.cpp",
+      "file": "screenshots/summary/populated-metrics.png",
+      "number": 12,
+      "pixel_sha256": "e17046c346c354e116cd30d0b295cc0b295fbecebc37ec508cc7d956d60327f1",
+      "file_sha256": "c246ccfd9fc81f1a98fe60198e0f8468f2b1df8b514a2c5536557c446845dcb6"
+    },
+    {
+      "id": "saving/failed-shutdown",
+      "title": "Save failure: No track file",
+      "condition": "Actual shutdown notice with no IGC track; JSON save failed. No acknowledgement.",
+      "renderer": "src/vario/logging/log.cpp:flightTimer_stop",
+      "file": "screenshots/saving/failed-shutdown.png",
+      "number": 13,
+      "pixel_sha256": "c8ef36a1dbacc7de8e254ff4528ea95413c30551098c4649fb223f4b8a8569fb",
+      "file_sha256": "49324104c2281b729afe3c77e5b4cd1891c6c0c1c2443c6d1edc702b8657128d"
+    },
+    {
+      "id": "saving/failed-low-battery",
+      "title": "Save failure: No track file",
+      "condition": "Actual shutdown notice with no IGC track; JSON save failed. No acknowledgement.",
+      "renderer": "src/vario/logging/log.cpp:flightTimer_stop",
+      "file": "screenshots/saving/failed-low-battery.png",
+      "number": 14,
+      "pixel_sha256": "c8ef36a1dbacc7de8e254ff4528ea95413c30551098c4649fb223f4b8a8569fb",
+      "file_sha256": "49324104c2281b729afe3c77e5b4cd1891c6c0c1c2443c6d1edc702b8657128d",
+      "same_pixels_as": 13
+    },
+    {
+      "id": "saving/failed-shutdown-with-track",
+      "title": "Save failure: Track unverified",
+      "condition": "Actual shutdown notice with an IGC present; JSON save failed. The track is explicitly unverified.",
+      "renderer": "src/vario/logging/log.cpp:flightTimer_stop",
+      "file": "screenshots/saving/failed-shutdown-with-track.png",
+      "number": 15,
+      "pixel_sha256": "fe52c0b7ced4d63210a72ac33c671c3a64e01168ea53049a8763633dd9187edd",
+      "file_sha256": "255f354e9dc396ad72e3efdb0e174a450327128a120b15bcf6f5b3ad7627eba1"
+    },
+    {
+      "id": "saving/failed-low-battery-with-track",
+      "title": "Save failure: Track unverified",
+      "condition": "Actual shutdown notice with an IGC present; JSON save failed. The track is explicitly unverified.",
+      "renderer": "src/vario/logging/log.cpp:flightTimer_stop",
+      "file": "screenshots/saving/failed-low-battery-with-track.png",
+      "number": 16,
+      "pixel_sha256": "fe52c0b7ced4d63210a72ac33c671c3a64e01168ea53049a8763633dd9187edd",
+      "file_sha256": "255f354e9dc396ad72e3efdb0e174a450327128a120b15bcf6f5b3ad7627eba1",
+      "same_pixels_as": 15
+    },
+    {
+      "id": "logbook/opening",
+      "title": "Opening logbook",
+      "condition": "Nominal opening while the quiet repair scan is pending.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/opening.png",
+      "number": 17,
+      "pixel_sha256": "cd2185847b975e367be69f255e32145a7534a41c8f9659309f3109a425f5bf12",
+      "file_sha256": "7efa573384249f8dccbbb03d887f7028c828e91fc17d0ddfe3340a2166a542df"
+    },
+    {
+      "id": "logbook/normal-imperial",
+      "title": "Logbook: newest of three",
+      "condition": "Three complete readable flights; no status alert.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/normal-imperial.png",
+      "number": 18,
+      "pixel_sha256": "a14bae2af9f615ccd9818b7c58982ea6581621e94f636a8711c6166580043ab3",
+      "file_sha256": "36da74284c3917db12cec6f1d8dd16732ef5e840249770645b27d8efa332c6ea"
+    },
+    {
+      "id": "logbook/normal-metric",
+      "title": "Logbook: metric",
+      "condition": "Same newest entry in metric units.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/normal-metric.png",
+      "number": 19,
+      "pixel_sha256": "0b0d65dcc3a04c397fd5256b52e75aa5591af117eef7c573474c57895f062391",
+      "file_sha256": "d30f3a86e6ef39f9e9f19cdfb4630c25c72b5314c68620ae3896f10624e858ac"
+    },
+    {
+      "id": "logbook/pager-middle",
+      "title": "Logbook: middle entry",
+      "condition": "Both page arrows and 2/3 position.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/pager-middle.png",
+      "number": 20,
+      "pixel_sha256": "2ed1c51caaa7fafdd25db630dfbb9ef05bce498f393794e82503ca5c622f16a3",
+      "file_sha256": "bdb924930e5a05852d7618a03d171a0ad36382fef8372155b930a8d06ba8bc82"
+    },
+    {
+      "id": "logbook/delete-selected",
+      "title": "Logbook: Delete selected",
+      "condition": "Existing hold-to-delete row.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/delete-selected.png",
+      "number": 21,
+      "pixel_sha256": "e10b800c867e047e0d8b89949125563cc5465bca96e022c29488fe362d30ff1d",
+      "file_sha256": "4fc8d9e60ddf5201ac33ebe5ca9b26d0daad258607c064e3b25bdb5b8f7e1747"
+    },
+    {
+      "id": "logbook/delete-hold",
+      "title": "Logbook: delete hold in progress",
+      "condition": "Three of five hold increments.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/delete-hold.png",
+      "number": 22,
+      "pixel_sha256": "d7c4388ccdf95bad6d7d3d3620961127ffcdf093df99a545df6505547dc7b3ed",
+      "file_sha256": "f7e4279e189813aa92c072e4a7d8ed18f1be8c756f1ee9d0860313fbe4e4fa22"
+    },
+    {
+      "id": "logbook/delete-failed-quiet",
+      "title": "Logbook: deletion failed quietly",
+      "condition": "Injected main-file deletion failure; the same available entry remains, with no error message.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/delete-failed-quiet.png",
+      "number": 23,
+      "pixel_sha256": "e10b800c867e047e0d8b89949125563cc5465bca96e022c29488fe362d30ff1d",
+      "file_sha256": "4fc8d9e60ddf5201ac33ebe5ca9b26d0daad258607c064e3b25bdb5b8f7e1747",
+      "same_pixels_as": 21
+    },
+    {
+      "id": "logbook/after-delete",
+      "title": "Logbook: after successful deletion",
+      "condition": "Remaining adjacent flight and updated 1/2 count.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/after-delete.png",
+      "number": 24,
+      "pixel_sha256": "b1c095539fa8f32653dc1ce905791bcb934374b1d653217364e2db68bf92bbf4",
+      "file_sha256": "067b7e6e3d9e8e895f79a07699422534a0c8230c0007408fe239501e47e842e0"
+    },
+    {
+      "id": "logbook/after-last-delete",
+      "title": "Logbook: last flight deleted",
+      "condition": "Normal No flights state; no confirmation popup.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/after-last-delete.png",
+      "number": 25,
+      "pixel_sha256": "6db85f13461432a67bc185484b72a53834143129d049070df1d9ef6c1f3e2159",
+      "file_sha256": "e90bfe384585688402f74d0ba773a37122342819a6875b96c690f5983fe16b8c"
+    },
+    {
+      "id": "logbook/empty",
+      "title": "Logbook: empty",
+      "condition": "No saved flights on a readable card.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/empty.png",
+      "number": 26,
+      "pixel_sha256": "6db85f13461432a67bc185484b72a53834143129d049070df1d9ef6c1f3e2159",
+      "file_sha256": "e90bfe384585688402f74d0ba773a37122342819a6875b96c690f5983fe16b8c",
+      "same_pixels_as": 25
+    },
+    {
+      "id": "logbook/placeholder-only",
+      "title": "Logbook: incomplete placeholder hidden",
+      "condition": "Only an incomplete placeholder survives. It is not listed as a completed flight.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/placeholder-only.png",
+      "number": 27,
+      "pixel_sha256": "6db85f13461432a67bc185484b72a53834143129d049070df1d9ef6c1f3e2159",
+      "file_sha256": "e90bfe384585688402f74d0ba773a37122342819a6875b96c690f5983fe16b8c",
+      "same_pixels_as": 25
+    },
+    {
+      "id": "logbook/unreadable-only",
+      "title": "Logbook: unreadable entry hidden",
+      "condition": "Only malformed JSON, with no recoverable candidate. No per-file parse alert.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/unreadable-only.png",
+      "number": 28,
+      "pixel_sha256": "6db85f13461432a67bc185484b72a53834143129d049070df1d9ef6c1f3e2159",
+      "file_sha256": "e90bfe384585688402f74d0ba773a37122342819a6875b96c690f5983fe16b8c",
+      "same_pixels_as": 25
+    },
+    {
+      "id": "logbook/mixed-records-filtered",
+      "title": "Logbook: only available flights counted",
+      "condition": "One good flight, one malformed record, one incomplete placeholder; pager is 1/1.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/mixed-records-filtered.png",
+      "number": 29,
+      "pixel_sha256": "248670edf786a88f6e86c23ff2bbdde58987aa5c78512979654cd9443b03fa5f",
+      "file_sha256": "070658171870f63e33ee8590cdf495acd6be14ef84c99aad891ee868a59b8d16"
+    },
+    {
+      "id": "logbook/repair-pending",
+      "title": "Logbook: repair pending",
+      "condition": "Same Opening logbook message while a completed temporary awaits repair.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/repair-pending.png",
+      "number": 30,
+      "pixel_sha256": "cd2185847b975e367be69f255e32145a7534a41c8f9659309f3109a425f5bf12",
+      "file_sha256": "7efa573384249f8dccbbb03d887f7028c828e91fc17d0ddfe3340a2166a542df",
+      "same_pixels_as": 17
+    },
+    {
+      "id": "logbook/after-repair",
+      "title": "Logbook: recovered completed flight",
+      "condition": "Completed temporary promoted, then displayed normally. No repair-success message.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/after-repair.png",
+      "number": 31,
+      "pixel_sha256": "b045733c809360659a19fd5fb346ea8f9feddce79f16118b78e33b6a8c0cf6f9",
+      "file_sha256": "7dc94dfd10d48af16d3f177b923229777e13f61f0e5d78490190b35731b2a6a3"
+    },
+    {
+      "id": "logbook/repair-failed-quiet",
+      "title": "Logbook: repair failed quietly",
+      "condition": "Promotion fails once. The older available flight is shown as 1/1; no Repair deferred alert.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/repair-failed-quiet.png",
+      "number": 32,
+      "pixel_sha256": "248670edf786a88f6e86c23ff2bbdde58987aa5c78512979654cd9443b03fa5f",
+      "file_sha256": "070658171870f63e33ee8590cdf495acd6be14ef84c99aad891ee868a59b8d16",
+      "same_pixels_as": 29
+    },
+    {
+      "id": "logbook/backup-recovered",
+      "title": "Logbook: recovered backup",
+      "condition": "Backup-only completed record promoted and shown normally.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/backup-recovered.png",
+      "number": 33,
+      "pixel_sha256": "248670edf786a88f6e86c23ff2bbdde58987aa5c78512979654cd9443b03fa5f",
+      "file_sha256": "070658171870f63e33ee8590cdf495acd6be14ef84c99aad891ee868a59b8d16",
+      "same_pixels_as": 29
+    },
+    {
+      "id": "logbook/conflict-quiet",
+      "title": "Logbook: unresolved candidate conflict",
+      "condition": "Equal-revision completed candidates differ. Readable main stays viewable; upload is blocked; no alert.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/conflict-quiet.png",
+      "number": 34,
+      "pixel_sha256": "248670edf786a88f6e86c23ff2bbdde58987aa5c78512979654cd9443b03fa5f",
+      "file_sha256": "070658171870f63e33ee8590cdf495acd6be14ef84c99aad891ee868a59b8d16",
+      "same_pixels_as": 29
+    },
+    {
+      "id": "logbook/leaf-log-not-uploaded",
+      "title": "Logbook: Leaf Log not-uploaded",
+      "condition": "Existing Leaf Log status icon in the header; no new message or dialog.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/leaf-log-not-uploaded.png",
+      "number": 35,
+      "pixel_sha256": "248670edf786a88f6e86c23ff2bbdde58987aa5c78512979654cd9443b03fa5f",
+      "file_sha256": "070658171870f63e33ee8590cdf495acd6be14ef84c99aad891ee868a59b8d16",
+      "same_pixels_as": 29
+    },
+    {
+      "id": "logbook/leaf-log-uploaded",
+      "title": "Logbook: Leaf Log uploaded",
+      "condition": "Existing Leaf Log status icon in the header; no new message or dialog.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/leaf-log-uploaded.png",
+      "number": 36,
+      "pixel_sha256": "4b5c862c11afd9a67e9e3e18cdc65a7015dad19e940593bc699d36b15d22a18e",
+      "file_sha256": "325b1bd366fcb079be1359092e11dfb2c2909d2141f2382bb684b5250c0bce7f"
+    },
+    {
+      "id": "logbook/leaf-log-rejected",
+      "title": "Logbook: Leaf Log rejected",
+      "condition": "Existing Leaf Log status icon in the header; no new message or dialog.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/leaf-log-rejected.png",
+      "number": 37,
+      "pixel_sha256": "eebeb71af0ccdbc80be77600b5039898609c700cfc634a56959e938eab6c293d",
+      "file_sha256": "5370e0f324f6ccdb33b5602a8825ef6d25b2edc7ffb2f0d7442b1ef2b8e18082"
+    },
+    {
+      "id": "logbook/legacy-missing-data",
+      "title": "Logbook: legacy / missing optional data",
+      "condition": "Legacy entry without revision metadata, clock, g-load or wind. Existing Date?/Time?/-- placeholders.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/legacy-missing-data.png",
+      "number": 38,
+      "pixel_sha256": "e537f1a2242a5fe0caaeae3a2a21b50161bfec783005f2e5eb7bf8a87c942e4d",
+      "file_sha256": "2d0f0f4db391d7fa8f86b1fce4fb31a94e3a5ab42d226dfdb331bda9bd5be5d4"
+    },
+    {
+      "id": "logbook/long-duration-values",
+      "title": "Logbook: long duration / wider values",
+      "condition": "12-hour flight, five-digit altitude in feet and longer distance/climb values; unchanged firmware formatting.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/long-duration-values.png",
+      "number": 39,
+      "pixel_sha256": "6ef77dae5d8009b8c199b5a7416ecb034dd248b55e66fed11170952995199331",
+      "file_sha256": "1ae7c4ba3b33c88d6640fce65e1649af38e3dd878c52f1407ddcc1246f403bd5"
+    },
+    {
+      "id": "logbook/card-unavailable",
+      "title": "Logbook: storage unavailable",
+      "condition": "Absent SD card; Unavailable rather than No flights.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/card-unavailable.png",
+      "number": 40,
+      "pixel_sha256": "a8b72ee357c8faeda4d2a051e3cfc10a39376b2662e8415ff3cfb5b25ed67c77",
+      "file_sha256": "8403cc11154959ee184545c1dc5cda8543f46ad0043d85b26c66945388a7cf82"
+    },
+    {
+      "id": "context/logging-menu",
+      "title": "Logging settings",
+      "condition": "Existing Save IGC / AutoStart / AutoStop settings.",
+      "renderer": "src/vario/ui/display/pages/menu/page_menu_log.cpp",
+      "file": "screenshots/context/logging-menu.png",
+      "number": 41,
+      "pixel_sha256": "7da2ac79d6558e5ddc824fd23c0d6d023529815d0e05b70810b456b397a5b7f0",
+      "file_sha256": "da3ea73708ba6273f234e5babbbaf64c2cd83e2ca5d52996bb19f9071bed91d8"
+    },
+    {
+      "id": "context/main-menu",
+      "title": "Main menu / Logbook entry",
+      "condition": "Existing entry point for on-device logbook review.",
+      "renderer": "src/vario/ui/display/pages/primary/page_menu_main.cpp",
+      "file": "screenshots/context/main-menu.png",
+      "number": 42,
+      "pixel_sha256": "44b09ee88e1d784bba02653a5e028e789c1114550a1aedd0fafb1e30e75fe604",
+      "file_sha256": "17aaada6a1de8a1bae340788416643a7d6d8434f62539c86d7cf10cae2a819d9"
+    },
+    {
+      "id": "charging/scanning-0",
+      "title": "Leaf Log: Scanning — frame 0",
+      "condition": "Existing scan animation; quiet eligibility repair happens behind this display.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/scanning-0.png",
+      "number": 43,
+      "pixel_sha256": "a37308ccb0ed7624c06d753abc1b82d800231ff3ecbc42449779028fd4e2af95",
+      "file_sha256": "033b1cfc003bfe89ea431df5b9421b7057971000fb1d24d4ff2755833e44d847"
+    },
+    {
+      "id": "charging/scanning-1",
+      "title": "Leaf Log: Scanning — frame 1",
+      "condition": "Existing scan animation; quiet eligibility repair happens behind this display.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/scanning-1.png",
+      "number": 44,
+      "pixel_sha256": "4060d4ce99cef05054901882c1b1486d71e696fcffa21475d4a2f8766e734df0",
+      "file_sha256": "240e00adee16a97bb1ce20bbde142a012df52a0fd0628b0e4b712c1fbf959cc9"
+    },
+    {
+      "id": "charging/scanning-2",
+      "title": "Leaf Log: Scanning — frame 2",
+      "condition": "Existing scan animation; quiet eligibility repair happens behind this display.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/scanning-2.png",
+      "number": 45,
+      "pixel_sha256": "ddfd645696e80c565fd0f72651e1d8388663e13664ab4f2631d1941b58e350d7",
+      "file_sha256": "3a40e1923f944df3ec72cde228a6220506fdfe6699598739686c0728973230b1"
+    },
+    {
+      "id": "charging/scanning-3",
+      "title": "Leaf Log: Scanning — frame 3",
+      "condition": "Existing scan animation; quiet eligibility repair happens behind this display.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/scanning-3.png",
+      "number": 46,
+      "pixel_sha256": "a44f6a5c364218a2c73ffe05bb1e68a6727fcbf7f9d5d4dd3ae7b4073934b187",
+      "file_sha256": "78748bb99ca66009a6dad42e80af964b39b3bb3a00f65b9c2cd353fa7484241b"
+    },
+    {
+      "id": "charging/scanning-4",
+      "title": "Leaf Log: Scanning — frame 4",
+      "condition": "Existing scan animation; quiet eligibility repair happens behind this display.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/scanning-4.png",
+      "number": 47,
+      "pixel_sha256": "c549f20c2359f99b51be1b6b1ddd856355cb044f0fdc78b76cb6eb119390a06e",
+      "file_sha256": "24307292969113dbfdde01d8b3e79733d438e6f827ae92e665ff20cc973baede"
+    },
+    {
+      "id": "charging/scanning-5",
+      "title": "Leaf Log: Scanning — frame 5",
+      "condition": "Existing scan animation; quiet eligibility repair happens behind this display.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/scanning-5.png",
+      "number": 48,
+      "pixel_sha256": "490108a23d5ee49dcfa50192c0a4912ad05838ecd6e5f76e00c305d5749a12cf",
+      "file_sha256": "440aab543c89edbf98973a8692fc28769095e2be69b05d9d72c1355cb72c582b"
+    },
+    {
+      "id": "charging/scanning-6",
+      "title": "Leaf Log: Scanning — frame 6",
+      "condition": "Existing scan animation; quiet eligibility repair happens behind this display.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/scanning-6.png",
+      "number": 49,
+      "pixel_sha256": "e63527a613ccf589ebbd9bb4c19fd7ba20a5f34a9a5ef138a103dd162f1e6f0e",
+      "file_sha256": "642fecc443f5871f030e813c78375511212c732ddbaf57d04a6c349293c36e16"
+    },
+    {
+      "id": "charging/wifi-0",
+      "title": "Leaf Log: Wi-Fi — frame 0",
+      "condition": "Existing Wi-Fi connection animation.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/wifi-0.png",
+      "number": 50,
+      "pixel_sha256": "7a5396ca3ab49e4b11156e99d0b5c5973d466dbe3b57db9ee99fa2944220820e",
+      "file_sha256": "27ed119625cde01e1cd916cf66ca6f101279c8780d882cfbb5404c9735872987"
+    },
+    {
+      "id": "charging/wifi-1",
+      "title": "Leaf Log: Wi-Fi — frame 1",
+      "condition": "Existing Wi-Fi connection animation.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/wifi-1.png",
+      "number": 51,
+      "pixel_sha256": "fcca9da5998be99bcb2ee7bf41274e23503d5ebc636670ed44b3393cd9006e97",
+      "file_sha256": "9f4efe1c2114e1fe22712c2cef0f06e9b8d5aacb4e5a6509d29c546dcade273c"
+    },
+    {
+      "id": "charging/wifi-2",
+      "title": "Leaf Log: Wi-Fi — frame 2",
+      "condition": "Existing Wi-Fi connection animation.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/wifi-2.png",
+      "number": 52,
+      "pixel_sha256": "af8da3ae35b23552369bf199c9697a1e468bd080ceaa8714d5896751b1f59ee3",
+      "file_sha256": "de29373403c481a5e8141740c2f8a518381cfc970ff798026b499ccf42bae242"
+    },
+    {
+      "id": "charging/wifi-3",
+      "title": "Leaf Log: Wi-Fi — frame 3",
+      "condition": "Existing Wi-Fi connection animation.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/wifi-3.png",
+      "number": 53,
+      "pixel_sha256": "8f079dfbf50079ac4cabfaf419851392123a471283fdcaba8cf9dbd18a46abfe",
+      "file_sha256": "a0be76ba3930fc90f3df07f01a8985faa25e4f37d16ddfbc23f1ad25b061ffaa"
+    },
+    {
+      "id": "charging/connecting-0",
+      "title": "Leaf Log: Connecting — frame 0",
+      "condition": "Existing waiting-for-time/server connection animation.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/connecting-0.png",
+      "number": 54,
+      "pixel_sha256": "853b780745486ee0d5319f82bc67a0ca9cab40130bd6ded6e912242301351ff0",
+      "file_sha256": "1603e701449ae712a477d35214864cf2c02ce14edd3ed9a50da20beddbf6a05f"
+    },
+    {
+      "id": "charging/connecting-1",
+      "title": "Leaf Log: Connecting — frame 1",
+      "condition": "Existing waiting-for-time/server connection animation.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/connecting-1.png",
+      "number": 55,
+      "pixel_sha256": "ad805af41bfb0890884af5365f48884bf2f12c9863590088da65c050e2f77ba6",
+      "file_sha256": "b747f4950d8dd3539e1c5929bc91e489f445112c79be073e13a3db59328fbdad"
+    },
+    {
+      "id": "charging/connecting-2",
+      "title": "Leaf Log: Connecting — frame 2",
+      "condition": "Existing waiting-for-time/server connection animation.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/connecting-2.png",
+      "number": 56,
+      "pixel_sha256": "fa46e5592569945aea76b3a9855db6d3e052702fb5e8cb9665cfb30696078f1e",
+      "file_sha256": "0698f87962cf81a4f1d95f5c309e5d5372a888ab3aaa2bf06c00967fb7c871ed"
+    },
+    {
+      "id": "charging/connecting-3",
+      "title": "Leaf Log: Connecting — frame 3",
+      "condition": "Existing waiting-for-time/server connection animation.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/connecting-3.png",
+      "number": 57,
+      "pixel_sha256": "ee5181ca3306a646ab06a63940bd52786f2a30361eee284f1640604787bb5102",
+      "file_sha256": "e224447c9b43326ebc249156ce866d6b75b235bff79ea6581b355d671fa37352"
+    },
+    {
+      "id": "charging/uploading-0",
+      "title": "Leaf Log: Uploading — frame 0",
+      "condition": "Existing upload animation and dynamic progress count.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/uploading-0.png",
+      "number": 58,
+      "pixel_sha256": "dd1b38bc963021b7fc7463eea1668e7e9b899dc518b336d44f867805bb5c7638",
+      "file_sha256": "fcd9e768deaae4eb99a0f84da27dadc89ca7bf8b62853e9a22013a28f48ef97f"
+    },
+    {
+      "id": "charging/uploading-1",
+      "title": "Leaf Log: Uploading — frame 1",
+      "condition": "Existing upload animation and dynamic progress count.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/uploading-1.png",
+      "number": 59,
+      "pixel_sha256": "df85ee8a9342792069b87564ea058b67dc7755cf3b7da7e268f4d0e613cbd911",
+      "file_sha256": "511be66990b16b4427e895c224f61263e5ee0cb71a426d8e32c7ba944bf625ca"
+    },
+    {
+      "id": "charging/uploading-2",
+      "title": "Leaf Log: Uploading — frame 2",
+      "condition": "Existing upload animation and dynamic progress count.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/uploading-2.png",
+      "number": 60,
+      "pixel_sha256": "3b161a421d9cf77c8ff61b4a9531c438c8e786100f633117d4e964fe3ebe57a3",
+      "file_sha256": "a74a636806dee8dbf79ffb1663aee0ebf40a8ac775f330824efa3da33dbb90f7"
+    },
+    {
+      "id": "charging/uploading-3",
+      "title": "Leaf Log: Uploading — frame 3",
+      "condition": "Existing upload animation and dynamic progress count.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/uploading-3.png",
+      "number": 61,
+      "pixel_sha256": "b5408a7ac1b5563c98ebfb1c6071d4e2522e6eb9699c5437f7b40117085d71fc",
+      "file_sha256": "59692dfdef43e05e7280208b42dc02dd2624b3683a53c29ab71e5c3e36d8d1c4"
+    },
+    {
+      "id": "charging/uploading-4",
+      "title": "Leaf Log: Uploading — frame 4",
+      "condition": "Existing upload animation and dynamic progress count.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/uploading-4.png",
+      "number": 62,
+      "pixel_sha256": "56034d063fe9d019ccb2c1da29eea8f6e4438df7484c087d2eb49468cfecc37b",
+      "file_sha256": "81b08235864b97e5840397b162e7f44e3e897673faf694e893001e3de573d43a"
+    },
+    {
+      "id": "charging/uploading-5",
+      "title": "Leaf Log: Uploading — frame 5",
+      "condition": "Existing upload animation and dynamic progress count.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/uploading-5.png",
+      "number": 63,
+      "pixel_sha256": "68155854844783f9528478562549b52841c9d3bfccd594ca71869375265b6276",
+      "file_sha256": "9c425442e5993b0923b04eebba50bd7996d9310e9d9b440d52aaeef357330a59"
+    },
+    {
+      "id": "charging/uploading-6",
+      "title": "Leaf Log: Uploading — frame 6",
+      "condition": "Existing upload animation and dynamic progress count.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/uploading-6.png",
+      "number": 64,
+      "pixel_sha256": "8e7ded084283135f21770feca415522ef1df8d868ed8e13305d6e830c9c7986a",
+      "file_sha256": "815ee85c089b2cd2f00ce5078bb42faa04e6fdfb3c9c34ccb990a76d567ec116"
+    },
+    {
+      "id": "charging/uploading-7",
+      "title": "Leaf Log: Uploading — frame 7",
+      "condition": "Existing upload animation and dynamic progress count.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/uploading-7.png",
+      "number": 65,
+      "pixel_sha256": "9be4caa82eb190951bd079c65c146f7e473421ac75efa3c24c3e64efeb8df25f",
+      "file_sha256": "94d63fe227d1608e974bbbf56469e0870c22096f7149e3d04a0aad765b71d006"
+    },
+    {
+      "id": "charging/uploading-8",
+      "title": "Leaf Log: Uploading — frame 8",
+      "condition": "Existing upload animation and dynamic progress count.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/uploading-8.png",
+      "number": 66,
+      "pixel_sha256": "aae174260646afbd6e43d34417be3d41f9794c862935ffef2e83b9fe1985635c",
+      "file_sha256": "330390a0f5a5816e9c84150a63f59ef58a802a405cf7adde7d8059159a23e328"
+    },
+    {
+      "id": "charging/uploading-9",
+      "title": "Leaf Log: Uploading — frame 9",
+      "condition": "Existing upload animation and dynamic progress count.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/uploading-9.png",
+      "number": 67,
+      "pixel_sha256": "fb6866e63d31267a2c351383313b9caf271d1257187a33cd5740fd4ba2f494fc",
+      "file_sha256": "052b7b24becfe7d2fb0a0d0b79204f94eecc664805835e5274deeb46bb55a9cc"
+    },
+    {
+      "id": "charging/uploading-10",
+      "title": "Leaf Log: Uploading — frame 10",
+      "condition": "Existing upload animation and dynamic progress count.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/uploading-10.png",
+      "number": 68,
+      "pixel_sha256": "29b72171858236d0a6ab56544c70618313c09dbc2de83f378d185f0b9ce5c118",
+      "file_sha256": "06d7a0cacddf07fa3191bf03fa9c6b42507624c11d312f95fa779ba924203f19"
+    },
+    {
+      "id": "charging/paused-0",
+      "title": "Leaf Log: Paused — frame 0",
+      "condition": "Existing upload retry animation; no new per-file repair warning.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/paused-0.png",
+      "number": 69,
+      "pixel_sha256": "8ed5d941ae3ed93dda054ad278bdcb913dfefb5609ac815cfdca28e109056a4b",
+      "file_sha256": "6d28760d03c388f1d9a53fb2758017a81b38ef646f303f623b510df215321487"
+    },
+    {
+      "id": "charging/paused-1",
+      "title": "Leaf Log: Paused — frame 1",
+      "condition": "Existing upload retry animation; no new per-file repair warning.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/paused-1.png",
+      "number": 70,
+      "pixel_sha256": "b14ac38accead719c81273875d3c38bf89783dddb74e5b11da98d7aaa1c2c4c3",
+      "file_sha256": "684974edae4c9a4f05430cef86aafa841dc70bb6bd2b687b1716d23c21291138"
+    },
+    {
+      "id": "charging/paused-2",
+      "title": "Leaf Log: Paused — frame 2",
+      "condition": "Existing upload retry animation; no new per-file repair warning.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/paused-2.png",
+      "number": 71,
+      "pixel_sha256": "7342ed60614b661ed9311bf591a365c600939ae8cb54499f0298c50829e8fdb3",
+      "file_sha256": "c64078f1620dfa89ebc1da3b177c43efe191cd28f1e041116220c34b1eb3746d"
+    },
+    {
+      "id": "charging/paused-3",
+      "title": "Leaf Log: Paused — frame 3",
+      "condition": "Existing upload retry animation; no new per-file repair warning.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/paused-3.png",
+      "number": 72,
+      "pixel_sha256": "cc430165b3d557590f80a325861612e83614606c4f47fff7b93fb3d11190c9cb",
+      "file_sha256": "e1beeec5a39c804ae7da8d52bf4fa9c327d0106b29e1104dde957d9380235795"
+    },
+    {
+      "id": "charging/scanning-repair",
+      "title": "Leaf Log: scanning during repair",
+      "condition": "Captured inside the actual candidate-promotion callback during upload eligibility scanning; no repair-specific alert.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/scanning-repair.png",
+      "number": 73,
+      "pixel_sha256": "a37308ccb0ed7624c06d753abc1b82d800231ff3ecbc42449779028fd4e2af95",
+      "file_sha256": "033b1cfc003bfe89ea431df5b9421b7057971000fb1d24d4ff2755833e44d847",
+      "same_pixels_as": 43
+    },
+    {
+      "id": "charging/cancel-confirmation",
+      "title": "Leaf Log: cancel confirmation",
+      "condition": "First center tap during upload; existing second-tap confirmation.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/cancel-confirmation.png",
+      "number": 74,
+      "pixel_sha256": "ed3fc6d478769e00b2b2951a3ee1f9e71d492e949b04f19ea8db0369ab41a38b",
+      "file_sha256": "51692feefcd6099bd63d3f57a3c3398bff4ea90b4e915363691539106d2c10f4"
+    },
+    {
+      "id": "charging/cancel-expired",
+      "title": "Leaf Log: confirmation expired",
+      "condition": "Five seconds without a second tap returns to the upload animation.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/cancel-expired.png",
+      "number": 75,
+      "pixel_sha256": "29b72171858236d0a6ab56544c70618313c09dbc2de83f378d185f0b9ce5c118",
+      "file_sha256": "06d7a0cacddf07fa3191bf03fa9c6b42507624c11d312f95fa779ba924203f19",
+      "same_pixels_as": 68
+    },
+    {
+      "id": "charging/cancelled-usb-available",
+      "title": "USB Drive Available: cancelled upload",
+      "condition": "Cancellation completes and the card is handed to USB.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/cancelled-usb-available.png",
+      "number": 76,
+      "pixel_sha256": "a18777785828feb123644b3eaefc7d8b98c564ddc1d613c5762c51b888121bcc",
+      "file_sha256": "9dde7d94d37cdaf9744b46844916b94e39c54eab7b7f6601baa5886c348610d2"
+    },
+    {
+      "id": "charging/opening-usb",
+      "title": "Opening USB Drive",
+      "condition": "Transient cancellation state before the upload worker has closed and USB owns the card.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/opening-usb.png",
+      "number": 77,
+      "pixel_sha256": "fca681a3db2dfffcdf63599907d6aa2a3fe9aac1cd353b506facab1cd59b7a98",
+      "file_sha256": "707e2b165f4670808196cbb3c9e6e239cae64aade7a0ab2fa6fcbd826b3c42a4"
+    },
+    {
+      "id": "charging/complete-9-of-9",
+      "title": "Leaf Log: complete 9/9",
+      "condition": "Existing five-second completion notice before USB handoff.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/complete-9-of-9.png",
+      "number": 78,
+      "pixel_sha256": "a464ff43e2dbc13582550a75a67744d1542c834a8163ca8b8d3b15ef5f387660",
+      "file_sha256": "be13722a8b57674e96705abb0c23118d6f1e70c2b39ab3f166df442073b3ceb5"
+    },
+    {
+      "id": "charging/complete-100-of-100",
+      "title": "Leaf Log: complete 100/100",
+      "condition": "Three-digit completion counts.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/complete-100-of-100.png",
+      "number": 79,
+      "pixel_sha256": "fc93203eb176a2b1fab5f83fe2c243282df83cebd52a15021e2edd9f4ea843f9",
+      "file_sha256": "1f5b1470579a8fdba8cf4ce55121280214b3db8b5eed3decb4a649c3c6e3304f"
+    },
+    {
+      "id": "charging/finished-during-confirmation",
+      "title": "Leaf Log: finished during confirmation",
+      "condition": "Upload completes while the cancel confirmation is visible.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/finished-during-confirmation.png",
+      "number": 80,
+      "pixel_sha256": "ff4e32670d27e54e97e954dfb6ccaf10c61b31fddf168f888f4435ccc9b870d6",
+      "file_sha256": "310675435569f3e637c592c700db213a01fcce767d91750f978ecf7e2f7d85c8"
+    },
+    {
+      "id": "charging/usb-available",
+      "title": "USB Drive Available",
+      "condition": "Nominal mass-storage handoff after completed uploads.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/usb-available.png",
+      "number": 81,
+      "pixel_sha256": "a18777785828feb123644b3eaefc7d8b98c564ddc1d613c5762c51b888121bcc",
+      "file_sha256": "9dde7d94d37cdaf9744b46844916b94e39c54eab7b7f6601baa5886c348610d2",
+      "same_pixels_as": 76
+    },
+    {
+      "id": "charging/usb-available-after-one-hour",
+      "title": "USB Drive Available: one hour later",
+      "condition": "Persistent existing USB availability state.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/usb-available-after-one-hour.png",
+      "number": 82,
+      "pixel_sha256": "a18777785828feb123644b3eaefc7d8b98c564ddc1d613c5762c51b888121bcc",
+      "file_sha256": "9dde7d94d37cdaf9744b46844916b94e39c54eab7b7f6601baa5886c348610d2",
+      "same_pixels_as": 76
+    },
+    {
+      "id": "charging/usb-ejected",
+      "title": "USB drive ejected",
+      "condition": "Ejected card is retained by firmware; the USB availability dialog disappears.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/usb-ejected.png",
+      "number": 83,
+      "pixel_sha256": "7c88b00afab87bd12406b9c360b13413dcb4ae9dbb6bb599a3d785942732fa2e",
+      "file_sha256": "4120d026227c4fc587e286b97d0c1dbc833495df41b81e526b8ab90f4bac0d58"
+    },
+    {
+      "id": "charging/closing-usb",
+      "title": "Closing USB Drive",
+      "condition": "Power-on waits for USB ownership to be released.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/closing-usb.png",
+      "number": 84,
+      "pixel_sha256": "ad147ba5fabf2b9c60cd5d9e3dc94a70f437b9e9456120884551c36bd2f84db5",
+      "file_sha256": "686ea527e57e91154611fb07893edeb3d258eed5171d459c844b4e8f66f6c0c7"
+    },
+    {
+      "id": "charging/turning-on",
+      "title": "Turning On",
+      "condition": "Power-on from charging mode.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/turning-on.png",
+      "number": 85,
+      "pixel_sha256": "69d10b24e5310c354cc98ecc3811edb4393d79a732e10daddd110da751ea9796",
+      "file_sha256": "b5c779c15f65923833811b337c54c5b81815e98d45969f13a57104c835c53d02"
+    },
+    {
+      "id": "charging/turning-on-during-upload",
+      "title": "Turning On: upload interrupted",
+      "condition": "Existing pending-power-on state while an upload worker closes.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/turning-on-during-upload.png",
+      "number": 86,
+      "pixel_sha256": "69d10b24e5310c354cc98ecc3811edb4393d79a732e10daddd110da751ea9796",
+      "file_sha256": "b5c779c15f65923833811b337c54c5b81815e98d45969f13a57104c835c53d02",
+      "same_pixels_as": 85
+    },
+    {
+      "id": "charging/usb-unavailable",
+      "title": "USB Drive Not Ready",
+      "condition": "Mass-storage presentation failed; existing whole-card status.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/usb-unavailable.png",
+      "number": 87,
+      "pixel_sha256": "2a80d70bc77c714a6fff732c4770a222a41c48aee67d989dedae152dee036b65",
+      "file_sha256": "3f8abf37107b04b08d7b2b9062ee9501b86285f6b3c44df96c3a693abcdba404"
+    },
+    {
+      "id": "charging/paused-after-30-seconds",
+      "title": "Leaf Log: paused after 30 seconds",
+      "condition": "Existing retry/paused screen persists rather than silently handing off the card.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/paused-after-30-seconds.png",
+      "number": 88,
+      "pixel_sha256": "8ed5d941ae3ed93dda054ad278bdcb913dfefb5609ac815cfdca28e109056a4b",
+      "file_sha256": "6d28760d03c388f1d9a53fb2758017a81b38ef646f303f623b510df215321487",
+      "same_pixels_as": 69
+    },
+    {
+      "id": "charging/version-footer",
+      "title": "Charging: simulator version footer",
+      "condition": "Present SD card; this simulator uses its unchanged build.script.error placeholder, rather than a release version. The placeholder is wider than normal firmware versions.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/version-footer.png",
+      "number": 89,
+      "pixel_sha256": "7c88b00afab87bd12406b9c360b13413dcb4ae9dbb6bb599a3d785942732fa2e",
+      "file_sha256": "4120d026227c4fc587e286b97d0c1dbc833495df41b81e526b8ab90f4bac0d58",
+      "same_pixels_as": 83
+    },
+    {
+      "id": "charging/no-sd-card",
+      "title": "Charging: NO SD CARD!",
+      "condition": "Existing missing-card warning replaces the footer.",
+      "renderer": "src/vario/ui/display/pages/primary/page_charging.cpp",
+      "file": "screenshots/charging/no-sd-card.png",
+      "number": 90,
+      "pixel_sha256": "a394c9bc9195efc4f73fd8a76d458e4426e3069a8f2a807037d8598af80c81ee",
+      "file_sha256": "91233456c347169693845953bfe56d5066e1d4c7bb231c2f239434c85b1d2711"
+    }
+  ],
+  "capture_count": 90,
+  "unique_frames": 70,
+  "notes": [
+    "Actual 96×192 u8g2 firmware frames; no mockups or visual changes. Synthetic data only; user SD evidence was not used.",
+    "c88afbb4 is the firmware source commit. Capture tooling and this gallery are a separate follow-up commit.",
+    "Saving and shutdown-failure messages were captured inside the real stop path, before staging open and during the failure-notice delay respectively.",
+    "Charging uses the existing charging_dialogs regression harness and deterministic transport outcomes; it checks the reference animation artwork.",
+    "The charging footer retains the simulator's 0.0.0+build.script.error placeholder. It is not an SD error or a release build version; no footer pixels were edited.",
+    "Removed Not fully deleted messages are absent in the current firmware. Quiet partial-delete captures demonstrate the replacement behavior.",
+    "No repair-success, repair-deferred, or cleanup-failure dialogs exist. Repair outcomes appear through the available logbook entries and counts.",
+    "Manual and automatic stops share the same summary renderer. Power-off and low-battery failure notices use the same message.",
+    "Web-app Checking logs... is HTML, not a firmware LCD screen; it is outside this native screenshot set. Unrelated GPX/profile/formatting tools are also outside this set."
+  ],
+  "capture_tools": {
+    "sim/tests/sd_dialogs.cpp": "d2ad985abc1276a12c6a101b1314095a72d4f1cf4bfd424180f5fbcfe635ece6",
+    "sim/tests/charging_dialogs.cpp": "b938a7d4fd2b99011d08bcca12805f9fea0aac5066c2e4d1e7af1d6b2d3cd389",
+    "sim/scripts/build_sd_dialog_gallery.py": "8a01b1d9bcc1f4498af495e459d8dfb7cc4f94d1a8075423d469d898c5d192ad"
+  }
+}

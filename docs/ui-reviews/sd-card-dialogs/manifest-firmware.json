@@ -1,0 +1,300 @@
+{
+  "source_commit": "c88afbb4",
+  "dimensions": "96x192",
+  "screens": [
+    {
+      "id": "saving/normal",
+      "title": "Saving flight...",
+      "condition": "Actual flightTimer_stop frame immediately before JSON staging is opened.",
+      "renderer": "src/vario/logging/log.cpp:flightTimer_stop",
+      "file": "screenshots/saving/normal.png"
+    },
+    {
+      "id": "summary/unsynced",
+      "title": "Summary: unknown date/time",
+      "condition": "Completed save without GPS clock synchronization; Date? / Time? are existing placeholders.",
+      "renderer": "src/vario/ui/display/pages/dialogs/page_flight_summary.cpp",
+      "file": "screenshots/summary/unsynced.png"
+    },
+    {
+      "id": "saving/retrying",
+      "title": "Saving flight...",
+      "condition": "Actual flightTimer_stop frame immediately before JSON staging is opened.",
+      "renderer": "src/vario/logging/log.cpp:flightTimer_stop",
+      "file": "screenshots/saving/retrying.png"
+    },
+    {
+      "id": "summary/saved-imperial",
+      "title": "Summary: saved (imperial)",
+      "condition": "Real stop succeeds on its third attempt; the summary has no success/retry notice.",
+      "renderer": "src/vario/ui/display/pages/dialogs/page_flight_summary.cpp",
+      "file": "screenshots/summary/saved-imperial.png"
+    },
+    {
+      "id": "summary/saved-metric",
+      "title": "Summary: saved (metric)",
+      "condition": "Same saved flight in metric units.",
+      "renderer": "src/vario/ui/display/pages/dialogs/page_flight_summary.cpp",
+      "file": "screenshots/summary/saved-metric.png"
+    },
+    {
+      "id": "summary/delete-selected",
+      "title": "Summary: Delete selected",
+      "condition": "Existing hold-to-delete affordance.",
+      "renderer": "src/vario/ui/display/pages/dialogs/page_flight_summary.cpp",
+      "file": "screenshots/summary/delete-selected.png"
+    },
+    {
+      "id": "summary/delete-hold",
+      "title": "Summary: delete hold in progress",
+      "condition": "Three of five hold increments.",
+      "renderer": "src/vario/ui/display/pages/dialogs/page_flight_summary.cpp",
+      "file": "screenshots/summary/delete-hold.png"
+    },
+    {
+      "id": "summary/delete-failed-quiet",
+      "title": "Summary: deletion failed quietly",
+      "condition": "Injected main-file removal failure. Remaining readable summary stays visible; no cleanup alert.",
+      "renderer": "src/vario/ui/display/pages/dialogs/page_flight_summary.cpp",
+      "file": "screenshots/summary/delete-failed-quiet.png"
+    },
+    {
+      "id": "summary/save-failed-imperial",
+      "title": "Summary: terminal save failure",
+      "condition": "All three stop attempts fail. RAM statistics plus Logbook save failed; no acknowledgement.",
+      "renderer": "src/vario/ui/display/pages/dialogs/page_flight_summary.cpp",
+      "file": "screenshots/summary/save-failed-imperial.png"
+    },
+    {
+      "id": "summary/save-failed-metric",
+      "title": "Summary: terminal save failure (metric)",
+      "condition": "Same terminal failure with metric units and numeric wind direction.",
+      "renderer": "src/vario/ui/display/pages/dialogs/page_flight_summary.cpp",
+      "file": "screenshots/summary/save-failed-metric.png"
+    },
+    {
+      "id": "summary/save-failed-card-missing",
+      "title": "Summary: card removed before stop",
+      "condition": "Card removed after the placeholder. Terminal failure retains RAM statistics; no extra missing-card popup.",
+      "renderer": "src/vario/ui/display/pages/dialogs/page_flight_summary.cpp",
+      "file": "screenshots/summary/save-failed-card-missing.png"
+    },
+    {
+      "id": "summary/populated-metrics",
+      "title": "Summary: all optional metrics present",
+      "condition": "Synthetic RAM snapshot with valid g-load and wind. Earlier actual-stop fixtures have no injected IMU samples.",
+      "renderer": "src/vario/ui/display/pages/dialogs/page_flight_summary.cpp",
+      "file": "screenshots/summary/populated-metrics.png"
+    },
+    {
+      "id": "saving/failed-shutdown",
+      "title": "Save failure: No track file",
+      "condition": "Actual shutdown notice with no IGC track; JSON save failed. No acknowledgement.",
+      "renderer": "src/vario/logging/log.cpp:flightTimer_stop",
+      "file": "screenshots/saving/failed-shutdown.png"
+    },
+    {
+      "id": "saving/failed-low-battery",
+      "title": "Save failure: No track file",
+      "condition": "Actual shutdown notice with no IGC track; JSON save failed. No acknowledgement.",
+      "renderer": "src/vario/logging/log.cpp:flightTimer_stop",
+      "file": "screenshots/saving/failed-low-battery.png"
+    },
+    {
+      "id": "saving/failed-shutdown-with-track",
+      "title": "Save failure: Track unverified",
+      "condition": "Actual shutdown notice with an IGC present; JSON save failed. The track is explicitly unverified.",
+      "renderer": "src/vario/logging/log.cpp:flightTimer_stop",
+      "file": "screenshots/saving/failed-shutdown-with-track.png"
+    },
+    {
+      "id": "saving/failed-low-battery-with-track",
+      "title": "Save failure: Track unverified",
+      "condition": "Actual shutdown notice with an IGC present; JSON save failed. The track is explicitly unverified.",
+      "renderer": "src/vario/logging/log.cpp:flightTimer_stop",
+      "file": "screenshots/saving/failed-low-battery-with-track.png"
+    },
+    {
+      "id": "logbook/opening",
+      "title": "Opening logbook",
+      "condition": "Nominal opening while the quiet repair scan is pending.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/opening.png"
+    },
+    {
+      "id": "logbook/normal-imperial",
+      "title": "Logbook: newest of three",
+      "condition": "Three complete readable flights; no status alert.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/normal-imperial.png"
+    },
+    {
+      "id": "logbook/normal-metric",
+      "title": "Logbook: metric",
+      "condition": "Same newest entry in metric units.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/normal-metric.png"
+    },
+    {
+      "id": "logbook/pager-middle",
+      "title": "Logbook: middle entry",
+      "condition": "Both page arrows and 2/3 position.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/pager-middle.png"
+    },
+    {
+      "id": "logbook/delete-selected",
+      "title": "Logbook: Delete selected",
+      "condition": "Existing hold-to-delete row.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/delete-selected.png"
+    },
+    {
+      "id": "logbook/delete-hold",
+      "title": "Logbook: delete hold in progress",
+      "condition": "Three of five hold increments.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/delete-hold.png"
+    },
+    {
+      "id": "logbook/delete-failed-quiet",
+      "title": "Logbook: deletion failed quietly",
+      "condition": "Injected main-file deletion failure; the same available entry remains, with no error message.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/delete-failed-quiet.png"
+    },
+    {
+      "id": "logbook/after-delete",
+      "title": "Logbook: after successful deletion",
+      "condition": "Remaining adjacent flight and updated 1/2 count.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/after-delete.png"
+    },
+    {
+      "id": "logbook/after-last-delete",
+      "title": "Logbook: last flight deleted",
+      "condition": "Normal No flights state; no confirmation popup.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/after-last-delete.png"
+    },
+    {
+      "id": "logbook/empty",
+      "title": "Logbook: empty",
+      "condition": "No saved flights on a readable card.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/empty.png"
+    },
+    {
+      "id": "logbook/placeholder-only",
+      "title": "Logbook: incomplete placeholder hidden",
+      "condition": "Only an incomplete placeholder survives. It is not listed as a completed flight.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/placeholder-only.png"
+    },
+    {
+      "id": "logbook/unreadable-only",
+      "title": "Logbook: unreadable entry hidden",
+      "condition": "Only malformed JSON, with no recoverable candidate. No per-file parse alert.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/unreadable-only.png"
+    },
+    {
+      "id": "logbook/mixed-records-filtered",
+      "title": "Logbook: only available flights counted",
+      "condition": "One good flight, one malformed record, one incomplete placeholder; pager is 1/1.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/mixed-records-filtered.png"
+    },
+    {
+      "id": "logbook/repair-pending",
+      "title": "Logbook: repair pending",
+      "condition": "Same Opening logbook message while a completed temporary awaits repair.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/repair-pending.png"
+    },
+    {
+      "id": "logbook/after-repair",
+      "title": "Logbook: recovered completed flight",
+      "condition": "Completed temporary promoted, then displayed normally. No repair-success message.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/after-repair.png"
+    },
+    {
+      "id": "logbook/repair-failed-quiet",
+      "title": "Logbook: repair failed quietly",
+      "condition": "Promotion fails once. The older available flight is shown as 1/1; no Repair deferred alert.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/repair-failed-quiet.png"
+    },
+    {
+      "id": "logbook/backup-recovered",
+      "title": "Logbook: recovered backup",
+      "condition": "Backup-only completed record promoted and shown normally.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/backup-recovered.png"
+    },
+    {
+      "id": "logbook/conflict-quiet",
+      "title": "Logbook: unresolved candidate conflict",
+      "condition": "Equal-revision completed candidates differ. Readable main stays viewable; upload is blocked; no alert.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/conflict-quiet.png"
+    },
+    {
+      "id": "logbook/leaf-log-not-uploaded",
+      "title": "Logbook: Leaf Log not-uploaded",
+      "condition": "Existing Leaf Log status icon in the header; no new message or dialog.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/leaf-log-not-uploaded.png"
+    },
+    {
+      "id": "logbook/leaf-log-uploaded",
+      "title": "Logbook: Leaf Log uploaded",
+      "condition": "Existing Leaf Log status icon in the header; no new message or dialog.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/leaf-log-uploaded.png"
+    },
+    {
+      "id": "logbook/leaf-log-rejected",
+      "title": "Logbook: Leaf Log rejected",
+      "condition": "Existing Leaf Log status icon in the header; no new message or dialog.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/leaf-log-rejected.png"
+    },
+    {
+      "id": "logbook/legacy-missing-data",
+      "title": "Logbook: legacy / missing optional data",
+      "condition": "Legacy entry without revision metadata, clock, g-load or wind. Existing Date?/Time?/-- placeholders.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/legacy-missing-data.png"
+    },
+    {
+      "id": "logbook/long-duration-values",
+      "title": "Logbook: long duration / wider values",
+      "condition": "12-hour flight, five-digit altitude in feet and longer distance/climb values; unchanged firmware formatting.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/long-duration-values.png"
+    },
+    {
+      "id": "logbook/card-unavailable",
+      "title": "Logbook: storage unavailable",
+      "condition": "Absent SD card; Unavailable rather than No flights.",
+      "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
+      "file": "screenshots/logbook/card-unavailable.png"
+    },
+    {
+      "id": "context/logging-menu",
+      "title": "Logging settings",
+      "condition": "Existing Save IGC / AutoStart / AutoStop settings.",
+      "renderer": "src/vario/ui/display/pages/menu/page_menu_log.cpp",
+      "file": "screenshots/context/logging-menu.png"
+    },
+    {
+      "id": "context/main-menu",
+      "title": "Main menu / Logbook entry",
+      "condition": "Existing entry point for on-device logbook review.",
+      "renderer": "src/vario/ui/display/pages/primary/page_menu_main.cpp",
+      "file": "screenshots/context/main-menu.png"
+    }
+  ]
+}
