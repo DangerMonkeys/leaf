@@ -1,5 +1,5 @@
 {
-  "source_commit": "c88afbb4",
+  "source_commit": "c7c9e6f1 + rounded SD dialogs (working tree)",
   "dimensions": "96x192",
   "screens": [
     {
@@ -88,28 +88,28 @@
     },
     {
       "id": "saving/failed-shutdown",
-      "title": "Save failure: No track file",
+      "title": "Save failure: No IGC file",
       "condition": "Actual shutdown notice with no IGC track; JSON save failed. No acknowledgement.",
       "renderer": "src/vario/logging/log.cpp:flightTimer_stop",
       "file": "screenshots/saving/failed-shutdown.png"
     },
     {
       "id": "saving/failed-low-battery",
-      "title": "Save failure: No track file",
+      "title": "Save failure: No IGC file",
       "condition": "Actual shutdown notice with no IGC track; JSON save failed. No acknowledgement.",
       "renderer": "src/vario/logging/log.cpp:flightTimer_stop",
       "file": "screenshots/saving/failed-low-battery.png"
     },
     {
       "id": "saving/failed-shutdown-with-track",
-      "title": "Save failure: Track unverified",
+      "title": "Save failure: IGC unverified",
       "condition": "Actual shutdown notice with an IGC present; JSON save failed. The track is explicitly unverified.",
       "renderer": "src/vario/logging/log.cpp:flightTimer_stop",
       "file": "screenshots/saving/failed-shutdown-with-track.png"
     },
     {
       "id": "saving/failed-low-battery-with-track",
-      "title": "Save failure: Track unverified",
+      "title": "Save failure: IGC unverified",
       "condition": "Actual shutdown notice with an IGC present; JSON save failed. The track is explicitly unverified.",
       "renderer": "src/vario/logging/log.cpp:flightTimer_stop",
       "file": "screenshots/saving/failed-low-battery-with-track.png"

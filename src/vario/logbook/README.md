@@ -68,6 +68,10 @@ unavailability is distinct from an empty logbook. Failed redundant-temp cleanup 
 rather than a false save failure. Successful repair removes redundant `.tmp`; the `.bak` remains
 intentional, and ambiguous or sole useful candidates may remain until another recovery opportunity.
 
+Standalone saving, opening, empty/unavailable and shutdown-failure messages use a centered 96×96
+rounded frame with centered text. Shutdown details say "No IGC file" or "IGC unverified". The
+inline "Logbook save failed" warning on the immediate flight summary keeps its existing layout.
+
 ## Storage tests
 
 In the normal GCC simulator container, run `make -C sim -j8 test-logbook-io`. It exercises the real

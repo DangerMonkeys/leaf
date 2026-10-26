@@ -9,6 +9,7 @@
 #include "ui/display/display_fields.h"
 #include "ui/display/fonts.h"
 #include "ui/display/logbook_card.h"
+#include "ui/display/message_box.h"
 #include "ui/display/pages.h"
 #include "ui/settings/settings.h"
 
@@ -130,9 +131,7 @@ void PageLogbook::draw() {
   do {
     menu_ui::drawTitle("Logbook", menu_ui::GLYPH_LOGGING);
     if (waitingForRepair) {
-      u8g2.setFont(leaf_6x12);
-      u8g2.setCursor(0, 67);
-      u8g2.print("Opening logbook");
+      message_box::draw("Opening", "logbook");
     } else if (summary.valid) {
       if (settings.labs_leafLog && summary.leafLogStatus != LeafLogFlightStatus::NotApplicable) {
         u8g2.setFont(leaf_8x14);
@@ -154,10 +153,8 @@ void PageLogbook::draw() {
 }
 
 void PageLogbook::drawEmpty() {
-  u8g2.setFont(leaf_6x12);
-  u8g2.setCursor(0, 67);
-  u8g2.print(unavailable || !sdcard.firmwareCanAccessFilesystem() || total ? "Unavailable"
-                                                                           : "No flights");
+  message_box::draw(unavailable || !sdcard.firmwareCanAccessFilesystem() || total ? "Unavailable"
+                                                                                  : "No flights");
   if (total) {
     drawDeleteRow(156);
     drawPageRow(171);

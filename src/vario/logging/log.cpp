@@ -19,6 +19,7 @@
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
 #include "ui/display/fonts.h"
+#include "ui/display/message_box.h"
 #include "ui/display/pages/dialogs/page_alert_timerAutoStop.h"
 #include "ui/display/pages/dialogs/page_flight_summary.h"
 #include "ui/display/pages/fanet/page_fanet_stats.h"
@@ -415,21 +416,14 @@ void flightTimer_stop(bool showSummary, FlightEndCause cause) {
 
   u8g2.firstPage();
   do {
-    u8g2.setFont(leaf_6x12);
-    u8g2.setCursor(0, 85);
-    u8g2.print("Saving flight...");
+    message_box::draw("Saving", "flight...");
   } while (u8g2.nextPage());
   const bool summarySaved = logbookEntry.finalize(logbook, trackFormat, trackPath);
   if (!summarySaved && !showSummary) {
     u8g2.firstPage();
     do {
-      u8g2.setFont(leaf_6x12);
-      u8g2.setCursor(0, 75);
-      u8g2.print("Logbook save");
-      u8g2.setCursor(0, 90);
-      u8g2.print("failed");
-      u8g2.setCursor(0, 115);
-      u8g2.print(trackPath.isEmpty() ? "No track file" : "Track unverified");
+      message_box::draw("Logbook save", "failed",
+                        trackPath.isEmpty() ? "No IGC file" : "IGC unverified");
     } while (u8g2.nextPage());
     delay(1000);  // Visible outcome before shutdown clears the display; no acknowledgement.
   }

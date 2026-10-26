@@ -1,5 +1,5 @@
 {
-  "source_commit": "c88afbb4",
+  "source_commit": "c7c9e6f1 + rounded SD dialogs (working tree)",
   "dimensions": "96x192",
   "screens": [
     {
@@ -9,8 +9,8 @@
       "renderer": "src/vario/logging/log.cpp:flightTimer_stop",
       "file": "screenshots/saving/normal.png",
       "number": 1,
-      "pixel_sha256": "df89a8fbc2e552d55b9e487e84872e701fff6850818f4acf8b44694316f639a9",
-      "file_sha256": "35f079a3f9427d02e45751cadfc7fb019ca89d14c7b16ddd69fa91cb1be29fca"
+      "pixel_sha256": "5ee6d5cab5b718053f0a951691a88363f3dd72f2ba3fb52ef2b5e6d9403d0c72",
+      "file_sha256": "89ba451c48d3191ee456610e6c9664ee349a05186029644b15e54e71f47c401e"
     },
     {
       "id": "summary/unsynced",
@@ -29,8 +29,8 @@
       "renderer": "src/vario/logging/log.cpp:flightTimer_stop",
       "file": "screenshots/saving/retrying.png",
       "number": 3,
-      "pixel_sha256": "df89a8fbc2e552d55b9e487e84872e701fff6850818f4acf8b44694316f639a9",
-      "file_sha256": "35f079a3f9427d02e45751cadfc7fb019ca89d14c7b16ddd69fa91cb1be29fca",
+      "pixel_sha256": "5ee6d5cab5b718053f0a951691a88363f3dd72f2ba3fb52ef2b5e6d9403d0c72",
+      "file_sha256": "89ba451c48d3191ee456610e6c9664ee349a05186029644b15e54e71f47c401e",
       "same_pixels_as": 1
     },
     {
@@ -126,44 +126,44 @@
     },
     {
       "id": "saving/failed-shutdown",
-      "title": "Save failure: No track file",
+      "title": "Save failure: No IGC file",
       "condition": "Actual shutdown notice with no IGC track; JSON save failed. No acknowledgement.",
       "renderer": "src/vario/logging/log.cpp:flightTimer_stop",
       "file": "screenshots/saving/failed-shutdown.png",
       "number": 13,
-      "pixel_sha256": "c8ef36a1dbacc7de8e254ff4528ea95413c30551098c4649fb223f4b8a8569fb",
-      "file_sha256": "49324104c2281b729afe3c77e5b4cd1891c6c0c1c2443c6d1edc702b8657128d"
+      "pixel_sha256": "c19251bc27d0a1c95557ca53a0c08a06a7d86d681d2b2b65473b5e84cfa63e9b",
+      "file_sha256": "d6669d3ed9c5f6e1e252b6c827f43c65c0928794d8611c79ede13ca1096a41cc"
     },
     {
       "id": "saving/failed-low-battery",
-      "title": "Save failure: No track file",
+      "title": "Save failure: No IGC file",
       "condition": "Actual shutdown notice with no IGC track; JSON save failed. No acknowledgement.",
       "renderer": "src/vario/logging/log.cpp:flightTimer_stop",
       "file": "screenshots/saving/failed-low-battery.png",
       "number": 14,
-      "pixel_sha256": "c8ef36a1dbacc7de8e254ff4528ea95413c30551098c4649fb223f4b8a8569fb",
-      "file_sha256": "49324104c2281b729afe3c77e5b4cd1891c6c0c1c2443c6d1edc702b8657128d",
+      "pixel_sha256": "c19251bc27d0a1c95557ca53a0c08a06a7d86d681d2b2b65473b5e84cfa63e9b",
+      "file_sha256": "d6669d3ed9c5f6e1e252b6c827f43c65c0928794d8611c79ede13ca1096a41cc",
       "same_pixels_as": 13
     },
     {
       "id": "saving/failed-shutdown-with-track",
-      "title": "Save failure: Track unverified",
+      "title": "Save failure: IGC unverified",
       "condition": "Actual shutdown notice with an IGC present; JSON save failed. The track is explicitly unverified.",
       "renderer": "src/vario/logging/log.cpp:flightTimer_stop",
       "file": "screenshots/saving/failed-shutdown-with-track.png",
       "number": 15,
-      "pixel_sha256": "fe52c0b7ced4d63210a72ac33c671c3a64e01168ea53049a8763633dd9187edd",
-      "file_sha256": "255f354e9dc396ad72e3efdb0e174a450327128a120b15bcf6f5b3ad7627eba1"
+      "pixel_sha256": "213f128c597d5e577bfb45eedd9a6ba713c061fef58b86a49e631e86a0d0e809",
+      "file_sha256": "7f01b32b71814b85431544a5f34470b356c98477eac6ed76a9ffaf836c426e54"
     },
     {
       "id": "saving/failed-low-battery-with-track",
-      "title": "Save failure: Track unverified",
+      "title": "Save failure: IGC unverified",
       "condition": "Actual shutdown notice with an IGC present; JSON save failed. The track is explicitly unverified.",
       "renderer": "src/vario/logging/log.cpp:flightTimer_stop",
       "file": "screenshots/saving/failed-low-battery-with-track.png",
       "number": 16,
-      "pixel_sha256": "fe52c0b7ced4d63210a72ac33c671c3a64e01168ea53049a8763633dd9187edd",
-      "file_sha256": "255f354e9dc396ad72e3efdb0e174a450327128a120b15bcf6f5b3ad7627eba1",
+      "pixel_sha256": "213f128c597d5e577bfb45eedd9a6ba713c061fef58b86a49e631e86a0d0e809",
+      "file_sha256": "7f01b32b71814b85431544a5f34470b356c98477eac6ed76a9ffaf836c426e54",
       "same_pixels_as": 15
     },
     {
@@ -173,8 +173,8 @@
       "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
       "file": "screenshots/logbook/opening.png",
       "number": 17,
-      "pixel_sha256": "cd2185847b975e367be69f255e32145a7534a41c8f9659309f3109a425f5bf12",
-      "file_sha256": "7efa573384249f8dccbbb03d887f7028c828e91fc17d0ddfe3340a2166a542df"
+      "pixel_sha256": "eb07f8f4127c2bbfe3957cd5ce4a729639c0889168ffd0e20a52f4f149ab44d6",
+      "file_sha256": "e169ae499bbb7df2f3898eef6e472b04bfb76f84a7d24554f36e14b32c2eedf1"
     },
     {
       "id": "logbook/normal-imperial",
@@ -254,8 +254,8 @@
       "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
       "file": "screenshots/logbook/after-last-delete.png",
       "number": 25,
-      "pixel_sha256": "6db85f13461432a67bc185484b72a53834143129d049070df1d9ef6c1f3e2159",
-      "file_sha256": "e90bfe384585688402f74d0ba773a37122342819a6875b96c690f5983fe16b8c"
+      "pixel_sha256": "9c82c5cd4ccd50456904a619763db475be0afd6c67d578e3349c918664803f89",
+      "file_sha256": "add103b4904d41fa2984190aebf5ebe1c244218e83b9e94cd1f268764b5028a1"
     },
     {
       "id": "logbook/empty",
@@ -264,8 +264,8 @@
       "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
       "file": "screenshots/logbook/empty.png",
       "number": 26,
-      "pixel_sha256": "6db85f13461432a67bc185484b72a53834143129d049070df1d9ef6c1f3e2159",
-      "file_sha256": "e90bfe384585688402f74d0ba773a37122342819a6875b96c690f5983fe16b8c",
+      "pixel_sha256": "9c82c5cd4ccd50456904a619763db475be0afd6c67d578e3349c918664803f89",
+      "file_sha256": "add103b4904d41fa2984190aebf5ebe1c244218e83b9e94cd1f268764b5028a1",
       "same_pixels_as": 25
     },
     {
@@ -275,8 +275,8 @@
       "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
       "file": "screenshots/logbook/placeholder-only.png",
       "number": 27,
-      "pixel_sha256": "6db85f13461432a67bc185484b72a53834143129d049070df1d9ef6c1f3e2159",
-      "file_sha256": "e90bfe384585688402f74d0ba773a37122342819a6875b96c690f5983fe16b8c",
+      "pixel_sha256": "9c82c5cd4ccd50456904a619763db475be0afd6c67d578e3349c918664803f89",
+      "file_sha256": "add103b4904d41fa2984190aebf5ebe1c244218e83b9e94cd1f268764b5028a1",
       "same_pixels_as": 25
     },
     {
@@ -286,8 +286,8 @@
       "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
       "file": "screenshots/logbook/unreadable-only.png",
       "number": 28,
-      "pixel_sha256": "6db85f13461432a67bc185484b72a53834143129d049070df1d9ef6c1f3e2159",
-      "file_sha256": "e90bfe384585688402f74d0ba773a37122342819a6875b96c690f5983fe16b8c",
+      "pixel_sha256": "9c82c5cd4ccd50456904a619763db475be0afd6c67d578e3349c918664803f89",
+      "file_sha256": "add103b4904d41fa2984190aebf5ebe1c244218e83b9e94cd1f268764b5028a1",
       "same_pixels_as": 25
     },
     {
@@ -307,8 +307,8 @@
       "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
       "file": "screenshots/logbook/repair-pending.png",
       "number": 30,
-      "pixel_sha256": "cd2185847b975e367be69f255e32145a7534a41c8f9659309f3109a425f5bf12",
-      "file_sha256": "7efa573384249f8dccbbb03d887f7028c828e91fc17d0ddfe3340a2166a542df",
+      "pixel_sha256": "eb07f8f4127c2bbfe3957cd5ce4a729639c0889168ffd0e20a52f4f149ab44d6",
+      "file_sha256": "e169ae499bbb7df2f3898eef6e472b04bfb76f84a7d24554f36e14b32c2eedf1",
       "same_pixels_as": 17
     },
     {
@@ -412,8 +412,8 @@
       "renderer": "src/vario/ui/display/pages/menu/page_logbook.cpp",
       "file": "screenshots/logbook/card-unavailable.png",
       "number": 40,
-      "pixel_sha256": "a8b72ee357c8faeda4d2a051e3cfc10a39376b2662e8415ff3cfb5b25ed67c77",
-      "file_sha256": "8403cc11154959ee184545c1dc5cda8543f46ad0043d85b26c66945388a7cf82"
+      "pixel_sha256": "c459a7d8972004f46935099c126921f313d744c07d7c2d9b7d2bfc2e1968f6b9",
+      "file_sha256": "5badb6911b7d610cc4b614aca7a49ab0ebff8ef70c53e2b580c75bd9da5bd104"
     },
     {
       "id": "context/logging-menu",
@@ -926,8 +926,8 @@
   "capture_count": 90,
   "unique_frames": 70,
   "notes": [
-    "Actual 96×192 u8g2 firmware frames; no mockups or visual changes. Synthetic data only; user SD evidence was not used.",
-    "c88afbb4 is the firmware source commit. Capture tooling and this gallery are a separate follow-up commit.",
+    "Actual 96×192 u8g2 firmware frames; no mockups. Synthetic data only; user SD evidence was not used.",
+    "Firmware source: c7c9e6f1 + rounded SD dialogs (working tree). Standalone SD messages use centered 96×96 rounded frames; the inline summary save-failure warning is unchanged.",
     "Saving and shutdown-failure messages were captured inside the real stop path, before staging open and during the failure-notice delay respectively.",
     "Charging uses the existing charging_dialogs regression harness and deterministic transport outcomes; it checks the reference animation artwork.",
     "The charging footer retains the simulator's 0.0.0+build.script.error placeholder. It is not an SD error or a release build version; no footer pixels were edited.",
@@ -937,8 +937,8 @@
     "Web-app Checking logs... is HTML, not a firmware LCD screen; it is outside this native screenshot set. Unrelated GPX/profile/formatting tools are also outside this set."
   ],
   "capture_tools": {
-    "sim/tests/sd_dialogs.cpp": "d2ad985abc1276a12c6a101b1314095a72d4f1cf4bfd424180f5fbcfe635ece6",
+    "sim/tests/sd_dialogs.cpp": "e952a39fe93a419bb6d66e1e9cfa7ebdb799a65df51a6eb0edd55ae3b998fa59",
     "sim/tests/charging_dialogs.cpp": "b938a7d4fd2b99011d08bcca12805f9fea0aac5066c2e4d1e7af1d6b2d3cd389",
-    "sim/scripts/build_sd_dialog_gallery.py": "8a01b1d9bcc1f4498af495e459d8dfb7cc4f94d1a8075423d469d898c5d192ad"
+    "sim/scripts/build_sd_dialog_gallery.py": "cec6bc9f19635c1e29ff86ba5ed2cbcad7ece11d38a676d46fbead7adb6027b7"
   }
 }

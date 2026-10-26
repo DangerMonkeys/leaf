@@ -74,7 +74,7 @@ namespace {
       // The first delay after three exhausted attempts is the firmware's 1 s failure notice.
       snapshot(
           shutdownName,
-          shutdownHasTrack ? "Save failure: Track unverified" : "Save failure: No track file",
+          shutdownHasTrack ? "Save failure: IGC unverified" : "Save failure: No IGC file",
           shutdownHasTrack
               ? "Actual shutdown notice with an IGC present; JSON save failed. The track is "
                 "explicitly unverified."

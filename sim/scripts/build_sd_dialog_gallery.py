@@ -120,8 +120,8 @@ def main():
     manifest["capture_count"] = len(entries)
     manifest["unique_frames"] = len(hashes)
     manifest["notes"] = [
-        "Actual 96×192 u8g2 firmware frames; no mockups or visual changes. Synthetic data only; user SD evidence was not used.",
-        f"{manifest['source_commit']} is the firmware source commit. Capture tooling and this gallery are a separate follow-up commit.",
+        "Actual 96×192 u8g2 firmware frames; no mockups. Synthetic data only; user SD evidence was not used.",
+        f"Firmware source: {manifest['source_commit']}. Standalone SD messages use centered 96×96 rounded frames; the inline summary save-failure warning is unchanged.",
         "Saving and shutdown-failure messages were captured inside the real stop path, before staging open and during the failure-notice delay respectively.",
         "Charging uses the existing charging_dialogs regression harness and deterministic transport outcomes; it checks the reference animation artwork.",
         "The charging footer retains the simulator's 0.0.0+build.script.error placeholder. It is not an SD error or a release build version; no footer pixels were edited.",
@@ -146,6 +146,12 @@ def main():
     ]
     for key, title, items in groups:
         contact_sheet(directory, key + ".png", title, items)
+    overview_ids = (
+        "saving/normal", "logbook/opening", "logbook/empty", "logbook/card-unavailable",
+        "saving/failed-shutdown", "saving/failed-shutdown-with-track",
+    )
+    contact_sheet(directory, "00-rounded-messages.png", "Standalone SD messages",
+                  [next(entry for entry in entries if entry["id"] == key) for key in overview_ids])
 
     esc = html.escape
     cards = []
@@ -173,7 +179,8 @@ h3{font-size:16px;align-self:stretch;min-height:48px;margin:0 0 12px}img{box-siz
 article p{align-self:stretch;margin:12px 0 0;font-size:14px}.duplicate{color:#576c5f;min-height:20px}details{align-self:stretch;margin-top:10px;font-size:12px;overflow-wrap:anywhere}.notes{padding:8px 22px;background:white;border:1px solid #d0d7d0;border-radius:6px}.notes li{margin:8px 0}
 pre{overflow:auto;max-width:100%}body.native img{width:96px;height:192px}body.native article{min-height:420px}[hidden]{display:none!important}
 </style><header><h1>Leaf SD screens</h1><p>CAPTURE_COUNT native screenshots · UNIQUE_COUNT distinct frames · firmware source <strong>c88afbb4</strong></p>
-<p>Current visuals for review. The firmware’s styling has not been changed.</p></header><main>
+<p>Rounded SD message panels, centered text, and IGC wording. The inline summary warning retains its existing layout.</p></header><main>
+<p><a href="00-rounded-messages.png">Standalone message overview</a></p>
 <nav>NAVIGATION</nav><details class="notes"><summary>Scope, provenance and screens that intentionally do not exist</summary><ul>NOTES</ul></details>
 <div class="toolbar"><input id="filter" type="search" placeholder="Filter titles and SD states" aria-label="Filter screenshots"><label><input id="native" type="checkbox" style="min-width:0"> Native size</label><span id="count"></span></div>
 CARDS
@@ -188,7 +195,7 @@ LEAF_CAPTURE_COMMIT=&lt;firmware-commit&gt; ./sim/build/sd_dialogs_capture docs/
     for key, value in {"CAPTURE_COUNT": str(len(entries)), "UNIQUE_COUNT": str(len(hashes)), "NAVIGATION": links, "NOTES": notes, "CARDS": "\n".join(cards)}.items():
         page = page.replace(key, value)
     (directory / "index.html").write_text(page, encoding="utf-8")
-    print(f"Packaged {len(entries)} native captures ({len(hashes)} unique frames), five contact sheets and index.html.")
+    print(f"Packaged {len(entries)} native captures ({len(hashes)} unique frames), six contact sheets and index.html.")
 
 
 if __name__ == "__main__":
