@@ -30,7 +30,11 @@ namespace training {
     if (!lock) return false;
     started_ = true;
     // Explicit bench-only US profile. Production RF operating profile remains unqualified.
-    lastError = chip_.begin(920.8f, 500.0f, 7, 5, 0x12, 10, 8, 1.8f, false);
+    lastError = chip_.begin(920.8f, 500.0f, 7, 5, 0x12, 22, 8, 1.8f, false);
+    // begin()/PA setup restores RadioLib's 60 mA default; override and verify afterwards.
+    if (lastError == RADIOLIB_ERR_NONE) lastError = chip_.setCurrentLimit(140.0f);
+    if (lastError == RADIOLIB_ERR_NONE && chip_.getCurrentLimit() != 140.0f)
+      lastError = RADIOLIB_ERR_SPI_WRITE_FAILED;
     // Match Leaf's normal radio path, including the variant-specific external RX switch.
     if (lastError == RADIOLIB_ERR_NONE) {
       chip_.setRfSwitchPins(SX1262_RF_SW, RADIOLIB_NC);

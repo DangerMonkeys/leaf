@@ -5,7 +5,9 @@
 namespace training {
   constexpr uint8_t STUDENTS = 4;
   constexpr size_t MAX_PACKET = 64;
-  constexpr uint32_t SLOT_MS = 125, LINK_STALE_MS = 750;
+  // SLOT_MS applies only to the retained legacy request/reply decoder.
+  constexpr uint32_t SLOT_MS = 125, LINK_STALE_MS = 2000;
+  constexpr uint32_t FOCUS_PERIOD_MS = 1000, FOCUS_LEASE_MS = 3000;
   // V1 poll/telemetry remain byte-compatible; enrollment adds bounded control frames.
   enum class Type : uint8_t {
     Poll = 1,
@@ -13,8 +15,17 @@ namespace training {
     Hello = 3,
     Offer = 4,
     Accept = 5,
-    Confirm = 6
+    Confirm = 6,
+    Broadcast = 9,
+    Focus = 10
   };
+  constexpr bool telemetryType(Type type) {
+    return type == Type::Telemetry || type == Type::Broadcast;
+  }
+  // Jitter breaks persistent collisions between independently clocked students.
+  constexpr uint32_t broadcastInterval(bool fast, uint32_t entropy) {
+    return fast ? 225 + entropy % 51 : 900 + entropy % 201;
+  }
   constexpr uint32_t DISCOVERY_GROUP = 0x54524e47;
   constexpr uint32_t PAIR_WINDOW_MS = 60000;
   // Tone/toneHz are legacy V1 fields, accepted but ignored by instructor audio.
@@ -49,6 +60,7 @@ namespace training {
   struct StudentState {
     Telemetry data;
     uint32_t id = 0, session = 0, receivedAt = 0;
+    uint32_t sequence = 0, previousSession = 0;
     bool received = false;
     char pilotName[PILOT_NAME_BYTES + 1]{};
   };

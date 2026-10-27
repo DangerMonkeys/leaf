@@ -144,9 +144,9 @@ namespace training {
       sentAt_ = now;
       retryMs_ = retryMs;
     }
-    // Call only after the normal receiver validates a telemetry response to a pending poll.
+    // Call only after the receiver validates data from the paired student.
     bool linked(const Packet& p, uint32_t now) {
-      if (phase(now) != Phase::Confirming || p.header.type != Type::Telemetry ||
+      if (phase(now) != Phase::Confirming || !telemetryType(p.header.type) ||
           p.header.group != group_ || p.header.sender != peer_.id ||
           p.header.session != peer_.session || p.data.slot != slot_)
         return false;

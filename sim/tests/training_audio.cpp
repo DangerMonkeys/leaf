@@ -52,14 +52,14 @@ int main() {
   // A missed packet must not stretch/reset the envelope. Stale climb must silence it.
   Receiver held, control;
   ClimbAudio heldAudio, controlAudio;
-  for (uint32_t t = 0; t < 1000; ++t) {
+  for (uint32_t t = 0; t < 250 + LINK_STALE_MS; ++t) {
     if (t == 0 || t == 250) sample(held, t, 799);
     if (!(t % 250)) sample(control, t, 799);
     assert(heldAudio.update(held, t, true) == controlAudio.update(control, t, true));
   }
-  for (uint32_t t = 1000; t < 1100; ++t) assert(!heldAudio.update(held, t, true));
-  sample(held, 1100, 1200);
-  assert(heldAudio.update(held, 1100, true) == 2093);
+  for (uint32_t t = 250 + LINK_STALE_MS; t < 350 + LINK_STALE_MS; ++t) assert(!heldAudio.update(held, t, true));
+  sample(held, 350 + LINK_STALE_MS, 1200);
+  assert(heldAudio.update(held, 350 + LINK_STALE_MS, true) == 2093);
   // Legacy student PWM / UI effects do not influence local audio, including a silent student.
   Receiver a, b;
   ClimbAudio aa, ab;
@@ -74,7 +74,7 @@ int main() {
   r.students[0].data.valid = Tone;
   assert(!audio.update(r, 2000, true));
   sample(r, 2010, 1200);
-  r.students[0].data.pressureAge = 750;
+  r.students[0].data.pressureAge = LINK_STALE_MS;
   assert(!audio.update(r, 2010, true));
   sample(r, 2020, 1200);
   assert(!audio.update(r, 2020, false));

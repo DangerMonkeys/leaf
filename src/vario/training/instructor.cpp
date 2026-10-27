@@ -32,8 +32,7 @@ namespace {
   training::ClimbAudio climbAudio;
   training::InstructorLink enrollment;
   U8G2_ST75256_JLX19296_F_4W_HW_SPI lcd(U8G2_R1, 10, 17, 18);
-  uint32_t session = 0, sequence = 0, lastPollAt = 0;
-  uint8_t tick = 0;
+  uint32_t session = 0, sequence = 0, lastFocusAt = 0;
   bool muted = false, powered = true;
   training::InstructorButtons controls;
   training::InstructorNavigation navigation;
@@ -209,8 +208,7 @@ namespace {
     navigation.row = value;
     receiver.cancel();
     climbAudio.reset();
-    tick = 0;
-    lastPollAt = millis() - training::SLOT_MS;
+    lastFocusAt = millis() - training::FOCUS_PERIOD_MS;
     ledcWriteTone(14, 0);
     playingTone = 0;
     outputHz = 0;
@@ -594,26 +592,15 @@ void loop() {
                                                                   : "Pair window ended");
   training::Packet packet;
   if (radio.receive(packet)) bus.receive(Received(packet, now));
-  if (config.group && radio.ready() && !radio.busy() &&
-      uint32_t(now - lastPollAt) >= training::SLOT_MS) {
-    lastPollAt = now;
-    receiver.cancel();
-    const uint8_t slot = training::scheduledStudent(tick, receiver.focus);
-    tick = (tick + 1) % 8;
+  if (radio.ready() && !radio.busy()) {
     training::Packet control;
-    const bool controlSlot =
-        slot >= training::STUDENTS || !receiver.students[slot].id ||
-        (enrollment.active(now) && receiver.students[slot].id == enrollment.peer());
-    if (controlSlot && enrollment.control(control, now, training::deviceId(), session)) {
-      // Jitter plus the pending peer's slots avoids phase-locking against its fixed 500 ms Accept
-      // retries.
+    if (enrollment.control(control, now, training::deviceId(), session)) {
       if (radio.send(control)) enrollment.sent(now, 500 + esp_random() % 375);
-    } else if (slot < training::STUDENTS && receiver.students[slot].id) {
-      training::Packet poll;
-      poll.header = {training::Type::Poll, config.group, training::deviceId(), session, ++sequence};
-      poll.requestedSlot = slot;
-      poll.focusSlot = receiver.focus;
-      if (radio.send(poll)) receiver.expect(slot, sequence, now);
+    } else if (config.group && uint32_t(now - lastFocusAt) >= training::FOCUS_PERIOD_MS) {
+      control.header = {training::Type::Focus, config.group, training::deviceId(), session,
+                        ++sequence};
+      control.focusSlot = receiver.focus;
+      if (radio.send(control)) lastFocusAt = now;
     }
   }
   applyBoardVolume();

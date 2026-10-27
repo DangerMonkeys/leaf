@@ -5,7 +5,7 @@ description: Two firmware roles for a four-student LoRa training link, focused a
 
 # Student and instructor training link
 
-Status: initial bench implementation in progress; requirements updated 2026-10-24.
+Status: initial bench implementation in progress; requirements updated 2026-10-26.
 Transport, instructor UI and Bluetooth output have initial implementations; hardware and
 phone-app qualification remain outstanding.
 
@@ -53,12 +53,9 @@ Build two firmware loads from shared protocol and Leaf components:
 - [ ] Define a versioned binary protocol over the existing LoRa hardware, separate from FANET
   framing and timing. Reuse the SPI/radio driver where practical, with explicit mutually exclusive
   radio ownership. Compare candidate PHY settings using measured airtime, delivery and freshness.
-- [ ] Carry the SX1262 power/current setup from `codex/lora-fanet-radio-settings` (`20d2ff29`)
-  into the shared training radio: request 22 dBm, set 140 mA after initialization, check status
-  and verify/read back the limit. Both roles need it because telemetry requires an instructor
-  poll. Current training builds request 10 dBm with RadioLib's default 60 mA limit. Retain the
-  current PHY/schedule initially; measure delivered packets, freshness, RF output and supply/TX
-  current before claiming range. FANET's neighbor-dependent coding policy is separate.
+- [x] Apply the SX1262 power/current setup in the shared training radio: request 22 dBm and
+  set/verify 140 mA after initialization/PA setup in both roles. Keep SF7/BW500/4/5 unchanged
+  for comparison. Actual RF output, current/battery impact and range still need measurement.
 - [ ] Resolve the US operating profile against the exact module, antenna, power and applicable
   operating requirements before choosing the final frequency/bandwidth/channel-access policy.
   Do not assume the current FANET profile or a private sync word establishes suitability.
@@ -80,10 +77,12 @@ Build two firmware loads from shared protocol and Leaf components:
   other student, and position at the source's actual GNSS cadence (initially about 1 Hz).
   These are development targets, not guaranteed capacity. Do not manufacture fresh position
   fixes by repeating an old sample at 4 Hz.
-- [ ] Prefer an instructor-coordinated slot schedule with bounded discovery/control windows
-  and one focused high-rate allocation. Account for half-duplex RX/TX, clock drift, missed beacons,
-  newcomers and restart recovery. A focus grant expires unless renewed, so an unreachable old
-  student cannot retain a conflicting fast slot indefinitely. Define a bounded fallback schedule.
+- [x] Use autonomous telemetry and optional instructor Focus messages. The selected student uses
+  about 4 Hz and others about 1 Hz while Focus is recent; after three seconds without control,
+  every student returns to 4 Hz. No instructor reply is required for any individual sample.
+- [ ] Qualify jitter/collisions with four physical students, including simultaneous startup and
+  control loss (up to sixteen data frames/s). Revisit CAD or clock coordination if required,
+  while retaining autonomous transmission when instructor control is unavailable.
 - [ ] Use latest-value telemetry rather than retransmitting a growing history. Bound any control
   acknowledgments/retries and expose effective rates, loss, sample age, RSSI/SNR and TX failures.
   Agree stale/lost thresholds and degraded-rate behavior before field tests.
@@ -130,6 +129,15 @@ Build two firmware loads from shared protocol and Leaf components:
   With training off, ensure transport tasks/queues and active radio work are released or absent.
 
 ## Work item 3: instructor firmware on standard boards
+
+- [x] Replace per-update polling with autonomous student broadcasts. Default/fallback 4 Hz,
+  optional instructor Focus at 1 Hz to reduce other students to 1 Hz for a three-second lease,
+  and two-second audio/data hold. Keep pairing/name persistence, per-source sequence isolation
+  and the message-bus adapters. Both firmware roles need updating.
+- [x] Request 22 dBm and set/verify the 140 mA current limit in the shared training driver.
+- [ ] Re-test airborne-to-ground range, actual RF output/current and one-way control loss on the
+  new autonomous/high-power images. Exercise four physical transmitters with collision/focus
+  changes and no instructor control; software tests do not qualify that RF workload.
 
 - [ ] Refine UI usability following the 2026-10-25 operator test: live pairing/name sharing worked,
   but the interaction was confusing. Gather the unclear steps before revising the flow. Make the

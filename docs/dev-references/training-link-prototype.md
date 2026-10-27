@@ -54,8 +54,8 @@ To create the same package locally after a build:
 python src/scripts/package_training_firmware.py --environment leaf_student_3_2_6_training --output-dir .pio/training-downloads/3.2.6
 ```
 
-- **Student:** the normal Leaf application plus one bus subscriber and a polled training
-  service. Parsed GPS updates feed a fixed-size snapshot; pressure/altitude/climb come from
+- **Student:** the normal Leaf application plus one bus subscriber and an autonomous training
+  broadcast service. Parsed GPS updates feed a fixed-size snapshot; pressure/altitude/climb come from
   the existing barometer instrument. Bus callbacks do no radio/SPI work. Settings > Leaf Labs >
   Training now controls runtime radio ownership: On reserves the radio for training; Off restores
   normal FANET lifecycle and preferences. A separate firmware name keeps the normal OTA asset name
@@ -82,7 +82,7 @@ RF/audio loop. PWM muting remains independent of expander access. Full battery p
 charge-state reporting and full power-management qualification remain outstanding; the prototype
 is not the normal Leaf power-management implementation. Basic instructor power control is now
 implemented independently of local sensors: hold center for three seconds in any screen to mute
-PWM/gain, cancel pairing and polling, put the radio to sleep, stop Bluetooth, turn off the LED and
+PWM/gain, cancel pairing and focus announcements, put the radio to sleep, stop Bluetooth, turn off the LED and
 backlight, and release GPIO48's regulator latch. On battery, releasing the button then cuts power.
 USB keeps an inactive `Power off` screen alive; another three-second center hold performs a clean
 restart, with fresh remote state and the saved roster/focus/volume. A button held through boot must
@@ -96,7 +96,7 @@ The instructor generates vario audio from the selected student's valid climb rat
 `ui/audio/vario_audio.h` pitch mapping, beep/rest envelope and pitch smoothing as production Leaf.
 RF updates change the climb input at nominal 4 Hz; they do not restart the local beep clock. The
 40 ms envelope and 10 ms pitch service continue between packets, including a missed packet.
-Climb that becomes invalid or reaches the existing 750 ms age limit is silenced. Focus changes
+Climb that becomes invalid or reaches the two-second age limit is silenced. Focus changes
 reset the old voice. Instructor button clicks remain local sound effects and briefly take priority.
 
 The instructor currently uses the **production default sound profile** (climb starts at +0.05 m/s,
@@ -174,8 +174,8 @@ student ID with Cancel selected by default; select Unpair explicitly to remove i
 Altitude uses fresh GPS altitude when available, otherwise fresh transmitted barometric altitude.
 The latter is **unadjusted pressure altitude**, labeled BARO rather than MSL; it is not the student's
 calibrated MSL readout. GPS-derived course/speed and GPS altitude disappear when GPS data age reaches
-2.5 s. Barometric altitude/climb require pressure age below 750 ms, and all focused values require
-an RF reply younger than 750 ms. Missing data uses dashes, independently of valid remaining fields.
+2.5 s. Barometric altitude/climb require pressure/sample age below two seconds, and all focused values require
+an RF broadcast younger than two seconds. Missing data uses dashes, independently of valid remaining fields.
 The display uses meters/feet, km/h/mph, and m/s/fpm; radio values and local audio remain in their
 original units. Wind and thermal-map data are not available in this protocol and are not inferred.
 
@@ -203,42 +203,71 @@ so the initial ATT MTU does not truncate them.
 
 ## Polling and wire format
 
-Provisional bench PHY: 920.8 MHz, 500 kHz bandwidth, SF7, coding rate 4/5, private LoRa sync word
-`0x12`, explicit headers, two-byte radio CRC, 8-symbol preamble, 10 dBm requested power and
-1.8 V TCXO. This is a matched bench configuration, not FANET and not a qualified production US
-operating profile. Region/module/antenna requirements and installed RF performance remain open.
+The current US test PHY is 920.8 MHz, 500 kHz bandwidth, SF7, coding rate 4/5, private LoRa
+sync word `0x12`, explicit headers, two-byte radio CRC, 8-symbol preamble and 1.8 V TCXO.
+Both student and instructor request **22 dBm** and set **140 mA** current limit after RadioLib
+initialization/PA setup, verifying the readback before starting RX. Frequency/modulation are
+unchanged so the power/current effect can be evaluated separately. Region/module/antenna
+qualification and actual radiated output/range remain unmeasured for this revision.
 
-Range follow-up: the separate FANET branch `codex/lora-fanet-radio-settings` (`20d2ff29`)
-requests 22 dBm and sets/verifies a 140 mA SX1262 current limit after initialization. The training
-driver does not inherit that change: it still requests 10 dBm and retains RadioLib 7.1.2's
-60 mA limit. Apply and verify both settings in the shared training driver for both roles before
-range evaluation; the instructor-to-student poll is required before any student reply. Keep
-the current PHY/schedule initially so power/current effects can be measured separately. FANET's
-neighbor-dependent coding-rate policy does not apply to this private polling protocol. Requested
-power/current settings are not measured RF output or a range guarantee.
+The earlier prototype requested 10 dBm and retained RadioLib 7.1.2's 60 mA limit. The operator
+reported roughly 200–400 m airborne-to-ground range on 2026-10-26. The separate FANET current
+limit work (`20d2ff29`) did not automatically affect this private driver; the settings above now
+apply to both directions. Normal FANET behavior when Training is disabled is unchanged.
 
-An eight-slot cycle uses 125 ms slots. The focused student gets four polls; each of the three
-others gets one, followed by an idle slot. Only the addressed student answers. No clock alignment
-between devices or broadcast telemetry competition is required. These are nominal request rates;
-round-trip latency and sustained real RF rates still need measurement. Instructor loss stops
-student telemetry without affecting the student's local flight instruments. Discovery Hello/Accept
-transmissions occur only during the explicit pairing window.
+**Telemetry no longer depends on an instructor poll or acknowledgement.** Once paired, enabled
+and powered on, the student broadcasts about 4 Hz using its own boot session and sequence. A
+small interval jitter (225–275 ms) reduces persistent collisions between independent radios.
+The instructor accepts any fresh-sequence broadcast from the registered group/device/slot;
+it does not impose a 125 ms response window or require an outstanding request.
+
+The instructor still transmits pairing controls and a 24-byte Focus announcement about once per
+second. A student that has heard a valid Focus in the last three seconds uses 4 Hz when selected,
+or approximately 1 Hz (900–1100 ms jitter) otherwise. If those announcements are lost or the
+instructor is off, each student returns to 4 Hz; broadcasting never stops for lack of a control
+message. No per-sample ACK is sent. Pairing, Training Off, power-off and unpair still gate the
+student intentionally; an unpaired student does not emit flight telemetry.
+
+The selected student's valid climb/pressure can be held for up to **two seconds**, including the
+reported age of the source pressure sample. Audio, instrument fields and BLE validity then become
+unavailable/muted; duplicate/out-of-order packets do not extend freshness. Original invalid
+sensor data still invalidates its fields immediately. GPS age remains bounded separately at
+2.5 seconds. Names remain pairing-only and do not keep flight data alive.
+
+One-way broadcasts remove the weak instructor-to-student direction from the per-update success
+requirement. They also remove strict TDMA collision avoidance: there is no common clock/CAD
+scheduler yet. Under healthy focus control the intended aggregate is about seven data frames/s;
+if all four students lose control, it can rise to sixteen (~47% data airtime at this PHY, before
+other traffic). Jitter is a mitigation, not a four-device reliability guarantee. Multi-radio
+collision behavior, power consumption and improved range still need physical testing.
 
 Protocol v1 uses explicit little-endian fields, never native object bytes:
+
+The active transport adds Broadcast (type 9, the same 64-byte telemetry layout with a student
+sequence) and Focus (type 10, 24 bytes: reserved zero byte plus selected-slot byte). Legacy Poll
+and Telemetry decoding/125 ms matching remain for regression compatibility but are not used by
+the current adapters. **Update both student and instructor** for autonomous mode; saved groups,
+slots, names and enable settings remain valid without re-pairing. The earlier download links
+below contain the old polling transport and must not be used to test this revision.
+
+Broadcasts cannot allocate a roster slot. Per-student sequence checks reject duplicate and
+out-of-order data within a boot; one retired session is retained to reject late data from the
+immediately preceding boot. These identity/CRC checks are not cryptographic authentication.
 
 | Offset | Field |
 | --- | --- |
 | 0-1 | Magic `54 4c` |
-| 2-3 | Version 1, type (poll 1 / telemetry 2 / Hello 3 / Offer 4 / Accept 5 / Confirm 6) |
-| 4-19 | Group, sender identity, boot session, request sequence; four uint32 values |
-| 20 onward | Poll: requested slot and focused slot. Telemetry: fields below. |
+| 2-3 | Version 1, type (legacy Poll 1 / Telemetry 2 / Hello 3 / Offer 4 / Accept 5 / Confirm 6 / Broadcast 9 / Focus 10) |
+| 4-19 | Group, sender identity, boot session, packet sequence; four uint32 values |
+| 20 onward | Poll/Focus: requested/reserved slot and focused slot. Telemetry/Broadcast: fields below. |
 | Last 2 bytes | CRC16-CCITT, polynomial `0x1021`, initial `0xffff` |
 
 Polls are 24 bytes. Telemetry is 64 bytes, with slot/validity, GPS/pressure sample ages (uint16 ms),
 legacy tone frequency (uint16 Hz, ignored for audio), pressure (uint32 Pa), signed latitude/longitude (1e-7 degrees),
 signed GPS MSL and pressure altitudes (int32 cm), climb (int16 cm/s), speed (uint16 cm/s),
 course (uint16 hundredths of a degree), UTC date (uint32 YYYYMMDD) and time (uint32 HHMMSScc).
-The telemetry sequence echoes the poll and is accepted once, only for that pending slot/window.
+Broadcast uses an independently advancing student sequence and no pending window. The retained
+legacy Telemetry type echoes its Poll sequence only in the legacy receiver path.
 Unknown versions, sizes, CRCs, groups, source identities and obsolete replies are rejected.
 
 Enrollment control frames are 31 bytes: the same 20-byte header, target ID (uint32), target boot
@@ -249,13 +278,12 @@ identity/boot session and assigned nonzero group. Accept reverses sender/target 
 the proposal's group/slot and nonce. Confirm must match the exact user-approved Offer. The instructor
 retries confirmation after enrollment until it receives validated telemetry or its bounded handshake
 expires, rather than allocating another slot on duplicate Accept. Offer/Confirm retries vary between
-500 and 874 ms before slot scheduling, avoiding repeated collisions with the installed student's
-fixed 500 ms Accept retry. Control frames use idle/unpaired slots or the pending student's slot;
-other roster entries retain their polls. Enrollment IDs/nonces filter
+500 and 874 ms between attempts, avoiding repeated collisions with the student's fixed 500 ms
+Accept retry. Other roster entries retain their independent broadcasts. Enrollment IDs/nonces filter
 accidental/stale traffic; they are not cryptographic authentication.
 
-Focus changes cancel outstanding replies, clear partly queued BLE output and silence old tones.
-Focused data expires after 750 ms; GPS validity additionally respects its original sample age
+Focus changes send a prompt Focus announcement, clear partly queued BLE output and silence old
+tones; background broadcasts remain accepted. Focused data expires after two seconds; GPS validity additionally respects its original sample age
 and a 2.5-second limit. Stale GPS emits an invalid fix and stale vario emits unavailable values,
 following the [LK8EX1 specification](https://github.com/LK8000/LK8000/blob/master/Docs/LK8EX1.txt).
 Actual phone behavior on invalidation, reconnect and source switching must still be tested.
@@ -651,3 +679,41 @@ at the operator's request. Its SHA256 is
 static RAM/flash remain 36,456 / 679,840 bytes. Both written app hashes verified. Its USB console
 did not reappear after reset, so startup/display confirmation is pending; this does not extend
 the previous instructor's live pairing/runtime evidence to this board.
+
+
+### Autonomous telemetry and RF power revision (2026-10-26)
+
+The shared training radio now requests 22 dBm and sets the SX1262 current limit to 140 mA
+following PA initialization, with register readback required for successful startup. Paired,
+enabled students transmit autonomously at approximately 4 Hz with jitter even if they never
+hear the instructor. Once-per-second focus announcements reduce nonfocused students to 1 Hz;
+without an announcement for three seconds they return to 4 Hz. There is no per-sample poll,
+acknowledgement or 125-ms response deadline. Fresh climb values can drive local vario audio
+for up to two seconds, accounting for the age of the source sample, before muting.
+
+Verification for this revision:
+
+- Formatter and all seven pure training test targets, including the new autonomous-telemetry
+  test, passed. The new test also passed AddressSanitizer/UndefinedBehaviorSanitizer. Checks
+  cover four paired sources, source isolation, duplicate/out-of-order/session/sequence guards,
+  focus leases, two-second audio/NMEA freshness and pairing completion without polls.
+- A fresh training simulator build passed the student and instructor UI integration targets.
+  The student adapter emitted valid sequential telemetry without injected instructor traffic,
+  changed background rate on a valid focus control, returned to 4 Hz when control expired, and
+  stopped on disable/unpair. This stand-in does not qualify RF collisions or radio performance.
+- Firmware builds passed for v3.2.5 student (105,460 static RAM / 2,409,848 reported flash bytes),
+  v3.2.7 instructor (36,488 / 679,988) and normal v3.2.6 (104,572 / 2,394,232).
+  Student static RAM increased by 8 bytes and instructor by 32; the normal build is unchanged.
+  These are static build figures, not measured peak memory or execution-time results.
+- Instructor SHA256 `60b00178a51b18dcd866aeca794bc95b783aa6f7046ed2b4baf79cf329a99812`
+  was flashed and hash-verified in both app slots on `48:ca:43:59:ae:a8`, preserving NVS.
+  A bounded no-reset capture showed group 7101, focus 0, high volume, radio/expander ready,
+  TX advancing from 120 to 135 at one focus announcement per second, and zero radio errors.
+  Radio readiness includes successful 140-mA register readback; RF output power was not measured.
+  No student telemetry was received. Captures: `.pio/training-autonomous-instructor-flash.log`
+  and `.pio/training-autonomous-instructor-runtime.log`.
+- The matching v3.2.5 student image has been built but has not yet been installed. Both roles
+  must be updated for the new telemetry types; saved pairings remain usable. The earlier
+  downloadable builds above still use the previous polling protocol and 10-dBm request.
+  New-protocol over-air pairing/data/audio, physical range and four-student collision behavior
+  remain hardware checks. No range improvement is claimed from compilation or startup alone.

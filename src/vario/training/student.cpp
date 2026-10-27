@@ -25,6 +25,8 @@ namespace training {
     link_.enabled = config_.store.getBool("enabled", link_.binding.valid());
     session_ = esp_random();
     if (!session_) session_ = 1;
+    lastTxAt_ = millis();
+    nextTxMs_ = 50 + esp_random() % 201;
     lastHandoff_ = millis() - 250;
     Serial.println(
         "TRAINING STUDENT: Leaf Labs > Training; enable 0/1, pair, accept, cancel, forget, status");
@@ -39,6 +41,8 @@ namespace training {
     storageError_ = config_.store.putBool("enabled", value) != 1;
     if (storageError_) return false;
     link_.setEnabled(value);
+    lastTxAt_ = millis();
+    nextTxMs_ = 50 + esp_random() % 201;
     lastHandoff_ = millis() - 250;
     return true;
   }
@@ -46,17 +50,20 @@ namespace training {
     if (!enabled() || !fanetRadio.isDetected()) return false;
     uint32_t nonce = esp_random();
     link_.beginPair(millis(), nonce ? nonce : 1);
-    pairTxAt_ = millis();
-    nextPairTxMs_ = 100 + esp_random() % 400;
+    lastTxAt_ = millis();
+    nextTxMs_ = 100 + esp_random() % 400;
     return true;
   }
   bool Student::confirmPair() {
     if (!link_.acceptOffer(millis())) return false;
-    pairTxAt_ = millis() - 500;
-    nextPairTxMs_ = 0;
+    lastTxAt_ = millis() - 500;
+    nextTxMs_ = 0;
     return true;
   }
-  void Student::cancelPair() { link_.cancelPair(); }
+  void Student::cancelPair() {
+    link_.cancelPair();
+    nextTxMs_ = 0;
+  }
   bool Student::unpair() {
     const Binding previous = link_.binding;
     link_.unpair();
@@ -72,7 +79,7 @@ namespace training {
     if (pairing()) return "Searching...";
     if (!paired()) return "Not paired";
     if (!reserved_ || !radio_.ready()) return "Radio waiting";
-    return link_.connected(millis()) ? "Connected" : "Connecting...";
+    return link_.connected(millis()) ? "Instructor seen" : "Broadcasting";
   }
   void Student::on_receive(const GpsReading& message) {
     // The normal GPS instrument publishes this parsed bus value. No RF/SPI/formatting here.
@@ -123,14 +130,27 @@ namespace training {
       }
       if (wantsRadio && reserved_ && !radio_.ready()) radio_.begin();
     }
-    Packet poll;
-    if (wantsRadio && reserved_ && radio_.receive(poll)) {
+    Packet incoming;
+    if (wantsRadio && reserved_ && radio_.receive(incoming)) {
       const Binding previous = link_.binding;
-      if (link_.enroll(poll, now, deviceId(), session_) && !saveBinding()) link_.binding = previous;
-      if (link_.poll(poll, now)) {
+      if (link_.enroll(incoming, now, deviceId(), session_)) {
+        if (!saveBinding())
+          link_.binding = previous;
+        else {
+          lastTxAt_ = now;
+          nextTxMs_ = 50 + esp_random() % 201;
+        }
+      }
+      link_.control(incoming, now);  // Focus changes the rate; it never authorizes individual data.
+    }
+    if (wantsRadio && reserved_ && radio_.ready() && !radio_.busy() && paired() && !pairing()) {
+      const bool fast = link_.fast(now);
+      // Accelerate immediately after focus selection or loss of instructor control.
+      if (fast && nextTxMs_ > 275) nextTxMs_ = broadcastInterval(true, esp_random());
+      if (uint32_t(now - lastTxAt_) >= nextTxMs_) {
         Packet response;
-        response.header = {Type::Telemetry, link_.binding.group, deviceId(), session_,
-                           poll.header.sequence};
+        response.header = {Type::Broadcast, link_.binding.group, deviceId(), session_,
+                           broadcastSequence_ + 1};
         response.data = gps_;
         auto& d = response.data;
         d.slot = link_.binding.slot;
@@ -149,11 +169,14 @@ namespace training {
         }
         // V1 keeps the legacy tone bytes for wire compatibility; audio is synthesized from climb.
         d.toneHz = 0;
-        radio_.send(response);
+        const bool sent = radio_.send(response);
+        if (sent) ++broadcastSequence_;
+        lastTxAt_ = millis();
+        nextTxMs_ = sent ? broadcastInterval(fast, esp_random()) : 10 + esp_random() % 11;
       }
     }
     if (wantsRadio && reserved_ && radio_.ready() && !radio_.busy() && pairing() &&
-        uint32_t(now - pairTxAt_) >= nextPairTxMs_) {
+        uint32_t(now - lastTxAt_) >= nextTxMs_) {
       // Jitter bounds collisions when several students open discovery together.
       Packet control;
       if (accepting()) {
@@ -171,8 +194,8 @@ namespace training {
         }
       }
       if (radio_.send(control)) {
-        pairTxAt_ = now;
-        nextPairTxMs_ = accepting() ? 500 : 750 + esp_random() % 500;
+        lastTxAt_ = now;
+        nextTxMs_ = accepting() ? 500 : 750 + esp_random() % 500;
       }
     }
     if (uint32_t(millis() - lastStatus_) >= 5000) {

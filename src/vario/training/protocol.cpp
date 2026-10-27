@@ -48,14 +48,15 @@ namespace training {
   }
   size_t encode(const Packet& f, uint8_t* out, size_t cap) {
     const bool control = f.header.type >= Type::Hello && f.header.type <= Type::Confirm;
-    const bool request = f.header.type == Type::Poll;
+    const bool request = f.header.type == Type::Poll || f.header.type == Type::Focus;
     const bool namedHello = f.header.type == Type::Hello && f.pilotName[0];
     if (namedHello && !validPilotName(f.pilotName, HELLO_NAME_BYTES)) return 0;
-    size_t n = request ? 24 : f.header.type == Type::Telemetry ? 64 : control ? 31 : 0;
+    size_t n = request ? 24 : telemetryType(f.header.type) ? 64 : control ? 31 : 0;
     if (namedHello) n += 1 + strlen(f.pilotName);
     if (!out || !n || cap < n || !f.header.group || !f.header.sender || !f.header.session ||
-        (f.header.type == Type::Telemetry && !validData(f.data)) ||
-        (request && (f.requestedSlot >= STUDENTS || f.focusSlot >= STUDENTS)) ||
+        (telemetryType(f.header.type) && !validData(f.data)) ||
+        (request && (f.requestedSlot >= STUDENTS || f.focusSlot >= STUDENTS ||
+                     (f.header.type == Type::Focus && f.requestedSlot != 0))) ||
         (control && (!f.header.sequence || f.assignedSlot >= STUDENTS ||
                      (f.header.type == Type::Hello ? (f.header.group != DISCOVERY_GROUP ||
                                                       f.target || f.targetSession || f.assignedSlot)
@@ -106,9 +107,9 @@ namespace training {
     if (get(p, 2) != 0x4c54 || get(p, 1) != 1) return false;
     Packet f;
     f.header.type = Type(get(p, 1));
-    const bool request = f.header.type == Type::Poll;
+    const bool request = f.header.type == Type::Poll || f.header.type == Type::Focus;
     const bool namedHello = f.header.type == Type::Hello && n >= 33;
-    if (!((request && n == 24) || namedHello || (f.header.type == Type::Telemetry && n == 64) ||
+    if (!((request && n == 24) || namedHello || (telemetryType(f.header.type) && n == 64) ||
           (f.header.type >= Type::Hello && f.header.type <= Type::Confirm && n == 31)))
       return false;
     f.header.group = get(p, 4);
@@ -166,13 +167,29 @@ namespace training {
   }
   void Receiver::cancel() { pendingSlot_ = 255; }
   bool Receiver::accept(const Packet& f, uint32_t now, bool pairing) {
-    if (f.header.type != Type::Telemetry || !group || f.header.group != group ||
-        f.data.slot >= STUDENTS || f.data.slot != pendingSlot_ ||
-        f.header.sequence != pendingSequence_ || uint32_t(now - pendingAt_) >= SLOT_MS ||
-        !validData(f.data) || !f.header.sender || !f.header.session)
+    const bool stream = f.header.type == Type::Broadcast;
+    if (!telemetryType(f.header.type) || !group || f.header.group != group ||
+        f.data.slot >= STUDENTS || !validData(f.data) || !f.header.sender || !f.header.session)
       return false;
     auto& s = students[f.data.slot];
-    if (s.id != f.header.sender && (s.id || !pairing)) return false;
+    if (stream) {
+      // Unsolicited data can only refresh an explicitly paired roster entry.
+      if (!s.id || s.id != f.header.sender) return false;
+      if (s.received) {
+        if (s.session == f.header.session) {
+          if (!newer(f.header.sequence, s.sequence)) return false;
+        } else {
+          // Reject a late packet from the immediately preceding boot, without keeping a queue.
+          if (f.header.session == s.previousSession) return false;
+          s.previousSession = s.session;
+        }
+      }
+      s.sequence = f.header.sequence;
+    } else {
+      if (f.data.slot != pendingSlot_ || f.header.sequence != pendingSequence_ ||
+          uint32_t(now - pendingAt_) >= SLOT_MS || (s.id != f.header.sender && (s.id || !pairing)))
+        return false;
+    }
     s.id = f.header.sender;
     s.session = f.header.session;
     s.data = f.data;
@@ -191,14 +208,16 @@ namespace training {
   }
   bool Receiver::climbFresh(uint32_t now) const {
     return fresh(now) && (students[focus].data.valid & Climb) &&
-           uint32_t(now - students[focus].receivedAt) + students[focus].data.pressureAge < 750;
+           uint32_t(now - students[focus].receivedAt) + students[focus].data.pressureAge <
+               LINK_STALE_MS;
   }
   size_t nmea(const Receiver& r, uint32_t now, unsigned sentence, char* out, size_t cap) {
     if (!out || cap < 8 || r.focus >= STUDENTS || sentence > 2) return 0;
     const auto& d = r.students[r.focus].data;
     if (sentence == 2) {
-      const bool pressure = r.fresh(now) && (d.valid & Baro) &&
-                            uint32_t(now - r.students[r.focus].receivedAt) + d.pressureAge < 750;
+      const bool pressure =
+          r.fresh(now) && (d.valid & Baro) &&
+          uint32_t(now - r.students[r.focus].receivedAt) + d.pressureAge < LINK_STALE_MS;
       // LK8000 Docs/LK8EX1.txt defines these unavailable-value sentinels.
       return finish(out, cap,
                     snprintf(out, cap, "$LK8EX1,%lu,%ld,%d,99,999,",

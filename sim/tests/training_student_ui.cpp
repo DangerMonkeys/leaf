@@ -9,6 +9,7 @@
 #include "runtime.h"
 #include "sim/board.h"
 #include "sim/clock.h"
+#include "sim/training_radio.h"
 #include "training/pilot_name.h"
 #include "training/student.h"
 #include "ui/display/display.h"
@@ -119,6 +120,65 @@ int main() {
   assert(migrated.instructor() == 42 && migrated.slot() == 2);
   migrated.unpair();
   assert(!migrated.paired());
+  // Exercise the real student adapter, not just the pure link state, with no instructor polls.
+  legacy.begin("training-v1");
+  const uint32_t binding[] = {7101, 42, 2};
+  legacy.putBytes("binding", binding, sizeof(binding));
+  legacy.putBool("enabled", true);
+  legacy.end();
+  student.begin();
+  sim::training_radio::beginCapture();
+  auto run = [&](uint32_t duration) {
+    for (uint32_t elapsed = 0; elapsed < duration; elapsed += 10) {
+      sim::clock().advanceUs(10000);
+      student.update();
+    }
+  };
+  run(2200);
+  auto verifyFrames = [&] {
+    uint32_t previous = 0;
+    for (const auto& frame : sim::training_radio::sent()) {
+      const auto& p = frame.packet;
+      assert(p.header.type == training::Type::Broadcast && p.header.group == 7101 &&
+             p.header.sender == training::deviceId() && p.data.slot == 2);
+      assert(!previous || training::newer(p.header.sequence, previous));
+      previous = p.header.sequence;
+      uint8_t bytes[training::MAX_PACKET];
+      assert(training::encode(p, bytes, sizeof(bytes)) == 64);
+    }
+  };
+  verifyFrames();
+  assert(sim::training_radio::sent().size() >= 7 && sim::training_radio::sent().size() <= 10);
+  sim::training_radio::beginCapture();
+  training::Packet focus;
+  focus.header = {training::Type::Focus, 7101, 42, 11, 1};
+  focus.focusSlot = 0;
+  sim::training_radio::inject(focus);
+  run(1000);
+  ++focus.header.sequence;
+  sim::training_radio::inject(focus);
+  run(1000);
+  verifyFrames();
+  assert(sim::training_radio::sent().size() >= 1 && sim::training_radio::sent().size() <= 3);
+  // Once control is lost, keep transmitting and return to 4 Hz, including after instructor off.
+  sim::training_radio::beginCapture();
+  run(7000);
+  verifyFrames();
+  unsigned fastFrames = 0;
+  for (const auto& frame : sim::training_radio::sent())
+    if (uint32_t(millis() - frame.at) < 4000) ++fastFrames;
+  assert(fastFrames >= 14 && fastFrames <= 18);
+  assert(student.setEnabled(false));
+  sim::training_radio::beginCapture();
+  run(3000);
+  assert(sim::training_radio::sent().empty() && !fanetRadio.trainingReserved());
+  student.setEnabled(true);
+  student.unpair();
+  sim::training_radio::beginCapture();
+  run(1000);
+  assert(sim::training_radio::sent().empty());
+  sim::training_radio::endCapture();
+  puts("Actual student adapter: autonomous 4 Hz, optional 1 Hz focus control, fallback after control loss, enable/unpair gating passed");
   puts(
       "Student UI, radio lifecycle stand-in, repeated toggles and legacy pairing migration passed; "
       "no RF simulated");

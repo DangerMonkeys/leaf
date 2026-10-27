@@ -34,8 +34,8 @@ namespace training {
     Radio radio_;
     Console console_;
     Telemetry gps_;
-    uint32_t gpsAt_ = 0, session_ = 0, lastStatus_ = 0, lastHandoff_ = 0, pairTxAt_ = 0;
-    uint32_t nextPairTxMs_ = 0;
+    uint32_t gpsAt_ = 0, session_ = 0, lastStatus_ = 0, lastHandoff_ = 0, lastTxAt_ = 0;
+    uint32_t nextTxMs_ = 0, broadcastSequence_ = 0;
     bool reserved_ = false, storageError_ = false;
     uint8_t statusPage_ = 0;
   };

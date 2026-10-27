@@ -87,7 +87,7 @@ int main() {
   receiver.expect(teacher.slot(), 102, 1400);
   assert(receiver.accept(wire(telemetry), 1401, false));
   assert(!strcmp(state.pilotName, "Alex Taylor"));
-  assert(!receiver.fresh(2200));  // The label cannot keep flight data alive.
+  assert(!receiver.fresh(3401));  // The label cannot keep flight data alive.
   student.beginPair(2300, 10);
   teacher.open(2300);
   assert(teacher.hello(wire(student.hello(77, 33, "Beth Wong")), 2301));
@@ -114,7 +114,7 @@ int main() {
     assert(!encode(removed, bytes, sizeof(bytes)) && !student.poll(removed, 2500));
   }
   // Prevent a full Packet (including its name buffer) creeping back into persistent student state.
-  static_assert(sizeof(StudentLink) <= 64, "Student pairing state must not retain a name buffer");
+  static_assert(sizeof(StudentLink) <= 68, "Student pairing state must not retain a name buffer");
   printf("Pairing-only pilot names: codec/UTF-8, dropped-frame retries, identity checks, "
          "re-pair/reconnect labels and compact student state (%zu bytes) passed\n", sizeof(StudentLink));
 }

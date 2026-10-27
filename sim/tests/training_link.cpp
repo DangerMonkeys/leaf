@@ -124,11 +124,11 @@ int main() {
   }
   assert(strstr(line, "$LK8EX1,101325,-34,-123,99,999,") != nullptr);
   assert(nmea(receiver, 3002, 0, line, 8) == 0);
-  assert(!receiver.fresh(3751) && !receiver.climbFresh(3751));
-  assert(nmea(receiver, 3751, 2, line, sizeof(line)) > 0);
+  assert(!receiver.fresh(5001) && !receiver.climbFresh(5001));
+  assert(nmea(receiver, 5001, 2, line, sizeof(line)) > 0);
   assert(strstr(line, "$LK8EX1,999999,99999,9999,99,999,"));
   checksum(line);
-  assert(nmea(receiver, 3751, 1, line, sizeof(line)) > 0 && strstr(line, "$GPRMC,,V,"));
+  assert(nmea(receiver, 5001, 1, line, sizeof(line)) > 0 && strstr(line, "$GPRMC,,V,"));
   checksum(line);
   receiver.students[0].data.gpsAge = 2499;
   assert(!receiver.positionFresh(3002));

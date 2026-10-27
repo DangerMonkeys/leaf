@@ -402,3 +402,11 @@ test-version-markers: $(BUILD)/version_markers_test
 	@$<
 	@grep -aq 'LEAF_HARDWARE_VARIANT=' $<
 	@grep -aq 'LEAF_FIRMWARE_VERSION=' $<
+
+.PHONY: test-training-broadcast
+$(BUILD)/training_broadcast_test: $(SIM)/tests/training_broadcast.cpp $(ROOT)/src/vario/training/protocol.cpp $(ROOT)/src/vario/training/protocol.h $(ROOT)/src/vario/training/student_link.h $(ROOT)/src/vario/training/instructor_link.h
+	@mkdir -p $(BUILD)
+	@$(CXX) -std=c++17 -Wall -Wextra -Werror -I$(ROOT)/src/vario $< $(ROOT)/src/vario/training/protocol.cpp -o $@
+
+test-training-broadcast: $(BUILD)/training_broadcast_test
+	@$<

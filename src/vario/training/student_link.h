@@ -82,26 +82,37 @@ namespace training {
           p.header.group != binding.group || p.header.sender != binding.instructor ||
           !p.header.session || p.requestedSlot != binding.slot)
         return false;
+      return hear(p, now);
+    }
+    bool control(const Packet& p, uint32_t now) {
+      if (!enabled || pairing(now) || !binding.valid() || p.header.type != Type::Focus ||
+          p.header.group != binding.group || p.header.sender != binding.instructor ||
+          !p.header.session || p.requestedSlot != 0 || p.focusSlot >= STUDENTS)
+        return false;
+      return hear(p, now);
+    }
+    bool connected(uint32_t now) const {
+      return enabled && !pairing(now) && seen_ && uint32_t(now - lastControl_) < FOCUS_LEASE_MS;
+    }
+    bool fast(uint32_t now) const { return !connected(now) || focused_; }
+
+   private:
+    bool hear(const Packet& p, uint32_t now) {
       if (seen_ && p.header.session == peerSession_ && !newer(p.header.sequence, sequence_))
         return false;
       seen_ = true;
       peerSession_ = p.header.session;
       sequence_ = p.header.sequence;
-      lastPoll_ = now;
+      lastControl_ = now;
+      focused_ = p.focusSlot == binding.slot;
       return true;
     }
-    bool connected(uint32_t now) const {
-      // Background slots are polled at 1 Hz; permit two missed polls on the student UI.
-      return enabled && !pairing(now) && seen_ && uint32_t(now - lastPoll_) < 3000;
-    }
-
-   private:
     // Only retain routing fields. Never keep packet/name/telemetry buffers on the student.
     struct Offer {
       Header header;
       uint8_t assignedSlot = 0;
     } offer_;
-    uint32_t pairAt_ = 0, nonce_ = 0, peerSession_ = 0, sequence_ = 0, lastPoll_ = 0;
-    bool pairing_ = false, offered_ = false, accepted_ = false, seen_ = false;
+    uint32_t pairAt_ = 0, nonce_ = 0, peerSession_ = 0, sequence_ = 0, lastControl_ = 0;
+    bool pairing_ = false, offered_ = false, accepted_ = false, seen_ = false, focused_ = true;
   };
 }  // namespace training

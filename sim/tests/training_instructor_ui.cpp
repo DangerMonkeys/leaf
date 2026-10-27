@@ -147,7 +147,7 @@ int main() {
   v = instructorFlight(receiver, 3000, units);
   assert(!v.position && v.climb && v.altitude && v.barometric);
   rosterScreen("sim/build-tests/instructor-no-gps.png", 3000);
-  d.pressureAge = 740;
+  d.pressureAge = LINK_STALE_MS - 10;
   v = instructorFlight(receiver, 3000, units);
   assert(!v.climb && !v.altitude);
   rosterScreen("sim/build-tests/instructor-stale.png", 3000);
