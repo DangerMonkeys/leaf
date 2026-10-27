@@ -34,7 +34,7 @@ async function run() {
 
   responses.push(response(202), response(202), response(200, { count: 2 }));
   await context.loadLogbook();
-  assert.deepEqual(requests, ['/api/logbook?repair=1', '/api/logbook', '/api/logbook']);
+  assert.deepEqual(requests, ['/api/logbook', '/api/logbook', '/api/logbook']);
   assert.equal(yields, 2);
   assert.equal(elements.logCount.textContent, 2);
 
@@ -56,8 +56,9 @@ async function run() {
   responses.push(response(202), response(200));
   await context.fetchLogbook('/api/logbook/entry?path=example.json', true);
   assert.deepEqual(requests, [
-    '/api/logbook/entry?path=example.json&repair=1', '/api/logbook/entry?path=example.json'
+    '/api/logbook/entry?path=example.json', '/api/logbook/entry?path=example.json'
   ]);
-  console.log('Embedded logbook JavaScript: syntax, repair polling, deletion refresh and unavailable state passed.');
+  assert(!javascript.includes('repair=1'), 'Nominal UI must never request repair');
+  console.log('Embedded logbook JavaScript: syntax, read-only scan polling, deletion refresh and unavailable state passed.');
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });

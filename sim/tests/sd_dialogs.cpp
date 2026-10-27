@@ -109,8 +109,10 @@ namespace {
     settings.labs_leafLog = true;
   }
   void repair() {
-    for (unsigned i = 0; LogbookStore::repairPending() && i < 10000; ++i)
+    for (unsigned i = 0; LogbookStore::repairPending() && i < 10000; ++i) {
+      LogbookStore::startRepair();
       LogbookStore::serviceRepair();
+    }
     assert(!LogbookStore::repairPending());
   }
   FlightStats sampleStats() {
@@ -218,13 +220,14 @@ namespace {
     void older() { setting_change(Button::RIGHT, ButtonEvent::CLICKED, 1); }
   } book;
   void captureBook(const char* name, const char* title, const char* condition) {
+    for (unsigned i = 0; i < 10000; ++i) book.service();
     book.draw();
     snapshot(std::string("logbook/") + name, title, condition,
              "src/vario/ui/display/pages/menu/page_logbook.cpp");
   }
   void openBook() {
     book.showNewest();
-    repair();
+    for (unsigned i = 0; i < 10000; ++i) book.service();
     book.draw();
   }
   void saveScreens() {
@@ -338,8 +341,10 @@ namespace {
     seed(3);
     book.showNewest();
     captureBook("opening", "Opening logbook",
-                "Nominal opening while the quiet repair scan is pending.");
+                "Read-only filename scan completed; no implicit repair.");
+    LogbookStore::beginRepairSession();
     repair();
+    book.showNewest();
     captureBook("normal-imperial", "Logbook: newest of three",
                 "Three complete readable flights; no status alert.");
     units(false);
@@ -372,21 +377,22 @@ namespace {
     captureBook("empty", "Logbook: empty", "No saved flights on a readable card.");
     seed(1, 1, false);
     openBook();
-    captureBook("placeholder-only", "Logbook: incomplete placeholder hidden",
-                "Only an incomplete placeholder survives. It is not listed as a completed flight.");
+    captureBook("placeholder-only", "Logbook: incomplete placeholder unavailable",
+                "An incomplete main is counted but shown unavailable, with the Repair Logs hint.");
     reset();
     std::ofstream(root + path(1).c_str()) << "{broken";
     openBook();
-    captureBook("unreadable-only", "Logbook: unreadable entry hidden",
-                "Only malformed JSON, with no recoverable candidate. No per-file parse alert.");
+    captureBook("unreadable-only", "Logbook: unreadable entry unavailable",
+                "A malformed main remains visible without any automatic repair.");
     reset();
     seed(1);
     std::ofstream(root + path(2).c_str()) << "{broken";
     seed(3, 1, false);
     openBook();
-    assert(LogbookStore::count() == 1);
-    captureBook("mixed-records-filtered", "Logbook: only available flights counted",
-                "One good flight, one malformed record, one incomplete placeholder; pager is 1/1.");
+    assert(LogbookStore::count() == 3);
+    captureBook(
+        "mixed-records-filtered", "Logbook: all main filenames counted",
+        "One good flight, one malformed record and one placeholder; newest is unavailable at 1/3.");
 
     reset();
     seed(1);
@@ -394,27 +400,30 @@ namespace {
     seed(2, 3, true, ".tmp");
     book.showNewest();
     captureBook("repair-pending", "Logbook: repair pending",
-                "Same Opening logbook message while a completed temporary awaits repair.");
+                "The incomplete main remains unavailable before explicit fixture maintenance.");
+    LogbookStore::beginRepairSession();
     repair();
+    book.showNewest();
     assert(LogbookStore::count() == 2 && !SD_MMC.exists(path(2) + ".tmp"));
     captureBook(
         "after-repair", "Logbook: recovered completed flight",
-        "Completed temporary promoted, then displayed normally. No repair-success message.");
+        "Explicit maintenance promoted the completed temporary before reopening the browser.");
     reset();
     seed(1);
     seed(2, 2, false);
     seed(2, 3, true, ".tmp");
     faults("promote", 10);
     openBook();
-    assert(LogbookStore::count() == 1 && SD_MMC.exists(path(2) + ".tmp"));
+    assert(LogbookStore::count() == 2 && SD_MMC.exists(path(2) + ".tmp"));
     captureBook("repair-failed-quiet", "Logbook: repair failed quietly",
-                "Promotion fails once. The older available flight is shown as 1/1; no Repair "
-                "deferred alert.");
+                "The incomplete main remains visible at 1/2, with its temporary preserved.");
     reset();
     seed(1, 3, true, ".bak");
+    LogbookStore::beginRepairSession();
+    repair();
     openBook();
     captureBook("backup-recovered", "Logbook: recovered backup",
-                "Backup-only completed record promoted and shown normally.");
+                "Explicit fixture maintenance promoted a backup-only record before browsing.");
 
     reset();
     seed(1, 3, true);

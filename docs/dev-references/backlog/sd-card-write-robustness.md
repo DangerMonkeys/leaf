@@ -9,8 +9,9 @@ description: Two-phase plan for recoverable logbook saves and resource-conscious
 original-versus-parsed floating-point fingerprints and excessive save-path I/O. The follow-up
 removes normal readback/preparation scans and redundant explicit pre-close sync, coalesces launch
 placeholders, reuses checked staging files for stop retries, and displays the immediate summary
-from RAM. Quiet, bounded repair moves to logbook/web opening and upload preparation while the
-timer is stopped. Only terminal flight-save failure gets a per-flight warning; deletion refreshes
+from RAM. Recovery is restricted to charging-page upload preparation and the explicit Logging >
+Repair Logs action. Nominal browsing uses sliced filename-only scans and reads only the selected
+flight; no per-flight RAM index is retained. Only terminal flight-save failure gets a per-flight warning; deletion refreshes
 available entries quietly. See [the current implementation contract](../../../src/vario/logbook/README.md)
 for exact limits and UI behavior. The historical implementation/verification record below describes
 the original Phase 1; its readback and eager-recovery policy is superseded by this refinement.

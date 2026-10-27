@@ -32,65 +32,38 @@ void PageLogbook::showNewest() {
   modal = false;
   cursor_position = CURSOR_BACK;
   deletePending = 0;
-  LogbookStore::beginRepairSession();
-  waitingForRepair = LogbookStore::repairPending();
-  if (waitingForRepair) cursor_max = CURSOR_BACK;
-  if (!waitingForRepair) loadNewest();
+  loadNewest();
 }
 
 void PageLogbook::showModalNewest() {
   modal = true;
   cursor_position = CURSOR_BACK;
   deletePending = 0;
-  LogbookStore::beginRepairSession();
-  waitingForRepair = LogbookStore::repairPending();
-  if (waitingForRepair) cursor_max = CURSOR_BACK;
-  if (!waitingForRepair) loadNewest();
+  loadNewest();
   push_page(this);
 }
 
 void PageLogbook::loadNewest() {
-  unavailable = !logbook_io::directoryAvailable();
-  String path;
-  if (!LogbookStore::newestEntryPath(path)) {
-    currentPath = "";
-    summary = LogbookEntrySummary();
-    position = 0;
-    total = 0;
-    cursor_max = CURSOR_BACK;
-    cursor_position = CURSOR_BACK;
-    return;
-  }
-  loadPath(path);
+  currentPath = "";
+  scanDirection = 0;
+  scan.begin();
+  waitingForScan = true;
+  cursor_max = CURSOR_BACK;
 }
 
 void PageLogbook::loadPath(const String& path) {
   currentPath = LogbookStore::normalizePath(path);
   deletePending = 0;
-  if (!LogbookStore::readSummary(currentPath, summary, false)) {
-    summary = LogbookEntrySummary();
-    position = total = 0;
-    LogbookStore::entryPositionNewestFirst(currentPath, position, total);
-    cursor_max = total ? cursor_page : CURSOR_BACK;
-    cursor_position = CURSOR_BACK;
-    return;
-  }
-  cursor_max = cursor_page;
-  LogbookStore::entryPositionNewestFirst(currentPath, position, total);
+  scanDirection = 0;
+  scan.begin(currentPath);
+  waitingForScan = true;
 }
 
 void PageLogbook::loadAdjacent(bool newer) {
-  if (currentPath.isEmpty()) return;
-
-  String path;
-  const bool found = newer ? LogbookStore::nextEntryPath(currentPath, path)
-                           : LogbookStore::previousEntryPath(currentPath, path);
-  if (found) {
-    speaker.playSound(newer ? fx::increase : fx::decrease);
-    loadPath(path);
-  } else {
-    speaker.playSound(fx::cancel);
-  }
+  if (currentPath.isEmpty() || waitingForScan) return;
+  scanDirection = newer ? 1 : -1;
+  scan.begin(currentPath);
+  waitingForScan = true;
 }
 
 void PageLogbook::deleteCurrent() {
@@ -113,7 +86,7 @@ void PageLogbook::deleteCurrent() {
     deletePending = 0;
     // Refresh what remains without a per-file alert or recovery that could undo
     // a partial deletion. A still-present flight remains available to delete again.
-    if (LogbookStore::readSummary(currentPath, summary, false))
+    if (LogbookStore::readSummary(currentPath, summary))
       LogbookStore::entryPositionNewestFirst(currentPath, position, total);
     else
       loadNewest();
@@ -123,14 +96,35 @@ void PageLogbook::deleteCurrent() {
 bool PageLogbook::cursorUsesLeftButton() const { return cursor_position == cursor_page; }
 
 void PageLogbook::draw() {
-  if (waitingForRepair && !LogbookStore::repairPending()) {
-    waitingForRepair = false;
-    loadNewest();
+  // Also advance in direct simulator/gallery draws; the normal loop services this between frames.
+  scan.service();
+  if (waitingForScan && !scan.pending()) {
+    waitingForScan = false;
+    unavailable = scan.unavailable();
+    const auto& nav = scan.navigation();
+    total = nav.total;
+    if (scanDirection) {
+      const String adjacent = scanDirection > 0 ? nav.nextPath : nav.previousPath;
+      if (!adjacent.isEmpty()) {
+        currentPath = adjacent;
+        position = scanDirection > 0 ? nav.position - 1 : nav.position + 1;
+        speaker.playSound(scanDirection > 0 ? fx::increase : fx::decrease);
+      } else {
+        position = nav.position;
+        speaker.playSound(fx::cancel);
+      }
+    } else {
+      if (currentPath.isEmpty()) currentPath = scan.newestPath();
+      position = nav.position;
+    }
+    summary = LogbookEntrySummary();
+    if (!unavailable && !currentPath.isEmpty()) LogbookStore::readSummary(currentPath, summary);
+    cursor_max = total ? cursor_page : CURSOR_BACK;
   }
   u8g2.firstPage();
   do {
     menu_ui::drawTitle("Logbook", menu_ui::GLYPH_LOGGING);
-    if (waitingForRepair) {
+    if (waitingForScan) {
       message_box::draw("Opening", "logbook");
     } else if (summary.valid) {
       if (settings.labs_leafLog && summary.leafLogStatus != LeafLogFlightStatus::NotApplicable) {
@@ -153,8 +147,12 @@ void PageLogbook::draw() {
 }
 
 void PageLogbook::drawEmpty() {
-  message_box::draw(unavailable || !sdcard.firmwareCanAccessFilesystem() || total ? "Unavailable"
-                                                                                  : "No flights");
+  if (unavailable || !sdcard.firmwareCanAccessFilesystem())
+    message_box::draw("Unavailable");
+  else if (total)
+    message_box::draw("Log unavailable", "Run Repair Logs");
+  else
+    message_box::draw("No flights");
   if (total) {
     drawDeleteRow(156);
     drawPageRow(171);
@@ -233,6 +231,7 @@ void PageLogbook::setting_change(Button dir, ButtonEvent state, uint8_t count) {
   if (cursor_position == cursor_back) {
     if (state == ButtonEvent::CLICKED || state == ButtonEvent::HELD) {
       speaker.playSound(state == ButtonEvent::HELD ? fx::exit : fx::cancel);
+      scan.cancel();
       if (modal) {
         modal = false;
         mainMenuPage.backToMainMenu();
@@ -247,7 +246,7 @@ void PageLogbook::setting_change(Button dir, ButtonEvent state, uint8_t count) {
     return;
   }
 
-  if (waitingForRepair) return;
+  if (waitingForScan) return;
 
   if (cursor_position == cursor_page) {
     if (state == ButtonEvent::CLICKED) {

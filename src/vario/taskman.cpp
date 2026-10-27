@@ -36,6 +36,7 @@
 #include "system/usb_state.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
+#include "ui/display/pages/menu/page_menu_log.h"
 #include "ui/input/buttons.h"
 #include "ui/settings/settings.h"
 #include "utils/magic_enum.h"
@@ -164,9 +165,11 @@ void TaskManager::update() {
   {
     cpu_utilization::Scope services(
         runtime_capture::Work::Services, true,
-        networkWork || heartbeatDue ||
+        networkWork || heartbeatDue || LogbookStore::repairPending() ||
+            logMenuPage.logbookScanning() ||
             (cpu_utilization::capturing() && settings.udpInjectionEnabled()));
     udpMessageServer.update();
+    logMenuPage.serviceLogbook();
     if (!leafLogSync.scanning() && !leafLogSync.transferInFlight()) LogbookStore::serviceRepair();
 
     // LOOP NOTES:

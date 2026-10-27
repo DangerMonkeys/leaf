@@ -28,6 +28,11 @@
 extern LogbookEntryFile logbookEntry;
 
 namespace {
+  void serviceMaintenance() {
+    LogbookStore::startRepair();
+    LogbookStore::serviceRepair();
+  }
+
   std::string root;
   std::string failStage;
   unsigned failures = 0;
@@ -224,8 +229,7 @@ namespace {
       candidate(path + suffix, 4);
       String found;
       LogbookStore::beginRepairSession();
-      for (unsigned i = 0; LogbookStore::repairPending() && i < 1000; ++i)
-        LogbookStore::serviceRepair();
+      for (unsigned i = 0; LogbookStore::repairPending() && i < 1000; ++i) serviceMaintenance();
       assert(!LogbookStore::repairPending());
       assert(LogbookStore::count() == 1);
       assert(LogbookStore::newestEntryPath(found) && found == path);
@@ -531,16 +535,15 @@ namespace {
     candidate(path + ".tmp", 3, true, 90);
     faults("promote", 10);
     LogbookStore::beginRepairSession();
-    for (unsigned i = 0; LogbookStore::repairPending() && i < 1000; ++i)
-      LogbookStore::serviceRepair();
+    for (unsigned i = 0; LogbookStore::repairPending() && i < 1000; ++i) serviceMaintenance();
     assert(!LogbookStore::repairPending() && calls == 1 && exists(path + ".tmp"));
-    assert(LogbookStore::count() == 0);  // Do not present the one-second placeholder as a flight.
+    assert(LogbookStore::count() ==
+           0);  // Failed promotion left only auxiliary candidates; browsing never repairs.
     LeafLogCandidate upload;
-    assert(!LogbookStore::classifyForLeafLog(path, upload) && calls == 1);
+    assert(!LogbookStore::classifyForLeafLog(path, upload) && calls == 2);
     faults();
     LogbookStore::beginRepairSession();
-    for (unsigned i = 0; LogbookStore::repairPending() && i < 1000; ++i)
-      LogbookStore::serviceRepair();
+    for (unsigned i = 0; LogbookStore::repairPending() && i < 1000; ++i) serviceMaintenance();
     assert(!LogbookStore::repairPending() && LogbookStore::count() == 1);
     assert(!exists(path + ".tmp") && revision(path) == 3);
 
@@ -550,7 +553,7 @@ namespace {
     LogbookStore::beginRepairSession();
     flightTimer_start();
     faults("read", 1000);
-    LogbookStore::serviceRepair();
+    serviceMaintenance();
     assert(!LogbookStore::repairPending() && calls == 0 && exists(path + ".tmp"));
     faults();
     flightTimer_stop(false);
@@ -571,9 +574,9 @@ namespace {
     candidate(path + ".tmp", 2, false);
     faults("temp_cleanup", 10);
     assert(!LogbookStore::classifyForLeafLog(path, upload) && calls == 1);
-    assert(!LogbookStore::recordLeafLogFlightId(path, "must-not-write") && calls == 1);
+    assert(!LogbookStore::recordLeafLogFlightId(path, "must-not-write") && calls == 2);
     LogbookEntrySummary readable;
-    assert(LogbookStore::readSummary(path, readable, false));
+    assert(LogbookStore::readSummary(path, readable));
     faults();
     LogbookStore::beginRepairSession(false);
     assert(LogbookStore::classifyForLeafLog(path, upload) && !exists(path + ".tmp"));
@@ -607,8 +610,7 @@ namespace {
         }
       }
       LogbookStore::beginRepairSession();
-      for (unsigned i = 0; LogbookStore::repairPending() && i < 10000; ++i)
-        LogbookStore::serviceRepair();
+      for (unsigned i = 0; LogbookStore::repairPending() && i < 10000; ++i) serviceMaintenance();
       assert(!LogbookStore::repairPending());
       for (const auto& [filename, original] : completed) {
         std::ifstream input(root + "/logbook/" + filename);
@@ -685,7 +687,7 @@ namespace {
     logbookPage.showNewest();
     logbookPage.draw();
     screenshot("opening-logbook");
-    while (LogbookStore::repairPending()) LogbookStore::serviceRepair();
+    while (LogbookStore::repairPending()) serviceMaintenance();
     logbookPage.draw();
     faults("delete_backup", 1);
     logbookPage.attemptDelete();
@@ -695,12 +697,12 @@ namespace {
     reset();
     raw(path, "{broken");
     logbookPage.showNewest();
-    while (LogbookStore::repairPending()) LogbookStore::serviceRepair();
+    while (LogbookStore::repairPending()) serviceMaintenance();
     logbookPage.draw();
     screenshot("unreadable-record-hidden");
     SD_MMC.simSetPresent(false);
     logbookPage.showNewest();
-    while (LogbookStore::repairPending()) LogbookStore::serviceRepair();
+    while (LogbookStore::repairPending()) serviceMaintenance();
     logbookPage.draw();
     screenshot("card-unavailable");
     SD_MMC.simSetPresent(true);

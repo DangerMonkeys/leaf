@@ -24,7 +24,7 @@ namespace logbook_io {
   Result lastResult();
   bool retryable();
   bool ensureDirectory();
-  bool directoryAvailable();
+  bool directoryAvailable(bool* missing = nullptr);
 
   // Owned by one writer, not a background retry queue. A checked temporary can be
   // promoted again without serializing or reading it back on the next stop attempt.

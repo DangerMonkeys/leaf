@@ -25,21 +25,36 @@ comparing original float values against their parsed JSON round trip caused fals
 0.2.4-968. One previous `.bak` is retained. Leaf Log status updates read the main once, modify it,
 and use the same checked replacement routine.
 
-Quiet recovery runs when opening the device logbook/web app and during Leaf Log's eligibility
-scan. It requires a stopped flight timer and firmware filesystem ownership. Healthy mains are
-read without inspecting their backups. A temporary, missing/malformed main or incomplete record
-triggers one candidate-set recovery attempt per viewing/upload session (up to 16 affected sets).
-Only recovery compares parsed candidates: completed records outrank placeholders; unordered
-completed candidates and unreadable/unsupported candidates are preserved. Unresolved conflicts
-remain viewable through a readable main but are excluded from upload/status writes.
+Recovery runs only during charging-page Leaf Log upload preparation or the explicit
+**Logging > Repair Logs** action. Summary reads, ordinary device/web browsing, deletion refresh,
+and downloads never initiate recovery. Manual repair is unavailable with the flight timer running;
+a new flight, cancellation, or storage ownership loss stops maintenance safely between operations.
+Healthy mains are read without inspecting their backups. Candidate comparison preserves the
+existing rules: completed records outrank placeholders; ambiguous, unreadable or unsupported
+candidates remain intact and are reported as unresolved rather than successful repairs.
 
-Directory discovery is sliced (up to 16 entries/10 ms for viewing repair), closes its iterator
-before mutations, and can stop between records. A new flight or SD ownership handoff closes it.
-Leaf Log reuses its bounded scan and existing SD-backed queue. No boot scan, new storage task,
-repair journal or flight-time retry loop is added. A single filesystem call can exceed a slice.
-Charging-mode recovery must tolerate immediate power loss on unplug: it does not rewrite candidate
-data or delete the chosen source before promotion. This is application-level ordering, not a
-guarantee against interrupted FAT metadata or SD-controller failure.
+Nominal browsing scans only main `.json` filenames, excluding the active flight. Incomplete or
+unreadable mains participate in counts; selecting one shows `Log unavailable / Run Repair Logs`.
+Auxiliary-only records remain hidden until explicit maintenance or upload preparation recovers
+them. Opening/paging uses one incremental directory pass and one selected JSON read, with a
+fixed number of working filenames, not a per-flight RAM index. Device scans run between display
+frames; web requests poll HTTP 202 until their read-only scan is ready.
+
+Manual checking and directory scans yield after at most 16 entries or a 5 ms soft work slice.
+Checking queues suspect paths into `/.logbook-repair.tmp` on SD. It closes the logbook directory
+before processing that list, avoiding invalidated FAT iterators during renames. Each queued path
+gets one recovery attempt, without the former 16-repair ceiling or a RAM filename-history array.
+The work list is disposable and rebuilt on each request; its size grows only with suspect records,
+not RAM use. Cancellation/completion removes it when firmware owns the filesystem. Individual
+filesystem calls and a candidate-set repair can exceed a work slice.
+
+The action shows rounded `Checking logs`, then `Repairing logs` if needed, followed by `No problems
+found`, `Repair complete`, `Some logs not repaired`, or an explicit failure/cancellation result.
+Each phase is visible for at least one elapsed second; button-triggered redraws cannot shorten it.
+Results return to Logging settings. Back/center cancels between operations. Leaf Log keeps its
+existing charging UI and SD-backed upload queue; no recovery is introduced into flight operation.
+Checked writes, backup preservation and bounded final-save retries are unchanged. None of these
+application-level rules guarantee durability across interrupted FAT metadata or SD-controller failure.
 
 Finalization freezes the ending time/context and makes at most three attempts, pausing 100 ms
 between eligible retries, with a 2,000 ms budget checked before further attempts. Persistent errors
@@ -54,16 +69,16 @@ Start/first-fix/clock saves do not show the completion dialog or enter the immed
 Clock/first-fix/track milestones are coalesced into the initial placeholder where available, with
 at most one later milestone write. Failed placeholders do not trigger periodic retries. Final-save
 retries reuse a checked staging file after promotion failure instead of rewriting or rereading it.
-Unknown temporary files are preserved for idle repair; a writer can replace only its own failed
+Unknown temporary files are preserved for explicit maintenance or charging uploads; a writer can replace only its own failed
 staging file. No IGC synchronization or continuous-write behavior changes. Save failure never
 prevents a subsequent flight from starting after finalization returns.
 
 Deletion removes candidates and associated tracks before the main, checks each result, and also
 finds old filename aliases by the generated flight-ID suffix. It never runs recovery as a deletion
 precondition. A flight currently being recorded cannot be deleted. After partial deletion the UI
-quietly refreshes the available complete, readable records and their counts/navigation. It does
+quietly refreshes main-file records and their counts/navigation. It does
 not repair immediately after deleting or claim success when deletion failed. Save failure is the
-only per-flight exception message; cleanup/repair failures remain serial diagnostics. Whole-card
+only immediate save exception message; manual maintenance reports unresolved repair results. Whole-card
 unavailability is distinct from an empty logbook. Failed redundant-temp cleanup is diagnostic
 rather than a false save failure. Successful repair removes redundant `.tmp`; the `.bak` remains
 intentional, and ambiguous or sole useful candidates may remain until another recovery opportunity.
@@ -81,7 +96,10 @@ to export save/deletion failure screens.
 Set `LEAF_FIELD_EVIDENCE` to a read-only folder containing device subfolders with `logbook`
 directories to additionally recover disposable copies and check that completed temporary payloads
 are promoted byte-for-byte. Never run the tests against original evidence as the writable card root.
-`node sim/tests/logbook_web.js` checks the shipped web JavaScript and its repair polling,
+`make -C sim -j8 test-logbook-maintenance` exercises 400-entry read-only browsing, repair of more
+than 16 records, preserved conflicts, cancellation/storage loss, and minimum dialog visibility;
+it captures only changed/new logbook maintenance screens under `sim/build/logbook-maintenance-screens`.
+`node sim/tests/logbook_web.js` checks the shipped web JavaScript and its read-only scan polling,
 quiet deletion refresh, and distinction between unavailable storage and no flights.
 
 For a disposable FAT32-backed run, build `sim/Dockerfile.fat-test` as `leaf-sd-fat-test`, then run

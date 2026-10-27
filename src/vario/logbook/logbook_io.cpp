@@ -311,7 +311,8 @@ namespace logbook_io {
     if (errno != ENOENT) return fail("directory", errno);
     return mkdir(physical("/logbook").c_str(), 0775) == 0 || fail("directory_create", errno);
   }
-  bool directoryAvailable() {
+  bool directoryAvailable(bool* missing) {
+    if (missing) *missing = false;
     Guard guard;
     if (!guard || !accessible()) return false;
     struct stat info;
@@ -322,7 +323,9 @@ namespace logbook_io {
     if (errno != ENOENT) return false;
     // A readable card with no logbook directory is an ordinary empty logbook.
     File directory = SD_MMC.open("/");
-    return directory && directory.isDirectory();
+    const bool available = directory && directory.isDirectory();
+    if (missing) *missing = available;
+    return available;
   }
   bool prepare(const String& path, uint32_t& revision, uint64_t& previousPayload) {
     Guard guard;

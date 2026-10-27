@@ -78,7 +78,7 @@ void PageFlightSummary::setting_change(Button dir, ButtonEvent state, uint8_t co
           pop_page();
         } else {
           LogbookEntrySummary remaining;
-          if (LogbookStore::readSummary(logbookPath, remaining, false))
+          if (LogbookStore::readSummary(logbookPath, remaining))
             summary = remaining;
           else
             pop_page();

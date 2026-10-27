@@ -317,3 +317,10 @@ $(BUILD)/flight_auto_start_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJ
 
 test-flight-auto-start: $(BUILD)/flight_auto_start_test
 	@cd $(ROOT) && $(BUILD)/flight_auto_start_test
+
+.PHONY: test-logbook-maintenance
+$(BUILD)/logbook_maintenance_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/logbook_maintenance.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/logbook_maintenance.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-logbook-maintenance: $(BUILD)/logbook_maintenance_test
+	@cd $(ROOT) && $(BUILD)/logbook_maintenance_test $(BUILD)/logbook-maintenance-screens

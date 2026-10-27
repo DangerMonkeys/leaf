@@ -2,6 +2,7 @@
 
 #include <ArduinoJson.h>
 #include <SD_MMC.h>
+#include <cerrno>
 
 #include "logbook/logbook_entry.h"
 #include "logbook/logbook_io.h"
@@ -11,35 +12,44 @@
 namespace {
   constexpr const char* LOGBOOK_DIR = "/logbook";
   constexpr size_t LEAF_LOG_MAX_IGC_BYTES = 5 * 1024 * 1024;
-  constexpr size_t MAX_REPAIR_ATTEMPTS = 16;
-  String repairAttempts[MAX_REPAIR_ATTEMPTS];
-  bool repairResults[MAX_REPAIR_ATTEMPTS] = {};
-  size_t repairAttemptCount = 0;
-  File repairDirectory;
-  bool repairing = false;
+  constexpr const char* REPAIR_QUEUE = "/.logbook-repair.tmp";
+  constexpr size_t MAX_PATH_BYTES = 512;
+  File repairDirectory, repairQueue;
+  LogRepairStatus repairStatus;
+  bool cancelRepairRequested = false;
 
   bool repairOnce(const String& path) {
-    if (flightTimer_isRunning() || !sdcard.firmwareCanAccessFilesystem()) return false;
-    for (size_t i = 0; i < repairAttemptCount; ++i)
-      if (repairAttempts[i] == path) return repairResults[i];
-    if (repairAttemptCount == MAX_REPAIR_ATTEMPTS) return false;
-    const size_t index = repairAttemptCount++;
-    repairAttempts[index] = path;
-    return repairResults[index] = logbook_io::recover(path);
+    return !flightTimer_isRunning() && sdcard.firmwareCanAccessFilesystem() &&
+           logbook_io::recover(path);
+  }
+
+  void closeRepairFiles() {
+    repairDirectory.close();
+    repairQueue.close();
+    if (sdcard.firmwareCanAccessFilesystem()) SD_MMC.remove(REPAIR_QUEUE);
+  }
+
+  void finishRepair(LogRepairState state) {
+    closeRepairFiles();
+    repairStatus.state = state;
+  }
+
+  bool healthyMain(const String& path) {
+    if (logbook_io::needsRepair(path)) return false;
+    JsonDocument doc;
+    return logbook_io::load(path, doc) && (doc["complete"].isNull() || doc["complete"].as<bool>());
+  }
+
+  bool nominalPath(const String& entry, String& path) {
+    path = LogbookStore::normalizePath(entry);
+    return LogbookStore::isLogbookJsonPath(path) && !flightTimer_ownsLogbookPath(path);
   }
 
   bool getNextLogbookPath(File& dir, String& path) {
     while (true) {
       String next = dir.getNextFileName();
       if (next.isEmpty()) return false;
-
-      if (logbook_io::candidatePath(next, path)) {
-        // Repair is performed before browsing, with the directory closed. Here
-        // only complete, readable records participate in counts and navigation.
-        JsonDocument doc;
-        if (logbook_io::load(path, doc) && (doc["complete"].isNull() || doc["complete"].as<bool>()))
-          return true;
-      }
+      if (nominalPath(next, path)) return true;
     }
   }
 
@@ -86,61 +96,222 @@ namespace {
   }
 }  // namespace
 
-void LogbookStore::beginRepairSession(bool scan) {
-  logbook_io::Guard guard;
-  if (!guard || (scan && (repairing || flightTimer_isRunning()))) return;
-  repairDirectory.close();
-  for (size_t i = 0; i < repairAttemptCount; ++i) repairAttempts[i] = String();
-  repairAttemptCount = 0;
-  repairing = scan && sdcard.firmwareCanAccessFilesystem();
+void LogbookScan::cancel() {
+  directory_.close();
+  pending_ = false;
+  anchor_ = newest_ = "";
+  navigation_ = LogbookNavigation();
 }
 
-bool LogbookStore::repairPending() { return repairing; }
+void LogbookScan::begin(const String& anchor) {
+  cancel();
+  bool missing = false;
+  unavailable_ = !logbook_io::directoryAvailable(&missing);
+  if (unavailable_ || missing) return;
+  anchor_ = anchor;
+  newer_ = 0;
+  directory_ = SD_MMC.open(LogbookStore::directoryPath());
+  pending_ = bool(directory_);
+  unavailable_ = !pending_;
+}
 
-void LogbookStore::serviceRepair() {
-  if (!repairing) return;
-  if (flightTimer_isRunning() || !sdcard.firmwareCanAccessFilesystem() ||
-      repairAttemptCount == MAX_REPAIR_ATTEMPTS) {
-    repairDirectory.close();
-    repairing = false;
+void LogbookScan::service() {
+  if (!pending_) return;
+  if (!sdcard.firmwareCanAccessFilesystem()) {
+    directory_.close();
+    pending_ = false;
+    unavailable_ = true;
     return;
   }
   logbook_io::Guard guard;
   if (!guard) return;
-  if (!repairDirectory) repairDirectory = SD_MMC.open(LOGBOOK_DIR);
+  const uint32_t started = millis();
+  for (unsigned i = 0; i < 16; ++i) {
+    if (i && millis() - started >= 5) return;
+    errno = 0;
+    String entry = directory_.getNextFileName(), path;
+    const int directoryError = errno;
+    if (entry.isEmpty()) {
+      if (directoryError) unavailable_ = true;
+      directory_.close();
+      pending_ = false;
+      navigation_.position =
+          anchor_.isEmpty() ? (newest_.isEmpty() ? 0 : 1) : (navigation_.found ? newer_ + 1 : 0);
+      if (anchor_.isEmpty()) navigation_.found = !newest_.isEmpty();
+      return;
+    }
+    if (!nominalPath(entry, path)) continue;
+    if (navigation_.total != UINT16_MAX) ++navigation_.total;
+    // sortKeyForPath gives unsynced entries the same ordering as the old browser.
+    const auto key = [](const String& p) {
+      String f = LogbookStore::filenameFromPath(p);
+      return f.startsWith("unsynced_") ? String("0000_") + f : f;
+    };
+    const String candidate = key(path);
+    if (anchor_.isEmpty()) {
+      if (newest_.isEmpty() || candidate > key(newest_)) {
+        navigation_.previousPath = newest_;
+        newest_ = path;
+      } else if (navigation_.previousPath.isEmpty() || candidate > key(navigation_.previousPath)) {
+        navigation_.previousPath = path;
+      }
+    } else {
+      const String anchorKey = key(anchor_);
+      if (path == anchor_)
+        navigation_.found = true;
+      else if (candidate > anchorKey) {
+        if (newer_ != UINT16_MAX) ++newer_;
+        if (navigation_.nextPath.isEmpty() || candidate < key(navigation_.nextPath))
+          navigation_.nextPath = path;
+      } else if (candidate < anchorKey && (navigation_.previousPath.isEmpty() ||
+                                           candidate > key(navigation_.previousPath))) {
+        navigation_.previousPath = path;
+      }
+    }
+  }
+}
+
+bool LogbookStore::repairPending() {
+  return ::repairStatus.state == LogRepairState::Checking ||
+         ::repairStatus.state == LogRepairState::Ready ||
+         ::repairStatus.state == LogRepairState::Repairing;
+}
+
+LogRepairStatus LogbookStore::repairStatus() { return ::repairStatus; }
+
+bool LogbookStore::beginRepairSession(bool scan) {
+  if (!scan) cancelRepairRequested = true;
+  logbook_io::Guard guard;
+  if (!guard) return false;
+  if (!scan) {
+    if (repairPending()) finishRepair(LogRepairState::Cancelled);
+    cancelRepairRequested = false;
+    return true;
+  }
+  if (repairPending()) return false;
+  cancelRepairRequested = false;
+  closeRepairFiles();
+  ::repairStatus = LogRepairStatus();
+  bool missing = false;
+  if (flightTimer_isRunning() || !logbook_io::directoryAvailable(&missing)) {
+    finishRepair(LogRepairState::Failed);
+    return true;
+  }
+  if (missing) {
+    finishRepair(LogRepairState::Complete);
+    return true;
+  }
+  repairDirectory = SD_MMC.open(LOGBOOK_DIR);
   if (!repairDirectory) {
-    repairing = false;
+    finishRepair(LogRepairState::Failed);
+    return true;
+  }
+  repairQueue = SD_MMC.open(REPAIR_QUEUE, "w", true);
+  if (!repairQueue) {
+    finishRepair(LogRepairState::Failed);
+    return true;
+  }
+  ::repairStatus.state = LogRepairState::Checking;
+  return true;
+}
+
+bool LogbookStore::startRepair() {
+  logbook_io::Guard guard;
+  if (!guard || cancelRepairRequested || ::repairStatus.state != LogRepairState::Ready)
+    return false;
+  if (!sdcard.firmwareCanAccessFilesystem() || !sdcard.isCardPresent()) {
+    finishRepair(LogRepairState::Failed);
+    return false;
+  }
+  repairQueue = SD_MMC.open(REPAIR_QUEUE, "r");
+  if (!repairQueue) {
+    finishRepair(LogRepairState::Failed);
+    return false;
+  }
+  ::repairStatus.state = LogRepairState::Repairing;
+  return true;
+}
+
+void LogbookStore::serviceRepair() {
+  if (!repairPending()) return;
+  logbook_io::Guard guard;
+  if (!guard) return;
+  if (cancelRepairRequested) {
+    cancelRepairRequested = false;
+    finishRepair(LogRepairState::Cancelled);
+    return;
+  }
+  if (::repairStatus.state == LogRepairState::Ready) return;
+  if (flightTimer_isRunning()) {
+    finishRepair(LogRepairState::Cancelled);
+    return;
+  }
+  if (!sdcard.firmwareCanAccessFilesystem() || !sdcard.isCardPresent()) {
+    finishRepair(LogRepairState::Failed);
+    return;
+  }
+  if (::repairStatus.state == LogRepairState::Repairing) {
+    if (!repairQueue.available()) {
+      finishRepair(::repairStatus.repaired + ::repairStatus.unresolved == ::repairStatus.problems
+                       ? LogRepairState::Complete
+                       : LogRepairState::Failed);
+      return;
+    }
+    uint8_t prefix[2];
+    if (repairQueue.read(prefix, 2) != 2) {
+      finishRepair(LogRepairState::Failed);
+      return;
+    }
+    const size_t length = prefix[0] | (size_t(prefix[1]) << 8);
+    char buffer[MAX_PATH_BYTES + 1];
+    if (!length || length > MAX_PATH_BYTES || repairQueue.readBytes(buffer, length) != length) {
+      finishRepair(LogRepairState::Failed);
+      return;
+    }
+    buffer[length] = 0;
+    const String path(buffer);
+    if (!isLogbookJsonPath(path)) {
+      finishRepair(LogRepairState::Failed);
+      return;
+    }
+    // The logbook directory is closed throughout mutation; each queued path gets one attempt.
+    if (repairOnce(path) && healthyMain(path))
+      ++::repairStatus.repaired;
+    else
+      ++::repairStatus.unresolved;
     return;
   }
   const uint32_t started = millis();
   for (unsigned entries = 0; entries < 16; ++entries) {
-    if (entries && millis() - started >= 10) return;
-    String path = repairDirectory.getNextFileName();
-    if (path.isEmpty()) {
+    if (entries && millis() - started >= 5) return;
+    errno = 0;
+    String entry = repairDirectory.getNextFileName(), path;
+    const int directoryError = errno;
+    if (entry.isEmpty()) {
+      if (directoryError) {
+        finishRepair(LogRepairState::Failed);
+        return;
+      }
       repairDirectory.close();
-      repairing = false;
+      repairQueue.flush();
+      repairQueue.close();
+      if (!::repairStatus.problems)
+        finishRepair(LogRepairState::Complete);
+      else
+        ::repairStatus.state = LogRepairState::Ready;
       return;
     }
-    if (!path.startsWith("/")) path = String(LOGBOOK_DIR) + "/" + path;
-    const bool backup = path.endsWith(".bak");
-    if (path.endsWith(".tmp") || path.endsWith(".bak")) path.remove(path.length() - 4);
-    if (!isLogbookJsonPath(path)) continue;
-    if (backup && SD_MMC.exists(path)) continue;  // An intentional backup is not a fault.
-    bool attempted = false;
-    for (size_t i = 0; i < repairAttemptCount; ++i) attempted |= repairAttempts[i] == path;
-    if (attempted) continue;
-    if (!logbook_io::needsRepair(path)) {
-      // Read each main once in this directory pass to discover malformed or
-      // incomplete records without inspecting every healthy backup.
-      JsonDocument doc;
-      if (logbook_io::load(path, doc) && (doc["complete"].isNull() || doc["complete"].as<bool>()))
-        continue;
+    if (!logbook_io::candidatePath(entry, path)) continue;
+    ++::repairStatus.checked;
+    if (healthyMain(path)) continue;
+    const size_t length = path.length();
+    const uint8_t prefix[] = {uint8_t(length), uint8_t(length >> 8)};
+    if (!length || length > MAX_PATH_BYTES || repairQueue.write(prefix, 2) != 2 ||
+        repairQueue.write((const uint8_t*)path.c_str(), length) != length) {
+      finishRepair(LogRepairState::Failed);
+      return;
     }
-    // FAT directory entries may move during repair. Close and restart discovery;
-    // the bounded attempted set prevents retries within this session.
-    repairDirectory.close();
-    repairOnce(path);
-    return;
+    ++::repairStatus.problems;
   }
 }
 
@@ -242,7 +413,7 @@ bool LogbookStore::navigationForPath(const String& currentPath, LogbookNavigatio
   return true;
 }
 
-bool LogbookStore::readSummary(const String& path, LogbookEntrySummary& summary, bool recover) {
+bool LogbookStore::readSummary(const String& path, LogbookEntrySummary& summary) {
   logbook_io::Guard guard;
   if (!guard || !sdcard.firmwareCanAccessFilesystem()) return false;
   summary = LogbookEntrySummary();
@@ -250,11 +421,6 @@ bool LogbookStore::readSummary(const String& path, LogbookEntrySummary& summary,
   // Preserve a readable main on an unresolved conflict; writes/uploads remain blocked.
   JsonDocument doc;
   bool loaded = logbook_io::load(normalizedPath, doc);
-  if (recover && !flightTimer_isRunning() &&
-      (!loaded || logbook_io::needsRepair(normalizedPath) ||
-       (doc["complete"].is<bool>() && !doc["complete"].as<bool>()))) {
-    if (repairOnce(normalizedPath)) loaded = logbook_io::load(normalizedPath, doc);
-  }
   if (!loaded || (doc["complete"].is<bool>() && !doc["complete"].as<bool>())) return false;
 
   summary.valid = true;
@@ -436,8 +602,7 @@ const char* LogbookStore::leafLogRejectionLabel(const String& reason) {
 
 bool LogbookStore::deleteEntry(const String& path) {
   // Deletion must not race an idle directory iterator or restart repair afterward.
-  repairDirectory.close();
-  repairing = false;
+  beginRepairSession(false);
   // The shared eraser discovers tracks and filename aliases without running recovery.
   return logbook_io::erase(normalizePath(path));
 }
