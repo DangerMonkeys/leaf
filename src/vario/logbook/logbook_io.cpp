@@ -108,6 +108,39 @@ namespace logbook_io {
       }
       return writer.hash;
     }
+    // Compare the bytes actually emitted, not original floats against their JSON round trip.
+    bool verifyBytes(const String& path, size_t expected, uint64_t hash) {
+      if (int e = fault("verify_read")) return fail("verify_read", e);
+      FILE* file = fopen(physical(path).c_str(), "rb");
+      if (!file) return fail("verify_open", errno);
+      HashWriter actual;
+      size_t length = 0, count;
+      uint8_t buffer[256];
+      while ((count = fread(buffer, 1, sizeof(buffer), file)) != 0) {
+        actual.write(buffer, count);
+        length += count;
+        if (length > expected) break;
+      }
+      bool ok = !ferror(file);
+      if (!ok) fail("verify_io", errno);
+      if (fclose(file) != 0 && ok) ok = fail("verify_close", errno);
+      if (ok && (length != expected || actual.hash != hash || fault("verify_mismatch")))
+        ok = fail("verify_mismatch", EIO, expected, length);
+      return ok;
+    }
+    bool finishCommit(const String& path, bool complete, PendingWrite& state) {
+      if (complete && !state.verified) {
+        if (!verifyBytes(path, state.bytes, state.serializedHash)) return false;
+        state.verified = true;
+      }
+      // A cleanup failure must not turn a verified save into a save failure.
+      if (complete && !removeFile(path + ".bak", "backup_cleanup")) return true;
+      result = {};
+      return true;
+    }
+    bool legacyUndated(const String& path) {
+      return path.substring(path.lastIndexOf('/') + 1).startsWith("unsynced_");
+    }
     struct Candidate {
       bool exists = false;
       bool valid = false;
@@ -252,7 +285,24 @@ namespace logbook_io {
         if (!renameFile(paths[best], paths[0], "promote")) return false;
         if (int e = fault("repair_after_promote")) return fail("repair_after_promote", e);
       }
-      // A previous backup is intentional. Only the now-redundant temporary is disposable.
+      Candidate main = candidates[best];
+      if (best != 0) {
+        Candidate promoted;
+        if (!inspect(path, promoted, doc) || !promoted.valid || compare(promoted, main) != 0)
+          return fail("repair_verification", EIO);
+        main = promoted;
+      }
+      // A complete, authoritative main can retire only a known superseded backup.
+      if (main.complete && best != 2) {
+        const Candidate& backup = best == 1 && candidates[0].valid ? candidates[0] : candidates[2];
+        if (backup.exists) {
+          if (!backup.valid) return fail("backup_unverified", EEXIST);
+          const int order = compare(main, backup);
+          if (order < 0 || order == 2) return fail("recovery_conflict", EEXIST);
+          if (!removeFile(paths[2], "backup_cleanup")) return false;
+        }
+      }
+      // Dispose of a redundant temporary only after the surviving main has been validated.
       if (!removeFile(paths[1], "temp_cleanup")) {
         // Commit/recovery succeeded; leave diagnostic evidence and retry cleanup on next access.
         return true;
@@ -301,6 +351,30 @@ namespace logbook_io {
     if (SD_MMC.exists(path + ".tmp")) return true;
     struct stat info;
     return stat(physical(path).c_str(), &info) != 0 || info.st_size == 0;
+  }
+  bool needsMaintenance(const String& path) {
+    Guard guard;
+    return guard && accessible() && safePath(path) &&
+           (legacyUndated(path) || needsRepair(path) || SD_MMC.exists(path + ".bak"));
+  }
+  bool maintain(String& path) {
+    Guard guard;
+    if (!guard || flightTimer_isRunning() || !recoverLocked(path)) return false;
+    if (!legacyUndated(path)) return true;
+    // Never split an unresolved candidate set or overwrite a colliding alias.
+    if (SD_MMC.exists(path + ".tmp") || SD_MMC.exists(path + ".bak"))
+      return fail("rename_unresolved", EEXIST);
+    const int start = path.lastIndexOf('/') + 1;
+    const String target =
+        path.substring(0, start) + "date_not_available_" + path.substring(start + 9);
+    for (const char* suffix : {"", ".tmp", ".bak"}) {
+      bool exists;
+      if (!existsChecked(target + suffix, exists)) return false;
+      if (exists) return fail("rename_collision", EEXIST);
+    }
+    if (!renameFile(path, target, "rename_main")) return false;
+    path = target;
+    return true;
   }
   bool ensureDirectory() {
     Guard guard;
@@ -371,12 +445,11 @@ namespace logbook_io {
     PendingWrite& state = pending ? *pending : local;
     if (state.revision != revision) {
       state.revision = revision;
-      state.closed = state.promoted = false;
+      state.closed = state.promoted = state.verified = false;
+      state.bytes = 0;
+      state.serializedHash = 0;
     }
-    if (state.promoted) {
-      result = {};
-      return true;
-    }
+    if (state.promoted) return finishCommit(path, doc["complete"] | false, state);
     const String temp = path + ".tmp";
     const String backup = path + ".bak";
     bool exists;
@@ -403,6 +476,7 @@ namespace logbook_io {
       state.ownsTemporary = true;
       struct Writer {
         FILE* file;
+        HashWriter hash;
         size_t write(uint8_t c) { return write(&c, 1); }
         size_t write(const uint8_t* bytes, size_t count) {
           if (int e = fault("write")) {
@@ -410,7 +484,9 @@ namespace logbook_io {
             return 0;
           }
           if (fault("short_write")) count /= 2;
-          return fwrite(bytes, 1, count, file);
+          const size_t written = fwrite(bytes, 1, count, file);
+          hash.write(bytes, written);
+          return written;
         }
       } writer{file};
       size_t actual = serializeJson(doc, writer);
@@ -427,6 +503,8 @@ namespace logbook_io {
       if (ok && (closeFault || closed)) ok = fail("close", closeFault ? closeFault : errno);
       if (!ok) return false;
       state.closed = true;
+      state.bytes = actual;
+      state.serializedHash = writer.hash.hash;
       if (int e = fault("after_temp_close")) return fail("after_temp_close", e);
     } else if (!exists) {
       return fail("missing_temporary", ENOENT);
@@ -445,8 +523,7 @@ namespace logbook_io {
     state.promoted = true;
     state.ownsTemporary = false;
     if (int e = fault("after_promote")) return fail("after_promote", e);
-    result = {};
-    return true;
+    return finishCommit(path, doc["complete"] | false, state);
   }
 
   bool candidatePath(const String& entry, String& path) {

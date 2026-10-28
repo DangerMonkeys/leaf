@@ -118,14 +118,16 @@ void PageLogbook::draw() {
       position = nav.position;
     }
     summary = LogbookEntrySummary();
-    if (!unavailable && !currentPath.isEmpty()) LogbookStore::readSummary(currentPath, summary);
+    readStatus = LogbookReadStatus::Unavailable;
+    if (!unavailable && !currentPath.isEmpty())
+      LogbookStore::readSummary(currentPath, summary, &readStatus);
     cursor_max = total ? cursor_page : CURSOR_BACK;
   }
   u8g2.firstPage();
   do {
     menu_ui::drawTitle("Logbook", menu_ui::GLYPH_LOGGING);
     if (waitingForScan) {
-      message_box::draw("Opening", "logbook");
+      message_box::draw("Loading", "Flights");
     } else if (summary.valid) {
       if (settings.labs_leafLog && summary.leafLogStatus != LeafLogFlightStatus::NotApplicable) {
         u8g2.setFont(leaf_8x14);
@@ -149,8 +151,10 @@ void PageLogbook::draw() {
 void PageLogbook::drawEmpty() {
   if (unavailable || !sdcard.firmwareCanAccessFilesystem())
     message_box::draw("Unavailable");
+  else if (total && readStatus == LogbookReadStatus::RepairNeeded)
+    message_box::draw("Repair needed", "Run", "\"Repair Logs\"");
   else if (total)
-    message_box::draw("Log unavailable", "Run Repair Logs");
+    message_box::draw("Could not read", "flight", "Try again");
   else
     message_box::draw("No flights");
   if (total) {

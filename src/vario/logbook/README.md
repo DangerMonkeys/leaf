@@ -20,21 +20,31 @@ the 64 KiB/16-level validation limits are preserved and reported, not treated as
 Writes use a same-directory `.tmp`, exact byte counts, checked stream errors, `fflush`, and checked
 `fclose`, followed by checked backup rotation and promotion. ESP-IDF's FatFs `f_close` already
 synchronizes the file; no additional explicit `fsync` is requested immediately before it. A normal
-flight save and its immediate RAM summary perform **zero JSON reads**. There is no readback hash:
-comparing original float values against their parsed JSON round trip caused false failures in
-0.2.4-968. One previous `.bak` is retained. Leaf Log status updates read the main once, modify it,
-and use the same checked replacement routine.
+placeholder save and its immediate RAM summary perform **zero JSON reads**. Completed saves
+also perform one sequential byte readback using a 256-byte stack buffer. The writer records
+the exact serialized byte count and FNV-1a-64 checksum (including the newline), then compares
+the promoted main against those bytes before deleting `.bak`. It never compares original
+floats against parsed JSON round trips, which caused false failures in 0.2.4-968. Verification
+failure preserves the backup and uses the existing bounded stop-time retry budget; a retry
+checks the same promoted file without rewriting or rotating its backup. Backup deletion failure
+alone is diagnostic: the verified flight remains saved. Leaf Log result updates use the same
+verified cleanup for completed records. Placeholders retain recovery candidates until completion.
 
 Recovery runs only during charging-page Leaf Log upload preparation or the explicit
 **Logging > Repair Logs** action. Summary reads, ordinary device/web browsing, deletion refresh,
 and downloads never initiate recovery. Manual repair is unavailable with the flight timer running;
 a new flight, cancellation, or storage ownership loss stops maintenance safely between operations.
-Healthy mains are read without inspecting their backups. Candidate comparison preserves the
-existing rules: completed records outrank placeholders; ambiguous, unreadable or unsupported
-candidates remain intact and are reported as unresolved rather than successful repairs.
+A main with a backup is now a maintenance candidate even when readable. Maintenance validates
+the candidate set, reads back a promoted candidate, and deletes a backup only when the completed
+main clearly supersedes it. Completed records outrank placeholders; ambiguous, unreadable,
+unsupported or malformed backups are preserved and reported as unresolved. Automatic upload
+scanning cleans every enumerated record, while retaining the existing session upload limit.
 
 Nominal browsing scans only main `.json` filenames, excluding the active flight. Incomplete or
-unreadable mains participate in counts; selecting one shows `Log unavailable / Run Repair Logs`.
+unreadable mains participate in counts. Opening and paging both show centered `Loading / Flights`.
+Selecting a confirmed malformed/incomplete main shows `Repair needed / Run / "Repair Logs"`;
+a busy lock or temporary read failure shows `Could not read / flight / Try again`. Neither read
+path starts maintenance or treats a transient failure as proof of corruption.
 Auxiliary-only records remain hidden until explicit maintenance or upload preparation recovers
 them. Opening/paging uses one incremental directory pass and one selected JSON read, with a
 fixed number of working filenames, not a per-flight RAM index. Device scans run between display
@@ -53,7 +63,7 @@ found`, `Repair complete`, `Some logs not repaired`, or an explicit failure/canc
 Each phase is visible for at least one elapsed second; button-triggered redraws cannot shorten it.
 Results return to Logging settings. Back/center cancels between operations. Leaf Log keeps its
 existing charging UI and SD-backed upload queue; no recovery is introduced into flight operation.
-Checked writes, backup preservation and bounded final-save retries are unchanged. None of these
+Checked writes and bounded final-save retries remain in place. None of these
 application-level rules guarantee durability across interrupted FAT metadata or SD-controller failure.
 
 Finalization freezes the ending time/context and makes at most three attempts, pausing 100 ms
@@ -80,8 +90,15 @@ quietly refreshes main-file records and their counts/navigation. It does
 not repair immediately after deleting or claim success when deletion failed. Save failure is the
 only immediate save exception message; manual maintenance reports unresolved repair results. Whole-card
 unavailability is distinct from an empty logbook. Failed redundant-temp cleanup is diagnostic
-rather than a false save failure. Successful repair removes redundant `.tmp`; the `.bak` remains
-intentional, and ambiguous or sole useful candidates may remain until another recovery opportunity.
+rather than a false save failure. Successful maintenance removes redundant `.tmp` and provably
+superseded `.bak` files; ambiguous or sole useful candidates remain for another recovery opportunity.
+
+New records without a trustworthy GPS-derived calendar date use
+`date_not_available_<seconds-since-boot>_<flight-id>.json`. They are primary records, never disposable
+errors. During maintenance, resolved legacy `unsynced_` names are renamed to the new prefix without
+changing JSON payloads or track paths. Destination collisions preserve both names and are reported.
+Upload queues follow the returned filename. Both prefixes remain readable and sort together below
+dated flights using filenames only. Existing clock metadata retains its schema's `unsynced` value.
 
 Standalone saving, opening, empty/unavailable and shutdown-failure messages use a centered 96×96
 rounded frame with centered text. Shutdown details say "No IGC file" or "IGC unverified". The

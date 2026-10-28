@@ -98,6 +98,27 @@ namespace {
     step();
   }
 
+  void undatedCleanup() {
+    reset("undated-cleanup");
+    addFlight("unsynced_5_flight");
+    const std::string old = "/logbook/unsynced_5_flight.json";
+    std::ifstream in(root + old);
+    std::string bytes((std::istreambuf_iterator<char>(in)), {});
+    writeFile(old + ".bak", bytes);
+    bytes.pop_back();
+    bytes += ",\"end\":{\"time_valid\":false}}";
+    writeFile(old, bytes);
+    scan();
+    assert(leafLogSync.totalCount() == 1);
+    assert(!std::filesystem::exists(root + old));
+    assert(!std::filesystem::exists(root + old + ".bak"));
+    assert(std::filesystem::exists(root + "/logbook/date_not_available_5_flight.json"));
+    finish();
+    assert(attempts.size() == 1);
+    assert(!std::filesystem::exists(root + "/logbook/date_not_available_5_flight.json.bak"));
+    assert(classify("date_not_available_5_flight").disposition ==
+           LeafLogCandidate::Disposition::Delivered);
+  }
   void largeLogbook() {
     reset("large");
     // beginSession has opened the directory, but has not enumerated it yet.
@@ -255,7 +276,16 @@ namespace {
   void boundedSessionsAndConfirmation() {
     reset("session-limit");
     for (int i = 0; i < 105; ++i) addFlight("flight-" + std::to_string(i));
+    // Cleanup continues past the 100-upload session limit.
+    const std::string last = "/logbook/flight-104.json";
+    std::ifstream input(root + last);
+    std::string original((std::istreambuf_iterator<char>(input)), {});
+    writeFile(last + ".bak", original);
+    original.pop_back();
+    original += ",\"end\":{\"time_valid\":false}}";
+    writeFile(last, original);
     scan();
+    assert(!std::filesystem::exists(root + last + ".bak"));
     assert(leafLogSync.totalCount() == 100);
     finish();
     assert(attempts.size() == 100);
@@ -308,6 +338,7 @@ int main() {
   assert(directory);
   root = std::string(directory) + "/initial";
   sim::clock().setSpeed(0);
+  undatedCleanup();
   largeLogbook();
   retryCurrentFlight();
   alreadySyncedAndUnauthorized();

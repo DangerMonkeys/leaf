@@ -16,7 +16,9 @@ SCREENS = [
     ("repairing-logs", "Repairing logs", "Recovery in progress"),
     ("repair-complete", "Repair complete", "All affected logs recovered"),
     ("no-problems-found", "No problems found", "Healthy logbook"),
-    ("logbook-unavailable", "Unavailable flight", "Read-only browsing"),
+    ("logbook-opening", "Loading Flights", "Opening and paging"),
+    ("logbook-unavailable", "Flight needs repair", "Confirmed invalid/incomplete log"),
+    ("logbook-read-retry", "Could not read flight", "Temporary read failure"),
     ("repair-incomplete", "Some logs not repaired", "Conflict preserved"),
     ("repair-unavailable", "Storage unavailable", "Explicit failure"),
     ("repair-cancelled", "Repair cancelled", "Back / center cancellation"),
@@ -65,6 +67,9 @@ def main():
             shutil.copy2(args.screenshots / (key + ".png"), destination / (key + ".png"))
     sheet(output, SCREENS[:5], 5, "01-maintenance-flow.png", "Logbook maintenance: settings and normal flow")
     sheet(output, SCREENS[5:], 3, "02-maintenance-outcomes.png", "Logbook maintenance: unavailable records and other outcomes")
+    changed = [entry for entry in SCREENS if entry[0] in
+               ("logbook-opening", "logbook-unavailable", "logbook-read-retry")]
+    sheet(output, changed, 3, "03-loading-and-errors.png", "Logbook loading and read outcomes")
     cards = []
     for key, label, detail in SCREENS:
         cards.append(f'<article><h2>{html.escape(label)}</h2><p>{html.escape(detail)}</p>'
@@ -80,6 +85,8 @@ a{color:inherit}</style><h1>Logbook maintenance</h1>
 display enlargement uses nearest-neighbor scaling. Click a screen for its native PNG.</p>
 <main>''' + "".join(cards) + "</main></html>", encoding="utf-8")
     sources = [
+        "src/vario/logbook/logbook_entry.cpp", "src/vario/comms/leaf_log_sync.cpp",
+        "sim/tests/logbook_io.cpp", "sim/tests/leaf_log_sync.cpp",
         "src/vario/logbook/logbook_store.cpp", "src/vario/logbook/logbook_store.h",
         "src/vario/logbook/logbook_io.cpp", "src/vario/taskman.cpp", "src/vario/comms/webserver.cpp",
         "src/vario/ui/display/pages/menu/page_logbook.cpp",

@@ -35,7 +35,7 @@ namespace {
   }
 
   bool healthyMain(const String& path) {
-    if (logbook_io::needsRepair(path)) return false;
+    if (logbook_io::needsMaintenance(path)) return false;
     JsonDocument doc;
     return logbook_io::load(path, doc) && (doc["complete"].isNull() || doc["complete"].as<bool>());
   }
@@ -79,7 +79,7 @@ namespace {
     const String normalizedPath = LogbookStore::normalizePath(path);
     logbook_io::Guard guard;
     if (!guard) return false;
-    if (logbook_io::needsRepair(normalizedPath) &&
+    if ((logbook_io::needsRepair(normalizedPath) || SD_MMC.exists(normalizedPath + ".bak")) &&
         (!repairOnce(normalizedPath) || logbook_io::needsRepair(normalizedPath)))
       return false;
     JsonDocument doc;
@@ -143,9 +143,11 @@ void LogbookScan::service() {
     if (!nominalPath(entry, path)) continue;
     if (navigation_.total != UINT16_MAX) ++navigation_.total;
     // sortKeyForPath gives unsynced entries the same ordering as the old browser.
-    const auto key = [](const String& p) {
+    const auto key = [](const String& p) -> String {
       String f = LogbookStore::filenameFromPath(p);
-      return f.startsWith("unsynced_") ? String("0000_") + f : f;
+      if (f.startsWith("unsynced_")) return String("0000_") + f.substring(9);
+      if (f.startsWith("date_not_available_")) return String("0000_") + f.substring(19);
+      return f;
     };
     const String candidate = key(path);
     if (anchor_.isEmpty()) {
@@ -241,11 +243,11 @@ void LogbookStore::serviceRepair() {
     finishRepair(LogRepairState::Cancelled);
     return;
   }
-  if (::repairStatus.state == LogRepairState::Ready) return;
   if (flightTimer_isRunning()) {
     finishRepair(LogRepairState::Cancelled);
     return;
   }
+  if (::repairStatus.state == LogRepairState::Ready) return;
   if (!sdcard.firmwareCanAccessFilesystem() || !sdcard.isCardPresent()) {
     finishRepair(LogRepairState::Failed);
     return;
@@ -269,13 +271,13 @@ void LogbookStore::serviceRepair() {
       return;
     }
     buffer[length] = 0;
-    const String path(buffer);
+    String path(buffer);
     if (!isLogbookJsonPath(path)) {
       finishRepair(LogRepairState::Failed);
       return;
     }
     // The logbook directory is closed throughout mutation; each queued path gets one attempt.
-    if (repairOnce(path) && healthyMain(path))
+    if (logbook_io::maintain(path) && healthyMain(path))
       ++::repairStatus.repaired;
     else
       ++::repairStatus.unresolved;
@@ -413,16 +415,25 @@ bool LogbookStore::navigationForPath(const String& currentPath, LogbookNavigatio
   return true;
 }
 
-bool LogbookStore::readSummary(const String& path, LogbookEntrySummary& summary) {
+bool LogbookStore::readSummary(const String& path, LogbookEntrySummary& summary,
+                               LogbookReadStatus* status) {
+  summary = LogbookEntrySummary();
+  if (status) *status = LogbookReadStatus::Unavailable;
   logbook_io::Guard guard;
   if (!guard || !sdcard.firmwareCanAccessFilesystem()) return false;
-  summary = LogbookEntrySummary();
   const String normalizedPath = normalizePath(path);
   // Preserve a readable main on an unresolved conflict; writes/uploads remain blocked.
   JsonDocument doc;
-  bool loaded = logbook_io::load(normalizedPath, doc);
-  if (!loaded || (doc["complete"].is<bool>() && !doc["complete"].as<bool>())) return false;
-
+  if (!logbook_io::load(normalizedPath, doc)) {
+    if (status && logbook_io::lastResult().error == EBADMSG)
+      *status = LogbookReadStatus::RepairNeeded;
+    return false;
+  }
+  if (doc["complete"].is<bool>() && !doc["complete"].as<bool>()) {
+    if (status) *status = LogbookReadStatus::RepairNeeded;
+    return false;
+  }
+  if (status) *status = LogbookReadStatus::Ready;
   summary.valid = true;
   summary.path = normalizedPath;
   summary.filename = filenameFromPath(normalizedPath);
@@ -493,6 +504,10 @@ bool LogbookStore::classifyForLeafLog(const String& path, LeafLogCandidate& cand
   candidate = LeafLogCandidate();
   candidate.logbookPath = normalizePath(path);
   if (flightTimer_isRunning()) return false;
+  if (logbook_io::needsMaintenance(candidate.logbookPath) &&
+      (!logbook_io::maintain(candidate.logbookPath) ||
+       logbook_io::needsRepair(candidate.logbookPath)))
+    return false;
   if (logbook_io::needsRepair(candidate.logbookPath) &&
       (!repairOnce(candidate.logbookPath) || logbook_io::needsRepair(candidate.logbookPath)))
     return false;
@@ -633,8 +648,7 @@ String LogbookStore::filenameFromPath(const String& path) {
 
 String LogbookStore::sortKeyForPath(const String& path) {
   const String filename = filenameFromPath(normalizePath(path));
-  if (filename.startsWith("unsynced_")) {
-    return String("0000_") + filename;
-  }
+  if (filename.startsWith("unsynced_")) return String("0000_") + filename.substring(9);
+  if (filename.startsWith("date_not_available_")) return String("0000_") + filename.substring(19);
   return filename;
 }

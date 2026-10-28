@@ -26,7 +26,7 @@ class LogbookEntryFile {
  private:
   String generateFlightId() const;
   String timestampFileStem() const;
-  String unsyncedFileStem() const;
+  String undatedFileStem() const;
   String pathForStem(const String& stem) const;
   bool ensureLogbookDirectory() const;
   time_t startEpochFromStats(const FlightStats& stats) const;

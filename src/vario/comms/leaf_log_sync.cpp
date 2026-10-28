@@ -148,7 +148,7 @@ void LeafLogSync::scanEligibility() {
       }
     }
 
-    if (pendingCount_ >= MAX_SESSION_FLIGHTS || !scanPaths_.available()) {
+    if (!scanPaths_.available()) {
       scanPaths_.close();
       SD_MMC.remove(SCAN_PATHS);
       pendingPaths_.close();
@@ -169,12 +169,13 @@ void LeafLogSync::scanEligibility() {
     if (!LogbookStore::classifyForLeafLog(path, candidate)) continue;
     if (candidate.disposition == LeafLogCandidate::Disposition::Rejected &&
         !candidate.rejectionReason.isEmpty() && !candidate.rejectionPersisted) {
-      if (!LogbookStore::recordLeafLogRejection(path, candidate.rejectionReason)) {
+      if (!LogbookStore::recordLeafLogRejection(candidate.logbookPath, candidate.rejectionReason)) {
         handleTransientFailure("record_rejection_failed");
         return;
       }
-    } else if (candidate.disposition == LeafLogCandidate::Disposition::Pending) {
-      if (pendingCount_ == UINT16_MAX || !writeQueuedPath(pendingPaths_, path)) {
+    } else if (candidate.disposition == LeafLogCandidate::Disposition::Pending &&
+               pendingCount_ < MAX_SESSION_FLIGHTS) {
+      if (pendingCount_ == UINT16_MAX || !writeQueuedPath(pendingPaths_, candidate.logbookPath)) {
         handleTransientFailure("pending_queue_write_failed");
         return;
       }
@@ -200,7 +201,7 @@ void LeafLogSync::selectNextUpload() {
   if (current_.disposition != LeafLogCandidate::Disposition::Pending) {
     if (current_.disposition == LeafLogCandidate::Disposition::Rejected &&
         !current_.rejectionPersisted &&
-        !LogbookStore::recordLeafLogRejection(path, current_.rejectionReason)) {
+        !LogbookStore::recordLeafLogRejection(current_.logbookPath, current_.rejectionReason)) {
       pendingPaths_.seek(position);
       current_ = LeafLogCandidate();
       handleTransientFailure("record_rejection_failed");

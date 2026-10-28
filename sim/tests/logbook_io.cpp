@@ -132,7 +132,7 @@ namespace {
       assert(logbook_io::load(path, doc));
       assert((doc["metrics"]["duration_seconds"] | 0U) >= 2);
       assert(save(path, true, 100));
-      assert(!exists(path + ".tmp") && exists(path + ".bak"));
+      assert(!exists(path + ".tmp") && !exists(path + ".bak"));
       assert(logbook_io::recover(path) && logbook_io::recover(path));
       assert(!exists(path + ".tmp"));
     }
@@ -147,8 +147,9 @@ namespace {
     assert(logbook_io::recover(path));
   }
   void interruptedProcess() {
-    for (const char* stage : {"open", "write", "flush", "close", "backup_rotate", "backup",
-                              "promote", "after_temp_close", "after_backup", "after_promote"}) {
+    for (const char* stage :
+         {"open", "write", "flush", "close", "backup_rotate", "backup", "promote",
+          "after_temp_close", "after_backup", "after_promote", "verify_read", "backup_cleanup"}) {
       reset();
       assert(save(path, false, 0));
       assert(save(path, false, 2));
@@ -363,6 +364,134 @@ namespace {
       assert(doc["complete"].as<bool>());
       assert(!strcmp(doc["notes"]["pilot_notes"], "Keep these notes"));
       assert(!strcmp(doc["leaf_log"]["flight_id"], "delivered"));
+    }
+  }
+  void verifiedCleanup() {
+    // Verify the promoted bytes, including float serialization, before deleting the fallback.
+    for (const char* stage : {"verify_read", "verify_mismatch"}) {
+      reset();
+      candidate(path, 1, false);
+      JsonDocument doc;
+      document(doc, 2, true, 120);
+      doc["metrics"]["max_climb_rate_mps"] = 7.440002f;
+      logbook_io::PendingWrite pending;
+      faults(stage, 1);
+      assert(!logbook_io::commit(path, doc, 0, &pending));
+      assert(exists(path) && exists(path + ".bak") && !exists(path + ".tmp"));
+      const unsigned writes = stages["open"];
+      assert(logbook_io::commit(path, doc, 0, &pending));
+      assert(stages["open"] == writes && !exists(path + ".bak"));
+    }
+    // Detect real, same-length valid-JSON corruption as well as truncation.
+    for (bool truncate : {false, true}) {
+      reset();
+      candidate(path, 1, false);
+      JsonDocument doc;
+      document(doc, 2, true, 120);
+      logbook_io::PendingWrite pending;
+      faults("after_promote", 1);
+      assert(!logbook_io::commit(path, doc, 0, &pending));
+      std::ifstream in(root + path.c_str(), std::ios::binary);
+      std::string good((std::istreambuf_iterator<char>(in)), {});
+      std::string bad = good;
+      if (truncate)
+        bad.pop_back();
+      else {
+        const auto offset = bad.find("120");
+        assert(offset != std::string::npos);
+        bad.replace(offset, 3, "121");
+      }
+      raw(path, bad);
+      faults();
+      assert(!logbook_io::commit(path, doc, 0, &pending));
+      assert(exists(path + ".bak") && stages["open"] == 0);
+      raw(path, good);
+      assert(logbook_io::commit(path, doc, 0, &pending) && !exists(path + ".bak"));
+    }
+    reset();
+    candidate(path, 1, false);
+    faults("backup_cleanup", 1);
+    assert(save(path, true, 120));  // Cleanup alone never makes a verified save fail.
+    assert(exists(path + ".bak"));
+    faults();
+    String maintained = path;
+    assert(logbook_io::maintain(maintained) && !exists(path + ".bak"));
+    reset();
+    candidate(path, 2, true);
+    raw(path + ".bak", "{broken");
+    assert(!logbook_io::maintain(maintained) && exists(path + ".bak"));
+    reset();
+    candidate(path, 2, true, 20);
+    candidate(path + ".bak", 2, true, 30);
+    assert(!logbook_io::maintain(maintained) && exists(path + ".bak"));
+    reset();
+    candidate(path, 2, true);
+    candidate(path + ".bak", 1, false);
+    faults("read", 1);
+    assert(!logbook_io::maintain(maintained) && exists(path + ".bak"));
+    faults();
+    assert(LogbookStore::recordLeafLogFlightId(path, "uploaded"));
+    assert(!exists(path + ".bak") && !exists(path + ".tmp"));
+    assert(LogbookStore::recordLeafLogRejection(path, "invalid_igc"));
+    assert(!exists(path + ".bak"));
+
+    reset();
+    const String legacy = "/logbook/unsynced_10_1234abcd.json";
+    const String renamed = "/logbook/date_not_available_10_1234abcd.json";
+    candidate(legacy, 0);
+    maintained = legacy;
+    assert(logbook_io::maintain(maintained) && maintained == renamed && !exists(legacy));
+    // Collisions preserve both records and are reported, never overwritten.
+    candidate(legacy, 0, true, 99);
+    maintained = legacy;
+    assert(!logbook_io::maintain(maintained) && exists(legacy) && exists(renamed));
+
+    reset();
+    LogbookEntryFile entry;
+    FlightStats stats;
+    assert(entry.begin(stats));
+    assert(LogbookStore::filenameFromPath(entry.path()).startsWith("date_not_available_"));
+    assert(entry.writePlaceholder(stats));
+    faults("verify_read", 20);
+    assert(!entry.finalize(stats));
+    assert(calls == 3 && stages["open"] == 1 && exists(entry.path() + ".bak"));
+    faults();
+    assert(entry.finalize(stats) && !exists(entry.path() + ".bak"));
+  }
+  void fieldCleanup() {
+    const char* evidence = getenv("LEAF_LOGBOOK_CLEANUP_EVIDENCE");
+    if (!evidence) return;
+    for (const char* snapshot : {"logbook - before repair", "logbook - after repair"}) {
+      reset();
+      std::map<std::string, std::string> expected;
+      for (const auto& file :
+           std::filesystem::directory_iterator(std::string(evidence) + "/" + snapshot)) {
+        const std::string name = file.path().filename();
+        std::filesystem::copy_file(file.path(), root + "/logbook/" + name);
+        if (file.path().extension() != ".json") continue;
+        std::ifstream in(file.path(), std::ios::binary);
+        std::string bytes((std::istreambuf_iterator<char>(in)), {});
+        expected[name.rfind("unsynced_", 0) == 0 ? "date_not_available_" + name.substr(9) : name] =
+            bytes;
+      }
+      assert(LogbookStore::beginRepairSession());
+      for (unsigned i = 0; LogbookStore::repairPending() && i < 10000; ++i) serviceMaintenance();
+      auto status = LogbookStore::repairStatus();
+      assert(status.state == LogRepairState::Complete && !status.unresolved);
+      unsigned count = 0;
+      for (const auto& file : std::filesystem::directory_iterator(root + "/logbook")) {
+        assert(file.path().extension() == ".json");
+        const std::string name = file.path().filename();
+        std::ifstream in(file.path(), std::ios::binary);
+        std::string bytes((std::istreambuf_iterator<char>(in)), {});
+        assert(expected.count(name) && expected[name] == bytes);
+        ++count;
+      }
+      assert(count == expected.size() && count == 23 && status.repaired == 23);
+      printf(
+          "Field snapshot cleanup: %s; 19 backups removed, 4 undated names migrated, all 23 main "
+          "payloads identical.\n",
+          snapshot);
     }
   }
   void finalization() {
@@ -732,6 +861,8 @@ int main() {
   recoverySets();
   deletionAndRename();
   uploadStatus();
+  verifiedCleanup();
+  fieldCleanup();
   finalization();
   faults();
   flightTimer_stop(false);

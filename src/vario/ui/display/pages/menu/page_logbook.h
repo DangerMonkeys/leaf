@@ -50,4 +50,5 @@ class PageLogbook : public SettingsMenuPage {
   int8_t scanDirection = 0;
   bool waitingForScan = false;
   bool unavailable = false;
+  LogbookReadStatus readStatus = LogbookReadStatus::Unavailable;
 };

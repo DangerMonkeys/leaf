@@ -22,6 +22,8 @@ struct LeafLogCandidate {
   bool rejectionPersisted = false;
 };
 
+enum class LogbookReadStatus : uint8_t { Ready, RepairNeeded, Unavailable };
+
 struct LogbookEntrySummary {
   bool valid = false;
   String path;
@@ -110,7 +112,8 @@ class LogbookStore {
   static bool entryPositionNewestFirst(const String& currentPath, uint16_t& position,
                                        uint16_t& total);
   static bool navigationForPath(const String& currentPath, LogbookNavigation& navigation);
-  static bool readSummary(const String& path, LogbookEntrySummary& summary);
+  static bool readSummary(const String& path, LogbookEntrySummary& summary,
+                          LogbookReadStatus* status = nullptr);
   // Explicit maintenance only. Suspect paths are spooled on SD, never retained as a RAM list.
   static bool beginRepairSession(bool scan = true);
   static void serviceRepair();

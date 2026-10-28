@@ -74,7 +74,7 @@ bool LogbookEntryFile::begin(const FlightStats& stats) {
   if (startTimeValid_) {
     startEpoch_ = startEpochFromStats(stats);
   }
-  path_ = pathForStem(startTimeValid_ ? timestampFileStem() : unsyncedFileStem());
+  path_ = pathForStem(startTimeValid_ ? timestampFileStem() : undatedFileStem());
   startTemperatureC_ = stats.temperature;
   ProfileStore::activePilot(pilot_);
   ProfileStore::activeGlider(glider_);
@@ -214,8 +214,8 @@ String LogbookEntryFile::timestampFileStem() const {
   return String(stem) + "_" + flightId_;
 }
 
-String LogbookEntryFile::unsyncedFileStem() const {
-  return String("unsynced_") + String(millis() / 1000) + "_" + flightId_;
+String LogbookEntryFile::undatedFileStem() const {
+  return String("date_not_available_") + String(millis() / 1000) + "_" + flightId_;
 }
 
 String LogbookEntryFile::pathForStem(const String& stem) const {

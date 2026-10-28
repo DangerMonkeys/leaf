@@ -133,6 +133,62 @@ namespace {
     book.draw();
     assert(!SD_MMC.exists(path(900)));
   }
+  int temporaryRead(const char* stage) { return !strcmp(stage, "read") ? EIO : 0; }
+  void readOutcomes() {
+    reset();
+    seed(1);
+    LogbookEntrySummary summary;
+    LogbookReadStatus status;
+    assert(LogbookStore::readSummary(path(1), summary, &status) &&
+           status == LogbookReadStatus::Ready);
+    logbook_io::setFaultHook(temporaryRead);
+    assert(!LogbookStore::readSummary(path(1), summary, &status) &&
+           status == LogbookReadStatus::Unavailable);
+    PageLogbook page;
+    page.showNewest();
+    while (page.scanning()) page.service();
+    page.draw();
+    snapshot("logbook-read-retry");
+    logbook_io::setFaultHook(nullptr);
+    std::atomic<bool> locked{false}, release{false};
+    std::thread owner([&] {
+      logbook_io::Guard transaction(true);
+      locked.store(true);
+      while (!release.load()) std::this_thread::yield();
+    });
+    while (!locked.load()) std::this_thread::yield();
+    assert(!LogbookStore::readSummary(path(1), summary, &status) &&
+           status == LogbookReadStatus::Unavailable);
+    release.store(true);
+    owner.join();
+    seed(1, 1, false);
+    assert(!LogbookStore::readSummary(path(1), summary, &status) &&
+           status == LogbookReadStatus::RepairNeeded);
+    std::ofstream(root + path(1).c_str()) << "{broken";
+    assert(!LogbookStore::readSummary(path(1), summary, &status) &&
+           status == LogbookReadStatus::RepairNeeded);
+    // Both undated prefixes retain chronological filename-only ordering through migration.
+    reset();
+    seed(1);
+    std::filesystem::rename(root + path(1).c_str(), root + "/logbook/unsynced_10_00000001.json");
+    seed(2);
+    std::filesystem::rename(root + path(2).c_str(),
+                            root + "/logbook/date_not_available_20_00000002.json");
+    seed(3);
+    LogbookScan scan;
+    scan.begin();
+    while (scan.pending()) scan.service();
+    assert(scan.navigation().total == 3 && scan.newestPath() == path(3));
+    scan.begin("/logbook/date_not_available_20_00000002.json");
+    while (scan.pending()) scan.service();
+    assert(scan.navigation().position == 2 &&
+           scan.navigation().previousPath == "/logbook/unsynced_10_00000001.json");
+    assert(LogbookStore::beginRepairSession());
+    check();
+    repair();
+    assert(!LogbookStore::repairStatus().unresolved &&
+           !SD_MMC.exists("/logbook/unsynced_10_00000001.json"));
+  }
   void maintenance() {
     reset();
     std::filesystem::remove_all(root + "/logbook");
@@ -304,6 +360,7 @@ int main(int argc, char** argv) {
   settings.system_autoOff = 0;
   settings.log_saveTrack = settings.log_autoStart = settings.log_autoStop = false;
   browsing();
+  readOutcomes();
   maintenance();
   reset();
   std::filesystem::remove_all(root);

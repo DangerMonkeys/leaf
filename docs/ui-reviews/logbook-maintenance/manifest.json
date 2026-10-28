@@ -1,19 +1,25 @@
 {
-  "source_base_commit": "d8a755aad9de4e35eb945304cd6f681e11500519",
+  "source_base_commit": "61bd8d2ff17cdecb05e755a9d5eab8b68877909a",
   "source_files_sha256": {
-    "src/vario/logbook/logbook_store.cpp": "a76efbd1271436d3e60ee3111d00de0718da3baae82d073c9ef72c598da490f9",
-    "src/vario/logbook/logbook_store.h": "b8e0fe842c40b536f9d6b10f4597823ff62b15f946175b2521725b37a149c862",
-    "src/vario/logbook/logbook_io.cpp": "cbd338292a3609fc936f3fbe7a8f35ac9d39a76cde62eb9b2a1d224fad96df26",
+    "src/vario/logbook/logbook_entry.cpp": "9409358ba96b1672814ef83bcfc9f39cc1d7ed39fcd2c7b46f4b401553f5957f",
+    "src/vario/comms/leaf_log_sync.cpp": "9fc5ebf15cd79b80f100068c7a592e7938e7ffeca066e0c93221d6f34eee3cc6",
+    "sim/tests/logbook_io.cpp": "068761d52554ee5dc103511d4c2fd17bbd8cf34af88369abfc3425092813f92e",
+    "sim/tests/leaf_log_sync.cpp": "e3debcf4581753cc04885d20a71cb49065067b4c462f49866f3232dc8cf1fe44",
+    "src/vario/logbook/logbook_store.cpp": "65b29f71b2a6347c46565be6b2a0513c220d042c2e98665c3c2c9a48a121b9a8",
+    "src/vario/logbook/logbook_store.h": "37c58fa3022159cb28c9762f15a239655503797ee268b0a3fa0039bc35ff2b33",
+    "src/vario/logbook/logbook_io.cpp": "0f36e66ebfb51dd00807cd64b12e1c719ba85b4168d10de36a0e6413480b045d",
     "src/vario/taskman.cpp": "884e19a1958453a75cb9759184eb80210142d44efd6e57cd71b5a30e6b7c36cf",
     "src/vario/comms/webserver.cpp": "87b58ba0520b7fa458c1b4b6360fadb499cc7dd28bde8b0da1c750daa6f8051b",
-    "src/vario/ui/display/pages/menu/page_logbook.cpp": "52248ec702612b826ed4eaf2d9c7f84f83ee295d46ee926730119aac4761bd89",
+    "src/vario/ui/display/pages/menu/page_logbook.cpp": "2381754298398657b081bad05a8ccab8868630e151527727766a4fda873d9915",
     "src/vario/ui/display/pages/menu/page_repair_logs.cpp": "13c2d7cf761607f7e9a79f3a18cc0ce3ef415bba6ee1e4d993e09da7eb76f440",
     "src/vario/ui/display/pages/menu/page_menu_log.cpp": "e7b2c3ff4b0851775c560803c8d04f3f8107568d97593e47d384cf0de0616d24",
-    "sim/tests/logbook_maintenance.cpp": "5faf52a43c314d918f2d90542643b49262a33c4d6f521cf7f562777150335ceb",
-    "src/vario/logbook/logbook_io.h": "f7ee442fb87b04223a04a0ceafda763c808a3143914b7dd58b9ca42e3c8cf554",
+    "sim/tests/logbook_maintenance.cpp": "ea1233a6b59dcc4a217f07c9e03ff0d1e1f2ddb9628498a1c0b515d77efebe41",
+    "src/vario/logbook/logbook_entry.h": "d252d26e1946f09a0e8f371b96ce8fe542dcccf9a47180fc4a8cde73f766d77a",
+    "src/vario/comms/leaf_log_sync.h": "8e7a77c09df57f67ce0eb994e7e3821c1919df5736b54bc118c01076dde90d3d",
+    "src/vario/logbook/logbook_io.h": "c5c9294a1d4617e602acdf8562d92f95d1d8f16be0aeff18b6516610728f34be",
     "src/vario/taskman.h": "ba60cc934ad84b70ef55657dcb104252fd36f838960f91ce3e972a0d244aae59",
     "src/vario/comms/webserver.h": "96aaff336013e319a02c4c8ec348d123522b92877fc6325fa8465fdd9d67d19d",
-    "src/vario/ui/display/pages/menu/page_logbook.h": "d7a6f718a21395f6e85130c2d66a4f534f2e431b7199b58d0d6c43c838462afa",
+    "src/vario/ui/display/pages/menu/page_logbook.h": "fdee522dd61b4be67f907559a191196f3cd63d6d14333d70888db11e3b68945a",
     "src/vario/ui/display/pages/menu/page_repair_logs.h": "eaafe20f0bbf2d370dce7e02c4c92d726557be874b5f8a0e1f915c9b15269e44",
     "src/vario/ui/display/pages/menu/page_menu_log.h": "b8e1505ea20b6464e97dcb9bd8963e209b2613226f9a7c76284b4ac849a65d11"
   },
@@ -49,9 +55,19 @@
       "sha256": "5be4ec1a5e46c553375f68c71862f6d39acd2687cb65a3a6ed8b7d306c000bdf"
     },
     {
+      "file": "screenshots/logbook-opening.png",
+      "title": "Loading Flights",
+      "sha256": "cde253457d75f6fe6565392e2ec0d5a41cf1b87ffd650dfa3fdcb2c9f6e8d9e5"
+    },
+    {
       "file": "screenshots/logbook-unavailable.png",
-      "title": "Unavailable flight",
-      "sha256": "aade44e208d11aa22dba985afebb623a823cf24885271988f8c057f8db04d56b"
+      "title": "Flight needs repair",
+      "sha256": "143ad0e266fc0324f0d57877d75b643d8ebcb04a99457766ab72366d0c716da9"
+    },
+    {
+      "file": "screenshots/logbook-read-retry.png",
+      "title": "Could not read flight",
+      "sha256": "02a169811203c9963c40c8ebbfd7d9e0eedeb87f69b7827baf045994e102e2a4"
     },
     {
       "file": "screenshots/repair-incomplete.png",

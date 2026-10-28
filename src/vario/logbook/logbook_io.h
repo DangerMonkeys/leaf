@@ -30,6 +30,9 @@ namespace logbook_io {
   // promoted again without serializing or reading it back on the next stop attempt.
   struct PendingWrite {
     uint32_t revision = 0;
+    size_t bytes = 0;
+    uint64_t serializedHash = 0;
+    bool verified = false;
     bool ownsTemporary = false;
     bool closed = false;
     bool promoted = false;
@@ -42,6 +45,9 @@ namespace logbook_io {
               PendingWrite* pending = nullptr);
   bool recover(const String& path);
   bool needsRepair(const String& path);
+  bool needsMaintenance(const String& path);
+  // Explicit maintenance may rename legacy undated files; callers must retain the returned path.
+  bool maintain(String& path);
   bool load(const String& path, JsonDocument& document);
   bool erase(const String& path, const String& trackPath = "");
   bool relocate(const String& oldPath, const String& newPath, bool inspectExisting = true);
