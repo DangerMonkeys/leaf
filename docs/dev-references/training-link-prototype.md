@@ -21,6 +21,7 @@ From the repository root:
 pio run -e leaf_student_3_2_5_training
 pio run -e leaf_student_3_2_6_training
 pio run -e leaf_student_3_2_7_training
+pio run -e leaf_instructor_3_2_5_training
 pio run -e leaf_instructor_3_2_6_training
 pio run -e leaf_instructor_3_2_7_training
 ```
@@ -28,7 +29,7 @@ pio run -e leaf_instructor_3_2_7_training
 Use the local PlatformIO executable if `pio` is not on PATH. Images and separately named
 `firmware-leaf_student_3_2_7.bin` / `firmware-leaf_instructor_3_2_7.bin` artifacts are under
 `.pio/build/<environment>/`. The normal release defaults are unchanged. Student targets support v3.2.5, v3.2.6 and v3.2.7; the
-instructor targets support v3.2.6 and v3.2.7. Add/qualify other hardware revisions separately.
+instructor targets support v3.2.5, v3.2.6 and v3.2.7. Add/qualify other hardware revisions separately.
 The training radio uses each variant's external RF-switch pin as well as the module's DIO2 switch.
 
 ### Student SD-update downloads
@@ -70,7 +71,10 @@ python src/scripts/package_training_firmware.py --environment leaf_student_3_2_6
 
 The instructor targets standard, unmodified boards. It holds the power latch, uses the existing
 SPI display/direct button and speaker PWM pins, and initializes the IO expander using the variant's
-normal output latches and pin directions. Speaker gain uses the same off/low/medium/high bit
+normal output latches and pin directions. On v3.2.5 this uses the expander's all-high reset
+latches for non-volume outputs and address 0x20; speaker gain is on P02/P01 and the radio RX
+switch is GPIO7. GPIO47 remains an input on v3.2.5 because it is the charging-status signal;
+only revisions defining `LED_PIN` drive their separate LED. Speaker gain uses the same off/low/medium/high bit
 settings as Leaf. It starts **enabled at medium volume**, or high if that was saved. A saved low
 level or mute does not reduce startup below medium. Lower gain/mute remain available during use.
 After startup it writes gain only when the requested level changes. No IMU, barometer or ambient-sensor addresses are probed,
@@ -717,3 +721,17 @@ Verification for this revision:
   downloadable builds above still use the previous polling protocol and 10-dBm request.
   New-protocol over-air pairing/data/audio, physical range and four-student collision behavior
   remain hardware checks. No range improvement is claimed from compilation or startup alone.
+
+
+### Instructor v3.2.5 target and flash (2026-10-27)
+
+Added `leaf_instructor_3_2_5_training`, using the normal v3.2.5 expander address, gain pins,
+reset output latches and radio switch pin. Instructor LED writes now honor `LED_PIN`, leaving
+v3.2.5's GPIO47 charging-status input undriven. The formatter and v3.2.5/v3.2.7 instructor
+builds passed. Both use 36,488 static RAM bytes; reported flash is 679,956 / 679,988 bytes.
+The v3.2.5 image SHA256 is
+`1908849f814e596a296044cf2dfaa90597445c88a2e7236c243df32efa485af7`.
+It was flashed and hash-verified in both app slots on `f0:f5:bd:56:16:a0`, preserving NVS.
+The operator confirmed the flash succeeded and swapped boards after completion. A console
+startup check on the flashed board was therefore not completed; the subsequently enumerated
+board was not flashed. Device logs are under `.pio/training-instructor-3-2-5-2026-10-27-*`.

@@ -17,6 +17,7 @@
 #include "console.h"
 #include "esp_random.h"
 #include "hardware/configuration.h"
+#include "hardware/io_pins.h"
 #include "instructor_controls.h"
 #include "instructor_link.h"
 #include "instructor_pairing_screen.h"
@@ -24,6 +25,13 @@
 #include "protocol.h"
 #include "radio.h"
 #include "ui/audio/notes.h"
+// v3.2.5 uses the expander's all-high reset output latches for non-volume pins.
+#ifndef IOEX_REG_OUTPUT_PORT0
+#define IOEX_REG_OUTPUT_PORT0 0xff
+#endif
+#ifndef IOEX_REG_OUTPUT_PORT1
+#define IOEX_REG_OUTPUT_PORT1 0xff
+#endif
 namespace {
   training::Config config;
   training::Console console;
@@ -396,7 +404,9 @@ namespace {
     training::drawInstructorPower(lcd, false, 0);
     lcd.sendBuffer();
     digitalWrite(21, LOW);  // Backlight and status LED off.
-    digitalWrite(47, LOW);
+#ifdef LED_PIN
+    digitalWrite(LED_PIN, LOW);
+#endif
     Serial.println("INSTRUCTOR: power off; hold center 3s to restart on USB");
     // Battery operation ends here once the user releases the physical power button.
     // USB can keep the MCU alive; its off loop accepts only the next power hold.
@@ -516,8 +526,10 @@ namespace {
 void setup() {
   gpio_set_level(GPIO_NUM_48, 1);
   gpio_set_direction(GPIO_NUM_48, GPIO_MODE_OUTPUT);  // Hold regulator during board setup.
-  pinMode(47, OUTPUT);
-  digitalWrite(47, HIGH);
+#ifdef LED_PIN
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, HIGH);
+#endif
   Serial.begin(115200);
   // HWCDC's unsigned retry counter underflows at zero when the host stops draining TX.
   // Keep all USB writes bounded even with a closed/unplugged serial monitor.
