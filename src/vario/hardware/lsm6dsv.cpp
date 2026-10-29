@@ -544,7 +544,7 @@ void LSM6DSV::finishFlatBiasCapture() {
   selfTestInfo("`Test=IMU`, `FlatBias_g=%.6f`, `Saved=%d`", reference.residualG, pass);
   if (pass) {
     imu.setAccelerationBiasReference(reference);
-    imu.wake();
+    imu.wake(GLoadTracker::ResetReason::BiasCalibration);
     testResult_ = TestResult::Pass;
   } else {
     finishSelfTest(false);

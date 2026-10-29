@@ -23,7 +23,7 @@ namespace {
 
     void play(uint32_t durationMs, const std::function<float(uint32_t)>& profile) {
       for (uint32_t elapsed = 0; elapsed < durationMs; elapsed += SAMPLE_MS) {
-        if (t % 1000 == 0) tracker.updateAirborne(airborne);
+        if (t % 1000 == 0) tracker.updateFlightState(airborne, airborne);
         tracker.addSample(profile(elapsed), t);
         t += SAMPLE_MS;
       }
@@ -164,17 +164,17 @@ int main() {
   {
     GLoadTracker g;
     g.startFlight();
-    g.updateAirborne(true);
-    g.updateAirborne(true);
-    check(!g.diagnosticState().airborne, "two handling pulses do not arm flight", 0);
-    g.updateAirborne(false);
-    for (int i = 0; i < 3; ++i) g.updateAirborne(true);
+    g.updateFlightState(false, true);
+    g.updateFlightState(false, true);
+    check(!g.diagnosticState().airborne, "activity without shared launch cannot arm flight", 0);
+    g.updateFlightState(false, false);
+    for (int i = 0; i < 3; ++i) g.updateFlightState(true, true);
     check(g.diagnosticState().ignoreRemainingMs == 15000, "guard starts on confirmed departure", 0);
-    for (int i = 0; i < 30; ++i) g.updateAirborne(false, false);
+    for (int i = 0; i < 30; ++i) g.updateFlightState(false, false, false);
     check(g.diagnosticState().airborne, "missing instruments do not invent landing", 0);
-    for (int i = 0; i < 19; ++i) g.updateAirborne(false);
+    for (int i = 0; i < 19; ++i) g.updateFlightState(false, false);
     check(g.diagnosticState().airborne, "nineteen quiet checks keep flight", 0);
-    g.updateAirborne(false);
+    g.updateFlightState(false, false);
     check(!g.diagnosticState().airborne, "twentieth quiet check lands", 0);
   }
   {
@@ -223,6 +223,27 @@ int main() {
     const uint32_t start = UINT32_MAX - 400;
     for (uint32_t dt = 0; dt < 1000; dt += 50) g.addSample(1, start + dt);
     check(g.filteredValid(start + 1000), "sample age survives millisecond rollover", g.filtered());
+  }
+  {
+    GLoadTracker g;
+    g.resetFilter(GLoadTracker::ResetReason::Wake);
+    for (uint32_t t = 1000; t <= 2000; t += 50) g.addSample(1, t);
+    g.resetFilter(GLoadTracker::ResetReason::SourceChange);
+    g.addSample(1, 2701);
+    auto q = g.takeInterval();
+    check(q.resets == 2 && q.gaps == 1 && q.maxGapMs == 701 && q.maxGapEndMs == 2701,
+          "explicit resets and largest accepted-sample gap are distinct", q.maxGapMs);
+    const uint16_t reasons = static_cast<uint16_t>(GLoadTracker::ResetReason::Wake) |
+                             static_cast<uint16_t>(GLoadTracker::ResetReason::SourceChange) |
+                             static_cast<uint16_t>(GLoadTracker::ResetReason::SampleGap);
+    check(q.resetReasons == reasons, "all restart causes survive the interval", q.resetReasons);
+    q = g.takeInterval();
+    check(q.resetReasons == 0 && q.maxGapMs == 0, "restart diagnostics drain once", 0);
+    g.addSample(1, 2751);
+    g.addSample(1, 2751);  // A rejected duplicate must not become a gap.
+    q = g.takeInterval();
+    check(q.maxGapMs == 50 && q.maxGapEndMs == 2751 && q.rejected == 1,
+          "next interval retains the sample clock", q.maxGapMs);
   }
   printf(failures ? "%d FAILED\n" : "all passed\n", failures);
   return failures ? 1 : 0;

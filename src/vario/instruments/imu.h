@@ -16,7 +16,7 @@ class IMU : public MessageSink<IMU, MotionUpdate>, public IMessageSource {
  public:
   IMU();
 
-  void wake();
+  void wake(GLoadTracker::ResetReason reason = GLoadTracker::ResetReason::Unspecified);
 
   // MessageSink<IMU, MotionUpdate>
   void on_receive(const MotionUpdate& msg);

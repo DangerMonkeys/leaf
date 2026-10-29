@@ -16,7 +16,6 @@ class GLoadTracker {
   static constexpr uint32_t TAKEOFF_IGNORE_MS = 15000;
   static constexpr uint32_t PENDING_BUCKET_MS = 30000;  // Hold back 30-60s.
   static constexpr uint8_t GROUND_SECONDS_TO_LAND = 20;
-  static constexpr uint8_t AIR_SECONDS_TO_FLY = 3;
   static_assert(GROUND_SECONDS_TO_LAND * 1000 < PENDING_BUCKET_MS,
                 "landing must be confirmed before the touchdown can be committed");
 
@@ -50,11 +49,25 @@ class GLoadTracker {
     Range raw, filtered, discarded;
     uint16_t samples = 0, filteredSamples = 0, rejected = 0;
     uint16_t gaps = 0, clippingReports = 0, resets = 0;
+    uint16_t resetReasons = 0;
+    uint32_t maxGapMs = 0, maxGapEndMs = 0;
+  };
+  // Interval bitmask. SampleGap is an automatic averaging restart, not an explicit reset.
+  enum class ResetReason : uint16_t {
+    Unspecified = 1,
+    Sleep = 2,
+    Wake = 4,
+    SensorMessage = 8,
+    SourceChange = 16,
+    MissingAcceleration = 32,
+    InvalidGravity = 64,
+    BiasCalibration = 128,
+    SampleGap = 256
   };
   enum class Transition : uint8_t { None, Airborne, Landed, Unknown, Started, Stopped };
   struct DiagnosticState {
     bool active, airborne;
-    uint8_t groundSeconds, airSeconds;
+    uint8_t groundSeconds;
     uint32_t ignoreRemainingMs;
     bool pending;
     uint32_t bucketStartMs;
@@ -72,21 +85,11 @@ class GLoadTracker {
       else if (int32_t(countFromMs_ - lastSampleMs_) > 0)
         remaining = countFromMs_ - lastSampleMs_;
     }
-    return {active_,
-            airborne_,
-            groundSeconds_,
-            airSeconds_,
-            remaining,
-            bucketStarted_,
-            bucketStarted_ ? bucketStartMs_ : 0,
-            committed_.valid,
-            filteredReady_,
-            lastSampleMs_,
-            filtered_,
-            transition_,
-            current_,
-            previous_,
-            committed_};
+    return {active_,          airborne_,      groundSeconds_,
+            remaining,        bucketStarted_, bucketStarted_ ? bucketStartMs_ : 0,
+            committed_.valid, filteredReady_, lastSampleMs_,
+            filtered_,        transition_,    current_,
+            previous_,        committed_};
   }
   Interval takeInterval() {
     const Interval result = interval_;
@@ -99,34 +102,38 @@ class GLoadTracker {
     committed_ = Range();
     active_ = true;
     airborne_ = takeoffGuardArmed_ = false;
-    groundSeconds_ = airSeconds_ = 0;
+    groundSeconds_ = 0;
     transition_ = Transition::Started;
   }
   void stopFlight() {
     discardPending();
     active_ = airborne_ = takeoffGuardArmed_ = false;
-    groundSeconds_ = airSeconds_ = 0;
+    groundSeconds_ = 0;
     transition_ = Transition::Stopped;
   }
-  // Check counts, approximately once per second. Unknown input must not invent a landing.
-  void updateAirborne(bool airborneNow, bool inputsValid = true) {
+  // Launch is already confirmed by the shared motion-window detector. Activity is
+  // only a landing veto: failing a launch test during slow flight must not land.
+  void updateFlightState(bool launchConfirmed, bool activeMotion, bool inputsValid = true) {
     transition_ = Transition::None;
     if (!active_) return;
+    if (!airborne_) {
+      if (launchConfirmed) {
+        airborne_ = takeoffGuardArmed_ = true;
+        groundSeconds_ = 0;
+        transition_ = Transition::Airborne;
+      } else if (!inputsValid) {
+        transition_ = Transition::Unknown;
+      }
+      return;
+    }
     if (!inputsValid) {
-      groundSeconds_ = airSeconds_ = 0;
+      groundSeconds_ = 0;
       transition_ = Transition::Unknown;
       return;
     }
-    if (airborneNow) {
+    if (activeMotion) {
       groundSeconds_ = 0;
-      if (airSeconds_ < AIR_SECONDS_TO_FLY) ++airSeconds_;
-      if (!airborne_ && airSeconds_ >= AIR_SECONDS_TO_FLY) {
-        airborne_ = true;
-        takeoffGuardArmed_ = true;
-        transition_ = Transition::Airborne;
-      }
     } else {
-      airSeconds_ = 0;
       if (airborne_ && ++groundSeconds_ >= GROUND_SECONDS_TO_LAND) {
         airborne_ = takeoffGuardArmed_ = false;
         discardPending();
@@ -135,8 +142,9 @@ class GLoadTracker {
     }
   }
   // Discontinuities invalidate live filtering without erasing committed flight history.
-  void resetFilter() {
+  void resetFilter(ResetReason reason = ResetReason::Unspecified) {
     increment(interval_.resets);
+    interval_.resetReasons |= static_cast<uint16_t>(reason);
     hasSample_ = filteredReady_ = false;
     averageCount_ = averageIndex_ = 0;
   }
@@ -152,7 +160,14 @@ class GLoadTracker {
       increment(interval_.rejected);
       return;
     }
-    if (haveSampleTime_ && dt > MAX_SAMPLE_GAP_MS) increment(interval_.gaps);
+    if (haveSampleTime_ && dt > interval_.maxGapMs) {
+      interval_.maxGapMs = dt;
+      interval_.maxGapEndMs = tMs;
+    }
+    if (haveSampleTime_ && dt > MAX_SAMPLE_GAP_MS) {
+      increment(interval_.gaps);
+      interval_.resetReasons |= static_cast<uint16_t>(ResetReason::SampleGap);
+    }
     interval_.raw.add(accelG, tMs);
     increment(interval_.samples);
     if (!hasSample_ || dt > MAX_SAMPLE_GAP_MS) {
@@ -218,7 +233,7 @@ class GLoadTracker {
     bucketStarted_ = false;
   }
   bool active_ = false, airborne_ = false, takeoffGuardArmed_ = false;
-  uint8_t groundSeconds_ = 0, airSeconds_ = 0;
+  uint8_t groundSeconds_ = 0;
   uint32_t countFromMs_ = 0;
   bool hasSample_ = false, haveSampleTime_ = false;
   uint32_t lastSampleMs_ = 0;
