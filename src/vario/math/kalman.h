@@ -35,6 +35,7 @@ class KalmanFilterPA {
   bool estimateAccelerationBias_ = false;
   double bias_ = 0;
   double initialAccelerationBias_ = 0;
+  // The legacy filter uses the upper-left 2x2 block; bias estimation uses all 3x3.
   double covariance_[3][3]{};
 
   // Position variance
@@ -54,7 +55,4 @@ class KalmanFilterPA {
 
   // Current acceleration
   double a_ = 0;
-
-  // Covariance matrix
-  double p11_, p21_, p12_, p22_;
 };

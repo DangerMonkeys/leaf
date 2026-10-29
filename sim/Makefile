@@ -321,3 +321,44 @@ $(BUILD)/flight_auto_start_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJ
 
 test-flight-auto-start: $(BUILD)/flight_auto_start_test
 	@cd $(ROOT) && $(BUILD)/flight_auto_start_test
+
+# Delay tolerance through the actual instruments and Kalman implementation.
+.PHONY: test-vario-continuity
+$(BUILD)/kalman_gaps_test: $(SIM)/tests/kalman_gaps.cpp $(ROOT)/src/vario/math/kalman.cpp $(ROOT)/src/vario/math/kalman.h $(ROOT)/src/vario/instruments/vario_timing.h
+	@mkdir -p $(BUILD)
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/kalman_gaps.cpp $(ROOT)/src/vario/math/kalman.cpp
+
+$(BUILD)/vario_continuity_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/vario_continuity.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/vario_continuity.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-vario-continuity: $(BUILD)/kalman_gaps_test $(BUILD)/vario_continuity_test $(BUILD)/kalman_bias_test $(BUILD)/flat_acceleration_bias_test
+	@$(BUILD)/kalman_gaps_test
+	@$(BUILD)/kalman_bias_test
+	@$(BUILD)/flat_acceleration_bias_test
+	@cd $(ROOT) && $(BUILD)/vario_continuity_test
+
+# The normal simulator replaces the sensor driver. This target runs the real LSM driver.
+.PHONY: test-lsm6dsv-continuity
+LSM_TEST_OBJECTS := $(filter-out $(BUILD)/sim/emulator/main.o $(BUILD)/sim/device/sensors.o,$(OBJECTS))
+$(BUILD)/sensors_real_lsm.o: $(SIM)/device/sensors.cpp | deps
+	@$(CXX) $(CXXFLAGS) -DLEAF_SIM_REAL_LSM6DSV -MMD -MP -c $< -o $@
+
+$(BUILD)/lsm6dsv_real.o: $(ROOT)/src/vario/hardware/lsm6dsv.cpp | deps
+	@$(CXX) $(CXXFLAGS) -MMD -MP -c $< -o $@
+
+$(BUILD)/lsm6dsv_registers.o: $(ROOT)/src/libraries/LSM6DSV/src/lsm6dsv_reg.c | deps
+	@$(CC) $(FW_CFLAGS) -c $< -o $@
+
+$(BUILD)/lsm6dsv_continuity_test: $(LSM_TEST_OBJECTS) $(BUILD)/sensors_real_lsm.o $(BUILD)/lsm6dsv_real.o $(BUILD)/lsm6dsv_registers.o $(SIM)/tests/lsm6dsv_continuity.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/lsm6dsv_continuity.cpp $(LSM_TEST_OBJECTS) $(BUILD)/sensors_real_lsm.o $(BUILD)/lsm6dsv_real.o $(BUILD)/lsm6dsv_registers.o $(LDFLAGS)
+
+test-lsm6dsv-continuity: $(BUILD)/lsm6dsv_continuity_test
+	@cd $(ROOT) && $(BUILD)/lsm6dsv_continuity_test
+
+$(BUILD)/kalman_bias_test: $(SIM)/tests/kalman_bias.cpp $(ROOT)/src/vario/math/kalman.cpp $(ROOT)/src/vario/math/kalman.h
+	@mkdir -p $(BUILD)
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/kalman_bias.cpp $(ROOT)/src/vario/math/kalman.cpp
+
+$(BUILD)/flat_acceleration_bias_test: $(SIM)/tests/flat_acceleration_bias.cpp $(ROOT)/src/vario/math/kalman.cpp $(ROOT)/src/vario/math/kalman.h
+	@mkdir -p $(BUILD)
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/flat_acceleration_bias.cpp $(ROOT)/src/vario/math/kalman.cpp
