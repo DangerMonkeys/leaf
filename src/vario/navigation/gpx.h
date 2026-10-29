@@ -133,11 +133,27 @@ class Navigator {
   // True if a specific waypoint is active, or if a route is active with a next route point.
   bool hasActivePoint() const;
   bool hasNavSolution() const;
-  double goalDistanceRemaining() const { return hasNavSolution() ? totalDistanceRemaining_ : 0; }
+  // Navigation field distance conventions:
+  // - Waypoint (*) fields target the actual coordinates (the center), with no radius allowance.
+  // - Cylinder (%) fields target max(0, distance to center - active radius). The progress bar
+  //   uses this same arrival boundary. Route points supply their own radius; standalone
+  //   waypoints use defaultWaypointRadius. A zero radius makes cylinder and waypoint equal.
+  // - Goal fields follow the remaining route through waypoint centers, then subtract only the
+  //   final goal radius once, clamping at zero. They do not shortcut the route or subtract
+  //   intermediate cylinders. Without a route, the active waypoint is also the goal.
+  // Each field's time, required glide and predicted arrival altitude use its corresponding
+  // horizontal distance. Cylinder elevation is the waypoint's elevation; "altitude above" is
+  // predicted arrival surplus using the pilot's current glide, not current vertical clearance.
+  uint16_t activeCylinderRadiusM() const;
+  double cylinderDistanceRemaining() const;
+  uint32_t cylinderTimeRemaining() const;
+  float glideToCylinder() const;
+  double goalDistanceRemaining() const;
   uint32_t goalTimeRemaining() const;
   float glideToGoal() const { return hasNavSolution() ? glideToGoal_ : 0; }
   // Predicted arrival height above the destination, in metres; NAN if unavailable/negative.
   float arrivalAltitudeAboveWaypoint() const;
+  float arrivalAltitudeAboveCylinder() const;
   float arrivalAltitudeAboveGoal() const;
   bool hasLastNav() const { return lastNavType_ != LastNavType::None; }
   bool lastNavIsRoute() const { return lastNavType_ == LastNavType::Route; }
@@ -199,7 +215,7 @@ class Navigator {
   double segmentDistance;
   // distance remaining to next waypoint
   double pointDistanceRemaining;
-  // time (seconds) remaning to next waypoint
+  // time (seconds) remaining to the next waypoint center
   uint32_t pointTimeRemaining;
   // change-in-current-heading to point toward active point
   double turnToActive;

@@ -16,11 +16,12 @@ namespace thermal_page {
                                  int16_t fieldX = -1, int16_t fieldY = -1) {
     const bool average = fieldX >= 0;
     const bool negative = climbRate < 0;
+    const bool largeMetricSign = large && !settings.units_climb;
     const uint8_t boxHeight = large ? CORE_CLIMB_BOX_HEIGHT : CLIMB_BOX_HEIGHT;
     const uint8_t zeroY = VARIO_BAR_TOP + VARIO_BAR_HALF_HEIGHT + (large ? 2 : 0);
     const uint8_t boxY = average ? fieldY : zeroY - boxHeight / 2;
     const uint8_t boxX = average ? fieldX : large ? CORE_VARIO_BAR_WIDTH : CLIMB_BOX_X;
-    if (!average) {
+    if (!average && !largeMetricSign) {
       u8g2.setFont(leaf_5x8);
       u8g2.setFontMode(1);
       u8g2.setDrawColor(0);
@@ -97,7 +98,17 @@ namespace thermal_page {
       u8g2.setFont(leaf_6x12);
       u8g2.drawGlyph(unitsX, boxY + 14, settings.units_climb ? 132 : 131);
     }
-    if (average && negative) {
+    if (largeMetricSign && (!average || negative)) {
+      // Core/Track m/s fields have room before the fixed digit slots for the standard 14h
+      // signs. Move the live sign three pixels right and draw after its overlapping box.
+      // Move the average minus two pixels right to retain a one-pixel gap before the digits;
+      // positive averages remain unsigned.
+      u8g2.setFont(leaf_8x14);
+      u8g2.setFontMode(1);
+      u8g2.setDrawColor(average ? 1 : 0);
+      u8g2.drawGlyph(average ? boxX + 3 : boxX - 3, boxY + 13, negative ? '-' : '+');
+      u8g2.setFontMode(0);
+    } else if (average && negative) {
       u8g2.setFont(leaf_5x8);
       u8g2.drawGlyph(boxX + 1, boxY + 11, '-');
     }

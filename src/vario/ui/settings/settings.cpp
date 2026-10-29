@@ -317,7 +317,8 @@ void Settings::retrieve() {
   vario_sinkAlarm_units = leafPrefs.getBool("SINK_ALARM_UNIT", DEF_SINK_ALARM_UNITS);
   vario_sensitivity.readFrom(leafPrefs);
   vario_climbDisplayAverage = leafPrefs.getChar("climbDispAvg", DEF_CLIMB_DISPLAY_AVERAGE);
-  if (vario_climbDisplayAverage < 0 || vario_climbDisplayAverage > 5)
+  if (vario_climbDisplayAverage < 0 ||
+      vario_climbDisplayAverage > CLIMB_DISPLAY_AVERAGE_MAX_SECONDS)
     vario_climbDisplayAverage = DEF_CLIMB_DISPLAY_AVERAGE;
   glideAverageSeconds = leafPrefs.getChar("glideAvgSec", DEF_GLIDE_AVERAGE);
   if (glideAverageSeconds < 0 || glideAverageSeconds > 20) glideAverageSeconds = DEF_GLIDE_AVERAGE;
@@ -672,7 +673,7 @@ void Settings::adjustClimbDisplayAverage(Button dir) {
 
   if (dir == Button::RIGHT) {
     sound = fx::increase;
-    if (vario_climbDisplayAverage < 5)
+    if (vario_climbDisplayAverage < CLIMB_DISPLAY_AVERAGE_MAX_SECONDS)
       vario_climbDisplayAverage++;
     else
       sound = fx::doubleClick;

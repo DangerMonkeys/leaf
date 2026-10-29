@@ -2,6 +2,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstdio>
+#include <deque>
 
 #include "instruments/baro.h"
 #include "instruments/imu.h"
@@ -12,7 +13,11 @@
 namespace {
   uint32_t origin;
   bool gravityMode;
-  double altitude() { return 100 + 2 * uint32_t(millis() - origin) * .001; }
+  bool varyingClimb = false;
+  double altitude() {
+    const double seconds = uint32_t(millis() - origin) * .001;
+    return 100 + 2 * seconds + (varyingClimb ? 10 * sin(seconds * .3) : 0);
+  }
   void pressure() {
     const int32_t p = lround(101325 * pow(1 - altitude() / 44331, 1 / .190264));
     baro.on_receive(PressureUpdate(millis(), p));
@@ -49,6 +54,39 @@ namespace {
     origin = millis();
     for (int i = 0; i < 1200; ++i) step();
     ready();
+  }
+  void checkDisplayAverage() {
+    warm();
+    varyingClimb = true;
+    Barometer displayBaro;
+    displayBaro.setClimbDisplayAverageSeconds(20);
+    std::deque<int32_t> blocks;
+    int32_t blockSum = 0;
+    unsigned samples = 0;
+    bool differsFromFiveSeconds = false;
+    for (unsigned i = 0; i < 1300; ++i) {
+      step();
+      displayBaro.on_receive(PressureUpdate(millis(), baro.pressure()));
+      if (!displayBaro.climbRateFilteredValid()) continue;
+      blockSum += displayBaro.climbRateFiltered();
+      if (++samples % 4) continue;
+      blocks.push_back(blockSum / 4);
+      blockSum = 0;
+      if (blocks.size() > 100) blocks.pop_front();
+      int32_t sum = 0, recentSum = 0;
+      for (unsigned j = 0; j < blocks.size(); ++j) {
+        sum += blocks[j];
+        if (j + 25 >= blocks.size()) recentSum += blocks[j];
+      }
+      const int32_t expected = sum / static_cast<int32_t>(blocks.size());
+      assert(displayBaro.climbRateForDisplay() == expected);
+      if (blocks.size() == 100 && std::abs(expected - recentSum / 25) > 50)
+        differsFromFiveSeconds = true;
+    }
+    assert(differsFromFiveSeconds);  // Verifies the full twenty-second window, including wrap.
+    displayBaro.setClimbDisplayAverageSeconds(0);
+    assert(displayBaro.climbRateForDisplay() == displayBaro.climbRateFiltered());
+    varyingClimb = false;
   }
 }  // namespace
 
@@ -120,6 +158,7 @@ int main() {
     step(1501);
     assert(imu.kalmanVelocity() == 0);
   }
+  checkDisplayAverage();
   // Freshness and motion gap subtraction must also survive the 32-bit millisecond rollover.
   gravityMode = true;
   const uint32_t nearWrap = UINT32_MAX - 1000;

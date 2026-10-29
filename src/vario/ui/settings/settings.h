@@ -147,6 +147,11 @@ enum class NavField : uint8_t {
   GlideToGoal,
   AltitudeAboveWaypoint,
   AltitudeAboveGoal,
+  // These IDs are persisted in NVS; append new fields to preserve saved selections.
+  TimeToCylinder,
+  DistanceToCylinder,
+  GlideToCylinder,
+  AltitudeAboveCylinder,
   Count
 };
 

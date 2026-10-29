@@ -415,11 +415,8 @@ void navigatePage_draw() {
     // Progress Bar
     float percent_progress;
     if (navigator.hasNavSolution() && navigator.segmentDistance > 0) {
-      const uint16_t activeRadius =
-          navigator.activeRouteIndex ? navigator.activeRoutePoint.radiusM : defaultWaypointRadius;
-      const double distanceToSequence = navigator.pointDistanceRemaining > activeRadius
-                                            ? navigator.pointDistanceRemaining - activeRadius
-                                            : 0;
+      const uint16_t activeRadius = navigator.activeCylinderRadiusM();
+      const double distanceToSequence = navigator.cylinderDistanceRemaining();
       const double segmentToSequence =
           navigator.segmentDistance > activeRadius ? navigator.segmentDistance - activeRadius : 0;
       percent_progress = segmentToSequence > 0 ? 1 - distanceToSequence / segmentToSequence : 1;
@@ -433,8 +430,10 @@ void navigatePage_draw() {
                  percent_progress * (96 - varioBarWidth), 2);
 
     // Four independently configurable fields, in two columns and two rows.
-    const char* labels[] = {"TIME>&", "TIME>GOAL", "DIST>&", "DIST>GOAL", "`GLIDE",
-                            "`>&",    "`>GOAL",    "ALT^&",  "ALT^GOAL"};
+    // In leaf_5h, '*' (0x2A) is the waypoint diamond and '%' (0x25) is the cylinder ring.
+    const char* labels[] = {"TIME>*", "TIME>GOAL", "DIST>*", "DIST>GOAL", "`GLIDE",
+                            "`>*",    "`>GOAL",    "ALT^*",  "ALT^GOAL",  "TIME>%",
+                            "DIST>%", "`>%",       "ALT^%"};
     static_assert(sizeof(labels) / sizeof(labels[0]) == static_cast<uint8_t>(NavField::Count));
     for (uint8_t i = 0; i < 4; ++i) {
       const uint8_t x = i % 2 == 0 ? 3 : 52;
@@ -444,20 +443,26 @@ void navigatePage_draw() {
       u8g2.setFont(leaf_6x12);
       switch (field) {
         case NavField::TimeToWaypoint:
+        case NavField::TimeToCylinder:
         case NavField::TimeToGoal: {
           const uint32_t seconds = !navigator.hasNavSolution()     ? 0
                                    : field == NavField::TimeToGoal ? navigator.goalTimeRemaining()
-                                                                   : navigator.pointTimeRemaining;
+                                   : field == NavField::TimeToCylinder
+                                       ? navigator.cylinderTimeRemaining()
+                                       : navigator.pointTimeRemaining;
           // Seven-character hour strings still fit inside the narrow selection box.
           display_navTimeRemaining(x + 5, y + 20, seconds >= 3600 ? leaf_5x8 : leaf_6x12, seconds);
           break;
         }
         case NavField::DistanceToWaypoint:
+        case NavField::DistanceToCylinder:
         case NavField::DistanceToGoal:
           display_distance(x + 5, y + 20,
                            !navigator.hasNavSolution()         ? 0
                            : field == NavField::DistanceToGoal ? navigator.goalDistanceRemaining()
-                                                               : navigator.pointDistanceRemaining,
+                           : field == NavField::DistanceToCylinder
+                               ? navigator.cylinderDistanceRemaining()
+                               : navigator.pointDistanceRemaining,
                            38);
           break;
         case NavField::CurrentGlide:
@@ -466,11 +471,17 @@ void navigatePage_draw() {
         case NavField::GlideToWaypoint:
           display_glide(x + 5, y + 20, navigator.hasNavSolution() ? navigator.glideToActive : 0);
           break;
+        case NavField::GlideToCylinder:
+          display_glide(x + 5, y + 20, navigator.glideToCylinder());
+          break;
         case NavField::GlideToGoal:
           display_glide(x + 5, y + 20, navigator.glideToGoal());
           break;
         case NavField::AltitudeAboveWaypoint:
           display_navAltitudeSurplus(x, y + 20, navigator.arrivalAltitudeAboveWaypoint());
+          break;
+        case NavField::AltitudeAboveCylinder:
+          display_navAltitudeSurplus(x, y + 20, navigator.arrivalAltitudeAboveCylinder());
           break;
         case NavField::AltitudeAboveGoal:
           display_navAltitudeSurplus(x, y + 20, navigator.arrivalAltitudeAboveGoal());

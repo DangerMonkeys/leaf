@@ -3,23 +3,21 @@
 #include <stdint.h>
 
 // Shared five-second altitude history for the graph and trailing-minute net climb.
-// Collection follows center visibility, independently of which display page is open.
+// Collection is independent of thermal detection, GPS and which display page is open.
 class ThermalClimbHistory {
  public:
   static constexpr uint8_t CAPACITY = 40;
   static constexpr uint32_t SAMPLE_MS = 5000;
+  // 1 - exp(-5 / 120): a two-minute EMA time constant on the fixed five-second grid.
+  static constexpr float ORIGIN_AVERAGE_ALPHA = 0.040810543f;
 
   void reset() { *this = {}; }
 
-  void update(bool centerVisible, uint32_t nowMs, int32_t altitudeCm) {
-    if (!centerVisible) {
-      reset();
-      return;
-    }
+  void update(uint32_t nowMs, int32_t altitudeCm) {
     if (!count_) {
       append(altitudeCm);
       newestMs_ = nowMs;
-      initialAltitudeCm_ = altitudeCm;
+      bucketAltitudeCm_ = altitudeCm;
     } else {
       // Interpolate onto a fixed time grid rather than accumulating task scheduling jitter.
       const uint32_t elapsed = nowMs - lastUpdateMs_;
@@ -30,11 +28,21 @@ class ThermalClimbHistory {
             elapsed ? latestAltitudeCm_ +
                           static_cast<int64_t>(altitudeCm - latestAltitudeCm_) * offset / elapsed
                     : altitudeCm;
+        const float climbCms = (sampleCm - bucketAltitudeCm_) * (1000.0f / SAMPLE_MS);
+        originAverageCms_ += (climbCms - originAverageCms_) * ORIGIN_AVERAGE_ALPHA;
+        bucketAltitudeCm_ = sampleCm;
         append(sampleCm);
       }
     }
     latestAltitudeCm_ = altitudeCm;
     lastUpdateMs_ = nowMs;
+  }
+
+  // Origin motion uses its own slow EMA of net vertical rate, not an EMA of the one-minute
+  // field. Start at zero after reset; update once per five-second bucket, regardless of page
+  // refresh cadence. No extra altitude samples are retained.
+  int32_t originAverageCms() const {
+    return static_cast<int32_t>(originAverageCms_ + (originAverageCms_ >= 0 ? 0.5f : -0.5f));
   }
 
   uint8_t size() const { return count_; }
@@ -55,7 +63,7 @@ class ThermalClimbHistory {
     if (!count_) return 0;
     if (count_ == 1) {
       const uint32_t elapsed = lastUpdateMs_ - newestMs_;
-      return elapsed ? static_cast<int64_t>(latestAltitudeCm_ - initialAltitudeCm_) * 1000 / elapsed
+      return elapsed ? static_cast<int64_t>(latestAltitudeCm_ - bucketAltitudeCm_) * 1000 / elapsed
                      : 0;
     }
     const uint8_t intervals = count_ > 13 ? 12 : count_ - 1;
@@ -77,9 +85,12 @@ class ThermalClimbHistory {
   uint32_t newestMs_ = 0;
   uint32_t lastUpdateMs_ = 0;
   int32_t latestAltitudeCm_ = 0;
-  int32_t initialAltitudeCm_ = 0;
+  // The current bucket's initial altitude also serves the first partial numerical average.
+  int32_t bucketAltitudeCm_ = 0;
+  float originAverageCms_ = 0;
   uint8_t next_ = 0;
   uint8_t count_ = 0;
 };
 
-static_assert(sizeof(ThermalClimbHistory) <= 100, "Keep widget history within 100 bytes");
+static_assert(sizeof(ThermalClimbHistory) <= 104,
+              "Keep widget history and origin EMA within 104 bytes");

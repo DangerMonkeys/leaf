@@ -65,10 +65,11 @@ namespace {
           thermal_page::drawCoreClimbAverage(climb, 54, 56);
         } while (u8g2.nextPage());
         const auto average = sim::captureFrame();
-        // Every font, digit slot, baseline and unit gap matches the live field, with its
-        // colors reversed. Negative averages add a minus in the otherwise unused left margin.
+        // Every digit slot, baseline and unit gap matches the live field, with reversed
+        // colors. Exclude the sign margins: m/s now has standard 14h signs; fpm is unchanged.
+        const int firstDigitColumn = fpm ? (climb < 0 ? 7 : 0) : 12;
         for (int y = 0; y < 16; ++y) {
-          for (int x = climb < 0 ? 7 : 0; x < 41; ++x) {
+          for (int x = firstDigitColumn; x < 41; ++x) {
             assert(frame.pixels[(35 + y) * frame.width + 14 + x] !=
                    average.pixels[(56 + y) * average.width + 54 + x]);
           }
@@ -104,6 +105,33 @@ namespace {
     save(low, "sim/build-tests/core-climb-0080.png");
     save(mid, "sim/build-tests/core-climb-1080.png");
     settings.units_climb = false;
+    const auto positive = drawCoreClimb(551);
+    const auto negative = drawCoreClimb(-551);
+    // The full eight-pixel 14h horizontal stroke is visible after the box is drawn,
+    // including the part that moved inside it. The positive sign also has a taller stem.
+    for (int y : {42, 43})
+      for (int x = 11; x <= 18; ++x) {
+        assert(!positive.pixels[y * positive.width + x]);
+        assert(!negative.pixels[y * negative.width + x]);
+      }
+    assert(!positive.pixels[39 * positive.width + 14]);
+    assert(negative.pixels[39 * negative.width + 14]);
+    for (int y = 35; y <= 50; ++y)
+      for (int x = 19; x <= 54; ++x)
+        assert(positive.pixels[y * positive.width + x] == negative.pixels[y * negative.width + x]);
+    save(positive, "sim/build-tests/core-climb-metric-plus.png");
+    save(negative, "sim/build-tests/core-climb-metric-minus.png");
+    for (bool sink : {false, true}) {
+      u8g2.firstPage();
+      do {
+        thermal_page::drawCoreClimbAverage(sink ? -551 : 551, 54, 56);
+      } while (u8g2.nextPage());
+      const auto average = sim::captureFrame();
+      for (int y : {63, 64})
+        for (int x = 57; x <= 64; ++x) assert(average.pixels[y * average.width + x] == sink);
+      save(average, sink ? "sim/build-tests/core-average-metric-minus.png"
+                         : "sim/build-tests/core-average-metric-positive.png");
+    }
   }
 
   sim::Frame drawCoreAltitude(int32_t altitude, uint8_t& endX) {
