@@ -1,0 +1,2338 @@
+[
+  {
+    "speed_mph": 5,
+    "distance_m": 5,
+    "forward_confirmation_ms": 1000,
+    "normalization_scope": "shared",
+    "tracks": [
+      {
+        "id": 0,
+        "unit": "3.2.3 raccoon",
+        "ground_checks": 0,
+        "first": "13:02:12",
+        "mask": 1,
+        "paths": {
+          "forward": "13:02:12",
+          "vertical": "13:02:14",
+          "blended": "13:02:14"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 1,
+        "unit": "3.2.3 redstrap",
+        "ground_checks": 0,
+        "first": "13:19:02",
+        "mask": 1,
+        "paths": {
+          "forward": "13:19:02",
+          "vertical": "13:19:07",
+          "blended": "13:19:07"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 2,
+        "unit": "3.2.6 blue",
+        "ground_checks": 5,
+        "first": "13:04:51",
+        "mask": 1,
+        "paths": {
+          "forward": "13:04:51",
+          "vertical": null,
+          "blended": null
+        },
+        "delay_from_accepted_launch_s": null
+      },
+      {
+        "id": 3,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": "13:18:57",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:03",
+          "vertical": "13:18:57",
+          "blended": "13:19:03"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 4,
+        "unit": "3.2.8",
+        "ground_checks": 0,
+        "first": "13:19:02",
+        "mask": 4,
+        "paths": {
+          "forward": "13:19:13",
+          "vertical": "13:19:13",
+          "blended": "13:19:02"
+        },
+        "delay_from_accepted_launch_s": 0
+      }
+    ]
+  },
+  {
+    "speed_mph": 5.5,
+    "distance_m": 5,
+    "forward_confirmation_ms": 1000,
+    "normalization_scope": "shared",
+    "tracks": [
+      {
+        "id": 0,
+        "unit": "3.2.3 raccoon",
+        "ground_checks": 0,
+        "first": "13:02:12",
+        "mask": 1,
+        "paths": {
+          "forward": "13:02:12",
+          "vertical": "13:02:14",
+          "blended": "13:02:14"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 1,
+        "unit": "3.2.3 redstrap",
+        "ground_checks": 0,
+        "first": "13:19:02",
+        "mask": 1,
+        "paths": {
+          "forward": "13:19:02",
+          "vertical": "13:19:07",
+          "blended": "13:19:08"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 2,
+        "unit": "3.2.6 blue",
+        "ground_checks": 3,
+        "first": "13:04:52",
+        "mask": 1,
+        "paths": {
+          "forward": "13:04:52",
+          "vertical": null,
+          "blended": null
+        },
+        "delay_from_accepted_launch_s": null
+      },
+      {
+        "id": 3,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": "13:18:57",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:13",
+          "vertical": "13:18:57",
+          "blended": "13:19:03"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 4,
+        "unit": "3.2.8",
+        "ground_checks": 0,
+        "first": "13:19:02",
+        "mask": 4,
+        "paths": {
+          "forward": "13:19:14",
+          "vertical": "13:19:13",
+          "blended": "13:19:02"
+        },
+        "delay_from_accepted_launch_s": 0
+      }
+    ]
+  },
+  {
+    "speed_mph": 6,
+    "distance_m": 5,
+    "forward_confirmation_ms": 1000,
+    "normalization_scope": "shared",
+    "tracks": [
+      {
+        "id": 0,
+        "unit": "3.2.3 raccoon",
+        "ground_checks": 0,
+        "first": "13:02:12",
+        "mask": 1,
+        "paths": {
+          "forward": "13:02:12",
+          "vertical": "13:02:14",
+          "blended": "13:02:14"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 1,
+        "unit": "3.2.3 redstrap",
+        "ground_checks": 0,
+        "first": "13:19:02",
+        "mask": 1,
+        "paths": {
+          "forward": "13:19:02",
+          "vertical": "13:19:07",
+          "blended": "13:19:13"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 2,
+        "unit": "3.2.6 blue",
+        "ground_checks": 2,
+        "first": "13:04:52",
+        "mask": 1,
+        "paths": {
+          "forward": "13:04:52",
+          "vertical": null,
+          "blended": null
+        },
+        "delay_from_accepted_launch_s": null
+      },
+      {
+        "id": 3,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": "13:18:57",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:13",
+          "vertical": "13:18:57",
+          "blended": "13:19:03"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 4,
+        "unit": "3.2.8",
+        "ground_checks": 0,
+        "first": "13:19:02",
+        "mask": 4,
+        "paths": {
+          "forward": "13:19:18",
+          "vertical": "13:19:13",
+          "blended": "13:19:02"
+        },
+        "delay_from_accepted_launch_s": 0
+      }
+    ]
+  },
+  {
+    "speed_mph": 6.5,
+    "distance_m": 5,
+    "forward_confirmation_ms": 1000,
+    "normalization_scope": "shared",
+    "tracks": [
+      {
+        "id": 0,
+        "unit": "3.2.3 raccoon",
+        "ground_checks": 0,
+        "first": "13:02:14",
+        "mask": 7,
+        "paths": {
+          "forward": "13:02:14",
+          "vertical": "13:02:14",
+          "blended": "13:02:14"
+        },
+        "delay_from_accepted_launch_s": 2
+      },
+      {
+        "id": 1,
+        "unit": "3.2.3 redstrap",
+        "ground_checks": 0,
+        "first": "13:19:07",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:13",
+          "vertical": "13:19:07",
+          "blended": "13:19:13"
+        },
+        "delay_from_accepted_launch_s": 5
+      },
+      {
+        "id": 2,
+        "unit": "3.2.6 blue",
+        "ground_checks": 1,
+        "first": "13:04:53",
+        "mask": 1,
+        "paths": {
+          "forward": "13:04:53",
+          "vertical": null,
+          "blended": null
+        },
+        "delay_from_accepted_launch_s": null
+      },
+      {
+        "id": 3,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": "13:18:57",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:14",
+          "vertical": "13:18:57",
+          "blended": "13:19:03"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 4,
+        "unit": "3.2.8",
+        "ground_checks": 0,
+        "first": "13:19:02",
+        "mask": 4,
+        "paths": {
+          "forward": "13:19:23",
+          "vertical": "13:19:13",
+          "blended": "13:19:02"
+        },
+        "delay_from_accepted_launch_s": 0
+      }
+    ]
+  },
+  {
+    "speed_mph": 6.8,
+    "distance_m": 5,
+    "forward_confirmation_ms": 1000,
+    "normalization_scope": "shared",
+    "tracks": [
+      {
+        "id": 0,
+        "unit": "3.2.3 raccoon",
+        "ground_checks": 0,
+        "first": "13:02:14",
+        "mask": 7,
+        "paths": {
+          "forward": "13:02:14",
+          "vertical": "13:02:14",
+          "blended": "13:02:14"
+        },
+        "delay_from_accepted_launch_s": 2
+      },
+      {
+        "id": 1,
+        "unit": "3.2.3 redstrap",
+        "ground_checks": 0,
+        "first": "13:19:07",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:13",
+          "vertical": "13:19:07",
+          "blended": "13:19:13"
+        },
+        "delay_from_accepted_launch_s": 5
+      },
+      {
+        "id": 2,
+        "unit": "3.2.6 blue",
+        "ground_checks": 1,
+        "first": "13:04:53",
+        "mask": 1,
+        "paths": {
+          "forward": "13:04:53",
+          "vertical": null,
+          "blended": null
+        },
+        "delay_from_accepted_launch_s": null
+      },
+      {
+        "id": 3,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": "13:18:57",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:14",
+          "vertical": "13:18:57",
+          "blended": "13:19:03"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 4,
+        "unit": "3.2.8",
+        "ground_checks": 0,
+        "first": "13:19:02",
+        "mask": 4,
+        "paths": {
+          "forward": "13:19:23",
+          "vertical": "13:19:13",
+          "blended": "13:19:02"
+        },
+        "delay_from_accepted_launch_s": 0
+      }
+    ]
+  },
+  {
+    "speed_mph": 6.85,
+    "distance_m": 5,
+    "forward_confirmation_ms": 1000,
+    "normalization_scope": "shared",
+    "tracks": [
+      {
+        "id": 0,
+        "unit": "3.2.3 raccoon",
+        "ground_checks": 0,
+        "first": "13:02:14",
+        "mask": 7,
+        "paths": {
+          "forward": "13:02:14",
+          "vertical": "13:02:14",
+          "blended": "13:02:14"
+        },
+        "delay_from_accepted_launch_s": 2
+      },
+      {
+        "id": 1,
+        "unit": "3.2.3 redstrap",
+        "ground_checks": 0,
+        "first": "13:19:07",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:13",
+          "vertical": "13:19:07",
+          "blended": "13:19:13"
+        },
+        "delay_from_accepted_launch_s": 5
+      },
+      {
+        "id": 2,
+        "unit": "3.2.6 blue",
+        "ground_checks": 1,
+        "first": "13:04:53",
+        "mask": 1,
+        "paths": {
+          "forward": "13:04:53",
+          "vertical": null,
+          "blended": null
+        },
+        "delay_from_accepted_launch_s": null
+      },
+      {
+        "id": 3,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": "13:18:57",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:14",
+          "vertical": "13:18:57",
+          "blended": "13:19:03"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 4,
+        "unit": "3.2.8",
+        "ground_checks": 0,
+        "first": "13:19:02",
+        "mask": 4,
+        "paths": {
+          "forward": "13:19:23",
+          "vertical": "13:19:13",
+          "blended": "13:19:02"
+        },
+        "delay_from_accepted_launch_s": 0
+      }
+    ]
+  },
+  {
+    "speed_mph": 6.88,
+    "distance_m": 5,
+    "forward_confirmation_ms": 1000,
+    "normalization_scope": "shared",
+    "tracks": [
+      {
+        "id": 0,
+        "unit": "3.2.3 raccoon",
+        "ground_checks": 0,
+        "first": "13:02:14",
+        "mask": 7,
+        "paths": {
+          "forward": "13:02:14",
+          "vertical": "13:02:14",
+          "blended": "13:02:14"
+        },
+        "delay_from_accepted_launch_s": 2
+      },
+      {
+        "id": 1,
+        "unit": "3.2.3 redstrap",
+        "ground_checks": 0,
+        "first": "13:19:07",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:13",
+          "vertical": "13:19:07",
+          "blended": "13:19:13"
+        },
+        "delay_from_accepted_launch_s": 5
+      },
+      {
+        "id": 2,
+        "unit": "3.2.6 blue",
+        "ground_checks": 1,
+        "first": "13:04:53",
+        "mask": 1,
+        "paths": {
+          "forward": "13:04:53",
+          "vertical": null,
+          "blended": null
+        },
+        "delay_from_accepted_launch_s": null
+      },
+      {
+        "id": 3,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": "13:18:57",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:14",
+          "vertical": "13:18:57",
+          "blended": "13:19:03"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 4,
+        "unit": "3.2.8",
+        "ground_checks": 0,
+        "first": "13:19:13",
+        "mask": 6,
+        "paths": {
+          "forward": "13:19:23",
+          "vertical": "13:19:13",
+          "blended": "13:19:13"
+        },
+        "delay_from_accepted_launch_s": 11
+      }
+    ]
+  },
+  {
+    "speed_mph": 6.89,
+    "distance_m": 5,
+    "forward_confirmation_ms": 1000,
+    "normalization_scope": "shared",
+    "tracks": [
+      {
+        "id": 0,
+        "unit": "3.2.3 raccoon",
+        "ground_checks": 0,
+        "first": "13:02:14",
+        "mask": 7,
+        "paths": {
+          "forward": "13:02:14",
+          "vertical": "13:02:14",
+          "blended": "13:02:14"
+        },
+        "delay_from_accepted_launch_s": 2
+      },
+      {
+        "id": 1,
+        "unit": "3.2.3 redstrap",
+        "ground_checks": 0,
+        "first": "13:19:07",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:13",
+          "vertical": "13:19:07",
+          "blended": "13:19:13"
+        },
+        "delay_from_accepted_launch_s": 5
+      },
+      {
+        "id": 2,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": null,
+        "mask": null,
+        "paths": {
+          "forward": null,
+          "vertical": null,
+          "blended": null
+        },
+        "delay_from_accepted_launch_s": null
+      },
+      {
+        "id": 3,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": "13:18:57",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:14",
+          "vertical": "13:18:57",
+          "blended": "13:19:03"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 4,
+        "unit": "3.2.8",
+        "ground_checks": 0,
+        "first": "13:19:13",
+        "mask": 6,
+        "paths": {
+          "forward": "13:19:23",
+          "vertical": "13:19:13",
+          "blended": "13:19:13"
+        },
+        "delay_from_accepted_launch_s": 11
+      }
+    ]
+  },
+  {
+    "speed_mph": 6.9,
+    "distance_m": 5,
+    "forward_confirmation_ms": 1000,
+    "normalization_scope": "shared",
+    "tracks": [
+      {
+        "id": 0,
+        "unit": "3.2.3 raccoon",
+        "ground_checks": 0,
+        "first": "13:02:14",
+        "mask": 7,
+        "paths": {
+          "forward": "13:02:14",
+          "vertical": "13:02:14",
+          "blended": "13:02:14"
+        },
+        "delay_from_accepted_launch_s": 2
+      },
+      {
+        "id": 1,
+        "unit": "3.2.3 redstrap",
+        "ground_checks": 0,
+        "first": "13:19:07",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:13",
+          "vertical": "13:19:07",
+          "blended": "13:19:13"
+        },
+        "delay_from_accepted_launch_s": 5
+      },
+      {
+        "id": 2,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": null,
+        "mask": null,
+        "paths": {
+          "forward": null,
+          "vertical": null,
+          "blended": null
+        },
+        "delay_from_accepted_launch_s": null
+      },
+      {
+        "id": 3,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": "13:18:57",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:14",
+          "vertical": "13:18:57",
+          "blended": "13:19:03"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 4,
+        "unit": "3.2.8",
+        "ground_checks": 0,
+        "first": "13:19:13",
+        "mask": 6,
+        "paths": {
+          "forward": "13:19:23",
+          "vertical": "13:19:13",
+          "blended": "13:19:13"
+        },
+        "delay_from_accepted_launch_s": 11
+      }
+    ]
+  },
+  {
+    "speed_mph": 7,
+    "distance_m": 5,
+    "forward_confirmation_ms": 1000,
+    "normalization_scope": "shared",
+    "tracks": [
+      {
+        "id": 0,
+        "unit": "3.2.3 raccoon",
+        "ground_checks": 0,
+        "first": "13:02:14",
+        "mask": 7,
+        "paths": {
+          "forward": "13:02:14",
+          "vertical": "13:02:14",
+          "blended": "13:02:14"
+        },
+        "delay_from_accepted_launch_s": 2
+      },
+      {
+        "id": 1,
+        "unit": "3.2.3 redstrap",
+        "ground_checks": 0,
+        "first": "13:19:07",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:13",
+          "vertical": "13:19:07",
+          "blended": "13:19:13"
+        },
+        "delay_from_accepted_launch_s": 5
+      },
+      {
+        "id": 2,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": null,
+        "mask": null,
+        "paths": {
+          "forward": null,
+          "vertical": null,
+          "blended": null
+        },
+        "delay_from_accepted_launch_s": null
+      },
+      {
+        "id": 3,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": "13:18:57",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:14",
+          "vertical": "13:18:57",
+          "blended": "13:19:03"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 4,
+        "unit": "3.2.8",
+        "ground_checks": 0,
+        "first": "13:19:13",
+        "mask": 6,
+        "paths": {
+          "forward": "13:19:23",
+          "vertical": "13:19:13",
+          "blended": "13:19:13"
+        },
+        "delay_from_accepted_launch_s": 11
+      }
+    ]
+  },
+  {
+    "speed_mph": 7.5,
+    "distance_m": 5,
+    "forward_confirmation_ms": 1000,
+    "normalization_scope": "shared",
+    "tracks": [
+      {
+        "id": 0,
+        "unit": "3.2.3 raccoon",
+        "ground_checks": 0,
+        "first": "13:02:14",
+        "mask": 7,
+        "paths": {
+          "forward": "13:02:14",
+          "vertical": "13:02:14",
+          "blended": "13:02:14"
+        },
+        "delay_from_accepted_launch_s": 2
+      },
+      {
+        "id": 1,
+        "unit": "3.2.3 redstrap",
+        "ground_checks": 0,
+        "first": "13:19:07",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:13",
+          "vertical": "13:19:07",
+          "blended": "13:19:13"
+        },
+        "delay_from_accepted_launch_s": 5
+      },
+      {
+        "id": 2,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": null,
+        "mask": null,
+        "paths": {
+          "forward": null,
+          "vertical": null,
+          "blended": null
+        },
+        "delay_from_accepted_launch_s": null
+      },
+      {
+        "id": 3,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": "13:18:57",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:14",
+          "vertical": "13:18:57",
+          "blended": "13:19:14"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 4,
+        "unit": "3.2.8",
+        "ground_checks": 0,
+        "first": "13:19:13",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:24",
+          "vertical": "13:19:13",
+          "blended": "13:19:14"
+        },
+        "delay_from_accepted_launch_s": 11
+      }
+    ]
+  },
+  {
+    "speed_mph": 8,
+    "distance_m": 5,
+    "forward_confirmation_ms": 1000,
+    "normalization_scope": "shared",
+    "tracks": [
+      {
+        "id": 0,
+        "unit": "3.2.3 raccoon",
+        "ground_checks": 0,
+        "first": "13:02:14",
+        "mask": 6,
+        "paths": {
+          "forward": "13:02:19",
+          "vertical": "13:02:14",
+          "blended": "13:02:14"
+        },
+        "delay_from_accepted_launch_s": 2
+      },
+      {
+        "id": 1,
+        "unit": "3.2.3 redstrap",
+        "ground_checks": 0,
+        "first": "13:19:07",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:17",
+          "vertical": "13:19:07",
+          "blended": "13:19:13"
+        },
+        "delay_from_accepted_launch_s": 5
+      },
+      {
+        "id": 2,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": null,
+        "mask": null,
+        "paths": {
+          "forward": null,
+          "vertical": null,
+          "blended": null
+        },
+        "delay_from_accepted_launch_s": null
+      },
+      {
+        "id": 3,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": "13:18:57",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:24",
+          "vertical": "13:18:57",
+          "blended": "13:19:14"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 4,
+        "unit": "3.2.8",
+        "ground_checks": 0,
+        "first": "13:19:13",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:24",
+          "vertical": "13:19:13",
+          "blended": "13:19:14"
+        },
+        "delay_from_accepted_launch_s": 11
+      }
+    ]
+  },
+  {
+    "speed_mph": 5,
+    "distance_m": 6,
+    "forward_confirmation_ms": 1000,
+    "normalization_scope": "shared",
+    "tracks": [
+      {
+        "id": 0,
+        "unit": "3.2.3 raccoon",
+        "ground_checks": 0,
+        "first": "13:02:12",
+        "mask": 1,
+        "paths": {
+          "forward": "13:02:12",
+          "vertical": "13:02:14",
+          "blended": "13:02:14"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 1,
+        "unit": "3.2.3 redstrap",
+        "ground_checks": 0,
+        "first": "13:19:02",
+        "mask": 1,
+        "paths": {
+          "forward": "13:19:02",
+          "vertical": "13:19:07",
+          "blended": "13:19:07"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 2,
+        "unit": "3.2.6 blue",
+        "ground_checks": 5,
+        "first": "13:04:51",
+        "mask": 1,
+        "paths": {
+          "forward": "13:04:51",
+          "vertical": null,
+          "blended": null
+        },
+        "delay_from_accepted_launch_s": null
+      },
+      {
+        "id": 3,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": "13:18:57",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:03",
+          "vertical": "13:18:57",
+          "blended": "13:19:03"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 4,
+        "unit": "3.2.8",
+        "ground_checks": 0,
+        "first": "13:19:02",
+        "mask": 4,
+        "paths": {
+          "forward": "13:19:13",
+          "vertical": "13:19:13",
+          "blended": "13:19:02"
+        },
+        "delay_from_accepted_launch_s": 0
+      }
+    ]
+  },
+  {
+    "speed_mph": 5,
+    "distance_m": 7,
+    "forward_confirmation_ms": 1000,
+    "normalization_scope": "shared",
+    "tracks": [
+      {
+        "id": 0,
+        "unit": "3.2.3 raccoon",
+        "ground_checks": 0,
+        "first": "13:02:12",
+        "mask": 1,
+        "paths": {
+          "forward": "13:02:12",
+          "vertical": "13:02:14",
+          "blended": "13:02:14"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 1,
+        "unit": "3.2.3 redstrap",
+        "ground_checks": 0,
+        "first": "13:19:02",
+        "mask": 1,
+        "paths": {
+          "forward": "13:19:02",
+          "vertical": "13:19:07",
+          "blended": "13:19:13"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 2,
+        "unit": "3.2.6 blue",
+        "ground_checks": 4,
+        "first": "13:04:51",
+        "mask": 1,
+        "paths": {
+          "forward": "13:04:51",
+          "vertical": null,
+          "blended": null
+        },
+        "delay_from_accepted_launch_s": null
+      },
+      {
+        "id": 3,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": "13:18:57",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:13",
+          "vertical": "13:18:57",
+          "blended": "13:19:03"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 4,
+        "unit": "3.2.8",
+        "ground_checks": 0,
+        "first": "13:19:02",
+        "mask": 4,
+        "paths": {
+          "forward": "13:19:13",
+          "vertical": "13:19:13",
+          "blended": "13:19:02"
+        },
+        "delay_from_accepted_launch_s": 0
+      }
+    ]
+  },
+  {
+    "speed_mph": 5,
+    "distance_m": 8,
+    "forward_confirmation_ms": 1000,
+    "normalization_scope": "shared",
+    "tracks": [
+      {
+        "id": 0,
+        "unit": "3.2.3 raccoon",
+        "ground_checks": 0,
+        "first": "13:02:12",
+        "mask": 1,
+        "paths": {
+          "forward": "13:02:12",
+          "vertical": "13:02:14",
+          "blended": "13:02:14"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 1,
+        "unit": "3.2.3 redstrap",
+        "ground_checks": 0,
+        "first": "13:19:02",
+        "mask": 1,
+        "paths": {
+          "forward": "13:19:02",
+          "vertical": "13:19:07",
+          "blended": "13:19:13"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 2,
+        "unit": "3.2.6 blue",
+        "ground_checks": 4,
+        "first": "13:04:51",
+        "mask": 1,
+        "paths": {
+          "forward": "13:04:51",
+          "vertical": null,
+          "blended": null
+        },
+        "delay_from_accepted_launch_s": null
+      },
+      {
+        "id": 3,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": "13:18:57",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:13",
+          "vertical": "13:18:57",
+          "blended": "13:19:03"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 4,
+        "unit": "3.2.8",
+        "ground_checks": 0,
+        "first": "13:19:02",
+        "mask": 4,
+        "paths": {
+          "forward": "13:19:17",
+          "vertical": "13:19:13",
+          "blended": "13:19:02"
+        },
+        "delay_from_accepted_launch_s": 0
+      }
+    ]
+  },
+  {
+    "speed_mph": 5,
+    "distance_m": 9,
+    "forward_confirmation_ms": 1000,
+    "normalization_scope": "shared",
+    "tracks": [
+      {
+        "id": 0,
+        "unit": "3.2.3 raccoon",
+        "ground_checks": 0,
+        "first": "13:02:12",
+        "mask": 1,
+        "paths": {
+          "forward": "13:02:12",
+          "vertical": "13:02:14",
+          "blended": "13:02:14"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 1,
+        "unit": "3.2.3 redstrap",
+        "ground_checks": 0,
+        "first": "13:19:07",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:13",
+          "vertical": "13:19:07",
+          "blended": "13:19:13"
+        },
+        "delay_from_accepted_launch_s": 5
+      },
+      {
+        "id": 2,
+        "unit": "3.2.6 blue",
+        "ground_checks": 2,
+        "first": "13:04:52",
+        "mask": 1,
+        "paths": {
+          "forward": "13:04:52",
+          "vertical": null,
+          "blended": null
+        },
+        "delay_from_accepted_launch_s": null
+      },
+      {
+        "id": 3,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": "13:18:57",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:13",
+          "vertical": "13:18:57",
+          "blended": "13:19:14"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 4,
+        "unit": "3.2.8",
+        "ground_checks": 0,
+        "first": "13:19:02",
+        "mask": 4,
+        "paths": {
+          "forward": "13:19:17",
+          "vertical": "13:19:13",
+          "blended": "13:19:02"
+        },
+        "delay_from_accepted_launch_s": 0
+      }
+    ]
+  },
+  {
+    "speed_mph": 5,
+    "distance_m": 10,
+    "forward_confirmation_ms": 1000,
+    "normalization_scope": "shared",
+    "tracks": [
+      {
+        "id": 0,
+        "unit": "3.2.3 raccoon",
+        "ground_checks": 0,
+        "first": "13:02:12",
+        "mask": 1,
+        "paths": {
+          "forward": "13:02:12",
+          "vertical": "13:02:14",
+          "blended": "13:02:14"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 1,
+        "unit": "3.2.3 redstrap",
+        "ground_checks": 0,
+        "first": "13:19:07",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:13",
+          "vertical": "13:19:07",
+          "blended": "13:19:13"
+        },
+        "delay_from_accepted_launch_s": 5
+      },
+      {
+        "id": 2,
+        "unit": "3.2.6 blue",
+        "ground_checks": 2,
+        "first": "13:04:52",
+        "mask": 1,
+        "paths": {
+          "forward": "13:04:52",
+          "vertical": null,
+          "blended": null
+        },
+        "delay_from_accepted_launch_s": null
+      },
+      {
+        "id": 3,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": "13:18:57",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:13",
+          "vertical": "13:18:57",
+          "blended": "13:19:14"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 4,
+        "unit": "3.2.8",
+        "ground_checks": 0,
+        "first": "13:19:13",
+        "mask": 6,
+        "paths": {
+          "forward": "13:19:24",
+          "vertical": "13:19:13",
+          "blended": "13:19:13"
+        },
+        "delay_from_accepted_launch_s": 11
+      }
+    ]
+  },
+  {
+    "speed_mph": 5,
+    "distance_m": 10.05,
+    "forward_confirmation_ms": 1000,
+    "normalization_scope": "shared",
+    "tracks": [
+      {
+        "id": 0,
+        "unit": "3.2.3 raccoon",
+        "ground_checks": 0,
+        "first": "13:02:12",
+        "mask": 1,
+        "paths": {
+          "forward": "13:02:12",
+          "vertical": "13:02:14",
+          "blended": "13:02:14"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 1,
+        "unit": "3.2.3 redstrap",
+        "ground_checks": 0,
+        "first": "13:19:07",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:13",
+          "vertical": "13:19:07",
+          "blended": "13:19:13"
+        },
+        "delay_from_accepted_launch_s": 5
+      },
+      {
+        "id": 2,
+        "unit": "3.2.6 blue",
+        "ground_checks": 2,
+        "first": "13:04:52",
+        "mask": 1,
+        "paths": {
+          "forward": "13:04:52",
+          "vertical": null,
+          "blended": null
+        },
+        "delay_from_accepted_launch_s": null
+      },
+      {
+        "id": 3,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": "13:18:57",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:13",
+          "vertical": "13:18:57",
+          "blended": "13:19:14"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 4,
+        "unit": "3.2.8",
+        "ground_checks": 0,
+        "first": "13:19:13",
+        "mask": 6,
+        "paths": {
+          "forward": "13:19:24",
+          "vertical": "13:19:13",
+          "blended": "13:19:13"
+        },
+        "delay_from_accepted_launch_s": 11
+      }
+    ]
+  },
+  {
+    "speed_mph": 5,
+    "distance_m": 10.08,
+    "forward_confirmation_ms": 1000,
+    "normalization_scope": "shared",
+    "tracks": [
+      {
+        "id": 0,
+        "unit": "3.2.3 raccoon",
+        "ground_checks": 0,
+        "first": "13:02:12",
+        "mask": 1,
+        "paths": {
+          "forward": "13:02:12",
+          "vertical": "13:02:14",
+          "blended": "13:02:14"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 1,
+        "unit": "3.2.3 redstrap",
+        "ground_checks": 0,
+        "first": "13:19:07",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:13",
+          "vertical": "13:19:07",
+          "blended": "13:19:13"
+        },
+        "delay_from_accepted_launch_s": 5
+      },
+      {
+        "id": 2,
+        "unit": "3.2.6 blue",
+        "ground_checks": 2,
+        "first": "13:04:52",
+        "mask": 1,
+        "paths": {
+          "forward": "13:04:52",
+          "vertical": null,
+          "blended": null
+        },
+        "delay_from_accepted_launch_s": null
+      },
+      {
+        "id": 3,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": "13:18:57",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:13",
+          "vertical": "13:18:57",
+          "blended": "13:19:14"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 4,
+        "unit": "3.2.8",
+        "ground_checks": 0,
+        "first": "13:19:13",
+        "mask": 6,
+        "paths": {
+          "forward": "13:19:24",
+          "vertical": "13:19:13",
+          "blended": "13:19:13"
+        },
+        "delay_from_accepted_launch_s": 11
+      }
+    ]
+  },
+  {
+    "speed_mph": 5,
+    "distance_m": 10.09,
+    "forward_confirmation_ms": 1000,
+    "normalization_scope": "shared",
+    "tracks": [
+      {
+        "id": 0,
+        "unit": "3.2.3 raccoon",
+        "ground_checks": 0,
+        "first": "13:02:12",
+        "mask": 1,
+        "paths": {
+          "forward": "13:02:12",
+          "vertical": "13:02:14",
+          "blended": "13:02:14"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 1,
+        "unit": "3.2.3 redstrap",
+        "ground_checks": 0,
+        "first": "13:19:07",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:13",
+          "vertical": "13:19:07",
+          "blended": "13:19:13"
+        },
+        "delay_from_accepted_launch_s": 5
+      },
+      {
+        "id": 2,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": null,
+        "mask": null,
+        "paths": {
+          "forward": null,
+          "vertical": null,
+          "blended": null
+        },
+        "delay_from_accepted_launch_s": null
+      },
+      {
+        "id": 3,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": "13:18:57",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:13",
+          "vertical": "13:18:57",
+          "blended": "13:19:14"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 4,
+        "unit": "3.2.8",
+        "ground_checks": 0,
+        "first": "13:19:13",
+        "mask": 6,
+        "paths": {
+          "forward": "13:19:24",
+          "vertical": "13:19:13",
+          "blended": "13:19:13"
+        },
+        "delay_from_accepted_launch_s": 11
+      }
+    ]
+  },
+  {
+    "speed_mph": 5,
+    "distance_m": 10.1,
+    "forward_confirmation_ms": 1000,
+    "normalization_scope": "shared",
+    "tracks": [
+      {
+        "id": 0,
+        "unit": "3.2.3 raccoon",
+        "ground_checks": 0,
+        "first": "13:02:12",
+        "mask": 1,
+        "paths": {
+          "forward": "13:02:12",
+          "vertical": "13:02:14",
+          "blended": "13:02:14"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 1,
+        "unit": "3.2.3 redstrap",
+        "ground_checks": 0,
+        "first": "13:19:07",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:13",
+          "vertical": "13:19:07",
+          "blended": "13:19:13"
+        },
+        "delay_from_accepted_launch_s": 5
+      },
+      {
+        "id": 2,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": null,
+        "mask": null,
+        "paths": {
+          "forward": null,
+          "vertical": null,
+          "blended": null
+        },
+        "delay_from_accepted_launch_s": null
+      },
+      {
+        "id": 3,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": "13:18:57",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:13",
+          "vertical": "13:18:57",
+          "blended": "13:19:14"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 4,
+        "unit": "3.2.8",
+        "ground_checks": 0,
+        "first": "13:19:13",
+        "mask": 6,
+        "paths": {
+          "forward": "13:19:24",
+          "vertical": "13:19:13",
+          "blended": "13:19:13"
+        },
+        "delay_from_accepted_launch_s": 11
+      }
+    ]
+  },
+  {
+    "speed_mph": 5,
+    "distance_m": 10.5,
+    "forward_confirmation_ms": 1000,
+    "normalization_scope": "shared",
+    "tracks": [
+      {
+        "id": 0,
+        "unit": "3.2.3 raccoon",
+        "ground_checks": 0,
+        "first": "13:02:14",
+        "mask": 6,
+        "paths": {
+          "forward": "13:02:18",
+          "vertical": "13:02:14",
+          "blended": "13:02:14"
+        },
+        "delay_from_accepted_launch_s": 2
+      },
+      {
+        "id": 1,
+        "unit": "3.2.3 redstrap",
+        "ground_checks": 0,
+        "first": "13:19:07",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:18",
+          "vertical": "13:19:07",
+          "blended": "13:19:13"
+        },
+        "delay_from_accepted_launch_s": 5
+      },
+      {
+        "id": 2,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": null,
+        "mask": null,
+        "paths": {
+          "forward": null,
+          "vertical": null,
+          "blended": null
+        },
+        "delay_from_accepted_launch_s": null
+      },
+      {
+        "id": 3,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": "13:18:57",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:13",
+          "vertical": "13:18:57",
+          "blended": "13:19:14"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 4,
+        "unit": "3.2.8",
+        "ground_checks": 0,
+        "first": "13:19:13",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:24",
+          "vertical": "13:19:13",
+          "blended": "13:19:21"
+        },
+        "delay_from_accepted_launch_s": 11
+      }
+    ]
+  },
+  {
+    "speed_mph": 5,
+    "distance_m": 11,
+    "forward_confirmation_ms": 1000,
+    "normalization_scope": "shared",
+    "tracks": [
+      {
+        "id": 0,
+        "unit": "3.2.3 raccoon",
+        "ground_checks": 0,
+        "first": "13:02:14",
+        "mask": 6,
+        "paths": {
+          "forward": "13:02:18",
+          "vertical": "13:02:14",
+          "blended": "13:02:14"
+        },
+        "delay_from_accepted_launch_s": 2
+      },
+      {
+        "id": 1,
+        "unit": "3.2.3 redstrap",
+        "ground_checks": 0,
+        "first": "13:19:07",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:18",
+          "vertical": "13:19:07",
+          "blended": "13:19:13"
+        },
+        "delay_from_accepted_launch_s": 5
+      },
+      {
+        "id": 2,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": null,
+        "mask": null,
+        "paths": {
+          "forward": null,
+          "vertical": null,
+          "blended": null
+        },
+        "delay_from_accepted_launch_s": null
+      },
+      {
+        "id": 3,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": "13:18:57",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:18",
+          "vertical": "13:18:57",
+          "blended": "13:19:14"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 4,
+        "unit": "3.2.8",
+        "ground_checks": 0,
+        "first": "13:19:13",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:24",
+          "vertical": "13:19:13",
+          "blended": "13:19:21"
+        },
+        "delay_from_accepted_launch_s": 11
+      }
+    ]
+  },
+  {
+    "speed_mph": 5,
+    "distance_m": 12,
+    "forward_confirmation_ms": 1000,
+    "normalization_scope": "shared",
+    "tracks": [
+      {
+        "id": 0,
+        "unit": "3.2.3 raccoon",
+        "ground_checks": 0,
+        "first": "13:02:14",
+        "mask": 6,
+        "paths": {
+          "forward": "13:02:19",
+          "vertical": "13:02:14",
+          "blended": "13:02:14"
+        },
+        "delay_from_accepted_launch_s": 2
+      },
+      {
+        "id": 1,
+        "unit": "3.2.3 redstrap",
+        "ground_checks": 0,
+        "first": "13:19:07",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:24",
+          "vertical": "13:19:07",
+          "blended": "13:19:13"
+        },
+        "delay_from_accepted_launch_s": 5
+      },
+      {
+        "id": 2,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": null,
+        "mask": null,
+        "paths": {
+          "forward": null,
+          "vertical": null,
+          "blended": null
+        },
+        "delay_from_accepted_launch_s": null
+      },
+      {
+        "id": 3,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": "13:18:57",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:24",
+          "vertical": "13:18:57",
+          "blended": "13:19:14"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 4,
+        "unit": "3.2.8",
+        "ground_checks": 0,
+        "first": "13:19:13",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:25",
+          "vertical": "13:19:13",
+          "blended": "13:19:24"
+        },
+        "delay_from_accepted_launch_s": 11
+      }
+    ]
+  },
+  {
+    "speed_mph": 5,
+    "distance_m": 5,
+    "forward_confirmation_ms": 2000,
+    "normalization_scope": "shared",
+    "tracks": [
+      {
+        "id": 0,
+        "unit": "3.2.3 raccoon",
+        "ground_checks": 0,
+        "first": "13:02:13",
+        "mask": 1,
+        "paths": {
+          "forward": "13:02:13",
+          "vertical": "13:02:14",
+          "blended": "13:02:14"
+        },
+        "delay_from_accepted_launch_s": 1
+      },
+      {
+        "id": 1,
+        "unit": "3.2.3 redstrap",
+        "ground_checks": 0,
+        "first": "13:19:07",
+        "mask": 6,
+        "paths": {
+          "forward": "13:19:13",
+          "vertical": "13:19:07",
+          "blended": "13:19:07"
+        },
+        "delay_from_accepted_launch_s": 5
+      },
+      {
+        "id": 2,
+        "unit": "3.2.6 blue",
+        "ground_checks": 3,
+        "first": "13:04:52",
+        "mask": 1,
+        "paths": {
+          "forward": "13:04:52",
+          "vertical": null,
+          "blended": null
+        },
+        "delay_from_accepted_launch_s": null
+      },
+      {
+        "id": 3,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": "13:18:57",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:14",
+          "vertical": "13:18:57",
+          "blended": "13:19:03"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 4,
+        "unit": "3.2.8",
+        "ground_checks": 0,
+        "first": "13:19:02",
+        "mask": 4,
+        "paths": {
+          "forward": "13:19:14",
+          "vertical": "13:19:13",
+          "blended": "13:19:02"
+        },
+        "delay_from_accepted_launch_s": 0
+      }
+    ]
+  },
+  {
+    "speed_mph": 5,
+    "distance_m": 5,
+    "forward_confirmation_ms": 3000,
+    "normalization_scope": "shared",
+    "tracks": [
+      {
+        "id": 0,
+        "unit": "3.2.3 raccoon",
+        "ground_checks": 0,
+        "first": "13:02:14",
+        "mask": 7,
+        "paths": {
+          "forward": "13:02:14",
+          "vertical": "13:02:14",
+          "blended": "13:02:14"
+        },
+        "delay_from_accepted_launch_s": 2
+      },
+      {
+        "id": 1,
+        "unit": "3.2.3 redstrap",
+        "ground_checks": 0,
+        "first": "13:19:07",
+        "mask": 6,
+        "paths": {
+          "forward": "13:19:14",
+          "vertical": "13:19:07",
+          "blended": "13:19:07"
+        },
+        "delay_from_accepted_launch_s": 5
+      },
+      {
+        "id": 2,
+        "unit": "3.2.6 blue",
+        "ground_checks": 2,
+        "first": "13:04:53",
+        "mask": 1,
+        "paths": {
+          "forward": "13:04:53",
+          "vertical": null,
+          "blended": null
+        },
+        "delay_from_accepted_launch_s": null
+      },
+      {
+        "id": 3,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": "13:18:57",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:15",
+          "vertical": "13:18:57",
+          "blended": "13:19:03"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 4,
+        "unit": "3.2.8",
+        "ground_checks": 0,
+        "first": "13:19:02",
+        "mask": 4,
+        "paths": {
+          "forward": "13:19:15",
+          "vertical": "13:19:13",
+          "blended": "13:19:02"
+        },
+        "delay_from_accepted_launch_s": 0
+      }
+    ]
+  },
+  {
+    "speed_mph": 5,
+    "distance_m": 5,
+    "forward_confirmation_ms": 4000,
+    "normalization_scope": "shared",
+    "tracks": [
+      {
+        "id": 0,
+        "unit": "3.2.3 raccoon",
+        "ground_checks": 0,
+        "first": "13:02:14",
+        "mask": 6,
+        "paths": {
+          "forward": "13:02:15",
+          "vertical": "13:02:14",
+          "blended": "13:02:14"
+        },
+        "delay_from_accepted_launch_s": 2
+      },
+      {
+        "id": 1,
+        "unit": "3.2.3 redstrap",
+        "ground_checks": 0,
+        "first": "13:19:07",
+        "mask": 6,
+        "paths": {
+          "forward": "13:19:15",
+          "vertical": "13:19:07",
+          "blended": "13:19:07"
+        },
+        "delay_from_accepted_launch_s": 5
+      },
+      {
+        "id": 2,
+        "unit": "3.2.6 blue",
+        "ground_checks": 1,
+        "first": "13:04:54",
+        "mask": 1,
+        "paths": {
+          "forward": "13:04:54",
+          "vertical": null,
+          "blended": null
+        },
+        "delay_from_accepted_launch_s": null
+      },
+      {
+        "id": 3,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": "13:18:57",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:16",
+          "vertical": "13:18:57",
+          "blended": "13:19:03"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 4,
+        "unit": "3.2.8",
+        "ground_checks": 0,
+        "first": "13:19:02",
+        "mask": 4,
+        "paths": {
+          "forward": "13:19:16",
+          "vertical": "13:19:13",
+          "blended": "13:19:02"
+        },
+        "delay_from_accepted_launch_s": 0
+      }
+    ]
+  },
+  {
+    "speed_mph": 5,
+    "distance_m": 5,
+    "forward_confirmation_ms": 4300,
+    "normalization_scope": "shared",
+    "tracks": [
+      {
+        "id": 0,
+        "unit": "3.2.3 raccoon",
+        "ground_checks": 0,
+        "first": "13:02:14",
+        "mask": 6,
+        "paths": {
+          "forward": "13:02:16",
+          "vertical": "13:02:14",
+          "blended": "13:02:14"
+        },
+        "delay_from_accepted_launch_s": 2
+      },
+      {
+        "id": 1,
+        "unit": "3.2.3 redstrap",
+        "ground_checks": 0,
+        "first": "13:19:07",
+        "mask": 6,
+        "paths": {
+          "forward": "13:19:16",
+          "vertical": "13:19:07",
+          "blended": "13:19:07"
+        },
+        "delay_from_accepted_launch_s": 5
+      },
+      {
+        "id": 2,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": null,
+        "mask": null,
+        "paths": {
+          "forward": null,
+          "vertical": null,
+          "blended": null
+        },
+        "delay_from_accepted_launch_s": null
+      },
+      {
+        "id": 3,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": "13:18:57",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:17",
+          "vertical": "13:18:57",
+          "blended": "13:19:03"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 4,
+        "unit": "3.2.8",
+        "ground_checks": 0,
+        "first": "13:19:02",
+        "mask": 4,
+        "paths": {
+          "forward": "13:19:17",
+          "vertical": "13:19:13",
+          "blended": "13:19:02"
+        },
+        "delay_from_accepted_launch_s": 0
+      }
+    ]
+  },
+  {
+    "speed_mph": 5,
+    "distance_m": 5,
+    "forward_confirmation_ms": 4500,
+    "normalization_scope": "shared",
+    "tracks": [
+      {
+        "id": 0,
+        "unit": "3.2.3 raccoon",
+        "ground_checks": 0,
+        "first": "13:02:14",
+        "mask": 6,
+        "paths": {
+          "forward": "13:02:16",
+          "vertical": "13:02:14",
+          "blended": "13:02:14"
+        },
+        "delay_from_accepted_launch_s": 2
+      },
+      {
+        "id": 1,
+        "unit": "3.2.3 redstrap",
+        "ground_checks": 0,
+        "first": "13:19:07",
+        "mask": 6,
+        "paths": {
+          "forward": "13:19:16",
+          "vertical": "13:19:07",
+          "blended": "13:19:07"
+        },
+        "delay_from_accepted_launch_s": 5
+      },
+      {
+        "id": 2,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": null,
+        "mask": null,
+        "paths": {
+          "forward": null,
+          "vertical": null,
+          "blended": null
+        },
+        "delay_from_accepted_launch_s": null
+      },
+      {
+        "id": 3,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": "13:18:57",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:17",
+          "vertical": "13:18:57",
+          "blended": "13:19:03"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 4,
+        "unit": "3.2.8",
+        "ground_checks": 0,
+        "first": "13:19:02",
+        "mask": 4,
+        "paths": {
+          "forward": "13:19:17",
+          "vertical": "13:19:13",
+          "blended": "13:19:02"
+        },
+        "delay_from_accepted_launch_s": 0
+      }
+    ]
+  },
+  {
+    "speed_mph": 5,
+    "distance_m": 5,
+    "forward_confirmation_ms": 5000,
+    "normalization_scope": "shared",
+    "tracks": [
+      {
+        "id": 0,
+        "unit": "3.2.3 raccoon",
+        "ground_checks": 0,
+        "first": "13:02:14",
+        "mask": 6,
+        "paths": {
+          "forward": "13:02:16",
+          "vertical": "13:02:14",
+          "blended": "13:02:14"
+        },
+        "delay_from_accepted_launch_s": 2
+      },
+      {
+        "id": 1,
+        "unit": "3.2.3 redstrap",
+        "ground_checks": 0,
+        "first": "13:19:07",
+        "mask": 6,
+        "paths": {
+          "forward": "13:19:16",
+          "vertical": "13:19:07",
+          "blended": "13:19:07"
+        },
+        "delay_from_accepted_launch_s": 5
+      },
+      {
+        "id": 2,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": null,
+        "mask": null,
+        "paths": {
+          "forward": null,
+          "vertical": null,
+          "blended": null
+        },
+        "delay_from_accepted_launch_s": null
+      },
+      {
+        "id": 3,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": "13:18:57",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:17",
+          "vertical": "13:18:57",
+          "blended": "13:19:03"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 4,
+        "unit": "3.2.8",
+        "ground_checks": 0,
+        "first": "13:19:02",
+        "mask": 4,
+        "paths": {
+          "forward": "13:19:17",
+          "vertical": "13:19:13",
+          "blended": "13:19:02"
+        },
+        "delay_from_accepted_launch_s": 0
+      }
+    ]
+  },
+  {
+    "speed_mph": 7,
+    "distance_m": 5,
+    "forward_confirmation_ms": 1000,
+    "normalization_scope": "standalone",
+    "tracks": [
+      {
+        "id": 0,
+        "unit": "3.2.3 raccoon",
+        "ground_checks": 0,
+        "first": "13:02:14",
+        "mask": 7,
+        "paths": {
+          "forward": "13:02:14",
+          "vertical": "13:02:14",
+          "blended": "13:02:14"
+        },
+        "delay_from_accepted_launch_s": 2
+      },
+      {
+        "id": 1,
+        "unit": "3.2.3 redstrap",
+        "ground_checks": 0,
+        "first": "13:19:07",
+        "mask": 6,
+        "paths": {
+          "forward": "13:19:13",
+          "vertical": "13:19:07",
+          "blended": "13:19:07"
+        },
+        "delay_from_accepted_launch_s": 5
+      },
+      {
+        "id": 2,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": null,
+        "mask": null,
+        "paths": {
+          "forward": null,
+          "vertical": null,
+          "blended": null
+        },
+        "delay_from_accepted_launch_s": null
+      },
+      {
+        "id": 3,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": "13:18:57",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:14",
+          "vertical": "13:18:57",
+          "blended": "13:19:03"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 4,
+        "unit": "3.2.8",
+        "ground_checks": 0,
+        "first": "13:19:02",
+        "mask": 4,
+        "paths": {
+          "forward": "13:19:23",
+          "vertical": "13:19:13",
+          "blended": "13:19:02"
+        },
+        "delay_from_accepted_launch_s": 0
+      }
+    ]
+  },
+  {
+    "speed_mph": 5,
+    "distance_m": 11,
+    "forward_confirmation_ms": 1000,
+    "normalization_scope": "standalone",
+    "tracks": [
+      {
+        "id": 0,
+        "unit": "3.2.3 raccoon",
+        "ground_checks": 0,
+        "first": "13:02:14",
+        "mask": 6,
+        "paths": {
+          "forward": "13:02:18",
+          "vertical": "13:02:14",
+          "blended": "13:02:14"
+        },
+        "delay_from_accepted_launch_s": 2
+      },
+      {
+        "id": 1,
+        "unit": "3.2.3 redstrap",
+        "ground_checks": 0,
+        "first": "13:19:07",
+        "mask": 6,
+        "paths": {
+          "forward": "13:19:18",
+          "vertical": "13:19:07",
+          "blended": "13:19:07"
+        },
+        "delay_from_accepted_launch_s": 5
+      },
+      {
+        "id": 2,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": null,
+        "mask": null,
+        "paths": {
+          "forward": null,
+          "vertical": null,
+          "blended": null
+        },
+        "delay_from_accepted_launch_s": null
+      },
+      {
+        "id": 3,
+        "unit": "3.2.6 blue",
+        "ground_checks": 0,
+        "first": "13:18:57",
+        "mask": 2,
+        "paths": {
+          "forward": "13:19:18",
+          "vertical": "13:18:57",
+          "blended": "13:19:03"
+        },
+        "delay_from_accepted_launch_s": 0
+      },
+      {
+        "id": 4,
+        "unit": "3.2.8",
+        "ground_checks": 0,
+        "first": "13:19:02",
+        "mask": 4,
+        "paths": {
+          "forward": "13:19:24",
+          "vertical": "13:19:13",
+          "blended": "13:19:02"
+        },
+        "delay_from_accepted_launch_s": 0
+      }
+    ]
+  }
+]

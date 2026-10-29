@@ -1,0 +1,2311 @@
+[
+  {
+    "file": "hardware-3.2.3/Racoon/tracks/2026-10-25-XLV-000-01.igc",
+    "bytes": 2311462,
+    "checksum_validator_exit": 0,
+    "checksum_validator_stdout": "STATUS_IGC_PASSED",
+    "checksum_validator_stderr": "",
+    "starts": [
+      {
+        "V": "1",
+        "CAUSE": "AUTO",
+        "T_MS": "583695",
+        "N": "30"
+      }
+    ],
+    "ends": [
+      {
+        "V": "1",
+        "CAUSE": "MANUAL",
+        "T_MS": "4463119"
+      }
+    ],
+    "diagnostic_groups": 3876,
+    "b_records": 3875,
+    "first_b_offset_estimate": 2436,
+    "b_gaps_over_1s": [
+      {
+        "index": 1,
+        "gap_s": 2
+      },
+      {
+        "index": 902,
+        "gap_s": 2
+      },
+      {
+        "index": 1537,
+        "gap_s": 2
+      },
+      {
+        "index": 2224,
+        "gap_s": 2
+      },
+      {
+        "index": 2865,
+        "gap_s": 2
+      }
+    ],
+    "max_diagnostic_gap_ms": 1260,
+    "reset_sum": 8,
+    "events": [
+      {
+        "t_ms": 1490314,
+        "since_start_ms": 906619,
+        "gap_ms": 1200,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 1491314,
+        "since_start_ms": 907619,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 1807774,
+        "since_start_ms": 1224079,
+        "gap_ms": 1200,
+        "reset_count": 1,
+        "samples": "18",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 1808774,
+        "since_start_ms": 1225079,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 2125234,
+        "since_start_ms": 1541539,
+        "gap_ms": 1199,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 2812134,
+        "since_start_ms": 2228439,
+        "gap_ms": 1200,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 3129594,
+        "since_start_ms": 2545899,
+        "gap_ms": 1200,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 3130594,
+        "since_start_ms": 2546899,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "18",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 3452984,
+        "since_start_ms": 2869289,
+        "gap_ms": 1260,
+        "reset_count": 1,
+        "samples": "18",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 3795504,
+        "since_start_ms": 3211809,
+        "gap_ms": 1200,
+        "reset_count": 1,
+        "samples": "18",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 4136964,
+        "since_start_ms": 3553269,
+        "gap_ms": 1200,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      }
+    ]
+  },
+  {
+    "file": "hardware-3.2.3/RedStrap/tracks/2026-10-25-XLV-000-01.igc",
+    "bytes": 1421560,
+    "checksum_validator_exit": 0,
+    "checksum_validator_stdout": "STATUS_IGC_PASSED",
+    "checksum_validator_stderr": "",
+    "starts": [
+      {
+        "V": "1",
+        "CAUSE": "AUTO",
+        "T_MS": "1190274",
+        "N": "30"
+      }
+    ],
+    "ends": [
+      {
+        "V": "1",
+        "CAUSE": "MANUAL",
+        "T_MS": "3492638"
+      }
+    ],
+    "diagnostic_groups": 2303,
+    "b_records": 2302,
+    "first_b_offset_estimate": 2436,
+    "b_gaps_over_1s": [
+      {
+        "index": 649,
+        "gap_s": 2
+      },
+      {
+        "index": 652,
+        "gap_s": 2
+      },
+      {
+        "index": 655,
+        "gap_s": 2
+      },
+      {
+        "index": 658,
+        "gap_s": 2
+      }
+    ],
+    "max_diagnostic_gap_ms": 1209,
+    "reset_sum": 1,
+    "events": [
+      {
+        "t_ms": 1191504,
+        "since_start_ms": 1230,
+        "gap_ms": 1209,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 1192684,
+        "since_start_ms": 2410,
+        "gap_ms": 1180,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 1193684,
+        "since_start_ms": 3410,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 1194684,
+        "since_start_ms": 4410,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 1195684,
+        "since_start_ms": 5410,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 1196684,
+        "since_start_ms": 6410,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 1197684,
+        "since_start_ms": 7410,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      }
+    ]
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-01.igc",
+    "bytes": 41753,
+    "checksum_validator_exit": 0,
+    "checksum_validator_stdout": "STATUS_IGC_PASSED",
+    "checksum_validator_stderr": "",
+    "starts": [
+      {
+        "V": "1",
+        "CAUSE": "AUTO",
+        "T_MS": "95548",
+        "N": "30"
+      }
+    ],
+    "ends": [
+      {
+        "V": "1",
+        "CAUSE": "MANUAL",
+        "T_MS": "165413"
+      }
+    ],
+    "diagnostic_groups": 71,
+    "b_records": 70,
+    "first_b_offset_estimate": 3269,
+    "b_gaps_over_1s": [
+      {
+        "index": 1,
+        "gap_s": 2
+      }
+    ],
+    "max_diagnostic_gap_ms": 1280,
+    "reset_sum": 2,
+    "events": [
+      {
+        "t_ms": 96788,
+        "since_start_ms": 1240,
+        "gap_ms": 1217,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 98068,
+        "since_start_ms": 2520,
+        "gap_ms": 1280,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 6,
+        "ending": "0"
+      },
+      {
+        "t_ms": 99068,
+        "since_start_ms": 3520,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 100068,
+        "since_start_ms": 4520,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 101068,
+        "since_start_ms": 5520,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 102068,
+        "since_start_ms": 6520,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "18",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 103068,
+        "since_start_ms": 7520,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 104068,
+        "since_start_ms": 8520,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      }
+    ]
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-02.igc",
+    "bytes": 37610,
+    "checksum_validator_exit": 0,
+    "checksum_validator_stdout": "STATUS_IGC_PASSED",
+    "checksum_validator_stderr": "",
+    "starts": [
+      {
+        "V": "1",
+        "CAUSE": "AUTO",
+        "T_MS": "187438",
+        "N": "22"
+      }
+    ],
+    "ends": [
+      {
+        "V": "1",
+        "CAUSE": "MANUAL",
+        "T_MS": "250323"
+      }
+    ],
+    "diagnostic_groups": 64,
+    "b_records": 63,
+    "first_b_offset_estimate": 2857,
+    "b_gaps_over_1s": [
+      {
+        "index": 1,
+        "gap_s": 2
+      },
+      {
+        "index": 5,
+        "gap_s": 2
+      },
+      {
+        "index": 9,
+        "gap_s": 2
+      },
+      {
+        "index": 23,
+        "gap_s": 2
+      },
+      {
+        "index": 46,
+        "gap_s": 2
+      },
+      {
+        "index": 55,
+        "gap_s": 2
+      },
+      {
+        "index": 60,
+        "gap_s": 2
+      }
+    ],
+    "max_diagnostic_gap_ms": 1220,
+    "reset_sum": 2,
+    "events": [
+      {
+        "t_ms": 188678,
+        "since_start_ms": 1240,
+        "gap_ms": 1217,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 189898,
+        "since_start_ms": 2460,
+        "gap_ms": 1220,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 190898,
+        "since_start_ms": 3460,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 191898,
+        "since_start_ms": 4460,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 192898,
+        "since_start_ms": 5460,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 193898,
+        "since_start_ms": 6460,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 194898,
+        "since_start_ms": 7460,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "18",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 195898,
+        "since_start_ms": 8460,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 196898,
+        "since_start_ms": 9460,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      }
+    ]
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-03.igc",
+    "bytes": 38619,
+    "checksum_validator_exit": 0,
+    "checksum_validator_stdout": "STATUS_IGC_PASSED",
+    "checksum_validator_stderr": "",
+    "starts": [
+      {
+        "V": "1",
+        "CAUSE": "AUTO",
+        "T_MS": "398288",
+        "N": "30"
+      }
+    ],
+    "ends": [
+      {
+        "V": "1",
+        "CAUSE": "MANUAL",
+        "T_MS": "461961"
+      }
+    ],
+    "diagnostic_groups": 65,
+    "b_records": 64,
+    "first_b_offset_estimate": 3336,
+    "b_gaps_over_1s": [],
+    "max_diagnostic_gap_ms": 1230,
+    "reset_sum": 2,
+    "events": [
+      {
+        "t_ms": 399518,
+        "since_start_ms": 1230,
+        "gap_ms": 1207,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 400748,
+        "since_start_ms": 2460,
+        "gap_ms": 1230,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 401748,
+        "since_start_ms": 3460,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 402748,
+        "since_start_ms": 4460,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 403748,
+        "since_start_ms": 5460,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 404748,
+        "since_start_ms": 6460,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "18",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 68,
+        "ending": "0"
+      },
+      {
+        "t_ms": 405748,
+        "since_start_ms": 7460,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 406748,
+        "since_start_ms": 8460,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 407748,
+        "since_start_ms": 9460,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      }
+    ]
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-04.igc",
+    "bytes": 37034,
+    "checksum_validator_exit": 0,
+    "checksum_validator_stdout": "STATUS_IGC_PASSED",
+    "checksum_validator_stderr": "",
+    "starts": [
+      {
+        "V": "1",
+        "CAUSE": "MANUAL",
+        "T_MS": "493888",
+        "N": "30"
+      }
+    ],
+    "ends": [
+      {
+        "V": "1",
+        "CAUSE": "MANUAL",
+        "T_MS": "554713"
+      }
+    ],
+    "diagnostic_groups": 62,
+    "b_records": 61,
+    "first_b_offset_estimate": 3343,
+    "b_gaps_over_1s": [],
+    "max_diagnostic_gap_ms": 1250,
+    "reset_sum": 2,
+    "events": [
+      {
+        "t_ms": 495208,
+        "since_start_ms": 1320,
+        "gap_ms": 1220,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 496458,
+        "since_start_ms": 2570,
+        "gap_ms": 1250,
+        "reset_count": 1,
+        "samples": "18",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 497458,
+        "since_start_ms": 3570,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 498458,
+        "since_start_ms": 4570,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 499458,
+        "since_start_ms": 5570,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 500458,
+        "since_start_ms": 6570,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 501458,
+        "since_start_ms": 7570,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 502458,
+        "since_start_ms": 8570,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "18",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 68,
+        "ending": "0"
+      },
+      {
+        "t_ms": 503458,
+        "since_start_ms": 9570,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      }
+    ]
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-05.igc",
+    "bytes": 36222,
+    "checksum_validator_exit": 0,
+    "checksum_validator_stdout": "STATUS_IGC_PASSED",
+    "checksum_validator_stderr": "",
+    "starts": [
+      {
+        "V": "1",
+        "CAUSE": "AUTO",
+        "T_MS": "571878",
+        "N": "17"
+      }
+    ],
+    "ends": [
+      {
+        "V": "1",
+        "CAUSE": "MANUAL",
+        "T_MS": "633031"
+      }
+    ],
+    "diagnostic_groups": 62,
+    "b_records": 61,
+    "first_b_offset_estimate": 2574,
+    "b_gaps_over_1s": [
+      {
+        "index": 0,
+        "gap_s": 2
+      }
+    ],
+    "max_diagnostic_gap_ms": 1250,
+    "reset_sum": 2,
+    "events": [
+      {
+        "t_ms": 573118,
+        "since_start_ms": 1240,
+        "gap_ms": 1217,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 574368,
+        "since_start_ms": 2490,
+        "gap_ms": 1250,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 575368,
+        "since_start_ms": 3490,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 576368,
+        "since_start_ms": 4490,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 577368,
+        "since_start_ms": 5490,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 578368,
+        "since_start_ms": 6490,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "18",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 68,
+        "ending": "0"
+      },
+      {
+        "t_ms": 579368,
+        "since_start_ms": 7490,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 580368,
+        "since_start_ms": 8490,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 581368,
+        "since_start_ms": 9490,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      }
+    ]
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-06.igc",
+    "bytes": 50753,
+    "checksum_validator_exit": 0,
+    "checksum_validator_stdout": "STATUS_IGC_PASSED",
+    "checksum_validator_stderr": "",
+    "starts": [
+      {
+        "V": "1",
+        "CAUSE": "AUTO",
+        "T_MS": "754598",
+        "N": "30"
+      }
+    ],
+    "ends": [
+      {
+        "V": "1",
+        "CAUSE": "MANUAL",
+        "T_MS": "839021"
+      }
+    ],
+    "diagnostic_groups": 85,
+    "b_records": 84,
+    "first_b_offset_estimate": 3355,
+    "b_gaps_over_1s": [
+      {
+        "index": 1,
+        "gap_s": 2
+      }
+    ],
+    "max_diagnostic_gap_ms": 1270,
+    "reset_sum": 2,
+    "events": [
+      {
+        "t_ms": 755858,
+        "since_start_ms": 1260,
+        "gap_ms": 1236,
+        "reset_count": 1,
+        "samples": "18",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 68,
+        "ending": "0"
+      },
+      {
+        "t_ms": 757128,
+        "since_start_ms": 2530,
+        "gap_ms": 1270,
+        "reset_count": 1,
+        "samples": "18",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 758128,
+        "since_start_ms": 3530,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 759128,
+        "since_start_ms": 4530,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 760128,
+        "since_start_ms": 5530,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 761128,
+        "since_start_ms": 6530,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 762128,
+        "since_start_ms": 7530,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 763128,
+        "since_start_ms": 8530,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "18",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 68,
+        "ending": "0"
+      },
+      {
+        "t_ms": 764128,
+        "since_start_ms": 9530,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      }
+    ]
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-07.igc",
+    "bytes": 23314,
+    "checksum_validator_exit": 0,
+    "checksum_validator_stdout": "STATUS_IGC_PASSED",
+    "checksum_validator_stderr": "",
+    "starts": [
+      {
+        "V": "1",
+        "CAUSE": "MANUAL",
+        "T_MS": "983768",
+        "N": "30"
+      }
+    ],
+    "ends": [
+      {
+        "V": "1",
+        "CAUSE": "MANUAL",
+        "T_MS": "1019491"
+      }
+    ],
+    "diagnostic_groups": 36,
+    "b_records": 35,
+    "first_b_offset_estimate": 3354,
+    "b_gaps_over_1s": [
+      {
+        "index": 1,
+        "gap_s": 2
+      }
+    ],
+    "max_diagnostic_gap_ms": 1280,
+    "reset_sum": 2,
+    "events": [
+      {
+        "t_ms": 985838,
+        "since_start_ms": 2070,
+        "gap_ms": 1240,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 987118,
+        "since_start_ms": 3350,
+        "gap_ms": 1280,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 988118,
+        "since_start_ms": 4350,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 989118,
+        "since_start_ms": 5350,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 990118,
+        "since_start_ms": 6350,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 991118,
+        "since_start_ms": 7350,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "18",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 992118,
+        "since_start_ms": 8350,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 993118,
+        "since_start_ms": 9350,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 994118,
+        "since_start_ms": 10350,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      }
+    ]
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-08.igc",
+    "bytes": 52477,
+    "checksum_validator_exit": 0,
+    "checksum_validator_stdout": "STATUS_IGC_PASSED",
+    "checksum_validator_stderr": "",
+    "starts": [
+      {
+        "V": "1",
+        "CAUSE": "AUTO",
+        "T_MS": "105840",
+        "N": "30"
+      }
+    ],
+    "ends": [
+      {
+        "V": "1",
+        "CAUSE": "MANUAL",
+        "T_MS": "192692"
+      }
+    ],
+    "diagnostic_groups": 88,
+    "b_records": 87,
+    "first_b_offset_estimate": 3332,
+    "b_gaps_over_1s": [
+      {
+        "index": 0,
+        "gap_s": 2
+      }
+    ],
+    "max_diagnostic_gap_ms": 1280,
+    "reset_sum": 2,
+    "events": [
+      {
+        "t_ms": 107110,
+        "since_start_ms": 1270,
+        "gap_ms": 1247,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 108390,
+        "since_start_ms": 2550,
+        "gap_ms": 1280,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 109390,
+        "since_start_ms": 3550,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "18",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 68,
+        "ending": "0"
+      },
+      {
+        "t_ms": 110390,
+        "since_start_ms": 4550,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 111390,
+        "since_start_ms": 5550,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 112390,
+        "since_start_ms": 6550,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 113390,
+        "since_start_ms": 7550,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 114390,
+        "since_start_ms": 8550,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 115390,
+        "since_start_ms": 9550,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      }
+    ]
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-09.igc",
+    "bytes": 21395,
+    "checksum_validator_exit": 0,
+    "checksum_validator_stdout": "STATUS_IGC_PASSED",
+    "checksum_validator_stderr": "",
+    "starts": [
+      {
+        "V": "1",
+        "CAUSE": "AUTO",
+        "T_MS": "80362",
+        "N": "30"
+      }
+    ],
+    "ends": [
+      {
+        "V": "1",
+        "CAUSE": "MANUAL",
+        "T_MS": "114267"
+      }
+    ],
+    "diagnostic_groups": 34,
+    "b_records": 33,
+    "first_b_offset_estimate": 3259,
+    "b_gaps_over_1s": [
+      {
+        "index": 0,
+        "gap_s": 3
+      }
+    ],
+    "max_diagnostic_gap_ms": 2177,
+    "reset_sum": 2,
+    "events": [
+      {
+        "t_ms": 82562,
+        "since_start_ms": 2200,
+        "gap_ms": 2177,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "1",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 83852,
+        "since_start_ms": 3490,
+        "gap_ms": 1290,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 84852,
+        "since_start_ms": 4490,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 85852,
+        "since_start_ms": 5490,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 86852,
+        "since_start_ms": 6490,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 87852,
+        "since_start_ms": 7490,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "18",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 68,
+        "ending": "0"
+      },
+      {
+        "t_ms": 88852,
+        "since_start_ms": 8490,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      }
+    ]
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-10.igc",
+    "bytes": 31037,
+    "checksum_validator_exit": 0,
+    "checksum_validator_stdout": "STATUS_IGC_PASSED",
+    "checksum_validator_stderr": "",
+    "starts": [
+      {
+        "V": "1",
+        "CAUSE": "AUTO",
+        "T_MS": "150312",
+        "N": "30"
+      }
+    ],
+    "ends": [
+      {
+        "V": "1",
+        "CAUSE": "MANUAL",
+        "T_MS": "200777"
+      }
+    ],
+    "diagnostic_groups": 51,
+    "b_records": 50,
+    "first_b_offset_estimate": 3330,
+    "b_gaps_over_1s": [
+      {
+        "index": 0,
+        "gap_s": 2
+      }
+    ],
+    "max_diagnostic_gap_ms": 1300,
+    "reset_sum": 2,
+    "events": [
+      {
+        "t_ms": 151602,
+        "since_start_ms": 1290,
+        "gap_ms": 1267,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 152902,
+        "since_start_ms": 2590,
+        "gap_ms": 1300,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 153902,
+        "since_start_ms": 3590,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 154902,
+        "since_start_ms": 4590,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "18",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      }
+    ]
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-11.igc",
+    "bytes": 25935,
+    "checksum_validator_exit": 0,
+    "checksum_validator_stdout": "STATUS_IGC_PASSED",
+    "checksum_validator_stderr": "",
+    "starts": [
+      {
+        "V": "1",
+        "CAUSE": "AUTO",
+        "T_MS": "218382",
+        "N": "18"
+      }
+    ],
+    "ends": [
+      {
+        "V": "1",
+        "CAUSE": "MANUAL",
+        "T_MS": "260857"
+      }
+    ],
+    "diagnostic_groups": 43,
+    "b_records": 42,
+    "first_b_offset_estimate": 2612,
+    "b_gaps_over_1s": [
+      {
+        "index": 0,
+        "gap_s": 2
+      }
+    ],
+    "max_diagnostic_gap_ms": 1300,
+    "reset_sum": 2,
+    "events": [
+      {
+        "t_ms": 219672,
+        "since_start_ms": 1290,
+        "gap_ms": 1267,
+        "reset_count": 1,
+        "samples": "18",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 220972,
+        "since_start_ms": 2590,
+        "gap_ms": 1300,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 221972,
+        "since_start_ms": 3590,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 222972,
+        "since_start_ms": 4590,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 223972,
+        "since_start_ms": 5590,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "18",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 224972,
+        "since_start_ms": 6590,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 225972,
+        "since_start_ms": 7590,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 226972,
+        "since_start_ms": 8590,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 227972,
+        "since_start_ms": 9590,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      }
+    ]
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-12.igc",
+    "bytes": 12975,
+    "checksum_validator_exit": 0,
+    "checksum_validator_stdout": "STATUS_IGC_PASSED",
+    "checksum_validator_stderr": "",
+    "starts": [
+      {
+        "V": "1",
+        "CAUSE": "MANUAL",
+        "T_MS": "278622",
+        "N": "18"
+      }
+    ],
+    "ends": [
+      {
+        "V": "1",
+        "CAUSE": "MANUAL",
+        "T_MS": "297887"
+      }
+    ],
+    "diagnostic_groups": 19,
+    "b_records": 18,
+    "first_b_offset_estimate": 2617,
+    "b_gaps_over_1s": [
+      {
+        "index": 0,
+        "gap_s": 2
+      }
+    ],
+    "max_diagnostic_gap_ms": 1310,
+    "reset_sum": 2,
+    "events": [
+      {
+        "t_ms": 280762,
+        "since_start_ms": 2140,
+        "gap_ms": 1270,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 282072,
+        "since_start_ms": 3450,
+        "gap_ms": 1310,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 283072,
+        "since_start_ms": 4450,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "18",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 284072,
+        "since_start_ms": 5450,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 285072,
+        "since_start_ms": 6450,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 286072,
+        "since_start_ms": 7450,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 287072,
+        "since_start_ms": 8450,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 288072,
+        "since_start_ms": 9450,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 289072,
+        "since_start_ms": 10450,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      }
+    ]
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-13.igc",
+    "bytes": 10022,
+    "checksum_validator_exit": 0,
+    "checksum_validator_stdout": "STATUS_IGC_PASSED",
+    "checksum_validator_stderr": "",
+    "starts": [
+      {
+        "V": "1",
+        "CAUSE": "MANUAL",
+        "T_MS": "302362",
+        "N": "5"
+      }
+    ],
+    "ends": [
+      {
+        "V": "1",
+        "CAUSE": "MANUAL",
+        "T_MS": "317117"
+      }
+    ],
+    "diagnostic_groups": 15,
+    "b_records": 14,
+    "first_b_offset_estimate": 1858,
+    "b_gaps_over_1s": [],
+    "max_diagnostic_gap_ms": 1310,
+    "reset_sum": 2,
+    "events": [
+      {
+        "t_ms": 302592,
+        "since_start_ms": 230,
+        "gap_ms": null,
+        "reset_count": 0,
+        "samples": "3",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 303852,
+        "since_start_ms": 1490,
+        "gap_ms": 1260,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 305162,
+        "since_start_ms": 2800,
+        "gap_ms": 1310,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 306162,
+        "since_start_ms": 3800,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 307162,
+        "since_start_ms": 4800,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 308162,
+        "since_start_ms": 5800,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "18",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 309162,
+        "since_start_ms": 6800,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 310162,
+        "since_start_ms": 7800,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 311162,
+        "since_start_ms": 8800,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 312162,
+        "since_start_ms": 9800,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      }
+    ]
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-14.igc",
+    "bytes": 20971,
+    "checksum_validator_exit": 0,
+    "checksum_validator_stdout": "STATUS_IGC_PASSED",
+    "checksum_validator_stderr": "",
+    "starts": [
+      {
+        "V": "1",
+        "CAUSE": "MANUAL",
+        "T_MS": "331872",
+        "N": "15"
+      }
+    ],
+    "ends": [
+      {
+        "V": "1",
+        "CAUSE": "MANUAL",
+        "T_MS": "365817"
+      }
+    ],
+    "diagnostic_groups": 34,
+    "b_records": 33,
+    "first_b_offset_estimate": 2433,
+    "b_gaps_over_1s": [],
+    "max_diagnostic_gap_ms": 1310,
+    "reset_sum": 2,
+    "events": [
+      {
+        "t_ms": 333952,
+        "since_start_ms": 2080,
+        "gap_ms": 1270,
+        "reset_count": 1,
+        "samples": "18",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 68,
+        "ending": "0"
+      },
+      {
+        "t_ms": 335262,
+        "since_start_ms": 3390,
+        "gap_ms": 1310,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 336262,
+        "since_start_ms": 4390,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 337262,
+        "since_start_ms": 5390,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 338262,
+        "since_start_ms": 6390,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 339262,
+        "since_start_ms": 7390,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 340262,
+        "since_start_ms": 8390,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "18",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 68,
+        "ending": "0"
+      },
+      {
+        "t_ms": 341262,
+        "since_start_ms": 9390,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 342262,
+        "since_start_ms": 10390,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      }
+    ]
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-15.igc",
+    "bytes": 133584,
+    "checksum_validator_exit": 0,
+    "checksum_validator_stdout": "STATUS_IGC_PASSED",
+    "checksum_validator_stderr": "",
+    "starts": [
+      {
+        "V": "1",
+        "CAUSE": "AUTO",
+        "T_MS": "757549",
+        "N": "30"
+      }
+    ],
+    "ends": [
+      {
+        "V": "1",
+        "CAUSE": "MANUAL",
+        "T_MS": "997434"
+      }
+    ],
+    "diagnostic_groups": 240,
+    "b_records": 239,
+    "first_b_offset_estimate": 3370,
+    "b_gaps_over_1s": [
+      {
+        "index": 110,
+        "gap_s": 2
+      }
+    ],
+    "max_diagnostic_gap_ms": 1320,
+    "reset_sum": 3,
+    "events": [
+      {
+        "t_ms": 758859,
+        "since_start_ms": 1310,
+        "gap_ms": 1287,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 760179,
+        "since_start_ms": 2630,
+        "gap_ms": 1320,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 761179,
+        "since_start_ms": 3630,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 870709,
+        "since_start_ms": 113160,
+        "gap_ms": 1270,
+        "reset_count": 1,
+        "samples": "18",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 68,
+        "ending": "0"
+      }
+    ]
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-16.igc",
+    "bytes": 8941,
+    "checksum_validator_exit": 0,
+    "checksum_validator_stdout": "STATUS_IGC_PASSED",
+    "checksum_validator_stderr": "",
+    "starts": [
+      {
+        "V": "1",
+        "CAUSE": "AUTO",
+        "T_MS": "1290539",
+        "N": "30"
+      }
+    ],
+    "ends": [
+      {
+        "V": "1",
+        "CAUSE": "MANUAL",
+        "T_MS": "1299812"
+      }
+    ],
+    "diagnostic_groups": 10,
+    "b_records": 9,
+    "first_b_offset_estimate": 3375,
+    "b_gaps_over_1s": [],
+    "max_diagnostic_gap_ms": 1320,
+    "reset_sum": 2,
+    "events": [
+      {
+        "t_ms": 1291829,
+        "since_start_ms": 1290,
+        "gap_ms": 1267,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 1293149,
+        "since_start_ms": 2610,
+        "gap_ms": 1320,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 1294149,
+        "since_start_ms": 3610,
+        "gap_ms": 1000,
+        "reset_count": 0,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      }
+    ]
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-17.igc",
+    "bytes": 1384013,
+    "checksum_validator_exit": 0,
+    "checksum_validator_stdout": "STATUS_IGC_PASSED",
+    "checksum_validator_stderr": "",
+    "starts": [
+      {
+        "V": "1",
+        "CAUSE": "AUTO",
+        "T_MS": "1325659",
+        "N": "26"
+      }
+    ],
+    "ends": [
+      {
+        "V": "1",
+        "CAUSE": "MANUAL",
+        "T_MS": "3561522"
+      }
+    ],
+    "diagnostic_groups": 2236,
+    "b_records": 2235,
+    "first_b_offset_estimate": 3126,
+    "b_gaps_over_1s": [
+      {
+        "index": 1439,
+        "gap_s": 2
+      }
+    ],
+    "max_diagnostic_gap_ms": 1870,
+    "reset_sum": 3,
+    "events": [
+      {
+        "t_ms": 1326949,
+        "since_start_ms": 1290,
+        "gap_ms": 1267,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 1328269,
+        "since_start_ms": 2610,
+        "gap_ms": 1320,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "0",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      },
+      {
+        "t_ms": 2767249,
+        "since_start_ms": 1441590,
+        "gap_ms": 1870,
+        "reset_count": 1,
+        "samples": "19",
+        "sample_gap_count": "1",
+        "climb_valid": "0",
+        "raw_sample_age_ms": 18,
+        "ending": "0"
+      }
+    ]
+  }
+]

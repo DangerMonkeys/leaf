@@ -1,0 +1,65 @@
+{
+  "firmware": "0.2.4-968",
+  "original_files": 196,
+  "current_flights": 19,
+  "complete_main_logbooks": 16,
+  "pending_complete_temporaries": 3,
+  "pending_fraction": 0.15789473684210525,
+  "all_current_igc_checksums_pass": true,
+  "all_current_tracks_have_one_start_and_end": true,
+  "fingerprint_mismatches": [
+    {
+      "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_11-33-08_71df1a09.json.tmp",
+      "parse_error": "Ok",
+      "written_fingerprint": "a3d6859e968dca17",
+      "reread_fingerprint": "380f88fd0a43db86",
+      "changes": [
+        {
+          "field": "/metrics/max_altitude_above_launch_m",
+          "written": "7.440002",
+          "reserialized": "7.440001"
+        }
+      ]
+    },
+    {
+      "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_11-36-02_262eff2e.json.tmp",
+      "parse_error": "Ok",
+      "written_fingerprint": "d45ab78ba351f3a9",
+      "reread_fingerprint": "158b068848dc253c",
+      "changes": [
+        {
+          "field": "/metrics/max_altitude_above_launch_m",
+          "written": "7.069977",
+          "reserialized": "7.069976"
+        }
+      ]
+    },
+    {
+      "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_14-04-14_5696dc6b.json.tmp",
+      "parse_error": "Ok",
+      "written_fingerprint": "efe36c4f97d75c82",
+      "reread_fingerprint": "520e8ed9f8f9a1ff",
+      "changes": [
+        {
+          "field": "/metrics/average_ground_speed_mps",
+          "written": "8.060762",
+          "reserialized": "8.060761"
+        }
+      ]
+    }
+  ],
+  "bluegreen_startup_resets_all_flights": true,
+  "bluegreen_manual_flights": 5,
+  "bluegreen_automatic_flights": 12,
+  "midflight_resets_by_device": {
+    "BlueGreen326": 2,
+    "Racoon": 8,
+    "RedStrap": 0
+  },
+  "limitations": [
+    "No on-device save-stage serial trace supplied; filesystem-call attribution of each stall is inferred.",
+    "Checksums establish intact emitted IGC records, not continuous sensor sampling or full IGC syntax compliance.",
+    "Current snapshot counts are not a population failure-rate estimate.",
+    "No recovery, promotion, rename, repair, or source edit performed."
+  ]
+}

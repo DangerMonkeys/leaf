@@ -1,0 +1,1881 @@
+[
+  {
+    "speed_mph": 6,
+    "climb_mps": 1,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc",
+      "BlueGreen326/02.igc",
+      "BlueGreen326/03.igc",
+      "BlueGreen326/06.igc",
+      "BlueGreen326/07.igc",
+      "BlueGreen326/08.igc",
+      "BlueGreen326/10.igc",
+      "BlueGreen326/12.igc",
+      "BlueGreen326/14.igc"
+    ],
+    "ground_max_score": 1.3921,
+    "delay_s": {
+      "Racoon": 2.3,
+      "RedStrap": 2.3,
+      "BlueGreen326": 4.3,
+      "Bethany": 4.0
+    }
+  },
+  {
+    "speed_mph": 6,
+    "climb_mps": 1,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc",
+      "BlueGreen326/02.igc",
+      "BlueGreen326/03.igc",
+      "BlueGreen326/06.igc",
+      "BlueGreen326/07.igc",
+      "BlueGreen326/08.igc",
+      "BlueGreen326/10.igc",
+      "BlueGreen326/14.igc"
+    ],
+    "ground_max_score": 1.7741,
+    "delay_s": {
+      "Racoon": 3.3,
+      "RedStrap": 2.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 5.0
+    }
+  },
+  {
+    "speed_mph": 6,
+    "climb_mps": 1,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc",
+      "BlueGreen326/03.igc",
+      "BlueGreen326/06.igc",
+      "BlueGreen326/07.igc",
+      "BlueGreen326/08.igc",
+      "BlueGreen326/14.igc"
+    ],
+    "ground_max_score": 1.9028,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 3.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 9.0
+    }
+  },
+  {
+    "speed_mph": 6,
+    "climb_mps": 1.5,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc",
+      "BlueGreen326/06.igc",
+      "BlueGreen326/07.igc",
+      "BlueGreen326/08.igc"
+    ],
+    "ground_max_score": 1.3872,
+    "delay_s": {
+      "Racoon": 2.3,
+      "RedStrap": 2.3,
+      "BlueGreen326": 4.3,
+      "Bethany": 4.0
+    }
+  },
+  {
+    "speed_mph": 6,
+    "climb_mps": 1.5,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc",
+      "BlueGreen326/06.igc",
+      "BlueGreen326/07.igc"
+    ],
+    "ground_max_score": 1.5471,
+    "delay_s": {
+      "Racoon": 3.3,
+      "RedStrap": 2.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 5.0
+    }
+  },
+  {
+    "speed_mph": 6,
+    "climb_mps": 1.5,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc",
+      "BlueGreen326/06.igc",
+      "BlueGreen326/07.igc"
+    ],
+    "ground_max_score": 1.387,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 3.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 9.0
+    }
+  },
+  {
+    "speed_mph": 6,
+    "climb_mps": 2,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc",
+      "BlueGreen326/06.igc",
+      "BlueGreen326/07.igc"
+    ],
+    "ground_max_score": 1.3096,
+    "delay_s": {
+      "Racoon": 2.3,
+      "RedStrap": 2.3,
+      "BlueGreen326": 4.3,
+      "Bethany": 4.0
+    }
+  },
+  {
+    "speed_mph": 6,
+    "climb_mps": 2,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc",
+      "BlueGreen326/06.igc"
+    ],
+    "ground_max_score": 1.2562,
+    "delay_s": {
+      "Racoon": 3.3,
+      "RedStrap": 3.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 6.0
+    }
+  },
+  {
+    "speed_mph": 6,
+    "climb_mps": 2,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc",
+      "BlueGreen326/06.igc"
+    ],
+    "ground_max_score": 1.1353,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 4.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 9.0
+    }
+  },
+  {
+    "speed_mph": 6,
+    "climb_mps": 2.5,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc",
+      "BlueGreen326/06.igc"
+    ],
+    "ground_max_score": 1.2352,
+    "delay_s": {
+      "Racoon": 2.3,
+      "RedStrap": 2.3,
+      "BlueGreen326": 4.3,
+      "Bethany": 4.0
+    }
+  },
+  {
+    "speed_mph": 6,
+    "climb_mps": 2.5,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc",
+      "BlueGreen326/06.igc"
+    ],
+    "ground_max_score": 1.191,
+    "delay_s": {
+      "Racoon": 3.3,
+      "RedStrap": 3.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 6.0
+    }
+  },
+  {
+    "speed_mph": 6,
+    "climb_mps": 2.5,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc"
+    ],
+    "ground_max_score": 1.134,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 4.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 9.0
+    }
+  },
+  {
+    "speed_mph": 6,
+    "climb_mps": 3,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc",
+      "BlueGreen326/06.igc"
+    ],
+    "ground_max_score": 1.2349,
+    "delay_s": {
+      "Racoon": 2.3,
+      "RedStrap": 2.3,
+      "BlueGreen326": 4.3,
+      "Bethany": 4.0
+    }
+  },
+  {
+    "speed_mph": 6,
+    "climb_mps": 3,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc"
+    ],
+    "ground_max_score": 1.1903,
+    "delay_s": {
+      "Racoon": 3.3,
+      "RedStrap": 3.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 6.0
+    }
+  },
+  {
+    "speed_mph": 6,
+    "climb_mps": 3,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc"
+    ],
+    "ground_max_score": 1.1332,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 4.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 9.0
+    }
+  },
+  {
+    "speed_mph": 6,
+    "climb_mps": 4,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc"
+    ],
+    "ground_max_score": 1.2347,
+    "delay_s": {
+      "Racoon": 2.3,
+      "RedStrap": 2.3,
+      "BlueGreen326": 4.3,
+      "Bethany": 4.0
+    }
+  },
+  {
+    "speed_mph": 6,
+    "climb_mps": 4,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc"
+    ],
+    "ground_max_score": 1.1895,
+    "delay_s": {
+      "Racoon": 3.3,
+      "RedStrap": 3.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 6.0
+    }
+  },
+  {
+    "speed_mph": 6,
+    "climb_mps": 4,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc"
+    ],
+    "ground_max_score": 1.1321,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 4.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 9.0
+    }
+  },
+  {
+    "speed_mph": 6,
+    "climb_mps": null,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc"
+    ],
+    "ground_max_score": 1.2338,
+    "delay_s": {
+      "Racoon": 2.3,
+      "RedStrap": 2.3,
+      "BlueGreen326": 4.3,
+      "Bethany": 4.0
+    }
+  },
+  {
+    "speed_mph": 6,
+    "climb_mps": null,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc"
+    ],
+    "ground_max_score": 1.1871,
+    "delay_s": {
+      "Racoon": 3.3,
+      "RedStrap": 3.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 6.0
+    }
+  },
+  {
+    "speed_mph": 6,
+    "climb_mps": null,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc"
+    ],
+    "ground_max_score": 1.1289,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 4.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 9.0
+    }
+  },
+  {
+    "speed_mph": 7,
+    "climb_mps": 1,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc",
+      "BlueGreen326/03.igc",
+      "BlueGreen326/06.igc",
+      "BlueGreen326/07.igc",
+      "BlueGreen326/08.igc",
+      "BlueGreen326/10.igc",
+      "BlueGreen326/14.igc"
+    ],
+    "ground_max_score": 1.3921,
+    "delay_s": {
+      "Racoon": 3.3,
+      "RedStrap": 2.3,
+      "BlueGreen326": 4.3,
+      "Bethany": 9.0
+    }
+  },
+  {
+    "speed_mph": 7,
+    "climb_mps": 1,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc",
+      "BlueGreen326/06.igc",
+      "BlueGreen326/07.igc",
+      "BlueGreen326/08.igc",
+      "BlueGreen326/14.igc"
+    ],
+    "ground_max_score": 1.7741,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 3.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 10.0
+    }
+  },
+  {
+    "speed_mph": 7,
+    "climb_mps": 1,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc",
+      "BlueGreen326/07.igc",
+      "BlueGreen326/08.igc",
+      "BlueGreen326/14.igc"
+    ],
+    "ground_max_score": 1.8569,
+    "delay_s": {
+      "Racoon": 5.3,
+      "RedStrap": 4.3,
+      "BlueGreen326": 6.9,
+      "Bethany": 10.0
+    }
+  },
+  {
+    "speed_mph": 7,
+    "climb_mps": 1.5,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc",
+      "BlueGreen326/06.igc",
+      "BlueGreen326/07.igc"
+    ],
+    "ground_max_score": 1.377,
+    "delay_s": {
+      "Racoon": 3.3,
+      "RedStrap": 2.3,
+      "BlueGreen326": 4.3,
+      "Bethany": 9.0
+    }
+  },
+  {
+    "speed_mph": 7,
+    "climb_mps": 1.5,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc",
+      "BlueGreen326/06.igc",
+      "BlueGreen326/07.igc"
+    ],
+    "ground_max_score": 1.4942,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 3.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 10.0
+    }
+  },
+  {
+    "speed_mph": 7,
+    "climb_mps": 1.5,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc"
+    ],
+    "ground_max_score": 1.3381,
+    "delay_s": {
+      "Racoon": 5.3,
+      "RedStrap": 4.3,
+      "BlueGreen326": 6.9,
+      "Bethany": 11.0
+    }
+  },
+  {
+    "speed_mph": 7,
+    "climb_mps": 2,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc",
+      "BlueGreen326/06.igc"
+    ],
+    "ground_max_score": 1.2819,
+    "delay_s": {
+      "Racoon": 3.3,
+      "RedStrap": 2.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 9.0
+    }
+  },
+  {
+    "speed_mph": 7,
+    "climb_mps": 2,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc",
+      "BlueGreen326/06.igc"
+    ],
+    "ground_max_score": 1.202,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 3.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 10.0
+    }
+  },
+  {
+    "speed_mph": 7,
+    "climb_mps": 2,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc"
+    ],
+    "ground_max_score": 1.077,
+    "delay_s": {
+      "Racoon": 5.3,
+      "RedStrap": 4.3,
+      "BlueGreen326": 6.9,
+      "Bethany": 11.0
+    }
+  },
+  {
+    "speed_mph": 7,
+    "climb_mps": 2.5,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc",
+      "BlueGreen326/06.igc"
+    ],
+    "ground_max_score": 1.1292,
+    "delay_s": {
+      "Racoon": 3.3,
+      "RedStrap": 2.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 9.0
+    }
+  },
+  {
+    "speed_mph": 7,
+    "climb_mps": 2.5,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc",
+      "BlueGreen326/06.igc"
+    ],
+    "ground_max_score": 1.0267,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 3.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 10.0
+    }
+  },
+  {
+    "speed_mph": 7,
+    "climb_mps": 2.5,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.9727,
+    "delay_s": {
+      "Racoon": 5.3,
+      "RedStrap": 4.3,
+      "BlueGreen326": 6.9,
+      "Bethany": 11.0
+    }
+  },
+  {
+    "speed_mph": 7,
+    "climb_mps": 3,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc",
+      "BlueGreen326/06.igc"
+    ],
+    "ground_max_score": 1.0653,
+    "delay_s": {
+      "Racoon": 3.3,
+      "RedStrap": 2.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 9.0
+    }
+  },
+  {
+    "speed_mph": 7,
+    "climb_mps": 3,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc"
+    ],
+    "ground_max_score": 1.0207,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 3.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 10.0
+    }
+  },
+  {
+    "speed_mph": 7,
+    "climb_mps": 3,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.9719,
+    "delay_s": {
+      "Racoon": 5.3,
+      "RedStrap": 5.3,
+      "BlueGreen326": 6.9,
+      "Bethany": 11.0
+    }
+  },
+  {
+    "speed_mph": 7,
+    "climb_mps": 4,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc"
+    ],
+    "ground_max_score": 1.065,
+    "delay_s": {
+      "Racoon": 3.3,
+      "RedStrap": 2.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 9.0
+    }
+  },
+  {
+    "speed_mph": 7,
+    "climb_mps": 4,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc"
+    ],
+    "ground_max_score": 1.0199,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 3.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 10.0
+    }
+  },
+  {
+    "speed_mph": 7,
+    "climb_mps": 4,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.9708,
+    "delay_s": {
+      "Racoon": 5.3,
+      "RedStrap": 5.3,
+      "BlueGreen326": 6.9,
+      "Bethany": 11.0
+    }
+  },
+  {
+    "speed_mph": 7,
+    "climb_mps": null,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc"
+    ],
+    "ground_max_score": 1.0642,
+    "delay_s": {
+      "Racoon": 3.3,
+      "RedStrap": 2.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 9.0
+    }
+  },
+  {
+    "speed_mph": 7,
+    "climb_mps": null,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [
+      "Bethany/01.igc"
+    ],
+    "ground_max_score": 1.0175,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 3.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 10.0
+    }
+  },
+  {
+    "speed_mph": 7,
+    "climb_mps": null,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.9677,
+    "delay_s": {
+      "Racoon": 5.3,
+      "RedStrap": 5.3,
+      "BlueGreen326": 6.9,
+      "Bethany": 11.0
+    }
+  },
+  {
+    "speed_mph": 8,
+    "climb_mps": 1,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc",
+      "BlueGreen326/07.igc",
+      "BlueGreen326/08.igc",
+      "BlueGreen326/14.igc"
+    ],
+    "ground_max_score": 1.3921,
+    "delay_s": {
+      "Racoon": 3.3,
+      "RedStrap": 3.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 10.0
+    }
+  },
+  {
+    "speed_mph": 8,
+    "climb_mps": 1,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc",
+      "BlueGreen326/07.igc",
+      "BlueGreen326/08.igc",
+      "BlueGreen326/14.igc"
+    ],
+    "ground_max_score": 1.7654,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 4.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 11.0
+    }
+  },
+  {
+    "speed_mph": 8,
+    "climb_mps": 1,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc",
+      "BlueGreen326/07.igc",
+      "BlueGreen326/08.igc"
+    ],
+    "ground_max_score": 1.8213,
+    "delay_s": {
+      "Racoon": 5.3,
+      "RedStrap": 5.3,
+      "BlueGreen326": 6.9,
+      "Bethany": 12.0
+    }
+  },
+  {
+    "speed_mph": 8,
+    "climb_mps": 1.5,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc",
+      "BlueGreen326/07.igc"
+    ],
+    "ground_max_score": 1.3681,
+    "delay_s": {
+      "Racoon": 3.3,
+      "RedStrap": 3.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 10.0
+    }
+  },
+  {
+    "speed_mph": 8,
+    "climb_mps": 1.5,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc",
+      "BlueGreen326/07.igc"
+    ],
+    "ground_max_score": 1.4535,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 4.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 11.0
+    }
+  },
+  {
+    "speed_mph": 8,
+    "climb_mps": 1.5,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc"
+    ],
+    "ground_max_score": 1.3014,
+    "delay_s": {
+      "Racoon": 5.3,
+      "RedStrap": 5.3,
+      "BlueGreen326": 7.9,
+      "Bethany": 12.0
+    }
+  },
+  {
+    "speed_mph": 8,
+    "climb_mps": 2,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc"
+    ],
+    "ground_max_score": 1.2504,
+    "delay_s": {
+      "Racoon": 3.3,
+      "RedStrap": 3.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 10.0
+    }
+  },
+  {
+    "speed_mph": 8,
+    "climb_mps": 2,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc"
+    ],
+    "ground_max_score": 1.1613,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 4.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 11.0
+    }
+  },
+  {
+    "speed_mph": 8,
+    "climb_mps": 2,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc"
+    ],
+    "ground_max_score": 1.0403,
+    "delay_s": {
+      "Racoon": 5.3,
+      "RedStrap": 5.3,
+      "BlueGreen326": 7.9,
+      "Bethany": 12.0
+    }
+  },
+  {
+    "speed_mph": 8,
+    "climb_mps": 2.5,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc"
+    ],
+    "ground_max_score": 1.0772,
+    "delay_s": {
+      "Racoon": 3.3,
+      "RedStrap": 3.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 10.0
+    }
+  },
+  {
+    "speed_mph": 8,
+    "climb_mps": 2.5,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.986,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 4.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 11.0
+    }
+  },
+  {
+    "speed_mph": 8,
+    "climb_mps": 2.5,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.8836,
+    "delay_s": {
+      "Racoon": 5.3,
+      "RedStrap": 5.3,
+      "BlueGreen326": 7.9,
+      "Bethany": 12.0
+    }
+  },
+  {
+    "speed_mph": 8,
+    "climb_mps": 3,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.9584,
+    "delay_s": {
+      "Racoon": 3.3,
+      "RedStrap": 3.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 10.0
+    }
+  },
+  {
+    "speed_mph": 8,
+    "climb_mps": 3,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.8935,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 4.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 11.0
+    }
+  },
+  {
+    "speed_mph": 8,
+    "climb_mps": 3,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.8509,
+    "delay_s": {
+      "Racoon": 5.3,
+      "RedStrap": 5.3,
+      "BlueGreen326": 7.9,
+      "Bethany": 12.0
+    }
+  },
+  {
+    "speed_mph": 8,
+    "climb_mps": 4,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.932,
+    "delay_s": {
+      "Racoon": 3.3,
+      "RedStrap": 3.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 10.0
+    }
+  },
+  {
+    "speed_mph": 8,
+    "climb_mps": 4,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.8927,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 4.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 11.0
+    }
+  },
+  {
+    "speed_mph": 8,
+    "climb_mps": 4,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.8499,
+    "delay_s": {
+      "Racoon": 5.3,
+      "RedStrap": 5.3,
+      "BlueGreen326": 7.9,
+      "Bethany": 12.0
+    }
+  },
+  {
+    "speed_mph": 8,
+    "climb_mps": null,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.9312,
+    "delay_s": {
+      "Racoon": 3.3,
+      "RedStrap": 3.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 10.0
+    }
+  },
+  {
+    "speed_mph": 8,
+    "climb_mps": null,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.8903,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 4.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 11.0
+    }
+  },
+  {
+    "speed_mph": 8,
+    "climb_mps": null,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.8467,
+    "delay_s": {
+      "Racoon": 6.3,
+      "RedStrap": 5.3,
+      "BlueGreen326": 7.9,
+      "Bethany": 12.0
+    }
+  },
+  {
+    "speed_mph": 9,
+    "climb_mps": 1,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc",
+      "BlueGreen326/07.igc",
+      "BlueGreen326/08.igc",
+      "BlueGreen326/14.igc"
+    ],
+    "ground_max_score": 1.3921,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 3.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 11.0
+    }
+  },
+  {
+    "speed_mph": 9,
+    "climb_mps": 1,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc",
+      "BlueGreen326/07.igc",
+      "BlueGreen326/08.igc",
+      "BlueGreen326/14.igc"
+    ],
+    "ground_max_score": 1.7554,
+    "delay_s": {
+      "Racoon": 5.3,
+      "RedStrap": 4.3,
+      "BlueGreen326": 6.9,
+      "Bethany": 12.0
+    }
+  },
+  {
+    "speed_mph": 9,
+    "climb_mps": 1,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc",
+      "BlueGreen326/07.igc",
+      "BlueGreen326/08.igc"
+    ],
+    "ground_max_score": 1.7936,
+    "delay_s": {
+      "Racoon": 5.3,
+      "RedStrap": 6.3,
+      "BlueGreen326": 8.9,
+      "Bethany": 14.0
+    }
+  },
+  {
+    "speed_mph": 9,
+    "climb_mps": 1.5,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc",
+      "BlueGreen326/07.igc"
+    ],
+    "ground_max_score": 1.3612,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 3.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 11.0
+    }
+  },
+  {
+    "speed_mph": 9,
+    "climb_mps": 1.5,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc"
+    ],
+    "ground_max_score": 1.4219,
+    "delay_s": {
+      "Racoon": 5.3,
+      "RedStrap": 5.3,
+      "BlueGreen326": 6.9,
+      "Bethany": 12.0
+    }
+  },
+  {
+    "speed_mph": 9,
+    "climb_mps": 1.5,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc"
+    ],
+    "ground_max_score": 1.2729,
+    "delay_s": {
+      "Racoon": 6.3,
+      "RedStrap": 6.3,
+      "BlueGreen326": 8.9,
+      "Bethany": 14.0
+    }
+  },
+  {
+    "speed_mph": 9,
+    "climb_mps": 2,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc"
+    ],
+    "ground_max_score": 1.2142,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 3.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 11.0
+    }
+  },
+  {
+    "speed_mph": 9,
+    "climb_mps": 2,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc"
+    ],
+    "ground_max_score": 1.1297,
+    "delay_s": {
+      "Racoon": 5.3,
+      "RedStrap": 5.3,
+      "BlueGreen326": 6.9,
+      "Bethany": 12.0
+    }
+  },
+  {
+    "speed_mph": 9,
+    "climb_mps": 2,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc"
+    ],
+    "ground_max_score": 1.0117,
+    "delay_s": {
+      "Racoon": 6.3,
+      "RedStrap": 6.3,
+      "BlueGreen326": 8.9,
+      "Bethany": 14.0
+    }
+  },
+  {
+    "speed_mph": 9,
+    "climb_mps": 2.5,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc"
+    ],
+    "ground_max_score": 1.0366,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 3.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 11.0
+    }
+  },
+  {
+    "speed_mph": 9,
+    "climb_mps": 2.5,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.9544,
+    "delay_s": {
+      "Racoon": 5.3,
+      "RedStrap": 5.3,
+      "BlueGreen326": 6.9,
+      "Bethany": 12.0
+    }
+  },
+  {
+    "speed_mph": 9,
+    "climb_mps": 2.5,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.855,
+    "delay_s": {
+      "Racoon": 6.3,
+      "RedStrap": 6.3,
+      "BlueGreen326": 8.9,
+      "Bethany": 14.0
+    }
+  },
+  {
+    "speed_mph": 9,
+    "climb_mps": 3,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.9179,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 3.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 11.0
+    }
+  },
+  {
+    "speed_mph": 9,
+    "climb_mps": 3,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.8375,
+    "delay_s": {
+      "Racoon": 5.3,
+      "RedStrap": 5.3,
+      "BlueGreen326": 6.9,
+      "Bethany": 12.0
+    }
+  },
+  {
+    "speed_mph": 9,
+    "climb_mps": 3,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.7568,
+    "delay_s": {
+      "Racoon": 6.3,
+      "RedStrap": 6.3,
+      "BlueGreen326": 8.9,
+      "Bethany": 14.0
+    }
+  },
+  {
+    "speed_mph": 9,
+    "climb_mps": 4,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.8285,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 3.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 11.0
+    }
+  },
+  {
+    "speed_mph": 9,
+    "climb_mps": 4,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.7938,
+    "delay_s": {
+      "Racoon": 5.3,
+      "RedStrap": 5.3,
+      "BlueGreen326": 6.9,
+      "Bethany": 12.0
+    }
+  },
+  {
+    "speed_mph": 9,
+    "climb_mps": 4,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.7558,
+    "delay_s": {
+      "Racoon": 6.3,
+      "RedStrap": 6.3,
+      "BlueGreen326": 8.9,
+      "Bethany": 14.0
+    }
+  },
+  {
+    "speed_mph": 9,
+    "climb_mps": null,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.8277,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 3.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 11.0
+    }
+  },
+  {
+    "speed_mph": 9,
+    "climb_mps": null,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.7914,
+    "delay_s": {
+      "Racoon": 5.3,
+      "RedStrap": 5.3,
+      "BlueGreen326": 6.9,
+      "Bethany": 12.0
+    }
+  },
+  {
+    "speed_mph": 9,
+    "climb_mps": null,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.7526,
+    "delay_s": {
+      "Racoon": 7.3,
+      "RedStrap": 6.3,
+      "BlueGreen326": 8.9,
+      "Bethany": 14.0
+    }
+  },
+  {
+    "speed_mph": 10,
+    "climb_mps": 1,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc",
+      "BlueGreen326/07.igc",
+      "BlueGreen326/08.igc",
+      "BlueGreen326/14.igc"
+    ],
+    "ground_max_score": 1.3921,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 4.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 13.0
+    }
+  },
+  {
+    "speed_mph": 10,
+    "climb_mps": 1,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc",
+      "BlueGreen326/07.igc",
+      "BlueGreen326/08.igc",
+      "BlueGreen326/14.igc"
+    ],
+    "ground_max_score": 1.7473,
+    "delay_s": {
+      "Racoon": 5.3,
+      "RedStrap": 5.3,
+      "BlueGreen326": 7.9,
+      "Bethany": 14.0
+    }
+  },
+  {
+    "speed_mph": 10,
+    "climb_mps": 1,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc",
+      "BlueGreen326/07.igc",
+      "BlueGreen326/08.igc"
+    ],
+    "ground_max_score": 1.7714,
+    "delay_s": {
+      "Racoon": 6.3,
+      "RedStrap": 7.3,
+      "BlueGreen326": 8.9,
+      "Bethany": 15.0
+    }
+  },
+  {
+    "speed_mph": 10,
+    "climb_mps": 1.5,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc",
+      "BlueGreen326/07.igc"
+    ],
+    "ground_max_score": 1.3557,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 4.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 13.0
+    }
+  },
+  {
+    "speed_mph": 10,
+    "climb_mps": 1.5,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc"
+    ],
+    "ground_max_score": 1.3966,
+    "delay_s": {
+      "Racoon": 5.3,
+      "RedStrap": 5.3,
+      "BlueGreen326": 7.9,
+      "Bethany": 14.0
+    }
+  },
+  {
+    "speed_mph": 10,
+    "climb_mps": 1.5,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc"
+    ],
+    "ground_max_score": 1.2501,
+    "delay_s": {
+      "Racoon": 7.3,
+      "RedStrap": 7.3,
+      "BlueGreen326": 8.9,
+      "Bethany": 15.0
+    }
+  },
+  {
+    "speed_mph": 10,
+    "climb_mps": 2,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc"
+    ],
+    "ground_max_score": 1.1823,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 4.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 13.0
+    }
+  },
+  {
+    "speed_mph": 10,
+    "climb_mps": 2,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc"
+    ],
+    "ground_max_score": 1.1044,
+    "delay_s": {
+      "Racoon": 5.3,
+      "RedStrap": 5.3,
+      "BlueGreen326": 7.9,
+      "Bethany": 14.0
+    }
+  },
+  {
+    "speed_mph": 10,
+    "climb_mps": 2,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.9889,
+    "delay_s": {
+      "Racoon": 7.3,
+      "RedStrap": 7.3,
+      "BlueGreen326": 8.9,
+      "Bethany": 15.0
+    }
+  },
+  {
+    "speed_mph": 10,
+    "climb_mps": 2.5,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc"
+    ],
+    "ground_max_score": 1.0042,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 4.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 13.0
+    }
+  },
+  {
+    "speed_mph": 10,
+    "climb_mps": 2.5,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.929,
+    "delay_s": {
+      "Racoon": 5.3,
+      "RedStrap": 5.3,
+      "BlueGreen326": 7.9,
+      "Bethany": 14.0
+    }
+  },
+  {
+    "speed_mph": 10,
+    "climb_mps": 2.5,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.8322,
+    "delay_s": {
+      "Racoon": 7.3,
+      "RedStrap": 7.3,
+      "BlueGreen326": 9.9,
+      "Bethany": 16.0
+    }
+  },
+  {
+    "speed_mph": 10,
+    "climb_mps": 3,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.8855,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 4.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 13.0
+    }
+  },
+  {
+    "speed_mph": 10,
+    "climb_mps": 3,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.8122,
+    "delay_s": {
+      "Racoon": 5.3,
+      "RedStrap": 5.3,
+      "BlueGreen326": 7.9,
+      "Bethany": 14.0
+    }
+  },
+  {
+    "speed_mph": 10,
+    "climb_mps": 3,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.7277,
+    "delay_s": {
+      "Racoon": 8.3,
+      "RedStrap": 7.3,
+      "BlueGreen326": 9.9,
+      "Bethany": 16.0
+    }
+  },
+  {
+    "speed_mph": 10,
+    "climb_mps": 4,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.7458,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 4.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 13.0
+    }
+  },
+  {
+    "speed_mph": 10,
+    "climb_mps": 4,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.7147,
+    "delay_s": {
+      "Racoon": 5.3,
+      "RedStrap": 5.3,
+      "BlueGreen326": 7.9,
+      "Bethany": 14.0
+    }
+  },
+  {
+    "speed_mph": 10,
+    "climb_mps": 4,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.6805,
+    "delay_s": {
+      "Racoon": 8.3,
+      "RedStrap": 7.3,
+      "BlueGreen326": 9.9,
+      "Bethany": 16.0
+    }
+  },
+  {
+    "speed_mph": 10,
+    "climb_mps": null,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.7449,
+    "delay_s": {
+      "Racoon": 4.3,
+      "RedStrap": 4.3,
+      "BlueGreen326": 5.6,
+      "Bethany": 13.0
+    }
+  },
+  {
+    "speed_mph": 10,
+    "climb_mps": null,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.7123,
+    "delay_s": {
+      "Racoon": 6.3,
+      "RedStrap": 6.3,
+      "BlueGreen326": 7.9,
+      "Bethany": 14.0
+    }
+  },
+  {
+    "speed_mph": 10,
+    "climb_mps": null,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.6774,
+    "delay_s": {
+      "Racoon": 8.3,
+      "RedStrap": 7.3,
+      "BlueGreen326": 9.9,
+      "Bethany": 16.0
+    }
+  },
+  {
+    "speed_mph": 12,
+    "climb_mps": 1,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc",
+      "BlueGreen326/07.igc",
+      "BlueGreen326/08.igc",
+      "BlueGreen326/14.igc"
+    ],
+    "ground_max_score": 1.3921,
+    "delay_s": {
+      "Racoon": 5.3,
+      "RedStrap": 5.3,
+      "BlueGreen326": 7.9,
+      "Bethany": 15.0
+    }
+  },
+  {
+    "speed_mph": 12,
+    "climb_mps": 1,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc",
+      "BlueGreen326/07.igc",
+      "BlueGreen326/08.igc"
+    ],
+    "ground_max_score": 1.7353,
+    "delay_s": {
+      "Racoon": 6.3,
+      "RedStrap": 7.3,
+      "BlueGreen326": 8.9,
+      "Bethany": 16.0
+    }
+  },
+  {
+    "speed_mph": 12,
+    "climb_mps": 1,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc",
+      "BlueGreen326/07.igc"
+    ],
+    "ground_max_score": 1.7382,
+    "delay_s": {
+      "Racoon": 9.3,
+      "RedStrap": 9.3,
+      "BlueGreen326": 9.9,
+      "Bethany": 19.0
+    }
+  },
+  {
+    "speed_mph": 12,
+    "climb_mps": 1.5,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc",
+      "BlueGreen326/07.igc"
+    ],
+    "ground_max_score": 1.3516,
+    "delay_s": {
+      "Racoon": 5.3,
+      "RedStrap": 5.3,
+      "BlueGreen326": 7.9,
+      "Bethany": 15.0
+    }
+  },
+  {
+    "speed_mph": 12,
+    "climb_mps": 1.5,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc"
+    ],
+    "ground_max_score": 1.3586,
+    "delay_s": {
+      "Racoon": 6.3,
+      "RedStrap": 7.3,
+      "BlueGreen326": 8.9,
+      "Bethany": 16.0
+    }
+  },
+  {
+    "speed_mph": 12,
+    "climb_mps": 1.5,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc"
+    ],
+    "ground_max_score": 1.2158,
+    "delay_s": {
+      "Racoon": 10.3,
+      "RedStrap": 9.3,
+      "BlueGreen326": 9.9,
+      "Bethany": 20.0
+    }
+  },
+  {
+    "speed_mph": 12,
+    "climb_mps": 2,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc"
+    ],
+    "ground_max_score": 1.1337,
+    "delay_s": {
+      "Racoon": 5.3,
+      "RedStrap": 5.3,
+      "BlueGreen326": 7.9,
+      "Bethany": 15.0
+    }
+  },
+  {
+    "speed_mph": 12,
+    "climb_mps": 2,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [
+      "BlueGreen326/06.igc"
+    ],
+    "ground_max_score": 1.0664,
+    "delay_s": {
+      "Racoon": 7.3,
+      "RedStrap": 7.3,
+      "BlueGreen326": 8.9,
+      "Bethany": 16.0
+    }
+  },
+  {
+    "speed_mph": 12,
+    "climb_mps": 2,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.9547,
+    "delay_s": {
+      "Racoon": 10.3,
+      "RedStrap": 10.3,
+      "BlueGreen326": 10.9,
+      "Bethany": 20.0
+    }
+  },
+  {
+    "speed_mph": 12,
+    "climb_mps": 2.5,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.9556,
+    "delay_s": {
+      "Racoon": 5.3,
+      "RedStrap": 5.3,
+      "BlueGreen326": 7.9,
+      "Bethany": 15.0
+    }
+  },
+  {
+    "speed_mph": 12,
+    "climb_mps": 2.5,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.8911,
+    "delay_s": {
+      "Racoon": 7.3,
+      "RedStrap": 7.3,
+      "BlueGreen326": 8.9,
+      "Bethany": 16.0
+    }
+  },
+  {
+    "speed_mph": 12,
+    "climb_mps": 2.5,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.798,
+    "delay_s": {
+      "Racoon": 10.3,
+      "RedStrap": 10.3,
+      "BlueGreen326": 10.9,
+      "Bethany": 20.0
+    }
+  },
+  {
+    "speed_mph": 12,
+    "climb_mps": 3,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.8369,
+    "delay_s": {
+      "Racoon": 5.3,
+      "RedStrap": 5.3,
+      "BlueGreen326": 7.9,
+      "Bethany": 15.0
+    }
+  },
+  {
+    "speed_mph": 12,
+    "climb_mps": 3,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.7742,
+    "delay_s": {
+      "Racoon": 8.3,
+      "RedStrap": 7.3,
+      "BlueGreen326": 9.9,
+      "Bethany": 17.0
+    }
+  },
+  {
+    "speed_mph": 12,
+    "climb_mps": 3,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.6935,
+    "delay_s": {
+      "Racoon": 10.3,
+      "RedStrap": 10.3,
+      "BlueGreen326": 10.9,
+      "Bethany": 20.0
+    }
+  },
+  {
+    "speed_mph": 12,
+    "climb_mps": 4,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.6884,
+    "delay_s": {
+      "Racoon": 5.3,
+      "RedStrap": 5.3,
+      "BlueGreen326": 7.9,
+      "Bethany": 15.0
+    }
+  },
+  {
+    "speed_mph": 12,
+    "climb_mps": 4,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.6281,
+    "delay_s": {
+      "Racoon": 8.3,
+      "RedStrap": 7.3,
+      "BlueGreen326": 9.9,
+      "Bethany": 17.0
+    }
+  },
+  {
+    "speed_mph": 12,
+    "climb_mps": 4,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.5676,
+    "delay_s": {
+      "Racoon": 10.3,
+      "RedStrap": 10.3,
+      "BlueGreen326": 10.9,
+      "Bethany": 20.0
+    }
+  },
+  {
+    "speed_mph": 12,
+    "climb_mps": null,
+    "memory_s": 2.4,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.6208,
+    "delay_s": {
+      "Racoon": 6.3,
+      "RedStrap": 5.3,
+      "BlueGreen326": 7.9,
+      "Bethany": 15.0
+    }
+  },
+  {
+    "speed_mph": 12,
+    "climb_mps": null,
+    "memory_s": 4,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.5935,
+    "delay_s": {
+      "Racoon": 9.3,
+      "RedStrap": 8.3,
+      "BlueGreen326": 9.9,
+      "Bethany": 19.0
+    }
+  },
+  {
+    "speed_mph": 12,
+    "climb_mps": null,
+    "memory_s": 6,
+    "ground_tracks_either_direction": [],
+    "ground_max_score": 0.5645,
+    "delay_s": {
+      "Racoon": 11.3,
+      "RedStrap": 10.3,
+      "BlueGreen326": 11.9,
+      "Bethany": 20.0
+    }
+  }
+]

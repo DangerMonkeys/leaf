@@ -1,0 +1,48 @@
+Follow-up: thermal launch, fallback bubble, and continuous quiet
+
+The pilot accepted the inferred takeoff times. The aim is to reject the observed
+short ground-like episodes, with eventual bubble-triggered logging during a long
+hike explicitly acceptable. The original 9 mph / 3 m/s score should not be the
+only start path: 1 m/s climb at 1–2 mph will not trigger it.
+
+Continuous quiet in the proposed stop analysis meant BOTH valid speed <1.5 m/s
+and the highest-minus-lowest pressure altitude in the preceding 20 s <=3 m,
+at every approximately one-second check for 20 elapsed seconds. A violation
+resets the dwell. The analyzed candidate did not include an acceleration test.
+The firmware currently does include a raw acceleration test, plus different
+speed and altitude conditions. The 20 s altitude window and 20 s dwell are
+separate, overlapping requirements, not an instruction always to wait 40 s.
+In-flight hovering could satisfy low speed and stable altitude; these two flights
+do not validate that case. Changing start sensitivity does not settle stop safety.
+
+A velocity-only threshold >=1 m/s for six seconds cannot separate all requested
+examples: BlueGreen326 06's pre-start history has a negative velocity estimate
+near -2 m/s for several seconds. Sign reversal makes it look like thermal lift.
+In the current firmware, climb comes from filtered IMU velocity, while alt()
+is pressure-derived. Those are related signals, not identical measurements.
+
+A candidate thermal path is >=6 m actual pressure-altitude rise within a 6 s
+window, corroborated by positive mean vario (for example >=0.8 m/s). Observed
+complete ground pressure-altitude windows top out at 5 m in either direction;
+this candidate gives no pressure-only ground hits in the available windows.
+The one-meter gap is narrow given the IGC's whole-meter altitude quantization.
+Pre-start diagnostic history contains vario but not altitude, so the strongest
+BlueGreen326 06 pre-start transient CANNOT be checked against this rule. No
+claim of complete separation is justified until that history is captured.
+
+Ideal inputs representing six seconds at 1, 1.5 or 2 m/s gain 6, 9 or 12 m.
+With valid preceding idle history, the 6 m / 6 s + mean-vario candidate triggers
+at 6, 4 or 3 s respectively. These are idealized calculations, not measured
+performance on the friend's missing track or guarantees about sensor lag/noise.
+
+Recommended architecture for further analysis: independent OR paths for
+(1) sustained clear horizontal flight speed, (2) pressure-corroborated sustained
+climb, and (3) a larger displacement bubble from an explicit idle anchor after
+sensors stabilize. The anchor must not drift along with the pilot; rearming after
+stop needs its own policy. A bubble of 100 m horizontally is only an illustration:
+straight-line travel at 4–6 mph exits in 37–56 s, at 1–2 mph in 112–224 s. Turns
+or hovering take longer or never exit. Vertical departure could be an independent
+bubble condition, but its final size is not established by the available idle data.
+Ground travel that exits this bubble is an accepted tradeoff, not a false-positive
+constraint to optimize away. Avoid summing absolute pressure increments as a
+replacement for net spatial departure, since noise also accumulates that sum.

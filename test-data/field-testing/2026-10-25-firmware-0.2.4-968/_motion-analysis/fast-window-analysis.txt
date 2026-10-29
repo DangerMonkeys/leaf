@@ -1,0 +1,13 @@
+Three- and four-second launch windows
+
+Exact window endpoints interpolated between adjacent 1 Hz readings using diagnostic uptime; mean vario is signed trapezoidal average, never mean absolute value. Gaps >2s rejected. Ground originals and vertical reflections evaluated. Missing pre-start pressure altitude remains unobservable.
+
+Complete hiking pressure-altitude windows peak at 2 m net change in BOTH 3 s and 4 s windows. The same holds after vertical reflection. Thus >=3 m in 3 s and >=4 m in 4 s both separate the available hiking pressure histories; >=4 m has more margin against whole-meter IGC quantization. Neither conclusion covers the unrecorded pre-start pressure histories.
+
+A bare altitude endpoint test is vulnerable to a launch-area pressure spike: Racoon falls 639 ->634 m for one sample then returns to 639 m while the vario remains near zero. Max ground change is 5 m over either window. Requiring same-direction mean vario >=0.5 m/s as well as >=3 m or >=4 m altitude change rejects all available jointly valid ground windows for both durations, including mirrored ground. This is a fitted candidate, not independent validation.
+
+Climb estimate alone still overlaps: the BlueGreen326 06 pre-start trace has mean magnitude 2.133 m/s over 3 s and 2.091 m/s over 4 s. The largest minimum magnitude sustained in one direction is 1.92 m/s over 3 s and 1.85 m/s over 4 s. To reject all these traces using mean-vario alone requires >2.133 m/s or >2.091 m/s respectively; a minimum-at-every-sample rule requires >1.92 or >1.85 m/s respectively. Such cutoffs miss much of the requested 1–2 m/s thermal-launch range.
+
+Ideal altitude requirements: >=3 m within 3 s corresponds to >=1 m/s average over the full window; >=4 m within 4 s also corresponds to >=1 m/s. With stable idle history and a matching positive vario signal, 1 m/s flight reaches these at 3 or 4 s, 1.5 m/s at 2 or 2.67 s, and 2 m/s at 1.5 or 2 s. Actual once-per-second decisions round up to the next check; any explicit minimum-observation rule may impose a longer floor. These are ideal calculations, not observed sensor-response times.
+
+Recommendation for the next evaluation: compare a 3 m / 3 s path and a 4 m / 4 s path, both corroborated by positive mean vario >=0.5 m/s. Prefer the latter if one second of extra delay is acceptable; keep the stronger horizontal-speed path and slower departure bubble independent. Capture idle pressure altitude at centimeter resolution alongside vario to close the key prehistory and quantization gaps. No firmware changes.

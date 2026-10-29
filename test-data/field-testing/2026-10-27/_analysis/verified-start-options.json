@@ -1,0 +1,224 @@
+{
+  "baseline": [
+    {
+      "id": 0,
+      "unit": "3.2.3 raccoon",
+      "ground_trigger": null,
+      "delay_s": 0,
+      "mask": 1
+    },
+    {
+      "id": 1,
+      "unit": "3.2.3 redstrap",
+      "ground_trigger": null,
+      "delay_s": 0,
+      "mask": 1
+    },
+    {
+      "id": 2,
+      "unit": "3.2.6 blue",
+      "ground_trigger": true,
+      "delay_s": null,
+      "mask": 1
+    },
+    {
+      "id": 3,
+      "unit": "3.2.6 blue",
+      "ground_trigger": null,
+      "delay_s": 0,
+      "mask": 2
+    },
+    {
+      "id": 4,
+      "unit": "3.2.8",
+      "ground_trigger": null,
+      "delay_s": 0,
+      "mask": 4
+    }
+  ],
+  "forward7": [
+    {
+      "id": 0,
+      "unit": "3.2.3 raccoon",
+      "ground_trigger": null,
+      "delay_s": 2,
+      "mask": 7
+    },
+    {
+      "id": 1,
+      "unit": "3.2.3 redstrap",
+      "ground_trigger": null,
+      "delay_s": 5,
+      "mask": 6
+    },
+    {
+      "id": 2,
+      "unit": "3.2.6 blue",
+      "ground_trigger": false,
+      "delay_s": null,
+      "mask": null
+    },
+    {
+      "id": 3,
+      "unit": "3.2.6 blue",
+      "ground_trigger": null,
+      "delay_s": 0,
+      "mask": 2
+    },
+    {
+      "id": 4,
+      "unit": "3.2.8",
+      "ground_trigger": null,
+      "delay_s": 0,
+      "mask": 4
+    }
+  ],
+  "distance11": [
+    {
+      "id": 0,
+      "unit": "3.2.3 raccoon",
+      "ground_trigger": null,
+      "delay_s": 2,
+      "mask": 6
+    },
+    {
+      "id": 1,
+      "unit": "3.2.3 redstrap",
+      "ground_trigger": null,
+      "delay_s": 5,
+      "mask": 6
+    },
+    {
+      "id": 2,
+      "unit": "3.2.6 blue",
+      "ground_trigger": false,
+      "delay_s": null,
+      "mask": null
+    },
+    {
+      "id": 3,
+      "unit": "3.2.6 blue",
+      "ground_trigger": null,
+      "delay_s": 0,
+      "mask": 2
+    },
+    {
+      "id": 4,
+      "unit": "3.2.8",
+      "ground_trigger": null,
+      "delay_s": 0,
+      "mask": 4
+    }
+  ],
+  "shared7": [
+    {
+      "id": 0,
+      "unit": "3.2.3 raccoon",
+      "ground_trigger": null,
+      "delay_s": 2,
+      "mask": 7
+    },
+    {
+      "id": 1,
+      "unit": "3.2.3 redstrap",
+      "ground_trigger": null,
+      "delay_s": 5,
+      "mask": 2
+    },
+    {
+      "id": 2,
+      "unit": "3.2.6 blue",
+      "ground_trigger": false,
+      "delay_s": null,
+      "mask": null
+    },
+    {
+      "id": 3,
+      "unit": "3.2.6 blue",
+      "ground_trigger": null,
+      "delay_s": 0,
+      "mask": 2
+    },
+    {
+      "id": 4,
+      "unit": "3.2.8",
+      "ground_trigger": null,
+      "delay_s": 11,
+      "mask": 6
+    }
+  ],
+  "forward5s": [
+    {
+      "id": 0,
+      "unit": "3.2.3 raccoon",
+      "ground_trigger": null,
+      "delay_s": 2,
+      "mask": 6
+    },
+    {
+      "id": 1,
+      "unit": "3.2.3 redstrap",
+      "ground_trigger": null,
+      "delay_s": 5,
+      "mask": 6
+    },
+    {
+      "id": 2,
+      "unit": "3.2.6 blue",
+      "ground_trigger": false,
+      "delay_s": null,
+      "mask": null
+    },
+    {
+      "id": 3,
+      "unit": "3.2.6 blue",
+      "ground_trigger": null,
+      "delay_s": 0,
+      "mask": 2
+    },
+    {
+      "id": 4,
+      "unit": "3.2.8",
+      "ground_trigger": null,
+      "delay_s": 0,
+      "mask": 4
+    }
+  ],
+  "forward6_3s": [
+    {
+      "id": 0,
+      "unit": "3.2.3 raccoon",
+      "ground_trigger": null,
+      "delay_s": 2,
+      "mask": 7
+    },
+    {
+      "id": 1,
+      "unit": "3.2.3 redstrap",
+      "ground_trigger": null,
+      "delay_s": 5,
+      "mask": 6
+    },
+    {
+      "id": 2,
+      "unit": "3.2.6 blue",
+      "ground_trigger": false,
+      "delay_s": null,
+      "mask": null
+    },
+    {
+      "id": 3,
+      "unit": "3.2.6 blue",
+      "ground_trigger": null,
+      "delay_s": 0,
+      "mask": 2
+    },
+    {
+      "id": 4,
+      "unit": "3.2.8",
+      "ground_trigger": null,
+      "delay_s": 0,
+      "mask": 4
+    }
+  ]
+}

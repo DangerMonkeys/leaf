@@ -1,0 +1,1325 @@
+[
+  {
+    "id": 0,
+    "unit": "3.2.3 raccoon",
+    "file": "2026-10-27-XLV-000-01.igc",
+    "start": {
+      "V": "2",
+      "CAUSE": "MANUAL",
+      "T_MS": "469288",
+      "N": "30"
+    },
+    "end": {
+      "V": "1",
+      "CAUSE": "MANUAL",
+      "T_MS": "3874273"
+    },
+    "launch_band": [
+      46925,
+      46935
+    ],
+    "landing_band": [
+      47945,
+      47953
+    ],
+    "paths": {
+      "forward": {
+        "id": 0.0,
+        "ms": 1546958.0,
+        "candidates": 7.0,
+        "triggered": 1.0,
+        "mean_speed_mps": 3.43029571,
+        "mean_climb_mps": 1.25076652,
+        "alt_change_m": 3.99900007,
+        "displacement_m": 11.5216541,
+        "valid": 15.0,
+        "local": "13:02:12"
+      },
+      "vertical": {
+        "id": 0.0,
+        "ms": 1548958.0,
+        "candidates": 7.0,
+        "triggered": 7.0,
+        "mean_speed_mps": 3.54137611,
+        "mean_climb_mps": 1.18288338,
+        "alt_change_m": 3.99700308,
+        "displacement_m": 9.37812519,
+        "valid": 15.0,
+        "local": "13:02:14"
+      },
+      "blended": {
+        "id": 0.0,
+        "ms": 1548958.0,
+        "candidates": 7.0,
+        "triggered": 7.0,
+        "mean_speed_mps": 3.54137611,
+        "mean_climb_mps": 1.18288338,
+        "alt_change_m": 3.99700308,
+        "displacement_m": 9.37812519,
+        "valid": 15.0,
+        "local": "13:02:14"
+      }
+    },
+    "ground_hits": [],
+    "precise_prehistory_comparison": [
+      {
+        "ms": 445978,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 446978,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 447978,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 448978,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 449978,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 450978,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 451978,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 452978,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 453978,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 454978,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 455978,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 456978,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 457978,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 458978,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 459978,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 460978,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 461978,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 462978,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 463978,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 464978,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 465978,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 466978,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 467978,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 468978,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 469288,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      }
+    ],
+    "stop_proxy": {
+      "first_after_landing": {
+        "local": "13:20:32",
+        "seconds": 48032,
+        "ms": 2647307,
+        "count": 20
+      },
+      "first_possible_from_speed_accel": {
+        "local": "13:19:32",
+        "seconds": 47972,
+        "ms": 2587307,
+        "count": 20
+      },
+      "max_inflight_quiet_checks": 0,
+      "max_inflight_speed_accel_checks": 1,
+      "proxy_inflight_hits": 0
+    }
+  },
+  {
+    "id": 1,
+    "unit": "3.2.3 redstrap",
+    "file": "2026-10-27-XLV-000-01.igc",
+    "start": {
+      "V": "2",
+      "CAUSE": "MANUAL",
+      "T_MS": "2162747",
+      "N": "30"
+    },
+    "end": {
+      "V": "1",
+      "CAUSE": "POWER_OFF",
+      "T_MS": "3665971"
+    },
+    "launch_band": [
+      47925,
+      47952
+    ],
+    "landing_band": [
+      48574,
+      48578
+    ],
+    "paths": {
+      "forward": {
+        "id": 1.0,
+        "ms": 2555876.0,
+        "candidates": 5.0,
+        "triggered": 1.0,
+        "mean_speed_mps": 2.72166681,
+        "mean_climb_mps": 0.833333313,
+        "alt_change_m": 2.0,
+        "displacement_m": 8.23517323,
+        "valid": 15.0,
+        "local": "13:19:02"
+      },
+      "vertical": {
+        "id": 1.0,
+        "ms": 2560876.0,
+        "candidates": 6.0,
+        "triggered": 6.0,
+        "mean_speed_mps": 1.87166667,
+        "mean_climb_mps": 1.23333335,
+        "alt_change_m": 4.0,
+        "displacement_m": 4.78574085,
+        "valid": 15.0,
+        "local": "13:19:07"
+      },
+      "blended": {
+        "id": 1.0,
+        "ms": 2560876.0,
+        "candidates": 6.0,
+        "triggered": 6.0,
+        "mean_speed_mps": 1.87166667,
+        "mean_climb_mps": 1.23333335,
+        "alt_change_m": 4.0,
+        "displacement_m": 4.78574085,
+        "valid": 15.0,
+        "local": "13:19:07"
+      }
+    },
+    "ground_hits": [],
+    "precise_prehistory_comparison": [
+      {
+        "ms": 2138627,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2139627,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2140627,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2141627,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2142627,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2143627,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2144627,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2145627,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2146627,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2147627,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2148627,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2149627,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2150627,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2151627,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2152627,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2153627,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2154627,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2155627,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2156627,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2157627,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2158627,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2159627,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2160627,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2161627,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2162746,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      }
+    ],
+    "stop_proxy": {
+      "first_after_landing": {
+        "local": "13:34:32",
+        "seconds": 48872,
+        "ms": 3486006,
+        "count": 20
+      },
+      "first_possible_from_speed_accel": {
+        "local": "13:30:00",
+        "seconds": 48600,
+        "ms": 3213886,
+        "count": 20
+      },
+      "max_inflight_quiet_checks": 1,
+      "max_inflight_speed_accel_checks": 1,
+      "proxy_inflight_hits": 0
+    }
+  },
+  {
+    "id": 2,
+    "unit": "3.2.6 blue",
+    "file": "2026-10-27-XLV-000-01.igc",
+    "start": {
+      "V": "2",
+      "CAUSE": "AUTO",
+      "T_MS": "1693910",
+      "N": "30"
+    },
+    "end": {
+      "V": "1",
+      "CAUSE": "MANUAL",
+      "T_MS": "2248744"
+    },
+    "launch_band": null,
+    "landing_band": null,
+    "paths": {
+      "forward": {
+        "id": 2.0,
+        "ms": 1693910.0,
+        "candidates": 1.0,
+        "triggered": 1.0,
+        "mean_speed_mps": 2.88393903,
+        "mean_climb_mps": 0.208191961,
+        "alt_change_m": -2.93061256,
+        "displacement_m": 9.40706635,
+        "valid": 15.0,
+        "local": "13:04:51"
+      },
+      "vertical": null,
+      "blended": null
+    },
+    "ground_hits": [
+      {
+        "id": 2.0,
+        "ms": 1693910.0,
+        "candidates": 1.0,
+        "triggered": 1.0,
+        "mean_speed_mps": 2.88393903,
+        "mean_climb_mps": 0.208191961,
+        "alt_change_m": -2.93061256,
+        "displacement_m": 9.40706635,
+        "valid": 15.0,
+        "local": "13:04:51",
+        "source": "pre"
+      },
+      {
+        "id": 2.0,
+        "ms": 1693932.0,
+        "candidates": 1.0,
+        "triggered": 1.0,
+        "mean_speed_mps": 2.89476085,
+        "mean_climb_mps": 0.202841565,
+        "alt_change_m": -3.3642354,
+        "displacement_m": 10.8485394,
+        "valid": 15.0,
+        "local": "13:04:51",
+        "source": "track"
+      },
+      {
+        "id": 2.0,
+        "ms": 1695169.0,
+        "candidates": 1.0,
+        "triggered": 1.0,
+        "mean_speed_mps": 3.22578931,
+        "mean_climb_mps": 1.07691967,
+        "alt_change_m": -3.20817256,
+        "displacement_m": 10.085165,
+        "valid": 15.0,
+        "local": "13:04:52",
+        "source": "track"
+      },
+      {
+        "id": 2.0,
+        "ms": 1696169.0,
+        "candidates": 1.0,
+        "triggered": 1.0,
+        "mean_speed_mps": 3.07694125,
+        "mean_climb_mps": 1.68253791,
+        "alt_change_m": 0.121059664,
+        "displacement_m": 10.8998175,
+        "valid": 15.0,
+        "local": "13:04:53",
+        "source": "track"
+      },
+      {
+        "id": 2.0,
+        "ms": 1697169.0,
+        "candidates": 1.0,
+        "triggered": 1.0,
+        "mean_speed_mps": 2.47678018,
+        "mean_climb_mps": 1.40148211,
+        "alt_change_m": 0.0,
+        "displacement_m": 6.47315931,
+        "valid": 15.0,
+        "local": "13:04:54",
+        "source": "track"
+      }
+    ],
+    "precise_prehistory_comparison": [
+      {
+        "ms": 1669909,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1670910,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1671909,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1672909,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1673909,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1674909,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1675909,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1676909,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1677909,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1678910,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1679909,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1680909,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1681909,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1682909,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1683910,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1684909,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1685910,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1686909,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1687909,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1688909,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1689909,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1690909,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1691909,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1692909,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 1,
+        "replayed_candidates": 1
+      },
+      {
+        "ms": 1693910,
+        "recorded": 1,
+        "replayed": 1,
+        "recorded_candidates": 1,
+        "replayed_candidates": 1
+      }
+    ],
+    "stop_proxy": {
+      "first_after_landing": {
+        "local": "13:06:07",
+        "seconds": 47167,
+        "ms": 1770169,
+        "count": 20
+      },
+      "first_possible_from_speed_accel": {
+        "local": "13:05:17",
+        "seconds": 47117,
+        "ms": 1720169,
+        "count": 20
+      },
+      "max_inflight_quiet_checks": 0,
+      "max_inflight_speed_accel_checks": 0,
+      "proxy_inflight_hits": 0
+    }
+  },
+  {
+    "id": 3,
+    "unit": "3.2.6 blue",
+    "file": "2026-10-27-XLV-000-02.igc",
+    "start": {
+      "V": "2",
+      "CAUSE": "MANUAL",
+      "T_MS": "2397620",
+      "N": "30"
+    },
+    "end": {
+      "V": "1",
+      "CAUSE": "MANUAL",
+      "T_MS": "3294843"
+    },
+    "launch_band": [
+      47925,
+      47952
+    ],
+    "landing_band": [
+      48574,
+      48578
+    ],
+    "paths": {
+      "forward": {
+        "id": 3.0,
+        "ms": 2545409.0,
+        "candidates": 5.0,
+        "triggered": 5.0,
+        "mean_speed_mps": 2.54149985,
+        "mean_climb_mps": 1.0666666,
+        "alt_change_m": 2.0,
+        "displacement_m": 6.16811895,
+        "valid": 15.0,
+        "local": "13:19:03"
+      },
+      "vertical": {
+        "id": 3.0,
+        "ms": 2539409.0,
+        "candidates": 2.0,
+        "triggered": 2.0,
+        "mean_speed_mps": 1.50983334,
+        "mean_climb_mps": 0.866666675,
+        "alt_change_m": 3.0,
+        "displacement_m": 4.41234541,
+        "valid": 15.0,
+        "local": "13:18:57"
+      },
+      "blended": {
+        "id": 3.0,
+        "ms": 2545409.0,
+        "candidates": 5.0,
+        "triggered": 5.0,
+        "mean_speed_mps": 2.54149985,
+        "mean_climb_mps": 1.0666666,
+        "alt_change_m": 2.0,
+        "displacement_m": 6.16811895,
+        "valid": 15.0,
+        "local": "13:19:03"
+      }
+    },
+    "ground_hits": [],
+    "precise_prehistory_comparison": [
+      {
+        "ms": 2373239,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2374240,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2375239,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2376239,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2377239,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2378239,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2379239,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2380239,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2381239,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2382239,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2383239,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2384239,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2385239,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2386240,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2387239,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2388239,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2389239,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2390239,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2391239,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2392239,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2393240,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2394239,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2395239,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2396239,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 2397619,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      }
+    ],
+    "stop_proxy": {
+      "first_after_landing": {
+        "local": "13:30:01",
+        "seconds": 48601,
+        "ms": 3204099,
+        "count": 20
+      },
+      "first_possible_from_speed_accel": {
+        "local": "13:30:00",
+        "seconds": 48600,
+        "ms": 3203099,
+        "count": 20
+      },
+      "max_inflight_quiet_checks": 0,
+      "max_inflight_speed_accel_checks": 1,
+      "proxy_inflight_hits": 0
+    }
+  },
+  {
+    "id": 4,
+    "unit": "3.2.8",
+    "file": "2026-10-27-XLV-000-01.igc",
+    "start": {
+      "V": "2",
+      "CAUSE": "MANUAL",
+      "T_MS": "1183379",
+      "N": "30"
+    },
+    "end": {
+      "V": "1",
+      "CAUSE": "POWER_OFF",
+      "T_MS": "2681193"
+    },
+    "launch_band": [
+      47925,
+      47952
+    ],
+    "landing_band": [
+      48574,
+      48578
+    ],
+    "paths": {
+      "forward": {
+        "id": 4.0,
+        "ms": 1582559.0,
+        "candidates": 7.0,
+        "triggered": 7.0,
+        "mean_speed_mps": 2.61350012,
+        "mean_climb_mps": 1.14999998,
+        "alt_change_m": 3.0,
+        "displacement_m": 7.09785748,
+        "valid": 15.0,
+        "local": "13:19:13"
+      },
+      "vertical": {
+        "id": 4.0,
+        "ms": 1582559.0,
+        "candidates": 7.0,
+        "triggered": 7.0,
+        "mean_speed_mps": 2.61350012,
+        "mean_climb_mps": 1.14999998,
+        "alt_change_m": 3.0,
+        "displacement_m": 7.09785748,
+        "valid": 15.0,
+        "local": "13:19:13"
+      },
+      "blended": {
+        "id": 4.0,
+        "ms": 1571559.0,
+        "candidates": 5.0,
+        "triggered": 4.0,
+        "mean_speed_mps": 2.3210001,
+        "mean_climb_mps": 0.666666687,
+        "alt_change_m": 2.0,
+        "displacement_m": 6.95336533,
+        "valid": 15.0,
+        "local": "13:19:02"
+      }
+    },
+    "ground_hits": [],
+    "precise_prehistory_comparison": [
+      {
+        "ms": 1159459,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1160459,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1161459,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1162459,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1163459,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1164459,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1165460,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1166459,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1167459,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1168460,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1169459,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1170459,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1171459,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1172459,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1173459,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1174459,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1175459,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1176459,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1177459,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1178460,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1179459,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1180459,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1181459,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1182459,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      },
+      {
+        "ms": 1183379,
+        "recorded": 0,
+        "replayed": 0,
+        "recorded_candidates": 0,
+        "replayed_candidates": 0
+      }
+    ],
+    "stop_proxy": {
+      "first_after_landing": {
+        "local": "13:32:31",
+        "seconds": 48751,
+        "ms": 2380559,
+        "count": 20
+      },
+      "first_possible_from_speed_accel": {
+        "local": "13:30:00",
+        "seconds": 48600,
+        "ms": 2229559,
+        "count": 20
+      },
+      "max_inflight_quiet_checks": 3,
+      "max_inflight_speed_accel_checks": 8,
+      "proxy_inflight_hits": 0
+    }
+  }
+]
