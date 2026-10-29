@@ -1,3 +1,7 @@
+---
+title: Logbook maintenance UI review
+---
+
 # Logbook maintenance UI review
 
 [Open the gallery](index.html). Only changed/new screens are included; native firmware captures

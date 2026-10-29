@@ -3,6 +3,30 @@
 Astro/Starlight website for Leaf. The documentation content is shared from the
 repo-level `docs/` folder via `src/content/docs`.
 
+## Documentation format
+
+Every `.md` and `.mdx` file under the repo-level `docs/` folder is loaded by
+Astro/Starlight, including backlog notes and UI review READMEs outside the sidebar.
+Each file must begin with YAML frontmatter containing a `title` string:
+
+```markdown
+---
+title: Logbook maintenance UI review
+---
+
+# Logbook maintenance UI review
+```
+
+A Markdown heading alone does not satisfy the content schema. Preserve any other
+frontmatter fields when editing an existing page. Files outside `docs/` are not
+part of this documentation collection.
+
+Run `npm run build` from `website/` to validate all documentation and generate the
+site. On Windows, first run the local preview script below to prepare the docs
+junction. The `Website check` pull request workflow runs the same website build
+for documentation, website, and website workflow changes. Pages deployment still
+runs after merge to `main`.
+
 ## Local Preview
 
 From `website/`, run:
