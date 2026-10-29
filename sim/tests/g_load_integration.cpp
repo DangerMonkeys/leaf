@@ -94,6 +94,32 @@ int main() {
   imu.gLoad().takeInterval();
   feed(true, 6, 6);
   assert(imu.gLoad().takeInterval().raw.max > 8);
+  // Reset provenance comes from the real instrument branches, not just tracker calls.
+  auto reason = [](GLoadTracker::ResetReason r) { return static_cast<uint16_t>(r); };
+  MotionUpdate reset(millis());
+  reset.reset = true;
+  imu.on_receive(reset);
+  assert(imu.gLoad().takeInterval().resetReasons ==
+         reason(GLoadTracker::ResetReason::SensorMessage));
+  feed(true, 0, 1);
+  imu.gLoad().takeInterval();
+  feed(false, 0, 1);
+  assert(imu.gLoad().takeInterval().resetReasons ==
+         reason(GLoadTracker::ResetReason::SourceChange));
+  sim::clock().advanceUs(50000);
+  MotionUpdate missing(millis());
+  missing.hasGravity = true;
+  missing.gz = 1;
+  imu.on_receive(missing);
+  assert(imu.gLoad().takeInterval().resetReasons ==
+         reason(GLoadTracker::ResetReason::MissingAcceleration));
+  sim::clock().advanceUs(50000);
+  MotionUpdate invalid(millis());
+  invalid.hasGravity = invalid.hasAcceleration = true;
+  invalid.az = 1;
+  imu.on_receive(invalid);
+  assert(imu.gLoad().takeInterval().resetReasons ==
+         reason(GLoadTracker::ResetReason::InvalidGravity));
   assert(formatAccel(NAN, false) == "--");
   assert(formatAccel(13.8f, true) == "13.8g");
   settings.disp_userPageUser1 = static_cast<uint8_t>(UserPageFields::ACCEL);
@@ -134,7 +160,7 @@ int main() {
   assert(doc["metrics"]["max_accel_g"].is<float>());
   File track = SD_MMC.open(trackPath.c_str());
   const String contents = track.readString();
-  assert(contents.indexOf("LXLVGLCFG V=2") >= 0);
+  assert(contents.indexOf("LXLVGLCFG V=3") >= 0);
   assert(contents.indexOf(" Z=1") >= 0 && contents.indexOf(" D=5") >= 0);
   assert(contents.indexOf("LXLVGR ") >= 0 && contents.indexOf("LXLVGE ") >= 0);
   const int finalGroup = contents.lastIndexOf("LXLVGL T=");

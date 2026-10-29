@@ -22,13 +22,14 @@ struct GLoadDiagnostics {
   bool rawValid = false;
   uint32_t rawSampleMs = 0;
   bool ending = false;
+  uint8_t launchPaths = 0;  // Shared FlightAutoStart confirmed path mask, not a raw activity flag.
 
   bool looksAirborne() const { return fast || vertical; }
-  // Either positive indication can confirm flight; ground needs both measurements.
+  // Either positive indication vetoes landing; ground needs both measurements.
   bool detectorInputsValid() const { return looksAirborne() || (speedValid && climbValid); }
 };
 
-// Emit bounded V2 manufacturer records, each fitting within 76 bytes including LXLV.
+// Emit bounded V3 manufacturer records, each fitting within 76 bytes including LXLV.
 // The sink adds the manufacturer prefix and CRLF. No allocation or persistent buffer here.
 template <typename Sink>
 void writeGLoadDiagnostics(const GLoadDiagnostics& d, const GLoadTracker::DiagnosticState& s,
@@ -62,12 +63,16 @@ void writeGLoadDiagnostics(const GLoadDiagnostics& d, const GLoadTracker::Diagno
   write(line);
   snprintf(line, sizeof(line), "GS T=%lu ON=%u A=%u G=%u I=%lu P=%u B=%lu E=%u H=%u D=%u",
            (unsigned long)d.checkMs, s.active, s.airborne, s.groundSeconds, (unsigned long)ignore,
-           s.pending, (unsigned long)s.bucketStartMs, s.committed, s.airSeconds,
+           s.pending, (unsigned long)s.bucketStartMs, s.committed, 0u,
            static_cast<unsigned>(s.transition));
   write(line);
   snprintf(line, sizeof(line), "GQ T=%lu N=%u F=%u RJ=%u GP=%u CL=%u RS=%u",
            (unsigned long)d.checkMs, interval.samples, interval.filteredSamples, interval.rejected,
            interval.gaps, interval.clippingReports, interval.resets);
+  write(line);
+  snprintf(line, sizeof(line), "GX T=%lu RM=%u DT=%lu GT=%lu J=%u", (unsigned long)d.checkMs,
+           interval.resetReasons, (unsigned long)interval.maxGapMs,
+           (unsigned long)interval.maxGapEndMs, d.launchPaths);
   write(line);
   auto range = [&](const char* kind, const GLoadTracker::Range& r) {
     char lo[8] = "NA", hi[8] = "NA";

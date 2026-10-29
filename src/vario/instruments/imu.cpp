@@ -299,7 +299,7 @@ void IMU::on_receive(const MotionUpdate& msg) {
   motionSampleCount_++;
   if (msg.clippedSinceLastUpdate) gLoad_.recordClipping();
   if (msg.reset) {
-    wake();
+    wake(GLoadTracker::ResetReason::SensorMessage);
     return;
   }
   // A late sample is not evidence of a broken filter. Preserve the current estimate.
@@ -307,20 +307,20 @@ void IMU::on_receive(const MotionUpdate& msg) {
   if (haveMotionTime_) {
     const int32_t dt = static_cast<int32_t>(msg.t - lastMotionTime_);
     if (dt <= 0) return;
-    if (gravityVectorMode_ != msg.hasGravity) wake();
+    if (gravityVectorMode_ != msg.hasGravity) wake(GLoadTracker::ResetReason::SourceChange);
   }
   if (msg.hasGravity) {
     const double initialBias = flatBiasReference_.initialBias(msg.gx, msg.gy, msg.gz);
     if (!gravityVectorMode_) kalmanvert_.reset(25.0, true, initialBias);
     gravityVectorMode_ = true;
     if (!msg.hasAcceleration) {
-      wake();
+      wake(GLoadTracker::ResetReason::MissingAcceleration);
       return;
     }
     processGravity(msg);
     haveMotionTime_ = true;
     if (!validAccelVert_) {
-      wake();
+      wake(GLoadTracker::ResetReason::InvalidGravity);
       return;
     }
     const bool disturbed = msg.clippedSinceLastUpdate ||
@@ -400,8 +400,8 @@ void IMU::on_receive(const MotionUpdate& msg) {
   }
 }
 
-void IMU::wake() {
-  gLoad_.resetFilter();
+void IMU::wake(GLoadTracker::ResetReason reason) {
+  gLoad_.resetFilter(reason);
   kalmanvert_.reset();
   validAccelVert_ = validAccelTot_ = validLastWorldVerticalAccel_ = false;
   haveMotionTime_ = false;

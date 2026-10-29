@@ -264,12 +264,12 @@ bool Igc::startFlight() {
   logger.writeIRecord(sizeof(extensions) / sizeof(extensions[0]), extensions);
   char gLoadConfig[73];
   snprintf(gLoadConfig, sizeof(gLoadConfig),
-           "GLCFG V=2 SLEW=%.1f AVG=%u IGNORE=%lu BUCKET=%lu LAND=%u AIR=%u",
+           "GLCFG V=3 SLEW=%.1f AVG=%u IGNORE=%lu BUCKET=%lu LAND=%u",
            GLoadTracker::MAX_SLEW_G_PER_S, GLoadTracker::AVERAGE_SAMPLES,
            (unsigned long)GLoadTracker::TAKEOFF_IGNORE_MS,
-           (unsigned long)GLoadTracker::PENDING_BUCKET_MS, GLoadTracker::GROUND_SECONDS_TO_LAND,
-           GLoadTracker::AIR_SECONDS_TO_FLY);
+           (unsigned long)GLoadTracker::PENDING_BUCKET_MS, GLoadTracker::GROUND_SECONDS_TO_LAND);
   logger.writeLRecord(gLoadConfig);
+  logger.writeLRecord("GLLAUNCH SOURCE=START WINDOW=SHARED H=RESERVED");
   snprintf(gLoadConfig, sizeof(gLoadConfig), "GLDET SPEED=%.5f CLIMB=%ld FRESH=%lu GAP=%lu",
            GLoadDiagnostics::MIN_SPEED_MPS, (long)GLoadDiagnostics::MIN_CLIMB_CMS,
            (unsigned long)GLoadTracker::FRESH_MS, (unsigned long)GLoadTracker::MAX_SAMPLE_GAP_MS);

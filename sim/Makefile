@@ -129,9 +129,14 @@ $(BUILD)/g_load_diagnostics_test: $(SIM)/tests/g_load_diagnostics.cpp $(ROOT)/sr
 $(BUILD)/g_load_integration_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/g_load_integration.cpp
 	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/g_load_integration.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
 
-test-g-load: $(BUILD)/g_load_tracker_test $(BUILD)/g_load_diagnostics_test $(BUILD)/g_load_integration_test
+$(BUILD)/g_load_launch_test: $(SIM)/tests/g_load_launch.cpp $(ROOT)/src/vario/instruments/g_load_tracker.h $(ROOT)/src/vario/logging/flight_auto_start.h
+	@mkdir -p $(dir $@)
+	@$(CXX) $(CXXFLAGS) -o $@ $<
+
+test-g-load: $(BUILD)/g_load_tracker_test $(BUILD)/g_load_diagnostics_test $(BUILD)/g_load_launch_test $(BUILD)/g_load_integration_test
 	@$(BUILD)/g_load_tracker_test
 	@$(BUILD)/g_load_diagnostics_test
+	@$(BUILD)/g_load_launch_test
 	@cd $(ROOT) && $(BUILD)/g_load_integration_test
 
 .PHONY: test-runtime-capture

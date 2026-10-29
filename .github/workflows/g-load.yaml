@@ -14,3 +14,5 @@ jobs:
           /tmp/g-load-tracker
           g++ -std=c++17 -Wall -Wextra -Isrc/vario sim/tests/g_load_diagnostics.cpp -o /tmp/g-load-diagnostics
           /tmp/g-load-diagnostics
+          g++ -std=c++17 -Wall -Wextra -Isrc/vario sim/tests/g_load_launch.cpp -o /tmp/g-load-launch
+          /tmp/g-load-launch

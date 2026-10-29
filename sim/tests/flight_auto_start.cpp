@@ -193,9 +193,14 @@ namespace {
     settings.toggleBoolOnOff(&settings.log_autoStart);
     fly(2000, 8);
     assert(!flightTimer_isRunning());
-    fly(4000, 8);
+    for (unsigned elapsed = 0; elapsed < 4000 && !flightTimer_isRunning(); elapsed += 100)
+      fly(100, 8);
     assert(flightTimer_isRunning() && igcFlight.started());
     const String autoPath = igcFlight.trackLogPath();
+    // The timer's accepted check must enter g-load collection immediately, with
+    // a fresh launch guard and no second detector/debounce delay.
+    assert(imu.gLoad().diagnosticState().airborne);
+    assert(imu.gLoad().diagnosticState().ignoreRemainingMs > 14000);
     settings.toggleBoolOnOff(&settings.log_autoStart);
     assert(flightTimer_isRunning());
     settings.toggleBoolOnOff(&settings.log_autoStart);
@@ -224,6 +229,7 @@ namespace {
     while (!flightTimer_isRunning() && uint32_t(millis() - launchAt) < 10000)
       fly(100, 0, 1.2f, false);
     assert(flightTimer_isRunning() && !igcFlight.started());
+    assert(imu.gLoad().diagnosticState().airborne);  // Even before GPS permits an IGC.
     printf("Fused climb-only launch: %.2f seconds after climb onset\n",
            (millis() - launchAt) / 1000.0);
     const unsigned climbStartAt = logbook.logStartedAt;

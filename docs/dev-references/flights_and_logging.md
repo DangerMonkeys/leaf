@@ -287,29 +287,38 @@ Erase Flight    ➡
 
 # G-load diagnostic IGC records
 
-The g-load experiment writes ten Leaf manufacturer comment (`LXLV`) records per logging
+The g-load experiment writes eleven Leaf manufacturer comment (`LXLV`) records per logging
 update, approximately once per second. State and interval ranges are bounded in memory; no
 per-sample SD writes are added. Diagnostics continue through GPS outages after an IGC file opens.
 The tracker also runs while waiting for the first GPS fix, or with track saving disabled.
 Raw acceleration used by auto-stop and self-test is unchanged. The User page shows the fresh
 filtered value, or `--.- g` during startup, missing input, and filter recovery.
 
-V2 headers describe the actual parameters:
+V3 headers describe the actual parameters:
 
 ```text
-LXLVGLCFG V=2 SLEW=3.0 AVG=10 IGNORE=15000 BUCKET=30000 LAND=20 AIR=3
-LXLVGLDET SPEED=3.57632 CLIMB=50 FRESH=250 GAP=500
+LXLVGLCFG V=3 SLEW=3.0 AVG=10 IGNORE=15000 BUCKET=30000 LAND=20
+LXLVGLLAUNCH SOURCE=START WINDOW=SHARED H=RESERVED
+LXLVGLDET SPEED=3.57632 CLIMB=50 FRESH=500 GAP=500
 ```
 
 The settings describe slew in g/s, averaging samples, launch exclusion and pending bucket length
-in milliseconds, and consecutive detector checks. Airborne entry requires three qualifying
-checks; landing requires twenty nonqualifying checks. A check qualifies with valid speed over
-8 mph OR valid absolute climb over 50 cm/s. Ground confirmation requires both measurements to
-be valid and below their thresholds. Otherwise confirmation counters clear and airborne state
-is retained. This is a g-load eligibility detector, separate
-from the flight timer's existing auto-start/stop logic. These thresholds remain experimental.
+in milliseconds, and consecutive landing checks. Airborne entry consumes the same confirmed
+forward, vertical or blended motion-window evidence as Auto Start (see above); it does not add
+another three-check debounce. Automatic timer starts pass their already accepted launch paths
+to the tracker. A manual start collects fresh launch evidence while logging, even with Auto Start
+disabled, before arming the 15-second guard. This also works while waiting for GPS or with track
+saving disabled. Landing clears launch history so a relaunch requires fresh confirmation.
 
-Each group starts with `GL`; all ten records have a common `T` in device milliseconds, wrapping
+The shared launch test does not have to remain satisfied during flight. Landing still requires
+twenty valid quiet checks: speed at most 8 mph AND absolute filtered climb at most 50 cm/s.
+Either positive activity indication vetoes landing; missing inputs cannot prove ground and clear
+the quiet counter. These landing checks remain separate from timer Auto Stop. The shared launch
+thresholds are experimental: October 27's confirmed ground-only Blue recording still qualifies
+for timer Auto Start through forward evidence. Sharing does not eliminate that timer false positive;
+the eligibility replay does prevent its later uncorroborated handling from committing g-load extrema.
+
+Each group starts with `GL`; all eleven records have a common `T` in device milliseconds, wrapping
 at 32 bits. Preserve file order rather than sorting by timestamps. The first group may follow
 earlier detector activity while waiting for GPS. One final, potentially partial interval is
 written on timer stop before the IGC G checksum. It has `Z=1` and can share a `T` with the last
@@ -317,10 +326,11 @@ periodic group. Periodic groups have `Z=0`.
 
 | Record | Fields |
 | --- | --- |
-| `GL` | Inputs: `S` speed (m/s), `C` climb (cm/s), `SV`/`CV` input validity, `FS` actual speed threshold result, `VC` actual climb threshold result, `L=FS OR VC`, `Z` final group. Replay flags rather than rounded `S`. |
-| `GA` | Snapshots: raw `R` and filtered `F` (g), raw sample time `RT`, filter sample time `FT`, and validity `RV`/`FV`. In V2 `FV` includes window readiness AND age <=250 ms. |
-| `GS` | State after the check: active `ON`, airborne `A`, ground-check count `G`, airborne-check count `H`, launch guard remaining `I` (ms on the sample clock), pending flag `P`, current bucket start `B`, committed-extrema flag `E`, transition `D`. |
+| `GL` | Landing-veto inputs: `S` speed (m/s), `C` filtered climb (cm/s), `SV`/`CV` input validity, `FS` actual speed threshold result, `VC` actual climb threshold result, `L=FS OR VC`, `Z` final group. `L` is activity, not confirmed launch. Replay flags rather than rounded `S`. |
+| `GA` | Snapshots: raw `R` and filtered `F` (g), raw sample time `RT`, filter sample time `FT`, and validity `RV`/`FV`. `FV` includes window readiness AND age within the recorded `FRESH` parameter. |
+| `GS` | State after the check: active `ON`, airborne `A`, ground-check count `G`, reserved `H=0` (formerly airborne-check count), launch guard remaining `I` (ms on the sample clock), pending flag `P`, current bucket start `B`, committed-extrema flag `E`, transition `D`. |
 | `GQ` | Interval counts: accepted raw samples `N`, filtered outputs `F`, rejected samples `RJ`, gaps over 500 ms `GP`, clipping notifications `CL`, instrument/filter resets `RS`. Counts saturate at 65535. |
+| `GX` | Interval restart-reason bitmask `RM` (decimal), largest accepted-sample interval `DT` (ms) and its ending sample timestamp `GT`, plus this check's shared confirmed launch path mask `J` (1=forward, 2=vertical, 4=blended). `J` can remain nonzero during flight without rearming the guard. |
 | `GR` / `GF` | Raw / filtered extrema over samples delivered since the preceding diagnostic group. |
 | `GC` / `GP` | Current / previous pending bucket extrema, respectively. |
 | `GE` | Committed flight extrema; preserved through landing/relaunch within one timer session. |
@@ -329,6 +339,17 @@ periodic group. Periodic groups have `Z=0`.
 `D` values are 0=no transition, 1=confirmed airborne, 2=confirmed landing, 3=insufficient detector
 input, 4=tracker started, 5=tracker stopped. Counts are checks, not exact elapsed seconds.
 `I` is armed only on confirmed airborne entry and starts from the next eligible filtered sample.
+
+`RM` ORs all restart reasons in the interval: 1=unspecified explicit reset, 2=power sleep,
+4=power wake, 8=sensor discontinuity message, 16=IMU source change, 32=missing LSM acceleration,
+64=invalid LSM acceleration/gravity projection, 128=accepted flat-bias calibration,
+256=automatic averaging restart after a sample gap over 500 ms. `RS` counts explicit reset calls;
+the automatic gap restart increments `GP` and sets bit 256 without incrementing `RS`.
+The sensor-message reason does not distinguish driver configuration, FIFO loss and I2C recovery.
+`DT` measures every positive interval between accepted samples, even an ordinary 50 ms interval;
+it spans diagnostic groups and explicit resets. Rejected timestamps do not contribute. `DT=GT=0`
+means there was no accepted sample with a predecessor in this interval. Reasons, counts and the
+largest gap drain with each group; the sample clock continues, including across millis rollover.
 
 Every range record has `LO`/`HI` in g and the respective sample timestamps `LT`/`HT`.
 Empty ranges use `LO=NA HI=NA LT=0 HT=0`. Interval ranges cover delivered motion samples
@@ -347,7 +368,9 @@ LXLVGF T=123450 LO=0.950 HI=1.120 LT=122950 HT=123300
 Unavailable snapshots are `NA`; out-of-field snapshot numbers use `OVF`. All diagnostic lines
 fit within 76 bytes, including the manufacturer prefix and excluding CRLF. V1 logs from the
 earlier experiment used `LXLF`, three snapshots per update, five ground checks, and `FV` did not
-guarantee freshness. Readers must use `GLCFG V` and the recorded settings to distinguish them.
+guarantee freshness. V2 emitted ten records with three activity checks for launch and no `GX`.
+V3 preserves the existing record fields, reserves `H=0`, adds `GX`, and shares launch evidence.
+Readers must use `GLCFG V` and the recorded settings to distinguish them.
 
 The ten-sample average is approximately 0.5 seconds at the nominal 20 Hz delivered sample rate;
 it is not a fixed-duration resampler. ICM-20948 uses +/-4 g per axis and LSM6DSV +/-8 g per axis;

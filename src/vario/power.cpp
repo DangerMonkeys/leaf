@@ -210,7 +210,7 @@ void Power::sleepPeripherals() {
   Serial.println(" - Sleeping baro");
   baro.sleep();
   MotionSensor::getInstance().sleep();
-  imu.wake();  // Invalidate the estimator before any subsequent wake.
+  imu.wake(GLoadTracker::ResetReason::Sleep);  // Invalidate before any subsequent wake.
   Serial.println(" - Sleeping speaker");
   speaker.mute();
   Serial.println("Shut down speaker");
@@ -226,7 +226,7 @@ void Power::wakePeripherals() {
   heap_monitor::checkpoint("wake-periph-gps");
   Serial.println(" - waking baro and IMU");
   baro.wake();
-  imu.wake();
+  imu.wake(GLoadTracker::ResetReason::Wake);
   MotionSensor::getInstance().wake();
   heap_monitor::checkpoint("wake-periph-baro-imu");
   Serial.println(" - waking speaker");

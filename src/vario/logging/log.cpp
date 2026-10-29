@@ -49,6 +49,7 @@ PageAlertTimerAutoStop pageAlertTimerAutoStop;
 namespace {
   FlightAutoStart autoStartDetector;
   FlightStartHistory startHistory;
+  uint8_t pendingAutoLaunchPaths = 0;
 
   FlightAutoStart::Sample autoStartSample() {
     FlightAutoStart::Sample sample;
@@ -83,8 +84,7 @@ namespace {
     logbookEntry.captureFirstFix(logbook);
   }
 
-  // Rough in-flight check for g-load statistics: moving over the ground faster than walking, or
-  // climbing/sinking noticeably (covers flying with little ground speed in strong wind).
+  // Activity only vetoes landing. Entry uses the corroborated motion-window detector.
 
   GLoadDiagnostics captureGLoadDiagnostics() {
     GLoadDiagnostics d;
@@ -144,9 +144,21 @@ void log_update() {
 
     // Current second of the flight
     logbook.duration = currentSecondSinceBoot - logbook.logStartedAt;
-    const GLoadDiagnostics gLoadDiagnostics = captureGLoadDiagnostics();
-    imu.gLoad().updateAirborne(gLoadDiagnostics.looksAirborne(),
-                               gLoadDiagnostics.detectorInputsValid());
+    auto gLoadDiagnostics = captureGLoadDiagnostics();
+    if (pendingAutoLaunchPaths) {
+      // The timer already consumed this check's launch evidence; do not confirm it again.
+      gLoadDiagnostics.launchPaths = pendingAutoLaunchPaths;
+      pendingAutoLaunchPaths = 0;
+    } else {
+      // Manual logs and relaunches use the same detector, independent of Auto Start settings.
+      autoStartDetector.update(gLoadDiagnostics.checkMs, autoStartSample());
+      gLoadDiagnostics.launchPaths = autoStartDetector.triggered();
+    }
+    imu.gLoad().updateFlightState(gLoadDiagnostics.launchPaths != 0,
+                                  gLoadDiagnostics.looksAirborne(),
+                                  gLoadDiagnostics.detectorInputsValid());
+    if (imu.gLoad().diagnosticState().transition == GLoadTracker::Transition::Landed)
+      autoStartDetector.reset();  // A relaunch needs a fresh motion window after landing.
     captureGLoadExtrema();
     logbookEntry.refreshStartTimeFromSyncedClock(logbook);
 
@@ -381,6 +393,7 @@ void flightTimer_start(FlightStartCause cause) {
                       cause == FlightStartCause::Automatic ? autoStartDetector.candidates() : 0,
                       cause == FlightStartCause::Automatic ? autoStartDetector.triggered() : 0);
   startHistory.freeze(millis(), cause);
+  pendingAutoLaunchPaths = cause == FlightStartCause::Automatic ? autoStartDetector.triggered() : 0;
   autoStartDetector.reset();
   flightTimer_resetAutoStop();
 
@@ -405,6 +418,7 @@ void flightTimer_start(FlightStartCause cause) {
 // stop timer
 void flightTimer_stop(bool showSummary, FlightEndCause cause) {
   fanet_log::endFlight();
+  pendingAutoLaunchPaths = 0;
   autoStartDetector.reset();
   startHistory.reset();
   windEstimator.clearWindEstimate();  // clear the wind estimate when we stop a flight
