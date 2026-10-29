@@ -8,6 +8,7 @@
 #include <Arduino.h>
 
 #include "hardware/configuration.h"
+#include "sim/board.h"
 
 #include "comms/ble.h"
 #include "comms/factory_discovery.h"
@@ -50,10 +51,13 @@ FanetRadio fanetRadio;
 
 String FanetAddressToString(FANET::Address address) { return String("000:000"); }
 
-void FanetRadio::setup() {}
+void FanetRadio::setup() {
+  fanetDetected_ = sim::board().fanetPresent;
+  state = fanetDetected_ ? FanetRadioState::UNINITIALIZED : FanetRadioState::UNINSTALLED;
+}
 void FanetRadio::subscribe(etl::imessage_bus* bus) {}
-void FanetRadio::begin(const FanetRadioRegion& region) { state = FanetRadioState::UNINSTALLED; }
-void FanetRadio::end() { state = FanetRadioState::UNINITIALIZED; }
+void FanetRadio::begin(const FanetRadioRegion& region) { setup(); }
+void FanetRadio::end() { setup(); }
 void FanetRadio::logDetectionResult() { Serial.println("FANET: radio not emulated"); }
 FanetRadioState FanetRadio::getState() { return state; }
 void FanetRadio::setGroundTrackingMode(const FANET::GroundTrackingPayload::TrackingType& mode) {}

@@ -8,7 +8,7 @@ class PageFanet : public SimpleSettingsMenuPage {
  public:
   const char* get_title() const override { return "Fanet"; }
   uint8_t get_title_glyph() const override { return menu_ui::GLYPH_FANET; }
-  static void show() { push_page(&getInstance()); }
+  static void show();
   etl::array_view<const char*> get_labels() const override {
     static etl::array labels{"Ground", "Region", "Stats", "Neighbors"};
     return etl::array_view<const char*>(labels);

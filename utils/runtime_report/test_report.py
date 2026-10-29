@@ -69,6 +69,17 @@ def gps_capture():
 
 
 class ReportTests(unittest.TestCase):
+    def test_fanet_logging_changes_withhold_baseline_comparison(self):
+        c = gps_capture()
+        c["settings"]["fanet_log"] = False
+        meta = dict(profile="p", scenario="s", toolchain="t")
+        baseline = dict(capture=copy.deepcopy(c), metadata=meta)
+        self.assertTrue(report.assess(c, meta, baseline)["baseline_comparable"])
+        c["settings"]["fanet_log"] = True
+        assessment = report.assess(c, meta, baseline)
+        self.assertFalse(assessment["baseline_comparable"])
+        self.assertIn("Other diagnostic SD logging was enabled and can affect timing.", assessment["notes"])
+
     def test_inherited_lateness_does_not_become_duration_overrun(self):
         c = capture()
         c["slots"][0].update(deadline_misses=1, max_start_delay_us=9500, max_end_delay_us=500)

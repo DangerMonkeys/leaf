@@ -13,6 +13,7 @@
 #include "ui/display/pages/dialogs/page_message.h"
 
 void PageFanetGround::show(FanetGroundTrackingMode mode) {
+  if (!fanetRadio.isDetected()) return;
   // If we're currently in a flight, show an error message
   if (flightTimer_isRunning()) {
     speaker.playSound(fx::bad);

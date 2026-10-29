@@ -25,7 +25,6 @@
 #include "diagnostics/heap_monitor.h"
 #include "diagnostics/memory_report.h"
 #include "diagnostics/self_test/selfTest.h"
-#include "etl/string_stream.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "logbook/logbook_io.h"
@@ -40,7 +39,6 @@
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
 #include "ui/settings/settings.h"
-#include "utils/lock_guard.h"
 
 namespace {
   ::WebServer user_server(80);
@@ -2339,16 +2337,15 @@ function row(label,id){let l=el("label",{class:"checkline"}),i=el("input",{id:id
 function msg(t){let m=document.getElementById("devMsg");if(m)m.textContent=t||""}
 let main=document.getElementById("mainView");if(!main)return;
 let s=el("section",{id:"developerCard"}),h=el("h2",{text:"Developer"}),status=el("div",{class:"status",id:"devStatus",text:"Loading..."}),actions=el("div",{class:"actions"}),msgEl=el("p",{class:"muted msg",id:"devMsg"});
-let shot=el("button",{class:"hero",id:"devScreenshot",text:"Screenshot"}),msc=el("button",{class:"secondary",id:"devMassStorage",text:"Mass Storage"}),mem=el("button",{class:"secondary",id:"devMemory",text:"Memory"}),fan=el("button",{class:"secondary",id:"devFanet",text:"FANET"});
+let shot=el("button",{class:"hero",id:"devScreenshot",text:"Screenshot"}),msc=el("button",{class:"secondary",id:"devMassStorage",text:"Mass Storage"}),mem=el("button",{class:"secondary",id:"devMemory",text:"Memory"});
 actions.style.flexWrap="wrap";
-actions.appendChild(shot);actions.appendChild(msc);actions.appendChild(mem);actions.appendChild(fan);
+actions.appendChild(shot);actions.appendChild(msc);actions.appendChild(mem);
 s.appendChild(h);s.appendChild(status);s.appendChild(row("Keep web app on","devAlwaysOn"));s.appendChild(row("Keep Bluetooth disabled","devKeepBleDisabled"));s.appendChild(row("UDP sensor injection","devUdpInjection"));s.appendChild(el("p",{class:"muted",text:"Accept test sensor data over WiFi (UDP 7431)."}));s.appendChild(row("System events log","devDiagSystem"));s.appendChild(row("Network events log","devDiagNetwork"));s.appendChild(row("Web requests log","devDiagWeb"));s.appendChild(row("Vario log","devDiagVario"));s.appendChild(row("CPU utilization log","devDiagCpu"));s.appendChild(actions);s.appendChild(msgEl);main.appendChild(s);
 async function load(){try{let r=await Promise.all([fetch("/api/debug/session"),fetch("/api/user/status")]);if(r.some(x=>!x.ok))throw new Error("Developer controls unavailable");let d=await r[0].json(),u=await r[1].json();document.getElementById("devAlwaysOn").checked=!!d.always_on;document.getElementById("devKeepBleDisabled").checked=!!d.keep_bluetooth_disabled;document.getElementById("devUdpInjection").checked=!!d.udp_sensor_injection;document.getElementById("devDiagSystem").checked=!!d.diag_system_events;document.getElementById("devDiagNetwork").checked=!!d.diag_network_events;document.getElementById("devDiagWeb").checked=!!d.diag_web_requests;document.getElementById("devDiagVario").checked=!!d.diag_vario;document.getElementById("devDiagCpu").checked=!!d.diag_cpu_utilization;status.textContent="web app: "+(d.web_app_active?"active":"off")+"\nmode: "+(d.using_leaf_wifi?"Leaf AP":"network")+"\nfirmware: "+(u.firmware_display_version||u.firmware_version||"")+"\nmac: "+(u.mac_address||"")}catch(e){status.textContent="Developer controls unavailable."}}
 async function save(){msg("Saving...");try{let body={always_on:document.getElementById("devAlwaysOn").checked,keep_bluetooth_disabled:document.getElementById("devKeepBleDisabled").checked,udp_sensor_injection:document.getElementById("devUdpInjection").checked,diag_system_events:document.getElementById("devDiagSystem").checked,diag_network_events:document.getElementById("devDiagNetwork").checked,diag_web_requests:document.getElementById("devDiagWeb").checked,diag_vario:document.getElementById("devDiagVario").checked,diag_cpu_utilization:document.getElementById("devDiagCpu").checked};let r=await fetch("/api/debug/session",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});if(!r.ok)throw new Error("Developer settings were rejected");msg("Saved.");load()}catch(e){msg("Unable to save developer settings.")}}
 ["devAlwaysOn","devKeepBleDisabled","devUdpInjection","devDiagSystem","devDiagNetwork","devDiagWeb","devDiagVario","devDiagCpu"].forEach(id=>document.getElementById(id).onchange=save);
 shot.onclick=()=>window.open("/app/debug/screenshot","_blank","noopener");
 mem.onclick=()=>window.open("/app/debug/memory","_blank","noopener");
-fan.onclick=()=>window.open("/app/debug/fanet","_blank","noopener");
 msc.onclick=async()=>{if(!confirm("Start SD mass storage?"))return;msg("Starting mass storage...");try{await fetch("/api/debug/mass-storage");msg("Mass storage requested.")}catch(e){msg("Unable to start mass storage.")}};
 load();
 })();
@@ -3653,8 +3650,6 @@ const char* leafLogBaseUrl() { return LEAF_LOG_BASE_URL; }
 
 const char* leafLogCaCertificate() { return ISRG_ROOT_X1_CA; }
 
-constexpr auto endl = "\n";
-
 void writeScreenshotBuffer(const char* buffer) {
   Serial.println("Writing screenshot buffer");
   send_buffer += buffer;
@@ -3675,56 +3670,6 @@ void webserver_setup() {
     send_buffer = "";
     u8g2_WriteBufferXBM(u8g2.getU8g2(), writeScreenshotBuffer);
     user_server.send(200, "image/x-xbitmap", send_buffer);
-  });
-
-  user_server.on("/app/debug/fanet", HTTP_GET, []() {
-    etl::string<1024> str;
-    etl::string_stream ss(str);
-    auto& radio = fanetRadio;
-    auto protocol = radio.protocol;
-
-    // Lock the radio while we poke around their private parts
-    LockGuard lock(radio.x_fanet_manager_mutex);
-    auto& radioStats = protocol->stats();
-    // UnsafeManager* manager = (UnsafeManager*)radio.manager;
-    auto ms = millis();
-
-    ss << "<!DOCTYPE html>\n"
-       << "<html>\n"
-       << "<script>\n"
-       << "setTimeout(() => location.reload(), 1000);\n"
-       << "</script>\n"
-       << "<body><pre>\n"
-
-       << "Current Time: " << ms << endl
-       << endl
-       << "-- STATS -- " << endl
-       << "State: " << fanetRadio.getState().c_str() << "\n"
-       << "rx: " << radioStats.rx << "\n"
-       << "txSuccess: " << radioStats.txSuccess << "\n"
-       << "txFailed: " << radioStats.txFailed << "\n"
-       << "processed: " << radioStats.processed << "\n"
-       << "forwarded: " << radioStats.forwarded << "\n"
-       << "fwdMinRssiDrp: " << radioStats.fwdMinRssiDrp << "\n"
-       << "fwdNeighborDrp: " << radioStats.fwdNeighborDrp << "\n"
-       << "fwdDbBoostWeak: " << radioStats.fwdDbBoostWeak << "\n"
-       << "fwdDbBoostDrop: " << radioStats.fwdDbBoostDrop << "\n"
-       << "rxFromUsDrp: " << radioStats.rxFromUsDrp << "\n"
-       << "txAck: " << radioStats.txAck << "\n"
-       << "neighbors: " << radioStats.neighborTableSize << "\n"
-       << "-- Manager --" << endl
-       << "Manager Queue Length: " << protocol->txPoolSize() << endl
-       << "Next allowed tracking time: "
-       << (radio.m_nextAllowedTrackingTimeMs ? (long long)radio.m_nextAllowedTrackingTimeMs - ms
-                                             : 0) /
-              1000.0f
-       << "s" << endl
-       << endl
-
-       << "</pre></body>\n"
-       << "</html>\n";
-
-    user_server.send(200, "text/html", str.c_str());
   });
 
   user_server.on("/app/debug/screenshot", HTTP_GET, []() {

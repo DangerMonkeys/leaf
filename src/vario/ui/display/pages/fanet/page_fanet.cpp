@@ -1,5 +1,6 @@
 #include "ui/display/pages/fanet/page_fanet.h"
 
+#include "comms/fanet_radio.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/pages.h"
@@ -11,6 +12,11 @@
 
 // Singleton instance
 
+void PageFanet::show() {
+  if (!fanetRadio.isDetected()) return;
+  push_page(&getInstance());
+}
+
 void PageFanet::setting_change(Button dir, ButtonEvent state, uint8_t count) {
   if (state != ButtonEvent::CLICKED) return;
 
@@ -21,6 +27,7 @@ void PageFanet::setting_change(Button dir, ButtonEvent state, uint8_t count) {
   }
 
   // Handle menu item selection
+  if (!fanetRadio.isDetected()) return;
   switch (cursor_position) {
     case 0:
       // Ground Tracking Selection
@@ -32,6 +39,7 @@ void PageFanet::setting_change(Button dir, ButtonEvent state, uint8_t count) {
 
       // Callback for when the region is changed
       auto regionChanged = [](int selected) {
+        if (!fanetRadio.isDetected()) return;
         settings.fanet_region = (FanetRadioRegion)selected;
         Serial.print("Updating Fanet region to ");
         Serial.print(settings.fanet_region);

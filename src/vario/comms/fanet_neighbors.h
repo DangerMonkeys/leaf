@@ -10,11 +10,10 @@
 #include "fanet/protocol.hpp"
 #include "instruments/gps.h"
 
-#include "logging/telemetry.h"
+#include "logging/fanet_log.h"
 
 /// @brief A class to handle FANET neighbor statistics in addition to base Fanet neighbor table.
-struct FanetNeighbors : public etl::message_router<FanetNeighbors, FanetPacket>,
-                        public IMessageSource {
+struct FanetNeighbors : public etl::message_router<FanetNeighbors, FanetPacket> {
  public:
   struct Neighbor {
     FANET::Address address;  // The address of the neighbor
@@ -28,13 +27,8 @@ struct FanetNeighbors : public etl::message_router<FanetNeighbors, FanetPacket>,
 
   using NeighborMap = etl::map<uint32_t, Neighbor, FANET::Protocol::FANET_MAX_NEIGHBORS>;
 
-  // IMessageSource
-  void publishTo(etl::imessage_bus* bus) { bus_ = bus; }
-  void stopPublishing() { bus_ = nullptr; }
-
  private:
   NeighborMap neighbors_;
-  etl::imessage_bus* bus_ = nullptr;
 
  public:
   const NeighborMap& get() const { return neighbors_; }
@@ -132,17 +126,20 @@ struct FanetNeighbors : public etl::message_router<FanetNeighbors, FanetPacket>,
         neighbor.groundTrackingMode = trackingPayload.groundType();
       }
 
-      // Log to message bus - only log when we have valid location data
-      // Format: fanet_rx,<FanetID>,<distance in km>,<RSSI>,<SNR>,<Packet Lat>,<Packet
-      // Lon>,<MyLat>,<MyLon>
-      if (LOG::FANET_RX && bus_ && hasLocationData && neighbor.distanceKm.has_value()) {
-        String fanetRxName = "fanet_rx,";
-        String fanetEntry = fanetRxName + String(neighbor.address.asUint(), HEX) + "," +
-                            String(neighbor.distanceKm.value()) + "," + String(neighbor.rssi) +
-                            "," + String(neighbor.snr) + "," + String(lat, 8) + "," +
-                            String(lon, 8) + "," + String(gps.location.lat(), 8) + "," +
-                            String(gps.location.lng(), 8);
-        bus_->receive(CommentMessage(fanetEntry));
+      // Queue numeric observations only; CSV formatting and SD I/O run on the flight task.
+      if (hasLocationData && fanet_log::recording()) {
+        fanet_log::Observation observation;
+        observation.receivedMs = millis();
+        observation.neighborId = neighbor.address.asUint();
+        observation.distanceKm = neighbor.distanceKm.value();
+        observation.rssi = msg.rssi;
+        observation.snr = msg.snr;
+        observation.neighborLat = lat;
+        observation.neighborLon = lon;
+        observation.receiverLat = gps.location.lat();
+        observation.receiverLon = gps.location.lng();
+        observation.receiverFix = gps.hasUsableFix();
+        fanet_log::record(observation);
       }
     } catch (...) {
       // Silently ignore exceptions to prevent crashes from malformed FANET packets

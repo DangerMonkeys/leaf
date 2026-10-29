@@ -268,6 +268,7 @@ void Settings::loadDefaults() {
   dev_startLogAtBoot = DEF_DEV_START_LOG_AT_BOOT;
   dev_startDisconnected = DEF_DEV_START_DISCONNECTED;
   dev_fanetFwd = DEF_DEV_FANET_FWD;
+  dev_logFanet = DEF_DEV_LOG_FANET;
   diag_systemEvents = DEF_DIAG_SYSTEM_EVENTS;
   diag_networkEvents = DEF_DIAG_NETWORK_EVENTS;
   diag_webRequests = DEF_DIAG_WEB_REQUESTS;
@@ -372,6 +373,7 @@ void Settings::retrieve() {
   dev_startLogAtBoot = leafPrefs.getBool("DEV_STARTLOG");
   dev_startDisconnected = leafPrefs.getBool("DEV_STARTDISCON");
   dev_fanetFwd = leafPrefs.getBool("DEV_FANET_FWD", DEF_DEV_FANET_FWD);
+  dev_logFanet = leafPrefs.getBool("DEV_LOG_FANET", DEF_DEV_LOG_FANET);
   diag_systemEvents = leafPrefs.getBool("DIAG_SYSTEM", DEF_DIAG_SYSTEM_EVENTS);
   diag_networkEvents = leafPrefs.getBool("DIAG_NETWORK", DEF_DIAG_NETWORK_EVENTS);
   diag_webRequests = leafPrefs.getBool("DIAG_WEB_REQ", DEF_DIAG_WEB_REQUESTS);
@@ -496,6 +498,7 @@ void Settings::save() {
   leafPrefs.putBool("DEV_STARTLOG", dev_startLogAtBoot);
   leafPrefs.putBool("DEV_STARTDISCON", dev_startDisconnected);
   leafPrefs.putBool("DEV_FANET_FWD", dev_fanetFwd);
+  leafPrefs.putBool("DEV_LOG_FANET", dev_logFanet);
   leafPrefs.putBool("DIAG_SYSTEM", diag_systemEvents);
   leafPrefs.putBool("DIAG_NETWORK", diag_networkEvents);
   leafPrefs.putBool("DIAG_WEB_REQ", diag_webRequests);

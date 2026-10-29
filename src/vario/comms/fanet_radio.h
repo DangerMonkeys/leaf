@@ -29,9 +29,6 @@ String FanetAddressToString(FANET::Address address);
 class FanetRadio : public etl::message_router<FanetRadio, GpsReading>,
                    public FANET::Connector,
                    public IMessageSource {
-  // Allow the webserver to access all of our private parts
-  friend void webserver_setup();
-
  public:
   // Keep singleton construction free of hardware access. FANET detection runs from setup(),
   // after Arduino and the shared SPI bus have been initialized.
@@ -61,6 +58,7 @@ class FanetRadio : public etl::message_router<FanetRadio, GpsReading>,
 
   // Returns the current state of the radio module
   FanetRadioState getState();
+  bool isDetected() const { return fanetDetected_; }
 
   /// @brief Changes the tracking mode between ground modes (null, flying)
   void setGroundTrackingMode(const FANET::GroundTrackingPayload::TrackingType& mode);
@@ -78,14 +76,8 @@ class FanetRadio : public etl::message_router<FanetRadio, GpsReading>,
   const FanetNeighbors::NeighborMap& getNeighborTable() const;
 
   // IMessageSource
-  void publishTo(etl::imessage_bus* bus) {
-    bus_ = bus;
-    neighbors.publishTo(bus_);
-  }
-  void stopPublishing() {
-    bus_ = nullptr;
-    neighbors.stopPublishing();
-  }
+  void publishTo(etl::imessage_bus* bus) { bus_ = bus; }
+  void stopPublishing() { bus_ = nullptr; }
 
   // Handle GPS Packet updates
   void on_receive(const GpsReading& msg);
@@ -140,6 +132,7 @@ class FanetRadio : public etl::message_router<FanetRadio, GpsReading>,
   // Fanet::FanetManager* manager = nullptr;
   etl::array<uint8_t, FANET_MAX_FRAME_SIZE> buffer = {0};  // Radio module buffer
   SX1262* radio = nullptr;
+  uint8_t appliedCodingRate_ = 0;  // Denominator (5 or 8); zero means unknown after a failed write.
 
   // RX Task:
   // Used to handle the process of any incoming packets destined for this

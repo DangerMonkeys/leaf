@@ -13,14 +13,16 @@ class DeveloperMenuPage : public SettingsMenuPage {
     cursor_max = 8;
   }
   void draw();
+  bool button_event(Button button, ButtonEvent state, uint8_t count) override;
 
  protected:
   void setting_change(Button dir, ButtonEvent state, uint8_t count);
 
  private:
-  static constexpr const char* labels[9] = {"Back",         "Fanet ReTX", "Debug Page",
-                                            "Run SelfTest", "Runtime:",   "Save Timing",
-                                            "StartBusLog",  "Detach HW",  "Log Now:"};
+  bool row_hidden(uint8_t row) const;
+  static constexpr const char* labels[9] = {
+      "Back",     "Fanet ReTX",  "Log FANET", "Debug Page", "Run SelfTest",
+      "Runtime:", "StartBusLog", "Detach HW", "Log Now:"};
 };
 
 #endif

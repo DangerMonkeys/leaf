@@ -25,6 +25,9 @@ namespace sim {
 
   class Board {
    public:
+    // Presence only, for exercising hardware-dependent menus/logging; no RF is emulated.
+    bool fanetPresent = false;
+
     // ------------------------------------------------------------------ GPIO
     void pinMode(uint16_t pin, uint8_t mode);
     void digitalWrite(uint16_t pin, uint8_t value);

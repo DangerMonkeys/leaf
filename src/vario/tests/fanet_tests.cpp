@@ -18,7 +18,6 @@ void test_fanet_neighbors_empty_distance(etl::imessage_bus* bus) {
   Serial.println("\n=== Testing FANET Non-Location Packet Handling (Issue #306) ===");
 
   FanetNeighbors fanetNeighbors;
-  fanetNeighbors.publishTo(bus);
 
   // Create test neighbor
   FANET::Address testAddress(0x12, 0x3456);
