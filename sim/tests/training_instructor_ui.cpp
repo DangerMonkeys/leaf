@@ -135,6 +135,23 @@ int main() {
     });
   };
   rosterScreen("sim/build-tests/instructor-roster.png", 3000);
+  InstructorBattery battery;
+  for (bool selected : {false, true}) {
+    nav.row = selected ? 4 : 0;
+    for (bool charging : {false, true})
+      for (uint8_t percent : {uint8_t(0), uint8_t(10), uint8_t(50), uint8_t(90), uint8_t(100)}) {
+        battery.valid = true; battery.charging = charging; battery.percent = percent;
+        drawInstructorRoster(bounds, receiver, 3000, nav, units, true, true, 3, nullptr, &battery);
+      }
+  }
+  battery.valid = true; battery.charging = true; battery.percent = 50;
+  screen("sim/build-tests/instructor-battery-charging.png", [&] {
+    drawInstructorRoster(bounds, receiver, 3000, nav, units, true, true, 3, nullptr, &battery);
+  });
+  battery.charging = false;
+  screen("sim/build-tests/instructor-battery-half.png", [&] {
+    drawInstructorRoster(bounds, receiver, 3000, nav, units, true, true, 3, nullptr, &battery);
+  });
   nav.row = 4;
   rosterScreen("sim/build-tests/instructor-settings-cursor.png", 3000);
   units = {true, true, true};

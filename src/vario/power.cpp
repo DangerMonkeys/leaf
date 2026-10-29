@@ -43,9 +43,7 @@ Power power;  // struct for battery-state and on-state variables
 #define BATT_SENSE 1  // INPUT ADC
 
 // Battery Threshold values
-#define BATT_FULL_MV 4080   // mV full battery on which to base % full (100%)
-#define BATT_EMPTY_MV 3250  // mV empty battery on which to base % full (0%)
-#define BATT_SHUTDOWN_MV 3200
+#define BATT_SHUTDOWN_MV battery_characterization::SHUTDOWN_MV
 // mV at which to shutdown the system to prevent battery over-discharge
 // Note: the battery apparently also has over discharge protection, but we don't fully trust it,
 // plus we want to shutdown while we have power to save logs etc
@@ -421,39 +419,19 @@ void Power::readBatteryState() {
 #endif
 
   // Test internal calibration of ADC:
-  info_.batteryMV = analogReadMilliVolts(BATT_SENSE) * 69 / 41;
+  info_.batteryMV = battery_characterization::voltageFromAdc(analogReadMilliVolts(BATT_SENSE));
 
   // The ISET current measurement is available on v3.2.6+; earlier variants estimate the charge
   // current from terminal voltage instead. Never compensate the raw voltage used for shutdown.
-  const uint16_t percentMV =
-      battery_characterization::voltageForPercent(info_.batteryMV, info_.charging,
+  info_.batteryPercent =
+      battery_characterization::percentForReading(info_.batteryMV, info_.charging,
 #ifdef ISET
                                                   true,
 #else
                                                   false,
 #endif
-                                                  info_.chargeCurrentMA);
+                                                  info_.chargeCurrentMA, batteryPercentLast_);
 
-  if (percentMV < BATT_EMPTY_MV) {
-    info_.batteryPercent = 0;
-  } else if (percentMV > BATT_FULL_MV) {
-    info_.batteryPercent = 100;
-  } else {
-    info_.batteryPercent = 100 * (percentMV - BATT_EMPTY_MV) / (BATT_FULL_MV - BATT_EMPTY_MV);
-  }
-
-  // use a 2% hysteresis on battery% to avoid rapid fluctuations as ADC values change
-  if (info_.charging) {  // don't let % go down (within 2%) when charging
-    if (info_.batteryPercent < batteryPercentLast_ &&
-        info_.batteryPercent >= batteryPercentLast_ - 2) {
-      info_.batteryPercent = batteryPercentLast_;
-    }
-  } else {  // don't let % go up (within 2%) when discharging
-    if (info_.batteryPercent > batteryPercentLast_ &&
-        info_.batteryPercent <= batteryPercentLast_ + 2) {
-      info_.batteryPercent = batteryPercentLast_;
-    }
-  }
   batteryPercentLast_ = info_.batteryPercent;
 }
 

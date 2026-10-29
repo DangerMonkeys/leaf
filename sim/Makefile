@@ -379,7 +379,7 @@ $(BUILD)/training_instructor_test: $(SIM)/tests/training_instructor_link.cpp $(R
 test-training-instructor: $(BUILD)/training_instructor_test
 	@$<
 
-$(BUILD)/training_instructor_ui_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/training_instructor_ui.cpp $(ROOT)/src/vario/training/pilot_name.h $(ROOT)/src/vario/training/instructor_ui.h $(ROOT)/src/vario/training/instructor_instruments.h $(ROOT)/src/vario/training/instructor_screen.h $(ROOT)/src/vario/training/instructor_controls.h $(ROOT)/src/vario/training/instructor_pairing_screen.h $(ROOT)/src/vario/training/instructor_link.h
+$(BUILD)/training_instructor_ui_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/training_instructor_ui.cpp $(ROOT)/src/vario/training/pilot_name.h $(ROOT)/src/vario/training/instructor_ui.h $(ROOT)/src/vario/training/instructor_instruments.h $(ROOT)/src/vario/training/instructor_screen.h $(ROOT)/src/vario/training/instructor_battery.h $(ROOT)/src/vario/battery_characterization.h $(ROOT)/src/vario/training/instructor_controls.h $(ROOT)/src/vario/training/instructor_pairing_screen.h $(ROOT)/src/vario/training/instructor_link.h
 	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/training_instructor_ui.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
 
 test-training-instructor-ui: $(BUILD)/training_instructor_ui_test
@@ -409,4 +409,12 @@ $(BUILD)/training_broadcast_test: $(SIM)/tests/training_broadcast.cpp $(ROOT)/sr
 	@$(CXX) -std=c++17 -Wall -Wextra -Werror -I$(ROOT)/src/vario $< $(ROOT)/src/vario/training/protocol.cpp -o $@
 
 test-training-broadcast: $(BUILD)/training_broadcast_test
+	@$<
+
+.PHONY: test-training-battery
+$(BUILD)/training_battery_test: $(SIM)/tests/training_instructor_battery.cpp $(ROOT)/src/vario/training/instructor_battery.h $(ROOT)/src/vario/battery_characterization.h
+	@mkdir -p $(BUILD)
+	@$(CXX) -std=c++17 -Wall -Wextra -Werror -I$(ROOT)/src/vario $(SIM)/tests/training_instructor_battery.cpp -o $@
+
+test-training-battery: $(BUILD)/training_battery_test
 	@$<

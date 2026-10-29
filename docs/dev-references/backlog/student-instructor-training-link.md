@@ -167,7 +167,17 @@ Build two firmware loads from shared protocol and Leaf components:
   presses until release so one hold cannot immediately reverse power state or delete a link.
   Simulator checks cover button debounce/hold/release/rollover and actual display glyph bounds.
   USB and battery shutdown/restart, BLE disappearance/reconnect and saved links/volume still need
-  verification on the new binary; full battery protection/charging UI remain separate work.
+  verification on the new binary. The 2026-10-28 revision commits completed holds before
+  processing release, independently debounces center, requires a clean release before rearming,
+  and draws the off state/releases the latch before peripheral teardown. Physical confirmation
+  of the reported intermittent shutdown issue remains pending.
+- [x] Selecting an empty main-page slot opens discovery directly and prefers that exact slot;
+  existing students retain their slot, and discovery can never overwrite another student.
+- [x] Add the normal Leaf battery icon at lower right, with charging/full-charge glyphs, 1-Hz ADC
+  and charger-status sampling, shared compensated percentage/hysteresis calculations and raw-voltage
+  low-battery shutdown. Support direct v3.2.5 charger pins and the v3.2.6/v3.2.7 expander/current-sense
+  paths, with bounded fault handling. Physical battery/charging qualification and a full charging
+  page remain separate work.
 
 - [x] Add button-based discovery and linking compatible with the student's Leaf Labs menu: show
   up to four fresh candidate IDs, require explicit instructor selection plus student confirmation,

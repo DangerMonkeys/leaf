@@ -163,6 +163,17 @@ int main() {
   instructor.sent(80003, 700);
   assert(!instructor.control(control, 80702, 42, 22));
   assert(instructor.control(control, 80703, 42, 22));
+  // Clicking a specific empty row must pair there, even if an earlier row is also free.
+  InstructorRoster empty; empty.group = 9001;
+  instructor.open(90000, 3);
+  assert(instructor.hello(hello(555), 90001));
+  assert(instructor.choose(empty, 90002) && instructor.slot() == 3);
+  instructor.open(91000, 3);
+  empty.ids[3] = 777; // Occupancy changed during discovery: never overwrite it.
+  assert(instructor.hello(hello(555), 91001));
+  assert(!instructor.choose(empty, 91002));
+  empty.ids[1] = 555;
+  assert(instructor.choose(empty, 91003) && instructor.slot() == 1); // Existing binding wins.
   auto invalid = full;
   invalid.ids[3] = invalid.ids[0];
   assert(!invalid.valid());

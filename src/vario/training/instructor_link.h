@@ -37,11 +37,12 @@ namespace training {
     };
     Candidate candidates[STUDENTS];
     uint8_t selection = 0;
-    void open(uint32_t now) {
+    void open(uint32_t now, uint8_t preferredSlot = STUDENTS) {
       for (auto& c : candidates) c = {};
       selection = 0;
       phase_ = Phase::Discovering;
       openedAt_ = now;
+      preferredSlot_ = preferredSlot < STUDENTS ? preferredSlot : STUDENTS;
     }
     void cancel() { phase_ = Phase::Closed; }
     bool active(uint32_t now) const {
@@ -99,7 +100,11 @@ namespace training {
       if (phase(now) != Phase::Discovering || !roster.valid() || !roster.group ||
           selection >= STUDENTS || !candidates[selection].fresh(now))
         return false;
-      const int slot = roster.availableSlot(candidates[selection].id);
+      const int existing = roster.slotFor(candidates[selection].id);
+      const int slot = existing >= 0 ? existing
+                       : preferredSlot_ < STUDENTS
+                           ? (roster.ids[preferredSlot_] ? -1 : int(preferredSlot_))
+                           : roster.availableSlot(candidates[selection].id);
       if (slot < 0) return false;
       peer_ = candidates[selection];
       group_ = roster.group;
@@ -158,6 +163,6 @@ namespace training {
     Phase phase_ = Phase::Closed;
     Candidate peer_;
     uint32_t openedAt_ = 0, sentAt_ = 0, group_ = 0, retryMs_ = 500;
-    uint8_t slot_ = 0;
+    uint8_t slot_ = 0, preferredSlot_ = STUDENTS;
   };
 }  // namespace training

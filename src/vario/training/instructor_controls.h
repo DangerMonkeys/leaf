@@ -12,36 +12,43 @@ namespace training {
     };
     void begin(uint8_t value, uint32_t now) {
       raw_ = stable_ = value;
-      changed_ = centerAt_ = now;
+      changed_ = centerChanged_ = centerAt_ = now;
       consumed_ =
           (value & CENTER) != 0;  // Release the button used to boot before accepting a hold.
     }
     Event update(uint8_t value, uint32_t now) {
       Event event;
-      if (value != raw_) {
-        raw_ = value;
-        changed_ = now;
+      // Debounce center independently: direction contact chatter must not cancel a power hold.
+      if ((value ^ raw_) & ~CENTER) changed_ = now;
+      if ((value ^ raw_) & CENTER) centerChanged_ = now;
+      raw_ = value;
+      const uint8_t directions = value & ~CENTER;
+      if (directions != (stable_ & ~CENTER) && uint32_t(now - changed_) >= 20) {
+        event.pressed = directions & ~stable_;
+        stable_ = (stable_ & CENTER) | directions;
       }
-      if (value != stable_ && uint32_t(now - changed_) >= 20) {
-        event.pressed = value & ~stable_;
-        const bool released = (stable_ & CENTER) && !(value & CENTER);
-        stable_ = value;
-        if (event.pressed & CENTER) {
-          centerAt_ = now;
-          consumed_ = false;
-        }
-        if (released) {
-          // Releasing an interrupted power hold cancels it; do not select a menu item.
-          event.click = !consumed_ && uint32_t(now - centerAt_) < PREVIEW_MS;
-          consumed_ = false;
-        }
-      }
+      // Commit a completed hold before handling release. The preview uses this same debounced
+      // state; handling release first could cancel a hold after its progress bar reached full.
       if ((stable_ & CENTER) && !consumed_ && uint32_t(now - centerAt_) >= HOLD_MS) {
         consumed_ = true;
         event.power = true;
       }
+      const bool down = value & CENTER;
+      if (down != bool(stable_ & CENTER) && uint32_t(now - centerChanged_) >= (down ? 20U : 80U)) {
+        if (down) {
+          stable_ |= CENTER;
+          event.pressed |= CENTER;
+          centerAt_ = now;
+          consumed_ = false;
+        } else {
+          stable_ &= ~CENTER;
+          event.click = !consumed_ && uint32_t(now - centerAt_) < PREVIEW_MS;
+          consumed_ = false;
+        }
+      }
       return event;
     }
+    void consumePress() { consumed_ = true; }
     bool centerDown() const { return stable_ & CENTER; }
     uint32_t holding(uint32_t now) const {
       return centerDown() && !consumed_ ? uint32_t(now - centerAt_) : 0;
@@ -49,7 +56,7 @@ namespace training {
 
    private:
     uint8_t raw_ = 0, stable_ = 0;
-    uint32_t changed_ = 0, centerAt_ = 0;
+    uint32_t changed_ = 0, centerChanged_ = 0, centerAt_ = 0;
     bool consumed_ = false;
   };
   enum class InstructorPage : uint8_t { Roster, Settings, Remove };
@@ -87,9 +94,9 @@ namespace training {
       page = InstructorPage::Remove;
       confirmation = 0;
     }
-    InstructorAction select() {
+    InstructorAction select(bool assigned = true) {
       if (page == InstructorPage::Roster) {
-        if (row < SETTINGS_ROW) return InstructorAction::Focus;
+        if (row < SETTINGS_ROW) return assigned ? InstructorAction::Focus : InstructorAction::Pair;
         page = InstructorPage::Settings;
         return InstructorAction::None;
       }

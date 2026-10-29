@@ -1,4 +1,5 @@
 #include "ui/display/display_fields.h"
+#include "battery_characterization.h"
 
 #include <Arduino.h>
 #include <U8g2lib.h>
@@ -712,14 +713,7 @@ void display_battIcon(uint8_t x, uint8_t y, bool vertical) {
       ; batt charging (full)
   */
   const auto& info = power.info();
-  char battIcon = '0' + (info.batteryPercent + 5) / 10;
-
-  if (info.charging) {
-    if (info.batteryPercent >= 100)
-      battIcon = ';';
-    else
-      battIcon = '/';
-  }
+  const char battIcon = battery_characterization::icon(info.batteryPercent, info.charging);
 
   u8g2.setCursor(x, y);
   if (vertical)

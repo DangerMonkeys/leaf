@@ -45,6 +45,7 @@ namespace {
   training::InstructorButtons controls;
   training::InstructorNavigation navigation;
   training::InstructorUnits units;
+  training::InstructorBattery battery;
   char notice[20]{};
   uint32_t noticeAt = 0;
   void inform(const char* text) {
@@ -224,7 +225,7 @@ namespace {
     lastGps = millis() - 1000;
     gpsSentence = 0;
   }
-  void pair() {
+  void pair(uint8_t preferredSlot = training::STUDENTS) {
     if (!config.group) {
       auto r = roster();
       do {
@@ -238,7 +239,7 @@ namespace {
       return;
     }
     navigation.page = training::InstructorPage::Roster;
-    enrollment.open(millis());
+    enrollment.open(millis(), preferredSlot);
     inform("Searching students");
   }
   void chooseStudent() {
@@ -325,6 +326,60 @@ namespace {
       }
     }
   }
+  void initBattery() {
+    pinMode(1, INPUT);
+    if (!POWER_CHARGE_GOOD_IOEX) pinMode(POWER_CHARGE_GOOD, INPUT_PULLUP);
+#ifdef ISET
+    pinMode(ISET, INPUT);
+#endif
+    // Match normal Leaf's 500-mA input limit on boards with direct charge-control pins.
+    if (!POWER_CHARGE_I2_IOEX) {
+      digitalWrite(POWER_CHARGE_I2, LOW);
+      pinMode(POWER_CHARGE_I2, OUTPUT);
+    }
+    if (!POWER_CHARGE_I1_IOEX) {
+      digitalWrite(POWER_CHARGE_I1, HIGH);
+      pinMode(POWER_CHARGE_I1, OUTPUT);
+    }
+  }
+  void updateBattery(uint32_t now) {
+    if (!battery.due(now)) return;
+    bool chargingKnown = true, charging = false, usbKnown = false, usb = false;
+    if (POWER_CHARGE_GOOD_IOEX) {
+      chargingKnown = speakerControlReady;
+      if (chargingKnown) {
+        const int port = ioExpander.read8(POWER_CHARGE_GOOD / 8);
+        if (ioExpander.lastError() == 0) {
+          charging = !(port & (1U << (POWER_CHARGE_GOOD % 8)));
+#if POWER_GOOD_IOEX
+          if (POWER_GOOD / 8 == POWER_CHARGE_GOOD / 8) {
+            usbKnown = true;
+            usb = !(port & (1U << (POWER_GOOD % 8)));
+          }
+#endif
+        } else {
+          chargingKnown = speakerControlReady = false;
+          Serial.println("INSTRUCTOR: board battery status unavailable");
+        }
+      }
+    } else {
+      charging = !digitalRead(POWER_CHARGE_GOOD);
+    }
+    uint16_t currentMA = 0;
+#ifdef ISET
+    currentMA = analogReadMilliVolts(ISET) * 400 / 1100;
+#endif
+    battery.sample(now, analogReadMilliVolts(1), chargingKnown, charging,
+#ifdef ISET
+                   true,
+#else
+                   false,
+#endif
+                   currentMA, usbKnown, usb);
+#ifdef LED_PIN
+    digitalWrite(LED_PIN, powered && battery.usbKnown && battery.usb ? LOW : HIGH);
+#endif
+  }
   void commands() {
     if (const char* line = console.read()) {
       uint32_t value = 0;
@@ -386,6 +441,13 @@ namespace {
       return;
     }
     powered = false;
+    controls.consumePress();
+    // Show the committed state and drop the latch before potentially slow peripheral teardown.
+    // Holding the physical button still supplies power; releasing it can now switch off reliably.
+    lcd.clearBuffer();
+    training::drawInstructorPower(lcd, false, 0);
+    lcd.sendBuffer();
+    gpio_set_level(GPIO_NUM_48, 0);
     enrollment.cancel();
     receiver.cancel();
     climbAudio.reset();
@@ -405,7 +467,7 @@ namespace {
     lcd.sendBuffer();
     digitalWrite(21, LOW);  // Backlight and status LED off.
 #ifdef LED_PIN
-    digitalWrite(LED_PIN, LOW);
+    digitalWrite(LED_PIN, HIGH);
 #endif
     Serial.println("INSTRUCTOR: power off; hold center 3s to restart on USB");
     // Battery operation ends here once the user releases the physical power button.
@@ -437,7 +499,8 @@ namespace {
         config.store.putBool("ui_climb_fpm", units.climbFpm);
         break;
       case Action::Pair:
-        pair();
+        pair(navigation.page == training::InstructorPage::Roster ? navigation.row
+                                                                 : training::STUDENTS);
         break;
       case Action::AskRemove:
         if (receiver.students[receiver.focus].id)
@@ -452,6 +515,10 @@ namespace {
       default:
         break;
     }
+  }
+  training::InstructorAction selectedAction() {
+    return navigation.select(navigation.row >= training::STUDENTS ||
+                             receiver.students[navigation.row].id != 0);
   }
   void buttons() {
     const auto event = controls.update(readButtons(), millis());
@@ -478,11 +545,11 @@ namespace {
     if (pressed & 2) navigation.move(1);
     if (pressed & 4) {
       if (navigation.page == training::InstructorPage::Settings && navigation.setting < 4)
-        uiAction(navigation.select(), -1, false);
+        uiAction(selectedAction(), -1, false);
       else
         navigation.back();
     } else if ((pressed & 8) || event.click) {
-      uiAction(navigation.select(), 1, event.click);
+      uiAction(selectedAction(), 1, event.click);
     }
   }
   void display() {
@@ -518,7 +585,8 @@ namespace {
     } else {
       training::drawInstructorRoster(
           lcd, receiver, now, navigation, units, radio.ready(), server->getConnectedCount(),
-          muted ? 0 : volume, notice[0] && uint32_t(now - noticeAt) < 2500 ? notice : nullptr);
+          muted ? 0 : volume, notice[0] && uint32_t(now - noticeAt) < 2500 ? notice : nullptr,
+          &battery);
     }
     lcd.sendBuffer();
   }
@@ -556,6 +624,8 @@ void setup() {
   // Always start audible: medium minimum, retaining a saved high setting.
   if (volume < 2 || volume > 3) volume = 2;
   initBoardControls();
+  initBattery();
+  updateBattery(millis());
   applyBoardVolume();
   loadRoster();
   loadNames();
@@ -591,6 +661,11 @@ void setup() {
 }
 void loop() {
   buttons();
+  updateBattery(millis());
+  if (powered && battery.empty()) {
+    Serial.println("INSTRUCTOR: low battery shutdown");
+    togglePower();
+  }
   if (!powered) {
     display();
     delay(5);

@@ -34,4 +34,22 @@ namespace battery_characterization {
     return batteryMV > riseMV ? static_cast<uint16_t>(batteryMV - riseMV) : 0;
   }
 
+  constexpr uint16_t FULL_MV = 4080, EMPTY_MV = 3250, SHUTDOWN_MV = 3200;
+  constexpr uint16_t voltageFromAdc(uint32_t adcMV) { return adcMV * 69 / 41; }
+  constexpr uint8_t percentForReading(uint16_t batteryMV, bool charging, bool hasCurrentSense,
+                                      uint16_t measuredCurrentMA, uint8_t previous) {
+    const uint16_t mv = voltageForPercent(batteryMV, charging, hasCurrentSense, measuredCurrentMA);
+    const uint8_t percent = mv < EMPTY_MV  ? 0
+                            : mv > FULL_MV ? 100
+                                           : 100 * (mv - EMPTY_MV) / (FULL_MV - EMPTY_MV);
+    // Match Leaf's directional 2% hysteresis, including the endpoints.
+    if (charging ? (percent < previous && int(percent) >= int(previous) - 2)
+                 : (percent > previous && int(percent) <= int(previous) + 2))
+      return previous;
+    return percent;
+  }
+  constexpr char icon(uint8_t percent, bool charging) {
+    return charging ? (percent >= 100 ? ';' : '/') : '0' + (percent + 5) / 10;
+  }
+
 }  // namespace battery_characterization

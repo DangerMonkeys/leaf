@@ -1,11 +1,13 @@
 #pragma once
 #include <stdio.h>
+#include "instructor_battery.h"
 #include "instructor_instruments.h"
 namespace training {
   template <typename Display>
   void drawInstructorRoster(Display& lcd, const Receiver& receiver, uint32_t now,
                             const InstructorNavigation& navigation, const InstructorUnits& units,
-                            bool radioReady, bool phone, uint8_t volume, const char* notice) {
+                            bool radioReady, bool phone, uint8_t volume, const char* notice,
+                            const InstructorBattery* battery = nullptr) {
     drawInstructorInstruments(lcd, receiver, now, units, radioReady, phone, notice);
     char text[24];
     for (uint8_t i = 0; i < STUDENTS; ++i) {
@@ -42,6 +44,12 @@ namespace training {
     instructorRow(lcd, 189, navigation.row == InstructorNavigation::SETTINGS_ROW);
     lcd.drawGlyph(3, 189, 151);
     lcd.drawStr(20, 189, "Settings");
+    if (battery && battery->valid) {
+      lcd.setFont(leaf_icons);
+      const char glyph = battery->icon();
+      const char label[] = {glyph, 0};
+      lcd.drawGlyph(94 - lcd.getStrWidth(label), 189, glyph);
+    }
     lcd.setDrawColor(1);
   }
   template <typename Display>

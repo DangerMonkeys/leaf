@@ -82,8 +82,12 @@ so their absence or failure does not gate startup.
 
 Board-control transactions use a 10 ms timeout. An expander communication fault is nonfatal,
 is reported as unavailable volume, and disables further gain writes rather than retrying on the
-RF/audio loop. PWM muting remains independent of expander access. Full battery protection,
-charge-state reporting and full power-management qualification remain outstanding; the prototype
+RF/audio loop. PWM muting remains independent of expander access. Battery voltage and charging status are now sampled once per second, using the same ADC
+scaling, charging compensation, percentage hysteresis and icon glyphs as normal Leaf.
+The lower-right main-page battery icon shows local instructor charge, with the charging bolt.
+The raw 3,200-mV threshold triggers shutdown; compensated display voltage never does.
+Charging-state reads share one bounded expander transaction; failed I2C is not repeatedly polled.
+Battery and full power-management hardware qualification remain outstanding; the prototype
 is not the normal Leaf power-management implementation. Basic instructor power control is now
 implemented independently of local sensors: hold center for three seconds in any screen to mute
 PWM/gain, cancel pairing and focus announcements, put the radio to sleep, stop Bluetooth, turn off the LED and
@@ -735,3 +739,51 @@ It was flashed and hash-verified in both app slots on `f0:f5:bd:56:16:a0`, prese
 The operator confirmed the flash succeeded and swapped boards after completion. A console
 startup check on the flashed board was therefore not completed; the subsequently enumerated
 board was not flashed. Device logs are under `.pio/training-instructor-3-2-5-2026-10-27-*`.
+
+
+### Instructor power gesture, empty-slot pairing and battery status (2026-10-28)
+
+Completed center holds are committed before a debounced release is handled. Previously a release
+processed first could discard the power event even after the displayed hold reached its deadline.
+Center debounce is independent of direction contacts; an 80-ms clean release is required before
+another center gesture. Shutdown immediately displays the committed off state and releases the
+regulator latch before radio/BLE teardown, so slow cleanup cannot hold the battery power latch on.
+Interrupted holds still cancel without selecting a menu item, and boot/continuing holds are consumed.
+
+Selecting an unassigned main-page row now opens discovery and prefers that exact slot for new
+students. Re-pairing an existing student retains its original slot, and an occupied target is never
+overwritten. The settings-menu Add student option retains its first-available-slot behavior.
+
+The instructor now samples battery ADC and charger state once per second, including USB-off mode.
+The main-page lower-right icon uses normal Leaf glyphs and inverts with the Settings cursor. The
+percentage, charging compensation, hysteresis, ADC scaling and icons are shared with the normal
+firmware; no local flight sensors or full normal power-manager initialization are introduced.
+The normal raw-voltage 3,200-mV shutdown threshold is also applied. Failed expander reads stop
+subsequent I2C status/gain transactions, while ADC readings continue without a charging claim.
+
+Verification:
+
+- Formatter and diff whitespace checks passed. Power-button regression tests cover release at the
+  hold deadline, interrupted holds, held-through-shutdown/boot behavior, center/direction chatter,
+  a clean release before rearming and millis rollover. Enrollment tests cover selected-slot
+  assignment, occupancy changes during discovery and existing-student slot reuse.
+- Battery tests cover direct/current-sense hardware compensation, ADC/low-voltage boundaries,
+  charging/full-charge glyphs, unavailable charger status, 1-Hz scheduling and rollover. An
+  exhaustive comparison across 2,800-4,500 mV, both charge/sense modes and every previous percentage
+  confirms that the shared percentage helper preserves the previous production calculation.
+  The existing battery-characterization test and battery AddressSanitizer/UndefinedBehaviorSanitizer
+  checks passed.
+- Rendered instructor screen tests passed all glyph/framebuffer bounds, battery states and inverted
+  Settings selection. The half-full and charging previews were visually inspected for overlap.
+- All instructor builds passed: v3.2.5 uses 36,776 static RAM / 692,472 reported flash bytes;
+  v3.2.6 and v3.2.7 each use 36,776 / 692,756. The final v3.2.5 image was rebuilt after the last
+  source correction. These are candidate builds, not installed images or peak runtime measurements.
+- Normal v3.2.6 passed with 104,572 static RAM bytes (unchanged) and 2,394,228 reported flash bytes.
+  Shared battery helpers add no persistent state to the normal/student firmware.
+- The operator identified the connected Leaf as another device and requested that it be left alone.
+  No device was flashed. Actual battery accuracy, charger transitions, radio/audio timing under
+  periodic ADC/status work, and the reported intermittent shutdown symptom remain hardware checks.
+
+Logs: `.pio/instructor-ui-power-battery-tests-final.log`,
+`.pio/instructor-ui-power-battery-builds.log`,
+`.pio/instructor-ui-power-battery-3-2-5-final.log`.
