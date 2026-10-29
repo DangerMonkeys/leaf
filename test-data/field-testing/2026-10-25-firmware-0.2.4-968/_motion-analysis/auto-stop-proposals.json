@@ -1,0 +1,226 @@
+[
+  {
+    "path": "hardware-3.2.3/Racoon/tracks/2026-10-25-XLV-000-01.igc",
+    "label": "Racoon",
+    "launch": 50650,
+    "land": 52775,
+    "sha256": "ee0d055e29029cdf2779f8860169bde2ff429191d5a469db602b45a8cdce5d9d",
+    "file_end_local": "14:58:42",
+    "recorded_end_cause": "MANUAL",
+    "sample_count": 3269,
+    "candidates": {
+      "10": {
+        "earliest": {
+          "local": "14:40:10",
+          "seconds": 52810,
+          "ms": 3350594
+        },
+        "latest": {
+          "local": "14:40:10",
+          "seconds": 52810,
+          "ms": 3350594
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 0
+      },
+      "15": {
+        "earliest": {
+          "local": "14:40:15",
+          "seconds": 52815,
+          "ms": 3355594
+        },
+        "latest": {
+          "local": "14:40:15",
+          "seconds": 52815,
+          "ms": 3355594
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 0
+      }
+    }
+  },
+  {
+    "path": "hardware-3.2.3/RedStrap/tracks/2026-10-25-XLV-000-01.igc",
+    "label": "RedStrap",
+    "launch": 50650,
+    "land": 52775,
+    "sha256": "bbfb834743fd1b8bc70f3bf87ad9100a0e97eebe1e1106deaf331dd2bbea198a",
+    "file_end_local": "14:42:32",
+    "recorded_end_cause": "MANUAL",
+    "sample_count": 2302,
+    "candidates": {
+      "10": {
+        "earliest": {
+          "local": "14:40:00",
+          "seconds": 52800,
+          "ms": 3340394
+        },
+        "latest": {
+          "local": "14:40:00",
+          "seconds": 52800,
+          "ms": 3340394
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 0
+      },
+      "15": {
+        "earliest": {
+          "local": "14:40:05",
+          "seconds": 52805,
+          "ms": 3345394
+        },
+        "latest": {
+          "local": "14:40:05",
+          "seconds": 52805,
+          "ms": 3345394
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 0
+      }
+    }
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-17.igc",
+    "label": "BlueGreen326",
+    "launch": 50650,
+    "land": 52775,
+    "sha256": "974eab459c7f269caff506eaa8459ac83a2ba3f64ed02e5af0a5fdfc68ff7e8d",
+    "file_end_local": "14:41:30",
+    "recorded_end_cause": "MANUAL",
+    "sample_count": 2235,
+    "candidates": {
+      "10": {
+        "earliest": {
+          "local": "14:40:19",
+          "seconds": 52819,
+          "ms": 3490249
+        },
+        "latest": {
+          "local": "14:40:19",
+          "seconds": 52819,
+          "ms": 3490249
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 0
+      },
+      "15": {
+        "earliest": {
+          "local": "14:40:24",
+          "seconds": 52824,
+          "ms": 3495249
+        },
+        "latest": {
+          "local": "14:40:24",
+          "seconds": 52824,
+          "ms": 3495249
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 0
+      }
+    }
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-10-25-XLV-000-02.igc",
+    "label": "Bethany",
+    "launch": 48394,
+    "land": 49299,
+    "sha256": "3365275ae7dbdf874761e55d05295125375a6a9b78f3dae4d73483886e7a6c8e",
+    "file_end_local": "13:41:53",
+    "recorded_end_cause": "MANUAL",
+    "sample_count": 916,
+    "candidates": {
+      "10": {
+        "earliest": null,
+        "latest": null,
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 0
+      },
+      "15": {
+        "earliest": null,
+        "latest": null,
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 0
+      }
+    }
+  },
+  {
+    "path": "unknown hardware/2026-10-25-XLV-000-01 (1).igc",
+    "label": "Bowen",
+    "launch": 50590,
+    "land": 53415,
+    "sha256": "37ec3c3a6fe09a82ea615aea993489e03332787eb632cf88744768ba469c729f",
+    "file_end_local": "15:24:00",
+    "recorded_end_cause": "POWER_OFF",
+    "sample_count": 4836,
+    "candidates": {
+      "10": {
+        "earliest": {
+          "local": "14:50:24",
+          "seconds": 53424,
+          "ms": 4012187
+        },
+        "latest": {
+          "local": "14:50:24",
+          "seconds": 53424,
+          "ms": 4012187
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 8
+      },
+      "15": {
+        "earliest": {
+          "local": "14:50:29",
+          "seconds": 53429,
+          "ms": 4017187
+        },
+        "latest": {
+          "local": "14:50:29",
+          "seconds": 53429,
+          "ms": 4017187
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 8
+      }
+    }
+  },
+  {
+    "path": "unknown hardware/2026-10-25-XLV-000-02.igc",
+    "label": "Scott",
+    "launch": 50595,
+    "land": 53405,
+    "sha256": "858c7b4f5a481f6c7783269832269fa489bde073f39a0c7c50bae7b09b2a0b29",
+    "file_end_local": "14:50:24",
+    "recorded_end_cause": "AUTO",
+    "sample_count": 2805,
+    "candidates": {
+      "10": {
+        "earliest": {
+          "local": "14:50:15",
+          "seconds": 53415,
+          "ms": 5249397
+        },
+        "latest": {
+          "local": "14:50:15",
+          "seconds": 53415,
+          "ms": 5249397
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 1
+      },
+      "15": {
+        "earliest": {
+          "local": "14:50:20",
+          "seconds": 53420,
+          "ms": 5254397
+        },
+        "latest": {
+          "local": "14:50:20",
+          "seconds": 53420,
+          "ms": 5254397
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 1
+      }
+    }
+  }
+]

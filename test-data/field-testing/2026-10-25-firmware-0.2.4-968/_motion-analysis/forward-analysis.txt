@@ -1,0 +1,129 @@
+Forward start analysis
+
+Planned climb path: >=3m pressure-altitude gain within 3s AND mean climb >0.5m/s. No firmware changes.
+
+Speed from exact STARTDATA prehistory and GL diagnostics during recording. Time-weighted trapezoidal averages at exact rolling-window endpoints. Net displacement from a separate stream of all valid recorded B positions, not integrated reported speed. This preserves the first B fix even when speed-check de-duplication keeps STARTDATA for the same second. Missing/invalid speed or gaps >2s invalidate a window. No pre-start positions are present, so early positional detection is censored.
+
+{'group': 'hiking', 'max_3s_mean_mph': 4.316541398234311, 'max_3s_distance_when_mean_at_least_5mph_m': None}
+{'group': 'launch ground', 'max_3s_mean_mph': 2.4338333333333333, 'max_3s_distance_when_mean_at_least_5mph_m': None}
+{'group': 'Bethany anomaly', 'max_3s_mean_mph': 7.939872245936986, 'max_3s_distance_when_mean_at_least_5mph_m': 8.35509072025253}
+{'group': 'post-landing', 'max_3s_mean_mph': 3.2853137675972324, 'max_3s_distance_when_mean_at_least_5mph_m': None}
+
+Candidate: time-weighted mean fresh ground speed >=5mph over the last 3s AND net GPS displacement >=5m over those SAME 3s; require these combined window conditions for 1 additional elapsed second (normally two consecutive checks). This is an alternative OR path to climb and the future larger fallback bubble. A low individual reading changes the average rather than clearing a consecutive-speed timer.
+
+The standalone speed average rejects hiking and launch-area motion, but does not reject the Bethany 01 reported-speed anomaly. Its reported speed is higher than some legitimate headwind launches, so a simple lower monotone speed boundary cannot separate those cases quickly. Position corroboration supplies the missing evidence.
+
+The confirmed combined candidate rejects all classified ground windows for which it can be evaluated in the provided recordings. Lower speed thresholds are fitted to a small sample; running or faster walking remains a possible trigger. Freshness, position quality and velocity/position consistency deserve explicit handling. The 1Hz IGC positions are quantized, and idle positions before log start are absent.
+
+Ideal straight motion at 5mph travels 6.71m in 3s, so it satisfies the two window limits; 6mph travels 8.05m. The 1s confirmation makes a cold sustained 5mph launch detect at around 4s. These are calculations, not strong-headwind flight validations. Turning tightly or hovering reduces net displacement and may leave detection to the separate climb / fallback paths. With a prefilled idle history, higher speeds can satisfy the mean and displacement before 3s of flight; a separate 3s launch-observation floor, if desired, must be specified rather than assumed.
+
+Raw maximum hiking speed including prehistory is 4.74mph. The maximum 3s hiking mean is listed above. Including the first B fix reveals an initial Bethany-anomaly position excursion reaching 8.36m in a 3s window while reported speed is elevated. Speed>=5mph plus displacement>=5m alone therefore DOES trigger that anomaly. The extra confirmation rejects this isolated excursion; it does not reset merely because an individual speed sample drops below 5mph. A previous calculation that omitted the first fix understated this excursion.
+
+Old reference: every reading >8 mph for 5 s
+Ground files triggered: none
+  Racoon: 14:04:16 PDT; delay 6.35s; first recorded position delay -606.79s
+  RedStrap: 14:04:16 PDT; delay 6.33s; first recorded position delay -0.06s
+  BlueGreen326: 14:04:18 PDT; delay 7.92s; first recorded position delay 4.33s
+  Bethany: 13:26:48 PDT; delay 14.0s; first recorded position delay 0.84s
+
+3s mean >= 5mph
+Ground files triggered: Bethany/01.igc
+  Racoon: 14:04:12 PDT; delay 2.35s; first recorded position delay -606.79s
+  RedStrap: 14:04:12 PDT; delay 2.33s; first recorded position delay -0.06s
+  BlueGreen326: 14:04:13 PDT; delay 3.31s; first recorded position delay 4.33s
+  Bethany: 13:26:36 PDT; delay 2.46s; first recorded position delay 0.84s
+
+3s mean >= 5mph AND net displacement >= 5m
+Ground files triggered: Bethany/01.igc
+  Racoon: 14:04:12 PDT; delay 2.35s; first recorded position delay -606.79s
+  RedStrap: 14:04:13 PDT; delay 3.33s; first recorded position delay -0.06s
+  BlueGreen326: 14:04:18 PDT; delay 7.92s; first recorded position delay 4.33s
+  Bethany: 13:26:38 PDT; delay 4.0s; first recorded position delay 0.84s
+
+3s mean >= 5.5mph
+Ground files triggered: Bethany/01.igc
+  Racoon: 14:04:12 PDT; delay 2.35s; first recorded position delay -606.79s
+  RedStrap: 14:04:12 PDT; delay 2.33s; first recorded position delay -0.06s
+  BlueGreen326: 14:04:14 PDT; delay 4.31s; first recorded position delay 4.33s
+  Bethany: 13:26:36 PDT; delay 2.46s; first recorded position delay 0.84s
+
+3s mean >= 5.5mph AND net displacement >= 5m
+Ground files triggered: Bethany/01.igc
+  Racoon: 14:04:12 PDT; delay 2.35s; first recorded position delay -606.79s
+  RedStrap: 14:04:13 PDT; delay 3.33s; first recorded position delay -0.06s
+  BlueGreen326: 14:04:18 PDT; delay 7.92s; first recorded position delay 4.33s
+  Bethany: 13:26:38 PDT; delay 4.0s; first recorded position delay 0.84s
+
+3s mean >= 6mph
+Ground files triggered: Bethany/01.igc
+  Racoon: 14:04:12 PDT; delay 2.35s; first recorded position delay -606.79s
+  RedStrap: 14:04:12 PDT; delay 2.33s; first recorded position delay -0.06s
+  BlueGreen326: 14:04:14 PDT; delay 4.31s; first recorded position delay 4.33s
+  Bethany: 13:26:36 PDT; delay 2.46s; first recorded position delay 0.84s
+
+3s mean >= 6mph AND net displacement >= 5m
+Ground files triggered: Bethany/01.igc
+  Racoon: 14:04:12 PDT; delay 2.35s; first recorded position delay -606.79s
+  RedStrap: 14:04:13 PDT; delay 3.33s; first recorded position delay -0.06s
+  BlueGreen326: 14:04:18 PDT; delay 7.92s; first recorded position delay 4.33s
+  Bethany: 13:26:38 PDT; delay 4.0s; first recorded position delay 0.84s
+
+3s mean >= 8mph
+Ground files triggered: none
+  Racoon: 14:04:13 PDT; delay 3.35s; first recorded position delay -606.79s
+  RedStrap: 14:04:13 PDT; delay 3.33s; first recorded position delay -0.06s
+  BlueGreen326: 14:04:14 PDT; delay 4.31s; first recorded position delay 4.33s
+  Bethany: 13:26:44 PDT; delay 10.0s; first recorded position delay 0.84s
+
+3s mean >= 8mph AND net displacement >= 5m
+Ground files triggered: none
+  Racoon: 14:04:13 PDT; delay 3.35s; first recorded position delay -606.79s
+  RedStrap: 14:04:13 PDT; delay 3.33s; first recorded position delay -0.06s
+  BlueGreen326: 14:04:18 PDT; delay 7.92s; first recorded position delay 4.33s
+  Bethany: 13:26:44 PDT; delay 10.0s; first recorded position delay 0.84s
+
+3s mean >= 5mph AND net displacement >= 5m; confirm 1s
+Ground files triggered: none
+  Racoon: 14:04:13 PDT; delay 3.35s; first recorded position delay -606.79s
+  RedStrap: 14:04:14 PDT; delay 4.33s; first recorded position delay -0.06s
+  BlueGreen326: 14:04:19 PDT; delay 8.92s; first recorded position delay 4.33s
+  Bethany: 13:26:39 PDT; delay 5.0s; first recorded position delay 0.84s
+
+3s mean >= 5mph AND net displacement >= 5m; confirm 2s
+Ground files triggered: none
+  Racoon: 14:04:14 PDT; delay 4.35s; first recorded position delay -606.79s
+  RedStrap: 14:04:15 PDT; delay 5.33s; first recorded position delay -0.06s
+  BlueGreen326: 14:04:20 PDT; delay 9.92s; first recorded position delay 4.33s
+  Bethany: 13:26:40 PDT; delay 6.0s; first recorded position delay 0.84s
+
+3s mean >= 5.5mph AND net displacement >= 5m; confirm 1s
+Ground files triggered: none
+  Racoon: 14:04:13 PDT; delay 3.35s; first recorded position delay -606.79s
+  RedStrap: 14:04:14 PDT; delay 4.33s; first recorded position delay -0.06s
+  BlueGreen326: 14:04:19 PDT; delay 8.92s; first recorded position delay 4.33s
+  Bethany: 13:26:39 PDT; delay 5.0s; first recorded position delay 0.84s
+
+3s mean >= 5.5mph AND net displacement >= 5m; confirm 2s
+Ground files triggered: none
+  Racoon: 14:04:14 PDT; delay 4.35s; first recorded position delay -606.79s
+  RedStrap: 14:04:15 PDT; delay 5.33s; first recorded position delay -0.06s
+  BlueGreen326: 14:04:20 PDT; delay 9.92s; first recorded position delay 4.33s
+  Bethany: 13:26:40 PDT; delay 6.0s; first recorded position delay 0.84s
+
+3s mean >= 6mph AND net displacement >= 5m; confirm 1s
+Ground files triggered: none
+  Racoon: 14:04:13 PDT; delay 3.35s; first recorded position delay -606.79s
+  RedStrap: 14:04:14 PDT; delay 4.33s; first recorded position delay -0.06s
+  BlueGreen326: 14:04:19 PDT; delay 8.92s; first recorded position delay 4.33s
+  Bethany: 13:26:39 PDT; delay 5.0s; first recorded position delay 0.84s
+
+3s mean >= 6mph AND net displacement >= 5m; confirm 2s
+Ground files triggered: none
+  Racoon: 14:04:14 PDT; delay 4.35s; first recorded position delay -606.79s
+  RedStrap: 14:04:15 PDT; delay 5.33s; first recorded position delay -0.06s
+  BlueGreen326: 14:04:20 PDT; delay 9.92s; first recorded position delay 4.33s
+  Bethany: 13:26:40 PDT; delay 6.0s; first recorded position delay 0.84s
+
+The recorded combined-rule delays for RedStrap and BlueGreen326 cannot show the full benefit of an idle position history: their first positions are already around/after takeoff. In a future implementation, sample the position window while idle. Racoon has continuous recorded preflight positions; Bethany has only pre-start speeds and begins logging about a second after its accepted launch reference.
+
+The next choice is whether >=5mph and >=5m/3s is the intended fast headwind path, or whether to retain a more conservative speed floor such as 5.5mph. Keep a bounded history, invalidate discontinuities instead of inventing travel, and use actual net GPS displacement rather than a distance obtained from the same speed signal.

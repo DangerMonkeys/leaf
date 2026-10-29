@@ -1,0 +1,40 @@
+
+ 0 3.2.3 raccoon 2026-10-27-XLV-000-01.igc ground qualifying checks 0
+forward {'id': 0.0, 'ms': 1546958.0, 'candidates': 7.0, 'triggered': 1.0, 'mean_speed_mps': 3.43029571, 'mean_climb_mps': 1.25076652, 'alt_change_m': 3.99900007, 'displacement_m': 11.5216541, 'valid': 15.0, 'local': '13:02:12'}
+vertical {'id': 0.0, 'ms': 1548958.0, 'candidates': 7.0, 'triggered': 7.0, 'mean_speed_mps': 3.54137611, 'mean_climb_mps': 1.18288338, 'alt_change_m': 3.99700308, 'displacement_m': 9.37812519, 'valid': 15.0, 'local': '13:02:14'}
+blended {'id': 0.0, 'ms': 1548958.0, 'candidates': 7.0, 'triggered': 7.0, 'mean_speed_mps': 3.54137611, 'mean_climb_mps': 1.18288338, 'alt_change_m': 3.99700308, 'displacement_m': 9.37812519, 'valid': 15.0, 'local': '13:02:14'}
+GROUND HITS []
+STOP {'first_after_landing': {'local': '13:20:32', 'seconds': 48032, 'ms': 2647307, 'count': 20}, 'first_possible_from_speed_accel': {'local': '13:19:32', 'seconds': 47972, 'ms': 2587307, 'count': 20}, 'max_inflight_quiet_checks': 0, 'max_inflight_speed_accel_checks': 1, 'proxy_inflight_hits': 0}
+PRE MATCH 25 25
+
+ 1 3.2.3 redstrap 2026-10-27-XLV-000-01.igc ground qualifying checks 0
+forward {'id': 1.0, 'ms': 2555876.0, 'candidates': 5.0, 'triggered': 1.0, 'mean_speed_mps': 2.72166681, 'mean_climb_mps': 0.833333313, 'alt_change_m': 2.0, 'displacement_m': 8.23517323, 'valid': 15.0, 'local': '13:19:02'}
+vertical {'id': 1.0, 'ms': 2560876.0, 'candidates': 6.0, 'triggered': 6.0, 'mean_speed_mps': 1.87166667, 'mean_climb_mps': 1.23333335, 'alt_change_m': 4.0, 'displacement_m': 4.78574085, 'valid': 15.0, 'local': '13:19:07'}
+blended {'id': 1.0, 'ms': 2560876.0, 'candidates': 6.0, 'triggered': 6.0, 'mean_speed_mps': 1.87166667, 'mean_climb_mps': 1.23333335, 'alt_change_m': 4.0, 'displacement_m': 4.78574085, 'valid': 15.0, 'local': '13:19:07'}
+GROUND HITS []
+STOP {'first_after_landing': {'local': '13:34:32', 'seconds': 48872, 'ms': 3486006, 'count': 20}, 'first_possible_from_speed_accel': {'local': '13:30:00', 'seconds': 48600, 'ms': 3213886, 'count': 20}, 'max_inflight_quiet_checks': 1, 'max_inflight_speed_accel_checks': 1, 'proxy_inflight_hits': 0}
+PRE MATCH 25 25
+
+ 2 3.2.6 blue 2026-10-27-XLV-000-01.igc ground qualifying checks 5
+forward {'id': 2.0, 'ms': 1693910.0, 'candidates': 1.0, 'triggered': 1.0, 'mean_speed_mps': 2.88393903, 'mean_climb_mps': 0.208191961, 'alt_change_m': -2.93061256, 'displacement_m': 9.40706635, 'valid': 15.0, 'local': '13:04:51'}
+vertical None
+blended None
+GROUND HITS [{'id': 2.0, 'ms': 1693910.0, 'candidates': 1.0, 'triggered': 1.0, 'mean_speed_mps': 2.88393903, 'mean_climb_mps': 0.208191961, 'alt_change_m': -2.93061256, 'displacement_m': 9.40706635, 'valid': 15.0, 'local': '13:04:51', 'source': 'pre'}, {'id': 2.0, 'ms': 1693932.0, 'candidates': 1.0, 'triggered': 1.0, 'mean_speed_mps': 2.89476085, 'mean_climb_mps': 0.202841565, 'alt_change_m': -3.3642354, 'displacement_m': 10.8485394, 'valid': 15.0, 'local': '13:04:51', 'source': 'track'}, {'id': 2.0, 'ms': 1695169.0, 'candidates': 1.0, 'triggered': 1.0, 'mean_speed_mps': 3.22578931, 'mean_climb_mps': 1.07691967, 'alt_change_m': -3.20817256, 'displacement_m': 10.085165, 'valid': 15.0, 'local': '13:04:52', 'source': 'track'}, {'id': 2.0, 'ms': 1696169.0, 'candidates': 1.0, 'triggered': 1.0, 'mean_speed_mps': 3.07694125, 'mean_climb_mps': 1.68253791, 'alt_change_m': 0.121059664, 'displacement_m': 10.8998175, 'valid': 15.0, 'local': '13:04:53', 'source': 'track'}, {'id': 2.0, 'ms': 1697169.0, 'candidates': 1.0, 'triggered': 1.0, 'mean_speed_mps': 2.47678018, 'mean_climb_mps': 1.40148211, 'alt_change_m': 0.0, 'displacement_m': 6.47315931, 'valid': 15.0, 'local': '13:04:54', 'source': 'track'}]
+STOP {'first_after_landing': {'local': '13:06:07', 'seconds': 47167, 'ms': 1770169, 'count': 20}, 'first_possible_from_speed_accel': {'local': '13:05:17', 'seconds': 47117, 'ms': 1720169, 'count': 20}, 'max_inflight_quiet_checks': 0, 'max_inflight_speed_accel_checks': 0, 'proxy_inflight_hits': 0}
+PRE MATCH 25 25
+
+ 3 3.2.6 blue 2026-10-27-XLV-000-02.igc ground qualifying checks 0
+forward {'id': 3.0, 'ms': 2545409.0, 'candidates': 5.0, 'triggered': 5.0, 'mean_speed_mps': 2.54149985, 'mean_climb_mps': 1.0666666, 'alt_change_m': 2.0, 'displacement_m': 6.16811895, 'valid': 15.0, 'local': '13:19:03'}
+vertical {'id': 3.0, 'ms': 2539409.0, 'candidates': 2.0, 'triggered': 2.0, 'mean_speed_mps': 1.50983334, 'mean_climb_mps': 0.866666675, 'alt_change_m': 3.0, 'displacement_m': 4.41234541, 'valid': 15.0, 'local': '13:18:57'}
+blended {'id': 3.0, 'ms': 2545409.0, 'candidates': 5.0, 'triggered': 5.0, 'mean_speed_mps': 2.54149985, 'mean_climb_mps': 1.0666666, 'alt_change_m': 2.0, 'displacement_m': 6.16811895, 'valid': 15.0, 'local': '13:19:03'}
+GROUND HITS []
+STOP {'first_after_landing': {'local': '13:30:01', 'seconds': 48601, 'ms': 3204099, 'count': 20}, 'first_possible_from_speed_accel': {'local': '13:30:00', 'seconds': 48600, 'ms': 3203099, 'count': 20}, 'max_inflight_quiet_checks': 0, 'max_inflight_speed_accel_checks': 1, 'proxy_inflight_hits': 0}
+PRE MATCH 25 25
+
+ 4 3.2.8 2026-10-27-XLV-000-01.igc ground qualifying checks 0
+forward {'id': 4.0, 'ms': 1582559.0, 'candidates': 7.0, 'triggered': 7.0, 'mean_speed_mps': 2.61350012, 'mean_climb_mps': 1.14999998, 'alt_change_m': 3.0, 'displacement_m': 7.09785748, 'valid': 15.0, 'local': '13:19:13'}
+vertical {'id': 4.0, 'ms': 1582559.0, 'candidates': 7.0, 'triggered': 7.0, 'mean_speed_mps': 2.61350012, 'mean_climb_mps': 1.14999998, 'alt_change_m': 3.0, 'displacement_m': 7.09785748, 'valid': 15.0, 'local': '13:19:13'}
+blended {'id': 4.0, 'ms': 1571559.0, 'candidates': 5.0, 'triggered': 4.0, 'mean_speed_mps': 2.3210001, 'mean_climb_mps': 0.666666687, 'alt_change_m': 2.0, 'displacement_m': 6.95336533, 'valid': 15.0, 'local': '13:19:02'}
+GROUND HITS []
+STOP {'first_after_landing': {'local': '13:32:31', 'seconds': 48751, 'ms': 2380559, 'count': 20}, 'first_possible_from_speed_accel': {'local': '13:30:00', 'seconds': 48600, 'ms': 2229559, 'count': 20}, 'max_inflight_quiet_checks': 3, 'max_inflight_speed_accel_checks': 8, 'proxy_inflight_hits': 0}
+PRE MATCH 25 25

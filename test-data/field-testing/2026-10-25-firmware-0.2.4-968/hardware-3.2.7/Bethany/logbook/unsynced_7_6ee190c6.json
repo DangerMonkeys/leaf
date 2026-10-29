@@ -1,0 +1,62 @@
+{
+  "schema": "leaf.logbook.flight",
+  "schema_version": "v0.1.0",
+  "flight_id": "6ee190c6",
+  "clock": {
+    "system_time_synced_this_boot": false,
+    "time_source": "unsynced",
+    "timezone_offset_minutes": -420
+  },
+  "start": {
+    "time_valid": false,
+    "temperature_c": 21.15428
+  },
+  "end": {
+    "time_valid": false,
+    "temperature_c": 21.15428
+  },
+  "metrics": {
+    "duration_seconds": 162,
+    "max_altitude_m": 0,
+    "min_altitude_m": 0,
+    "max_altitude_above_launch_m": 0,
+    "max_climb_rate_mps": 0,
+    "max_sink_rate_mps": 0,
+    "max_ground_speed_mps": 0,
+    "average_ground_speed_mps": 0,
+    "straight_line_distance_m": 0,
+    "path_distance_m": 0,
+    "max_accel_g": 1,
+    "min_accel_g": 1,
+    "max_temperature_c": 21.15428,
+    "min_temperature_c": 21.15428
+  },
+  "track": {
+    "saved": false
+  },
+  "device": {
+    "firmware_version": "0.2.1+h3.2.7",
+    "hardware_version": "leaf_3_2_7",
+    "mac_address": "3C:DC:75:45:26:94"
+  },
+  "pilot": {
+    "id": "0ac46de5",
+    "name": "Bethany Taylor"
+  },
+  "glider": {
+    "id": "cce5335d",
+    "brand": "Phi",
+    "model": "Symphonia 2",
+    "size": "20",
+    "display_name": "Valkyrie"
+  },
+  "site": {
+    "launch_name": null,
+    "landing_name": null
+  },
+  "weather": {},
+  "notes": {
+    "pilot_notes": "",
+    "tags": []
+  }
+}

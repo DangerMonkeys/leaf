@@ -1,0 +1,540 @@
+{
+  "method": "Exact window endpoints interpolated between adjacent 1 Hz readings using diagnostic uptime; mean vario is signed trapezoidal average, never mean absolute value. Gaps >2s rejected. Ground originals and vertical reflections evaluated. Missing pre-start pressure altitude remains unobservable.",
+  "summary": [
+    {
+      "seconds": 3,
+      "group": "hiking",
+      "pressure_window_count": 662,
+      "vario_window_count": 792,
+      "joint_window_count": 541,
+      "max_abs_altitude_change_m": 2.0,
+      "max_abs_mean_vario_mps": 2.1333333333333333,
+      "max_sustained_same_direction_vario_mps": 1.92,
+      "largest_altitude_event": {
+        "seconds": 3,
+        "group": "hiking",
+        "unit": "BlueGreen326",
+        "track": "2026-10-25-XLV-000-07.igc",
+        "relative_s": 6.350000000000023,
+        "local_s": 42181.0,
+        "altitude_change_m": 2.0,
+        "mean_vario_mps": null,
+        "minimum_positive_vario_mps": null,
+        "minimum_negative_vario_mps": null
+      },
+      "largest_vario_event": {
+        "seconds": 3,
+        "group": "hiking",
+        "unit": "BlueGreen326",
+        "track": "2026-10-25-XLV-000-06.igc",
+        "relative_s": -26.0,
+        "local_s": 41919.47,
+        "altitude_change_m": null,
+        "mean_vario_mps": -2.1333333333333333,
+        "minimum_positive_vario_mps": -2.37,
+        "minimum_negative_vario_mps": 1.79
+      }
+    },
+    {
+      "seconds": 3,
+      "group": "launch-area ground",
+      "pressure_window_count": 832,
+      "vario_window_count": 946,
+      "joint_window_count": 822,
+      "max_abs_altitude_change_m": 5.0,
+      "max_abs_mean_vario_mps": 0.875,
+      "max_sustained_same_direction_vario_mps": 0.28017999999999577,
+      "largest_altitude_event": {
+        "seconds": 3,
+        "group": "launch-area ground",
+        "unit": "Racoon",
+        "track": "2026-10-25-XLV-000-01.igc",
+        "relative_s": 452.70899999999995,
+        "local_s": 50495.9,
+        "altitude_change_m": -5.0,
+        "mean_vario_mps": -0.016666666666666666,
+        "minimum_positive_vario_mps": -0.1,
+        "minimum_negative_vario_mps": -0.0
+      },
+      "largest_vario_event": {
+        "seconds": 3,
+        "group": "launch-area ground",
+        "unit": "BlueGreen326",
+        "track": "2026-10-25-XLV-000-15.igc",
+        "relative_s": 0.0,
+        "local_s": 50086.53,
+        "altitude_change_m": null,
+        "mean_vario_mps": 0.875,
+        "minimum_positive_vario_mps": 0.15,
+        "minimum_negative_vario_mps": -1.73
+      }
+    },
+    {
+      "seconds": 3,
+      "group": "post-landing ground",
+      "pressure_window_count": 1371,
+      "vario_window_count": 1358,
+      "joint_window_count": 1358,
+      "max_abs_altitude_change_m": 3.0,
+      "max_abs_mean_vario_mps": 0.6666666666666666,
+      "max_sustained_same_direction_vario_mps": 0.4,
+      "largest_altitude_event": {
+        "seconds": 3,
+        "group": "post-landing ground",
+        "unit": "RedStrap",
+        "track": "2026-10-25-XLV-000-01.igc",
+        "relative_s": 2224.12,
+        "local_s": 52874.03999999999,
+        "altitude_change_m": -3.0,
+        "mean_vario_mps": -0.033333333333333326,
+        "minimum_positive_vario_mps": -0.6,
+        "minimum_negative_vario_mps": -0.2
+      },
+      "largest_vario_event": {
+        "seconds": 3,
+        "group": "post-landing ground",
+        "unit": "BlueGreen326",
+        "track": "2026-10-25-XLV-000-17.igc",
+        "relative_s": 2232.5899999999997,
+        "local_s": 52886.899999999994,
+        "altitude_change_m": 0.0,
+        "mean_vario_mps": 0.6666666666666666,
+        "minimum_positive_vario_mps": 0.4,
+        "minimum_negative_vario_mps": -0.8
+      }
+    },
+    {
+      "seconds": 3,
+      "group": "unknown Bethany ground",
+      "pressure_window_count": 47,
+      "vario_window_count": 72,
+      "joint_window_count": 45,
+      "max_abs_altitude_change_m": 0.0,
+      "max_abs_mean_vario_mps": 0.8116666666666666,
+      "max_sustained_same_direction_vario_mps": -0.0,
+      "largest_altitude_event": {
+        "seconds": 3,
+        "group": "unknown Bethany ground",
+        "unit": "Bethany",
+        "track": "2026-10-25-XLV-000-01.igc",
+        "relative_s": 5.279999999999973,
+        "local_s": 31243.949999999997,
+        "altitude_change_m": 0.0,
+        "mean_vario_mps": null,
+        "minimum_positive_vario_mps": null,
+        "minimum_negative_vario_mps": null
+      },
+      "largest_vario_event": {
+        "seconds": 3,
+        "group": "unknown Bethany ground",
+        "unit": "Bethany",
+        "track": "2026-10-25-XLV-000-01.igc",
+        "relative_s": -13.0,
+        "local_s": 31225.67,
+        "altitude_change_m": null,
+        "mean_vario_mps": 0.8116666666666666,
+        "minimum_positive_vario_mps": -0.09,
+        "minimum_negative_vario_mps": -1.55
+      }
+    },
+    {
+      "seconds": 4,
+      "group": "hiking",
+      "pressure_window_count": 648,
+      "vario_window_count": 765,
+      "joint_window_count": 527,
+      "max_abs_altitude_change_m": 2.0,
+      "max_abs_mean_vario_mps": 2.09125,
+      "max_sustained_same_direction_vario_mps": 1.85,
+      "largest_altitude_event": {
+        "seconds": 4,
+        "group": "hiking",
+        "unit": "BlueGreen326",
+        "track": "2026-10-25-XLV-000-01.igc",
+        "relative_s": 8.519999999999996,
+        "local_s": 41295.0,
+        "altitude_change_m": -2.0,
+        "mean_vario_mps": null,
+        "minimum_positive_vario_mps": null,
+        "minimum_negative_vario_mps": null
+      },
+      "largest_vario_event": {
+        "seconds": 4,
+        "group": "hiking",
+        "unit": "BlueGreen326",
+        "track": "2026-10-25-XLV-000-06.igc",
+        "relative_s": -25.0,
+        "local_s": 41920.47,
+        "altitude_change_m": null,
+        "mean_vario_mps": -2.09125,
+        "minimum_positive_vario_mps": -2.37,
+        "minimum_negative_vario_mps": 1.79
+      }
+    },
+    {
+      "seconds": 4,
+      "group": "launch-area ground",
+      "pressure_window_count": 829,
+      "vario_window_count": 937,
+      "joint_window_count": 818,
+      "max_abs_altitude_change_m": 5.0,
+      "max_abs_mean_vario_mps": 0.6925,
+      "max_sustained_same_direction_vario_mps": 0.2,
+      "largest_altitude_event": {
+        "seconds": 4,
+        "group": "launch-area ground",
+        "unit": "Racoon",
+        "track": "2026-10-25-XLV-000-01.igc",
+        "relative_s": 452.70899999999995,
+        "local_s": 50495.9,
+        "altitude_change_m": -5.0,
+        "mean_vario_mps": -0.0125,
+        "minimum_positive_vario_mps": -0.1,
+        "minimum_negative_vario_mps": -0.0
+      },
+      "largest_vario_event": {
+        "seconds": 4,
+        "group": "launch-area ground",
+        "unit": "BlueGreen326",
+        "track": "2026-10-25-XLV-000-15.igc",
+        "relative_s": 0.0,
+        "local_s": 50086.53,
+        "altitude_change_m": null,
+        "mean_vario_mps": 0.6925,
+        "minimum_positive_vario_mps": -0.24,
+        "minimum_negative_vario_mps": -1.73
+      }
+    },
+    {
+      "seconds": 4,
+      "group": "post-landing ground",
+      "pressure_window_count": 1368,
+      "vario_window_count": 1352,
+      "joint_window_count": 1352,
+      "max_abs_altitude_change_m": 3.0,
+      "max_abs_mean_vario_mps": 0.6,
+      "max_sustained_same_direction_vario_mps": 0.4,
+      "largest_altitude_event": {
+        "seconds": 4,
+        "group": "post-landing ground",
+        "unit": "RedStrap",
+        "track": "2026-10-25-XLV-000-01.igc",
+        "relative_s": 2224.12,
+        "local_s": 52874.03999999999,
+        "altitude_change_m": -3.0,
+        "mean_vario_mps": -0.01249999999999999,
+        "minimum_positive_vario_mps": -0.6,
+        "minimum_negative_vario_mps": -0.2
+      },
+      "largest_vario_event": {
+        "seconds": 4,
+        "group": "post-landing ground",
+        "unit": "BlueGreen326",
+        "track": "2026-10-25-XLV-000-17.igc",
+        "relative_s": 2232.5899999999997,
+        "local_s": 52886.899999999994,
+        "altitude_change_m": 1.0,
+        "mean_vario_mps": 0.6,
+        "minimum_positive_vario_mps": 0.4,
+        "minimum_negative_vario_mps": -0.8
+      }
+    },
+    {
+      "seconds": 4,
+      "group": "unknown Bethany ground",
+      "pressure_window_count": 46,
+      "vario_window_count": 70,
+      "joint_window_count": 44,
+      "max_abs_altitude_change_m": 0.0,
+      "max_abs_mean_vario_mps": 0.62,
+      "max_sustained_same_direction_vario_mps": -0.0,
+      "largest_altitude_event": {
+        "seconds": 4,
+        "group": "unknown Bethany ground",
+        "unit": "Bethany",
+        "track": "2026-10-25-XLV-000-01.igc",
+        "relative_s": 6.279999999999973,
+        "local_s": 31244.949999999997,
+        "altitude_change_m": 0.0,
+        "mean_vario_mps": null,
+        "minimum_positive_vario_mps": null,
+        "minimum_negative_vario_mps": null
+      },
+      "largest_vario_event": {
+        "seconds": 4,
+        "group": "unknown Bethany ground",
+        "unit": "Bethany",
+        "track": "2026-10-25-XLV-000-01.igc",
+        "relative_s": -12.0,
+        "local_s": 31226.67,
+        "altitude_change_m": null,
+        "mean_vario_mps": 0.62,
+        "minimum_positive_vario_mps": -0.09,
+        "minimum_negative_vario_mps": -1.55
+      }
+    }
+  ],
+  "candidates": [
+    {
+      "seconds": 3,
+      "gain_m": 3,
+      "same_direction_mean_vario_min_mps": null,
+      "trigger_windows": 5,
+      "tracks": [
+        "Racoon/01.igc",
+        "RedStrap/01.igc"
+      ],
+      "hits": [
+        {
+          "unit": "Racoon",
+          "track": "2026-10-25-XLV-000-01.igc",
+          "group": "launch-area ground",
+          "local_s": 50406.9,
+          "mirror": true
+        },
+        {
+          "unit": "Racoon",
+          "track": "2026-10-25-XLV-000-01.igc",
+          "group": "launch-area ground",
+          "local_s": 50495.9,
+          "mirror": true
+        },
+        {
+          "unit": "Racoon",
+          "track": "2026-10-25-XLV-000-01.igc",
+          "group": "launch-area ground",
+          "local_s": 50498.9,
+          "mirror": false
+        },
+        {
+          "unit": "Racoon",
+          "track": "2026-10-25-XLV-000-01.igc",
+          "group": "launch-area ground",
+          "local_s": 50621.9,
+          "mirror": true
+        },
+        {
+          "unit": "RedStrap",
+          "track": "2026-10-25-XLV-000-01.igc",
+          "group": "post-landing ground",
+          "local_s": 52874.03999999999,
+          "mirror": true
+        }
+      ]
+    },
+    {
+      "seconds": 3,
+      "gain_m": 3,
+      "same_direction_mean_vario_min_mps": 0.3,
+      "trigger_windows": 0,
+      "tracks": [],
+      "hits": []
+    },
+    {
+      "seconds": 3,
+      "gain_m": 3,
+      "same_direction_mean_vario_min_mps": 0.5,
+      "trigger_windows": 0,
+      "tracks": [],
+      "hits": []
+    },
+    {
+      "seconds": 3,
+      "gain_m": 3,
+      "same_direction_mean_vario_min_mps": 0.7,
+      "trigger_windows": 0,
+      "tracks": [],
+      "hits": []
+    },
+    {
+      "seconds": 3,
+      "gain_m": 4,
+      "same_direction_mean_vario_min_mps": null,
+      "trigger_windows": 2,
+      "tracks": [
+        "Racoon/01.igc"
+      ],
+      "hits": [
+        {
+          "unit": "Racoon",
+          "track": "2026-10-25-XLV-000-01.igc",
+          "group": "launch-area ground",
+          "local_s": 50495.9,
+          "mirror": true
+        },
+        {
+          "unit": "Racoon",
+          "track": "2026-10-25-XLV-000-01.igc",
+          "group": "launch-area ground",
+          "local_s": 50498.9,
+          "mirror": false
+        }
+      ]
+    },
+    {
+      "seconds": 3,
+      "gain_m": 4,
+      "same_direction_mean_vario_min_mps": 0.3,
+      "trigger_windows": 0,
+      "tracks": [],
+      "hits": []
+    },
+    {
+      "seconds": 3,
+      "gain_m": 4,
+      "same_direction_mean_vario_min_mps": 0.5,
+      "trigger_windows": 0,
+      "tracks": [],
+      "hits": []
+    },
+    {
+      "seconds": 3,
+      "gain_m": 4,
+      "same_direction_mean_vario_min_mps": 0.7,
+      "trigger_windows": 0,
+      "tracks": [],
+      "hits": []
+    },
+    {
+      "seconds": 4,
+      "gain_m": 3,
+      "same_direction_mean_vario_min_mps": null,
+      "trigger_windows": 7,
+      "tracks": [
+        "Racoon/01.igc",
+        "RedStrap/01.igc"
+      ],
+      "hits": [
+        {
+          "unit": "Racoon",
+          "track": "2026-10-25-XLV-000-01.igc",
+          "group": "launch-area ground",
+          "local_s": 50406.9,
+          "mirror": true
+        },
+        {
+          "unit": "Racoon",
+          "track": "2026-10-25-XLV-000-01.igc",
+          "group": "launch-area ground",
+          "local_s": 50410.9,
+          "mirror": false
+        },
+        {
+          "unit": "Racoon",
+          "track": "2026-10-25-XLV-000-01.igc",
+          "group": "launch-area ground",
+          "local_s": 50458.9,
+          "mirror": true
+        },
+        {
+          "unit": "Racoon",
+          "track": "2026-10-25-XLV-000-01.igc",
+          "group": "launch-area ground",
+          "local_s": 50465.9,
+          "mirror": false
+        },
+        {
+          "unit": "Racoon",
+          "track": "2026-10-25-XLV-000-01.igc",
+          "group": "launch-area ground",
+          "local_s": 50495.9,
+          "mirror": true
+        },
+        {
+          "unit": "Racoon",
+          "track": "2026-10-25-XLV-000-01.igc",
+          "group": "launch-area ground",
+          "local_s": 50499.9,
+          "mirror": false
+        },
+        {
+          "unit": "RedStrap",
+          "track": "2026-10-25-XLV-000-01.igc",
+          "group": "post-landing ground",
+          "local_s": 52874.03999999999,
+          "mirror": true
+        }
+      ]
+    },
+    {
+      "seconds": 4,
+      "gain_m": 3,
+      "same_direction_mean_vario_min_mps": 0.3,
+      "trigger_windows": 0,
+      "tracks": [],
+      "hits": []
+    },
+    {
+      "seconds": 4,
+      "gain_m": 3,
+      "same_direction_mean_vario_min_mps": 0.5,
+      "trigger_windows": 0,
+      "tracks": [],
+      "hits": []
+    },
+    {
+      "seconds": 4,
+      "gain_m": 3,
+      "same_direction_mean_vario_min_mps": 0.7,
+      "trigger_windows": 0,
+      "tracks": [],
+      "hits": []
+    },
+    {
+      "seconds": 4,
+      "gain_m": 4,
+      "same_direction_mean_vario_min_mps": null,
+      "trigger_windows": 3,
+      "tracks": [
+        "Racoon/01.igc"
+      ],
+      "hits": [
+        {
+          "unit": "Racoon",
+          "track": "2026-10-25-XLV-000-01.igc",
+          "group": "launch-area ground",
+          "local_s": 50458.9,
+          "mirror": true
+        },
+        {
+          "unit": "Racoon",
+          "track": "2026-10-25-XLV-000-01.igc",
+          "group": "launch-area ground",
+          "local_s": 50495.9,
+          "mirror": true
+        },
+        {
+          "unit": "Racoon",
+          "track": "2026-10-25-XLV-000-01.igc",
+          "group": "launch-area ground",
+          "local_s": 50499.9,
+          "mirror": false
+        }
+      ]
+    },
+    {
+      "seconds": 4,
+      "gain_m": 4,
+      "same_direction_mean_vario_min_mps": 0.3,
+      "trigger_windows": 0,
+      "tracks": [],
+      "hits": []
+    },
+    {
+      "seconds": 4,
+      "gain_m": 4,
+      "same_direction_mean_vario_min_mps": 0.5,
+      "trigger_windows": 0,
+      "tracks": [],
+      "hits": []
+    },
+    {
+      "seconds": 4,
+      "gain_m": 4,
+      "same_direction_mean_vario_min_mps": 0.7,
+      "trigger_windows": 0,
+      "tracks": [],
+      "hits": []
+    }
+  ]
+}

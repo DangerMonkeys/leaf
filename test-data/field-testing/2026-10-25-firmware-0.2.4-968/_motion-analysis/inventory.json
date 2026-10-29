@@ -1,0 +1,1843 @@
+[
+  {
+    "path": "hardware-3.2.3/Racoon/tracks/2026-09-20-XLF-000-01.igc",
+    "unit": "Racoon",
+    "date": "200926",
+    "firmware": "v0.2.3",
+    "sha256": "f0a46fd0cfe72b21ca1768040858c20d10ffd7cb1d20e2f13172d05d03a4bb6d"
+  },
+  {
+    "path": "hardware-3.2.3/Racoon/tracks/2026-09-20-XLF-000-02.igc",
+    "unit": "Racoon",
+    "date": "200926",
+    "firmware": "v0.2.3",
+    "sha256": "0322ef854bfce7ea1f4f7f1f6ac4d676c47bfece822b1fc78dc0c8f77c86c1e3"
+  },
+  {
+    "path": "hardware-3.2.3/Racoon/tracks/2026-09-20-XLF-000-03.igc",
+    "unit": "Racoon",
+    "date": "200926",
+    "firmware": "v0.2.3",
+    "sha256": "e675f479be3733019a91cb9a4eb93c3794bc8416a0c48130861ad6fb8ed34e1b"
+  },
+  {
+    "path": "hardware-3.2.3/Racoon/tracks/2026-09-20-XLF-000-04.igc",
+    "unit": "Racoon",
+    "date": "200926",
+    "firmware": "v0.2.3",
+    "sha256": "791b2c1b23cba6e1778024e45ee529914d7c191737d111a5a32001d315cb7fbd"
+  },
+  {
+    "path": "hardware-3.2.3/Racoon/tracks/2026-09-20-XLF-000-05.igc",
+    "unit": "Racoon",
+    "date": "200926",
+    "firmware": "v0.2.3",
+    "sha256": "aff8a279e20ce7b45ac24e8fae58c994bf53a2bb8aade042de1e61ef178104b3"
+  },
+  {
+    "path": "hardware-3.2.3/Racoon/tracks/2026-10-16-XLF-000-01.igc",
+    "unit": "Racoon",
+    "date": "161026",
+    "firmware": "v0.2.4-0f1",
+    "sha256": "2b54cc206bd791be0ec2c07bed1ea28c077eda5202d01d06940d525b523a93c1"
+  },
+  {
+    "path": "hardware-3.2.3/Racoon/tracks/2026-10-16-XLF-000-02.igc",
+    "unit": "Racoon",
+    "date": "161026",
+    "firmware": "v0.2.4-0f1",
+    "sha256": "834558333ad4b82f3abf3be78e8d147e5d24c5e81a4184a16dcc7a134efaf10f"
+  },
+  {
+    "path": "hardware-3.2.3/Racoon/tracks/2026-10-25-XLV-000-01.igc",
+    "unit": "Racoon",
+    "date": "251026",
+    "firmware": "v0.2.4-968",
+    "sha256": "ee0d055e29029cdf2779f8860169bde2ff429191d5a469db602b45a8cdce5d9d"
+  },
+  {
+    "path": "hardware-3.2.3/RedStrap/tracks/2025-03-05-XLF-000-01.igc",
+    "unit": "RedStrap",
+    "date": "050325",
+    "firmware": "0.0.9",
+    "sha256": "b6a03bd68b1399b47558ad8def0c15229151fccdb44a4afc3d6772c27bd5177b"
+  },
+  {
+    "path": "hardware-3.2.3/RedStrap/tracks/2025-03-05-XLF-000-02.igc",
+    "unit": "RedStrap",
+    "date": "050325",
+    "firmware": "0.0.9",
+    "sha256": "4a976a4d5b6c537f1735bafbb8501d014736f3b8d6689645942db8bd275e7673"
+  },
+  {
+    "path": "hardware-3.2.3/RedStrap/tracks/2025-03-06-XLF-000-01.igc",
+    "unit": "RedStrap",
+    "date": "060325",
+    "firmware": "0.0.9",
+    "sha256": "d6455706b51eaa46cf6b8a3e571eb599da299f0de49e97db881f9a7107b3d7f9"
+  },
+  {
+    "path": "hardware-3.2.3/RedStrap/tracks/2025-03-06-XLF-000-02.igc",
+    "unit": "RedStrap",
+    "date": "060325",
+    "firmware": "0.0.9",
+    "sha256": "de993088526376e67462c0331d367705f8043fb27b9cb7bab5c17385bac8b114"
+  },
+  {
+    "path": "hardware-3.2.3/RedStrap/tracks/2025-03-06-XLF-000-03.igc",
+    "unit": "RedStrap",
+    "date": "060325",
+    "firmware": "0.0.9",
+    "sha256": "b4749703765fc046c52138e0e38a73dca30573e3407d38961e200817e1f81763"
+  },
+  {
+    "path": "hardware-3.2.3/RedStrap/tracks/2025-03-06-XLF-000-04.igc",
+    "unit": "RedStrap",
+    "date": "060325",
+    "firmware": "0.0.9",
+    "sha256": "8d2634cacc5d52731f2954eff8efa130c1269c3e8925a57c4a4f958f4e200431"
+  },
+  {
+    "path": "hardware-3.2.3/RedStrap/tracks/2025-03-06-XLF-000-05.igc",
+    "unit": "RedStrap",
+    "date": "060325",
+    "firmware": "0.0.9",
+    "sha256": "e12d9d8da0d12a29be952803e321877cf29606c34a029fe4f181fe601adbc0ad"
+  },
+  {
+    "path": "hardware-3.2.3/RedStrap/tracks/2025-03-07-XLF-000-01.igc",
+    "unit": "RedStrap",
+    "date": "070325",
+    "firmware": "0.0.9",
+    "sha256": "42e39b9911e95be97f97068010bfb945f1c4970503a462d835783fce6e8d60c2"
+  },
+  {
+    "path": "hardware-3.2.3/RedStrap/tracks/2025-03-07-XLF-000-02.igc",
+    "unit": "RedStrap",
+    "date": "070325",
+    "firmware": "0.0.9",
+    "sha256": "5c62791025409c58ddc891cef70e555e888746146f54d37b5558e80bcfc76b74"
+  },
+  {
+    "path": "hardware-3.2.3/RedStrap/tracks/2026-08-20-XLF-000-01.igc",
+    "unit": "RedStrap",
+    "date": "200826",
+    "firmware": "v0.2.1",
+    "sha256": "e01e4f00f7252a51cf303dbe95cf566e63422d2ac0507340d0dadea7cc0cc9f9"
+  },
+  {
+    "path": "hardware-3.2.3/RedStrap/tracks/2026-08-20-XLF-000-02.igc",
+    "unit": "RedStrap",
+    "date": "200826",
+    "firmware": "v0.2.1",
+    "sha256": "62b81c384288e0ca807b6225bb4bc39fd616ad7ff4d766d235ed9ab2de4aa404"
+  },
+  {
+    "path": "hardware-3.2.3/RedStrap/tracks/2026-08-23-XLF-000-01.igc",
+    "unit": "RedStrap",
+    "date": "230826",
+    "firmware": "v0.2.1",
+    "sha256": "0f378b1acce43c0a939fdb3d8d51500593d2ac255cbf1ebc19a8d876766230ac"
+  },
+  {
+    "path": "hardware-3.2.3/RedStrap/tracks/2026-08-23-XLF-000-02.igc",
+    "unit": "RedStrap",
+    "date": "230826",
+    "firmware": "v0.2.1",
+    "sha256": "580f5ca33e352c223a3d93d6fef210d20490726870bc564a290fefac6575260d"
+  },
+  {
+    "path": "hardware-3.2.3/RedStrap/tracks/2026-08-23-XLF-000-03.igc",
+    "unit": "RedStrap",
+    "date": "230826",
+    "firmware": "v0.2.1",
+    "sha256": "4512cf8353a893fd7d18189688b2ee659246ea8b620d2b2efd8326ca46347585"
+  },
+  {
+    "path": "hardware-3.2.3/RedStrap/tracks/2026-08-23-XLF-000-04.igc",
+    "unit": "RedStrap",
+    "date": "230826",
+    "firmware": "v0.2.1",
+    "sha256": "dae2a9ce634cdc486d73e3108f701620fbff57e4f213e04e139b40036ab049cd"
+  },
+  {
+    "path": "hardware-3.2.3/RedStrap/tracks/2026-08-23-XLF-000-05.igc",
+    "unit": "RedStrap",
+    "date": "230826",
+    "firmware": "v0.2.1",
+    "sha256": "2f1a583e45e7c005de7463f0f2903523357f2c581aabd36ff441945ba60f29bf"
+  },
+  {
+    "path": "hardware-3.2.3/RedStrap/tracks/2026-08-23-XLF-000-06.igc",
+    "unit": "RedStrap",
+    "date": "230826",
+    "firmware": "v0.2.1",
+    "sha256": "63e31c9fb5c7db43dfb98f246b0e1ea02043a6714161c493548f92444ab884c7"
+  },
+  {
+    "path": "hardware-3.2.3/RedStrap/tracks/2026-09-04-XLF-000-01.igc",
+    "unit": "RedStrap",
+    "date": "040926",
+    "firmware": "v0.2.2",
+    "sha256": "3453d09504c750760fa980c2345f2ecb2278358f5d6195301fa0daf148805432"
+  },
+  {
+    "path": "hardware-3.2.3/RedStrap/tracks/2026-10-04-XLF-000-01.igc",
+    "unit": "RedStrap",
+    "date": "041026",
+    "firmware": "v0.2.2",
+    "sha256": "345626f5141db275bc7ae8eab325040bef3d3d8b09ad11907ffb9380dc934acf"
+  },
+  {
+    "path": "hardware-3.2.3/RedStrap/tracks/2026-10-11-XLF-000-01.igc",
+    "unit": "RedStrap",
+    "date": "111026",
+    "firmware": "v0.2.2",
+    "sha256": "24f85cf9e9cf170d14aeceaa9156f765fa8d2de6bcb38de46b3167d8be6d8019"
+  },
+  {
+    "path": "hardware-3.2.3/RedStrap/tracks/2026-10-11-XLF-000-02.igc",
+    "unit": "RedStrap",
+    "date": "111026",
+    "firmware": "v0.2.2",
+    "sha256": "afad40cea37e48ce6dc8493c1cfd76a7d898dea54c71546117ef39f5b5e51b07"
+  },
+  {
+    "path": "hardware-3.2.3/RedStrap/tracks/2026-10-11-XLF-000-03.igc",
+    "unit": "RedStrap",
+    "date": "111026",
+    "firmware": "v0.2.2",
+    "sha256": "fe683f72dd6313ed9eaa66f7455c5a0215550067696afbad108e5586f0bd2835"
+  },
+  {
+    "path": "hardware-3.2.3/RedStrap/tracks/2026-10-11-XLF-000-04.igc",
+    "unit": "RedStrap",
+    "date": "111026",
+    "firmware": "v0.2.2",
+    "sha256": "43466d4be8a5807632569d9cf85d68e5684417be63e62f0ce8171249f68050a8"
+  },
+  {
+    "path": "hardware-3.2.3/RedStrap/tracks/2026-10-16-XLF-000-01.igc",
+    "unit": "RedStrap",
+    "date": "171026",
+    "firmware": "v0.2.4-0f1",
+    "sha256": "d4c7c64132ae502e462f86001bbd7c206ba11f1a5f90f702b9781d02eecbc4f9"
+  },
+  {
+    "path": "hardware-3.2.3/RedStrap/tracks/2026-10-17-XLF-000-01.igc",
+    "unit": "RedStrap",
+    "date": "171026",
+    "firmware": "v0.2.4-0f1",
+    "sha256": "be6a6346e9f97c48267576cb9d5abfba3ac8bc3fb7311b995b6393f0a1f8acb8"
+  },
+  {
+    "path": "hardware-3.2.3/RedStrap/tracks/2026-10-17-XLF-000-02.igc",
+    "unit": "RedStrap",
+    "date": "171026",
+    "firmware": "v0.2.4-0f1",
+    "sha256": "dfb6d4de8b3bd0093f41202d926df9696530c74e45c3e1d9393a819a0d3640e0"
+  },
+  {
+    "path": "hardware-3.2.3/RedStrap/tracks/2026-10-18-XLF-000-01.igc",
+    "unit": "RedStrap",
+    "date": "181026",
+    "firmware": "v0.2.4-0f1",
+    "sha256": "c6e09e86b2a3c3323808ee868dc199c3ebe9fbdbcc2b32b84972ff2309681a07"
+  },
+  {
+    "path": "hardware-3.2.3/RedStrap/tracks/2026-10-18-XLF-000-02.igc",
+    "unit": "RedStrap",
+    "date": "181026",
+    "firmware": "v0.2.4-0f1",
+    "sha256": "b337ee8a29f571d6f088e316dffab316a0b599af124bb446e75510bcd1629fd1"
+  },
+  {
+    "path": "hardware-3.2.3/RedStrap/tracks/2026-10-19-XLF-000-01.igc",
+    "unit": "RedStrap",
+    "date": "191026",
+    "firmware": "v0.2.4-0f1",
+    "sha256": "abdde707cc08b0fe1991e2e03d5f723b7581a9438a59196abfa16775ee9fdf4e"
+  },
+  {
+    "path": "hardware-3.2.3/RedStrap/tracks/2026-10-25-XLV-000-01.igc",
+    "unit": "RedStrap",
+    "date": "251026",
+    "firmware": "v0.2.4-968",
+    "sha256": "bbfb834743fd1b8bc70f3bf87ad9100a0e97eebe1e1106deaf331dd2bbea198a"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2025-08-28-XLF-000-01.igc",
+    "unit": "BlueGreen326",
+    "date": null,
+    "firmware": null,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2025-08-28-XLF-000-03.igc",
+    "unit": "BlueGreen326",
+    "date": null,
+    "firmware": null,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2025-08-28-XLF-000-04.igc",
+    "unit": "BlueGreen326",
+    "date": null,
+    "firmware": null,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2025-09-13-XLF-000-01.igc",
+    "unit": "BlueGreen326",
+    "date": null,
+    "firmware": null,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2025-09-13-XLF-000-02.igc",
+    "unit": "BlueGreen326",
+    "date": null,
+    "firmware": null,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2025-09-17-XLF-000-01.igc",
+    "unit": "BlueGreen326",
+    "date": null,
+    "firmware": null,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-08-08-XLF-000-01.igc",
+    "unit": "BlueGreen326",
+    "date": "080826",
+    "firmware": "v0.2.1-0c9",
+    "sha256": "d8cbdd6fa533b692d201eb7d3b0bd7b881baee34611445554673e3e5593ba93c"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-08-08-XLF-000-02.igc",
+    "unit": "BlueGreen326",
+    "date": "080826",
+    "firmware": "v0.2.1-0c9",
+    "sha256": "4f3abdd18cada0554326e2870340403079f68c39e0d0c1308ef71fa7a84ea4eb"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-08-12-XLF-000-01.igc",
+    "unit": "BlueGreen326",
+    "date": "130826",
+    "firmware": "v0.2.1-cd5d",
+    "sha256": "eeed9a67a8a565e9e765174682d6eafae9aa9b9791fffab8d7bb4e9a6fbe75df"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-08-13-XLF-000-01.igc",
+    "unit": "BlueGreen326",
+    "date": "130826",
+    "firmware": "v0.2.1-cd5d",
+    "sha256": "43eafb7662f797c8db62dd5947f5a9cff5b1f3833e1682ab6eeb734c4aa8eddb"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-08-16-XLF-000-01.igc",
+    "unit": "BlueGreen326",
+    "date": "160826",
+    "firmware": "v0.2.1-cd5d",
+    "sha256": "fbe120473b2b89e9077c792e06a2821ac4bb5bc12e4744742e755453050fa081"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-08-18-XLF-000-01.igc",
+    "unit": "BlueGreen326",
+    "date": "180826",
+    "firmware": "v0.2.1-648d",
+    "sha256": "8598110c56ab0cbe0fe1e76bc937c6b4343f97eea91d4886946f382db52d7e59"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-08-18-XLF-000-02.igc",
+    "unit": "BlueGreen326",
+    "date": "190826",
+    "firmware": "v0.2.1-648d",
+    "sha256": "6e9763e8f496df9d4eaeed40bc2f7312a1e64e9a9c0157180c239007be863d1a"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-08-23-XLF-000-01.igc",
+    "unit": "BlueGreen326",
+    "date": "230826",
+    "firmware": "v0.2.1-f74d",
+    "sha256": "74c873214eecd31162d567850574ba99f1a2c84e09cf513981d3cdfdbfb26663"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-08-23-XLF-000-02.igc",
+    "unit": "BlueGreen326",
+    "date": "230826",
+    "firmware": "v0.2.1-f74d",
+    "sha256": "9df2ca3a37517a19d60a1153318f998b319e81a18f7e5b81817d38c4f53df492"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-08-23-XLF-000-03.igc",
+    "unit": "BlueGreen326",
+    "date": "230826",
+    "firmware": "v0.2.1-f74d",
+    "sha256": "9a69596a8cf1dd0944f49ba0d64f9bb1539a665cd7acdfbf1ff6712b8d02caae"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-09-01-XLF-000-01.igc",
+    "unit": "BlueGreen326",
+    "date": "010926",
+    "firmware": "v0.2.1-b30d",
+    "sha256": "ac34bb1e941d00202de8bd358d385e78fc49c4a5876701acd8c895b8291b8611"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-09-01-XLF-000-02.igc",
+    "unit": "BlueGreen326",
+    "date": "010926",
+    "firmware": "v0.2.1-b30d",
+    "sha256": "ebf295dd9a9520f68b738a7beca32de90251223d2e40cf9de699ea30f7365f2a"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-09-02-XLF-000-01.igc",
+    "unit": "BlueGreen326",
+    "date": "020926",
+    "firmware": "v0.2.1-b30d",
+    "sha256": "569bdddb3a2963bd9361c32a203399941837e5db1728c3526107d9cbce6cfba6"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-09-02-XLF-000-02.igc",
+    "unit": "BlueGreen326",
+    "date": "020926",
+    "firmware": "v0.2.1-b30d",
+    "sha256": "ab9e871d1602392846d60c575ad1960a18c4d81959a6f097646c0b671bb7130c"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-09-06-XLF-000-01.igc",
+    "unit": "BlueGreen326",
+    "date": "060926",
+    "firmware": "v0.2.3",
+    "sha256": "b57bc12a6672fafd1d7548b6f867ce31ca13469a408346d70630349a4bed2342"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-09-10-XLF-000-01.igc",
+    "unit": "BlueGreen326",
+    "date": "100926",
+    "firmware": "v0.2.3-ad3d",
+    "sha256": "25bd6141f566257bff06f62e3f4d346787b94e1d6754c46b04a19913003c2b6c"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-09-10-XLF-000-02.igc",
+    "unit": "BlueGreen326",
+    "date": "110926",
+    "firmware": "v0.2.3-ad3d",
+    "sha256": "68ed24c7195c66d86324feeb3b796866710fc542723a205eeb2295d7d12e7197"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-09-10-XLF-000-03.igc",
+    "unit": "BlueGreen326",
+    "date": "110926",
+    "firmware": "v0.2.3-ad3d",
+    "sha256": "5674dc19a23f081e5a696b185a5affacb17013e209d688e506eeb8ed6eb3d1a5"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-09-17-XLF-000-01.igc",
+    "unit": "BlueGreen326",
+    "date": "170926",
+    "firmware": "v0.2.3-ad3d",
+    "sha256": "f1a6f8dd2047f64411260d658f862bd8cac0a47cb4fbc85cb47ca593767bb9cf"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-09-17-XLF-000-02.igc",
+    "unit": "BlueGreen326",
+    "date": "170926",
+    "firmware": "v0.2.3-ad3d",
+    "sha256": "1a08f6558c7d567fa2f6db11a89c888c106b73f0e0f42f7f3886ada36f7b1439"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-03-XLF-000-01.igc",
+    "unit": "BlueGreen326",
+    "date": "031026",
+    "firmware": "v0.2.3-ad3d",
+    "sha256": "435443ceaf82634367026a35b4f7fdfd423bd1eb5555e048df6bd4663929c403"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-04-XLF-000-01.igc",
+    "unit": "BlueGreen326",
+    "date": "041026",
+    "firmware": "v0.2.3-ad3d",
+    "sha256": "6f8db09dfad156aff100a20d86f203bbdae800aef23ac77af19824d76d7e1946"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-04-XLF-000-02.igc",
+    "unit": "BlueGreen326",
+    "date": "041026",
+    "firmware": "v0.2.3-ad3d",
+    "sha256": "613adfebd1702cbf5040cb443d3d6ee0a369abbc62d79fe2e0f74e07aba2a86e"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-12-XLF-000-01.igc",
+    "unit": "BlueGreen326",
+    "date": "121026",
+    "firmware": "v0.2.3-497d",
+    "sha256": "19365369da64e1632ba4e1f85c9d851c4b07f8aff69508d0b69aa98f8cf3dfa5"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-13-XLF-000-01.igc",
+    "unit": "BlueGreen326",
+    "date": "141026",
+    "firmware": "v0.2.3-497d",
+    "sha256": "e91a74c56237dec9dfcf3713e4cc87bc5e284f2578fd7906ea282cc6f9da2942"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-16-XLF-000-01.igc",
+    "unit": "BlueGreen326",
+    "date": "171026",
+    "firmware": "v0.2.3-497d",
+    "sha256": "5e00383fcdf435ea06a810c199d61e2a7bd044f6e9a76278abc2797f7972bf8a"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-17-XLF-000-01.igc",
+    "unit": "BlueGreen326",
+    "date": "171026",
+    "firmware": "v0.2.3-497d",
+    "sha256": "1105c63c3afa8a02fcce73d5d4672714275f42f58628887b017f84b441c18b99"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-17-XLF-000-02.igc",
+    "unit": "BlueGreen326",
+    "date": "171026",
+    "firmware": "v0.2.3-497d",
+    "sha256": "16977af94b9ea203458462dd246ddd50328035e69177f712b0edc59ad88cb9f4"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-18-XLF-000-01.igc",
+    "unit": "BlueGreen326",
+    "date": "181026",
+    "firmware": "v0.2.3-497d",
+    "sha256": "933af0da25d1c4668cb93a83ff57a1625e7580a274fb36ff9d8af2051d23bcfa"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-18-XLF-000-02.igc",
+    "unit": "BlueGreen326",
+    "date": "181026",
+    "firmware": "v0.2.3-497d",
+    "sha256": "f1ebbe9fc8351f45e3259468c8ddcbcbd5fae67fac104baaa48bfcfd19379c64"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-19-XLF-000-01.igc",
+    "unit": "BlueGreen326",
+    "date": "191026",
+    "firmware": "v0.2.3-497d",
+    "sha256": "8e5f639d875436d519f49c7b15ce654daff11949a8c11de2ff061eec436650c3"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-01.igc",
+    "unit": "BlueGreen326",
+    "date": "251026",
+    "firmware": "v0.2.4-968",
+    "sha256": "377328ff0db75e667ed8c6b366fa9cb3d6e7bba512ac43dc4a4b32cda6d2a637"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-02.igc",
+    "unit": "BlueGreen326",
+    "date": "251026",
+    "firmware": "v0.2.4-968",
+    "sha256": "2a62d8b8718a2508156e117f91956314bb677fadc8b84aa15c427e733dbab293"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-03.igc",
+    "unit": "BlueGreen326",
+    "date": "251026",
+    "firmware": "v0.2.4-968",
+    "sha256": "c016f9ebb1191cbf03b56fe6bc484a43304498b321bb7535f5aadf8f538e2c4b"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-04.igc",
+    "unit": "BlueGreen326",
+    "date": "251026",
+    "firmware": "v0.2.4-968",
+    "sha256": "353d140605869f0dc5caea1c69b27fe271519494c277b6c23c87957b75c1e790"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-05.igc",
+    "unit": "BlueGreen326",
+    "date": "251026",
+    "firmware": "v0.2.4-968",
+    "sha256": "341323ae9f820a980ee4cab645a734371c4c89f94176613142e72351be3cc14d"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-06.igc",
+    "unit": "BlueGreen326",
+    "date": "251026",
+    "firmware": "v0.2.4-968",
+    "sha256": "f3ccce72353da154912afb90af03ce115a1c3f5b0c9981ba66b4c2af53688925"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-07.igc",
+    "unit": "BlueGreen326",
+    "date": "251026",
+    "firmware": "v0.2.4-968",
+    "sha256": "12464e6b2fa5595eec24842d0d6f9ca36546873c333dc2c013f091e2b6c4c3fd"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-08.igc",
+    "unit": "BlueGreen326",
+    "date": "251026",
+    "firmware": "v0.2.4-968",
+    "sha256": "002089480abff3f98ceb6fdb081c3d9b7077571ed3c7ee711c150d860eb84b46"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-09.igc",
+    "unit": "BlueGreen326",
+    "date": "251026",
+    "firmware": "v0.2.4-968",
+    "sha256": "361c834c33db1db85c45406c5c5252178e33e5c29152e60f2efcaef398d0c0a1"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-10.igc",
+    "unit": "BlueGreen326",
+    "date": "251026",
+    "firmware": "v0.2.4-968",
+    "sha256": "c99138b09041180a31c5996613cc3b1ee03545b3c45129d1acfbc8461fa320ec"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-11.igc",
+    "unit": "BlueGreen326",
+    "date": "251026",
+    "firmware": "v0.2.4-968",
+    "sha256": "8a17c4efc8b2fa46ee0b3d6c685d804de6833ab7cfd140cf44cef41c6beb638e"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-12.igc",
+    "unit": "BlueGreen326",
+    "date": "251026",
+    "firmware": "v0.2.4-968",
+    "sha256": "31a393274ca7bfeb2de2074b12b478dce4f658dd516100045fd5a8f50ab07cad"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-13.igc",
+    "unit": "BlueGreen326",
+    "date": "251026",
+    "firmware": "v0.2.4-968",
+    "sha256": "3d5e186ac1bd92004f7333c37f219ed4c9ba536ff4bf5a58a5cd8a82603d895b"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-14.igc",
+    "unit": "BlueGreen326",
+    "date": "251026",
+    "firmware": "v0.2.4-968",
+    "sha256": "d0b107cd75bd3993560ecc3ac15cb862cb7a6f836cbf17b587a9f6686431ef41"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-15.igc",
+    "unit": "BlueGreen326",
+    "date": "251026",
+    "firmware": "v0.2.4-968",
+    "sha256": "a1a0ee22fa5097b202c074c37e74d2b077006fd5b9ec20f7ba4ddaf2506e8076"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-16.igc",
+    "unit": "BlueGreen326",
+    "date": "251026",
+    "firmware": "v0.2.4-968",
+    "sha256": "504b8915d363eac16e3f07f14911b5525a1471a48e9d6b17fbb97122659dede3"
+  },
+  {
+    "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-17.igc",
+    "unit": "BlueGreen326",
+    "date": "251026",
+    "firmware": "v0.2.4-968",
+    "sha256": "974eab459c7f269caff506eaa8459ac83a2ba3f64ed02e5af0a5fdfc68ff7e8d"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2025-07-06-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "060725",
+    "firmware": "0.0.11-83d+h3.2.3",
+    "sha256": "ccb7dcd87067143048ee6f186fedfaa1f760c273599dadd91c659f2ceecbe36b"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2025-08-18-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "180825",
+    "firmware": "0.1.0-d57d.dev+h3.2.3",
+    "sha256": "4e0d8cf2fce77a5b406886d04cf8dfcb8049d90329635bb9a60e2f2c2581403a"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2025-08-18-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "180825",
+    "firmware": "0.1.0-d57d.dev+h3.2.3",
+    "sha256": "a513665878b54c68422134de2c226c896308ccd2dfbc117406453037dba567e2"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2025-08-18-XLF-000-03.igc",
+    "unit": "Bethany",
+    "date": null,
+    "firmware": null,
+    "sha256": "27feabee299939307ece60e150cc069ff84b6417e586e40e92877872cc00c9a1"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-02-11-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "110226",
+    "firmware": "0.1.2+h3.2.3",
+    "sha256": "e244911ac6efa7877e228d3d74f7f6e7f044126141a189cc55a2c89dab0bbb09"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-02-12-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "120226",
+    "firmware": "0.1.2+h3.2.3",
+    "sha256": "ed530c16382144dbbc9147037a62c91568c99855ecb5dcdb1ce1bd50e9226ea1"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-02-13-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "130226",
+    "firmware": "0.1.2+h3.2.3",
+    "sha256": "71f1624559c21e0479027b5022df70caf0c1fcc8dcf225012e77efa294e2a70f"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-02-22-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "220226",
+    "firmware": "0.1.2+h3.2.3",
+    "sha256": "dd2578f82bbaf006010888d97d202119e265f5b69e722ea1cd25a504ca7a8630"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-02-28-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "280226",
+    "firmware": "0.1.2+h3.2.3",
+    "sha256": "6fcc1131e6eb4cb2f2cf1ca18437e55dfd4a5baa31dbf773be38002c80aae05b"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-03-01-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "010326",
+    "firmware": "0.1.2+h3.2.3",
+    "sha256": "1406ed3f67721e35d1eeade1f71d681134ccb49519e84f16f695978c79ab3905"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-03-08-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "080326",
+    "firmware": "0.1.2+h3.2.3",
+    "sha256": "bff567010d008f77b2df83982646c4908c81ead35bbd296e99c01aee40f4b1e6"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-03-22-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "220326",
+    "firmware": "0.1.2+h3.2.3",
+    "sha256": "91afdb5a8557b85e31ce3e70512d004a675aae9b31f97937a5f3154e84501a53"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-03-28-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "280326",
+    "firmware": "0.1.2+h3.2.3",
+    "sha256": "c2f85c4c6bdcc98eedbc9cc3cd9b0a015b31d392b9d14afafbe5902c6e5862d3"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-03-28-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "280326",
+    "firmware": "0.1.2+h3.2.3",
+    "sha256": "83e5e95e33e97d337f3e3259cedc49c65e32fa561af588da9de85f4942941e35"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-03-28-XLF-000-03.igc",
+    "unit": "Bethany",
+    "date": null,
+    "firmware": null,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-03-28-XLF-000-04.igc",
+    "unit": "Bethany",
+    "date": "280326",
+    "firmware": "0.1.2+h3.2.3",
+    "sha256": "ff4b66bec9abd8bd49d712fc6cd400625d6690c3cdf74dea0172a489879edd76"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-04-18-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "180426",
+    "firmware": "0.1.2+h3.2.3",
+    "sha256": "e38942358aca229b98afccde57e44d81b18d9d6c52e7674954be7bb9d2b045af"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-04-23-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "240426",
+    "firmware": "0.1.2+h3.2.3",
+    "sha256": "783cafd5956038ee1592c368e0ea6fcac1e7528de170dd88411016da2bc8dbfc"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-04-24-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "240426",
+    "firmware": "0.1.2+h3.2.3",
+    "sha256": "8fc5bb888dfa8684497b9e3669b2b3d1db2dd8e38b0343c673fa59e00702aa9c"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-04-24-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "240426",
+    "firmware": "0.1.2+h3.2.3",
+    "sha256": "f7037b0c0c3d77bd1881cea9007a5ee14ba6316f4923ea280efca917da16fae3"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-04-24-XLF-000-03.igc",
+    "unit": "Bethany",
+    "date": "250426",
+    "firmware": "0.1.2+h3.2.3",
+    "sha256": "d81a0af0133984ac5b57e673f7cb3c2d6aa398468464b56e6bc8516b8fdeb5d7"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-04-25-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "250426",
+    "firmware": "0.1.2+h3.2.3",
+    "sha256": "c9bdb8da1bcaa4d9c7a38f28c4247275885250c538ae5033a42fb5c40c49efa1"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-04-25-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "250426",
+    "firmware": "0.1.2+h3.2.3",
+    "sha256": "97998310274cb2f3362b2b74588a146aecbdc1e8bd43a076eb93bee830ba2b49"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-04-26-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "260426",
+    "firmware": "0.1.2+h3.2.3",
+    "sha256": "12fd89b24d56aa51f9aed0b39cd41bce79f38b060458e8270c5732ef078081cd"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-05-02-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "020526",
+    "firmware": "0.1.2+h3.2.3",
+    "sha256": "fcb159b804a93b5b1905228271285853c74484bafb10290db3f2e556c080df1c"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-05-12-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "120526",
+    "firmware": "0.1.2+h3.2.3",
+    "sha256": "bbac76d837676461f9cca9c50f139fd77a9877ab6be0cabffe029ce49a10c50a"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-05-21-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "210526",
+    "firmware": "0.1.2+h3.2.3",
+    "sha256": "4f8982e3df44bf4601604970d9ce39d87e56daf12f24dbf69f63fb501d4ffb31"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-05-21-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "220526",
+    "firmware": "0.1.2+h3.2.3",
+    "sha256": "a0775b2cebb3a39b2e38b82aa81d0bd9dccf80785147995605f12ab9346b7aab"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-05-22-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "220526",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "7ddc228d28c28c8cf4e5fe4040b0df1b0f315fb3dc13071673ebe1a727d68d7b"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-05-22-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "230526",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "61ea45dfd0622057026937b5e87d4e071d01c72f3170de010c7eb1c294615614"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-05-23-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "230526",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "7128ceff36cfd13c895b362c94d40559406c8c72a4f91e1db9e62ee8a2124cb1"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-05-23-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "230526",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "ad6c73b3b31cb82128084a6e240b45c66c81ce609f587abd859be7fdc85f01c5"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-05-23-XLF-000-03.igc",
+    "unit": "Bethany",
+    "date": "240526",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "5399888c817d87ee71e351b67cfd3ccbf810a8703bc80ce5dc8442488cebd76d"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-05-24-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "240526",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "974255654f587c6f5802ee90eb5a6acae240514b702da5184fe4f4e7f1099c89"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-05-25-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "250526",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "0a461b8871b0d18ee48fe58a81a891e7c2e73c9bbb67cb199ce042fd80f47f9c"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-05-31-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "310526",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "0dee55ca56e42acca653a02927da864279bb86cac385b28c5fdbb2816b287b1e"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-05-31-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "310526",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "3890a5066282d4bbd9c681381365e616318cccc97da102b716254f786f80933e"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-05-31-XLF-000-03.igc",
+    "unit": "Bethany",
+    "date": "310526",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "7dd58e47f888ca71e4638605c3b6304279328002561c8c86a475b0b834877164"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-05-31-XLF-000-04.igc",
+    "unit": "Bethany",
+    "date": "310526",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "f30e06766fe45a68aa72c2391f17f1a1ff75822fa33465ece653aadc346e7401"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-05-31-XLF-000-05.igc",
+    "unit": "Bethany",
+    "date": "310526",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "12dd85853fbd103c72aa1667958ec52e14a823f17f216efcbfb14075ad390de0"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-05-31-XLF-000-06.igc",
+    "unit": "Bethany",
+    "date": "310526",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "4b84a63c74539bfc185dfd2d04c53da4318f5b9621bbcdb13fbcc443af207cec"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-05-31-XLF-000-07.igc",
+    "unit": "Bethany",
+    "date": "310526",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "a4dfcc4b68c7d916352474cc598505e1fc06899a0b1a165956f30144c8e61795"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-05-31-XLF-000-08.igc",
+    "unit": "Bethany",
+    "date": "310526",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "5333fbd954f69ec3f19ce11f1bccfb353ad12b6920e40b9860d872c7cea78188"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-05-31-XLF-000-09.igc",
+    "unit": "Bethany",
+    "date": "310526",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "0cfa8b48bd5e66fdaef191d6f5cd8be3b0381ea7fa4e141c4e0a0cd92d04f24d"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-05-31-XLF-000-10.igc",
+    "unit": "Bethany",
+    "date": "310526",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "d61ac068beaf709d99d63feda42876c849a734a1c81c38e4729163479acebec0"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-05-31-XLF-000-11.igc",
+    "unit": "Bethany",
+    "date": "310526",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "48eabbf9f41cdc3490a97923ca6236d9fe2c28ed0a6a849a61420750bca91995"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-05-31-XLF-000-12.igc",
+    "unit": "Bethany",
+    "date": "310526",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "c0bd2e93e458a7dabb411b40aaf7fcf067905f014248ea5cefe63ae9f590805d"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-05-31-XLF-000-13.igc",
+    "unit": "Bethany",
+    "date": "310526",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "1b6c7863023ad2270f2107b7e3544073f4d53d7cad443ead4ba533cd8145dae3"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-06-02-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "020626",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "a86cacea32d8b7ee9a7926c69a69c0152339d3b2d4375814d0474336141f6e87"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-06-02-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "020626",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "b9220082ec485d57728c34c28fdb31d2240d5a0917f3a53fc62b1996513e5e31"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-06-02-XLF-000-03.igc",
+    "unit": "Bethany",
+    "date": "020626",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "66e110b5fd9f37893e2e9bfb603b666eefdbf0b42bc3e80a1caa4b214889bdd9"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-06-02-XLF-000-04.igc",
+    "unit": "Bethany",
+    "date": "020626",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "b49ebf858211cd40b948a92ea557afe80c950f3aef936213d51a68c1783cafe2"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-06-02-XLF-000-05.igc",
+    "unit": "Bethany",
+    "date": "020626",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "253cde4e26f670b283f530aa533b775a448e473bda242b694107d25f8d2f1106"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-06-02-XLF-000-06.igc",
+    "unit": "Bethany",
+    "date": "020626",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "96ee0a51a07aeac7d1909c28263a5e3b5210adab008700ac2e02ea141046cc2a"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-06-04-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "040626",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "3f237480fe3171ea47005cc8a9fad10fb3a9dd4a693a224332b37396ccc96d67"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-06-04-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "040626",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "a4a6aaf6dbfa7ba1f2f061784d41d5ebaee572403f92e8fe90e04726edcacf7b"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-06-04-XLF-000-03.igc",
+    "unit": "Bethany",
+    "date": "040626",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "e0993c98900ba160b599d00f80a22261bf65511bb670d53f2ce9fd765a2d4193"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-06-04-XLF-000-04.igc",
+    "unit": "Bethany",
+    "date": "040626",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "ff09aeea7e37ecca0502f820aac994f63767509d7a589f06028effc26b977f2b"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-06-04-XLF-000-05.igc",
+    "unit": "Bethany",
+    "date": "040626",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "2e547c66205946f278769780e096e1ee5c77e696a2fedb11c0ff9fcb90754c43"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-06-04-XLF-000-06.igc",
+    "unit": "Bethany",
+    "date": "040626",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "99acf27d0c2dd057077c4292ae8c29afd14fafb1f2a57376bf2d8d77dde3c2c7"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-06-04-XLF-000-07.igc",
+    "unit": "Bethany",
+    "date": "040626",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "ccdfbb49c2b9571b2c7ff2a69d326a08309ee949d6dd51136578a5a2a2c1a8ac"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-06-04-XLF-000-08.igc",
+    "unit": "Bethany",
+    "date": "040626",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "3ec20a6e1286d8a77ef2b7870f96cec80f01543ab4540da65b333925d094999b"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-06-04-XLF-000-09.igc",
+    "unit": "Bethany",
+    "date": "040626",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "02651f2453b631e02ee7e23cc691dfde73d35f7d8f35179517ae54c0b255f437"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-06-04-XLF-000-10.igc",
+    "unit": "Bethany",
+    "date": "040626",
+    "firmware": "0.1.4-c46.dev+h3.2.3",
+    "sha256": "e8a784188e15afb488784bfc1afc6c3ec93c4d50f0b877d07a6a04f351705fee"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-06-13-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "130626",
+    "firmware": "0.1.4-b40d.dev+h3.2.3",
+    "sha256": "0082e4a1d211a8cedb530d1445a18788a6a02aec2b5b2d1d25dda0a442465185"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-06-13-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": null,
+    "firmware": null,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-06-14-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "140626",
+    "firmware": "0.1.5-67b.dev+h3.2.3",
+    "sha256": "f59250eea1cd97ec0282d9c0c2c5c7eedec9192cb1e9d4967c7553cbfbd3400d"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-06-20-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "200626",
+    "firmware": "0.1.5-67b.dev+h3.2.3",
+    "sha256": "25918b08ac933b26533ef08b68189cd2e7f96252b56c08180e3ffc97855b29d5"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-06-20-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "200626",
+    "firmware": "0.1.5-67b.dev+h3.2.3",
+    "sha256": "1b6de452446aee2310a2cbe6794aea17319d7e3fdabb620825142bc35aeda63e"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-06-21-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "210626",
+    "firmware": "0.1.5-67b.dev+h3.2.3",
+    "sha256": "3ffb7d6164d40ecc4b0760f0398fc7bb7ea7fa7a5b83df8a66d9df1bf236cfbe"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-06-26-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "260626",
+    "firmware": "0.1.6+h3.2.3",
+    "sha256": "7294a1bf63e38f9510f15a3727df96235804c5cbadb2a7c9ee3c453b57b9f114"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-06-26-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "260626",
+    "firmware": "0.1.6+h3.2.3",
+    "sha256": "9c7b1de5e2154162c149b7f1a801c0c6e63fe65e67bed4cde8d14e9b846adf36"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-06-26-XLF-000-03.igc",
+    "unit": "Bethany",
+    "date": "260626",
+    "firmware": "0.1.6+h3.2.3",
+    "sha256": "ec6edb3f96531c82b88a8cb6b80dd5a840153585ffb0938aa2b92570c55f43d0"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-06-26-XLF-000-04.igc",
+    "unit": "Bethany",
+    "date": "260626",
+    "firmware": "0.1.6+h3.2.3",
+    "sha256": "142c1ec4926145bcce63d9c0b27aa7cee85dd8bfd5a02ce89cfb17e040f41f72"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-06-30-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "300626",
+    "firmware": "0.1.7+h3.2.3",
+    "sha256": "c2b4900ad5a571ee815e2b61527ca78d9a93d47cbb86863560f9cbecf0e251ed"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-06-30-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "300626",
+    "firmware": "0.1.7+h3.2.3",
+    "sha256": "8c1550147cd9318c241ea7079d517e2554c611e7c6401aa7a73cba245b63b08e"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-06-30-XLF-000-03.igc",
+    "unit": "Bethany",
+    "date": "300626",
+    "firmware": "0.1.7+h3.2.3",
+    "sha256": "1bde74ddba6bdd8f123ef36cd22f78daedcf2f5b80cf10807e56bd042b02299f"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-06-30-XLF-000-04.igc",
+    "unit": "Bethany",
+    "date": "300626",
+    "firmware": "0.1.7+h3.2.3",
+    "sha256": "2b6b1b82f6239e988458cf6b25012e53017cc735a148c9fbaf6329c3c7dbe26e"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-06-30-XLF-000-05.igc",
+    "unit": "Bethany",
+    "date": "300626",
+    "firmware": "0.1.7+h3.2.3",
+    "sha256": "5c9534d80dda69aa14a8e5484ec1aec7232bbcd1814e60623e88a65f38d23918"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-07-02-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "020726",
+    "firmware": "0.1.7+h3.2.3",
+    "sha256": "d9b67f0f5b41933bafed8253a903f007b7a89dc7b3bd208bdb4ce04be91c8648"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-07-02-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "020726",
+    "firmware": "0.1.7+h3.2.3",
+    "sha256": "fc6e2e0d2864e58d30d8a1a0cd5d2bfd5629f97f1c66a9582e15d4c14dbbced4"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-07-12-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "120726",
+    "firmware": "0.1.7+h3.2.3",
+    "sha256": "e1f72c7b23ebf6bf4163911485b5124d8adbe8c4f7859e300ad37de0bbc1c44f"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-07-14-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "140726",
+    "firmware": "0.1.7+h3.2.3",
+    "sha256": "ab69e1fef683d971b90896ed7bb707b9b6e1553fcc645f21a5366a7ff7abaff8"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-07-18-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "180726",
+    "firmware": "0.1.7+h3.2.3",
+    "sha256": "afd8eb5300a06a736fbe8e50bffd45ef73ace4bedb3c3e93ab8cd5613c10990c"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-07-25-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "250726",
+    "firmware": "0.1.7+h3.2.3",
+    "sha256": "5b1a36637d7669e4e4d4dcaf004e8d66f92f76aa63ff630b4fde32487a570572"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-07-26-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "260726",
+    "firmware": "0.1.7+h3.2.3",
+    "sha256": "33d62e430b8e467c6a8b25ac4028a17fd2cf77e1a8d7a99442c4489c5945966b"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-07-26-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "260726",
+    "firmware": "0.1.7+h3.2.3",
+    "sha256": "6337959577de331d24a4084d06902adbb7d61c451eeeba8c4f6533245bf06ce0"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-07-26-XLF-000-03.igc",
+    "unit": "Bethany",
+    "date": "260726",
+    "firmware": "0.1.7+h3.2.3",
+    "sha256": "3eb4af0527cb6866181ae7e84432d8da972ee22b4e83a66b982a347255a82c1a"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-08-01-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "010826",
+    "firmware": "v0.1.7-55cd",
+    "sha256": "2ce7ac8d2e8e415350f81722410ba12f863ca6fc6aa0678f11864f479e9d46f7"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-08-02-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "020826",
+    "firmware": "v0.1.7-55cd",
+    "sha256": "5d2cff7d01ade32592d89521a2149c8bb3b0a193ca4dfadcdd3447979930ef84"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-08-02-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "020826",
+    "firmware": "v0.1.7-55cd",
+    "sha256": "c6d85ac61c869e66d351026b44e60b8477c95f952b778c3026cf92cc3f812113"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-08-02-XLF-000-03.igc",
+    "unit": "Bethany",
+    "date": "020826",
+    "firmware": "v0.1.7-55cd",
+    "sha256": "3cfefda22ce4732c9158459d5c12f21d24bb1a75b98cc89f9333bb9d907e1422"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-08-15-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "150826",
+    "firmware": "v0.2.1",
+    "sha256": "596637c547c759f468e51f6764a0bf357f2bf202d735abcc74b5e1953dae42a5"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-08-16-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "160826",
+    "firmware": "v0.2.1",
+    "sha256": "bb29dc62959e84906a3e6f2e5ab71dfefffe1368da4c5a9cece5020ff31cbd6c"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-08-16-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "170826",
+    "firmware": "v0.2.1",
+    "sha256": "4c42b9b13885be61c7312b251e65cfcef04021b3afbd0d83e3e4d70599898770"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-08-16-XLF-000-03.igc",
+    "unit": "Bethany",
+    "date": "170826",
+    "firmware": "v0.2.1",
+    "sha256": "3c7080003c81b5de5810493711a86f5ce30b4dfa6f0156b30c898c96fe063584"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-08-22-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "220826",
+    "firmware": "v0.2.1",
+    "sha256": "0b6a7e40e8100a365afda5fc49497b690fea95cd5ac9f5923268d1bfc8c0b267"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-08-22-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "220826",
+    "firmware": "v0.2.1",
+    "sha256": "32a88e6b00b9629772fbc86c74f766e441dbbe143d8d0ae984b02b20f6306c11"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-08-23-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "230826",
+    "firmware": "v0.2.1",
+    "sha256": "77e7855090b5ee50a34aaea49f200fb5d315c8766d8ac5f71d1a0a2b162e0547"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-08-27-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "270826",
+    "firmware": "v0.2.1",
+    "sha256": "e9d6c524d7458b840cb0f1f2ebf5930bea1466c267e1aa17316674f4d994ac0e"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-08-28-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "280826",
+    "firmware": "v0.2.1",
+    "sha256": "ae00adf29bb31d18dcb49925ae2ebf4e67fdd32f65e2e0cbffdda350855cc655"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-08-28-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "290826",
+    "firmware": "v0.2.1",
+    "sha256": "86f6686662a1feab55189a32b46e6cddbb6c57c85b95b4aaa1c7027297b471eb"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-08-29-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "290826",
+    "firmware": "v0.2.1",
+    "sha256": "44603e57964ad5163f283238a69f552c586ce2e5d847cf89df4f84414ee98704"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-08-29-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "290826",
+    "firmware": "v0.2.1",
+    "sha256": "105210db12850a762d683e8584d7af07496043ba27ee8ab4823fe5ea9554ab87"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-08-29-XLF-000-03.igc",
+    "unit": "Bethany",
+    "date": "300826",
+    "firmware": "v0.2.1",
+    "sha256": "43e457a4faa2392fe9cd905366991bd28970399a90f12441f535a1867093eb7d"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-08-30-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "300826",
+    "firmware": "v0.2.1",
+    "sha256": "2f8a31d9632d43e8f2fc11058733f5a47742184837eb52002eb075feb2a64068"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-05-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "050926",
+    "firmware": "v0.2.1",
+    "sha256": "d240a91a34018b1d16b26f660b5ca866fd481708212cd7f6e5bfdc732847bb81"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-06-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "060926",
+    "firmware": "v0.2.1",
+    "sha256": "6e9c47517c02dd0b61bdb610533f489e20af80edc2e8f203463d7a06471261ff"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-07-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "070926",
+    "firmware": "v0.2.1",
+    "sha256": "337206dcf9399fa7f063c4c92454c623d2d5b5db5bed2894fdcd86f62c73dd81"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-07-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "070926",
+    "firmware": "v0.2.1",
+    "sha256": "41bcea8960ee1d0151eafcdb58133a3f22f46eb2ce6fcbb8176ce7532eef2e2b"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-07-XLF-000-03.igc",
+    "unit": "Bethany",
+    "date": "070926",
+    "firmware": "v0.2.1",
+    "sha256": "e2e9a18c8299bcf455338273a7d1113e47f699eeeed84b46edb70cb3f45c190c"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-07-XLF-000-04.igc",
+    "unit": "Bethany",
+    "date": "070926",
+    "firmware": "v0.2.1",
+    "sha256": "be040b80fee9decbc6004aae8eb829bada4ca4d12dacd824add1a198638bf422"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-07-XLF-000-05.igc",
+    "unit": "Bethany",
+    "date": "070926",
+    "firmware": "v0.2.1",
+    "sha256": "fcffc52c69091a7a7d6df43cd3568051180fe25a02aa4f681cb1445a84470028"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-07-XLF-000-06.igc",
+    "unit": "Bethany",
+    "date": "070926",
+    "firmware": "v0.2.1",
+    "sha256": "d9945d0bccfdefb31448c2dbd524ff19982d0a9833d73c8b345c8405adb76f1b"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-11-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "110926",
+    "firmware": "v0.2.1",
+    "sha256": "806407211a2cfdc540eb103c3195ff311458e0c2291e4576d191be8df2fb2bb1"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-11-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "110926",
+    "firmware": "v0.2.1",
+    "sha256": "8521153074235ec2948a3a0841520f0bed3acc95849b8c42e29106ce3657468d"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-11-XLF-000-03.igc",
+    "unit": "Bethany",
+    "date": "110926",
+    "firmware": "v0.2.1",
+    "sha256": "c0a647381fedea7d54495c43bdf3be411e43430217e873bcf2d2fdb02a59dcb3"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-12-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "120926",
+    "firmware": "v0.2.1",
+    "sha256": "c5fc7c4c42d0e7a9284c0b6ab7e940b1f5827a0c870e6cdbd64c31911386ed39"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-12-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "120926",
+    "firmware": "v0.2.1",
+    "sha256": "263db212aeab2e9f18247605f509fb9813fe9a941d18624bd238a37c63f1fde0"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-12-XLF-000-03.igc",
+    "unit": "Bethany",
+    "date": "120926",
+    "firmware": "v0.2.1",
+    "sha256": "59763dc75755d84e6d12edc72d4b5b47802f959f220aec9d7ed7d3dd69bf3794"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-12-XLF-000-04.igc",
+    "unit": "Bethany",
+    "date": "120926",
+    "firmware": "v0.2.1",
+    "sha256": "6a7bc0b8c18bbf94cc1a0e0a621b330de00a23b2ed905f225806facfb7965ecc"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-12-XLF-000-05.igc",
+    "unit": "Bethany",
+    "date": "120926",
+    "firmware": "v0.2.1",
+    "sha256": "005e7857882e371edaf540ce1ec8ac8a85817a2067a6c61cb33650753bce72cc"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-12-XLF-000-06.igc",
+    "unit": "Bethany",
+    "date": "120926",
+    "firmware": "v0.2.1",
+    "sha256": "7a3ddbcd36c6a2a89a8ed54e43357700406a7fc24ee58dc22d55db573642bc00"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-12-XLF-000-07.igc",
+    "unit": "Bethany",
+    "date": "120926",
+    "firmware": "v0.2.1",
+    "sha256": "10c482ec9a06404f7205e591fe209ed008fa06e9a70b15d8e370a2791206f8de"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-12-XLF-000-08.igc",
+    "unit": "Bethany",
+    "date": "120926",
+    "firmware": "v0.2.1",
+    "sha256": "463faf2ec32005e436d03c682f34dfee579760952766658edfce1d58b38d6726"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-12-XLF-000-10.igc",
+    "unit": "Bethany",
+    "date": "120926",
+    "firmware": "v0.2.1",
+    "sha256": "e61e7a334cdaead191f634ec8b5fb6a9f30fa30b136a9e8ca5da9a313d664960"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-13-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "130926",
+    "firmware": "v0.2.1",
+    "sha256": "710693c1a164e2093c57513a548c5684fa9ca658ba34664f41ba283a79356a3c"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-13-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "130926",
+    "firmware": "v0.2.1",
+    "sha256": "306a51f918286742b732583f7a44f39dbb2df70b001de1be82c14f12c059f110"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-13-XLF-000-03.igc",
+    "unit": "Bethany",
+    "date": "130926",
+    "firmware": "v0.2.1",
+    "sha256": "900cba6071d054b8db21a4a3cf293efc93261cdc6f33c89182994e46d8509342"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-18-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "190926",
+    "firmware": "v0.2.1",
+    "sha256": "96bf07bab8c9c3fb5cafb2d9980c934b50c40666c05d9471f8bc56c890e20907"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-20-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "200926",
+    "firmware": "v0.2.3",
+    "sha256": "3874637b3998a2c055bfcac85b1826a86d853396891cd047ce4dd6f64bfbfa10"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-20-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "200926",
+    "firmware": "v0.2.3",
+    "sha256": "b3a9b4a0cb1f6987fd63182cdd5e5a89985ba79a317e27537c6b2de5f8d7418a"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-20-XLF-000-03.igc",
+    "unit": "Bethany",
+    "date": "200926",
+    "firmware": "v0.2.3",
+    "sha256": "d4c88d9241f965171b82daea64207e6a91b38caa175e1ceaf44f040d3d8ec939"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-20-XLF-000-04.igc",
+    "unit": "Bethany",
+    "date": "210926",
+    "firmware": "v0.2.3",
+    "sha256": "4366ac5fa5223320d6d7175242436fae29eb55f513818f62ea4cbeea57f88639"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-24-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "240926",
+    "firmware": "v0.2.3",
+    "sha256": "865d70566587aa73c3aa0ee37de1b2b59e5f81f31fe54703f0644fffb6d4ab5f"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-24-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "240926",
+    "firmware": "v0.2.3",
+    "sha256": "c559dbe8944d75d80be7d53ad301be7666f31d7d4032204bb23e6d7bf515c154"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-24-XLF-000-03.igc",
+    "unit": "Bethany",
+    "date": "240926",
+    "firmware": "v0.2.3",
+    "sha256": "3c2a06ce92eb262836de228616bb8dfc4269203ee68c57ef91940acde876a3e0"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-24-XLF-000-04.igc",
+    "unit": "Bethany",
+    "date": "240926",
+    "firmware": "v0.2.3",
+    "sha256": "994a5d58ec88783a45cf3988ce3c92e0647277f2478f9712c72085a4ea4881b1"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-24-XLF-000-05.igc",
+    "unit": "Bethany",
+    "date": "240926",
+    "firmware": "v0.2.3",
+    "sha256": "6669e5358822da64f98e2bc72db0f245a7d64b785ec079649afdc06235e6ea05"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-26-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "260926",
+    "firmware": "v0.2.3",
+    "sha256": "bcff9e6345cb96a7a8208548d4fc9df76901dc5ba0c40dfd963f8fcce65c2665"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-26-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "260926",
+    "firmware": "v0.2.3",
+    "sha256": "3c77910f1517d2646fb8c4593607976ba61dcf390ed0609fafed5ecaec9b1f5b"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-27-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "270926",
+    "firmware": "v0.2.3",
+    "sha256": "943e100d076e2573fa15047b6edfc774335652db63358f71eef3fe3f28983b01"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-27-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "270926",
+    "firmware": "v0.2.3",
+    "sha256": "1a05cd23f6a765f8857bae5f91e7ddd78423aed1e4b45b3ef1a0c2efbbb4df47"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-09-27-XLF-000-03.igc",
+    "unit": "Bethany",
+    "date": "270926",
+    "firmware": "v0.2.3",
+    "sha256": "a52f10d4c978c3105790b455d33a260e63b32b8c3607b1efd3c91fce71e1138c"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-10-01-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "011026",
+    "firmware": "v0.2.3",
+    "sha256": "45ad00f37607b6a615b9779930d193804510a3d7fbd778da93c978342619f4de"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-10-01-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "011026",
+    "firmware": "v0.2.3",
+    "sha256": "1cb240d15941fcd524dc24dd988b4f953fc722e8edcfd66dbeb88ebd319a31ed"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-10-01-XLF-000-03.igc",
+    "unit": "Bethany",
+    "date": "011026",
+    "firmware": "v0.2.3",
+    "sha256": "e56e94a659aad60935dcf49806ae700a7df966a4e79393fd88d7b6ba8c2e754c"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-10-01-XLF-000-04.igc",
+    "unit": "Bethany",
+    "date": "011026",
+    "firmware": "v0.2.3",
+    "sha256": "1fe570591e11e2e1462c0bd85e1a835ec561f7eb25884b1b0843bcec517e7ee6"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-10-04-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "041026",
+    "firmware": "v0.2.3",
+    "sha256": "b351b02cb5e7d0b8fc9af442e3a5ef9ec03125bd0e8b17d06791ab14e30b27af"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-10-04-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "041026",
+    "firmware": "v0.2.3",
+    "sha256": "f5369806b9b12f11a9f3196fc31d75f1c7873963116e22e296be4dbcf69a5cff"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-10-04-XLF-000-03.igc",
+    "unit": "Bethany",
+    "date": "041026",
+    "firmware": "v0.2.3",
+    "sha256": "d81bccf25686cff735a1bdfae67798d816f5d49ff3b06131f61a1ce96631b675"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-10-06-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "061026",
+    "firmware": "v0.2.3",
+    "sha256": "c1c3646e783e95cc5f6362280845deb00706c685e8c56b1674706d2a326ced97"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-10-06-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "061026",
+    "firmware": "v0.2.3",
+    "sha256": "8c046f63ddb07b6d2e9dd687ad4e4890377f5179825e906bdb46c6d9f5c6af59"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-10-06-XLF-000-03.igc",
+    "unit": "Bethany",
+    "date": "061026",
+    "firmware": "v0.2.3",
+    "sha256": "3f0aca085c092d10310729bb3d6bbfa3e49dcee12b081f5bd75cdbbb7bca1937"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-10-10-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "101026",
+    "firmware": "v0.2.3",
+    "sha256": "1012ae907f1aa4bc04828f9e3fcf9c8275f567ecf47439a3ec34479605fca431"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-10-10-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "101026",
+    "firmware": "v0.2.3",
+    "sha256": "daad6728823bcbd62eb57ae131816358e8e01ec5399af404a058bf8781a14765"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-10-11-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "111026",
+    "firmware": "v0.2.3",
+    "sha256": "3077abca0d34513d3edc6bc08370e2ce06d91be9120eb0e99195f0c0c0a1e8c1"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-10-11-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "111026",
+    "firmware": "v0.2.3",
+    "sha256": "79fb8e7f6a03397b4401ff1b0d47e26c9a41630ef2ff2cbc6af85c604b9b31d5"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-10-11-XLF-000-03.igc",
+    "unit": "Bethany",
+    "date": "111026",
+    "firmware": "v0.2.3",
+    "sha256": "b9e1b2138224a2de814eae66d6c39906d0c9a910de6d4871eeb5473f7bae5973"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-10-11-XLF-000-04.igc",
+    "unit": "Bethany",
+    "date": "111026",
+    "firmware": "v0.2.3",
+    "sha256": "727f6b0778603dc4cb842e6a250cfb592bef5d5b60e2623f772d91b0040d4d9c"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-10-11-XLF-000-05.igc",
+    "unit": "Bethany",
+    "date": "111026",
+    "firmware": "v0.2.3",
+    "sha256": "8bb3608acc36e26063da77ba1490cf58a7a8d5a3c649c4d2dc3f99eca01d0b05"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-10-11-XLF-000-06.igc",
+    "unit": "Bethany",
+    "date": "111026",
+    "firmware": "v0.2.3",
+    "sha256": "e0c6294a2f81c79cf742a7056bd481ebcd93b65cab106e90ed5428ad83ffcc95"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-10-11-XLF-000-07.igc",
+    "unit": "Bethany",
+    "date": "111026",
+    "firmware": "v0.2.3",
+    "sha256": "c4a6fb0fe3279cf37eed453e934a41edc123248ee7355e10619fd6bf05f25f4b"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-10-16-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "171026",
+    "firmware": "v0.2.3",
+    "sha256": "416322a1ded5240bc59c95729af7ed3e68f8b4898e990f5bccb59f45b74679de"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-10-17-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "171026",
+    "firmware": "v0.2.3",
+    "sha256": "16a8b6fcbc2abff3e6854862f25778f855f61fae4ba7e7de735c1a12aec4e5f8"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-10-18-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "181026",
+    "firmware": "v0.2.3",
+    "sha256": "edbb3ba3c399c12d0150877fb852a34a184b4257b4256e5801940fa3e2143270"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-10-18-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "191026",
+    "firmware": "v0.2.3",
+    "sha256": "df2190bb429bba7c0ad74dbb4eae256e2f61bcf6836d5a0fb246eb3b22f47412"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-10-19-XLF-000-01.igc",
+    "unit": "Bethany",
+    "date": "191026",
+    "firmware": "v0.2.3",
+    "sha256": "02f81953e8a356ba350eac33b34ae4bbdb52690fd8bce5c0db8a4c8bab8a9a5f"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-10-19-XLF-000-02.igc",
+    "unit": "Bethany",
+    "date": "191026",
+    "firmware": "v0.2.3",
+    "sha256": "55c44936f82c24258ba49f5f55309fe447d3116c625651be6af57703ca5f55fc"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-10-25-XLV-000-01.igc",
+    "unit": "Bethany",
+    "date": "251026",
+    "firmware": "v0.2.4-968",
+    "sha256": "b33180a3d97eff2f81efd352d9ade03fbd3e1123ea7ad8d471b092c22a410236"
+  },
+  {
+    "path": "hardware-3.2.7/Bethany/tracks/2026-10-25-XLV-000-02.igc",
+    "unit": "Bethany",
+    "date": "251026",
+    "firmware": "v0.2.4-968",
+    "sha256": "3365275ae7dbdf874761e55d05295125375a6a9b78f3dae4d73483886e7a6c8e"
+  }
+]

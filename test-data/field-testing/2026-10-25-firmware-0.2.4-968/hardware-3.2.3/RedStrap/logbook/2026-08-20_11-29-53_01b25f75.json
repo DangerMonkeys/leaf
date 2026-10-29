@@ -1,0 +1,84 @@
+{
+  "schema": "leaf.logbook.flight",
+  "schema_version": "v0.1.0",
+  "flight_id": "01b25f75",
+  "clock": {
+    "system_time_synced_this_boot": true,
+    "time_source": "gps",
+    "timezone_offset_minutes": -420
+  },
+  "start": {
+    "time_valid": true,
+    "time_utc": "2026-08-20T18:29:53Z",
+    "time_local": "2026-08-20T11:29:53",
+    "temperature_c": 30.50143
+  },
+  "first_fix": {
+    "time_valid": true,
+    "time_utc": "2026-08-20T18:29:53Z",
+    "time_local": "2026-08-20T11:29:53",
+    "location": {
+      "lat_deg": 37.45736,
+      "lon_deg": -121.8664,
+      "altitude_m": 173.04
+    },
+    "temperature_c": 30.50143
+  },
+  "end": {
+    "time_valid": true,
+    "time_utc": "2026-08-20T18:30:06Z",
+    "time_local": "2026-08-20T11:30:06",
+    "location": {
+      "lat_deg": 37.45653,
+      "lon_deg": -121.8661,
+      "altitude_m": 173.73
+    },
+    "temperature_c": 30.3765
+  },
+  "metrics": {
+    "duration_seconds": 14,
+    "max_altitude_m": 173.86,
+    "min_altitude_m": 172.56,
+    "max_altitude_above_launch_m": 0.820007,
+    "max_climb_rate_mps": 1.28,
+    "max_sink_rate_mps": -0.61,
+    "max_ground_speed_mps": 9.239422,
+    "average_ground_speed_mps": 8.201346,
+    "straight_line_distance_m": 94.87774,
+    "path_distance_m": 114.8188,
+    "max_accel_g": 2.098318,
+    "min_accel_g": 0.408065,
+    "max_temperature_c": 30.53214,
+    "min_temperature_c": 30.3765
+  },
+  "track": {
+    "saved": true,
+    "format": "igc",
+    "path": "tracks/2026-08-20-XLF-000-02.igc"
+  },
+  "device": {
+    "firmware_version": "0.2.1+h3.2.3",
+    "hardware_version": "leaf_3_2_3",
+    "mac_address": "24:EC:4A:1F:38:B0"
+  },
+  "pilot": {
+    "id": "609a7497",
+    "name": "Jack Resmini"
+  },
+  "glider": {
+    "id": "f2ccfe74",
+    "brand": "Ozone",
+    "model": "Buzz Z2",
+    "size": "MS",
+    "display_name": "Buzz Z2 MS"
+  },
+  "site": {
+    "launch_name": null,
+    "landing_name": null
+  },
+  "weather": {},
+  "notes": {
+    "pilot_notes": "",
+    "tags": []
+  }
+}

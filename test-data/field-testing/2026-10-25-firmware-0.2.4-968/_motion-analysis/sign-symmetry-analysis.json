@@ -1,0 +1,14 @@
+{
+  "tracks": 21,
+  "window_checks": 10874,
+  "sign_reflection_results_identical": true,
+  "confirmation_state_identical": true,
+  "sign_disagreement_and_zero_tests_pass": true,
+  "qualifying_checks_by_path": [
+    7287,
+    3835,
+    4227
+  ],
+  "ground_files_with_any_proposed_path": [],
+  "notes": "Absolute value applied AFTER signed window average and net altitude change. Positive/negative agreement checked before granting vertical evidence. Forward independent of vertical sign. These are offline candidates; current firmware has not been changed."
+}

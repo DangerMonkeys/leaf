@@ -1,0 +1,128 @@
+[
+  {
+    "id": 0,
+    "unit": "3.2.3 raccoon",
+    "file": "2026-10-27-XLV-000-01.igc",
+    "from_timer_start": {
+      "earliest_possible": {
+        "local": "12:44:48",
+        "seconds": 45888,
+        "ms": 503587
+      },
+      "latest_across_reconstructions": {
+        "local": "12:47:18",
+        "seconds": 46038,
+        "ms": 653587
+      }
+    },
+    "from_launch": {
+      "earliest_possible": {
+        "local": "13:19:36",
+        "seconds": 47976,
+        "ms": 2591307
+      },
+      "latest_across_reconstructions": {
+        "local": "13:20:32",
+        "seconds": 48032,
+        "ms": 2647307
+      }
+    }
+  },
+  {
+    "id": 1,
+    "unit": "3.2.3 redstrap",
+    "file": "2026-10-27-XLV-000-01.igc",
+    "from_timer_start": {
+      "earliest_possible": {
+        "local": "13:13:09",
+        "seconds": 47589,
+        "ms": 2202856
+      },
+      "latest_across_reconstructions": {
+        "local": "13:14:08",
+        "seconds": 47648,
+        "ms": 2261856
+      }
+    },
+    "from_launch": {
+      "earliest_possible": {
+        "local": "13:30:00",
+        "seconds": 48600,
+        "ms": 3213886
+      },
+      "latest_across_reconstructions": {
+        "local": "13:34:51",
+        "seconds": 48891,
+        "ms": 3505056
+      }
+    }
+  },
+  {
+    "id": 2,
+    "unit": "3.2.6 blue",
+    "file": "2026-10-27-XLV-000-01.igc",
+    "from_timer_start": {
+      "earliest_possible": {
+        "local": "13:05:17",
+        "seconds": 47117,
+        "ms": 1720169
+      },
+      "latest_across_reconstructions": {
+        "local": "13:06:32",
+        "seconds": 47192,
+        "ms": 1795169
+      }
+    },
+    "from_launch": null
+  },
+  {
+    "id": 3,
+    "unit": "3.2.6 blue",
+    "file": "2026-10-27-XLV-000-02.igc",
+    "from_timer_start": {
+      "earliest_possible": {
+        "local": "13:17:43",
+        "seconds": 47863,
+        "ms": 2465409
+      },
+      "latest_across_reconstructions": null
+    },
+    "from_launch": {
+      "earliest_possible": {
+        "local": "13:30:00",
+        "seconds": 48600,
+        "ms": 3203099
+      },
+      "latest_across_reconstructions": null
+    }
+  },
+  {
+    "id": 4,
+    "unit": "3.2.8",
+    "file": "2026-10-27-XLV-000-01.igc",
+    "from_timer_start": {
+      "earliest_possible": {
+        "local": "13:13:09",
+        "seconds": 47589,
+        "ms": 1218559
+      },
+      "latest_across_reconstructions": {
+        "local": "13:17:36",
+        "seconds": 47856,
+        "ms": 1485559
+      }
+    },
+    "from_launch": {
+      "earliest_possible": {
+        "local": "13:30:00",
+        "seconds": 48600,
+        "ms": 2229559
+      },
+      "latest_across_reconstructions": {
+        "local": "13:32:50",
+        "seconds": 48770,
+        "ms": 2399559
+      }
+    }
+  }
+]

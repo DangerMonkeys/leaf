@@ -1,0 +1,92 @@
+<div id="oct25-motion">
+<style>
+#oct25-motion{position:relative;color:var(--foreground)}
+#oct25-motion .facets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#oct25-motion .chart{min-width:0}
+#oct25-motion svg{display:block;overflow:visible;width:100%}
+#oct25-motion svg text{fill:var(--foreground);font-size:12px}
+#oct25-motion .domain,#oct25-motion .tick line{stroke:var(--border)}
+#oct25-motion .legend{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0}
+#oct25-motion .legend button{background:transparent;border:0;color:var(--foreground);font:inherit;padding:0;display:flex;align-items:center;gap:5px}
+#oct25-motion .swatch{width:9px;height:9px;display:inline-block}
+#oct25-motion .tooltip{position:absolute;pointer-events:none;background:var(--popover);color:var(--popover-foreground);padding:8px;z-index:2;max-width:260px}
+@media(max-width:620px){#oct25-motion .facets{grid-template-columns:1fr}}
+</style>
+<h2>October 25 motion</h2>
+<div class="legend" aria-label="Motion categories"></div>
+<div class="facets"><div class="chart" id="motion-climb"></div><div class="chart" id="motion-distance"></div></div>
+<div class="viz-controls">
+<label class="form-label">Track <select class="form-select" id="motion-track"></select></label>
+<label class="form-label">Interval <select class="form-select" id="motion-window"><option value="launch">Takeoff / recording start</option><option value="landing">Landing / recording end</option><option value="full">Full recording</option></select></label>
+</div>
+<div id="motion-detail" class="text-small" aria-live="polite"></div>
+<div class="chart" id="motion-speed"></div><div class="chart" id="motion-altitude"></div><div class="chart" id="motion-vario"></div>
+<div class="tooltip" role="tooltip" hidden></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script>
+(function(){
+const root=document.getElementById('oct25-motion');
+const tracks=/*DATA*/[];
+const cols=['var(--viz-series-1)','var(--viz-series-2)','var(--viz-series-3)','var(--viz-series-4)'];
+const names=['Ground (includes inferred)','Flight (inferred)','Uncertain transition','Ground with vertical sign reversed'];
+const enabled=[true,true,true,true];
+const select=root.querySelector('#motion-track'),range=root.querySelector('#motion-window'),tip=root.querySelector('.tooltip');
+const hh=t=>{t=Math.round(t);return [Math.floor(t/3600),Math.floor(t/60)%60,t%60].map(x=>String(x).padStart(2,'0')).join(':')};
+tracks.forEach((t,i)=>{let o=document.createElement('option');o.value=i;o.textContent=t.unit+' · '+t.file.slice(-6)+' · '+t.category;select.appendChild(o)});
+select.value=tracks.findIndex(t=>t.unit==='Racoon');
+let chosen=null;
+function save(){window.openai?.setWidgetState({modelContent:{track:tracks[+select.value].path,interval:range.value,selectedTime:chosen},privateContent:{track:+select.value,interval:range.value}}).catch(()=>{});}
+function restore(s){if(!s)return;let p=s.privateContent||{};if(tracks[p.track])select.value=p.track;if(['launch','landing','full'].includes(p.interval))range.value=p.interval;draw();}
+const legend=root.querySelector('.legend');names.forEach((n,i)=>{let b=document.createElement('button');b.type='button';b.setAttribute('aria-pressed','true');b.innerHTML='<span class="swatch" style="background:'+cols[i]+'"></span>'+n;b.onclick=()=>{enabled[i]=!enabled[i];b.setAttribute('aria-pressed',String(enabled[i]));drawScatter()};legend.appendChild(b)});
+function frame(id,height,xlabel,ylabel,xvals,yvals){
+ let el=root.querySelector('#'+id);el.replaceChildren();let w=el.getBoundingClientRect().width,h=height,m={l:68,r:20,t:25,b:54};
+ let svg=d3.select(el).append('svg').attr('viewBox',`0 0 ${w} ${h}`).attr('role','img').attr('aria-label',ylabel+' against '+xlabel);
+ let domain=vs=>{let [a,b]=d3.extent(vs.filter(Number.isFinite));if(a===undefined)return[0,1];let p=(b-a||1)*.06;return[a-p,b+p]};
+ let x=d3.scaleLinear().domain(domain(xvals)).range([m.l+4,w-m.r-4]),y=d3.scaleLinear().domain(domain(yvals)).range([h-m.b-4,m.t+4]);
+ svg.append('rect').attr('data-chart-frame','').attr('x',m.l).attr('y',m.t).attr('width',w-m.l-m.r).attr('height',h-m.t-m.b).attr('fill','none').attr('stroke','var(--border)');
+ svg.append('g').attr('transform',`translate(0,${h-m.b})`).call(d3.axisBottom(x).ticks(w<400?3:5));
+ svg.append('g').attr('transform',`translate(${m.l},0)`).call(d3.axisLeft(y).ticks(4));
+ svg.append('text').attr('class','axis-title').attr('data-axis','x').attr('x',(m.l+w-m.r)/2).attr('y',h-10).attr('text-anchor','middle').text(xlabel);
+ svg.append('text').attr('class','axis-title').attr('data-axis','y').attr('transform',`translate(16,${(m.t+h-m.b)/2}) rotate(-90)`).attr('text-anchor','middle').text(ylabel);
+ let clip=id+'-clip';svg.append('defs').append('clipPath').attr('id',clip).append('rect').attr('x',m.l).attr('y',m.t).attr('width',w-m.l-m.r).attr('height',h-m.t-m.b);
+ return{svg,x,y,w,h,m,plot:svg.append('g').attr('clip-path',`url(#${clip})`)};
+}
+function tooltip(e,text){let a=root.getBoundingClientRect();tip.hidden=false;tip.textContent=text;tip.style.left=Math.min(a.width-270,Math.max(0,e.clientX-a.left+12))+'px';tip.style.top=(e.clientY-a.top+14)+'px'}
+function drawScatter(){
+ let points=[];tracks.forEach(t=>t.rows.forEach((r,i)=>{if(r[7]===1&&i%5)return;let p={r,t,k:r[7]};points.push(p);if(r[7]===0&&r[5]!==null)points.push({r:[...r.slice(0,5),-r[5],...r.slice(6)],t,k:3})}));
+ [['motion-climb',5,'5 s mean vertical speed (m/s)',[0]],['motion-distance',4,'5 s horizontal displacement (m)',[12]]].forEach(([id,j,label,refs])=>{
+ let p=points.filter(p=>p.r[6]!==null&&p.r[j]!==null&&enabled[p.k]);
+ let f=frame(id,280,'3 s minimum speed (m/s)',label,[4,...p.map(p=>p.r[6])],[...refs,...p.map(p=>p.r[j])]);
+ f.plot.append('line').attr('x1',f.x(4)).attr('x2',f.x(4)).attr('y1',f.m.t).attr('y2',f.h-f.m.b).attr('stroke','var(--foreground)').attr('stroke-dasharray','4 4');
+ f.svg.append('text').attr('x',f.x(4)+4).attr('y',16).text('4 m/s');
+ f.plot.selectAll('circle').data(p).join('circle').attr('cx',p=>f.x(p.r[6])).attr('cy',p=>f.y(p.r[j])).attr('r',p=>p.k===3?2.5:2).attr('fill',p=>p.k===3?'none':cols[p.k]).attr('stroke',p=>p.k===3?cols[p.k]:'none').attr('opacity',.45);
+ let overlay=f.svg.append('rect').attr('data-chart-hit','').attr('x',f.m.l).attr('y',f.m.t).attr('width',f.w-f.m.l-f.m.r).attr('height',f.h-f.m.t-f.m.b).attr('fill','transparent');
+ function hit(e){let [a,b]=d3.pointer(e,f.svg.node()),best=null,min=Infinity;p.forEach(q=>{let ds=(f.x(q.r[6])-a)**2+(f.y(q.r[j])-b)**2;if(ds<min){min=ds;best=q}});if(best)tooltip(e,best.t.unit+' '+best.t.file.slice(-6)+' · '+hh(best.r[0])+' PDT · '+best.r[6].toFixed(2)+' m/s · '+best.r[j].toFixed(2)+(j===5?' m/s':' m')+' · '+names[best.k])}
+ overlay.on('pointermove',hit).on('pointerleave',()=>tip.hidden=true).on('click',hit);
+ });
+}
+function drawTime(){
+ let t=tracks[+select.value];if(!t)return;let rows=t.rows;
+ if(range.value==='launch'){let a=t.launch??rows[0][0];rows=rows.filter(r=>a-30<=r[0]&&r[0]<=a+45)}
+ if(range.value==='landing'){let a=t.land??rows[rows.length-1][0];rows=rows.filter(r=>a-35<=r[0]&&r[0]<=a+90)}
+ root.querySelector('#motion-detail').textContent=t.hardware+' · '+t.cause+' start / '+t.end+' end · PDT · '+(t.launch?'Inferred takeoff '+hh(t.launch)+' / touchdown '+hh(t.land):t.category);
+ [['motion-speed',1,'Ground speed (m/s)'],['motion-altitude',3,'Barometric altitude (m)'],['motion-vario',2,'1 s vertical speed (m/s)']].forEach(([id,j,label])=>{
+ let valid=rows.filter(r=>r[j]!==null);let refs=j===1?[4]:[];
+ let f=frame(id,210,'Local time (PDT)',label,rows.map(r=>r[0]),[...refs,...valid.map(r=>r[j])]);
+ f.svg.select('g').call(d3.axisBottom(f.x).ticks(f.w<400?3:5).tickFormat(hh));
+ if(j===1)f.plot.append('line').attr('x1',f.m.l).attr('x2',f.w-f.m.r).attr('y1',f.y(4)).attr('y2',f.y(4)).attr('stroke','var(--foreground)').attr('stroke-dasharray','4 4');
+ let line=d3.line().defined(r=>r[j]!==null).x(r=>f.x(r[0])).y(r=>f.y(r[j]));f.plot.append('path').datum(rows).attr('d',line).attr('fill','none').attr('stroke',cols[0]).attr('stroke-width',1.5);
+ [t.launch,t.land].filter(a=>a!=null&&a>=f.x.domain()[0]&&a<=f.x.domain()[1]).forEach(a=>f.plot.append('line').attr('x1',f.x(a)).attr('x2',f.x(a)).attr('y1',f.m.t).attr('y2',f.h-f.m.b).attr('stroke',cols[2]).attr('stroke-dasharray','3 3'));
+ let guide=f.plot.append('line').attr('data-chart-hover-guide','').attr('y1',f.m.t).attr('y2',f.h-f.m.b).attr('stroke','var(--foreground)').attr('visibility','hidden');let marker=f.plot.append('circle').attr('data-chart-hover-marker','').attr('r',4).attr('fill',cols[0]).attr('visibility','hidden');
+ let over=f.svg.append('rect').attr('data-chart-hit','').attr('data-chart-hover-overlay','cross-series').attr('x',f.m.l).attr('y',f.m.t).attr('width',f.w-f.m.l-f.m.r).attr('height',f.h-f.m.t-f.m.b).attr('fill','transparent');
+ function hit(e,pin){let x=d3.pointer(e,f.svg.node())[0],time=f.x.invert(x),k=d3.bisector(r=>r[0]).left(valid,time);if(!valid.length)return;let a=valid[Math.max(0,k-1)],b=valid[Math.min(k,valid.length-1)],v=a[j]+(b[j]-a[j])*(time-a[0])/(b[0]-a[0]||1);guide.attr('x1',x).attr('x2',x).attr('visibility','visible');marker.attr('cx',x).attr('cy',f.y(v)).attr('visibility','visible');tooltip(e,hh(time)+' PDT · '+label+': '+v.toFixed(2));if(pin){chosen=hh(time);save();root.querySelector('#motion-detail').textContent=t.unit+' · selected '+chosen+' PDT · '+label+': '+v.toFixed(2)}}
+ over.on('pointermove',e=>hit(e,false)).on('click',e=>hit(e,true)).on('pointerleave',()=>{tip.hidden=true;guide.attr('visibility','hidden');marker.attr('visibility','hidden')});
+ });
+}
+function draw(){drawScatter();drawTime()}
+select.onchange=range.onchange=()=>{chosen=null;drawTime();save()};
+new ResizeObserver(draw).observe(root);restore(window.openai?.widgetState);draw();
+window.addEventListener('openai:set_globals',e=>restore(e.detail?.globals?.widgetState));
+})();
+</script>

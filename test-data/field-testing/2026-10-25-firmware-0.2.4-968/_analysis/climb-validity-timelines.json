@@ -1,0 +1,444 @@
+[
+  {
+    "device": "Racoon",
+    "track": "2026-10-25-XLV-000-01.igc",
+    "cause": "AUTO",
+    "reset_count": 8,
+    "startup_resets": 0,
+    "midflight_resets": 8,
+    "invalid_runs": [
+      {
+        "first_invalid_since_start_ms": 906619,
+        "first_invalid_line": 10005,
+        "invalid_checks": 2,
+        "resets": 1,
+        "last_invalid_since_start_ms": 907619,
+        "first_valid_since_start_ms": 908619,
+        "observed_invalid_span_ms": 1000
+      },
+      {
+        "first_invalid_since_start_ms": 1224079,
+        "first_invalid_line": 13492,
+        "invalid_checks": 2,
+        "resets": 1,
+        "last_invalid_since_start_ms": 1225079,
+        "first_valid_since_start_ms": 1226079,
+        "observed_invalid_span_ms": 1000
+      },
+      {
+        "first_invalid_since_start_ms": 1541539,
+        "first_invalid_line": 16979,
+        "invalid_checks": 1,
+        "resets": 1,
+        "last_invalid_since_start_ms": 1541539,
+        "first_valid_since_start_ms": 1542539,
+        "observed_invalid_span_ms": 0
+      },
+      {
+        "first_invalid_since_start_ms": 2228439,
+        "first_invalid_line": 24525,
+        "invalid_checks": 1,
+        "resets": 1,
+        "last_invalid_since_start_ms": 2228439,
+        "first_valid_since_start_ms": 2229439,
+        "observed_invalid_span_ms": 0
+      },
+      {
+        "first_invalid_since_start_ms": 2545899,
+        "first_invalid_line": 28012,
+        "invalid_checks": 2,
+        "resets": 1,
+        "last_invalid_since_start_ms": 2546899,
+        "first_valid_since_start_ms": 2547899,
+        "observed_invalid_span_ms": 1000
+      },
+      {
+        "first_invalid_since_start_ms": 2869289,
+        "first_invalid_line": 31565,
+        "invalid_checks": 1,
+        "resets": 1,
+        "last_invalid_since_start_ms": 2869289,
+        "first_valid_since_start_ms": 2870350,
+        "observed_invalid_span_ms": 0
+      },
+      {
+        "first_invalid_since_start_ms": 3211809,
+        "first_invalid_line": 35327,
+        "invalid_checks": 1,
+        "resets": 1,
+        "last_invalid_since_start_ms": 3211809,
+        "first_valid_since_start_ms": 3212809,
+        "observed_invalid_span_ms": 0
+      },
+      {
+        "first_invalid_since_start_ms": 3553269,
+        "first_invalid_line": 39078,
+        "invalid_checks": 1,
+        "resets": 1,
+        "last_invalid_since_start_ms": 3553269,
+        "first_valid_since_start_ms": 3554269,
+        "observed_invalid_span_ms": 0
+      }
+    ]
+  },
+  {
+    "device": "RedStrap",
+    "track": "2026-10-25-XLV-000-01.igc",
+    "cause": "AUTO",
+    "reset_count": 1,
+    "startup_resets": 1,
+    "midflight_resets": 0,
+    "invalid_runs": [
+      {
+        "first_invalid_since_start_ms": 1230,
+        "first_invalid_line": 61,
+        "invalid_checks": 7,
+        "resets": 1,
+        "last_invalid_since_start_ms": 7410,
+        "first_valid_since_start_ms": 8410,
+        "observed_invalid_span_ms": 6180
+      }
+    ]
+  },
+  {
+    "device": "BlueGreen326",
+    "track": "2026-10-25-XLV-000-01.igc",
+    "cause": "AUTO",
+    "reset_count": 2,
+    "startup_resets": 2,
+    "midflight_resets": 0,
+    "invalid_runs": [
+      {
+        "first_invalid_since_start_ms": 1240,
+        "first_invalid_line": 79,
+        "invalid_checks": 8,
+        "resets": 2,
+        "last_invalid_since_start_ms": 8520,
+        "first_valid_since_start_ms": 9520,
+        "observed_invalid_span_ms": 7280
+      }
+    ]
+  },
+  {
+    "device": "BlueGreen326",
+    "track": "2026-10-25-XLV-000-02.igc",
+    "cause": "AUTO",
+    "reset_count": 2,
+    "startup_resets": 2,
+    "midflight_resets": 0,
+    "invalid_runs": [
+      {
+        "first_invalid_since_start_ms": 1240,
+        "first_invalid_line": 71,
+        "invalid_checks": 9,
+        "resets": 2,
+        "last_invalid_since_start_ms": 9460,
+        "first_valid_since_start_ms": 10460,
+        "observed_invalid_span_ms": 8220
+      }
+    ]
+  },
+  {
+    "device": "BlueGreen326",
+    "track": "2026-10-25-XLV-000-03.igc",
+    "cause": "AUTO",
+    "reset_count": 2,
+    "startup_resets": 2,
+    "midflight_resets": 0,
+    "invalid_runs": [
+      {
+        "first_invalid_since_start_ms": 1230,
+        "first_invalid_line": 79,
+        "invalid_checks": 9,
+        "resets": 2,
+        "last_invalid_since_start_ms": 9460,
+        "first_valid_since_start_ms": 10460,
+        "observed_invalid_span_ms": 8230
+      }
+    ]
+  },
+  {
+    "device": "BlueGreen326",
+    "track": "2026-10-25-XLV-000-04.igc",
+    "cause": "MANUAL",
+    "reset_count": 2,
+    "startup_resets": 2,
+    "midflight_resets": 0,
+    "invalid_runs": [
+      {
+        "first_invalid_since_start_ms": 1320,
+        "first_invalid_line": 79,
+        "invalid_checks": 9,
+        "resets": 2,
+        "last_invalid_since_start_ms": 9570,
+        "first_valid_since_start_ms": 10570,
+        "observed_invalid_span_ms": 8250
+      }
+    ]
+  },
+  {
+    "device": "BlueGreen326",
+    "track": "2026-10-25-XLV-000-05.igc",
+    "cause": "AUTO",
+    "reset_count": 2,
+    "startup_resets": 2,
+    "midflight_resets": 0,
+    "invalid_runs": [
+      {
+        "first_invalid_since_start_ms": 1240,
+        "first_invalid_line": 66,
+        "invalid_checks": 9,
+        "resets": 2,
+        "last_invalid_since_start_ms": 9490,
+        "first_valid_since_start_ms": 10490,
+        "observed_invalid_span_ms": 8250
+      }
+    ]
+  },
+  {
+    "device": "BlueGreen326",
+    "track": "2026-10-25-XLV-000-06.igc",
+    "cause": "AUTO",
+    "reset_count": 2,
+    "startup_resets": 2,
+    "midflight_resets": 0,
+    "invalid_runs": [
+      {
+        "first_invalid_since_start_ms": 1260,
+        "first_invalid_line": 79,
+        "invalid_checks": 9,
+        "resets": 2,
+        "last_invalid_since_start_ms": 9530,
+        "first_valid_since_start_ms": 10530,
+        "observed_invalid_span_ms": 8270
+      }
+    ]
+  },
+  {
+    "device": "BlueGreen326",
+    "track": "2026-10-25-XLV-000-07.igc",
+    "cause": "MANUAL",
+    "reset_count": 2,
+    "startup_resets": 2,
+    "midflight_resets": 0,
+    "invalid_runs": [
+      {
+        "first_invalid_since_start_ms": 2070,
+        "first_invalid_line": 79,
+        "invalid_checks": 9,
+        "resets": 2,
+        "last_invalid_since_start_ms": 10350,
+        "first_valid_since_start_ms": 11350,
+        "observed_invalid_span_ms": 8280
+      }
+    ]
+  },
+  {
+    "device": "BlueGreen326",
+    "track": "2026-10-25-XLV-000-08.igc",
+    "cause": "AUTO",
+    "reset_count": 2,
+    "startup_resets": 2,
+    "midflight_resets": 0,
+    "invalid_runs": [
+      {
+        "first_invalid_since_start_ms": 1270,
+        "first_invalid_line": 79,
+        "invalid_checks": 9,
+        "resets": 2,
+        "last_invalid_since_start_ms": 9550,
+        "first_valid_since_start_ms": 10550,
+        "observed_invalid_span_ms": 8280
+      }
+    ]
+  },
+  {
+    "device": "BlueGreen326",
+    "track": "2026-10-25-XLV-000-09.igc",
+    "cause": "AUTO",
+    "reset_count": 2,
+    "startup_resets": 2,
+    "midflight_resets": 0,
+    "invalid_runs": [
+      {
+        "first_invalid_since_start_ms": 2200,
+        "first_invalid_line": 79,
+        "invalid_checks": 7,
+        "resets": 2,
+        "last_invalid_since_start_ms": 8490,
+        "first_valid_since_start_ms": 9490,
+        "observed_invalid_span_ms": 6290
+      }
+    ]
+  },
+  {
+    "device": "BlueGreen326",
+    "track": "2026-10-25-XLV-000-10.igc",
+    "cause": "AUTO",
+    "reset_count": 2,
+    "startup_resets": 2,
+    "midflight_resets": 0,
+    "invalid_runs": [
+      {
+        "first_invalid_since_start_ms": 1290,
+        "first_invalid_line": 79,
+        "invalid_checks": 4,
+        "resets": 2,
+        "last_invalid_since_start_ms": 4590,
+        "first_valid_since_start_ms": 5590,
+        "observed_invalid_span_ms": 3300
+      }
+    ]
+  },
+  {
+    "device": "BlueGreen326",
+    "track": "2026-10-25-XLV-000-11.igc",
+    "cause": "AUTO",
+    "reset_count": 2,
+    "startup_resets": 2,
+    "midflight_resets": 0,
+    "invalid_runs": [
+      {
+        "first_invalid_since_start_ms": 1290,
+        "first_invalid_line": 67,
+        "invalid_checks": 9,
+        "resets": 2,
+        "last_invalid_since_start_ms": 9590,
+        "first_valid_since_start_ms": 10590,
+        "observed_invalid_span_ms": 8300
+      }
+    ]
+  },
+  {
+    "device": "BlueGreen326",
+    "track": "2026-10-25-XLV-000-12.igc",
+    "cause": "MANUAL",
+    "reset_count": 2,
+    "startup_resets": 2,
+    "midflight_resets": 0,
+    "invalid_runs": [
+      {
+        "first_invalid_since_start_ms": 2140,
+        "first_invalid_line": 67,
+        "invalid_checks": 9,
+        "resets": 2,
+        "last_invalid_since_start_ms": 10450,
+        "first_valid_since_start_ms": 11450,
+        "observed_invalid_span_ms": 8310
+      }
+    ]
+  },
+  {
+    "device": "BlueGreen326",
+    "track": "2026-10-25-XLV-000-13.igc",
+    "cause": "MANUAL",
+    "reset_count": 2,
+    "startup_resets": 2,
+    "midflight_resets": 0,
+    "invalid_runs": [
+      {
+        "first_invalid_since_start_ms": 230,
+        "first_invalid_line": 43,
+        "invalid_checks": 10,
+        "resets": 2,
+        "last_invalid_since_start_ms": 9800,
+        "first_valid_since_start_ms": 10800,
+        "observed_invalid_span_ms": 9570
+      }
+    ]
+  },
+  {
+    "device": "BlueGreen326",
+    "track": "2026-10-25-XLV-000-14.igc",
+    "cause": "MANUAL",
+    "reset_count": 2,
+    "startup_resets": 2,
+    "midflight_resets": 0,
+    "invalid_runs": [
+      {
+        "first_invalid_since_start_ms": 2080,
+        "first_invalid_line": 64,
+        "invalid_checks": 9,
+        "resets": 2,
+        "last_invalid_since_start_ms": 10390,
+        "first_valid_since_start_ms": 11390,
+        "observed_invalid_span_ms": 8310
+      }
+    ]
+  },
+  {
+    "device": "BlueGreen326",
+    "track": "2026-10-25-XLV-000-15.igc",
+    "cause": "AUTO",
+    "reset_count": 3,
+    "startup_resets": 2,
+    "midflight_resets": 1,
+    "invalid_runs": [
+      {
+        "first_invalid_since_start_ms": 1310,
+        "first_invalid_line": 79,
+        "invalid_checks": 3,
+        "resets": 2,
+        "last_invalid_since_start_ms": 3630,
+        "first_valid_since_start_ms": 4630,
+        "observed_invalid_span_ms": 2320
+      },
+      {
+        "first_invalid_since_start_ms": 113160,
+        "first_invalid_line": 1300,
+        "invalid_checks": 1,
+        "resets": 1,
+        "last_invalid_since_start_ms": 113160,
+        "first_valid_since_start_ms": 114290,
+        "observed_invalid_span_ms": 0
+      }
+    ]
+  },
+  {
+    "device": "BlueGreen326",
+    "track": "2026-10-25-XLV-000-16.igc",
+    "cause": "AUTO",
+    "reset_count": 2,
+    "startup_resets": 2,
+    "midflight_resets": 0,
+    "invalid_runs": [
+      {
+        "first_invalid_since_start_ms": 1290,
+        "first_invalid_line": 79,
+        "invalid_checks": 3,
+        "resets": 2,
+        "last_invalid_since_start_ms": 3610,
+        "first_valid_since_start_ms": 4610,
+        "observed_invalid_span_ms": 2320
+      }
+    ]
+  },
+  {
+    "device": "BlueGreen326",
+    "track": "2026-10-25-XLV-000-17.igc",
+    "cause": "AUTO",
+    "reset_count": 3,
+    "startup_resets": 2,
+    "midflight_resets": 1,
+    "invalid_runs": [
+      {
+        "first_invalid_since_start_ms": 1290,
+        "first_invalid_line": 75,
+        "invalid_checks": 2,
+        "resets": 2,
+        "last_invalid_since_start_ms": 2610,
+        "first_valid_since_start_ms": 3610,
+        "observed_invalid_span_ms": 1320
+      },
+      {
+        "first_invalid_since_start_ms": 1441590,
+        "first_invalid_line": 15904,
+        "invalid_checks": 1,
+        "resets": 1,
+        "last_invalid_since_start_ms": 1441590,
+        "first_valid_since_start_ms": 1442590,
+        "observed_invalid_span_ms": 0
+      }
+    ]
+  }
+]
