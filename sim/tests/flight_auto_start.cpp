@@ -9,8 +9,10 @@
 
 #include "dispatch/message_bus.h"
 #include "dispatch/message_injector.h"
+#include "flight_start_window_checks.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
+#include "instruments/imu.h"
 #include "logbook/igc.h"
 #include "logging/flight_auto_start.h"
 #include "logging/flight_start_history.h"
@@ -20,137 +22,16 @@
 #include "scenario.h"
 #include "sim/clock.h"
 #include "ui/display/menu_page.h"
+#include "ui/display/pages/dialogs/page_alert_timerAutoStop.h"
 #include "ui/display/pages/dialogs/page_flight_summary.h"
 #include "ui/settings/settings.h"
 
 extern MessageBus<11> bus;
 extern Igc igcFlight;
+extern int32_t autoStopAltitude;
+extern PageAlertTimerAutoStop pageAlertTimerAutoStop;
 
 namespace {
-  using Sample = FlightAutoStart::Sample;
-
-  unsigned sustained(const char* label, Sample sample, uint32_t period = 1000,
-                     uint32_t origin = 0) {
-    FlightAutoStart detector;
-    assert(!detector.update(origin, sample));
-    for (uint32_t elapsed = period; elapsed <= 20000; elapsed += period) {
-      if (detector.update(origin + elapsed, sample)) {
-        assert(elapsed >= 3000);
-        printf("Launch calibration: %s = %.2f seconds\n", label, elapsed / 1000.0);
-        return elapsed;
-      }
-    }
-    assert(false && "Expected a launch within twenty seconds");
-    return 0;
-  }
-
-  void checkModel() {
-    assert(sustained("8 mph", {8, 0, true, false}) == 3000);
-    for (float peak : {6.f, 7.f}) {
-      FlightAutoStart d;
-      assert(!d.update(0, {peak, 0, true, false}));
-      assert(!d.update(1000, {peak, 0, true, false}));
-      unsigned triggered = 0;
-      for (unsigned t = 2000; t <= 10000; t += 1000) {
-        if (d.update(t, {5, 0, true, false})) {
-          triggered = t;
-          break;
-        }
-      }
-      printf("Launch calibration: %.0f mph once then 5 mph = %.2f seconds\n", peak,
-             triggered / 1000.0);
-      assert(triggered >= 3000 && triggered <= 6000);
-    }
-    assert(sustained("climb 1.2 m/s, no GPS", {0, 1.2f, false, true}) == 3000);
-    assert(sustained("climb 1.0 m/s, no GPS", {0, 1.f, false, true}) <= 4000);
-    assert(sustained("climb 0.8 m/s, no GPS", {0, .8f, false, true}) <= 6000);
-    assert(sustained("4 mph + 0.4 m/s", {4, .4f, true, true}) <= 4000);
-    assert(sustained("3 mph + 0.3 m/s", {3, .3f, true, true}) <= 6000);
-    assert(sustained("extreme input, 250 ms updates", {1000, 1000, true, true}, 250) == 3000);
-    assert(sustained("millis rollover", {8, 0, true, false}, 1000, UINT32_MAX - 1500) == 3000);
-
-    // Neither weak activity, descending, exact equilibrium, nor invalid sensors
-    // may eventually creep across the threshold, even after thirty minutes.
-    for (Sample quiet : {Sample{3, 0, true, true},
-                         {0, .5f, false, true},
-                         {2, .2f, true, true},
-                         {3, -10, true, true},
-                         {FlightAutoStart::SPEED_SCALE_MPH, 0, true, false},
-                         {50, 50, false, false},
-                         {NAN, INFINITY, true, true}}) {
-      FlightAutoStart d;
-      for (unsigned t = 0; t <= 1800000; t += 1000) assert(!d.update(t, quiet));
-    }
-
-    FlightAutoStart d;
-    assert(!d.update(0, {0, 0, true, true}));
-    for (unsigned t = 1000; t <= 60000; t += 1000) {
-      const bool spike = t % 5000 == 1000;
-      assert(!d.update(t, {spike ? 1000.f : 0, 0, true, true}));
-    }
-    d.reset();
-    assert(!d.update(0, {8, 0, true, false}));
-    assert(!d.update(1000, {8, 0, true, false}));
-    assert(!d.update(2000, {8, 0, true, false}));
-    const float beforeDip = d.score();
-    assert(!d.update(3000, {0, 0, true, false}));
-    assert(d.score() > 0 && d.score() < beforeDip);
-    assert(!d.update(4000, {8, 0, true, false}));
-    assert(d.update(5000, {8, 0, true, false}));
-    d.reset();
-    assert(!d.update(0, {8, 0, true, false}));
-    assert(!d.update(1000, {8, 0, true, false}));
-    assert(!d.update(2000, {8, 0, true, false}));
-    assert(!d.update(3000, {}));  // No available sensor resets the accumulated evidence.
-    assert(d.score() == 0);
-    assert(!d.update(4000, {8, 0, true, false}));
-    assert(!d.update(5000, {8, 0, true, false}));
-    assert(!d.update(6000, {8, 0, true, false}));
-    assert(!d.update(20000, {8, 0, true, false}));  // Unknown time must not count.
-    assert(d.score() == 0);
-    assert(!d.update(21000, {8, 0, true, false}));
-    assert(!d.update(22000, {8, 0, true, false}));
-    assert(d.update(23000, {8, 0, true, false}));
-  }
-
-  void checkGpsDropouts() {
-    FlightAutoStart d;
-    assert(!d.update(0, {8, 0, true, true}));
-    assert(!d.update(1000, {8, 0, true, true}));
-    assert(!d.update(2000, {8, 0, true, true}));
-    const float beforeLoss = d.score();
-    // A cached high speed marked invalid must contribute nothing. With valid
-    // flat climb remaining, the old evidence fades rather than being refreshed.
-    for (unsigned t = 3000; t <= 10000; t += 1000) assert(!d.update(t, {1000, 0, false, true}));
-    assert(d.score() > 0 && d.score() < beforeLoss / 10);
-    assert(!d.update(11000, {8, 0, true, true}));
-    assert(!d.update(12000, {8, 0, true, true}));
-    assert(d.update(13000, {8, 0, true, true}));
-    // Valid climb still works while GPS is absent; stale climb cannot assist speed.
-    assert(sustained("stale GPS with valid climb", {1000, 1.2f, false, true}) == 3000);
-    assert(sustained("fresh speed with stale climb", {8, 1000, true, false}) == 3000);
-  }
-
-  void checkHistory() {
-    FlightStartHistory h;
-    for (unsigned t = 0; t <= 34000; t += 1000)
-      h.record(t, {float(t / 1000), -1, true, true}, .5f, true, false);
-    assert(h.size() == 30);
-    assert(h.at(0).atMs == 5000 && h.at(29).atMs == 34000);
-    h.record(34500, {8, .4f, true, true}, 1, true, false);
-    assert(h.size() == 30 && h.at(29).atMs == 34500 && h.at(29).score == 1);
-    h.freeze(34500, FlightStartCause::Automatic);
-    h.record(40000, {}, 0, false, true);
-    assert(h.at(29).atMs == 34500 && h.cause() == FlightStartCause::Automatic);
-    h.reset();
-    h.record(UINT32_MAX - 100, {8, 0, true, false}, 0, false, false);
-    h.record(900, {8, 0, true, false}, 0, false, false);
-    assert(h.size() == 2);
-    h.record(10000, {NAN, INFINITY, true, true}, 0, true, false);
-    assert(h.size() == 1);
-    assert(h.at(0).flags == FlightStartHistory::Enabled);
-  }
-
   MessageInjector injector;
   sim::FlightSensorState sensor;
   uint32_t sensorAtMs = 0;
@@ -161,7 +42,9 @@ namespace {
     while (uint32_t(millis() - started) < durationMs) {
       const uint32_t now = millis();
       if (uint32_t(now - sensorAtMs) >= 50) {
-        sensor.altitudeM += climbMps * uint32_t(now - sensorAtMs) / 1000.0;
+        const double seconds = uint32_t(now - sensorAtMs) / 1000.0;
+        sensor.altitudeM += climbMps * seconds;
+        sensor.latitude += speedMph * .44704 * seconds / 111195.0;
         sensorAtMs = now;
         sensor.atMs = now;
         sensor.northMps = speedMph * .44704;
@@ -179,8 +62,18 @@ namespace {
     assert(f);
     const std::string text = f.readString().c_str();
     f.close();
-    assert(text.find("LXLVSTART V=1 CAUSE=") != std::string::npos);
-    assert(text.find("LXLVSTARTCFG SPEED_MPH=") != std::string::npos);
+    assert(text.find("LXLVSTART V=2 CAUSE=") != std::string::npos);
+    assert(text.find("LXLVSTARTCFG WINDOW_MS=") != std::string::npos);
+    assert(text.find("LXLVSTARTUNITS V=M/S C=M/S A=M") != std::string::npos);
+    assert(text.find("LXLVSTARTALT ") != std::string::npos);
+    assert(text.find("LXLVSTARTPATH ") != std::string::npos);
+    for (size_t start = 0; start < text.size();) {
+      const size_t end = text.find('\n', start);
+      if (end == std::string::npos) break;
+      const size_t length = end - start - (end > start && text[end - 1] == '\r' ? 1 : 0);
+      if (text.compare(start, 9, "LXLVSTART") == 0) assert(length <= 76);
+      start = end + 1;
+    }
     size_t rows = 0, position = 0;
     while ((position = text.find("LXLVSTARTDATA ", position)) != std::string::npos) {
       ++rows;
@@ -191,6 +84,61 @@ namespace {
     assert(text.rfind("\nG") != std::string::npos);
     assert(text.find("LXLVEND V=1 CAUSE=") < text.rfind("\nG"));
     return text;
+  }
+
+  void checkAutoStop() {
+    static_assert(AUTO_STOP_MIN_SEC == 15);
+    static_assert(AUTO_STOP_MAX_ALT == 200);
+    assert(!gps.hasUsableFix());
+    pageAlertTimerAutoStop.pop_all_pages();
+
+    for (int sign : {-1, 1}) {
+      // Both sides of the enlarged altitude tolerance qualify without GPS.
+      // Use real fresh sensor updates between scheduled detector checks.
+      flightTimer_resetAutoStop();
+      autoStopAltitude = baro.alt() + sign * 150;
+      for (unsigned check = 1; check <= 15; ++check) {
+        fly(1000, 0, 0, false);
+        assert(imu.accelValid());
+        assert(!gps.hasUsableFix());
+        assert(flightTimer_autoStop() == (check == 15));
+        if (check < 7 || check == 15) {
+          assert(pageAlertTimerAutoStop.get_modal_page() == nullptr);
+        } else {
+          assert(pageAlertTimerAutoStop.get_modal_page() == &pageAlertTimerAutoStop);
+          assert(flightTimer_getAutoStopCountRemaining() == 15 - check);
+        }
+        if (check == 7) assert(flightTimer_getAutoStopCountRemaining() == 8);
+      }
+      assert(flightTimer_getAutoStopCountRemaining() == 0);
+
+      // Canceling the eight-second warning starts confirmation over.
+      autoStopAltitude = baro.alt() + sign * 150;
+      for (unsigned check = 1; check <= 7; ++check) {
+        fly(1000, 0, 0, false);
+        assert(!flightTimer_autoStop());
+      }
+      assert(flightTimer_getAutoStopCountRemaining() == 8);
+      pageAlertTimerAutoStop.button_event(Button::CENTER, ButtonEvent::CLICKED, 1);
+      assert(pageAlertTimerAutoStop.get_modal_page() == nullptr);
+      assert(flightTimer_getAutoStopCountRemaining() == 0);
+      for (unsigned check = 1; check <= 7; ++check) {
+        fly(1000, 0, 0, false);
+        assert(!flightTimer_autoStop());
+      }
+      assert(flightTimer_getAutoStopCountRemaining() == 8);
+
+      // The strict 2 m boundary breaks qualification and closes the warning.
+      autoStopAltitude = baro.alt() + sign * 200;
+      assert(!flightTimer_autoStop());
+      assert(flightTimer_getAutoStopCountRemaining() == 0);
+      assert(pageAlertTimerAutoStop.get_modal_page() == nullptr);
+      autoStopAltitude = baro.alt() + sign * 199;
+      assert(!flightTimer_autoStop());
+      assert(flightTimer_getAutoStopCountRemaining() == 14);
+      flightTimer_resetAutoStop();
+    }
+    puts("Auto-stop 15 checks, 2 m boundary, eight-second warning, cancel and no-GPS passed");
   }
 
   void checkFirmware() {
@@ -215,6 +163,8 @@ namespace {
     assert(baro.climbRate1SecAverageValid());
     assert(!gps.hasUsableFix());
 
+    checkAutoStop();
+
     // A manual pre-GPS start freezes history through a long wait for the file.
     const unsigned manualAt = millis();
     flightTimer_start();
@@ -226,7 +176,7 @@ namespace {
     const String manualPath = igcFlight.trackLogPath();
     flightTimer_stop(false);
     auto text = readTrack(manualPath);
-    const std::string header = "START V=1 CAUSE=MANUAL T_MS=" + std::to_string(manualAt);
+    const std::string header = "START V=2 CAUSE=MANUAL T_MS=" + std::to_string(manualAt);
     assert(text.find(header) != std::string::npos);
     assert(text.find(" N=30") != std::string::npos);
     assert(text.find(" V=NA ") != std::string::npos);
@@ -255,8 +205,10 @@ namespace {
     fly(30000);
     assert(!flightTimer_isRunning() && PageFlightSummary::isShowing());
     text = readTrack(autoPath);
-    assert(text.find("START V=1 CAUSE=AUTO") != std::string::npos);
+    assert(text.find("START V=2 CAUSE=AUTO") != std::string::npos);
     assert(text.find("END V=1 CAUSE=AUTO") != std::string::npos);
+    assert(text.find("LXLVSTARTPOS ") != std::string::npos);
+    assert(text.find(" Q=01 T=01") != std::string::npos);
     fly(8000, 8);
     assert(!flightTimer_isRunning());
     PageFlightSummary summary;
@@ -282,8 +234,36 @@ namespace {
     const String climbPath = igcFlight.trackLogPath();
     flightTimer_stop(false);
     text = readTrack(climbPath);
-    assert(text.find("START V=1 CAUSE=AUTO") != std::string::npos);
+    assert(text.find("START V=2 CAUSE=AUTO") != std::string::npos);
     assert(text.find(" V=NA ") != std::string::npos);
+
+    // Actual descending pressure and fused velocity use the same vertical path.
+    settings.log_autoStart = false;
+    fly(6000, 0, 0, false);
+    settings.log_autoStart = true;
+    const uint32_t descentAt = millis();
+    while (!flightTimer_isRunning() && uint32_t(millis() - descentAt) < 10000)
+      fly(100, 0, -1.2f, false);
+    assert(flightTimer_isRunning() && !igcFlight.started());
+    fly(2500, 0, -1.2f, true);
+    assert(igcFlight.started());
+    const String descentPath = igcFlight.trackLogPath();
+    flightTimer_stop(false);
+    text = readTrack(descentPath);
+    assert(text.find(" Q=02 T=02") != std::string::npos);
+
+    // Below both standalone thresholds, real pressure/IMU/GPS injection starts
+    // through the blended path. The idle fixes populate its spatial window.
+    settings.log_autoStart = false;
+    fly(6000);
+    settings.log_autoStart = true;
+    const uint32_t mixedAt = millis();
+    while (!flightTimer_isRunning() && uint32_t(millis() - mixedAt) < 10000) fly(100, 3.75f, .6f);
+    assert(flightTimer_isRunning() && igcFlight.started());
+    const String mixedPath = igcFlight.trackLogPath();
+    flightTimer_stop(false);
+    text = readTrack(mixedPath);
+    assert(text.find(" Q=04 T=04") != std::string::npos);
 
     settings.log_autoStart = false;
     fly(1500);
@@ -299,11 +279,9 @@ namespace {
 }  // namespace
 
 int main() {
-  checkModel();
-  checkHistory();
-  checkGpsDropouts();
+  flight_start_test::checkFlightStartWindows();
   checkFirmware();
   puts(
-      "Launch score, spike rejection, sensor validity, circular history, delayed GPS, IGC causes "
+      "Launch windows, sensor corroboration, circular history, delayed GPS, IGC causes "
       "and lifecycle passed");
 }

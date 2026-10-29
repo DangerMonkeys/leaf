@@ -50,6 +50,7 @@ class Preferences {
   bool getBool(const char* key, bool defaultValue = false);
   String getString(const char* key, const String& defaultValue = String());
   size_t getBytes(const char* key, void* buf, size_t maxLen);
+  size_t getBytesLength(const char* key);
   size_t freeEntries() { return 1000; }
 
   // Wipes every namespace; backs nvs_flash_erase().

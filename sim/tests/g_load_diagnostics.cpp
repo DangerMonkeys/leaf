@@ -81,7 +81,7 @@ int main() {
   assert(longest[2].find("D=2") != std::string::npos);
   assert(longest[3].find("RS=65535") != std::string::npos);
   assert(longest[4].find("HT=4294967295") != std::string::npos);
-  d.checkMs = 300;
+  d.checkMs = GLoadTracker::FRESH_MS + 1;
   s.sampleMs = 0;
   auto stale = records(d, s);
   assert(stale[1].find("F=NA RV=1 FV=0") != std::string::npos);
