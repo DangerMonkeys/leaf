@@ -5,6 +5,30 @@ description: Two-phase plan for recoverable logbook saves and resource-conscious
 
 # SD Card Write Robustness Backlog
 
+## 2026-10-28 verified cleanup refinement
+
+Completed flight and Leaf Log result writes now read back the exact serialized bytes and length
+before removing `.bak`. Cleanup failure alone leaves a successful save intact; verification
+failure preserves the fallback and retries verification within the existing final-save budget.
+Manual maintenance and charging upload scans also retire provably superseded backups, preserving
+ambiguous/unknown candidates. Legacy `unsynced_` names migrate to `date_not_available_` only in
+maintenance, with collision checks and updated upload queue paths. Nominal browsing remains
+read-only and distinguishes malformed/incomplete records from temporary read failures.
+Historical findings and runtime measurements below describe their stated earlier candidates.
+
+
+**2026-10-26 refinement:** Field testing of 0.2.4-968 exposed false final-save failures from
+original-versus-parsed floating-point fingerprints and excessive save-path I/O. The follow-up
+removes normal readback/preparation scans and redundant explicit pre-close sync, coalesces launch
+placeholders, reuses checked staging files for stop retries, and displays the immediate summary
+from RAM. Recovery is restricted to charging-page upload preparation and the explicit Logging >
+Repair Logs action. Nominal browsing uses sliced filename-only scans and reads only the selected
+flight; no per-flight RAM index is retained. Only terminal flight-save failure gets a per-flight warning; deletion refreshes
+available entries quietly. See [the current implementation contract](../../../src/vario/logbook/README.md)
+for exact limits and UI behavior. The historical implementation/verification record below describes
+the original Phase 1; its readback and eager-recovery policy is superseded by this refinement.
+The separate 200–250 ms instrument-gap/reset issue remains outside this change.
+
 Status reconciled **2026-10-24**: Phase 1 merged to `main` in `605810eb` (#430). Automated
 fault-injection and FAT-backed tests passed. Leaf 3.2.8 checks also passed for no-GPS saves,
 absent-card failure followed by a new flight, staged candidate recovery, and deletion/cold boot.

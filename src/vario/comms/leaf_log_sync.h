@@ -66,10 +66,11 @@ class LeafLogSync {
   void selectNextUpload();
   void startCurrentUpload();
   void clearSessionFiles();
+  void invalidateEligibilityScan(const char* reason);
   void finishRequestedExit();
   void finishForPowerOn();
   void finishToMassStorage();
-  void recordCompletedItem();
+  bool recordCompletedItem();
   void handleTransientFailure(const char* reason, int httpStatus = 0, uint32_t elapsedMs = 0,
                               size_t fileSize = 0, size_t responseSize = 0,
                               const String& transportDetail = String());
@@ -104,6 +105,10 @@ class LeafLogSync {
   uint16_t completedCount_ = 0;
   uint16_t sessionTotalCount_ = 0;
   uint16_t pendingCount_ = 0;
+  uint16_t pendingPathsRemaining_ = 0;
+  uint32_t scanPathsRemaining_ = 0;
+  size_t scanQueueBytes_ = 0;
+  size_t pendingQueueBytes_ = 0;
   uint32_t stateStartedMs_ = 0;
   uint32_t completionStartedMs_ = 0;
   uint32_t centerIntentStartedMs_ = 0;

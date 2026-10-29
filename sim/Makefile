@@ -220,7 +220,7 @@ test-display-settings: $(BUILD)/display_settings_test
 LEAF_LOG_TEST_OBJECTS := $(filter-out $(BUILD)/sim/emulator/main.o $(BUILD)/fw/src/vario/comms/leaf_log_client.o,$(OBJECTS))
 
 $(BUILD)/leaf_log_sync_test: $(LEAF_LOG_TEST_OBJECTS) $(SIM)/tests/leaf_log_sync.cpp
-	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/leaf_log_sync.cpp $(LEAF_LOG_TEST_OBJECTS) $(LDFLAGS)
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/leaf_log_sync.cpp $(LEAF_LOG_TEST_OBJECTS) $(LDFLAGS) -Wl,--wrap=readdir,--wrap=fread,--wrap=fclose
 
 test-leaf-log-sync: $(BUILD)/leaf_log_sync_test
 	@cd $(ROOT) && $(BUILD)/leaf_log_sync_test
@@ -231,6 +231,10 @@ $(BUILD)/logbook_io_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) 
 
 test-logbook-io: $(BUILD)/logbook_io_test
 	@cd $(ROOT) && $(BUILD)/logbook_io_test
+
+# Deterministic visual inventory; does not change firmware rendering or require hardware.
+$(BUILD)/sd_dialogs_capture: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/sd_dialogs.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/sd_dialogs.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
 
 .PHONY: test-usb-serial
 $(BUILD)/usb_serial_test: $(SIM)/tests/usb_serial.cpp $(wildcard $(SIM)/tests/usb_serial_hal/*.h) $(ROOT)/src/vario/system/usb_serial.cpp $(ROOT)/src/vario/system/usb_serial.h $(ROOT)/src/vario/system/usb_state.cpp $(ROOT)/src/vario/system/usb_state.h
@@ -321,6 +325,13 @@ $(BUILD)/flight_auto_start_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJ
 
 test-flight-auto-start: $(BUILD)/flight_auto_start_test
 	@cd $(ROOT) && $(BUILD)/flight_auto_start_test
+
+.PHONY: test-logbook-maintenance
+$(BUILD)/logbook_maintenance_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/logbook_maintenance.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/logbook_maintenance.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-logbook-maintenance: $(BUILD)/logbook_maintenance_test
+	@cd $(ROOT) && $(BUILD)/logbook_maintenance_test $(BUILD)/logbook-maintenance-screens
 
 # Delay tolerance through the actual instruments and Kalman implementation.
 .PHONY: test-vario-continuity

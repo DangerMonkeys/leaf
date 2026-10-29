@@ -13,16 +13,19 @@ class PageFlightSummary : public SettingsMenuPage {
     if (removed_from_Stack) showing_ = false;
   }
   void show(const FlightStats stats, const String& logbookPath, const String& trackPath,
-            bool saved = true) {
+            bool saved = true, const LogbookEntrySummary* snapshot = nullptr) {
     this->logbookPath = logbookPath;
     this->trackPath = trackPath;
     this->deletePending = 0;
-    deleteFailed = false;
     saveFailed = !saved;
     this->summary = LogbookEntrySummary();
-    // A failed finalization is terminal: opening its summary must not start another promotion.
-    LogbookStore::readSummary(logbookPath, this->summary, saved);
-    if (!saved) {
+    // The immediate summary must never read or repair the filesystem.
+    if (snapshot)
+      this->summary = *snapshot;
+    else {
+      summary.valid = true;
+      summary.path = logbookPath;
+      summary.trackPath = trackPath;
       summary.durationSeconds = stats.duration;
       summary.maxAltitudeM = stats.gpsalt_max;
       summary.minAltitudeM = stats.gpsalt_min;
@@ -46,7 +49,6 @@ class PageFlightSummary : public SettingsMenuPage {
   String trackPath;
   LogbookEntrySummary summary;
   uint8_t deletePending = 0;
-  bool deleteFailed = false;
   bool saveFailed = false;
   static bool showing_;
 };

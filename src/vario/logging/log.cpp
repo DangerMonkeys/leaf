@@ -19,6 +19,7 @@
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
 #include "ui/display/fonts.h"
+#include "ui/display/message_box.h"
 #include "ui/display/pages/dialogs/page_alert_timerAutoStop.h"
 #include "ui/display/pages/dialogs/page_flight_summary.h"
 #include "ui/display/pages/fanet/page_fanet_stats.h"
@@ -144,13 +145,13 @@ void log_update() {
     imu.gLoad().updateAirborne(gLoadDiagnostics.looksAirborne(),
                                gLoadDiagnostics.detectorInputsValid());
     captureGLoadExtrema();
-    logbookEntry.writePlaceholder(logbook);
     logbookEntry.refreshStartTimeFromSyncedClock(logbook);
 
     // We wish to save a tracklog, but the tracklog has not yet started.
     if (trackLogEnabledForFlight && !flight->started()) {
       if (!gps.hasUsableFix()) {
         // We don't have a valid GPS location yet, try again later
+        logbookEntry.writePlaceholder(logbook);
         writeGLoadSnapshot(gLoadDiagnostics);
         return;
       }
@@ -158,6 +159,7 @@ void log_update() {
       if (baro.state() != Barometer::State::Ready) {
         // The baro is still discarding its startup samples, so it can't set a launch altitude
         // yet; try again later
+        logbookEntry.writePlaceholder(logbook);
         writeGLoadSnapshot(gLoadDiagnostics);
         return;
       }
@@ -197,6 +199,8 @@ void log_update() {
       captureFirstGpsFixForLogbook();
     }
 
+    // Coalesce clock, first-fix and track association before the single milestone write.
+    logbookEntry.writePlaceholder(logbook);
     // Generate a tracklog record.
     if (trackLogEnabledForFlight && gps.hasUsableFix()) flight->log(logbook.duration);
     log_captureValues();      // TODO:  Update this to an "Update Flight Stats" or something
@@ -365,6 +369,9 @@ void flightTimer_start(FlightStartCause cause) {
     return;
   }
 
+  // Release an idle repair iterator before this flight can create any files.
+  LogbookStore::beginRepairSession(false);
+
   // Freeze before resetting the detector, including its final triggering score.
   startHistory.record(millis(), autoStartSample(), autoStartDetector.score(),
                       settings.log_autoStart, PageFlightSummary::isShowing(),
@@ -406,6 +413,9 @@ void flightTimer_stop(bool showSummary, FlightEndCause cause) {
     return;
   }
 
+  const bool previouslyMuted = speaker.muted();
+  speaker.mute();  // Stop hardware output before any final IGC or JSON file work.
+
   // ending values
   imu.gLoad().stopFlight();
   captureGLoadExtrema();
@@ -439,30 +449,26 @@ void flightTimer_stop(bool showSummary, FlightEndCause cause) {
 
   u8g2.firstPage();
   do {
-    u8g2.setFont(leaf_6x12);
-    u8g2.setCursor(0, 85);
-    u8g2.print("Saving flight...");
+    message_box::draw("Saving", "flight...");
   } while (u8g2.nextPage());
   const bool summarySaved = logbookEntry.finalize(logbook, trackFormat, trackPath);
-  if (!summarySaved) {
+  if (!summarySaved && !showSummary) {
     u8g2.firstPage();
     do {
-      u8g2.setFont(leaf_6x12);
-      u8g2.setCursor(0, 75);
-      u8g2.print("Logbook save");
-      u8g2.setCursor(0, 90);
-      u8g2.print("failed");
-      u8g2.setCursor(0, 115);
-      u8g2.print(trackPath.isEmpty() ? "No track file" : "Track unverified");
+      message_box::draw("Logbook save", "failed",
+                        trackPath.isEmpty() ? "No IGC file" : "IGC unverified");
     } while (u8g2.nextPage());
     delay(1000);  // Visible outcome before shutdown clears the display; no acknowledgement.
   }
   if (showSummary) {
     static PageFlightSummary dialog;
-    dialog.show(logbook, logbookEntry.path(), trackPath, summarySaved);
+    LogbookEntrySummary snapshot;
+    logbookEntry.summary(logbook, snapshot);
+    dialog.show(logbook, logbookEntry.path(), trackPath, summarySaved, &snapshot);
   }
   logbookEntry.reset();
   // TODO:  A much cooler end flight sound.  Perhaps even an easter egg?
+  if (!previouslyMuted) speaker.unMute();
   speaker.playSound(summarySaved ? fx::confirm : fx::bad);
   settings.resetShortcutVolume();
   flight = NULL;

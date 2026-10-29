@@ -74,7 +74,7 @@ bool LogbookEntryFile::begin(const FlightStats& stats) {
   if (startTimeValid_) {
     startEpoch_ = startEpochFromStats(stats);
   }
-  path_ = pathForStem(startTimeValid_ ? timestampFileStem() : unsyncedFileStem());
+  path_ = pathForStem(startTimeValid_ ? timestampFileStem() : undatedFileStem());
   startTemperatureC_ = stats.temperature;
   ProfileStore::activePilot(pilot_);
   ProfileStore::activeGlider(glider_);
@@ -86,12 +86,14 @@ bool LogbookEntryFile::writePlaceholder(const FlightStats& stats) {
   if (!active()) {
     if (!begin(stats)) return false;
   }
-  if (placeholderWritten_) return true;
-  if (nextPlaceholderMs_ && static_cast<int32_t>(millis() - nextPlaceholderMs_) < 0) return false;
-  nextPlaceholderMs_ = millis() + 30000;
+  if (!placeholderPending_ || placeholderAttempts_ >= 2) return placeholderWritten_;
+  placeholderPending_ = false;
+  ++placeholderAttempts_;
   logbook_io::Guard transaction;
   if (!transaction || !ensureLogbookDirectory()) return false;
-  if (startTimeValid_) renameToSyncedTimestampIfNeeded();
+  // Before the first write the filename can change without moving anything on SD.
+  // Later clock synchronization is coalesced into content; relocation waits for stop.
+  if (placeholderAttempts_ == 1 && startTimeValid_) path_ = pathForStem(timestampFileStem());
   placeholderWritten_ = writeJson(stats, false);
   return placeholderWritten_;
 }
@@ -108,7 +110,7 @@ void LogbookEntryFile::captureFirstFix(const FlightStats& stats) {
   }
   firstFixTemperatureC_ = stats.temperature;
   placeholderWritten_ = false;
-  nextPlaceholderMs_ = 0;
+  placeholderPending_ = true;
 }
 
 bool LogbookEntryFile::refreshStartTimeFromSyncedClock(const FlightStats& stats) {
@@ -117,8 +119,8 @@ bool LogbookEntryFile::refreshStartTimeFromSyncedClock(const FlightStats& stats)
   startEpoch_ = startEpochFromStats(stats);
   refreshFirstFixTimeIfPossible();
   placeholderWritten_ = false;
-  nextPlaceholderMs_ = 0;
-  return writePlaceholder(stats);
+  placeholderPending_ = true;
+  return true;
 }
 
 void LogbookEntryFile::setTrack(const String& format, const String& path) {
@@ -126,7 +128,7 @@ void LogbookEntryFile::setTrack(const String& format, const String& path) {
   trackFormat_ = format;
   trackPath_ = path;
   placeholderWritten_ = false;
-  nextPlaceholderMs_ = 0;
+  placeholderPending_ = true;
 }
 
 bool LogbookEntryFile::finalize(const FlightStats& stats, const String& trackFormat,
@@ -149,9 +151,9 @@ bool LogbookEntryFile::finalize(const FlightStats& stats, const String& trackFor
     {
       logbook_io::Guard transaction;
       if (transaction && ensureLogbookDirectory()) {
-        // A failed filename update must not prevent saving the immutable payload at its old path.
-        if (startTimeValid_) renameToSyncedTimestampIfNeeded();
         saved = writeJson(stats, true);
+        // Rename only our known, completed main; no candidate scan/readback is needed.
+        if (saved && startTimeValid_) renameToSyncedTimestampIfNeeded();
       }
     }
     if (saved || !logbook_io::retryable() || attempts == 3 || millis() - started >= 1900) break;
@@ -180,7 +182,11 @@ void LogbookEntryFile::reset() {
   firstFixTemperatureC_ = 0;
   trackFormat_ = String();
   trackPath_ = String();
-  nextPlaceholderMs_ = 0;
+  placeholderPending_ = true;
+  placeholderAttempts_ = 0;
+  revision_ = 0;
+  finalStarted_ = false;
+  pendingWrite_ = {};
   endEpoch_ = 0;
   endTimeValid_ = false;
   timezoneMinutes_ = 0;
@@ -208,8 +214,8 @@ String LogbookEntryFile::timestampFileStem() const {
   return String(stem) + "_" + flightId_;
 }
 
-String LogbookEntryFile::unsyncedFileStem() const {
-  return String("unsynced_") + String(millis() / 1000) + "_" + flightId_;
+String LogbookEntryFile::undatedFileStem() const {
+  return String("date_not_available_") + String(millis() / 1000) + "_" + flightId_;
 }
 
 String LogbookEntryFile::pathForStem(const String& stem) const {
@@ -221,7 +227,7 @@ bool LogbookEntryFile::ensureLogbookDirectory() const { return logbook_io::ensur
 bool LogbookEntryFile::renameToSyncedTimestampIfNeeded() {
   const String newPath = pathForStem(timestampFileStem());
   if (newPath == path_) return true;
-  if (!logbook_io::relocate(path_, newPath)) return false;
+  if (!logbook_io::relocate(path_, newPath, false)) return false;
   path_ = newPath;
   return true;
 }
@@ -241,19 +247,20 @@ void LogbookEntryFile::refreshFirstFixTimeIfPossible() {
   placeholderWritten_ = false;
 }
 
-bool LogbookEntryFile::writeJson(const FlightStats& stats, bool finalEntry) const {
+bool LogbookEntryFile::writeJson(const FlightStats& stats, bool finalEntry) {
   if (path_.isEmpty()) return false;
   logbook_io::Guard transaction;
   if (!transaction) return false;
-  uint32_t revision;
-  uint64_t previous;
-  if (!logbook_io::prepare(path_, revision, previous)) return false;
+  if (!finalEntry || !finalStarted_) {
+    ++revision_;
+    finalStarted_ = finalEntry;
+  }
   JsonDocument doc;
 
   doc["schema"] = SCHEMA_NAME;
   doc["schema_version"] = SCHEMA_VERSION;
   doc["flight_id"] = flightId_;
-  doc["revision"] = revision;
+  doc["revision"] = revision_;
   doc["complete"] = finalEntry;
 
   JsonObject clock = doc["clock"].to<JsonObject>();
@@ -347,5 +354,44 @@ bool LogbookEntryFile::writeJson(const FlightStats& stats, bool finalEntry) cons
   notes["pilot_notes"] = "";
   notes["tags"].to<JsonArray>();
 
-  return logbook_io::commit(path_, doc, previous);
+  return logbook_io::commit(path_, doc, 0, &pendingWrite_);
+}
+
+void LogbookEntryFile::summary(const FlightStats& stats, LogbookEntrySummary& result) const {
+  result = LogbookEntrySummary();
+  result.valid = true;
+  result.path = path_;
+  result.filename = LogbookStore::filenameFromPath(path_);
+  result.flightId = flightId_;
+  result.pilotName = pilot_.name;
+  result.gliderDisplayName = glider_.resolvedDisplayName();
+  result.startTimeValid = startTimeValid_;
+  if (startTimeValid_) {
+    char utc[24], local[24];
+    formatUtcTime(utc, sizeof(utc), startEpoch_);
+    formatLocalTime(local, sizeof(local), startEpoch_, timezoneMinutes_);
+    result.startTimeUtc = utc;
+    result.startTimeLocal = local;
+  }
+  result.startAltitudeM = stats.gpsalt_start;
+  result.endAltitudeM = stats.gpsalt_end;
+  result.durationSeconds = stats.duration;
+  result.maxAltitudeM = stats.gpsalt_max;
+  result.minAltitudeM = stats.gpsalt_min;
+  result.maxAltitudeAboveLaunchM = stats.gpsalt_above_launch_max;
+  result.maxClimbRateMps = stats.climb_max / 100.0f;
+  result.maxSinkRateMps = stats.climb_min / 100.0f;
+  result.maxGroundSpeedMps = stats.speed_max;
+  result.maxWindValid = stats.windValid;
+  result.maxWindSpeedMps = stats.windSpeedMax;
+  result.maxWindDirectionFromDeg = stats.windDirectionFromAtMaxDeg;
+  result.pathDistanceM = stats.distanceAlongPath;
+  result.straightLineDistanceM = stats.distanceStraightLine;
+  result.maxAccelG = stats.accel_max;
+  result.minAccelG = stats.accel_min;
+  result.maxTemperatureC = stats.temperature_max;
+  result.minTemperatureC = stats.temperature_min;
+  result.trackSaved = !trackPath_.isEmpty();
+  result.trackPath = trackPath_;
+  result.trackFormat = trackFormat_;
 }

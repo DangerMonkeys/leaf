@@ -17,6 +17,7 @@ enum log_menu_items {
   cursor_log_saveLog,
   cursor_log_autoStart,
   cursor_log_autoStop,
+  cursor_log_repair,
 };
 
 enum log_menu_pages {
@@ -60,7 +61,7 @@ void LogMenuPage::drawLogMenu() {
     // Menu Items
     uint8_t setting_name_x = 2;
     uint8_t setting_choice_x = 78;
-    uint8_t menu_items_y[] = {190, 45, 60, 75};
+    uint8_t menu_items_y[] = {190, 45, 60, 75, 90};
 
     // then draw all the menu items
     for (int i = 0; i <= cursor_max; i++) {
@@ -87,6 +88,9 @@ void LogMenuPage::drawLogMenu() {
           else
             menu_ui::printGlyph(menu_ui::ICON_OFF);
           break;
+        case cursor_log_repair:
+          if (selected) menu_ui::printGlyph(menu_ui::ICON_ENTER);
+          break;
         case cursor_log_back:
           menu_ui::drawBackIcon(setting_choice_x, menu_items_y[i]);
           break;
@@ -111,6 +115,11 @@ void LogMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) {
     case cursor_log_autoStop: {
       if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT))
         settings.toggleBoolOnOff(&settings.log_autoStop);
+      break;
+    }
+    case cursor_log_repair: {
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT))
+        repairPage.start();
       break;
     }
     case cursor_log_back: {
