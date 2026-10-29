@@ -12,6 +12,7 @@
 #include "flight_start_window_checks.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
+#include "instruments/imu.h"
 #include "logbook/igc.h"
 #include "logging/flight_auto_start.h"
 #include "logging/flight_start_history.h"
@@ -21,11 +22,14 @@
 #include "scenario.h"
 #include "sim/clock.h"
 #include "ui/display/menu_page.h"
+#include "ui/display/pages/dialogs/page_alert_timerAutoStop.h"
 #include "ui/display/pages/dialogs/page_flight_summary.h"
 #include "ui/settings/settings.h"
 
 extern MessageBus<11> bus;
 extern Igc igcFlight;
+extern int32_t autoStopAltitude;
+extern PageAlertTimerAutoStop pageAlertTimerAutoStop;
 
 namespace {
   MessageInjector injector;
@@ -82,6 +86,61 @@ namespace {
     return text;
   }
 
+  void checkAutoStop() {
+    static_assert(AUTO_STOP_MIN_SEC == 15);
+    static_assert(AUTO_STOP_MAX_ALT == 200);
+    assert(!gps.hasUsableFix());
+    pageAlertTimerAutoStop.pop_all_pages();
+
+    for (int sign : {-1, 1}) {
+      // Both sides of the enlarged altitude tolerance qualify without GPS.
+      // Use real fresh sensor updates between scheduled detector checks.
+      flightTimer_resetAutoStop();
+      autoStopAltitude = baro.alt() + sign * 150;
+      for (unsigned check = 1; check <= 15; ++check) {
+        fly(1000, 0, 0, false);
+        assert(imu.accelValid());
+        assert(!gps.hasUsableFix());
+        assert(flightTimer_autoStop() == (check == 15));
+        if (check < 7 || check == 15) {
+          assert(pageAlertTimerAutoStop.get_modal_page() == nullptr);
+        } else {
+          assert(pageAlertTimerAutoStop.get_modal_page() == &pageAlertTimerAutoStop);
+          assert(flightTimer_getAutoStopCountRemaining() == 15 - check);
+        }
+        if (check == 7) assert(flightTimer_getAutoStopCountRemaining() == 8);
+      }
+      assert(flightTimer_getAutoStopCountRemaining() == 0);
+
+      // Canceling the eight-second warning starts confirmation over.
+      autoStopAltitude = baro.alt() + sign * 150;
+      for (unsigned check = 1; check <= 7; ++check) {
+        fly(1000, 0, 0, false);
+        assert(!flightTimer_autoStop());
+      }
+      assert(flightTimer_getAutoStopCountRemaining() == 8);
+      pageAlertTimerAutoStop.button_event(Button::CENTER, ButtonEvent::CLICKED, 1);
+      assert(pageAlertTimerAutoStop.get_modal_page() == nullptr);
+      assert(flightTimer_getAutoStopCountRemaining() == 0);
+      for (unsigned check = 1; check <= 7; ++check) {
+        fly(1000, 0, 0, false);
+        assert(!flightTimer_autoStop());
+      }
+      assert(flightTimer_getAutoStopCountRemaining() == 8);
+
+      // The strict 2 m boundary breaks qualification and closes the warning.
+      autoStopAltitude = baro.alt() + sign * 200;
+      assert(!flightTimer_autoStop());
+      assert(flightTimer_getAutoStopCountRemaining() == 0);
+      assert(pageAlertTimerAutoStop.get_modal_page() == nullptr);
+      autoStopAltitude = baro.alt() + sign * 199;
+      assert(!flightTimer_autoStop());
+      assert(flightTimer_getAutoStopCountRemaining() == 14);
+      flightTimer_resetAutoStop();
+    }
+    puts("Auto-stop 15 checks, 2 m boundary, eight-second warning, cancel and no-GPS passed");
+  }
+
   void checkFirmware() {
     sim::Runtime::Options options;
     options.httpPort = 0;
@@ -103,6 +162,8 @@ namespace {
     fly(40000, 0, 0, false);
     assert(baro.climbRate1SecAverageValid());
     assert(!gps.hasUsableFix());
+
+    checkAutoStop();
 
     // A manual pre-GPS start freezes history through a long wait for the file.
     const unsigned manualAt = millis();

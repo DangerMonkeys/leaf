@@ -300,7 +300,7 @@ bool flightTimer_autoStop() {
 
     // if all three conditions are met, increment the counter
     autoStopCounter++;
-    // alert the user if we've been in this state for a little while and are about to stop
+    // Warn at check 7 of 15, leaving an eight-second cancelable countdown.
     if (autoStopCounter == AUTO_STOP_MIN_SEC / 2) {
       pageAlertTimerAutoStop.show();
       showingAlert_ = true;

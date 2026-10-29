@@ -81,8 +81,7 @@ instead of counting unseen movement. Storage is bounded (32 samples, sufficient
 for the normal 1 Hz check and 250 ms regression sampling). Toggling Auto Start,
 showing a flight summary, and starting/stopping a flight reset the detector.
 These are detector timings; sensor acquisition, filtering and polling add delay.
-A larger departure bubble and auto-stop retuning have not been finalized here;
-existing auto-stop behavior is unchanged.
+A larger departure bubble has not been finalized here.
 
 Pressure departure uses the fresh **unadjusted pressure altitude** in centimeters
 converted to meters. It is not GPS altitude, QNH-adjusted altitude, or an integral
@@ -145,6 +144,21 @@ checksum.
 Run `make -C sim test-flight-start-window test-flight-auto-start test-thermal-lifecycle`
 in the usual container for model boundaries, sign reflection, GPS/barometer
 dropouts, history, real fused-sensor launches and IGC lifecycle checks.
+
+### Automatic flight stop
+
+Auto Stop requires 15 consecutive qualifying checks at the normal one-second
+logging cadence. Each check requires pressure altitude strictly within 2 m of the
+retained altitude anchor, valid acceleration within 0.2 g of 1 g, and GPS speed
+below 3 mph when a usable fix exists. Without a usable GPS fix, speed is bypassed
+so a stationary unit packed indoors can stop logging and later shut down through
+system Auto Off. A usable fix with stale speed does not qualify.
+
+A failed check resets the count and moves the altitude anchor to the current
+pressure altitude. This is an anchor-departure test, not a full rolling altitude
+range. The warning dialog and sound appear at check seven, leaving an eight-second
+countdown before stopping at check fifteen. The pilot can dismiss the warning to
+reset confirmation; another quiet period can start a new countdown afterward.
 
 ### What Happens During Each State
 
