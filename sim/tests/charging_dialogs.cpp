@@ -204,6 +204,10 @@ namespace {
     assert(leafLogSync.cancelPending());
     snapshot("opening-usb");
     waitFor([] { return sdcard.hostOwnsMassStorage(); });
+    assert(leafLogSync.result() == LeafLogSync::Result::Problem);
+    snapshot("cancelled-final-x");
+    sim::clock().advanceUs(5000000);
+    step();
     snapshot("cancelled-usb-available");
   }
 
@@ -211,6 +215,7 @@ namespace {
     reset("complete", 9);
     scan();
     waitFor([] { return leafLogSync.completionNotice(); });
+    sim::setUsbHostMounted(true);
     assertReferenceFrame(26, true);
     snapshot("complete-9-of-9");
     sim::clock().advanceUs(5000000);
@@ -249,13 +254,99 @@ namespace {
 
     reset("unavailable", 0, false);
     scan();
-    step();
+    waitFor([] { return leafLogSync.massStorageUnavailable(); });
     assert(leafLogSync.massStorageUnavailable());
     snapshot("usb-unavailable");
     sim::setUsbMassStorageAvailable(true);
     chargingPage_button(Button::CENTER, ButtonEvent::CLICKED, 0);
     step();
     assert(sdcard.hostOwnsMassStorage());
+  }
+
+  void persistentResults() {
+    using Result = LeafLogSync::Result;
+    reset("persistent-success", 1);
+    sim::setUsbHostMounted(true);
+    scan();
+    waitFor([] { return leafLogSync.completionNotice(); });
+    assert(leafLogSync.result() == Result::Success);
+    sim::clock().advanceUs(4996000);
+    step();
+    assert(leafLogSync.screenActive());
+    snapshot("success-final-before-five-seconds");
+    sim::clock().advanceUs(2000);
+    step();
+    assert(!leafLogSync.screenActive());
+    snapshot("compact-both-success");
+    const auto combined = sim::captureFrame();
+    for (unsigned y = 150; y < 173; ++y)
+      for (unsigned x = 47; x < 49; ++x) assert(!combined.pixels[y * 96 + x]);
+    sim::setUsbHostMounted(false);
+    snapshot("compact-leaf-log-success");
+    const auto leafOnly = sim::captureFrame();
+    assert(leafOnly.pixels != combined.pixels);
+    sim::clock().advanceUs(3600000000ULL);
+    step();
+    chargingPage_draw();
+    assert(sim::captureFrame().pixels == leafOnly.pixels);
+    // A host can appear later, without changing the upload result.
+    sim::setUsbHostMounted(true);
+    chargingPage_draw();
+    assert(sim::captureFrame().pixels == combined.pixels);
+    sdcard.notifyExplicitEject();
+    step();
+    waitFor([] { return leafLogSync.completionNotice(); });
+    sim::clock().advanceUs(5000000);
+    step();
+    assert(!sdcard.hostOwnsMassStorage() && leafLogSync.result() == Result::Success);
+    chargingPage_draw();
+    assert(sim::captureFrame().pixels == leafOnly.pixels);
+    snapshot("compact-success-after-eject");
+
+    reset("persistent-rejected", 1);
+    outcome = Outcome::Invalid;
+    sim::setUsbHostMounted(true);
+    scan();
+    waitFor([] { return leafLogSync.completionNotice(); });
+    assert(leafLogSync.sessionProblem() && leafLogSync.result() == Result::Problem);
+    snapshot("rejected-final-x");
+    sim::clock().advanceUs(5000000);
+    step();
+    snapshot("compact-both-problem");
+    sim::setUsbHostMounted(false);
+    snapshot("compact-leaf-log-problem");
+    // Eject rescans must not hide a rejection encountered in this charging session.
+    sdcard.notifyExplicitEject();
+    step();
+    waitFor([] { return leafLogSync.completionNotice(); });
+    assert(leafLogSync.result() == Result::Problem);
+
+    reset("persistent-usb-failed", 1, false);
+    scan();
+    waitFor([] { return leafLogSync.completionNotice(); });
+    assert(leafLogSync.result() == Result::Success);
+    snapshot("success-final-usb-unavailable");
+    sim::clock().advanceUs(5000000);
+    step();
+    assert(leafLogSync.massStorageUnavailable() && !leafLogSync.screenActive());
+    snapshot("compact-success-usb-unavailable");
+    leafLogSync.requestChargingClick();
+    sim::setUsbMassStorageAvailable(true);
+    step();
+    assert(leafLogSync.result() == Result::Success && !leafLogSync.screenActive());
+
+    reset("persistent-usb-only", 0);
+    settings.labs_leafLog = 0;
+    scan();
+    waitFor([] { return sdcard.hostOwnsMassStorage(); });
+    assert(leafLogSync.result() == Result::None);
+    sim::setUsbHostMounted(true);
+    snapshot("compact-usb-only");
+    sim::setUsbHostMounted(false);
+    snapshot("compact-no-host-no-leaf-log");
+    const auto noHost = sim::captureFrame();
+    for (unsigned y = 150; y < 173; ++y)
+      for (unsigned x = 0; x < 96; ++x) assert(!noHost.pixels[y * 96 + x]);
   }
 
   void pausedAndFinishDuringConfirmation() {
@@ -371,6 +462,7 @@ int main(int argc, char** argv) {
   pausedAndFinishDuringConfirmation();
   repairDuringScan();
   missingCardFooter();
+  persistentResults();
   printf(
       "Charging dialogs passed: exact reference artwork, corrected scan, live input, confirmation, "
       "ownership, completion and %u native 96x192 captures.\n",

@@ -171,7 +171,7 @@ namespace {
       assert(candidate.disposition == LeafLogCandidate::Disposition::Delivered ||
              candidate.rejectionPersisted);
     }
-    assert(leafLogSync.completionPending());
+    assert(leafLogSync.result() == LeafLogSync::Result::Problem);
 
     leafLogSync.prepareForCharging();
     sdcard.acquireForFirmwareUse(0, true);
@@ -194,6 +194,7 @@ namespace {
     sim::clock().advanceUs(5ULL * 60 * 1000000);
     finish();
     assert(attempts.size() == 3 && attempts[0] == attempts[1] && attempts[2] != attempts[1]);
+    assert(leafLogSync.result() == LeafLogSync::Result::Success);
     assert(classify("next-session").disposition == LeafLogCandidate::Disposition::Pending);
   }
 
@@ -204,6 +205,7 @@ namespace {
     assert(leafLogSync.totalCount() == 0);
     finish();
     assert(attempts.empty());
+    assert(leafLogSync.result() == LeafLogSync::Result::Success);
 
     reset("unauthorized");
     addFlight("flight");
@@ -212,6 +214,7 @@ namespace {
     finish();
     assert(attempts.size() == 1);
     assert(!leaf_log_credentials::load().linked());
+    assert(leafLogSync.result() == LeafLogSync::Result::Problem);
     assert(classify("flight").disposition == LeafLogCandidate::Disposition::Pending);
   }
 
@@ -223,6 +226,7 @@ namespace {
     leafLogSync.requestCancel();
     finish();
     assert(attempts.empty());
+    assert(leafLogSync.result() == LeafLogSync::Result::Problem);
 
     reset("power-on");
     addFlight("flight");
@@ -241,6 +245,7 @@ namespace {
     finish();
     assert(attempts.size() == 1);
     assert(classify("flight").disposition == LeafLogCandidate::Disposition::Pending);
+    assert(leafLogSync.result() == LeafLogSync::Result::Problem);
   }
 
   void queueFailureAndStaleFiles() {
@@ -267,6 +272,7 @@ namespace {
     settings.labs_leafLog = 0;
     finish();
     assert(attempts.empty());
+    assert(leafLogSync.result() == LeafLogSync::Result::None);
   }
 
   void incompleteScanRecovery() {
@@ -363,10 +369,10 @@ namespace {
     assert(leaf_log_credentials::store("llk_sim", "pilot", "Test Pilot"));
 
     const uint32_t startedMs = millis();
-    while (!leafLogSync.massStorageUnavailable() && millis() - startedMs < 5000) device.step();
+    while (!leafLogSync.completionNotice() && millis() - startedMs < 5000) device.step();
     // Prove that the actual charging scheduler services slices between display ticks. The old
     // one-file-per-500ms schedule would take about 250 seconds for this same card.
-    assert(leafLogSync.massStorageUnavailable());
+    assert(leafLogSync.completionNotice());
     assert(millis() - startedMs < 5000 && attempts.empty());
   }
 
@@ -386,6 +392,7 @@ namespace {
     assert(leafLogSync.totalCount() == 100);
     finish();
     assert(attempts.size() == 100);
+    assert(leafLogSync.result() == LeafLogSync::Result::Success);
     unsigned pending = 0;
     for (int i = 0; i < 105; ++i) {
       if (classify("flight-" + std::to_string(i)).disposition ==
@@ -412,6 +419,22 @@ namespace {
     leafLogSync.requestChargingClick();
     finish();
     assert(attempts.empty());
+  }
+
+  void unavailableAccountAndCard() {
+    reset("unlinked");
+    leaf_log_credentials::clear();
+    leafLogSync.prepareForCharging();
+    finish();
+    assert(leafLogSync.result() == LeafLogSync::Result::Problem && attempts.empty());
+
+    reset("missing-card");
+    leafLogSync.prepareForCharging();
+    sdcard.unmount();
+    SD_MMC.simSetPresent(false);
+    finish();
+    assert(leafLogSync.result() == LeafLogSync::Result::Problem && attempts.empty());
+    SD_MMC.simSetPresent(true);
   }
 }  // namespace
 
@@ -496,6 +519,7 @@ int main() {
   queueFailureAndStaleFiles();
   incompleteScanRecovery();
   boundedSessionsAndConfirmation();
+  unavailableAccountAndCard();
   chargingScheduler();
   leafLogSync.prepareForCharging();
   std::filesystem::remove_all(directory);

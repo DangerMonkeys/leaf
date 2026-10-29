@@ -11,6 +11,7 @@ class LeafLogSync {
  public:
   static constexpr uint16_t MAX_SESSION_FLIGHTS = 100;
   enum class ScreenPhase : uint8_t { Scanning, Wifi, Connecting, Transfer, Paused, Complete };
+  enum class Result : uint8_t { None, Success, Problem };
   enum class State : uint8_t {
     Idle,
     CheckingEligibility,
@@ -50,6 +51,8 @@ class LeafLogSync {
   }
   bool completionPending() const { return sessionCompletionPending_; }
   bool completionNotice() const { return state_ == State::Complete; }
+  Result result() const { return result_; }
+  bool sessionProblem() const { return sessionProblem_; }
   bool powerOnPending() const { return powerOnRequested_.load(std::memory_order_acquire); }
   bool powerOnClosingUsb() const { return powerOnPending() && powerOnClosingUsb_; }
   bool progressKnown() const { return sessionTotalKnown_; }
@@ -102,6 +105,10 @@ class LeafLogSync {
   bool powerOnClosingUsb_ = false;
   bool sessionTotalKnown_ = false;
   bool sessionCompletionPending_ = false;
+  // Final charging-screen status is independent of USB ownership and notice timers.
+  Result result_ = Result::None;
+  bool sessionProblem_ = false;
+  bool chargingRejection_ = false;
   uint16_t completedCount_ = 0;
   uint16_t sessionTotalCount_ = 0;
   uint16_t pendingCount_ = 0;
