@@ -22,7 +22,7 @@
 #define DEFAULT_SAMPLES_TO_AVERAGE 3
 #define BARO_SAMPLES_PER_SECOND 20
 #define CLIMB_DISPLAY_SAMPLES_PER_SECOND 5
-#define CLIMB_DISPLAY_AVERAGE_MAX_SECONDS 5
+#define CLIMB_DISPLAY_AVERAGE_MAX_SECONDS 20
 
 // Barometer reporting altitude, adjusted altitude, climb rate, and other information.
 // Requires a pressure source.
@@ -141,7 +141,7 @@ class Barometer : public MessageSink<Barometer, PressureUpdate>,
 
   static constexpr size_t CLIMB_DISPLAY_HISTORY_SIZE =
       CLIMB_DISPLAY_SAMPLES_PER_SECOND * CLIMB_DISPLAY_AVERAGE_MAX_SECONDS;
-  static_assert(CLIMB_DISPLAY_HISTORY_SIZE == 25);
+  static_assert(CLIMB_DISPLAY_HISTORY_SIZE <= UINT8_MAX);
   std::array<int16_t, CLIMB_DISPLAY_HISTORY_SIZE> climbDisplayHistory_{};
   uint8_t climbDisplayHistoryCount_ = 0;
   uint8_t climbDisplayHistoryIndex_ = 0;

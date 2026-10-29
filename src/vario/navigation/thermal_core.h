@@ -46,6 +46,7 @@ class ThermalCore {
   const ThermalClimbHistory& climbHistory() const { return climbHistory_; }
 
  private:
+  void resetGuidance();
   void updateTurnSegment(const ThermalTracker::CoreSample& latest,
                          const ThermalTracker::CoreSample& prior);
   ThermalCoreEstimate estimate_;

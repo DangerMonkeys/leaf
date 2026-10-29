@@ -24,32 +24,60 @@ extern MessageBus<11> bus;
 namespace {
   void checkWidgetHistory() {
     ThermalClimbHistory history;
-    assert(sizeof(history) == 100);
+    assert(sizeof(history) == 104);
     // Fractional starting meters must not masquerade as climb in the first partial bucket.
-    history.update(true, 1000, 100049);
-    history.update(true, 1500, 100149);
+    history.update(1000, 100049);
+    history.update(1500, 100149);
     assert(history.averageCms() == 200);
     for (uint32_t ms = 2000; ms <= 251000; ms += 500) {
-      history.update(true, ms, 100049 + (ms - 1000) / 5);
+      history.update(ms, 100049 + (ms - 1000) / 5);
     }
     assert(history.size() == 40 && history.averageCms() == 200);
     assert(history.altitudeM(39) == 1110);  // ring wrapped; 195 seconds retained
-    history.update(true, 251500, 150149);
+    history.update(251500, 150149);
     assert(history.altitudeAgoCm(1) == 149100);  // five seconds before the live reference
-    for (uint32_t ms = 252000; ms <= 311000; ms += 500) history.update(true, ms, 150049);
+    for (uint32_t ms = 252000; ms <= 311000; ms += 500) history.update(ms, 150049);
     assert(history.averageCms() == 0);  // trailing minute forgets the earlier strong climb
-    history.update(false, 311500, 150049);
-    assert(!history.size() && history.averageCms() == 0);
-    history.update(true, 312000, -100049);
-    history.update(true, 317000, -101049);
+    history.reset();
+    assert(!history.size() && history.averageCms() == 0 && history.originAverageCms() == 0);
+    history.update(312000, -100049);
+    history.update(317000, -101049);
     assert(history.size() == 2 && history.averageCms() == -200);
     history.reset();
     const uint32_t start = UINT32_MAX - 2000;
-    history.update(true, start, 100000);
-    history.update(true, start + 5500, 101100);
+    history.update(start, 100000);
+    history.update(start + 5500, 101100);
     assert(history.size() == 2 && history.averageCms() == 200);
     // Interpolation handles a late update without lengthening the five-second buckets.
     assert(history.altitudeM(0) == 1010);
+  }
+
+  void checkOriginAverage() {
+    for (int direction : {-1, 1}) {
+      ThermalClimbHistory regular, sparse;
+      regular.update(0, 100000);
+      sparse.update(0, 100000);
+      for (uint32_t ms = 500; ms <= 240000; ms += 500) {
+        const int32_t altitudeCm = 100000 + direction * static_cast<int32_t>(ms) * 3 / 10;
+        regular.update(ms, altitudeCm);
+        if (ms % 5000 == 0) {
+          sparse.update(ms, altitudeCm);
+          assert(regular.originAverageCms() == sparse.originAverageCms());
+        }
+        const int32_t origin = direction * regular.originAverageCms();
+        if (ms == 60000) {
+          assert(regular.averageCms() == direction * 300);
+          assert(origin >= 117 && origin <= 119);  // ~39% of the step after one minute.
+        }
+        if (ms == 120000) assert(origin >= 189 && origin <= 191);  // ~63% at the time constant.
+        if (ms == 240000) assert(origin >= 258 && origin <= 260);
+      }
+      const int32_t held = regular.originAverageCms();
+      regular.update(240000, regular.currentAltitudeCm());
+      assert(regular.originAverageCms() == held);  // Redraws/duplicate samples cannot speed it up.
+      regular.reset();
+      assert(regular.originAverageCms() == 0);
+    }
   }
 
   void checkLiftCenter() {
@@ -438,7 +466,7 @@ namespace {
     for (uint32_t ms = 0; ms <= 195000; ms += 500) {
       // Strong climb first, tapering to flat over the last minute.
       if (ms) altitudeCm += ms <= 120000 ? 150 : (195000 - ms) / 500;
-      history.update(true, ms, altitudeCm);
+      history.update(ms, altitudeCm);
     }
     estimate.centerValid = true;
     estimate.centerX = 48;
@@ -446,10 +474,9 @@ namespace {
     for (bool imperial : {false, true}) {
       settings.units_climb = imperial;
       const auto frame = draw();
-      assert(frame.pixels[55 * frame.width + 53]);  // present altitude sits just left of divider
-      assert(!frame.pixels[54 * frame.width + 53]);
       int filledColumns = 0;
-      for (int x = 15; x < 54; ++x) {
+      // The source ring deliberately clears holes in the two rightmost graph columns.
+      for (int x = 15; x < 52; ++x) {
         bool filled = false;
         for (int y = 51; y < 73; ++y) {
           if (frame.pixels[y * frame.width + x]) filled = true;
@@ -461,10 +488,70 @@ namespace {
       save(frame, imperial ? "sim/build-tests/climb-history-fpm.png"
                            : "sim/build-tests/climb-history-metric.png");
     }
-    // Losing the circle must hide the contents even if a stale history was accidentally retained.
+    // The graph and average remain visible after the center disappears.
     estimate = {};
     settings.units_climb = savedUnits;
-    assert(draw() == empty);
+    const auto withoutCenter = draw();
+    assert(!(withoutCenter == empty));
+    save(withoutCenter, "sim/build-tests/climb-history-outside-thermal.png");
+    estimate.centerValid = true;
+    const auto withCenter = draw();
+    for (int y = 51; y < 73; ++y)
+      for (int x = 15; x < 95; ++x)
+        assert(withoutCenter.pixels[y * withoutCenter.width + x] ==
+               withCenter.pixels[y * withCenter.width + x]);
+    estimate = {};
+    // Check actual rendered pixels: asymmetric limits, saturation, intermediate positions,
+    // unit independence, exact glyph centering and white center over the graph/divider/text.
+    const struct {
+      int32_t rateCms;
+      int16_t originY;
+      const char* name;
+    } cases[] = {{500, 52, "strong-climb"}, {300, 52, "climb-bound"}, {200, 56, "climb"},
+                 {100, 60, "weak-climb"},   {0, 63, "level"},         {-100, 67, "sink"},
+                 {-200, 71, "sink-bound"},  {-500, 71, "strong-sink"}};
+    for (const auto& test : cases) {
+      history.reset();
+      // Let the two-minute origin EMA settle before checking the mapping endpoints.
+      for (uint32_t ms = 0; ms <= 1200000; ms += 500)
+        history.update(ms, 100000 + static_cast<int64_t>(test.rateCms) * ms / 1000);
+      assert(history.averageCms() == test.rateCms);
+      assert(history.originAverageCms() == test.rateCms);
+      for (bool imperial : {false, true}) {
+        settings.units_climb = imperial;
+        const auto frame = draw();
+        const auto pixel = [&](int x, int y) { return frame.pixels[y * frame.width + x]; };
+        for (int dy = -1; dy <= 1; ++dy) {
+          for (int dx = -1; dx <= 1; ++dx) assert(!pixel(54 + dx, test.originY + dy));
+          assert(pixel(52, test.originY + dy) && pixel(56, test.originY + dy));
+        }
+        for (int dx = -1; dx <= 1; ++dx)
+          assert(pixel(54 + dx, test.originY - 2) && pixel(54 + dx, test.originY + 2));
+        // Two columns back is ten seconds old and outside the source bubble. Its slope must
+        // retain the fixed altitude scale while the entire trace follows the dynamic origin.
+        const int deltaCm = test.rateCms * 10;
+        const int lineY = test.originY + (deltaCm + (deltaCm >= 0 ? 1250 : -1250)) / 2500;
+        for (int y = 51; y < 73; ++y) assert(pixel(51, y) == (y >= lineY));
+        if (!imperial) {
+          const std::string path =
+              std::string("sim/build-tests/climb-origin-") + test.name + ".png";
+          save(frame, path.c_str());
+        }
+      }
+    }
+    // After just a minute of +3 m/s, the numerical field is already +3, but the source bubble
+    // must still be near neutral (EMA ~+1.18 m/s -> y=59), not at its upper bound y=52.
+    history.reset();
+    for (uint32_t ms = 0; ms <= 60000; ms += 500) history.update(ms, 100000 + ms * 3 / 10);
+    assert(history.averageCms() == 300 && history.originAverageCms() == 118);
+    const auto transition = draw();
+    for (int dy = -1; dy <= 1; ++dy)
+      for (int dx = -1; dx <= 1; ++dx)
+        assert(!transition.pixels[(59 + dy) * transition.width + 54 + dx]);
+    assert(transition.pixels[57 * transition.width + 54]);
+    assert(transition.pixels[61 * transition.width + 54]);
+    save(transition, "sim/build-tests/climb-origin-ema-transition.png");
+    settings.units_climb = savedUnits;
     history = savedHistory;
   }
 
@@ -680,7 +767,8 @@ namespace {
   void checkGuidanceRetention() {
     auto& device = sim::runtime();
     const auto startFlight = [&](int initialDirection, float exitRate, bool reverse,
-                                 float exitSpeed = 1.0f, bool returnToCenter = false) {
+                                 float exitSpeed = 1.0f, bool returnToCenter = false,
+                                 float exitClimb = 2) {
       sim::scenario().pause();
       thermalTracker.reset();
       thermalCore.reset();
@@ -694,9 +782,10 @@ namespace {
             << "{\"durationS\":"
             << (reverse          ? 5
                 : returnToCenter ? 20
+                : exitClimb < 0  ? 75
                                  : 45)
-            << ",\"airspeedMps\":" << exitSpeed
-            << ",\"climbMps\":2,\"turnRateDegPerS\":" << exitRate << "}";
+            << ",\"airspeedMps\":" << exitSpeed << ",\"climbMps\":" << exitClimb
+            << ",\"turnRateDegPerS\":" << exitRate << "}";
         if (returnToCenter) {
           out << ",{\"durationS\":20,\"airspeedMps\":9.5,\"climbMps\":2,\"headingDeg\":"
               << (initialDirection * 1200 + 180 + 3600) % 360 << "}";
@@ -733,6 +822,8 @@ namespace {
       uint32_t start = startFlight(direction, 0, false, 9.5f, true);
       flyUntil(start + 80000);
       assert(!thermalCore.estimate().centerValid);  // >100 m away long enough to hide
+      assert(thermalCore.climbHistory().size() >= 16);
+      assert(thermalCore.climbHistory().averageCms() > 150);
       flyUntil(start + 100000);
       assert(thermalCore.estimate().centerValid);  // return restores without any new turn
 
@@ -747,23 +838,40 @@ namespace {
       }
       assert(thermalCore.estimate().direction == -direction);
     }
+    const uint32_t sinkStart = startFlight(1, 0, false, 9.5f, false, -2);
+    flyUntil(sinkStart + 130000);
+    assert(!thermalCore.estimate().centerValid);
+    assert(thermalCore.climbHistory().size() >= 26);
+    assert(thermalCore.climbHistory().averageCms() < -180);
+    assert(thermalCore.climbHistory().averageCms() > -220);
+    thermalCorePage_draw();
+    const auto sinkPng = sim::encodePng(sim::captureFrame(), 4);
+    std::ofstream sinkScreen("sim/build-tests/climb-history-sink.png", std::ios::binary);
+    sinkScreen.write(sinkPng.data(), sinkPng.size());
+    assert(sinkScreen.good());
+    // Return to a nearby established center before checking GPS loss and recovery.
+    const uint32_t recoveryStart = startFlight(1, 0, false);
+    flyUntil(recoveryStart + 80000);
+    assert(thermalCore.estimate().centerValid);
     // Retaining the center must not make stale GPS appear current.
     sim::scenario().pause();
     flyUntil(sim::clock().millis() + 4000);
     assert(!thermalCore.estimate().centerValid);
-    assert(!thermalCore.climbHistory().size());
+    assert(thermalCore.climbHistory().size() > 12);
     sim::scenario().play();
     flyUntil(sim::clock().millis() + 3000);
     assert(thermalCore.estimate().centerValid);  // GPS recovery restores the cached nearby center
-    assert(thermalCore.climbHistory().size() > 0 && thermalCore.climbHistory().size() <= 2);
+    assert(thermalCore.climbHistory().size() > 12);
     thermalTracker.reset();
     thermalCore.update();
     assert(!thermalCore.estimate().centerValid && thermalCore.estimate().direction == 0);
+    assert(thermalCore.climbHistory().size() > 12);
   }
 }  // namespace
 
 int main() {
   checkWidgetHistory();
+  checkOriginAverage();
   checkLiftCenter();
   checkGuidanceGain();
   checkClimbHistory();

@@ -31,7 +31,10 @@ namespace {
       thermal_page::CORE_CLIMB_BOX_TOP + thermal_page::CORE_CLIMB_BOX_HEIGHT;
   constexpr int16_t HISTORY_DIVIDER = HISTORY_LEFT + thermal_page::CORE_CLIMB_BOX_WIDTH - 1;
   constexpr int16_t HISTORY_VALUE_TOP = MAP_TOP - 18;
-  constexpr int16_t HISTORY_CURRENT_Y = HISTORY_VALUE_TOP;
+  constexpr int16_t HISTORY_ORIGIN_TOP = 52;
+  constexpr int16_t HISTORY_ORIGIN_BOTTOM = 71;
+  constexpr int32_t HISTORY_ORIGIN_MAX_CLIMB_CMS = 300;
+  constexpr int32_t HISTORY_ORIGIN_MIN_CLIMB_CMS = -200;
   constexpr int32_t HISTORY_CM_PER_PIXEL = 2500;
   // Moving the top edge must not shift the aircraft or breadcrumb projection.
   constexpr int16_t MAP_CENTER_Y = 124;
@@ -529,20 +532,32 @@ namespace {
     speaker.playSound(fx::neutral);
   }
 
-  void drawClimbHistory(const ThermalCoreEstimate& estimate) {
+  int16_t climbHistoryOriginY(int32_t averageCms) {
+    // Move only the origin, preserving 25 m/pixel. Its two-minute EMA is independent of the
+    // one-minute numerical field, display units and the user climb-averaging setting.
+    const int32_t rate =
+        constrain(averageCms, HISTORY_ORIGIN_MIN_CLIMB_CMS, HISTORY_ORIGIN_MAX_CLIMB_CMS);
+    constexpr int32_t rateRange = HISTORY_ORIGIN_MAX_CLIMB_CMS - HISTORY_ORIGIN_MIN_CLIMB_CMS;
+    return HISTORY_ORIGIN_TOP +
+           ((HISTORY_ORIGIN_MAX_CLIMB_CMS - rate) * (HISTORY_ORIGIN_BOTTOM - HISTORY_ORIGIN_TOP) +
+            rateRange / 2) /
+               rateRange;
+  }
+
+  void drawClimbHistory() {
     // The vario and climb field already form the graph's left and upper edges.
     u8g2.drawFrame(HISTORY_DIVIDER, HISTORY_VALUE_TOP, MAP_WIDTH - HISTORY_DIVIDER,
                    MAP_TOP - HISTORY_VALUE_TOP + 1);
     u8g2.drawVLine(HISTORY_DIVIDER, HISTORY_TOP, MAP_TOP - HISTORY_TOP);
-    if (!estimate.centerValid) return;
-
     const auto& history = thermalCore.climbHistory();
     if (!history.size()) return;
+    const int32_t averageClimbCms = history.averageCms();
+    const int16_t originY = climbHistoryOriginY(history.originAverageCms());
     for (uint8_t age = 0; age < history.size() && age < HISTORY_DIVIDER - HISTORY_LEFT; ++age) {
       const int32_t deltaCm = history.currentAltitudeCm() - history.altitudeAgoCm(age);
-      const int16_t y = HISTORY_CURRENT_Y + (deltaCm + (deltaCm >= 0 ? HISTORY_CM_PER_PIXEL / 2
-                                                                     : -HISTORY_CM_PER_PIXEL / 2)) /
-                                                HISTORY_CM_PER_PIXEL;
+      const int16_t y = originY + (deltaCm + (deltaCm >= 0 ? HISTORY_CM_PER_PIXEL / 2
+                                                           : -HISTORY_CM_PER_PIXEL / 2)) /
+                                      HISTORY_CM_PER_PIXEL;
       // Fill only actual history columns, clipping before the unsigned drawing API.
       const int16_t top = max<int16_t>(HISTORY_TOP, y);
       if (top < MAP_TOP) {
@@ -550,9 +565,20 @@ namespace {
       }
     }
     u8g2.setClipWindow(HISTORY_DIVIDER + 1, HISTORY_VALUE_TOP + 1, MAP_WIDTH - 1, MAP_TOP);
-    thermal_page::drawCoreClimbAverage(history.averageCms(), HISTORY_DIVIDER + 1,
-                                       HISTORY_VALUE_TOP + 1);
+    thermal_page::drawCoreClimbAverage(averageClimbCms, HISTORY_DIVIDER + 1, HISTORY_VALUE_TOP + 1);
     u8g2.setMaxClipWindow();
+
+    // Draw the source bubble last, over the graph, divider and average field. The 5h '%' glyph
+    // is 5x5 with zero offsets: its centered origin is (x - 2, baseline y + 3), not (x, y).
+    // Transparent glyph rendering leaves the explicitly cleared 3x3 center white.
+    u8g2.setDrawColor(0);
+    u8g2.drawBox(HISTORY_DIVIDER - 1, originY - 1, 3, 3);
+    u8g2.setDrawColor(1);
+    u8g2.setFont(leaf_5h);
+    u8g2.setFontPosBaseline();
+    u8g2.setFontMode(1);
+    u8g2.drawGlyph(HISTORY_DIVIDER - 2, originY + 3, 0x25);
+    u8g2.setFontMode(0);
   }
 
   void drawThermalCoreContent() {
@@ -592,7 +618,7 @@ namespace {
     */
     drawAircraft(aircraftX, AIRCRAFT_Y);
     u8g2.drawFrame(MAP_LEFT, MAP_TOP, MAP_WIDTH, MAP_HEIGHT);
-    drawClimbHistory(estimate);
+    drawClimbHistory();
 
     /*
     if (hasTurn) drawTargetScale(GUIDANCE_CENTER_X, GUIDANCE_CENTER_Y);

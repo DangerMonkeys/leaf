@@ -35,7 +35,7 @@ namespace {
     while (uint32_t(millis() - start) < ms) sim::runtime().step();
   }
 
-  void assertEmpty() {
+  void assertEmpty(bool historyEmpty = true) {
     assert(thermalTracker.recentCoreSamples().size() == 0);
     assert(thermalTracker.savedThermalCount() == 0);
     assert(thermalTracker.displayItemCount() == 0);
@@ -43,7 +43,7 @@ namespace {
     const auto& estimate = thermalCore.estimate();
     assert(!estimate.valid && !estimate.centerValid && estimate.markerCount == 0);
     assert(estimate.direction == 0 && estimate.adviceQ7 == 0);
-    assert(thermalCore.climbHistory().size() == 0);
+    if (historyEmpty) assert(thermalCore.climbHistory().size() == 0);
   }
 
   void populate() {
@@ -65,10 +65,10 @@ namespace {
       thermalTracker.updateDetector();
       thermalTracker.updateNavigation();
       thermalCore.update();
-      assertEmpty();
+      assertEmpty(false);  // Barometric history does not require a GPS fix.
     }
     flyFor(4000);  // The retained fix is now stale as well.
-    assertEmpty();
+    assertEmpty(false);
     sim::scenario().play();
     flyFor(12000);  // Allow the 20 discarded 4 Hz pressure samples and IMU startup.
     assert(thermalTracker.recentCoreSamples().size() > 0);

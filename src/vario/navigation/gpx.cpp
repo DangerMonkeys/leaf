@@ -450,8 +450,7 @@ void Navigator::update() {
     pointDistanceRemaining = gps.distanceBetween(gps.location.lat(), gps.location.lng(),
                                                  activePoint.latitude(), activePoint.longitude());
     if (segmentDistance <= 0) segmentDistance = pointDistanceRemaining;
-    const uint16_t activeRadius =
-        activeRouteIndex ? activeRoutePoint.radiusM : defaultWaypointRadius;
+    const uint16_t activeRadius = activeCylinderRadiusM();
     if (pointDistanceRemaining < activeRadius && !reachedGoal_ && flightTimer_isLogging())
       sequenceWaypoint();  //  (this will also update distance to the new point)
 
@@ -475,10 +474,7 @@ void Navigator::update() {
     if (!gps.hasFreshGroundSpeed() || gps.speed.mps() < 0.5) {
       pointTimeRemaining = 0;
     } else {
-      const double distanceToCylinder =
-          fmax(0.0, pointDistanceRemaining -
-                        (activeRouteIndex ? activeRoutePoint.radiusM : defaultWaypointRadius));
-      pointTimeRemaining = distanceToCylinder / gps.speed.mps();
+      pointTimeRemaining = pointDistanceRemaining / gps.speed.mps();
     }
 
     // get degress to active point
@@ -507,7 +503,9 @@ void Navigator::update() {
                         ? pointDistanceRemaining / heightAboveWaypoint
                         : 0;
     const double heightAboveGoal = gps.altitude.meters() - goalPoint_.ele;
-    glideToGoal_ = heightAboveGoal > 0 ? totalDistanceRemaining_ / heightAboveGoal : 0;
+    glideToGoal_ = isfinite(heightAboveGoal) && heightAboveGoal > 0
+                       ? goalDistanceRemaining() / heightAboveGoal
+                       : 0;
 
     // update relative altimeters (in cm)
     // alt above active point
@@ -696,15 +694,38 @@ bool Navigator::gpsPositionUsable() const { return gps.hasUsableFix(); }
 
 bool Navigator::hasNavSolution() const { return hasActivePoint() && gpsPositionUsable(); }
 
-uint32_t Navigator::goalTimeRemaining() const {
+uint16_t Navigator::activeCylinderRadiusM() const {
+  return activeRouteIndex ? activeRoutePoint.radiusM : defaultWaypointRadius;
+}
+
+double Navigator::cylinderDistanceRemaining() const {
+  return hasNavSolution() ? fmax(0.0, pointDistanceRemaining - activeCylinderRadiusM()) : 0;
+}
+
+uint32_t Navigator::cylinderTimeRemaining() const {
   if (!hasNavSolution() || !gps.hasFreshGroundSpeed() || gps.speed.mps() < 0.5) return 0;
-  // Match waypoint ETA's cylinder arrival convention at the final destination.
+  return cylinderDistanceRemaining() / gps.speed.mps();
+}
+
+float Navigator::glideToCylinder() const {
+  if (!hasNavSolution()) return 0;
+  const double height = gps.altitude.meters() - activePoint.ele;
+  return isfinite(height) && height > 0 ? cylinderDistanceRemaining() / height : 0;
+}
+
+double Navigator::goalDistanceRemaining() const {
+  if (!hasNavSolution()) return 0;
   const uint16_t radius =
       activeRouteIndex
           ? routePointMeta(activeRouteIndex, RouteIndex(routes[activeRouteIndex].totalPoints))
                 .radiusM
           : defaultWaypointRadius;
-  return fmax(0.0, totalDistanceRemaining_ - radius) / gps.speed.mps();
+  return fmax(0.0, totalDistanceRemaining_ - radius);
+}
+
+uint32_t Navigator::goalTimeRemaining() const {
+  if (!hasNavSolution() || !gps.hasFreshGroundSpeed() || gps.speed.mps() < 0.5) return 0;
+  return goalDistanceRemaining() / gps.speed.mps();
 }
 
 float Navigator::arrivalAltitudeSurplus(double distanceM, float elevationM) const {
@@ -721,13 +742,17 @@ float Navigator::arrivalAltitudeAboveWaypoint() const {
   return arrivalAltitudeSurplus(pointDistanceRemaining, activePoint.ele);
 }
 
+float Navigator::arrivalAltitudeAboveCylinder() const {
+  return arrivalAltitudeSurplus(cylinderDistanceRemaining(), activePoint.ele);
+}
+
 float Navigator::arrivalAltitudeAboveGoal() const {
   if (!hasNavSolution()) return NAN;
   const Waypoint& goal =
       activeRouteIndex
           ? routePoint(activeRouteIndex, RouteIndex(routes[activeRouteIndex].totalPoints))
           : activePoint;
-  return arrivalAltitudeSurplus(totalDistanceRemaining_, goal.ele);
+  return arrivalAltitudeSurplus(goalDistanceRemaining(), goal.ele);
 }
 
 void Navigator::clearNavSolution() {

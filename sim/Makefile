@@ -380,3 +380,11 @@ $(BUILD)/kalman_bias_test: $(SIM)/tests/kalman_bias.cpp $(ROOT)/src/vario/math/k
 $(BUILD)/flat_acceleration_bias_test: $(SIM)/tests/flat_acceleration_bias.cpp $(ROOT)/src/vario/math/kalman.cpp $(ROOT)/src/vario/math/kalman.h
 	@mkdir -p $(BUILD)
 	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/flat_acceleration_bias.cpp $(ROOT)/src/vario/math/kalman.cpp
+
+.PHONY: test-climb-display-average
+$(BUILD)/climb_display_average_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/climb_display_average.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/climb_display_average.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-climb-display-average: $(BUILD)/climb_display_average_test
+	@cd $(ROOT) && $(BUILD)/climb_display_average_test
+	@cd $(ROOT) && $(BUILD)/climb_display_average_test --verify-persistence

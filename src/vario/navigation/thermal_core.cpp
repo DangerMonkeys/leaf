@@ -148,6 +148,11 @@ namespace {
 }  // namespace
 
 void ThermalCore::reset() {
+  resetGuidance();
+  climbHistory_.reset();
+}
+
+void ThermalCore::resetGuidance() {
   estimate_ = {};
   turnGuidanceActive_ = false;
   turnGuidancePreviouslyActive_ = false;
@@ -158,7 +163,6 @@ void ThermalCore::reset() {
   episodeClimbScaleValid_ = false;
   episodeMaxClimbCms_ = 0;
   target_.reset();
-  climbHistory_.reset();
 }
 
 void ThermalCore::updateTurnSegment(const ThermalTracker::CoreSample& latest,
@@ -205,16 +209,18 @@ void ThermalCore::update() {
     reset();
     return;
   }
+  const uint32_t nowMs = millis();
+  // Raw pressure altitude keeps MSL/GPS corrections out of the continuous climb history.
+  climbHistory_.update(nowMs, baro.alt());
   const auto samples = thermalTracker.recentCoreSamples();
   const uint8_t sampleCount = samples.size();
   estimate_ = {};
   if (sampleCount == 0) {
-    reset();
+    resetGuidance();
     return;
   }
 
   const ThermalTracker::CoreSample& latest = samples[sampleCount - 1];
-  const uint32_t nowMs = millis();
   const bool guidanceWasActive = turnGuidanceActive_;
   if (latest.capturedAtMs != lastGuidanceSampleMs_) {
     if (sampleCount >= 2) updateTurnSegment(latest, samples[sampleCount - 2]);
@@ -273,9 +279,6 @@ void ThermalCore::update() {
   if (samplesFresh) target_.observe(center, latest.capturedAtMs);
   target_.updateVisibility(latest.xM, latest.yM, latest.capturedAtMs, samplesFresh);
   estimate_.centerValid = target_.visible() && samplesFresh;
-  // Use the circle's visibility without adding a second set of display thresholds. Raw
-  // pressure altitude keeps manual MSL/GPS altitude corrections out of the climb history.
-  climbHistory_.update(estimate_.centerValid, nowMs, baro.alt());
   if (estimate_.centerValid) {
     pointToScreen(target_.eastM(), target_.northM(), mapReference.xM, mapReference.yM,
                   mapReference.courseDeg, aircraftX, estimate_.centerX, estimate_.centerY);
