@@ -24,14 +24,33 @@ namespace logbook_io {
   Result lastResult();
   bool retryable();
   bool ensureDirectory();
+  bool directoryAvailable(bool* missing = nullptr);
 
-  // Callers hold Guard from prepare through commit. Documents are never retained.
+  // Owned by one writer, not a background retry queue. A checked temporary can be
+  // promoted again without serializing or reading it back on the next stop attempt.
+  struct PendingWrite {
+    uint32_t revision = 0;
+    size_t bytes = 0;
+    uint64_t serializedHash = 0;
+    bool verified = false;
+    bool ownsTemporary = false;
+    bool closed = false;
+    bool promoted = false;
+  };
+
+  // Flight writers use their own revision/PendingWrite; prepare supports existing
+  // records without retaining a document. Hold Guard across a read/modify/commit.
   bool prepare(const String& path, uint32_t& nextRevision, uint64_t& previousPayload);
-  bool commit(const String& path, JsonDocument& document, uint64_t previousPayload = 0);
+  bool commit(const String& path, JsonDocument& document, uint64_t previousPayload = 0,
+              PendingWrite* pending = nullptr);
   bool recover(const String& path);
+  bool needsRepair(const String& path);
+  bool needsMaintenance(const String& path);
+  // Explicit maintenance may rename legacy undated files; callers must retain the returned path.
+  bool maintain(String& path);
   bool load(const String& path, JsonDocument& document);
   bool erase(const String& path, const String& trackPath = "");
-  bool relocate(const String& oldPath, const String& newPath);
+  bool relocate(const String& oldPath, const String& newPath, bool inspectExisting = true);
   // Maps directory entries to one logical flight without mutating a live iterator.
   bool candidatePath(const String& entry, String& path);
 

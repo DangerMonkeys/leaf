@@ -13,10 +13,15 @@ class PageLogbook : public SettingsMenuPage {
   void showNewest();
   void showModalNewest();
   void draw() override;
+  void service() { scan.service(); }
+  bool scanning() const { return scan.pending(); }
 
  protected:
   void setting_change(Button dir, ButtonEvent state, uint8_t count) override;
   bool cursorUsesLeftButton() const override;
+  void closed(bool removed) override {
+    if (removed) scan.cancel();
+  }
 
  private:
   enum Cursor : int8_t {
@@ -41,5 +46,9 @@ class PageLogbook : public SettingsMenuPage {
   uint16_t total = 0;
   uint8_t deletePending = 0;
   bool modal = false;
-  bool deleteFailed = false;
+  LogbookScan scan;
+  int8_t scanDirection = 0;
+  bool waitingForScan = false;
+  bool unavailable = false;
+  LogbookReadStatus readStatus = LogbookReadStatus::Unavailable;
 };

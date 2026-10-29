@@ -227,7 +227,7 @@ test-display-settings: $(BUILD)/display_settings_test
 LEAF_LOG_TEST_OBJECTS := $(filter-out $(BUILD)/sim/emulator/main.o $(BUILD)/fw/src/vario/comms/leaf_log_client.o,$(OBJECTS))
 
 $(BUILD)/leaf_log_sync_test: $(LEAF_LOG_TEST_OBJECTS) $(SIM)/tests/leaf_log_sync.cpp
-	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/leaf_log_sync.cpp $(LEAF_LOG_TEST_OBJECTS) $(LDFLAGS)
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/leaf_log_sync.cpp $(LEAF_LOG_TEST_OBJECTS) $(LDFLAGS) -Wl,--wrap=readdir,--wrap=fread,--wrap=fclose
 
 test-leaf-log-sync: $(BUILD)/leaf_log_sync_test
 	@cd $(ROOT) && $(BUILD)/leaf_log_sync_test
@@ -238,6 +238,10 @@ $(BUILD)/logbook_io_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) 
 
 test-logbook-io: $(BUILD)/logbook_io_test
 	@cd $(ROOT) && $(BUILD)/logbook_io_test
+
+# Deterministic visual inventory; does not change firmware rendering or require hardware.
+$(BUILD)/sd_dialogs_capture: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/sd_dialogs.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/sd_dialogs.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
 
 .PHONY: test-usb-serial
 $(BUILD)/usb_serial_test: $(SIM)/tests/usb_serial.cpp $(wildcard $(SIM)/tests/usb_serial_hal/*.h) $(ROOT)/src/vario/system/usb_serial.cpp $(ROOT)/src/vario/system/usb_serial.h $(ROOT)/src/vario/system/usb_state.cpp $(ROOT)/src/vario/system/usb_state.h
@@ -315,8 +319,64 @@ clean:
 -include $(shell find $(BUILD) -name '*.d' 2>/dev/null)
 
 .PHONY: test-flight-auto-start
-$(BUILD)/flight_auto_start_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/flight_auto_start.cpp
+.PHONY: test-flight-start-window
+$(BUILD)/flight_start_window_test: $(SIM)/tests/flight_start_window.cpp $(SIM)/tests/flight_start_window_checks.h $(ROOT)/src/vario/logging/flight_auto_start.h $(ROOT)/src/vario/logging/flight_start_history.h
+	@mkdir -p $(@D)
+	@$(CXX) -std=c++17 -Wall -Wextra -I$(ROOT)/src/vario -o $@ $(SIM)/tests/flight_start_window.cpp
+
+test-flight-start-window: $(BUILD)/flight_start_window_test
+	@$<
+
+$(BUILD)/flight_auto_start_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/flight_auto_start.cpp $(SIM)/tests/flight_start_window_checks.h
 	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/flight_auto_start.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
 
 test-flight-auto-start: $(BUILD)/flight_auto_start_test
 	@cd $(ROOT) && $(BUILD)/flight_auto_start_test
+
+.PHONY: test-logbook-maintenance
+$(BUILD)/logbook_maintenance_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/logbook_maintenance.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/logbook_maintenance.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-logbook-maintenance: $(BUILD)/logbook_maintenance_test
+	@cd $(ROOT) && $(BUILD)/logbook_maintenance_test $(BUILD)/logbook-maintenance-screens
+
+# Delay tolerance through the actual instruments and Kalman implementation.
+.PHONY: test-vario-continuity
+$(BUILD)/kalman_gaps_test: $(SIM)/tests/kalman_gaps.cpp $(ROOT)/src/vario/math/kalman.cpp $(ROOT)/src/vario/math/kalman.h $(ROOT)/src/vario/instruments/vario_timing.h
+	@mkdir -p $(BUILD)
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/kalman_gaps.cpp $(ROOT)/src/vario/math/kalman.cpp
+
+$(BUILD)/vario_continuity_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/vario_continuity.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/vario_continuity.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-vario-continuity: $(BUILD)/kalman_gaps_test $(BUILD)/vario_continuity_test $(BUILD)/kalman_bias_test $(BUILD)/flat_acceleration_bias_test
+	@$(BUILD)/kalman_gaps_test
+	@$(BUILD)/kalman_bias_test
+	@$(BUILD)/flat_acceleration_bias_test
+	@cd $(ROOT) && $(BUILD)/vario_continuity_test
+
+# The normal simulator replaces the sensor driver. This target runs the real LSM driver.
+.PHONY: test-lsm6dsv-continuity
+LSM_TEST_OBJECTS := $(filter-out $(BUILD)/sim/emulator/main.o $(BUILD)/sim/device/sensors.o,$(OBJECTS))
+$(BUILD)/sensors_real_lsm.o: $(SIM)/device/sensors.cpp | deps
+	@$(CXX) $(CXXFLAGS) -DLEAF_SIM_REAL_LSM6DSV -MMD -MP -c $< -o $@
+
+$(BUILD)/lsm6dsv_real.o: $(ROOT)/src/vario/hardware/lsm6dsv.cpp | deps
+	@$(CXX) $(CXXFLAGS) -MMD -MP -c $< -o $@
+
+$(BUILD)/lsm6dsv_registers.o: $(ROOT)/src/libraries/LSM6DSV/src/lsm6dsv_reg.c | deps
+	@$(CC) $(FW_CFLAGS) -c $< -o $@
+
+$(BUILD)/lsm6dsv_continuity_test: $(LSM_TEST_OBJECTS) $(BUILD)/sensors_real_lsm.o $(BUILD)/lsm6dsv_real.o $(BUILD)/lsm6dsv_registers.o $(SIM)/tests/lsm6dsv_continuity.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/lsm6dsv_continuity.cpp $(LSM_TEST_OBJECTS) $(BUILD)/sensors_real_lsm.o $(BUILD)/lsm6dsv_real.o $(BUILD)/lsm6dsv_registers.o $(LDFLAGS)
+
+test-lsm6dsv-continuity: $(BUILD)/lsm6dsv_continuity_test
+	@cd $(ROOT) && $(BUILD)/lsm6dsv_continuity_test
+
+$(BUILD)/kalman_bias_test: $(SIM)/tests/kalman_bias.cpp $(ROOT)/src/vario/math/kalman.cpp $(ROOT)/src/vario/math/kalman.h
+	@mkdir -p $(BUILD)
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/kalman_bias.cpp $(ROOT)/src/vario/math/kalman.cpp
+
+$(BUILD)/flat_acceleration_bias_test: $(SIM)/tests/flat_acceleration_bias.cpp $(ROOT)/src/vario/math/kalman.cpp $(ROOT)/src/vario/math/kalman.h
+	@mkdir -p $(BUILD)
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/flat_acceleration_bias.cpp $(ROOT)/src/vario/math/kalman.cpp

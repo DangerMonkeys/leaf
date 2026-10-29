@@ -2,6 +2,8 @@
 
 #include "Arduino.h"
 #include "logbook/flight_stats.h"
+#include "logbook/logbook_io.h"
+#include "logbook/logbook_store.h"
 #include "profiles/profile_store.h"
 
 class LogbookEntryFile {
@@ -14,6 +16,7 @@ class LogbookEntryFile {
                 const String& trackPath = "");
   void setTrack(const String& format, const String& path);
   void reset();
+  void summary(const FlightStats& stats, LogbookEntrySummary& summary) const;
   static bool deleteFiles(const String& logbookPath, const String& trackPath);
 
   bool active() const { return !path_.isEmpty(); }
@@ -23,12 +26,12 @@ class LogbookEntryFile {
  private:
   String generateFlightId() const;
   String timestampFileStem() const;
-  String unsyncedFileStem() const;
+  String undatedFileStem() const;
   String pathForStem(const String& stem) const;
   bool ensureLogbookDirectory() const;
   time_t startEpochFromStats(const FlightStats& stats) const;
   void refreshFirstFixTimeIfPossible();
-  bool writeJson(const FlightStats& stats, bool finalEntry) const;
+  bool writeJson(const FlightStats& stats, bool finalEntry);
   bool renameToSyncedTimestampIfNeeded();
 
   String flightId_;
@@ -44,7 +47,11 @@ class LogbookEntryFile {
   float firstFixTemperatureC_ = 0;
   String trackFormat_;
   String trackPath_;
-  uint32_t nextPlaceholderMs_ = 0;
+  bool placeholderPending_ = true;
+  uint8_t placeholderAttempts_ = 0;
+  uint32_t revision_ = 0;
+  bool finalStarted_ = false;
+  logbook_io::PendingWrite pendingWrite_;
   time_t endEpoch_ = 0;
   int16_t timezoneMinutes_ = 0;
   bool endTimeValid_ = false;

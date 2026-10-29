@@ -14,9 +14,9 @@ struct Waypoint;
 // Auto Stop Timer Thresholds
 
 #define AUTO_STOP_MAX_SPEED 3     // mph max -- must be below this speed for timer to auto-stop
-#define AUTO_STOP_MAX_ACCEL 0.2f  // Max accelerometer signal (m/s^2) to consider "not moving"
-#define AUTO_STOP_MAX_ALT 100     // cm altitude change for timer auto-stop
-#define AUTO_STOP_MIN_SEC 20      // seconds of low speed / low accel for timer to auto-stop
+#define AUTO_STOP_MAX_ACCEL 0.2f  // Maximum acceleration departure from 1 g
+#define AUTO_STOP_MAX_ALT 200     // cm departure from the retained altitude anchor
+#define AUTO_STOP_MIN_SEC 15      // consecutive qualifying one-second checks
 
 // Main Log functions
 void log_update(void);  // Update function to run every second

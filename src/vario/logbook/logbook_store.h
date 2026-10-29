@@ -1,5 +1,6 @@
 #pragma once
 
+#include <FS.h>
 #include "Arduino.h"
 
 enum class LeafLogFlightStatus : uint8_t {
@@ -20,6 +21,8 @@ struct LeafLogCandidate {
   size_t trackSize = 0;
   bool rejectionPersisted = false;
 };
+
+enum class LogbookReadStatus : uint8_t { Ready, RepairNeeded, Unavailable };
 
 struct LogbookEntrySummary {
   bool valid = false;
@@ -65,6 +68,39 @@ struct LogbookNavigation {
   String nextPath;
 };
 
+// One directory iterator and a fixed number of working paths; no per-flight cache.
+class LogbookScan {
+ public:
+  void begin(const String& anchor = "");
+  void service();
+  void cancel();
+  bool pending() const { return pending_; }
+  bool unavailable() const { return unavailable_; }
+  const String& newestPath() const { return newest_; }
+  const LogbookNavigation& navigation() const { return navigation_; }
+
+ private:
+  File directory_;
+  String anchor_, newest_;
+  LogbookNavigation navigation_;
+  uint16_t newer_ = 0;
+  bool pending_ = false, unavailable_ = false;
+};
+
+enum class LogRepairState : uint8_t {
+  Idle,
+  Checking,
+  Ready,
+  Repairing,
+  Complete,
+  Failed,
+  Cancelled
+};
+struct LogRepairStatus {
+  LogRepairState state = LogRepairState::Idle;
+  uint32_t checked = 0, problems = 0, repaired = 0, unresolved = 0;
+};
+
 class LogbookStore {
  public:
   static constexpr const char* directoryPath() { return "/logbook"; }
@@ -76,7 +112,14 @@ class LogbookStore {
   static bool entryPositionNewestFirst(const String& currentPath, uint16_t& position,
                                        uint16_t& total);
   static bool navigationForPath(const String& currentPath, LogbookNavigation& navigation);
-  static bool readSummary(const String& path, LogbookEntrySummary& summary, bool recover = true);
+  static bool readSummary(const String& path, LogbookEntrySummary& summary,
+                          LogbookReadStatus* status = nullptr);
+  // Explicit maintenance only. Suspect paths are spooled on SD, never retained as a RAM list.
+  static bool beginRepairSession(bool scan = true);
+  static void serviceRepair();
+  static bool repairPending();
+  static bool startRepair();
+  static LogRepairStatus repairStatus();
   static bool classifyForLeafLog(const String& path, LeafLogCandidate& candidate);
   static bool recordLeafLogFlightId(const String& path, const String& flightId);
   static bool recordLeafLogRejection(const String& path, const String& reason);
