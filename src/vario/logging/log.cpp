@@ -51,9 +51,16 @@ namespace {
   FlightAutoStart::Sample autoStartSample() {
     FlightAutoStart::Sample sample;
     sample.speedValid = gps.hasFreshGroundSpeed();
-    if (sample.speedValid) sample.speedMph = gps.speed.mph();
+    if (sample.speedValid) sample.speedMps = gps.speed.mps();
     sample.climbValid = baro.pressureFresh() && baro.climbRate1SecAverageValid();
     if (sample.climbValid) sample.climbMps = baro.climbRate1SecAverage() / 100.0f;
+    sample.altitudeValid = baro.pressureFresh();
+    if (sample.altitudeValid) sample.altitudeM = baro.alt() / 100.0f;
+    sample.positionValid = gps.hasUsableFix();
+    if (sample.positionValid) {
+      sample.latitude = gps.location.lat();
+      sample.longitude = gps.location.lng();
+    }
     return sample;
   }
 
@@ -217,35 +224,59 @@ bool flightTimer_autoStart() {
     start = autoStartDetector.update(millis(), sample);
   }
   startHistory.record(millis(), sample, autoStartDetector.score(), settings.log_autoStart,
-                      inhibited);
-  if (start) Serial.println("****************************** autoStart TRUE via motion score");
+                      inhibited, autoStartDetector.candidates(), autoStartDetector.triggered());
+  if (start) Serial.println("****************************** autoStart TRUE via motion window");
   return start;
 }
 
 void log_writeStartDiagnostics(IgcLogger& logger) {
   if (!startHistory.frozen()) return;
   char line[80];
-  snprintf(line, sizeof(line), "START V=1 CAUSE=%s T_MS=%lu N=%u",
+  snprintf(line, sizeof(line), "START V=2 CAUSE=%s T_MS=%lu N=%u",
            startHistory.cause() == FlightStartCause::Automatic ? "AUTO" : "MANUAL",
            static_cast<unsigned long>(startHistory.startedAtMs()),
            static_cast<unsigned>(startHistory.size()));
   logger.writeLRecord(line);
-  snprintf(line, sizeof(line), "STARTCFG SPEED_MPH=%.2f CLIMB_MPS=%.2f MEMORY_S=%.2f MIN_MS=%lu",
-           FlightAutoStart::SPEED_SCALE_MPH, FlightAutoStart::CLIMB_SCALE_MPS,
-           FlightAutoStart::MEMORY_SECONDS,
-           static_cast<unsigned long>(FlightAutoStart::MIN_DETECTION_MS));
+  snprintf(line, sizeof(line), "STARTCFG WINDOW_MS=%lu GAP_MS=%lu CONFIRM_MS=%lu",
+           static_cast<unsigned long>(FlightAutoStart::WINDOW_MS),
+           static_cast<unsigned long>(FlightAutoStart::MAX_UPDATE_GAP_MS),
+           static_cast<unsigned long>(FlightAutoStart::CONFIRM_MS));
   logger.writeLRecord(line);
-  logger.writeLRecord("STARTFIELDS DT_MS V=MPH C=M/S S=SCORE F=1:SPEED,2:CLIMB,4:ON,8:BLOCK");
+  snprintf(line, sizeof(line), "STARTFORWARD SPEED_MPS=%.5f DIST_M=%.2f",
+           FlightAutoStart::FORWARD_SPEED_MPS, FlightAutoStart::FORWARD_DISTANCE_M);
+  logger.writeLRecord(line);
+  snprintf(line, sizeof(line), "STARTVERT DIST_M=%.2f CLIMB_MPS_GT=%.2f SIGN=AGREE",
+           FlightAutoStart::VERTICAL_DISTANCE_M, FlightAutoStart::VERTICAL_CLIMB_MPS);
+  logger.writeLRecord(line);
+  snprintf(line, sizeof(line), "STARTBLEND S_MIN=%.2f U_MIN=%.2f SCORE=S+U^2 SIGN=AGREE",
+           FlightAutoStart::BLEND_MIN_FORWARD, FlightAutoStart::BLEND_MIN_VERTICAL);
+  logger.writeLRecord(line);
+  logger.writeLRecord("STARTUNITS V=M/S C=M/S A=M LAT/LON=DEG S=UNCONFIRMED_SCORE");
+  logger.writeLRecord("STARTFLAGS F=1:SPEED,2:CLIMB,4:ON,8:BLOCK,16:ALT,32:POS");
+  logger.writeLRecord("STARTPATHS Q=CANDIDATE T=TRIGGER 1:FORWARD,2:VERTICAL,4:BLEND");
   for (size_t i = 0; i < startHistory.size(); ++i) {
     const auto& entry = startHistory.at(i);
     char speed[16] = "NA", climb[16] = "NA";
     if (entry.flags & FlightStartHistory::SpeedValid)
-      snprintf(speed, sizeof(speed), "%.4g", entry.speedMph);
+      snprintf(speed, sizeof(speed), "%.4g", entry.speedMps);
     if (entry.flags & FlightStartHistory::ClimbValid)
       snprintf(climb, sizeof(climb), "%.4g", entry.climbMps);
     const int32_t relativeMs = -static_cast<int32_t>(startHistory.startedAtMs() - entry.atMs);
-    snprintf(line, sizeof(line), "STARTDATA DT_MS=%ld V=%s C=%s S=%.6f F=%02X",
+    snprintf(line, sizeof(line), "STARTDATA DT_MS=%ld V=%s C=%s S=%.4g F=%02X",
              static_cast<long>(relativeMs), speed, climb, entry.score, entry.flags);
+    logger.writeLRecord(line);
+    if (entry.flags & FlightStartHistory::AltitudeValid) {
+      snprintf(line, sizeof(line), "STARTALT DT_MS=%ld A=%.2f", static_cast<long>(relativeMs),
+               entry.altitudeM);
+      logger.writeLRecord(line);
+    }
+    if (entry.flags & FlightStartHistory::PositionValid) {
+      snprintf(line, sizeof(line), "STARTPOS DT_MS=%ld LAT=%.7f LON=%.7f",
+               static_cast<long>(relativeMs), entry.latitude, entry.longitude);
+      logger.writeLRecord(line);
+    }
+    snprintf(line, sizeof(line), "STARTPATH DT_MS=%ld Q=%02X T=%02X", static_cast<long>(relativeMs),
+             entry.candidates, entry.triggered);
     logger.writeLRecord(line);
   }
 }
@@ -269,7 +300,7 @@ bool flightTimer_autoStop() {
 
     // if all three conditions are met, increment the counter
     autoStopCounter++;
-    // alert the user if we've been in this state for a little while and are about to stop
+    // Warn at check 7 of 15, leaving an eight-second cancelable countdown.
     if (autoStopCounter == AUTO_STOP_MIN_SEC / 2) {
       pageAlertTimerAutoStop.show();
       showingAlert_ = true;
@@ -336,7 +367,9 @@ void flightTimer_start(FlightStartCause cause) {
 
   // Freeze before resetting the detector, including its final triggering score.
   startHistory.record(millis(), autoStartSample(), autoStartDetector.score(),
-                      settings.log_autoStart, PageFlightSummary::isShowing());
+                      settings.log_autoStart, PageFlightSummary::isShowing(),
+                      cause == FlightStartCause::Automatic ? autoStartDetector.candidates() : 0,
+                      cause == FlightStartCause::Automatic ? autoStartDetector.triggered() : 0);
   startHistory.freeze(millis(), cause);
   autoStartDetector.reset();
   flightTimer_resetAutoStop();
