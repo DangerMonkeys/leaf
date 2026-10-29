@@ -64,10 +64,22 @@ a retry keeps the current flight/queue position rather than silently dropping it
   directly, without first presenting the SD card.
 - The upload worker finishes/aborts and closes its file before USB handoff or power-on.
   The UI can show `Opening USB Drive`, `Closing USB Drive` or `Turning On`.
-- Completion is shown for five seconds after handoff, then the ordinary charging/USB display
-  resumes. `USB Drive Available` remains while host ownership is active.
-- A failed USB handoff shows `USB Drive Not Ready` for 30 seconds. A center click retries the
-  handoff without restarting uploads, and holding center can still request power-on.
+- The final check or X is shown for five seconds after handoff, then a compact result remains
+  throughout the charging session. Successful batches (including the 100-flight cap) and an
+  empty eligible queue show a check. Newly encountered rejections, unreadable records,
+  missing storage/account linkage, authorization failure or cancellation with unfinished work
+  show X. A transient failure followed by successful retries shows a check; retry waits retain
+  their large paused animation. Previously recorded rejections do not fail every later session.
+- The compact panel shows USB only, Leaf Log only, or both with a two-pixel vertical divider.
+  USB requires both presented storage and a configured USB host; power-only chargers and
+  charge-only cables do not show USB availability. Host configuration does not prove that the
+  computer mounted the filesystem. Leaf Log results remain visible independently of USB
+  handoff failure, host connection or eject. Rejections encountered during this charging
+  session remain problems across eject-triggered rescans; a new charging session resets results.
+- With Leaf Log disabled, a failed USB handoff shows `USB Drive Not Ready` for 30 seconds.
+  With a final Leaf Log result, that result remains visible instead. A center click retries the
+  handoff without restarting uploads or changing their result, and holding center can still
+  request power-on.
 - The footer shows the combined firmware/hardware version, or `NO SD CARD!` when absent.
 
 ## SD ownership

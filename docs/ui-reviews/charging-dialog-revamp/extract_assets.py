@@ -55,6 +55,15 @@ def main():
     glyph('cloud', (57, 21, 92, 41), source, raise_by=1)
     complete = Image.open(ROOT / 'reference/complete-00.png').convert('RGB')
     glyph('checkmark', (36, 27, 54, 41), complete, raise_by=1)
+    # The new failure glyph shares the check's height and center. Keep it
+    # reproducible here so refreshing the reference artwork preserves it.
+    failure = Image.new('1', (14, 14))
+    for y in range(14):
+        for x in range(14):
+            failure.putpixel((x, y), abs(x - y) <= 1 or abs(x + y - 13) <= 1)
+    lines.append('// Two-pixel diagonal strokes, shared by the final frame and compact result.')
+    array('failure_bits', failure)
+    lines.append('const Glyph failure = {failure_bits, 38, 26, 14, 14};')
     from PIL import ImageChops
     for i in range(1, 4):
         previous = bits(Image.open(ROOT / f'reference/wifi-{i-1:02}.png'))
@@ -99,7 +108,7 @@ def main():
     (ROOT / 'reference/expected-dialogs.bin').write_bytes(fixture)
     lines.append('}  // namespace charging_art\n')
     OUT.write_text('\n'.join(lines), encoding='utf-8')
-    print('Extracted 8 shared firmware glyphs; 27 full frames are simulator-only fixtures.')
+    print('Extracted 9 shared firmware glyphs; 27 full frames are simulator-only fixtures.')
     print('Reference SHA256:', hashlib.sha256((ROOT / 'reference/dialog-spec.png').read_bytes()).hexdigest())
 
 
