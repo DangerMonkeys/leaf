@@ -19,8 +19,9 @@ namespace {
   constexpr uint32_t SELF_TEST_TIMEOUT_MS = 25000;
   static_assert(SFLP_ACCEL_FULL_SCALE_G == 8.0,
                 "Update the operating full scale and FIFO conversion together");
-  // Two FIFO words per 60 Hz sample. Never consume a long backlog as current data.
-  constexpr uint16_t MAX_FIFO_WORDS = 16;
+  // Two FIFO words per 60 Hz sample: tolerate about half a second of delayed polling.
+  // This bounds read work, not a host-side buffer; only the newest complete pair is published.
+  constexpr uint16_t MAX_FIFO_WORDS = 64;
   struct BiasRecord {
     uint32_t version;
     float x, y, z;
@@ -63,8 +64,6 @@ void LSM6DSV::invalidate() {
   haveCounter_ = false;
   pendingClipped_ = false;
   clippedSincePublish_ = false;
-  climbSum_ = climbSumSquares_ = 0;
-  climbSamples_ = 0;
   // Also invalidates instruments when hardware publishing is disconnected for replay.
   if (bus_) {
     MotionUpdate m(millis());
@@ -209,10 +208,7 @@ void LSM6DSV::update() {
     return;
   }
   const uint32_t now = millis();
-  if (uint32_t(now - lastPoll_) > 200) {
-    fault("IMU polling gap");
-    return;
-  }
+  const uint32_t pollGap = now - lastPoll_;
   lastPoll_ = now;
   lsm6dsv_fifo_status_t fifo{};
   if (lsm6dsv_fifo_status_get(&ctx_, &fifo) != 0) {
@@ -220,7 +216,24 @@ void LSM6DSV::update() {
     return;
   }
   if (fifo.fifo_ovr || fifo.fifo_full || fifo.fifo_level > MAX_FIFO_WORDS) {
-    fault("FIFO overrun/backlog");
+    // Lost samples after a host stall do not mean SFLP failed. Discard the FIFO,
+    // preserve sensor fusion and the instrument filter, and acquire a fresh pair next poll.
+    if (lsm6dsv_fifo_mode_set(&ctx_, LSM6DSV_BYPASS_MODE) != 0 ||
+        lsm6dsv_fifo_mode_set(&ctx_, LSM6DSV_STREAM_MODE) != 0) {
+      fault("FIFO discard I2C fault");
+      return;
+    }
+    pending_ = MotionUpdate(0);
+    haveCounter_ = pendingClipped_ = false;
+    // A delayed host needs a fresh acquisition window. Repeated overruns during timely
+    // polling must still trip the normal paired-data watchdog rather than mask a failure.
+    if (pollGap > 500) lastPair_ = now;
+    if (uint32_t(now - lastPair_) > (uint32_t(now - started_) < WARMUP_MS ? WARMUP_MS : 500)) {
+      fault("No paired gravity data");
+      return;
+    }
+    Serial.printf("LSM6DSV: t=%lu discarded FIFO backlog (%u words)\n", (unsigned long)now,
+                  fifo.fifo_level);
     return;
   }
   if (!fifo.fifo_level) ++empty_;
@@ -307,12 +320,6 @@ void LSM6DSV::update() {
         retries_ = 0;
         Serial.println("LSM6DSV: recovery budget restored after healthy operation");
       }
-      if (imu.velocityValid()) {
-        const double climb = imu.kalmanVelocity();
-        climbSum_ += climb;
-        climbSumSquares_ += climb * climb;
-        ++climbSamples_;
-      }
     }
     if (uint32_t(now - lastReport_) >= 5000) {
       lastReport_ = now;
@@ -323,13 +330,6 @@ void LSM6DSV::update() {
           (unsigned long)mismatched_, imu.velocityValid(), imu.kalmanVelocity(),
           imu.accelerationBias(), imu.biasLearningAllowed(), (unsigned long)invalidAccel_,
           (unsigned long)resets_, retries_);
-      if (climbSamples_) {
-        Serial.printf("LSM6DSV climb: t=%lu n=%u mean=%.5f rms=%.5f\n", (unsigned long)now,
-                      climbSamples_, climbSum_ / climbSamples_,
-                      sqrt(climbSumSquares_ / climbSamples_));
-      }
-      climbSum_ = climbSumSquares_ = 0;
-      climbSamples_ = 0;
     }
   }
 }
@@ -481,7 +481,6 @@ void LSM6DSV::finishSelfTest(bool passed) {
     beginTestPhase(5);
     flatCaptureFailed_ = false;
     residualSum_ = residualSumSq_ = 0;
-    for (int i = 0; i < 3; ++i) gravitySum_[i] = gravitySumSq_[i] = 0;
     testResult_ = TestResult::Running;
   }
   if (!restored) fault("Self-test restore fault");
@@ -503,8 +502,8 @@ void LSM6DSV::captureFlatBias(const MotionUpdate& sample) {
   for (int i = 0; i < 3; ++i) {
     accelSum_[i] += a[i];
     accelSumSq_[i] += a[i] * a[i];
-    gravitySum_[i] += g[i];
-    gravitySumSq_[i] += g[i] * g[i];
+    sum_[i] += g[i];
+    sumSq_[i] += g[i] * g[i];
   }
   residualSum_ += residual;
   residualSumSq_ += residual * residual;
@@ -515,18 +514,17 @@ void LSM6DSV::finishFlatBiasCapture() {
   FlatAccelerationBias reference{};
   reference.version = FlatAccelerationBias::VERSION;
   reference.residualG = residualSum_ / 100;
-  const double norm = sqrt(gravitySum_[0] * gravitySum_[0] + gravitySum_[1] * gravitySum_[1] +
-                           gravitySum_[2] * gravitySum_[2]);
+  const double norm = sqrt(sum_[0] * sum_[0] + sum_[1] * sum_[1] + sum_[2] * sum_[2]);
   const double inverseNorm = norm > 1e-6 ? 1 / norm : 0;
-  reference.gx = gravitySum_[0] * inverseNorm;
-  reference.gy = gravitySum_[1] * inverseNorm;
-  reference.gz = gravitySum_[2] * inverseNorm;
+  reference.gx = sum_[0] * inverseNorm;
+  reference.gy = sum_[1] * inverseNorm;
+  reference.gz = sum_[2] * inverseNorm;
   bool pass = !flatCaptureFailed_ && reference.valid();
   double accelNorm2 = 0;
   for (int i = 0; i < 3; ++i) {
-    const double a = accelSum_[i] / 100, g = gravitySum_[i] / 100;
+    const double a = accelSum_[i] / 100, g = sum_[i] / 100;
     accelNorm2 += a * a;
-    pass &= accelSumSq_[i] / 100 - a * a < .0004 && gravitySumSq_[i] / 100 - g * g < .0004;
+    pass &= accelSumSq_[i] / 100 - a * a < .0004 && sumSq_[i] / 100 - g * g < .0004;
   }
   pass &= accelNorm2 > .81 && accelNorm2 < 1.21 &&
           residualSumSq_ / 100 - reference.residualG * reference.residualG < .0004;

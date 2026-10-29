@@ -75,7 +75,7 @@ def check(path):
         if state["E"] == "1":
             saw.add("committed")
         if accel["FV"] == "1":
-            assert (tick - int(accel["FT"])) % 2**32 <= 250
+            assert (tick - int(accel["FT"])) % 2**32 <= 500
             saw.add("values")
         else:
             assert accel["F"] == "NA"

@@ -7,6 +7,8 @@
 
 #include <Arduino.h>
 
+#include "instruments/vario_timing.h"
+
 #include "dispatch/message_sink.h"
 #include "dispatch/message_source.h"
 #include "dispatch/message_types.h"
@@ -34,7 +36,8 @@ class Barometer : public MessageSink<Barometer, PressureUpdate>,
   State state() const { return state_; }
   uint32_t lastPressureTime() const { return lastPressureTime_; }
   bool pressureFresh() const {
-    return state_ == State::Ready && uint32_t(millis() - lastPressureTime_) <= 250;
+    return state_ == State::Ready &&
+           uint32_t(millis() - lastPressureTime_) <= vario_timing::SENSOR_FRESH_MS;
   }
   void invalidateClimb();
 

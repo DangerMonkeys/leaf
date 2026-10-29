@@ -218,3 +218,8 @@ size_t Preferences::getBytes(const char* key, void* buf, size_t maxLen) {
   memcpy(buf, it->second.data(), n);
   return n;
 }
+
+size_t Preferences::getBytesLength(const char* key) {
+  auto it = values_.find(key ? key : "");
+  return it == values_.end() ? 0 : it->second.size();
+}
