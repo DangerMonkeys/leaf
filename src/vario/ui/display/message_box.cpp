@@ -10,7 +10,7 @@ namespace message_box {
     constexpr int LINE_HEIGHT = 14;
     constexpr int DETAIL_GAP = 8;
     const int x = (u8g2.getDisplayWidth() - WIDTH) / 2;
-    const int y = (u8g2.getDisplayHeight() - HEIGHT) / 2;
+    const int y = (u8g2.getDisplayHeight() - HEIGHT) / 2 - 3;
 
     u8g2.setDrawColor(0);
     u8g2.drawRBox(x, y, WIDTH, HEIGHT, 5);

@@ -1,6 +1,7 @@
 {
-  "source_base_commit": "61bd8d2ff17cdecb05e755a9d5eab8b68877909a",
+  "source_base_commit": "baca496be55e612315e904ba430b49afa306537e",
   "source_files_sha256": {
+    "src/vario/ui/display/message_box.cpp": "0b442ef5f81ddcbeca43345c001ed6c29c5bcf23720f1c477e2d167c0621dcae",
     "src/vario/logbook/logbook_entry.cpp": "9409358ba96b1672814ef83bcfc9f39cc1d7ed39fcd2c7b46f4b401553f5957f",
     "src/vario/comms/leaf_log_sync.cpp": "9fc5ebf15cd79b80f100068c7a592e7938e7ffeca066e0c93221d6f34eee3cc6",
     "sim/tests/logbook_io.cpp": "068761d52554ee5dc103511d4c2fd17bbd8cf34af88369abfc3425092813f92e",
@@ -14,6 +15,7 @@
     "src/vario/ui/display/pages/menu/page_repair_logs.cpp": "13c2d7cf761607f7e9a79f3a18cc0ce3ef415bba6ee1e4d993e09da7eb76f440",
     "src/vario/ui/display/pages/menu/page_menu_log.cpp": "e7b2c3ff4b0851775c560803c8d04f3f8107568d97593e47d384cf0de0616d24",
     "sim/tests/logbook_maintenance.cpp": "ea1233a6b59dcc4a217f07c9e03ff0d1e1f2ddb9628498a1c0b515d77efebe41",
+    "src/vario/ui/display/message_box.h": "6101fc731cbf687cad466af80a5ac9c1dfc6f989018203a3d9920269b88ea4af",
     "src/vario/logbook/logbook_entry.h": "d252d26e1946f09a0e8f371b96ce8fe542dcccf9a47180fc4a8cde73f766d77a",
     "src/vario/comms/leaf_log_sync.h": "8e7a77c09df57f67ce0eb994e7e3821c1919df5736b54bc118c01076dde90d3d",
     "src/vario/logbook/logbook_io.h": "c5c9294a1d4617e602acdf8562d92f95d1d8f16be0aeff18b6516610728f34be",
@@ -37,62 +39,62 @@
     {
       "file": "screenshots/checking-logs.png",
       "title": "Checking logs",
-      "sha256": "58d2d70abece4d0c8f6a67da7fde976f069d51ce67a7ffe5a087438e543a3467"
+      "sha256": "2c4d68f4ffa0966d66d271e79cf3dc1bdaf9f692b1fe18e4840d093eb8b8ea7a"
     },
     {
       "file": "screenshots/repairing-logs.png",
       "title": "Repairing logs",
-      "sha256": "941b08f6a177d3185cf5a1fa438f77cccc4428749c6fc4dc0e5eadfbabb6cf20"
+      "sha256": "edab78241489c64877cb7efae4679922d0c25012c64fa6199918314c51a1a726"
     },
     {
       "file": "screenshots/repair-complete.png",
       "title": "Repair complete",
-      "sha256": "0b006a4f1a853c1e1cba35843320ae2143d90a59c2cc4ca40a6ecf9c19c65f7c"
+      "sha256": "caecb25436f836ac330dded76089b67229252a6407a5c40b16b8e18ad521f8e4"
     },
     {
       "file": "screenshots/no-problems-found.png",
       "title": "No problems found",
-      "sha256": "5be4ec1a5e46c553375f68c71862f6d39acd2687cb65a3a6ed8b7d306c000bdf"
+      "sha256": "de6bd77d7a448e0e3ef220212bc9e37bbc5e18f4422873bd017b6bbf742537bf"
     },
     {
       "file": "screenshots/logbook-opening.png",
       "title": "Loading Flights",
-      "sha256": "cde253457d75f6fe6565392e2ec0d5a41cf1b87ffd650dfa3fdcb2c9f6e8d9e5"
+      "sha256": "81cd402606cd605c0ada037aad08468ee49de1384eca14e92d69b716d7e2ca32"
     },
     {
       "file": "screenshots/logbook-unavailable.png",
       "title": "Flight needs repair",
-      "sha256": "143ad0e266fc0324f0d57877d75b643d8ebcb04a99457766ab72366d0c716da9"
+      "sha256": "7c46cb0663bdd56b882df37fd4dcdf0f327fa3a331a7f4e854b53a44c2409fa6"
     },
     {
       "file": "screenshots/logbook-read-retry.png",
       "title": "Could not read flight",
-      "sha256": "02a169811203c9963c40c8ebbfd7d9e0eedeb87f69b7827baf045994e102e2a4"
+      "sha256": "f40f15a66dcbe6da82df6125b69717a381a8afe81a9ecbd200424d832a1b4ae1"
     },
     {
       "file": "screenshots/repair-incomplete.png",
       "title": "Some logs not repaired",
-      "sha256": "b0345a70ce5b09ae035888b7251a9a4ce1b11d1691709dd954e3ae5d13634349"
+      "sha256": "1386dd0e33dd92d2a4f69001959a670ac27f4cd6c2cd5b17fc10ba90df2381e9"
     },
     {
       "file": "screenshots/repair-unavailable.png",
       "title": "Storage unavailable",
-      "sha256": "db595666234b187c247a3553b1d2d3d8520fb17ba35f55c4d65242ec4a342a14"
+      "sha256": "331ef27219057b2faaba97319379900c04725e148f1dc45edc20b626e3ab042b"
     },
     {
       "file": "screenshots/repair-cancelled.png",
       "title": "Repair cancelled",
-      "sha256": "dc6a26bdf7005122f12bc531a64ad2320ccc685abe627f6728aab8e8c12cb16f"
+      "sha256": "2845e4e6ca2cacc5d83f4b1ceb63f215b70c2f64d46a69723610eb5ad9c09e9b"
     },
     {
       "file": "screenshots/repair-busy.png",
       "title": "Logs busy",
-      "sha256": "c648f99b8c7db8c3d53d218117441f1bf93b1e8bd480c0c0da1505d3e83b5798"
+      "sha256": "57795dc32c764c1cfe2677b829e727342306dad1e56067a543db3ded19a21db8"
     },
     {
       "file": "screenshots/repair-flight-active.png",
       "title": "Flight timer running",
-      "sha256": "bdabf53061228e47e9edd88ce02dd4ab282e72d591e76225ddc0d5250a0a40c4"
+      "sha256": "bdeb3f7ca8779998a11adb4df37c5dfe55d06b2c3a1231c0fe44886805c9ae5b"
     }
   ]
 }

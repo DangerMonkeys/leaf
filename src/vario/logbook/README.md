@@ -100,8 +100,9 @@ changing JSON payloads or track paths. Destination collisions preserve both name
 Upload queues follow the returned filename. Both prefixes remain readable and sort together below
 dated flights using filenames only. Existing clock metadata retains its schema's `unsynced` value.
 
-Standalone saving, opening, empty/unavailable and shutdown-failure messages use a centered 96×96
-rounded frame with centered text. Shutdown details say "No IGC file" or "IGC unverified". The
+Standalone saving, loading, empty/unavailable and shutdown-failure messages use a 96×96
+rounded frame 3 pixels above the LCD center, with text centered inside. This leaves space above
+the logbook Delete row. Shutdown details say "No IGC file" or "IGC unverified". The
 inline "Logbook save failed" warning on the immediate flight summary keeps its existing layout.
 
 ## Storage tests

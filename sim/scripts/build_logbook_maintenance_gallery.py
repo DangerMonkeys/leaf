@@ -85,6 +85,7 @@ a{color:inherit}</style><h1>Logbook maintenance</h1>
 display enlargement uses nearest-neighbor scaling. Click a screen for its native PNG.</p>
 <main>''' + "".join(cards) + "</main></html>", encoding="utf-8")
     sources = [
+        "src/vario/ui/display/message_box.cpp",
         "src/vario/logbook/logbook_entry.cpp", "src/vario/comms/leaf_log_sync.cpp",
         "sim/tests/logbook_io.cpp", "sim/tests/leaf_log_sync.cpp",
         "src/vario/logbook/logbook_store.cpp", "src/vario/logbook/logbook_store.h",
