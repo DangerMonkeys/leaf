@@ -3,6 +3,10 @@
 #include <SD_MMC.h>
 #include <WiFi.h>
 #include <assert.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <cerrno>
+#include <cstring>
 
 #include <deque>
 #include <filesystem>
@@ -32,6 +36,18 @@ namespace {
   std::vector<std::string> attempts;
   std::deque<Outcome> outcomes;
   std::function<void()> duringUpload;
+  bool failDirectoryRead = false;
+  std::string failReadPath, truncateOnClose;
+  unsigned readsBeforeFailure = 0, injectedFailures = 0;
+
+  bool isFile(FILE* file, const std::string& suffix) {
+    if (suffix.empty()) return false;
+    char link[64], target[1024];
+    snprintf(link, sizeof(link), "/proc/self/fd/%d", fileno(file));
+    const ssize_t length = readlink(link, target, sizeof(target));
+    return length >= static_cast<ssize_t>(suffix.size()) &&
+           std::string(target + length - suffix.size(), suffix.size()) == suffix;
+  }
 
   void writeFile(const std::string& path, const std::string& contents) {
     std::ofstream file(root + path);
@@ -78,6 +94,10 @@ namespace {
   }
 
   void reset(const std::string& name) {
+    failDirectoryRead = false;
+    failReadPath.clear();
+    truncateOnClose.clear();
+    readsBeforeFailure = injectedFailures = 0;
     leafLogSync.prepareForCharging();
     root = root.substr(0, root.find_last_of('/')) + "/" + name;
     std::filesystem::create_directories(root + "/logbook");
@@ -249,6 +269,83 @@ namespace {
     assert(attempts.empty());
   }
 
+  void incompleteScanRecovery() {
+    for (const std::string stage : {"directory", "scan-close", "pending-close", "scan-prefix",
+                                    "scan-body", "pending-prefix", "pending-body"}) {
+      reset("incomplete-" + stage);
+      for (int i = 0; i < 3; ++i) addFlight("flight-" + std::to_string(i));
+      if (stage == "directory")
+        failDirectoryRead = true;
+      else if (stage == "scan-close")
+        truncateOnClose = "/.leaf-log-scan.tmp";
+      else if (stage == "pending-close")
+        truncateOnClose = "/.leaf-log-pending.tmp";
+      else {
+        failReadPath = stage.find("scan-") == 0 ? "/.leaf-log-scan.tmp" : "/.leaf-log-pending.tmp";
+        readsBeforeFailure = stage.find("body") != std::string::npos ? 1 : 0;
+      }
+      for (int i = 0; i < 1000 && !leafLogSync.retryPending(); ++i) step();
+      assert(injectedFailures == 1 && leafLogSync.retryPending());
+      assert(!leafLogSync.progressKnown() && !leafLogSync.completionPending());
+      assert(!leafLogSync.completionNotice() && attempts.empty());
+      for (int i = 0; i < 3; ++i)
+        assert(classify("flight-" + std::to_string(i)).disposition ==
+               LeafLogCandidate::Disposition::Pending);
+      sim::clock().advanceUs(5ULL * 60 * 1000000);
+      step();
+      scan();
+      assert(leafLogSync.totalCount() == 3);
+      finish();
+      assert(attempts.size() == 3 &&
+             std::set<std::string>(attempts.begin(), attempts.end()).size() == 3);
+    }
+
+    // Rebuild a damaged pending queue even after some uploads have succeeded. Their persisted
+    // markers, rather than the discarded scratch list, determine what is left to upload.
+    reset("incomplete-after-delivery");
+    for (int i = 0; i < 3; ++i) addFlight("flight-" + std::to_string(i));
+    scan();
+    duringUpload = [] {
+      if (attempts.size() == 1) failReadPath = "/.leaf-log-pending.tmp";
+    };
+    for (int i = 0; i < 10000 && !leafLogSync.retryPending(); ++i) step();
+    assert(leafLogSync.retryPending() && injectedFailures == 1 && attempts.size() == 1);
+    assert(!leafLogSync.progressKnown() && !leafLogSync.completionPending());
+    sim::clock().advanceUs(5ULL * 60 * 1000000);
+    step();
+    scan();
+    assert(leafLogSync.totalCount() == 2);
+    finish();
+    assert(attempts.size() == 3 &&
+           std::set<std::string>(attempts.begin(), attempts.end()).size() == 3);
+
+    // Even an unexpected tail added during the last transfer must not briefly show Complete.
+    reset("unexpected-queue-tail");
+    addFlight("flight");
+    scan();
+    duringUpload = [] {
+      std::ofstream file(root + "/.leaf-log-pending.tmp", std::ios::app | std::ios::binary);
+      file << 'x';
+    };
+    for (int i = 0; i < 10000 && !leafLogSync.retryPending(); ++i) {
+      step();
+      assert(!leafLogSync.completionPending() && !leafLogSync.completionNotice());
+    }
+    assert(leafLogSync.retryPending() && attempts.size() == 1);
+    sim::clock().advanceUs(5ULL * 60 * 1000000);
+    step();
+    scan();
+    assert(leafLogSync.totalCount() == 0);
+    finish();
+    assert(attempts.size() == 1);
+
+    reset("missing-logbook");
+    leafLogSync.prepareForCharging();
+    std::filesystem::remove(root + "/logbook");
+    finish();
+    assert(attempts.empty() && !leafLogSync.retryPending());
+  }
+
   void chargingScheduler() {
     reset("scheduler");
     for (int i = 0; i < 500; ++i) addFlight("old-" + std::to_string(i), true);
@@ -318,6 +415,59 @@ namespace {
   }
 }  // namespace
 
+// Linker wrappers inject errors at the actual filesystem boundary, without firmware hooks.
+extern "C" struct dirent* __real_readdir(DIR* directory);
+extern "C" struct dirent* __wrap_readdir(DIR* directory) {
+  if (failDirectoryRead) {
+    failDirectoryRead = false;
+    ++injectedFailures;
+    errno = EIO;
+    return nullptr;
+  }
+  return __real_readdir(directory);
+}
+extern "C" size_t __real_fread(void* buffer, size_t size, size_t count, FILE* file);
+extern "C" size_t __wrap_fread(void* buffer, size_t size, size_t count, FILE* file) {
+  if (isFile(file, failReadPath)) {
+    if (readsBeforeFailure)
+      --readsBeforeFailure;
+    else {
+      failReadPath.clear();
+      ++injectedFailures;
+      errno = EIO;
+      return 0;
+    }
+  }
+  return __real_fread(buffer, size, count, file);
+}
+extern "C" int __real_fclose(FILE* file);
+extern "C" int __wrap_fclose(FILE* file) {
+  const bool truncate = isFile(file, truncateOnClose);
+  const int result = __real_fclose(file);
+  if (truncate) {
+    const std::string path = root + truncateOnClose;
+    truncateOnClose.clear();
+    ++injectedFailures;
+    // Lose exactly the final complete record during close, leaving a syntactically valid
+    // prefix of the queue. Neither a short read nor a malformed length can reveal this loss.
+    std::ifstream input(path, std::ios::binary);
+    std::string bytes((std::istreambuf_iterator<char>(input)), {});
+    size_t position = 0, last = 0;
+    while (position < bytes.size()) {
+      last = position;
+      assert(position + 2 <= bytes.size());
+      const size_t length = static_cast<unsigned char>(bytes[position]) |
+                            (size_t(static_cast<unsigned char>(bytes[position + 1])) << 8);
+      position += 2 + length;
+      assert(position <= bytes.size());
+    }
+    input.close();
+    assert(position > 0);
+    std::filesystem::resize_file(path, last);
+  }
+  return result;
+}
+
 namespace leaf_log_client {
   UploadResult uploadIgc(const String&, const String& filename, const String& token,
                          std::atomic<bool>&, std::atomic<bool>&) {
@@ -344,6 +494,7 @@ int main() {
   alreadySyncedAndUnauthorized();
   cancelAndPowerOn();
   queueFailureAndStaleFiles();
+  incompleteScanRecovery();
   boundedSessionsAndConfirmation();
   chargingScheduler();
   leafLogSync.prepareForCharging();

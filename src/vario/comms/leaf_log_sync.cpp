@@ -5,6 +5,7 @@
 #include <WiFi.h>
 #include <freertos/task.h>
 #include <time.h>
+#include <cerrno>
 #include <cstring>
 
 #include "comms/leaf_log_client.h"
@@ -31,12 +32,31 @@ namespace {
 
   // Length prefixes also support filenames containing newlines. These lists are scratch data,
   // rebuilt each session; the upload/rejection markers in the logbook remain authoritative.
-  bool writeQueuedPath(File& file, const String& path) {
+  bool writeQueuedPath(File& file, const String& path, size_t& bytes) {
     const size_t length = path.length();
-    if (length == 0 || length > MAX_QUEUED_PATH_BYTES) return false;
+    if (length == 0 || length > MAX_QUEUED_PATH_BYTES || length + 2 > SIZE_MAX - bytes)
+      return false;
     const uint8_t prefix[] = {static_cast<uint8_t>(length), static_cast<uint8_t>(length >> 8)};
-    return file.write(prefix, sizeof(prefix)) == sizeof(prefix) &&
-           file.write(reinterpret_cast<const uint8_t*>(path.c_str()), length) == length;
+    if (file.write(prefix, sizeof(prefix)) != sizeof(prefix) ||
+        file.write(reinterpret_cast<const uint8_t*>(path.c_str()), length) != length)
+      return false;
+    bytes += sizeof(prefix) + length;
+    return true;
+  }
+
+  // File::flush/close do not report errors. Check the reopened length and consume the
+  // expected record count as well, so a lost tail cannot masquerade as a clean EOF.
+  bool reopenQueue(File& file, const char* path, size_t expectedBytes) {
+    file.close();
+    file = SD_MMC.open(path, "r");
+    return file && !file.isDirectory() && file.size() == expectedBytes;
+  }
+
+  bool queueConsumed(File& file, size_t expectedBytes) {
+    if (!file || file.position() != expectedBytes || file.size() != expectedBytes) return false;
+    // ESP32 File caches the size of read-only files; probe EOF rather than trusting available().
+    errno = 0;
+    return file.read() == -1 && errno == 0;
   }
 
   bool readQueuedPath(File& file, String& path) {
@@ -74,6 +94,9 @@ void LeafLogSync::beginEligibilityScan() {
   clearSessionFiles();
   current_ = LeafLogCandidate();
   pendingCount_ = 0;
+  pendingPathsRemaining_ = 0;
+  scanPathsRemaining_ = 0;
+  scanQueueBytes_ = pendingQueueBytes_ = 0;
   wifiAttemptStarted_ = false;
   timeStarted_ = false;
   state_ = State::CheckingEligibility;
@@ -84,9 +107,13 @@ void LeafLogSync::beginEligibilityScan() {
     finishToMassStorage();
     return;
   }
+  errno = 0;
   scanDirectory_ = SD_MMC.open(LogbookStore::directoryPath());
-  if (!scanDirectory_) {
-    finishToMassStorage();
+  if (!scanDirectory_ || !scanDirectory_.isDirectory()) {
+    if (!scanDirectory_ && errno == ENOENT)
+      finishToMassStorage();
+    else
+      invalidateEligibilityScan("scan_queue_directory_open_failed");
     return;
   }
   scanPaths_ = SD_MMC.open(SCAN_PATHS, "w", true);
@@ -102,6 +129,16 @@ void LeafLogSync::clearSessionFiles() {
     if (SD_MMC.exists(SCAN_PATHS)) SD_MMC.remove(SCAN_PATHS);
     if (SD_MMC.exists(PENDING_PATHS)) SD_MMC.remove(PENDING_PATHS);
   }
+}
+
+void LeafLogSync::invalidateEligibilityScan(const char* reason) {
+  // Scratch lists can always be rebuilt. Persisted delivery markers prevent re-uploading
+  // flights already completed before a later queue failure.
+  sessionTotalKnown_ = false;
+  sessionCompletionPending_ = false;
+  completedCount_ = sessionTotalCount_ = 0;
+  current_ = LeafLogCandidate();
+  handleTransientFailure(reason);
 }
 
 void LeafLogSync::scanEligibility() {
@@ -127,44 +164,56 @@ void LeafLogSync::scanEligibility() {
 
     String path;
     if (scanDirectory_) {
+      errno = 0;
       path = scanDirectory_.getNextFileName();
+      const int directoryError = errno;
       if (!path.isEmpty()) {
         String logicalPath;
-        if (logbook_io::candidatePath(path, logicalPath) &&
-            !writeQueuedPath(scanPaths_, logicalPath)) {
-          handleTransientFailure("scan_queue_write_failed");
-          return;
+        if (logbook_io::candidatePath(path, logicalPath)) {
+          if (scanPathsRemaining_ == UINT32_MAX ||
+              !writeQueuedPath(scanPaths_, logicalPath, scanQueueBytes_)) {
+            invalidateEligibilityScan("scan_queue_write_failed");
+            return;
+          }
+          ++scanPathsRemaining_;
         }
         continue;
       }
+      if (directoryError) {
+        invalidateEligibilityScan("scan_queue_directory_read_failed");
+        return;
+      }
       // Close the directory before recovery or result writes can rename its entries.
       scanDirectory_.close();
-      scanPaths_.close();
-      scanPaths_ = SD_MMC.open(SCAN_PATHS, "r");
+      if (!reopenQueue(scanPaths_, SCAN_PATHS, scanQueueBytes_)) {
+        invalidateEligibilityScan("scan_queue_incomplete");
+        return;
+      }
       pendingPaths_ = SD_MMC.open(PENDING_PATHS, "w", true);
-      if (!scanPaths_ || !pendingPaths_ || pendingPaths_.isDirectory()) {
-        handleTransientFailure("pending_queue_open_failed");
+      if (!pendingPaths_ || pendingPaths_.isDirectory()) {
+        invalidateEligibilityScan("pending_queue_open_failed");
         return;
       }
     }
 
-    if (!scanPaths_.available()) {
-      scanPaths_.close();
-      SD_MMC.remove(SCAN_PATHS);
-      pendingPaths_.close();
-      pendingPaths_ = SD_MMC.open(PENDING_PATHS, "r");
-      if (!pendingPaths_) {
-        handleTransientFailure("pending_queue_open_failed");
+    if (scanPathsRemaining_ == 0) {
+      if (!queueConsumed(scanPaths_, scanQueueBytes_) ||
+          !reopenQueue(pendingPaths_, PENDING_PATHS, pendingQueueBytes_)) {
+        invalidateEligibilityScan("pending_queue_incomplete");
         return;
       }
+      scanPaths_.close();
+      SD_MMC.remove(SCAN_PATHS);
+      pendingPathsRemaining_ = pendingCount_;
       sessionTotalCount_ = pendingCount_;
       sessionTotalKnown_ = true;
       return;
     }
     if (!readQueuedPath(scanPaths_, path)) {
-      handleTransientFailure("scan_queue_read_failed");
+      invalidateEligibilityScan("scan_queue_read_failed");
       return;
     }
+    --scanPathsRemaining_;
     LeafLogCandidate candidate;
     if (!LogbookStore::classifyForLeafLog(path, candidate)) continue;
     if (candidate.disposition == LeafLogCandidate::Disposition::Rejected &&
@@ -175,8 +224,9 @@ void LeafLogSync::scanEligibility() {
       }
     } else if (candidate.disposition == LeafLogCandidate::Disposition::Pending &&
                pendingCount_ < MAX_SESSION_FLIGHTS) {
-      if (pendingCount_ == UINT16_MAX || !writeQueuedPath(pendingPaths_, candidate.logbookPath)) {
-        handleTransientFailure("pending_queue_write_failed");
+      if (pendingCount_ == UINT16_MAX ||
+          !writeQueuedPath(pendingPaths_, candidate.logbookPath, pendingQueueBytes_)) {
+        invalidateEligibilityScan("pending_queue_write_failed");
         return;
       }
       pendingCount_++;
@@ -185,15 +235,25 @@ void LeafLogSync::scanEligibility() {
 }
 
 void LeafLogSync::selectNextUpload() {
-  if (!pendingPaths_.available()) {
-    finishToMassStorage();
+  if (pendingPathsRemaining_ == 0) {
+    if (!queueConsumed(pendingPaths_, pendingQueueBytes_))
+      invalidateEligibilityScan("pending_queue_incomplete");
+    else
+      finishToMassStorage();
     return;
   }
   // Keep the read position until classification succeeds, so retries cannot drop an entry.
   const size_t position = pendingPaths_.position();
   String path;
-  if (!readQueuedPath(pendingPaths_, path) || !LogbookStore::classifyForLeafLog(path, current_)) {
-    pendingPaths_.seek(position);
+  if (!readQueuedPath(pendingPaths_, path)) {
+    invalidateEligibilityScan("pending_queue_read_failed");
+    return;
+  }
+  if (!LogbookStore::classifyForLeafLog(path, current_)) {
+    if (!pendingPaths_.seek(position)) {
+      invalidateEligibilityScan("pending_queue_seek_failed");
+      return;
+    }
     current_ = LeafLogCandidate();
     handleTransientFailure("pending_entry_read_failed");
     return;
@@ -202,15 +262,20 @@ void LeafLogSync::selectNextUpload() {
     if (current_.disposition == LeafLogCandidate::Disposition::Rejected &&
         !current_.rejectionPersisted &&
         !LogbookStore::recordLeafLogRejection(current_.logbookPath, current_.rejectionReason)) {
-      pendingPaths_.seek(position);
+      if (!pendingPaths_.seek(position)) {
+        invalidateEligibilityScan("pending_queue_seek_failed");
+        return;
+      }
       current_ = LeafLogCandidate();
       handleTransientFailure("record_rejection_failed");
       return;
     }
-    recordCompletedItem();
+    --pendingPathsRemaining_;
+    if (!recordCompletedItem()) return;
     current_ = LeafLogCandidate();
     return;
   }
+  --pendingPathsRemaining_;
   startCurrentUpload();
 }
 
@@ -392,12 +457,17 @@ void LeafLogSync::prepareForOperating() {
   state_ = State::Idle;
 }
 
-void LeafLogSync::recordCompletedItem() {
+bool LeafLogSync::recordCompletedItem() {
   completedCount_++;
   if (sessionTotalKnown_ && sessionTotalCount_ > 0 && completedCount_ >= sessionTotalCount_) {
+    if (pendingPathsRemaining_ != 0 || !queueConsumed(pendingPaths_, pendingQueueBytes_)) {
+      invalidateEligibilityScan("pending_queue_incomplete");
+      return false;
+    }
     sessionCompletionPending_ = true;
     completionStartedMs_ = millis();
   }
+  return true;
 }
 
 void LeafLogSync::finishRequestedExit() {
@@ -636,7 +706,7 @@ void LeafLogSync::finishUpload(const leaf_log_client::UploadResult& result) {
     if (!result.accountHandle.isEmpty() && !result.accountDisplayName.isEmpty()) {
       leaf_log_credentials::updateAccount(result.accountHandle, result.accountDisplayName);
     }
-    recordCompletedItem();
+    if (!recordCompletedItem()) return;
     retryIndex_ = 0;
     current_ = LeafLogCandidate();
     state_ = State::CheckingEligibility;
@@ -656,7 +726,7 @@ void LeafLogSync::finishUpload(const leaf_log_client::UploadResult& result) {
                              result.fileSize, result.responseSize);
       return;
     }
-    recordCompletedItem();
+    if (!recordCompletedItem()) return;
     retryIndex_ = 0;
     current_ = LeafLogCandidate();
     state_ = State::CheckingEligibility;

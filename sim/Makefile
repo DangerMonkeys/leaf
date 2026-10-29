@@ -220,7 +220,7 @@ test-display-settings: $(BUILD)/display_settings_test
 LEAF_LOG_TEST_OBJECTS := $(filter-out $(BUILD)/sim/emulator/main.o $(BUILD)/fw/src/vario/comms/leaf_log_client.o,$(OBJECTS))
 
 $(BUILD)/leaf_log_sync_test: $(LEAF_LOG_TEST_OBJECTS) $(SIM)/tests/leaf_log_sync.cpp
-	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/leaf_log_sync.cpp $(LEAF_LOG_TEST_OBJECTS) $(LDFLAGS)
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/leaf_log_sync.cpp $(LEAF_LOG_TEST_OBJECTS) $(LDFLAGS) -Wl,--wrap=readdir,--wrap=fread,--wrap=fclose
 
 test-leaf-log-sync: $(BUILD)/leaf_log_sync_test
 	@cd $(ROOT) && $(BUILD)/leaf_log_sync_test
