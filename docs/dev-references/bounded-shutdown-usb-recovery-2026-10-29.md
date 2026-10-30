@@ -371,3 +371,23 @@ Next requested test holds center through BLE-fault recovery, then releases it,
 waits two seconds, and checks an ordinary subsequent power-on. Battery-only,
 connected-client, synchronized IGC, true blocked-loop long-hold, representative
 save latency, and runtime-overhead acceptance checks remain open.
+
+
+### Held-center recovery and subsequent power-on observed
+
+With Bluetooth enabled and USB connected, the maintainer held center continuously
+through BLE-fault recovery. Leaf returned to charging while still held; after
+release, a fresh hold correctly entered On. This observes recovery power-state
+selection and release gating on the corrected `bebbbf8f` candidate.
+
+`ble-held-result.json` preserves the observation. At capture time Leaf was already
+On: no Leaf USB interface or readable SD volume was present, as expected for
+operating mode. System-events confirmation remains pending until charging resumes;
+this availability check is not another stuck-device incident. No firmware changed.
+
+Next requested trial exercises CLR on battery only, releasing center after about
+three seconds, waiting fifteen seconds, then verifying a fresh normal power-on
+without USB and stable On after release. The maintainer will shut down normally
+and reconnect in charging mode afterward so the held-button and subsequent boot
+records can be preserved. Visible blanking alone is not a direct latch/current
+measurement; GPIO48/current instrumentation remains preferable for absolute timing.
