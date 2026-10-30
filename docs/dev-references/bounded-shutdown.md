@@ -23,8 +23,11 @@ reported Goodbye freeze. It is a test candidate, not a firmware release.
 - An independent 100 Hz hardware-timer interrupt watches GPIO2. Holding the center
   button for ten seconds releases GPIO48 even when the main loop is blocked.
   Release the button afterward: a physically held button itself supplies power.
-- The emergency ISR directly releases GPIO48 and arms a roughly 20 ms RTC watchdog
-  reset if USB/button power keeps the CPU alive. Its critical path uses no driver,
+- The emergency ISR directly releases GPIO48 and arms a one-second RTC watchdog
+  system reset if USB/button power keeps the CPU alive, followed by a one-second
+  RTC-domain reset stage if boot still fails. Flash-boot protection remains armed
+  across reset and is explicitly cleared when the application disarms the guard.
+  The latch releases immediately; only the later processor restart is delayed. Its critical path uses no driver,
   mutex, allocation, logging, or software restart handlers. Control calls are
   confined to Arduino's loop core, which also installs the timer. ISR state uses
   aligned volatile words rather than this Xtensa toolchain's locking atomic RMWs.
@@ -93,6 +96,7 @@ reboot clears it. RIGHT/CENTER cycles the selector; LEFT returns to Back, as in 
 | I2C | Before peripheral sleep | Same bound; essential save completed |
 | BLE | Before full NimBLE deinit, after latch release | Battery latch is already low; USB resets near eight seconds |
 | WDT | Interrupts disabled before flight save | Existing interrupt watchdog may act first; RTC backstop near ten seconds if needed |
+| RTC | Guard ISR deliberately skipped; interrupts and scheduler remain running | Exercises the independent ten-second RTC backstop, without the normal eight-second guard or interrupt-watchdog panic taking over |
 
 1. First use **OFF**, USB connected, Bluetooth off: start a short flight/timer,
    then shut down. Confirm the charging screen and a complete flight/IGC.
@@ -106,7 +110,10 @@ reboot clears it. RIGHT/CENTER cycles the selector; LEFT returns to Back, as in 
    releasing center, rather than merely blanking the display.
 4. With USB attached, exercise each injected fault once. Time from the shutdown
    request until reset/charging, record the selector, Bluetooth/FANET/client state,
-   and serial recovery line. Copy `/diagnostics/system_events.csv`, boot/heap
+   and serial recovery line. The eight-second limit measures latch release, not
+   the subsequent USB disconnect/reconnect: the emergency RTC restart adds about
+   one second, possible escalation another second, and initialization further time.
+   Copy `/diagnostics/system_events.csv`, boot/heap
    diagnostics, any watchdog/core dump, and the test flight's logbook/IGC. Save
    these files before another build, and report whether USB storage returned.
 5. For LOCK/SAVE, incomplete last-flight data is an expected tradeoff of forcing
@@ -125,3 +132,27 @@ Do not turn these results into a claim of protection against every processor,
 power-circuit, or hardware fault. If recovery initialization itself cannot finish,
 its watchdog may retry until USB/button power is removed. Physical power-removal
 hardware remains the final remedy for failures beyond working GPIO/reset logic.
+
+## Hardware follow-up
+
+The first `cc457326` candidate saved the WORK test flight correctly but failed
+BLE-fault recovery on USB: the LCD cleared, the LED went off at the reset, and no
+USB interface returned until power was cycled. Initial eight-second/long-hold
+simulator success did not establish that a native RTC reset could reboot.
+The separate WDT fault did recover through the existing interrupt-watchdog panic
+path; system events confirm two successful recoveries of that type.
+
+The follow-up replaces the 20 ms single reset stage with the pinned SDK's
+one-second stage timing, a second RTC-domain reset stage, and flash-boot
+protection. It also clears that protection on disarm (ordinary WDT disable does
+not necessarily disable flash-boot protection). The initial ten-second backstop
+has the same second reset stage. Compare the pinned ESP-IDF
+[restart implementation](https://github.com/espressif/esp-idf/blob/083aad99cf/components/esp_system/port/soc/esp32s3/system_internal.c).
+These are corrections to a weak reset configuration, not proof that every
+possible cause of the observed hardware failure has been identified.
+
+Repeat BLE and RTC tests with USB connected, both with center released shortly
+after shutdown starts and held through recovery. Confirm a return to charging,
+then release and confirm a later ordinary power-on works. Until those trials
+pass, USB reset recovery remains an open hardware issue. The simulator does not
+model boot ROM timing, retained peripheral state, or RTC-domain reset behavior.

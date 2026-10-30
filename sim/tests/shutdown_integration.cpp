@@ -110,7 +110,7 @@ int main(int argc, char** argv) {
   }
   Stage injected = Stage::None;
   if (mode == "lock") injected = Stage::Lock;
-  if (mode == "save" || mode == "watchdog") injected = Stage::Flight;
+  if (mode == "save" || mode == "watchdog" || mode == "rtc") injected = Stage::Flight;
   if (mode == "worker") injected = Stage::BleWorker;
   if (mode == "sound") injected = Stage::Sound;
   if (mode == "peripherals") injected = Stage::Peripherals;
@@ -119,7 +119,10 @@ int main(int argc, char** argv) {
     injected = Stage::Lock;
     settings.dev_mode = false;
   }
-  setFault(injected, mode == "watchdog");
+  const bool rtcBackstop = mode == "watchdog" || mode == "rtc";
+  setFault(injected, mode == "watchdog" ? FaultBehavior::InterruptsOff
+                     : mode == "rtc"    ? FaultBehavior::RtcOnly
+                                        : FaultBehavior::Stall);
   const auto start = sim::clock().nowUs();
   if (mode == "nested") {
     begin();
@@ -148,8 +151,8 @@ int main(int argc, char** argv) {
   } catch (const EmergencyReset&) {
     assert(mode != "normal" && mode != "disabled");
     assert(digitalRead(LATCH_PIN) == LOW);
-    assert(lastReason() == (mode == "watchdog" ? Reason::HardwareWatchdog : Reason::Deadline));
-    const uint32_t bound = mode == "watchdog" ? BACKSTOP_US : DEADLINE_US;
+    assert(lastReason() == (rtcBackstop ? Reason::HardwareWatchdog : Reason::Deadline));
+    const uint32_t bound = rtcBackstop ? BACKSTOP_US : DEADLINE_US;
     assert(sim::clock().nowUs() - start <= bound + 10000);
     if (mode == "worker" || mode == "sound" || mode == "peripherals" || mode == "ble")
       assert(completeFlight(options.cardRoot));

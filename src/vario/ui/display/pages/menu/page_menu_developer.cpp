@@ -39,8 +39,10 @@ namespace {
       shutdown_guard::Stage::None,      shutdown_guard::Stage::Lock,
       shutdown_guard::Stage::Flight,    shutdown_guard::Stage::BleWorker,
       shutdown_guard::Stage::Sound,     shutdown_guard::Stage::Peripherals,
-      shutdown_guard::Stage::BleDeinit, shutdown_guard::Stage::Flight};
-  const char* offFaultLabels[] = {"OFF", "LOCK", "SAVE", "WORK", "BEEP", "I2C", "BLE", "WDT"};
+      shutdown_guard::Stage::BleDeinit, shutdown_guard::Stage::Flight,
+      shutdown_guard::Stage::Flight};
+  const char* offFaultLabels[] = {"OFF", "LOCK", "SAVE", "WORK", "BEEP",
+                                  "I2C", "BLE",  "WDT",  "RTC"};
 }  // namespace
 #endif
 
@@ -169,8 +171,11 @@ void DeveloperMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t co
 #ifdef LEAF_SHUTDOWN_FAULT_INJECTION
     case cursor_developer_shutdownFault:
       if (state == ButtonEvent::CLICKED) {
-        offFaultIndex = (offFaultIndex + (dir == Button::LEFT ? 7 : 1)) % 8;
-        shutdown_guard::setFault(offFaultStages[offFaultIndex], offFaultIndex == 7);
+        offFaultIndex = (offFaultIndex + (dir == Button::LEFT ? 8 : 1)) % 9;
+        shutdown_guard::setFault(offFaultStages[offFaultIndex],
+                                 offFaultIndex == 7   ? shutdown_guard::FaultBehavior::InterruptsOff
+                                 : offFaultIndex == 8 ? shutdown_guard::FaultBehavior::RtcOnly
+                                                      : shutdown_guard::FaultBehavior::Stall);
       }
       break;
 #endif

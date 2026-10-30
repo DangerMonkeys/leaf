@@ -5,6 +5,8 @@ namespace shutdown_guard {
   constexpr uint32_t DEADLINE_US = 8000000;
   constexpr uint32_t HOLD_US = 10000000;
   constexpr uint32_t BACKSTOP_US = 10000000;
+  // Follow the pinned ESP-IDF restart watchdog's one-second stage timing.
+  constexpr uint32_t RESET_STAGE_US = 1000000;
   constexpr unsigned LATCH_PIN = 48;
   enum class Stage : uint32_t {
     None,
@@ -52,7 +54,8 @@ namespace shutdown_guard {
 #if defined(LEAF_SIM) || defined(LEAF_SHUTDOWN_FAULT_INJECTION)
   // Nonpersistent, one-shot faults. Hardware builds require both this explicit
   // build flag and Developer mode; ordinary firmware has no fault selector.
-  void setFault(Stage value, bool watchdogOnly = false);
+  enum class FaultBehavior { Stall, InterruptsOff, RtcOnly };
+  void setFault(Stage value, FaultBehavior behavior = FaultBehavior::Stall);
   Stage fault();
   void faultPoint(Stage value);
 #else

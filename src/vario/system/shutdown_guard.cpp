@@ -43,7 +43,7 @@ namespace shutdown_guard {
     hw_timer_t* timer = nullptr;
 #if defined(LEAF_SIM) || defined(LEAF_SHUTDOWN_FAULT_INJECTION)
     Stage injected = Stage::None;
-    bool watchdogFault = false;
+    FaultBehavior faultBehavior = FaultBehavior::Stall;
     volatile bool skipGuard = false;
 #endif
 #ifdef LEAF_SIM
@@ -55,12 +55,18 @@ namespace shutdown_guard {
     void armRtc() {
       wdt_hal_write_protect_disable(&rtcWatchdog);
       wdt_hal_config_stage(&rtcWatchdog, WDT_STAGE0, backstopTicks, WDT_STAGE_ACTION_RESET_SYSTEM);
+      // SYSTEM reset does not reset the RTC watchdog domain. If boot stalls,
+      // escalate to RTC reset; flash-boot mode lets ROM/bootloader manage it.
+      wdt_hal_config_stage(&rtcWatchdog, WDT_STAGE1, resetTicks, WDT_STAGE_ACTION_RESET_RTC);
+      wdt_hal_set_flashboot_en(&rtcWatchdog, true);
       wdt_hal_enable(&rtcWatchdog);
       wdt_hal_write_protect_enable(&rtcWatchdog);
     }
     void stopRtc() {
       wdt_hal_write_protect_disable(&rtcWatchdog);
       wdt_hal_disable(&rtcWatchdog);
+      // Flash-boot protection can run independently of the ordinary enable bit.
+      wdt_hal_set_flashboot_en(&rtcWatchdog, false);
       wdt_hal_write_protect_enable(&rtcWatchdog);
     }
 #endif
@@ -72,6 +78,8 @@ namespace shutdown_guard {
       auto* hw = RWDT_DEV_GET();
       rwdt_ll_write_protect_disable(hw);
       rwdt_ll_config_stage(hw, WDT_STAGE0, resetTicks, WDT_STAGE_ACTION_RESET_SYSTEM);
+      rwdt_ll_config_stage(hw, WDT_STAGE1, resetTicks, WDT_STAGE_ACTION_RESET_RTC);
+      rwdt_ll_set_flashboot_en(hw, true);
       rwdt_ll_feed(hw);
       rwdt_ll_enable(hw);
       rwdt_ll_write_protect_enable(hw);
@@ -189,7 +197,7 @@ namespace shutdown_guard {
                                                  ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &slowHz));
     // LL stage-0 uses half the effective tick count; round up to an even count.
     backstopTicks = (uint32_t(uint64_t(slowHz) * BACKSTOP_US / 1000000) + 1) & ~1u;
-    resetTicks = (slowHz / 50 + 1) & ~1u;  // Approximately 20 ms to reset on USB.
+    resetTicks = (uint32_t(uint64_t(slowHz) * RESET_STAGE_US / 1000000) + 1) & ~1u;
     wdt_hal_init(&rtcWatchdog, WDT_RWDT, 0, false);
     stopRtc();
 #endif
@@ -261,9 +269,9 @@ namespace shutdown_guard {
     }
   }
 #if defined(LEAF_SIM) || defined(LEAF_SHUTDOWN_FAULT_INJECTION)
-  void setFault(Stage value, bool watchdogOnly) {
+  void setFault(Stage value, FaultBehavior behavior) {
     injected = value;
-    watchdogFault = watchdogOnly;
+    faultBehavior = behavior;
   }
   Stage fault() { return injected; }
   void faultPoint(Stage value) {
@@ -271,7 +279,8 @@ namespace shutdown_guard {
     if (injected != value || !settings.dev_mode) return;
     injected = Stage::None;
     Serial.printf("Injecting shutdown stall: %s\n", stageName(value));
-    if (watchdogFault) {
+    if (faultBehavior == FaultBehavior::RtcOnly) skipGuard = true;
+    if (faultBehavior == FaultBehavior::InterruptsOff) {
 #ifdef LEAF_SIM
       skipGuard = true;
 #else

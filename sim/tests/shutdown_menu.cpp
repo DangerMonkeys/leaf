@@ -53,10 +53,13 @@ int main() {
   screenshot(menu, root + "/menu-fanet.png");
   // Like the other Developer selectors, RIGHT/CENTER cycle; LEFT goes back.
   for (int i = 0; i < 7; ++i) menu.press(Button::RIGHT);
+  assert(shutdown_guard::fault() == shutdown_guard::Stage::Flight);  // RTC-only option
+  screenshot(menu, root + "/menu-rtc.png");
+  menu.press(Button::RIGHT);
   assert(shutdown_guard::fault() == shutdown_guard::Stage::None);
   menu.press(Button::CENTER);
   assert(shutdown_guard::fault() == shutdown_guard::Stage::Lock);
-  for (int i = 0; i < 7; ++i) menu.press(Button::RIGHT);
+  for (int i = 0; i < 8; ++i) menu.press(Button::RIGHT);
   assert(shutdown_guard::fault() == shutdown_guard::Stage::None);
   menu.press(Button::DOWN);
   assert(menu.cursor() == 7);  // Startup options follow the fault row
