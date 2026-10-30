@@ -264,3 +264,41 @@ checks still measure the eight-second release; physical reboot occurs later.
 This is an evidence-based simplification, not proof of why a one-second rearm
 failed after display clearing. Native CLR and BLE must be retested, followed by
 normal shutdown, long hold, and the outstanding production acceptance checks.
+
+
+### Preserve-backstop candidate deployed; CLR recovery confirmed
+
+Source `bebbbf8faf4e5de082ae31d728aa65d13b5ea36c`, firmware
+`0.2.4-beb.shutdown+h3.2.6`, was built from clean source in both normal and
+fault-test 3.2.6 environments. Formatter/whitespace checks, all 17 simulator
+shutdown scenarios, the shared watchdog policy regression, developer logging/menu,
+and runtime capture/lifecycle checks passed. The emergency functions remain in
+IRAM with the same audited constraints. Developer static RAM remains 107,420 B;
+no task, stack, or schedule slot was added.
+
+Both OTA slots were flashed and hash-verified, exit 0, with one app-mode nudge and
+same-identity bootloader retry. Post-flash checks returned COM14/PID 0002, readable
+SD storage, and unchanged hashes for both test routes. Initial read-only checks
+overlapped the maintainer's CLR trial (storage/USB went away); subsequent checks
+passed after its recovery.
+
+The maintainer reports that **CLR now works and returns to charging**. Its log
+records `other_watchdog` (7), `setup-complete` at 2,088 ms, and
+`shutdown,recovered,power-latch,reason,1` at 2,107 ms. This verifies recovery through
+the interrupt deadline path after display clearing on this trial. It supports
+preserving the original hardware backstop; it does not identify the root cause
+of the prior shortened-reset failure or establish repeatability yet.
+
+Evidence is preserved in
+`sim/build/hardware-evidence/shutdown-recovery-bebbbf8f-20261029-194137/`, including
+exact BIN/ELF pairs, build/test/audit and deployment records, links to the previous
+candidate's differential evidence, `clr-result.json`, and
+`system-events-after-clr.csv` (verified against the SD source).
+CSV SHA-256: `27fcd4e79414d2591cf15cead70b52053c8c0a7e9dca95b3592eda03b9f4d29e`.
+Developer BIN: 2,417,632 B, SHA-256
+`28cb311f131811bf16ece6b485455e42bd9e8ad68a7577b27c76f24a59ce2b50`.
+
+The next requested physical check is the original BLE fault with USB attached,
+center released after approximately three seconds, and twenty seconds allowed
+for charging. Hardware acceptance remains open, including held-button/outside-
+shutdown long-hold recovery and normal shutdown/save/radio regression checks.
