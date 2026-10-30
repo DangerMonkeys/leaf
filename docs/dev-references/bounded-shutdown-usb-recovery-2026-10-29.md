@@ -341,3 +341,33 @@ active flight timer followed by normal shutdown, leaving the timer running until
 shutdown. Verify normal charging transition, actual teardown checkpoints, and the
 completed flight/IGC. Connected-client, held-button, long-hold, battery-only, and
 representative slow/long-save checks remain open. No additional flash was needed.
+
+
+### Normal advertising-enabled shutdown and summary save confirmed
+
+With Bluetooth enabled, no client connected, Off fault OFF, and the flight timer
+left running, the maintainer observed normal sound/Goodbye and a prompt return to
+charging. The appended system-events interval has **no boot-reset or shutdown-
+recovery record** and reaches all teardown checkpoints, including
+`ble-end-nimble-after` and `ble-end-after`. Thus this trial completed actual normal
+Bluetooth cleanup without watchdog recovery; it was not just a fault-stall test.
+
+The new flight summary `date_not_available_91_fca5a743.json` names the corrected
+firmware, is `complete: true`, revision 2, and has a **17-second** duration. It was
+copied and hash-verified. The clock is unsynchronized and `track.saved` is false;
+no new IGC exists. `Flight::startFlight()` intentionally waits for synchronized
+GPS date/time before creating a track. This verifies summary finalization only;
+IGC finalization on this candidate still needs a GPS-synchronized trial.
+
+Preserved in the current candidate folder: `normal-advertising-result.json`,
+`system-events-after-normal-advertising.csv`, its appended-events delta, and the
+copied summary. CSV SHA-256:
+`ed1ec768b2f7ac77f16d5fd5269ea0a9bd83dc62dcbd95fb5adc059434ec6930`.
+Summary SHA-256: `47409c1633d480ead6bca8c6ee1fe3a7c6c1822f7d2c26029acc2d5eeced858f`.
+An older undated record also copied during discovery names `0.2.1` and is not
+attributed to this trial.
+
+Next requested test holds center through BLE-fault recovery, then releases it,
+waits two seconds, and checks an ordinary subsequent power-on. Battery-only,
+connected-client, synchronized IGC, true blocked-loop long-hold, representative
+save latency, and runtime-overhead acceptance checks remain open.
