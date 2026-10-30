@@ -71,6 +71,36 @@ flash logs and deployment manifest, and the post-flash USB/route check. This
 ignored directory is not part of the Git commit. The previous nav BIN/ELF and
 field/runtime evidence remain preserved in the nav worktree for rollback.
 
+## Initial maintainer hardware observations — 2026-10-29
+
+Reported on the flashed 3.2.6 candidate; timings are approximate observations,
+not instrumented measurements. Power source and a recovery-reason capture were
+not specified. Screen blanking alone does not establish physical CPU power loss.
+
+| Fault | Reported behavior | Interpretation against implementation |
+| --- | --- | --- |
+| OFF | Normal shutdown | Normal path appears functional in this trial |
+| LOCK | Blank/appears off near ten seconds, no sound; also after releasing center at five seconds | Fault is before display/sound. Continued button hold is not required for the observed cutoff |
+| SAVE | Same approximate ten-second blanking, no sound | Fault precedes final save, Goodbye, and shutdown sound |
+| WORK | Goodbye, no sound, blank near ten seconds whether held or released | Fault follows Goodbye and precedes worker quiescence/sound |
+| BEEP | Goodbye, no sound, blank near ten seconds | Fault is before playback starts, as intended |
+| I2C | Goodbye and shutdown sound, blank near ten seconds | Fault follows playback and precedes peripheral sleep |
+| BLE | Goodbye and sound; blank near five or six seconds, Bluetooth advertising both enabled and disabled | Display clear and latch release precede the fault. Battery power can end execution before fault injection; USB is needed to observe the later forced-reset recovery |
+
+The ordinary power-button handler requests shutdown after approximately 1.8 s
+(800 ms initial hold plus two 500 ms increments). The eight-second shutdown
+deadline therefore predicts approximately 9.8 s from the initial press. This is
+consistent with the observations. Without reset-reason/timing evidence, the
+specific watchdog responsible is not yet proven. The emergency path intentionally
+makes no confirmation sound or other peripheral calls.
+
+Next focused checks: BLE fault with USB connected, release center after roughly
+three seconds, and observe whether the device returns to charging after the
+blank interval; repeat while holding center through recovery to check boot gating.
+Exercise WDT on USB as a separate interrupt-starvation test (the existing interrupt
+watchdog may reset sooner than the RTC backstop). Verify final flight/IGC records
+for post-save faults and normal shutdown with an actual connected Bluetooth client.
+
 ## Still required on hardware
 
 Start with **Off fault = OFF**: save a short flight and shut down with Bluetooth
