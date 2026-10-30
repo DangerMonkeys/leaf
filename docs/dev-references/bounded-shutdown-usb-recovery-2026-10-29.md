@@ -204,3 +204,22 @@ save latency remain production acceptance items. Hardware acceptance remains ope
 Successful post-flash startup is not proof of recovery from these injected late
 faults. The maintainer has been asked to test SLP first, with USB attached, center
 released after about three seconds, and a twenty-second observation window.
+
+
+### SLP physical recovery confirmed
+
+On the deployed `e93daf78` candidate, the maintainer observed proper shutdown
+sound and Goodbye, approximately ten seconds displaying the splash, and a
+successful reboot to charging. The copied CSV records reset reason
+`other_watchdog` (7), completed setup at 2,083 ms, then
+`shutdown,recovered,peripherals-asleep,reason,1` at 2,104 ms. COM14/PID 0002 and SD
+access returned. Thus recovery succeeds after `sleepPeripherals()` and before
+`display.clear()` on this trial; peripheral sleep alone does not reproduce the
+late BLE-boundary failure.
+
+The exact-candidate evidence directory above now includes `slp-result.json` and
+`system-events-after-slp.csv`; the CSV copy was verified against the SD source.
+SHA-256: `8cf5a23e973b074b6f7334ff689480409934ea109d2b6074ff197a3f3e72a58b`.
+The next requested comparison is CLR (after display clear, before latch release).
+This single successful trial does not establish repeatability or close hardware
+acceptance. No additional firmware was flashed for this test.
