@@ -114,13 +114,66 @@ The exact BIN/ELF pairs, build IDs, test/build logs, IRAM audit, and deployment
 records are retained there. Successful post-flash boot is not an injected-reset
 recovery test.
 
-## Next physical checks
+## Replacement-candidate physical results
 
-With USB connected, select BLE, start normal power-off, release center after
-about three seconds, and wait up to twenty seconds for charging. Then repeat
-with RTC. If both recover, repeat while holding center through recovery, release,
-and verify that an ordinary subsequent power-on works. The processor-reset delay
-can be about one second longer than the old candidate; initialization adds time.
-If either remains unresponsive, leave it attached for another USB-state check.
+Candidate `53927919` still fails the BLE fault with USB connected. The maintainer
+heard the normal shutdown sound, saw Goodbye and then a blank LCD, but the LED
+stayed on. While left attached, Windows again reported no Leaf USB interface or
+SD volume. This does not establish whether the emergency ISR ran or where a
+subsequent boot stopped; LED state alone is insufficient to distinguish them.
+
+After unplug/replug, **RTC fault returned to charging**. The preserved CSV tail
+records `boot,reset,"other_watchdog",reason,7`, completes peripheral and task-manager
+initialization, reaches `setup-complete`, and then records
+`shutdown,recovered,flight-save,reason,4` at 2,105 ms. This is physical evidence
+that the independent RTC watchdog can reset and complete recovery from the early
+flight-save fault stage on this exact candidate. It does not prove recovery from
+the later BLE-deinit stage or from the timer ISR's emergency reconfiguration.
+
+The differential evidence is retained locally in
+`sim/build/hardware-evidence/shutdown-second-failure-20261029-190811/`, including
+`stuck-state.json`, `system-events-after-rtc.csv`, and `rtc-result.json`. The CSV
+copy was verified against the SD source by SHA-256:
+`c6803726ab8dfdc5f00442420fd9a3b5859980466f9acb1338dc609e57b034cc`.
+
+**LOCK also returned to charging**, approximately twelve seconds after the initial
+button press. The CSV records reset reason `other_watchdog` (7), completed setup,
+and `shutdown,recovered,logbook-lock,reason,1` at 2,103 ms. Thus the timer ISR's
+emergency deadline path can recover from this early stage. Its CSV copy has
+SHA-256 `aee9403dc74e002a72686b10075943d13023d3b84849ed842dfc0660f6e99600`.
+
+**I2C also returned to charging**, after sound and Goodbye and about ten seconds
+on the splash screen. Its CSV records reset reason `other_watchdog` (7), completed
+setup, and `shutdown,recovered,peripherals,reason,1` at 2,106 ms. Its CSV copy has
+SHA-256 `48d8082a8b2e2a6f1cc7a0b0dfc0db0d4d324688220e2f2c494b29d43f1f8f12`.
+These verified copies and maintainer observations are in the same evidence folder.
+
+These comparisons narrow the failure to state reached after the I2C fault point;
+they do not establish which operation causes it. The remaining operations before
+the BLE injection are peripheral sleep, display clear, latch release, and the
+`OffUSB` state assignment. Actual NimBLE deinitialization has not run at the BLE
+fault point and cannot yet be blamed for this injected failure.
+
+## Next diagnostic candidate
+
+The next candidate adds fault boundaries without changing watchdog configuration,
+reset code, shutdown order, deadlines, or task scheduling. Existing selector order
+and stage IDs are preserved; new stage IDs are appended. Added selectors:
+
+| Selector | Stall location | Reset path |
+| --- | --- | --- |
+| SLEEP | After peripheral sleep, before display clear | Eight-second emergency deadline |
+| CLEAR | After display clear, before latch release | Eight-second emergency deadline |
+| LATCH | After latch release, before `OffUSB` | Eight-second emergency deadline |
+| RTCB | Same late location as BLE, after `OffUSB` | Independent ten-second RTC backstop |
+
+Each remains nonpersistent, one-shot, and restricted to the explicit developer
+fault build. Test sequentially with USB connected, releasing center after about
+three seconds and allowing twenty seconds for recovery. Stop at the first stuck
+case and leave it attached for inventory capture. RTCB then distinguishes the
+late hardware-backstop result from the late emergency-ISR result. The simulator
+checks all boundaries, saved flights, selector cycling, and the power state at
+the late stalls; it cannot reproduce physical reset retention.
+
 Normal OFF/connected-client Bluetooth shutdown and representative long-flight SD
-save latency remain production acceptance items.
+save latency remain production acceptance items. Hardware acceptance remains open.

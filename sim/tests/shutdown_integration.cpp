@@ -114,15 +114,18 @@ int main(int argc, char** argv) {
   if (mode == "worker") injected = Stage::BleWorker;
   if (mode == "sound") injected = Stage::Sound;
   if (mode == "peripherals") injected = Stage::Peripherals;
-  if (mode == "ble") injected = Stage::BleDeinit;
+  if (mode == "asleep") injected = Stage::Sleeping;
+  if (mode == "clear") injected = Stage::Latch;
+  if (mode == "latch") injected = Stage::LatchReleased;
+  if (mode == "ble" || mode == "rtcble") injected = Stage::BleDeinit;
   if (mode == "disabled") {
     injected = Stage::Lock;
     settings.dev_mode = false;
   }
-  const bool rtcBackstop = mode == "watchdog" || mode == "rtc";
-  setFault(injected, mode == "watchdog" ? FaultBehavior::InterruptsOff
-                     : mode == "rtc"    ? FaultBehavior::RtcOnly
-                                        : FaultBehavior::Stall);
+  const bool rtcBackstop = mode == "watchdog" || mode == "rtc" || mode == "rtcble";
+  setFault(injected, mode == "watchdog"                  ? FaultBehavior::InterruptsOff
+                     : mode == "rtc" || mode == "rtcble" ? FaultBehavior::RtcOnly
+                                                         : FaultBehavior::Stall);
   const auto start = sim::clock().nowUs();
   if (mode == "nested") {
     begin();
@@ -154,8 +157,13 @@ int main(int argc, char** argv) {
     assert(lastReason() == (rtcBackstop ? Reason::HardwareWatchdog : Reason::Deadline));
     const uint32_t bound = rtcBackstop ? BACKSTOP_US : DEADLINE_US;
     assert(sim::clock().nowUs() - start <= bound + 10000);
-    if (mode == "worker" || mode == "sound" || mode == "peripherals" || mode == "ble")
+    if (mode == "worker" || mode == "sound" || mode == "peripherals" || mode == "ble" ||
+        mode == "asleep" || mode == "clear" || mode == "latch" || mode == "rtcble")
       assert(completeFlight(options.cardRoot));
+    // These faults isolate late shutdown transitions on either side of OffUSB.
+    if (mode == "asleep" || mode == "clear" || mode == "latch")
+      assert(power.info().onState == PowerState::On);
+    if (mode == "ble" || mode == "rtcble") assert(power.info().onState == PowerState::OffUSB);
     std::cout << "Injected " << mode << " stall released latch at "
               << (sim::clock().nowUs() - start) / 1000 << " ms\n";
   }

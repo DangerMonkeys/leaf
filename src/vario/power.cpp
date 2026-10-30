@@ -339,11 +339,16 @@ void Power::shutdown(bool deadBattery) {
   shutdown_guard::stage(shutdown_guard::Stage::Peripherals);
   shutdown_guard::faultPoint(shutdown_guard::Stage::Peripherals);
   sleepPeripherals();
+  shutdown_guard::stage(shutdown_guard::Stage::Sleeping);
+  shutdown_guard::faultPoint(shutdown_guard::Stage::Sleeping);
   display.clear();
   delay(100);
   shutdown_guard::stage(shutdown_guard::Stage::Latch);
+  shutdown_guard::faultPoint(shutdown_guard::Stage::Latch);
   latchOff();  // turn off 3.3V regulator (if we're plugged into USB, we'll stay on)
   delay(100);
+  shutdown_guard::stage(shutdown_guard::Stage::LatchReleased);
+  shutdown_guard::faultPoint(shutdown_guard::Stage::LatchReleased);
 
   // go to PowerState::OffUSB, in case device was shut down while
   // plugged into USB, then we can show necessary charging updates etc

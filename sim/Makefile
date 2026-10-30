@@ -409,7 +409,7 @@ $(BUILD)/shutdown_integration_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(
 test-shutdown: $(BUILD)/shutdown_policy_test $(BUILD)/shutdown_rtc_test $(BUILD)/shutdown_integration_test
 	@$(BUILD)/shutdown_policy_test
 	@$(BUILD)/shutdown_rtc_test
-	@cd $(ROOT) && for mode in normal disabled lock save worker sound peripherals ble hold nested watchdog rtc recovery; do $(BUILD)/shutdown_integration_test $$mode || exit $$?; done
+	@cd $(ROOT) && for mode in normal disabled lock save worker sound peripherals asleep clear latch ble hold nested watchdog rtc rtcble recovery; do $(BUILD)/shutdown_integration_test $$mode || exit $$?; done
 
 # Build all sources consistently with the explicit developer-only menu flag.
 .PHONY: test-shutdown-menu run-shutdown-menu

@@ -159,6 +159,10 @@ namespace shutdown_guard {
         return "ble-deinit";
       case Stage::Charging:
         return "charging";
+      case Stage::Sleeping:
+        return "peripherals-asleep";
+      case Stage::LatchReleased:
+        return "latch-released";
     }
     return "unknown";
   }

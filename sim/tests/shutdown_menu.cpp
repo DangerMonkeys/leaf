@@ -55,11 +55,20 @@ int main() {
   for (int i = 0; i < 7; ++i) menu.press(Button::RIGHT);
   assert(shutdown_guard::fault() == shutdown_guard::Stage::Flight);  // RTC-only option
   screenshot(menu, root + "/menu-rtc.png");
+  const shutdown_guard::Stage lateStages[] = {
+      shutdown_guard::Stage::Sleeping, shutdown_guard::Stage::Latch,
+      shutdown_guard::Stage::LatchReleased, shutdown_guard::Stage::BleDeinit};
+  for (const auto stage : lateStages) {
+    menu.press(Button::RIGHT);
+    assert(shutdown_guard::fault() == stage);
+    if (stage == shutdown_guard::Stage::Sleeping) screenshot(menu, root + "/menu-sleep.png");
+  }
+  screenshot(menu, root + "/menu-rtcble.png");
   menu.press(Button::RIGHT);
   assert(shutdown_guard::fault() == shutdown_guard::Stage::None);
   menu.press(Button::CENTER);
   assert(shutdown_guard::fault() == shutdown_guard::Stage::Lock);
-  for (int i = 0; i < 8; ++i) menu.press(Button::RIGHT);
+  for (int i = 0; i < 12; ++i) menu.press(Button::RIGHT);
   assert(shutdown_guard::fault() == shutdown_guard::Stage::None);
   menu.press(Button::DOWN);
   assert(menu.cursor() == 7);  // Startup options follow the fault row

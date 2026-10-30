@@ -35,14 +35,26 @@ enum developer_menu_items {
 #ifdef LEAF_SHUTDOWN_FAULT_INJECTION
 namespace {
   uint8_t offFaultIndex = 0;
-  const shutdown_guard::Stage offFaultStages[] = {
-      shutdown_guard::Stage::None,      shutdown_guard::Stage::Lock,
-      shutdown_guard::Stage::Flight,    shutdown_guard::Stage::BleWorker,
-      shutdown_guard::Stage::Sound,     shutdown_guard::Stage::Peripherals,
-      shutdown_guard::Stage::BleDeinit, shutdown_guard::Stage::Flight,
-      shutdown_guard::Stage::Flight};
-  const char* offFaultLabels[] = {"OFF", "LOCK", "SAVE", "WORK", "BEEP",
-                                  "I2C", "BLE",  "WDT",  "RTC"};
+  struct OffFaultChoice {
+    const char* label;
+    shutdown_guard::Stage stage;
+    shutdown_guard::FaultBehavior behavior = shutdown_guard::FaultBehavior::Stall;
+  };
+  constexpr OffFaultChoice offFaultChoices[] = {
+      {"OFF", shutdown_guard::Stage::None},
+      {"LOCK", shutdown_guard::Stage::Lock},
+      {"SAVE", shutdown_guard::Stage::Flight},
+      {"WORK", shutdown_guard::Stage::BleWorker},
+      {"BEEP", shutdown_guard::Stage::Sound},
+      {"I2C", shutdown_guard::Stage::Peripherals},
+      {"BLE", shutdown_guard::Stage::BleDeinit},
+      {"WDT", shutdown_guard::Stage::Flight, shutdown_guard::FaultBehavior::InterruptsOff},
+      {"RTC", shutdown_guard::Stage::Flight, shutdown_guard::FaultBehavior::RtcOnly},
+      {"SLEEP", shutdown_guard::Stage::Sleeping},
+      {"CLEAR", shutdown_guard::Stage::Latch},
+      {"LATCH", shutdown_guard::Stage::LatchReleased},
+      {"RTCB", shutdown_guard::Stage::BleDeinit, shutdown_guard::FaultBehavior::RtcOnly}};
+  constexpr uint8_t offFaultCount = sizeof(offFaultChoices) / sizeof(offFaultChoices[0]);
 }  // namespace
 #endif
 
@@ -108,7 +120,7 @@ void DeveloperMenuPage::draw() {
         case cursor_developer_shutdownFault:
           if (shutdown_guard::fault() == shutdown_guard::Stage::None) offFaultIndex = 0;
           u8g2.setCursor(66, menu_items_y[i]);
-          u8g2.print(offFaultLabels[offFaultIndex]);
+          u8g2.print(offFaultChoices[offFaultIndex].label);
           break;
 #endif
         case cursor_developer_fanetReTx:
@@ -171,11 +183,10 @@ void DeveloperMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t co
 #ifdef LEAF_SHUTDOWN_FAULT_INJECTION
     case cursor_developer_shutdownFault:
       if (state == ButtonEvent::CLICKED) {
-        offFaultIndex = (offFaultIndex + (dir == Button::LEFT ? 8 : 1)) % 9;
-        shutdown_guard::setFault(offFaultStages[offFaultIndex],
-                                 offFaultIndex == 7   ? shutdown_guard::FaultBehavior::InterruptsOff
-                                 : offFaultIndex == 8 ? shutdown_guard::FaultBehavior::RtcOnly
-                                                      : shutdown_guard::FaultBehavior::Stall);
+        offFaultIndex =
+            (offFaultIndex + (dir == Button::LEFT ? offFaultCount - 1 : 1)) % offFaultCount;
+        const auto& choice = offFaultChoices[offFaultIndex];
+        shutdown_guard::setFault(choice.stage, choice.behavior);
       }
       break;
 #endif

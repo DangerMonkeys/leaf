@@ -21,7 +21,10 @@ namespace shutdown_guard {
     Peripherals,
     Latch,
     BleDeinit,
-    Charging
+    Charging,
+    // Append stages so retained diagnostic IDs from earlier builds stay stable.
+    Sleeping,
+    LatchReleased
   };
   enum class Reason : uint32_t { None, Deadline, LongHold, WorkerTimeout, HardwareWatchdog };
 
