@@ -1,118 +1,102 @@
-# Shutdown candidate assessment â€” 2026-10-29
+---
+title: Shutdown validation (2026-10-29)
+description: Verified shutdown recovery on Leaf 3.2.6, exact candidate provenance, and remaining test coverage.
+---
 
-**Ready for physical shutdown testing, not yet approved for production.**
+The core reproduced USB-recovery failure passes the trials below. This is a code
+review and broader testing checkpoint, not firmware release acceptance. The
+[design and fault-testing guide](bounded-shutdown.md) describes the implementation.
+Route optimization is outside this branch.
 
-Candidate firmware source: `cc457326611ef350646b011e556f76949216a363` on
-`codex/bounded-shutdown`, branched from main `07140964`. This assessment commit
-only records results; the firmware remains the exact candidate above. Route
-optimization is not included. Its latest tested source remains `2882f408` in the
-separate `codex/route-solver-assessment` worktree.
+## Candidate and build verification
 
-Implementation, limitations, fault selector, and the hardware capture checklist:
-[Bounded shutdown](bounded-shutdown.md).
+- Branch: `codex/bounded-shutdown`, based on main `07140964`.
+- Hardware-tested source: `bebbbf8faf4e5de082ae31d728aa65d13b5ea36c`.
+- Device firmware: `0.2.4-beb.shutdown+h3.2.6`; subsequent changes are documentation only.
+- Device: Leaf 3.2.6. Both OTA app slots were flashed and hash-verified.
 
-## Completed verification
+| Build | BIN bytes | Static RAM | BIN SHA-256 |
+| --- | ---: | ---: | --- |
+| `leaf_3_2_6_release` | 2,416,992 | 107,404 B | `3aaa63a564111efde85308c67742d299fcd9c8d8d8a21f5707608a72ae9ec395` |
+| `leaf_3_2_6_shutdown` | 2,417,632 | 107,420 B | `28cb311f131811bf16ece6b485455e42bd9e8ad68a7577b27c76f24a59ce2b50` |
 
-- Repository formatter and `git diff --check` passed.
-- Both PlatformIO environments built successfully with a clean candidate tree:
-  `leaf_3_2_6_release` and `leaf_3_2_6_shutdown`.
-- The host simulator build and `test-shutdown`, `test-shutdown-menu`,
-  `test-developer-logging`, `test-runtime-capture`, and `test-runtime-lifecycle`
-  completed successfully. Tests use fresh, exclusively created fixture folders
-  so a previous run cannot supply an old completed flight or recovery event.
-- The shutdown policy test covers unsigned timer wrap, button release gating,
-  and concurrent producer admission/draining. The integration test runs twelve
-  scenarios: normal, injection disabled, lock/save/worker/sound/peripheral/BLE
-  stalls, blocked main loop, nested cleanup, modeled RTC backstop, and held-button
-  recovery. Normal shutdown finalizes a flight; faults after the essential-save
-  stage retain a completed flight. Recovery overrides a boot-to-on request and
-  enabled Bluetooth, and records the previous stage/reason in system events.
-- Six injected ordinary stalls released the modeled latch at **8,004 ms**. The
-  independently modeled RTC-backstop case acted at **10,004 ms**. The 4 ms offset
-  is timer phase in this scenario; physical timing has not been measured.
-- The developer-only menu test covers selection cycling, wrap, cursor order,
-  LEFT-to-Back behavior, and screenshots with/without a detected FANET radio.
-  Both screenshots were visually reviewed.
-- Both native ELFs place `tick()`, `trip()`, `hardwareTrip()`, and
-  `esp_timer_get_time()` in `.iram0.text`; the ISR's relocation dependencies use
-  internal/RTC state and registers, with no locking atomic helpers or flash
-  strings. The native worker parking acknowledgement is a direct byte store
-  followed by suspension, outside driver locks.
+Formatter/whitespace checks and both clean-source native builds passed. These
+static sizes are total build usage, not added heap cost. No task, stack, or
+schedule slot was added; actual burdened CPU/heap overhead remains unmeasured.
 
-| Build | Version | BIN bytes | Static RAM reported by PlatformIO |
-| --- | --- | ---: | ---: |
-| Normal | `0.2.4-cc4+h3.2.6` | 2,416,656 | 107,404 B |
-| Fault test | `0.2.4-cc4.shutdown+h3.2.6` | 2,417,152 | 107,412 B |
+The simulator build, shutdown policy/integration/menu, developer logging, runtime
+capture, and runtime lifecycle suites passed. Seventeen shutdown scenarios cover
+normal and disabled injection, staged faults, nested cleanup, long hold with the
+main loop unserviced, both backstop modes, and held-button recovery. Fresh fixture
+directories prevent earlier saved flights from masking a failed save. Rendered
+menu labels were checked with and without FANET.
 
-These static sizes are not additional heap costs. There is one new hardware timer,
-small fixed guard state, and SDK timer allocation, with no new FreeRTOS task or
-task-manager slot. On-device CPU/heap overhead is still to be assessed.
+The shared RTC policy model verifies no register writes/feed/rearm when an active
+guard trips, expiry at the original ten-second deadline, unarmed emergency
+fallback, safe configuration order, escalation, and full disarm. Integration
+checks release the modeled latch at 8,004 ms, or act at 10,004 ms for RTC modes;
+the phase offset and physical reboot timing are not hardware measurements.
 
-## Deployment
+Both native ELFs place emergency functions and `esp_timer_get_time()` in IRAM.
+Audited emergency relocations use internal/RTC state and registers, without
+locking atomic helpers or flash strings. Native worker parking acknowledges
+quiescence outside driver locks before task deletion.
 
-The fault-test image was flashed to the attached **3.2.6**, USB identity
-`F0F5BD5467A0`, in both app slots (`0x10000`, `0x340000`). Esptool verified both
-writes and exited 0. The first app-mode attempt caused the expected COM14-to-COM13
-handover; the one allowed bootloader retry succeeded. After reset, the device
-returned on COM14 with application USB PID `0002`, and SD storage was accessible.
-Both `airport_road.json` and `apartment-compute-8.json` retained their pre-flash
-SHA-256 checksums. No fault was automatically armed or exercised on hardware.
+## Physical results on the corrected candidate
 
-Fault-test BIN SHA-256:
-`756215cdff0c5c59194dcb5b54ca582a4bbec84a7f1bf2aeaad58990a5c61bba`
+Timings are approximate maintainer observations. USB inventory and copied SD
+records corroborate recovery; GPIO48/current timing was not instrumented.
 
-Normal BIN SHA-256:
-`4f79aa1d8624d352dc0f854e6e5af250b4f37d04218e6373b8522d9002c1dcbf`
-
-Local raw evidence is retained under
-`sim/build/hardware-evidence/shutdown-cc457326-20261029-180740/`: both BIN/ELF
-pairs, build identifiers, simulator/build logs, IRAM symbol/relocation audits,
-flash logs and deployment manifest, and the post-flash USB/route check. This
-ignored directory is not part of the Git commit. The previous nav BIN/ELF and
-field/runtime evidence remain preserved in the nav worktree for rollback.
-
-## Initial maintainer hardware observations — 2026-10-29
-
-Reported on the flashed 3.2.6 candidate; timings are approximate observations,
-not instrumented measurements. Power source and a recovery-reason capture were
-not specified. Screen blanking alone does not establish physical CPU power loss.
-
-| Fault | Reported behavior | Interpretation against implementation |
+| Trial | Result | Evidence |
 | --- | --- | --- |
-| OFF | Normal shutdown | Normal path appears functional in this trial |
-| LOCK | Blank/appears off near ten seconds, no sound; also after releasing center at five seconds | Fault is before display/sound. Continued button hold is not required for the observed cutoff |
-| SAVE | Same approximate ten-second blanking, no sound | Fault precedes final save, Goodbye, and shutdown sound |
-| WORK | Goodbye, no sound, blank near ten seconds whether held or released | Fault follows Goodbye and precedes worker quiescence/sound |
-| BEEP | Goodbye, no sound, blank near ten seconds | Fault is before playback starts, as intended |
-| I2C | Goodbye and shutdown sound, blank near ten seconds | Fault follows playback and precedes peripheral sleep |
-| BLE | Goodbye and sound; blank near five or six seconds, Bluetooth advertising both enabled and disabled | Display clear and latch release precede the fault. Battery power can end execution before fault injection; USB is needed to observe the later forced-reset recovery |
+| CLR fault, USB, center released | Returned to charging | `other_watchdog` reset; `power-latch`, reason 1 recovery |
+| BLE fault, Bluetooth disabled | Charging after about twelve seconds | `ble-deinit`, reason 1 recovery |
+| BLE fault, Bluetooth advertising, no client | Returned to charging | Bluetooth start recorded before test; `ble-deinit`, reason 1 recovery |
+| BLE fault, center held through reset | Stayed in charging; fresh On after release | Maintainer observation and subsequent `ble-deinit`, reason 1 recovery |
+| CLR fault, battery only | Power-off followed by fresh stable On | Maintainer observation; subsequent POWERON boot and Bluetooth restart |
+| Normal OFF, Bluetooth advertising, active flight | Prompt normal charging; complete summary saved | NimBLE teardown completed; no new boot/reset or recovery event |
 
-The ordinary power-button handler requests shutdown after approximately 1.8 s
-(800 ms initial hold plus two 500 ms increments). The eight-second shutdown
-deadline therefore predicts approximately 9.8 s from the initial press. This is
-consistent with the observations. Without reset-reason/timing evidence, the
-specific watchdog responsible is not yet proven. The emergency path intentionally
-makes no confirmation sound or other peripheral calls.
+The normal OFF trial finalized a **17-second**, revision-2 summary marked
+`complete: true` on this exact firmware. GPS time was unsynchronized and
+`track.saved` was false, so no IGC was created. Existing logging deliberately
+waits for valid GPS date/time before opening a track. This verifies summary
+finalization, not IGC finalization. An earlier candidate saved a checksum-valid
+IGC, but that is not substituted for current-candidate track coverage.
 
-Next focused checks: BLE fault with USB connected, release center after roughly
-three seconds, and observe whether the device returns to charging after the
-blank interval; repeat while holding center through recovery to check boot gating.
-Exercise WDT on USB as a separate interrupt-starvation test (the existing interrupt
-watchdog may reset sooner than the RTC backstop). Verify final flight/IGC records
-for post-save faults and normal shutdown with an actual connected Bluetooth client.
+Application USB and SD access returned after recovery; both existing test routes
+retained their hashes. Actual Bluetooth teardown is supported by
+`ble-end-nimble-after` and `ble-end-after` on the normal path, rather than inferred
+from a deliberately injected BLE stall.
 
-## Still required on hardware
+## Reason for preserving the armed watchdog
 
-Start with **Off fault = OFF**: save a short flight and shut down with Bluetooth
-off, advertising, and connected to a client, on both USB and battery. Then follow
-the linked fault checklist. Capture actual power-latch/visible reset timing,
-flight/IGC completion, system events, boot diagnostics, and any watchdog/core dump.
-A representative long flight and slow/nearly full SD card must fit the save
-budget before production acceptance.
+Earlier candidates sometimes stayed blank with no USB/SD interface after a
+shortened emergency watchdog reset. Differential testing recovered before display
+clear (SLP), failed after clear (CLR), and recovered at the later BLE boundary
+when only the original independent timer expired (RTCB). The corrected candidate
+leaves that original backstop untouched at the eight-second latch deadline;
+CLR and BLE recovery then passed. The precise prior failure mechanism remains
+unproven. A separate legacy fatal log and an unattributed core dump were not
+claimed as evidence of this failure's cause.
 
-Desktop tests do not establish that the original Goodbye freeze was reproduced
-or identify its cause. They also do not validate physical GPIO power removal,
-RTC reset timing, real NimBLE worker quiescence, radio behavior, or storage-driver
-failure handling. Those remain explicit hardware review items.
+## Evidence retention and remaining coverage
 
-Follow-up: [USB recovery failure, verified WORK flight, and replacement candidate](bounded-shutdown-usb-recovery-2026-10-29.md).
+Raw CSVs, SD/flight copies, exact BIN/ELF pairs, build/test/IRAM audit output, and
+flash records are retained locally under ignored `sim/build/hardware-evidence/`.
+The final candidate directory is
+`shutdown-recovery-bebbbf8f-20261029-194137/`; its manifests and per-trial JSON
+records identify files and SHA-256-verified copies. Full investigation documents
+are retained locally under ignored `sim/build/review-preparation/original-docs-f5cc69e2/`
+and in this branch's earlier history. Raw flight data and generated logs are not
+part of the PR.
+
+Before release, complete coverage for:
+
+- Bluetooth with a connected client and repeated stop/start cycles, plus FANET activity.
+- GPS-synchronized IGC finalization on this exact candidate and representative long/slow-SD saves.
+- Native emergency long hold with the main loop blocked outside an armed shutdown.
+- Burdened runtime/heap overhead, additional hardware variants, and instrumented cutoff timing.
+
+Follow the [runtime assessment](runtime-assessment.md) and
+[release requirements](releasing.md) for a published firmware candidate. Those
+release reports are not a prerequisite for submitting this PR.
