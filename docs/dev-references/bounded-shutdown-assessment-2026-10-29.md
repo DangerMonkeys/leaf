@@ -114,3 +114,5 @@ Desktop tests do not establish that the original Goodbye freeze was reproduced
 or identify its cause. They also do not validate physical GPIO power removal,
 RTC reset timing, real NimBLE worker quiescence, radio behavior, or storage-driver
 failure handling. Those remain explicit hardware review items.
+
+Follow-up: [USB recovery failure, verified WORK flight, and replacement candidate](bounded-shutdown-usb-recovery-2026-10-29.md).
