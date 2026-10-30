@@ -405,3 +405,14 @@ $(BUILD)/shutdown_integration_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(
 test-shutdown: $(BUILD)/shutdown_policy_test $(BUILD)/shutdown_integration_test
 	@$(BUILD)/shutdown_policy_test
 	@cd $(ROOT) && for mode in normal disabled lock save worker sound peripherals ble hold nested watchdog recovery; do $(BUILD)/shutdown_integration_test $$mode || exit $$?; done
+
+# Build all sources consistently with the explicit developer-only menu flag.
+.PHONY: test-shutdown-menu run-shutdown-menu
+test-shutdown-menu:
+	@$(MAKE) -C $(SIM) BUILD=$(BUILD)/shutdown-menu OPT="$(OPT) -DLEAF_SHUTDOWN_FAULT_INJECTION=1" run-shutdown-menu
+
+$(BUILD)/shutdown_menu_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/shutdown_menu.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/shutdown_menu.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+run-shutdown-menu: $(BUILD)/shutdown_menu_test
+	@cd $(ROOT) && $(BUILD)/shutdown_menu_test

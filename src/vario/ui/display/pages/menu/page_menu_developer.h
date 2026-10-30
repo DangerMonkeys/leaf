@@ -23,20 +23,12 @@ class DeveloperMenuPage : public SettingsMenuPage {
 
  private:
   bool row_hidden(uint8_t row) const;
-  static constexpr const char* labels[] = {"Back",
-                                           "Fanet ReTX",
-                                           "Log FANET",
-                                           "Debug Page",
-                                           "Run SelfTest",
-                                           "Runtime:",
-                                           "StartBusLog",
-                                           "Detach HW",
-                                           "Log Now:"
+  static constexpr const char* labels[] = {"Back",        "Fanet ReTX",   "Log FANET",
+                                           "Debug Page",  "Run SelfTest", "Runtime:",
 #ifdef LEAF_SHUTDOWN_FAULT_INJECTION
-                                           ,
-                                           "Off fault:"
+                                           "Off fault:",
 #endif
-  };
+                                           "StartBusLog", "Detach HW",    "Log Now:"};
 };
 
 #endif

@@ -25,12 +25,12 @@ enum developer_menu_items {
   cursor_developer_showDebugPg,
   cursor_developer_runSelfTest,
   cursor_developer_runtime,
+#ifdef LEAF_SHUTDOWN_FAULT_INJECTION
+  cursor_developer_shutdownFault,
+#endif
   cursor_developer_startupStart,
   cursor_developer_startupDisconnect,
-  cursor_developer_busLogControl,
-#ifdef LEAF_SHUTDOWN_FAULT_INJECTION
-  cursor_developer_shutdownFault
-#endif
+  cursor_developer_busLogControl
 };
 #ifdef LEAF_SHUTDOWN_FAULT_INJECTION
 namespace {
