@@ -8,6 +8,7 @@
 #include "hardware/buttons.h"
 #include "logging/buslog.h"
 #include "logging/fanet_log.h"
+#include "system/shutdown_guard.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
@@ -26,8 +27,22 @@ enum developer_menu_items {
   cursor_developer_runtime,
   cursor_developer_startupStart,
   cursor_developer_startupDisconnect,
-  cursor_developer_busLogControl
+  cursor_developer_busLogControl,
+#ifdef LEAF_SHUTDOWN_FAULT_INJECTION
+  cursor_developer_shutdownFault
+#endif
 };
+#ifdef LEAF_SHUTDOWN_FAULT_INJECTION
+namespace {
+  uint8_t offFaultIndex = 0;
+  const shutdown_guard::Stage offFaultStages[] = {
+      shutdown_guard::Stage::None,      shutdown_guard::Stage::Lock,
+      shutdown_guard::Stage::Flight,    shutdown_guard::Stage::BleWorker,
+      shutdown_guard::Stage::Sound,     shutdown_guard::Stage::Peripherals,
+      shutdown_guard::Stage::BleDeinit, shutdown_guard::Stage::Flight};
+  const char* offFaultLabels[] = {"OFF", "LOCK", "SAVE", "WORK", "BEEP", "I2C", "BLE", "WDT"};
+}  // namespace
+#endif
 
 bool DeveloperMenuPage::row_hidden(uint8_t row) const {
   return (row == cursor_developer_fanetReTx || row == cursor_developer_logFanet) &&
@@ -55,13 +70,21 @@ void DeveloperMenuPage::draw() {
     // Menu Items
     uint8_t setting_name_x = 2;
     uint8_t setting_choice_x = 76;
-    uint8_t menu_items_y[9] = {190};
+    uint8_t menu_items_y[10] = {190};
     uint8_t next_y = 35;
     for (int i = cursor_developer_fanetReTx; i <= cursor_developer_runtime; ++i) {
       if (row_hidden(i)) continue;
       menu_items_y[i] = next_y;
+#ifdef LEAF_SHUTDOWN_FAULT_INJECTION
+      next_y += 13;
+#else
       next_y += 15;
+#endif
     }
+#ifdef LEAF_SHUTDOWN_FAULT_INJECTION
+    menu_items_y[cursor_developer_shutdownFault] = next_y;
+    next_y += 13;
+#endif
     menu_items_y[cursor_developer_startupStart] = next_y + 25;
     menu_items_y[cursor_developer_startupDisconnect] = next_y + 40;
     menu_items_y[cursor_developer_busLogControl] = next_y + 60;
@@ -79,6 +102,13 @@ void DeveloperMenuPage::draw() {
       menu_ui::drawLabel(setting_name_x, menu_items_y[i], labels[i]);
       u8g2.setCursor(setting_choice_x, menu_items_y[i]);
       switch (i) {
+#ifdef LEAF_SHUTDOWN_FAULT_INJECTION
+        case cursor_developer_shutdownFault:
+          if (shutdown_guard::fault() == shutdown_guard::Stage::None) offFaultIndex = 0;
+          u8g2.setCursor(58, menu_items_y[i]);
+          u8g2.print(offFaultLabels[offFaultIndex]);
+          break;
+#endif
         case cursor_developer_fanetReTx:
           if (settings.dev_fanetFwd)
             menu_ui::printGlyph(menu_ui::ICON_ON);
@@ -136,6 +166,14 @@ void DeveloperMenuPage::draw() {
 void DeveloperMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) {
   if (row_hidden(cursor_position)) return;
   switch (cursor_position) {
+#ifdef LEAF_SHUTDOWN_FAULT_INJECTION
+    case cursor_developer_shutdownFault:
+      if (state == ButtonEvent::CLICKED) {
+        offFaultIndex = (offFaultIndex + (dir == Button::LEFT ? 7 : 1)) % 8;
+        shutdown_guard::setFault(offFaultStages[offFaultIndex], offFaultIndex == 7);
+      }
+      break;
+#endif
     case cursor_developer_runtime:
       if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
         if (cpu_utilization::capturing()) {

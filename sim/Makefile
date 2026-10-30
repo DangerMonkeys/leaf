@@ -393,3 +393,15 @@ $(BUILD)/climb_display_average_test: $(filter-out $(BUILD)/sim/emulator/main.o,$
 test-climb-display-average: $(BUILD)/climb_display_average_test
 	@cd $(ROOT) && $(BUILD)/climb_display_average_test
 	@cd $(ROOT) && $(BUILD)/climb_display_average_test --verify-persistence
+
+.PHONY: test-shutdown
+$(BUILD)/shutdown_policy_test: $(SIM)/tests/shutdown_policy.cpp $(ROOT)/src/vario/system/shutdown_policy.h $(ROOT)/src/vario/utils/producer_gate.h
+	@mkdir -p $(BUILD)
+	@$(CXX) -std=c++17 -Wall -Wextra -g -I$(ROOT)/src/vario $< -lpthread -o $@
+
+$(BUILD)/shutdown_integration_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/shutdown_integration.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/shutdown_integration.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-shutdown: $(BUILD)/shutdown_policy_test $(BUILD)/shutdown_integration_test
+	@$(BUILD)/shutdown_policy_test
+	@cd $(ROOT) && for mode in normal disabled lock save worker sound peripherals ble hold nested watchdog recovery; do $(BUILD)/shutdown_integration_test $$mode || exit $$?; done

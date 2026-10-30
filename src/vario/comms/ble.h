@@ -9,6 +9,7 @@
 
 #include "dispatch/message_sink.h"
 #include "dispatch/message_types.h"
+#include "utils/producer_gate.h"
 
 // FreeRTOS Task for handling Bluetooth Operations
 class BLE : public MessageSink<BLE, GpsMessage, FanetPacket> {
@@ -35,6 +36,9 @@ class BLE : public MessageSink<BLE, GpsMessage, FanetPacket> {
 
   /// @brief ends the service, tears down bluetooth resources
   void end();
+  // Stop producers and park the worker outside all driver locks. No resource
+  // is deleted until both producer and worker quiescence are acknowledged.
+  bool quiesce(uint32_t timeoutMs = 500);
 
   // MessageSink<BLE, GpsMessage, FanetPacket>
   void on_receive(const GpsMessage& msg);
@@ -86,6 +90,8 @@ class BLE : public MessageSink<BLE, GpsMessage, FanetPacket> {
   TimerHandle_t xTimer;
   // Task to handle Bluetooth IO
   TaskHandle_t xTask;
+  ProducerGate producers_;
+  std::atomic<bool> workerParked_{true};
 
   // FreeRTOS Task handler callbacks
   static void bleTask(void*);
