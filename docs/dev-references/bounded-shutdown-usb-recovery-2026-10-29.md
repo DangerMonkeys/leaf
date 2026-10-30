@@ -5,6 +5,33 @@
 (`0.2.4-539.shutdown+h3.2.6`) on `codex/bounded-shutdown`. No nav-optimizer
 changes are included. The attached device is 3.2.6, identity `F0F5BD5467A0`.
 
+## Current review status
+
+Current device firmware: **`0.2.4-beb.shutdown+h3.2.6`**, exact source
+`bebbbf8faf4e5de082ae31d728aa65d13b5ea36c`. Later commits record assessments only.
+The core reproduced USB-recovery failure is resolved in the trials below; the
+underlying cause of the earlier shortened-watchdog reset failure is not proven.
+The implementation preserves the original ten-second backstop during an armed
+shutdown, while releasing the latch at the eight-second interrupt deadline.
+
+| Check on the attached 3.2.6 | Result and evidence |
+| --- | --- |
+| CLR fault, USB, center released | Recovery confirmed by SD reset/recovery records |
+| BLE fault, Bluetooth disabled | Recovery confirmed by SD records |
+| BLE fault, Bluetooth advertising, no client | Recovery confirmed by SD records |
+| BLE fault, center held through recovery | Charging then fresh On after release observed; recovery confirmed by subsequent SD records |
+| CLR fault, battery only | Power-off and fresh stable On observed; subsequent SD interval includes a fresh POWERON boot |
+| Normal shutdown, Bluetooth advertising, active flight | Actual NimBLE cleanup completed with no reset/recovery event; 17-second summary complete |
+| Desktop/build verification | 17 shutdown scenarios, policy/diagnostics/runtime/menu checks, both native firmware builds, and IRAM audit passed |
+
+This is ready for code review and broader hardware testing, **not a release
+acceptance claim**. Remaining coverage includes connected-client Bluetooth,
+GPS-synchronized IGC finalization on this exact candidate, representative long/
+slow-SD saves, native emergency long hold with the ordinary main loop actually
+blocked outside an armed shutdown, runtime overhead under burden, and other
+hardware variants. Battery cutoff timing/current was not instrumented. The tests
+below preserve the distinction between maintainer observations and log evidence.
+
 ## Observations and preserved evidence
 
 The maintainer reported that BLE fault blanked the LCD around five to six seconds
@@ -391,3 +418,27 @@ without USB and stable On after release. The maintainer will shut down normally
 and reconnect in charging mode afterward so the held-button and subsequent boot
 records can be preserved. Visible blanking alone is not a direct latch/current
 measurement; GPIO48/current instrumentation remains preferable for absolute timing.
+
+
+### Battery-only trial and held-recovery records preserved
+
+The maintainer reports that CLR shutdown on battery, fresh battery power-on stable
+after release, normal shutdown, and return to USB charging all worked as requested.
+The subsequently copied CSV interval contains the earlier held-center BLE fault's
+`other_watchdog` reset (7), completed setup at 2,090 ms, and
+`shutdown,recovered,ble-deinit,reason,1` at 2,109 ms. This confirms the recovery
+record that was inaccessible while the device was On.
+
+The later interval records a `poweron` reset (1), a completed operating-mode boot
+with Bluetooth restarted, and subsequent `ble-end-after`. These support the
+reported fresh startup and successful normal teardown after the battery trial.
+Battery power loss can erase retained shutdown intent, so a dedicated CLR recovery
+record is not expected after physical cutoff. This is not a direct measurement of
+the GPIO48 edge, power draw, or absolute eight-second cutoff timing.
+
+Evidence in the current candidate folder: `battery-clr-result.json`, updated
+`ble-held-result.json`, `battery-clr-events-delta.csv`, and the hash-verified
+`system-events-after-battery-clr.csv`.
+CSV SHA-256: `cc1360539ef996728c6675b4d29fd246f141b35e7d43bd8090540084261a08e2`.
+Application USB returned on COM14/PID 0002 and the SD remained readable.
+No additional firmware change or flash was needed for these trials.

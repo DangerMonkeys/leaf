@@ -191,3 +191,20 @@ expiry at the original ten-second bound. A new timer is still armed for emergenc
 without an active guard, and initialization/completion races retain their fallback.
 The exact cause of the prior native reset failure remains unproven; this change
 uses the independently successful path and requires CLR/BLE hardware retesting.
+
+
+## Current hardware review checkpoint
+
+The corrected source is `bebbbf8faf4e5de082ae31d728aa65d13b5ea36c`, deployed as
+`0.2.4-beb.shutdown+h3.2.6`. CLR and BLE fault recovery passed with USB connected,
+including Bluetooth broadcasting and holding center through reset. Fresh On after
+release worked. CLR on battery followed by a fresh stable power-on also passed by
+maintainer observation. The recovered SD interval confirms the held-button reset
+and a later fresh POWERON boot. Normal Bluetooth shutdown completed without a
+watchdog reset and finalized a 17-second summary; no IGC existed because GPS time
+was unsynchronized. The assessment links exact candidate artifacts and evidence.
+
+The branch is ready for review and broader device testing. Connected-client
+Bluetooth, synchronized IGC, representative long/slow-SD saves, native blocked-loop
+long hold outside shutdown, burdened runtime overhead, and additional hardware
+variants remain separate acceptance work. GPIO timing/current was not instrumented.
