@@ -320,3 +320,24 @@ Next requested trial: enable Bluetooth broadcasting with no connected client and
 repeat BLE fault with USB attached and center released after about three seconds.
 Normal OFF with active Bluetooth must also be tested to exercise actual teardown.
 No further firmware changes or flash were needed for this trial.
+
+
+### BLE-fault recovery with Bluetooth broadcasting confirmed
+
+The maintainer enabled Bluetooth broadcasting with no client connected and
+reports successful restart into charging under BLE fault on the same `bebbbf8f`
+candidate. The CSV shows Bluetooth setup/start completed before the test, then
+`other_watchdog` (7), completed setup at 2,084 ms, and
+`shutdown,recovered,ble-deinit,reason,1` at 2,103 ms. COM14/PID 0002 and SD access
+returned. This covers the late guard after cooperative worker quiescence while
+the Bluetooth stack had been active. The deliberate fault still precedes full
+NimBLE deinitialization, so successful normal teardown is a separate check.
+
+Evidence: `ble-advertising-result.json` and verified
+`system-events-after-ble-advertising.csv` in the current candidate folder.
+CSV SHA-256: `36d4508830c07d987c054a28ae8db4d71e4ba4653ba64958cc60ae4642beea3c`.
+Next requested trial: Bluetooth enabled, Off fault OFF, at least ten seconds of an
+active flight timer followed by normal shutdown, leaving the timer running until
+shutdown. Verify normal charging transition, actual teardown checkpoints, and the
+completed flight/IGC. Connected-client, held-button, long-hold, battery-only, and
+representative slow/long-save checks remain open. No additional flash was needed.
