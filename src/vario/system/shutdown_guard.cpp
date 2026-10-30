@@ -3,6 +3,7 @@
 #include "diagnostics/diagnostic_logs.h"
 #include "hardware/configuration.h"
 #include "system/shutdown_policy.h"
+#include "system/shutdown_rtc_policy.h"
 #include "ui/settings/settings.h"
 
 #ifdef LEAF_SIM
@@ -52,37 +53,33 @@ namespace shutdown_guard {
     void armRtc() { simRtcArmedUs = micros(); }
     void stopRtc() {}
 #else
-    void armRtc() {
-      wdt_hal_write_protect_disable(&rtcWatchdog);
-      wdt_hal_config_stage(&rtcWatchdog, WDT_STAGE0, backstopTicks, WDT_STAGE_ACTION_RESET_SYSTEM);
-      // SYSTEM reset does not reset the RTC watchdog domain. If boot stalls,
-      // escalate to RTC reset; flash-boot mode lets ROM/bootloader manage it.
-      wdt_hal_config_stage(&rtcWatchdog, WDT_STAGE1, resetTicks, WDT_STAGE_ACTION_RESET_RTC);
-      wdt_hal_set_flashboot_en(&rtcWatchdog, true);
-      wdt_hal_enable(&rtcWatchdog);
-      wdt_hal_write_protect_enable(&rtcWatchdog);
-    }
-    void stopRtc() {
-      wdt_hal_write_protect_disable(&rtcWatchdog);
-      wdt_hal_disable(&rtcWatchdog);
-      // Flash-boot protection can run independently of the ordinary enable bit.
-      wdt_hal_set_flashboot_en(&rtcWatchdog, false);
-      wdt_hal_write_protect_enable(&rtcWatchdog);
-    }
+    // Every adapter operation is forced inline into the IRAM emergency path.
+    struct RtcHardware {
+      rtc_cntl_dev_t* hw;
+      __attribute__((always_inline)) inline void unlock() { rwdt_ll_write_protect_disable(hw); }
+      __attribute__((always_inline)) inline void lock() { rwdt_ll_write_protect_enable(hw); }
+      __attribute__((always_inline)) inline void flashBoot(bool enabled) {
+        rwdt_ll_set_flashboot_en(hw, enabled);
+      }
+      __attribute__((always_inline)) inline void disable() { rwdt_ll_disable(hw); }
+      __attribute__((always_inline)) inline void enable() { rwdt_ll_enable(hw); }
+      __attribute__((always_inline)) inline void feed() { rwdt_ll_feed(hw); }
+      __attribute__((always_inline)) inline void systemStage(uint32_t ticks) {
+        rwdt_ll_config_stage(hw, WDT_STAGE0, ticks, WDT_STAGE_ACTION_RESET_SYSTEM);
+      }
+      __attribute__((always_inline)) inline void rtcStage(uint32_t ticks) {
+        rwdt_ll_config_stage(hw, WDT_STAGE1, ticks, WDT_STAGE_ACTION_RESET_RTC);
+      }
+    };
+    void armRtc() { configureRtc(RtcHardware{RWDT_DEV_GET()}, backstopTicks, resetTicks); }
+    void stopRtc() { disarmRtc(RtcHardware{RWDT_DEV_GET()}); }
 #endif
 #ifndef LEAF_SIM
     void IRAM_ATTR hardwareTrip() {
       gpio_ll_set_level(&GPIO, LATCH_PIN, 0);
       gpio_ll_iomux_func_sel(IO_MUX_GPIO48_REG, PIN_FUNC_GPIO);
       gpio_ll_output_enable(&GPIO, LATCH_PIN);
-      auto* hw = RWDT_DEV_GET();
-      rwdt_ll_write_protect_disable(hw);
-      rwdt_ll_config_stage(hw, WDT_STAGE0, resetTicks, WDT_STAGE_ACTION_RESET_SYSTEM);
-      rwdt_ll_config_stage(hw, WDT_STAGE1, resetTicks, WDT_STAGE_ACTION_RESET_RTC);
-      rwdt_ll_set_flashboot_en(hw, true);
-      rwdt_ll_feed(hw);
-      rwdt_ll_enable(hw);
-      rwdt_ll_write_protect_enable(hw);
+      configureRtc(RtcHardware{RWDT_DEV_GET()}, resetTicks, resetTicks);
     }
 #endif
     // This emergency path has no mutex, heap, logging, drivers, or software

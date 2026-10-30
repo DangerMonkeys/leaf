@@ -142,6 +142,15 @@ simulator success did not establish that a native RTC reset could reboot.
 The separate WDT fault did recover through the existing interrupt-watchdog panic
 path; system events confirm two successful recoveries of that type.
 
+The emergency path was also shortening an already-running watchdog's timeout
+without first disabling it. Its old elapsed count could exceed the new timeout
+before the subsequent feed reached the RTC domain. Both ordinary enable and
+flash-boot mode are now disabled before configuration, then the watchdog is fed
+and enabled after both stages are ready. A shared register-operation policy is
+exercised by a host timing model that starts with eight seconds already elapsed;
+it detects premature reset if either enable mode remains active during a timeout
+change. This tests configuration order, not physical ROM reboot behavior.
+
 The follow-up replaces the 20 ms single reset stage with the pinned SDK's
 one-second stage timing, a second RTC-domain reset stage, and flash-boot
 protection. It also clears that protection on disarm (ordinary WDT disable does

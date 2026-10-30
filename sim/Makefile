@@ -399,11 +399,16 @@ $(BUILD)/shutdown_policy_test: $(SIM)/tests/shutdown_policy.cpp $(ROOT)/src/vari
 	@mkdir -p $(BUILD)
 	@$(CXX) -std=c++17 -Wall -Wextra -g -I$(ROOT)/src/vario $< -lpthread -o $@
 
+$(BUILD)/shutdown_rtc_test: $(SIM)/tests/shutdown_rtc.cpp $(ROOT)/src/vario/system/shutdown_guard.h $(ROOT)/src/vario/system/shutdown_rtc_policy.h
+	@mkdir -p $(BUILD)
+	@$(CXX) -std=c++17 -Wall -Wextra -g -I$(ROOT)/src/vario $< -o $@
+
 $(BUILD)/shutdown_integration_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/shutdown_integration.cpp
 	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/shutdown_integration.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
 
-test-shutdown: $(BUILD)/shutdown_policy_test $(BUILD)/shutdown_integration_test
+test-shutdown: $(BUILD)/shutdown_policy_test $(BUILD)/shutdown_rtc_test $(BUILD)/shutdown_integration_test
 	@$(BUILD)/shutdown_policy_test
+	@$(BUILD)/shutdown_rtc_test
 	@cd $(ROOT) && for mode in normal disabled lock save worker sound peripherals ble hold nested watchdog rtc recovery; do $(BUILD)/shutdown_integration_test $$mode || exit $$?; done
 
 # Build all sources consistently with the explicit developer-only menu flag.
