@@ -79,7 +79,10 @@ namespace shutdown_guard {
       gpio_ll_set_level(&GPIO, LATCH_PIN, 0);
       gpio_ll_iomux_func_sel(IO_MUX_GPIO48_REG, PIN_FUNC_GPIO);
       gpio_ll_output_enable(&GPIO, LATCH_PIN);
-      configureRtc(RtcHardware{RWDT_DEV_GET()}, resetTicks, resetTicks);
+      // State 1 is published only after armRtc() finishes. Preserve that
+      // original backstop: native RTCB recovers from the late shutdown state
+      // with this timer intact, whereas the CLR emergency path failed.
+      ensureEmergencyRtc(RtcHardware{RWDT_DEV_GET()}, active == 1, resetTicks, resetTicks);
     }
 #endif
     // This emergency path has no mutex, heap, logging, drivers, or software
@@ -262,8 +265,9 @@ namespace shutdown_guard {
   [[noreturn]] void force(Reason why) {
     trip(why);
 #ifndef LEAF_SIM
-    // Also re-arm after an ISR preempted begin()/complete() and their RTC
-    // register writes resumed. This never waits on that interrupted code.
+    // If an ISR preempted begin()/complete(), their resumed writes may have
+    // replaced/disarmed its reset timer. States 2/0 need a new timer; state 1
+    // keeps the original backstop. Never wait on the interrupted code.
     hardwareTrip();
 #endif
     for (;;) { /* Hardware reset needs no scheduler, flash, or interrupts. */

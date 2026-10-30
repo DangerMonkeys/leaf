@@ -23,11 +23,16 @@ reported Goodbye freeze. It is a test candidate, not a firmware release.
 - An independent 100 Hz hardware-timer interrupt watches GPIO2. Holding the center
   button for ten seconds releases GPIO48 even when the main loop is blocked.
   Release the button afterward: a physically held button itself supplies power.
-- The emergency ISR directly releases GPIO48 and arms a one-second RTC watchdog
-  system reset if USB/button power keeps the CPU alive, followed by a one-second
-  RTC-domain reset stage if boot still fails. Flash-boot protection remains armed
+- The emergency ISR directly releases GPIO48. During an active shutdown it
+  preserves the already-armed ten-second RTC backstop: no watchdog register write,
+  feed, or timeout change occurs at the eight-second deadline. If USB/button power
+  keeps the CPU alive, the original watchdog resets it near ten seconds after the
+  shutdown request, followed by a one-second RTC-domain escalation if needed.
+  An emergency outside a fully armed shutdown (including a ten-second button hold)
+  arms a one-second reset timer instead. Flash-boot protection remains armed
   across reset and is explicitly cleared when the application disarms the guard.
-  The latch releases immediately; only the later processor restart is delayed. Its critical path uses no driver,
+  The latch releases immediately; only the later processor restart is delayed.
+  Its critical path uses no driver,
   mutex, allocation, logging, or software restart handlers. Control calls are
   confined to Arduino's loop core, which also installs the timer. ISR state uses
   aligned volatile words rather than this Xtensa toolchain's locking atomic RMWs.
@@ -89,12 +94,12 @@ reboot clears it. RIGHT/CENTER cycles the selector; LEFT returns to Back, as in 
 | Selector | Deliberately stalls at | Expected observation |
 | --- | --- | --- |
 | OFF | None | Normal shutdown, flight saved, charging on USB, off on battery |
-| LOCK | Before logbook mutex | Latch release/reset near eight seconds; final save may not occur |
+| LOCK | Before logbook mutex | Latch release near eight seconds; RTC reset near ten; final save may not occur |
 | SAVE | Before flight finalization | Same bound; flight may remain incomplete |
 | WORK | Before Bluetooth worker stop | Same bound; essential flight save already completed |
 | BEEP | Before sound/peripheral sleep | Same bound; essential save completed |
 | I2C | Before peripheral sleep | Same bound; essential save completed |
-| BLE | Before full NimBLE deinit, after latch release | Battery latch is already low; USB resets near eight seconds |
+| BLE | Before full NimBLE deinit, after latch release | Battery latch is already low; RTC reset near ten seconds |
 | WDT | Interrupts disabled before flight save | Existing interrupt watchdog may act first; RTC backstop near ten seconds if needed |
 | RTC | Guard ISR deliberately skipped; interrupts and scheduler remain running | Exercises the independent ten-second RTC backstop, without the normal eight-second guard or interrupt-watchdog panic taking over |
 | SLP | After peripheral sleep, before display clear | Isolates sleeping peripherals from subsequent display/latch/state changes |
@@ -115,8 +120,8 @@ reboot clears it. RIGHT/CENTER cycles the selector; LEFT returns to Back, as in 
 4. With USB attached, exercise each injected fault once. Time from the shutdown
    request until reset/charging, record the selector, Bluetooth/FANET/client state,
    and serial recovery line. The eight-second limit measures latch release, not
-   the subsequent USB disconnect/reconnect: the emergency RTC restart adds about
-   one second, possible escalation another second, and initialization further time.
+   the subsequent USB disconnect/reconnect: the preserved RTC deadline adds about
+   two seconds to the original backstop, possible escalation another second, and initialization further time.
    Copy `/diagnostics/system_events.csv`, boot/heap
    diagnostics, any watchdog/core dump, and the test flight's logbook/IGC. Save
    these files before another build, and report whether USB storage returned.
@@ -176,3 +181,13 @@ with corresponding completed recovery records on the SD card. BLE still stalled
 with a blank LCD, LED on, and no USB interface. The additional SLP/CLR/LAT
 and RTCB selectors isolate the intervening operations; they do not change the
 reset mechanism. See [the detailed USB recovery assessment](bounded-shutdown-usb-recovery-2026-10-29.md).
+
+
+Later differential tests on `e93daf78` confirmed SLP recovery, a stuck CLR trial,
+and successful RTCB recovery from the late BLE boundary. During active shutdown,
+the deadline ISR now leaves the original backstop untouched rather than shortening
+it to a one-second timer. The shared policy model asserts zero register writes and
+expiry at the original ten-second bound. A new timer is still armed for emergencies
+without an active guard, and initialization/completion races retain their fallback.
+The exact cause of the prior native reset failure remains unproven; this change
+uses the independently successful path and requires CLR/BLE hardware retesting.

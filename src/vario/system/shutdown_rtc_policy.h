@@ -18,6 +18,15 @@ namespace shutdown_guard {
     hw.enable();
     hw.lock();
   }
+  // An active shutdown already owns its original ten-second backstop. The
+  // emergency ISR must not feed, shorten, or otherwise rewrite that watchdog.
+  // Only an emergency without a fully armed guard needs a new reset timer.
+  template <class Hardware>
+  __attribute__((always_inline)) inline void ensureEmergencyRtc(Hardware hw, bool alreadyArmed,
+                                                                uint32_t firstTicks,
+                                                                uint32_t secondTicks) {
+    if (!alreadyArmed) configureRtc(hw, firstTicks, secondTicks);
+  }
   template <class Hardware>
   __attribute__((always_inline)) inline void disarmRtc(Hardware hw) {
     hw.unlock();

@@ -223,3 +223,44 @@ SHA-256: `8cf5a23e973b074b6f7334ff689480409934ea109d2b6074ff197a3f3e72a58b`.
 The next requested comparison is CLR (after display clear, before latch release).
 This single successful trial does not establish repeatability or close hardware
 acceptance. No additional firmware was flashed for this test.
+
+
+### CLR failure and RTCB success on the same diagnostic candidate
+
+CLR cleared the display and then remained stuck. Windows reported no Leaf serial
+port, present VID 303A USB interface, USB error device, or accessible SD volume.
+Inventory is saved as `clr-stuck-state.json`, `clr-stuck-usb.json`, and
+`clr-stuck-volumes.json` in the `e93daf78` evidence folder. The observation bounds
+the failing transition after SLP and before normal latch release/OffUSB. It does
+not prove the clear call returned or locate the last CPU instruction.
+
+Unplug/replug restored charging. The preserved `system-events-after-clr-power-cycle.csv`
+has no completed CLR recovery before that power-on boot. SHA-256:
+`f4b999c0f8fbd6f88707967d866a96c9fafac6c69f8e9b305a4a089338b27c3c`.
+
+RTCB then produced normal sound/Goodbye, cleared the screen at the usual time,
+and rebooted to charging about twelve seconds after the initial press. The log
+records `other_watchdog` (7), completed setup at 2,086 ms, and
+`shutdown,recovered,ble-deinit,reason,4` at 2,106 ms. Thus the independent hardware
+backstop can recover from the late state. `system-events-after-rtcb.csv` has
+SHA-256 `c4d205e505f8c4ddc101f42cb4b4b8dc1e70ec77f5afb9a425e563aa4f117049`;
+it and `rtcb-result.json` are preserved alongside the CLR evidence.
+
+### Preserve the original backstop during an active shutdown
+
+The next correction leaves the original ten-second watchdog entirely untouched
+when an already-armed shutdown reaches its eight-second emergency deadline. The
+ISR still releases the latch immediately and records the emergency reason. USB
+recovery then follows the same original timer used by the successful RTCB trial,
+rather than disabling, feeding, and shortening it from the timer ISR. No driver,
+mutex, extra task/slot, heap allocation, or software restart handler is introduced.
+
+The shared native/test policy explicitly asserts zero watchdog register writes
+for an already-armed emergency, and reset at the original ten-second deadline.
+An out-of-shutdown long hold or interrupted guard initialization/completion still
+arms a reset watchdog; those fallbacks have not been removed. Simulator latch
+checks still measure the eight-second release; physical reboot occurs later.
+
+This is an evidence-based simplification, not proof of why a one-second rearm
+failed after display clearing. Native CLR and BLE must be retested, followed by
+normal shutdown, long hold, and the outstanding production acceptance checks.
