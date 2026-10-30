@@ -393,3 +393,31 @@ $(BUILD)/climb_display_average_test: $(filter-out $(BUILD)/sim/emulator/main.o,$
 test-climb-display-average: $(BUILD)/climb_display_average_test
 	@cd $(ROOT) && $(BUILD)/climb_display_average_test
 	@cd $(ROOT) && $(BUILD)/climb_display_average_test --verify-persistence
+
+.PHONY: test-shutdown
+$(BUILD)/shutdown_policy_test: $(SIM)/tests/shutdown_policy.cpp $(ROOT)/src/vario/system/shutdown_policy.h $(ROOT)/src/vario/utils/producer_gate.h
+	@mkdir -p $(BUILD)
+	@$(CXX) -std=c++17 -Wall -Wextra -g -I$(ROOT)/src/vario $< -lpthread -o $@
+
+$(BUILD)/shutdown_rtc_test: $(SIM)/tests/shutdown_rtc.cpp $(ROOT)/src/vario/system/shutdown_guard.h $(ROOT)/src/vario/system/shutdown_rtc_policy.h
+	@mkdir -p $(BUILD)
+	@$(CXX) -std=c++17 -Wall -Wextra -g -I$(ROOT)/src/vario $< -o $@
+
+$(BUILD)/shutdown_integration_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/shutdown_integration.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/shutdown_integration.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-shutdown: $(BUILD)/shutdown_policy_test $(BUILD)/shutdown_rtc_test $(BUILD)/shutdown_integration_test
+	@$(BUILD)/shutdown_policy_test
+	@$(BUILD)/shutdown_rtc_test
+	@cd $(ROOT) && for mode in normal disabled lock save worker sound peripherals asleep clear latch ble hold nested watchdog rtc rtcble recovery; do $(BUILD)/shutdown_integration_test $$mode || exit $$?; done
+
+# Build all sources consistently with the explicit developer-only menu flag.
+.PHONY: test-shutdown-menu run-shutdown-menu
+test-shutdown-menu:
+	@$(MAKE) -C $(SIM) BUILD=$(BUILD)/shutdown-menu OPT="$(OPT) -DLEAF_SHUTDOWN_FAULT_INJECTION=1" run-shutdown-menu
+
+$(BUILD)/shutdown_menu_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/shutdown_menu.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/shutdown_menu.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+run-shutdown-menu: $(BUILD)/shutdown_menu_test
+	@cd $(ROOT) && $(BUILD)/shutdown_menu_test

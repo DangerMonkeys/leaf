@@ -19,6 +19,7 @@
 #include "instruments/imu.h"
 #include "logging/buslog.h"
 #include "power.h"
+#include "system/shutdown_guard.h"
 #include "taskman.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
@@ -41,6 +42,7 @@ MessageBus<11> bus;
 TaskManager taskman;
 
 void setup() {
+  shutdown_guard::init();
   // Start USB Serial Debugging Port
   Serial.begin(115200);
   boot_diagnostics::captureResetReason();
@@ -119,6 +121,7 @@ void setup() {
 
   Serial.println("Leaf Initialized");
   heap_monitor::checkpoint("setup-complete");
+  shutdown_guard::finishBoot();
 }
 
 void loop() {
