@@ -154,9 +154,10 @@ the BLE injection are peripheral sleep, display clear, latch release, and the
 `OffUSB` state assignment. Actual NimBLE deinitialization has not run at the BLE
 fault point and cannot yet be blamed for this injected failure.
 
-## Next diagnostic candidate
+## Deployed late-boundary diagnostic candidate
 
-The next candidate adds fault boundaries without changing watchdog configuration,
+Candidate `e93daf78e766189f967b6b747a73a893e0951444`
+(`0.2.4-e93.shutdown+h3.2.6`) adds fault boundaries without changing watchdog configuration,
 reset code, shutdown order, deadlines, or task scheduling. Existing selector order
 and stage IDs are preserved; new stage IDs are appended. Added selectors:
 
@@ -177,3 +178,29 @@ the late stalls; it cannot reproduce physical reset retention.
 
 Normal OFF/connected-client Bluetooth shutdown and representative long-flight SD
 save latency remain production acceptance items. Hardware acceptance remains open.
+
+
+### Verification and deployment of the diagnostic candidate
+
+- Formatter and whitespace checks passed. Both normal and developer-fault 3.2.6
+  firmware builds passed with clean-source identifiers for `e93daf78`.
+- All 17 shutdown integration scenarios, shared RTC policy checks, concurrent
+  producer-drain checks, runtime accounting/lifecycle, and developer logging/menu
+  tests passed. Twelve injected stalls respect their modeled bounds. Rendered
+  SLP and RTCB menu screenshots were checked for clipping; short labels fit.
+- The emergency functions remain in IRAM, with no mutex/atomic helper or flash
+  constant references in their audited relocations. Static RAM remains 107,420 B
+  in the developer build; no task, stack, or task-manager slot was added.
+- The exact BIN/ELF pairs, build identifiers, test/build logs, IRAM audit, previous
+  hardware result records, flash logs, and post-flash checks are preserved in
+  `sim/build/hardware-evidence/shutdown-recovery-e93daf78-20261029-192644/`.
+- Both OTA app slots were flashed and hash-verified, exit 0. The app-mode attempt
+  caused re-enumeration; the single retry matched the same Leaf identity in
+  bootloader mode. Application USB returned on COM14/PID 0002. Both testing route
+  hashes on the SD card are unchanged.
+- Developer BIN: 2,417,616 B, SHA-256
+  `c5b0e8a7ca358ce7f3315971f6120617ce7a8016346d9e6567ca6598d889846b`.
+
+Successful post-flash startup is not proof of recovery from these injected late
+faults. The maintainer has been asked to test SLP first, with USB attached, center
+released after about three seconds, and a twenty-second observation window.
