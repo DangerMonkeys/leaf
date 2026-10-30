@@ -50,9 +50,9 @@ namespace {
       {"BLE", shutdown_guard::Stage::BleDeinit},
       {"WDT", shutdown_guard::Stage::Flight, shutdown_guard::FaultBehavior::InterruptsOff},
       {"RTC", shutdown_guard::Stage::Flight, shutdown_guard::FaultBehavior::RtcOnly},
-      {"SLEEP", shutdown_guard::Stage::Sleeping},
-      {"CLEAR", shutdown_guard::Stage::Latch},
-      {"LATCH", shutdown_guard::Stage::LatchReleased},
+      {"SLP", shutdown_guard::Stage::Sleeping},
+      {"CLR", shutdown_guard::Stage::Latch},
+      {"LAT", shutdown_guard::Stage::LatchReleased},
       {"RTCB", shutdown_guard::Stage::BleDeinit, shutdown_guard::FaultBehavior::RtcOnly}};
   constexpr uint8_t offFaultCount = sizeof(offFaultChoices) / sizeof(offFaultChoices[0]);
 }  // namespace

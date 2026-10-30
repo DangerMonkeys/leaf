@@ -162,9 +162,9 @@ and stage IDs are preserved; new stage IDs are appended. Added selectors:
 
 | Selector | Stall location | Reset path |
 | --- | --- | --- |
-| SLEEP | After peripheral sleep, before display clear | Eight-second emergency deadline |
-| CLEAR | After display clear, before latch release | Eight-second emergency deadline |
-| LATCH | After latch release, before `OffUSB` | Eight-second emergency deadline |
+| SLP | After peripheral sleep, before display clear | Eight-second emergency deadline |
+| CLR | After display clear, before latch release | Eight-second emergency deadline |
+| LAT | After latch release, before `OffUSB` | Eight-second emergency deadline |
 | RTCB | Same late location as BLE, after `OffUSB` | Independent ten-second RTC backstop |
 
 Each remains nonpersistent, one-shot, and restricted to the explicit developer

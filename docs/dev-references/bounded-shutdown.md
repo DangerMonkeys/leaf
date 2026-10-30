@@ -97,9 +97,9 @@ reboot clears it. RIGHT/CENTER cycles the selector; LEFT returns to Back, as in 
 | BLE | Before full NimBLE deinit, after latch release | Battery latch is already low; USB resets near eight seconds |
 | WDT | Interrupts disabled before flight save | Existing interrupt watchdog may act first; RTC backstop near ten seconds if needed |
 | RTC | Guard ISR deliberately skipped; interrupts and scheduler remain running | Exercises the independent ten-second RTC backstop, without the normal eight-second guard or interrupt-watchdog panic taking over |
-| SLEEP | After peripheral sleep, before display clear | Isolates sleeping peripherals from subsequent display/latch/state changes |
-| CLEAR | After display clear, before latch release | Isolates display clear from latch release |
-| LATCH | After latch release, before entering `OffUSB` | Isolates latch release from the state assignment |
+| SLP | After peripheral sleep, before display clear | Isolates sleeping peripherals from subsequent display/latch/state changes |
+| CLR | After display clear, before latch release | Isolates display clear from latch release |
+| LAT | After latch release, before entering `OffUSB` | Isolates latch release from the state assignment |
 | RTCB | Same late boundary as BLE, guard ISR skipped | Compares independent RTC recovery with the BLE emergency deadline after peripheral sleep |
 
 1. First use **OFF**, USB connected, Bluetooth off: start a short flight/timer,
@@ -173,6 +173,6 @@ model boot ROM timing, retained peripheral state, or RTC-domain reset behavior.
 
 Candidate `53927919` physically recovered from RTC, LOCK, and I2C faults on USB,
 with corresponding completed recovery records on the SD card. BLE still stalled
-with a blank LCD, LED on, and no USB interface. The additional SLEEP/CLEAR/LATCH
+with a blank LCD, LED on, and no USB interface. The additional SLP/CLR/LAT
 and RTCB selectors isolate the intervening operations; they do not change the
 reset mechanism. See [the detailed USB recovery assessment](bounded-shutdown-usb-recovery-2026-10-29.md).
