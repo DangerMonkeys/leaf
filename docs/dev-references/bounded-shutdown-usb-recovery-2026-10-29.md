@@ -302,3 +302,21 @@ The next requested physical check is the original BLE fault with USB attached,
 center released after approximately three seconds, and twenty seconds allowed
 for charging. Hardware acceptance remains open, including held-button/outside-
 shutdown long-hold recovery and normal shutdown/save/radio regression checks.
+
+
+### BLE-fault recovery with Bluetooth disabled confirmed
+
+On `0.2.4-beb.shutdown+h3.2.6`, the maintainer reports BLE fault returned to
+charging after about twelve seconds, with Bluetooth disabled in settings. The
+CSV records `other_watchdog` (7), completed setup at 2,083 ms, and
+`shutdown,recovered,ble-deinit,reason,1` at 2,103 ms. COM14/PID 0002 and SD access
+returned. This confirms late-boundary emergency recovery, not active Bluetooth
+cleanup: the injected stall occurs before full NimBLE deinitialization.
+
+The current evidence folder includes `ble-disabled-result.json` and the verified
+`system-events-after-ble-disabled.csv`, SHA-256
+`2f3f921aa2c8b6b841706d64238cfab885e6182bd0f66d328154ebf981b445da`.
+Next requested trial: enable Bluetooth broadcasting with no connected client and
+repeat BLE fault with USB attached and center released after about three seconds.
+Normal OFF with active Bluetooth must also be tested to exercise actual teardown.
+No further firmware changes or flash were needed for this trial.
