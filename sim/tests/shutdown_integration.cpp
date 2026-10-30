@@ -1,6 +1,5 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
-#include <unistd.h>
 #include <cassert>
 #include <cstdlib>
 #include <filesystem>
@@ -44,7 +43,9 @@ int main(int argc, char** argv) {
   options.acceptWarning = true;
   options.exitOnFatalError = true;
   // Fresh fixtures prevent a previous run's completed flight masking a failed save.
-  const std::string fixture = "sim/build-tests/shutdown/" + mode + "-" + std::to_string(getpid());
+  std::filesystem::create_directories("sim/build-tests/shutdown");
+  std::string fixture = "sim/build-tests/shutdown/" + mode + "-XXXXXX";
+  assert(mkdtemp(fixture.data()));
   options.cardRoot = fixture + "/card";
   options.statePath = fixture + "/state";
   sim::runtime().configure(options);

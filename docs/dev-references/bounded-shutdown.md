@@ -63,7 +63,7 @@ these assumptions. The simulator uses an extra fake timer for the RTC backstop.
 Run the formatter and the normal simulator build, then:
 
 ```sh
-make -C sim -j8 test-shutdown test-developer-logging test-runtime-capture test-runtime-lifecycle
+make -C sim -j8 test-shutdown test-developer-logging test-runtime-capture test-runtime-lifecycle test-shutdown-menu
 ```
 
 `test-shutdown` checks deadline/button counter wrap, held-button release gating,
@@ -81,7 +81,7 @@ The ordinary `leaf_3_2_6_release` build includes the protections but no fault me
 `leaf_3_2_6_shutdown` additionally defines `LEAF_SHUTDOWN_FAULT_INJECTION=1`.
 Its Developer menu has a nonpersistent, one-shot **Off fault** selector, default
 **OFF**. Developer mode must also be enabled. Test faults consume their selection;
-reboot clears it. Use this build only for assessment.
+reboot clears it. RIGHT/CENTER cycles the selector; LEFT returns to Back, as in the other Developer settings. Use this build only for assessment.
 
 | Selector | Deliberately stalls at | Expected observation |
 | --- | --- | --- |

@@ -1,6 +1,7 @@
 #include <Arduino.h>
-#include <unistd.h>
 #include <cassert>
+#include <cstdlib>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include "comms/fanet_radio.h"
@@ -27,7 +28,9 @@ void screenshot(Menu& menu, const std::string& path) {
 }
 int main() {
   sim::Runtime::Options options;
-  const std::string root = "sim/build-tests/shutdown/menu-" + std::to_string(getpid());
+  std::filesystem::create_directories("sim/build-tests/shutdown");
+  std::string root = "sim/build-tests/shutdown/menu-XXXXXX";
+  assert(mkdtemp(root.data()));
   options.httpPort = 0;
   options.speed = 0;
   options.acceptWarning = true;
@@ -48,11 +51,12 @@ int main() {
   menu.press(Button::RIGHT);
   assert(shutdown_guard::fault() == shutdown_guard::Stage::Lock);
   screenshot(menu, root + "/menu-fanet.png");
-  menu.press(Button::LEFT);
+  // Like the other Developer selectors, RIGHT/CENTER cycle; LEFT goes back.
+  for (int i = 0; i < 7; ++i) menu.press(Button::RIGHT);
   assert(shutdown_guard::fault() == shutdown_guard::Stage::None);
-  menu.press(Button::LEFT);
-  assert(shutdown_guard::fault() == shutdown_guard::Stage::Flight);  // WDT wraps left
-  menu.press(Button::RIGHT);
+  menu.press(Button::CENTER);
+  assert(shutdown_guard::fault() == shutdown_guard::Stage::Lock);
+  for (int i = 0; i < 7; ++i) menu.press(Button::RIGHT);
   assert(shutdown_guard::fault() == shutdown_guard::Stage::None);
   menu.press(Button::DOWN);
   assert(menu.cursor() == 7);  // Startup options follow the fault row
@@ -62,6 +66,8 @@ int main() {
   screenshot(menu, root + "/menu-no-fanet.png");
   menu.press(Button::UP);
   assert(menu.cursor() == 5);
+  menu.press(Button::LEFT);
+  assert(menu.cursor() == 0);
   std::cout << "Shutdown fault selector order, wrap, and both radio layouts passed; " << root
             << "\n";
 }

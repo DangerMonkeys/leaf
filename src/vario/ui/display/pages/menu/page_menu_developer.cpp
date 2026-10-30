@@ -105,7 +105,7 @@ void DeveloperMenuPage::draw() {
 #ifdef LEAF_SHUTDOWN_FAULT_INJECTION
         case cursor_developer_shutdownFault:
           if (shutdown_guard::fault() == shutdown_guard::Stage::None) offFaultIndex = 0;
-          u8g2.setCursor(58, menu_items_y[i]);
+          u8g2.setCursor(66, menu_items_y[i]);
           u8g2.print(offFaultLabels[offFaultIndex]);
           break;
 #endif
