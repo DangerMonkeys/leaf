@@ -11,7 +11,7 @@
 
 namespace {
   constexpr const char* LOGBOOK_DIR = "/logbook";
-  constexpr size_t LEAF_LOG_MAX_IGC_BYTES = 5 * 1024 * 1024;
+  constexpr size_t LEAF_LOG_MAX_IGC_BYTES = 25 * 1024 * 1024;
   constexpr const char* REPAIR_QUEUE = "/.logbook-repair.tmp";
   constexpr size_t MAX_PATH_BYTES = 512;
   File repairDirectory, repairQueue;
