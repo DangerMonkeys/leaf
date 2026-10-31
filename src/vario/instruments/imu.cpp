@@ -1,5 +1,6 @@
 #include "instruments/imu.h"
 
+#include "diagnostics/flight_diagnostics.h"
 #include "instruments/vario_timing.h"
 
 #include "dispatch/message_types.h"
@@ -225,6 +226,7 @@ void IMU::processMotion(const MotionUpdate& m) {
         fabs(gravity_ - 1.0) > GRAVITY_UPDATE_VERTICAL_TOLERANCE_G) {
       lastRejectedGravity_ = gravity_;
       gravityInitResetCount_++;
+      flightDiagnostics.record(FlightDiagnostics::Kind::GravityReset, m.t);
       gravity_ = 1.0;
       gravityVerticalRejectCount_ = 0;
       validAccelVert_ = false;
@@ -348,7 +350,9 @@ void IMU::on_receive(const MotionUpdate& msg) {
     else
       kalmanTime_ = 0;
     lastKalmanTime_ = msg.t;
-    kalmanvert_.update(kalmanTime_, baro.altF(), kalmanAccelVert_ * 9.80665, biasLearningAllowed_);
+    const uint32_t gap = kalmanvert_.update(kalmanTime_, baro.altF(), kalmanAccelVert_ * 9.80665,
+                                            biasLearningAllowed_);
+    if (gap) flightDiagnostics.record(FlightDiagnostics::Kind::KalmanReset, msg.t, gap);
     ++kalmanUpdateSampleCount_;
     if (kalmanStartupSamplesRemaining_) --kalmanStartupSamplesRemaining_;
     return;
@@ -384,7 +388,9 @@ void IMU::on_receive(const MotionUpdate& msg) {
       return;
     lastPressureTime_ = baro.lastPressureTime();
     // update kalman filter
-    kalmanvert_.update(millis() / 1000.0, baro.altF(), kalmanAccelVert_ * 9.80665f);
+    const uint32_t now = millis();
+    const uint32_t gap = kalmanvert_.update(now / 1000.0, baro.altF(), kalmanAccelVert_ * 9.80665f);
+    if (gap) flightDiagnostics.record(FlightDiagnostics::Kind::KalmanReset, now, gap);
     kalmanUpdateSampleCount_++;
     if (kalmanStartupSamplesRemaining_ > 0) {
       kalmanStartupSamplesRemaining_--;
@@ -401,6 +407,8 @@ void IMU::on_receive(const MotionUpdate& msg) {
 }
 
 void IMU::wake(GLoadTracker::ResetReason reason) {
+  flightDiagnostics.record(FlightDiagnostics::Kind::ImuReset, millis(), 0,
+                           static_cast<uint16_t>(reason));
   gLoad_.resetFilter(reason);
   kalmanvert_.reset();
   validAccelVert_ = validAccelTot_ = validLastWorldVerticalAccel_ = false;

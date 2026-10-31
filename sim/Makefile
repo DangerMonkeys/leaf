@@ -122,9 +122,9 @@ $(BUILD)/g_load_tracker_test: $(SIM)/tests/g_load_tracker.cpp $(ROOT)/src/vario/
 	@mkdir -p $(BUILD)
 	@$(CXX) -std=c++17 -Wall -Wextra -g -I$(ROOT)/src/vario $< -o $@
 
-$(BUILD)/g_load_diagnostics_test: $(SIM)/tests/g_load_diagnostics.cpp $(ROOT)/src/vario/logbook/g_load_diagnostics.h $(ROOT)/src/vario/instruments/g_load_tracker.h
+$(BUILD)/flight_diagnostics_test: $(SIM)/tests/flight_diagnostics.cpp $(ROOT)/src/vario/diagnostics/flight_diagnostics.h
 	@mkdir -p $(BUILD)
-	@$(CXX) -std=c++17 -Wall -Wextra -g -I$(ROOT)/src/vario $< -o $@
+	@$(CXX) -std=c++17 -Wall -Wextra -g -pthread -I$(ROOT)/src/vario $< -o $@
 
 $(BUILD)/g_load_integration_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/g_load_integration.cpp
 	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/g_load_integration.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
@@ -133,9 +133,9 @@ $(BUILD)/g_load_launch_test: $(SIM)/tests/g_load_launch.cpp $(ROOT)/src/vario/in
 	@mkdir -p $(dir $@)
 	@$(CXX) $(CXXFLAGS) -o $@ $<
 
-test-g-load: $(BUILD)/g_load_tracker_test $(BUILD)/g_load_diagnostics_test $(BUILD)/g_load_launch_test $(BUILD)/g_load_integration_test
+test-g-load: $(BUILD)/g_load_tracker_test $(BUILD)/flight_diagnostics_test $(BUILD)/g_load_launch_test $(BUILD)/g_load_integration_test
 	@$(BUILD)/g_load_tracker_test
-	@$(BUILD)/g_load_diagnostics_test
+	@$(BUILD)/flight_diagnostics_test
 	@$(BUILD)/g_load_launch_test
 	@cd $(ROOT) && $(BUILD)/g_load_integration_test
 
@@ -325,7 +325,7 @@ clean:
 
 .PHONY: test-flight-auto-start
 .PHONY: test-flight-start-window
-$(BUILD)/flight_start_window_test: $(SIM)/tests/flight_start_window.cpp $(SIM)/tests/flight_start_window_checks.h $(ROOT)/src/vario/logging/flight_auto_start.h $(ROOT)/src/vario/logging/flight_start_history.h
+$(BUILD)/flight_start_window_test: $(SIM)/tests/flight_start_window.cpp $(SIM)/tests/flight_start_window_checks.h $(ROOT)/src/vario/logging/flight_auto_start.h
 	@mkdir -p $(@D)
 	@$(CXX) -std=c++17 -Wall -Wextra -I$(ROOT)/src/vario -o $@ $(SIM)/tests/flight_start_window.cpp
 

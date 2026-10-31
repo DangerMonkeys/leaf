@@ -15,7 +15,6 @@
 #include "instruments/imu.h"
 #include "logbook/igc.h"
 #include "logging/flight_auto_start.h"
-#include "logging/flight_start_history.h"
 #include "logging/log.h"
 #include "power.h"
 #include "runtime.h"
@@ -62,24 +61,10 @@ namespace {
     assert(f);
     const std::string text = f.readString().c_str();
     f.close();
-    assert(text.find("LXLVSTART V=2 CAUSE=") != std::string::npos);
-    assert(text.find("LXLVSTARTCFG WINDOW_MS=") != std::string::npos);
-    assert(text.find("LXLVSTARTUNITS V=M/S C=M/S A=M") != std::string::npos);
-    assert(text.find("LXLVSTARTALT ") != std::string::npos);
-    assert(text.find("LXLVSTARTPATH ") != std::string::npos);
-    for (size_t start = 0; start < text.size();) {
-      const size_t end = text.find('\n', start);
-      if (end == std::string::npos) break;
-      const size_t length = end - start - (end > start && text[end - 1] == '\r' ? 1 : 0);
-      if (text.compare(start, 9, "LXLVSTART") == 0) assert(length <= 76);
-      start = end + 1;
-    }
-    size_t rows = 0, position = 0;
-    while ((position = text.find("LXLVSTARTDATA ", position)) != std::string::npos) {
-      ++rows;
-      ++position;
-    }
-    assert(rows > 0 && rows <= FlightStartHistory::CAPACITY);
+    assert(text.find("LXLVSTART V=3 CAUSE=") != std::string::npos);
+    for (const char* old : {"LXLVSTARTDATA", "LXLVSTARTALT", "LXLVSTARTPOS", "LXLVSTARTPATH",
+                            "LXLVSTARTCFG", "LXLVGL"})
+      assert(text.find(old) == std::string::npos);
     // Every normal close includes the end cause before the final security record.
     assert(text.rfind("\nG") != std::string::npos);
     assert(text.find("LXLVEND V=1 CAUSE=") < text.rfind("\nG"));
@@ -165,21 +150,26 @@ namespace {
 
     checkAutoStop();
 
-    // A manual pre-GPS start freezes history through a long wait for the file.
+    // A manual pre-GPS start retains only its cause/time through a long wait for the file.
     const unsigned manualAt = millis();
     flightTimer_start();
     assert(flightTimer_isRunning() && !igcFlight.started());
     fly(45000, 0, 0, false);
     assert(!igcFlight.started());
+    const uint32_t resetBeforeGps = millis();
+    MotionUpdate reset(resetBeforeGps);
+    reset.reset = true;
+    imu.on_receive(reset);
     fly(2500);
     assert(igcFlight.started());
     const String manualPath = igcFlight.trackLogPath();
     flightTimer_stop(false);
     auto text = readTrack(manualPath);
-    const std::string header = "START V=2 CAUSE=MANUAL T_MS=" + std::to_string(manualAt);
+    const std::string header = "START V=3 CAUSE=MANUAL T_MS=" + std::to_string(manualAt);
     assert(text.find(header) != std::string::npos);
-    assert(text.find(" N=30") != std::string::npos);
-    assert(text.find(" V=NA ") != std::string::npos);
+    assert(text.find(" J=0") != std::string::npos);
+    assert(text.find("LXLVFDTIME ") != std::string::npos);
+    assert(text.find("LXLVFD K=IMU N=1 T=" + std::to_string(resetBeforeGps)) != std::string::npos);
     assert(text.find("END V=1 CAUSE=MANUAL") != std::string::npos);
 
     // Disabled detection cannot leave evidence to trigger immediately on enable.
@@ -210,10 +200,9 @@ namespace {
     fly(30000);
     assert(!flightTimer_isRunning() && PageFlightSummary::isShowing());
     text = readTrack(autoPath);
-    assert(text.find("START V=2 CAUSE=AUTO") != std::string::npos);
+    assert(text.find("START V=3 CAUSE=AUTO") != std::string::npos);
     assert(text.find("END V=1 CAUSE=AUTO") != std::string::npos);
-    assert(text.find("LXLVSTARTPOS ") != std::string::npos);
-    assert(text.find(" Q=01 T=01") != std::string::npos);
+    assert(text.find(" J=1") != std::string::npos);
     fly(8000, 8);
     assert(!flightTimer_isRunning());
     PageFlightSummary summary;
@@ -240,8 +229,8 @@ namespace {
     const String climbPath = igcFlight.trackLogPath();
     flightTimer_stop(false);
     text = readTrack(climbPath);
-    assert(text.find("START V=2 CAUSE=AUTO") != std::string::npos);
-    assert(text.find(" V=NA ") != std::string::npos);
+    assert(text.find("START V=3 CAUSE=AUTO") != std::string::npos);
+    assert(text.find(" J=2") != std::string::npos);
 
     // Actual descending pressure and fused velocity use the same vertical path.
     settings.log_autoStart = false;
@@ -256,7 +245,7 @@ namespace {
     const String descentPath = igcFlight.trackLogPath();
     flightTimer_stop(false);
     text = readTrack(descentPath);
-    assert(text.find(" Q=02 T=02") != std::string::npos);
+    assert(text.find(" J=2") != std::string::npos);
 
     // Below both standalone thresholds, real pressure/IMU/GPS injection starts
     // through the blended path. The idle fixes populate its spatial window.
@@ -269,7 +258,7 @@ namespace {
     const String mixedPath = igcFlight.trackLogPath();
     flightTimer_stop(false);
     text = readTrack(mixedPath);
-    assert(text.find(" Q=04 T=04") != std::string::npos);
+    assert(text.find(" J=4") != std::string::npos);
 
     settings.log_autoStart = false;
     fly(1500);
@@ -288,6 +277,6 @@ int main() {
   flight_start_test::checkFlightStartWindows();
   checkFirmware();
   puts(
-      "Launch windows, sensor corroboration, circular history, delayed GPS, IGC causes "
+      "Launch windows, sensor corroboration, delayed GPS, IGC causes "
       "and lifecycle passed");
 }

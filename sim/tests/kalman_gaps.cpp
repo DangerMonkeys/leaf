@@ -21,7 +21,8 @@ int main() {
       assert(std::abs(filter.getVelocity() - 2) < .01);
       const double learned = filter.getAccelerationBias();
       const double nextTime = 60 + gapMs * .001;
-      filter.update(nextTime, 100 + 2 * nextTime, offset, false);
+      const uint32_t resetGap = filter.update(nextTime, 100 + 2 * nextTime, offset, false);
+      assert(resetGap == (gapMs > 1500 ? gapMs : 0));
       if (gapMs <= 1500) {
         assert(std::abs(filter.getVelocity() - 2) < .02);
         assert(filter.getAccelerationBias() == learned);

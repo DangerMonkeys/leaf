@@ -91,44 +91,20 @@ smoothing. Losing a required channel invalidates that path's window until fresh
 history replaces it. Track recording still waits for GPS, synced time, a ready
 barometer, and a writable SD card after the timer starts.
 
-While idle, a fixed RAM ring retains thirty one-second diagnostic samples,
-including when Auto Start is disabled. At timer start it freezes until the IGC
-opens, preserving evidence through a delayed GPS acquisition. A manual start
-refreshes the current second before freezing. These are diagnostics, not backfilled
-track fixes or flight time.
-
-Version 2 manufacturer L records retain the new pressure/position history and
-explicit path decisions:
+The temporary thirty-second pre-launch diagnostic ring and its STARTDATA/STARTALT/
+STARTPOS/STARTPATH records have been removed from firmware. Only the short operational
+motion window used by `FlightAutoStart` remains; launch thresholds, shared evidence and
+confirmation behavior are unchanged. Delayed GPS acquisition retains just timer-start
+uptime, cause and the accepted launch-path mask:
 
 ```text
-LXLVSTART V=2 CAUSE=AUTO T_MS=42000 N=30
-LXLVSTARTCFG WINDOW_MS=3000 GAP_MS=2000 CONFIRM_MS=1000
-LXLVSTARTFORWARD SPEED_MPS=2.23520 DIST_M=5.00
-LXLVSTARTVERT DIST_M=3.00 CLIMB_MPS_GT=0.50 SIGN=AGREE
-LXLVSTARTBLEND S_MIN=0.70 U_MIN=0.50 SCORE=S+U^2 SIGN=AGREE
-LXLVSTARTUNITS V=M/S C=M/S A=M LAT/LON=DEG S=UNCONFIRMED_SCORE
-LXLVSTARTFLAGS F=1:SPEED,2:CLIMB,4:ON,8:BLOCK,16:ALT,32:POS
-LXLVSTARTPATHS Q=CANDIDATE T=TRIGGER 1:FORWARD,2:VERTICAL,4:BLEND
-LXLVSTARTDATA DT_MS=-1000 V=2.3 C=-0.3 S=1.02 F=37
-LXLVSTARTALT DT_MS=-1000 A=638.25
-LXLVSTARTPOS DT_MS=-1000 LAT=37.4620000 LON=-121.8630000
-LXLVSTARTPATH DT_MS=-1000 Q=01 T=00
+LXLVSTART V=3 CAUSE=AUTO T_MS=42000 J=1
 ```
 
-Start causes remain AUTO or MANUAL. T_MS is timer-start uptime; DT_MS is the
-sample offset. V is now **m/s**, whereas version 1 used mph. C remains signed
-m/s. A is unadjusted pressure altitude with centimeter precision; latitude and
-longitude are decimal degrees. Unusable speed/climb are NA; unavailable altitude
-and position omit their corresponding records. F is a hexadecimal validity/state
-mask. Q and T are hexadecimal candidate and confirmed-trigger masks. S is the
-maximum unconfirmed normalized evidence across eligible paths; **S ≥1 alone is
-not a start decision**. Use T for the evaluated result. Manual refreshes do not
-claim an automatic path decision.
-
-Calls within the same clock-second replace that diagnostic entry. Offsets work
-across millis rollover, and gaps clear stale history. Version 1 recordings remain
-historical evidence for the previous fading-score detector and must be interpreted
-with their original units/configuration.
+`T_MS` is timer-start uptime, even if the track opens later. Causes are AUTO or MANUAL.
+`J` is the confirmed automatic path mask (1=forward, 2=vertical, 4=blended); manual starts
+use zero. Older START V1/V2 records are historical formats, with their original units
+and configurations. No launch-history cache is retained just for logging.
 
 At normal close, an end-cause record precedes the G checksum:
 
@@ -285,104 +261,87 @@ Erase Flight    ➡
 ⇦Prev|Back⏎|Next⇨
 </pre>
 
-# G-load diagnostic IGC records
+# G-load tracking and compact flight diagnostics
 
-The g-load experiment writes eleven Leaf manufacturer comment (`LXLV`) records per logging
-update, approximately once per second. State and interval ranges are bounded in memory; no
-per-sample SD writes are added. Diagnostics continue through GPS outages after an IGC file opens.
-The tracker also runs while waiting for the first GPS fix, or with track saving disabled.
-Raw acceleration used by auto-stop and self-test is unchanged. The User page shows the fresh
-filtered value, or `--.- g` during startup, missing input, and filter recovery.
+The temporary V1–V3 g-load snapshots, interval ranges, pending/discarded ranges and
+eleven-record per-second dump are no longer emitted. Their raw/filtered/discarded
+diagnostic range accumulators are also removed. The flight-extrema buckets remain:
+they implement the intentional 15-second launch exclusion and 30–60-second landing
+holdback, not diagnostic history.
 
-V3 headers describe the actual parameters:
+G-load filtering, both IMU chip paths, the live User-page value and saved logbook extrema
+are unchanged. The ten-sample average is approximately 0.5 seconds at 20 Hz; it is not
+a fixed-duration resampler. ICM20948 uses ±4 g per axis and LSM6DSV ±8 g per axis, with
+the accepted resultant bound accounting for all three axes. Extrema remain unavailable
+until the first history commits, roughly 75 seconds after confirmed entry. Unavailable
+values are JSON null and display as dashes.
+
+Entry still uses the same confirmed motion-window evidence as Auto Start. Automatic
+starts hand their accepted mask directly to g-load tracking. Manual starts collect fresh
+shared evidence even with Auto Start disabled, while waiting for GPS or with track saving
+disabled. Landing still needs twenty valid quiet checks: speed ≤8 mph AND absolute
+filtered climb ≤50 cm/s. Either positive activity indication vetoes landing; unavailable
+inputs clear the quiet counter. Landing clears launch evidence before a relaunch.
+These checks remain distinct from timer Auto Stop and do not eliminate its ground false positives.
+
+## Event records
+
+Each new IGC contains one configuration record:
 
 ```text
-LXLVGLCFG V=3 SLEW=3.0 AVG=10 IGNORE=15000 BUCKET=30000 LAND=20
-LXLVGLLAUNCH SOURCE=START WINDOW=SHARED H=RESERVED
-LXLVGLDET SPEED=3.57632 CLIMB=50 FRESH=500 GAP=500
+LXLVFDCFG V=1 WRITE_MS=100 GAP_MS=500 REPORT_MS=30000
 ```
 
-The settings describe slew in g/s, averaging samples, launch exclusion and pending bucket length
-in milliseconds, and consecutive landing checks. Airborne entry consumes the same confirmed
-forward, vertical or blended motion-window evidence as Auto Start (see above); it does not add
-another three-check debounce. Automatic timer starts pass their already accepted launch paths
-to the tracker. A manual start collects fresh launch evidence while logging, even with Auto Start
-disabled, before arming the 15-second guard. This also works while waiting for GPS or with track
-saving disabled. Landing clears launch history so a relaunch requires fresh confirmation.
+During a timer session, fixed-size RAM counters collect events without I/O. At most one
+record per event kind is emitted per 30-second reporting interval, only when an event
+occurred. Normal flight seconds add no diagnostic lines. A final drain before the G
+checksum preserves events in a short/partial interval. After a track opens, reporting
+continues through GPS outages; the event timestamps remain their original uptime even
+if reporting was delayed waiting for GPS.
 
-The shared launch test does not have to remain satisfied during flight. Landing still requires
-twenty valid quiet checks: speed at most 8 mph AND absolute filtered climb at most 50 cm/s.
-Either positive activity indication vetoes landing; missing inputs cannot prove ground and clear
-the quiet counter. These landing checks remain separate from timer Auto Stop. The shared launch
-thresholds are experimental: October 27's confirmed ground-only Blue recording still qualifies
-for timer Auto Start through forward evidence. Sharing does not eliminate that timer false positive;
-the eligibility replay does prevent its later uncorroborated handling from committing g-load extrema.
+```text
+LXLVFDTIME T=150000 UTC=231500
+LXLVFD K=WRITE N=2 T=123000 DT=930 R=0
+LXLVFD K=KALMAN N=1 T=124100 DT=1700 R=0
+```
 
-Each group starts with `GL`; all eleven records have a common `T` in device milliseconds, wrapping
-at 32 bits. Preserve file order rather than sorting by timestamps. The first group may follow
-earlier detector activity while waiting for GPS. One final, potentially partial interval is
-written on timer stop before the IGC G checksum. It has `Z=1` and can share a `T` with the last
-periodic group. Periodic groups have `Z=0`.
+Each nonempty report starts with one `FDTIME` uptime/UTC anchor, so original event times
+can be mapped to the flight track even after delayed reporting or a UTC midnight crossing.
+There are at most seven event lines plus that one anchor per report; no anchor is written
+for an empty report. All lines fit within 76 characters including LXLV, excluding CRLF. `N` is the number
+of events since the last report, saturating at 65535. `DT` is the greatest observed
+duration/gap in milliseconds; `T` is that event's original timestamp, with the latest
+event winning a tie. For zero-duration resets, T is the latest reset. `R` ORs reason
+bits from all events of that kind in the interval, not necessarily just the worst event.
+T wraps with the 32-bit uptime clock. WRITE timestamps mark the start of the write;
+gap timestamps mark the arriving observation after the gap.
 
-| Record | Fields |
+| K | Meaning |
 | --- | --- |
-| `GL` | Landing-veto inputs: `S` speed (m/s), `C` filtered climb (cm/s), `SV`/`CV` input validity, `FS` actual speed threshold result, `VC` actual climb threshold result, `L=FS OR VC`, `Z` final group. `L` is activity, not confirmed launch. Replay flags rather than rounded `S`. |
-| `GA` | Snapshots: raw `R` and filtered `F` (g), raw sample time `RT`, filter sample time `FT`, and validity `RV`/`FV`. `FV` includes window readiness AND age within the recorded `FRESH` parameter. |
-| `GS` | State after the check: active `ON`, airborne `A`, ground-check count `G`, reserved `H=0` (formerly airborne-check count), launch guard remaining `I` (ms on the sample clock), pending flag `P`, current bucket start `B`, committed-extrema flag `E`, transition `D`. |
-| `GQ` | Interval counts: accepted raw samples `N`, filtered outputs `F`, rejected samples `RJ`, gaps over 500 ms `GP`, clipping notifications `CL`, instrument/filter resets `RS`. Counts saturate at 65535. |
-| `GX` | Interval restart-reason bitmask `RM` (decimal), largest accepted-sample interval `DT` (ms) and its ending sample timestamp `GT`, plus this check's shared confirmed launch path mask `J` (1=forward, 2=vertical, 4=blended). `J` can remain nonzero during flight without rearming the guard. |
-| `GR` / `GF` | Raw / filtered extrema over samples delivered since the preceding diagnostic group. |
-| `GC` / `GP` | Current / previous pending bucket extrema, respectively. |
-| `GE` | Committed flight extrema; preserved through landing/relaunch within one timer session. |
-| `GD` | Pending extrema discarded since the preceding group, including at landing and timer stop. |
+| `WRITE` | Actual IGC-backed Print write call took at least 100 ms, including automatic filesystem buffer writes. The measurement includes waiting in the storage stack; it does not establish which storage layer caused the delay. |
+| `IMU` | Explicit `IMU::wake` reset. R: 1=unspecified, 2=sleep, 4=wake, 8=sensor reset message, 16=source change, 32=missing LSM acceleration, 64=invalid gravity projection, 128=bias calibration. DT=0. |
+| `GRAVITY` | Legacy gravity estimate recovery reset. DT=0. |
+| `KALMAN` | Existing >1.5-second observation-gap guard actually reinitialized the estimator. DT is the measured Kalman update interval, not an acceleration-only gap. Normal first initialization is not a reset event. |
+| `FIFO` | ICM FIFO reset. R: 1=incomplete packet, 2=backlog beyond the eight-packet drain limit. DT=0. LSM discontinuities reach IMU through its reset message. |
+| `MOTION` | Accepted g-load samples were more than 500 ms apart, causing averaging warm-up. N counts those gaps; DT/T preserve the worst accepted-sample interval. |
+| `PRESSURE` | Fresh accepted pressure observations in the ready state were more than 500 ms apart. |
 
-`D` values are 0=no transition, 1=confirmed airborne, 2=confirmed landing, 3=insufficient detector
-input, 4=tracker started, 5=tracker stopped. Counts are checks, not exact elapsed seconds.
-`I` is armed only on confirmed airborne entry and starts from the next eligible filtered sample.
+A slow diagnostic write only creates a pending event for the next reporting interval;
+it cannot recursively produce more writes in the same report. The final drain is bounded
+to one snapshot as well; writes of that snapshot, the G record, and file close cannot
+report their own latency in an already finalized IGC. File-open/close, logbook JSON,
+optional developer logs and other SD users are outside WRITE's measurement.
+Events outside a timer session are ignored, and pending counters clear at start/stop.
+Flights with track saving off, or stopped before an IGC opens, have no IGC event output.
 
-`RM` ORs all restart reasons in the interval: 1=unspecified explicit reset, 2=power sleep,
-4=power wake, 8=sensor discontinuity message, 16=IMU source change, 32=missing LSM acceleration,
-64=invalid LSM acceleration/gravity projection, 128=accepted flat-bias calibration,
-256=automatic averaging restart after a sample gap over 500 ms. `RS` counts explicit reset calls;
-the automatic gap restart increments `GP` and sets bit 256 without incrementing `RS`.
-The sensor-message reason does not distinguish driver configuration, FIFO loss and I2C recovery.
-`DT` measures every positive interval between accepted samples, even an ordinary 50 ms interval;
-it spans diagnostic groups and explicit resets. Rejected timestamps do not contribute. `DT=GT=0`
-means there was no accepted sample with a predecessor in this interval. Reasons, counts and the
-largest gap drain with each group; the sample clock continues, including across millis rollover.
+The counters and reduced traffic aid diagnosis; they do not make synchronous SD writes
+nonblocking or guarantee sensor deadlines. A simulator can verify reporting limits and
+recovery after injected delays, but physical SD latency still needs a device/card comparison.
 
-Every range record has `LO`/`HI` in g and the respective sample timestamps `LT`/`HT`.
-Empty ranges use `LO=NA HI=NA LT=0 HT=0`. Interval ranges cover delivered motion samples
-through handling and exclusion periods, not just flight-eligible samples. They preserve peaks
-between the old 1 Hz snapshots, but cannot recover samples dropped by the hardware FIFO/host
-polling path. `CL` counts published notifications that one or more slots clipped, not the number
-of lost slots; only LSM6DSV currently supplies that notification. Zero does not prove no clipping.
-
-For example, a knock can be visible in the interval even when the snapshot has returned to rest:
-
-```text
-LXLVGR T=123450 LO=0.800 HI=4.111 LT=122800 HT=123150
-LXLVGF T=123450 LO=0.950 HI=1.120 LT=122950 HT=123300
-```
-
-Unavailable snapshots are `NA`; out-of-field snapshot numbers use `OVF`. All diagnostic lines
-fit within 76 bytes, including the manufacturer prefix and excluding CRLF. V1 logs from the
-earlier experiment used `LXLF`, three snapshots per update, five ground checks, and `FV` did not
-guarantee freshness. V2 emitted ten records with three activity checks for launch and no `GX`.
-V3 preserves the existing record fields, reserves `H=0`, adds `GX`, and shares launch evidence.
-Readers must use `GLCFG V` and the recorded settings to distinguish them.
-
-The ten-sample average is approximately 0.5 seconds at the nominal 20 Hz delivered sample rate;
-it is not a fixed-duration resampler. ICM-20948 uses +/-4 g per axis and LSM6DSV +/-8 g per axis;
-the accepted magnitude bound accounts for all three axes. Flight extrema remain unavailable
-until history is committed (roughly 15+60 seconds after confirmed entry). Unavailable values
-are persisted as JSON null and displayed as dashes, rather than defaulting to 1 g.
-
-Run `make -C sim test-g-load` inside the normal simulator container for tracker, serialization,
-both real IMU instrument paths, and saved logbook/IGC checks. The standalone tracker and record
-tests also run in `.github/workflows/g-load.yaml`.
-For end-to-end replay, use `sim/recordings/g-load-diagnostics.json`,
-`sim/scripts/g-load-diagnostics.txt`, `--accept-warning --setting AUTO_STOP=0 --setting TRACK_SAVE=1`,
-and fresh SD/state directories, then run `python sim/tests/check_g_load_igc.py <generated.igc>`.
-Populate the selected PlatformIO environment's dependencies at their current pinned versions;
-an old cached IgcLogger can omit checksums and does not verify the current firmware behavior.
+Run `make -C sim test-g-load test-flight-auto-start test-vario-continuity` for the
+tracker, compact event limits, measured output, both instrument paths, lifecycle and
+Kalman gap checks. The standalone tracker/event tests also run in
+`.github/workflows/g-load.yaml`. The existing `g-load-diagnostics.json` sensor scenario
+remains useful for injected outages; `sim/tests/check_g_load_igc.py` now checks compact
+records, removal of old dumps and the closed file's checksum. Old field-data parsers
+remain applicable to historical verbose recordings only.

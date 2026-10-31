@@ -6,7 +6,7 @@
 #include "etl/message_bus.h"
 
 #include "logbook/flight.h"
-#include "logging/flight_start_history.h"
+enum class FlightStartCause : uint8_t { Manual, Automatic };
 
 struct Waypoint;
 
