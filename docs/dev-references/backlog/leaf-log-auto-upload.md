@@ -108,7 +108,8 @@ Content-Type: application/octet-stream
 <raw IGC bytes>
 ```
 
-The limit is 5 MiB. A successful response includes `flightId`, `status`, `deduped` and
+The limit is 25 MiB (26,214,400 bytes), matching manual uploads in Leaf Log. A successful
+response includes `flightId`, `status`, `deduped` and
 `account: { handle, displayName }`. Exact bytes are deduplicated per account. HTTP 200 with a
 nonempty `flightId` records delivery, including `deduped: true` or server `status: "failed"`.
 Invalid JSON or a missing ID is transient. No pilot ID is sent for routing.
@@ -158,7 +159,8 @@ shows accessible icons and rejection labels. No icon is shown for `NotApplicable
 - Backoff currently keeps the charging loop awake (`canSleepWhileCharging()` is false).
   Sleeping between retries remains an optimization to assess, not an implemented property.
 - The client configures a 10-second HTTP connection timeout and 15-second socket timeout.
-  Network-time wait is eight seconds. A 60-second deadline is checked by the upload stream;
+  Network-time wait is eight seconds. A four-minute deadline is checked by the upload stream,
+  leaving margin below Railway's five-minute request-body upload limit;
   it is not a proven end-to-end wall-clock bound across DNS, blocking TLS/socket operations
   and response-body retrieval. Cancellation can wait for an in-progress blocking operation.
   Measure real network failure/cancellation latencies before claiming tighter bounds.

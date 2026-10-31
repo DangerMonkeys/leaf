@@ -139,6 +139,22 @@ namespace {
     assert(classify("date_not_available_5_flight").disposition ==
            LeafLogCandidate::Disposition::Delivered);
   }
+  void trackSizeLimits() {
+    reset("track-size-limits");
+    addFlight("long-flight");
+    const auto path = root + "/tracks/long-flight.igc";
+    for (const auto bytes : {5u * 1024 * 1024 + 1, 25u * 1024 * 1024}) {
+      std::filesystem::resize_file(path, bytes);
+      const auto candidate = classify("long-flight");
+      assert(candidate.trackSize == bytes);
+      assert(candidate.disposition == LeafLogCandidate::Disposition::Pending);
+    }
+    std::filesystem::resize_file(path, 25u * 1024 * 1024 + 1);
+    const auto candidate = classify("long-flight");
+    assert(candidate.disposition == LeafLogCandidate::Disposition::Rejected);
+    assert(candidate.rejectionReason == "too_large");
+  }
+
   void largeLogbook() {
     reset("large");
     // beginSession has opened the directory, but has not enumerated it yet.
@@ -512,6 +528,7 @@ int main() {
   root = std::string(directory) + "/initial";
   sim::clock().setSpeed(0);
   undatedCleanup();
+  trackSizeLimits();
   largeLogbook();
   retryCurrentFlight();
   alreadySyncedAndUnauthorized();
