@@ -5,8 +5,10 @@
 #include "Arduino.h"
 #include "ArduinoJson.h"
 #include "FS.h"
+#include "instruments/ambient.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
+#include "instruments/imu.h"
 #include "logging/log.h"
 #include "navigation/gpx.h"
 #include "profiles/profile_store.h"
@@ -210,13 +212,48 @@ const String Igc::desiredFileName() const {
 void Igc::log(unsigned long durationSec) {
   // Short-circuit if we've not yet started a flight
   if (!started()) return;
-  if (gps.hasUsableFix() && baro.state() == Barometer::State::Ready)
+  const bool writeFix = gps.hasUsableFix() && baro.state() == Barometer::State::Ready;
+  if (writeFix) {
+    logSensorClock();
     logger.writeBRecord(utcTimeString(),  // Time in HHMMSS
                         latDegreeToStr(gps.location.lat()), lngDegreeToStr(gps.location.lng()),
                         true,
                         baro.alt() / 100,  // cm to meters
                         gps.altitude.meters(), igcBRecordExtensions());
+  }
+  logSensors(writeFix);
   logDiagnostics();
+}
+
+void Igc::logSensors(bool writeSample) {
+  const bool temperatureValid = ambient.state() == Ambient::State::Ready;
+  sensorLog_.update(imu.gLoad().logState(millis()), millis(), temperatureValid,
+                    temperatureValid ? ambient.temp() : 0, baro.climbRate1SecAverageValid(),
+                    writeSample, [this](const char* line) { logger.writeLRecord(line); });
+}
+
+void Igc::logSensorClock() {
+  // Anchor sensor uptimes to the same GPS clock as B records, including centiseconds.
+  // Refresh hourly or after a clock correction, rather than adding a clock line per fix.
+  const uint32_t receivedMs = millis() - gps.time.age();
+  const uint32_t utcMs =
+      ((gps.time.hour() * 60UL + gps.time.minute()) * 60 + gps.time.second()) * 1000 +
+      gps.time.centisecond() * 10;
+  const uint32_t elapsed = receivedMs - sensorClockMs_;
+  const uint32_t predicted = (sensorClockUtcMs_ + elapsed) % 86400000;
+  int32_t difference = static_cast<int32_t>(utcMs) - static_cast<int32_t>(predicted);
+  if (difference > 43200000) difference -= 86400000;
+  if (difference < -43200000) difference += 86400000;
+  if (sensorClockValid_ && elapsed < 3600000 && abs(difference) <= 2000) return;
+  char line[40];
+  const String date = utcDateString();
+  const String utc = utcTimeString();
+  snprintf(line, sizeof(line), "A%08lX%s%s%02u", (unsigned long)receivedMs, date.c_str(),
+           utc.c_str(), gps.time.centisecond());
+  logger.writeLRecord(line);
+  sensorClockValid_ = true;
+  sensorClockMs_ = receivedMs;
+  sensorClockUtcMs_ = utcMs;
 }
 
 bool Igc::startFlight() {
@@ -224,6 +261,8 @@ bool Igc::startFlight() {
   if (!success) return false;
 
   logger.setOutput(diagnosticOutput_);
+  sensorLog_.reset();
+  sensorClockValid_ = false;
 
   // Log the Header
   // A record to look like "AXLVLeaf1"
@@ -266,6 +305,7 @@ bool Igc::startFlight() {
            (unsigned long)FlightDiagnostics::SLOW_WRITE_MS,
            (unsigned long)FlightDiagnostics::GAP_MS, (unsigned long)FlightDiagnostics::REPORT_MS);
   logger.writeLRecord(config);
+  logger.writeLRecord("SENSOR V=1 G=MG T=DECI_C HEX=1");
   writeActiveNavigationDeclaration();
   log_writeStartDiagnostics(logger);
 
@@ -303,6 +343,8 @@ void Igc::markEnd(const char* cause) {
 void Igc::end(const FlightStats stats, bool showSummary) {
   // If we've not started a flight yet, don't write to disk.
   if (started()) {
+    sensorLog_.finish(imu.gLoad().logState(millis()),
+                      [this](const char* line) { logger.writeLRecord(line); });
     logDiagnostics(true);
     logger.writeGRecord();
   }

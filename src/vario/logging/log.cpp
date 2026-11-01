@@ -475,7 +475,7 @@ void log_captureValues() {
     logbook.alt = baro.altAdjusted();
     logbook.alt_above_launch = baro.altAboveLaunch();
 
-    if (baro.climbRateFilteredValid()) logbook.climb = baro.climbRateFiltered();
+    if (baro.climbRate1SecAverageValid()) logbook.climb = baro.climbRate1SecAverage();
   }
 
   if (gps.hasUsableFix()) {
@@ -534,7 +534,7 @@ void log_checkMinMaxValues() {
       logbook.alt_min = logbook.alt;
     }
 
-    if (baro.climbRateFilteredValid()) {
+    if (baro.climbRate1SecAverageValid()) {
       // check climb values for log records
       if (logbook.climb > logbook.climb_max) {
         logbook.climb_max = logbook.climb;
