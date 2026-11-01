@@ -228,8 +228,8 @@ void Igc::log(unsigned long durationSec) {
 void Igc::logSensors(bool writeSample) {
   const bool temperatureValid = ambient.state() == Ambient::State::Ready;
   sensorLog_.update(imu.gLoad().logState(millis()), millis(), temperatureValid,
-                    temperatureValid ? ambient.temp() : 0, baro.climbRate1SecAverageValid(),
-                    writeSample, [this](const char* line) { logger.writeLRecord(line); });
+                    temperatureValid ? ambient.temp() : 0, writeSample,
+                    [this](const char* line) { logger.writeLRecord(line); });
 }
 
 void Igc::logSensorClock() {

@@ -41,11 +41,12 @@ def check(path):
 
 
 def check_sensors(lines, path):
+    assert not any(line.startswith((b"LXLVX", b"LXLVP")) for line in lines)
     buckets = {}
     sample_bucket = 0
     samples = 0
     anchored = False
-    last_fix = None
+    pending_fix = False
     climb_values = []
 
     def add(bucket, g):
@@ -56,42 +57,29 @@ def check_sensors(lines, path):
         assert 0 <= g <= 14000
         values.append(g)
 
-    previous = b""
     for line in lines:
         if line.startswith(b"B"):
-            assert last_fix is None, "B record without associated sensor record"
-            last_fix = int(line[50:53]) / 10
+            assert not pending_fix, "B record without associated sensor record"
+            pending_fix = True
+            climb_values.append(int(line[50:53]) / 10)
         elif re.fullmatch(rb"LXLVA[0-9A-F]{8}[0-9]{14}", line):
             anchored = True
         elif line.startswith(b"LXLVS") and not line.startswith(b"LXLVSENSOR") and not line.startswith(b"LXLVSTART"):
-            assert re.fullmatch(rb"LXLVS[0-9A-F]{22}", line), line
-            assert anchored and last_fix is not None
+            assert re.fullmatch(rb"LXLVS[0-9A-F]{21}", line), line
+            assert anchored
             sample_bucket = int(line[13:19], 16)
             g = int(line[19:23], 16)
             temperature = int(line[23:26], 16)
-            flags = int(line[26:27], 16)
-            assert bool(flags & 1) == (g != 0xFFFF)
-            assert bool(flags & 2) == (temperature != 0x800)
-            if flags & 4:
-                assert flags & 1 and sample_bucket
-            if flags & 8:
-                climb_values.append(last_fix)
+            assert g == 0xFFFF or 0 <= g <= 14000
+            assert 0 <= temperature <= 4095
             add(sample_bucket, g)
-            last_fix = None
+            pending_fix = False
             samples += 1
-        elif line.startswith(b"LXLVX"):
-            assert re.fullmatch(rb"LXLVX[0-9A-F]{12}", line), line
-            assert previous.startswith(b"LXLVS") and len(previous) == 27
-            add(sample_bucket, int(line[13:17], 16))
-        elif line.startswith(b"LXLVP"):
-            assert re.fullmatch(rb"LXLVP[0-9A-F]{18}", line), line
-            add(int(line[13:19], 16), int(line[19:23], 16))
         elif re.fullmatch(rb"LXLV[CD][0-9A-F]{6}", line):
             bucket = int(line[5:11], 16)
             assert bucket in buckets and buckets[bucket][1] is None
             buckets[bucket] = (buckets[bucket][0], chr(line[4]))
-        previous = line
-    assert samples and last_fix is None
+    assert samples and not pending_fix
     assert all(disposition in {"C", "D"} for _, disposition in buckets.values())
     accepted = [g for values, disposition in buckets.values() if disposition == "C" for g in values]
     # Generated simulator tracks have paired logbook entries. Check reconstruction against

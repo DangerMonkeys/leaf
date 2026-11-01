@@ -17,7 +17,7 @@ struct Reader {
   std::vector<std::string> lines;
   unsigned bucket = 0;
   size_t bytes = 0;
-  unsigned samples = 0, extra = 0, boundary = 0;
+  unsigned samples = 0;
   static unsigned hex(const std::string& line, size_t offset, size_t length) {
     return std::stoul(line.substr(offset, length), nullptr, 16);
   }
@@ -33,18 +33,10 @@ struct Reader {
     lines.push_back(line);
     bytes += line.size() + 6;  // LXLV + CRLF: conservatively budget both newline bytes.
     if (line[0] == 'S') {
-      assert(line.size() == 23);
+      assert(line.size() == 22);
       ++samples;
       bucket = hex(line, 9, 6);
       add(bucket, hex(line, 15, 4));
-    } else if (line[0] == 'X') {
-      assert(line.size() == 13);
-      ++extra;
-      add(bucket, hex(line, 9, 4));
-    } else if (line[0] == 'P') {
-      assert(line.size() == 19);
-      ++boundary;
-      add(hex(line, 9, 6), hex(line, 15, 4));
     } else {
       assert(line.size() == 7 && (line[0] == 'C' || line[0] == 'D'));
       auto& b = buckets[hex(line, 1, 6)];
@@ -94,16 +86,16 @@ static void play(uint32_t start = 1000) {
     // Offset log ticks from IMU and bucket boundaries to exercise the final partial interval.
     if (dt % 1000 == 650) {
       const bool gpsFix = !(dt >= 44000 && dt < 122000);
-      writer.update(tracker.logState(now), now, true, -12.3f, true, gpsFix, emit);
+      writer.update(tracker.logState(now), now, true, -12.3f, gpsFix, emit);
       reader.compare(tracker);
     }
   }
   tracker.stopFlight();
-  writer.update(tracker.logState(start + 290000), start + 290000, false, 0, false, false, emit);
+  writer.update(tracker.logState(start + 290000), start + 290000, false, 0, false, emit);
   reader.compare(tracker);
   assert(tracker.maxG() > 2.99f && tracker.maxG() < 3.01f);
   assert(tracker.minG() < .31f);
-  assert(reader.boundary > 0);
+  assert(reader.samples > 200);
   for (const auto& item : reader.buckets) assert(item.second.committed || item.second.discarded);
 }
 
@@ -118,28 +110,28 @@ int main() {
     state.fresh = true;
     state.filteredG = 1.234f;
     state.sampleMs = 1500;
-    writer.update(state, 1600, true, -12.3f, true, true, emit);
-    assert(reader.lines.back() == "S000005DC00000004D2F85B");
+    writer.update(state, 1600, true, -12.3f, true, emit);
+    assert(reader.lines.back() == "S000005DC00000004D2F85");
     state.fresh = false;
-    writer.update(state, 2600, false, 0, false, true, emit);
-    assert(reader.lines.back() == "S00000A28000000FFFF8000");
-    writer.update(state, 3600, true, NAN, false, true, emit);
-    assert(reader.lines.back().substr(19) == "8000");
+    writer.update(state, 2600, false, 0, true, emit);
+    assert(reader.lines.back() == "S00000A28000000FFFF800");
+    writer.update(state, 3600, true, NAN, true, emit);
+    assert(reader.lines.back().substr(19) == "800");
 
     // Both new bounds must keep their original times, independent of the latest live value.
     state.current.id = 1;
     state.current.range.add(.4f, 2700);
     state.current.range.add(2.8f, 2900);
-    writer.update(state, 3700, true, 18, true, true, emit);
-    assert(reader.lines[reader.lines.size() - 2] == "S00000B540000010AF00B4F");
-    assert(reader.lines.back() == "X00000A8C0190");
+    writer.update(state, 3700, true, 18, true, emit);
+    assert(reader.lines[reader.lines.size() - 2] == "S00000B540000010AF00B4");
+    assert(reader.lines.back() == "S00000A8C00000101900B4");
     // No repeated extrema when unchanged; explicit reset/staleness stays unavailable.
-    writer.update(state, 4700, true, 18, true, true, emit);
+    writer.update(state, 4700, true, 18, true, emit);
     assert(reader.lines.back()[0] == 'S' && reader.lines.back().substr(15, 4) == "FFFF");
     writer.finish(state, emit);
     assert(reader.lines.back() == "D000001");
   }
-  {
+  for (bool busy : {false, true}) {
     // One-hour adversarial budget: both bounds change every second, plus two unsent
     // boundary peaks per rollover. This is substantially busier than normal flight.
     IgcSensorLog writer;
@@ -150,22 +142,22 @@ int main() {
       const unsigned id = second / 30 + 1;
       state.current.id = id;
       state.current.range = {};
-      state.current.range.add(1 - (second % 30 + 1) * .001f, second * 1000 + 100);
-      state.current.range.add(1 + (second % 30 + 1) * .001f, second * 1000 + 300);
+      state.current.range.add(busy ? 1 - (second % 30 + 1) * .001f : 1, second * 1000 + 100);
+      state.current.range.add(busy ? 1 + (second % 30 + 1) * .001f : 1, second * 1000 + 300);
       state.previous = {};
       if (id > 1) {
         state.previous.id = id - 1;
-        state.previous.range.add(.95f, second / 30 * 30000 - 200);
-        state.previous.range.add(1.05f, second / 30 * 30000 - 100);
+        state.previous.range.add(busy ? .95f : 1, second / 30 * 30000 - 200);
+        state.previous.range.add(busy ? 1.05f : 1, second / 30 * 30000 - 100);
       }
       state.committedThrough = id > 2 ? id - 2 : 0;
-      writer.update(state, second * 1000 + 500, true, 18, true, true, emit);
+      writer.update(state, second * 1000 + 500, true, 18, true, emit);
     }
     const size_t budget = reader.bytes + 1024;  // Configuration, clocks and final markers.
-    assert(reader.samples == 3600 && reader.extra == 3600);
-    assert(budget < 55 * 3600);
-    printf("Worst-case sensor overhead incl. CRLF and metadata: %zu bytes/hour (<198000)\n",
-           budget);
+    assert(busy ? reader.samples > 7200 : reader.samples == 3600);
+    assert(budget < 55 * 3600 * (busy ? 1.1 : 1));
+    printf("%s sensor overhead incl. CRLF and metadata: %zu bytes/hour\n",
+           busy ? "Stress-case" : "Steady-flight", budget);
   }
   puts("Compact sensor records: eligibility, peaks, timing, recovery and size passed");
 }

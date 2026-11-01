@@ -16,12 +16,12 @@ class IgcSensorLog {
     // Closing a track never accepts an unresolved tail, even if called directly.
     state.current = {};
     state.previous = {};
-    update(state, 0, false, 0, false, false, emit);
+    update(state, 0, false, 0, false, emit);
   }
 
   template <typename Emit>
   void update(const GLoadTracker::LogState& state, uint32_t nowMs, bool temperatureValid,
-              float temperatureC, bool climbValid, bool writeSample, Emit emit) {
+              float temperatureC, bool writeSample, Emit emit) {
     for (auto& slot : slots_) {
       if (!slot.id || slot.id == state.current.id || slot.id == state.previous.id) continue;
       char line[16];
@@ -45,7 +45,6 @@ class IgcSensorLog {
     uint32_t sampleMs = state.fresh ? state.sampleMs : nowMs;
     uint32_t bucket = state.fresh ? state.sampleBucket : 0;
     uint16_t g = state.fresh ? milliG(state.filteredG) : 0xFFFF;
-    bool substituted = false;
     bool extraLow = false;
     if (state.current.id && state.current.range.valid) {
       Slot& slot = find(state.current.id);
@@ -56,7 +55,6 @@ class IgcSensorLog {
         sampleMs = high ? range.maxMs : range.minMs;
         bucket = slot.id;
         g = milliG(high ? range.max : range.min);
-        substituted = true;
         extraLow = low && high && milliG(range.min) != milliG(range.max);
       }
       remember(slot, range);
@@ -67,17 +65,10 @@ class IgcSensorLog {
                               : -2048;
     temperatureValid = temperatureValid && deciC >= -2047 && deciC <= 2047;
     const uint16_t temperature = temperatureValid ? (deciC & 0xFFF) : 0x800;
-    const uint8_t flags = (g != 0xFFFF ? 1 : 0) | (temperatureValid ? 2 : 0) |
-                          (substituted ? 4 : 0) | (climbValid ? 8 : 0);
-    char line[40];
-    snprintf(line, sizeof(line), "S%08lX%06lX%04X%03X%X", (unsigned long)sampleMs,
-             (unsigned long)bucket, g, temperature, flags);
-    emit(line);
+    sample(sampleMs, bucket, g, temperature, emit);
     if (extraLow) {
-      // The second extreme inherits the bucket from the immediately preceding S record.
-      snprintf(line, sizeof(line), "X%08lX%04X", (unsigned long)state.current.range.minMs,
-               milliG(state.current.range.min));
-      emit(line);
+      sample(state.current.range.minMs, state.current.id, milliG(state.current.range.min),
+             temperature, emit);
     }
   }
 
@@ -112,16 +103,17 @@ class IgcSensorLog {
     const auto& range = bucket.range;
     const bool low = !slot.valid || milliG(range.min) < slot.min;
     const bool high = !slot.valid || milliG(range.max) > slot.max;
-    if (low) boundaryExtreme(range.minMs, slot.id, milliG(range.min), emit);
+    if (low) sample(range.minMs, slot.id, milliG(range.min), 0x800, emit);
     if (high && (!low || milliG(range.max) != milliG(range.min)))
-      boundaryExtreme(range.maxMs, slot.id, milliG(range.max), emit);
+      sample(range.maxMs, slot.id, milliG(range.max), 0x800, emit);
     remember(slot, range);
   }
   template <typename Emit>
-  static void boundaryExtreme(uint32_t sampleMs, uint32_t bucket, uint16_t g, Emit emit) {
+  static void sample(uint32_t sampleMs, uint32_t bucket, uint16_t g, uint16_t temperature,
+                     Emit emit) {
     char line[32];
-    snprintf(line, sizeof(line), "P%08lX%06lX%04X", (unsigned long)sampleMs, (unsigned long)bucket,
-             g);
+    snprintf(line, sizeof(line), "S%08lX%06lX%04X%03X", (unsigned long)sampleMs,
+             (unsigned long)bucket, g, temperature);
     emit(line);
   }
 };
