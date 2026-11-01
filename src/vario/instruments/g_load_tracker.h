@@ -5,7 +5,7 @@
 #include "instruments/vario_timing.h"
 
 // Sustained load, independent of the raw IMU value used by auto-stop and self-test.
-// All storage is bounded; diagnostics summarize samples rather than writing at IMU rate.
+// Flight buckets and small quality counters are bounded; no diagnostic sample-history ranges.
 class GLoadTracker {
  public:
   static constexpr float MAX_SLEW_G_PER_S = 3.0f;
@@ -46,7 +46,6 @@ class GLoadTracker {
     }
   };
   struct Interval {
-    Range raw, filtered, discarded;
     uint16_t samples = 0, filteredSamples = 0, rejected = 0;
     uint16_t gaps = 0, clippingReports = 0, resets = 0;
     uint16_t resetReasons = 0;
@@ -168,7 +167,6 @@ class GLoadTracker {
       increment(interval_.gaps);
       interval_.resetReasons |= static_cast<uint16_t>(ResetReason::SampleGap);
     }
-    interval_.raw.add(accelG, tMs);
     increment(interval_.samples);
     if (!hasSample_ || dt > MAX_SAMPLE_GAP_MS) {
       hasSample_ = true;
@@ -192,7 +190,6 @@ class GLoadTracker {
     for (float v : window_) sum += v;
     filtered_ = sum / AVERAGE_SAMPLES;
     filteredReady_ = true;
-    interval_.filtered.add(filtered_, tMs);
     increment(interval_.filteredSamples);
     if (!active_ || !airborne_) return;
     if (takeoffGuardArmed_) {
@@ -227,8 +224,6 @@ class GLoadTracker {
     }
   }
   void discardPending() {
-    interval_.discarded.add(previous_);
-    interval_.discarded.add(current_);
     previous_ = current_ = Range();
     bucketStarted_ = false;
   }

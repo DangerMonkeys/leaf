@@ -6,6 +6,9 @@
 #include <stdio.h>
 #include <fstream>
 
+#include <string>
+#include <vector>
+#include "diagnostics/flight_diagnostics.h"
 #include "dispatch/message_bus.h"
 #include "display_capture.h"
 #include "instruments/baro.h"
@@ -13,6 +16,7 @@
 #include "logbook/igc.h"
 #include "logbook/logbook_entry.h"
 #include "logbook/logbook_store.h"
+#include "logging/flight_diagnostic_output.h"
 #include "logging/log.h"
 #include "runtime.h"
 #include "scenario.h"
@@ -73,6 +77,33 @@ int main() {
   settings.system_autoOff = 0;
   settings.system_showWarning = false;
 
+  struct DelayedPrint : Print {
+    uint32_t delayMs = 0;
+    std::string bytes;
+    size_t write(uint8_t byte) override { return write(&byte, 1); }
+    size_t write(const uint8_t* data, size_t size) override {
+      sim::clock().advanceUs(uint64_t(delayMs) * 1000);
+      bytes.append(reinterpret_cast<const char*>(data), size);
+      return size;
+    }
+  } output;
+  FlightDiagnosticOutput measured(output);
+  flightDiagnostics.begin(millis());
+  output.delayMs = 99;
+  measured.write("fast");
+  std::vector<std::string> events;
+  auto capture = [&](const char* line) { events.emplace_back(line); };
+  flightDiagnostics.report(millis(), capture, true);
+  assert(events.empty());
+  const uint32_t slowAt = millis();
+  output.delayMs = 100;
+  measured.write("slow");
+  flightDiagnostics.report(millis(), capture, true);
+  assert(events.size() == 1);
+  assert(events[0] == "FD K=WRITE N=1 T=" + std::to_string(slowAt) + " DT=100 R=0");
+  assert(output.bytes == "fastslow");
+  flightDiagnostics.end();
+
   // Real instrument paths, including their sensor-specific validation and reset behavior.
   baro.sleep();
   for (bool gravityMode : {false, true}) {
@@ -83,7 +114,7 @@ int main() {
     assert(fabsf(imu.gLoad().filtered() - 2.5f) < .001f);
     saveLoadScreen("sim/build-tests/g-load/filtered.png");
     const auto q = imu.gLoad().takeInterval();
-    assert(q.samples == 40 && q.raw.max == 2.5f);
+    assert(q.samples == 40);
     assert(q.clippingReports == (gravityMode ? 1 : 0));
     imu.wake();
     feed(gravityMode, 0, 1);
@@ -93,7 +124,8 @@ int main() {
   imu.wake();
   imu.gLoad().takeInterval();
   feed(true, 6, 6);
-  assert(imu.gLoad().takeInterval().raw.max > 8);
+  assert(imu.getAccel() > 8);
+  assert(imu.gLoad().takeInterval().samples == 1);
   // Reset provenance comes from the real instrument branches, not just tracker calls.
   auto reason = [](GLoadTracker::ResetReason r) { return static_cast<uint16_t>(r); };
   MotionUpdate reset(millis());
@@ -148,23 +180,27 @@ int main() {
   assert(LogbookStore::readSummary(shortEntry, shortSummary));
   assert(isnan(shortSummary.maxAccelG) && isnan(shortSummary.minAccelG));
 
-  // A long flight commits extrema. Stop records the last partial interval and discarded tail.
+  // A long flight still commits extrema, without the eleven per-second diagnostic records.
   flightTimer_start();
   runFor(130000);
   const String entryPath = logbookEntry.path();
   const String trackPath = igcFlight.trackLogPath();
   assert(imu.gLoad().valid());
+  MotionUpdate sensorReset(millis());
+  sensorReset.reset = true;
+  imu.on_receive(sensorReset);
   flightTimer_stop(false);
   File entry = SD_MMC.open(entryPath.c_str());
   assert(!deserializeJson(doc, entry));
   assert(doc["metrics"]["max_accel_g"].is<float>());
   File track = SD_MMC.open(trackPath.c_str());
   const String contents = track.readString();
-  assert(contents.indexOf("LXLVGLCFG V=3") >= 0);
-  assert(contents.indexOf(" Z=1") >= 0 && contents.indexOf(" D=5") >= 0);
-  assert(contents.indexOf("LXLVGR ") >= 0 && contents.indexOf("LXLVGE ") >= 0);
-  const int finalGroup = contents.lastIndexOf("LXLVGL T=");
-  const int checksum = contents.indexOf("\nG", finalGroup);
-  assert(finalGroup >= 0 && checksum > finalGroup);
-  puts("Both IMUs, live recovery, short-flight nulls and final IGC diagnostics passed");
+  assert(contents.indexOf("LXLVGL") < 0 && contents.indexOf("LXLVGR ") < 0);
+  assert(contents.indexOf("LXLVSTARTDATA") < 0 && contents.indexOf("LXLVSTARTPOS") < 0);
+  assert(contents.indexOf("LXLVFDCFG V=1") >= 0);
+  assert(contents.indexOf("LXLVFD K=IMU N=1") >= 0);
+  assert(contents.indexOf("LXLVEND V=1") >= 0);
+  assert(contents.indexOf("LXLVEND V=1") < contents.lastIndexOf("\nG"));
+  assert(contents.length() < 20000);  // Old verbose diagnostics added roughly 85 kB here.
+  puts("Both IMUs, live recovery, short-flight nulls and compact IGC checks passed");
 }

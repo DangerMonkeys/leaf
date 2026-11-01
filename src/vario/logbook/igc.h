@@ -1,7 +1,7 @@
 #pragma once
 #include "IgcLogger.h"
 #include "flight.h"
-#include "g_load_diagnostics.h"
+#include "logging/flight_diagnostic_output.h"
 
 struct Waypoint;
 
@@ -17,12 +17,14 @@ class Igc : public Flight {
 
   const String desiredFileName() const override;
   void log(unsigned long durationSec) override;
-  void logGLoadDiagnostics(const GLoadDiagnostics& diagnostics);
+
   void markSavedPoint(const Waypoint& waypoint);
   void markEnd(const char* cause);
 
  private:
   IgcLogger logger;
+  FlightDiagnosticOutput diagnosticOutput_{file};
+  void logDiagnostics(bool final = false);
   void setPilotFromProfiles();
   void writeActiveNavigationDeclaration();
 };

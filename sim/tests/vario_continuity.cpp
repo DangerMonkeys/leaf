@@ -3,7 +3,10 @@
 #include <cmath>
 #include <cstdio>
 #include <deque>
+#include <string>
+#include <vector>
 
+#include "diagnostics/flight_diagnostics.h"
 #include "instruments/baro.h"
 #include "instruments/imu.h"
 #include "runtime.h"
@@ -104,6 +107,7 @@ int main() {
   for (bool mode : {false, true}) {
     gravityMode = mode;
     warm();
+    flightDiagnostics.begin(millis());
     for (uint32_t gap : {200, 250, 500, 501, 1000, 1500}) {
       imu.gLoad().takeInterval();
       advance(gap);
@@ -155,8 +159,26 @@ int main() {
     step();
     assert(imu.velocityValid());
     // The 1500 ms core guard is exercised independently of the 500 ms freshness check.
+    std::vector<std::string> events;
+    auto capture = [&](const char* line) { events.emplace_back(line); };
+    flightDiagnostics.report(millis(), capture, true);
+    bool sawPressureGap = false, sawImuReset = false;
+    for (const auto& event : events) {
+      assert(event.find("K=KALMAN") == std::string::npos);
+      sawPressureGap |= event.find("K=PRESSURE") != std::string::npos;
+      sawImuReset |= event.find("K=IMU") != std::string::npos;
+    }
+    assert(sawPressureGap && sawImuReset);
+    events.clear();
     step(1501);
     assert(imu.kalmanVelocity() == 0);
+    flightDiagnostics.report(millis(), capture, true);
+    bool sawKalmanReset = false;
+    for (const auto& event : events)
+      sawKalmanReset |= event.find("K=KALMAN N=1") != std::string::npos &&
+                        event.find("DT=1501") != std::string::npos;
+    assert(sawKalmanReset);
+    flightDiagnostics.end();
   }
   checkDisplayAverage();
   // Freshness and motion gap subtraction must also survive the 32-bit millisecond rollover.

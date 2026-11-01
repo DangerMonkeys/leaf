@@ -1,13 +1,16 @@
 #pragma once
 
+#include <stdint.h>
+
 // Kalman filter for position and acceleration
 class KalmanFilterPA {
  public:
   KalmanFilterPA(double positionVariance, double accelerationVariance)
       : pVar_(positionVariance), aVar_(accelerationVariance) {}
 
-  void update(double measuredTime, double measuredPosition, double measuredAcceleration,
-              bool allowBiasLearning = true);
+  // Returns the observation gap in ms only when the long-gap guard reinitializes.
+  uint32_t update(double measuredTime, double measuredPosition, double measuredAcceleration,
+                  bool allowBiasLearning = true);
 
   bool initialized() const { return initialized_; }
   // A moving start needs uncertainty in initial velocity, not a confident zero-velocity prior.

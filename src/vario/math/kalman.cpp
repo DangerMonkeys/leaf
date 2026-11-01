@@ -37,8 +37,8 @@ double KalmanFilterPA::getAcceleration() const {
   return a_;
 }
 
-void KalmanFilterPA::update(double measuredTime, double measuredPosition,
-                            double measuredAcceleration, bool allowBiasLearning) {
+uint32_t KalmanFilterPA::update(double measuredTime, double measuredPosition,
+                                double measuredAcceleration, bool allowBiasLearning) {
   if (isnan(measuredTime) || isinf(measuredTime) || isnan(measuredPosition) ||
       isinf(measuredPosition) || isnan(measuredAcceleration) || isinf(measuredAcceleration)) {
     fatalErrorInfo("measuredTime=%g, measuredPosition=%g, measuredAcceleration=%g", measuredTime,
@@ -48,16 +48,17 @@ void KalmanFilterPA::update(double measuredTime, double measuredPosition,
 
   if (!initialized_) {
     init(measuredTime, measuredPosition, measuredAcceleration);
-    return;
+    return 0;
   }
 
   double dt = measuredTime - t_;
   if (dt <= 0.0) {
-    return;
+    return 0;
   }
   if (dt > vario_timing::KALMAN_MAX_GAP_S) {
     init(measuredTime, measuredPosition, measuredAcceleration);
-    return;
+    const double gapMs = dt * 1000.0;
+    return gapMs >= UINT32_MAX ? UINT32_MAX : static_cast<uint32_t>(gapMs + 0.5);
   }
 
   double dt2 = dt * dt;
@@ -67,7 +68,7 @@ void KalmanFilterPA::update(double measuredTime, double measuredPosition,
 
   if (estimateAccelerationBias_) {
     updateWithBias(dt, measuredPosition, measuredAcceleration, allowBiasLearning);
-    return;
+    return 0;
   }
 
   // Prediction
@@ -120,6 +121,7 @@ void KalmanFilterPA::update(double measuredTime, double measuredPosition,
   p12_ -= k12 * p11_;
   p21_ -= k11 * p21_;
   p11_ -= k11 * p11_;
+  return 0;
 }
 
 void KalmanFilterPA::updateWithBias(double dt, double measuredPosition, double measuredAcceleration,

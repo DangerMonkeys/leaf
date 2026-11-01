@@ -4,6 +4,7 @@
 #include <Arduino.h>
 
 #include "comms/fanet_radio.h"
+#include "diagnostics/flight_diagnostics.h"
 #include "instruments/ambient.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
@@ -47,8 +48,12 @@ LogbookEntryFile logbookEntry;
 PageAlertTimerAutoStop pageAlertTimerAutoStop;
 
 namespace {
+  static_assert(FlightDiagnostics::GAP_MS == GLoadTracker::MAX_SAMPLE_GAP_MS,
+                "diagnostic motion-gap threshold must match the tracker");
   FlightAutoStart autoStartDetector;
-  FlightStartHistory startHistory;
+  uint32_t flightStartedAtMs = 0;
+  FlightStartCause flightStartCause = FlightStartCause::Manual;
+  uint8_t flightStartPaths = 0;
   uint8_t pendingAutoLaunchPaths = 0;
 
   FlightAutoStart::Sample autoStartSample() {
@@ -86,22 +91,20 @@ namespace {
 
   // Activity only vetoes landing. Entry uses the corroborated motion-window detector.
 
-  GLoadDiagnostics captureGLoadDiagnostics() {
-    GLoadDiagnostics d;
+  struct FlightEvidence {
+    uint32_t checkMs = 0;
+    bool speedValid = false, climbValid = false, fast = false, vertical = false;
+    uint8_t launchPaths = 0;
+    bool looksAirborne() const { return fast || vertical; }
+    bool detectorInputsValid() const { return looksAirborne() || (speedValid && climbValid); }
+  };
+  FlightEvidence captureFlightEvidence() {
+    FlightEvidence d;
     d.checkMs = millis();
     d.speedValid = gps.hasUsableFix() && gps.hasFreshGroundSpeed();
-    if (d.speedValid) {
-      d.speedMps = gps.speed.mps();
-      d.fast = gps.speed.mps() > GLoadDiagnostics::MIN_SPEED_MPS;
-    }
+    d.fast = d.speedValid && gps.speed.mps() > 8.0f * 0.44704f;
     d.climbValid = baro.state() == Barometer::State::Ready && baro.climbRateFilteredValid();
-    if (d.climbValid) {
-      d.climbCms = baro.climbRateFiltered();
-      d.vertical = abs(d.climbCms) > GLoadDiagnostics::MIN_CLIMB_CMS;
-    }
-    d.rawValid = imu.accelValid();
-    if (d.rawValid) d.rawG = imu.getAccel();
-    d.rawSampleMs = imu.lastMotionTime();
+    d.vertical = d.climbValid && abs(baro.climbRateFiltered()) > 50;
     return d;
   }
 
@@ -110,11 +113,11 @@ namespace {
     logbook.accel_min = imu.gLoad().valid() ? imu.gLoad().minG() : NAN;
   }
 
-  void writeGLoadSnapshot(const GLoadDiagnostics& d) {
-    if (trackLogEnabledForFlight && flight == &igcFlight && igcFlight.started())
-      igcFlight.logGLoadDiagnostics(d);
-    else
-      imu.gLoad().takeInterval();  // Keep intervals bounded even without a track file.
+  void captureGLoadEvents() {
+    const auto interval = imu.gLoad().takeInterval();
+    if (interval.gaps)
+      flightDiagnostics.record(FlightDiagnostics::Kind::MotionGap, interval.maxGapEndMs,
+                               interval.maxGapMs, 0, interval.gaps);
   }
 }  // namespace
 
@@ -123,8 +126,8 @@ namespace {
 void log_update() {
   // Check auto-start criteria if we haven't begun a flight yet
   if (!flight) {
-    // Always sample while idle, including when auto-start is disabled, so manual
-    // flights also retain their recent launch inputs.
+    // Evaluate automatic starts while idle. Manual flights collect fresh launch
+    // evidence once the timer is running, independent of the Auto Start setting.
     if (flightTimer_autoStart()) flightTimer_start(FlightStartCause::Automatic);
     // Check auto-stop criteria if we have started a flight (and AutoStop is ON)
   } else {
@@ -144,19 +147,18 @@ void log_update() {
 
     // Current second of the flight
     logbook.duration = currentSecondSinceBoot - logbook.logStartedAt;
-    auto gLoadDiagnostics = captureGLoadDiagnostics();
+    auto evidence = captureFlightEvidence();
     if (pendingAutoLaunchPaths) {
       // The timer already consumed this check's launch evidence; do not confirm it again.
-      gLoadDiagnostics.launchPaths = pendingAutoLaunchPaths;
+      evidence.launchPaths = pendingAutoLaunchPaths;
       pendingAutoLaunchPaths = 0;
     } else {
       // Manual logs and relaunches use the same detector, independent of Auto Start settings.
-      autoStartDetector.update(gLoadDiagnostics.checkMs, autoStartSample());
-      gLoadDiagnostics.launchPaths = autoStartDetector.triggered();
+      autoStartDetector.update(evidence.checkMs, autoStartSample());
+      evidence.launchPaths = autoStartDetector.triggered();
     }
-    imu.gLoad().updateFlightState(gLoadDiagnostics.launchPaths != 0,
-                                  gLoadDiagnostics.looksAirborne(),
-                                  gLoadDiagnostics.detectorInputsValid());
+    imu.gLoad().updateFlightState(evidence.launchPaths != 0, evidence.looksAirborne(),
+                                  evidence.detectorInputsValid());
     if (imu.gLoad().diagnosticState().transition == GLoadTracker::Transition::Landed)
       autoStartDetector.reset();  // A relaunch needs a fresh motion window after landing.
     captureGLoadExtrema();
@@ -167,7 +169,7 @@ void log_update() {
       if (!gps.hasUsableFix()) {
         // We don't have a valid GPS location yet, try again later
         logbookEntry.writePlaceholder(logbook);
-        writeGLoadSnapshot(gLoadDiagnostics);
+        captureGLoadEvents();
         return;
       }
 
@@ -175,7 +177,7 @@ void log_update() {
         // The baro is still discarding its startup samples, so it can't set a launch altitude
         // yet; try again later
         logbookEntry.writePlaceholder(logbook);
-        writeGLoadSnapshot(gLoadDiagnostics);
+        captureGLoadEvents();
         return;
       }
 
@@ -217,10 +219,10 @@ void log_update() {
     // Coalesce clock, first-fix and track association before the single milestone write.
     logbookEntry.writePlaceholder(logbook);
     // Generate a tracklog record.
-    if (trackLogEnabledForFlight && gps.hasUsableFix()) flight->log(logbook.duration);
+    captureGLoadEvents();
+    if (trackLogEnabledForFlight) flight->log(logbook.duration);
     log_captureValues();      // TODO:  Update this to an "Update Flight Stats" or something
     log_checkMinMaxValues();  // TODO:  Probably rename this to be "bound Flight Stats"
-    writeGLoadSnapshot(gLoadDiagnostics);
   }
 }
 
@@ -242,62 +244,16 @@ bool flightTimer_autoStart() {
   } else {
     start = autoStartDetector.update(millis(), sample);
   }
-  startHistory.record(millis(), sample, autoStartDetector.score(), settings.log_autoStart,
-                      inhibited, autoStartDetector.candidates(), autoStartDetector.triggered());
   if (start) Serial.println("****************************** autoStart TRUE via motion window");
   return start;
 }
 
 void log_writeStartDiagnostics(IgcLogger& logger) {
-  if (!startHistory.frozen()) return;
-  char line[80];
-  snprintf(line, sizeof(line), "START V=2 CAUSE=%s T_MS=%lu N=%u",
-           startHistory.cause() == FlightStartCause::Automatic ? "AUTO" : "MANUAL",
-           static_cast<unsigned long>(startHistory.startedAtMs()),
-           static_cast<unsigned>(startHistory.size()));
+  char line[73];
+  snprintf(line, sizeof(line), "START V=3 CAUSE=%s T_MS=%lu J=%u",
+           flightStartCause == FlightStartCause::Automatic ? "AUTO" : "MANUAL",
+           (unsigned long)flightStartedAtMs, flightStartPaths);
   logger.writeLRecord(line);
-  snprintf(line, sizeof(line), "STARTCFG WINDOW_MS=%lu GAP_MS=%lu CONFIRM_MS=%lu",
-           static_cast<unsigned long>(FlightAutoStart::WINDOW_MS),
-           static_cast<unsigned long>(FlightAutoStart::MAX_UPDATE_GAP_MS),
-           static_cast<unsigned long>(FlightAutoStart::CONFIRM_MS));
-  logger.writeLRecord(line);
-  snprintf(line, sizeof(line), "STARTFORWARD SPEED_MPS=%.5f DIST_M=%.2f",
-           FlightAutoStart::FORWARD_SPEED_MPS, FlightAutoStart::FORWARD_DISTANCE_M);
-  logger.writeLRecord(line);
-  snprintf(line, sizeof(line), "STARTVERT DIST_M=%.2f CLIMB_MPS_GT=%.2f SIGN=AGREE",
-           FlightAutoStart::VERTICAL_DISTANCE_M, FlightAutoStart::VERTICAL_CLIMB_MPS);
-  logger.writeLRecord(line);
-  snprintf(line, sizeof(line), "STARTBLEND S_MIN=%.2f U_MIN=%.2f SCORE=S+U^2 SIGN=AGREE",
-           FlightAutoStart::BLEND_MIN_FORWARD, FlightAutoStart::BLEND_MIN_VERTICAL);
-  logger.writeLRecord(line);
-  logger.writeLRecord("STARTUNITS V=M/S C=M/S A=M LAT/LON=DEG S=UNCONFIRMED_SCORE");
-  logger.writeLRecord("STARTFLAGS F=1:SPEED,2:CLIMB,4:ON,8:BLOCK,16:ALT,32:POS");
-  logger.writeLRecord("STARTPATHS Q=CANDIDATE T=TRIGGER 1:FORWARD,2:VERTICAL,4:BLEND");
-  for (size_t i = 0; i < startHistory.size(); ++i) {
-    const auto& entry = startHistory.at(i);
-    char speed[16] = "NA", climb[16] = "NA";
-    if (entry.flags & FlightStartHistory::SpeedValid)
-      snprintf(speed, sizeof(speed), "%.4g", entry.speedMps);
-    if (entry.flags & FlightStartHistory::ClimbValid)
-      snprintf(climb, sizeof(climb), "%.4g", entry.climbMps);
-    const int32_t relativeMs = -static_cast<int32_t>(startHistory.startedAtMs() - entry.atMs);
-    snprintf(line, sizeof(line), "STARTDATA DT_MS=%ld V=%s C=%s S=%.4g F=%02X",
-             static_cast<long>(relativeMs), speed, climb, entry.score, entry.flags);
-    logger.writeLRecord(line);
-    if (entry.flags & FlightStartHistory::AltitudeValid) {
-      snprintf(line, sizeof(line), "STARTALT DT_MS=%ld A=%.2f", static_cast<long>(relativeMs),
-               entry.altitudeM);
-      logger.writeLRecord(line);
-    }
-    if (entry.flags & FlightStartHistory::PositionValid) {
-      snprintf(line, sizeof(line), "STARTPOS DT_MS=%ld LAT=%.7f LON=%.7f",
-               static_cast<long>(relativeMs), entry.latitude, entry.longitude);
-      logger.writeLRecord(line);
-    }
-    snprintf(line, sizeof(line), "STARTPATH DT_MS=%ld Q=%02X T=%02X", static_cast<long>(relativeMs),
-             entry.candidates, entry.triggered);
-    logger.writeLRecord(line);
-  }
 }
 
 bool showingAlert_ = false;
@@ -387,13 +343,11 @@ void flightTimer_start(FlightStartCause cause) {
   // Release an idle repair iterator before this flight can create any files.
   LogbookStore::beginRepairSession(false);
 
-  // Freeze before resetting the detector, including its final triggering score.
-  startHistory.record(millis(), autoStartSample(), autoStartDetector.score(),
-                      settings.log_autoStart, PageFlightSummary::isShowing(),
-                      cause == FlightStartCause::Automatic ? autoStartDetector.candidates() : 0,
-                      cause == FlightStartCause::Automatic ? autoStartDetector.triggered() : 0);
-  startHistory.freeze(millis(), cause);
-  pendingAutoLaunchPaths = cause == FlightStartCause::Automatic ? autoStartDetector.triggered() : 0;
+  flightStartedAtMs = millis();
+  flightStartCause = cause;
+  flightStartPaths = cause == FlightStartCause::Automatic ? autoStartDetector.triggered() : 0;
+  pendingAutoLaunchPaths = flightStartPaths;
+  flightDiagnostics.begin(flightStartedAtMs);
   autoStartDetector.reset();
   flightTimer_resetAutoStop();
 
@@ -420,7 +374,6 @@ void flightTimer_stop(bool showSummary, FlightEndCause cause) {
   fanet_log::endFlight();
   pendingAutoLaunchPaths = 0;
   autoStartDetector.reset();
-  startHistory.reset();
   windEstimator.clearWindEstimate();  // clear the wind estimate when we stop a flight
   power.resetAutoOffCounter();  // reset the auto-off counter when we stop a flight (it could have
                                 // counted up to nearly the limit prior to auto-starting a log)
@@ -438,9 +391,7 @@ void flightTimer_stop(bool showSummary, FlightEndCause cause) {
   // ending values
   imu.gLoad().stopFlight();
   captureGLoadExtrema();
-  auto gLoadDiagnostics = captureGLoadDiagnostics();
-  gLoadDiagnostics.ending = true;
-  writeGLoadSnapshot(gLoadDiagnostics);  // Includes pending values discarded at stop, before G.
+  captureGLoadEvents();
   log_captureEndingValues();
 
   const String trackFormat = flight->started() ? flight->trackLogFormat() : "";
@@ -465,6 +416,7 @@ void flightTimer_stop(bool showSummary, FlightEndCause cause) {
     igcFlight.markEnd(causeName);
     flight->end(logbook, false);
   }
+  flightDiagnostics.end();
 
   u8g2.firstPage();
   do {

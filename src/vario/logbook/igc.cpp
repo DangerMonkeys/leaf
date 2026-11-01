@@ -7,7 +7,6 @@
 #include "FS.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
-#include "instruments/imu.h"
 #include "logging/log.h"
 #include "navigation/gpx.h"
 #include "profiles/profile_store.h"
@@ -211,20 +210,20 @@ const String Igc::desiredFileName() const {
 void Igc::log(unsigned long durationSec) {
   // Short-circuit if we've not yet started a flight
   if (!started()) return;
-  if (!gps.hasUsableFix()) return;
-  if (baro.state() != Barometer::State::Ready) return;
-
-  logger.writeBRecord(utcTimeString(),  // Time in HHMMSS
-                      latDegreeToStr(gps.location.lat()), lngDegreeToStr(gps.location.lng()), true,
-                      baro.alt() / 100,  // cm to meters
-                      gps.altitude.meters(), igcBRecordExtensions());
+  if (gps.hasUsableFix() && baro.state() == Barometer::State::Ready)
+    logger.writeBRecord(utcTimeString(),  // Time in HHMMSS
+                        latDegreeToStr(gps.location.lat()), lngDegreeToStr(gps.location.lng()),
+                        true,
+                        baro.alt() / 100,  // cm to meters
+                        gps.altitude.meters(), igcBRecordExtensions());
+  logDiagnostics();
 }
 
 bool Igc::startFlight() {
   auto success = Flight::startFlight();
   if (!success) return false;
 
-  logger.setOutput(file);
+  logger.setOutput(diagnosticOutput_);
 
   // Log the Header
   // A record to look like "AXLVLeaf1"
@@ -262,29 +261,35 @@ bool Igc::startFlight() {
                                          IRecordExtension(3, "TRT"), IRecordExtension(3, "WDI"),
                                          IRecordExtension(3, "WSP"), IRecordExtension(3, "VAR")};
   logger.writeIRecord(sizeof(extensions) / sizeof(extensions[0]), extensions);
-  char gLoadConfig[73];
-  snprintf(gLoadConfig, sizeof(gLoadConfig),
-           "GLCFG V=3 SLEW=%.1f AVG=%u IGNORE=%lu BUCKET=%lu LAND=%u",
-           GLoadTracker::MAX_SLEW_G_PER_S, GLoadTracker::AVERAGE_SAMPLES,
-           (unsigned long)GLoadTracker::TAKEOFF_IGNORE_MS,
-           (unsigned long)GLoadTracker::PENDING_BUCKET_MS, GLoadTracker::GROUND_SECONDS_TO_LAND);
-  logger.writeLRecord(gLoadConfig);
-  logger.writeLRecord("GLLAUNCH SOURCE=START WINDOW=SHARED H=RESERVED");
-  snprintf(gLoadConfig, sizeof(gLoadConfig), "GLDET SPEED=%.5f CLIMB=%ld FRESH=%lu GAP=%lu",
-           GLoadDiagnostics::MIN_SPEED_MPS, (long)GLoadDiagnostics::MIN_CLIMB_CMS,
-           (unsigned long)GLoadTracker::FRESH_MS, (unsigned long)GLoadTracker::MAX_SAMPLE_GAP_MS);
-  logger.writeLRecord(gLoadConfig);
+  char config[73];
+  snprintf(config, sizeof(config), "FDCFG V=1 WRITE_MS=%lu GAP_MS=%lu REPORT_MS=%lu",
+           (unsigned long)FlightDiagnostics::SLOW_WRITE_MS,
+           (unsigned long)FlightDiagnostics::GAP_MS, (unsigned long)FlightDiagnostics::REPORT_MS);
+  logger.writeLRecord(config);
   writeActiveNavigationDeclaration();
   log_writeStartDiagnostics(logger);
 
   return true;
 }
 
-void Igc::logGLoadDiagnostics(const GLoadDiagnostics& diagnostics) {
+void Igc::logDiagnostics(bool final) {
   if (!started()) return;
-  // Deliberately independent of GPS fix validity: detector checks continue through GPS outages.
-  writeGLoadDiagnostics(diagnostics, imu.gLoad().diagnosticState(), imu.gLoad().takeInterval(),
-                        [this](const char* line) { logger.writeLRecord(line); });
+  bool clockWritten = false;
+  flightDiagnostics.report(
+      millis(),
+      [this, &clockWritten](const char* line) {
+        if (!clockWritten) {
+          // Anchor original event uptimes to UTC without restoring a per-second record.
+          char clock[48];
+          const String utc = utcTimeString();
+          snprintf(clock, sizeof(clock), "FDTIME T=%lu UTC=%s", (unsigned long)millis(),
+                   utc.c_str());
+          logger.writeLRecord(clock);
+          clockWritten = true;
+        }
+        logger.writeLRecord(line);
+      },
+      final);
 }
 
 void Igc::markEnd(const char* cause) {
@@ -298,6 +303,7 @@ void Igc::markEnd(const char* cause) {
 void Igc::end(const FlightStats stats, bool showSummary) {
   // If we've not started a flight yet, don't write to disk.
   if (started()) {
+    logDiagnostics(true);
     logger.writeGRecord();
   }
   Flight::end(stats, showSummary);

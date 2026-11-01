@@ -10,6 +10,7 @@
 
 #include "diagnostics/diagnostic_logs.h"
 #include "diagnostics/fatal_error.h"
+#include "diagnostics/flight_diagnostics.h"
 #include "hardware/Leaf_I2C.h"
 #include "hardware/ms5611.h"
 #include "instruments/gps.h"
@@ -142,6 +143,9 @@ void Barometer::init(void) {
 
 void Barometer::on_receive(const PressureUpdate& msg) {
   if (uint32_t(millis() - msg.t) > vario_timing::SENSOR_FRESH_MS || msg.pressure <= 0) return;
+  const uint32_t gap = uint32_t(msg.t - lastPressureTime_);
+  if (state_ == State::Ready && int32_t(gap) > 0 && gap > FlightDiagnostics::GAP_MS)
+    flightDiagnostics.record(FlightDiagnostics::Kind::PressureGap, msg.t, gap);
   lastPressureTime_ = msg.t;
   if (state_ == State::Uninitialized) {
     init();

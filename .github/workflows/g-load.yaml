@@ -8,11 +8,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Check tracker and diagnostic records
+      - name: Check tracker and compact event diagnostics
         run: |
           g++ -std=c++17 -Wall -Wextra -Isrc/vario sim/tests/g_load_tracker.cpp -o /tmp/g-load-tracker
           /tmp/g-load-tracker
-          g++ -std=c++17 -Wall -Wextra -Isrc/vario sim/tests/g_load_diagnostics.cpp -o /tmp/g-load-diagnostics
+          g++ -std=c++17 -Wall -Wextra -pthread -Isrc/vario sim/tests/flight_diagnostics.cpp -o /tmp/g-load-diagnostics
           /tmp/g-load-diagnostics
           g++ -std=c++17 -Wall -Wextra -Isrc/vario sim/tests/g_load_launch.cpp -o /tmp/g-load-launch
           /tmp/g-load-launch

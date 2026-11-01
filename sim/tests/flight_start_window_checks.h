@@ -7,7 +7,6 @@
 #include <limits>
 
 #include "logging/flight_auto_start.h"
-#include "logging/flight_start_history.h"
 
 namespace flight_start_test {
   using Detector = FlightAutoStart;
@@ -262,30 +261,6 @@ namespace flight_start_test {
       assert(original.triggered() == mirrored.triggered());
     }
 
-    FlightStartHistory history;
-    for (uint32_t t = 0; t <= 34000; t += 1000)
-      history.record(t, motion(t, 5, -1), .5f, true, false);
-    assert(history.size() == 30 && history.at(0).atMs == 5000);
-    history.record(34500, motion(34500, 5, -1), 1, true, false, Detector::Forward,
-                   Detector::Forward);
-    assert(history.size() == 30 && history.at(29).atMs == 34500);
-    assert(history.at(29).speedMps == 5 * MPH && history.at(29).altitudeM == 965.5f);
-    assert(history.at(29).triggered == Detector::Forward);
-    assert(history.at(29).flags == 55);  // All sensor-valid bits plus enabled.
-    history.freeze(34500, FlightStartCause::Automatic);
-    history.record(40000, {}, 0, false, true);
-    assert(history.at(29).atMs == 34500 && history.cause() == FlightStartCause::Automatic);
-    history.reset();
-    history.record(UINT32_MAX - 100, motion(0), 0, false, false);
-    history.record(900, motion(0), 0, false, false);
-    assert(history.size() == 2);
-    Sample bad = motion(0);
-    bad.speedMps = NAN;
-    bad.climbMps = INFINITY;
-    bad.altitudeM = NAN;
-    bad.latitude = 91;
-    history.record(10000, bad, 0, true, false);
-    assert(history.size() == 1 && history.at(0).flags == FlightStartHistory::Enabled);
-    puts("Flight-start windows, boundaries, dropouts, sign symmetry and history passed");
+    puts("Flight-start windows, boundaries, dropouts, and sign symmetry passed");
   }
 }  // namespace flight_start_test
