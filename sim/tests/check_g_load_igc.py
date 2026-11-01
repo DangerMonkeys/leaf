@@ -41,21 +41,12 @@ def check(path):
 
 
 def check_sensors(lines, path):
-    assert not any(line.startswith((b"LXLVX", b"LXLVP")) for line in lines)
-    buckets = {}
-    sample_bucket = 0
+    assert not any(line.startswith((b"LXLVX", b"LXLVP", b"LXLVC", b"LXLVD")) for line in lines)
+    g_values = []
     samples = 0
     anchored = False
     pending_fix = False
     climb_values = []
-
-    def add(bucket, g):
-        if not bucket or g == 0xFFFF:
-            return
-        values, disposition = buckets.setdefault(bucket, ([], None))
-        assert disposition is None
-        assert 0 <= g <= 14000
-        values.append(g)
 
     for line in lines:
         if line.startswith(b"B"):
@@ -65,25 +56,21 @@ def check_sensors(lines, path):
         elif re.fullmatch(rb"LXLVA[0-9A-F]{8}[0-9]{14}", line):
             anchored = True
         elif line.startswith(b"LXLVS") and not line.startswith(b"LXLVSENSOR") and not line.startswith(b"LXLVSTART"):
-            assert re.fullmatch(rb"LXLVS[0-9A-F]{21}", line), line
+            assert re.fullmatch(rb"LXLVS[0-9A-F]{15}", line), line
             assert anchored
-            sample_bucket = int(line[13:19], 16)
-            g = int(line[19:23], 16)
-            temperature = int(line[23:26], 16)
+            g = int(line[13:17], 16)
+            temperature = int(line[17:20], 16)
             assert g == 0xFFFF or 0 <= g <= 14000
             assert 0 <= temperature <= 4095
-            add(sample_bucket, g)
+            if g != 0xFFFF:
+                g_values.append(g)
             pending_fix = False
             samples += 1
-        elif re.fullmatch(rb"LXLV[CD][0-9A-F]{6}", line):
-            bucket = int(line[5:11], 16)
-            assert bucket in buckets and buckets[bucket][1] is None
-            buckets[bucket] = (buckets[bucket][0], chr(line[4]))
     assert samples and not pending_fix
-    assert all(disposition in {"C", "D"} for _, disposition in buckets.values())
-    accepted = [g for values, disposition in buckets.values() if disposition == "C" for g in values]
     # Generated simulator tracks have paired logbook entries. Check reconstruction against
     # the actual persisted JSON as well as validating the wire format and checksum.
+    # IGC now leaves flight-window classification to the reader: handling/landing peaks
+    # can exceed the device extrema, but every device extreme must still be represented.
     card = next((parent for parent in Path(path).parents if parent.name == "card"), None)
     if card:
         matched = False
@@ -93,16 +80,15 @@ def check_sensors(lines, path):
                 continue
             matched = True
             metrics = data["metrics"]
-            for key, fn in (("min_accel_g", min), ("max_accel_g", max)):
+            for key in ("min_accel_g", "max_accel_g"):
                 value = metrics[key]
-                assert (value is not None) == bool(accepted)
-                if accepted:
-                    assert abs(fn(accepted) / 1000 - value) <= .00051
+                if value is not None:
+                    assert any(abs(g / 1000 - value) <= .00051 for g in g_values)
             if climb_values:
                 assert abs(max(0, max(climb_values)) - min(99.9, metrics["max_climb_rate_mps"])) <= .051
                 assert abs(min(0, min(climb_values)) - max(-9.9, metrics["max_sink_rate_mps"])) <= .051
         assert matched, "No paired simulator logbook JSON found"
-    print(f"Verified {samples} sensor records and {len(buckets)} resolved eligibility buckets")
+    print(f"Verified {samples} independent sensor records without eligibility metadata")
 
 
 if __name__ == "__main__":

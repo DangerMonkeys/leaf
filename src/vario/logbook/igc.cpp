@@ -343,8 +343,6 @@ void Igc::markEnd(const char* cause) {
 void Igc::end(const FlightStats stats, bool showSummary) {
   // If we've not started a flight yet, don't write to disk.
   if (started()) {
-    sensorLog_.finish(imu.gLoad().logState(millis()),
-                      [this](const char* line) { logger.writeLRecord(line); });
     logDiagnostics(true);
     logger.writeGRecord();
   }

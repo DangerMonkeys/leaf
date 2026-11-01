@@ -51,22 +51,23 @@ class GLoadTracker {
     uint16_t resetReasons = 0;
     uint32_t maxGapMs = 0, maxGapEndMs = 0;
   };
-  // Stable identities let a track reader apply the same delayed acceptance as the logbook.
-  // Reuse the two existing pending ranges; this is not a sample-history cache.
+  // Internal identities let the peak writer distinguish the two existing pending ranges.
+  // These identities are never written to the track; there is no sample-history cache.
   struct LogBucket {
     uint32_t id = 0;
     Range range;
   };
   struct LogState {
     LogBucket current, previous;
-    uint32_t committedThrough = 0, sampleBucket = 0, sampleMs = 0;
+    uint32_t sampleMs = 0;
     float filteredG = 1;
     bool fresh = false;
   };
   LogState logState(uint32_t nowMs) const {
-    return {{currentId_, current_}, {previousId_, previous_},
-            committedThrough_,      sampleBucket_,
-            lastSampleMs_,          filtered_,
+    return {{currentId_, current_},
+            {previousId_, previous_},
+            lastSampleMs_,
+            filtered_,
             filteredValid(nowMs)};
   }
   // Interval bitmask. SampleGap is an automatic averaging restart, not an explicit reset.
@@ -118,7 +119,6 @@ class GLoadTracker {
     interval_ = Interval();
     committed_ = Range();
     nextBucketId_ = 0;
-    committedThrough_ = 0;
     active_ = true;
     airborne_ = takeoffGuardArmed_ = false;
     groundSeconds_ = 0;
@@ -165,7 +165,6 @@ class GLoadTracker {
     increment(interval_.resets);
     interval_.resetReasons |= static_cast<uint16_t>(reason);
     hasSample_ = filteredReady_ = false;
-    sampleBucket_ = 0;
     averageCount_ = averageIndex_ = 0;
   }
   void recordClipping() { increment(interval_.clippingReports); }
@@ -211,7 +210,6 @@ class GLoadTracker {
     for (float v : window_) sum += v;
     filtered_ = sum / AVERAGE_SAMPLES;
     filteredReady_ = true;
-    sampleBucket_ = 0;
     increment(interval_.filteredSamples);
     if (!active_ || !airborne_) return;
     if (takeoffGuardArmed_) {
@@ -221,7 +219,6 @@ class GLoadTracker {
     if (int32_t(tMs - countFromMs_) < 0) return;
     rollBuckets(tMs);
     current_.add(filtered_, tMs);
-    sampleBucket_ = currentId_;
   }
   bool filteredValid(uint32_t nowMs) const {
     return filteredReady_ && uint32_t(nowMs - lastSampleMs_) <= FRESH_MS;
@@ -242,7 +239,6 @@ class GLoadTracker {
       currentId_ = ++nextBucketId_;
     } else if (tMs - bucketStartMs_ >= PENDING_BUCKET_MS) {
       committed_.add(previous_);
-      if (previousId_) committedThrough_ = previousId_;
       previous_ = current_;
       previousId_ = currentId_;
       current_ = Range();
@@ -253,7 +249,7 @@ class GLoadTracker {
   void discardPending() {
     previous_ = current_ = Range();
     bucketStarted_ = false;
-    currentId_ = previousId_ = sampleBucket_ = 0;
+    currentId_ = previousId_ = 0;
   }
   bool active_ = false, airborne_ = false, takeoffGuardArmed_ = false;
   uint8_t groundSeconds_ = 0;
@@ -269,7 +265,6 @@ class GLoadTracker {
   uint32_t bucketStartMs_ = 0;
   Range current_, previous_, committed_;
   uint32_t nextBucketId_ = 0, currentId_ = 0, previousId_ = 0;
-  uint32_t committedThrough_ = 0, sampleBucket_ = 0;
   Interval interval_;
   Transition transition_ = Transition::None;
 };
