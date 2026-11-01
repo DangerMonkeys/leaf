@@ -14,7 +14,7 @@ class FlightStats {
   int32_t alt_above_launch = 0;
   int32_t alt_above_launch_max = 0;
 
-  int32_t climb = 0;  // climb in cm/s
+  int32_t climb = 0;  // Fixed one-second climb average in cm/s, sampled at log cadence.
   int32_t climb_max = 0;
   int32_t climb_min = 0;
 
