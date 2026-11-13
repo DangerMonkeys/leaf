@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <cstdio>
@@ -9,6 +10,7 @@
 #include "diagnostics/flight_diagnostics.h"
 #include "instruments/baro.h"
 #include "instruments/imu.h"
+#include "logging/log.h"
 #include "runtime.h"
 #include "sim/clock.h"
 #include "ui/settings/settings.h"
@@ -67,8 +69,20 @@ namespace {
     int32_t blockSum = 0;
     unsigned samples = 0;
     bool differsFromFiveSeconds = false;
+    bool differsFromSensitivity = false;
+    logbook.climb_max = logbook.climb_min = 0;
+    int32_t expectedMax = 0, expectedMin = 0;
     for (unsigned i = 0; i < 1300; ++i) {
       step();
+      if (baro.climbRate1SecAverageValid()) {
+        log_captureValues();
+        assert(logbook.climb == baro.climbRate1SecAverage());
+        log_checkMinMaxValues();
+        expectedMax = std::max(expectedMax, baro.climbRate1SecAverage());
+        expectedMin = std::min(expectedMin, baro.climbRate1SecAverage());
+        assert(logbook.climb_max == expectedMax && logbook.climb_min == expectedMin);
+        differsFromSensitivity |= baro.climbRate1SecAverage() != baro.climbRateFiltered();
+      }
       displayBaro.on_receive(PressureUpdate(millis(), baro.pressure()));
       if (!displayBaro.climbRateFilteredValid()) continue;
       blockSum += displayBaro.climbRateFiltered();
@@ -87,6 +101,7 @@ namespace {
         differsFromFiveSeconds = true;
     }
     assert(differsFromFiveSeconds);  // Verifies the full twenty-second window, including wrap.
+    assert(differsFromSensitivity);  // Logbook extrema use the separate one-second signal.
     displayBaro.setClimbDisplayAverageSeconds(0);
     assert(displayBaro.climbRateForDisplay() == displayBaro.climbRateFiltered());
     varyingClimb = false;

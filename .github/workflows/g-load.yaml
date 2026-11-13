@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Check tracker and compact event diagnostics
+      - name: Check tracker, compact sensor records and event diagnostics
         run: |
           g++ -std=c++17 -Wall -Wextra -Isrc/vario sim/tests/g_load_tracker.cpp -o /tmp/g-load-tracker
           /tmp/g-load-tracker
@@ -16,3 +16,5 @@ jobs:
           /tmp/g-load-diagnostics
           g++ -std=c++17 -Wall -Wextra -Isrc/vario sim/tests/g_load_launch.cpp -o /tmp/g-load-launch
           /tmp/g-load-launch
+          g++ -std=c++17 -Wall -Wextra -Isrc/vario sim/tests/igc_sensor_log.cpp -o /tmp/igc-sensors
+          /tmp/igc-sensors

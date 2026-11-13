@@ -118,6 +118,10 @@ TARGET  := $(BUILD)/leafsim
 all: $(TARGET)
 
 .PHONY: test-g-load
+$(BUILD)/igc_sensor_log_test: $(SIM)/tests/igc_sensor_log.cpp $(ROOT)/src/vario/logbook/igc_sensor_log.h $(ROOT)/src/vario/instruments/g_load_tracker.h
+	@mkdir -p $(BUILD)
+	@$(CXX) -std=c++17 -Wall -Wextra -g -I$(ROOT)/src/vario $< -o $@
+
 $(BUILD)/g_load_tracker_test: $(SIM)/tests/g_load_tracker.cpp $(ROOT)/src/vario/instruments/g_load_tracker.h
 	@mkdir -p $(BUILD)
 	@$(CXX) -std=c++17 -Wall -Wextra -g -I$(ROOT)/src/vario $< -o $@
@@ -133,7 +137,8 @@ $(BUILD)/g_load_launch_test: $(SIM)/tests/g_load_launch.cpp $(ROOT)/src/vario/in
 	@mkdir -p $(dir $@)
 	@$(CXX) $(CXXFLAGS) -o $@ $<
 
-test-g-load: $(BUILD)/g_load_tracker_test $(BUILD)/flight_diagnostics_test $(BUILD)/g_load_launch_test $(BUILD)/g_load_integration_test
+test-g-load: $(BUILD)/igc_sensor_log_test $(BUILD)/g_load_tracker_test $(BUILD)/flight_diagnostics_test $(BUILD)/g_load_launch_test $(BUILD)/g_load_integration_test
+	@$(BUILD)/igc_sensor_log_test
 	@$(BUILD)/g_load_tracker_test
 	@$(BUILD)/flight_diagnostics_test
 	@$(BUILD)/g_load_launch_test

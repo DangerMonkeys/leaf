@@ -1,6 +1,7 @@
 #pragma once
 #include "IgcLogger.h"
 #include "flight.h"
+#include "igc_sensor_log.h"
 #include "logging/flight_diagnostic_output.h"
 
 struct Waypoint;
@@ -24,6 +25,11 @@ class Igc : public Flight {
  private:
   IgcLogger logger;
   FlightDiagnosticOutput diagnosticOutput_{file};
+  IgcSensorLog sensorLog_;
+  bool sensorClockValid_ = false;
+  uint32_t sensorClockMs_ = 0, sensorClockUtcMs_ = 0;
+  void logSensors(bool writeSample);
+  void logSensorClock();
   void logDiagnostics(bool final = false);
   void setPilotFromProfiles();
   void writeActiveNavigationDeclaration();
