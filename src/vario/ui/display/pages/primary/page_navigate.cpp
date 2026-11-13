@@ -1,5 +1,8 @@
 #include <Arduino.h>
 #include <U8g2lib.h>
+#ifdef LEAF_SIM
+#include "route_guidance.h"
+#endif
 
 #include "hardware/buttons.h"
 #include "instruments/baro.h"
@@ -182,79 +185,88 @@ void navigatePage_draw() {
     display_headerAndFooter(navigatePage_cursorPosition == cursor_navigatePage_timer,
                             showHeadingTurnArrows);
 
-    // Arrow Point - Direction of Travel
-    uint8_t pointer_w = 5;  // half width of arrowhead
-    uint8_t pointer_h = 9;  // full height of arrowhead
-    uint8_t shaft_h = 6;    // height of arrow shaft
-    uint8_t pointer_x = nav_x;
-    uint8_t pointer_y = nav_y - nav_r - 3;  // tip of arrow
+    // Fixed heading marker: one-pixel open outline, with a clear channel
+    // for the active direction arrow when it points straight ahead.
+    const auto drawHeadingMarker = [&] {
+      const int pointer_x = nav_x, pointer_y = nav_y - nav_r - 3;
+      for (int row = 0; row <= 10; ++row) {
+        const int halfWidth = 1 + (row + 1) / 2;
+        u8g2.setDrawColor(0);
+        u8g2.drawHLine(pointer_x - halfWidth + 1, pointer_y + row, 2 * halfWidth - 1);
+        u8g2.setDrawColor(1);
+        if (row == 0)
+          u8g2.drawHLine(pointer_x - 1, pointer_y, 3);
+        else {
+          u8g2.drawPixel(pointer_x - halfWidth, pointer_y + row);
+          u8g2.drawPixel(pointer_x + halfWidth, pointer_y + row);
+        }
+      }
+      u8g2.setDrawColor(0);
+      u8g2.drawBox(pointer_x - 3, pointer_y + 11, 7, 3);
+      u8g2.setDrawColor(1);
+      u8g2.drawVLine(pointer_x - 3, pointer_y + 11, 3);
+      u8g2.drawVLine(pointer_x + 3, pointer_y + 11, 3);
+    };
 
-    // erase top of circle so pointer arrow can poke through
-    u8g2.setDrawColor(0);
-    u8g2.drawBox(nav_x - pointer_w / 2, nav_y - nav_r - 2, pointer_w, 4);
-    u8g2.setDrawColor(1);
-    // arrow point
-    u8g2.drawLine(pointer_x - pointer_w, pointer_y + pointer_h, pointer_x, pointer_y);
-    u8g2.drawLine(pointer_x + pointer_w, pointer_y + pointer_h, pointer_x, pointer_y);
-    u8g2.drawLine(pointer_x - pointer_w - 1, pointer_y + pointer_h, pointer_x - 1, pointer_y);
-    u8g2.drawLine(pointer_x + pointer_w + 1, pointer_y + pointer_h, pointer_x + 1, pointer_y);
-    // arrow flats
-    u8g2.drawLine(pointer_x - pointer_w, pointer_y + pointer_h, pointer_x - pointer_w / 2,
-                  pointer_y + pointer_h);
-    u8g2.drawLine(pointer_x + pointer_w, pointer_y + pointer_h, pointer_x + pointer_w / 2,
-                  pointer_y + pointer_h);
-    // arrow shaft
-    u8g2.drawLine(pointer_x - pointer_w / 2, pointer_y + pointer_h, pointer_x - pointer_w / 2,
-                  pointer_y + pointer_h + shaft_h);
-    u8g2.drawLine(pointer_x + pointer_w / 2, pointer_y + pointer_h, pointer_x + pointer_w / 2,
-                  pointer_y + pointer_h + shaft_h);
+    drawHeadingMarker();
 
-    // Waypoint Drop Shape Placemark Icon
-    // just testing options here:
-    // displayWaypointDropletPointer(nav_x, nav_y, nav_r, gpxNav.turnToActive * DEG_TO_RAD + PI /
-    // 2);
-
-    // Waypoint Pointer
+    // Active direction: trim the outer two tip pixels into a three-pixel flat cap.
+    // The remaining head and stem retain the reference silhouette.
     if (navigator.hasNavSolution()) {
-      uint8_t waypoint_tip_r = nav_r - 1;
-      uint8_t waypoint_shaft_r = waypoint_tip_r - 3;
-      uint8_t waypoint_shaft_length = 9;
-      uint8_t waypoint_tail_r = waypoint_tip_r - 5;
-      float waypoint_arrow_angle = 0.15;  // 0.205;
-
-      float directionToWaypoint = navigator.turnToActive * DEG_TO_RAD;
-
-      int8_t waypoint_tip_x = nav_x + sin(directionToWaypoint) * waypoint_tip_r;
-      int8_t waypoint_tip_y = nav_y - cos(directionToWaypoint) * waypoint_tip_r;
-      int8_t waypoint_shaft_x = nav_x + sin(directionToWaypoint) * waypoint_shaft_r;
-      int8_t waypoint_shaft_y = nav_y - cos(directionToWaypoint) * waypoint_shaft_r;
-      int8_t waypoint_root_x =
-          nav_x + sin(directionToWaypoint) * (waypoint_shaft_r - waypoint_shaft_length);
-      int8_t waypoint_root_y =
-          nav_y - cos(directionToWaypoint) * (waypoint_shaft_r - waypoint_shaft_length);
-
-      // draw the line plus 4 others slightly offset, to "fatten" the line a bit
-      u8g2.drawLine(waypoint_root_x + 1, waypoint_root_y, waypoint_shaft_x + 1, waypoint_shaft_y);
-      u8g2.drawLine(waypoint_root_x, waypoint_root_y + 1, waypoint_shaft_x, waypoint_shaft_y + 1);
-      u8g2.drawLine(waypoint_root_x, waypoint_root_y, waypoint_shaft_x,
-                    waypoint_shaft_y);  // the center;
-      u8g2.drawLine(waypoint_root_x - 1, waypoint_root_y, waypoint_shaft_x - 1, waypoint_shaft_y);
-      u8g2.drawLine(waypoint_root_x, waypoint_root_y - 1, waypoint_shaft_x, waypoint_shaft_y - 1);
-
-      int8_t tail_left_x =
-          sin(directionToWaypoint - waypoint_arrow_angle) * (waypoint_tail_r) + nav_x;
-      int8_t tail_left_y =
-          nav_y - cos(directionToWaypoint - waypoint_arrow_angle) * (waypoint_tail_r);
-      int8_t tail_right_x =
-          sin(directionToWaypoint + waypoint_arrow_angle) * (waypoint_tail_r) + nav_x;
-      int8_t tail_right_y =
-          nav_y - cos(directionToWaypoint + waypoint_arrow_angle) * (waypoint_tail_r);
-
-      u8g2.drawLine(tail_left_x, tail_left_y, waypoint_tip_x, waypoint_tip_y);
-      u8g2.drawLine(tail_right_x, tail_right_y, waypoint_tip_x, waypoint_tip_y);
-      u8g2.drawLine(tail_right_x, tail_right_y, tail_left_x, tail_left_y);
-      u8g2.drawTriangle(tail_left_x, tail_left_y, waypoint_tip_x, waypoint_tip_y, tail_right_x,
-                        tail_right_y);
+      const double angle = navigator.turnToActive * DEG_TO_RAD;
+      const double sine = sin(angle), cosine = cos(angle);
+      struct Point {
+        int x, y;
+      };
+      const auto rotated = [&](int across, int forward) {
+        return Point{int(lround(nav_x + across * cosine + forward * sine)),
+                     int(lround(nav_y + across * sine - forward * cosine))};
+      };
+      const auto tipLeft = rotated(-1, nav_r);
+      const auto tipRight = rotated(1, nav_r);
+      const auto left = rotated(-4, nav_r - 7);
+      const auto right = rotated(4, nav_r - 7);
+      const auto stemTopLeft = rotated(-1, nav_r - 7);
+      const auto stemTopRight = rotated(1, nav_r - 7);
+      const auto stemBottomLeft = rotated(-1, nav_r - 10);
+      const auto stemBottomRight = rotated(1, nav_r - 10);
+      const auto line = [&](Point a, Point b) { u8g2.drawLine(a.x, a.y, b.x, b.y); };
+      u8g2.setDrawColor(1);
+      u8g2.drawTriangle(stemTopLeft.x, stemTopLeft.y, stemTopRight.x, stemTopRight.y,
+                        stemBottomLeft.x, stemBottomLeft.y);
+      u8g2.drawTriangle(stemTopRight.x, stemTopRight.y, stemBottomRight.x, stemBottomRight.y,
+                        stemBottomLeft.x, stemBottomLeft.y);
+      line(stemTopLeft, stemTopRight);
+      line(stemTopRight, stemBottomRight);
+      line(stemBottomRight, stemBottomLeft);
+      line(stemBottomLeft, stemTopLeft);
+      line(stemTopRight, stemBottomLeft);
+      u8g2.drawTriangle(left.x, left.y, tipLeft.x, tipLeft.y, tipRight.x, tipRight.y);
+      u8g2.drawTriangle(left.x, left.y, tipRight.x, tipRight.y, right.x, right.y);
+      // u8g2 deliberately omits a triangle edge: stroke after filling.
+      line(left, tipLeft);
+      line(tipLeft, tipRight);
+      line(tipRight, right);
+      line(right, left);
+      line(left, tipRight);
+    }
+    // Upcoming optimized intercept, drawn inside the active pointer's radius.
+    double followingTurn = 0;
+    if (navigator.followingTurn(followingTurn)) {
+      const double angle = followingTurn * DEG_TO_RAD;
+      const double tipRadius = nav_r - 10, baseRadius = tipRadius - 5;
+      const int tipX = lround(nav_x + sin(angle) * tipRadius);
+      const int tipY = lround(nav_y - cos(angle) * tipRadius);
+      const int baseX = lround(nav_x + sin(angle) * baseRadius);
+      const int baseY = lround(nav_y - cos(angle) * baseRadius);
+      const int leftX = lround(baseX - cos(angle) * 5);
+      const int leftY = lround(baseY - sin(angle) * 5);
+      const int rightX = lround(baseX + cos(angle) * 5);
+      const int rightY = lround(baseY + sin(angle) * 5);
+      u8g2.setDrawColor(1);
+      u8g2.drawLine(tipX, tipY, leftX, leftY);
+      u8g2.drawLine(tipX, tipY, rightX, rightY);
+      u8g2.drawLine(leftX, leftY, rightX, rightY);
     }
     // wind & compass
     uint8_t wind_radius = 12;
@@ -415,10 +427,8 @@ void navigatePage_draw() {
     // Progress Bar
     float percent_progress;
     if (navigator.hasNavSolution() && navigator.segmentDistance > 0) {
-      const uint16_t activeRadius = navigator.activeCylinderRadiusM();
       const double distanceToSequence = navigator.cylinderDistanceRemaining();
-      const double segmentToSequence =
-          navigator.segmentDistance > activeRadius ? navigator.segmentDistance - activeRadius : 0;
+      const double segmentToSequence = navigator.cylinderInitialLegDistance();
       percent_progress = segmentToSequence > 0 ? 1 - distanceToSequence / segmentToSequence : 1;
       if (percent_progress < 0) percent_progress = 0;
       if (percent_progress > 1) percent_progress = 1;
@@ -463,7 +473,7 @@ void navigatePage_draw() {
                            : field == NavField::DistanceToCylinder
                                ? navigator.cylinderDistanceRemaining()
                                : navigator.pointDistanceRemaining,
-                           38);
+                           38, navigator.hasNavSolution());
           break;
         case NavField::CurrentGlide:
           display_glide(x + 5, y + 20, gps.getGlideRatio());

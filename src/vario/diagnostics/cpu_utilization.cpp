@@ -79,22 +79,22 @@ namespace cpu_utilization {
     bool gpsProfiling() { return capturing() && onCaptureThread() && data->gps.active; }
 
     void settingsJson(char* out, size_t length) {
-      snprintf(
-          out, length,
-          "{\"ble\":%s,\"fanet_region\":%u,\"thermal_core\":%s,\"thermal_track\":%s,"
-          "\"basic_page\":%s,\"user_page\":%s,\"nav_page\":%s,\"debug_pages\":%s,"
-          "\"system_log\":%s,\"network_log\":%s,\"web_log\":%s,\"vario_log\":%s,\"fanet_log\":%s}",
-          settings.system_bluetoothOn ? "true" : "false", (unsigned)settings.fanet_region,
-          settings.disp_showThermalCorePage ? "true" : "false",
-          settings.disp_showThermalTrackPage ? "true" : "false",
-          settings.disp_showBasicPage ? "true" : "false",
-          settings.disp_showUserPage ? "true" : "false",
-          settings.disp_showNavPage ? "true" : "false",
-          settings.disp_showDebugPage ? "true" : "false",
-          settings.diag_systemEvents ? "true" : "false",
-          settings.diag_networkEvents ? "true" : "false",
-          settings.diag_webRequests ? "true" : "false", settings.diag_vario ? "true" : "false",
-          settings.dev_logFanet ? "true" : "false");
+      snprintf(out, length,
+               "{\"ble\":%s,\"fanet_region\":%u,\"thermal_core\":%s,\"thermal_track\":%s,"
+               "\"basic_page\":%s,\"user_page\":%s,\"nav_page\":%s,\"debug_pages\":%s,"
+               "\"system_log\":%s,\"network_log\":%s,\"web_log\":%s,\"vario_log\":%s,\"fanet_log\":"
+               "%s,\"route_optimizer\":true}",
+               settings.system_bluetoothOn ? "true" : "false", (unsigned)settings.fanet_region,
+               settings.disp_showThermalCorePage ? "true" : "false",
+               settings.disp_showThermalTrackPage ? "true" : "false",
+               settings.disp_showBasicPage ? "true" : "false",
+               settings.disp_showUserPage ? "true" : "false",
+               settings.disp_showNavPage ? "true" : "false",
+               settings.disp_showDebugPage ? "true" : "false",
+               settings.diag_systemEvents ? "true" : "false",
+               settings.diag_networkEvents ? "true" : "false",
+               settings.diag_webRequests ? "true" : "false", settings.diag_vario ? "true" : "false",
+               settings.dev_logFanet ? "true" : "false");
     }
 
 #ifndef LEAF_SIM
@@ -154,6 +154,12 @@ namespace cpu_utilization {
           return "imu_wind";
         case 7:
           return "imu";
+        case 1:
+        case 3:
+        case 4:
+        case 6:
+        case 8:
+          return "base_route";
         default:
           return "base";
       }
@@ -420,6 +426,8 @@ namespace cpu_utilization {
       start();
     previouslyEnabled = requested;
   }
+
+  uint64_t captureStartUs() { return data ? data->startUs : 0; }
 
   void beginSlot(uint8_t index, uint32_t tick, uint64_t expectedUs, uint64_t actualUs) {
     if (!capturing()) return;

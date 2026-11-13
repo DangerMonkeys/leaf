@@ -399,6 +399,24 @@ test-climb-display-average: $(BUILD)/climb_display_average_test
 	@cd $(ROOT) && $(BUILD)/climb_display_average_test
 	@cd $(ROOT) && $(BUILD)/climb_display_average_test --verify-persistence
 
+# Standalone geometry experiments; no firmware/PlatformIO dependency setup.
+.PHONY: test-route-solver
+test-route-solver:
+	$(MAKE) -C $(SIM)/route_solver BUILD=$(BUILD)/route-solver all
+
+.PHONY: test-route-guidance
+$(BUILD)/route_guidance_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/route_guidance.cpp
+	$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/route_guidance.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+test-route-guidance: $(BUILD)/route_guidance_test
+	@cd $(ROOT) && $(BUILD)/route_guidance_test
+
+.PHONY: test-route-optimizer
+$(BUILD)/route_optimizer_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/route_optimizer.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/route_optimizer.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-route-optimizer: $(BUILD)/route_optimizer_test
+	@cd $(ROOT) && $(BUILD)/route_optimizer_test
+
 .PHONY: test-shutdown
 $(BUILD)/shutdown_policy_test: $(SIM)/tests/shutdown_policy.cpp $(ROOT)/src/vario/system/shutdown_policy.h $(ROOT)/src/vario/utils/producer_gate.h
 	@mkdir -p $(BUILD)

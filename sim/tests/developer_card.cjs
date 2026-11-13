@@ -50,6 +50,10 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   assert.equal(posts.at(-1).udp_sensor_injection, false);
   assert.equal(injection.checked, false);
 
+  assert(!elements.has('devRouteOptimizer'));
+  assert(!('route_optimizer' in posts.at(-1)));
+  assert(source.includes('"/api/debug/route-optimizer", HTTP_GET'));
+
   // A stale developer page must show failure when the device rejects its POST.
   reject = true;
   injection.checked = true;

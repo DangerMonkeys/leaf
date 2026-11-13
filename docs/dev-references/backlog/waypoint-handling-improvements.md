@@ -87,7 +87,7 @@ Remaining possible follow-up items:
 Useful current constraints and estimates:
 
 - Current waypoint cap: 120 loaded waypoint entries plus the sentinel slot.
-- Current route point cap: 40 compact route references.
+- Current route point cap: 20 compact route references shared across loaded routes.
 - Current waypoint name cap: 15 display characters plus null terminator.
 - Current `Waypoint` shape is effectively `name[16] + latE7 + lonE7 + ele`, about 28 bytes.
 - Current full waypoint array is expected to be `121 * 28 = 3388` bytes.

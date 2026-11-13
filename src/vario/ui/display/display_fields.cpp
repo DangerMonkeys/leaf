@@ -162,12 +162,13 @@ void display_speed(uint8_t x, uint8_t y, const uint8_t* font, bool units) {
 }
 
 // Display distance
-void display_distance(uint8_t cursor_x, uint8_t cursor_y, double distance, uint8_t maxWidth) {
+void display_distance(uint8_t cursor_x, uint8_t cursor_y, double distance, uint8_t maxWidth,
+                      bool showZero) {
   u8g2.setCursor(cursor_x, cursor_y);
   uint8_t decimalPlaces = 0;
   uint8_t unitsSmall = true;  // assume m or ft, switch to km or mi if needed
 
-  const bool unknown = distance == 0;
+  const bool unknown = !isfinite(distance) || distance < 0 || (!showZero && distance == 0);
   if (!unknown) {
     if (settings.units_distance) {
       distance *= 3.28084;  // convert to feet
@@ -187,6 +188,8 @@ void display_distance(uint8_t cursor_x, uint8_t cursor_y, double distance, uint8
     }
   }
 
+  // A positive sub-unit distance still means the pilot is outside the boundary.
+  if (showZero && unitsSmall && distance > 0 && distance < 1) distance = 1;
   const uint8_t unit =
       settings.units_distance ? (unitsSmall ? 128 : 130) : (unitsSmall ? 127 : 129);
   if (maxWidth) {

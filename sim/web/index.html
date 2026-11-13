@@ -80,6 +80,7 @@
   .dpad .spacer { visibility: hidden; }
   .hint { color: var(--muted); font-size: 11px; text-align: center; }
 
+  @media (min-width: 901px) { .device { position: sticky; top: 12px; } }
   .panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
   section {
     background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px;
@@ -205,6 +206,44 @@
         reached</span></div>
     </section>
 
+    <section class="wide" id="routeTrialCard">
+      <h2>Route guidance lab · desktop only</h2>
+      <div class="row">
+        <label>Route <select id="routePreset">
+          <option value="tangent6">Six grazing cylinders</option>
+          <option value="mixed7">Mixed angles · grazing, reversal, oblique</option>
+          <option value="corners6">Right-angle turns</option>
+          <option value="small6">Small 35 m cylinders</option>
+          <option value="overlap6">Overlapping cylinders</option>
+          <option value="straight6">Straight route</option>
+        </select></label>
+        <label>Guidance <select id="routePolicy">
+          <option value="none">Optimized · no margin</option>
+          <option value="fixed25">Fixed 25 m margin</option>
+          <option value="fixed50">Fixed 50 m margin</option>
+          <option value="angle0_50">Angle-scaled 0–50 m</option>
+          <option value="angle5_50">Angle-scaled 5–50 m</option>
+          <option value="grazing20">Grazing only · up to 20 m</option>
+          <option value="grazing30" selected>Grazing only · up to 30 m</option>
+          <option value="grazing40">Grazing only · up to 40 m</option>
+          <option value="centers">Waypoint centers</option>
+        </select></label>
+        <button class="action" id="routeStart">Start / restart route trial</button>
+        <button class="action" id="routeDisable">Turn experiment off</button>
+        <a class="action" href="/api/route-guidance/log" download="route-guidance.csv">Save guidance trace</a>
+        <a class="action" href="/route-guidance-v2.html" target="_blank">Assessment results</a>
+        <label class="check"><input id="routeFit" type="checkbox" checked> Fit route on map</label>
+      </div>
+      <p id="routeTrialStatus" role="status">Desktop experiment off.</p>
+      <p id="routeCost" role="status" hidden></p>
+      <p class="hint">Grazing-only margins are zero within 45° of a straight-in approach, increasing
+      to their maximum at tangency. The distance comparison stays fixed at the route's original start.</p>
+      <p class="hint">Solid circles: actual valid cylinders. Orange dashed circles: planning margins.
+      Orange points and line: guidance targets. Blue cross: first entry into the actual active cylinder.
+      The cylinder fields count down to that crossing. Hollow LCD pointer: following intercept. Purple dot: GPS position.
+      Arrow keys fly; C straightens; Space pauses. Route start resets the flight and enables its log.</p>
+    </section>
+
     <section class="wide" id="freeFlightCard" hidden>
       <h2>Free flight</h2>
       <div class="row">
@@ -220,7 +259,9 @@
         <button class="action" id="flightRight">Right ↷</button>
         <button class="action" id="flightReset">Restart flight</button>
         <a class="action" href="/api/free-flight/log" download="free-flight.log" id="flightSave">Save flight recording</a>
-        <label class="check">Map zoom <input id="flightZoom" type="range" min="0.5" max="2.5" step="0.1" value="1" style="min-width:80px;width:100px"></label>
+        <button class="action" id="flightZoomOut" aria-label="Zoom map out">−</button>
+        <button class="action" id="flightZoomIn" aria-label="Zoom map in">+</button>
+        <label class="check">Map zoom <input id="flightZoom" type="range" min="0.25" max="8" step="0.05" value="1" style="min-width:80px;width:100px"></label>
       </div>
       <details open>
         <summary style="margin-top:14px;cursor:pointer">Thermal and flight settings</summary>
@@ -826,6 +867,7 @@
   connect();
 })();
 </script>
+<script src="/route-guidance.js"></script>
 <script src="/free-flight.js"></script>
 </body>
 </html>

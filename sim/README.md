@@ -345,3 +345,17 @@ sim/
 ```
 
 `play_buslog.py` is unchanged and still points at real hardware — or at the emulator.
+
+## Route navigation
+
+The simulator runs the same automatic cylinder guidance as hardware. Run
+`make -C sim test-route-optimizer test-route-guidance` to verify solver geometry,
+scheduling, sequencing, the Navigate display, and the simulator controls.
+`make -C sim test-route-solver` runs the standalone geometry regressions without
+PlatformIO dependencies.
+
+The control panel also has an opt-in **Route guidance lab** for comparing
+margin policies on synthetic presets. It replaces the simulator's active
+navigation state; use a dedicated state/card directory. See the
+[live lab guide](route_solver/GUIDANCE.md) and
+[firmware behavior and hardware results](route_solver/FIRMWARE.md).

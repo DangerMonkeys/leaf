@@ -6,6 +6,10 @@
 // even when dealing with other datatypes)
 
 #include "navigation/gpx.h"
+#include "navigation/optimized_route_guidance.h"
+#ifdef LEAF_SIM
+#include "route_guidance.h"
+#endif
 
 #include <ArduinoJson.h>
 #include <FS.h>
@@ -230,7 +234,7 @@ namespace {
     return waypointIndex && result->addRoutePoint(route, waypointIndex);
   }
 
-  bool parseCupFile(fs::FS& fs, const String& fileName, Navigator* result) {
+  bool parseCupFile(fs::FS& fs, const String& fileName, Navigator* result, NavLoadError* error) {
     File file = fs.open(fileName, FILE_READ);
     if (!file) return false;
 
@@ -278,7 +282,10 @@ namespace {
           char* wpName = trimInPlace(field);
           if (wpName[0] == '\0') continue;
           const WaypointID waypointIndex = result->findWaypointByName(wpName);
-          if (waypointIndex) result->addRoutePoint(activeRoute, waypointIndex);
+          if (waypointIndex && !result->addRoutePoint(activeRoute, waypointIndex)) {
+            if (error) *error = NavLoadError::RoutePointLimit;
+            return false;
+          }
         }
         if (activeRoute->totalPoints == 0) result->totalRoutes--;
       }
@@ -345,6 +352,7 @@ void Navigator::init() {
 }
 
 void Navigator::clear() {
+  route_guidance::invalidate();
   totalWaypoints = 0;
   totalRoutePointRefs = 0;
   totalRoutes = 0;
@@ -440,6 +448,7 @@ const RoutePoint& Navigator::routePointMeta(RouteID routeIndex, RouteIndex point
 
 // update nav data every second
 void Navigator::update() {
+  if (!hasNavSolution()) route_guidance::invalidate();
   if (hasActivePoint() && !gpsPositionUsable()) {
     clearNavSolution();
   }
@@ -477,9 +486,17 @@ void Navigator::update() {
       pointTimeRemaining = pointDistanceRemaining / gps.speed.mps();
     }
 
+    route_guidance::update(*this);
+
     // get degress to active point
     courseToActive_ = gps.courseTo(gps.location.lat(), gps.location.lng(), activePoint.latitude(),
                                    activePoint.longitude());
+#ifdef LEAF_SIM
+    // Explicitly enabled desktop experiment; achievement still uses the real cylinder above.
+    sim::updateRouteGuidance(*this, courseToActive_);
+#endif
+    if (const auto* optimized = route_guidance::solution(*this))
+      courseToActive_ = optimized->bearingDeg;
     turnToActive = courseToActive_ - gps.course.deg();
     if (turnToActive > 180)
       turnToActive -= 360;
@@ -520,6 +537,35 @@ void Navigator::update() {
   }
 }
 
+void Navigator::refreshRouteGuidance() {
+  if (const auto* optimized = route_guidance::solution(*this)) {
+    courseToActive_ = optimized->bearingDeg;
+    turnToActive = std::remainder(courseToActive_ - gps.course.deg(), 360.0);
+    const double height = gps.altitude.meters() - goalPoint_.ele;
+    glideToGoal_ = isfinite(height) && height > 0 ? optimized->goalM / height : 0;
+  }
+}
+bool Navigator::followingTurn(double& turnDeg) const {
+  if (const auto* optimized = route_guidance::solution(*this)) {
+    if (!optimized->hasFollowing) return false;
+    turnDeg = std::remainder(optimized->followingBearingDeg - gps.course.deg(), 360.0);
+    return true;
+  }
+#ifdef LEAF_SIM
+  return sim::routeGuidanceFollowingTurn(turnDeg);
+#else
+  return false;
+#endif
+}
+double Navigator::cylinderInitialLegDistance() const {
+  if (const auto* optimized = route_guidance::solution(*this)) return optimized->initialLegM;
+  double result = std::max(0.0, segmentDistance - activeCylinderRadiusM());
+#ifdef LEAF_SIM
+  double distance = 0;
+  sim::routeGuidanceCylinderDistance(distance, &result);
+#endif
+  return result;
+}
 // Start, Sequence, and End Navigation Functions
 
 bool Navigator::activatePoint(WaypointID pointIndex) { return activatePoint(pointIndex, true); }
@@ -527,6 +573,7 @@ bool Navigator::activatePoint(WaypointID pointIndex) { return activatePoint(poin
 bool Navigator::activatePoint(WaypointID pointIndex, bool playSound) {
   if (!pointIndex || pointIndex > totalWaypoints) return false;
 
+  route_guidance::invalidate();
   navigating = true;
   reachedGoal_ = false;
   lastNavType_ = LastNavType::Point;
@@ -577,6 +624,7 @@ bool Navigator::activateRoute(RouteID routeIndex, RouteIndex routePointIndex, bo
   // first check if any valid points
   uint8_t validPoints = routes[routeIndex].totalPoints;
   if (routePointIndex < 1 || routePointIndex > validPoints) return false;
+  route_guidance::invalidate();
   if (!validPoints) {
     navigating = false;
   } else {
@@ -674,6 +722,7 @@ bool Navigator::sequenceWaypoint(bool playSound) {
 }
 
 void Navigator::cancelNav() {
+  route_guidance::invalidate();
   pointDistanceRemaining = 0;
   pointTimeRemaining = 0;
   activeRouteIndex = RouteID::None;
@@ -699,6 +748,11 @@ uint16_t Navigator::activeCylinderRadiusM() const {
 }
 
 double Navigator::cylinderDistanceRemaining() const {
+  if (const auto* optimized = route_guidance::solution(*this)) return optimized->cylinderM;
+#ifdef LEAF_SIM
+  double plannedEntryDistance = 0;
+  if (sim::routeGuidanceCylinderDistance(plannedEntryDistance)) return plannedEntryDistance;
+#endif
   return hasNavSolution() ? fmax(0.0, pointDistanceRemaining - activeCylinderRadiusM()) : 0;
 }
 
@@ -714,7 +768,12 @@ float Navigator::glideToCylinder() const {
 }
 
 double Navigator::goalDistanceRemaining() const {
+  if (const auto* optimized = route_guidance::solution(*this)) return optimized->goalM;
   if (!hasNavSolution()) return 0;
+#ifdef LEAF_SIM
+  double experimentalDistance = 0;
+  if (sim::routeGuidanceDistance(experimentalDistance)) return experimentalDistance;
+#endif
   const uint16_t radius =
       activeRouteIndex
           ? routePointMeta(activeRouteIndex, RouteIndex(routes[activeRouteIndex].totalPoints))
@@ -942,7 +1001,8 @@ bool Navigator::restartLastRoute() {
   return activateRoute(lastRouteIndex_, RouteIndex(1));
 }
 
-bool gpx_readFile(fs::FS& fs, String fileName) {
+bool gpx_readFile(fs::FS& fs, String fileName, NavLoadError* error) {
+  if (error) *error = NavLoadError::InvalidFile;
   heap_monitor::checkpoint("gpx-read-start");
   FileReader file_reader(fs, fileName);
   if (file_reader.error() != "") {
@@ -1001,11 +1061,11 @@ bool gpx_readFile(fs::FS& fs, String fileName) {
     Serial.println(" routes");
     navigator.setLoadedGpxFilename(fileName);
     navigator.savePersistedState();
+    if (error) *error = NavLoadError::None;
     heap_monitor::checkpoint("gpx-read-end");
     return true;
   } else {
-    // TODO: Display error to user (create appropriate method in GPXParser looking at _error, _line,
-    // and _col)
+    if (error && parser.routePointLimitExceeded()) *error = NavLoadError::RoutePointLimit;
     Serial.print("gpx_readFile error parsing GPX at line ");
     Serial.print(parser.line());
     Serial.print(" col ");
@@ -1018,11 +1078,12 @@ bool gpx_readFile(fs::FS& fs, String fileName) {
   }
 }
 
-bool nav_readFile(fs::FS& fs, String fileName) {
+bool nav_readFile(fs::FS& fs, String fileName, NavLoadError* error) {
+  if (error) *error = NavLoadError::InvalidFile;
   heap_monitor::checkpoint("nav-read-start");
   const String ext = lowerExtension(fileName);
   if (ext == "gpx") {
-    return gpx_readFile(fs, fileName);
+    return gpx_readFile(fs, fileName, error);
   }
 
   navigator.clear();
@@ -1030,7 +1091,7 @@ bool nav_readFile(fs::FS& fs, String fileName) {
   bool success = false;
   if (ext == "cup") {
     heap_monitor::checkpoint("cup-parse-start");
-    success = parseCupFile(fs, fileName, &navigator);
+    success = parseCupFile(fs, fileName, &navigator, error);
   } else if (ext == "wpt" || ext == "wyp") {
     heap_monitor::checkpoint("wpt-parse-start");
     success = parseWptFile(fs, fileName, &navigator);
@@ -1050,6 +1111,7 @@ bool nav_readFile(fs::FS& fs, String fileName) {
     Serial.println(fileName);
     navigator.setLoadedNavFilename(fileName);
     navigator.savePersistedState();
+    if (error) *error = NavLoadError::None;
     heap_monitor::checkpoint("nav-read-end");
     return true;
   }

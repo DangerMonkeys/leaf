@@ -17,6 +17,7 @@
 #include <thread>
 
 #include "free_flight.h"
+#include "route_guidance.h"
 #include "hardware/configuration.h"
 #include "instruments/ambient.h"
 #include "instruments/baro.h"
@@ -224,6 +225,7 @@ namespace sim {
     if (options_.acceptWarning) answerWarningScreen();
     scenario().update(clock().millis());
     freeFlight().update(clock().millis());
+    serviceRouteGuidance();
     if (script().loaded()) script().update(clock().millis());
 
     clock().advanceUs(LOOP_QUANTUM_US);

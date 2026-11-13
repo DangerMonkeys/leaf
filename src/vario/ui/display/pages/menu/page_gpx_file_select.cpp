@@ -83,6 +83,7 @@ PageGpxFileSelect::PageGpxFileSelect() {
   cursor_position = CURSOR_BACK;
   cursor_max = CURSOR_BACK;
   status_[0] = '\0';
+  loadFailed_ = false;
 }
 
 void PageGpxFileSelect::show() {
@@ -92,6 +93,10 @@ void PageGpxFileSelect::show() {
 }
 
 bool PageGpxFileSelect::button_event(Button button, ButtonEvent state, uint8_t count) {
+  if (loadFailed_ && state == ButtonEvent::CLICKED) {
+    loadFailed_ = false;
+    return true;
+  }
   if (button == Button::NONE) return false;
 
   if (state == ButtonEvent::CLICKED) {
@@ -128,7 +133,7 @@ void PageGpxFileSelect::draw() {
   do {
     menu_ui::drawTitle("Load File", menu_ui::GLYPH_NAV_FILE);
 
-    if (fileCount_ == 0) {
+    if (fileCount_ == 0 || loadFailed_) {
       drawStatus();
     } else {
       ensureCursorVisible();
@@ -150,6 +155,7 @@ void PageGpxFileSelect::refreshIndex() {
   firstVisible_ = 0;
   tooManyFiles_ = false;
   status_[0] = '\0';
+  loadFailed_ = false;
 
   if (!sdcard.isMounted()) {
     if (!SDCard::isCardPresent() || !sdcard.mount()) {
@@ -371,15 +377,18 @@ void PageGpxFileSelect::loadSelectedFile() {
   Serial.print(mode_ == Mode::SavedRoutes ? "Loading saved route: " : "Loading nav file: ");
   Serial.println(path);
 
-  const bool success = mode_ == Mode::SavedRoutes ? route_store::loadRouteFile(path, true)
-                                                  : nav_readFile(SD_MMC, path);
+  NavLoadError error;
+  const bool success = mode_ == Mode::SavedRoutes ? route_store::loadRouteFile(path, true, &error)
+                                                  : nav_readFile(SD_MMC, path, &error);
   if (success) {
     speaker.playSound(fx::confirm);
     navDataMenuPage.backToNavDataMenu();
     pop_page();
   } else {
     speaker.playSound(fx::bad);
-    snprintf(status_, sizeof(status_), "Load failed");
+    loadFailed_ = true;
+    snprintf(status_, sizeof(status_), "%s",
+             error == NavLoadError::RoutePointLimit ? "20-point limit" : "Load failed");
   }
 }
 

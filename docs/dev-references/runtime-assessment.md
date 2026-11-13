@@ -48,6 +48,25 @@ It no longer writes a wide CSV every second. The menu's STOP action also exports
 freeze/export actions remain separate. Commands affect the current
 boot; CPU-checkbox settings saved by the existing settings UI still persist normally.
 
+The 10 ms task timer uses a microsecond-resolution counter. Each capture anchors its
+expected timestamps once, at its first dispatched slot, to that counter's actual alarm phase.
+Interrupts coalesced before capture (for example across charging/sleep transitions) therefore
+do not create a permanent false lateness offset. Interrupt loss during capture remains visible;
+the reference is never continuously shifted to hide it. `timer_epoch_uncertainty_us` reports
+the initial counter-read interval plus one counter quantum. The optimizer independently checks
+the current timer phase before each slice and reserves 2 ms; its admission check does not depend
+on capture being enabled or on interrupt counts staying aligned with time since boot.
+
+For route-optimizer assessment, save separate captures with the optimizer OFF and ON, holding
+other settings constant. Opening the web app changes radio state; retrieve optimizer JSON and
+runtime files after the timed flight workload. Nonzero `iterations` and `publications` confirm
+that the solver actually ran. A capture with both zero cannot measure solver cost.
+
+Bluetooth shutdown checkpoints in `diagnostics/system_events.csv` bracket timer deletion,
+worker deletion, queue deletion, mutex deletion, and NimBLE deinitialization (`ble-end-*-before`
+and `ble-end-*-after`). Keep **Log system** enabled when reproducing a Goodbye stall. These
+checkpoints diagnose the blocking stage; they do not establish that the shutdown bug is fixed.
+
 The neighbor CSV opt-in is recorded as `fanet_log` in the captured settings. Keep Log FANET
 disabled for clean timing captures. Older reports without this setting remain readable, but
 their settings do not exactly match new captures for baseline comparisons.
