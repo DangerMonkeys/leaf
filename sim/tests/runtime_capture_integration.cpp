@@ -52,8 +52,26 @@ int main() {
       settings.disp_showNavPage = true;
   settings.autoSwitchToThermalCorePage = false;
   display.dismissWarning();
+  // Before capture, coalesce three physical alarms into one delivered callback.
+  // The old boot-epoch reference left every later slot falsely late by 20 ms.
+  sim::clock().maskTimerInterrupts(true);
+  sim::clock().advanceUs(30000);
+  sim::clock().maskTimerInterrupts(false);
   assert(cpu_utilization::start());
   settings.diag_cpuUtilization = true;
+  runFor(200000);
+  cpu_utilization::freeze();
+  StringPrint alignedOutput;
+  assert(cpu_utilization::writeJson(alignedOutput));
+  JsonDocument aligned;
+  assert(!deserializeJson(aligned, alignedOutput.text));
+  assert(aligned["timer_epoch_uncertainty_us"].as<unsigned>() <= 1);
+  for (JsonObject slot : aligned["trace"].as<JsonArray>()) {
+    const auto actual = slot["start_us"].as<uint64_t>();
+    const auto expected = slot["expected_us"].as<uint64_t>();
+    assert(actual >= expected && actual - expected < 1000);
+  }
+  assert(cpu_utilization::start());
   const MainPage pages[] = {MainPage::Basic,       MainPage::User,  MainPage::ThermalCore,
                             MainPage::Navigate,    MainPage::Debug, MainPage::Debug2,
                             MainPage::ThermalTrack};

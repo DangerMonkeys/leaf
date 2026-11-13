@@ -28,11 +28,13 @@
 #include "logbook/logbook_store.h"
 #include "logging/log.h"
 #include "navigation/gpx.h"
+#include "navigation/optimized_route_guidance.h"
 #include "navigation/thermal_core.h"
 #include "navigation/thermal_tracker.h"
 #include "navigation/user_waypoints.h"
 #include "power.h"
 #include "storage/sd_card.h"
+#include "system/task_timer.h"
 #include "system/usb_state.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
@@ -51,8 +53,10 @@ SET_LOOP_TASK_STACK_SIZE(12 * 1024);  // 12KB
 namespace {
   std::atomic<bool> timerISRsSetup{false};
 
-  const uint32_t TASK_TIMER_FREQ = 1000;     // run at 1000Hz
-  const uint64_t TASK_TIMER_PERIOD_MS = 10;  // trigger the ISR every 10ms
+  // Microsecond counter resolution; dispatch cadence remains 10 ms.
+  // This lets budget checks and capture alignment use the actual alarm phase.
+  task_timer::CaptureReference captureTimerReference;
+  uint64_t timerCaptureStartUs = 0;
   // Set by interrupt at the start of the next task time block
   // A sequence preserves coalesced timer ticks without changing the one-dispatch policy.
   std::atomic<uint32_t> taskTimerTicks{0};
@@ -116,12 +120,12 @@ void TaskManager::init() {
     heap_monitor::checkpoint("taskman-timers-start");
     // Start Main System Timer for Interrupt Events (this will tell Main Loop to set tasks every
     // interrupt cycle)
-    taskTimer_ = timerBegin(TASK_TIMER_FREQ);
+    taskTimer_ = timerBegin(task_timer::FREQUENCY_HZ);
     // timer, ISR call.  NOTE: timerDetachInterrupt() does the opposite
     timerAttachInterrupt(taskTimer_, &onTaskTimer);
     // auto reload timer ever time we've counted a sample length
     taskTimerEpochUs = cpu_utilization::nowUs();
-    timerAlarm(taskTimer_, TASK_TIMER_PERIOD_MS, true, 0);
+    timerAlarm(taskTimer_, task_timer::PERIOD_US, true, 0);
     cpu_utilization::timerArmed(cpu_utilization::nowUs() - taskTimerEpochUs);
 
     // Start Charge System Timer for Interrupt Events (this will tell Main Loop to do tasks every
@@ -304,8 +308,16 @@ void TaskManager::updateWhileOn() {
     // setNecessaryTasksForBlock advances the logical index, including one direct baro call.
     if (cpu_utilization::capturing()) {
       const uint64_t actualStartUs = cpu_utilization::nowUs();
+      const uint64_t phaseUs = timerRead(taskTimer_);
+      const uint64_t afterReadUs = cpu_utilization::nowUs();
+      if (timerCaptureStartUs != cpu_utilization::captureStartUs()) {
+        timerCaptureStartUs = cpu_utilization::captureStartUs();
+        captureTimerReference.reset(taskTimerEpochUs);
+        cpu_utilization::timerArmed(afterReadUs - actualStartUs + 1);
+      }
       const uint8_t nextIndex = (current100msBlock * 10 + current10msBlock + 1) % 100;
-      cpu_utilization::beginSlot(nextIndex, tick, taskTimerEpochUs + uint64_t(tick) * 10000,
+      cpu_utilization::beginSlot(nextIndex, tick,
+                                 captureTimerReference.expected(tick, actualStartUs, phaseUs),
                                  actualStartUs);
       taskBlockButtonMask = cpu_utilization::buttonPinMask(buttons.inspectPins());
       display.clearLastRenderContext();
@@ -340,6 +352,25 @@ void TaskManager::updateWhileOn() {
   while (gpsHasData && taskTimerTicks.load(std::memory_order_acquire) == consumedTaskTick) {
     gpsHasData = lc86g.readLine(taskTimerTicks, consumedTaskTick, sampleEmptyPoll);
     sampleEmptyPoll = false;
+  }
+  // One bounded optimizer unit in lighter slots, after mandatory work and UART
+  // servicing. Never catch up missed opportunities in a burst. Leave 2 ms of
+  // headroom; the target assessment measures whether one unit fits that budget.
+  const bool routeSlot = current10msBlock == 1 || current10msBlock == 3 || current10msBlock == 4 ||
+                         current10msBlock == 6 || current10msBlock == 8;
+  if (startedTaskBlock && routeSlot && route_guidance::hasPendingWork()) {
+    // ISR callbacks can be coalesced while interrupts are masked or the device
+    // sleeps. A boot epoch plus callback count can therefore drift permanently
+    // behind wall time. Read the auto-reloading hardware counter instead.
+    const uint64_t readStartUs = cpu_utilization::nowUs();
+    const uint64_t phaseUs = timerRead(taskTimer_);
+    const uint64_t readElapsedUs = cpu_utilization::nowUs() - readStartUs;
+    if (!gpsHasData && task_timer::hasHeadroom(phaseUs, readElapsedUs) &&
+        taskTimerTicks.load(std::memory_order_acquire) == consumedTaskTick) {
+      cpu_utilization::Scope work(runtime_capture::Work::Services);
+      route_guidance::service(navigator);
+    } else
+      route_guidance::skippedSlice();
   }
 }
 

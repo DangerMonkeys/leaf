@@ -205,7 +205,11 @@ namespace route_store {
 
     bool normalizeCompactXctsk(JsonObjectConst input, JsonObject output, String& error) {
       JsonArrayConst turnpoints = input["t"].as<JsonArrayConst>();
-      if (turnpoints.isNull() || turnpoints.size() == 0 || turnpoints.size() > maxRoutePointRefs) {
+      if (turnpoints.size() > maxRoutePointRefs) {
+        error = routeError("Route exceeds the 20-point limit.");
+        return false;
+      }
+      if (turnpoints.isNull() || turnpoints.size() == 0) {
         error = routeError("Route has no usable turnpoints.");
         return false;
       }
@@ -258,7 +262,11 @@ namespace route_store {
 
     bool normalizeFullXctsk(JsonObjectConst input, JsonObject output, String& error) {
       JsonArrayConst turnpoints = input["turnpoints"].as<JsonArrayConst>();
-      if (turnpoints.isNull() || turnpoints.size() == 0 || turnpoints.size() > maxRoutePointRefs) {
+      if (turnpoints.size() > maxRoutePointRefs) {
+        error = routeError("Route exceeds the 20-point limit.");
+        return false;
+      }
+      if (turnpoints.isNull() || turnpoints.size() == 0) {
         error = routeError("Route has no usable turnpoints.");
         return false;
       }
@@ -399,14 +407,13 @@ namespace route_store {
     }
 
     bool loadNormalizedRoute(JsonDocument& doc, const String& path, bool activate) {
-      navigator.clear();
-
       const char* schema = doc["schema"] | "";
       if (strcmp(schema, "leaf.route") != 0) return false;
 
       JsonArrayConst points = doc["points"].as<JsonArrayConst>();
       if (points.isNull() || points.size() == 0 || points.size() > maxRoutePointRefs) return false;
 
+      navigator.clear();
       Route route;
       route.setName(doc["name"] | "Route");
       route.taskType = RouteTaskType::Classic;
@@ -499,7 +506,12 @@ namespace route_store {
     route["name"] = name;
 
     JsonArray points = route["points"].as<JsonArray>();
-    if (points.isNull() || points.size() == 0 || points.size() > maxRoutePointRefs) {
+    if (points.size() > maxRoutePointRefs) {
+      result.error = routeError("Route exceeds the 20-point limit.");
+      heap_monitor::checkpoint("route-save-invalid");
+      return false;
+    }
+    if (points.isNull() || points.size() == 0) {
       result.error = routeError("Route has no usable turnpoints.");
       heap_monitor::checkpoint("route-save-invalid");
       return false;
@@ -531,7 +543,8 @@ namespace route_store {
     return true;
   }
 
-  bool loadRouteFile(const String& path, bool activate) {
+  bool loadRouteFile(const String& path, bool activate, NavLoadError* loadError) {
+    if (loadError) *loadError = NavLoadError::InvalidFile;
     heap_monitor::checkpoint("route-load-file");
     if (path.isEmpty() || path.length() > 96 || !SD_MMC.exists(path)) return false;
 
@@ -550,7 +563,13 @@ namespace route_store {
       return false;
     }
 
+    if (doc["points"].as<JsonArrayConst>().size() > maxRoutePointRefs) {
+      if (loadError) *loadError = NavLoadError::RoutePointLimit;
+      heap_monitor::checkpoint("route-load-fail");
+      return false;
+    }
     const bool loaded = loadNormalizedRoute(doc, path, activate);
+    if (loaded && loadError) *loadError = NavLoadError::None;
     heap_monitor::checkpoint(loaded ? "route-load-done" : "route-load-fail");
     return loaded;
   }

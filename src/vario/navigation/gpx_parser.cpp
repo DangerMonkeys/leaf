@@ -495,8 +495,9 @@ bool GPXParser::readRoute(Navigator* result, Route* route, bool storePoints) {
         continue;
       }
       if (result->totalRoutePointRefs >= maxRoutePointRefs) {
-        Serial.println("WARNING: maximum number of GPX route point refs reached; skipping rtept");
-        continue;
+        _routePointLimitExceeded = true;
+        _error = "maximum number of route points exceeded";
+        return false;
       }
       WaypointID waypointIndex = result->findWaypointByName(waypoint.name);
       if (!waypointIndex && !foundCoordinates) {
@@ -512,8 +513,9 @@ bool GPXParser::readRoute(Navigator* result, Route* route, bool storePoints) {
         continue;
       }
       if (!result->addRoutePoint(route, waypointIndex)) {
-        Serial.println("WARNING: maximum number of GPX route point refs reached; skipping rtept");
-        continue;
+        _routePointLimitExceeded = true;
+        _error = "maximum number of route points exceeded";
+        return false;
       }
     } else if (tagEqualsIgnoreCase(key, "name")) {
       // This is an opening name tag

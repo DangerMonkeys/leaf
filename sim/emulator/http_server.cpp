@@ -17,6 +17,7 @@
 #include "free_flight.h"
 #include "navigation/thermal_core.h"
 #include "navigation/thermal_tracker.h"
+#include "route_guidance.h"
 #include "runtime.h"
 #include "scenario.h"
 #include "sim/board.h"
@@ -193,7 +194,8 @@ namespace sim {
           << ",\"scenario\":{\"name\":\"" << jsonEscape(s.scenarioName)
           << "\",\"positionS\":" << s.scenarioPositionS << ",\"lengthS\":" << s.scenarioLengthS
           << ",\"playing\":" << (s.scenarioPlaying ? "true" : "false") << "}";
-      out << ",\"freeFlight\":" << freeFlightJson() << "}";
+      out << ",\"routeGuidance\":" << routeGuidanceJson() << ",\"freeFlight\":" << freeFlightJson()
+          << "}";
       return out.str();
     }
 
@@ -314,6 +316,25 @@ namespace sim {
       return;
     }
 
+    if (method == "GET" && path == "/route-guidance-v2.html") {
+      const auto report = readFile("sim/route_solver/results/guidance-v2/report.html");
+      sendResponse(client, report.empty() ? "404 Not Found" : "200 OK", "text/html; charset=utf-8",
+                   report.empty() ? "<p>Assessment is being prepared.</p>" : report);
+      return;
+    }
+    if (method == "GET" && path == "/route-guidance-report.html") {
+      const auto report = readFile("sim/route_solver/results/guidance-v1/report.html");
+      sendResponse(client, report.empty() ? "404 Not Found" : "200 OK", "text/html; charset=utf-8",
+                   report.empty()
+                       ? "<p>Run the guidance assessment or restore its saved report.</p>"
+                       : report);
+      return;
+    }
+    if (method == "GET" && path == "/route-guidance.js") {
+      sendResponse(client, "200 OK", "application/javascript; charset=utf-8",
+                   readFile("sim/web/route-guidance.js"));
+      return;
+    }
     if (method == "GET" && path == "/free-flight.js") {
       sendResponse(client, "200 OK", "text/javascript; charset=utf-8",
                    readFile("sim/web/free-flight.js"));
@@ -326,6 +347,10 @@ namespace sim {
       return;
     }
 
+    if (method == "GET" && path == "/api/route-guidance/log") {
+      sendResponse(client, "200 OK", "text/csv; charset=utf-8", routeGuidanceLog());
+      return;
+    }
     if (method == "GET" && path == "/api/free-flight/log") {
       sendResponse(client, "200 OK", "text/plain; charset=utf-8", freeFlight().recording());
       return;
@@ -476,6 +501,7 @@ namespace sim {
           }
         }
         if (request["load"].is<const char*>()) {
+          device.post([] { disableRouteGuidance(); });
           freeFlight().stop();
           device.setPaused(false);
         }
@@ -491,6 +517,23 @@ namespace sim {
         return;
       }
 
+      if (path == "/api/route-guidance") {
+        const std::string preset = request["preset"] | "";
+        const std::string policy = request["policy"] | "grazing30";
+        const bool stop = request["disable"] | false;
+        if (!stop && !routeGuidanceValid(preset, policy)) {
+          sendJson(client, "{\"ok\":false,\"error\":\"unknown route or margin policy\"}");
+          return;
+        }
+        device.post([preset, policy, stop] {
+          if (stop)
+            disableRouteGuidance();
+          else
+            configureRouteGuidance(preset, policy);
+        });
+        sendJson(client, "{\"ok\":true,\"queued\":true}");
+        return;
+      }
       if (path == "/api/free-flight") {
         auto p = freeFlight().snapshot(false).model.parameters;
         const auto config = request["parameters"];
@@ -518,6 +561,7 @@ namespace sim {
           device.setPaused(false);
           device.setSpeed(1);
           device.post([&device] {
+            disableRouteGuidance();
             const auto previous = freeFlight().snapshot(false);
             const auto instruments = device.status();
             const double altitudeM = previous.active         ? previous.model.z

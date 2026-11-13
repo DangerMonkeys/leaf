@@ -192,6 +192,7 @@ int main() {
   JsonDocument capture;
   assert(!deserializeJson(capture, frozen.text));
   assert(!capture["settings"]["fanet_log"].as<bool>());
+  assert(capture["settings"]["route_optimizer"].as<bool>());
   assert(capture["settings_changed"].as<bool>());
   settings.dev_logFanet = false;
   menu.press(Button::CENTER);

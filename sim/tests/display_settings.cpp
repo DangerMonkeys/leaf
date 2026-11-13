@@ -59,6 +59,22 @@ namespace {
           display_distance(57, 154, distance, 38);
           assert(u8g2.getCursorX() <= 95);
         }
+        // Reached is a number; unavailable is still dashes. Small positive
+        // distances do not round to zero before reaching the cylinder.
+        auto expected = [&](const char* digits) {
+          u8g2.setCursor(57, 154);
+          u8g2.print(digits);
+          u8g2.print(static_cast<char>(imperial ? 128 : 127));
+          return u8g2.getCursorX();
+        };
+        for (double distance : {0., 0.01}) {
+          const auto width = expected(distance == 0 ? "0" : "1");
+          display_distance(57, 154, distance, 38, true);
+          assert(u8g2.getCursorX() == width);
+        }
+        const auto unknownWidth = expected("----");
+        display_distance(57, 154, 0, 38);
+        assert(u8g2.getCursorX() == unknownWidth);
       }
       for (uint32_t seconds : {0u, 3599u, 3600u, 35999u, 36000u, 999999u}) {
         display_navTimeRemaining(57, 154, seconds >= 3600 ? leaf_5x8 : leaf_6x12, seconds);

@@ -30,6 +30,7 @@
 #include "logbook/logbook_io.h"
 #include "logbook/logbook_store.h"
 #include "navigation/gpx.h"
+#include "navigation/optimized_route_guidance.h"
 #include "navigation/route_store.h"
 #include "navigation/user_waypoints.h"
 #include "power.h"
@@ -1024,7 +1025,8 @@ namespace {
 
     const String savedPath = nav_upload_final_path;
     const String savedName = nav_upload_saved_name;
-    const bool loaded = nav_readFile(SD_MMC, savedPath);
+    NavLoadError loadError;
+    const bool loaded = nav_readFile(SD_MMC, savedPath, &loadError);
     if (loaded) user_waypoints::loadIntoNavigator();
 
     String json = "{\"saved\":true,\"loaded\":";
@@ -1038,7 +1040,9 @@ namespace {
     json += ",\"routes\":";
     json += loaded ? navigator.totalRoutes : 0;
     if (!loaded) {
-      json += ",\"detail\":\"File was saved, but Leaf could not load it.\"";
+      json += loadError == NavLoadError::RoutePointLimit
+                  ? ",\"detail\":\"File was saved but exceeds the 20-point route limit.\""
+                  : ",\"detail\":\"File was saved, but Leaf could not load it.\"";
     }
     json += "}";
 
@@ -1905,9 +1909,12 @@ namespace {
       return;
     }
 
-    if (!nav_readFile(SD_MMC, path)) {
+    NavLoadError loadError;
+    if (!nav_readFile(SD_MMC, path, &loadError)) {
       target.send(400, "application/json",
-                  "{\"detail\":\"Leaf could not parse this waypoint file.\"}");
+                  loadError == NavLoadError::RoutePointLimit
+                      ? "{\"detail\":\"File exceeds the 20-point route limit.\"}"
+                      : "{\"detail\":\"Leaf could not parse this waypoint file.\"}");
       return;
     }
     user_waypoints::loadIntoNavigator();
@@ -1951,8 +1958,11 @@ namespace {
     name.trim();
     const bool activate = input["activate"] | true;
     JsonArrayConst inputPoints = input["points"].as<JsonArrayConst>();
-    if (name.isEmpty() || inputPoints.isNull() || inputPoints.size() == 0 ||
-        inputPoints.size() > maxRoutePointRefs) {
+    if (inputPoints.size() > maxRoutePointRefs) {
+      target.send(400, "application/json", "{\"detail\":\"Route exceeds the 20-point limit.\"}");
+      return;
+    }
+    if (name.isEmpty() || inputPoints.isNull() || inputPoints.size() == 0) {
       target.send(400, "application/json",
                   "{\"detail\":\"Route name and at least one waypoint are required.\"}");
       return;
@@ -2340,7 +2350,7 @@ let s=el("section",{id:"developerCard"}),h=el("h2",{text:"Developer"}),status=el
 let shot=el("button",{class:"hero",id:"devScreenshot",text:"Screenshot"}),msc=el("button",{class:"secondary",id:"devMassStorage",text:"Mass Storage"}),mem=el("button",{class:"secondary",id:"devMemory",text:"Memory"});
 actions.style.flexWrap="wrap";
 actions.appendChild(shot);actions.appendChild(msc);actions.appendChild(mem);
-s.appendChild(h);s.appendChild(status);s.appendChild(row("Keep web app on","devAlwaysOn"));s.appendChild(row("Keep Bluetooth disabled","devKeepBleDisabled"));s.appendChild(row("UDP sensor injection","devUdpInjection"));s.appendChild(el("p",{class:"muted",text:"Accept test sensor data over WiFi (UDP 7431)."}));s.appendChild(row("System events log","devDiagSystem"));s.appendChild(row("Network events log","devDiagNetwork"));s.appendChild(row("Web requests log","devDiagWeb"));s.appendChild(row("Vario log","devDiagVario"));s.appendChild(row("CPU utilization log","devDiagCpu"));s.appendChild(actions);s.appendChild(msgEl);main.appendChild(s);
+s.appendChild(h);s.appendChild(status);s.appendChild(row("Keep web app on","devAlwaysOn"));s.appendChild(row("Keep Bluetooth disabled","devKeepBleDisabled"));s.appendChild(row("UDP sensor injection","devUdpInjection"));s.appendChild(el("p",{class:"muted",text:"Accept test sensor data over WiFi (UDP 7431)."}));s.appendChild(row("System events log","devDiagSystem"));s.appendChild(row("Network events log","devDiagNetwork"));s.appendChild(row("Web requests log","devDiagWeb"));s.appendChild(row("Vario log","devDiagVario"));s.appendChild(row("CPU utilization log","devDiagCpu"));s.appendChild(el("a",{href:"/api/debug/route-optimizer",target:"_blank",text:"Route optimizer measurements"}));s.appendChild(actions);s.appendChild(msgEl);main.appendChild(s);
 async function load(){try{let r=await Promise.all([fetch("/api/debug/session"),fetch("/api/user/status")]);if(r.some(x=>!x.ok))throw new Error("Developer controls unavailable");let d=await r[0].json(),u=await r[1].json();document.getElementById("devAlwaysOn").checked=!!d.always_on;document.getElementById("devKeepBleDisabled").checked=!!d.keep_bluetooth_disabled;document.getElementById("devUdpInjection").checked=!!d.udp_sensor_injection;document.getElementById("devDiagSystem").checked=!!d.diag_system_events;document.getElementById("devDiagNetwork").checked=!!d.diag_network_events;document.getElementById("devDiagWeb").checked=!!d.diag_web_requests;document.getElementById("devDiagVario").checked=!!d.diag_vario;document.getElementById("devDiagCpu").checked=!!d.diag_cpu_utilization;status.textContent="web app: "+(d.web_app_active?"active":"off")+"\nmode: "+(d.using_leaf_wifi?"Leaf AP":"network")+"\nfirmware: "+(u.firmware_display_version||u.firmware_version||"")+"\nmac: "+(u.mac_address||"")}catch(e){status.textContent="Developer controls unavailable."}}
 async function save(){msg("Saving...");try{let body={always_on:document.getElementById("devAlwaysOn").checked,keep_bluetooth_disabled:document.getElementById("devKeepBleDisabled").checked,udp_sensor_injection:document.getElementById("devUdpInjection").checked,diag_system_events:document.getElementById("devDiagSystem").checked,diag_network_events:document.getElementById("devDiagNetwork").checked,diag_web_requests:document.getElementById("devDiagWeb").checked,diag_vario:document.getElementById("devDiagVario").checked,diag_cpu_utilization:document.getElementById("devDiagCpu").checked};let r=await fetch("/api/debug/session",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});if(!r.ok)throw new Error("Developer settings were rejected");msg("Saved.");load()}catch(e){msg("Unable to save developer settings.")}}
 ["devAlwaysOn","devKeepBleDisabled","devUdpInjection","devDiagSystem","devDiagNetwork","devDiagWeb","devDiagVario","devDiagCpu"].forEach(id=>document.getElementById(id).onchange=save);
@@ -3753,6 +3763,25 @@ void webserver_setup() {
   user_server.on("/api/debug/session", HTTP_GET, []() { sendDebugSessionStatus(user_server); });
 
   user_server.on("/api/debug/session", HTTP_POST, []() { updateDebugSessionStatus(user_server); });
+
+  user_server.on("/api/debug/route-optimizer", HTTP_GET, []() {
+    if (!settings.dev_mode) {
+      user_server.send(403, "text/plain", "Developer mode is disabled");
+      return;
+    }
+    class JsonOutput : public Print {
+     public:
+      String text;
+      size_t write(uint8_t c) override {
+        text += char(c);
+        return 1;
+      }
+    } output;
+    output.text.reserve(768);
+    route_guidance::writeJson(output);
+    sendNoStoreHeaders(user_server);
+    user_server.send(200, "application/json", output.text);
+  });
 
   user_server.on("/api/debug/runtime", HTTP_POST, []() {
     if (!settings.dev_mode) {

@@ -117,8 +117,15 @@
   const reveal = document.getElementById('showLiveThermal');
   const trailToggle = document.getElementById('showLiveTrail');
   const zoom = document.getElementById('flightZoom');
+  for (const [id,factor] of [['flightZoomOut',1/1.25],['flightZoomIn',1.25]]) {
+    document.getElementById(id).addEventListener('click',()=>{
+      zoom.value=String(clamp(Math.round(Number(zoom.value)*factor*100)/100,Number(zoom.min),Number(zoom.max)));
+      zoom.dispatchEvent(new Event('input'));
+    });
+  }
   for (const input of [reveal, trailToggle, zoom]) input.addEventListener('input', draw);
   terrainMapImage.addEventListener('load', draw);
+  addEventListener('route-redraw', draw);
   window.leafFreeFlight = {active:false};
   addEventListener('leaf-status', e => {
     latestStatus=e.detail;
@@ -413,11 +420,20 @@ function drawParaglider(x, y, headingDeg, turnRateDps, visualScale = 1, canopy =
   function draw() {
     if (!active) return;
     const rect={x:0,y:0,w:canvas.width,h:canvas.height};
-    const scale=Math.min(rect.w,rect.h)/360*Number(zoom.value);
+    let scale=Math.min(rect.w,rect.h)/360*Number(zoom.value),focusX=state.x,focusY=state.y;
+    if(window.leafRouteGuidance?.fit()){
+      const cylinders=window.leafRouteGuidance.bounds();
+      const xs=[state.x],ys=[state.y];
+      cylinders.forEach(c=>{xs.push(c[0]-c[2],c[0]+c[2]);ys.push(c[1]-c[2],c[1]+c[2]);});
+      const xmin=Math.min(...xs),xmax=Math.max(...xs),ymin=Math.min(...ys),ymax=Math.max(...ys);
+      focusX=(xmin+xmax)/2;focusY=(ymin+ymax)/2;
+      scale=Math.min((rect.w-100)/Math.max(200,xmax-xmin),(rect.h-200)/Math.max(200,ymax-ymin))*Number(zoom.value);
+    }
     ctx.clearRect(0,0,rect.w,rect.h);
-    drawTerrain(rect,state.x,state.y,scale,Number(zoom.value));
+    drawTerrain(rect,focusX,focusY,scale,Number(zoom.value));
     ctx.save(); ctx.beginPath(); ctx.rect(0,0,rect.w,rect.h); ctx.clip();
-    const point=(x,y)=>mapPoint(x,y,state.x,state.y,scale,rect);
+    const point=(x,y)=>mapPoint(x,y,focusX,focusY,scale,rect);
+    window.leafRouteGuidance?.draw(ctx,point,scale);
     if (reveal.checked) {
       const center=point(state.centerX,state.centerY), radius=state.radius*scale;
       const gradient=ctx.createRadialGradient(center.x,center.y,0,center.x,center.y,radius*1.8);
@@ -454,7 +470,7 @@ function drawParaglider(x, y, headingDeg, turnRateDps, visualScale = 1, canopy =
     }
     ctx.stroke();ctx.setLineDash([]);
     const pilot=point(state.x,state.y);
-    drawParaglider(pilot.x,pilot.y,state.heading,state.turnRate,1.35);
+    drawParaglider(pilot.x,pilot.y,state.heading,state.turnRate,window.leafRouteGuidance?.fit() ? 0.7 : 1.35);
     ctx.restore();
     const card=(x,y,w,h)=>{
       ctx.fillStyle='rgba(250,252,249,.92)';ctx.strokeStyle='rgba(90,105,93,.22)';ctx.lineWidth=1;

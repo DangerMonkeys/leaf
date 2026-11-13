@@ -477,13 +477,15 @@ Leaf can load waypoint and route files from the SD card. Save navigation files i
 
 On Leaf, open <strong>Main Menu &rarr; Nav Data &rarr; Load File</strong>, then choose the file you want to use.
 
-After a file is loaded, the Nav Data page shows the active file name and the number of points and routes found. Use <strong>Clear All</strong> to unload the current navigation data.
+After a file is loaded, the Nav Data page shows the active file name and the number of points and routes found. Leaf can load up to **20 route points total** across the routes in one file. Files that exceed the limit are rejected. Standalone waypoints have a separate limit. Use <strong>Clear All</strong> to unload the current navigation data.
 
 ### Selecting a Route or Point
 
 Open <strong>Main Menu &rarr; Nav Data &rarr; Select Dest</strong> to choose a waypoint or route from the loaded file.
 
-When a destination is selected, Leaf shows it under <strong>Active Point/Route</strong>, and the Nav Page will guide you toward the active waypoint. If you select a route, Leaf starts from the first waypoint in the route and advances through the route as you fly.
+When a destination is selected, Leaf shows it under <strong>Active Point/Route</strong>. For a route through cylinders, Leaf plans a short path through the remaining points. The solid arrow points to the current aim point, which may be inside the cylinder to make a glancing approach more forgiving. The hollow arrow previews the following aim point. When an optimized plan is unavailable, the solid arrow points to the waypoint center.
+
+**Distance to point** is the distance to the waypoint center. **Distance to cylinder** is the distance along the planned approach to the actual cylinder boundary, and is zero once you are inside it. With the flight timer active and logging ready, Leaf advances on the first GPS fix strictly inside the cylinder. The display then shows the distance to the next cylinder, so you may not see zero for the previous one. You do not need to reach the inward aim point. Timed starts and line goals are not optimized or scored as competition tasks.
 
 <br />
 

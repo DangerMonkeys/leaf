@@ -45,6 +45,7 @@ class PageGpxFileSelect : public MenuPage {
 
   char fileNames_[MAX_GPX_FILES][MAX_GPX_FILENAME_LENGTH + 1];
   char status_[32];
+  bool loadFailed_ = false;
   Mode mode_ = Mode::NavFiles;
   uint8_t fileCount_ = 0;
   uint8_t firstVisible_ = 0;

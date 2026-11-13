@@ -11,7 +11,7 @@
 #define defaultWaypointRadius 400  // meters radius to count as "reaching/crossing" a waypoint
 #define maxRoutes 10
 #define maxNavPoints 120
-#define maxRoutePointRefs 40
+#define maxRoutePointRefs RouteIndex::Max
 #define maxGpxNameLength 15
 #define maxGpxFileNameLength 96
 
@@ -115,6 +115,10 @@ class Navigator {
  public:
   void init(void);
   void update(void);
+  void refreshRouteGuidance();
+  bool followingTurn(double& turnDeg) const;
+  double cylinderInitialLegDistance() const;
+  bool routeCompleted() const { return reachedGoal_; }
 
   bool activatePoint(WaypointID pointIndex);
   bool activatePoint(WaypointID pointIndex, bool playSound);
@@ -135,7 +139,10 @@ class Navigator {
   bool hasNavSolution() const;
   // Navigation field distance conventions:
   // - Waypoint (*) fields target the actual coordinates (the center), with no radius allowance.
-  // - Cylinder (%) fields target max(0, distance to center - active radius). The progress bar
+  // - With developer route optimization, cylinder fields stop at first actual-cylinder
+  //   entry along the guidance line, and goal fields use the buffered optimized path.
+  // - Otherwise cylinder (%) fields target max(0, distance to center - active radius). The progress
+  // bar
   //   uses this same arrival boundary. Route points supply their own radius; standalone
   //   waypoints use defaultWaypointRadius. A zero radius makes cylinder and waypoint equal.
   // - Goal fields follow the remaining route through waypoint centers, then subtract only the
@@ -275,5 +282,6 @@ class Navigator {
 };
 extern Navigator navigator;
 
-bool gpx_readFile(fs::FS& fs, String fileName);
-bool nav_readFile(fs::FS& fs, String fileName);
+enum class NavLoadError : uint8_t { None, InvalidFile, RoutePointLimit };
+bool gpx_readFile(fs::FS& fs, String fileName, NavLoadError* error = nullptr);
+bool nav_readFile(fs::FS& fs, String fileName, NavLoadError* error = nullptr);
