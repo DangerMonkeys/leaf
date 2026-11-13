@@ -1,5 +1,11 @@
 # Agent Notes
 
+## Pull requests and merges
+
+- Run the **Format Leaf C++ Files** task (or its script below) after the last code change and before the final commit and PR submission. Review and include any formatting changes in the commit.
+- Before merging, wait for all applicable GitHub CI checks for the exact PR head to finish and pass, including Hygiene, tests, documentation, and every firmware build. Pending, missing, cancelled, or failed checks block the merge; fail closed if status cannot be verified. Jobs intentionally skipped by workflow conditions do not block the merge.
+- If the PR head changes, verify the checks again for the new head. Use the verified head SHA as a merge guard and check the resulting `main` run separately.
+
 ## Publishing firmware releases
 
 - Before publishing a new firmware release (including prereleases), follow
