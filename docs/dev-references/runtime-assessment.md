@@ -57,15 +57,12 @@ the initial counter-read interval plus one counter quantum. The optimizer indepe
 the current timer phase before each slice and reserves 2 ms; its admission check does not depend
 on capture being enabled or on interrupt counts staying aligned with time since boot.
 
-For route-optimizer assessment, save separate captures with the optimizer OFF and ON, holding
-other settings constant. Opening the web app changes radio state; retrieve optimizer JSON and
-runtime files after the timed flight workload. Nonzero `iterations` and `publications` confirm
-that the solver actually ran. A capture with both zero cannot measure solver cost.
-
-Bluetooth shutdown checkpoints in `diagnostics/system_events.csv` bracket timer deletion,
-worker deletion, queue deletion, mutex deletion, and NimBLE deinitialization (`ble-end-*-before`
-and `ble-end-*-after`). Keep **Log system** enabled when reproducing a Goodbye stall. These
-checkpoints diagnose the blocking stage; they do not establish that the shutdown bug is fixed.
+For route-optimizer assessment, enable Developer mode before activating the route.
+Retrieve the optimizer JSON after the timed workload, before shutting down. Opening
+the web app changes radio state, so its current heap reading does not represent a
+Bluetooth-on workload. Nonzero `iterations` and `publications` confirm that the
+solver ran. Use the lightweight counters alone if the full capture does not fit.
+The Developer endpoint is `GET /api/debug/route-optimizer`.
 
 The neighbor CSV opt-in is recorded as `fanet_log` in the captured settings. Keep Log FANET
 disabled for clean timing captures. Older reports without this setting remain readable, but
