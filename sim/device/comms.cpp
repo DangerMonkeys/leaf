@@ -63,7 +63,7 @@ void FanetRadio::subscribe(etl::imessage_bus* bus) {}
 void FanetRadio::begin(const FanetRadioRegion& region) { setup(); }
 void FanetRadio::end() { setup(); }
 void FanetRadio::logDetectionResult() { Serial.println("FANET: radio not emulated"); }
-FanetRadioState FanetRadio::getState() { return state; }
+FanetRadioState FanetRadio::getState() { return state.load(); }
 void FanetRadio::setGroundTrackingMode(const FANET::GroundTrackingPayload::TrackingType& mode) {}
 void FanetRadio::setCurrentLocation(const float& lat, const float& lon, const uint32_t& alt,
                                     const int& heading, const float& climbRate,

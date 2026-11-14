@@ -57,7 +57,9 @@ tests, connect the computer to the same network or to Leaf's access point.
 `wifi` reports the active radio mode such as 0 for off, 1 for station, or 2 for
 access point. `routeheap` reports the start and minimum free internal heap
 for route body receipt and editor normalization, in that order. Zero means a
-phase did not record a measurement.
+phase did not record a measurement. `fanet` reports module detection, radio state, and
+the TX and RX worker stack high-water marks in bytes. The stack value is
+zero when the worker is absent.
 
 ## Capture and compare heap
 

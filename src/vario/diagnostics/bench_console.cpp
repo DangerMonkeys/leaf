@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "comms/fanet_radio.h"
 #include "comms/webserver.h"
 #include "diagnostics/heap_monitor.h"
 #include "hardware/buttons.h"
@@ -90,6 +91,12 @@ namespace bench_console {
         webserver_route_heap(metrics);
         respond("BENCH routeheap %lu %lu %lu %lu\n", (unsigned long)metrics[0],
                 (unsigned long)metrics[1], (unsigned long)metrics[2], (unsigned long)metrics[3]);
+      } else if (!strcmp(command, "fanet")) {
+        heap_monitor::Snapshot sample{};
+        heap_monitor::snapshot(sample);
+        respond("BENCH fanet %d %s %lu %lu\n", fanetRadio.isDetected(),
+                fanetRadio.getState().c_str(), (unsigned long)sample.fanetTxStack,
+                (unsigned long)sample.fanetRxStack);
       } else if (!strcmp(command, "version")) {
         respond("BENCH version %s\n", LeafVersionInfo::firmwareVersion());
       } else if (!strcmp(command, "config")) {

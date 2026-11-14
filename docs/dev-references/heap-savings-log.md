@@ -193,3 +193,74 @@ that depend on normal USB, charging, or OTA behavior. [Firmware release checklis
 | OTA over saved Wi-Fi (N20) | Update a spare unit over its saved network with a known test image. Verify the update completes, the expected version boots, settings and SD files survive, and the Web App reconnects after the reboot. The bench USB flashes exercised a different update path. |
 | Leaf access point and Wi-Fi setup (N20) | Join Leaf's access point from the host, load the Web App, and exercise a route request. Test a successful join through the setup portal and a cancelled setup. Verify the station connection survives a successful handoff, and check saved-network reconnect and idle radio shutdown on exit. The bench run verified AP mode and IP over USB and exercised HTTP on the saved station network. |
 | Repeated route stress and SD write failure (N06a, N07a) | On the combined firmware, repeat the 18,000-byte editor request after screenshots and other Web App activity, then reopen the app and repeat. Record any disconnect and the phase heap readings. With a disposable full or failing SD card, verify that a staging or write failure preserves an existing route and a later retry can save successfully. The combined candidate passed the maximum-size, oversize, and interrupted-transfer checks on the bench card. |
+
+## Batch 4 · Runtime capture and profile picker
+
+| Audit item | Change | Measured or linked memory |
+| --- | --- | --- |
+| SYS-05-a | Add `discard` to the Developer runtime API. A running capture must be frozen before it can be discarded. | Free internal heap rose **22,288 B** after discarding a frozen capture. |
+| SYS-05-b | Turning off Developer mode releases a running or frozen capture. Re-enabling Developer mode leaves capture idle. | Free internal heap rose **22,376 B** when Developer mode was turned off with a capture running. Both actions release the same **22,496 B** capture payload. |
+| UI-02-B | Allocate the profile picker model when its page opens and release it when that page closes. | The linked `profileSelectPage` object shrank from **1,868 B to 48 B**, releasing **1,820 B** of static RAM while closed. The open picker held about 1,260 B of internal heap with the test fixture. Closing returned to the same heap reading on the first cycle and within 140 B on the second. |
+| UI-03-A | Keep IDs and resolved display labels in the open picker. | Sixteen glider rows hold two Strings each instead of five, a **768 B** reduction in String headers inside the open model. This overlaps with UI-02-B while the picker is closed. String payload savings vary by profile. |
+
+The 3.2.5 test selected a second pilot and a second glider using the
+physical menu path driven over USB, reopened the picker, and verified both
+saved IDs through the Web App. The fixture included a legacy glider
+`name` field and a display-name override. The original SD profile file was
+restored byte for byte. Runtime checks verified HTTP 409 when attempting
+to discard an active capture, successful freeze and discard, successful
+export and JSON download, and no restart after cycling Developer mode.
+Simulator recorder, lifecycle, and scheduler integration checks passed,
+including freeing an already frozen capture on Developer mode exit.
+
+The `0.2.4-a40d.bench+h3.2.5` image was built from local changes on
+`a4075ce4`. Both app slots were hash-verified. The build used 98,380 B of
+static RAM versus 100,204 B in Batch 3, a total reduction of 1,824 B.
+Image SHA-256
+`6dd480e9a7f83db3dfb8b9520223a2ace945216d2483b22ed24809249f555acf`.
+Bench evidence is in `utils/bench_baselines/batch-04/`.
+
+## Batch 5 · FANET lifecycle
+
+| Audit item | Change | Memory accounting |
+| --- | --- | --- |
+| N15a | Release the FANET protocol, radio driver, task stacks, and mutex while the Web App or Wi-Fi setup is open. Restart when the active flight needs the radio again. Block fresh FANET allocations while the app is open. | The saved-network Web App returned HTTP 200 with both FANET workers absent during a stationary bench flight. The radio and both workers returned on close. The matched ground start/stop cycles below measure the resource cost without Wi-Fi and Bluetooth handoffs in the comparison. |
+| N16 | Preserve boot-time hardware detection and sleep the radio after the probe. Allocate runtime resources only when a flight or ground-tracking mode needs the radio. | The unit detected its FANET radio at boot and reported zero FANET workers. This avoids the same allocations measured on stop in N15a. |
+
+Free internal heap before the first menu visit rose from **99,304 B** in
+Batch 4 to **111,356 B** in Batch 5 on the same 3.2.5 with the same radio
+configuration. The largest free block grew from **36,852 B to 49,140 B**.
+Each value is the median of five USB readings.
+
+| Ground-tracking cycle | Active free B | Stopped free B | Free B returned |
+| --- | ---: | ---: | ---: |
+| 1 | 48,980 | 60,504 | 11,524 |
+| 2 | 48,836 | 60,512 | 11,676 |
+| 3 | 48,836 | 60,504 | 11,668 |
+
+The final build uses 98,308 B of linked static RAM, 72 B less than Batch 4.
+The FANET singleton shrank by 80 B, from 1,940 B to 1,860 B.
+The radio heap reclaimed by teardown and the allocation avoided at boot
+describe the same resources.
+
+The driver, SPI module, and HAL share the same allocation lifetime. Teardown
+withdraws the interrupt target and waits for the RX and TX workers to park
+before deleting them. A timeout retains the resources for a later stop.
+The tests used the existing saved US region and a stationary unit with
+no GPS fix.
+
+The final image was `0.2.4-a40d.bench+h3.2.5`, built with both batches on
+`a4075ce4`. Both OTA app slots were hash-verified. Image SHA-256
+`42fbd1981c04af150ccfa941c70faac28d9195d3c5e6dbf4e5292e9a424b05b9`.
+Bench evidence is in `utils/bench_baselines/batch-05/`.
+
+
+### Remaining FANET hardware coverage
+
+Exercise RX and TX against a second FANET radio with a real GPS fix.
+Verify position and neighbor updates before and after a Web App pause.
+Repeat while traffic is active to check the interrupt and worker
+handoff under load, and measure the time until the first valid packet
+after resuming. Recheck the Wi-Fi setup portal on a spare unit, including
+a cancelled setup and a successful network join. The bench run covered
+the saved-network Web App path.

@@ -48,6 +48,7 @@ namespace heap_monitor {
 
     std::atomic<bool> historyEnabled{false};
     std::mutex historyMutex;
+    std::mutex registeredTasksMutex;
     std::unique_ptr<Sample[]> samples;
     size_t nextSample = 0;
     size_t sampleTotal = 0;
@@ -73,6 +74,7 @@ namespace heap_monitor {
     }
 
     uint32_t stackHighWaterFor(const char* name) {
+      std::lock_guard<std::mutex> lock(registeredTasksMutex);
       for (const RegisteredTask& task : registeredTasks) {
         if (task.handle && strncmp(task.name, name, TASK_NAME_LENGTH) == 0) {
           return uxTaskGetStackHighWaterMark(task.handle);
@@ -180,6 +182,7 @@ namespace heap_monitor {
 
   void registerTask(const char* name, TaskHandle_t handle) {
     if (!name) return;
+    std::lock_guard<std::mutex> lock(registeredTasksMutex);
 
     for (RegisteredTask& task : registeredTasks) {
       if (strncmp(task.name, name, TASK_NAME_LENGTH) == 0) {

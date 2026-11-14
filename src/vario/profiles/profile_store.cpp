@@ -201,44 +201,32 @@ bool ProfileStore::activeGlider(GliderProfile& glider) {
   return false;
 }
 
-bool ProfileStore::load(PilotProfile* pilots, size_t maxPilots, size_t& pilotCount,
-                        GliderProfile* gliders, size_t maxGliders, size_t& gliderCount,
-                        String& activePilotId, String& activeGliderId) {
-  pilotCount = 0;
-  gliderCount = 0;
-  activePilotId = "";
-  activeGliderId = "";
-
+bool ProfileStore::loadPicker(ProfilePickerList& pilots, ProfilePickerList& gliders) {
   JsonDocument doc;
   if (!loadProfiles(doc)) return false;
 
-  activePilotId = optionalString(doc["active_pilot_id"]);
-  activeGliderId = optionalString(doc["active_glider_id"]);
-
-  JsonArrayConst pilotsJson = doc["pilots"].as<JsonArrayConst>();
-  if (!pilotsJson.isNull()) {
-    for (JsonObjectConst item : pilotsJson) {
-      PilotProfile candidate = pilotFromJson(item);
-      if (!candidate.valid()) continue;
-      if (pilotCount < maxPilots) {
-        pilots[pilotCount] = candidate;
-        pilotCount++;
-      }
-    }
+  const String activePilotId = optionalString(doc["active_pilot_id"]);
+  const String activeGliderId = optionalString(doc["active_glider_id"]);
+  for (JsonObjectConst item : doc["pilots"].as<JsonArrayConst>()) {
+    if (pilots.count == ProfilePickerList::Capacity) break;
+    PilotProfile pilot = pilotFromJson(item);
+    if (!pilot.valid()) continue;
+    if (!activePilotId.isEmpty() && pilot.id == activePilotId && pilots.selected < 0)
+      pilots.selected = pilots.count;
+    pilots.entries[pilots.count++] = {std::move(pilot.id), std::move(pilot.name)};
   }
-
-  JsonArrayConst glidersJson = doc["gliders"].as<JsonArrayConst>();
-  if (!glidersJson.isNull()) {
-    for (JsonObjectConst item : glidersJson) {
-      GliderProfile candidate = gliderFromJson(item);
-      if (!candidate.valid()) continue;
-      if (gliderCount < maxGliders) {
-        gliders[gliderCount] = candidate;
-        gliderCount++;
-      }
-    }
+  for (JsonObjectConst item : doc["gliders"].as<JsonArrayConst>()) {
+    if (gliders.count == ProfilePickerList::Capacity) break;
+    GliderProfile glider = gliderFromJson(item);
+    if (!glider.valid()) continue;
+    String label = glider.resolvedDisplayName();
+    if (label.isEmpty()) return false;
+    if (!activeGliderId.isEmpty() && glider.id == activeGliderId && gliders.selected < 0)
+      gliders.selected = gliders.count;
+    gliders.entries[gliders.count++] = {std::move(glider.id), std::move(label)};
   }
-
+  if (activePilotId.isEmpty() && pilots.count == 1) pilots.selected = 0;
+  if (activeGliderId.isEmpty() && gliders.count == 1) gliders.selected = 0;
   return true;
 }
 

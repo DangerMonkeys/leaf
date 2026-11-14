@@ -419,12 +419,30 @@ namespace cpu_utilization {
   }
 
   void update() {
+    if (!settings.dev_mode) {
+      settings.diag_cpuUtilization = false;
+      freeze();
+      discard();
+      previouslyEnabled = false;
+      return;
+    }
     const bool requested = settings.dev_mode && settings.diag_cpuUtilization;
     if (!requested) {
       if (capturing()) freeze();
     } else if (!previouslyEnabled)
       start();
     previouslyEnabled = requested;
+  }
+
+  bool discard() {
+    if (capturing() || (data && !onCaptureThread())) return false;
+    if (data) {
+      data->~Capture();
+      heap_caps_free(data);
+      data = nullptr;
+    }
+    allocationFailed = false;
+    return true;
   }
 
   uint64_t captureStartUs() { return data ? data->startUs : 0; }
@@ -740,11 +758,7 @@ namespace cpu_utilization {
     file.close();
     if (written) snprintf(lastExportPath, sizeof(lastExportPath), "%s", path);
     Serial.printf("Runtime capture: %s (%s)\n", path, written ? "exported" : "write failed");
-    if (written) {
-      data->~Capture();
-      heap_caps_free(data);
-      data = nullptr;
-    }
+    if (written) discard();
     return written;
   }
 }  // namespace cpu_utilization

@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <RadioLib.h>
+#include <atomic>
 #include "FreeRTOS.h"
 #include "comms/fanet_neighbors.h"
 #include "comms/fanet_radio_types.h"
@@ -17,6 +18,7 @@
 #include "fanet/protocol.hpp"
 #include "hardware/configuration.h"
 #include "ui/settings/settings.h"
+#include "utils/producer_gate.h"
 
 // Helper function to convert an Address to a string
 String FanetAddressToString(FANET::Address address);
@@ -39,7 +41,7 @@ class FanetRadio : public etl::message_router<FanetRadio, GpsReading>,
   bool fanet_sendFrame(uint8_t codingRate, etl::span<const uint8_t> data);
   void fanet_ackReceived(uint16_t id) override {}
 
-  /// @brief Allocates any dynamic memory required for module.
+  /// @brief Detects the physical radio without allocating its runtime resources.
   void setup();
 
   /// @brief Subscribes the module to the given message bus
@@ -72,7 +74,6 @@ class FanetRadio : public etl::message_router<FanetRadio, GpsReading>,
   // Gets the current radio ID
   static String getAddress();
 
-  /// @brief Gets a copy of the neighbor table
   const FanetNeighbors::NeighborMap& getNeighborTable() const;
 
   // IMessageSource
@@ -112,7 +113,7 @@ class FanetRadio : public etl::message_router<FanetRadio, GpsReading>,
     return result;
   }
 
-  FanetRadioState state = FanetRadioState::UNINITIALIZED;  // The current state of the radio module
+  std::atomic<FanetRadioState::enum_type> state{FanetRadioState::UNINITIALIZED};
   bool fanetDetected_ = false;
   bool detectionResultLogged_ = false;
   uint8_t detectionCycles_ = 0;
@@ -129,7 +130,6 @@ class FanetRadio : public etl::message_router<FanetRadio, GpsReading>,
   // Fanet manager used to handle packets and radio modules
   // Mutex to protect the manager from being accessed by multiple tasks
   SemaphoreHandle_t x_fanet_manager_mutex = nullptr;
-  // Fanet::FanetManager* manager = nullptr;
   etl::array<uint8_t, FANET_MAX_FRAME_SIZE> buffer = {0};  // Radio module buffer
   SX1262* radio = nullptr;
   uint8_t appliedCodingRate_ = 0;  // Denominator (5 or 8); zero means unknown after a failed write.
@@ -151,18 +151,19 @@ class FanetRadio : public etl::message_router<FanetRadio, GpsReading>,
   TaskHandle_t x_fanet_tx_task = nullptr;
   static void taskRadioTx(void* pvParameters);
 
-  // Periodic name sending
-  TaskHandle_t x_fanet_tx_name_task = nullptr;
-  static void taskRadioNameTx(void* pvParameters);
+  mutable ProducerGate producers_;
+  std::atomic<bool> rxParked_{false};
+  std::atomic<bool> txParked_{false};
+  bool irqAttached_ = false;
 
   /// @brief Setup of the Fanet Packet Handler
   void setupFanetHandler();
+  bool allocateResources();
+  bool initializeRadio(const FanetRadioRegion& region);
+  bool releaseResources();
 
   /// @brief Message bus to write events onto
   etl::imessage_bus* bus_ = nullptr;
-
-  /// @brief Time we last flushed out old expired neighbors
-  unsigned long neighbor_table_flushed = 0;
 
   /// @brief Time we're allowed to send out a tracking update
   unsigned long m_nextAllowedTrackingTimeMs = 0;  // Time we're allowed to send a tracking message
@@ -170,17 +171,13 @@ class FanetRadio : public etl::message_router<FanetRadio, GpsReading>,
   /// @brief Random number generator
   etl::random_xorshift random;
 
-  /// @brief if a frame is currently being sent on the wire.
-  static volatile bool frameSending;
-
-  /// @brief The current tracking mode, if any
-  etl::optional<FANET::GroundTrackingPayload::TrackingType::enum_type> trackingMode = etl::nullopt;
+  static constexpr int NO_GROUND_TRACKING = -1;
+  std::atomic<int> trackingMode{NO_GROUND_TRACKING};
 
   FanetNeighbors neighbors;  // The neighbor table with more info than the protocol class
 
-#ifdef LORA_SX1262
-  Module radioModule = Module((uint32_t)SX1262_NSS, SX1262_DIO1, SX1262_RESET, SX1262_BUSY);
-#endif
+  struct RadioHardware;
+  RadioHardware* hardware_ = nullptr;
 };
 
 extern FanetRadio fanetRadio;

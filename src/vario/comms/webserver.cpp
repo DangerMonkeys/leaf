@@ -1,4 +1,5 @@
 #include "comms/webserver.h"
+
 #include <ArduinoJson.h>
 #include <DNSServer.h>
 #include <FS.h>
@@ -30,6 +31,7 @@
 #include "instruments/gps.h"
 #include "logbook/logbook_io.h"
 #include "logbook/logbook_store.h"
+#include "logging/log.h"
 #include "navigation/gpx.h"
 #include "navigation/optimized_route_guidance.h"
 #include "navigation/route_store.h"
@@ -1216,11 +1218,10 @@ namespace {
       BLE::get().end();
     }
 
-    user_app_restart_fanet = fanetRadio.getState() == FanetRadioState::RUNNING;
+    user_app_restart_fanet =
+        !flightTimer_isRunning() && fanetRadio.getState() == FanetRadioState::RUNNING;
     user_app_fanet_region = settings.fanet_region;
-    if (user_app_restart_fanet) {
-      fanetRadio.end();
-    }
+    fanetRadio.end();
 
     user_app_services_paused = true;
   }
@@ -1228,7 +1229,8 @@ namespace {
   void resumeServicesAfterUserApp() {
     if (!user_app_services_paused) return;
 
-    if (user_app_restart_fanet && settings.fanet_region != FanetRadioRegion::OFF) {
+    if (flightTimer_isRunning() ||
+        (user_app_restart_fanet && settings.fanet_region != FanetRadioRegion::OFF)) {
       fanetRadio.begin(settings.fanet_region);
     } else if (user_app_restart_fanet && user_app_fanet_region != FanetRadioRegion::OFF) {
       fanetRadio.begin(user_app_fanet_region);
@@ -4001,8 +4003,11 @@ void webserver_setup() {
       cpu_utilization::freeze();
     } else if (action == "export") {
       ok = cpu_utilization::exportToSd();
+    } else if (action == "discard") {
+      ok = cpu_utilization::discard();
+      if (ok) settings.diag_cpuUtilization = false;
     } else {
-      user_server.send(400, "text/plain", "Use action=start, freeze, or export");
+      user_server.send(400, "text/plain", "Use action=start, freeze, export, or discard");
       return;
     }
     user_server.send(ok ? 200 : 409, "text/plain", cpu_utilization::status());

@@ -1,0 +1,137 @@
+{
+  "runtime_actions": [
+    [
+      "start",
+      200,
+      "capturing"
+    ],
+    [
+      "export",
+      409,
+      "idle"
+    ]
+  ],
+  "firmware_version": "0.2.4-a40d.bench+h3.2.5",
+  "about_before_disabling": {
+    "samples": [
+      {
+        "internal_free": 24248,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 9204,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 24248,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 9204,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 24248,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 9204,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 24248,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 9204,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 24248,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 9204,
+        "loop_stack_unused": 7844
+      }
+    ],
+    "median": {
+      "internal_free": 24248,
+      "internal_min_since_boot": 17184,
+      "internal_largest": 9204,
+      "loop_stack_unused": 7844
+    }
+  },
+  "about_after_disabling": {
+    "samples": [
+      {
+        "internal_free": 46624,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 46624,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 46624,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 46624,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 46624,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      }
+    ],
+    "median": {
+      "internal_free": 46624,
+      "internal_min_since_boot": 17184,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7844
+    }
+  },
+  "about_after_reenabling": {
+    "samples": [
+      {
+        "internal_free": 46624,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 46624,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 46624,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 46624,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 46624,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      }
+    ],
+    "median": {
+      "internal_free": 46624,
+      "internal_min_since_boot": 17184,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7844
+    }
+  },
+  "passed": true,
+  "firmware_sha256": "6dd480e9a7f83db3dfb8b9520223a2ace945216d2483b22ed24809249f555acf"
+}

@@ -86,6 +86,7 @@ int main() {
     receiver.join();
   }
   assert(!cpu_utilization::exportToSd());
+  assert(!cpu_utilization::discard());
   StringPrint active;
   assert(!cpu_utilization::writeJson(active));
   for (unsigned tick = 1; tick <= 110; ++tick) {
@@ -110,10 +111,29 @@ int main() {
   assert(cpu_utilization::exportedPath()[0]);
   assert(cpu_utilization::start());
   assert(allocations == 2);
+  cpu_utilization::freeze();
+  assert(cpu_utilization::hasCapture());
+  assert(cpu_utilization::discard());
+  assert(releases == 2 && !cpu_utilization::hasCapture());
+  assert(cpu_utilization::discard());
+  assert(releases == 2);
+
+  settings.diag_cpuUtilization = true;
+  cpu_utilization::update();
+  assert(allocations == 3 && cpu_utilization::capturing());
   settings.dev_mode = false;
   cpu_utilization::update();
-  assert(!cpu_utilization::capturing());
-  assert(cpu_utilization::exportToSd());
-  assert(releases == 2);
-  puts("Runtime capture FN8 allocation, freeze/export and release checks passed");
+  assert(!cpu_utilization::capturing() && !cpu_utilization::hasCapture());
+  assert(!settings.diag_cpuUtilization);
+  assert(releases == 3 && !cpu_utilization::exportToSd());
+
+  settings.dev_mode = true;
+  cpu_utilization::update();
+  assert(allocations == 3 && !cpu_utilization::capturing());
+  assert(cpu_utilization::start());
+  cpu_utilization::freeze();
+  settings.dev_mode = false;
+  cpu_utilization::update();
+  assert(allocations == 4 && releases == 4 && !cpu_utilization::hasCapture());
+  puts("Runtime capture allocation, export, discard, and Developer mode checks passed");
 }

@@ -43,6 +43,12 @@ Invoke-WebRequest -Method Post -Uri 'http://<leaf>/api/debug/runtime' -Body @{ac
 Invoke-WebRequest -Uri 'http://<leaf>/api/debug/runtime/download' -OutFile runtime.json
 ```
 
+After freezing, submit `action=discard` to release the capture's memory
+without saving it. If Developer mode is turned off, Leaf releases any
+unsaved capture, including one still running. Export a capture first if
+you need to keep it on the SD card.
+
+
 The existing CPU utilization checkbox now enables bounded RAM capture; disabling it freezes.
 It no longer writes a wide CSV every second. The menu's STOP action also exports; the HTTP
 freeze/export actions remain separate. Commands affect the current
