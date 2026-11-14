@@ -17,3 +17,7 @@ String webserver_user_app_url();
 String webserver_leaf_ap_ssid();
 String webserver_leaf_ap_password();
 String webserver_leaf_ap_wifi_qr();
+
+#ifdef LEAF_USB_BENCH_CONSOLE
+void webserver_route_heap(uint32_t (&metrics)[4]);
+#endif

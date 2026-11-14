@@ -379,7 +379,10 @@ namespace route_store {
 
       const size_t written = serializeJsonPretty(doc, file);
       file.close();
-      if (written == 0) {
+      File staged = SD_MMC.open(ROUTE_TEMP_FILE, FILE_READ);
+      const bool complete = staged && written == measureJsonPretty(doc) && staged.size() == written;
+      staged.close();
+      if (!complete) {
         SD_MMC.remove(ROUTE_TEMP_FILE);
         return false;
       }

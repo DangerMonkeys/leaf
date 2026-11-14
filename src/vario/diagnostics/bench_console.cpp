@@ -83,6 +83,13 @@ namespace bench_console {
       } else if (!strcmp(command, "web")) {
         const String url = webserver_user_app_url();
         respond("BENCH web %s\n", url.isEmpty() ? "off" : url.c_str());
+      } else if (!strcmp(command, "wifi")) {
+        respond("BENCH wifi %u\n", unsigned(WiFi.getMode()));
+      } else if (!strcmp(command, "routeheap")) {
+        uint32_t metrics[4];
+        webserver_route_heap(metrics);
+        respond("BENCH routeheap %lu %lu %lu %lu\n", (unsigned long)metrics[0],
+                (unsigned long)metrics[1], (unsigned long)metrics[2], (unsigned long)metrics[3]);
       } else if (!strcmp(command, "version")) {
         respond("BENCH version %s\n", LeafVersionInfo::firmwareVersion());
       } else if (!strcmp(command, "config")) {
