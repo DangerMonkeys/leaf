@@ -3,6 +3,10 @@
 #include <Arduino.h>
 #include <SD_MMC.h>
 #include <string.h>
+#include <atomic>
+#include <memory>
+#include <mutex>
+#include <new>
 
 #include "diagnostics/cpu_utilization.h"
 #include "diagnostics/diagnostic_logs.h"
@@ -42,7 +46,9 @@ namespace heap_monitor {
       TaskHandle_t handle;
     };
 
-    Sample samples[SAMPLE_COUNT];
+    std::atomic<bool> historyEnabled{false};
+    std::mutex historyMutex;
+    std::unique_ptr<Sample[]> samples;
     size_t nextSample = 0;
     size_t sampleTotal = 0;
     RegisteredTask registeredTasks[REGISTERED_TASK_COUNT] = {};
@@ -122,26 +128,42 @@ namespace heap_monitor {
                   static_cast<unsigned long>(sample.fanetRxStackHighWater));
     }
 
+    bool rememberSample(const char* event, Sample& sample) {
+      if (!historyEnabled.load()) return false;
+      std::lock_guard<std::mutex> lock(historyMutex);
+      if (!samples) return false;
+      captureSample(sample, event);
+      samples[nextSample] = sample;
+      nextSample = (nextSample + 1) % SAMPLE_COUNT;
+      if (sampleTotal < SAMPLE_COUNT) sampleTotal++;
+      return true;
+    }
+
   }  // namespace
 
-  void record(const char* event) {
-    if (!diagnostic_logs::enabled(diagnostic_logs::Log::SystemEvents)) return;
-    Sample& sample = samples[nextSample];
-    captureSample(sample, event);
+  void setHistoryEnabled(bool enabled) {
+    if (enabled == historyEnabled.load()) return;
+    bool failed = false;
+    {
+      std::lock_guard<std::mutex> lock(historyMutex);
+      if (enabled == bool(samples)) return;
+      if (enabled) samples.reset(new (std::nothrow) Sample[SAMPLE_COUNT]);
+      historyEnabled.store(enabled && bool(samples));
+      if (!enabled) samples.reset();
+      nextSample = sampleTotal = 0;
+      failed = enabled && !samples;
+    }
+    if (failed) Serial.println("Unable to allocate System Events heap history");
+  }
 
-    nextSample = (nextSample + 1) % SAMPLE_COUNT;
-    if (sampleTotal < SAMPLE_COUNT) sampleTotal++;
+  void record(const char* event) {
+    Sample sample;
+    rememberSample(event, sample);
   }
 
   void checkpoint(const char* event) {
-    if (!diagnostic_logs::enabled(diagnostic_logs::Log::SystemEvents)) return;
-
     Sample sample;
-    captureSample(sample, event);
-
-    samples[nextSample] = sample;
-    nextSample = (nextSample + 1) % SAMPLE_COUNT;
-    if (sampleTotal < SAMPLE_COUNT) sampleTotal++;
+    if (!rememberSample(event, sample)) return;
 
     // Retain the bounded RAM history during timing capture; exporting is explicit.
     if (cpu_utilization::capturing() || !sdLoggingEnabled || !diagnostic_logs::ensureDirectory())
@@ -190,10 +212,12 @@ namespace heap_monitor {
   void setSdLoggingEnabled(bool enabled) { sdLoggingEnabled = enabled; }
 
   bool dumpToSd(const char* path) {
-    if (!diagnostic_logs::enabled(diagnostic_logs::Log::SystemEvents)) return false;
+    if (!historyEnabled.load()) return false;
     if (!path || path[0] == '\0') return false;
     if (!sdLoggingEnabled) return false;
     if (!diagnostic_logs::ensureDirectory()) return false;
+    std::lock_guard<std::mutex> lock(historyMutex);
+    if (!samples) return false;
 
     const char* outputPath = diagnostic_logs::SYSTEM_EVENTS_PATH;
     const bool existed = SD_MMC.exists(outputPath);
@@ -212,7 +236,8 @@ namespace heap_monitor {
   }
 
   void clear() {
-    if (!diagnostic_logs::enabled(diagnostic_logs::Log::SystemEvents)) return;
+    if (!historyEnabled.load()) return;
+    std::lock_guard<std::mutex> lock(historyMutex);
     nextSample = 0;
     sampleTotal = 0;
   }

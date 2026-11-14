@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <memory>
 
 #include "ui/display/menu_page.h"
 #include "ui/input/buttons.h"
@@ -12,6 +13,9 @@ class PageGpxFileSelect : public MenuPage {
   void show();
   bool button_event(Button button, ButtonEvent state, uint8_t count) override;
   void draw() override;
+
+ protected:
+  void closed(bool removed) override;
 
  private:
   enum class Mode : uint8_t {
@@ -43,7 +47,8 @@ class PageGpxFileSelect : public MenuPage {
   const char* directoryPath() const;
   bool supportedFileName(const char* name) const;
 
-  char fileNames_[MAX_GPX_FILES][MAX_GPX_FILENAME_LENGTH + 1];
+  using FileName = char[MAX_GPX_FILENAME_LENGTH + 1];
+  std::unique_ptr<FileName[]> fileNames_;
   char status_[32];
   bool loadFailed_ = false;
   Mode mode_ = Mode::NavFiles;

@@ -17,6 +17,7 @@ namespace heap_monitor {
     uint32_t fanetRxStack;
   };
   void snapshot(Snapshot& sample);
+  void setHistoryEnabled(bool enabled);
 
   void record(const char* event);
   void checkpoint(const char* event);

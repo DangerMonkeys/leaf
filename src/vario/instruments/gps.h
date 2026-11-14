@@ -128,31 +128,13 @@ class LeafGPS : public TinyGPSPlus, IMessageSource, public MessageSink<LeafGPS, 
   void recordGlideSample();
   void resetGlideHistory();
 
-  void testSats();
-
   // Satellite tracking
 
   // GPS satellite info for storing values straight from the GPS
   struct GPSSatInfo sats[MAX_SATELLITES];
 
-  // $GPGSV sentence parsing
-  TinyGPSCustom totalGPGSVMessages;  // first element is # messages (N) total
-  TinyGPSCustom messageNumber;       // second element is message number (x of N)
-  TinyGPSCustom satsInView;          // third element is # satellites in view
-
-  // Fields for capturing the information from GSV strings
-  // (each GSV sentence will have info for at most 4 satellites)
-  TinyGPSCustom satNumber[4];  // to be initialized later
-  TinyGPSCustom elevation[4];  // to be initialized later
-  TinyGPSCustom azimuth[4];    // to be initialized later
-  TinyGPSCustom snr[4];        // to be initialized later
-
-  // Custom objects for position/fix accuracy.
-  // Need to read from the GST sentence which TinyGPS doesn't do by default
-  TinyGPSCustom latAccuracy;  // Latitude error - standard deviation
-  TinyGPSCustom lonAccuracy;  // Longitude error - standard deviation
-  TinyGPSCustom fix;          // Fix (0=none, 1=GPS, 2=DGPS, 3=Valid PPS)
-  TinyGPSCustom fixMode;      // Fix mode (1=No fix, 2=2D fix, 3=3D fix)
+  TinyGPSCustom fix;      // Fix (0=none, 1=GPS, 2=DGPS, 3=Valid PPS)
+  TinyGPSCustom fixMode;  // Fix mode (1=No fix, 2=2D fix, 3=3D fix)
 
   // Message bus to let the rest of the application know when new GPS updates are
   // available
@@ -171,8 +153,6 @@ class LeafGPS : public TinyGPSPlus, IMessageSource, public MessageSink<LeafGPS, 
   uint8_t glideAverageSeconds_ = 10;
   float glideRatio = 0;
 
-  NMEAString nmeaBuffer = {'\0'};  // buffer for reading NMEA sentences
-  int nmeaBufferIndex = 0;         // index into the buffer currently writing to
   bool gsvSentenceGroupActive = false;
   bool systemTimeSyncedThisBoot_ = false;
   GPSPositionSnapshot lastValidFix_;

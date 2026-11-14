@@ -61,6 +61,7 @@ void setup() {
 
   // grab user settings (or populate defaults if no saved settings)
   settings.init();
+  heap_monitor::setHistoryEnabled(settings.dev_mode && settings.diag_systemEvents);
   heap_monitor::registerTask("loop", xTaskGetCurrentTaskHandle());
   heap_monitor::record("setup-settings");
 

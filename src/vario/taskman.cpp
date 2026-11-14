@@ -163,8 +163,9 @@ the pushbuttons, the GPS 1PPS signal, and perhaps others.
 */
 void TaskManager::update() {
   cpu_utilization::update();
-  const bool networkWork = !leafLogSync.transferInFlight() && sdcard.firmwareOwnsMassStorage() &&
-                           (WiFi.status() == WL_CONNECTED || webserver_user_app_active());
+  const bool networkWork =
+      !leafLogSync.transferInFlight() && sdcard.firmwareOwnsMassStorage() &&
+      (WiFi.status() == WL_CONNECTED || webserver_user_app_active() || webserver_listening());
   const bool heartbeatDue = millis() - lastMemoryHeartbeatMs >= MEMORY_HEARTBEAT_MS;
   {
     cpu_utilization::Scope services(

@@ -3,6 +3,7 @@
 #include <FS.h>
 #include <SD_MMC.h>
 #include <string.h>
+#include <new>
 
 #include "navigation/gpx.h"
 #include "navigation/route_store.h"
@@ -88,8 +89,13 @@ PageGpxFileSelect::PageGpxFileSelect() {
 
 void PageGpxFileSelect::show() {
   mode_ = Mode::FolderSelect;
+  if (!fileNames_) fileNames_.reset(new (std::nothrow) FileName[MAX_GPX_FILES]);
   refreshIndex();
   push_page(this);
+}
+
+void PageGpxFileSelect::closed(bool removed) {
+  if (removed) fileNames_.reset();
 }
 
 bool PageGpxFileSelect::button_event(Button button, ButtonEvent state, uint8_t count) {
@@ -156,6 +162,13 @@ void PageGpxFileSelect::refreshIndex() {
   tooManyFiles_ = false;
   status_[0] = '\0';
   loadFailed_ = false;
+
+  if (!fileNames_) {
+    snprintf(status_, sizeof(status_), "Not enough memory");
+    cursor_position = CURSOR_BACK;
+    cursor_max = CURSOR_BACK;
+    return;
+  }
 
   if (!sdcard.isMounted()) {
     if (!SDCard::isCardPresent() || !sdcard.mount()) {

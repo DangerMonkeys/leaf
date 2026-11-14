@@ -19,6 +19,7 @@
 #include "comms/ota.h"
 #include "comms/udp_message_server.h"
 #include "comms/wifi_coordinator.h"
+#include "detail/RequestHandler.h"
 #include "diagnostics/cpu_utilization.h"
 #include "diagnostics/diagnostic_logs.h"
 #include "diagnostics/diagnostic_network/diagnostic_network.h"
@@ -42,9 +43,60 @@
 #include "ui/settings/settings.h"
 
 namespace {
-  ::WebServer user_server(80);
+  // Arduino ESP32 3.1.0 retains these arrays after processing the request and
+  // does not delete them in the base destructor.
+  class LeafWebServer : public WebServer {
+   public:
+    using WebServer::WebServer;
+
+    ~LeafWebServer() { releaseRequestArguments(); }
+
+    const String& body() const {
+      for (int i = 0; i < _postArgsLen; ++i)
+        if (_postArgs[i].key == "plain") return _postArgs[i].value;
+      for (int i = 0; i < _currentArgCount; ++i)
+        if (_currentArgs[i].key == "plain") return _currentArgs[i].value;
+      static const String empty;
+      return empty;
+    }
+
+    void handleClient() {
+      WebServer::handleClient();
+      // Request parsing, upload callbacks and response handlers run synchronously.
+      releaseRequestArguments();
+    }
+
+    void stopHosting() {
+      stop();
+      _currentClient.stop();
+      _currentClient = NetworkClient();
+      _currentUpload.reset();
+      _currentRaw.reset();
+      _currentHandler = nullptr;
+      releaseRequestArguments();
+      while (_firstHandler) {
+        auto* handler = _firstHandler;
+        _firstHandler = handler->next();
+        delete handler;
+      }
+      _lastHandler = nullptr;
+      onNotFound(nullptr);
+    }
+
+   private:
+    void releaseRequestArguments() {
+      delete[] _currentArgs;
+      _currentArgs = nullptr;
+      _currentArgCount = 0;
+      delete[] _postArgs;
+      _postArgs = nullptr;
+      _postArgsLen = 0;
+    }
+  };
+
+  LeafWebServer user_server(80);
   DNSServer dns_server;
-  String send_buffer = "";
+  String* screenshot_output = nullptr;
   bool user_server_started = false;
   bool user_server_routes_configured = false;
   bool commissioning_routes_configured = false;
@@ -166,6 +218,14 @@ namespace {
 
   bool commissioningHttpAllowed() {
     return diagnostic_network.connected() && !settings.commissioningComplete;
+  }
+
+  void stopWebHosting() {
+    user_server.stopHosting();
+    user_server_started = false;
+    user_server_routes_configured = false;
+    commissioning_routes_configured = false;
+    debug_routes_configured = false;
   }
 
   void logWifiSetupTiming(const char* event) {
@@ -1390,7 +1450,7 @@ namespace {
     return true;
   }
 
-  void saveProfiles(WebServer& target) {
+  void saveProfiles(LeafWebServer& target) {
     heap_monitor::checkpoint("profiles-put-start");
     if (!user_app_enabled) {
       target.send(404, "application/json", "{\"detail\":\"Leaf Web App is not active.\"}");
@@ -1402,7 +1462,7 @@ namespace {
       return;
     }
 
-    const String body = target.arg("plain");
+    const String& body = target.body();
     if (!profilesRequestLooksValid(body)) {
       heap_monitor::checkpoint("profiles-put-invalid");
       target.send(
@@ -1669,7 +1729,7 @@ namespace {
     target.send(200, "application/json", json);
   }
 
-  void importRoute(WebServer& target) {
+  void importRoute(LeafWebServer& target) {
     heap_monitor::checkpoint("route-import-start");
     if (!user_app_enabled) {
       target.send(404, "application/json", "{\"detail\":\"Leaf Web App is not active.\"}");
@@ -1681,7 +1741,7 @@ namespace {
       return;
     }
 
-    const String body = target.arg("plain");
+    const String& body = target.body();
     if (body.length() == 0 || body.length() > ROUTE_IMPORT_REQUEST_MAX_BYTES) {
       target.send(400, "application/json", "{\"detail\":\"Route import request is invalid.\"}");
       return;
@@ -1802,14 +1862,14 @@ namespace {
     heap_monitor::checkpoint("nav-data-end");
   }
 
-  void activateNavPoint(WebServer& target) {
+  void activateNavPoint(LeafWebServer& target) {
     if (!user_app_enabled) {
       target.send(404, "application/json", "{\"detail\":\"Leaf Web App is not active.\"}");
       return;
     }
 
     JsonDocument doc;
-    DeserializationError error = deserializeJson(doc, target.arg("plain"));
+    DeserializationError error = deserializeJson(doc, target.body());
     if (error) {
       target.send(400, "application/json", "{\"detail\":\"Nav activation request is not JSON.\"}");
       return;
@@ -1878,7 +1938,7 @@ namespace {
     json.finish();
   }
 
-  void activateWaypointFile(WebServer& target) {
+  void activateWaypointFile(LeafWebServer& target) {
     if (!user_app_enabled) {
       target.send(404, "application/json", "{\"detail\":\"Leaf Web App is not active.\"}");
       return;
@@ -1890,7 +1950,7 @@ namespace {
     }
 
     JsonDocument doc;
-    DeserializationError error = deserializeJson(doc, target.arg("plain"));
+    DeserializationError error = deserializeJson(doc, target.body());
     if (error) {
       target.send(400, "application/json",
                   "{\"detail\":\"Waypoint activation request is invalid.\"}");
@@ -1929,7 +1989,7 @@ namespace {
     target.send(200, "application/json", json);
   }
 
-  void saveEditedRoute(WebServer& target) {
+  void saveEditedRoute(LeafWebServer& target) {
     heap_monitor::checkpoint("route-save-start");
     if (!user_app_enabled) {
       target.send(404, "application/json", "{\"detail\":\"Leaf Web App is not active.\"}");
@@ -1941,7 +2001,7 @@ namespace {
       return;
     }
 
-    const String body = target.arg("plain");
+    const String& body = target.body();
     if (body.length() == 0 || body.length() > ROUTE_EDITOR_REQUEST_MAX_BYTES) {
       target.send(400, "application/json", "{\"detail\":\"Route save request is invalid.\"}");
       return;
@@ -2109,14 +2169,14 @@ namespace {
     json.finish();
   }
 
-  void saveUserWaypoints(WebServer& target) {
+  void saveUserWaypoints(LeafWebServer& target) {
     if (!user_app_enabled) {
       target.send(404, "application/json", "{\"detail\":\"Leaf Web App is not active.\"}");
       return;
     }
 
     JsonDocument input;
-    DeserializationError error = deserializeJson(input, target.arg("plain"));
+    DeserializationError error = deserializeJson(input, target.body());
     if (error) {
       target.send(400, "application/json", "{\"detail\":\"User waypoint request is not JSON.\"}");
       return;
@@ -2481,9 +2541,9 @@ load();
     return false;
   }
 
-  void updateVarioSettings(WebServer& target) {
+  void updateVarioSettings(LeafWebServer& target) {
     JsonDocument doc;
-    const DeserializationError error = deserializeJson(doc, target.arg("plain"));
+    const DeserializationError error = deserializeJson(doc, target.body());
     if (error || !doc.is<JsonObject>()) {
       target.send(400, "application/json", "{\"detail\":\"Invalid settings JSON.\"}");
       return;
@@ -2584,9 +2644,9 @@ load();
     sendVarioSettings(target);
   }
 
-  void playVarioTone(WebServer& target) {
+  void playVarioTone(LeafWebServer& target) {
     JsonDocument doc;
-    const DeserializationError error = deserializeJson(doc, target.arg("plain"));
+    const DeserializationError error = deserializeJson(doc, target.body());
     const int32_t frequency = doc["frequency_hz"] | 0;
     if (error || frequency < 30 || frequency > 5000) {
       target.send(422, "application/json", "{\"detail\":\"Tone frequency is out of range.\"}");
@@ -2596,8 +2656,8 @@ load();
     target.send(202, "application/json", "{\"started\":true,\"duration_ms\":500}");
   }
 
-  void startVarioTest(WebServer& target) {
-    const String kind = extractJsonStringValue(target.arg("plain"), "kind");
+  void startVarioTest(LeafWebServer& target) {
+    const String kind = extractJsonStringValue(target.body(), "kind");
     const VarioAudioProfile& audio = settings.varioAudio;
     int32_t targetRate = 0;
     if (kind == "climb") {
@@ -2658,12 +2718,12 @@ load();
     target.send(200, "application/json", json);
   }
 
-  void updateDebugSessionStatus(WebServer& target) {
+  void updateDebugSessionStatus(LeafWebServer& target) {
     if (!settings.dev_mode) {
       target.send(403, "application/json", "{\"detail\":\"Developer mode is disabled.\"}");
       return;
     }
-    const String body = target.arg("plain");
+    const String& body = target.body();
     settings.setUdpInjectionEnabled(
         extractJsonBoolValue(body, "udp_sensor_injection", settings.dev_udpInjection));
     udpMessageServer.update();
@@ -2710,11 +2770,11 @@ load();
     target.send(200, "application/json", json);
   }
 
-  void resetCommissioningSettings(WebServer& target) {
+  void resetCommissioningSettings(LeafWebServer& target) {
     if (!requireCommissioningHttp(target)) return;
 
     const bool forceFormatSdCard =
-        extractJsonBoolValue(target.arg("plain"), "force_format_sd_card", false);
+        extractJsonBoolValue(target.body(), "force_format_sd_card", false);
     target.send(200, "application/json", "{\"reset_requested\":true}");
     delay(250);
     settings.factoryResetVario();
@@ -2724,10 +2784,10 @@ load();
     ESP.restart();
   }
 
-  void saveCommissioningFanetAddress(WebServer& target) {
+  void saveCommissioningFanetAddress(LeafWebServer& target) {
     if (!requireCommissioningHttp(target)) return;
 
-    String fanet_address = extractJsonStringValue(target.arg("plain"), "fanet_address");
+    String fanet_address = extractJsonStringValue(target.body(), "fanet_address");
     fanet_address.trim();
     fanet_address.toUpperCase();
     if (!isValidFanetAddress(fanet_address)) {
@@ -2907,33 +2967,6 @@ load();
     user_server.on("/commissioning/status", HTTP_GET,
                    []() { sendCommissioningStatus(user_server); });
     user_server.on("/commissioning/complete", HTTP_POST,
-                   []() { markCommissioningComplete(user_server); });
-
-    user_server.on("/api/debug/mac-address", HTTP_GET,
-                   []() { sendCommissioningMacAddress(user_server); });
-    user_server.on("/api/debug/firmware-version", HTTP_GET,
-                   []() { sendCommissioningFirmwareVersion(user_server); });
-    user_server.on("/api/debug/settings/factory-reset", HTTP_POST,
-                   []() { resetCommissioningSettings(user_server); });
-    user_server.on("/api/debug/settings/fanet-address", HTTP_POST,
-                   []() { saveCommissioningFanetAddress(user_server); });
-    user_server.on("/api/debug/self-test/interactive", HTTP_POST,
-                   []() { startCommissioningSelfTest(user_server); });
-    user_server.on("/api/debug/sd-card/format", HTTP_POST,
-                   []() { formatCommissioningSdCard(user_server); });
-    user_server.on("/api/debug/sd-card/remount", HTTP_POST,
-                   []() { remountCommissioningSdCard(user_server); });
-    user_server.on("/api/debug/restart", HTTP_POST,
-                   []() { restartCommissioningDevice(user_server); });
-    user_server.on("/api/debug/self-test/details", HTTP_GET,
-                   []() { sendCommissioningSelfTestDetails(user_server); });
-    user_server.on("/api/debug/self-test/results", HTTP_DELETE,
-                   []() { clearCommissioningSelfTestResults(user_server); });
-    user_server.on("/api/debug/self-test", HTTP_GET,
-                   []() { sendCommissioningSelfTest(user_server); });
-    user_server.on("/api/debug/commissioning/status", HTTP_GET,
-                   []() { sendCommissioningStatus(user_server); });
-    user_server.on("/api/debug/commissioning/complete", HTTP_POST,
                    []() { markCommissioningComplete(user_server); });
 
     commissioning_routes_configured = true;
@@ -3432,9 +3465,9 @@ load();
     target.send(200, "application/json", wifi_setup_networks_json);
   }
 
-  void connectToWifiFromRequest(WebServer& target) {
+  void connectToWifiFromRequest(LeafWebServer& target) {
     heap_monitor::checkpoint("wifi-connect-request");
-    const String body = target.arg("plain");
+    const String& body = target.body();
     const String ssid = extractJsonStringValue(body, "ssid");
     const String password = extractJsonStringValue(body, "password");
 
@@ -3661,26 +3694,30 @@ const char* leafLogBaseUrl() { return LEAF_LOG_BASE_URL; }
 
 const char* leafLogCaCertificate() { return ISRG_ROOT_X1_CA; }
 
-void writeScreenshotBuffer(const char* buffer) {
-  Serial.println("Writing screenshot buffer");
-  send_buffer += buffer;
-}
+void writeScreenshotBuffer(const char* buffer) { *screenshot_output += buffer; }
 
 void webserver_setup() {
-  configureCommissioningRoutes();
-  if (!user_server_started && commissioningHttpAllowed()) {
+  // Keep the canonical routes through the current factory connection so the
+  // completion response can be retried even after the durable flag changes.
+  const bool factoryConnected = diagnostic_network.connected();
+  if (factoryConnected && !settings.commissioningComplete) configureCommissioningRoutes();
+  if (!user_app_enabled && !factoryConnected && user_server_started) stopWebHosting();
+  if (!user_server_started && commissioning_routes_configured) {
     user_server.begin();
     user_server_started = true;
     Serial.println("Leaf commissioning webserver started");
   }
 
+  if (!user_server_started && !user_app_enabled) return;
   if (!settings.dev_mode) return;
   if (debug_routes_configured) return;
 
   user_server.on("/api/debug/raw-xbm", HTTP_GET, []() {
-    send_buffer = "";
+    String image;
+    screenshot_output = &image;
     u8g2_WriteBufferXBM(u8g2.getU8g2(), writeScreenshotBuffer);
-    user_server.send(200, "image/x-xbitmap", send_buffer);
+    screenshot_output = nullptr;
+    user_server.send(200, "image/x-xbitmap", image);
   });
 
   user_server.on("/app/debug/screenshot", HTTP_GET, []() {
@@ -3956,8 +3993,16 @@ void webserver_disable_user_app() {
   wifi_setup_connect_error = "";
   wifi_setup_connect_saved = false;
   if (user_server_started) {
-    user_server.stop();
-    user_server_started = false;
+    const bool preserveFactoryConnection =
+        commissioning_routes_configured && diagnostic_network.connected();
+    stopWebHosting();
+    if (preserveFactoryConnection) {
+      // Closing the app on the factory's station connection must still allow
+      // a tool to recover a lost commissioning-complete reply.
+      configureCommissioningRoutes();
+      user_server.begin();
+      user_server_started = true;
+    }
     heap_monitor::checkpoint("after-user-stop");
   }
   if (user_app_using_leaf_wifi) {
@@ -3976,6 +4021,8 @@ void webserver_disable_user_app() {
 }
 
 bool webserver_user_app_active() { return user_app_enabled; }
+
+bool webserver_listening() { return user_server_started; }
 
 bool webserver_user_app_always_on() { return user_app_always_on; }
 

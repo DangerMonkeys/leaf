@@ -1,0 +1,258 @@
+{
+  "captured_at_utc": "2026-11-14T02:36:26.574542+00:00",
+  "firmware_sha256": "6b96404cbb42ffea128be215a421959a0ed866b6b18f8c6eb655c368717571c5",
+  "samples": {
+    "idle": {
+      "raw": [
+        {
+          "internal_free": 48012,
+          "internal_min_since_boot": 38272,
+          "internal_largest": 31732,
+          "loop_stack_unused": 7844
+        },
+        {
+          "internal_free": 48012,
+          "internal_min_since_boot": 38272,
+          "internal_largest": 31732,
+          "loop_stack_unused": 7844
+        },
+        {
+          "internal_free": 47988,
+          "internal_min_since_boot": 38272,
+          "internal_largest": 31732,
+          "loop_stack_unused": 7844
+        },
+        {
+          "internal_free": 48012,
+          "internal_min_since_boot": 38272,
+          "internal_largest": 31732,
+          "loop_stack_unused": 7844
+        },
+        {
+          "internal_free": 48012,
+          "internal_min_since_boot": 38272,
+          "internal_largest": 31732,
+          "loop_stack_unused": 7844
+        }
+      ],
+      "median_bytes": {
+        "internal_free": 48012,
+        "internal_min_since_boot": 38272,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      }
+    },
+    "web_open": {
+      "raw": [
+        {
+          "internal_free": 91880,
+          "internal_min_since_boot": 38272,
+          "internal_largest": 31732,
+          "loop_stack_unused": 7780
+        },
+        {
+          "internal_free": 91880,
+          "internal_min_since_boot": 38272,
+          "internal_largest": 31732,
+          "loop_stack_unused": 7780
+        },
+        {
+          "internal_free": 91880,
+          "internal_min_since_boot": 38272,
+          "internal_largest": 31732,
+          "loop_stack_unused": 7780
+        },
+        {
+          "internal_free": 91880,
+          "internal_min_since_boot": 38272,
+          "internal_largest": 31732,
+          "loop_stack_unused": 7780
+        },
+        {
+          "internal_free": 91880,
+          "internal_min_since_boot": 38272,
+          "internal_largest": 31732,
+          "loop_stack_unused": 7780
+        }
+      ],
+      "median_bytes": {
+        "internal_free": 91880,
+        "internal_min_since_boot": 38272,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7780
+      }
+    },
+    "after_screenshots": {
+      "raw": [
+        {
+          "internal_free": 91432,
+          "internal_min_since_boot": 38272,
+          "internal_largest": 31732,
+          "loop_stack_unused": 7780
+        },
+        {
+          "internal_free": 91432,
+          "internal_min_since_boot": 38272,
+          "internal_largest": 31732,
+          "loop_stack_unused": 7780
+        },
+        {
+          "internal_free": 91432,
+          "internal_min_since_boot": 38272,
+          "internal_largest": 31732,
+          "loop_stack_unused": 7780
+        },
+        {
+          "internal_free": 91432,
+          "internal_min_since_boot": 38272,
+          "internal_largest": 31732,
+          "loop_stack_unused": 7780
+        },
+        {
+          "internal_free": 91432,
+          "internal_min_since_boot": 38272,
+          "internal_largest": 31732,
+          "loop_stack_unused": 7780
+        }
+      ],
+      "median_bytes": {
+        "internal_free": 91432,
+        "internal_min_since_boot": 38272,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7780
+      }
+    },
+    "after_route_request": {
+      "raw": [
+        {
+          "internal_free": 91208,
+          "internal_min_since_boot": 21700,
+          "internal_largest": 31732,
+          "loop_stack_unused": 7780
+        },
+        {
+          "internal_free": 91208,
+          "internal_min_since_boot": 21700,
+          "internal_largest": 31732,
+          "loop_stack_unused": 7780
+        },
+        {
+          "internal_free": 91208,
+          "internal_min_since_boot": 21700,
+          "internal_largest": 31732,
+          "loop_stack_unused": 7780
+        },
+        {
+          "internal_free": 91208,
+          "internal_min_since_boot": 21700,
+          "internal_largest": 31732,
+          "loop_stack_unused": 7780
+        },
+        {
+          "internal_free": 91208,
+          "internal_min_since_boot": 21700,
+          "internal_largest": 31732,
+          "loop_stack_unused": 7780
+        }
+      ],
+      "median_bytes": {
+        "internal_free": 91208,
+        "internal_min_since_boot": 21700,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7780
+      }
+    },
+    "after_web_close": {
+      "raw": [
+        {
+          "internal_free": 45164,
+          "internal_min_since_boot": 21700,
+          "internal_largest": 31732,
+          "loop_stack_unused": 7780
+        },
+        {
+          "internal_free": 45140,
+          "internal_min_since_boot": 21700,
+          "internal_largest": 31732,
+          "loop_stack_unused": 7780
+        },
+        {
+          "internal_free": 45164,
+          "internal_min_since_boot": 21700,
+          "internal_largest": 31732,
+          "loop_stack_unused": 7780
+        },
+        {
+          "internal_free": 45164,
+          "internal_min_since_boot": 21700,
+          "internal_largest": 31732,
+          "loop_stack_unused": 7780
+        },
+        {
+          "internal_free": 45164,
+          "internal_min_since_boot": 21700,
+          "internal_largest": 31732,
+          "loop_stack_unused": 7780
+        }
+      ],
+      "median_bytes": {
+        "internal_free": 45164,
+        "internal_min_since_boot": 21700,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7780
+      }
+    }
+  },
+  "http": {
+    "/app": 200,
+    "/api/user/status": 200,
+    "/api/waypoints/files": 200,
+    "/api/debug/route-optimizer": 200,
+    "/mac-address": 404,
+    "/api/debug/mac-address": 404,
+    "screenshot": {
+      "status": 200,
+      "bytes": 11697,
+      "bitmap_bytes": 2304
+    },
+    "route_request": {
+      "status": 400,
+      "bytes": 18000,
+      "detail": "Route name and at least one waypoint are required."
+    }
+  },
+  "version": "0.2.4-dd5d.bench+h3.2.5",
+  "initial_status": {
+    "power": "On",
+    "page": "User",
+    "cursor": 0,
+    "modal_depth": 0,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": false,
+    "flight_running": false,
+    "firmware_sd_access": true
+  },
+  "configuration": [
+    "1",
+    "1",
+    "1",
+    "0",
+    "0",
+    "0",
+    "0",
+    "0"
+  ],
+  "final_status": {
+    "power": "On",
+    "page": "Navigate",
+    "cursor": 0,
+    "modal_depth": 0,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": false,
+    "flight_running": false,
+    "firmware_sd_access": true
+  },
+  "passed": true
+}

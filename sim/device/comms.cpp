@@ -96,6 +96,7 @@ namespace leaf_wifi {
 // ---------------------------------------------------------------- webserver
 
 void webserver_setup() {}
+bool webserver_listening() { return false; }
 void webserver_loop() {}
 void webserver_enable_user_app(bool useLeafWifi) {}
 void webserver_enable_wifi_setup() {}

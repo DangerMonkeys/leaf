@@ -76,6 +76,19 @@ and sampling interval. Keep the console idle between samples. The loop task
 stack high-water mark is the smallest unused stack space observed since boot.
 The capture reports all four metrics in bytes.
 
+For the paired Web App workload, run the following on the warmed-up User
+screen with Developer mode on. The host needs a network path to the Leaf
+when the Web App opens. The script reads two screenshots, submits a route
+request that fails validation without saving, and measures heap through
+Web App closure.
+
+```powershell
+python utils/leaf_bench_web_memory.py --firmware .pio/build/leaf_3_2_5_bench/firmware.bin --output .pio/web-memory.json
+```
+
+See the [firmware heap savings log](heap-savings-log.md) for the paired
+baseline and candidate results.
+
 ## Initial 3.2.5 on-state baseline
 
 The November 13, 2026 capture (November 14 at 01:47 UTC) sampled a USB-connected

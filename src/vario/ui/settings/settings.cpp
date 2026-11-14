@@ -8,6 +8,7 @@
 
 #include "comms/leaf_log_credentials.h"
 #include "comms/wifi_coordinator.h"
+#include "diagnostics/heap_monitor.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "logging/log.h"
@@ -446,6 +447,7 @@ void Settings::retrieve() {
 void Settings::save() {
   // Save settings before shutdown (or other times as needed)
   if (!dev_mode) dev_udpInjection = false;
+  heap_monitor::setHistoryEnabled(dev_mode && diag_systemEvents);
 
   leafPrefs.begin("varioPrefs", RW_MODE);
 
@@ -899,6 +901,7 @@ void Settings::toggleBoolNeutral(bool* unitSetting) {
 void Settings::setDeveloperMode(bool enabled) {
   dev_mode = enabled;
   if (!dev_mode) dev_udpInjection = false;
+  heap_monitor::setHistoryEnabled(dev_mode && diag_systemEvents);
 }
 
 void Settings::setUdpInjectionEnabled(bool enabled) { dev_udpInjection = dev_mode && enabled; }

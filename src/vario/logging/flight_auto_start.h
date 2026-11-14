@@ -24,11 +24,11 @@ class FlightAutoStart {
   enum Path : uint8_t { None = 0, Forward = 1, Vertical = 2, Blended = 4 };
 
   struct Sample {
+    double latitude = 0;
+    double longitude = 0;
     float speedMps = 0;
     float climbMps = 0;
     float altitudeM = 0;  // Unadjusted pressure altitude, never GPS/QNH altitude.
-    double latitude = 0;
-    double longitude = 0;
     bool speedValid = false;
     bool climbValid = false;
     bool altitudeValid = false;
