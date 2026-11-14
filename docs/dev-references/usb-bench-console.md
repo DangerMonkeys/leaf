@@ -54,6 +54,10 @@ vario readiness, GPS fix, flight timer, and firmware access to the SD card.
 `ip` reports the station and access point IPv4 addresses. `web` gives the URL
 when the Web App is active. Open the Web App through its normal menu. For HTTP
 tests, connect the computer to the same network or to Leaf's access point.
+`wifi` reports the active radio mode such as 0 for off, 1 for station, or 2 for
+access point. `routeheap` reports the start and minimum free internal heap
+for route body receipt and editor normalization, in that order. Zero means a
+phase did not record a measurement.
 
 ## Capture and compare heap
 
@@ -88,6 +92,15 @@ python utils/leaf_bench_web_memory.py --firmware .pio/build/leaf_3_2_5_bench/fir
 
 See the [firmware heap savings log](heap-savings-log.md) for the paired
 baseline and candidate results.
+
+The route regression saves two inactive, disposable files under `/routes`.
+Choose an unused prefix on the SD card. After the run, inspect and remove the
+two files through USB mass storage in charging mode.
+
+```powershell
+python utils/leaf_bench_route_requests.py --firmware .pio/build/leaf_3_2_5_bench/firmware.bin --prefix bench-my-run --output .pio/route-test.json
+python utils/leaf_bench_wifi_idle.py --firmware .pio/build/leaf_3_2_5_bench/firmware.bin --output .pio/wifi-test.json
+```
 
 ## Initial 3.2.5 on-state baseline
 

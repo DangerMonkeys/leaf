@@ -10,7 +10,7 @@ import socket
 from datetime import datetime, timezone
 from pathlib import Path
 from time import monotonic, sleep
-from urllib.parse import urlsplit
+from urllib.parse import urlencode, urlsplit
 from urllib.request import ProxyHandler, build_opener
 
 from leaf_bench_console import Console
@@ -140,6 +140,19 @@ def run_requests(unit, base, args, report):
     report["interrupted_request"] = {"declared_bytes": len(interrupted), "sent_bytes": 3000,
                                      "response": "400" if interrupted_reply else "closed",
                                      "recovery_http_status": status}
+
+    form_body = urlencode({"plain": '{"name":'}).encode("ascii")
+    client = http.client.HTTPConnection(host.hostname, host.port or 80, timeout=10)
+    try:
+        client.request("POST", edit_path, form_body,
+                       {"Content-Type": "application/x-www-form-urlencoded"})
+        form_reply = client.getresponse()
+        detail = json.loads(form_reply.read()).get("detail")
+    finally:
+        client.close()
+    if form_reply.status != 400 or detail != "Route save request is not JSON.":
+        raise ValueError(f"The legacy form body was not decoded: {form_reply.status} {detail}")
+    report["legacy_urlencoded_form"] = {"status": form_reply.status, "detail": detail}
 
 
 def main():

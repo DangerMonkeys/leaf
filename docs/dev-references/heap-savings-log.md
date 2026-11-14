@@ -96,3 +96,86 @@ byte for byte and both fixtures were removed. After a USB restart, the
 original navigation fields matched and the Leaf was returned to the User
 screen with the Web App closed.
 Evidence is saved in `utils/bench_baselines/batch-01/route-and-waypoint-verification.json`.
+
+## Batch 2 · Route request memory
+
+| Audit item | Change | Memory accounting |
+| --- | --- | --- |
+| N06a | Stage the route editor and import JSON bodies in a temporary SD file through the Arduino core's 1,436-byte receive buffer. Enforce the 18,000- and 10,000-byte limits before writing to SD. | The raw JSON path avoids the old full receive buffer and its full String copy. These previously overlapped during receipt. The import handler still holds the decoded XCTSK data while parsing it. The form fallback keeps the existing multipart and URL-encoded `plain` behavior. |
+| N07a | Normalize the editor's parsed document in place. Verify that the complete serialized route reached SD before replacing an existing route. | The editor no longer holds a second full route document. The saving depends on the input fields and point count. |
+
+The candidate uses 100,204 B of linked static RAM, 80 B more than Batch 1.
+That includes the request state and the bench-only phase measurements.
+Use `routeheap` over USB to read free internal heap before receipt, the
+receipt minimum, free heap before editor normalization, and the normalization
+minimum. Those are local phase minima. Measure them separately from the
+boot-to-date heap low water mark.
+
+| Workload | Batch 1 | Batch 2 |
+| --- | --- | --- |
+| 18,000-byte editor request, 20 points | Timed out and USB disconnected | HTTP 200 in 297 ms |
+| 10,000-byte import request, 20 points | HTTP 200 in 218 ms | HTTP 200 in 235 ms |
+
+The editor used **5,408 B** from the first raw callback through SD receipt and
+**1,028 B** during in-place normalization. Import receipt used **2,788 B**.
+Receipt includes SD and network allocations after the raw callback starts.
+The pinned core allocates its 1,436-byte receive buffer before that callback.
+Batch 1 has no phase instrumentation. Its old receipt path overlapped an
+18,001-byte or 10,001-byte receive payload with a second full body String.
+The net before/after peak delta for either phase was not isolated.
+
+The editor rejected 18,001 bytes, malformed JSON, 21 points, and an invalid
+latitude. Import rejected 10,001 bytes. A request that stopped after 3,000 of
+18,000 bytes returned HTTP 400 and the next Web App status call returned 200.
+Reading the SD card confirmed that existing test routes retained their
+coordinates, elevations, goal, and radii, and that the temporary request file
+was gone. The pre-existing active navigation pointer matched its original
+hash. Test route files were removed. Route guidance and route optimizer
+simulator checks passed.
+
+The route-only image was `0.2.4-b25d.bench+h3.2.5`, built with the route
+changes on `b2506c25`. Both app slots were hash-verified. Image SHA-256
+`7004bcc2a6059140b202ab39e5b9cf35342bcf0e3b7fa568cb209f2093b4d24d`.
+The measurements and SD checks are in `utils/bench_baselines/batch-02/`.
+
+## Batch 3 · Idle Wi-Fi shutdown
+
+**N20** powers down the Wi-Fi driver when the user exits the menu or leaves a
+standalone Web App access point. It also stops Wi-Fi after an unsuccessful
+commissioning search and on existing Leaf Log disconnect paths. Wi-Fi setup
+keeps the station connection when handing off a successful join. The factory
+connection remains available for completion retries. Saved-network reconnect
+still starts when the menu needs it.
+
+The table compares the route-only build with the Wi-Fi shutdown build on the
+same Leaf 3.2.5. Each checkpoint is the median of five USB reads after a
+two-second settle.
+
+| Checkpoint | Route-only free B | Wi-Fi shutdown free B | Free B gained |
+| --- | ---: | ---: | ---: |
+| Idle before opening the menu | 46,144 | 97,480 | 51,336 |
+| After closing the first station Web App session | 45,760 | 79,092 | 33,332 |
+| After using Leaf AP, reconnecting, and exiting the menu | 40,516 | 73,548 | 33,032 |
+
+The active Web App consumed comparable amounts of memory. It served the
+status endpoint on the saved network in both cycles. The candidate reported
+`WIFI_OFF` at all three idle checkpoints, `WIFI_AP` on Leaf's access point,
+and `WIFI_STA` after the saved network returned. The first and second
+Web App opens took 1.64 and 1.69 seconds, measured from the User screen.
+After closing the access point, the saved network returned in 0.77 seconds
+versus 0.53 seconds in the route-only run. The access-point test verified its
+mode and IP from USB. It did not move the PC onto the Leaf AP.
+
+The Wi-Fi candidate used 100,204 B of linked static RAM, matching the
+instrumented route build. Hardware coverage includes USB charging/wake,
+normal Web App reconnect, both hosting modes, and returning to idle.
+A fresh factory commissioning session, a real Leaf Log transfer, and OTA
+were not exercised on this unit.
+
+The final image was `0.2.4-064d.bench+h3.2.5`, built with N20 and the
+legacy form fallback on `06453e64`. Its SHA-256 was
+`ddd68959de69f7783c1836ed694531aacde1ddae8b25691f0f642d81066a91ec`.
+Both app slots were hash-verified. The final image also passed the full route
+regression and decoded a URL-encoded `plain` field through the legacy parser.
+Leaf Log sync and charging dialog simulator checks passed. The paired reports
+and the final route regression are in `utils/bench_baselines/batch-03/`.

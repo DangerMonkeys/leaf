@@ -1,0 +1,158 @@
+{
+  "captured_at_utc": "2026-11-14T03:15:56.441184+00:00",
+  "firmware_sha256": "0f99aeceb7a6090084b151a3db36cf6e10ad3514f1a452f5b081995ab4a6209c",
+  "checkpoints": {
+    "idle": {
+      "heap": {
+        "internal_free": 46144,
+        "internal_min_since_boot": 37744,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7564
+      },
+      "station_connected": false,
+      "ap_running": false,
+      "status": {
+        "power": "On",
+        "page": "User",
+        "cursor": 0,
+        "modal_depth": 0,
+        "warning": false,
+        "climb_ready": true,
+        "gps_fix": false,
+        "flight_running": false,
+        "firmware_sd_access": true
+      }
+    },
+    "station_web_1": {
+      "heap": {
+        "internal_free": 92088,
+        "internal_min_since_boot": 37744,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7564
+      },
+      "station_connected": true,
+      "ap_running": false,
+      "status": {
+        "power": "On",
+        "page": "Menu",
+        "cursor": -1,
+        "modal_depth": 1,
+        "warning": false,
+        "climb_ready": true,
+        "gps_fix": false,
+        "flight_running": false,
+        "firmware_sd_access": true
+      }
+    },
+    "idle_after_1": {
+      "heap": {
+        "internal_free": 45760,
+        "internal_min_since_boot": 34936,
+        "internal_largest": 26612,
+        "loop_stack_unused": 7564
+      },
+      "station_connected": false,
+      "ap_running": false,
+      "status": {
+        "power": "On",
+        "page": "User",
+        "cursor": 0,
+        "modal_depth": 0,
+        "warning": false,
+        "climb_ready": true,
+        "gps_fix": false,
+        "flight_running": false,
+        "firmware_sd_access": true
+      }
+    },
+    "station_web_2": {
+      "heap": {
+        "internal_free": 91820,
+        "internal_min_since_boot": 34936,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7564
+      },
+      "station_connected": true,
+      "ap_running": false,
+      "status": {
+        "power": "On",
+        "page": "Menu",
+        "cursor": -1,
+        "modal_depth": 1,
+        "warning": false,
+        "climb_ready": true,
+        "gps_fix": false,
+        "flight_running": false,
+        "firmware_sd_access": true
+      }
+    },
+    "access_point": {
+      "heap": {
+        "internal_free": 83636,
+        "internal_min_since_boot": 34936,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7564
+      },
+      "station_connected": false,
+      "ap_running": true,
+      "status": {
+        "power": "On",
+        "page": "Menu",
+        "cursor": -1,
+        "modal_depth": 1,
+        "warning": false,
+        "climb_ready": true,
+        "gps_fix": false,
+        "flight_running": false,
+        "firmware_sd_access": true
+      }
+    },
+    "menu_after_ap_close": {
+      "heap": {
+        "internal_free": 39692,
+        "internal_min_since_boot": 34936,
+        "internal_largest": 26612,
+        "loop_stack_unused": 7564
+      },
+      "station_connected": true,
+      "ap_running": false,
+      "status": {
+        "power": "On",
+        "page": "Menu",
+        "cursor": 5,
+        "modal_depth": 0,
+        "warning": false,
+        "climb_ready": true,
+        "gps_fix": false,
+        "flight_running": false,
+        "firmware_sd_access": true
+      }
+    },
+    "idle_after_2": {
+      "heap": {
+        "internal_free": 40516,
+        "internal_min_since_boot": 34936,
+        "internal_largest": 26612,
+        "loop_stack_unused": 7564
+      },
+      "station_connected": false,
+      "ap_running": false,
+      "status": {
+        "power": "On",
+        "page": "User",
+        "cursor": 0,
+        "modal_depth": 0,
+        "warning": false,
+        "climb_ready": true,
+        "gps_fix": false,
+        "flight_running": false,
+        "firmware_sd_access": true
+      }
+    }
+  },
+  "passed": true,
+  "version": "0.2.4-b25d.bench+h3.2.5",
+  "reopen_1_ms": 1719,
+  "reopen_2_ms": 1688,
+  "saved_network_reconnect_ms": 531
+}

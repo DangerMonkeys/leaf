@@ -1,0 +1,17 @@
+{
+  "routes": {
+    "bench-r2final-edit.json": {
+      "schema": "leaf.route",
+      "points": 20,
+      "coordinates_and_radii_verified": true
+    },
+    "bench-r2final-import.json": {
+      "schema": "leaf.route",
+      "points": 20,
+      "coordinates_and_radii_verified": true
+    }
+  },
+  "temp_exists": false,
+  "active_state_unchanged": true,
+  "test_files_removed": true
+}

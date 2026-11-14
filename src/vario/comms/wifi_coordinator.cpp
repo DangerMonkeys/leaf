@@ -9,6 +9,7 @@
 #include <cstring>
 
 #include "diagnostics/diagnostic_logs.h"
+#include "diagnostics/diagnostic_network/diagnostic_network.h"
 #include "ui/settings/settings.h"
 
 namespace leaf_wifi {
@@ -428,9 +429,11 @@ namespace leaf_wifi {
   void disconnectFromNetwork() {
     if (diagnosticsEnabled()) appendAutoConnectDiagnostics("disconnect");
     clearSavedNetworkAttempt();
+    // The factory holds this connection through the commissioning response and
+    // retry. The explicit user Wi-Fi setup path can still take over the radio.
+    if (diagnostic_network.connected()) return;
     WiFi.scanDelete();
-    WiFi.disconnect();
-    WiFi.mode(WIFI_STA);
+    if (!WiFi.mode(WIFI_OFF)) Serial.println("WiFi coordinator: unable to stop WiFi");
   }
 
   bool savedNetworkConnectionInProgress() {

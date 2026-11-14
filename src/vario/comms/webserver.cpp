@@ -1846,7 +1846,10 @@ namespace {
     bool canHandle(WebServer&, HTTPMethod method, const String& uri) override {
       return method == HTTP_POST && uri == path_;
     }
-    bool canRaw(WebServer&, const String&) override { return true; }
+    bool canRaw(WebServer& server, const String&) override {
+      // Let the core decode legacy form fields before we read its "plain" argument.
+      return !server.header("Content-Type").startsWith("application/x-www-form-urlencoded");
+    }
     void raw(WebServer&, const String&, HTTPRaw&) override { receiver_(); }
     bool handle(WebServer&, HTTPMethod, const String&) override {
       handler_();
@@ -3663,6 +3666,8 @@ load();
     if (user_server_started && user_server_routes_configured) return;
 
     if (!user_server_routes_configured) {
+      const char* headers[] = {"Content-Type"};
+      user_server.collectHeaders(headers, 1);
       user_server.on("/", HTTP_GET, []() {
         handleUserRequest("GET /", []() {
           if (diagnosticsEnabled()) user_app_route_root_count++;
@@ -4134,6 +4139,7 @@ void webserver_enable_wifi_setup() {
 }
 
 void webserver_disable_user_app() {
+  const bool wasProvisioning = user_app_provisioning;
   webSummaryScan.cancel();
   webEntryScan.cancel();
   webSummaryScanning = webEntryScanning = false;
@@ -4168,8 +4174,12 @@ void webserver_disable_user_app() {
     heap_monitor::checkpoint("after-user-stop");
   }
   if (user_app_using_leaf_wifi) {
-    WiFi.softAPdisconnect(true);
-    WiFi.mode(WIFI_STA);
+    if (wasProvisioning && WiFi.status() == WL_CONNECTED) {
+      // The setup screen observes the new station connection before closing.
+      WiFi.mode(WIFI_STA);
+    } else {
+      leaf_wifi::disconnectFromNetwork();
+    }
     heap_monitor::checkpoint("after-ap-stop");
   }
   user_app_using_leaf_wifi = false;

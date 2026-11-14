@@ -1,0 +1,16 @@
+{
+  "captured_at_utc": "2026-11-14T03:09:47.869134+00:00",
+  "firmware_sha256": "6b96404cbb42ffea128be215a421959a0ed866b6b18f8c6eb655c368717571c5",
+  "prefix": "bench-r2base",
+  "requests": {},
+  "passed": false,
+  "version": "0.2.4-dd5d.bench+h3.2.5",
+  "web_open_heap": {
+    "internal_free": 93432,
+    "internal_min_since_boot": 38272,
+    "internal_largest": 31732,
+    "loop_stack_unused": 7844
+  },
+  "cleanup_error": "WriteFile failed (PermissionError(13, 'The device does not recognize the command.', None, 22))",
+  "error": "timed out"
+}
