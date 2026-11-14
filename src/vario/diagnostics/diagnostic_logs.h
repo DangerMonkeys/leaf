@@ -5,13 +5,12 @@
 
 namespace diagnostic_logs {
 
-  enum class Log : uint8_t { SystemEvents, NetworkEvents, WebRequests, Vario, CpuUtilization };
+  enum class Log : uint8_t { SystemEvents, NetworkEvents, WebRequests, CpuUtilization };
 
   constexpr const char* DIAGNOSTICS_DIR = "/diagnostics";
   constexpr const char* SYSTEM_EVENTS_PATH = "/diagnostics/system_events.csv";
   constexpr const char* NETWORK_EVENTS_PATH = "/diagnostics/network_events.csv";
   constexpr const char* WEB_REQUESTS_PATH = "/diagnostics/web_requests.csv";
-  constexpr const char* VARIO_PATH = "/diagnostics/vario.csv";
   constexpr const char* CPU_UTILIZATION_PATH = "/diagnostics/cpu_utilization.csv";
 
   bool enabled(Log log);

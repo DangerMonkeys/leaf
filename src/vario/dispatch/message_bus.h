@@ -22,6 +22,18 @@ class MessageBus : public etl::message_bus<MAX_ROUTERS_> {
 
   virtual void receive(const etl::imessage& message) override;
 
+  bool subscribeSynchronized(etl::imessage_router& router) {
+    auto locked = lock();
+    if (!locked.valid()) fatalError("Lock acquisition failed subscribing to message bus");
+    return etl::message_bus<MAX_ROUTERS_>::subscribe(router);
+  }
+
+  void unsubscribeSynchronized(etl::imessage_router& router) {
+    auto locked = lock();
+    if (!locked.valid()) fatalError("Lock acquisition failed unsubscribing from message bus");
+    etl::message_bus<MAX_ROUTERS_>::unsubscribe(router);
+  }
+
  private:
   SemaphoreHandle_t mutex_;
 

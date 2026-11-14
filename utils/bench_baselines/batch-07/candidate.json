@@ -1,0 +1,218 @@
+{
+  "version": "0.2.4-756d.bench+h3.2.5",
+  "firmware_sha256": "01efe79fd25da0685830072a9bd3cdf19bb011439e77286620c243a24a69ff2d",
+  "initial_config": [
+    1,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "vario_html_toggle": false,
+  "vario_api_flag": false,
+  "vario_settings_http": 200,
+  "before_bus_start": {
+    "median": {
+      "internal_free": 59040,
+      "internal_min_since_boot": 53668,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7840
+    },
+    "samples": [
+      {
+        "internal_free": 59040,
+        "internal_min_since_boot": 53668,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 59040,
+        "internal_min_since_boot": 53668,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 59040,
+        "internal_min_since_boot": 53668,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 59040,
+        "internal_min_since_boot": 53668,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 59040,
+        "internal_min_since_boot": 53668,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      }
+    ]
+  },
+  "with_bus_running": {
+    "median": {
+      "internal_free": 58492,
+      "internal_min_since_boot": 53668,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7840
+    },
+    "samples": [
+      {
+        "internal_free": 58492,
+        "internal_min_since_boot": 53668,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 58492,
+        "internal_min_since_boot": 53668,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 58492,
+        "internal_min_since_boot": 53668,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 58468,
+        "internal_min_since_boot": 53668,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 58352,
+        "internal_min_since_boot": 53668,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      }
+    ]
+  },
+  "about_bus_running": {
+    "median": {
+      "internal_free": 58356,
+      "internal_min_since_boot": 53668,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7840
+    },
+    "samples": [
+      {
+        "internal_free": 58356,
+        "internal_min_since_boot": 53668,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 58356,
+        "internal_min_since_boot": 53668,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 58356,
+        "internal_min_since_boot": 53668,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 58356,
+        "internal_min_since_boot": 53668,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 58356,
+        "internal_min_since_boot": 53668,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      }
+    ]
+  },
+  "about_developer_disabled": {
+    "median": {
+      "internal_free": 58816,
+      "internal_min_since_boot": 53668,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7840
+    },
+    "samples": [
+      {
+        "internal_free": 58816,
+        "internal_min_since_boot": 53668,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 58816,
+        "internal_min_since_boot": 53668,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 58816,
+        "internal_min_since_boot": 53668,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 58792,
+        "internal_min_since_boot": 53668,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 58816,
+        "internal_min_since_boot": 53668,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      }
+    ]
+  },
+  "about_developer_reenabled": {
+    "median": {
+      "internal_free": 58824,
+      "internal_min_since_boot": 53668,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7840
+    },
+    "samples": [
+      {
+        "internal_free": 58824,
+        "internal_min_since_boot": 53668,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 58824,
+        "internal_min_since_boot": 53668,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 58824,
+        "internal_min_since_boot": 53668,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 58824,
+        "internal_min_since_boot": 53668,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 58824,
+        "internal_min_since_boot": 53668,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      }
+    ]
+  },
+  "passed": true
+}

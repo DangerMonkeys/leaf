@@ -27,6 +27,7 @@
 #include "ui/display/pages/fanet/page_fanet_stats.h"
 #include "ui/display/pages/menu/page_menu_developer.h"
 #include "ui/display/pages/menu/page_menu_settings.h"
+#include "ui/display/pages/menu/page_menu_system.h"
 #include "ui/settings/settings.h"
 
 namespace {
@@ -57,6 +58,14 @@ namespace {
     out.write(png.data(), png.size());
     assert(out.good());
   }
+
+  class SystemMenu : public SystemMenuPage {
+   public:
+    void toggleDeveloperMode() {
+      for (int i = 0; i < 5; ++i) button_event(Button::DOWN, ButtonEvent::CLICKED, 0);
+      button_event(Button::CENTER, ButtonEvent::INCREMENTED, 4);
+    }
+  };
 
   std::vector<std::filesystem::path> csvFiles() {
     std::vector<std::filesystem::path> result;
@@ -276,6 +285,23 @@ int main() {
   flightTimer_stop(false);
   assert(rows(files.back()).size() == 33);
   assert(!busLog.isLogging() && !std::filesystem::exists(root + "/buslogs"));
+
+  assert(busLog.startLog());
+  assert(busLog.startLog() && busLog.isLogging());
+  busLog.on_receive(PressureUpdate(millis(), 101325));
+  settings.dev_startLogAtBoot = true;
+  SystemMenu systemMenu;
+  systemMenu.toggleDeveloperMode();
+  assert(!settings.dev_mode && !settings.dev_startLogAtBoot && !busLog.isLogging());
+  assert(!busLog.startLog());
+  const auto logPath = *std::filesystem::directory_iterator(root + "/buslogs");
+  std::ifstream busFile(logPath.path());
+  std::string line;
+  assert(std::getline(busFile, line) && line.front() == 'V');
+  assert(std::getline(busFile, line) && line.front() == 'P');
+  auto logEnd = std::filesystem::directory_iterator();
+  auto logStart = std::filesystem::directory_iterator(root + "/buslogs");
+  assert(++logStart == logEnd);
 
   settings.dev_mode = false;
   flightTimer_start();

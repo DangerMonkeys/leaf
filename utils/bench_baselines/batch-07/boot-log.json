@@ -1,0 +1,83 @@
+{
+  "startup_bus_active": {
+    "median": {
+      "internal_free": 110220,
+      "internal_min_since_boot": 101292,
+      "internal_largest": 47092,
+      "loop_stack_unused": 7840
+    },
+    "samples": [
+      {
+        "internal_free": 110220,
+        "internal_min_since_boot": 101292,
+        "internal_largest": 47092,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 110220,
+        "internal_min_since_boot": 101292,
+        "internal_largest": 47092,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 110220,
+        "internal_min_since_boot": 101292,
+        "internal_largest": 47092,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 110220,
+        "internal_min_since_boot": 101292,
+        "internal_largest": 47092,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 110220,
+        "internal_min_since_boot": 101292,
+        "internal_largest": 47092,
+        "loop_stack_unused": 7840
+      }
+    ]
+  },
+  "startup_bus_closed": {
+    "median": {
+      "internal_free": 59796,
+      "internal_min_since_boot": 56072,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7840
+    },
+    "samples": [
+      {
+        "internal_free": 59796,
+        "internal_min_since_boot": 56072,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 59796,
+        "internal_min_since_boot": 56072,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 59796,
+        "internal_min_since_boot": 56072,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 59796,
+        "internal_min_since_boot": 56072,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 59796,
+        "internal_min_since_boot": 56072,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      }
+    ]
+  },
+  "passed": true
+}

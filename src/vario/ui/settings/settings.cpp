@@ -11,6 +11,7 @@
 #include "diagnostics/heap_monitor.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
+#include "logging/buslog.h"
 #include "logging/log.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
@@ -273,7 +274,6 @@ void Settings::loadDefaults() {
   diag_systemEvents = DEF_DIAG_SYSTEM_EVENTS;
   diag_networkEvents = DEF_DIAG_NETWORK_EVENTS;
   diag_webRequests = DEF_DIAG_WEB_REQUESTS;
-  diag_vario = DEF_DIAG_VARIO;
   diag_cpuUtilization = DEF_DIAG_CPU_UTILIZATION;
 
   // Leaf Labs
@@ -379,7 +379,6 @@ void Settings::retrieve() {
   diag_systemEvents = leafPrefs.getBool("DIAG_SYSTEM", DEF_DIAG_SYSTEM_EVENTS);
   diag_networkEvents = leafPrefs.getBool("DIAG_NETWORK", DEF_DIAG_NETWORK_EVENTS);
   diag_webRequests = leafPrefs.getBool("DIAG_WEB_REQ", DEF_DIAG_WEB_REQUESTS);
-  diag_vario = leafPrefs.getBool("DIAG_VARIO", DEF_DIAG_VARIO);
   diag_cpuUtilization = leafPrefs.getBool("DIAG_CPU_UTIL", DEF_DIAG_CPU_UTILIZATION);
 
   // Leaf Labs
@@ -505,7 +504,6 @@ void Settings::save() {
   leafPrefs.putBool("DIAG_SYSTEM", diag_systemEvents);
   leafPrefs.putBool("DIAG_NETWORK", diag_networkEvents);
   leafPrefs.putBool("DIAG_WEB_REQ", diag_webRequests);
-  leafPrefs.putBool("DIAG_VARIO", diag_vario);
   leafPrefs.putBool("DIAG_CPU_UTIL", diag_cpuUtilization);
   // Leaf Labs
   leafPrefs.putBool("LAB_LEAF_LOG", labs_leafLog);
@@ -900,7 +898,10 @@ void Settings::toggleBoolNeutral(bool* unitSetting) {
 
 void Settings::setDeveloperMode(bool enabled) {
   dev_mode = enabled;
-  if (!dev_mode) dev_udpInjection = false;
+  if (!dev_mode) {
+    dev_udpInjection = false;
+    busLog.endLog();
+  }
   heap_monitor::setHistoryEnabled(dev_mode && diag_systemEvents);
 }
 

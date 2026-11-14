@@ -297,3 +297,42 @@ The baseline was Batch 5's `42fbd198…` image. The candidate was
 Both candidate app slots were hash-verified. Image SHA-256
 `76166ce106e53e5bfdff7338ecda314beb1bc303edcc813dd040630076807931`.
 Bench evidence is in `utils/bench_baselines/batch-06/`.
+
+
+## Batch 7 · Developer Vario CSV and bus log
+
+| Audit item | Change | Memory accounting |
+| --- | --- | --- |
+| I04 | Retire the Developer Vario CSV toggle, API field and writer. Remove the CSV-only IMU fields and long climb average. Store the two factory timeout readings at the precision their getters already return. | The linked IMU is **72 B** smaller (624 to 552 B), and the linked barometer is **8 B** smaller (512 to 504 B). Total linked static RAM fell from 98,332 to 98,252 B. Retiring the writer also removes its temporary SD/file allocations and periodic writes when enabled. A USB sample between writes does not isolate that temporary allocation. |
+| S17b | When Developer mode turns off, stop the bus log. Unsubscribe under the message-bus lock before closing the file so an already-dispatched callback can finish. | On the candidate the same System menu checkpoint gained **460 B** when Developer mode was switched off. The older build gained 8 B and continued logging. Its separate open step consumed 4,432 B versus 548 B on the candidate. These heap readings include allocator and SD effects. |
+| S17c | Allow startup bus logging only with Developer mode enabled, and start after SD and the message bus are available. | Avoids opening the same file and buffers in ordinary mode. There is no separate steady-state reduction when startup logging is disabled already. |
+
+| USB checkpoint | Batch 6 free B | Batch 7 free B |
+| --- | ---: | ---: |
+| Developer menu before manual start | 58,356 | 59,040 |
+| Developer menu with bus log running | 53,924 | 58,492 |
+| System menu before disabling Developer mode | 53,788 | 58,356 |
+| System menu after disabling Developer mode | 53,796 | 58,816 |
+| System menu after re-enabling Developer mode | 53,796 | 58,824 |
+
+Each value is the median of five USB reads after a one-second settle. The
+candidate console confirmed that the bus log closed on Developer mode exit
+and stayed closed on re-entry. A saved startup preference also started the
+bus log after a USB reset and wake with Developer mode enabled. Both
+candidate logs contained the firmware header and pressure records. Simulator
+cold boots with the same legacy startup flag started a log only with
+Developer mode enabled. The simulator also passed live vario filter
+continuity on both IMU paths, Developer logging and runtime capture. The
+bench reported a ready vario and HTTP 200 for live vario settings. The
+interactive factory self-test remains a hardware follow-up.
+
+The baseline briefly enabled Vario CSV for comparison. The subsequent
+candidate preserved that file byte for byte and omitted its control and API
+field. The test removed the three disposable bus logs, preserved the
+pre-existing bus logs, and restored the original Developer mode and startup
+logging settings.
+
+The final image was `0.2.4-756d.bench+h3.2.5`, built on `7568b4c6`. Both
+app slots were hash-verified. Image SHA-256
+`01efe79fd25da0685830072a9bd3cdf19bb011439e77286620c243a24a69ff2d`.
+Bench evidence is in `utils/bench_baselines/batch-07/`.

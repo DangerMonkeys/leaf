@@ -17,8 +17,6 @@ namespace diagnostic_logs {
         return settings.diag_networkEvents;
       case Log::WebRequests:
         return settings.diag_webRequests;
-      case Log::Vario:
-        return settings.diag_vario;
       case Log::CpuUtilization:
         return settings.diag_cpuUtilization;
     }

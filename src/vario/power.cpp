@@ -114,7 +114,6 @@ void Power::bootUp() {
     display.setPage((MainPage)settings.startPage);
     heap_monitor::checkpoint("power-start-page");
 
-    maybeStartBusLog();
   } else {
     // if not center button, then USB power turned us on, go into charge mode
     info_.onState = PowerState::OffUSB;
@@ -125,6 +124,7 @@ void Power::bootUp() {
   // charge mode, we still need to initialize devices so we can put some
   // of them back to sleep)
   initPeripherals();
+  if (info_.onState == PowerState::On) maybeStartBusLog();
   heap_monitor::checkpoint("power-boot-end");
 }
 
@@ -271,7 +271,7 @@ bool Power::switchToOnState() {
 }
 
 void Power::maybeStartBusLog() {
-  if (settings.dev_startLogAtBoot) {
+  if (settings.dev_mode && settings.dev_startLogAtBoot) {
     Serial.println("Starting bus log at startup");
     if (busLog.startLog()) {
       Serial.println("Started bus log at startup");

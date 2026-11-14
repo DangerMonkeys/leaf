@@ -6,9 +6,6 @@
 
 #include "instruments/vario_timing.h"
 
-#include <SD_MMC.h>
-
-#include "diagnostics/diagnostic_logs.h"
 #include "diagnostics/fatal_error.h"
 #include "diagnostics/flight_diagnostics.h"
 #include "hardware/Leaf_I2C.h"
@@ -17,37 +14,16 @@
 #include "instruments/imu.h"
 #include "logging/log.h"
 #include "logging/telemetry.h"
-#include "storage/sd_card.h"
 #include "ui/audio/speaker.h"
 #include "ui/input/buttons.h"
 #include "ui/settings/settings.h"
 #include "utils/flags_enum.h"
 #include "utils/magic_enum.h"
 
-// Number of seconds for the legacy long-term diagnostic climb average.
-constexpr uint32_t CLIMB_AVERAGE_S = 4;
-
-// number of seconds to average the climb rate before declaring that the averaged value is valid
-constexpr uint32_t CLIMB_AVERAGE_INIT_S = 1;
-
 constexpr size_t BARO_STARTUP_DISCARD_SAMPLES = 20;
 
 // Singleton barometer instance for device
 Barometer baro;
-
-namespace {
-  void writeVarioHeaderIfNeeded(File& file, bool existed) {
-    if (existed && file.size() > 0) return;
-    file.println(
-        "millis,motion_millis,pressure,baro_alt_m,baro_alt_adjusted_cm,accel_total_g,"
-        "ax_g,ay_g,az_g,qx,qy,qz,awx_g,awy_g,awz_g,gravity_g,vertical_accel_g,"
-        "kalman_accel_input_g,kalman_valid,kalman_position_m,kalman_velocity_mps,"
-        "kalman_acceleration_mps2,climb_raw_mps,climb_filtered_cms,climb_average_cms,"
-        "gravity_candidates,gravity_accepted,gravity_reject_accel,gravity_reject_vertical,"
-        "gravity_reject_time,gravity_reject_plausibility,gravity_slew_limited,"
-        "kalman_updates,motion_samples,motion_reject_quat");
-  }
-}  // namespace
 
 void Barometer::adjustAltSetting(int8_t dir, uint8_t count) {
   // TODO(#192): check whether settings is initialized before reading/using
@@ -134,8 +110,6 @@ void Barometer::init(void) {
   climbDisplayHistoryIndex_ = 0;
   climbDisplayBlockSum_ = 0;
   climbDisplayBlockCount_ = 0;
-  climbRateAverage_ = 0;
-  nInitSamplesRemaining_ = CLIMB_AVERAGE_INIT_S * BARO_SAMPLES_PER_SECOND;
   startupDiscardSamplesRemaining_ = BARO_STARTUP_DISCARD_SAMPLES;
 
   state_ = State::WaitingForFirstReading;
@@ -325,20 +299,6 @@ bool Barometer::climbRate1SecAverageValid() {
   return true;
 }
 
-float Barometer::climbRateAverage() {
-  assertState("Barometer::climbRateAverage", State::Ready);
-  if (nInitSamplesRemaining_ > 0) {
-    fatalError(
-        "Barometer::climbRateAverage accessed before initialized; waiting for %d samples more",
-        nInitSamplesRemaining_);
-  }
-  return climbRateAverage_;
-}
-
-bool Barometer::climbRateAverageValid() {
-  return state_ == State::Ready && imu.velocityValid() && nInitSamplesRemaining_ == 0;
-}
-
 uint16_t Barometer::startupSamplesCompleted() const {
   if (state_ == State::Uninitialized || state_ == State::Sleeping) return 0;
   if (state_ != State::WaitingForFirstReading) return BARO_STARTUP_DISCARD_SAMPLES;
@@ -386,8 +346,6 @@ void Barometer::invalidateClimb() {
   climbDisplayHistory_.fill(0);
   climbDisplayHistoryCount_ = climbDisplayHistoryIndex_ = climbDisplayBlockCount_ = 0;
   climbDisplayBlockSum_ = 0;
-  climbRateAverage_ = 0;
-  nInitSamplesRemaining_ = CLIMB_AVERAGE_INIT_S * BARO_SAMPLES_PER_SECOND;
 }
 
 // Filter ClimbRate
@@ -419,59 +377,6 @@ void Barometer::filterClimb() {
   }
   climbRate1SecAverage_ = static_cast<int32_t>(climb1SecAvg * 100);
   validClimbRate1SecAverage_ = true;
-
-  // use new value in the long-running average
-  if (nInitSamplesRemaining_ > 1) {
-    climbRateAverage_ += climbRateFiltered_;
-    nInitSamplesRemaining_--;
-  } else if (nInitSamplesRemaining_ == 1) {
-    climbRateAverage_ =
-        (climbRateAverage_ + climbRateFiltered_) / (CLIMB_AVERAGE_INIT_S * BARO_SAMPLES_PER_SECOND);
-    nInitSamplesRemaining_ = 0;
-  } else {
-    // now calculate the longer-running average climb value
-    // (this is a smoother, slower-changing diagnostic value)
-    uint32_t total_samples = CLIMB_AVERAGE_S * BARO_SAMPLES_PER_SECOND;
-
-    climbRateAverage_ =
-        (climbRateAverage_ * (total_samples - 1) + climbRateFiltered_) / total_samples;
-    if (isnan(climbRateAverage_) || isinf(climbRateAverage_)) {
-      fatalError(
-          "climbRateAverage in Barometer::filterClimb was %g after incorporating climbRateFiltered",
-          climbRateAverage_);
-    }
-  }
-
-  if (diagnostic_logs::enabled(diagnostic_logs::Log::Vario) && diagnostic_logs::ensureDirectory()) {
-    const bool existed = SD_MMC.exists(diagnostic_logs::VARIO_PATH);
-    File file = SD_MMC.open(diagnostic_logs::VARIO_PATH, "a", true);
-    if (file) {
-      writeVarioHeaderIfNeeded(file, existed);
-      file.printf(
-          "%lu,%lu,%ld,%.6f,%ld,%.6f,%.6f,%.6f,%.6f,%.8f,%.8f,%.8f,%.6f,%.6f,%.6f,"
-          "%.6f,%.6f,%.6f,%u,%.6f,%.6f,%.6f,%.6f,%ld,%.6f,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%"
-          "lu\n",
-          static_cast<unsigned long>(millis()), static_cast<unsigned long>(imu.lastMotionTime()),
-          static_cast<long>(pressure_), altF(), static_cast<long>(altAdjusted()), imu.getAccel(),
-          imu.lastDeviceAccelX(), imu.lastDeviceAccelY(), imu.lastDeviceAccelZ(), imu.lastQuatX(),
-          imu.lastQuatY(), imu.lastQuatZ(), imu.lastWorldAccelX(), imu.lastWorldAccelY(),
-          imu.lastWorldVerticalAccel(), imu.gravityEstimate(), imu.verticalAccel(),
-          imu.kalmanAccelInput(), imu.kalmanValid() ? 1 : 0, imu.kalmanPosition(),
-          imu.kalmanVelocity(), imu.kalmanAcceleration(), climbRateRaw_,
-          static_cast<long>(climbRateFiltered_), climbRateAverage_,
-          static_cast<unsigned long>(imu.gravityUpdateCandidateCount()),
-          static_cast<unsigned long>(imu.gravityUpdateAcceptedCount()),
-          static_cast<unsigned long>(imu.gravityUpdateRejectedAccelCount()),
-          static_cast<unsigned long>(imu.gravityUpdateRejectedVerticalCount()),
-          static_cast<unsigned long>(imu.gravityUpdateRejectedTimeCount()),
-          static_cast<unsigned long>(imu.gravityUpdateRejectedPlausibilityCount()),
-          static_cast<unsigned long>(imu.gravityUpdateSlewLimitedCount()),
-          static_cast<unsigned long>(imu.kalmanUpdateSampleCount()),
-          static_cast<unsigned long>(imu.motionSampleCount()),
-          static_cast<unsigned long>(imu.motionSampleRejectedQuaternionCount()));
-      file.close();
-    }
-  }
 }
 
 void Barometer::updateClimbDisplayHistory() {

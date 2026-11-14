@@ -82,6 +82,8 @@ void setup() {
   baro.subscribeTo(&bus);
   baro.publishTo(&bus);
 
+  busLog.setBus(&bus);
+
   // Initialize anything left over on the Task Manager System
   Serial.println("Initializing Taskman Service");
   taskman.init();
@@ -117,9 +119,6 @@ void setup() {
 
   buttonMonitor.subscribeTo(&bus);
   buttonDispatcher.subscribeTo(&bus);
-
-  // Provide bus logger access to the bus
-  busLog.setBus(&bus);
 
   Serial.println("Leaf Initialized");
   heap_monitor::checkpoint("setup-complete");

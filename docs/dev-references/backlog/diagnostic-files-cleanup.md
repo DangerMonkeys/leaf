@@ -16,7 +16,7 @@ mode and each category's setting control logging in the release image.
 | `system_events.csv` | System Events (`diag_systemEvents`): lifecycle/boot events, heap checkpoints, buffered heap dumps, registered-task stack headroom and Leaf Log retry details |
 | `network_events.csv` | Network Events (`diag_networkEvents`): WiFi setup and saved-network connection events |
 | `web_requests.csv` | Web Requests (`diag_webRequests`): web request timing and session/counter diagnostics |
-| `vario.csv` | Vario (`diag_vario`): instrument/filter diagnostics |
+| `vario.csv` | Legacy instrument/filter capture. New firmware no longer writes it. |
 | `runtime_N.json` | CPU/timing capture (`diag_cpuUtilization`): explicit export of a bounded, frozen RAM capture |
 
 The former `heap_lifecycle.csv`, `heap_monitor.csv`, `wifi_setup.csv`,

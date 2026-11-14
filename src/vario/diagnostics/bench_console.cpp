@@ -13,6 +13,7 @@
 #include "hardware/buttons.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
+#include "logging/buslog.h"
 #include "logging/log.h"
 #include "power.h"
 #include "storage/sd_card.h"
@@ -102,12 +103,15 @@ namespace bench_console {
         respond("BENCH fanet %d %s %lu %lu\n", fanetRadio.isDetected(),
                 fanetRadio.getState().c_str(), (unsigned long)sample.fanetTxStack,
                 (unsigned long)sample.fanetRxStack);
+      } else if (!strcmp(command, "buslog")) {
+        respond("BENCH buslog %d %d\n", busLog.isLogging(), settings.dev_startLogAtBoot);
       } else if (!strcmp(command, "version")) {
         respond("BENCH version %s\n", LeafVersionInfo::firmwareVersion());
       } else if (!strcmp(command, "config")) {
+        // The retired vario CSV flag remains a reserved zero for older bench clients.
         respond("BENCH config %d %u %d %d %d %d %d %d\n", settings.system_bluetoothOn,
                 unsigned(settings.fanet_region), settings.dev_mode, settings.diag_systemEvents,
-                settings.diag_networkEvents, settings.diag_webRequests, settings.diag_vario,
+                settings.diag_networkEvents, settings.diag_webRequests, 0,
                 settings.diag_cpuUtilization);
       } else if (buttonCommand) {
         const char* time = strtok_r(nullptr, " ", &cursor);

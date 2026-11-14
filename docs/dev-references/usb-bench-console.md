@@ -62,6 +62,9 @@ the TX and RX worker stack high-water marks in bytes. The stack value is
 zero when the worker is absent. The `navheap` reply gives start and minimum
 free internal heap for route import and saved-waypoint listing in that order.
 These are phase readings from the most recent run of each operation.
+`buslog` reports whether the logger has an open file, then the saved
+startup-logging flag. The old Vario CSV field in `config` is reserved as zero
+so older bench clients can read the same reply format.
 
 ## Capture and compare heap
 

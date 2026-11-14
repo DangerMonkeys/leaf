@@ -1,6 +1,6 @@
 #pragma once
 
-#include "etl/message_bus.h"
+#include "dispatch/message_bus.h"
 
 #include "dispatch/message_types.h"
 #include "logbook/flight.h"
@@ -9,7 +9,7 @@
 class BusLogger : public etl::message_router<BusLogger, AmbientUpdate, CommentMessage, GpsMessage,
                                              MotionUpdate, PressureUpdate> {
  public:
-  void setBus(etl::imessage_bus* bus) { bus_ = bus; }
+  void setBus(MessageBus<11>* bus) { bus_ = bus; }
   bool startLog();
   bool isLogging() { return file_; }
   void endLog();
@@ -27,7 +27,7 @@ class BusLogger : public etl::message_router<BusLogger, AmbientUpdate, CommentMe
 
   File file_;
   unsigned long tStart_;
-  etl::imessage_bus* bus_ = nullptr;
+  MessageBus<11>* bus_ = nullptr;
 };
 
 extern BusLogger busLog;

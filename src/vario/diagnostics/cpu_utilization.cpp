@@ -82,7 +82,7 @@ namespace cpu_utilization {
       snprintf(out, length,
                "{\"ble\":%s,\"fanet_region\":%u,\"thermal_core\":%s,\"thermal_track\":%s,"
                "\"basic_page\":%s,\"user_page\":%s,\"nav_page\":%s,\"debug_pages\":%s,"
-               "\"system_log\":%s,\"network_log\":%s,\"web_log\":%s,\"vario_log\":%s,\"fanet_log\":"
+               "\"system_log\":%s,\"network_log\":%s,\"web_log\":%s,\"fanet_log\":"
                "%s,\"route_optimizer\":true}",
                settings.system_bluetoothOn ? "true" : "false", (unsigned)settings.fanet_region,
                settings.disp_showThermalCorePage ? "true" : "false",
@@ -93,7 +93,7 @@ namespace cpu_utilization {
                settings.disp_showDebugPage ? "true" : "false",
                settings.diag_systemEvents ? "true" : "false",
                settings.diag_networkEvents ? "true" : "false",
-               settings.diag_webRequests ? "true" : "false", settings.diag_vario ? "true" : "false",
+               settings.diag_webRequests ? "true" : "false",
                settings.dev_logFanet ? "true" : "false");
     }
 

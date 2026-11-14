@@ -83,12 +83,6 @@ class Barometer : public MessageSink<Barometer, PressureUpdate>,
 
   bool climbRate1SecAverageValid();
 
-  // Legacy long-term (several seconds) averaged climb rate retained for diagnostics and other
-  // non-display consumers (cm/s)
-  float climbRateAverage();
-
-  bool climbRateAverageValid();
-
   uint16_t startupSamplesCompleted() const;
   uint16_t startupSamplesRequired() const;
 
@@ -154,10 +148,6 @@ class Barometer : public MessageSink<Barometer, PressureUpdate>,
 
   // Current representation of average climb rate, or a temporary sum of climb rate samples during
   // initialization
-  float climbRateAverage_;
-  // Number of remaining initial samples to be summed into climbRateAverage_ before declaring
-  // climbRateAverage available
-  size_t nInitSamplesRemaining_;
   size_t startupDiscardSamplesRemaining_;
 
   int32_t altAdjusted_;
