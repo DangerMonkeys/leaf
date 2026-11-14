@@ -30,6 +30,15 @@ available. The COM port can disappear during that transition. Reopen it after
 it re-enumerates. Use the release image to verify production USB and power
 behavior.
 
+Leaf release and bench environments compile the TinyUSB device dispatcher
+from the exact revision recorded in the pinned Arduino SDK. The build
+downloads and verifies the source on first use, then caches it under the
+PlatformIO build directory. The SDK still supplies the USB controller, the
+control endpoint, serial, and mass storage. The dispatcher keeps the serial
+and mass-storage classes and the SDK's 4,096-byte mass-storage buffer.
+When updating the SDK, verify the dispatcher source pin and repeat the USB
+hardware checks in the heap savings log.
+
 ## Drive the unit
 
 With a USB data cable, run these commands from the repository root using a

@@ -336,3 +336,54 @@ The final image was `0.2.4-756d.bench+h3.2.5`, built on `7568b4c6`. Both
 app slots were hash-verified. Image SHA-256
 `01efe79fd25da0685830072a9bd3cdf19bb011439e77286620c243a24a69ff2d`.
 Bench evidence is in `utils/bench_baselines/batch-07/`.
+
+## Batch 8 · Unused USB device classes
+
+Leaf compiles the device dispatcher from the TinyUSB revision pinned by the
+Arduino SDK. The linker then omits the unused class drivers and keeps the
+SDK's USB controller, control endpoint, serial (CDC), and mass storage
+(MSC). The CDC endpoint buffers still total 128 B and the MSC endpoint
+buffer is still 4,096 B. This also retains Developer firmware mass storage.
+
+| Audit item | Disabled TinyUSB class | Linked static class storage removed |
+| --- | --- | ---: |
+| LIB-058 | NCM networking | 6,472 B |
+| LIB-059 | Application DFU and DFU runtime | 4,116 B |
+| LIB-060 | HID | 204 B |
+| LIB-061 | MIDI | 496 B |
+| LIB-062 | Video | 153 B |
+| LIB-063 | Vendor interface | 500 B |
+
+The class symbols account for 11,941 B. The net linked static RAM saving
+was **11,928 B**, including the dispatcher's layout and section alignment.
+Both builds used the same pinned SDK and boot configuration.
+
+| Leaf 3.2.5 bench metric | Batch 7 | Batch 8 | Change |
+| --- | ---: | ---: | ---: |
+| Linked static RAM | 98,252 B | 86,324 B | −11,928 B |
+| Free internal heap before opening the menu | 111,412 B | 123,340 B | +11,928 B |
+| Largest free internal block at idle | 49,140 B | 61,428 B | +12,288 B |
+| Minimum free heap since boot at that checkpoint | 102,400 B | 114,328 B | +11,928 B |
+
+Each idle reading is the median of ten samples on the same unit after a
+reset and USB wake. Both measurements used the User page, the saved radio
+configuration, and a closed Web App.
+
+Windows enumerated the serial console, Leaf SD volume, and Developer
+firmware mass-storage device. Both builds flushed a 2 MiB SD write and
+matched its SHA-256 on readback. The disposable file was removed. Windows
+accepted explicit SD eject on both builds and showed the SD media absent.
+The bench console stopped replying after eject on both builds. The
+candidate re-entered the ESP32 bootloader over USB, and firmware SD access
+and the console returned after reset and wake. Both app slots were flash
+hash-verified. USB serial and Leaf Log simulator regressions also passed.
+
+The regular `leaf_3_2_5_release` build compiled and linked with the same
+dispatcher. Remaining hardware coverage includes an actual update through
+the Developer firmware drive, production-image USB behavior on other
+hardware revisions, and a fresh factory commissioning run.
+
+The tested bench image was `0.2.4-632d.bench+h3.2.5`, built on `63205415`.
+Image SHA-256
+`b9f4df22485e213568c51a6e97c31e80b82e1ab9d4c4b090617410ca0fa40441`.
+Bench evidence is in `utils/bench_baselines/batch-08/`.
