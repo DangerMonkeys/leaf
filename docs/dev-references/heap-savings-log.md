@@ -69,9 +69,7 @@ investigation before using this stress case as a prerelease pass criterion.
   validation, route-optimizer diagnostics, Device Maintenance status, the
   picker lifetime, and System Events enable/disable. The diagnostic setting
   was restored. Factory-network commissioning and completion retry still
-  need a fresh commissioning fixture. The web request probe exercised
-  validation, and successful route persistence and file activation remain
-  outside its coverage.
+  need a fresh commissioning fixture.
 - Simulator checks passed for flight-start windows, GPS UART handling,
   USB serial, and developer logging. Firmware configuration tests passed.
 - Baseline image: `0.2.4-03ed.bench+h3.2.5`, SHA-256
@@ -82,3 +80,19 @@ investigation before using this stress case as a prerelease pass criterion.
 - Raw USB captures and the ELF summary are in `utils/bench_baselines/batch-01/`.
   The tested candidate BIN, ELF, map, and flash log are archived locally in
   `.pio/bench-batch-01/final/`. [USB bench console guide](usb-bench-console.md)
+
+### Route and waypoint verification
+
+A follow-up on the same candidate saved and activated a two-point route
+through the Web App. The navigator showed it as the active route. Reading
+the SD card directly confirmed the full route name, both waypoints and
+their cylinder radii, and the goal role on the final point. The navigator
+applied its existing 15-character route label limit.
+
+The Web App listed and activated a separate GPX file. The navigator reported
+both expected waypoints with their coordinates and elevations, and the SD
+card's navigation pointer referenced the GPX. The original pointer was restored
+byte for byte and both fixtures were removed. After a USB restart, the
+original navigation fields matched and the Leaf was returned to the User
+screen with the Web App closed.
+Evidence is saved in `utils/bench_baselines/batch-01/route-and-waypoint-verification.json`.
