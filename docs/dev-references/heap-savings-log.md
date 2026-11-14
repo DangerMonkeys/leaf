@@ -179,3 +179,17 @@ Both app slots were hash-verified. The final image also passed the full route
 regression and decoded a URL-encoded `plain` field through the legacy parser.
 Leaf Log sync and charging dialog simulator checks passed. The paired reports
 and the final route regression are in `utils/bench_baselines/batch-03/`.
+
+## Remaining hardware tests for batches 1–3
+
+Record the firmware commit and image SHA-256 for each run. Keep the results
+next to the corresponding bench captures. Use the release image for checks
+that depend on normal USB, charging, or OTA behavior. [Firmware release checklist](releasing.md)
+
+| Test still open | Setup and expected result |
+| --- | --- |
+| Factory commissioning and completion retry (N03a, N03b, N20) | Use a spare Leaf with erased NVS and a test SD card on the factory network. Run the factory tool through discovery, reset, self-test details, restart/reconnect, and completion via the canonical endpoints. Drop the first completion reply and confirm that status and a repeated completion request succeed on the same factory connection, including after closing a Web App session on that connection. Confirm the next boot skips factory discovery after completion. Verify the Device Maintenance repair action on an eligible fixture and confirm ordinary Web App hosting leaves the factory endpoints unavailable. |
+| Live Leaf Log upload (N20) | Use a linked test account and an eligible IGC on a test SD card. From charging mode, verify saved Wi-Fi reconnect, actual upload, one recorded result, and return to USB mass storage. Interrupt the network during a transfer, verify that the flight stays pending, then confirm a retry reconnects and completes without a duplicate. Check that cancellation or power-on hands off the SD card only after the upload worker exits. Simulator coverage is recorded above. |
+| OTA over saved Wi-Fi (N20) | Update a spare unit over its saved network with a known test image. Verify the update completes, the expected version boots, settings and SD files survive, and the Web App reconnects after the reboot. The bench USB flashes exercised a different update path. |
+| Leaf access point and Wi-Fi setup (N20) | Join Leaf's access point from the host, load the Web App, and exercise a route request. Test a successful join through the setup portal and a cancelled setup. Verify the station connection survives a successful handoff, and check saved-network reconnect and idle radio shutdown on exit. The bench run verified AP mode and IP over USB and exercised HTTP on the saved station network. |
+| Repeated route stress and SD write failure (N06a, N07a) | On the combined firmware, repeat the 18,000-byte editor request after screenshots and other Web App activity, then reopen the app and repeat. Record any disconnect and the phase heap readings. With a disposable full or failing SD card, verify that a staging or write failure preserves an existing route and a later retry can save successfully. The combined candidate passed the maximum-size, oversize, and interrupted-transfer checks on the bench card. |
