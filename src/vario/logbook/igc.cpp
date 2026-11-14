@@ -295,6 +295,16 @@ bool Igc::startFlight() {
   logger.fix_accuracy = 2;  // Quectel LC86G spec: 2.0m CEP horizontal accuracy
   logger.writeHeader();
 
+  // Arduino String keeps its capacity when assigned "". A null C string frees it.
+  logger.pilot = static_cast<const char*>(nullptr);
+  logger.glider_type = static_cast<const char*>(nullptr);
+  logger.firmware_version = static_cast<const char*>(nullptr);
+  logger.hardware_version = static_cast<const char*>(nullptr);
+  logger.logger_type = static_cast<const char*>(nullptr);
+  logger.gps_type = static_cast<const char*>(nullptr);
+  logger.pressure_type = static_cast<const char*>(nullptr);
+  logger.time_zone = static_cast<const char*>(nullptr);
+
   // Log the I record for the extension values appended to each B fix record.
   const IRecordExtension extensions[] = {IRecordExtension(3, "FXA"), IRecordExtension(3, "GSP"),
                                          IRecordExtension(3, "TRT"), IRecordExtension(3, "WDI"),

@@ -5,7 +5,7 @@ import shutil
 def rename_firmware(*args, **kwargs):
   env_name = env["PIOENV"]
   hardware_variant, _, behavior_variant = env_name.rpartition("_")
-  prefix = "bench-firmware" if behavior_variant == "bench" else "firmware"
+  prefix = f"{behavior_variant}-firmware" if behavior_variant.endswith("bench") else "firmware"
 
   firmware_path = os.path.join(env.subst("$BUILD_DIR"), env["PROGNAME"] + ".bin")
   new_name = os.path.join(env.subst("$BUILD_DIR"), f"{prefix}-{hardware_variant}.bin")

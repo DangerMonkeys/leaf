@@ -3,6 +3,8 @@ title: Firmware heap savings log
 description: Leaf memory audit changes, measured savings, and on-device verification.
 ---
 
+[Branch-wide heap savings report](heap-savings-summary.md)
+
 ## Batch 1 · Leaf 3.2.5
 
 One bench build covered web request and route lifetimes, diagnostic heap history,
@@ -189,7 +191,7 @@ that depend on normal USB, charging, or OTA behavior. [Firmware release checklis
 | Test still open | Setup and expected result |
 | --- | --- |
 | Factory commissioning and completion retry (N03a, N03b, N20) | Use a spare Leaf with erased NVS and a test SD card on the factory network. Run the factory tool through discovery, reset, self-test details, restart/reconnect, and completion via the canonical endpoints. Drop the first completion reply and confirm that status and a repeated completion request succeed on the same factory connection, including after closing a Web App session on that connection. Confirm the next boot skips factory discovery after completion. Verify the Device Maintenance repair action on an eligible fixture and confirm ordinary Web App hosting leaves the factory endpoints unavailable. |
-| Live Leaf Log upload (N20) | Use a linked test account and an eligible IGC on a test SD card. From charging mode, verify saved Wi-Fi reconnect, actual upload, one recorded result, and return to USB mass storage. Interrupt the network during a transfer, verify that the flight stays pending, then confirm a retry reconnects and completes without a duplicate. Check that cancellation or power-on hands off the SD card only after the upload worker exits. Simulator coverage is recorded above. |
+| Live Leaf Log retry and cancellation (N20) | Batch 9 verified saved Wi-Fi reconnect, actual uploads, persisted delivery records, and return to USB mass storage. Interrupt the network during a transfer, verify that the flight stays pending, then confirm a retry reconnects and completes without a duplicate. Check that cancellation or power-on hands off the SD card only after the upload worker exits. Simulator coverage is recorded above. |
 | OTA over saved Wi-Fi (N20) | Update a spare unit over its saved network with a known test image. Verify the update completes, the expected version boots, settings and SD files survive, and the Web App reconnects after the reboot. The bench USB flashes exercised a different update path. |
 | Leaf access point and Wi-Fi setup (N20) | Join Leaf's access point from the host, load the Web App, and exercise a route request. Test a successful join through the setup portal and a cancelled setup. Verify the station connection survives a successful handoff, and check saved-network reconnect and idle radio shutdown on exit. The bench run verified AP mode and IP over USB and exercised HTTP on the saved station network. |
 | Repeated route stress and SD write failure (N06a, N07a) | On the combined firmware, repeat the 18,000-byte editor request after screenshots and other Web App activity, then reopen the app and repeat. Record any disconnect and the phase heap readings. With a disposable full or failing SD card, verify that a staging or write failure preserves an existing route and a later retry can save successfully. The combined candidate passed the maximum-size, oversize, and interrupted-transfer checks on the bench card. |
@@ -387,3 +389,153 @@ The tested bench image was `0.2.4-632d.bench+h3.2.5`, built on `63205415`.
 Image SHA-256
 `b9f4df22485e213568c51a6e97c31e80b82e1ab9d4c4b090617410ca0fa40441`.
 Bench evidence is in `utils/bench_baselines/batch-08/`.
+
+## Batch 9 · Flight cleanup and TLS experiment
+
+| Audit item | Change | Memory result on 3.2.5 |
+| --- | --- | --- |
+| S09a | Free the eight header-only strings immediately after emitting the IGC header. Rebuild them when the next flight starts. | String capacities depend on the profile and version. With the simulator's two roughly 40-character profile values and the bench firmware version and MAC, the pinned Arduino allocator would request about **160 B** of string buffers. An isolated hardware heap delta is pending a GPS-synced flight. |
+| UI-06-B | Destroy the in-memory summary and both delete paths when the modal is removed. | Free internal heap increased **724 B** across dismissal of a stationary 13-second flight summary. This is a whole-device checkpoint delta. The device saved and then removed the disposable logbook record. The run had no GPS fix and did not write an IGC. |
+| UI-08-B | Release scan paths when the scan completes and destroy the summary and current path on exit. Back and global pop use the same cleanup. | Closing Logbook returned **440 B** and **444 B** on two successive cycles in the stock-TLS cleanup build. The previous image returned 0 B and lost another 136 B on the corresponding closes. Measured with existing logbook entries and saved Wi-Fi reconnect active in the main menu. |
+| LIB-001 | On `leaf_3_2_5_tlsbench`, reduce the outbound TLS record payload from 16 KiB to 4 KiB and keep 16 KiB inbound. | TLS context setup used **12,288 B less internal heap**, dropping from 35,200 B to 22,912 B. The incoming buffer stays 16 KiB. The allocation exists for an open TLS context. |
+
+The simulator passed the logbook I/O and maintenance, charging Leaf Log sync,
+USB serial, and runtime capture suites. Consecutive IGC recordings verified
+long, changed, and missing pilot/glider profiles. The device passed the Web
+App's HTTPS firmware availability check and exported a short runtime trace.
+The final eight-second trace used the Web App with the radio workers
+suspended. It recorded 784 deadline misses and 16 skipped ticks with no
+matched timing baseline. The trace verifies capture and export and requires
+follow-up under the normal on-state workload.
+
+| Task | Allocated stack | Smallest observed unused stack | Workload |
+| --- | ---: | ---: | --- |
+| Arduino loop | 12,288 B | 7,264 B | Stationary flight timer |
+| BLE worker | 5,120 B | 2,892 B | Stationary flight timer |
+| FANET TX worker | 4,096 B | 2,760 B | Stationary flight timer |
+| FANET RX worker | 4,096 B | 3,352 B | Stationary flight timer |
+| Leaf Log upload worker | 12,288 B | 7,288 B | Eight live IGC uploads |
+
+Repeat the on-state measurements with a GPS fix, active navigation, IGC
+writes, radio peers, and a BLE client before selecting stack reductions.
+Repeat the upload stack measurement under network interruption and retry.
+See [USB bench console](usb-bench-console.md#compare-tls-record-buffers).
+
+The stock-TLS and experimental bench builds both used 86,332 B of linked
+static RAM and showed 123,332 B of idle internal heap. The experiment added
+1,400 B of linked flash. The ordinary 3.2.5 release build passed with stock TLS.
+Both bench images were verified in both OTA app slots of the 3.2.5.
+The final TLS image was `0.2.4-865d.tlsbench+h3.2.5` with SHA-256
+`cf58b086ff21ea8130398beafe3878a946d55dd3393668f69e62f519c0a9b83b`.
+Bench evidence is in `utils/bench_baselines/batch-09/`.
+
+### Live Leaf Log upload on 3.2.5
+
+The 4 KiB TLS bench image reconnected to saved Wi-Fi in charging mode and
+stored eight distinct server flight IDs for the eight existing pending IGCs.
+The IGCs totaled 1,345,238 B, with the largest at 595,226 B. Windows mounted
+the SD card roughly 40 seconds after the first charging sample. No manual
+logbook edits were needed. On a second charging cycle, all deliveries were
+still recorded and the samples showed neither Wi-Fi nor an upload worker.
+
+The lowest sampled free internal heap during the connected phase was
+45,004 B and the boot-wide minimum reached 32,652 B during the session.
+The upload stack used at most 5,000 B of its 12,288 B allocation in this run.
+This was a successful transfers check on the TLS image. Interrupted
+transfers and their retries remain open.
+
+### On-device Runtime start with Bluetooth and FANET
+
+The first GPS field attempt showed `ERR`. With the flight timer running,
+Bluetooth and FANET active, and background menu Wi-Fi connected, the bench
+console measured 52,704 B free and a largest free block of 31,732 B. The
+recorder required 55,264 B in total, including its 32 KiB reserve.
+
+Menu-started capture now releases background Wi-Fi when the Web App is
+closed. Reopening the menu during capture skips the automatic Wi-Fi
+connection. On the 3.2.5 bench, the updated firmware started and exported a
+12-second stationary flight-timer capture with Bluetooth and both FANET
+workers active. Sampled internal free heap stayed at or above 69,472 B. The
+GPS-synced workload remains to be captured.
+
+Runtime menu verification is recorded in
+`utils/bench_baselines/batch-09/runtime-menu-verification.json`.
+
+A second attempt showed `ERR` with Wi-Fi already off. The console measured
+86,908 B free, with a largest block of 21,492 B. The recorder previously
+needed a single 22,496 B block. It now allocates the per-slot statistics
+separately, using blocks of 12,800 B and 9,704 B with the same 32 KiB reserve.
+The simulator verified capture with a 16 KiB allocation cap and cleanup if
+the second allocation fails. The updated 3.2.5 firmware exported a
+12-second stationary capture with Bluetooth and both FANET workers active.
+The outdoor run below verified capture and export with a GPS fix.
+
+Split-allocation evidence is in
+`utils/bench_baselines/batch-09/runtime-split-verification.json`.
+
+### GPS-synced on-state capture
+
+The 3.2.5 split-allocation image exported a 163.955-second Runtime capture.
+The main IGC covered 91 seconds and contained 91 GPS fix records. The second
+IGC covered four seconds and contained five fixes. Both contained the
+checked IGC headers and end record and matched their G-record checksum.
+
+With the 22,504 B recorder allocated, sampled free internal heap stayed at
+or above 64,560 B and the smallest sampled largest block was 31,732 B.
+The boot-wide heap minimum of 36,876 B was already present at the first
+sample. The recorder observed zero allocation failures.
+
+| Task | Stack allocation | Minimum unused in the capture | Observed use |
+| --- | ---: | ---: | ---: |
+| Arduino loop | 12,288 B | 7,684 B | 4,604 B |
+| BLE worker | 5,120 B | 2,988 B | 2,132 B |
+| FANET TX worker | 4,096 B | 2,132 B | 1,964 B |
+| FANET RX worker | 4,096 B | 1,960 B | 2,136 B |
+
+The first memory sample included both FANET workers. Later samples include
+periods after the flight timer stopped. Bluetooth client traffic and FANET
+peer traffic were not independently verified. An initial loop-stack
+experiment at 10 KiB would save 2 KiB of on-state heap. Verify the heavier
+flight, navigation, SD, and network workloads before adopting any reduction.
+
+The report recorded 474 deadline misses and 34 coalesced ticks in normal
+slots. The longest occupied slot was 219 ms in the IGC logging slot.
+This identifies which slot to investigate. It does not isolate the SD write
+or establish a timing regression without a matched capture.
+See `utils/bench_baselines/batch-09/outdoor-runtime-summary.json`.
+
+### Longer stack measurements
+
+The Developer **Stacks** monitor samples the Arduino loop, BLE worker, and
+FANET transmit and receive workers every 30 seconds. It also samples a
+registered worker before deletion to preserve low readings from instances
+that start and stop between periodic samples. It keeps one counter and
+minimum per task and allocates no heap buffer. The 3.2.5 bench build adds
+24 B of linked static RAM compared with the preceding bench image. The
+simulator verified a three-hour session, worker restarts, and save retry
+after an unavailable SD card.
+
+The plugged-in 3.2.5 saved a 36.6-second CSV with two instances each of
+FANET TX and RX. The saved minima were 7,836 B for the loop, 2,996 B for
+BLE, 2,616 B for FANET TX, and 3,344 B for FANET RX. We read the CSV
+back over USB. See `utils/bench_baselines/batch-09/stack-monitor-device.csv`.
+
+The next build also saved an active stack session on normal shutdown. We
+started monitoring, turned off the plugged-in 3.2.5, and read the 6.78-second
+CSV from USB storage. The simulator verified normal and low-battery saves
+within the current shutdown deadline. This change added no linked static RAM.
+See `utils/bench_baselines/batch-09/stack-shutdown-device.csv`.
+
+The 12 KiB loop stack remains in use. The audit lists 10 KiB as the first
+trial after broader workload coverage, with 2 KiB of potential on-state
+heap savings. See [how to record a stack session](runtime-assessment.md#monitor-stack-headroom-during-regular-use).
+
+### Release build and flash on 3.2.6
+
+The `leaf_3_2_6_release` build includes the stack monitor and shutdown
+autosave, uses stock TLS, and links 86,124 B of static RAM. Both OTA app
+slots verified after writing `0.2.4-865d+h3.2.6`. The firmware rebooted,
+the same USB device reappeared, and Windows mounted its SD card.
+Shutdown CSV readback was verified on the 3.2.5 bench. The 3.2.6 check
+covered flash and boot. See
+`utils/bench_baselines/batch-09/leaf-3.2.6-release-flash.json`.

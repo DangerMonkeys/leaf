@@ -1,0 +1,12 @@
+{
+  "environment": "leaf_3_2_6_release",
+  "firmware_version": "0.2.4-865d+h3.2.6",
+  "firmware_sha256": "601f104d59a0252094f4e0699f3b0dba040a97e651788e5ffaa3182b262ccff1",
+  "linked_static_ram_bytes": 86124,
+  "linked_flash_bytes": 2423884,
+  "app_slot_addresses": ["0x10000", "0x340000"],
+  "both_app_slots_verified": true,
+  "same_usb_device_reenumerated": true,
+  "sd_card_mounted": true,
+  "notes": "Stock TLS release build. The first esptool connection brought the app-mode port into the bootloader; the retry completed on the re-enumerated port. Shutdown CSV readback was verified separately on the 3.2.5 bench."
+}

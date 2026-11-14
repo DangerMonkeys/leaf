@@ -7,7 +7,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "esp_heap_caps.h"
+#include "esp_random.h"
+#include "mbedtls/ssl.h"
+
 #include "comms/fanet_radio.h"
+#include "comms/leaf_log_sync.h"
 #include "comms/webserver.h"
 #include "diagnostics/heap_monitor.h"
 #include "hardware/buttons.h"
@@ -75,6 +80,39 @@ namespace bench_console {
         respond("BENCH heap %lu %lu %lu %lu\n", (unsigned long)sample.internalFree,
                 (unsigned long)sample.internalMin, (unsigned long)sample.internalLargest,
                 (unsigned long)sample.loopStack);
+      } else if (!strcmp(command, "stacks")) {
+        heap_monitor::Snapshot sample{};
+        heap_monitor::snapshot(sample);
+        respond("BENCH stacks %lu %lu %lu %lu %lu\n", (unsigned long)sample.loopStack,
+                (unsigned long)sample.bleStack, (unsigned long)sample.fanetTxStack,
+                (unsigned long)sample.fanetRxStack, (unsigned long)leafLogSync.uploadStackUnused());
+      } else if (!strcmp(command, "tlsheap")) {
+        mbedtls_ssl_context ssl;
+        mbedtls_ssl_config config;
+        mbedtls_ssl_init(&ssl);
+        mbedtls_ssl_config_init(&config);
+        int result =
+            mbedtls_ssl_config_defaults(&config, MBEDTLS_SSL_IS_CLIENT,
+                                        MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT);
+        mbedtls_ssl_conf_rng(
+            &config,
+            [](void*, unsigned char* output, size_t size) {
+              esp_fill_random(output, size);
+              return 0;
+            },
+            nullptr);
+        constexpr uint32_t caps = MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT;
+        const size_t before = heap_caps_get_free_size(caps);
+        if (!result) result = mbedtls_ssl_setup(&ssl, &config);
+        const size_t after = heap_caps_get_free_size(caps);
+        if (!result) {
+          respond("BENCH tlsheap %d %d %ld\n", mbedtls_ssl_get_max_in_record_payload(&ssl),
+                  mbedtls_ssl_get_max_out_record_payload(&ssl), long(before) - long(after));
+        } else {
+          respond("BENCH error tls_setup %d\n", result);
+        }
+        mbedtls_ssl_free(&ssl);
+        mbedtls_ssl_config_free(&config);
       } else if (!strcmp(command, "ip")) {
         const IPAddress station = WiFi.status() == WL_CONNECTED ? WiFi.localIP() : IPAddress();
         const wifi_mode_t mode = WiFi.getMode();

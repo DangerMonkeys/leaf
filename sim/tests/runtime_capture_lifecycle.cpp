@@ -4,6 +4,7 @@
 
 #include <string>
 #include <thread>
+#include <unordered_set>
 
 #include "diagnostics/cpu_utilization.h"
 #include "runtime.h"
@@ -13,7 +14,9 @@
 
 namespace {
   size_t freeInternal = 200 * 1024;
-  void* captureAllocation = nullptr;
+  size_t maxAllocation = 16 * 1024;
+  unsigned successfulAllocationsRemaining = 2;
+  std::unordered_set<void*> captureAllocations;
   unsigned allocations = 0;
   unsigned releases = 0;
   class StringPrint : public Print {
@@ -32,12 +35,16 @@ void __real_heap_caps_free(void*);
 size_t __wrap_heap_caps_get_free_size(uint32_t caps) { return freeInternal; }
 void* __wrap_heap_caps_malloc(size_t size, uint32_t caps) {
   assert((caps & MALLOC_CAP_INTERNAL) != 0);
+  if (size > maxAllocation || !successfulAllocationsRemaining) return nullptr;
+  --successfulAllocationsRemaining;
   ++allocations;
-  captureAllocation = __real_heap_caps_malloc(size, caps);
-  return captureAllocation;
+  void* allocation = __real_heap_caps_malloc(size, caps);
+  assert(allocation && captureAllocations.insert(allocation).second);
+  return allocation;
 }
 void __wrap_heap_caps_free(void* memory) {
-  assert(memory == captureAllocation);
+  assert(captureAllocations.erase(memory) == 1);
+  ++successfulAllocationsRemaining;
   ++releases;
   __real_heap_caps_free(memory);
 }
@@ -69,8 +76,15 @@ int main() {
   assert(!cpu_utilization::start());
   assert(allocations == 0 && !cpu_utilization::hasCapture());
   freeInternal = 200 * 1024;
+  // A partial allocation must roll back so the user can retry.
+  successfulAllocationsRemaining = 1;
+  assert(!cpu_utilization::start());
+  assert(allocations == 1 && releases == 1 && captureAllocations.empty());
+  assert(!cpu_utilization::hasCapture());
+  successfulAllocationsRemaining = 2;
+  allocations = releases = 0;
   assert(cpu_utilization::start());
-  assert(allocations == 1 && cpu_utilization::capturing());
+  assert(allocations == 2 && cpu_utilization::capturing());
   {
     cpu_utilization::GpsUartScope fragment(true, true);
     fragment.finish(true);
@@ -105,35 +119,35 @@ int main() {
   assert(frozen.text.find("\"nested_dropped\":1") != std::string::npos);
   assert(frozen.text.find("\"partial_uart\":1") != std::string::npos);
   assert(frozen.text.find("\"pages\":[") != std::string::npos);
-  assert(allocations == 1);  // No allocation per slot or at freeze.
+  assert(allocations == 2);  // No allocation per slot or at freeze.
   assert(cpu_utilization::exportToSd());
-  assert(releases == 1 && !cpu_utilization::hasCapture());
+  assert(releases == 2 && !cpu_utilization::hasCapture());
   assert(cpu_utilization::exportedPath()[0]);
   assert(cpu_utilization::start());
-  assert(allocations == 2);
+  assert(allocations == 4);
   cpu_utilization::freeze();
   assert(cpu_utilization::hasCapture());
   assert(cpu_utilization::discard());
-  assert(releases == 2 && !cpu_utilization::hasCapture());
+  assert(releases == 4 && !cpu_utilization::hasCapture());
   assert(cpu_utilization::discard());
-  assert(releases == 2);
+  assert(releases == 4);
 
   settings.diag_cpuUtilization = true;
   cpu_utilization::update();
-  assert(allocations == 3 && cpu_utilization::capturing());
+  assert(allocations == 6 && cpu_utilization::capturing());
   settings.dev_mode = false;
   cpu_utilization::update();
   assert(!cpu_utilization::capturing() && !cpu_utilization::hasCapture());
   assert(!settings.diag_cpuUtilization);
-  assert(releases == 3 && !cpu_utilization::exportToSd());
+  assert(releases == 6 && !cpu_utilization::exportToSd());
 
   settings.dev_mode = true;
   cpu_utilization::update();
-  assert(allocations == 3 && !cpu_utilization::capturing());
+  assert(allocations == 6 && !cpu_utilization::capturing());
   assert(cpu_utilization::start());
   cpu_utilization::freeze();
   settings.dev_mode = false;
   cpu_utilization::update();
-  assert(allocations == 4 && releases == 4 && !cpu_utilization::hasCapture());
+  assert(allocations == 8 && releases == 8 && !cpu_utilization::hasCapture());
   puts("Runtime capture allocation, export, discard, and Developer mode checks passed");
 }

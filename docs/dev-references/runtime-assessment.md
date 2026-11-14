@@ -10,16 +10,43 @@ firmware release, collect and review simulator and hardware reports for the fixe
 or record an explicit exception. It is not required for every PR. See [Releasing](releasing.md)
 and the [remaining backlog](backlog/runtime-resource-assessment.md).
 
+## Monitor stack headroom during regular use
+
+In **Menu → Developer → Stacks**, select **START** before using the Leaf.
+The monitor checks the loop, BLE worker, and FANET transmit and receive
+workers every 30 seconds. It also reads a worker's watermark before the
+worker is deleted, so radio restarts during the session preserve earlier lows.
+FreeRTOS tracks each task instance's least unused stack since it started.
+For tasks already running when monitoring begins, the result can therefore
+include earlier activity.
+
+Select **STOP** to write a new `/diagnostics/stack_N.csv` to the SD card.
+The Leaf also saves the session automatically at normal power-off and
+low-battery shutdown. If the save fails while the Leaf is still powered,
+select **SAVE** to retry. Retrieve the CSV through USB storage. It contains one row per
+task with the session duration, number of observed task instances, and
+minimum unused stack in bytes. A blank minimum means the task was absent
+throughout the session. A numeric zero is a measured watermark.
+
+The monitor keeps fixed-size counters in RAM and writes only at manual
+save or shutdown. Save manually before a forced reset or firmware update.
+Record the workloads exercised so the
+measurements can inform changes to stack sizes.
+
 ## Capture on a Leaf
 
 Build the matching hardware's release environment. Enable Developer mode. Leave optional
 network/web/vario diagnostic SD logs disabled for a clean timing measurement. Normal IGC
 logging should stay enabled when measuring flight behavior.
 
-1. In Menu > Developer, select **Runtime: START**. This allocates a fixed capture buffer of
-   bounded internal-RAM buffer before measurement; the exact size is exported as `capture_bytes`.
-   Allocation requires space for the buffer plus a 32 KB reserve. A failure
-   plays the error sound, shows ERR, and prints the allocation reason on serial.
+1. In Menu > Developer, select **Runtime: START**. This allocates two fixed
+   internal-RAM blocks before measurement. Their combined size is exported as
+   `capture_bytes`. The recorder preserves a 32 KiB internal-heap reserve.
+   A failure plays the error sound, shows ERR, and prints the free heap,
+   largest block, requested block sizes, and reserve on serial.
+   Starting from the device menu disconnects its background Wi-Fi connection
+   when the Web App is closed. Reopening the menu during the capture skips
+   automatic Wi-Fi connection.
 2. Exercise the intended operating mode manually. Record settings, active page, sensor source,
    radio/client activity, SD card, and elapsed time. Do not assume enabled features were exercised.
 3. Select **Runtime: STOP** to freeze and save a new `/diagnostics/runtime_N.json` on the SD

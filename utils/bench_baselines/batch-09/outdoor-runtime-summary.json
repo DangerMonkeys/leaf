@@ -1,0 +1,82 @@
+{
+  "metadata": {
+    "label": "Leaf 3.2.5 outdoor Runtime capture",
+    "commit": "865a665e plus batch 9 working changes",
+    "profile": "outdoor-navigate-field-v1",
+    "scenario": "Outdoor, battery power, Bluetooth enabled, FANET active during flight, Navigate display",
+    "toolchain": "leaf_3_2_5_tlsbench, pioarduino 53.03.10, ESP-IDF 083aad99cf",
+    "coverage_notes": "Task high-water minima include observations of both FANET workers. Bluetooth client traffic and FANET peer traffic were not independently measured.",
+    "limitations": "One field run, no matched stock-TLS timing baseline. The boot low watermark includes allocations before this capture.",
+    "firmware_sha256": "048cd2f5b7cf31851b0a7a85b3ff447ed0675b88ee88aabc3435fabbb3fcc56b"
+  },
+  "capture_sha256": "9fb895078f7a809585defcb24fd904e53d86e96c5bc1f3cb5f263e7a09966cd9",
+  "firmware_version": "0.2.4-865d.tlsbench+h3.2.5",
+  "recorder_bytes": 22504,
+  "first_memory": {
+    "time_us": 169798637,
+    "internal_free": 64564,
+    "internal_min": 36876,
+    "internal_largest": 31732,
+    "loop_stack": 7684,
+    "ble_stack": 2988,
+    "fanet_tx_stack": 2132,
+    "fanet_rx_stack": 1960
+  },
+  "assessment": {
+    "status": "review_required",
+    "duration_s": 163.954998,
+    "minimum_slot_samples": 153,
+    "deadline_misses": 474,
+    "duration_overruns": 28,
+    "skipped_ticks": 34,
+    "memory": {
+      "internal_free_change": 16132,
+      "sampled_minima": {
+        "internal_free": 64560,
+        "internal_min": 36876,
+        "internal_largest": 31732,
+        "loop_stack": 7684,
+        "ble_stack": 2988,
+        "fanet_tx_stack": 2132,
+        "fanet_rx_stack": 1960
+      },
+      "failed_allocations": 0
+    }
+  },
+  "gps_profile": {
+    "total": 2376,
+    "uart_resets": 0,
+    "partial_uart": 0,
+    "unassigned": 0
+  },
+  "longest_normal_slot": {
+    "label": "igc_log",
+    "slot": 29,
+    "max_occupied_us": 218889,
+    "max_end_delay_us": 208958
+  },
+  "igcs": [
+    {
+      "duration_seconds": 4,
+      "bytes": 3162,
+      "required_headers_present": true,
+      "gps_fix_records": 5,
+      "gps_span_seconds": 4,
+      "largest_fix_gap_seconds": 1,
+      "end_reason_manual": true,
+      "end_record_present": true,
+      "g_record_matches": true
+    },
+    {
+      "duration_seconds": 91,
+      "bytes": 9852,
+      "required_headers_present": true,
+      "gps_fix_records": 91,
+      "gps_span_seconds": 91,
+      "largest_fix_gap_seconds": 2,
+      "end_reason_manual": true,
+      "end_record_present": true,
+      "g_record_matches": true
+    }
+  ]
+}

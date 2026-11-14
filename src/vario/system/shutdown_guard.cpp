@@ -166,6 +166,8 @@ namespace shutdown_guard {
         return "peripherals-asleep";
       case Stage::LatchReleased:
         return "latch-released";
+      case Stage::StackLog:
+        return "stack-log";
     }
     return "unknown";
   }

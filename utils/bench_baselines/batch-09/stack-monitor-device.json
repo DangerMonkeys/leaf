@@ -1,0 +1,20 @@
+{
+  "firmware_version": "0.2.4-865d.tlsbench+h3.2.5",
+  "firmware_sha256": "3afb5da0e44a0f1dd73f286e9286fd60b5eb6835ad21100a05538bcf7636b5c9",
+  "before": {
+    "internal_free": 104104,
+    "internal_min_since_boot": 52460,
+    "internal_largest": 31732,
+    "loop_stack_unused": 7836
+  },
+  "while_running": {
+    "internal_free": 103688,
+    "internal_min_since_boot": 52460,
+    "internal_largest": 31732,
+    "loop_stack_unused": 7836
+  },
+  "save_message": "Stack monitor saved /diagnostics/stack_1.csv",
+  "seconds": 36.77,
+  "fanet_restarts_exercised": 2,
+  "passed": true
+}

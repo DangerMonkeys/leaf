@@ -75,6 +75,37 @@ These are phase readings from the most recent run of each operation.
 startup-logging flag. The old Vario CSV field in `config` is reserved as zero
 so older bench clients can read the same reply format.
 
+`stacks` reports minimum unused bytes for the loop, BLE, FANET TX, FANET RX,
+and Leaf Log upload tasks, in that order. Zero indicates an absent task or a
+missing reading. The upload worker saves its reading even after it exits, so
+query after a transfer attempt and before the next charging upload session.
+`tlsheap` reports incoming and outgoing payload limits followed by internal
+heap allocated by TLS context setup. It briefly allocates a context and can
+lower the boot-wide minimum heap reading. Run it separately from measurements
+of the workload heap minimum.
+
+## Compare TLS record buffers
+
+Build `leaf_3_2_5_bench` and `leaf_3_2_5_tlsbench` from the same source and run
+`python utils/leaf_bench_console.py send version tlsheap` after booting each image.
+The TLS experiment retains 16 KiB receive records and limits transmit records
+to 4 KiB. Only `tlsbench` compiles the record-size-dependent files from the
+matching mbedTLS revision. It also keeps the receive limit at 16 KiB when no
+maximum fragment length is negotiated. Its output is named
+`tlsbench-firmware-leaf_3_2_5.bin`.
+If Python cannot download the archive, download the pinned URL from
+`src/scripts/prepare_tls_bench.py` to `.pio/build/tls-bench/mbedtls.tar.gz`.
+The build verifies the archive hash before using it.
+
+For a live comparison, use a linked test account, saved Wi-Fi and comparable
+eligible IGCs on a test SD card. Record elapsed time, the heap minimum, the
+Leaf Log upload worker's stack reading, the saved flight ID, and return to USB
+storage. For retry coverage, interrupt Wi-Fi during a transfer and check that
+it stays pending and completes once after reconnecting. Exercise the firmware
+update check separately. Use the on-state workload in
+[Runtime assessment](runtime-assessment.md) to measure the loop and radio
+stacks with flight logging and navigation active.
+
 ## Capture and compare heap
 
 Use a cold boot and let the vario finish warming up on a primary page, with

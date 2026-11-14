@@ -11,6 +11,7 @@
 
 #include "comms/fanet_radio.h"
 #include "diagnostics/cpu_utilization.h"
+#include "diagnostics/heap_monitor.h"
 #include "display_capture.h"
 #include "instruments/gps.h"
 #include "logging/buslog.h"
@@ -169,7 +170,7 @@ int main() {
   menu.press(Button::UP);
   assert(menu.cursor() == 0);
   menu.press(Button::UP);  // Wrap to bus logger and back.
-  assert(menu.cursor() == 8);
+  assert(menu.cursor() == 9);
   menu.press(Button::DOWN);
   assert(menu.cursor() == 0);
   menu.press(Button::DOWN);
@@ -206,6 +207,32 @@ int main() {
   settings.dev_logFanet = false;
   menu.press(Button::CENTER);
   assert(!cpu_utilization::hasCapture());
+
+  menu.press(Button::DOWN);
+  assert(menu.cursor() == 6);
+  heap_monitor::registerTask("loop", xTaskGetCurrentTaskHandle());
+  menu.press(Button::CENTER);
+  using StackState = heap_monitor::StackMonitorState;
+  assert(heap_monitor::stackMonitorState() == StackState::Running);
+  // A pair of FANET workers recreated between periodic samples still contributes.
+  for (unsigned i = 0; i < 2; ++i) {
+    heap_monitor::registerTask("fanet_rx", xTaskGetCurrentTaskHandle());
+    heap_monitor::registerTask("fanet_rx", nullptr);
+  }
+  sim::clock().advanceUs(3 * 60 * 60 * UINT64_C(1000000));
+  assert(!SD_MMC.exists("/diagnostics/stack_1.csv"));
+  sdcard.unmount();
+  menu.press(Button::CENTER);
+  assert(heap_monitor::stackMonitorState() == StackState::Frozen);
+  assert(sdcard.mount());
+  menu.press(Button::CENTER);
+  assert(heap_monitor::stackMonitorState() == StackState::Idle);
+  File stackFile = SD_MMC.open("/diagnostics/stack_1.csv");
+  assert(stackFile);
+  const String stackCsv = stackFile.readString();
+  assert(stackCsv.indexOf("loop,10800000,1,4096") >= 0);
+  assert(stackCsv.indexOf("fanet_rx,10800000,2,4096") >= 0);
+  assert(stackCsv.indexOf("ble,10800000,0,\n") >= 0);
 
   sim::board().fanetPresent = true;
   fanetRadio.setup();

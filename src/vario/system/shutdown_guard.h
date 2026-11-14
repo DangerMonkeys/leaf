@@ -24,7 +24,8 @@ namespace shutdown_guard {
     Charging,
     // Append stages so retained diagnostic IDs from earlier builds stay stable.
     Sleeping,
-    LatchReleased
+    LatchReleased,
+    StackLog
   };
   enum class Reason : uint32_t { None, Deadline, LongHold, WorkerTimeout, HardwareWatchdog };
 

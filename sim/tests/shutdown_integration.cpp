@@ -7,6 +7,7 @@
 #include <iostream>
 #include <string>
 #include "comms/ble.h"
+#include "diagnostics/heap_monitor.h"
 #include "dispatch/message_bus.h"
 #include "hardware/configuration.h"
 #include "logging/log.h"
@@ -93,6 +94,10 @@ int main(int argc, char** argv) {
   sim::scenario().play();
   run(4000);
   flightTimer_start();
+  if (mode == "normal" || mode == "low-battery") {
+    heap_monitor::registerTask("loop", xTaskGetCurrentTaskHandle());
+    heap_monitor::startStackMonitor();
+  }
   run(2000);
   if (mode == "hold") {
     sim::pressButton("CENTER", true);
@@ -142,17 +147,28 @@ int main(int argc, char** argv) {
     return 0;
   }
   try {
-    power.shutdown();
-    assert(mode == "normal" || mode == "disabled");
+    power.shutdown(mode == "low-battery");
+    assert(mode == "normal" || mode == "low-battery" || mode == "disabled");
     assert(power.info().onState == PowerState::OffUSB);
     assert(digitalRead(LATCH_PIN) == LOW);
     assert(completeFlight(options.cardRoot));
+    const auto stackPath = options.cardRoot + "/diagnostics/stack_1.csv";
+    if (mode == "disabled") {
+      assert(!std::filesystem::exists(stackPath));
+    } else {
+      std::ifstream stackFile(stackPath);
+      assert(stackFile);
+      const std::string csv((std::istreambuf_iterator<char>(stackFile)), {});
+      assert(csv.find("task,elapsed_ms,instances,min_unused_bytes\nloop,") == 0);
+      assert(csv.find(",1,4096\n") != std::string::npos);
+      assert(heap_monitor::stackMonitorState() == heap_monitor::StackMonitorState::Idle);
+    }
     assert(sim::clock().nowUs() - start < DEADLINE_US);
     // The old deadline must be disarmed after a successful charging transition.
     sim::clock().advanceUs(BACKSTOP_US + 20000);
     std::cout << "Normal shutdown saved flight and returned to charging within deadline\n";
   } catch (const EmergencyReset&) {
-    assert(mode != "normal" && mode != "disabled");
+    assert(mode != "normal" && mode != "low-battery" && mode != "disabled");
     assert(digitalRead(LATCH_PIN) == LOW);
     assert(lastReason() == (rtcBackstop ? Reason::HardwareWatchdog : Reason::Deadline));
     const uint32_t bound = rtcBackstop ? BACKSTOP_US : DEADLINE_US;

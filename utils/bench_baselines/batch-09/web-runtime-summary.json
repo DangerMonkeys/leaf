@@ -1,0 +1,34 @@
+{
+  "metadata": {
+    "label": "3.2.5 TLS bench Web App capture smoke test",
+    "commit": "865a665e plus batch 9 working changes",
+    "profile": "web-idle-smoke-v1",
+    "scenario": "3.2.5 connected to saved Wi-Fi, Web App open, stationary",
+    "toolchain": "leaf_3_2_5_tlsbench, pioarduino 53.03.10, ESP-IDF 083aad99cf",
+    "coverage_notes": "The trace followed a successful HTTPS update check. Raw GPS UART was active. The Web App suspends BLE and FANET. No flight or Leaf Log upload ran during the trace.",
+    "limitations": "Short diagnostic capture. Review is required and there was no paired workload baseline.",
+    "firmware_sha256": "cf58b086ff21ea8130398beafe3878a946d55dd3393668f69e62f519c0a9b83b"
+  },
+  "capture_sha256": "b81a2b7d96ffed6a3771e681648ac22ff99621b36b611f563ab993e6b8c3732a",
+  "assessment": {
+    "status": "review_required",
+    "duration_s": 8.018049,
+    "minimum_slot_samples": 7,
+    "deadline_misses": 784,
+    "duration_overruns": 17,
+    "skipped_ticks": 16,
+    "memory": {
+      "internal_free_change": -240,
+      "sampled_minima": {
+        "internal_free": 92528,
+        "internal_min": 66520,
+        "internal_largest": 31732,
+        "loop_stack": 7264,
+        "ble_stack": 0,
+        "fanet_tx_stack": 0,
+        "fanet_rx_stack": 0
+      },
+      "failed_allocations": 0
+    }
+  }
+}

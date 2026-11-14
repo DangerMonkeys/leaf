@@ -22,6 +22,13 @@ namespace heap_monitor {
   void record(const char* event);
   void checkpoint(const char* event);
   void registerTask(const char* name, TaskHandle_t handle);
+
+  enum class StackMonitorState { Idle, Running, Frozen };
+  StackMonitorState stackMonitorState();
+  void startStackMonitor();
+  void updateStackMonitor();
+  bool saveStackMonitor();
+
   void setSdLoggingEnabled(bool enabled);
   bool dumpToSd(const char* path = "/diagnostics/system_events.csv");
   void clear();

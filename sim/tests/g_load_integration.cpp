@@ -18,11 +18,13 @@
 #include "logbook/logbook_store.h"
 #include "logging/flight_diagnostic_output.h"
 #include "logging/log.h"
+#include "profiles/profile_store.h"
 #include "runtime.h"
 #include "scenario.h"
 #include "sim/clock.h"
 #include "ui/display/display.h"
 #include "ui/display/display_fields.h"
+#include "ui/display/pages/dialogs/page_flight_summary.h"
 #include "ui/display/pages/primary/page_user.h"
 #include "ui/settings/settings.h"
 #include "utils/string_utils.h"
@@ -165,12 +167,38 @@ int main() {
   sim::scenario().play();
   runFor(30000);
 
+  assert(SD_MMC.mkdir(ProfileStore::directoryPath()) ||
+         SD_MMC.exists(ProfileStore::directoryPath()));
+  auto writeProfiles = [](const char* pilot, const char* glider) {
+    JsonDocument profiles;
+    profiles["schema"] = "leaf.profiles";
+    profiles["pilots"][0]["id"] = "pilot";
+    profiles["pilots"][0]["name"] = pilot;
+    profiles["gliders"][0]["id"] = "glider";
+    profiles["gliders"][0]["model"] = glider;
+    File file = SD_MMC.open(ProfileStore::filePath(), "w");
+    assert(file && serializeJson(profiles, file));
+  };
+  auto verifyHeader = [](const String& path, const char* pilot, const char* glider) {
+    File file = SD_MMC.open(path.c_str());
+    assert(file);
+    const String igc = file.readString();
+    assert(igc.indexOf(String("\nHFPLTPILOTINCHARGE:") + pilot + "\r\n") >= 0);
+    assert(igc.indexOf(String("\nHFGTYGLIDERTYPE:") + glider + "\r\n") >= 0);
+    assert(igc.indexOf("\nLXLVEND V=1") >= 0 && igc.lastIndexOf("\nG") > 0);
+  };
+
   // A short flight persists null extrema, including through the summary reader.
+  const char* longPilot = "First pilot with a long IGC header name";
+  const char* longGlider = "First glider with a long IGC header name";
+  writeProfiles(longPilot, longGlider);
   flightTimer_start();
   runFor(10000);
   const String shortEntry = logbookEntry.path();
+  const String shortTrack = igcFlight.trackLogPath();
   assert(igcFlight.started());
   flightTimer_stop(false);
+  verifyHeader(shortTrack, longPilot, longGlider);
   JsonDocument doc;
   File shortFile = SD_MMC.open(shortEntry.c_str());
   assert(!deserializeJson(doc, shortFile));
@@ -181,6 +209,7 @@ int main() {
   assert(isnan(shortSummary.maxAccelG) && isnan(shortSummary.minAccelG));
 
   // A long flight still commits extrema, without the eleven per-second diagnostic records.
+  writeProfiles("Second pilot", "Second glider");
   flightTimer_start();
   runFor(130000);
   const String entryPath = logbookEntry.path();
@@ -190,6 +219,7 @@ int main() {
   sensorReset.reset = true;
   imu.on_receive(sensorReset);
   flightTimer_stop(false);
+  verifyHeader(trackPath, "Second pilot", "Second glider");
   File entry = SD_MMC.open(entryPath.c_str());
   assert(!deserializeJson(doc, entry));
   assert(doc["metrics"]["max_accel_g"].is<float>());
@@ -202,5 +232,17 @@ int main() {
   assert(contents.indexOf("LXLVEND V=1") >= 0);
   assert(contents.indexOf("LXLVEND V=1") < contents.lastIndexOf("\nG"));
   assert(contents.length() < 20000);  // Old verbose diagnostics added roughly 85 kB here.
-  puts("Both IMUs, live recovery, short-flight nulls and compact IGC checks passed");
+
+  assert(SD_MMC.remove(ProfileStore::filePath()));
+  flightTimer_start();
+  runFor(10000);
+  const String noProfileTrack = igcFlight.trackLogPath();
+  assert(igcFlight.started());
+  flightTimer_stop(true);
+  verifyHeader(noProfileTrack, "Unknown", "Unknown");
+  assert(PageFlightSummary::isShowing());
+  PageFlightSummary modalController;
+  modalController.pop_all_pages();
+  assert(!PageFlightSummary::isShowing());
+  puts("Both IMUs, live recovery, short-flight nulls and consecutive IGC headers passed");
 }

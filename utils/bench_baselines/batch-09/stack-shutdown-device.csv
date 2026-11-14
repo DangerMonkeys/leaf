@@ -1,0 +1,5 @@
+task,elapsed_ms,instances,min_unused_bytes
+loop,6780,1,7836
+ble,6780,1,2996
+fanet_tx,6780,0,
+fanet_rx,6780,0,

@@ -1,0 +1,249 @@
+{
+  "version": "0.2.4-865d.bench+h3.2.5",
+  "image_sha256": "89fd304f9ae201bcd4b2226931cc58233f794c3ba50b0b5d0c7f31e3c6756655",
+  "config": "config 1 1 1 0 0 0 0 0",
+  "idle": {
+    "heap": {
+      "internal_free": 123332,
+      "internal_min_since_boot": 114320,
+      "internal_largest": 61428,
+      "loop_stack_unused": 7840
+    },
+    "status": {
+      "power": "On",
+      "page": "User",
+      "cursor": 0,
+      "modal_depth": 0,
+      "warning": false,
+      "climb_ready": true,
+      "gps_fix": false,
+      "flight_running": false,
+      "firmware_sd_access": true
+    },
+    "fanet": "fanet 1 UNINITIALIZED 0 0",
+    "stack_unused": {
+      "loop": 7840,
+      "ble": 2996,
+      "fanet_tx": 0,
+      "fanet_rx": 0,
+      "leaf_log_upload": 0
+    }
+  },
+  "menu_before_logbook": {
+    "heap": {
+      "internal_free": 72620,
+      "internal_min_since_boot": 69204,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7840
+    },
+    "status": {
+      "power": "On",
+      "page": "Menu",
+      "cursor": 6,
+      "modal_depth": 0,
+      "warning": false,
+      "climb_ready": true,
+      "gps_fix": false,
+      "flight_running": false,
+      "firmware_sd_access": true
+    },
+    "fanet": "fanet 1 UNINITIALIZED 0 0",
+    "stack_unused": {
+      "loop": 7840,
+      "ble": 2996,
+      "fanet_tx": 0,
+      "fanet_rx": 0,
+      "leaf_log_upload": 0
+    }
+  },
+  "logbook_open_1": {
+    "heap": {
+      "internal_free": 72180,
+      "internal_min_since_boot": 66524,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7840
+    },
+    "status": {
+      "power": "On",
+      "page": "Menu",
+      "cursor": -1,
+      "modal_depth": 1,
+      "warning": false,
+      "climb_ready": true,
+      "gps_fix": false,
+      "flight_running": false,
+      "firmware_sd_access": true
+    },
+    "fanet": "fanet 1 UNINITIALIZED 0 0",
+    "stack_unused": {
+      "loop": 7840,
+      "ble": 2996,
+      "fanet_tx": 0,
+      "fanet_rx": 0,
+      "leaf_log_upload": 0
+    }
+  },
+  "logbook_closed_1": {
+    "heap": {
+      "internal_free": 72620,
+      "internal_min_since_boot": 66524,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7840
+    },
+    "status": {
+      "power": "On",
+      "page": "Menu",
+      "cursor": 6,
+      "modal_depth": 0,
+      "warning": false,
+      "climb_ready": true,
+      "gps_fix": false,
+      "flight_running": false,
+      "firmware_sd_access": true
+    },
+    "fanet": "fanet 1 UNINITIALIZED 0 0",
+    "stack_unused": {
+      "loop": 7840,
+      "ble": 2996,
+      "fanet_tx": 0,
+      "fanet_rx": 0,
+      "leaf_log_upload": 0
+    }
+  },
+  "logbook_open_2": {
+    "heap": {
+      "internal_free": 72176,
+      "internal_min_since_boot": 66524,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7840
+    },
+    "status": {
+      "power": "On",
+      "page": "Menu",
+      "cursor": -1,
+      "modal_depth": 1,
+      "warning": false,
+      "climb_ready": true,
+      "gps_fix": false,
+      "flight_running": false,
+      "firmware_sd_access": true
+    },
+    "fanet": "fanet 1 UNINITIALIZED 0 0",
+    "stack_unused": {
+      "loop": 7840,
+      "ble": 2996,
+      "fanet_tx": 0,
+      "fanet_rx": 0,
+      "leaf_log_upload": 0
+    }
+  },
+  "logbook_closed_2": {
+    "heap": {
+      "internal_free": 72620,
+      "internal_min_since_boot": 66524,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7840
+    },
+    "status": {
+      "power": "On",
+      "page": "Menu",
+      "cursor": 6,
+      "modal_depth": 0,
+      "warning": false,
+      "climb_ready": true,
+      "gps_fix": false,
+      "flight_running": false,
+      "firmware_sd_access": true
+    },
+    "fanet": "fanet 1 UNINITIALIZED 0 0",
+    "stack_unused": {
+      "loop": 7840,
+      "ble": 2996,
+      "fanet_tx": 0,
+      "fanet_rx": 0,
+      "leaf_log_upload": 0
+    }
+  },
+  "idle_after_logbook": {
+    "heap": {
+      "internal_free": 105600,
+      "internal_min_since_boot": 66524,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7840
+    },
+    "status": {
+      "power": "On",
+      "page": "User",
+      "cursor": 0,
+      "modal_depth": 0,
+      "warning": false,
+      "climb_ready": true,
+      "gps_fix": false,
+      "flight_running": false,
+      "firmware_sd_access": true
+    },
+    "fanet": "fanet 1 UNINITIALIZED 0 0",
+    "stack_unused": {
+      "loop": 7840,
+      "ble": 2996,
+      "fanet_tx": 0,
+      "fanet_rx": 0,
+      "leaf_log_upload": 0
+    }
+  },
+  "tls": {
+    "rx_payload_bytes": 16384,
+    "tx_payload_bytes": 16384,
+    "setup_heap_bytes": 35200,
+    "samples": [
+      [
+        16384,
+        16384,
+        35200
+      ],
+      [
+        16384,
+        16384,
+        35200
+      ],
+      [
+        16384,
+        16384,
+        35200
+      ],
+      [
+        16384,
+        16384,
+        35200
+      ]
+    ]
+  },
+  "idle_after_tls": {
+    "heap": {
+      "internal_free": 105596,
+      "internal_min_since_boot": 49788,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7840
+    },
+    "status": {
+      "power": "On",
+      "page": "User",
+      "cursor": 0,
+      "modal_depth": 0,
+      "warning": false,
+      "climb_ready": true,
+      "gps_fix": false,
+      "flight_running": false,
+      "firmware_sd_access": true
+    },
+    "fanet": "fanet 1 UNINITIALIZED 0 0",
+    "stack_unused": {
+      "loop": 7840,
+      "ble": 2996,
+      "fanet_tx": 0,
+      "fanet_rx": 0,
+      "leaf_log_upload": 0
+    }
+  },
+  "passed": true
+}

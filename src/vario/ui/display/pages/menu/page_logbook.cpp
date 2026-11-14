@@ -43,6 +43,14 @@ void PageLogbook::showModalNewest() {
   push_page(this);
 }
 
+void PageLogbook::closed(bool removed) {
+  if (!removed) return;
+  scan.cancel();
+  waitingForScan = false;
+  currentPath = static_cast<const char*>(nullptr);
+  summary.reset();
+}
+
 void PageLogbook::loadNewest() {
   currentPath = "";
   scanDirection = 0;
@@ -86,7 +94,7 @@ void PageLogbook::deleteCurrent() {
     deletePending = 0;
     // Refresh what remains without a per-file alert or recovery that could undo
     // a partial deletion. A still-present flight remains available to delete again.
-    if (LogbookStore::readSummary(currentPath, summary))
+    if (LogbookStore::readSummary(currentPath, summary.emplace()))
       LogbookStore::entryPositionNewestFirst(currentPath, position, total);
     else
       loadNewest();
@@ -117,10 +125,11 @@ void PageLogbook::draw() {
       if (currentPath.isEmpty()) currentPath = scan.newestPath();
       position = nav.position;
     }
-    summary = LogbookEntrySummary();
+    summary.reset();
     readStatus = LogbookReadStatus::Unavailable;
     if (!unavailable && !currentPath.isEmpty())
-      LogbookStore::readSummary(currentPath, summary, &readStatus);
+      LogbookStore::readSummary(currentPath, summary.emplace(), &readStatus);
+    scan.cancel();  // The page now owns the selected path and displayed position.
     cursor_max = total ? cursor_page : CURSOR_BACK;
   }
   u8g2.firstPage();
@@ -128,13 +137,13 @@ void PageLogbook::draw() {
     menu_ui::drawTitle("Logbook", menu_ui::GLYPH_LOGGING);
     if (waitingForScan) {
       message_box::draw("Loading", "Flights");
-    } else if (summary.valid) {
-      if (settings.labs_leafLog && summary.leafLogStatus != LeafLogFlightStatus::NotApplicable) {
+    } else if (summary && summary->valid) {
+      if (settings.labs_leafLog && summary->leafLogStatus != LeafLogFlightStatus::NotApplicable) {
         u8g2.setFont(leaf_8x14);
         u8g2.setCursor(menu_ui::ICON_CHECKBOX_X, 14);
-        if (summary.leafLogStatus == LeafLogFlightStatus::Uploaded) {
+        if (summary->leafLogStatus == LeafLogFlightStatus::Uploaded) {
           menu_ui::printGlyph(LEAF_LOG_ICON_UPLOADED);
-        } else if (summary.leafLogStatus == LeafLogFlightStatus::NotUploaded) {
+        } else if (summary->leafLogStatus == LeafLogFlightStatus::NotUploaded) {
           menu_ui::printGlyph(LEAF_LOG_ICON_NOT_UPLOADED);
         } else {
           menu_ui::printGlyph(LEAF_LOG_ICON_REJECTED);
@@ -164,7 +173,7 @@ void PageLogbook::drawEmpty() {
 }
 
 void PageLogbook::drawEntry() {
-  logbook_card::drawFlightCard(summary);
+  logbook_card::drawFlightCard(*summary);
 
   drawDeleteRow(156);
   drawPageRow(171);
@@ -235,12 +244,12 @@ void PageLogbook::setting_change(Button dir, ButtonEvent state, uint8_t count) {
   if (cursor_position == cursor_back) {
     if (state == ButtonEvent::CLICKED || state == ButtonEvent::HELD) {
       speaker.playSound(state == ButtonEvent::HELD ? fx::exit : fx::cancel);
-      scan.cancel();
       if (modal) {
         modal = false;
         mainMenuPage.backToMainMenu();
         pop_page();
       } else {
+        closed(true);
         logMenuPage.backToLogMenu();
       }
       if (state == ButtonEvent::HELD) {

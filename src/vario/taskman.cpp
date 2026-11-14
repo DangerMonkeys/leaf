@@ -190,6 +190,7 @@ void TaskManager::update() {
     if (heartbeatDue) {
       lastMemoryHeartbeatMs = millis();
       heap_monitor::checkpoint("main-heartbeat");
+      heap_monitor::updateStackMonitor();
     }
   }
 

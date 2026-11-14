@@ -311,6 +311,10 @@ void Power::shutdown(bool deadBattery) {
   flightTimer_stop(false, deadBattery ? FlightEndCause::LowBattery : FlightEndCause::PowerOff);
   shutdown_guard::stage(shutdown_guard::Stage::BusLog);
   busLog.endLog();
+  if (heap_monitor::stackMonitorState() != heap_monitor::StackMonitorState::Idle) {
+    shutdown_guard::stage(shutdown_guard::Stage::StackLog);
+    if (!heap_monitor::saveStackMonitor()) Serial.println("Stack monitor: shutdown save failed");
+  }
   shutdown_guard::stage(shutdown_guard::Stage::Settings);
   settings.save();
 

@@ -1,0 +1,38 @@
+{
+  "firmware_version": "0.2.4-865d.tlsbench+h3.2.5",
+  "firmware_sha256": "cf58b086ff21ea8130398beafe3878a946d55dd3393668f69e62f519c0a9b83b",
+  "pending_before": 8,
+  "after": {
+    "delivered": 8,
+    "not_applicable": 2,
+    "pending": 0,
+    "rejected": 0
+  },
+  "distinct_server_flight_ids": 8,
+  "entries_renamed_by_firmware": 1,
+  "igc_sizes_bytes": {
+    "min": 2268,
+    "max": 595226,
+    "total": 1345238
+  },
+  "sd_volume_mounted_and_entries_read_after_handoff": true,
+  "seconds_from_first_charging_sample_to_host_ownership": 40.39,
+  "transfer_phase": {
+    "samples": 199,
+    "sampled_internal_free_min_bytes": 45004,
+    "sampled_internal_largest_min_bytes": 29684,
+    "boot_minimum_internal_free_at_end_bytes": 32652,
+    "boot_minimum_internal_free_before_session_bytes": 63100,
+    "upload_stack_allocated_bytes": 12288,
+    "upload_stack_min_unused_bytes": 7288,
+    "loop_stack_min_unused_bytes": 7056
+  },
+  "scope": "Live charging session with saved Wi-Fi and linked account. Server response supplied local delivery IDs. No network interruption was induced.",
+  "repeat_session": {
+    "charging_samples": 3,
+    "wifi_observed": false,
+    "upload_worker_observed": false,
+    "sd_volume_mounted_and_entries_read_after_handoff": true,
+    "all_eight_deliveries_still_recorded": true
+  }
+}

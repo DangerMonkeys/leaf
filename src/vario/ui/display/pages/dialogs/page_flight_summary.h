@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "logbook/flight_stats.h"
 #include "logbook/logbook_store.h"
 #include "ui/display/menu_page.h"
@@ -9,20 +11,18 @@ class PageFlightSummary : public SettingsMenuPage {
   PageFlightSummary();
   void draw() override;
   void setting_change(Button dir, ButtonEvent state, uint8_t count) override;
-  void closed(bool removed_from_Stack) override {
-    if (removed_from_Stack) showing_ = false;
-  }
+  void closed(bool removed) override;
   void show(const FlightStats stats, const String& logbookPath, const String& trackPath,
             bool saved = true, const LogbookEntrySummary* snapshot = nullptr) {
     this->logbookPath = logbookPath;
     this->trackPath = trackPath;
     this->deletePending = 0;
     saveFailed = !saved;
-    this->summary = LogbookEntrySummary();
     // The immediate summary must never read or repair the filesystem.
     if (snapshot)
-      this->summary = *snapshot;
+      summary.emplace(*snapshot);
     else {
+      auto& summary = this->summary.emplace();
       summary.valid = true;
       summary.path = logbookPath;
       summary.trackPath = trackPath;
@@ -47,7 +47,7 @@ class PageFlightSummary : public SettingsMenuPage {
  private:
   String logbookPath;
   String trackPath;
-  LogbookEntrySummary summary;
+  std::optional<LogbookEntrySummary> summary;
   uint8_t deletePending = 0;
   bool saveFailed = false;
   static bool showing_;
