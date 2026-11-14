@@ -177,7 +177,11 @@ void Power::initPeripherals() {
   sdcard.init(true);
   if (info_.onState == PowerState::On) {
     leafLogSync.prepareForOperating();
+#ifdef LEAF_USB_BENCH_CONSOLE
+    leaf_usb::connect();
+#else
     leaf_usb::disconnect();
+#endif
   } else {
     leafLogSync.prepareForCharging();
   }
@@ -249,6 +253,10 @@ bool Power::switchToOnState() {
     Serial.println("switch_to_on_state: SD ownership transition failed");
     return false;
   }
+#ifdef LEAF_USB_BENCH_CONSOLE
+  // Preserve the normal SD handoff. Bring USB back after the host LUN is absent.
+  leaf_usb::connect();
+#endif
   leafLogSync.prepareForOperating();
   latchOn();
   Serial.println("switch_to_on_state");

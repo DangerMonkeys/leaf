@@ -15,6 +15,9 @@ class LeafUSBCDC : public USBCDC {
   size_t write(const uint8_t* buffer, size_t size) override;
   void flush() override;
   void setTransmitEnabled(bool enabled) { transmitEnabled_.store(enabled); }
+#ifdef LEAF_USB_BENCH_CONSOLE
+  bool writeBenchLine(const char* line, size_t size);
+#endif
 
  private:
   std::atomic<bool> transmitEnabled_{true};

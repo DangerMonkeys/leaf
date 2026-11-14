@@ -2,6 +2,7 @@
 #include "comms/ble.h"
 #include "comms/fanet_radio.h"
 #include "comms/udp_message_server.h"
+#include "diagnostics/bench_console.h"
 #include "diagnostics/boot_diagnostics.h"
 #include "diagnostics/buttons.h"
 #include "diagnostics/heap_monitor.h"
@@ -129,5 +130,8 @@ void loop() {
   run_tests(&bus);
 #else
   taskman.update();
+#ifdef LEAF_USB_BENCH_CONSOLE
+  bench_console::poll();
+#endif
 #endif
 }

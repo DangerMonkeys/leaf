@@ -23,6 +23,10 @@ class Buttons : IMessageSource {
   // check the instantaneous state of the button hardware pins
   Button inspectPins();
 
+#ifdef LEAF_USB_BENCH_CONSOLE
+  bool pressForBench(Button button, uint32_t durationMs);
+#endif
+
   // Capture the center-button edge independently of the polling state machine. This is used by
   // blocking operations that must remain cancellable even when update() cannot run.
   void armUrgentPressCapture();
@@ -67,6 +71,11 @@ class Buttons : IMessageSource {
   // emit any additional action events other than RELEASED.
   bool consumed_ = false;
   bool suppressUntilRelease_ = false;
+#ifdef LEAF_USB_BENCH_CONSOLE
+  Button benchButton_ = Button::NONE;
+  uint32_t benchPressedAt_ = 0;
+  uint32_t benchDurationMs_ = 0;
+#endif
   std::atomic<bool> urgentPressArmed_{false};
   std::atomic<bool> urgentPressLatched_{false};
 
