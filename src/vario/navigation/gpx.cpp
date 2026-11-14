@@ -917,29 +917,41 @@ bool Navigator::loadPersistedState() { return loadPersistedState(true); }
 bool Navigator::loadPersistedState(bool activate) {
   if (!sdcard.isMounted() || !SD_MMC.exists(route_store::activeRoutePath())) return false;
 
-  File file = SD_MMC.open(route_store::activeRoutePath(), "r");
-  if (!file) return false;
+  String path;
+  LoadedNavSource sourceType = LoadedNavSource::None;
+  LastNavType activeType = LastNavType::None;
+  uint8_t index = 0;
+  int16_t routePointIndex = 1;
+  {
+    File file = SD_MMC.open(route_store::activeRoutePath(), "r");
+    if (!file) return false;
 
-  JsonDocument doc;
-  DeserializationError error = deserializeJson(doc, file);
-  file.close();
-  if (error) return false;
+    JsonDocument doc;
+    DeserializationError error = deserializeJson(doc, file);
+    file.close();
+    if (error) return false;
 
-  const char* schema = doc["schema"] | "";
-  if (strcmp(schema, LEGACY_ACTIVE_ROUTE_SCHEMA) == 0) {
-    const String path = doc["path"] | "";
-    if (!route_store::loadRouteFile(path, false)) return false;
-    lastNavType_ = LastNavType::Route;
-    lastRouteIndex_ = RouteID(1);
-    lastRoutePointIndex_ = RouteIndex(1);
-    lastWaypointIndex_ = WaypointID::None;
-    return activate ? activateRoute(RouteID(1), false) : true;
+    const char* schema = doc["schema"] | "";
+    if (strcmp(schema, LEGACY_ACTIVE_ROUTE_SCHEMA) == 0) {
+      path = doc["path"] | "";
+      sourceType = LoadedNavSource::SavedRoute;
+      activeType = LastNavType::Route;
+      index = 1;
+    } else if (strcmp(schema, NAV_STATE_SCHEMA) == 0) {
+      JsonObjectConst source = doc["source"].as<JsonObjectConst>();
+      sourceType = sourceFromName(source["type"] | "");
+      path = source["path"] | "";
+
+      JsonObjectConst active = doc["active"].as<JsonObjectConst>();
+      const char* type = active["type"] | "none";
+      if (strcmp(type, "route") == 0)
+        activeType = LastNavType::Route;
+      else if (strcmp(type, "point") == 0)
+        activeType = LastNavType::Point;
+      index = active["index"] | 0;
+      routePointIndex = active["route_point_index"] | 1;
+    }
   }
-  if (strcmp(schema, NAV_STATE_SCHEMA) != 0) return false;
-
-  JsonObjectConst source = doc["source"].as<JsonObjectConst>();
-  const LoadedNavSource sourceType = sourceFromName(source["type"] | "");
-  const String path = source["path"] | "";
   if (sourceType == LoadedNavSource::None || path.isEmpty()) return false;
 
   bool loaded = false;
@@ -952,11 +964,7 @@ bool Navigator::loadPersistedState(bool activate) {
   }
   if (!loaded) return false;
 
-  JsonObjectConst active = doc["active"].as<JsonObjectConst>();
-  const char* activeType = active["type"] | "none";
-  const uint8_t index = active["index"] | 0;
-  const int16_t routePointIndex = active["route_point_index"] | 1;
-  if (strcmp(activeType, "route") == 0) {
+  if (activeType == LastNavType::Route) {
     const RouteID routeIndex(index);
     const RouteIndex pointIndex(routePointIndex);
     if (!routeIndex || routeIndex > totalRoutes || pointIndex < 1 ||
@@ -968,7 +976,7 @@ bool Navigator::loadPersistedState(bool activate) {
     lastWaypointIndex_ = WaypointID::None;
     return activate ? activateRoute(lastRouteIndex_, lastRoutePointIndex_, false) : true;
   }
-  if (strcmp(activeType, "point") == 0) {
+  if (activeType == LastNavType::Point) {
     const WaypointID pointIndex(index);
     if (!pointIndex || pointIndex > totalWaypoints) return false;
     lastNavType_ = LastNavType::Point;

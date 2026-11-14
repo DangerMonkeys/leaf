@@ -39,23 +39,113 @@ namespace user_waypoints {
       return name;
     }
 
-    bool validPoint(JsonObjectConst point) {
-      const double lat = point["lat"] | NAN;
-      const double lon = point["lon"] | NAN;
-      return !isnan(lat) && !isnan(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
+    void skipWhitespace(File& file) {
+      while (true) {
+        const int c = file.peek();
+        if (c != ' ' && c != '\t' && c != '\r' && c != '\n') return;
+        file.read();
+      }
     }
 
-    uint8_t navigatorIndexForPoint(JsonObjectConst point) {
-      Waypoint waypoint;
-      waypoint.setLatitude(point["lat"] | 0.0);
-      waypoint.setLongitude(point["lon"] | 0.0);
-      for (uint8_t i = 1; i <= navigator.totalWaypoints; i++) {
-        if (navigator.waypoints[i].latE7 == waypoint.latE7 &&
-            navigator.waypoints[i].lonE7 == waypoint.lonE7) {
-          return i;
-        }
+    bool consume(File& file, int expected) {
+      skipWhitespace(file);
+      if (file.peek() != expected) return false;
+      file.read();
+      return true;
+    }
+
+    // The JSON parser reads one character ahead for numbers. Leave a parent
+    // delimiter in the file so the caller can validate it.
+    struct ScalarInput {
+      File& file;
+      int read() {
+        const int c = file.peek();
+        return c == ',' || c == ']' || c == '}' ? -1 : file.read();
       }
-      return 0;
+      size_t readBytes(char* out, size_t count) {
+        size_t i = 0;
+        for (; i < count; ++i) {
+          const int c = read();
+          if (c < 0) break;
+          out[i] = static_cast<char>(c);
+        }
+        return i;
+      }
+    };
+
+    bool readValue(File& file, JsonDocument& doc, uint8_t nesting) {
+      skipWhitespace(file);
+      const int c = file.peek();
+      const auto limit = DeserializationOption::NestingLimit(nesting);
+      if (c == '"' || c == '\'' || c == '[' || c == '{') {
+        return !deserializeJson(doc, file, limit);
+      }
+      ScalarInput input{file};
+      return !deserializeJson(doc, input, limit);
+    }
+
+    bool keyCharacter(int c) {
+      return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= '_' && c <= 'z');
+    }
+
+    enum class Member { Other, Schema, Points };
+
+    Member memberName(const char* name) {
+      if (strcmp(name, "schema") == 0) return Member::Schema;
+      if (strcmp(name, "points") == 0) return Member::Points;
+      return Member::Other;
+    }
+
+    bool readMember(File& file, JsonDocument& scratch, Member& member) {
+      skipWhitespace(file);
+      if (file.peek() == '"' || file.peek() == '\'') {
+        if (!readValue(file, scratch, 0)) return false;
+        const char* name = scratch.as<const char*>();
+        if (!name) return false;
+        member = memberName(name);
+      } else {
+        char name[8] = {};
+        size_t size = 0;
+        while (keyCharacter(file.peek())) {
+          const int c = file.read();
+          if (size < sizeof(name)) name[size++] = static_cast<char>(c);
+        }
+        if (size == 0) return false;
+        member = size == sizeof(name) ? Member::Other : memberName(name);
+      }
+      return consume(file, ':');
+    }
+
+    struct PointsLocation {
+      size_t offset = 0;
+      bool validPoint = false;
+    };
+
+    bool inspectDocument(File& file, PointsLocation& points, bool& supportedSchema) {
+      if (!consume(file, '{')) return false;
+      if (consume(file, '}')) return true;
+      JsonDocument scratch;
+      do {
+        Member member;
+        if (!readMember(file, scratch, member)) return false;
+        if (member == Member::Points && consume(file, '[')) {
+          points = {file.position(), false};
+          if (consume(file, ']')) continue;
+          do {
+            if (!readValue(file, scratch, ARDUINOJSON_DEFAULT_NESTING_LIMIT - 2)) return false;
+            if (validPoint(scratch.as<JsonObjectConst>())) points.validPoint = true;
+          } while (consume(file, ','));
+          if (!consume(file, ']')) return false;
+        } else {
+          if (!readValue(file, scratch, ARDUINOJSON_DEFAULT_NESTING_LIMIT - 1)) return false;
+          if (member == Member::Schema && !scratch.isNull()) {
+            const char* name = scratch.as<const char*>();
+            supportedSchema = name && strcmp(name, "leaf.user_waypoints") == 0;
+          }
+          if (member == Member::Points && !scratch.isNull()) points = {};
+        }
+      } while (consume(file, ','));
+      return consume(file, '}');
     }
 
     bool loadDocument(JsonDocument& doc, String& error) {
@@ -154,6 +244,52 @@ namespace user_waypoints {
     }
   }  // namespace
 
+  bool validPoint(JsonObjectConst point) {
+    const double lat = point["lat"] | NAN;
+    const double lon = point["lon"] | NAN;
+    return !isnan(lat) && !isnan(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
+  }
+
+  bool Reader::open(String& error) {
+    if (!SD_MMC.exists(filePath())) return true;
+    file_ = SD_MMC.open(filePath(), "r");
+    if (!file_) {
+      error = "Unable to read user waypoints.";
+      return false;
+    }
+    if (file_.size() > USER_WAYPOINTS_MAX_BYTES) {
+      error = "User waypoint file is too large.";
+      return false;
+    }
+
+    PointsLocation points;
+    bool supportedSchema = false;
+    if (!inspectDocument(file_, points, supportedSchema) ||
+        (points.offset != 0 && !file_.seek(points.offset))) {
+      error = "User waypoint file is invalid.";
+      return false;
+    }
+    if (!supportedSchema) {
+      error = "User waypoint file has an unsupported schema.";
+      return false;
+    }
+    hasValidPoint_ = points.validPoint;
+    readingPoints_ = points.offset != 0 && !consume(file_, ']');
+    return true;
+  }
+
+  bool Reader::next(JsonDocument& point) {
+    if (!readingPoints_) return false;
+    if (!readValue(file_, point, ARDUINOJSON_DEFAULT_NESTING_LIMIT - 2)) {
+      readingPoints_ = false;
+      failed_ = true;
+      return false;
+    }
+    readingPoints_ = consume(file_, ',');
+    failed_ = !readingPoints_ && !consume(file_, ']');
+    return !failed_;
+  }
+
   bool appendCurrentPosition(Waypoint& savedWaypoint, String& error) {
     heap_monitor::checkpoint("user-wpt-add-start");
     savedWaypoint = Waypoint();
@@ -205,35 +341,32 @@ namespace user_waypoints {
   bool loadIntoNavigator() {
     heap_monitor::checkpoint("user-wpt-load-nav");
     if (!sdcard.isMounted() || !SD_MMC.exists(filePath())) return false;
-    JsonDocument doc;
+    Reader reader;
     String error;
-    if (!loadDocument(doc, error)) return false;
-    for (JsonObjectConst point : doc["points"].as<JsonArrayConst>()) {
-      appendNavigatorWaypoint(point);
-    }
-    return true;
+    if (!reader.open(error)) return false;
+    JsonDocument point;
+    while (reader.next(point)) appendNavigatorWaypoint(point.as<JsonObjectConst>());
+    return !reader.failed();
   }
 
   bool hasSavedPoints() {
-    if (!sdcard.isMounted() || !SD_MMC.exists(filePath())) return false;
-    JsonDocument doc;
+    if (!sdcard.isMounted()) return false;
+    Reader reader;
     String error;
-    if (!loadDocument(doc, error)) return false;
-    for (JsonObjectConst point : doc["points"].as<JsonArrayConst>()) {
-      if (validPoint(point)) return true;
-    }
-    return false;
+    return reader.open(error) && reader.hasValidPoint();
   }
 
   bool loadAsNavigatorSource(bool persist) {
     heap_monitor::checkpoint("user-wpt-source-start");
     if (!sdcard.isMounted() || !SD_MMC.exists(filePath())) return false;
-    JsonDocument doc;
+    Reader reader;
     String error;
-    if (!loadDocument(doc, error)) return false;
+    if (!reader.open(error)) return false;
 
     navigator.clear();
-    for (JsonObjectConst point : doc["points"].as<JsonArrayConst>()) {
+    JsonDocument doc;
+    while (reader.next(doc)) {
+      const JsonObjectConst point = doc.as<JsonObjectConst>();
       if (!validPoint(point)) continue;
       if (!appendNavigatorWaypoint(point)) {
         navigator.clear();
@@ -241,7 +374,7 @@ namespace user_waypoints {
       }
     }
 
-    if (navigator.totalWaypoints == 0) {
+    if (reader.failed() || navigator.totalWaypoints == 0) {
       navigator.clear();
       return false;
     }

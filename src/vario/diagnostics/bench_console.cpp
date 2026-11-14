@@ -91,6 +91,11 @@ namespace bench_console {
         webserver_route_heap(metrics);
         respond("BENCH routeheap %lu %lu %lu %lu\n", (unsigned long)metrics[0],
                 (unsigned long)metrics[1], (unsigned long)metrics[2], (unsigned long)metrics[3]);
+      } else if (!strcmp(command, "navheap")) {
+        uint32_t metrics[4];
+        webserver_navigation_heap(metrics);
+        respond("BENCH navheap %lu %lu %lu %lu\n", (unsigned long)metrics[0],
+                (unsigned long)metrics[1], (unsigned long)metrics[2], (unsigned long)metrics[3]);
       } else if (!strcmp(command, "fanet")) {
         heap_monitor::Snapshot sample{};
         heap_monitor::snapshot(sample);

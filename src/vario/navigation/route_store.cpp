@@ -18,11 +18,6 @@ namespace route_store {
 
     String routeError(const char* message) { return String(message ? message : "Route error"); }
 
-    String trimmed(String value) {
-      value.trim();
-      return value;
-    }
-
     uint16_t radiusOrDefault(uint16_t radiusM) {
       return radiusM == 0 ? defaultWaypointRadius : radiusM;
     }
@@ -327,15 +322,13 @@ namespace route_store {
         return false;
       }
 
-      String payload = trimmed(data);
-      if (payload.startsWith("XCTSKZ:")) {
+      const char* payload = data.c_str();
+      while (isspace(static_cast<unsigned char>(*payload))) ++payload;
+      if (strncmp(payload, "XCTSKZ:", 7) == 0) {
         error = routeError("Compressed XCTSKZ routes are not supported yet.");
         return false;
       }
-      if (payload.startsWith("XCTSK:")) {
-        payload.remove(0, 6);
-        payload.trim();
-      }
+      if (strncmp(payload, "XCTSK:", 6) == 0) payload += 6;
 
       JsonDocument input;
       DeserializationError parseError = deserializeJson(input, payload);

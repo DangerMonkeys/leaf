@@ -264,3 +264,36 @@ handoff under load, and measure the time until the first valid packet
 after resuming. Recheck the Wi-Fi setup portal on a spare unit, including
 a cancelled setup and a successful network join. The bench run covered
 the saved-network Web App path.
+
+
+## Batch 6 · Route import and saved waypoints
+
+| Audit item | Change | Memory accounting |
+| --- | --- | --- |
+| I30a | Parse the original XCTSK String after skipping its optional prefix. | Removes one payload-sized String copy. The 8,192-byte valid fixture exercises the upper limit. Candidate route-import phase used 12,184 B from normalization through the response. The baseline firmware has no matching phase probe. |
+| N07b | Validate the saved-waypoint file one record at a time, then stream the Web App view in file order. | Candidate listing used 16,936 B from file open through the response for the 21,197-byte fixture. This includes SD and network memory. The previous run's boot-to-date low moved from 55,408 B to 53,088 B on listing and the candidate's stayed at 57,144 B. These are cumulative minima and do not isolate the listing's before/after peak. |
+| I30c | Find whether saved waypoints exist during the validation pass. | The reader carries one JSON value at a time. A separate phase delta for the picker existence check was not measured. |
+| I30d | Reuse that reader when merging or loading the saved-waypoint source. | Eliminates the full-file JSON tree during navigator load and merge. The underlying stop-and-read workload shared the same 21,197-byte file. No separate on-device peak delta was isolated. |
+| I31a | Copy the path and active indices out of the persisted navigation-state document before loading its target. | The small state document no longer overlaps with source parsing. The exact heap delta depends on state file size and was not isolated. |
+
+The USB console's `navheap` reports free heap at the start and local minimum
+for route import, then the same two values for a waypoint listing. Candidate
+linked static RAM was 98,332 B, 24 B more than Batch 5 due to bench
+instrumentation. Idle free heap before opening the app was 111,332 B.
+
+Both firmware images listed 113 valid records, returned the same index for
+duplicate coordinates, skipped the invalid coordinates, activated a point,
+and supported rename and delete. The candidate preserved unrelated waypoint
+metadata, rejected compressed XCTSK and malformed or oversized waypoint
+files, and restored both the staged user-waypoint source and an imported
+20-point route after a reset. Route guidance and route optimizer simulator
+checks passed. Writes still use the existing document path to preserve
+metadata. The near-limit listing took about 0.6 s on the candidate and
+0.4 s on the baseline in these runs. Rename took 1.45 s versus 0.69 s,
+including its subsequent navigator reload.
+
+The baseline was Batch 5's `42fbd198…` image. The candidate was
+`0.2.4-068d.bench+h3.2.5` built with local changes on `06817109`.
+Both candidate app slots were hash-verified. Image SHA-256
+`76166ce106e53e5bfdff7338ecda314beb1bc303edcc813dd040630076807931`.
+Bench evidence is in `utils/bench_baselines/batch-06/`.

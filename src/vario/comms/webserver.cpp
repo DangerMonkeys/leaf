@@ -148,7 +148,6 @@ namespace {
   static constexpr size_t PROFILE_FILE_MAX_BYTES = 6144;
   static constexpr size_t ROUTE_IMPORT_REQUEST_MAX_BYTES = 10000;
   static constexpr size_t ROUTE_EDITOR_REQUEST_MAX_BYTES = 18000;
-  static constexpr size_t USER_WAYPOINTS_MAX_BYTES = 24576;
   static constexpr size_t NAV_UPLOAD_MAX_BYTES = 262144UL;
   static constexpr uint32_t NAV_POINTS_MIN_FREE_HEAP = 18000;
   static constexpr uint32_t NAV_POINTS_MIN_MAX_ALLOC = 6000;
@@ -932,14 +931,8 @@ namespace {
     return "";
   }
 
-  bool validUserWaypointJson(JsonObjectConst point) {
-    const double lat = point["lat"] | NAN;
-    const double lon = point["lon"] | NAN;
-    return !isnan(lat) && !isnan(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
-  }
-
   uint8_t mergeUserWaypointIntoNavigator(JsonObjectConst point) {
-    if (!validUserWaypointJson(point)) return 0;
+    if (!user_waypoints::validPoint(point)) return 0;
 
     Waypoint waypoint;
     const char* sourceName = point["name"] | "";
@@ -1759,6 +1752,7 @@ namespace {
       active = heap_caps_monitor_local_minimum_free_size_start() == ESP_OK;
     }
 
+    struct Scope;
     void finish() {
       if (!active) return;
       minimum = heap_caps_get_minimum_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
@@ -1766,6 +1760,15 @@ namespace {
       active = false;
     }
   };
+  struct RouteHeapMeasurement::Scope {
+    explicit Scope(RouteHeapMeasurement& measurement) : measurement(measurement) {
+      measurement.start();
+    }
+    ~Scope() { measurement.finish(); }
+    RouteHeapMeasurement& measurement;
+  };
+  RouteHeapMeasurement route_import_heap;
+  RouteHeapMeasurement waypoint_list_heap;
   RouteHeapMeasurement route_receipt_heap;
   RouteHeapMeasurement route_normalization_heap;
 #endif
@@ -1920,6 +1923,9 @@ namespace {
     }
     doc.clear();
 
+#ifdef LEAF_USB_BENCH_CONSOLE
+    RouteHeapMeasurement::Scope heapScope(route_import_heap);
+#endif
     route_store::ImportResult result;
     if (!route_store::importRouteText(name, data, activate, result)) {
       String json = "{\"saved\":";
@@ -2268,31 +2274,15 @@ namespace {
       return;
     }
 
-    JsonDocument doc;
-    if (!SD_MMC.exists(user_waypoints::filePath())) {
-      doc["schema"] = "leaf.user_waypoints";
-      doc["schema_version"] = "v0.1.0";
-      doc["points"].to<JsonArray>();
-    } else {
-      File file = SD_MMC.open(user_waypoints::filePath(), "r");
-      if (!file) {
-        target.send(404, "application/json",
-                    "{\"points\":[],\"detail\":\"Unable to read user waypoints.\"}");
-        return;
-      }
-      if (file.size() > USER_WAYPOINTS_MAX_BYTES) {
-        file.close();
-        target.send(404, "application/json",
-                    "{\"points\":[],\"detail\":\"User waypoint file is too large.\"}");
-        return;
-      }
-      DeserializationError error = deserializeJson(doc, file);
-      file.close();
-      if (error || strcmp(doc["schema"] | "", "leaf.user_waypoints") != 0) {
-        target.send(404, "application/json",
-                    "{\"points\":[],\"detail\":\"User waypoint file is invalid.\"}");
-        return;
-      }
+#ifdef LEAF_USB_BENCH_CONSOLE
+    RouteHeapMeasurement::Scope heapScope(waypoint_list_heap);
+#endif
+    user_waypoints::Reader reader;
+    String error;
+    if (!reader.open(error)) {
+      const String reply = "{\"points\":[],\"detail\":\"" + error + "\"}";
+      target.send(404, "application/json", reply);
+      return;
     }
 
     target.setContentLength(CONTENT_LENGTH_UNKNOWN);
@@ -2301,10 +2291,12 @@ namespace {
     JsonStream json(target, responseBuffer, sizeof(responseBuffer));
     json.write("{\"points\":[");
     bool first = true;
-    for (JsonObjectConst point : doc["points"].as<JsonArrayConst>()) {
+    JsonDocument record;
+    while (reader.next(record)) {
+      const JsonObjectConst point = record.as<JsonObjectConst>();
+      if (!user_waypoints::validPoint(point)) continue;
       const double lat = point["lat"] | NAN;
       const double lon = point["lon"] | NAN;
-      if (!validUserWaypointJson(point)) continue;
       const uint8_t navigatorIndex = mergeUserWaypointIntoNavigator(point);
 
       if (!first) json.write(",");
@@ -2324,6 +2316,10 @@ namespace {
       json.write(",\"created_utc\":\"");
       json.writeEscaped(point["created_utc"] | "");
       json.write("\"}");
+    }
+    if (reader.failed()) {
+      target.client().stop();
+      return;
     }
     json.write("]}");
     json.finish();
@@ -4200,6 +4196,13 @@ void webserver_disable_user_app() {
 bool webserver_user_app_active() { return user_app_enabled; }
 
 #ifdef LEAF_USB_BENCH_CONSOLE
+void webserver_navigation_heap(uint32_t (&metrics)[4]) {
+  metrics[0] = route_import_heap.before;
+  metrics[1] = route_import_heap.minimum;
+  metrics[2] = waypoint_list_heap.before;
+  metrics[3] = waypoint_list_heap.minimum;
+}
+
 void webserver_route_heap(uint32_t (&metrics)[4]) {
   metrics[0] = route_receipt_heap.before;
   metrics[1] = route_receipt_heap.minimum;

@@ -59,7 +59,9 @@ access point. `routeheap` reports the start and minimum free internal heap
 for route body receipt and editor normalization, in that order. Zero means a
 phase did not record a measurement. `fanet` reports module detection, radio state, and
 the TX and RX worker stack high-water marks in bytes. The stack value is
-zero when the worker is absent.
+zero when the worker is absent. The `navheap` reply gives start and minimum
+free internal heap for route import and saved-waypoint listing in that order.
+These are phase readings from the most recent run of each operation.
 
 ## Capture and compare heap
 

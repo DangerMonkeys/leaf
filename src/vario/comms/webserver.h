@@ -19,5 +19,6 @@ String webserver_leaf_ap_password();
 String webserver_leaf_ap_wifi_qr();
 
 #ifdef LEAF_USB_BENCH_CONSOLE
+void webserver_navigation_heap(uint32_t (&metrics)[4]);
 void webserver_route_heap(uint32_t (&metrics)[4]);
 #endif
