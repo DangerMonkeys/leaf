@@ -1,12 +1,36 @@
-# Leaf USB bench console
+---
+title: Leaf USB bench console
+description: Drive a test unit over USB and capture comparable on-device heap measurements.
+---
 
-Build `leaf_3_2_5_bench` for the 3.2.5 bench unit. This environment adds USB
-control to the matching release configuration. The operating-mode SD handoff
-still revokes host access and waits for pending host I/O. The bench build
-reconnects USB after the handoff so the serial console remains available.
-The COM port can disappear and reappear during that transition. Reopen the
-port after it re-enumerates. Use the same bench environment and hardware for
-later memory comparisons.
+## Build a candidate for the bench
+
+Check out the candidate commit and run PlatformIO from the repository root.
+
+```powershell
+pio run -e leaf_3_2_5_bench
+```
+
+The 3.2.5 bench target inherits `leaf_3_2_5_release` and adds
+`LEAF_USB_BENCH_CONSOLE=1`. For another hardware revision, define a matching
+`*_bench` environment in the variant's `platformio.ini` using
+`leaf_3_2_5_bench` as the template. Build one environment at a time per worktree
+because the version script temporarily updates a shared header.
+
+Flash `.pio/build/leaf_3_2_5_bench/firmware.bin` to both OTA app slots using the
+repository's hardware verification procedure for the connected unit. The build
+also copies the image to `bench-firmware-leaf_3_2_5.bin` for local use. Archive
+the tested binary, ELF, commit ID, and report together. Release builds leave
+the console flag off. For publication, use the release image and follow the
+runtime assessment and release checklist. [Creating a firmware release](releasing.md)
+
+The operating-mode SD handoff revokes USB host access to the SD card and waits
+for pending host I/O. The bench build then reconnects USB so the console remains
+available. The COM port can disappear during that transition. Reopen it after
+it re-enumerates. Use the release image to verify production USB and power
+behavior.
+
+## Drive the unit
 
 With a USB data cable, run these commands from the repository root using a
 Python environment that has pySerial installed. The script selects a single
@@ -31,23 +55,53 @@ vario readiness, GPS fix, flight timer, and firmware access to the SD card.
 when the Web App is active. Open the Web App through its normal menu. For HTTP
 tests, connect the computer to the same network or to Leaf's access point.
 
-## Memory baseline
+## Capture and compare heap
 
 Use a cold boot and let the vario finish warming up on a primary page, with
 the flight timer stopped. Keep radio, network, SD and diagnostics settings
 consistent between runs. Record normal on-state heap with the Web App closed
 first. A second run can measure Web App idle as a separate workload.
 
-Pass the exact `.bin` that was flashed. The capture checks for the reported
-version in that image and records the binary hash.
+Pass the exact `.bin` that was flashed and choose a fresh output path. The
+capture checks for the reported version string in that file and records the
+file's SHA-256. Verify the flash itself when establishing the image identity.
 
 ```powershell
 python utils/leaf_bench_console.py baseline --firmware .pio/build/leaf_3_2_5_bench/firmware.bin --output .pio/bench-baseline.json
 ```
 
-The report includes the page and configuration, sampled free internal heap,
-boot-to-date minimum, largest free internal block, and loop-task stack high
-water mark, all in bytes. These values describe a USB-connected bench run.
-Keep the console idle except for the same sampling commands when comparing
-two images. For later Web App tests, close the app again before comparing
-against the normal on-state baseline.
+Compare the idle median and range, the boot-to-date minimum, and the largest
+free block on the same unit with the same build flag, startup sequence, settings,
+and sampling interval. Keep the console idle between samples. The loop task
+stack high-water mark is the smallest unused stack space observed since boot.
+The capture reports all four metrics in bytes.
+
+## Initial 3.2.5 on-state baseline
+
+The November 13, 2026 capture (November 14 at 01:47 UTC) sampled a USB-connected
+Leaf 3.2.5 on the User page 20 times over 19.047 seconds. The vario was ready,
+the flight timer was stopped, the GPS had no fix, and the firmware could access
+the SD card. The Web App was closed. Bluetooth was configured on, FANET region
+was set to 1, and Developer mode was on with the captured diagnostic logs and
+CPU capture disabled. The raw samples are in
+`utils/bench_baselines/leaf-3.2.5-idle-on.json` in the repository.
+
+| Metric | Bytes in every sample |
+| --- | ---: |
+| Free internal heap | 40,296 |
+| Minimum free internal heap since boot | 30,560 |
+| Largest free internal block | 31,732 |
+| Loop task stack high-water mark | 7,848 |
+
+Both OTA slots were flashed and verified. The console woke the unit from
+charging mode, reconnected after the SD handoff, and navigated to the Web App.
+From the host, `GET /app` and `GET /api/user/status` returned HTTP 200.
+The Web App was then closed for the heap capture.
+
+- Build: `leaf_3_2_5_bench`, firmware `0.2.4-03ed.bench+h3.2.5`.
+- Source: the bench implementation was built as local changes on
+  `03ead991e92ff7907f331ade535cc05061b841be` before it was committed as
+  `60496019`. Use the recorded binary hash to identify the exact tested build.
+- Firmware SHA-256: `46705b76c2b2e4d1557c24aec42a2eac5777c20422ebba4298573d45ce5c3b6f`.
+- Toolchain: PlatformIO Core 6.2.0, pioarduino 53.03.10, Arduino ESP32 3.1.0,
+  and Xtensa GCC 13.2.0+20240530.
