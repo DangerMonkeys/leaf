@@ -18,6 +18,7 @@
 #include "logbook/logbook_store.h"
 #include "logging/flight_diagnostic_output.h"
 #include "logging/log.h"
+#include "profiles/profile_store.h"
 #include "runtime.h"
 #include "scenario.h"
 #include "sim/clock.h"
@@ -165,12 +166,33 @@ int main() {
   sim::scenario().play();
   runFor(30000);
 
+  assert(SD_MMC.exists(ProfileStore::directoryPath()) ||
+         SD_MMC.mkdir(ProfileStore::directoryPath()));
+  auto writeProfiles = [](const char* pilotName, const char* gliderModel) {
+    JsonDocument profiles;
+    profiles["schema"] = "leaf.profiles";
+    profiles["pilots"][0]["id"] = "pilot";
+    profiles["pilots"][0]["name"] = pilotName;
+    profiles["gliders"][0]["id"] = "glider";
+    profiles["gliders"][0]["model"] = gliderModel;
+    File file = SD_MMC.open(ProfileStore::filePath(), "w");
+    assert(file && serializeJson(profiles, file) > 0);
+    file.close();
+  };
+
   // A short flight persists null extrema, including through the summary reader.
+  writeProfiles(u8"\u96EA", u8"\U0001F680");
   flightTimer_start();
   runFor(10000);
   const String shortEntry = logbookEntry.path();
+  const String shortTrackPath = igcFlight.trackLogPath();
   assert(igcFlight.started());
   flightTimer_stop(false);
+  File shortTrack = SD_MMC.open(shortTrackPath.c_str());
+  const String shortIgc = shortTrack.readString();
+  shortTrack.close();
+  assert(shortIgc.indexOf("HFPLTPILOTINCHARGE:Unknown") >= 0);
+  assert(shortIgc.indexOf("HFGTYGLIDERTYPE:Unknown") >= 0);
   JsonDocument doc;
   File shortFile = SD_MMC.open(shortEntry.c_str());
   assert(!deserializeJson(doc, shortFile));
@@ -181,6 +203,9 @@ int main() {
   assert(isnan(shortSummary.maxAccelG) && isnan(shortSummary.minAccelG));
 
   // A long flight still commits extrema, without the eleven per-second diagnostic records.
+  const char* pilotName = u8"Jos\u00E9 O\u2019Neil\u0301\r\nJr.";
+  const char* gliderModel = u8"Cr\u00E8me \u2013 \u00C6ro^2";
+  writeProfiles(pilotName, gliderModel);
   flightTimer_start();
   runFor(130000);
   const String entryPath = logbookEntry.path();
@@ -195,6 +220,12 @@ int main() {
   assert(doc["metrics"]["max_accel_g"].is<float>());
   File track = SD_MMC.open(trackPath.c_str());
   const String contents = track.readString();
+  assert(contents.indexOf("HFPLTPILOTINCHARGE:Jose O'Neil  Jr.") >= 0);
+  assert(contents.indexOf("HFGTYGLIDERTYPE:Creme - AEro 2") >= 0);
+  PilotProfile pilot;
+  GliderProfile glider;
+  assert(ProfileStore::activePilot(pilot) && pilot.name == pilotName);
+  assert(ProfileStore::activeGlider(glider) && glider.model == gliderModel);
   assert(contents.indexOf("LXLVGL") < 0 && contents.indexOf("LXLVGR ") < 0);
   assert(contents.indexOf("LXLVSTARTDATA") < 0 && contents.indexOf("LXLVSTARTPOS") < 0);
   assert(contents.indexOf("LXLVFDCFG V=1") >= 0);

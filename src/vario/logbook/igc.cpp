@@ -1,6 +1,7 @@
 #include "igc.h"
 
 #include <SD_MMC.h>
+#include <string_view>
 
 #include "Arduino.h"
 #include "ArduinoJson.h"
@@ -35,19 +36,112 @@ namespace {
     return String(buf);
   }
 
-  String printableAscii(const String& value, uint8_t maxLength) {
+  uint32_t takeUtf8Character(std::string_view& text) {
+    constexpr uint32_t REPLACEMENT = 0xFFFD;
+    const auto lead = static_cast<uint8_t>(text.front());
+    text.remove_prefix(1);
+    if (lead < 0x80) return lead;
+    if (lead < 0xC2 || lead > 0xF4) return REPLACEMENT;
+
+    const unsigned continuationCount = lead < 0xE0 ? 1 : lead < 0xF0 ? 2 : 3;
+    uint32_t character = lead & (0x3F >> continuationCount);
+    for (unsigned i = 0; i < continuationCount; ++i) {
+      if (text.empty()) return REPLACEMENT;
+      const auto next = static_cast<uint8_t>(text.front());
+      if ((next & 0xC0) != 0x80) return REPLACEMENT;
+      character = (character << 6) | (next & 0x3F);
+      text.remove_prefix(1);
+    }
+    if ((continuationCount == 2 && character < 0x800) ||
+        (continuationCount == 3 && character < 0x10000) ||
+        (character >= 0xD800 && character <= 0xDFFF) || character > 0x10FFFF)
+      return REPLACEMENT;
+    return character;
+  }
+
+  std::string_view igcTransliteration(uint32_t character) {
+    switch (character) {
+      case 0x00C6:
+        return "AE";
+      case 0x00DE:
+        return "TH";
+      case 0x00DF:
+        return "ss";
+      case 0x00E6:
+        return "ae";
+      case 0x00FE:
+        return "th";
+      case 0x0141:
+        return "L";
+      case 0x0142:
+        return "l";
+      case 0x0152:
+        return "OE";
+      case 0x0153:
+        return "oe";
+      case 0x0160:
+        return "S";
+      case 0x0161:
+        return "s";
+      case 0x0178:
+        return "Y";
+      case 0x017D:
+        return "Z";
+      case 0x017E:
+        return "z";
+      case 0x2010:
+      case 0x2011:
+      case 0x2012:
+      case 0x2013:
+      case 0x2014:
+        return "-";
+      case 0x2018:
+      case 0x2019:
+        return "'";
+      case 0x201C:
+      case 0x201D:
+        return "\"";
+      default:
+        return {};
+    }
+  }
+
+  String igcText(const String& value, size_t maxLength) {
+    // ASCII equivalents in code point order from U+00C0 through U+00FF.
+    static constexpr char LATIN1[] =
+        "AAAAAA CEEEEIIII"
+        "DNOOOOOxOUUUUY  "
+        "aaaaaa ceeeeiiii"
+        "dnooooo/ouuuuy y";
+    static_assert(sizeof(LATIN1) == 65);
+    constexpr std::string_view RESERVED = "!$*\\^";
     String safe;
-    safe.reserve(min((uint16_t)value.length(), (uint16_t)maxLength));
-    for (uint16_t i = 0; i < value.length() && safe.length() < maxLength; i++) {
-      char c = value[i];
-      safe += (c >= 0x20 && c <= 0x7E) ? c : ' ';
+    safe.reserve(min(size_t(value.length()), maxLength));
+    std::string_view text(value.c_str(), value.length());
+    while (!text.empty() && safe.length() < maxLength) {
+      const uint32_t character = takeUtf8Character(text);
+      if (character >= 0x20 && character <= 0x7D &&
+          RESERVED.find(static_cast<char>(character)) == std::string_view::npos) {
+        safe += static_cast<char>(character);
+        continue;
+      }
+      // Drop combining accents so decomposed names also keep their base letters.
+      if (character >= 0x0300 && character <= 0x036F) continue;
+
+      const auto replacement = igcTransliteration(character);
+      if (!replacement.empty()) {
+        if (replacement.size() > maxLength - safe.length()) break;
+        for (char c : replacement) safe += c;
+      } else {
+        safe += (character >= 0x00C0 && character <= 0x00FF) ? LATIN1[character - 0x00C0] : ' ';
+      }
     }
     safe.trim();
     return safe;
   }
 
   String pointLabel(const Waypoint& waypoint) {
-    return printableAscii(String(waypoint.name), maxGpxNameLength);
+    return igcText(String(waypoint.name), maxGpxNameLength);
   }
 
   const char* routeRoleName(RoutePointRole role) {
@@ -142,7 +236,7 @@ namespace {
     description += role;
     description += "AREA ";
     description += pointLabel(waypoint);
-    return printableAscii(description, 58);
+    return igcText(description, 58);
   }
 
   String indexedLabel(uint8_t index, uint8_t total) {
@@ -160,7 +254,7 @@ namespace {
     comment += routeRoleName(meta.role);
     comment += " NAME=";
     comment += pointLabel(waypoint);
-    return printableAscii(comment, 72);
+    return igcText(comment, 72);
   }
 
   void writeTaskPlaceholders(IgcLogger& logger, bool takeoff) {
@@ -352,20 +446,21 @@ void Igc::end(const FlightStats stats, bool showSummary) {
 void Igc::setPilotFromProfiles() {
   PilotProfile pilot;
   if (ProfileStore::activePilot(pilot)) {
-    logger.pilot = pilot.name;
+    const String name = igcText(pilot.name, pilot.name.length());
+    if (!name.isEmpty()) logger.pilot = name;
   }
 
   GliderProfile glider;
   if (ProfileStore::activeGlider(glider)) {
     const String profileName = glider.profileName();
-    if (!profileName.isEmpty()) logger.glider_type = profileName;
+    const String gliderType = igcText(profileName, profileName.length());
+    if (!gliderType.isEmpty()) logger.glider_type = gliderType;
   }
 }
 
 void Igc::markSavedPoint(const Waypoint& waypoint) {
   if (!started()) return;
-  logger.writeERecord(utcTimeString(), "PEV",
-                      printableAscii(String("Save Point ") + waypoint.name, 66));
+  logger.writeERecord(utcTimeString(), "PEV", igcText(String("Save Point ") + waypoint.name, 66));
 }
 
 void Igc::writeActiveNavigationDeclaration() {
@@ -375,12 +470,11 @@ void Igc::writeActiveNavigationDeclaration() {
     if (!route.totalPoints) return;
 
     const uint8_t turnpointCount = route.totalPoints > 2 ? route.totalPoints - 2 : 0;
-    const String routeName = printableAscii(String(route.name), maxGpxNameLength);
+    const String routeName = igcText(String(route.name), maxGpxNameLength);
     Serial.print("IGC task declaration route: ");
     Serial.println(routeName);
     logger.writeCDeclarationRecord(utcDateString(), utcTimeString(), utcDateString(), "0000",
-                                   turnpointCount,
-                                   printableAscii(String("Leaf Route ") + routeName, 51));
+                                   turnpointCount, igcText(String("Leaf Route ") + routeName, 51));
     writeTaskPlaceholders(logger, true);
 
     for (uint8_t i = 1; i <= route.totalPoints; i++) {
@@ -393,7 +487,7 @@ void Igc::writeActiveNavigationDeclaration() {
     }
 
     writeTaskPlaceholders(logger, false);
-    logger.writeLRecord(printableAscii(String("NAV:ROUTE NAME=") + routeName, 72));
+    logger.writeLRecord(igcText(String("NAV:ROUTE NAME=") + routeName, 72));
 
     for (uint8_t i = 1; i <= route.totalPoints; i++) {
       const RouteIndex pointIndex(i);
@@ -411,7 +505,7 @@ void Igc::writeActiveNavigationDeclaration() {
   Serial.print("IGC nav declaration point: ");
   Serial.println(pointName);
   logger.writeCDeclarationRecord(utcDateString(), utcTimeString(), utcDateString(), "0000", 0,
-                                 printableAscii(String("Leaf Point ") + pointName, 51));
+                                 igcText(String("Leaf Point ") + pointName, 51));
   writeTaskPlaceholders(logger, true);
   logger.writeCPointRecord(latDegreeToStr(point.latitude()), lngDegreeToStr(point.longitude()),
                            cPointAreaDescription("START", point, defaultWaypointRadius));
@@ -419,5 +513,5 @@ void Igc::writeActiveNavigationDeclaration() {
                            cPointAreaDescription("FINISH", point, defaultWaypointRadius));
   writeTaskPlaceholders(logger, false);
   logger.writeLRecord(
-      printableAscii(String("NAV:POINT R=") + defaultWaypointRadius + " NAME=" + pointName, 72));
+      igcText(String("NAV:POINT R=") + defaultWaypointRadius + " NAME=" + pointName, 72));
 }
