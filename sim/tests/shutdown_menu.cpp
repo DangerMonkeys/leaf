@@ -71,7 +71,7 @@ int main() {
   for (int i = 0; i < 12; ++i) menu.press(Button::RIGHT);
   assert(shutdown_guard::fault() == shutdown_guard::Stage::None);
   menu.press(Button::DOWN);
-  assert(menu.cursor() == 7);  // Startup options follow the fault row
+  assert(menu.cursor() == 7);  // Eco Mode follows the fault row
   menu.press(Button::UP);
   sim::board().fanetPresent = false;
   fanetRadio.setup();

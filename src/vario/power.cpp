@@ -493,11 +493,11 @@ void Power::readBatteryState() {
   info_.charging = !ioexDigitalRead(POWER_CHARGE_GOOD_IOEX, POWER_CHARGE_GOOD);
   // logic low is charging, logic high is not
 
-  info_.chargeCurrentMA = 0;
 #ifdef ISET
   // V_ISET = (I_CHARGE / 400) * R_ISET note: R_ISET is 1100 Ohms
-  info_.chargeCurrentMA = analogReadMilliVolts(ISET) * 400 / 1100;
+  info_.chargeSenseMV = analogReadMilliVolts(ISET);
 #endif
+  info_.chargeCurrentMA = info_.chargeSenseMV * 400 / 1100;
 
   // Test internal calibration of ADC:
   info_.batteryMV = analogReadMilliVolts(BATT_SENSE) * 69 / 41;

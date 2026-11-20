@@ -28,7 +28,11 @@ namespace sim {
     anchored_.store(false, std::memory_order_relaxed);
   }
 
-  void Clock::advanceUs(uint64_t us) {
+  void Clock::advanceUs(uint64_t us) { advance(us, false); }
+
+  void Clock::lightSleepUs(uint64_t us) { advance(us, true); }
+
+  void Clock::advance(uint64_t us, bool lightSleep) {
     if (stallHook_) stallHook_();
 
     // A paused clock blocks the device thread instead of advancing: from the firmware's point of
@@ -39,7 +43,15 @@ namespace sim {
     }
 
     const uint64_t target = nowUs() + us;
-    fireDueTimers(target);
+    if (lightSleep) {
+      for (Timer& timer : timers_) {
+        if (!timer.active) continue;
+        timer.counterEpochUs += us;
+        if (timer.periodUs) timer.nextUs += us;
+      }
+    } else {
+      fireDueTimers(target);
+    }
     nowUs_.store(target, std::memory_order_relaxed);
 
     const double speed = speed_.load(std::memory_order_relaxed);

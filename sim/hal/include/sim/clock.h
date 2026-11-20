@@ -12,7 +12,7 @@
 
 namespace sim {
 
-  // Hardware timer interrupts (the 10ms task timer and 500ms charge timer the firmware installs).
+  // Hardware timer interrupts, including the firmware's 10ms task timer.
   // Registered callbacks fire from whichever call advanced virtual time past their deadline, which
   // is the same place the device sees them: in the middle of the main loop.
   using TimerCallback = void (*)();
@@ -30,6 +30,9 @@ namespace sim {
     // Moves virtual time forward, firing any timer callbacks due along the way, and blocks in real
     // time if the clock is pacing to a speed multiplier.
     void advanceUs(uint64_t us);
+
+    // Light sleep advances wall time while the hardware timer counters are stopped.
+    void lightSleepUs(uint64_t us);
 
     // Speed multiplier: 1.0 tracks wall clock, 10.0 runs ten times faster, 0 runs flat out.
     void setSpeed(double speed);
@@ -64,6 +67,7 @@ namespace sim {
     void setStallHook(StallHook hook) { stallHook_ = hook; }
 
    private:
+    void advance(uint64_t us, bool lightSleep);
     void fireDueTimers(uint64_t until);
 
     struct Timer {
