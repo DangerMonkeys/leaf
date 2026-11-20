@@ -11,6 +11,10 @@ succeeded after making space available and correcting a stale FAT32 free-space h
 The dialog screenshots are ready for wording and visual review. These are uncommitted
 changes on `codex/usb-bench-console`, based on `b1ed6ae1`.
 
+The storage work was subsequently committed as `45e599af`. The
+[separate shutdown follow-up](shutdown-fix-review-2026-11-19.md) implements the proposed
+Power shutdown redesign below; the rest of this report preserves the storage test session.
+
 ## Behavior changes
 
 1. **Protect user files.** Navigation state, saved routes, saved waypoints, profiles and

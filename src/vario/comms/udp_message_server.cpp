@@ -4,6 +4,7 @@
 #include <AsyncUDP.h>
 #include <WiFi.h>
 
+#include "power.h"
 #include "ui/settings/settings.h"
 
 namespace {
@@ -34,7 +35,8 @@ UDPMessageServer::~UDPMessageServer() {
 }
 
 void UDPMessageServer::update() {
-  if (!injectionEnabled()) {
+  if (power.info().onState != PowerState::On || !injectionEnabled()) {
+    callbacks_.requestStop();
     if (accepting_.exchange(false)) {
       resetReference_.store(true);
       Serial.println("UDP injection stopped");
@@ -42,6 +44,10 @@ void UDPMessageServer::update() {
     attemptedListen_ = false;
     return;
   }
+
+  // Never reopen over a callback left from a previous enable/disable cycle.
+  if (!callbacks_.idle()) return;
+  callbacks_.reopen();
 
   // ESP32 AsyncUDP::close disconnects but does not unbind its PCB or clear queued callbacks.
   // Keep one listener and gate packet handling instead of repeatedly closing/rebinding it.
@@ -58,9 +64,22 @@ void UDPMessageServer::update() {
                             : "Could not start UDP injection; will retry");
 }
 
+bool UDPMessageServer::quiesce(uint32_t timeoutMs) {
+  accepting_.store(false);
+  callbacks_.requestStop();
+  resetReference_.store(true);
+  const uint32_t started = millis();
+  while (!callbacks_.idle()) {
+    if (millis() - started >= timeoutMs) return false;
+    delay(1);
+  }
+  return true;
+}
+
 void UDPMessageServer::onPacket(AsyncUDPPacket& packet) {
   // Settings and WiFi are inspected on the main loop; the callback only reads atomic state.
-  if (!accepting_.load()) return;
+  ProducerGate::Entry callback(callbacks_);
+  if (!callback || !accepting_.load()) return;
   if (resetReference_.exchange(false)) injector_.resetReferenceTime();
   if (!injector_.bus()) {
     Serial.println("Received UDP packet without a message bus");

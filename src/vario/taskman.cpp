@@ -162,6 +162,9 @@ TODO: In addition to the timer-driven interrupt, we may consider also setting wa
 the pushbuttons, the GPS 1PPS signal, and perhaps others.
 */
 void TaskManager::update() {
+  // Button subscribers only request shutdown. Dispatch has released its bus
+  // mutex before this loop boundary, so asynchronous publishers can finish.
+  if (power.serviceShutdown()) return;
   cpu_utilization::update();
   const bool networkWork =
       !leafLogSync.transferInFlight() && sdcard.firmwareOwnsMassStorage() &&

@@ -541,6 +541,7 @@ namespace {
       flightTimer_start();
       faults("open", 2);
       power.shutdown(lowBattery);
+      assert(power.serviceShutdown());
       assert(calls == 3 && !flightTimer_isRunning());
       faults();
       assert(power.switchToOnState());

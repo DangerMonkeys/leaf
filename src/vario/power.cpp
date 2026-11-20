@@ -3,7 +3,9 @@
 
 #include "battery_characterization.h"
 #include "comms/ble.h"
+#include "comms/fanet_radio.h"
 #include "comms/leaf_log_sync.h"
+#include "comms/udp_message_server.h"
 #include "diagnostics/diagnostic_network/diagnostic_network.h"
 #include "diagnostics/heap_monitor.h"
 #include "hardware/Leaf_I2C.h"
@@ -253,6 +255,7 @@ void Power::wakePeripherals() {
 }
 
 bool Power::switchToOnState() {
+  if (shutdownPending_ || shutdownInProgress_) return false;
   if (!sdcard.acquireForFirmwareUse(2000, true)) {
     Serial.println("switch_to_on_state: SD ownership transition failed");
     return false;
@@ -289,8 +292,30 @@ void Power::maybeStartBusLog() {
 void Power::shutdown() { shutdown(false); }
 
 void Power::shutdown(bool deadBattery) {
-  // Arm before ANY lock, SD write, or driver cleanup can block the loop.
-  shutdown_guard::begin();
+  if (shutdownInProgress_) return;
+  shutdownDeadBattery_ |= deadBattery;
+  if (shutdownPending_) return;
+  // Arm while still in the requesting callback. Even a stalled dispatch or
+  // main loop before serviceShutdown() retains the original safety bound.
+  shutdown_guard::begin(shutdown_guard::Stage::Requested);
+  shutdownPending_ = true;
+  buttons.consumeButton();
+}
+
+bool Power::serviceShutdown() {
+  if (!shutdownPending_ || shutdownInProgress_) return false;
+  shutdownPending_ = false;
+  shutdownInProgress_ = true;
+  const bool deadBattery = shutdownDeadBattery_;
+  shutdownDeadBattery_ = false;
+
+  // No bus or file lock is held here. Drain callbacks that were admitted before
+  // stopping, including ones waiting for the requesting button's bus lock.
+  shutdown_guard::stage(shutdown_guard::Stage::Publishers);
+  shutdown_guard::faultPoint(shutdown_guard::Stage::Publishers);
+  if (!udpMessageServer.quiesce() || !fanetRadio.quiesce())
+    shutdown_guard::force(shutdown_guard::Reason::WorkerTimeout);
+  shutdown_guard::stage(shutdown_guard::Stage::Lock);
   shutdown_guard::faultPoint(shutdown_guard::Stage::Lock);
   // Finish an already-running logbook operation before shutdown starts, and prevent
   // another reader/save from crossing the final-save/power-latch boundary.
@@ -383,6 +408,8 @@ void Power::shutdown(bool deadBattery) {
     Serial.println("power_shutdown: SD unavailable for charging transition");
   }
   shutdown_guard::complete();
+  shutdownInProgress_ = false;
+  return true;
 }
 
 void Power::latchOn() { digitalWrite(POWER_LATCH, HIGH); }

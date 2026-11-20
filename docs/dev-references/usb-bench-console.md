@@ -92,7 +92,9 @@ this fast; these timings do not bound a full allocation-table scan.
 
 For UDP replay tests, stop and join the host producer, disable injection through the
 existing developer session endpoint, and verify it is disabled before sending shutdown
-buttons. See the [shutdown lock investigation](backlog/shutdown-message-bus-lock.md).
+buttons when isolating storage/memory workloads or testing older firmware. The
+[shutdown regression](shutdown-fix-review-2026-11-19.md) instead keeps replay active
+through power-off to verify the new deferred transition and publisher drain.
 
 ## Compare TLS record buffers
 

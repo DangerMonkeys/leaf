@@ -49,8 +49,13 @@ class Power {
 
   void bootUp();
 
+  // Loop-core only: request shutdown without blocking a message-bus subscriber.
+  // The safety deadline starts here, not when the request is serviced.
   void shutdown();
   void shutdown(bool deadBattery);
+
+  // Called by the main loop outside message dispatch. True if shutdown ran.
+  bool serviceShutdown();
 
   bool switchToOnState();
 
@@ -91,6 +96,9 @@ class Power {
   void setInputCurrent(PowerInputLevel current);
 
   Info info_;
+  bool shutdownPending_ = false;
+  bool shutdownDeadBattery_ = false;
+  bool shutdownInProgress_ = false;
 
   // check if we should turn off from  inactivity
   uint16_t autoOffCounter_ = 0;

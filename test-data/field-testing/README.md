@@ -9,6 +9,9 @@ The [checked-save and startup-warning follow-up](sd-full/2026-11-19-3.2.8-fix/RE
 adds fault-injection results, warning screenshots, file-preservation checks and recovery
 controls, including the stale FAT32 free-count hint investigation.
 
+The [shutdown follow-up](shutdown/2026-11-19-3.2.8/README.md) preserves replay-active
+power-off and wake controls, shutdown-saved flight/Stack data and watchdog regression logs.
+
 This archive preserves the complete useful contents of the former
 `scratch/field-testing` folders, including files previously hidden by an ignore-all
 rule. Raw recordings and saved results were copied byte for byte. Only Python

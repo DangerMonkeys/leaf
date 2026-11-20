@@ -1,0 +1,34 @@
+BENCH version 0.2.4-45ed.bench+h3.2.8
+BENCH version 0.2.4-45ed.bench+h3.2.8
+BENCH status On User -1 1 0 1 1 0 1
+
+HOST press LEFT
+BENCH ok
+
+HOST wait 5
+button: LEFT   state: PRESSED     hold count: 0
+button: LEFT   state: CLICKED     hold count: 0
+302177 playSound 1008610866
+button: LEFT   state: RELEASED    hold count: 0
+LSM6DSV: a=-0.0024,-0.0056,0.9938 g=-0.0018,-0.0056,0.9994 pairs
+HOST press UP
+BENCH ok
+
+HOST press CENTER
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+307566 playSound 1008728178
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST status
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+307876 playSound 1008579248
+button: CENTER state: RELEASED    hold count: 0
+Sectors: 15741312
+307950 playSound 1008579222
+BENCH status On User 0 0 0 1 1 1 1
+
+HOST hold CENTER 2300
+BENCH ok

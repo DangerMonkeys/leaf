@@ -267,9 +267,23 @@ namespace {
     const String shutdownPath = igcFlight.trackLogPath();
     assert(igcFlight.started());
     power.shutdown(false);
+    assert(power.serviceShutdown());
     assert(!flightTimer_isRunning());
     text = readTrack(shutdownPath);
     assert(text.find("END V=1 CAUSE=POWER_OFF") != std::string::npos);
+    assert(power.switchToOnState());
+    fly(4000);
+    flightTimer_start();
+    fly(1500);
+    const String lowBatteryPath = igcFlight.trackLogPath();
+    assert(igcFlight.started());
+    power.shutdown(false);
+    power.shutdown(true);
+    power.shutdown(false);
+    assert(flightTimer_isRunning());
+    assert(power.serviceShutdown());
+    text = readTrack(lowBatteryPath);
+    assert(text.find("END V=1 CAUSE=LOW_BATTERY") != std::string::npos);
   }
 }  // namespace
 

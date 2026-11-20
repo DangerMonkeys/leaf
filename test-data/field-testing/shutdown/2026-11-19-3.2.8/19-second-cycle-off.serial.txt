@@ -1,0 +1,25 @@
+BENCH version 0.2.4-45ed.bench+h3.2.8
+LSM6DSV: a=-0.0022,-0.0061,0.9926 g=-0.0018,-0.0057,1.0014 pairsBENCH version 0.2.4-45ed.bench+h3.2.8
+BENCH status On Menu -1 1 0 1 1 0 1
+
+HOST status
+BENCH status On Menu -1 1 0 1 1 0 1
+
+HOST press LEFT
+BENCH ok
+
+HOST press LEFT
+button: LEFT   state: PRESSED     hold count: 0
+button: LEFT   state: CLICKED     hold count: 0
+535176 playSound 1008681504
+button: LEFT   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST wait 5
+button: LEFT   state: PRESSED     hold count: 0
+button: LEFT   state: CLICKED     hold count: 0
+535487 playSound 1008704932
+button: LEFT   state: RELEASED    hold count: 0
+LSM6DSV: a=-0.0020,-0.0056,0.9931 g=-0.0019,-0.0057,1.0014 pairs
+HOST hold CENTER 2300
+BENCH ok

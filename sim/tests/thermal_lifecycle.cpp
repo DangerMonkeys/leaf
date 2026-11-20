@@ -3,6 +3,7 @@
 #include <SD_MMC.h>
 #include <assert.h>
 #include <stdio.h>
+#include <cstdlib>
 
 #include "dispatch/message_bus.h"
 #include "instruments/baro.h"
@@ -189,8 +190,10 @@ int main() {
   options.speed = 0;
   options.acceptWarning = true;
   options.exitOnFatalError = true;
-  options.statePath = "sim/build-tests/thermal-lifecycle/state";
-  options.cardRoot = "sim/build-tests/thermal-lifecycle/card";
+  char fixture[] = "/tmp/leaf-thermal-lifecycle-XXXXXX";
+  assert(mkdtemp(fixture));
+  options.statePath = std::string(fixture) + "/state";
+  options.cardRoot = std::string(fixture) + "/card";
   sim::runtime().configure(options);
   sim::runtime().boot();
   settings.loadDefaults();
@@ -209,7 +212,7 @@ int main() {
   populate();
   assert(igcFlight.started());
   const String trackPath = igcFlight.trackLogPath();
-  const String entryPath = logbookEntry.path();
+  const String flightId = logbookEntry.flightId();
   const auto duration = logbook.duration;
   assert(duration >= 340);
   selectPageCursors();
@@ -217,6 +220,20 @@ int main() {
   assertEmpty();
   checkCursorsPreserved();
   assert(!flightTimer_isRunning());
+  // GPS clock acquisition can rename an undated placeholder during finalization.
+  // Follow this flight's identity, not its earlier provisional filename.
+  String entryPath;
+  File directory = SD_MMC.open("/logbook");
+  for (File candidate = directory.openNextFile(); candidate; candidate = directory.openNextFile()) {
+    if (candidate.isDirectory() || !String(candidate.name()).endsWith(".json")) continue;
+    JsonDocument entry;
+    assert(!deserializeJson(entry, candidate));
+    if (entry["flight_id"].as<String>() == flightId) {
+      assert(entryPath.isEmpty());
+      entryPath = candidate.path();
+    }
+  }
+  directory.close();
   assert(SD_MMC.exists(trackPath.c_str()) && SD_MMC.exists(entryPath.c_str()));
   File entry = SD_MMC.open(entryPath.c_str());
   JsonDocument json;
@@ -271,6 +288,7 @@ int main() {
     settings.disp_showThermalCorePage = settings.disp_showThermalTrackPage = cycle >= 2;
     display.setPage(MainPage::Navigate);
     power.shutdown(cycle >= 2);
+    assert(power.serviceShutdown());
     assertEmpty();
     assert(power.info().onState == PowerState::OffUSB);
     assert(power.switchToOnState());

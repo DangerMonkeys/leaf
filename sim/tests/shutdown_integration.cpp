@@ -146,8 +146,27 @@ int main(int argc, char** argv) {
     std::cout << "Nested cleanup cannot extend the outer deadline\n";
     return 0;
   }
+  if (mode == "pending") {
+    power.shutdown();
+    assert(power.info().onState == PowerState::On && flightTimer_isRunning());
+    sim::clock().advanceUs(4000000);
+    power.shutdown(true);  // Repeat/upgrade cannot restart the request's deadline.
+    try {
+      sim::clock().advanceUs(4020000);
+      assert(false);
+    } catch (const EmergencyReset&) {
+      assert(lastReason() == Reason::Deadline);
+      assert(sim::clock().nowUs() - start <= DEADLINE_US + 10000);
+      assert(digitalRead(LATCH_PIN) == LOW);
+    }
+    std::cout << "Unserviced/repeated shutdown requests retain the original deadline\n";
+    return 0;
+  }
   try {
     power.shutdown(mode == "low-battery");
+    assert(power.info().onState == PowerState::On);
+    assert(power.serviceShutdown());
+    assert(!power.serviceShutdown());
     assert(mode == "normal" || mode == "low-battery" || mode == "disabled");
     assert(power.info().onState == PowerState::OffUSB);
     assert(digitalRead(LATCH_PIN) == LOW);

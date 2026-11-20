@@ -55,6 +55,10 @@ class FanetRadio : public etl::message_router<FanetRadio, GpsReading>,
   // Request to cleanly stop the radio module
   void end();
 
+  // Stop admission and park workers before shutdown takes file/driver locks.
+  // On timeout retain resources; the caller chooses the guarded recovery path.
+  bool quiesce();
+
   // Logs the cached boot-time detection result once system event logging is available.
   void logDetectionResult();
 

@@ -138,6 +138,10 @@ namespace shutdown_guard {
     switch (value) {
       case Stage::None:
         return "none";
+      case Stage::Requested:
+        return "requested";
+      case Stage::Publishers:
+        return "publishers";
       case Stage::RecoveryBoot:
         return "recovery-boot";
       case Stage::Lock:

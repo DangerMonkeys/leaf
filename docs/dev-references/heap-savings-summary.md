@@ -97,8 +97,11 @@ starting on a full card, and false Stack export success. Diagnostic retry and
 a writable-card recording control passed. The [checked-save and startup-warning follow-up](storage-fix-review-2026-11-19.md)
 addresses user-file preservation and Stack false success. It adds +16 B static RAM and
 +8,624 B flash in the 3.2.8 bench image. IGC in-flight error behavior remains unchanged
-by agreement, and the shutdown lock dependency remains proposed work. The tests did not
-compare main against the candidate.
+by agreement. The [separate shutdown fix](shutdown-fix-review-2026-11-19.md) moves cleanup
+outside dispatch and drains publishers, adding another +16 B static RAM and +628 B flash.
+Simulator watchdog/regression tests and replay-active 3.2.8 shutdowns passed; live FANET
+with a connected Bluetooth client remains to be checked. These tests did not compare
+main against the candidate.
 
 - Run a fresh factory commissioning session, including completion retries and the interactive self-test.
 - Interrupt and retry a live Leaf Log upload. Verify cancellation and SD ownership handoff.

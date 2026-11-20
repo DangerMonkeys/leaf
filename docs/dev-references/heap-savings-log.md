@@ -582,3 +582,18 @@ This reliability work costs +16 B linked static RAM and +8,624 B linked flash in
 timing instrumentation. The unit is charging with original settings/files restored and
 8,503,296 bytes free for reviewing the low-space warning. Shutdown's shared FANET/message
 bus lock dependency remains a separate [proposed fix](backlog/shutdown-message-bus-lock.md).
+
+### November 19: deferred shutdown and publisher drain
+
+Committed the storage follow-up as `45e599af`, then moved Power shutdown cleanup out of
+message-bus callbacks. The request arms the existing guard immediately; the main loop
+drains admitted UDP/FANET producers before file locks and cleanup. Original shutdown
+deadlines, hardware watchdogs and recovery semantics are retained. The final simulator
+fault/regression suites and two replay-active 3.2.8 shutdowns passed. A shutdown IGC
+and Stack CSV were saved and read back; all three short test IGCs passed checksums.
+
+This adds +16 B static RAM and +628 B flash over the storage-fix bench image, with no
+new task or capture buffer. Live FANET plus a connected Bluetooth client remains to
+be checked. See the [shutdown report](shutdown-fix-review-2026-11-19.md) for exact hashes,
+producer timing, test-driver corrections, and cleanup. Original card files/settings
+were restored; the unit is charging with 8,503,296 bytes free.

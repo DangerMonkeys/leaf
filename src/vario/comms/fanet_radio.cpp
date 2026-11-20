@@ -693,7 +693,7 @@ bool FanetRadio::initializeRadio(const FanetRadioRegion& region) {
   return true;
 }
 
-bool FanetRadio::releaseResources() {
+bool FanetRadio::quiesce() {
   if (!hardware_) return true;
 
   producers_.requestStop();
@@ -710,6 +710,13 @@ bool FanetRadio::releaseResources() {
     }
     delay(1);
   }
+
+  return true;
+}
+
+bool FanetRadio::releaseResources() {
+  if (!hardware_) return true;
+  if (!quiesce()) return false;
 
   // A task parked outside the protocol/SPI locks cannot touch the shared objects.
   // On a timeout, leave ownership intact so a later stop can safely finish.

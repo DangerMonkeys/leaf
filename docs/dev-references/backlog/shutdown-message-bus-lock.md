@@ -5,8 +5,10 @@ description: Assess and remove a shutdown lock dependency shared by UDP injectio
 
 # Move blocking shutdown outside message dispatch
 
-Status: proposed, not implemented. Identified during the November 19, 2026 full-card tests.
-Keep this architectural change separate from checked user-file saves and startup storage warnings.
+Status: implemented for Power shutdown in a separate follow-up to storage commit `45e599af`.
+Identified during the November 19, 2026 full-card tests. See the
+[implementation and test report](../shutdown-fix-review-2026-11-19.md). Live FANET plus
+connected Bluetooth testing and the audit of other blocking subscribers remain open.
 
 ## Evidence and scope
 
@@ -14,7 +16,7 @@ With UDP replay active, shutdown printed `Lock acquisition failed in MessageBus:
 restarted. With replay stopped, otherwise comparable shutdowns completed. The saved trace is
 `test-data/field-testing/sd-full/2026-11-19-3.2.8/21-flight-shutdown.serial.txt`.
 
-The lock dependency is not exclusive to the developer replay interface:
+Before the fix, the lock dependency was not exclusive to the developer replay interface:
 
 - `MessageBus::receive` holds its recursive mutex while dispatching to subscribers. Other threads
   wait up to 3 seconds for that mutex (`src/vario/dispatch/message_bus.h`).
@@ -31,7 +33,7 @@ Live FANET traffic has not reproduced this failure in this investigation. The so
 a shared architectural risk; it does not establish how often normal users encounter it. The
 current storage test unit reported FANET off/uninstalled.
 
-## Recommended design
+## Implemented design and remaining audit
 
 1. Turn shutdown calls from button handlers into a pending request, preserving the low-battery
    reason, consuming the initiating button, and making repeated requests harmless.
@@ -43,8 +45,9 @@ current storage test unit reported FANET off/uninstalled.
 4. Audit other blocking transitions invoked by subscribers for the same dependency. Do not fix
    this by simply lengthening the bus timeout or deleting tasks while they can hold shared locks.
 
-No new thread or large queue is inherently required for a deferred shutdown request. Exact
-state changes, lock ordering, memory impact and low-battery timing still need implementation review.
+Items 1–3 are implemented, with the guard armed at the first request, before deferral.
+The measured bench cost is +16 B static RAM and +628 B flash; no new thread or queue is
+allocated. Item 4 remains follow-up work. The existing emergency path and deadlines are unchanged.
 
 ## Verification
 
@@ -54,5 +57,6 @@ state changes, lock ordering, memory impact and low-battery timing still need im
 - Normal, low-battery, repeated-request, stuck-worker, watchdog and charging-handoff regressions.
 - Confirm the main loop retains its shutdown bound and the exact shutdown reason survives deferral.
 
-Until then, storage automation must stop/join its replay producer and disable injection before
-requesting power-off. This is a test workaround, not a firmware architectural fix.
+For older firmware, stop/join replay and disable injection before power-off. Ordinary storage
+measurements can still use that sequence to isolate their workload. The new shutdown regression
+deliberately keeps replay active through shutdown and verifies charging before stopping it.

@@ -1,0 +1,1292 @@
+make: Entering directory '/leaf/sim'
+  CXX   src/vario/comms/udp_message_server
+In file included from /leaf/sim/tests/shutdown_integration.cpp:9:
+/leaf/src/vario/comms/ble.h: In constructor 'BLE::BLE()':
+/leaf/src/vario/comms/ble.h:92:16: warning: 'BLE::xTask' will be initialized after [-Wreorder]
+   92 |   TaskHandle_t xTask;
+      |                ^~~~~
+/leaf/src/vario/comms/ble.h:71:21: warning:   'std::atomic<bool> BLE::started' [-Wreorder]
+   71 |   std::atomic<bool> started;  // Desired state; advertising pauses while a central is connected.
+      |                     ^~~~~~~
+/leaf/src/vario/comms/ble.h:59:3: warning:   when initialized here [-Wreorder]
+   59 |   BLE()
+      |   ^~~
+Shutdown deadline/wrap, hold/release and concurrent producer drain passed
+RTC armed-backstop preservation, unarmed emergency, reconfiguration and disarm passed
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: On
+0 playSound 5451312
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done. 
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+ - DONE
+SD startup space: available=1 free=8522825728 check_us=0
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+Speaker::update skipped 5 intervals
+4525 playSound 5440456
+Sectors: 16777216
+5815 playSound 5440424
+power_shutdown
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+6525 playSound 5440440
+Stack monitor saved /diagnostics/stack_1.csv
+6525 playSound 5451296
+sleep_peripherals: On
+ - Sleeping GPS
+LC86G::sleep now: 9345
+ready: 680
+delay: 0
+************ !!!!!!!!!!! GPS SLEEPING COMMAND SENT !!!!!!!!!!! ************
+ - Sleeping baro
+ - Sleeping speaker
+Shut down speaker
+ - DONE
+Normal shutdown saved flight and returned to charging within deadline
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: On
+0 playSound 5451312
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done. 
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+ - DONE
+SD startup space: available=1 free=8522825728 check_us=0
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+Speaker::update skipped 5 intervals
+4525 playSound 5440456
+Sectors: 16777216
+5815 playSound 5440424
+power_shutdown
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+6525 playSound 5440440
+Stack monitor saved /diagnostics/stack_1.csv
+6525 playSound 5451296
+sleep_peripherals: On
+ - Sleeping GPS
+LC86G::sleep now: 9345
+ready: 680
+delay: 0
+************ !!!!!!!!!!! GPS SLEEPING COMMAND SENT !!!!!!!!!!! ************
+ - Sleeping baro
+ - Sleeping speaker
+Shut down speaker
+ - DONE
+Normal shutdown saved flight and returned to charging within deadline
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: On
+0 playSound 5451312
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done. 
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+ - DONE
+SD startup space: available=1 free=8522825728 check_us=0
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+Speaker::update skipped 5 intervals
+4525 playSound 5440456
+Sectors: 16777216
+5815 playSound 5440424
+power_shutdown
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+6525 playSound 5440440
+6525 playSound 5451296
+sleep_peripherals: On
+ - Sleeping GPS
+LC86G::sleep now: 9345
+ready: 680
+delay: 0
+************ !!!!!!!!!!! GPS SLEEPING COMMAND SENT !!!!!!!!!!! ************
+ - Sleeping baro
+ - Sleeping speaker
+Shut down speaker
+ - DONE
+Normal shutdown saved flight and returned to charging within deadline
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: On
+0 playSound 5451312
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done. 
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+ - DONE
+SD startup space: available=1 free=8522825728 check_us=0
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+Speaker::update skipped 5 intervals
+4525 playSound 5440456
+Sectors: 16777216
+5815 playSound 5440424
+Injecting shutdown stall: logbook-lock
+Injected lock stall released latch at 8004 ms
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: On
+0 playSound 5451312
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done. 
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+ - DONE
+SD startup space: available=1 free=8522825728 check_us=0
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+Speaker::update skipped 5 intervals
+4525 playSound 5440456
+Sectors: 16777216
+5815 playSound 5440424
+power_shutdown
+Injecting shutdown stall: flight-save
+Injected save stall released latch at 8004 ms
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: On
+0 playSound 5451312
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done. 
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+ - DONE
+SD startup space: available=1 free=8522825728 check_us=0
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+Speaker::update skipped 5 intervals
+4525 playSound 5440456
+Sectors: 16777216
+5815 playSound 5440424
+power_shutdown
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+6525 playSound 5440440
+Injecting shutdown stall: ble-worker
+Injected worker stall released latch at 8004 ms
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: On
+0 playSound 5451312
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done. 
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+ - DONE
+SD startup space: available=1 free=8522825728 check_us=0
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+Speaker::update skipped 5 intervals
+4525 playSound 5440456
+Sectors: 16777216
+5815 playSound 5440424
+power_shutdown
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+6525 playSound 5440440
+Injecting shutdown stall: shutdown-sound
+Injected sound stall released latch at 8004 ms
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: On
+0 playSound 5451312
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done. 
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+ - DONE
+SD startup space: available=1 free=8522825728 check_us=0
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+Speaker::update skipped 5 intervals
+4525 playSound 5440456
+Sectors: 16777216
+5815 playSound 5440424
+power_shutdown
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+6525 playSound 5440440
+6525 playSound 5451296
+Injecting shutdown stall: peripherals
+Injected peripherals stall released latch at 8004 ms
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: On
+0 playSound 5451312
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done. 
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+ - DONE
+SD startup space: available=1 free=8522825728 check_us=0
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+Speaker::update skipped 5 intervals
+4525 playSound 5440456
+Sectors: 16777216
+5815 playSound 5440424
+power_shutdown
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+6525 playSound 5440440
+6525 playSound 5451296
+sleep_peripherals: On
+ - Sleeping GPS
+LC86G::sleep now: 9345
+ready: 680
+delay: 0
+************ !!!!!!!!!!! GPS SLEEPING COMMAND SENT !!!!!!!!!!! ************
+ - Sleeping baro
+ - Sleeping speaker
+Shut down speaker
+ - DONE
+Injecting shutdown stall: peripherals-asleep
+Injected asleep stall released latch at 8004 ms
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: On
+0 playSound 5451312
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done. 
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+ - DONE
+SD startup space: available=1 free=8522825728 check_us=0
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+Speaker::update skipped 5 intervals
+4525 playSound 5440456
+Sectors: 16777216
+5815 playSound 5440424
+power_shutdown
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+6525 playSound 5440440
+6525 playSound 5451296
+sleep_peripherals: On
+ - Sleeping GPS
+LC86G::sleep now: 9345
+ready: 680
+delay: 0
+************ !!!!!!!!!!! GPS SLEEPING COMMAND SENT !!!!!!!!!!! ************
+ - Sleeping baro
+ - Sleeping speaker
+Shut down speaker
+ - DONE
+Injecting shutdown stall: power-latch
+Injected clear stall released latch at 8004 ms
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: On
+0 playSound 5451312
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done. 
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+ - DONE
+SD startup space: available=1 free=8522825728 check_us=0
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+Speaker::update skipped 5 intervals
+4525 playSound 5440456
+Sectors: 16777216
+5815 playSound 5440424
+power_shutdown
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+6525 playSound 5440440
+6525 playSound 5451296
+sleep_peripherals: On
+ - Sleeping GPS
+LC86G::sleep now: 9345
+ready: 680
+delay: 0
+************ !!!!!!!!!!! GPS SLEEPING COMMAND SENT !!!!!!!!!!! ************
+ - Sleeping baro
+ - Sleeping speaker
+Shut down speaker
+ - DONE
+Injecting shutdown stall: latch-released
+Injected latch stall released latch at 8004 ms
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: On
+0 playSound 5451312
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done. 
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+ - DONE
+SD startup space: available=1 free=8522825728 check_us=0
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+Speaker::update skipped 5 intervals
+4525 playSound 5440456
+Sectors: 16777216
+5815 playSound 5440424
+power_shutdown
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+6525 playSound 5440440
+6525 playSound 5451296
+sleep_peripherals: On
+ - Sleeping GPS
+LC86G::sleep now: 9345
+ready: 680
+delay: 0
+************ !!!!!!!!!!! GPS SLEEPING COMMAND SENT !!!!!!!!!!! ************
+ - Sleeping baro
+ - Sleeping speaker
+Shut down speaker
+ - DONE
+Injecting shutdown stall: ble-deinit
+Injected ble stall released latch at 8004 ms
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: On
+0 playSound 5451312
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done. 
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+ - DONE
+SD startup space: available=1 free=8522825728 check_us=0
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+Speaker::update skipped 5 intervals
+4525 playSound 5440456
+Sectors: 16777216
+5815 playSound 5440424
+Long hold works with main loop completely unserviced
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: On
+0 playSound 5451312
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done. 
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+ - DONE
+SD startup space: available=1 free=8522825728 check_us=0
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+Speaker::update skipped 5 intervals
+4525 playSound 5440456
+Sectors: 16777216
+5815 playSound 5440424
+Nested cleanup cannot extend the outer deadline
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: On
+0 playSound 5451312
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done. 
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+ - DONE
+SD startup space: available=1 free=8522825728 check_us=0
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+Speaker::update skipped 5 intervals
+4525 playSound 5440456
+Sectors: 16777216
+5815 playSound 5440424
+Unserviced/repeated shutdown requests retain the original deadline
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: On
+0 playSound 5451312
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done. 
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+ - DONE
+SD startup space: available=1 free=8522825728 check_us=0
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+Speaker::update skipped 5 intervals
+4525 playSound 5440456
+Sectors: 16777216
+5815 playSound 5440424
+power_shutdown
+Injecting shutdown stall: flight-save
+Injected watchdog stall released latch at 10004 ms
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: On
+0 playSound 5451312
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done. 
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+ - DONE
+SD startup space: available=1 free=8522825728 check_us=0
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+Speaker::update skipped 5 intervals
+4525 playSound 5440456
+Sectors: 16777216
+5815 playSound 5440424
+power_shutdown
+Injecting shutdown stall: flight-save
+Injected rtc stall released latch at 10004 ms
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: On
+0 playSound 5451312
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done. 
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+ - DONE
+SD startup space: available=1 free=8522825728 check_us=0
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+Speaker::update skipped 5 intervals
+4525 playSound 5440456
+Sectors: 16777216
+5815 playSound 5440424
+power_shutdown
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+6525 playSound 5440440
+6525 playSound 5451296
+sleep_peripherals: On
+ - Sleeping GPS
+LC86G::sleep now: 9345
+ready: 680
+delay: 0
+************ !!!!!!!!!!! GPS SLEEPING COMMAND SENT !!!!!!!!!!! ************
+ - Sleeping baro
+ - Sleeping speaker
+Shut down speaker
+ - DONE
+Injecting shutdown stall: ble-deinit
+Injected rtcble stall released latch at 10004 ms
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: OffUSB
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done. 
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+sleep_peripherals: OffUSB
+ - Sleeping GPS
+LC86G::sleep now: 245
+ready: 400
+delay: 155
+************ !!!!!!!!!!! GPS SLEEPING COMMAND SENT !!!!!!!!!!! ************
+ - Sleeping baro
+ - Sleeping speaker
+Shut down speaker
+ - DONE
+ - DONE
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+Recovered shutdown: stage=ble-deinit reason=1
+Recovery overrides held center; fresh long hold works after release
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: On
+0 playSound 5438128
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done. 
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+ - DONE
+SD startup space: available=1 free=8522825728 check_us=0
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+525 playSound 5427368
+UDP injection listening on port 7431
+power_shutdown
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+527 playSound 5427352
+527 playSound 5438112
+Speaker::update skipped 5 intervals
+sleep_peripherals: On
+ - Sleeping GPS
+LC86G::sleep now: 3347
+ready: 680
+delay: 0
+************ !!!!!!!!!!! GPS SLEEPING COMMAND SENT !!!!!!!!!!! ************
+ - Sleeping baro
+ - Sleeping speaker
+Shut down speaker
+ - DONE
+switch_to_on_state
+SD startup space: available=1 free=8522825728 check_us=0
+wake_peripherals: 
+ - waking GPS
+ - waking baro and IMU
+ - waking speaker
+ - DONE
+UDP injection enabled
+Deferred shutdown released the bus, drained an admitted UDP publisher, saved, charged and reopened on wake
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: On
+0 playSound 5438128
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done. 
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+ - DONE
+SD startup space: available=1 free=8522825728 check_us=0
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+525 playSound 5427368
+UDP injection listening on port 7431
+A stuck admitted publisher forced guarded recovery without deleting its resources
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: On
+0 playSound 5438000
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done. 
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+ - DONE
+SD startup space: available=1 free=8522825728 check_us=0
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+525 playSound 5613592
+UDP injection listening on port 7431
+UDP injection stopped
+UDP injection enabled
+525 playSound 5613592
+UDP injection stopped
+UDP injection enabled
+UDP injection stopped
+UDP injection enabled
+525 playSound 5613592
+UDP injection stopped
+UDP injection enabled
+UDP injection stopped
+UDP injection enabled
+525 playSound 5613592
+UDP injection stopped
+UDP injection defaults, persistence, both gates, packet parsing and restart checks passed
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: On
+0 playSound 5514736
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done. 
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+ - DONE
+SD startup space: available=1 free=8522825728 check_us=0
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+logbook: open error=5 expected=0 actual=0
+logbook: write error=5 expected=245 actual=244
+logbook: trailing_content error=74 expected=0 actual=0
+logbook: write error=2 expected=245 actual=244
+logbook: trailing_content error=74 expected=0 actual=0
+logbook: flush error=5 expected=0 actual=0
+logbook: close error=5 expected=0 actual=0
+logbook: backup_rotate error=5 expected=0 actual=0
+logbook: backup error=5 expected=0 actual=0
+logbook: promote error=5 expected=0 actual=0
+logbook: promote error=5 expected=0 actual=0
+logbook: promote error=5 expected=0 actual=0
+logbook: length error=74 expected=0 actual=0
+logbook: length error=74 expected=0 actual=0
+logbook: allocation error=12 expected=0 actual=0
+logbook: length error=74 expected=0 actual=0
+logbook: length error=74 expected=0 actual=0
+logbook: parse error=74 expected=0 actual=0
+logbook: parse error=74 expected=0 actual=0
+logbook: schema error=74 expected=0 actual=0
+logbook: schema error=74 expected=0 actual=0
+logbook: schema error=74 expected=0 actual=0
+logbook: schema error=74 expected=0 actual=0
+logbook: recovery_conflict error=17 expected=0 actual=0
+logbook: recovery_conflict error=17 expected=0 actual=0
+logbook: recovery_conflict error=17 expected=0 actual=0
+logbook: revision_overflow error=75 expected=0 actual=0
+logbook: schema error=74 expected=0 actual=0
+logbook: temp_cleanup error=5 expected=0 actual=0
+logbook: schema error=74 expected=0 actual=0
+logbook: parse error=74 expected=0 actual=0
+logbook: no_valid_candidate error=74 expected=0 actual=0
+logbook: trailing_content error=74 expected=0 actual=0
+logbook: promote error=5 expected=0 actual=0
+logbook: validation_limit error=27 expected=0 actual=0
+logbook: unsupported_schema error=93 expected=0 actual=0
+logbook: trailing_content error=74 expected=0 actual=0
+logbook: delete_temp error=5 expected=0 actual=0
+logbook: delete_backup error=5 expected=0 actual=0
+logbook: delete_main error=5 expected=0 actual=0
+logbook: delete_track error=5 expected=0 actual=0
+logbook: rename_main error=5 expected=0 actual=0
+logbook: verify_read error=5 expected=0 actual=0
+logbook: verify_mismatch error=5 expected=275 actual=275
+logbook: after_promote error=5 expected=0 actual=0
+logbook: verify_mismatch error=5 expected=245 actual=245
+logbook: after_promote error=5 expected=0 actual=0
+logbook: verify_mismatch error=5 expected=245 actual=244
+logbook: backup_cleanup error=5 expected=0 actual=0
+logbook: parse error=74 expected=0 actual=0
+logbook: backup_unverified error=17 expected=0 actual=0
+logbook: recovery_conflict error=17 expected=0 actual=0
+logbook: read error=5 expected=0 actual=0
+logbook: rename_collision error=17 expected=0 actual=0
+logbook: verify_read error=5 expected=0 actual=0
+logbook: verify_read error=5 expected=0 actual=0
+logbook: verify_read error=5 expected=0 actual=0
+logbook finalization: saved=0 attempts=3 elapsed_ms=200 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+725 playSound 5503880
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+725 playSound 5503864
+725 playSound 5503880
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+725 playSound 5503864
+725 playSound 5503880
+logbook: open error=5 expected=0 actual=0
+logbook finalization: saved=1 attempts=2 elapsed_ms=100 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+825 playSound 5503864
+825 playSound 5503880
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+825 playSound 5503864
+825 playSound 5503880
+logbook: open error=5 expected=0 actual=0
+logbook: open error=5 expected=0 actual=0
+logbook finalization: saved=1 attempts=3 elapsed_ms=200 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+1025 playSound 5503864
+1025 playSound 5503880
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+1025 playSound 5503864
+1025 playSound 5503880
+logbook: open error=5 expected=0 actual=0
+logbook: open error=5 expected=0 actual=0
+logbook: open error=5 expected=0 actual=0
+logbook finalization: saved=0 attempts=3 elapsed_ms=200 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+2225 playSound 5503832
+2225 playSound 5503880
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+2225 playSound 5503864
+2225 playSound 5503880
+logbook: open error=28 expected=0 actual=0
+logbook finalization: saved=0 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+3225 playSound 5503832
+3225 playSound 5503880
+logbook: open error=5 expected=0 actual=0
+logbook finalization: saved=0 attempts=1 elapsed_ms=2100 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+6325 playSound 5503832
+logbook: open error=5 expected=0 actual=0
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+6325 playSound 5503880
+power_shutdown
+logbook: open error=5 expected=0 actual=0
+logbook: open error=5 expected=0 actual=0
+logbook finalization: saved=1 attempts=3 elapsed_ms=200 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+6525 playSound 5503864
+6525 playSound 5514720
+Speaker::update skipped 155 intervals
+sleep_peripherals: On
+ - Sleeping GPS
+LC86G::sleep now: 9345
+ready: 680
+delay: 0
+************ !!!!!!!!!!! GPS SLEEPING COMMAND SENT !!!!!!!!!!! ************
+ - Sleeping baro
+ - Sleeping speaker
+Shut down speaker
+ - DONE
+switch_to_on_state
+SD startup space: available=1 free=8522825728 check_us=0
+wake_peripherals: 
+ - waking GPS
+ - waking baro and IMU
+ - waking speaker
+ - DONE
+9645 playSound 5503880
+power_shutdown
+logbook: open error=5 expected=0 actual=0
+logbook: open error=5 expected=0 actual=0
+logbook finalization: saved=1 attempts=3 elapsed_ms=200 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+9845 playSound 5503864
+9845 playSound 5514720
+Speaker::update skipped 74 intervals
+sleep_peripherals: On
+ - Sleeping GPS
+LC86G::sleep now: 12665
+ready: 680
+delay: 0
+************ !!!!!!!!!!! GPS SLEEPING COMMAND SENT !!!!!!!!!!! ************
+ - Sleeping baro
+ - Sleeping speaker
+Shut down speaker
+ - DONE
+switch_to_on_state
+SD startup space: available=1 free=8522825728 check_us=0
+wake_peripherals: 
+ - waking GPS
+ - waking baro and IMU
+ - waking speaker
+ - DONE
+12965 playSound 5503880
+logbook: promote error=5 expected=0 actual=0
+logbook: promote error=5 expected=0 actual=0
+logbook: promote error=5 expected=0 actual=0
+logbook finalization: saved=0 attempts=3 elapsed_ms=200 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+13165 playSound 5503832
+13165 playSound 5503880
+logbook: delete_active error=16 expected=0 actual=0
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+13165 playSound 5503864
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+Host filesystem wall time: placeholder_us=113 finalization_us=171 (not device latency).
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+logbook: open error=5 expected=0 actual=0
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+logbook: promote error=5 expected=0 actual=0
+logbook: promote error=5 expected=0 actual=0
+logbook finalization: saved=1 attempts=3 elapsed_ms=200 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+logbook: write error=2 expected=964 actual=36
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+73365 playSound 5503880
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+73365 playSound 5503864
+73365 playSound 5503880
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+73365 playSound 5503864
+logbook: promote error=5 expected=0 actual=0
+logbook: promote error=5 expected=0 actual=0
+73365 playSound 5503880
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+73365 playSound 5503864
+logbook: recovery_conflict error=17 expected=0 actual=0
+logbook: recovery_conflict error=17 expected=0 actual=0
+logbook: temp_cleanup error=5 expected=0 actual=0
+logbook: temp_cleanup error=5 expected=0 actual=0
+logbook hardening tests passed
+Flight-start windows, boundaries, dropouts, and sign symmetry passed
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: On
+0 playSound 5457904
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done. 
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+ - DONE
+SD startup space: available=1 free=8522825728 check_us=0
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+Speaker::update skipped 5 intervals
+47525 playSound 5447120
+62525 playSound 5447120
+62525 playSound 5491832
+69525 playSound 5447120
+76525 playSound 5447120
+91525 playSound 5447120
+91525 playSound 5491832
+98525 playSound 5447120
+Auto-stop 15 checks, 2 m boundary, eight-second warning, cancel and no-GPS passed
+98525 playSound 5447144
+Flight::startFlight waiting for valid GPS date/time
+Sectors: 16777216
+144815 playSound 5447112
+logbook: rename_collision error=17 expected=0 actual=0
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+146025 playSound 5447128
+154025 playSound 5633520
+157025 playSound 5633496
+157025 playSound 5633520
+****************************** autoStart TRUE via motion window
+161815 playSound 5447144
+Sectors: 16777216
+161815 playSound 5447112
+161825 playSound 5633496
+161825 playSound 5633520
+168815 playSound 5447120
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+176815 playSound 5447128
+****************************** autoStart TRUE via motion window
+209815 playSound 5447144
+Fused climb-only launch: 5.00 seconds after climb onset
+Sectors: 16777216
+222815 playSound 5447112
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+224325 playSound 5447128
+****************************** autoStart TRUE via motion window
+234815 playSound 5447144
+Sectors: 16777216
+235815 playSound 5447112
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+237325 playSound 5447128
+****************************** autoStart TRUE via motion window
+248815 playSound 5447144
+Sectors: 16777216
+248815 playSound 5447112
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+248825 playSound 5447128
+250325 playSound 5447144
+Sectors: 16777216
+250815 playSound 5447112
+power_shutdown
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+251825 playSound 5447128
+251825 playSound 5457888
+sleep_peripherals: On
+ - Sleeping GPS
+LC86G::sleep now: 254665
+ready: 680
+delay: 0
+************ !!!!!!!!!!! GPS SLEEPING COMMAND SENT !!!!!!!!!!! ************
+ - Sleeping baro
+ - Sleeping speaker
+Shut down speaker
+ - DONE
+switch_to_on_state
+SD startup space: available=1 free=8522825728 check_us=0
+wake_peripherals: 
+ - waking GPS
+ - waking baro and IMU
+ - waking speaker
+ - DONE
+Speaker::update skipped 69 intervals
+258965 playSound 5447144
+Sectors: 16777216
+259955 playSound 5447112
+power_shutdown
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+260465 playSound 5447128
+260465 playSound 5457888
+sleep_peripherals: On
+ - Sleeping GPS
+LC86G::sleep now: 263305
+ready: 680
+delay: 0
+************ !!!!!!!!!!! GPS SLEEPING COMMAND SENT !!!!!!!!!!! ************
+ - Sleeping baro
+ - Sleeping speaker
+Shut down speaker
+ - DONE
+Launch windows, sensor corroboration, delayed GPS, IGC causes and lifecycle passed
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: On
+0 playSound 5438608
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done. 
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+ - DONE
+SD startup space: available=1 free=8522825728 check_us=0
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+525 playSound 5567366
+525 playSound 5605502
+525 playSound 5590886
+525 playSound 5599462
+525 playSound 5589326
+525 playSound 5428040
+525 playSound 5614240
+525 playSound 5614240
+525 playSound 5590880
+525 playSound 5599456
+525 playSound 56thermal_lifecycle_test: /leaf/sim/tests/thermal_lifecycle.cpp:223: int main(): Assertion `SD_MMC.exists(trackPath.c_str()) && SD_MMC.exists(entryPath.c_str())' failed.
+Aborted (core dumped)
+make: *** [Makefile:234: test-thermal-lifecycle] Error 134
+make: Leaving directory '/leaf/sim'
