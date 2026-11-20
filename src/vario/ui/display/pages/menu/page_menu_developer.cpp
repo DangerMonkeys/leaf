@@ -3,10 +3,10 @@
 #include <Arduino.h>
 
 #include "comms/fanet_radio.h"
+#include "diagnostics/charge_sleep_capture.h"
 #include "diagnostics/cpu_utilization.h"
 #include "diagnostics/self_test/selfTest.h"
 #include "hardware/buttons.h"
-#include "logging/buslog.h"
 #include "logging/fanet_log.h"
 #include "system/shutdown_guard.h"
 #include "ui/audio/sound_effects.h"
@@ -28,9 +28,9 @@ enum developer_menu_items {
 #ifdef LEAF_SHUTDOWN_FAULT_INJECTION
   cursor_developer_shutdownFault,
 #endif
-  cursor_developer_startupStart,
-  cursor_developer_startupDisconnect,
-  cursor_developer_busLogControl
+  cursor_developer_ecoMode,
+  cursor_developer_chargeTest,
+  cursor_developer_startupDisconnect
 };
 #ifdef LEAF_SHUTDOWN_FAULT_INJECTION
 namespace {
@@ -84,9 +84,9 @@ void DeveloperMenuPage::draw() {
     // Menu Items
     uint8_t setting_name_x = 2;
     uint8_t setting_choice_x = 76;
-    uint8_t menu_items_y[10] = {190};
+    uint8_t menu_items_y[sizeof(labels) / sizeof(labels[0])] = {190};
     uint8_t next_y = 35;
-    for (int i = cursor_developer_fanetReTx; i <= cursor_developer_runtime; ++i) {
+    for (int i = cursor_developer_fanetReTx; i <= cursor_max; ++i) {
       if (row_hidden(i)) continue;
       menu_items_y[i] = next_y;
 #ifdef LEAF_SHUTDOWN_FAULT_INJECTION
@@ -95,19 +95,6 @@ void DeveloperMenuPage::draw() {
       next_y += 15;
 #endif
     }
-#ifdef LEAF_SHUTDOWN_FAULT_INJECTION
-    menu_items_y[cursor_developer_shutdownFault] = next_y;
-    next_y += 13;
-#endif
-    menu_items_y[cursor_developer_startupStart] = next_y + 25;
-    menu_items_y[cursor_developer_startupDisconnect] = next_y + 40;
-    menu_items_y[cursor_developer_busLogControl] = next_y + 60;
-
-    // draw Bus Logger Section
-    u8g2.drawHLine(0, next_y - 5, 96);
-    u8g2.setCursor(0, next_y + 10);
-    u8g2.print("On Startup:");
-
     // then draw all the menu items
     for (int i = 0; i <= cursor_max; i++) {
       if (row_hidden(i)) continue;
@@ -148,25 +135,29 @@ void DeveloperMenuPage::draw() {
                      : strcmp(cpu_utilization::status(), "allocation_failed") == 0 ? "ERR"
                                                                                    : "START");
           break;
-        case cursor_developer_startupStart:
-          if (settings.dev_startLogAtBoot)
-            menu_ui::printGlyph(menu_ui::ICON_ON);
-          else
-            menu_ui::printGlyph(menu_ui::ICON_OFF);
+        case cursor_developer_ecoMode:
+          menu_ui::printGlyph(settings.system_ecoMode ? menu_ui::ICON_ON : menu_ui::ICON_OFF);
+          break;
+        case cursor_developer_chargeTest:
+          u8g2.setCursor(setting_choice_x - 18, menu_items_y[i]);
+          switch (charge_sleep_capture::state()) {
+            case charge_sleep_capture::State::Idle:
+              u8g2.print("START");
+              break;
+            case charge_sleep_capture::State::Armed:
+              u8g2.print("ARMED");
+              break;
+            case charge_sleep_capture::State::Recording:
+            case charge_sleep_capture::State::Ready:
+              u8g2.print("SAVE");
+              break;
+          }
           break;
         case cursor_developer_startupDisconnect:
           if (settings.dev_startDisconnected)
             menu_ui::printGlyph(menu_ui::ICON_ON);
           else
             menu_ui::printGlyph(menu_ui::ICON_OFF);
-          break;
-        case cursor_developer_busLogControl:
-          u8g2.setCursor(u8g2.getCursorX() - 18, u8g2.getCursorY());
-          if (busLog.isLogging()) {
-            u8g2.print("STOP");
-          } else {
-            u8g2.print("START");
-          }
           break;
         case cursor_developer_back:
           menu_ui::drawBackIcon(setting_choice_x, menu_items_y[i]);
@@ -229,28 +220,29 @@ void DeveloperMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t co
       }
       break;
     }
-    case cursor_developer_startupStart: {
+    case cursor_developer_ecoMode: {
       if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT))
-        settings.toggleBoolOnOff(&settings.dev_startLogAtBoot);
+        settings.toggleBoolOnOff(&settings.system_ecoMode);
+      break;
+    }
+    case cursor_developer_chargeTest: {
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
+        using charge_sleep_capture::State;
+        const State captureState = charge_sleep_capture::state();
+        if (captureState == State::Idle) {
+          if (!charge_sleep_capture::arm()) speaker.playSound(fx::bad);
+        } else if (captureState == State::Armed) {
+          charge_sleep_capture::finish();  // Cancel before starting a charging session.
+        } else {
+          charge_sleep_capture::finish();
+          speaker.playSound(charge_sleep_capture::exportToSd() ? fx::confirm : fx::bad);
+        }
+      }
       break;
     }
     case cursor_developer_startupDisconnect: {
       if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT))
         settings.toggleBoolOnOff(&settings.dev_startDisconnected);
-      break;
-    }
-    case cursor_developer_busLogControl: {
-      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
-        if (!busLog.isLogging()) {
-          if (busLog.startLog()) {
-            speaker.playSound(fx::started);
-          } else {
-            speaker.playSound(fx::bad);
-          }
-        } else {
-          busLog.endLog();
-        }
-      }
       break;
     }
     case cursor_developer_back: {

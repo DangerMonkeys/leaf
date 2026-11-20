@@ -42,7 +42,8 @@ class Power {
     bool USBinput = false;  // if system is plugged into USB power or not (ONLY VALID ON 3.2.6+)
     PowerState onState = PowerState::Off;
     PowerInputLevel inputCurrent = PowerInputLevel::i500mA;
-    uint16_t chargeCurrentMA;  // measured charge current in mA (v3.2.6+), otherwise zero
+    uint16_t chargeSenseMV = 0;  // ISET pin voltage (v3.2.6+), otherwise zero
+    uint16_t chargeCurrentMA;    // measured charge current in mA (v3.2.6+), otherwise zero
   };
 
   const Info& info() { return info_; }

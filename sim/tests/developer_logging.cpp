@@ -1,6 +1,7 @@
 #include <ArduinoJson.h>
 #include <SD_MMC.h>
 #include <assert.h>
+#include <esp_sleep.h>
 
 #include <algorithm>
 #include <filesystem>
@@ -10,12 +11,16 @@
 #include <vector>
 
 #include "comms/fanet_radio.h"
+#include "comms/leaf_log_sync.h"
+#include "diagnostics/charge_sleep_capture.h"
 #include "diagnostics/cpu_utilization.h"
 #include "display_capture.h"
+#include "hardware/configuration.h"
 #include "instruments/gps.h"
 #include "logging/buslog.h"
 #include "logging/fanet_log.h"
 #include "logging/log.h"
+#include "power.h"
 #include "runtime.h"
 #include "sim/board.h"
 #include "sim/clock.h"
@@ -90,6 +95,57 @@ namespace {
     return result;
   }
 
+  void runChargeTest(Menu& menu, bool eco, unsigned sequence) {
+    using charge_sleep_capture::State;
+    const auto path = "/diagnostics/charge_sleep_" + std::to_string(sequence) + ".csv";
+    menu.press(Button::CENTER);
+    assert(charge_sleep_capture::state() == State::Armed);
+    power.shutdown();
+    assert(power.info().onState == PowerState::OffUSB);
+    const uint32_t started = millis();
+    while (millis() - started < (eco ? 2000U : 61'000U)) sim::runtime().step();
+    assert(charge_sleep_capture::state() == (eco ? State::Recording : State::Ready));
+    assert(!std::filesystem::exists(root + path));
+
+    leafLogSync.requestPowerOn();
+    const uint32_t powerOnRequested = millis();
+    while (power.info().onState == PowerState::OffUSB && millis() - powerOnRequested < 2000)
+      sim::runtime().step();
+    assert(power.info().onState == PowerState::On);
+    assert(charge_sleep_capture::state() == State::Ready);
+    menu.press(Button::CENTER);
+    assert(charge_sleep_capture::state() == State::Idle);
+
+    std::ifstream csv(root + path);
+    std::string line;
+    assert(std::getline(csv, line) && line.rfind("elapsed_us,eco_mode", 0) == 0);
+    unsigned samples = 0;
+    int previousTickUs = 0;
+    int previousSleepUs = 0;
+    while (std::getline(csv, line)) {
+      std::istringstream row(line);
+      std::vector<int> fields;
+      for (std::string field; std::getline(row, field, ',');) fields.push_back(std::stoi(field));
+      assert(fields.size() == 18 && fields[1] == eco);
+      assert(fields[8] == 1 && fields[10] == 1100 && fields[11] == 400);
+      assert(fields[12] == eco);
+      assert(fields[15] == (eco ? ESP_OK : -1));
+      assert(fields[16] == (eco ? ESP_SLEEP_WAKEUP_TIMER : -1));
+      if (samples == 0) {
+        assert(fields[0] == 0);
+      } else {
+        const int periodUs = fields[0] - previousTickUs;
+        assert(periodUs >= 500'000 && periodUs < 510'000);
+        // A clock that stops during sleep would add a second wait of nearly 500 ms.
+        if (eco) assert(previousSleepUs * 10 > periodUs * 9);
+      }
+      previousTickUs = fields[0];
+      previousSleepUs = fields[17];
+      samples++;
+    }
+    assert(samples >= 3);
+  }
+
   void sentence(const char* body) {
     unsigned checksum = 0;
     for (const char* p = body; *p; ++p) checksum ^= *p;
@@ -159,7 +215,7 @@ int main() {
   screenshot(menu, "no-radio.png");
   menu.press(Button::UP);
   assert(menu.cursor() == 0);
-  menu.press(Button::UP);  // Wrap to bus logger and back.
+  menu.press(Button::UP);  // Wrap to Detach HW and back.
   assert(menu.cursor() == 8);
   menu.press(Button::DOWN);
   assert(menu.cursor() == 0);
@@ -197,6 +253,22 @@ int main() {
   settings.dev_logFanet = false;
   menu.press(Button::CENTER);
   assert(!cpu_utilization::hasCapture());
+
+  sim::board().setCharging(true);
+  sim::board().setAdcMilliVolts(ISET, 1100);
+  menu.press(Button::DOWN);  // Eco Mode
+  assert(!settings.system_ecoMode);
+  menu.press(Button::DOWN);  // Charge test
+  runChargeTest(menu, false, 1);
+  menu.press(Button::UP);
+  menu.press(Button::CENTER);
+  assert(settings.system_ecoMode);
+  settings.save();
+  settings.system_ecoMode = false;
+  settings.retrieve();
+  assert(settings.system_ecoMode);
+  menu.press(Button::DOWN);
+  runChargeTest(menu, true, 2);
 
   sim::board().fanetPresent = true;
   fanetRadio.setup();
@@ -302,6 +374,6 @@ int main() {
   flightTimer_stop(false);
   assert(rows(csvFiles().back()).size() == 1 && rows(first).size() == 4);
   puts(
-      "Developer logging: runtime STOP/save/retry, radio visibility, flight CSV lifecycle, "
+      "Developer logging: runtime and charge captures, radio visibility, flight CSV lifecycle, "
       "GPS validity, packet filtering, persistence, queue overflow and SD recovery passed");
 }

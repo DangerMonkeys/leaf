@@ -23,6 +23,10 @@
 
 EspClass ESP;
 
+namespace {
+  uint64_t sleepTimerUs = 0;
+}
+
 namespace sim {
   // Set by the emulator when a restart is requested; the run loop notices and re-runs setup().
   bool g_restartRequested = false;
@@ -41,7 +45,7 @@ uint32_t esp_get_minimum_free_heap_size(void) { return 150 * 1024; }
 void esp_restart(void) { sim::g_restartRequested = true; }
 
 esp_err_t esp_sleep_enable_timer_wakeup(uint64_t timeInUs) {
-  (void)timeInUs;
+  sleepTimerUs = timeInUs;
   return ESP_OK;
 }
 esp_err_t esp_sleep_enable_ext0_wakeup(int gpioNum, int level) {
@@ -55,12 +59,12 @@ esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t mask, esp_sleep_ext1_wakeup_mode
   return ESP_OK;
 }
 
-// Light sleep in charge mode is a timed wait on device; here it is simply virtual time passing,
-// which keeps the charging loop's cadence right without the emulator actually idling.
 esp_err_t esp_light_sleep_start(void) {
-  sim::clock().advanceUs(1000);
+  sim::clock().lightSleepUs(sleepTimerUs);
   return ESP_OK;
 }
+
+esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void) { return ESP_SLEEP_WAKEUP_TIMER; }
 
 const char* esp_err_to_name(esp_err_t code) {
   switch (code) {
