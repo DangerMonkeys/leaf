@@ -11,10 +11,17 @@ grew from **31,732 B to 61,428 B**. The largest gains came from shutting down
 idle Wi-Fi, allocating FANET resources only when needed, and removing unused
 TinyUSB classes.
 
-The latest 3.2.5 bench build uses **86,356 B of linked static RAM**, down
-**21,368 B (20.9 KiB)** from the 107,724 B baseline. The idle endpoint above
+The final memory-only 3.2.5 bench build used **86,356 B of linked static RAM**, down
+**21,368 B (20.9 KiB)** from the 107,724 B baseline. The later checked-save and shutdown
+reliability fixes bring the tested 3.2.5 total to **86,388 B**, still **21,336 B** below
+that baseline; no fresh matched idle measurement is claimed for those fixes. The idle endpoint above
 is the last matched cold-idle measurement. The subsequent stack monitor
 adds 24 B of linked static RAM, and its shutdown autosave adds zero.
+
+**Closeout decision, November 20:** pause further optimization for stable-release work.
+The [restart plan](backlog/memory-optimization-followup.md) preserves the complete audit
+inventory, remaining agreed cohorts, stack trial sizes and larger experiments. No task
+stack reductions or smaller release TLS buffers are adopted.
 
 ## Idle heap progression
 
@@ -37,6 +44,7 @@ gain and must not be added to it.
 | 8 · Unused TinyUSB classes | 123,340 B | 86,324 B |
 | 9 · Flight and logbook cleanup, stock TLS | 123,332 B | 86,332 B |
 | 9 · Final 3.2.5 bench with stack monitor and autosave | — | 86,356 B |
+| Checked saves and deferred shutdown · tested November 20 | — | 86,388 B |
 
 [Per-batch measurements and provenance](heap-savings-log.md)
 
@@ -76,6 +84,12 @@ already present at the first sample.
 | FANET RX | 4,096 B | 1,960 B in the outdoor run |
 | Leaf Log uploader | 12,288 B | 7,288 B across eight charging uploads |
 
+The table above describes the earlier outdoor/upload workloads. Across the broader
+archive, the lowest retained unused stacks are loop **7,072 B**, Bluetooth worker
+**2,124 B**, FANET TX **2,076 B**, and FANET RX **1,176 B**. Use those lower values
+rather than the newer, lighter workload when planning. See the
+[future stack trials and coverage](backlog/memory-optimization-followup.md#stack-reservations-preserve-now-measure-before-a-future-trial).
+
 The lightweight **Stacks** monitor retains minima across task restarts,
 uses no capture buffer, and saves on manual stop, normal power-off, or
 low-battery shutdown. The 10 KiB loop stack remains a future trial with
@@ -99,15 +113,20 @@ addresses user-file preservation and Stack false success. It adds +16 B static R
 +8,624 B flash in the 3.2.8 bench image. IGC in-flight error behavior remains unchanged
 by agreement. The [separate shutdown fix](shutdown-fix-review-2026-11-19.md) moves cleanup
 outside dispatch and drains publishers, adding another +16 B static RAM and +628 B flash.
-Simulator watchdog/regression tests and replay-active 3.2.8 shutdowns passed; live FANET
-with a connected Bluetooth client remains to be checked. These tests did not compare
-main against the candidate.
+Simulator watchdog/regression tests and replay-active 3.2.8 shutdowns passed. The
+[November 20 3.2.5 follow-up](shutdown-radio-test-2026-11-20.md) also passed live FANET
+plus phone-connected shutdown and Web App lifecycle checks. Its raw IGC checksums match,
+but strict validation rejects the known pilot-name Unicode issue. These tests did not
+compare main against the candidate.
 
-- Run a fresh factory commissioning session, including completion retries and the interactive self-test.
-- Interrupt and retry a live Leaf Log upload. Verify cancellation and SD ownership handoff.
-- Test the Leaf AP end to end and recheck Wi-Fi setup and saved-network handoff.
+- The maintainer reported successful 3.2.8 commissioning, Leaf AP, Wi-Fi setup and Web App
+  testing during this thread, and previously verified interrupted Leaf Log uploads. These
+  are earlier-candidate results, not exact final-build qualification. Completion-reply loss
+  and repeat commissioning retries remain explicit fault cases to preserve.
+- November 20 verified upload cancellation and USB SD ownership handoff. A fresh exact-release
+  candidate upload/retry and end-to-end OTA update remain useful release checks.
 - Test a full HTTPS firmware download before promoting the smaller TLS buffer to release.
-- Exercise FANET traffic with a peer and Bluetooth with a connected client, and collect longer stack sessions before changing allocations.
+- Collect longer flight/stack sessions before changing allocations. Combined peer FANET and phone-connected bench shutdown coverage passed; the historical RX minimum of 1,176 B argues for keeping its current allocation.
 - Repeat the outdoor timing workload on a matched build to investigate the 219 ms IGC logging slot. Continue the route stress and SD failure checks in the detailed log.
 
 [Detailed hardware test notes](heap-savings-log.md)

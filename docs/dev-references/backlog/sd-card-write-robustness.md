@@ -5,6 +5,16 @@ description: Two-phase plan for recoverable logbook saves and resource-conscious
 
 # SD Card Write Robustness Backlog
 
+## November 20, 2026 status
+
+Checked replacement saves for navigation, routes, waypoints and profiles, retryable Stack
+exports and startup low/full/unavailable-card warnings are now implemented; see the
+[storage review](../storage-fix-review-2026-11-19.md). The separate deferred Power shutdown
+also passed [live FANET/Bluetooth checks](../shutdown-radio-test-2026-11-20.md).
+These are bounded fixes, not completion of Phase 2 or proof of power-loss durability.
+IGC in-flight flush/error policy remains unchanged by agreement. SD buffer-size reductions
+are deferred pending timing/card measurements in the [memory restart plan](memory-optimization-followup.md).
+
 ## 2026-10-28 verified cleanup refinement
 
 Completed flight and Leaf Log result writes now read back the exact serialized bytes and length

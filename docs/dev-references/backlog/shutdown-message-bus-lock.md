@@ -7,8 +7,9 @@ description: Assess and remove a shutdown lock dependency shared by UDP injectio
 
 Status: implemented for Power shutdown in a separate follow-up to storage commit `45e599af`.
 Identified during the November 19, 2026 full-card tests. See the
-[implementation and test report](../shutdown-fix-review-2026-11-19.md). Live FANET plus
-connected Bluetooth testing and the audit of other blocking subscribers remain open.
+[implementation and test report](../shutdown-fix-review-2026-11-19.md). Live FANET plus connected Bluetooth shutdown coverage passed in the
+[November 20 hardware follow-up](../shutdown-radio-test-2026-11-20.md). The audit of
+other blocking subscribers and broader timing workloads remain open.
 
 ## Evidence and scope
 

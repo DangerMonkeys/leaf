@@ -1,0 +1,45 @@
+{
+  "shutdown_lifecycle": "passed",
+  "phone_connected_shutdowns": 2,
+  "phone_connection_confirmation": "user confirmed each required reconnection",
+  "live_fanet_peers": [
+    "FB5F38",
+    "FBD364"
+  ],
+  "fanet_observations": 125,
+  "fanet_logger_queue_drops": 0,
+  "web_app_pause_resume_during_recording": "passed",
+  "second_shutdown_hold_to_charging_seconds": 5.125,
+  "igc_strict_format_validation": "failed: known UTF-8 pilot header",
+  "raw_g_checksums": "both match original bytes",
+  "logbook_complete_entries": 2,
+  "shutdown_saved_stack_csvs": 2,
+  "minimum_unused_stack_bytes": {
+    "loop": 7836,
+    "ble": 2996,
+    "fanet_tx": 2076,
+    "fanet_rx": 1212
+  },
+  "boot_heap_minimum_bytes": 20208,
+  "first_igc_timing_diagnostics": [
+    "WRITE DT=136 ms",
+    "FIFO N=1 R=2"
+  ],
+  "vario_timing_qualification": "not established",
+  "final_state": "OffUSB Charging, SD available to host",
+  "final_free_card_bytes": 7944634368,
+  "temporary_settings_restored": true,
+  "user_recordings_deleted": false,
+  "firmware_changes_in_this_test": false,
+  "archived_file_hashes_verified": 22,
+  "leaf_log_delivery": "not verified; normal two-tap cancellation and USB release passed",
+  "test_corrections": [
+    "Adjacent forwarding toggle was restored on next control action",
+    "Nonexistent /api/debug/memory probe returned 404",
+    "Wake COM handle lost during normal USB handoff; reopened successfully"
+  ],
+  "documentation_build": {
+    "result": "passed",
+    "pages_built": 62
+  }
+}

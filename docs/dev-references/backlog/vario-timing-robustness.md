@@ -5,7 +5,11 @@ description: Protect Leaf’s climb estimate and vario audio from storage and ne
 
 # Vario Timing Robustness Backlog
 
-**Status:** Open. Field evidence from November 14, 2026.
+**Status:** Open. Field evidence from November 14, 2026, with a
+[November 20 live-radio follow-up](../shutdown-radio-test-2026-11-20.md).
+That follow-up verifies shutdown/lifecycle behavior, not flight-time vario robustness.
+Keep stack reservations unchanged while isolating timing effects; further memory
+reductions are deferred in the [restart plan](memory-optimization-followup.md).
 
 Keep the vario responsive to real climb and sink while a flight is recording,
 the SD card is slow, or the radios are busy. The pressure and IMU sampling,

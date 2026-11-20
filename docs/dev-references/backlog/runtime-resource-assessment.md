@@ -5,6 +5,12 @@ description: Release timing and memory assessment, implementation stages and fol
 
 # Runtime resource assessment
 
+**November 20, 2026 follow-up:** the opt-in USB bench console, split Runtime allocations,
+explicit discard/Developer-exit release and lightweight shutdown-saving Stacks monitor are
+implemented. They support later workload automation but do not complete stage 2's verified
+traffic, hardware fixtures or soak coverage. Further memory and stack reductions are paused
+for stable-release work; see the [memory restart plan](memory-optimization-followup.md).
+
 Status reconciled **2026-10-22**: stage 1 is implemented and merged in `e432ee66` (#421).
 A provisional Leaf 3.2.8 Navigate comparison reference is registered in
 [`utils/runtime_report/baselines/index.json`](../../../utils/runtime_report/baselines/index.json).

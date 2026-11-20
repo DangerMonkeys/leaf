@@ -1,0 +1,14 @@
+{
+  "schema": "leaf.nav_state",
+  "schema_version": "v0.1.0",
+  "source": {
+    "type": "saved_route",
+    "path": "/routes/apartment-compute-20.json"
+  },
+  "active": {
+    "type": "route",
+    "index": 1,
+    "route_point_index": 1,
+    "route_complete": false
+  }
+}

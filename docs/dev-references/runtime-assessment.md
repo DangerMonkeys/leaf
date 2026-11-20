@@ -36,6 +36,10 @@ save or shutdown. Save manually before a forced reset or firmware update.
 Record the workloads exercised so the
 measurements can inform changes to stack sizes.
 
+Current stack sizes remain unchanged. Further reductions are deferred for stable-release
+work; see the [memory follow-up plan](backlog/memory-optimization-followup.md) for the
+lowest retained measurements, conservative future trial sizes and missing workloads.
+
 ## Capture on a Leaf
 
 Build the matching hardware's release environment. Enable Developer mode. Leave optional
@@ -263,8 +267,10 @@ The profiler retains eight recent sentences and the four largest sentence deadli
 plus full-run per-type statistics and phase counts. It emits no sentence text/coordinates and
 performs no formatting, allocation or I/O while recording. Recent slot history is eight slots
 and memory history sixteen samples; endpoints, sampled minima, and separately retained worst
-slot/predecessor records remain intact. The current 3.2.8 capture is 22,496 bytes, only 176 bytes
-more than schema 2. The exported size/capacities remain authoritative for each build. Profile
+slot/predecessor records remain intact. The earlier single-block schema-3 capture was 22,496
+bytes, 176 bytes more than schema 2. The current split capture uses 12,800 B and 9,704 B
+allocations (22,504 B total), preserving the telemetry and 32 KiB reserve. The exported
+size/capacities remain authoritative for each build. Profile
 record-bookkeeping maximum is disclosed, but not a complete isolated profiler overhead bound.
 
 Only the loop thread mutates the profiler. Asynchronous GPS injections are counted as excluded;
@@ -286,7 +292,8 @@ Use one firmware image. With capture off, there is no capture-buffer allocation,
 memory sampling, per-slot timestamp collection or timing-log writing. Hooks use inline relaxed atomic
 flag reads; capture-only slot calculations are guarded. Developer controls allocate their web
 routes only in Developer mode. The timer counter and small control state remain present.
-Capture cannot start with Developer mode off, and disabling that mode freezes active capture.
+Capture cannot start with Developer mode off, and disabling that mode discards unsaved capture
+and releases both allocations. Export first to preserve the data.
 STOP deliberately retains data until export; successful export releases the buffer.
 
 ## Accounting and limits

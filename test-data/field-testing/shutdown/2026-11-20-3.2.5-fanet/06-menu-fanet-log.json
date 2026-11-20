@@ -1,0 +1,138 @@
+{
+  "utc": "2026-11-20T16:47:00.058795+00:00",
+  "steps": [
+    {
+      "command": "press RIGHT",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "wait 8",
+      "reply": "waited",
+      "seconds": 8.015
+    },
+    {
+      "command": "fanet",
+      "reply": "fanet 1 RUNNING 2124 1212",
+      "seconds": 0.0
+    },
+    {
+      "command": "stacks",
+      "reply": "stacks 7836 3000 2124 1212 0",
+      "seconds": 0.016
+    },
+    {
+      "command": "heap",
+      "reply": "heap 58484 47148 31732 7836",
+      "seconds": 0.0
+    },
+    {
+      "command": "press UP",
+      "reply": "ok",
+      "seconds": 0.312
+    },
+    {
+      "command": "press CENTER",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press UP",
+      "reply": "ok",
+      "seconds": 0.313
+    },
+    {
+      "command": "press UP",
+      "reply": "ok",
+      "seconds": 0.312
+    },
+    {
+      "command": "press UP",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press UP",
+      "reply": "ok",
+      "seconds": 0.313
+    },
+    {
+      "command": "press UP",
+      "reply": "ok",
+      "seconds": 0.296
+    },
+    {
+      "command": "press UP",
+      "reply": "ok",
+      "seconds": 0.329
+    },
+    {
+      "command": "press UP",
+      "reply": "ok",
+      "seconds": 0.296
+    },
+    {
+      "command": "press UP",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press UP",
+      "reply": "ok",
+      "seconds": 0.313
+    },
+    {
+      "command": "press CENTER",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "wait 4",
+      "reply": "waited",
+      "seconds": 4.156
+    },
+    {
+      "command": "fanet",
+      "reply": "fanet 1 RUNNING 2124 1212",
+      "seconds": 0.0
+    },
+    {
+      "command": "status",
+      "reply": "status On Menu 7 0 0 1 1 1 1",
+      "seconds": 0.0
+    },
+    {
+      "command": "heap",
+      "reply": "heap 58624 47148 31732 7836",
+      "seconds": 0.0
+    }
+  ],
+  "initial": {
+    "power": "On",
+    "page": "Navigate",
+    "cursor": 0,
+    "modal_depth": 0,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": true,
+    "flight_running": true,
+    "firmware_sd_access": true
+  },
+  "final": {
+    "power": "On",
+    "page": "Menu",
+    "cursor": 7,
+    "modal_depth": 0,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": true,
+    "flight_running": true,
+    "firmware_sd_access": true
+  },
+  "heap": {
+    "internal_free": 58624,
+    "internal_min_since_boot": 47148,
+    "internal_largest": 31732,
+    "loop_stack_unused": 7836
+  }
+}

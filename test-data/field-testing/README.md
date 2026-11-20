@@ -12,6 +12,9 @@ controls, including the stale FAT32 free-count hint investigation.
 The [shutdown follow-up](shutdown/2026-11-19-3.2.8/README.md) preserves replay-active
 power-off and wake controls, shutdown-saved flight/Stack data and watchdog regression logs.
 
+The [November 20 3.2.5 live-radio tests](shutdown/2026-11-20-3.2.5-fanet/README.md)
+add phone-connected FANET shutdown, menu/Web App lifecycle, stack and file-integrity evidence.
+
 This archive preserves the complete useful contents of the former
 `scratch/field-testing` folders, including files previously hidden by an ignore-all
 rule. Raw recordings and saved results were copied byte for byte. Only Python

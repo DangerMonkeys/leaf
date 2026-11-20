@@ -1,0 +1,68 @@
+{
+  "utc": "2026-11-20T16:55:49.674273+00:00",
+  "steps": [
+    {
+      "command": "press LEFT",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press LEFT",
+      "reply": "ok",
+      "seconds": 0.312
+    },
+    {
+      "command": "wait 12",
+      "reply": "waited",
+      "seconds": 12.016
+    },
+    {
+      "command": "status",
+      "reply": "status On Navigate 0 0 0 1 0 1 1",
+      "seconds": 0.0
+    },
+    {
+      "command": "fanet",
+      "reply": "fanet 1 RUNNING 2724 1312",
+      "seconds": 0.0
+    },
+    {
+      "command": "stacks",
+      "reply": "stacks 7836 3000 2724 1312 0",
+      "seconds": 0.0
+    },
+    {
+      "command": "heap",
+      "reply": "heap 88024 20208 16372 7836",
+      "seconds": 0.0
+    }
+  ],
+  "initial": {
+    "power": "On",
+    "page": "Menu",
+    "cursor": -1,
+    "modal_depth": 1,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": false,
+    "flight_running": true,
+    "firmware_sd_access": true
+  },
+  "final": {
+    "power": "On",
+    "page": "Navigate",
+    "cursor": 0,
+    "modal_depth": 0,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": false,
+    "flight_running": true,
+    "firmware_sd_access": true
+  },
+  "heap": {
+    "internal_free": 88048,
+    "internal_min_since_boot": 20208,
+    "internal_largest": 16372,
+    "loop_stack_unused": 7836
+  }
+}

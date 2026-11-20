@@ -1,0 +1,311 @@
+{
+  "utc": "2026-11-20T17:01:19.486842+00:00",
+  "phone_connection": "user-confirmed after Web App close",
+  "samples": [
+    {
+      "seconds_after_hold_command": 0.0,
+      "status": {
+        "power": "On",
+        "page": "Navigate",
+        "cursor": 0,
+        "modal_depth": 0,
+        "warning": false,
+        "climb_ready": true,
+        "gps_fix": true,
+        "flight_running": true,
+        "firmware_sd_access": true
+      }
+    },
+    {
+      "seconds_after_hold_command": 0.11,
+      "status": {
+        "power": "On",
+        "page": "Navigate",
+        "cursor": 0,
+        "modal_depth": 0,
+        "warning": false,
+        "climb_ready": true,
+        "gps_fix": true,
+        "flight_running": true,
+        "firmware_sd_access": true
+      }
+    },
+    {
+      "seconds_after_hold_command": 0.203,
+      "status": {
+        "power": "On",
+        "page": "Navigate",
+        "cursor": 0,
+        "modal_depth": 0,
+        "warning": false,
+        "climb_ready": true,
+        "gps_fix": true,
+        "flight_running": true,
+        "firmware_sd_access": true
+      }
+    },
+    {
+      "seconds_after_hold_command": 0.313,
+      "status": {
+        "power": "On",
+        "page": "Navigate",
+        "cursor": 0,
+        "modal_depth": 0,
+        "warning": false,
+        "climb_ready": true,
+        "gps_fix": true,
+        "flight_running": true,
+        "firmware_sd_access": true
+      }
+    },
+    {
+      "seconds_after_hold_command": 0.406,
+      "status": {
+        "power": "On",
+        "page": "Navigate",
+        "cursor": 0,
+        "modal_depth": 0,
+        "warning": false,
+        "climb_ready": true,
+        "gps_fix": true,
+        "flight_running": true,
+        "firmware_sd_access": true
+      }
+    },
+    {
+      "seconds_after_hold_command": 0.516,
+      "status": {
+        "power": "On",
+        "page": "Navigate",
+        "cursor": 0,
+        "modal_depth": 0,
+        "warning": false,
+        "climb_ready": true,
+        "gps_fix": true,
+        "flight_running": true,
+        "firmware_sd_access": true
+      }
+    },
+    {
+      "seconds_after_hold_command": 0.61,
+      "status": {
+        "power": "On",
+        "page": "Navigate",
+        "cursor": 0,
+        "modal_depth": 0,
+        "warning": false,
+        "climb_ready": true,
+        "gps_fix": true,
+        "flight_running": true,
+        "firmware_sd_access": true
+      }
+    },
+    {
+      "seconds_after_hold_command": 0.719,
+      "status": {
+        "power": "On",
+        "page": "Navigate",
+        "cursor": 0,
+        "modal_depth": 0,
+        "warning": false,
+        "climb_ready": true,
+        "gps_fix": true,
+        "flight_running": true,
+        "firmware_sd_access": true
+      }
+    },
+    {
+      "seconds_after_hold_command": 0.828,
+      "status": {
+        "power": "On",
+        "page": "Navigate",
+        "cursor": 0,
+        "modal_depth": 0,
+        "warning": false,
+        "climb_ready": true,
+        "gps_fix": true,
+        "flight_running": true,
+        "firmware_sd_access": true
+      }
+    },
+    {
+      "seconds_after_hold_command": 0.938,
+      "status": {
+        "power": "On",
+        "page": "Navigate",
+        "cursor": 0,
+        "modal_depth": 0,
+        "warning": false,
+        "climb_ready": true,
+        "gps_fix": true,
+        "flight_running": true,
+        "firmware_sd_access": true
+      }
+    },
+    {
+      "seconds_after_hold_command": 1.047,
+      "status": {
+        "power": "On",
+        "page": "Navigate",
+        "cursor": 0,
+        "modal_depth": 0,
+        "warning": false,
+        "climb_ready": true,
+        "gps_fix": true,
+        "flight_running": true,
+        "firmware_sd_access": true
+      }
+    },
+    {
+      "seconds_after_hold_command": 1.141,
+      "status": {
+        "power": "On",
+        "page": "Navigate",
+        "cursor": 0,
+        "modal_depth": 0,
+        "warning": false,
+        "climb_ready": true,
+        "gps_fix": true,
+        "flight_running": true,
+        "firmware_sd_access": true
+      }
+    },
+    {
+      "seconds_after_hold_command": 1.25,
+      "status": {
+        "power": "On",
+        "page": "Navigate",
+        "cursor": 0,
+        "modal_depth": 0,
+        "warning": false,
+        "climb_ready": true,
+        "gps_fix": true,
+        "flight_running": true,
+        "firmware_sd_access": true
+      }
+    },
+    {
+      "seconds_after_hold_command": 1.344,
+      "status": {
+        "power": "On",
+        "page": "Navigate",
+        "cursor": 0,
+        "modal_depth": 0,
+        "warning": false,
+        "climb_ready": true,
+        "gps_fix": true,
+        "flight_running": true,
+        "firmware_sd_access": true
+      }
+    },
+    {
+      "seconds_after_hold_command": 1.453,
+      "status": {
+        "power": "On",
+        "page": "Navigate",
+        "cursor": 0,
+        "modal_depth": 0,
+        "warning": false,
+        "climb_ready": true,
+        "gps_fix": true,
+        "flight_running": true,
+        "firmware_sd_access": true
+      }
+    },
+    {
+      "seconds_after_hold_command": 1.547,
+      "status": {
+        "power": "On",
+        "page": "Navigate",
+        "cursor": 0,
+        "modal_depth": 0,
+        "warning": false,
+        "climb_ready": true,
+        "gps_fix": true,
+        "flight_running": true,
+        "firmware_sd_access": true
+      }
+    },
+    {
+      "seconds_after_hold_command": 1.656,
+      "status": {
+        "power": "On",
+        "page": "Navigate",
+        "cursor": 0,
+        "modal_depth": 0,
+        "warning": false,
+        "climb_ready": true,
+        "gps_fix": true,
+        "flight_running": true,
+        "firmware_sd_access": true
+      }
+    },
+    {
+      "seconds_after_hold_command": 1.75,
+      "status": {
+        "power": "On",
+        "page": "Navigate",
+        "cursor": 0,
+        "modal_depth": 0,
+        "warning": false,
+        "climb_ready": true,
+        "gps_fix": true,
+        "flight_running": true,
+        "firmware_sd_access": true
+      }
+    },
+    {
+      "seconds_after_hold_command": 5.125,
+      "status": {
+        "power": "OffUSB",
+        "page": "Charging",
+        "cursor": 0,
+        "modal_depth": 0,
+        "warning": false,
+        "climb_ready": false,
+        "gps_fix": false,
+        "flight_running": false,
+        "firmware_sd_access": true
+      }
+    }
+  ],
+  "initial": {
+    "power": "On",
+    "page": "Navigate",
+    "cursor": 0,
+    "modal_depth": 0,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": true,
+    "flight_running": true,
+    "firmware_sd_access": true
+  },
+  "fanet_before": "fanet 1 RUNNING 2164 1244",
+  "heap_before": {
+    "internal_free": 89168,
+    "internal_min_since_boot": 20208,
+    "internal_largest": 16372,
+    "loop_stack_unused": 7836
+  },
+  "hold_reply": "ok",
+  "seconds_from_hold_command_to_charging": 5.125,
+  "final": {
+    "power": "OffUSB",
+    "page": "Charging",
+    "cursor": 0,
+    "modal_depth": 0,
+    "warning": false,
+    "climb_ready": false,
+    "gps_fix": false,
+    "flight_running": false,
+    "firmware_sd_access": true
+  },
+  "fanet_after": "fanet 1 UNINITIALIZED 0 0",
+  "heap_after": {
+    "internal_free": 152436,
+    "internal_min_since_boot": 20208,
+    "internal_largest": 24564,
+    "loop_stack_unused": 7836
+  },
+  "stacks_after": "stacks 7836 0 0 0 0"
+}

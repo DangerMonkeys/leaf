@@ -5,6 +5,15 @@ description: Leaf memory audit changes, measured savings, and on-device verifica
 
 [Branch-wide heap savings report](heap-savings-summary.md)
 
+## Closeout and future work · November 20, 2026
+
+Further memory optimization is paused for stable-release work. Production task stack
+reservations and stock release TLS remain unchanged. The [restart plan](backlog/memory-optimization-followup.md)
+archives the review inventory and preserves the next agreed cohorts, deferred choices,
+conservative stack trials and their test requirements. Historical measurements below retain
+their original workload and candidate limits; later results supersede open-test status only
+where explicitly documented.
+
 ## Batch 1 · Leaf 3.2.5
 
 One bench build covered web request and route lifetimes, diagnostic heap history,
@@ -183,6 +192,13 @@ Leaf Log sync and charging dialog simulator checks passed. The paired reports
 and the final route regression are in `utils/bench_baselines/batch-03/`.
 
 ## Remaining hardware tests for batches 1–3
+
+**Closeout reconciliation, November 20:** the maintainer subsequently reported 3.2.8
+commissioning, Leaf AP, Wi-Fi setup and Web App passing, plus interrupted Leaf Log uploads.
+The table preserves the detailed workloads and fault cases; it does not mean all nominal
+flows remain untested. Full-card route preservation/recovery is recorded in the November 19
+follow-up; live-radio shutdown and charging cancellation/handoff passed November 20.
+Exact-release qualification, OTA delivery and unexercised retry/fault variants remain separate.
 
 Record the firmware commit and image SHA-256 for each run. Keep the results
 next to the corresponding bench captures. Use the release image for checks
@@ -581,7 +597,7 @@ This reliability work costs +16 B linked static RAM and +8,624 B linked flash in
 3.2.8 bench image; no new heap saving is claimed. Part of the RAM cost is bench-only
 timing instrumentation. The unit is charging with original settings/files restored and
 8,503,296 bytes free for reviewing the low-space warning. Shutdown's shared FANET/message
-bus lock dependency remains a separate [proposed fix](backlog/shutdown-message-bus-lock.md).
+bus lock dependency was subsequently addressed by the separate [shutdown fix](backlog/shutdown-message-bus-lock.md).
 
 ### November 19: deferred shutdown and publisher drain
 
@@ -593,7 +609,22 @@ fault/regression suites and two replay-active 3.2.8 shutdowns passed. A shutdown
 and Stack CSV were saved and read back; all three short test IGCs passed checksums.
 
 This adds +16 B static RAM and +628 B flash over the storage-fix bench image, with no
-new task or capture buffer. Live FANET plus a connected Bluetooth client remains to
-be checked. See the [shutdown report](shutdown-fix-review-2026-11-19.md) for exact hashes,
+new task or capture buffer. Live FANET plus a connected Bluetooth client was subsequently
+checked in the November 20 follow-up below. See the [shutdown report](shutdown-fix-review-2026-11-19.md) for exact hashes,
 producer timing, test-driver corrections, and cleanup. Original card files/settings
 were restored; the unit is charging with 8,503,296 bytes free.
+
+### November 20: live FANET and phone-connected 3.2.5
+
+Built and flashed committed `8a435a42` as `leaf_3_2_5_bench`. Two phone-connected,
+live-peer shutdowns, menu Wi-Fi cycles and Web App pause/resume passed. Both flight
+logbooks and Stack CSVs finalized; 125 FANET observations from two peers had no logger
+queue drops. The measured second shutdown reached charging 5.125 s from button-hold
+start. No firmware change or new heap saving is claimed.
+
+Lowest unused stacks were loop 7,836 B, BLE 2,996 B, TX 2,076 B and RX 1,212 B.
+Keep the RX allocation at 4 KiB. The boot-wide heap minimum reached 20,208 B; the
+responsible transient was not isolated. Both raw IGC checksums match, but strict
+validation rejects the known UTF-8 pilot-name header; the separate header-text fix
+is not in this candidate. A 136 ms write and FIFO diagnostic keep vario timing
+follow-up open. See the [full hardware report](shutdown-radio-test-2026-11-20.md).
