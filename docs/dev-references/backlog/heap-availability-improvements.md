@@ -5,6 +5,12 @@ description: Ordered backlog for improving Leaf's general heap availability and 
 
 # Heap Availability Improvements Backlog
 
+**November 20, 2026 closeout:** further optimization is deferred while preparing a stable
+release. The [restart plan](memory-optimization-followup.md) is now the current prioritized
+follow-up, including the saved audit inventory, remaining agreed cohorts, stack evidence,
+and SDK/buffering experiments. The historical investigation below provides context, not
+another list of unimplemented work. Keep production stack sizes and stock TLS unchanged.
+
 Recent heap diagnostics showed that Leaf has substantial heap available shortly after SD mount, but much of it was consumed or fragmented before memory-intensive features like WiFi setup, the web app, OTA checks, route editing, and waypoint transfer ran. Recent memory work has improved the major web-app and lifecycle pressure points enough that this backlog is no longer an urgent failure list. It is now a pickup note for cautious follow-up if real-world diagnostics show more room to squeeze.
 
 Completed or mostly completed work:

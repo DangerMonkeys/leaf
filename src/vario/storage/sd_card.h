@@ -34,6 +34,7 @@ class SDCard {
   FormatResult remountAfterFormat();
   bool setLabel();
   bool isMounted() { return mounted_; }
+  bool spaceAvailable(uint64_t& totalBytes, uint64_t& freeBytes) const;
 
   bool setupMassStorage(bool mediaPresent = true);
   bool reserveForFirmwareUpload();

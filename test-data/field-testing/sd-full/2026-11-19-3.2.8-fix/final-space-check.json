@@ -1,0 +1,8 @@
+{
+  "volume_serial": "01114FC5",
+  "actual_free_clusters": 519,
+  "actual_free_bytes": 8503296,
+  "fsinfo_free_clusters": 519,
+  "fsinfo_free_bytes": 8503296,
+  "fat_copies_identical": true
+}

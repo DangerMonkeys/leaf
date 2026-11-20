@@ -1,0 +1,215 @@
+{
+  "captured_at_utc": "2026-11-14T03:28:56.657592+00:00",
+  "firmware_sha256": "ddd68959de69f7783c1836ed694531aacde1ddae8b25691f0f642d81066a91ec",
+  "prefix": "bench-r2final",
+  "requests": {
+    "editor_limit": {
+      "status": 200,
+      "bytes": 18000,
+      "response": {
+        "saved": true,
+        "active": false,
+        "name": "bench-r2final-edit",
+        "path": "/routes/bench-r2final-edit.json",
+        "points": 20
+      },
+      "elapsed_ms": 1234,
+      "before": {
+        "internal_free": 87228,
+        "internal_min_since_boot": 34472,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      "after": {
+        "internal_free": 86820,
+        "internal_min_since_boot": 34472,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      "route_heap_bytes": {
+        "receipt_start": 76028,
+        "receipt_minimum": 70632,
+        "normalization_start": 74768,
+        "normalization_minimum": 73740
+      }
+    },
+    "import_limit": {
+      "status": 200,
+      "bytes": 10000,
+      "response": {
+        "saved": true,
+        "active": false,
+        "name": "bench-r2final-import",
+        "path": "/routes/bench-r2final-import.json",
+        "points": 20
+      },
+      "elapsed_ms": 297,
+      "before": {
+        "internal_free": 86820,
+        "internal_min_since_boot": 34472,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      "after": {
+        "internal_free": 80896,
+        "internal_min_since_boot": 23200,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7572
+      },
+      "route_heap_bytes": {
+        "receipt_start": 75788,
+        "receipt_minimum": 72804,
+        "normalization_start": 0,
+        "normalization_minimum": 0
+      }
+    },
+    "editor_oversize": {
+      "status": 400,
+      "bytes": 18001,
+      "response": {
+        "detail": "Route save request is invalid."
+      },
+      "elapsed_ms": 31,
+      "before": {
+        "internal_free": 86596,
+        "internal_min_since_boot": 23200,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7572
+      },
+      "after": {
+        "internal_free": 83824,
+        "internal_min_since_boot": 23200,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7572
+      },
+      "route_heap_bytes": {
+        "receipt_start": 75356,
+        "receipt_minimum": 72956,
+        "normalization_start": 0,
+        "normalization_minimum": 0
+      }
+    },
+    "import_oversize": {
+      "status": 400,
+      "bytes": 10001,
+      "response": {
+        "detail": "Route import request is invalid."
+      },
+      "elapsed_ms": 32,
+      "before": {
+        "internal_free": 86372,
+        "internal_min_since_boot": 23200,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7572
+      },
+      "after": {
+        "internal_free": 77800,
+        "internal_min_since_boot": 23200,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7572
+      },
+      "route_heap_bytes": {
+        "receipt_start": 75532,
+        "receipt_minimum": 72716,
+        "normalization_start": 0,
+        "normalization_minimum": 0
+      }
+    },
+    "editor_bad_json": {
+      "status": 400,
+      "bytes": 8,
+      "response": {
+        "detail": "Route save request is not JSON."
+      },
+      "elapsed_ms": 32,
+      "before": {
+        "internal_free": 86148,
+        "internal_min_since_boot": 23200,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7572
+      },
+      "after": {
+        "internal_free": 86148,
+        "internal_min_since_boot": 23200,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7572
+      },
+      "route_heap_bytes": {
+        "receipt_start": 82456,
+        "receipt_minimum": 81652,
+        "normalization_start": 0,
+        "normalization_minimum": 0
+      }
+    },
+    "editor_21_points": {
+      "status": 400,
+      "bytes": 18000,
+      "response": {
+        "detail": "Route exceeds the 20-point limit."
+      },
+      "elapsed_ms": 140,
+      "before": {
+        "internal_free": 86148,
+        "internal_min_since_boot": 23200,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7572
+      },
+      "after": {
+        "internal_free": 85924,
+        "internal_min_since_boot": 23200,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7572
+      },
+      "route_heap_bytes": {
+        "receipt_start": 75348,
+        "receipt_minimum": 69736,
+        "normalization_start": 0,
+        "normalization_minimum": 0
+      }
+    },
+    "editor_bad_coordinates": {
+      "status": 400,
+      "bytes": 18000,
+      "response": {
+        "detail": "Route contains an invalid waypoint coordinate."
+      },
+      "elapsed_ms": 156,
+      "before": {
+        "internal_free": 85924,
+        "internal_min_since_boot": 23200,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7572
+      },
+      "after": {
+        "internal_free": 85700,
+        "internal_min_since_boot": 23200,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7572
+      },
+      "route_heap_bytes": {
+        "receipt_start": 75104,
+        "receipt_minimum": 71900,
+        "normalization_start": 73640,
+        "normalization_minimum": 68716
+      }
+    }
+  },
+  "passed": true,
+  "version": "0.2.4-064d.bench+h3.2.5",
+  "web_open_heap": {
+    "internal_free": 87228,
+    "internal_min_since_boot": 34472,
+    "internal_largest": 31732,
+    "loop_stack_unused": 7844
+  },
+  "interrupted_request": {
+    "declared_bytes": 18000,
+    "sent_bytes": 3000,
+    "response": "400",
+    "recovery_http_status": 200
+  },
+  "legacy_urlencoded_form": {
+    "status": 400,
+    "detail": "Route save request is not JSON."
+  }
+}

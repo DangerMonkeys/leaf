@@ -1,0 +1,23 @@
+BENCH version 0.2.4-8a4.bench+h3.2.5
+BENCH status OffUSB Charging 0 0 0 0 0 0 1
+
+HOST version
+BENCH version 0.2.4-8a4.bench+h3.2.5
+
+HOST status
+BENCH status OffUSB Charging 0 0 0 0 0 0 1
+
+HOST config
+BENCH config 1 1 1 0 0 0 0 0
+
+HOST fanet
+BENCH fanet 1 UNINITIALIZED 0 0
+
+HOST stacks
+BENCH stacks 7836 0 0 0 0
+
+HOST heap
+BENCH heap 123324 113924 59380 7836
+BENCH status OffUSB Charging 0 0 0 0 0 0 1
+BENCH heap 123324 113924 59380 7836
+BENCH web off

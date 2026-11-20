@@ -1,0 +1,1 @@
+[{"method": "GET", "path": "/app"}, {"method": "GET", "path": "/api/user/status"}, {"method": "GET", "path": "/api/debug/session"}, {"method": "GET", "path": "/api/profiles"}, {"method": "GET", "path": "/api/nav-data"}, {"method": "GET", "path": "/api/debug/memory"}]

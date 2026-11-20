@@ -1,0 +1,1 @@
+PASS: shutdown/lifecycle evidence, 125 peer observations, Stack restart minima and 22 archived hashes. EXPECTED LIMIT: strict IGC validation fails Unicode pilot header; both raw checksums match.

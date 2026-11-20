@@ -1,0 +1,42 @@
+BENCH version 0.2.4-8a4.bench+h3.2.5
+BENCH version 0.2.4-8a4.bench+h3.2.5
+BENCH status On Menu 7 0 0 1 1 1 1
+
+HOST press CENTER
+BENCH ok
+
+HOST press DOWN
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+967193 playSound 1008735730
+button: CENTER state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press CENTER
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+967503 playSound 1008599430
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST wait 5
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+967803 playSound 1008735730
+FANET log: /fanetlogs/FANET_2026-11-20_164747_1.csv
+button: CENTER state: RELEASED    hold count: 0
+Speaker::update skipped 4 intervals
+$PFLAA,0,21,101,120,2,FBD364,104,,0.28,0.00,7,0,0,-40*08
+
+
+HOST fanet
+BENCH fanet 1 RUNNING 2124 1212
+
+HOST stacks
+BENCH stacks 7836 3000 2124 1212 0
+
+HOST heap
+BENCH heap 56104 47148 31732 7836
+BENCH status On Menu 7 0 0 1 1 1 1
+BENCH heap 56104 47148 31732 7836
+BENCH web off

@@ -1,8 +1,14 @@
 #include "heap_monitor.h"
+#include "logbook/logbook_io.h"
+#include "storage/checked_file.h"
 
 #include <Arduino.h>
 #include <SD_MMC.h>
 #include <string.h>
+#include <atomic>
+#include <memory>
+#include <mutex>
+#include <new>
 
 #include "diagnostics/cpu_utilization.h"
 #include "diagnostics/diagnostic_logs.h"
@@ -17,7 +23,7 @@ namespace heap_monitor {
     constexpr size_t SAMPLE_COUNT = 32;
     constexpr size_t EVENT_LENGTH = 28;
     constexpr size_t TASK_NAME_LENGTH = 12;
-    constexpr size_t REGISTERED_TASK_COUNT = 4;
+    constexpr uint32_t STACK_SAMPLE_INTERVAL_MS = 30000;
     struct Sample {
       uint32_t millis;
       char event[EVENT_LENGTH];
@@ -38,14 +44,24 @@ namespace heap_monitor {
     };
 
     struct RegisteredTask {
-      char name[TASK_NAME_LENGTH];
-      TaskHandle_t handle;
+      const char* name;
+      TaskHandle_t handle = nullptr;
+      uint32_t minimumUnused = UINT32_MAX;
+      uint32_t instances = 0;
     };
 
-    Sample samples[SAMPLE_COUNT];
+    std::atomic<bool> historyEnabled{false};
+    std::mutex historyMutex;
+    std::mutex registeredTasksMutex;
+    std::unique_ptr<Sample[]> samples;
     size_t nextSample = 0;
     size_t sampleTotal = 0;
-    RegisteredTask registeredTasks[REGISTERED_TASK_COUNT] = {};
+    RegisteredTask registeredTasks[] = {{"loop"}, {"ble"}, {"fanet_tx"}, {"fanet_rx"}};
+    StackMonitorState stackState = StackMonitorState::Idle;
+    uint32_t stackStarted = 0;
+    uint32_t lastStackSample = 0;
+    uint32_t stackElapsed = 0;
+    uint32_t stackSequence = 0;
     bool sdLoggingEnabled = false;
 
     void copyEvent(char* dest, const char* event) {
@@ -67,12 +83,30 @@ namespace heap_monitor {
     }
 
     uint32_t stackHighWaterFor(const char* name) {
+      std::lock_guard<std::mutex> lock(registeredTasksMutex);
       for (const RegisteredTask& task : registeredTasks) {
         if (task.handle && strncmp(task.name, name, TASK_NAME_LENGTH) == 0) {
           return uxTaskGetStackHighWaterMark(task.handle);
         }
       }
       return 0;
+    }
+
+    void sampleStack(RegisteredTask& task) {
+      if (!task.handle) return;
+      const uint32_t unused = uxTaskGetStackHighWaterMark(task.handle);
+      if (unused < task.minimumUnused) task.minimumUnused = unused;
+    }
+
+    void sampleStacks(uint32_t now) {
+      for (RegisteredTask& task : registeredTasks) sampleStack(task);
+      lastStackSample = now;
+    }
+
+    void freezeStackMonitor(uint32_t now) {
+      sampleStacks(now);
+      stackElapsed = now - stackStarted;
+      stackState = StackMonitorState::Frozen;
     }
 
     void writeHeaderIfNeeded(File& file, const char* path) {
@@ -122,26 +156,42 @@ namespace heap_monitor {
                   static_cast<unsigned long>(sample.fanetRxStackHighWater));
     }
 
+    bool rememberSample(const char* event, Sample& sample) {
+      if (!historyEnabled.load()) return false;
+      std::lock_guard<std::mutex> lock(historyMutex);
+      if (!samples) return false;
+      captureSample(sample, event);
+      samples[nextSample] = sample;
+      nextSample = (nextSample + 1) % SAMPLE_COUNT;
+      if (sampleTotal < SAMPLE_COUNT) sampleTotal++;
+      return true;
+    }
+
   }  // namespace
 
-  void record(const char* event) {
-    if (!diagnostic_logs::enabled(diagnostic_logs::Log::SystemEvents)) return;
-    Sample& sample = samples[nextSample];
-    captureSample(sample, event);
+  void setHistoryEnabled(bool enabled) {
+    if (enabled == historyEnabled.load()) return;
+    bool failed = false;
+    {
+      std::lock_guard<std::mutex> lock(historyMutex);
+      if (enabled == bool(samples)) return;
+      if (enabled) samples.reset(new (std::nothrow) Sample[SAMPLE_COUNT]);
+      historyEnabled.store(enabled && bool(samples));
+      if (!enabled) samples.reset();
+      nextSample = sampleTotal = 0;
+      failed = enabled && !samples;
+    }
+    if (failed) Serial.println("Unable to allocate System Events heap history");
+  }
 
-    nextSample = (nextSample + 1) % SAMPLE_COUNT;
-    if (sampleTotal < SAMPLE_COUNT) sampleTotal++;
+  void record(const char* event) {
+    Sample sample;
+    rememberSample(event, sample);
   }
 
   void checkpoint(const char* event) {
-    if (!diagnostic_logs::enabled(diagnostic_logs::Log::SystemEvents)) return;
-
     Sample sample;
-    captureSample(sample, event);
-
-    samples[nextSample] = sample;
-    nextSample = (nextSample + 1) % SAMPLE_COUNT;
-    if (sampleTotal < SAMPLE_COUNT) sampleTotal++;
+    if (!rememberSample(event, sample)) return;
 
     // Retain the bounded RAM history during timing capture; exporting is explicit.
     if (cpu_utilization::capturing() || !sdLoggingEnabled || !diagnostic_logs::ensureDirectory())
@@ -158,23 +208,87 @@ namespace heap_monitor {
 
   void registerTask(const char* name, TaskHandle_t handle) {
     if (!name) return;
+    std::lock_guard<std::mutex> lock(registeredTasksMutex);
 
     for (RegisteredTask& task : registeredTasks) {
-      if (strncmp(task.name, name, TASK_NAME_LENGTH) == 0) {
-        task.handle = handle;
-        return;
+      if (strcmp(task.name, name) != 0) continue;
+      if (task.handle == handle) return;
+      if (stackState == StackMonitorState::Running) {
+        sampleStack(task);
+        if (handle) ++task.instances;
       }
+      task.handle = handle;
+      return;
     }
+  }
 
-    if (!handle) return;
+  StackMonitorState stackMonitorState() {
+    std::lock_guard<std::mutex> lock(registeredTasksMutex);
+    return stackState;
+  }
 
+  void startStackMonitor() {
+    std::lock_guard<std::mutex> lock(registeredTasksMutex);
+    if (!settings.dev_mode || stackState != StackMonitorState::Idle) return;
     for (RegisteredTask& task : registeredTasks) {
-      if (!task.handle) {
-        copyTaskName(task.name, name);
-        task.handle = handle;
-        return;
-      }
+      task.minimumUnused = UINT32_MAX;
+      task.instances = task.handle ? 1 : 0;
     }
+    stackStarted = millis();
+    sampleStacks(stackStarted);
+    stackState = StackMonitorState::Running;
+  }
+
+  void updateStackMonitor() {
+    std::lock_guard<std::mutex> lock(registeredTasksMutex);
+    if (stackState != StackMonitorState::Running) return;
+    const uint32_t now = millis();
+    if (!settings.dev_mode)
+      freezeStackMonitor(now);
+    else if (now - lastStackSample >= STACK_SAMPLE_INTERVAL_MS)
+      sampleStacks(now);
+  }
+
+  bool saveStackMonitor() {
+    // Only the firmware loop starts, freezes or exports sessions. Task registration
+    // can run elsewhere, so freeze the readings under the registry lock before SD I/O.
+    {
+      std::lock_guard<std::mutex> lock(registeredTasksMutex);
+      if (stackState == StackMonitorState::Idle) return false;
+      if (stackState == StackMonitorState::Running) freezeStackMonitor(millis());
+    }
+    if (!diagnostic_logs::ensureDirectory()) return false;
+
+    char path[48];
+    do {
+      snprintf(path, sizeof(path), "/diagnostics/stack_%lu.csv", (unsigned long)++stackSequence);
+    } while (SD_MMC.exists(path));
+    logbook_io::Guard transaction;
+    if (!transaction) return false;
+    checked_file::Writer file(path);
+    if (!file) return false;
+    constexpr char header[] = "task,elapsed_ms,instances,min_unused_bytes\n";
+    bool written = file.write(reinterpret_cast<const uint8_t*>(header), sizeof(header) - 1) ==
+                   sizeof(header) - 1;
+    for (const RegisteredTask& task : registeredTasks) {
+      char minimum[16] = {};
+      if (task.minimumUnused != UINT32_MAX)
+        snprintf(minimum, sizeof(minimum), "%lu", (unsigned long)task.minimumUnused);
+      char row[60];
+      const int size =
+          snprintf(row, sizeof(row), "%s,%lu,%lu,%s\n", task.name, (unsigned long)stackElapsed,
+                   (unsigned long)task.instances, minimum);
+      written &= file.write(reinterpret_cast<const uint8_t*>(row), size) == size_t(size);
+    }
+    const bool complete = file.finish(path);
+    if (!written || !complete) {
+      SD_MMC.remove(path);
+      return false;
+    }
+    Serial.printf("Stack monitor saved %s\n", path);
+    std::lock_guard<std::mutex> lock(registeredTasksMutex);
+    stackState = StackMonitorState::Idle;
+    return true;
   }
 
   void snapshot(Snapshot& s) {
@@ -190,10 +304,12 @@ namespace heap_monitor {
   void setSdLoggingEnabled(bool enabled) { sdLoggingEnabled = enabled; }
 
   bool dumpToSd(const char* path) {
-    if (!diagnostic_logs::enabled(diagnostic_logs::Log::SystemEvents)) return false;
+    if (!historyEnabled.load()) return false;
     if (!path || path[0] == '\0') return false;
     if (!sdLoggingEnabled) return false;
     if (!diagnostic_logs::ensureDirectory()) return false;
+    std::lock_guard<std::mutex> lock(historyMutex);
+    if (!samples) return false;
 
     const char* outputPath = diagnostic_logs::SYSTEM_EVENTS_PATH;
     const bool existed = SD_MMC.exists(outputPath);
@@ -212,7 +328,8 @@ namespace heap_monitor {
   }
 
   void clear() {
-    if (!diagnostic_logs::enabled(diagnostic_logs::Log::SystemEvents)) return;
+    if (!historyEnabled.load()) return;
+    std::lock_guard<std::mutex> lock(historyMutex);
     nextSample = 0;
     sampleTotal = 0;
   }

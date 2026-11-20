@@ -1,0 +1,55 @@
+{
+  "utc": "2026-11-20T01:06:50.449405+00:00",
+  "base": "http://10.0.0.183",
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/api/debug/raw-xbm",
+      "request_bytes": 0,
+      "status": 200,
+      "seconds": 0.094,
+      "bytes": 11697,
+      "sha256": "645e6aeef440117722ab099d65abaf1ca894335a20bbe3857da2379535ff81b7",
+      "body": "Saved screen bitmap"
+    },
+    {
+      "method": "GET",
+      "path": "/api/nav-data",
+      "request_bytes": 0,
+      "status": 200,
+      "seconds": 0.015,
+      "bytes": 143,
+      "sha256": "da4917be71c0a51b881c5b3225098db47d61d2531648dca4fd9b54457abb37f3",
+      "body": {
+        "loaded_file": "Ed2Hamilton.cup",
+        "loaded_path": "/waypoints/Ed2Hamilton.cup",
+        "point_count": 26,
+        "route_count": 0,
+        "active_type": "",
+        "active_name": ""
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/logbook",
+      "request_bytes": 0,
+      "status": 200,
+      "seconds": 0.047,
+      "bytes": 163,
+      "sha256": "585debcdef4d76dc1b2a889e101af309c056c3d8eeeb1b519467395a8fdde7e2",
+      "body": {
+        "count": 1,
+        "time_12h": true,
+        "units": {
+          "alt_feet": true,
+          "climb_fpm": true,
+          "speed_mph": true,
+          "distance_miles": true,
+          "heading_cardinal": true,
+          "temp_f": true,
+          "time_12h": true
+        }
+      }
+    }
+  ]
+}

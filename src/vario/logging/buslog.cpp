@@ -28,6 +28,8 @@ String BusLogger::desiredFileName() const {
 }
 
 bool BusLogger::startLog() {
+  if (!settings.dev_mode) return false;
+  if (isLogging()) return true;
   if (!sdcard.firmwareCanAccessFilesystem()) {
     Serial.println("BusLogger::startLog failed: sdcard unavailable to firmware");
     return false;
@@ -55,16 +57,14 @@ bool BusLogger::startLog() {
     return false;
   }
 
-  bus_->unsubscribe(*this);  // Make sure we don't double-subscribe
-  if (!bus_->subscribe(*this)) {
+  file_.printf("V%s\n", LeafVersionInfo::firmwareVersion());
+  tStart_ = millis();
+
+  if (!bus_->subscribeSynchronized(*this)) {
     Serial.println("BusLogger::startLog failed: subscribe to bus");
     file_.close();
     return false;
   }
-
-  file_.printf("V%s\n", LeafVersionInfo::firmwareVersion());
-
-  tStart_ = millis();
 
   return true;
 }
@@ -101,10 +101,7 @@ void BusLogger::on_receive(const PressureUpdate& msg) {
 }
 
 void BusLogger::endLog() {
-  if (bus_) {
-    bus_->unsubscribe(*this);
-  }
-  if (file_) {
-    file_.close();
-  }
+  if (!file_) return;
+  bus_->unsubscribeSynchronized(*this);
+  file_.close();
 }

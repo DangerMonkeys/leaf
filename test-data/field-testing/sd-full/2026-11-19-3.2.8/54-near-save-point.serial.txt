@@ -1,0 +1,40 @@
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH status On Menu 2 1 0 1 1 1 1
+
+HOST press LEFT
+BENCH ok
+
+HOST press DOWN
+button: LEFT   state: PRESSED     hold count: 0
+button: LEFT   state: CLICKED     hold count: 0
+835618 playSound 1008684112
+button: LEFT   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press DOWN
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+835918 playSound 1008598446
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press CENTER
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+836230 playSound 1008598446
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST status
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+836562 playSound 1008649600
+button: CENTER state: RELEASED    hold count: 0
+BENCH status On Menu 1 0 0 1 1 1 1
+
+HOST heap
+BENCH heap 52900 20232 31732 7532
+BENCH status On Menu 1 0 0 1 1 1 1
+BENCH heap 52900 20232 31732 7532
+BENCH web http://10.0.0.183/app

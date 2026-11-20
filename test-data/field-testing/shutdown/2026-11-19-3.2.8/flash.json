@@ -1,0 +1,19 @@
+{
+  "firmware_sha256": "4d010ecb533194ab323499a1df58d7114e35eabdef20d50b2c12e7ce80170e53",
+  "attempts": [
+    {
+      "port": "COM44",
+      "vid": 12346,
+      "pid": 2,
+      "serial_number": "7C4FAD3BACB0",
+      "returncode": 1
+    },
+    {
+      "port": "COM42",
+      "vid": 12346,
+      "pid": 4097,
+      "serial_number": "7C:4F:AD:3B:AC:B0",
+      "returncode": 0
+    }
+  ]
+}

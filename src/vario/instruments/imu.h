@@ -48,15 +48,7 @@ class IMU : public MessageSink<IMU, MotionUpdate>, public IMessageSource {
   void setAccelerationBiasReference(const FlatAccelerationBias& reference) {
     flatBiasReference_ = reference;
   }
-  unsigned long lastMotionTime() const;
-  float lastDeviceAccelX() const;
-  float lastDeviceAccelY() const;
-  float lastDeviceAccelZ() const;
-  float lastQuatX() const;
-  float lastQuatY() const;
-  float lastQuatZ() const;
-  float lastWorldAccelX() const;
-  float lastWorldAccelY() const;
+  unsigned long lastMotionTime() const { return lastMotionTime_; }
   float lastWorldVerticalAccel() const;
   bool worldVerticalAccelValid() const;
   uint16_t gravityInitResetCount() const;
@@ -102,18 +94,10 @@ class IMU : public MessageSink<IMU, MotionUpdate>, public IMessageSource {
   // Best estimate for strength of gravity
   double gravity_ = 1.0;
 
-  double lastWorldVerticalAccel_ = 0.0;
-  double lastWorldAccelX_ = 0.0;
-  double lastWorldAccelY_ = 0.0;
-  double lastDeviceAccelX_ = 0.0;
-  double lastDeviceAccelY_ = 0.0;
-  double lastDeviceAccelZ_ = 0.0;
-  double lastQuatX_ = 0.0;
-  double lastQuatY_ = 0.0;
-  double lastQuatZ_ = 0.0;
+  float lastWorldVerticalAccel_ = 0.0;
   unsigned long lastMotionTime_ = 0;
   bool validLastWorldVerticalAccel_ = false;
-  double lastRejectedGravity_ = 0.0;
+  float lastRejectedGravity_ = 0.0;
   uint16_t gravityInitResetCount_ = 0;
 
   // Last time gravity estimate was updated

@@ -1,0 +1,119 @@
+{
+  "utc": "2026-11-20T01:06:24.526077+00:00",
+  "steps": [
+    {
+      "command": "press LEFT",
+      "reply": "ok",
+      "seconds": 0.313
+    },
+    {
+      "command": "press LEFT",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press LEFT",
+      "reply": "ok",
+      "seconds": 0.312
+    },
+    {
+      "command": "press UP",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press CENTER",
+      "reply": "ok",
+      "seconds": 0.312
+    },
+    {
+      "command": "status",
+      "reply": "status On User 0 0 0 1 1 1 1",
+      "seconds": 0.0
+    },
+    {
+      "command": "wait 45",
+      "reply": "waited",
+      "seconds": 45.079
+    },
+    {
+      "command": "status",
+      "reply": "status On User 0 0 0 1 1 1 1",
+      "seconds": 0.0
+    },
+    {
+      "command": "heap",
+      "reply": "heap 107816 78900 32756 7372",
+      "seconds": 0.015
+    },
+    {
+      "command": "press RIGHT",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press DOWN",
+      "reply": "ok",
+      "seconds": 0.313
+    },
+    {
+      "command": "press CENTER",
+      "reply": "ok",
+      "seconds": 0.296
+    },
+    {
+      "command": "press DOWN",
+      "reply": "ok",
+      "seconds": 0.313
+    },
+    {
+      "command": "press DOWN",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press DOWN",
+      "reply": "ok",
+      "seconds": 0.312
+    },
+    {
+      "command": "press CENTER",
+      "reply": "ok",
+      "seconds": 0.313
+    },
+    {
+      "command": "status",
+      "reply": "status On Menu 1 0 0 1 1 1 1",
+      "seconds": 0.0
+    }
+  ],
+  "initial": {
+    "power": "On",
+    "page": "Menu",
+    "cursor": 2,
+    "modal_depth": 0,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": true,
+    "flight_running": false,
+    "firmware_sd_access": true
+  },
+  "final": {
+    "power": "On",
+    "page": "Menu",
+    "cursor": 1,
+    "modal_depth": 0,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": true,
+    "flight_running": true,
+    "firmware_sd_access": true
+  },
+  "heap": {
+    "internal_free": 107960,
+    "internal_min_since_boot": 78900,
+    "internal_largest": 32756,
+    "loop_stack_unused": 7372
+  },
+  "screen": "18-flight-full.png"
+}

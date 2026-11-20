@@ -1,0 +1,39 @@
+{
+  "utc": "2026-11-20T01:06:05.125745+00:00",
+  "steps": [
+    {
+      "command": "status",
+      "reply": "status On Menu 2 0 0 1 1 0 1",
+      "seconds": 0.0
+    }
+  ],
+  "initial": {
+    "power": "On",
+    "page": "Menu",
+    "cursor": 2,
+    "modal_depth": 0,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": true,
+    "flight_running": false,
+    "firmware_sd_access": true
+  },
+  "final": {
+    "power": "On",
+    "page": "Menu",
+    "cursor": 2,
+    "modal_depth": 0,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": true,
+    "flight_running": false,
+    "firmware_sd_access": true
+  },
+  "heap": {
+    "internal_free": 113292,
+    "internal_min_since_boot": 85316,
+    "internal_largest": 32756,
+    "loop_stack_unused": 7548
+  },
+  "screen": "17-logging-screen.png"
+}

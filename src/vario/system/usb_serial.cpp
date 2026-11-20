@@ -25,6 +25,20 @@ size_t LeafUSBCDC::write(const uint8_t* buffer, size_t size) {
   return written;
 }
 
+#ifdef LEAF_USB_BENCH_CONSOLE
+bool LeafUSBCDC::writeBenchLine(const char* line, size_t size) {
+  if (!transmitEnabled_.load() || !tx_lock || xSemaphoreTake(tx_lock, 0) != pdPASS) return false;
+  bool sent = false;
+  if (transmitEnabled_.load() && tud_cdc_n_connected(itf) &&
+      tud_cdc_n_write_available(itf) >= size) {
+    sent = tud_cdc_n_write(itf, line, size) == size;
+    tud_cdc_n_write_flush(itf);
+  }
+  xSemaphoreGive(tx_lock);
+  return sent;
+}
+#endif
+
 void LeafUSBCDC::flush() {
   if (!transmitEnabled_.load() || !tx_lock || xPortInIsrContext()) return;
   if (xSemaphoreTake(tx_lock, 0) != pdPASS) return;

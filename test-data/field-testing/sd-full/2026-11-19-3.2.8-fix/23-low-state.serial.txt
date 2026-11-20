@@ -1,0 +1,14 @@
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH status On User -1 1 0 1 0 0 1
+
+HOST status
+BENCH status On User -1 1 0 1 0 0 1
+
+HOST sdstartup
+BENCH sdstartup 370
+
+HOST heap
+BENCH heap 90040 88972 31732 7532
+BENCH status On User -1 1 0 1 0 0 1
+BENCH heap 90040 88972 31732 7532
+BENCH web http://0.0.0.0/app

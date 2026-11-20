@@ -1,0 +1,57 @@
+{
+  "firmware_version": "0.2.4-865d.tlsbench+h3.2.5",
+  "firmware_sha256": "e2a154bc2c243dbffab157a6a1a3c4f2c88bcb23323cd9c2803787ac30c37c6e",
+  "before": {
+    "heap": {
+      "internal_free": 103020,
+      "internal_min_since_boot": 66456,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7264
+    },
+    "stacks": "stacks 7264 2892 0 0 0"
+  },
+  "flight": {
+    "heap": {
+      "internal_free": 91244,
+      "internal_min_since_boot": 66456,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7264
+    },
+    "stacks": "stacks 7264 2892 2872 3352 0",
+    "fanet": "fanet 1 RUNNING 2872 3352"
+  },
+  "flight_end": {
+    "heap": {
+      "internal_free": 91944,
+      "internal_min_since_boot": 66456,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7264
+    },
+    "stacks": "stacks 7264 2892 2760 3352 0",
+    "fanet": "fanet 1 RUNNING 2760 3352"
+  },
+  "summary_open": {
+    "heap": {
+      "internal_free": 103332,
+      "internal_min_since_boot": 66456,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7264
+    },
+    "stacks": "stacks 7264 2892 0 0 0"
+  },
+  "summary_dismissed": {
+    "heap": {
+      "internal_free": 104056,
+      "internal_min_since_boot": 66456,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7264
+    },
+    "stacks": "stacks 7264 2892 0 0 0"
+  },
+  "stationary_fixture": {
+    "duration_seconds": 13,
+    "track_saved": false,
+    "removed": true
+  },
+  "passed": true
+}

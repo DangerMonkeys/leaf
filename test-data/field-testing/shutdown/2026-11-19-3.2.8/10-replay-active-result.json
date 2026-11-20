@@ -1,0 +1,49 @@
+{
+  "utc": "2026-11-20T03:04:44.737400+00:00",
+  "steps": [
+    {
+      "command": "status",
+      "reply": "status On User -1 1 0 1 1 0 1",
+      "seconds": 0.0
+    },
+    {
+      "command": "heap",
+      "reply": "heap 135812 85968 34804 7868",
+      "seconds": 0.015
+    },
+    {
+      "command": "version",
+      "reply": "version 0.2.4-45ed.bench+h3.2.8",
+      "seconds": 0.0
+    }
+  ],
+  "initial": {
+    "power": "On",
+    "page": "User",
+    "cursor": -1,
+    "modal_depth": 1,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": true,
+    "flight_running": false,
+    "firmware_sd_access": true
+  },
+  "final": {
+    "power": "On",
+    "page": "User",
+    "cursor": -1,
+    "modal_depth": 1,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": true,
+    "flight_running": false,
+    "firmware_sd_access": true
+  },
+  "heap": {
+    "internal_free": 135812,
+    "internal_min_since_boot": 85968,
+    "internal_largest": 34804,
+    "loop_stack_unused": 7868
+  },
+  "screen": "10-replay-active-result.png"
+}

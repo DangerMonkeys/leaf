@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <optional>
 
 #include "logbook/logbook_store.h"
 #include "ui/display/menu_page.h"
@@ -19,9 +20,7 @@ class PageLogbook : public SettingsMenuPage {
  protected:
   void setting_change(Button dir, ButtonEvent state, uint8_t count) override;
   bool cursorUsesLeftButton() const override;
-  void closed(bool removed) override {
-    if (removed) scan.cancel();
-  }
+  void closed(bool removed) override;
 
  private:
   enum Cursor : int8_t {
@@ -41,7 +40,7 @@ class PageLogbook : public SettingsMenuPage {
   void drawPageRow(uint8_t y);
 
   String currentPath;
-  LogbookEntrySummary summary;
+  std::optional<LogbookEntrySummary> summary;
   uint16_t position = 0;
   uint16_t total = 0;
   uint8_t deletePending = 0;

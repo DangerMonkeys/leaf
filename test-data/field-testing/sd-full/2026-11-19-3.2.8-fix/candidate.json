@@ -1,0 +1,42 @@
+{
+  "source_commit": "b1ed6ae14d09eb1988d4b515297cfaa05a3f4a63",
+  "source_changes": {
+    "sim/Makefile": "73bb13fb4d46f8bdfe9242492d347e8e3a2e09888c67ddc0c8de6c95b81fd52a",
+    "sim/device/sd_card.cpp": "6fcc097edd60a9b2a4b5a320ad70b0e79400386e2b02fd6039ffbc16ba7cf694",
+    "sim/hal/include/SD_MMC.h": "1cc6ed4a38cfa85a371302f26a3a29b2e0df7e3c607d6391b353123add82c4dc",
+    "sim/hal/src/fs.cpp": "6a3ee1fa12d46de77233a0b8572ccf7c92a063390653ad4467c1ac92f7559a59",
+    "sim/tests/checked_storage.cpp": "b771fd09bfdece9f34c6755192ed46b5d00ab7775307a53102733fd39ef7537b",
+    "src/variants/leaf_3_2_8/platformio.ini": "11c392eada65beb2a1b5193d1204b52d81d165adece1809cf8eee60d429aa3ce",
+    "src/vario/comms/webserver.cpp": "d5e8594efcc211c688ea19379bf865b368ace7d1d035a29a753ec9bdb6ea9456",
+    "src/vario/diagnostics/bench_console.cpp": "223c612b29345c080f519ae0fee67e01bf5740b38603aefec720eff896e0e383",
+    "src/vario/diagnostics/heap_monitor.cpp": "b13d826741394fac20b68cb8ffc315b0152c6f16c062ae9342241222f724ea39",
+    "src/vario/navigation/gpx.cpp": "8837d235e49bb745f26062d3ec0c11edef15c63f45cf291d7f90ce4329f05298",
+    "src/vario/navigation/gpx.h": "29fec52d988fe33cc3f13e1b9ca674fbe4c55f04c2e1e356e61a34f3d5d613ff",
+    "src/vario/navigation/route_store.cpp": "fc1f3f8494a64b1fca5b9dc166f4bbd2ac8f2e43f486faa0e0a739de69203e9d",
+    "src/vario/navigation/user_waypoints.cpp": "ba1689d38513db7cf0b2e65d2a56b3d86175456c1f6e131ce3d07766e7091b78",
+    "src/vario/power.cpp": "471625d17f34f9221a2afc3138dfcedb8996f2b9d24756028a7fd786ffa950f3",
+    "src/vario/profiles/profile_store.cpp": "5b1261760106e5d13df077f0250d2b09a6187aa5118972010dd9caf7444f2ff6",
+    "src/vario/storage/checked_file.cpp": "748c8d5f22d5548bf60e41a1f10d7bbedd8ef1b39eccc250b30775ce6be2d909",
+    "src/vario/storage/checked_file.h": "969fe73dbc1205bb4d8cf7321f2c69d79af47f3dfcad842b7e3870f7183ad631",
+    "src/vario/storage/sd_card.cpp": "d5e464a15e147518efbc45c2eebfe4be550d8057697c60883fb20c0792edc01a",
+    "src/vario/storage/sd_card.h": "f4767831450c18bdaba619679c8f5297842c65426281fc66043bc17216d0516d",
+    "src/vario/ui/display/pages/dialogs/page_storage_warning.cpp": "c8d1f2f6ac20ee9df96a3480567c2037260c7868c07dd97858a51bcfb7320c0c",
+    "src/vario/ui/display/pages/dialogs/page_storage_warning.h": "6a3471a4a95d7193dbf8ded017e64374158e9d26728b7e912c3899a32f04ea3e",
+    "src/vario/ui/display/pages/menu/page_gpx_file_select.cpp": "d5330cf6f51c68a5955786d393bdf3186dc043736cddd9adbc219262593bfd4e"
+  },
+  "artifacts": {
+    "firmware.bin": {
+      "bytes": 2420016,
+      "sha256": "05630762d029b07d876b4354cfa1f1862f08a56d9ff6d9304af6f8ea6c415ffb"
+    },
+    "firmware.elf": {
+      "bytes": 37944376,
+      "sha256": "f1305dd41ac5b741b9b0ccd8d56805fcdb1a08b7dead4fc92908107fcb57a321"
+    }
+  },
+  "environment": "leaf_3_2_8_bench",
+  "baseline_static_bytes": 86588,
+  "candidate_static_bytes": 86604,
+  "baseline_flash_bytes": 2410760,
+  "candidate_flash_bytes": 2419384
+}

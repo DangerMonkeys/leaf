@@ -1,0 +1,52 @@
+BENCH version 0.2.4-8a4.bench+h3.2.5
+$PFLAA,0,20,46,68,2,FBD364,11,,0.00,0.00,7,0,0,-39*37
+
+BENCH version 0.2.4-8a4.bench+h3.2.5
+BENCH status On Navigate 0 0 0 1 1 1 1
+BENCH fanet 1 RUNNING 2164 1244
+BENCH heap 89168 20208 16372 7836
+BENCH ok
+BENCH status On Navigate 0 0 0 1 1 1 1
+button: CENTER state: PRESSED     hold count: 0
+BENCH status On Navigate 0 0 0 1 1 1 1
+BENCH status On Navigate 0 0 0 1 1 1 1
+BENCH status On Navigate 0 0 0 1 1 1 1
+BENCH status On Navigate 0 0 0 1 1 1 1
+BENCH status On Navigate 0 0 0 1 1 1 1
+BENCH status On Navigate 0 0 0 1 1 1 1
+BENCH status On Navigate 0 0 0 1 1 1 1
+button: CENTER state: HELD        hold count: 0
+button: CENTER state: INCREMENTED hold count: 0
+BENCH status On Navigate 0 0 0 1 1 1 1
+BENCH status On Navigate 0 0 0 1 1 1 1
+BENCH status On Navigate 0 0 0 1 1 1 1
+BENCH status On Navigate 0 0 0 1 1 1 1
+BENCH status On Navigate 0 0 0 1 1 1 1
+button: CENTER state: INCREMENTED hold count: 1
+BENCH status On Navigate 0 0 0 1 1 1 1
+BENCH status On Navigate 0 0 0 1 1 1 1
+BENCH status On Navigate 0 0 0 1 1 1 1
+BENCH status On Navigate 0 0 0 1 1 1 1
+BENCH status On Navigate 0 0 0 1 1 1 1
+button: CENTER state: INCREMENTED hold count: 2
+power_shutdown
+logbook finalization: saved=1 attempts=1 elapsed_ms=149 heap_bef1783153 playSound 1008579950
+Stack monitor saved /diagnostics/stack_5.csv
+1783203 playSound 1008580194
+Speaker::update skipped 5 intervals
+sleep_peripherals: On
+ - Sleeping GPS
+LC86G::sleep now: 1786024
+ready: 1135
+delay: 0
+************ !!!!!!!!!!! GPS SLEEPING COMMAND SENT !!!!!!!!!!! *
+ - Sleeping baro
+ - Sleeping speaker
+Shut down speaker
+ - DONE
+button: CENTER state: RELEASED    hold count: 0
+BENCH status OffUSB Charging 0 0 0 0 0 0 1
+BENCH status OffUSB Charging 0 0 0 0 0 0 1
+BENCH fanet 1 UNINITIALIZED 0 0
+BENCH heap 152436 20208 24564 7836
+BENCH stacks 7836 0 0 0 0

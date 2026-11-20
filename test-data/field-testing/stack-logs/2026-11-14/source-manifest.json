@@ -1,0 +1,86 @@
+{
+  "collection_date": "2026-11-14",
+  "devices": [
+    {
+      "directory": "3.2.6",
+      "hardware": "3.2.6",
+      "firmware_igc_header": "v0.2.4-865d",
+      "files": [
+        {
+          "path": "3.2.6/tracks/2026-11-14-XLV-000-01.igc",
+          "source": "/tracks/2026-11-14-XLV-000-01.igc",
+          "bytes": 280552,
+          "sha256": "fa66104168205080935b500ffa656150fba5a26d616cbb423627ef9fda1502be",
+          "source_sha256": "fa66104168205080935b500ffa656150fba5a26d616cbb423627ef9fda1502be"
+        },
+        {
+          "path": "3.2.6/diagnostics/stack_1.csv",
+          "source": "/diagnostics/stack_1.csv",
+          "bytes": 122,
+          "sha256": "cc8c62c9b751f6959711f1ce1f0a54f3934b44c8752c4003ced5facb13b4ac3b",
+          "source_sha256": "cc8c62c9b751f6959711f1ce1f0a54f3934b44c8752c4003ced5facb13b4ac3b"
+        },
+        {
+          "path": "3.2.6/diagnostics/system_events-flight-boot.csv",
+          "source": "/diagnostics/system_events.csv",
+          "bytes": 80635,
+          "sha256": "2469f7126adee69219f0dae52a12cd6b2b1c143bcc9214caa915317ecdf7fa0b",
+          "source_sha256": "8a02fbb38e57cd93d6a74acd05792463a9d66cf61a04c5f820193a24e7d8258e",
+          "source_line_start": 24456,
+          "source_line_end": 25273,
+          "source_rows": 818,
+          "added_header": true
+        }
+      ]
+    },
+    {
+      "directory": "3.2.7",
+      "hardware": "3.2.7",
+      "firmware_igc_header": "v0.2.4-b1e",
+      "files": [
+        {
+          "path": "3.2.7/tracks/2026-11-14-XLV-000-02.igc",
+          "source": "/tracks/2026-11-14-XLV-000-02.igc",
+          "bytes": 282049,
+          "sha256": "c884c58d3bdf155a7dd5571d8ed2eb532b792f78cefdec34601b62bdf04f879d",
+          "source_sha256": "c884c58d3bdf155a7dd5571d8ed2eb532b792f78cefdec34601b62bdf04f879d"
+        },
+        {
+          "path": "3.2.7/tracks/2026-11-14-XLV-000-01.igc",
+          "source": "/tracks/2026-11-14-XLV-000-01.igc",
+          "bytes": 168583,
+          "sha256": "36e5f21d6f887ff7df16a80a0d2be527116994067a47c24bc8941371505495fc",
+          "source_sha256": "36e5f21d6f887ff7df16a80a0d2be527116994067a47c24bc8941371505495fc"
+        },
+        {
+          "path": "3.2.7/diagnostics/stack_1.csv",
+          "source": "/diagnostics/stack_1.csv",
+          "bytes": 126,
+          "sha256": "b4a1a2326192438c017b8f906ea0e4c10c01df439eefdfd2248d1273bb476658",
+          "source_sha256": "b4a1a2326192438c017b8f906ea0e4c10c01df439eefdfd2248d1273bb476658"
+        }
+      ]
+    },
+    {
+      "directory": "3.2.5",
+      "hardware": "3.2.5",
+      "firmware_igc_header": "v0.2.4-865d.tlsbench",
+      "files": [
+        {
+          "path": "3.2.5/tracks/2026-11-14-XLV-000-03.igc",
+          "source": "/tracks/2026-11-14-XLV-000-03.igc",
+          "bytes": 282043,
+          "sha256": "03671ca3c80e64114a27ea55972160c09341c28ca1c7622cbdcfd59972c3203e",
+          "source_sha256": "03671ca3c80e64114a27ea55972160c09341c28ca1c7622cbdcfd59972c3203e"
+        },
+        {
+          "path": "3.2.5/diagnostics/stack_3.csv",
+          "source": "/diagnostics/stack_3.csv",
+          "bytes": 130,
+          "sha256": "74bec1c5182b4e69fb57a621c91bb08cbad2a33fa3262cf4ec34a4c77987b666",
+          "source_sha256": "74bec1c5182b4e69fb57a621c91bb08cbad2a33fa3262cf4ec34a4c77987b666"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,298 @@
+{
+  "version": "0.2.4-068d.bench+h3.2.5",
+  "firmware_sha256": "76166ce106e53e5bfdff7338ecda314beb1bc303edcc813dd040630076807931",
+  "initial_config": [
+    1,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "vario_html_toggle": true,
+  "vario_api_flag": true,
+  "vario_settings_http": 200,
+  "vario_csv_on": {
+    "median": {
+      "internal_free": 105900,
+      "internal_min_since_boot": 57160,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7840
+    },
+    "samples": [
+      {
+        "internal_free": 105900,
+        "internal_min_since_boot": 57160,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 105900,
+        "internal_min_since_boot": 57160,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 105900,
+        "internal_min_since_boot": 57160,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 105900,
+        "internal_min_since_boot": 57160,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 105900,
+        "internal_min_since_boot": 57160,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      }
+    ]
+  },
+  "vario_csv_off": {
+    "median": {
+      "internal_free": 105676,
+      "internal_min_since_boot": 57160,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7840
+    },
+    "samples": [
+      {
+        "internal_free": 105676,
+        "internal_min_since_boot": 57160,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 105676,
+        "internal_min_since_boot": 57160,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 105676,
+        "internal_min_since_boot": 57160,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 105676,
+        "internal_min_since_boot": 57160,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 105676,
+        "internal_min_since_boot": 57160,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      }
+    ]
+  },
+  "before_bus_start": {
+    "median": {
+      "internal_free": 58356,
+      "internal_min_since_boot": 53036,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7840
+    },
+    "samples": [
+      {
+        "internal_free": 58356,
+        "internal_min_since_boot": 53036,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 58356,
+        "internal_min_since_boot": 53036,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 58356,
+        "internal_min_since_boot": 53036,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 58356,
+        "internal_min_since_boot": 53036,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 58356,
+        "internal_min_since_boot": 53036,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      }
+    ]
+  },
+  "with_bus_running": {
+    "median": {
+      "internal_free": 53924,
+      "internal_min_since_boot": 51884,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7840
+    },
+    "samples": [
+      {
+        "internal_free": 53924,
+        "internal_min_since_boot": 51884,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 53924,
+        "internal_min_since_boot": 51884,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 53924,
+        "internal_min_since_boot": 51884,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 53924,
+        "internal_min_since_boot": 51884,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 53924,
+        "internal_min_since_boot": 51884,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      }
+    ]
+  },
+  "about_bus_running": {
+    "median": {
+      "internal_free": 53788,
+      "internal_min_since_boot": 49556,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7840
+    },
+    "samples": [
+      {
+        "internal_free": 53788,
+        "internal_min_since_boot": 49556,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 53788,
+        "internal_min_since_boot": 49556,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 53788,
+        "internal_min_since_boot": 49556,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 53788,
+        "internal_min_since_boot": 49556,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 53788,
+        "internal_min_since_boot": 49556,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      }
+    ]
+  },
+  "about_developer_disabled": {
+    "median": {
+      "internal_free": 53796,
+      "internal_min_since_boot": 49556,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7840
+    },
+    "samples": [
+      {
+        "internal_free": 53796,
+        "internal_min_since_boot": 49556,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 53796,
+        "internal_min_since_boot": 49556,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 53796,
+        "internal_min_since_boot": 49556,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 53796,
+        "internal_min_since_boot": 49556,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 53796,
+        "internal_min_since_boot": 49556,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      }
+    ]
+  },
+  "about_developer_reenabled": {
+    "median": {
+      "internal_free": 53796,
+      "internal_min_since_boot": 49556,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7840
+    },
+    "samples": [
+      {
+        "internal_free": 53796,
+        "internal_min_since_boot": 49556,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 53796,
+        "internal_min_since_boot": 49556,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 53796,
+        "internal_min_since_boot": 49556,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 53796,
+        "internal_min_since_boot": 49556,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      },
+      {
+        "internal_free": 53796,
+        "internal_min_since_boot": 49556,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7840
+      }
+    ]
+  },
+  "passed": true
+}

@@ -1,0 +1,63 @@
+{
+  "utc": "2026-11-20T01:02:31.676688+00:00",
+  "steps": [
+    {
+      "command": "press UP",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press CENTER",
+      "reply": "ok",
+      "seconds": 0.313
+    },
+    {
+      "command": "wait 10",
+      "reply": "waited",
+      "seconds": 10.156
+    },
+    {
+      "command": "press CENTER",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "status",
+      "reply": "status On Menu 7 0 0 1 0 0 1",
+      "seconds": 0.0
+    },
+    {
+      "command": "heap",
+      "reply": "heap 112592 85552 32756 7548",
+      "seconds": 0.016
+    }
+  ],
+  "initial": {
+    "power": "On",
+    "page": "Menu",
+    "cursor": 7,
+    "modal_depth": 0,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": false,
+    "flight_running": false,
+    "firmware_sd_access": true
+  },
+  "final": {
+    "power": "On",
+    "page": "Menu",
+    "cursor": 7,
+    "modal_depth": 0,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": false,
+    "flight_running": false,
+    "firmware_sd_access": true
+  },
+  "heap": {
+    "internal_free": 112592,
+    "internal_min_since_boot": 85552,
+    "internal_largest": 32756,
+    "loop_stack_unused": 7548
+  }
+}

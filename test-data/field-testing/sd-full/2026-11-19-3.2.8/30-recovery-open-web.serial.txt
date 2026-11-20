@@ -1,0 +1,56 @@
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH status On User 0 0 0 1 0 0 1
+
+HOST status
+BENCH status On User 0 0 0 1 0 0 1
+
+HOST press RIGHT
+BENCH ok
+
+HOST press UP
+button: RIGHT  state: PRESSED     hold count: 0
+button: RIGHT  state: CLICKED     hold count: 0
+236878 playSound 1008724160
+WiFi coordinator: trying saved network 0 'SkyWagon'
+button: RIGHT  state: RELEASED    hold count: 0
+Speaker::update skipped 1 intervals
+LSM6DSV: a=-0.0049,-0.0041,0.9941 g=-0.0048,-0.0050,0.9994 pairsBENCH ok
+
+HOST press UP
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+237179 playSound 1008598446
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press UP
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+237488 playSound 1008598446
+button: UP     state: RELEASED    hold count: 0
+UDP injection enabled
+BENCH ok
+
+HOST press CENTER
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+237789 playSound 1008598446
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST wait 2
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+238099 playSound 1008700914
+Leaf Web App started: http://10.0.0.183/app
+Leaf WiFi setup diag: event=enable-user-app-network enabled=1 lebutton: CENTER state: RELEASED    hold count: 0
+Speaker::update skipped 6 intervals
+
+HOST web
+BENCH web http://10.0.0.183/app
+
+HOST status
+BENCH status On Menu -1 1 0 1 0 0 1
+BENCH status On Menu -1 1 0 1 0 0 1
+BENCH heap 88536 31700 31732 7724
+BENCH web http://10.0.0.183/app

@@ -1,0 +1,489 @@
+{
+  "firmware_version": "0.2.4-a40d.bench+h3.2.5",
+  "firmware_sha256": "6dd480e9a7f83db3dfb8b9520223a2ace945216d2483b22ed24809249f555acf",
+  "initial_config": "config 1 1 1 0 0 0 0 0",
+  "idle": {
+    "samples": [
+      {
+        "internal_free": 99304,
+        "internal_min_since_boot": 89588,
+        "internal_largest": 36852,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 99304,
+        "internal_min_since_boot": 89588,
+        "internal_largest": 36852,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 99304,
+        "internal_min_since_boot": 89588,
+        "internal_largest": 36852,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 99304,
+        "internal_min_since_boot": 89588,
+        "internal_largest": 36852,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 99304,
+        "internal_min_since_boot": 89588,
+        "internal_largest": 36852,
+        "loop_stack_unused": 7844
+      }
+    ],
+    "median": {
+      "internal_free": 99304,
+      "internal_min_since_boot": 89588,
+      "internal_largest": 36852,
+      "loop_stack_unused": 7844
+    }
+  },
+  "flight_tools_before": {
+    "samples": [
+      {
+        "internal_free": 47468,
+        "internal_min_since_boot": 43460,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 47468,
+        "internal_min_since_boot": 43460,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 47468,
+        "internal_min_since_boot": 43460,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 47468,
+        "internal_min_since_boot": 43460,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 47468,
+        "internal_min_since_boot": 43460,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      }
+    ],
+    "median": {
+      "internal_free": 47468,
+      "internal_min_since_boot": 43460,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7844
+    }
+  },
+  "profiles_open": {
+    "samples": [
+      {
+        "internal_free": 46068,
+        "internal_min_since_boot": 39880,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 46208,
+        "internal_min_since_boot": 39880,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 46208,
+        "internal_min_since_boot": 39880,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 46208,
+        "internal_min_since_boot": 39880,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 46208,
+        "internal_min_since_boot": 39880,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      }
+    ],
+    "median": {
+      "internal_free": 46208,
+      "internal_min_since_boot": 39880,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7844
+    }
+  },
+  "flight_tools_after": {
+    "samples": [
+      {
+        "internal_free": 47468,
+        "internal_min_since_boot": 35552,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 47468,
+        "internal_min_since_boot": 35552,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 47468,
+        "internal_min_since_boot": 35552,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 47468,
+        "internal_min_since_boot": 35552,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 47468,
+        "internal_min_since_boot": 35552,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      }
+    ],
+    "median": {
+      "internal_free": 47468,
+      "internal_min_since_boot": 35552,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7844
+    }
+  },
+  "flight_tools_after_second_close": {
+    "samples": [
+      {
+        "internal_free": 47328,
+        "internal_min_since_boot": 35552,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 47328,
+        "internal_min_since_boot": 35552,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 47328,
+        "internal_min_since_boot": 35552,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 47328,
+        "internal_min_since_boot": 35552,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 47328,
+        "internal_min_since_boot": 35552,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      }
+    ],
+    "median": {
+      "internal_free": 47328,
+      "internal_min_since_boot": 35552,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7844
+    }
+  },
+  "selected": {
+    "active_pilot_id": "bench-p2",
+    "active_glider_id": "bench-g2"
+  },
+  "runtime_actions": [
+    [
+      "start",
+      200,
+      "capturing"
+    ],
+    [
+      "discard",
+      409,
+      "capturing"
+    ],
+    [
+      "freeze",
+      200,
+      "frozen"
+    ],
+    [
+      "discard",
+      200,
+      "idle"
+    ],
+    [
+      "start",
+      200,
+      "capturing"
+    ],
+    [
+      "freeze",
+      200,
+      "frozen"
+    ],
+    [
+      "export",
+      200,
+      "exported"
+    ]
+  ],
+  "runtime_idle": {
+    "samples": [
+      {
+        "internal_free": 94072,
+        "internal_min_since_boot": 35552,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 94072,
+        "internal_min_since_boot": 35552,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 94072,
+        "internal_min_since_boot": 35552,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 94072,
+        "internal_min_since_boot": 35552,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 94072,
+        "internal_min_since_boot": 35552,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      }
+    ],
+    "median": {
+      "internal_free": 94072,
+      "internal_min_since_boot": 35552,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7844
+    }
+  },
+  "runtime_running": {
+    "samples": [
+      {
+        "internal_free": 71288,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 19444,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 71288,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 19444,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 71288,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 19444,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 71288,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 19444,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 71288,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 19444,
+        "loop_stack_unused": 7844
+      }
+    ],
+    "median": {
+      "internal_free": 71288,
+      "internal_min_since_boot": 17184,
+      "internal_largest": 19444,
+      "loop_stack_unused": 7844
+    }
+  },
+  "runtime_frozen": {
+    "samples": [
+      {
+        "internal_free": 70840,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 19444,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 70840,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 19444,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 70840,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 19444,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 70840,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 19444,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 70840,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 19444,
+        "loop_stack_unused": 7844
+      }
+    ],
+    "median": {
+      "internal_free": 70840,
+      "internal_min_since_boot": 17184,
+      "internal_largest": 19444,
+      "loop_stack_unused": 7844
+    }
+  },
+  "runtime_discarded": {
+    "samples": [
+      {
+        "internal_free": 93128,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 93128,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 93128,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 93128,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 93128,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      }
+    ],
+    "median": {
+      "internal_free": 93128,
+      "internal_min_since_boot": 17184,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7844
+    }
+  },
+  "runtime_exported": {
+    "samples": [
+      {
+        "internal_free": 92456,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 92456,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 92456,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 92456,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      {
+        "internal_free": 92456,
+        "internal_min_since_boot": 17184,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      }
+    ],
+    "median": {
+      "internal_free": 92456,
+      "internal_min_since_boot": 17184,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7844
+    }
+  },
+  "runtime_export_keys": [
+    "schema_version",
+    "source",
+    "work_clock",
+    "memory_supported",
+    "firmware",
+    "hardware",
+    "capture_memory",
+    "cpu_mhz",
+    "capture_bytes",
+    "start_us",
+    "end_us",
+    "partial_slots",
+    "trace_overwritten",
+    "memory_overwritten",
+    "clock_pair_max_us",
+    "bookkeeping_max_us",
+    "memory_sample_max_us",
+    "unassigned_work_us",
+    "timer_epoch_uncertainty_us",
+    "settings_changed",
+    "failed_allocations",
+    "settings",
+    "histogram_upper_us",
+    "slots",
+    "pages",
+    "button_slots",
+    "recovery_slots",
+    "worst_recovery_previous",
+    "worst_recovery",
+    "worst_previous",
+    "worst",
+    "trace",
+    "gps_profile",
+    "trace_capacity",
+    "memory_capacity",
+    "first_memory",
+    "memory_minima",
+    "memory"
+  ],
+  "capture_bytes": 22496,
+  "verified_download_bytes": 66044,
+  "passed": true
+}

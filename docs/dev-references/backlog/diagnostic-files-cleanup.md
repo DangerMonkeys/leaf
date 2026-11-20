@@ -5,6 +5,11 @@ description: Current developer diagnostic files and remaining cleanup work.
 
 # Diagnostic Files Cleanup Backlog
 
+**November 20, 2026 update:** Developer Vario CSV is retired; the Stacks monitor saves on
+stop or normal shutdown, preserving failed exports in RAM for retry while powered. Bus
+logging stops when Developer mode is disabled. Further diagnostic-memory reductions are
+paused; see the [memory restart plan](memory-optimization-followup.md).
+
 Status reconciled **2026-10-24**: diagnostic categories and their Developer controls are
 implemented. Separate dev firmware builds were retired in `c840faf9` (#420); runtime Developer
 mode and each category's setting control logging in the release image.
@@ -16,7 +21,8 @@ mode and each category's setting control logging in the release image.
 | `system_events.csv` | System Events (`diag_systemEvents`): lifecycle/boot events, heap checkpoints, buffered heap dumps, registered-task stack headroom and Leaf Log retry details |
 | `network_events.csv` | Network Events (`diag_networkEvents`): WiFi setup and saved-network connection events |
 | `web_requests.csv` | Web Requests (`diag_webRequests`): web request timing and session/counter diagnostics |
-| `vario.csv` | Vario (`diag_vario`): instrument/filter diagnostics |
+| `vario.csv` | Legacy instrument/filter capture. New firmware no longer writes it. |
+| `stack_N.csv` | Lightweight Stacks monitor: session/task-instance counts and minimum unused task stack; manual stop or shutdown export |
 | `runtime_N.json` | CPU/timing capture (`diag_cpuUtilization`): explicit export of a bounded, frozen RAM capture |
 
 The former `heap_lifecycle.csv`, `heap_monitor.csv`, `wifi_setup.csv`,
@@ -37,8 +43,8 @@ after freeze/export; a general CSV file-management UI is separate work.
 
 The `/diagnostics` categories above are separate from manufacturer L records added to normal
 IGC tracks in #431 and #432. G-load interval diagnostics are written once per second while the
-IGC is open, with a final group at stop. Launch diagnostics retain up to thirty one-second
-pre-start inputs and their scores; start/end records identify the timer cause. These records
+IGC is open, with a final group at stop. The old thirty-entry pre-start diagnostic ring was removed in #444. Compact START V=3
+and end records identify the timer cause; the separate live auto-start detector remains. These records
 use the normal checksum-aware IGC writer and do not require Developer mode or a CSV toggle.
 No IGC diagnostics are available when track saving is disabled or the flight ends before its
 IGC opens. See [Flights and Logging](../flights_and_logging.md).

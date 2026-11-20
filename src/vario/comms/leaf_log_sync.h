@@ -61,6 +61,9 @@ class LeafLogSync {
     return completedCount_ < sessionTotalCount_ ? completedCount_ + 1 : sessionTotalCount_;
   }
   uint16_t totalCount() const { return sessionTotalCount_; }
+#ifdef LEAF_USB_BENCH_CONSOLE
+  uint32_t uploadStackUnused() const { return uploadStackUnused_.load(std::memory_order_relaxed); }
+#endif
 
  private:
   void beginSession(bool fromEject);
@@ -93,6 +96,9 @@ class LeafLogSync {
   // all sync state, logbook writes and SD/USB ownership changes.
   bool uploadRunning_ = false;
   std::atomic<bool> uploadDone_{false};
+#ifdef LEAF_USB_BENCH_CONSOLE
+  std::atomic<uint32_t> uploadStackUnused_{0};
+#endif
   String uploadPath_;
   String uploadFilename_;
   String uploadToken_;

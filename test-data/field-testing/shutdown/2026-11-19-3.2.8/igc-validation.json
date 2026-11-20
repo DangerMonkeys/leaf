@@ -1,0 +1,20 @@
+[
+  {
+    "path": "card-captures/14-writable-results/tracks/2026-11-19-XLV-000-01.igc",
+    "sha256": "4821cb99e4fabf5e81685819aad998f5e0ddd044ea5ae57ddc09f239baa3311c",
+    "returncode": 0,
+    "output": "STATUS_IGC_PASSED"
+  },
+  {
+    "path": "card-captures/14-writable-results/tracks/2026-11-19-XLV-000-02.igc",
+    "sha256": "6b24fcb25f7c22f28dfeefdd92e5bc28495cdac26e3d6b94efb2dc04b633d1ba",
+    "returncode": 0,
+    "output": "STATUS_IGC_PASSED"
+  },
+  {
+    "path": "card-captures/14-writable-results/tracks/2026-11-19-XLV-000-03.igc",
+    "sha256": "231f6c022f82704ff8f511410c5e79294a06c9a247b05c7141ac03f2ea8906ac",
+    "returncode": 0,
+    "output": "STATUS_IGC_PASSED"
+  }
+]

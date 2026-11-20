@@ -1,0 +1,12 @@
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH status OffUSB Charging 0 0 0 0 0 0 0
+
+HOST status
+BENCH status OffUSB Charging 0 0 0 0 0 0 0
+
+HOST heap
+BENCH heap 154944 54400 34804 7724
+BENCH status OffUSB Charging 0 0 0 0 0 0 0
+BENCH heap 154944 54400 34804 7724
+BENCH web off

@@ -2,6 +2,7 @@
 #include "comms/ble.h"
 #include "comms/fanet_radio.h"
 #include "comms/udp_message_server.h"
+#include "diagnostics/bench_console.h"
 #include "diagnostics/boot_diagnostics.h"
 #include "diagnostics/buttons.h"
 #include "diagnostics/heap_monitor.h"
@@ -60,6 +61,7 @@ void setup() {
 
   // grab user settings (or populate defaults if no saved settings)
   settings.init();
+  heap_monitor::setHistoryEnabled(settings.dev_mode && settings.diag_systemEvents);
   heap_monitor::registerTask("loop", xTaskGetCurrentTaskHandle());
   heap_monitor::record("setup-settings");
 
@@ -79,6 +81,8 @@ void setup() {
 
   baro.subscribeTo(&bus);
   baro.publishTo(&bus);
+
+  busLog.setBus(&bus);
 
   // Initialize anything left over on the Task Manager System
   Serial.println("Initializing Taskman Service");
@@ -116,9 +120,6 @@ void setup() {
   buttonMonitor.subscribeTo(&bus);
   buttonDispatcher.subscribeTo(&bus);
 
-  // Provide bus logger access to the bus
-  busLog.setBus(&bus);
-
   Serial.println("Leaf Initialized");
   heap_monitor::checkpoint("setup-complete");
   shutdown_guard::finishBoot();
@@ -129,5 +130,8 @@ void loop() {
   run_tests(&bus);
 #else
   taskman.update();
+#ifdef LEAF_USB_BENCH_CONSOLE
+  bench_console::poll();
+#endif
 #endif
 }

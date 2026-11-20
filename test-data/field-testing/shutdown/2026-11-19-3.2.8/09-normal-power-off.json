@@ -1,0 +1,47 @@
+{
+  "utc": "2026-11-20T03:04:21.815079+00:00",
+  "steps": [
+    {
+      "command": "press LEFT",
+      "reply": "ok",
+      "seconds": 0.313
+    },
+    {
+      "command": "wait 5",
+      "reply": "waited",
+      "seconds": 5.0
+    },
+    {
+      "command": "press UP",
+      "reply": "ok",
+      "seconds": 0.312
+    },
+    {
+      "command": "press CENTER",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press DOWN",
+      "reply": "ok",
+      "seconds": 0.313
+    },
+    {
+      "command": "hold CENTER 2300",
+      "reply": "ok",
+      "seconds": 2.593
+    }
+  ],
+  "initial": {
+    "power": "On",
+    "page": "User",
+    "cursor": -1,
+    "modal_depth": 1,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": true,
+    "flight_running": false,
+    "firmware_sd_access": true
+  },
+  "final": "Expected USB transition; inspect in next capture"
+}

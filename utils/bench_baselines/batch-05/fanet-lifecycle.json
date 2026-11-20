@@ -1,0 +1,579 @@
+{
+  "firmware_version": "0.2.4-a40d.bench+h3.2.5",
+  "firmware_sha256": "42fbd1981c04af150ccfa941c70faac28d9195d3c5e6dbf4e5292e9a424b05b9",
+  "initial_config": "config 1 1 1 0 0 0 0 0",
+  "boot_idle": {
+    "detected": true,
+    "state": "UNINITIALIZED",
+    "tx_stack_unused": 0,
+    "rx_stack_unused": 0,
+    "samples": [
+      {
+        "internal_free": 111356,
+        "internal_min_since_boot": 101640,
+        "internal_largest": 49140,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 111356,
+        "internal_min_since_boot": 101640,
+        "internal_largest": 49140,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 111356,
+        "internal_min_since_boot": 101640,
+        "internal_largest": 49140,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 111356,
+        "internal_min_since_boot": 101640,
+        "internal_largest": 49140,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 111356,
+        "internal_min_since_boot": 101640,
+        "internal_largest": 49140,
+        "loop_stack_unused": 7848
+      }
+    ],
+    "median": {
+      "internal_free": 111356,
+      "internal_min_since_boot": 101640,
+      "internal_largest": 49140,
+      "loop_stack_unused": 7848
+    }
+  },
+  "ground_menu_before": {
+    "detected": true,
+    "state": "UNINITIALIZED",
+    "tx_stack_unused": 0,
+    "rx_stack_unused": 0,
+    "samples": [
+      {
+        "internal_free": 60640,
+        "internal_min_since_boot": 57204,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 60640,
+        "internal_min_since_boot": 57204,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 60640,
+        "internal_min_since_boot": 57204,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 60640,
+        "internal_min_since_boot": 57204,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 60640,
+        "internal_min_since_boot": 57204,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      }
+    ],
+    "median": {
+      "internal_free": 60640,
+      "internal_min_since_boot": 57204,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7848
+    }
+  },
+  "ground_1_active": {
+    "detected": true,
+    "state": "RUNNING",
+    "tx_stack_unused": 2612,
+    "rx_stack_unused": 3348,
+    "samples": [
+      {
+        "internal_free": 48980,
+        "internal_min_since_boot": 46480,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 48980,
+        "internal_min_since_boot": 46480,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 48980,
+        "internal_min_since_boot": 46480,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 48980,
+        "internal_min_since_boot": 46480,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 48980,
+        "internal_min_since_boot": 46480,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      }
+    ],
+    "median": {
+      "internal_free": 48980,
+      "internal_min_since_boot": 46480,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7848
+    }
+  },
+  "ground_1_stopped": {
+    "detected": true,
+    "state": "UNINITIALIZED",
+    "tx_stack_unused": 0,
+    "rx_stack_unused": 0,
+    "samples": [
+      {
+        "internal_free": 60504,
+        "internal_min_since_boot": 46480,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 60504,
+        "internal_min_since_boot": 46480,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 60504,
+        "internal_min_since_boot": 46480,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 60504,
+        "internal_min_since_boot": 46480,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 60504,
+        "internal_min_since_boot": 46480,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      }
+    ],
+    "median": {
+      "internal_free": 60504,
+      "internal_min_since_boot": 46480,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7848
+    }
+  },
+  "ground_2_active": {
+    "detected": true,
+    "state": "RUNNING",
+    "tx_stack_unused": 2628,
+    "rx_stack_unused": 3348,
+    "samples": [
+      {
+        "internal_free": 48836,
+        "internal_min_since_boot": 46376,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 48836,
+        "internal_min_since_boot": 46376,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 48836,
+        "internal_min_since_boot": 46376,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 48836,
+        "internal_min_since_boot": 46376,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 48836,
+        "internal_min_since_boot": 46376,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      }
+    ],
+    "median": {
+      "internal_free": 48836,
+      "internal_min_since_boot": 46376,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7848
+    }
+  },
+  "ground_2_stopped": {
+    "detected": true,
+    "state": "UNINITIALIZED",
+    "tx_stack_unused": 0,
+    "rx_stack_unused": 0,
+    "samples": [
+      {
+        "internal_free": 60512,
+        "internal_min_since_boot": 46376,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 60512,
+        "internal_min_since_boot": 46376,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 60512,
+        "internal_min_since_boot": 46376,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 60512,
+        "internal_min_since_boot": 46376,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 60512,
+        "internal_min_since_boot": 46376,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      }
+    ],
+    "median": {
+      "internal_free": 60512,
+      "internal_min_since_boot": 46376,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7848
+    }
+  },
+  "ground_3_active": {
+    "detected": true,
+    "state": "RUNNING",
+    "tx_stack_unused": 2660,
+    "rx_stack_unused": 3348,
+    "samples": [
+      {
+        "internal_free": 48836,
+        "internal_min_since_boot": 46376,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 48836,
+        "internal_min_since_boot": 46376,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 48836,
+        "internal_min_since_boot": 46376,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 48836,
+        "internal_min_since_boot": 46376,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 48836,
+        "internal_min_since_boot": 46376,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      }
+    ],
+    "median": {
+      "internal_free": 48836,
+      "internal_min_since_boot": 46376,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7848
+    }
+  },
+  "ground_3_stopped": {
+    "detected": true,
+    "state": "UNINITIALIZED",
+    "tx_stack_unused": 0,
+    "rx_stack_unused": 0,
+    "samples": [
+      {
+        "internal_free": 60504,
+        "internal_min_since_boot": 46376,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 60504,
+        "internal_min_since_boot": 46376,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 60504,
+        "internal_min_since_boot": 46376,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 60504,
+        "internal_min_since_boot": 46376,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 60504,
+        "internal_min_since_boot": 46376,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      }
+    ],
+    "median": {
+      "internal_free": 60504,
+      "internal_min_since_boot": 46376,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7848
+    }
+  },
+  "after_ground_idle": {
+    "detected": true,
+    "state": "UNINITIALIZED",
+    "tx_stack_unused": 0,
+    "rx_stack_unused": 0,
+    "samples": [
+      {
+        "internal_free": 93632,
+        "internal_min_since_boot": 46376,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 93632,
+        "internal_min_since_boot": 46376,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 93632,
+        "internal_min_since_boot": 46376,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 93632,
+        "internal_min_since_boot": 46376,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 93632,
+        "internal_min_since_boot": 46376,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      }
+    ],
+    "median": {
+      "internal_free": 93632,
+      "internal_min_since_boot": 46376,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7848
+    }
+  },
+  "flight_active": {
+    "detected": true,
+    "state": "RUNNING",
+    "tx_stack_unused": 2872,
+    "rx_stack_unused": 3340,
+    "samples": [
+      {
+        "internal_free": 81868,
+        "internal_min_since_boot": 46376,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 81868,
+        "internal_min_since_boot": 46376,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 81868,
+        "internal_min_since_boot": 46376,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 81868,
+        "internal_min_since_boot": 46376,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 81868,
+        "internal_min_since_boot": 46376,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      }
+    ],
+    "median": {
+      "internal_free": 81868,
+      "internal_min_since_boot": 46376,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7848
+    }
+  },
+  "flight_web_app": {
+    "detected": true,
+    "state": "UNINITIALIZED",
+    "tx_stack_unused": 0,
+    "rx_stack_unused": 0,
+    "samples": [
+      {
+        "internal_free": 106080,
+        "internal_min_since_boot": 44896,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 106080,
+        "internal_min_since_boot": 44896,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 106080,
+        "internal_min_since_boot": 44896,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 106080,
+        "internal_min_since_boot": 44896,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 106080,
+        "internal_min_since_boot": 44896,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      }
+    ],
+    "median": {
+      "internal_free": 106080,
+      "internal_min_since_boot": 44896,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7848
+    }
+  },
+  "flight_web_app_http_status": 200,
+  "flight_resumed": {
+    "detected": true,
+    "state": "RUNNING",
+    "tx_stack_unused": 2740,
+    "rx_stack_unused": 3352,
+    "samples": [
+      {
+        "internal_free": 80904,
+        "internal_min_since_boot": 43176,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 80904,
+        "internal_min_since_boot": 43176,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 80904,
+        "internal_min_since_boot": 43176,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 80904,
+        "internal_min_since_boot": 43176,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      },
+      {
+        "internal_free": 80904,
+        "internal_min_since_boot": 43176,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7848
+      }
+    ],
+    "median": {
+      "internal_free": 80904,
+      "internal_min_since_boot": 43176,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7848
+    }
+  },
+  "flight_stopped": {
+    "detected": true,
+    "state": "UNINITIALIZED",
+    "tx_stack_unused": 0,
+    "rx_stack_unused": 0,
+    "samples": [
+      {
+        "internal_free": 92300,
+        "internal_min_since_boot": 43176,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7416
+      },
+      {
+        "internal_free": 92300,
+        "internal_min_since_boot": 43176,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7416
+      },
+      {
+        "internal_free": 92300,
+        "internal_min_since_boot": 43176,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7416
+      },
+      {
+        "internal_free": 92300,
+        "internal_min_since_boot": 43176,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7416
+      },
+      {
+        "internal_free": 92300,
+        "internal_min_since_boot": 43176,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7416
+      }
+    ],
+    "median": {
+      "internal_free": 92300,
+      "internal_min_since_boot": 43176,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7416
+    }
+  },
+  "passed": true
+}

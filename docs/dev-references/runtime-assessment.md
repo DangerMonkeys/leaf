@@ -10,16 +10,50 @@ firmware release, collect and review simulator and hardware reports for the fixe
 or record an explicit exception. It is not required for every PR. See [Releasing](releasing.md)
 and the [remaining backlog](backlog/runtime-resource-assessment.md).
 
+See [Vario timing robustness](backlog/vario-timing-robustness.md) for the
+field evidence and plan to protect sensor updates and audio from SD stalls.
+
+## Monitor stack headroom during regular use
+
+In **Menu → Developer → Stacks**, select **START** before using the Leaf.
+The monitor checks the loop, BLE worker, and FANET transmit and receive
+workers every 30 seconds. It also reads a worker's watermark before the
+worker is deleted, so radio restarts during the session preserve earlier lows.
+FreeRTOS tracks each task instance's least unused stack since it started.
+For tasks already running when monitoring begins, the result can therefore
+include earlier activity.
+
+Select **STOP** to write a new `/diagnostics/stack_N.csv` to the SD card.
+The Leaf also saves the session automatically at normal power-off and
+low-battery shutdown. If the save fails while the Leaf is still powered,
+select **SAVE** to retry. Retrieve the CSV through USB storage. It contains one row per
+task with the session duration, number of observed task instances, and
+minimum unused stack in bytes. A blank minimum means the task was absent
+throughout the session. A numeric zero is a measured watermark.
+
+The monitor keeps fixed-size counters in RAM and writes only at manual
+save or shutdown. Save manually before a forced reset or firmware update.
+Record the workloads exercised so the
+measurements can inform changes to stack sizes.
+
+Current stack sizes remain unchanged. Further reductions are deferred for stable-release
+work; see the [memory follow-up plan](backlog/memory-optimization-followup.md) for the
+lowest retained measurements, conservative future trial sizes and missing workloads.
+
 ## Capture on a Leaf
 
 Build the matching hardware's release environment. Enable Developer mode. Leave optional
 network/web/vario diagnostic SD logs disabled for a clean timing measurement. Normal IGC
 logging should stay enabled when measuring flight behavior.
 
-1. In Menu > Developer, select **Runtime: START**. This allocates a fixed capture buffer of
-   bounded internal-RAM buffer before measurement; the exact size is exported as `capture_bytes`.
-   Allocation requires space for the buffer plus a 32 KB reserve. A failure
-   plays the error sound, shows ERR, and prints the allocation reason on serial.
+1. In Menu > Developer, select **Runtime: START**. This allocates two fixed
+   internal-RAM blocks before measurement. Their combined size is exported as
+   `capture_bytes`. The recorder preserves a 32 KiB internal-heap reserve.
+   A failure plays the error sound, shows ERR, and prints the free heap,
+   largest block, requested block sizes, and reserve on serial.
+   Starting from the device menu disconnects its background Wi-Fi connection
+   when the Web App is closed. Reopening the menu during the capture skips
+   automatic Wi-Fi connection.
 2. Exercise the intended operating mode manually. Record settings, active page, sensor source,
    radio/client activity, SD card, and elapsed time. Do not assume enabled features were exercised.
 3. Select **Runtime: STOP** to freeze and save a new `/diagnostics/runtime_N.json` on the SD
@@ -42,6 +76,12 @@ Invoke-WebRequest -Method Post -Uri 'http://<leaf>/api/debug/runtime' -Body @{ac
 Invoke-WebRequest -Method Post -Uri 'http://<leaf>/api/debug/runtime' -Body @{action='export'}
 Invoke-WebRequest -Uri 'http://<leaf>/api/debug/runtime/download' -OutFile runtime.json
 ```
+
+After freezing, submit `action=discard` to release the capture's memory
+without saving it. If Developer mode is turned off, Leaf releases any
+unsaved capture, including one still running. Export a capture first if
+you need to keep it on the SD card.
+
 
 The existing CPU utilization checkbox now enables bounded RAM capture; disabling it freezes.
 It no longer writes a wide CSV every second. The menu's STOP action also exports; the HTTP
@@ -227,8 +267,10 @@ The profiler retains eight recent sentences and the four largest sentence deadli
 plus full-run per-type statistics and phase counts. It emits no sentence text/coordinates and
 performs no formatting, allocation or I/O while recording. Recent slot history is eight slots
 and memory history sixteen samples; endpoints, sampled minima, and separately retained worst
-slot/predecessor records remain intact. The current 3.2.8 capture is 22,496 bytes, only 176 bytes
-more than schema 2. The exported size/capacities remain authoritative for each build. Profile
+slot/predecessor records remain intact. The earlier single-block schema-3 capture was 22,496
+bytes, 176 bytes more than schema 2. The current split capture uses 12,800 B and 9,704 B
+allocations (22,504 B total), preserving the telemetry and 32 KiB reserve. The exported
+size/capacities remain authoritative for each build. Profile
 record-bookkeeping maximum is disclosed, but not a complete isolated profiler overhead bound.
 
 Only the loop thread mutates the profiler. Asynchronous GPS injections are counted as excluded;
@@ -250,7 +292,8 @@ Use one firmware image. With capture off, there is no capture-buffer allocation,
 memory sampling, per-slot timestamp collection or timing-log writing. Hooks use inline relaxed atomic
 flag reads; capture-only slot calculations are guarded. Developer controls allocate their web
 routes only in Developer mode. The timer counter and small control state remain present.
-Capture cannot start with Developer mode off, and disabling that mode freezes active capture.
+Capture cannot start with Developer mode off, and disabling that mode discards unsaved capture
+and releases both allocations. Export first to preserve the data.
 STOP deliberately retains data until export; successful export releases the buffer.
 
 ## Accounting and limits

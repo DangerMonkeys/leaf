@@ -1,0 +1,26 @@
+{
+  "utc": "2026-11-20T01:01:21.481021+00:00",
+  "base": "http://10.0.0.183",
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/api/debug/raw-xbm",
+      "request_bytes": 0,
+      "status": 200,
+      "seconds": 0.094,
+      "bytes": 11697,
+      "sha256": "18f1103977c89418756e80d9e235bc84037d207b2b55a6ef4a09a4b554e0b957",
+      "body": "Saved screen bitmap"
+    },
+    {
+      "method": "GET",
+      "path": "/api/debug/runtime",
+      "request_bytes": 0,
+      "status": 404,
+      "seconds": 0.016,
+      "bytes": 9,
+      "sha256": "e3ebaa16dd9d9b9fc107c42183fb6cf9d22927e1af03dbbdfa0ccc38e4e4ac31",
+      "body": "Not found"
+    }
+  ]
+}

@@ -1,0 +1,109 @@
+{
+  "utc": "2026-11-20T01:14:16.354301+00:00",
+  "steps": [
+    {
+      "command": "press DOWN",
+      "reply": "ok",
+      "seconds": 0.313
+    },
+    {
+      "command": "press DOWN",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press DOWN",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press CENTER",
+      "reply": "ok",
+      "seconds": 0.312
+    },
+    {
+      "command": "press DOWN",
+      "reply": "ok",
+      "seconds": 0.328
+    },
+    {
+      "command": "press CENTER",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "status",
+      "reply": "status On Menu 7 0 0 1 0 0 1",
+      "seconds": 0.016
+    },
+    {
+      "command": "heap",
+      "reply": "heap 111756 28740 31732 7548",
+      "seconds": 0.0
+    },
+    {
+      "command": "press LEFT",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press UP",
+      "reply": "ok",
+      "seconds": 0.312
+    },
+    {
+      "command": "press UP",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press CENTER",
+      "reply": "ok",
+      "seconds": 0.312
+    },
+    {
+      "command": "wait 3",
+      "reply": "waited",
+      "seconds": 3.188
+    },
+    {
+      "command": "web",
+      "reply": "web http://192.168.4.1/app",
+      "seconds": 0.0
+    },
+    {
+      "command": "ip",
+      "reply": "ip 0.0.0.0 192.168.4.1",
+      "seconds": 0.016
+    }
+  ],
+  "initial": {
+    "power": "On",
+    "page": "Menu",
+    "cursor": 7,
+    "modal_depth": 0,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": false,
+    "flight_running": false,
+    "firmware_sd_access": true
+  },
+  "final": {
+    "power": "On",
+    "page": "Menu",
+    "cursor": -1,
+    "modal_depth": 1,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": false,
+    "flight_running": false,
+    "firmware_sd_access": true
+  },
+  "heap": {
+    "internal_free": 107208,
+    "internal_min_since_boot": 28740,
+    "internal_largest": 31732,
+    "loop_stack_unused": 7548
+  },
+  "screen_error": "URLError(TimeoutError('timed out'))"
+}

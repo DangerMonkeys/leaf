@@ -1,0 +1,31 @@
+{
+  "source_commit": "8a435a426f5383b0097ee96df40cad47ed4ea873",
+  "environment": "leaf_3_2_5_bench",
+  "usb_serial": "F0F5BD5616A0",
+  "artifacts": {
+    "firmware.bin": {
+      "bytes": 2438496,
+      "sha256": "42edeeffa28e30cd9d67c0003d00258575467e57154c901d2598354581fd3ea6"
+    },
+    "firmware.elf": {
+      "bytes": 37887284,
+      "sha256": "195d28e90a26262a4aa9669c4abf6c717d6972c64b0a518aecf753def798447e"
+    }
+  },
+  "phase": "tests completed: shutdown/lifecycle passed; strict IGC header validation fails known Unicode issue",
+  "reported_version": "0.2.4-8a4.bench+h3.2.5",
+  "linked_static_bytes": 86388,
+  "linked_flash_bytes": 2437852,
+  "fanet_detected": true,
+  "fanet_region": "US",
+  "fanet_running_before_flight": false,
+  "bluetooth_enabled": true,
+  "bluetooth_name": "Leaf16A0",
+  "original_config": "config 1 1 1 0 0 0 0 0",
+  "original_start_page": "Navigate",
+  "stack_monitor_started": true,
+  "phone_connected_tests": 2,
+  "fanet_receive_observations": 125,
+  "restored_fanet_log_enabled": false,
+  "forwarding_restored_to_original": true
+}

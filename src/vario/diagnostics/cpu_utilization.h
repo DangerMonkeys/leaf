@@ -22,6 +22,7 @@ namespace cpu_utilization {
   void update();
   bool start();
   void freeze();
+  bool discard();
   bool exportToSd();
   const char* exportedPath();
   bool writeJson(Print& output);

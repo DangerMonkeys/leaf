@@ -114,6 +114,15 @@ void Buttons::startDebouncing(Button button) {
 
 void Buttons::update() {
   Button button = inspectPins();
+#ifdef LEAF_USB_BENCH_CONSOLE
+  if (benchButton_ != Button::NONE) {
+    if (button != Button::NONE || millis() - benchPressedAt_ >= benchDurationMs_) {
+      benchButton_ = Button::NONE;
+    } else {
+      button = benchButton_;
+    }
+  }
+#endif
 
   if (suppressUntilRelease_) {
     if (button == Button::NONE) {
@@ -200,6 +209,18 @@ void Buttons::update() {
     fatalError("Buttons::update found unsupported state '%s' (%u)", nameOf(state_).c_str(), state_);
   }
 }
+
+#ifdef LEAF_USB_BENCH_CONSOLE
+bool Buttons::pressForBench(Button button, uint32_t durationMs) {
+  if (benchButton_ != Button::NONE || state_ != State::Up || suppressUntilRelease_ ||
+      inspectPins() != Button::NONE)
+    return false;
+  benchButton_ = button;
+  benchPressedAt_ = millis();
+  benchDurationMs_ = durationMs;
+  return true;
+}
+#endif
 
 Button Buttons::inspectPins() {
   Button button = Button::NONE;

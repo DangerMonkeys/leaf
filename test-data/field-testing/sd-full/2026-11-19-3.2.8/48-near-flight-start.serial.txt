@@ -1,0 +1,48 @@
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH status On Menu -1 1 0 1 1 0 1
+
+HOST press LEFT
+BENCH ok
+
+HOST press LEFT
+button: LEFT   state: PRESSED     hold count: 0
+button: LEFT   state: CLICKED     hold count: 0
+704789 playSound 1008677476
+button: LEFT   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press UP
+button: LEFT   state: PRESSED     hold count: 0
+button: LEFT   state: CLICKED     hold count: 0
+705090 playSound 1008700904
+button: LEFT   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press CENTER
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+705399 playSound 1008724150
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST status
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+705709 playSound 1008578976
+button: CENTER state: RELEASED    hold count: 0
+Sectors: 15741312
+705767 playSound 1008578950
+logbook: write error=28 expected=1327 actual=1312
+BENCH status On User 0 0 0 1 1 1 1
+
+HOST wait 10
+LSM6DSV: a=-0.0029,-0.0051,0.9938 g=-0.0044,-0.0057,0.9994 pairsLSM6DSV: a=-0.0044,-0.0041,0.9936 g=-0.0048,-0.0046,0.9994 pairs
+HOST status
+BENCH status On User 0 0 0 1 1 1 1
+
+HOST heap
+BENCH heap 54512 27792 31732 7548
+BENCH status On User 0 0 0 1 1 1 1
+BENCH heap 54512 27792 31732 7548
+BENCH web http://10.0.0.183/app

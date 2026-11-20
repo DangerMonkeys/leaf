@@ -1,0 +1,22 @@
+{
+  "utc": "2026-11-20T16:51:28.239869+00:00",
+  "steps": [
+    {
+      "command": "hold CENTER 1000",
+      "reply": "ok",
+      "seconds": 1.296
+    }
+  ],
+  "initial": {
+    "power": "OffUSB",
+    "page": "Charging",
+    "cursor": 0,
+    "modal_depth": 0,
+    "warning": false,
+    "climb_ready": false,
+    "gps_fix": false,
+    "flight_running": false,
+    "firmware_sd_access": false
+  },
+  "error": "SerialException(\"ClearCommError failed (PermissionError(13, 'The device does not recognize the command.', None, 22))\")"
+}

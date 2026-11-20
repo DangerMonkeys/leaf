@@ -117,6 +117,13 @@ TARGET  := $(BUILD)/leafsim
 .PHONY: all clean deps test-thermal-core test-free-flight test-thermal-track test-display-settings test-leaf-log-sync test-udp-injection
 all: $(TARGET)
 
+.PHONY: test-checked-storage
+$(BUILD)/checked_storage_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/checked_storage.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/checked_storage.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-checked-storage: $(BUILD)/checked_storage_test
+	@cd $(ROOT) && $(BUILD)/checked_storage_test .pio/storage-fix-review/simulator
+
 .PHONY: test-g-load
 $(BUILD)/igc_sensor_log_test: $(SIM)/tests/igc_sensor_log.cpp $(ROOT)/src/vario/logbook/igc_sensor_log.h $(ROOT)/src/vario/instruments/g_load_tracker.h
 	@mkdir -p $(BUILD)
@@ -432,7 +439,14 @@ $(BUILD)/shutdown_integration_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(
 test-shutdown: $(BUILD)/shutdown_policy_test $(BUILD)/shutdown_rtc_test $(BUILD)/shutdown_integration_test
 	@$(BUILD)/shutdown_policy_test
 	@$(BUILD)/shutdown_rtc_test
-	@cd $(ROOT) && for mode in normal disabled lock save worker sound peripherals asleep clear latch ble hold nested watchdog rtc rtcble recovery; do $(BUILD)/shutdown_integration_test $$mode || exit $$?; done
+	@cd $(ROOT) && for mode in normal low-battery disabled lock save worker sound peripherals asleep clear latch ble hold nested pending watchdog rtc rtcble recovery; do $(BUILD)/shutdown_integration_test $$mode || exit $$?; done
+
+$(BUILD)/shutdown_bus_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/shutdown_bus.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/shutdown_bus.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+.PHONY: test-shutdown-bus
+test-shutdown-bus: $(BUILD)/shutdown_bus_test
+	@cd $(ROOT) && for mode in concurrent timeout; do $(BUILD)/shutdown_bus_test $$mode || exit $$?; done
 
 # Build all sources consistently with the explicit developer-only menu flag.
 .PHONY: test-shutdown-menu run-shutdown-menu

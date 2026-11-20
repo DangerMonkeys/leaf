@@ -1,0 +1,60 @@
+BENCH version 0.2.4-45ed.bench+h3.2.8
+BENCH version 0.2.4-45ed.bench+h3.2.8
+BENCH status On User -1 1 0 1 0 0 1
+
+HOST press CENTER
+BENCH ok
+
+HOST press RIGHT
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+button: CENTER state: RELEASED    hold count: 0
+BENCH ok
+
+HOST wait 8
+button: RIGHT  state: PRESSED     hold count: 0
+button: RIGHT  state: CLICKED     hold count: 0
+465656 playSound 1008728188
+WiFi coordinator: trying saved network 0 'SkyWagon'
+button: RIGHT  state: RELEASED    hold count: 0
+UDP injection enabled
+LSM6DSV: a=-0.0015,-0.0056,0.9926 g=-0.0018,-0.0056,1.0014 pairs
+HOST press UP
+BENCH ok
+
+HOST press UP
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+473977 playSound 1008598718
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press UP
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+474277 playSound 1008598718
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press CENTER
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+474586 playSound 1008598718
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST wait 2
+button: CENTER state: PRESSED     hold count: 0
+LSM6DSV: a=-0.0017,-0.0059,0.9926 g=-0.0018,-0.0057,1.0014 pairsbutton: CENTER state: CLICKED     hold count: 0
+474887 playSound 1008704942
+button: CENTER state: RELEASED    hold count: 0
+Speaker::update skipped 1 intervals
+
+HOST web
+BENCH web http://10.0.0.183/app
+
+HOST status
+BENCH status On Menu -1 1 0 1 0 0 1
+BENCH status On Menu -1 1 0 1 0 0 1
+BENCH heap 57536 52728 31732 7868
+BENCH web http://10.0.0.183/app

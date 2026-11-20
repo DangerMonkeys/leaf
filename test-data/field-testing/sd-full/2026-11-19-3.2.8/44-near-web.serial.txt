@@ -1,0 +1,57 @@
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH status On User 0 0 0 1 0 0 1
+
+HOST press RIGHT
+BENCH ok
+
+HOST wait 4
+button: RIGHT  state: PRESSED     hold count: 0
+button: RIGHT  state: CLICKED     hold count: 0
+614358 playSound 1008724160
+WiFi coordinator: trying saved network 0 'SkyWagon'
+button: RIGHT  state: RELEASED    hold count: 0
+LSM6DSV: a=-0.0044,0.0010,0.9938 g=-0.0037,-0.0049,0.9994 pairs=
+HOST press UP
+BENCH ok
+
+HOST press UP
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+618669 playSound 1008598446
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press UP
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+618969 playSound 1008598446
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press CENTER
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+619280 playSound 1008598446
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST wait 2
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+619579 playSound 1008700914
+button: CENTER state: RELEASED    hold count: 0
+Speaker::update skipped 13 intervals
+LSM6DSV: t=620137 discarded FIFO backlog (72 words)
+UDP injection enabled
+LSM6DSV: a=-0.0044,-0.0046,0.9933 g=-0.0048,-0.0046,0.9994 pairs
+HOST web
+BENCH web http://192.168.4.1/app
+
+HOST ip
+BENCH ip 0.0.0.0 192.168.4.1
+
+HOST status
+BENCH status On Menu -1 1 0 1 0 0 1
+BENCH status On Menu -1 1 0 1 0 0 1
+BENCH heap 53692 28740 31732 7548
+BENCH web http://192.168.4.1/app

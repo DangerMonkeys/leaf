@@ -1,0 +1,14 @@
+{
+  "firmware.bin": {
+    "bytes": 2411392,
+    "sha256": "ca939e56601655d5c630efb66b80daad68b815942aaae79808f6eeceb22ed810"
+  },
+  "firmware.elf": {
+    "bytes": 37799228,
+    "sha256": "373b6e0d63d6f6ddd1c16d62a3705a04bcbdbd6d073089102c0c24f1d1f5dc06"
+  },
+  "source_commit": "b1ed6ae14d09eb1988d4b515297cfaa05a3f4a63",
+  "environment": "leaf_3_2_8_bench",
+  "code_changes": "Only added a 3.2.8 bench environment; firmware logic unchanged",
+  "device_mac": "7c:4f:ad:3b:ac:b0"
+}

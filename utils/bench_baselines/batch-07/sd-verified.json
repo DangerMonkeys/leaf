@@ -1,0 +1,18 @@
+{
+  "previous_buslogs_preserved": true,
+  "legacy_csv_unchanged": true,
+  "test_buslogs_removed": true,
+  "legacy_csv_bytes": 1098383,
+  "candidate_logs": [
+    {
+      "type": "candidate",
+      "bytes": 41227,
+      "pressure_records": 350
+    },
+    {
+      "type": "candidate",
+      "bytes": 101819,
+      "pressure_records": 846
+    }
+  ]
+}

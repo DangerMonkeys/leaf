@@ -1,0 +1,104 @@
+{
+  "utc": "2026-11-20T02:35:11.948222+00:00",
+  "steps": [
+    {
+      "command": "sdstartup",
+      "reply": "sdstartup 362",
+      "seconds": 0.0
+    },
+    {
+      "command": "status",
+      "reply": "status On User -1 1 1 1 0 0 1",
+      "seconds": 0.0
+    },
+    {
+      "command": "press DOWN",
+      "reply": "ok",
+      "seconds": 0.313
+    },
+    {
+      "command": "press CENTER",
+      "reply": "ok",
+      "seconds": 0.296
+    },
+    {
+      "command": "press CENTER",
+      "reply": "ok",
+      "seconds": 0.313
+    },
+    {
+      "command": "status",
+      "reply": "status On User 0 0 0 1 0 0 1",
+      "seconds": 0.0
+    },
+    {
+      "command": "press RIGHT",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "wait 8",
+      "reply": "waited",
+      "seconds": 8.031
+    },
+    {
+      "command": "press UP",
+      "reply": "ok",
+      "seconds": 0.313
+    },
+    {
+      "command": "press UP",
+      "reply": "ok",
+      "seconds": 0.312
+    },
+    {
+      "command": "press UP",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press CENTER",
+      "reply": "ok",
+      "seconds": 0.312
+    },
+    {
+      "command": "wait 2",
+      "reply": "waited",
+      "seconds": 2.157
+    },
+    {
+      "command": "web",
+      "reply": "web http://10.0.0.183/app",
+      "seconds": 0.0
+    }
+  ],
+  "initial": {
+    "power": "On",
+    "page": "User",
+    "cursor": -1,
+    "modal_depth": 1,
+    "warning": true,
+    "climb_ready": true,
+    "gps_fix": false,
+    "flight_running": false,
+    "firmware_sd_access": true
+  },
+  "final": {
+    "power": "On",
+    "page": "Menu",
+    "cursor": -1,
+    "modal_depth": 1,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": false,
+    "flight_running": false,
+    "firmware_sd_access": true
+  },
+  "heap": {
+    "internal_free": 119296,
+    "internal_min_since_boot": 60544,
+    "internal_largest": 31732,
+    "loop_stack_unused": 8300
+  },
+  "screen": "36-reconciled-warning.png"
+}

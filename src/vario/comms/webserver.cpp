@@ -1,4 +1,5 @@
 #include "comms/webserver.h"
+
 #include <ArduinoJson.h>
 #include <DNSServer.h>
 #include <FS.h>
@@ -19,6 +20,7 @@
 #include "comms/ota.h"
 #include "comms/udp_message_server.h"
 #include "comms/wifi_coordinator.h"
+#include "detail/RequestHandler.h"
 #include "diagnostics/cpu_utilization.h"
 #include "diagnostics/diagnostic_logs.h"
 #include "diagnostics/diagnostic_network/diagnostic_network.h"
@@ -29,12 +31,14 @@
 #include "instruments/gps.h"
 #include "logbook/logbook_io.h"
 #include "logbook/logbook_store.h"
+#include "logging/log.h"
 #include "navigation/gpx.h"
 #include "navigation/optimized_route_guidance.h"
 #include "navigation/route_store.h"
 #include "navigation/user_waypoints.h"
 #include "power.h"
 #include "profiles/profile_store.h"
+#include "storage/checked_file.h"
 #include "storage/sd_card.h"
 #include "system/version_info.h"
 #include "ui/audio/speaker.h"
@@ -42,9 +46,62 @@
 #include "ui/settings/settings.h"
 
 namespace {
-  ::WebServer user_server(80);
+  // Arduino ESP32 3.1.0 retains these arrays after processing the request and
+  // does not delete them in the base destructor.
+  class LeafWebServer : public WebServer {
+   public:
+    using WebServer::WebServer;
+
+    ~LeafWebServer() { releaseRequestArguments(); }
+
+    const String& body() const {
+      for (int i = 0; i < _postArgsLen; ++i)
+        if (_postArgs[i].key == "plain") return _postArgs[i].value;
+      for (int i = 0; i < _currentArgCount; ++i)
+        if (_currentArgs[i].key == "plain") return _currentArgs[i].value;
+      static const String empty;
+      return empty;
+    }
+
+    void skipRequestBody() { _clientContentLength = 0; }
+
+    void handleClient() {
+      WebServer::handleClient();
+      // Request parsing, upload callbacks and response handlers run synchronously.
+      releaseRequestArguments();
+    }
+
+    void stopHosting() {
+      stop();
+      _currentClient.stop();
+      _currentClient = NetworkClient();
+      _currentUpload.reset();
+      _currentRaw.reset();
+      _currentHandler = nullptr;
+      releaseRequestArguments();
+      while (_firstHandler) {
+        auto* handler = _firstHandler;
+        _firstHandler = handler->next();
+        delete handler;
+      }
+      _lastHandler = nullptr;
+      onNotFound(nullptr);
+    }
+
+   private:
+    void releaseRequestArguments() {
+      delete[] _currentArgs;
+      _currentArgs = nullptr;
+      _currentArgCount = 0;
+      delete[] _postArgs;
+      _postArgs = nullptr;
+      _postArgsLen = 0;
+    }
+  };
+
+  LeafWebServer user_server(80);
   DNSServer dns_server;
-  String send_buffer = "";
+  String* screenshot_output = nullptr;
   bool user_server_started = false;
   bool user_server_routes_configured = false;
   bool commissioning_routes_configured = false;
@@ -92,14 +149,12 @@ namespace {
   static constexpr size_t PROFILE_FILE_MAX_BYTES = 6144;
   static constexpr size_t ROUTE_IMPORT_REQUEST_MAX_BYTES = 10000;
   static constexpr size_t ROUTE_EDITOR_REQUEST_MAX_BYTES = 18000;
-  static constexpr size_t USER_WAYPOINTS_MAX_BYTES = 24576;
   static constexpr size_t NAV_UPLOAD_MAX_BYTES = 262144UL;
   static constexpr uint32_t NAV_POINTS_MIN_FREE_HEAP = 18000;
   static constexpr uint32_t NAV_POINTS_MIN_MAX_ALLOC = 6000;
-  static constexpr const char* PROFILE_TEMP_FILE = "/profiles/profiles.tmp";
-  static constexpr const char* PROFILE_BACKUP_FILE = "/profiles/profiles.bak";
   static constexpr const char* WAYPOINTS_DIR = "/waypoints";
   static constexpr const char* NAV_UPLOAD_TEMP_FILE = "/waypoints/upload.tmp";
+  static constexpr const char* ROUTE_REQUEST_TEMP_FILE = "/routes/request.tmp";
   static constexpr size_t WIFI_SETUP_NETWORKS_JSON_RESERVE = 896;
   static constexpr uint32_t WEB_REQUEST_SLOW_MS = 1000;
   static constexpr const char* LEAF_LOG_BASE_URL = "https://log.leafvario.com";
@@ -166,6 +221,14 @@ namespace {
 
   bool commissioningHttpAllowed() {
     return diagnostic_network.connected() && !settings.commissioningComplete;
+  }
+
+  void stopWebHosting() {
+    user_server.stopHosting();
+    user_server_started = false;
+    user_server_routes_configured = false;
+    commissioning_routes_configured = false;
+    debug_routes_configured = false;
   }
 
   void logWifiSetupTiming(const char* event) {
@@ -867,14 +930,8 @@ namespace {
     return "";
   }
 
-  bool validUserWaypointJson(JsonObjectConst point) {
-    const double lat = point["lat"] | NAN;
-    const double lon = point["lon"] | NAN;
-    return !isnan(lat) && !isnan(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
-  }
-
   uint8_t mergeUserWaypointIntoNavigator(JsonObjectConst point) {
-    if (!validUserWaypointJson(point)) return 0;
+    if (!user_waypoints::validPoint(point)) return 0;
 
     Waypoint waypoint;
     const char* sourceName = point["name"] | "";
@@ -1153,11 +1210,10 @@ namespace {
       BLE::get().end();
     }
 
-    user_app_restart_fanet = fanetRadio.getState() == FanetRadioState::RUNNING;
+    user_app_restart_fanet =
+        !flightTimer_isRunning() && fanetRadio.getState() == FanetRadioState::RUNNING;
     user_app_fanet_region = settings.fanet_region;
-    if (user_app_restart_fanet) {
-      fanetRadio.end();
-    }
+    fanetRadio.end();
 
     user_app_services_paused = true;
   }
@@ -1165,7 +1221,8 @@ namespace {
   void resumeServicesAfterUserApp() {
     if (!user_app_services_paused) return;
 
-    if (user_app_restart_fanet && settings.fanet_region != FanetRadioRegion::OFF) {
+    if (flightTimer_isRunning() ||
+        (user_app_restart_fanet && settings.fanet_region != FanetRadioRegion::OFF)) {
       fanetRadio.begin(settings.fanet_region);
     } else if (user_app_restart_fanet && user_app_fanet_region != FanetRadioRegion::OFF) {
       fanetRadio.begin(user_app_fanet_region);
@@ -1285,6 +1342,10 @@ namespace {
       return;
     }
 
+    if (!checked_file::recover(ProfileStore::filePath())) {
+      target.send(500, "application/json", "{\"detail\":\"Profiles could not be recovered.\"}");
+      return;
+    }
     if (!SD_MMC.exists(ProfileStore::filePath())) {
       sendNoStoreHeaders(target);
       target.send(200, "application/json", emptyProfilesJson());
@@ -1357,40 +1418,12 @@ namespace {
 
   bool writeProfilesBody(const String& body) {
     if (!SD_MMC.exists(ProfileStore::directoryPath()) &&
-        !SD_MMC.mkdir(ProfileStore::directoryPath())) {
+        !SD_MMC.mkdir(ProfileStore::directoryPath()))
       return false;
-    }
-
-    if (SD_MMC.exists(PROFILE_TEMP_FILE)) SD_MMC.remove(PROFILE_TEMP_FILE);
-    if (SD_MMC.exists(PROFILE_BACKUP_FILE)) SD_MMC.remove(PROFILE_BACKUP_FILE);
-
-    File file = SD_MMC.open(PROFILE_TEMP_FILE, "w", true);
-    if (!file) return false;
-
-    const size_t written = file.print(body);
-    file.close();
-    if (written != body.length()) {
-      SD_MMC.remove(PROFILE_TEMP_FILE);
-      return false;
-    }
-
-    const bool hadExisting = SD_MMC.exists(ProfileStore::filePath());
-    if (hadExisting && !SD_MMC.rename(ProfileStore::filePath(), PROFILE_BACKUP_FILE)) {
-      SD_MMC.remove(PROFILE_TEMP_FILE);
-      return false;
-    }
-
-    if (!SD_MMC.rename(PROFILE_TEMP_FILE, ProfileStore::filePath())) {
-      if (hadExisting) SD_MMC.rename(PROFILE_BACKUP_FILE, ProfileStore::filePath());
-      SD_MMC.remove(PROFILE_TEMP_FILE);
-      return false;
-    }
-
-    if (hadExisting) SD_MMC.remove(PROFILE_BACKUP_FILE);
-    return true;
+    return checked_file::replaceBytes(ProfileStore::filePath(), body);
   }
 
-  void saveProfiles(WebServer& target) {
+  void saveProfiles(LeafWebServer& target) {
     heap_monitor::checkpoint("profiles-put-start");
     if (!user_app_enabled) {
       target.send(404, "application/json", "{\"detail\":\"Leaf Web App is not active.\"}");
@@ -1402,7 +1435,7 @@ namespace {
       return;
     }
 
-    const String body = target.arg("plain");
+    const String& body = target.body();
     if (!profilesRequestLooksValid(body)) {
       heap_monitor::checkpoint("profiles-put-invalid");
       target.send(
@@ -1457,6 +1490,7 @@ namespace {
   }
 
   bool loadProfilesForUpdate(JsonDocument& doc) {
+    if (!checked_file::recover(ProfileStore::filePath())) return false;
     if (SD_MMC.exists(ProfileStore::filePath())) {
       File file = SD_MMC.open(ProfileStore::filePath(), "r");
       if (!file) return false;
@@ -1669,30 +1703,190 @@ namespace {
     target.send(200, "application/json", json);
   }
 
-  void importRoute(WebServer& target) {
+  enum class RouteRequestStatus : uint8_t {
+    Empty,
+    Receiving,
+    Ready,
+    Unavailable,
+    Invalid,
+    SdError
+  };
+  File route_request_file;
+  RouteRequestStatus route_request_status = RouteRequestStatus::Empty;
+  size_t route_request_size = 0;
+  bool route_request_owns_file = false;
+
+#ifdef LEAF_USB_BENCH_CONSOLE
+  struct RouteHeapMeasurement {
+    uint32_t before = 0;
+    uint32_t minimum = 0;
+    bool active = false;
+
+    void start() {
+      before = heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+      minimum = 0;
+      active = heap_caps_monitor_local_minimum_free_size_start() == ESP_OK;
+    }
+
+    struct Scope;
+    void finish() {
+      if (!active) return;
+      minimum = heap_caps_get_minimum_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+      heap_caps_monitor_local_minimum_free_size_stop();
+      active = false;
+    }
+  };
+  struct RouteHeapMeasurement::Scope {
+    explicit Scope(RouteHeapMeasurement& measurement) : measurement(measurement) {
+      measurement.start();
+    }
+    ~Scope() { measurement.finish(); }
+    RouteHeapMeasurement& measurement;
+  };
+  RouteHeapMeasurement route_import_heap;
+  RouteHeapMeasurement waypoint_list_heap;
+  RouteHeapMeasurement route_receipt_heap;
+  RouteHeapMeasurement route_normalization_heap;
+#endif
+
+  void clearRouteRequest() {
+#ifdef LEAF_USB_BENCH_CONSOLE
+    route_receipt_heap.finish();
+#endif
+    route_request_file.close();
+    if (route_request_owns_file && !SD_MMC.remove(ROUTE_REQUEST_TEMP_FILE)) {
+      Serial.println("Could not remove the temporary route request");
+    }
+    route_request_owns_file = false;
+    route_request_status = RouteRequestStatus::Empty;
+    route_request_size = 0;
+  }
+
+  void receiveRouteRequest(size_t limit) {
+    HTTPRaw& raw = user_server.raw();
+    switch (raw.status) {
+      case RAW_START: {
+        clearRouteRequest();
+#ifdef LEAF_USB_BENCH_CONSOLE
+        route_receipt_heap.start();
+        route_normalization_heap = {};
+#endif
+        const int length = user_server.clientContentLength();
+        if (!user_app_enabled || !sdcard.isMounted()) {
+          route_request_status = RouteRequestStatus::Unavailable;
+        } else if (length <= 0 || static_cast<size_t>(length) > limit) {
+          route_request_status = RouteRequestStatus::Invalid;
+        } else {
+          route_request_size = length;
+          route_request_file = SD_MMC.open(ROUTE_REQUEST_TEMP_FILE, "w", true);
+          route_request_owns_file = bool(route_request_file);
+          route_request_status =
+              route_request_owns_file ? RouteRequestStatus::Receiving : RouteRequestStatus::SdError;
+        }
+        // Drain a small overflow without writing it, so the client can finish
+        // sending and reliably read the validation response. Cap even this work.
+        if (route_request_status != RouteRequestStatus::Receiving &&
+            (length <= 0 || static_cast<size_t>(length) > limit + sizeof(raw.buf)))
+          user_server.skipRequestBody();
+        break;
+      }
+      case RAW_WRITE:
+        if (route_request_status != RouteRequestStatus::Receiving) break;
+        // The core can issue a short callback after its read timeout, then
+        // wait for the next chunk again. End this incomplete request now.
+        if (raw.totalSize < route_request_size && raw.currentSize < sizeof(raw.buf)) {
+          route_request_status = RouteRequestStatus::Invalid;
+          user_server.skipRequestBody();
+        } else if (raw.totalSize > route_request_size ||
+                   route_request_file.write(raw.buf, raw.currentSize) != raw.currentSize) {
+          route_request_status = RouteRequestStatus::SdError;
+          user_server.skipRequestBody();
+        }
+        break;
+      case RAW_END:
+        route_request_file.close();
+#ifdef LEAF_USB_BENCH_CONSOLE
+        route_receipt_heap.finish();
+#endif
+        if (route_request_status == RouteRequestStatus::Receiving)
+          route_request_status = RouteRequestStatus::Ready;
+        break;
+      case RAW_ABORTED:
+        clearRouteRequest();
+        break;
+    }
+  }
+
+  // The raw callback is only called for non-multipart bodies. Keep this route out
+  // of the framework's file-upload callback, which shares the same on() overload.
+  class RouteRequestHandler : public RequestHandler {
+   public:
+    RouteRequestHandler(const char* path, void (*handler)(), void (*receiver)())
+        : path_(path), handler_(handler), receiver_(receiver) {}
+
+    bool canHandle(WebServer&, HTTPMethod method, const String& uri) override {
+      return method == HTTP_POST && uri == path_;
+    }
+    bool canRaw(WebServer& server, const String&) override {
+      // Let the core decode legacy form fields before we read its "plain" argument.
+      return !server.header("Content-Type").startsWith("application/x-www-form-urlencoded");
+    }
+    void raw(WebServer&, const String&, HTTPRaw&) override { receiver_(); }
+    bool handle(WebServer&, HTTPMethod, const String&) override {
+      handler_();
+      return true;
+    }
+
+   private:
+    const char* path_;
+    void (*handler_)();
+    void (*receiver_)();
+  };
+
+  bool decodeRouteRequest(LeafWebServer& target, JsonDocument& doc, size_t limit, bool importing) {
+    const char* invalid = importing ? "{\"detail\":\"Route import request is invalid.\"}"
+                                    : "{\"detail\":\"Route save request is invalid.\"}";
+    const char* invalidJson = importing ? "{\"detail\":\"Route import request is not JSON.\"}"
+                                        : "{\"detail\":\"Route save request is not JSON.\"}";
+    bool isValid = false;
+    if (!user_app_enabled || !sdcard.isMounted()) {
+      target.send(404, "application/json",
+                  !user_app_enabled ? "{\"detail\":\"Leaf Web App is not active.\"}"
+                                    : "{\"detail\":\"SD card is not mounted.\"}");
+    } else if (route_request_status == RouteRequestStatus::Empty) {
+      // Retain compatibility with the framework's multipart "plain" form argument.
+      const String& body = target.body();
+      if (body.isEmpty() || body.length() > limit) {
+        target.send(400, "application/json", invalid);
+      } else if (deserializeJson(doc, body)) {
+        target.send(400, "application/json", invalidJson);
+      } else {
+        isValid = true;
+      }
+    } else if (route_request_status == RouteRequestStatus::Invalid) {
+      target.send(400, "application/json", invalid);
+    } else {
+      File file;
+      if (route_request_status == RouteRequestStatus::Ready)
+        file = SD_MMC.open(ROUTE_REQUEST_TEMP_FILE, FILE_READ);
+      if (!file || file.size() != route_request_size) {
+        target.send(500, "application/json",
+                    "{\"detail\":\"Could not stage route request on SD card.\"}");
+      } else if (deserializeJson(doc, file)) {
+        target.send(400, "application/json", invalidJson);
+      } else {
+        isValid = true;
+      }
+      file.close();
+    }
+    clearRouteRequest();
+    return isValid;
+  }
+
+  void importRoute(LeafWebServer& target) {
     heap_monitor::checkpoint("route-import-start");
-    if (!user_app_enabled) {
-      target.send(404, "application/json", "{\"detail\":\"Leaf Web App is not active.\"}");
-      return;
-    }
-
-    if (!sdcard.isMounted()) {
-      target.send(404, "application/json", "{\"detail\":\"SD card is not mounted.\"}");
-      return;
-    }
-
-    const String body = target.arg("plain");
-    if (body.length() == 0 || body.length() > ROUTE_IMPORT_REQUEST_MAX_BYTES) {
-      target.send(400, "application/json", "{\"detail\":\"Route import request is invalid.\"}");
-      return;
-    }
-
     JsonDocument doc;
-    DeserializationError error = deserializeJson(doc, body);
-    if (error) {
-      target.send(400, "application/json", "{\"detail\":\"Route import request is not JSON.\"}");
-      return;
-    }
+    if (!decodeRouteRequest(target, doc, ROUTE_IMPORT_REQUEST_MAX_BYTES, true)) return;
 
     String name = doc["name"] | "";
     String data = doc["data"] | "";
@@ -1705,6 +1899,9 @@ namespace {
     }
     doc.clear();
 
+#ifdef LEAF_USB_BENCH_CONSOLE
+    RouteHeapMeasurement::Scope heapScope(route_import_heap);
+#endif
     route_store::ImportResult result;
     if (!route_store::importRouteText(name, data, activate, result)) {
       String json = "{\"saved\":";
@@ -1802,14 +1999,14 @@ namespace {
     heap_monitor::checkpoint("nav-data-end");
   }
 
-  void activateNavPoint(WebServer& target) {
+  void activateNavPoint(LeafWebServer& target) {
     if (!user_app_enabled) {
       target.send(404, "application/json", "{\"detail\":\"Leaf Web App is not active.\"}");
       return;
     }
 
     JsonDocument doc;
-    DeserializationError error = deserializeJson(doc, target.arg("plain"));
+    DeserializationError error = deserializeJson(doc, target.body());
     if (error) {
       target.send(400, "application/json", "{\"detail\":\"Nav activation request is not JSON.\"}");
       return;
@@ -1878,7 +2075,7 @@ namespace {
     json.finish();
   }
 
-  void activateWaypointFile(WebServer& target) {
+  void activateWaypointFile(LeafWebServer& target) {
     if (!user_app_enabled) {
       target.send(404, "application/json", "{\"detail\":\"Leaf Web App is not active.\"}");
       return;
@@ -1890,7 +2087,7 @@ namespace {
     }
 
     JsonDocument doc;
-    DeserializationError error = deserializeJson(doc, target.arg("plain"));
+    DeserializationError error = deserializeJson(doc, target.body());
     if (error) {
       target.send(400, "application/json",
                   "{\"detail\":\"Waypoint activation request is invalid.\"}");
@@ -1929,47 +2126,39 @@ namespace {
     target.send(200, "application/json", json);
   }
 
-  void saveEditedRoute(WebServer& target) {
+  void saveEditedRoute(LeafWebServer& target) {
     heap_monitor::checkpoint("route-save-start");
-    if (!user_app_enabled) {
-      target.send(404, "application/json", "{\"detail\":\"Leaf Web App is not active.\"}");
-      return;
-    }
-
-    if (!sdcard.isMounted()) {
-      target.send(404, "application/json", "{\"detail\":\"SD card is not mounted.\"}");
-      return;
-    }
-
-    const String body = target.arg("plain");
-    if (body.length() == 0 || body.length() > ROUTE_EDITOR_REQUEST_MAX_BYTES) {
-      target.send(400, "application/json", "{\"detail\":\"Route save request is invalid.\"}");
-      return;
-    }
-
-    JsonDocument input;
-    DeserializationError error = deserializeJson(input, body);
-    if (error) {
-      target.send(400, "application/json", "{\"detail\":\"Route save request is not JSON.\"}");
-      return;
-    }
-
-    String name = input["name"] | "";
+    JsonDocument routeDoc;
+    if (!decodeRouteRequest(target, routeDoc, ROUTE_EDITOR_REQUEST_MAX_BYTES, false)) return;
+    heap_monitor::checkpoint("route-editor-parsed");
+    JsonObject route = routeDoc.as<JsonObject>();
+    String name = route["name"] | "";
     name.trim();
-    const bool activate = input["activate"] | true;
-    JsonArrayConst inputPoints = input["points"].as<JsonArrayConst>();
-    if (inputPoints.size() > maxRoutePointRefs) {
+    const bool activate = route["activate"] | true;
+    JsonArray points = route["points"].as<JsonArray>();
+    if (points.size() > maxRoutePointRefs) {
       target.send(400, "application/json", "{\"detail\":\"Route exceeds the 20-point limit.\"}");
       return;
     }
-    if (name.isEmpty() || inputPoints.isNull() || inputPoints.size() == 0) {
+    if (name.isEmpty() || points.isNull() || points.size() == 0) {
       target.send(400, "application/json",
                   "{\"detail\":\"Route name and at least one waypoint are required.\"}");
       return;
     }
 
-    JsonDocument routeDoc;
-    JsonObject route = routeDoc.to<JsonObject>();
+    // Canonicalize the existing points. Unknown input keys were never persisted.
+#ifdef LEAF_USB_BENCH_CONSOLE
+    // The scope also covers early validation returns.
+    struct FinishMeasurement {
+      ~FinishMeasurement() { route_normalization_heap.finish(); }
+    } finishMeasurement;
+    route_normalization_heap.start();
+#endif
+    for (auto it = route.begin(); it != route.end();) {
+      auto field = it;
+      ++it;
+      if (strcmp((*field).key().c_str(), "points") != 0) route.remove(field);
+    }
     route["schema"] = "leaf.route";
     route["schema_version"] = "v0.1.0";
     route["name"] = name;
@@ -1980,35 +2169,48 @@ namespace {
     route["start"]["type"] = "none";
     route["start"]["time_gates"].to<JsonArray>();
 
-    JsonArray points = route["points"].to<JsonArray>();
     uint8_t pointIndex = 0;
-    const uint8_t totalPoints = inputPoints.size();
-    for (JsonObjectConst inputPoint : inputPoints) {
+    const uint8_t totalPoints = points.size();
+    for (JsonObject point : points) {
       pointIndex++;
-      const double lat = inputPoint["lat"] | NAN;
-      const double lon = inputPoint["lon"] | NAN;
+      const double lat = point["lat"] | NAN;
+      const double lon = point["lon"] | NAN;
       if (isnan(lat) || isnan(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
         target.send(400, "application/json",
                     "{\"detail\":\"Route contains an invalid waypoint coordinate.\"}");
         return;
       }
 
-      uint16_t radiusM = inputPoint["radius_m"] | defaultWaypointRadius;
+      uint16_t radiusM = point["radius_m"] | defaultWaypointRadius;
       if (radiusM == 0)
         radiusM = defaultWaypointRadius;
       else if (radiusM < 10)
         radiusM = 10;
       if (radiusM > 20000) radiusM = 20000;
 
-      JsonObject outPoint = points.add<JsonObject>();
-      outPoint["name"] = inputPoint["name"] | "";
-      outPoint["lat"] = lat;
-      outPoint["lon"] = lon;
-      outPoint["alt_m"] = inputPoint["alt_m"] | NAN;
-      outPoint["radius_m"] = radiusM;
-      outPoint["role"] = pointIndex == totalPoints ? "goal" : "normal";
+      for (auto it = point.begin(); it != point.end();) {
+        auto field = it;
+        ++it;
+        const char* key = (*field).key().c_str();
+        if (strcmp(key, "name") != 0 && strcmp(key, "lat") != 0 && strcmp(key, "lon") != 0 &&
+            strcmp(key, "alt_m") != 0 && strcmp(key, "radius_m") != 0)
+          point.remove(field);
+      }
+      if (!point["name"].is<const char*>()) point["name"] = "";
+      point["lat"] = lat;
+      point["lon"] = lon;
+      point["alt_m"] = point["alt_m"] | NAN;
+      point["radius_m"] = radiusM;
+      point["role"] = pointIndex == totalPoints ? "goal" : "normal";
     }
-    input.clear();
+#ifdef LEAF_USB_BENCH_CONSOLE
+    route_normalization_heap.finish();
+#endif
+    if (routeDoc.overflowed()) {
+      target.send(500, "application/json", "{\"detail\":\"Not enough memory to save the route.\"}");
+      return;
+    }
+    heap_monitor::checkpoint("route-editor-normalized");
 
     route_store::ImportResult result;
     if (!route_store::saveRouteJson(routeDoc, activate, result)) {
@@ -2048,31 +2250,15 @@ namespace {
       return;
     }
 
-    JsonDocument doc;
-    if (!SD_MMC.exists(user_waypoints::filePath())) {
-      doc["schema"] = "leaf.user_waypoints";
-      doc["schema_version"] = "v0.1.0";
-      doc["points"].to<JsonArray>();
-    } else {
-      File file = SD_MMC.open(user_waypoints::filePath(), "r");
-      if (!file) {
-        target.send(404, "application/json",
-                    "{\"points\":[],\"detail\":\"Unable to read user waypoints.\"}");
-        return;
-      }
-      if (file.size() > USER_WAYPOINTS_MAX_BYTES) {
-        file.close();
-        target.send(404, "application/json",
-                    "{\"points\":[],\"detail\":\"User waypoint file is too large.\"}");
-        return;
-      }
-      DeserializationError error = deserializeJson(doc, file);
-      file.close();
-      if (error || strcmp(doc["schema"] | "", "leaf.user_waypoints") != 0) {
-        target.send(404, "application/json",
-                    "{\"points\":[],\"detail\":\"User waypoint file is invalid.\"}");
-        return;
-      }
+#ifdef LEAF_USB_BENCH_CONSOLE
+    RouteHeapMeasurement::Scope heapScope(waypoint_list_heap);
+#endif
+    user_waypoints::Reader reader;
+    String error;
+    if (!reader.open(error)) {
+      const String reply = "{\"points\":[],\"detail\":\"" + error + "\"}";
+      target.send(404, "application/json", reply);
+      return;
     }
 
     target.setContentLength(CONTENT_LENGTH_UNKNOWN);
@@ -2081,10 +2267,12 @@ namespace {
     JsonStream json(target, responseBuffer, sizeof(responseBuffer));
     json.write("{\"points\":[");
     bool first = true;
-    for (JsonObjectConst point : doc["points"].as<JsonArrayConst>()) {
+    JsonDocument record;
+    while (reader.next(record)) {
+      const JsonObjectConst point = record.as<JsonObjectConst>();
+      if (!user_waypoints::validPoint(point)) continue;
       const double lat = point["lat"] | NAN;
       const double lon = point["lon"] | NAN;
-      if (!validUserWaypointJson(point)) continue;
       const uint8_t navigatorIndex = mergeUserWaypointIntoNavigator(point);
 
       if (!first) json.write(",");
@@ -2105,18 +2293,22 @@ namespace {
       json.writeEscaped(point["created_utc"] | "");
       json.write("\"}");
     }
+    if (reader.failed()) {
+      target.client().stop();
+      return;
+    }
     json.write("]}");
     json.finish();
   }
 
-  void saveUserWaypoints(WebServer& target) {
+  void saveUserWaypoints(LeafWebServer& target) {
     if (!user_app_enabled) {
       target.send(404, "application/json", "{\"detail\":\"Leaf Web App is not active.\"}");
       return;
     }
 
     JsonDocument input;
-    DeserializationError error = deserializeJson(input, target.arg("plain"));
+    DeserializationError error = deserializeJson(input, target.body());
     if (error) {
       target.send(400, "application/json", "{\"detail\":\"User waypoint request is not JSON.\"}");
       return;
@@ -2350,10 +2542,10 @@ let s=el("section",{id:"developerCard"}),h=el("h2",{text:"Developer"}),status=el
 let shot=el("button",{class:"hero",id:"devScreenshot",text:"Screenshot"}),msc=el("button",{class:"secondary",id:"devMassStorage",text:"Mass Storage"}),mem=el("button",{class:"secondary",id:"devMemory",text:"Memory"});
 actions.style.flexWrap="wrap";
 actions.appendChild(shot);actions.appendChild(msc);actions.appendChild(mem);
-s.appendChild(h);s.appendChild(status);s.appendChild(row("Keep web app on","devAlwaysOn"));s.appendChild(row("Keep Bluetooth disabled","devKeepBleDisabled"));s.appendChild(row("UDP sensor injection","devUdpInjection"));s.appendChild(el("p",{class:"muted",text:"Accept test sensor data over WiFi (UDP 7431)."}));s.appendChild(row("System events log","devDiagSystem"));s.appendChild(row("Network events log","devDiagNetwork"));s.appendChild(row("Web requests log","devDiagWeb"));s.appendChild(row("Vario log","devDiagVario"));s.appendChild(row("CPU utilization log","devDiagCpu"));s.appendChild(el("a",{href:"/api/debug/route-optimizer",target:"_blank",text:"Route optimizer measurements"}));s.appendChild(actions);s.appendChild(msgEl);main.appendChild(s);
-async function load(){try{let r=await Promise.all([fetch("/api/debug/session"),fetch("/api/user/status")]);if(r.some(x=>!x.ok))throw new Error("Developer controls unavailable");let d=await r[0].json(),u=await r[1].json();document.getElementById("devAlwaysOn").checked=!!d.always_on;document.getElementById("devKeepBleDisabled").checked=!!d.keep_bluetooth_disabled;document.getElementById("devUdpInjection").checked=!!d.udp_sensor_injection;document.getElementById("devDiagSystem").checked=!!d.diag_system_events;document.getElementById("devDiagNetwork").checked=!!d.diag_network_events;document.getElementById("devDiagWeb").checked=!!d.diag_web_requests;document.getElementById("devDiagVario").checked=!!d.diag_vario;document.getElementById("devDiagCpu").checked=!!d.diag_cpu_utilization;status.textContent="web app: "+(d.web_app_active?"active":"off")+"\nmode: "+(d.using_leaf_wifi?"Leaf AP":"network")+"\nfirmware: "+(u.firmware_display_version||u.firmware_version||"")+"\nmac: "+(u.mac_address||"")}catch(e){status.textContent="Developer controls unavailable."}}
-async function save(){msg("Saving...");try{let body={always_on:document.getElementById("devAlwaysOn").checked,keep_bluetooth_disabled:document.getElementById("devKeepBleDisabled").checked,udp_sensor_injection:document.getElementById("devUdpInjection").checked,diag_system_events:document.getElementById("devDiagSystem").checked,diag_network_events:document.getElementById("devDiagNetwork").checked,diag_web_requests:document.getElementById("devDiagWeb").checked,diag_vario:document.getElementById("devDiagVario").checked,diag_cpu_utilization:document.getElementById("devDiagCpu").checked};let r=await fetch("/api/debug/session",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});if(!r.ok)throw new Error("Developer settings were rejected");msg("Saved.");load()}catch(e){msg("Unable to save developer settings.")}}
-["devAlwaysOn","devKeepBleDisabled","devUdpInjection","devDiagSystem","devDiagNetwork","devDiagWeb","devDiagVario","devDiagCpu"].forEach(id=>document.getElementById(id).onchange=save);
+s.appendChild(h);s.appendChild(status);s.appendChild(row("Keep web app on","devAlwaysOn"));s.appendChild(row("Keep Bluetooth disabled","devKeepBleDisabled"));s.appendChild(row("UDP sensor injection","devUdpInjection"));s.appendChild(el("p",{class:"muted",text:"Accept test sensor data over WiFi (UDP 7431)."}));s.appendChild(row("System events log","devDiagSystem"));s.appendChild(row("Network events log","devDiagNetwork"));s.appendChild(row("Web requests log","devDiagWeb"));s.appendChild(row("CPU utilization log","devDiagCpu"));s.appendChild(el("a",{href:"/api/debug/route-optimizer",target:"_blank",text:"Route optimizer measurements"}));s.appendChild(actions);s.appendChild(msgEl);main.appendChild(s);
+async function load(){try{let r=await Promise.all([fetch("/api/debug/session"),fetch("/api/user/status")]);if(r.some(x=>!x.ok))throw new Error("Developer controls unavailable");let d=await r[0].json(),u=await r[1].json();document.getElementById("devAlwaysOn").checked=!!d.always_on;document.getElementById("devKeepBleDisabled").checked=!!d.keep_bluetooth_disabled;document.getElementById("devUdpInjection").checked=!!d.udp_sensor_injection;document.getElementById("devDiagSystem").checked=!!d.diag_system_events;document.getElementById("devDiagNetwork").checked=!!d.diag_network_events;document.getElementById("devDiagWeb").checked=!!d.diag_web_requests;document.getElementById("devDiagCpu").checked=!!d.diag_cpu_utilization;status.textContent="web app: "+(d.web_app_active?"active":"off")+"\nmode: "+(d.using_leaf_wifi?"Leaf AP":"network")+"\nfirmware: "+(u.firmware_display_version||u.firmware_version||"")+"\nmac: "+(u.mac_address||"")}catch(e){status.textContent="Developer controls unavailable."}}
+async function save(){msg("Saving...");try{let body={always_on:document.getElementById("devAlwaysOn").checked,keep_bluetooth_disabled:document.getElementById("devKeepBleDisabled").checked,udp_sensor_injection:document.getElementById("devUdpInjection").checked,diag_system_events:document.getElementById("devDiagSystem").checked,diag_network_events:document.getElementById("devDiagNetwork").checked,diag_web_requests:document.getElementById("devDiagWeb").checked,diag_cpu_utilization:document.getElementById("devDiagCpu").checked};let r=await fetch("/api/debug/session",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});if(!r.ok)throw new Error("Developer settings were rejected");msg("Saved.");load()}catch(e){msg("Unable to save developer settings.")}}
+["devAlwaysOn","devKeepBleDisabled","devUdpInjection","devDiagSystem","devDiagNetwork","devDiagWeb","devDiagCpu"].forEach(id=>document.getElementById(id).onchange=save);
 shot.onclick=()=>window.open("/app/debug/screenshot","_blank","noopener");
 mem.onclick=()=>window.open("/app/debug/memory","_blank","noopener");
 msc.onclick=async()=>{if(!confirm("Start SD mass storage?"))return;msg("Starting mass storage...");try{await fetch("/api/debug/mass-storage");msg("Mass storage requested.")}catch(e){msg("Unable to start mass storage.")}};
@@ -2481,9 +2673,9 @@ load();
     return false;
   }
 
-  void updateVarioSettings(WebServer& target) {
+  void updateVarioSettings(LeafWebServer& target) {
     JsonDocument doc;
-    const DeserializationError error = deserializeJson(doc, target.arg("plain"));
+    const DeserializationError error = deserializeJson(doc, target.body());
     if (error || !doc.is<JsonObject>()) {
       target.send(400, "application/json", "{\"detail\":\"Invalid settings JSON.\"}");
       return;
@@ -2584,9 +2776,9 @@ load();
     sendVarioSettings(target);
   }
 
-  void playVarioTone(WebServer& target) {
+  void playVarioTone(LeafWebServer& target) {
     JsonDocument doc;
-    const DeserializationError error = deserializeJson(doc, target.arg("plain"));
+    const DeserializationError error = deserializeJson(doc, target.body());
     const int32_t frequency = doc["frequency_hz"] | 0;
     if (error || frequency < 30 || frequency > 5000) {
       target.send(422, "application/json", "{\"detail\":\"Tone frequency is out of range.\"}");
@@ -2596,8 +2788,8 @@ load();
     target.send(202, "application/json", "{\"started\":true,\"duration_ms\":500}");
   }
 
-  void startVarioTest(WebServer& target) {
-    const String kind = extractJsonStringValue(target.arg("plain"), "kind");
+  void startVarioTest(LeafWebServer& target) {
+    const String kind = extractJsonStringValue(target.body(), "kind");
     const VarioAudioProfile& audio = settings.varioAudio;
     int32_t targetRate = 0;
     if (kind == "climb") {
@@ -2649,8 +2841,6 @@ load();
     json += settings.diag_networkEvents ? "true" : "false";
     json += ",\"diag_web_requests\":";
     json += settings.diag_webRequests ? "true" : "false";
-    json += ",\"diag_vario\":";
-    json += settings.diag_vario ? "true" : "false";
     json += ",\"diag_cpu_utilization\":";
     json += settings.diag_cpuUtilization ? "true" : "false";
     json += "}";
@@ -2658,12 +2848,12 @@ load();
     target.send(200, "application/json", json);
   }
 
-  void updateDebugSessionStatus(WebServer& target) {
+  void updateDebugSessionStatus(LeafWebServer& target) {
     if (!settings.dev_mode) {
       target.send(403, "application/json", "{\"detail\":\"Developer mode is disabled.\"}");
       return;
     }
-    const String body = target.arg("plain");
+    const String& body = target.body();
     settings.setUdpInjectionEnabled(
         extractJsonBoolValue(body, "udp_sensor_injection", settings.dev_udpInjection));
     udpMessageServer.update();
@@ -2676,7 +2866,6 @@ load();
         extractJsonBoolValue(body, "diag_network_events", settings.diag_networkEvents);
     settings.diag_webRequests =
         extractJsonBoolValue(body, "diag_web_requests", settings.diag_webRequests);
-    settings.diag_vario = extractJsonBoolValue(body, "diag_vario", settings.diag_vario);
     settings.diag_cpuUtilization =
         extractJsonBoolValue(body, "diag_cpu_utilization", settings.diag_cpuUtilization);
     settings.save();
@@ -2710,11 +2899,11 @@ load();
     target.send(200, "application/json", json);
   }
 
-  void resetCommissioningSettings(WebServer& target) {
+  void resetCommissioningSettings(LeafWebServer& target) {
     if (!requireCommissioningHttp(target)) return;
 
     const bool forceFormatSdCard =
-        extractJsonBoolValue(target.arg("plain"), "force_format_sd_card", false);
+        extractJsonBoolValue(target.body(), "force_format_sd_card", false);
     target.send(200, "application/json", "{\"reset_requested\":true}");
     delay(250);
     settings.factoryResetVario();
@@ -2724,10 +2913,10 @@ load();
     ESP.restart();
   }
 
-  void saveCommissioningFanetAddress(WebServer& target) {
+  void saveCommissioningFanetAddress(LeafWebServer& target) {
     if (!requireCommissioningHttp(target)) return;
 
-    String fanet_address = extractJsonStringValue(target.arg("plain"), "fanet_address");
+    String fanet_address = extractJsonStringValue(target.body(), "fanet_address");
     fanet_address.trim();
     fanet_address.toUpperCase();
     if (!isValidFanetAddress(fanet_address)) {
@@ -2907,33 +3096,6 @@ load();
     user_server.on("/commissioning/status", HTTP_GET,
                    []() { sendCommissioningStatus(user_server); });
     user_server.on("/commissioning/complete", HTTP_POST,
-                   []() { markCommissioningComplete(user_server); });
-
-    user_server.on("/api/debug/mac-address", HTTP_GET,
-                   []() { sendCommissioningMacAddress(user_server); });
-    user_server.on("/api/debug/firmware-version", HTTP_GET,
-                   []() { sendCommissioningFirmwareVersion(user_server); });
-    user_server.on("/api/debug/settings/factory-reset", HTTP_POST,
-                   []() { resetCommissioningSettings(user_server); });
-    user_server.on("/api/debug/settings/fanet-address", HTTP_POST,
-                   []() { saveCommissioningFanetAddress(user_server); });
-    user_server.on("/api/debug/self-test/interactive", HTTP_POST,
-                   []() { startCommissioningSelfTest(user_server); });
-    user_server.on("/api/debug/sd-card/format", HTTP_POST,
-                   []() { formatCommissioningSdCard(user_server); });
-    user_server.on("/api/debug/sd-card/remount", HTTP_POST,
-                   []() { remountCommissioningSdCard(user_server); });
-    user_server.on("/api/debug/restart", HTTP_POST,
-                   []() { restartCommissioningDevice(user_server); });
-    user_server.on("/api/debug/self-test/details", HTTP_GET,
-                   []() { sendCommissioningSelfTestDetails(user_server); });
-    user_server.on("/api/debug/self-test/results", HTTP_DELETE,
-                   []() { clearCommissioningSelfTestResults(user_server); });
-    user_server.on("/api/debug/self-test", HTTP_GET,
-                   []() { sendCommissioningSelfTest(user_server); });
-    user_server.on("/api/debug/commissioning/status", HTTP_GET,
-                   []() { sendCommissioningStatus(user_server); });
-    user_server.on("/api/debug/commissioning/complete", HTTP_POST,
                    []() { markCommissioningComplete(user_server); });
 
     commissioning_routes_configured = true;
@@ -3432,9 +3594,9 @@ load();
     target.send(200, "application/json", wifi_setup_networks_json);
   }
 
-  void connectToWifiFromRequest(WebServer& target) {
+  void connectToWifiFromRequest(LeafWebServer& target) {
     heap_monitor::checkpoint("wifi-connect-request");
-    const String body = target.arg("plain");
+    const String& body = target.body();
     const String ssid = extractJsonStringValue(body, "ssid");
     const String password = extractJsonStringValue(body, "password");
 
@@ -3475,6 +3637,8 @@ load();
     if (user_server_started && user_server_routes_configured) return;
 
     if (!user_server_routes_configured) {
+      const char* headers[] = {"Content-Type"};
+      user_server.collectHeaders(headers, 1);
       user_server.on("/", HTTP_GET, []() {
         handleUserRequest("GET /", []() {
           if (diagnosticsEnabled()) user_app_route_root_count++;
@@ -3547,15 +3711,21 @@ load();
       user_server.on("/api/leaf-log/unlink", HTTP_POST, []() {
         handleUserRequest("POST /api/leaf-log/unlink", []() { unlinkLeafLog(user_server); });
       });
-      user_server.on("/api/routes/import", HTTP_POST, []() {
-        handleUserRequest("POST /api/routes/import", []() {
-          if (diagnosticsEnabled()) user_app_route_routes_import_count++;
-          importRoute(user_server);
-        });
-      });
-      user_server.on("/api/routes/save", HTTP_POST, []() {
-        handleUserRequest("POST /api/routes/save", []() { saveEditedRoute(user_server); });
-      });
+      user_server.addHandler(new RouteRequestHandler(
+          "/api/routes/import",
+          []() {
+            handleUserRequest("POST /api/routes/import", []() {
+              if (diagnosticsEnabled()) user_app_route_routes_import_count++;
+              importRoute(user_server);
+            });
+          },
+          []() { receiveRouteRequest(ROUTE_IMPORT_REQUEST_MAX_BYTES); }));
+      user_server.addHandler(new RouteRequestHandler(
+          "/api/routes/save",
+          []() {
+            handleUserRequest("POST /api/routes/save", []() { saveEditedRoute(user_server); });
+          },
+          []() { receiveRouteRequest(ROUTE_EDITOR_REQUEST_MAX_BYTES); }));
       user_server.on("/api/nav-data", HTTP_GET, []() {
         handleUserRequest("GET /api/nav-data", []() { sendNavData(user_server); });
       });
@@ -3661,26 +3831,30 @@ const char* leafLogBaseUrl() { return LEAF_LOG_BASE_URL; }
 
 const char* leafLogCaCertificate() { return ISRG_ROOT_X1_CA; }
 
-void writeScreenshotBuffer(const char* buffer) {
-  Serial.println("Writing screenshot buffer");
-  send_buffer += buffer;
-}
+void writeScreenshotBuffer(const char* buffer) { *screenshot_output += buffer; }
 
 void webserver_setup() {
-  configureCommissioningRoutes();
-  if (!user_server_started && commissioningHttpAllowed()) {
+  // Keep the canonical routes through the current factory connection so the
+  // completion response can be retried even after the durable flag changes.
+  const bool factoryConnected = diagnostic_network.connected();
+  if (factoryConnected && !settings.commissioningComplete) configureCommissioningRoutes();
+  if (!user_app_enabled && !factoryConnected && user_server_started) stopWebHosting();
+  if (!user_server_started && commissioning_routes_configured) {
     user_server.begin();
     user_server_started = true;
     Serial.println("Leaf commissioning webserver started");
   }
 
+  if (!user_server_started && !user_app_enabled) return;
   if (!settings.dev_mode) return;
   if (debug_routes_configured) return;
 
   user_server.on("/api/debug/raw-xbm", HTTP_GET, []() {
-    send_buffer = "";
+    String image;
+    screenshot_output = &image;
     u8g2_WriteBufferXBM(u8g2.getU8g2(), writeScreenshotBuffer);
-    user_server.send(200, "image/x-xbitmap", send_buffer);
+    screenshot_output = nullptr;
+    user_server.send(200, "image/x-xbitmap", image);
   });
 
   user_server.on("/app/debug/screenshot", HTTP_GET, []() {
@@ -3798,8 +3972,11 @@ void webserver_setup() {
       cpu_utilization::freeze();
     } else if (action == "export") {
       ok = cpu_utilization::exportToSd();
+    } else if (action == "discard") {
+      ok = cpu_utilization::discard();
+      if (ok) settings.diag_cpuUtilization = false;
     } else {
-      user_server.send(400, "text/plain", "Use action=start, freeze, or export");
+      user_server.send(400, "text/plain", "Use action=start, freeze, export, or discard");
       return;
     }
     user_server.send(ok ? 200 : 409, "text/plain", cpu_utilization::status());
@@ -3936,6 +4113,7 @@ void webserver_enable_wifi_setup() {
 }
 
 void webserver_disable_user_app() {
+  const bool wasProvisioning = user_app_provisioning;
   webSummaryScan.cancel();
   webEntryScan.cancel();
   webSummaryScanning = webEntryScanning = false;
@@ -3956,13 +4134,26 @@ void webserver_disable_user_app() {
   wifi_setup_connect_error = "";
   wifi_setup_connect_saved = false;
   if (user_server_started) {
-    user_server.stop();
-    user_server_started = false;
+    clearRouteRequest();
+    const bool preserveFactoryConnection =
+        commissioning_routes_configured && diagnostic_network.connected();
+    stopWebHosting();
+    if (preserveFactoryConnection) {
+      // Closing the app on the factory's station connection must still allow
+      // a tool to recover a lost commissioning-complete reply.
+      configureCommissioningRoutes();
+      user_server.begin();
+      user_server_started = true;
+    }
     heap_monitor::checkpoint("after-user-stop");
   }
   if (user_app_using_leaf_wifi) {
-    WiFi.softAPdisconnect(true);
-    WiFi.mode(WIFI_STA);
+    if (wasProvisioning && WiFi.status() == WL_CONNECTED) {
+      // The setup screen observes the new station connection before closing.
+      WiFi.mode(WIFI_STA);
+    } else {
+      leaf_wifi::disconnectFromNetwork();
+    }
     heap_monitor::checkpoint("after-ap-stop");
   }
   user_app_using_leaf_wifi = false;
@@ -3976,6 +4167,24 @@ void webserver_disable_user_app() {
 }
 
 bool webserver_user_app_active() { return user_app_enabled; }
+
+#ifdef LEAF_USB_BENCH_CONSOLE
+void webserver_navigation_heap(uint32_t (&metrics)[4]) {
+  metrics[0] = route_import_heap.before;
+  metrics[1] = route_import_heap.minimum;
+  metrics[2] = waypoint_list_heap.before;
+  metrics[3] = waypoint_list_heap.minimum;
+}
+
+void webserver_route_heap(uint32_t (&metrics)[4]) {
+  metrics[0] = route_receipt_heap.before;
+  metrics[1] = route_receipt_heap.minimum;
+  metrics[2] = route_normalization_heap.before;
+  metrics[3] = route_normalization_heap.minimum;
+}
+#endif
+
+bool webserver_listening() { return user_server_started; }
 
 bool webserver_user_app_always_on() { return user_app_always_on; }
 

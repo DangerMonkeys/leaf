@@ -1,0 +1,6 @@
+{
+  "cluster_bytes": 16384,
+  "fsinfo_free_clusters": 0,
+  "actual_free_clusters": 512,
+  "actual_free_bytes": 8388608
+}

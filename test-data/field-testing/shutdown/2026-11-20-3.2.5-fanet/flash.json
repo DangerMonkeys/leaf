@@ -1,0 +1,12 @@
+{
+  "firmware_sha256": "42edeeffa28e30cd9d67c0003d00258575467e57154c901d2598354581fd3ea6",
+  "attempts": [
+    {
+      "port": "COM18",
+      "vid": 12346,
+      "pid": 4097,
+      "serial_number": "F0:F5:BD:56:16:A0",
+      "returncode": 0
+    }
+  ]
+}
