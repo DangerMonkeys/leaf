@@ -1,0 +1,111 @@
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH status On Menu 2 0 0 1 1 0 1
+
+HOST press LEFT
+BENCH ok
+
+HOST press LEFT
+button: LEFT   state: PRESSED     hold count: 0
+button: LEFT   state: CLICKED     hold count: 0
+467734 playSound 1008657268
+button: LEFT   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press LEFT
+button: LEFT   state: PRESSED     hold count: 0
+button: LEFT   state: CLICKED     hold count: 0
+468034 playSound 1008661216
+button: LEFT   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press UP
+button: LEFT   state: PRESSED     hold count: 0
+LSM6DSV: a=-0.0041,-0.0046,0.9938 g=-0.0046,-0.0030,0.9994 pairsbutton: LEFT   state: CLICKED     hold count: 0
+468334 playSound 1008700904
+button: LEFT   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press CENTER
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+468644 playSound 1008724150
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST status
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+468954 playSound 1008578976
+button: CENTER state: RELEASED    hold count: 0
+Sectors: 15741312
+469121 playSound 1008578950
+logbook: write error=28 expected=1281 actual=1267
+BENCH status On User 0 0 0 1 1 1 1
+
+HOST wait 45
+LSM6DSV: a=-0.0051,-0.0041,0.9938 g=-0.0039,-0.0042,0.9994 pairsLSM6DSV: a=-0.0032,-0.0037,0.9945 g=-0.0036,-0.0044,0.9994 pairsLSM6DSV: a=-0.0034,-0.0046,0.9941 g=-0.0038,-0.0041,0.9994 pairsLSM6DSV: a=-0.0041,-0.0044,0.9936 g=-0.0038,-0.0042,0.9994 pairslogbook: length error=77 expected=0 actual=0
+LSM6DSV: a=-0.0032,-0.0046,0.9936 g=-0.0038,-0.0038,0.9994 pairsLSM6DSV: a=-0.0037,-0.0032,0.9936 g=-0.0037,-0.0121,0.9994 pairsLSM6DSV: a=-0.0039,-0.0044,0.9943 g=-0.0037,-0.0043,0.9994 pairsLSM6DSV: a=-0.0032,-0.0044,0.9938 g=-0.0039,-0.0042,0.9994 pairsLSM6DSV: a=-0.0051,-0.0039,0.9941 g=-0.0039,-0.0046,0.9994 pairs
+HOST status
+BENCH status On User 0 0 0 1 1 1 1
+
+HOST heap
+BENCH heap 107816 78900 32756 7372
+
+HOST press RIGHT
+BENCH ok
+
+HOST press DOWN
+button: RIGHT  state: PRESSED     hold count: 0
+button: RIGHT  state: CLICKED     hold count: 0
+514344 playSound 1008724160
+WiFi coordinator: trying saved network 0 'SkyWagon'
+button: RIGHT  state: RELEASED    hold count: 0
+UDP injection stopped
+UDP injection enabled
+BENCH ok
+
+HOST press CENTER
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+514654 playSound 1008598446
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press DOWN
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+514954 playSound 1008700914
+button: CENTER state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press DOWN
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+515264 playSound 1008598446
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press DOWN
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+515564 playSound 1008598446
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press CENTER
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+515874 playSound 1008598446
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST status
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+516209 playSound 1008649600
+button: CENTER state: RELEASED    hold count: 0
+BENCH status On Menu 1 0 0 1 1 1 1
+BENCH status On Menu 1 0 0 1 1 1 1
+BENCH heap 107960 78900 32756 7372
+BENCH web http://10.0.0.183/app

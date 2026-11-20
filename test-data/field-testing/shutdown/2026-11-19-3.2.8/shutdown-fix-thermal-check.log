@@ -1,0 +1,48 @@
+make: Entering directory '/leaf/sim'
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: On
+0 playSound 5442768
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done. 
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+ - DONE
+SD startup space: available=1 free=8522825728 check_us=0
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+525 playSound 5571526
+525 playSound 5609662
+525 playSound 5595046
+525 playSound 5603622
+525 playSound 5593486
+525 playSound 5432200
+525 playSound 5618400
+525 playSound 5618400
+525 playSound 5595040
+525 playSound 5603616
+525 playSound 56Thermal fixture: track=tracks/2025-01-01-XLV-000-01.igc entry=/logbook/date_not_available_0_ac835feb.json root=/tmp/leaf-thermal-lifecycle-4MQ0Sl/card
+  /tmp/leaf-thermal-lifecycle-4MQ0Sl/card/tracks
+  /tmp/leaf-thermal-lifecycle-4MQ0Sl/card/tracks/2025-01-01-XLV-000-01.igc
+  /tmp/leaf-thermal-lifecycle-4MQ0Sl/card/logbook
+  /tmp/leaf-thermal-lifecycle-4MQ0Sl/card/logbook/2025-01-01_05-59-59_ac835feb.json
+thermal_lifecycle_test: /leaf/sim/tests/thermal_lifecycle.cpp:229: int main(): Assertion `SD_MMC.exists(trackPath.c_str()) && SD_MMC.exists(entryPath.c_str())' failed.
+Aborted (core dumped)
+make: *** [Makefile:234: test-thermal-lifecycle] Error 134
+make: Leaving directory '/leaf/sim'

@@ -1,0 +1,11 @@
+BENCH version 0.2.4-8a4.bench+h3.2.5
+BENCH version 0.2.4-8a4.bench+h3.2.5
+BENCH status OffUSB Charging 0 0 0 0 0 0 0
+
+HOST hold CENTER 1000
+BENCH ok
+
+HOST wait 20
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: HELD        hold count: 0
+button: CENTER state: RELEASED    hold count: 0

@@ -1,0 +1,18 @@
+{
+  "firmware_version": "0.2.4-865d.tlsbench+h3.2.5",
+  "firmware_sha256": "3980062ef8e6545312abd574b742aaf9e4345ad2605cd4d1ea5af9b3c5296401",
+  "path": "/diagnostics/stack_2.csv",
+  "seconds_start_to_save": 6.64,
+  "after": {
+    "power": "OffUSB",
+    "page": "Charging",
+    "cursor": 0,
+    "modal_depth": 0,
+    "warning": false,
+    "climb_ready": false,
+    "gps_fix": false,
+    "flight_running": false,
+    "firmware_sd_access": false
+  },
+  "autosave_observed": true
+}

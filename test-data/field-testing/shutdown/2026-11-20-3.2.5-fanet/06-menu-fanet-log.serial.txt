@@ -1,0 +1,128 @@
+BENCH version 0.2.4-8a4.bench+h3.2.5
+BENCH version 0.2.4-8a4.bench+h3.2.5
+BENCH status On Navigate 0 0 0 1 1 1 1
+
+HOST press RIGHT
+BENCH ok
+
+HOST wait 8
+button: RIGHT  state: PRESSED     hold count: 0
+button: RIGHT  state: CLICKED     hold count: 0
+921823 playSound 1008713402
+WiFi coordinator: trying saved network 0 'SkyWagon'
+button: RIGHT  state: RELEASED    hold count: 0
+$PFLAA,0,24,92,120,2,FBD364,73,,0.28,-0.10,7,0,0,-40*2B
+
+NMEA sentence was not valid: $G0,34,7*7D
+$PFLAA,0,24,97,120,2,FBD364,327,,0.14,-0.10,7,0,0,-39*1D
+
+
+HOST fanet
+BENCH fanet 1 RUNNING 2124 1212
+
+HOST stacks
+BENCH stacks 7836 3000 2124 1212 0
+
+HOST heap
+BENCH heap 58484 47148 31732 7836
+
+HOST press UP
+BENCH ok
+
+HOST press CENTER
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+930163 playSound 1008599430
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press UP
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+930473 playSound 1008705654
+button: CENTER state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press UP
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+930773 playSound 1008599430
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press UP
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+931083 playSound 1008599430
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press UP
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+931393 playSound 1008599430
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press UP
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+931703 playSound 1008599430
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press UP
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+932003 playSound 1008599430
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press UP
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+932313 playSound 1008599430
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press UP
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+932623 playSound 1008599430
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press UP
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+932933 playSound 1008599430
+button: UP     state: RELEASED    hold count: 0
+NMEA sentence was not valid: $GLG8,,7*75
+BENCH ok
+
+HOST press CENTER
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+933233 playSound 1008599430
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST wait 4
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+933533 playSound 1008735712
+button: CENTER state: RELEASED    hold count: 0
+$PFLAA,0,25,100,120,2,FBD364,327,,0.14,0.00,7,0,0,-40*01
+
+
+HOST fanet
+BENCH fanet 1 RUNNING 2124 1212
+
+HOST status
+BENCH status On Menu 7 0 0 1 1 1 1
+
+HOST heap
+BENCH heap 58624 47148 31732 7836
+BENCH status On Menu 7 0 0 1 1 1 1
+BENCH heap 58624 47148 31732 7836
+BENCH web off

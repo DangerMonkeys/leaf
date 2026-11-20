@@ -10,9 +10,9 @@ class DeveloperMenuPage : public SettingsMenuPage {
  public:
   DeveloperMenuPage() {
     cursor_position = 0;
-    cursor_max = 8;
-#ifdef LEAF_SHUTDOWN_FAULT_INJECTION
     cursor_max = 9;
+#ifdef LEAF_SHUTDOWN_FAULT_INJECTION
+    cursor_max = 10;
 #endif
   }
   void draw();
@@ -23,12 +23,12 @@ class DeveloperMenuPage : public SettingsMenuPage {
 
  private:
   bool row_hidden(uint8_t row) const;
-  static constexpr const char* labels[] = {"Back",        "Fanet ReTX",   "Log FANET",
-                                           "Debug Page",  "Run SelfTest", "Runtime:",
+  static constexpr const char* labels[] = {"Back",         "Fanet ReTX", "Log FANET", "Debug Page",
+                                           "Run SelfTest", "Runtime:",   "Stacks:",
 #ifdef LEAF_SHUTDOWN_FAULT_INJECTION
                                            "Off fault:",
 #endif
-                                           "StartBusLog", "Detach HW",    "Log Now:"};
+                                           "StartBusLog",  "Detach HW",  "Log Now:"};
 };
 
 #endif

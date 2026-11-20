@@ -5,6 +5,13 @@ description: Staged plan for producing tamper-evident Leaf IGC files that can be
 
 # Signed IGC Files and XContest Validation
 
+**November 20, 2026 follow-up:** [IGC text normalization](https://leafvario.com/dev-references/igc-text-normalization/)
+fixes unsupported profile-header characters before the logger writes and hashes records.
+Four generated files pass the independent Windows/Linux C checkers; each checker rejects
+eight altered-header/fix controls. The current unkeyed checksum algorithm is unchanged.
+This closes a text-format problem and preserves checksum validity; authenticated signing,
+manufacturer registration and scoring-service acceptance below remain open.
+
 Status reconciled **2026-10-22**: authenticated signing and contest acceptance remain proposed.
 Checksum generation and a local validator were implemented in `daae85f2` (#414), with a prebuilt
 Windows validator added in `82a74de7`. These complete a local integrity-checking step, not this

@@ -1,0 +1,58 @@
+{
+  "utc": "2026-11-20T03:06:40.596659+00:00",
+  "operation": "snapshot",
+  "volume_serial": "01114FC5",
+  "free_before": 8372224,
+  "free_after": 8372224,
+  "files": [
+    {
+      "path": "routes/active.json",
+      "bytes": 213,
+      "sha256": "30ca8568c00881b56c232496831c8388a208701c5a9e1946d8c11735a26d2a69",
+      "valid_json": true
+    },
+    {
+      "path": "waypoints/Ed2Hamilton.cup",
+      "bytes": 1509,
+      "sha256": "6a4d4e496fbdf729003686d085c5dde383fa79d25a862d34f6869b10d0d0fda1"
+    },
+    {
+      "path": "logbook/2026-11-19_20-02-37_d8005b51.json",
+      "bytes": 1469,
+      "sha256": "d87b46970d8f1709007ba4c0ca18abe4f4cf0aab64ca40553710a8815460b05d",
+      "valid_json": true
+    },
+    {
+      "path": "logbook/2026-11-19_20-04-29_f8658869.json",
+      "bytes": 1469,
+      "sha256": "674ba077bb8741c67e753c94ec9f493c9fd90922546f70baff50c69dc62fe3c9",
+      "valid_json": true
+    },
+    {
+      "path": "logbook/2026-11-19_20-05-53_72962d7d.json",
+      "bytes": 1465,
+      "sha256": "38668da2a5e10d949968dd0de94cdf92fe6b7c04385f104b3035f501abcbe900",
+      "valid_json": true
+    },
+    {
+      "path": "tracks/2026-11-19-XLV-000-01.igc",
+      "bytes": 1721,
+      "sha256": "4821cb99e4fabf5e81685819aad998f5e0ddd044ea5ae57ddc09f239baa3311c"
+    },
+    {
+      "path": "tracks/2026-11-19-XLV-000-02.igc",
+      "bytes": 1259,
+      "sha256": "6b24fcb25f7c22f28dfeefdd92e5bc28495cdac26e3d6b94efb2dc04b633d1ba"
+    },
+    {
+      "path": "tracks/2026-11-19-XLV-000-03.igc",
+      "bytes": 725,
+      "sha256": "231f6c022f82704ff8f511410c5e79294a06c9a247b05c7141ac03f2ea8906ac"
+    },
+    {
+      "path": "diagnostics/stack_1.csv",
+      "bytes": 114,
+      "sha256": "e5ed9c86641dfa495a6dad5130b0b7303959f7b35d2a41818dde3479d81c45d6"
+    }
+  ]
+}

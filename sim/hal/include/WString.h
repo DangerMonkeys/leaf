@@ -35,7 +35,10 @@ class String {
   String& operator=(const String&) = default;
   String& operator=(String&&) = default;
   String& operator=(const char* s) {
-    v_ = s ? s : "";
+    if (s)
+      v_ = s;
+    else
+      std::string().swap(v_);
     return *this;
   }
 

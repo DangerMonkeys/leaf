@@ -1,0 +1,38 @@
+name: IGC text checksums
+on:
+  pull_request:
+    paths:
+      - 'src/vario/logbook/**'
+      - 'sim/tests/g_load_integration.cpp'
+      - 'sim/tests/check_igc_text.py'
+      - 'utils/igc_validator/**'
+      - 'test-data/igc-text/**'
+      - '.github/workflows/igc-checksum.yaml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/vario/logbook/**'
+      - 'sim/tests/g_load_integration.cpp'
+      - 'sim/tests/check_igc_text.py'
+      - 'utils/igc_validator/**'
+      - 'test-data/igc-text/**'
+      - '.github/workflows/igc-checksum.yaml'
+permissions:
+  contents: read
+jobs:
+  checksums:
+    name: IGC text checksum fixtures
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install checksum build dependency
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libssl-dev
+      - name: Validate original files and reject altered copies
+        run: |
+          gcc -std=c11 -Wall -Wextra utils/igc_validator/validate.c -lcrypto -o /tmp/vali-xlv
+          python sim/tests/check_igc_text.py --validator /tmp/vali-xlv --tracks test-data/igc-text/2026-11-20/tracks

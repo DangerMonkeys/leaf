@@ -1,0 +1,104 @@
+{
+  "utc": "2026-11-20T02:39:02.052098+00:00",
+  "steps": [
+    {
+      "command": "press LEFT",
+      "reply": "ok",
+      "seconds": 0.313
+    },
+    {
+      "command": "press DOWN",
+      "reply": "ok",
+      "seconds": 0.296
+    },
+    {
+      "command": "press DOWN",
+      "reply": "ok",
+      "seconds": 0.313
+    },
+    {
+      "command": "press DOWN",
+      "reply": "ok",
+      "seconds": 0.312
+    },
+    {
+      "command": "press CENTER",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press DOWN",
+      "reply": "ok",
+      "seconds": 0.313
+    },
+    {
+      "command": "press DOWN",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press DOWN",
+      "reply": "ok",
+      "seconds": 0.312
+    },
+    {
+      "command": "press DOWN",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press CENTER",
+      "reply": "ok",
+      "seconds": 0.313
+    },
+    {
+      "command": "wait 3",
+      "reply": "waited",
+      "seconds": 3.109
+    },
+    {
+      "command": "press CENTER",
+      "reply": "ok",
+      "seconds": 0.312
+    },
+    {
+      "command": "status",
+      "reply": "status On Menu 7 0 0 1 0 0 1",
+      "seconds": 0.0
+    },
+    {
+      "command": "heap",
+      "reply": "heap 118300 60544 31732 7644",
+      "seconds": 0.0
+    }
+  ],
+  "initial": {
+    "power": "On",
+    "page": "Menu",
+    "cursor": 4,
+    "modal_depth": 0,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": false,
+    "flight_running": false,
+    "firmware_sd_access": true
+  },
+  "final": {
+    "power": "On",
+    "page": "Menu",
+    "cursor": 7,
+    "modal_depth": 0,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": false,
+    "flight_running": false,
+    "firmware_sd_access": true
+  },
+  "heap": {
+    "internal_free": 118300,
+    "internal_min_since_boot": 60544,
+    "internal_largest": 31732,
+    "loop_stack_unused": 7644
+  },
+  "screen": "39-stack-save.png"
+}

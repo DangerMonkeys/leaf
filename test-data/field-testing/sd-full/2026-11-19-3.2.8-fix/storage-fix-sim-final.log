@@ -1,0 +1,225 @@
+make: Entering directory '/leaf/sim'
+  CXX   src/vario/power
+  CXX   src/vario/diagnostics/bench_console
+  CXX   src/vario/ui/display/pages/dialogs/page_storage_warning
+In file included from /leaf/src/vario/power.cpp:5:
+/leaf/src/vario/comms/ble.h: In constructor 'BLE::BLE()':
+/leaf/src/vario/comms/ble.h:92:16: warning: 'BLE::xTask' will be initialized after [-Wreorder]
+   92 |   TaskHandle_t xTask;
+      |                ^~~~~
+/leaf/src/vario/comms/ble.h:71:21: warning:   'std::atomic<bool> BLE::started' [-Wreorder]
+   71 |   std::atomic<bool> started;  // Desired state; advertising pauses while a central is connected.
+      |                     ^~~~~~~
+/leaf/src/vario/comms/ble.h:59:3: warning:   when initialized here [-Wreorder]
+   59 |   BLE()
+      |   ^~~
+In file included from /leaf/src/vario/ui/display/pages.h:6,
+                 from /leaf/sim/tests/checked_storage.cpp:20:
+/leaf/src/vario/ui/display/pages/menu/page_menu_display.h:24:7: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   24 |       "Back",     "Basic",   "User", "Thermal\037Core", "Auto Switch?", "Thermal\037Track",
+      |       ^~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_display.h:24:19: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   24 |       "Back",     "Basic",   "User", "Thermal\037Core", "Auto Switch?", "Thermal\037Track",
+      |                   ^~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_display.h:24:30: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   24 |       "Back",     "Basic",   "User", "Thermal\037Core", "Auto Switch?", "Thermal\037Track",
+      |                              ^~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_display.h:24:38: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   24 |       "Back",     "Basic",   "User", "Thermal\037Core", "Auto Switch?", "Thermal\037Track",
+      |                                      ^~~~~~~~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_display.h:24:57: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   24 |       "Back",     "Basic",   "User", "Thermal\037Core", "Auto Switch?", "Thermal\037Track",
+      |                                                         ^~~~~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_display.h:24:73: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   24 |       "Back",     "Basic",   "User", "Thermal\037Core", "Auto Switch?", "Thermal\037Track",
+      |                                                                         ^~~~~~~~~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_display.h:25:7: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   25 |       "Navigate", "Contrast"};
+      |       ^~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_display.h:25:19: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   25 |       "Navigate", "Contrast"};
+      |                   ^~~~~~~~~~
+In file included from /leaf/src/vario/ui/display/pages.h:8:
+/leaf/src/vario/ui/display/pages/menu/page_menu_gps.h:24:39: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   24 |   static constexpr char* labels[2] = {"Back", "Update(sec)"
+      |                                       ^~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_gps.h:24:47: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   24 |   static constexpr char* labels[2] = {"Back", "Update(sec)"
+      |                                               ^~~~~~~~~~~~~
+In file included from /leaf/src/vario/ui/display/pages.h:9:
+/leaf/src/vario/ui/display/pages/menu/page_menu_leaf_labs.h:21:39: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   21 |   static constexpr char* labels[2] = {"Back", "Leaf Log"};
+      |                                       ^~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_leaf_labs.h:21:47: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   21 |   static constexpr char* labels[2] = {"Back", "Leaf Log"};
+      |                                               ^~~~~~~~~~
+In file included from /leaf/src/vario/ui/display/pages/menu/page_menu_system.h:8,
+                 from /leaf/src/vario/ui/display/pages.h:13:
+/leaf/src/vario/ui/display/pages/menu/page_menu_wifi.h:120:39: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+  120 |   static constexpr char* labels[4] = {"Back", "Setup", "Reset", "BLE"};
+      |                                       ^~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_wifi.h:120:47: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+  120 |   static constexpr char* labels[4] = {"Back", "Setup", "Reset", "BLE"};
+      |                                               ^~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_wifi.h:120:56: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+  120 |   static constexpr char* labels[4] = {"Back", "Setup", "Reset", "BLE"};
+      |                                                        ^~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_wifi.h:120:65: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+  120 |   static constexpr char* labels[4] = {"Back", "Setup", "Reset", "BLE"};
+      |                                                                 ^~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_system.h:28:39: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   28 |   static constexpr char* labels[8] = {"Back",       "Time Zone", "Volume",    "Auto-Off",
+      |                                       ^~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_system.h:28:53: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   28 |   static constexpr char* labels[8] = {"Back",       "Time Zone", "Volume",    "Auto-Off",
+      |                                                     ^~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_system.h:28:66: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   28 |   static constexpr char* labels[8] = {"Back",       "Time Zone", "Volume",    "Auto-Off",
+      |                                                                  ^~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_system.h:28:79: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   28 |   static constexpr char* labels[8] = {"Back",       "Time Zone", "Volume",    "Auto-Off",
+      |                                                                               ^~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_system.h:29:39: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   29 |                                       "ShowSafety", "About",     "Update FW", "Reset"};
+      |                                       ^~~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_system.h:29:53: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   29 |                                       "ShowSafety", "About",     "Update FW", "Reset"};
+      |                                                     ^~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_system.h:29:66: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   29 |                                       "ShowSafety", "About",     "Update FW", "Reset"};
+      |                                                                  ^~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_system.h:29:79: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   29 |                                       "ShowSafety", "About",     "Update FW", "Reset"};
+      |                                                                               ^~~~~~~
+In file included from /leaf/src/vario/ui/display/pages.h:14:
+/leaf/src/vario/ui/display/pages/menu/page_menu_units.h:21:39: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   21 |   static constexpr char* labels[8] = {"Back",     "Altitude", "ClimbRate", "Speed",
+      |                                       ^~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_units.h:21:51: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   21 |   static constexpr char* labels[8] = {"Back",     "Altitude", "ClimbRate", "Speed",
+      |                                                   ^~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_units.h:21:63: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   21 |   static constexpr char* labels[8] = {"Back",     "Altitude", "ClimbRate", "Speed",
+      |                                                               ^~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_units.h:21:76: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   21 |   static constexpr char* labels[8] = {"Back",     "Altitude", "ClimbRate", "Speed",
+      |                                                                            ^~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_units.h:22:39: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   22 |                                       "Distance", "Heading",  "Temp",      "Time"};
+      |                                       ^~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_units.h:22:51: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   22 |                                       "Distance", "Heading",  "Temp",      "Time"};
+      |                                                   ^~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_units.h:22:63: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   22 |                                       "Distance", "Heading",  "Temp",      "Time"};
+      |                                                               ^~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_units.h:22:76: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   22 |                                       "Distance", "Heading",  "Temp",      "Time"};
+      |                                                                            ^~~~~~
+In file included from /leaf/src/vario/ui/display/pages.h:15:
+/leaf/src/vario/ui/display/pages/menu/page_menu_vario.h:23:7: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   23 |       "Back",
+      |       ^~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_vario.h:24:7: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   24 |       "Beep Volume",
+      |       ^~~~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_vario.h:25:7: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   25 |       "Vol Shortcut",
+      |       ^~~~~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_vario.h:27:7: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   27 |       "Quiet Mode",
+      |       ^~~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_vario.h:28:7: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   28 |       "Sensitivity",
+      |       ^~~~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_vario.h:29:7: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   29 |       "ClimbStart",
+      |       ^~~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_vario.h:31:7: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   31 |       "SinkAlarm",
+      |       ^~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_vario.h:32:7: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   32 |       "Climb Avg",
+      |       ^~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_vario.h:33:7: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   33 |       "Glide Avg",
+      |       ^~~~~~~~~~~
+In file included from /leaf/src/vario/ui/display/pages.h:18:
+/leaf/src/vario/ui/display/pages/primary/page_menu_main.h:29:39: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   29 |   static constexpr char* labels[8] = {"Back", "Flight",  "Settings", "Nav Data",
+      |                                       ^~~~~~
+/leaf/src/vario/ui/display/pages/primary/page_menu_main.h:29:47: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   29 |   static constexpr char* labels[8] = {"Back", "Flight",  "Settings", "Nav Data",
+      |                                               ^~~~~~~~
+/leaf/src/vario/ui/display/pages/primary/page_menu_main.h:29:58: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   29 |   static constexpr char* labels[8] = {"Back", "Flight",  "Settings", "Nav Data",
+      |                                                          ^~~~~~~~~~
+/leaf/src/vario/ui/display/pages/primary/page_menu_main.h:29:70: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   29 |   static constexpr char* labels[8] = {"Back", "Flight",  "Settings", "Nav Data",
+      |                                                                      ^~~~~~~~~~
+/leaf/src/vario/ui/display/pages/primary/page_menu_main.h:30:39: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   30 |                                       "GPS",  "Web App", "Logbook",  "Developer"};
+      |                                       ^~~~~
+/leaf/src/vario/ui/display/pages/primary/page_menu_main.h:30:47: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   30 |                                       "GPS",  "Web App", "Logbook",  "Developer"};
+      |                                               ^~~~~~~~~
+/leaf/src/vario/ui/display/pages/primary/page_menu_main.h:30:58: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   30 |                                       "GPS",  "Web App", "Logbook",  "Developer"};
+      |                                                          ^~~~~~~~~
+/leaf/src/vario/ui/display/pages/primary/page_menu_main.h:30:70: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   30 |                                       "GPS",  "Web App", "Logbook",  "Developer"};
+      |                                                                      ^~~~~~~~~~~
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: On
+0 playSound 5451824
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done. 
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+ - DONE
+SD startup space: available=1 free=8522825728 check_us=0
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+Navigator loaded 1 waypoints and 0 routes from /waypoints/bench.cup
+Navigator loaded 1 waypoints and 0 routes from /waypoints/bench.cup
+525 playSound 5476512
+525 playSound 5519418
+Loading saved route: /routes/recovered.json
+*** NEW ROUTE: Recovered
+entering sequence..525 playSound 5443280
+ new active index:1 route index:1 new point:A new lat: 47.50 succes is: 1
+525 playSound 5519408
+Stack monitor saved /diagnostics/stack_2.csv
+Stack monitor saved /diagnostics/stack_4.csv
+Stack monitor saved /diagnostics/stack_6.csv
+Stack monitor saved /diagnostics/stack_8.csv
+SD startup space: available=1 free=10000001 check_us=0
+SD startup space: available=1 free=10000000 check_us=0
+SD startup space: available=1 free=8000000 check_us=0
+SD startup space: available=1 free=16384 check_us=0
+SD startup space: available=1 free=0 check_us=0
+SD startup space: available=0 free=0 check_us=0
+SD card: mounted
+SD startup space: available=0 free=0 check_us=0
+4525 playSound 5441032
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+4525 playSound 5441016
+Checked storage: replacement faults, rollback, recovery, caller preservation, read-only restore, Stack retry and startup warning boundaries passed.
+make: Leaving directory '/leaf/sim'

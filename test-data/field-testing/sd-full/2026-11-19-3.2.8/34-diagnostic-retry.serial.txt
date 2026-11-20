@@ -1,0 +1,97 @@
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH status On Menu 7 0 0 1 0 0 1
+
+HOST press DOWN
+BENCH ok
+
+HOST press DOWN
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+314568 playSound 1008598446
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press DOWN
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+314868 playSound 1008598446
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press CENTER
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+315178 playSound 1008598446
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press DOWN
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+Runtime capture: /diagnostics/runtime_1.json (exported)
+315704 playSound 1008640162
+button: CENTER state: RELEASED    hold count: 0
+Speaker::update skipped 6 intervals
+BENCH ok
+
+HOST press CENTER
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+315798 playSound 1008598446
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST status
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+Stack monitor saved /diagnostics/stack_1.csv
+316124 playSound 1008640162
+button: CENTER state: RELEASED    hold count: 0
+BENCH status On Menu 7 0 0 1 0 0 1
+
+HOST heap
+BENCH heap 111756 28740 31732 7548
+
+HOST press LEFT
+BENCH ok
+
+HOST press UP
+button: LEFT   state: PRESSED     hold count: 0
+button: LEFT   state: CLICKED     hold count: 0
+316418 playSound 1008640154
+WiFi coordinator: saved network 'SkyWagon' did not connect
+WiFi coordinator: trying saved network 1 'LeafDiagnostics'
+button: LEFT   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press UP
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+316728 playSound 1008598446
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press CENTER
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+317028 playSound 1008598446
+button: UP     state: RELEASED    hold count: 0
+LSM6DSV: a=-0.0041,-0.0046,0.9938 g=-0.0043,-0.0059,0.9994 pairsBENCH ok
+
+HOST wait 3
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+317338 playSound 1008700914
+button: CENTER state: RELEASED    hold count: 0
+Speaker::update skipped 13 intervals
+LSM6DSV: t=317908 discarded FIFO backlog (70 words)
+
+HOST web
+BENCH web http://192.168.4.1/app
+
+HOST ip
+BENCH ip 0.0.0.0 192.168.4.1
+BENCH status On Menu -1 1 0 1 0 0 1
+BENCH heap 107208 28740 31732 7548
+BENCH web http://192.168.4.1/app

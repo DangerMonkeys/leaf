@@ -1,0 +1,124 @@
+BENCH version 0.2.4-8a4.bench+h3.2.5
+BENCH version 0.2.4-8a4.bench+h3.2.5
+BENCH status On Navigate 0 0 0 1 0 0 1
+
+HOST press RIGHT
+BENCH ok
+
+HOST press UP
+button: RIGHT  state: PRESSED     hold count: 0
+button: RIGHT  state: CLICKED     hold count: 0
+1284623 playSound 1008713402
+WiFi coordinator: trying saved network 0 'SkyWagon'
+button: RIGHT  state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press CENTER
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+1284923 playSound 1008599430
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press DOWN
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+1285223 playSound 1008705654
+button: CENTER state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press DOWN
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+1285533 playSound 1008599430
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press DOWN
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+1285834 playSound 1008599430
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press DOWN
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+1286133 playSound 1008599430
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press DOWN
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+1286443 playSound 1008599430
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press DOWN
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+1286743 playSound 1008599430
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press CENTER
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+1287053 playSound 1008599430
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press LEFT
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+button: CENTER state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press LEFT
+button: LEFT   state: PRESSED     hold count: 0
+button: LEFT   state: CLICKED     hold count: 0
+1287663 playSound 1008644894
+button: LEFT   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST wait 5
+button: LEFT   state: PRESSED     hold count: 0
+button: LEFT   state: CLICKED     hold count: 0
+1287963 playSound 1008705644
+WiFi disconnected
+button: LEFT   state: RELEASED    hold count: 0
+Speaker::update skipped 1 intervals
+
+HOST press UP
+BENCH ok
+
+HOST press CENTER
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+1293343 playSound 1008713392
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST status
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+1293643 playSound 1008579960
+FANET log: /fanetlogs/FANET_2026-11-20_165313_2.csv
+[FanetRadio] Initializing
+[FanetRadio] Initialized
+button: CENTER state: RELEASED    hold count: 0
+Speaker::update skipped 3 intervals
+BENCH status On Navigate 0 0 0 1 0 1 1
+
+HOST fanet
+BENCH fanet 1 RUNNING 2864 3340
+
+HOST stacks
+BENCH stacks 7836 2996 2864 3340 0
+
+HOST heap
+BENCH heap 90256 20208 26612 7836
+BENCH status On Navigate 0 0 0 1 0 1 1
+BENCH heap 90256 20208 26612 7836
+BENCH web off

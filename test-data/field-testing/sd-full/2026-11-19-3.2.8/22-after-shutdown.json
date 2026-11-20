@@ -1,0 +1,48 @@
+{
+  "utc": "2026-11-20T01:09:25.875309+00:00",
+  "steps": [
+    {
+      "command": "status",
+      "reply": "status OffUSB Charging 0 0 1 0 0 0 0",
+      "seconds": 0.0
+    },
+    {
+      "command": "config",
+      "reply": "config 1 0 1 1 1 1 0 0",
+      "seconds": 0.0
+    },
+    {
+      "command": "heap",
+      "reply": "heap 200716 173544 110580 7724",
+      "seconds": 0.0
+    }
+  ],
+  "initial": {
+    "power": "OffUSB",
+    "page": "Charging",
+    "cursor": 0,
+    "modal_depth": 0,
+    "warning": true,
+    "climb_ready": false,
+    "gps_fix": false,
+    "flight_running": false,
+    "firmware_sd_access": false
+  },
+  "final": {
+    "power": "OffUSB",
+    "page": "Charging",
+    "cursor": 0,
+    "modal_depth": 0,
+    "warning": true,
+    "climb_ready": false,
+    "gps_fix": false,
+    "flight_running": false,
+    "firmware_sd_access": false
+  },
+  "heap": {
+    "internal_free": 200716,
+    "internal_min_since_boot": 173544,
+    "internal_largest": 110580,
+    "loop_stack_unused": 7724
+  }
+}

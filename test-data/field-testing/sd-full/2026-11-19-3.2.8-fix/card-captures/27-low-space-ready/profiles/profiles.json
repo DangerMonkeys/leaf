@@ -1,0 +1,1 @@
+{"schema": "leaf.profiles", "schema_version": "v0.1.0", "active_pilot_id": "sd-p1", "active_glider_id": "sd-g1", "pilots": [{"id": "sd-p1", "name": "SD Bench Pilot 1"}, {"id": "sd-p2", "name": "SD Bench Pilot 2"}], "gliders": [{"id": "sd-g1", "model": "SD Bench Glider"}]}

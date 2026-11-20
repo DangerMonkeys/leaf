@@ -11,6 +11,7 @@
 
 #include "comms/fanet_radio.h"
 #include "diagnostics/cpu_utilization.h"
+#include "diagnostics/heap_monitor.h"
 #include "display_capture.h"
 #include "instruments/gps.h"
 #include "logging/buslog.h"
@@ -27,6 +28,7 @@
 #include "ui/display/pages/fanet/page_fanet_stats.h"
 #include "ui/display/pages/menu/page_menu_developer.h"
 #include "ui/display/pages/menu/page_menu_settings.h"
+#include "ui/display/pages/menu/page_menu_system.h"
 #include "ui/settings/settings.h"
 
 namespace {
@@ -57,6 +59,14 @@ namespace {
     out.write(png.data(), png.size());
     assert(out.good());
   }
+
+  class SystemMenu : public SystemMenuPage {
+   public:
+    void toggleDeveloperMode() {
+      for (int i = 0; i < 5; ++i) button_event(Button::DOWN, ButtonEvent::CLICKED, 0);
+      button_event(Button::CENTER, ButtonEvent::INCREMENTED, 4);
+    }
+  };
 
   std::vector<std::filesystem::path> csvFiles() {
     std::vector<std::filesystem::path> result;
@@ -160,7 +170,7 @@ int main() {
   menu.press(Button::UP);
   assert(menu.cursor() == 0);
   menu.press(Button::UP);  // Wrap to bus logger and back.
-  assert(menu.cursor() == 8);
+  assert(menu.cursor() == 9);
   menu.press(Button::DOWN);
   assert(menu.cursor() == 0);
   menu.press(Button::DOWN);
@@ -197,6 +207,32 @@ int main() {
   settings.dev_logFanet = false;
   menu.press(Button::CENTER);
   assert(!cpu_utilization::hasCapture());
+
+  menu.press(Button::DOWN);
+  assert(menu.cursor() == 6);
+  heap_monitor::registerTask("loop", xTaskGetCurrentTaskHandle());
+  menu.press(Button::CENTER);
+  using StackState = heap_monitor::StackMonitorState;
+  assert(heap_monitor::stackMonitorState() == StackState::Running);
+  // A pair of FANET workers recreated between periodic samples still contributes.
+  for (unsigned i = 0; i < 2; ++i) {
+    heap_monitor::registerTask("fanet_rx", xTaskGetCurrentTaskHandle());
+    heap_monitor::registerTask("fanet_rx", nullptr);
+  }
+  sim::clock().advanceUs(3 * 60 * 60 * UINT64_C(1000000));
+  assert(!SD_MMC.exists("/diagnostics/stack_1.csv"));
+  sdcard.unmount();
+  menu.press(Button::CENTER);
+  assert(heap_monitor::stackMonitorState() == StackState::Frozen);
+  assert(sdcard.mount());
+  menu.press(Button::CENTER);
+  assert(heap_monitor::stackMonitorState() == StackState::Idle);
+  File stackFile = SD_MMC.open("/diagnostics/stack_1.csv");
+  assert(stackFile);
+  const String stackCsv = stackFile.readString();
+  assert(stackCsv.indexOf("loop,10800000,1,4096") >= 0);
+  assert(stackCsv.indexOf("fanet_rx,10800000,2,4096") >= 0);
+  assert(stackCsv.indexOf("ble,10800000,0,\n") >= 0);
 
   sim::board().fanetPresent = true;
   fanetRadio.setup();
@@ -276,6 +312,23 @@ int main() {
   flightTimer_stop(false);
   assert(rows(files.back()).size() == 33);
   assert(!busLog.isLogging() && !std::filesystem::exists(root + "/buslogs"));
+
+  assert(busLog.startLog());
+  assert(busLog.startLog() && busLog.isLogging());
+  busLog.on_receive(PressureUpdate(millis(), 101325));
+  settings.dev_startLogAtBoot = true;
+  SystemMenu systemMenu;
+  systemMenu.toggleDeveloperMode();
+  assert(!settings.dev_mode && !settings.dev_startLogAtBoot && !busLog.isLogging());
+  assert(!busLog.startLog());
+  const auto logPath = *std::filesystem::directory_iterator(root + "/buslogs");
+  std::ifstream busFile(logPath.path());
+  std::string line;
+  assert(std::getline(busFile, line) && line.front() == 'V');
+  assert(std::getline(busFile, line) && line.front() == 'P');
+  auto logEnd = std::filesystem::directory_iterator();
+  auto logStart = std::filesystem::directory_iterator(root + "/buslogs");
+  assert(++logStart == logEnd);
 
   settings.dev_mode = false;
   flightTimer_start();

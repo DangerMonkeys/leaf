@@ -1,0 +1,54 @@
+{
+  "utc": "2026-11-20T02:40:10.908532+00:00",
+  "operation": "snapshot",
+  "volume_serial": "01114FC5",
+  "free_before": 8355840,
+  "free_after": 8355840,
+  "files": [
+    {
+      "path": "routes/active.json",
+      "bytes": 211,
+      "sha256": "4568978043d611e1fa7ca5abd5ebdac0e15dd7d4bd90f7001d9832ec7768f69e",
+      "valid_json": true
+    },
+    {
+      "path": "routes/bench-sd-full.json",
+      "bytes": 457,
+      "sha256": "a991c6f2ca37263dbbca14d588aa6dd05ea3fd2f030df9e4c58949716cb8d1c8",
+      "valid_json": true
+    },
+    {
+      "path": "routes/bench-sd-import.json",
+      "bytes": 472,
+      "sha256": "1e75c0eb31b5979d62fd4a23998acd6cfa8848fb6f5692ef5b5a86ebe4b90bdc",
+      "valid_json": true
+    },
+    {
+      "path": "waypoints/bench-sd-full.cup",
+      "bytes": 1509,
+      "sha256": "6a4d4e496fbdf729003686d085c5dde383fa79d25a862d34f6869b10d0d0fda1"
+    },
+    {
+      "path": "waypoints/Ed2Hamilton.cup",
+      "bytes": 1509,
+      "sha256": "6a4d4e496fbdf729003686d085c5dde383fa79d25a862d34f6869b10d0d0fda1"
+    },
+    {
+      "path": "waypoints/user_waypoints.json",
+      "bytes": 146,
+      "sha256": "4a99751b73485a087fc2c95071c0dde89b31703cdd93ea71d3e38cbb0a06086e",
+      "valid_json": true
+    },
+    {
+      "path": "profiles/profiles.json",
+      "bytes": 272,
+      "sha256": "a935456c9c26934c962a04a8a233874f2f90fb23dd91afdc41f471dc39214a80",
+      "valid_json": true
+    },
+    {
+      "path": "diagnostics/stack_1.csv",
+      "bytes": 106,
+      "sha256": "08f7887d878b12dd2012b453230f333e12911e1ac564f6aebf75c413daa17092"
+    }
+  ]
+}

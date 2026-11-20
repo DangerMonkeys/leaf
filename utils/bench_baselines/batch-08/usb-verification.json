@@ -1,0 +1,36 @@
+{
+  "usb-baseline": {
+    "read_hash_ms": 15,
+    "write_flush_ms": 4925,
+    "bytes": 2097152,
+    "read_back_verified": true,
+    "sha256": "ac4d6e29fe03bea7db6d9da75f80b33f10a380c50a567fd2c7f7b8f62d056c2a",
+    "fixture_removed": true
+  },
+  "usb-candidate": {
+    "fixture_removed": true,
+    "bytes": 2097152,
+    "write_flush_ms": 3833,
+    "sha256": "ac4d6e29fe03bea7db6d9da75f80b33f10a380c50a567fd2c7f7b8f62d056c2a",
+    "read_hash_ms": 14,
+    "read_back_verified": true
+  },
+  "enumeration": {
+    "firmware_mass_storage_enumerated": true,
+    "sd_mass_storage": true,
+    "usb_serial": true
+  },
+  "eject-baseline": {
+    "windows_eject_accepted": true,
+    "sd_media_present": false,
+    "eject": "USB console did not reply"
+  },
+  "eject-candidate": {
+    "windows_eject_accepted": true,
+    "sd_media_present": false,
+    "eject": "USB console did not reply",
+    "bootloader_reentry_after_eject": true,
+    "console_recovered_after_reset": true,
+    "firmware_sd_access_after_wake": true
+  }
+}

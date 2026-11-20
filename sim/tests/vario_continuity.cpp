@@ -138,8 +138,8 @@ int main() {
       ready();
       assert(imu.gLoad().takeInterval().resets == 0);
       step();
-      // This long-running average would need another 20 samples if stale output cleared it.
-      assert(baro.climbRateAverageValid());
+      assert(baro.climbRateFilteredValid());
+      assert(baro.climbRate1SecAverageValid());
     }
     // Neither a stale message nor a temporary pressure-only outage resets the filter.
     const auto updates = imu.kalmanUpdateSampleCount();
@@ -160,7 +160,7 @@ int main() {
     motion();
     ready();
     step();
-    assert(baro.climbRateAverageValid());
+    assert(baro.climbRateFilteredValid() && baro.climbRate1SecAverageValid());
     // An explicit sensor reset still requires the original startup qualification.
     MotionUpdate reset(millis());
     reset.reset = true;

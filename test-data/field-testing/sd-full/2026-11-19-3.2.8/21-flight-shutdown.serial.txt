@@ -1,0 +1,49 @@
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH status On User -1 1 0 1 1 0 1
+
+HOST press LEFT
+BENCH ok
+
+HOST press UP
+button: LEFT   state: PRESSED     hold count: 0
+button: LEFT   state: CLICKED     hold count: 0
+613544 playSound 1008610594
+button: LEFT   state: RELEASED    hold count: 0
+LSM6DSV: a=0.0000,-0.0061,0.9928 g=-0.0035,-0.0051,0.9994 pairs=BENCH ok
+
+HOST press CENTER
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+613844 playSound 1008724150
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST status
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+614154 playSound 1008578976
+button: CENTER state: RELEASED    hold count: 0
+BENCH status On User 0 0 0 1 1 1 1
+
+HOST wait 5
+Sectors: 15741312
+614411 playSound 1008578950
+logbook: write error=28 expected=1281 actual=1267
+LSM6DSV: a=-0.0037,-0.0039,0.9931 g=-0.0035,-0.0050,0.9994 pairs
+HOST hold CENTER 2300
+BENCH ok
+
+HOST wait 6
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: HELD        hold count: 0
+button: CENTER state: INCREMENTED hold count: 0
+button: CENTER state: INCREMENTED hold count: 1
+button: CENTER state: INCREMENTED hold count: 2
+power_shutdown
+logbook: write error=28 expected=1469 actual=1451
+logbook finalization: saved=0 attempts=1 elapsed_ms=28 heap_befo622333 playSound 1008578940
+Stack monitor: shutdown save failed
+622371 playSound 1008579210
+Speaker::update skipped 26 intervals
+FATAL ERROR: Lock acquisition failed in MessageBus::receive

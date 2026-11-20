@@ -1,0 +1,75 @@
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH status On Menu 7 0 0 1 1 1 1
+
+HOST press UP
+BENCH ok
+
+HOST press UP
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+864528 playSound 1008598446
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press UP
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+864839 playSound 1008598446
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press CENTER
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+865140 playSound 1008598446
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST wait 3
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+button: CENTER state: RELEASED    hold count: 0
+LSM6DSV: a=-0.0041,-0.0046,0.9933 g=-0.0048,-0.0043,0.9994 pairs
+HOST press CENTER
+BENCH ok
+
+HOST press UP
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+Stack monitor saved /diagnostics/stack_2.csv
+868949 playSound 1008640162
+button: CENTER state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press CENTER
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+869238 playSound 1008598446
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST wait 8
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+Runtime capture: free=52932 largest=31732 need blocks of 12800 a869539 playSound 1008640136
+button: CENTER state: RELEASED    hold count: 0
+LSM6DSV: a=-0.0046,-0.0044,0.9938 g=-0.0044,-0.0048,0.9994 pairsLSM6DSV: a=-0.0044,-0.0046,0.9928 g=-0.0048,-0.0045,0.9994 pairs
+HOST press CENTER
+BENCH ok
+
+HOST status
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+Runtime capture: free=52932 largest=31732 need blocks of 12800 a877940 playSound 1008640136
+button: CENTER state: RELEASED    hold count: 0
+BENCH status On Menu 7 0 0 1 1 1 1
+
+HOST heap
+BENCH heap 52932 18864 31732 7532
+
+HOST stacks
+BENCH stacks 7532 2996 0 0 0
+BENCH status On Menu 7 0 0 1 1 1 1
+BENCH heap 52932 18864 31732 7532
+BENCH web http://10.0.0.183/app

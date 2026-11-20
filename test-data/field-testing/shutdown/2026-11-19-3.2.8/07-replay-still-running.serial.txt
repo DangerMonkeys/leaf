@@ -1,0 +1,18 @@
+LSM6DSV: a=-0.0017,-0.0059,0.9938 g=-0.0018,-0.0056,0.9994 pairslogbook finalization: saved=1 attempts=1 elapsed_ms=1062 heap_be127686 playSound 1008579238
+Speaker::update skipped 26 intervals
+BENCH version 0.2.4-45ed.bench+h3.2.8
+LSM6DSV: t=127708 discarded FIFO backlog (132 words)
+BENCH version 0.2.4-45ed.bench+h3.2.8
+BENCH status On User -1 1 0 0 1 0 1
+
+HOST status
+BENCH status On User -1 1 0 0 1 0 1
+
+HOST heap
+BENCH heap 135548 85968 34804 7868
+
+HOST version
+BENCH version 0.2.4-45ed.bench+h3.2.8
+BENCH status On User -1 1 0 0 1 0 1
+BENCH heap 135548 85968 34804 7868
+BENCH web http://10.0.0.183/app

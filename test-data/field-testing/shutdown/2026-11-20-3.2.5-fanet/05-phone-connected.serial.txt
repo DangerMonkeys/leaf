@@ -1,0 +1,28 @@
+BENCH version 0.2.4-8a4.bench+h3.2.5
+BENCH version 0.2.4-8a4.bench+h3.2.5
+BENCH status On Navigate 0 0 0 1 1 1 1
+
+HOST status
+BENCH status On Navigate 0 0 0 1 1 1 1
+
+HOST config
+BENCH config 1 1 1 0 0 0 0 0
+
+HOST fanet
+BENCH fanet 1 RUNNING 2124 1376
+
+HOST stacks
+BENCH stacks 7836 3000 2124 1376 0
+
+HOST heap
+BENCH heap 92228 47164 31732 7836
+
+HOST wait 3
+$PFLAA,0,18,62,119,2,FBD364,82,,0.14,0.10,7,0,0,-40*0D
+
+
+HOST status
+BENCH status On Navigate 0 0 0 1 1 1 1
+BENCH status On Navigate 0 0 0 1 1 1 1
+BENCH heap 92292 47164 31732 7836
+BENCH web off

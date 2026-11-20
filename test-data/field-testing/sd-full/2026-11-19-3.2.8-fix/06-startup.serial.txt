@@ -1,0 +1,4 @@
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: HELD        hold count: 0
+button: CENTER state: RELEASED    hold count: 0
+WARNING: LC86G sentence length 85 was exceeded with sentence (inNMEA sentence was not valid: 2,571d3e7,2209141904,,,-15.48,-15.4LSM6DSV: a=-0.0020,-0.0059,0.9945 g=-0.0015,-0.0056,0.9994 pairs

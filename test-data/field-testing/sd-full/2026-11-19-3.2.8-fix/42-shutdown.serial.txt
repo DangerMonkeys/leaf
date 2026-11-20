@@ -1,0 +1,29 @@
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH status On Menu 2 0 0 1 0 0 1
+
+HOST press LEFT
+BENCH ok
+
+HOST press LEFT
+button: LEFT   state: PRESSED     hold count: 0
+button: LEFT   state: CLICKED     hold count: 0
+785732 playSound 1008669776
+button: LEFT   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press LEFT
+button: LEFT   state: PRESSED     hold count: 0
+button: LEFT   state: CLICKED     hold count: 0
+786042 playSound 1008665236
+button: LEFT   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST hold CENTER 2300
+button: LEFT   state: PRESSED     hold count: 0
+button: LEFT   state: CLICKED     hold count: 0
+786342 playSound 1008704924
+WiFi disconnected
+button: LEFT   state: RELEASED    hold count: 0
+Speaker::update skipped 1 intervals
+BENCH ok

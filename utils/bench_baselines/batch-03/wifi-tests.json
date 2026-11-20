@@ -1,0 +1,165 @@
+{
+  "captured_at_utc": "2026-11-14T03:28:33.770736+00:00",
+  "firmware_sha256": "ddd68959de69f7783c1836ed694531aacde1ddae8b25691f0f642d81066a91ec",
+  "checkpoints": {
+    "idle": {
+      "heap": {
+        "internal_free": 97480,
+        "internal_min_since_boot": 87764,
+        "internal_largest": 34804,
+        "loop_stack_unused": 7844
+      },
+      "station_connected": false,
+      "ap_running": false,
+      "status": {
+        "power": "On",
+        "page": "User",
+        "cursor": 0,
+        "modal_depth": 0,
+        "warning": false,
+        "climb_ready": true,
+        "gps_fix": false,
+        "flight_running": false,
+        "firmware_sd_access": true
+      },
+      "wifi_mode": "0"
+    },
+    "station_web_1": {
+      "heap": {
+        "internal_free": 92840,
+        "internal_min_since_boot": 43372,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      "station_connected": true,
+      "ap_running": false,
+      "status": {
+        "power": "On",
+        "page": "Menu",
+        "cursor": -1,
+        "modal_depth": 1,
+        "warning": false,
+        "climb_ready": true,
+        "gps_fix": false,
+        "flight_running": false,
+        "firmware_sd_access": true
+      },
+      "wifi_mode": "1"
+    },
+    "idle_after_1": {
+      "heap": {
+        "internal_free": 79092,
+        "internal_min_since_boot": 38236,
+        "internal_largest": 26612,
+        "loop_stack_unused": 7844
+      },
+      "station_connected": false,
+      "ap_running": false,
+      "status": {
+        "power": "On",
+        "page": "User",
+        "cursor": 0,
+        "modal_depth": 0,
+        "warning": false,
+        "climb_ready": true,
+        "gps_fix": false,
+        "flight_running": false,
+        "firmware_sd_access": true
+      },
+      "wifi_mode": "0"
+    },
+    "station_web_2": {
+      "heap": {
+        "internal_free": 92288,
+        "internal_min_since_boot": 38236,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      "station_connected": true,
+      "ap_running": false,
+      "status": {
+        "power": "On",
+        "page": "Menu",
+        "cursor": -1,
+        "modal_depth": 1,
+        "warning": false,
+        "climb_ready": true,
+        "gps_fix": false,
+        "flight_running": false,
+        "firmware_sd_access": true
+      },
+      "wifi_mode": "1"
+    },
+    "access_point": {
+      "heap": {
+        "internal_free": 84088,
+        "internal_min_since_boot": 38236,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      "station_connected": false,
+      "ap_running": true,
+      "status": {
+        "power": "On",
+        "page": "Menu",
+        "cursor": -1,
+        "modal_depth": 1,
+        "warning": false,
+        "climb_ready": true,
+        "gps_fix": false,
+        "flight_running": false,
+        "firmware_sd_access": true
+      },
+      "wifi_mode": "2"
+    },
+    "menu_after_ap_close": {
+      "heap": {
+        "internal_free": 40208,
+        "internal_min_since_boot": 34600,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      "station_connected": true,
+      "ap_running": false,
+      "status": {
+        "power": "On",
+        "page": "Menu",
+        "cursor": 5,
+        "modal_depth": 0,
+        "warning": false,
+        "climb_ready": true,
+        "gps_fix": false,
+        "flight_running": false,
+        "firmware_sd_access": true
+      },
+      "wifi_mode": "1"
+    },
+    "idle_after_2": {
+      "heap": {
+        "internal_free": 73548,
+        "internal_min_since_boot": 34600,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      "station_connected": false,
+      "ap_running": false,
+      "status": {
+        "power": "On",
+        "page": "User",
+        "cursor": 0,
+        "modal_depth": 0,
+        "warning": false,
+        "climb_ready": true,
+        "gps_fix": false,
+        "flight_running": false,
+        "firmware_sd_access": true
+      },
+      "wifi_mode": "0"
+    }
+  },
+  "passed": true,
+  "version": "0.2.4-064d.bench+h3.2.5",
+  "reopen_1_ms": 1640,
+  "reopen_2_ms": 1687,
+  "saved_network_reconnect_ms": 766
+}

@@ -1,0 +1,29 @@
+BENCH version 0.2.4-8a4.bench+h3.2.5
+BENCH version 0.2.4-8a4.bench+h3.2.5
+BENCH status OffUSB Charging 0 0 0 0 0 0 1
+
+HOST press CENTER
+BENCH ok
+
+HOST press CENTER
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+button: CENTER state: RELEASED    hold count: 0
+BENCH ok
+
+HOST wait 8
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+button: CENTER state: RELEASED    hold count: 0
+
+HOST status
+BENCH status OffUSB Charging 0 0 0 0 0 0 0
+
+HOST stacks
+BENCH stacks 7836 0 0 0 8564
+
+HOST heap
+BENCH heap 180448 20208 31732 7836
+BENCH status OffUSB Charging 0 0 0 0 0 0 0
+BENCH heap 180448 20208 31732 7836
+BENCH web off

@@ -1,0 +1,61 @@
+{
+  "baseline_static_sections_bytes": {
+    ".dram0.data": 28356,
+    ".dram0.bss": 69896
+  },
+  "candidate_static_sections_bytes": {
+    ".dram0.data": 28372,
+    ".dram0.bss": 57952
+  },
+  "linked_static_bytes_saved": 11928,
+  "classes": {
+    "LIB-058 NCM": {
+      "bss_symbols": {
+        "ncm_epbuf": 6416,
+        "ncm_interface": 56
+      },
+      "removed_bytes": 6472
+    },
+    "LIB-059 DFU": {
+      "bss_symbols": {
+        "_dfu_epbuf": 4096,
+        "_dfu_ctx": 20
+      },
+      "removed_bytes": 4116
+    },
+    "LIB-060 HID": {
+      "bss_symbols": {
+        "_hidd_epbuf": 192,
+        "_hidd_itf": 12
+      },
+      "removed_bytes": 204
+    },
+    "LIB-061 MIDI": {
+      "bss_symbols": {
+        "_midid_itf": 368,
+        "_midid_epbuf": 128
+      },
+      "removed_bytes": 496
+    },
+    "LIB-062 Video": {
+      "bss_symbols": {
+        "_videod_streaming_epbuf": 64,
+        "_videod_streaming_itf": 78,
+        "_videod_itf": 11
+      },
+      "removed_bytes": 153
+    },
+    "LIB-063 Vendor": {
+      "bss_symbols": {
+        "_vendord_epbuf": 128,
+        "_vendord_itf": 372
+      },
+      "removed_bytes": 500
+    }
+  },
+  "disabled_class_bss_bytes": 11941,
+  "retained_buffers_bytes": {
+    "cdc_endpoints": 128,
+    "msc_endpoint": 4096
+  }
+}

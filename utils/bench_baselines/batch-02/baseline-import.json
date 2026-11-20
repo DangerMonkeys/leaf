@@ -1,0 +1,39 @@
+{
+  "captured_at_utc": "2026-11-14T03:10:19.179311+00:00",
+  "firmware_sha256": "6b96404cbb42ffea128be215a421959a0ed866b6b18f8c6eb655c368717571c5",
+  "prefix": "bench-r2base",
+  "requests": {
+    "import_limit": {
+      "status": 200,
+      "bytes": 10000,
+      "response": {
+        "saved": true,
+        "active": false,
+        "name": "bench-r2base-import",
+        "path": "/routes/bench-r2base-import.json",
+        "points": 20
+      },
+      "elapsed_ms": 218,
+      "before": {
+        "internal_free": 93400,
+        "internal_min_since_boot": 38032,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7844
+      },
+      "after": {
+        "internal_free": 87584,
+        "internal_min_since_boot": 31888,
+        "internal_largest": 31732,
+        "loop_stack_unused": 7588
+      }
+    }
+  },
+  "passed": true,
+  "version": "0.2.4-dd5d.bench+h3.2.5",
+  "web_open_heap": {
+    "internal_free": 93400,
+    "internal_min_since_boot": 38032,
+    "internal_largest": 31732,
+    "loop_stack_unused": 7844
+  }
+}

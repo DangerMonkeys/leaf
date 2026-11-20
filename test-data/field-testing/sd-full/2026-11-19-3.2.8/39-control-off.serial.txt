@@ -1,0 +1,22 @@
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH status On Menu 1 0 0 1 0 0 1
+
+HOST press LEFT
+BENCH ok
+
+HOST press LEFT
+button: LEFT   state: PRESSED     hold count: 0
+LSM6DSV: a=-0.0017,-0.0054,0.9936 g=-0.0014,-0.0059,0.9994 pairsbutton: LEFT   state: CLICKED     hold count: 0
+527548 playSound 1008649592
+WiFi coordinator: saved network 'SkyWagon' did not connect
+WiFi coordinator: trying saved network 1 'LeafDiagnostics'
+button: LEFT   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST hold CENTER 2300
+button: LEFT   state: PRESSED     hold count: 0
+button: LEFT   state: CLICKED     hold count: 0
+527858 playSound 1008700904
+button: LEFT   state: RELEASED    hold count: 0
+BENCH ok

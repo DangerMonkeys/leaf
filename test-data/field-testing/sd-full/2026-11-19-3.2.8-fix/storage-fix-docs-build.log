@@ -1,0 +1,144 @@
+
+> leaf-website2@0.0.1 build
+> astro build
+
+18:45:52 [content] Syncing content
+18:45:53 [WARN] [starlight-docs-loader] Duplicate id "dev-references/heap-savings-log" found in C:\Users\oxoth\projects\leaf\.pio\worktrees\usb-bench-console\website\src\content\docs\dev-references\heap-savings-log.md. Later items with the same id will overwrite earlier ones.
+18:45:53 [WARN] [starlight-docs-loader] Duplicate id "dev-references/heap-savings-summary" found in C:\Users\oxoth\projects\leaf\.pio\worktrees\usb-bench-console\website\src\content\docs\dev-references\heap-savings-summary.md. Later items with the same id will overwrite earlier ones.
+18:45:53 [WARN] [starlight-docs-loader] Duplicate id "dev-references/usb-bench-console" found in C:\Users\oxoth\projects\leaf\.pio\worktrees\usb-bench-console\website\src\content\docs\dev-references\usb-bench-console.md. Later items with the same id will overwrite earlier ones.
+18:45:53 [content] Synced content
+18:45:53 [types] Generated 896ms
+18:45:53 [build] output: "static"
+18:45:53 [build] mode: "static"
+18:45:53 [build] directory: C:\Users\oxoth\projects\leaf\.pio\worktrees\usb-bench-console\website\dist\
+18:45:53 [build] Collecting build info...
+18:45:53 [build] ✓ Completed in 1.08s.
+18:45:53 [build] Building static entrypoints...
+18:45:54 [WARN] [astro-icon] Failed to load icons from "src/icons": ENOENT: no such file or directory, scandir 'C:\Users\oxoth\projects\leaf\.pio\worktrees\usb-bench-console\website\src\icons\'
+18:45:55 [vite] ✓ built in 2.17s
+18:45:55 [build] ✓ Completed in 2.20s.
+
+ building client (vite) 
+18:45:55 [vite] transforming...
+18:45:56 [vite] ✓ 35 modules transformed.
+18:45:56 [vite] rendering chunks...
+18:45:56 [vite] computing gzip size...
+18:45:56 [vite] dist/_astro/ec.8zarh.js                                                               2.42 kB
+18:45:56 [vite] dist/_astro/ec.tm3va.css                                                             18.26 kB │ gzip:  3.88 kB
+18:45:56 [vite] dist/_astro/MobileTableOfContents.astro_astro_type_script_index_0_lang.C181hMzK.js    0.67 kB │ gzip:  0.40 kB
+18:45:56 [vite] dist/_astro/TableOfContents.astro_astro_type_script_index_0_lang.CKWWgpjV.js          1.67 kB │ gzip:  0.86 kB
+18:45:56 [vite] dist/_astro/Search.astro_astro_type_script_index_0_lang.CJiOmi4V.js                   2.69 kB │ gzip:  1.38 kB
+18:45:56 [vite] dist/_astro/ui-core.C0u4jL1_.js                                                      94.19 kB │ gzip: 27.34 kB
+18:45:56 [vite] dist/_astro/client.DtF5yZE9.js                                                      143.47 kB │ gzip: 46.21 kB
+18:45:56 [vite] ✓ built in 492ms
+
+ generating static routes 
+18:45:56 ▶ @astrojs/starlight/routes/static/404.astro
+Entry docs → 404 was not found.
+18:45:56   └─ /404.html (+18ms) 
+18:45:56 ▶ @astrojs/starlight/routes/static/index.astro
+18:45:56   ├─ /dev-references/bluetooth/index.html (+8ms) 
+18:45:56   ├─ /dev-references/backlog-review-2026-10-22/index.html (+5ms) 
+18:45:56   ├─ /legal/disclaimer/index.html (+5ms) 
+18:45:56   ├─ /release-notes/v024/index.html (+5ms) 
+18:45:56   ├─ /dev-references/heap-savings-log/index.html (+6ms) 
+18:45:56   ├─ /dev-references/bounded-shutdown-assessment-2026-10-29/index.html (+4ms) 
+18:45:56   ├─ /dev-references/example/index.html (+6ms) 
+18:45:56   ├─ /dev-references/bounded-shutdown/index.html (+5ms) 
+18:45:56   ├─ /dev-references/core-dumps/index.html (+5ms) 
+18:45:56   ├─ /dev-references/flights_and_logging/index.html (+4ms) 
+18:45:56   ├─ /dev-references/heap-savings-summary/index.html (+4ms) 
+18:45:56   ├─ /dev-references/igc-sensor-records/index.html (+4ms) 
+18:45:56   ├─ /dev-references/releasing/index.html (+3ms) 
+18:45:56   ├─ /dev-references/release-readiness-2026-10-24/index.html (+3ms) 
+18:45:56   ├─ /dev-references/runtime-assessment/index.html (+4ms) 
+18:45:56   ├─ /dev-references/rtos/index.html (+3ms) 
+18:45:56   ├─ /dev-references/sd-full-test-2026-11-19/index.html (+3ms) 
+18:45:56   ├─ /dev-references/usb-bench-console/index.html (+3ms) 
+18:45:56   ├─ /dev-references/variants/index.html (+4ms) 
+18:45:56   ├─ /user-guides/test-pilot-page/index.html (+8ms) 
+18:45:56   ├─ /ui-reviews/readme/index.html (+4ms) 
+18:45:56   ├─ /dev-references/archives/index.html (+3ms) 
+18:45:56   ├─ /assets/device-captures/readme/index.html (+5ms) 
+18:45:56   ├─ /dev-references/backlog/diagnostic-files-cleanup/index.html (+3ms) 
+18:45:56   ├─ /dev-references/backlog/accelerometer-flight-metrics/index.html (+3ms) 
+18:45:56   ├─ /dev-references/backlog/factory-commissioning-followup/index.html (+3ms) 
+18:45:56   ├─ /dev-references/backlog/heap-availability-improvements/index.html (+3ms) 
+18:45:56   ├─ /dev-references/backlog/igc-task-start-rendering/index.html (+3ms) 
+18:45:56   ├─ /dev-references/backlog/logbook-path-distance/index.html (+3ms) 
+18:45:56   ├─ /dev-references/backlog/lcd-preview-renderer/index.html (+3ms) 
+18:45:56   ├─ /dev-references/backlog/leaf-log-auto-upload/index.html (+3ms) 
+18:45:56   ├─ /dev-references/backlog/lora-fanet-range-and-antennas/index.html (+3ms) 
+18:45:56   ├─ /dev-references/backlog/sd-card-write-robustness/index.html (+4ms) 
+18:45:56   ├─ /dev-references/backlog/one-button-bootloader-entry/index.html (+3ms) 
+18:45:56   ├─ /dev-references/backlog/runtime-resource-assessment/index.html (+5ms) 
+18:45:56   ├─ /dev-references/backlog/misc-firmware-bugs/index.html (+3ms) 
+18:45:56   ├─ /dev-references/backlog/signed-igc-xcontest-validation/index.html (+7ms) 
+18:45:56   ├─ /dev-references/backlog/st-imu-magnetometer-migration/index.html (+5ms) 
+18:45:56   ├─ /dev-references/backlog/thermal-core-display/index.html (+3ms) 
+18:45:56   ├─ /dev-references/backlog/student-instructor-training-link/index.html (+3ms) 
+18:45:56   ├─ /dev-references/backlog/usb-mass-storage-power-on-ownership/index.html (+3ms) 
+18:45:56   ├─ /dev-references/backlog/vario-timing-robustness/index.html (+3ms) 
+18:45:56   ├─ /dev-references/backlog/web-app-firmware-check-followup/index.html (+3ms) 
+18:45:56   ├─ /dev-references/backlog/waypoint-handling-improvements/index.html (+3ms) 
+18:45:56   ├─ /dev-references/backlog/vario-imu-gravity-performance/index.html (+3ms) 
+18:45:56   ├─ /dev-references/bus/index.html (+4ms) 
+18:45:56   ├─ /dev-references/ide-setup/index.html (+3ms) 
+18:45:56   ├─ /dev-references/fanet/index.html (+4ms) 
+18:45:56   ├─ /user-guides/vario-user-manual/index.html (+17ms) 
+18:45:56   ├─ /dev-references/debug-memory/index.html (+3ms) 
+18:45:56   ├─ /ui-reviews/logbook-maintenance/readme/index.html (+3ms) 
+18:45:56   ├─ /dev-references/testing/test_procedure/index.html (+3ms) 
+18:45:56   ├─ /dev-references/storage-fix-review-2026-11-19/index.html (+3ms) 
+18:45:56   └─ /dev-references/backlog/shutdown-message-bus-lock/index.html (+3ms) 
+18:45:56 ▶ src/pages/index.astro
+18:45:56   └─ /index.html (+3ms) 
+18:45:56 ▶ src/pages/user-guides/test-pilot-page.astro
+18:45:56   └─ /user-guides/test-pilot-page/index.html (+1ms) 
+18:45:56 ▶ src/pages/user-guides/vario-user-manual.astro
+18:45:56   └─ /user-guides/vario-user-manual/index.html (+1ms) 
+18:45:56 ▶ src/pages/user-manual/archive/v0-1-7-firmware-updates.astro
+18:45:56   └─ /user-manual/archive/v0-1-7-firmware-updates/index.html (+2ms) 
+18:45:56 ▶ src/pages/user-manual.astro
+18:45:56   └─ /user-manual/index.html (+4ms) 
+18:45:56 ✓ Completed in 352ms.
+
+ generating optimized images 
+18:45:56   ▶ /_astro/leaf-logotype.BRsTKDOL_ZnJGuy.webp (reused cache entry) (+2ms) (1/6)
+18:45:56   ▶ /_astro/message-bus.LBJ00aPh_201384.webp (reused cache entry) (+2ms) (2/6)
+18:45:56   ▶ /_astro/leaf-log-sequence.16bB9FhO_10DSAn.webp (reused cache entry) (+2ms) (3/6)
+18:45:56   ▶ /_astro/upload.sZPvcxlD_2v2fQs.webp (reused cache entry) (+2ms) (4/6)
+18:45:56   ▶ /_astro/leaf-user-fields.Dyzp271V_Z2sLE1y.webp (reused cache entry) (+3ms) (5/6)
+18:45:56   ▶ /_astro/leaf-sd-card.MFyhHeOe_Lrvw6.webp (reused cache entry) (+3ms) (6/6)
+18:45:56 ✓ Completed in 4ms.
+
+(node:10660) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+Running Pagefind v1.5.2 (Extended)
+Running from: "C:\\Users\\oxoth\\projects\\leaf\\.pio\\worktrees\\usb-bench-console\\website\\node_modules\\@astrojs\\starlight"
+Source:       "..\\..\\..\\dist"
+Output:       "..\\..\\..\\dist\\pagefind"
+
+[Walking source directory]
+Found 60 files matching **/*.{html}
+
+[Parsing files]
+Found a data-pagefind-body element on the site.
+↳ Ignoring pages without this tag.
+
+[Reading languages]
+Discovered 1 language: en
+
+[Building search indexes]
+Total: 
+  Indexed 1 language
+  Indexed 52 pages
+  Indexed 8353 words
+  Indexed 0 filters
+  Indexed 0 sorts
+
+Finished in 0.534 seconds
+18:45:58 [@astrojs/sitemap] `sitemap-index.xml` created at `dist`
+18:45:58 [build] 60 page(s) built in 6.28s
+18:45:58 [build] Complete!

@@ -1,0 +1,167 @@
+{
+  "utc": "2026-11-20T02:35:25.304089+00:00",
+  "base": "http://10.0.0.183",
+  "requests": [
+    {
+      "method": "POST",
+      "path": "/api/debug/session",
+      "request_bytes": 137,
+      "status": 200,
+      "seconds": 0.094,
+      "bytes": 235,
+      "sha256": "4f0b3892bf1c7223ad1a02c44550e1a7b6a029870d54a16052f88356c31b1e62",
+      "body": {
+        "always_on": true,
+        "keep_bluetooth_disabled": false,
+        "udp_sensor_injection": false,
+        "web_app_active": true,
+        "using_leaf_wifi": false,
+        "diag_system_events": false,
+        "diag_network_events": false,
+        "diag_web_requests": false,
+        "diag_cpu_utilization": false
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/routes/save",
+      "request_bytes": 18000,
+      "status": 200,
+      "seconds": 1.125,
+      "bytes": 99,
+      "sha256": "dfdbd25aadd67277c01af9973f954ea99a9ad1a0002d0c7222d33e726affffa4",
+      "body": {
+        "saved": true,
+        "active": false,
+        "name": "bench-sd-full",
+        "path": "/routes/bench-sd-full.json",
+        "points": 1
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/routes/import",
+      "request_bytes": 229,
+      "status": 200,
+      "seconds": 0.125,
+      "bytes": 103,
+      "sha256": "007cfbfab9d0107845d1c91a5b89d1046fd810a0edb43810a7e900bb1ab4e0f6",
+      "body": {
+        "saved": true,
+        "active": false,
+        "name": "bench-sd-import",
+        "path": "/routes/bench-sd-import.json",
+        "points": 1
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/api/profiles",
+      "request_bytes": 272,
+      "status": 200,
+      "seconds": 0.062,
+      "bytes": 14,
+      "sha256": "82a210beacaa01c555bf2a7ee6f4390ebb4f3879a8e8625b19f954db24d678d6",
+      "body": {
+        "saved": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/waypoints/upload",
+      "request_bytes": 1692,
+      "status": 200,
+      "seconds": 0.125,
+      "bytes": 120,
+      "sha256": "881be18bcf8d088a21402b20889c4ef7b43b56f155bb13dfca8c5f77cab74632",
+      "body": {
+        "saved": true,
+        "loaded": true,
+        "filename": "bench-sd-full.cup",
+        "path": "/waypoints/bench-sd-full.cup",
+        "points": 26,
+        "routes": 0
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/waypoints/activate",
+      "request_bytes": 27,
+      "status": 200,
+      "seconds": 0.109,
+      "bytes": 67,
+      "sha256": "9f1d96053d5a4dae61769adf6417497f0138f82395482592d9de197857655c7d",
+      "body": {
+        "loaded": true,
+        "filename": "Ed2Hamilton.cup",
+        "points": 26,
+        "routes": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/profiles",
+      "request_bytes": 0,
+      "status": 200,
+      "seconds": 0.016,
+      "bytes": 272,
+      "sha256": "a935456c9c26934c962a04a8a233874f2f90fb23dd91afdc41f471dc39214a80",
+      "body": {
+        "schema": "leaf.profiles",
+        "schema_version": "v0.1.0",
+        "active_pilot_id": "sd-p2",
+        "active_glider_id": "sd-g1",
+        "pilots": [
+          {
+            "id": "sd-p1",
+            "name": "SD Bench Pilot 1"
+          },
+          {
+            "id": "sd-p2",
+            "name": "SD Bench Pilot 2"
+          }
+        ],
+        "gliders": [
+          {
+            "id": "sd-g1",
+            "model": "SD Bench Glider"
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/leaf-log/status",
+      "request_bytes": 0,
+      "status": 200,
+      "seconds": 0.015,
+      "bytes": 84,
+      "sha256": "c56f2d8953fb21d1657cd9d465ec3ae0e0d24e3eae9258fcff2e5a9980396a61",
+      "body": {
+        "linked": false,
+        "reconnect_required": false,
+        "account": {
+          "handle": "",
+          "displayName": ""
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/nav-data",
+      "request_bytes": 0,
+      "status": 200,
+      "seconds": 0.032,
+      "bytes": 143,
+      "sha256": "da4917be71c0a51b881c5b3225098db47d61d2531648dca4fd9b54457abb37f3",
+      "body": {
+        "loaded_file": "Ed2Hamilton.cup",
+        "loaded_path": "/waypoints/Ed2Hamilton.cup",
+        "point_count": 26,
+        "route_count": 0,
+        "active_type": "",
+        "active_name": ""
+      }
+    }
+  ]
+}

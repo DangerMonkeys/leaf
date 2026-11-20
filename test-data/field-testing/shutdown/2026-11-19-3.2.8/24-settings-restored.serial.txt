@@ -1,0 +1,116 @@
+BENCH version 0.2.4-45ed.bench+h3.2.8
+BENCH version 0.2.4-45ed.bench+h3.2.8
+BENCH status On Menu -1 1 0 1 0 0 1
+
+HOST press LEFT
+BENCH ok
+
+HOST press UP
+button: LEFT   state: PRESSED     hold count: 0
+button: LEFT   state: CLICKED     hold count: 0
+629937 playSound 1008681504
+button: LEFT   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press UP
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+630237 playSound 1008598718
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press UP
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+630537 playSound 1008598718
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press CENTER
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+630846 playSound 1008598718
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press UP
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+631156 playSound 1008704942
+button: CENTER state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press CENTER
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+631456 playSound 1008598718
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press UP
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+631766 playSound 1008665262
+button: CENTER state: RELEASED    hold count: 0
+LSM6DSV: a=-0.0020,-0.0059,0.9928 g=-0.0019,-0.0056,0.9994 pairsBENCH ok
+
+HOST press UP
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+632066 playSound 1008598718
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press UP
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+632366 playSound 1008598718
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST hold CENTER 3000
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+632677 playSound 1008598718
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST config
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: HELD        hold count: 0
+button: CENTER state: INCREMENTED hold count: 0
+button: CENTER state: INCREMENTED hold count: 1
+button: CENTER state: INCREMENTED hold count: 2
+button: CENTER state: INCREMENTED hold count: 3
+button: CENTER state: INCREMENTED hold count: 4
+635716 playSound 1008735000
+button: CENTER state: RELEASED    hold count: 0
+BENCH config 1 0 0 0 0 0 0 0
+
+HOST press LEFT
+BENCH ok
+
+HOST press LEFT
+button: LEFT   state: PRESSED     hold count: 0
+button: LEFT   state: CLICKED     hold count: 0
+636296 playSound 1008669784
+button: LEFT   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press LEFT
+button: LEFT   state: PRESSED     hold count: 0
+button: LEFT   state: CLICKED     hold count: 0
+636597 playSound 1008665244
+button: LEFT   state: RELEASED    hold count: 0
+LSM6DSV: a=-0.0017,-0.0059,0.9933 g=-0.0027,-0.0036,0.9994 pairsBENCH ok
+
+HOST wait 5
+button: LEFT   state: PRESSED     hold count: 0
+button: LEFT   state: CLICKED     hold count: 0
+636905 playSound 1008704932
+WiFi disconnected
+button: LEFT   state: RELEASED    hold count: 0
+Speaker::update skipped 1 intervals
+LSM6DSV: a=-0.0015,-0.0051,0.9933 g=-0.0018,-0.0056,0.9994 pairs
+HOST hold CENTER 2300
+BENCH ok

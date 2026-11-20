@@ -6,6 +6,7 @@
 
 #include "dispatch/message_injector.h"
 #include "dispatch/message_source.h"
+#include "utils/producer_gate.h"
 
 // Receives injected sensor messages over UDP (see sim/play_buslog.py).  The wire format and its
 // parsing live in MessageInjector, shared with the device emulator.
@@ -17,6 +18,12 @@ class UDPMessageServer : public IMessageSource {
   // Require both developer mode and its injection opt-in, plus a network on hardware.
   void update();
 
+  // Stop new callbacks and wait, without a bus/file lock, for admitted ones.
+  bool quiesce(uint32_t timeoutMs = 500);
+#ifdef LEAF_SIM
+  bool callbackInFlightForTest() const { return !callbacks_.idle(); }
+#endif
+
   // IMessageSource
   void publishTo(etl::imessage_bus* bus) { injector_.setBus(bus); }
   void stopPublishing() { injector_.setBus(nullptr); }
@@ -25,6 +32,7 @@ class UDPMessageServer : public IMessageSource {
   void onPacket(AsyncUDPPacket& packet);
 
   MessageInjector injector_;
+  ProducerGate callbacks_;
   std::atomic<bool> accepting_{false};
   std::atomic<bool> resetReference_{true};
   bool listening_ = false;

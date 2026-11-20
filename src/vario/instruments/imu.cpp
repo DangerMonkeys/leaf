@@ -127,9 +127,6 @@ void IMU::processMotion(const MotionUpdate& m) {
   }
   motionSampleProcessedCount_++;
   lastMotionTime_ = m.t;
-  lastQuatX_ = qx;
-  lastQuatY_ = qy;
-  lastQuatZ_ = qz;
 
   bool needComma = false;
   bool needNewline = false;
@@ -150,9 +147,6 @@ void IMU::processMotion(const MotionUpdate& m) {
   accelTot_ = sqrt(m.ax * m.ax + m.ay * m.ay + m.az * m.az);
   validAccelTot_ = true;
   gLoad_.addSample((float)accelTot_, m.t, 4.0f * 1.732051f);
-  lastDeviceAccelX_ = m.ax;
-  lastDeviceAccelY_ = m.ay;
-  lastDeviceAccelZ_ = m.az;
 
 #ifdef SHOW_DEVICE_ACCEL
   if (needComma) {
@@ -176,8 +170,6 @@ void IMU::processMotion(const MotionUpdate& m) {
         m.ay, m.az, qw, qx, qy, qz, awx, awy, awz);
     fatalError("IMU awz was invalid");
   }
-  lastWorldAccelX_ = awx;
-  lastWorldAccelY_ = awy;
   lastWorldVerticalAccel_ = awz;
   validLastWorldVerticalAccel_ = true;
 
@@ -283,9 +275,6 @@ void IMU::processGravity(const MotionUpdate& m) {
   }
   motionSampleProcessedCount_++;
   lastMotionTime_ = m.t;
-  lastDeviceAccelX_ = m.ax;
-  lastDeviceAccelY_ = m.ay;
-  lastDeviceAccelZ_ = m.az;
   accelTot_ = sqrt(m.ax * m.ax + m.ay * m.ay + m.az * m.az);
   validAccelTot_ = true;
   kalmanAccelVert_ = accelVert_;
@@ -293,7 +282,6 @@ void IMU::processGravity(const MotionUpdate& m) {
   lastWorldVerticalAccel_ = accelVert_ + gravity_;
   validLastWorldVerticalAccel_ = true;
   // No horizontal orientation or quaternion is requested from the chip.
-  lastWorldAccelX_ = lastWorldAccelY_ = lastQuatX_ = lastQuatY_ = lastQuatZ_ = NAN;
   startupNonVertSamples_ = STARTUP_NON_VERT_SAMPLES;
 }
 
@@ -470,31 +458,13 @@ float IMU::kalmanAcceleration() const {
   return kalmanvert_.initialized() ? (float)kalmanvert_.getAcceleration() : 0.0f;
 }
 
-unsigned long IMU::lastMotionTime() const { return lastMotionTime_; }
-
-float IMU::lastDeviceAccelX() const { return (float)lastDeviceAccelX_; }
-
-float IMU::lastDeviceAccelY() const { return (float)lastDeviceAccelY_; }
-
-float IMU::lastDeviceAccelZ() const { return (float)lastDeviceAccelZ_; }
-
-float IMU::lastQuatX() const { return (float)lastQuatX_; }
-
-float IMU::lastQuatY() const { return (float)lastQuatY_; }
-
-float IMU::lastQuatZ() const { return (float)lastQuatZ_; }
-
-float IMU::lastWorldAccelX() const { return (float)lastWorldAccelX_; }
-
-float IMU::lastWorldAccelY() const { return (float)lastWorldAccelY_; }
-
-float IMU::lastWorldVerticalAccel() const { return (float)lastWorldVerticalAccel_; }
+float IMU::lastWorldVerticalAccel() const { return lastWorldVerticalAccel_; }
 
 bool IMU::worldVerticalAccelValid() const { return validLastWorldVerticalAccel_; }
 
 uint16_t IMU::gravityInitResetCount() const { return gravityInitResetCount_; }
 
-float IMU::lastRejectedGravityEstimate() const { return (float)lastRejectedGravity_; }
+float IMU::lastRejectedGravityEstimate() const { return lastRejectedGravity_; }
 
 uint32_t IMU::motionSampleCount() const { return motionSampleCount_; }
 

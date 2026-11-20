@@ -75,6 +75,9 @@ namespace {
 LeafLogSync leafLogSync;
 
 void LeafLogSync::beginSession(bool fromEject) {
+#ifdef LEAF_USB_BENCH_CONSOLE
+  uploadStackUnused_.store(0, std::memory_order_relaxed);
+#endif
   LogbookStore::beginRepairSession(false);
   // Uploads no longer block input polling. A first center tap asks for confirmation,
   // so the old interrupt-to-abort shortcut must not cancel the transport.
@@ -699,6 +702,12 @@ void LeafLogSync::uploadTask(void* context) {
   self->uploadResult_ =
       leaf_log_client::uploadIgc(self->uploadPath_, self->uploadFilename_, self->uploadToken_,
                                  self->cancelRequested_, self->powerOnRequested_);
+#ifdef LEAF_USB_BENCH_CONSOLE
+  const uint32_t unused = uxTaskGetStackHighWaterMark(nullptr);
+  const uint32_t minimum = self->uploadStackUnused_.load(std::memory_order_relaxed);
+  if (minimum == 0 || unused < minimum)
+    self->uploadStackUnused_.store(unused, std::memory_order_relaxed);
+#endif
   self->uploadDone_.store(true, std::memory_order_release);
   vTaskDelete(nullptr);
 }

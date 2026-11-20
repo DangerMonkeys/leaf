@@ -1,0 +1,38 @@
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH status On User -1 1 1 1 0 0 1
+
+HOST status
+BENCH status On User -1 1 1 1 0 0 1
+
+HOST press DOWN
+BENCH ok
+
+HOST press CENTER
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+76578 playSound 1008626834
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST status
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+76878 playSound 1008626820
+button: CENTER state: RELEASED    hold count: 0
+BENCH status On User -1 1 0 1 0 0 1
+
+HOST press CENTER
+BENCH ok
+
+HOST status
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+button: CENTER state: RELEASED    hold count: 0
+BENCH status On User 0 0 0 1 0 0 1
+
+HOST heap
+BENCH heap 149228 143756 86004 8308
+BENCH status On User 0 0 0 1 0 0 1
+BENCH heap 149228 143756 86004 8308
+BENCH web off

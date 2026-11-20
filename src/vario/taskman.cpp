@@ -162,9 +162,13 @@ TODO: In addition to the timer-driven interrupt, we may consider also setting wa
 the pushbuttons, the GPS 1PPS signal, and perhaps others.
 */
 void TaskManager::update() {
+  // Button subscribers only request shutdown. Dispatch has released its bus
+  // mutex before this loop boundary, so asynchronous publishers can finish.
+  if (power.serviceShutdown()) return;
   cpu_utilization::update();
-  const bool networkWork = !leafLogSync.transferInFlight() && sdcard.firmwareOwnsMassStorage() &&
-                           (WiFi.status() == WL_CONNECTED || webserver_user_app_active());
+  const bool networkWork =
+      !leafLogSync.transferInFlight() && sdcard.firmwareOwnsMassStorage() &&
+      (WiFi.status() == WL_CONNECTED || webserver_user_app_active() || webserver_listening());
   const bool heartbeatDue = millis() - lastMemoryHeartbeatMs >= MEMORY_HEARTBEAT_MS;
   {
     cpu_utilization::Scope services(
@@ -189,6 +193,7 @@ void TaskManager::update() {
     if (heartbeatDue) {
       lastMemoryHeartbeatMs = millis();
       heap_monitor::checkpoint("main-heartbeat");
+      heap_monitor::updateStackMonitor();
     }
   }
 

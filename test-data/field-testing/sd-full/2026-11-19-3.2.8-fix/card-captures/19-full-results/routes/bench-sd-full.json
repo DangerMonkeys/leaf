@@ -1,0 +1,25 @@
+{
+  "points": [
+    {
+      "name": "SD full bench",
+      "lat": 47.5,
+      "lon": -122.2,
+      "alt_m": 100,
+      "radius_m": 400,
+      "role": "goal"
+    }
+  ],
+  "schema": "leaf.route",
+  "schema_version": "v0.1.0",
+  "name": "bench-sd-full",
+  "source_format": "leaf_web",
+  "task_type": "route",
+  "earth_model": "wgs84",
+  "goal": {
+    "type": "cylinder"
+  },
+  "start": {
+    "type": "none",
+    "time_gates": []
+  }
+}

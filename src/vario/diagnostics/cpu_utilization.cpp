@@ -28,6 +28,8 @@ namespace cpu_utilization {
       heap_monitor::Snapshot value = {};
     };
     struct Capture {
+      explicit Capture(Recorder::SlotStats& stats) : recorder(stats) {}
+
       Recorder recorder;
       GpsProfile gps;
       struct {
@@ -49,8 +51,15 @@ namespace cpu_utilization {
       uint64_t startUs = 0;
       uint64_t endUs = 0;
     };
-    static_assert(sizeof(Capture) <= 22832,
+    struct SlotStatsStorage {
+      Recorder::SlotStats stats = {};
+    };
+    constexpr size_t CAPTURE_BYTES = sizeof(Capture) + sizeof(SlotStatsStorage);
+    static_assert(CAPTURE_BYTES <= 22832,
                   "Keep GPS profiling within 512 bytes of the prior capture footprint");
+    static_assert(sizeof(Capture) <= sizeof(SlotStatsStorage),
+                  "Allocate the larger runtime capture block first");
+    SlotStatsStorage* slotStats = nullptr;
     Capture* data = nullptr;
     std::atomic<uint32_t> failedAllocations{0};
     std::atomic<uint32_t> excludedGps{0};
@@ -82,7 +91,7 @@ namespace cpu_utilization {
       snprintf(out, length,
                "{\"ble\":%s,\"fanet_region\":%u,\"thermal_core\":%s,\"thermal_track\":%s,"
                "\"basic_page\":%s,\"user_page\":%s,\"nav_page\":%s,\"debug_pages\":%s,"
-               "\"system_log\":%s,\"network_log\":%s,\"web_log\":%s,\"vario_log\":%s,\"fanet_log\":"
+               "\"system_log\":%s,\"network_log\":%s,\"web_log\":%s,\"fanet_log\":"
                "%s,\"route_optimizer\":true}",
                settings.system_bluetoothOn ? "true" : "false", (unsigned)settings.fanet_region,
                settings.disp_showThermalCorePage ? "true" : "false",
@@ -93,7 +102,7 @@ namespace cpu_utilization {
                settings.disp_showDebugPage ? "true" : "false",
                settings.diag_systemEvents ? "true" : "false",
                settings.diag_networkEvents ? "true" : "false",
-               settings.diag_webRequests ? "true" : "false", settings.diag_vario ? "true" : "false",
+               settings.diag_webRequests ? "true" : "false",
                settings.dev_logFanet ? "true" : "false");
     }
 
@@ -369,21 +378,33 @@ namespace cpu_utilization {
     if (!data) {
       // Preserve internal headroom before starting capture.
       // Allocation never occurs in the slot/segment record path.
-      void* storage = nullptr;
-      if (heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT) >=
-          sizeof(Capture) + INTERNAL_RESERVE_BYTES)
-        storage = heap_caps_malloc(sizeof(Capture), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-      if (!storage) {
+      // Keep the per-slot statistics separate so a fragmented heap can fit the capture.
+      constexpr uint32_t caps = MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT;
+      const size_t free = heap_caps_get_free_size(caps);
+      const size_t largest = heap_caps_get_largest_free_block(caps);
+      void* statsStorage = nullptr;
+      void* captureStorage = nullptr;
+      if (free >= CAPTURE_BYTES + INTERNAL_RESERVE_BYTES) {
+        statsStorage = heap_caps_malloc(sizeof(SlotStatsStorage), caps);
+        if (statsStorage) captureStorage = heap_caps_malloc(sizeof(Capture), caps);
+      }
+      if (!captureStorage || heap_caps_get_free_size(caps) < INTERNAL_RESERVE_BYTES) {
+        if (captureStorage) heap_caps_free(captureStorage);
+        if (statsStorage) heap_caps_free(statsStorage);
         allocationFailed = true;
         Serial.printf(
-            "Runtime capture: cannot reserve %u bytes while leaving %u internal bytes free\n",
+            "Runtime capture: free=%u largest=%u need blocks of %u and %u with %u bytes left\n",
+            (unsigned)free, (unsigned)largest, (unsigned)sizeof(SlotStatsStorage),
             (unsigned)sizeof(Capture), (unsigned)INTERNAL_RESERVE_BYTES);
         return false;
       }
-      data = new (storage) Capture{};
+      slotStats = new (statsStorage) SlotStatsStorage{};
+      data = new (captureStorage) Capture(slotStats->stats);
     } else {
       data->~Capture();
-      new (data) Capture{};
+      slotStats->~SlotStatsStorage();
+      new (slotStats) SlotStatsStorage{};
+      new (data) Capture(slotStats->stats);
     }
     allocationFailed = false;
     lastExportPath[0] = '\0';
@@ -419,12 +440,33 @@ namespace cpu_utilization {
   }
 
   void update() {
+    if (!settings.dev_mode) {
+      settings.diag_cpuUtilization = false;
+      freeze();
+      discard();
+      previouslyEnabled = false;
+      return;
+    }
     const bool requested = settings.dev_mode && settings.diag_cpuUtilization;
     if (!requested) {
       if (capturing()) freeze();
     } else if (!previouslyEnabled)
       start();
     previouslyEnabled = requested;
+  }
+
+  bool discard() {
+    if (capturing() || (data && !onCaptureThread())) return false;
+    if (data) {
+      data->~Capture();
+      heap_caps_free(data);
+      data = nullptr;
+      slotStats->~SlotStatsStorage();
+      heap_caps_free(slotStats);
+      slotStats = nullptr;
+    }
+    allocationFailed = false;
+    return true;
   }
 
   uint64_t captureStartUs() { return data ? data->startUs : 0; }
@@ -617,7 +659,7 @@ namespace cpu_utilization {
         "\"partial_slots\":%lu,\"trace_overwritten\":%lu,\"memory_overwritten\":%lu,"
         "\"clock_pair_max_us\":%lu,\"bookkeeping_max_us\":%lu,"
         "\"memory_sample_max_us\":%lu,\"unassigned_work_us\":%lu,",
-        (unsigned long)ESP.getCpuFreqMHz(), (unsigned)sizeof(Capture),
+        (unsigned long)ESP.getCpuFreqMHz(), (unsigned)CAPTURE_BYTES,
         (unsigned long long)data->startUs, (unsigned long long)data->endUs,
         (unsigned long)r.partialSlots,
         (unsigned long)(r.traceTotal > TRACE_COUNT ? r.traceTotal - TRACE_COUNT : 0),
@@ -740,11 +782,7 @@ namespace cpu_utilization {
     file.close();
     if (written) snprintf(lastExportPath, sizeof(lastExportPath), "%s", path);
     Serial.printf("Runtime capture: %s (%s)\n", path, written ? "exported" : "write failed");
-    if (written) {
-      data->~Capture();
-      heap_caps_free(data);
-      data = nullptr;
-    }
+    if (written) discard();
     return written;
   }
 }  // namespace cpu_utilization

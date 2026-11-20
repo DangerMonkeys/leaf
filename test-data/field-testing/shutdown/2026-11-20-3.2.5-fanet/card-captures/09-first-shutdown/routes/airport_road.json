@@ -1,0 +1,82 @@
+{
+  "schema": "leaf.route",
+  "schema_version": "v0.1.0",
+  "name": "airport_road",
+  "source_format": "synthetic_test",
+  "task_type": "route",
+  "earth_model": "wgs84",
+  "goal": {
+    "type": "cylinder"
+  },
+  "start": {
+    "type": "none",
+    "time_gates": []
+  },
+  "notes": "Travel test using the supplied path. Start at 37.454172,-122.114729; follow the path to 37.457655,-122.114889; return along the path to the start; then follow the path north again to the goal near 37.456554,-122.115645. Complete both end turnarounds even if a cylinder sequences shortly before the endpoint. Off-path cylinder centers are intentional. Elevations are synthetic 0 m test values, not surveyed elevations.",
+  "points": [
+    {
+      "name": "01 OUT GLANCE",
+      "lat": 37.4545482,
+      "lon": -122.1163345,
+      "alt_m": 0.0,
+      "radius_m": 90,
+      "role": "normal"
+    },
+    {
+      "name": "02 OUT ANGLE",
+      "lat": 37.455909,
+      "lon": -122.1154775,
+      "alt_m": 0.0,
+      "radius_m": 50,
+      "role": "normal"
+    },
+    {
+      "name": "03 NORTH TURN",
+      "lat": 37.4578752,
+      "lon": -122.114946,
+      "alt_m": 0.0,
+      "radius_m": 45,
+      "role": "normal"
+    },
+    {
+      "name": "04 BACK GLANCE",
+      "lat": 37.4564019,
+      "lon": -122.1148301,
+      "alt_m": 0.0,
+      "radius_m": 90,
+      "role": "normal"
+    },
+    {
+      "name": "05 BACK ANGLE",
+      "lat": 37.4549015,
+      "lon": -122.1157565,
+      "alt_m": 0.0,
+      "radius_m": 50,
+      "role": "normal"
+    },
+    {
+      "name": "06 SOUTH TURN",
+      "lat": 37.4541659,
+      "lon": -122.114446,
+      "alt_m": 0.0,
+      "radius_m": 45,
+      "role": "normal"
+    },
+    {
+      "name": "07 OUT GLANCE",
+      "lat": 37.4548139,
+      "lon": -122.1163926,
+      "alt_m": 0.0,
+      "radius_m": 90,
+      "role": "normal"
+    },
+    {
+      "name": "08 GOAL",
+      "lat": 37.4565685,
+      "lon": -122.1156124,
+      "alt_m": 0.0,
+      "radius_m": 25,
+      "role": "goal"
+    }
+  ]
+}

@@ -99,7 +99,10 @@ namespace {
 void LogbookScan::cancel() {
   directory_.close();
   pending_ = false;
-  anchor_ = newest_ = "";
+  anchor_ = static_cast<const char*>(nullptr);
+  newest_ = static_cast<const char*>(nullptr);
+  navigation_.previousPath = static_cast<const char*>(nullptr);
+  navigation_.nextPath = static_cast<const char*>(nullptr);
   navigation_ = LogbookNavigation();
 }
 

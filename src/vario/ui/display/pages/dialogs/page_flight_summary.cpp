@@ -23,13 +23,21 @@ PageFlightSummary::PageFlightSummary() {
   cursor_max = 0;
 }
 
+void PageFlightSummary::closed(bool removed) {
+  if (!removed) return;
+  summary.reset();
+  logbookPath = static_cast<const char*>(nullptr);
+  trackPath = static_cast<const char*>(nullptr);
+  showing_ = false;
+}
+
 void PageFlightSummary::draw() {
   u8g2.firstPage();
   do {
     display_menuTitle("SUMMARY");
 
     u8g2.setFont(leaf_6x12);
-    logbook_card::drawFlightCard(summary);
+    logbook_card::drawFlightCard(*summary);
 
     menu_ui::beginRow(156, cursor_position == 0);
     menu_ui::drawLabel(2, 156, "Delete");
@@ -79,7 +87,7 @@ void PageFlightSummary::setting_change(Button dir, ButtonEvent state, uint8_t co
         } else {
           LogbookEntrySummary remaining;
           if (LogbookStore::readSummary(logbookPath, remaining))
-            summary = remaining;
+            summary.emplace(std::move(remaining));
           else
             pop_page();
         }

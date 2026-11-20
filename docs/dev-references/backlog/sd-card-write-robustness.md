@@ -5,6 +5,16 @@ description: Two-phase plan for recoverable logbook saves and resource-conscious
 
 # SD Card Write Robustness Backlog
 
+## November 20, 2026 status
+
+Checked replacement saves for navigation, routes, waypoints and profiles, retryable Stack
+exports and startup low/full/unavailable-card warnings are now implemented; see the
+[storage review](https://leafvario.com/dev-references/storage-fix-review-2026-11-19/). The separate deferred Power shutdown
+also passed [live FANET/Bluetooth checks](https://leafvario.com/dev-references/shutdown-radio-test-2026-11-20/).
+These are bounded fixes, not completion of Phase 2 or proof of power-loss durability.
+IGC in-flight flush/error policy remains unchanged by agreement. SD buffer-size reductions
+are deferred pending timing/card measurements in the [memory restart plan](https://leafvario.com/dev-references/backlog/memory-optimization-followup/).
+
 ## 2026-10-28 verified cleanup refinement
 
 Completed flight and Leaf Log result writes now read back the exact serialized bytes and length
@@ -24,7 +34,7 @@ placeholders, reuses checked staging files for stop retries, and displays the im
 from RAM. Recovery is restricted to charging-page upload preparation and the explicit Logging >
 Repair Logs action. Nominal browsing uses sliced filename-only scans and reads only the selected
 flight; no per-flight RAM index is retained. Only terminal flight-save failure gets a per-flight warning; deletion refreshes
-available entries quietly. See [the current implementation contract](../../../src/vario/logbook/README.md)
+available entries quietly. See [the current implementation contract](https://github.com/DangerMonkeys/leaf/blob/main/src/vario/logbook/README.md)
 for exact limits and UI behavior. The historical implementation/verification record below describes
 the original Phase 1; its readback and eager-recovery policy is superseded by this refinement.
 The separate 200–250 ms instrument-gap/reset issue remains outside this change.
@@ -371,7 +381,7 @@ Phase 1 exit criteria:
 
 Implemented in the isolated Phase 1 worktree based on main at `9ae9fe80`. The shared routine is
 `src/vario/logbook/logbook_io.*`; its caller contract, recovery triggers, resource policy, and test
-instructions are documented in [the logbook README](../../../src/vario/logbook/README.md).
+instructions are documented in [the logbook README](https://github.com/DangerMonkeys/leaf/blob/main/src/vario/logbook/README.md).
 
 Implementation details fixed by this change:
 
@@ -511,7 +521,7 @@ SDK has `CONFIG_FATFS_FS_LOCK=0`; audit explicit handle ownership and synchroniz
 assuming duplicate-open/rename protection exists. Prefer a small guard and existing scheduling
 unless measurements demonstrate a need for a dedicated storage task.
 
-Coordinate with the [USB ownership backlog](usb-mass-storage-power-on-ownership.md). Firmware must
+Coordinate with the [USB ownership backlog](https://leafvario.com/dev-references/backlog/usb-mass-storage-power-on-ownership/). Firmware must
 not access FAT while a USB host owns the medium. USB inactivity/suspend does not establish safe
 release, and forcing disconnection cannot flush unsent host caches.
 
@@ -627,7 +637,7 @@ metrics; report the distinction explicitly.
 - [FatFs rename requirements](https://elm-chan.org/fsw/ff/doc/rename.html)
 - [ESP-IDF 5.3 FAT filesystem support and configuration](https://docs.espressif.com/projects/esp-idf/en/v5.3/esp32s3/api-reference/storage/fatfs.html)
 - [ESP-IDF 5.3.2 VFS implementation](https://github.com/espressif/esp-idf/blob/v5.3.2/components/fatfs/vfs/vfs_fat.c)
-- [USB mass-storage ownership backlog](usb-mass-storage-power-on-ownership.md)
-- [Leaf Log auto-upload backlog](leaf-log-auto-upload.md)
-- [Diagnostic files cleanup backlog](diagnostic-files-cleanup.md)
-- [Heap availability improvements backlog](heap-availability-improvements.md)
+- [USB mass-storage ownership backlog](https://leafvario.com/dev-references/backlog/usb-mass-storage-power-on-ownership/)
+- [Leaf Log auto-upload backlog](https://leafvario.com/dev-references/backlog/leaf-log-auto-upload/)
+- [Diagnostic files cleanup backlog](https://leafvario.com/dev-references/backlog/diagnostic-files-cleanup/)
+- [Heap availability improvements backlog](https://leafvario.com/dev-references/backlog/heap-availability-improvements/)

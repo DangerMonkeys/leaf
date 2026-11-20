@@ -1,0 +1,51 @@
+{
+  "utc": "2026-11-20T03:09:26.611075+00:00",
+  "base": "http://10.0.0.183",
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/api/debug/session",
+      "request_bytes": 0,
+      "status": 200,
+      "seconds": 0.094,
+      "bytes": 234,
+      "sha256": "0de90f1ff10fc016393f3443d961df0d767b4db5138fef0d612bb3e623bf02da",
+      "body": {
+        "always_on": true,
+        "keep_bluetooth_disabled": false,
+        "udp_sensor_injection": true,
+        "web_app_active": true,
+        "using_leaf_wifi": false,
+        "diag_system_events": false,
+        "diag_network_events": false,
+        "diag_web_requests": false,
+        "diag_cpu_utilization": false
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/user/status",
+      "request_bytes": 0,
+      "status": 200,
+      "seconds": 0.015,
+      "bytes": 364,
+      "sha256": "de30c728bf931b2083a619ff01dac3670275403652c11c9a428d2777cbf695f0",
+      "body": {
+        "active": true,
+        "mode": "network",
+        "ssid": "SkyWagon",
+        "ip_address": "10.0.0.183",
+        "url": "http://10.0.0.183/app",
+        "firmware_version": "0.2.4-45ed.bench+h3.2.8",
+        "firmware_display_version": "v0.2.4-45ed.bench",
+        "hardware_display_version": "v3.2.8",
+        "mac_address": "7C:4F:AD:3B:AC:B0",
+        "battery_percent": 72,
+        "battery_charging": true,
+        "usb_input": true,
+        "battery_mv": 3936,
+        "dev_mode": true
+      }
+    }
+  ]
+}

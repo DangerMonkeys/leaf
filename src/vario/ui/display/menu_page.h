@@ -97,6 +97,11 @@ class MenuPage {
   // If there is no modal page, returns NULL.
   MenuPage* get_modal_page();
 
+#ifdef LEAF_USB_BENCH_CONSOLE
+  size_t benchModalDepth() const { return get_current_page_stack().size(); }
+  int8_t benchCursor() const { return cursor_position; }
+#endif
+
   // Pops all modal pages off the stack, returning to a blank slate with no
   // modal pages
   void pop_all_pages();

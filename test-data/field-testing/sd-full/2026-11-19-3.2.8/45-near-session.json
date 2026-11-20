@@ -1,0 +1,12 @@
+{
+  "utc": "2026-11-20T01:19:29.825282+00:00",
+  "base": "http://10.0.0.183",
+  "requests": [
+    {
+      "method": "POST",
+      "path": "/api/debug/session",
+      "request_bytes": 136,
+      "error": "URLError(TimeoutError('timed out'))"
+    }
+  ]
+}

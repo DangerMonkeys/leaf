@@ -211,7 +211,6 @@ void SystemMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count
           settings.disp_showDebugPage = false;
           settings.dev_fanetFwd = true;
           settings.save();
-          // TODO: stop bus log if it's running
         }
       }
       break;

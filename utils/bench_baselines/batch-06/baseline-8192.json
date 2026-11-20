@@ -1,0 +1,25 @@
+{
+  "captured_utc": "2026-11-14T04:22:40.291106+00:00",
+  "fixture_bytes": 21197,
+  "firmware_sha256": "42fbd1981c04af150ccfa941c70faac28d9195d3c5e6dbf4e5292e9a424b05b9",
+  "version": "0.2.4-a40d.bench+h3.2.5",
+  "route_max": {
+    "http": 200,
+    "elapsed_ms": 359,
+    "before": {
+      "internal_free": 106760,
+      "internal_min_since_boot": 53088,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7096
+    },
+    "after": {
+      "internal_free": 103768,
+      "internal_min_since_boot": 53088,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7096
+    },
+    "response_bytes": 112
+  },
+  "path": "/routes/bench-nav6-baseline.json",
+  "passed": true
+}

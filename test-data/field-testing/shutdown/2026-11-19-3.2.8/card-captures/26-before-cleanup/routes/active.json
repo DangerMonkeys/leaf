@@ -1,0 +1,12 @@
+{
+  "schema": "leaf.nav_state",
+  "schema_version": "v0.1.0",
+  "source": {
+    "type": "nav_file",
+    "path": "/waypoints/Ed2Hamilton.cup"
+  },
+  "active": {
+    "type": "point",
+    "index": 15
+  }
+}

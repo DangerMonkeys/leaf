@@ -22,6 +22,7 @@
 #include "navigation/gpx_parser.h"
 #include "navigation/route_store.h"
 #include "navigation/user_waypoints.h"
+#include "storage/checked_file.h"
 #include "storage/files.h"
 #include "storage/sd_card.h"
 #include "ui/audio/sound_effects.h"
@@ -73,26 +74,7 @@ namespace {
   bool writeNavState(JsonDocument& doc) {
     if (!SD_MMC.exists(route_store::directoryPath()) && !SD_MMC.mkdir(route_store::directoryPath()))
       return false;
-
-    const char* tempPath = "/routes/active.tmp";
-    if (SD_MMC.exists(tempPath)) SD_MMC.remove(tempPath);
-
-    File file = SD_MMC.open(tempPath, "w", true);
-    if (!file) return false;
-
-    const size_t written = serializeJsonPretty(doc, file);
-    file.close();
-    if (written == 0) {
-      SD_MMC.remove(tempPath);
-      return false;
-    }
-
-    SD_MMC.remove(route_store::activeRoutePath());
-    if (!SD_MMC.rename(tempPath, route_store::activeRoutePath())) {
-      SD_MMC.remove(tempPath);
-      return false;
-    }
-    return true;
+    return checked_file::replaceJson(route_store::activeRoutePath(), doc, true);
   }
 
   bool readLine(File& file, char* buffer, size_t len) {
@@ -908,55 +890,64 @@ bool Navigator::savePersistedState() {
 }
 
 bool Navigator::clearPersistedState() {
-  if (!sdcard.isMounted() || !SD_MMC.exists(route_store::activeRoutePath())) return true;
-  return SD_MMC.remove(route_store::activeRoutePath());
+  return !sdcard.isMounted() || checked_file::erase(route_store::activeRoutePath());
 }
 
 bool Navigator::loadPersistedState() { return loadPersistedState(true); }
 
 bool Navigator::loadPersistedState(bool activate) {
-  if (!sdcard.isMounted() || !SD_MMC.exists(route_store::activeRoutePath())) return false;
+  if (!sdcard.isMounted() || !checked_file::recover(route_store::activeRoutePath()) ||
+      !SD_MMC.exists(route_store::activeRoutePath()))
+    return false;
 
-  File file = SD_MMC.open(route_store::activeRoutePath(), "r");
-  if (!file) return false;
+  String path;
+  LoadedNavSource sourceType = LoadedNavSource::None;
+  LastNavType activeType = LastNavType::None;
+  uint8_t index = 0;
+  int16_t routePointIndex = 1;
+  {
+    File file = SD_MMC.open(route_store::activeRoutePath(), "r");
+    if (!file) return false;
 
-  JsonDocument doc;
-  DeserializationError error = deserializeJson(doc, file);
-  file.close();
-  if (error) return false;
+    JsonDocument doc;
+    DeserializationError error = deserializeJson(doc, file);
+    file.close();
+    if (error) return false;
 
-  const char* schema = doc["schema"] | "";
-  if (strcmp(schema, LEGACY_ACTIVE_ROUTE_SCHEMA) == 0) {
-    const String path = doc["path"] | "";
-    if (!route_store::loadRouteFile(path, false)) return false;
-    lastNavType_ = LastNavType::Route;
-    lastRouteIndex_ = RouteID(1);
-    lastRoutePointIndex_ = RouteIndex(1);
-    lastWaypointIndex_ = WaypointID::None;
-    return activate ? activateRoute(RouteID(1), false) : true;
+    const char* schema = doc["schema"] | "";
+    if (strcmp(schema, LEGACY_ACTIVE_ROUTE_SCHEMA) == 0) {
+      path = doc["path"] | "";
+      sourceType = LoadedNavSource::SavedRoute;
+      activeType = LastNavType::Route;
+      index = 1;
+    } else if (strcmp(schema, NAV_STATE_SCHEMA) == 0) {
+      JsonObjectConst source = doc["source"].as<JsonObjectConst>();
+      sourceType = sourceFromName(source["type"] | "");
+      path = source["path"] | "";
+
+      JsonObjectConst active = doc["active"].as<JsonObjectConst>();
+      const char* type = active["type"] | "none";
+      if (strcmp(type, "route") == 0)
+        activeType = LastNavType::Route;
+      else if (strcmp(type, "point") == 0)
+        activeType = LastNavType::Point;
+      index = active["index"] | 0;
+      routePointIndex = active["route_point_index"] | 1;
+    }
   }
-  if (strcmp(schema, NAV_STATE_SCHEMA) != 0) return false;
-
-  JsonObjectConst source = doc["source"].as<JsonObjectConst>();
-  const LoadedNavSource sourceType = sourceFromName(source["type"] | "");
-  const String path = source["path"] | "";
   if (sourceType == LoadedNavSource::None || path.isEmpty()) return false;
 
   bool loaded = false;
   if (sourceType == LoadedNavSource::SavedRoute) {
     loaded = route_store::loadRouteFile(path, false);
   } else if (sourceType == LoadedNavSource::NavFile) {
-    loaded = nav_readFile(SD_MMC, path);
+    loaded = nav_readFile(SD_MMC, path, nullptr, false);
   } else if (sourceType == LoadedNavSource::UserWaypoints) {
     loaded = user_waypoints::loadAsNavigatorSource(false);
   }
   if (!loaded) return false;
 
-  JsonObjectConst active = doc["active"].as<JsonObjectConst>();
-  const char* activeType = active["type"] | "none";
-  const uint8_t index = active["index"] | 0;
-  const int16_t routePointIndex = active["route_point_index"] | 1;
-  if (strcmp(activeType, "route") == 0) {
+  if (activeType == LastNavType::Route) {
     const RouteID routeIndex(index);
     const RouteIndex pointIndex(routePointIndex);
     if (!routeIndex || routeIndex > totalRoutes || pointIndex < 1 ||
@@ -968,7 +959,7 @@ bool Navigator::loadPersistedState(bool activate) {
     lastWaypointIndex_ = WaypointID::None;
     return activate ? activateRoute(lastRouteIndex_, lastRoutePointIndex_, false) : true;
   }
-  if (strcmp(activeType, "point") == 0) {
+  if (activeType == LastNavType::Point) {
     const WaypointID pointIndex(index);
     if (!pointIndex || pointIndex > totalWaypoints) return false;
     lastNavType_ = LastNavType::Point;
@@ -982,7 +973,6 @@ bool Navigator::loadPersistedState(bool activate) {
   lastRouteIndex_ = RouteID::None;
   lastRoutePointIndex_ = RouteIndex::None;
   lastWaypointIndex_ = WaypointID::None;
-  savePersistedState();
   return true;
 }
 
@@ -1001,7 +991,7 @@ bool Navigator::restartLastRoute() {
   return activateRoute(lastRouteIndex_, RouteIndex(1));
 }
 
-bool gpx_readFile(fs::FS& fs, String fileName, NavLoadError* error) {
+bool gpx_readFile(fs::FS& fs, String fileName, NavLoadError* error, bool persist) {
   if (error) *error = NavLoadError::InvalidFile;
   heap_monitor::checkpoint("gpx-read-start");
   FileReader file_reader(fs, fileName);
@@ -1060,7 +1050,7 @@ bool gpx_readFile(fs::FS& fs, String fileName, NavLoadError* error) {
     Serial.print(navigator.totalRoutes);
     Serial.println(" routes");
     navigator.setLoadedGpxFilename(fileName);
-    navigator.savePersistedState();
+    if (persist) navigator.savePersistedState();
     if (error) *error = NavLoadError::None;
     heap_monitor::checkpoint("gpx-read-end");
     return true;
@@ -1078,12 +1068,12 @@ bool gpx_readFile(fs::FS& fs, String fileName, NavLoadError* error) {
   }
 }
 
-bool nav_readFile(fs::FS& fs, String fileName, NavLoadError* error) {
+bool nav_readFile(fs::FS& fs, String fileName, NavLoadError* error, bool persist) {
   if (error) *error = NavLoadError::InvalidFile;
   heap_monitor::checkpoint("nav-read-start");
   const String ext = lowerExtension(fileName);
   if (ext == "gpx") {
-    return gpx_readFile(fs, fileName, error);
+    return gpx_readFile(fs, fileName, error, persist);
   }
 
   navigator.clear();
@@ -1110,7 +1100,7 @@ bool nav_readFile(fs::FS& fs, String fileName, NavLoadError* error) {
     Serial.print(" routes from ");
     Serial.println(fileName);
     navigator.setLoadedNavFilename(fileName);
-    navigator.savePersistedState();
+    if (persist) navigator.savePersistedState();
     if (error) *error = NavLoadError::None;
     heap_monitor::checkpoint("nav-read-end");
     return true;

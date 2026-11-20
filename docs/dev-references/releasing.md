@@ -21,6 +21,9 @@ Publication remains an explicit operator action; this document does not automate
   environments. Preserve firmware binaries, ELF files, build diagnostics, and hashes.
 - Follow the repository hardware verification instructions, selecting the connected unit's
   correct variant. Record what was built, flashed, and actually exercised.
+- For optional automated button, Web App, and heap smoke tests, build the matching bench
+  environment from the candidate source. Keep the release build for the required runtime
+  reports. [USB bench console](usb-bench-console.md)
 
 ## Required runtime reports
 

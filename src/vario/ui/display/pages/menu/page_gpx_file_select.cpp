@@ -3,6 +3,7 @@
 #include <FS.h>
 #include <SD_MMC.h>
 #include <string.h>
+#include <new>
 
 #include "navigation/gpx.h"
 #include "navigation/route_store.h"
@@ -88,8 +89,13 @@ PageGpxFileSelect::PageGpxFileSelect() {
 
 void PageGpxFileSelect::show() {
   mode_ = Mode::FolderSelect;
+  if (!fileNames_) fileNames_.reset(new (std::nothrow) FileName[MAX_GPX_FILES]);
   refreshIndex();
   push_page(this);
+}
+
+void PageGpxFileSelect::closed(bool removed) {
+  if (removed) fileNames_.reset();
 }
 
 bool PageGpxFileSelect::button_event(Button button, ButtonEvent state, uint8_t count) {
@@ -157,6 +163,13 @@ void PageGpxFileSelect::refreshIndex() {
   status_[0] = '\0';
   loadFailed_ = false;
 
+  if (!fileNames_) {
+    snprintf(status_, sizeof(status_), "Not enough memory");
+    cursor_position = CURSOR_BACK;
+    cursor_max = CURSOR_BACK;
+    return;
+  }
+
   if (!sdcard.isMounted()) {
     if (!SDCard::isCardPresent() || !sdcard.mount()) {
       snprintf(status_, sizeof(status_), "SD card not ready");
@@ -193,7 +206,13 @@ void PageGpxFileSelect::refreshIndex() {
   File entry = dir.openNextFile();
   while (entry) {
     if (!entry.isDirectory()) {
-      const String name = fileNameOnly(entry.name());
+      String name = fileNameOnly(entry.name());
+      // Show a route whose replacement was interrupted after its old main became a backup.
+      // Do not rename while a directory iterator is live; loadRouteFile recovers on selection.
+      if (mode_ == Mode::SavedRoutes && name.endsWith(".json.bak")) {
+        name.remove(name.length() - 4);
+        if (SD_MMC.exists(String(directoryPath()) + "/" + name)) name = "";
+      }
       if (supportedFileName(name.c_str())) {
         addFileName(name);
       }

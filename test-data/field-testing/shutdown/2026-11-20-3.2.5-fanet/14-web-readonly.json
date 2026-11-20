@@ -1,0 +1,120 @@
+{
+  "utc": "2026-11-20T16:55:49.138928+00:00",
+  "base": "http://10.0.0.190",
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/app",
+      "request_bytes": 0,
+      "status": 200,
+      "seconds": 0.172,
+      "bytes": 92192,
+      "sha256": "b2b619502f6bd78060a7edf1ff90784dbf4113aab4ccebbc556d40ffa2c2287e",
+      "body": "<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content=\"width=device-width,initial-scale=1\"><meta http-equiv=Cache-Control content=no-store><title>Leaf</title><style>:root{font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;color:#202423;background:#363636;"
+    },
+    {
+      "method": "GET",
+      "path": "/api/user/status",
+      "request_bytes": 0,
+      "status": 200,
+      "seconds": 0.015,
+      "bytes": 365,
+      "sha256": "9f4f7d380deb501289d377faffaaab5dd3ef2320f82ccf9ffc508dee2dde5dcb",
+      "body": {
+        "active": true,
+        "mode": "network",
+        "ssid": "SkyWagon",
+        "ip_address": "10.0.0.190",
+        "url": "http://10.0.0.190/app",
+        "firmware_version": "0.2.4-8a4.bench+h3.2.5",
+        "firmware_display_version": "v0.2.4-8a4.bench",
+        "hardware_display_version": "v3.2.5",
+        "mac_address": "F0:F5:BD:56:16:A0",
+        "battery_percent": 100,
+        "battery_charging": false,
+        "usb_input": false,
+        "battery_mv": 4158,
+        "dev_mode": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/debug/session",
+      "request_bytes": 0,
+      "status": 200,
+      "seconds": 0.032,
+      "bytes": 236,
+      "sha256": "66e08921b96862403dbe5a0554b59cc1194217c06e70d04b2446780309128868",
+      "body": {
+        "always_on": false,
+        "keep_bluetooth_disabled": false,
+        "udp_sensor_injection": false,
+        "web_app_active": true,
+        "using_leaf_wifi": false,
+        "diag_system_events": false,
+        "diag_network_events": false,
+        "diag_web_requests": false,
+        "diag_cpu_utilization": false
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/profiles",
+      "request_bytes": 0,
+      "status": 200,
+      "seconds": 0.031,
+      "bytes": 315,
+      "sha256": "98ec77e9198b7da2fb24b947d9c968fd324e488bfd68b68819f808af0939df9a",
+      "body": {
+        "schema": "leaf.profiles",
+        "schema_version": "v0.1.0",
+        "active_pilot_id": "a78c7788",
+        "active_glider_id": "95b889e0",
+        "pilots": [
+          {
+            "id": "a78c7788",
+            "name": "Scott O\u2019Brien",
+            "email": "scott@scottyob.com",
+            "leaf_log_api_key": null
+          }
+        ],
+        "gliders": [
+          {
+            "id": "95b889e0",
+            "model": "SwiftSix",
+            "brand": "Ozone",
+            "size": "ML",
+            "display_name": null
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/nav-data",
+      "request_bytes": 0,
+      "status": 200,
+      "seconds": 0.047,
+      "bytes": 160,
+      "sha256": "f4d13285b22e7f6d00427b62f3376b4ff9eeac9d86ba8ff269fb43e40bfa20c3",
+      "body": {
+        "loaded_file": "apartment-compute-20.json",
+        "loaded_path": "/routes/apartment-compute-20.json",
+        "point_count": 20,
+        "route_count": 1,
+        "active_type": "",
+        "active_name": ""
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/debug/memory",
+      "request_bytes": 0,
+      "status": 404,
+      "seconds": 0.031,
+      "bytes": 9,
+      "sha256": "e3ebaa16dd9d9b9fc107c42183fb6cf9d22927e1af03dbbdfa0ccc38e4e4ac31",
+      "body": "Not found"
+    }
+  ]
+}

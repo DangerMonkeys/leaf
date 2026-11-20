@@ -1,0 +1,44 @@
+{
+  "baseline": {
+    "firmware_sha256": "46705b76c2b2e4d1557c24aec42a2eac5777c20422ebba4298573d45ce5c3b6f",
+    "app_image_bytes": 2433984,
+    "static_sections_bytes": {
+      ".dram0.data": 28340,
+      ".dram0.bss": 79384
+    },
+    "static_symbols_bytes": {
+      "GPS object": 2672,
+      "Nav Data picker owner": 3168,
+      "Flight auto-start detector": 1592,
+      "Heap history storage": 3072,
+      "Heap history enabled": 0,
+      "Heap history mutex": 0,
+      "Screenshot String": 16,
+      "Screenshot writer pointer": 0,
+      "Web Server instance": 360,
+      "Empty request String": 0,
+      "Empty request String guard": 0
+    }
+  },
+  "candidate": {
+    "firmware_sha256": "6b96404cbb42ffea128be215a421959a0ed866b6b18f8c6eb655c368717571c5",
+    "app_image_bytes": 2431712,
+    "static_sections_bytes": {
+      ".dram0.data": 28340,
+      ".dram0.bss": 71784
+    },
+    "static_symbols_bytes": {
+      "GPS object": 1472,
+      "Nav Data picker owner": 72,
+      "Flight auto-start detector": 1336,
+      "Heap history storage": 4,
+      "Heap history enabled": 1,
+      "Heap history mutex": 4,
+      "Screenshot String": 0,
+      "Screenshot writer pointer": 4,
+      "Web Server instance": 360,
+      "Empty request String": 16,
+      "Empty request String guard": 8
+    }
+  }
+}

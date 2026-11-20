@@ -3,7 +3,10 @@
 #include <Arduino.h>
 
 #include "comms/fanet_radio.h"
+#include "comms/webserver.h"
+#include "comms/wifi_coordinator.h"
 #include "diagnostics/cpu_utilization.h"
+#include "diagnostics/heap_monitor.h"
 #include "diagnostics/self_test/selfTest.h"
 #include "hardware/buttons.h"
 #include "logging/buslog.h"
@@ -25,6 +28,7 @@ enum developer_menu_items {
   cursor_developer_showDebugPg,
   cursor_developer_runSelfTest,
   cursor_developer_runtime,
+  cursor_developer_stacks,
 #ifdef LEAF_SHUTDOWN_FAULT_INJECTION
   cursor_developer_shutdownFault,
 #endif
@@ -84,9 +88,9 @@ void DeveloperMenuPage::draw() {
     // Menu Items
     uint8_t setting_name_x = 2;
     uint8_t setting_choice_x = 76;
-    uint8_t menu_items_y[10] = {190};
+    uint8_t menu_items_y[cursor_developer_busLogControl + 1] = {190};
     uint8_t next_y = 35;
-    for (int i = cursor_developer_fanetReTx; i <= cursor_developer_runtime; ++i) {
+    for (int i = cursor_developer_fanetReTx; i <= cursor_developer_stacks; ++i) {
       if (row_hidden(i)) continue;
       menu_items_y[i] = next_y;
 #ifdef LEAF_SHUTDOWN_FAULT_INJECTION
@@ -99,13 +103,13 @@ void DeveloperMenuPage::draw() {
     menu_items_y[cursor_developer_shutdownFault] = next_y;
     next_y += 13;
 #endif
-    menu_items_y[cursor_developer_startupStart] = next_y + 25;
-    menu_items_y[cursor_developer_startupDisconnect] = next_y + 40;
-    menu_items_y[cursor_developer_busLogControl] = next_y + 60;
+    menu_items_y[cursor_developer_startupStart] = next_y + 17;
+    menu_items_y[cursor_developer_startupDisconnect] = next_y + 31;
+    menu_items_y[cursor_developer_busLogControl] = next_y + 45;
 
     // draw Bus Logger Section
     u8g2.drawHLine(0, next_y - 5, 96);
-    u8g2.setCursor(0, next_y + 10);
+    u8g2.setCursor(0, next_y + 4);
     u8g2.print("On Startup:");
 
     // then draw all the menu items
@@ -148,6 +152,14 @@ void DeveloperMenuPage::draw() {
                      : strcmp(cpu_utilization::status(), "allocation_failed") == 0 ? "ERR"
                                                                                    : "START");
           break;
+        case cursor_developer_stacks: {
+          const auto state = heap_monitor::stackMonitorState();
+          u8g2.setCursor(u8g2.getCursorX() - 18, u8g2.getCursorY());
+          u8g2.print(state == heap_monitor::StackMonitorState::Running  ? "STOP"
+                     : state == heap_monitor::StackMonitorState::Frozen ? "SAVE"
+                                                                        : "START");
+          break;
+        }
         case cursor_developer_startupStart:
           if (settings.dev_startLogAtBoot)
             menu_ui::printGlyph(menu_ui::ICON_ON);
@@ -200,6 +212,9 @@ void DeveloperMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t co
           settings.diag_cpuUtilization = false;
           speaker.playSound(cpu_utilization::exportToSd() ? fx::confirm : fx::bad);
         } else {
+          // The main menu connects Wi-Fi for the Web App. Free its heap before
+          // starting an on-device capture with Bluetooth and FANET still active.
+          if (!webserver_user_app_active()) leaf_wifi::disconnectFromNetwork();
           const bool started = cpu_utilization::start();
           settings.diag_cpuUtilization = started;
           if (!started) speaker.playSound(fx::bad);
@@ -210,6 +225,15 @@ void DeveloperMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t co
       if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
         settings.toggleBoolOnOff(&settings.dev_logFanet);
         if (!fanet_log::update()) speaker.playSound(fx::bad);
+      }
+      break;
+    case cursor_developer_stacks:
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
+        if (heap_monitor::stackMonitorState() == heap_monitor::StackMonitorState::Idle) {
+          heap_monitor::startStackMonitor();
+        } else {
+          speaker.playSound(heap_monitor::saveStackMonitor() ? fx::confirm : fx::bad);
+        }
       }
       break;
     case cursor_developer_fanetReTx: {

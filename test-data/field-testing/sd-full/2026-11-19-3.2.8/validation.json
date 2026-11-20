@@ -1,0 +1,56 @@
+{
+  "validated_at_utc": "2026-11-20T01:31:56.447948+00:00",
+  "archived_file_copies_verified": 109,
+  "original_files_restored": true,
+  "final_free_bytes": 0,
+  "control_logbook_complete": true,
+  "control_runtime_json_valid": true,
+  "control_stack_csv_valid": true,
+  "runtime_capture_bytes": 22504,
+  "runtime_reserve_bytes": 32768,
+  "runtime_start_threshold_bytes": 55272,
+  "detected_stack_false_success": true,
+  "detected_navigation_truncation": true,
+  "detected_replay_shutdown_fatal": true,
+  "igc": [
+    {
+      "file": "2026-11-19-XLV-000-01.igc",
+      "bytes": 0,
+      "b_records": 0,
+      "g_records": 0,
+      "validator_exit": 1,
+      "validator_output": "STATUS_IGC_FAILED",
+      "validator_stderr": "missing G"
+    },
+    {
+      "file": "2026-11-19-XLV-000-02.igc",
+      "bytes": 0,
+      "b_records": 0,
+      "g_records": 0,
+      "validator_exit": 1,
+      "validator_output": "STATUS_IGC_FAILED",
+      "validator_stderr": "missing G"
+    },
+    {
+      "file": "2026-11-19-XLV-000-03.igc",
+      "bytes": 1817,
+      "b_records": 16,
+      "g_records": 1,
+      "validator_exit": 0,
+      "validator_output": "STATUS_IGC_PASSED",
+      "validator_stderr": ""
+    },
+    {
+      "file": "2026-11-19-XLV-000-04.igc",
+      "bytes": 15906,
+      "b_records": 197,
+      "g_records": 1,
+      "validator_exit": 0,
+      "validator_output": "STATUS_IGC_PASSED",
+      "validator_stderr": ""
+    }
+  ],
+  "website_build_passed": true,
+  "firmware_build_environment": "leaf_3_2_8_bench",
+  "firmware_build_passed": true
+}

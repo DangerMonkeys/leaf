@@ -1,0 +1,46 @@
+{
+  "utc": "2026-11-20T01:01:00.726370+00:00",
+  "base": "http://10.0.0.183",
+  "requests": [
+    {
+      "method": "POST",
+      "path": "/api/debug/session",
+      "request_bytes": 133,
+      "status": 200,
+      "seconds": 0.031,
+      "bytes": 231,
+      "sha256": "8e6b79cfc767abb2c2336cf84251c0c7f4fe90ea4e37cc8af0a079fe43a22d1d",
+      "body": {
+        "always_on": true,
+        "keep_bluetooth_disabled": false,
+        "udp_sensor_injection": true,
+        "web_app_active": true,
+        "using_leaf_wifi": false,
+        "diag_system_events": true,
+        "diag_network_events": true,
+        "diag_web_requests": true,
+        "diag_cpu_utilization": false
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/debug/session",
+      "request_bytes": 0,
+      "status": 200,
+      "seconds": 0.016,
+      "bytes": 231,
+      "sha256": "8e6b79cfc767abb2c2336cf84251c0c7f4fe90ea4e37cc8af0a079fe43a22d1d",
+      "body": {
+        "always_on": true,
+        "keep_bluetooth_disabled": false,
+        "udp_sensor_injection": true,
+        "web_app_active": true,
+        "using_leaf_wifi": false,
+        "diag_system_events": true,
+        "diag_network_events": true,
+        "diag_web_requests": true,
+        "diag_cpu_utilization": false
+      }
+    }
+  ]
+}

@@ -10,7 +10,8 @@ a task-manager slot. It does not depend on reproducing the original Goodbye free
 ## Shutdown and recovery
 
 The guard starts before the logbook mutex or any final save. Shutdown finalizes
-the flight, closes the bus log, and saves settings before optional cleanup.
+the flight, closes the bus log, saves any pending stack monitor session, and
+saves settings before optional cleanup.
 Bluetooth stops accepting work and parks its worker outside driver locks before
 its queues, mutex, and task can be deleted. Full NimBLE deinitialization follows
 power-latch release. Bluetooth cleanup initiated from settings/web also obtains

@@ -1,0 +1,119 @@
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH status On Menu -1 1 0 1 0 0 1
+
+HOST press LEFT
+BENCH ok
+
+HOST press DOWN
+button: LEFT   state: PRESSED     hold count: 0
+button: LEFT   state: CLICKED     hold count: 0
+695762 playSound 1008681496
+button: LEFT   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press DOWN
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+696072 playSound 1008598710
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press DOWN
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+696372 playSound 1008598710
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press DOWN
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+696682 playSound 1008598702
+button: DOWN   state: RELEASED    hold count: 0
+LSM6DSV: a=-0.0017,-0.0051,0.9931 g=-0.0020,-0.0051,0.9994 pairsBENCH ok
+
+HOST press DOWN
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+696982 playSound 1008598710
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press DOWN
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+697292 playSound 1008598710
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press DOWN
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+697592 playSound 1008598710
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press CENTER
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+697892 playSound 1008598710
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press DOWN
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+698202 playSound 1008704934
+button: CENTER state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press DOWN
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+698502 playSound 1008598710
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press DOWN
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+698812 playSound 1008598702
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press DOWN
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+699112 playSound 1008598710
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press CENTER
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+699422 playSound 1008598702
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST wait 3
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+699722 playSound 1008657422
+button: CENTER state: RELEASED    hold count: 0
+LSM6DSV: a=-0.0020,-0.0059,0.9928 g=-0.0018,-0.0058,0.9994 pairs
+HOST press CENTER
+BENCH ok
+
+HOST status
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+703102 playSound 1008704934
+button: CENTER state: RELEASED    hold count: 0
+BENCH status On Menu 4 0 0 1 0 0 1
+
+HOST heap
+BENCH heap 118560 60544 31732 7644
+BENCH status On Menu 4 0 0 1 0 0 1
+BENCH heap 118560 60544 31732 7644
+BENCH web http://10.0.0.183/app
