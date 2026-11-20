@@ -7,10 +7,10 @@ Today debugging RAM usage isn't great and needs much love. The Leaf only has 512
 and most of that is used by WiFi and Bluetooth stacks. Some writeup
 https://www.scottyob.com/post/2025-02-27-esp32-memory/
 
-See the [measured savings report](../heap-savings-summary.md),
-[future optimization cohorts](../backlog/memory-optimization-followup.md),
-[USB bench console](../usb-bench-console.md) and
-[Runtime/Stacks capture instructions](../runtime-assessment.md) for current tooling.
+See the [measured savings report](https://leafvario.com/dev-references/heap-savings-summary/),
+[future optimization cohorts](https://leafvario.com/dev-references/backlog/memory-optimization-followup/),
+[USB bench console](https://leafvario.com/dev-references/usb-bench-console/) and
+[Runtime/Stacks capture instructions](https://leafvario.com/dev-references/runtime-assessment/) for current tooling.
 Further stack and SDK reductions are deferred while preparing a stable release.
 
 ## Reading memory usage
