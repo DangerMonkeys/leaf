@@ -47,7 +47,9 @@ int main() {
   for (int i = 0; i < 5; ++i) menu.press(Button::DOWN);
   assert(menu.cursor() == 5);  // Runtime
   menu.press(Button::DOWN);
-  assert(menu.cursor() == 6);  // Off fault, immediately after Runtime
+  assert(menu.cursor() == 6);  // Stacks follows Runtime.
+  menu.press(Button::DOWN);
+  assert(menu.cursor() == 7);  // Off fault follows Stacks.
   menu.press(Button::RIGHT);
   assert(shutdown_guard::fault() == shutdown_guard::Stage::Lock);
   screenshot(menu, root + "/menu-fanet.png");
@@ -71,13 +73,13 @@ int main() {
   for (int i = 0; i < 12; ++i) menu.press(Button::RIGHT);
   assert(shutdown_guard::fault() == shutdown_guard::Stage::None);
   menu.press(Button::DOWN);
-  assert(menu.cursor() == 7);  // Startup options follow the fault row
+  assert(menu.cursor() == 8);  // Eco Mode follows the fault row
   menu.press(Button::UP);
   sim::board().fanetPresent = false;
   fanetRadio.setup();
   screenshot(menu, root + "/menu-no-fanet.png");
   menu.press(Button::UP);
-  assert(menu.cursor() == 5);
+  assert(menu.cursor() == 6);
   menu.press(Button::LEFT);
   assert(menu.cursor() == 0);
   std::cout << "Shutdown fault selector order, wrap, and both radio layouts passed; " << root

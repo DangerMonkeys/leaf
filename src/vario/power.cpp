@@ -44,7 +44,6 @@ Power power;  // struct for battery-state and on-state variables
 
 // Pinout for Leaf V3.2.0+
 #define POWER_LATCH shutdown_guard::LATCH_PIN
-#define BATT_SENSE 1  // INPUT ADC
 
 // Battery Threshold values
 #define BATT_FULL_MV 4080   // mV full battery on which to base % full (100%)
@@ -140,7 +139,7 @@ void Power::initPowerSystem() {
   Serial.println(nameOf(info_.onState));
 
   // Set output / input pins to control battery charge and power supply
-  pinMode(BATT_SENSE, INPUT);
+  pinMode(BATTERY_SENSE_PIN, INPUT);
   pinMode(POWER_LATCH, OUTPUT);
   if (!POWER_CHARGE_I1_IOEX) pinMode(POWER_CHARGE_I1, OUTPUT);
   if (!POWER_CHARGE_I2_IOEX) pinMode(POWER_CHARGE_I2, OUTPUT);
@@ -237,6 +236,10 @@ void Power::sleepPeripherals() {
 }
 
 void Power::wakePeripherals() {
+  sleepCurrentWindowCount_ = 0;
+  sleepCurrentMaUs_ = 0;
+  sampledSleepUs_ = 0;
+  lastBatteryReadUs_ = 0;
   heap_monitor::checkpoint("wake-periph-start");
   Serial.println("wake_peripherals: ");
   heap_monitor::checkpoint("wake-periph-sd");
@@ -488,19 +491,61 @@ bool Power::autoOff() {
   return autoShutOff;
 }
 
+void Power::recordSleepCurrent(const sleep_adc::Result& sample, uint32_t sleepUs) {
+  if (sample.error != ESP_OK || sample.samples == 0) return;
+  const uint32_t chargeMa = static_cast<uint32_t>(sample.milliVolts) * 400 / 1100;
+  const uint32_t nowUs = static_cast<uint32_t>(micros());
+  if (sleepCurrentWindowCount_ == 0 || nowUs - lastSleepSampleUs_ > 1'000'000U) {
+    sleepCurrentWindowSum_ = 0;
+    sleepCurrentWindowCount_ = 0;
+    sleepCurrentWindowNext_ = 0;
+  }
+  if (sleepCurrentWindowCount_ == SLEEP_CURRENT_WINDOW)
+    sleepCurrentWindowSum_ -= sleepCurrentWindow_[sleepCurrentWindowNext_];
+  else
+    ++sleepCurrentWindowCount_;
+  sleepCurrentWindow_[sleepCurrentWindowNext_] = chargeMa;
+  sleepCurrentWindowSum_ += chargeMa;
+  sleepCurrentWindowNext_ = (sleepCurrentWindowNext_ + 1) % SLEEP_CURRENT_WINDOW;
+  lastSleepSampleUs_ = nowUs;
+  const uint32_t meanMa =
+      (sleepCurrentWindowSum_ + sleepCurrentWindowCount_ / 2) / sleepCurrentWindowCount_;
+  sleepCurrentMaUs_ += static_cast<uint64_t>(meanMa) * sleepUs;
+  sampledSleepUs_ += sleepUs;
+}
+
 void Power::readBatteryState() {
+#ifdef ISET
+  const uint32_t nowUs = static_cast<uint32_t>(micros());
+  const uint32_t intervalUs = nowUs - lastBatteryReadUs_;
+#endif
   // Update Charge State
   info_.charging = !ioexDigitalRead(POWER_CHARGE_GOOD_IOEX, POWER_CHARGE_GOOD);
   // logic low is charging, logic high is not
 
-  info_.chargeCurrentMA = 0;
 #ifdef ISET
   // V_ISET = (I_CHARGE / 400) * R_ISET note: R_ISET is 1100 Ohms
-  info_.chargeCurrentMA = analogReadMilliVolts(ISET) * 400 / 1100;
+  uint16_t chargeSenseMv;
+  if (sleep_adc::readMilliVolts(ISET, chargeSenseMv))
+    awakeChargeCurrentMa_ = chargeSenseMv * 400 / 1100;
+  info_.chargeCurrentMA = awakeChargeCurrentMa_;
+  if (lastBatteryReadUs_ != 0 && sampledSleepUs_ != 0 && intervalUs >= sampledSleepUs_) {
+    const uint64_t awakeMaUs =
+        static_cast<uint64_t>(awakeChargeCurrentMa_) * (intervalUs - sampledSleepUs_);
+    info_.chargeCurrentMA = (sleepCurrentMaUs_ + awakeMaUs + intervalUs / 2) / intervalUs;
+  }
+  lastBatteryReadUs_ = nowUs;
+  sleepCurrentMaUs_ = 0;
+  sampledSleepUs_ = 0;
+  uint16_t batterySenseMv;
+  if (sleep_adc::readMilliVolts(BATTERY_SENSE_PIN, batterySenseMv))
+    info_.batteryMV = batterySenseMv * 69 / 41;
+#else
+  // These boards have no ISET connection. Keep their existing voltage-only estimate
+  // and never acquire ADC1 for ULP or touch the newer boards' current-sense GPIO.
+  info_.chargeCurrentMA = 0;
+  info_.batteryMV = analogReadMilliVolts(BATTERY_SENSE_PIN) * 69 / 41;
 #endif
-
-  // Test internal calibration of ADC:
-  info_.batteryMV = analogReadMilliVolts(BATT_SENSE) * 69 / 41;
 
   // The ISET current measurement is available on v3.2.6+; earlier variants estimate the charge
   // current from terminal voltage instead. Never compensate the raw voltage used for shutdown.

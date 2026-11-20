@@ -43,6 +43,7 @@ class TaskManager : IPollable {
   void updateWhileCharging();
 
   bool goToSleep = false;
+  uint64_t nextChargeUpdateUs_ = 0;
 
   uint32_t tNecessaryTasksStart = 0;
   bool performedNecessaryTasks = false;
@@ -62,8 +63,4 @@ class TaskManager : IPollable {
 
   // Main system event/task timer
   hw_timer_t* taskTimer_ = nullptr;
-
-  // Standby system timer (when on USB power and charging battery, but otherwise "off" (i.e., soft
-  // off))
-  hw_timer_t* chargeTimer_ = nullptr;
 };

@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <HardwareSerial.h>
 #include <WiFi.h>
+#include <esp_sleep.h>
 #include <atomic>
 #include "task.h"
 
@@ -19,6 +20,7 @@
 #include "hardware/Leaf_SPI.h"
 #include "hardware/aht20.h"
 #include "hardware/buttons.h"
+#include "hardware/configuration.h"
 #include "hardware/lc86g.h"
 #include "hardware/motion_sensor.h"
 #include "hardware/ms5611.h"
@@ -64,17 +66,7 @@ namespace {
   uint64_t taskTimerEpochUs = 0;
   void IRAM_ATTR onTaskTimer() { taskTimerTicks.fetch_add(1, std::memory_order_release); }
 
-  const uint32_t CHARGE_TIMER_FREQ = 1000;      // run at 1000Hz
-  const uint64_t CHARGE_TIMER_PERIOD_MS = 500;  // trigger the ISR every 500ms
-  // Set by interrupt at the start of the next charge time block
-  std::atomic<bool> nextChargeTimerBlock{false};
-  // Lowest 32 bits of micros() at which most recent charge timer block started
-  std::atomic<uint32_t> tChargeTimerBlock{0};
-  void IRAM_ATTR onChargeTimer() {
-    tChargeTimerBlock.store(static_cast<uint32_t>(micros()), std::memory_order_release);
-    nextChargeTimerBlock.store(true, std::memory_order_release);
-  }
-
+  constexpr uint32_t CHARGE_UPDATE_PERIOD_US = 500'000;
   constexpr uint32_t MEMORY_HEARTBEAT_MS = 5000;
   uint32_t lastMemoryHeartbeatMs = 0;
   bool loggedFirstBaroTask = false;
@@ -128,13 +120,6 @@ void TaskManager::init() {
     timerAlarm(taskTimer_, task_timer::PERIOD_US, true, 0);
     cpu_utilization::timerArmed(cpu_utilization::nowUs() - taskTimerEpochUs);
 
-    // Start Charge System Timer for Interrupt Events (this will tell Main Loop to do tasks every
-    // interrupt cycle)
-    chargeTimer_ = timerBegin(CHARGE_TIMER_FREQ);
-    // timer, ISR call.  NOTE: timerDetachInterrupt() does the opposite
-    timerAttachInterrupt(chargeTimer_, &onChargeTimer);
-    // auto reload timer ever time we've counted a sample length
-    timerAlarm(chargeTimer_, CHARGE_TIMER_PERIOD_MS, true, 0);
     heap_monitor::checkpoint("taskman-timers-end");
   } else {
     fatalError("Attempted to set up singleton task timers when they were already set up");
@@ -216,23 +201,34 @@ void TaskManager::updateWhileCharging() {
     lastChargingButtonPollMs = millis();
     buttons.update();
   }
-  if (buttons.inspectPins() != Button::NONE) goToSleep = false;
+  if (buttons.inspectPins() != Button::NONE) {
+    goToSleep = false;
+  }
   // Scanning yields after a short work slice rather than waiting for the 500ms display timer.
   if (leafLogSync.scanning()) leafLogSync.update();
 
-  if (nextChargeTimerBlock.exchange(false, std::memory_order_acq_rel)) {
+  // esp_timer includes time spent in light sleep. A GPTimer stops counting there.
+  const uint64_t nowUs = cpu_utilization::nowUs();
+  if (nowUs >= nextChargeUpdateUs_) {
+    nextChargeUpdateUs_ = nowUs + CHARGE_UPDATE_PERIOD_US;
+    goToSleep = false;
     leafLogSync.update();
     if (leafLogSync.takePowerOnReady()) {
       display.clear();
       display.showOnSplash();
       display.setPage((MainPage)settings.startPage);
       speaker.playSound(fx::enter);
-      if (!power.switchToOnState()) {
+      if (power.switchToOnState()) {
+        nextChargeUpdateUs_ = 0;
+      } else {
         display.setPage(MainPage::Charging);
         display.update();
       }
       return;
     }
+    // Update the battery before rendering so the preceding sleep is represented on screen.
+    power.readBatteryState();
+
     // Display Charging Page
     display.setPage(MainPage::Charging);
     display.update();  // update display based on battery charge state etc
@@ -242,9 +238,6 @@ void TaskManager::updateWhileCharging() {
     // until it has closed the file and published its result.
     if (!leafLogSync.transferInFlight()) sdcard.update();
 
-    // update battery level and charge state
-    power.readBatteryState();
-
     // Try to connect to the diagnostic network once while in charge-only mode. If it connects,
     // the connection will be preserved when the device switches to the on state.
     if (!leafLogSync.transferInFlight()) diagnostic_network.update();
@@ -253,52 +246,33 @@ void TaskManager::updateWhileCharging() {
     buttons.update();  // also poll on a charging tick immediately after waking
 
     // Prep to end this cycle and sleep
-    if (buttons.inspectPins() == Button::NONE && diagnostic_network.canSleepWhileCharging() &&
-        leafLogSync.canSleepWhileCharging() && !leaf_usb::shouldStayAwakeForHost()) {
-      goToSleep = true;  // get ready to sleep if no button is being pushed
-    } else {
-      goToSleep = false;
-    }
-  } else {
-    if (goToSleep && settings.system_ecoMode) {  // don't allow sleep if ECO_MODE is off
-
-      goToSleep = false;  // we don't want to sleep again as soon as we wake up; we want to wait
-                          // until we've done 'doTasks' before sleeping again
-
-      // Wake up if any of the five active-high buttons is pressed.
-      buttons.enableSleepWakeFromAnyButton();
-
-      // or wake up with timer
-      uint32_t microsNow = static_cast<uint32_t>(micros());
-      uint32_t sleepTimeStamp = tChargeTimerBlock.load(std::memory_order_acquire);
-      uint32_t sleepMicros =
-          sleepTimeStamp + (1000 * (CHARGE_TIMER_PERIOD_MS - 1)) -
-          microsNow;  // sleep until just 1ms before the expected next cycle of CHARGE_TIMER
-      if (sleepMicros > 496 * 1000)
-        sleepMicros = 496 * 1000;  // ensure we don't go to sleep for too long if there's some math
-                                   // issue (or micros rollover, etc).
-      esp_sleep_enable_timer_wakeup(sleepMicros);  // set timer to wake up
-
-      // sleep for real if ECO_MODE is set, otherwise 'fake sleep' using delay
-      if (settings.system_ecoMode) {  // TODO: this is doubling the condition since we already check
-                                      // ECO_MODE in
-                                      // the parent if() statement
-        esp_light_sleep_start();
-      } else {
-        Serial.print("microsNow:    ");
-        Serial.println(microsNow);
-        Serial.print("sleepMicros:  ");
-        Serial.println(sleepMicros);
-        Serial.print("wakeMicros:   ");
-        Serial.println(microsNow + sleepMicros);
-        delayMicroseconds(sleepMicros);  // use delay instead of actual sleep to test sleep logic
-                                         // (allows us to serial print during 'fake sleep' and also
-                                         // re-program over USB mid-'fake sleep')
-      }
-    } else {
-      // if (Button_update() != NONE) Serial.println("we see a button!");  // TOOD: erase this
-    }
+    goToSleep = buttons.inspectPins() == Button::NONE &&
+                diagnostic_network.canSleepWhileCharging() && leafLogSync.canSleepWhileCharging() &&
+                !leaf_usb::shouldStayAwakeForHost();
+    return;
   }
+
+  if (!goToSleep || !settings.system_ecoMode) return;
+  goToSleep = false;  // At most one sleep attempt between charge updates.
+  buttons.enableSleepWakeFromAnyButton();
+
+  const uint64_t wakeConfiguredUs = cpu_utilization::nowUs();
+  if (wakeConfiguredUs >= nextChargeUpdateUs_) return;
+  const uint32_t requestedUs = static_cast<uint32_t>(nextChargeUpdateUs_ - wakeConfiguredUs);
+  if (esp_sleep_enable_timer_wakeup(requestedUs) != ESP_OK) return;
+#ifdef ISET
+  sleep_adc::prepare(ISET, requestedUs);
+  const uint64_t startUs = cpu_utilization::nowUs();
+#endif
+  const esp_err_t result = esp_light_sleep_start();
+#ifdef ISET
+  const uint32_t sleepUs = static_cast<uint32_t>(cpu_utilization::nowUs() - startUs);
+  const auto sample = sleep_adc::finish(result == ESP_OK, sleepUs);
+  if (result == ESP_OK) power.recordSleepCurrent(sample, sleepUs);
+#endif
+  // A button wake leaves the next charge deadline in place.
+  if (result == ESP_OK && esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_TIMER)
+    nextChargeUpdateUs_ = 0;
 }
 
 void TaskManager::updateWhileOn() {

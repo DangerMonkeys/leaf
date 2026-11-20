@@ -10,10 +10,7 @@ class DeveloperMenuPage : public SettingsMenuPage {
  public:
   DeveloperMenuPage() {
     cursor_position = 0;
-    cursor_max = 9;
-#ifdef LEAF_SHUTDOWN_FAULT_INJECTION
-    cursor_max = 10;
-#endif
+    cursor_max = sizeof(labels) / sizeof(labels[0]) - 1;
   }
   void draw();
   bool button_event(Button button, ButtonEvent state, uint8_t count) override;
@@ -28,7 +25,7 @@ class DeveloperMenuPage : public SettingsMenuPage {
 #ifdef LEAF_SHUTDOWN_FAULT_INJECTION
                                            "Off fault:",
 #endif
-                                           "StartBusLog",  "Detach HW",  "Log Now:"};
+                                           "Eco Mode",     "Detach HW"};
 };
 
 #endif

@@ -1,6 +1,7 @@
 #include <ArduinoJson.h>
 #include <SD_MMC.h>
 #include <assert.h>
+#include <esp_sleep.h>
 
 #include <algorithm>
 #include <filesystem>
@@ -10,13 +11,16 @@
 #include <vector>
 
 #include "comms/fanet_radio.h"
+#include "comms/leaf_log_sync.h"
 #include "diagnostics/cpu_utilization.h"
 #include "diagnostics/heap_monitor.h"
 #include "display_capture.h"
+#include "hardware/configuration.h"
 #include "instruments/gps.h"
 #include "logging/buslog.h"
 #include "logging/fanet_log.h"
 #include "logging/log.h"
+#include "power.h"
 #include "runtime.h"
 #include "sim/board.h"
 #include "sim/clock.h"
@@ -52,8 +56,7 @@ namespace {
     void press(Button button) { button_event(button, ButtonEvent::CLICKED, 0); }
   };
 
-  void screenshot(Menu& menu, const char* name) {
-    menu.draw();
+  void saveScreen(const char* name) {
     const auto png = sim::encodePng(sim::captureFrame(), 4);
     std::ofstream out(std::string("sim/build/developer-logging/") + name, std::ios::binary);
     out.write(png.data(), png.size());
@@ -67,6 +70,10 @@ namespace {
       button_event(Button::CENTER, ButtonEvent::INCREMENTED, 4);
     }
   };
+  void screenshot(Menu& menu, const char* name) {
+    menu.draw();
+    saveScreen(name);
+  }
 
   std::vector<std::filesystem::path> csvFiles() {
     std::vector<std::filesystem::path> result;
@@ -98,6 +105,79 @@ namespace {
       result.push_back(fields);
     }
     return result;
+  }
+
+  void runChargeTest(bool eco) {
+    settings.system_ecoMode = eco;
+    power.shutdown();
+    const uint32_t shutdownRequested = millis();
+    while (power.info().onState != PowerState::OffUSB && millis() - shutdownRequested < 2000)
+      sim::runtime().step();
+    assert(power.info().onState == PowerState::OffUSB);
+    const uint64_t startedUs = sim::clock().nowUs();
+    const uint64_t sleepBefore = sim::clock().lightSleepTotalUs();
+    const uint64_t callsBefore = sim::clock().lightSleepCalls();
+    while (sim::clock().nowUs() - startedUs < 60'000'000U) sim::runtime().step();
+    const uint64_t duration = sim::clock().nowUs() - startedUs;
+    const uint64_t asleep = sim::clock().lightSleepTotalUs() - sleepBefore;
+    const uint64_t calls = sim::clock().lightSleepCalls() - callsBefore;
+    if (eco) {
+      assert(asleep * 10 > duration * 9);
+      assert(calls >= 118 && calls <= 122);  // 500ms cadence, including time asleep.
+    } else {
+      assert(calls == 0 && asleep == 0);
+    }
+    assert(power.info().chargeCurrentMA == 400);
+    leafLogSync.requestPowerOn();
+    const uint32_t requested = millis();
+    while (power.info().onState == PowerState::OffUSB && millis() - requested < 2000)
+      sim::runtime().step();
+    assert(power.info().onState == PowerState::On);
+  }
+
+  void sleepCurrentAveraging() {
+    uint16_t milliVolts = 0;
+    sim::board().setAdcMilliVolts(ISET, 1100);
+    power.readBatteryState();
+    assert(sleep_adc::prepare(ISET, 500) == ESP_ERR_NOT_SUPPORTED);
+    assert(sleep_adc::finish(false, 0).samples == 0);
+    assert(sleep_adc::prepare(ISET, 500'000) == ESP_OK);
+    assert(!sleep_adc::readMilliVolts(ISET, milliVolts));
+    assert(sleep_adc::finish(false, 0).samples == 0);
+    assert(sleep_adc::readMilliVolts(ISET, milliVolts) && milliVolts == 1100);
+
+    assert(sleep_adc::prepare(ISET, 500'000) == ESP_OK);
+    sim::board().setAdcMilliVolts(ISET, 1301);
+    sim::clock().lightSleepUs(490'000);
+    const auto sample = sleep_adc::finish(true, 490'000);
+    assert(sample.error == ESP_OK && sample.samples == 1 && sample.milliVolts == 1301);
+    sim::board().setAdcMilliVolts(ISET, 1100);
+    sim::clock().advanceUs(10'000);
+    power.recordSleepCurrent(sample, 490'000);
+    power.readBatteryState();
+    assert(power.info().chargeCurrentMA >= 470 && power.info().chargeCurrentMA <= 472);
+
+    auto low = sample;
+    low.milliVolts = 1100;
+    for (unsigned i = 0; i < 8; ++i) {
+      sim::clock().advanceUs(500'000);
+      power.recordSleepCurrent(low, 490'000);
+      power.readBatteryState();
+      if (i == 0) assert(power.info().chargeCurrentMA >= 435 && power.info().chargeCurrentMA <= 437);
+    }
+    assert(power.info().chargeCurrentMA == 400);  // Old samples roll out of the eight-cycle window.
+    sim::clock().advanceUs(1'500'000);
+    power.recordSleepCurrent(sample, 490'000);
+    power.readBatteryState();
+    assert(power.info().chargeCurrentMA >= 423 && power.info().chargeCurrentMA <= 425);
+    sim::clock().advanceUs(500'000);
+    power.readBatteryState();
+    assert(power.info().chargeCurrentMA == 400);  // No stale sleep contribution while awake.
+
+    assert(sleep_adc::prepare(ISET, 500'000) == ESP_OK);
+    sim::clock().lightSleepUs(1000);
+    assert(sleep_adc::finish(true, 1000).samples == 0);
+    assert(sleep_adc::readMilliVolts(Power::BATTERY_SENSE_PIN, milliVolts));
   }
 
   void sentence(const char* body) {
@@ -169,8 +249,8 @@ int main() {
   screenshot(menu, "no-radio.png");
   menu.press(Button::UP);
   assert(menu.cursor() == 0);
-  menu.press(Button::UP);  // Wrap to bus logger and back.
-  assert(menu.cursor() == 9);
+  menu.press(Button::UP);  // Wrap to Detach HW and back.
+  assert(menu.cursor() == 8);
   menu.press(Button::DOWN);
   assert(menu.cursor() == 0);
   menu.press(Button::DOWN);
@@ -233,6 +313,19 @@ int main() {
   assert(stackCsv.indexOf("loop,10800000,1,4096") >= 0);
   assert(stackCsv.indexOf("fanet_rx,10800000,2,4096") >= 0);
   assert(stackCsv.indexOf("ble,10800000,0,\n") >= 0);
+  sim::board().setCharging(true);
+  sim::board().setAdcMilliVolts(ISET, 1100);
+  menu.press(Button::DOWN);  // Eco Mode follows Stacks.
+  assert(menu.cursor() == 7 && !settings.system_ecoMode);
+  runChargeTest(false);
+  menu.press(Button::CENTER);
+  assert(settings.system_ecoMode);
+  settings.save();
+  settings.system_ecoMode = false;
+  settings.retrieve();
+  assert(settings.system_ecoMode);
+  screenshot(menu, "eco-mode.png");
+  runChargeTest(true);
 
   sim::board().fanetPresent = true;
   fanetRadio.setup();
@@ -354,7 +447,8 @@ int main() {
   receive(neighbors, address);
   flightTimer_stop(false);
   assert(rows(csvFiles().back()).size() == 1 && rows(first).size() == 4);
+  sleepCurrentAveraging();
   puts(
-      "Developer logging: runtime STOP/save/retry, radio visibility, flight CSV lifecycle, "
+      "Developer logging: runtime captures, Eco charge sleep, radio visibility, flight CSV lifecycle, "
       "GPS validity, packet filtering, persistence, queue overflow and SD recovery passed");
 }
