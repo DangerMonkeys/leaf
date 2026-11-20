@@ -1,4 +1,5 @@
 #include "profile_store.h"
+#include "storage/checked_file.h"
 
 #include <ArduinoJson.h>
 #include <SD_MMC.h>
@@ -48,6 +49,7 @@ namespace {
 
   bool loadProfiles(JsonDocument& doc) {
     heap_monitor::checkpoint("profiles-load-start");
+    if (!checked_file::recover(ProfileStore::filePath())) return false;
     if (!SD_MMC.exists(ProfileStore::filePath())) {
       heap_monitor::checkpoint("profiles-load-missing");
       return true;
@@ -102,16 +104,7 @@ namespace {
   bool writeProfiles(JsonDocument& doc) {
     heap_monitor::checkpoint("profiles-write-start");
     if (!ensureProfileDirectory()) return false;
-
-    File file = SD_MMC.open(ProfileStore::filePath(), "w");
-    if (!file) {
-      heap_monitor::checkpoint("profiles-write-open-fail");
-      return false;
-    }
-
-    const size_t written = serializeJson(doc, file);
-    file.close();
-    const bool ok = written > 0;
+    const bool ok = checked_file::replaceJson(ProfileStore::filePath(), doc);
     heap_monitor::checkpoint(ok ? "profiles-write-end" : "profiles-write-fail");
     return ok;
   }

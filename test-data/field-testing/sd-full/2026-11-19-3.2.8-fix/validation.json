@@ -1,0 +1,36 @@
+{
+  "full_card_all_six_files_byte_identical": true,
+  "full_card_free_bytes": 0,
+  "recovery_http_all_200": true,
+  "stack_csv_bytes": 106,
+  "stack_loop_min_unused_bytes": 7644,
+  "same_capture_retry_verified_in_simulator": true,
+  "same_capture_hardware_retry": false,
+  "original_card_files_restored": true,
+  "archived_file_hashes_verified": 54,
+  "final_space": {
+    "volume_serial": "01114FC5",
+    "actual_free_clusters": 519,
+    "actual_free_bytes": 8503296,
+    "fsinfo_free_clusters": 519,
+    "fsinfo_free_bytes": 8503296,
+    "fat_copies_identical": true
+  },
+  "settings_restored": "config 1 0 0 0 0 0 0 0",
+  "final_power": "OffUSB Charging",
+  "candidate_source_and_artifact_hashes_verified": true,
+  "test_setup_interruptions": [
+    "Run 21 filler process overlapped power-on; discarded as a recovery result. All six files remained intact.",
+    "FSINFO free-count hint was 0 despite 512 free clusters. After a targeted hint correction, a volume-flush call failed with Windows error 21 and the device restarted. This was not a clean firmware shutdown test."
+  ],
+  "qualification_limits": [
+    "No live FANET module or connected Bluetooth client",
+    "No new in-flight IGC error detection, periodic flush, or stack allocation reductions",
+    "No matched main comparison or release qualification"
+  ],
+  "documentation_website": {
+    "result": "passed",
+    "pages_built": 60
+  },
+  "simulator_final_formatted_source": "passed"
+}

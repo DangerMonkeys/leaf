@@ -31,10 +31,13 @@ class SDMMCFS : public fs::FS {
   void simSetPresent(bool present);
   bool simPresent() const { return present_; }
   bool mounted() const { return mounted_; }
+  void simSetSpace(uint64_t total, uint64_t free) { total_ = total; used_ = total - free; }
 
  private:
   bool present_ = true;
   bool mounted_ = false;
+  uint64_t total_ = 8ULL * 1024 * 1024 * 1024;
+  uint64_t used_ = 64ULL * 1024 * 1024;
 };
 
 #define CARD_NONE 0

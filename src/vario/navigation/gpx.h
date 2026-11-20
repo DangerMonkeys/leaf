@@ -283,5 +283,5 @@ class Navigator {
 extern Navigator navigator;
 
 enum class NavLoadError : uint8_t { None, InvalidFile, RoutePointLimit };
-bool gpx_readFile(fs::FS& fs, String fileName, NavLoadError* error = nullptr);
-bool nav_readFile(fs::FS& fs, String fileName, NavLoadError* error = nullptr);
+bool gpx_readFile(fs::FS& fs, String fileName, NavLoadError* error = nullptr, bool persist = true);
+bool nav_readFile(fs::FS& fs, String fileName, NavLoadError* error = nullptr, bool persist = true);

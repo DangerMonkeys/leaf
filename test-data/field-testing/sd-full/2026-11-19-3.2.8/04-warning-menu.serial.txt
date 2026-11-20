@@ -1,0 +1,71 @@
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH status On User 0 0 1 1 0 0 1
+
+HOST press DOWN
+BENCH ok
+
+HOST press CENTER
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+60904 playSound 1008622844
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST status
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+61204 playSound 1008622830
+button: CENTER state: RELEASED    hold count: 0
+BENCH status On User 0 0 0 1 0 0 1
+
+HOST press RIGHT
+BENCH ok
+
+HOST status
+button: RIGHT  state: PRESSED     hold count: 0
+button: RIGHT  state: CLICKED     hold count: 0
+61514 playSound 1008724160
+WiFi coordinator: diagnostic network disabled until reboot
+WiFi coordinator: trying saved network 0 'SkyWagon'
+button: RIGHT  state: RELEASED    hold count: 0
+Speaker::update skipped 1 intervals
+BENCH status On Menu 0 0 0 1 0 0 1
+
+HOST press RIGHT
+BENCH ok
+
+HOST status
+button: RIGHT  state: PRESSED     hold count: 0
+button: RIGHT  state: CLICKED     hold count: 0
+button: RIGHT  state: RELEASED    hold count: 0
+BENCH status On Menu 0 0 0 1 0 0 1
+
+HOST press RIGHT
+BENCH ok
+
+HOST status
+button: RIGHT  state: PRESSED     hold count: 0
+button: RIGHT  state: CLICKED     hold count: 0
+button: RIGHT  state: RELEASED    hold count: 0
+BENCH status On Menu 0 0 0 1 0 0 1
+
+HOST press RIGHT
+BENCH ok
+
+HOST status
+button: RIGHT  state: PRESSED     hold count: 0
+button: RIGHT  state: CLICKED     hold count: 0
+button: RIGHT  state: RELEASED    hold count: 0
+LSM6DSV: a=-0.0039,-0.0046,0.9958 g=-0.0037,-0.0046,0.9994 pairsBENCH status On Menu 0 0 0 1 0 0 1
+
+HOST press RIGHT
+BENCH ok
+
+HOST status
+button: RIGHT  state: PRESSED     hold count: 0
+button: RIGHT  state: CLICKED     hold count: 0
+button: RIGHT  state: RELEASED    hold count: 0
+BENCH status On Menu 0 0 0 1 0 0 1
+BENCH status On Menu 0 0 0 1 0 0 1
+BENCH heap 99012 98640 36852 8316

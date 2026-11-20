@@ -1,0 +1,5 @@
+millis,event,mode,cycle,attempt_index,saved_count,enabled,using_leaf_wifi,provisioning,connecting,ready,wifi_status,wifi_mode,rssi,ap_stations,max_ap_stations,local_ip,ap_ip,target_ssid,current_ssid,connect_error,elapsed_ms,connect_started_ms,connected_ms,last_scan_result,diagnostics_allowed,free_heap,max_alloc_heap,current_task,loop_count,handle_count,root,app,status,profiles_get,profiles_put,logbook,logbook_entry,logbook_delete,waypoints_upload,routes_import,not_found
+236889,"attempt-start",wifi_autoconnect,2,0,0,,,,,,254,0,0,,,"0.0.0.0","","","","",0,0,,,0,74580,31732,"loopTask",,,,,,,,,,,,,
+236924,"attempt-network",wifi_autoconnect,2,0,2,,,,,,6,1,0,,,"0.0.0.0","","SkyWagon","","",10,236914,,,0,37892,27636,"loopTask",,,,,,,,,,,,,
+237797,"attempt-connected",wifi_autoconnect,2,0,2,,,,,,3,1,-59,,,"10.0.0.183","","SkyWagon","SkyWagon","",883,236914,,,0,37140,27636,"loopTask",,,,,,,,,,,,,
+238290,"enable-user-app-network",wifi_setup,0,,,1,0,0,0,0,3,1,-59,0,0,"10.0.0.183","0.0.0.0","","SkyWagon","",0,0,0,-2,0,84116,31732,"loopTask",,,,,,,,,,,,,

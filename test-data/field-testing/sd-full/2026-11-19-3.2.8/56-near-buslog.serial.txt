@@ -1,0 +1,70 @@
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH status On Menu 1 0 0 1 1 1 1
+
+HOST press LEFT
+BENCH ok
+
+HOST press UP
+button: LEFT   state: PRESSED     hold count: 0
+button: LEFT   state: CLICKED     hold count: 0
+839609 playSound 1008649592
+button: LEFT   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press UP
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+839919 playSound 1008598438
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press CENTER
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+840219 playSound 1008598446
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press UP
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+840540 playSound 1008700914
+button: CENTER state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press CENTER
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+840849 playSound 1008598446
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST buslog
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+841166 playSound 1008640146
+button: CENTER state: RELEASED    hold count: 0
+Speaker::update skipped 27 intervals
+BENCH buslog 1 0
+
+HOST wait 8
+LSM6DSV: t=842359 discarded FIFO backlog (136 words)
+LSM6DSV: a=-0.0044,-0.0049,0.9938 g=-0.0041,-0.0046,0.9994 pairsLSM6DSV: a=-0.0059,-0.0051,0.9933 g=-0.0048,-0.0046,0.9994 pairs
+HOST press CENTER
+BENCH ok
+
+HOST buslog
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+button: CENTER state: RELEASED    hold count: 0
+BENCH buslog 0 0
+
+HOST status
+BENCH status On Menu 7 0 0 1 1 1 1
+
+HOST heap
+BENCH heap 52900 20232 31732 7532
+BENCH status On Menu 7 0 0 1 1 1 1
+BENCH heap 52760 20232 31732 7532
+BENCH web http://10.0.0.183/app

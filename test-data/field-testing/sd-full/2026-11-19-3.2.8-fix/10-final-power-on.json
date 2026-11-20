@@ -1,0 +1,22 @@
+{
+  "utc": "2026-11-20T02:17:35.805380+00:00",
+  "steps": [
+    {
+      "command": "hold CENTER 1000",
+      "reply": "ok",
+      "seconds": 1.297
+    }
+  ],
+  "initial": {
+    "power": "OffUSB",
+    "page": "Charging",
+    "cursor": 0,
+    "modal_depth": 0,
+    "warning": true,
+    "climb_ready": false,
+    "gps_fix": false,
+    "flight_running": false,
+    "firmware_sd_access": false
+  },
+  "final": "Expected USB transition; inspect in next capture"
+}

@@ -1,0 +1,6 @@
+LSM6DSV: a=-0.0020,-0.0059,0.9941 g=-0.0018,-0.0056,0.9994 pairsBENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH status On User 0 0 0 1 0 0 1
+
+HOST hold CENTER 2300
+BENCH ok

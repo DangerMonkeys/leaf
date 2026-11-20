@@ -1,0 +1,44 @@
+{
+  "utc": "2026-11-20T02:22:09.353473+00:00",
+  "operation": "snapshot",
+  "volume_serial": "01114FC5",
+  "free_before": 16662528,
+  "free_after": 16662528,
+  "files": [
+    {
+      "path": "routes/active.json",
+      "bytes": 213,
+      "sha256": "30ca8568c00881b56c232496831c8388a208701c5a9e1946d8c11735a26d2a69",
+      "valid_json": true
+    },
+    {
+      "path": "routes/bench-sd-full.json",
+      "bytes": 455,
+      "sha256": "84de9327dad7bfbf8fc1a07b0543fe49a627ee9177b16ee04af62745db8ac844",
+      "valid_json": true
+    },
+    {
+      "path": "routes/bench-sd-import.json",
+      "bytes": 472,
+      "sha256": "1e75c0eb31b5979d62fd4a23998acd6cfa8848fb6f5692ef5b5a86ebe4b90bdc",
+      "valid_json": true
+    },
+    {
+      "path": "waypoints/Ed2Hamilton.cup",
+      "bytes": 1509,
+      "sha256": "6a4d4e496fbdf729003686d085c5dde383fa79d25a862d34f6869b10d0d0fda1"
+    },
+    {
+      "path": "waypoints/user_waypoints.json",
+      "bytes": 146,
+      "sha256": "4a99751b73485a087fc2c95071c0dde89b31703cdd93ea71d3e38cbb0a06086e",
+      "valid_json": true
+    },
+    {
+      "path": "profiles/profiles.json",
+      "bytes": 272,
+      "sha256": "75df5fcfc423772458b0fbc03133250268c1b99bf7a87b05d1a2f1731ffae741",
+      "valid_json": true
+    }
+  ]
+}

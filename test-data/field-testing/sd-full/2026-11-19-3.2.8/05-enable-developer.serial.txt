@@ -1,0 +1,139 @@
+LSM6DSV: a=-0.0039,-0.0044,0.9958 g=-0.0047,-0.0045,0.9994 pairsBENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH status On Menu 0 0 0 1 0 0 1
+
+HOST press DOWN
+BENCH ok
+
+HOST press DOWN
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+84294 playSound 1008598446
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press CENTER
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+84594 playSound 1008598446
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press UP
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+84894 playSound 1008700914
+button: CENTER state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press CENTER
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+85194 playSound 1008598446
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press UP
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+85504 playSound 1008661234
+button: CENTER state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press UP
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+85805 playSound 1008598446
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press UP
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+86104 playSound 1008598446
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST hold CENTER 3000
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+86414 playSound 1008598446
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST config
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: HELD        hold count: 0
+button: CENTER state: INCREMENTED hold count: 0
+LSM6DSV: a=-0.0017,-0.0044,0.9936 g=-0.0045,-0.0046,0.9994 pairsbutton: CENTER state: INCREMENTED hold count: 1
+button: CENTER state: INCREMENTED hold count: 2
+button: CENTER state: INCREMENTED hold count: 3
+button: CENTER state: INCREMENTED hold count: 4
+89444 playSound 1008730990
+button: CENTER state: RELEASED    hold count: 0
+BENCH config 1 0 1 0 0 0 0 0
+
+HOST status
+BENCH status On Menu 2 0 0 1 0 0 1
+
+HOST press LEFT
+BENCH ok
+
+HOST press LEFT
+button: LEFT   state: PRESSED     hold count: 0
+button: LEFT   state: CLICKED     hold count: 0
+90024 playSound 1008665756
+button: LEFT   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST status
+button: LEFT   state: PRESSED     hold count: 0
+button: LEFT   state: CLICKED     hold count: 0
+90324 playSound 1008661216
+button: LEFT   state: RELEASED    hold count: 0
+BENCH status On Menu 2 0 0 1 0 0 1
+
+HOST press DOWN
+BENCH ok
+
+HOST press DOWN
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+90634 playSound 1008598446
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press DOWN
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+90934 playSound 1008598446
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST status
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+91234 playSound 1008598446
+button: DOWN   state: RELEASED    hold count: 0
+BENCH status On Menu 5 0 0 1 0 0 1
+
+HOST press CENTER
+BENCH ok
+
+HOST wait 3
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+91545 playSound 1008700914
+Leaf Web App started: http://10.0.0.183/app
+button: CENTER state: RELEASED    hold count: 0
+LSM6DSV: a=-0.0044,-0.0041,0.9958 g=-0.0044,-0.0048,0.9994 pairs
+HOST web
+BENCH web http://10.0.0.183/app
+
+HOST ip
+BENCH ip 10.0.0.183 0.0.0.0
+
+HOST status
+BENCH status On Menu -1 1 0 1 0 0 1
+BENCH status On Menu -1 1 0 1 0 0 1
+BENCH heap 144468 85552 32756 8316

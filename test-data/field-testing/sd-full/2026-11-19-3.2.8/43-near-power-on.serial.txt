@@ -1,0 +1,6 @@
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH status OffUSB Charging 0 0 0 0 0 0 0
+
+HOST hold CENTER 1000
+BENCH ok

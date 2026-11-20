@@ -75,6 +75,15 @@ SDCard::FormatResult SDCard::remountAfterFormat() { return formatDetailed(); }
 
 bool SDCard::setLabel() { return true; }
 
+bool SDCard::spaceAvailable(uint64_t& totalBytes, uint64_t& freeBytes) const {
+  if (!firmwareCanAccessFilesystem() || !isCardPresent()) return false;
+  totalBytes = SD_MMC.totalBytes();
+  const uint64_t used = SD_MMC.usedBytes();
+  if (!totalBytes || used > totalBytes) return false;
+  freeBytes = totalBytes - used;
+  return true;
+}
+
 // There is no USB host in the emulator, so the card is never actually handed off: these keep the
 // real contract's return values and ownership bookkeeping, but ownership never leaves the
 // firmware.

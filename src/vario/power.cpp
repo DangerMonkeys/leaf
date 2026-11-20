@@ -30,6 +30,7 @@
 #include "ui/display/display.h"
 #include "ui/display/display_fields.h"
 #include "ui/display/pages/dialogs/page_alert_autoOff.h"
+#include "ui/display/pages/dialogs/page_storage_warning.h"
 #include "ui/input/buttons.h"
 #include "ui/settings/settings.h"
 #include "utils/magic_enum.h"
@@ -124,7 +125,10 @@ void Power::bootUp() {
   // charge mode, we still need to initialize devices so we can put some
   // of them back to sleep)
   initPeripherals();
-  if (info_.onState == PowerState::On) maybeStartBusLog();
+  if (info_.onState == PowerState::On) {
+    storage_warning::checkAtStartup();
+    maybeStartBusLog();
+  }
   heap_monitor::checkpoint("power-boot-end");
 }
 
@@ -261,6 +265,7 @@ bool Power::switchToOnState() {
   latchOn();
   Serial.println("switch_to_on_state");
   info_.onState = PowerState::On;
+  storage_warning::checkAtStartup();
   wakePeripherals();
   if (settings.system_bluetoothOn) BLE::get().start();
   if (diagnostic_network.shouldResetWhenSwitchingOn()) {

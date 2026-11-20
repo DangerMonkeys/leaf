@@ -1,0 +1,88 @@
+{
+  "utc": "2026-11-20T01:23:00.904644+00:00",
+  "base": "http://10.0.0.183",
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/api/profiles",
+      "request_bytes": 0,
+      "status": 200,
+      "seconds": 0.078,
+      "bytes": 251,
+      "sha256": "6213b5a231405eb1a4c2a452c00832fd29cead7e990135df9325e74696f523e4",
+      "body": {
+        "schema": "leaf.profiles",
+        "schema_version": "v0.1.0",
+        "active_pilot_id": "sd-p2",
+        "active_glider_id": "sd-g1",
+        "pilots": [
+          {
+            "id": "sd-p1",
+            "name": "SD Bench Pilot 1"
+          },
+          {
+            "id": "sd-p2",
+            "name": "SD Bench Pilot 2"
+          }
+        ],
+        "gliders": [
+          {
+            "id": "sd-g1",
+            "model": "SD Bench Glider"
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/user-waypoints",
+      "request_bytes": 0,
+      "status": 200,
+      "seconds": 0.172,
+      "bytes": 271,
+      "sha256": "c471a5147e0ce1ecea2c94b6706d80553b549928d3224eb5a84c19074be85569",
+      "body": {
+        "points": [
+          {
+            "id": "",
+            "index": 27,
+            "name": "SD baseline point",
+            "lat": 47.5,
+            "lon": -122.2000046,
+            "alt_m": 100.0,
+            "created_utc": ""
+          },
+          {
+            "id": "20261120-012300",
+            "index": 27,
+            "name": "Saved 18:23",
+            "lat": 47.5,
+            "lon": -122.2000046,
+            "alt_m": 100.0,
+            "created_utc": "2026-11-20T01:23:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/debug/session",
+      "request_bytes": 0,
+      "status": 200,
+      "seconds": 0.031,
+      "bytes": 234,
+      "sha256": "0de90f1ff10fc016393f3443d961df0d767b4db5138fef0d612bb3e623bf02da",
+      "body": {
+        "always_on": true,
+        "keep_bluetooth_disabled": false,
+        "udp_sensor_injection": true,
+        "web_app_active": true,
+        "using_leaf_wifi": false,
+        "diag_system_events": false,
+        "diag_network_events": false,
+        "diag_web_requests": false,
+        "diag_cpu_utilization": false
+      }
+    }
+  ]
+}

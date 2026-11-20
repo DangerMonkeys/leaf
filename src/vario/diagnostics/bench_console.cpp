@@ -26,6 +26,7 @@
 #include "system/version_info.h"
 #include "ui/display/display.h"
 #include "ui/display/pages.h"
+#include "ui/display/pages/dialogs/page_storage_warning.h"
 #include "ui/settings/settings.h"
 #include "utils/magic_enum.h"
 
@@ -74,6 +75,8 @@ namespace bench_console {
                 settings.system_showWarning && display.displayingWarning(),
                 baro.climbRateFilteredValid(), gps.hasUsableFix(), flightTimer_isRunning(),
                 sdcard.firmwareCanAccessFilesystem());
+      } else if (!strcmp(command, "sdstartup")) {
+        respond("BENCH sdstartup %lu\n", (unsigned long)storage_warning::lastCheckMicros());
       } else if (!strcmp(command, "heap")) {
         heap_monitor::Snapshot sample{};
         heap_monitor::snapshot(sample);

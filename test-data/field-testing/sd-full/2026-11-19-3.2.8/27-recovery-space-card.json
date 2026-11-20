@@ -1,0 +1,78 @@
+{
+  "utc": "2026-11-20T01:11:54.350292+00:00",
+  "operation": "release",
+  "volume_serial": "01114FC5",
+  "free_before": 0,
+  "free_after": 16777216,
+  "files": [
+    {
+      "path": "routes/active.json",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "valid_json": false
+    },
+    {
+      "path": "routes/bench-sd-import.json",
+      "bytes": 472,
+      "sha256": "1e75c0eb31b5979d62fd4a23998acd6cfa8848fb6f5692ef5b5a86ebe4b90bdc",
+      "valid_json": true
+    },
+    {
+      "path": "waypoints/Ed2Hamilton.cup",
+      "bytes": 1509,
+      "sha256": "6a4d4e496fbdf729003686d085c5dde383fa79d25a862d34f6869b10d0d0fda1"
+    },
+    {
+      "path": "waypoints/user_waypoints.json",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "valid_json": false
+    },
+    {
+      "path": "logbook/2026-11-19_18-06-27_383b52ad.json",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "valid_json": false
+    },
+    {
+      "path": "logbook/2026-11-19_18-06-27_383b52ad.json.tmp",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "valid_json": false
+    },
+    {
+      "path": "logbook/2026-11-19_18-08-52_4af81c48.json",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "valid_json": false
+    },
+    {
+      "path": "logbook/2026-11-19_18-08-52_4af81c48.json.tmp",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "valid_json": false
+    },
+    {
+      "path": "logbook/date_not_available_317_9118b2c1.json",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "valid_json": false
+    },
+    {
+      "path": "logbook/date_not_available_317_9118b2c1.json.tmp",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "valid_json": false
+    },
+    {
+      "path": "tracks/2026-11-19-XLV-000-01.igc",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tracks/2026-11-19-XLV-000-02.igc",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

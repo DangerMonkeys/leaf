@@ -1,0 +1,79 @@
+{
+  "utc": "2026-11-20T02:19:34.338114+00:00",
+  "base": "http://10.0.0.183",
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/api/profiles",
+      "request_bytes": 0,
+      "status": 200,
+      "seconds": 0.047,
+      "bytes": 272,
+      "sha256": "75df5fcfc423772458b0fbc03133250268c1b99bf7a87b05d1a2f1731ffae741",
+      "body": {
+        "schema": "leaf.profiles",
+        "schema_version": "v0.1.0",
+        "active_pilot_id": "sd-p1",
+        "active_glider_id": "sd-g1",
+        "pilots": [
+          {
+            "id": "sd-p1",
+            "name": "SD Bench Pilot 1"
+          },
+          {
+            "id": "sd-p2",
+            "name": "SD Bench Pilot 2"
+          }
+        ],
+        "gliders": [
+          {
+            "id": "sd-g1",
+            "model": "SD Bench Glider"
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/user-waypoints",
+      "request_bytes": 0,
+      "status": 200,
+      "seconds": 0.031,
+      "bytes": 127,
+      "sha256": "fa3e604b210b7b8f318942da3c5cf9a88b47db69a72c92d0986d3bcea8f120a1",
+      "body": {
+        "points": [
+          {
+            "id": "",
+            "index": 27,
+            "name": "SD baseline point",
+            "lat": 47.5,
+            "lon": -122.2000046,
+            "alt_m": 100.0,
+            "created_utc": ""
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/debug/session",
+      "request_bytes": 0,
+      "status": 200,
+      "seconds": 0.016,
+      "bytes": 234,
+      "sha256": "0de90f1ff10fc016393f3443d961df0d767b4db5138fef0d612bb3e623bf02da",
+      "body": {
+        "always_on": true,
+        "keep_bluetooth_disabled": false,
+        "udp_sensor_injection": true,
+        "web_app_active": true,
+        "using_leaf_wifi": false,
+        "diag_system_events": false,
+        "diag_network_events": false,
+        "diag_web_requests": false,
+        "diag_cpu_utilization": false
+      }
+    }
+  ]
+}

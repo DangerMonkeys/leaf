@@ -1,4 +1,5 @@
 #include "navigation/route_store.h"
+#include "storage/checked_file.h"
 
 #include <ArduinoJson.h>
 #include <SD_MMC.h>
@@ -13,8 +14,6 @@ namespace route_store {
   namespace {
     constexpr size_t ROUTE_IMPORT_MAX_BYTES = 8192;
     constexpr size_t ROUTE_FILE_MAX_BYTES = 16384;
-    constexpr const char* ROUTE_TEMP_FILE = "/routes/route.tmp";
-    constexpr const char* ROUTE_BACKUP_FILE = "/routes/route.bak";
 
     String routeError(const char* message) { return String(message ? message : "Route error"); }
 
@@ -362,36 +361,7 @@ namespace route_store {
     }
 
     bool writeJsonFile(const String& path, JsonDocument& doc) {
-      if (!ensureRouteDirectory()) return false;
-
-      if (SD_MMC.exists(ROUTE_TEMP_FILE)) SD_MMC.remove(ROUTE_TEMP_FILE);
-      if (SD_MMC.exists(ROUTE_BACKUP_FILE)) SD_MMC.remove(ROUTE_BACKUP_FILE);
-
-      File file = SD_MMC.open(ROUTE_TEMP_FILE, "w", true);
-      if (!file) return false;
-
-      const size_t written = serializeJsonPretty(doc, file);
-      file.close();
-      File staged = SD_MMC.open(ROUTE_TEMP_FILE, FILE_READ);
-      const bool complete = staged && written == measureJsonPretty(doc) && staged.size() == written;
-      staged.close();
-      if (!complete) {
-        SD_MMC.remove(ROUTE_TEMP_FILE);
-        return false;
-      }
-
-      const bool hadExisting = SD_MMC.exists(path);
-      if (hadExisting && !SD_MMC.rename(path, ROUTE_BACKUP_FILE)) {
-        SD_MMC.remove(ROUTE_TEMP_FILE);
-        return false;
-      }
-      if (!SD_MMC.rename(ROUTE_TEMP_FILE, path)) {
-        if (hadExisting) SD_MMC.rename(ROUTE_BACKUP_FILE, path);
-        SD_MMC.remove(ROUTE_TEMP_FILE);
-        return false;
-      }
-      if (hadExisting) SD_MMC.remove(ROUTE_BACKUP_FILE);
-      return true;
+      return ensureRouteDirectory() && checked_file::replaceJson(path, doc, true);
     }
 
     bool saveActiveRoutePointer(const String& path) {
@@ -542,7 +512,9 @@ namespace route_store {
   bool loadRouteFile(const String& path, bool activate, NavLoadError* loadError) {
     if (loadError) *loadError = NavLoadError::InvalidFile;
     heap_monitor::checkpoint("route-load-file");
-    if (path.isEmpty() || path.length() > 96 || !SD_MMC.exists(path)) return false;
+    if (path.isEmpty() || path.length() > 96 || !checked_file::recover(path) ||
+        !SD_MMC.exists(path))
+      return false;
 
     File file = SD_MMC.open(path, "r");
     if (!file) return false;
@@ -571,6 +543,7 @@ namespace route_store {
   }
 
   bool loadActiveRoute() {
+    if (!checked_file::recover(activeRoutePath())) return false;
     if (!SD_MMC.exists(activeRoutePath())) return false;
 
     File file = SD_MMC.open(activeRoutePath(), "r");
@@ -588,9 +561,6 @@ namespace route_store {
     return loadRouteFile(path, true);
   }
 
-  bool clearActiveRoute() {
-    if (!SD_MMC.exists(activeRoutePath())) return true;
-    return SD_MMC.remove(activeRoutePath());
-  }
+  bool clearActiveRoute() { return checked_file::erase(activeRoutePath()); }
 
 }  // namespace route_store

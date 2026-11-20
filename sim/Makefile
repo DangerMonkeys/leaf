@@ -117,6 +117,13 @@ TARGET  := $(BUILD)/leafsim
 .PHONY: all clean deps test-thermal-core test-free-flight test-thermal-track test-display-settings test-leaf-log-sync test-udp-injection
 all: $(TARGET)
 
+.PHONY: test-checked-storage
+$(BUILD)/checked_storage_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/checked_storage.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/checked_storage.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-checked-storage: $(BUILD)/checked_storage_test
+	@cd $(ROOT) && $(BUILD)/checked_storage_test .pio/storage-fix-review/simulator
+
 .PHONY: test-g-load
 $(BUILD)/igc_sensor_log_test: $(SIM)/tests/igc_sensor_log.cpp $(ROOT)/src/vario/logbook/igc_sensor_log.h $(ROOT)/src/vario/instruments/g_load_tracker.h
 	@mkdir -p $(BUILD)

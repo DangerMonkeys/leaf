@@ -539,3 +539,46 @@ the same USB device reappeared, and Windows mounted its SD card.
 Shutdown CSV readback was verified on the 3.2.5 bench. The 3.2.6 check
 covered flash and boot. See
 `utils/bench_baselines/batch-09/leaf-3.2.6-release-flash.json`.
+
+### November 19: full-card hardware testing on 3.2.8
+
+Added a 3.2.8 bench environment and flashed both application slots from
+`b1ed6ae1` with the existing console enabled. No firmware behavior changed
+and no new memory saving is claimed. USB button events, HTTP requests,
+screenshots, and card readback exercised exhausted-card errors, recovery,
+flight finalization, profile selection, navigation loading, uploads,
+bus logging, Stack and Runtime capture, and shutdown.
+
+The tests found empty navigation state and saved-waypoint files, empty IGCs
+when starting on a full card, and false success from a Stack export that
+produced an empty CSV. Shutdown with UDP replay active hit a message-bus
+lock fatal error; shutdown with replay stopped completed normally. Full
+details, qualification limits, exact image hashes, and evidence references
+are in the [hardware report](sd-full-test-2026-11-19.md).
+
+After freeing 16 MB, route/profile/upload retries and retained Stack/Runtime
+exports succeeded. A short control IGC and the 4m07s near-full IGC passed
+the checksum validator. The latter still fit its allocated cluster and
+does not verify an IGC extension failure. Runtime's refusal at 52,932 B
+free respected its capture-plus-32-KiB-reserve guard.
+
+Both original SD files were restored with matching hashes, the card was
+refilled to zero free bytes, test settings were restored, and the unit was
+left charging. These tests are evidence about this candidate, not a matched
+regression comparison with main or release qualification.
+
+### November 19: checked saves and startup storage warnings
+
+Implemented the agreed full-card follow-up: verified replacement saves for user data,
+retryable failed Stack exports, and low/full/unavailable storage warnings at startup.
+No IGC periodic-flush changes or shutdown redesign were included. Hardware full-card
+failures preserved all six fixtures, and writable web/Stack controls passed after
+reconciling a stale FAT32 free-count hint. Simulator fault injection and related
+regressions passed. See the [review report](storage-fix-review-2026-11-19.md) for exact
+hashes, screenshots, interruptions and limits.
+
+This reliability work costs +16 B linked static RAM and +8,624 B linked flash in the
+3.2.8 bench image; no new heap saving is claimed. Part of the RAM cost is bench-only
+timing instrumentation. The unit is charging with original settings/files restored and
+8,503,296 bytes free for reviewing the low-space warning. Shutdown's shared FANET/message
+bus lock dependency remains a separate [proposed fix](backlog/shutdown-message-bus-lock.md).

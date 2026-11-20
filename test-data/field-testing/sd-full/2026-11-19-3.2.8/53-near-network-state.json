@@ -1,0 +1,59 @@
+{
+  "utc": "2026-11-20T01:22:29.756642+00:00",
+  "steps": [
+    {
+      "command": "ip",
+      "reply": "ip 10.0.0.183 0.0.0.0",
+      "seconds": 0.0
+    },
+    {
+      "command": "wifi",
+      "reply": "wifi 1",
+      "seconds": 0.0
+    },
+    {
+      "command": "web",
+      "reply": "web http://10.0.0.183/app",
+      "seconds": 0.0
+    },
+    {
+      "command": "status",
+      "reply": "status On Menu 2 1 0 1 1 1 1",
+      "seconds": 0.015
+    },
+    {
+      "command": "wait 2",
+      "reply": "waited",
+      "seconds": 2.032
+    }
+  ],
+  "initial": {
+    "power": "On",
+    "page": "Menu",
+    "cursor": 2,
+    "modal_depth": 1,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": true,
+    "flight_running": true,
+    "firmware_sd_access": true
+  },
+  "final": {
+    "power": "On",
+    "page": "Menu",
+    "cursor": 2,
+    "modal_depth": 1,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": true,
+    "flight_running": true,
+    "firmware_sd_access": true
+  },
+  "heap": {
+    "internal_free": 51724,
+    "internal_min_since_boot": 21800,
+    "internal_largest": 31732,
+    "loop_stack_unused": 7532
+  },
+  "screen": "53-near-network-state.png"
+}

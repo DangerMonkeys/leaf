@@ -22,6 +22,7 @@
 #include "navigation/gpx_parser.h"
 #include "navigation/route_store.h"
 #include "navigation/user_waypoints.h"
+#include "storage/checked_file.h"
 #include "storage/files.h"
 #include "storage/sd_card.h"
 #include "ui/audio/sound_effects.h"
@@ -73,26 +74,7 @@ namespace {
   bool writeNavState(JsonDocument& doc) {
     if (!SD_MMC.exists(route_store::directoryPath()) && !SD_MMC.mkdir(route_store::directoryPath()))
       return false;
-
-    const char* tempPath = "/routes/active.tmp";
-    if (SD_MMC.exists(tempPath)) SD_MMC.remove(tempPath);
-
-    File file = SD_MMC.open(tempPath, "w", true);
-    if (!file) return false;
-
-    const size_t written = serializeJsonPretty(doc, file);
-    file.close();
-    if (written == 0) {
-      SD_MMC.remove(tempPath);
-      return false;
-    }
-
-    SD_MMC.remove(route_store::activeRoutePath());
-    if (!SD_MMC.rename(tempPath, route_store::activeRoutePath())) {
-      SD_MMC.remove(tempPath);
-      return false;
-    }
-    return true;
+    return checked_file::replaceJson(route_store::activeRoutePath(), doc, true);
   }
 
   bool readLine(File& file, char* buffer, size_t len) {
@@ -908,14 +890,15 @@ bool Navigator::savePersistedState() {
 }
 
 bool Navigator::clearPersistedState() {
-  if (!sdcard.isMounted() || !SD_MMC.exists(route_store::activeRoutePath())) return true;
-  return SD_MMC.remove(route_store::activeRoutePath());
+  return !sdcard.isMounted() || checked_file::erase(route_store::activeRoutePath());
 }
 
 bool Navigator::loadPersistedState() { return loadPersistedState(true); }
 
 bool Navigator::loadPersistedState(bool activate) {
-  if (!sdcard.isMounted() || !SD_MMC.exists(route_store::activeRoutePath())) return false;
+  if (!sdcard.isMounted() || !checked_file::recover(route_store::activeRoutePath()) ||
+      !SD_MMC.exists(route_store::activeRoutePath()))
+    return false;
 
   String path;
   LoadedNavSource sourceType = LoadedNavSource::None;
@@ -958,7 +941,7 @@ bool Navigator::loadPersistedState(bool activate) {
   if (sourceType == LoadedNavSource::SavedRoute) {
     loaded = route_store::loadRouteFile(path, false);
   } else if (sourceType == LoadedNavSource::NavFile) {
-    loaded = nav_readFile(SD_MMC, path);
+    loaded = nav_readFile(SD_MMC, path, nullptr, false);
   } else if (sourceType == LoadedNavSource::UserWaypoints) {
     loaded = user_waypoints::loadAsNavigatorSource(false);
   }
@@ -990,7 +973,6 @@ bool Navigator::loadPersistedState(bool activate) {
   lastRouteIndex_ = RouteID::None;
   lastRoutePointIndex_ = RouteIndex::None;
   lastWaypointIndex_ = WaypointID::None;
-  savePersistedState();
   return true;
 }
 
@@ -1009,7 +991,7 @@ bool Navigator::restartLastRoute() {
   return activateRoute(lastRouteIndex_, RouteIndex(1));
 }
 
-bool gpx_readFile(fs::FS& fs, String fileName, NavLoadError* error) {
+bool gpx_readFile(fs::FS& fs, String fileName, NavLoadError* error, bool persist) {
   if (error) *error = NavLoadError::InvalidFile;
   heap_monitor::checkpoint("gpx-read-start");
   FileReader file_reader(fs, fileName);
@@ -1068,7 +1050,7 @@ bool gpx_readFile(fs::FS& fs, String fileName, NavLoadError* error) {
     Serial.print(navigator.totalRoutes);
     Serial.println(" routes");
     navigator.setLoadedGpxFilename(fileName);
-    navigator.savePersistedState();
+    if (persist) navigator.savePersistedState();
     if (error) *error = NavLoadError::None;
     heap_monitor::checkpoint("gpx-read-end");
     return true;
@@ -1086,12 +1068,12 @@ bool gpx_readFile(fs::FS& fs, String fileName, NavLoadError* error) {
   }
 }
 
-bool nav_readFile(fs::FS& fs, String fileName, NavLoadError* error) {
+bool nav_readFile(fs::FS& fs, String fileName, NavLoadError* error, bool persist) {
   if (error) *error = NavLoadError::InvalidFile;
   heap_monitor::checkpoint("nav-read-start");
   const String ext = lowerExtension(fileName);
   if (ext == "gpx") {
-    return gpx_readFile(fs, fileName, error);
+    return gpx_readFile(fs, fileName, error, persist);
   }
 
   navigator.clear();
@@ -1118,7 +1100,7 @@ bool nav_readFile(fs::FS& fs, String fileName, NavLoadError* error) {
     Serial.print(" routes from ");
     Serial.println(fileName);
     navigator.setLoadedNavFilename(fileName);
-    navigator.savePersistedState();
+    if (persist) navigator.savePersistedState();
     if (error) *error = NavLoadError::None;
     heap_monitor::checkpoint("nav-read-end");
     return true;

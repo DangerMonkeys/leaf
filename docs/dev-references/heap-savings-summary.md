@@ -91,6 +91,15 @@ this report are from the 3.2.5.
 
 ## Remaining verification
 
+The [November 19 full-card hardware tests](sd-full-test-2026-11-19.md) found
+empty navigation state, an empty saved-waypoint file, silent IGC failure when
+starting on a full card, and false Stack export success. Diagnostic retry and
+a writable-card recording control passed. The [checked-save and startup-warning follow-up](storage-fix-review-2026-11-19.md)
+addresses user-file preservation and Stack false success. It adds +16 B static RAM and
++8,624 B flash in the 3.2.8 bench image. IGC in-flight error behavior remains unchanged
+by agreement, and the shutdown lock dependency remains proposed work. The tests did not
+compare main against the candidate.
+
 - Run a fresh factory commissioning session, including completion retries and the interactive self-test.
 - Interrupt and retry a live Leaf Log upload. Verify cancellation and SD ownership handoff.
 - Test the Leaf AP end to end and recheck Wi-Fi setup and saved-network handoff.

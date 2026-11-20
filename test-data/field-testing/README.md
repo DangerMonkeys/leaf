@@ -1,5 +1,14 @@
 # October 2026 field-test archive
 
+Newer collections include the [November 14 stack and vario timing logs](stack-logs/2026-11-14/README.md).
+
+The [November 19 full-card bench tests](sd-full/2026-11-19-3.2.8/README.md)
+preserve automated USB/HTTP traces, screenshots, and SD file readback.
+
+The [checked-save and startup-warning follow-up](sd-full/2026-11-19-3.2.8-fix/README.md)
+adds fault-injection results, warning screenshots, file-preservation checks and recovery
+controls, including the stale FAT32 free-count hint investigation.
+
 This archive preserves the complete useful contents of the former
 `scratch/field-testing` folders, including files previously hidden by an ignore-all
 rule. Raw recordings and saved results were copied byte for byte. Only Python

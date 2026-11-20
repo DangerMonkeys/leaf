@@ -10,6 +10,9 @@ firmware release, collect and review simulator and hardware reports for the fixe
 or record an explicit exception. It is not required for every PR. See [Releasing](releasing.md)
 and the [remaining backlog](backlog/runtime-resource-assessment.md).
 
+See [Vario timing robustness](backlog/vario-timing-robustness.md) for the
+field evidence and plan to protect sensor updates and audio from SD stalls.
+
 ## Monitor stack headroom during regular use
 
 In **Menu → Developer → Stacks**, select **START** before using the Leaf.

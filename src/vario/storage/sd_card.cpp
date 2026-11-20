@@ -28,6 +28,12 @@
 
 #define DEBUG_SDCARD true
 
+bool SDCard::spaceAvailable(uint64_t& totalBytes, uint64_t& freeBytes) const {
+  return firmwareCanAccessFilesystem() && isCardPresent() &&
+         esp_vfs_fat_info("/sdcard", &totalBytes, &freeBytes) == ESP_OK && totalBytes > 0 &&
+         freeBytes <= totalBytes;
+}
+
 // Pinout for Leaf V3.2.0
 // These should be default pins for ESP32S3, so technically no need to use these and set them.  But
 // here for completeness

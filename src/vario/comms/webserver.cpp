@@ -38,6 +38,7 @@
 #include "navigation/user_waypoints.h"
 #include "power.h"
 #include "profiles/profile_store.h"
+#include "storage/checked_file.h"
 #include "storage/sd_card.h"
 #include "system/version_info.h"
 #include "ui/audio/speaker.h"
@@ -151,8 +152,6 @@ namespace {
   static constexpr size_t NAV_UPLOAD_MAX_BYTES = 262144UL;
   static constexpr uint32_t NAV_POINTS_MIN_FREE_HEAP = 18000;
   static constexpr uint32_t NAV_POINTS_MIN_MAX_ALLOC = 6000;
-  static constexpr const char* PROFILE_TEMP_FILE = "/profiles/profiles.tmp";
-  static constexpr const char* PROFILE_BACKUP_FILE = "/profiles/profiles.bak";
   static constexpr const char* WAYPOINTS_DIR = "/waypoints";
   static constexpr const char* NAV_UPLOAD_TEMP_FILE = "/waypoints/upload.tmp";
   static constexpr const char* ROUTE_REQUEST_TEMP_FILE = "/routes/request.tmp";
@@ -1343,6 +1342,10 @@ namespace {
       return;
     }
 
+    if (!checked_file::recover(ProfileStore::filePath())) {
+      target.send(500, "application/json", "{\"detail\":\"Profiles could not be recovered.\"}");
+      return;
+    }
     if (!SD_MMC.exists(ProfileStore::filePath())) {
       sendNoStoreHeaders(target);
       target.send(200, "application/json", emptyProfilesJson());
@@ -1415,37 +1418,9 @@ namespace {
 
   bool writeProfilesBody(const String& body) {
     if (!SD_MMC.exists(ProfileStore::directoryPath()) &&
-        !SD_MMC.mkdir(ProfileStore::directoryPath())) {
+        !SD_MMC.mkdir(ProfileStore::directoryPath()))
       return false;
-    }
-
-    if (SD_MMC.exists(PROFILE_TEMP_FILE)) SD_MMC.remove(PROFILE_TEMP_FILE);
-    if (SD_MMC.exists(PROFILE_BACKUP_FILE)) SD_MMC.remove(PROFILE_BACKUP_FILE);
-
-    File file = SD_MMC.open(PROFILE_TEMP_FILE, "w", true);
-    if (!file) return false;
-
-    const size_t written = file.print(body);
-    file.close();
-    if (written != body.length()) {
-      SD_MMC.remove(PROFILE_TEMP_FILE);
-      return false;
-    }
-
-    const bool hadExisting = SD_MMC.exists(ProfileStore::filePath());
-    if (hadExisting && !SD_MMC.rename(ProfileStore::filePath(), PROFILE_BACKUP_FILE)) {
-      SD_MMC.remove(PROFILE_TEMP_FILE);
-      return false;
-    }
-
-    if (!SD_MMC.rename(PROFILE_TEMP_FILE, ProfileStore::filePath())) {
-      if (hadExisting) SD_MMC.rename(PROFILE_BACKUP_FILE, ProfileStore::filePath());
-      SD_MMC.remove(PROFILE_TEMP_FILE);
-      return false;
-    }
-
-    if (hadExisting) SD_MMC.remove(PROFILE_BACKUP_FILE);
-    return true;
+    return checked_file::replaceBytes(ProfileStore::filePath(), body);
   }
 
   void saveProfiles(LeafWebServer& target) {
@@ -1515,6 +1490,7 @@ namespace {
   }
 
   bool loadProfilesForUpdate(JsonDocument& doc) {
+    if (!checked_file::recover(ProfileStore::filePath())) return false;
     if (SD_MMC.exists(ProfileStore::filePath())) {
       File file = SD_MMC.open(ProfileStore::filePath(), "r");
       if (!file) return false;

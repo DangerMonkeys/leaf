@@ -1,4 +1,6 @@
 #include "heap_monitor.h"
+#include "logbook/logbook_io.h"
+#include "storage/checked_file.h"
 
 #include <Arduino.h>
 #include <SD_MMC.h>
@@ -261,7 +263,9 @@ namespace heap_monitor {
     do {
       snprintf(path, sizeof(path), "/diagnostics/stack_%lu.csv", (unsigned long)++stackSequence);
     } while (SD_MMC.exists(path));
-    File file = SD_MMC.open(path, "w", true);
+    logbook_io::Guard transaction;
+    if (!transaction) return false;
+    checked_file::Writer file(path);
     if (!file) return false;
     constexpr char header[] = "task,elapsed_ms,instances,min_unused_bytes\n";
     bool written = file.write(reinterpret_cast<const uint8_t*>(header), sizeof(header) - 1) ==
@@ -276,9 +280,8 @@ namespace heap_monitor {
                    (unsigned long)task.instances, minimum);
       written &= file.write(reinterpret_cast<const uint8_t*>(row), size) == size_t(size);
     }
-    file.flush();
-    file.close();
-    if (!written) {
+    const bool complete = file.finish(path);
+    if (!written || !complete) {
       SD_MMC.remove(path);
       return false;
     }

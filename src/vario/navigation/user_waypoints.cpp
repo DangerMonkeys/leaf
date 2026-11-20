@@ -6,12 +6,12 @@
 
 #include "diagnostics/heap_monitor.h"
 #include "instruments/gps.h"
+#include "storage/checked_file.h"
 #include "storage/sd_card.h"
 
 namespace user_waypoints {
   namespace {
     constexpr const char* WAYPOINTS_DIR = "/waypoints";
-    constexpr const char* TEMP_FILE = "/waypoints/user_waypoints.tmp";
     constexpr size_t USER_WAYPOINTS_MAX_BYTES = 24576;
 
     bool ensureDirectory() { return SD_MMC.exists(WAYPOINTS_DIR) || SD_MMC.mkdir(WAYPOINTS_DIR); }
@@ -150,6 +150,10 @@ namespace user_waypoints {
 
     bool loadDocument(JsonDocument& doc, String& error) {
       doc.clear();
+      if (!checked_file::recover(filePath())) {
+        error = "Unable to recover user waypoints.";
+        return false;
+      }
       if (!SD_MMC.exists(filePath())) {
         doc["schema"] = "leaf.user_waypoints";
         doc["schema_version"] = "v0.1.0";
@@ -189,29 +193,7 @@ namespace user_waypoints {
         error = "Unable to create waypoints folder.";
         return false;
       }
-
-      if (SD_MMC.exists(TEMP_FILE)) SD_MMC.remove(TEMP_FILE);
-      File file = SD_MMC.open(TEMP_FILE, "w", true);
-      if (!file) {
-        error = "Unable to write user waypoints.";
-        return false;
-      }
-
-      const size_t written = serializeJson(doc, file);
-      file.close();
-      if (written == 0) {
-        SD_MMC.remove(TEMP_FILE);
-        error = "Unable to write user waypoints.";
-        return false;
-      }
-
-      if (SD_MMC.exists(filePath()) && !SD_MMC.remove(filePath())) {
-        SD_MMC.remove(TEMP_FILE);
-        error = "Unable to replace user waypoints.";
-        return false;
-      }
-      if (!SD_MMC.rename(TEMP_FILE, filePath())) {
-        SD_MMC.remove(TEMP_FILE);
+      if (!checked_file::replaceJson(filePath(), doc)) {
         error = "Unable to save user waypoints.";
         return false;
       }
@@ -251,6 +233,10 @@ namespace user_waypoints {
   }
 
   bool Reader::open(String& error) {
+    if (!checked_file::recover(filePath())) {
+      error = "Unable to recover user waypoints.";
+      return false;
+    }
     if (!SD_MMC.exists(filePath())) return true;
     file_ = SD_MMC.open(filePath(), "r");
     if (!file_) {
@@ -340,7 +326,8 @@ namespace user_waypoints {
 
   bool loadIntoNavigator() {
     heap_monitor::checkpoint("user-wpt-load-nav");
-    if (!sdcard.isMounted() || !SD_MMC.exists(filePath())) return false;
+    if (!sdcard.isMounted() || !checked_file::recover(filePath()) || !SD_MMC.exists(filePath()))
+      return false;
     Reader reader;
     String error;
     if (!reader.open(error)) return false;
@@ -358,7 +345,8 @@ namespace user_waypoints {
 
   bool loadAsNavigatorSource(bool persist) {
     heap_monitor::checkpoint("user-wpt-source-start");
-    if (!sdcard.isMounted() || !SD_MMC.exists(filePath())) return false;
+    if (!sdcard.isMounted() || !checked_file::recover(filePath()) || !SD_MMC.exists(filePath()))
+      return false;
     Reader reader;
     String error;
     if (!reader.open(error)) return false;

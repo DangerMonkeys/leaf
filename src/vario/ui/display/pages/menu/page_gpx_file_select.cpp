@@ -206,7 +206,13 @@ void PageGpxFileSelect::refreshIndex() {
   File entry = dir.openNextFile();
   while (entry) {
     if (!entry.isDirectory()) {
-      const String name = fileNameOnly(entry.name());
+      String name = fileNameOnly(entry.name());
+      // Show a route whose replacement was interrupted after its old main became a backup.
+      // Do not rename while a directory iterator is live; loadRouteFile recovers on selection.
+      if (mode_ == Mode::SavedRoutes && name.endsWith(".json.bak")) {
+        name.remove(name.length() - 4);
+        if (SD_MMC.exists(String(directoryPath()) + "/" + name)) name = "";
+      }
       if (supportedFileName(name.c_str())) {
         addFileName(name);
       }

@@ -12,7 +12,8 @@ pio run -e leaf_3_2_5_bench
 ```
 
 The 3.2.5 bench target inherits `leaf_3_2_5_release` and adds
-`LEAF_USB_BENCH_CONSOLE=1`. For another hardware revision, define a matching
+`LEAF_USB_BENCH_CONSOLE=1`. The `leaf_3_2_8_bench` target does the same for
+3.2.8 hardware. For another hardware revision, define a matching
 `*_bench` environment in the variant's `platformio.ini` using
 `leaf_3_2_5_bench` as the template. Build one environment at a time per worktree
 because the version script temporarily updates a shared header.
@@ -83,6 +84,15 @@ query after a transfer attempt and before the next charging upload session.
 heap allocated by TLS context setup. It briefly allocates a context and can
 lower the boot-wide minimum heap reading. Run it separately from measurements
 of the workload heap minimum.
+
+`sdstartup` reports the duration in microseconds of the most recent startup storage
+space query. It reads a cached bench-only value and does not access the card again.
+Zero means the query has not run since boot. Cached FatFs free-space counts can make
+this fast; these timings do not bound a full allocation-table scan.
+
+For UDP replay tests, stop and join the host producer, disable injection through the
+existing developer session endpoint, and verify it is disabled before sending shutdown
+buttons. See the [shutdown lock investigation](backlog/shutdown-message-bus-lock.md).
 
 ## Compare TLS record buffers
 

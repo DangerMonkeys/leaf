@@ -1,0 +1,32 @@
+{
+  "utc": "2026-11-20T02:21:48.808618+00:00",
+  "steps": [
+    {
+      "command": "press CENTER",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "status",
+      "reply": "status On User 0 0 0 1 0 0 1",
+      "seconds": 0.016
+    },
+    {
+      "command": "hold CENTER 2300",
+      "reply": "ok",
+      "seconds": 2.594
+    }
+  ],
+  "initial": {
+    "power": "On",
+    "page": "User",
+    "cursor": -1,
+    "modal_depth": 1,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": false,
+    "flight_running": false,
+    "firmware_sd_access": true
+  },
+  "final": "Expected USB transition; inspect in next capture"
+}

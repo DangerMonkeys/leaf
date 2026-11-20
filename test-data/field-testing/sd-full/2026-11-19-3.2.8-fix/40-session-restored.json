@@ -1,0 +1,26 @@
+{
+  "utc": "2026-11-20T02:39:28.426761+00:00",
+  "base": "http://10.0.0.183",
+  "requests": [
+    {
+      "method": "POST",
+      "path": "/api/debug/session",
+      "request_bytes": 169,
+      "status": 200,
+      "seconds": 0.047,
+      "bytes": 236,
+      "sha256": "66e08921b96862403dbe5a0554b59cc1194217c06e70d04b2446780309128868",
+      "body": {
+        "always_on": false,
+        "keep_bluetooth_disabled": false,
+        "udp_sensor_injection": false,
+        "web_app_active": true,
+        "using_leaf_wifi": false,
+        "diag_system_events": false,
+        "diag_network_events": false,
+        "diag_web_requests": false,
+        "diag_cpu_utilization": false
+      }
+    }
+  ]
+}
