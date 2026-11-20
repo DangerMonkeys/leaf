@@ -103,7 +103,7 @@ The second IGC has no FD events. B-record timestamp gaps reach 2 s in the first 
 later returned; B records require both usable GPS and a ready barometer. These observations
 do not establish the cause of each gap. No Runtime capture or dynamic climb/audio stimulus
 was used, so this is **not a vario timing or beeper performance qualification**. Preserve
-the [vario timing backlog](backlog/vario-timing-robustness.md) and these files for follow-up.
+the [vario timing backlog](https://leafvario.com/dev-references/backlog/vario-timing-robustness/) and these files for follow-up.
 
 ## Test corrections and final state
 

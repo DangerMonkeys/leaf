@@ -7,10 +7,10 @@ description: Manual bounded timing capture and baseline reports for release cand
 
 This is a manual measurement tool, not an automated operational test. Before publishing a
 firmware release, collect and review simulator and hardware reports for the fixed candidate,
-or record an explicit exception. It is not required for every PR. See [Releasing](releasing.md)
-and the [remaining backlog](backlog/runtime-resource-assessment.md).
+or record an explicit exception. It is not required for every PR. See [Releasing](https://leafvario.com/dev-references/releasing/)
+and the [remaining backlog](https://leafvario.com/dev-references/backlog/runtime-resource-assessment/).
 
-See [Vario timing robustness](backlog/vario-timing-robustness.md) for the
+See [Vario timing robustness](https://leafvario.com/dev-references/backlog/vario-timing-robustness/) for the
 field evidence and plan to protect sensor updates and audio from SD stalls.
 
 ## Monitor stack headroom during regular use
@@ -37,7 +37,7 @@ Record the workloads exercised so the
 measurements can inform changes to stack sizes.
 
 Current stack sizes remain unchanged. Further reductions are deferred for stable-release
-work; see the [memory follow-up plan](backlog/memory-optimization-followup.md) for the
+work; see the [memory follow-up plan](https://leafvario.com/dev-references/backlog/memory-optimization-followup/) for the
 lowest retained measurements, conservative future trial sizes and missing workloads.
 
 ## Capture on a Leaf
@@ -146,13 +146,13 @@ Use scenario playback on the device thread for stage 1 simulator captures.
 ## Generate and compare reports
 
 The current provisional device reference is
-[Leaf 3.2.8 Navigate v1](../../utils/runtime_report/baselines/leaf-3_2_8-navigate-v1/README.md).
+[Leaf 3.2.8 Navigate v1](https://github.com/DangerMonkeys/leaf/blob/main/utils/runtime_report/baselines/leaf-3_2_8-navigate-v1/README.md).
 Its bundle pins the latest repeat capture, firmware/source identity, known issues and repeat
 instructions. Use its `report.json` as `--baseline`; aim for 120 seconds total recorded time
 and matching settings/workload. Start from its candidate metadata template so stable scenario
 identifiers remain separate from run-specific descriptions. This reference covers Navigate
 only and does not replace the wider release assessments. See the
-[reference registry](../../utils/runtime_report/baselines/README.md) before selecting a baseline.
+[reference registry](https://github.com/DangerMonkeys/leaf/blob/main/utils/runtime_report/baselines/README.md) before selecting a baseline.
 
 Create a metadata JSON alongside the raw capture, for example:
 

@@ -6,10 +6,10 @@ description: Protect Leaf’s climb estimate and vario audio from storage and ne
 # Vario Timing Robustness Backlog
 
 **Status:** Open. Field evidence from November 14, 2026, with a
-[November 20 live-radio follow-up](../shutdown-radio-test-2026-11-20.md).
+[November 20 live-radio follow-up](https://leafvario.com/dev-references/shutdown-radio-test-2026-11-20/).
 That follow-up verifies shutdown/lifecycle behavior, not flight-time vario robustness.
 Keep stack reservations unchanged while isolating timing effects; further memory
-reductions are deferred in the [restart plan](memory-optimization-followup.md).
+reductions are deferred in the [restart plan](https://leafvario.com/dev-references/backlog/memory-optimization-followup/).
 
 Keep the vario responsive to real climb and sink while a flight is recording,
 the SD card is slow, or the radios are busy. The pressure and IMU sampling,
@@ -37,7 +37,7 @@ thresholds. The IGC samples the one-second climb average, while audio and
 the configurable display average have different response times. Keep the
 longer swings open for investigation. Use time since recording start when
 aligning diagnostics. The track suggests takeoff was about 11 minutes into
-this recording. [IGC event definitions](../flights_and_logging.md#event-records)
+this recording. [IGC event definitions](https://leafvario.com/dev-references/flights_and_logging/#event-records)
 
 ## 1. Isolate in-flight SD writes
 
@@ -54,8 +54,8 @@ this recording. [IGC event definitions](../flights_and_logging.md#event-records)
 - Coordinate drain, close, and finalization with flight stop, the existing
   shutdown deadline, and USB mass-storage handoff. Measure buffer and
   worker stack costs as part of the change.
-  [SD card write robustness](sd-card-write-robustness.md)
-  · [Bounded shutdown](../bounded-shutdown.md)
+  [SD card write robustness](https://leafvario.com/dev-references/backlog/sd-card-write-robustness/)
+  · [Bounded shutdown](https://leafvario.com/dev-references/bounded-shutdown/)
 
 ## 2. Protect sensor and audio timing
 
@@ -95,5 +95,5 @@ this recording. [IGC event definitions](../flights_and_logging.md#event-records)
 If the longer swings recur, capture sensor age, main-loop delays,
 estimated climb, and tone changes in a bounded RAM trace for export after
 the flight. Compare those signals before changing estimator tuning.
-[Runtime assessment](../runtime-assessment.md)
-· [IMU gravity performance](vario-imu-gravity-performance.md)
+[Runtime assessment](https://leafvario.com/dev-references/runtime-assessment/)
+· [IMU gravity performance](https://leafvario.com/dev-references/backlog/vario-imu-gravity-performance/)

@@ -3,12 +3,12 @@ title: Firmware heap savings log
 description: Leaf memory audit changes, measured savings, and on-device verification.
 ---
 
-[Branch-wide heap savings report](heap-savings-summary.md)
+[Branch-wide heap savings report](https://leafvario.com/dev-references/heap-savings-summary/)
 
 ## Closeout and future work · November 20, 2026
 
 Further memory optimization is paused for stable-release work. Production task stack
-reservations and stock release TLS remain unchanged. The [restart plan](backlog/memory-optimization-followup.md)
+reservations and stock release TLS remain unchanged. The [restart plan](https://leafvario.com/dev-references/backlog/memory-optimization-followup/)
 archives the review inventory and preserves the next agreed cohorts, deferred choices,
 conservative stack trials and their test requirements. Historical measurements below retain
 their original workload and candidate limits; later results supersede open-test status only
@@ -90,7 +90,7 @@ investigation before using this stress case as a prerelease pass criterion.
   `6b96404cbb42ffea128be215a421959a0ed866b6b18f8c6eb655c368717571c5`.
 - Raw USB captures and the ELF summary are in `utils/bench_baselines/batch-01/`.
   The tested candidate BIN, ELF, map, and flash log are archived locally in
-  `.pio/bench-batch-01/final/`. [USB bench console guide](usb-bench-console.md)
+  `.pio/bench-batch-01/final/`. [USB bench console guide](https://leafvario.com/dev-references/usb-bench-console/)
 
 ### Route and waypoint verification
 
@@ -202,7 +202,7 @@ Exact-release qualification, OTA delivery and unexercised retry/fault variants r
 
 Record the firmware commit and image SHA-256 for each run. Keep the results
 next to the corresponding bench captures. Use the release image for checks
-that depend on normal USB, charging, or OTA behavior. [Firmware release checklist](releasing.md)
+that depend on normal USB, charging, or OTA behavior. [Firmware release checklist](https://leafvario.com/dev-references/releasing/)
 
 | Test still open | Setup and expected result |
 | --- | --- |
@@ -435,7 +435,7 @@ follow-up under the normal on-state workload.
 Repeat the on-state measurements with a GPS fix, active navigation, IGC
 writes, radio peers, and a BLE client before selecting stack reductions.
 Repeat the upload stack measurement under network interruption and retry.
-See [USB bench console](usb-bench-console.md#compare-tls-record-buffers).
+See [USB bench console](https://leafvario.com/dev-references/usb-bench-console/#compare-tls-record-buffers).
 
 The stock-TLS and experimental bench builds both used 86,332 B of linked
 static RAM and showed 123,332 B of idle internal heap. The experiment added
@@ -544,7 +544,7 @@ See `utils/bench_baselines/batch-09/stack-shutdown-device.csv`.
 
 The 12 KiB loop stack remains in use. The audit lists 10 KiB as the first
 trial after broader workload coverage, with 2 KiB of potential on-state
-heap savings. See [how to record a stack session](runtime-assessment.md#monitor-stack-headroom-during-regular-use).
+heap savings. See [how to record a stack session](https://leafvario.com/dev-references/runtime-assessment/#monitor-stack-headroom-during-regular-use).
 
 ### Release build and flash on 3.2.6
 
@@ -570,7 +570,7 @@ when starting on a full card, and false success from a Stack export that
 produced an empty CSV. Shutdown with UDP replay active hit a message-bus
 lock fatal error; shutdown with replay stopped completed normally. Full
 details, qualification limits, exact image hashes, and evidence references
-are in the [hardware report](sd-full-test-2026-11-19.md).
+are in the [hardware report](https://leafvario.com/dev-references/sd-full-test-2026-11-19/).
 
 After freeing 16 MB, route/profile/upload retries and retained Stack/Runtime
 exports succeeded. A short control IGC and the 4m07s near-full IGC passed
@@ -590,14 +590,14 @@ retryable failed Stack exports, and low/full/unavailable storage warnings at sta
 No IGC periodic-flush changes or shutdown redesign were included. Hardware full-card
 failures preserved all six fixtures, and writable web/Stack controls passed after
 reconciling a stale FAT32 free-count hint. Simulator fault injection and related
-regressions passed. See the [review report](storage-fix-review-2026-11-19.md) for exact
+regressions passed. See the [review report](https://leafvario.com/dev-references/storage-fix-review-2026-11-19/) for exact
 hashes, screenshots, interruptions and limits.
 
 This reliability work costs +16 B linked static RAM and +8,624 B linked flash in the
 3.2.8 bench image; no new heap saving is claimed. Part of the RAM cost is bench-only
 timing instrumentation. The unit is charging with original settings/files restored and
 8,503,296 bytes free for reviewing the low-space warning. Shutdown's shared FANET/message
-bus lock dependency was subsequently addressed by the separate [shutdown fix](backlog/shutdown-message-bus-lock.md).
+bus lock dependency was subsequently addressed by the separate [shutdown fix](https://leafvario.com/dev-references/backlog/shutdown-message-bus-lock/).
 
 ### November 19: deferred shutdown and publisher drain
 
@@ -610,7 +610,7 @@ and Stack CSV were saved and read back; all three short test IGCs passed checksu
 
 This adds +16 B static RAM and +628 B flash over the storage-fix bench image, with no
 new task or capture buffer. Live FANET plus a connected Bluetooth client was subsequently
-checked in the November 20 follow-up below. See the [shutdown report](shutdown-fix-review-2026-11-19.md) for exact hashes,
+checked in the November 20 follow-up below. See the [shutdown report](https://leafvario.com/dev-references/shutdown-fix-review-2026-11-19/) for exact hashes,
 producer timing, test-driver corrections, and cleanup. Original card files/settings
 were restored; the unit is charging with 8,503,296 bytes free.
 
@@ -627,4 +627,4 @@ Keep the RX allocation at 4 KiB. The boot-wide heap minimum reached 20,208 B; th
 responsible transient was not isolated. Both raw IGC checksums match, but strict
 validation rejects the known UTF-8 pilot-name header; the separate header-text fix
 is not in this candidate. A 136 ms write and FIFO diagnostic keep vario timing
-follow-up open. See the [full hardware report](shutdown-radio-test-2026-11-20.md).
+follow-up open. See the [full hardware report](https://leafvario.com/dev-references/shutdown-radio-test-2026-11-20/).

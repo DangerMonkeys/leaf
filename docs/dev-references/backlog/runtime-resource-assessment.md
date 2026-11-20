@@ -9,11 +9,11 @@ description: Release timing and memory assessment, implementation stages and fol
 explicit discard/Developer-exit release and lightweight shutdown-saving Stacks monitor are
 implemented. They support later workload automation but do not complete stage 2's verified
 traffic, hardware fixtures or soak coverage. Further memory and stack reductions are paused
-for stable-release work; see the [memory restart plan](memory-optimization-followup.md).
+for stable-release work; see the [memory restart plan](https://leafvario.com/dev-references/backlog/memory-optimization-followup/).
 
 Status reconciled **2026-10-22**: stage 1 is implemented and merged in `e432ee66` (#421).
 A provisional Leaf 3.2.8 Navigate comparison reference is registered in
-[`utils/runtime_report/baselines/index.json`](../../../utils/runtime_report/baselines/index.json).
+[`utils/runtime_report/baselines/index.json`](https://github.com/DangerMonkeys/leaf/blob/main/utils/runtime_report/baselines/index.json).
 It remains `review_required`, with unresolved timing/recovery and workload-coverage limits;
 selection is not a release pass. Reviewed operational qualification and subsequent automation
 remain pending. Reports are required for the exact firmware release candidate, not per PR.
@@ -24,8 +24,8 @@ that older Navigate baseline. Include their actual activity, SD-write load, save
 memory use in the candidate assessment, alongside the existing flight/web/transition workload.
 The additional records are part of normal IGC logging, not only Developer-mode CSV capture.
 
-Use [Runtime assessment](../runtime-assessment.md) for current capture/export instructions and
-the [versioned baseline instructions](../../../utils/runtime_report/baselines/leaf-3_2_8-navigate-v1/README.md)
+Use [Runtime assessment](https://leafvario.com/dev-references/runtime-assessment/) for current capture/export instructions and
+the [versioned baseline instructions](https://github.com/DangerMonkeys/leaf/blob/main/utils/runtime_report/baselines/leaf-3_2_8-navigate-v1/README.md)
 for compatible comparisons. Preserve existing baseline bundles and their known issues.
 
 ## Intent

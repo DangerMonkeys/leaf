@@ -10,7 +10,7 @@ description: Deferred stack trials, remaining audit decisions, evidence, and tes
 **Last hardware candidate:** `8a435a426f5383b0097ee96df40cad47ed4ea873`.
 **Scope:** Future planning; no additional stack, SDK, buffering or capacity changes in this closeout.
 
-The first cohort delivered the [measured heap improvements](../heap-savings-summary.md).
+The first cohort delivered the [measured heap improvements](https://leafvario.com/dev-references/heap-savings-summary/).
 Keep its current stack reservations and stock release TLS configuration while preparing a
 stable release. Existing “yes” decisions remain agreed directions; their scheduling is
 paused. A “maybe”, blank, “defer” or rejected tracker row is not authorization to implement it.
@@ -26,15 +26,15 @@ paused. A “maybe”, blank, “defer” or rejected tracker row is not authori
 4. Treat stack reservations, SDK pools, file buffering and behavioral compromises as separate
    experiments. Keep a known-good image and compare identical workloads before adopting them.
 
-Use the [USB console](../usb-bench-console.md), [Runtime/Stacks instructions](../runtime-assessment.md)
-and [per-batch savings log](../heap-savings-log.md). Archive raw results under
+Use the [USB console](https://leafvario.com/dev-references/usb-bench-console/), [Runtime/Stacks instructions](https://leafvario.com/dev-references/runtime-assessment/)
+and [per-batch savings log](https://leafvario.com/dev-references/heap-savings-log/). Archive raw results under
 `utils/bench_baselines/` or `test-data/field-testing/`, with commit, image hash, build flags,
 hardware, settings, workload and restoration notes. Console support remains opt-in;
 the ordinary release build does not enable it.
 
 ### Saved decision inventory
 
-The [November 20 inventory snapshot](../../../utils/bench_baselines/memory-followup-2026-11-20.json)
+The [November 20 inventory snapshot](https://github.com/DangerMonkeys/leaf/blob/main/utils/bench_baselines/memory-followup-2026-11-20.json)
 preserves all **422** review rows: **355 decisions** (132 yes, 28 maybe, 5 defer, 2 no,
 188 undecided) and 67 reference rows. It includes priorities, phases, historical scoped
 estimates and detailed notes for key deferred choices. Its original audit revision is
@@ -116,15 +116,15 @@ Vario CSV decisions distinct from live climb-history and vario functionality.
 
 ## Stability and release follow-up
 
-The [November 20 radio test](../shutdown-radio-test-2026-11-20.md) closes the combined
+The [November 20 radio test](https://leafvario.com/dev-references/shutdown-radio-test-2026-11-20/) closes the combined
 phone-connected/FANET shutdown gap and exercises menu/Web App lifecycle transitions.
 It does not qualify hours of in-flight vario timing or crowded-network operation.
 
-- Investigate sensor/audio stalls under [vario timing robustness](vario-timing-robustness.md).
+- Investigate sensor/audio stalls under [vario timing robustness](https://leafvario.com/dev-references/backlog/vario-timing-robustness/).
   Nearby heap and stack observations do not establish stack exhaustion as their cause.
   Do not change stack sizes while comparing diagnostic I/O effects.
-- Preserve [SD robustness](sd-card-write-robustness.md) and
-  [other blocking bus subscribers](shutdown-message-bus-lock.md) as separate reliability work.
+- Preserve [SD robustness](https://leafvario.com/dev-references/backlog/sd-card-write-robustness/) and
+  [other blocking bus subscribers](https://leafvario.com/dev-references/backlog/shutdown-message-bus-lock/) as separate reliability work.
   Checked saves/startup warnings and deferred Power shutdown are implemented; general
   power-loss durability, stale FAT free-count behavior and all blocking subscribers are not solved.
 - The known non-ASCII IGC pilot-header issue is on the separate
@@ -134,8 +134,8 @@ It does not qualify hours of in-flight vario timing or crowded-network operation
   maintainer on the 3.2.8 during this thread. Interrupted Leaf Log uploads were also reported
   passing. Preserve those results; final-candidate retries/fault cases and OTA delivery remain
   useful release checks rather than grounds to reopen optimization.
-- A merge is not firmware publication. Follow [releasing](../releasing.md) and
-  [runtime assessment](runtime-resource-assessment.md) for reviewed simulator/device reports
+- A merge is not firmware publication. Follow [releasing](https://leafvario.com/dev-references/releasing/) and
+  [runtime assessment](https://leafvario.com/dev-references/backlog/runtime-resource-assessment/) for reviewed simulator/device reports
   on the exact release candidate, preserving known timing and compatibility limits.
 
 ## Closeout verification

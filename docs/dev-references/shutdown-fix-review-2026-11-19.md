@@ -11,7 +11,7 @@ with production FANET reception. It preserves the existing shutdown sequence, sa
 opportunity, power-latch behavior and watchdogs. The storage changes were committed
 first as `45e599af`; this change is a separate follow-up on `codex/usb-bench-console`.
 
-The [November 20 live-radio follow-up](shutdown-radio-test-2026-11-20.md) subsequently
+The [November 20 live-radio follow-up](https://leafvario.com/dev-references/shutdown-radio-test-2026-11-20/) subsequently
 passed combined FANET/phone shutdown and Web App lifecycle checks on 3.2.5. It also
 records strict IGC header-validation and timing limitations.
 

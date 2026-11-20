@@ -8,7 +8,7 @@ description: Current developer diagnostic files and remaining cleanup work.
 **November 20, 2026 update:** Developer Vario CSV is retired; the Stacks monitor saves on
 stop or normal shutdown, preserving failed exports in RAM for retry while powered. Bus
 logging stops when Developer mode is disabled. Further diagnostic-memory reductions are
-paused; see the [memory restart plan](memory-optimization-followup.md).
+paused; see the [memory restart plan](https://leafvario.com/dev-references/backlog/memory-optimization-followup/).
 
 Status reconciled **2026-10-24**: diagnostic categories and their Developer controls are
 implemented. Separate dev firmware builds were retired in `c840faf9` (#420); runtime Developer
@@ -34,7 +34,7 @@ assessor no longer writes synchronous per-second `cpu_utilization.csv` rows.
 All categories require `dev_mode` as well as their category toggle. The web app Developer card
 can change these controls. Diagnostic filesystem writes require firmware SD ownership and are
 paused while USB owns the card. Runtime capture freezes before explicit export; it does not
-stream timing rows to SD in the measured path. See [Runtime assessment](../runtime-assessment.md)
+stream timing rows to SD in the measured path. See [Runtime assessment](https://leafvario.com/dev-references/runtime-assessment/)
 for capture allocation, export, comparison and simulator limitations.
 The runtime capture also has an implemented download endpoint, `/api/debug/runtime/download`,
 after freeze/export; a general CSV file-management UI is separate work.
@@ -47,7 +47,7 @@ IGC is open, with a final group at stop. The old thirty-entry pre-start diagnost
 and end records identify the timer cause; the separate live auto-start detector remains. These records
 use the normal checksum-aware IGC writer and do not require Developer mode or a CSV toggle.
 No IGC diagnostics are available when track saving is disabled or the flight ends before its
-IGC opens. See [Flights and Logging](../flights_and_logging.md).
+IGC opens. See [Flights and Logging](https://leafvario.com/dev-references/flights_and_logging/).
 
 These temporary field-tuning records add SD traffic to the flight workload. Measure their
 effect in exact-candidate runtime reports and decide what to retain or gate after validation.
@@ -61,5 +61,5 @@ effect in exact-candidate runtime reports and decide what to retain or gate afte
 - Reassess which diagnostics to retain after release hardening, preserving checks needed for
   correct behavior.
 - Coordinate checked writes and failure-path reporting with
-  [SD card write robustness](sd-card-write-robustness.md); a diagnostic write must not recurse
+  [SD card write robustness](https://leafvario.com/dev-references/backlog/sd-card-write-robustness/); a diagnostic write must not recurse
   into more writes on a failing card.

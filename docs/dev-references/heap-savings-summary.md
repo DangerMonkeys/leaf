@@ -19,7 +19,7 @@ is the last matched cold-idle measurement. The subsequent stack monitor
 adds 24 B of linked static RAM, and its shutdown autosave adds zero.
 
 **Closeout decision, November 20:** pause further optimization for stable-release work.
-The [restart plan](backlog/memory-optimization-followup.md) preserves the complete audit
+The [restart plan](https://leafvario.com/dev-references/backlog/memory-optimization-followup/) preserves the complete audit
 inventory, remaining agreed cohorts, stack trial sizes and larger experiments. No task
 stack reductions or smaller release TLS buffers are adopted.
 
@@ -46,7 +46,7 @@ gain and must not be added to it.
 | 9 · Final 3.2.5 bench with stack monitor and autosave | — | 86,356 B |
 | Checked saves and deferred shutdown · tested November 20 | — | 86,388 B |
 
-[Per-batch measurements and provenance](heap-savings-log.md)
+[Per-batch measurements and provenance](https://leafvario.com/dev-references/heap-savings-log/)
 
 ## Workload-specific results
 
@@ -88,7 +88,7 @@ The table above describes the earlier outdoor/upload workloads. Across the broad
 archive, the lowest retained unused stacks are loop **7,072 B**, Bluetooth worker
 **2,124 B**, FANET TX **2,076 B**, and FANET RX **1,176 B**. Use those lower values
 rather than the newer, lighter workload when planning. See the
-[future stack trials and coverage](backlog/memory-optimization-followup.md#stack-reservations-preserve-now-measure-before-a-future-trial).
+[future stack trials and coverage](https://leafvario.com/dev-references/backlog/memory-optimization-followup/#stack-reservations-preserve-now-measure-before-a-future-trial).
 
 The lightweight **Stacks** monitor retains minima across task restarts,
 uses no capture buffer, and saves on manual stop, normal power-off, or
@@ -96,7 +96,7 @@ low-battery shutdown. The 10 KiB loop stack remains a future trial with
 2 KiB of potential on-state savings. The uploader stack exists during
 charging transfers and returns to the heap when the worker exits.
 
-[Stack monitor instructions](runtime-assessment.md#monitor-stack-headroom-during-regular-use)
+[Stack monitor instructions](https://leafvario.com/dev-references/runtime-assessment/#monitor-stack-headroom-during-regular-use)
 
 The 3.2.6 release build includes the stack monitor and shutdown autosave and
 uses stock TLS. Both app slots verified, and the 3.2.6 rebooted and mounted
@@ -105,16 +105,16 @@ this report are from the 3.2.5.
 
 ## Remaining verification
 
-The [November 19 full-card hardware tests](sd-full-test-2026-11-19.md) found
+The [November 19 full-card hardware tests](https://leafvario.com/dev-references/sd-full-test-2026-11-19/) found
 empty navigation state, an empty saved-waypoint file, silent IGC failure when
 starting on a full card, and false Stack export success. Diagnostic retry and
-a writable-card recording control passed. The [checked-save and startup-warning follow-up](storage-fix-review-2026-11-19.md)
+a writable-card recording control passed. The [checked-save and startup-warning follow-up](https://leafvario.com/dev-references/storage-fix-review-2026-11-19/)
 addresses user-file preservation and Stack false success. It adds +16 B static RAM and
 +8,624 B flash in the 3.2.8 bench image. IGC in-flight error behavior remains unchanged
-by agreement. The [separate shutdown fix](shutdown-fix-review-2026-11-19.md) moves cleanup
+by agreement. The [separate shutdown fix](https://leafvario.com/dev-references/shutdown-fix-review-2026-11-19/) moves cleanup
 outside dispatch and drains publishers, adding another +16 B static RAM and +628 B flash.
 Simulator watchdog/regression tests and replay-active 3.2.8 shutdowns passed. The
-[November 20 3.2.5 follow-up](shutdown-radio-test-2026-11-20.md) also passed live FANET
+[November 20 3.2.5 follow-up](https://leafvario.com/dev-references/shutdown-radio-test-2026-11-20/) also passed live FANET
 plus phone-connected shutdown and Web App lifecycle checks. Its raw IGC checksums match,
 but strict validation rejects the known pilot-name Unicode issue. These tests did not
 compare main against the candidate.
@@ -129,4 +129,4 @@ compare main against the candidate.
 - Collect longer flight/stack sessions before changing allocations. Combined peer FANET and phone-connected bench shutdown coverage passed; the historical RX minimum of 1,176 B argues for keeping its current allocation.
 - Repeat the outdoor timing workload on a matched build to investigate the 219 ms IGC logging slot. Continue the route stress and SD failure checks in the detailed log.
 
-[Detailed hardware test notes](heap-savings-log.md)
+[Detailed hardware test notes](https://leafvario.com/dev-references/heap-savings-log/)

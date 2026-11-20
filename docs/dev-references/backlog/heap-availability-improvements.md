@@ -6,7 +6,7 @@ description: Ordered backlog for improving Leaf's general heap availability and 
 # Heap Availability Improvements Backlog
 
 **November 20, 2026 closeout:** further optimization is deferred while preparing a stable
-release. The [restart plan](memory-optimization-followup.md) is now the current prioritized
+release. The [restart plan](https://leafvario.com/dev-references/backlog/memory-optimization-followup/) is now the current prioritized
 follow-up, including the saved audit inventory, remaining agreed cohorts, stack evidence,
 and SDK/buffering experiments. The historical investigation below provides context, not
 another list of unimplemented work. Keep production stack sizes and stock TLS unchanged.
@@ -43,7 +43,7 @@ Completed or mostly completed work:
 6. Bounded runtime assessment and Leaf Log preparation (status checked 2026-10-22).
    - Runtime capture/reporting is implemented in `e432ee66` (#421), including memory samples
      and registered-task stack headroom. A provisional v3.2.8 Navigate reference is available;
-     see [runtime assessment](../runtime-assessment.md). This provides evidence, not a completed
+     see [runtime assessment](https://leafvario.com/dev-references/runtime-assessment/). This provides evidence, not a completed
      stack-resizing or long-term leak audit.
    - Leaf Log now scans in bounded slices and reuses an SD-backed pending queue within a session
      (`2b9cb5e1`, #418), rather than rescanning all logbook JSON after every upload. The session
@@ -87,7 +87,7 @@ Remaining possible follow-up items:
 7. Keep heap diagnostics as a regression tool while optimizing.
     - Preserve lifecycle checkpoints during this work and use `/diagnostics/system_events.csv`
       plus bounded runtime capture exports as before/after evidence. `heap_lifecycle.csv` is
-      a historical filename; see [current diagnostic files](diagnostic-files-cleanup.md).
+      a historical filename; see [current diagnostic files](https://leafvario.com/dev-references/backlog/diagnostic-files-cleanup/).
     - Track free heap, largest free block, minimum free heap, current task, and stack high-water values.
     - Use extended real-world dev-mode logs before reducing stack reservations or making further lifecycle changes.
 
