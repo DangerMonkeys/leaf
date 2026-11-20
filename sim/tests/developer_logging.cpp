@@ -1,4 +1,5 @@
 #include <ArduinoJson.h>
+#include <Preferences.h>
 #include <SD_MMC.h>
 #include <assert.h>
 #include <esp_sleep.h>
@@ -226,6 +227,14 @@ int main() {
   sim::runtime().configure(options);
   sim::runtime().boot();
   settings.loadDefaults();
+  assert(settings.system_ecoMode);
+  Preferences prefs;
+  assert(prefs.begin("varioPrefs", false));
+  prefs.remove("ECO_MODE");
+  prefs.end();
+  settings.system_ecoMode = false;
+  settings.retrieve();
+  assert(settings.system_ecoMode);  // Missing saved preference uses the ON default.
   settings.dev_mode = true;
   settings.log_autoStart = settings.log_autoStop = settings.log_saveTrack = false;
   assert(!busLog.isLogging());
@@ -316,7 +325,13 @@ int main() {
   sim::board().setCharging(true);
   sim::board().setAdcMilliVolts(ISET, 1100);
   menu.press(Button::DOWN);  // Eco Mode follows Stacks.
-  assert(menu.cursor() == 7 && !settings.system_ecoMode);
+  assert(menu.cursor() == 7 && settings.system_ecoMode);
+  menu.press(Button::CENTER);
+  assert(!settings.system_ecoMode);
+  settings.save();
+  settings.system_ecoMode = true;
+  settings.retrieve();
+  assert(!settings.system_ecoMode);  // An explicitly saved OFF choice survives retrieval.
   runChargeTest(false);
   menu.press(Button::CENTER);
   assert(settings.system_ecoMode);

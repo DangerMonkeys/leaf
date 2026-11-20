@@ -80,7 +80,7 @@
 #define DEF_DIAG_NETWORK_EVENTS 0
 #define DEF_DIAG_WEB_REQUESTS 0
 #define DEF_DIAG_CPU_UTILIZATION 0
-#define DEF_ECO_MODE 0  // default off to allow reprogramming easier
+#define DEF_ECO_MODE 1  // Charge-mode light sleep; can be disabled in Developer settings.
 
 // Leaf Labs Settings
 #define DEF_LABS_LEAF_LOG 0  // default hide experimental Leaf Log linking

@@ -358,7 +358,7 @@ void Settings::retrieve() {
   system_timeZone = leafPrefs.getShort("TIME_ZONE");
   system_volume = leafPrefs.getChar("VOLUME_SYSTEM");
   speaker.setVolume(Speaker::SoundChannel::FX, (SpeakerVolume)system_volume);
-  system_ecoMode = leafPrefs.getBool("ECO_MODE");
+  system_ecoMode = leafPrefs.getBool("ECO_MODE", DEF_ECO_MODE);
   system_autoOff = leafPrefs.getChar("AUTO_OFF");
   system_wifiOn = leafPrefs.getBool("WIFI_ON");
   system_bluetoothOn = leafPrefs.getBool("BLUETOOTH_ON");
