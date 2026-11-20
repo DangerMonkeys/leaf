@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
+#include <filesystem>
 #include <fstream>
 
 #include <string>
@@ -64,6 +65,8 @@ static void feed(bool gravityMode, double ax, double az, bool clipped = false) {
 }
 
 int main() {
+  // Keep consecutive-flight checks independent of earlier simulator runs.
+  std::filesystem::remove_all("sim/build-tests/g-load");
   sim::Runtime::Options options;
   options.httpPort = 0;
   options.speed = 0;
@@ -178,6 +181,7 @@ int main() {
     profiles["gliders"][0]["model"] = glider;
     File file = SD_MMC.open(ProfileStore::filePath(), "w");
     assert(file && serializeJson(profiles, file));
+    file.close();
   };
   auto verifyHeader = [](const String& path, const char* pilot, const char* glider) {
     File file = SD_MMC.open(path.c_str());
@@ -209,7 +213,9 @@ int main() {
   assert(isnan(shortSummary.maxAccelG) && isnan(shortSummary.minAccelG));
 
   // A long flight still commits extrema, without the eleven per-second diagnostic records.
-  writeProfiles("Second pilot", "Second glider");
+  const char* pilotName = u8"Jos\u00E9 O\u2019Neil\u0301\r\nJr.";
+  const char* gliderModel = u8"Cr\u00E8me \u2013 \u00C6ro^2";
+  writeProfiles(pilotName, gliderModel);
   flightTimer_start();
   runFor(130000);
   const String entryPath = logbookEntry.path();
@@ -219,12 +225,18 @@ int main() {
   sensorReset.reset = true;
   imu.on_receive(sensorReset);
   flightTimer_stop(false);
-  verifyHeader(trackPath, "Second pilot", "Second glider");
+  verifyHeader(trackPath, "Jose O'Neil  Jr.", "Creme - AEro 2");
   File entry = SD_MMC.open(entryPath.c_str());
   assert(!deserializeJson(doc, entry));
   assert(doc["metrics"]["max_accel_g"].is<float>());
   File track = SD_MMC.open(trackPath.c_str());
   const String contents = track.readString();
+  assert(contents.indexOf("HFPLTPILOTINCHARGE:Jose O'Neil  Jr.") >= 0);
+  assert(contents.indexOf("HFGTYGLIDERTYPE:Creme - AEro 2") >= 0);
+  PilotProfile pilot;
+  GliderProfile glider;
+  assert(ProfileStore::activePilot(pilot) && pilot.name == pilotName);
+  assert(ProfileStore::activeGlider(glider) && glider.model == gliderModel);
   assert(contents.indexOf("LXLVGL") < 0 && contents.indexOf("LXLVGR ") < 0);
   assert(contents.indexOf("LXLVSTARTDATA") < 0 && contents.indexOf("LXLVSTARTPOS") < 0);
   assert(contents.indexOf("LXLVFDCFG V=1") >= 0);
@@ -232,6 +244,17 @@ int main() {
   assert(contents.indexOf("LXLVEND V=1") >= 0);
   assert(contents.indexOf("LXLVEND V=1") < contents.lastIndexOf("\nG"));
   assert(contents.length() < 20000);  // Old verbose diagnostics added roughly 85 kB here.
+
+  // Unsupported-only names fall back without retaining the preceding pilot/glider.
+  writeProfiles(u8"\u96EA", u8"\U0001F680");
+  flightTimer_start();
+  runFor(10000);
+  const String unsupportedTrack = igcFlight.trackLogPath();
+  assert(igcFlight.started());
+  flightTimer_stop(false);
+  verifyHeader(unsupportedTrack, "Unknown", "Unknown");
+  assert(ProfileStore::activePilot(pilot) && pilot.name == u8"\u96EA");
+  assert(ProfileStore::activeGlider(glider) && glider.model == u8"\U0001F680");
 
   assert(SD_MMC.remove(ProfileStore::filePath()));
   flightTimer_start();

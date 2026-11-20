@@ -1,0 +1,17 @@
+{
+  "date": "2026-11-20",
+  "original_fix": "002750165e3ea01437bdd29ba003b25263e400da",
+  "integration_base": "ba64a320bce2c7b096ebe42f1f06dc3c227a1177",
+  "kind": "Synthetic simulator recordings, not physical flights",
+  "source_sha256": {
+    "src/vario/logbook/igc.cpp": "5c91a4a4966abb5a6fded2ccd33bfe92c14f8dd24c1e9bdd7baa184770fd6867",
+    "sim/tests/g_load_integration.cpp": "39029b9af26c3d208e38c35b9b97222f6f46460879a8020e4590c9880a044851",
+    "utils/igc_validator/validate.c": "7ff24c81a0b864b5560c92de8e26b98859e76d06476b524bf59bd742925bb72c"
+  },
+  "firmware_build": {
+    "environment": "leaf_3_2_6_release",
+    "bytes": 2434544,
+    "sha256": "1fc627079923780507445907ec997992c94580b1be18f14d21e02ae43dd7071c",
+    "version_note": "Built on original fix with current-main merge pending; source hashes identify the integrated changes. No hardware flash or scoring-site qualification claimed."
+  }
+}

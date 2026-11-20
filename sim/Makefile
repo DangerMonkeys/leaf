@@ -151,6 +151,14 @@ test-g-load: $(BUILD)/igc_sensor_log_test $(BUILD)/g_load_tracker_test $(BUILD)/
 	@$(BUILD)/g_load_launch_test
 	@cd $(ROOT) && $(BUILD)/g_load_integration_test
 
+$(BUILD)/igc_checksum_validator: $(ROOT)/utils/igc_validator/validate.c
+	@mkdir -p $(dir $@)
+	@$(CC) -std=c11 -O2 -Wall -Wextra $< -lcrypto -o $@
+
+.PHONY: test-igc-text
+test-igc-text: test-g-load $(BUILD)/igc_checksum_validator
+	@cd $(ROOT) && python3 sim/tests/check_igc_text.py --validator $(BUILD)/igc_checksum_validator --tracks sim/build-tests/g-load/card/tracks
+
 .PHONY: test-runtime-capture
 $(BUILD)/runtime_capture_test: $(SIM)/tests/runtime_capture.cpp $(ROOT)/src/vario/diagnostics/runtime_capture.h $(ROOT)/src/vario/diagnostics/gps_profile.h
 	@mkdir -p $(BUILD)

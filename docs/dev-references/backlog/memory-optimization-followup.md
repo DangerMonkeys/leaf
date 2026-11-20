@@ -127,9 +127,10 @@ It does not qualify hours of in-flight vario timing or crowded-network operation
   [other blocking bus subscribers](https://leafvario.com/dev-references/backlog/shutdown-message-bus-lock/) as separate reliability work.
   Checked saves/startup warnings and deferred Power shutdown are implemented; general
   power-loss durability, stale FAT free-count behavior and all blocking subscribers are not solved.
-- The known non-ASCII IGC pilot-header issue is on the separate
-  `codex/igc-header-text` branch (`00275016`), outside this cohort. Raw checksum matches
-  are not strict format passes. Reconcile its current status before release.
+- The separate [IGC text-normalization follow-up](https://leafvario.com/dev-references/igc-text-normalization/)
+  addresses non-ASCII pilot/glider headers and verifies generated checksums with positive
+  and tampered-file controls. Original field captures remain preserved, including their
+  strict-format failures. Authenticated signing and contest acceptance remain separate work.
 - Factory commissioning, Leaf AP, Wi-Fi setup and Web App were reported passing by the
   maintainer on the 3.2.8 during this thread. Interrupted Leaf Log uploads were also reported
   passing. Preserve those results; final-candidate retries/fault cases and OTA delivery remain

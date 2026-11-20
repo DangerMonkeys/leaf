@@ -75,7 +75,7 @@ def check_sensors(lines, path):
     if card:
         matched = False
         for entry in (card / "logbook").rglob("*.json"):
-            data = json.loads(entry.read_text())
+            data = json.loads(entry.read_text(encoding="utf-8"))
             if not str(data.get("track", {}).get("path", "")).endswith(Path(path).name):
                 continue
             matched = True

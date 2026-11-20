@@ -1,0 +1,110 @@
+{
+  "scope": "Unmodified simulator-produced files; independent C validator plus Python canonical-LF MD5. Not authenticated recorder signing or contest approval.",
+  "validator_name": "vali-xlv.exe",
+  "validator_binary_sha256": "eb06f6869c2b46e134fcce7dd6bb6080cf5e3a009f8a0eff7e84ec5fa1591e96",
+  "validator_source_sha256": "7ff24c81a0b864b5560c92de8e26b98859e76d06476b524bf59bd742925bb72c",
+  "files_passed": 4,
+  "tampered_copies_rejected": 8,
+  "files": [
+    {
+      "file": "2025-01-01-XLV-000-01.igc",
+      "bytes": 1395,
+      "sha256": "7e00d4bf0bfb95f3e3823ce76aa8cac8b0b42dbb83234679f115b2a2ae128ee8",
+      "pilot_header": "First pilot with a long IGC header name",
+      "glider_header": "First glider with a long IGC header name",
+      "g_record": "G3E914929C2E7CD5444E0DA3E7A4A9577",
+      "validator": {
+        "exit_code": 0,
+        "stdout": "STATUS_IGC_PASSED",
+        "stderr": ""
+      },
+      "tamper_controls": {
+        "pilot_header": {
+          "exit_code": 1,
+          "stdout": "STATUS_IGC_FAILED",
+          "stderr": "G checksum mismatch"
+        },
+        "gps_fix": {
+          "exit_code": 1,
+          "stdout": "STATUS_IGC_FAILED",
+          "stderr": "G checksum mismatch"
+        }
+      }
+    },
+    {
+      "file": "2025-01-01-XLV-000-02.igc",
+      "bytes": 10677,
+      "sha256": "47eea701bbc0e4db53c52a69544e45ee38fd89473b69c3c35a9bcc699769a696",
+      "pilot_header": "Jose O'Neil  Jr.",
+      "glider_header": "Creme - AEro 2",
+      "g_record": "GE891FC9FCD0E6106467DD1957E46756D",
+      "validator": {
+        "exit_code": 0,
+        "stdout": "STATUS_IGC_PASSED",
+        "stderr": ""
+      },
+      "tamper_controls": {
+        "pilot_header": {
+          "exit_code": 1,
+          "stdout": "STATUS_IGC_FAILED",
+          "stderr": "G checksum mismatch"
+        },
+        "gps_fix": {
+          "exit_code": 1,
+          "stdout": "STATUS_IGC_FAILED",
+          "stderr": "G checksum mismatch"
+        }
+      }
+    },
+    {
+      "file": "2025-01-01-XLV-000-03.igc",
+      "bytes": 1332,
+      "sha256": "fb52c39dbde4dacc78d1ca5e050fa0001b5f4150510f4a153f7e703aff372096",
+      "pilot_header": "Unknown",
+      "glider_header": "Unknown",
+      "g_record": "G808057A74BBEE739CB41E24D8B5F7C93",
+      "validator": {
+        "exit_code": 0,
+        "stdout": "STATUS_IGC_PASSED",
+        "stderr": ""
+      },
+      "tamper_controls": {
+        "pilot_header": {
+          "exit_code": 1,
+          "stdout": "STATUS_IGC_FAILED",
+          "stderr": "G checksum mismatch"
+        },
+        "gps_fix": {
+          "exit_code": 1,
+          "stdout": "STATUS_IGC_FAILED",
+          "stderr": "G checksum mismatch"
+        }
+      }
+    },
+    {
+      "file": "2025-01-01-XLV-000-04.igc",
+      "bytes": 1332,
+      "sha256": "a9d2797f7c70c7a47eed39612a5c27bc11398ae2fca13bdc067ed5fc641c50ad",
+      "pilot_header": "Unknown",
+      "glider_header": "Unknown",
+      "g_record": "G160F7A0E435BFD75EBEB50C7C7E1D127",
+      "validator": {
+        "exit_code": 0,
+        "stdout": "STATUS_IGC_PASSED",
+        "stderr": ""
+      },
+      "tamper_controls": {
+        "pilot_header": {
+          "exit_code": 1,
+          "stdout": "STATUS_IGC_FAILED",
+          "stderr": "G checksum mismatch"
+        },
+        "gps_fix": {
+          "exit_code": 1,
+          "stdout": "STATUS_IGC_FAILED",
+          "stderr": "G checksum mismatch"
+        }
+      }
+    }
+  ]
+}
