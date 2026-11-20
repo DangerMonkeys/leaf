@@ -148,4 +148,3 @@ BIN/ELF hashes. Its expected strict-IGC failure remains disclosed, not counted a
 GitHub must separately pass Hygiene, G-load tests, the docs build and all five release
 firmware builds for the exact PR head before merge. Release-only artifact publication is
 intentionally skipped for a PR; reviewed release runtime reports remain a publication gate.
-
