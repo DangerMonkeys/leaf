@@ -1,6 +1,6 @@
 ---
 title: SD Card Write Robustness Backlog
-description: Two-phase plan for recoverable logbook saves and resource-conscious SD handling throughout Leaf firmware.
+description: Recoverable flight saves, deterministic vario scheduling, SD isolation, and a path to ON-state light sleep.
 ---
 
 # SD Card Write Robustness Backlog
@@ -14,6 +14,28 @@ also passed [live FANET/Bluetooth checks](https://leafvario.com/dev-references/s
 These are bounded fixes, not completion of Phase 2 or proof of power-loss durability.
 IGC in-flight flush/error policy remains unchanged by agreement. SD buffer-size reductions
 are deferred pending timing/card measurements in the [memory restart plan](https://leafvario.com/dev-references/backlog/memory-optimization-followup/).
+
+## Phase 2 architecture proposal
+
+The proposed Phase 2 covers vario scheduling, SD access, and the idle behavior needed for eventual
+ON-state light sleep. Design their task and peripheral boundaries together. Validate the new
+scheduler and storage isolation with the chip awake, then measure how much light sleep adds.
+
+The [vario timing backlog](https://leafvario.com/dev-references/backlog/vario-timing-robustness/)
+records November field evidence of FIFO resets and sensor gaps near synchronous System Events
+checkpoints. The checkpoint write duration remains unmeasured. A separate historical
+[timing capture](https://github.com/DangerMonkeys/leaf/blob/03ead991e92ff7907f331ade535cc05061b841be/scratch/diagnostics_logs/cpu_utilization2_report.md#likely-audio-stall-cause)
+measured a 557 ms diagnostic SD write aligned with a held vario tone. Keep these observations
+separate and use the timing backlog's controlled reproduction before attributing later swings to SD.
+
+In the current firmware, the Core 1 loop dispatches one logical slot when it sees the 10 ms
+timer advance. Multiple ticks can elapse during a blocking call without running another slot.
+Pressure conversion, IMU polling, climb estimation, and audio updates all depend on that loop.
+Normal flight logging and web/logbook work also run there. BLE and FANET already use workers,
+while some sensor message subscribers run inline and can write files under the message-bus mutex.
+The [Phase 2 plan](#phase-2-vario-scheduling-storage-isolation-and-power) addresses those dependencies.
+It is a proposed architecture, not an implementation or a measured power-saving result. Keep the
+existing estimator and stack allocations for the first timing comparison.
 
 ## 2026-10-28 verified cleanup refinement
 
@@ -62,7 +84,7 @@ Keep FAT32 and the existing JSON/IGC files. Deliver this work in two phases:
 | Phase | Scope | Intended result |
 | --- | --- | --- |
 | 1: focused logbook hardening | Checked logbook replacement, revision/completion metadata, automatic recovery, bounded final-save retries, and targeted failure tests | Address the demonstrated loss windows with small changes around existing save milestones |
-| 2: firmware-wide refinement | Shared storage lifecycle, all file writers, continuous logging, diagnostics, and broader power-failure validation | Apply consistent storage guarantees throughout the firmware and measure their resource costs |
+| 2: firmware-wide refinement | Deadline-driven vario task, one SD worker and lifecycle, continuous logging, broader fault testing, and an ON-state light-sleep evaluation | Preserve instrument timing through SD stalls and measure the remaining battery-saving opportunity |
 
 Phase 1 should be independently releasable. Avoid making it depend on a new storage task, a global
 filesystem abstraction, a migration of existing JSON files, or a persistent internal-flash journal.
@@ -499,16 +521,59 @@ qualification. Linux vfat and process-exit tests do not reproduce target FatFs m
 SD-controller power loss, or the original incident's root cause. Reviewed exact-candidate runtime
 reports remain required before release publication; this implementation is not a release approval.
 
-## Phase 2: complete refinement across the firmware
+## Phase 2: vario scheduling, storage isolation, and power
 
-### 1. Audit and coordinate every storage user
+These are proposed follow-ups. Start with the bounded RAM checkpoint mitigation and freshness
+checks in the [vario timing backlog](https://leafvario.com/dev-references/backlog/vario-timing-robustness/),
+then measure the dedicated vario/storage task prototype before committing to task affinity,
+queue sizes, or ON-state sleep. Keep IGC flush/error policy unchanged until that work is approved.
+
+### 1. Give the vario its own deadlines and state
+
+- Start with one higher-priority task pinned to Core 1. Preserve the existing 10 ms release
+  cadence and nominal 50 ms IMU service interval in the awake prototype. Use the hardware timer
+  to notify the task, let it block between releases, and derive deadlines from elapsed time.
+  Service the barometer when its conversion is due. Keep sample timestamps and validity through
+  fusion and audio. Count missed releases and resume with fresh inputs so an overrun does not
+  replay a burst of stale samples. Use the current 500 ms freshness limit initially; expire stale
+  climb and its tone, and verify recovery after FIFO overflow, stale pressure, and genuine filter resets.
+- Keep pressure conversion, IMU FIFO service, Kalman and climb state, and speaker timing under
+  that task's ownership. Publish a bounded timestamped snapshot for display, navigation, and
+  logging. Preserve per-sample flight metrics and interval extrema that a slower snapshot reader
+  could otherwise miss. Pass mute, volume, sound effects, and power transitions through bounded
+  commands. Route simulator and UDP-injected sensor inputs through the same ownership boundary.
+- Give the vario a direct sensor path. Its release must have no synchronous filesystem work,
+  message-bus callbacks, diagnostic formatting, heap allocation, or waits for lower-priority
+  work. Audit `Wire` users, including ambient sensing and the I/O expander. Bound their
+  transaction times or schedule them under one bus owner so they cannot stall a sensor read.
+- Keep TaskManager for UI, GPS, navigation, and power coordination. Preserve bounded work slices
+  and give the loop a way to block while it has no work, with a timely wake for GPS servicing.
+  Measure priorities with the existing radios active. Keep the exported slot labels in
+  `src/vario/diagnostics/cpu_utilization.cpp` synchronized with the schedule.
+
+### 2. Move card access to one storage worker
 
 Inventory all `SD_MMC`, raw SD, and FatFs users, including IGC, bus logs, logbooks, profiles, routes,
 GPX imports, user waypoints, web reads/writes/downloads, firmware updates, commissioning/self-test
 files, Leaf Log scratch queues, and diagnostics. Classify durable user data separately from
 rebuildable scratch data so temporary queues do not incur the same validation cost as flight records.
 
-Extend `storage/sd_card.*` with a small lifecycle/transaction guard that:
+After the RAM-only checkpoint mitigation, start the worker with System Events and verify vario
+timing under a forced worker stall. Then move normal IGC and logbook work onto the same low-priority
+worker. Migrate the remaining ON-state readers, writers, and mount operations through that boundary.
+Producers submit small records
+with zero wait and consumers handle pending results. The worker owns file handles and does formatting,
+writes, synchronization, close, and recovery. It blocks when its queue is empty. Keep locks used by
+the vario free of I/O and formatting work.
+
+Prototype the worker on Core 0, including SDMMC initialization and teardown, so the SDMMC
+interrupt is allocated and freed on the worker's core. Compare with a lower-priority same-core
+worker under radio load before settling on affinity. Leaf uses SDMMC independently of sensor
+I²C, so a long card busy period can stay local to the storage worker. Measure interrupt and
+shared-memory contention. Internal SPI flash operations such as NVS commits have different
+cross-core effects and need separate timing measurements.
+
+Extend the lifecycle in `storage/sd_card.*` so the worker:
 
 - Requires firmware ownership throughout firmware I/O, not just at the initial open.
 - Accounts for active transactions and long-lived readers/writers before ownership changes.
@@ -516,16 +581,14 @@ Extend `storage/sd_card.*` with a small lifecycle/transaction guard that:
 - Stops new writes and drains current work before unmount, format, USB handoff, or orderly shutdown.
 - Handles removal, failed remount, and reinsertion without reusing stale file handles.
 
-Do not assume per-operation filesystem locks protect a multi-step save transaction. The installed
-SDK has `CONFIG_FATFS_FS_LOCK=0`; audit explicit handle ownership and synchronization rather than
-assuming duplicate-open/rename protection exists. Prefer a small guard and existing scheduling
-unless measurements demonstrate a need for a dedicated storage task.
+The installed SDK has `CONFIG_FATFS_FS_LOCK=0`. Use explicit handle ownership and keep each
+multi-step save transaction serialized against competing readers, deletion, and recovery.
 
 Coordinate with the [USB ownership backlog](https://leafvario.com/dev-references/backlog/usb-mass-storage-power-on-ownership/). Firmware must
 not access FAT while a USB host owns the medium. USB inactivity/suspend does not establish safe
 release, and forcing disconnection cannot flush unsent host caches.
 
-### 2. Introduce one bounded storage-drain sequence
+### 3. Introduce one bounded storage-drain sequence
 
 Use a common sequence for shutdown and transitions: reject new work, finish/check pending track
 and logbook writes, flush/close other writers, then unmount or hand off ownership as appropriate.
@@ -537,26 +600,29 @@ Recovery should run before normal writes, including diagnostics, when firmware a
 Defer opportunistic diagnostic writes during critical commits. Avoid repeated remount/retry storms
 after a persistent failure; retain useful state and give the user a clear storage outcome.
 
-### 3. Harden continuous IGC and bus logging
+### 4. Harden continuous IGC and bus logging
 
 - Propagate short writes, write failures, synchronization errors, and close results from the track
   writer. Having a filename or an open handle is not proof that the track was saved.
 - Evaluate periodic checked IGC synchronization, initially around 15-30 seconds, and a final sync
   at flight end. Select the interval from measured latency and acceptable recent-data loss.
 - Use buffered/block writes; avoid synchronizing every GPS fix or sensor message.
-- Measure the longest blocking SD operation, not just average throughput. Instrument updates share
-  execution time with storage work, and an individual card operation may exceed a scheduler budget.
-- Give optional high-rate bus/diagnostic logging a separate buffering/sync policy and lower priority
-  than preserving flight data. Keep buffers bounded and overflow behavior explicit.
+- Size preallocated queues from peak record rate times the stall interval to absorb, plus room for
+  bursts and in-flight work. Measure longest open/write/sync/close operations as well as throughput.
+  Batching reduces filesystem work. A card busy period can still exceed many 10 ms releases.
+- Reserve queue capacity for flight records. Drop and count optional diagnostics first. If a card
+  stays slow or disappears and flight data cannot be queued, surface the logging fault and keep the
+  vario running. Ensure a full data queue cannot prevent a stop, drain, or ownership transition.
 
 Leave global `CONFIG_FATFS_IMMEDIATE_FSYNC` disabled unless measurements justify changing it; it
 increases disk operations for all affected writers rather than only important commit boundaries.
 
-### 4. Apply recoverable saves and stronger ordering consistently
+### 5. Apply recoverable saves and stronger ordering consistently
 
-Migrate durable profile, route, waypoint, and related web-handler saves to the phase 1 routine with
-appropriate validators. Remove duplicate replacement implementations as they are migrated. Preserve
-existing data and public formats, and define recovery/deletion rules for each file family.
+Checked replacement saves for profiles, routes, and waypoints are already implemented as recorded
+in the November 20 status above. Audit remaining durable writers and their validators rather than
+reopening that completed migration. Preserve existing data and public formats, and define
+recovery/deletion rules for each file family.
 
 Revision/completion metadata for logbook ordering is now part of Phase 1. Phase 2 extends and
 audits that policy across other durable file families where needed, preserving legacy compatibility
@@ -567,7 +633,7 @@ Consider a streamed length/checksum mechanism only if testing shows a gap beyond
 and structural validation, such as syntactically valid corruption. Keep it bounded and compatible
 with legitimate edits; a checksum detects damage but cannot restore missing data or repair FAT.
 
-### 5. Make diagnostics and resource budgets explicit
+### 6. Make diagnostics and resource budgets explicit
 
 Record compact counters and the last failure's stage, code, expected/actual bytes, flight ID, and
 reset reason. Keep failure-path diagnostics in bounded RAM/serial output when the card is failing;
@@ -580,7 +646,7 @@ flight payloads or location data in routine error messages.
 | Recovery | One candidate set at a time; sliced directory work | Read recovery candidates, not every historical JSON or every card sector |
 | Bounded finalization | Reuse flight state only during the final-save sequence; release retry resources afterward | At most three total attempts within an elapsed budget; no session-long retry queue |
 | Previous valid copy | Small bookkeeping; no full-file RAM duplicate | Approximately one allocation unit per small backup: 4 KiB on this image, typically 16 KiB with the current formatter |
-| Periodic track sync | No unbounded queue; measure worst-case stalls | One sync per selected interval, not per fix |
+| Periodic track sync | Preallocated queue sized for measured stalls | One sync per selected interval, plus final sync |
 | Diagnostics | Fixed counters/last-error record | Rate-limited; never recursive on SD failure |
 
 Measure peak heap, largest free block, stack use, flash growth, save duration, longest instrument-loop
@@ -588,7 +654,17 @@ stall, synchronization frequency, and write amplification. Test on supported har
 cards, including slow, nearly full, and failing/removal scenarios. Avoid increasing allocation size,
 preallocating large files, or changing buffering globally without evidence of a useful tradeoff.
 
-### 6. Expand validation to the complete lifecycle
+### 7. Verify that storage faults stay out of the vario
+
+Deliberately delay the worker through queue saturation and repeat with slow and nearly full cards
+and during removal. Exercise flight start and stop, display/navigation load, and active radios.
+Measure vario release-to-start delay, barometer conversion timing, IMU and pressure sample gaps,
+FIFO/gravity/Kalman reset reasons, audio transitions, GPS continuity, queue high-water marks and
+drops, and storage operation durations. Use bounded RAM timing or a logic analyzer for the System
+Events reproduction because the existing runtime capture suppresses heap checkpoint SD writes.
+Test on both the ICM-20948 and LSM6DSV hardware paths. An induced storage stall should produce
+zero SD-induced sensor deadline misses, false climbs, or held tones. Check that the IGC and logbook
+survive recoverable delays and that a terminal logging failure is visible to the pilot.
 
 Exercise power interruption around data writes, sync, close, FAT updates, rename, backup rotation,
 and recovery. Include repeated boot/recovery, new flights after failures, manual deletion, card
@@ -600,9 +676,36 @@ behavior, and controlled hardware power cuts for real SD-controller behavior. In
 images offline for orphaned clusters, cross-links, and FAT disagreement. A passing host-filesystem
 test or successful readback is not proof of physical power-loss durability.
 
-Phase 2 exit criteria: every storage user has an explicit ownership/lifecycle policy, every durable
-replacement has defined recovery behavior, failures reach the caller/user appropriately, and measured
-resource use stays within an agreed instrument-responsiveness and memory budget.
+The awake architecture is ready when the timing tests above pass, every storage user has an
+explicit ownership policy, every durable replacement has defined recovery behavior, and measured
+resource use stays within the agreed responsiveness and memory budgets.
+
+### 8. Measure ON-state light sleep with the same architecture
+
+The [3.2.8 Navigate baseline](https://github.com/DangerMonkeys/leaf/tree/03ead991e92ff7907f331ade535cc05061b841be/utils/runtime_report/baselines/leaf-3_2_8-navigate-v1)
+shows spare execution time in normal 10 ms slots. Actual sleep residency depends on both cores,
+peripheral activity, and entry/wake overhead. Preserve one power coordinator that knows the next
+required deadline and whether vario, audio, storage, USB, and radios can safely idle.
+Design that interface with the awake refactor and evaluate sleep once its
+timing is stable.
+
+- Wake from an explicit sleep-capable timer before the next sensor release with measured margin.
+  Preserve sample time and conversion state across wake. Avoid sleep during active PWM (the
+  existing speaker driver disables its PWM timer in silence) and in-flight card transactions.
+  Verify wake behavior for buttons and FANET. Protect the GPS burst with an awake window or a
+  verified early wake signal. Waking on incoming NMEA UART activity can lose its first characters.
+  Check the SDK's power-management, tickless idle, and radio support before testing automatic sleep
+  with connected BLE or Wi-Fi.
+- On the same Leaf and workload, measure battery-input current for the current loop, the new
+  scheduler blocking between deadlines with the chip awake, and that scheduler with light sleep.
+  Record actual sleep residency, wake latency, and time blocked by audio, SD, or radio activity.
+  Start with live GPS and IGC plus intermittent and sustained tones. Repeat with connected BLE,
+  FANET traffic, and any supported connected Wi-Fi mode.
+- Use about 10% lower mean battery current in representative ON-state use as the proposed
+  threshold for prioritizing a rollout. Require preserved sensor timing, tone transitions, GPS
+  fixes, and logging continuity. Use awake operation whenever the wake deadline or peripheral
+  readiness is uncertain. If the measured benefit falls short, retain the deadline-driven awake
+  scheduler and revisit sleep as hardware or workloads change.
 
 ## Deferred options and limits
 
@@ -641,3 +744,8 @@ metrics; report the distinction explicitly.
 - [Leaf Log auto-upload backlog](https://leafvario.com/dev-references/backlog/leaf-log-auto-upload/)
 - [Diagnostic files cleanup backlog](https://leafvario.com/dev-references/backlog/diagnostic-files-cleanup/)
 - [Heap availability improvements backlog](https://leafvario.com/dev-references/backlog/heap-availability-improvements/)
+- [Vario timing robustness backlog](https://leafvario.com/dev-references/backlog/vario-timing-robustness/)
+- [Runtime assessment and capture workflow](https://leafvario.com/dev-references/runtime-assessment/)
+- [ESP32-S3 interrupt allocation](https://docs.espressif.com/projects/esp-idf/en/v5.3.2/esp32s3/api-reference/system/intr_alloc.html)
+- [ESP32-S3 power management](https://docs.espressif.com/projects/esp-idf/en/v5.3.2/esp32s3/api-reference/system/power_management.html)
+- [ESP32-S3 sleep modes and wake sources](https://docs.espressif.com/projects/esp-idf/en/v5.3.2/esp32s3/api-reference/system/sleep_modes.html)

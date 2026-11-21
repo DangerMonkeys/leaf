@@ -143,7 +143,9 @@ bool LogbookEntryFile::finalize(const FlightStats& stats, const String& trackFor
     refreshFirstFixTimeIfPossible();
   }
   const uint32_t started = millis();
-  const size_t heapBefore = heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+  const bool reportFinalization = settings.dev_mode;
+  const size_t heapBefore =
+      reportFinalization ? heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT) : 0;
   bool saved = false;
   unsigned attempts = 0;
   for (; attempts < 3 && (attempts == 0 || millis() - started < 2000);) {
@@ -159,12 +161,14 @@ bool LogbookEntryFile::finalize(const FlightStats& stats, const String& trackFor
     if (saved || !logbook_io::retryable() || attempts == 3 || millis() - started >= 1900) break;
     delay(100);  // Yield to the system between attempts; no background retry state is retained.
   }
-  Serial.printf(
-      "logbook finalization: saved=%d attempts=%u elapsed_ms=%lu heap_before=%u heap_after=%u "
-      "stats_bytes=%u entry_bytes=%u\n",
-      saved, attempts, static_cast<unsigned long>(millis() - started), unsigned(heapBefore),
-      unsigned(heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)),
-      unsigned(sizeof(FlightStats)), unsigned(sizeof(LogbookEntryFile)));
+  if (reportFinalization) {
+    Serial.printf(
+        "logbook finalization: saved=%d attempts=%u elapsed_ms=%lu heap_before=%u heap_after=%u "
+        "stats_bytes=%u entry_bytes=%u\n",
+        saved, attempts, static_cast<unsigned long>(millis() - started), unsigned(heapBefore),
+        unsigned(heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)),
+        unsigned(sizeof(FlightStats)), unsigned(sizeof(LogbookEntryFile)));
+  }
   return saved;
 }
 
