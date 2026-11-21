@@ -1,0 +1,23 @@
+[
+  {
+    "environment": "leaf_3_2_5_release",
+    "commit": "8ce157c1a028cae7b0775b45ce3c02fc78d9b60e",
+    "clean": true,
+    "image_bytes": 2434528,
+    "image_sha256": "e23be21f4dcba4cc65e2a5ccdf2403eaf0b2cffdf7db97279e2f988c5efa065c"
+  },
+  {
+    "environment": "leaf_3_2_6_release",
+    "commit": "8ce157c1a028cae7b0775b45ce3c02fc78d9b60e",
+    "clean": true,
+    "image_bytes": 2437136,
+    "image_sha256": "d1f1eddee8118c4725b7ae43d419e85a4427a3879945e38a98d34f9d69a4ed72"
+  },
+  {
+    "environment": "leaf_3_2_8_release",
+    "commit": "8ce157c1a028cae7b0775b45ce3c02fc78d9b60e",
+    "clean": true,
+    "image_bytes": 2419072,
+    "image_sha256": "330596b071f5ccab381eece1e1154998b56198a38bbca886fefd3b6249b8cabc"
+  }
+]

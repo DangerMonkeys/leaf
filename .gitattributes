@@ -6,3 +6,5 @@
 /codex_artifacts/runtime-telemetry/2026-10-21/revision-4/** -text whitespace=cr-at-eol
 # Raw device/simulator transcripts retain their original spaces and blank lines.
 /codex_artifacts/runtime-telemetry/2026-10-21/revision-4/*.txt -whitespace
+# Preserve the original charge-sleep CSVs and oscilloscope captures on every platform.
+/test-data/charge-sleep/2026-11-20/** -text whitespace=cr-at-eol

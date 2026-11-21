@@ -1,0 +1,400 @@
+{
+  "collection_date": "2026-11-20",
+  "archived_date": "2026-11-21",
+  "validated_firmware_commit": "8ce157c1a028cae7b0775b45ce3c02fc78d9b60e",
+  "bench_snapshot_commit": "46ff66ce5388d4c1b8415b44999d6c614ce24a04",
+  "reconciled_backup_commit": "aa82cf9052a4ad3f43ec173b64823e617ee18083",
+  "bench_snapshot_parent": "c0ca46e18c0b4a4f62ed42b6b4f90c77f065d9f1",
+  "files": [
+    {
+      "path": "captures/ulp-ab-capture/charge_sleep_1.csv",
+      "bytes": 8993,
+      "sha256": "a375ff31e7754bf103ddb64b6e97ad3398279611a0c28f6c3c32ff5d6c61cdce"
+    },
+    {
+      "path": "captures/ulp-ab-capture/charge_sleep_2.csv",
+      "bytes": 9449,
+      "sha256": "94e17540545b146a9fe56b57eb562e9016f06d87cc441b235661eb1a065c6576"
+    },
+    {
+      "path": "captures/ulp-ab-capture/charge_sleep_3.csv",
+      "bytes": 6222,
+      "sha256": "d396bd3d16dfd24ab7e8989ac2bd57b478ba6bf92bdde2d5734c2c0d0999209e"
+    },
+    {
+      "path": "captures/ulp-ab-capture/charge_sleep_4.csv",
+      "bytes": 9531,
+      "sha256": "1c94f8174f4c70c0531c9e7db1af5311fad02c787ac55e08c1bba5584ffe619b"
+    },
+    {
+      "path": "captures/ulp-battery-reference-capture/charge_sleep_1.csv",
+      "bytes": 8993,
+      "sha256": "a375ff31e7754bf103ddb64b6e97ad3398279611a0c28f6c3c32ff5d6c61cdce"
+    },
+    {
+      "path": "captures/ulp-battery-reference-capture/charge_sleep_2.csv",
+      "bytes": 9449,
+      "sha256": "94e17540545b146a9fe56b57eb562e9016f06d87cc441b235661eb1a065c6576"
+    },
+    {
+      "path": "captures/ulp-battery-reference-capture/charge_sleep_3.csv",
+      "bytes": 6222,
+      "sha256": "d396bd3d16dfd24ab7e8989ac2bd57b478ba6bf92bdde2d5734c2c0d0999209e"
+    },
+    {
+      "path": "captures/ulp-battery-reference-capture/charge_sleep_4.csv",
+      "bytes": 9531,
+      "sha256": "1c94f8174f4c70c0531c9e7db1af5311fad02c787ac55e08c1bba5584ffe619b"
+    },
+    {
+      "path": "captures/ulp-battery-reference-capture/charge_sleep_5.csv",
+      "bytes": 11531,
+      "sha256": "c454e90841da871c8fe9dd94bdbe32ae2047050c3d7b2305240b394c10c4e545"
+    },
+    {
+      "path": "captures/ulp-battery-reference-capture/sleep_adc_awake.csv",
+      "bytes": 1042,
+      "sha256": "92f5a4765c43225e48a0d7164a6c0325e2827a1f1b64de15a873ea3265c89f2c"
+    },
+    {
+      "path": "captures/ulp-battery-reference-capture/sleep_adc_awake_preselected.csv",
+      "bytes": 1170,
+      "sha256": "cb00437992621b208541c7592d085fe4da06b393239569c4f78881bcddcdfb79"
+    },
+    {
+      "path": "captures/ulp-burst-settle-capture/charge_sleep_1.csv",
+      "bytes": 8993,
+      "sha256": "a375ff31e7754bf103ddb64b6e97ad3398279611a0c28f6c3c32ff5d6c61cdce"
+    },
+    {
+      "path": "captures/ulp-burst-settle-capture/charge_sleep_2.csv",
+      "bytes": 9449,
+      "sha256": "94e17540545b146a9fe56b57eb562e9016f06d87cc441b235661eb1a065c6576"
+    },
+    {
+      "path": "captures/ulp-burst-settle-capture/charge_sleep_3.csv",
+      "bytes": 6222,
+      "sha256": "d396bd3d16dfd24ab7e8989ac2bd57b478ba6bf92bdde2d5734c2c0d0999209e"
+    },
+    {
+      "path": "captures/ulp-burst-settle-capture/charge_sleep_4.csv",
+      "bytes": 9531,
+      "sha256": "1c94f8174f4c70c0531c9e7db1af5311fad02c787ac55e08c1bba5584ffe619b"
+    },
+    {
+      "path": "captures/ulp-burst-settle-capture/charge_sleep_5.csv",
+      "bytes": 11531,
+      "sha256": "c454e90841da871c8fe9dd94bdbe32ae2047050c3d7b2305240b394c10c4e545"
+    },
+    {
+      "path": "captures/ulp-burst-settle-capture/charge_sleep_6.csv",
+      "bytes": 9820,
+      "sha256": "120385ab839654b7686810365c46de3e6a51d4f41bf7af3e5adbfbd9fce2c56c"
+    },
+    {
+      "path": "captures/ulp-burst-settle-capture/charge_sleep_7.csv",
+      "bytes": 17506,
+      "sha256": "360e5620ffc3f7d0fd6c81053913dd68fe1ae51b32e3f32f539b082f5169e418"
+    },
+    {
+      "path": "captures/ulp-burst-settle-capture/sleep_adc_awake.csv",
+      "bytes": 1352,
+      "sha256": "012689d23bad5390c7959f3b7776147227bce8242dcd08a6bbd0ea215187c8a7"
+    },
+    {
+      "path": "captures/ulp-burst-settle-capture/sleep_adc_awake_single_build.csv",
+      "bytes": 1416,
+      "sha256": "a40140b0bee84926a7eb431b23ee470313a87a28b9bc1b7ea9ef0ea1d7810d05"
+    },
+    {
+      "path": "captures/ulp-input-preselect-capture/charge_sleep_1.csv",
+      "bytes": 8993,
+      "sha256": "a375ff31e7754bf103ddb64b6e97ad3398279611a0c28f6c3c32ff5d6c61cdce"
+    },
+    {
+      "path": "captures/ulp-input-preselect-capture/charge_sleep_2.csv",
+      "bytes": 9449,
+      "sha256": "94e17540545b146a9fe56b57eb562e9016f06d87cc441b235661eb1a065c6576"
+    },
+    {
+      "path": "captures/ulp-input-preselect-capture/charge_sleep_3.csv",
+      "bytes": 6222,
+      "sha256": "d396bd3d16dfd24ab7e8989ac2bd57b478ba6bf92bdde2d5734c2c0d0999209e"
+    },
+    {
+      "path": "captures/ulp-input-preselect-capture/charge_sleep_4.csv",
+      "bytes": 9531,
+      "sha256": "1c94f8174f4c70c0531c9e7db1af5311fad02c787ac55e08c1bba5584ffe619b"
+    },
+    {
+      "path": "captures/ulp-input-preselect-capture/charge_sleep_5.csv",
+      "bytes": 11531,
+      "sha256": "c454e90841da871c8fe9dd94bdbe32ae2047050c3d7b2305240b394c10c4e545"
+    },
+    {
+      "path": "captures/ulp-input-preselect-capture/charge_sleep_6.csv",
+      "bytes": 9820,
+      "sha256": "120385ab839654b7686810365c46de3e6a51d4f41bf7af3e5adbfbd9fce2c56c"
+    },
+    {
+      "path": "captures/ulp-input-preselect-capture/sleep_adc_awake.csv",
+      "bytes": 1224,
+      "sha256": "eb60c6387bb014da873721de560abe524824ebc593e68cb79cd8172adbcff37a"
+    },
+    {
+      "path": "captures/ulp-input-preselect-capture/sleep_adc_awake_burst_build.csv",
+      "bytes": 1288,
+      "sha256": "ae63db9ff0d5192aaade953e99770b67c3681609491410701110c27b190ed9a7"
+    },
+    {
+      "path": "captures/ulp-one-only-capture/charge_sleep_1.csv",
+      "bytes": 8993,
+      "sha256": "a375ff31e7754bf103ddb64b6e97ad3398279611a0c28f6c3c32ff5d6c61cdce"
+    },
+    {
+      "path": "captures/ulp-one-only-capture/charge_sleep_2.csv",
+      "bytes": 9449,
+      "sha256": "94e17540545b146a9fe56b57eb562e9016f06d87cc441b235661eb1a065c6576"
+    },
+    {
+      "path": "captures/ulp-one-only-capture/charge_sleep_3.csv",
+      "bytes": 6222,
+      "sha256": "d396bd3d16dfd24ab7e8989ac2bd57b478ba6bf92bdde2d5734c2c0d0999209e"
+    },
+    {
+      "path": "captures/ulp-one-only-capture/charge_sleep_4.csv",
+      "bytes": 9531,
+      "sha256": "1c94f8174f4c70c0531c9e7db1af5311fad02c787ac55e08c1bba5584ffe619b"
+    },
+    {
+      "path": "captures/ulp-one-only-capture/charge_sleep_5.csv",
+      "bytes": 11531,
+      "sha256": "c454e90841da871c8fe9dd94bdbe32ae2047050c3d7b2305240b394c10c4e545"
+    },
+    {
+      "path": "captures/ulp-one-only-capture/charge_sleep_6.csv",
+      "bytes": 9820,
+      "sha256": "120385ab839654b7686810365c46de3e6a51d4f41bf7af3e5adbfbd9fce2c56c"
+    },
+    {
+      "path": "captures/ulp-one-only-capture/charge_sleep_7.csv",
+      "bytes": 17506,
+      "sha256": "360e5620ffc3f7d0fd6c81053913dd68fe1ae51b32e3f32f539b082f5169e418"
+    },
+    {
+      "path": "captures/ulp-one-only-capture/charge_sleep_8.csv",
+      "bytes": 16792,
+      "sha256": "444436512c79bd9a798731192ba9e20f3a5ad467b427437a6e6ed8df3d3e0914"
+    },
+    {
+      "path": "captures/ulp-one-only-capture/charge_sleep_9.csv",
+      "bytes": 15369,
+      "sha256": "c89f76b134a7f1e63f811184021d8020df36cdb67ffd840cb77a7e1cd2293450"
+    },
+    {
+      "path": "captures/ulp-one-only-capture/sleep_adc_awake.csv",
+      "bytes": 1480,
+      "sha256": "50e6d2b36e79d35b215d5931b03b827984d10bb73832320f2e42cff50b99c80f"
+    },
+    {
+      "path": "captures/ulp-settled-charger/charge_sleep_1.csv",
+      "bytes": 8993,
+      "sha256": "a375ff31e7754bf103ddb64b6e97ad3398279611a0c28f6c3c32ff5d6c61cdce"
+    },
+    {
+      "path": "captures/ulp-settled-charger/charge_sleep_2.csv",
+      "bytes": 9449,
+      "sha256": "94e17540545b146a9fe56b57eb562e9016f06d87cc441b235661eb1a065c6576"
+    },
+    {
+      "path": "captures/ulp-settled-charger/charge_sleep_3.csv",
+      "bytes": 6222,
+      "sha256": "d396bd3d16dfd24ab7e8989ac2bd57b478ba6bf92bdde2d5734c2c0d0999209e"
+    },
+    {
+      "path": "captures/ulp-settled-charger/sleep_adc_awake.csv",
+      "bytes": 192,
+      "sha256": "7e68472906cb7435a5369631b424bf2fdd4890d00ee8ab2a305014a746bf305a"
+    },
+    {
+      "path": "captures/ulp-settled-charger/sleep_adc_awake_battery_connected.csv",
+      "bytes": 860,
+      "sha256": "c537908ff5e81712a16da9dc51a837d4de2f9ae7cf20a18c81f14687eeb249a7"
+    },
+    {
+      "path": "captures/ulp-single-capture/charge_sleep_1.csv",
+      "bytes": 8993,
+      "sha256": "a375ff31e7754bf103ddb64b6e97ad3398279611a0c28f6c3c32ff5d6c61cdce"
+    },
+    {
+      "path": "captures/ulp-single-capture/charge_sleep_2.csv",
+      "bytes": 9449,
+      "sha256": "94e17540545b146a9fe56b57eb562e9016f06d87cc441b235661eb1a065c6576"
+    },
+    {
+      "path": "captures/ulp-single-capture/charge_sleep_3.csv",
+      "bytes": 6222,
+      "sha256": "d396bd3d16dfd24ab7e8989ac2bd57b478ba6bf92bdde2d5734c2c0d0999209e"
+    },
+    {
+      "path": "captures/ulp-single-capture/charge_sleep_4.csv",
+      "bytes": 9531,
+      "sha256": "1c94f8174f4c70c0531c9e7db1af5311fad02c787ac55e08c1bba5584ffe619b"
+    },
+    {
+      "path": "captures/ulp-single-capture/charge_sleep_5.csv",
+      "bytes": 11531,
+      "sha256": "c454e90841da871c8fe9dd94bdbe32ae2047050c3d7b2305240b394c10c4e545"
+    },
+    {
+      "path": "captures/ulp-single-capture/charge_sleep_6.csv",
+      "bytes": 9820,
+      "sha256": "120385ab839654b7686810365c46de3e6a51d4f41bf7af3e5adbfbd9fce2c56c"
+    },
+    {
+      "path": "captures/ulp-single-capture/charge_sleep_7.csv",
+      "bytes": 17506,
+      "sha256": "360e5620ffc3f7d0fd6c81053913dd68fe1ae51b32e3f32f539b082f5169e418"
+    },
+    {
+      "path": "captures/ulp-single-capture/charge_sleep_8.csv",
+      "bytes": 16792,
+      "sha256": "444436512c79bd9a798731192ba9e20f3a5ad467b427437a6e6ed8df3d3e0914"
+    },
+    {
+      "path": "captures/ulp-single-capture/sleep_adc_awake.csv",
+      "bytes": 1416,
+      "sha256": "a40140b0bee84926a7eb431b23ee470313a87a28b9bc1b7ea9ef0ea1d7810d05"
+    },
+    {
+      "path": "captures/ulp-single-capture/sleep_adc_awake_one_only_build.csv",
+      "bytes": 1480,
+      "sha256": "50e6d2b36e79d35b215d5931b03b827984d10bb73832320f2e42cff50b99c80f"
+    },
+    {
+      "path": "captures/ulp-v328-captures/charge_sleep_1.csv",
+      "bytes": 8993,
+      "sha256": "a375ff31e7754bf103ddb64b6e97ad3398279611a0c28f6c3c32ff5d6c61cdce"
+    },
+    {
+      "path": "captures/ulp-v328-power-captures/charge_sleep_1.csv",
+      "bytes": 8993,
+      "sha256": "a375ff31e7754bf103ddb64b6e97ad3398279611a0c28f6c3c32ff5d6c61cdce"
+    },
+    {
+      "path": "captures/ulp-v328-power-captures/charge_sleep_2.csv",
+      "bytes": 9449,
+      "sha256": "94e17540545b146a9fe56b57eb562e9016f06d87cc441b235661eb1a065c6576"
+    },
+    {
+      "path": "captures/ulp-v328-power-captures/sleep_adc_awake.csv",
+      "bytes": 64,
+      "sha256": "cebac3afd79e9fc3d96bd2c3d91d6b8cd7a43705b2fa6e70c1fd02d9590d5953"
+    },
+    {
+      "path": "captures/ulp-v328-power-captures/sleep_adc_awake_settled.csv",
+      "bytes": 192,
+      "sha256": "7e68472906cb7435a5369631b424bf2fdd4890d00ee8ab2a305014a746bf305a"
+    },
+    {
+      "path": "captures/ulp-v328-power-captures/sleep_adc_awake_spaced.csv",
+      "bytes": 128,
+      "sha256": "c150200b2224eb5aa5cfec4f74c77543719e3cd6f40bb0f4a087c1403dfc7124"
+    },
+    {
+      "path": "scope/1.bmp",
+      "bytes": 153654,
+      "sha256": "5569c89729422e11b0a751fb3dd10086a316626a61b89084e645187956993147"
+    },
+    {
+      "path": "scope/10.bmp",
+      "bytes": 153654,
+      "sha256": "bfae742f875494adbd9d01e1f93800e9a295b9cf9f427694584762a1ab413fce"
+    },
+    {
+      "path": "scope/11.bmp",
+      "bytes": 153654,
+      "sha256": "eb5e9821489d8811cfdffcf0d6293e03ec455f2084390f5bfbaab7bbac5fec6a"
+    },
+    {
+      "path": "scope/12.bmp",
+      "bytes": 153654,
+      "sha256": "70d492eab1dd8f63ec5faf54660c0dc1eae62974e5929a4abe97833ea2ffd75e"
+    },
+    {
+      "path": "scope/13.bmp",
+      "bytes": 153654,
+      "sha256": "7d2bd537ae6ebad4854a2e2d7358cfc3ff35ec1209ef0dd677c035ba142682c8"
+    },
+    {
+      "path": "scope/14.bmp",
+      "bytes": 153654,
+      "sha256": "221122b97731d6d8e3272fcb6e6c2e91ea7bd670b476025653100002d226a09b"
+    },
+    {
+      "path": "scope/15.bmp",
+      "bytes": 153654,
+      "sha256": "5a192891d8cdf698d4c5de0114111536daf3cc83e8d9eb8a8b91961c9bf10086"
+    },
+    {
+      "path": "scope/16.bmp",
+      "bytes": 153654,
+      "sha256": "25a28ade62e9e551e27228c09dfc7f94afba1d90328ad846ab4aa42923ee4111"
+    },
+    {
+      "path": "scope/17.bmp",
+      "bytes": 153654,
+      "sha256": "c558b7e27cb29205dc8c4afa2901d2ecf64794636aacf6cc85aaefac0649a6c3"
+    },
+    {
+      "path": "scope/18.bmp",
+      "bytes": 153654,
+      "sha256": "9173eb59b4016c027a7a8850a505408cc5c35898686bb122c7ccf151026d8a41"
+    },
+    {
+      "path": "scope/19.bmp",
+      "bytes": 153654,
+      "sha256": "602c3db3eeef90c0b11728827b80e1a0de2226cd2b380ad3745f32cb3647afde"
+    },
+    {
+      "path": "scope/2.bmp",
+      "bytes": 153654,
+      "sha256": "3d575ef0d96098f284ecc8fa76fe438f0a72c2e56305751da9e0b2c18a9fe113"
+    },
+    {
+      "path": "scope/3.bmp",
+      "bytes": 153654,
+      "sha256": "40c640aeb35ff8105cfacfd06d32c725de67e876c2f82e4977caa6cde6ee54f9"
+    },
+    {
+      "path": "scope/4.bmp",
+      "bytes": 153654,
+      "sha256": "09a10e11d69d067347b4e438f7823bf595c62c2ecad55441380fd08553b84efb"
+    },
+    {
+      "path": "scope/5.bmp",
+      "bytes": 153654,
+      "sha256": "9c51a30f40183419d33ad49b8ba539ec9bad6884eb65cb9b7d18ab2079146119"
+    },
+    {
+      "path": "scope/6.bmp",
+      "bytes": 153654,
+      "sha256": "6a3e19bb240bb4f1eb1db46a9c14d15cd77a5d12b09fed4a4a123c1566340f62"
+    },
+    {
+      "path": "scope/7.bmp",
+      "bytes": 153654,
+      "sha256": "ac793dc3c76f4569b9c590bedf01984293a100274e09ebb443cecd149b429c85"
+    },
+    {
+      "path": "scope/8.bmp",
+      "bytes": 153654,
+      "sha256": "8901eb7cf1f7f35b94c64a16189d5af2141ce28c2d30bde6bae07d98c43d7e4c"
+    },
+    {
+      "path": "scope/9.bmp",
+      "bytes": 153654,
+      "sha256": "39a089e71830134b473335dfce4cf48d28712c6e1abb3870b2e844e2c8349cbd"
+    }
+  ]
+}

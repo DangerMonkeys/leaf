@@ -8,6 +8,8 @@ simulator screen captures for documentation belong in
   logbook files, analysis scripts, saved reports, and replay inputs.
 - [IGC text checksum fixtures](igc-text/2026-11-20/README.md): synthetic special-character
   header recordings, independent validator reports and tamper-control results.
+- [Charge mode sleep continuation](charge-sleep/2026-11-20/README.md): current firmware,
+  preserved bench-source history, charging captures, scope traces and remote setup instructions.
 
 Collection folders retain their original device names and filenames. The collection
 date is not necessarily the flight date: a device download can contain older flights.
