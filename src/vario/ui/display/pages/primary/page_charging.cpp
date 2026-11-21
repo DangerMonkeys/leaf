@@ -3,6 +3,7 @@
 
 #include "charging_dialog_art.h"
 #include "comms/leaf_log_sync.h"
+#include "diagnostics/charge_sleep_capture.h"
 #include "hardware/buttons.h"
 #include "power.h"
 #include "storage/sd_card.h"
@@ -207,6 +208,12 @@ void chargingPage_draw() {
     u8g2.print(info.batteryMV);
     u8g2.print("mV");
     u8g2.setDrawColor(1);
+#ifdef ISET
+    if (charge_sleep_capture::state() == charge_sleep_capture::State::Recording) {
+      u8g2.setCursor(2, 10);
+      u8g2.print(settings.system_ecoMode ? "ONE" : "ADC-");
+    }
+#endif
 
     if (settings.dev_mode && !leafLogSync.screenActive() && !sdcard.hostOwnsMassStorage() &&
         !leafLogSync.cancelPending() && !leafLogResult) {

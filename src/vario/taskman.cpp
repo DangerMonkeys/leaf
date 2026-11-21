@@ -21,6 +21,7 @@
 #include "hardware/Leaf_SPI.h"
 #include "hardware/aht20.h"
 #include "hardware/buttons.h"
+#include "hardware/configuration.h"
 #include "hardware/lc86g.h"
 #include "hardware/motion_sensor.h"
 #include "hardware/ms5611.h"
@@ -223,6 +224,9 @@ void TaskManager::updateWhileCharging() {
       }
       return;
     }
+    // Update the battery before rendering so the preceding sleep is represented on screen.
+    power.readBatteryState();
+
     // Display Charging Page
     display.setPage(MainPage::Charging);
     display.update();  // update display based on battery charge state etc
@@ -231,9 +235,6 @@ void TaskManager::updateWhileCharging() {
     // An upload owns an open SD file on its worker. Defer mount/unmount changes
     // until it has closed the file and published its result.
     if (!leafLogSync.transferInFlight()) sdcard.update();
-
-    // update battery level and charge state
-    power.readBatteryState();
 
     // Try to connect to the diagnostic network once while in charge-only mode. If it connects,
     // the connection will be preserved when the device switches to the on state.
@@ -264,10 +265,19 @@ void TaskManager::updateWhileCharging() {
   sleep.requestedUs = static_cast<uint32_t>(nextChargeUpdateUs_ - wakeConfiguredUs);
   sleep.timerResult = esp_sleep_enable_timer_wakeup(sleep.requestedUs);
   if (sleep.timerResult == ESP_OK) {
-    const bool recording = charge_sleep_capture::state() == charge_sleep_capture::State::Recording;
-    const uint64_t startUs = recording ? cpu_utilization::nowUs() : 0;
+#ifdef ISET
+    sleep.ulpAttempted = true;
+    sleep_adc::prepare(ISET, sleep.requestedUs);
+#endif
+    const uint64_t startUs = cpu_utilization::nowUs();
     sleep.result = esp_light_sleep_start();
-    if (recording) sleep.callUs = static_cast<uint32_t>(cpu_utilization::nowUs() - startUs);
+    sleep.callUs = static_cast<uint32_t>(cpu_utilization::nowUs() - startUs);
+#ifdef ISET
+    if (sleep.ulpAttempted) {
+      sleep.ulp = sleep_adc::finish(sleep.result == ESP_OK, sleep.callUs);
+      if (!sleep.ulpBattery) power.recordSleepCurrent(sleep.ulp, sleep.callUs);
+    }
+#endif
     if (sleep.result == ESP_OK) {
       sleep.wakeCause = esp_sleep_get_wakeup_cause();
       // The RTC alarm is the charge deadline. An early button wake leaves the deadline in place.

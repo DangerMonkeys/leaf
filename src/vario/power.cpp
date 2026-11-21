@@ -1,9 +1,12 @@
 // Includes
 #include "power.h"
 
+#include <SD_MMC.h>
+
 #include "battery_characterization.h"
 #include "comms/ble.h"
 #include "comms/leaf_log_sync.h"
+#include "diagnostics/diagnostic_logs.h"
 #include "diagnostics/diagnostic_network/diagnostic_network.h"
 #include "diagnostics/heap_monitor.h"
 #include "hardware/Leaf_I2C.h"
@@ -41,7 +44,6 @@ Power power;  // struct for battery-state and on-state variables
 
 // Pinout for Leaf V3.2.0+
 #define POWER_LATCH shutdown_guard::LATCH_PIN
-#define BATT_SENSE 1  // INPUT ADC
 
 // Battery Threshold values
 #define BATT_FULL_MV 4080   // mV full battery on which to base % full (100%)
@@ -134,7 +136,7 @@ void Power::initPowerSystem() {
   Serial.println(nameOf(info_.onState));
 
   // Set output / input pins to control battery charge and power supply
-  pinMode(BATT_SENSE, INPUT);
+  pinMode(BATTERY_SENSE_PIN, INPUT);
   pinMode(POWER_LATCH, OUTPUT);
   if (!POWER_CHARGE_I1_IOEX) pinMode(POWER_CHARGE_I1, OUTPUT);
   if (!POWER_CHARGE_I2_IOEX) pinMode(POWER_CHARGE_I2, OUTPUT);
@@ -172,9 +174,38 @@ void Power::initPeripherals() {
   }
 
   // then initialize the rest of the devices
+#ifdef ISET
+  const bool checkAdc = settings.dev_mode && settings.system_ecoMode;
+  constexpr uint8_t adcCheckPins[] = {ISET, BATTERY_SENSE_PIN};
+  sleep_adc::AwakeCheck adcChecks[2];
+  if (checkAdc) {
+    // Battery voltage is a stable comparison even if ADC power changes the ISET signal.
+    for (unsigned i = 0; i < 2; ++i) adcChecks[i] = sleep_adc::checkWhileAwake(adcCheckPins[i]);
+  }
+#endif
   // The SD LUN starts absent in every power state. Charging mode runs Leaf Log first and explicitly
   // presents the card; operating mode retains exclusive firmware ownership.
   sdcard.init(true);
+#ifdef ISET
+  // Append the bench comparison before SD ownership can pass to the USB host.
+  if (checkAdc && sdcard.firmwareCanAccessFilesystem() && diagnostic_logs::ensureDirectory()) {
+    const bool reportExists = SD_MMC.exists("/diagnostics/sleep_adc_awake.csv");
+    File file = SD_MMC.open("/diagnostics/sleep_adc_awake.csv", FILE_APPEND);
+    if (file) {
+      if (!reportExists)
+        file.println(
+            "millis,pin,cpu_before_mv,ulp_raw,ulp_mv,ulp_samples,ulp_error,cpu_after_mv,"
+            "check_error");
+      for (unsigned i = 0; i < 2; ++i) {
+        const auto& check = adcChecks[i];
+        file.printf("%lu,%u,%u,%u,%u,%u,%d,%u,%d\n", static_cast<unsigned long>(millis()),
+                    adcCheckPins[i], check.cpuBeforeMv, check.ulp.raw, check.ulp.milliVolts,
+                    check.ulp.samples, check.ulp.error, check.cpuAfterMv, check.error);
+      }
+      file.close();
+    }
+  }
+#endif
   if (info_.onState == PowerState::On) {
     leafLogSync.prepareForOperating();
     leaf_usb::disconnect();
@@ -227,6 +258,10 @@ void Power::sleepPeripherals() {
 }
 
 void Power::wakePeripherals() {
+  sleepCurrentWindowCount_ = 0;
+  sleepCurrentMaUs_ = 0;
+  sampledSleepUs_ = 0;
+  lastBatteryReadUs_ = 0;
   heap_monitor::checkpoint("wake-periph-start");
   Serial.println("wake_peripherals: ");
   heap_monitor::checkpoint("wake-periph-sd");
@@ -444,19 +479,56 @@ bool Power::autoOff() {
   return autoShutOff;
 }
 
+void Power::recordSleepCurrent(const sleep_adc::Result& sample, uint32_t sleepUs) {
+  if (sample.error != ESP_OK || sample.samples == 0) return;
+  const uint32_t chargeMa = static_cast<uint32_t>(sample.milliVolts) * 400 / 1100;
+  const uint32_t nowUs = static_cast<uint32_t>(micros());
+  if (sleepCurrentWindowCount_ == 0 || sample.samples != sleepSampleCount_ ||
+      nowUs - lastSleepSampleUs_ > 1'000'000U) {
+    sleepCurrentWindowSum_ = 0;
+    sleepCurrentWindowCount_ = 0;
+    sleepCurrentWindowNext_ = 0;
+  }
+  if (sleepCurrentWindowCount_ == SLEEP_CURRENT_WINDOW)
+    sleepCurrentWindowSum_ -= sleepCurrentWindow_[sleepCurrentWindowNext_];
+  else
+    ++sleepCurrentWindowCount_;
+  sleepCurrentWindow_[sleepCurrentWindowNext_] = chargeMa;
+  sleepCurrentWindowSum_ += chargeMa;
+  sleepCurrentWindowNext_ = (sleepCurrentWindowNext_ + 1) % SLEEP_CURRENT_WINDOW;
+  sleepSampleCount_ = sample.samples;
+  lastSleepSampleUs_ = nowUs;
+  const uint32_t meanMa =
+      (sleepCurrentWindowSum_ + sleepCurrentWindowCount_ / 2) / sleepCurrentWindowCount_;
+  sleepCurrentMaUs_ += static_cast<uint64_t>(meanMa) * sleepUs;
+  sampledSleepUs_ += sleepUs;
+}
+
 void Power::readBatteryState() {
+  const uint32_t nowUs = static_cast<uint32_t>(micros());
+  const uint32_t intervalUs = nowUs - lastBatteryReadUs_;
   // Update Charge State
   info_.charging = !ioexDigitalRead(POWER_CHARGE_GOOD_IOEX, POWER_CHARGE_GOOD);
   // logic low is charging, logic high is not
 
 #ifdef ISET
   // V_ISET = (I_CHARGE / 400) * R_ISET note: R_ISET is 1100 Ohms
-  info_.chargeSenseMV = analogReadMilliVolts(ISET);
+  sleep_adc::readMilliVolts(ISET, info_.chargeSenseMV);
 #endif
-  info_.chargeCurrentMA = info_.chargeSenseMV * 400 / 1100;
+  info_.awakeChargeCurrentMA = info_.chargeSenseMV * 400 / 1100;
+  info_.chargeCurrentMA = info_.awakeChargeCurrentMA;
+  if (lastBatteryReadUs_ != 0 && sampledSleepUs_ != 0 && intervalUs >= sampledSleepUs_) {
+    const uint64_t awakeMaUs =
+        static_cast<uint64_t>(info_.awakeChargeCurrentMA) * (intervalUs - sampledSleepUs_);
+    info_.chargeCurrentMA = (sleepCurrentMaUs_ + awakeMaUs + intervalUs / 2) / intervalUs;
+  }
+  lastBatteryReadUs_ = nowUs;
+  sleepCurrentMaUs_ = 0;
+  sampledSleepUs_ = 0;
 
   // Test internal calibration of ADC:
-  info_.batteryMV = analogReadMilliVolts(BATT_SENSE) * 69 / 41;
+  if (sleep_adc::readMilliVolts(BATTERY_SENSE_PIN, info_.batterySenseMV))
+    info_.batteryMV = info_.batterySenseMV * 69 / 41;
 
   // The ISET current measurement is available on v3.2.6+; earlier variants estimate the charge
   // current from terminal voltage instead. Never compensate the raw voltage used for shutdown.

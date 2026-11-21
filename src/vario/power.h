@@ -8,6 +8,7 @@
 
 #include <Arduino.h>
 
+#include "hardware/sleep_adc.h"
 #include "utils/constrained_enum.h"
 
 /// @details ... note: we enter PowerState::OffUSB either from Off and then plugging in to USB power
@@ -35,6 +36,7 @@ DEFINE_CLAMPING_BOUNDS(PowerInputLevel, PowerInputLevel::Standby, PowerInputLeve
 
 class Power {
  public:
+  static constexpr uint8_t BATTERY_SENSE_PIN = 1;
   struct Info {
     int8_t batteryPercent;  // battery percentage remaining from 0-100%
     uint16_t batteryMV;     // milivolts battery voltage (typically between 3200 and 4200)
@@ -42,8 +44,10 @@ class Power {
     bool USBinput = false;  // if system is plugged into USB power or not (ONLY VALID ON 3.2.6+)
     PowerState onState = PowerState::Off;
     PowerInputLevel inputCurrent = PowerInputLevel::i500mA;
-    uint16_t chargeSenseMV = 0;  // ISET pin voltage (v3.2.6+), otherwise zero
-    uint16_t chargeCurrentMA;    // measured charge current in mA (v3.2.6+), otherwise zero
+    uint16_t chargeSenseMV = 0;    // ISET pin voltage (v3.2.6+), otherwise zero
+    uint16_t batterySenseMV = 0;   // Voltage at the divided battery ADC input.
+    uint16_t chargeCurrentMA = 0;  // Time-weighted CPU/ULP charge current.
+    uint16_t awakeChargeCurrentMA = 0;
   };
 
   const Info& info() { return info_; }
@@ -65,6 +69,8 @@ class Power {
 
   // Read battery voltage
   void readBatteryState();
+  // Called after a successful sleep in either operating or charge mode.
+  void recordSleepCurrent(const sleep_adc::Result& sample, uint32_t sleepUs);
 
  private:
   // Initialize the power system itself (battery charger and 3.3V regulator etc)
@@ -98,5 +104,16 @@ class Power {
   int32_t autoOffAltitude_ = 0;
 
   uint16_t batteryPercentLast_;
+  uint32_t lastBatteryReadUs_ = 0;
+  uint64_t sleepCurrentMaUs_ = 0;
+  uint32_t sampledSleepUs_ = 0;
+  // Smooth sleep measurements across cycles; never mix single and burst acquisition.
+  static constexpr uint8_t SLEEP_CURRENT_WINDOW = 8;
+  uint16_t sleepCurrentWindow_[SLEEP_CURRENT_WINDOW] = {};
+  uint32_t sleepCurrentWindowSum_ = 0;
+  uint32_t lastSleepSampleUs_ = 0;
+  uint16_t sleepSampleCount_ = 0;
+  uint8_t sleepCurrentWindowCount_ = 0;
+  uint8_t sleepCurrentWindowNext_ = 0;
 };
 extern Power power;

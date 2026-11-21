@@ -55,12 +55,16 @@ namespace {
     void press(Button button) { button_event(button, ButtonEvent::CLICKED, 0); }
   };
 
-  void screenshot(Menu& menu, const char* name) {
-    menu.draw();
+  void saveScreen(const char* name) {
     const auto png = sim::encodePng(sim::captureFrame(), 4);
     std::ofstream out(std::string("sim/build/developer-logging/") + name, std::ios::binary);
     out.write(png.data(), png.size());
     assert(out.good());
+  }
+
+  void screenshot(Menu& menu, const char* name) {
+    menu.draw();
+    saveScreen(name);
   }
 
   std::vector<std::filesystem::path> csvFiles() {
@@ -103,8 +107,15 @@ namespace {
     power.shutdown();
     assert(power.info().onState == PowerState::OffUSB);
     const uint32_t started = millis();
-    while (millis() - started < (eco ? 2000U : 61'000U)) sim::runtime().step();
-    assert(charge_sleep_capture::state() == (eco ? State::Recording : State::Ready));
+    bool savedSampling = false;
+    while (millis() - started < 61'000U) {
+      sim::runtime().step();
+      if (eco && !savedSampling && millis() - started >= 2000) {
+        saveScreen("charge-sample-one.png");
+        savedSampling = true;
+      }
+    }
+    assert(charge_sleep_capture::state() == State::Ready);
     assert(!std::filesystem::exists(root + path));
 
     leafLogSync.requestPowerOn();
@@ -126,11 +137,18 @@ namespace {
       std::istringstream row(line);
       std::vector<int> fields;
       for (std::string field; std::getline(row, field, ',');) fields.push_back(std::stoi(field));
-      assert(fields.size() == 18 && fields[1] == eco);
+      assert(fields.size() == 40 && fields[1] == eco);
       assert(fields[8] == 1 && fields[10] == 1100 && fields[11] == 400);
       assert(fields[12] == eco);
       assert(fields[15] == (eco ? ESP_OK : -1));
       assert(fields[16] == (eco ? ESP_SLEEP_WAKEUP_TIMER : -1));
+      assert(fields[18] == 400);
+      assert(fields[20] == (eco ? 1100 : 0));
+      assert(fields[21] == (eco ? 1 : 0) && fields[22] == ESP_OK && fields[23] == eco);
+      assert(fields[24] == 0 && fields[26] == 0 && fields[27] == 0);
+      assert(fields[29] == (eco ? 2000 : 0));
+      for (unsigned i = 30; i < 39; ++i) assert(fields[i] == 0);  // Simulator has no raw ADC.
+      assert(fields[39] == (eco ? 1100 : 0));
       if (samples == 0) {
         assert(fields[0] == 0);
       } else {
@@ -143,7 +161,94 @@ namespace {
       previousSleepUs = fields[17];
       samples++;
     }
-    assert(samples >= 3);
+    assert(samples == 120);  // The entire minute uses one conversion per sleep cycle.
+  }
+
+  void sleepCurrentAveraging() {
+    uint16_t milliVolts = 0;
+    sim::board().setAdcMilliVolts(ISET, 1100);
+    const auto awakeCheck = sleep_adc::checkWhileAwake(ISET);
+    assert(awakeCheck.error == ESP_OK && awakeCheck.cpuBeforeMv == 1100 &&
+           awakeCheck.cpuAfterMv == 1100 && awakeCheck.ulp.samples == 1 &&
+           awakeCheck.ulp.milliVolts == 1100);
+    power.readBatteryState();
+    assert(sleep_adc::prepare(ISET, 500) == ESP_ERR_NOT_SUPPORTED);
+    assert(sleep_adc::finish(false, 0).samples == 0);
+    assert(sleep_adc::prepare(ISET, 500'000) == ESP_OK);
+    assert(sleep_adc::checkWhileAwake(ISET).error == ESP_ERR_INVALID_STATE);
+    assert(!sleep_adc::readMilliVolts(ISET, milliVolts));
+    assert(sleep_adc::finish(false, 0).samples == 0);
+    assert(sleep_adc::readMilliVolts(ISET, milliVolts) && milliVolts == 1100);
+
+    // Different sleep/awake input voltages prove that the LCD average uses the stored ULP value.
+    assert(sleep_adc::prepare(ISET, 500'000, sleep_adc::Mode::Burst) == ESP_OK);
+    sim::board().setAdcMilliVolts(ISET, 1301);
+    sim::clock().lightSleepUs(490'000);
+    const auto sample = sleep_adc::finish(true, 490'000);
+    assert(sample.error == ESP_OK && sample.samples == 8 && sample.milliVolts == 1301);
+    sim::board().setAdcMilliVolts(ISET, 1100);
+    sim::clock().advanceUs(10'000);
+    power.recordSleepCurrent(sample, 490'000);
+    power.readBatteryState();
+    assert(power.info().awakeChargeCurrentMA == 400);
+    assert(power.info().chargeCurrentMA >= 470 && power.info().chargeCurrentMA <= 472);
+    sim::clock().advanceUs(500'000);
+    power.readBatteryState();
+    assert(power.info().chargeCurrentMA == 400);  // No stale sleep contribution.
+
+    assert(sleep_adc::prepare(ISET, 500'000) == ESP_OK);
+    sim::clock().lightSleepUs(1000);
+    assert(sleep_adc::finish(true, 1000).samples == 0);  // Early button wake.
+    assert(sleep_adc::readMilliVolts(1, milliVolts));  // Battery ADC is reclaimed too.
+
+    assert(sleep_adc::prepare(ISET, 10'000, sleep_adc::Mode::LongSettle) == ESP_ERR_NOT_SUPPORTED);
+    assert(sleep_adc::finish(false, 0).samples == 0);
+    assert(sleep_adc::prepare(ISET, 500'000, sleep_adc::Mode::LongSettle) == ESP_OK);
+    sim::clock().lightSleepUs(490'000);
+    const auto longSample = sleep_adc::finish(true, 490'000);
+    assert(longSample.error == ESP_OK && longSample.samples == 8 &&
+           longSample.settleCycles == 40000 && longSample.milliVolts == 1100);
+    assert(sleep_adc::readMilliVolts(ISET, milliVolts) && milliVolts == 1100);
+
+    power.readBatteryState();
+    assert(sleep_adc::prepare(ISET, 500'000) == ESP_OK);  // Normal operation defaults to one.
+    sim::board().setAdcMilliVolts(ISET, 1301);
+    sim::clock().lightSleepUs(490'000);
+    const auto single = sleep_adc::finish(true, 490'000);
+    assert(single.error == ESP_OK && single.samples == 1 && single.milliVolts == 1301 &&
+           single.firstMilliVolts == 1301 && single.settleCycles == 2000);
+    sim::board().setAdcMilliVolts(ISET, 1100);
+    sim::clock().advanceUs(10'000);
+    power.recordSleepCurrent(single, 490'000);
+    power.readBatteryState();
+    assert(power.info().chargeCurrentMA >= 470 && power.info().chargeCurrentMA <= 472);
+
+    auto low = single;
+    low.milliVolts = low.firstMilliVolts = 1100;
+    sim::clock().advanceUs(500'000);
+    power.recordSleepCurrent(low, 490'000);
+    power.readBatteryState();
+    assert(power.info().chargeCurrentMA >= 435 && power.info().chargeCurrentMA <= 437);
+    auto burst = low;
+    burst.samples = 8;
+    sim::clock().advanceUs(500'000);
+    power.recordSleepCurrent(burst, 490'000);
+    power.readBatteryState();
+    assert(power.info().chargeCurrentMA == 400);  // Switching phases discards the previous window.
+
+    sim::clock().advanceUs(500'000);
+    power.recordSleepCurrent(sample, 490'000);  // High burst, now mixed with the low burst.
+    power.readBatteryState();
+    assert(power.info().chargeCurrentMA >= 435 && power.info().chargeCurrentMA <= 437);
+    sim::clock().advanceUs(1'500'000);
+    power.recordSleepCurrent(burst, 490'000);
+    power.readBatteryState();
+    assert(power.info().chargeCurrentMA == 400);  // No stale smoothing after a sleep gap.
+
+    assert(sleep_adc::prepare(ISET, 500'000, sleep_adc::Mode::Single) == ESP_OK);
+    sim::clock().lightSleepUs(1000);
+    assert(sleep_adc::finish(true, 1000).samples == 0);
+    assert(sleep_adc::readMilliVolts(ISET, milliVolts));
   }
 
   void sentence(const char* body) {
@@ -373,6 +478,7 @@ int main() {
   receive(neighbors, address);
   flightTimer_stop(false);
   assert(rows(csvFiles().back()).size() == 1 && rows(first).size() == 4);
+  sleepCurrentAveraging();
   puts(
       "Developer logging: runtime and charge captures, radio visibility, flight CSV lifecycle, "
       "GPS validity, packet filtering, persistence, queue overflow and SD recovery passed");

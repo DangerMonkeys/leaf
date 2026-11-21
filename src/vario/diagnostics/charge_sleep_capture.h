@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include "hardware/sleep_adc.h"
 
 namespace charge_sleep_capture {
   enum class State { Idle, Armed, Recording, Ready };
@@ -18,6 +19,9 @@ namespace charge_sleep_capture {
     int timerResult = -1;
     int result = -1;
     int wakeCause = -1;
+    sleep_adc::Result ulp;
+    bool ulpAttempted = false;
+    bool ulpBattery = false;
   };
 
   State state();

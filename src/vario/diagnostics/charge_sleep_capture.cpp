@@ -18,13 +18,19 @@ namespace charge_sleep_capture {
     constexpr char CSV_HEADER[] =
         "elapsed_us,eco_mode,button_block,diagnostic_block,leaf_log_block,usb_block,wifi_mode,"
         "input_limit,charging,battery_mv,iset_mv,charge_ma,sleep_attempt,requested_us,"
-        "timer_setup_result,sleep_result,wake_cause,sleep_call_us\n";
+        "timer_setup_result,sleep_result,wake_cause,sleep_call_us,awake_charge_ma,"
+        "ulp_raw,ulp_iset_mv,ulp_samples,ulp_error,ulp_attempt,ulp_battery,ulp_batt_raw,"
+        "ulp_batt_sense_mv,ulp_batt_samples,awake_batt_sense_mv,ulp_settle_cycles,"
+        "ulp_first_raw,ulp_sample_1_raw,ulp_sample_2_raw,ulp_sample_3_raw,ulp_sample_4_raw,"
+        "ulp_sample_5_raw,ulp_sample_6_raw,ulp_sample_7_raw,ulp_sample_8_raw,ulp_first_mv\n";
 
     struct Sample {
       uint32_t elapsedUs;
       uint16_t batteryMv;
+      uint16_t batterySenseMv;
       uint16_t isetMv;
       uint16_t chargeMa;
+      uint16_t awakeChargeMa;
       uint8_t blockers;
       uint8_t wifiMode;
       PowerInputLevel inputLimit;
@@ -41,16 +47,26 @@ namespace charge_sleep_capture {
 
     bool writeSample(File& file, const Sample& sample) {
       const Sleep& sleep = sample.sleep;
-      char row[192];
-      const int length =
-          snprintf(row, sizeof(row), "%lu,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%lu,%d,%d,%d,%lu\n",
-                   static_cast<unsigned long>(sample.elapsedUs), sample.eco,
-                   !!(sample.blockers & ButtonHeld), !!(sample.blockers & DiagnosticNetwork),
-                   !!(sample.blockers & LeafLog), !!(sample.blockers & UsbHost), sample.wifiMode,
-                   static_cast<int>(sample.inputLimit), sample.charging, sample.batteryMv,
-                   sample.isetMv, sample.chargeMa, sample.attempted,
-                   static_cast<unsigned long>(sleep.requestedUs), sleep.timerResult, sleep.result,
-                   sleep.wakeCause, static_cast<unsigned long>(sleep.callUs));
+      char row[320];
+      const int length = snprintf(
+          row, sizeof(row),
+          "%lu,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%lu,%d,%d,%d,%lu,%d,%d,%d,%d,%d,%d,"
+          "%d,%d,%d,%d,%d,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u\n",
+          static_cast<unsigned long>(sample.elapsedUs), sample.eco,
+          !!(sample.blockers & ButtonHeld), !!(sample.blockers & DiagnosticNetwork),
+          !!(sample.blockers & LeafLog), !!(sample.blockers & UsbHost), sample.wifiMode,
+          static_cast<int>(sample.inputLimit), sample.charging, sample.batteryMv, sample.isetMv,
+          sample.chargeMa, sample.attempted, static_cast<unsigned long>(sleep.requestedUs),
+          sleep.timerResult, sleep.result, sleep.wakeCause,
+          static_cast<unsigned long>(sleep.callUs), sample.awakeChargeMa,
+          sleep.ulpBattery ? 0 : sleep.ulp.raw, sleep.ulpBattery ? 0 : sleep.ulp.milliVolts,
+          sleep.ulpBattery ? 0 : sleep.ulp.samples, sleep.ulp.error, sleep.ulpAttempted,
+          sleep.ulpBattery, sleep.ulpBattery ? sleep.ulp.raw : 0,
+          sleep.ulpBattery ? sleep.ulp.milliVolts : 0, sleep.ulpBattery ? sleep.ulp.samples : 0,
+          sample.batterySenseMv, sleep.ulp.settleCycles, sleep.ulp.conversions[0],
+          sleep.ulp.conversions[1], sleep.ulp.conversions[2], sleep.ulp.conversions[3],
+          sleep.ulp.conversions[4], sleep.ulp.conversions[5], sleep.ulp.conversions[6],
+          sleep.ulp.conversions[7], sleep.ulp.conversions[8], sleep.ulp.firstMilliVolts);
       return length > 0 && static_cast<size_t>(length) < sizeof(row) &&
              file.write(reinterpret_cast<const uint8_t*>(row), length) ==
                  static_cast<size_t>(length);
@@ -92,8 +108,10 @@ namespace charge_sleep_capture {
     const auto& info = power.info();
     samples[count++] = {elapsedUs,
                         info.batteryMV,
+                        info.batterySenseMV,
                         info.chargeSenseMV,
                         info.chargeCurrentMA,
+                        info.awakeChargeCurrentMA,
                         blockers,
                         static_cast<uint8_t>(WiFi.getMode()),
                         info.inputCurrent,
