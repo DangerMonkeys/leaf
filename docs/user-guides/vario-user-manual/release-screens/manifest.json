@@ -1,0 +1,236 @@
+{
+  "sourceHead": "d05fd2291aeaff7de1d1dc9ce625cb565f1d39b3",
+  "firmwareBase": "c4138b627352a6a36ae03f4cf36454530e477016",
+  "generator": "sim/manual/capture.cpp",
+  "generatorSha256": "ca2dcca56a29b41204eba5368f934617b20fccc531a236aa52f5e29fee4e0bd2",
+  "simulatorSha256": "f04f112b3383751984afbc1aad3cc89885a296781f3fb0c546c3911aecea7ae0",
+  "captureExecutableSha256": "4857a197f5c8baf4e816b2aa557eb72a566f8cf7f1d4768979213b0f3e9f8d89",
+  "chargingExecutableSha256": "c9c558158e3cbfe639290be37f61a7b597403d18f08f96efec35cd188e1f9486",
+  "firmwareHasUncommittedChanges": false,
+  "palette": "LCD on -> #000000; LCD off -> #ffffff; no interpolation or pixel edits",
+  "workload": "thermal-core.json at 237/407 seconds; synthetic 3-cylinder route at 1500 m, elevation 800 m, sink 1 m/s; developer mode off",
+  "records": [
+    {
+      "name": "thermal-core",
+      "source": "sim/build/manual-raw/thermal-core.png",
+      "crop": null,
+      "sha256": "48cf661bc2cd44641fc02c8b9e243da5e353a5b54bc1b744859c4433ad327ef8"
+    },
+    {
+      "name": "thermal-track",
+      "source": "sim/build/manual-raw/thermal-track.png",
+      "crop": null,
+      "sha256": "18a1ab4c997b36c07bc8fda62df5df3e49261e7c27fa6ac17cf06ddde18f4f64"
+    },
+    {
+      "name": "navigate",
+      "source": "sim/build/manual-raw/navigate.png",
+      "crop": null,
+      "sha256": "ed081ff563629376c85255c9fdd965a5556a0279a224995475a9200da6a2ae00"
+    },
+    {
+      "name": "logging-menu",
+      "source": "sim/build/manual-raw/logging-menu.png",
+      "crop": null,
+      "sha256": "603e00d5c2f1fc89458c99fb9523aa02ec72b708270e57be8aae0522d949c1fd"
+    },
+    {
+      "name": "nav-field-0",
+      "source": "sim/build/manual-raw/nav-field-0.png",
+      "crop": {
+        "left": 3,
+        "top": 134,
+        "width": 46,
+        "height": 21
+      },
+      "sha256": "848d2ea157077e28317cf4a8862339c64a38098277a671a3b86dbb0714b9db8a"
+    },
+    {
+      "name": "nav-field-1",
+      "source": "sim/build/manual-raw/nav-field-1.png",
+      "crop": {
+        "left": 3,
+        "top": 134,
+        "width": 46,
+        "height": 21
+      },
+      "sha256": "6dd97e3689c366a11ef9e608e2e1ab87ae3b8247939259c715c96b5b858f6c66"
+    },
+    {
+      "name": "nav-field-2",
+      "source": "sim/build/manual-raw/nav-field-2.png",
+      "crop": {
+        "left": 3,
+        "top": 134,
+        "width": 46,
+        "height": 21
+      },
+      "sha256": "fc492002f6220c3be4d28cafd28082559b31fe44d4b5e0a332ede26ff4e48e1d"
+    },
+    {
+      "name": "nav-field-3",
+      "source": "sim/build/manual-raw/nav-field-3.png",
+      "crop": {
+        "left": 3,
+        "top": 134,
+        "width": 46,
+        "height": 21
+      },
+      "sha256": "dababdec37694bc983dae4eed185ea55d957cbbb330c291bc3927bb01bfece42"
+    },
+    {
+      "name": "nav-field-4",
+      "source": "sim/build/manual-raw/nav-field-4.png",
+      "crop": {
+        "left": 3,
+        "top": 134,
+        "width": 46,
+        "height": 21
+      },
+      "sha256": "1529ecb46d26cd8a0ab37f15ffb6b8856b0b2122f99dddd1c3fcdffb99bc60f1"
+    },
+    {
+      "name": "nav-field-5",
+      "source": "sim/build/manual-raw/nav-field-5.png",
+      "crop": {
+        "left": 3,
+        "top": 134,
+        "width": 46,
+        "height": 21
+      },
+      "sha256": "21527a703bc9d3924eb23df2f21423e5c053fd680a4b301242fc5f79b212ae47"
+    },
+    {
+      "name": "nav-field-6",
+      "source": "sim/build/manual-raw/nav-field-6.png",
+      "crop": {
+        "left": 3,
+        "top": 134,
+        "width": 46,
+        "height": 21
+      },
+      "sha256": "eeaa20463938503aed96679193ea6345e0257d7eb08e01f8bf858747a8575da3"
+    },
+    {
+      "name": "nav-field-7",
+      "source": "sim/build/manual-raw/nav-field-7.png",
+      "crop": {
+        "left": 3,
+        "top": 134,
+        "width": 46,
+        "height": 21
+      },
+      "sha256": "ed3008d4584d49b77c4c847667e1537cf793bf00a757d8802afa4bb29f07f004"
+    },
+    {
+      "name": "nav-field-8",
+      "source": "sim/build/manual-raw/nav-field-8.png",
+      "crop": {
+        "left": 3,
+        "top": 134,
+        "width": 46,
+        "height": 21
+      },
+      "sha256": "d69a2c761fec5748b5211c018f45035eb71f2b9bddbc16be3a4da70504f751f8"
+    },
+    {
+      "name": "nav-field-9",
+      "source": "sim/build/manual-raw/nav-field-9.png",
+      "crop": {
+        "left": 3,
+        "top": 134,
+        "width": 46,
+        "height": 21
+      },
+      "sha256": "2d9795757fad547dc7f8168bdf7f3f35193a9b150988caf0ee6ea37da2694b42"
+    },
+    {
+      "name": "nav-field-10",
+      "source": "sim/build/manual-raw/nav-field-10.png",
+      "crop": {
+        "left": 3,
+        "top": 134,
+        "width": 46,
+        "height": 21
+      },
+      "sha256": "c7894db38ac17793ac1e26c548d8be17b6a1acaa7635100194039e5cad19c57f"
+    },
+    {
+      "name": "nav-field-11",
+      "source": "sim/build/manual-raw/nav-field-11.png",
+      "crop": {
+        "left": 3,
+        "top": 134,
+        "width": 46,
+        "height": 21
+      },
+      "sha256": "ef89dd825f0992777df52f656b191d70d083e1cc7ca87e653218e718791e7a8f"
+    },
+    {
+      "name": "nav-field-12",
+      "source": "sim/build/manual-raw/nav-field-12.png",
+      "crop": {
+        "left": 3,
+        "top": 134,
+        "width": 46,
+        "height": 21
+      },
+      "sha256": "9d38f2d7f5cb48a0b13188466357da8619735aad62b38eaab080120452698411"
+    },
+    {
+      "name": "nav-destination",
+      "source": "navigate.png",
+      "crop": {
+        "left": 18,
+        "top": 112,
+        "width": 78,
+        "height": 22
+      },
+      "sha256": "ea60cc0926cccf5db91455047e8ba3fbb2bc67b1da1f4d8b23854fc051eedb04"
+    },
+    {
+      "name": "charging-uploading-2",
+      "source": "sim/build/manual-charging/uploading-2.png",
+      "crop": {
+        "left": 0,
+        "top": 141,
+        "width": 96,
+        "height": 51
+      },
+      "sha256": "d1dee1151e453680237da6db17efffc943bba64167b967266d836b576de49e44"
+    },
+    {
+      "name": "charging-cancel-confirmation",
+      "source": "sim/build/manual-charging/cancel-confirmation.png",
+      "crop": {
+        "left": 0,
+        "top": 141,
+        "width": 96,
+        "height": 51
+      },
+      "sha256": "25032150f557e5d89b6fdcbb9305c062b095da641f93b9d38976a490a4fce9cc"
+    },
+    {
+      "name": "charging-compact-both-success",
+      "source": "sim/build/manual-charging/compact-both-success.png",
+      "crop": {
+        "left": 0,
+        "top": 150,
+        "width": 96,
+        "height": 23
+      },
+      "sha256": "b892e45112ce99e3047bf3fe9c435df8fc93748f7d87475a2f0a5088f580b460"
+    },
+    {
+      "name": "charging-compact-both-problem",
+      "source": "sim/build/manual-charging/compact-both-problem.png",
+      "crop": {
+        "left": 0,
+        "top": 150,
+        "width": 96,
+        "height": 23
+      },
+      "sha256": "9efeb35b908a0cdcb6afd80d03e152d98dc312617fba6c48af4ce7dc6dcc2f47"
+    }
+  ]
+}

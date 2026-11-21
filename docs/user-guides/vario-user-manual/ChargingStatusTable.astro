@@ -1,0 +1,21 @@
+---
+import LcdScreenshot from './LcdScreenshot.astro';
+import uploading from './release-screens/charging-uploading-2.png';
+import cancel from './release-screens/charging-cancel-confirmation.png';
+import success from './release-screens/charging-compact-both-success.png';
+import problem from './release-screens/charging-compact-both-problem.png';
+const rows = [
+  [uploading, 'Uploading', 'Flights are being sent to Leaf Log. Wait for uploads to finish before opening the USB drive, or cancel them.'],
+  [cancel, 'Cancel Uploads?', 'Press CENTER to cancel uploads, then press CENTER again within five seconds to confirm and open the USB drive. Flights still waiting will upload the next time you charge.'],
+  [success, 'Uploads complete', 'The checkmark shows uploads finished. The USB symbol means you can open the drive.'],
+  [problem, 'Uploads stopped', 'An X means uploads were cancelled or a problem occurred. Check the Logbook to see which flights uploaded. The USB symbol means you can open the drive.'],
+] as const;
+---
+<div class="manual-charging-states">
+  {rows.map(([image, label, description]) => (
+    <div class="manual-charging-state">
+      <LcdScreenshot image={image} alt={`Actual charging-screen status strip: ${label}`} />
+      <p><strong>{label}:</strong> {description}</p>
+    </div>
+  ))}
+</div>

@@ -5,6 +5,11 @@ description: How to set up and use your Leaf Vario
 import "./style.css"
 import ManualContactLinks from "../../../website/src/components/manual-contact-links.astro"
 import LeafLogStatusIcon from "./LeafLogStatusIcon.astro"
+import NavMetricTable from "./NavMetricTable.astro"
+import LcdScreenshot from "./LcdScreenshot.astro"
+import RouteGuidanceDiagram from "./RouteGuidanceDiagram.astro"
+import ChargingStatusTable from "./ChargingStatusTable.astro"
+import navigateCurrent from "./release-screens/navigate.png"
 import leafLogotype from "./leaf-logotype.png"
 import leafGreenBg from "./leaf-green-bg.png"
 import button from "./button.png"
@@ -14,10 +19,10 @@ import buttonLeftOnly from "./button-left-only.png"
 import buttonUpDown from "./button-up-down.png"
 import cursorBox from "./cursor-box.png"
 import leafPages from "./leaf-pages.png"
-import navPage from "./nav-page.png"
+import navDestination from "./release-screens/nav-destination.png"
 import userPage from "./user-page.png"
-import thermalCorePage from "./thermal-core-page.png"
-import thermalTrackPage from "./thermal-track-page.png"
+import thermalCorePage from "./release-screens/thermal-core.png"
+import thermalTrackPage from "./release-screens/thermal-track.png"
 import mainMenu from "./menu_images/MainMenu.png"
 import flightMenu from "./menu_images/FlightNoSyncAlt.png"
 import settingsMenu from "./menu_images/Settings.png"
@@ -26,7 +31,7 @@ import altimeterMenu from "./menu_images/Altimeter.png"
 import displayMenu from "./menu_images/Display.png"
 import leafLabsMenu from "./menu_images/LeafLabs.png"
 import unitsMenu from "./menu_images/Units.png"
-import loggingMenu from "./menu_images/Logging.png"
+import loggingMenu from "./release-screens/logging-menu.png"
 import connectMenu from "./menu_images/Connect.png"
 import systemMenu from "./menu_images/System.png"
 import navDataMenu from "./menu_images/NavData.png"
@@ -102,11 +107,11 @@ All the way to the right you'll find the MENU page:
     </tr>
     <tr>
       <td><img src={cursorBox.src} alt="Cursor Box" /></td>
-      <td>A cursor selection box will highlight adjustable fields. If no button is pushed for about 5 seconds, the cursor will disappear. This prevents accidental adjustments to your Leaf.</td>
+      <td>A cursor box highlights the selected field or menu option. Use <strong>UP</strong> or <strong>DOWN</strong> to move it, then press <strong>CENTER</strong> to select or change the item. The cursor box disappears after about five seconds without a button press.</td>
     </tr>
     <tr>
       <td><img src={buttonCenter.src} alt="Center Button" /></td>
-      <td>When selected, press CENTER to select or adjust that option</td>
+      <td>Press <strong>CENTER</strong> to open the highlighted option or change its value.</td>
     </tr>
   </tbody>
 </table>
@@ -154,52 +159,65 @@ All the way to the right you'll find the MENU page:
 
 <div className="manual-shortcut-callout">
   <img src={buttonCenter.src} alt="Center button shortcut" />
-  <p><strong>Shortcut:</strong> When MSL Altitude is selected, hold <strong>CENTER</strong> to sync the baro altitude to the GPS altitude. This is useful if you don't know the site altitude or current pressure setting. (Requires a GPS fix.)</p>
+  <p><strong>Shortcut:</strong> Select MSL Altitude (height above sea level), then hold <strong>CENTER</strong> to set the pressure altimeter to match GPS altitude.  This is useful when you don’t know the site altitude or local pressure setting. (This shortcut requires a GPS fix)</p>
 </div>
 
 ## User Page
-This is the main operational page for standard vario information
+<p>The User Page shows your main flight information. You can choose what appears in the two customizable fields: select either field with <strong>UP</strong> or <strong>DOWN</strong>, then press <strong>CENTER</strong> to cycle through the options.</p>
 <div className="manual-page-image">
   <img src={userPage.src} alt="User Page" />
 </div>
 *Blue are fields that can be adjusted; Green is fixed information*
 
-## Thermal Pages
+<h2 id="thermal-pages">Thermal Pages</h2>
 
 <div className="manual-menu-card">
-  <img src={thermalCorePage.src} alt="Thermal Core showing lift-strength breadcrumbs, the estimated thermal center and a target circle" />
+  <LcdScreenshot image={thermalCorePage} alt="Current Thermal Core screen with climb history, minute-average climb, breadcrumbs and centering guidance" />
   <div>
     <ul>
-      <li><strong>Thermal Core</strong> draws a “bread crumb” trail with the dots sized by lift strength to help you visualize where the stronger lift may be. Once enough data is gathered (usually one full turn), Leaf continually calculates an estimated thermal center and draws an ideal circle to follow. If Leaf has a wind estimate, the wind direction is shown in the middle of the thermal to remind you to turn a little slower upwind and a little tighter downwind to avoid drifting.</li>
+      <li>
+        <p><strong>Thermal Core</strong> shows your recent flight path as dots. Larger dots mark stronger lift. As you circle, Leaf estimates the thermal’s center and marks it with a target circle to help you center your turns.</p>
+        <ul>
+          <li><strong>Climb history</strong>: The small graph above the map shows about three minutes of altitude history. Use this graph to determine if a thermal is weakening or if you're reaching the top of lift.</li>
+          <li><strong>Minute average</strong>: The number beside the graph shows your average climb or sink over the last minute, helping you judge the thermal’s overall strength.</li>
+          <li><strong>Wind</strong>: When Leaf has estimated the wind, it shows a wind indicator and adds a small wind arrow in the center of the thermal circle to help you account for drift.</li>
+        </ul>
+      </li>
     </ul>
   </div>
 </div>
 
 <div className="manual-menu-card">
-  <img src={thermalTrackPage.src} alt="Thermal Track showing three simulated thermals and the selected thermal’s distance and strength" />
+  <LcdScreenshot image={thermalTrackPage} alt="Current Thermal Track screen showing saved thermals and selected-thermal distance and strength" />
   <div>
     <ul>
-      <li><strong>Thermal Track</strong> detects and saves thermals on a map as you fly, relative to your current position. This can help you return to previous thermals when needed. The saved thermals are marked darker depending on a combination of their strength, the height of climb they provided, and if they are more confidently available at your present altitude. Thermals are saved in 3D to account for slant due to wind drift, and Leaf will try to guide you to the best location at your present altitude. Leaf also shows the distance to, and strength of, the thermal you’re most “pointed at”.</li>
+      <li>
+        <p><strong>Thermal Track</strong> shows where you found lift earlier in this flight, with positions adjusted for wind drift and altitude. Darker dots mark thermals Leaf considers more promising at your current altitude.</p>
+        <ul>
+          <li>Fly toward a thermal dot to select it. Leaf shows its distance and strength, with arrows beside the distance to guide you left or right.</li>
+          <li>These dots show previous lift; the thermal may have moved or faded.</li>
+        </ul>
+      </li>
     </ul>
   </div>
 </div>
 
 ## Nav Page
-The Nav Page is used when tracking to GPS waypoints or routes
-<div className="manual-page-image">
-  <img src={navPage.src} alt="Nav Page" />
+<div className="manual-menu-card">
+  <LcdScreenshot image={navigateCurrent} alt="Current Navigate screen with cylinder and goal distances and predicted arrival heights" />
+  <div className="manual-nav-copy">
+    <p>The Nav Page guides you to a waypoint or along a route. Follow the solid arrow in the compass circle. Below it are your current destination, a progress bar, and four fields you can customize.</p>
+    <p>For more details on using and configuring the Nav Page, please see the <a href="#navigation">Navigation section</a> of the manual.</p>
+  </div>
 </div>
-*Blue are fields that can be adjusted; Green is fixed information*
-
-The four navigation data fields are configurable. Move the cursor to a field, then press CENTER to cycle through the options: time, distance, or glide to either Next Waypoint or Goal, and current glide ratio. Your choices are saved.
 
 <section className="manual-first-flight">
   <h2 id="before-your-first-flight">Before Your First Flight</h2>
 
 - Fully charge Leaf using a USB-C cable.
 - Read the liability waiver included with Leaf. Leaf will ask you to accept it the first time you turn it on. You can disable this reminder later in <strong>Menu &rarr; Settings &rarr; System</strong>.
-- Explore the menu and adjust your preferences. We recommend turning on <strong>Vario &rarr; QuietMode</strong> and <strong>Logging &rarr; AutoStart</strong>, and setting your local time zone in <strong>Settings &rarr; System</strong>.
-- You may wish to [update to the latest firmware](#firmware-updates).
+- Under Main Menu → Settings, turn on Vario → Quiet Mode to keep Leaf quiet until your flight starts, and <strong>Logging → AutoStart</strong> to start the flight timer automatically at launch. Set your local time zone under System.
+- <span>You may wish to <a href="#firmware-updates">update to the latest firmware</a>.</span>
 - Mount Leaf using the Velcro strap or base plate, and always attach the lanyard.
 - Test Leaf on the ground before flying.
 
@@ -226,7 +244,7 @@ The four navigation data fields are configurable. Move the cursor to a field, th
 ## Main Menu
 
 <div className="manual-menu-card">
-  <img src={mainMenu.src} alt="Main Menu" />
+  <LcdScreenshot image={mainMenu} alt="Main Menu" />
   <div>
     <ul>
       <li><strong>WiFi Status</strong>: Leaf will show network name and connection status.</li>
@@ -243,7 +261,7 @@ The four navigation data fields are configurable. Move the cursor to a field, th
 ### Flight Page
 
 <div className="manual-menu-card">
-  <img src={flightMenu.src} alt="Flight Page" />
+  <LcdScreenshot image={flightMenu} alt="Flight Page" />
   <div>
     <ul>
       <li><strong>Profiles</strong>: Select the active pilot and glider profiles to save in the logbook.</li>
@@ -264,7 +282,7 @@ The four navigation data fields are configurable. Move the cursor to a field, th
 Below is an overview of available Leaf settings. For full descriptions of each one, please see the <a href="#settings-submenus">Settings Submenus</a> section further below.
 
 <div className="manual-menu-card">
-  <img src={settingsMenu.src} alt="Settings Menu" />
+  <LcdScreenshot image={settingsMenu} alt="Settings Menu" />
   <div>
     <ul>
       <li><strong>Vario</strong>: Adjust audio feedback and climb/sink thresholds.</li>
@@ -273,7 +291,7 @@ Below is an overview of available Leaf settings. For full descriptions of each o
       <li><strong>Units</strong>: Choose altitude, speed, distance, temperature, and time units.</li>
       <li><strong>Logging</strong>: Configure IGC logging and automatic start/stop behavior.</li>
       <li><strong>Connect</strong>: Configure WiFi and Bluetooth features.</li>
-      <li><strong>Leaf Labs</strong>: Enable experimental Leaf Log linking and automatic uploads. Thermal Core and Thermal Track are selected under Display.</li>
+      <li><strong>Leaf Labs</strong>: Explore and enable new features that are still in development.</li>
       <li><strong>System</strong>: Set time zone, volume, auto-off, firmware updates, and reset options.</li>
     </ul>
   </div>
@@ -282,13 +300,13 @@ Below is an overview of available Leaf settings. For full descriptions of each o
 ### Nav Data Page
 
 <div className="manual-menu-card">
-  <img src={navDataMenu.src} alt="Nav Data Page" />
+  <LcdScreenshot image={navDataMenu} alt="Nav Data Page" />
   <div>
     <ul>
       <li><strong>Active Point/Route</strong>: Shows the current navigation destination.</li>
       <li><strong>Active File</strong>: Shows the waypoint or route file currently loaded.</li>
       <li><strong>Pts / Rtes</strong>: Shows how many points and routes were found in the loaded file.</li>
-      <li><strong>Select Dest</strong>: Opens the list of available destinations.</li>
+      <li><strong>Navigate To</strong>: Opens the list of available destinations.</li>
       <li><strong>Load File</strong>: Loads a waypoint or route file from the SD card.</li>
       <li><strong>Clear All</strong>: Unloads the current navigation data without deleting files from the SD card.</li>
     </ul>
@@ -298,7 +316,7 @@ Below is an overview of available Leaf settings. For full descriptions of each o
 ### GPS Menu
 
 <div className="manual-menu-card">
-  <img src={gpsMenu.src} alt="GPS Menu" />
+  <LcdScreenshot image={gpsMenu} alt="GPS Menu" />
   <div>
     <ul>
       <li><strong>Status icon</strong>: Shows a solid dot when Leaf has a GPS fix. Otherwise, it blinks and shows the current satellite count while searching for a fix.</li>
@@ -314,7 +332,7 @@ Below is an overview of available Leaf settings. For full descriptions of each o
 ### Web App Page
 
 <div className="manual-menu-card">
-  <img src={webAppMenu.src} alt="Web App Page" />
+  <LcdScreenshot image={webAppMenu} alt="Web App Page" />
   <div>
     <ul>
       <li><strong>Connected to</strong>: Shows the WiFi network Leaf is using.</li>
@@ -322,14 +340,14 @@ Below is an overview of available Leaf settings. For full descriptions of each o
       <li><strong>Address</strong>: Type the shown address into a browser if you are not using the QR code.</li>
       <li><strong>Use Leaf AP</strong>: Switches to Leaf's own WiFi network when you are away from saved WiFi.</li>
     </ul>
-    <p>If Leaf is not connected to a local WiFi network, it will automatically open the Leaf Web App in Access Point (AP) mode. Use your phone's WiFi settings to connect to the Leaf network, then open the Web App.</p>
+    <p>If Leaf is not connected to a saved WiFi network, it creates its own network. Join the Leaf network on your phone or computer, then scan the QR code or open the address shown on Leaf.</p>
   </div>
 </div>
 
 ### Logbook Page
 
 <div className="manual-menu-card">
-  <img src={logbookMenu.src} alt="Logbook Page" />
+  <LcdScreenshot image={logbookMenu} alt="Logbook Page" />
   <div>
     <ul>
       <li><strong>Flight Summary</strong>: Shows the date, time, and duration of the flight.</li>
@@ -355,17 +373,17 @@ Below is an overview of available Leaf settings. For full descriptions of each o
 ### Vario Settings
 
 <div className="manual-menu-card">
-  <img src={varioMenu.src} alt="Vario Settings" />
+  <LcdScreenshot image={varioMenu} alt="Vario Settings" />
   <div>
     <ul>
       <li><strong>Beep Volume</strong>: Sets the climb and sink audio volume.</li>
       <li><strong>Vol Shortcut</strong>: When enabled, hold UP or DOWN on a flight page to temporarily adjust vario volume without changing the saved Beep Volume setting.</li>
-      <li><strong>Quiet Mode</strong>: Mutes vario beeps until a flight log is started.</li>
+      <li><strong>Quiet Mode</strong>: Keeps vario beeps silent until the flight timer starts.</li>
       <li><strong>Sensitivity</strong>: Controls how quickly the vario responds. Higher values feel more immediate.</li>
       <li><strong>ClimbStart</strong>: Sets the climb rate needed before climb beeps begin.</li>
-      <li><strong>SinkAlarm</strong>: Sets the descent rate needed before the sink alarm sounds.</li>
-      <li><strong>Climb Avg</strong>: Averages the numerical climb-rate value shown on flight pages. Choose from <strong>OFF</strong> to <strong>5 seconds</strong>, in 1-second steps. A longer window steadies the displayed number but makes it react more slowly. Averaging the climb rate value does not change the responsiveness of the vario bar or the audio beeps.</li>
-      <li><strong>Glide Avg</strong>: Averages the displayed glide ratio. Choose from <strong>OFF</strong> to <strong>20 seconds</strong>, in 2-second steps. A longer window produces a steadier glide ratio but responds more slowly to changes.</li>
+      <li><strong>SinkAlarm</strong>: Sets the descent rate needed before the sink alarm sounds. Select <strong>OFF</strong> to disable sink audio.</li>
+      <li><strong>Climb Avg</strong>: Smooths the displayed climb-rate number over up to 20 seconds. Longer averaging makes the number steadier but slower to change. The vario bar and beeps respond as usual.</li>
+      <li><strong>Glide Avg</strong>: Smooths the displayed glide ratio over up to <strong>20 seconds</strong>. Longer averaging makes the number steadier but slower to change.</li>
     </ul>
   </div>
 </div>
@@ -373,16 +391,16 @@ Below is an overview of available Leaf settings. For full descriptions of each o
 ### Altimeter Settings
 
 <div className="manual-menu-card">
-  <img src={altimeterMenu.src} alt="Altimeter Settings" />
+  <LcdScreenshot image={altimeterMenu} alt="Altimeter Settings" />
   <div>
     <ul>
       <li><strong>GPS Alt</strong>: Shows current GPS altitude when Leaf has a GPS fix.</li>
       <li><strong>Sync Now</strong>: Immediately sets the barometric altitude equal to GPS altitude.</li>
-      <li><strong>@LogStart</strong>: Performs an altimeter sync when a flight log starts.</li>
+      <li><strong>@LogStart</strong>: Sets the pressure altimeter to match GPS altitude when flight recording begins.</li>
       <li><strong>Baro (Std)</strong>: Altitude MSL using the 29.92 inHg standard pressure setting.</li>
       <li><strong>Baro (Adj)</strong>: Altitude MSL using the current pressure setting.</li>
       <li><strong>Set</strong>: Current pressure setting value.</li>
-      <li><strong>Adjust Alt</strong>: Press or hold LEFT/RIGHT to adjust the pressure setting.</li>
+      <li><strong>Adjust Alt</strong>: Press or hold <strong>LEFT</strong> or <strong>RIGHT</strong> until the displayed altitude matches your known altitude.</li>
     </ul>
   </div>
 </div>
@@ -390,26 +408,25 @@ Below is an overview of available Leaf settings. For full descriptions of each o
 ### Display Settings
 
 <div className="manual-menu-card">
-  <img src={displayMenu.src} alt="Display Settings, including Thermal Core Auto Switch" />
+  <LcdScreenshot image={displayMenu} alt="Display Settings, including Thermal Core Auto Switch" />
   <div>
     <ul>
-      <li><strong>Show Pages</strong>: Choose which flight pages are available as you scroll left and right.</li>
-      <li className="manual-subnote"><strong>Basic</strong>: Shows the simplified thermal page.</li>
-      <li className="manual-subnote"><strong>User</strong>: Shows the thermal page with configurable user fields.</li>
-      <li className="manual-subnote"><strong>Thermal Core</strong>: Shows the live thermal-centering page.</li>
-      <li className="manual-subnote"><strong>Auto Switch?</strong>: When enabled, automatically shows Thermal Core when circling in lift, then returns to your previous page once you’ve left the thermal.</li>
-      <li className="manual-subnote"><strong>Thermal Track</strong>: Shows the thermal map page.</li>
-      <li className="manual-subnote"><strong>Navigate</strong>: Shows the GPS navigation page.</li>
+      <li><strong>Show Pages</strong>: Choose which flight pages are enabled. At least one must remain selected.</li>
+      <li className="manual-subnote"><strong>Basic</strong>: Simplified vario page with the largest font.</li>
+      <li className="manual-subnote"><strong>User</strong>: Vario page with 2 configurable user fields.</li>
+      <li className="manual-subnote"><strong>Thermal Core</strong>: Shows lift strength and turn guidance to help center around a thermal core.</li>
+      <li className="manual-subnote"><strong>Auto Switch?</strong>: When enabled, automatically switches to the Thermal Core page when circling in lift, then returns to your previous page once you’ve left the thermal.</li>
+      <li className="manual-subnote"><strong>Thermal Track</strong>: Maps previous thermals from earlier in your flight to help you find them again when needed.</li>
+      <li className="manual-subnote"><strong>Navigate</strong>: Select and navigate to waypoints and along routes. Has 4 customizable fields.</li>
       <li><strong>Contrast</strong>: Adjusts the screen contrast for current lighting and temperature.</li>
     </ul>
-    <p>At least one flight page must remain enabled.</p>
   </div>
 </div>
 
 ### Units Settings
 
 <div className="manual-menu-card">
-  <img src={unitsMenu.src} alt="Units Settings" />
+  <LcdScreenshot image={unitsMenu} alt="Units Settings" />
   <div>
     <ul>
       <li><strong>Altitude</strong>: Feet or meters.</li>
@@ -426,12 +443,13 @@ Below is an overview of available Leaf settings. For full descriptions of each o
 ### Logging Settings
 
 <div className="manual-menu-card">
-  <img src={loggingMenu.src} alt="Logging Settings" />
+  <LcdScreenshot image={loggingMenu} alt="Logging Settings" />
   <div>
     <ul>
       <li><strong>Save IGC</strong>: Saves an IGC track file while the flight timer is running and GPS has a fix.</li>
-      <li><strong>AutoStart</strong>: Starts logging automatically after Leaf detects launch-like motion and speed for at least 5-8 seconds.</li>
-      <li><strong>AutoStop</strong>: Stops logging automatically after landing-like stillness is detected for at least 20 seconds. An alert will pop up when the log is 10 seconds from stopping, allowing you to push a button or shake Leaf to keep the log running.</li>
+      <li><strong>AutoStart</strong>: Monitors speed and altitude changes to detect launch and auto-start the timer and flight log.</li>
+      <li><strong>AutoStop</strong>: Stops the flight timer when Leaf detects you have landed. A warning appears first; press any button to keep recording.</li>
+      <li><strong>Repair Logs</strong>: Checks for interrupted logbook saves and repairs recoverable entries. Stop the flight timer first. See <a href="#repairing-the-logbook"><strong>Repairing the Logbook</strong></a>.</li>
     </ul>
   </div>
 </div>
@@ -439,7 +457,7 @@ Below is an overview of available Leaf settings. For full descriptions of each o
 ### Connect Settings
 
 <div className="manual-menu-card">
-  <img src={connectMenu.src} alt="Connect Settings" />
+  <LcdScreenshot image={connectMenu} alt="Connect Settings" />
   <div>
     <ul>
       <li><strong>WiFi Setup</strong>: Creates the Leaf setup network so you can save WiFi credentials.</li>
@@ -454,10 +472,10 @@ Below is an overview of available Leaf settings. For full descriptions of each o
 ### System Settings
 
 <div className="manual-menu-card">
-  <img src={systemMenu.src} alt="System Settings" />
+  <LcdScreenshot image={systemMenu} alt="System Settings" />
   <div>
     <ul>
-      <li><strong>Time Zone</strong>: Sets the local time zone used for the display clock and log file create/start/end times. Press CENTER to switch to adjusting the time zone in 15 minute increments. Press CENTER again to switch back to hour increments.</li>
+      <li><strong>Time Zone</strong>: Sets local time for the clock and flight logs. Press <strong>CENTER</strong> to switch between one-hour and 15-minute adjustments.</li>
       <li><strong>Volume</strong>: Sets system alert, button, and notification volume.</li>
       <li><strong>Auto-Off</strong>: Turns Leaf off after inactivity when no log is running.</li>
       <li><strong>ShowSafety</strong>: Shows or hides the startup safety disclaimer.</li>
@@ -474,15 +492,44 @@ Below is an overview of available Leaf settings. For full descriptions of each o
 
 ### Accessing the SD card
 
-To access the SD card, connect Leaf to a computer or smartphone in charging mode (turn it off if needed). The “LEAF VARIO” USB drive shows the SD card contents. (If Leaf Log is paired and has pending flights, the USB drive waits while uploads run. Press CENTER twice to cancel uploads and show the drive.)
+<div>
+
+<p>Turn Leaf off and connect it to your computer or phone with a USB cable. Open the LEAF VARIO drive to access the SD card.</p>
+<p>If Leaf Log is uploading flights, wait for uploads to finish or press <strong>CENTER</strong> twice to cancel them and open the drive.</p>
+
+</div>
 
 <br />
 
-While Leaf is turned on, USB still charges the device but the USB drive is hidden since Leaf needs access to the SD card. For best results, **please eject the USB drive from your computer/phone before turning Leaf on while it’s plugged in.**
+<div>
 
-### Saving Track Logs
+<p>Leaf charges over USB whether it is on or off, but the USB drive is available only while Leaf is off. Safely eject the drive before unplugging Leaf or turning it on.</p>
 
-To record IGC flight tracks on the SD card, enable <strong>Main Menu &rarr; Settings &rarr; Logging &rarr; Save IGC</strong>. Recording requires the flight timer to be running and a GPS fix.
+</div>
+
+<h3 id="saving-track-logs">Saving Track Logs</h3>
+
+<div>
+
+<p>To save your flight path as an IGC track file, turn on <strong>Main Menu → Settings → Logging → Save IGC</strong>. Recording begins when the flight timer is running and Leaf has a GPS fix. After landing, stop the timer manually or let AutoStop stop it for you.</p>
+
+</div>
+
+<div>
+
+<div className="manual-shortcut-callout">
+  <img src={buttonCenter.src} alt="Center button shortcut" />
+  <p><strong>Shortcut:</strong> You can simply hold the center button at the end of a flight to turn off Leaf, even while the timer is running. While shutting down, Leaf will end the log and save the track file. Leaf will also save a running log if the battery runs out while recording.</p>
+</div>
+
+<p>Short recordings may show dashes for some flight statistics.</p>
+
+<h3 id="repairing-the-logbook">Repairing the Logbook</h3>
+
+<p>If the Logbook shows <strong>Repair needed</strong>, stop the flight timer and back up important SD card files to your computer. With the SD card in Leaf, open <strong>Settings → Logging → Repair Logs</strong> and follow the result shown on screen. Press <strong>LEFT</strong> or <strong>CENTER</strong> to cancel.</p>
+<p>Repair Logs can recover interrupted flight summaries, but cannot restore a deleted track file.</p>
+
+</div>
 
 ### Files and Folders
 
@@ -490,33 +537,35 @@ Leaf will create folders and files on the SD card as you use different features:
 
 <ul className="manual-folder-list">
   <li><strong>tracks/</strong> Stores recorded IGC flight track files.</li>
-  <li><strong>logbook/</strong> Stores flight summary files used by the Logbook page and Leaf Web App. These summaries reference the matching track files in <strong>tracks/</strong> when an IGC track was recorded.</li>
-  <li><strong>waypoints/</strong> Stores waypoint files for navigation. You can place <strong>GPX</strong>, <strong>CUP</strong>, <strong>WPT</strong>, and <strong>WYP</strong> files here. Leaf also stores saved user waypoints in <strong>waypoints/user_waypoints.json</strong>.</li>
-  <li><strong>routes/</strong> Stores route files created or imported on Leaf or in the Leaf Web App. Leaf may also use <strong>routes/active.json</strong> to remember the currently active route.</li>
-  <li><strong>profiles/</strong> Stores pilot and glider profile information, such as <strong>profiles/profiles.json</strong>, after profiles are edited in the Web App.</li>
+  <li><strong>logbook/</strong> Stores the flight summaries shown in Leaf’s Logbook and Web App.</li>
+  <li><strong>waypoints/</strong> Stores waypoint files for navigation. Copy <strong>GPX</strong>, <strong>CUP</strong>, <strong>WPT</strong>, or <strong>WYP</strong> files here. User waypoints saved on Leaf are also stored in this folder.</li>
+  <li><strong>routes/</strong> Stores saved routes.</li>
+  <li><strong>profiles/</strong> Stores pilot and glider profiles saved through the Web App.</li>
   <li><strong>firmware/</strong> Stores firmware files and update status messages for <a href="#flash-firmware-via-the-sd-card">manual firmware updates via the SD card</a>.</li>
   <li><strong>diagnostics/</strong> May appear when diagnostic features are enabled or troubleshooting information is saved.</li>
 </ul>
 
 # Navigation
 
-### Waypoint and Route Files
+<h2 id="waypoints-and-routes">Waypoints and Routes</h2>
 
-Leaf can load waypoint and route files from the SD card. Save navigation files in the <strong>waypoints</strong> folder on the "LEAF VARIO" drive. Leaf accepts <strong>GPX</strong>, <strong>CUP</strong>, <strong>WPT</strong>, and <strong>WYP</strong> files. GPX files may contain waypoints, routes, or both.
+<p>Leaf can load waypoint and route files from the SD card. Save waypoint files in the <strong>waypoints</strong> folder on the “LEAF VARIO” drive, or import a waypoint file from your phone using the <a href="#loading-waypoints">Web App</a>. Leaf accepts <strong>GPX</strong>, <strong>CUP</strong>, <strong>WPT</strong>, and <strong>WYP</strong> files. GPX files may contain waypoints, routes, or both.</p>
 
 ### Loading and Activating Files
 
 On Leaf, open <strong>Main Menu &rarr; Nav Data &rarr; Load File</strong>, then choose the file you want to use.
 
-After a file is loaded, the Nav Data page shows the active file name and the number of points and routes found. Leaf can load up to **20 route points total** across the routes in one file. Files that exceed the limit are rejected. Standalone waypoints have a separate limit. Use <strong>Clear All</strong> to unload the current navigation data.
+<div>
+  <p>The Nav Data page shows the loaded file and the number of waypoints and routes it contains. Choose <strong>Navigate To</strong> to select your destination. If you load a saved route from the routes folder, navigation starts automatically.</p>
+  <p>File limits: Up to <strong>20 points</strong> per route and <strong>120 waypoints</strong> per loaded file. A GPX file can load up to 10 routes with 80 route points in total; a point used in two routes counts twice. Files over the point limits will not load, and only the first 10 routes are loaded.</p>
+  <p>Loading another file replaces the waypoints and routes currently in use. <strong>Clear All</strong> stops navigation and unloads them. Neither action deletes your saved files.</p>
+</div>
 
 ### Selecting a Route or Point
 
-Open <strong>Main Menu &rarr; Nav Data &rarr; Select Dest</strong> to choose a waypoint or route from the loaded file.
+Open <strong>Main Menu &rarr; Nav Data &rarr; Navigate To</strong> to choose a waypoint or route from the loaded file.
 
-When a destination is selected, Leaf shows it under <strong>Active Point/Route</strong>. For a route through cylinders, Leaf plans a short path through the remaining points. The solid arrow points to the current aim point, which may be inside the cylinder to make a glancing approach more forgiving. The hollow arrow previews the following aim point. When an optimized plan is unavailable, the solid arrow points to the waypoint center.
-
-**Distance to point** is the distance to the waypoint center. **Distance to cylinder** is the distance along the planned approach to the actual cylinder boundary, and is zero once you are inside it. With the flight timer active and logging ready, Leaf advances on the first GPS fix strictly inside the cylinder. The display then shows the distance to the next cylinder, so you may not see zero for the previous one. You do not need to reach the inward aim point. Timed starts and line goals are not optimized or scored as competition tasks.
+<p>Leaf shows your destination under <strong>Active Point/Route</strong>. Each route point has a circular area around it, called a cylinder. If no cylinder radius is defined, Leaf uses 400 m. With the flight timer running, Leaf uses GPS to detect when you enter the cylinder and automatically guides you to the next point. To skip a point or go back, use the destination-field shortcut below.</p>
 
 <br />
 
@@ -526,14 +575,37 @@ When you select a route from a GPX file, or create or import a route from the Le
 
 <div className="manual-shortcut-group">
   <div className="manual-shortcut-callout">
-    <img src={flightMenu.src} alt="Flight menu shortcut" />
+    <LcdScreenshot image={flightMenu} alt="Flight menu shortcut" />
     <p><strong>Shortcut:</strong> Open <strong>Main Menu &rarr; Flight</strong> to resume, reset, or cancel navigation without going back through the Nav Data menu.</p>
   </div>
   <div className="manual-shortcut-callout manual-shortcut-callout-wide">
-    <img src={navPage.src} alt="Nav Page destination field shortcut" />
+    <LcdScreenshot image={navDestination} alt="Actual Nav Page destination strip showing the active RIDGE waypoint" />
     <p><strong>Shortcut:</strong> On the Nav Page, scroll up to the destination field, then press <strong>LEFT</strong> or <strong>RIGHT</strong> to move through available navigation points. Press <strong>CENTER</strong> to select one as the new destination. This is especially useful while navigating a route if you want to skip ahead or go back to a previous point.</p>
   </div>
 </div>
+
+<h2 id="using-and-configuring-the-nav-page">Using the Nav Page</h2>
+
+<div className="manual-menu-card">
+  <LcdScreenshot image={navigateCurrent} alt="Current Navigate screen with cylinder and goal distances and predicted arrival heights" />
+  <div className="manual-nav-copy">
+    <p>To follow Leaf’s guidance, steer until the solid arrow points to the top of the compass circle. The smaller hollow arrow shows the direction of the following waypoint, helping you anticipate the next turn. The progress bar below the waypoint name fills as you approach its cylinder.</p>
+    <p>The four lower navigation fields are independently configurable. Select a field with the cursor then press <strong>CENTER</strong> to cycle through the choices below. Your choices are saved.</p>
+    <p>The filled diamond <strong>◆</strong> means the waypoint center; the ring <span className="manual-cylinder-symbol" role="img" aria-label="cylinder ring" /> means cylinder entry. <strong>GOAL</strong> is the final cylinder of the route. When navigating to a single standalone waypoint, that point is also the goal, with a default 400 m cylinder.</p>
+  </div>
+</div>
+
+<NavMetricTable />
+
+<div>
+  <h2 id="optimized-route-guidance">Optimized Route Guidance</h2>
+  <p>Leaf guides you along a shorter path through the remaining waypoint cylinders, updating the route as you fly.</p>
+  <p>On a glancing approach, Leaf aims up to 20m inside the cylinder to make entry more forgiving and to help record an IGC track point inside the cylinder. Entering the cylinder advances the route; there is no need to actually reach the inward aiming point.</p>
+</div>
+
+<RouteGuidanceDiagram />
+
+<p>Leaf does not yet support timed starts, speed sections, or line goals. When it cannot optimize a route, it guides you toward the waypoint centers.</p>
 
 # Connect to WiFi
 
@@ -576,7 +648,7 @@ After a successful connection, Leaf will save that network and try to reconnect 
 
 <br />
 
-When Leaf is connected to a network with internet access, you can check for firmware updates, access the Leaf Web App from any device on that network, and use automatic Leaf Log uploads when that experimental feature is enabled and paired.
+<p>You can open the Leaf Web App from a phone or computer on the same WiFi network. Internet access is needed for firmware updates and Leaf Log uploads.</p>
 
 ### Connecting to a Phone Hotspot
 
@@ -588,18 +660,13 @@ Remember that for local Leaf Web App functions, like editing waypoints/routes an
 
 <br />
 
-To connect to your phone's hotspot network for internet access, follow this process:
-
-1.  Turn on and configure the WiFi hotspot feature on your phone/device. Be sure to remember the hotspot network name and password.
-2.  Follow the [Connect to WiFi](#connect-to-wifi) steps to connect to the Leaf network and open the WiFi setup page on your phone/device.
-
-    **Note:** Connecting to the Leaf network on your device may automatically turn off your hotspot feature. If this happens, it is okay.
-
-3.  Enter your hotspot network and password information into the WiFi setup page. If your hotspot did turn off, you may have to type the name manually instead of selecting it from the list.
-4.  Immediately after clicking "Save and Connect", turn your device's hotspot feature back on if needed.
-5.  Leaf will try to connect to the hotspot network and save it for future use.
-6.  To reconnect in the future, simply turn on your hotspot feature before opening the Main Menu on Leaf. When the Main Menu page opens, Leaf will automatically try connecting to every saved network, including your hotspot.
-7.  If you have trouble connecting Leaf to your hotspot, try using an additional device as described in the iPhone note below:
+<ol>
+  <li>Turn on your phone’s WiFi hotspot and note its network name and password.</li>
+  <li>Follow <a href="#connect-to-wifi">Connect to WiFi</a> to open Leaf’s WiFi setup page. Enter your hotspot’s name and password, typing the name manually if needed.</li>
+  <li>Choose <strong>Save and Connect</strong>, then turn your hotspot back on if joining Leaf’s network switched it off.</li>
+</ol>
+<p>Next time, just turn on the hotspot before opening Leaf’s Main Menu. (When the Main Menu page opens, Leaf will automatically try connecting to the last 3 used networks, including your hotspot).</p>
+<p>If setup is difficult, use a second device as described in the iPhone note below.</p>
 
 <div className="manual-note-callout">
   <p><strong>iPhone hotspot note:</strong> Connecting Leaf to an iPhone hotspot may require another device, such as a tablet, laptop, or a friend's phone. Turn on your iPhone hotspot and set it aside, then use the other device to follow the <a href="#connect-to-wifi"><strong>Connect to WiFi</strong></a> steps and select the iPhone hotspot as the network Leaf should join.</p>
@@ -609,15 +676,21 @@ To connect to your phone's hotspot network for internet access, follow this proc
 
 Having issues connecting Leaf to WiFi networks? You can try the following:
 
-- Try the WiFi setup process again, and make sure you are using the correct network name and password.
-- Try rebooting Leaf by turning it off and on again. Leaf needs to be unplugged from a charger during this process for a proper reset.
-- Fully reset WiFi settings by selecting <strong>Settings &rarr; Connect &rarr; WiFi Reset</strong>. Then try connecting again. <strong>Warning:</strong> this will erase all previously saved networks.
-- If Leaf does not reconnect to a previously used WiFi network, it may just be a temporarily failed connection. Exit and reopen the Main Menu to make Leaf try again.
-- Leaf saves only the latest three WiFi networks, so older networks may need to be added again in WiFi Setup.
+<p>Try these steps in order:</p>
+<ol>
+  <li>Exit and reopen the Main Menu to retry the connection.</li>
+  <li>Check that the network supports 2.4 GHz and that its name and password are correct. Leaf remembers only three networks, so you may need to add an older one again.</li>
+  <li>Unplug Leaf from USB power, then turn it off and on again.</li>
+  <li>If it still will not connect, select <strong>Settings → Connect → WiFi Reset</strong> and repeat WiFi Setup. WiFi Reset erases all saved networks.</li>
+</ol>
 
 # Leaf Web App
 
-The Leaf Web App gives you a larger screen for tasks that are easier on a phone, tablet, or laptop: vario settings, profiles, flight summaries, saved waypoints, route activation, and route building. The Web App runs directly on Leaf. For local features like vario settings, profiles, route editing, and logbook viewing, internet access is not required.
+<div>
+
+<p>Use the Leaf Web App in your phone, tablet, or computer’s browser to adjust vario settings, manage profiles, review flights, and create routes. It runs on Leaf, so these features work without internet access.</p>
+
+</div>
 
 ### Opening the Web App
 
@@ -625,9 +698,9 @@ The Leaf Web App gives you a larger screen for tasks that are easier on a phone,
   <img src={webAppMainPage.src} alt="Leaf Web App main page" />
   <div>
     <ol>
-      <li>On Leaf, open <strong>Main Menu &rarr; Web App</strong>.</li>
-      <li>Scan the QR code shown on Leaf, or type the displayed address into your browser.</li>
-      <li>If Leaf is not on a local WiFi network, connect your phone or computer to the Leaf WiFi network first, then open the address shown on Leaf.</li>
+      <li>On Leaf, open <strong>Main Menu → Web App</strong>.</li>
+      <li>Connect your phone or computer to the same WiFi network as Leaf. If Leaf is using its own network, join the Leaf network shown on its screen.</li>
+      <li>Scan Leaf’s QR code or type the displayed address into your browser.</li>
     </ol>
     <br />
     <p>The first page of the Web App gives you a quick overview of Leaf:</p>
@@ -664,6 +737,7 @@ The Leaf Web App gives you a larger screen for tasks that are easier on a phone,
       <li>Open <strong>Logbook</strong> to review saved flight summaries.</li>
       <li>Flight summaries include time, duration, altitude, vario, distance, speed, acceleration, and observed wind information when available.</li>
       <li>When Leaf Log is enabled, an icon beside each IGC track shows whether it was uploaded, is still pending, or was rejected.</li>
+      <li>Open a flight’s track preview to see its recorded path.</li>
       <li>Deleting a logbook entry from the Web App also deletes the recorded IGC track file for that flight.</li>
     </ul>
   </div>
@@ -690,7 +764,7 @@ The Leaf Web App gives you a larger screen for tasks that are easier on a phone,
   <div>
     <ul>
       <li>You can create your own routes using waypoints from the loaded file.</li>
-      <li className="manual-subnote manual-markerless manual-tight-subitem">- Select a point, enter a turn radius, then click <strong>Add Point</strong>.</li>
+      <li className="manual-subnote manual-markerless manual-tight-subitem">- Select a waypoint and enter its cylinder radius. Click <strong>Add Point</strong>, then repeat for the remaining waypoints.</li>
       <li className="manual-subnote manual-markerless manual-tight-subitem">- Once complete, give the route a name and click <strong>Save Route</strong>.</li>
       <li className="manual-subnote manual-markerless manual-tight-subitem">- Leaf will save this route in the <strong>routes</strong> folder on the SD card.</li>
       <li className="manual-subnote manual-markerless manual-tight-subitem manual-subgroup-end">- If you checked the <strong>Set as active</strong> box, Leaf will activate this route immediately.</li>
@@ -704,7 +778,7 @@ The Leaf Web App gives you a larger screen for tasks that are easier on a phone,
   </div>
 </div>
 
-### Web App Vario Settings
+<h3 id="web-app-vario-settings">Web App Vario Settings</h3>
 
 <div className="manual-webapp-card">
   <img src={webAppVarioSettings.src} alt="Leaf Web App vario settings showing General controls" />
@@ -739,7 +813,11 @@ Leaf can update to the latest firmware over WiFi. If you have not saved a networ
 
 <br />
 
+<div>
+
 To check for updates, open <strong>Main Menu &rarr; Settings &rarr; System &rarr; Update FW.</strong> If an update is available, Leaf installs it and restarts when finished. Leaf will display a message if already up to date, and will still need to restart after checking.
+
+</div>
 
 <br />
 
@@ -753,11 +831,19 @@ If no WiFi network is available, you can still check for firmware updates using 
 
 **WARNING** *Manually loading firmware is only for advanced users. For general updates, please use the firmware update process described above.*
 
+<div>
+
 **Make sure the firmware file matches your exact Leaf hardware version. Contact us if you are unsure.**
+
+</div>
 
 There are two methods for manually loading firmware:
 #### Flash firmware via the SD card
+<div>
+
 Plug Leaf into your computer with a USB cable and leave it off in charging mode. Wait for Leaf Log to finish, or press CENTER twice to confirm cancellation, so the removable drive appears. Copy the new firmware file into the `firmware/` folder on the SD card, safely eject the drive, then unplug Leaf from the USB cable and reboot Leaf. During startup, Leaf will detect the firmware file and attempt to upgrade to the new firmware.
+
+</div>
 
 After the upgrade attempt, Leaf will create a status message inside the `firmware/` folder so you can confirm whether the update succeeded or failed. When you are finished, it is okay to delete the firmware file and the status message from the SD card.
 
@@ -770,7 +856,7 @@ For advanced users who wish to reprogram the firmware manually, the "Boot" butto
 Leaf Labs is home to experimental features that are ready to try but may continue to change. Open <strong>Main Menu &rarr; Settings &rarr; Leaf Labs</strong> to enable them.
 
 <div className="manual-menu-card">
-  <img src={leafLabsMenu.src} alt="Leaf Labs settings showing the Leaf Log option" />
+  <LcdScreenshot image={leafLabsMenu} alt="Leaf Labs settings showing the Leaf Log option" />
   <div>
     <ul>
       <li><strong>Leaf Log</strong>: Adds Leaf Log account linking to the Leaf Web App and enables automatic flight uploads while charging.</li>
@@ -778,42 +864,74 @@ Leaf Labs is home to experimental features that are ready to try but may continu
   </div>
 </div>
 
-## Leaf Log
+<h2 id="leaf-log">Leaf Log</h2>
+
+<div>
 
 Leaf Log is an experimental online flight log. See an example here: [https://log.leafvario.com/flights/806c](https://log.leafvario.com/flights/806c).
 
+</div>
+
 <br />
 
-Once your Leaf is paired with your Leaf Log account, eligible IGC flight recordings can upload automatically whenever your Leaf is charging and near WiFi.
+<div>
 
-### Pairing with Leaf Log
+<p>Link Leaf to your Leaf Log account to upload saved IGC flights automatically while Leaf is off and charging and within range of a saved WiFi network with internet access.</p>
+
+</div>
+
+<h3 id="pairing-with-leaf-log">Pairing with Leaf Log</h3>
+
+<div>
 
 1. Enable **Main Menu → Settings → Leaf Labs → Leaf Log**.
 2. Ensure Leaf is connected to a WiFi network with internet access.
 3. Open the [**Leaf Web App**](#leaf-web-app) and in the **Leaf Log** card, choose **Get Activation Code**.
 4. Once a code is generated, choose **Open Leaf Log**. Sign in with your email address. If you haven't signed in to Leaf Log before, you may need to receive and open a link emailed to you.
 5. Name and link your Leaf to your account.
-6. You will need to close the Leaf Log website page or switch back to the Web App page in your phone browser to see the Web App again.
+6. After linking, switch back to the Leaf Web App tab in your browser.
+
+</div>
 
 <br />
+
+<div>
 
 Leaf will upload all flights to the linked account regardless of which local pilot profile is selected. Use **Unlink** in the Leaf Web App before lending or transferring the device if you do not want later flights uploaded to your Leaf Log account. You can also revoke a paired vario from the Leaf Log website.
 
-### Automatic uploads while charging
+</div>
 
-When Leaf is off and connected to USB power, it checks the SD card for eligible IGC flights that have not yet been uploaded. If Leaf Log is enabled and paired, and a known WiFi network is available, Leaf will connect and upload up to 100 flights per session. Additional flights wait for a later charging session. The charging screen will show Leaf Log status and upload progress.
+<h3 id="automatic-uploads-while-charging">Automatic uploads while charging</h3>
 
-<br />
+<div>
 
-Keep Leaf connected to power and within range of the saved WiFi network until the upload finishes. If a network problem occurs, the uploading flight remains pending and Leaf retries after a waiting period and also during later charging sessions until the flight is successfully uploaded.
+<p>Turn Leaf off and plug it into USB power near a saved WiFi network with internet access. With Leaf Log enabled and linked to your account, uploads start automatically. The charging screen shows progress. Leaf uploads up to 100 flights each time; any remaining flights wait until the next time you charge.</p>
 
-<br />
-
-While Leaf Log uploads are in progress, the **LEAF VARIO** USB drive is suspended. If you need to use the USB mass storage drive during uploads, press CENTER to show **Cancel Uploads?**, then press CENTER again within five seconds to confirm and open the USB drive. Uploads will resume in the next charging session.
+</div>
 
 <br />
 
-Both the on-device logbook (**Menu → Logbook**) and the Web App Logbook will show whether each IGC flight was uploaded, is still pending, or was rejected, according to the following symbols:
+<div>
+
+<p>Keep Leaf plugged in and within WiFi range until uploads finish. If the connection fails, Leaf retries automatically. Flights still waiting will be tried again the next time you charge.</p>
+
+</div>
+
+<br />
+
+<div>
+
+<p>To open the LEAF VARIO USB drive while uploads are running, press <strong>CENTER</strong>, then press <strong>CENTER</strong> again within five seconds to confirm Cancel Uploads? Flights still waiting will upload the next time you charge.</p>
+
+</div>
+
+<br />
+
+<p>When Leaf Log uploads are enabled, Leaf will show current status on the charging screen:</p>
+
+<ChargingStatusTable />
+
+<p>Both the on-device logbook (<strong>Menu → Logbook</strong>) and the Web App Logbook will show whether each IGC flight was uploaded, is still pending, or was rejected, according to the following symbols:</p>
 
 <div className="manual-leaf-log-status-list" aria-label="Leaf Log upload status icons">
   <div>
@@ -830,13 +948,18 @@ Both the on-device logbook (**Menu → Logbook**) and the Web App Logbook will s
   </div>
   <div>
     <LeafLogStatusIcon status="none" />
-    <p><strong>No Leaf icon — Not eligible:</strong> The flight has no eligible IGC track to upload. This usually means IGC recording was turned off, no track file was saved, or the saved track is not an IGC file.</p>
+    <p>No Leaf icon — No IGC track: This entry has no IGC flight recording to upload.</p>
   </div>
 </div>
 
 # Troubleshooting
 
 Having WiFi connection issues? See [WiFi Troubleshooting](#wifi-troubleshooting) in the Connect to WiFi section.
+
+<div>
+  <h3 id="sd-card-and-save-problems">SD Card and Save Problems</h3>
+  <p>If Leaf reports that logs are unavailable, check that the SD card is inserted and try opening the Logbook again. If <strong>Repair needed</strong> appears when viewing a flight in Leaf’s on-device Logbook (<strong>Main Menu → Logbook</strong>), stop the flight timer and run <a href="#repairing-the-logbook"><strong>Settings → Logging → Repair Logs</strong></a>. Copy important files off the card before making repairs or replacing the card.</p>
+</div>
 
 ### Restore Factory Defaults
 To return all settings to the factory configuration, go to <strong>Menu &rarr; Settings &rarr; System</strong>, then scroll down to the Reset option. Hold the center button to reset all Leaf settings. This will reset Leaf settings and saved WiFi networks, but it will not erase your SD card, logs, pilot or glider profiles, or saved waypoints/routes.

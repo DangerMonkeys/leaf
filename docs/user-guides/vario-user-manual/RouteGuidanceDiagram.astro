@@ -1,0 +1,55 @@
+---
+// Explanatory geometry, not measured solver output or an LCD screenshot.
+// The second approach is nearly radial: its guidance point sits on the actual boundary.
+const radius = 65;
+const colors = { cylinders: '#326d96', guidance: '#484848', route: '#b96320' };
+// Scale the first cylinder's 400 m radius and near-maximum 20 m tangent margin together.
+const inward = { x: 200, y: 150 + radius * (400 - 20) / 400 };
+const pilot = { x: 30, y: 214 };
+const boundaryAngle = 166 * Math.PI / 180;
+const boundary = { x: 455 + radius * Math.cos(boundaryAngle), y: 205 + radius * Math.sin(boundaryAngle) };
+const goal = { x: 210, y: 325, radius: 40 };
+const goalDistance = Math.hypot(boundary.x - goal.x, boundary.y - goal.y);
+const goalEntry = {
+  x: goal.x + goal.radius * (boundary.x - goal.x) / goalDistance,
+  y: goal.y + goal.radius * (boundary.y - goal.y) / goalDistance,
+};
+---
+<figure class="manual-route-figure">
+  <svg class="manual-route-diagram" viewBox="0 0 600 390" role="img" aria-label="Optimized cylinder route with a nearly tangent first approach, an aim about 20 metres inside its 400-metre cylinder, an on-edge aim at the next direct entry, and a finish at the goal cylinder">
+    <defs>
+      <marker id="route-goal-arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0 0L7 3.5L0 7" fill={colors.route} /></marker>
+    </defs>
+    <g fill="white" stroke={colors.cylinders} stroke-width="1.5">
+      <circle cx="200" cy="150" r={radius} />
+      <circle cx="455" cy="205" r={radius} />
+      <circle cx={goal.x} cy={goal.y} r={goal.radius} />
+    </g>
+    <path d={`M${pilot.x} ${pilot.y}L${inward.x} ${inward.y}L${boundary.x} ${boundary.y}L${goalEntry.x} ${goalEntry.y}`} fill="none" stroke={colors.route} stroke-width="2.5" stroke-linejoin="round" marker-end="url(#route-goal-arrow)" />
+    <g fill="none" stroke={colors.guidance} stroke-width="1.2" stroke-dasharray="4 4">
+      <path d={`M140 88L162 156L${inward.x - 5} ${inward.y - 5}`} />
+      <path d={`M418 88L377 149L${boundary.x} ${boundary.y - 6}`} />
+    </g>
+    <g fill={colors.route}>
+      <circle cx={inward.x} cy={inward.y} r="2" />
+      <circle cx={boundary.x} cy={boundary.y} r="2" />
+      <path d={`M${pilot.x} ${pilot.y}l-14 -7v14Z`} />
+    </g>
+    <g color={colors.guidance} font-size="20" font-weight="700">
+      <text x="24" y="24"><tspan x="24">Glancing the</tspan><tspan x="24" dy="24">cylinder edge</tspan></text>
+      <text x="350" y="24"><tspan x="350">Flying straight into</tspan><tspan x="350" dy="24">the cylinder</tspan></text>
+    </g>
+    <g color={colors.guidance} font-size="18">
+      <text x="24" y="76">Guidance aims just inside</text>
+      <text x="350" y="76">Guidance aims at the edge</text>
+    </g>
+    <g color={colors.cylinders} font-size="20">
+      <text x="150" y="153">Waypoint 1</text>
+      <text x="405" y="209">Waypoint 2</text>
+      <text x="188" y="332">Goal</text>
+    </g>
+    <g color={colors.route} font-size="20">
+      <text x="12" y="247">You</text>
+    </g>
+  </svg>
+</figure>

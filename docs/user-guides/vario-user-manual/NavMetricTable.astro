@@ -1,0 +1,52 @@
+---
+import type { ImageMetadata } from 'astro';
+import LcdScreenshot from './LcdScreenshot.astro';
+const images = import.meta.glob<{ default: ImageMetadata }>('./release-screens/nav-field-*.png', { eager: true });
+// Explicit IDs keep the real LCD crops paired with their fields when the table is reordered.
+const categories = [
+  { name: 'Time', fields: [
+    [0, 'Time to next waypoint center', 'Estimated time to the waypoint’s center at your current groundspeed.'],
+    [9, 'Time to next cylinder', 'Estimated time to enter the next cylinder at your current groundspeed, following Leaf’s guidance.'],
+    [1, 'Time to goal', 'Estimated time to the goal cylinder at your current groundspeed, following the remaining route.'],
+  ] },
+  { name: 'Distance', fields: [
+    [2, 'Distance to next waypoint center', 'Straight-line distance to the waypoint’s center.'],
+    [10, 'Distance to next cylinder', 'Distance to enter the next cylinder, following Leaf’s guidance.'],
+    [3, 'Distance to goal', 'Distance to the goal cylinder along the remaining route.'],
+  ] },
+  { name: 'Glide', fields: [
+    [4, 'Current glide ratio', 'Your glide ratio over the ground, smoothed by the Glide Avg setting. Dashes mean Leaf cannot calculate a descending glide.'],
+    [5, 'Required glide to next waypoint center', 'Glide ratio needed to reach the waypoint’s center at its recorded elevation.'],
+    [11, 'Required glide to next cylinder', 'Glide ratio needed to enter the next cylinder at the waypoint’s recorded elevation.'],
+    [6, 'Required glide to goal', 'Glide ratio needed to reach the goal cylinder at its recorded elevation along the remaining route.'],
+  ] },
+  { name: 'Arrival altitude', fields: [
+    [7, 'Arrival altitude above next waypoint center', 'Predicted height above the waypoint’s recorded elevation when you reach its center.'],
+    [12, 'Arrival altitude above next cylinder', 'Predicted height above the waypoint’s recorded elevation when you enter its cylinder.'],
+    [8, 'Arrival altitude above goal', 'Predicted height above the goal’s recorded elevation when you reach its cylinder.'],
+  ] },
+];
+---
+<p class="manual-mobile-table-hint">Swipe the table sideways to read the field explanations.</p>
+<div id="nav-metric-fields" class="manual-metric-scroll" role="region" aria-label="All navigation metric fields" tabindex="0">
+  <table class="manual-metric-table" aria-label="Nav Page metrics grouped by category">
+    <thead><tr><th scope="col">LCD example</th><th scope="col">Field</th><th scope="col">Meaning</th></tr></thead>
+    {categories.map(({name: category, fields}) => (
+      <tbody>
+        <tr class="manual-metric-category"><th colspan="3" scope="rowgroup">{category}</th></tr>
+        {fields.map(([id, name, meaning]) => (
+          <tr>
+            <td><LcdScreenshot class="manual-metric-crop" image={images[`./release-screens/nav-field-${id}.png`].default} alt={`Actual LCD label and example for ${name}`} /></td>
+            <th scope="row">{name}</th>
+            <td>{meaning}</td>
+          </tr>
+        ))}
+      </tbody>
+    ))}
+  </table>
+</div>
+<div>
+  <p>Cylinder estimates follow Leaf’s guidance. Goal estimates include the remaining turns. Arrival heights assume you continue at your current averaged glide ratio.</p>
+  <p>A current glide ratio higher than the required glide suggests you can reach the destination with height to spare if conditions stay similar.</p>
+  <p>Arrival heights use GPS altitude and your selected altitude units. They show height above the waypoint’s recorded elevation. They do not show clearance over terrain along the way. Dashes mean a height estimate is unavailable or predicts arrival below the waypoint’s elevation.</p>
+</div>

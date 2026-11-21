@@ -3,6 +3,35 @@
     border-collapse: collapse;
 }
 
+.manual-metric-scroll { overflow-x: auto; margin: 1.5rem 0; }
+.manual-mobile-table-hint { display: none; }
+#nav-metric-fields { scroll-margin-top: 5rem; }
+.manual-metric-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+.manual-cylinder-symbol {
+    display: inline-block;
+    width: 1.1em;
+    height: 1.1em;
+    margin-inline: 0.12em;
+    vertical-align: -0.15em;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+}
+.manual-nav-copy p + p { margin-top: 0.75rem; }
+.manual-metric-table :is(th, td) { padding: 0.7rem 0.6rem; border-bottom: 1px solid #ddd; text-align: left; vertical-align: top; }
+.manual-metric-table td:first-child { width: 104px; min-width: 104px; }
+.manual-metric-table th[scope="row"] { width: 28%; }
+.manual-metric-category th { background: #f4f6f4; }
+.manual-route-diagram { display: block; width: 100%; max-width: 640px; margin: 0 auto; border: 1px solid #ddd; border-radius: 6px; }
+.manual-route-diagram text { fill: currentColor; }
+.manual-route-figure { margin: 1.5rem 0; }
+.manual-charging-state { display: grid; grid-template-columns: 192px minmax(0, 1fr); gap: 1.25rem; align-items: center; padding: 0.9rem 0; border-bottom: 1px solid #ddd; }
+.manual-charging-state p { margin: 0; }
+@media (max-width: 650px) {
+    .manual-metric-table { min-width: 560px; }
+    .manual-mobile-table-hint { display: block; font-size: 0.9rem; }
+    .manual-charging-state { grid-template-columns: 1fr; }
+}
+
 .button-table th:first-child,
 .button-table td:first-child {
     width: 125px;
@@ -52,7 +81,7 @@
 
 .manual-menu-card {
     display: grid;
-    grid-template-columns: minmax(90px, 126px) minmax(0, 1fr);
+    grid-template-columns: 192px minmax(0, 1fr);
     gap: 1.25rem;
     align-items: start;
     margin: 1rem 0 2rem;
@@ -727,7 +756,7 @@
     }
 
     .manual-menu-card {
-        grid-template-columns: 90px minmax(0, 1fr);
+        grid-template-columns: 192px minmax(0, 1fr);
         gap: 1rem;
     }
 
@@ -769,6 +798,39 @@
 
     .manual-webapp-card img {
         max-width: 220px;
+    }
+}
+
+/* LCD bitmaps keep their intrinsic aspect and an exact 2x scale in every layout.
+   Override card widths, border-box sizing and shortcut height limits together. */
+.manual-lcd,
+.manual-menu-card img.manual-lcd,
+.manual-content img.manual-lcd,
+.manual-shortcut-group .manual-shortcut-callout img.manual-lcd {
+    display: block;
+    box-sizing: content-box;
+    width: var(--lcd-width);
+    height: var(--lcd-height);
+    min-width: var(--lcd-width);
+    max-width: none;
+    min-height: var(--lcd-height);
+    max-height: none;
+    padding: 0;
+    border: 0;
+    image-rendering: pixelated;
+}
+
+.manual-menu-card img.manual-lcd {
+    outline: 1px solid #d8d8d8;
+}
+
+.manual-shortcut-group .manual-shortcut-callout:has(> .manual-lcd) {
+    grid-template-columns: 192px minmax(0, 1fr);
+}
+
+@media (max-width: 540px) {
+    .manual-shortcut-group .manual-shortcut-callout:has(> .manual-lcd) {
+        grid-template-columns: 1fr;
     }
 }
 
