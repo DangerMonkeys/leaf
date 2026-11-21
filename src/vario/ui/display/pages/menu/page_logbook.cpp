@@ -1,12 +1,15 @@
 #include "ui/display/pages/menu/page_logbook.h"
 
 #include "hardware/buttons.h"
+#include "logbook/logbook_io.h"
+#include "storage/sd_card.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
 #include "ui/display/display_fields.h"
 #include "ui/display/fonts.h"
 #include "ui/display/logbook_card.h"
+#include "ui/display/message_box.h"
 #include "ui/display/pages.h"
 #include "ui/settings/settings.h"
 
@@ -40,51 +43,39 @@ void PageLogbook::showModalNewest() {
   push_page(this);
 }
 
+void PageLogbook::closed(bool removed) {
+  if (!removed) return;
+  scan.cancel();
+  waitingForScan = false;
+  currentPath = static_cast<const char*>(nullptr);
+  summary.reset();
+}
+
 void PageLogbook::loadNewest() {
-  String path;
-  if (!LogbookStore::newestEntryPath(path)) {
-    currentPath = "";
-    summary = LogbookEntrySummary();
-    position = 0;
-    total = 0;
-    cursor_max = CURSOR_BACK;
-    cursor_position = CURSOR_BACK;
-    return;
-  }
-  loadPath(path);
+  currentPath = "";
+  scanDirection = 0;
+  scan.begin();
+  waitingForScan = true;
+  cursor_max = CURSOR_BACK;
 }
 
 void PageLogbook::loadPath(const String& path) {
   currentPath = LogbookStore::normalizePath(path);
   deletePending = 0;
-  if (!LogbookStore::readSummary(currentPath, summary)) {
-    summary = LogbookEntrySummary();
-    position = 0;
-    total = LogbookStore::count();
-    cursor_max = CURSOR_BACK;
-    cursor_position = CURSOR_BACK;
-    return;
-  }
-  cursor_max = cursor_page;
-  LogbookStore::entryPositionNewestFirst(currentPath, position, total);
+  scanDirection = 0;
+  scan.begin(currentPath);
+  waitingForScan = true;
 }
 
 void PageLogbook::loadAdjacent(bool newer) {
-  if (!summary.valid) return;
-
-  String path;
-  const bool found = newer ? LogbookStore::nextEntryPath(currentPath, path)
-                           : LogbookStore::previousEntryPath(currentPath, path);
-  if (found) {
-    speaker.playSound(newer ? fx::increase : fx::decrease);
-    loadPath(path);
-  } else {
-    speaker.playSound(fx::cancel);
-  }
+  if (currentPath.isEmpty() || waitingForScan) return;
+  scanDirection = newer ? 1 : -1;
+  scan.begin(currentPath);
+  waitingForScan = true;
 }
 
 void PageLogbook::deleteCurrent() {
-  if (!summary.valid) return;
+  if (currentPath.isEmpty()) return;
 
   String replacementPath;
   if (!LogbookStore::previousEntryPath(currentPath, replacementPath)) {
@@ -101,23 +92,58 @@ void PageLogbook::deleteCurrent() {
     }
   } else {
     deletePending = 0;
-    speaker.playSound(fx::bad);
+    // Refresh what remains without a per-file alert or recovery that could undo
+    // a partial deletion. A still-present flight remains available to delete again.
+    if (LogbookStore::readSummary(currentPath, summary.emplace()))
+      LogbookStore::entryPositionNewestFirst(currentPath, position, total);
+    else
+      loadNewest();
   }
 }
 
 bool PageLogbook::cursorUsesLeftButton() const { return cursor_position == cursor_page; }
 
 void PageLogbook::draw() {
+  // Also advance in direct simulator/gallery draws; the normal loop services this between frames.
+  scan.service();
+  if (waitingForScan && !scan.pending()) {
+    waitingForScan = false;
+    unavailable = scan.unavailable();
+    const auto& nav = scan.navigation();
+    total = nav.total;
+    if (scanDirection) {
+      const String adjacent = scanDirection > 0 ? nav.nextPath : nav.previousPath;
+      if (!adjacent.isEmpty()) {
+        currentPath = adjacent;
+        position = scanDirection > 0 ? nav.position - 1 : nav.position + 1;
+        speaker.playSound(scanDirection > 0 ? fx::increase : fx::decrease);
+      } else {
+        position = nav.position;
+        speaker.playSound(fx::cancel);
+      }
+    } else {
+      if (currentPath.isEmpty()) currentPath = scan.newestPath();
+      position = nav.position;
+    }
+    summary.reset();
+    readStatus = LogbookReadStatus::Unavailable;
+    if (!unavailable && !currentPath.isEmpty())
+      LogbookStore::readSummary(currentPath, summary.emplace(), &readStatus);
+    scan.cancel();  // The page now owns the selected path and displayed position.
+    cursor_max = total ? cursor_page : CURSOR_BACK;
+  }
   u8g2.firstPage();
   do {
     menu_ui::drawTitle("Logbook", menu_ui::GLYPH_LOGGING);
-    if (summary.valid) {
-      if (settings.labs_leafLog && summary.leafLogStatus != LeafLogFlightStatus::NotApplicable) {
+    if (waitingForScan) {
+      message_box::draw("Loading", "Flights");
+    } else if (summary && summary->valid) {
+      if (settings.labs_leafLog && summary->leafLogStatus != LeafLogFlightStatus::NotApplicable) {
         u8g2.setFont(leaf_8x14);
         u8g2.setCursor(menu_ui::ICON_CHECKBOX_X, 14);
-        if (summary.leafLogStatus == LeafLogFlightStatus::Uploaded) {
+        if (summary->leafLogStatus == LeafLogFlightStatus::Uploaded) {
           menu_ui::printGlyph(LEAF_LOG_ICON_UPLOADED);
-        } else if (summary.leafLogStatus == LeafLogFlightStatus::NotUploaded) {
+        } else if (summary->leafLogStatus == LeafLogFlightStatus::NotUploaded) {
           menu_ui::printGlyph(LEAF_LOG_ICON_NOT_UPLOADED);
         } else {
           menu_ui::printGlyph(LEAF_LOG_ICON_REJECTED);
@@ -132,13 +158,22 @@ void PageLogbook::draw() {
 }
 
 void PageLogbook::drawEmpty() {
-  u8g2.setFont(leaf_6x12);
-  u8g2.setCursor(0, 67);
-  u8g2.print("No flights");
+  if (unavailable || !sdcard.firmwareCanAccessFilesystem())
+    message_box::draw("Unavailable");
+  else if (total && readStatus == LogbookReadStatus::RepairNeeded)
+    message_box::draw("Repair needed", "Run", "\"Repair Logs\"");
+  else if (total)
+    message_box::draw("Could not read", "flight", "Try again");
+  else
+    message_box::draw("No flights");
+  if (total) {
+    drawDeleteRow(156);
+    drawPageRow(171);
+  }
 }
 
 void PageLogbook::drawEntry() {
-  logbook_card::drawFlightCard(summary);
+  logbook_card::drawFlightCard(*summary);
 
   drawDeleteRow(156);
   drawPageRow(171);
@@ -214,6 +249,7 @@ void PageLogbook::setting_change(Button dir, ButtonEvent state, uint8_t count) {
         mainMenuPage.backToMainMenu();
         pop_page();
       } else {
+        closed(true);
         logMenuPage.backToLogMenu();
       }
       if (state == ButtonEvent::HELD) {
@@ -222,6 +258,8 @@ void PageLogbook::setting_change(Button dir, ButtonEvent state, uint8_t count) {
     }
     return;
   }
+
+  if (waitingForScan) return;
 
   if (cursor_position == cursor_page) {
     if (state == ButtonEvent::CLICKED) {

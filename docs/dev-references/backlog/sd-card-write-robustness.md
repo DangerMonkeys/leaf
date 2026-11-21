@@ -1,12 +1,77 @@
 ---
 title: SD Card Write Robustness Backlog
-description: Two-phase plan for recoverable logbook saves and resource-conscious SD handling throughout Leaf firmware.
+description: Recoverable flight saves, deterministic vario scheduling, SD isolation, and a path to ON-state light sleep.
 ---
 
 # SD Card Write Robustness Backlog
 
-Status: proposed; investigation completed on 2026-10-21. This document records findings and
-recommendations only. No firmware changes or hardware verification were performed for this review.
+## November 20, 2026 status
+
+Checked replacement saves for navigation, routes, waypoints and profiles, retryable Stack
+exports and startup low/full/unavailable-card warnings are now implemented; see the
+[storage review](https://leafvario.com/dev-references/storage-fix-review-2026-11-19/). The separate deferred Power shutdown
+also passed [live FANET/Bluetooth checks](https://leafvario.com/dev-references/shutdown-radio-test-2026-11-20/).
+These are bounded fixes, not completion of Phase 2 or proof of power-loss durability.
+IGC in-flight flush/error policy remains unchanged by agreement. SD buffer-size reductions
+are deferred pending timing/card measurements in the [memory restart plan](https://leafvario.com/dev-references/backlog/memory-optimization-followup/).
+
+## Phase 2 architecture proposal
+
+The proposed Phase 2 covers vario scheduling, SD access, and the idle behavior needed for eventual
+ON-state light sleep. Design their task and peripheral boundaries together. Validate the new
+scheduler and storage isolation with the chip awake, then measure how much light sleep adds.
+
+The [vario timing backlog](https://leafvario.com/dev-references/backlog/vario-timing-robustness/)
+records November field evidence of FIFO resets and sensor gaps near synchronous System Events
+checkpoints. The checkpoint write duration remains unmeasured. A separate historical
+[timing capture](https://github.com/DangerMonkeys/leaf/blob/03ead991e92ff7907f331ade535cc05061b841be/scratch/diagnostics_logs/cpu_utilization2_report.md#likely-audio-stall-cause)
+measured a 557 ms diagnostic SD write aligned with a held vario tone. Keep these observations
+separate and use the timing backlog's controlled reproduction before attributing later swings to SD.
+
+In the current firmware, the Core 1 loop dispatches one logical slot when it sees the 10 ms
+timer advance. Multiple ticks can elapse during a blocking call without running another slot.
+Pressure conversion, IMU polling, climb estimation, and audio updates all depend on that loop.
+Normal flight logging and web/logbook work also run there. BLE and FANET already use workers,
+while some sensor message subscribers run inline and can write files under the message-bus mutex.
+The [Phase 2 plan](#phase-2-vario-scheduling-storage-isolation-and-power) addresses those dependencies.
+It is a proposed architecture, not an implementation or a measured power-saving result. Keep the
+existing estimator and stack allocations for the first timing comparison.
+
+## 2026-10-28 verified cleanup refinement
+
+Completed flight and Leaf Log result writes now read back the exact serialized bytes and length
+before removing `.bak`. Cleanup failure alone leaves a successful save intact; verification
+failure preserves the fallback and retries verification within the existing final-save budget.
+Manual maintenance and charging upload scans also retire provably superseded backups, preserving
+ambiguous/unknown candidates. Legacy `unsynced_` names migrate to `date_not_available_` only in
+maintenance, with collision checks and updated upload queue paths. Nominal browsing remains
+read-only and distinguishes malformed/incomplete records from temporary read failures.
+Historical findings and runtime measurements below describe their stated earlier candidates.
+
+
+**2026-10-26 refinement:** Field testing of 0.2.4-968 exposed false final-save failures from
+original-versus-parsed floating-point fingerprints and excessive save-path I/O. The follow-up
+removes normal readback/preparation scans and redundant explicit pre-close sync, coalesces launch
+placeholders, reuses checked staging files for stop retries, and displays the immediate summary
+from RAM. Recovery is restricted to charging-page upload preparation and the explicit Logging >
+Repair Logs action. Nominal browsing uses sliced filename-only scans and reads only the selected
+flight; no per-flight RAM index is retained. Only terminal flight-save failure gets a per-flight warning; deletion refreshes
+available entries quietly. See [the current implementation contract](https://github.com/DangerMonkeys/leaf/blob/main/src/vario/logbook/README.md)
+for exact limits and UI behavior. The historical implementation/verification record below describes
+the original Phase 1; its readback and eager-recovery policy is superseded by this refinement.
+The separate 200–250 ms instrument-gap/reset issue remains outside this change.
+
+Status reconciled **2026-10-24**: Phase 1 merged to `main` in `605810eb` (#430). Automated
+fault-injection and FAT-backed tests passed. Leaf 3.2.8 checks also passed for no-GPS saves,
+absent-card failure followed by a new flight, staged candidate recovery, and deletion/cold boot.
+The USB diagnostic startup fix passed an initial monitored charge-to-on check. GPS/IGC flights,
+active-flight shutdown, target resource measurements and controlled power interruption remain
+qualification work; Phase 2 remains unimplemented.
+
+Investigation completed on 2026-10-21; the maintainer refined the scope on 2026-10-22 to automatic
+recovery with revision/completion metadata and a short, bounded final-save sequence without
+session-long RAM retention. The implementation/verification record below distinguishes completed
+checks from remaining qualification; it does not establish physical power-loss durability.
 
 ## Goal and phase boundaries
 
@@ -18,11 +83,14 @@ Keep FAT32 and the existing JSON/IGC files. Deliver this work in two phases:
 
 | Phase | Scope | Intended result |
 | --- | --- | --- |
-| 1: focused logbook hardening | Checked logbook replacement, conservative recovery, retained finalizations, and targeted failure tests | Address the demonstrated loss windows with small changes around existing save milestones |
-| 2: firmware-wide refinement | Shared storage lifecycle, all file writers, continuous logging, diagnostics, and broader power-failure validation | Apply consistent storage guarantees throughout the firmware and measure their resource costs |
+| 1: focused logbook hardening | Checked logbook replacement, revision/completion metadata, automatic recovery, bounded final-save retries, and targeted failure tests | Address the demonstrated loss windows with small changes around existing save milestones |
+| 2: firmware-wide refinement | Deadline-driven vario task, one SD worker and lifecycle, continuous logging, broader fault testing, and an ON-state light-sleep evaluation | Preserve instrument timing through SD stalls and measure the remaining battery-saving opportunity |
 
 Phase 1 should be independently releasable. Avoid making it depend on a new storage task, a global
-filesystem abstraction, a JSON schema migration, or a persistent internal-flash journal.
+filesystem abstraction, a migration of existing JSON files, or a persistent internal-flash journal.
+New optional revision/completion fields are in Phase 1; existing files without them remain supported.
+Continuous IGC/bus-log write, synchronization, signing, and close behavior remain unchanged in
+Phase 1. Recording the existing track association earlier in JSON is included.
 
 ## Incident evidence
 
@@ -63,7 +131,33 @@ Recovering unreferenced cluster contents requires offline analysis. Filename-bas
 cannot recover this existing incident from the visible zero-byte file, nor guarantee that all future
 FAT corruption is repairable.
 
-## Current weaknesses and implementation boundaries
+### What Phase 1 addresses about this incident
+
+Phase 1 directly addresses the demonstrated application-level loss windows: unchecked replacement,
+removing the previous main before promotion, destructive recovery, and ignoring final-save failure.
+Checked writes/sync/close/readback, a retained previous valid file, recoverable temporary promotion,
+and bounded final-save retries are intended to prevent avoidable loss and recover automatically
+when a valid named candidate survives. Earlier track association can preserve the IGC link even
+when only a placeholder survives; that is not recovery of the final flight metrics.
+
+The original trigger remains unproven. Phase 1 cannot guarantee prevention of the exact observed
+FAT/directory corruption, repair the supplied image, or recover a final payload that survives only
+in unreferenced clusters. A same-card backup may also be affected by filesystem or card failure.
+If no named completed candidate survives, a preserved placeholder is only partial protection.
+Firmware-wide writer/lifecycle auditing remains in Phase 2.
+
+Treat this as targeted mitigation of known weaknesses consistent with the incident, not a verified
+root-cause fix. Fault injection must cover an empty/malformed main with surviving candidates;
+FAT-backed and controlled hardware interruption tests must establish the new sequence's actual
+behavior before claiming power-loss resilience. The incident alone cannot establish a recurrence
+rate or quantify the risk reduction.
+
+## Historical weaknesses identified before Phase 1
+
+The following table describes the investigated code before #430. Phase 1 replaces the unchecked
+logbook/result saves and destructive recovery, and handles finalization failures through the
+bounded save sequence and user feedback. Continuous-track and other-writer guarantees remain
+Phase 2 work; these historical rows are not a list of current logbook implementation defects.
 
 | Area | Observed behavior | Consequence |
 | --- | --- | --- |
@@ -75,10 +169,11 @@ FAT corruption is repairable.
 | `src/vario/power.cpp` | Stops the flight before power-down but cannot act on the ignored save result | Shutdown cannot reliably report or retry a failed finalization |
 | Other writers | Profiles, routes, waypoints, web handlers, and diagnostics use different save strategies | Fixes confined to flight JSON leave similar weaknesses elsewhere |
 
-These flight-save weaknesses were present in `v0.2.3` and remained in the current code reviewed.
-Current `storage/sd_card.*` already implements firmware/USB ownership states and handoffs; extend
-and audit that design in phase 2 rather than introducing another ownership mechanism. Its presence
-does not establish that USB caused this incident or that every caller already observes it correctly.
+These flight-save weaknesses were present in `v0.2.3` and in the code reviewed during the
+original investigation. Current `storage/sd_card.*` implements firmware/USB ownership states and
+handoffs, with Phase 1 logbook transaction coordination. Extend and audit that design across all
+storage users in Phase 2 rather than introducing another ownership mechanism. Its presence does
+not establish that USB caused this incident or that every caller already observes it correctly.
 
 ### Synchronization details that affect the design
 
@@ -97,113 +192,388 @@ overwrite-rename semantics will not work. The replacement sequence must remain r
 multiple metadata operations. Even successful sync and readback cannot prove survival of a later
 power interruption or SD-controller failure.
 
-## Phase 1: simplest changes with the highest impact
+## Phase 1: implemented focused logbook hardening
+
+The 2026-10-22 scope replaces the original proposal to keep failed completed flights in RAM for
+later background retries. Complete one short save sequence, report its outcome, preserve recoverable
+files, and release the resources. A previous failure must not prevent recording a new flight.
 
 ### 1. Share one checked logbook replacement routine
 
 Use the same narrow routine for placeholders, first-fix/time updates, completed flights, and Leaf Log
-upload/rejection status updates. Leave unrelated storage callers for phase 2.
+upload/rejection status updates. Leave unrelated storage callers for Phase 2.
 
-Proposed sequence:
+Required sequence:
 
-1. Require firmware filesystem ownership and resolve an earlier incomplete transaction before
-   reusing its temporary or backup filename. Do not truncate the only valid candidate.
-2. Build the JSON document and reject allocation/overflow failures. Measure the expected serialized
-   length and check the exact written count, including any trailing newline.
-3. Write a temporary file in the same directory through buffered output. Check write errors,
-   `fflush()`, `fsync()`, and close, preserving the original failure if cleanup also fails.
-4. Reopen and validate the temporary file: expected length, complete JSON with no unexpected
-   trailing content, supported schema, matching flight identity, and required fields for the
-   intended placeholder or completed record. Parsing successfully as `{}` is insufficient.
-5. Preserve the previous valid main file as `.bak`, then promote the verified `.tmp` to the main
-   name. Check each operation. A failed promotion must retain the valid temporary and backup
-   candidates; rollback must also be checked.
-6. Confirm the promoted path is readable and valid before treating the save as successful. Retain
-   a bounded previous valid copy; remove an older backup only when another validated copy exists.
-   Define backup rotation and cleanup explicitly rather than deleting every backup eagerly.
+1. Require firmware filesystem ownership and serialize the complete logbook transaction against
+   recovery, readers, other logbook saves, and deletion. Coordinate the affected ownership transition
+   boundaries; an ownership check only at open is insufficient if a handoff can occur mid-save.
+   Use the existing ownership design, not a second ownership mechanism.
+2. Resolve an earlier incomplete transaction before reusing its temporary or backup filename.
+   Do not truncate the only valid candidate or overwrite unresolved conflicting evidence.
+3. Build the JSON document, including the revision/completion metadata below, and reject
+   allocation/overflow failures. Measure the expected serialized length and check the exact
+   written count, including any trailing newline.
+4. Write a temporary file in the same directory through buffered output. Check write errors,
+   `fflush()`, `fsync()`, and close, preserving the original failure if cleanup also fails. Use one
+   handle/buffering model; close a failed handle before a safe retry.
+5. Reopen and validate the temporary file: expected length, complete JSON with no unexpected
+   trailing content, supported schema, matching flight identity, valid ordering metadata, and
+   required fields for the intended placeholder or completed record. Parsing as `{}` is insufficient.
+6. Preserve the previous valid main file as `.bak`, then promote the verified `.tmp` to the main name.
+   Check each operation and any rollback. Keep at most one ordinary previous-version backup per
+   flight; rotate an older backup only after the new temporary and current main are validated.
+   A failed rotation or promotion must preserve the surviving valid candidates.
+7. Confirm the promoted path is readable and valid before treating the save as successful. Retain
+   the previous valid backup. Conflicting evidence is an exception to routine cleanup, not a reason
+   to delete the only recoverable copy.
 
-Keep the existing JSON fields and filenames in phase 1. Use stream serialization and reuse a single
-JSON document for readback, avoiding two simultaneous full documents or a serialized `String` copy.
-Bound validation size and nesting according to supported records without rejecting legitimate
-existing files or discarding fields during upload-status updates.
+Keep existing filenames, schema identity, and flight fields. Add only compatible optional metadata;
+do not rewrite old files just to migrate them. Use stream serialization and one JSON document at a
+time across serialization, validation, and recovery. Bound validation size and nesting without
+rejecting legitimate existing files or discarding additional fields during upload-status updates.
 
-### 2. Replace destructive recovery with conservative candidate validation
+### 2. Add revision and completion metadata for automatic ordering
+
+Move this small addition from Phase 2 into Phase 1 so users do not have to arbitrate recovery files:
+
+- Add a per-flight revision and explicit completion state to newly written records. Define exact
+  field names/types and validation in implementation; compatibility tests must cover all readers.
+- Advance the revision for each replacement, including Leaf Log status updates. Account for all
+  surviving validated candidates, including an unpromoted temporary, before assigning another
+  revision. A failed attempt must not allow different payloads to reuse an ordering value.
+- Preserve identity, the original ending time, and completed state across retries and upload-status
+  updates. A retry of the same logical save must not become a different flight or a later landing.
+- Define equal-revision conflicts, mixed legacy/new candidates, and counter overflow explicitly;
+  do not silently wrap the counter or infer ordering from FAT timestamps.
+- Recover the newest validated completed revision when ordering is established; never let an
+  incomplete placeholder displace a known completed record merely because of its revision.
+- Completion means the flight summary is finalized. It does not certify IGC write/close success,
+  physical power-loss durability, or upload acceptance.
+- Support older files without the metadata. Do not mark them invalid or upload-ineligible solely
+  because the fields are absent, and do not invent ordering for conflicting legacy records.
+- Newly marked incomplete records must not become upload-eligible merely because JSON now
+  contains the early track path. Leaf Log status updates must preserve completion and flight content.
+
+### 3. Replace destructive recovery with automatic candidate validation
 
 - Validate main, `.tmp`, and `.bak` independently. Existence alone is never a validity test.
 - Recover a valid replacement when the main file is missing, empty, or malformed. Prefer a
-  completed record over an earlier placeholder for the same flight when the evidence is clear.
-- Preserve conflicting valid completed records when their ordering cannot be established. Do not
-  guess from FAT timestamps or delete the ambiguous candidate; expose an unresolved recovery state.
-- Keep a valid main record when it is clearly authoritative, and clean up alternatives only after
-  validation establishes they are redundant. Never delete the only valid copy.
-- Discover candidate sets even when only `.tmp` or `.bak` exists. Normal `.json` enumeration alone
-  will miss them. Run a bounded recovery pass before normal logbook enumeration and Leaf Log scans,
-  and before overwriting candidates for the same flight.
+  completed record over an earlier placeholder for the same flight when the evidence is clear;
+  use the new metadata where available.
+- Preserve conflicting valid completed records when ordering cannot be established, including
+  legacy conflicts and inconsistent equal revisions. Record unresolved ambiguity in compact
+  internal diagnostics; never ask the user to choose filenames or compare duplicate records.
+- Keep one normal logbook entry per flight, with recovery candidates excluded from the ordinary
+  list. Keep a valid main as the displayed entry where safe, without claiming an uncertain record
+  is the latest. If no safe selection is possible, preserve the candidates and report a simple
+  unavailable/save-failure outcome rather than asking for arbitration.
+- Clean alternatives only after validation establishes they are redundant. Unresolved recovery
+  for an older flight must not block unrelated new flights.
+- Discover candidate sets even when only `.tmp` or `.bak` exists. Existing logbook scans enumerate
+  one logical path per set; recover the selected set before presenting its summary or classifying
+  it for upload, after closing the directory iterator. Leaf Log discovery remains sliced and uses
+  its existing SD-backed queue. Resolve a flight's candidates before saving to its path. Do not
+  parse every historical main file or scan card sectors on boot.
 - Process one candidate set at a time. Do not mutate directory entries under a live iterator in a
   way that skips entries; close/resume safely or use an explicitly bounded work list.
 - Serialize recovery against saves and readers. Opening a summary must not remove an active
   writer's temporary file.
-- Make intentional deletion remove associated candidates and cancel pending retries so a deleted
-  flight cannot reappear during recovery. Treat deletion differently from failed replacement.
+- Intentional deletion must remove associated candidates and coordinate with an active save so
+  a deleted flight cannot reappear. Cover summary, logbook-menu, and web deletion paths. Check
+  each removal, retain the main until candidate/track cleanup succeeds, and permit retry after
+  partial failure. Show "Not fully deleted" on the device and a simple inline web deletion error;
+  record technical details internally. Routine redundant-temp cleanup errors are diagnostic,
+  not a false claim that the user requested deletion or that a verified save failed.
+- Handle unsynced-to-timestamp filename changes together with their recovery candidates so old
+  paths do not produce duplicate flights or orphan the only valid copy.
 
-This is a small directory/candidate recovery operation, not an on-device FAT checker or a scan of
-the card's unreferenced sectors. Keep the original image as an offline regression reference; use
-small synthetic fixtures in automated tests instead of checking in user data.
+This is filename-based recovery, not an on-device FAT checker or unreferenced-sector scan. Keep
+the incident image and user data outside the repository; use small synthetic test fixtures.
 
-### 3. Preserve failed finalizations and report them accurately
+### 4. Finish each completed flight with bounded retries and release RAM
 
-- Check `finalize()` and retain a bounded completed-flight snapshot until save succeeds. Capture
-  statistics, flight ID/path, pilot/glider context, track association/status, clock validity, and
-  the actual ending time once. A retry must not move the landing time forward.
-- Keep pending completed data separate from the next active flight. Use bounded retries with
-  backoff instead of a tight loop, including a bounded retry opportunity during ordinary shutdown.
-- Define pending capacity and full-capacity behavior explicitly. A later flight must not silently
-  overwrite an unsaved one. RAM retention handles transient failures, not power loss.
-- Show separate track and logbook outcomes. For example, show `Track saved; logbook save failed`
-  only when track success is known; otherwise report the uncertainty. Do not play/display an
-  unconditional save-success indication after failure.
-- Record the IGC path in the existing first-fix update once the track opens, rather than waiting
-  until finalization. Preserve that association in subsequent placeholder/time updates. Reuse the
-  existing save milestone instead of adding frequent writes.
-- Report a compact failure stage and error code to existing diagnostics/serial output. Storage
-  failure reporting must not recursively attempt more writes to the failing card.
+At flight stop, including a stop initiated by shutdown:
 
-### 4. Verify the focused change before release
+1. Check `finalize()` and freeze the completed-flight data once: statistics, flight ID/path,
+   pilot/glider context, track association/status, relevant clock/timezone validity and values,
+   and the actual ending time. Reuse existing flight state where practical instead of duplicating it.
+2. Attempt the checked save. If it fails, inspect/reconcile the surviving candidates before another
+   attempt. Complete a verified temporary's promotion or recognize an already validated result
+   where possible instead of blindly rewriting the whole file.
+3. Allow at most two additional attempts (three total), with short pauses and an elapsed-time
+   budget. Stop early for clearly persistent errors; do not repeatedly remount, format, or retry
+   the same failed handle. A missing/full/damaged card is not fixed by an indefinite wait.
+4. Aim initially for about 1-2 seconds for the entire final-save sequence, including retry pauses.
+   This is a measurement target, not a guaranteed hard deadline: an individual blocking filesystem
+   call may overrun the application budget. Check the budget before starting further work, measure
+   underlying failure timeouts, and document the observed worst-case completion/shutdown delay.
+   Do not try to enforce a deadline by abandoning a live filesystem operation unsafely.
+5. Finish with a verified success or an explicit save failure. Preserve useful named candidates,
+   close handles, and release temporary documents, buffers, and any completed-flight retry state
+   on both outcomes. Do not allocate a session-long pending snapshot, multi-flight queue, retained
+   JSON document/string, dedicated retry task/stack, or later background-finalization retry.
+   Only compact status/error bookkeeping and the small metadata needed by normal active-flight
+   handling may remain. Measure the added steady-state footprint as well as peak save memory.
 
-Add meaningful fault-injection tests for the shared routine and its callers:
+UI and timing requirements:
 
-- Short/zero writes, full storage, JSON allocation failure, and sync/close failure.
-- Failed backup/promotion/rollback operations and interruption between every replacement step.
-- Zero-byte or malformed main files with a valid temporary or backup; temporary-only and
-  backup-only candidate sets; conflicting valid records; repeated recovery.
-- Failed finalization followed by retry, a subsequent flight, shutdown, and intentional deletion.
-- Leaf Log status updates retaining the flight content and the same recovery guarantees.
-- Existing records without new metadata, valid unsynced/no-GPS flights, and flights without tracks.
+- A brief "Saving flight..." dialog and temporary prevention of another flight start are acceptable
+  only while the bounded completion sequence runs. No acknowledgement is required to finish it.
+  Once terminal success/failure is reached, an older failure must never block a new flight.
+- Flight start, placeholder, first-fix, and clock/time updates occur during normal instrument use:
+  no saving dialog, deliberate multi-second pause, or immediate multi-attempt retry loop there.
+  Make one checked attempt at the existing milestone, return control promptly, and defer any
+  further attempt to a later suitable milestone or explicitly rate-limited opportunity. Prevent
+  an unsuccessful placeholder flag from producing a retry/write storm on every log update.
+- Recovery discovery and validation must respect start/in-flight responsiveness too. Measure
+  unavoidable single-operation stalls; do not treat the final-save target as an acceptable added
+  delay at flight start. Service required system/watchdog work during retry waits.
+- Ordinary shutdown keeps processor and card power available until its bounded save sequence
+  finishes. The display may be cleared while saving; a "Saving flight..." indication is permitted.
+  Do not release the power latch or hand the card to USB in the middle of the transaction.
+  Report failure appropriately before completing shutdown, without demanding user input.
+- Low-battery shutdown uses the same nominal time/attempt budget as ordinary shutdown; do not
+  shorten the save opportunity just because the low-battery threshold was reached. The maintainer
+  reports minutes of operating reserve beyond that threshold, so the bounded, single-digit-second
+  save opportunity is acceptable. Neither shutdown path may wait indefinitely for a bad card.
+  A stop immediately followed by shutdown must not restart an exhausted retry sequence for the
+  same completed flight.
+- Report track and logbook outcomes separately. Do not claim "Track saved" from a filename or
+  open handle alone, or play/display unconditional save success after logbook failure. Phase 1
+  leaves IGC write, synchronization, and close behavior unchanged, so report uncertainty honestly.
+- Record the IGC path in the existing first-fix JSON update once the track opens, and preserve it
+  in subsequent placeholder/time updates. Do not add frequent checkpoints or change IGC writing.
+- Report a compact failure stage/code through existing diagnostics/serial output. Failure reporting
+  must not recursively write to the failing card or retain a flight payload in diagnostics.
 
-The host-directory simulator can test application decisions but does not reproduce FAT metadata
-ordering. Include a focused FAT-backed test and controlled hardware interruption checks for this
-save sequence before declaring power-failure behavior verified. Follow the repository's firmware
-verification workflow when implementing the change.
+Releasing RAM after the bounded sequence intentionally gives up delayed retries if storage becomes
+usable much later. RAM also cannot survive power loss. Cross-boot recovery relies on surviving named
+candidates; neither these files nor summary metadata constitute an in-memory IGC track backup.
+
+### 5. Verify the focused change before release
+
+Add meaningful fault-injection and integration tests covering:
+
+- Short/zero writes, full/missing storage, JSON allocation failure, and sync/close failure.
+- Failed backup rotation, promotion, rollback, and interruption between every replacement step.
+- Empty/malformed main with a valid temporary or backup; temporary-only/backup-only candidate
+  sets; conflicting completed records; idempotent repeated recovery and candidate discovery.
+- Revisions across interrupted attempts, equal-revision conflicts, mixed legacy/new records,
+  counter overflow, and completion preserved through Leaf Log status updates.
+- A failed finalization followed by success, exhaustion, early persistent-error exit, elapsed-budget
+  exhaustion, ordinary/low-battery shutdown, and repeated stop/shutdown without renewed retries.
+- Frozen landing time/context, cleanup on success and failure, no retained queue or boot-session
+  retry allocation, and a new flight starting normally after an earlier terminal failure.
+- Intentional deletion from all entry points, concurrent reads/status updates, filename changes,
+  and ownership transitions without candidate resurrection or destruction.
+- No completion dialog or intentional retry delay at flight start/first fix/time updates; bounded
+  recovery and no repeated per-update placeholder write storm.
+- Existing files without metadata, legitimate additional fields, valid unsynced/no-GPS flights,
+  flights without tracks, and web/export/upload compatibility.
+- Early track association without premature upload or a false claim of IGC durability.
+- Slow and nearly full cards: peak heap, largest free block, memory released after success/failure,
+  steady-state RAM change, save duration, worst instrument stall, and shutdown failure-path latency.
+
+The host-directory simulator verifies application decisions but does not reproduce FAT metadata
+ordering. Include a focused FAT-backed test and controlled hardware interruption checks before
+declaring power-failure behavior verified. Follow the repository's firmware verification workflow
+when implementing the change, and the runtime-report requirements before publishing a release.
 
 Phase 1 exit criteria:
 
-- A failed save does not intentionally discard the previous valid record or the pending snapshot.
-- Whenever a valid named candidate survives, recovery preserves it and selects it when unambiguous.
-  Unresolved ambiguity remains visible and preserves evidence.
-- Success requires checked I/O and a validated promoted file. An unrecoverable error remains visible.
-- Added work occurs at existing save milestones; no new per-fix sync, whole-card scan, or
-  unbounded RAM collection is introduced. Measure peak heap and save latency against a baseline.
+- A failed replacement never intentionally discards the only valid named copy. The completed-flight
+  RAM source remains intact throughout the bounded save sequence, then is deliberately released
+  on success or terminal failure; it is not retained indefinitely.
+- Recovery selects a validated candidate automatically when ordering is established. Conflicts
+  preserve evidence and diagnostic visibility without duplicate-file arbitration by users.
+- New revision/completion metadata works with existing files/readers and does not change IGC
+  behavior or make incomplete records eligible for upload.
+- Success requires checked I/O and a validated promoted file. Terminal failure remains visible,
+  resources are released, and subsequent flight capture is allowed.
+- No new long-lived flight-save buffer/queue or retry task is introduced. Temporary save resources
+  are released; any small permanent bookkeeping increase is measured explicitly.
+- Added writes occur at existing milestones and bounded failure attempts. No in-flight saving
+  dialog, deliberate long start pause, per-fix sync, whole-card scan, or unbounded work is introduced.
+- Retry count and elapsed budgets, shared by ordinary and low-battery shutdown, and measured
+  memory/stall/shutdown costs are documented. The 1-2 second final-save target is not presented
+  as a hardware guarantee.
 
-## Phase 2: complete refinement across the firmware
+### Implementation and verification record, 2026-10-23
 
-### 1. Audit and coordinate every storage user
+Implemented in the isolated Phase 1 worktree based on main at `9ae9fe80`. The shared routine is
+`src/vario/logbook/logbook_io.*`; its caller contract, recovery triggers, resource policy, and test
+instructions are documented in [the logbook README](https://github.com/DangerMonkeys/leaf/blob/main/src/vario/logbook/README.md).
+
+Implementation details fixed by this change:
+
+- New optional fields are `revision` (positive uint32) and `complete` (boolean); schema version
+  remains `v0.1.0`. Counter overflow, conflicting equal revisions, and unreadable candidates fail
+  conservatively. Supported sparse legacy records and additional fields survive status updates.
+- Candidate validation is limited to 64 KiB and nesting 16. Unsupported schemas and over-limit
+  candidates remain untouched. JSON fingerprints check readback content without a serialized
+  RAM copy; they are transient comparisons, not a persisted checksum or corruption-repair feature.
+- A selected recovery candidate receives checked sync/close again before promotion. A previous
+  failed sync is not silently converted into success just because parsing later succeeds.
+- Finalization uses three attempts maximum, 100 ms between eligible retries, and a 2,000 ms budget
+  checked before further attempts. There is no retained queue or background-finalization retry.
+  Ordinary and low-battery shutdown share this policy. Filesystem calls or waiting for an already
+  active transaction can exceed the application budget; device worst-case timing is unmeasured.
+- A terminal save failure is displayed for one second before the normal summary/shutdown flow;
+  this feedback interval is separate from the save budget. Opening that failed summary does not
+  start another promotion. New-flight capture remains available after the sequence returns.
+- Failed ordinary placeholder attempts are rate-limited to 30 seconds. A new first-fix, track,
+  or clock milestone may request one earlier attempt. No start/in-flight completion dialog or
+  immediate retry loop was added; IGC writer/sync/close behavior is unchanged.
+- Directory enumeration discovers one logical path for main/temporary/backup sets. Recovery runs
+  after the iterator closes, when the selected summary or queued upload candidate is read. No
+  separate boot-wide rewrite or recovery task was introduced.
+- Deletion covers recovery candidates, referenced tracks, and matching old filename aliases.
+  It keeps the main until cleanup succeeds and rejects deletion of an active flight. Device
+  screens show partial failure; an unavailable record still permits navigation/deletion. Web
+  errors remain inline. Storage-failure reporting uses serial rather than recursive SD diagnostics.
+
+Completed verification:
+
+| Check | Result |
+| --- | --- |
+| Repository formatter and whitespace checks | Passed |
+| `leaf_3_2_6_release` firmware build | Passed; 103,508 bytes static RAM, 2,383,724 bytes reported flash use |
+| `leaf_3_2_8_release` firmware build | Passed from clean implementation commit `2d928d0f`; 103,804 bytes static RAM, 2,366,328 bytes reported flash use |
+| Attached Leaf 3.2.8 application flash | Passed; both OTA slots (`0x10000`, `0x340000`) written and verified by esptool. Initial app-mode `COM44` disconnected during connection; the prescribed rescan/retry succeeded on ROM-mode `COM42`. Application USB returned as `COM44`. |
+| USB startup follow-up build/flash | Passed from clean commit `2567ddc3`; 103,804 bytes static RAM, 2,366,896 bytes reported flash use; both OTA slots written and verified, with the same app-to-ROM port nudge/retry |
+| Native USB diagnostic regression | Passed: real writer and connection lifecycle compiled against a stalled endpoint; 10,000 full-FIFO attempts return without waiting, with stale connection state, partial writes, contention, ISR, detach/reconnect, and failed transitions covered |
+| Leaf 3.2.8 normal no-fix saves | Passed on follow-up candidate: three operator-run short flights, responsive starts and normal summaries; each JSON parses, has `complete=true`, revision 2, 11-second duration, and one revision-1 incomplete backup. No `.tmp` files remain; `track.saved=false` and no new IGC are correct without a GPS fix. Operator estimated the stop-only saving display at about 200 ms; this is not an instrumented save-duration measurement. |
+| Leaf 3.2.8 absent-card stop and next flight | Passed with Save IGC off: operator removed the card after the placeholder settled, stopped, observed prompt failure feedback/UI return, reinserted, and completed another flight. Card inspection found the first revision-1 incomplete placeholder preserved and the new flight completed at revision 2 with 12-second duration and one prior placeholder backup. No `.tmp` files remain. This tests persistent absence, not all-three-attempt transient recovery. |
+| Leaf 3.2.8 staged candidate recovery | Passed: isolated temporary-only (revision 5), backup-only (revision 3), and newer-completed-temporary-over-placeholder (revision 3) fixtures displayed expected durations of 111/222/333 seconds. Post-handoff inspection confirmed correct promoted main payloads/revisions, no remaining `.tmp`, and one prior incomplete backup for the replacement case. No physical power interruption was induced. |
+| Leaf 3.2.8 deletion and cold boot | Passed: operator deleted all three synthetic entries through the device and confirmed they stayed absent after unplugged shutdown and a fresh boot. Inspection found no matching main/temporary/backup or old-filename candidates, and both test-only referenced GPX files were removed, including the old alias's track. No `.tmp` files remain; the original five JSON records remain readable and original five IGC files remain present. Save IGC was requested restored to ON. |
+| `test-logbook-io` | Passed: injected write/sync/close/rename/cleanup/read/allocation failures, real JSON allocation denial, abrupt process exits, recovery/conflicts/limits, revisions, deletion/aliases, bounded retries, shutdown, new flights, and upload-status preservation |
+| Existing Leaf Log sync regression suite | Passed |
+| Existing thermal flight-lifecycle/shutdown regression suite | Passed |
+| Existing charging dialogs/ownership regression suite | Passed, including 46 native display captures |
+| Failure-screen visual review | Save failure, summary/logbook deletion failure, and unavailable-record captures inspected; text and controls do not overlap |
+| Disposable FAT32-backed test | Passed on Linux vfat, 512 MiB image, 4 KiB allocation units; same fault/process-exit suite, actual out-of-space failure preserving the previous record, recovery after freeing space, and clean read-only `fsck.fat -n` result |
+
+The final FAT-backed wall-time observation was approximately 3.3 ms for a placeholder and 3.0 ms
+for finalization. These are single host observations, not worst-case measurements or ESP32 timing.
+Simulator heap telemetry is a stub and is not evidence of target peak heap or memory release.
+
+Target symbol inspection shows `FlightStats` remains 144 bytes and `LogbookEntryFile` grows from
+184 to 232 bytes (+48). The new mutex handle and last-error globals occupy another 20 static bytes.
+These identified static costs exclude the mutex's runtime backing allocation and active-flight
+strings. There is no boot-session completed-flight buffer; actual target heap/stack measurements
+remain pending.
+
+Built `leaf_3_2_6_release` application SHA256:
+`0323b3eb3702720b805392ed71d7368b1885ec202b52e7924b926d163564c7fb`.
+
+Initial flashed `leaf_3_2_8_release` application SHA256:
+`2889ca71122ee5a30c1a4f9ee59a3f49b66c71f61296e34dbe4c035a6ac9875b`.
+This binary identifies clean commit `2d928d0fbaa141d521037822b0610f4f67c78a5a`.
+
+USB-startup follow-up flashed application SHA256:
+`ef71fc6f0f2890f46fa5765f41ed64cf2926e0f373cce1a425e0c96e316ffe60`.
+This binary identifies clean commit `2567ddc35460e244bd7bfcb961a8b4e7165bf365`.
+
+The initial implementation verification found no attached Leaf and did not attempt a flash. A
+Leaf 3.2.8 was subsequently attached and flashed as recorded above; manual no-fix saves,
+absent-card/new-flight, staged recovery, and deletion/cold-boot checks passed as recorded in the table.
+Hardware checks, using
+disposable/backed-up SD data, are:
+
+- Repeat normal timer start/stop saves, with and without a usable GPS fix; inspect summaries,
+  final JSON, retained backups, and temporary-file cleanup. USB deliberately disconnects when
+  leaving charge mode, so an attached USB monitor cannot collect subsequent `logbook finalization`
+  lines in normal operation. Use a saved developer runtime capture for instrument/button-task
+  stalls and heap observations, or explicit test instrumentation for exact save telemetry.
+  Compare repeated-cycle heap observations without treating
+  the before/after snapshot as a measurement of peak allocation or post-reset release.
+- With Save IGC temporarily off, start a test flight, allow its initial placeholder to settle,
+  remove the card, and stop. Check the short failure display and restored UI responsiveness.
+  Reinsert, then start/stop a new flight and confirm that the earlier failure does not block it.
+  This exercises known-absent media; it does not reproduce an interrupted in-flight IGC write or
+  a transient failure requiring all three attempts.
+- Stop via ordinary shutdown with a flight active, then restart and inspect its saved summary.
+- While the host safely owns the card, stage isolated synthetic temporary-only, backup-only,
+  and newer-temporary candidate sets. Release host ownership, select them in the logbook, and
+  inspect promotion/cleanup on the next host handoff. Delete a test record, restart, and verify
+  that it does not return. Preserve existing flight files and restore changed test settings.
+
+The first physical check exposed a charge-to-on freeze with a USB serial capture open: the LCD
+went blank and startup did not finish. Closing the capture and retrying on the same firmware
+restored normal startup. The installed Arduino USBCDC writer loops without a deadline while its
+FIFO is full; software USB detach can leave cached connection/DTR state asserted with no host
+able to drain it. A follow-up replaces only Leaf's native USB diagnostic writer with bounded,
+best-effort FIFO writes and a non-waiting transmit lock, and disables output before software
+detach. Reconnection enables it again. Saturated, contended, disconnected, and ISR diagnostics
+may be dropped; no extra output queue is allocated. A focused host test compiles the real writer
+against a permanently stalled endpoint, including stale connected state, partial writes, lock
+contention, detach, and reconnect. On the flashed follow-up candidate, the operator confirmed
+that charge-to-on now reaches normal operation with the USB serial monitor open. The monitor
+captured the center press/hold and observed the expected USB detach. This confirms one startup
+cycle under the previously failing condition; repeated monitored startup cycles and GPS-fix flight
+checks remain pending.
+The follow-up also passed the logbook regression and charging suite with 46 display captures.
+
+GPS/IGC association, active-flight shutdown, peak heap/largest block/stack headroom,
+slow/nearly-full-card timing, and controlled power interruption across multiple cards still need
+qualification. Linux vfat and process-exit tests do not reproduce target FatFs metadata ordering,
+SD-controller power loss, or the original incident's root cause. Reviewed exact-candidate runtime
+reports remain required before release publication; this implementation is not a release approval.
+
+## Phase 2: vario scheduling, storage isolation, and power
+
+These are proposed follow-ups. Start with the bounded RAM checkpoint mitigation and freshness
+checks in the [vario timing backlog](https://leafvario.com/dev-references/backlog/vario-timing-robustness/),
+then measure the dedicated vario/storage task prototype before committing to task affinity,
+queue sizes, or ON-state sleep. Keep IGC flush/error policy unchanged until that work is approved.
+
+### 1. Give the vario its own deadlines and state
+
+- Start with one higher-priority task pinned to Core 1. Preserve the existing 10 ms release
+  cadence and nominal 50 ms IMU service interval in the awake prototype. Use the hardware timer
+  to notify the task, let it block between releases, and derive deadlines from elapsed time.
+  Service the barometer when its conversion is due. Keep sample timestamps and validity through
+  fusion and audio. Count missed releases and resume with fresh inputs so an overrun does not
+  replay a burst of stale samples. Use the current 500 ms freshness limit initially; expire stale
+  climb and its tone, and verify recovery after FIFO overflow, stale pressure, and genuine filter resets.
+- Keep pressure conversion, IMU FIFO service, Kalman and climb state, and speaker timing under
+  that task's ownership. Publish a bounded timestamped snapshot for display, navigation, and
+  logging. Preserve per-sample flight metrics and interval extrema that a slower snapshot reader
+  could otherwise miss. Pass mute, volume, sound effects, and power transitions through bounded
+  commands. Route simulator and UDP-injected sensor inputs through the same ownership boundary.
+- Give the vario a direct sensor path. Its release must have no synchronous filesystem work,
+  message-bus callbacks, diagnostic formatting, heap allocation, or waits for lower-priority
+  work. Audit `Wire` users, including ambient sensing and the I/O expander. Bound their
+  transaction times or schedule them under one bus owner so they cannot stall a sensor read.
+- Keep TaskManager for UI, GPS, navigation, and power coordination. Preserve bounded work slices
+  and give the loop a way to block while it has no work, with a timely wake for GPS servicing.
+  Measure priorities with the existing radios active. Keep the exported slot labels in
+  `src/vario/diagnostics/cpu_utilization.cpp` synchronized with the schedule.
+
+### 2. Move card access to one storage worker
 
 Inventory all `SD_MMC`, raw SD, and FatFs users, including IGC, bus logs, logbooks, profiles, routes,
 GPX imports, user waypoints, web reads/writes/downloads, firmware updates, commissioning/self-test
 files, Leaf Log scratch queues, and diagnostics. Classify durable user data separately from
 rebuildable scratch data so temporary queues do not incur the same validation cost as flight records.
 
-Extend `storage/sd_card.*` with a small lifecycle/transaction guard that:
+After the RAM-only checkpoint mitigation, start the worker with System Events and verify vario
+timing under a forced worker stall. Then move normal IGC and logbook work onto the same low-priority
+worker. Migrate the remaining ON-state readers, writers, and mount operations through that boundary.
+Producers submit small records
+with zero wait and consumers handle pending results. The worker owns file handles and does formatting,
+writes, synchronization, close, and recovery. It blocks when its queue is empty. Keep locks used by
+the vario free of I/O and formatting work.
+
+Prototype the worker on Core 0, including SDMMC initialization and teardown, so the SDMMC
+interrupt is allocated and freed on the worker's core. Compare with a lower-priority same-core
+worker under radio load before settling on affinity. Leaf uses SDMMC independently of sensor
+I²C, so a long card busy period can stay local to the storage worker. Measure interrupt and
+shared-memory contention. Internal SPI flash operations such as NVS commits have different
+cross-core effects and need separate timing measurements.
+
+Extend the lifecycle in `storage/sd_card.*` so the worker:
 
 - Requires firmware ownership throughout firmware I/O, not just at the initial open.
 - Accounts for active transactions and long-lived readers/writers before ownership changes.
@@ -211,57 +581,59 @@ Extend `storage/sd_card.*` with a small lifecycle/transaction guard that:
 - Stops new writes and drains current work before unmount, format, USB handoff, or orderly shutdown.
 - Handles removal, failed remount, and reinsertion without reusing stale file handles.
 
-Do not assume per-operation filesystem locks protect a multi-step save transaction. The installed
-SDK has `CONFIG_FATFS_FS_LOCK=0`; audit explicit handle ownership and synchronization rather than
-assuming duplicate-open/rename protection exists. Prefer a small guard and existing scheduling
-unless measurements demonstrate a need for a dedicated storage task.
+The installed SDK has `CONFIG_FATFS_FS_LOCK=0`. Use explicit handle ownership and keep each
+multi-step save transaction serialized against competing readers, deletion, and recovery.
 
-Coordinate with the [USB ownership backlog](usb-mass-storage-power-on-ownership.md). Firmware must
+Coordinate with the [USB ownership backlog](https://leafvario.com/dev-references/backlog/usb-mass-storage-power-on-ownership/). Firmware must
 not access FAT while a USB host owns the medium. USB inactivity/suspend does not establish safe
 release, and forcing disconnection cannot flush unsent host caches.
 
-### 2. Introduce one bounded storage-drain sequence
+### 3. Introduce one bounded storage-drain sequence
 
 Use a common sequence for shutdown and transitions: reject new work, finish/check pending track
 and logbook writes, flush/close other writers, then unmount or hand off ownership as appropriate.
-Recheck the boundary before USB presentation and power-latch release. Low-battery shutdown needs a
-strict time budget so retrying a bad card cannot indefinitely delay power-off.
+Recheck the boundary before USB presentation and power-latch release. Both ordinary and low-battery
+shutdown use bounded save/drain timing so retrying a bad card cannot indefinitely delay power-off;
+Phase 1 does not shorten the retry budget at the low-battery threshold.
 
 Recovery should run before normal writes, including diagnostics, when firmware acquires the card.
 Defer opportunistic diagnostic writes during critical commits. Avoid repeated remount/retry storms
 after a persistent failure; retain useful state and give the user a clear storage outcome.
 
-### 3. Harden continuous IGC and bus logging
+### 4. Harden continuous IGC and bus logging
 
 - Propagate short writes, write failures, synchronization errors, and close results from the track
   writer. Having a filename or an open handle is not proof that the track was saved.
 - Evaluate periodic checked IGC synchronization, initially around 15-30 seconds, and a final sync
   at flight end. Select the interval from measured latency and acceptable recent-data loss.
 - Use buffered/block writes; avoid synchronizing every GPS fix or sensor message.
-- Measure the longest blocking SD operation, not just average throughput. Instrument updates share
-  execution time with storage work, and an individual card operation may exceed a scheduler budget.
-- Give optional high-rate bus/diagnostic logging a separate buffering/sync policy and lower priority
-  than preserving flight data. Keep buffers bounded and overflow behavior explicit.
+- Size preallocated queues from peak record rate times the stall interval to absorb, plus room for
+  bursts and in-flight work. Measure longest open/write/sync/close operations as well as throughput.
+  Batching reduces filesystem work. A card busy period can still exceed many 10 ms releases.
+- Reserve queue capacity for flight records. Drop and count optional diagnostics first. If a card
+  stays slow or disappears and flight data cannot be queued, surface the logging fault and keep the
+  vario running. Ensure a full data queue cannot prevent a stop, drain, or ownership transition.
 
 Leave global `CONFIG_FATFS_IMMEDIATE_FSYNC` disabled unless measurements justify changing it; it
 increases disk operations for all affected writers rather than only important commit boundaries.
 
-### 4. Apply recoverable saves and stronger ordering consistently
+### 5. Apply recoverable saves and stronger ordering consistently
 
-Migrate durable profile, route, waypoint, and related web-handler saves to the phase 1 routine with
-appropriate validators. Remove duplicate replacement implementations as they are migrated. Preserve
-existing data and public formats, and define recovery/deletion rules for each file family.
+Checked replacement saves for profiles, routes, and waypoints are already implemented as recorded
+in the November 20 status above. Audit remaining durable writers and their validators rather than
+reopening that completed migration. Preserve existing data and public formats, and define
+recovery/deletion rules for each file family.
 
-Add a small revision counter and explicit completion state for new logbook records if needed to
-resolve candidate ordering deterministically. Preserve completed-flight state through later upload
-status updates, support older files without these fields, and verify web/export/upload compatibility.
-Do not use coarse FAT timestamps as transaction sequence numbers.
+Revision/completion metadata for logbook ordering is now part of Phase 1. Phase 2 extends and
+audits that policy across other durable file families where needed, preserving legacy compatibility
+and completed-flight state through later updates. Do not use coarse FAT timestamps as transaction
+sequence numbers.
 
 Consider a streamed length/checksum mechanism only if testing shows a gap beyond checked writes
 and structural validation, such as syntactically valid corruption. Keep it bounded and compatible
 with legitimate edits; a checksum detects damage but cannot restore missing data or repair FAT.
 
-### 5. Make diagnostics and resource budgets explicit
+### 6. Make diagnostics and resource budgets explicit
 
 Record compact counters and the last failure's stage, code, expected/actual bytes, flight ID, and
 reset reason. Keep failure-path diagnostics in bounded RAM/serial output when the card is failing;
@@ -272,9 +644,9 @@ flight payloads or location data in routine error messages.
 | --- | --- | --- |
 | Checked JSON commits | One reusable document, small buffered I/O, a few bounded passes at save milestones | One replacement plus validation reads |
 | Recovery | One candidate set at a time; sliced directory work | Read recovery candidates, not every historical JSON or every card sector |
-| Retained finalization | One bounded snapshot/capacity policy and infrequent retries | Retries only after failures |
+| Bounded finalization | Reuse flight state only during the final-save sequence; release retry resources afterward | At most three total attempts within an elapsed budget; no session-long retry queue |
 | Previous valid copy | Small bookkeeping; no full-file RAM duplicate | Approximately one allocation unit per small backup: 4 KiB on this image, typically 16 KiB with the current formatter |
-| Periodic track sync | No unbounded queue; measure worst-case stalls | One sync per selected interval, not per fix |
+| Periodic track sync | Preallocated queue sized for measured stalls | One sync per selected interval, plus final sync |
 | Diagnostics | Fixed counters/last-error record | Rate-limited; never recursive on SD failure |
 
 Measure peak heap, largest free block, stack use, flash growth, save duration, longest instrument-loop
@@ -282,7 +654,17 @@ stall, synchronization frequency, and write amplification. Test on supported har
 cards, including slow, nearly full, and failing/removal scenarios. Avoid increasing allocation size,
 preallocating large files, or changing buffering globally without evidence of a useful tradeoff.
 
-### 6. Expand validation to the complete lifecycle
+### 7. Verify that storage faults stay out of the vario
+
+Deliberately delay the worker through queue saturation and repeat with slow and nearly full cards
+and during removal. Exercise flight start and stop, display/navigation load, and active radios.
+Measure vario release-to-start delay, barometer conversion timing, IMU and pressure sample gaps,
+FIFO/gravity/Kalman reset reasons, audio transitions, GPS continuity, queue high-water marks and
+drops, and storage operation durations. Use bounded RAM timing or a logic analyzer for the System
+Events reproduction because the existing runtime capture suppresses heap checkpoint SD writes.
+Test on both the ICM-20948 and LSM6DSV hardware paths. An induced storage stall should produce
+zero SD-induced sensor deadline misses, false climbs, or held tones. Check that the IGC and logbook
+survive recoverable delays and that a terminal logging failure is visible to the pilot.
 
 Exercise power interruption around data writes, sync, close, FAT updates, rename, backup rotation,
 and recovery. Include repeated boot/recovery, new flights after failures, manual deletion, card
@@ -294,9 +676,36 @@ behavior, and controlled hardware power cuts for real SD-controller behavior. In
 images offline for orphaned clusters, cross-links, and FAT disagreement. A passing host-filesystem
 test or successful readback is not proof of physical power-loss durability.
 
-Phase 2 exit criteria: every storage user has an explicit ownership/lifecycle policy, every durable
-replacement has defined recovery behavior, failures reach the caller/user appropriately, and measured
-resource use stays within an agreed instrument-responsiveness and memory budget.
+The awake architecture is ready when the timing tests above pass, every storage user has an
+explicit ownership policy, every durable replacement has defined recovery behavior, and measured
+resource use stays within the agreed responsiveness and memory budgets.
+
+### 8. Measure ON-state light sleep with the same architecture
+
+The [3.2.8 Navigate baseline](https://github.com/DangerMonkeys/leaf/tree/03ead991e92ff7907f331ade535cc05061b841be/utils/runtime_report/baselines/leaf-3_2_8-navigate-v1)
+shows spare execution time in normal 10 ms slots. Actual sleep residency depends on both cores,
+peripheral activity, and entry/wake overhead. Preserve one power coordinator that knows the next
+required deadline and whether vario, audio, storage, USB, and radios can safely idle.
+Design that interface with the awake refactor and evaluate sleep once its
+timing is stable.
+
+- Wake from an explicit sleep-capable timer before the next sensor release with measured margin.
+  Preserve sample time and conversion state across wake. Avoid sleep during active PWM (the
+  existing speaker driver disables its PWM timer in silence) and in-flight card transactions.
+  Verify wake behavior for buttons and FANET. Protect the GPS burst with an awake window or a
+  verified early wake signal. Waking on incoming NMEA UART activity can lose its first characters.
+  Check the SDK's power-management, tickless idle, and radio support before testing automatic sleep
+  with connected BLE or Wi-Fi.
+- On the same Leaf and workload, measure battery-input current for the current loop, the new
+  scheduler blocking between deadlines with the chip awake, and that scheduler with light sleep.
+  Record actual sleep residency, wake latency, and time blocked by audio, SD, or radio activity.
+  Start with live GPS and IGC plus intermittent and sustained tones. Repeat with connected BLE,
+  FANET traffic, and any supported connected Wi-Fi mode.
+- Use about 10% lower mean battery current in representative ON-state use as the proposed
+  threshold for prioritizing a rollout. Require preserved sensor timing, tone transitions, GPS
+  fixes, and logging continuity. Use awake operation whenever the wake deadline or peripheral
+  readiness is uncertain. If the measured benefit falls short, retain the deadline-driven awake
+  scheduler and revisit sleep as hardware or workloads change.
 
 ## Deferred options and limits
 
@@ -308,6 +717,9 @@ resource use stays within an agreed instrument-responsiveness and memory budget.
   weaknesses can be addressed first.
 - Do not rewrite JSON every second, checkpoint every sensor update, or journal continuously to
   internal flash. Revisit occasional checkpoints only with a defined recovery need and write budget.
+- Long-lived RAM snapshots, multi-flight pending queues, and delayed background finalization
+  retries are outside the agreed Phase 1 plan. Reconsider only with evidence of useful recovery
+  opportunities and an explicit memory/lifecycle budget.
 - If stronger completed-flight protection is still required after testing, evaluate a small bounded
   internal-flash pending-finalization record written once per completed flight. It should capture
   enough immutable data to replay the JSON save, survive reboot, and be cleared only after verified
@@ -328,7 +740,12 @@ metrics; report the distinction explicitly.
 - [FatFs rename requirements](https://elm-chan.org/fsw/ff/doc/rename.html)
 - [ESP-IDF 5.3 FAT filesystem support and configuration](https://docs.espressif.com/projects/esp-idf/en/v5.3/esp32s3/api-reference/storage/fatfs.html)
 - [ESP-IDF 5.3.2 VFS implementation](https://github.com/espressif/esp-idf/blob/v5.3.2/components/fatfs/vfs/vfs_fat.c)
-- [USB mass-storage ownership backlog](usb-mass-storage-power-on-ownership.md)
-- [Leaf Log auto-upload backlog](leaf-log-auto-upload.md)
-- [Diagnostic files cleanup backlog](diagnostic-files-cleanup.md)
-- [Heap availability improvements backlog](heap-availability-improvements.md)
+- [USB mass-storage ownership backlog](https://leafvario.com/dev-references/backlog/usb-mass-storage-power-on-ownership/)
+- [Leaf Log auto-upload backlog](https://leafvario.com/dev-references/backlog/leaf-log-auto-upload/)
+- [Diagnostic files cleanup backlog](https://leafvario.com/dev-references/backlog/diagnostic-files-cleanup/)
+- [Heap availability improvements backlog](https://leafvario.com/dev-references/backlog/heap-availability-improvements/)
+- [Vario timing robustness backlog](https://leafvario.com/dev-references/backlog/vario-timing-robustness/)
+- [Runtime assessment and capture workflow](https://leafvario.com/dev-references/runtime-assessment/)
+- [ESP32-S3 interrupt allocation](https://docs.espressif.com/projects/esp-idf/en/v5.3.2/esp32s3/api-reference/system/intr_alloc.html)
+- [ESP32-S3 power management](https://docs.espressif.com/projects/esp-idf/en/v5.3.2/esp32s3/api-reference/system/power_management.html)
+- [ESP32-S3 sleep modes and wake sources](https://docs.espressif.com/projects/esp-idf/en/v5.3.2/esp32s3/api-reference/system/sleep_modes.html)

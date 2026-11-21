@@ -3,6 +3,7 @@
 #include <FS.h>
 #include <SD_MMC.h>
 #include <string.h>
+#include <new>
 
 #include "navigation/gpx.h"
 #include "navigation/route_store.h"
@@ -83,15 +84,25 @@ PageGpxFileSelect::PageGpxFileSelect() {
   cursor_position = CURSOR_BACK;
   cursor_max = CURSOR_BACK;
   status_[0] = '\0';
+  loadFailed_ = false;
 }
 
 void PageGpxFileSelect::show() {
   mode_ = Mode::FolderSelect;
+  if (!fileNames_) fileNames_.reset(new (std::nothrow) FileName[MAX_GPX_FILES]);
   refreshIndex();
   push_page(this);
 }
 
+void PageGpxFileSelect::closed(bool removed) {
+  if (removed) fileNames_.reset();
+}
+
 bool PageGpxFileSelect::button_event(Button button, ButtonEvent state, uint8_t count) {
+  if (loadFailed_ && state == ButtonEvent::CLICKED) {
+    loadFailed_ = false;
+    return true;
+  }
   if (button == Button::NONE) return false;
 
   if (state == ButtonEvent::CLICKED) {
@@ -128,7 +139,7 @@ void PageGpxFileSelect::draw() {
   do {
     menu_ui::drawTitle("Load File", menu_ui::GLYPH_NAV_FILE);
 
-    if (fileCount_ == 0) {
+    if (fileCount_ == 0 || loadFailed_) {
       drawStatus();
     } else {
       ensureCursorVisible();
@@ -150,6 +161,14 @@ void PageGpxFileSelect::refreshIndex() {
   firstVisible_ = 0;
   tooManyFiles_ = false;
   status_[0] = '\0';
+  loadFailed_ = false;
+
+  if (!fileNames_) {
+    snprintf(status_, sizeof(status_), "Not enough memory");
+    cursor_position = CURSOR_BACK;
+    cursor_max = CURSOR_BACK;
+    return;
+  }
 
   if (!sdcard.isMounted()) {
     if (!SDCard::isCardPresent() || !sdcard.mount()) {
@@ -187,7 +206,13 @@ void PageGpxFileSelect::refreshIndex() {
   File entry = dir.openNextFile();
   while (entry) {
     if (!entry.isDirectory()) {
-      const String name = fileNameOnly(entry.name());
+      String name = fileNameOnly(entry.name());
+      // Show a route whose replacement was interrupted after its old main became a backup.
+      // Do not rename while a directory iterator is live; loadRouteFile recovers on selection.
+      if (mode_ == Mode::SavedRoutes && name.endsWith(".json.bak")) {
+        name.remove(name.length() - 4);
+        if (SD_MMC.exists(String(directoryPath()) + "/" + name)) name = "";
+      }
       if (supportedFileName(name.c_str())) {
         addFileName(name);
       }
@@ -371,15 +396,18 @@ void PageGpxFileSelect::loadSelectedFile() {
   Serial.print(mode_ == Mode::SavedRoutes ? "Loading saved route: " : "Loading nav file: ");
   Serial.println(path);
 
-  const bool success = mode_ == Mode::SavedRoutes ? route_store::loadRouteFile(path, true)
-                                                  : nav_readFile(SD_MMC, path);
+  NavLoadError error;
+  const bool success = mode_ == Mode::SavedRoutes ? route_store::loadRouteFile(path, true, &error)
+                                                  : nav_readFile(SD_MMC, path, &error);
   if (success) {
     speaker.playSound(fx::confirm);
     navDataMenuPage.backToNavDataMenu();
     pop_page();
   } else {
     speaker.playSound(fx::bad);
-    snprintf(status_, sizeof(status_), "Load failed");
+    loadFailed_ = true;
+    snprintf(status_, sizeof(status_), "%s",
+             error == NavLoadError::RoutePointLimit ? "20-point limit" : "Load failed");
   }
 }
 

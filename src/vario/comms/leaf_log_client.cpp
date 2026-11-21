@@ -8,6 +8,9 @@
 
 namespace leaf_log_client {
   namespace {
+    // Leave margin below Railway's five-minute request-body upload limit.
+    constexpr uint32_t UPLOAD_DEADLINE_MS = 4 * 60 * 1000;
+
     String baseUrlHost() {
       String host = leafLogBaseUrl();
       const int schemeEnd = host.indexOf("://");
@@ -99,7 +102,8 @@ namespace leaf_log_client {
     http.addHeader("Content-Type", "application/octet-stream");
     http.addHeader("Accept", "application/json");
 
-    CancellableFileStream stream(file, cancelRequested, urgentButtonPress, millis() + 60000);
+    CancellableFileStream stream(file, cancelRequested, urgentButtonPress,
+                                 millis() + UPLOAD_DEADLINE_MS);
     result.httpStatus = http.sendRequest("POST", &stream, result.fileSize);
     if (result.httpStatus <= 0) {
       char errorText[160] = {};

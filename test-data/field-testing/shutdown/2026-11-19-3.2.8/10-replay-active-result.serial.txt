@@ -1,0 +1,15 @@
+BENCH version 0.2.4-45ed.bench+h3.2.8
+BENCH version 0.2.4-45ed.bench+h3.2.8
+BENCH status On User -1 1 0 1 1 0 1
+
+HOST status
+BENCH status On User -1 1 0 1 1 0 1
+
+HOST heap
+BENCH heap 135812 85968 34804 7868
+
+HOST version
+BENCH version 0.2.4-45ed.bench+h3.2.8
+BENCH status On User -1 1 0 1 1 0 1
+BENCH heap 135812 85968 34804 7868
+BENCH web http://10.0.0.183/app

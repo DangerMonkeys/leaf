@@ -1,0 +1,16 @@
+{
+  "path": "test-data/field-testing/shutdown/2026-11-20-3.2.5-fanet/card-captures/09-first-shutdown/tracks/2026-11-20-XLV-000-01.igc",
+  "strict_validator": "STATUS_IGC_FAILED",
+  "strict_error": "non-printable record",
+  "non_ascii_records": [
+    {
+      "line": 4,
+      "record": "HFPLTPILOTINCHARGE:Scott O\u2019Brien"
+    }
+  ],
+  "raw_g_expected": "7434E15440EABE029D1437D62C39D818",
+  "raw_g_calculated": "7434E15440EABE029D1437D62C39D818",
+  "raw_g_matches": true,
+  "b_records": 283,
+  "cause_power_off": true
+}

@@ -1,6 +1,8 @@
 /*
-
-
+Historical early-development notes, retained for context (reviewed 2026-10-22).
+These issue references and implementation markers are not the active backlog. USB storage,
+OTA, Bluetooth, wind estimation, IMU-assisted climb, logbooks and configurable fields now exist.
+Use docs/dev-references/backlog/ for current remaining work and qualification requirements.
 
 Legend:
 ->  this is a priority

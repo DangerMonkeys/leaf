@@ -1,0 +1,92 @@
+{
+  "baseline": [
+    {
+      "unit": "Racoon",
+      "launch_delay": 1.35
+    },
+    {
+      "unit": "RedStrap",
+      "launch_delay": 5.33
+    },
+    {
+      "unit": "BlueGreen326",
+      "launch_delay": 9.92
+    },
+    {
+      "unit": "Bethany",
+      "launch_delay": 7.0
+    }
+  ],
+  "forward7": [
+    {
+      "unit": "Racoon",
+      "launch_delay": 1.35
+    },
+    {
+      "unit": "RedStrap",
+      "launch_delay": 5.33
+    },
+    {
+      "unit": "BlueGreen326",
+      "launch_delay": 9.92
+    },
+    {
+      "unit": "Bethany",
+      "launch_delay": 10.0
+    }
+  ],
+  "distance11": [
+    {
+      "unit": "Racoon",
+      "launch_delay": 1.35
+    },
+    {
+      "unit": "RedStrap",
+      "launch_delay": 5.33
+    },
+    {
+      "unit": "BlueGreen326",
+      "launch_delay": 9.92
+    },
+    {
+      "unit": "Bethany",
+      "launch_delay": 10.0
+    }
+  ],
+  "shared7": [
+    {
+      "unit": "Racoon",
+      "launch_delay": 1.35
+    },
+    {
+      "unit": "RedStrap",
+      "launch_delay": 5.33
+    },
+    {
+      "unit": "BlueGreen326",
+      "launch_delay": 9.92
+    },
+    {
+      "unit": "Bethany",
+      "launch_delay": 10.0
+    }
+  ],
+  "forward5s": [
+    {
+      "unit": "Racoon",
+      "launch_delay": 1.35
+    },
+    {
+      "unit": "RedStrap",
+      "launch_delay": 9.33
+    },
+    {
+      "unit": "BlueGreen326",
+      "launch_delay": 13.92
+    },
+    {
+      "unit": "Bethany",
+      "launch_delay": 10.0
+    }
+  ]
+}

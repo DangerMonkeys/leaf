@@ -162,6 +162,7 @@ void SettingsRootMenuPage::drawSettingsMenu() {
 }
 
 void SettingsRootMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) {
+  if (row_hidden(cursor_position)) return;
   if (state != ButtonEvent::CLICKED && state != ButtonEvent::HELD) return;
 
   switch (cursor_position) {
@@ -238,7 +239,7 @@ bool SettingsRootMenuPage::row_hidden(uint8_t row) const {
 #ifndef FANET_CAPABLE
     return true;
 #else
-    return fanetRadio.getState() == FanetRadioState::UNINSTALLED;
+    return !fanetRadio.isDetected();
 #endif
   }
 

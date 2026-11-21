@@ -3,6 +3,8 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 
+enum class NavLoadError : uint8_t;
+
 namespace route_store {
 
   struct ImportResult {
@@ -18,7 +20,7 @@ namespace route_store {
 
   bool importRouteText(const String& name, const String& data, bool activate, ImportResult& result);
   bool saveRouteJson(JsonDocument& routeDoc, bool activate, ImportResult& result);
-  bool loadRouteFile(const String& path, bool activate);
+  bool loadRouteFile(const String& path, bool activate, NavLoadError* error = nullptr);
   bool loadActiveRoute();
   bool clearActiveRoute();
 

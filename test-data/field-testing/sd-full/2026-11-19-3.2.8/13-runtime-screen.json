@@ -1,0 +1,16 @@
+{
+  "utc": "2026-11-20T01:02:44.812143+00:00",
+  "base": "http://10.0.0.183",
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/api/debug/raw-xbm",
+      "request_bytes": 0,
+      "status": 200,
+      "seconds": 0.063,
+      "bytes": 11697,
+      "sha256": "f1f230a1de17eacd53380f99c74fc4e96b511d4f26599db83d81ee13c57b1724",
+      "body": "Saved screen bitmap"
+    }
+  ]
+}

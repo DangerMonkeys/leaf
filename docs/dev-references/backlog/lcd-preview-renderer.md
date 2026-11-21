@@ -1,27 +1,34 @@
 ---
 title: LCD Preview Renderer Backlog
-description: Future host-side pixel-exact renderer for Leaf LCD page layout iteration.
+description: Implemented host LCD rendering and remaining preview workflow improvements.
 ---
 
 # LCD Preview Renderer Backlog
 
-Display-only UI tweaks currently require building firmware, uploading, booting Leaf, and navigating menus before the layout can be reviewed. A host-side renderer would make iteration much faster, but it needs to be pixel-for-pixel identical to the Leaf LCD output to be useful for final layout decisions.
+Status reconciled **2026-10-22**: the host renderer is implemented by
+[`leafsim`](../../../sim/README.md). Display iteration no longer requires flashing hardware.
 
-An initial approximate Python layout renderer was tried and then removed because it was not accurate enough: host-rendered text and placeholder QR codes did not match Leaf's u8g2 fonts, QR output, title rows, footer rows, or exact drawing behavior.
+## Implemented
 
-Future work:
+- The simulator compiles the real firmware page/menu code, Leaf font arrays, QR implementation
+  and u8g2 core against host hardware substitutes. It renders the actual 96x192 portrait framebuffer.
+- The browser control panel provides working buttons, saved settings, a virtual SD card,
+  recorded sensor playback and live thermal training.
+- Script `screenshot` steps save PNGs; `GET /api/screenshot.png?scale=N` exports the screen at
+  native or integer scale. See the simulator README for launch and script instructions.
+- Focused tests drive page state directly. The charging-dialog work in `18fc69af` (#425)
+  includes reference-art comparisons, live-input checks and 46 native captures under
+  `docs/ui-reviews/charging-dialog-revamp/`.
 
-- Build a pixel-exact host renderer that runs the actual Leaf page drawing code against a host-side u8g2 framebuffer.
-- Link the real Leaf font arrays from `src/vario/ui/display/fonts.h`.
-- Link the real QR implementation from `src/vario/utils/qrcodex.c`.
-- Link the u8g2 core from `src/libraries/U8g2/src`.
-- Provide small host mocks for Arduino APIs, WiFi state, settings, page stack globals, and any hardware/global objects touched by the page under test.
-- Export the rendered `96x192` native framebuffer as PNG, plus an integer-scaled preview PNG for easier review.
-- Start with `PageMenuSystemWifiWebApp` in Leaf-AP mode, then generalize to other pages once the harness is proven.
-- Ensure the tool uses the same display rotation/orientation as firmware (`96x192` portrait for current Leaf hardware).
+The approximate Python renderer in the original proposal was removed. Its replacement uses the
+firmware graphics code. Windows builds run through Docker's `gcc:13` toolchain.
 
-Notes from the first attempt:
+## Remaining work
 
-- A non-exact renderer is not sufficient for design decisions.
-- The Codex Windows environment at the time did not expose a native C/C++ compiler (`cl`, `gcc`, `clang`, `zig`) or a Python FFI/JIT compiler, so the exact u8g2 harness could not be built there.
-- Revisit this when a host compiler is available, or consider a firmware-side debug endpoint that renders the real framebuffer and exports it for review.
+- Add reusable deterministic fixtures for more menu/page states where they save repeated setup.
+  A dedicated Leaf-AP WiFi/QR fixture remains useful: the simulator substitutes the webserver,
+  so its existence alone does not establish coverage of every WiFi page state.
+- Extend screenshot regression coverage as layouts change, keeping references tied to actual
+  framebuffer output rather than approximations.
+- Check physical LCD contrast, readability and hardware behavior on the device when needed;
+  host pixels do not qualify those properties.

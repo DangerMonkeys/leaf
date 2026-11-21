@@ -221,7 +221,7 @@ bool GPXParser::readWaypoint(Waypoint* waypoint, const char* tag_name, bool requ
   waypoint->setName("");
   waypoint->latE7 = 0;
   waypoint->lonE7 = 0;
-  waypoint->ele = 0;
+  waypoint->ele = NAN;
 
   // Read attributes of opening tag (until tag is closed)
   bool found_lat = false;
@@ -291,7 +291,11 @@ bool GPXParser::readWaypoint(Waypoint* waypoint, const char* tag_name, bool requ
         _error += " while reading ele value in waypoint";
         return false;
       }
-      waypoint->ele = atof(value);
+      char* end;
+      const float elevation = strtof(value, &end);
+      const bool parsedElevation = end != value;
+      while (*end == ' ' || *end == '\t' || *end == '\r' || *end == '\n') ++end;
+      waypoint->ele = parsedElevation && *end == '\0' && isfinite(elevation) ? elevation : NAN;
       ReadTagNameResult closing_outcome = readTagName(key);
       if (closing_outcome == ReadTagNameResult::Error) {
         _error += " while reading name of tag that should be a closing ele tag in waypoint";
@@ -491,8 +495,9 @@ bool GPXParser::readRoute(Navigator* result, Route* route, bool storePoints) {
         continue;
       }
       if (result->totalRoutePointRefs >= maxRoutePointRefs) {
-        Serial.println("WARNING: maximum number of GPX route point refs reached; skipping rtept");
-        continue;
+        _routePointLimitExceeded = true;
+        _error = "maximum number of route points exceeded";
+        return false;
       }
       WaypointID waypointIndex = result->findWaypointByName(waypoint.name);
       if (!waypointIndex && !foundCoordinates) {
@@ -508,8 +513,9 @@ bool GPXParser::readRoute(Navigator* result, Route* route, bool storePoints) {
         continue;
       }
       if (!result->addRoutePoint(route, waypointIndex)) {
-        Serial.println("WARNING: maximum number of GPX route point refs reached; skipping rtept");
-        continue;
+        _routePointLimitExceeded = true;
+        _error = "maximum number of route points exceeded";
+        return false;
       }
     } else if (tagEqualsIgnoreCase(key, "name")) {
       // This is an opening name tag

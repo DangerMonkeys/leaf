@@ -5,6 +5,7 @@
 #include "dispatch/message_sink.h"
 #include "dispatch/message_source.h"
 #include "dispatch/message_types.h"
+#include "instruments/g_load_tracker.h"
 #include "math/flat_acceleration_bias.h"
 #include "math/kalman.h"
 
@@ -15,7 +16,7 @@ class IMU : public MessageSink<IMU, MotionUpdate>, public IMessageSource {
  public:
   IMU();
 
-  void wake();
+  void wake(GLoadTracker::ResetReason reason = GLoadTracker::ResetReason::Unspecified);
 
   // MessageSink<IMU, MotionUpdate>
   void on_receive(const MotionUpdate& msg);
@@ -27,6 +28,9 @@ class IMU : public MessageSink<IMU, MotionUpdate>, public IMessageSource {
 
   bool accelValid();
   float getAccel();
+
+  // Filtered g-load extremes for flight statistics (see GLoadTracker)
+  GLoadTracker& gLoad() { return gLoad_; }
 
   bool velocityValid();
   float getVelocity();
@@ -44,15 +48,7 @@ class IMU : public MessageSink<IMU, MotionUpdate>, public IMessageSource {
   void setAccelerationBiasReference(const FlatAccelerationBias& reference) {
     flatBiasReference_ = reference;
   }
-  unsigned long lastMotionTime() const;
-  float lastDeviceAccelX() const;
-  float lastDeviceAccelY() const;
-  float lastDeviceAccelZ() const;
-  float lastQuatX() const;
-  float lastQuatY() const;
-  float lastQuatZ() const;
-  float lastWorldAccelX() const;
-  float lastWorldAccelY() const;
+  unsigned long lastMotionTime() const { return lastMotionTime_; }
   float lastWorldVerticalAccel() const;
   bool worldVerticalAccelValid() const;
   uint16_t gravityInitResetCount() const;
@@ -93,22 +89,15 @@ class IMU : public MessageSink<IMU, MotionUpdate>, public IMessageSource {
 
   double accelTot_;
   bool validAccelTot_ = false;
+  GLoadTracker gLoad_;
 
   // Best estimate for strength of gravity
   double gravity_ = 1.0;
 
-  double lastWorldVerticalAccel_ = 0.0;
-  double lastWorldAccelX_ = 0.0;
-  double lastWorldAccelY_ = 0.0;
-  double lastDeviceAccelX_ = 0.0;
-  double lastDeviceAccelY_ = 0.0;
-  double lastDeviceAccelZ_ = 0.0;
-  double lastQuatX_ = 0.0;
-  double lastQuatY_ = 0.0;
-  double lastQuatZ_ = 0.0;
+  float lastWorldVerticalAccel_ = 0.0;
   unsigned long lastMotionTime_ = 0;
   bool validLastWorldVerticalAccel_ = false;
-  double lastRejectedGravity_ = 0.0;
+  float lastRejectedGravity_ = 0.0;
   uint16_t gravityInitResetCount_ = 0;
 
   // Last time gravity estimate was updated

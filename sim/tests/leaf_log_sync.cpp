@@ -3,6 +3,10 @@
 #include <SD_MMC.h>
 #include <WiFi.h>
 #include <assert.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <cerrno>
+#include <cstring>
 
 #include <deque>
 #include <filesystem>
@@ -32,6 +36,18 @@ namespace {
   std::vector<std::string> attempts;
   std::deque<Outcome> outcomes;
   std::function<void()> duringUpload;
+  bool failDirectoryRead = false;
+  std::string failReadPath, truncateOnClose;
+  unsigned readsBeforeFailure = 0, injectedFailures = 0;
+
+  bool isFile(FILE* file, const std::string& suffix) {
+    if (suffix.empty()) return false;
+    char link[64], target[1024];
+    snprintf(link, sizeof(link), "/proc/self/fd/%d", fileno(file));
+    const ssize_t length = readlink(link, target, sizeof(target));
+    return length >= static_cast<ssize_t>(suffix.size()) &&
+           std::string(target + length - suffix.size(), suffix.size()) == suffix;
+  }
 
   void writeFile(const std::string& path, const std::string& contents) {
     std::ofstream file(root + path);
@@ -41,7 +57,8 @@ namespace {
 
   void addFlight(const std::string& name, bool delivered = false, bool trackExists = true) {
     writeFile("/logbook/" + name + ".json",
-              "{\"schema\":\"leaf.logbook.flight\",\"track\":{\"saved\":true,"
+              "{\"schema\":\"leaf.logbook.flight\",\"schema_version\":\"v0.1.0\",\"flight_id\":"
+              "\"sim-flight\",\"track\":{\"saved\":true,"
               "\"format\":\"igc\",\"path\":\"/tracks/" +
                   name + ".igc\"}" +
                   (delivered ? ",\"leaf_log\":{\"flight_id\":\"already-uploaded\"}" : "") + "}");
@@ -50,8 +67,10 @@ namespace {
 
   LeafLogCandidate classify(const std::string& name) {
     LeafLogCandidate candidate;
-    assert(LogbookStore::classifyForLeafLog(String(("/logbook/" + name + ".json").c_str()),
-                                            candidate));
+    const bool classified =
+        LogbookStore::classifyForLeafLog(String(("/logbook/" + name + ".json").c_str()), candidate);
+    if (!classified) fprintf(stderr, "Classification failed for test flight %s\n", name.c_str());
+    assert(classified);
     return candidate;
   }
 
@@ -75,6 +94,10 @@ namespace {
   }
 
   void reset(const std::string& name) {
+    failDirectoryRead = false;
+    failReadPath.clear();
+    truncateOnClose.clear();
+    readsBeforeFailure = injectedFailures = 0;
     leafLogSync.prepareForCharging();
     root = root.substr(0, root.find_last_of('/')) + "/" + name;
     std::filesystem::create_directories(root + "/logbook");
@@ -93,6 +116,43 @@ namespace {
     duringUpload = {};
     // Reset progress from the previous session before the test checks it.
     step();
+  }
+
+  void undatedCleanup() {
+    reset("undated-cleanup");
+    addFlight("unsynced_5_flight");
+    const std::string old = "/logbook/unsynced_5_flight.json";
+    std::ifstream in(root + old);
+    std::string bytes((std::istreambuf_iterator<char>(in)), {});
+    writeFile(old + ".bak", bytes);
+    bytes.pop_back();
+    bytes += ",\"end\":{\"time_valid\":false}}";
+    writeFile(old, bytes);
+    scan();
+    assert(leafLogSync.totalCount() == 1);
+    assert(!std::filesystem::exists(root + old));
+    assert(!std::filesystem::exists(root + old + ".bak"));
+    assert(std::filesystem::exists(root + "/logbook/date_not_available_5_flight.json"));
+    finish();
+    assert(attempts.size() == 1);
+    assert(!std::filesystem::exists(root + "/logbook/date_not_available_5_flight.json.bak"));
+    assert(classify("date_not_available_5_flight").disposition ==
+           LeafLogCandidate::Disposition::Delivered);
+  }
+  void trackSizeLimits() {
+    reset("track-size-limits");
+    addFlight("long-flight");
+    const auto path = root + "/tracks/long-flight.igc";
+    for (const auto bytes : {5u * 1024 * 1024 + 1, 25u * 1024 * 1024}) {
+      std::filesystem::resize_file(path, bytes);
+      const auto candidate = classify("long-flight");
+      assert(candidate.trackSize == bytes);
+      assert(candidate.disposition == LeafLogCandidate::Disposition::Pending);
+    }
+    std::filesystem::resize_file(path, 25u * 1024 * 1024 + 1);
+    const auto candidate = classify("long-flight");
+    assert(candidate.disposition == LeafLogCandidate::Disposition::Rejected);
+    assert(candidate.rejectionReason == "too_large");
   }
 
   void largeLogbook() {
@@ -127,7 +187,7 @@ namespace {
       assert(candidate.disposition == LeafLogCandidate::Disposition::Delivered ||
              candidate.rejectionPersisted);
     }
-    assert(leafLogSync.completionPending());
+    assert(leafLogSync.result() == LeafLogSync::Result::Problem);
 
     leafLogSync.prepareForCharging();
     sdcard.acquireForFirmwareUse(0, true);
@@ -150,6 +210,7 @@ namespace {
     sim::clock().advanceUs(5ULL * 60 * 1000000);
     finish();
     assert(attempts.size() == 3 && attempts[0] == attempts[1] && attempts[2] != attempts[1]);
+    assert(leafLogSync.result() == LeafLogSync::Result::Success);
     assert(classify("next-session").disposition == LeafLogCandidate::Disposition::Pending);
   }
 
@@ -160,6 +221,7 @@ namespace {
     assert(leafLogSync.totalCount() == 0);
     finish();
     assert(attempts.empty());
+    assert(leafLogSync.result() == LeafLogSync::Result::Success);
 
     reset("unauthorized");
     addFlight("flight");
@@ -168,6 +230,7 @@ namespace {
     finish();
     assert(attempts.size() == 1);
     assert(!leaf_log_credentials::load().linked());
+    assert(leafLogSync.result() == LeafLogSync::Result::Problem);
     assert(classify("flight").disposition == LeafLogCandidate::Disposition::Pending);
   }
 
@@ -179,6 +242,7 @@ namespace {
     leafLogSync.requestCancel();
     finish();
     assert(attempts.empty());
+    assert(leafLogSync.result() == LeafLogSync::Result::Problem);
 
     reset("power-on");
     addFlight("flight");
@@ -197,6 +261,7 @@ namespace {
     finish();
     assert(attempts.size() == 1);
     assert(classify("flight").disposition == LeafLogCandidate::Disposition::Pending);
+    assert(leafLogSync.result() == LeafLogSync::Result::Problem);
   }
 
   void queueFailureAndStaleFiles() {
@@ -223,6 +288,84 @@ namespace {
     settings.labs_leafLog = 0;
     finish();
     assert(attempts.empty());
+    assert(leafLogSync.result() == LeafLogSync::Result::None);
+  }
+
+  void incompleteScanRecovery() {
+    for (const std::string stage : {"directory", "scan-close", "pending-close", "scan-prefix",
+                                    "scan-body", "pending-prefix", "pending-body"}) {
+      reset("incomplete-" + stage);
+      for (int i = 0; i < 3; ++i) addFlight("flight-" + std::to_string(i));
+      if (stage == "directory")
+        failDirectoryRead = true;
+      else if (stage == "scan-close")
+        truncateOnClose = "/.leaf-log-scan.tmp";
+      else if (stage == "pending-close")
+        truncateOnClose = "/.leaf-log-pending.tmp";
+      else {
+        failReadPath = stage.find("scan-") == 0 ? "/.leaf-log-scan.tmp" : "/.leaf-log-pending.tmp";
+        readsBeforeFailure = stage.find("body") != std::string::npos ? 1 : 0;
+      }
+      for (int i = 0; i < 1000 && !leafLogSync.retryPending(); ++i) step();
+      assert(injectedFailures == 1 && leafLogSync.retryPending());
+      assert(!leafLogSync.progressKnown() && !leafLogSync.completionPending());
+      assert(!leafLogSync.completionNotice() && attempts.empty());
+      for (int i = 0; i < 3; ++i)
+        assert(classify("flight-" + std::to_string(i)).disposition ==
+               LeafLogCandidate::Disposition::Pending);
+      sim::clock().advanceUs(5ULL * 60 * 1000000);
+      step();
+      scan();
+      assert(leafLogSync.totalCount() == 3);
+      finish();
+      assert(attempts.size() == 3 &&
+             std::set<std::string>(attempts.begin(), attempts.end()).size() == 3);
+    }
+
+    // Rebuild a damaged pending queue even after some uploads have succeeded. Their persisted
+    // markers, rather than the discarded scratch list, determine what is left to upload.
+    reset("incomplete-after-delivery");
+    for (int i = 0; i < 3; ++i) addFlight("flight-" + std::to_string(i));
+    scan();
+    duringUpload = [] {
+      if (attempts.size() == 1) failReadPath = "/.leaf-log-pending.tmp";
+    };
+    for (int i = 0; i < 10000 && !leafLogSync.retryPending(); ++i) step();
+    assert(leafLogSync.retryPending() && injectedFailures == 1 && attempts.size() == 1);
+    assert(!leafLogSync.progressKnown() && !leafLogSync.completionPending());
+    sim::clock().advanceUs(5ULL * 60 * 1000000);
+    step();
+    scan();
+    assert(leafLogSync.totalCount() == 2);
+    finish();
+    assert(attempts.size() == 3 &&
+           std::set<std::string>(attempts.begin(), attempts.end()).size() == 3);
+
+    // Even an unexpected tail added during the last transfer must not briefly show Complete.
+    reset("unexpected-queue-tail");
+    addFlight("flight");
+    scan();
+    duringUpload = [] {
+      std::ofstream file(root + "/.leaf-log-pending.tmp", std::ios::app | std::ios::binary);
+      file << 'x';
+    };
+    for (int i = 0; i < 10000 && !leafLogSync.retryPending(); ++i) {
+      step();
+      assert(!leafLogSync.completionPending() && !leafLogSync.completionNotice());
+    }
+    assert(leafLogSync.retryPending() && attempts.size() == 1);
+    sim::clock().advanceUs(5ULL * 60 * 1000000);
+    step();
+    scan();
+    assert(leafLogSync.totalCount() == 0);
+    finish();
+    assert(attempts.size() == 1);
+
+    reset("missing-logbook");
+    leafLogSync.prepareForCharging();
+    std::filesystem::remove(root + "/logbook");
+    finish();
+    assert(attempts.empty() && !leafLogSync.retryPending());
   }
 
   void chargingScheduler() {
@@ -242,20 +385,30 @@ namespace {
     assert(leaf_log_credentials::store("llk_sim", "pilot", "Test Pilot"));
 
     const uint32_t startedMs = millis();
-    while (!leafLogSync.massStorageUnavailable() && millis() - startedMs < 5000) device.step();
+    while (!leafLogSync.completionNotice() && millis() - startedMs < 5000) device.step();
     // Prove that the actual charging scheduler services slices between display ticks. The old
     // one-file-per-500ms schedule would take about 250 seconds for this same card.
-    assert(leafLogSync.massStorageUnavailable());
+    assert(leafLogSync.completionNotice());
     assert(millis() - startedMs < 5000 && attempts.empty());
   }
 
   void boundedSessionsAndConfirmation() {
     reset("session-limit");
     for (int i = 0; i < 105; ++i) addFlight("flight-" + std::to_string(i));
+    // Cleanup continues past the 100-upload session limit.
+    const std::string last = "/logbook/flight-104.json";
+    std::ifstream input(root + last);
+    std::string original((std::istreambuf_iterator<char>(input)), {});
+    writeFile(last + ".bak", original);
+    original.pop_back();
+    original += ",\"end\":{\"time_valid\":false}}";
+    writeFile(last, original);
     scan();
+    assert(!std::filesystem::exists(root + last + ".bak"));
     assert(leafLogSync.totalCount() == 100);
     finish();
     assert(attempts.size() == 100);
+    assert(leafLogSync.result() == LeafLogSync::Result::Success);
     unsigned pending = 0;
     for (int i = 0; i < 105; ++i) {
       if (classify("flight-" + std::to_string(i)).disposition ==
@@ -283,7 +436,76 @@ namespace {
     finish();
     assert(attempts.empty());
   }
+
+  void unavailableAccountAndCard() {
+    reset("unlinked");
+    leaf_log_credentials::clear();
+    leafLogSync.prepareForCharging();
+    finish();
+    assert(leafLogSync.result() == LeafLogSync::Result::Problem && attempts.empty());
+
+    reset("missing-card");
+    leafLogSync.prepareForCharging();
+    sdcard.unmount();
+    SD_MMC.simSetPresent(false);
+    finish();
+    assert(leafLogSync.result() == LeafLogSync::Result::Problem && attempts.empty());
+    SD_MMC.simSetPresent(true);
+  }
 }  // namespace
+
+// Linker wrappers inject errors at the actual filesystem boundary, without firmware hooks.
+extern "C" struct dirent* __real_readdir(DIR* directory);
+extern "C" struct dirent* __wrap_readdir(DIR* directory) {
+  if (failDirectoryRead) {
+    failDirectoryRead = false;
+    ++injectedFailures;
+    errno = EIO;
+    return nullptr;
+  }
+  return __real_readdir(directory);
+}
+extern "C" size_t __real_fread(void* buffer, size_t size, size_t count, FILE* file);
+extern "C" size_t __wrap_fread(void* buffer, size_t size, size_t count, FILE* file) {
+  if (isFile(file, failReadPath)) {
+    if (readsBeforeFailure)
+      --readsBeforeFailure;
+    else {
+      failReadPath.clear();
+      ++injectedFailures;
+      errno = EIO;
+      return 0;
+    }
+  }
+  return __real_fread(buffer, size, count, file);
+}
+extern "C" int __real_fclose(FILE* file);
+extern "C" int __wrap_fclose(FILE* file) {
+  const bool truncate = isFile(file, truncateOnClose);
+  const int result = __real_fclose(file);
+  if (truncate) {
+    const std::string path = root + truncateOnClose;
+    truncateOnClose.clear();
+    ++injectedFailures;
+    // Lose exactly the final complete record during close, leaving a syntactically valid
+    // prefix of the queue. Neither a short read nor a malformed length can reveal this loss.
+    std::ifstream input(path, std::ios::binary);
+    std::string bytes((std::istreambuf_iterator<char>(input)), {});
+    size_t position = 0, last = 0;
+    while (position < bytes.size()) {
+      last = position;
+      assert(position + 2 <= bytes.size());
+      const size_t length = static_cast<unsigned char>(bytes[position]) |
+                            (size_t(static_cast<unsigned char>(bytes[position + 1])) << 8);
+      position += 2 + length;
+      assert(position <= bytes.size());
+    }
+    input.close();
+    assert(position > 0);
+    std::filesystem::resize_file(path, last);
+  }
+  return result;
+}
 
 namespace leaf_log_client {
   UploadResult uploadIgc(const String&, const String& filename, const String& token,
@@ -305,12 +527,16 @@ int main() {
   assert(directory);
   root = std::string(directory) + "/initial";
   sim::clock().setSpeed(0);
+  undatedCleanup();
+  trackSizeLimits();
   largeLogbook();
   retryCurrentFlight();
   alreadySyncedAndUnauthorized();
   cancelAndPowerOn();
   queueFailureAndStaleFiles();
+  incompleteScanRecovery();
   boundedSessionsAndConfirmation();
+  unavailableAccountAndCard();
   chargingScheduler();
   leafLogSync.prepareForCharging();
   std::filesystem::remove_all(directory);

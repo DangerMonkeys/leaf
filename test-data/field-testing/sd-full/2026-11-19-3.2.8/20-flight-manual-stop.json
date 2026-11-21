@@ -1,0 +1,74 @@
+{
+  "utc": "2026-11-20T01:07:29.267722+00:00",
+  "steps": [
+    {
+      "command": "press LEFT",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press LEFT",
+      "reply": "ok",
+      "seconds": 0.313
+    },
+    {
+      "command": "wait 35",
+      "reply": "waited",
+      "seconds": 35.062
+    },
+    {
+      "command": "status",
+      "reply": "status On User 0 0 0 1 1 1 1",
+      "seconds": 0.0
+    },
+    {
+      "command": "press UP",
+      "reply": "ok",
+      "seconds": 0.313
+    },
+    {
+      "command": "hold CENTER 1000",
+      "reply": "ok",
+      "seconds": 1.312
+    },
+    {
+      "command": "status",
+      "reply": "status On User -1 1 0 1 1 0 1",
+      "seconds": 0.0
+    },
+    {
+      "command": "heap",
+      "reply": "heap 111848 78900 32756 7372",
+      "seconds": 0.016
+    }
+  ],
+  "initial": {
+    "power": "On",
+    "page": "Menu",
+    "cursor": 1,
+    "modal_depth": 0,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": true,
+    "flight_running": true,
+    "firmware_sd_access": true
+  },
+  "final": {
+    "power": "On",
+    "page": "User",
+    "cursor": -1,
+    "modal_depth": 1,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": true,
+    "flight_running": false,
+    "firmware_sd_access": true
+  },
+  "heap": {
+    "internal_free": 111848,
+    "internal_min_since_boot": 78900,
+    "internal_largest": 32756,
+    "loop_stack_unused": 7372
+  },
+  "screen": "20-flight-manual-stop.png"
+}

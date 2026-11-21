@@ -1,0 +1,35 @@
+{
+  "two_replay_active_shutdowns_passed": true,
+  "replay_continued_through_charging_checks": true,
+  "host_disabled_injection_before_test_shutdowns": false,
+  "wake_reopens_opted_in_injection": true,
+  "igcs_checksum_passed": 3,
+  "shutdown_igc_cause": "POWER_OFF",
+  "stack_csv_bytes": 114,
+  "stack_elapsed_ms": 203373,
+  "loop_stack_min_unused_bytes": 7868,
+  "normal_low_battery_and_upgraded_cause_simulator": "passed",
+  "original_deadline_unserviced_repeated_nested_tests": "passed",
+  "long_hold_rtc_and_recovery_tests": "passed",
+  "already_admitted_publisher_drains": "passed",
+  "stuck_publisher_worker_timeout": "passed",
+  "all_eight_final_simulator_targets": "passed",
+  "candidate_source_and_build_hashes": "verified",
+  "archived_file_hashes_verified": 22,
+  "original_files_and_settings_restored": true,
+  "final_state": "OffUSB Charging",
+  "final_card_free_bytes": 8503296,
+  "static_ram_delta_bytes": 16,
+  "linked_flash_delta_bytes": 628,
+  "limits": [
+    "FANET absent/uninstalled and no connected Bluetooth phone",
+    "Hardware zero-space workload not repeated for this second candidate",
+    "Hardware watchdog fault injection not repeated; existing simulator matrix passed and guard timing/emergency code is unchanged",
+    "Two initial driver sequences selected a field rather than requesting shutdown; excluded from shutdown pass/fail counts",
+    "Thermal test adjusted for the existing undated-to-dated logbook rename; no logbook production change"
+  ],
+  "documentation_website": {
+    "result": "passed",
+    "pages_built": 61
+  }
+}

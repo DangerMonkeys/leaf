@@ -1,0 +1,1 @@
+[{"method": "POST", "path": "/api/debug/session", "json": {"always_on": true, "udp_sensor_injection": true, "diag_system_events": false, "diag_network_events": false, "diag_web_requests": false}}]

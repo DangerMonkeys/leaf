@@ -1,0 +1,127 @@
+{
+  "captured_utc": "2026-11-14T04:18:13.726572+00:00",
+  "fixture_bytes": 21197,
+  "firmware_sha256": "42fbd1981c04af150ccfa941c70faac28d9195d3c5e6dbf4e5292e9a424b05b9",
+  "version": "0.2.4-a40d.bench+h3.2.5",
+  "idle": {
+    "internal_free": 106548,
+    "internal_min_since_boot": 55408,
+    "internal_largest": 31732,
+    "loop_stack_unused": 7672
+  },
+  "initial_nav": {
+    "loaded_path": "/waypoints/user_waypoints.json",
+    "point_count": 112,
+    "route_count": 0,
+    "active_type": "",
+    "active_name": ""
+  },
+  "waypoint_listing": {
+    "http": 200,
+    "elapsed_ms": 391,
+    "before": {
+      "internal_free": 106324,
+      "internal_min_since_boot": 55408,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7672
+    },
+    "after": {
+      "internal_free": 106100,
+      "internal_min_since_boot": 53088,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7672
+    },
+    "response_bytes": 16067
+  },
+  "listing": {
+    "count": 113,
+    "duplicate_index": 1
+  },
+  "activate_waypoint": {
+    "http": 200,
+    "elapsed_ms": 78,
+    "before": {
+      "internal_free": 106100,
+      "internal_min_since_boot": 53088,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7672
+    },
+    "after": {
+      "internal_free": 97548,
+      "internal_min_since_boot": 53088,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7672
+    },
+    "response_bytes": 50
+  },
+  "rename": {
+    "http": 200,
+    "elapsed_ms": 687,
+    "before": {
+      "internal_free": 100480,
+      "internal_min_since_boot": 53088,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7672
+    },
+    "after": {
+      "internal_free": 100400,
+      "internal_min_since_boot": 53088,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7672
+    },
+    "response_bytes": 14
+  },
+  "delete": {
+    "http": 200,
+    "elapsed_ms": 469,
+    "before": {
+      "internal_free": 105212,
+      "internal_min_since_boot": 53088,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7672
+    },
+    "after": {
+      "internal_free": 100040,
+      "internal_min_since_boot": 53088,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7672
+    },
+    "response_bytes": 16
+  },
+  "route_max": {
+    "http": 200,
+    "elapsed_ms": 406,
+    "before": {
+      "internal_free": 104180,
+      "internal_min_since_boot": 53088,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7672
+    },
+    "after": {
+      "internal_free": 93776,
+      "internal_min_since_boot": 53088,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7096
+    },
+    "response_bytes": 111
+  },
+  "route_file": "/routes/bench-nav6-baseline.json",
+  "compressed_rejected": {
+    "http": 400,
+    "elapsed_ms": 172,
+    "before": {
+      "internal_free": 102364,
+      "internal_min_since_boot": 53088,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7096
+    },
+    "after": {
+      "internal_free": 101356,
+      "internal_min_since_boot": 53088,
+      "internal_largest": 31732,
+      "loop_stack_unused": 7096
+    },
+    "response_bytes": 74
+  },
+  "passed": true
+}

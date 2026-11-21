@@ -116,12 +116,6 @@ const char disableVTG[] PROGMEM = "$PAIR062,5,0";  // disable message
 SemaphoreHandle_t GpsLockGuard::mutex = NULL;
 
 LeafGPS::LeafGPS() {
-  totalGPGSVMessages.begin(gps, "GPGSV", 1);
-  messageNumber.begin(gps, "GPGSV", 2);
-  satsInView.begin(gps, "GPGSV", 3);
-
-  latAccuracy.begin(gps, "GPGST", 6);
-  lonAccuracy.begin(gps, "GPGST", 7);
   fix.begin(gps, "GNGGA", 6);
   fixMode.begin(gps, "GNGSA", 2);
 }
@@ -133,16 +127,6 @@ void LeafGPS::init(void) {
   // init nav class (TODO: may not need this here, just for testing at startup for ease)
   navigator.init();
 
-  // Initialize all the uninitialized TinyGPSCustom objects
-  Serial.print("GPS initialize sat messages... ");
-  for (int i = 0; i < 4; ++i) {
-    satNumber[i].begin(gps, "GPGSV", 4 + 4 * i);  // offsets 4, 8, 12, 16
-    elevation[i].begin(gps, "GPGSV", 5 + 4 * i);  // offsets 5, 9, 13, 17
-    azimuth[i].begin(gps, "GPGSV", 6 + 4 * i);    // offsets 6, 10, 14, 18
-    snr[i].begin(gps, "GPGSV", 7 + 4 * i);        // offsets 7, 11, 15, 19
-  }
-
-  Serial.print("GPS initialize done... ");
 }  // gps_init
 
 void LeafGPS::calculateGlideRatio() {
@@ -217,11 +201,6 @@ void LeafGPS::updateFixInfo() {
   fixInfo.fix = atoi(fix.value());
   fixInfo.fixMode = atoi(fixMode.value());
 
-  // solution accuracy
-  // gpsFixInfo.latError = 2.5; //atof(latAccuracy.value());
-  // gpsFixInfo.lonError = 1.5; //atof(lonAccuracy.value());
-  // gpsFixInfo.error = sqrt(gpsFixInfo.latError * gpsFixInfo.latError +
-  //                         gpsFixInfo.lonError * gpsFixInfo.lonError);
   fixInfo.error = (float)hdop.value() * 5 / 100;
 }
 
@@ -384,81 +363,6 @@ void LeafGPS::updateLastValidFix() {
   lastValidFix_.courseDeg = course.deg();
   lastValidFix_.fixError = fixInfo.error;
   lastValidFix_.capturedAtMs = millis() - location.age();
-}
-
-void LeafGPS::testSats() {
-  if (totalGPGSVMessages.isUpdated()) {
-    for (int i = 0; i < 4; ++i) {
-      int no = atoi(satNumber[i].value());
-      // Serial.print(F("SatNumber is ")); Serial.println(no);
-      if (no >= 1 && no <= MAX_SATELLITES) {
-        sats[no - 1].elevation = constrain(atoi(elevation[i].value()), 0, 90);
-        sats[no - 1].azimuth = constrain(atoi(azimuth[i].value()), 0, 359);
-        sats[no - 1].snr = constrain(atoi(snr[i].value()), 0, 99);
-        sats[no - 1].active = true;
-      }
-    }
-
-    int totalMessages = atoi(totalGPGSVMessages.value());
-    int currentMessage = atoi(messageNumber.value());
-    if (totalMessages == currentMessage) {
-      /*
-      // Print Sat Info
-      Serial.print(F("Sats=")); Serial.print(gps.satellites.value());
-      Serial.print(F(" Nums="));
-      for (int i=0; i<MAX_SATELLITES; ++i)
-        if (sats[i].active)
-        {
-          Serial.print(i+1);
-          Serial.print(F(" "));
-        }
-      Serial.print(F(" Elevation="));
-      for (int i=0; i<MAX_SATELLITES; ++i)
-        if (sats[i].active)
-        {
-          Serial.print(sats[i].elevation);
-          Serial.print(F(" "));
-        }
-      Serial.print(F(" Azimuth="));
-      for (int i=0; i<MAX_SATELLITES; ++i)
-        if (sats[i].active)
-        {
-          Serial.print(sats[i].azimuth);
-          Serial.print(F(" "));
-        }
-
-      Serial.print(F(" SNR="));
-      for (int i=0; i<MAX_SATELLITES; ++i)
-        if (sats[i].active)
-        {
-          Serial.print(sats[i].snr);
-          Serial.print(F(" "));
-        }
-      Serial.println();
-
-      Serial.print("|TIME| isValid: "); Serial.print(gps.time.isValid());
-      Serial.print(", isUpdated:"); Serial.print(gps.time.isUpdated());
-      Serial.print(", hour: "); Serial.print(gps.time.hour());
-      Serial.print(", minute: "); Serial.print(gps.time.minute());
-      Serial.print(", second: "); Serial.print(gps.time.second());
-      Serial.print(", age: "); Serial.print(gps.time.age());
-      Serial.print(", value: "); Serial.print(gps.time.value());
-
-      Serial.print("  |DATE| isValid: "); Serial.print(gps.date.isValid());
-      Serial.print(" isUpdated: "); Serial.print(gps.date.isUpdated());
-      Serial.print(" year: "); Serial.print(gps.date.year());
-      Serial.print(" month: "); Serial.print(gps.date.month());
-      Serial.print(" day: "); Serial.print(gps.date.day());
-      Serial.print(" age: "); Serial.print(gps.date.age());
-      Serial.print(" value: "); Serial.println(gps.date.value());
-      */
-
-      // Reset Active
-      for (int i = 0; i < MAX_SATELLITES; ++i) {
-        sats[i].active = false;
-      }
-    }
-  }
 }
 
 bool LeafGPS::getUtcDateTime(tm& cal) {

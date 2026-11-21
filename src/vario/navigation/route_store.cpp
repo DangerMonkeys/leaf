@@ -1,4 +1,5 @@
 #include "navigation/route_store.h"
+#include "storage/checked_file.h"
 
 #include <ArduinoJson.h>
 #include <SD_MMC.h>
@@ -13,15 +14,8 @@ namespace route_store {
   namespace {
     constexpr size_t ROUTE_IMPORT_MAX_BYTES = 8192;
     constexpr size_t ROUTE_FILE_MAX_BYTES = 16384;
-    constexpr const char* ROUTE_TEMP_FILE = "/routes/route.tmp";
-    constexpr const char* ROUTE_BACKUP_FILE = "/routes/route.bak";
 
     String routeError(const char* message) { return String(message ? message : "Route error"); }
-
-    String trimmed(String value) {
-      value.trim();
-      return value;
-    }
 
     uint16_t radiusOrDefault(uint16_t radiusM) {
       return radiusM == 0 ? defaultWaypointRadius : radiusM;
@@ -205,7 +199,11 @@ namespace route_store {
 
     bool normalizeCompactXctsk(JsonObjectConst input, JsonObject output, String& error) {
       JsonArrayConst turnpoints = input["t"].as<JsonArrayConst>();
-      if (turnpoints.isNull() || turnpoints.size() == 0 || turnpoints.size() > maxRoutePointRefs) {
+      if (turnpoints.size() > maxRoutePointRefs) {
+        error = routeError("Route exceeds the 20-point limit.");
+        return false;
+      }
+      if (turnpoints.isNull() || turnpoints.size() == 0) {
         error = routeError("Route has no usable turnpoints.");
         return false;
       }
@@ -258,7 +256,11 @@ namespace route_store {
 
     bool normalizeFullXctsk(JsonObjectConst input, JsonObject output, String& error) {
       JsonArrayConst turnpoints = input["turnpoints"].as<JsonArrayConst>();
-      if (turnpoints.isNull() || turnpoints.size() == 0 || turnpoints.size() > maxRoutePointRefs) {
+      if (turnpoints.size() > maxRoutePointRefs) {
+        error = routeError("Route exceeds the 20-point limit.");
+        return false;
+      }
+      if (turnpoints.isNull() || turnpoints.size() == 0) {
         error = routeError("Route has no usable turnpoints.");
         return false;
       }
@@ -304,7 +306,7 @@ namespace route_store {
         outPoint["name"] = waypoint["name"] | "";
         outPoint["lat"] = lat;
         outPoint["lon"] = lon;
-        outPoint["alt_m"] = waypoint["altSmoothed"] | 0;
+        outPoint["alt_m"] = waypoint["altSmoothed"] | NAN;
         const uint16_t radiusM = point["radius"] | defaultWaypointRadius;
         outPoint["radius_m"] = radiusOrDefault(radiusM);
         outPoint["role"] = roleName(fullRoleForPoint(point, index == total));
@@ -319,15 +321,13 @@ namespace route_store {
         return false;
       }
 
-      String payload = trimmed(data);
-      if (payload.startsWith("XCTSKZ:")) {
+      const char* payload = data.c_str();
+      while (isspace(static_cast<unsigned char>(*payload))) ++payload;
+      if (strncmp(payload, "XCTSKZ:", 7) == 0) {
         error = routeError("Compressed XCTSKZ routes are not supported yet.");
         return false;
       }
-      if (payload.startsWith("XCTSK:")) {
-        payload.remove(0, 6);
-        payload.trim();
-      }
+      if (strncmp(payload, "XCTSK:", 6) == 0) payload += 6;
 
       JsonDocument input;
       DeserializationError parseError = deserializeJson(input, payload);
@@ -361,33 +361,7 @@ namespace route_store {
     }
 
     bool writeJsonFile(const String& path, JsonDocument& doc) {
-      if (!ensureRouteDirectory()) return false;
-
-      if (SD_MMC.exists(ROUTE_TEMP_FILE)) SD_MMC.remove(ROUTE_TEMP_FILE);
-      if (SD_MMC.exists(ROUTE_BACKUP_FILE)) SD_MMC.remove(ROUTE_BACKUP_FILE);
-
-      File file = SD_MMC.open(ROUTE_TEMP_FILE, "w", true);
-      if (!file) return false;
-
-      const size_t written = serializeJsonPretty(doc, file);
-      file.close();
-      if (written == 0) {
-        SD_MMC.remove(ROUTE_TEMP_FILE);
-        return false;
-      }
-
-      const bool hadExisting = SD_MMC.exists(path);
-      if (hadExisting && !SD_MMC.rename(path, ROUTE_BACKUP_FILE)) {
-        SD_MMC.remove(ROUTE_TEMP_FILE);
-        return false;
-      }
-      if (!SD_MMC.rename(ROUTE_TEMP_FILE, path)) {
-        if (hadExisting) SD_MMC.rename(ROUTE_BACKUP_FILE, path);
-        SD_MMC.remove(ROUTE_TEMP_FILE);
-        return false;
-      }
-      if (hadExisting) SD_MMC.remove(ROUTE_BACKUP_FILE);
-      return true;
+      return ensureRouteDirectory() && checked_file::replaceJson(path, doc, true);
     }
 
     bool saveActiveRoutePointer(const String& path) {
@@ -399,14 +373,13 @@ namespace route_store {
     }
 
     bool loadNormalizedRoute(JsonDocument& doc, const String& path, bool activate) {
-      navigator.clear();
-
       const char* schema = doc["schema"] | "";
       if (strcmp(schema, "leaf.route") != 0) return false;
 
       JsonArrayConst points = doc["points"].as<JsonArrayConst>();
       if (points.isNull() || points.size() == 0 || points.size() > maxRoutePointRefs) return false;
 
+      navigator.clear();
       Route route;
       route.setName(doc["name"] | "Route");
       route.taskType = RouteTaskType::Classic;
@@ -429,7 +402,7 @@ namespace route_store {
         waypoint.setName(point["name"] | "");
         waypoint.setLatitude(point["lat"] | 0.0);
         waypoint.setLongitude(point["lon"] | 0.0);
-        waypoint.ele = point["alt_m"] | 0.0;
+        waypoint.ele = point["alt_m"] | NAN;
 
         WaypointID waypointIndex = navigator.addWaypoint(waypoint)
                                        ? WaypointID(navigator.totalWaypoints)
@@ -499,7 +472,12 @@ namespace route_store {
     route["name"] = name;
 
     JsonArray points = route["points"].as<JsonArray>();
-    if (points.isNull() || points.size() == 0 || points.size() > maxRoutePointRefs) {
+    if (points.size() > maxRoutePointRefs) {
+      result.error = routeError("Route exceeds the 20-point limit.");
+      heap_monitor::checkpoint("route-save-invalid");
+      return false;
+    }
+    if (points.isNull() || points.size() == 0) {
       result.error = routeError("Route has no usable turnpoints.");
       heap_monitor::checkpoint("route-save-invalid");
       return false;
@@ -531,9 +509,12 @@ namespace route_store {
     return true;
   }
 
-  bool loadRouteFile(const String& path, bool activate) {
+  bool loadRouteFile(const String& path, bool activate, NavLoadError* loadError) {
+    if (loadError) *loadError = NavLoadError::InvalidFile;
     heap_monitor::checkpoint("route-load-file");
-    if (path.isEmpty() || path.length() > 96 || !SD_MMC.exists(path)) return false;
+    if (path.isEmpty() || path.length() > 96 || !checked_file::recover(path) ||
+        !SD_MMC.exists(path))
+      return false;
 
     File file = SD_MMC.open(path, "r");
     if (!file) return false;
@@ -550,12 +531,19 @@ namespace route_store {
       return false;
     }
 
+    if (doc["points"].as<JsonArrayConst>().size() > maxRoutePointRefs) {
+      if (loadError) *loadError = NavLoadError::RoutePointLimit;
+      heap_monitor::checkpoint("route-load-fail");
+      return false;
+    }
     const bool loaded = loadNormalizedRoute(doc, path, activate);
+    if (loaded && loadError) *loadError = NavLoadError::None;
     heap_monitor::checkpoint(loaded ? "route-load-done" : "route-load-fail");
     return loaded;
   }
 
   bool loadActiveRoute() {
+    if (!checked_file::recover(activeRoutePath())) return false;
     if (!SD_MMC.exists(activeRoutePath())) return false;
 
     File file = SD_MMC.open(activeRoutePath(), "r");
@@ -573,9 +561,6 @@ namespace route_store {
     return loadRouteFile(path, true);
   }
 
-  bool clearActiveRoute() {
-    if (!SD_MMC.exists(activeRoutePath())) return true;
-    return SD_MMC.remove(activeRoutePath());
-  }
+  bool clearActiveRoute() { return checked_file::erase(activeRoutePath()); }
 
 }  // namespace route_store

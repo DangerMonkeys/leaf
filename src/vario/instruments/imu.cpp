@@ -1,5 +1,8 @@
 #include "instruments/imu.h"
 
+#include "diagnostics/flight_diagnostics.h"
+#include "instruments/vario_timing.h"
+
 #include "dispatch/message_types.h"
 #include "hardware/Leaf_I2C.h"
 #include "logging/log.h"
@@ -124,9 +127,6 @@ void IMU::processMotion(const MotionUpdate& m) {
   }
   motionSampleProcessedCount_++;
   lastMotionTime_ = m.t;
-  lastQuatX_ = qx;
-  lastQuatY_ = qy;
-  lastQuatZ_ = qz;
 
   bool needComma = false;
   bool needNewline = false;
@@ -146,9 +146,7 @@ void IMU::processMotion(const MotionUpdate& m) {
 
   accelTot_ = sqrt(m.ax * m.ax + m.ay * m.ay + m.az * m.az);
   validAccelTot_ = true;
-  lastDeviceAccelX_ = m.ax;
-  lastDeviceAccelY_ = m.ay;
-  lastDeviceAccelZ_ = m.az;
+  gLoad_.addSample((float)accelTot_, m.t, 4.0f * 1.732051f);
 
 #ifdef SHOW_DEVICE_ACCEL
   if (needComma) {
@@ -172,8 +170,6 @@ void IMU::processMotion(const MotionUpdate& m) {
         m.ay, m.az, qw, qx, qy, qz, awx, awy, awz);
     fatalError("IMU awz was invalid");
   }
-  lastWorldAccelX_ = awx;
-  lastWorldAccelY_ = awy;
   lastWorldVerticalAccel_ = awz;
   validLastWorldVerticalAccel_ = true;
 
@@ -222,6 +218,7 @@ void IMU::processMotion(const MotionUpdate& m) {
         fabs(gravity_ - 1.0) > GRAVITY_UPDATE_VERTICAL_TOLERANCE_G) {
       lastRejectedGravity_ = gravity_;
       gravityInitResetCount_++;
+      flightDiagnostics.record(FlightDiagnostics::Kind::GravityReset, m.t);
       gravity_ = 1.0;
       gravityVerticalRejectCount_ = 0;
       validAccelVert_ = false;
@@ -278,46 +275,42 @@ void IMU::processGravity(const MotionUpdate& m) {
   }
   motionSampleProcessedCount_++;
   lastMotionTime_ = m.t;
-  lastDeviceAccelX_ = m.ax;
-  lastDeviceAccelY_ = m.ay;
-  lastDeviceAccelZ_ = m.az;
   accelTot_ = sqrt(m.ax * m.ax + m.ay * m.ay + m.az * m.az);
   validAccelTot_ = true;
   kalmanAccelVert_ = accelVert_;
+  gLoad_.addSample((float)accelTot_, m.t, 8.0f * 1.732051f);
   lastWorldVerticalAccel_ = accelVert_ + gravity_;
   validLastWorldVerticalAccel_ = true;
   // No horizontal orientation or quaternion is requested from the chip.
-  lastWorldAccelX_ = lastWorldAccelY_ = lastQuatX_ = lastQuatY_ = lastQuatZ_ = NAN;
   startupNonVertSamples_ = STARTUP_NON_VERT_SAMPLES;
 }
 
 void IMU::on_receive(const MotionUpdate& msg) {
   motionSampleCount_++;
+  if (msg.clippedSinceLastUpdate) gLoad_.recordClipping();
   if (msg.reset) {
-    wake();
+    wake(GLoadTracker::ResetReason::SensorMessage);
     return;
   }
+  // A late sample is not evidence of a broken filter. Preserve the current estimate.
+  if (static_cast<uint32_t>(millis() - msg.t) > vario_timing::SENSOR_FRESH_MS) return;
   if (haveMotionTime_) {
     const int32_t dt = static_cast<int32_t>(msg.t - lastMotionTime_);
     if (dt <= 0) return;
-    if (dt > 250 || gravityVectorMode_ != msg.hasGravity) wake();
-  }
-  if (static_cast<uint32_t>(millis() - msg.t) > 250) {
-    wake();
-    return;
+    if (gravityVectorMode_ != msg.hasGravity) wake(GLoadTracker::ResetReason::SourceChange);
   }
   if (msg.hasGravity) {
     const double initialBias = flatBiasReference_.initialBias(msg.gx, msg.gy, msg.gz);
     if (!gravityVectorMode_) kalmanvert_.reset(25.0, true, initialBias);
     gravityVectorMode_ = true;
     if (!msg.hasAcceleration) {
-      wake();
+      wake(GLoadTracker::ResetReason::MissingAcceleration);
       return;
     }
     processGravity(msg);
     haveMotionTime_ = true;
     if (!validAccelVert_) {
-      wake();
+      wake(GLoadTracker::ResetReason::InvalidGravity);
       return;
     }
     const bool disturbed = msg.clippedSinceLastUpdate ||
@@ -332,8 +325,8 @@ void IMU::on_receive(const MotionUpdate& msg) {
     if (biasLearningAllowed_) haveBiasDisturbance_ = false;
     if (baro.state() != Barometer::State::Ready || !baro.pressureFresh()) {
       motionSampleBaroNotReadyCount_++;
-      kalmanvert_.reset(25.0, true, initialBias);
-      kalmanStartupSamplesRemaining_ = KALMAN_STARTUP_REPORT_SAMPLES;
+      // A temporary pressure outage must not erase velocity or learned bias. The Kalman
+      // timestamp guard handles a genuinely long interval when observations resume.
       return;
     }
     // Each pressure observation is used at most once. Do not make the filter overconfident
@@ -345,7 +338,9 @@ void IMU::on_receive(const MotionUpdate& msg) {
     else
       kalmanTime_ = 0;
     lastKalmanTime_ = msg.t;
-    kalmanvert_.update(kalmanTime_, baro.altF(), kalmanAccelVert_ * 9.80665, biasLearningAllowed_);
+    const uint32_t gap = kalmanvert_.update(kalmanTime_, baro.altF(), kalmanAccelVert_ * 9.80665,
+                                            biasLearningAllowed_);
+    if (gap) flightDiagnostics.record(FlightDiagnostics::Kind::KalmanReset, msg.t, gap);
     ++kalmanUpdateSampleCount_;
     if (kalmanStartupSamplesRemaining_) --kalmanStartupSamplesRemaining_;
     return;
@@ -374,8 +369,16 @@ void IMU::on_receive(const MotionUpdate& msg) {
   haveMotionTime_ = true;
 
   if (validAccelVert_) {
+    // As on SFLP, consume each fresh pressure observation once. Reusing a held altitude
+    // during an outage would incorrectly pull an otherwise continuous climb toward zero.
+    if (!baro.pressureFresh() ||
+        (kalmanvert_.initialized() && lastPressureTime_ == baro.lastPressureTime()))
+      return;
+    lastPressureTime_ = baro.lastPressureTime();
     // update kalman filter
-    kalmanvert_.update(millis() / 1000.0, baro.altF(), kalmanAccelVert_ * 9.80665f);
+    const uint32_t now = millis();
+    const uint32_t gap = kalmanvert_.update(now / 1000.0, baro.altF(), kalmanAccelVert_ * 9.80665f);
+    if (gap) flightDiagnostics.record(FlightDiagnostics::Kind::KalmanReset, now, gap);
     kalmanUpdateSampleCount_++;
     if (kalmanStartupSamplesRemaining_ > 0) {
       kalmanStartupSamplesRemaining_--;
@@ -391,7 +394,10 @@ void IMU::on_receive(const MotionUpdate& msg) {
   }
 }
 
-void IMU::wake() {
+void IMU::wake(GLoadTracker::ResetReason reason) {
+  flightDiagnostics.record(FlightDiagnostics::Kind::ImuReset, millis(), 0,
+                           static_cast<uint16_t>(reason));
+  gLoad_.resetFilter(reason);
   kalmanvert_.reset();
   validAccelVert_ = validAccelTot_ = validLastWorldVerticalAccel_ = false;
   haveMotionTime_ = false;
@@ -406,7 +412,9 @@ void IMU::wake() {
   haveBiasDisturbance_ = false;
 }
 
-bool IMU::accelValid() { return validAccelTot_ && uint32_t(millis() - lastMotionTime_) <= 250; }
+bool IMU::accelValid() {
+  return validAccelTot_ && uint32_t(millis() - lastMotionTime_) <= vario_timing::SENSOR_FRESH_MS;
+}
 
 float IMU::getAccel() {
   if (!accelValid()) {
@@ -450,31 +458,13 @@ float IMU::kalmanAcceleration() const {
   return kalmanvert_.initialized() ? (float)kalmanvert_.getAcceleration() : 0.0f;
 }
 
-unsigned long IMU::lastMotionTime() const { return lastMotionTime_; }
-
-float IMU::lastDeviceAccelX() const { return (float)lastDeviceAccelX_; }
-
-float IMU::lastDeviceAccelY() const { return (float)lastDeviceAccelY_; }
-
-float IMU::lastDeviceAccelZ() const { return (float)lastDeviceAccelZ_; }
-
-float IMU::lastQuatX() const { return (float)lastQuatX_; }
-
-float IMU::lastQuatY() const { return (float)lastQuatY_; }
-
-float IMU::lastQuatZ() const { return (float)lastQuatZ_; }
-
-float IMU::lastWorldAccelX() const { return (float)lastWorldAccelX_; }
-
-float IMU::lastWorldAccelY() const { return (float)lastWorldAccelY_; }
-
-float IMU::lastWorldVerticalAccel() const { return (float)lastWorldVerticalAccel_; }
+float IMU::lastWorldVerticalAccel() const { return lastWorldVerticalAccel_; }
 
 bool IMU::worldVerticalAccelValid() const { return validLastWorldVerticalAccel_; }
 
 uint16_t IMU::gravityInitResetCount() const { return gravityInitResetCount_; }
 
-float IMU::lastRejectedGravityEstimate() const { return (float)lastRejectedGravity_; }
+float IMU::lastRejectedGravityEstimate() const { return lastRejectedGravity_; }
 
 uint32_t IMU::motionSampleCount() const { return motionSampleCount_; }
 

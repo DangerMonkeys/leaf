@@ -1,0 +1,99 @@
+{
+  "utc": "2026-11-20T02:23:29.133167+00:00",
+  "steps": [
+    {
+      "command": "sdstartup",
+      "reply": "sdstartup 365",
+      "seconds": 0.0
+    },
+    {
+      "command": "status",
+      "reply": "status On User -1 1 0 1 0 0 1",
+      "seconds": 0.0
+    },
+    {
+      "command": "press CENTER",
+      "reply": "ok",
+      "seconds": 0.312
+    },
+    {
+      "command": "status",
+      "reply": "status On User 0 0 0 1 0 0 1",
+      "seconds": 0.0
+    },
+    {
+      "command": "press RIGHT",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "wait 8",
+      "reply": "waited",
+      "seconds": 8.172
+    },
+    {
+      "command": "ip",
+      "reply": "ip 10.0.0.183 0.0.0.0",
+      "seconds": 0.0
+    },
+    {
+      "command": "press UP",
+      "reply": "ok",
+      "seconds": 0.312
+    },
+    {
+      "command": "press UP",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press UP",
+      "reply": "ok",
+      "seconds": 0.313
+    },
+    {
+      "command": "press CENTER",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "wait 2",
+      "reply": "waited",
+      "seconds": 2.062
+    },
+    {
+      "command": "web",
+      "reply": "web http://10.0.0.183/app",
+      "seconds": 0.016
+    }
+  ],
+  "initial": {
+    "power": "On",
+    "page": "User",
+    "cursor": -1,
+    "modal_depth": 1,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": false,
+    "flight_running": false,
+    "firmware_sd_access": true
+  },
+  "final": {
+    "power": "On",
+    "page": "Menu",
+    "cursor": -1,
+    "modal_depth": 1,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": false,
+    "flight_running": false,
+    "firmware_sd_access": true
+  },
+  "heap": {
+    "internal_free": 57740,
+    "internal_min_since_boot": 48248,
+    "internal_largest": 31732,
+    "loop_stack_unused": 7532
+  },
+  "screen": "29-low-warning.png"
+}

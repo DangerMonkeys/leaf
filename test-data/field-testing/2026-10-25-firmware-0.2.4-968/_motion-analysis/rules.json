@@ -1,0 +1,250 @@
+[
+  {
+    "rule": "speed >3m/s for 3s",
+    "ground_tracks": [
+      "Bethany/01.igc"
+    ],
+    "launches": {
+      "Racoon": [
+        "14:04:14",
+        4.3
+      ],
+      "RedStrap": [
+        "14:04:14",
+        4.3
+      ],
+      "BlueGreen326": [
+        "14:04:15",
+        5.6
+      ],
+      "Bethany": [
+        "13:26:46",
+        12.0
+      ]
+    }
+  },
+  {
+    "rule": "speed >3.5m/s for 3s",
+    "ground_tracks": [],
+    "launches": {
+      "Racoon": [
+        "14:04:14",
+        4.3
+      ],
+      "RedStrap": [
+        "14:04:14",
+        4.3
+      ],
+      "BlueGreen326": [
+        "14:04:16",
+        6.9
+      ],
+      "Bethany": [
+        "13:26:46",
+        12.0
+      ]
+    }
+  },
+  {
+    "rule": "speed >4m/s for 3s",
+    "ground_tracks": [],
+    "launches": {
+      "Racoon": [
+        "14:04:15",
+        5.3
+      ],
+      "RedStrap": [
+        "14:04:15",
+        5.3
+      ],
+      "BlueGreen326": [
+        "14:04:16",
+        6.9
+      ],
+      "Bethany": [
+        "13:26:46",
+        12.0
+      ]
+    }
+  },
+  {
+    "rule": "speed >4m/s for 5s",
+    "ground_tracks": [],
+    "launches": {
+      "Racoon": [
+        "14:04:17",
+        7.3
+      ],
+      "RedStrap": [
+        "14:04:17",
+        7.3
+      ],
+      "BlueGreen326": [
+        "14:04:18",
+        8.9
+      ],
+      "Bethany": [
+        "13:26:48",
+        14.0
+      ]
+    }
+  },
+  {
+    "rule": "speed >3m/s for 3s AND 5s displacement >12m",
+    "ground_tracks": [],
+    "launches": {
+      "Racoon": [
+        "14:04:14",
+        4.3
+      ],
+      "RedStrap": [
+        "14:04:16",
+        6.3
+      ],
+      "BlueGreen326": [
+        "14:04:20",
+        10.9
+      ],
+      "Bethany": [
+        "13:26:46",
+        12.0
+      ]
+    }
+  },
+  {
+    "rule": "speed >2.5m/s for 3s AND 5s displacement >12m",
+    "ground_tracks": [],
+    "launches": {
+      "Racoon": [
+        "14:04:13",
+        3.3
+      ],
+      "RedStrap": [
+        "14:04:16",
+        6.3
+      ],
+      "BlueGreen326": [
+        "14:04:20",
+        10.9
+      ],
+      "Bethany": [
+        "13:26:45",
+        11.0
+      ]
+    }
+  },
+  {
+    "rule": "5s mean speed >2.5m/s AND 5s displacement >12m",
+    "ground_tracks": [],
+    "launches": {
+      "Racoon": [
+        "14:04:13",
+        3.3
+      ],
+      "RedStrap": [
+        "14:04:16",
+        6.3
+      ],
+      "BlueGreen326": [
+        "14:04:20",
+        10.9
+      ],
+      "Bethany": [
+        "13:26:42",
+        8.0
+      ]
+    }
+  },
+  {
+    "rule": "10s displacement >25m",
+    "ground_tracks": [],
+    "launches": {
+      "Racoon": [
+        "14:04:14",
+        4.3
+      ],
+      "RedStrap": [
+        "14:04:21",
+        11.3
+      ],
+      "BlueGreen326": [
+        "14:04:25",
+        15.9
+      ],
+      "Bethany": [
+        "13:26:47",
+        13.0
+      ]
+    }
+  },
+  {
+    "rule": "10s net vertical >6m",
+    "ground_tracks": [],
+    "launches": {
+      "Racoon": [
+        "14:04:12",
+        2.3
+      ],
+      "RedStrap": [
+        "14:04:29",
+        19.3
+      ],
+      "BlueGreen326": [
+        "14:04:27",
+        17.9
+      ],
+      "Bethany": [
+        "13:26:49",
+        15.0
+      ]
+    }
+  },
+  {
+    "rule": "5s mean abs NET climb >0.8m/s",
+    "ground_tracks": [
+      "BlueGreen326/06.igc",
+      "BlueGreen326/07.igc",
+      "BlueGreen326/14.igc"
+    ],
+    "launches": {
+      "Racoon": [
+        "14:04:12",
+        2.3
+      ],
+      "RedStrap": [
+        "14:04:27",
+        17.3
+      ],
+      "BlueGreen326": [
+        "14:04:13",
+        3.3
+      ],
+      "Bethany": [
+        "13:26:45",
+        11.0
+      ]
+    }
+  },
+  {
+    "rule": "speed>4/3s OR (speed>2.5/3s AND 5s displacement>12m)",
+    "ground_tracks": [],
+    "launches": {
+      "Racoon": [
+        "14:04:13",
+        3.3
+      ],
+      "RedStrap": [
+        "14:04:15",
+        5.3
+      ],
+      "BlueGreen326": [
+        "14:04:16",
+        6.9
+      ],
+      "Bethany": [
+        "13:26:45",
+        11.0
+      ]
+    }
+  }
+]

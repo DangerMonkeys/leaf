@@ -1,0 +1,930 @@
+make: Entering directory '/leaf/sim'
+  CXX   src/vario/diagnostics/heap_monitor
+  CXX   src/vario/navigation/gpx
+  CXX   src/vario/navigation/user_waypoints
+  CXX   src/vario/navigation/route_store
+  CXX   src/vario/profiles/profile_store
+  CXX   src/vario/storage/checked_file
+In file included from /leaf/src/vario/ui/display/pages.h:6,
+                 from /leaf/sim/tests/checked_storage.cpp:20:
+/leaf/src/vario/ui/display/pages/menu/page_menu_display.h:24:7: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   24 |       "Back",     "Basic",   "User", "Thermal\037Core", "Auto Switch?", "Thermal\037Track",
+      |       ^~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_display.h:24:19: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   24 |       "Back",     "Basic",   "User", "Thermal\037Core", "Auto Switch?", "Thermal\037Track",
+      |                   ^~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_display.h:24:30: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   24 |       "Back",     "Basic",   "User", "Thermal\037Core", "Auto Switch?", "Thermal\037Track",
+      |                              ^~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_display.h:24:38: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   24 |       "Back",     "Basic",   "User", "Thermal\037Core", "Auto Switch?", "Thermal\037Track",
+      |                                      ^~~~~~~~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_display.h:24:57: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   24 |       "Back",     "Basic",   "User", "Thermal\037Core", "Auto Switch?", "Thermal\037Track",
+      |                                                         ^~~~~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_display.h:24:73: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   24 |       "Back",     "Basic",   "User", "Thermal\037Core", "Auto Switch?", "Thermal\037Track",
+      |                                                                         ^~~~~~~~~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_display.h:25:7: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   25 |       "Navigate", "Contrast"};
+      |       ^~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_display.h:25:19: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   25 |       "Navigate", "Contrast"};
+      |                   ^~~~~~~~~~
+In file included from /leaf/src/vario/ui/display/pages.h:8:
+/leaf/src/vario/ui/display/pages/menu/page_menu_gps.h:24:39: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   24 |   static constexpr char* labels[2] = {"Back", "Update(sec)"
+      |                                       ^~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_gps.h:24:47: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   24 |   static constexpr char* labels[2] = {"Back", "Update(sec)"
+      |                                               ^~~~~~~~~~~~~
+In file included from /leaf/src/vario/ui/display/pages.h:9:
+/leaf/src/vario/ui/display/pages/menu/page_menu_leaf_labs.h:21:39: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   21 |   static constexpr char* labels[2] = {"Back", "Leaf Log"};
+      |                                       ^~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_leaf_labs.h:21:47: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   21 |   static constexpr char* labels[2] = {"Back", "Leaf Log"};
+      |                                               ^~~~~~~~~~
+In file included from /leaf/src/vario/ui/display/pages/menu/page_menu_system.h:8,
+                 from /leaf/src/vario/ui/display/pages.h:13:
+/leaf/src/vario/ui/display/pages/menu/page_menu_wifi.h:120:39: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+  120 |   static constexpr char* labels[4] = {"Back", "Setup", "Reset", "BLE"};
+      |                                       ^~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_wifi.h:120:47: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+  120 |   static constexpr char* labels[4] = {"Back", "Setup", "Reset", "BLE"};
+      |                                               ^~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_wifi.h:120:56: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+  120 |   static constexpr char* labels[4] = {"Back", "Setup", "Reset", "BLE"};
+      |                                                        ^~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_wifi.h:120:65: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+  120 |   static constexpr char* labels[4] = {"Back", "Setup", "Reset", "BLE"};
+      |                                                                 ^~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_system.h:28:39: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   28 |   static constexpr char* labels[8] = {"Back",       "Time Zone", "Volume",    "Auto-Off",
+      |                                       ^~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_system.h:28:53: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   28 |   static constexpr char* labels[8] = {"Back",       "Time Zone", "Volume",    "Auto-Off",
+      |                                                     ^~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_system.h:28:66: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   28 |   static constexpr char* labels[8] = {"Back",       "Time Zone", "Volume",    "Auto-Off",
+      |                                                                  ^~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_system.h:28:79: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   28 |   static constexpr char* labels[8] = {"Back",       "Time Zone", "Volume",    "Auto-Off",
+      |                                                                               ^~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_system.h:29:39: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   29 |                                       "ShowSafety", "About",     "Update FW", "Reset"};
+      |                                       ^~~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_system.h:29:53: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   29 |                                       "ShowSafety", "About",     "Update FW", "Reset"};
+      |                                                     ^~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_system.h:29:66: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   29 |                                       "ShowSafety", "About",     "Update FW", "Reset"};
+      |                                                                  ^~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_system.h:29:79: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   29 |                                       "ShowSafety", "About",     "Update FW", "Reset"};
+      |                                                                               ^~~~~~~
+In file included from /leaf/src/vario/ui/display/pages.h:14:
+/leaf/src/vario/ui/display/pages/menu/page_menu_units.h:21:39: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   21 |   static constexpr char* labels[8] = {"Back",     "Altitude", "ClimbRate", "Speed",
+      |                                       ^~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_units.h:21:51: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   21 |   static constexpr char* labels[8] = {"Back",     "Altitude", "ClimbRate", "Speed",
+      |                                                   ^~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_units.h:21:63: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   21 |   static constexpr char* labels[8] = {"Back",     "Altitude", "ClimbRate", "Speed",
+      |                                                               ^~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_units.h:21:76: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   21 |   static constexpr char* labels[8] = {"Back",     "Altitude", "ClimbRate", "Speed",
+      |                                                                            ^~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_units.h:22:39: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   22 |                                       "Distance", "Heading",  "Temp",      "Time"};
+      |                                       ^~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_units.h:22:51: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   22 |                                       "Distance", "Heading",  "Temp",      "Time"};
+      |                                                   ^~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_units.h:22:63: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   22 |                                       "Distance", "Heading",  "Temp",      "Time"};
+      |                                                               ^~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_units.h:22:76: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   22 |                                       "Distance", "Heading",  "Temp",      "Time"};
+      |                                                                            ^~~~~~
+In file included from /leaf/src/vario/ui/display/pages.h:15:
+/leaf/src/vario/ui/display/pages/menu/page_menu_vario.h:23:7: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   23 |       "Back",
+      |       ^~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_vario.h:24:7: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   24 |       "Beep Volume",
+      |       ^~~~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_vario.h:25:7: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   25 |       "Vol Shortcut",
+      |       ^~~~~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_vario.h:27:7: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   27 |       "Quiet Mode",
+      |       ^~~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_vario.h:28:7: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   28 |       "Sensitivity",
+      |       ^~~~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_vario.h:29:7: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   29 |       "ClimbStart",
+      |       ^~~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_vario.h:31:7: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   31 |       "SinkAlarm",
+      |       ^~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_vario.h:32:7: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   32 |       "Climb Avg",
+      |       ^~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_vario.h:33:7: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   33 |       "Glide Avg",
+      |       ^~~~~~~~~~~
+In file included from /leaf/src/vario/ui/display/pages.h:18:
+/leaf/src/vario/ui/display/pages/primary/page_menu_main.h:29:39: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   29 |   static constexpr char* labels[8] = {"Back", "Flight",  "Settings", "Nav Data",
+      |                                       ^~~~~~
+/leaf/src/vario/ui/display/pages/primary/page_menu_main.h:29:47: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   29 |   static constexpr char* labels[8] = {"Back", "Flight",  "Settings", "Nav Data",
+      |                                               ^~~~~~~~
+/leaf/src/vario/ui/display/pages/primary/page_menu_main.h:29:58: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   29 |   static constexpr char* labels[8] = {"Back", "Flight",  "Settings", "Nav Data",
+      |                                                          ^~~~~~~~~~
+/leaf/src/vario/ui/display/pages/primary/page_menu_main.h:29:70: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   29 |   static constexpr char* labels[8] = {"Back", "Flight",  "Settings", "Nav Data",
+      |                                                                      ^~~~~~~~~~
+/leaf/src/vario/ui/display/pages/primary/page_menu_main.h:30:39: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   30 |                                       "GPS",  "Web App", "Logbook",  "Developer"};
+      |                                       ^~~~~
+/leaf/src/vario/ui/display/pages/primary/page_menu_main.h:30:47: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   30 |                                       "GPS",  "Web App", "Logbook",  "Developer"};
+      |                                               ^~~~~~~~~
+/leaf/src/vario/ui/display/pages/primary/page_menu_main.h:30:58: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   30 |                                       "GPS",  "Web App", "Logbook",  "Developer"};
+      |                                                          ^~~~~~~~~
+/leaf/src/vario/ui/display/pages/primary/page_menu_main.h:30:70: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   30 |                                       "GPS",  "Web App", "Logbook",  "Developer"};
+      |                                                                      ^~~~~~~~~~~
+In file included from /leaf/src/vario/ui/display/pages.h:6,
+                 from /leaf/sim/tests/display_settings.cpp:22:
+/leaf/src/vario/ui/display/pages/menu/page_menu_display.h:24:7: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   24 |       "Back",     "Basic",   "User", "Thermal\037Core", "Auto Switch?", "Thermal\037Track",
+      |       ^~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_display.h:24:19: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   24 |       "Back",     "Basic",   "User", "Thermal\037Core", "Auto Switch?", "Thermal\037Track",
+      |                   ^~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_display.h:24:30: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   24 |       "Back",     "Basic",   "User", "Thermal\037Core", "Auto Switch?", "Thermal\037Track",
+      |                              ^~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_display.h:24:38: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   24 |       "Back",     "Basic",   "User", "Thermal\037Core", "Auto Switch?", "Thermal\037Track",
+      |                                      ^~~~~~~~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_display.h:24:57: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   24 |       "Back",     "Basic",   "User", "Thermal\037Core", "Auto Switch?", "Thermal\037Track",
+      |                                                         ^~~~~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_display.h:24:73: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   24 |       "Back",     "Basic",   "User", "Thermal\037Core", "Auto Switch?", "Thermal\037Track",
+      |                                                                         ^~~~~~~~~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_display.h:25:7: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   25 |       "Navigate", "Contrast"};
+      |       ^~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_display.h:25:19: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   25 |       "Navigate", "Contrast"};
+      |                   ^~~~~~~~~~
+In file included from /leaf/src/vario/ui/display/pages.h:8:
+/leaf/src/vario/ui/display/pages/menu/page_menu_gps.h:24:39: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   24 |   static constexpr char* labels[2] = {"Back", "Update(sec)"
+      |                                       ^~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_gps.h:24:47: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   24 |   static constexpr char* labels[2] = {"Back", "Update(sec)"
+      |                                               ^~~~~~~~~~~~~
+In file included from /leaf/src/vario/ui/display/pages.h:9:
+/leaf/src/vario/ui/display/pages/menu/page_menu_leaf_labs.h:21:39: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   21 |   static constexpr char* labels[2] = {"Back", "Leaf Log"};
+      |                                       ^~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_leaf_labs.h:21:47: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   21 |   static constexpr char* labels[2] = {"Back", "Leaf Log"};
+      |                                               ^~~~~~~~~~
+In file included from /leaf/src/vario/ui/display/pages/menu/page_menu_system.h:8,
+                 from /leaf/src/vario/ui/display/pages.h:13:
+/leaf/src/vario/ui/display/pages/menu/page_menu_wifi.h:120:39: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+  120 |   static constexpr char* labels[4] = {"Back", "Setup", "Reset", "BLE"};
+      |                                       ^~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_wifi.h:120:47: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+  120 |   static constexpr char* labels[4] = {"Back", "Setup", "Reset", "BLE"};
+      |                                               ^~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_wifi.h:120:56: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+  120 |   static constexpr char* labels[4] = {"Back", "Setup", "Reset", "BLE"};
+      |                                                        ^~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_wifi.h:120:65: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+  120 |   static constexpr char* labels[4] = {"Back", "Setup", "Reset", "BLE"};
+      |                                                                 ^~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_system.h:28:39: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   28 |   static constexpr char* labels[8] = {"Back",       "Time Zone", "Volume",    "Auto-Off",
+      |                                       ^~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_system.h:28:53: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   28 |   static constexpr char* labels[8] = {"Back",       "Time Zone", "Volume",    "Auto-Off",
+      |                                                     ^~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_system.h:28:66: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   28 |   static constexpr char* labels[8] = {"Back",       "Time Zone", "Volume",    "Auto-Off",
+      |                                                                  ^~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_system.h:28:79: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   28 |   static constexpr char* labels[8] = {"Back",       "Time Zone", "Volume",    "Auto-Off",
+      |                                                                               ^~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_system.h:29:39: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   29 |                                       "ShowSafety", "About",     "Update FW", "Reset"};
+      |                                       ^~~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_system.h:29:53: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   29 |                                       "ShowSafety", "About",     "Update FW", "Reset"};
+      |                                                     ^~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_system.h:29:66: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   29 |                                       "ShowSafety", "About",     "Update FW", "Reset"};
+      |                                                                  ^~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_system.h:29:79: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   29 |                                       "ShowSafety", "About",     "Update FW", "Reset"};
+      |                                                                               ^~~~~~~
+In file included from /leaf/src/vario/ui/display/pages.h:14:
+/leaf/src/vario/ui/display/pages/menu/page_menu_units.h:21:39: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   21 |   static constexpr char* labels[8] = {"Back",     "Altitude", "ClimbRate", "Speed",
+      |                                       ^~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_units.h:21:51: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   21 |   static constexpr char* labels[8] = {"Back",     "Altitude", "ClimbRate", "Speed",
+      |                                                   ^~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_units.h:21:63: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   21 |   static constexpr char* labels[8] = {"Back",     "Altitude", "ClimbRate", "Speed",
+      |                                                               ^~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_units.h:21:76: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   21 |   static constexpr char* labels[8] = {"Back",     "Altitude", "ClimbRate", "Speed",
+      |                                                                            ^~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_units.h:22:39: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   22 |                                       "Distance", "Heading",  "Temp",      "Time"};
+      |                                       ^~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_units.h:22:51: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   22 |                                       "Distance", "Heading",  "Temp",      "Time"};
+      |                                                   ^~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_units.h:22:63: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   22 |                                       "Distance", "Heading",  "Temp",      "Time"};
+      |                                                               ^~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_units.h:22:76: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   22 |                                       "Distance", "Heading",  "Temp",      "Time"};
+      |                                                                            ^~~~~~
+In file included from /leaf/src/vario/ui/display/pages.h:15:
+/leaf/src/vario/ui/display/pages/menu/page_menu_vario.h:23:7: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   23 |       "Back",
+      |       ^~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_vario.h:24:7: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   24 |       "Beep Volume",
+      |       ^~~~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_vario.h:25:7: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   25 |       "Vol Shortcut",
+      |       ^~~~~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_vario.h:27:7: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   27 |       "Quiet Mode",
+      |       ^~~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_vario.h:28:7: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   28 |       "Sensitivity",
+      |       ^~~~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_vario.h:29:7: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   29 |       "ClimbStart",
+      |       ^~~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_vario.h:31:7: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   31 |       "SinkAlarm",
+      |       ^~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_vario.h:32:7: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   32 |       "Climb Avg",
+      |       ^~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_vario.h:33:7: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   33 |       "Glide Avg",
+      |       ^~~~~~~~~~~
+In file included from /leaf/src/vario/ui/display/pages.h:18:
+/leaf/src/vario/ui/display/pages/primary/page_menu_main.h:29:39: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   29 |   static constexpr char* labels[8] = {"Back", "Flight",  "Settings", "Nav Data",
+      |                                       ^~~~~~
+/leaf/src/vario/ui/display/pages/primary/page_menu_main.h:29:47: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   29 |   static constexpr char* labels[8] = {"Back", "Flight",  "Settings", "Nav Data",
+      |                                               ^~~~~~~~
+/leaf/src/vario/ui/display/pages/primary/page_menu_main.h:29:58: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   29 |   static constexpr char* labels[8] = {"Back", "Flight",  "Settings", "Nav Data",
+      |                                                          ^~~~~~~~~~
+/leaf/src/vario/ui/display/pages/primary/page_menu_main.h:29:70: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   29 |   static constexpr char* labels[8] = {"Back", "Flight",  "Settings", "Nav Data",
+      |                                                                      ^~~~~~~~~~
+/leaf/src/vario/ui/display/pages/primary/page_menu_main.h:30:39: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   30 |                                       "GPS",  "Web App", "Logbook",  "Developer"};
+      |                                       ^~~~~
+/leaf/src/vario/ui/display/pages/primary/page_menu_main.h:30:47: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   30 |                                       "GPS",  "Web App", "Logbook",  "Developer"};
+      |                                               ^~~~~~~~~
+/leaf/src/vario/ui/display/pages/primary/page_menu_main.h:30:58: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   30 |                                       "GPS",  "Web App", "Logbook",  "Developer"};
+      |                                                          ^~~~~~~~~
+/leaf/src/vario/ui/display/pages/primary/page_menu_main.h:30:70: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   30 |                                       "GPS",  "Web App", "Logbook",  "Developer"};
+      |                                                                      ^~~~~~~~~~~
+In file included from /leaf/src/vario/ui/display/pages/menu/page_menu_system.h:8,
+                 from /leaf/sim/tests/developer_logging.cpp:31:
+/leaf/src/vario/ui/display/pages/menu/page_menu_wifi.h:120:39: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+  120 |   static constexpr char* labels[4] = {"Back", "Setup", "Reset", "BLE"};
+      |                                       ^~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_wifi.h:120:47: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+  120 |   static constexpr char* labels[4] = {"Back", "Setup", "Reset", "BLE"};
+      |                                               ^~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_wifi.h:120:56: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+  120 |   static constexpr char* labels[4] = {"Back", "Setup", "Reset", "BLE"};
+      |                                                        ^~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_wifi.h:120:65: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+  120 |   static constexpr char* labels[4] = {"Back", "Setup", "Reset", "BLE"};
+      |                                                                 ^~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_system.h:28:39: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   28 |   static constexpr char* labels[8] = {"Back",       "Time Zone", "Volume",    "Auto-Off",
+      |                                       ^~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_system.h:28:53: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   28 |   static constexpr char* labels[8] = {"Back",       "Time Zone", "Volume",    "Auto-Off",
+      |                                                     ^~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_system.h:28:66: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   28 |   static constexpr char* labels[8] = {"Back",       "Time Zone", "Volume",    "Auto-Off",
+      |                                                                  ^~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_system.h:28:79: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   28 |   static constexpr char* labels[8] = {"Back",       "Time Zone", "Volume",    "Auto-Off",
+      |                                                                               ^~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_system.h:29:39: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   29 |                                       "ShowSafety", "About",     "Update FW", "Reset"};
+      |                                       ^~~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_system.h:29:53: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   29 |                                       "ShowSafety", "About",     "Update FW", "Reset"};
+      |                                                     ^~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_system.h:29:66: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   29 |                                       "ShowSafety", "About",     "Update FW", "Reset"};
+      |                                                                  ^~~~~~~~~~~
+/leaf/src/vario/ui/display/pages/menu/page_menu_system.h:29:79: warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+   29 |                                       "ShowSafety", "About",     "Update FW", "Reset"};
+      |                                                                               ^~~~~~~
+SD card: mounted
+SD card: mounted
+SD card: mounted
+logbook: parse error=74 expected=0 actual=0
+logbook: parse error=74 expected=0 actual=0
+logbook: no_valid_candidate error=74 expected=0 actual=0
+logbook: parse error=74 expected=0 actual=0
+logbook: parse error=74 expected=0 actual=0
+logbook: no_valid_candidate error=74 expected=0 actual=0
+SD card: mounted
+Leaf Log retry: reason=not_started,track=retry-me.igc,http=0,elapsed_ms=0,file_bytes=0,response_bytes=0 delay_ms=300000
+SD card: mounted
+SD card: mounted
+SD card: mounted
+SD card: mounted
+SD card: mounted
+SD card: mounted
+Leaf Log retry: reason=scan_queue_open_failed,track=,http=0,elapsed_ms=0,file_bytes=0,response_bytes=0 delay_ms=300000
+SD card: mounted
+SD card: mounted
+Leaf Log retry: reason=scan_queue_directory_read_failed,track=,http=0,elapsed_ms=0,file_bytes=0,response_bytes=0 delay_ms=300000
+SD card: mounted
+Leaf Log retry: reason=scan_queue_incomplete,track=,http=0,elapsed_ms=0,file_bytes=0,response_bytes=0 delay_ms=300000
+SD card: mounted
+Leaf Log retry: reason=pending_queue_incomplete,track=,http=0,elapsed_ms=0,file_bytes=0,response_bytes=0 delay_ms=300000
+SD card: mounted
+Leaf Log retry: reason=scan_queue_read_failed,track=,http=0,elapsed_ms=0,file_bytes=0,response_bytes=0 delay_ms=300000
+SD card: mounted
+Leaf Log retry: reason=scan_queue_read_failed,track=,http=0,elapsed_ms=0,file_bytes=0,response_bytes=0 delay_ms=300000
+SD card: mounted
+Leaf Log retry: reason=pending_queue_read_failed,track=,http=0,elapsed_ms=0,file_bytes=0,response_bytes=0 delay_ms=300000
+SD card: mounted
+Leaf Log retry: reason=pending_queue_read_failed,track=,http=0,elapsed_ms=0,file_bytes=0,response_bytes=0 delay_ms=300000
+SD card: mounted
+Leaf Log retry: reason=pending_queue_read_failed,track=,http=0,elapsed_ms=0,file_bytes=0,response_bytes=0 delay_ms=300000
+SD card: mounted
+Leaf Log retry: reason=pending_queue_incomplete,track=,http=0,elapsed_ms=0,file_bytes=0,response_bytes=0 delay_ms=300000
+SD card: mounted
+SD card: mounted
+SD card: mounted
+SD card: mounted
+SD card: mounted
+SD card: mounted
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: OffUSB
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done. 
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+sleep_peripherals: OffUSB
+ - Sleeping GPS
+LC86G::sleep now: 3432805
+ready: 3432960
+delay: 155
+************ !!!!!!!!!!! GPS SLEEPING COMMAND SENT !!!!!!!!!!! ************
+ - Sleeping baro
+ - Sleeping speaker
+Shut down speaker
+ - DONE
+ - DONE
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+Leaf Log sync regression checks passed.
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: On
+0 playSound 5451824
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done. 
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+ - DONE
+SD startup space: available=1 free=8522825728 check_us=0
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+Navigator loaded 1 waypoints and 0 routes from /waypoints/bench.cup
+Navigator loaded 1 waypoints and 0 routes from /waypoints/bench.cup
+525 playSound 5476512
+525 playSound 5519418
+Loading saved route: /routes/recovered.json
+*** NEW ROUTE: Recovered
+entering sequence..525 playSound 5443280
+ new active index:1 route index:1 new point:A new lat: 47.50 succes is: 1
+525 playSound 5519408
+Stack monitor saved /diagnostics/stack_2.csv
+Stack monitor saved /diagnostics/stack_4.csv
+Stack monitor saved /diagnostics/stack_6.csv
+Stack monitor saved /diagnostics/stack_8.csv
+SD startup space: available=1 free=10000001 check_us=0
+SD startup space: available=1 free=10000000 check_us=0
+SD startup space: available=1 free=8000000 check_us=0
+SD startup space: available=1 free=16384 check_us=0
+SD startup space: available=1 free=0 check_us=0
+SD startup space: available=0 free=0 check_us=0
+SD card: mounted
+SD startup space: available=0 free=0 check_us=0
+4525 playSound 5441032
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+4525 playSound 5441016
+Checked storage: replacement faults, rollback, recovery, caller preservation, read-only restore, Stack retry and startup warning boundaries passed.
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: On
+0 playSound 5510608
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done. 
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+ - DONE
+SD startup space: available=1 free=8522825728 check_us=0
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+logbook: open error=5 expected=0 actual=0
+logbook: write error=5 expected=245 actual=244
+logbook: trailing_content error=74 expected=0 actual=0
+logbook: write error=2 expected=245 actual=244
+logbook: trailing_content error=74 expected=0 actual=0
+logbook: flush error=5 expected=0 actual=0
+logbook: close error=5 expected=0 actual=0
+logbook: backup_rotate error=5 expected=0 actual=0
+logbook: backup error=5 expected=0 actual=0
+logbook: promote error=5 expected=0 actual=0
+logbook: promote error=5 expected=0 actual=0
+logbook: promote error=5 expected=0 actual=0
+logbook: length error=74 expected=0 actual=0
+logbook: length error=74 expected=0 actual=0
+logbook: allocation error=12 expected=0 actual=0
+logbook: length error=74 expected=0 actual=0
+logbook: length error=74 expected=0 actual=0
+logbook: parse error=74 expected=0 actual=0
+logbook: parse error=74 expected=0 actual=0
+logbook: schema error=74 expected=0 actual=0
+logbook: schema error=74 expected=0 actual=0
+logbook: schema error=74 expected=0 actual=0
+logbook: schema error=74 expected=0 actual=0
+logbook: recovery_conflict error=17 expected=0 actual=0
+logbook: recovery_conflict error=17 expected=0 actual=0
+logbook: recovery_conflict error=17 expected=0 actual=0
+logbook: revision_overflow error=75 expected=0 actual=0
+logbook: schema error=74 expected=0 actual=0
+logbook: temp_cleanup error=5 expected=0 actual=0
+logbook: schema error=74 expected=0 actual=0
+logbook: parse error=74 expected=0 actual=0
+logbook: no_valid_candidate error=74 expected=0 actual=0
+logbook: trailing_content error=74 expected=0 actual=0
+logbook: promote error=5 expected=0 actual=0
+logbook: validation_limit error=27 expected=0 actual=0
+logbook: unsupported_schema error=93 expected=0 actual=0
+logbook: trailing_content error=74 expected=0 actual=0
+logbook: delete_temp error=5 expected=0 actual=0
+logbook: delete_backup error=5 expected=0 actual=0
+logbook: delete_main error=5 expected=0 actual=0
+logbook: delete_track error=5 expected=0 actual=0
+logbook: rename_main error=5 expected=0 actual=0
+logbook: verify_read error=5 expected=0 actual=0
+logbook: verify_mismatch error=5 expected=275 actual=275
+logbook: after_promote error=5 expected=0 actual=0
+logbook: verify_mismatch error=5 expected=245 actual=245
+logbook: after_promote error=5 expected=0 actual=0
+logbook: verify_mismatch error=5 expected=245 actual=244
+logbook: backup_cleanup error=5 expected=0 actual=0
+logbook: parse error=74 expected=0 actual=0
+logbook: backup_unverified error=17 expected=0 actual=0
+logbook: recovery_conflict error=17 expected=0 actual=0
+logbook: read error=5 expected=0 actual=0
+logbook: rename_collision error=17 expected=0 actual=0
+logbook: verify_read error=5 expected=0 actual=0
+logbook: verify_read error=5 expected=0 actual=0
+logbook: verify_read error=5 expected=0 actual=0
+logbook finalization: saved=0 attempts=3 elapsed_ms=200 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+725 playSound 5499752
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+725 playSound 5499736
+725 playSound 5499752
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+725 playSound 5499736
+725 playSound 5499752
+logbook: open error=5 expected=0 actual=0
+logbook finalization: saved=1 attempts=2 elapsed_ms=100 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+825 playSound 5499736
+825 playSound 5499752
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+825 playSound 5499736
+825 playSound 5499752
+logbook: open error=5 expected=0 actual=0
+logbook: open error=5 expected=0 actual=0
+logbook finalization: saved=1 attempts=3 elapsed_ms=200 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+1025 playSound 5499736
+1025 playSound 5499752
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+1025 playSound 5499736
+1025 playSound 5499752
+logbook: open error=5 expected=0 actual=0
+logbook: open error=5 expected=0 actual=0
+logbook: open error=5 expected=0 actual=0
+logbook finalization: saved=0 attempts=3 elapsed_ms=200 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+2225 playSound 5499704
+2225 playSound 5499752
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+2225 playSound 5499736
+2225 playSound 5499752
+logbook: open error=28 expected=0 actual=0
+logbook finalization: saved=0 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+3225 playSound 5499704
+3225 playSound 5499752
+logbook: open error=5 expected=0 actual=0
+logbook finalization: saved=0 attempts=1 elapsed_ms=2100 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+6325 playSound 5499704
+logbook: open error=5 expected=0 actual=0
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+6325 playSound 5499752
+power_shutdown
+logbook: open error=5 expected=0 actual=0
+logbook: open error=5 expected=0 actual=0
+logbook finalization: saved=1 attempts=3 elapsed_ms=200 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+6525 playSound 5499736
+6525 playSound 5510592
+Speaker::update skipped 155 intervals
+sleep_peripherals: On
+ - Sleeping GPS
+LC86G::sleep now: 9345
+ready: 680
+delay: 0
+************ !!!!!!!!!!! GPS SLEEPING COMMAND SENT !!!!!!!!!!! ************
+ - Sleeping baro
+ - Sleeping speaker
+Shut down speaker
+ - DONE
+switch_to_on_state
+SD startup space: available=1 free=8522825728 check_us=0
+wake_peripherals: 
+ - waking GPS
+ - waking baro and IMU
+ - waking speaker
+ - DONE
+9645 playSound 5499752
+power_shutdown
+logbook: open error=5 expected=0 actual=0
+logbook: open error=5 expected=0 actual=0
+logbook finalization: saved=1 attempts=3 elapsed_ms=200 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+9845 playSound 5499736
+9845 playSound 5510592
+Speaker::update skipped 74 intervals
+sleep_peripherals: On
+ - Sleeping GPS
+LC86G::sleep now: 12665
+ready: 680
+delay: 0
+************ !!!!!!!!!!! GPS SLEEPING COMMAND SENT !!!!!!!!!!! ************
+ - Sleeping baro
+ - Sleeping speaker
+Shut down speaker
+ - DONE
+switch_to_on_state
+SD startup space: available=1 free=8522825728 check_us=0
+wake_peripherals: 
+ - waking GPS
+ - waking baro and IMU
+ - waking speaker
+ - DONE
+12965 playSound 5499752
+logbook: promote error=5 expected=0 actual=0
+logbook: promote error=5 expected=0 actual=0
+logbook: promote error=5 expected=0 actual=0
+logbook finalization: saved=0 attempts=3 elapsed_ms=200 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+13165 playSound 5499704
+13165 playSound 5499752
+logbook: delete_active error=16 expected=0 actual=0
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+13165 playSound 5499736
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+Host filesystem wall time: placeholder_us=119 finalization_us=189 (not device latency).
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+logbook: open error=5 expected=0 actual=0
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+logbook: promote error=5 expected=0 actual=0
+logbook: promote error=5 expected=0 actual=0
+logbook finalization: saved=1 attempts=3 elapsed_ms=200 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+logbook: write error=2 expected=964 actual=36
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+73365 playSound 5499752
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+73365 playSound 5499736
+73365 playSound 5499752
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+73365 playSound 5499736
+logbook: promote error=5 expected=0 actual=0
+logbook: promote error=5 expected=0 actual=0
+73365 playSound 5499752
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+73365 playSound 5499736
+logbook: recovery_conflict error=17 expected=0 actual=0
+logbook: recovery_conflict error=17 expected=0 actual=0
+logbook: temp_cleanup error=5 expected=0 actual=0
+logbook: temp_cleanup error=5 expected=0 actual=0
+logbook hardening tests passed
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: On
+0 playSound 5456752
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done. 
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+ - DONE
+SD startup space: available=1 free=8522825728 check_us=0
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+Speaker::update skipped 5 intervals
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+10985 playSound 5511750
+button: DOWN   state: RELEASED    hold count: 0
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+11285 playSound 5511736
+button: CENTER state: RELEASED    hold count: 0
+****************************** autoStart TRUE via motion window
+26815 playSound 5445896
+Sectors: 16777216
+26815 playSound 5445864
+gpx_readFile was successful:
+  4 waypoints
+    Unknown @ 47.00, 11.00, nanm
+    Sea level @ 47.10, 11.00, 0.00m
+    Below sea @ 47.20, 11.00, -50.00m
+    Bad height @ 47.30, 11.00, nanm
+  0 routes
+Navigator loaded 4 waypoints and 0 routes
+*** NEW ROUTE: Dogleg
+entering sequence.. new active index:2 route index:1 new point:Test new lat: 47.61 succes is: 1
+*** NEW ROUTE: Dogleg
+entering sequence.. new active index:4 route index:1 new point:Test new lat: 47.52 succes is: 1
+*** NEW ROUTE: Dogleg
+entering sequence.. new active index:4 route index:1 new point:Test new lat: 47.52 succes is: 1
+entering sequence..30000 playSound 5448152
+ succes is: 0
+34000 playSound 5448144
+34000 playSound 5607406
+34000 playSound 5607406
+34000 playSound 5607400
+34000 playSound 5607406
+34000 playSound 5607400
+34000 playSound 5607406
+34000 playSound 5607400
+34000 playSound 5607406
+34000 playSound 5607400
+34000 playSound 5607406
+34000 playSound 5607406
+34000 playSound 5607400
+34000 playSound 5607406
+34000 playSound 5607400
+34000 playSound 5607406
+34000 playSound 5607406
+34000 playSound 5607406
+34000 playSound 5607406
+34000 playSound 5632128
+34000 playSound 5607406
+34000 playSound 5607406
+34000 playSound 5607400
+34000 playSound 5607406
+34000 playSound 5607400
+34000 playSound 5607400
+34000 playSound 5607400
+34000 playSound 5607400
+34001 playSound 5607400
+34001 playSound 5607400
+34001 playSound 5607400
+34001 playSound 5607400
+34001 playSound 5607400
+34001 playSound 5607400
+34001 playSound 5607400
+34001 playSound 5607400
+34001 playSound 5607400
+34001 playSound 5607406
+34001 playSound 5607406
+34001 playSound 5607392
+34001 playSound 5481472
+34001 playSound 5481472
+34001 playSound 5481472
+34001 playSound 5632112
+34001 playSound 5481472
+34001 playSound 5632112
+34001 playSound 5481472
+34001 playSound 5632088
+34001 playSound 5481472
+34001 playSound 5632112
+Speaker::update skipped 100 intervals
+Nav fields, route goal metrics, display menu, persistence and thermal auto-switch checks passed
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: On
+0 playSound 5456752
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done. 
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+ - DONE
+SD startup space: available=1 free=8522825728 check_us=0
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+Display settings survived a fresh simulator process boot
+Reset reason: poweron (1)
+Starting Setup
+ - Finished SPI
+Connecting hardware devices to bus
+Initializing Taskman Service
+ - Finished I2C Wire
+ - Finished SPI
+ - Finished IO Expander
+power_init: Off
+set input current: 500mA
+init_peripherals: On
+0 playSound 5470448
+SD card: emulated (backed by a host directory)
+SD card: mounted
+ - Finished SDcard
+GPS set pins... GPS being serial port...  - Finished GPS
+ - Finished I2C Wire
+u8g2 set clock. u8g2 began. u8g2 done. 
+u8g2 set contrast.  - Finished display
+MS5611: emulated (pressure arrives as bus messages)
+ - Finished Baro
+ICM20948: emulated (motion arrives as bus messages)
+ - Finished IMU
+ - DONE
+SD startup space: available=1 free=8522825728 check_us=0
+FANET: radio not emulated
+Finished Setup
+Leaf Initialized
+525 playSound 5494912
+525 playSound 5494904
+525 playSound 5494912
+525 playSound 5494912
+525 playSound 5494912
+525 playSound 5494904
+525 playSound 5494912
+525 playSound 5494912
+525 playSound 5494912
+Runtime capture: /diagnostics/runtime_1.json (exported)
+625 playSound 5544952
+625 playSound 5544920
+SD card: mounted
+Runtime capture: /diagnostics/runtime_2.json (exported)
+625 playSound 5544952
+Runtime capture: /diagnostics/runtime_3.json (exported)
+625 playSound 5544952
+625 playSound 5494912
+10800625 playSound 5544920
+SD card: mounted
+Stack monitor saved /diagnostics/stack_1.csv
+10800625 playSound 5544952
+10800625 playSound 5494912
+10800625 playSound 5525424
+10800625 playSound 5494912
+10800625 playSound 5494912
+10800625 playSound 5645712
+10800625 playSound 5459608
+FANET log: /fanetlogs/FANET_unsynced_1.csv
+10800625 playSound 5645688
+10800625 playSound 5645712
+FANET log: /fanetlogs/FANET_2094-03-23_123519_2.csv
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+10800625 playSound 5459592
+10800625 playSound 5459608
+FANET log: /fanetlogs/FANET_2094-03-23_123519_3.csv
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+10800625 playSound 5459592
+10800625 playSound 5494912
+10800625 playSound 5494912
+10800625 playSound 5494912
+10800625 playSound 5494912
+10800625 playSound 5494912
+10800625 playSound 5645688
+10800625 playSound 5459608
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+10800625 playSound 5459592
+10800625 playSound 5459608
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+10800625 playSound 5459592
+10800625 playSound 5459608
+FANET log: write/open failed; toggle Log FANET to retry
+SD card: mounted
+10800625 playSound 5645688
+10800625 playSound 5645712
+FANET log: /fanetlogs/FANET_2094-03-23_123519_4.csv
+logbook finalization: saved=1 attempts=1 elapsed_ms=0 heap_before=204800 heap_after=204800 stats_bytes=152 entry_bytes=456
+10800625 playSound 5459592
+Developer logging: runtime STOP/save/retry, radio visibility, flight CSV lifecycle, GPS validity, packet filtering, persistence, queue overflow and SD recovery passed
+make: Leaving directory '/leaf/sim'

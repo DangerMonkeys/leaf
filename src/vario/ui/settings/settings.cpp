@@ -8,8 +8,11 @@
 
 #include "comms/leaf_log_credentials.h"
 #include "comms/wifi_coordinator.h"
+#include "diagnostics/heap_monitor.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
+#include "logging/buslog.h"
+#include "logging/log.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
@@ -267,10 +270,10 @@ void Settings::loadDefaults() {
   dev_startLogAtBoot = DEF_DEV_START_LOG_AT_BOOT;
   dev_startDisconnected = DEF_DEV_START_DISCONNECTED;
   dev_fanetFwd = DEF_DEV_FANET_FWD;
+  dev_logFanet = DEF_DEV_LOG_FANET;
   diag_systemEvents = DEF_DIAG_SYSTEM_EVENTS;
   diag_networkEvents = DEF_DIAG_NETWORK_EVENTS;
   diag_webRequests = DEF_DIAG_WEB_REQUESTS;
-  diag_vario = DEF_DIAG_VARIO;
   diag_cpuUtilization = DEF_DIAG_CPU_UTILIZATION;
 
   // Leaf Labs
@@ -315,7 +318,8 @@ void Settings::retrieve() {
   vario_sinkAlarm_units = leafPrefs.getBool("SINK_ALARM_UNIT", DEF_SINK_ALARM_UNITS);
   vario_sensitivity.readFrom(leafPrefs);
   vario_climbDisplayAverage = leafPrefs.getChar("climbDispAvg", DEF_CLIMB_DISPLAY_AVERAGE);
-  if (vario_climbDisplayAverage < 0 || vario_climbDisplayAverage > 5)
+  if (vario_climbDisplayAverage < 0 ||
+      vario_climbDisplayAverage > CLIMB_DISPLAY_AVERAGE_MAX_SECONDS)
     vario_climbDisplayAverage = DEF_CLIMB_DISPLAY_AVERAGE;
   glideAverageSeconds = leafPrefs.getChar("glideAvgSec", DEF_GLIDE_AVERAGE);
   if (glideAverageSeconds < 0 || glideAverageSeconds > 20) glideAverageSeconds = DEF_GLIDE_AVERAGE;
@@ -371,10 +375,10 @@ void Settings::retrieve() {
   dev_startLogAtBoot = leafPrefs.getBool("DEV_STARTLOG");
   dev_startDisconnected = leafPrefs.getBool("DEV_STARTDISCON");
   dev_fanetFwd = leafPrefs.getBool("DEV_FANET_FWD", DEF_DEV_FANET_FWD);
+  dev_logFanet = leafPrefs.getBool("DEV_LOG_FANET", DEF_DEV_LOG_FANET);
   diag_systemEvents = leafPrefs.getBool("DIAG_SYSTEM", DEF_DIAG_SYSTEM_EVENTS);
   diag_networkEvents = leafPrefs.getBool("DIAG_NETWORK", DEF_DIAG_NETWORK_EVENTS);
   diag_webRequests = leafPrefs.getBool("DIAG_WEB_REQ", DEF_DIAG_WEB_REQUESTS);
-  diag_vario = leafPrefs.getBool("DIAG_VARIO", DEF_DIAG_VARIO);
   diag_cpuUtilization = leafPrefs.getBool("DIAG_CPU_UTIL", DEF_DIAG_CPU_UTILIZATION);
 
   // Leaf Labs
@@ -442,6 +446,7 @@ void Settings::retrieve() {
 void Settings::save() {
   // Save settings before shutdown (or other times as needed)
   if (!dev_mode) dev_udpInjection = false;
+  heap_monitor::setHistoryEnabled(dev_mode && diag_systemEvents);
 
   leafPrefs.begin("varioPrefs", RW_MODE);
 
@@ -495,10 +500,10 @@ void Settings::save() {
   leafPrefs.putBool("DEV_STARTLOG", dev_startLogAtBoot);
   leafPrefs.putBool("DEV_STARTDISCON", dev_startDisconnected);
   leafPrefs.putBool("DEV_FANET_FWD", dev_fanetFwd);
+  leafPrefs.putBool("DEV_LOG_FANET", dev_logFanet);
   leafPrefs.putBool("DIAG_SYSTEM", diag_systemEvents);
   leafPrefs.putBool("DIAG_NETWORK", diag_networkEvents);
   leafPrefs.putBool("DIAG_WEB_REQ", diag_webRequests);
-  leafPrefs.putBool("DIAG_VARIO", diag_vario);
   leafPrefs.putBool("DIAG_CPU_UTIL", diag_cpuUtilization);
   // Leaf Labs
   leafPrefs.putBool("LAB_LEAF_LOG", labs_leafLog);
@@ -668,7 +673,7 @@ void Settings::adjustClimbDisplayAverage(Button dir) {
 
   if (dir == Button::RIGHT) {
     sound = fx::increase;
-    if (vario_climbDisplayAverage < 5)
+    if (vario_climbDisplayAverage < CLIMB_DISPLAY_AVERAGE_MAX_SECONDS)
       vario_climbDisplayAverage++;
     else
       sound = fx::doubleClick;
@@ -893,7 +898,11 @@ void Settings::toggleBoolNeutral(bool* unitSetting) {
 
 void Settings::setDeveloperMode(bool enabled) {
   dev_mode = enabled;
-  if (!dev_mode) dev_udpInjection = false;
+  if (!dev_mode) {
+    dev_udpInjection = false;
+    busLog.endLog();
+  }
+  heap_monitor::setHistoryEnabled(dev_mode && diag_systemEvents);
 }
 
 void Settings::setUdpInjectionEnabled(bool enabled) { dev_udpInjection = dev_mode && enabled; }
@@ -904,6 +913,8 @@ void Settings::toggleBoolOnOff(bool* switchSetting) {
     setDeveloperMode(!dev_mode);
   else
     *switchSetting = !*switchSetting;
+  // Clear evidence on either edge, even when off/on happens between logging ticks.
+  if (switchSetting == &log_autoStart) flightTimer_resetAutoStart();
   if (*switchSetting)
     speaker.playSound(fx::enter);  // if we turned it on
   else

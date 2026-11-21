@@ -8,6 +8,7 @@
 #include <Arduino.h>
 
 #include "hardware/configuration.h"
+#include "sim/board.h"
 
 #include "comms/ble.h"
 #include "comms/factory_discovery.h"
@@ -33,6 +34,10 @@ void BLE::setup() { Serial.println("BLE: not emulated"); }
 void BLE::start() { started = true; }
 void BLE::stop() { started = false; }
 void BLE::end() { started = false; }
+bool BLE::quiesce(uint32_t) {
+  started = false;
+  return true;
+}
 const char* BLE::statusText() const { return "Unavailable"; }
 void BLE::on_receive(const GpsMessage& msg) {}
 void BLE::on_receive(const FanetPacket& msg) {}
@@ -50,12 +55,16 @@ FanetRadio fanetRadio;
 
 String FanetAddressToString(FANET::Address address) { return String("000:000"); }
 
-void FanetRadio::setup() {}
+void FanetRadio::setup() {
+  fanetDetected_ = sim::board().fanetPresent;
+  state = fanetDetected_ ? FanetRadioState::UNINITIALIZED : FanetRadioState::UNINSTALLED;
+}
 void FanetRadio::subscribe(etl::imessage_bus* bus) {}
-void FanetRadio::begin(const FanetRadioRegion& region) { state = FanetRadioState::UNINSTALLED; }
-void FanetRadio::end() { state = FanetRadioState::UNINITIALIZED; }
+void FanetRadio::begin(const FanetRadioRegion& region) { setup(); }
+void FanetRadio::end() { setup(); }
+bool FanetRadio::quiesce() { return true; }
 void FanetRadio::logDetectionResult() { Serial.println("FANET: radio not emulated"); }
-FanetRadioState FanetRadio::getState() { return state; }
+FanetRadioState FanetRadio::getState() { return state.load(); }
 void FanetRadio::setGroundTrackingMode(const FANET::GroundTrackingPayload::TrackingType& mode) {}
 void FanetRadio::setCurrentLocation(const float& lat, const float& lon, const uint32_t& alt,
                                     const int& heading, const float& climbRate,
@@ -88,6 +97,7 @@ namespace leaf_wifi {
 // ---------------------------------------------------------------- webserver
 
 void webserver_setup() {}
+bool webserver_listening() { return false; }
 void webserver_loop() {}
 void webserver_enable_user_app(bool useLeafWifi) {}
 void webserver_enable_wifi_setup() {}

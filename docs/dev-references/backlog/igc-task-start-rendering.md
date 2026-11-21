@@ -7,7 +7,7 @@ description: Future compatibility check for how IGC viewers render the first rou
 
 ## Context
 
-Leaf currently writes active route declarations into IGC `C` records with the first route waypoint emitted as a `STARTAREA`, intermediate points as `TURNAREA`, and the final point as `FINISHAREA`.
+For ordinary route points, Leaf writes IGC `C` records with the first emitted as `STARTAREA`, intermediate points as `TURNAREA`, and the final point as `FINISHAREA`. Explicit takeoff/SSS/ESS/goal roles override those defaults, and zero-coordinate takeoff/landing placeholders surround the declaration. These role and placeholder records do not establish that casual viewers render the first real route point correctly.
 
 During v0.1.8 release testing, an online IGC viewer displayed the second and third route points but did not visibly render the first route point. The IGC file did contain the first waypoint, and the track passed through its cylinder, so this appears to be a viewer/task-interpretation issue rather than a missing-record issue.
 

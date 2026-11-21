@@ -1,0 +1,88 @@
+{
+  "schema": "leaf.logbook.flight",
+  "schema_version": "v0.1.0",
+  "flight_id": "d686ec1d",
+  "clock": {
+    "system_time_synced_this_boot": true,
+    "time_source": "gps",
+    "timezone_offset_minutes": -420
+  },
+  "start": {
+    "time_valid": true,
+    "time_utc": "2026-10-19T19:26:02Z",
+    "time_local": "2026-10-19T12:26:02",
+    "temperature_c": 27.37567
+  },
+  "first_fix": {
+    "time_valid": true,
+    "time_utc": "2026-10-19T19:26:02Z",
+    "time_local": "2026-10-19T12:26:02",
+    "location": {
+      "lat_deg": 36.76507,
+      "lon_deg": -119.098,
+      "altitude_m": 1416.5
+    },
+    "temperature_c": 27.37567
+  },
+  "end": {
+    "time_valid": true,
+    "time_utc": "2026-10-19T20:49:22Z",
+    "time_local": "2026-10-19T13:49:22",
+    "location": {
+      "lat_deg": 36.73571,
+      "lon_deg": -119.1054,
+      "altitude_m": 620.87
+    },
+    "temperature_c": 24.35271
+  },
+  "metrics": {
+    "duration_seconds": 5000,
+    "max_altitude_m": 2125.23,
+    "min_altitude_m": 619.32,
+    "max_altitude_above_launch_m": 708.73,
+    "max_climb_rate_mps": 7.57,
+    "max_sink_rate_mps": -5.73,
+    "max_ground_speed_mps": 17.78434,
+    "max_wind": {
+      "speed_mps": 5.630281,
+      "direction_from_deg": 236.5923
+    },
+    "average_ground_speed_mps": 9.52425,
+    "straight_line_distance_m": 3331.605,
+    "path_distance_m": 47621.25,
+    "max_accel_g": 1.593458,
+    "min_accel_g": 0.70712,
+    "max_temperature_c": 27.64747,
+    "min_temperature_c": 10.95264
+  },
+  "track": {
+    "saved": true,
+    "format": "igc",
+    "path": "tracks/2026-10-19-XLF-000-01.igc"
+  },
+  "device": {
+    "firmware_version": "0.2.3-497d+h3.2.6",
+    "hardware_version": "leaf_3_2_6",
+    "mac_address": "F0:F5:BD:54:67:A0"
+  },
+  "pilot": {
+    "id": "350c2ea1",
+    "name": "James Burgess"
+  },
+  "glider": {
+    "id": "6b0bd0eb",
+    "brand": "Ozone",
+    "model": "Rush 4",
+    "size": "ML",
+    "display_name": "Rush 4"
+  },
+  "site": {
+    "launch_name": null,
+    "landing_name": null
+  },
+  "weather": {},
+  "notes": {
+    "pilot_notes": "",
+    "tags": []
+  }
+}

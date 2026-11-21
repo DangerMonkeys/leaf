@@ -21,6 +21,18 @@ struct GliderProfile {
   String resolvedDisplayName() const;
 };
 
+struct ProfilePickerEntry {
+  String id;
+  String label;
+};
+
+struct ProfilePickerList {
+  static constexpr uint8_t Capacity = 16;
+  ProfilePickerEntry entries[Capacity];
+  uint8_t count = 0;
+  int8_t selected = -1;
+};
+
 class ProfileStore {
  public:
   static constexpr const char* directoryPath() { return "/profiles"; }
@@ -28,9 +40,7 @@ class ProfileStore {
 
   static bool activePilot(PilotProfile& pilot);
   static bool activeGlider(GliderProfile& glider);
-  static bool load(PilotProfile* pilots, size_t maxPilots, size_t& pilotCount,
-                   GliderProfile* gliders, size_t maxGliders, size_t& gliderCount,
-                   String& activePilotId, String& activeGliderId);
+  static bool loadPicker(ProfilePickerList& pilots, ProfilePickerList& gliders);
   static bool selectPilot(const String& id);
   static bool selectGlider(const String& id);
 };

@@ -1,0 +1,307 @@
+[
+  {
+    "file": "hardware-3.2.3/Racoon/logbook/2026-10-25_13-54-03_0914dd23.json",
+    "parse_error": "Ok",
+    "written_fingerprint": "ca73bce5ddfb7a1a",
+    "reread_fingerprint": "ca73bce5ddfb7a1a",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.3/Racoon/logbook/2026-10-25_13-54-03_0914dd23.json.bak",
+    "parse_error": "Ok",
+    "written_fingerprint": "3d5f6cefab182340",
+    "reread_fingerprint": "3d5f6cefab182340",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.3/RedStrap/logbook/2026-10-25_14-04-09_b597dd83.json",
+    "parse_error": "Ok",
+    "written_fingerprint": "0d4fe6235a65e454",
+    "reread_fingerprint": "0d4fe6235a65e454",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.3/RedStrap/logbook/2026-10-25_14-04-09_b597dd83.json.bak",
+    "parse_error": "Ok",
+    "written_fingerprint": "390d7a189b2d094a",
+    "reread_fingerprint": "390d7a189b2d094a",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_11-28-05_98b04e96.json",
+    "parse_error": "Ok",
+    "written_fingerprint": "c47be07fda1c756a",
+    "reread_fingerprint": "c47be07fda1c756a",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_11-28-05_98b04e96.json.bak",
+    "parse_error": "Ok",
+    "written_fingerprint": "095089681062ac68",
+    "reread_fingerprint": "095089681062ac68",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_11-29-37_ed66b1bd.json",
+    "parse_error": "Ok",
+    "written_fingerprint": "70e0e60f79238796",
+    "reread_fingerprint": "70e0e60f79238796",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_11-29-37_ed66b1bd.json.bak",
+    "parse_error": "Ok",
+    "written_fingerprint": "08be585dc230b93d",
+    "reread_fingerprint": "08be585dc230b93d",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_11-33-08_71df1a09.json",
+    "parse_error": "Ok",
+    "written_fingerprint": "05255f47e54fc4f6",
+    "reread_fingerprint": "05255f47e54fc4f6",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_11-33-08_71df1a09.json.bak",
+    "parse_error": "Ok",
+    "written_fingerprint": "b6b2ba6b5b396657",
+    "reread_fingerprint": "b6b2ba6b5b396657",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_11-33-08_71df1a09.json.tmp",
+    "parse_error": "Ok",
+    "written_fingerprint": "a3d6859e968dca17",
+    "reread_fingerprint": "380f88fd0a43db86",
+    "changes": [
+      {
+        "field": "/metrics/max_altitude_above_launch_m",
+        "written": "7.440002",
+        "reserialized": "7.440001"
+      }
+    ]
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_11-34-44_66ee53c4.json",
+    "parse_error": "Ok",
+    "written_fingerprint": "e8c794cfac8148d4",
+    "reread_fingerprint": "e8c794cfac8148d4",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_11-34-44_66ee53c4.json.bak",
+    "parse_error": "Ok",
+    "written_fingerprint": "2dc2be196e9eb6ad",
+    "reread_fingerprint": "2dc2be196e9eb6ad",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_11-36-02_262eff2e.json",
+    "parse_error": "Ok",
+    "written_fingerprint": "c5be9dba247b1821",
+    "reread_fingerprint": "c5be9dba247b1821",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_11-36-02_262eff2e.json.bak",
+    "parse_error": "Ok",
+    "written_fingerprint": "8c287ff345e9fd87",
+    "reread_fingerprint": "8c287ff345e9fd87",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_11-36-02_262eff2e.json.tmp",
+    "parse_error": "Ok",
+    "written_fingerprint": "d45ab78ba351f3a9",
+    "reread_fingerprint": "158b068848dc253c",
+    "changes": [
+      {
+        "field": "/metrics/max_altitude_above_launch_m",
+        "written": "7.069977",
+        "reserialized": "7.069976"
+      }
+    ]
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_11-39-04_d8562629.json",
+    "parse_error": "Ok",
+    "written_fingerprint": "fe25733ef2385a45",
+    "reread_fingerprint": "fe25733ef2385a45",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_11-39-04_d8562629.json.bak",
+    "parse_error": "Ok",
+    "written_fingerprint": "6d9383fe517cff00",
+    "reread_fingerprint": "6d9383fe517cff00",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_11-42-53_aacea3ea.json",
+    "parse_error": "Ok",
+    "written_fingerprint": "1c7d1331dfe572a3",
+    "reread_fingerprint": "1c7d1331dfe572a3",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_11-42-53_aacea3ea.json.bak",
+    "parse_error": "Ok",
+    "written_fingerprint": "e61c121219ca3e7b",
+    "reread_fingerprint": "e61c121219ca3e7b",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_12-26-30_5d52b0cc.json",
+    "parse_error": "Ok",
+    "written_fingerprint": "6945ee3df14bb230",
+    "reread_fingerprint": "6945ee3df14bb230",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_12-26-30_5d52b0cc.json.bak",
+    "parse_error": "Ok",
+    "written_fingerprint": "886b57a2428f36ca",
+    "reread_fingerprint": "886b57a2428f36ca",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_12-31-39_69b2f82a.json",
+    "parse_error": "Ok",
+    "written_fingerprint": "5b63b4a38f06fbd4",
+    "reread_fingerprint": "5b63b4a38f06fbd4",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_12-31-39_69b2f82a.json.bak",
+    "parse_error": "Ok",
+    "written_fingerprint": "bdb730365dcbb3ea",
+    "reread_fingerprint": "bdb730365dcbb3ea",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_12-32-49_7b9629a0.json",
+    "parse_error": "Ok",
+    "written_fingerprint": "ed60d98f9d12bbcd",
+    "reread_fingerprint": "ed60d98f9d12bbcd",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_12-32-49_7b9629a0.json.bak",
+    "parse_error": "Ok",
+    "written_fingerprint": "0e78c3dc7575aa39",
+    "reread_fingerprint": "0e78c3dc7575aa39",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_12-33-57_3a70e32f.json",
+    "parse_error": "Ok",
+    "written_fingerprint": "b270d781c88ca134",
+    "reread_fingerprint": "b270d781c88ca134",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_12-33-57_3a70e32f.json.bak",
+    "parse_error": "Ok",
+    "written_fingerprint": "8ae63d0752e6aa4b",
+    "reread_fingerprint": "8ae63d0752e6aa4b",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_12-34-57_3f44f4fd.json",
+    "parse_error": "Ok",
+    "written_fingerprint": "2890dcb691ed106b",
+    "reread_fingerprint": "2890dcb691ed106b",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_12-34-57_3f44f4fd.json.bak",
+    "parse_error": "Ok",
+    "written_fingerprint": "dc8d768e2bfe2b4d",
+    "reread_fingerprint": "dc8d768e2bfe2b4d",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_12-35-21_54230450.json",
+    "parse_error": "Ok",
+    "written_fingerprint": "37465507c4e00fa1",
+    "reread_fingerprint": "37465507c4e00fa1",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_12-35-21_54230450.json.bak",
+    "parse_error": "Ok",
+    "written_fingerprint": "70bd8b07a1d728f6",
+    "reread_fingerprint": "70bd8b07a1d728f6",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_12-35-50_2bfa0a61.json",
+    "parse_error": "Ok",
+    "written_fingerprint": "b4c757e5443d82e8",
+    "reread_fingerprint": "b4c757e5443d82e8",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_12-35-50_2bfa0a61.json.bak",
+    "parse_error": "Ok",
+    "written_fingerprint": "03e851441443dc46",
+    "reread_fingerprint": "03e851441443dc46",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_13-54-46_e8d117b0.json",
+    "parse_error": "Ok",
+    "written_fingerprint": "1e37a096eead5981",
+    "reread_fingerprint": "1e37a096eead5981",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_13-54-46_e8d117b0.json.bak",
+    "parse_error": "Ok",
+    "written_fingerprint": "e0f25ce04fe08043",
+    "reread_fingerprint": "e0f25ce04fe08043",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_14-03-39_e3cc6779.json",
+    "parse_error": "Ok",
+    "written_fingerprint": "c3a68a65377b880f",
+    "reread_fingerprint": "c3a68a65377b880f",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_14-03-39_e3cc6779.json.bak",
+    "parse_error": "Ok",
+    "written_fingerprint": "ad4fa20285c6b7a9",
+    "reread_fingerprint": "ad4fa20285c6b7a9",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_14-04-14_5696dc6b.json",
+    "parse_error": "Ok",
+    "written_fingerprint": "6c9cabac2df493af",
+    "reread_fingerprint": "6c9cabac2df493af",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_14-04-14_5696dc6b.json.bak",
+    "parse_error": "Ok",
+    "written_fingerprint": "53c3d1d929940aff",
+    "reread_fingerprint": "53c3d1d929940aff",
+    "changes": []
+  },
+  {
+    "file": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_14-04-14_5696dc6b.json.tmp",
+    "parse_error": "Ok",
+    "written_fingerprint": "efe36c4f97d75c82",
+    "reread_fingerprint": "520e8ed9f8f9a1ff",
+    "changes": [
+      {
+        "field": "/metrics/average_ground_speed_mps",
+        "written": "8.060762",
+        "reserialized": "8.060761"
+      }
+    ]
+  }
+]

@@ -1,0 +1,38 @@
+{
+  "source_commit": "45e599af1c0a47421a88dbcbefccf0519c8166ee",
+  "source_changes": {
+    "sim/Makefile": "dbbb0ef8130e4b659c4ecd9b6433f99824b913c123e19d1b7d896cf2c28151ba",
+    "sim/device/comms.cpp": "77e8ffad02d1e797623b4aa445fecff2e9302c83db02ff816896f1c74d5becf4",
+    "sim/tests/flight_auto_start.cpp": "5ec80d86b0efb9a64fa2f8533b0bbcc72b9ec5691484502174fc600605b3da4d",
+    "sim/tests/logbook_io.cpp": "7f1ea08c4b9640b66339fb03658e78f4b7b49aa1fcd2ef13a55d778dfb82ba71",
+    "sim/tests/shutdown_bus.cpp": "07601d389e2ac32a8c0bb9e888e583c175452762273539922d2640088530d1a0",
+    "sim/tests/shutdown_integration.cpp": "ea802543a1b15eb14dbbd651654070888cf721800ba9423102c30947d7ceeaa9",
+    "sim/tests/thermal_lifecycle.cpp": "489409c437a52673452a6cc866436808a30080f1348c5cab24c08939ee205c55",
+    "src/vario/comms/fanet_radio.cpp": "2d00ae85fc4fb3f5f74d57fb91b4d34937bf5c61c089fc4dfe03ff9af2269d22",
+    "src/vario/comms/fanet_radio.h": "5c2d3244cd3f29a6be5b3b066e989b2d01c93db31ee8697e02bf3b7413d23d86",
+    "src/vario/comms/udp_message_server.cpp": "05e3eedff7739c415bb0ade8955dea8fea662e418ecccabcee698d73fde79eb2",
+    "src/vario/comms/udp_message_server.h": "635622a5fcf74e0fe7dc07ab6a57b59749b8e2b2075c9f6e5af81a5b85be3a3d",
+    "src/vario/power.cpp": "89dc10ca35ca1657719d9f3478635bcfddf3b977592cd0a9b2630a39b4005fbb",
+    "src/vario/power.h": "3c8a0541226e947d8357de1a0342a314c689f6b8fc39124acb0e2b84c6b9e550",
+    "src/vario/system/shutdown_guard.cpp": "1010465bf5a0980caf09572f7e46340685bb6d04f0dc534cd302a5bab6826ff5",
+    "src/vario/system/shutdown_guard.h": "e035b98a74e7b063a29b87903e4bf4fe58eef468904f3513cea9e27d2288a9db",
+    "src/vario/taskman.cpp": "cfb9af0c69233c36a62448a49b4ff190065a46ac87dde44f506a09a7d45ea50a"
+  },
+  "environment": "leaf_3_2_8_bench",
+  "reported_version": "0.2.4-45ed.bench+h3.2.8",
+  "device_mac": "7C:4F:AD:3B:AC:B0",
+  "artifacts": {
+    "firmware.bin": {
+      "bytes": 2420656,
+      "sha256": "4d010ecb533194ab323499a1df58d7114e35eabdef20d50b2c12e7ce80170e53"
+    },
+    "firmware.elf": {
+      "bytes": 37960192,
+      "sha256": "fd292ac3af418f9f957deeba936d2d828175fda688aa219a085958b1e7190d2e"
+    }
+  },
+  "baseline_static_bytes": 86604,
+  "candidate_static_bytes": 86620,
+  "baseline_flash_bytes": 2419384,
+  "candidate_flash_bytes": 2420012
+}

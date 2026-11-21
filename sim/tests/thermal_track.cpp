@@ -37,8 +37,8 @@ namespace {
     const auto track = drawTrack();
     thermalCorePage_draw();
     const auto core = sim::captureFrame();
-    // The entire upper section matches Core, including altitude, wind and climb fields.
-    for (int y = 0; y < 57; ++y) {
+    // The shared instruments match above Core's new history pane.
+    for (int y = 0; y < 51; ++y) {
       for (int x = 0; x < track.width; ++x) {
         assert(core.pixels[y * core.width + x] == track.pixels[y * track.width + x]);
       }
@@ -57,9 +57,23 @@ namespace {
   void checkCoreClimbLayout() {
     for (bool fpm : {false, true}) {
       settings.units_climb = fpm;
-      const int right = fpm ? 54 : 43;
+      const int right = 54;
       for (int32_t climb : {0, 5, 45, 95, 551, 999, 1059, 6000, -551}) {
         const auto frame = drawCoreClimb(climb);
+        u8g2.firstPage();
+        do {
+          thermal_page::drawCoreClimbAverage(climb, 54, 56);
+        } while (u8g2.nextPage());
+        const auto average = sim::captureFrame();
+        // Every digit slot, baseline and unit gap matches the live field, with reversed
+        // colors. Exclude the sign margins: m/s now has standard 14h signs; fpm is unchanged.
+        const int firstDigitColumn = fpm ? (climb < 0 ? 7 : 0) : 12;
+        for (int y = 0; y < 16; ++y) {
+          for (int x = firstDigitColumn; x < 41; ++x) {
+            assert(frame.pixels[(35 + y) * frame.width + 14 + x] !=
+                   average.pixels[(56 + y) * average.width + 54 + x]);
+          }
+        }
         // Fixed box size and one-pixel padding survive leading blanks, sign and saturation.
         for (int x = 14; x <= right; ++x) {
           assert(frame.pixels[35 * frame.width + x]);
@@ -91,6 +105,33 @@ namespace {
     save(low, "sim/build-tests/core-climb-0080.png");
     save(mid, "sim/build-tests/core-climb-1080.png");
     settings.units_climb = false;
+    const auto positive = drawCoreClimb(551);
+    const auto negative = drawCoreClimb(-551);
+    // The full eight-pixel 14h horizontal stroke is visible after the box is drawn,
+    // including the part that moved inside it. The positive sign also has a taller stem.
+    for (int y : {42, 43})
+      for (int x = 11; x <= 18; ++x) {
+        assert(!positive.pixels[y * positive.width + x]);
+        assert(!negative.pixels[y * negative.width + x]);
+      }
+    assert(!positive.pixels[39 * positive.width + 14]);
+    assert(negative.pixels[39 * negative.width + 14]);
+    for (int y = 35; y <= 50; ++y)
+      for (int x = 19; x <= 54; ++x)
+        assert(positive.pixels[y * positive.width + x] == negative.pixels[y * negative.width + x]);
+    save(positive, "sim/build-tests/core-climb-metric-plus.png");
+    save(negative, "sim/build-tests/core-climb-metric-minus.png");
+    for (bool sink : {false, true}) {
+      u8g2.firstPage();
+      do {
+        thermal_page::drawCoreClimbAverage(sink ? -551 : 551, 54, 56);
+      } while (u8g2.nextPage());
+      const auto average = sim::captureFrame();
+      for (int y : {63, 64})
+        for (int x = 57; x <= 64; ++x) assert(average.pixels[y * average.width + x] == sink);
+      save(average, sink ? "sim/build-tests/core-average-metric-minus.png"
+                         : "sim/build-tests/core-average-metric-positive.png");
+    }
   }
 
   sim::Frame drawCoreAltitude(int32_t altitude, uint8_t& endX) {
@@ -142,7 +183,8 @@ namespace {
       for (int y = 0; y < frame.height; ++y) {
         for (int x = 15; x < endX; ++x) {
           if (!frame.pixels[y * frame.width + x]) continue;
-          if (x < tensX) highTop = std::min(highTop, y);
+          if (x < tensX)
+            highTop = std::min(highTop, y);
           else {
             lowTop = std::min(lowTop, y);
             lowBottom = std::max(lowBottom, y);
@@ -206,8 +248,8 @@ namespace {
     const struct {
       const char* number;
       const char* unit;
-    } distances[] = {{"999", "m"}, {"9.9", "km"}, {"9.9", "mi"},
-                     {"99", "km"}, {"99", "mi"}, {"--", "km"}, {"--", "mi"}};
+    } distances[] = {{"999", "m"}, {"9.9", "km"}, {"9.9", "mi"}, {"99", "km"},
+                     {"99", "mi"}, {"--", "km"},  {"--", "mi"}};
     for (const auto& distance : distances) {
       u8g2.setFont(leaf_6x12);
       const int16_t numberWidth = u8g2.getStrWidth(distance.number);
@@ -230,9 +272,10 @@ namespace {
     const uint8_t count = thermalTracker.displayItemCount();
     const std::vector<ThermalDisplayItem> originals(items, items + count);
     for (uint8_t i = 0; i < count; ++i) items[i].valid = &items[i] == &selected;
-    const struct { int8_t x, y; } positions[] = {
-        {0, -20}, {20, 0}, {0, 20}, {-20, 0}, {20, -20}, {-20, -20},
-        {20, 20}, {-20, 20}, {47, 0}, {-48, 0}, {0, -48}, {0, 47}, {0, 0}, {0, -4}};
+    const struct {
+      int8_t x, y;
+    } positions[] = {{0, -20},  {20, 0}, {0, 20},  {-20, 0}, {20, -20}, {-20, -20}, {20, 20},
+                     {-20, 20}, {47, 0}, {-48, 0}, {0, -48}, {0, 47},   {0, 0},     {0, -4}};
     for (uint8_t quality = 1; quality <= 5; ++quality) {
       selected.quality = quality;
       for (const auto& position : positions) {

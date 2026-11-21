@@ -1,0 +1,59 @@
+{
+  "utc": "2026-11-20T01:21:55.979551+00:00",
+  "steps": [
+    {
+      "command": "wait 5",
+      "reply": "waited",
+      "seconds": 5.0
+    },
+    {
+      "command": "press UP",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press CENTER",
+      "reply": "ok",
+      "seconds": 0.312
+    },
+    {
+      "command": "status",
+      "reply": "status On Menu 2 1 0 1 0 1 1",
+      "seconds": 0.0
+    },
+    {
+      "command": "heap",
+      "reply": "heap 52588 21800 31732 7548",
+      "seconds": 0.0
+    }
+  ],
+  "initial": {
+    "power": "On",
+    "page": "Menu",
+    "cursor": 4,
+    "modal_depth": 1,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": false,
+    "flight_running": true,
+    "firmware_sd_access": true
+  },
+  "final": {
+    "power": "On",
+    "page": "Menu",
+    "cursor": 2,
+    "modal_depth": 1,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": false,
+    "flight_running": true,
+    "firmware_sd_access": true
+  },
+  "heap": {
+    "internal_free": 52588,
+    "internal_min_since_boot": 21800,
+    "internal_largest": 31732,
+    "loop_stack_unused": 7548
+  },
+  "screen_error": "URLError(OSError(10049, 'The requested address is not valid in its context', None, 10049, None))"
+}

@@ -1,6 +1,7 @@
 #include "ui/display/pages/menu/page_profile_select.h"
 
 #include <string.h>
+#include <new>
 
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
@@ -18,7 +19,6 @@ namespace {
   constexpr uint8_t MAX_PROFILE_NAME_LENGTH = 64;
   constexpr uint8_t DISPLAY_WIDTH = 96;
 
-  String gliderName(const GliderProfile& glider) { return glider.resolvedDisplayName(); }
 }  // namespace
 
 PageProfileSelect::PageProfileSelect() {
@@ -85,28 +85,25 @@ void PageProfileSelect::draw() {
 }
 
 void PageProfileSelect::refresh() {
-  size_t pilotCount = 0;
-  size_t gliderCount = 0;
+  model_.reset();
   firstVisible_ = 0;
   status_[0] = '\0';
-
-  if (!ProfileStore::load(pilots_, MAX_PILOT_PROFILES, pilotCount, gliders_, MAX_GLIDER_PROFILES,
-                          gliderCount, activePilotId_, activeGliderId_)) {
-    snprintf(status_, sizeof(status_), "Profiles not ready");
-    pilotCount_ = 0;
-    gliderCount_ = 0;
-    contentCount_ = 0;
-    cursor_position = CURSOR_BACK;
-    cursor_max = CURSOR_BACK;
+  pilotCount_ = gliderCount_ = contentCount_ = 0;
+  cursor_position = cursor_max = CURSOR_BACK;
+  model_.reset(new (std::nothrow) Model);
+  if (!model_ || !ProfileStore::loadPicker(model_->pilots, model_->gliders)) {
+    snprintf(status_, sizeof(status_), "%s", model_ ? "Profiles not ready" : "Not enough memory");
+    model_.reset();
     return;
   }
 
-  pilotCount_ = static_cast<uint8_t>(pilotCount);
-  gliderCount_ = static_cast<uint8_t>(gliderCount);
+  pilotCount_ = model_->pilots.count;
+  gliderCount_ = model_->gliders.count;
   contentCount_ = 2 + pilotCount_ + gliderCount_;
   cursor_max = contentCount_ > 0 ? contentCount_ - 1 : CURSOR_BACK;
 
   if (pilotCount_ + gliderCount_ == 0) {
+    model_.reset();
     contentCount_ = 0;
     cursor_position = CURSOR_BACK;
     cursor_max = CURSOR_BACK;
@@ -186,9 +183,9 @@ void PageProfileSelect::selectCurrent() {
   bool selected = false;
 
   if (type == RowType::Pilot && profileIndex < pilotCount_) {
-    selected = ProfileStore::selectPilot(pilots_[profileIndex].id);
+    selected = ProfileStore::selectPilot(model_->pilots.entries[profileIndex].id);
   } else if (type == RowType::Glider && profileIndex < gliderCount_) {
-    selected = ProfileStore::selectGlider(gliders_[profileIndex].id);
+    selected = ProfileStore::selectGlider(model_->gliders.entries[profileIndex].id);
   }
 
   if (selected) {
@@ -211,6 +208,12 @@ void PageProfileSelect::close() {
   pop_page();
 }
 
+void PageProfileSelect::closed(bool removed) {
+  if (!removed) return;
+  model_.reset();
+  pilotCount_ = gliderCount_ = contentCount_ = 0;
+}
+
 void PageProfileSelect::drawContentRow(uint8_t y, uint8_t contentIndex) {
   const RowType type = rowType(contentIndex);
   if (type == RowType::Header) {
@@ -224,12 +227,11 @@ void PageProfileSelect::drawContentRow(uint8_t y, uint8_t contentIndex) {
 
   const uint8_t profileIndex = rowProfileIndex(contentIndex);
   if (type == RowType::Pilot && profileIndex < pilotCount_) {
-    drawProfileRow(y, pilots_[profileIndex].name.c_str(), cursor_position == contentIndex,
-                   isSelectedPilot(profileIndex));
+    drawProfileRow(y, model_->pilots.entries[profileIndex].label.c_str(),
+                   cursor_position == contentIndex, model_->pilots.selected == profileIndex);
   } else if (type == RowType::Glider && profileIndex < gliderCount_) {
-    const String name = gliderName(gliders_[profileIndex]);
-    drawProfileRow(y, name.c_str(), cursor_position == contentIndex,
-                   isSelectedGlider(profileIndex));
+    drawProfileRow(y, model_->gliders.entries[profileIndex].label.c_str(),
+                   cursor_position == contentIndex, model_->gliders.selected == profileIndex);
   }
 }
 
@@ -300,18 +302,6 @@ bool PageProfileSelect::cursorOnBack() const { return cursor_position == CURSOR_
 bool PageProfileSelect::selectableRow(uint8_t contentIndex) const {
   const RowType type = rowType(contentIndex);
   return type == RowType::Pilot || type == RowType::Glider;
-}
-
-bool PageProfileSelect::isSelectedPilot(uint8_t pilotIndex) const {
-  if (pilotIndex >= pilotCount_) return false;
-  if (!activePilotId_.isEmpty()) return pilots_[pilotIndex].id == activePilotId_;
-  return pilotCount_ == 1;
-}
-
-bool PageProfileSelect::isSelectedGlider(uint8_t gliderIndex) const {
-  if (gliderIndex >= gliderCount_) return false;
-  if (!activeGliderId_.isEmpty()) return gliders_[gliderIndex].id == activeGliderId_;
-  return gliderCount_ == 1;
 }
 
 PageProfileSelect::RowType PageProfileSelect::rowType(uint8_t contentIndex) const {

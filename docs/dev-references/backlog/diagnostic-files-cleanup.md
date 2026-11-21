@@ -1,40 +1,65 @@
 ---
 title: Diagnostic Files Cleanup Backlog
-description: Reference and future cleanup notes for dev-mode SD-card diagnostic files.
+description: Current developer diagnostic files and remaining cleanup work.
 ---
 
 # Diagnostic Files Cleanup Backlog
 
-Leaf can write diagnostic files under `/diagnostics` on the SD card when the `dev_mode` user setting is enabled. These files are intended for development and field debugging; normal user mode should not create the diagnostics directory or write these files.
+**November 20, 2026 update:** Developer Vario CSV is retired; the Stacks monitor saves on
+stop or normal shutdown, preserving failed exports in RAM for retry while powered. Bus
+logging stops when Developer mode is disabled. Further diagnostic-memory reductions are
+paused; see the [memory restart plan](https://leafvario.com/dev-references/backlog/memory-optimization-followup/).
 
-Current diagnostic files:
+Status reconciled **2026-10-24**: diagnostic categories and their Developer controls are
+implemented. Separate dev firmware builds were retired in `c840faf9` (#420); runtime Developer
+mode and each category's setting control logging in the release image.
 
-- `/diagnostics/heap_lifecycle.csv`
-  - Written by `heap_monitor::checkpoint()` as major firmware lifecycle events occur.
-  - CSV columns: `millis`, `event`, heap totals, largest allocatable blocks, internal/PSRAM availability, current task, and loop/BLE/FANET stack high-water marks.
-- `/diagnostics/heap_monitor.csv`
-  - Written by `heap_monitor::dumpToSd()` when a buffered heap snapshot is flushed, currently around user web-app shutdown.
-  - Uses the same CSV format as `heap_lifecycle.csv`; rows come from the recent in-memory ring buffer instead of only immediate lifecycle checkpoints.
-- `/diagnostics/wifi_setup.csv`
-  - Written during the Leaf AP/web-app WiFi setup flow.
-  - CSV columns include setup cycle, portal/provisioning/connection state, WiFi status and mode, AP station count, local/AP IPs, current and target SSIDs, connection errors, connection timing, and heap availability.
-- `/diagnostics/wifi_autoconnect.csv`
-  - Written by the saved-network WiFi coordinator while attempting automatic station connections.
-  - CSV columns include attempt cycle/index/count, target/current SSID, WiFi status and mode, RSSI, local IP, whether diagnostic-network activity is still allowed, heap availability, and current task.
-- `/diagnostics/web_requests.csv`
-  - Written around user web-app route handlers.
-  - CSV columns include request sequence, route label, HTTP method and URI, start/duration timing, heap availability, WiFi status/mode/RSSI, AP station count, provisioning state, and current task.
-- `/diagnostics/webapp_requests.csv`
-  - Written when the user web app is disabled to summarize route/counter activity.
-  - CSV columns include user-app enabled/configuration state, AP station peak, WiFi status, heap availability, loop/handle counts, per-route counters, not-found count, and AP IP.
-- `/diagnostics/boot_report.csv`
-  - Written once per boot after SD mount.
-  - CSV columns are `millis`, `section`, `key`, `value`, and `detail`; current sections cover reset reason and navigation structure/capacity sizes.
+## Current files and controls
 
-Future work:
+| File under `/diagnostics` | Control and contents |
+| --- | --- |
+| `system_events.csv` | System Events (`diag_systemEvents`): lifecycle/boot events, heap checkpoints, buffered heap dumps, registered-task stack headroom and Leaf Log retry details |
+| `network_events.csv` | Network Events (`diag_networkEvents`): WiFi setup and saved-network connection events |
+| `web_requests.csv` | Web Requests (`diag_webRequests`): web request timing and session/counter diagnostics |
+| `vario.csv` | Legacy instrument/filter capture. New firmware no longer writes it. |
+| `stack_N.csv` | Lightweight Stacks monitor: session/task-instance counts and minimum unused task stack; manual stop or shutdown export |
+| `runtime_N.json` | CPU/timing capture (`diag_cpuUtilization`): explicit export of a bounded, frozen RAM capture |
 
-- Decide whether these SD-card diagnostics should stay as developer tools, move behind a stronger build/debug switch, or be removed once the related release hardening is complete.
-- If they stay, consider individual `dev_mode` toggles for heap, WiFi setup, WiFi autoconnect, web request, web-app counter, and boot reports.
-- Add a small web-app/debug UI for clearing or downloading diagnostic files so field testers do not need to inspect the SD card manually.
-- Consider rotating or truncating long-running CSV files to avoid unbounded SD growth during repeated development sessions.
-- Keep any lightweight runtime checks that are required for correct behavior, even if their file-writing diagnostics are removed.
+The former `heap_lifecycle.csv`, `heap_monitor.csv`, `wifi_setup.csv`,
+`wifi_autoconnect.csv`, `webapp_requests.csv` and `boot_report.csv` names describe older
+captures, not separate current writers. Their lifecycle/network/web information is consolidated
+into the category files above. `CPU_UTILIZATION_PATH` remains a legacy constant; the runtime
+assessor no longer writes synchronous per-second `cpu_utilization.csv` rows.
+
+All categories require `dev_mode` as well as their category toggle. The web app Developer card
+can change these controls. Diagnostic filesystem writes require firmware SD ownership and are
+paused while USB owns the card. Runtime capture freezes before explicit export; it does not
+stream timing rows to SD in the measured path. See [Runtime assessment](https://leafvario.com/dev-references/runtime-assessment/)
+for capture allocation, export, comparison and simulator limitations.
+The runtime capture also has an implemented download endpoint, `/api/debug/runtime/download`,
+after freeze/export; a general CSV file-management UI is separate work.
+
+## Flight diagnostics in IGC files
+
+The `/diagnostics` categories above are separate from manufacturer L records added to normal
+IGC tracks in #431 and #432. G-load interval diagnostics are written once per second while the
+IGC is open, with a final group at stop. The old thirty-entry pre-start diagnostic ring was removed in #444. Compact START V=3
+and end records identify the timer cause; the separate live auto-start detector remains. These records
+use the normal checksum-aware IGC writer and do not require Developer mode or a CSV toggle.
+No IGC diagnostics are available when track saving is disabled or the flight ends before its
+IGC opens. See [Flights and Logging](https://leafvario.com/dev-references/flights_and_logging/).
+
+These temporary field-tuning records add SD traffic to the flight workload. Measure their
+effect in exact-candidate runtime reports and decide what to retain or gate after validation.
+
+## Remaining work
+
+- Add a focused UI for downloading/clearing diagnostic CSVs if field use warrants it; category
+  toggles exist and should not be reimplemented.
+- Consider rotation/truncation for append-only CSVs and retention limits for numbered runtime
+  exports to avoid unbounded SD growth across development sessions.
+- Reassess which diagnostics to retain after release hardening, preserving checks needed for
+  correct behavior.
+- Coordinate checked writes and failure-path reporting with
+  [SD card write robustness](https://leafvario.com/dev-references/backlog/sd-card-write-robustness/); a diagnostic write must not recurse
+  into more writes on a failing card.

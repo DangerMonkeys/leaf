@@ -1,0 +1,992 @@
+[
+  {
+    "window_s": 15,
+    "pressure_range_m": 2,
+    "position_radius_m": null,
+    "tracks": [
+      {
+        "label": "Racoon",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:16",
+        "delay_from_reference_s": 41,
+        "recording_ends": "14:58:42"
+      },
+      {
+        "label": "RedStrap",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:06",
+        "delay_from_reference_s": 31,
+        "recording_ends": "14:42:32"
+      },
+      {
+        "label": "BlueGreen326",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:25",
+        "delay_from_reference_s": 50,
+        "recording_ends": "14:41:30"
+      },
+      {
+        "label": "Bethany",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": null,
+        "delay_from_reference_s": null,
+        "recording_ends": "13:41:53"
+      },
+      {
+        "label": "Bowen Dwelle 2026-10-25-XLV-000-01 (1).igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:50:30",
+        "delay_from_reference_s": 15,
+        "recording_ends": "15:24:00"
+      },
+      {
+        "label": "Scott O\u00e2\u20ac\u2122Brien 2026-10-25-XLV-000-02.igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:50:21",
+        "delay_from_reference_s": 16,
+        "recording_ends": "14:50:24"
+      }
+    ]
+  },
+  {
+    "window_s": 15,
+    "pressure_range_m": 2,
+    "position_radius_m": 5,
+    "tracks": [
+      {
+        "label": "Racoon",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:16",
+        "delay_from_reference_s": 41,
+        "recording_ends": "14:58:42"
+      },
+      {
+        "label": "RedStrap",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:06",
+        "delay_from_reference_s": 31,
+        "recording_ends": "14:42:32"
+      },
+      {
+        "label": "BlueGreen326",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:25",
+        "delay_from_reference_s": 50,
+        "recording_ends": "14:41:30"
+      },
+      {
+        "label": "Bethany",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": null,
+        "delay_from_reference_s": null,
+        "recording_ends": "13:41:53"
+      },
+      {
+        "label": "Bowen Dwelle 2026-10-25-XLV-000-01 (1).igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:50:30",
+        "delay_from_reference_s": 15,
+        "recording_ends": "15:24:00"
+      },
+      {
+        "label": "Scott O\u00e2\u20ac\u2122Brien 2026-10-25-XLV-000-02.igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:50:21",
+        "delay_from_reference_s": 16,
+        "recording_ends": "14:50:24"
+      }
+    ]
+  },
+  {
+    "window_s": 15,
+    "pressure_range_m": 2,
+    "position_radius_m": 10,
+    "tracks": [
+      {
+        "label": "Racoon",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:16",
+        "delay_from_reference_s": 41,
+        "recording_ends": "14:58:42"
+      },
+      {
+        "label": "RedStrap",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:06",
+        "delay_from_reference_s": 31,
+        "recording_ends": "14:42:32"
+      },
+      {
+        "label": "BlueGreen326",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:25",
+        "delay_from_reference_s": 50,
+        "recording_ends": "14:41:30"
+      },
+      {
+        "label": "Bethany",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": null,
+        "delay_from_reference_s": null,
+        "recording_ends": "13:41:53"
+      },
+      {
+        "label": "Bowen Dwelle 2026-10-25-XLV-000-01 (1).igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:50:30",
+        "delay_from_reference_s": 15,
+        "recording_ends": "15:24:00"
+      },
+      {
+        "label": "Scott O\u00e2\u20ac\u2122Brien 2026-10-25-XLV-000-02.igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:50:21",
+        "delay_from_reference_s": 16,
+        "recording_ends": "14:50:24"
+      }
+    ]
+  },
+  {
+    "window_s": 15,
+    "pressure_range_m": 3,
+    "position_radius_m": null,
+    "tracks": [
+      {
+        "label": "Racoon",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:16",
+        "delay_from_reference_s": 41,
+        "recording_ends": "14:58:42"
+      },
+      {
+        "label": "RedStrap",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:06",
+        "delay_from_reference_s": 31,
+        "recording_ends": "14:42:32"
+      },
+      {
+        "label": "BlueGreen326",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:25",
+        "delay_from_reference_s": 50,
+        "recording_ends": "14:41:30"
+      },
+      {
+        "label": "Bethany",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": null,
+        "delay_from_reference_s": null,
+        "recording_ends": "13:41:53"
+      },
+      {
+        "label": "Bowen Dwelle 2026-10-25-XLV-000-01 (1).igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:50:30",
+        "delay_from_reference_s": 15,
+        "recording_ends": "15:24:00"
+      },
+      {
+        "label": "Scott O\u00e2\u20ac\u2122Brien 2026-10-25-XLV-000-02.igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:50:21",
+        "delay_from_reference_s": 16,
+        "recording_ends": "14:50:24"
+      }
+    ]
+  },
+  {
+    "window_s": 15,
+    "pressure_range_m": 3,
+    "position_radius_m": 5,
+    "tracks": [
+      {
+        "label": "Racoon",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:16",
+        "delay_from_reference_s": 41,
+        "recording_ends": "14:58:42"
+      },
+      {
+        "label": "RedStrap",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:06",
+        "delay_from_reference_s": 31,
+        "recording_ends": "14:42:32"
+      },
+      {
+        "label": "BlueGreen326",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:25",
+        "delay_from_reference_s": 50,
+        "recording_ends": "14:41:30"
+      },
+      {
+        "label": "Bethany",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": null,
+        "delay_from_reference_s": null,
+        "recording_ends": "13:41:53"
+      },
+      {
+        "label": "Bowen Dwelle 2026-10-25-XLV-000-01 (1).igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:50:30",
+        "delay_from_reference_s": 15,
+        "recording_ends": "15:24:00"
+      },
+      {
+        "label": "Scott O\u00e2\u20ac\u2122Brien 2026-10-25-XLV-000-02.igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:50:21",
+        "delay_from_reference_s": 16,
+        "recording_ends": "14:50:24"
+      }
+    ]
+  },
+  {
+    "window_s": 15,
+    "pressure_range_m": 3,
+    "position_radius_m": 10,
+    "tracks": [
+      {
+        "label": "Racoon",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:16",
+        "delay_from_reference_s": 41,
+        "recording_ends": "14:58:42"
+      },
+      {
+        "label": "RedStrap",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:06",
+        "delay_from_reference_s": 31,
+        "recording_ends": "14:42:32"
+      },
+      {
+        "label": "BlueGreen326",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:25",
+        "delay_from_reference_s": 50,
+        "recording_ends": "14:41:30"
+      },
+      {
+        "label": "Bethany",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": null,
+        "delay_from_reference_s": null,
+        "recording_ends": "13:41:53"
+      },
+      {
+        "label": "Bowen Dwelle 2026-10-25-XLV-000-01 (1).igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:50:30",
+        "delay_from_reference_s": 15,
+        "recording_ends": "15:24:00"
+      },
+      {
+        "label": "Scott O\u00e2\u20ac\u2122Brien 2026-10-25-XLV-000-02.igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:50:21",
+        "delay_from_reference_s": 16,
+        "recording_ends": "14:50:24"
+      }
+    ]
+  },
+  {
+    "window_s": 20,
+    "pressure_range_m": 2,
+    "position_radius_m": null,
+    "tracks": [
+      {
+        "label": "Racoon",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:21",
+        "delay_from_reference_s": 46,
+        "recording_ends": "14:58:42"
+      },
+      {
+        "label": "RedStrap",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:11",
+        "delay_from_reference_s": 36,
+        "recording_ends": "14:42:32"
+      },
+      {
+        "label": "BlueGreen326",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:30",
+        "delay_from_reference_s": 55,
+        "recording_ends": "14:41:30"
+      },
+      {
+        "label": "Bethany",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": null,
+        "delay_from_reference_s": null,
+        "recording_ends": "13:41:53"
+      },
+      {
+        "label": "Bowen Dwelle 2026-10-25-XLV-000-01 (1).igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:51:45",
+        "delay_from_reference_s": 90,
+        "recording_ends": "15:24:00"
+      },
+      {
+        "label": "Scott O\u00e2\u20ac\u2122Brien 2026-10-25-XLV-000-02.igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": null,
+        "delay_from_reference_s": null,
+        "recording_ends": "14:50:24"
+      }
+    ]
+  },
+  {
+    "window_s": 20,
+    "pressure_range_m": 2,
+    "position_radius_m": 5,
+    "tracks": [
+      {
+        "label": "Racoon",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:21",
+        "delay_from_reference_s": 46,
+        "recording_ends": "14:58:42"
+      },
+      {
+        "label": "RedStrap",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:11",
+        "delay_from_reference_s": 36,
+        "recording_ends": "14:42:32"
+      },
+      {
+        "label": "BlueGreen326",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:30",
+        "delay_from_reference_s": 55,
+        "recording_ends": "14:41:30"
+      },
+      {
+        "label": "Bethany",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": null,
+        "delay_from_reference_s": null,
+        "recording_ends": "13:41:53"
+      },
+      {
+        "label": "Bowen Dwelle 2026-10-25-XLV-000-01 (1).igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:51:45",
+        "delay_from_reference_s": 90,
+        "recording_ends": "15:24:00"
+      },
+      {
+        "label": "Scott O\u00e2\u20ac\u2122Brien 2026-10-25-XLV-000-02.igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": null,
+        "delay_from_reference_s": null,
+        "recording_ends": "14:50:24"
+      }
+    ]
+  },
+  {
+    "window_s": 20,
+    "pressure_range_m": 2,
+    "position_radius_m": 10,
+    "tracks": [
+      {
+        "label": "Racoon",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:21",
+        "delay_from_reference_s": 46,
+        "recording_ends": "14:58:42"
+      },
+      {
+        "label": "RedStrap",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:11",
+        "delay_from_reference_s": 36,
+        "recording_ends": "14:42:32"
+      },
+      {
+        "label": "BlueGreen326",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:30",
+        "delay_from_reference_s": 55,
+        "recording_ends": "14:41:30"
+      },
+      {
+        "label": "Bethany",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": null,
+        "delay_from_reference_s": null,
+        "recording_ends": "13:41:53"
+      },
+      {
+        "label": "Bowen Dwelle 2026-10-25-XLV-000-01 (1).igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:51:45",
+        "delay_from_reference_s": 90,
+        "recording_ends": "15:24:00"
+      },
+      {
+        "label": "Scott O\u00e2\u20ac\u2122Brien 2026-10-25-XLV-000-02.igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": null,
+        "delay_from_reference_s": null,
+        "recording_ends": "14:50:24"
+      }
+    ]
+  },
+  {
+    "window_s": 20,
+    "pressure_range_m": 3,
+    "position_radius_m": null,
+    "tracks": [
+      {
+        "label": "Racoon",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:21",
+        "delay_from_reference_s": 46,
+        "recording_ends": "14:58:42"
+      },
+      {
+        "label": "RedStrap",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:11",
+        "delay_from_reference_s": 36,
+        "recording_ends": "14:42:32"
+      },
+      {
+        "label": "BlueGreen326",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:30",
+        "delay_from_reference_s": 55,
+        "recording_ends": "14:41:30"
+      },
+      {
+        "label": "Bethany",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": null,
+        "delay_from_reference_s": null,
+        "recording_ends": "13:41:53"
+      },
+      {
+        "label": "Bowen Dwelle 2026-10-25-XLV-000-01 (1).igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:51:40",
+        "delay_from_reference_s": 85,
+        "recording_ends": "15:24:00"
+      },
+      {
+        "label": "Scott O\u00e2\u20ac\u2122Brien 2026-10-25-XLV-000-02.igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": null,
+        "delay_from_reference_s": null,
+        "recording_ends": "14:50:24"
+      }
+    ]
+  },
+  {
+    "window_s": 20,
+    "pressure_range_m": 3,
+    "position_radius_m": 5,
+    "tracks": [
+      {
+        "label": "Racoon",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:21",
+        "delay_from_reference_s": 46,
+        "recording_ends": "14:58:42"
+      },
+      {
+        "label": "RedStrap",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:11",
+        "delay_from_reference_s": 36,
+        "recording_ends": "14:42:32"
+      },
+      {
+        "label": "BlueGreen326",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:30",
+        "delay_from_reference_s": 55,
+        "recording_ends": "14:41:30"
+      },
+      {
+        "label": "Bethany",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": null,
+        "delay_from_reference_s": null,
+        "recording_ends": "13:41:53"
+      },
+      {
+        "label": "Bowen Dwelle 2026-10-25-XLV-000-01 (1).igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:51:41",
+        "delay_from_reference_s": 86,
+        "recording_ends": "15:24:00"
+      },
+      {
+        "label": "Scott O\u00e2\u20ac\u2122Brien 2026-10-25-XLV-000-02.igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": null,
+        "delay_from_reference_s": null,
+        "recording_ends": "14:50:24"
+      }
+    ]
+  },
+  {
+    "window_s": 20,
+    "pressure_range_m": 3,
+    "position_radius_m": 10,
+    "tracks": [
+      {
+        "label": "Racoon",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:21",
+        "delay_from_reference_s": 46,
+        "recording_ends": "14:58:42"
+      },
+      {
+        "label": "RedStrap",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:11",
+        "delay_from_reference_s": 36,
+        "recording_ends": "14:42:32"
+      },
+      {
+        "label": "BlueGreen326",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:30",
+        "delay_from_reference_s": 55,
+        "recording_ends": "14:41:30"
+      },
+      {
+        "label": "Bethany",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": null,
+        "delay_from_reference_s": null,
+        "recording_ends": "13:41:53"
+      },
+      {
+        "label": "Bowen Dwelle 2026-10-25-XLV-000-01 (1).igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:51:40",
+        "delay_from_reference_s": 85,
+        "recording_ends": "15:24:00"
+      },
+      {
+        "label": "Scott O\u00e2\u20ac\u2122Brien 2026-10-25-XLV-000-02.igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": null,
+        "delay_from_reference_s": null,
+        "recording_ends": "14:50:24"
+      }
+    ]
+  },
+  {
+    "window_s": 30,
+    "pressure_range_m": 2,
+    "position_radius_m": null,
+    "tracks": [
+      {
+        "label": "Racoon",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:31",
+        "delay_from_reference_s": 56,
+        "recording_ends": "14:58:42"
+      },
+      {
+        "label": "RedStrap",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:21",
+        "delay_from_reference_s": 46,
+        "recording_ends": "14:42:32"
+      },
+      {
+        "label": "BlueGreen326",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:40",
+        "delay_from_reference_s": 65,
+        "recording_ends": "14:41:30"
+      },
+      {
+        "label": "Bethany",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": null,
+        "delay_from_reference_s": null,
+        "recording_ends": "13:41:53"
+      },
+      {
+        "label": "Bowen Dwelle 2026-10-25-XLV-000-01 (1).igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:51:55",
+        "delay_from_reference_s": 100,
+        "recording_ends": "15:24:00"
+      },
+      {
+        "label": "Scott O\u00e2\u20ac\u2122Brien 2026-10-25-XLV-000-02.igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": null,
+        "delay_from_reference_s": null,
+        "recording_ends": "14:50:24"
+      }
+    ]
+  },
+  {
+    "window_s": 30,
+    "pressure_range_m": 2,
+    "position_radius_m": 5,
+    "tracks": [
+      {
+        "label": "Racoon",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:31",
+        "delay_from_reference_s": 56,
+        "recording_ends": "14:58:42"
+      },
+      {
+        "label": "RedStrap",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:21",
+        "delay_from_reference_s": 46,
+        "recording_ends": "14:42:32"
+      },
+      {
+        "label": "BlueGreen326",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:40",
+        "delay_from_reference_s": 65,
+        "recording_ends": "14:41:30"
+      },
+      {
+        "label": "Bethany",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": null,
+        "delay_from_reference_s": null,
+        "recording_ends": "13:41:53"
+      },
+      {
+        "label": "Bowen Dwelle 2026-10-25-XLV-000-01 (1).igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:51:55",
+        "delay_from_reference_s": 100,
+        "recording_ends": "15:24:00"
+      },
+      {
+        "label": "Scott O\u00e2\u20ac\u2122Brien 2026-10-25-XLV-000-02.igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": null,
+        "delay_from_reference_s": null,
+        "recording_ends": "14:50:24"
+      }
+    ]
+  },
+  {
+    "window_s": 30,
+    "pressure_range_m": 2,
+    "position_radius_m": 10,
+    "tracks": [
+      {
+        "label": "Racoon",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:31",
+        "delay_from_reference_s": 56,
+        "recording_ends": "14:58:42"
+      },
+      {
+        "label": "RedStrap",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:21",
+        "delay_from_reference_s": 46,
+        "recording_ends": "14:42:32"
+      },
+      {
+        "label": "BlueGreen326",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:40",
+        "delay_from_reference_s": 65,
+        "recording_ends": "14:41:30"
+      },
+      {
+        "label": "Bethany",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": null,
+        "delay_from_reference_s": null,
+        "recording_ends": "13:41:53"
+      },
+      {
+        "label": "Bowen Dwelle 2026-10-25-XLV-000-01 (1).igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:51:55",
+        "delay_from_reference_s": 100,
+        "recording_ends": "15:24:00"
+      },
+      {
+        "label": "Scott O\u00e2\u20ac\u2122Brien 2026-10-25-XLV-000-02.igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": null,
+        "delay_from_reference_s": null,
+        "recording_ends": "14:50:24"
+      }
+    ]
+  },
+  {
+    "window_s": 30,
+    "pressure_range_m": 3,
+    "position_radius_m": null,
+    "tracks": [
+      {
+        "label": "Racoon",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:31",
+        "delay_from_reference_s": 56,
+        "recording_ends": "14:58:42"
+      },
+      {
+        "label": "RedStrap",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:21",
+        "delay_from_reference_s": 46,
+        "recording_ends": "14:42:32"
+      },
+      {
+        "label": "BlueGreen326",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:40",
+        "delay_from_reference_s": 65,
+        "recording_ends": "14:41:30"
+      },
+      {
+        "label": "Bethany",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": null,
+        "delay_from_reference_s": null,
+        "recording_ends": "13:41:53"
+      },
+      {
+        "label": "Bowen Dwelle 2026-10-25-XLV-000-01 (1).igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:51:50",
+        "delay_from_reference_s": 95,
+        "recording_ends": "15:24:00"
+      },
+      {
+        "label": "Scott O\u00e2\u20ac\u2122Brien 2026-10-25-XLV-000-02.igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": null,
+        "delay_from_reference_s": null,
+        "recording_ends": "14:50:24"
+      }
+    ]
+  },
+  {
+    "window_s": 30,
+    "pressure_range_m": 3,
+    "position_radius_m": 5,
+    "tracks": [
+      {
+        "label": "Racoon",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:31",
+        "delay_from_reference_s": 56,
+        "recording_ends": "14:58:42"
+      },
+      {
+        "label": "RedStrap",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:21",
+        "delay_from_reference_s": 46,
+        "recording_ends": "14:42:32"
+      },
+      {
+        "label": "BlueGreen326",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:40",
+        "delay_from_reference_s": 65,
+        "recording_ends": "14:41:30"
+      },
+      {
+        "label": "Bethany",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": null,
+        "delay_from_reference_s": null,
+        "recording_ends": "13:41:53"
+      },
+      {
+        "label": "Bowen Dwelle 2026-10-25-XLV-000-01 (1).igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:51:51",
+        "delay_from_reference_s": 96,
+        "recording_ends": "15:24:00"
+      },
+      {
+        "label": "Scott O\u00e2\u20ac\u2122Brien 2026-10-25-XLV-000-02.igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": null,
+        "delay_from_reference_s": null,
+        "recording_ends": "14:50:24"
+      }
+    ]
+  },
+  {
+    "window_s": 30,
+    "pressure_range_m": 3,
+    "position_radius_m": 10,
+    "tracks": [
+      {
+        "label": "Racoon",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:31",
+        "delay_from_reference_s": 56,
+        "recording_ends": "14:58:42"
+      },
+      {
+        "label": "RedStrap",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:21",
+        "delay_from_reference_s": 46,
+        "recording_ends": "14:42:32"
+      },
+      {
+        "label": "BlueGreen326",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:40:40",
+        "delay_from_reference_s": 65,
+        "recording_ends": "14:41:30"
+      },
+      {
+        "label": "Bethany",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": null,
+        "delay_from_reference_s": null,
+        "recording_ends": "13:41:53"
+      },
+      {
+        "label": "Bowen Dwelle 2026-10-25-XLV-000-01 (1).igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": "14:51:50",
+        "delay_from_reference_s": 95,
+        "recording_ends": "15:24:00"
+      },
+      {
+        "label": "Scott O\u00e2\u20ac\u2122Brien 2026-10-25-XLV-000-02.igc",
+        "airborne_checks": 0,
+        "first_airborne": null,
+        "stop_local": null,
+        "delay_from_reference_s": null,
+        "recording_ends": "14:50:24"
+      }
+    ]
+  }
+]

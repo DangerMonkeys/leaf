@@ -1,0 +1,84 @@
+{
+  "schema": "leaf.logbook.flight",
+  "schema_version": "v0.1.0",
+  "flight_id": "33907959",
+  "clock": {
+    "system_time_synced_this_boot": true,
+    "time_source": "gps",
+    "timezone_offset_minutes": -420
+  },
+  "start": {
+    "time_valid": true,
+    "time_utc": "2026-10-04T21:45:12Z",
+    "time_local": "2026-10-04T14:45:12",
+    "temperature_c": 37.31448
+  },
+  "first_fix": {
+    "time_valid": true,
+    "time_utc": "2026-10-04T21:45:12Z",
+    "time_local": "2026-10-04T14:45:12",
+    "location": {
+      "lat_deg": 37.47526,
+      "lon_deg": -121.86,
+      "altitude_m": 725
+    },
+    "temperature_c": 37.31448
+  },
+  "end": {
+    "time_valid": true,
+    "time_utc": "2026-10-04T21:46:04Z",
+    "time_local": "2026-10-04T14:46:04",
+    "location": {
+      "lat_deg": 37.4752,
+      "lon_deg": -121.8598,
+      "altitude_m": 722.35
+    },
+    "temperature_c": 37.49397
+  },
+  "metrics": {
+    "duration_seconds": 52,
+    "max_altitude_m": 725,
+    "min_altitude_m": 720.09,
+    "max_altitude_above_launch_m": 0,
+    "max_climb_rate_mps": 2.69,
+    "max_sink_rate_mps": -1.06,
+    "max_ground_speed_mps": 4.63,
+    "average_ground_speed_mps": 0.501188,
+    "straight_line_distance_m": 17.37081,
+    "path_distance_m": 26.06176,
+    "max_accel_g": 1.293528,
+    "min_accel_g": 0.355459,
+    "max_temperature_c": 37.49397,
+    "min_temperature_c": 37.31448
+  },
+  "track": {
+    "saved": true,
+    "format": "igc",
+    "path": "tracks/2026-10-04-XLF-000-01.igc"
+  },
+  "device": {
+    "firmware_version": "0.2.2+h3.2.3",
+    "hardware_version": "leaf_3_2_3",
+    "mac_address": "24:EC:4A:1F:38:B0"
+  },
+  "pilot": {
+    "id": "609a7497",
+    "name": "Jack Resmini"
+  },
+  "glider": {
+    "id": "f2ccfe74",
+    "brand": "Ozone",
+    "model": "Buzz Z2",
+    "size": "MS",
+    "display_name": "Buzz Z2 MS"
+  },
+  "site": {
+    "launch_name": null,
+    "landing_name": null
+  },
+  "weather": {},
+  "notes": {
+    "pilot_notes": "",
+    "tags": []
+  }
+}

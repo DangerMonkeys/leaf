@@ -1,0 +1,490 @@
+[
+  {
+    "label": "Racoon",
+    "checks": 20,
+    "speed_mph": 3,
+    "altitude_m": 1,
+    "earliest": {
+      "local": "14:40:20",
+      "seconds": 52820,
+      "ms": 3360594
+    },
+    "latest": {
+      "local": "14:40:43",
+      "seconds": 52843,
+      "ms": 3383594
+    },
+    "possible_airborne_stop": null,
+    "max_airborne_speed_accel_run": 0
+  },
+  {
+    "label": "Racoon",
+    "checks": 15,
+    "speed_mph": 3,
+    "altitude_m": 2,
+    "earliest": {
+      "local": "14:40:15",
+      "seconds": 52815,
+      "ms": 3355594
+    },
+    "latest": {
+      "local": "14:40:15",
+      "seconds": 52815,
+      "ms": 3355594
+    },
+    "possible_airborne_stop": null,
+    "max_airborne_speed_accel_run": 0
+  },
+  {
+    "label": "Racoon",
+    "checks": 10,
+    "speed_mph": 3,
+    "altitude_m": 2,
+    "earliest": {
+      "local": "14:40:10",
+      "seconds": 52810,
+      "ms": 3350594
+    },
+    "latest": {
+      "local": "14:40:10",
+      "seconds": 52810,
+      "ms": 3350594
+    },
+    "possible_airborne_stop": null,
+    "max_airborne_speed_accel_run": 0
+  },
+  {
+    "label": "Racoon",
+    "checks": 10,
+    "speed_mph": 4,
+    "altitude_m": 2,
+    "earliest": {
+      "local": "14:40:10",
+      "seconds": 52810,
+      "ms": 3350594
+    },
+    "latest": {
+      "local": "14:40:10",
+      "seconds": 52810,
+      "ms": 3350594
+    },
+    "possible_airborne_stop": null,
+    "max_airborne_speed_accel_run": 0
+  },
+  {
+    "label": "Racoon",
+    "checks": 15,
+    "speed_mph": 4,
+    "altitude_m": 2,
+    "earliest": {
+      "local": "14:40:15",
+      "seconds": 52815,
+      "ms": 3355594
+    },
+    "latest": {
+      "local": "14:40:15",
+      "seconds": 52815,
+      "ms": 3355594
+    },
+    "possible_airborne_stop": null,
+    "max_airborne_speed_accel_run": 0
+  },
+  {
+    "label": "RedStrap",
+    "checks": 20,
+    "speed_mph": 3,
+    "altitude_m": 1,
+    "earliest": {
+      "local": "14:40:10",
+      "seconds": 52810,
+      "ms": 3350394
+    },
+    "latest": null,
+    "possible_airborne_stop": null,
+    "max_airborne_speed_accel_run": 0
+  },
+  {
+    "label": "RedStrap",
+    "checks": 15,
+    "speed_mph": 3,
+    "altitude_m": 2,
+    "earliest": {
+      "local": "14:40:05",
+      "seconds": 52805,
+      "ms": 3345394
+    },
+    "latest": {
+      "local": "14:40:05",
+      "seconds": 52805,
+      "ms": 3345394
+    },
+    "possible_airborne_stop": null,
+    "max_airborne_speed_accel_run": 0
+  },
+  {
+    "label": "RedStrap",
+    "checks": 10,
+    "speed_mph": 3,
+    "altitude_m": 2,
+    "earliest": {
+      "local": "14:40:00",
+      "seconds": 52800,
+      "ms": 3340394
+    },
+    "latest": {
+      "local": "14:40:00",
+      "seconds": 52800,
+      "ms": 3340394
+    },
+    "possible_airborne_stop": null,
+    "max_airborne_speed_accel_run": 0
+  },
+  {
+    "label": "RedStrap",
+    "checks": 10,
+    "speed_mph": 4,
+    "altitude_m": 2,
+    "earliest": {
+      "local": "14:40:00",
+      "seconds": 52800,
+      "ms": 3340394
+    },
+    "latest": {
+      "local": "14:40:00",
+      "seconds": 52800,
+      "ms": 3340394
+    },
+    "possible_airborne_stop": null,
+    "max_airborne_speed_accel_run": 0
+  },
+  {
+    "label": "RedStrap",
+    "checks": 15,
+    "speed_mph": 4,
+    "altitude_m": 2,
+    "earliest": {
+      "local": "14:40:05",
+      "seconds": 52805,
+      "ms": 3345394
+    },
+    "latest": {
+      "local": "14:40:05",
+      "seconds": 52805,
+      "ms": 3345394
+    },
+    "possible_airborne_stop": null,
+    "max_airborne_speed_accel_run": 0
+  },
+  {
+    "label": "BlueGreen326",
+    "checks": 20,
+    "speed_mph": 3,
+    "altitude_m": 1,
+    "earliest": {
+      "local": "14:40:29",
+      "seconds": 52829,
+      "ms": 3500249
+    },
+    "latest": {
+      "local": "14:40:29",
+      "seconds": 52829,
+      "ms": 3500249
+    },
+    "possible_airborne_stop": null,
+    "max_airborne_speed_accel_run": 0
+  },
+  {
+    "label": "BlueGreen326",
+    "checks": 15,
+    "speed_mph": 3,
+    "altitude_m": 2,
+    "earliest": {
+      "local": "14:40:24",
+      "seconds": 52824,
+      "ms": 3495249
+    },
+    "latest": {
+      "local": "14:40:24",
+      "seconds": 52824,
+      "ms": 3495249
+    },
+    "possible_airborne_stop": null,
+    "max_airborne_speed_accel_run": 0
+  },
+  {
+    "label": "BlueGreen326",
+    "checks": 10,
+    "speed_mph": 3,
+    "altitude_m": 2,
+    "earliest": {
+      "local": "14:40:19",
+      "seconds": 52819,
+      "ms": 3490249
+    },
+    "latest": {
+      "local": "14:40:19",
+      "seconds": 52819,
+      "ms": 3490249
+    },
+    "possible_airborne_stop": null,
+    "max_airborne_speed_accel_run": 0
+  },
+  {
+    "label": "BlueGreen326",
+    "checks": 10,
+    "speed_mph": 4,
+    "altitude_m": 2,
+    "earliest": {
+      "local": "14:39:56",
+      "seconds": 52796,
+      "ms": 3467249
+    },
+    "latest": {
+      "local": "14:39:56",
+      "seconds": 52796,
+      "ms": 3467249
+    },
+    "possible_airborne_stop": null,
+    "max_airborne_speed_accel_run": 0
+  },
+  {
+    "label": "BlueGreen326",
+    "checks": 15,
+    "speed_mph": 4,
+    "altitude_m": 2,
+    "earliest": {
+      "local": "14:40:24",
+      "seconds": 52824,
+      "ms": 3495249
+    },
+    "latest": {
+      "local": "14:40:24",
+      "seconds": 52824,
+      "ms": 3495249
+    },
+    "possible_airborne_stop": null,
+    "max_airborne_speed_accel_run": 0
+  },
+  {
+    "label": "Bethany",
+    "checks": 20,
+    "speed_mph": 3,
+    "altitude_m": 1,
+    "earliest": null,
+    "latest": null,
+    "possible_airborne_stop": null,
+    "max_airborne_speed_accel_run": 0
+  },
+  {
+    "label": "Bethany",
+    "checks": 15,
+    "speed_mph": 3,
+    "altitude_m": 2,
+    "earliest": null,
+    "latest": null,
+    "possible_airborne_stop": null,
+    "max_airborne_speed_accel_run": 0
+  },
+  {
+    "label": "Bethany",
+    "checks": 10,
+    "speed_mph": 3,
+    "altitude_m": 2,
+    "earliest": null,
+    "latest": null,
+    "possible_airborne_stop": null,
+    "max_airborne_speed_accel_run": 0
+  },
+  {
+    "label": "Bethany",
+    "checks": 10,
+    "speed_mph": 4,
+    "altitude_m": 2,
+    "earliest": null,
+    "latest": null,
+    "possible_airborne_stop": null,
+    "max_airborne_speed_accel_run": 0
+  },
+  {
+    "label": "Bethany",
+    "checks": 15,
+    "speed_mph": 4,
+    "altitude_m": 2,
+    "earliest": null,
+    "latest": null,
+    "possible_airborne_stop": null,
+    "max_airborne_speed_accel_run": 0
+  },
+  {
+    "label": "Bowen Dwelle",
+    "checks": 20,
+    "speed_mph": 3,
+    "altitude_m": 1,
+    "earliest": {
+      "local": "14:51:47",
+      "seconds": 53507,
+      "ms": 4095187
+    },
+    "latest": {
+      "local": "14:57:10",
+      "seconds": 53830,
+      "ms": 4418047
+    },
+    "possible_airborne_stop": null,
+    "max_airborne_speed_accel_run": 8
+  },
+  {
+    "label": "Bowen Dwelle",
+    "checks": 15,
+    "speed_mph": 3,
+    "altitude_m": 2,
+    "earliest": {
+      "local": "14:50:29",
+      "seconds": 53429,
+      "ms": 4017187
+    },
+    "latest": {
+      "local": "14:50:29",
+      "seconds": 53429,
+      "ms": 4017187
+    },
+    "possible_airborne_stop": null,
+    "max_airborne_speed_accel_run": 8
+  },
+  {
+    "label": "Bowen Dwelle",
+    "checks": 10,
+    "speed_mph": 3,
+    "altitude_m": 2,
+    "earliest": {
+      "local": "14:50:24",
+      "seconds": 53424,
+      "ms": 4012187
+    },
+    "latest": {
+      "local": "14:50:24",
+      "seconds": 53424,
+      "ms": 4012187
+    },
+    "possible_airborne_stop": null,
+    "max_airborne_speed_accel_run": 8
+  },
+  {
+    "label": "Bowen Dwelle",
+    "checks": 10,
+    "speed_mph": 4,
+    "altitude_m": 2,
+    "earliest": {
+      "local": "14:50:24",
+      "seconds": 53424,
+      "ms": 4012187
+    },
+    "latest": {
+      "local": "14:50:24",
+      "seconds": 53424,
+      "ms": 4012187
+    },
+    "possible_airborne_stop": null,
+    "max_airborne_speed_accel_run": 11
+  },
+  {
+    "label": "Bowen Dwelle",
+    "checks": 15,
+    "speed_mph": 4,
+    "altitude_m": 2,
+    "earliest": {
+      "local": "14:50:29",
+      "seconds": 53429,
+      "ms": 4017187
+    },
+    "latest": {
+      "local": "14:50:29",
+      "seconds": 53429,
+      "ms": 4017187
+    },
+    "possible_airborne_stop": null,
+    "max_airborne_speed_accel_run": 11
+  },
+  {
+    "label": "Scott O\u00e2\u20ac\u2122Brien",
+    "checks": 20,
+    "speed_mph": 3,
+    "altitude_m": 1,
+    "earliest": null,
+    "latest": null,
+    "possible_airborne_stop": null,
+    "max_airborne_speed_accel_run": 1
+  },
+  {
+    "label": "Scott O\u00e2\u20ac\u2122Brien",
+    "checks": 15,
+    "speed_mph": 3,
+    "altitude_m": 2,
+    "earliest": {
+      "local": "14:50:20",
+      "seconds": 53420,
+      "ms": 5254397
+    },
+    "latest": {
+      "local": "14:50:20",
+      "seconds": 53420,
+      "ms": 5254397
+    },
+    "possible_airborne_stop": null,
+    "max_airborne_speed_accel_run": 1
+  },
+  {
+    "label": "Scott O\u00e2\u20ac\u2122Brien",
+    "checks": 10,
+    "speed_mph": 3,
+    "altitude_m": 2,
+    "earliest": {
+      "local": "14:50:15",
+      "seconds": 53415,
+      "ms": 5249397
+    },
+    "latest": {
+      "local": "14:50:15",
+      "seconds": 53415,
+      "ms": 5249397
+    },
+    "possible_airborne_stop": null,
+    "max_airborne_speed_accel_run": 1
+  },
+  {
+    "label": "Scott O\u00e2\u20ac\u2122Brien",
+    "checks": 10,
+    "speed_mph": 4,
+    "altitude_m": 2,
+    "earliest": {
+      "local": "14:50:13",
+      "seconds": 53413,
+      "ms": 5247397
+    },
+    "latest": {
+      "local": "14:50:13",
+      "seconds": 53413,
+      "ms": 5247397
+    },
+    "possible_airborne_stop": null,
+    "max_airborne_speed_accel_run": 1
+  },
+  {
+    "label": "Scott O\u00e2\u20ac\u2122Brien",
+    "checks": 15,
+    "speed_mph": 4,
+    "altitude_m": 2,
+    "earliest": {
+      "local": "14:50:18",
+      "seconds": 53418,
+      "ms": 5252397
+    },
+    "latest": {
+      "local": "14:50:18",
+      "seconds": 53418,
+      "ms": 5252397
+    },
+    "possible_airborne_stop": null,
+    "max_airborne_speed_accel_run": 1
+  }
+]

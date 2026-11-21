@@ -1,0 +1,359 @@
+LEAF BRANCH CLEANUP AUDIT - 2026-10-28
+Compared against origin/main at b1bdcd377bb0538b3e5ab28898cf018125939235.
+No branches or worktrees were deleted. Main branches are excluded from deletion candidates.
+Safe means no unique code is lost by removing this branch reference. It does not authorize deleting a worktree or its ignored/untracked files.
+Merged PRs were verified by their merge commit being reachable from main; squash-merged branches were matched to their exact PR head.
+Candidate classification applies to the listed SHA. Recheck if a branch advances.
+Branches checked out in worktrees must be switched away from or their worktrees retired separately.
+The current test branch worktree contains untracked field-testing files and a GIF; preserve those.
+Shared-origin candidates below are technically covered; coordinate shared branch cleanup separately.
+
+LOCAL BRANCHES - SAFE BRANCH-REFERENCE CANDIDATES (119)
+BRANCH | TIP | EVIDENCE | WORKTREE / UPSTREAM NOTES
+018_ReleaseCleanUp | e16dd775b17c0a27e20addd77972d0c35dcb406c | Exact head of merged PR #363 |
+219-crash-saw-units-crashing-in-range-te | 5b16e6ce985215ad7dc9c5ff637c713f4d5eb154 | Exact head of merged PR #222 |
+AddFanetFwdDevSetting | 02e27560f310ed5917b003d45b6ce048d1fc96f8 | Exact head of merged PR #217 |
+AddFanetNeighborIDtoBusLog | a5d88f6f07a5efbc6cd66049bf4729fdd93fca3e | Exact head of merged PR #225 |
+Add_0.1.1_BugFixes_To_Main | 8544dd7d7bfed68939a84e15803c72af5098fd6f | Exact head of merged PR #216 |
+AdjustGravitySlewRate | 170f1ae99d52d851333e0599f55236304613ff25 | Exact head of merged PR #330 |
+AdjustableAutoOffTimer | 6398cdfed9e8eed08d0d7611eb611b3c5f3306bc | Exact head of merged PR #270 |
+BLE_Rx_andData | f19a2f955959745d85245a44077773e602098bed | Exact head of merged PR #388 |
+CPU_utilization | 9cfda6e397c3d8de20b92c24720c7283a56353b8 | Exact head of merged PR #374 |
+CaptivePortalFix | 361b4f27bea88bb102f8c384bd2ae9a896690bf5 | Exact head of merged PR #360 |
+CreateDisplaySimulator | 39b13fff0dfc6b184b731e1969a56cdf857ba842 | Exact head of merged PR #367 |
+DevAllowPreReleaseBeta | eab0e911d68e70f7c0c3d8e7d09798b0c3237c48 | Exact head of merged PR #372 |
+DevModeFWupdate | 3581f88b50aa8af1fbd46bd132a0457bd6c68c13 | Exact head of merged PR #398 |
+DevWebEndpoints | 142cd908e98ef045842081f71bab6565571bcbc3 | Exact head of merged PR #358 |
+ExpandIGCrecord | 90a6ab0032fa36f2250376645bdb877211a579c2 | Exact head of merged PR #376 |
+GPStroubleshooting | 4da9c11c5e44f5472a76fcc1c22f806d9c2f6e79 | Exact head of merged PR #283 |
+GPXfilePicker | 5c27fd5633ce5556ae3c31fd6c37df8bb461c885 | Exact head of merged PR #344 |
+GitBuildProcess | 606e7825fb9c522d26abf7a92d41ac402cbf8370 | Exact head of merged PR #272 |
+IGCtaskSave | 0bf02f0c8e1da5b7a5445749d0fdefc9e6863360 | Exact head of merged PR #352 |
+IMUselfTestDebug | 3eca1fc2aef62a0b8fea8b2f70b708456d6a00d1 | Identical complete tree to refs/remotes/oxothnk423/increaseIMUtimeout | [ahead 1]
+LeafLogPairingCleanup | 702a98f3b55d67c143cc49a330ff3d0d548f94a6 | Exact head of merged PR #396 |
+LeafLogUploads | 465fdef435de269c914d317a17619a1c10f298fb | Exact head of merged PR #383 |
+LeafLogbookUpdates | 82d759e2015076db24b7ff56ee6d6d92d3ca7266 | Exact head of merged PR #336 |
+LogNavBugs | fee683fb7fdd91cb1df66a9a13c2f13e5876bb32 | Exact head of merged PR #354 |
+MainPageEnumValidation | 3e00cc9f6ea7c49a39e6f1a816a15ad3ba0155e2 | Exact head of merged PR #353 |
+MassStorageWhileCharging | 550e16c378dd7e773818fb18ee434ee58fc88833 | Exact head of merged PR #324 |
+MenuPageWrap | 13b5ff94b8b2427d23122693e9b78a49817039c2 | Exact head of merged PR #362 |
+MenuRestructure | 8b6e1bec46bc569ebf827c85d7554f8159d7faaf | Exact head of merged PR #343 |
+NavDataImprovements | ded02556bf77a646e04bf8ef42487165890ef034 | Exact head of merged PR #365 |
+NavResumeTweaks | 19fbe64c75d2ed26c16ef46c54911049694e839f | Exact head of merged PR #351 |
+NewLayoutThermalCore | 2babbd006dcc48a77ec9bb1f62c8b15babfbcf2d | Exact head of merged PR #415 |
+NoLogWhileSummary | b7a46a7ae316dfea903c1cabf153b2243bdfdd2f | Exact head of merged PR #305 |
+NotRequireAmbient | e8833a91fc79de446970bfe94dfe9d0bd5cc4d16 | Exact head of merged PR #403 |
+PilotGliderProfiles | 629ef4398213c3e729ef21ae1eef507ad347b142 | Exact head of merged PR #337 |
+PrepForNextRelease | 8d49365dfcd5487d6ddbb87244b90a1c234a776d | Exact head of merged PR #347 |
+PrepIGCupload | 6188c0761826b003ee1ed5b29bd017c22febf628 | Exact head of merged PR #345 |
+ProfileChooser | 86f82a007805346d6742ad3623798c2e9111eab9 | Exact head of merged PR #350 |
+RealWebAppFromMock | 27b51496af17958f9bf20c1fe767bfa43a565b58 | Exact head of merged PR #339 |
+RemoveFakeThermals | 16acb9c5b9e48ead224c3d9a09fff568b40b8a37 | Exact head of merged PR #385 |
+SDfilesDateCreated | 37cc6c8f385801e4add1f62e8bee0099f5d9b660 | Exact head of merged PR #323 |
+SaveMultipleNetworks | 0261693efb5406eb5a3179167ba45c0d0609ecf5 | Exact head of merged PR #346 |
+SelfTest | 8bb2c4839bbc6630831a35283fb2aac8a696620c | Older tip contained in merged PR #262 | [behind 15]
+SelfTestIntegration | 2b013709dd2ad0572f25deec996355be6d4ec831 | Exact head of merged PR #282 |
+TempProtect | c20013c881b9cde967762d6d98a20d73ad0ec9b2 | Identical complete tree to refs/remotes/oxothnk423/SelfTestIntegration |
+ThermalCorePage | 2710d1864d35fc2645d3c20770fb7fe808abc742 | Exact head of merged PR #379 |
+ThermalViewer | 06aed3245a93d2b47e78cdfada448fb787918970 | Exact head of merged PR #364 |
+UserManualUpdate | af5379bb13145888b1a97b00b29c5da6141be469 | Older tip contained in merged PR #326 | [behind 2]
+UserWebserver | fa83282cff41ce5d6e534fd6f3fbb30826d28237 | Exact head of merged PR #335 |
+VarioBug | c49179d35b345cba99d67ee746f2b48752fe42c2 | Exact head of merged PR #304 |
+VarioVolumeShortcut | 2db55859c0bf0bd2091575081fa4593dbf8af4ae | Exact head of merged PR #373 |
+WaypointTweaks | 9278123c5947c8cc7e6ca55878e66ffc004fcd61 | Exact head of merged PR #366 |
+WebAppLogbookImprovements | aaf09453bdaef28138c78e7be698e0c51d6b8ed3 | Exact head of merged PR #341 |
+WebAppTrackViewer | 657ca620e454beda18aee0493306a1a9cf21efa2 | Exact head of merged PR #386 |
+WebserverUI | c286f2b67f8a4725a11466ba38573dfc974df208 | Exact head of merged PR #338 |
+WebsiteUpdate | 7e118e3757ec48e5627c6640d0454b180125c40c | Exact head of merged PR #371 |
+WifiPage | 7274a5329d48ce4e8c98b6d04ed72d8dd8705368 | Commit is an ancestor of origin/main |
+WifiWiFi | 3b980cc581d1dbd546c5e267e88547bb41df8027 | Exact head of merged PR #370 |
+XCTSKimport | ccf7d2fb2dd4dceb895a91e1e7cc494caa697244 | Exact head of merged PR #348 |
+addPackageLocationtoDecodeBacktraceScript | 84a027c37e2d49e8865dc68b432400f0092e2f1e | Exact head of merged PR #228 |
+addwifisetupIP | cd90eec0a0a3399fba8b28a9604f852e09665649 | Exact head of merged PR #227 |
+autoFormatSD | 2005c458d9e18aa281b36ceadc7e318b458b3405 | Exact head of merged PR #322 |
+backlogItems | 272eaaa133563d0354a4a630d8c9d09ef77625d1 | Exact head of merged PR #356 |
+better-audio-driver | 96eccf312feac1ef2ed228226cace53b04299723 | Older tip contained in merged PR #404 | [behind 1]
+codex/activation-return-to-leaf | 236db6867c89ef8002f9eeac5ba9a92d207ab540 | Exact head of merged PR #409 |
+codex/analyze-leaf-log-scan-delays | 13935b9d9955f6f8cda1e42fe7262db573d827dc | Exact head of merged PR #418 | checked out at C:/Users/oxoth/.codex/worktrees/6f7f/leaf; tracked/untracked status clean; ignored files not assessed
+codex/backlog-docs-refresh | 8dced26329abbcb1a106917ef303609a99f6bbaf | Exact head of merged PR #427 |
+codex/centered-entry-feedback | 28eabb9053beeeb33b8fd24934a6d86f3eae877d | Ancestor of refs/heads/codex/thermal-friends-training (merged PR #412) | [ahead 1, behind 31]
+codex/charging-dialog-revamp | 301d25b1277fe3c7e95a76fc16c84b9dd3fc1991 | Exact head of merged PR #425 |
+codex/ci-build-cache | 0f8ed0b9ffbc14a6f982669fb79a97b08db155d6 | Exact head of merged PR #419 |
+codex/climb-history-widget | cd1f27c096f3fffd2fd097b5e60895d857806c2d | Exact head of merged PR #429 | checked out at C:/Users/oxoth/.codex/worktrees/climb-history-widget/leaf; tracked/untracked status clean; ignored files not assessed
+codex/commissioning-wifi-handoff | 32b165bc8d0fd8b8b5a9e846a6f94fe0f5cb11de | Exact head of merged PR #406 |
+codex/fix-simulator-diagnostics-audio | 5475bb5faccc94d5140b5efc705c0c59402ae016 | Exact head of merged PR #408 |
+codex/fix-sink-alarm-off | de0be283d1d7b97aa481f66c6892604e3c4d6cea | Exact head of merged PR #402 |
+codex/flight-start-motion | 52b493fa5060a9613354d3d146a6c00dafaf33ae | Exact head of merged PR #435 | checked out at C:/Users/oxoth/.codex/worktrees/flight-start-motion/leaf; tracked/untracked status clean; ignored files not assessed
+codex/flight-start-motion-before-pr-cleanup-2026-10-28 | 354e321d3471b846110b841ca81045003aa614fd | Three flight patches exactly match cleaned source of merged PR #435; inherited FANET work covered by #433 |
+codex/g-load-flight-metrics | d06b3476f251450ab36838f961ff5e025be69c66 | Exact head of merged PR #431 | checked out at C:/Users/oxoth/.codex/worktrees/g-load-flight-metrics/leaf; tracked/untracked status clean; ignored files not assessed
+codex/hardware-v3.2.8 | e2d6647c3de38e63d671f104daa13617381d9cc3 | Exact head of merged PR #416 |
+codex/launch-auto-start | 1d36f15b0676bb7b077c24d604ef7f1d4731473a | Exact head of merged PR #432 | checked out at C:/Users/oxoth/.codex/worktrees/launch-auto-start/leaf; tracked/untracked status clean; ignored files not assessed
+codex/lcd-controls | a8bef268c4655bec6a5bc54dac611adcfe625228 | Exact head of merged PR #423 |
+codex/leaf-log-popup-completion | 47a6749659967b67176f84b7ad25324702f98088 | Exact head of merged PR #407 |
+codex/leaf-log-sd-ownership | b69e7d738354183f9b539ef7a712f456d45562a2 | Exact head of merged PR #384 |
+codex/leaf-log-site-link | 64263e137516c4e78cb4df6b1d10b477d4ab5c21 | Exact head of merged PR #422 | checked out at C:/Users/oxoth/.codex/worktrees/leaf-log-site-link/leaf; tracked/untracked status clean; ignored files not assessed
+codex/lightweight-sd-saves | 53535eee64c014a94eb371fa0972374f544cfed1 | Exact head of merged PR #436 | checked out at C:/Users/oxoth/.codex/worktrees/lightweight-sd-saves/leaf; tracked/untracked status clean; ignored files not assessed
+codex/lora-fanet-radio-settings | 3a6d90eebeb24d506c72934517245dd0db1d20a1 | Exact head of merged PR #433 | checked out at C:/Users/oxoth/.codex/worktrees/lora-fanet-range/leaf; tracked/untracked status clean; ignored files not assessed
+codex/lora-fanet-range | 89d938cf43b310a12462397bc52f50d184e623e7 | Ancestor of refs/heads/codex/lora-fanet-radio-settings (merged PR #433) |
+codex/nav-fields-thermal-display | a48c998fd3145331ac3b10d74a31e091ba5844f2 | Exact head of merged PR #417 | checked out at C:/Users/oxoth/.codex/worktrees/3c84/leaf; tracked/untracked status clean; ignored files not assessed
+codex/plan-dev-firmware-retirement | 05c6a2c327d4d93e9ee2af8226e0a801b70096c2 | Exact head of merged PR #420 | checked out at C:/Users/oxoth/.codex/worktrees/f11b/leaf; tracked/untracked status clean; ignored files not assessed
+codex/reset-navigation-cursor | 93f632485ab2a76a2a3c033e90626f7f75ca66d9 | Exact head of merged PR #428 |
+codex/runtime-telemetry | 99d55e49cd8b10a2d94a032add57206fee674df1 | Exact head of merged PR #421 |
+codex/sd-write-hardening-phase-1 | 0611789aeb56bd1e354bc288c02b7c5e016fb2be | Exact head of merged PR #430 | checked out at C:/Users/oxoth/.codex/worktrees/sd-write-hardening-phase-1/leaf; tracked/untracked status clean; ignored files not assessed
+codex/stop-ble-before-baro-sleep | 2a53537d8a09f417630c262eb571f4f78aa91c74 | Exact head of merged PR #400 |
+codex/test-latest-three-2026-10-26 | 4454e1cb68455f9eb79a70743ee9f177cf4a7766 | Six exact patches plus adapted SD maintenance commit, all covered by merged PRs #434/#435/#436 | checked out at C:/Users/oxoth/projects/leaf; UNCOMMITTED/UNTRACKED: ?? docs/ui-reviews/charging-dialog-revamp/leaf-log-sequence.gif; ?? scratch/field-testing/
+codex/thermal-friends-training | cdb5180c33e67d97c44d11c0c354b2e4b36200b4 | Exact head of merged PR #412 |
+codex/thermal-track-rendering | 076a2230fed8c582b7b89a9590f3de45f0b5a4c8 | Exact head of merged PR #426 |
+codex/thermal-training-moving-terrain | 11e25e3ae0863543c3614bd70ca79493eb91b6cf | Exact head of merged PR #411 |
+codex/thermal-training-prototype | fd5324b252017d9cbd526102ed1a94859a2f301a | Exact head of merged PR #410 |
+codex/thermalCoreUpdates | 467e7216a84664dedfb03013bdfeb435fceca65b | Exact head of merged PR #395 |
+codex/vario-filter-continuity | 71cfbffb84ca6f80cf8287db23febccccfbff55d | Exact head of merged PR #434 | checked out at C:/Users/oxoth/.codex/worktrees/vario-filter-continuity/leaf; tracked/untracked status clean; ignored files not assessed
+defaultTaskTurnRadius | 1ff79f697314385b0414d2d18720a539bfdfacc8 | Exact head of merged PR #394 |
+enableLeafLog | 68b7641ab1eb613b72255ef4f3f6bf682e11dcb9 | Exact head of merged PR #380 |
+factory-interface | 8308559b59a96358acf04cf841c38fdfb0ac8ccc | Exact head of merged PR #285 |
+factoryInterfaceUpdate | f3ae23d24c3baa2aebf8664ea919a449203d069e | Exact head of merged PR #359 |
+fixButtonTest | e7ff26e15e49586e46f5bdfb715f1cd51707bcd8 | Exact head of merged PR #298 |
+fixprofilesmessage | cf7003324cd96d9907385b3e5e69067de43b4f7e | Exact head of merged PR #377 |
+gravityBug | ae4b03a3cf4f0f6cad4151291bf65911f63b2097 | Exact head of merged PR #328 |
+ignoreMacHiddenFiles | 4afa0a07c8ec0d014a8a573a63ad29ecc29abec8 | Exact head of merged PR #393 |
+increaseIMUtimeout | 60cc8bef5558814ce3e416aa075e1aeb8e5e2bbb | Exact head of merged PR #321 |
+leaf-diagnostics | 7c74517e68221a124157153825261d6667875aa8 | Exact head of merged PR #265 |
+leafLog_url | d17caebfc8b8876c69969eba40da24cc6d32873f | Exact head of merged PR #390 |
+logbookTweaks | d25623da1f86f697ffceadc7b454536ca0277784 | Exact head of merged PR #342 |
+memoryAnalysis | 1c9cc00c3195b0fa08b066936347ccbce8554c0c | Exact head of merged PR #355 |
+sdcardFileSaveTimestampBug | 8aa25c4f361a6c43ce7ed7a8c97a4e8ac218102b | Exact head of merged PR #327 |
+selfTestInfoReports | ddb634a29cee90ea633ad70e4680afd6c498027a | Exact head of merged PR #301 |
+speaker-cleanup | 96c933212bb023a6b6e44a6f01f3cc18981e219f | Exact head of merged PR #230 | [gone]
+thermalTrackImprove | 86caf7d91f28c35b8069d72830bbbdfd209ed2e1 | Exact head of merged PR #378 |
+updateUserManual | 528f04cd843f4cae204551b39b9b7dad86ae7273 | Exact head of merged PR #334 |
+updateUserManual2 | ed9ebdcaf59d0332df66a5e5de07b04706b3ef24 | Exact head of merged PR #401 |
+varioAndGlideAverage | 55ee7c7cea10122e449ac460147033b157469be8 | Exact head of merged PR #391 |
+webAppWaypointFile | 96e36e4f0ef542401a7f3c5337821d828d4dcabe | Exact head of merged PR #349 |
+
+LOCAL BRANCHES - KEEP / REVIEW (21)
+BRANCH | TIP | EVIDENCE | WORKTREE / UPSTREAM NOTES
+0.1.0-bugfixes | c804fb480c8bb633c64ff02826241cccce41ea79 | Not established as fully covered; keep or review individually |
+CheckForUpdatesWebApp | 4295fd0a99d04ccd36ce72efb2185a111cb95fd8 | Not established as fully covered; keep or review individually |
+DiagnoseForRealz | 228cd9a395125ca5a982b2d8040200d13bb5d264 | Not established as fully covered; keep or review individually |
+EnvelopeGame | 3d6b10055394acb1534e0f3a00d160b7897fac83 | Not established as fully covered; keep or review individually |
+FormatSDCard | 140c57953e2a2c5aa3454014881cd6c5fa562033 | Not established as fully covered; keep or review individually |
+HeapAnalysis | 898e68602696079188df0ca831430e19abbf2612 | Not established as fully covered; keep or review individually |
+LCDpreviewRender | 9b56f68eb46eff192ca2f01d94b75a61545e3e02 | Not established as fully covered; keep or review individually |
+LogMigration | 21bd734342d56527c981077e73c7384f2876963d | Not established as fully covered; keep or review individually |
+MemorySaving | 8139578ef4696be2edafa4b458bf8693d62c7498 | Not established as fully covered; keep or review individually |
+TIspeakerDriverTest | 7814ed5d7ee7943f1d5d48c908f89c4f50fba16d | Not established as fully covered; keep or review individually |
+WebAppFixes | f8060cb399f767fdb1b39656eb47b6a65e51011a | Not established as fully covered; keep or review individually |
+codex/charging-sync-status | e42abd7029dc383107615d0a355bf6958c5b798a | Not established as fully covered; keep or review individually | [ahead 5, behind 1]; checked out at C:/Users/oxoth/.codex/worktrees/charging-sync-status/leaf; UNCOMMITTED/UNTRACKED: M src/vario/leaf_version.h
+codex/docs-backlog-manual-refresh | 1eff63f12c1746557359dc553eeefd70391ef262 | Not established as fully covered; keep or review individually |
+codex/fix-thermal-state-baro-readiness | c80db09459a99acaf0805a7d1defe7eb4e8b5732 | Not established as fully covered; keep or review individually |
+codex/g-load-igc-diagnostics | 497bb1c3aae1f0a0559f2b59b3d74b2b68910fec | Not established as fully covered; keep or review individually |
+codex/i2c-failure-testing | d6e414d6e1094a06aaabc5088471c62531266edf | Not established as fully covered; keep or review individually |
+codex/instructor-student-link | 5a553c0437d994bad2d85a3d56a49f62e75635f8 | Not established as fully covered; keep or review individually | checked out at C:/Users/oxoth/.codex/worktrees/instructor-student-link/leaf; tracked/untracked status clean; ignored files not assessed
+codex/website-manual-release-refresh | 7aba63bd05f830b7995755b926a7f802c804514d | Not established as fully covered; keep or review individually |
+fix/charging-battery-percentage | 2eb22accbe461c3431ce1a72a0aea02c487c6fee | Not established as fully covered; keep or review individually |
+release_0.1.1 | 97ceee94ffe12b5d474107efe326ae8b0fbaeaad | Not established as fully covered; keep or review individually |
+scottyob/ble_settings | 5231cdb90e3cf0e39fe06021a67ba039912af230 | Not established as fully covered; keep or review individually |
+
+YOUR FORK: oxothnk423 - SAFE BRANCH-REFERENCE CANDIDATES (139)
+BRANCH | TIP | EVIDENCE | WORKTREE / UPSTREAM NOTES
+018_ReleaseCleanUp | e16dd775b17c0a27e20addd77972d0c35dcb406c | Exact head of merged PR #363 |
+Add-Dev-Menu | c898ffca04dc711d0e86752967368380c5caa5ac | Exact head of merged PR #189 |
+AddAxesDocumentation | e6ac378869525badda3d2b6b1e77d270100208b8 | Exact head of merged PR #198 |
+AddDebuggingInfotoGPS | c688d6d164e42acc34d42d6cb026c998eccefc87 | Exact head of merged PR #251 |
+AddFanetFwdDevSetting | 02e27560f310ed5917b003d45b6ce048d1fc96f8 | Exact head of merged PR #217 |
+AddFanetNeighborIDtoBusLog | a5d88f6f07a5efbc6cd66049bf4729fdd93fca3e | Exact head of merged PR #225 |
+AddFanetRebroadcastSetting | 49abe2434d27f14b11cd3445d6ee55c43f2f47c0 | Exact head of merged PR #201 |
+AddLogbookDesignDetails | e67d72749f30e8d6e5cd12753df2a07d548bff20 | Exact head of merged PR #204 |
+AddShutdownWarningDialog | 85ad21bf410f06d2471fc5063c9367ba96618350 | Exact head of merged PR #281 |
+Add_0.1.1_BugFixes_To_Main | 8544dd7d7bfed68939a84e15803c72af5098fd6f | Exact head of merged PR #216 |
+Add_FCC_IDs | e37b9e14c3ed7412ba58bc0916f215848c09f9c4 | Exact head of merged PR #235 |
+Add_hw_versions_to_build | d27a4819a74584d737e5a3268be4cd3c39bdc7f9 | Exact head of merged PR #170 |
+AdjustAutoOffSettings | 5c09d67ec94895a9bb5039865f7ba35edc8e8453 | Exact head of merged PR #268 |
+AdjustDefaultSettings | 67a40866076a95a23482312fad9619a2980a9497 | Exact head of merged PR #329 |
+AdjustGravitySlewRate | 170f1ae99d52d851333e0599f55236304613ff25 | Exact head of merged PR #330 |
+AdjustLogAutoStartStop | 4a68fb8ec06ba9c0f4f32f2c8939b05f35d0f950 | Exact head of merged PR #276 |
+AdjustableAutoOffTimer | 6398cdfed9e8eed08d0d7611eb611b3c5f3306bc | Exact head of merged PR #270 |
+AutoStopAlertDialog | 32e73f8bea58b4420ab70fbda65158a7f0c1a4ee | Exact head of merged PR #241 |
+BLE_Rx_andData | f19a2f955959745d85245a44077773e602098bed | Exact head of merged PR #388 |
+BasicPageTweaks | a9bb7bffc63f5752a6a13b04b504d29d20aadb31 | Exact head of merged PR #261 |
+BatteryShutdownMessage | 25c026b15042ce4c8840e8e9728bee51da2f4d24 | Exact head of merged PR #266 |
+CPU_utilization | 9cfda6e397c3d8de20b92c24720c7283a56353b8 | Exact head of merged PR #374 |
+CaptivePortalFix | 361b4f27bea88bb102f8c384bd2ae9a896690bf5 | Exact head of merged PR #360 |
+ChargerUpgrades | 0860c0f688e25cfafbb9a1602f6c404ee9179b56 | Exact head of merged PR #236 |
+CreateDisplaySimulator | 39b13fff0dfc6b184b731e1969a56cdf857ba842 | Exact head of merged PR #367 |
+DebugPageOnlyAsDev | 82c375bae9221818f575f82db050e2920ff02305 | Exact head of merged PR #252 |
+DevAllowPreReleaseBeta | eab0e911d68e70f7c0c3d8e7d09798b0c3237c48 | Exact head of merged PR #372 |
+DevModeFWupdate | 3581f88b50aa8af1fbd46bd132a0457bd6c68c13 | Exact head of merged PR #398 |
+DevWebEndpoints | 142cd908e98ef045842081f71bab6565571bcbc3 | Exact head of merged PR #358 |
+DisclaimerOnlyAfterCommission | 9f98daf934e0259570c85bbe342fca37b4566c72 | Exact head of merged PR #294 |
+ExpandIGCrecord | 90a6ab0032fa36f2250376645bdb877211a579c2 | Exact head of merged PR #376 |
+FactoryInterfaceAdjustments | 6a03e873fcf4054856397ced44cb4775a6802fb7 | Exact head of merged PR #311 |
+FactoryInterfaceImprovements | ec5ddd09ee98231cb3b1fcd528a38f0b5235c00b | Exact head of merged PR #375 |
+FactoryResetImprovements | 021f4511edc85bd8f7d78fd69a4f8e4deb261536 | Exact head of merged PR #293 |
+FirmwareViaSDcard | ded02556bf77a646e04bf8ef42487165890ef034 | Exact head of merged PR #365 |
+FixBaroLogBugs | ca63659d075da1e33574a12b9873d54c0c086863 | Exact head of merged PR #258 |
+FixBaroShutdownBug | fb4afa11a66c6259caa988b498859d96e5b5d92b | Exact head of merged PR #250 |
+FixNOGPSclockBug | da301979a94206bb1a943d744e5b461aa43423dc | Exact head of merged PR #160 |
+FixSelfTests | f7b79971cd655adb6c10d5b712c91248eb7d5cda | Exact head of merged PR #333 |
+FixUnprotectedBaroCalls | 555fa28956e7d7e4c49dd6957bee75694e0365c8 | Exact head of merged PR #277 |
+GPSselfTest | 53ccf49f9f9e297954b5e0a4abfda73e52058771 | Exact head of merged PR #290 |
+GPStroubleshooting | 4da9c11c5e44f5472a76fcc1c22f806d9c2f6e79 | Exact head of merged PR #283 |
+GPXfilePicker | 5c27fd5633ce5556ae3c31fd6c37df8bb461c885 | Exact head of merged PR #344 |
+IGCtaskSave | 0bf02f0c8e1da5b7a5445749d0fdefc9e6863360 | Exact head of merged PR #352 |
+IMUselfTestDebug | dad9c376f33f313abd0259d75273c90b5a253d9d | Exact head of merged PR #320 |
+KMLtimestampFile | 957aba6e0221f4d7cda8e2f14eb361989b6eae31 | Exact head of merged PR #269 |
+LeafLogPairingCleanup | 702a98f3b55d67c143cc49a330ff3d0d548f94a6 | Exact head of merged PR #396 |
+LeafLogUploads | 465fdef435de269c914d317a17619a1c10f298fb | Exact head of merged PR #383 |
+LeafLogbookUpdates | 82d759e2015076db24b7ff56ee6d6d92d3ca7266 | Exact head of merged PR #336 |
+LogAutoStartNoAlt | 956e139ecedb1d3a82e80b0e38d43340633addcb | Exact head of merged PR #303 |
+LogNavBugs | fee683fb7fdd91cb1df66a9a13c2f13e5876bb32 | Exact head of merged PR #354 |
+MainPageEnumValidation | 3e00cc9f6ea7c49a39e6f1a816a15ad3ba0155e2 | Exact head of merged PR #353 |
+MassStorageWhileCharging | 550e16c378dd7e773818fb18ee434ee58fc88833 | Exact head of merged PR #324 |
+MenuPageWrap | 13b5ff94b8b2427d23122693e9b78a49817039c2 | Exact head of merged PR #362 |
+MenuRestructure | 8b6e1bec46bc569ebf827c85d7554f8159d7faaf | Exact head of merged PR #343 |
+NavResumeTweaks | 19fbe64c75d2ed26c16ef46c54911049694e839f | Exact head of merged PR #351 |
+NewDefaultSettings | accb195079a2b8035fa2ff8780581f1b6d802f99 | Exact head of merged PR #242 |
+NoFanetFix | a23d34a4d829b82b0cd5e27c80521dc79b710ea4 | Exact head of merged PR #368 |
+NoLogWhileSummary | b7a46a7ae316dfea903c1cabf153b2243bdfdd2f | Exact head of merged PR #305 |
+NonBlockingSelfTest | 3cc2c8a949b1280249af137628fb3d25545414cf | Exact head of merged PR #295 |
+NotRequireAmbient | e8833a91fc79de446970bfe94dfe9d0bd5cc4d16 | Exact head of merged PR #403 |
+PilotGliderProfiles | 629ef4398213c3e729ef21ae1eef507ad347b142 | Exact head of merged PR #337 |
+PrepForNextRelease | 8d49365dfcd5487d6ddbb87244b90a1c234a776d | Exact head of merged PR #347 |
+PrepIGCupload | 6188c0761826b003ee1ed5b29bd017c22febf628 | Exact head of merged PR #345 |
+ProfileChooser | 86f82a007805346d6742ad3623798c2e9111eab9 | Exact head of merged PR #350 |
+RealWebAppFromMock | 27b51496af17958f9bf20c1fe767bfa43a565b58 | Exact head of merged PR #339 |
+RemoveFakeThermals | 16acb9c5b9e48ead224c3d9a09fff568b40b8a37 | Exact head of merged PR #385 |
+RemoveGravityWarmUp | 807b12068edff515b17b17c0a6172d3997030802 | Exact head of merged PR #331 |
+SDfilesDateCreated | 37cc6c8f385801e4add1f62e8bee0099f5d9b660 | Exact head of merged PR #323 |
+SaveLastPageAcrossShutdown | 293fba18e3355c279d4328f301a11ea7368f3f9a | Exact head of merged PR #296 |
+SaveMultipleNetworks | 0261693efb5406eb5a3179167ba45c0d0609ecf5 | Exact head of merged PR #346 |
+SelfTest | 6db4372f60110ec3ec29316b115e841a424c6153 | Exact head of merged PR #262 |
+SelfTestIntegration | 2b013709dd2ad0572f25deec996355be6d4ec831 | Exact head of merged PR #282 |
+SelfTestPauseBeforeVario | 0da6b29872bcdb8ffded86867eb91206cfdd9001 | Exact head of merged PR #310 |
+SeparateChargingPage | 1cfdb7e16b78c11e2bef42bceda5d96b937abb88 | Exact head of merged PR #207 |
+SeparatePopPageBugfromBaro | b5e6e87ad1a4b87ea1d5f7690c69d60002a9b0b6 | Identical complete tree to refs/remotes/origin/sobrien/climbrate_crashes |
+SimpleVarioPage | d1098f393fd547dd0d8b7a847f46b655818f0481 | Exact head of merged PR #254 |
+ThermalCorePage | 2710d1864d35fc2645d3c20770fb7fe808abc742 | Exact head of merged PR #379 |
+ThermalViewer | 06aed3245a93d2b47e78cdfada448fb787918970 | Exact head of merged PR #364 |
+ThisCrashes-TimerAutoStopWIP | a6de72909c3a8bacef761ddb0062eab736a285ec | Ancestor of refs/remotes/oxothnk423/AutoStopAlertDialog (merged PR #241) |
+UI_tweaks_wifiSetup | 71facb8fcbd7a8d6e35b0e6bd130e113d512e805 | Ancestor of refs/heads/AdjustableAutoOffTimer (merged PR #270) |
+UpdateLiabilityWaiver | defccb883b1a0a60ad8d28494a5a7d70e92ba5eb | Exact head of merged PR #267 |
+UserManualTweaks | 0c00728fa0327f4822b7e3312b77e88942e5b413 | Exact head of merged PR #313 |
+UserManualUpdate | a968b0cfe21c4ece2520875e842b7fb1c3c5eb55 | Exact head of merged PR #326 |
+UserWebserver | fa83282cff41ce5d6e534fd6f3fbb30826d28237 | Exact head of merged PR #335 |
+VarioBug | c49179d35b345cba99d67ee746f2b48752fe42c2 | Exact head of merged PR #304 |
+VarioMenuFeatures | 7242c955079b6bef79003e39d0e1fd4da8aeea79 | Exact head of merged PR #257 |
+VarioVolumeShortcut | 2db55859c0bf0bd2091575081fa4593dbf8af4ae | Exact head of merged PR #373 |
+WaypointTweaks | 9278123c5947c8cc7e6ca55878e66ffc004fcd61 | Exact head of merged PR #366 |
+WebAppLogbookImprovements | aaf09453bdaef28138c78e7be698e0c51d6b8ed3 | Exact head of merged PR #341 |
+WebserverUI | c286f2b67f8a4725a11466ba38573dfc974df208 | Exact head of merged PR #338 |
+WebsiteUpdate | 7e118e3757ec48e5627c6640d0454b180125c40c | Exact head of merged PR #371 |
+WifiMenuImprovements | c45a3f9a6bac7b10fc963aae9cb8a4944b2938a6 | Exact head of merged PR #259 |
+WifiWiFi | 3b980cc581d1dbd546c5e267e88547bb41df8027 | Exact head of merged PR #370 |
+XCTSKimport | ccf7d2fb2dd4dceb895a91e1e7cc494caa697244 | Exact head of merged PR #348 |
+addPackageLocationtoDecodeBacktraceScript | 84a027c37e2d49e8865dc68b432400f0092e2f1e | Exact head of merged PR #228 |
+addwifisetupIP | cd90eec0a0a3399fba8b28a9604f852e09665649 | Exact head of merged PR #227 |
+autoFormatSD | 2005c458d9e18aa281b36ceadc7e318b458b3405 | Exact head of merged PR #322 |
+backlogItems | 272eaaa133563d0354a4a630d8c9d09ef77625d1 | Exact head of merged PR #356 |
+climb&diagnosticLogs | 3bfde76dcce506d0e9061ef8c81325a555a78c26 | Exact head of merged PR #361 |
+codex/activation-return-to-leaf | 236db6867c89ef8002f9eeac5ba9a92d207ab540 | Exact head of merged PR #409 |
+codex/fix-sink-alarm-off | de0be283d1d7b97aa481f66c6892604e3c4d6cea | Exact head of merged PR #402 |
+codex/flight-start-motion | 52b493fa5060a9613354d3d146a6c00dafaf33ae | Exact head of merged PR #435 |
+codex/leaf-log-sd-ownership | b69e7d738354183f9b539ef7a712f456d45562a2 | Exact head of merged PR #384 |
+codex/leaf-log-site-link | 64263e137516c4e78cb4df6b1d10b477d4ab5c21 | Exact head of merged PR #422 |
+codex/lightweight-sd-saves | 53535eee64c014a94eb371fa0972374f544cfed1 | Exact head of merged PR #436 |
+codex/lora-fanet-radio-settings | 3a6d90eebeb24d506c72934517245dd0db1d20a1 | Exact head of merged PR #433 |
+codex/lora-fanet-range | 89d938cf43b310a12462397bc52f50d184e623e7 | Ancestor of refs/heads/codex/lora-fanet-radio-settings (merged PR #433) |
+codex/test-latest-three-2026-10-26 | 4454e1cb68455f9eb79a70743ee9f177cf4a7766 | Six exact patches plus adapted SD maintenance commit, all covered by merged PRs #434/#435/#436 |
+codex/thermalCoreUpdates | 467e7216a84664dedfb03013bdfeb435fceca65b | Exact head of merged PR #395 |
+codex/vario-filter-continuity | 71cfbffb84ca6f80cf8287db23febccccfbff55d | Exact head of merged PR #434 |
+debugGPXread | b632ad3322719184f5b9f84ccde39c73ea5053ed | Exact head of merged PR #315 |
+defaultTaskTurnRadius | 1ff79f697314385b0414d2d18720a539bfdfacc8 | Exact head of merged PR #394 |
+enableLeafLog | 68b7641ab1eb613b72255ef4f3f6bf682e11dcb9 | Exact head of merged PR #380 |
+factoryCommissionImprove | 6ab9abbefaf54329ccdeff7353c70fca326622b4 | Exact head of merged PR #397 |
+factoryInterfaceUpdate | f3ae23d24c3baa2aebf8664ea919a449203d069e | Exact head of merged PR #359 |
+fixAboveLaunchDisplayBug | d73db1f9da0ec978ddaa59543af351fe212c541c | Exact head of merged PR #260 |
+fixButtonTest | e7ff26e15e49586e46f5bdfb715f1cd51707bcd8 | Exact head of merged PR #298 |
+fixWifiAPName | 366e21bce478b4bf586dc0b02362e3de263c7932 | Exact head of merged PR #369 |
+fix_boot_time | 146f77502da4c829acb51786e96058120592eae6 | Exact head of merged PR #168 |
+fix_charging_bug | f986e54436397f16cda71af5a4374ada65187d5f | Exact head of merged PR #167 |
+fixprofilesmessage | cf7003324cd96d9907385b3e5e69067de43b4f7e | Exact head of merged PR #377 |
+fixspeakerbug | 34a55cb59d5091444825b93e5cdbfd937153f595 | Exact head of merged PR #255 |
+gravityBug | ae4b03a3cf4f0f6cad4151291bf65911f63b2097 | Exact head of merged PR #328 |
+hideThermalADVpage | b53166e4ed37aca61c8ee029cecdaef19fd535bb | Exact head of merged PR #256 |
+ignoreMacHiddenFiles | 4afa0a07c8ec0d014a8a573a63ad29ecc29abec8 | Exact head of merged PR #393 |
+increaseIMUtimeout | 60cc8bef5558814ce3e416aa075e1aeb8e5e2bbb | Exact head of merged PR #321 |
+logbookTweaks | d25623da1f86f697ffceadc7b454536ca0277784 | Exact head of merged PR #342 |
+memoryAnalysis | 1c9cc00c3195b0fa08b066936347ccbce8554c0c | Exact head of merged PR #355 |
+remove_weAreFlying | 2229bee0d4a62642edd6b3a086c2420405f3c0ff | Exact head of merged PR #240 |
+sdcardFileSaveTimestampBug | 8aa25c4f361a6c43ce7ed7a8c97a4e8ac218102b | Exact head of merged PR #327 |
+selfTestInfoReports | ddb634a29cee90ea633ad70e4680afd6c498027a | Exact head of merged PR #301 |
+support-326-hw | 3e34825e188576cfca0d6819f9cce2ec9fa63f79 | Exact head of merged PR #161 |
+thermalTrackImprove | 86caf7d91f28c35b8069d72830bbbdfd209ed2e1 | Exact head of merged PR #378 |
+updateUserManual | 528f04cd843f4cae204551b39b9b7dad86ae7273 | Exact head of merged PR #334 |
+updateUserManual2 | ed9ebdcaf59d0332df66a5e5de07b04706b3ef24 | Exact head of merged PR #401 |
+useCalibratedBattVoltage | c283e52fd0e293531b60fd10e8f01f28e12492d2 | Exact head of merged PR #279 |
+varioAndGlideAverage | 55ee7c7cea10122e449ac460147033b157469be8 | Exact head of merged PR #391 |
+webAppWaypointFile | 96e36e4f0ef542401a7f3c5337821d828d4dcabe | Exact head of merged PR #349 |
+
+YOUR FORK: oxothnk423 - KEEP / REVIEW (15)
+BRANCH | TIP | EVIDENCE | WORKTREE / UPSTREAM NOTES
+0.1.0-bugfixes | c804fb480c8bb633c64ff02826241cccce41ea79 | Not established as fully covered; keep or review individually |
+CheckForUpdatesWebApp | 4295fd0a99d04ccd36ce72efb2185a111cb95fd8 | Not established as fully covered; keep or review individually |
+DiagnoseForRealz | 228cd9a395125ca5a982b2d8040200d13bb5d264 | Not established as fully covered; keep or review individually |
+EnvelopeGame | 3d6b10055394acb1534e0f3a00d160b7897fac83 | Not established as fully covered; keep or review individually |
+FANET_detect_3.2.6+ | fb7e955d7765dc0a4aca04416046b433d6b86bc7 | Not established as fully covered; keep or review individually |
+FormatSDCard | 140c57953e2a2c5aa3454014881cd6c5fa562033 | Not established as fully covered; keep or review individually |
+GPXdynamicRoutes | d15652bcbdd49622f92273ce0489e5c809f9e0cb | Not established as fully covered; keep or review individually |
+HeapAnalysis | 898e68602696079188df0ca831430e19abbf2612 | Not established as fully covered; keep or review individually |
+LCDpreviewRender | 9b56f68eb46eff192ca2f01d94b75a61545e3e02 | Not established as fully covered; keep or review individually |
+MemorySaving | 8139578ef4696be2edafa4b458bf8693d62c7498 | Not established as fully covered; keep or review individually |
+ReducePowerInChargeMode | 30c0e17d7b0d385cfc4a5319a52ad97985335e38 | Not established as fully covered; keep or review individually |
+TIspeakerDriverTest | 7814ed5d7ee7943f1d5d48c908f89c4f50fba16d | Not established as fully covered; keep or review individually |
+codex/charging-sync-status | 9338889ec951e9f4b47f5c073d0209200dc0eaee | Not established as fully covered; keep or review individually |
+codex/i2c-failure-testing | d6e414d6e1094a06aaabc5088471c62531266edf | Not established as fully covered; keep or review individually |
+sdcard_bug | b459b9654c1fd11cb6ced821b0a3fc4028fe3233 | Not established as fully covered; keep or review individually |
+
+SHARED UPSTREAM: origin - SAFE BRANCH-REFERENCE CANDIDATES (30)
+BRANCH | TIP | EVIDENCE | WORKTREE / UPSTREAM NOTES
+GitBuildProcess | 606e7825fb9c522d26abf7a92d41ac402cbf8370 | Exact head of merged PR #272 |
+NewLayoutThermalCore | 2babbd006dcc48a77ec9bb1f62c8b15babfbcf2d | Exact head of merged PR #415 |
+WebAppTrackViewer | 657ca620e454beda18aee0493306a1a9cf21efa2 | Exact head of merged PR #386 |
+codex/analyze-leaf-log-scan-delays | 13935b9d9955f6f8cda1e42fe7262db573d827dc | Exact head of merged PR #418 |
+codex/backlog-docs-refresh | 8dced26329abbcb1a106917ef303609a99f6bbaf | Exact head of merged PR #427 |
+codex/charging-dialog-revamp | 301d25b1277fe3c7e95a76fc16c84b9dd3fc1991 | Exact head of merged PR #425 |
+codex/ci-build-cache | 0f8ed0b9ffbc14a6f982669fb79a97b08db155d6 | Exact head of merged PR #419 |
+codex/climb-history-widget | cd1f27c096f3fffd2fd097b5e60895d857806c2d | Exact head of merged PR #429 |
+codex/commissioned-device-recovery | faf73275ec5922163477443f71ce87bcf52ae8f3 | Exact head of merged PR #399 |
+codex/commissioning-wifi-handoff | 32b165bc8d0fd8b8b5a9e846a6f94fe0f5cb11de | Exact head of merged PR #406 |
+codex/fix-simulator-diagnostics-audio | 5475bb5faccc94d5140b5efc705c0c59402ae016 | Exact head of merged PR #408 |
+codex/g-load-flight-metrics | d06b3476f251450ab36838f961ff5e025be69c66 | Exact head of merged PR #431 |
+codex/hardware-v3.2.8 | e2d6647c3de38e63d671f104daa13617381d9cc3 | Exact head of merged PR #416 |
+codex/launch-auto-start | 1d36f15b0676bb7b077c24d604ef7f1d4731473a | Exact head of merged PR #432 |
+codex/lcd-controls | a8bef268c4655bec6a5bc54dac611adcfe625228 | Exact head of merged PR #423 |
+codex/leaf-log-popup-completion | 47a6749659967b67176f84b7ad25324702f98088 | Exact head of merged PR #407 |
+codex/nav-fields-thermal-display | a48c998fd3145331ac3b10d74a31e091ba5844f2 | Exact head of merged PR #417 |
+codex/plan-dev-firmware-retirement | 05c6a2c327d4d93e9ee2af8226e0a801b70096c2 | Exact head of merged PR #420 |
+codex/reset-navigation-cursor | 93f632485ab2a76a2a3c033e90626f7f75ca66d9 | Exact head of merged PR #428 |
+codex/runtime-telemetry | 99d55e49cd8b10a2d94a032add57206fee674df1 | Exact head of merged PR #421 |
+codex/sd-write-hardening-phase-1 | 0611789aeb56bd1e354bc288c02b7c5e016fb2be | Exact head of merged PR #430 |
+codex/stop-ble-before-baro-sleep | 2a53537d8a09f417630c262eb571f4f78aa91c74 | Exact head of merged PR #400 |
+codex/thermal-friends-training | cdb5180c33e67d97c44d11c0c354b2e4b36200b4 | Exact head of merged PR #412 |
+codex/thermal-track-rendering | 076a2230fed8c582b7b89a9590f3de45f0b5a4c8 | Exact head of merged PR #426 |
+codex/thermal-training-moving-terrain | 11e25e3ae0863543c3614bd70ca79493eb91b6cf | Exact head of merged PR #411 |
+codex/thermal-training-prototype | fd5324b252017d9cbd526102ed1a94859a2f301a | Exact head of merged PR #410 |
+leafLog_url | d17caebfc8b8876c69969eba40da24cc6d32873f | Exact head of merged PR #390 |
+nmea-patch | 723415e14b706bc040534cafcd70907ca5c8fc8b | Exact head of merged PR #174 |
+push-mzvssyyzvmkx | b511586fd219e3f5370be1919a4f675d97724c14 | Exact head of merged PR #307 |
+sobrien/climbrate_crashes | f3a10d23e4cab2a48a63bdca051d349bc3285dd0 | Exact head of merged PR #273 |
+
+SHARED UPSTREAM: origin - KEEP / REVIEW (8)
+BRANCH | TIP | EVIDENCE | WORKTREE / UPSTREAM NOTES
+MainSystemSleep | 533791c3419c0c4c7aa6331ca355f289aaf37f6f | Not established as fully covered; keep or review individually |
+codex/fix-thermal-state-baro-readiness | c80db09459a99acaf0805a7d1defe7eb4e8b5732 | Not established as fully covered; keep or review individually |
+codex/instructor-student-link | 5a553c0437d994bad2d85a3d56a49f62e75635f8 | Not established as fully covered; keep or review individually |
+codex/website-manual-release-refresh | 7aba63bd05f830b7995755b926a7f802c804514d | Not established as fully covered; keep or review individually |
+release_0.1.1 | 97ceee94ffe12b5d474107efe326ae8b0fbaeaad | Not established as fully covered; keep or review individually |
+scottyob/ble_settings | 5231cdb90e3cf0e39fe06021a67ba039912af230 | Not established as fully covered; keep or review individually |
+scottyob/recorder | 81a517af8d4d5771a383736932d45488210ebac4 | Not established as fully covered; keep or review individually |
+sobrien/fix_autotimer_crash | 4605d2167ff8ae57c981484efe5533cb199e30fb | Not established as fully covered; keep or review individually |

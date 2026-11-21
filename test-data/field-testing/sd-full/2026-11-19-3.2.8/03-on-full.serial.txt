@@ -1,0 +1,75 @@
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH status On User 0 0 1 1 0 0 1
+
+HOST wait 3
+
+HOST status
+BENCH status On User 0 0 1 1 0 0 1
+
+HOST config
+BENCH config 1 0 0 0 0 0 0 0
+
+HOST heap
+BENCH heap 149156 143764 86004 8316
+
+HOST fanet
+BENCH fanet 0 UNINSTALLED 0 0
+
+HOST stacks
+BENCH stacks 8316 2988 0 0 0
+
+HOST press CENTER
+BENCH ok
+
+HOST status
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+button: CENTER state: RELEASED    hold count: 0
+BENCH status On User 0 0 1 1 0 0 1
+
+HOST press RIGHT
+BENCH ok
+
+HOST status
+button: RIGHT  state: PRESSED     hold count: 0
+button: RIGHT  state: CLICKED     hold count: 0
+button: RIGHT  state: RELEASED    hold count: 0
+BENCH status On User 0 0 1 1 0 0 1
+
+HOST press RIGHT
+BENCH ok
+
+HOST status
+button: RIGHT  state: PRESSED     hold count: 0
+button: RIGHT  state: CLICKED     hold count: 0
+button: RIGHT  state: RELEASED    hold count: 0
+BENCH status On User 0 0 1 1 0 0 1
+
+HOST press RIGHT
+BENCH ok
+
+HOST status
+button: RIGHT  state: PRESSED     hold count: 0
+button: RIGHT  state: CLICKED     hold count: 0
+button: RIGHT  state: RELEASED    hold count: 0
+BENCH status On User 0 0 1 1 0 0 1
+
+HOST press RIGHT
+BENCH ok
+
+HOST status
+button: RIGHT  state: PRESSED     hold count: 0
+button: RIGHT  state: CLICKED     hold count: 0
+button: RIGHT  state: RELEASED    hold count: 0
+LSM6DSV: a=-0.0029,-0.0032,0.9921 g=-0.0034,-0.0048,0.9994 pairsBENCH status On User 0 0 1 1 0 0 1
+
+HOST press RIGHT
+BENCH ok
+
+HOST status
+button: RIGHT  state: PRESSED     hold count: 0
+button: RIGHT  state: CLICKED     hold count: 0
+button: RIGHT  state: RELEASED    hold count: 0
+BENCH status On User 0 0 1 1 0 0 1
+BENCH status On User 0 0 1 1 0 0 1
+BENCH heap 149156 143764 86004 8316

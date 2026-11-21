@@ -196,7 +196,7 @@ def assess(capture, metadata, baseline=None):
         notes.append("Recent trace wrapped by design; full-run slot aggregates and the worst incident remain available.")
     if capture.get("memory_overwritten", 0):
         notes.append("Memory history wrapped; first sample and full-run sampled minima are retained.")
-    if any(capture.get("settings", {}).get(k) for k in ("network_log", "web_log", "vario_log")):
+    if any(capture.get("settings", {}).get(k) for k in ("network_log", "web_log", "vario_log", "fanet_log")):
         notes.append("Other diagnostic SD logging was enabled and can affect timing.")
     notes.append("Clock-pair, slot-bookkeeping, and memory-sampling costs are reported. Full instrumentation overhead requires an external A/B measurement.")
     if capture.get("memory_supported"):

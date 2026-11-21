@@ -1,0 +1,161 @@
+BENCH version 0.2.4-45ed.bench+h3.2.8
+BENCH status On User -1 1 1 1 0 0 1
+
+HOST press DOWN
+BENCH ok
+
+HOST press CENTER
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+38016 playSound 1008626874
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press CENTER
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+38316 playSound 1008626860
+button: CENTER state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press RIGHT
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+button: CENTER state: RELEASED    hold count: 0
+BENCH ok
+
+HOST wait 8
+button: RIGHT  state: PRESSED     hold count: 0
+button: RIGHT  state: CLICKED     hold count: 0
+38926 playSound 1008728188
+WiFi coordinator: diagnostic network disabled until reboot
+WiFi coordinator: trying saved network 0 'SkyWagon'
+button: RIGHT  state: RELEASED    hold count: 0
+LSM6DSV: a=-0.0020,-0.0051,0.9941 g=-0.0018,-0.0055,0.9994 pairsLSM6DSV: a=-0.0020,-0.0056,0.9938 g=-0.0020,-0.0056,0.9994 pairs
+HOST status
+BENCH status On Menu 0 0 0 1 0 0 1
+
+HOST press DOWN
+BENCH ok
+
+HOST press DOWN
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+47406 playSound 1008598718
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press CENTER
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+47706 playSound 1008598718
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press UP
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+48007 playSound 1008704942
+button: CENTER state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press CENTER
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+48316 playSound 1008598718
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press UP
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+48616 playSound 1008665262
+button: CENTER state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press UP
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+48916 playSound 1008598718
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press UP
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+49216 playSound 1008598718
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST hold CENTER 3000
+button: UP     state: PRESSED     hold count: 0
+button: UP     state: CLICKED     hold count: 0
+49526 playSound 1008598718
+button: UP     state: RELEASED    hold count: 0
+BENCH ok
+
+HOST config
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: HELD        hold count: 0
+button: CENTER state: INCREMENTED hold count: 0
+button: CENTER state: INCREMENTED hold count: 1
+LSM6DSV: a=-0.0020,-0.0054,0.9945 g=-0.0019,-0.0055,0.9994 pairsbutton: CENTER state: INCREMENTED hold count: 2
+button: CENTER state: INCREMENTED hold count: 3
+button: CENTER state: INCREMENTED hold count: 4
+52556 playSound 1008735018
+button: CENTER state: RELEASED    hold count: 0
+BENCH config 1 0 1 0 0 0 0 0
+
+HOST press LEFT
+BENCH ok
+
+HOST press LEFT
+button: LEFT   state: PRESSED     hold count: 0
+button: LEFT   state: CLICKED     hold count: 0
+53136 playSound 1008669784
+button: LEFT   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press DOWN
+button: LEFT   state: PRESSED     hold count: 0
+button: LEFT   state: CLICKED     hold count: 0
+53437 playSound 1008665244
+button: LEFT   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press DOWN
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+53747 playSound 1008598718
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press DOWN
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+54046 playSound 1008598718
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press CENTER
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+54346 playSound 1008598718
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST wait 2
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+54656 playSound 1008704942
+Leaf Web App started: http://10.0.0.183/app
+button: CENTER state: RELEASED    hold count: 0
+LSM6DSV: a=-0.0015,-0.0056,0.9941 g=-0.0019,-0.0057,0.9994 pairs
+HOST web
+BENCH web http://10.0.0.183/app
+
+HOST status
+BENCH status On Menu -1 1 0 1 0 0 1
+BENCH status On Menu -1 1 0 1 0 0 1
+BENCH heap 144796 85968 34804 8300
+BENCH web http://10.0.0.183/app

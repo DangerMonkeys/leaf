@@ -7,6 +7,7 @@
 
 // draw the pixels to the display
 void navigatePage_draw(void);
+void navigatePage_reset();
 
 // handle button presses relative to what's shown on the display
 void navigatePage_button(Button button, ButtonEvent state, uint8_t count);

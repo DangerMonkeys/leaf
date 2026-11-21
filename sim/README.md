@@ -82,8 +82,8 @@ through the normal recording player or sent through the device's existing UDP in
 Storage is bounded to 600 trail points (five minutes) and 60,000 sensor lines (roughly twenty
 minutes). The flight model and UI are simulator-only; physical firmware memory use is unchanged.
 
-Regression checks: `make -C sim test-free-flight test-thermal-core test-thermal-track test-display-settings` inside the
-usual container.
+Regression checks: `make -C sim test-free-flight test-thermal-core test-thermal-track test-display-settings
+test-climb-display-average` inside the usual container.
 
 `make -C sim test-udp-injection` checks real UDP packets, the developer-mode and injection-setting gates, persistence, and repeated disable/enable cycles without a reboot.
 `node sim/tests/developer_card.cjs` checks the embedded web developer card's injection toggle and rejected saves.
@@ -124,10 +124,43 @@ the five-pixel-radius black outline. The arrow's tip and both tail tips touch th
 where the wind is blowing and rotates with the map; it is hidden without a valid wind estimate.
 Auxiliary widening/tightening rings are removed and the top-of-map turn reticle is disabled.
 
+Thermal Core's climb-history widget sits above the map. Its left graph extends up to the climb
+field, with one column per five seconds and a fixed 25 m/pixel vertical scale. Present altitude
+uses a dynamic origin driven by a two-minute exponential average of net vertical rate.
+The EMA has a 120-second time constant, starts at zero, and updates on the five-second sample
+grid; a sustained rate change reaches about 63% after two minutes. It maps linearly from
++3 m/s at (54,52) to -2 m/s at (54,71), rounded and clamped. Zero maps to y=63.
+The numerical climb field continues to show the separate trailing-minute average.
+A 5h ring (0x25) is centered on that origin and drawn last, with its central 3x3 pixels cleared.
+Older altitudes remain relative to the current altitude at the same fixed vertical scale.
+The graph fills down from the curve to the map border, with off-screen portions clipped. Its
+left and top edges use the existing vario and live climb box, without duplicate borders. Its
+right divider meets the live climb box at x=54.
+The right field shows trailing-minute net climb in the selected climb units, using the available
+duration during the first minute. It refreshes every five seconds, with a live partial average
+in the first bucket. Both contents remain visible outside thermals and keep collecting without
+a GPS fix while the barometer is ready. Flight lifecycle resets still clear the history.
+The average uses the same fixed digit slots, fonts and unit spacing as the live climb field.
+One 104-byte history serves both fields without heap allocation and continues collecting while
+another page is displayed. The origin EMA adds one four-byte float to the original history;
+the altitude buffer stays at 40 samples.
+
+Navigate's four configurable fields distinguish waypoint centers (the filled diamond, `*`)
+from arrival cylinders (the ring, `%`). Each offers time, distance, required glide and predicted
+arrival altitude. Waypoint fields use the full distance to the coordinates; cylinder fields
+subtract the active radius and clamp at zero. The progress bar also finishes at the cylinder.
+Goal fields follow the remaining route through waypoint centers and subtract the final goal
+radius once for all four calculations. Standalone waypoints use the default 400 m radius.
+Existing saved field IDs stay unchanged; the four cylinder choices are appended to the cycle.
+
 ThermalTrack shares Thermal Core's upper layout, including the narrow vario, large climb field,
-altitude with its selectable source, and wind circle with compass letters and speed. The selected
-thermal's distance and strength share the strip from (15,57) to (95,73), with fixed positions and
-font sizes. Strength and its unit align to the right edge; distance centers between fixed steering
+altitude with its selectable source, and wind circle with compass letters and speed. Both pages
+use a fixed 41-by-16-pixel climb field in either m/s or fpm. The m/s climb signs use the
+standard 14h glyphs, shifted three pixels right; digits and units retain their positions.
+The one-minute average shows a larger minus in m/s, shifted two pixels right with a one-pixel
+gap before the digits, and no positive sign. Fpm signs stay compact.
+The selected thermal's distance and strength share the strip from (15,57) to (95,73), with
+fixed positions and font sizes. Strength and its unit align to the right edge; distance centers between fixed steering
 arrow slots, with 6x12 numbers and 5x8 m/km/mi labels. Distances use feet/metres below 1,000,
 tenths of miles/kilometres below 10, then whole miles/kilometres capped at 99. Steering arrows use
 the same 20/40/60-degree thresholds as waypoint
@@ -136,6 +169,15 @@ navigation and are hidden without a selected thermal.
 The pilot triangle's tip sits at the map center. A single-pixel line runs from its tip to the
 selected thermal's outer selection ring, stopping before the marker's hollow interior. The
 line is clipped to the map and connects directly to the pilot's tip.
+
+Navigate has nine independently selectable field options. `ALT^&` (waypoint glyph) and
+`ALT^GOAL` predict arrival height above the destination: GPS altitude minus destination
+elevation minus remaining distance divided by the current averaged glide ratio. Goal distance
+includes every remaining route leg; a standalone waypoint is also its own goal. Values use the
+altitude unit setting. Missing elevation, stale GPS, unavailable/ascending glide, or negative
+surplus displays `--`; a known zero or negative terrain elevation remains valid.
+Unknown elevations stay unknown through imports and Web App route saves. Older saved files
+that already substituted zero for missing elevation cannot recover that distinction automatically.
 
 Three formats, one playback path. Everything is normalised at load time into the bus-log line
 format the device itself records (`dispatch/message_injector.h`), so a synthetic flight and a
@@ -303,3 +345,17 @@ sim/
 ```
 
 `play_buslog.py` is unchanged and still points at real hardware — or at the emulator.
+
+## Route navigation
+
+The simulator runs the same automatic cylinder guidance as hardware. Run
+`make -C sim test-route-optimizer test-route-guidance` to verify solver geometry,
+scheduling, sequencing, the Navigate display, and the simulator controls.
+`make -C sim test-route-solver` runs the standalone geometry regressions without
+PlatformIO dependencies.
+
+The control panel also has an opt-in **Route guidance lab** for comparing
+margin policies on synthetic presets. It replaces the simulator's active
+navigation state; use a dedicated state/card directory. See the
+[live lab guide](route_solver/GUIDANCE.md) and
+[firmware behavior and hardware results](route_solver/FIRMWARE.md).

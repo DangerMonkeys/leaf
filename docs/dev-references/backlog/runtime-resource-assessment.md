@@ -5,8 +5,28 @@ description: Release timing and memory assessment, implementation stages and fol
 
 # Runtime resource assessment
 
-Status: stage 1 implemented; reviewed operational baselines and subsequent automation remain
-pending. Required evidence for publishing a firmware release; not a per-PR requirement.
+**November 20, 2026 follow-up:** the opt-in USB bench console, split Runtime allocations,
+explicit discard/Developer-exit release and lightweight shutdown-saving Stacks monitor are
+implemented. They support later workload automation but do not complete stage 2's verified
+traffic, hardware fixtures or soak coverage. Further memory and stack reductions are paused
+for stable-release work; see the [memory restart plan](https://leafvario.com/dev-references/backlog/memory-optimization-followup/).
+
+Status reconciled **2026-10-22**: stage 1 is implemented and merged in `e432ee66` (#421).
+A provisional Leaf 3.2.8 Navigate comparison reference is registered in
+[`utils/runtime_report/baselines/index.json`](https://github.com/DangerMonkeys/leaf/blob/main/utils/runtime_report/baselines/index.json).
+It remains `review_required`, with unresolved timing/recovery and workload-coverage limits;
+selection is not a release pass. Reviewed operational qualification and subsequent automation
+remain pending. Reports are required for the exact firmware release candidate, not per PR.
+
+The newer Core climb-history widget (#429), checked logbook finalization (#430), sustained
+g-load/interval diagnostics (#431) and launch-history diagnostics (#432) are not qualified by
+that older Navigate baseline. Include their actual activity, SD-write load, save stalls and
+memory use in the candidate assessment, alongside the existing flight/web/transition workload.
+The additional records are part of normal IGC logging, not only Developer-mode CSV capture.
+
+Use [Runtime assessment](https://leafvario.com/dev-references/runtime-assessment/) for current capture/export instructions and
+the [versioned baseline instructions](https://github.com/DangerMonkeys/leaf/blob/main/utils/runtime_report/baselines/leaf-3_2_8-navigate-v1/README.md)
+for compatible comparisons. Preserve existing baseline bundles and their known issues.
 
 ## Intent
 
@@ -16,6 +36,9 @@ expensive work from a late start caused by earlier work, include GPS and foregro
 services, and expose accumulated timer ticks without changing scheduler behavior.
 
 ## Stage 1: bounded telemetry and baseline reports
+
+Implemented scope is listed below. These are no longer outstanding implementation tasks;
+broader qualification remains open under stages 2 and 3 and the baseline's attention items.
 
 - Replace synchronous per-second CPU CSV writes with fixed-capacity RAM capture and
   explicit freeze/export. Keep production IGC writes in the measured workload.

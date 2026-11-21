@@ -1,0 +1,89 @@
+{
+  "utc": "2026-11-20T01:19:50.887820+00:00",
+  "steps": [
+    {
+      "command": "press LEFT",
+      "reply": "ok",
+      "seconds": 0.312
+    },
+    {
+      "command": "press LEFT",
+      "reply": "ok",
+      "seconds": 0.313
+    },
+    {
+      "command": "press RIGHT",
+      "reply": "ok",
+      "seconds": 0.312
+    },
+    {
+      "command": "wait 8",
+      "reply": "waited",
+      "seconds": 8.109
+    },
+    {
+      "command": "ip",
+      "reply": "ip 10.0.0.183 0.0.0.0",
+      "seconds": 0.0
+    },
+    {
+      "command": "press UP",
+      "reply": "ok",
+      "seconds": 0.313
+    },
+    {
+      "command": "press UP",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press UP",
+      "reply": "ok",
+      "seconds": 0.312
+    },
+    {
+      "command": "press CENTER",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "wait 2",
+      "reply": "waited",
+      "seconds": 2.047
+    },
+    {
+      "command": "web",
+      "reply": "web http://10.0.0.183/app",
+      "seconds": 0.0
+    }
+  ],
+  "initial": {
+    "power": "On",
+    "page": "Menu",
+    "cursor": -1,
+    "modal_depth": 1,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": false,
+    "flight_running": false,
+    "firmware_sd_access": true
+  },
+  "final": {
+    "power": "On",
+    "page": "Menu",
+    "cursor": -1,
+    "modal_depth": 1,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": false,
+    "flight_running": false,
+    "firmware_sd_access": true
+  },
+  "heap": {
+    "internal_free": 57180,
+    "internal_min_since_boot": 28740,
+    "internal_largest": 31732,
+    "loop_stack_unused": 7548
+  },
+  "screen": "46-near-network.png"
+}

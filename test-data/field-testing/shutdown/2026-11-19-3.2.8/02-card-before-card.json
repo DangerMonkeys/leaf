@@ -1,0 +1,20 @@
+{
+  "utc": "2026-11-20T02:59:43.355058+00:00",
+  "operation": "snapshot",
+  "volume_serial": "01114FC5",
+  "free_before": 8503296,
+  "free_after": 8503296,
+  "files": [
+    {
+      "path": "routes/active.json",
+      "bytes": 213,
+      "sha256": "30ca8568c00881b56c232496831c8388a208701c5a9e1946d8c11735a26d2a69",
+      "valid_json": true
+    },
+    {
+      "path": "waypoints/Ed2Hamilton.cup",
+      "bytes": 1509,
+      "sha256": "6a4d4e496fbdf729003686d085c5dde383fa79d25a862d34f6869b10d0d0fda1"
+    }
+  ]
+}

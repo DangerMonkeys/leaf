@@ -1,0 +1,7138 @@
+[
+  {
+    "checks": 5,
+    "speed_mph": 3,
+    "altitude_m": 1,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:20",
+          "seconds": 47960,
+          "ms": 2575307
+        },
+        "latest": {
+          "local": "13:19:25",
+          "seconds": 47965,
+          "ms": 2580307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 5,
+        "latest_delay_s": 10
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3198886
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3213886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3188099
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3193099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 13
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 2214559
+        },
+        "latest": {
+          "local": "13:32:00",
+          "seconds": 48720,
+          "ms": 2349559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 8,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 143
+      }
+    ]
+  },
+  {
+    "checks": 5,
+    "speed_mph": 3,
+    "altitude_m": 2,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:17",
+          "seconds": 47957,
+          "ms": 2572307
+        },
+        "latest": {
+          "local": "13:19:22",
+          "seconds": 47962,
+          "ms": 2577307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 2,
+        "latest_delay_s": 7
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3198886
+        },
+        "latest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3198886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 8
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3188099
+        },
+        "latest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3188099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 8
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 2214559
+        },
+        "latest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 2214559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 8,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 8
+      }
+    ]
+  },
+  {
+    "checks": 5,
+    "speed_mph": 3,
+    "altitude_m": 3,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:17",
+          "seconds": 47957,
+          "ms": 2572307
+        },
+        "latest": {
+          "local": "13:19:17",
+          "seconds": 47957,
+          "ms": 2572307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 2,
+        "latest_delay_s": 2
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3198886
+        },
+        "latest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3198886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 8
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3188099
+        },
+        "latest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3188099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 8
+      },
+      {
+        "earliest": {
+          "local": "13:22:59",
+          "seconds": 48179,
+          "ms": 1808559
+        },
+        "latest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 2214559
+        },
+        "possible_airborne_stop": {
+          "local": "13:22:59",
+          "seconds": 48179,
+          "ms": 1808559
+        },
+        "max_airborne_speed_accel_run": 8,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": -398,
+        "latest_delay_s": 8
+      }
+    ]
+  },
+  {
+    "checks": 5,
+    "speed_mph": 4,
+    "altitude_m": 1,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:20",
+          "seconds": 47960,
+          "ms": 2575307
+        },
+        "latest": {
+          "local": "13:19:25",
+          "seconds": 47965,
+          "ms": 2580307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 5,
+        "latest_delay_s": 10
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3198886
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3213886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3188099
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3193099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 13
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 2214559
+        },
+        "latest": {
+          "local": "13:32:00",
+          "seconds": 48720,
+          "ms": 2349559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 10,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 143
+      }
+    ]
+  },
+  {
+    "checks": 5,
+    "speed_mph": 4,
+    "altitude_m": 2,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:17",
+          "seconds": 47957,
+          "ms": 2572307
+        },
+        "latest": {
+          "local": "13:19:22",
+          "seconds": 47962,
+          "ms": 2577307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 2,
+        "latest_delay_s": 7
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3198886
+        },
+        "latest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3198886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 8
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3188099
+        },
+        "latest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3188099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 8
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 2214559
+        },
+        "latest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 2214559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 10,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 8
+      }
+    ]
+  },
+  {
+    "checks": 5,
+    "speed_mph": 4,
+    "altitude_m": 3,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:17",
+          "seconds": 47957,
+          "ms": 2572307
+        },
+        "latest": {
+          "local": "13:19:17",
+          "seconds": 47957,
+          "ms": 2572307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 2,
+        "latest_delay_s": 2
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3198886
+        },
+        "latest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3198886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 8
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3188099
+        },
+        "latest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3188099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 8
+      },
+      {
+        "earliest": {
+          "local": "13:22:59",
+          "seconds": 48179,
+          "ms": 1808559
+        },
+        "latest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 2214559
+        },
+        "possible_airborne_stop": {
+          "local": "13:22:59",
+          "seconds": 48179,
+          "ms": 1808559
+        },
+        "max_airborne_speed_accel_run": 10,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": -398,
+        "latest_delay_s": 8
+      }
+    ]
+  },
+  {
+    "checks": 5,
+    "speed_mph": 5,
+    "altitude_m": 1,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:20",
+          "seconds": 47960,
+          "ms": 2575307
+        },
+        "latest": {
+          "local": "13:19:25",
+          "seconds": 47965,
+          "ms": 2580307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 5,
+        "latest_delay_s": 10
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3198886
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3213886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3188099
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3193099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 13
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 2214559
+        },
+        "latest": {
+          "local": "13:32:00",
+          "seconds": 48720,
+          "ms": 2349559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 11,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 143
+      }
+    ]
+  },
+  {
+    "checks": 5,
+    "speed_mph": 5,
+    "altitude_m": 2,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:17",
+          "seconds": 47957,
+          "ms": 2572307
+        },
+        "latest": {
+          "local": "13:19:22",
+          "seconds": 47962,
+          "ms": 2577307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 2,
+        "latest_delay_s": 7
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3198886
+        },
+        "latest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3198886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 8
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3188099
+        },
+        "latest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3188099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 8
+      },
+      {
+        "earliest": {
+          "local": "13:19:10",
+          "seconds": 47950,
+          "ms": 1579559
+        },
+        "latest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 2214559
+        },
+        "possible_airborne_stop": {
+          "local": "13:19:10",
+          "seconds": 47950,
+          "ms": 1579559
+        },
+        "max_airborne_speed_accel_run": 11,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": -627,
+        "latest_delay_s": 8
+      }
+    ]
+  },
+  {
+    "checks": 5,
+    "speed_mph": 5,
+    "altitude_m": 3,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:17",
+          "seconds": 47957,
+          "ms": 2572307
+        },
+        "latest": {
+          "local": "13:19:17",
+          "seconds": 47957,
+          "ms": 2572307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 2,
+        "latest_delay_s": 2
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3198886
+        },
+        "latest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3198886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 8
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3188099
+        },
+        "latest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3188099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 8
+      },
+      {
+        "earliest": {
+          "local": "13:22:59",
+          "seconds": 48179,
+          "ms": 1808559
+        },
+        "latest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 2214559
+        },
+        "possible_airborne_stop": {
+          "local": "13:22:59",
+          "seconds": 48179,
+          "ms": 1808559
+        },
+        "max_airborne_speed_accel_run": 11,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": -398,
+        "latest_delay_s": 8
+      }
+    ]
+  },
+  {
+    "checks": 5,
+    "speed_mph": 6,
+    "altitude_m": 1,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:20",
+          "seconds": 47960,
+          "ms": 2575307
+        },
+        "latest": {
+          "local": "13:19:25",
+          "seconds": 47965,
+          "ms": 2580307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 5,
+        "latest_delay_s": 10
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3198886
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3213886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3188099
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3193099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 13
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 2214559
+        },
+        "latest": {
+          "local": "13:32:00",
+          "seconds": 48720,
+          "ms": 2349559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 16,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 143
+      }
+    ]
+  },
+  {
+    "checks": 5,
+    "speed_mph": 6,
+    "altitude_m": 2,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:17",
+          "seconds": 47957,
+          "ms": 2572307
+        },
+        "latest": {
+          "local": "13:19:22",
+          "seconds": 47962,
+          "ms": 2577307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 2,
+        "latest_delay_s": 7
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3198886
+        },
+        "latest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3198886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 8
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3188099
+        },
+        "latest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3188099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 8
+      },
+      {
+        "earliest": {
+          "local": "13:19:10",
+          "seconds": 47950,
+          "ms": 1579559
+        },
+        "latest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 2214559
+        },
+        "possible_airborne_stop": {
+          "local": "13:19:10",
+          "seconds": 47950,
+          "ms": 1579559
+        },
+        "max_airborne_speed_accel_run": 16,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": -627,
+        "latest_delay_s": 8
+      }
+    ]
+  },
+  {
+    "checks": 5,
+    "speed_mph": 6,
+    "altitude_m": 3,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:17",
+          "seconds": 47957,
+          "ms": 2572307
+        },
+        "latest": {
+          "local": "13:19:17",
+          "seconds": 47957,
+          "ms": 2572307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 2,
+        "latest_delay_s": 2
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3198886
+        },
+        "latest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3198886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 8
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3188099
+        },
+        "latest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3188099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 8
+      },
+      {
+        "earliest": {
+          "local": "13:22:59",
+          "seconds": 48179,
+          "ms": 1808559
+        },
+        "latest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 2214559
+        },
+        "possible_airborne_stop": {
+          "local": "13:22:59",
+          "seconds": 48179,
+          "ms": 1808559
+        },
+        "max_airborne_speed_accel_run": 16,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": -398,
+        "latest_delay_s": 8
+      }
+    ]
+  },
+  {
+    "checks": 5,
+    "speed_mph": 8,
+    "altitude_m": 1,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:03:27",
+          "seconds": 47007,
+          "ms": 1621958
+        },
+        "latest": {
+          "local": "13:19:25",
+          "seconds": 47965,
+          "ms": 2580307
+        },
+        "possible_airborne_stop": {
+          "local": "13:03:27",
+          "seconds": 47007,
+          "ms": 1621958
+        },
+        "max_airborne_speed_accel_run": 18,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": -948,
+        "latest_delay_s": 10
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3198886
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3213886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3188099
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3193099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 7,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 13
+      },
+      {
+        "earliest": {
+          "local": "13:19:11",
+          "seconds": 47951,
+          "ms": 1580559
+        },
+        "latest": {
+          "local": "13:32:00",
+          "seconds": 48720,
+          "ms": 2349559
+        },
+        "possible_airborne_stop": {
+          "local": "13:19:11",
+          "seconds": 47951,
+          "ms": 1580559
+        },
+        "max_airborne_speed_accel_run": 21,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": -626,
+        "latest_delay_s": 143
+      }
+    ]
+  },
+  {
+    "checks": 5,
+    "speed_mph": 8,
+    "altitude_m": 2,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:03:26",
+          "seconds": 47006,
+          "ms": 1620957
+        },
+        "latest": {
+          "local": "13:19:22",
+          "seconds": 47962,
+          "ms": 2577307
+        },
+        "possible_airborne_stop": {
+          "local": "13:03:26",
+          "seconds": 47006,
+          "ms": 1620957
+        },
+        "max_airborne_speed_accel_run": 18,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": -949,
+        "latest_delay_s": 7
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3198886
+        },
+        "latest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3198886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 8
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3188099
+        },
+        "latest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3188099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 7,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 8
+      },
+      {
+        "earliest": {
+          "local": "13:19:10",
+          "seconds": 47950,
+          "ms": 1579559
+        },
+        "latest": {
+          "local": "13:19:19",
+          "seconds": 47959,
+          "ms": 1588559
+        },
+        "possible_airborne_stop": {
+          "local": "13:19:10",
+          "seconds": 47950,
+          "ms": 1579559
+        },
+        "max_airborne_speed_accel_run": 21,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": -627,
+        "latest_delay_s": -618
+      }
+    ]
+  },
+  {
+    "checks": 5,
+    "speed_mph": 8,
+    "altitude_m": 3,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:03:26",
+          "seconds": 47006,
+          "ms": 1620957
+        },
+        "latest": {
+          "local": "13:08:35",
+          "seconds": 47315,
+          "ms": 1930407
+        },
+        "possible_airborne_stop": {
+          "local": "13:03:26",
+          "seconds": 47006,
+          "ms": 1620957
+        },
+        "max_airborne_speed_accel_run": 18,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": -949,
+        "latest_delay_s": -640
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3198886
+        },
+        "latest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3198886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 8
+      },
+      {
+        "earliest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3188099
+        },
+        "latest": {
+          "local": "13:29:45",
+          "seconds": 48585,
+          "ms": 3188099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 7,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 8
+      },
+      {
+        "earliest": {
+          "local": "13:19:11",
+          "seconds": 47951,
+          "ms": 1580559
+        },
+        "latest": {
+          "local": "13:19:12",
+          "seconds": 47952,
+          "ms": 1581559
+        },
+        "possible_airborne_stop": {
+          "local": "13:19:11",
+          "seconds": 47951,
+          "ms": 1580559
+        },
+        "max_airborne_speed_accel_run": 21,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": -626,
+        "latest_delay_s": -625
+      }
+    ]
+  },
+  {
+    "checks": 8,
+    "speed_mph": 3,
+    "altitude_m": 1,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:23",
+          "seconds": 47963,
+          "ms": 2578307
+        },
+        "latest": {
+          "local": "13:19:51",
+          "seconds": 47991,
+          "ms": 2606307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 36
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3201886
+        },
+        "latest": {
+          "local": "13:34:27",
+          "seconds": 48867,
+          "ms": 3481006
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 290
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3191099
+        },
+        "latest": {
+          "local": "13:29:56",
+          "seconds": 48596,
+          "ms": 3199099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 19
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 2217559
+        },
+        "latest": {
+          "local": "13:32:06",
+          "seconds": 48726,
+          "ms": 2355559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 8,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 149
+      }
+    ]
+  },
+  {
+    "checks": 8,
+    "speed_mph": 3,
+    "altitude_m": 2,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:20",
+          "seconds": 47960,
+          "ms": 2575307
+        },
+        "latest": {
+          "local": "13:19:28",
+          "seconds": 47968,
+          "ms": 2583307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 5,
+        "latest_delay_s": 13
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3201886
+        },
+        "latest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3201886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 11
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3191099
+        },
+        "latest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3191099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 11
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 2217559
+        },
+        "latest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 2217559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 8,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 11
+      }
+    ]
+  },
+  {
+    "checks": 8,
+    "speed_mph": 3,
+    "altitude_m": 3,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:20",
+          "seconds": 47960,
+          "ms": 2575307
+        },
+        "latest": {
+          "local": "13:19:20",
+          "seconds": 47960,
+          "ms": 2575307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 5,
+        "latest_delay_s": 5
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3201886
+        },
+        "latest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3201886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 11
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3191099
+        },
+        "latest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3191099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 11
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 2217559
+        },
+        "latest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 2217559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 8,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 11
+      }
+    ]
+  },
+  {
+    "checks": 8,
+    "speed_mph": 4,
+    "altitude_m": 1,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:23",
+          "seconds": 47963,
+          "ms": 2578307
+        },
+        "latest": {
+          "local": "13:19:51",
+          "seconds": 47991,
+          "ms": 2606307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 36
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3201886
+        },
+        "latest": {
+          "local": "13:34:27",
+          "seconds": 48867,
+          "ms": 3481006
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 290
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3191099
+        },
+        "latest": {
+          "local": "13:29:56",
+          "seconds": 48596,
+          "ms": 3199099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 19
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 2217559
+        },
+        "latest": {
+          "local": "13:32:06",
+          "seconds": 48726,
+          "ms": 2355559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 10,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 149
+      }
+    ]
+  },
+  {
+    "checks": 8,
+    "speed_mph": 4,
+    "altitude_m": 2,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:20",
+          "seconds": 47960,
+          "ms": 2575307
+        },
+        "latest": {
+          "local": "13:19:28",
+          "seconds": 47968,
+          "ms": 2583307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 5,
+        "latest_delay_s": 13
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3201886
+        },
+        "latest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3201886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 11
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3191099
+        },
+        "latest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3191099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 11
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 2217559
+        },
+        "latest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 2217559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 10,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 11
+      }
+    ]
+  },
+  {
+    "checks": 8,
+    "speed_mph": 4,
+    "altitude_m": 3,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:20",
+          "seconds": 47960,
+          "ms": 2575307
+        },
+        "latest": {
+          "local": "13:19:20",
+          "seconds": 47960,
+          "ms": 2575307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 5,
+        "latest_delay_s": 5
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3201886
+        },
+        "latest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3201886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 11
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3191099
+        },
+        "latest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3191099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 11
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 2217559
+        },
+        "latest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 2217559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 10,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 11
+      }
+    ]
+  },
+  {
+    "checks": 8,
+    "speed_mph": 5,
+    "altitude_m": 1,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:23",
+          "seconds": 47963,
+          "ms": 2578307
+        },
+        "latest": {
+          "local": "13:19:51",
+          "seconds": 47991,
+          "ms": 2606307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 36
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3201886
+        },
+        "latest": {
+          "local": "13:34:27",
+          "seconds": 48867,
+          "ms": 3481006
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 290
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3191099
+        },
+        "latest": {
+          "local": "13:29:56",
+          "seconds": 48596,
+          "ms": 3199099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 19
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 2217559
+        },
+        "latest": {
+          "local": "13:32:06",
+          "seconds": 48726,
+          "ms": 2355559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 11,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 149
+      }
+    ]
+  },
+  {
+    "checks": 8,
+    "speed_mph": 5,
+    "altitude_m": 2,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:20",
+          "seconds": 47960,
+          "ms": 2575307
+        },
+        "latest": {
+          "local": "13:19:28",
+          "seconds": 47968,
+          "ms": 2583307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 5,
+        "latest_delay_s": 13
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3201886
+        },
+        "latest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3201886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 11
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3191099
+        },
+        "latest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3191099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 11
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 2217559
+        },
+        "latest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 2217559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 11,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 11
+      }
+    ]
+  },
+  {
+    "checks": 8,
+    "speed_mph": 5,
+    "altitude_m": 3,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:20",
+          "seconds": 47960,
+          "ms": 2575307
+        },
+        "latest": {
+          "local": "13:19:20",
+          "seconds": 47960,
+          "ms": 2575307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 5,
+        "latest_delay_s": 5
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3201886
+        },
+        "latest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3201886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 11
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3191099
+        },
+        "latest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3191099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 11
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 2217559
+        },
+        "latest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 2217559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 11,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 11
+      }
+    ]
+  },
+  {
+    "checks": 8,
+    "speed_mph": 6,
+    "altitude_m": 1,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:23",
+          "seconds": 47963,
+          "ms": 2578307
+        },
+        "latest": {
+          "local": "13:19:51",
+          "seconds": 47991,
+          "ms": 2606307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 36
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3201886
+        },
+        "latest": {
+          "local": "13:34:27",
+          "seconds": 48867,
+          "ms": 3481006
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 290
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3191099
+        },
+        "latest": {
+          "local": "13:29:56",
+          "seconds": 48596,
+          "ms": 3199099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 19
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 2217559
+        },
+        "latest": {
+          "local": "13:32:06",
+          "seconds": 48726,
+          "ms": 2355559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 16,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 149
+      }
+    ]
+  },
+  {
+    "checks": 8,
+    "speed_mph": 6,
+    "altitude_m": 2,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:20",
+          "seconds": 47960,
+          "ms": 2575307
+        },
+        "latest": {
+          "local": "13:19:28",
+          "seconds": 47968,
+          "ms": 2583307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 5,
+        "latest_delay_s": 13
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3201886
+        },
+        "latest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3201886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 11
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3191099
+        },
+        "latest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3191099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 11
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 2217559
+        },
+        "latest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 2217559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 16,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 11
+      }
+    ]
+  },
+  {
+    "checks": 8,
+    "speed_mph": 6,
+    "altitude_m": 3,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:20",
+          "seconds": 47960,
+          "ms": 2575307
+        },
+        "latest": {
+          "local": "13:19:20",
+          "seconds": 47960,
+          "ms": 2575307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 5,
+        "latest_delay_s": 5
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3201886
+        },
+        "latest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3201886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 11
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3191099
+        },
+        "latest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3191099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 11
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 2217559
+        },
+        "latest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 2217559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 16,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 11
+      }
+    ]
+  },
+  {
+    "checks": 8,
+    "speed_mph": 8,
+    "altitude_m": 1,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:23",
+          "seconds": 47963,
+          "ms": 2578307
+        },
+        "latest": {
+          "local": "13:19:51",
+          "seconds": 47991,
+          "ms": 2606307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 18,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 8,
+        "latest_delay_s": 36
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3201886
+        },
+        "latest": {
+          "local": "13:34:27",
+          "seconds": 48867,
+          "ms": 3481006
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 290
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3191099
+        },
+        "latest": {
+          "local": "13:29:56",
+          "seconds": 48596,
+          "ms": 3199099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 7,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 19
+      },
+      {
+        "earliest": {
+          "local": "13:19:20",
+          "seconds": 47960,
+          "ms": 1589559
+        },
+        "latest": {
+          "local": "13:32:06",
+          "seconds": 48726,
+          "ms": 2355559
+        },
+        "possible_airborne_stop": {
+          "local": "13:19:20",
+          "seconds": 47960,
+          "ms": 1589559
+        },
+        "max_airborne_speed_accel_run": 21,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": -617,
+        "latest_delay_s": 149
+      }
+    ]
+  },
+  {
+    "checks": 8,
+    "speed_mph": 8,
+    "altitude_m": 2,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:03:29",
+          "seconds": 47009,
+          "ms": 1623957
+        },
+        "latest": {
+          "local": "13:19:28",
+          "seconds": 47968,
+          "ms": 2583307
+        },
+        "possible_airborne_stop": {
+          "local": "13:03:29",
+          "seconds": 47009,
+          "ms": 1623957
+        },
+        "max_airborne_speed_accel_run": 18,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": -946,
+        "latest_delay_s": 13
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3201886
+        },
+        "latest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3201886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 11
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3191099
+        },
+        "latest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3191099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 7,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 11
+      },
+      {
+        "earliest": {
+          "local": "13:19:20",
+          "seconds": 47960,
+          "ms": 1589559
+        },
+        "latest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 2217559
+        },
+        "possible_airborne_stop": {
+          "local": "13:19:20",
+          "seconds": 47960,
+          "ms": 1589559
+        },
+        "max_airborne_speed_accel_run": 21,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": -617,
+        "latest_delay_s": 11
+      }
+    ]
+  },
+  {
+    "checks": 8,
+    "speed_mph": 8,
+    "altitude_m": 3,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:03:29",
+          "seconds": 47009,
+          "ms": 1623957
+        },
+        "latest": {
+          "local": "13:19:20",
+          "seconds": 47960,
+          "ms": 2575307
+        },
+        "possible_airborne_stop": {
+          "local": "13:03:29",
+          "seconds": 47009,
+          "ms": 1623957
+        },
+        "max_airborne_speed_accel_run": 18,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": -946,
+        "latest_delay_s": 5
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3201886
+        },
+        "latest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3201886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 11
+      },
+      {
+        "earliest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3191099
+        },
+        "latest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 3191099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 7,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 11,
+        "latest_delay_s": 11
+      },
+      {
+        "earliest": {
+          "local": "13:19:15",
+          "seconds": 47955,
+          "ms": 1584559
+        },
+        "latest": {
+          "local": "13:29:48",
+          "seconds": 48588,
+          "ms": 2217559
+        },
+        "possible_airborne_stop": {
+          "local": "13:19:15",
+          "seconds": 47955,
+          "ms": 1584559
+        },
+        "max_airborne_speed_accel_run": 21,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": -622,
+        "latest_delay_s": 11
+      }
+    ]
+  },
+  {
+    "checks": 10,
+    "speed_mph": 3,
+    "altitude_m": 1,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:25",
+          "seconds": 47965,
+          "ms": 2580307
+        },
+        "latest": {
+          "local": "13:20:22",
+          "seconds": 48022,
+          "ms": 2637307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 10,
+        "latest_delay_s": 67
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3203886
+        },
+        "latest": {
+          "local": "13:34:31",
+          "seconds": 48871,
+          "ms": 3485006
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 294
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3193099
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3203099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 2219559
+        },
+        "latest": {
+          "local": "13:32:30",
+          "seconds": 48750,
+          "ms": 2379559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 8,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 173
+      }
+    ]
+  },
+  {
+    "checks": 10,
+    "speed_mph": 3,
+    "altitude_m": 2,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:22",
+          "seconds": 47962,
+          "ms": 2577307
+        },
+        "latest": {
+          "local": "13:19:32",
+          "seconds": 47972,
+          "ms": 2587307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 7,
+        "latest_delay_s": 17
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3203886
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3203886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 13
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3193099
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3193099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 13
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 2219559
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 2219559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 8,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 13
+      }
+    ]
+  },
+  {
+    "checks": 10,
+    "speed_mph": 3,
+    "altitude_m": 3,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:22",
+          "seconds": 47962,
+          "ms": 2577307
+        },
+        "latest": {
+          "local": "13:19:22",
+          "seconds": 47962,
+          "ms": 2577307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 7,
+        "latest_delay_s": 7
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3203886
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3203886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 13
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3193099
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3193099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 13
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 2219559
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 2219559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 8,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 13
+      }
+    ]
+  },
+  {
+    "checks": 10,
+    "speed_mph": 4,
+    "altitude_m": 1,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:25",
+          "seconds": 47965,
+          "ms": 2580307
+        },
+        "latest": {
+          "local": "13:20:31",
+          "seconds": 48031,
+          "ms": 2646307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 10,
+        "latest_delay_s": 76
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3203886
+        },
+        "latest": {
+          "local": "13:34:31",
+          "seconds": 48871,
+          "ms": 3485006
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 294
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3193099
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3203099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 2219559
+        },
+        "latest": {
+          "local": "13:32:30",
+          "seconds": 48750,
+          "ms": 2379559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 10,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 173
+      }
+    ]
+  },
+  {
+    "checks": 10,
+    "speed_mph": 4,
+    "altitude_m": 2,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:22",
+          "seconds": 47962,
+          "ms": 2577307
+        },
+        "latest": {
+          "local": "13:19:32",
+          "seconds": 47972,
+          "ms": 2587307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 7,
+        "latest_delay_s": 17
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3203886
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3203886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 13
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3193099
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3193099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 13
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 2219559
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 2219559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 10,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 13
+      }
+    ]
+  },
+  {
+    "checks": 10,
+    "speed_mph": 4,
+    "altitude_m": 3,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:22",
+          "seconds": 47962,
+          "ms": 2577307
+        },
+        "latest": {
+          "local": "13:19:22",
+          "seconds": 47962,
+          "ms": 2577307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 7,
+        "latest_delay_s": 7
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3203886
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3203886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 13
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3193099
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3193099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 13
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 2219559
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 2219559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 10,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 13
+      }
+    ]
+  },
+  {
+    "checks": 10,
+    "speed_mph": 5,
+    "altitude_m": 1,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:25",
+          "seconds": 47965,
+          "ms": 2580307
+        },
+        "latest": {
+          "local": "13:20:31",
+          "seconds": 48031,
+          "ms": 2646307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 10,
+        "latest_delay_s": 76
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3203886
+        },
+        "latest": {
+          "local": "13:34:31",
+          "seconds": 48871,
+          "ms": 3485006
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 294
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3193099
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3203099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 2219559
+        },
+        "latest": {
+          "local": "13:32:30",
+          "seconds": 48750,
+          "ms": 2379559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 11,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 173
+      }
+    ]
+  },
+  {
+    "checks": 10,
+    "speed_mph": 5,
+    "altitude_m": 2,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:22",
+          "seconds": 47962,
+          "ms": 2577307
+        },
+        "latest": {
+          "local": "13:19:32",
+          "seconds": 47972,
+          "ms": 2587307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 7,
+        "latest_delay_s": 17
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3203886
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3203886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 13
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3193099
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3193099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 13
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 2219559
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 2219559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 11,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 13
+      }
+    ]
+  },
+  {
+    "checks": 10,
+    "speed_mph": 5,
+    "altitude_m": 3,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:22",
+          "seconds": 47962,
+          "ms": 2577307
+        },
+        "latest": {
+          "local": "13:19:22",
+          "seconds": 47962,
+          "ms": 2577307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 7,
+        "latest_delay_s": 7
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3203886
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3203886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 13
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3193099
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3193099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 13
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 2219559
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 2219559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 11,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 13
+      }
+    ]
+  },
+  {
+    "checks": 10,
+    "speed_mph": 6,
+    "altitude_m": 1,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:25",
+          "seconds": 47965,
+          "ms": 2580307
+        },
+        "latest": {
+          "local": "13:20:31",
+          "seconds": 48031,
+          "ms": 2646307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 10,
+        "latest_delay_s": 76
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3203886
+        },
+        "latest": {
+          "local": "13:34:31",
+          "seconds": 48871,
+          "ms": 3485006
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 294
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3193099
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3203099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 2219559
+        },
+        "latest": {
+          "local": "13:32:30",
+          "seconds": 48750,
+          "ms": 2379559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 16,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 173
+      }
+    ]
+  },
+  {
+    "checks": 10,
+    "speed_mph": 6,
+    "altitude_m": 2,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:22",
+          "seconds": 47962,
+          "ms": 2577307
+        },
+        "latest": {
+          "local": "13:19:32",
+          "seconds": 47972,
+          "ms": 2587307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 7,
+        "latest_delay_s": 17
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3203886
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3203886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 13
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3193099
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3193099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 13
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 2219559
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 2219559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 16,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 13
+      }
+    ]
+  },
+  {
+    "checks": 10,
+    "speed_mph": 6,
+    "altitude_m": 3,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:22",
+          "seconds": 47962,
+          "ms": 2577307
+        },
+        "latest": {
+          "local": "13:19:22",
+          "seconds": 47962,
+          "ms": 2577307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 7,
+        "latest_delay_s": 7
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3203886
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3203886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 13
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3193099
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3193099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 13
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 2219559
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 2219559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 16,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 13
+      }
+    ]
+  },
+  {
+    "checks": 10,
+    "speed_mph": 8,
+    "altitude_m": 1,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:25",
+          "seconds": 47965,
+          "ms": 2580307
+        },
+        "latest": {
+          "local": "13:20:31",
+          "seconds": 48031,
+          "ms": 2646307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 18,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 10,
+        "latest_delay_s": 76
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3203886
+        },
+        "latest": {
+          "local": "13:34:31",
+          "seconds": 48871,
+          "ms": 3485006
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 294
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3193099
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3203099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 7,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 2219559
+        },
+        "latest": {
+          "local": "13:32:30",
+          "seconds": 48750,
+          "ms": 2379559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 21,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 173
+      }
+    ]
+  },
+  {
+    "checks": 10,
+    "speed_mph": 8,
+    "altitude_m": 2,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:22",
+          "seconds": 47962,
+          "ms": 2577307
+        },
+        "latest": {
+          "local": "13:19:32",
+          "seconds": 47972,
+          "ms": 2587307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 18,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 7,
+        "latest_delay_s": 17
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3203886
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3203886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 13
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3193099
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3193099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 7,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 13
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 2219559
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 2219559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 21,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 13
+      }
+    ]
+  },
+  {
+    "checks": 10,
+    "speed_mph": 8,
+    "altitude_m": 3,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:22",
+          "seconds": 47962,
+          "ms": 2577307
+        },
+        "latest": {
+          "local": "13:19:22",
+          "seconds": 47962,
+          "ms": 2577307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 18,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 7,
+        "latest_delay_s": 7
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3203886
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3203886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 13
+      },
+      {
+        "earliest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3193099
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 3193099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 7,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 13,
+        "latest_delay_s": 13
+      },
+      {
+        "earliest": {
+          "local": "13:19:17",
+          "seconds": 47957,
+          "ms": 1586559
+        },
+        "latest": {
+          "local": "13:29:50",
+          "seconds": 48590,
+          "ms": 2219559
+        },
+        "possible_airborne_stop": {
+          "local": "13:19:17",
+          "seconds": 47957,
+          "ms": 1586559
+        },
+        "max_airborne_speed_accel_run": 21,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": -620,
+        "latest_delay_s": 13
+      }
+    ]
+  },
+  {
+    "checks": 12,
+    "speed_mph": 3,
+    "altitude_m": 1,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:27",
+          "seconds": 47967,
+          "ms": 2582307
+        },
+        "latest": {
+          "local": "13:20:24",
+          "seconds": 48024,
+          "ms": 2639307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 12,
+        "latest_delay_s": 69
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3205886
+        },
+        "latest": {
+          "local": "13:34:35",
+          "seconds": 48875,
+          "ms": 3489006
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 298
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3195099
+        },
+        "latest": {
+          "local": "13:30:04",
+          "seconds": 48604,
+          "ms": 3207099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 27
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 2221559
+        },
+        "latest": {
+          "local": "13:32:34",
+          "seconds": 48754,
+          "ms": 2383559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 8,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 177
+      }
+    ]
+  },
+  {
+    "checks": 12,
+    "speed_mph": 3,
+    "altitude_m": 2,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:24",
+          "seconds": 47964,
+          "ms": 2579307
+        },
+        "latest": {
+          "local": "13:19:36",
+          "seconds": 47976,
+          "ms": 2591307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 9,
+        "latest_delay_s": 21
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3205886
+        },
+        "latest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3205886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 15
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3195099
+        },
+        "latest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3195099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 15
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 2221559
+        },
+        "latest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 2221559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 8,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 15
+      }
+    ]
+  },
+  {
+    "checks": 12,
+    "speed_mph": 3,
+    "altitude_m": 3,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:24",
+          "seconds": 47964,
+          "ms": 2579307
+        },
+        "latest": {
+          "local": "13:19:24",
+          "seconds": 47964,
+          "ms": 2579307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 9,
+        "latest_delay_s": 9
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3205886
+        },
+        "latest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3205886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 15
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3195099
+        },
+        "latest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3195099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 15
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 2221559
+        },
+        "latest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 2221559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 8,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 15
+      }
+    ]
+  },
+  {
+    "checks": 12,
+    "speed_mph": 4,
+    "altitude_m": 1,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:27",
+          "seconds": 47967,
+          "ms": 2582307
+        },
+        "latest": {
+          "local": "13:21:46",
+          "seconds": 48106,
+          "ms": 2721308
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 12,
+        "latest_delay_s": 151
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3205886
+        },
+        "latest": {
+          "local": "13:34:35",
+          "seconds": 48875,
+          "ms": 3489006
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 298
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3195099
+        },
+        "latest": {
+          "local": "13:30:04",
+          "seconds": 48604,
+          "ms": 3207099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 27
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 2221559
+        },
+        "latest": {
+          "local": "13:32:34",
+          "seconds": 48754,
+          "ms": 2383559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 10,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 177
+      }
+    ]
+  },
+  {
+    "checks": 12,
+    "speed_mph": 4,
+    "altitude_m": 2,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:24",
+          "seconds": 47964,
+          "ms": 2579307
+        },
+        "latest": {
+          "local": "13:19:36",
+          "seconds": 47976,
+          "ms": 2591307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 9,
+        "latest_delay_s": 21
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3205886
+        },
+        "latest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3205886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 15
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3195099
+        },
+        "latest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3195099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 15
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 2221559
+        },
+        "latest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 2221559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 10,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 15
+      }
+    ]
+  },
+  {
+    "checks": 12,
+    "speed_mph": 4,
+    "altitude_m": 3,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:24",
+          "seconds": 47964,
+          "ms": 2579307
+        },
+        "latest": {
+          "local": "13:19:24",
+          "seconds": 47964,
+          "ms": 2579307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 9,
+        "latest_delay_s": 9
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3205886
+        },
+        "latest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3205886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 15
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3195099
+        },
+        "latest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3195099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 15
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 2221559
+        },
+        "latest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 2221559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 10,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 15
+      }
+    ]
+  },
+  {
+    "checks": 12,
+    "speed_mph": 5,
+    "altitude_m": 1,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:27",
+          "seconds": 47967,
+          "ms": 2582307
+        },
+        "latest": {
+          "local": "13:21:46",
+          "seconds": 48106,
+          "ms": 2721308
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 12,
+        "latest_delay_s": 151
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3205886
+        },
+        "latest": {
+          "local": "13:34:35",
+          "seconds": 48875,
+          "ms": 3489006
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 298
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3195099
+        },
+        "latest": {
+          "local": "13:30:04",
+          "seconds": 48604,
+          "ms": 3207099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 27
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 2221559
+        },
+        "latest": {
+          "local": "13:32:34",
+          "seconds": 48754,
+          "ms": 2383559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 11,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 177
+      }
+    ]
+  },
+  {
+    "checks": 12,
+    "speed_mph": 5,
+    "altitude_m": 2,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:24",
+          "seconds": 47964,
+          "ms": 2579307
+        },
+        "latest": {
+          "local": "13:19:36",
+          "seconds": 47976,
+          "ms": 2591307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 9,
+        "latest_delay_s": 21
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3205886
+        },
+        "latest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3205886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 15
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3195099
+        },
+        "latest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3195099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 15
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 2221559
+        },
+        "latest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 2221559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 11,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 15
+      }
+    ]
+  },
+  {
+    "checks": 12,
+    "speed_mph": 5,
+    "altitude_m": 3,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:24",
+          "seconds": 47964,
+          "ms": 2579307
+        },
+        "latest": {
+          "local": "13:19:24",
+          "seconds": 47964,
+          "ms": 2579307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 9,
+        "latest_delay_s": 9
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3205886
+        },
+        "latest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3205886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 15
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3195099
+        },
+        "latest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3195099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 15
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 2221559
+        },
+        "latest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 2221559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 11,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 15
+      }
+    ]
+  },
+  {
+    "checks": 12,
+    "speed_mph": 6,
+    "altitude_m": 1,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:27",
+          "seconds": 47967,
+          "ms": 2582307
+        },
+        "latest": {
+          "local": "13:21:46",
+          "seconds": 48106,
+          "ms": 2721308
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 12,
+        "latest_delay_s": 151
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3205886
+        },
+        "latest": {
+          "local": "13:34:35",
+          "seconds": 48875,
+          "ms": 3489006
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 298
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3195099
+        },
+        "latest": {
+          "local": "13:30:04",
+          "seconds": 48604,
+          "ms": 3207099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 27
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 2221559
+        },
+        "latest": {
+          "local": "13:32:34",
+          "seconds": 48754,
+          "ms": 2383559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 16,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 177
+      }
+    ]
+  },
+  {
+    "checks": 12,
+    "speed_mph": 6,
+    "altitude_m": 2,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:24",
+          "seconds": 47964,
+          "ms": 2579307
+        },
+        "latest": {
+          "local": "13:19:36",
+          "seconds": 47976,
+          "ms": 2591307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 9,
+        "latest_delay_s": 21
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3205886
+        },
+        "latest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3205886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 15
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3195099
+        },
+        "latest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3195099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 15
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 2221559
+        },
+        "latest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 2221559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 16,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 15
+      }
+    ]
+  },
+  {
+    "checks": 12,
+    "speed_mph": 6,
+    "altitude_m": 3,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:24",
+          "seconds": 47964,
+          "ms": 2579307
+        },
+        "latest": {
+          "local": "13:19:24",
+          "seconds": 47964,
+          "ms": 2579307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 9,
+        "latest_delay_s": 9
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3205886
+        },
+        "latest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3205886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 15
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3195099
+        },
+        "latest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3195099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 15
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 2221559
+        },
+        "latest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 2221559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 16,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 15
+      }
+    ]
+  },
+  {
+    "checks": 12,
+    "speed_mph": 8,
+    "altitude_m": 1,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:27",
+          "seconds": 47967,
+          "ms": 2582307
+        },
+        "latest": {
+          "local": "13:21:46",
+          "seconds": 48106,
+          "ms": 2721308
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 18,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 12,
+        "latest_delay_s": 151
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3205886
+        },
+        "latest": {
+          "local": "13:34:35",
+          "seconds": 48875,
+          "ms": 3489006
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 298
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3195099
+        },
+        "latest": {
+          "local": "13:30:04",
+          "seconds": 48604,
+          "ms": 3207099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 7,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 27
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 2221559
+        },
+        "latest": {
+          "local": "13:32:34",
+          "seconds": 48754,
+          "ms": 2383559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 21,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 177
+      }
+    ]
+  },
+  {
+    "checks": 12,
+    "speed_mph": 8,
+    "altitude_m": 2,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:24",
+          "seconds": 47964,
+          "ms": 2579307
+        },
+        "latest": {
+          "local": "13:19:36",
+          "seconds": 47976,
+          "ms": 2591307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 18,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 9,
+        "latest_delay_s": 21
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3205886
+        },
+        "latest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3205886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 15
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3195099
+        },
+        "latest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3195099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 7,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 15
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 2221559
+        },
+        "latest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 2221559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 21,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 15
+      }
+    ]
+  },
+  {
+    "checks": 12,
+    "speed_mph": 8,
+    "altitude_m": 3,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:24",
+          "seconds": 47964,
+          "ms": 2579307
+        },
+        "latest": {
+          "local": "13:19:24",
+          "seconds": 47964,
+          "ms": 2579307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 18,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 9,
+        "latest_delay_s": 9
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3205886
+        },
+        "latest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3205886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 15
+      },
+      {
+        "earliest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3195099
+        },
+        "latest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 3195099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 7,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 15,
+        "latest_delay_s": 15
+      },
+      {
+        "earliest": {
+          "local": "13:19:19",
+          "seconds": 47959,
+          "ms": 1588559
+        },
+        "latest": {
+          "local": "13:29:52",
+          "seconds": 48592,
+          "ms": 2221559
+        },
+        "possible_airborne_stop": {
+          "local": "13:19:19",
+          "seconds": 47959,
+          "ms": 1588559
+        },
+        "max_airborne_speed_accel_run": 21,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": -618,
+        "latest_delay_s": 15
+      }
+    ]
+  },
+  {
+    "checks": 15,
+    "speed_mph": 3,
+    "altitude_m": 1,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:31",
+          "seconds": 47971,
+          "ms": 2586307
+        },
+        "latest": {
+          "local": "13:20:27",
+          "seconds": 48027,
+          "ms": 2642307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 16,
+        "latest_delay_s": 72
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3208886
+        },
+        "latest": {
+          "local": "13:34:41",
+          "seconds": 48881,
+          "ms": 3495056
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 304
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3198099
+        },
+        "latest": null,
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 18
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 2224559
+        },
+        "latest": {
+          "local": "13:32:40",
+          "seconds": 48760,
+          "ms": 2389559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 8,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 183
+      }
+    ]
+  },
+  {
+    "checks": 15,
+    "speed_mph": 3,
+    "altitude_m": 2,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:27",
+          "seconds": 47967,
+          "ms": 2582307
+        },
+        "latest": {
+          "local": "13:19:42",
+          "seconds": 47982,
+          "ms": 2597307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 12,
+        "latest_delay_s": 27
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3208886
+        },
+        "latest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3208886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 18
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3198099
+        },
+        "latest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3198099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 18
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 2224559
+        },
+        "latest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 2224559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 8,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 18
+      }
+    ]
+  },
+  {
+    "checks": 15,
+    "speed_mph": 3,
+    "altitude_m": 3,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:27",
+          "seconds": 47967,
+          "ms": 2582307
+        },
+        "latest": {
+          "local": "13:19:27",
+          "seconds": 47967,
+          "ms": 2582307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 12,
+        "latest_delay_s": 12
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3208886
+        },
+        "latest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3208886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 18
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3198099
+        },
+        "latest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3198099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 18
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 2224559
+        },
+        "latest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 2224559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 8,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 18
+      }
+    ]
+  },
+  {
+    "checks": 15,
+    "speed_mph": 4,
+    "altitude_m": 1,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:31",
+          "seconds": 47971,
+          "ms": 2586307
+        },
+        "latest": {
+          "local": "13:21:49",
+          "seconds": 48109,
+          "ms": 2724307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 16,
+        "latest_delay_s": 154
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3208886
+        },
+        "latest": {
+          "local": "13:34:41",
+          "seconds": 48881,
+          "ms": 3495056
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 304
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3198099
+        },
+        "latest": null,
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 18
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 2224559
+        },
+        "latest": {
+          "local": "13:32:40",
+          "seconds": 48760,
+          "ms": 2389559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 10,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 183
+      }
+    ]
+  },
+  {
+    "checks": 15,
+    "speed_mph": 4,
+    "altitude_m": 2,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:27",
+          "seconds": 47967,
+          "ms": 2582307
+        },
+        "latest": {
+          "local": "13:19:42",
+          "seconds": 47982,
+          "ms": 2597307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 12,
+        "latest_delay_s": 27
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3208886
+        },
+        "latest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3208886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 18
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3198099
+        },
+        "latest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3198099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 18
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 2224559
+        },
+        "latest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 2224559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 10,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 18
+      }
+    ]
+  },
+  {
+    "checks": 15,
+    "speed_mph": 4,
+    "altitude_m": 3,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:27",
+          "seconds": 47967,
+          "ms": 2582307
+        },
+        "latest": {
+          "local": "13:19:27",
+          "seconds": 47967,
+          "ms": 2582307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 12,
+        "latest_delay_s": 12
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3208886
+        },
+        "latest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3208886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 18
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3198099
+        },
+        "latest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3198099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 18
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 2224559
+        },
+        "latest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 2224559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 10,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 18
+      }
+    ]
+  },
+  {
+    "checks": 15,
+    "speed_mph": 5,
+    "altitude_m": 1,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:31",
+          "seconds": 47971,
+          "ms": 2586307
+        },
+        "latest": {
+          "local": "13:21:49",
+          "seconds": 48109,
+          "ms": 2724307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 16,
+        "latest_delay_s": 154
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3208886
+        },
+        "latest": {
+          "local": "13:34:41",
+          "seconds": 48881,
+          "ms": 3495056
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 304
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3198099
+        },
+        "latest": null,
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 18
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 2224559
+        },
+        "latest": {
+          "local": "13:32:40",
+          "seconds": 48760,
+          "ms": 2389559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 11,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 183
+      }
+    ]
+  },
+  {
+    "checks": 15,
+    "speed_mph": 5,
+    "altitude_m": 2,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:27",
+          "seconds": 47967,
+          "ms": 2582307
+        },
+        "latest": {
+          "local": "13:19:42",
+          "seconds": 47982,
+          "ms": 2597307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 12,
+        "latest_delay_s": 27
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3208886
+        },
+        "latest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3208886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 18
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3198099
+        },
+        "latest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3198099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 18
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 2224559
+        },
+        "latest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 2224559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 11,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 18
+      }
+    ]
+  },
+  {
+    "checks": 15,
+    "speed_mph": 5,
+    "altitude_m": 3,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:27",
+          "seconds": 47967,
+          "ms": 2582307
+        },
+        "latest": {
+          "local": "13:19:27",
+          "seconds": 47967,
+          "ms": 2582307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 12,
+        "latest_delay_s": 12
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3208886
+        },
+        "latest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3208886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 18
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3198099
+        },
+        "latest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3198099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 18
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 2224559
+        },
+        "latest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 2224559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 11,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 18
+      }
+    ]
+  },
+  {
+    "checks": 15,
+    "speed_mph": 6,
+    "altitude_m": 1,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:31",
+          "seconds": 47971,
+          "ms": 2586307
+        },
+        "latest": {
+          "local": "13:21:49",
+          "seconds": 48109,
+          "ms": 2724307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 16,
+        "latest_delay_s": 154
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3208886
+        },
+        "latest": {
+          "local": "13:34:41",
+          "seconds": 48881,
+          "ms": 3495056
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 304
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3198099
+        },
+        "latest": null,
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 18
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 2224559
+        },
+        "latest": {
+          "local": "13:32:40",
+          "seconds": 48760,
+          "ms": 2389559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 16,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 183
+      }
+    ]
+  },
+  {
+    "checks": 15,
+    "speed_mph": 6,
+    "altitude_m": 2,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:27",
+          "seconds": 47967,
+          "ms": 2582307
+        },
+        "latest": {
+          "local": "13:19:42",
+          "seconds": 47982,
+          "ms": 2597307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 12,
+        "latest_delay_s": 27
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3208886
+        },
+        "latest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3208886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 18
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3198099
+        },
+        "latest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3198099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 18
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 2224559
+        },
+        "latest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 2224559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 16,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 18
+      }
+    ]
+  },
+  {
+    "checks": 15,
+    "speed_mph": 6,
+    "altitude_m": 3,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:27",
+          "seconds": 47967,
+          "ms": 2582307
+        },
+        "latest": {
+          "local": "13:19:27",
+          "seconds": 47967,
+          "ms": 2582307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 12,
+        "latest_delay_s": 12
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3208886
+        },
+        "latest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3208886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 18
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3198099
+        },
+        "latest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3198099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 18
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 2224559
+        },
+        "latest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 2224559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 16,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 18
+      }
+    ]
+  },
+  {
+    "checks": 15,
+    "speed_mph": 8,
+    "altitude_m": 1,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:31",
+          "seconds": 47971,
+          "ms": 2586307
+        },
+        "latest": {
+          "local": "13:21:49",
+          "seconds": 48109,
+          "ms": 2724307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 18,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 16,
+        "latest_delay_s": 154
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3208886
+        },
+        "latest": {
+          "local": "13:34:41",
+          "seconds": 48881,
+          "ms": 3495056
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 304
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3198099
+        },
+        "latest": null,
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 7,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 18
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 2224559
+        },
+        "latest": {
+          "local": "13:32:40",
+          "seconds": 48760,
+          "ms": 2389559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 21,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 183
+      }
+    ]
+  },
+  {
+    "checks": 15,
+    "speed_mph": 8,
+    "altitude_m": 2,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:27",
+          "seconds": 47967,
+          "ms": 2582307
+        },
+        "latest": {
+          "local": "13:19:42",
+          "seconds": 47982,
+          "ms": 2597307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 18,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 12,
+        "latest_delay_s": 27
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3208886
+        },
+        "latest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3208886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 18
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3198099
+        },
+        "latest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3198099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 7,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 18
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 2224559
+        },
+        "latest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 2224559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 21,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 18
+      }
+    ]
+  },
+  {
+    "checks": 15,
+    "speed_mph": 8,
+    "altitude_m": 3,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:27",
+          "seconds": 47967,
+          "ms": 2582307
+        },
+        "latest": {
+          "local": "13:19:27",
+          "seconds": 47967,
+          "ms": 2582307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 18,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 12,
+        "latest_delay_s": 12
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3208886
+        },
+        "latest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3208886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 18
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3198099
+        },
+        "latest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 3198099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 7,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 18
+      },
+      {
+        "earliest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 2224559
+        },
+        "latest": {
+          "local": "13:29:55",
+          "seconds": 48595,
+          "ms": 2224559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 21,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 18,
+        "latest_delay_s": 18
+      }
+    ]
+  },
+  {
+    "checks": 20,
+    "speed_mph": 3,
+    "altitude_m": 1,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:36",
+          "seconds": 47976,
+          "ms": 2591307
+        },
+        "latest": {
+          "local": "13:20:32",
+          "seconds": 48032,
+          "ms": 2647307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 21,
+        "latest_delay_s": 77
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3213886
+        },
+        "latest": {
+          "local": "13:34:51",
+          "seconds": 48891,
+          "ms": 3505056
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 314
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3203099
+        },
+        "latest": null,
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 2229559
+        },
+        "latest": {
+          "local": "13:32:50",
+          "seconds": 48770,
+          "ms": 2399559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 8,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 193
+      }
+    ]
+  },
+  {
+    "checks": 20,
+    "speed_mph": 3,
+    "altitude_m": 2,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:36",
+          "seconds": 47976,
+          "ms": 2591307
+        },
+        "latest": {
+          "local": "13:20:32",
+          "seconds": 48032,
+          "ms": 2647307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 21,
+        "latest_delay_s": 77
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3213886
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3213886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3203099
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3203099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 2229559
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 2229559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 8,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 23
+      }
+    ]
+  },
+  {
+    "checks": 20,
+    "speed_mph": 3,
+    "altitude_m": 3,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:32",
+          "seconds": 47972,
+          "ms": 2587307
+        },
+        "latest": {
+          "local": "13:19:50",
+          "seconds": 47990,
+          "ms": 2605307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 17,
+        "latest_delay_s": 35
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3213886
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3213886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3203099
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3203099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 2229559
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 2229559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 8,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 23
+      }
+    ]
+  },
+  {
+    "checks": 20,
+    "speed_mph": 4,
+    "altitude_m": 1,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:36",
+          "seconds": 47976,
+          "ms": 2591307
+        },
+        "latest": {
+          "local": "13:21:54",
+          "seconds": 48114,
+          "ms": 2729307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 21,
+        "latest_delay_s": 159
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3213886
+        },
+        "latest": {
+          "local": "13:34:51",
+          "seconds": 48891,
+          "ms": 3505056
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 314
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3203099
+        },
+        "latest": null,
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 2229559
+        },
+        "latest": {
+          "local": "13:32:50",
+          "seconds": 48770,
+          "ms": 2399559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 10,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 193
+      }
+    ]
+  },
+  {
+    "checks": 20,
+    "speed_mph": 4,
+    "altitude_m": 2,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:36",
+          "seconds": 47976,
+          "ms": 2591307
+        },
+        "latest": {
+          "local": "13:20:31",
+          "seconds": 48031,
+          "ms": 2646307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 21,
+        "latest_delay_s": 76
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3213886
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3213886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3203099
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3203099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 2229559
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 2229559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 10,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 23
+      }
+    ]
+  },
+  {
+    "checks": 20,
+    "speed_mph": 4,
+    "altitude_m": 3,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:32",
+          "seconds": 47972,
+          "ms": 2587307
+        },
+        "latest": {
+          "local": "13:19:50",
+          "seconds": 47990,
+          "ms": 2605307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 2,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 17,
+        "latest_delay_s": 35
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3213886
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3213886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3203099
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3203099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 2229559
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 2229559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 10,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 23
+      }
+    ]
+  },
+  {
+    "checks": 20,
+    "speed_mph": 5,
+    "altitude_m": 1,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:36",
+          "seconds": 47976,
+          "ms": 2591307
+        },
+        "latest": {
+          "local": "13:21:54",
+          "seconds": 48114,
+          "ms": 2729307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 21,
+        "latest_delay_s": 159
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3213886
+        },
+        "latest": {
+          "local": "13:34:51",
+          "seconds": 48891,
+          "ms": 3505056
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 314
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3203099
+        },
+        "latest": null,
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 2229559
+        },
+        "latest": {
+          "local": "13:32:50",
+          "seconds": 48770,
+          "ms": 2399559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 11,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 193
+      }
+    ]
+  },
+  {
+    "checks": 20,
+    "speed_mph": 5,
+    "altitude_m": 2,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:36",
+          "seconds": 47976,
+          "ms": 2591307
+        },
+        "latest": {
+          "local": "13:20:31",
+          "seconds": 48031,
+          "ms": 2646307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 21,
+        "latest_delay_s": 76
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3213886
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3213886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3203099
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3203099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 2229559
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 2229559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 11,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 23
+      }
+    ]
+  },
+  {
+    "checks": 20,
+    "speed_mph": 5,
+    "altitude_m": 3,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:32",
+          "seconds": 47972,
+          "ms": 2587307
+        },
+        "latest": {
+          "local": "13:19:50",
+          "seconds": 47990,
+          "ms": 2605307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 17,
+        "latest_delay_s": 35
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3213886
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3213886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3203099
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3203099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 2229559
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 2229559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 11,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 23
+      }
+    ]
+  },
+  {
+    "checks": 20,
+    "speed_mph": 6,
+    "altitude_m": 1,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:36",
+          "seconds": 47976,
+          "ms": 2591307
+        },
+        "latest": {
+          "local": "13:21:54",
+          "seconds": 48114,
+          "ms": 2729307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 21,
+        "latest_delay_s": 159
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3213886
+        },
+        "latest": {
+          "local": "13:34:51",
+          "seconds": 48891,
+          "ms": 3505056
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 314
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3203099
+        },
+        "latest": null,
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 2229559
+        },
+        "latest": {
+          "local": "13:32:50",
+          "seconds": 48770,
+          "ms": 2399559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 16,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 193
+      }
+    ]
+  },
+  {
+    "checks": 20,
+    "speed_mph": 6,
+    "altitude_m": 2,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:36",
+          "seconds": 47976,
+          "ms": 2591307
+        },
+        "latest": {
+          "local": "13:20:31",
+          "seconds": 48031,
+          "ms": 2646307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 21,
+        "latest_delay_s": 76
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3213886
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3213886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3203099
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3203099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 2229559
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 2229559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 16,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 23
+      }
+    ]
+  },
+  {
+    "checks": 20,
+    "speed_mph": 6,
+    "altitude_m": 3,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:32",
+          "seconds": 47972,
+          "ms": 2587307
+        },
+        "latest": {
+          "local": "13:19:50",
+          "seconds": 47990,
+          "ms": 2605307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 3,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 17,
+        "latest_delay_s": 35
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3213886
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3213886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3203099
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3203099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 2229559
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 2229559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 16,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 23
+      }
+    ]
+  },
+  {
+    "checks": 20,
+    "speed_mph": 8,
+    "altitude_m": 1,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:36",
+          "seconds": 47976,
+          "ms": 2591307
+        },
+        "latest": {
+          "local": "13:21:54",
+          "seconds": 48114,
+          "ms": 2729307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 18,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 21,
+        "latest_delay_s": 159
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3213886
+        },
+        "latest": {
+          "local": "13:34:51",
+          "seconds": 48891,
+          "ms": 3505056
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 314
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3203099
+        },
+        "latest": null,
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 7,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 2229559
+        },
+        "latest": {
+          "local": "13:32:50",
+          "seconds": 48770,
+          "ms": 2399559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 21,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 193
+      }
+    ]
+  },
+  {
+    "checks": 20,
+    "speed_mph": 8,
+    "altitude_m": 2,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:36",
+          "seconds": 47976,
+          "ms": 2591307
+        },
+        "latest": {
+          "local": "13:20:31",
+          "seconds": 48031,
+          "ms": 2646307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 18,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 21,
+        "latest_delay_s": 76
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3213886
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3213886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3203099
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3203099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 7,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 2229559
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 2229559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 21,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 23
+      }
+    ]
+  },
+  {
+    "checks": 20,
+    "speed_mph": 8,
+    "altitude_m": 3,
+    "tracks": [
+      {
+        "earliest": {
+          "local": "13:19:32",
+          "seconds": 47972,
+          "ms": 2587307
+        },
+        "latest": {
+          "local": "13:19:50",
+          "seconds": 47990,
+          "ms": 2605307
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 18,
+        "unit": "3.2.3 raccoon",
+        "id": 0,
+        "earliest_delay_s": 17,
+        "latest_delay_s": 35
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3213886
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3213886
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 4,
+        "unit": "3.2.3 redstrap",
+        "id": 1,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3203099
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 3203099
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 7,
+        "unit": "3.2.6 blue",
+        "id": 3,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 23
+      },
+      {
+        "earliest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 2229559
+        },
+        "latest": {
+          "local": "13:30:00",
+          "seconds": 48600,
+          "ms": 2229559
+        },
+        "possible_airborne_stop": null,
+        "max_airborne_speed_accel_run": 21,
+        "unit": "3.2.8",
+        "id": 4,
+        "earliest_delay_s": 23,
+        "latest_delay_s": 23
+      }
+    ]
+  }
+]

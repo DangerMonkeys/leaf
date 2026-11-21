@@ -9,7 +9,8 @@ description: Hardware v3.2.8 implementation status, bench results, and remaining
 
 The build and tracing instructions below describe the original hardware migration. The dev firmware configuration and `LEAF_IMU_STARTUP_TRACE` have since been retired. Use `leaf_3_2_8_release` for current builds; historical capture logs can still be analyzed with `capture_startup.py --analyze`.
 
-Status updated on **2026-10-21**. Initial v3.2.8 hardware support is ready for PR review;
+Status reconciled on **2026-10-22**. Initial v3.2.8 hardware support merged to `main` in
+`d2c1d9a9` (#416);
 flight, temperature, multiple-board and electrical fault/current qualification remain follow-ups.
 Core v3.2.8 support is implemented in commit `6ff70157`
 (`Add Leaf v3.2.8 LSM6DSV IMU support`). Development/release builds, a v3.2.6 regression
@@ -35,10 +36,15 @@ two during normal desk typing. A deliberate stronger desk disturbance verified t
 gyro windows are discarded and an automatic clean retry can complete the same test. See the
 commissioning rejection/recovery record below; older ICM behavior remains unchanged.
 
-The hardware-support branch is `codex/hardware-v3.2.8`, created from `origin/main` at
+The historical hardware-support branch was `codex/hardware-v3.2.8`, created from `origin/main` at
 `82a74de7`. This document was brought forward from `codex/leaf-log-site-link`, where it was
 introduced in `26026ae6`. The implementation/measurement record and checkpoint below supersede
-the earlier planning sections wherever they differ.
+the earlier planning sections wherever they differ. Earlier “next work”, prototype and
+acceptance lists are historical plans, not a second list of unimplemented features. The
+current follow-ups are physical moving-start/sustained-turn/flight, temperature/multiple-board,
+electrical fault/current and broader calibration-retention qualification, plus the explicitly
+deferred ICM estimator, magnetometer and interrupt/gesture work. The Auto-Off timeout check
+remains in [factory commissioning](factory-commissioning-followup.md).
 
 Replace Leaf's TDK ICM-20948 with the ST LSM6DSVTR on v3.2.8, retain the ICM implementation
 for older boards, and keep the new driver and acceleration calculation as simple as possible.
@@ -49,6 +55,47 @@ accelerometer residuals required correction; removal of all correction is not su
 current evidence. Older ICM boards retain their existing path.
 
 The confirmed component changes are also recorded in `vario/hardware/hardware_changes.md`.
+
+## Scheduling-delay tolerance follow-up (2026-10-26)
+
+The runtime interruption policy now separates a late host poll from a failed sensor:
+
+- Motion and pressure freshness is 500 ms, inclusive. Stale messages are discarded without
+  resetting a healthy estimator; both IMU paths consume each fresh pressure observation once. Output can
+  become unavailable while retaining qualified climb-averaging history.
+- The shared Kalman filter reinitializes only when the update interval exceeds 1.5 seconds.
+  Duplicate/non-increasing timestamps remain ignored. Genuine instrument resets still clear
+  startup qualification and climb history.
+- LSM polling delays no longer power-cycle the sensor. Drain up to 64 FIFO words (about half
+  a second at two words per 60 Hz sample), publishing only the newest complete pair. An
+  excessive/full/overrun FIFO is discarded without restarting SFLP or Kalman; the next poll
+  obtains fresh data. Host polling gaps over 500 ms start a fresh paired-data observation
+  window; repeated overruns during timely polling still trip the existing watchdog.
+- Communication faults, invalid-data rejection, the existing 500 ms paired-data watchdog,
+  two-second retry delay, three-second warm-up and bounded recovery budget remain in place.
+- Covariance storage is shared between the legacy and bias-enabled filters. Commissioning
+  reuses the gyro sums for the later gravity-reference phase. Periodic climb mean/RMS
+  accumulation is removed; normal sensor status/counters and vario diagnostics remain.
+  ESP32 class-layout checks show `KalmanFilterPA` shrinking from 192 to 160 bytes and
+  `LSM6DSV` from 448 to 384 bytes, saving 96 bytes combined. No sample buffers were added.
+
+Focused tests (inside the simulator container):
+
+```sh
+make -C sim VARIANT=leaf_3_2_8 BUILD=/leaf/sim/build328 test-vario-continuity test-lsm6dsv-continuity
+```
+
+The latter compiles both the real LSM host driver and ST register decoder, replacing register
+I/O rather than substituting the sensor driver. It covers bounded backlog draining/discard,
+communication faults, missing/invalid pairs, retry/warm-up and all commissioning phases.
+These tests do not establish physical sensor-fusion behavior or flight performance across
+missing acceleration. The filter still applies the newest acceleration over each elapsed
+update interval.
+
+Verification on 2026-10-26: formatter, `leaf_3_2_6_release` and `leaf_3_2_8_release` builds,
+continuity/bias tests, real-driver register-model tests, g-load and thermal lifecycle tests,
+and the existing unbiased/biased recovery and bias-maneuver replays passed. No Espressif/Leaf
+serial port was connected; no firmware was flashed and physical validation remains outstanding.
 
 ## Confirmed hardware and requirements
 
@@ -75,9 +122,10 @@ resolve the earlier open questions about those connections.
 
 ## Hardware variant and build support
 
-- Add `src/variants/leaf_3_2_8/variant.h` and development/release PlatformIO environments.
-- Select the LSM6DSV at compile time for v3.2.8. Keep existing variants on the ICM path.
-- Add `leaf_3_2_8_dev` and `leaf_3_2_8_release` to the CI build matrix.
+- Implemented: `src/variants/leaf_3_2_8/variant.h` and `leaf_3_2_8_release`.
+- Implemented: compile-time LSM6DSV selection for v3.2.8; existing variants keep the ICM path.
+- Implemented: `leaf_3_2_8_release` in CI. Separate development environments were retired in
+  `c840faf9` (#420); use the runtime Developer mode controls with the release image.
 - Verify hardware-version reporting, firmware filenames, release metadata, OTA selection, and
   factory-interface discovery of local builds and release assets.
 - Preserve the existing legacy target of the generic `firmware.bin`; v3.2.8 needs its own asset.
@@ -562,7 +610,10 @@ Make additional audio changes only if those tests identify a concrete problem.
 
 Reference: [CPT-9019A-SMT-TR datasheet](https://www.sameskydevices.com/product/resource/cpt-9019a-smt-tr.pdf).
 
-## Verification Backlog
+## Original verification plan and qualification checklist
+
+The dated records below identify completed checks. Retain this matrix for regression and
+unqualified physical cases; it does not imply that all bring-up and commissioning work is pending.
 
 ### Automated processing and recovery checks
 
@@ -621,7 +672,7 @@ Reference: [CPT-9019A-SMT-TR datasheet](https://www.sameskydevices.com/product/r
   limits are needed beyond the proposed stationary gyro-bias capture.
 - Verify test pass/failure/cancellation paths and persisted results through the factory interface.
 - Keep the ICM-20948 driver selectable and check older-board commissioning for regressions.
-- Run the formatter and simulator checks, then build both v3.2.8 environments and the existing
+- Run the formatter and simulator checks, then build `leaf_3_2_8_release` and the existing
   ICM variants covered by CI. Include `leaf_3_2_6_release` as a legacy regression build.
 - Follow `AGENTS.md` for hardware verification when firmware implementation begins: detect the
   connected board/port, confirm the v3.2.8 target, and flash the matching firmware to both OTA slots
@@ -1686,8 +1737,8 @@ scope and acceptance checks are in the
 ### Board and measurement checks
 
 - Confirm the remaining v3.2.8 pins/peripherals and flash layout match the v3.2.7 baseline.
-- Verify the actual sensor-vector signs and axis labeling; mounting information alone does not
-  establish the driver's sign convention.
+- Sensor-vector signs were checked in the recorded six-orientation bring-up; repeat on additional
+  boards and preserve axis-label checks when changing the driver or board mounting.
 - Extend residual accelerometer/gravity measurements across temperature and orientation before
   finalizing the experimental Kalman bias correction or adding per-axis calibration.
 - Finalize full scales, sample/filter rates, FIFO pairing, timestamp mapping, decimation, and

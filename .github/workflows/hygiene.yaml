@@ -9,46 +9,21 @@ on:
 jobs:
   format-check:
     name: Leaf C++ Formatting
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # To anyone who would add an actions/cache here for clang-format-19, beware that it appears
-      # to be extremely difficult.  The clang-format-19 binary prepared to be cached below in
-      # ~/clang-format-install is not sufficient because the shared libraries aren't installed.
-      # clang-format/LLVM also doesn't provide docker images; it is as if LLVM wants their servers
-      # to be hit everytime someone wants to check anything in an automated fashion.
-
       - name: Install clang-format-19
         run: |
-          set -o xtrace
           sudo apt-get update
-          sudo apt-get install -y wget lsb-release
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh 19
-          sudo apt-get install -y clang-format-19
-          # The command clang-format-19 is now available as a command
-          which clang-format-19
+          sudo apt-get install -y --no-install-recommends clang-format-19
           clang-format-19 --version
-          mkdir -p ~/clang-format-install
-          cp $(which clang-format-19) ~/clang-format-install/clang-format-19
-          ls ~/clang-format-install
-
-      - name: Copy installed v19 clang-format to location on PATH
-        run: |
-          set -o xtrace
-          which clang-format
-          clang-format --version
-          ls ~/clang-format-install
-          sudo cp ~/clang-format-install/clang-format-19 $(which clang-format)
-          clang-format --version
 
       - name: Check C++ Formatting
         run: |
-          if find src/vario src/variants -type f \( -name "*.cpp" -o -name "*.h" \) -exec clang-format --dry-run --Werror {} +; then
+          if find src/vario src/variants -type f \( -name "*.cpp" -o -name "*.h" \) -exec clang-format-19 --dry-run --Werror {} +; then
             echo "All files are properly formatted."
           else
             echo "Some files need formatting. Run 'Format Leaf C++ Files' task to fix them (see src/README.md#formatting)"

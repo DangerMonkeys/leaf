@@ -148,6 +148,11 @@ namespace {
 }  // namespace
 
 void ThermalCore::reset() {
+  resetGuidance();
+  climbHistory_.reset();
+}
+
+void ThermalCore::resetGuidance() {
   estimate_ = {};
   turnGuidanceActive_ = false;
   turnGuidancePreviouslyActive_ = false;
@@ -204,16 +209,18 @@ void ThermalCore::update() {
     reset();
     return;
   }
+  const uint32_t nowMs = millis();
+  // Raw pressure altitude keeps MSL/GPS corrections out of the continuous climb history.
+  climbHistory_.update(nowMs, baro.alt());
   const auto samples = thermalTracker.recentCoreSamples();
   const uint8_t sampleCount = samples.size();
   estimate_ = {};
   if (sampleCount == 0) {
-    reset();
+    resetGuidance();
     return;
   }
 
   const ThermalTracker::CoreSample& latest = samples[sampleCount - 1];
-  const uint32_t nowMs = millis();
   const bool guidanceWasActive = turnGuidanceActive_;
   if (latest.capturedAtMs != lastGuidanceSampleMs_) {
     if (sampleCount >= 2) updateTurnSegment(latest, samples[sampleCount - 2]);

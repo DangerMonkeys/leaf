@@ -49,7 +49,7 @@ void PageMenuAbout::draw_extra() {
   u8g2.setFont(leaf_5x8);
   u8g2.print("2AC7Z-ESPS3MINI1");  // ESP32-S3-MINI-1 module FCC ID
 #ifdef FANET_CAPABLE
-  if (fanetRadio.getState() != FanetRadioState::UNINSTALLED) {
+  if (fanetRadio.isDetected()) {
     u8g2.setCursor(5, y += offset);
     u8g2.print("Z4T-WIO-SX1262");
     y += offset;

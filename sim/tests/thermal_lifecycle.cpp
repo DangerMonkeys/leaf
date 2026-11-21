@@ -3,6 +3,7 @@
 #include <SD_MMC.h>
 #include <assert.h>
 #include <stdio.h>
+#include <cstdlib>
 
 #include "dispatch/message_bus.h"
 #include "instruments/baro.h"
@@ -17,6 +18,7 @@
 #include "sim/clock.h"
 #include "ui/display/display.h"
 #include "ui/display/display_fields.h"
+#include "ui/display/pages/dialogs/page_flight_summary.h"
 #include "ui/display/pages/primary/page_basic.h"
 #include "ui/display/pages/primary/page_navigate.h"
 #include "ui/display/pages/primary/page_thermal_core.h"
@@ -34,7 +36,7 @@ namespace {
     while (uint32_t(millis() - start) < ms) sim::runtime().step();
   }
 
-  void assertEmpty() {
+  void assertEmpty(bool historyEmpty = true) {
     assert(thermalTracker.recentCoreSamples().size() == 0);
     assert(thermalTracker.savedThermalCount() == 0);
     assert(thermalTracker.displayItemCount() == 0);
@@ -42,6 +44,7 @@ namespace {
     const auto& estimate = thermalCore.estimate();
     assert(!estimate.valid && !estimate.centerValid && estimate.markerCount == 0);
     assert(estimate.direction == 0 && estimate.adviceQ7 == 0);
+    if (historyEmpty) assert(thermalCore.climbHistory().size() == 0);
   }
 
   void populate() {
@@ -63,10 +66,10 @@ namespace {
       thermalTracker.updateDetector();
       thermalTracker.updateNavigation();
       thermalCore.update();
-      assertEmpty();
+      assertEmpty(false);  // Barometric history does not require a GPS fix.
     }
     flyFor(4000);  // The retained fix is now stale as well.
-    assertEmpty();
+    assertEmpty(false);
     sim::scenario().play();
     flyFor(12000);  // Allow the 20 discarded 4 Hz pressure samples and IMU startup.
     assert(thermalTracker.recentCoreSamples().size() > 0);
@@ -82,19 +85,51 @@ namespace {
   }
 
   void selectPageCursors() {
+    basicPage_reset();
+    userPage_reset();
+    thermalCorePage_reset();
+    thermalTrackPage_reset();
+    navigatePage_reset();
+    // Keep these selections from timing out as other page handlers redraw the display.
+    display.setPage(MainPage::Menu);
     basicPage_button(Button::DOWN, ButtonEvent::CLICKED, 0);
     userPage_button(Button::DOWN, ButtonEvent::CLICKED, 0);
     thermalCorePage_button(Button::DOWN, ButtonEvent::CLICKED, 0);
     thermalTrackPage_button(Button::DOWN, ButtonEvent::CLICKED, 0);
+    navigatePage_button(Button::DOWN, ButtonEvent::CLICKED, 0);
+  }
+
+  void checkCursorsPreserved() {
+    for (auto button : {basicPage_button, userPage_button, thermalCorePage_button,
+                        thermalTrackPage_button, navigatePage_button}) {
+      const auto altType = settings.disp_userPageAltType;
+      const auto navAltType = settings.disp_navPageAltType;
+      const bool running = flightTimer_isRunning();
+      // A center click must still edit the selected altitude field after the timer changes.
+      button(Button::CENTER, ButtonEvent::CLICKED, 0);
+      if (button == navigatePage_button) {
+        assert(settings.disp_navPageAltType != navAltType);
+        assert(settings.disp_userPageAltType == altType);
+      } else {
+        assert(settings.disp_userPageAltType != altType);
+        assert(settings.disp_navPageAltType == navAltType);
+      }
+      assert(flightTimer_isRunning() == running);
+      settings.disp_userPageAltType = altType;
+      settings.disp_navPageAltType = navAltType;
+    }
   }
 
   void checkCursorsCleared() {
-    for (auto button :
-         {basicPage_button, userPage_button, thermalCorePage_button, thermalTrackPage_button}) {
+    for (auto button : {basicPage_button, userPage_button, thermalCorePage_button,
+                        thermalTrackPage_button, navigatePage_button}) {
       const auto altType = settings.disp_userPageAltType;
+      const auto navAltType = settings.disp_navPageAltType;
+      const bool running = flightTimer_isRunning();
       button(Button::CENTER, ButtonEvent::CLICKED, 0);
       assert(settings.disp_userPageAltType == altType);
-      assert(!flightTimer_isRunning());
+      assert(settings.disp_navPageAltType == navAltType);
+      assert(flightTimer_isRunning() == running);
     }
   }
 
@@ -155,8 +190,10 @@ int main() {
   options.speed = 0;
   options.acceptWarning = true;
   options.exitOnFatalError = true;
-  options.statePath = "sim/build-tests/thermal-lifecycle/state";
-  options.cardRoot = "sim/build-tests/thermal-lifecycle/card";
+  char fixture[] = "/tmp/leaf-thermal-lifecycle-XXXXXX";
+  assert(mkdtemp(fixture));
+  options.statePath = std::string(fixture) + "/state";
+  options.cardRoot = std::string(fixture) + "/card";
   sim::runtime().configure(options);
   sim::runtime().boot();
   settings.loadDefaults();
@@ -169,18 +206,34 @@ int main() {
   std::string error;
   assert(sim::scenario().load("sim/recordings/thermal-core.json", error));
 
+  selectPageCursors();
   flightTimer_start();
+  checkCursorsPreserved();
   populate();
   assert(igcFlight.started());
   const String trackPath = igcFlight.trackLogPath();
-  const String entryPath = logbookEntry.path();
+  const String flightId = logbookEntry.flightId();
   const auto duration = logbook.duration;
   assert(duration >= 340);
   selectPageCursors();
   flightTimer_stop(false);
   assertEmpty();
-  checkCursorsCleared();
+  checkCursorsPreserved();
   assert(!flightTimer_isRunning());
+  // GPS clock acquisition can rename an undated placeholder during finalization.
+  // Follow this flight's identity, not its earlier provisional filename.
+  String entryPath;
+  File directory = SD_MMC.open("/logbook");
+  for (File candidate = directory.openNextFile(); candidate; candidate = directory.openNextFile()) {
+    if (candidate.isDirectory() || !String(candidate.name()).endsWith(".json")) continue;
+    JsonDocument entry;
+    assert(!deserializeJson(entry, candidate));
+    if (entry["flight_id"].as<String>() == flightId) {
+      assert(entryPath.isEmpty());
+      entryPath = candidate.path();
+    }
+  }
+  directory.close();
   assert(SD_MMC.exists(trackPath.c_str()) && SD_MMC.exists(entryPath.c_str()));
   File entry = SD_MMC.open(entryPath.c_str());
   JsonDocument json;
@@ -192,7 +245,22 @@ int main() {
   checkNoCachedFix();
   checkAutoSwitchReset();
 
-  flightTimer_start();
+  // Automatic start must also leave an in-progress field edit alone.
+  settings.log_autoStart = true;
+  selectPageCursors();
+  sim::scenario().play();
+  for (unsigned i = 0; i < 60 && !flightTimer_isRunning(); ++i) flyFor(100);
+  sim::scenario().pause();
+  if (!flightTimer_isRunning()) {
+    fprintf(stderr,
+            "Auto-start fixture: ms=%lu fresh=%d mph=%.2f climbValid=%d summary=%d enabled=%d\n",
+            static_cast<unsigned long>(millis()), gps.hasFreshGroundSpeed(), gps.speed.mph(),
+            baro.climbRate1SecAverageValid(), PageFlightSummary::isShowing(),
+            settings.log_autoStart);
+  }
+  assert(flightTimer_isRunning());
+  checkCursorsPreserved();
+  settings.log_autoStart = false;
   populate();
   checkUnavailableBarometer();
 
@@ -205,9 +273,11 @@ int main() {
   autoStopCounter = AUTO_STOP_MIN_SEC - 1;
   autoStopAltitude = baro.alt();
   settings.log_autoStop = true;
+  selectPageCursors();
   log_update();
   assert(!flightTimer_isRunning());
   assertEmpty();
+  checkCursorsPreserved();
   settings.log_autoStop = false;
 
   // Exercise active/non-logging sessions, enabled/hidden features and normal/low-battery exits.
@@ -218,6 +288,7 @@ int main() {
     settings.disp_showThermalCorePage = settings.disp_showThermalTrackPage = cycle >= 2;
     display.setPage(MainPage::Navigate);
     power.shutdown(cycle >= 2);
+    assert(power.serviceShutdown());
     assertEmpty();
     assert(power.info().onState == PowerState::OffUSB);
     assert(power.switchToOnState());

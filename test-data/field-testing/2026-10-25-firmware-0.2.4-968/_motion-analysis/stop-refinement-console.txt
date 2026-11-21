@@ -1,0 +1,63 @@
+WINDOW 15 ALT 3 BUBBLE None
+{'label': 'Racoon', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:40:16', 'delay_from_reference_s': 41, 'recording_ends': '14:58:42'}
+{'label': 'RedStrap', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:40:06', 'delay_from_reference_s': 31, 'recording_ends': '14:42:32'}
+{'label': 'BlueGreen326', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:40:25', 'delay_from_reference_s': 50, 'recording_ends': '14:41:30'}
+{'label': 'Bethany', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': None, 'delay_from_reference_s': None, 'recording_ends': '13:41:53'}
+{'label': 'Bowen Dwelle 2026-10-25-XLV-000-01 (1).igc', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:50:30', 'delay_from_reference_s': 15, 'recording_ends': '15:24:00'}
+{'label': 'Scott O’Brien 2026-10-25-XLV-000-02.igc', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:50:21', 'delay_from_reference_s': 16, 'recording_ends': '14:50:24'}
+WINDOW 15 ALT 3 BUBBLE 5
+{'label': 'Racoon', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:40:16', 'delay_from_reference_s': 41, 'recording_ends': '14:58:42'}
+{'label': 'RedStrap', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:40:06', 'delay_from_reference_s': 31, 'recording_ends': '14:42:32'}
+{'label': 'BlueGreen326', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:40:25', 'delay_from_reference_s': 50, 'recording_ends': '14:41:30'}
+{'label': 'Bethany', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': None, 'delay_from_reference_s': None, 'recording_ends': '13:41:53'}
+{'label': 'Bowen Dwelle 2026-10-25-XLV-000-01 (1).igc', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:50:30', 'delay_from_reference_s': 15, 'recording_ends': '15:24:00'}
+{'label': 'Scott O’Brien 2026-10-25-XLV-000-02.igc', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:50:21', 'delay_from_reference_s': 16, 'recording_ends': '14:50:24'}
+WINDOW 15 ALT 3 BUBBLE 10
+{'label': 'Racoon', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:40:16', 'delay_from_reference_s': 41, 'recording_ends': '14:58:42'}
+{'label': 'RedStrap', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:40:06', 'delay_from_reference_s': 31, 'recording_ends': '14:42:32'}
+{'label': 'BlueGreen326', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:40:25', 'delay_from_reference_s': 50, 'recording_ends': '14:41:30'}
+{'label': 'Bethany', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': None, 'delay_from_reference_s': None, 'recording_ends': '13:41:53'}
+{'label': 'Bowen Dwelle 2026-10-25-XLV-000-01 (1).igc', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:50:30', 'delay_from_reference_s': 15, 'recording_ends': '15:24:00'}
+{'label': 'Scott O’Brien 2026-10-25-XLV-000-02.igc', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:50:21', 'delay_from_reference_s': 16, 'recording_ends': '14:50:24'}
+WINDOW 20 ALT 3 BUBBLE None
+{'label': 'Racoon', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:40:21', 'delay_from_reference_s': 46, 'recording_ends': '14:58:42'}
+{'label': 'RedStrap', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:40:11', 'delay_from_reference_s': 36, 'recording_ends': '14:42:32'}
+{'label': 'BlueGreen326', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:40:30', 'delay_from_reference_s': 55, 'recording_ends': '14:41:30'}
+{'label': 'Bethany', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': None, 'delay_from_reference_s': None, 'recording_ends': '13:41:53'}
+{'label': 'Bowen Dwelle 2026-10-25-XLV-000-01 (1).igc', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:51:40', 'delay_from_reference_s': 85, 'recording_ends': '15:24:00'}
+{'label': 'Scott O’Brien 2026-10-25-XLV-000-02.igc', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': None, 'delay_from_reference_s': None, 'recording_ends': '14:50:24'}
+WINDOW 20 ALT 3 BUBBLE 5
+{'label': 'Racoon', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:40:21', 'delay_from_reference_s': 46, 'recording_ends': '14:58:42'}
+{'label': 'RedStrap', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:40:11', 'delay_from_reference_s': 36, 'recording_ends': '14:42:32'}
+{'label': 'BlueGreen326', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:40:30', 'delay_from_reference_s': 55, 'recording_ends': '14:41:30'}
+{'label': 'Bethany', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': None, 'delay_from_reference_s': None, 'recording_ends': '13:41:53'}
+{'label': 'Bowen Dwelle 2026-10-25-XLV-000-01 (1).igc', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:51:41', 'delay_from_reference_s': 86, 'recording_ends': '15:24:00'}
+{'label': 'Scott O’Brien 2026-10-25-XLV-000-02.igc', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': None, 'delay_from_reference_s': None, 'recording_ends': '14:50:24'}
+WINDOW 20 ALT 3 BUBBLE 10
+{'label': 'Racoon', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:40:21', 'delay_from_reference_s': 46, 'recording_ends': '14:58:42'}
+{'label': 'RedStrap', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:40:11', 'delay_from_reference_s': 36, 'recording_ends': '14:42:32'}
+{'label': 'BlueGreen326', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:40:30', 'delay_from_reference_s': 55, 'recording_ends': '14:41:30'}
+{'label': 'Bethany', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': None, 'delay_from_reference_s': None, 'recording_ends': '13:41:53'}
+{'label': 'Bowen Dwelle 2026-10-25-XLV-000-01 (1).igc', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:51:40', 'delay_from_reference_s': 85, 'recording_ends': '15:24:00'}
+{'label': 'Scott O’Brien 2026-10-25-XLV-000-02.igc', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': None, 'delay_from_reference_s': None, 'recording_ends': '14:50:24'}
+WINDOW 30 ALT 3 BUBBLE None
+{'label': 'Racoon', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:40:31', 'delay_from_reference_s': 56, 'recording_ends': '14:58:42'}
+{'label': 'RedStrap', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:40:21', 'delay_from_reference_s': 46, 'recording_ends': '14:42:32'}
+{'label': 'BlueGreen326', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:40:40', 'delay_from_reference_s': 65, 'recording_ends': '14:41:30'}
+{'label': 'Bethany', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': None, 'delay_from_reference_s': None, 'recording_ends': '13:41:53'}
+{'label': 'Bowen Dwelle 2026-10-25-XLV-000-01 (1).igc', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:51:50', 'delay_from_reference_s': 95, 'recording_ends': '15:24:00'}
+{'label': 'Scott O’Brien 2026-10-25-XLV-000-02.igc', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': None, 'delay_from_reference_s': None, 'recording_ends': '14:50:24'}
+WINDOW 30 ALT 3 BUBBLE 5
+{'label': 'Racoon', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:40:31', 'delay_from_reference_s': 56, 'recording_ends': '14:58:42'}
+{'label': 'RedStrap', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:40:21', 'delay_from_reference_s': 46, 'recording_ends': '14:42:32'}
+{'label': 'BlueGreen326', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:40:40', 'delay_from_reference_s': 65, 'recording_ends': '14:41:30'}
+{'label': 'Bethany', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': None, 'delay_from_reference_s': None, 'recording_ends': '13:41:53'}
+{'label': 'Bowen Dwelle 2026-10-25-XLV-000-01 (1).igc', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:51:51', 'delay_from_reference_s': 96, 'recording_ends': '15:24:00'}
+{'label': 'Scott O’Brien 2026-10-25-XLV-000-02.igc', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': None, 'delay_from_reference_s': None, 'recording_ends': '14:50:24'}
+WINDOW 30 ALT 3 BUBBLE 10
+{'label': 'Racoon', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:40:31', 'delay_from_reference_s': 56, 'recording_ends': '14:58:42'}
+{'label': 'RedStrap', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:40:21', 'delay_from_reference_s': 46, 'recording_ends': '14:42:32'}
+{'label': 'BlueGreen326', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:40:40', 'delay_from_reference_s': 65, 'recording_ends': '14:41:30'}
+{'label': 'Bethany', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': None, 'delay_from_reference_s': None, 'recording_ends': '13:41:53'}
+{'label': 'Bowen Dwelle 2026-10-25-XLV-000-01 (1).igc', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': '14:51:50', 'delay_from_reference_s': 95, 'recording_ends': '15:24:00'}
+{'label': 'Scott O’Brien 2026-10-25-XLV-000-02.igc', 'airborne_checks': 0, 'first_airborne': None, 'stop_local': None, 'delay_from_reference_s': None, 'recording_ends': '14:50:24'}

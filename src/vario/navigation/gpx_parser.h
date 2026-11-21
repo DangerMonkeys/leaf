@@ -32,6 +32,8 @@ class GPXParser {
 
   inline String error() { return _error; }
 
+  bool routePointLimitExceeded() const { return _routePointLimitExceeded; }
+
   inline uint16_t line() { return _line; }
 
   inline uint16_t col() { return _col; }
@@ -85,6 +87,7 @@ class GPXParser {
   uint32_t _charsReadTotal;
   bool _readAborted;
   bool _lastTagSelfClosing;
+  bool _routePointLimitExceeded = false;
   String _error;
 };
 

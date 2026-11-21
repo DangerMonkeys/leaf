@@ -3,6 +3,7 @@
 #include <Arduino.h>
 
 #include "comms/webserver.h"
+#include "diagnostics/cpu_utilization.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
@@ -79,7 +80,7 @@ void MainMenuPage::draw() {
 }
 
 void MainMenuPage::draw_main_menu() {
-  if (firstOpened) {
+  if (firstOpened && !cpu_utilization::capturing()) {
     firstOpened = false;
     wifi_menu_ui::attemptSavedNetworkConnection();
   }

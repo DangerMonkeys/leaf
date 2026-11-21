@@ -1,4 +1,5 @@
 #include "runtime.h"
+#include "system/shutdown_guard.h"
 
 #include <Arduino.h>
 #include <Preferences.h>
@@ -16,6 +17,7 @@
 #include <thread>
 
 #include "free_flight.h"
+#include "route_guidance.h"
 #include "hardware/configuration.h"
 #include "instruments/ambient.h"
 #include "instruments/baro.h"
@@ -186,7 +188,7 @@ namespace sim {
     exit(4);
   }
 
-  void Runtime::boot() {
+  void Runtime::boot() try {
     // Timers are installed by setup(); the emulated device only ever boots once per process (a
     // restart is a new process, see relaunch()), but clearing them keeps boot() honest about
     // what it assumes.
@@ -211,9 +213,11 @@ namespace sim {
 
     captureDisplay();
     updateStatus();
+  } catch (const shutdown_guard::EmergencyReset&) {
+    relaunch();
   }
 
-  void Runtime::step() {
+  void Runtime::step() try {
     if (!booted_) boot();
 
     loop();
@@ -221,6 +225,7 @@ namespace sim {
     if (options_.acceptWarning) answerWarningScreen();
     scenario().update(clock().millis());
     freeFlight().update(clock().millis());
+    serviceRouteGuidance();
     if (script().loaded()) script().update(clock().millis());
 
     clock().advanceUs(LOOP_QUANTUM_US);
@@ -239,6 +244,8 @@ namespace sim {
     }
 
     if (g_restartRequested) relaunch();
+  } catch (const shutdown_guard::EmergencyReset&) {
+    relaunch();
   }
 
   void Runtime::run() {

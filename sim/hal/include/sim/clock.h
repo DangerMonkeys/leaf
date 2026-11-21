@@ -44,6 +44,11 @@ namespace sim {
     void setTimerCallback(int handle, TimerCallback callback);
     void setTimerAlarm(int handle, uint64_t ticks, bool autoReload);
     void removeTimer(int handle);
+    uint64_t readTimer(int handle) const;
+
+    // Test support: alarm counters keep running, but repeated masked callbacks
+    // coalesce into one pending interrupt per timer, delivered when unmasked.
+    void maskTimerInterrupts(bool masked);
 
     // Drops every timer.  Used when the emulated device reboots: setup() installs its timers
     // again, and without this the old ones would keep firing and double the task rate.
@@ -66,12 +71,15 @@ namespace sim {
       uint32_t frequencyHz = 1000;
       uint64_t periodUs = 0;
       uint64_t nextUs = 0;
+      uint64_t counterEpochUs = 0;
+      bool pendingInterrupt = false;
       bool autoReload = true;
       TimerCallback callback = nullptr;
     };
 
     static constexpr int MAX_TIMERS = 8;
     Timer timers_[MAX_TIMERS];
+    bool timerInterruptsMasked_ = false;
 
     std::atomic<uint64_t> nowUs_{0};
     std::atomic<double> speed_{1.0};

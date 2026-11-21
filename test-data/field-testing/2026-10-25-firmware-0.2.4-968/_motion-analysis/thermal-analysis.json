@@ -1,0 +1,258 @@
+{
+  "window_seconds": 6,
+  "interpretation": "Signed ascent and mirrored descent; pressure-altitude corroboration is censored before the first B record.",
+  "ground": [
+    {
+      "unit": "Racoon",
+      "track": "2026-10-25-XLV-000-01.igc",
+      "pressure_windows": 1710,
+      "vario_windows": 1719,
+      "largest_absolute_pressure_altitude_change_m": 5.0,
+      "largest_absolute_mean_vario_mps": 0.3666666666666667,
+      "largest_same_direction_minimum_vario_mps": 0.2,
+      "pressure_candidate_hits": 0,
+      "six_seconds_vario_at_least_1_mps_hits": 0
+    },
+    {
+      "unit": "RedStrap",
+      "track": "2026-10-25-XLV-000-01.igc",
+      "pressure_windows": 152,
+      "vario_windows": 166,
+      "largest_absolute_pressure_altitude_change_m": 3.0,
+      "largest_absolute_mean_vario_mps": 0.225,
+      "largest_same_direction_minimum_vario_mps": 0.1,
+      "pressure_candidate_hits": 0,
+      "six_seconds_vario_at_least_1_mps_hits": 0
+    },
+    {
+      "unit": "BlueGreen326",
+      "track": "2026-10-25-XLV-000-01.igc",
+      "pressure_windows": 63,
+      "vario_windows": 79,
+      "largest_absolute_pressure_altitude_change_m": 2.0,
+      "largest_absolute_mean_vario_mps": 0.4283333333333333,
+      "largest_same_direction_minimum_vario_mps": 0.34,
+      "pressure_candidate_hits": 0,
+      "six_seconds_vario_at_least_1_mps_hits": 0
+    },
+    {
+      "unit": "BlueGreen326",
+      "track": "2026-10-25-XLV-000-02.igc",
+      "pressure_windows": 56,
+      "vario_windows": 55,
+      "largest_absolute_pressure_altitude_change_m": 1.0,
+      "largest_absolute_mean_vario_mps": 0.43333333333333335,
+      "largest_same_direction_minimum_vario_mps": 0.3,
+      "pressure_candidate_hits": 0,
+      "six_seconds_vario_at_least_1_mps_hits": 0
+    },
+    {
+      "unit": "BlueGreen326",
+      "track": "2026-10-25-XLV-000-03.igc",
+      "pressure_windows": 57,
+      "vario_windows": 72,
+      "largest_absolute_pressure_altitude_change_m": 2.0,
+      "largest_absolute_mean_vario_mps": 0.5991666666666667,
+      "largest_same_direction_minimum_vario_mps": 0.46,
+      "pressure_candidate_hits": 0,
+      "six_seconds_vario_at_least_1_mps_hits": 0
+    },
+    {
+      "unit": "BlueGreen326",
+      "track": "2026-10-25-XLV-000-04.igc",
+      "pressure_windows": 54,
+      "vario_windows": 62,
+      "largest_absolute_pressure_altitude_change_m": 2.0,
+      "largest_absolute_mean_vario_mps": 0.41666666666666674,
+      "largest_same_direction_minimum_vario_mps": 0.19,
+      "pressure_candidate_hits": 0,
+      "six_seconds_vario_at_least_1_mps_hits": 0
+    },
+    {
+      "unit": "BlueGreen326",
+      "track": "2026-10-25-XLV-000-05.igc",
+      "pressure_windows": 54,
+      "vario_windows": 55,
+      "largest_absolute_pressure_altitude_change_m": 2.0,
+      "largest_absolute_mean_vario_mps": 0.5416666666666666,
+      "largest_same_direction_minimum_vario_mps": 0.4,
+      "pressure_candidate_hits": 0,
+      "six_seconds_vario_at_least_1_mps_hits": 0
+    },
+    {
+      "unit": "BlueGreen326",
+      "track": "2026-10-25-XLV-000-06.igc",
+      "pressure_windows": 77,
+      "vario_windows": 92,
+      "largest_absolute_pressure_altitude_change_m": 2.0,
+      "largest_absolute_mean_vario_mps": 2.0208333333333335,
+      "largest_same_direction_minimum_vario_mps": 1.79,
+      "pressure_candidate_hits": 0,
+      "six_seconds_vario_at_least_1_mps_hits": 8
+    },
+    {
+      "unit": "BlueGreen326",
+      "track": "2026-10-25-XLV-000-07.igc",
+      "pressure_windows": 29,
+      "vario_windows": 44,
+      "largest_absolute_pressure_altitude_change_m": 2.0,
+      "largest_absolute_mean_vario_mps": 1.1749999999999998,
+      "largest_same_direction_minimum_vario_mps": 0.6,
+      "pressure_candidate_hits": 0,
+      "six_seconds_vario_at_least_1_mps_hits": 0
+    },
+    {
+      "unit": "BlueGreen326",
+      "track": "2026-10-25-XLV-000-08.igc",
+      "pressure_windows": 80,
+      "vario_windows": 95,
+      "largest_absolute_pressure_altitude_change_m": 2.0,
+      "largest_absolute_mean_vario_mps": 0.7666666666666667,
+      "largest_same_direction_minimum_vario_mps": 0.5,
+      "pressure_candidate_hits": 0,
+      "six_seconds_vario_at_least_1_mps_hits": 0
+    },
+    {
+      "unit": "BlueGreen326",
+      "track": "2026-10-25-XLV-000-09.igc",
+      "pressure_windows": 26,
+      "vario_windows": 42,
+      "largest_absolute_pressure_altitude_change_m": 2.0,
+      "largest_absolute_mean_vario_mps": 0.4033333333333333,
+      "largest_same_direction_minimum_vario_mps": 0.25,
+      "pressure_candidate_hits": 0,
+      "six_seconds_vario_at_least_1_mps_hits": 0
+    },
+    {
+      "unit": "BlueGreen326",
+      "track": "2026-10-25-XLV-000-10.igc",
+      "pressure_windows": 43,
+      "vario_windows": 60,
+      "largest_absolute_pressure_altitude_change_m": 2.0,
+      "largest_absolute_mean_vario_mps": 0.5666666666666667,
+      "largest_same_direction_minimum_vario_mps": 0.3,
+      "pressure_candidate_hits": 0,
+      "six_seconds_vario_at_least_1_mps_hits": 0
+    },
+    {
+      "unit": "BlueGreen326",
+      "track": "2026-10-25-XLV-000-11.igc",
+      "pressure_windows": 35,
+      "vario_windows": 30,
+      "largest_absolute_pressure_altitude_change_m": 2.0,
+      "largest_absolute_mean_vario_mps": 0.3383333333333333,
+      "largest_same_direction_minimum_vario_mps": 0.1,
+      "pressure_candidate_hits": 0,
+      "six_seconds_vario_at_least_1_mps_hits": 0
+    },
+    {
+      "unit": "BlueGreen326",
+      "track": "2026-10-25-XLV-000-12.igc",
+      "pressure_windows": 12,
+      "vario_windows": 9,
+      "largest_absolute_pressure_altitude_change_m": 2.0,
+      "largest_absolute_mean_vario_mps": 0.40833333333333327,
+      "largest_same_direction_minimum_vario_mps": 0.15,
+      "pressure_candidate_hits": 0,
+      "six_seconds_vario_at_least_1_mps_hits": 0
+    },
+    {
+      "unit": "BlueGreen326",
+      "track": "2026-10-25-XLV-000-13.igc",
+      "pressure_windows": 7,
+      "vario_windows": 0,
+      "largest_absolute_pressure_altitude_change_m": 2.0,
+      "largest_absolute_mean_vario_mps": null,
+      "largest_same_direction_minimum_vario_mps": null,
+      "pressure_candidate_hits": 0,
+      "six_seconds_vario_at_least_1_mps_hits": 0
+    },
+    {
+      "unit": "BlueGreen326",
+      "track": "2026-10-25-XLV-000-14.igc",
+      "pressure_windows": 27,
+      "vario_windows": 18,
+      "largest_absolute_pressure_altitude_change_m": 2.0,
+      "largest_absolute_mean_vario_mps": 0.9,
+      "largest_same_direction_minimum_vario_mps": 0.4,
+      "pressure_candidate_hits": 0,
+      "six_seconds_vario_at_least_1_mps_hits": 0
+    },
+    {
+      "unit": "BlueGreen326",
+      "track": "2026-10-25-XLV-000-15.igc",
+      "pressure_windows": 232,
+      "vario_windows": 246,
+      "largest_absolute_pressure_altitude_change_m": 1.0,
+      "largest_absolute_mean_vario_mps": 0.3175,
+      "largest_same_direction_minimum_vario_mps": 0.1,
+      "pressure_candidate_hits": 0,
+      "six_seconds_vario_at_least_1_mps_hits": 0
+    },
+    {
+      "unit": "BlueGreen326",
+      "track": "2026-10-25-XLV-000-16.igc",
+      "pressure_windows": 2,
+      "vario_windows": 24,
+      "largest_absolute_pressure_altitude_change_m": 1.0,
+      "largest_absolute_mean_vario_mps": 0.3591666666666667,
+      "largest_same_direction_minimum_vario_mps": 0.06,
+      "pressure_candidate_hits": 0,
+      "six_seconds_vario_at_least_1_mps_hits": 0
+    },
+    {
+      "unit": "BlueGreen326",
+      "track": "2026-10-25-XLV-000-17.igc",
+      "pressure_windows": 89,
+      "vario_windows": 93,
+      "largest_absolute_pressure_altitude_change_m": 1.0,
+      "largest_absolute_mean_vario_mps": 0.525,
+      "largest_same_direction_minimum_vario_mps": 0.2,
+      "pressure_candidate_hits": 0,
+      "six_seconds_vario_at_least_1_mps_hits": 0
+    },
+    {
+      "unit": "Bethany",
+      "track": "2026-10-25-XLV-000-01.igc",
+      "pressure_windows": 44,
+      "vario_windows": 66,
+      "largest_absolute_pressure_altitude_change_m": 0.0,
+      "largest_absolute_mean_vario_mps": 0.43166666666666664,
+      "largest_same_direction_minimum_vario_mps": -0.0,
+      "pressure_candidate_hits": 0,
+      "six_seconds_vario_at_least_1_mps_hits": 0
+    },
+    {
+      "unit": "Bethany",
+      "track": "2026-10-25-XLV-000-02.igc",
+      "pressure_windows": 0,
+      "vario_windows": 13,
+      "largest_absolute_pressure_altitude_change_m": null,
+      "largest_absolute_mean_vario_mps": 0.050833333333333335,
+      "largest_same_direction_minimum_vario_mps": -0.04,
+      "pressure_candidate_hits": 0,
+      "six_seconds_vario_at_least_1_mps_hits": 0
+    }
+  ],
+  "synthetic_thermal": [
+    {
+      "climb_mps": 1,
+      "gain_over_six_seconds_m": 6,
+      "idealized_trigger_seconds_after_climb_begins": 6.0
+    },
+    {
+      "climb_mps": 1.5,
+      "gain_over_six_seconds_m": 9.0,
+      "idealized_trigger_seconds_after_climb_begins": 4.0
+    },
+    {
+      "climb_mps": 2,
+      "gain_over_six_seconds_m": 12,
+      "idealized_trigger_seconds_after_climb_begins": 3.0
+    }
+  ],
+  "max_ground_six_second_pressure_change_m": 5.0,
+  "max_ground_six_second_absolute_mean_vario_mps": 2.0208333333333335,
+  "max_ground_six_second_same_direction_minimum_vario_mps": 1.79,
+  "candidate_pressure_hits": 0
+}

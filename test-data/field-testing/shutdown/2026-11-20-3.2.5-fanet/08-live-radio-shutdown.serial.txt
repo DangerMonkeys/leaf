@@ -1,0 +1,119 @@
+BENCH version 0.2.4-8a4.bench+h3.2.5
+BENCH version 0.2.4-8a4.bench+h3.2.5
+BENCH status On Menu 7 0 0 1 1 1 1
+
+HOST press LEFT
+BENCH ok
+
+HOST press LEFT
+button: LEFT   state: PRESSED     hold count: 0
+button: LEFT   state: CLICKED     hold count: 0
+1035193 playSound 1008644894
+button: LEFT   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST wait 15
+button: LEFT   state: PRESSED     hold count: 0
+button: LEFT   state: CLICKED     hold count: 0
+1035493 playSound 1008705644
+WiFi disconnected
+button: LEFT   state: RELEASED    hold count: 0
+$PFLAA,0,20,119,121,2,FBD364,94,,0.00,-0.10,7,0,0,-39*11
+
+$PFLAA,0,21,119,121,2,FBD364,94,,0.14,0.20,7,0,0,-39*3B
+
+$PFLAA,0,5,48,34,2,FB5F38,244,,0.00,0.10,7,0,0,-46*31
+
+Speaker::update skipped 2 intervals
+$PFLAA,0,21,122,121,2,FBD364,94,,0.14,0.10,7,0,0,-40*3E
+
+Speaker::update skipped 6 intervals
+
+HOST fanet
+Speaker::update skipped 2 intervals
+BENCH fanet 1 RUNNING 2076 1212
+
+HOST stacks
+BENCH stacks 7836 3000 2076 1212 0
+
+HOST heap
+BENCH heap 89912 47148 31732 7836
+
+HOST press RIGHT
+BENCH ok
+
+HOST wait 3
+button: RIGHT  state: PRESSED     hold count: 0
+button: RIGHT  state: CLICKED     hold count: 0
+1050953 playSound 1008713402
+WiFi coordinator: trying saved network 0 'SkyWagon'
+button: RIGHT  state: RELEASED    hold count: 0
+NMEA sentence was not valid: $GLGSV,
+
+HOST heap
+BENCH heap 56324 47148 31732 7836
+
+HOST fanet
+BENCH fanet 1 RUNNING 2076 1212
+
+HOST press LEFT
+BENCH ok
+
+HOST wait 5
+button: LEFT   state: PRESSED     hold count: 0
+button: LEFT   state: CLICKED     hold count: 0
+1054383 playSound 1008705644
+WiFi disconnected
+button: LEFT   state: RELEASED    hold count: 0
+Speaker::update skipped 1 intervals
+$PFLAA,0,20,122,121,2,FBD364,94,,0.14,0.00,7,0,0,-40*3E
+
+Speaker::update skipped 10 intervals
+NMEA sentence was not valid: $GPGSV,3,.481100,N,12159.685390,W,0ICM20948 FIFO backlog exceeded drain limit; resetting FIFO
+Speaker::update skipped 1 intervals
+
+HOST status
+BENCH status On Navigate 0 0 0 1 1 1 1
+
+HOST hold CENTER 2300
+BENCH ok
+
+HOST wait 6
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: HELD        hold count: 0
+button: CENTER state: INCREMENTED hold count: 0
+$PFLAA,0,21,123,121,2,FBD364,94,,0.14,0.10,7,0,0,-39*31
+
+button: CENTER state: INCREMENTED hold count: 1
+button: CENTER state: INCREMENTED hold count: 2
+power_shutdown
+logbook finalization: saved=1 attempts=1 elapsed_ms=118 heap_bef1061724 playSound 1008579950
+Stack monitor saved /diagnostics/stack_4.csv
+1061786 playSound 1008580194
+Speaker::update skipped 4 intervals
+sleep_peripherals: On
+ - Sleeping GPS
+LC86G::sleep now: 1064587
+ready: 1135
+delay: 0
+************ !!!!!!!!!!! GPS SLEEPING COMMAND SENT !!!!!!!!!!! *
+ - Sleeping baro
+ - Sleeping speaker
+Shut down speaker
+ - DONE
+button: CENTER state: RELEASED    hold count: 0
+
+HOST status
+BENCH status OffUSB Charging 0 0 0 0 0 0 0
+
+HOST fanet
+BENCH fanet 1 UNINITIALIZED 0 0
+
+HOST stacks
+BENCH stacks 7836 0 0 0 0
+
+HOST heap
+BENCH heap 181392 47148 31732 7836
+BENCH status OffUSB Charging 0 0 0 0 0 0 0
+BENCH heap 181392 47148 31732 7836
+BENCH web off

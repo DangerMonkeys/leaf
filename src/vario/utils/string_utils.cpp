@@ -113,7 +113,8 @@ String formatSpeed(float speed, bool units, bool showUnits) {
 }
 
 String formatAccel(float accel, bool showUnits) {
-  char buffer[4];  // "3.1\0"
+  if (!isfinite(accel)) return showUnits ? "--g" : "--";
+  char buffer[8];
   char unitSymbol = 'g';
 
   snprintf(buffer, sizeof(buffer), "%1.1f", accel);

@@ -32,6 +32,7 @@ class Speaker : private StateAssertMixin<Speaker> {
 
   // Resume normal sounds (previous volume levels, etc)
   void unMute();
+  bool muted() const { return speakerMute_; }
 
   // Play sounds on the specified channel at the specified volume
   void setVolume(SoundChannel channel, SpeakerVolume volume);

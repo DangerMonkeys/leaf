@@ -1,0 +1,93 @@
+[
+  {
+    "altitude_min_m": 3,
+    "mean_rate_strictly_greater_mps": 0.5,
+    "additional_confirmation_s": 0,
+    "ground_qualifying_checks": 26,
+    "first_ground": {
+      "time": "13:46:15",
+      "ms": 163187,
+      "alt": 3.0,
+      "climb": 0.666666687
+    },
+    "first_launch_or_flight": {
+      "time": "14:03:11",
+      "ms": 1178917,
+      "alt": -4.0,
+      "climb": -0.75
+    }
+  },
+  {
+    "altitude_min_m": 18,
+    "mean_rate_strictly_greater_mps": 0.5,
+    "additional_confirmation_s": 0,
+    "ground_qualifying_checks": 0,
+    "first_ground": null,
+    "first_launch_or_flight": null
+  },
+  {
+    "altitude_min_m": 3,
+    "mean_rate_strictly_greater_mps": 1.6,
+    "additional_confirmation_s": 0,
+    "ground_qualifying_checks": 0,
+    "first_ground": null,
+    "first_launch_or_flight": {
+      "time": "14:03:17",
+      "ms": 1184917,
+      "alt": -4.0,
+      "climb": -1.86666656
+    }
+  },
+  {
+    "altitude_min_m": 16,
+    "mean_rate_strictly_greater_mps": 1,
+    "additional_confirmation_s": 0,
+    "ground_qualifying_checks": 0,
+    "first_ground": null,
+    "first_launch_or_flight": null
+  },
+  {
+    "altitude_min_m": 3,
+    "mean_rate_strictly_greater_mps": 0.5,
+    "additional_confirmation_s": 1,
+    "ground_qualifying_checks": 1,
+    "first_ground": {
+      "time": "13:47:35",
+      "ms": 243187,
+      "alt": 7.0,
+      "climb": 1.38333333
+    },
+    "first_launch_or_flight": {
+      "time": "14:03:12",
+      "ms": 1179917,
+      "alt": -9.0,
+      "climb": -0.850000024
+    }
+  },
+  {
+    "altitude_min_m": 3,
+    "mean_rate_strictly_greater_mps": 0.5,
+    "additional_confirmation_s": 2,
+    "ground_qualifying_checks": 0,
+    "first_ground": null,
+    "first_launch_or_flight": {
+      "time": "14:03:13",
+      "ms": 1180917,
+      "alt": -6.0,
+      "climb": -1.10000002
+    }
+  },
+  {
+    "altitude_min_m": 3,
+    "mean_rate_strictly_greater_mps": 0.5,
+    "additional_confirmation_s": 3,
+    "ground_qualifying_checks": 0,
+    "first_ground": null,
+    "first_launch_or_flight": {
+      "time": "14:03:45",
+      "ms": 1212917,
+      "alt": -3.0,
+      "climb": -1.13333333
+    }
+  }
+]

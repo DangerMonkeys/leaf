@@ -68,8 +68,7 @@ void DiagnosticNetwork::update() {
       (state_ == State::Ready || state_ == State::WifiResetting ||
        state_ == State::LookingForNetwork) &&
       millis() - search_started_ms_ >= SEARCH_TIMEOUT_MS) {
-    WiFi.scanDelete();
-    WiFi.disconnect();
+    leaf_wifi::disconnectFromNetwork();
     error_msg_ = "Timeout searching for diagnostic network";
     state_ = State::Error;
     return;
@@ -226,6 +225,7 @@ void DiagnosticNetwork::checkForDiagnosticNetwork() {
     Serial.printf("checkForDiagnosticNetwork -> %d with RSSI %d (min %d) scan count %d\n", found,
                   bestRssi, MIN_RSSI_DBM, result);
     state_ = State::NoNetworkFound;
+    leaf_wifi::disconnectFromNetwork();
     return;
   }
 }
@@ -233,7 +233,7 @@ void DiagnosticNetwork::checkForDiagnosticNetwork() {
 void DiagnosticNetwork::checkForConnection() {
   uint32_t now = millis();
   if (now - t0_ > CONNECT_TIMEOUT_MS) {
-    WiFi.disconnect();
+    leaf_wifi::disconnectFromNetwork();
     error_msg_ = "Timeout attempting to connect to diagnostic network";
     state_ = State::Error;
     return;
@@ -244,7 +244,7 @@ void DiagnosticNetwork::checkForConnection() {
     state_ = State::ConnectedToNetwork;
     return;
   } else if (status == WL_CONNECT_FAILED || status == WL_STOPPED) {
-    WiFi.disconnect();
+    leaf_wifi::disconnectFromNetwork();
     error_msg_ = "WiFi FAILED or STOPPED while connecting to diagnostic network";
     state_ = State::Error;
   }

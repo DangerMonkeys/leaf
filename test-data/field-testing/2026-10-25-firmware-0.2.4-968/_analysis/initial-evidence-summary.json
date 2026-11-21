@@ -1,0 +1,2011 @@
+{
+  "devices": [
+    {
+      "device": "Racoon",
+      "folder_hardware": "hardware-3.2.3",
+      "total_json_candidates": 9,
+      "json_errors": [],
+      "total_tracks": 8,
+      "current_records": [
+        {
+          "file": "2026-10-25_13-54-03_0914dd23.json",
+          "firmware": "0.2.4-968+h3.2.3",
+          "hardware": "leaf_3_2_3",
+          "complete": true,
+          "revision": 3,
+          "start": "2026-10-25T13:54:03",
+          "end": "2026-10-25T14:58:43",
+          "duration": 3879,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-01.igc"
+          },
+          "bytes": 1635
+        },
+        {
+          "file": "2026-10-25_13-54-03_0914dd23.json.bak",
+          "firmware": "0.2.4-968+h3.2.3",
+          "hardware": "leaf_3_2_3",
+          "complete": false,
+          "revision": 2,
+          "start": "2026-10-25T13:54:03",
+          "end": null,
+          "duration": 1,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-01.igc"
+          },
+          "bytes": 1348
+        }
+      ],
+      "current_tracks": [
+        {
+          "file": "2026-10-25-XLV-000-01.igc",
+          "bytes": 2311462,
+          "headers": {
+            "HFRFWFIRMWAREVERSION": "v0.2.4-968",
+            "HFRHWHARDWAREVERSION": "v3.2.3"
+          },
+          "b_records": 3875,
+          "g_records": [
+            "G7F7FB064BE9DCCA5052D50E79BBA36B9"
+          ],
+          "start_records": [
+            "LXLVSTART V=1 CAUSE=AUTO T_MS=583695 N=30"
+          ],
+          "end_records": [
+            "LXLVEND V=1 CAUSE=MANUAL T_MS=4463119"
+          ]
+        }
+      ]
+    },
+    {
+      "device": "RedStrap",
+      "folder_hardware": "hardware-3.2.3",
+      "total_json_candidates": 22,
+      "json_errors": [],
+      "total_tracks": 30,
+      "current_records": [
+        {
+          "file": "2026-10-25_14-04-09_b597dd83.json",
+          "firmware": "0.2.4-968+h3.2.3",
+          "hardware": "leaf_3_2_3",
+          "complete": true,
+          "revision": 3,
+          "start": "2026-10-25T14:04:09",
+          "end": "2026-10-25T14:42:32",
+          "duration": 2302,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-01.igc"
+          },
+          "bytes": 1632
+        },
+        {
+          "file": "2026-10-25_14-04-09_b597dd83.json.bak",
+          "firmware": "0.2.4-968+h3.2.3",
+          "hardware": "leaf_3_2_3",
+          "complete": false,
+          "revision": 2,
+          "start": "2026-10-25T14:04:09",
+          "end": null,
+          "duration": 1,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-01.igc"
+          },
+          "bytes": 1348
+        }
+      ],
+      "current_tracks": [
+        {
+          "file": "2026-10-25-XLV-000-01.igc",
+          "bytes": 1421560,
+          "headers": {
+            "HFRFWFIRMWAREVERSION": "v0.2.4-968",
+            "HFRHWHARDWAREVERSION": "v3.2.3"
+          },
+          "b_records": 2302,
+          "g_records": [
+            "G3B6D6CB3309B543414B5E4EA30DD9F75"
+          ],
+          "start_records": [
+            "LXLVSTART V=1 CAUSE=AUTO T_MS=1190274 N=30"
+          ],
+          "end_records": [
+            "LXLVEND V=1 CAUSE=MANUAL T_MS=3492638"
+          ]
+        }
+      ]
+    },
+    {
+      "device": "BlueGreen326",
+      "folder_hardware": "hardware-3.2.6",
+      "total_json_candidates": 72,
+      "json_errors": [],
+      "total_tracks": 54,
+      "current_records": [
+        {
+          "file": "2026-10-25_11-28-05_98b04e96.json",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": true,
+          "revision": 3,
+          "start": "2026-10-25T11:28:05",
+          "end": "2026-10-25T11:29:15",
+          "duration": 70,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-01.igc"
+          },
+          "bytes": 1558
+        },
+        {
+          "file": "2026-10-25_11-28-05_98b04e96.json.bak",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": false,
+          "revision": 2,
+          "start": "2026-10-25T11:28:05",
+          "end": null,
+          "duration": 1,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-01.igc"
+          },
+          "bytes": 1339
+        },
+        {
+          "file": "2026-10-25_11-29-37_ed66b1bd.json",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": true,
+          "revision": 3,
+          "start": "2026-10-25T11:29:37",
+          "end": "2026-10-25T11:30:40",
+          "duration": 62,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-02.igc"
+          },
+          "bytes": 1549
+        },
+        {
+          "file": "2026-10-25_11-29-37_ed66b1bd.json.bak",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": false,
+          "revision": 2,
+          "start": "2026-10-25T11:29:37",
+          "end": null,
+          "duration": 1,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-02.igc"
+          },
+          "bytes": 1344
+        },
+        {
+          "file": "2026-10-25_11-33-08_71df1a09.json",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": false,
+          "revision": 2,
+          "start": "2026-10-25T11:33:08",
+          "end": null,
+          "duration": 1,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-03.igc"
+          },
+          "bytes": 1337
+        },
+        {
+          "file": "2026-10-25_11-33-08_71df1a09.json.bak",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": false,
+          "revision": 1,
+          "start": "2026-10-25T11:33:08",
+          "end": null,
+          "duration": 0,
+          "track": {
+            "saved": false
+          },
+          "bytes": 1061
+        },
+        {
+          "file": "2026-10-25_11-33-08_71df1a09.json.tmp",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": true,
+          "revision": 3,
+          "start": "2026-10-25T11:33:08",
+          "end": "2026-10-25T11:34:12",
+          "duration": 63,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-03.igc"
+          },
+          "bytes": 1549
+        },
+        {
+          "file": "2026-10-25_11-34-44_66ee53c4.json",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": true,
+          "revision": 3,
+          "start": "2026-10-25T11:34:44",
+          "end": "2026-10-25T11:35:44",
+          "duration": 61,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-04.igc"
+          },
+          "bytes": 1557
+        },
+        {
+          "file": "2026-10-25_11-34-44_66ee53c4.json.bak",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": false,
+          "revision": 2,
+          "start": "2026-10-25T11:34:44",
+          "end": null,
+          "duration": 2,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-04.igc"
+          },
+          "bytes": 1340
+        },
+        {
+          "file": "2026-10-25_11-36-02_262eff2e.json",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": false,
+          "revision": 2,
+          "start": "2026-10-25T11:36:02",
+          "end": null,
+          "duration": 2,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-05.igc"
+          },
+          "bytes": 1341
+        },
+        {
+          "file": "2026-10-25_11-36-02_262eff2e.json.bak",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": false,
+          "revision": 1,
+          "start": "2026-10-25T11:36:02",
+          "end": null,
+          "duration": 0,
+          "track": {
+            "saved": false
+          },
+          "bytes": 1064
+        },
+        {
+          "file": "2026-10-25_11-36-02_262eff2e.json.tmp",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": true,
+          "revision": 3,
+          "start": "2026-10-25T11:36:02",
+          "end": "2026-10-25T11:37:03",
+          "duration": 61,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-05.igc"
+          },
+          "bytes": 1555
+        },
+        {
+          "file": "2026-10-25_11-39-04_d8562629.json",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": true,
+          "revision": 3,
+          "start": "2026-10-25T11:39:04",
+          "end": "2026-10-25T11:40:29",
+          "duration": 84,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-06.igc"
+          },
+          "bytes": 1554
+        },
+        {
+          "file": "2026-10-25_11-39-04_d8562629.json.bak",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": false,
+          "revision": 2,
+          "start": "2026-10-25T11:39:04",
+          "end": null,
+          "duration": 1,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-06.igc"
+          },
+          "bytes": 1340
+        },
+        {
+          "file": "2026-10-25_11-42-53_aacea3ea.json",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": true,
+          "revision": 3,
+          "start": "2026-10-25T11:42:53",
+          "end": "2026-10-25T11:43:29",
+          "duration": 36,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-07.igc"
+          },
+          "bytes": 1558
+        },
+        {
+          "file": "2026-10-25_11-42-53_aacea3ea.json.bak",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": false,
+          "revision": 2,
+          "start": "2026-10-25T11:42:53",
+          "end": null,
+          "duration": 2,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-07.igc"
+          },
+          "bytes": 1345
+        },
+        {
+          "file": "2026-10-25_12-26-30_5d52b0cc.json",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": true,
+          "revision": 3,
+          "start": "2026-10-25T12:26:30",
+          "end": "2026-10-25T12:27:57",
+          "duration": 87,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-08.igc"
+          },
+          "bytes": 1556
+        },
+        {
+          "file": "2026-10-25_12-26-30_5d52b0cc.json.bak",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": false,
+          "revision": 2,
+          "start": "2026-10-25T12:26:30",
+          "end": null,
+          "duration": 2,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-08.igc"
+          },
+          "bytes": 1345
+        },
+        {
+          "file": "2026-10-25_12-31-39_69b2f82a.json",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": true,
+          "revision": 3,
+          "start": "2026-10-25T12:31:39",
+          "end": "2026-10-25T12:32:13",
+          "duration": 33,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-09.igc"
+          },
+          "bytes": 1552
+        },
+        {
+          "file": "2026-10-25_12-31-39_69b2f82a.json.bak",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": false,
+          "revision": 2,
+          "start": "2026-10-25T12:31:39",
+          "end": null,
+          "duration": 2,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-09.igc"
+          },
+          "bytes": 1345
+        },
+        {
+          "file": "2026-10-25_12-32-49_7b9629a0.json",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": true,
+          "revision": 3,
+          "start": "2026-10-25T12:32:49",
+          "end": "2026-10-25T12:33:39",
+          "duration": 49,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-10.igc"
+          },
+          "bytes": 1550
+        },
+        {
+          "file": "2026-10-25_12-32-49_7b9629a0.json.bak",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": false,
+          "revision": 2,
+          "start": "2026-10-25T12:32:49",
+          "end": null,
+          "duration": 1,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-10.igc"
+          },
+          "bytes": 1339
+        },
+        {
+          "file": "2026-10-25_12-33-57_3a70e32f.json",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": true,
+          "revision": 3,
+          "start": "2026-10-25T12:33:57",
+          "end": "2026-10-25T12:34:39",
+          "duration": 41,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-11.igc"
+          },
+          "bytes": 1551
+        },
+        {
+          "file": "2026-10-25_12-33-57_3a70e32f.json.bak",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": false,
+          "revision": 2,
+          "start": "2026-10-25T12:33:57",
+          "end": null,
+          "duration": 1,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-11.igc"
+          },
+          "bytes": 1345
+        },
+        {
+          "file": "2026-10-25_12-34-57_3f44f4fd.json",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": true,
+          "revision": 3,
+          "start": "2026-10-25T12:34:57",
+          "end": "2026-10-25T12:35:16",
+          "duration": 19,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-12.igc"
+          },
+          "bytes": 1558
+        },
+        {
+          "file": "2026-10-25_12-34-57_3f44f4fd.json.bak",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": false,
+          "revision": 2,
+          "start": "2026-10-25T12:34:57",
+          "end": null,
+          "duration": 2,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-12.igc"
+          },
+          "bytes": 1343
+        },
+        {
+          "file": "2026-10-25_12-35-21_54230450.json",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": true,
+          "revision": 3,
+          "start": "2026-10-25T12:35:21",
+          "end": "2026-10-25T12:35:35",
+          "duration": 14,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-13.igc"
+          },
+          "bytes": 1554
+        },
+        {
+          "file": "2026-10-25_12-35-21_54230450.json.bak",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": false,
+          "revision": 2,
+          "start": "2026-10-25T12:35:21",
+          "end": null,
+          "duration": 1,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-13.igc"
+          },
+          "bytes": 1344
+        },
+        {
+          "file": "2026-10-25_12-35-50_2bfa0a61.json",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": true,
+          "revision": 3,
+          "start": "2026-10-25T12:35:50",
+          "end": "2026-10-25T12:36:24",
+          "duration": 34,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-14.igc"
+          },
+          "bytes": 1556
+        },
+        {
+          "file": "2026-10-25_12-35-50_2bfa0a61.json.bak",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": false,
+          "revision": 2,
+          "start": "2026-10-25T12:35:50",
+          "end": null,
+          "duration": 2,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-14.igc"
+          },
+          "bytes": 1341
+        },
+        {
+          "file": "2026-10-25_13-54-46_e8d117b0.json",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": true,
+          "revision": 3,
+          "start": "2026-10-25T13:54:46",
+          "end": "2026-10-25T13:58:46",
+          "duration": 240,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-15.igc"
+          },
+          "bytes": 1558
+        },
+        {
+          "file": "2026-10-25_13-54-46_e8d117b0.json.bak",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": false,
+          "revision": 2,
+          "start": "2026-10-25T13:54:46",
+          "end": null,
+          "duration": 1,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-15.igc"
+          },
+          "bytes": 1345
+        },
+        {
+          "file": "2026-10-25_14-03-39_e3cc6779.json",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": true,
+          "revision": 3,
+          "start": "2026-10-25T14:03:39",
+          "end": "2026-10-25T14:03:48",
+          "duration": 9,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-16.igc"
+          },
+          "bytes": 1543
+        },
+        {
+          "file": "2026-10-25_14-03-39_e3cc6779.json.bak",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": false,
+          "revision": 2,
+          "start": "2026-10-25T14:03:39",
+          "end": null,
+          "duration": 1,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-16.igc"
+          },
+          "bytes": 1342
+        },
+        {
+          "file": "2026-10-25_14-04-14_5696dc6b.json",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": false,
+          "revision": 2,
+          "start": "2026-10-25T14:04:14",
+          "end": null,
+          "duration": 1,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-17.igc"
+          },
+          "bytes": 1345
+        },
+        {
+          "file": "2026-10-25_14-04-14_5696dc6b.json.bak",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": false,
+          "revision": 1,
+          "start": "2026-10-25T14:04:14",
+          "end": null,
+          "duration": 0,
+          "track": {
+            "saved": false
+          },
+          "bytes": 1067
+        },
+        {
+          "file": "2026-10-25_14-04-14_5696dc6b.json.tmp",
+          "firmware": "0.2.4-968+h3.2.6",
+          "hardware": "leaf_3_2_6",
+          "complete": true,
+          "revision": 3,
+          "start": "2026-10-25T14:04:14",
+          "end": "2026-10-25T14:41:30",
+          "duration": 2236,
+          "track": {
+            "saved": true,
+            "format": "igc",
+            "path": "tracks/2026-10-25-XLV-000-17.igc"
+          },
+          "bytes": 1626
+        }
+      ],
+      "current_tracks": [
+        {
+          "file": "2026-10-25-XLV-000-01.igc",
+          "bytes": 41753,
+          "headers": {
+            "HFRFWFIRMWAREVERSION": "v0.2.4-968",
+            "HFRHWHARDWAREVERSION": "v3.2.6"
+          },
+          "b_records": 70,
+          "g_records": [
+            "G974E09616EE930F4BB128C8628662CD1"
+          ],
+          "start_records": [
+            "LXLVSTART V=1 CAUSE=AUTO T_MS=95548 N=30"
+          ],
+          "end_records": [
+            "LXLVEND V=1 CAUSE=MANUAL T_MS=165413"
+          ]
+        },
+        {
+          "file": "2026-10-25-XLV-000-02.igc",
+          "bytes": 37610,
+          "headers": {
+            "HFRFWFIRMWAREVERSION": "v0.2.4-968",
+            "HFRHWHARDWAREVERSION": "v3.2.6"
+          },
+          "b_records": 63,
+          "g_records": [
+            "GB304D351FD10393A0A00D3025D20A5EE"
+          ],
+          "start_records": [
+            "LXLVSTART V=1 CAUSE=AUTO T_MS=187438 N=22"
+          ],
+          "end_records": [
+            "LXLVEND V=1 CAUSE=MANUAL T_MS=250323"
+          ]
+        },
+        {
+          "file": "2026-10-25-XLV-000-03.igc",
+          "bytes": 38619,
+          "headers": {
+            "HFRFWFIRMWAREVERSION": "v0.2.4-968",
+            "HFRHWHARDWAREVERSION": "v3.2.6"
+          },
+          "b_records": 64,
+          "g_records": [
+            "GA45846F7B69D088C4D064F22D4DA6173"
+          ],
+          "start_records": [
+            "LXLVSTART V=1 CAUSE=AUTO T_MS=398288 N=30"
+          ],
+          "end_records": [
+            "LXLVEND V=1 CAUSE=MANUAL T_MS=461961"
+          ]
+        },
+        {
+          "file": "2026-10-25-XLV-000-04.igc",
+          "bytes": 37034,
+          "headers": {
+            "HFRFWFIRMWAREVERSION": "v0.2.4-968",
+            "HFRHWHARDWAREVERSION": "v3.2.6"
+          },
+          "b_records": 61,
+          "g_records": [
+            "GED7117F02469AFCDA55C3D956A5D8ADA"
+          ],
+          "start_records": [
+            "LXLVSTART V=1 CAUSE=MANUAL T_MS=493888 N=30"
+          ],
+          "end_records": [
+            "LXLVEND V=1 CAUSE=MANUAL T_MS=554713"
+          ]
+        },
+        {
+          "file": "2026-10-25-XLV-000-05.igc",
+          "bytes": 36222,
+          "headers": {
+            "HFRFWFIRMWAREVERSION": "v0.2.4-968",
+            "HFRHWHARDWAREVERSION": "v3.2.6"
+          },
+          "b_records": 61,
+          "g_records": [
+            "G2FAC91C3918A79D70274CBDD7FC55CC8"
+          ],
+          "start_records": [
+            "LXLVSTART V=1 CAUSE=AUTO T_MS=571878 N=17"
+          ],
+          "end_records": [
+            "LXLVEND V=1 CAUSE=MANUAL T_MS=633031"
+          ]
+        },
+        {
+          "file": "2026-10-25-XLV-000-06.igc",
+          "bytes": 50753,
+          "headers": {
+            "HFRFWFIRMWAREVERSION": "v0.2.4-968",
+            "HFRHWHARDWAREVERSION": "v3.2.6"
+          },
+          "b_records": 84,
+          "g_records": [
+            "GE2B168F55BD9F896DE76A765327A877B"
+          ],
+          "start_records": [
+            "LXLVSTART V=1 CAUSE=AUTO T_MS=754598 N=30"
+          ],
+          "end_records": [
+            "LXLVEND V=1 CAUSE=MANUAL T_MS=839021"
+          ]
+        },
+        {
+          "file": "2026-10-25-XLV-000-07.igc",
+          "bytes": 23314,
+          "headers": {
+            "HFRFWFIRMWAREVERSION": "v0.2.4-968",
+            "HFRHWHARDWAREVERSION": "v3.2.6"
+          },
+          "b_records": 35,
+          "g_records": [
+            "GE2B042F6A201053C7E8EBD7096A4DD20"
+          ],
+          "start_records": [
+            "LXLVSTART V=1 CAUSE=MANUAL T_MS=983768 N=30"
+          ],
+          "end_records": [
+            "LXLVEND V=1 CAUSE=MANUAL T_MS=1019491"
+          ]
+        },
+        {
+          "file": "2026-10-25-XLV-000-08.igc",
+          "bytes": 52477,
+          "headers": {
+            "HFRFWFIRMWAREVERSION": "v0.2.4-968",
+            "HFRHWHARDWAREVERSION": "v3.2.6"
+          },
+          "b_records": 87,
+          "g_records": [
+            "G6807E1A6C8C4CE3CD6090BE3180A4887"
+          ],
+          "start_records": [
+            "LXLVSTART V=1 CAUSE=AUTO T_MS=105840 N=30"
+          ],
+          "end_records": [
+            "LXLVEND V=1 CAUSE=MANUAL T_MS=192692"
+          ]
+        },
+        {
+          "file": "2026-10-25-XLV-000-09.igc",
+          "bytes": 21395,
+          "headers": {
+            "HFRFWFIRMWAREVERSION": "v0.2.4-968",
+            "HFRHWHARDWAREVERSION": "v3.2.6"
+          },
+          "b_records": 33,
+          "g_records": [
+            "G8945C0A7F83FBD18D270675385F3057B"
+          ],
+          "start_records": [
+            "LXLVSTART V=1 CAUSE=AUTO T_MS=80362 N=30"
+          ],
+          "end_records": [
+            "LXLVEND V=1 CAUSE=MANUAL T_MS=114267"
+          ]
+        },
+        {
+          "file": "2026-10-25-XLV-000-10.igc",
+          "bytes": 31037,
+          "headers": {
+            "HFRFWFIRMWAREVERSION": "v0.2.4-968",
+            "HFRHWHARDWAREVERSION": "v3.2.6"
+          },
+          "b_records": 50,
+          "g_records": [
+            "GEBE93F1B669176C67021E188B5A847DB"
+          ],
+          "start_records": [
+            "LXLVSTART V=1 CAUSE=AUTO T_MS=150312 N=30"
+          ],
+          "end_records": [
+            "LXLVEND V=1 CAUSE=MANUAL T_MS=200777"
+          ]
+        },
+        {
+          "file": "2026-10-25-XLV-000-11.igc",
+          "bytes": 25935,
+          "headers": {
+            "HFRFWFIRMWAREVERSION": "v0.2.4-968",
+            "HFRHWHARDWAREVERSION": "v3.2.6"
+          },
+          "b_records": 42,
+          "g_records": [
+            "G6EFA92EA6DF0E72E575F61B40A10FD6F"
+          ],
+          "start_records": [
+            "LXLVSTART V=1 CAUSE=AUTO T_MS=218382 N=18"
+          ],
+          "end_records": [
+            "LXLVEND V=1 CAUSE=MANUAL T_MS=260857"
+          ]
+        },
+        {
+          "file": "2026-10-25-XLV-000-12.igc",
+          "bytes": 12975,
+          "headers": {
+            "HFRFWFIRMWAREVERSION": "v0.2.4-968",
+            "HFRHWHARDWAREVERSION": "v3.2.6"
+          },
+          "b_records": 18,
+          "g_records": [
+            "G36E31570A67F54FE44D95A5CFC1CAFBE"
+          ],
+          "start_records": [
+            "LXLVSTART V=1 CAUSE=MANUAL T_MS=278622 N=18"
+          ],
+          "end_records": [
+            "LXLVEND V=1 CAUSE=MANUAL T_MS=297887"
+          ]
+        },
+        {
+          "file": "2026-10-25-XLV-000-13.igc",
+          "bytes": 10022,
+          "headers": {
+            "HFRFWFIRMWAREVERSION": "v0.2.4-968",
+            "HFRHWHARDWAREVERSION": "v3.2.6"
+          },
+          "b_records": 14,
+          "g_records": [
+            "GC75FF6A97A883D4BBBBBE58A85DF0AC5"
+          ],
+          "start_records": [
+            "LXLVSTART V=1 CAUSE=MANUAL T_MS=302362 N=5"
+          ],
+          "end_records": [
+            "LXLVEND V=1 CAUSE=MANUAL T_MS=317117"
+          ]
+        },
+        {
+          "file": "2026-10-25-XLV-000-14.igc",
+          "bytes": 20971,
+          "headers": {
+            "HFRFWFIRMWAREVERSION": "v0.2.4-968",
+            "HFRHWHARDWAREVERSION": "v3.2.6"
+          },
+          "b_records": 33,
+          "g_records": [
+            "GBDD3777D8C11AE5C6210D6EDEF66F4DB"
+          ],
+          "start_records": [
+            "LXLVSTART V=1 CAUSE=MANUAL T_MS=331872 N=15"
+          ],
+          "end_records": [
+            "LXLVEND V=1 CAUSE=MANUAL T_MS=365817"
+          ]
+        },
+        {
+          "file": "2026-10-25-XLV-000-15.igc",
+          "bytes": 133584,
+          "headers": {
+            "HFRFWFIRMWAREVERSION": "v0.2.4-968",
+            "HFRHWHARDWAREVERSION": "v3.2.6"
+          },
+          "b_records": 239,
+          "g_records": [
+            "GD1FA58DC5C764800CEB1EBA418C4012D"
+          ],
+          "start_records": [
+            "LXLVSTART V=1 CAUSE=AUTO T_MS=757549 N=30"
+          ],
+          "end_records": [
+            "LXLVEND V=1 CAUSE=MANUAL T_MS=997434"
+          ]
+        },
+        {
+          "file": "2026-10-25-XLV-000-16.igc",
+          "bytes": 8941,
+          "headers": {
+            "HFRFWFIRMWAREVERSION": "v0.2.4-968",
+            "HFRHWHARDWAREVERSION": "v3.2.6"
+          },
+          "b_records": 9,
+          "g_records": [
+            "G1BE24FCE149CD10CECF2839A0A2BFB04"
+          ],
+          "start_records": [
+            "LXLVSTART V=1 CAUSE=AUTO T_MS=1290539 N=30"
+          ],
+          "end_records": [
+            "LXLVEND V=1 CAUSE=MANUAL T_MS=1299812"
+          ]
+        },
+        {
+          "file": "2026-10-25-XLV-000-17.igc",
+          "bytes": 1384013,
+          "headers": {
+            "HFRFWFIRMWAREVERSION": "v0.2.4-968",
+            "HFRHWHARDWAREVERSION": "v3.2.6"
+          },
+          "b_records": 2235,
+          "g_records": [
+            "GD417501E62DB15FFB5092F866EB6E2EB"
+          ],
+          "start_records": [
+            "LXLVSTART V=1 CAUSE=AUTO T_MS=1325659 N=26"
+          ],
+          "end_records": [
+            "LXLVEND V=1 CAUSE=MANUAL T_MS=3561522"
+          ]
+        }
+      ]
+    }
+  ],
+  "manifest": [
+    {
+      "path": "hardware-3.2.3/Racoon/logbook/2026-09-20_13-43-17_314e0295.json",
+      "size": 1621,
+      "sha256": "77a661cbdcd255bf1765803bc76e16277f36900647fbf36df13d49d0b7e2b171"
+    },
+    {
+      "path": "hardware-3.2.3/Racoon/logbook/2026-09-20_14-05-52_fc5a0605.json",
+      "size": 1628,
+      "sha256": "782943b5567134f58839643b658672aca2bbd42e8415b65ba131d889f998a860"
+    },
+    {
+      "path": "hardware-3.2.3/Racoon/logbook/2026-09-20_14-30-17_1b2f8dc6.json",
+      "size": 1629,
+      "sha256": "ddb9e7765180a274109bd80875d7ed5e5cb140d5195a2efcadf439ee6ed85b62"
+    },
+    {
+      "path": "hardware-3.2.3/Racoon/logbook/2026-09-20_15-09-18_1ea10e10.json",
+      "size": 1629,
+      "sha256": "06af30e79570b961d0fcf3e8e12d7671fcb930e2616c0924b6c925972114076f"
+    },
+    {
+      "path": "hardware-3.2.3/Racoon/logbook/2026-09-20_16-38-51_61fa95fa.json",
+      "size": 1627,
+      "sha256": "34836df3ec1395908ada89a08daa759dfbeba9954f8ddf231697a9ab6138d47c"
+    },
+    {
+      "path": "hardware-3.2.3/Racoon/logbook/2026-10-16_11-45-42_69a2837c.json",
+      "size": 1566,
+      "sha256": "23465555dfc22f06ed180e352ed89b61e10857e953e50b1d25d5da7a4e35f04e"
+    },
+    {
+      "path": "hardware-3.2.3/Racoon/logbook/2026-10-16_12-00-02_5281e8fa.json",
+      "size": 1551,
+      "sha256": "1126ff6484feff39fbf3afe962c56c2f72f7039ee35984a4e8d2878e1b05b92b"
+    },
+    {
+      "path": "hardware-3.2.3/Racoon/logbook/2026-10-25_13-54-03_0914dd23.json",
+      "size": 1635,
+      "sha256": "15ba377d57482c349d9e3ed18e715507faf25e238553f0090e1c4c3a19355d37"
+    },
+    {
+      "path": "hardware-3.2.3/Racoon/logbook/2026-10-25_13-54-03_0914dd23.json.bak",
+      "size": 1348,
+      "sha256": "8013ad2d56021fd1d94927f7215b2b15dabbcbb2ffe15cfef8db689047b2bb45"
+    },
+    {
+      "path": "hardware-3.2.3/Racoon/tracks/2026-09-20-XLF-000-01.igc",
+      "size": 6496,
+      "sha256": "f0a46fd0cfe72b21ca1768040858c20d10ffd7cb1d20e2f13172d05d03a4bb6d"
+    },
+    {
+      "path": "hardware-3.2.3/Racoon/tracks/2026-09-20-XLF-000-02.igc",
+      "size": 5451,
+      "sha256": "0322ef854bfce7ea1f4f7f1f6ac4d676c47bfece822b1fc78dc0c8f77c86c1e3"
+    },
+    {
+      "path": "hardware-3.2.3/Racoon/tracks/2026-09-20-XLF-000-03.igc",
+      "size": 11336,
+      "sha256": "e675f479be3733019a91cb9a4eb93c3794bc8416a0c48130861ad6fb8ed34e1b"
+    },
+    {
+      "path": "hardware-3.2.3/Racoon/tracks/2026-09-20-XLF-000-04.igc",
+      "size": 26791,
+      "sha256": "791b2c1b23cba6e1778024e45ee529914d7c191737d111a5a32001d315cb7fbd"
+    },
+    {
+      "path": "hardware-3.2.3/Racoon/tracks/2026-09-20-XLF-000-05.igc",
+      "size": 125406,
+      "sha256": "aff8a279e20ce7b45ac24e8fae58c994bf53a2bb8aade042de1e61ef178104b3"
+    },
+    {
+      "path": "hardware-3.2.3/Racoon/tracks/2026-10-16-XLF-000-01.igc",
+      "size": 157214,
+      "sha256": "2b54cc206bd791be0ec2c07bed1ea28c077eda5202d01d06940d525b523a93c1"
+    },
+    {
+      "path": "hardware-3.2.3/Racoon/tracks/2026-10-16-XLF-000-02.igc",
+      "size": 9871,
+      "sha256": "834558333ad4b82f3abf3be78e8d147e5d24c5e81a4184a16dcc7a134efaf10f"
+    },
+    {
+      "path": "hardware-3.2.3/Racoon/tracks/2026-10-25-XLV-000-01.igc",
+      "size": 2311462,
+      "sha256": "ee0d055e29029cdf2779f8860169bde2ff429191d5a469db602b45a8cdce5d9d"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/logbook/2026-08-20_10-55-30_bf56a636.json",
+      "size": 2146,
+      "sha256": "ea7ed4b5fe16b4e6049fd1d0b09808e0641c3e522ac229c033318a32c800cadc"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/logbook/2026-08-20_11-29-53_01b25f75.json",
+      "size": 2059,
+      "sha256": "c249a39049597fae804f03643ff307423c0d62ba0be67f6865eee89d45785b36"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/logbook/2026-08-23_09-13-37_8be9a02b.json",
+      "size": 2146,
+      "sha256": "2f4df28587be5fd0062f33df4d7e063ecf0efffabd8fdcd8e5d927f7fb01ca01"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/logbook/2026-08-23_09-51-03_bc6f0a36.json",
+      "size": 2150,
+      "sha256": "f92f8b1c724088934d9b4e36d31a259671579e16763cac5fd03d26095c2e3775"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/logbook/2026-08-23_10-25-21_d2f4195d.json",
+      "size": 2149,
+      "sha256": "bdebd3fbe97bba2ba0c2be118ccabcc68b3fd4614eab9b7c5ac51d9b4240377a"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/logbook/2026-08-23_10-49-56_bbaf0135.json",
+      "size": 2148,
+      "sha256": "e7a0119919de9f662ebe5508905a16bc03cb4c7bde1d63031fdce0eb10c1b9c9"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/logbook/2026-08-23_11-27-48_fc65d9e4.json",
+      "size": 2052,
+      "sha256": "8a6612031aa927929560b77c7b55726c695083cb461f2a68a773560e012b7dd7"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/logbook/2026-08-23_11-57-47_33ec8f25.json",
+      "size": 2148,
+      "sha256": "fc452d07cfc8e746c1e61359fb84a6d6af8a6587123bbfcabb0a83fb7293e6e7"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/logbook/2026-09-04_13-29-29_d1bffdfb.json",
+      "size": 2048,
+      "sha256": "c7525dea210e07cb680097510c730cfe7916b4901eaf0bb665aab6635a4b33a2"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/logbook/2026-10-04_14-45-12_33907959.json",
+      "size": 2041,
+      "sha256": "94c223022f6af7c8340e01856ab151e4b6a4f13683535464f3271117b7f8a6c5"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/logbook/2026-10-11_10-02-17_4be11f64.json",
+      "size": 2150,
+      "sha256": "76c68ebeda4d77d2e4b7de2f58fc031c22341dbcaf00128578dff2977255fef3"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/logbook/2026-10-11_11-26-58_e200c488.json",
+      "size": 2155,
+      "sha256": "f3924b94df97756d8d4b25e22d7c71f0ae21cbc85c7b5104a017929fc9bbeeae"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/logbook/2026-10-11_13-20-30_f658286e.json",
+      "size": 2149,
+      "sha256": "25a0377fd96bdd8a24cf23fa15c927133501d1eb704509ec4c59ceb32853df91"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/logbook/2026-10-11_14-34-57_fd2e33e6.json",
+      "size": 2142,
+      "sha256": "9e80f71a348ad111c009f6077aabe3160736a42c64104c9f2c76bbc3e7cebd1d"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/logbook/2026-10-16_17-33-19_1c1c8572.json",
+      "size": 2162,
+      "sha256": "32b101603c5b2744721337f05f5eef4a174b69b5631adefb9d94b08692c766a4"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/logbook/2026-10-17_12-50-59_4e9b6552.json",
+      "size": 2160,
+      "sha256": "f2899b01c78cd2416a3a2b655f97dae408ec7388c5b3757d8890eab8858239aa"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/logbook/2026-10-17_16-58-33_87409a7d.json",
+      "size": 2159,
+      "sha256": "6b5be25a3f1d095794c0b2c79531f515c336eb619d8296dad7d60658402e92fc"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/logbook/2026-10-18_11-59-25_7a046797.json",
+      "size": 2161,
+      "sha256": "c980de7e515abe21020a0cd625a7839777c2e3371f77fd283b30011989dd7386"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/logbook/2026-10-18_16-36-24_45dd4b48.json",
+      "size": 2160,
+      "sha256": "1d52094f073458eafedc6e88196bb9a021b339c1617d66d3a2006ff4715d1c00"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/logbook/2026-10-19_12-25-52_534b203c.json",
+      "size": 2159,
+      "sha256": "4ddfa1a9f0d94418e13004597335979142278b6b45d9477842c050fc4ef98cb4"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/logbook/2026-10-25_14-04-09_b597dd83.json",
+      "size": 1632,
+      "sha256": "228f2956cc9c52747cf48b2758b05431fb3518ef13c3aeef5bd3a4a82b2ae138"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/logbook/2026-10-25_14-04-09_b597dd83.json.bak",
+      "size": 1348,
+      "sha256": "391ba20c0f3ccaceaa68fbf0e1a284182119957bbb8a68ce71e99225b3f567b2"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/tracks/2025-03-05-XLF-000-01.igc",
+      "size": 799,
+      "sha256": "b6a03bd68b1399b47558ad8def0c15229151fccdb44a4afc3d6772c27bd5177b"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/tracks/2025-03-05-XLF-000-02.igc",
+      "size": 1759,
+      "sha256": "4a976a4d5b6c537f1735bafbb8501d014736f3b8d6689645942db8bd275e7673"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/tracks/2025-03-06-XLF-000-01.igc",
+      "size": 1159,
+      "sha256": "d6455706b51eaa46cf6b8a3e571eb599da299f0de49e97db881f9a7107b3d7f9"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/tracks/2025-03-06-XLF-000-02.igc",
+      "size": 479,
+      "sha256": "de993088526376e67462c0331d367705f8043fb27b9cb7bab5c17385bac8b114"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/tracks/2025-03-06-XLF-000-03.igc",
+      "size": 839,
+      "sha256": "b4749703765fc046c52138e0e38a73dca30573e3407d38961e200817e1f81763"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/tracks/2025-03-06-XLF-000-04.igc",
+      "size": 759,
+      "sha256": "8d2634cacc5d52731f2954eff8efa130c1269c3e8925a57c4a4f958f4e200431"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/tracks/2025-03-06-XLF-000-05.igc",
+      "size": 759,
+      "sha256": "e12d9d8da0d12a29be952803e321877cf29606c34a029fe4f181fe601adbc0ad"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/tracks/2025-03-07-XLF-000-01.igc",
+      "size": 919,
+      "sha256": "42e39b9911e95be97f97068010bfb945f1c4970503a462d835783fce6e8d60c2"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/tracks/2025-03-07-XLF-000-02.igc",
+      "size": 839,
+      "sha256": "5c62791025409c58ddc891cef70e555e888746146f54d37b5558e80bcfc76b74"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/tracks/2026-08-20-XLF-000-01.igc",
+      "size": 4859,
+      "sha256": "e01e4f00f7252a51cf303dbe95cf566e63422d2ac0507340d0dadea7cc0cc9f9"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/tracks/2026-08-20-XLF-000-02.igc",
+      "size": 859,
+      "sha256": "62b81c384288e0ca807b6225bb4bc39fd616ad7ff4d766d235ed9ab2de4aa404"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/tracks/2026-08-23-XLF-000-01.igc",
+      "size": 9659,
+      "sha256": "0f378b1acce43c0a939fdb3d8d51500593d2ac255cbf1ebc19a8d876766230ac"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/tracks/2026-08-23-XLF-000-02.igc",
+      "size": 4779,
+      "sha256": "580f5ca33e352c223a3d93d6fef210d20490726870bc564a290fefac6575260d"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/tracks/2026-08-23-XLF-000-03.igc",
+      "size": 4099,
+      "sha256": "4512cf8353a893fd7d18189688b2ee659246ea8b620d2b2efd8326ca46347585"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/tracks/2026-08-23-XLF-000-04.igc",
+      "size": 6579,
+      "sha256": "dae2a9ce634cdc486d73e3108f701620fbff57e4f213e04e139b40036ab049cd"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/tracks/2026-08-23-XLF-000-05.igc",
+      "size": 4099,
+      "sha256": "2f1a583e45e7c005de7463f0f2903523357f2c581aabd36ff441945ba60f29bf"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/tracks/2026-08-23-XLF-000-06.igc",
+      "size": 11379,
+      "sha256": "63e31c9fb5c7db43dfb98f246b0e1ea02043a6714161c493548f92444ab884c7"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/tracks/2026-09-04-XLF-000-01.igc",
+      "size": 2479,
+      "sha256": "3453d09504c750760fa980c2345f2ecb2278358f5d6195301fa0daf148805432"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/tracks/2026-10-04-XLF-000-01.igc",
+      "size": 3249,
+      "sha256": "345626f5141db275bc7ae8eab325040bef3d3d8b09ad11907ffb9380dc934acf"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/tracks/2026-10-11-XLF-000-01.igc",
+      "size": 12764,
+      "sha256": "24f85cf9e9cf170d14aeceaa9156f765fa8d2de6bcb38de46b3167d8be6d8019"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/tracks/2026-10-11-XLF-000-02.igc",
+      "size": 156919,
+      "sha256": "afad40cea37e48ce6dc8493c1cfd76a7d898dea54c71546117ef39f5b5e51b07"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/tracks/2026-10-11-XLF-000-03.igc",
+      "size": 35919,
+      "sha256": "fe683f72dd6313ed9eaa66f7455c5a0215550067696afbad108e5586f0bd2835"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/tracks/2026-10-11-XLF-000-04.igc",
+      "size": 22664,
+      "sha256": "43466d4be8a5807632569d9cf85d68e5684417be63e62f0ce8171249f68050a8"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/tracks/2026-10-16-XLF-000-01.igc",
+      "size": 261525,
+      "sha256": "d4c7c64132ae502e462f86001bbd7c206ba11f1a5f90f702b9781d02eecbc4f9"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/tracks/2026-10-17-XLF-000-01.igc",
+      "size": 613515,
+      "sha256": "be6a6346e9f97c48267576cb9d5abfba3ac8bc3fb7311b995b6393f0a1f8acb8"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/tracks/2026-10-17-XLF-000-02.igc",
+      "size": 593857,
+      "sha256": "dfb6d4de8b3bd0093f41202d926df9696530c74e45c3e1d9393a819a0d3640e0"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/tracks/2026-10-18-XLF-000-01.igc",
+      "size": 1374404,
+      "sha256": "c6e09e86b2a3c3323808ee868dc199c3ebe9fbdbcc2b32b84972ff2309681a07"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/tracks/2026-10-18-XLF-000-02.igc",
+      "size": 705681,
+      "sha256": "b337ee8a29f571d6f088e316dffab316a0b599af124bb446e75510bcd1629fd1"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/tracks/2026-10-19-XLF-000-01.igc",
+      "size": 1153958,
+      "sha256": "abdde707cc08b0fe1991e2e03d5f723b7581a9438a59196abfa16775ee9fdf4e"
+    },
+    {
+      "path": "hardware-3.2.3/RedStrap/tracks/2026-10-25-XLV-000-01.igc",
+      "size": 1421560,
+      "sha256": "bbfb834743fd1b8bc70f3bf87ad9100a0e97eebe1e1106deaf331dd2bbea198a"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-08-08_13-59-10_7dd266c0.json",
+      "size": 1628,
+      "sha256": "d676ce17bdd5c0a4c572f46f237fadc2bac38e73f2105591d3f549ab25f91136"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-08-08_15-32-22_e30dd50f.json",
+      "size": 1626,
+      "sha256": "dc918919f53cf0d1eb08ec86c10f1ed5a8e4f5df8ba48f1a7aa89d773e51a4bd"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-08-12_20-24-43_b1477e4a.json",
+      "size": 1625,
+      "sha256": "690847923862762b38612241f0fba3ba9b7a6f716661e2f1ad7778ac8ec7ed75"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-08-13_11-46-52_d97da7a0.json",
+      "size": 1630,
+      "sha256": "5e7823fd12055bf12a1a17cff8abb56edd93df1923fca37d3859c47377881435"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-08-16_14-46-34_9e31972e.json",
+      "size": 1633,
+      "sha256": "3899e695b72a18a006e68f5fca5f340f8fd87fb91d84a72ce61e59aee4f3eac6"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-08-18_15-41-56_76aadc1b.json",
+      "size": 1636,
+      "sha256": "08dbc554998df41e83cff73f7542708e45a799f073c7fa3c2bad00217f366cb1"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-08-18_17-42-58_d1fc1763.json",
+      "size": 1637,
+      "sha256": "efe3fca2cb5465374b9efd22cfe7036dcbed2b21e3250dd85dba546c7bbeba6a"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-08-23_10-58-34_d5dad493.json",
+      "size": 1634,
+      "sha256": "5d58dad87854dba0d5a55f58fa69ca855b194e79aad9ada61157598a466941b1"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-08-23_11-35-59_a902f311.json",
+      "size": 1575,
+      "sha256": "e3758d3c64fa2cb700d251576a7cf4754373d12505a354e1e8353c0f3f2761f8"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-08-23_12-11-38_3334e6c3.json",
+      "size": 1640,
+      "sha256": "de353362e659781dcc0a7fa8b50f578e61e6f854ebe2924a502dbd631f99828b"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-09-01_10-49-06_28bf9ee7.json",
+      "size": 1637,
+      "sha256": "28075875e54d2fba1d372e5c4d9253b6033f96fd32c7179b42badb762f28cccb"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-09-01_16-16-50_5194ec46.json",
+      "size": 1641,
+      "sha256": "dd2977210e45690ad1f0d63f68ad2ae20055cbea3b0b3c462fd7440181c711f5"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-09-02_12-17-26_45a3fa74.json",
+      "size": 1639,
+      "sha256": "f5bf2a6180f57fdb74b38b8405e36e8d1d4a8f85730491e602d199496441cdd9"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-09-02_14-31-18_5459096b.json",
+      "size": 1640,
+      "sha256": "ab7ae13aede3c4db544689deec85ef90cd17c7d553801c568b4cd90f301260b2"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-09-06_12-58-42_9e428d9d.json",
+      "size": 1637,
+      "sha256": "67e5e6328c6b46b9efd662839374d0ae664a8c21f430cb6e1ab6f5f51696aa7d"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-09-10_16-59-23_c7b36523.json",
+      "size": 1636,
+      "sha256": "1ae8aa0cf0a387ea9c3b656da663491b9d06af8b7d73036452dbd04330688c37"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-09-10_17-11-03_b86746eb.json",
+      "size": 1641,
+      "sha256": "2979dc94cc0ac7e6934aa4de97fe3eb0b59367b7e614593ec397e0a2259ae463"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-09-10_17-51-53_20a9e7ee.json",
+      "size": 1636,
+      "sha256": "ee5333ff5a7cd1f056ccdc990549b605442ff1fbeedfbdf99961a2b22232f524"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-09-17_12-07-05_7d41e759.json",
+      "size": 1632,
+      "sha256": "16b9894147544004e29b141a35181ee2f194da7bce8e6996f77cb680c240b573"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-09-17_13-44-49_982d39c4.json",
+      "size": 1639,
+      "sha256": "f36e9c9e0256e4b520d16745503aa69272b3f24a7cb3e244ce241e8041c151f2"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-03_13-02-13_7954313c.json",
+      "size": 1626,
+      "sha256": "8c2599138c6f079d7c3bb0e130270224adcecb6d165624fb50a24ec4459abbad"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-04_10-33-56_2b304b97.json",
+      "size": 1624,
+      "sha256": "d62f0c74d5f9f894d46fcc28e5c09ad5f104865cac9e5867c64c7cc924538233"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-04_13-51-42_2acd308f.json",
+      "size": 1633,
+      "sha256": "41ff77664812158b328213c3f2d6ecd3a58a402d3eafcaa9451a786a31fc1f36"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-12_12-30-36_583a5179.json",
+      "size": 1634,
+      "sha256": "c79d53512a74a8ad65993c09e862b28759bbb03223a0495f10e371ca276a6099"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-13_17-10-06_4865815a.json",
+      "size": 1629,
+      "sha256": "558cc56ed60f4d8769d3b8bfff074fb41d12ae6396d711682e78246fc49971b1"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-16_17-32-59_9dc6c6ba.json",
+      "size": 1636,
+      "sha256": "33014ea9ccdc577e13c70f7e1db04b09197942eb4122209f742d263c26fd73d1"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-17_12-50-42_52de0e95.json",
+      "size": 1634,
+      "sha256": "f6eb424cfcb356283db8147b800695be7787aede890ee4760a95ba99c80c2bb6"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-17_16-58-36_abc2ad4f.json",
+      "size": 1633,
+      "sha256": "3031e00ae6ffc7f30bbac109249834d54a7041c329a56e32f17c9193b023389a"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-18_11-59-25_01f6d034.json",
+      "size": 1638,
+      "sha256": "8437aa1b40e475504824dd448d05140b7206f5fa554671d54c41e615b493fc7c"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-18_16-36-25_22b7d837.json",
+      "size": 1637,
+      "sha256": "ece8ed64cc6e99bbdec56fbf35074df245cda27dbf94482dc3076f16f18108a2"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-19_12-26-02_d686ec1d.json",
+      "size": 2155,
+      "sha256": "68a99db2c397503d51701645955329dfe110d630466c5272aecc9da80111468c"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_11-28-05_98b04e96.json",
+      "size": 1558,
+      "sha256": "3e25a7e6d99e27cbaf3d8fc698321e64a14393de1b631aa3f0bdc7f8a106fde1"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_11-28-05_98b04e96.json.bak",
+      "size": 1339,
+      "sha256": "bcc302d27726b2de8b5eff322317d07947f15b183e7e68c3200208819be11b7e"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_11-29-37_ed66b1bd.json",
+      "size": 1549,
+      "sha256": "0c722529bfc2799b76d34318aca689360454aa822eb13bebef368cd44445e424"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_11-29-37_ed66b1bd.json.bak",
+      "size": 1344,
+      "sha256": "3ed01893ba68b863fa3aae1aa8bb09325c74da33b20ba312b2f0016dbe3c98c3"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_11-33-08_71df1a09.json",
+      "size": 1337,
+      "sha256": "1297c72f04abc68e322be42699f4ee2edd9fa07625134c16f436ae7a41d1934a"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_11-33-08_71df1a09.json.bak",
+      "size": 1061,
+      "sha256": "e2d04bbd5f6f6a7834855de6186fcd960008b8a9a8c94fde438e94644e24d9d7"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_11-33-08_71df1a09.json.tmp",
+      "size": 1549,
+      "sha256": "a9b259f8d47effb7180d7a741344a2b62446a3c538f71db0659ca92375c737d5"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_11-34-44_66ee53c4.json",
+      "size": 1557,
+      "sha256": "2dcde3d39c00f0243823bb47b8bb9521f8ab244e41673100c57ab9f731eac11d"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_11-34-44_66ee53c4.json.bak",
+      "size": 1340,
+      "sha256": "133532c6491d3508b1ad4012e9f363a75b183d79e67807c0e9a9a59f06a7ff59"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_11-36-02_262eff2e.json",
+      "size": 1341,
+      "sha256": "c7afe061d3578ae6842d063c4e83d1f74263170af6fa220915bf5ee3ed861589"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_11-36-02_262eff2e.json.bak",
+      "size": 1064,
+      "sha256": "30162cece24c06fbe82528ce8ca89d7ee8769e0e706c146abef8a3513dc0b375"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_11-36-02_262eff2e.json.tmp",
+      "size": 1555,
+      "sha256": "248c4dc6e4e1c26cefd8712dc76ad5fe032da4b531ced0ee191d49766fa0d5d2"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_11-39-04_d8562629.json",
+      "size": 1554,
+      "sha256": "45736545d72f0795308fb171aa0c8b1907bd07fa2b39218f3fae8dd02567b151"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_11-39-04_d8562629.json.bak",
+      "size": 1340,
+      "sha256": "f859fdffc68ad96a96a9eb6e0c55bd849801197bc1ec5b3ae99b8db4f1d77fc8"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_11-42-53_aacea3ea.json",
+      "size": 1558,
+      "sha256": "f7176abc90eb0721a7f68ca709f9763aa385b1ebe35bf6771936b448aa804e82"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_11-42-53_aacea3ea.json.bak",
+      "size": 1345,
+      "sha256": "59e2bfc93ae376f518e5ed3823eed63c92ce55dd95ab2d5c23b860183db1dafb"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_12-26-30_5d52b0cc.json",
+      "size": 1556,
+      "sha256": "feb2948defb34b3575a6e1232bfd35a85cab5e57bc84534abc6100637c1624eb"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_12-26-30_5d52b0cc.json.bak",
+      "size": 1345,
+      "sha256": "a5fa41d6c605e694a79948de0d73a43b26af4d8eee06083190d33f3f4a09ab6a"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_12-31-39_69b2f82a.json",
+      "size": 1552,
+      "sha256": "7cd9e706ed95a150d7414c20e46cc5636d2f0ceddc816cc77979035e3aabd6bc"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_12-31-39_69b2f82a.json.bak",
+      "size": 1345,
+      "sha256": "bfe83dfeabd96a2d58473d152555de6b2a0deb4460e94e8a072fc94796c12eea"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_12-32-49_7b9629a0.json",
+      "size": 1550,
+      "sha256": "444d84feac5cc891b2ccacd338c933be5d6b1485d1de0bccfc1af2f730944fd2"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_12-32-49_7b9629a0.json.bak",
+      "size": 1339,
+      "sha256": "46666470e0292384d812358ebc18068049a8796b8c2e5f3db926d524802ebb90"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_12-33-57_3a70e32f.json",
+      "size": 1551,
+      "sha256": "0697086f15e7a161010bc2103b42bad8a7e7dcbe79f3b8df7de3e7498a5a3058"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_12-33-57_3a70e32f.json.bak",
+      "size": 1345,
+      "sha256": "0dcb951bf6fb6284d695b47c20ef951b5f98e340cadd84b5a46429ec376861d8"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_12-34-57_3f44f4fd.json",
+      "size": 1558,
+      "sha256": "0b5749fb566ba7f2ece2a9a958277fe26939009f2165891cbcb5fec948005525"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_12-34-57_3f44f4fd.json.bak",
+      "size": 1343,
+      "sha256": "44dcb214ecdc50325dea311a528c878b320e3f95d028abdf794f0b5463821791"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_12-35-21_54230450.json",
+      "size": 1554,
+      "sha256": "fe449a37317539029dba12420df414413d7ad566c58d34c7aeed6110bf19b756"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_12-35-21_54230450.json.bak",
+      "size": 1344,
+      "sha256": "15701e951983843e5c11bca497a72afe95beeb5f45add629b0df6b80d80f0f38"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_12-35-50_2bfa0a61.json",
+      "size": 1556,
+      "sha256": "e628fac3bdd9bfa5abd9b32a0d14d00949b5c7e9a986eb19223097ac07ea8234"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_12-35-50_2bfa0a61.json.bak",
+      "size": 1341,
+      "sha256": "4a14e67d9f62bae985df00d5eed20d3120537dd542f2f41fe360fdca7ddf3290"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_13-54-46_e8d117b0.json",
+      "size": 1558,
+      "sha256": "7ae9976fc345dd4bc0aac2e031e4e829c28830804e497b0bdd277aca0526de23"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_13-54-46_e8d117b0.json.bak",
+      "size": 1345,
+      "sha256": "15f18fceebc099000bcf4876c3a544ff26755234322f74fe9edf897e0cb0942d"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_14-03-39_e3cc6779.json",
+      "size": 1543,
+      "sha256": "8ad2cfa1c9bb548a0c1f4236ec1bdcf265787a2bef1a98cca39cf816703e9778"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_14-03-39_e3cc6779.json.bak",
+      "size": 1342,
+      "sha256": "1935c61805fe3ccc400b62194654eff31ea4d9d45e37b128512cb2b2e7406691"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_14-04-14_5696dc6b.json",
+      "size": 1345,
+      "sha256": "66e388195adaf4cb296330aba01a6e1371d9a4f4f5394cf66c0e21ef55237cae"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_14-04-14_5696dc6b.json.bak",
+      "size": 1067,
+      "sha256": "a961ad5b6cacd27d3db731c985716ece7c3fdbcebf67419620936874a641a539"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/2026-10-25_14-04-14_5696dc6b.json.tmp",
+      "size": 1626,
+      "sha256": "0b902bd16a333bf6e6f97238da3afa1fa864557de3bf42aab3c278e050135dc9"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/unsynced_106_9c7b69e7.json",
+      "size": 1387,
+      "sha256": "d118744d799e189bb89cb4f5aaedf44bbfabd76ed2721a1f9b465c924657134f"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/unsynced_22_7ef26f1a.json",
+      "size": 1390,
+      "sha256": "bdb5ae613c741d2348084e34826ff94be73102776c61797a2965cc2a41263d22"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/unsynced_27_3b38b5f5.json",
+      "size": 1387,
+      "sha256": "8443d278a0005552e3b8ba5770909feae2abec41b3e3587f836a10a9f98a832c"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/logbook/unsynced_2890_897c3e74.json",
+      "size": 1390,
+      "sha256": "260d67acdbb085e90519b16e6334c131a05c851e062cf7d25bb1fdff70f75599"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2025-08-28-XLF-000-01.igc",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2025-08-28-XLF-000-03.igc",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2025-08-28-XLF-000-04.igc",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2025-09-13-XLF-000-01.igc",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2025-09-13-XLF-000-02.igc",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2025-09-17-XLF-000-01.igc",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-08-08-XLF-000-01.igc",
+      "size": 212968,
+      "sha256": "d8cbdd6fa533b692d201eb7d3b0bd7b881baee34611445554673e3e5593ba93c"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-08-08-XLF-000-02.igc",
+      "size": 77888,
+      "sha256": "4f3abdd18cada0554326e2870340403079f68c39e0d0c1308ef71fa7a84ea4eb"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-08-12-XLF-000-01.igc",
+      "size": 17829,
+      "sha256": "eeed9a67a8a565e9e765174682d6eafae9aa9b9791fffab8d7bb4e9a6fbe75df"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-08-13-XLF-000-01.igc",
+      "size": 144879,
+      "sha256": "43eafb7662f797c8db62dd5947f5a9cff5b1f3833e1682ab6eeb734c4aa8eddb"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-08-16-XLF-000-01.igc",
+      "size": 63317,
+      "sha256": "fbe120473b2b89e9077c792e06a2821ac4bb5bc12e4744742e755453050fa081"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-08-18-XLF-000-01.igc",
+      "size": 13872,
+      "sha256": "8598110c56ab0cbe0fe1e76bc937c6b4343f97eea91d4886946f382db52d7e59"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-08-18-XLF-000-02.igc",
+      "size": 119142,
+      "sha256": "6e9763e8f496df9d4eaeed40bc2f7312a1e64e9a9c0157180c239007be863d1a"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-08-23-XLF-000-01.igc",
+      "size": 5840,
+      "sha256": "74c873214eecd31162d567850574ba99f1a2c84e09cf513981d3cdfdbfb26663"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-08-23-XLF-000-02.igc",
+      "size": 1605,
+      "sha256": "9df2ca3a37517a19d60a1153318f998b319e81a18f7e5b81817d38c4f53df492"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-08-23-XLF-000-03.igc",
+      "size": 5950,
+      "sha256": "9a69596a8cf1dd0944f49ba0d64f9bb1539a665cd7acdfbf1ff6712b8d02caae"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-09-01-XLF-000-01.igc",
+      "size": 82510,
+      "sha256": "ac34bb1e941d00202de8bd358d385e78fc49c4a5876701acd8c895b8291b8611"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-09-01-XLF-000-02.igc",
+      "size": 90320,
+      "sha256": "ebf295dd9a9520f68b738a7beca32de90251223d2e40cf9de699ea30f7365f2a"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-09-02-XLF-000-01.igc",
+      "size": 215554,
+      "sha256": "569bdddb3a2963bd9361c32a203399941837e5db1728c3526107d9cbce6cfba6"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-09-02-XLF-000-02.igc",
+      "size": 83939,
+      "sha256": "ab9e871d1602392846d60c575ad1960a18c4d81959a6f097646c0b671bb7130c"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-09-06-XLF-000-01.igc",
+      "size": 250859,
+      "sha256": "b57bc12a6672fafd1d7548b6f867ce31ca13469a408346d70630349a4bed2342"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-09-10-XLF-000-01.igc",
+      "size": 17609,
+      "sha256": "25bd6141f566257bff06f62e3f4d346787b94e1d6754c46b04a19913003c2b6c"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-09-10-XLF-000-02.igc",
+      "size": 77669,
+      "sha256": "68ed24c7195c66d86324feeb3b796866710fc542723a205eeb2295d7d12e7197"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-09-10-XLF-000-03.igc",
+      "size": 40159,
+      "sha256": "5674dc19a23f081e5a696b185a5affacb17013e209d688e506eeb8ed6eb3d1a5"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-09-17-XLF-000-01.igc",
+      "size": 14529,
+      "sha256": "f1a6f8dd2047f64411260d658f862bd8cac0a47cb4fbc85cb47ca593767bb9cf"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-09-17-XLF-000-02.igc",
+      "size": 396394,
+      "sha256": "1a08f6558c7d567fa2f6db11a89c888c106b73f0e0f42f7f3886ada36f7b1439"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-03-XLF-000-01.igc",
+      "size": 31468,
+      "sha256": "435443ceaf82634367026a35b4f7fdfd423bd1eb5555e048df6bd4663929c403"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-04-XLF-000-01.igc",
+      "size": 25363,
+      "sha256": "6f8db09dfad156aff100a20d86f203bbdae800aef23ac77af19824d76d7e1946"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-04-XLF-000-02.igc",
+      "size": 36363,
+      "sha256": "613adfebd1702cbf5040cb443d3d6ee0a369abbc62d79fe2e0f74e07aba2a86e"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-12-XLF-000-01.igc",
+      "size": 73330,
+      "sha256": "19365369da64e1632ba4e1f85c9d851c4b07f8aff69508d0b69aa98f8cf3dfa5"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-13-XLF-000-01.igc",
+      "size": 138552,
+      "sha256": "e91a74c56237dec9dfcf3713e4cc87bc5e284f2578fd7906ea282cc6f9da2942"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-16-XLF-000-01.igc",
+      "size": 262185,
+      "sha256": "5e00383fcdf435ea06a810c199d61e2a7bd044f6e9a76278abc2797f7972bf8a"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-17-XLF-000-01.igc",
+      "size": 616728,
+      "sha256": "1105c63c3afa8a02fcce73d5d4672714275f42f58628887b017f84b441c18b99"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-17-XLF-000-02.igc",
+      "size": 592364,
+      "sha256": "16977af94b9ea203458462dd246ddd50328035e69177f712b0edc59ad88cb9f4"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-18-XLF-000-01.igc",
+      "size": 1374242,
+      "sha256": "933af0da25d1c4668cb93a83ff57a1625e7580a274fb36ff9d8af2051d23bcfa"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-18-XLF-000-02.igc",
+      "size": 707798,
+      "sha256": "f1ebbe9fc8351f45e3259468c8ddcbcbd5fae67fac104baaa48bfcfd19379c64"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-19-XLF-000-01.igc",
+      "size": 1150930,
+      "sha256": "8e5f639d875436d519f49c7b15ce654daff11949a8c11de2ff061eec436650c3"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-01.igc",
+      "size": 41753,
+      "sha256": "377328ff0db75e667ed8c6b366fa9cb3d6e7bba512ac43dc4a4b32cda6d2a637"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-02.igc",
+      "size": 37610,
+      "sha256": "2a62d8b8718a2508156e117f91956314bb677fadc8b84aa15c427e733dbab293"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-03.igc",
+      "size": 38619,
+      "sha256": "c016f9ebb1191cbf03b56fe6bc484a43304498b321bb7535f5aadf8f538e2c4b"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-04.igc",
+      "size": 37034,
+      "sha256": "353d140605869f0dc5caea1c69b27fe271519494c277b6c23c87957b75c1e790"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-05.igc",
+      "size": 36222,
+      "sha256": "341323ae9f820a980ee4cab645a734371c4c89f94176613142e72351be3cc14d"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-06.igc",
+      "size": 50753,
+      "sha256": "f3ccce72353da154912afb90af03ce115a1c3f5b0c9981ba66b4c2af53688925"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-07.igc",
+      "size": 23314,
+      "sha256": "12464e6b2fa5595eec24842d0d6f9ca36546873c333dc2c013f091e2b6c4c3fd"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-08.igc",
+      "size": 52477,
+      "sha256": "002089480abff3f98ceb6fdb081c3d9b7077571ed3c7ee711c150d860eb84b46"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-09.igc",
+      "size": 21395,
+      "sha256": "361c834c33db1db85c45406c5c5252178e33e5c29152e60f2efcaef398d0c0a1"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-10.igc",
+      "size": 31037,
+      "sha256": "c99138b09041180a31c5996613cc3b1ee03545b3c45129d1acfbc8461fa320ec"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-11.igc",
+      "size": 25935,
+      "sha256": "8a17c4efc8b2fa46ee0b3d6c685d804de6833ab7cfd140cf44cef41c6beb638e"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-12.igc",
+      "size": 12975,
+      "sha256": "31a393274ca7bfeb2de2074b12b478dce4f658dd516100045fd5a8f50ab07cad"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-13.igc",
+      "size": 10022,
+      "sha256": "3d5e186ac1bd92004f7333c37f219ed4c9ba536ff4bf5a58a5cd8a82603d895b"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-14.igc",
+      "size": 20971,
+      "sha256": "d0b107cd75bd3993560ecc3ac15cb862cb7a6f836cbf17b587a9f6686431ef41"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-15.igc",
+      "size": 133584,
+      "sha256": "a1a0ee22fa5097b202c074c37e74d2b077006fd5b9ec20f7ba4ddaf2506e8076"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-16.igc",
+      "size": 8941,
+      "sha256": "504b8915d363eac16e3f07f14911b5525a1471a48e9d6b17fbb97122659dede3"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/2026-10-25-XLV-000-17.igc",
+      "size": 1384013,
+      "sha256": "974eab459c7f269caff506eaa8459ac83a2ba3f64ed02e5af0a5fdfc68ff7e8d"
+    },
+    {
+      "path": "hardware-3.2.6/BlueGreen326/tracks/FlightTrack_2026-06-10_1827-01.kml",
+      "size": 200860,
+      "sha256": "f0153b8bf10e4ab53b0d124296183fe8ee461882ab09fc38baec9ab628a210a6"
+    }
+  ]
+}

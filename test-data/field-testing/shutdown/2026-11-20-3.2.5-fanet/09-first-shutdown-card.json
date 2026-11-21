@@ -1,0 +1,331 @@
+{
+  "utc": "2026-11-20T16:50:54.347490+00:00",
+  "identity": {
+    "serial": "DC408B34",
+    "label": "LEAF VARIO",
+    "filesystem": "FAT32",
+    "capacity": 8047788032
+  },
+  "free_bytes": 7944765440,
+  "inventory": [
+    {
+      "path": "tracks/2025-07-06-XLF-000-01.igc",
+      "bytes": 1240943
+    },
+    {
+      "path": "tracks/2025-08-29-XLF-000-01.igc",
+      "bytes": 6469
+    },
+    {
+      "path": "tracks/2025-08-29-XLF-000-02.igc",
+      "bytes": 0
+    },
+    {
+      "path": "tracks/2025-08-29-XLF-000-03.igc",
+      "bytes": 4789
+    },
+    {
+      "path": "tracks/2025-09-02-XLF-000-01.igc",
+      "bytes": 0
+    },
+    {
+      "path": "tracks/2025-09-02-XLF-000-02.igc",
+      "bytes": 0
+    },
+    {
+      "path": "tracks/2025-10-01-XLF-000-01.igc",
+      "bytes": 34191
+    },
+    {
+      "path": "tracks/2025-10-01-XLF-000-02.igc",
+      "bytes": 166671
+    },
+    {
+      "path": "tracks/2025-10-01-XLF-000-03.igc",
+      "bytes": 4589
+    },
+    {
+      "path": "tracks/2025-10-01-XLF-000-04.igc",
+      "bytes": 52789
+    },
+    {
+      "path": "tracks/2026-06-19-XLF-000-01.igc",
+      "bytes": 23085
+    },
+    {
+      "path": "tracks/2026-06-19-XLF-000-02.igc",
+      "bytes": 338886
+    },
+    {
+      "path": "tracks/2026-06-20-XLF-000-01.igc",
+      "bytes": 103766
+    },
+    {
+      "path": "tracks/2026-06-21-XLF-000-01.igc",
+      "bytes": 101686
+    },
+    {
+      "path": "tracks/2026-07-04-XLF-000-01.igc",
+      "bytes": 56822
+    },
+    {
+      "path": "tracks/2026-07-04-XLF-000-02.igc",
+      "bytes": 32822
+    },
+    {
+      "path": "tracks/2026-08-04-XLF-000-01.igc",
+      "bytes": 2268
+    },
+    {
+      "path": "tracks/2026-08-04-XLF-000-02.igc",
+      "bytes": 0
+    },
+    {
+      "path": "tracks/2026-11-11-XLV-000-01.igc",
+      "bytes": 30911
+    },
+    {
+      "path": "tracks/2026-11-11-XLV-000-02.igc",
+      "bytes": 297382
+    },
+    {
+      "path": "tracks/2026-11-11-XLV-000-03.igc",
+      "bytes": 7951
+    },
+    {
+      "path": "tracks/2026-11-11-XLV-000-04.igc",
+      "bytes": 321856
+    },
+    {
+      "path": "tracks/2026-11-13-XLV-000-01.igc",
+      "bytes": 595226
+    },
+    {
+      "path": "tracks/2026-11-13-XLV-000-02.igc",
+      "bytes": 10635
+    },
+    {
+      "path": "tracks/2026-11-13-XLV-000-03.igc",
+      "bytes": 7135
+    },
+    {
+      "path": "tracks/2026-11-14-XLV-000-01.igc",
+      "bytes": 9852
+    },
+    {
+      "path": "tracks/2026-11-14-XLV-000-02.igc",
+      "bytes": 3162
+    },
+    {
+      "path": "tracks/2026-11-14-XLV-000-03.igc",
+      "bytes": 282043
+    },
+    {
+      "path": "tracks/2026-11-20-XLV-000-01.igc",
+      "bytes": 24682
+    },
+    {
+      "path": "logbook/2026-07-04_11-03-27_be34690e.json",
+      "bytes": 1627
+    },
+    {
+      "path": "logbook/2026-07-04_12-40-41_fda01a0a.json",
+      "bytes": 1626
+    },
+    {
+      "path": "logbook/2026-08-04_10-46-24_28381da2.json",
+      "bytes": 1592
+    },
+    {
+      "path": "logbook/2026-08-04_10-59-52_b7f1983b.json",
+      "bytes": 1711
+    },
+    {
+      "path": "logbook/2026-11-11_13-37-57_312d7c4e.json",
+      "bytes": 1664
+    },
+    {
+      "path": "logbook/2026-11-11_13-39-24_38021749.json",
+      "bytes": 1671
+    },
+    {
+      "path": "logbook/2026-11-11_13-47-51_8a92bc22.json",
+      "bytes": 1593
+    },
+    {
+      "path": "logbook/2026-11-11_16-08-23_baddc332.json",
+      "bytes": 1671
+    },
+    {
+      "path": "logbook/2026-11-13_12-04-31_0a60319b.json",
+      "bytes": 1664
+    },
+    {
+      "path": "logbook/2026-11-13_23-40-37_c1587b17.json",
+      "bytes": 1675
+    },
+    {
+      "path": "logbook/2026-11-13_23-53-52_3017756f.json",
+      "bytes": 1615
+    },
+    {
+      "path": "logbook/2026-11-14_00-02-10_d875b851.json",
+      "bytes": 1670
+    },
+    {
+      "path": "logbook/2026-11-14_00-04-02_d2008c99.json",
+      "bytes": 1609
+    },
+    {
+      "path": "logbook/2026-11-14_13-46-50_c9d23ce6.json",
+      "bytes": 1653
+    },
+    {
+      "path": "logbook/2026-11-20_09-44-36_84247609.json",
+      "bytes": 1630
+    },
+    {
+      "path": "logbook/date_not_available_143_cca7e794.json",
+      "bytes": 1395
+    },
+    {
+      "path": "diagnostics/heap_monitor.csv",
+      "bytes": 2487
+    },
+    {
+      "path": "diagnostics/runtime_1.json",
+      "bytes": 71665
+    },
+    {
+      "path": "diagnostics/runtime_2.json",
+      "bytes": 73289
+    },
+    {
+      "path": "diagnostics/runtime_3.json",
+      "bytes": 66810
+    },
+    {
+      "path": "diagnostics/runtime_4.json",
+      "bytes": 66238
+    },
+    {
+      "path": "diagnostics/runtime_5.json",
+      "bytes": 66305
+    },
+    {
+      "path": "diagnostics/runtime_6.json",
+      "bytes": 66343
+    },
+    {
+      "path": "diagnostics/runtime_7.json",
+      "bytes": 66513
+    },
+    {
+      "path": "diagnostics/runtime_8.json",
+      "bytes": 70850
+    },
+    {
+      "path": "diagnostics/stack_1.csv",
+      "bytes": 122
+    },
+    {
+      "path": "diagnostics/stack_2.csv",
+      "bytes": 110
+    },
+    {
+      "path": "diagnostics/stack_3.csv",
+      "bytes": 130
+    },
+    {
+      "path": "diagnostics/stack_4.csv",
+      "bytes": 126
+    },
+    {
+      "path": "diagnostics/system_events.csv",
+      "bytes": 100
+    },
+    {
+      "path": "diagnostics/vario.csv",
+      "bytes": 1098383
+    },
+    {
+      "path": "diagnostics/webapp_requests.csv",
+      "bytes": 907
+    },
+    {
+      "path": "diagnostics/wifi_setup.csv",
+      "bytes": 518
+    },
+    {
+      "path": "fanetlogs/FANET_2026-11-20_164747_1.csv",
+      "bytes": 1674
+    },
+    {
+      "path": "routes/active.json",
+      "bytes": 281
+    },
+    {
+      "path": "routes/airport_road.json",
+      "bytes": 1998
+    },
+    {
+      "path": "routes/apartment-compute-20.json",
+      "bytes": 3767
+    },
+    {
+      "path": "waypoints/Woodrat-wpt.wpt",
+      "bytes": 14797
+    },
+    {
+      "path": "profiles/profiles.json",
+      "bytes": 315
+    }
+  ],
+  "files": [
+    {
+      "path": "tracks/2026-11-20-XLV-000-01.igc",
+      "bytes": 24682,
+      "sha256": "e2fa38b6801010522d3bb7e82a0e86a22f8a355fdb451d5c67e23bd13c33e328"
+    },
+    {
+      "path": "logbook/2026-11-20_09-44-36_84247609.json",
+      "bytes": 1630,
+      "sha256": "5c9d159152746c147a5050795daa592bc62b5ee8f82ec95fb223be1f85ea53df"
+    },
+    {
+      "path": "diagnostics/stack_4.csv",
+      "bytes": 126,
+      "sha256": "cac76c9e2e883315011a37340aeac2cbf94896944410c4081f2e3696e6978698"
+    },
+    {
+      "path": "fanetlogs/FANET_2026-11-20_164747_1.csv",
+      "bytes": 1674,
+      "sha256": "375bd59f6f78edbaf3365c0439cf0733d89e75ba8abb285042471963e8106101"
+    },
+    {
+      "path": "routes/active.json",
+      "bytes": 281,
+      "sha256": "086bcf6312d4dc729980833e9bc2053acfaaf668e689d47153a4c116174b9498"
+    },
+    {
+      "path": "routes/airport_road.json",
+      "bytes": 1998,
+      "sha256": "d0098ac698c23dc9e55da1d3a805acbfb8bdd5f8ac3bb5ab6c9b23dcdcc40abf"
+    },
+    {
+      "path": "routes/apartment-compute-20.json",
+      "bytes": 3767,
+      "sha256": "5f1904e80e1de3ab92ef99f0512da5f8b133311dd3e8aea120cfa3fa171a5e29"
+    },
+    {
+      "path": "waypoints/Woodrat-wpt.wpt",
+      "bytes": 14797,
+      "sha256": "8805b891f4976845283e1ff484052d80559660a4959f7b3f04d3a84103157d4d"
+    },
+    {
+      "path": "profiles/profiles.json",
+      "bytes": 315,
+      "sha256": "98ec77e9198b7da2fb24b947d9c968fd324e488bfd68b68819f808af0939df9a"
+    }
+  ]
+}

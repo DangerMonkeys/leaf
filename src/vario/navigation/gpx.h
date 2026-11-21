@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <FS.h>
+#include <math.h>
 #include <string.h>
 
 #include "navigation/nav_ids.h"
@@ -10,7 +11,7 @@
 #define defaultWaypointRadius 400  // meters radius to count as "reaching/crossing" a waypoint
 #define maxRoutes 10
 #define maxNavPoints 120
-#define maxRoutePointRefs 40
+#define maxRoutePointRefs RouteIndex::Max
 #define maxGpxNameLength 15
 #define maxGpxFileNameLength 96
 
@@ -24,7 +25,8 @@ struct Waypoint {
   char name[maxGpxNameLength + 1] = "";
   int32_t latE7 = 0;
   int32_t lonE7 = 0;
-  float ele = 0;
+  // Missing elevation must remain distinct from a known sea-level waypoint.
+  float ele = NAN;
 
   void setName(const char* value) {
     strncpy(name, value ? value : "", maxGpxNameLength);
@@ -113,6 +115,10 @@ class Navigator {
  public:
   void init(void);
   void update(void);
+  void refreshRouteGuidance();
+  bool followingTurn(double& turnDeg) const;
+  double cylinderInitialLegDistance() const;
+  bool routeCompleted() const { return reachedGoal_; }
 
   bool activatePoint(WaypointID pointIndex);
   bool activatePoint(WaypointID pointIndex, bool playSound);
@@ -131,9 +137,31 @@ class Navigator {
   // True if a specific waypoint is active, or if a route is active with a next route point.
   bool hasActivePoint() const;
   bool hasNavSolution() const;
-  double goalDistanceRemaining() const { return hasNavSolution() ? totalDistanceRemaining_ : 0; }
+  // Navigation field distance conventions:
+  // - Waypoint (*) fields target the actual coordinates (the center), with no radius allowance.
+  // - With developer route optimization, cylinder fields stop at first actual-cylinder
+  //   entry along the guidance line, and goal fields use the buffered optimized path.
+  // - Otherwise cylinder (%) fields target max(0, distance to center - active radius). The progress
+  // bar
+  //   uses this same arrival boundary. Route points supply their own radius; standalone
+  //   waypoints use defaultWaypointRadius. A zero radius makes cylinder and waypoint equal.
+  // - Goal fields follow the remaining route through waypoint centers, then subtract only the
+  //   final goal radius once, clamping at zero. They do not shortcut the route or subtract
+  //   intermediate cylinders. Without a route, the active waypoint is also the goal.
+  // Each field's time, required glide and predicted arrival altitude use its corresponding
+  // horizontal distance. Cylinder elevation is the waypoint's elevation; "altitude above" is
+  // predicted arrival surplus using the pilot's current glide, not current vertical clearance.
+  uint16_t activeCylinderRadiusM() const;
+  double cylinderDistanceRemaining() const;
+  uint32_t cylinderTimeRemaining() const;
+  float glideToCylinder() const;
+  double goalDistanceRemaining() const;
   uint32_t goalTimeRemaining() const;
   float glideToGoal() const { return hasNavSolution() ? glideToGoal_ : 0; }
+  // Predicted arrival height above the destination, in metres; NAN if unavailable/negative.
+  float arrivalAltitudeAboveWaypoint() const;
+  float arrivalAltitudeAboveCylinder() const;
+  float arrivalAltitudeAboveGoal() const;
   bool hasLastNav() const { return lastNavType_ != LastNavType::None; }
   bool lastNavIsRoute() const { return lastNavType_ == LastNavType::Route; }
   bool lastNavIsPoint() const { return lastNavType_ == LastNavType::Point; }
@@ -194,7 +222,7 @@ class Navigator {
   double segmentDistance;
   // distance remaining to next waypoint
   double pointDistanceRemaining;
-  // time (seconds) remaning to next waypoint
+  // time (seconds) remaining to the next waypoint center
   uint32_t pointTimeRemaining;
   // change-in-current-heading to point toward active point
   double turnToActive;
@@ -204,6 +232,7 @@ class Navigator {
 
  private:
   bool gpsPositionUsable() const;
+  float arrivalAltitudeSurplus(double distanceM, float elevationM) const;
   void clearNavSolution();
   bool sequenceWaypoint(bool playSound = true);
   void loadRoutes(void);
@@ -253,5 +282,6 @@ class Navigator {
 };
 extern Navigator navigator;
 
-bool gpx_readFile(fs::FS& fs, String fileName);
-bool nav_readFile(fs::FS& fs, String fileName);
+enum class NavLoadError : uint8_t { None, InvalidFile, RoutePointLimit };
+bool gpx_readFile(fs::FS& fs, String fileName, NavLoadError* error = nullptr, bool persist = true);
+bool nav_readFile(fs::FS& fs, String fileName, NavLoadError* error = nullptr, bool persist = true);

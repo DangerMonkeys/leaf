@@ -1,0 +1,84 @@
+{
+  "schema": "leaf.logbook.flight",
+  "schema_version": "v0.1.0",
+  "flight_id": "d1bffdfb",
+  "clock": {
+    "system_time_synced_this_boot": true,
+    "time_source": "gps",
+    "timezone_offset_minutes": -420
+  },
+  "start": {
+    "time_valid": true,
+    "time_utc": "2026-09-04T20:29:29Z",
+    "time_local": "2026-09-04T13:29:29",
+    "temperature_c": 27.81799
+  },
+  "first_fix": {
+    "time_valid": true,
+    "time_utc": "2026-09-04T20:29:29Z",
+    "time_local": "2026-09-04T13:29:29",
+    "location": {
+      "lat_deg": 37.36754,
+      "lon_deg": -122.0322,
+      "altitude_m": 36.33
+    },
+    "temperature_c": 27.81799
+  },
+  "end": {
+    "time_valid": true,
+    "time_utc": "2026-09-04T20:30:07Z",
+    "time_local": "2026-09-04T13:30:07",
+    "location": {
+      "lat_deg": 37.36433,
+      "lon_deg": -122.0283,
+      "altitude_m": 22.43
+    },
+    "temperature_c": 28.81686
+  },
+  "metrics": {
+    "duration_seconds": 38,
+    "max_altitude_m": 36.33,
+    "min_altitude_m": 22.43,
+    "max_altitude_above_launch_m": 0,
+    "max_climb_rate_mps": 0.98,
+    "max_sink_rate_mps": -0.65,
+    "max_ground_speed_mps": 15.40761,
+    "average_ground_speed_mps": 13.484,
+    "straight_line_distance_m": 492.3557,
+    "path_distance_m": 512.3918,
+    "max_accel_g": 1.874922,
+    "min_accel_g": 0.770614,
+    "max_temperature_c": 28.81686,
+    "min_temperature_c": 27.81799
+  },
+  "track": {
+    "saved": true,
+    "format": "igc",
+    "path": "tracks/2026-09-04-XLF-000-01.igc"
+  },
+  "device": {
+    "firmware_version": "0.2.2+h3.2.3",
+    "hardware_version": "leaf_3_2_3",
+    "mac_address": "24:EC:4A:1F:38:B0"
+  },
+  "pilot": {
+    "id": "609a7497",
+    "name": "Jack Resmini"
+  },
+  "glider": {
+    "id": "f2ccfe74",
+    "brand": "Ozone",
+    "model": "Buzz Z2",
+    "size": "MS",
+    "display_name": "Buzz Z2 MS"
+  },
+  "site": {
+    "launch_name": null,
+    "landing_name": null
+  },
+  "weather": {},
+  "notes": {
+    "pilot_notes": "",
+    "tags": []
+  }
+}

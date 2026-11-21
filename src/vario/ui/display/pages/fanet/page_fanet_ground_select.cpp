@@ -1,10 +1,14 @@
 #include "ui/display/pages/fanet/page_fanet_ground_select.h"
 
+#include "comms/fanet_radio.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/pages/fanet/page_fanet_ground.h"
 
-void PageFanetGroundSelect::show() { push_page(&getInstance()); }
+void PageFanetGroundSelect::show() {
+  if (!fanetRadio.isDetected()) return;
+  push_page(&getInstance());
+}
 
 void PageFanetGroundSelect::setting_change(Button dir, ButtonEvent state, uint8_t count) {
   if (state != ButtonEvent::CLICKED) return;
@@ -16,6 +20,7 @@ void PageFanetGroundSelect::setting_change(Button dir, ButtonEvent state, uint8_
   }
 
   FanetGroundTrackingMode mode = (FanetGroundTrackingMode)cursor_position;
+  if (!fanetRadio.isDetected()) return;
   PageFanetGround::show(mode);
 }
 

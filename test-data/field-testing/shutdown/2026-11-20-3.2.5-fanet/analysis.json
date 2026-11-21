@@ -1,0 +1,166 @@
+{
+  "source_commit": "8a435a426f5383b0097ee96df40cad47ed4ea873",
+  "phone_connection_evidence": "User confirmed before first shutdown and after wake and Web App close",
+  "flights": [
+    {
+      "path": "card-captures/22-final-results/tracks/2026-11-20-XLV-000-01.igc",
+      "bytes": 24682,
+      "sha256": "e2fa38b6801010522d3bb7e82a0e86a22f8a355fdb451d5c67e23bd13c33e328",
+      "strict_validator_returncode": 1,
+      "strict_validator_output": "STATUS_IGC_FAILED",
+      "strict_validator_error": "non-printable record",
+      "non_ascii_records": [
+        {
+          "line": 4,
+          "record": "HFPLTPILOTINCHARGE:Scott O\u2019Brien"
+        }
+      ],
+      "raw_g_expected": "7434E15440EABE029D1437D62C39D818",
+      "raw_g_calculated": "7434E15440EABE029D1437D62C39D818",
+      "raw_g_matches": true,
+      "b_records": 283,
+      "largest_b_time_gap_seconds": 2,
+      "end_markers": [
+        "LXLVEND V=1 CAUSE=POWER_OFF T_MS=1061595"
+      ],
+      "timing_diagnostics": [
+        "LXLVFDTIME T=1061595 UTC=164921",
+        "LXLVFD K=FIFO N=1 T=1056354 DT=0 R=2",
+        "LXLVFD K=WRITE N=1 T=1050723 DT=136 R=0"
+      ]
+    },
+    {
+      "path": "card-captures/22-final-results/tracks/2026-11-20-XLV-000-02.igc",
+      "bytes": 14715,
+      "sha256": "df7af85ae0065bf04b023c14978dae659d3b36ac49426caf9cb2762fc4605f08",
+      "strict_validator_returncode": 1,
+      "strict_validator_output": "STATUS_IGC_FAILED",
+      "strict_validator_error": "non-printable record",
+      "non_ascii_records": [
+        {
+          "line": 4,
+          "record": "HFPLTPILOTINCHARGE:Scott O\u2019Brien"
+        }
+      ],
+      "raw_g_expected": "D1FB7727B490F64FFCC8BB0A617DE96B",
+      "raw_g_calculated": "D1FB7727B490F64FFCC8BB0A617DE96B",
+      "raw_g_matches": true,
+      "b_records": 155,
+      "largest_b_time_gap_seconds": 50,
+      "end_markers": [
+        "LXLVEND V=1 CAUSE=POWER_OFF T_MS=1782995"
+      ],
+      "timing_diagnostics": []
+    }
+  ],
+  "fanet_logs": [
+    {
+      "path": "card-captures/22-final-results/fanetlogs/FANET_2026-11-20_164747_1.csv",
+      "observations": 17,
+      "neighbors": [
+        "FB5F38",
+        "FBD364"
+      ],
+      "max_queue_drops": 0
+    },
+    {
+      "path": "card-captures/22-final-results/fanetlogs/FANET_2026-11-20_165313_2.csv",
+      "observations": 108,
+      "neighbors": [
+        "FB5F38",
+        "FBD364"
+      ],
+      "max_queue_drops": 0
+    }
+  ],
+  "stacks": [
+    {
+      "path": "card-captures/22-final-results/diagnostics/stack_4.csv",
+      "rows": [
+        {
+          "task": "loop",
+          "elapsed_ms": "989592",
+          "instances": "1",
+          "min_unused_bytes": "7836"
+        },
+        {
+          "task": "ble",
+          "elapsed_ms": "989592",
+          "instances": "1",
+          "min_unused_bytes": "3000"
+        },
+        {
+          "task": "fanet_tx",
+          "elapsed_ms": "989592",
+          "instances": "1",
+          "min_unused_bytes": "2076"
+        },
+        {
+          "task": "fanet_rx",
+          "elapsed_ms": "989592",
+          "instances": "1",
+          "min_unused_bytes": "1212"
+        }
+      ]
+    },
+    {
+      "path": "card-captures/22-final-results/diagnostics/stack_5.csv",
+      "rows": [
+        {
+          "task": "loop",
+          "elapsed_ms": "495802",
+          "instances": "1",
+          "min_unused_bytes": "7836"
+        },
+        {
+          "task": "ble",
+          "elapsed_ms": "495802",
+          "instances": "2",
+          "min_unused_bytes": "2996"
+        },
+        {
+          "task": "fanet_tx",
+          "elapsed_ms": "495802",
+          "instances": "2",
+          "min_unused_bytes": "2164"
+        },
+        {
+          "task": "fanet_rx",
+          "elapsed_ms": "495802",
+          "instances": "2",
+          "min_unused_bytes": "1244"
+        }
+      ]
+    }
+  ],
+  "logbook": [
+    {
+      "path": "card-captures/22-final-results/logbook/2026-11-20_09-44-36_84247609.json",
+      "complete": true,
+      "duration_seconds": 285,
+      "track": {
+        "saved": true,
+        "format": "igc",
+        "path": "tracks/2026-11-20-XLV-000-01.igc"
+      }
+    },
+    {
+      "path": "card-captures/22-final-results/logbook/2026-11-20_09-53-13_2559e42c.json",
+      "complete": true,
+      "duration_seconds": 489,
+      "track": {
+        "saved": true,
+        "format": "igc",
+        "path": "tracks/2026-11-20-XLV-000-02.igc"
+      }
+    }
+  ],
+  "second_shutdown_seconds_from_hold": 5.125,
+  "final_heap": {
+    "internal_free": 180448,
+    "internal_min_since_boot": 20208,
+    "internal_largest": 31732,
+    "loop_stack_unused": 7836
+  },
+  "raw_checksums_match_but_strict_igc_validation_fails_known_header_issue": true
+}

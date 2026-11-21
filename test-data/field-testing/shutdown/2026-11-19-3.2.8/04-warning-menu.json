@@ -1,0 +1,159 @@
+{
+  "utc": "2026-11-20T03:01:23.986802+00:00",
+  "steps": [
+    {
+      "command": "press DOWN",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press CENTER",
+      "reply": "ok",
+      "seconds": 0.312
+    },
+    {
+      "command": "press CENTER",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press RIGHT",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "wait 8",
+      "reply": "waited",
+      "seconds": 8.188
+    },
+    {
+      "command": "status",
+      "reply": "status On Menu 0 0 0 1 0 0 1",
+      "seconds": 0.0
+    },
+    {
+      "command": "press DOWN",
+      "reply": "ok",
+      "seconds": 0.296
+    },
+    {
+      "command": "press DOWN",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press CENTER",
+      "reply": "ok",
+      "seconds": 0.313
+    },
+    {
+      "command": "press UP",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press CENTER",
+      "reply": "ok",
+      "seconds": 0.312
+    },
+    {
+      "command": "press UP",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press UP",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press UP",
+      "reply": "ok",
+      "seconds": 0.312
+    },
+    {
+      "command": "hold CENTER 3000",
+      "reply": "ok",
+      "seconds": 3.297
+    },
+    {
+      "command": "config",
+      "reply": "config 1 0 1 0 0 0 0 0",
+      "seconds": 0.016
+    },
+    {
+      "command": "press LEFT",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press LEFT",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press DOWN",
+      "reply": "ok",
+      "seconds": 0.312
+    },
+    {
+      "command": "press DOWN",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press DOWN",
+      "reply": "ok",
+      "seconds": 0.313
+    },
+    {
+      "command": "press CENTER",
+      "reply": "ok",
+      "seconds": 0.296
+    },
+    {
+      "command": "wait 2",
+      "reply": "waited",
+      "seconds": 2.11
+    },
+    {
+      "command": "web",
+      "reply": "web http://10.0.0.183/app",
+      "seconds": 0.0
+    },
+    {
+      "command": "status",
+      "reply": "status On Menu -1 1 0 1 0 0 1",
+      "seconds": 0.015
+    }
+  ],
+  "initial": {
+    "power": "On",
+    "page": "User",
+    "cursor": -1,
+    "modal_depth": 1,
+    "warning": true,
+    "climb_ready": true,
+    "gps_fix": false,
+    "flight_running": false,
+    "firmware_sd_access": true
+  },
+  "final": {
+    "power": "On",
+    "page": "Menu",
+    "cursor": -1,
+    "modal_depth": 1,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": false,
+    "flight_running": false,
+    "firmware_sd_access": true
+  },
+  "heap": {
+    "internal_free": 144796,
+    "internal_min_since_boot": 85968,
+    "internal_largest": 34804,
+    "loop_stack_unused": 8300
+  },
+  "screen": "04-warning-menu.png"
+}

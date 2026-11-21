@@ -1,0 +1,20 @@
+LSM6DSV: a=-0.0049,-0.0044,0.9936 g=-0.0048,-0.0045,0.9994 pairsBENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH status On Menu 2 1 0 1 1 1 1
+
+HOST ip
+BENCH ip 10.0.0.183 0.0.0.0
+
+HOST wifi
+BENCH wifi 1
+
+HOST web
+BENCH web http://10.0.0.183/app
+
+HOST status
+BENCH status On Menu 2 1 0 1 1 1 1
+
+HOST wait 2
+BENCH status On Menu 2 1 0 1 1 1 1
+BENCH heap 51724 21800 31732 7532
+BENCH web http://10.0.0.183/app

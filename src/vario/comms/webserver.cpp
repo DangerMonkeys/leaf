@@ -1,4 +1,5 @@
 #include "comms/webserver.h"
+
 #include <ArduinoJson.h>
 #include <DNSServer.h>
 #include <FS.h>
@@ -19,32 +20,88 @@
 #include "comms/ota.h"
 #include "comms/udp_message_server.h"
 #include "comms/wifi_coordinator.h"
+#include "detail/RequestHandler.h"
 #include "diagnostics/cpu_utilization.h"
 #include "diagnostics/diagnostic_logs.h"
 #include "diagnostics/diagnostic_network/diagnostic_network.h"
 #include "diagnostics/heap_monitor.h"
 #include "diagnostics/memory_report.h"
 #include "diagnostics/self_test/selfTest.h"
-#include "etl/string_stream.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
+#include "logbook/logbook_io.h"
 #include "logbook/logbook_store.h"
+#include "logging/log.h"
 #include "navigation/gpx.h"
+#include "navigation/optimized_route_guidance.h"
 #include "navigation/route_store.h"
 #include "navigation/user_waypoints.h"
 #include "power.h"
 #include "profiles/profile_store.h"
+#include "storage/checked_file.h"
 #include "storage/sd_card.h"
 #include "system/version_info.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
 #include "ui/settings/settings.h"
-#include "utils/lock_guard.h"
 
 namespace {
-  ::WebServer user_server(80);
+  // Arduino ESP32 3.1.0 retains these arrays after processing the request and
+  // does not delete them in the base destructor.
+  class LeafWebServer : public WebServer {
+   public:
+    using WebServer::WebServer;
+
+    ~LeafWebServer() { releaseRequestArguments(); }
+
+    const String& body() const {
+      for (int i = 0; i < _postArgsLen; ++i)
+        if (_postArgs[i].key == "plain") return _postArgs[i].value;
+      for (int i = 0; i < _currentArgCount; ++i)
+        if (_currentArgs[i].key == "plain") return _currentArgs[i].value;
+      static const String empty;
+      return empty;
+    }
+
+    void skipRequestBody() { _clientContentLength = 0; }
+
+    void handleClient() {
+      WebServer::handleClient();
+      // Request parsing, upload callbacks and response handlers run synchronously.
+      releaseRequestArguments();
+    }
+
+    void stopHosting() {
+      stop();
+      _currentClient.stop();
+      _currentClient = NetworkClient();
+      _currentUpload.reset();
+      _currentRaw.reset();
+      _currentHandler = nullptr;
+      releaseRequestArguments();
+      while (_firstHandler) {
+        auto* handler = _firstHandler;
+        _firstHandler = handler->next();
+        delete handler;
+      }
+      _lastHandler = nullptr;
+      onNotFound(nullptr);
+    }
+
+   private:
+    void releaseRequestArguments() {
+      delete[] _currentArgs;
+      _currentArgs = nullptr;
+      _currentArgCount = 0;
+      delete[] _postArgs;
+      _postArgs = nullptr;
+      _postArgsLen = 0;
+    }
+  };
+
+  LeafWebServer user_server(80);
   DNSServer dns_server;
-  String send_buffer = "";
+  String* screenshot_output = nullptr;
   bool user_server_started = false;
   bool user_server_routes_configured = false;
   bool commissioning_routes_configured = false;
@@ -92,14 +149,12 @@ namespace {
   static constexpr size_t PROFILE_FILE_MAX_BYTES = 6144;
   static constexpr size_t ROUTE_IMPORT_REQUEST_MAX_BYTES = 10000;
   static constexpr size_t ROUTE_EDITOR_REQUEST_MAX_BYTES = 18000;
-  static constexpr size_t USER_WAYPOINTS_MAX_BYTES = 24576;
   static constexpr size_t NAV_UPLOAD_MAX_BYTES = 262144UL;
   static constexpr uint32_t NAV_POINTS_MIN_FREE_HEAP = 18000;
   static constexpr uint32_t NAV_POINTS_MIN_MAX_ALLOC = 6000;
-  static constexpr const char* PROFILE_TEMP_FILE = "/profiles/profiles.tmp";
-  static constexpr const char* PROFILE_BACKUP_FILE = "/profiles/profiles.bak";
   static constexpr const char* WAYPOINTS_DIR = "/waypoints";
   static constexpr const char* NAV_UPLOAD_TEMP_FILE = "/waypoints/upload.tmp";
+  static constexpr const char* ROUTE_REQUEST_TEMP_FILE = "/routes/request.tmp";
   static constexpr size_t WIFI_SETUP_NETWORKS_JSON_RESERVE = 896;
   static constexpr uint32_t WEB_REQUEST_SLOW_MS = 1000;
   static constexpr const char* LEAF_LOG_BASE_URL = "https://log.leafvario.com";
@@ -166,6 +221,14 @@ namespace {
 
   bool commissioningHttpAllowed() {
     return diagnostic_network.connected() && !settings.commissioningComplete;
+  }
+
+  void stopWebHosting() {
+    user_server.stopHosting();
+    user_server_started = false;
+    user_server_routes_configured = false;
+    commissioning_routes_configured = false;
+    debug_routes_configured = false;
   }
 
   void logWifiSetupTiming(const char* event) {
@@ -867,14 +930,8 @@ namespace {
     return "";
   }
 
-  bool validUserWaypointJson(JsonObjectConst point) {
-    const double lat = point["lat"] | NAN;
-    const double lon = point["lon"] | NAN;
-    return !isnan(lat) && !isnan(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
-  }
-
   uint8_t mergeUserWaypointIntoNavigator(JsonObjectConst point) {
-    if (!validUserWaypointJson(point)) return 0;
+    if (!user_waypoints::validPoint(point)) return 0;
 
     Waypoint waypoint;
     const char* sourceName = point["name"] | "";
@@ -891,7 +948,7 @@ namespace {
     waypoint.setName(name);
     waypoint.setLatitude(point["lat"] | 0.0);
     waypoint.setLongitude(point["lon"] | 0.0);
-    waypoint.ele = point["alt_m"] | 0.0;
+    waypoint.ele = point["alt_m"] | NAN;
 
     for (uint8_t i = 1; i <= navigator.totalWaypoints; i++) {
       if (navigator.waypoints[i].latE7 == waypoint.latE7 &&
@@ -1025,7 +1082,8 @@ namespace {
 
     const String savedPath = nav_upload_final_path;
     const String savedName = nav_upload_saved_name;
-    const bool loaded = nav_readFile(SD_MMC, savedPath);
+    NavLoadError loadError;
+    const bool loaded = nav_readFile(SD_MMC, savedPath, &loadError);
     if (loaded) user_waypoints::loadIntoNavigator();
 
     String json = "{\"saved\":true,\"loaded\":";
@@ -1039,7 +1097,9 @@ namespace {
     json += ",\"routes\":";
     json += loaded ? navigator.totalRoutes : 0;
     if (!loaded) {
-      json += ",\"detail\":\"File was saved, but Leaf could not load it.\"";
+      json += loadError == NavLoadError::RoutePointLimit
+                  ? ",\"detail\":\"File was saved but exceeds the 20-point route limit.\""
+                  : ",\"detail\":\"File was saved, but Leaf could not load it.\"";
     }
     json += "}";
 
@@ -1150,11 +1210,10 @@ namespace {
       BLE::get().end();
     }
 
-    user_app_restart_fanet = fanetRadio.getState() == FanetRadioState::RUNNING;
+    user_app_restart_fanet =
+        !flightTimer_isRunning() && fanetRadio.getState() == FanetRadioState::RUNNING;
     user_app_fanet_region = settings.fanet_region;
-    if (user_app_restart_fanet) {
-      fanetRadio.end();
-    }
+    fanetRadio.end();
 
     user_app_services_paused = true;
   }
@@ -1162,7 +1221,8 @@ namespace {
   void resumeServicesAfterUserApp() {
     if (!user_app_services_paused) return;
 
-    if (user_app_restart_fanet && settings.fanet_region != FanetRadioRegion::OFF) {
+    if (flightTimer_isRunning() ||
+        (user_app_restart_fanet && settings.fanet_region != FanetRadioRegion::OFF)) {
       fanetRadio.begin(settings.fanet_region);
     } else if (user_app_restart_fanet && user_app_fanet_region != FanetRadioRegion::OFF) {
       fanetRadio.begin(user_app_fanet_region);
@@ -1282,6 +1342,10 @@ namespace {
       return;
     }
 
+    if (!checked_file::recover(ProfileStore::filePath())) {
+      target.send(500, "application/json", "{\"detail\":\"Profiles could not be recovered.\"}");
+      return;
+    }
     if (!SD_MMC.exists(ProfileStore::filePath())) {
       sendNoStoreHeaders(target);
       target.send(200, "application/json", emptyProfilesJson());
@@ -1354,40 +1418,12 @@ namespace {
 
   bool writeProfilesBody(const String& body) {
     if (!SD_MMC.exists(ProfileStore::directoryPath()) &&
-        !SD_MMC.mkdir(ProfileStore::directoryPath())) {
+        !SD_MMC.mkdir(ProfileStore::directoryPath()))
       return false;
-    }
-
-    if (SD_MMC.exists(PROFILE_TEMP_FILE)) SD_MMC.remove(PROFILE_TEMP_FILE);
-    if (SD_MMC.exists(PROFILE_BACKUP_FILE)) SD_MMC.remove(PROFILE_BACKUP_FILE);
-
-    File file = SD_MMC.open(PROFILE_TEMP_FILE, "w", true);
-    if (!file) return false;
-
-    const size_t written = file.print(body);
-    file.close();
-    if (written != body.length()) {
-      SD_MMC.remove(PROFILE_TEMP_FILE);
-      return false;
-    }
-
-    const bool hadExisting = SD_MMC.exists(ProfileStore::filePath());
-    if (hadExisting && !SD_MMC.rename(ProfileStore::filePath(), PROFILE_BACKUP_FILE)) {
-      SD_MMC.remove(PROFILE_TEMP_FILE);
-      return false;
-    }
-
-    if (!SD_MMC.rename(PROFILE_TEMP_FILE, ProfileStore::filePath())) {
-      if (hadExisting) SD_MMC.rename(PROFILE_BACKUP_FILE, ProfileStore::filePath());
-      SD_MMC.remove(PROFILE_TEMP_FILE);
-      return false;
-    }
-
-    if (hadExisting) SD_MMC.remove(PROFILE_BACKUP_FILE);
-    return true;
+    return checked_file::replaceBytes(ProfileStore::filePath(), body);
   }
 
-  void saveProfiles(WebServer& target) {
+  void saveProfiles(LeafWebServer& target) {
     heap_monitor::checkpoint("profiles-put-start");
     if (!user_app_enabled) {
       target.send(404, "application/json", "{\"detail\":\"Leaf Web App is not active.\"}");
@@ -1399,7 +1435,7 @@ namespace {
       return;
     }
 
-    const String body = target.arg("plain");
+    const String& body = target.body();
     if (!profilesRequestLooksValid(body)) {
       heap_monitor::checkpoint("profiles-put-invalid");
       target.send(
@@ -1454,6 +1490,7 @@ namespace {
   }
 
   bool loadProfilesForUpdate(JsonDocument& doc) {
+    if (!checked_file::recover(ProfileStore::filePath())) return false;
     if (SD_MMC.exists(ProfileStore::filePath())) {
       File file = SD_MMC.open(ProfileStore::filePath(), "r");
       if (!file) return false;
@@ -1666,30 +1703,190 @@ namespace {
     target.send(200, "application/json", json);
   }
 
-  void importRoute(WebServer& target) {
+  enum class RouteRequestStatus : uint8_t {
+    Empty,
+    Receiving,
+    Ready,
+    Unavailable,
+    Invalid,
+    SdError
+  };
+  File route_request_file;
+  RouteRequestStatus route_request_status = RouteRequestStatus::Empty;
+  size_t route_request_size = 0;
+  bool route_request_owns_file = false;
+
+#ifdef LEAF_USB_BENCH_CONSOLE
+  struct RouteHeapMeasurement {
+    uint32_t before = 0;
+    uint32_t minimum = 0;
+    bool active = false;
+
+    void start() {
+      before = heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+      minimum = 0;
+      active = heap_caps_monitor_local_minimum_free_size_start() == ESP_OK;
+    }
+
+    struct Scope;
+    void finish() {
+      if (!active) return;
+      minimum = heap_caps_get_minimum_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+      heap_caps_monitor_local_minimum_free_size_stop();
+      active = false;
+    }
+  };
+  struct RouteHeapMeasurement::Scope {
+    explicit Scope(RouteHeapMeasurement& measurement) : measurement(measurement) {
+      measurement.start();
+    }
+    ~Scope() { measurement.finish(); }
+    RouteHeapMeasurement& measurement;
+  };
+  RouteHeapMeasurement route_import_heap;
+  RouteHeapMeasurement waypoint_list_heap;
+  RouteHeapMeasurement route_receipt_heap;
+  RouteHeapMeasurement route_normalization_heap;
+#endif
+
+  void clearRouteRequest() {
+#ifdef LEAF_USB_BENCH_CONSOLE
+    route_receipt_heap.finish();
+#endif
+    route_request_file.close();
+    if (route_request_owns_file && !SD_MMC.remove(ROUTE_REQUEST_TEMP_FILE)) {
+      Serial.println("Could not remove the temporary route request");
+    }
+    route_request_owns_file = false;
+    route_request_status = RouteRequestStatus::Empty;
+    route_request_size = 0;
+  }
+
+  void receiveRouteRequest(size_t limit) {
+    HTTPRaw& raw = user_server.raw();
+    switch (raw.status) {
+      case RAW_START: {
+        clearRouteRequest();
+#ifdef LEAF_USB_BENCH_CONSOLE
+        route_receipt_heap.start();
+        route_normalization_heap = {};
+#endif
+        const int length = user_server.clientContentLength();
+        if (!user_app_enabled || !sdcard.isMounted()) {
+          route_request_status = RouteRequestStatus::Unavailable;
+        } else if (length <= 0 || static_cast<size_t>(length) > limit) {
+          route_request_status = RouteRequestStatus::Invalid;
+        } else {
+          route_request_size = length;
+          route_request_file = SD_MMC.open(ROUTE_REQUEST_TEMP_FILE, "w", true);
+          route_request_owns_file = bool(route_request_file);
+          route_request_status =
+              route_request_owns_file ? RouteRequestStatus::Receiving : RouteRequestStatus::SdError;
+        }
+        // Drain a small overflow without writing it, so the client can finish
+        // sending and reliably read the validation response. Cap even this work.
+        if (route_request_status != RouteRequestStatus::Receiving &&
+            (length <= 0 || static_cast<size_t>(length) > limit + sizeof(raw.buf)))
+          user_server.skipRequestBody();
+        break;
+      }
+      case RAW_WRITE:
+        if (route_request_status != RouteRequestStatus::Receiving) break;
+        // The core can issue a short callback after its read timeout, then
+        // wait for the next chunk again. End this incomplete request now.
+        if (raw.totalSize < route_request_size && raw.currentSize < sizeof(raw.buf)) {
+          route_request_status = RouteRequestStatus::Invalid;
+          user_server.skipRequestBody();
+        } else if (raw.totalSize > route_request_size ||
+                   route_request_file.write(raw.buf, raw.currentSize) != raw.currentSize) {
+          route_request_status = RouteRequestStatus::SdError;
+          user_server.skipRequestBody();
+        }
+        break;
+      case RAW_END:
+        route_request_file.close();
+#ifdef LEAF_USB_BENCH_CONSOLE
+        route_receipt_heap.finish();
+#endif
+        if (route_request_status == RouteRequestStatus::Receiving)
+          route_request_status = RouteRequestStatus::Ready;
+        break;
+      case RAW_ABORTED:
+        clearRouteRequest();
+        break;
+    }
+  }
+
+  // The raw callback is only called for non-multipart bodies. Keep this route out
+  // of the framework's file-upload callback, which shares the same on() overload.
+  class RouteRequestHandler : public RequestHandler {
+   public:
+    RouteRequestHandler(const char* path, void (*handler)(), void (*receiver)())
+        : path_(path), handler_(handler), receiver_(receiver) {}
+
+    bool canHandle(WebServer&, HTTPMethod method, const String& uri) override {
+      return method == HTTP_POST && uri == path_;
+    }
+    bool canRaw(WebServer& server, const String&) override {
+      // Let the core decode legacy form fields before we read its "plain" argument.
+      return !server.header("Content-Type").startsWith("application/x-www-form-urlencoded");
+    }
+    void raw(WebServer&, const String&, HTTPRaw&) override { receiver_(); }
+    bool handle(WebServer&, HTTPMethod, const String&) override {
+      handler_();
+      return true;
+    }
+
+   private:
+    const char* path_;
+    void (*handler_)();
+    void (*receiver_)();
+  };
+
+  bool decodeRouteRequest(LeafWebServer& target, JsonDocument& doc, size_t limit, bool importing) {
+    const char* invalid = importing ? "{\"detail\":\"Route import request is invalid.\"}"
+                                    : "{\"detail\":\"Route save request is invalid.\"}";
+    const char* invalidJson = importing ? "{\"detail\":\"Route import request is not JSON.\"}"
+                                        : "{\"detail\":\"Route save request is not JSON.\"}";
+    bool isValid = false;
+    if (!user_app_enabled || !sdcard.isMounted()) {
+      target.send(404, "application/json",
+                  !user_app_enabled ? "{\"detail\":\"Leaf Web App is not active.\"}"
+                                    : "{\"detail\":\"SD card is not mounted.\"}");
+    } else if (route_request_status == RouteRequestStatus::Empty) {
+      // Retain compatibility with the framework's multipart "plain" form argument.
+      const String& body = target.body();
+      if (body.isEmpty() || body.length() > limit) {
+        target.send(400, "application/json", invalid);
+      } else if (deserializeJson(doc, body)) {
+        target.send(400, "application/json", invalidJson);
+      } else {
+        isValid = true;
+      }
+    } else if (route_request_status == RouteRequestStatus::Invalid) {
+      target.send(400, "application/json", invalid);
+    } else {
+      File file;
+      if (route_request_status == RouteRequestStatus::Ready)
+        file = SD_MMC.open(ROUTE_REQUEST_TEMP_FILE, FILE_READ);
+      if (!file || file.size() != route_request_size) {
+        target.send(500, "application/json",
+                    "{\"detail\":\"Could not stage route request on SD card.\"}");
+      } else if (deserializeJson(doc, file)) {
+        target.send(400, "application/json", invalidJson);
+      } else {
+        isValid = true;
+      }
+      file.close();
+    }
+    clearRouteRequest();
+    return isValid;
+  }
+
+  void importRoute(LeafWebServer& target) {
     heap_monitor::checkpoint("route-import-start");
-    if (!user_app_enabled) {
-      target.send(404, "application/json", "{\"detail\":\"Leaf Web App is not active.\"}");
-      return;
-    }
-
-    if (!sdcard.isMounted()) {
-      target.send(404, "application/json", "{\"detail\":\"SD card is not mounted.\"}");
-      return;
-    }
-
-    const String body = target.arg("plain");
-    if (body.length() == 0 || body.length() > ROUTE_IMPORT_REQUEST_MAX_BYTES) {
-      target.send(400, "application/json", "{\"detail\":\"Route import request is invalid.\"}");
-      return;
-    }
-
     JsonDocument doc;
-    DeserializationError error = deserializeJson(doc, body);
-    if (error) {
-      target.send(400, "application/json", "{\"detail\":\"Route import request is not JSON.\"}");
-      return;
-    }
+    if (!decodeRouteRequest(target, doc, ROUTE_IMPORT_REQUEST_MAX_BYTES, true)) return;
 
     String name = doc["name"] | "";
     String data = doc["data"] | "";
@@ -1702,6 +1899,9 @@ namespace {
     }
     doc.clear();
 
+#ifdef LEAF_USB_BENCH_CONSOLE
+    RouteHeapMeasurement::Scope heapScope(route_import_heap);
+#endif
     route_store::ImportResult result;
     if (!route_store::importRouteText(name, data, activate, result)) {
       String json = "{\"saved\":";
@@ -1799,14 +1999,14 @@ namespace {
     heap_monitor::checkpoint("nav-data-end");
   }
 
-  void activateNavPoint(WebServer& target) {
+  void activateNavPoint(LeafWebServer& target) {
     if (!user_app_enabled) {
       target.send(404, "application/json", "{\"detail\":\"Leaf Web App is not active.\"}");
       return;
     }
 
     JsonDocument doc;
-    DeserializationError error = deserializeJson(doc, target.arg("plain"));
+    DeserializationError error = deserializeJson(doc, target.body());
     if (error) {
       target.send(400, "application/json", "{\"detail\":\"Nav activation request is not JSON.\"}");
       return;
@@ -1875,7 +2075,7 @@ namespace {
     json.finish();
   }
 
-  void activateWaypointFile(WebServer& target) {
+  void activateWaypointFile(LeafWebServer& target) {
     if (!user_app_enabled) {
       target.send(404, "application/json", "{\"detail\":\"Leaf Web App is not active.\"}");
       return;
@@ -1887,7 +2087,7 @@ namespace {
     }
 
     JsonDocument doc;
-    DeserializationError error = deserializeJson(doc, target.arg("plain"));
+    DeserializationError error = deserializeJson(doc, target.body());
     if (error) {
       target.send(400, "application/json",
                   "{\"detail\":\"Waypoint activation request is invalid.\"}");
@@ -1906,9 +2106,12 @@ namespace {
       return;
     }
 
-    if (!nav_readFile(SD_MMC, path)) {
+    NavLoadError loadError;
+    if (!nav_readFile(SD_MMC, path, &loadError)) {
       target.send(400, "application/json",
-                  "{\"detail\":\"Leaf could not parse this waypoint file.\"}");
+                  loadError == NavLoadError::RoutePointLimit
+                      ? "{\"detail\":\"File exceeds the 20-point route limit.\"}"
+                      : "{\"detail\":\"Leaf could not parse this waypoint file.\"}");
       return;
     }
     user_waypoints::loadIntoNavigator();
@@ -1923,44 +2126,39 @@ namespace {
     target.send(200, "application/json", json);
   }
 
-  void saveEditedRoute(WebServer& target) {
+  void saveEditedRoute(LeafWebServer& target) {
     heap_monitor::checkpoint("route-save-start");
-    if (!user_app_enabled) {
-      target.send(404, "application/json", "{\"detail\":\"Leaf Web App is not active.\"}");
-      return;
-    }
-
-    if (!sdcard.isMounted()) {
-      target.send(404, "application/json", "{\"detail\":\"SD card is not mounted.\"}");
-      return;
-    }
-
-    const String body = target.arg("plain");
-    if (body.length() == 0 || body.length() > ROUTE_EDITOR_REQUEST_MAX_BYTES) {
-      target.send(400, "application/json", "{\"detail\":\"Route save request is invalid.\"}");
-      return;
-    }
-
-    JsonDocument input;
-    DeserializationError error = deserializeJson(input, body);
-    if (error) {
-      target.send(400, "application/json", "{\"detail\":\"Route save request is not JSON.\"}");
-      return;
-    }
-
-    String name = input["name"] | "";
+    JsonDocument routeDoc;
+    if (!decodeRouteRequest(target, routeDoc, ROUTE_EDITOR_REQUEST_MAX_BYTES, false)) return;
+    heap_monitor::checkpoint("route-editor-parsed");
+    JsonObject route = routeDoc.as<JsonObject>();
+    String name = route["name"] | "";
     name.trim();
-    const bool activate = input["activate"] | true;
-    JsonArrayConst inputPoints = input["points"].as<JsonArrayConst>();
-    if (name.isEmpty() || inputPoints.isNull() || inputPoints.size() == 0 ||
-        inputPoints.size() > maxRoutePointRefs) {
+    const bool activate = route["activate"] | true;
+    JsonArray points = route["points"].as<JsonArray>();
+    if (points.size() > maxRoutePointRefs) {
+      target.send(400, "application/json", "{\"detail\":\"Route exceeds the 20-point limit.\"}");
+      return;
+    }
+    if (name.isEmpty() || points.isNull() || points.size() == 0) {
       target.send(400, "application/json",
                   "{\"detail\":\"Route name and at least one waypoint are required.\"}");
       return;
     }
 
-    JsonDocument routeDoc;
-    JsonObject route = routeDoc.to<JsonObject>();
+    // Canonicalize the existing points. Unknown input keys were never persisted.
+#ifdef LEAF_USB_BENCH_CONSOLE
+    // The scope also covers early validation returns.
+    struct FinishMeasurement {
+      ~FinishMeasurement() { route_normalization_heap.finish(); }
+    } finishMeasurement;
+    route_normalization_heap.start();
+#endif
+    for (auto it = route.begin(); it != route.end();) {
+      auto field = it;
+      ++it;
+      if (strcmp((*field).key().c_str(), "points") != 0) route.remove(field);
+    }
     route["schema"] = "leaf.route";
     route["schema_version"] = "v0.1.0";
     route["name"] = name;
@@ -1971,35 +2169,48 @@ namespace {
     route["start"]["type"] = "none";
     route["start"]["time_gates"].to<JsonArray>();
 
-    JsonArray points = route["points"].to<JsonArray>();
     uint8_t pointIndex = 0;
-    const uint8_t totalPoints = inputPoints.size();
-    for (JsonObjectConst inputPoint : inputPoints) {
+    const uint8_t totalPoints = points.size();
+    for (JsonObject point : points) {
       pointIndex++;
-      const double lat = inputPoint["lat"] | NAN;
-      const double lon = inputPoint["lon"] | NAN;
+      const double lat = point["lat"] | NAN;
+      const double lon = point["lon"] | NAN;
       if (isnan(lat) || isnan(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
         target.send(400, "application/json",
                     "{\"detail\":\"Route contains an invalid waypoint coordinate.\"}");
         return;
       }
 
-      uint16_t radiusM = inputPoint["radius_m"] | defaultWaypointRadius;
+      uint16_t radiusM = point["radius_m"] | defaultWaypointRadius;
       if (radiusM == 0)
         radiusM = defaultWaypointRadius;
       else if (radiusM < 10)
         radiusM = 10;
       if (radiusM > 20000) radiusM = 20000;
 
-      JsonObject outPoint = points.add<JsonObject>();
-      outPoint["name"] = inputPoint["name"] | "";
-      outPoint["lat"] = lat;
-      outPoint["lon"] = lon;
-      outPoint["alt_m"] = inputPoint["alt_m"] | 0.0;
-      outPoint["radius_m"] = radiusM;
-      outPoint["role"] = pointIndex == totalPoints ? "goal" : "normal";
+      for (auto it = point.begin(); it != point.end();) {
+        auto field = it;
+        ++it;
+        const char* key = (*field).key().c_str();
+        if (strcmp(key, "name") != 0 && strcmp(key, "lat") != 0 && strcmp(key, "lon") != 0 &&
+            strcmp(key, "alt_m") != 0 && strcmp(key, "radius_m") != 0)
+          point.remove(field);
+      }
+      if (!point["name"].is<const char*>()) point["name"] = "";
+      point["lat"] = lat;
+      point["lon"] = lon;
+      point["alt_m"] = point["alt_m"] | NAN;
+      point["radius_m"] = radiusM;
+      point["role"] = pointIndex == totalPoints ? "goal" : "normal";
     }
-    input.clear();
+#ifdef LEAF_USB_BENCH_CONSOLE
+    route_normalization_heap.finish();
+#endif
+    if (routeDoc.overflowed()) {
+      target.send(500, "application/json", "{\"detail\":\"Not enough memory to save the route.\"}");
+      return;
+    }
+    heap_monitor::checkpoint("route-editor-normalized");
 
     route_store::ImportResult result;
     if (!route_store::saveRouteJson(routeDoc, activate, result)) {
@@ -2039,31 +2250,15 @@ namespace {
       return;
     }
 
-    JsonDocument doc;
-    if (!SD_MMC.exists(user_waypoints::filePath())) {
-      doc["schema"] = "leaf.user_waypoints";
-      doc["schema_version"] = "v0.1.0";
-      doc["points"].to<JsonArray>();
-    } else {
-      File file = SD_MMC.open(user_waypoints::filePath(), "r");
-      if (!file) {
-        target.send(404, "application/json",
-                    "{\"points\":[],\"detail\":\"Unable to read user waypoints.\"}");
-        return;
-      }
-      if (file.size() > USER_WAYPOINTS_MAX_BYTES) {
-        file.close();
-        target.send(404, "application/json",
-                    "{\"points\":[],\"detail\":\"User waypoint file is too large.\"}");
-        return;
-      }
-      DeserializationError error = deserializeJson(doc, file);
-      file.close();
-      if (error || strcmp(doc["schema"] | "", "leaf.user_waypoints") != 0) {
-        target.send(404, "application/json",
-                    "{\"points\":[],\"detail\":\"User waypoint file is invalid.\"}");
-        return;
-      }
+#ifdef LEAF_USB_BENCH_CONSOLE
+    RouteHeapMeasurement::Scope heapScope(waypoint_list_heap);
+#endif
+    user_waypoints::Reader reader;
+    String error;
+    if (!reader.open(error)) {
+      const String reply = "{\"points\":[],\"detail\":\"" + error + "\"}";
+      target.send(404, "application/json", reply);
+      return;
     }
 
     target.setContentLength(CONTENT_LENGTH_UNKNOWN);
@@ -2072,10 +2267,12 @@ namespace {
     JsonStream json(target, responseBuffer, sizeof(responseBuffer));
     json.write("{\"points\":[");
     bool first = true;
-    for (JsonObjectConst point : doc["points"].as<JsonArrayConst>()) {
+    JsonDocument record;
+    while (reader.next(record)) {
+      const JsonObjectConst point = record.as<JsonObjectConst>();
+      if (!user_waypoints::validPoint(point)) continue;
       const double lat = point["lat"] | NAN;
       const double lon = point["lon"] | NAN;
-      if (!validUserWaypointJson(point)) continue;
       const uint8_t navigatorIndex = mergeUserWaypointIntoNavigator(point);
 
       if (!first) json.write(",");
@@ -2091,23 +2288,27 @@ namespace {
       json.write(",\"lon\":");
       json.writeFloat(lon, 7);
       json.write(",\"alt_m\":");
-      json.writeFloat(point["alt_m"] | 0.0, 1);
+      json.writeFloat(point["alt_m"] | NAN, 1);
       json.write(",\"created_utc\":\"");
       json.writeEscaped(point["created_utc"] | "");
       json.write("\"}");
+    }
+    if (reader.failed()) {
+      target.client().stop();
+      return;
     }
     json.write("]}");
     json.finish();
   }
 
-  void saveUserWaypoints(WebServer& target) {
+  void saveUserWaypoints(LeafWebServer& target) {
     if (!user_app_enabled) {
       target.send(404, "application/json", "{\"detail\":\"Leaf Web App is not active.\"}");
       return;
     }
 
     JsonDocument input;
-    DeserializationError error = deserializeJson(input, target.arg("plain"));
+    DeserializationError error = deserializeJson(input, target.body());
     if (error) {
       target.send(400, "application/json", "{\"detail\":\"User waypoint request is not JSON.\"}");
       return;
@@ -2221,7 +2422,7 @@ async function loadNavDataSerial(includePoints,seq){if(!navDataFresh(includePoin
 async function loadRoutePoints(){msg('createRouteLoadMsg','Loading points...');$('createRouteLoadPoints').disabled=true;let ok=await loadNavData(true);msg('createRouteLoadMsg',ok?(navPoints.length?('Loaded '+navPoints.length+' points.'):'No points available.'):'Unable to refresh waypoint list.');$('createRouteLoadPoints').disabled=false}
 async function activatePointIndex(index,msgId){if(!index){msg(msgId,'Point is not loaded yet.');return}msg(msgId,'Activating point...');try{let r=await fetch('/api/nav/activate-point',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({index:index})}),d=await r.json().catch(()=>({}));if(!r.ok||!d.active)throw d;msg(msgId,'Active: '+(d.name||'point'));loadNavData(!!navPoints.length)}catch(x){msg(msgId,x&&x.detail?x.detail:'Unable to activate point.')}}
 async function loadWaypointFileList(){msg('waypointMsg','Loading files...');try{let d=await(await fetch('/api/waypoints/files')).json(),files=d.files||[],sel=$('waypointFileList'),current=loadedNavFile||sel.value;sel.textContent='';files.forEach(f=>{let o=document.createElement('option');o.value=f.name;o.textContent=f.name;sel.appendChild(o)});if(current)sel.value=current;msg('waypointMsg',files.length?'Choose a file, then Activate File.':'No waypoint files found.')}catch(e){msg('waypointMsg','Unable to list waypoint files.')}}async function activateWaypointFile(){let sel=$('waypointFileList');if(!sel.options.length)await loadWaypointFileList();let name=sel.value;if(!name){msg('waypointMsg','Choose a waypoint file.');return}msg('waypointMsg','Activating '+name+'...');try{let r=await fetch('/api/waypoints/activate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name})}),d=await r.json().catch(()=>({}));if(!r.ok||!d.loaded)throw d;msg('waypointMsg','Activated '+(d.filename||name)+'.');await loadNavData(true);await loadUserWaypoints()}catch(x){msg('waypointMsg',x&&x.detail?x.detail:'Unable to activate file.')}}
-function addSelectedRoutePoint(){let idx=Number($('routeWaypointList').value),p=navPoints.find(x=>Number(x.index)==idx);if(!p)return;let radius=Math.max(10,Math.min(20000,Math.round(Number($('routeDefaultRadius').value)||DEFAULT_WAYPOINT_RADIUS_M)));$('routeDefaultRadius').value=radius;editRoute.push({name:p.name,lat:p.lat,lon:p.lon,alt_m:p.alt_m||0,radius_m:radius});renderEditRoute()}
+function addSelectedRoutePoint(){let idx=Number($('routeWaypointList').value),p=navPoints.find(x=>Number(x.index)==idx);if(!p)return;let radius=Math.max(10,Math.min(20000,Math.round(Number($('routeDefaultRadius').value)||DEFAULT_WAYPOINT_RADIUS_M)));$('routeDefaultRadius').value=radius;editRoute.push({name:p.name,lat:p.lat,lon:p.lon,alt_m:p.alt_m??null,radius_m:radius});renderEditRoute()}
 async function saveEditedRoute(){let name=clean($('editRouteName').value);if(!name||!editRoute.length){routeEditButtons();return}msg('editRouteMsg','Saving route...');$('editRouteSave').disabled=true;try{let r=await fetch('/api/routes/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,activate:$('editRouteActivate').checked,points:editRoute})}),d=await r.json().catch(()=>({}));if(!r.ok||!d.saved)throw d;msg('editRouteMsg','Saved '+(d.points||0)+' points'+(d.active?' and set active.':'.'))}catch(x){msg('editRouteMsg',x&&x.detail?x.detail:'Unable to save route.')}routeEditButtons(false)}function routeButtons(hint=true){let n=clean($('routeName').value),d=clean($('routeData').value);$('routeSave').disabled=!n||!d;if(!hint)return;if(!n&&!d)msg('routeMsg','Enter route name and data, then Save to Leaf.');else if(!n)msg('routeMsg','Enter route name, then Save to Leaf.');else if(!d)msg('routeMsg','Paste route data, then Save to Leaf.');else msg('routeMsg','Ready to save route.')}async function uploadWaypointFile(file){if(!file)return;msg('waypointMsg','Uploading '+file.name+'...');$('waypointLoad').disabled=true;let form=new FormData();form.append('file',file,file.name);try{let r=await fetch('/api/waypoints/upload',{method:'POST',body:form}),d=await r.json().catch(()=>({}));if(!d.saved)throw d;let counts=(d.points||0)+' pts';if(d.routes)counts+=', '+d.routes+' rtes';if(d.loaded){msg('waypointMsg','Loaded '+(d.filename||file.name)+': '+counts+'.');await loadNavData(true);await loadWaypointFileList()}else msg('waypointMsg','Saved '+(d.filename||file.name)+', but Leaf could not load it.')}catch(x){msg('waypointMsg',x&&x.detail?x.detail:'Unable to load file.')} $('waypointLoad').disabled=false}function buttons(){let p=pilotEditor(),g=gliderEditor();$('pilotSave').disabled=!clean(p.name)||same(p,pilotSnap);$('pilotDelete').disabled=!selectedPilot();$('pilotNew').disabled=!profiles.pilots.length;$('gliderSave').disabled=!([g.brand,g.model,g.size,g.display_name].some(v=>clean(v)))||same(g,gliderSnap);$('gliderDelete').disabled=!selectedGlider();$('gliderNew').disabled=!profiles.gliders.length;leafLogButtons();routeButtons()}
 function render(){fillSelect($('pilotList'),profiles.pilots,pilotLabel);fillSelect($('activePilotList'),profiles.pilots,pilotLabel);$('leafLogPilot').style.display='none';$('leafLogPilot').previousElementSibling.style.display='none';$('leafLogEmail').style.display='none';$('leafLogEmail').previousElementSibling.style.display='none';if(profiles.active_pilot_id){$('pilotList').value=profiles.active_pilot_id;$('activePilotList').value=profiles.active_pilot_id}let p=selectedPilot();$('pilotName').value=p?p.name||'':'';if(!profiles.pilots.length)msg('pilotMsg','Enter pilot name, then Save Profile.');fillSelect($('gliderList'),profiles.gliders,gliderLabel);fillSelect($('activeGliderList'),profiles.gliders,gliderLabel);if(profiles.active_glider_id){$('gliderList').value=profiles.active_glider_id;$('activeGliderList').value=profiles.active_glider_id}let g=selectedGlider();$('gliderBrand').value=g?g.brand||'':'';$('gliderModel').value=g?g.model||'':'';$('gliderSize').value=g?g.size||'':'';$('gliderDisplay').value=g?g.display_name||'':'';if(!profiles.gliders.length)msg('gliderMsg','Enter glider details, then Save Profile.');setSnaps()}
 function normalize(){profiles.schema='leaf.profiles';profiles.schema_version='v0.1.0';delete profiles.leaf_log;profiles.pilots=(profiles.pilots||[]).filter(p=>p&&p.id&&p.name);profiles.gliders=(profiles.gliders||[]).filter(g=>g&&g.id&&g.model);if(!profiles.pilots.find(p=>p.id==profiles.active_pilot_id))profiles.active_pilot_id=profiles.pilots.length==1?profiles.pilots[0].id:null;if(!profiles.gliders.find(g=>g.id==profiles.active_glider_id))profiles.active_glider_id=profiles.gliders.length==1?profiles.gliders[0].id:null}
@@ -2234,13 +2435,14 @@ function altShown(v){if(!good(v))return NaN;v=Number(v);return unitPrefs.alt_fee
 leafLogUrl=()=>{if(!leafLogActivationUrl)return'';let u=new URL(leafLogActivationUrl);u.searchParams.set('returnTo',location.origin+location.pathname);return u.toString()};
 function renderAlt(e){let s=Number(e.start_altitude_m),x=Number(e.max_altitude_m),n=Number(e.min_altitude_m),end=Number(e.end_altitude_m);let vals=[s,x,end].filter(Number.isFinite),a=$('altStart'),b=$('altMax'),c=$('altEnd');[a,b,c].forEach(q=>{q.classList.remove('high');q.style.display='none'});if(!vals.length)return;if(!Number.isFinite(n))n=Math.min(...vals,0);let hi=Math.max(...vals,0),lo=Math.min(n,...vals,0),range=Math.max(1,hi-lo),top=v=>Number.isFinite(v)?Math.round((hi-v)/range*64)+2:32,sv=Number.isFinite(s),ev=Number.isFinite(end),showMax=Number.isFinite(x)&&altShown(x)>Math.max(sv?altShown(s):-1e9,ev?altShown(end):-1e9);if(sv){a.style.display='block';a.lastChild.textContent=m(s);a.style.left='0';a.style.top=top(s)+'px'}if(showMax){b.style.display='block';b.lastChild.textContent=m(x);b.style.left='50%';b.style.transform='translateX(-50%)';b.style.top=top(x)+'px'}if(ev){c.style.display='block';c.lastChild.textContent=m(end);c.style.right='0';c.style.top=top(end)+'px'}if(showMax)b.classList.add('high');else if(sv&&(!ev||altShown(s)>=altShown(end)))a.classList.add('high');else if(ev)c.classList.add('high')}
 async function loadStatus(){try{let s=await(await fetch('/api/user/status')).json();userStatus=s;$('status').textContent=`mode: ${s.mode}\nssid: ${s.ssid||'(none)'}\nip: ${s.ip_address||'(none)'}\n`+versionText(s);leafLogButtons();let fwRow=$("firmwareCheckRow"),fwVisible=s.mode=="network";fwRow.style.display=fwVisible?"flex":"none";if(!fwVisible)msg("firmwareCheckMsg","");if(Number.isFinite(Number(s.battery_percent))){let p=Math.max(0,Math.min(100,Number(s.battery_percent)));$('batteryFill').style.width=p+'%';$('batteryText').textContent=p+'%';$('batteryCharge').textContent=s.battery_charging?'Charging':'Not charging'}else $('batteryBox').style.display='none'}catch(e){$('status').textContent='Unable to read status.';$('firmwareCheckRow').style.display='none'}}
-async function loadLogbook(){try{let d=await(await fetch('/api/logbook')).json();useUnits(d.units);$('logCount').textContent=d.count||0;$('logLatest').textContent=d.latest&&d.latest.start_time_local?logDateTime(d.latest.start_time_local,unitPrefs.time_12h):(d.count?'Unknown':'No flights')}catch(e){$('logLatest').textContent='Unavailable'}}
+async function fetchLogbook(url){for(;;){let r=await fetch(url);if(r.status!==202)return r;await new Promise(resolve=>setTimeout(resolve,100))}}
+async function loadLogbook(){$('logLatest').textContent='Loading logs...';try{let r=await fetchLogbook('/api/logbook');if(!r.ok)throw new Error('Unavailable');let d=await r.json();useUnits(d.units);$('logCount').textContent=d.count||0;$('logLatest').textContent=d.latest&&d.latest.start_time_local?logDateTime(d.latest.start_time_local,unitPrefs.time_12h):(d.count?'Unknown':'No flights')}catch(e){$('logLatest').textContent='Unavailable'}}
 function resetDelete(){$('deleteLog').style.display='block';$('deleteConfirm').style.display='none'}
-function clearLogCard(d){logState={prev:d&&d.previous_path||'',next:d&&d.next_path||'',path:d&&d.path||''};$('logPage').textContent=((d&&d.position)||'--')+'/'+((d&&d.total)||'--');$('logPrev').disabled=!logState.next;$('logNext').disabled=!logState.prev;$('flightDay').textContent='--';$('flightDate').textContent='Date unknown';$('flightTime').textContent='--';$('flightDuration').textContent='--';$('flightPilot').textContent='';$('flightGlider').textContent='';renderAlt({});$('climbMax').style.display='none';$('sinkMax').style.display='none';$('flightMetrics').innerHTML=['Straight Dist','Path Dist','Max Speed','Accel','Temp'].map(x=>`<div class=mini-row><span>${x}</span><strong>--</strong></div>`).join('');$('trackInfo').textContent=(d&&d.filename?'Bad log: '+d.filename:'Bad log');$('deleteLog').disabled=!logState.path}
-function igcCoord(s,d){let deg=Number(s.substr(0,d)),min=Number(s.substr(d,2)+'.'+s.substr(d+2,3)),h=s.substr(d+5,1);if(!Number.isFinite(deg)||!Number.isFinite(min))return NaN;let v=deg+min/60;return h=='S'||h=='W'?-v:v}function parseIgc(t){let pts=[];t.split(/\r?\n/).forEach(l=>{if(!l||l[0]!='B'||l.length<35)return;let lat=igcCoord(l.substr(7,8),2),lon=igcCoord(l.substr(15,9),3),alt=parseInt(l.substr(30,5),10);if(!Number.isFinite(alt))alt=parseInt(l.substr(25,5),10);if(Number.isFinite(lat)&&Number.isFinite(lon))pts.push({lat:lat,lon:lon,alt:Number.isFinite(alt)?alt:0})});return pts}function previewColor(t){t=Math.max(0,Math.min(1,t));let r,g,b;if(t<.5){let k=t*2;r=Math.round(17+41*k);g=Math.round(17+139*k);b=Math.round(17+238*k)}else{let k=(t-.5)*2;r=Math.round(58+158*k);g=Math.round(156+99*k);b=Math.round(255*(1-k))}return `rgb(${r},${g},${b})`}function scaleChoice(maxM){let unit=unitPrefs.distance_miles?1609.344:1000,label=unitPrefs.distance_miles?'mi':'km',vals=[100,50,10,5,1,.5,.1];for(let v of vals){if(v*unit<=maxM)return{m:v*unit,label:(v<1?v.toFixed(1):String(v))+' '+label}}return{m:.1*unit,label:'0.1 '+label}}function previewInfo(e){let lp=logParts(e.start_time_local,unitPrefs.time_12h),du=dur(e.duration_seconds),when=(lp.date||'Date unknown')+(lp.time?' '+lp.time:''),people=[];if(e.pilot_name)people.push(e.pilot_name);if(e.glider_display_name)people.push(e.glider_display_name);return '<div>'+esc(when)+(du!='--'?' <span class=preview-duration>'+esc(du)+'</span>':'')+'</div>'+(people.length?'<div>'+people.map(esc).join(' | ')+'</div>':'')}function renderPreview(){let pts=previewState.points,c=$('previewCanvas'),stage=c.parentElement,ctx=c.getContext('2d'),w=Math.max(220,Math.floor(stage.clientWidth-16)),h=Math.max(130,Math.floor(stage.clientHeight-16)),dpr=window.devicePixelRatio||1;c.style.width=w+'px';c.style.height=h+'px';c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);ctx.fillStyle='#4d4d4d';ctx.fillRect(0,0,w,h);if(pts.length<2)return;let mid=pts.reduce((a,p)=>a+p.lat,0)/pts.length,cs=Math.cos(mid*Math.PI/180),xs=pts.map(p=>p.lon*cs),ys=pts.map(p=>p.lat),minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys),pad=16,s=Math.min((w-pad*2)/Math.max(1e-9,maxX-minX),(h-pad*2)/Math.max(1e-9,maxY-minY)),ox=(w-(maxX-minX)*s)/2,oy=(h-(maxY-minY)*s)/2,xy=(i)=>[ox+(xs[i]-minX)*s,h-(oy+(ys[i]-minY)*s)],lo=previewState.lo,hi=previewState.hi,ar=Math.max(1,hi-lo);ctx.lineCap='round';ctx.lineJoin='round';ctx.lineWidth=3;for(let i=1;i<pts.length;i++){let a=xy(i-1),b=xy(i),t=(pts[i].alt-lo)/ar;ctx.strokeStyle=previewColor(t);ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke()}let st=xy(0),en=xy(pts.length-1);ctx.fillStyle='white';ctx.beginPath();ctx.arc(st[0],st[1],5,0,7);ctx.fill();ctx.fillStyle='#d8ff00';ctx.beginPath();ctx.arc(en[0],en[1],5,0,7);ctx.fill();ctx.fillStyle='white';ctx.font='12px sans-serif';ctx.fillText('S',st[0]+7,st[1]-7);ctx.fillText('E',en[0]+7,en[1]-7);let mPerPx=111320/Math.max(1e-9,s),sc=scaleChoice(w*.82*mPerPx),sw=Math.max(24,sc.m/mPerPx),sx=14,sy=h-18;ctx.strokeStyle='white';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(sx+sw,sy);ctx.stroke();ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(sx,sy-5);ctx.lineTo(sx,sy+5);ctx.moveTo(sx+sw,sy-5);ctx.lineTo(sx+sw,sy+5);ctx.stroke();ctx.fillStyle='white';ctx.font='12px sans-serif';ctx.fillText(sc.label,sx,sy-9)}async function openPreview(path,title,info){previewState={points:[],lo:0,hi:0};show('preview');$('previewTitle').textContent=title||'Track Preview';$('previewStats').innerHTML=info||'Loading...';$('previewLow').textContent='Low';$('previewHigh').textContent='High';msg('previewMsg','');renderPreview();try{let r=await fetch('/api/logbook/track?inline=1&path='+encodeURIComponent(path)),t=await r.text();if(!r.ok)throw new Error(t);let pts=parseIgc(t);if(pts.length<2)throw new Error('No GPS points found.');let alts=pts.map(p=>p.alt).filter(Number.isFinite);previewState={points:pts,lo:Math.min(...alts),hi:Math.max(...alts)};$('previewLow').textContent=m(previewState.lo);$('previewHigh').textContent=m(previewState.hi);renderPreview()}catch(e){previewState={points:[],lo:0,hi:0};$('previewStats').innerHTML='';msg('previewMsg','Unable to preview this track.');renderPreview()}}async function loadLogEntry(path){msg('logDetailMsg','Loading...');resetDelete();$('deleteLog').disabled=false;let url='/api/logbook/entry'+(path?'?path='+encodeURIComponent(path):'');try{let r=await fetch(url),d=await r.json().catch(()=>({}));useUnits(d.units);if(!r.ok||!d.ok){clearLogCard(d);throw d}let e=d.entry;logState={prev:d.previous_path||'',next:d.next_path||'',path:e.path||''};$('logPage').textContent=(d.position||'--')+'/'+(d.total||'--');$('logPrev').disabled=!logState.next;$('logNext').disabled=!logState.prev;let lp=logParts(e.start_time_local,unitPrefs.time_12h);$('flightDay').textContent=lp.day||'--';$('flightDate').textContent=lp.date||'Date unknown';$('flightTime').textContent=lp.time||'--';$('flightDuration').textContent=dur(e.duration_seconds);$('flightPilot').textContent=e.pilot_name||'';$('flightGlider').textContent=e.glider_display_name||'';renderAlt(e);$('climbMax').style.display=good(e.max_climb_rate_mps)?'block':'none';$('sinkMax').style.display=good(e.max_sink_rate_mps)?'block':'none';$('climbMax').textContent=ms(e.max_climb_rate_mps);$('sinkMax').textContent=ms(e.max_sink_rate_mps);let rows=[['Straight Dist',dist(e.straight_line_distance_m)],['Path Dist',dist(e.path_distance_m)],['Max Speed',spd(e.max_ground_speed_mps)],['Accel',(good(e.min_accel_g)&&good(e.max_accel_g)?Number(e.min_accel_g).toFixed(1)+' / '+Number(e.max_accel_g).toFixed(1)+' G':'--')],['Temp',tempRange(e.min_temperature_c,e.max_temperature_c)]];if(e.max_wind_valid)rows.push(['Wind',wind(e.max_wind_speed_mps,e.max_wind_direction_from_deg)]);$('flightMetrics').innerHTML=rows.map(r=>`<div class=mini-row><span>${r[0]}</span><strong>${r[1]}</strong></div>`).join('');let tn=e.track_path?e.track_path.split('/').pop():'',igc=tn.toLowerCase().endsWith('.igc'),leafLogIconMarkup=leafLogIcon(e.leaf_log_status,e.leaf_log_rejection_label),leafLogDetail=e.leaf_log_status=='rejected'?'<br><span>Leaf Log: '+esc(e.leaf_log_rejection_label||'Upload rejected')+'</span>':'',leafLog=leafLogIconMarkup+leafLogDetail,track=e.track_saved?(igc?('<span class=track-actions><button class=hero id=previewTrack>Preview</button><span>Track File: <a class=track-file-name href="/api/logbook/track?path='+encodeURIComponent(e.path)+'" download>'+esc(tn)+'</a>'+leafLog+'</span></span>'):('Track File: <span class=track-file-name>'+esc(tn)+'</span>'+leafLog)):('No track file'+leafLog);$('trackInfo').innerHTML=track;let pb=$('previewTrack');if(pb)pb.onclick=()=>openPreview(e.path,tn||'Track Preview',previewInfo(e));$('deleteLog').disabled=!logState.path;msg('logDetailMsg','')}catch(x){resetDelete();if(!(x&&x.path))$('deleteLog').disabled=true;msg('logDetailMsg',x&&x.detail?x.detail:'Unable to load log.')}}
+function clearLogCard(d){logState={prev:d&&d.previous_path||'',next:d&&d.next_path||'',path:d&&d.path||''};$('logPage').textContent=((d&&d.position)||'--')+'/'+((d&&d.total)||'--');$('logPrev').disabled=!logState.next;$('logNext').disabled=!logState.prev;$('flightDay').textContent='--';$('flightDate').textContent='Date unknown';$('flightTime').textContent='--';$('flightDuration').textContent='--';$('flightPilot').textContent='';$('flightGlider').textContent='';renderAlt({});$('climbMax').style.display='none';$('sinkMax').style.display='none';$('flightMetrics').innerHTML=['Straight Dist','Path Dist','Max Speed','Accel','Temp'].map(x=>`<div class=mini-row><span>${x}</span><strong>--</strong></div>`).join('');let label=d&&d.error==='repair_needed'?'Repair needed':'Flight unavailable';$('trackInfo').textContent=label+(d&&d.filename?': '+d.filename:'');$('deleteLog').disabled=!logState.path}
+function igcCoord(s,d){let deg=Number(s.substr(0,d)),min=Number(s.substr(d,2)+'.'+s.substr(d+2,3)),h=s.substr(d+5,1);if(!Number.isFinite(deg)||!Number.isFinite(min))return NaN;let v=deg+min/60;return h=='S'||h=='W'?-v:v}function parseIgc(t){let pts=[];t.split(/\r?\n/).forEach(l=>{if(!l||l[0]!='B'||l.length<35)return;let lat=igcCoord(l.substr(7,8),2),lon=igcCoord(l.substr(15,9),3),alt=parseInt(l.substr(30,5),10);if(!Number.isFinite(alt))alt=parseInt(l.substr(25,5),10);if(Number.isFinite(lat)&&Number.isFinite(lon))pts.push({lat:lat,lon:lon,alt:Number.isFinite(alt)?alt:0})});return pts}function previewColor(t){t=Math.max(0,Math.min(1,t));let r,g,b;if(t<.5){let k=t*2;r=Math.round(17+41*k);g=Math.round(17+139*k);b=Math.round(17+238*k)}else{let k=(t-.5)*2;r=Math.round(58+158*k);g=Math.round(156+99*k);b=Math.round(255*(1-k))}return `rgb(${r},${g},${b})`}function scaleChoice(maxM){let unit=unitPrefs.distance_miles?1609.344:1000,label=unitPrefs.distance_miles?'mi':'km',vals=[100,50,10,5,1,.5,.1];for(let v of vals){if(v*unit<=maxM)return{m:v*unit,label:(v<1?v.toFixed(1):String(v))+' '+label}}return{m:.1*unit,label:'0.1 '+label}}function previewInfo(e){let lp=logParts(e.start_time_local,unitPrefs.time_12h),du=dur(e.duration_seconds),when=(lp.date||'Date unknown')+(lp.time?' '+lp.time:''),people=[];if(e.pilot_name)people.push(e.pilot_name);if(e.glider_display_name)people.push(e.glider_display_name);return '<div>'+esc(when)+(du!='--'?' <span class=preview-duration>'+esc(du)+'</span>':'')+'</div>'+(people.length?'<div>'+people.map(esc).join(' | ')+'</div>':'')}function renderPreview(){let pts=previewState.points,c=$('previewCanvas'),stage=c.parentElement,ctx=c.getContext('2d'),w=Math.max(220,Math.floor(stage.clientWidth-16)),h=Math.max(130,Math.floor(stage.clientHeight-16)),dpr=window.devicePixelRatio||1;c.style.width=w+'px';c.style.height=h+'px';c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);ctx.fillStyle='#4d4d4d';ctx.fillRect(0,0,w,h);if(pts.length<2)return;let mid=pts.reduce((a,p)=>a+p.lat,0)/pts.length,cs=Math.cos(mid*Math.PI/180),xs=pts.map(p=>p.lon*cs),ys=pts.map(p=>p.lat),minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys),pad=16,s=Math.min((w-pad*2)/Math.max(1e-9,maxX-minX),(h-pad*2)/Math.max(1e-9,maxY-minY)),ox=(w-(maxX-minX)*s)/2,oy=(h-(maxY-minY)*s)/2,xy=(i)=>[ox+(xs[i]-minX)*s,h-(oy+(ys[i]-minY)*s)],lo=previewState.lo,hi=previewState.hi,ar=Math.max(1,hi-lo);ctx.lineCap='round';ctx.lineJoin='round';ctx.lineWidth=3;for(let i=1;i<pts.length;i++){let a=xy(i-1),b=xy(i),t=(pts[i].alt-lo)/ar;ctx.strokeStyle=previewColor(t);ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke()}let st=xy(0),en=xy(pts.length-1);ctx.fillStyle='white';ctx.beginPath();ctx.arc(st[0],st[1],5,0,7);ctx.fill();ctx.fillStyle='#d8ff00';ctx.beginPath();ctx.arc(en[0],en[1],5,0,7);ctx.fill();ctx.fillStyle='white';ctx.font='12px sans-serif';ctx.fillText('S',st[0]+7,st[1]-7);ctx.fillText('E',en[0]+7,en[1]-7);let mPerPx=111320/Math.max(1e-9,s),sc=scaleChoice(w*.82*mPerPx),sw=Math.max(24,sc.m/mPerPx),sx=14,sy=h-18;ctx.strokeStyle='white';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(sx+sw,sy);ctx.stroke();ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(sx,sy-5);ctx.lineTo(sx,sy+5);ctx.moveTo(sx+sw,sy-5);ctx.lineTo(sx+sw,sy+5);ctx.stroke();ctx.fillStyle='white';ctx.font='12px sans-serif';ctx.fillText(sc.label,sx,sy-9)}async function openPreview(path,title,info){previewState={points:[],lo:0,hi:0};show('preview');$('previewTitle').textContent=title||'Track Preview';$('previewStats').innerHTML=info||'Loading...';$('previewLow').textContent='Low';$('previewHigh').textContent='High';msg('previewMsg','');renderPreview();try{let r=await fetch('/api/logbook/track?inline=1&path='+encodeURIComponent(path)),t=await r.text();if(!r.ok)throw new Error(t);let pts=parseIgc(t);if(pts.length<2)throw new Error('No GPS points found.');let alts=pts.map(p=>p.alt).filter(Number.isFinite);previewState={points:pts,lo:Math.min(...alts),hi:Math.max(...alts)};$('previewLow').textContent=m(previewState.lo);$('previewHigh').textContent=m(previewState.hi);renderPreview()}catch(e){previewState={points:[],lo:0,hi:0};$('previewStats').innerHTML='';msg('previewMsg','Unable to preview this track.');renderPreview()}}async function loadLogEntry(path){msg('logDetailMsg','Loading...');resetDelete();$('deleteLog').disabled=false;let url='/api/logbook/entry'+(path?'?path='+encodeURIComponent(path):'');try{let r=await fetchLogbook(url),d=await r.json().catch(()=>({}));useUnits(d.units);if(!r.ok||!d.ok){clearLogCard(d);throw d}let e=d.entry;logState={prev:d.previous_path||'',next:d.next_path||'',path:e.path||''};$('logPage').textContent=(d.position||'--')+'/'+(d.total||'--');$('logPrev').disabled=!logState.next;$('logNext').disabled=!logState.prev;let lp=logParts(e.start_time_local,unitPrefs.time_12h);$('flightDay').textContent=lp.day||'--';$('flightDate').textContent=lp.date||'Date unknown';$('flightTime').textContent=lp.time||'--';$('flightDuration').textContent=dur(e.duration_seconds);$('flightPilot').textContent=e.pilot_name||'';$('flightGlider').textContent=e.glider_display_name||'';renderAlt(e);$('climbMax').style.display=good(e.max_climb_rate_mps)?'block':'none';$('sinkMax').style.display=good(e.max_sink_rate_mps)?'block':'none';$('climbMax').textContent=ms(e.max_climb_rate_mps);$('sinkMax').textContent=ms(e.max_sink_rate_mps);let rows=[['Straight Dist',dist(e.straight_line_distance_m)],['Path Dist',dist(e.path_distance_m)],['Max Speed',spd(e.max_ground_speed_mps)],['Accel',(good(e.min_accel_g)&&good(e.max_accel_g)?Number(e.min_accel_g).toFixed(1)+' / '+Number(e.max_accel_g).toFixed(1)+' G':'--')],['Temp',tempRange(e.min_temperature_c,e.max_temperature_c)]];if(e.max_wind_valid)rows.push(['Wind',wind(e.max_wind_speed_mps,e.max_wind_direction_from_deg)]);$('flightMetrics').innerHTML=rows.map(r=>`<div class=mini-row><span>${r[0]}</span><strong>${r[1]}</strong></div>`).join('');let tn=e.track_path?e.track_path.split('/').pop():'',igc=tn.toLowerCase().endsWith('.igc'),leafLogIconMarkup=leafLogIcon(e.leaf_log_status,e.leaf_log_rejection_label),leafLogDetail=e.leaf_log_status=='rejected'?'<br><span>Leaf Log: '+esc(e.leaf_log_rejection_label||'Upload rejected')+'</span>':'',leafLog=leafLogIconMarkup+leafLogDetail,track=e.track_saved?(igc?('<span class=track-actions><button class=hero id=previewTrack>Preview</button><span>Track File: <a class=track-file-name href="/api/logbook/track?path='+encodeURIComponent(e.path)+'" download>'+esc(tn)+'</a>'+leafLog+'</span></span>'):('Track File: <span class=track-file-name>'+esc(tn)+'</span>'+leafLog)):('No track file'+leafLog);$('trackInfo').innerHTML=track;let pb=$('previewTrack');if(pb)pb.onclick=()=>openPreview(e.path,tn||'Track Preview',previewInfo(e));$('deleteLog').disabled=!logState.path;msg('logDetailMsg','')}catch(x){resetDelete();if(!(x&&x.path)||x.error!=='repair_needed')$('deleteLog').disabled=true;msg('logDetailMsg',x&&x.detail?x.detail:'Unable to load log.')}}
 function previewInfo(e){let lp=logParts(e.start_time_local,unitPrefs.time_12h),du=dur(e.duration_seconds),when=[esc(lp.date||'Date unknown')];if(lp.time)when.push(esc(lp.time));if(du!='--')when.push('<span class=preview-duration>'+esc(du)+'</span>');let people=[];if(e.pilot_name)people.push(e.pilot_name);if(e.glider_display_name)people.push(e.glider_display_name);return '<div>'+when.join(' | ')+'</div>'+(people.length?'<div>'+people.map(esc).join(' | ')+'</div>':'')}
 async function loadProfiles(){try{profiles=await(await fetch('/api/profiles')).json();normalize();msg('pilotMsg','');msg('gliderMsg','');render()}catch(e){msg('pilotMsg','Unable to read profiles.')}}
-$('previewClose').onclick=()=>show('logbook');window.addEventListener('resize',()=>{if($('previewView').classList.contains('active'))renderPreview()});$('firmwareCheck').onclick=checkFirmware;$('openProfiles').onclick=()=>show('profiles');$('backMain').onclick=()=>show('main');$('openNavTools').onclick=async()=>{show('nav');await loadUserWaypoints();await loadNavData(true);await loadWaypointFileList()};$('backNavMain').onclick=()=>show('main');$('backLogMain').onclick=()=>show('main');$('openLogbook').onclick=()=>{show('logbook');loadLogEntry('')};$('waypointActivate').onclick=activateWaypointFile;$('waypointLoad').onclick=()=>{$('waypointFile').value='';$('waypointFile').click()};$('waypointFile').onchange=()=>uploadWaypointFile($('waypointFile').files[0]);$('fileWaypointActivate').onclick=()=>{let p=selectedFilePoint();if(p)activatePointIndex(Number(p.index),'waypointMsg')};$('fileWaypointMap').onclick=()=>{let p=selectedFilePoint();if(p)window.open(mapUrl(p),'_blank','noopener')};$('userWaypointSelect').onchange=e=>{selectedUserWaypointId=e.target.value;renderUserWaypoints()};$('userWaypointName').oninput=userWaypointChanged;$('userWaypointRename').onclick=renameUserWaypoint;$('userWaypointActivate').onclick=()=>{let p=selectedUserWaypoint();if(p)activatePointIndex(Number(p.index),'userWaypointMsg')};$('userWaypointMap').onclick=()=>{let p=selectedUserWaypoint();if(p)window.open(mapUrl(p),'_blank','noopener')};$('userWaypointDelete').onclick=()=>{if(!selectedUserWaypoint())return;$('userWaypointDelete').style.display='none';$('userWaypointDeleteConfirm').style.display='block';msg('userWaypointMsg','')};$('userWaypointCancelDelete').onclick=resetUserWaypointDelete;$('userWaypointConfirmDelete').onclick=deleteUserWaypoint;$('createRouteLoadPoints').onclick=loadRoutePoints;$('editRouteName').oninput=routeEditButtons;$('editRouteAdd').onclick=addSelectedRoutePoint;$('editRouteSave').onclick=saveEditedRoute;$('editRouteList').onclick=e=>{let b=e.target.closest('button');if(!b)return;let i=Number(b.dataset.i),a=b.dataset.act;if(a=='remove')editRoute.splice(i,1);else if(a=='up'&&i>0)[editRoute[i-1],editRoute[i]]=[editRoute[i],editRoute[i-1]];else if(a=='down'&&i<editRoute.length-1)[editRoute[i+1],editRoute[i]]=[editRoute[i],editRoute[i+1]];renderEditRoute()};$('editRouteList').oninput=e=>{if(e.target.dataset.r===undefined)return;let i=Number(e.target.dataset.r),v=Number(e.target.value)||DEFAULT_WAYPOINT_RADIUS_M;editRoute[i].radius_m=Math.max(10,Math.min(20000,Math.round(v)))};$('logPrev').onclick=()=>{if(logState.next)loadLogEntry(logState.next)};$('logNext').onclick=()=>{if(logState.prev)loadLogEntry(logState.prev)};$('deleteLog').onclick=()=>{if(!logState.path)return;$('deleteLog').style.display='none';$('deleteConfirm').style.display='block';msg('logDetailMsg','')};$('cancelDelete').onclick=resetDelete;$('confirmDelete').onclick=async()=>{if(!logState.path)return;msg('logDetailMsg','Deleting...');try{let r=await fetch('/api/logbook/entry?path='+encodeURIComponent(logState.path),{method:'DELETE'}),d=await r.json().catch(()=>({}));if(!r.ok||!d.ok)throw d;await loadLogbook();if(d.count>0)loadLogEntry(d.next_path||'');else{show('main');msg('logMsg','Log deleted.')}}catch(x){msg('logDetailMsg',x&&x.detail?x.detail:'Unable to delete log.');resetDelete()}};['pilotName','gliderBrand','gliderModel','gliderSize','gliderDisplay'].forEach(x=>$(x).oninput=buttons);['leafLogEmail'].forEach(x=>$(x).oninput=buttons);$('leafLogPilot').onchange=buttons;['routeName','routeData'].forEach(x=>$(x).oninput=routeButtons);$('leafLogStart').onclick=startLeafLog;$('leafLogWifi').onclick=()=>{location.href='/wifi?scan=1&return=app'};$('leafLogOpen').onclick=()=>{let u=leafLogUrl();if(u)window.open(u,'_blank','noopener')};$('routeSave').onclick=async()=>{let name=clean($('routeName').value),data=clean($('routeData').value);if(!name||!data){routeButtons();return}msg('routeMsg','Saving route...');$('routeSave').disabled=true;try{let r=await fetch('/api/routes/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,data:data,activate:$('routeActivate').checked})}),d=await r.json().catch(()=>({}));if(!r.ok||!d.saved)throw d;msg('routeMsg','Saved '+(d.points||0)+' points'+(d.active?' and set active.':'.'));$('routeData').value=''}catch(x){msg('routeMsg',x&&x.detail?x.detail:'Unable to save route.')}routeButtons(false)};
+$('previewClose').onclick=()=>show('logbook');window.addEventListener('resize',()=>{if($('previewView').classList.contains('active'))renderPreview()});$('firmwareCheck').onclick=checkFirmware;$('openProfiles').onclick=()=>show('profiles');$('backMain').onclick=()=>show('main');$('openNavTools').onclick=async()=>{show('nav');await loadUserWaypoints();await loadNavData(true);await loadWaypointFileList()};$('backNavMain').onclick=()=>show('main');$('backLogMain').onclick=()=>show('main');$('openLogbook').onclick=async()=>{show('logbook');await loadLogbook();loadLogEntry('')};$('waypointActivate').onclick=activateWaypointFile;$('waypointLoad').onclick=()=>{$('waypointFile').value='';$('waypointFile').click()};$('waypointFile').onchange=()=>uploadWaypointFile($('waypointFile').files[0]);$('fileWaypointActivate').onclick=()=>{let p=selectedFilePoint();if(p)activatePointIndex(Number(p.index),'waypointMsg')};$('fileWaypointMap').onclick=()=>{let p=selectedFilePoint();if(p)window.open(mapUrl(p),'_blank','noopener')};$('userWaypointSelect').onchange=e=>{selectedUserWaypointId=e.target.value;renderUserWaypoints()};$('userWaypointName').oninput=userWaypointChanged;$('userWaypointRename').onclick=renameUserWaypoint;$('userWaypointActivate').onclick=()=>{let p=selectedUserWaypoint();if(p)activatePointIndex(Number(p.index),'userWaypointMsg')};$('userWaypointMap').onclick=()=>{let p=selectedUserWaypoint();if(p)window.open(mapUrl(p),'_blank','noopener')};$('userWaypointDelete').onclick=()=>{if(!selectedUserWaypoint())return;$('userWaypointDelete').style.display='none';$('userWaypointDeleteConfirm').style.display='block';msg('userWaypointMsg','')};$('userWaypointCancelDelete').onclick=resetUserWaypointDelete;$('userWaypointConfirmDelete').onclick=deleteUserWaypoint;$('createRouteLoadPoints').onclick=loadRoutePoints;$('editRouteName').oninput=routeEditButtons;$('editRouteAdd').onclick=addSelectedRoutePoint;$('editRouteSave').onclick=saveEditedRoute;$('editRouteList').onclick=e=>{let b=e.target.closest('button');if(!b)return;let i=Number(b.dataset.i),a=b.dataset.act;if(a=='remove')editRoute.splice(i,1);else if(a=='up'&&i>0)[editRoute[i-1],editRoute[i]]=[editRoute[i],editRoute[i-1]];else if(a=='down'&&i<editRoute.length-1)[editRoute[i+1],editRoute[i]]=[editRoute[i],editRoute[i+1]];renderEditRoute()};$('editRouteList').oninput=e=>{if(e.target.dataset.r===undefined)return;let i=Number(e.target.dataset.r),v=Number(e.target.value)||DEFAULT_WAYPOINT_RADIUS_M;editRoute[i].radius_m=Math.max(10,Math.min(20000,Math.round(v)))};$('logPrev').onclick=()=>{if(logState.next)loadLogEntry(logState.next)};$('logNext').onclick=()=>{if(logState.prev)loadLogEntry(logState.prev)};$('deleteLog').onclick=()=>{if(!logState.path)return;$('deleteLog').style.display='none';$('deleteConfirm').style.display='block';msg('logDetailMsg','')};$('cancelDelete').onclick=resetDelete;$('confirmDelete').onclick=async()=>{if(!logState.path)return;msg('logDetailMsg','Deleting...');try{let r=await fetch('/api/logbook/entry?path='+encodeURIComponent(logState.path),{method:'DELETE'}),d=await r.json().catch(()=>({}));if(!r.ok||!d.ok)throw d;await loadLogbook();if(d.count>0)loadLogEntry(d.next_path||'');else{show('main');msg('logMsg',d.deleted?'Log deleted.':'')}}catch(x){msg('logDetailMsg',x&&x.detail?x.detail:'Unable to delete log.');resetDelete()}};['pilotName','gliderBrand','gliderModel','gliderSize','gliderDisplay'].forEach(x=>$(x).oninput=buttons);['leafLogEmail'].forEach(x=>$(x).oninput=buttons);$('leafLogPilot').onchange=buttons;['routeName','routeData'].forEach(x=>$(x).oninput=routeButtons);$('leafLogStart').onclick=startLeafLog;$('leafLogWifi').onclick=()=>{location.href='/wifi?scan=1&return=app'};$('leafLogOpen').onclick=()=>{let u=leafLogUrl();if(u)window.open(u,'_blank','noopener')};$('routeSave').onclick=async()=>{let name=clean($('routeName').value),data=clean($('routeData').value);if(!name||!data){routeButtons();return}msg('routeMsg','Saving route...');$('routeSave').disabled=true;try{let r=await fetch('/api/routes/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,data:data,activate:$('routeActivate').checked})}),d=await r.json().catch(()=>({}));if(!r.ok||!d.saved)throw d;msg('routeMsg','Saved '+(d.points||0)+' points'+(d.active?' and set active.':'.'));$('routeData').value=''}catch(x){msg('routeMsg',x&&x.detail?x.detail:'Unable to save route.')}routeButtons(false)};
 $('activePilotList').onchange=()=>{profiles.active_pilot_id=$('activePilotList').value;render();save().then(()=>msg('mainProfileMsg','Active pilot saved.')).catch(()=>msg('mainProfileMsg','Unable to save.'))};
 $('activeGliderList').onchange=()=>{profiles.active_glider_id=$('activeGliderList').value;render();save().then(()=>msg('mainProfileMsg','Active glider saved.')).catch(()=>msg('mainProfileMsg','Unable to save.'))};
 $('pilotList').onchange=()=>{profiles.active_pilot_id=$('pilotList').value;render();save().then(()=>msg('pilotMsg','Active pilot selected.')).catch(()=>msg('pilotMsg','Unable to save.'))};
@@ -2284,7 +2486,7 @@ const battery=document.getElementById('batteryBox'),statusSide=main.querySelecto
 const numberField=(label,key,min,max,step,unit,slider=false,scale=1)=>`<div class=vs-field><span>${label}</span><div class=vs-step><button type=button data-step="-${step}" data-for="${key}">&minus;</button><input type=number data-vs="${key}" data-scale="${scale}" min="${min}" max="${max}" step="${step}"><b>${unit}</b><button type=button data-step="${step}" data-for="${key}">+</button></div>${slider?`<input type=range data-range="${key}" min="${min}" max="${max}" step="${step}">`:''}<div class=vs-error data-error="${key}"></div></div>`;
 const sectionHeader=(kind,label)=>`<div class=vs-group-head><strong>${label}</strong><div class=vs-section-actions><button type=button class=hero data-test="${kind}">Test ${label}</button><button type=button class=hero data-save="${kind}" disabled>Save to Leaf</button><button type=button class=secondary data-defaults="${kind}">Defaults</button></div><p class="muted msg vs-section-msg" data-vs-msg="${kind}"></p></div>`;
 const gauge=kind=>`<div class=vs-gauge><div id=vs${kind}Scale class=vs-scale></div><div class=vs-track><div id=vs${kind}Fill class=vs-fill></div><div id=vs${kind}Rate class=vs-rate>0.0</div></div></div>`;
-const card=document.createElement('section');card.className='vario-settings-card';card.innerHTML=`<h2>Vario Settings</h2><div class=vs-general><strong class=vs-general-title>General</strong><label>Beep volume<select data-vs=volume><option value=0>Off</option><option value=1>Low</option><option value=2>Medium</option><option value=3>High</option></select></label><label>Sensitivity<select data-vs=sensitivity><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label><label class=checkline><input type=checkbox data-vs=quiet_mode>Quiet mode until flight starts</label><label class=checkline><input type=checkbox data-vs=volume_shortcut>Enable volume shortcut</label>${numberField('Climb display average','climb_display_average_s',0,5,1,'s')}${numberField('Glide average','glide_average_s',0,20,2,'s')}</div><div class=vs-group>${sectionHeader('climb','Climb')}<div class=vs-layout>${gauge('Climb')}<div>${numberField('Tone starts at','climb_start_cms',0,.2,.05,'m/s',false,100)}${numberField('Starting tone','climb_start_hz',100,2000,5,'Hz',true)}${numberField('Starting tone length','climb_beep_start_ms',40,2000,40,'ms')}${numberField('Starting tone pause','climb_rest_start_ms',40,4000,40,'ms')}<hr class=vs-divider>${numberField('Continuous at','climb_continuous_cms',1,20,.1,'m/s',false,100)}<div class=vs-derived id=vsClimbDerived></div><hr class=vs-divider>${numberField('Maximum climb','climb_max_cms',1,20,.1,'m/s',false,100)}${numberField('Maximum tone','climb_max_hz',100,5000,5,'Hz',true)}</div></div></div><div class=vs-group>${sectionHeader('sink','Sink')}<div class=vs-layout>${gauge('Sink')}<div><div class=vs-field><span>Tone starts at</span><select data-vs=sink_alarm_cms><option value=0>Off</option><option value=-120>−1.2 m/s</option><option value=-140>−1.4 m/s</option><option value=-160>−1.6 m/s</option><option value=-180>−1.8 m/s</option><option value=-200>−2.0 m/s</option><option value=-250>−2.5 m/s</option><option value=-300>−3.0 m/s</option><option value=-400>−4.0 m/s</option><option value=-500>−5.0 m/s</option><option value=-600>−6.0 m/s</option></select><div class=vs-error data-error=sink_alarm_cms></div></div>${numberField('Starting tone','sink_start_hz',100,2000,5,'Hz',true)}${numberField('Starting tone length','sink_beep_start_ms',40,2000,40,'ms')}${numberField('Starting tone pause','sink_rest_start_ms',40,4000,40,'ms')}<hr class=vs-divider>${numberField('Continuous at','sink_continuous_cms',-20,-.7,.1,'m/s',false,100)}<div class=vs-derived id=vsSinkDerived></div><hr class=vs-divider>${numberField('Maximum sink','sink_max_cms',-20,-.8,.1,'m/s',false,100)}${numberField('Minimum tone','sink_min_hz',30,2000,5,'Hz',true)}</div></div></div>`;
+const card=document.createElement('section');card.className='vario-settings-card';card.innerHTML=`<h2>Vario Settings</h2><div class=vs-general><strong class=vs-general-title>General</strong><label>Beep volume<select data-vs=volume><option value=0>Off</option><option value=1>Low</option><option value=2>Medium</option><option value=3>High</option></select></label><label>Sensitivity<select data-vs=sensitivity><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label><label class=checkline><input type=checkbox data-vs=quiet_mode>Quiet mode until flight starts</label><label class=checkline><input type=checkbox data-vs=volume_shortcut>Enable volume shortcut</label>${numberField('Climb display average','climb_display_average_s',0,20,1,'s')}${numberField('Glide average','glide_average_s',0,20,2,'s')}</div><div class=vs-group>${sectionHeader('climb','Climb')}<div class=vs-layout>${gauge('Climb')}<div>${numberField('Tone starts at','climb_start_cms',0,.2,.05,'m/s',false,100)}${numberField('Starting tone','climb_start_hz',100,2000,5,'Hz',true)}${numberField('Starting tone length','climb_beep_start_ms',40,2000,40,'ms')}${numberField('Starting tone pause','climb_rest_start_ms',40,4000,40,'ms')}<hr class=vs-divider>${numberField('Continuous at','climb_continuous_cms',1,20,.1,'m/s',false,100)}<div class=vs-derived id=vsClimbDerived></div><hr class=vs-divider>${numberField('Maximum climb','climb_max_cms',1,20,.1,'m/s',false,100)}${numberField('Maximum tone','climb_max_hz',100,5000,5,'Hz',true)}</div></div></div><div class=vs-group>${sectionHeader('sink','Sink')}<div class=vs-layout>${gauge('Sink')}<div><div class=vs-field><span>Tone starts at</span><select data-vs=sink_alarm_cms><option value=0>Off</option><option value=-120>−1.2 m/s</option><option value=-140>−1.4 m/s</option><option value=-160>−1.6 m/s</option><option value=-180>−1.8 m/s</option><option value=-200>−2.0 m/s</option><option value=-250>−2.5 m/s</option><option value=-300>−3.0 m/s</option><option value=-400>−4.0 m/s</option><option value=-500>−5.0 m/s</option><option value=-600>−6.0 m/s</option></select><div class=vs-error data-error=sink_alarm_cms></div></div>${numberField('Starting tone','sink_start_hz',100,2000,5,'Hz',true)}${numberField('Starting tone length','sink_beep_start_ms',40,2000,40,'ms')}${numberField('Starting tone pause','sink_rest_start_ms',40,4000,40,'ms')}<hr class=vs-divider>${numberField('Continuous at','sink_continuous_cms',-20,-.7,.1,'m/s',false,100)}<div class=vs-derived id=vsSinkDerived></div><hr class=vs-divider>${numberField('Maximum sink','sink_max_cms',-20,-.8,.1,'m/s',false,100)}${numberField('Minimum tone','sink_min_hz',30,2000,5,'Hz',true)}</div></div></div>`;
 settingsView.append(card);settingsButton.onclick=()=>{show('settings');settingsView.classList.add('active')};settingsView.querySelector('#backSettingsMain').onclick=()=>{settingsView.classList.remove('active');show('main')};
 const q=s=>card.querySelector(s),qa=s=>[...card.querySelectorAll(s)],defaults={volume:2,volume_shortcut:false,quiet_mode:false,sensitivity:3,climb_display_average_s:0,glide_average_s:10,climb_start_cms:5,climb_continuous_cms:800,climb_max_cms:1200,climb_start_hz:523,climb_max_hz:2093,climb_beep_start_ms:400,climb_rest_start_ms:240,sink_alarm_cms:-250,sink_continuous_cms:-800,sink_max_cms:-1070,sink_start_hz:330,sink_min_hz:131,sink_beep_start_ms:320,sink_rest_start_ms:800},sectionKeys={general:['volume','volume_shortcut','quiet_mode','sensitivity','climb_display_average_s','glide_average_s'],climb:['climb_start_cms','climb_continuous_cms','climb_max_cms','climb_start_hz','climb_max_hz','climb_beep_start_ms','climb_rest_start_ms'],sink:['sink_alarm_cms','sink_continuous_cms','sink_max_cms','sink_start_hz','sink_min_hz','sink_beep_start_ms','sink_rest_start_ms']},help={general:'Overall vario behavior and display smoothing.',climb:'Climb tone timing, pitch, and rate thresholds.',sink:'Sink alarm timing, pitch, and rate thresholds.'};let dirty={general:false,climb:false,sink:false},running=false,busy='',formValid={general:true,climb:true,sink:true},rateFpm=false,rateScale=100,rateUnit='m/s',savedSignatures={general:'',climb:'',sink:''};
 let general=q('.vs-general'),generalGroup=document.createElement('div');generalGroup.className='vs-group vs-general-group';general.before(generalGroup);generalGroup.innerHTML='<div class=vs-group-head><strong>General</strong><div class=vs-section-actions><button type=button class=hero data-save="general" disabled>Save to Leaf</button><button type=button class=secondary data-defaults="general">Defaults</button></div><p class="muted msg vs-section-msg" data-vs-msg="general"></p></div>';generalGroup.append(general);
@@ -2337,16 +2539,15 @@ function row(label,id){let l=el("label",{class:"checkline"}),i=el("input",{id:id
 function msg(t){let m=document.getElementById("devMsg");if(m)m.textContent=t||""}
 let main=document.getElementById("mainView");if(!main)return;
 let s=el("section",{id:"developerCard"}),h=el("h2",{text:"Developer"}),status=el("div",{class:"status",id:"devStatus",text:"Loading..."}),actions=el("div",{class:"actions"}),msgEl=el("p",{class:"muted msg",id:"devMsg"});
-let shot=el("button",{class:"hero",id:"devScreenshot",text:"Screenshot"}),msc=el("button",{class:"secondary",id:"devMassStorage",text:"Mass Storage"}),mem=el("button",{class:"secondary",id:"devMemory",text:"Memory"}),fan=el("button",{class:"secondary",id:"devFanet",text:"FANET"});
+let shot=el("button",{class:"hero",id:"devScreenshot",text:"Screenshot"}),msc=el("button",{class:"secondary",id:"devMassStorage",text:"Mass Storage"}),mem=el("button",{class:"secondary",id:"devMemory",text:"Memory"});
 actions.style.flexWrap="wrap";
-actions.appendChild(shot);actions.appendChild(msc);actions.appendChild(mem);actions.appendChild(fan);
-s.appendChild(h);s.appendChild(status);s.appendChild(row("Keep web app on","devAlwaysOn"));s.appendChild(row("Keep Bluetooth disabled","devKeepBleDisabled"));s.appendChild(row("UDP sensor injection","devUdpInjection"));s.appendChild(el("p",{class:"muted",text:"Accept test sensor data over WiFi (UDP 7431)."}));s.appendChild(row("System events log","devDiagSystem"));s.appendChild(row("Network events log","devDiagNetwork"));s.appendChild(row("Web requests log","devDiagWeb"));s.appendChild(row("Vario log","devDiagVario"));s.appendChild(row("CPU utilization log","devDiagCpu"));s.appendChild(actions);s.appendChild(msgEl);main.appendChild(s);
-async function load(){try{let r=await Promise.all([fetch("/api/debug/session"),fetch("/api/user/status")]);if(r.some(x=>!x.ok))throw new Error("Developer controls unavailable");let d=await r[0].json(),u=await r[1].json();document.getElementById("devAlwaysOn").checked=!!d.always_on;document.getElementById("devKeepBleDisabled").checked=!!d.keep_bluetooth_disabled;document.getElementById("devUdpInjection").checked=!!d.udp_sensor_injection;document.getElementById("devDiagSystem").checked=!!d.diag_system_events;document.getElementById("devDiagNetwork").checked=!!d.diag_network_events;document.getElementById("devDiagWeb").checked=!!d.diag_web_requests;document.getElementById("devDiagVario").checked=!!d.diag_vario;document.getElementById("devDiagCpu").checked=!!d.diag_cpu_utilization;status.textContent="web app: "+(d.web_app_active?"active":"off")+"\nmode: "+(d.using_leaf_wifi?"Leaf AP":"network")+"\nfirmware: "+(u.firmware_display_version||u.firmware_version||"")+"\nmac: "+(u.mac_address||"")}catch(e){status.textContent="Developer controls unavailable."}}
-async function save(){msg("Saving...");try{let body={always_on:document.getElementById("devAlwaysOn").checked,keep_bluetooth_disabled:document.getElementById("devKeepBleDisabled").checked,udp_sensor_injection:document.getElementById("devUdpInjection").checked,diag_system_events:document.getElementById("devDiagSystem").checked,diag_network_events:document.getElementById("devDiagNetwork").checked,diag_web_requests:document.getElementById("devDiagWeb").checked,diag_vario:document.getElementById("devDiagVario").checked,diag_cpu_utilization:document.getElementById("devDiagCpu").checked};let r=await fetch("/api/debug/session",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});if(!r.ok)throw new Error("Developer settings were rejected");msg("Saved.");load()}catch(e){msg("Unable to save developer settings.")}}
-["devAlwaysOn","devKeepBleDisabled","devUdpInjection","devDiagSystem","devDiagNetwork","devDiagWeb","devDiagVario","devDiagCpu"].forEach(id=>document.getElementById(id).onchange=save);
+actions.appendChild(shot);actions.appendChild(msc);actions.appendChild(mem);
+s.appendChild(h);s.appendChild(status);s.appendChild(row("Keep web app on","devAlwaysOn"));s.appendChild(row("Keep Bluetooth disabled","devKeepBleDisabled"));s.appendChild(row("UDP sensor injection","devUdpInjection"));s.appendChild(el("p",{class:"muted",text:"Accept test sensor data over WiFi (UDP 7431)."}));s.appendChild(row("System events log","devDiagSystem"));s.appendChild(row("Network events log","devDiagNetwork"));s.appendChild(row("Web requests log","devDiagWeb"));s.appendChild(row("CPU utilization log","devDiagCpu"));s.appendChild(el("a",{href:"/api/debug/route-optimizer",target:"_blank",text:"Route optimizer measurements"}));s.appendChild(actions);s.appendChild(msgEl);main.appendChild(s);
+async function load(){try{let r=await Promise.all([fetch("/api/debug/session"),fetch("/api/user/status")]);if(r.some(x=>!x.ok))throw new Error("Developer controls unavailable");let d=await r[0].json(),u=await r[1].json();document.getElementById("devAlwaysOn").checked=!!d.always_on;document.getElementById("devKeepBleDisabled").checked=!!d.keep_bluetooth_disabled;document.getElementById("devUdpInjection").checked=!!d.udp_sensor_injection;document.getElementById("devDiagSystem").checked=!!d.diag_system_events;document.getElementById("devDiagNetwork").checked=!!d.diag_network_events;document.getElementById("devDiagWeb").checked=!!d.diag_web_requests;document.getElementById("devDiagCpu").checked=!!d.diag_cpu_utilization;status.textContent="web app: "+(d.web_app_active?"active":"off")+"\nmode: "+(d.using_leaf_wifi?"Leaf AP":"network")+"\nfirmware: "+(u.firmware_display_version||u.firmware_version||"")+"\nmac: "+(u.mac_address||"")}catch(e){status.textContent="Developer controls unavailable."}}
+async function save(){msg("Saving...");try{let body={always_on:document.getElementById("devAlwaysOn").checked,keep_bluetooth_disabled:document.getElementById("devKeepBleDisabled").checked,udp_sensor_injection:document.getElementById("devUdpInjection").checked,diag_system_events:document.getElementById("devDiagSystem").checked,diag_network_events:document.getElementById("devDiagNetwork").checked,diag_web_requests:document.getElementById("devDiagWeb").checked,diag_cpu_utilization:document.getElementById("devDiagCpu").checked};let r=await fetch("/api/debug/session",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});if(!r.ok)throw new Error("Developer settings were rejected");msg("Saved.");load()}catch(e){msg("Unable to save developer settings.")}}
+["devAlwaysOn","devKeepBleDisabled","devUdpInjection","devDiagSystem","devDiagNetwork","devDiagWeb","devDiagCpu"].forEach(id=>document.getElementById(id).onchange=save);
 shot.onclick=()=>window.open("/app/debug/screenshot","_blank","noopener");
 mem.onclick=()=>window.open("/app/debug/memory","_blank","noopener");
-fan.onclick=()=>window.open("/app/debug/fanet","_blank","noopener");
 msc.onclick=async()=>{if(!confirm("Start SD mass storage?"))return;msg("Starting mass storage...");try{await fetch("/api/debug/mass-storage");msg("Mass storage requested.")}catch(e){msg("Unable to start mass storage.")}};
 load();
 })();
@@ -2472,9 +2673,9 @@ load();
     return false;
   }
 
-  void updateVarioSettings(WebServer& target) {
+  void updateVarioSettings(LeafWebServer& target) {
     JsonDocument doc;
-    const DeserializationError error = deserializeJson(doc, target.arg("plain"));
+    const DeserializationError error = deserializeJson(doc, target.body());
     if (error || !doc.is<JsonObject>()) {
       target.send(400, "application/json", "{\"detail\":\"Invalid settings JSON.\"}");
       return;
@@ -2525,7 +2726,8 @@ load();
                            sinkNoteStart <= 2000 && sinkNoteMin >= 30 &&
                            sinkNoteMin < sinkNoteStart;
     const bool generalValid = volume >= 0 && volume <= 3 && sensitivity >= 1 && sensitivity <= 5 &&
-                              climbDisplayAverage >= 0 && climbDisplayAverage <= 5 &&
+                              climbDisplayAverage >= 0 &&
+                              climbDisplayAverage <= CLIMB_DISPLAY_AVERAGE_MAX_SECONDS &&
                               glideAverage >= 0 && glideAverage <= 20 && glideAverage % 2 == 0;
     if (!timingValid || !climbValid || !sinkValid || !generalValid) {
       target.send(422, "application/json",
@@ -2574,9 +2776,9 @@ load();
     sendVarioSettings(target);
   }
 
-  void playVarioTone(WebServer& target) {
+  void playVarioTone(LeafWebServer& target) {
     JsonDocument doc;
-    const DeserializationError error = deserializeJson(doc, target.arg("plain"));
+    const DeserializationError error = deserializeJson(doc, target.body());
     const int32_t frequency = doc["frequency_hz"] | 0;
     if (error || frequency < 30 || frequency > 5000) {
       target.send(422, "application/json", "{\"detail\":\"Tone frequency is out of range.\"}");
@@ -2586,8 +2788,8 @@ load();
     target.send(202, "application/json", "{\"started\":true,\"duration_ms\":500}");
   }
 
-  void startVarioTest(WebServer& target) {
-    const String kind = extractJsonStringValue(target.arg("plain"), "kind");
+  void startVarioTest(LeafWebServer& target) {
+    const String kind = extractJsonStringValue(target.body(), "kind");
     const VarioAudioProfile& audio = settings.varioAudio;
     int32_t targetRate = 0;
     if (kind == "climb") {
@@ -2639,8 +2841,6 @@ load();
     json += settings.diag_networkEvents ? "true" : "false";
     json += ",\"diag_web_requests\":";
     json += settings.diag_webRequests ? "true" : "false";
-    json += ",\"diag_vario\":";
-    json += settings.diag_vario ? "true" : "false";
     json += ",\"diag_cpu_utilization\":";
     json += settings.diag_cpuUtilization ? "true" : "false";
     json += "}";
@@ -2648,12 +2848,12 @@ load();
     target.send(200, "application/json", json);
   }
 
-  void updateDebugSessionStatus(WebServer& target) {
+  void updateDebugSessionStatus(LeafWebServer& target) {
     if (!settings.dev_mode) {
       target.send(403, "application/json", "{\"detail\":\"Developer mode is disabled.\"}");
       return;
     }
-    const String body = target.arg("plain");
+    const String& body = target.body();
     settings.setUdpInjectionEnabled(
         extractJsonBoolValue(body, "udp_sensor_injection", settings.dev_udpInjection));
     udpMessageServer.update();
@@ -2666,7 +2866,6 @@ load();
         extractJsonBoolValue(body, "diag_network_events", settings.diag_networkEvents);
     settings.diag_webRequests =
         extractJsonBoolValue(body, "diag_web_requests", settings.diag_webRequests);
-    settings.diag_vario = extractJsonBoolValue(body, "diag_vario", settings.diag_vario);
     settings.diag_cpuUtilization =
         extractJsonBoolValue(body, "diag_cpu_utilization", settings.diag_cpuUtilization);
     settings.save();
@@ -2700,11 +2899,11 @@ load();
     target.send(200, "application/json", json);
   }
 
-  void resetCommissioningSettings(WebServer& target) {
+  void resetCommissioningSettings(LeafWebServer& target) {
     if (!requireCommissioningHttp(target)) return;
 
     const bool forceFormatSdCard =
-        extractJsonBoolValue(target.arg("plain"), "force_format_sd_card", false);
+        extractJsonBoolValue(target.body(), "force_format_sd_card", false);
     target.send(200, "application/json", "{\"reset_requested\":true}");
     delay(250);
     settings.factoryResetVario();
@@ -2714,10 +2913,10 @@ load();
     ESP.restart();
   }
 
-  void saveCommissioningFanetAddress(WebServer& target) {
+  void saveCommissioningFanetAddress(LeafWebServer& target) {
     if (!requireCommissioningHttp(target)) return;
 
-    String fanet_address = extractJsonStringValue(target.arg("plain"), "fanet_address");
+    String fanet_address = extractJsonStringValue(target.body(), "fanet_address");
     fanet_address.trim();
     fanet_address.toUpperCase();
     if (!isValidFanetAddress(fanet_address)) {
@@ -2899,33 +3098,6 @@ load();
     user_server.on("/commissioning/complete", HTTP_POST,
                    []() { markCommissioningComplete(user_server); });
 
-    user_server.on("/api/debug/mac-address", HTTP_GET,
-                   []() { sendCommissioningMacAddress(user_server); });
-    user_server.on("/api/debug/firmware-version", HTTP_GET,
-                   []() { sendCommissioningFirmwareVersion(user_server); });
-    user_server.on("/api/debug/settings/factory-reset", HTTP_POST,
-                   []() { resetCommissioningSettings(user_server); });
-    user_server.on("/api/debug/settings/fanet-address", HTTP_POST,
-                   []() { saveCommissioningFanetAddress(user_server); });
-    user_server.on("/api/debug/self-test/interactive", HTTP_POST,
-                   []() { startCommissioningSelfTest(user_server); });
-    user_server.on("/api/debug/sd-card/format", HTTP_POST,
-                   []() { formatCommissioningSdCard(user_server); });
-    user_server.on("/api/debug/sd-card/remount", HTTP_POST,
-                   []() { remountCommissioningSdCard(user_server); });
-    user_server.on("/api/debug/restart", HTTP_POST,
-                   []() { restartCommissioningDevice(user_server); });
-    user_server.on("/api/debug/self-test/details", HTTP_GET,
-                   []() { sendCommissioningSelfTestDetails(user_server); });
-    user_server.on("/api/debug/self-test/results", HTTP_DELETE,
-                   []() { clearCommissioningSelfTestResults(user_server); });
-    user_server.on("/api/debug/self-test", HTTP_GET,
-                   []() { sendCommissioningSelfTest(user_server); });
-    user_server.on("/api/debug/commissioning/status", HTTP_GET,
-                   []() { sendCommissioningStatus(user_server); });
-    user_server.on("/api/debug/commissioning/complete", HTTP_POST,
-                   []() { markCommissioningComplete(user_server); });
-
     commissioning_routes_configured = true;
   }
 
@@ -3045,13 +3217,47 @@ load();
     json.write("\"}");
   }
 
+  LogbookScan webSummaryScan, webEntryScan;
+  bool webSummaryScanning = false, webEntryScanning = false;
+  String webEntryAnchor;
+
+  bool awaitLogbookScan(WebServer& target, LogbookScan& scan) {
+    if (LogbookStore::repairPending()) {
+      scan.cancel();
+      webSummaryScanning = webEntryScanning = false;
+      sendNoStoreHeaders(target);
+      target.send(202, "application/json", "{\"busy\":true}");
+      return true;
+    }
+    scan.service();
+    if (scan.pending()) {
+      sendNoStoreHeaders(target);
+      target.send(202, "application/json", "{\"scanning\":true}");
+      return true;
+    }
+    if (scan.unavailable()) {
+      target.send(503, "application/json", "{\"detail\":\"Logbook unavailable.\"}");
+      return true;
+    }
+    return false;
+  }
+
   void sendLogbookSummary(WebServer& target) {
     if (!user_app_enabled) {
       target.send(404, "application/json", "{\"active\":false}");
       return;
     }
 
-    const uint16_t count = LogbookStore::count();
+    if (!webSummaryScanning) {
+      webSummaryScan.begin();
+      webSummaryScanning = true;
+    }
+    if (awaitLogbookScan(target, webSummaryScan)) {
+      if (!webSummaryScan.pending()) webSummaryScanning = false;
+      return;
+    }
+    webSummaryScanning = false;
+    const uint16_t count = webSummaryScan.navigation().total;
     sendNoStoreHeaders(target);
     target.setContentLength(CONTENT_LENGTH_UNKNOWN);
     target.send(200, "application/json", "");
@@ -3063,10 +3269,9 @@ load();
     json.write(settings.units_hours ? "true" : "false");
     json.write(",");
     writeUnitSettingsJson(json);
-    String latestPath;
+    const String latestPath = webSummaryScan.newestPath();
     LogbookEntrySummary latest;
-    if (count > 0 && LogbookStore::newestEntryPath(latestPath) &&
-        LogbookStore::readSummary(latestPath, latest)) {
+    if (count > 0 && LogbookStore::readSummary(latestPath, latest)) {
       json.write(",\"latest\":");
       writeLogbookSummaryJson(json, latest);
     }
@@ -3081,15 +3286,28 @@ load();
       return;
     }
 
-    heap_monitor::checkpoint("logbook-entry-start");
     String path = target.arg("path");
-    if (path.isEmpty() && !LogbookStore::newestEntryPath(path)) {
-      heap_monitor::checkpoint("logbook-entry-empty");
-      target.send(404, "application/json",
-                  "{\"ok\":false,\"error\":\"no_logs\",\"detail\":\"No logs found.\"}");
+    if (!path.isEmpty()) path = LogbookStore::normalizePath(path);
+    if (!path.isEmpty() && !LogbookStore::isLogbookJsonPath(path)) {
+      target.send(400, "application/json", "{\"error\":\"bad_path\"}");
       return;
     }
-
+    if (!webEntryScanning || webEntryAnchor != path) {
+      webEntryAnchor = path;
+      webEntryScan.begin(path);
+      webEntryScanning = true;
+    }
+    if (awaitLogbookScan(target, webEntryScan)) {
+      if (!webEntryScan.pending()) webEntryScanning = false;
+      return;
+    }
+    webEntryScanning = false;
+    const LogbookNavigation navigation = webEntryScan.navigation();
+    if (path.isEmpty()) path = webEntryScan.newestPath();
+    if (path.isEmpty() || !navigation.found) {
+      target.send(404, "application/json", "{\"error\":\"no_logs\",\"detail\":\"No logs found.\"}");
+      return;
+    }
     path = LogbookStore::normalizePath(path);
     if (!LogbookStore::isLogbookJsonPath(path)) {
       heap_monitor::checkpoint("logbook-entry-bad-path");
@@ -3097,26 +3315,23 @@ load();
                   "{\"ok\":false,\"error\":\"bad_path\",\"detail\":\"Invalid log path.\"}");
       return;
     }
-    if (!SD_MMC.exists(path)) {
-      heap_monitor::checkpoint("logbook-entry-missing");
-      target.send(404, "application/json",
-                  "{\"ok\":false,\"error\":\"missing\",\"detail\":\"Log file was not found.\"}");
-      return;
-    }
-
     LogbookEntrySummary summary;
-    if (!LogbookStore::readSummary(path, summary)) {
-      heap_monitor::checkpoint("logbook-entry-fail");
-      LogbookNavigation navigation;
-      LogbookStore::navigationForPath(path, navigation);
-
+    LogbookReadStatus readStatus;
+    if (!LogbookStore::readSummary(path, summary, &readStatus)) {
+      // Storage failure details are already recorded to serial; do not write diagnostics to SD.
+      const bool repairNeeded = readStatus == LogbookReadStatus::RepairNeeded;
+      sendNoStoreHeaders(target);
+      if (!repairNeeded) target.sendHeader("Retry-After", "1");
       target.setContentLength(CONTENT_LENGTH_UNKNOWN);
-      target.send(422, "application/json", "");
+      target.send(repairNeeded ? 422 : 503, "application/json", "");
       char responseBuffer[1024];
       JsonStream json(target, responseBuffer, sizeof(responseBuffer));
       json.write(
-          "{\"ok\":false,\"error\":\"invalid_json\",\"detail\":\"Log file could not be "
-          "parsed.\",\"path\":\"");
+          repairNeeded
+              ? "{\"ok\":false,\"error\":\"repair_needed\",\"detail\":\"Flight needs repair. "
+                "Run Repair Logs on the device.\",\"path\":\""
+              : "{\"ok\":false,\"error\":\"temporarily_unavailable\",\"detail\":\"Could not "
+                "read flight. Please try again.\",\"path\":\"");
       json.writeEscaped(path.c_str());
       json.write("\",\"filename\":\"");
       const String filename = LogbookStore::filenameFromPath(path);
@@ -3135,9 +3350,6 @@ load();
       json.finish();
       return;
     }
-
-    LogbookNavigation navigation;
-    LogbookStore::navigationForPath(summary.path, navigation);
 
     heap_monitor::checkpoint("logbook-entry-end");
     sendNoStoreHeaders(target);
@@ -3177,7 +3389,7 @@ load();
                   "{\"ok\":false,\"error\":\"bad_path\",\"detail\":\"Invalid log path.\"}");
       return;
     }
-    if (!SD_MMC.exists(path)) {
+    if (!SD_MMC.exists(path) && !SD_MMC.exists(path + ".tmp") && !SD_MMC.exists(path + ".bak")) {
       heap_monitor::checkpoint("logbook-delete-missing");
       target.send(404, "application/json",
                   "{\"ok\":false,\"error\":\"missing\",\"detail\":\"Log file was not found.\"}");
@@ -3187,20 +3399,19 @@ load();
     LogbookNavigation navigation;
     LogbookStore::navigationForPath(path, navigation);
 
-    if (!LogbookStore::deleteEntry(path)) {
-      heap_monitor::checkpoint("logbook-delete-fail");
-      target.send(
-          500, "application/json",
-          "{\"ok\":false,\"error\":\"delete_failed\",\"detail\":\"Log could not be deleted.\"}");
-      return;
-    }
+    LogbookStore::beginRepairSession(false);  // Close any maintenance iterator before deletion.
+    const bool deleted = LogbookStore::deleteEntry(path);
 
-    const String preferredPath =
+    String preferredPath =
         !navigation.previousPath.isEmpty() ? navigation.previousPath : navigation.nextPath;
-    String json = "{\"ok\":true,\"next_path\":\"";
+    LogbookEntrySummary remaining;
+    if (!deleted && LogbookStore::readSummary(path, remaining)) preferredPath = path;
+    String json = "{\"ok\":true,\"deleted\":";
+    json += deleted ? "true" : "false";
+    json += ",\"next_path\":\"";
     json += jsonEscape(preferredPath);
     json += "\",\"count\":";
-    json += navigation.total > 0 ? navigation.total - 1 : 0;
+    json += LogbookStore::count();
     json += "}";
 
     heap_monitor::checkpoint("logbook-delete-end");
@@ -3244,7 +3455,7 @@ load();
     }
 
     LogbookEntrySummary summary;
-    if (!SD_MMC.exists(logbookPath) || !LogbookStore::readSummary(logbookPath, summary)) {
+    if (!LogbookStore::readSummary(logbookPath, summary)) {
       heap_monitor::checkpoint("logbook-track-missing-log");
       target.send(404, "application/json",
                   "{\"ok\":false,\"error\":\"missing\",\"detail\":\"Log file was not found.\"}");
@@ -3383,9 +3594,9 @@ load();
     target.send(200, "application/json", wifi_setup_networks_json);
   }
 
-  void connectToWifiFromRequest(WebServer& target) {
+  void connectToWifiFromRequest(LeafWebServer& target) {
     heap_monitor::checkpoint("wifi-connect-request");
-    const String body = target.arg("plain");
+    const String& body = target.body();
     const String ssid = extractJsonStringValue(body, "ssid");
     const String password = extractJsonStringValue(body, "password");
 
@@ -3426,6 +3637,8 @@ load();
     if (user_server_started && user_server_routes_configured) return;
 
     if (!user_server_routes_configured) {
+      const char* headers[] = {"Content-Type"};
+      user_server.collectHeaders(headers, 1);
       user_server.on("/", HTTP_GET, []() {
         handleUserRequest("GET /", []() {
           if (diagnosticsEnabled()) user_app_route_root_count++;
@@ -3498,15 +3711,21 @@ load();
       user_server.on("/api/leaf-log/unlink", HTTP_POST, []() {
         handleUserRequest("POST /api/leaf-log/unlink", []() { unlinkLeafLog(user_server); });
       });
-      user_server.on("/api/routes/import", HTTP_POST, []() {
-        handleUserRequest("POST /api/routes/import", []() {
-          if (diagnosticsEnabled()) user_app_route_routes_import_count++;
-          importRoute(user_server);
-        });
-      });
-      user_server.on("/api/routes/save", HTTP_POST, []() {
-        handleUserRequest("POST /api/routes/save", []() { saveEditedRoute(user_server); });
-      });
+      user_server.addHandler(new RouteRequestHandler(
+          "/api/routes/import",
+          []() {
+            handleUserRequest("POST /api/routes/import", []() {
+              if (diagnosticsEnabled()) user_app_route_routes_import_count++;
+              importRoute(user_server);
+            });
+          },
+          []() { receiveRouteRequest(ROUTE_IMPORT_REQUEST_MAX_BYTES); }));
+      user_server.addHandler(new RouteRequestHandler(
+          "/api/routes/save",
+          []() {
+            handleUserRequest("POST /api/routes/save", []() { saveEditedRoute(user_server); });
+          },
+          []() { receiveRouteRequest(ROUTE_EDITOR_REQUEST_MAX_BYTES); }));
       user_server.on("/api/nav-data", HTTP_GET, []() {
         handleUserRequest("GET /api/nav-data", []() { sendNavData(user_server); });
       });
@@ -3612,78 +3831,30 @@ const char* leafLogBaseUrl() { return LEAF_LOG_BASE_URL; }
 
 const char* leafLogCaCertificate() { return ISRG_ROOT_X1_CA; }
 
-constexpr auto endl = "\n";
-
-void writeScreenshotBuffer(const char* buffer) {
-  Serial.println("Writing screenshot buffer");
-  send_buffer += buffer;
-}
+void writeScreenshotBuffer(const char* buffer) { *screenshot_output += buffer; }
 
 void webserver_setup() {
-  configureCommissioningRoutes();
-  if (!user_server_started && commissioningHttpAllowed()) {
+  // Keep the canonical routes through the current factory connection so the
+  // completion response can be retried even after the durable flag changes.
+  const bool factoryConnected = diagnostic_network.connected();
+  if (factoryConnected && !settings.commissioningComplete) configureCommissioningRoutes();
+  if (!user_app_enabled && !factoryConnected && user_server_started) stopWebHosting();
+  if (!user_server_started && commissioning_routes_configured) {
     user_server.begin();
     user_server_started = true;
     Serial.println("Leaf commissioning webserver started");
   }
 
+  if (!user_server_started && !user_app_enabled) return;
   if (!settings.dev_mode) return;
   if (debug_routes_configured) return;
 
   user_server.on("/api/debug/raw-xbm", HTTP_GET, []() {
-    send_buffer = "";
+    String image;
+    screenshot_output = &image;
     u8g2_WriteBufferXBM(u8g2.getU8g2(), writeScreenshotBuffer);
-    user_server.send(200, "image/x-xbitmap", send_buffer);
-  });
-
-  user_server.on("/app/debug/fanet", HTTP_GET, []() {
-    etl::string<1024> str;
-    etl::string_stream ss(str);
-    auto& radio = fanetRadio;
-    auto protocol = radio.protocol;
-
-    // Lock the radio while we poke around their private parts
-    LockGuard lock(radio.x_fanet_manager_mutex);
-    auto& radioStats = protocol->stats();
-    // UnsafeManager* manager = (UnsafeManager*)radio.manager;
-    auto ms = millis();
-
-    ss << "<!DOCTYPE html>\n"
-       << "<html>\n"
-       << "<script>\n"
-       << "setTimeout(() => location.reload(), 1000);\n"
-       << "</script>\n"
-       << "<body><pre>\n"
-
-       << "Current Time: " << ms << endl
-       << endl
-       << "-- STATS -- " << endl
-       << "State: " << fanetRadio.getState().c_str() << "\n"
-       << "rx: " << radioStats.rx << "\n"
-       << "txSuccess: " << radioStats.txSuccess << "\n"
-       << "txFailed: " << radioStats.txFailed << "\n"
-       << "processed: " << radioStats.processed << "\n"
-       << "forwarded: " << radioStats.forwarded << "\n"
-       << "fwdMinRssiDrp: " << radioStats.fwdMinRssiDrp << "\n"
-       << "fwdNeighborDrp: " << radioStats.fwdNeighborDrp << "\n"
-       << "fwdDbBoostWeak: " << radioStats.fwdDbBoostWeak << "\n"
-       << "fwdDbBoostDrop: " << radioStats.fwdDbBoostDrop << "\n"
-       << "rxFromUsDrp: " << radioStats.rxFromUsDrp << "\n"
-       << "txAck: " << radioStats.txAck << "\n"
-       << "neighbors: " << radioStats.neighborTableSize << "\n"
-       << "-- Manager --" << endl
-       << "Manager Queue Length: " << protocol->txPoolSize() << endl
-       << "Next allowed tracking time: "
-       << (radio.m_nextAllowedTrackingTimeMs ? (long long)radio.m_nextAllowedTrackingTimeMs - ms
-                                             : 0) /
-              1000.0f
-       << "s" << endl
-       << endl
-
-       << "</pre></body>\n"
-       << "</html>\n";
-
-    user_server.send(200, "text/html", str.c_str());
+    screenshot_output = nullptr;
+    user_server.send(200, "image/x-xbitmap", image);
   });
 
   user_server.on("/app/debug/screenshot", HTTP_GET, []() {
@@ -3767,6 +3938,25 @@ void webserver_setup() {
 
   user_server.on("/api/debug/session", HTTP_POST, []() { updateDebugSessionStatus(user_server); });
 
+  user_server.on("/api/debug/route-optimizer", HTTP_GET, []() {
+    if (!settings.dev_mode) {
+      user_server.send(403, "text/plain", "Developer mode is disabled");
+      return;
+    }
+    class JsonOutput : public Print {
+     public:
+      String text;
+      size_t write(uint8_t c) override {
+        text += char(c);
+        return 1;
+      }
+    } output;
+    output.text.reserve(768);
+    route_guidance::writeJson(output);
+    sendNoStoreHeaders(user_server);
+    user_server.send(200, "application/json", output.text);
+  });
+
   user_server.on("/api/debug/runtime", HTTP_POST, []() {
     if (!settings.dev_mode) {
       user_server.send(403, "text/plain", "Developer mode is disabled");
@@ -3782,8 +3972,11 @@ void webserver_setup() {
       cpu_utilization::freeze();
     } else if (action == "export") {
       ok = cpu_utilization::exportToSd();
+    } else if (action == "discard") {
+      ok = cpu_utilization::discard();
+      if (ok) settings.diag_cpuUtilization = false;
     } else {
-      user_server.send(400, "text/plain", "Use action=start, freeze, or export");
+      user_server.send(400, "text/plain", "Use action=start, freeze, export, or discard");
       return;
     }
     user_server.send(ok ? 200 : 409, "text/plain", cpu_utilization::status());
@@ -3821,6 +4014,15 @@ void webserver_setup() {
 }
 
 void webserver_loop() {
+  if (LogbookStore::repairPending()) {
+    webSummaryScan.cancel();
+    webEntryScan.cancel();
+    webSummaryScanning = webEntryScanning = false;
+  }
+  if (user_app_enabled) {
+    if (webSummaryScanning) webSummaryScan.service();
+    if (webEntryScanning) webEntryScan.service();
+  }
   if (WiFi.status() == WL_CONNECTED || user_app_enabled) {
     if (user_server_started) {
       user_server.handleClient();
@@ -3911,6 +4113,11 @@ void webserver_enable_wifi_setup() {
 }
 
 void webserver_disable_user_app() {
+  const bool wasProvisioning = user_app_provisioning;
+  webSummaryScan.cancel();
+  webEntryScan.cancel();
+  webSummaryScanning = webEntryScanning = false;
+  webEntryAnchor = "";
   appendWifiSetupDiagnostics("disable-start", true);
   heap_monitor::checkpoint("disable-start");
   dumpUserAppCounters("disable-start");
@@ -3927,13 +4134,26 @@ void webserver_disable_user_app() {
   wifi_setup_connect_error = "";
   wifi_setup_connect_saved = false;
   if (user_server_started) {
-    user_server.stop();
-    user_server_started = false;
+    clearRouteRequest();
+    const bool preserveFactoryConnection =
+        commissioning_routes_configured && diagnostic_network.connected();
+    stopWebHosting();
+    if (preserveFactoryConnection) {
+      // Closing the app on the factory's station connection must still allow
+      // a tool to recover a lost commissioning-complete reply.
+      configureCommissioningRoutes();
+      user_server.begin();
+      user_server_started = true;
+    }
     heap_monitor::checkpoint("after-user-stop");
   }
   if (user_app_using_leaf_wifi) {
-    WiFi.softAPdisconnect(true);
-    WiFi.mode(WIFI_STA);
+    if (wasProvisioning && WiFi.status() == WL_CONNECTED) {
+      // The setup screen observes the new station connection before closing.
+      WiFi.mode(WIFI_STA);
+    } else {
+      leaf_wifi::disconnectFromNetwork();
+    }
     heap_monitor::checkpoint("after-ap-stop");
   }
   user_app_using_leaf_wifi = false;
@@ -3947,6 +4167,24 @@ void webserver_disable_user_app() {
 }
 
 bool webserver_user_app_active() { return user_app_enabled; }
+
+#ifdef LEAF_USB_BENCH_CONSOLE
+void webserver_navigation_heap(uint32_t (&metrics)[4]) {
+  metrics[0] = route_import_heap.before;
+  metrics[1] = route_import_heap.minimum;
+  metrics[2] = waypoint_list_heap.before;
+  metrics[3] = waypoint_list_heap.minimum;
+}
+
+void webserver_route_heap(uint32_t (&metrics)[4]) {
+  metrics[0] = route_receipt_heap.before;
+  metrics[1] = route_receipt_heap.minimum;
+  metrics[2] = route_normalization_heap.before;
+  metrics[3] = route_normalization_heap.minimum;
+}
+#endif
+
+bool webserver_listening() { return user_server_started; }
 
 bool webserver_user_app_always_on() { return user_app_always_on; }
 

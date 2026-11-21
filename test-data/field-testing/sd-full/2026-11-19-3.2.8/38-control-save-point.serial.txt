@@ -1,0 +1,71 @@
+BENCH version 0.2.4-b1ed.bench+h3.2.8
+LSM6DSV: a=-0.0012,-0.0041,0.9936 g=-0.0023,-0.0054,0.9994 pairsBENCH version 0.2.4-b1ed.bench+h3.2.8
+BENCH status On User -1 1 0 1 0 0 1
+
+HOST press LEFT
+BENCH ok
+
+HOST press RIGHT
+button: LEFT   state: PRESSED     hold count: 0
+button: LEFT   state: CLICKED     hold count: 0
+502569 playSound 1008610594
+button: LEFT   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press DOWN
+button: RIGHT  state: PRESSED     hold count: 0
+button: RIGHT  state: CLICKED     hold count: 0
+502869 playSound 1008724160
+WiFi coordinator: trying saved network 0 'SkyWagon'
+button: RIGHT  state: RELEASED    hold count: 0
+UDP injection stopped
+BENCH ok
+
+HOST press CENTER
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+503179 playSound 1008598446
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press DOWN
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+503479 playSound 1008700914
+button: CENTER state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press DOWN
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+503779 playSound 1008598446
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press DOWN
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+504089 playSound 1008598446
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST press CENTER
+button: DOWN   state: PRESSED     hold count: 0
+button: DOWN   state: CLICKED     hold count: 0
+504399 playSound 1008598446
+button: DOWN   state: RELEASED    hold count: 0
+BENCH ok
+
+HOST status
+button: CENTER state: PRESSED     hold count: 0
+button: CENTER state: CLICKED     hold count: 0
+Save Point failed: GPS fix is required.
+504699 playSound 1008649582
+button: CENTER state: RELEASED    hold count: 0
+BENCH status On Menu 1 0 0 1 0 0 1
+
+HOST heap
+BENCH heap 113188 28740 31732 7548
+BENCH status On Menu 1 0 0 1 0 0 1
+BENCH heap 113140 28740 31732 7548
+BENCH web http://0.0.0.0/app

@@ -54,6 +54,7 @@ namespace sim {
     // start/stop/update run on the device thread. Settings and controls may come from HTTP.
     void start(uint32_t nowMs, etl::imessage_bus* bus, double altitudeM = 1000);
     void stop();
+    void relocate(double eastM, double northM, double headingDeg);
     void update(uint32_t nowMs);
     void configure(const FreeFlightParameters& parameters);
     void controls(double steering, double speedInput, bool straighten = false);

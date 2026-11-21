@@ -128,10 +128,7 @@ void timerAlarm(hw_timer_t* timer, uint64_t alarmValue, bool autoreload, uint64_
   if (timer) sim::clock().setTimerAlarm(timer->handle, alarmValue, autoreload);
 }
 
-uint64_t timerRead(hw_timer_t* timer) {
-  (void)timer;
-  return sim::clock().nowUs();
-}
+uint64_t timerRead(hw_timer_t* timer) { return timer ? sim::clock().readTimer(timer->handle) : 0; }
 void timerWrite(hw_timer_t* timer, uint64_t val) {
   (void)timer;
   (void)val;

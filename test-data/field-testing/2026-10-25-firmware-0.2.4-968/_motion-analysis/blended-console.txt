@@ -1,0 +1,106 @@
+SELECTED
+{'speed_power': 1, 'height_power': 2, 'speed_floor_mph': 2.5, 'height_floor': 0.3333333333333333, 'climb_floor': 0.2, 'confirm_s': 1, 'ground_files': [], 'ground_files_before_confirmation': [], 'largest_ground_score_after_gates': 0.9051, 'largest_ground_sample': {'unit': 'BlueGreen326', 'track': '2026-10-25-XLV-000-10.igc', 'local': 45195.0, 'mirrored': False, 'evidence': (0.7939632545931758, 0.3333333333333333, 0.4166666666666667)}, 'flight_delay_s': {'Racoon': 12.35, 'RedStrap': 12.33, 'BlueGreen326': 11.92, 'Bethany': 22.0}}
+{'speed_power': 1, 'height_power': 2, 'speed_floor_mph': 3, 'height_floor': 0.3333333333333333, 'climb_floor': 0.2, 'confirm_s': 1, 'ground_files': [], 'ground_files_before_confirmation': [], 'largest_ground_score_after_gates': 0.9051, 'largest_ground_sample': {'unit': 'BlueGreen326', 'track': '2026-10-25-XLV-000-10.igc', 'local': 45195.0, 'mirrored': False, 'evidence': (0.7939632545931758, 0.3333333333333333, 0.4166666666666667)}, 'flight_delay_s': {'Racoon': 12.35, 'RedStrap': 12.33, 'BlueGreen326': 11.92, 'Bethany': 22.0}}
+{'speed_power': 1, 'height_power': 2, 'speed_floor_mph': 3.25, 'height_floor': 0.3333333333333333, 'climb_floor': 0.2, 'confirm_s': 1, 'ground_files': [], 'ground_files_before_confirmation': [], 'largest_ground_score_after_gates': 0.9051, 'largest_ground_sample': {'unit': 'BlueGreen326', 'track': '2026-10-25-XLV-000-10.igc', 'local': 45195.0, 'mirrored': False, 'evidence': (0.7939632545931758, 0.3333333333333333, 0.4166666666666667)}, 'flight_delay_s': {'Racoon': 12.35, 'RedStrap': 12.33, 'BlueGreen326': 11.92, 'Bethany': 22.0}}
+{'speed_power': 1, 'height_power': 2, 'speed_floor_mph': 3.5, 'height_floor': 0.3333333333333333, 'climb_floor': 0.2, 'confirm_s': 1, 'ground_files': [], 'ground_files_before_confirmation': [], 'largest_ground_score_after_gates': 0.9051, 'largest_ground_sample': {'unit': 'BlueGreen326', 'track': '2026-10-25-XLV-000-10.igc', 'local': 45195.0, 'mirrored': False, 'evidence': (0.7939632545931758, 0.3333333333333333, 0.4166666666666667)}, 'flight_delay_s': {'Racoon': 12.35, 'RedStrap': 12.33, 'BlueGreen326': 11.92, 'Bethany': 22.0}}
+passing 120 / 144
+EXAMPLES [
+  {
+    "speed_mph": 3.75,
+    "actual_ascent_mps": 0.5,
+    "mean_reported_vario_mps": 0.25,
+    "gain_over_3s_m": 1.5,
+    "displacement_over_3s_m": 5.0291999999999994,
+    "evidence": [
+      0.75,
+      0.5,
+      0.25
+    ],
+    "score": 1.0,
+    "qualifies_before_confirmation": true
+  },
+  {
+    "speed_mph": 3.75,
+    "actual_ascent_mps": 0.5,
+    "mean_reported_vario_mps": 0.5,
+    "gain_over_3s_m": 1.5,
+    "displacement_over_3s_m": 5.0291999999999994,
+    "evidence": [
+      0.75,
+      0.5,
+      0.5
+    ],
+    "score": 1.0,
+    "qualifies_before_confirmation": true
+  },
+  {
+    "speed_mph": 4,
+    "actual_ascent_mps": 0.4,
+    "mean_reported_vario_mps": 0.4,
+    "gain_over_3s_m": 1.2000000000000002,
+    "displacement_over_3s_m": 5.36448,
+    "evidence": [
+      0.8,
+      0.4000000000000001,
+      0.4
+    ],
+    "score": null,
+    "qualifies_before_confirmation": false
+  },
+  {
+    "speed_mph": 3.5,
+    "actual_ascent_mps": 0.6,
+    "mean_reported_vario_mps": 0.6,
+    "gain_over_3s_m": 1.7999999999999998,
+    "displacement_over_3s_m": 4.69392,
+    "evidence": [
+      0.7000000000000001,
+      0.6,
+      0.6
+    ],
+    "score": 1.06,
+    "qualifies_before_confirmation": true
+  },
+  {
+    "speed_mph": 3,
+    "actual_ascent_mps": 0.7,
+    "mean_reported_vario_mps": 0.7,
+    "gain_over_3s_m": 2.0999999999999996,
+    "displacement_over_3s_m": 4.02336,
+    "evidence": [
+      0.6000000000000001,
+      0.6999999999999998,
+      0.7
+    ],
+    "score": null,
+    "qualifies_before_confirmation": false
+  },
+  {
+    "speed_mph": 3.75,
+    "actual_ascent_mps": 0.25,
+    "mean_reported_vario_mps": 0.25,
+    "gain_over_3s_m": 0.75,
+    "displacement_over_3s_m": 5.0291999999999994,
+    "evidence": [
+      0.75,
+      0.25,
+      0.25
+    ],
+    "score": null,
+    "qualifies_before_confirmation": false
+  },
+  {
+    "speed_mph": 4,
+    "actual_ascent_mps": 0,
+    "mean_reported_vario_mps": 0,
+    "gain_over_3s_m": 0,
+    "displacement_over_3s_m": 5.36448,
+    "evidence": [
+      0.8,
+      0,
+      0
+    ],
+    "score": null,
+    "qualifies_before_confirmation": false
+  }
+]

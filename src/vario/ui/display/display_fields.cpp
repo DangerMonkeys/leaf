@@ -162,12 +162,13 @@ void display_speed(uint8_t x, uint8_t y, const uint8_t* font, bool units) {
 }
 
 // Display distance
-void display_distance(uint8_t cursor_x, uint8_t cursor_y, double distance, uint8_t maxWidth) {
+void display_distance(uint8_t cursor_x, uint8_t cursor_y, double distance, uint8_t maxWidth,
+                      bool showZero) {
   u8g2.setCursor(cursor_x, cursor_y);
   uint8_t decimalPlaces = 0;
   uint8_t unitsSmall = true;  // assume m or ft, switch to km or mi if needed
 
-  const bool unknown = distance == 0;
+  const bool unknown = !isfinite(distance) || distance < 0 || (!showZero && distance == 0);
   if (!unknown) {
     if (settings.units_distance) {
       distance *= 3.28084;  // convert to feet
@@ -187,6 +188,8 @@ void display_distance(uint8_t cursor_x, uint8_t cursor_y, double distance, uint8
     }
   }
 
+  // A positive sub-unit distance still means the pilot is outside the boundary.
+  if (showZero && unitsSmall && distance > 0 && distance < 1) distance = 1;
   const uint8_t unit =
       settings.units_distance ? (unitsSmall ? 128 : 130) : (unitsSmall ? 127 : 129);
   if (maxWidth) {
@@ -612,7 +615,10 @@ void display_accel(uint8_t x, uint8_t y, float accel) {
   u8g2.setCursor(x, y);
   u8g2.setDrawColor(1);
   u8g2.setFont(leaf_6x12);
-  u8g2.print(accel, 1);
+  if (isfinite(accel))
+    u8g2.print(accel, 1);
+  else
+    u8g2.print("--.-");
   u8g2.print(" g");
 }
 
@@ -631,6 +637,37 @@ void display_glide(uint8_t x, uint8_t y, float glide) {
     u8g2.setCursor(x, y);
     u8g2.print("--.-");
   }
+}
+
+void display_navAltitudeSurplus(uint8_t x, uint8_t y, float surplusM) {
+  constexpr uint8_t width = 43;
+  u8g2.setDrawColor(1);
+  if (!isfinite(surplusM) || surplusM < 0) {
+    u8g2.setFont(leaf_6x12);
+    u8g2.setCursor(x + (width - u8g2.getStrWidth("--")) / 2, y);
+    u8g2.print("--");
+    return;
+  }
+
+  const double altitude = min<double>(surplusM * (settings.units_alt ? 1.0 / 0.3048 : 1.0), 99999);
+  char value[8];
+  snprintf(value, sizeof(value), "%lu", static_cast<unsigned long>(altitude));
+  const char* units = settings.units_alt ? "ft" : "m";
+  const auto advance = [](const char* text) {
+    uint8_t result = 0;
+    while (*text) result += u8g2_GetGlyphWidth(u8g2.getU8g2(), *text++);
+    return result;
+  };
+  u8g2.setFont(leaf_5x8);
+  const uint8_t unitsWidth = advance(units);
+  u8g2.setFont(leaf_6x12);
+  if (advance(value) + unitsWidth + 1 > width) u8g2.setFont(leaf_5x8);
+  const uint8_t totalWidth = advance(value) + unitsWidth + 1;
+  u8g2.setCursor(x + (width - totalWidth) / 2, y);
+  u8g2.print(value);
+  u8g2.setCursor(u8g2.getCursorX() + 1, y);
+  u8g2.setFont(leaf_5x8);
+  u8g2.print(units);
 }
 
 void display_temp(uint8_t x, uint8_t y, const Ambient& ambient) {
@@ -820,7 +857,7 @@ void display_fanet_icon(const uint8_t& x, const uint8_t& y) {
 #endif
 
   // If the radio is missing, don't bother rendering it at all
-  if (fanetRadio.getState() == FanetRadioState::UNINSTALLED) {
+  if (!fanetRadio.isDetected()) {
     return;
   }
 

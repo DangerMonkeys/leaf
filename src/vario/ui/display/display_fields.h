@@ -14,7 +14,8 @@ void display_navTimeRemaining(uint8_t x, uint8_t y, const uint8_t* font, uint32_
 bool display_speed(uint8_t cursor_x, uint8_t cursor_y);
 void display_speed(uint8_t x, uint8_t y, const uint8_t* font);
 void display_speed(uint8_t x, uint8_t y, const uint8_t* font, bool units);
-void display_distance(uint8_t cursor_x, uint8_t cursor_y, double distance, uint8_t maxWidth = 0);
+void display_distance(uint8_t cursor_x, uint8_t cursor_y, double distance, uint8_t maxWidth = 0,
+                      bool showZero = false);
 void display_heading(uint8_t cursor_x, uint8_t cursor_y, bool degSymbol);
 void display_headingTurn(uint8_t cursor_x, uint8_t cursor_y);
 void display_turnIndicators(uint8_t leftX, uint8_t rightX, uint8_t baselineY, double turnDeg);
@@ -53,6 +54,7 @@ void display_unsignedClimbRate_short(uint8_t x, uint8_t y, int16_t displayClimbR
 
 void display_accel(uint8_t x, uint8_t y, float accel);
 void display_glide(uint8_t x, uint8_t y, float glide);
+void display_navAltitudeSurplus(uint8_t x, uint8_t y, float surplusM);
 void display_temp(uint8_t x, uint8_t y, const Ambient& ambient);
 void display_humidity(uint8_t x, uint8_t y, const Ambient& ambient);
 

@@ -17,10 +17,12 @@ namespace cpu_utilization {
   bool hasCapture();
   const char* status();
   uint64_t nowUs();
+  uint64_t captureStartUs();
   uint64_t workClockUs();
   void update();
   bool start();
   void freeze();
+  bool discard();
   bool exportToSd();
   const char* exportedPath();
   bool writeJson(Print& output);

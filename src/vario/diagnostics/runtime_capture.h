@@ -116,7 +116,10 @@ namespace runtime_capture {
   }
   class Recorder {
    public:
-    Stats stats[SLOT_COUNT] = {};
+    using SlotStats = Stats[SLOT_COUNT];
+    explicit Recorder(SlotStats& slotStats) : stats(slotStats) {}
+
+    SlotStats& stats;
     Excluded excluded[SLOT_COUNT] = {};
     Stats buttonStats;
     Stats recoveryStats;

@@ -1,0 +1,192 @@
+---
+title: Leaf USB bench console
+description: Drive a test unit over USB and capture comparable on-device heap measurements.
+---
+
+## Build a candidate for the bench
+
+Check out the candidate commit and run PlatformIO from the repository root.
+
+```powershell
+pio run -e leaf_3_2_5_bench
+```
+
+The 3.2.5 bench target inherits `leaf_3_2_5_release` and adds
+`LEAF_USB_BENCH_CONSOLE=1`. The `leaf_3_2_8_bench` target does the same for
+3.2.8 hardware. For another hardware revision, define a matching
+`*_bench` environment in the variant's `platformio.ini` using
+`leaf_3_2_5_bench` as the template. Build one environment at a time per worktree
+because the version script temporarily updates a shared header.
+
+Flash `.pio/build/leaf_3_2_5_bench/firmware.bin` to both OTA app slots using the
+repository's hardware verification procedure for the connected unit. The build
+also copies the image to `bench-firmware-leaf_3_2_5.bin` for local use. Archive
+the tested binary, ELF, commit ID, and report together. Release builds leave
+the console flag off. For publication, use the release image and follow the
+runtime assessment and release checklist. [Creating a firmware release](releasing.md)
+
+The operating-mode SD handoff revokes USB host access to the SD card and waits
+for pending host I/O. The bench build then reconnects USB so the console remains
+available. The COM port can disappear during that transition. Reopen it after
+it re-enumerates. Use the release image to verify production USB and power
+behavior.
+
+Leaf release and bench environments compile the TinyUSB device dispatcher
+from the exact revision recorded in the pinned Arduino SDK. The build
+downloads and verifies the source on first use, then caches it under the
+PlatformIO build directory. The SDK still supplies the USB controller, the
+control endpoint, serial, and mass storage. The dispatcher keeps the serial
+and mass-storage classes and the SDK's 4,096-byte mass-storage buffer.
+When updating the SDK, verify the dispatcher source pin and repeat the USB
+hardware checks in the heap savings log.
+
+## Drive the unit
+
+With a USB data cable, run these commands from the repository root using a
+Python environment that has pySerial installed. The script selects a single
+Leaf application port automatically. Put `--port COM19` before the subcommand
+to specify a port explicitly.
+
+```powershell
+python utils/leaf_bench_console.py send version status config heap ip web
+python utils/leaf_bench_console.py send "press DOWN" "press UP" status
+python utils/leaf_bench_console.py send "hold CENTER 1000"
+```
+
+Buttons are `UP`, `DOWN`, `LEFT`, `RIGHT`, and `CENTER`. A press lasts 80 ms.
+A hold accepts 850–5000 ms. Firmware handles the synthetic input through the
+normal debounce and hold logic, and physical input takes precedence. A button
+reply acknowledges that the action was accepted. Use `status` to check the
+result. The console cannot make a fully unpowered unit boot.
+
+`status` reports power state, page, the main-menu or top modal cursor, modal depth, warning,
+vario readiness, GPS fix, flight timer, and firmware access to the SD card.
+`ip` reports the station and access point IPv4 addresses. `web` gives the URL
+when the Web App is active. Open the Web App through its normal menu. For HTTP
+tests, connect the computer to the same network or to Leaf's access point.
+`wifi` reports the active radio mode such as 0 for off, 1 for station, or 2 for
+access point. `routeheap` reports the start and minimum free internal heap
+for route body receipt and editor normalization, in that order. Zero means a
+phase did not record a measurement. `fanet` reports module detection, radio state, and
+the TX and RX worker stack high-water marks in bytes. The stack value is
+zero when the worker is absent. The `navheap` reply gives start and minimum
+free internal heap for route import and saved-waypoint listing in that order.
+These are phase readings from the most recent run of each operation.
+`buslog` reports whether the logger has an open file, then the saved
+startup-logging flag. The old Vario CSV field in `config` is reserved as zero
+so older bench clients can read the same reply format.
+
+`stacks` reports minimum unused bytes for the loop, BLE, FANET TX, FANET RX,
+and Leaf Log upload tasks, in that order. Zero indicates an absent task or a
+missing reading. The upload worker saves its reading even after it exits, so
+query after a transfer attempt and before the next charging upload session.
+`tlsheap` reports incoming and outgoing payload limits followed by internal
+heap allocated by TLS context setup. It briefly allocates a context and can
+lower the boot-wide minimum heap reading. Run it separately from measurements
+of the workload heap minimum.
+
+`sdstartup` reports the duration in microseconds of the most recent startup storage
+space query. It reads a cached bench-only value and does not access the card again.
+Zero means the query has not run since boot. Cached FatFs free-space counts can make
+this fast; these timings do not bound a full allocation-table scan.
+
+For UDP replay tests, stop and join the host producer, disable injection through the
+existing developer session endpoint, and verify it is disabled before sending shutdown
+buttons when isolating storage/memory workloads or testing older firmware. The
+[shutdown regression](shutdown-fix-review-2026-11-19.md) instead keeps replay active
+through power-off to verify the new deferred transition and publisher drain.
+
+## Compare TLS record buffers
+
+Build `leaf_3_2_5_bench` and `leaf_3_2_5_tlsbench` from the same source and run
+`python utils/leaf_bench_console.py send version tlsheap` after booting each image.
+The TLS experiment retains 16 KiB receive records and limits transmit records
+to 4 KiB. Only `tlsbench` compiles the record-size-dependent files from the
+matching mbedTLS revision. It also keeps the receive limit at 16 KiB when no
+maximum fragment length is negotiated. Its output is named
+`tlsbench-firmware-leaf_3_2_5.bin`.
+If Python cannot download the archive, download the pinned URL from
+`src/scripts/prepare_tls_bench.py` to `.pio/build/tls-bench/mbedtls.tar.gz`.
+The build verifies the archive hash before using it.
+
+For a live comparison, use a linked test account, saved Wi-Fi and comparable
+eligible IGCs on a test SD card. Record elapsed time, the heap minimum, the
+Leaf Log upload worker's stack reading, the saved flight ID, and return to USB
+storage. For retry coverage, interrupt Wi-Fi during a transfer and check that
+it stays pending and completes once after reconnecting. Exercise the firmware
+update check separately. Use the on-state workload in
+[Runtime assessment](runtime-assessment.md) to measure the loop and radio
+stacks with flight logging and navigation active.
+
+## Capture and compare heap
+
+Use a cold boot and let the vario finish warming up on a primary page, with
+the flight timer stopped. Keep radio, network, SD and diagnostics settings
+consistent between runs. Record normal on-state heap with the Web App closed
+first. A second run can measure Web App idle as a separate workload.
+
+Pass the exact `.bin` that was flashed and choose a fresh output path. The
+capture checks for the reported version string in that file and records the
+file's SHA-256. Verify the flash itself when establishing the image identity.
+
+```powershell
+python utils/leaf_bench_console.py baseline --firmware .pio/build/leaf_3_2_5_bench/firmware.bin --output .pio/bench-baseline.json
+```
+
+Compare the idle median and range, the boot-to-date minimum, and the largest
+free block on the same unit with the same build flag, startup sequence, settings,
+and sampling interval. Keep the console idle between samples. The loop task
+stack high-water mark is the smallest unused stack space observed since boot.
+The capture reports all four metrics in bytes.
+
+For the paired Web App workload, run the following on the warmed-up User
+screen with Developer mode on. The host needs a network path to the Leaf
+when the Web App opens. The script reads two screenshots, submits a route
+request that fails validation without saving, and measures heap through
+Web App closure.
+
+```powershell
+python utils/leaf_bench_web_memory.py --firmware .pio/build/leaf_3_2_5_bench/firmware.bin --output .pio/web-memory.json
+```
+
+See the [firmware heap savings log](heap-savings-log.md) for the paired
+baseline and candidate results.
+
+The route regression saves two inactive, disposable files under `/routes`.
+Choose an unused prefix on the SD card. After the run, inspect and remove the
+two files through USB mass storage in charging mode.
+
+```powershell
+python utils/leaf_bench_route_requests.py --firmware .pio/build/leaf_3_2_5_bench/firmware.bin --prefix bench-my-run --output .pio/route-test.json
+python utils/leaf_bench_wifi_idle.py --firmware .pio/build/leaf_3_2_5_bench/firmware.bin --output .pio/wifi-test.json
+```
+
+## Initial 3.2.5 on-state baseline
+
+The November 13, 2026 capture (November 14 at 01:47 UTC) sampled a USB-connected
+Leaf 3.2.5 on the User page 20 times over 19.047 seconds. The vario was ready,
+the flight timer was stopped, the GPS had no fix, and the firmware could access
+the SD card. The Web App was closed. Bluetooth was configured on, FANET region
+was set to 1, and Developer mode was on with the captured diagnostic logs and
+CPU capture disabled. The raw samples are in
+`utils/bench_baselines/leaf-3.2.5-idle-on.json` in the repository.
+
+| Metric | Bytes in every sample |
+| --- | ---: |
+| Free internal heap | 40,296 |
+| Minimum free internal heap since boot | 30,560 |
+| Largest free internal block | 31,732 |
+| Loop task stack high-water mark | 7,848 |
+
+Both OTA slots were flashed and verified. The console woke the unit from
+charging mode, reconnected after the SD handoff, and navigated to the Web App.
+From the host, `GET /app` and `GET /api/user/status` returned HTTP 200.
+The Web App was then closed for the heap capture.
+
+- Build: `leaf_3_2_5_bench`, firmware `0.2.4-03ed.bench+h3.2.5`.
+- Source: the bench implementation was built as local changes on
+  `03ead991e92ff7907f331ade535cc05061b841be` before it was committed as
+  `60496019`. Use the recorded binary hash to identify the exact tested build.
+- Firmware SHA-256: `46705b76c2b2e4d1557c24aec42a2eac5777c20422ebba4298573d45ce5c3b6f`.
+- Toolchain: PlatformIO Core 6.2.0, pioarduino 53.03.10, Arduino ESP32 3.1.0,
+  and Xtensa GCC 13.2.0+20240530.

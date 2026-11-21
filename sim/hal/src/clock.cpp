@@ -81,11 +81,15 @@ namespace sim {
       Timer& t = timers_[soonest];
       if (soonestAt > nowUs()) nowUs_.store(soonestAt, std::memory_order_relaxed);
       if (t.autoReload) {
+        t.counterEpochUs = soonestAt;
         t.nextUs = soonestAt + t.periodUs;
       } else {
         t.periodUs = 0;
       }
-      t.callback();
+      if (timerInterruptsMasked_)
+        t.pendingInterrupt = true;
+      else
+        t.callback();
     }
   }
 
@@ -95,6 +99,7 @@ namespace sim {
       timers_[i] = Timer{};
       timers_[i].active = true;
       timers_[i].frequencyHz = frequencyHz ? frequencyHz : 1000;
+      timers_[i].counterEpochUs = nowUs();
       return i;
     }
     return -1;
@@ -113,6 +118,7 @@ namespace sim {
     t.periodUs = (uint64_t)((double)ticks * 1000000.0 / (double)t.frequencyHz);
     if (t.periodUs == 0) t.periodUs = 1;
     t.autoReload = autoReload;
+    t.counterEpochUs = nowUs();
     t.nextUs = nowUs_ + t.periodUs;
   }
 
@@ -121,8 +127,25 @@ namespace sim {
     timers_[handle] = Timer{};
   }
 
+  uint64_t Clock::readTimer(int handle) const {
+    if (handle < 0 || handle >= MAX_TIMERS || !timers_[handle].active) return 0;
+    const Timer& t = timers_[handle];
+    return (nowUs() - t.counterEpochUs) * t.frequencyHz / 1000000;
+  }
+
+  void Clock::maskTimerInterrupts(bool masked) {
+    timerInterruptsMasked_ = masked;
+    if (masked) return;
+    for (Timer& t : timers_) {
+      if (!t.pendingInterrupt) continue;
+      t.pendingInterrupt = false;
+      if (t.active && t.callback) t.callback();
+    }
+  }
+
   void Clock::clearTimers() {
     for (int i = 0; i < MAX_TIMERS; i++) timers_[i] = Timer{};
+    timerInterruptsMasked_ = false;
   }
 
 }  // namespace sim

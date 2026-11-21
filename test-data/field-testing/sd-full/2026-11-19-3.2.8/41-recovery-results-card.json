@@ -1,0 +1,127 @@
+{
+  "utc": "2026-11-20T01:18:10.416151+00:00",
+  "operation": "snapshot",
+  "volume_serial": "01114FC5",
+  "free_before": 16482304,
+  "free_after": 16482304,
+  "files": [
+    {
+      "path": "routes/active.json",
+      "bytes": 211,
+      "sha256": "4568978043d611e1fa7ca5abd5ebdac0e15dd7d4bd90f7001d9832ec7768f69e",
+      "valid_json": true
+    },
+    {
+      "path": "routes/bench-sd-full.json",
+      "bytes": 455,
+      "sha256": "84de9327dad7bfbf8fc1a07b0543fe49a627ee9177b16ee04af62745db8ac844",
+      "valid_json": true
+    },
+    {
+      "path": "routes/bench-sd-import.json",
+      "bytes": 472,
+      "sha256": "1e75c0eb31b5979d62fd4a23998acd6cfa8848fb6f5692ef5b5a86ebe4b90bdc",
+      "valid_json": true
+    },
+    {
+      "path": "waypoints/bench-sd-full.cup",
+      "bytes": 1509,
+      "sha256": "6a4d4e496fbdf729003686d085c5dde383fa79d25a862d34f6869b10d0d0fda1"
+    },
+    {
+      "path": "waypoints/Ed2Hamilton.cup",
+      "bytes": 1509,
+      "sha256": "6a4d4e496fbdf729003686d085c5dde383fa79d25a862d34f6869b10d0d0fda1"
+    },
+    {
+      "path": "waypoints/user_waypoints.json",
+      "bytes": 146,
+      "sha256": "4a99751b73485a087fc2c95071c0dde89b31703cdd93ea71d3e38cbb0a06086e",
+      "valid_json": true
+    },
+    {
+      "path": "profiles/profiles.json",
+      "bytes": 272,
+      "sha256": "75df5fcfc423772458b0fbc03133250268c1b99bf7a87b05d1a2f1731ffae741",
+      "valid_json": true
+    },
+    {
+      "path": "logbook/2026-11-19_18-06-27_383b52ad.json",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "valid_json": false
+    },
+    {
+      "path": "logbook/2026-11-19_18-06-27_383b52ad.json.tmp",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "valid_json": false
+    },
+    {
+      "path": "logbook/2026-11-19_18-08-52_4af81c48.json",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "valid_json": false
+    },
+    {
+      "path": "logbook/2026-11-19_18-08-52_4af81c48.json.tmp",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "valid_json": false
+    },
+    {
+      "path": "logbook/2026-11-19_18-16-25_2b8b45b2.json",
+      "bytes": 1516,
+      "sha256": "393e017e692dd01ed3c6180070bd9bcd68e6893db29a49b0acabbe8708243d33",
+      "valid_json": true
+    },
+    {
+      "path": "logbook/date_not_available_317_9118b2c1.json",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "valid_json": false
+    },
+    {
+      "path": "logbook/date_not_available_317_9118b2c1.json.tmp",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "valid_json": false
+    },
+    {
+      "path": "tracks/2026-11-19-XLV-000-01.igc",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tracks/2026-11-19-XLV-000-02.igc",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tracks/2026-11-19-XLV-000-03.igc",
+      "bytes": 1817,
+      "sha256": "93c9b88bdd296d1951b78e914f4038e80313ffd6b7d4f1990b17a04cd2a6a9d5"
+    },
+    {
+      "path": "diagnostics/network_events.csv",
+      "bytes": 1062,
+      "sha256": "5ab626f70197b69b521de666ed514cad15c6ec3e066adf05f51232fe13b77b3b"
+    },
+    {
+      "path": "diagnostics/runtime_1.json",
+      "bytes": 66314,
+      "sha256": "0e876d6be0cbe67289c3d55135916d9336d0cddd0be737a18245491bfecca5cf",
+      "valid_json": true
+    },
+    {
+      "path": "diagnostics/stack_1.csv",
+      "bytes": 110,
+      "sha256": "c78d1419f8f770ec856084edc10ec22c26d6f6a022560213524c7e2ed23cfcc1"
+    },
+    {
+      "path": "diagnostics/system_events.csv",
+      "bytes": 4764,
+      "sha256": "1b2ef4130b5e6299643bc2623c8dc9efbdd8e598e043d35097339f75a50d0b23"
+    }
+  ]
+}

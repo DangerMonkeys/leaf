@@ -2,10 +2,16 @@
 
 #include <Arduino.h>
 
+#include "comms/fanet_radio.h"
+#include "comms/webserver.h"
+#include "comms/wifi_coordinator.h"
 #include "diagnostics/cpu_utilization.h"
+#include "diagnostics/heap_monitor.h"
 #include "diagnostics/self_test/selfTest.h"
 #include "hardware/buttons.h"
 #include "logging/buslog.h"
+#include "logging/fanet_log.h"
+#include "system/shutdown_guard.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
@@ -18,40 +24,109 @@
 enum developer_menu_items {
   cursor_developer_back,
   cursor_developer_fanetReTx,
+  cursor_developer_logFanet,
   cursor_developer_showDebugPg,
   cursor_developer_runSelfTest,
   cursor_developer_runtime,
-  cursor_developer_exportRuntime,
+  cursor_developer_stacks,
+#ifdef LEAF_SHUTDOWN_FAULT_INJECTION
+  cursor_developer_shutdownFault,
+#endif
   cursor_developer_startupStart,
   cursor_developer_startupDisconnect,
   cursor_developer_busLogControl
 };
+#ifdef LEAF_SHUTDOWN_FAULT_INJECTION
+namespace {
+  uint8_t offFaultIndex = 0;
+  struct OffFaultChoice {
+    const char* label;
+    shutdown_guard::Stage stage;
+    shutdown_guard::FaultBehavior behavior = shutdown_guard::FaultBehavior::Stall;
+  };
+  constexpr OffFaultChoice offFaultChoices[] = {
+      {"OFF", shutdown_guard::Stage::None},
+      {"LOCK", shutdown_guard::Stage::Lock},
+      {"SAVE", shutdown_guard::Stage::Flight},
+      {"WORK", shutdown_guard::Stage::BleWorker},
+      {"BEEP", shutdown_guard::Stage::Sound},
+      {"I2C", shutdown_guard::Stage::Peripherals},
+      {"BLE", shutdown_guard::Stage::BleDeinit},
+      {"WDT", shutdown_guard::Stage::Flight, shutdown_guard::FaultBehavior::InterruptsOff},
+      {"RTC", shutdown_guard::Stage::Flight, shutdown_guard::FaultBehavior::RtcOnly},
+      {"SLP", shutdown_guard::Stage::Sleeping},
+      {"CLR", shutdown_guard::Stage::Latch},
+      {"LAT", shutdown_guard::Stage::LatchReleased},
+      {"RTCB", shutdown_guard::Stage::BleDeinit, shutdown_guard::FaultBehavior::RtcOnly}};
+  constexpr uint8_t offFaultCount = sizeof(offFaultChoices) / sizeof(offFaultChoices[0]);
+}  // namespace
+#endif
+
+bool DeveloperMenuPage::row_hidden(uint8_t row) const {
+  return (row == cursor_developer_fanetReTx || row == cursor_developer_logFanet) &&
+         !fanetRadio.isDetected();
+}
+
+bool DeveloperMenuPage::button_event(Button button, ButtonEvent state, uint8_t count) {
+  const bool redraw = SettingsMenuPage::button_event(button, state, count);
+  while (row_hidden(cursor_position)) {
+    if (button == Button::UP)
+      cursor_prev();
+    else
+      cursor_next();
+  }
+  return redraw;
+}
 
 void DeveloperMenuPage::draw() {
+  if (row_hidden(cursor_position)) cursor_position = cursor_developer_back;
   u8g2.firstPage();
   do {
     // Title
     menu_ui::drawTitle("Developer", menu_ui::GLYPH_DEVELOPER);
 
     // Menu Items
-    uint8_t start_y = 29;
-    uint8_t y_spacing = 16;
     uint8_t setting_name_x = 2;
     uint8_t setting_choice_x = 76;
-    uint8_t menu_items_y[] = {190, 35, 50, 65, 80, 95, 135, 150, 170};
+    uint8_t menu_items_y[cursor_developer_busLogControl + 1] = {190};
+    uint8_t next_y = 35;
+    for (int i = cursor_developer_fanetReTx; i <= cursor_developer_stacks; ++i) {
+      if (row_hidden(i)) continue;
+      menu_items_y[i] = next_y;
+#ifdef LEAF_SHUTDOWN_FAULT_INJECTION
+      next_y += 13;
+#else
+      next_y += 15;
+#endif
+    }
+#ifdef LEAF_SHUTDOWN_FAULT_INJECTION
+    menu_items_y[cursor_developer_shutdownFault] = next_y;
+    next_y += 13;
+#endif
+    menu_items_y[cursor_developer_startupStart] = next_y + 17;
+    menu_items_y[cursor_developer_startupDisconnect] = next_y + 31;
+    menu_items_y[cursor_developer_busLogControl] = next_y + 45;
 
     // draw Bus Logger Section
-    u8g2.drawHLine(0, 105, 96);
-    u8g2.setCursor(0, 120);
+    u8g2.drawHLine(0, next_y - 5, 96);
+    u8g2.setCursor(0, next_y + 4);
     u8g2.print("On Startup:");
 
     // then draw all the menu items
     for (int i = 0; i <= cursor_max; i++) {
+      if (row_hidden(i)) continue;
       const bool selected = i == cursor_position;
       menu_ui::beginRow(menu_items_y[i], selected);
       menu_ui::drawLabel(setting_name_x, menu_items_y[i], labels[i]);
       u8g2.setCursor(setting_choice_x, menu_items_y[i]);
       switch (i) {
+#ifdef LEAF_SHUTDOWN_FAULT_INJECTION
+        case cursor_developer_shutdownFault:
+          if (shutdown_guard::fault() == shutdown_guard::Stage::None) offFaultIndex = 0;
+          u8g2.setCursor(66, menu_items_y[i]);
+          u8g2.print(offFaultChoices[offFaultIndex].label);
+          break;
+#endif
         case cursor_developer_fanetReTx:
           if (settings.dev_fanetFwd)
             menu_ui::printGlyph(menu_ui::ICON_ON);
@@ -64,16 +139,27 @@ void DeveloperMenuPage::draw() {
           else
             menu_ui::printGlyph(menu_ui::ICON_OFF);
           break;
+        case cursor_developer_logFanet:
+          menu_ui::printGlyph(settings.dev_logFanet ? menu_ui::ICON_ON : menu_ui::ICON_OFF);
+          break;
         case cursor_developer_runSelfTest:
-        case cursor_developer_exportRuntime:
           menu_ui::drawEnterIcon(setting_choice_x, menu_items_y[i], selected);
           break;
         case cursor_developer_runtime:
           u8g2.setCursor(u8g2.getCursorX() - 18, u8g2.getCursorY());
           u8g2.print(cpu_utilization::capturing()                                  ? "STOP"
+                     : cpu_utilization::hasCapture()                               ? "SAVE"
                      : strcmp(cpu_utilization::status(), "allocation_failed") == 0 ? "ERR"
                                                                                    : "START");
           break;
+        case cursor_developer_stacks: {
+          const auto state = heap_monitor::stackMonitorState();
+          u8g2.setCursor(u8g2.getCursorX() - 18, u8g2.getCursorY());
+          u8g2.print(state == heap_monitor::StackMonitorState::Running  ? "STOP"
+                     : state == heap_monitor::StackMonitorState::Frozen ? "SAVE"
+                                                                        : "START");
+          break;
+        }
         case cursor_developer_startupStart:
           if (settings.dev_startLogAtBoot)
             menu_ui::printGlyph(menu_ui::ICON_ON);
@@ -104,22 +190,51 @@ void DeveloperMenuPage::draw() {
 }
 
 void DeveloperMenuPage::setting_change(Button dir, ButtonEvent state, uint8_t count) {
+  if (row_hidden(cursor_position)) return;
   switch (cursor_position) {
+#ifdef LEAF_SHUTDOWN_FAULT_INJECTION
+    case cursor_developer_shutdownFault:
+      if (state == ButtonEvent::CLICKED) {
+        offFaultIndex =
+            (offFaultIndex + (dir == Button::LEFT ? offFaultCount - 1 : 1)) % offFaultCount;
+        const auto& choice = offFaultChoices[offFaultIndex];
+        shutdown_guard::setFault(choice.stage, choice.behavior);
+      }
+      break;
+#endif
     case cursor_developer_runtime:
       if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
         if (cpu_utilization::capturing()) {
           settings.diag_cpuUtilization = false;
           cpu_utilization::freeze();
+          speaker.playSound(cpu_utilization::exportToSd() ? fx::confirm : fx::bad);
+        } else if (cpu_utilization::hasCapture()) {
+          settings.diag_cpuUtilization = false;
+          speaker.playSound(cpu_utilization::exportToSd() ? fx::confirm : fx::bad);
         } else {
+          // The main menu connects Wi-Fi for the Web App. Free its heap before
+          // starting an on-device capture with Bluetooth and FANET still active.
+          if (!webserver_user_app_active()) leaf_wifi::disconnectFromNetwork();
           const bool started = cpu_utilization::start();
           settings.diag_cpuUtilization = started;
           if (!started) speaker.playSound(fx::bad);
         }
       }
       break;
-    case cursor_developer_exportRuntime:
-      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT))
-        speaker.playSound(cpu_utilization::exportToSd() ? fx::confirm : fx::bad);
+    case cursor_developer_logFanet:
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
+        settings.toggleBoolOnOff(&settings.dev_logFanet);
+        if (!fanet_log::update()) speaker.playSound(fx::bad);
+      }
+      break;
+    case cursor_developer_stacks:
+      if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT)) {
+        if (heap_monitor::stackMonitorState() == heap_monitor::StackMonitorState::Idle) {
+          heap_monitor::startStackMonitor();
+        } else {
+          speaker.playSound(heap_monitor::saveStackMonitor() ? fx::confirm : fx::bad);
+        }
+      }
       break;
     case cursor_developer_fanetReTx: {
       if (state == ButtonEvent::CLICKED && (dir == Button::CENTER || dir == Button::RIGHT))

@@ -117,6 +117,48 @@ TARGET  := $(BUILD)/leafsim
 .PHONY: all clean deps test-thermal-core test-free-flight test-thermal-track test-display-settings test-leaf-log-sync test-udp-injection
 all: $(TARGET)
 
+.PHONY: test-checked-storage
+$(BUILD)/checked_storage_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/checked_storage.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/checked_storage.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-checked-storage: $(BUILD)/checked_storage_test
+	@cd $(ROOT) && $(BUILD)/checked_storage_test .pio/storage-fix-review/simulator
+
+.PHONY: test-g-load
+$(BUILD)/igc_sensor_log_test: $(SIM)/tests/igc_sensor_log.cpp $(ROOT)/src/vario/logbook/igc_sensor_log.h $(ROOT)/src/vario/instruments/g_load_tracker.h
+	@mkdir -p $(BUILD)
+	@$(CXX) -std=c++17 -Wall -Wextra -g -I$(ROOT)/src/vario $< -o $@
+
+$(BUILD)/g_load_tracker_test: $(SIM)/tests/g_load_tracker.cpp $(ROOT)/src/vario/instruments/g_load_tracker.h
+	@mkdir -p $(BUILD)
+	@$(CXX) -std=c++17 -Wall -Wextra -g -I$(ROOT)/src/vario $< -o $@
+
+$(BUILD)/flight_diagnostics_test: $(SIM)/tests/flight_diagnostics.cpp $(ROOT)/src/vario/diagnostics/flight_diagnostics.h
+	@mkdir -p $(BUILD)
+	@$(CXX) -std=c++17 -Wall -Wextra -g -pthread -I$(ROOT)/src/vario $< -o $@
+
+$(BUILD)/g_load_integration_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/g_load_integration.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/g_load_integration.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+$(BUILD)/g_load_launch_test: $(SIM)/tests/g_load_launch.cpp $(ROOT)/src/vario/instruments/g_load_tracker.h $(ROOT)/src/vario/logging/flight_auto_start.h
+	@mkdir -p $(dir $@)
+	@$(CXX) $(CXXFLAGS) -o $@ $<
+
+test-g-load: $(BUILD)/igc_sensor_log_test $(BUILD)/g_load_tracker_test $(BUILD)/flight_diagnostics_test $(BUILD)/g_load_launch_test $(BUILD)/g_load_integration_test
+	@$(BUILD)/igc_sensor_log_test
+	@$(BUILD)/g_load_tracker_test
+	@$(BUILD)/flight_diagnostics_test
+	@$(BUILD)/g_load_launch_test
+	@cd $(ROOT) && $(BUILD)/g_load_integration_test
+
+$(BUILD)/igc_checksum_validator: $(ROOT)/utils/igc_validator/validate.c
+	@mkdir -p $(dir $@)
+	@$(CC) -std=c11 -O2 -Wall -Wextra $< -lcrypto -o $@
+
+.PHONY: test-igc-text
+test-igc-text: test-g-load $(BUILD)/igc_checksum_validator
+	@cd $(ROOT) && python3 sim/tests/check_igc_text.py --validator $(BUILD)/igc_checksum_validator --tracks sim/build-tests/g-load/card/tracks
+
 .PHONY: test-runtime-capture
 $(BUILD)/runtime_capture_test: $(SIM)/tests/runtime_capture.cpp $(ROOT)/src/vario/diagnostics/runtime_capture.h $(ROOT)/src/vario/diagnostics/gps_profile.h
 	@mkdir -p $(BUILD)
@@ -131,6 +173,13 @@ $(BUILD)/runtime_capture_lifecycle_test: $(filter-out $(BUILD)/sim/emulator/main
 
 test-runtime-lifecycle: $(BUILD)/runtime_capture_lifecycle_test
 	@cd $(ROOT) && $(BUILD)/runtime_capture_lifecycle_test
+
+.PHONY: test-developer-logging
+$(BUILD)/developer_logging_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/developer_logging.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/developer_logging.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-developer-logging: $(BUILD)/developer_logging_test
+	@cd $(ROOT) && $(BUILD)/developer_logging_test
 
 .PHONY: test-runtime-integration
 $(BUILD)/runtime_capture_integration_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/runtime_capture_integration.cpp
@@ -203,10 +252,29 @@ test-display-settings: $(BUILD)/display_settings_test
 LEAF_LOG_TEST_OBJECTS := $(filter-out $(BUILD)/sim/emulator/main.o $(BUILD)/fw/src/vario/comms/leaf_log_client.o,$(OBJECTS))
 
 $(BUILD)/leaf_log_sync_test: $(LEAF_LOG_TEST_OBJECTS) $(SIM)/tests/leaf_log_sync.cpp
-	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/leaf_log_sync.cpp $(LEAF_LOG_TEST_OBJECTS) $(LDFLAGS)
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/leaf_log_sync.cpp $(LEAF_LOG_TEST_OBJECTS) $(LDFLAGS) -Wl,--wrap=readdir,--wrap=fread,--wrap=fclose
 
 test-leaf-log-sync: $(BUILD)/leaf_log_sync_test
 	@cd $(ROOT) && $(BUILD)/leaf_log_sync_test
+
+.PHONY: test-logbook-io
+$(BUILD)/logbook_io_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/logbook_io.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/logbook_io.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-logbook-io: $(BUILD)/logbook_io_test
+	@cd $(ROOT) && $(BUILD)/logbook_io_test
+
+# Deterministic visual inventory; does not change firmware rendering or require hardware.
+$(BUILD)/sd_dialogs_capture: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/sd_dialogs.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/sd_dialogs.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+.PHONY: test-usb-serial
+$(BUILD)/usb_serial_test: $(SIM)/tests/usb_serial.cpp $(wildcard $(SIM)/tests/usb_serial_hal/*.h) $(ROOT)/src/vario/system/usb_serial.cpp $(ROOT)/src/vario/system/usb_serial.h $(ROOT)/src/vario/system/usb_state.cpp $(ROOT)/src/vario/system/usb_state.h
+	@mkdir -p $(BUILD)
+	@$(CXX) -std=c++17 -Wall -Wextra -Werror -DARDUINO_USB_MODE=0 -DARDUINO_USB_CDC_ON_BOOT=0 -DCONFIG_IDF_TARGET_ESP32S3=0 -I$(SIM)/tests/usb_serial_hal -I$(ROOT)/src/vario -o $@ $(SIM)/tests/usb_serial.cpp $(ROOT)/src/vario/system/usb_serial.cpp $(ROOT)/src/vario/system/usb_state.cpp
+
+test-usb-serial: $(BUILD)/usb_serial_test
+	@$(BUILD)/usb_serial_test
 
 .PHONY: test-charging-dialogs
 $(BUILD)/charging_dialogs_test: $(LEAF_LOG_TEST_OBJECTS) $(SIM)/tests/charging_dialogs.cpp
@@ -274,3 +342,127 @@ clean:
 	@echo "Cleaned $(BUILD)"
 
 -include $(shell find $(BUILD) -name '*.d' 2>/dev/null)
+
+.PHONY: test-flight-auto-start
+.PHONY: test-flight-start-window
+$(BUILD)/flight_start_window_test: $(SIM)/tests/flight_start_window.cpp $(SIM)/tests/flight_start_window_checks.h $(ROOT)/src/vario/logging/flight_auto_start.h
+	@mkdir -p $(@D)
+	@$(CXX) -std=c++17 -Wall -Wextra -I$(ROOT)/src/vario -o $@ $(SIM)/tests/flight_start_window.cpp
+
+test-flight-start-window: $(BUILD)/flight_start_window_test
+	@$<
+
+$(BUILD)/flight_auto_start_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/flight_auto_start.cpp $(SIM)/tests/flight_start_window_checks.h
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/flight_auto_start.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-flight-auto-start: $(BUILD)/flight_auto_start_test
+	@cd $(ROOT) && $(BUILD)/flight_auto_start_test
+
+.PHONY: test-logbook-maintenance
+$(BUILD)/logbook_maintenance_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/logbook_maintenance.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/logbook_maintenance.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-logbook-maintenance: $(BUILD)/logbook_maintenance_test
+	@cd $(ROOT) && $(BUILD)/logbook_maintenance_test $(BUILD)/logbook-maintenance-screens
+
+# Delay tolerance through the actual instruments and Kalman implementation.
+.PHONY: test-vario-continuity
+$(BUILD)/kalman_gaps_test: $(SIM)/tests/kalman_gaps.cpp $(ROOT)/src/vario/math/kalman.cpp $(ROOT)/src/vario/math/kalman.h $(ROOT)/src/vario/instruments/vario_timing.h
+	@mkdir -p $(BUILD)
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/kalman_gaps.cpp $(ROOT)/src/vario/math/kalman.cpp
+
+$(BUILD)/vario_continuity_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/vario_continuity.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/vario_continuity.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-vario-continuity: $(BUILD)/kalman_gaps_test $(BUILD)/vario_continuity_test $(BUILD)/kalman_bias_test $(BUILD)/flat_acceleration_bias_test
+	@$(BUILD)/kalman_gaps_test
+	@$(BUILD)/kalman_bias_test
+	@$(BUILD)/flat_acceleration_bias_test
+	@cd $(ROOT) && $(BUILD)/vario_continuity_test
+
+# The normal simulator replaces the sensor driver. This target runs the real LSM driver.
+.PHONY: test-lsm6dsv-continuity
+LSM_TEST_OBJECTS := $(filter-out $(BUILD)/sim/emulator/main.o $(BUILD)/sim/device/sensors.o,$(OBJECTS))
+$(BUILD)/sensors_real_lsm.o: $(SIM)/device/sensors.cpp | deps
+	@$(CXX) $(CXXFLAGS) -DLEAF_SIM_REAL_LSM6DSV -MMD -MP -c $< -o $@
+
+$(BUILD)/lsm6dsv_real.o: $(ROOT)/src/vario/hardware/lsm6dsv.cpp | deps
+	@$(CXX) $(CXXFLAGS) -MMD -MP -c $< -o $@
+
+$(BUILD)/lsm6dsv_registers.o: $(ROOT)/src/libraries/LSM6DSV/src/lsm6dsv_reg.c | deps
+	@$(CC) $(FW_CFLAGS) -c $< -o $@
+
+$(BUILD)/lsm6dsv_continuity_test: $(LSM_TEST_OBJECTS) $(BUILD)/sensors_real_lsm.o $(BUILD)/lsm6dsv_real.o $(BUILD)/lsm6dsv_registers.o $(SIM)/tests/lsm6dsv_continuity.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/lsm6dsv_continuity.cpp $(LSM_TEST_OBJECTS) $(BUILD)/sensors_real_lsm.o $(BUILD)/lsm6dsv_real.o $(BUILD)/lsm6dsv_registers.o $(LDFLAGS)
+
+test-lsm6dsv-continuity: $(BUILD)/lsm6dsv_continuity_test
+	@cd $(ROOT) && $(BUILD)/lsm6dsv_continuity_test
+
+$(BUILD)/kalman_bias_test: $(SIM)/tests/kalman_bias.cpp $(ROOT)/src/vario/math/kalman.cpp $(ROOT)/src/vario/math/kalman.h
+	@mkdir -p $(BUILD)
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/kalman_bias.cpp $(ROOT)/src/vario/math/kalman.cpp
+
+$(BUILD)/flat_acceleration_bias_test: $(SIM)/tests/flat_acceleration_bias.cpp $(ROOT)/src/vario/math/kalman.cpp $(ROOT)/src/vario/math/kalman.h
+	@mkdir -p $(BUILD)
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/flat_acceleration_bias.cpp $(ROOT)/src/vario/math/kalman.cpp
+
+.PHONY: test-climb-display-average
+$(BUILD)/climb_display_average_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/climb_display_average.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/climb_display_average.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-climb-display-average: $(BUILD)/climb_display_average_test
+	@cd $(ROOT) && $(BUILD)/climb_display_average_test
+	@cd $(ROOT) && $(BUILD)/climb_display_average_test --verify-persistence
+
+# Standalone geometry experiments; no firmware/PlatformIO dependency setup.
+.PHONY: test-route-solver
+test-route-solver:
+	$(MAKE) -C $(SIM)/route_solver BUILD=$(BUILD)/route-solver all
+
+.PHONY: test-route-guidance
+$(BUILD)/route_guidance_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/route_guidance.cpp
+	$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/route_guidance.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+test-route-guidance: $(BUILD)/route_guidance_test
+	@cd $(ROOT) && $(BUILD)/route_guidance_test
+
+.PHONY: test-route-optimizer
+$(BUILD)/route_optimizer_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/route_optimizer.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/route_optimizer.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-route-optimizer: $(BUILD)/route_optimizer_test
+	@cd $(ROOT) && $(BUILD)/route_optimizer_test
+
+.PHONY: test-shutdown
+$(BUILD)/shutdown_policy_test: $(SIM)/tests/shutdown_policy.cpp $(ROOT)/src/vario/system/shutdown_policy.h $(ROOT)/src/vario/utils/producer_gate.h
+	@mkdir -p $(BUILD)
+	@$(CXX) -std=c++17 -Wall -Wextra -g -I$(ROOT)/src/vario $< -lpthread -o $@
+
+$(BUILD)/shutdown_rtc_test: $(SIM)/tests/shutdown_rtc.cpp $(ROOT)/src/vario/system/shutdown_guard.h $(ROOT)/src/vario/system/shutdown_rtc_policy.h
+	@mkdir -p $(BUILD)
+	@$(CXX) -std=c++17 -Wall -Wextra -g -I$(ROOT)/src/vario $< -o $@
+
+$(BUILD)/shutdown_integration_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/shutdown_integration.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/shutdown_integration.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+test-shutdown: $(BUILD)/shutdown_policy_test $(BUILD)/shutdown_rtc_test $(BUILD)/shutdown_integration_test
+	@$(BUILD)/shutdown_policy_test
+	@$(BUILD)/shutdown_rtc_test
+	@cd $(ROOT) && for mode in normal low-battery disabled lock save worker sound peripherals asleep clear latch ble hold nested pending watchdog rtc rtcble recovery; do $(BUILD)/shutdown_integration_test $$mode || exit $$?; done
+
+$(BUILD)/shutdown_bus_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/shutdown_bus.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/shutdown_bus.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+.PHONY: test-shutdown-bus
+test-shutdown-bus: $(BUILD)/shutdown_bus_test
+	@cd $(ROOT) && for mode in concurrent timeout; do $(BUILD)/shutdown_bus_test $$mode || exit $$?; done
+
+# Build all sources consistently with the explicit developer-only menu flag.
+.PHONY: test-shutdown-menu run-shutdown-menu
+test-shutdown-menu:
+	@$(MAKE) -C $(SIM) BUILD=$(BUILD)/shutdown-menu OPT="$(OPT) -DLEAF_SHUTDOWN_FAULT_INJECTION=1" run-shutdown-menu
+
+$(BUILD)/shutdown_menu_test: $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(SIM)/tests/shutdown_menu.cpp
+	@$(CXX) $(CXXFLAGS) -o $@ $(SIM)/tests/shutdown_menu.cpp $(filter-out $(BUILD)/sim/emulator/main.o,$(OBJECTS)) $(LDFLAGS)
+
+run-shutdown-menu: $(BUILD)/shutdown_menu_test
+	@cd $(ROOT) && $(BUILD)/shutdown_menu_test

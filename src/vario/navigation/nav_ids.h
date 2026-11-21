@@ -66,7 +66,7 @@ class RouteIndex {
   static const RouteIndex NoNextPoint;
 
   // Maximum RouteIndex (a route may not have more than this number of points).
-  static const int16_t Max = 40;
+  static const int16_t Max = 20;
 
  private:
   int16_t value_;

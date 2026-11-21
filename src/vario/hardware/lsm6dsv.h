@@ -62,8 +62,6 @@ class LSM6DSV : public IPollable, public IMessageSource {
   uint32_t lastClipReport_ = 0;
   uint32_t packets_ = 0, matched_ = 0, mismatched_ = 0, published_ = 0, updates_ = 0;
   uint32_t empty_ = 0, invalidGravity_ = 0, invalidAccel_ = 0, resets_ = 0, ioErrors_ = 0;
-  double climbSum_ = 0, climbSumSquares_ = 0;
-  uint16_t climbSamples_ = 0;
 
   TestResult testResult_ = TestResult::Idle;
   uint8_t testPhase_ = 0, testSamples_ = 0, biasWindows_ = 0;
@@ -71,6 +69,6 @@ class LSM6DSV : public IPollable, public IMessageSource {
   bool discardTestSample_ = true;
   bool flatCaptureFailed_ = false;
   double residualSum_ = 0, residualSumSq_ = 0;
-  double gravitySum_[3]{}, gravitySumSq_[3]{};
+  // sum_/sumSq_ also accumulate gravity during the later flat-reference phase.
   double sum_[3]{}, sumSq_[3]{}, baseline_[3]{}, accelSum_[3]{}, accelSumSq_[3]{};
 };

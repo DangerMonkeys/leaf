@@ -1,0 +1,178 @@
+{
+  "schema": "leaf.route",
+  "schema_version": "v0.1.0",
+  "name": "Apt Compute 20",
+  "source_format": "synthetic_test",
+  "task_type": "route",
+  "earth_model": "wgs84",
+  "goal": {
+    "type": "cylinder"
+  },
+  "start": {
+    "type": "none",
+    "time_gates": []
+  },
+  "notes": "Synthetic stationary capacity and timing test. Start from the apartment area and stay put. All 20 points are initially outside your position. No timed start. Waypoint elevations are synthetic test values, not surveyed elevations.",
+  "points": [
+    {
+      "name": "TP01",
+      "lat": 37.3767026,
+      "lon": -121.9855745,
+      "alt_m": 0.0,
+      "radius_m": 180,
+      "role": "normal"
+    },
+    {
+      "name": "TP02",
+      "lat": 37.3785,
+      "lon": -121.9781069,
+      "alt_m": 0.0,
+      "radius_m": 260,
+      "role": "normal"
+    },
+    {
+      "name": "TP03",
+      "lat": 37.3763413,
+      "lon": -121.971998,
+      "alt_m": 0.0,
+      "radius_m": 220,
+      "role": "normal"
+    },
+    {
+      "name": "TP04",
+      "lat": 37.3834434,
+      "lon": -121.9692803,
+      "alt_m": 0.0,
+      "radius_m": 300,
+      "role": "normal"
+    },
+    {
+      "name": "TP05",
+      "lat": 37.388746,
+      "lon": -121.9614707,
+      "alt_m": 0.0,
+      "radius_m": 160,
+      "role": "normal"
+    },
+    {
+      "name": "TP06",
+      "lat": 37.3839789,
+      "lon": -121.9549101,
+      "alt_m": 0.0,
+      "radius_m": 280,
+      "role": "normal"
+    },
+    {
+      "name": "TP07",
+      "lat": 37.3898211,
+      "lon": -121.9500413,
+      "alt_m": 0.0,
+      "radius_m": 260,
+      "role": "normal"
+    },
+    {
+      "name": "TP08",
+      "lat": 37.3821777,
+      "lon": -121.9465382,
+      "alt_m": 0.0,
+      "radius_m": 200,
+      "role": "normal"
+    },
+    {
+      "name": "TP09",
+      "lat": 37.3788548,
+      "lon": -121.9566099,
+      "alt_m": 0.0,
+      "radius_m": 300,
+      "role": "normal"
+    },
+    {
+      "name": "TP10",
+      "lat": 37.3728294,
+      "lon": -121.9517482,
+      "alt_m": 0.0,
+      "radius_m": 240,
+      "role": "normal"
+    },
+    {
+      "name": "TP11",
+      "lat": 37.3679717,
+      "lon": -121.9447372,
+      "alt_m": 0.0,
+      "radius_m": 280,
+      "role": "normal"
+    },
+    {
+      "name": "TP12",
+      "lat": 37.3627603,
+      "lon": -121.9529982,
+      "alt_m": 0.0,
+      "radius_m": 210,
+      "role": "normal"
+    },
+    {
+      "name": "TP13",
+      "lat": 37.368067,
+      "lon": -121.9602354,
+      "alt_m": 0.0,
+      "radius_m": 220,
+      "role": "normal"
+    },
+    {
+      "name": "TP14",
+      "lat": 37.3632137,
+      "lon": -121.9666853,
+      "alt_m": 0.0,
+      "radius_m": 260,
+      "role": "normal"
+    },
+    {
+      "name": "TP15",
+      "lat": 37.3695981,
+      "lon": -121.9712081,
+      "alt_m": 0.0,
+      "radius_m": 180,
+      "role": "normal"
+    },
+    {
+      "name": "TP16",
+      "lat": 37.3651038,
+      "lon": -121.977318,
+      "alt_m": 0.0,
+      "radius_m": 240,
+      "role": "normal"
+    },
+    {
+      "name": "TP17",
+      "lat": 37.3692401,
+      "lon": -121.9824078,
+      "alt_m": 0.0,
+      "radius_m": 150,
+      "role": "normal"
+    },
+    {
+      "name": "TP18",
+      "lat": 37.3736448,
+      "lon": -121.9762978,
+      "alt_m": 0.0,
+      "radius_m": 250,
+      "role": "normal"
+    },
+    {
+      "name": "TP19",
+      "lat": 37.3729242,
+      "lon": -121.9691706,
+      "alt_m": 0.0,
+      "radius_m": 210,
+      "role": "normal"
+    },
+    {
+      "name": "20 GOAL",
+      "lat": 37.3788568,
+      "lon": -121.9636247,
+      "alt_m": 0.0,
+      "radius_m": 110,
+      "role": "goal"
+    }
+  ]
+}

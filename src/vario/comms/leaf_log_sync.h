@@ -11,6 +11,7 @@ class LeafLogSync {
  public:
   static constexpr uint16_t MAX_SESSION_FLIGHTS = 100;
   enum class ScreenPhase : uint8_t { Scanning, Wifi, Connecting, Transfer, Paused, Complete };
+  enum class Result : uint8_t { None, Success, Problem };
   enum class State : uint8_t {
     Idle,
     CheckingEligibility,
@@ -50,6 +51,8 @@ class LeafLogSync {
   }
   bool completionPending() const { return sessionCompletionPending_; }
   bool completionNotice() const { return state_ == State::Complete; }
+  Result result() const { return result_; }
+  bool sessionProblem() const { return sessionProblem_; }
   bool powerOnPending() const { return powerOnRequested_.load(std::memory_order_acquire); }
   bool powerOnClosingUsb() const { return powerOnPending() && powerOnClosingUsb_; }
   bool progressKnown() const { return sessionTotalKnown_; }
@@ -58,6 +61,9 @@ class LeafLogSync {
     return completedCount_ < sessionTotalCount_ ? completedCount_ + 1 : sessionTotalCount_;
   }
   uint16_t totalCount() const { return sessionTotalCount_; }
+#ifdef LEAF_USB_BENCH_CONSOLE
+  uint32_t uploadStackUnused() const { return uploadStackUnused_.load(std::memory_order_relaxed); }
+#endif
 
  private:
   void beginSession(bool fromEject);
@@ -66,10 +72,11 @@ class LeafLogSync {
   void selectNextUpload();
   void startCurrentUpload();
   void clearSessionFiles();
+  void invalidateEligibilityScan(const char* reason);
   void finishRequestedExit();
   void finishForPowerOn();
   void finishToMassStorage();
-  void recordCompletedItem();
+  bool recordCompletedItem();
   void handleTransientFailure(const char* reason, int httpStatus = 0, uint32_t elapsedMs = 0,
                               size_t fileSize = 0, size_t responseSize = 0,
                               const String& transportDetail = String());
@@ -89,6 +96,9 @@ class LeafLogSync {
   // all sync state, logbook writes and SD/USB ownership changes.
   bool uploadRunning_ = false;
   std::atomic<bool> uploadDone_{false};
+#ifdef LEAF_USB_BENCH_CONSOLE
+  std::atomic<uint32_t> uploadStackUnused_{0};
+#endif
   String uploadPath_;
   String uploadFilename_;
   String uploadToken_;
@@ -101,9 +111,17 @@ class LeafLogSync {
   bool powerOnClosingUsb_ = false;
   bool sessionTotalKnown_ = false;
   bool sessionCompletionPending_ = false;
+  // Final charging-screen status is independent of USB ownership and notice timers.
+  Result result_ = Result::None;
+  bool sessionProblem_ = false;
+  bool chargingRejection_ = false;
   uint16_t completedCount_ = 0;
   uint16_t sessionTotalCount_ = 0;
   uint16_t pendingCount_ = 0;
+  uint16_t pendingPathsRemaining_ = 0;
+  uint32_t scanPathsRemaining_ = 0;
+  size_t scanQueueBytes_ = 0;
+  size_t pendingQueueBytes_ = 0;
   uint32_t stateStartedMs_ = 0;
   uint32_t completionStartedMs_ = 0;
   uint32_t centerIntentStartedMs_ = 0;

@@ -1,0 +1,42 @@
+{
+  "utc": "2026-11-20T03:01:02.689286+00:00",
+  "steps": [
+    {
+      "command": "version",
+      "reply": "version 0.2.4-45ed.bench+h3.2.8",
+      "seconds": 0.0
+    },
+    {
+      "command": "status",
+      "reply": "status OffUSB Charging 0 0 1 0 0 0 0",
+      "seconds": 0.0
+    },
+    {
+      "command": "config",
+      "reply": "config 1 0 0 0 0 0 0 0",
+      "seconds": 0.0
+    },
+    {
+      "command": "heap",
+      "reply": "heap 229452 202280 139252 8432",
+      "seconds": 0.0
+    },
+    {
+      "command": "hold CENTER 1000",
+      "reply": "ok",
+      "seconds": 1.297
+    }
+  ],
+  "initial": {
+    "power": "OffUSB",
+    "page": "Charging",
+    "cursor": 0,
+    "modal_depth": 0,
+    "warning": true,
+    "climb_ready": false,
+    "gps_fix": false,
+    "flight_running": false,
+    "firmware_sd_access": false
+  },
+  "final": "Expected USB transition; inspect in next capture"
+}

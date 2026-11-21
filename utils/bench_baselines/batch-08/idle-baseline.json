@@ -1,0 +1,136 @@
+{
+  "captured_at_utc": "2026-11-14T05:03:09.885294+00:00",
+  "firmware_version": "0.2.4-756d.bench+h3.2.5",
+  "firmware_sha256": "01efe79fd25da0685830072a9bd3cdf19bb011439e77286620c243a24a69ff2d",
+  "firmware_file": "firmware.bin",
+  "port": "COM19",
+  "initial_status": {
+    "power": "On",
+    "page": "User",
+    "cursor": 0,
+    "modal_depth": 0,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": false,
+    "flight_running": false,
+    "firmware_sd_access": true
+  },
+  "final_status": {
+    "power": "On",
+    "page": "User",
+    "cursor": 0,
+    "modal_depth": 0,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": false,
+    "flight_running": false,
+    "firmware_sd_access": true
+  },
+  "configuration": {
+    "bluetooth_configured": 1,
+    "fanet_region": 1,
+    "developer_mode": 1,
+    "system_events": 0,
+    "network_events": 0,
+    "web_requests": 0,
+    "vario_log": 0,
+    "cpu_capture": 0
+  },
+  "web": "off",
+  "station_ipv4": "0.0.0.0",
+  "ap_ipv4": "0.0.0.0",
+  "summary_bytes": {
+    "internal_free": {
+      "min": 111412,
+      "median": 111412.0,
+      "max": 111412
+    },
+    "internal_min_since_boot": {
+      "min": 102400,
+      "median": 102400.0,
+      "max": 102400
+    },
+    "internal_largest": {
+      "min": 49140,
+      "median": 49140.0,
+      "max": 49140
+    },
+    "loop_stack_unused": {
+      "min": 7840,
+      "median": 7840.0,
+      "max": 7840
+    }
+  },
+  "samples": [
+    {
+      "at_seconds": 0.0,
+      "internal_free": 111412,
+      "internal_min_since_boot": 102400,
+      "internal_largest": 49140,
+      "loop_stack_unused": 7840
+    },
+    {
+      "at_seconds": 0.5,
+      "internal_free": 111412,
+      "internal_min_since_boot": 102400,
+      "internal_largest": 49140,
+      "loop_stack_unused": 7840
+    },
+    {
+      "at_seconds": 1.0,
+      "internal_free": 111412,
+      "internal_min_since_boot": 102400,
+      "internal_largest": 49140,
+      "loop_stack_unused": 7840
+    },
+    {
+      "at_seconds": 1.516,
+      "internal_free": 111412,
+      "internal_min_since_boot": 102400,
+      "internal_largest": 49140,
+      "loop_stack_unused": 7840
+    },
+    {
+      "at_seconds": 2.016,
+      "internal_free": 111412,
+      "internal_min_since_boot": 102400,
+      "internal_largest": 49140,
+      "loop_stack_unused": 7840
+    },
+    {
+      "at_seconds": 2.516,
+      "internal_free": 111412,
+      "internal_min_since_boot": 102400,
+      "internal_largest": 49140,
+      "loop_stack_unused": 7840
+    },
+    {
+      "at_seconds": 3.016,
+      "internal_free": 111412,
+      "internal_min_since_boot": 102400,
+      "internal_largest": 49140,
+      "loop_stack_unused": 7840
+    },
+    {
+      "at_seconds": 3.516,
+      "internal_free": 111412,
+      "internal_min_since_boot": 102400,
+      "internal_largest": 49140,
+      "loop_stack_unused": 7840
+    },
+    {
+      "at_seconds": 4.032,
+      "internal_free": 111412,
+      "internal_min_since_boot": 102400,
+      "internal_largest": 49140,
+      "loop_stack_unused": 7840
+    },
+    {
+      "at_seconds": 4.532,
+      "internal_free": 111412,
+      "internal_min_since_boot": 102400,
+      "internal_largest": 49140,
+      "loop_stack_unused": 7840
+    }
+  ]
+}

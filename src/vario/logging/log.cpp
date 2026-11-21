@@ -4,6 +4,7 @@
 #include <Arduino.h>
 
 #include "comms/fanet_radio.h"
+#include "diagnostics/flight_diagnostics.h"
 #include "instruments/ambient.h"
 #include "instruments/baro.h"
 #include "instruments/gps.h"
@@ -11,12 +12,16 @@
 #include "logbook/flight.h"
 #include "logbook/igc.h"
 #include "logbook/logbook_entry.h"
+#include "logging/fanet_log.h"
+#include "logging/flight_auto_start.h"
 #include "navigation/gpx.h"
 #include "power.h"
 #include "storage/sd_card.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
+#include "ui/display/fonts.h"
+#include "ui/display/message_box.h"
 #include "ui/display/pages/dialogs/page_alert_timerAutoStop.h"
 #include "ui/display/pages/dialogs/page_flight_summary.h"
 #include "ui/display/pages/fanet/page_fanet_stats.h"
@@ -43,6 +48,30 @@ LogbookEntryFile logbookEntry;
 PageAlertTimerAutoStop pageAlertTimerAutoStop;
 
 namespace {
+  static_assert(FlightDiagnostics::GAP_MS == GLoadTracker::MAX_SAMPLE_GAP_MS,
+                "diagnostic motion-gap threshold must match the tracker");
+  FlightAutoStart autoStartDetector;
+  uint32_t flightStartedAtMs = 0;
+  FlightStartCause flightStartCause = FlightStartCause::Manual;
+  uint8_t flightStartPaths = 0;
+  uint8_t pendingAutoLaunchPaths = 0;
+
+  FlightAutoStart::Sample autoStartSample() {
+    FlightAutoStart::Sample sample;
+    sample.speedValid = gps.hasFreshGroundSpeed();
+    if (sample.speedValid) sample.speedMps = gps.speed.mps();
+    sample.climbValid = baro.pressureFresh() && baro.climbRate1SecAverageValid();
+    if (sample.climbValid) sample.climbMps = baro.climbRate1SecAverage() / 100.0f;
+    sample.altitudeValid = baro.pressureFresh();
+    if (sample.altitudeValid) sample.altitudeM = baro.alt() / 100.0f;
+    sample.positionValid = gps.hasUsableFix();
+    if (sample.positionValid) {
+      sample.latitude = gps.location.lat();
+      sample.longitude = gps.location.lng();
+    }
+    return sample;
+  }
+
   void captureFirstGpsFixForLogbook() {
     GPSPositionSnapshot fix;
     if (!gps.lastValidFix(fix)) return;
@@ -59,6 +88,37 @@ namespace {
     logbook.startLocationLng = fix.longitude;
     logbookEntry.captureFirstFix(logbook);
   }
+
+  // Activity only vetoes landing. Entry uses the corroborated motion-window detector.
+
+  struct FlightEvidence {
+    uint32_t checkMs = 0;
+    bool speedValid = false, climbValid = false, fast = false, vertical = false;
+    uint8_t launchPaths = 0;
+    bool looksAirborne() const { return fast || vertical; }
+    bool detectorInputsValid() const { return looksAirborne() || (speedValid && climbValid); }
+  };
+  FlightEvidence captureFlightEvidence() {
+    FlightEvidence d;
+    d.checkMs = millis();
+    d.speedValid = gps.hasUsableFix() && gps.hasFreshGroundSpeed();
+    d.fast = d.speedValid && gps.speed.mps() > 8.0f * 0.44704f;
+    d.climbValid = baro.state() == Barometer::State::Ready && baro.climbRateFilteredValid();
+    d.vertical = d.climbValid && abs(baro.climbRateFiltered()) > 50;
+    return d;
+  }
+
+  void captureGLoadExtrema() {
+    logbook.accel_max = imu.gLoad().valid() ? imu.gLoad().maxG() : NAN;
+    logbook.accel_min = imu.gLoad().valid() ? imu.gLoad().minG() : NAN;
+  }
+
+  void captureGLoadEvents() {
+    const auto interval = imu.gLoad().takeInterval();
+    if (interval.gaps)
+      flightDiagnostics.record(FlightDiagnostics::Kind::MotionGap, interval.maxGapEndMs,
+                               interval.maxGapMs, 0, interval.gaps);
+  }
 }  // namespace
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -66,19 +126,17 @@ namespace {
 void log_update() {
   // Check auto-start criteria if we haven't begun a flight yet
   if (!flight) {
-    // If auto start is configured, and we match the criteria, start the flight
-    if (settings.log_autoStart) {
-      if (flightTimer_autoStart()) flightTimer_start();  // start a log if auto-start is on
-    } else {
-      // Otherwise, there's nothing to do here.
-      return;
-    }
+    // Evaluate automatic starts while idle. Manual flights collect fresh launch
+    // evidence once the timer is running, independent of the Auto Start setting.
+    if (flightTimer_autoStart()) flightTimer_start(FlightStartCause::Automatic);
     // Check auto-stop criteria if we have started a flight (and AutoStop is ON)
   } else {
     if (settings.log_autoStop) {
-      if (flightTimer_autoStop()) flightTimer_stop();  // stop the log if auto-stop is on
+      if (flightTimer_autoStop()) flightTimer_stop(true, FlightEndCause::Automatic);
     }
   }
+
+  fanet_log::update();
 
   // Now do all the regular log stuff if we have an active log
   if (flight) {
@@ -89,19 +147,39 @@ void log_update() {
 
     // Current second of the flight
     logbook.duration = currentSecondSinceBoot - logbook.logStartedAt;
-    logbookEntry.writePlaceholder(logbook);
+    auto evidence = captureFlightEvidence();
+    if (pendingAutoLaunchPaths) {
+      // The timer already consumed this check's launch evidence; do not confirm it again.
+      evidence.launchPaths = pendingAutoLaunchPaths;
+      pendingAutoLaunchPaths = 0;
+    } else {
+      // Manual logs and relaunches use the same detector, independent of Auto Start settings.
+      autoStartDetector.update(evidence.checkMs, autoStartSample());
+      evidence.launchPaths = autoStartDetector.triggered();
+    }
+    imu.gLoad().updateFlightState(evidence.launchPaths != 0, evidence.looksAirborne(),
+                                  evidence.detectorInputsValid());
+    if (imu.gLoad().diagnosticState().transition == GLoadTracker::Transition::Landed)
+      autoStartDetector.reset();  // A relaunch needs a fresh motion window after landing.
+    captureGLoadExtrema();
     logbookEntry.refreshStartTimeFromSyncedClock(logbook);
 
     // We wish to save a tracklog, but the tracklog has not yet started.
     if (trackLogEnabledForFlight && !flight->started()) {
-      if (!gps.hasUsableFix())
+      if (!gps.hasUsableFix()) {
         // We don't have a valid GPS location yet, try again later
+        logbookEntry.writePlaceholder(logbook);
+        captureGLoadEvents();
         return;
+      }
 
-      if (baro.state() != Barometer::State::Ready)
+      if (baro.state() != Barometer::State::Ready) {
         // The baro is still discarding its startup samples, so it can't set a launch altitude
         // yet; try again later
+        logbookEntry.writePlaceholder(logbook);
+        captureGLoadEvents();
         return;
+      }
 
       // We have a GPS fix, we're able to start recording of the flight.
       // Do all the necessary starting actions as we start the recording.
@@ -118,6 +196,7 @@ void log_update() {
         baro.setLaunchAlt();
         logbook.alt_start = baro.altAtLaunch();
         captureFirstGpsFixForLogbook();
+        logbookEntry.setTrack(flight->trackLogFormat(), flight->trackLogPath());
 
         // get first set of log values
         log_captureValues();
@@ -137,8 +216,11 @@ void log_update() {
       captureFirstGpsFixForLogbook();
     }
 
+    // Coalesce clock, first-fix and track association before the single milestone write.
+    logbookEntry.writePlaceholder(logbook);
     // Generate a tracklog record.
-    if (trackLogEnabledForFlight && gps.hasUsableFix()) flight->log(logbook.duration);
+    captureGLoadEvents();
+    if (trackLogEnabledForFlight) flight->log(logbook.duration);
     log_captureValues();      // TODO:  Update this to an "Update Flight Stats" or something
     log_checkMinMaxValues();  // TODO:  Probably rename this to be "bound Flight Stats"
   }
@@ -147,59 +229,31 @@ void log_update() {
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Auto Start & Stop check functions.
 
-uint8_t autoStartCounter = 0;
 uint8_t autoStopCounter = 0;
 int32_t autoStopAltitude = 0;
 
+void flightTimer_resetAutoStart() { autoStartDetector.reset(); }
+
 bool flightTimer_autoStart() {
-  bool startTheTimer = false;  // default to not auto-start
-
-  if (PageFlightSummary::isShowing()) {
-    autoStartCounter = 0;
-    return false;
-  }
-
-  if (!gps.hasFreshGroundSpeed()) {
-    autoStartCounter = 0;
-    return false;
-  }
-
-  // keep track of how many times (seconds) we've been continuously over the min speed threshold
-  if (gps.speed.mph() > AUTO_START_MIN_SPEED) {
-    autoStartCounter++;
-    if (autoStartCounter >= AUTO_START_MIN_SEC) {
-      startTheTimer = true;
-      Serial.println("****************************** autoStart TRUE via speed");
-    }
+  if (flight) return false;
+  const auto sample = autoStartSample();
+  const bool inhibited = PageFlightSummary::isShowing();
+  bool start = false;
+  if (!settings.log_autoStart || inhibited) {
+    autoStartDetector.reset();
   } else {
-    autoStartCounter = 0;
+    start = autoStartDetector.update(millis(), sample);
   }
+  if (start) Serial.println("****************************** autoStart TRUE via motion window");
+  return start;
+}
 
-  /*   Auto Start from altitude change was leading to false-positives.  Further, if auto-start by
-  Altitude is triggered before a GPS fix is obtained, then gps.speed is reported as 0, triggering
-  log auto-stop. Plus, a saved tracklog file is only recorded when we have a fix anyway, so it
-  doesn't make sense to start the log before we have a fix.  So, for now, we'll only auto-start from
-  speed. We can re-evaluate auto-start from altitude change in the future if we want to add it back
-  as an additional criteria for auto-starting (in addition to speed).  The main benefit of
-  auto-starting from altitude (before a fix) is to capture the total flight time for a saved
-  logbook.
-
-  // check if current altitude has changed enough from startup to trigger timer start
-  if (baro.state() == Barometer::State::Ready) {
-    int32_t altDifference = baro.altAboveInitial();
-    if (altDifference < 0) altDifference *= -1;
-    if (altDifference > AUTO_START_MIN_ALT) {
-      startTheTimer = true;
-      Serial.println("****************************** autoStart TRUE via alt");
-    }
-  }
-  */
-
-  if (startTheTimer) {
-    autoStartCounter = 0;
-  }
-
-  return startTheTimer;
+void log_writeStartDiagnostics(IgcLogger& logger) {
+  char line[73];
+  snprintf(line, sizeof(line), "START V=3 CAUSE=%s T_MS=%lu J=%u",
+           flightStartCause == FlightStartCause::Automatic ? "AUTO" : "MANUAL",
+           (unsigned long)flightStartedAtMs, flightStartPaths);
+  logger.writeLRecord(line);
 }
 
 bool showingAlert_ = false;
@@ -221,7 +275,7 @@ bool flightTimer_autoStop() {
 
     // if all three conditions are met, increment the counter
     autoStopCounter++;
-    // alert the user if we've been in this state for a little while and are about to stop
+    // Warn at check 7 of 15, leaving an eight-second cancelable countdown.
     if (autoStopCounter == AUTO_STOP_MIN_SEC / 2) {
       pageAlertTimerAutoStop.show();
       showingAlert_ = true;
@@ -266,6 +320,10 @@ void flightTimer_resetAutoStop() {
 
 // check if running
 bool flightTimer_isRunning() { return flight != NULL; }
+bool flightTimer_ownsLogbookPath(const String& path) {
+  if (!flight) return false;
+  return path == logbookEntry.path() || path.endsWith("_" + logbookEntry.flightId() + ".json");
+}
 bool flightTimer_isLogging() {
   return flightTimer_isRunning() && (!trackLogEnabledForFlight || (bool)flight->started());
 }
@@ -276,12 +334,21 @@ void flightTimer_markSavedPoint(const Waypoint& waypoint) {
 }
 
 // start timer
-void flightTimer_start() {
+void flightTimer_start(FlightStartCause cause) {
   // Short-circuit if a flight is already started
   if (flight != NULL) {
     return;
   }
 
+  // Release an idle repair iterator before this flight can create any files.
+  LogbookStore::beginRepairSession(false);
+
+  flightStartedAtMs = millis();
+  flightStartCause = cause;
+  flightStartPaths = cause == FlightStartCause::Automatic ? autoStartDetector.triggered() : 0;
+  pendingAutoLaunchPaths = flightStartPaths;
+  flightDiagnostics.begin(flightStartedAtMs);
+  autoStartDetector.reset();
   flightTimer_resetAutoStop();
 
   // start timer
@@ -289,6 +356,7 @@ void flightTimer_start() {
   settings.resetShortcutVolume();
   flight = &igcFlight;
   display.resetThermalState();
+  imu.gLoad().startFlight();
 
   logbook.logStartedAt = millis() / 1000;
   log_captureValues();
@@ -297,11 +365,15 @@ void flightTimer_start() {
   trackLogEnabledForFlight = settings.log_saveTrack;
 
   // Start the Fanet radio
+  fanet_log::beginFlight();
   fanetRadio.begin(settings.fanet_region);
 }
 
 // stop timer
-void flightTimer_stop(bool showSummary) {
+void flightTimer_stop(bool showSummary, FlightEndCause cause) {
+  fanet_log::endFlight();
+  pendingAutoLaunchPaths = 0;
+  autoStartDetector.reset();
   windEstimator.clearWindEstimate();  // clear the wind estimate when we stop a flight
   power.resetAutoOffCounter();  // reset the auto-off counter when we stop a flight (it could have
                                 // counted up to nearly the limit prior to auto-starting a log)
@@ -313,23 +385,62 @@ void flightTimer_stop(bool showSummary) {
     return;
   }
 
+  const bool previouslyMuted = speaker.muted();
+  speaker.mute();  // Stop hardware output before any final IGC or JSON file work.
+
   // ending values
+  imu.gLoad().stopFlight();
+  captureGLoadExtrema();
+  captureGLoadEvents();
   log_captureEndingValues();
 
   const String trackFormat = flight->started() ? flight->trackLogFormat() : "";
   const String trackPath = flight->started() ? flight->trackLogPath() : "";
 
   // Close the tracklog before finalizing the logbook reference to it.
-  if (flight->started()) flight->end(logbook, false);
+  if (flight->started()) {
+    const char* causeName = "MANUAL";
+    switch (cause) {
+      case FlightEndCause::Automatic:
+        causeName = "AUTO";
+        break;
+      case FlightEndCause::PowerOff:
+        causeName = "POWER_OFF";
+        break;
+      case FlightEndCause::LowBattery:
+        causeName = "LOW_BATTERY";
+        break;
+      case FlightEndCause::Manual:
+        break;
+    }
+    igcFlight.markEnd(causeName);
+    flight->end(logbook, false);
+  }
+  flightDiagnostics.end();
 
-  logbookEntry.finalize(logbook, trackFormat, trackPath);
+  u8g2.firstPage();
+  do {
+    message_box::draw("Saving", "flight...");
+  } while (u8g2.nextPage());
+  const bool summarySaved = logbookEntry.finalize(logbook, trackFormat, trackPath);
+  if (!summarySaved && !showSummary) {
+    u8g2.firstPage();
+    do {
+      message_box::draw("Logbook save", "failed",
+                        trackPath.isEmpty() ? "No IGC file" : "IGC unverified");
+    } while (u8g2.nextPage());
+    delay(1000);  // Visible outcome before shutdown clears the display; no acknowledgement.
+  }
   if (showSummary) {
     static PageFlightSummary dialog;
-    dialog.show(logbook, logbookEntry.path(), trackPath);
+    LogbookEntrySummary snapshot;
+    logbookEntry.summary(logbook, snapshot);
+    dialog.show(logbook, logbookEntry.path(), trackPath, summarySaved, &snapshot);
   }
   logbookEntry.reset();
   // TODO:  A much cooler end flight sound.  Perhaps even an easter egg?
-  speaker.playSound(fx::confirm);
+  if (!previouslyMuted) speaker.unMute();
+  speaker.playSound(summarySaved ? fx::confirm : fx::bad);
   settings.resetShortcutVolume();
   flight = NULL;
   trackLogEnabledForFlight = false;
@@ -364,7 +475,7 @@ void log_captureValues() {
     logbook.alt = baro.altAdjusted();
     logbook.alt_above_launch = baro.altAboveLaunch();
 
-    if (baro.climbRateFilteredValid()) logbook.climb = baro.climbRateFiltered();
+    if (baro.climbRate1SecAverageValid()) logbook.climb = baro.climbRate1SecAverage();
   }
 
   if (gps.hasUsableFix()) {
@@ -423,7 +534,7 @@ void log_checkMinMaxValues() {
       logbook.alt_min = logbook.alt;
     }
 
-    if (baro.climbRateFilteredValid()) {
+    if (baro.climbRate1SecAverageValid()) {
       // check climb values for log records
       if (logbook.climb > logbook.climb_max) {
         logbook.climb_max = logbook.climb;
@@ -452,13 +563,6 @@ void log_checkMinMaxValues() {
     } else if (logbook.temperature < logbook.temperature_min) {
       logbook.temperature_min = logbook.temperature;
     }
-  }
-
-  // check accel / g-force for log records
-  if (logbook.accel > logbook.accel_max) {
-    logbook.accel_max = logbook.accel;
-  } else if (logbook.accel < logbook.accel_min) {
-    logbook.accel_min = logbook.accel;
   }
 
   // Check speed value for log records

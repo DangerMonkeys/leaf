@@ -35,6 +35,9 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   await flush();
   const injection = elements.get('devUdpInjection');
   assert(injection && elements.has('developerCard'));
+  assert(!elements.has('devFanet'), 'The web app must not expose the removed FANET page');
+  assert(!source.includes('user_server.on("/app/debug/fanet"'), 'Old FANET bookmarks must not reach the unsafe handler');
+  assert(elements.has('devScreenshot') && elements.has('devMemory') && elements.has('devMassStorage'));
   assert.equal(injection.checked, false);
   injection.checked = true;
   await injection.onchange();
@@ -47,10 +50,14 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   assert.equal(posts.at(-1).udp_sensor_injection, false);
   assert.equal(injection.checked, false);
 
+  assert(!elements.has('devRouteOptimizer'));
+  assert(!('route_optimizer' in posts.at(-1)));
+  assert(source.includes('"/api/debug/route-optimizer", HTTP_GET'));
+
   // A stale developer page must show failure when the device rejects its POST.
   reject = true;
   injection.checked = true;
   await injection.onchange();
   assert.equal(elements.get('devMsg').textContent, 'Unable to save developer settings.');
-  console.log('Developer card injection load, toggle and rejected-save checks passed');
+  console.log('Developer card actions, FANET removal, injection load/toggle and rejected-save checks passed');
 })().catch(error => { console.error(error); process.exitCode = 1; });

@@ -3,7 +3,9 @@
 
 #include "battery_characterization.h"
 #include "comms/ble.h"
+#include "comms/fanet_radio.h"
 #include "comms/leaf_log_sync.h"
+#include "comms/udp_message_server.h"
 #include "diagnostics/diagnostic_network/diagnostic_network.h"
 #include "diagnostics/heap_monitor.h"
 #include "hardware/Leaf_I2C.h"
@@ -18,16 +20,19 @@
 #include "instruments/baro.h"
 #include "instruments/gps.h"
 #include "instruments/imu.h"
+#include "logbook/logbook_io.h"
 #include "logging/buslog.h"
 #include "logging/log.h"
 #include "power.h"
 #include "storage/sd_card.h"
+#include "system/shutdown_guard.h"
 #include "system/usb_state.h"
 #include "ui/audio/sound_effects.h"
 #include "ui/audio/speaker.h"
 #include "ui/display/display.h"
 #include "ui/display/display_fields.h"
 #include "ui/display/pages/dialogs/page_alert_autoOff.h"
+#include "ui/display/pages/dialogs/page_storage_warning.h"
 #include "ui/input/buttons.h"
 #include "ui/settings/settings.h"
 #include "utils/magic_enum.h"
@@ -38,7 +43,7 @@ PageAlertAutoOff pageAlertAutoOff;
 Power power;  // struct for battery-state and on-state variables
 
 // Pinout for Leaf V3.2.0+
-#define POWER_LATCH 48
+#define POWER_LATCH shutdown_guard::LATCH_PIN
 #define BATT_SENSE 1  // INPUT ADC
 
 // Battery Threshold values
@@ -93,7 +98,15 @@ void Power::bootUp() {
   heap_monitor::checkpoint("power-buttons");
 
   // go to "ON" state if button (user input) or BOOT_TO_ON flag from firmware update
-  if (button == Button::CENTER || settings.boot_toOnState) {
+  if (shutdown_guard::recovering()) {
+    // A watchdog reset during shutdown must not boot into flying mode, even
+    // while the center button is held or an OTA boot-to-on flag is persisted.
+    settings.boot_toOnState = false;
+    settings.save();
+    buttons.suppressEventsUntilRelease();
+    info_.onState = PowerState::OffUSB;
+    display.setPage(MainPage::Charging);
+  } else if (button == Button::CENTER || settings.boot_toOnState) {
     settings.boot_toOnState = false;
     settings.save();
 
@@ -104,7 +117,6 @@ void Power::bootUp() {
     display.setPage((MainPage)settings.startPage);
     heap_monitor::checkpoint("power-start-page");
 
-    maybeStartBusLog();
   } else {
     // if not center button, then USB power turned us on, go into charge mode
     info_.onState = PowerState::OffUSB;
@@ -115,6 +127,10 @@ void Power::bootUp() {
   // charge mode, we still need to initialize devices so we can put some
   // of them back to sleep)
   initPeripherals();
+  if (info_.onState == PowerState::On) {
+    storage_warning::checkAtStartup();
+    maybeStartBusLog();
+  }
   heap_monitor::checkpoint("power-boot-end");
 }
 
@@ -167,7 +183,11 @@ void Power::initPeripherals() {
   sdcard.init(true);
   if (info_.onState == PowerState::On) {
     leafLogSync.prepareForOperating();
+#ifdef LEAF_USB_BENCH_CONSOLE
+    leaf_usb::connect();
+#else
     leaf_usb::disconnect();
+#endif
   } else {
     leafLogSync.prepareForCharging();
   }
@@ -209,7 +229,7 @@ void Power::sleepPeripherals() {
   Serial.println(" - Sleeping baro");
   baro.sleep();
   MotionSensor::getInstance().sleep();
-  imu.wake();  // Invalidate the estimator before any subsequent wake.
+  imu.wake(GLoadTracker::ResetReason::Sleep);  // Invalidate before any subsequent wake.
   Serial.println(" - Sleeping speaker");
   speaker.mute();
   Serial.println("Shut down speaker");
@@ -225,7 +245,7 @@ void Power::wakePeripherals() {
   heap_monitor::checkpoint("wake-periph-gps");
   Serial.println(" - waking baro and IMU");
   baro.wake();
-  imu.wake();
+  imu.wake(GLoadTracker::ResetReason::Wake);
   MotionSensor::getInstance().wake();
   heap_monitor::checkpoint("wake-periph-baro-imu");
   Serial.println(" - waking speaker");
@@ -235,14 +255,20 @@ void Power::wakePeripherals() {
 }
 
 bool Power::switchToOnState() {
+  if (shutdownPending_ || shutdownInProgress_) return false;
   if (!sdcard.acquireForFirmwareUse(2000, true)) {
     Serial.println("switch_to_on_state: SD ownership transition failed");
     return false;
   }
+#ifdef LEAF_USB_BENCH_CONSOLE
+  // Preserve the normal SD handoff. Bring USB back after the host LUN is absent.
+  leaf_usb::connect();
+#endif
   leafLogSync.prepareForOperating();
   latchOn();
   Serial.println("switch_to_on_state");
   info_.onState = PowerState::On;
+  storage_warning::checkAtStartup();
   wakePeripherals();
   if (settings.system_bluetoothOn) BLE::get().start();
   if (diagnostic_network.shouldResetWhenSwitchingOn()) {
@@ -253,7 +279,7 @@ bool Power::switchToOnState() {
 }
 
 void Power::maybeStartBusLog() {
-  if (settings.dev_startLogAtBoot) {
+  if (settings.dev_mode && settings.dev_startLogAtBoot) {
     Serial.println("Starting bus log at startup");
     if (busLog.startLog()) {
       Serial.println("Started bus log at startup");
@@ -266,6 +292,34 @@ void Power::maybeStartBusLog() {
 void Power::shutdown() { shutdown(false); }
 
 void Power::shutdown(bool deadBattery) {
+  if (shutdownInProgress_) return;
+  shutdownDeadBattery_ |= deadBattery;
+  if (shutdownPending_) return;
+  // Arm while still in the requesting callback. Even a stalled dispatch or
+  // main loop before serviceShutdown() retains the original safety bound.
+  shutdown_guard::begin(shutdown_guard::Stage::Requested);
+  shutdownPending_ = true;
+  buttons.consumeButton();
+}
+
+bool Power::serviceShutdown() {
+  if (!shutdownPending_ || shutdownInProgress_) return false;
+  shutdownPending_ = false;
+  shutdownInProgress_ = true;
+  const bool deadBattery = shutdownDeadBattery_;
+  shutdownDeadBattery_ = false;
+
+  // No bus or file lock is held here. Drain callbacks that were admitted before
+  // stopping, including ones waiting for the requesting button's bus lock.
+  shutdown_guard::stage(shutdown_guard::Stage::Publishers);
+  shutdown_guard::faultPoint(shutdown_guard::Stage::Publishers);
+  if (!udpMessageServer.quiesce() || !fanetRadio.quiesce())
+    shutdown_guard::force(shutdown_guard::Reason::WorkerTimeout);
+  shutdown_guard::stage(shutdown_guard::Stage::Lock);
+  shutdown_guard::faultPoint(shutdown_guard::Stage::Lock);
+  // Finish an already-running logbook operation before shutdown starts, and prevent
+  // another reader/save from crossing the final-save/power-latch boundary.
+  logbook_io::Guard transaction(true);
   Serial.println("power_shutdown");
 
   switch (display.getPage()) {
@@ -282,10 +336,20 @@ void Power::shutdown(bool deadBattery) {
   }
 
   // save logs and system data
-  flightTimer_stop(false);
+  shutdown_guard::stage(shutdown_guard::Stage::Flight);
+  shutdown_guard::faultPoint(shutdown_guard::Stage::Flight);
+  flightTimer_stop(false, deadBattery ? FlightEndCause::LowBattery : FlightEndCause::PowerOff);
+  shutdown_guard::stage(shutdown_guard::Stage::BusLog);
   busLog.endLog();
+  if (heap_monitor::stackMonitorState() != heap_monitor::StackMonitorState::Idle) {
+    shutdown_guard::stage(shutdown_guard::Stage::StackLog);
+    if (!heap_monitor::saveStackMonitor()) Serial.println("Stack monitor: shutdown save failed");
+  }
+  shutdown_guard::stage(shutdown_guard::Stage::Settings);
+  settings.save();
 
   // Show user we're shutting down
+  shutdown_guard::stage(shutdown_guard::Stage::Display);
   display.clearPage();
   if (deadBattery) {
     display_batteryDead_splash();
@@ -293,40 +357,59 @@ void Power::shutdown(bool deadBattery) {
     display_off_splash();
   }
 
-  BLE::get().end();
+  shutdown_guard::stage(shutdown_guard::Stage::BleWorker);
+  shutdown_guard::faultPoint(shutdown_guard::Stage::BleWorker);
+  if (!BLE::get().quiesce()) shutdown_guard::force(shutdown_guard::Reason::WorkerTimeout);
+  shutdown_guard::stage(shutdown_guard::Stage::Sound);
+  shutdown_guard::faultPoint(shutdown_guard::Stage::Sound);
   baro.sleep();  // stop getting climbrate updates so we don't hear vario beeps while shutting down
 
   // play shutdown sound
   speaker.playSound(fx::exit);
 
   // loop until sound is done playing
-  while (speaker.update()) {
+  const uint32_t soundStartedMs = millis();
+  while (speaker.update() && millis() - soundStartedMs < 1000) {
     delay(10);
   }
-
-  // save any changed settings this session
-  settings.save();
 
   // wait another 2.5 seconds before shutting down to give user
   // a chance to see the shutdown screen
   delay(2500);
 
   // finally, turn off devices
+  shutdown_guard::stage(shutdown_guard::Stage::Peripherals);
+  shutdown_guard::faultPoint(shutdown_guard::Stage::Peripherals);
   sleepPeripherals();
+  shutdown_guard::stage(shutdown_guard::Stage::Sleeping);
+  shutdown_guard::faultPoint(shutdown_guard::Stage::Sleeping);
   display.clear();
   delay(100);
+  shutdown_guard::stage(shutdown_guard::Stage::Latch);
+  shutdown_guard::faultPoint(shutdown_guard::Stage::Latch);
   latchOff();  // turn off 3.3V regulator (if we're plugged into USB, we'll stay on)
   delay(100);
+  shutdown_guard::stage(shutdown_guard::Stage::LatchReleased);
+  shutdown_guard::faultPoint(shutdown_guard::Stage::LatchReleased);
 
   // go to PowerState::OffUSB, in case device was shut down while
   // plugged into USB, then we can show necessary charging updates etc
   info_.onState = PowerState::OffUSB;
+  // Battery power is already released. Only USB (or a held button) keeps the
+  // processor alive here, so expensive NimBLE deinit cannot prevent latch-off.
+  shutdown_guard::stage(shutdown_guard::Stage::BleDeinit);
+  shutdown_guard::faultPoint(shutdown_guard::Stage::BleDeinit);
+  BLE::get().end();
   display.setPage(MainPage::Charging);
+  shutdown_guard::stage(shutdown_guard::Stage::Charging);
   if (sdcard.acquireForFirmwareUse()) {
     leafLogSync.prepareForCharging();
   } else {
     Serial.println("power_shutdown: SD unavailable for charging transition");
   }
+  shutdown_guard::complete();
+  shutdownInProgress_ = false;
+  return true;
 }
 
 void Power::latchOn() { digitalWrite(POWER_LATCH, HIGH); }

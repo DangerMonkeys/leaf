@@ -6,30 +6,32 @@
 #include "etl/message_bus.h"
 
 #include "logbook/flight.h"
+enum class FlightStartCause : uint8_t { Manual, Automatic };
 
 struct Waypoint;
 
-// Auto Start/Stop Timer Thresholds
-#define AUTO_START_MIN_SPEED 8  // mph minimum before timer will auto-start
-#define AUTO_START_MIN_SEC 5    // seconds above the min speed to auto-start
-#define AUTO_START_MIN_ALT 700  // cm altitude change for timer auto-start
+// Auto-start tuning lives in logging/flight_auto_start.h.
+// Auto Stop Timer Thresholds
 
 #define AUTO_STOP_MAX_SPEED 3     // mph max -- must be below this speed for timer to auto-stop
-#define AUTO_STOP_MAX_ACCEL 0.2f  // Max accelerometer signal (m/s^2) to consider "not moving"
-#define AUTO_STOP_MAX_ALT 100     // cm altitude change for timer auto-stop
-#define AUTO_STOP_MIN_SEC 20      // seconds of low speed / low accel for timer to auto-stop
+#define AUTO_STOP_MAX_ACCEL 0.2f  // Maximum acceleration departure from 1 g
+#define AUTO_STOP_MAX_ALT 200     // cm departure from the retained altitude anchor
+#define AUTO_STOP_MIN_SEC 15      // consecutive qualifying one-second checks
 
 // Main Log functions
 void log_update(void);  // Update function to run every second
 
 // Flight Timer Auto Start/Stop check functions
 bool flightTimer_autoStart(void);
+void flightTimer_resetAutoStart(void);
 bool flightTimer_autoStop(void);
 
 // Flight Timer functions
-void flightTimer_start(void);
-void flightTimer_stop(bool showSummary = true);
+void flightTimer_start(FlightStartCause cause = FlightStartCause::Manual);
+enum class FlightEndCause : uint8_t { Manual, Automatic, PowerOff, LowBattery };
+void flightTimer_stop(bool showSummary = true, FlightEndCause cause = FlightEndCause::Manual);
 void flightTimer_toggle(void);
+bool flightTimer_ownsLogbookPath(const String& path);
 bool flightTimer_isRunning(void);  // If the timer is running
 bool flightTimer_isLogging(void);  // If the flight recorder log is logging
 void flightTimer_markSavedPoint(const Waypoint& waypoint);
@@ -53,5 +55,8 @@ void flightTimer_resetAutoStop(void);
 
 // Returns if we should stop recording a flight based on idle-ness
 bool flightTimer_autoStart(void);
+
+class IgcLogger;
+void log_writeStartDiagnostics(IgcLogger& logger);
 
 extern FlightStats logbook;

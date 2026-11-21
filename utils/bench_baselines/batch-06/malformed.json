@@ -1,0 +1,9 @@
+{
+  "response": {
+    "points": [],
+    "detail": "User waypoint file is invalid."
+  },
+  "navigation_unchanged": true,
+  "metadata_survived_edits": true,
+  "passed": true
+}

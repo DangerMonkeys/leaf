@@ -7,7 +7,8 @@
 using namespace runtime_capture;
 
 int main() {
-  Recorder r;
+  Recorder::SlotStats stats{};
+  Recorder r(stats);
   // Assigned work alone fits; GPS then pushes the slot past its deadline.
   r.begin(0, 1, 10000, 10000);
   r.add(Work::Tasks, 8000, 18000);
@@ -36,7 +37,8 @@ int main() {
   assert(r.partialSlots == 1 && r.stats[4].count == 0);
 
   // Timing survives micros() rollover because the capture uses 64-bit timestamps.
-  Recorder wrap;
+  Recorder::SlotStats wrapStats{};
+  Recorder wrap(wrapStats);
   const uint64_t t = uint64_t(UINT32_MAX) + 100000;
   wrap.begin(0, UINT32_MAX, t, t);
   wrap.add(Work::Tasks, 1500, t + 1500);
@@ -55,7 +57,8 @@ int main() {
   assert(r.stats[0].histogram[0] == 10);
   assert(r.stats[0].histogram[HISTOGRAM_COUNT - 2] == 1);
   // A button/inline refresh and the downstream catch-up slots stay outside the baseline.
-  Recorder interaction;
+  Recorder::SlotStats interactionStats{};
+  Recorder interaction(interactionStats);
   interaction.begin(0, 1, 10000, 10000);
   interaction.current.buttonEvents = 1;
   interaction.rendered(10, 12000);

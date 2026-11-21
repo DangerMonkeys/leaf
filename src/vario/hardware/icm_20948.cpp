@@ -8,6 +8,7 @@
 
 #include "hardware/icm_20948.h"
 
+#include "diagnostics/flight_diagnostics.h"
 #include "dispatch/message_types.h"
 
 #define DEBUG_IMU 0
@@ -108,6 +109,7 @@ void ICM20948::update() {
     if (IMU_.status == ICM_20948_Stat_FIFOIncompleteData) {
       publishComment(bus, "ICM20948 FIFO incomplete packet; resetting FIFO");
       fifoResetCount_++;
+      flightDiagnostics.record(FlightDiagnostics::Kind::FifoReset, millis(), 0, 1);
       IMU_.resetFIFO();
       return;
     }
@@ -186,6 +188,7 @@ void ICM20948::update() {
   if (moreData) {
     publishComment(bus, "ICM20948 FIFO backlog exceeded drain limit; resetting FIFO");
     fifoResetCount_++;
+    flightDiagnostics.record(FlightDiagnostics::Kind::FifoReset, millis(), 0, 2);
     IMU_.resetFIFO();
   }
 

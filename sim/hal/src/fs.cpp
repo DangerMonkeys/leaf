@@ -320,8 +320,8 @@ bool SDMMCFS::setPins(int clk, int cmd, int d0, int d1, int d2, int d3) { return
 bool SDMMCFS::setPins(int clk, int cmd, int d0) { return true; }
 
 uint64_t SDMMCFS::cardSize() const { return 8ULL * 1024 * 1024 * 1024; }
-uint64_t SDMMCFS::totalBytes() const { return cardSize(); }
-uint64_t SDMMCFS::usedBytes() const { return 64ULL * 1024 * 1024; }
+uint64_t SDMMCFS::totalBytes() const { return total_; }
+uint64_t SDMMCFS::usedBytes() const { return used_; }
 uint64_t SDMMCFS::numSectors() const { return cardSize() / 512; }
 uint8_t SDMMCFS::cardType() const { return present_ ? CARD_SDHC : CARD_NONE; }
 

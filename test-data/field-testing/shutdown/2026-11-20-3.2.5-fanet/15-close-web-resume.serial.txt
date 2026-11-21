@@ -1,0 +1,40 @@
+BENCH version 0.2.4-8a4.bench+h3.2.5
+BENCH version 0.2.4-8a4.bench+h3.2.5
+BENCH status On Menu -1 1 0 1 0 1 1
+
+HOST press LEFT
+BENCH ok
+
+HOST press LEFT
+button: LEFT   state: PRESSED     hold count: 0
+button: LEFT   state: CLICKED     hold count: 0
+1451453 playSound 1008682216
+[FanetRadio] Initializing
+[FanetRadio] Initialized
+button: LEFT   state: RELEASED    hold count: 0
+Speaker::update skipped 1 intervals
+BLE: Advertising
+BENCH ok
+
+HOST wait 12
+button: LEFT   state: PRESSED     hold count: 0
+button: LEFT   state: CLICKED     hold count: 0
+1451753 playSound 1008705644
+WiFi disconnected
+button: LEFT   state: RELEASED    hold count: 0
+Speaker::update skipped 1 intervals
+
+HOST status
+BENCH status On Navigate 0 0 0 1 0 1 1
+
+HOST fanet
+BENCH fanet 1 RUNNING 2724 1312
+
+HOST stacks
+BENCH stacks 7836 3000 2724 1312 0
+
+HOST heap
+BENCH heap 88024 20208 16372 7836
+BENCH status On Navigate 0 0 0 1 0 1 1
+BENCH heap 88048 20208 16372 7836
+BENCH web off

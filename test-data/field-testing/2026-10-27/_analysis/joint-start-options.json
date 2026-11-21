@@ -1,0 +1,224 @@
+[
+  {
+    "speed_mph": 5.5,
+    "forward_confirmation_ms": 3000,
+    "normalization_scope": "standalone",
+    "tracks": [
+      {
+        "id": 0,
+        "ground_hit": null,
+        "delay_s": 2,
+        "first_mask": 7
+      },
+      {
+        "id": 1,
+        "ground_hit": null,
+        "delay_s": 5,
+        "first_mask": 6
+      },
+      {
+        "id": 2,
+        "ground_hit": true,
+        "delay_s": null,
+        "first_mask": 1
+      },
+      {
+        "id": 3,
+        "ground_hit": null,
+        "delay_s": 0,
+        "first_mask": 2
+      },
+      {
+        "id": 4,
+        "ground_hit": null,
+        "delay_s": 0,
+        "first_mask": 4
+      }
+    ]
+  },
+  {
+    "speed_mph": 5.5,
+    "forward_confirmation_ms": 4000,
+    "normalization_scope": "standalone",
+    "tracks": [
+      {
+        "id": 0,
+        "ground_hit": null,
+        "delay_s": 2,
+        "first_mask": 6
+      },
+      {
+        "id": 1,
+        "ground_hit": null,
+        "delay_s": 5,
+        "first_mask": 6
+      },
+      {
+        "id": 2,
+        "ground_hit": false,
+        "delay_s": null,
+        "first_mask": null
+      },
+      {
+        "id": 3,
+        "ground_hit": null,
+        "delay_s": 0,
+        "first_mask": 2
+      },
+      {
+        "id": 4,
+        "ground_hit": null,
+        "delay_s": 0,
+        "first_mask": 4
+      }
+    ]
+  },
+  {
+    "speed_mph": 5.6,
+    "forward_confirmation_ms": 3000,
+    "normalization_scope": "standalone",
+    "tracks": [
+      {
+        "id": 0,
+        "ground_hit": null,
+        "delay_s": 2,
+        "first_mask": 7
+      },
+      {
+        "id": 1,
+        "ground_hit": null,
+        "delay_s": 5,
+        "first_mask": 6
+      },
+      {
+        "id": 2,
+        "ground_hit": false,
+        "delay_s": null,
+        "first_mask": null
+      },
+      {
+        "id": 3,
+        "ground_hit": null,
+        "delay_s": 0,
+        "first_mask": 2
+      },
+      {
+        "id": 4,
+        "ground_hit": null,
+        "delay_s": 0,
+        "first_mask": 4
+      }
+    ]
+  },
+  {
+    "speed_mph": 6,
+    "forward_confirmation_ms": 2000,
+    "normalization_scope": "standalone",
+    "tracks": [
+      {
+        "id": 0,
+        "ground_hit": null,
+        "delay_s": 1,
+        "first_mask": 1
+      },
+      {
+        "id": 1,
+        "ground_hit": null,
+        "delay_s": 5,
+        "first_mask": 6
+      },
+      {
+        "id": 2,
+        "ground_hit": true,
+        "delay_s": null,
+        "first_mask": 1
+      },
+      {
+        "id": 3,
+        "ground_hit": null,
+        "delay_s": 0,
+        "first_mask": 2
+      },
+      {
+        "id": 4,
+        "ground_hit": null,
+        "delay_s": 0,
+        "first_mask": 4
+      }
+    ]
+  },
+  {
+    "speed_mph": 6,
+    "forward_confirmation_ms": 3000,
+    "normalization_scope": "standalone",
+    "tracks": [
+      {
+        "id": 0,
+        "ground_hit": null,
+        "delay_s": 2,
+        "first_mask": 7
+      },
+      {
+        "id": 1,
+        "ground_hit": null,
+        "delay_s": 5,
+        "first_mask": 6
+      },
+      {
+        "id": 2,
+        "ground_hit": false,
+        "delay_s": null,
+        "first_mask": null
+      },
+      {
+        "id": 3,
+        "ground_hit": null,
+        "delay_s": 0,
+        "first_mask": 2
+      },
+      {
+        "id": 4,
+        "ground_hit": null,
+        "delay_s": 0,
+        "first_mask": 4
+      }
+    ]
+  },
+  {
+    "speed_mph": 6.5,
+    "forward_confirmation_ms": 2000,
+    "normalization_scope": "standalone",
+    "tracks": [
+      {
+        "id": 0,
+        "ground_hit": null,
+        "delay_s": 2,
+        "first_mask": 7
+      },
+      {
+        "id": 1,
+        "ground_hit": null,
+        "delay_s": 5,
+        "first_mask": 6
+      },
+      {
+        "id": 2,
+        "ground_hit": false,
+        "delay_s": null,
+        "first_mask": null
+      },
+      {
+        "id": 3,
+        "ground_hit": null,
+        "delay_s": 0,
+        "first_mask": 2
+      },
+      {
+        "id": 4,
+        "ground_hit": null,
+        "delay_s": 0,
+        "first_mask": 4
+      }
+    ]
+  }
+]

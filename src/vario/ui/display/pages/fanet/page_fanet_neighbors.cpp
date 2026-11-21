@@ -7,6 +7,7 @@
 #include "ui/display/fonts.h"
 
 void PageFanetNeighbors::show() {
+  if (!fanetRadio.isDetected()) return;
   static PageFanetNeighbors instance;
   push_page(&instance);
 }

@@ -1,0 +1,673 @@
+Processing leaf_3_2_5_bench (platform: https://github.com/pioarduino/platform-espressif32/releases/download/53.03.10/platform-espressif32.zip; board: esp32-s3-devkitc-1; framework: arduino)
+--------------------------------------------------------------------------------
+Verbose mode can be enabled via `-v, --verbose` option
+[reproducible_build.py] SOURCE_DATE_EPOCH=1795144582
+[reproducible_build.py] Added path prefix maps for project and PlatformIO roots
+[versioning.py] git_info: {
+  "git_tag": "v0.2.4-55-g8a435a42",
+  "commit_hash": "8a435a426f5383b0097ee96df40cad47ed4ea873"
+}
+[versioning.py] leaf_version.h or the constants FIRMWARE_VERSION, TAG_VERSION, HARDWARE_VARIANT have changed since last build
+[versioning.py] leaf_version.h backed up to leaf_version.h.original
+CONFIGURATION: https://docs.platformio.org/page/boards/espressif32/esp32-s3-devkitc-1.html
+PLATFORM: Espressif 32 (53.3.10) > Espressif ESP32-S3-DevKitC-1-N8 (8 MB QD, No PSRAM)
+HARDWARE: ESP32S3 240MHz, 320KB RAM, 8MB Flash
+DEBUG: Current (esp-builtin) On-board (esp-builtin) External (cmsis-dap, esp-bridge, esp-prog, iot-bus-jtag, jlink, minimodule, olimex-arm-usb-ocd, olimex-arm-usb-ocd-h, olimex-arm-usb-tiny-h, olimex-jtag-tiny, tumpa)
+PACKAGES: 
+ - framework-arduinoespressif32 @ 3.1.0 
+ - framework-arduinoespressif32-libs @ 5.3.0+sha.083aad99cf 
+ - tool-esptoolpy @ 4.8.5 
+ - tool-mklittlefs @ 3.2.0 
+ - tool-riscv32-esp-elf-gdb @ 14.2.0+20240403 
+ - tool-xtensa-esp-elf-gdb @ 14.2.0+20240403 
+ - toolchain-riscv32-esp @ 13.2.0+20240530 
+ - toolchain-xtensa-esp-elf @ 13.2.0+20240530
+LDF: Library Dependency Finder -> https://bit.ly/configure-pio-ldf
+LDF Modes: Finder ~ chain, Compatibility ~ soft
+Found 61 compatible libraries
+Scanning dependencies...
+Dependency Graph
+|-- Embedded Template Library @ 20.39.4
+|-- IgcLogger @ 0.0.6+sha.87a911f
+|-- FANET Protocol implementation in c++ @ 0.0.1+sha.f7c1e2f
+|-- RadioLib @ 7.1.2
+|-- NimBLE-Arduino @ 2.2.3
+|-- TCA9555 @ 0.4.1
+|-- ArduinoJson @ 7.3.1
+|-- TinyGPSPlus-ESP32 @ 0.0.2
+|-- WiFi @ 3.1.0
+|-- SPI @ 3.1.0
+|-- HTTPClient @ 3.1.0
+|-- SD_MMC @ 3.1.0
+|-- NetworkClientSecure @ 3.1.0
+|-- Preferences @ 3.1.0
+|-- Update @ 3.1.0
+|-- ESP32 Async UDP @ 3.1.0
+|-- WebServer @ 3.1.0
+|-- DNSServer @ 3.1.0
+|-- FS @ 3.1.0
+|-- Wire @ 3.1.0
+|-- U8g2 @ 2.34.22
+|-- magic_enum
+|-- SparkFun 9DoF IMU Breakout - ICM 20948 - Arduino Library @ 1.2.12
+|-- LSM6DSV @ 5.0.1
+Building in release mode
+Compiling .pio\build\leaf_3_2_5_bench\src\comms\ble.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\comms\factory_discovery.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\comms\fanet_radio.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\comms\leaf_log_client.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\comms\leaf_log_credentials.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\comms\leaf_log_sync.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\comms\ota.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\comms\sd_firmware_update.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\comms\udp_message_server.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\comms\webserver.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\comms\wifi_coordinator.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\diagnostics\bench_console.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\diagnostics\boot_diagnostics.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\diagnostics\buttons.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\diagnostics\cpu_utilization.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\diagnostics\diagnostic_logs.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\diagnostics\diagnostic_network\diagnostic_network.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\diagnostics\fatal_error.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\diagnostics\flight_diagnostics.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\diagnostics\heap_monitor.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\diagnostics\self_test\selfTest.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\diagnostics\self_test\selfTest_displayScreens.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\dispatch\message_injector.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\hardware\Leaf_I2C.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\hardware\Leaf_SPI.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\hardware\aht20.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\hardware\buttons.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\hardware\icm_20948.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\hardware\io_pins.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\hardware\lc86g.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\hardware\lsm6dsv.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\hardware\ms5611.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\instruments\ambient.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\instruments\baro.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\instruments\gps.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\instruments\imu.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\logbook\flight.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\logbook\igc.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\logbook\logbook_entry.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\logbook\logbook_io.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\logbook\logbook_store.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\logging\buslog.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\logging\fanet_log.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\logging\log.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\main.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\math\kalman.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\math\linear_regression.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\navigation\gpx.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\navigation\gpx_parser.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\navigation\nav_ids.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\navigation\route_guidance.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\navigation\route_store.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\navigation\thermal_core.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\navigation\thermal_tracker.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\navigation\user_waypoints.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\power.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\profiles\profile_store.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\storage\checked_file.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\storage\files.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\storage\sd_card.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\system\shutdown_guard.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\system\usb_dispatcher.c.o
+Compiling .pio\build\leaf_3_2_5_bench\src\system\usb_serial.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\system\usb_state.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\system\version_info.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\taskman.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\tests\fanet_tests.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\tests\gps_tests.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\tests\tests.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\audio\audio_tests.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\audio\speaker.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\audio\speaker_driver.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\display.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\display_fields.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\logbook_card.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\menu_page.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\message_box.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\dialogs\page_alert_autoOff.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\dialogs\page_alert_timerAutoStop.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\dialogs\page_flight_summary.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\dialogs\page_list_select.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\dialogs\page_menu_about.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\dialogs\page_message.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\dialogs\page_qr.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\dialogs\page_storage_warning.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\dialogs\page_warning.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\fanet\page_fanet.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\fanet\page_fanet_ground.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\fanet\page_fanet_ground_select.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\fanet\page_fanet_neighbors.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\fanet\page_fanet_stats.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_gpx_file_select.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_logbook.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_menu_altimeter.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_menu_developer.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_menu_display.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_menu_flight_tools.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_menu_gps.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_menu_leaf_labs.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_menu_log.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_menu_nav_data.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_menu_settings.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_menu_system.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_menu_units.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_menu_vario.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_menu_wifi.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_nav_data_select.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_profile_select.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_repair_logs.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\primary\page_basic.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\primary\page_charging.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\primary\page_debug.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\primary\page_debug2.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\primary\page_menu_main.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\primary\page_navigate.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\primary\page_thermal_core.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\primary\page_thermal_track.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\pages\primary\page_user.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\thermal_page_fields.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\display\utils.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\input\button_dispatcher.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\ui\settings\settings.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\utils\lock_guard.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\utils\qrcodex.c.o
+Compiling .pio\build\leaf_3_2_5_bench\src\utils\string_utils.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\src\wind_estimate\wind_estimate.cpp.o
+Building .pio\build\leaf_3_2_5_bench\bootloader.bin
+Generating partitions .pio\build\leaf_3_2_5_bench\partitions.bin
+esptool.py v4.8.5
+Creating esp32s3 image...
+Merged 2 ELF sections
+Successfully created esp32s3 image.
+Compiling .pio\build\leaf_3_2_5_bench\lib09e\IgcLogger\IgcLogger.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib8c0\SPI\SPI.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\Hal.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\Module.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\hal\Arduino\ArduinoHal.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\modules\CC1101\CC1101.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\modules\LLCC68\LLCC68.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\modules\LR11x0\LR1110.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\modules\LR11x0\LR1120.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\modules\LR11x0\LR1121.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\modules\LR11x0\LR11x0.cpp.o
+Archiving .pio\build\leaf_3_2_5_bench\lib8c0\libSPI.a
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\modules\RF69\RF69.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\modules\SX123x\SX1231.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\modules\SX123x\SX1233.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\modules\SX126x\STM32WLx.cpp.o
+Archiving .pio\build\leaf_3_2_5_bench\lib09e\libIgcLogger.a
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\modules\SX126x\STM32WLx_Module.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\modules\SX126x\SX1261.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\modules\SX126x\SX1262.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\modules\SX126x\SX1268.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\modules\SX126x\SX126x.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\modules\SX126x\SX126x_LR_FHSS.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\modules\SX127x\SX1272.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\modules\SX127x\SX1273.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\modules\SX127x\SX1276.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\modules\SX127x\SX1277.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\modules\SX127x\SX1278.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\modules\SX127x\SX1279.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\modules\SX127x\SX127x.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\modules\SX128x\SX1280.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\modules\SX128x\SX1281.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\modules\SX128x\SX1282.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\modules\SX128x\SX128x.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\modules\Si443x\Si4430.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\modules\Si443x\Si4431.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\modules\Si443x\Si4432.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\modules\Si443x\Si443x.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\modules\nRF24\nRF24.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\protocols\AFSK\AFSK.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\protocols\APRS\APRS.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\protocols\AX25\AX25.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\protocols\BellModem\BellModem.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\protocols\ExternalRadio\ExternalRadio.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\protocols\FSK4\FSK4.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\protocols\Hellschreiber\Hellschreiber.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\protocols\LoRaWAN\LoRaWAN.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\protocols\LoRaWAN\LoRaWANBands.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\protocols\Morse\Morse.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\protocols\Pager\Pager.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\protocols\PhysicalLayer\PhysicalLayer.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\protocols\Print\ITA2String.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\protocols\Print\Print.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\protocols\RTTY\RTTY.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\protocols\SSTV\SSTV.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\utils\CRC.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\utils\Cryptography.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\utils\FEC.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libe29\RadioLib\utils\Utils.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\NimBLE2904.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\NimBLEAddress.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\NimBLEAdvertisedDevice.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\NimBLEAdvertisementData.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\NimBLEAdvertising.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\NimBLEAttValue.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\NimBLEBeacon.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\NimBLECharacteristic.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\NimBLEClient.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\NimBLEDescriptor.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\NimBLEDevice.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\NimBLEEddystoneTLM.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\NimBLEExtAdvertising.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\NimBLEHIDDevice.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\NimBLERemoteCharacteristic.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\NimBLERemoteDescriptor.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\NimBLERemoteService.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\NimBLERemoteValueAttribute.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\NimBLEScan.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\NimBLEServer.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\NimBLEService.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\NimBLEUUID.cpp.o
+Archiving .pio\build\leaf_3_2_5_bench\libe29\libRadioLib.a
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\NimBLEUtils.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\esp_port\esp-hci\src\esp_nimble_hci.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\esp_port\port\src\esp_nimble_mem.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\ext\tinycrypt\src\aes_decrypt.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\ext\tinycrypt\src\aes_encrypt.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\ext\tinycrypt\src\cbc_mode.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\ext\tinycrypt\src\ccm_mode.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\ext\tinycrypt\src\cmac_mode.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\ext\tinycrypt\src\ctr_mode.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\ext\tinycrypt\src\ctr_prng.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\ext\tinycrypt\src\ecc.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\ext\tinycrypt\src\ecc_dh.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\ext\tinycrypt\src\ecc_dsa.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\ext\tinycrypt\src\ecc_platform_specific.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\ext\tinycrypt\src\hmac.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\ext\tinycrypt\src\hmac_prng.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\ext\tinycrypt\src\sha256.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\ext\tinycrypt\src\utils.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\controller\src\ble_ll.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\controller\src\ble_ll_adv.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\controller\src\ble_ll_conn.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\controller\src\ble_ll_conn_hci.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\controller\src\ble_ll_ctrl.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\controller\src\ble_ll_dtm.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\controller\src\ble_ll_hci.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\controller\src\ble_ll_hci_ev.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\controller\src\ble_ll_hci_vs.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\controller\src\ble_ll_iso.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\controller\src\ble_ll_rand.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\controller\src\ble_ll_resolv.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\controller\src\ble_ll_rfmgmt.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\controller\src\ble_ll_scan.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\controller\src\ble_ll_scan_aux.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\controller\src\ble_ll_sched.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\controller\src\ble_ll_supp_cmd.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\controller\src\ble_ll_sync.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\controller\src\ble_ll_trace.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\controller\src\ble_ll_utils.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\controller\src\ble_ll_whitelist.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\drivers\nrf51\src\ble_hw.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\drivers\nrf51\src\ble_phy.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\drivers\nrf52\src\ble_hw.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\drivers\nrf52\src\ble_phy.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\drivers\nrf52\src\ble_phy_trace.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\access.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\adv.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\adv_ext.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\adv_legacy.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\aes-ccm.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\app_keys.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\beacon.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\cdb.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\cfg.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\cfg_cli.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\cfg_srv.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\crypto.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\friend.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\glue.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\health_cli.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\health_srv.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\heartbeat.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\light_model.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\lpn.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\mesh.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\model_cli.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\model_srv.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\msg.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\net.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\nodes.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\pb_adv.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\pb_gatt.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\pb_gatt_srv.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\prov.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\prov_device.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\provisioner.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\proxy.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\proxy_msg.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\proxy_srv.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\rpl.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\settings.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\shell.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\subnet.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\mesh\src\transport.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\services\ans\src\ble_svc_ans.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\services\bas\src\ble_svc_bas.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\services\gap\src\ble_svc_gap.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\services\gatt\src\ble_svc_gatt.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\services\ias\src\ble_svc_ias.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_aes_ccm.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_att.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_att_clt.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_att_cmd.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_att_svr.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_ead.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_eddystone.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_gap.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_gattc.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_gattc_cache.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_gattc_cache_conn.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_gatts.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_gatts_lcl.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_hs.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_hs_adv.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_hs_atomic.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_hs_cfg.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_hs_conn.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_hs_flow.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_hs_hci.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_hs_hci_cmd.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_hs_hci_evt.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_hs_hci_util.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_hs_id.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_hs_log.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_hs_mbuf.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_hs_misc.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_hs_mqueue.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_hs_periodic_sync.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_hs_pvcy.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_hs_resolv.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_hs_shutdown.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_hs_startup.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_hs_stop.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_ibeacon.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_l2cap.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_l2cap_coc.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_l2cap_sig.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_l2cap_sig_cmd.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_sm.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_sm_alg.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_sm_cmd.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_sm_lgcy.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_sm_sc.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_store.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_store_util.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\src\ble_uuid.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\store\config\src\ble_store_config.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\store\config\src\ble_store_config_conf.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\store\config\src\ble_store_nvs.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\host\util\src\addr.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\transport\src\monitor.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\nimble\transport\src\transport.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\porting\nimble\src\endian.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\porting\nimble\src\hal_timer.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\porting\nimble\src\mem.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\porting\nimble\src\nimble_port.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\porting\nimble\src\os_cputime.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\porting\nimble\src\os_cputime_pwr2.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\porting\nimble\src\os_mbuf.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\porting\nimble\src\os_mempool.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\porting\nimble\src\os_msys_init.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\porting\npl\freertos\src\nimble_port_freertos.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ab\NimBLE-Arduino\nimble\porting\npl\freertos\src\npl_os_freertos.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib5b4\Wire\Wire.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib342\TCA9555\TCA9555.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib1ef\TinyGPSPlus-ESP32\TinyGPSPlus.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib45d\Network\NetworkClient.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib45d\Network\NetworkEvents.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib45d\Network\NetworkInterface.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib45d\Network\NetworkManager.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib45d\Network\NetworkServer.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib45d\Network\NetworkUdp.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2db\WiFi\AP.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2db\WiFi\STA.cpp.o
+Archiving .pio\build\leaf_3_2_5_bench\lib2ab\libNimBLE-Arduino.a
+Compiling .pio\build\leaf_3_2_5_bench\lib2db\WiFi\WiFi.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2db\WiFi\WiFiAP.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2db\WiFi\WiFiGeneric.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2db\WiFi\WiFiMulti.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2db\WiFi\WiFiSTA.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2db\WiFi\WiFiScan.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib0cd\NetworkClientSecure\NetworkClientSecure.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib0cd\NetworkClientSecure\ssl_client.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libf95\HTTPClient\HTTPClient.cpp.o
+Archiving .pio\build\leaf_3_2_5_bench\lib5b4\libWire.a
+Compiling .pio\build\leaf_3_2_5_bench\libcef\FS\FS.cpp.o
+Archiving .pio\build\leaf_3_2_5_bench\lib342\libTCA9555.a
+Archiving .pio\build\leaf_3_2_5_bench\lib1ef\libTinyGPSPlus-ESP32.a
+Compiling .pio\build\leaf_3_2_5_bench\libcef\FS\vfs_api.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib541\SD_MMC\SD_MMC.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\liba3a\Preferences\Preferences.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib6f3\Update\HttpsOTAUpdate.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib6f3\Update\Updater.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib5e5\AsyncUDP\AsyncUDP.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ef\WebServer\Parsing.cpp.o
+Archiving .pio\build\leaf_3_2_5_bench\lib45d\libNetwork.a
+Compiling .pio\build\leaf_3_2_5_bench\lib2ef\WebServer\WebServer.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2ef\WebServer\detail\mimetable.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\libca4\DNSServer\DNSServer.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\U8g2lib.cpp.o
+Archiving .pio\build\leaf_3_2_5_bench\lib2db\libWiFi.a
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\U8x8lib.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\mui.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\mui_u8g2.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8g2_bitmap.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8g2_box.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8g2_buffer.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8g2_button.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8g2_circle.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8g2_cleardisplay.c.o
+Archiving .pio\build\leaf_3_2_5_bench\lib0cd\libNetworkClientSecure.a
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8g2_d_memory.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8g2_d_setup.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8g2_font.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8g2_fonts.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8g2_hvline.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8g2_input_value.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8g2_intersection.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8g2_kerning.c.o
+Archiving .pio\build\leaf_3_2_5_bench\libf95\libHTTPClient.a
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8g2_line.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8g2_ll_hvline.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8g2_message.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8g2_polygon.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8g2_selection_list.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8g2_setup.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8log.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8log_u8g2.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8log_u8x8.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_8x8.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_byte.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_cad.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_capture.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_a2printer.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_gp1247ai.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_gp1287ai.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_gu800.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_hd44102.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_il3820_296x128.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_ist3020.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_ist3088.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_ist7920.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_ks0108.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_lc7981.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_ld7032_60x32.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_ls013b7dh03.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_max7219.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_pcd8544_84x48.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_pcf8812.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_pcf8814_hx1230.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_s1d15300.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_s1d15721.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_s1d15e06.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_sbn1661.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_sed1330.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_sh1106_64x32.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_sh1106_72x40.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_sh1107.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_sh1108.c.o
+Archiving .pio\build\leaf_3_2_5_bench\liba3a\libPreferences.a
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_sh1122.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_ssd1305.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_ssd1306_128x32.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_ssd1306_128x64_noname.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_ssd1306_2040x16.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_ssd1306_48x64.c.o
+Archiving .pio\build\leaf_3_2_5_bench\libcef\libFS.a
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_ssd1306_64x32.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_ssd1306_64x48.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_ssd1306_72x40.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_ssd1306_96x16.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_ssd1306_96x40.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_ssd1309.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_ssd1316.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_ssd1317.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_ssd1318.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_ssd1320.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_ssd1322.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_ssd1325.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_ssd1326.c.o
+Archiving .pio\build\leaf_3_2_5_bench\lib541\libSD_MMC.a
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_ssd1327.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_ssd1329.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_ssd1362.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_ssd1606_172x72.c.o
+Archiving .pio\build\leaf_3_2_5_bench\lib5e5\libAsyncUDP.a
+Archiving .pio\build\leaf_3_2_5_bench\lib6f3\libUpdate.a
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_ssd1607_200x200.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_st7511.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_st75160.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_st75256.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_st7528.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_st75320.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_st7539.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_st7565.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_st7567.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_st7571.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_st7586s_erc240160.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_st7586s_jlx384160.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_st7586s_s028hn118a.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_st7586s_ymc240160.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_st7588.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_st7920.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_t6963.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_uc1601.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_uc1604.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_uc1608.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_uc1609.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_uc1610.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_uc1611.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_uc1617.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_uc1638.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_uc1701_dogs102.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_d_uc1701_mini12864.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_debounce.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_display.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_fonts.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_gpio.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_input_value.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_message.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_selection_list.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_setup.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_string.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_u16toa.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib90d\U8g2\clib\u8x8_u8toa.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2e7\SparkFun_9DoF_IMU_Breakout_-_ICM_20948_-_Arduino_Library\ICM_20948.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\lib2e7\SparkFun_9DoF_IMU_Breakout_-_ICM_20948_-_Arduino_Library\util\ICM_20948_C.c.o
+Compiling .pio\build\leaf_3_2_5_bench\lib14b\LSM6DSV\lsm6dsv_reg.c.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\ColorFormat.c.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\Esp.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\FirmwareMSC.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\FunctionalInterrupt.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\HEXBuilder.cpp.o
+Archiving .pio\build\leaf_3_2_5_bench\libca4\libDNSServer.a
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\HWCDC.cpp.o
+Archiving .pio\build\leaf_3_2_5_bench\lib2ef\libWebServer.a
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\HardwareSerial.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\IPAddress.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\MD5Builder.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\MacAddress.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\Print.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\SHA1Builder.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\Stream.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\StreamString.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\Tone.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\USB.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\USBCDC.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\USBMSC.cpp.o
+Archiving .pio\build\leaf_3_2_5_bench\lib14b\libLSM6DSV.a
+Archiving .pio\build\leaf_3_2_5_bench\lib90d\libU8g2.a
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\WMath.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\WString.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\base64.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\cbuf.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\chip-debug-report.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\esp32-hal-adc.c.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\esp32-hal-bt.c.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\esp32-hal-cpu.c.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\esp32-hal-dac.c.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\esp32-hal-gpio.c.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\esp32-hal-i2c-slave.c.o
+Archiving .pio\build\leaf_3_2_5_bench\lib2e7\libSparkFun_9DoF_IMU_Breakout_-_ICM_20948_-_Arduino_Library.a
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\esp32-hal-i2c.c.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\esp32-hal-ledc.c.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\esp32-hal-matrix.c.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\esp32-hal-misc.c.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\esp32-hal-periman.c.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\esp32-hal-psram.c.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\esp32-hal-rgb-led.c.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\esp32-hal-rmt.c.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\esp32-hal-sigmadelta.c.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\esp32-hal-spi.c.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\esp32-hal-time.c.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\esp32-hal-timer.c.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\esp32-hal-tinyusb.c.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\esp32-hal-touch-ng.c.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\esp32-hal-touch.c.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\esp32-hal-uart.c.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\firmware_msc_fat.c.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\freertos_stats.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\libb64\cdecode.c.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\libb64\cencode.c.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\main.cpp.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\stdlib_noniso.c.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\wiring_pulse.c.o
+Compiling .pio\build\leaf_3_2_5_bench\FrameworkArduino\wiring_shift.c.o
+Archiving .pio\build\leaf_3_2_5_bench\libFrameworkArduino.a
+Linking .pio\build\leaf_3_2_5_bench\firmware.elf
+_run_summary([".pio\build\leaf_3_2_5_bench\firmware.elf"], [".pio\build\leaf_3_2_5_bench\src\comms\ble.cpp.o", ".pio\build\leaf_3_2_5_bench\src\comms\factory_discovery.cpp.o", ".pio\build\leaf_3_2_5_bench\src\comms\fanet_radio.cpp.o", ".pio\build\leaf_3_2_5_bench\src\comms\leaf_log_client.cpp.o", ".pio\build\leaf_3_2_5_bench\src\comms\leaf_log_credentials.cpp.o", ".pio\build\leaf_3_2_5_bench\src\comms\leaf_log_sync.cpp.o", ".pio\build\leaf_3_2_5_bench\src\comms\ota.cpp.o", ".pio\build\leaf_3_2_5_bench\src\comms\sd_firmware_update.cpp.o", ".pio\build\leaf_3_2_5_bench\src\comms\udp_message_server.cpp.o", ".pio\build\leaf_3_2_5_bench\src\comms\webserver.cpp.o", ".pio\build\leaf_3_2_5_bench\src\comms\wifi_coordinator.cpp.o", ".pio\build\leaf_3_2_5_bench\src\diagnostics\bench_console.cpp.o", ".pio\build\leaf_3_2_5_bench\src\diagnostics\boot_diagnostics.cpp.o", ".pio\build\leaf_3_2_5_bench\src\diagnostics\buttons.cpp.o", ".pio\build\leaf_3_2_5_bench\src\diagnostics\cpu_utilization.cpp.o", ".pio\build\leaf_3_2_5_bench\src\diagnostics\diagnostic_logs.cpp.o", ".pio\build\leaf_3_2_5_bench\src\diagnostics\diagnostic_network\diagnostic_network.cpp.o", ".pio\build\leaf_3_2_5_bench\src\diagnostics\fatal_error.cpp.o", ".pio\build\leaf_3_2_5_bench\src\diagnostics\flight_diagnostics.cpp.o", ".pio\build\leaf_3_2_5_bench\src\diagnostics\heap_monitor.cpp.o", ".pio\build\leaf_3_2_5_bench\src\diagnostics\self_test\selfTest.cpp.o", ".pio\build\leaf_3_2_5_bench\src\diagnostics\self_test\selfTest_displayScreens.cpp.o", ".pio\build\leaf_3_2_5_bench\src\dispatch\message_injector.cpp.o", ".pio\build\leaf_3_2_5_bench\src\hardware\Leaf_I2C.cpp.o", ".pio\build\leaf_3_2_5_bench\src\hardware\Leaf_SPI.cpp.o", ".pio\build\leaf_3_2_5_bench\src\hardware\aht20.cpp.o", ".pio\build\leaf_3_2_5_bench\src\hardware\buttons.cpp.o", ".pio\build\leaf_3_2_5_bench\src\hardware\icm_20948.cpp.o", ".pio\build\leaf_3_2_5_bench\src\hardware\io_pins.cpp.o", ".pio\build\leaf_3_2_5_bench\src\hardware\lc86g.cpp.o", ".pio\build\leaf_3_2_5_bench\src\hardware\lsm6dsv.cpp.o", ".pio\build\leaf_3_2_5_bench\src\hardware\ms5611.cpp.o", ".pio\build\leaf_3_2_5_bench\src\instruments\ambient.cpp.o", ".pio\build\leaf_3_2_5_bench\src\instruments\baro.cpp.o", ".pio\build\leaf_3_2_5_bench\src\instruments\gps.cpp.o", ".pio\build\leaf_3_2_5_bench\src\instruments\imu.cpp.o", ".pio\build\leaf_3_2_5_bench\src\logbook\flight.cpp.o", ".pio\build\leaf_3_2_5_bench\src\logbook\igc.cpp.o", ".pio\build\leaf_3_2_5_bench\src\logbook\logbook_entry.cpp.o", ".pio\build\leaf_3_2_5_bench\src\logbook\logbook_io.cpp.o", ".pio\build\leaf_3_2_5_bench\src\logbook\logbook_store.cpp.o", ".pio\build\leaf_3_2_5_bench\src\logging\buslog.cpp.o", ".pio\build\leaf_3_2_5_bench\src\logging\fanet_log.cpp.o", ".pio\build\leaf_3_2_5_bench\src\logging\log.cpp.o", ".pio\build\leaf_3_2_5_bench\src\main.cpp.o", ".pio\build\leaf_3_2_5_bench\src\math\kalman.cpp.o", ".pio\build\leaf_3_2_5_bench\src\math\linear_regression.cpp.o", ".pio\build\leaf_3_2_5_bench\src\navigation\gpx.cpp.o", ".pio\build\leaf_3_2_5_bench\src\navigation\gpx_parser.cpp.o", ".pio\build\leaf_3_2_5_bench\src\navigation\nav_ids.cpp.o", ".pio\build\leaf_3_2_5_bench\src\navigation\route_guidance.cpp.o", ".pio\build\leaf_3_2_5_bench\src\navigation\route_store.cpp.o", ".pio\build\leaf_3_2_5_bench\src\navigation\thermal_core.cpp.o", ".pio\build\leaf_3_2_5_bench\src\navigation\thermal_tracker.cpp.o", ".pio\build\leaf_3_2_5_bench\src\navigation\user_waypoints.cpp.o", ".pio\build\leaf_3_2_5_bench\src\power.cpp.o", ".pio\build\leaf_3_2_5_bench\src\profiles\profile_store.cpp.o", ".pio\build\leaf_3_2_5_bench\src\storage\checked_file.cpp.o", ".pio\build\leaf_3_2_5_bench\src\storage\files.cpp.o", ".pio\build\leaf_3_2_5_bench\src\storage\sd_card.cpp.o", ".pio\build\leaf_3_2_5_bench\src\system\shutdown_guard.cpp.o", ".pio\build\leaf_3_2_5_bench\src\system\usb_dispatcher.c.o", ".pio\build\leaf_3_2_5_bench\src\system\usb_serial.cpp.o", ".pio\build\leaf_3_2_5_bench\src\system\usb_state.cpp.o", ".pio\build\leaf_3_2_5_bench\src\system\version_info.cpp.o", ".pio\build\leaf_3_2_5_bench\src\taskman.cpp.o", ".pio\build\leaf_3_2_5_bench\src\tests\fanet_tests.cpp.o", ".pio\build\leaf_3_2_5_bench\src\tests\gps_tests.cpp.o", ".pio\build\leaf_3_2_5_bench\src\tests\tests.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\audio\audio_tests.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\audio\speaker.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\audio\speaker_driver.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\display.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\display_fields.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\logbook_card.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\menu_page.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\message_box.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\dialogs\page_alert_autoOff.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\dialogs\page_alert_timerAutoStop.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\dialogs\page_flight_summary.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\dialogs\page_list_select.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\dialogs\page_menu_about.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\dialogs\page_message.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\dialogs\page_qr.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\dialogs\page_storage_warning.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\dialogs\page_warning.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\fanet\page_fanet.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\fanet\page_fanet_ground.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\fanet\page_fanet_ground_select.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\fanet\page_fanet_neighbors.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\fanet\page_fanet_stats.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_gpx_file_select.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_logbook.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_menu_altimeter.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_menu_developer.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_menu_display.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_menu_flight_tools.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_menu_gps.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_menu_leaf_labs.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_menu_log.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_menu_nav_data.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_menu_settings.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_menu_system.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_menu_units.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_menu_vario.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_menu_wifi.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_nav_data_select.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_profile_select.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\menu\page_repair_logs.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\primary\page_basic.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\primary\page_charging.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\primary\page_debug.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\primary\page_debug2.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\primary\page_menu_main.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\primary\page_navigate.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\primary\page_thermal_core.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\primary\page_thermal_track.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\pages\primary\page_user.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\thermal_page_fields.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\display\utils.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\input\button_dispatcher.cpp.o", ".pio\build\leaf_3_2_5_bench\src\ui\settings\settings.cpp.o", ".pio\build\leaf_3_2_5_bench\src\utils\lock_guard.cpp.o", ".pio\build\leaf_3_2_5_bench\src\utils\qrcodex.c.o", ".pio\build\leaf_3_2_5_bench\src\utils\string_utils.cpp.o", ".pio\build\leaf_3_2_5_bench\src\wind_estimate\wind_estimate.cpp.o"])
+[build_result] Wrote C:\Users\oxoth\projects\leaf\.pio\worktrees\usb-bench-console\.pio\build\leaf_3_2_5_bench\diagnostics\build_result.json (rotated previous if it existed)
+Retrieving maximum program size .pio\build\leaf_3_2_5_bench\firmware.elf
+Checking size .pio\build\leaf_3_2_5_bench\firmware.elf
+Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
+RAM:   [===       ]  26.4% (used 86388 bytes from 327680 bytes)
+Flash: [=======   ]  72.9% (used 2437852 bytes from 3342336 bytes)
+Building .pio\build\leaf_3_2_5_bench\firmware.bin with action:
+  "$PYTHONEXE" "$OBJCOPY" --chip esp32s3 elf2image --flash_mode ${__get_board_flash_mode(__env__)} --flash_freq ${__get_board_f_image(__env__)} --flash_size 8MB --elf-sha256-offset 0xb0 -o $TARGET $SOURCES
+Building .pio\build\leaf_3_2_5_bench\firmware.bin
+esptool.py v4.8.5
+Creating esp32s3 image...
+Merged 3 ELF sections
+Successfully created esp32s3 image.
+after_build([".pio\build\leaf_3_2_5_bench\firmware.bin"], [".pio\build\leaf_3_2_5_bench\firmware.elf"])
+[versioning.py] Restoring leaf_version.h to its original content
+rename_firmware([".pio\build\leaf_3_2_5_bench\firmware.bin"], [".pio\build\leaf_3_2_5_bench\firmware.elf"])
+[rename_firmware.py] Copied C:\Users\oxoth\projects\leaf\.pio\worktrees\usb-bench-console\.pio\build\leaf_3_2_5_bench\firmware.bin to C:\Users\oxoth\projects\leaf\.pio\worktrees\usb-bench-console\.pio\build\leaf_3_2_5_bench\bench-firmware-leaf_3_2_5.bin
+_run_summary([".pio\build\leaf_3_2_5_bench\firmware.bin"], [".pio\build\leaf_3_2_5_bench\firmware.elf"])
+[build_result] Updated current summary (same build): C:\Users\oxoth\projects\leaf\.pio\worktrees\usb-bench-console\.pio\build\leaf_3_2_5_bench\diagnostics\build_result.json
+[versioning.py] Already restored leaf_version.h to its original content
+======================== [SUCCESS] Took 323.81 seconds ========================
+
+Environment       Status    Duration
+----------------  --------  ------------
+leaf_3_2_5_bench  SUCCESS   00:05:23.806
+========================= 1 succeeded in 00:05:23.806 =========================

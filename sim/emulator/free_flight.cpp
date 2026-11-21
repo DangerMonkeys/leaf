@@ -96,6 +96,15 @@ namespace sim {
     log_.clear();
   }
 
+  void FreeFlight::relocate(double eastM, double northM, double headingDeg) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    model_.x = eastM;
+    model_.y = northM;
+    model_.headingDeg = headingDeg;
+    model_.turnRateDps = 0;
+    trail_.clear();
+  }
+
   void FreeFlight::stop() {
     std::lock_guard<std::mutex> lock(mutex_);
     active_ = false;

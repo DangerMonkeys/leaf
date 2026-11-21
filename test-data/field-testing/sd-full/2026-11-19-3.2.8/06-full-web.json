@@ -1,0 +1,198 @@
+{
+  "utc": "2026-11-20T01:00:28.943823+00:00",
+  "base": "http://10.0.0.183",
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/api/user/status",
+      "request_bytes": 0,
+      "status": 200,
+      "seconds": 0.031,
+      "bytes": 364,
+      "sha256": "182f2303798626f97365be9ae509d64fc00ca3146cb4df29da92a9555661db56",
+      "body": {
+        "active": true,
+        "mode": "network",
+        "ssid": "SkyWagon",
+        "ip_address": "10.0.0.183",
+        "url": "http://10.0.0.183/app",
+        "firmware_version": "0.2.4-b1ed.bench+h3.2.8",
+        "firmware_display_version": "v0.2.4-b1ed.bench",
+        "hardware_display_version": "v3.2.8",
+        "mac_address": "7C:4F:AD:3B:AC:B0",
+        "battery_percent": 55,
+        "battery_charging": true,
+        "usb_input": true,
+        "battery_mv": 3798,
+        "dev_mode": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/debug/session",
+      "request_bytes": 0,
+      "status": 200,
+      "seconds": 0.031,
+      "bytes": 236,
+      "sha256": "66e08921b96862403dbe5a0554b59cc1194217c06e70d04b2446780309128868",
+      "body": {
+        "always_on": false,
+        "keep_bluetooth_disabled": false,
+        "udp_sensor_injection": false,
+        "web_app_active": true,
+        "using_leaf_wifi": false,
+        "diag_system_events": false,
+        "diag_network_events": false,
+        "diag_web_requests": false,
+        "diag_cpu_utilization": false
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/nav-data",
+      "request_bytes": 0,
+      "status": 200,
+      "seconds": 0.016,
+      "bytes": 143,
+      "sha256": "da4917be71c0a51b881c5b3225098db47d61d2531648dca4fd9b54457abb37f3",
+      "body": {
+        "loaded_file": "Ed2Hamilton.cup",
+        "loaded_path": "/waypoints/Ed2Hamilton.cup",
+        "point_count": 26,
+        "route_count": 0,
+        "active_type": "",
+        "active_name": ""
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/waypoints/files",
+      "request_bytes": 0,
+      "status": 200,
+      "seconds": 0.031,
+      "bytes": 74,
+      "sha256": "4055518ad215470d22441e456c2776ddf274ef7b88c488961303447dac505300",
+      "body": {
+        "files": [
+          {
+            "name": "Ed2Hamilton.cup",
+            "path": "/waypoints/Ed2Hamilton.cup"
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/profiles",
+      "request_bytes": 0,
+      "status": 200,
+      "seconds": 0.031,
+      "bytes": 124,
+      "sha256": "8e33d211faa21de90f941a27de2d3eaa49c11c89dd52e5d5feb1004103c480aa",
+      "body": {
+        "schema": "leaf.profiles",
+        "schema_version": "v0.1.0",
+        "active_pilot_id": null,
+        "active_glider_id": null,
+        "pilots": [],
+        "gliders": []
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/debug/raw-xbm",
+      "request_bytes": 0,
+      "status": 200,
+      "seconds": 0.047,
+      "bytes": 11697,
+      "sha256": "75fa59500e758f6301b8d3b1998d3c25b32b2915801b277416e9fc59b71782d0",
+      "body": "Saved screen bitmap"
+    },
+    {
+      "method": "POST",
+      "path": "/api/routes/save",
+      "request_bytes": 18000,
+      "status": 500,
+      "seconds": 0.063,
+      "bytes": 54,
+      "sha256": "cdab5c280ae4ab5978403fd96d79a73c32921ff70e21723711cfd1fd4211931a",
+      "body": {
+        "detail": "Could not stage route request on SD card."
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/routes/import",
+      "request_bytes": 229,
+      "status": 200,
+      "seconds": 2.297,
+      "bytes": 103,
+      "sha256": "007cfbfab9d0107845d1c91a5b89d1046fd810a0edb43810a7e900bb1ab4e0f6",
+      "body": {
+        "saved": true,
+        "active": false,
+        "name": "bench-sd-import",
+        "path": "/routes/bench-sd-import.json",
+        "points": 1
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/api/profiles",
+      "request_bytes": 272,
+      "status": 500,
+      "seconds": 0.031,
+      "bytes": 15,
+      "sha256": "562182bcc5d782ba14a8631b130a969c54cf4925b85cdef5d3dc9e4c1eaf335d",
+      "body": {
+        "saved": false
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/waypoints/upload",
+      "request_bytes": 1692,
+      "status": 400,
+      "seconds": 0.047,
+      "bytes": 72,
+      "sha256": "ab35c815a56421df61437d19ed8cdf9b9a8a601737c64566f8112a0686c32b34",
+      "body": {
+        "saved": false,
+        "loaded": false,
+        "detail": "Unable to write waypoint file."
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/waypoints/activate",
+      "request_bytes": 27,
+      "status": 200,
+      "seconds": 0.062,
+      "bytes": 67,
+      "sha256": "9f1d96053d5a4dae61769adf6417497f0138f82395482592d9de197857655c7d",
+      "body": {
+        "loaded": true,
+        "filename": "Ed2Hamilton.cup",
+        "points": 26,
+        "routes": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/nav-data",
+      "request_bytes": 0,
+      "status": 200,
+      "seconds": 0.016,
+      "bytes": 143,
+      "sha256": "da4917be71c0a51b881c5b3225098db47d61d2531648dca4fd9b54457abb37f3",
+      "body": {
+        "loaded_file": "Ed2Hamilton.cup",
+        "loaded_path": "/waypoints/Ed2Hamilton.cup",
+        "point_count": 26,
+        "route_count": 0,
+        "active_type": "",
+        "active_name": ""
+      }
+    }
+  ]
+}

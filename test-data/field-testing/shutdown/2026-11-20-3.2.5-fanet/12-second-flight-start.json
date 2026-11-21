@@ -1,0 +1,128 @@
+{
+  "utc": "2026-11-20T16:53:02.862585+00:00",
+  "steps": [
+    {
+      "command": "press RIGHT",
+      "reply": "ok",
+      "seconds": 0.296
+    },
+    {
+      "command": "press UP",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press CENTER",
+      "reply": "ok",
+      "seconds": 0.313
+    },
+    {
+      "command": "press DOWN",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press DOWN",
+      "reply": "ok",
+      "seconds": 0.312
+    },
+    {
+      "command": "press DOWN",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press DOWN",
+      "reply": "ok",
+      "seconds": 0.313
+    },
+    {
+      "command": "press DOWN",
+      "reply": "ok",
+      "seconds": 0.296
+    },
+    {
+      "command": "press DOWN",
+      "reply": "ok",
+      "seconds": 0.313
+    },
+    {
+      "command": "press CENTER",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press LEFT",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press LEFT",
+      "reply": "ok",
+      "seconds": 0.312
+    },
+    {
+      "command": "wait 5",
+      "reply": "waited",
+      "seconds": 5.078
+    },
+    {
+      "command": "press UP",
+      "reply": "ok",
+      "seconds": 0.297
+    },
+    {
+      "command": "press CENTER",
+      "reply": "ok",
+      "seconds": 0.313
+    },
+    {
+      "command": "status",
+      "reply": "status On Navigate 0 0 0 1 0 1 1",
+      "seconds": 0.0
+    },
+    {
+      "command": "fanet",
+      "reply": "fanet 1 RUNNING 2864 3340",
+      "seconds": 0.0
+    },
+    {
+      "command": "stacks",
+      "reply": "stacks 7836 2996 2864 3340 0",
+      "seconds": 0.0
+    },
+    {
+      "command": "heap",
+      "reply": "heap 90256 20208 26612 7836",
+      "seconds": 0.015
+    }
+  ],
+  "initial": {
+    "power": "On",
+    "page": "Navigate",
+    "cursor": 0,
+    "modal_depth": 0,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": false,
+    "flight_running": false,
+    "firmware_sd_access": true
+  },
+  "final": {
+    "power": "On",
+    "page": "Navigate",
+    "cursor": 0,
+    "modal_depth": 0,
+    "warning": false,
+    "climb_ready": true,
+    "gps_fix": false,
+    "flight_running": true,
+    "firmware_sd_access": true
+  },
+  "heap": {
+    "internal_free": 90256,
+    "internal_min_since_boot": 20208,
+    "internal_largest": 26612,
+    "loop_stack_unused": 7836
+  }
+}

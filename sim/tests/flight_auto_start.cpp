@@ -1,0 +1,296 @@
+#include <Arduino.h>
+#include <SD_MMC.h>
+#include <assert.h>
+#include <stdio.h>
+
+#include <cmath>
+#include <limits>
+#include <string>
+
+#include "dispatch/message_bus.h"
+#include "dispatch/message_injector.h"
+#include "flight_start_window_checks.h"
+#include "instruments/baro.h"
+#include "instruments/gps.h"
+#include "instruments/imu.h"
+#include "logbook/igc.h"
+#include "logging/flight_auto_start.h"
+#include "logging/log.h"
+#include "power.h"
+#include "runtime.h"
+#include "scenario.h"
+#include "sim/clock.h"
+#include "ui/display/menu_page.h"
+#include "ui/display/pages/dialogs/page_alert_timerAutoStop.h"
+#include "ui/display/pages/dialogs/page_flight_summary.h"
+#include "ui/settings/settings.h"
+
+extern MessageBus<11> bus;
+extern Igc igcFlight;
+extern int32_t autoStopAltitude;
+extern PageAlertTimerAutoStop pageAlertTimerAutoStop;
+
+namespace {
+  MessageInjector injector;
+  sim::FlightSensorState sensor;
+  uint32_t sensorAtMs = 0;
+  uint32_t gpsAtMs = 0;
+
+  void fly(unsigned durationMs, float speedMph = 0, float climbMps = 0, bool withGps = true) {
+    const uint32_t started = millis();
+    while (uint32_t(millis() - started) < durationMs) {
+      const uint32_t now = millis();
+      if (uint32_t(now - sensorAtMs) >= 50) {
+        const double seconds = uint32_t(now - sensorAtMs) / 1000.0;
+        sensor.altitudeM += climbMps * seconds;
+        sensor.latitude += speedMph * .44704 * seconds / 111195.0;
+        sensorAtMs = now;
+        sensor.atMs = now;
+        sensor.northMps = speedMph * .44704;
+        const bool gpsDue = withGps && uint32_t(now - gpsAtMs) >= 1000;
+        if (gpsDue) gpsAtMs = now;
+        for (const auto& line : sim::flightSensorLines(sensor, gpsDue, gpsDue))
+          assert(injector.handleLine(line.c_str(), line.size()));
+      }
+      sim::runtime().step();
+    }
+  }
+
+  std::string readTrack(const String& path) {
+    File f = SD_MMC.open(path.c_str());
+    assert(f);
+    const std::string text = f.readString().c_str();
+    f.close();
+    assert(text.find("LXLVSTART V=3 CAUSE=") != std::string::npos);
+    for (const char* old : {"LXLVSTARTDATA", "LXLVSTARTALT", "LXLVSTARTPOS", "LXLVSTARTPATH",
+                            "LXLVSTARTCFG", "LXLVGL"})
+      assert(text.find(old) == std::string::npos);
+    // Every normal close includes the end cause before the final security record.
+    assert(text.rfind("\nG") != std::string::npos);
+    assert(text.find("LXLVEND V=1 CAUSE=") < text.rfind("\nG"));
+    return text;
+  }
+
+  void checkAutoStop() {
+    static_assert(AUTO_STOP_MIN_SEC == 15);
+    static_assert(AUTO_STOP_MAX_ALT == 200);
+    assert(!gps.hasUsableFix());
+    pageAlertTimerAutoStop.pop_all_pages();
+
+    for (int sign : {-1, 1}) {
+      // Both sides of the enlarged altitude tolerance qualify without GPS.
+      // Use real fresh sensor updates between scheduled detector checks.
+      flightTimer_resetAutoStop();
+      autoStopAltitude = baro.alt() + sign * 150;
+      for (unsigned check = 1; check <= 15; ++check) {
+        fly(1000, 0, 0, false);
+        assert(imu.accelValid());
+        assert(!gps.hasUsableFix());
+        assert(flightTimer_autoStop() == (check == 15));
+        if (check < 7 || check == 15) {
+          assert(pageAlertTimerAutoStop.get_modal_page() == nullptr);
+        } else {
+          assert(pageAlertTimerAutoStop.get_modal_page() == &pageAlertTimerAutoStop);
+          assert(flightTimer_getAutoStopCountRemaining() == 15 - check);
+        }
+        if (check == 7) assert(flightTimer_getAutoStopCountRemaining() == 8);
+      }
+      assert(flightTimer_getAutoStopCountRemaining() == 0);
+
+      // Canceling the eight-second warning starts confirmation over.
+      autoStopAltitude = baro.alt() + sign * 150;
+      for (unsigned check = 1; check <= 7; ++check) {
+        fly(1000, 0, 0, false);
+        assert(!flightTimer_autoStop());
+      }
+      assert(flightTimer_getAutoStopCountRemaining() == 8);
+      pageAlertTimerAutoStop.button_event(Button::CENTER, ButtonEvent::CLICKED, 1);
+      assert(pageAlertTimerAutoStop.get_modal_page() == nullptr);
+      assert(flightTimer_getAutoStopCountRemaining() == 0);
+      for (unsigned check = 1; check <= 7; ++check) {
+        fly(1000, 0, 0, false);
+        assert(!flightTimer_autoStop());
+      }
+      assert(flightTimer_getAutoStopCountRemaining() == 8);
+
+      // The strict 2 m boundary breaks qualification and closes the warning.
+      autoStopAltitude = baro.alt() + sign * 200;
+      assert(!flightTimer_autoStop());
+      assert(flightTimer_getAutoStopCountRemaining() == 0);
+      assert(pageAlertTimerAutoStop.get_modal_page() == nullptr);
+      autoStopAltitude = baro.alt() + sign * 199;
+      assert(!flightTimer_autoStop());
+      assert(flightTimer_getAutoStopCountRemaining() == 14);
+      flightTimer_resetAutoStop();
+    }
+    puts("Auto-stop 15 checks, 2 m boundary, eight-second warning, cancel and no-GPS passed");
+  }
+
+  void checkFirmware() {
+    sim::Runtime::Options options;
+    options.httpPort = 0;
+    options.speed = 0;
+    options.acceptWarning = true;
+    options.exitOnFatalError = true;
+    options.statePath = "sim/build-tests/flight-auto-start/state";
+    options.cardRoot = "sim/build-tests/flight-auto-start/card";
+    sim::runtime().configure(options);
+    sim::runtime().boot();
+    settings.loadDefaults();
+    settings.log_autoStart = settings.log_autoStop = false;
+    settings.log_saveTrack = true;
+    settings.system_autoOff = 0;
+    settings.system_showWarning = false;
+    injector.setBus(&bus);
+    sensor.altitudeM = 1000;
+    sensorAtMs = millis();
+    fly(40000, 0, 0, false);
+    assert(baro.climbRate1SecAverageValid());
+    assert(!gps.hasUsableFix());
+
+    checkAutoStop();
+
+    // A manual pre-GPS start retains only its cause/time through a long wait for the file.
+    const unsigned manualAt = millis();
+    flightTimer_start();
+    assert(flightTimer_isRunning() && !igcFlight.started());
+    fly(45000, 0, 0, false);
+    assert(!igcFlight.started());
+    const uint32_t resetBeforeGps = millis();
+    MotionUpdate reset(resetBeforeGps);
+    reset.reset = true;
+    imu.on_receive(reset);
+    fly(2500);
+    assert(igcFlight.started());
+    const String manualPath = igcFlight.trackLogPath();
+    flightTimer_stop(false);
+    auto text = readTrack(manualPath);
+    const std::string header = "START V=3 CAUSE=MANUAL T_MS=" + std::to_string(manualAt);
+    assert(text.find(header) != std::string::npos);
+    assert(text.find(" J=0") != std::string::npos);
+    assert(text.find("LXLVFDTIME ") != std::string::npos);
+    assert(text.find("LXLVFD K=IMU N=1 T=" + std::to_string(resetBeforeGps)) != std::string::npos);
+    assert(text.find("END V=1 CAUSE=MANUAL") != std::string::npos);
+
+    // Disabled detection cannot leave evidence to trigger immediately on enable.
+    fly(8000, 8);
+    assert(!flightTimer_isRunning());
+    settings.toggleBoolOnOff(&settings.log_autoStart);
+    fly(3000, 8);
+    assert(!flightTimer_isRunning());
+    // A fast off/on between scheduled checks must discard partial launch evidence.
+    settings.toggleBoolOnOff(&settings.log_autoStart);
+    settings.toggleBoolOnOff(&settings.log_autoStart);
+    fly(2000, 8);
+    assert(!flightTimer_isRunning());
+    for (unsigned elapsed = 0; elapsed < 4000 && !flightTimer_isRunning(); elapsed += 100)
+      fly(100, 8);
+    assert(flightTimer_isRunning() && igcFlight.started());
+    const String autoPath = igcFlight.trackLogPath();
+    // The timer's accepted check must enter g-load collection immediately, with
+    // a fresh launch guard and no second detector/debounce delay.
+    assert(imu.gLoad().diagnosticState().airborne);
+    assert(imu.gLoad().diagnosticState().ignoreRemainingMs > 14000);
+    settings.toggleBoolOnOff(&settings.log_autoStart);
+    assert(flightTimer_isRunning());
+    settings.toggleBoolOnOff(&settings.log_autoStart);
+    assert(flightTimer_isRunning());
+    flightTimer_start();  // An accidental duplicate must not rewrite AUTO to MANUAL.
+    settings.log_autoStop = true;
+    fly(30000);
+    assert(!flightTimer_isRunning() && PageFlightSummary::isShowing());
+    text = readTrack(autoPath);
+    assert(text.find("START V=3 CAUSE=AUTO") != std::string::npos);
+    assert(text.find("END V=1 CAUSE=AUTO") != std::string::npos);
+    assert(text.find(" J=1") != std::string::npos);
+    fly(8000, 8);
+    assert(!flightTimer_isRunning());
+    PageFlightSummary summary;
+    summary.pop_all_pages();
+    assert(!PageFlightSummary::isShowing());
+
+    // The actual fused baro/IMU signal can trigger a vertical launch without GPS.
+    settings.log_autoStart = settings.log_autoStop = false;
+    fly(5000, 0, 0, false);
+    assert(!gps.hasFreshGroundSpeed());
+    settings.log_autoStart = true;
+    const uint32_t launchAt = millis();
+    while (!flightTimer_isRunning() && uint32_t(millis() - launchAt) < 10000)
+      fly(100, 0, 1.2f, false);
+    assert(flightTimer_isRunning() && !igcFlight.started());
+    assert(imu.gLoad().diagnosticState().airborne);  // Even before GPS permits an IGC.
+    printf("Fused climb-only launch: %.2f seconds after climb onset\n",
+           (millis() - launchAt) / 1000.0);
+    const unsigned climbStartAt = logbook.logStartedAt;
+    fly(12000, 0, 1.2f, false);
+    fly(2500, 0, 1.2f, true);
+    assert(igcFlight.started());
+    assert(logbook.logStartedAt == climbStartAt);
+    const String climbPath = igcFlight.trackLogPath();
+    flightTimer_stop(false);
+    text = readTrack(climbPath);
+    assert(text.find("START V=3 CAUSE=AUTO") != std::string::npos);
+    assert(text.find(" J=2") != std::string::npos);
+
+    // Actual descending pressure and fused velocity use the same vertical path.
+    settings.log_autoStart = false;
+    fly(6000, 0, 0, false);
+    settings.log_autoStart = true;
+    const uint32_t descentAt = millis();
+    while (!flightTimer_isRunning() && uint32_t(millis() - descentAt) < 10000)
+      fly(100, 0, -1.2f, false);
+    assert(flightTimer_isRunning() && !igcFlight.started());
+    fly(2500, 0, -1.2f, true);
+    assert(igcFlight.started());
+    const String descentPath = igcFlight.trackLogPath();
+    flightTimer_stop(false);
+    text = readTrack(descentPath);
+    assert(text.find(" J=2") != std::string::npos);
+
+    // Below both standalone thresholds, real pressure/IMU/GPS injection starts
+    // through the blended path. The idle fixes populate its spatial window.
+    settings.log_autoStart = false;
+    fly(6000);
+    settings.log_autoStart = true;
+    const uint32_t mixedAt = millis();
+    while (!flightTimer_isRunning() && uint32_t(millis() - mixedAt) < 10000) fly(100, 3.75f, .6f);
+    assert(flightTimer_isRunning() && igcFlight.started());
+    const String mixedPath = igcFlight.trackLogPath();
+    flightTimer_stop(false);
+    text = readTrack(mixedPath);
+    assert(text.find(" J=4") != std::string::npos);
+
+    settings.log_autoStart = false;
+    fly(1500);
+    flightTimer_start();
+    fly(1500);
+    const String shutdownPath = igcFlight.trackLogPath();
+    assert(igcFlight.started());
+    power.shutdown(false);
+    assert(power.serviceShutdown());
+    assert(!flightTimer_isRunning());
+    text = readTrack(shutdownPath);
+    assert(text.find("END V=1 CAUSE=POWER_OFF") != std::string::npos);
+    assert(power.switchToOnState());
+    fly(4000);
+    flightTimer_start();
+    fly(1500);
+    const String lowBatteryPath = igcFlight.trackLogPath();
+    assert(igcFlight.started());
+    power.shutdown(false);
+    power.shutdown(true);
+    power.shutdown(false);
+    assert(flightTimer_isRunning());
+    assert(power.serviceShutdown());
+    text = readTrack(lowBatteryPath);
+    assert(text.find("END V=1 CAUSE=LOW_BATTERY") != std::string::npos);
+  }
+}  // namespace
+
+int main() {
+  flight_start_test::checkFlightStartWindows();
+  checkFirmware();
+  puts(
+      "Launch windows, sensor corroboration, delayed GPS, IGC causes "
+      "and lifecycle passed");
+}

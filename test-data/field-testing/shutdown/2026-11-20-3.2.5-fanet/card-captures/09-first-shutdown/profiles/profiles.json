@@ -1,0 +1,1 @@
+{"schema":"leaf.profiles","schema_version":"v0.1.0","active_pilot_id":"a78c7788","active_glider_id":"95b889e0","pilots":[{"id":"a78c7788","name":"Scott O’Brien","email":"scott@scottyob.com","leaf_log_api_key":null}],"gliders":[{"id":"95b889e0","model":"SwiftSix","brand":"Ozone","size":"ML","display_name":null}]}

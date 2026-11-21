@@ -1,0 +1,88 @@
+{
+  "schema": "leaf.logbook.flight",
+  "schema_version": "v0.1.0",
+  "flight_id": "fd2e33e6",
+  "clock": {
+    "system_time_synced_this_boot": true,
+    "time_source": "gps",
+    "timezone_offset_minutes": -420
+  },
+  "start": {
+    "time_valid": true,
+    "time_utc": "2026-10-11T21:34:57Z",
+    "time_local": "2026-10-11T14:34:57",
+    "temperature_c": 21.0778
+  },
+  "first_fix": {
+    "time_valid": true,
+    "time_utc": "2026-10-11T21:34:57Z",
+    "time_local": "2026-10-11T14:34:57",
+    "location": {
+      "lat_deg": 37.47544,
+      "lon_deg": -121.8601,
+      "altitude_m": 699.91
+    },
+    "temperature_c": 21.0778
+  },
+  "end": {
+    "time_valid": true,
+    "time_utc": "2026-10-11T21:41:43Z",
+    "time_local": "2026-10-11T14:41:43",
+    "location": {
+      "lat_deg": 37.46873,
+      "lon_deg": -121.867,
+      "altitude_m": 380.81
+    },
+    "temperature_c": 22.82474
+  },
+  "metrics": {
+    "duration_seconds": 405,
+    "max_altitude_m": 699.91,
+    "min_altitude_m": 380.74,
+    "max_altitude_above_launch_m": 0,
+    "max_climb_rate_mps": 1.86,
+    "max_sink_rate_mps": -3.14,
+    "max_ground_speed_mps": 9.733289,
+    "max_wind": {
+      "speed_mps": 7.212486,
+      "direction_from_deg": 225
+    },
+    "average_ground_speed_mps": 6.350367,
+    "straight_line_distance_m": 960.2859,
+    "path_distance_m": 2571.898,
+    "max_accel_g": 1.777375,
+    "min_accel_g": 0.222964,
+    "max_temperature_c": 22.82474,
+    "min_temperature_c": 21.07494
+  },
+  "track": {
+    "saved": true,
+    "format": "igc",
+    "path": "tracks/2026-10-11-XLF-000-04.igc"
+  },
+  "device": {
+    "firmware_version": "0.2.2+h3.2.3",
+    "hardware_version": "leaf_3_2_3",
+    "mac_address": "24:EC:4A:1F:38:B0"
+  },
+  "pilot": {
+    "id": "609a7497",
+    "name": "Jack Resmini"
+  },
+  "glider": {
+    "id": "f2ccfe74",
+    "brand": "Ozone",
+    "model": "Buzz Z2",
+    "size": "MS",
+    "display_name": "Buzz Z2 MS"
+  },
+  "site": {
+    "launch_name": null,
+    "landing_name": null
+  },
+  "weather": {},
+  "notes": {
+    "pilot_notes": "",
+    "tags": []
+  }
+}
