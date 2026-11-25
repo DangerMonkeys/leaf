@@ -125,7 +125,7 @@ test-checked-storage: $(BUILD)/checked_storage_test
 	@cd $(ROOT) && $(BUILD)/checked_storage_test .pio/storage-fix-review/simulator
 
 .PHONY: test-g-load
-$(BUILD)/igc_sensor_log_test: $(SIM)/tests/igc_sensor_log.cpp $(ROOT)/src/vario/logbook/igc_sensor_log.h $(ROOT)/src/vario/instruments/g_load_tracker.h
+$(BUILD)/igc_sensor_log_test: $(SIM)/tests/igc_sensor_log.cpp $(ROOT)/src/vario/logbook/igc_sensor_log.h $(ROOT)/src/vario/logbook/igc_ambient_log.h $(ROOT)/src/vario/instruments/g_load_tracker.h
 	@mkdir -p $(BUILD)
 	@$(CXX) -std=c++17 -Wall -Wextra -g -I$(ROOT)/src/vario $< -o $@
 

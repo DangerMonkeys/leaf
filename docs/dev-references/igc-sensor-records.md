@@ -2,15 +2,56 @@
 title: Compact IGC sensor records
 ---
 
-# Compact IGC sensor records (version 1)
+# Compact IGC sensor records (version 2)
 
-Leaf records filtered g-load and ambient temperature alongside each GPS B record.
-These are manufacturer L records (`LXLV`), covered by the existing G-record checksum.
-Other IGC readers may ignore them. The schema declaration is:
+Leaf records filtered g-load in manufacturer L records (`LXLV`), and ambient temperature
+and relative humidity in standard IGC J/K records. All are covered by the G-record checksum.
+Other IGC readers may ignore manufacturer records. The g-load schema declaration is:
 
 ```text
-LXLVSENSOR V=1 G=MG T=DECI_C HEX=1
+LXLVSENSOR V=2 G=MG HEX=1
 ```
+
+Version 2 removes temperature from the version-1 S record. The uptime/g-load offsets and
+clock anchor format are unchanged. Readers must select the S length from the declaration.
+Version-1 files use `LXLVSENSOR V=1 G=MG T=DECI_C HEX=1` and have a three-character
+signed deci-C field after g-load; they have no humidity data. For those legacy temperatures,
+subtract 4096 from encoded values at least 2048, divide by 10, and treat `800` as unavailable.
+
+## Standard ambient records
+
+IGC Appendix A3.4, A4.4 and A7 define J/K records and the OAT (outside air temperature,
+Celsius) and HUM (relative humidity, percent) fields. See the
+[FAI specification](https://www.fai.org/sites/default/files/igc_specification_dec_2024_with_al9.pdf)
+and [2026 Amendment 10](https://www.fai.org/sites/default/files/document/file/igc_specification_al10_january_2026_0.pdf).
+Leaf writes the J declaration immediately after I, before any task declaration or fixes:
+
+```text
+J020813OAT1418HUM
+K1300000018.0065.4
+K130020-012.3100.0
+```
+
+The J record declares two fields, using one-based positions from the start of each K line:
+
+| Positions | Meaning | Example |
+| --- | --- | --- |
+| 1 | K record type | `K` |
+| 2-7 | UTC time, HHMMSS | `130000` |
+| 8-13 | OAT, decimal Celsius, six characters | `0018.0` = 18.0 C; `-012.3` = -12.3 C |
+| 14-18 | HUM, decimal percent RH, five characters | `065.4` = 65.4%; `100.0` = 100% |
+
+The explicit decimal points preserve 0.1 C and 0.1% RH resolution in the standard units;
+this is storage resolution, not sensor accuracy. The temperature comes from the ambient
+AHT20 path, including its existing compensation. These are current readings at the K
+record's own UTC time, independent of any preserved g-load peak's sample uptime.
+
+The first usable ambient pair is written with a GPS B fix, then at most once every 20 seconds,
+the standard's recommended default K interval. Missing/stale ambient readings, non-finite
+values, temperature outside -204.7 to 204.7 C, or humidity outside 0-100% before rounding
+cause that K record to be omitted. A valid pair can be written as soon as the interval is due
+again. No custom sentinel or fabricated zero is used in OAT/HUM. During GPS outages,
+g-load peaks may still be written, but no K record is written without an associated usable fix.
 
 There is no flight-summary record, pre-launch sample cache, bucket reference, eligibility
 flag, or commit/discard message in the IGC. Recording starts at the first usable GPS fix.
@@ -24,24 +65,13 @@ Offsets are zero-based within the payload **after `LXLV`**.
 
 | Payload | Fields | Bytes including `LXLV` and LF |
 | --- | --- | ---: |
-| `Smmmmmmmmggggttt` | Sensor sample: uptime ms (8), milli-g (4), signed deci-C (3) | 21 |
+| `Smmmmmmmmgggg` | G-load sample: uptime ms (8), milli-g (4) | 18 |
 | `AmmmmmmmmDDMMYYHHMMSScc` | GPS clock anchor: uptime at GPS time receipt, UTC date/time and centiseconds | 28 |
 
-The S offsets are: type 0, uptime 1-8, g-load 9-12, temperature 13-15.
-G-load is an unsigned integer in **0.001 g** units. Temperature is a **12-bit
-two's-complement integer in 0.1 C** units: subtract 4096 when the encoded value is
-at least 2048. For example `F85` is -12.3 C.
-
-There is no flags field. G-load `FFFF` and temperature `800` denote missing/unavailable
-values; neither is a physical measurement. The IGC VAR field is unchanged, including its
-existing `000` representation for unavailable climb.
-
-Temperature is the fresh ambient reading **at the associated B/S write**, even if S's
-g-load comes from an earlier extreme. Its timestamp is therefore the preceding B record's
-time, not the g-load's sample uptime. If both extremes changed, two independent S records
-carry the same current temperature associated with that B fix; readers may deduplicate
-these identical temperature points. Historical peaks and readings written during GPS
-outages also use the full S format, with temperature `800`.
+The S offsets are: type 0, uptime 1-8, g-load 9-12. G-load is an unsigned integer in
+**0.001 g** units. There is no flags field. G-load `FFFF` denotes a missing/unavailable
+value, not a physical measurement. The IGC VAR field is unchanged, including its existing
+`000` representation for unavailable climb.
 
 A clock anchor precedes the first B/S pair, repeats at least hourly when GPS records are
 available, and is refreshed if the GPS/uptime offset changes by more than two seconds.
@@ -83,10 +113,12 @@ integrate it as such. Data from before the track began is not guaranteed.
 
 The existing six-extension B record is 54 bytes with LF (55 with CRLF): approximately
 194.4 kB/hour (198 kB with CRLF), before headers and occasional diagnostics.
-One S per second adds 75.6 kB/hour with LF or 79.2 kB/hour with CRLF, plus occasional
-clock anchors. Additional full S records cost 21 bytes each with LF (22 with CRLF).
-Steady totals are approximately **270 kB/hour with LF or 277 kB/hour with CRLF**,
-roughly **39-40% growth** before extra extremes.
+One S per second adds 64.8 kB/hour with LF or 68.4 kB/hour with CRLF, plus occasional
+clock anchors. Additional full S records cost 18 bytes each with LF (19 with CRLF).
+A K record every 20 seconds adds 3.42 kB/hour with LF or 3.6 kB/hour with CRLF.
+Steady totals are approximately **263 kB/hour with LF or 270 kB/hour with CRLF**,
+roughly **35-36% growth** over B records alone, before extra extremes. This is smaller than
+the previous version-1 sensor trace despite adding standard humidity and temperature records.
 
 An adversarial one-hour test changes both bounds every second and adds two missing peaks
 at every range rollover. Including CRLF and metadata allowance, its sensor overhead stays

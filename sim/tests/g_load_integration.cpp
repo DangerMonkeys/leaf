@@ -12,7 +12,9 @@
 #include "diagnostics/flight_diagnostics.h"
 #include "dispatch/message_bus.h"
 #include "display_capture.h"
+#include "instruments/ambient.h"
 #include "instruments/baro.h"
+#include "instruments/gps.h"
 #include "instruments/imu.h"
 #include "logbook/igc.h"
 #include "logbook/logbook_entry.h"
@@ -189,6 +191,8 @@ int main() {
     const String igc = file.readString();
     assert(igc.indexOf(String("\nHFPLTPILOTINCHARGE:") + pilot + "\r\n") >= 0);
     assert(igc.indexOf(String("\nHFGTYGLIDERTYPE:") + glider + "\r\n") >= 0);
+    assert(igc.indexOf("\nJ020813OAT1418HUM\r\n") >= 0);
+    assert(igc.indexOf("\nLXLVSENSOR V=2 G=MG HEX=1\r\n") >= 0);
     assert(igc.indexOf("\nLXLVEND V=1") >= 0 && igc.lastIndexOf("\nG") > 0);
   };
 
@@ -261,8 +265,40 @@ int main() {
   runFor(10000);
   const String noProfileTrack = igcFlight.trackLogPath();
   assert(igcFlight.started());
+  // Exercise the real ambient-to-IGC path, then let the reading go stale.
+  // Stop playback so it cannot refresh ambient data during this check.
+  sim::scenario().pause();
+  MessageInjector injector;
+  injector.setBus(&bus);
+  auto refreshFix = [&] {
+    sim::FlightSensorState sensorState;
+    sensorState.atMs = millis();
+    for (const auto& line : sim::flightSensorLines(sensorState, true, false))
+      assert(injector.handleLine(line.c_str(), line.size()));
+    assert(gps.hasUsableFix());
+  };
+  sim::clock().advanceUs(21000000);
+  refreshFix();
+  ambient.on_receive(AmbientUpdate(18, 65.4f));
+  igcFlight.log(0);
+  sim::clock().advanceUs(21000000);
+  refreshFix();
+  assert(ambient.state() == Ambient::State::Stale);
+  igcFlight.log(0);  // No K record for stale ambient data.
+  ambient.on_receive(AmbientUpdate(-12.3f, 100));
+  igcFlight.log(0);  // Recovery can write immediately; no fabricated zero readings.
   flightTimer_stop(true);
   verifyHeader(noProfileTrack, "Unknown", "Unknown");
+  File ambientTrack = SD_MMC.open(noProfileTrack.c_str());
+  const std::string ambientContents = ambientTrack.readString().c_str();
+  assert(ambientContents.find("0018.0065.4\r\n") != std::string::npos);
+  const auto lastAmbient = ambientContents.rfind("\nK");
+  assert(lastAmbient != std::string::npos);
+  assert(ambientContents.substr(lastAmbient + 8, 11) == "-012.3100.0");
+  size_t kRecords = 0;
+  for (size_t offset = 0; (offset = ambientContents.find("\nK", offset)) != std::string::npos; ++offset)
+    ++kRecords;
+  assert(kRecords == 3);  // Initial reading, explicit fresh reading, then recovery.
   assert(PageFlightSummary::isShowing());
   PageFlightSummary modalController;
   modalController.pop_all_pages();

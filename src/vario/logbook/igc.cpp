@@ -320,10 +320,14 @@ void Igc::log(unsigned long durationSec) {
 }
 
 void Igc::logSensors(bool writeSample) {
-  const bool temperatureValid = ambient.state() == Ambient::State::Ready;
-  sensorLog_.update(imu.gLoad().logState(millis()), millis(), temperatureValid,
-                    temperatureValid ? ambient.temp() : 0, writeSample,
+  sensorLog_.update(imu.gLoad().logState(millis()), millis(), writeSample,
                     [this](const char* line) { logger.writeLRecord(line); });
+  if (!writeSample) return;
+  const bool ambientValid = ambient.state() == Ambient::State::Ready;
+  const String utc = utcTimeString();
+  ambientLog_.update(millis(), utc.c_str(), ambientValid, ambientValid ? ambient.temp() : 0,
+                     ambientValid ? ambient.humidity() : 0,
+                     [this](const char* line) { recordOutput_.println(line); });
 }
 
 void Igc::logSensorClock() {
@@ -354,8 +358,10 @@ bool Igc::startFlight() {
   auto success = Flight::startFlight();
   if (!success) return false;
 
-  logger.setOutput(diagnosticOutput_);
+  recordOutput_.reset();
+  logger.setOutput(recordOutput_);
   sensorLog_.reset();
+  ambientLog_.reset();
   sensorClockValid_ = false;
 
   // Log the Header
@@ -404,12 +410,13 @@ bool Igc::startFlight() {
                                          IRecordExtension(3, "TRT"), IRecordExtension(3, "WDI"),
                                          IRecordExtension(3, "WSP"), IRecordExtension(3, "VAR")};
   logger.writeIRecord(sizeof(extensions) / sizeof(extensions[0]), extensions);
+  recordOutput_.println(IgcAmbientLog::DECLARATION);
   char config[73];
   snprintf(config, sizeof(config), "FDCFG V=1 WRITE_MS=%lu GAP_MS=%lu REPORT_MS=%lu",
            (unsigned long)FlightDiagnostics::SLOW_WRITE_MS,
            (unsigned long)FlightDiagnostics::GAP_MS, (unsigned long)FlightDiagnostics::REPORT_MS);
   logger.writeLRecord(config);
-  logger.writeLRecord("SENSOR V=1 G=MG T=DECI_C HEX=1");
+  logger.writeLRecord("SENSOR V=2 G=MG HEX=1");
   writeActiveNavigationDeclaration();
   log_writeStartDiagnostics(logger);
 
@@ -448,7 +455,7 @@ void Igc::end(const FlightStats stats, bool showSummary) {
   // If we've not started a flight yet, don't write to disk.
   if (started()) {
     logDiagnostics(true);
-    logger.writeGRecord();
+    recordOutput_.writeGRecord();
   }
   Flight::end(stats, showSummary);
 }

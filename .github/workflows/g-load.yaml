@@ -18,3 +18,25 @@ jobs:
           /tmp/g-load-launch
           g++ -std=c++17 -Wall -Wextra -Isrc/vario sim/tests/igc_sensor_log.cpp -o /tmp/igc-sensors
           /tmp/igc-sensors
+      - name: Check IGC sensor reader compatibility
+        run: python3 -m unittest discover -s sim/tests -p test_igc_sensors.py
+  igc-integration:
+    name: IGC sensor integration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install simulator dependencies
+        run: |
+          pip install platformio==6.1.19
+          pio pkg install -e leaf_3_2_7_release
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libssl-dev
+      - name: Check sensor logging and IGC checksums through the real firmware
+        run: |
+          make -C sim -j2 test-igc-text
+          for track in sim/build-tests/g-load/card/tracks/*.igc; do
+            python3 sim/tests/check_g_load_igc.py "$track"
+          done
