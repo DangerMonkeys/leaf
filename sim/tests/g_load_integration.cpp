@@ -12,7 +12,9 @@
 #include "diagnostics/flight_diagnostics.h"
 #include "dispatch/message_bus.h"
 #include "display_capture.h"
+#include "instruments/ambient.h"
 #include "instruments/baro.h"
+#include "instruments/gps.h"
 #include "instruments/imu.h"
 #include "logbook/igc.h"
 #include "logbook/logbook_entry.h"
@@ -189,6 +191,7 @@ int main() {
     const String igc = file.readString();
     assert(igc.indexOf(String("\nHFPLTPILOTINCHARGE:") + pilot + "\r\n") >= 0);
     assert(igc.indexOf(String("\nHFGTYGLIDERTYPE:") + glider + "\r\n") >= 0);
+    assert(igc.indexOf("\nLXLVSENSOR V=2 G=MG T=DECI_C RH=DECI_PCT HEX=1\r\n") >= 0);
     assert(igc.indexOf("\nLXLVEND V=1") >= 0 && igc.lastIndexOf("\nG") > 0);
   };
 
@@ -261,8 +264,31 @@ int main() {
   runFor(10000);
   const String noProfileTrack = igcFlight.trackLogPath();
   assert(igcFlight.started());
+  // Exercise the real ambient-to-IGC path, then let the reading go stale.
+  // Stop playback so it cannot refresh ambient data during this check.
+  sim::scenario().pause();
+  ambient.on_receive(AmbientUpdate(18, 65.4f));
+  igcFlight.log(0);
+  sim::clock().advanceUs(16000000);
+  assert(ambient.state() == Ambient::State::Stale);
+  MessageInjector injector;
+  injector.setBus(&bus);
+  sim::FlightSensorState sensorState;
+  sensorState.atMs = millis();
+  for (const auto& line : sim::flightSensorLines(sensorState, true, false))
+    assert(injector.handleLine(line.c_str(), line.size()));
+  assert(gps.hasUsableFix());
+  igcFlight.log(0);
   flightTimer_stop(true);
   verifyHeader(noProfileTrack, "Unknown", "Unknown");
+  File ambientTrack = SD_MMC.open(noProfileTrack.c_str());
+  const std::string ambientContents = ambientTrack.readString().c_str();
+  const auto freshSensor = ambientContents.rfind("\nLXLVS", ambientContents.find("0B428E\r\n"));
+  assert(freshSensor != std::string::npos);
+  assert(ambientContents.substr(freshSensor + 18, 6) == "0B428E");
+  const auto staleSensor = ambientContents.rfind("\nLXLVS");
+  assert(staleSensor > freshSensor);
+  assert(ambientContents.substr(staleSensor + 18, 6) == "800FFF");
   assert(PageFlightSummary::isShowing());
   PageFlightSummary modalController;
   modalController.pop_all_pages();

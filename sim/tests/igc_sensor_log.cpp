@@ -10,7 +10,7 @@
 struct Reader {
   struct Point {
     uint32_t ms;
-    unsigned g, temperature;
+    unsigned g, temperature, humidity;
   };
   std::vector<Point> points;
   std::vector<std::string> lines;
@@ -23,9 +23,9 @@ struct Reader {
     std::string line(text);
     lines.push_back(line);
     bytes += line.size() + 6;  // LXLV + CRLF: conservatively budget both newline bytes.
-    assert(line[0] == 'S' && line.size() == 16);
+    assert(line[0] == 'S' && line.size() == 19);
     ++samples;
-    points.push_back({hex(line, 1, 8), hex(line, 9, 4), hex(line, 13, 3)});
+    points.push_back({hex(line, 1, 8), hex(line, 9, 4), hex(line, 13, 3), hex(line, 16, 3)});
   }
   bool has(unsigned g, uint32_t origin, uint32_t fromMs, uint32_t toMs) const {
     for (const auto& p : points)
@@ -58,11 +58,11 @@ static void play(uint32_t start = 1000) {
     // Offset log ticks from IMU and bucket boundaries to exercise the final partial interval.
     if (dt % 1000 == 650) {
       const bool gpsFix = !(dt >= 44000 && dt < 122000);
-      writer.update(tracker.logState(now), now, true, -12.3f, gpsFix, emit);
+      writer.update(tracker.logState(now), now, true, -12.3f, 65.4f, gpsFix, emit);
     }
   }
   tracker.stopFlight();
-  writer.update(tracker.logState(start + 290000), start + 290000, false, 0, false, emit);
+  writer.update(tracker.logState(start + 290000), start + 290000, false, 0, 0, false, emit);
   assert(tracker.maxG() > 2.99f && tracker.maxG() < 3.01f);
   assert(tracker.minG() < .31f);
   assert(reader.samples > 200);
@@ -75,7 +75,7 @@ static void play(uint32_t start = 1000) {
   assert(reader.has(3000, start, 210000, 214000));
   bool outagePeak = false;
   for (const auto& p : reader.points)
-    outagePeak |= p.g > 1400 && p.g < 2500 && p.temperature == 0x800 &&
+    outagePeak |= p.g > 1400 && p.g < 2500 && p.temperature == 0x800 && p.humidity == 0xFFF &&
                   uint32_t(p.ms - start) >= 74900 && uint32_t(p.ms - start) < 77000;
   assert(outagePeak);
 }
@@ -91,27 +91,37 @@ int main() {
     state.fresh = true;
     state.filteredG = 1.234f;
     state.sampleMs = 1500;
-    writer.update(state, 1600, true, -12.3f, true, emit);
-    assert(reader.lines.back() == "S000005DC04D2F85");
+    writer.update(state, 1600, true, -12.3f, 65.4f, true, emit);
+    assert(reader.lines.back() == "S000005DC04D2F8528E");
     state.fresh = false;
-    writer.update(state, 2600, false, 0, true, emit);
-    assert(reader.lines.back() == "S00000A28FFFF800");
-    writer.update(state, 3600, true, NAN, true, emit);
-    assert(reader.lines.back().substr(13) == "800");
+    writer.update(state, 2600, false, 18, 65.4f, true, emit);
+    assert(reader.lines.back() == "S00000A28FFFF800FFF");
+    writer.update(state, 3600, true, NAN, 65.4f, true, emit);
+    assert(reader.lines.back().substr(13) == "80028E");
+
+    // Humidity endpoints are real values; reject invalid inputs before rounding.
+    for (float humidity : {0.f, 100.f, 12.34f, 12.36f, 99.99f}) {
+      writer.update(state, 3600, true, 18, humidity, true, emit);
+      assert(reader.points.back().humidity == unsigned(lroundf(humidity * 10)));
+    }
+    for (float humidity : {NAN, INFINITY, -INFINITY, -.01f, 100.01f}) {
+      writer.update(state, 3600, true, 18, humidity, true, emit);
+      assert(reader.lines.back().substr(13) == "0B4FFF");
+    }
 
     // Both new bounds must keep their original times, independent of the latest live value.
     state.current.id = 1;
     state.current.range.add(.4f, 2700);
     state.current.range.add(2.8f, 2900);
-    writer.update(state, 3700, true, 18, true, emit);
-    assert(reader.lines[reader.lines.size() - 2] == "S00000B540AF00B4");
-    assert(reader.lines.back() == "S00000A8C01900B4");
+    writer.update(state, 3700, true, 18, 65.4f, true, emit);
+    assert(reader.lines[reader.lines.size() - 2] == "S00000B540AF00B428E");
+    assert(reader.lines.back() == "S00000A8C01900B428E");
     // No repeated extrema when unchanged; explicit reset/staleness stays unavailable.
-    writer.update(state, 4700, true, 18, true, emit);
+    writer.update(state, 4700, true, 18, 65.4f, true, emit);
     assert(reader.lines.back()[0] == 'S' && reader.lines.back().substr(9, 4) == "FFFF");
     const auto count = reader.lines.size();
     state.current = {};
-    writer.update(state, 4800, false, 0, false, emit);
+    writer.update(state, 4800, false, 0, 0, false, emit);
     assert(reader.lines.size() == count);  // No commit/discard or other terminal records.
   }
   for (bool busy : {false, true}) {
@@ -133,7 +143,7 @@ int main() {
         state.previous.range.add(busy ? .95f : 1, second / 30 * 30000 - 200);
         state.previous.range.add(busy ? 1.05f : 1, second / 30 * 30000 - 100);
       }
-      writer.update(state, second * 1000 + 500, true, 18, true, emit);
+      writer.update(state, second * 1000 + 500, true, 18, 65.4f, true, emit);
     }
     const size_t budget = reader.bytes + 1024;  // Configuration, clocks and final markers.
     assert(busy ? reader.samples > 7200 : reader.samples == 3600);

@@ -320,10 +320,10 @@ void Igc::log(unsigned long durationSec) {
 }
 
 void Igc::logSensors(bool writeSample) {
-  const bool temperatureValid = ambient.state() == Ambient::State::Ready;
-  sensorLog_.update(imu.gLoad().logState(millis()), millis(), temperatureValid,
-                    temperatureValid ? ambient.temp() : 0, writeSample,
-                    [this](const char* line) { logger.writeLRecord(line); });
+  const bool ambientValid = ambient.state() == Ambient::State::Ready;
+  sensorLog_.update(imu.gLoad().logState(millis()), millis(), ambientValid,
+                    ambientValid ? ambient.temp() : 0, ambientValid ? ambient.humidity() : 0,
+                    writeSample, [this](const char* line) { logger.writeLRecord(line); });
 }
 
 void Igc::logSensorClock() {
@@ -409,7 +409,7 @@ bool Igc::startFlight() {
            (unsigned long)FlightDiagnostics::SLOW_WRITE_MS,
            (unsigned long)FlightDiagnostics::GAP_MS, (unsigned long)FlightDiagnostics::REPORT_MS);
   logger.writeLRecord(config);
-  logger.writeLRecord("SENSOR V=1 G=MG T=DECI_C HEX=1");
+  logger.writeLRecord("SENSOR V=2 G=MG T=DECI_C RH=DECI_PCT HEX=1");
   writeActiveNavigationDeclaration();
   log_writeStartDiagnostics(logger);
 

@@ -47,6 +47,8 @@ def check(executable, tracks):
                 "pilot_header": raw.index(b"HFPLTPILOTINCHARGE:") + len(b"HFPLTPILOTINCHARGE:"),
                 "gps_fix": raw.index(b"\nB") + 2 + 5,
             }
+            if b"LXLVSENSOR V=2 G=MG T=DECI_C RH=DECI_PCT HEX=1" in lines:
+                offsets["humidity"] = raw.index(b"\nLXLVS0") + 21
             for label, offset in offsets.items():
                 altered = bytearray(raw)
                 original = altered[offset]
@@ -73,7 +75,8 @@ def check(executable, tracks):
         "validator_source_sha256": hashlib.sha256(
             (Path(__file__).resolve().parents[2] / "utils/igc_validator/validate.c").read_bytes()
         ).hexdigest(),
-        "files_passed": len(results), "tampered_copies_rejected": 2 * len(results),
+        "files_passed": len(results),
+        "tampered_copies_rejected": sum(len(result["tamper_controls"]) for result in results),
         "files": results,
     }
 

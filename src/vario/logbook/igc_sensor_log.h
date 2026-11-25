@@ -5,15 +5,15 @@
 
 #include "instruments/g_load_tracker.h"
 
-// Compact version-1 manufacturer records; see docs/dev-references/igc-sensor-records.md.
+// Compact version-2 manufacturer records; see docs/dev-references/igc-sensor-records.md.
 // Keep only the bounds already emitted for the two pending buckets, never sample history.
 class IgcSensorLog {
  public:
   void reset() { *this = {}; }
 
   template <typename Emit>
-  void update(const GLoadTracker::LogState& state, uint32_t nowMs, bool temperatureValid,
-              float temperatureC, bool writeSample, Emit emit) {
+  void update(const GLoadTracker::LogState& state, uint32_t nowMs, bool ambientValid,
+              float temperatureC, float relativeHumidity, bool writeSample, Emit emit) {
     for (auto& slot : slots_) {
       if (!slot.id || slot.id == state.current.id || slot.id == state.previous.id) continue;
       slot = {};
@@ -45,15 +45,20 @@ class IgcSensorLog {
       }
       remember(slot, range);
     }
-    const int32_t deciC = temperatureValid && isfinite(temperatureC) && temperatureC >= -204.7f &&
-                                  temperatureC <= 204.7f
-                              ? lroundf(temperatureC * 10)
-                              : -2048;
-    temperatureValid = temperatureValid && deciC >= -2047 && deciC <= 2047;
+    const int32_t deciC =
+        ambientValid && isfinite(temperatureC) && temperatureC >= -204.7f && temperatureC <= 204.7f
+            ? lroundf(temperatureC * 10)
+            : -2048;
+    const bool temperatureValid = ambientValid && deciC >= -2047 && deciC <= 2047;
     const uint16_t temperature = temperatureValid ? (deciC & 0xFFF) : 0x800;
-    sample(sampleMs, g, temperature, emit);
+    const uint16_t humidity = ambientValid && isfinite(relativeHumidity) && relativeHumidity >= 0 &&
+                                      relativeHumidity <= 100
+                                  ? static_cast<uint16_t>(lroundf(relativeHumidity * 10))
+                                  : 0xFFF;
+    sample(sampleMs, g, temperature, humidity, emit);
     if (extraLow) {
-      sample(state.current.range.minMs, milliG(state.current.range.min), temperature, emit);
+      sample(state.current.range.minMs, milliG(state.current.range.min), temperature, humidity,
+             emit);
     }
   }
 
@@ -88,15 +93,17 @@ class IgcSensorLog {
     const auto& range = bucket.range;
     const bool low = !slot.valid || milliG(range.min) < slot.min;
     const bool high = !slot.valid || milliG(range.max) > slot.max;
-    if (low) sample(range.minMs, milliG(range.min), 0x800, emit);
+    if (low) sample(range.minMs, milliG(range.min), 0x800, 0xFFF, emit);
     if (high && (!low || milliG(range.max) != milliG(range.min)))
-      sample(range.maxMs, milliG(range.max), 0x800, emit);
+      sample(range.maxMs, milliG(range.max), 0x800, 0xFFF, emit);
     remember(slot, range);
   }
   template <typename Emit>
-  static void sample(uint32_t sampleMs, uint16_t g, uint16_t temperature, Emit emit) {
+  static void sample(uint32_t sampleMs, uint16_t g, uint16_t temperature, uint16_t humidity,
+                     Emit emit) {
     char line[32];
-    snprintf(line, sizeof(line), "S%08lX%04X%03X", (unsigned long)sampleMs, g, temperature);
+    snprintf(line, sizeof(line), "S%08lX%04X%03X%03X", (unsigned long)sampleMs, g, temperature,
+             humidity);
     emit(line);
   }
 };
