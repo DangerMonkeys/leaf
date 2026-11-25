@@ -47,8 +47,9 @@ def check(executable, tracks):
                 "pilot_header": raw.index(b"HFPLTPILOTINCHARGE:") + len(b"HFPLTPILOTINCHARGE:"),
                 "gps_fix": raw.index(b"\nB") + 2 + 5,
             }
-            if b"LXLVSENSOR V=2 G=MG T=DECI_C RH=DECI_PCT HEX=1" in lines:
-                offsets["humidity"] = raw.index(b"\nLXLVS0") + 21
+            if b"J020813OAT1418HUM" in lines:
+                offsets["humidity"] = raw.index(b"\nK") + 14
+                offsets["ambient_schema"] = raw.index(b"J020813OAT1418HUM") + 7
             for label, offset in offsets.items():
                 altered = bytearray(raw)
                 original = altered[offset]

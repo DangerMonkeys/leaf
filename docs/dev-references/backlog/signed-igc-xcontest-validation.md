@@ -35,8 +35,10 @@ registration, and XContest deployment must all agree.
 
 ## Current implementation and remaining problem
 
-Leaf pins IgcLogger `v0.0.6` and appends its incremental, unkeyed MD5 G record on normal flight
-completion. `utils/igc_validator/` contains a maintained C checker and a standalone Windows
+Leaf pins IgcLogger `v0.0.6` and appends an incremental, unkeyed MD5 G record on normal flight
+completion. `IgcRecordOutput` hashes the combined output, including the library-generated
+records and Leaf's standard J/K ambient records, with the same canonical-LF algorithm.
+`utils/igc_validator/` contains a maintained C checker and a standalone Windows
 executable. The checker requires an `AXLV` header, at least one B record and a final 32-hex-digit
 G record, accepts LF/CRLF and rejects a checksum mismatch. See the
 [validator README](../../../utils/igc_validator/README.md) for exact rules and build/use commands.

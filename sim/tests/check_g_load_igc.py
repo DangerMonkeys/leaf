@@ -45,8 +45,10 @@ def check_sensors(lines, path):
     assert len(declarations) == 1, "Expected one sensor schema declaration"
     declaration = declarations[0]
     assert declaration in (b"LXLVSENSOR V=1 G=MG T=DECI_C HEX=1",
-                           b"LXLVSENSOR V=2 G=MG T=DECI_C RH=DECI_PCT HEX=1")
-    humidity_included = b"V=2 " in declaration
+                           b"LXLVSENSOR V=2 G=MG HEX=1")
+    version_2 = b"V=2 " in declaration
+    if version_2:
+        assert b"J020813OAT1418HUM" in lines
     assert not any(line.startswith((b"LXLVX", b"LXLVP", b"LXLVC", b"LXLVD")) for line in lines)
     g_values = []
     samples = 0
@@ -59,19 +61,19 @@ def check_sensors(lines, path):
             assert not pending_fix, "B record without associated sensor record"
             pending_fix = True
             climb_values.append(int(line[50:53]) / 10)
+        elif line.startswith(b"K"):
+            assert version_2
+            assert re.fullmatch(rb"K[0-9]{6}(?:[0-9]{4}|-[0-9]{3})\.[0-9][0-9]{3}\.[0-9]", line), line
+            assert -204.7 <= float(line[7:13]) <= 204.7
+            assert 0 <= float(line[13:18]) <= 100
         elif re.fullmatch(rb"LXLVA[0-9A-F]{8}[0-9]{14}", line):
             anchored = True
         elif line.startswith(b"LXLVS") and not line.startswith(b"LXLVSENSOR") and not line.startswith(b"LXLVSTART"):
-            pattern = rb"LXLVS[0-9A-F]{18}" if humidity_included else rb"LXLVS[0-9A-F]{15}"
+            pattern = rb"LXLVS[0-9A-F]{12}" if version_2 else rb"LXLVS[0-9A-F]{15}"
             assert re.fullmatch(pattern, line), line
             assert anchored
             g = int(line[13:17], 16)
-            temperature = int(line[17:20], 16)
             assert g == 0xFFFF or 0 <= g <= 14000
-            assert 0 <= temperature <= 4095
-            if humidity_included:
-                humidity = int(line[20:23], 16)
-                assert humidity == 0xFFF or 0 <= humidity <= 1000
             if g != 0xFFFF:
                 g_values.append(g)
             pending_fix = False

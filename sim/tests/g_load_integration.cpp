@@ -191,7 +191,8 @@ int main() {
     const String igc = file.readString();
     assert(igc.indexOf(String("\nHFPLTPILOTINCHARGE:") + pilot + "\r\n") >= 0);
     assert(igc.indexOf(String("\nHFGTYGLIDERTYPE:") + glider + "\r\n") >= 0);
-    assert(igc.indexOf("\nLXLVSENSOR V=2 G=MG T=DECI_C RH=DECI_PCT HEX=1\r\n") >= 0);
+    assert(igc.indexOf("\nJ020813OAT1418HUM\r\n") >= 0);
+    assert(igc.indexOf("\nLXLVSENSOR V=2 G=MG HEX=1\r\n") >= 0);
     assert(igc.indexOf("\nLXLVEND V=1") >= 0 && igc.lastIndexOf("\nG") > 0);
   };
 
@@ -267,28 +268,37 @@ int main() {
   // Exercise the real ambient-to-IGC path, then let the reading go stale.
   // Stop playback so it cannot refresh ambient data during this check.
   sim::scenario().pause();
-  ambient.on_receive(AmbientUpdate(18, 65.4f));
-  igcFlight.log(0);
-  sim::clock().advanceUs(16000000);
-  assert(ambient.state() == Ambient::State::Stale);
   MessageInjector injector;
   injector.setBus(&bus);
-  sim::FlightSensorState sensorState;
-  sensorState.atMs = millis();
-  for (const auto& line : sim::flightSensorLines(sensorState, true, false))
-    assert(injector.handleLine(line.c_str(), line.size()));
-  assert(gps.hasUsableFix());
+  auto refreshFix = [&] {
+    sim::FlightSensorState sensorState;
+    sensorState.atMs = millis();
+    for (const auto& line : sim::flightSensorLines(sensorState, true, false))
+      assert(injector.handleLine(line.c_str(), line.size()));
+    assert(gps.hasUsableFix());
+  };
+  sim::clock().advanceUs(21000000);
+  refreshFix();
+  ambient.on_receive(AmbientUpdate(18, 65.4f));
   igcFlight.log(0);
+  sim::clock().advanceUs(21000000);
+  refreshFix();
+  assert(ambient.state() == Ambient::State::Stale);
+  igcFlight.log(0);  // No K record for stale ambient data.
+  ambient.on_receive(AmbientUpdate(-12.3f, 100));
+  igcFlight.log(0);  // Recovery can write immediately; no fabricated zero readings.
   flightTimer_stop(true);
   verifyHeader(noProfileTrack, "Unknown", "Unknown");
   File ambientTrack = SD_MMC.open(noProfileTrack.c_str());
   const std::string ambientContents = ambientTrack.readString().c_str();
-  const auto freshSensor = ambientContents.rfind("\nLXLVS", ambientContents.find("0B428E\r\n"));
-  assert(freshSensor != std::string::npos);
-  assert(ambientContents.substr(freshSensor + 18, 6) == "0B428E");
-  const auto staleSensor = ambientContents.rfind("\nLXLVS");
-  assert(staleSensor > freshSensor);
-  assert(ambientContents.substr(staleSensor + 18, 6) == "800FFF");
+  assert(ambientContents.find("0018.0065.4\r\n") != std::string::npos);
+  const auto lastAmbient = ambientContents.rfind("\nK");
+  assert(lastAmbient != std::string::npos);
+  assert(ambientContents.substr(lastAmbient + 8, 11) == "-012.3100.0");
+  size_t kRecords = 0;
+  for (size_t offset = 0; (offset = ambientContents.find("\nK", offset)) != std::string::npos; ++offset)
+    ++kRecords;
+  assert(kRecords == 3);  // Initial reading, explicit fresh reading, then recovery.
   assert(PageFlightSummary::isShowing());
   PageFlightSummary modalController;
   modalController.pop_all_pages();
